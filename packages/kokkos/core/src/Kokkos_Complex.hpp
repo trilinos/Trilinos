@@ -487,6 +487,24 @@ std::ostream& operator >> (std::ostream& os, complex<RealType>& x) {
 }
 
 #if defined(KOKKOS_HAVE_CXX11) || defined(__CUDA_ARCH__)
+
+// Kokkos' support for atomic updates currently requires C++11 support.
+// Otherwise, one might see errors like this (from GCC 4.8.2):
+//
+// error: member ‘Kokkos::complex<double>
+// Kokkos::atomic_fetch_add(volatile T*, typename
+// Kokkos::Impl::enable_if<(((sizeof (T) != sizeof (int)) && (sizeof
+// (T) != sizeof (long int))) && (sizeof (T) == sizeof
+// (Kokkos::Impl::cas128_t))), const T>::type) [with T =
+// Kokkos::complex<double>; typename Kokkos::Impl::enable_if<(((sizeof
+// (T) != sizeof (int)) && (sizeof (T) != sizeof (long int))) &&
+// (sizeof (T) == sizeof (Kokkos::Impl::cas128_t))), const T>::type =
+// const Kokkos::complex<double>]::U::t’ with constructor not allowed
+// in union
+//  T t ;
+//       ^
+// note: unrestricted unions only available with -std=c++11 or -std=gnu++11
+
 KOKKOS_INLINE_FUNCTION void
 atomic_add (volatile ::Kokkos::complex<double>* const dest,
             const ::Kokkos::complex<double> src)
@@ -513,46 +531,77 @@ KOKKOS_INLINE_FUNCTION void
 atomic_assign (volatile ::Kokkos::complex<double>* const dest,
                const ::Kokkos::complex<double> src)
 {
-  /*The following text is wrong. Atomic operations only guarantee that each operation
-  actually takes effect: it does not guarantee any order. As a consequence the
-  component wise assignment would potentially end up with the real and imaginary part
-  coming from different assignments.*/
-  // We can do atomic assignment componentwise, because atomics only
-  // promise that a sequence of atomic operations, once complete,
-  // will eventually reach the value it would have reached after
-  // executing them sequentially.  Thus, intermediate results might
-  // be out of order, but the final result is the same as if the
-  // operations had been executed sequentially.
+  // Atomic operations only guarantee that each operation actually
+  // takes effect: it does not guarantee any order. As a result,
+  // implementing this using component-wise assignment could
+  // potentially end up with the final real and imaginary part coming
+  // from different assignments.
   //
-  // The one problem is if we mix atomic_add and atomic_assign.
-  // Those operations do not commute with each other, so we cannot
-  // mix them and expect to get the same answer if the order of
-  // operations changes.
-    *dest = src;
+  // Another issue is mixing atomic_add and atomic_assign.  Those
+  // operations do not commute with each other, so we cannot mix them
+  // and expect to get the same answer if the order of operations
+  // changes.
+
+  // FIXME (mfh 12 Mar 2015) The code below is incorrect.  It builds,
+  // but it doesn't have the desired atomic update semantics.
+  *dest = src;
 }
 
 KOKKOS_INLINE_FUNCTION void
 atomic_assign (volatile ::Kokkos::complex<float>* const dest,
                const ::Kokkos::complex<float> src)
 {
-  /*The following text is wrong. Atomic operations only guarantee that each operation
-  actually takes effect: it does not guarantee any order. As a consequence the
-  component wise assignment would potentially end up with the real and imaginary part
-  coming from different assignments.*/
-  // We can do atomic assignment componentwise, because atomics only
-  // promise that a sequence of atomic operations, once complete,
-  // will eventually reach the value it would have reached after
-  // executing them sequentially.  Thus, intermediate results might
-  // be out of order, but the final result is the same as if the
-  // operations had been executed sequentially.
+  // Atomic operations only guarantee that each operation actually
+  // takes effect: it does not guarantee any order. As a result,
+  // implementing this using component-wise assignment could
+  // potentially end up with the final real and imaginary part coming
+  // from different assignments.
   //
-  // The one problem is if we mix atomic_add and atomic_assign.
-  // Those operations do not commute with each other, so we cannot
-  // mix them and expect to get the same answer if the order of
-  // operations changes.
-    *dest = src;
+  // Another issue is mixing atomic_add and atomic_assign.  Those
+  // operations do not commute with each other, so we cannot mix them
+  // and expect to get the same answer if the order of operations
+  // changes.
+
+  // FIXME (mfh 12 Mar 2015) The code below is incorrect.  It builds,
+  // but it doesn't have the desired atomic update semantics.
+  *dest = src;
 }
-#endif
+
+#else // C++11 is disabled, and not building with CUDA
+
+// FIXME (mfh 12 Mar 2015) The code below builds, but is NOT
+// semantically correct.  Rather than try to fix it, we prefer to
+// leave it alone, since Trilinos will require C++11 soon.
+
+KOKKOS_INLINE_FUNCTION void
+atomic_add (volatile ::Kokkos::complex<double>* const dest,
+            const ::Kokkos::complex<double> src)
+{
+  *dest += src;
+}
+
+KOKKOS_INLINE_FUNCTION void
+atomic_add (volatile ::Kokkos::complex<float>* const dest,
+            const ::Kokkos::complex<float> src)
+{
+  *dest += src;
+}
+
+KOKKOS_INLINE_FUNCTION void
+atomic_assign (volatile ::Kokkos::complex<double>* const dest,
+               const ::Kokkos::complex<double> src)
+{
+  *dest = src;
+}
+
+KOKKOS_INLINE_FUNCTION void
+atomic_assign (volatile ::Kokkos::complex<float>* const dest,
+               const ::Kokkos::complex<float> src)
+{
+  *dest = src;
+}
+
+#endif // defined(KOKKOS_HAVE_CXX11) || defined(__CUDA_ARCH__)
 
 } // namespace Kokkos
 
