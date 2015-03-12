@@ -122,6 +122,9 @@ public:
   Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
 
   /** \brief . */
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_DfDp_op(int i) const;
+
+  /** \brief . */
   Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
@@ -260,6 +263,23 @@ public:
     outArgs.setSupports(MEB::OUT_ARG_W_op);
     prototypeOutArgs_ = outArgs; }
 
+  /** This method builds the response libraries that build the 
+    * dfdp sensitivities for the distributed parameters if requested.
+    * Note that in general the user is expected to call this through
+    * setupModel and not call it directly.
+    */
+  void buildDistroParamDfDp_RL(
+       const Teuchos::RCP<panzer::WorksetContainer> & wc,
+       const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+       const std::vector<panzer::BC> & bcs,
+       const panzer::EquationSetFactory & eqset_factory,
+       const panzer::BCStrategyFactory& bc_factory,
+       const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+       const Teuchos::ParameterList& closure_models,
+       const Teuchos::ParameterList& user_data,
+       const bool write_graphviz_file=false,
+       const std::string& graphviz_file_prefix="");
+
   /** This function is intended for experts only, it allows for a beta to be set for the
     * dirichlet conditions only. This allows the dirichlet condition to be propagated to
     * the mass matrix. The reason it is one time only is that it breaks encapsulation,
@@ -357,6 +377,8 @@ private: // data members
 
     // for distributed parameters
     Teuchos::RCP<const UniqueGlobalIndexerBase> global_indexer;
+    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > dfdp_rl;
+        // for residual sensitivities with respect to a distributed parameter
 
     // for scalar parameters
     panzer::ParamVec scalar_value;
