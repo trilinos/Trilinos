@@ -233,7 +233,7 @@ public:
     typedef Thyra::ModelEvaluatorBase MEB;
     MEB::OutArgsSetup<Scalar> outArgs;
     outArgs.setModelEvalDescription(this->description());
-    outArgs.set_Np_Ng(parameters_.names.size(), g_space_.size());
+    outArgs.set_Np_Ng(parameters_.size(), g_space_.size());
     outArgs.setSupports(MEB::OUT_ARG_f);
     outArgs.setSupports(MEB::OUT_ARG_W_op);
     prototypeOutArgs_ = outArgs; }
@@ -255,7 +255,7 @@ public:
     typedef Thyra::ModelEvaluatorBase MEB;
     MEB::OutArgsSetup<Scalar> outArgs;
     outArgs.setModelEvalDescription(this->description());
-    outArgs.set_Np_Ng(parameters_.names.size(), g_space_.size());
+    outArgs.set_Np_Ng(parameters_.size(), g_space_.size());
     outArgs.setSupports(MEB::OUT_ARG_f);
     outArgs.setSupports(MEB::OUT_ARG_W_op);
     prototypeOutArgs_ = outArgs; }
@@ -363,6 +363,10 @@ private: // data members
   };
 
   Teuchos::RCP<ParameterObject> createScalarParameter(const Teuchos::Array<std::string> & names) const;
+  Teuchos::RCP<ParameterObject> createDistributedParameter(const std::string & key,
+                        const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > & vs,
+                        const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & initial,
+                        const Teuchos::RCP<const UniqueGlobalIndexerBase> & ugi) const;
 
   double t_init_;
 
@@ -376,18 +380,7 @@ private: // data members
 
   mutable panzer::AssemblyEngine_TemplateManager<panzer::Traits> ae_tm_;     // they control and provide access to evaluate
 
-  // parameters
-  mutable struct { 
-    std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > names;
-    std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > > spaces;
-    std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > initial_values;
-    std::vector<Teuchos::RCP<const UniqueGlobalIndexerBase> > global_indexers;
-    std::vector<Teuchos::RCP<const LinearObjFactory<panzer::Traits> > > deriv_lofs;
-    std::vector<bool> are_distributed;
-
-    mutable std::vector<panzer::ParamVec> scalar_values;
-
-  } parameters_;
+  std::vector<Teuchos::RCP<ParameterObject> > parameters_;
 
   mutable bool require_in_args_refresh_;
   mutable bool require_out_args_refresh_;
