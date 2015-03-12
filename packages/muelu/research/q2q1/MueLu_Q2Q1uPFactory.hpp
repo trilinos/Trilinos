@@ -175,7 +175,7 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("p2vMap",                  rcpThis, "Mapping of pressure coords to u-velocity coords");
 
     validParamList->set< std::string >           ("mode",                 "pressure", "Mode");
-    validParamList->set< bool >                  ("phase2",                     true, "Use extra phase to improve pattern");
+    validParamList->set< bool >                  ("phase2",                    false, "Use extra phase to improve pattern");
     validParamList->set< bool >                  ("dump status",               false, "Output status");
 
     return validParamList;
@@ -314,7 +314,7 @@ namespace MueLu {
       // On the finest level, we must map userCpts (which corresponds to
       // pressure cpts and pressure mid-points) to the velocity variables
       //
-      // Note: on coarser levels the lower numbered velocity dofs correspond
+      // NOTE: on coarser levels the lower numbered velocity dofs correspond
       // to points that are co-located with pressures and the two numberings
       // are identical so no translation is needed.
       if (fineLevelID == 0) {
@@ -408,8 +408,8 @@ namespace MueLu {
     if (pressureMode) CptDepends2Pattern(*A,       *myCpts, P, 999999);
     else              CptDepends2Pattern(*AForPat, *myCpts, P, 0);
 
-    if (pressureMode) Utils::Write("Pp.mm", *P);
-    else              Utils::Write("Pv.mm", *P);
+    if (pressureMode) Utils::Write("Pp_tent.mm", *P);
+    else              Utils::Write("Pv_tent.mm", *P);
 
     // Construct coarse map
     RCP<const Map> coarseMap = P->getDomainMap();
@@ -692,11 +692,13 @@ namespace MueLu {
           // is actually a bug in the code. However, if I put a '2', I don't
           // get the perfect coarsening for a uniform mesh ... so I'm leaving
           // if for now without the 2.
-          //          coordDist[j] = 2*(coordDist[j]*distance) / (coordDist[j] + distance);
+          coordDist[j] = 2*(coordDist[j]*distance) / (coordDist[j] + distance);
+#if 0
           SC kkk = 10.;
           if (coordDist[j] > distance)
             coordDist[j] = (kkk*coordDist[j]*distance)/(coordDist[j]*(kkk-1)+ distance);
           coordDist[j] = (kkk*coordDist[j]*distance)/(coordDist[j]        + distance*(kkk-1));
+#endif
         }
 
         // Mark all unassigned dist4 points as CANDIDATE and compress
@@ -748,7 +750,12 @@ namespace MueLu {
         std::vector<double> ddtemp(numNewCandidates);
         for (size_t k = 0; k < numNewCandidates; k++) {
           LO j = dist4[k];
+#ifdef optimal
+          // This one is better, but we are trying to replicate Matlab now
           ddtemp[k] = -coordDist[j] - .01*(ia[j+1]-ia[j]) + 1e-10*(j+1);
+#else
+          ddtemp[k] = +coordDist[j] - 0.0*(ia[j+1]-ia[j]) + 1e-3*(j+1);
+#endif
         }
         Muelu_az_dsort2(ddtemp, dist4);
         MergeSort(candidateList, numOldCandidates, dist4, coordDist, ia);
@@ -900,6 +907,8 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   PhaseTwoPattern(const Matrix& A, const MultiVector& coords, const std::vector<char>& status, MyCptList& myCpts) const {
+    GetOStream(Runtime0) << "Starting phase 2" << std::endl;
+
     int    NDim    = coords.getNumVectors();
     size_t numRows = A.getNodeNumRows();
 
@@ -957,7 +966,7 @@ namespace MueLu {
 
         // Reset scratch
         for (int k = 0; k < numCpts[candidates[p]]; k++)
-          scratch[cpts[k]] = 'y';
+          scratch[cpts[k]] = 'n';
         for (int k = 0; k < numNearbyCs; k++)
           scratch[nearbyCs[k]] = 'n';
 
@@ -1393,8 +1402,8 @@ namespace MueLu {
     const std::string dirName = OUTPUT_DIR;
 
     struct stat sb;
-    if (stat(dirName.c_str(), &sb) != 0 || !S_ISDIR(sb.st_mode))
-      GetOStream(Errors) << "Please create a \"" << dirName << "\" directory" << std::endl;
+    TEUCHOS_TEST_FOR_EXCEPTION(stat(dirName.c_str(), &sb) != 0 || !S_ISDIR(sb.st_mode), Exceptions::RuntimeError,
+                               "Please create a \"" << dirName << "\" directory");
 
     if (pressureMode) {
       std::ofstream ofs((dirName + filename).c_str());
@@ -1771,8 +1780,13 @@ namespace MueLu {
         // Must match code above. There is something arbitrary and
         // crappy about the current weighting.
 
+#ifdef optimal
         if (coordDist[ii] + .01*(ia[ii+1]-ia[ii]) - 1.e-10*(ii+1) <
             coordDist[jj] + .01*(ia[jj+1]-ia[jj]) - 1.e-10*(jj+1))
+#else
+        if (-coordDist[ii] + .0*(ia[ii+1]-ia[ii]) - 1.e-3*(ii+1) <
+            -coordDist[jj] + .0*(ia[jj+1]-ia[jj]) - 1.e-3*(jj+1))
+#endif
           oldCandidates[k--] = oldCandidates[i--];
 
         else
@@ -1781,6 +1795,6 @@ namespace MueLu {
     }
   }
 
-}
+} // namespace MueLu
 
 #endif // MUELU_Q2Q1UPFACTORY_DECL_HPP

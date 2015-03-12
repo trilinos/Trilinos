@@ -97,7 +97,7 @@
 namespace Thyra {
 
 #define MUELU_GPD(name, type, defaultValue) \
-  (paramList.isParameter(#name) ? paramList.get<type>(#name) : defaultValue)
+  (paramList.isParameter(name) ? paramList.get<type>(name) : defaultValue)
 
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -352,6 +352,7 @@ namespace Thyra {
     RCP<CrsMatrix> A_22_crs     = rcp_dynamic_cast<CrsMatrixWrap>(A_22)    ->getCrsMatrix();
     RCP<CrsMatrix> A_11_crs_9Pt = rcp_dynamic_cast<CrsMatrixWrap>(A_11_9Pt)->getCrsMatrix();
 
+    // FIXME: why do we need to perturb A_22?
     Array<SC> smallVal(1, 1.0e-9);
 
     // FIXME: could this be sped up using expertStaticFillComplete?
@@ -524,9 +525,6 @@ namespace Thyra {
 
       level.Set<RCP<Matrix> >("A", rcpFromRef(Pattern));
 
-      FactoryManager M;
-      level.SetFactoryManager(rcpFromRef(M));
-
       RCP<CoalesceDropFactory> dropFactory = rcp(new CoalesceDropFactory());
       ParameterList dropParams = *(dropFactory->GetValidParameterList());
       dropParams.set("lightweight wrap",          true);
@@ -684,7 +682,8 @@ namespace Thyra {
     ParameterList patternParams = *(patternFact->GetValidParameterList());
     // Our prolongator constructs the exact pattern we are going to use,
     // therefore we do not expand it
-    patternParams.set("emin: pattern order", MUELU_GPD("emin: pattern order", int, 0));
+    if (paramList.isParameter("emin: pattern order"))
+      patternParams.set("emin: pattern order", paramList.get<int>("emin: pattern order"));
     patternFact->SetParameterList(patternParams);
     patternFact->SetFactory("A", AFact);
     patternFact->SetFactory("P", Q2Q1Fact);
@@ -695,6 +694,10 @@ namespace Thyra {
     M.SetFactory("Constraint", CFact);
 
     RCP<EminPFactory> EminPFact = rcp(new EminPFactory());
+    ParameterList eminParams = *(EminPFact->GetValidParameterList());
+    if (paramList.isParameter("emin: num iterations"))
+      eminParams.set("emin: num iterations", paramList.get<int>("emin: num iterations"));
+    EminPFact->SetParameterList(eminParams);
     EminPFact->SetFactory("A",          AFact);
     EminPFact->SetFactory("Constraint", CFact);
     EminPFact->SetFactory("P",          Q2Q1Fact);
@@ -735,8 +738,6 @@ namespace Thyra {
   std::string MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::description() const {
     return "Thyra::MueLuTpetraQ2Q1PreconditionerFactory";
   }
-
-#undef MUELU_GPD
 
 } // namespace Thyra
 
