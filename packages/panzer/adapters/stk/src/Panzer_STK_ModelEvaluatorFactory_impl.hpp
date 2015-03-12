@@ -1567,6 +1567,26 @@ namespace panzer_stk_classic {
     }
 
     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
+
+    // Note if you want to use new solvers within Teko they have to be added to the solver builer
+    // before teko is added. This is because Teko steals its defaults from the solver its being injected
+    // into!
+
+    #ifdef HAVE_MUELU
+    {
+      Thyra::addMueLuToStratimikosBuilder(linearSolverBuilder); // Register MueLu as a Stratimikos preconditioner strategy for Epetra
+      Stratimikos::enableMueLuTpetra<int,panzer::Ordinal64,panzer::TpetraNodeType>(linearSolverBuilder,"MueLu-Tpetra");
+    }
+    #endif // MUELU
+    #ifdef HAVE_IFPACK2
+    {
+      typedef Thyra::PreconditionerFactoryBase<double> Base;
+      typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double, int, panzer::Ordinal64,panzer::TpetraNodeType> > Impl;
+
+      linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
+    }
+    #endif // MUELU
+
     #ifdef HAVE_TEKO
     if(!blockedAssembly) {
 
@@ -1746,21 +1766,6 @@ namespace panzer_stk_classic {
        }
     }
     #endif
-
-    #ifdef HAVE_MUELU
-    {
-      Thyra::addMueLuToStratimikosBuilder(linearSolverBuilder); // Register MueLu as a Stratimikos preconditioner strategy for Epetra
-      Stratimikos::enableMueLuTpetra<int,panzer::Ordinal64,panzer::TpetraNodeType>(linearSolverBuilder,"MueLu-Tpetra");
-    }
-    #endif // MUELU
-    #ifdef HAVE_IFPACK2
-    {
-      typedef Thyra::PreconditionerFactoryBase<double> Base;
-      typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double, int, panzer::Ordinal64,panzer::TpetraNodeType> > Impl;
-
-      linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
-    }
-    #endif // MUELU
 
     linearSolverBuilder.setParameterList(strat_params);
     Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = createLinearSolveStrategy(linearSolverBuilder);
