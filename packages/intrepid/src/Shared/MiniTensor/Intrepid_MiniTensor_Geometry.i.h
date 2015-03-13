@@ -144,6 +144,28 @@ SphericalParametrization<T, N>::SphericalParametrization(
 }
 
 //
+// Normal vector for SphericalParemetrization
+//
+template<typename T, Index N>
+inline
+Vector<T, N>
+SphericalParametrization<T, N>::get_normal(
+    Vector<T, dimension_const<N, 2>::value> const & parameters
+) const
+{
+  T const &
+  phi = parameters(0);
+
+  T const &
+  theta = parameters(1);
+
+  Vector<T, N>
+  normal(sin(phi) * sin(theta), cos(phi), sin(phi) * cos(theta));
+
+  return normal;
+}
+
+//
 // Evaluation for SphericalParemetrization
 //
 template<typename T, Index N>
@@ -153,14 +175,8 @@ SphericalParametrization<T, N>::operator()(
     Vector<T, dimension_const<N, 2>::value> const & parameters
 )
 {
-  T const &
-  phi = parameters(0);
-
-  T const &
-  theta = parameters(1);
-
   Vector<T, N> const
-  normal(sin(phi) * sin(theta), cos(phi), sin(phi) * cos(theta));
+  normal = get_normal(parameters);
 
   // Localization tensor
   Tensor<T, N> const
