@@ -91,7 +91,7 @@ namespace Env {
   //  Set or get the gemini version, if passed value is not unknown, set the version, either way return the version
   //
   GeminiSCIVersion GetGeminiVersion(GeminiSCIVersion ver) {
-    static GeminiSCIVersion GeminiSCIVersionValue = GEMINI_SCI_1;  //This is the default gemini verion
+    static GeminiSCIVersion GeminiSCIVersionValue = GEMINI_SCI_1;  //This is the default gemini version
     if(ver != GEMINI_SCI_UNKNOWN) {
       GeminiSCIVersionValue = ver;
     }

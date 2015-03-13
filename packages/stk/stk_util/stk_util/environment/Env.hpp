@@ -87,7 +87,8 @@ static const std::string PARAM_ON = "on";  ///< Option value when command line o
     GEMINI_SCI_UNKNOWN = 0,
     GEMINI_SCI_1 = 1,
     GEMINI_SCI_2 = 2,
-    GEMINI_SCI_2_1 = 21
+    GEMINI_SCI_2_1 = 21,
+    NEMO_1 = 101
   };
 
   GeminiSCIVersion GetGeminiVersion(GeminiSCIVersion ver=GEMINI_SCI_UNKNOWN);
