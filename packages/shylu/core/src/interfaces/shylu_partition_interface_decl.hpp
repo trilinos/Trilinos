@@ -21,13 +21,13 @@
 #include <Isorropia_EpetraRedistributor.hpp>
 
 //Tperta
-#ifdef HAVE_SHYLU_TPETRA
+#ifdef HAVE_SHYLUCORE_TPETRA
 #include <Tpetra_CrsMatrix_decl.hpp>
 #include <Tpetra_CrsMatrix_def.hpp>
 #endif
 
 //#include <Zoltan2_config.h>
-#ifdef HAVE_SHYLU_ZOLTAN2
+#ifdef HAVE_SHYLUCORE_ZOLTAN2
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
 #include <Zoltan2_XpetraMultiVectorAdapter.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
@@ -54,7 +54,7 @@ private:
   Teuchos::ParameterList* pList;
   Matrix* A;
   ///other handlers needed by zoltan2 and isorropia
-#ifdef HAVE_SHYLU_ZOLTAN2
+#ifdef HAVE_SHYLUCORE_ZOLTAN2
   int partitionZoltan2();
   Zoltan2::XpetraCrsMatrixAdapter<Matrix,Vector> *zadapter;
   Zoltan2::PartitioningProblem<Zoltan2::XpetraCrsMatrixAdapter<Matrix,Vector> > *zproblem;

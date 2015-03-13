@@ -7,7 +7,7 @@ namespace ShyLU{
   //Epetra
   template class PartitionInterface<Epetra_CrsMatrix, Epetra_MultiVector>;
 
-#ifdef HAVE_SHYLU_TPETRA
+#ifdef HAVE_SHYLUCORE_TPETRA
   //Tpetra
   typedef KokkosClassic::DefaultNode::DefaultNodeType node;
  

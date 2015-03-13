@@ -8,13 +8,13 @@
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
 
-#ifdef HAVE_SHYLU_ZOLTAN2  
+#ifdef HAVE_SHYLUCORE_ZOLTAN2  
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
 #include <Zoltan2_XpetraMultiVectorAdapter.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 #endif
 
-#ifdef HAVE_SHYLU_TPETRA
+#ifdef HAVE_SHYLUCORE_TPETRA
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Vector.hpp>
@@ -67,7 +67,7 @@ int PartitionInterface<Epetra_CrsMatrix, Epetra_MultiVector>::partitionIsorropia
 }
 
 
-#ifdef HAVE_SHYLU_ZOLTAN2
+#ifdef HAVE_SHYLUCORE_ZOLTAN2
 template <class Matrix, class Vector>
 int PartitionInterface<Matrix, Vector>::partitionZoltan2()
 {
@@ -85,7 +85,7 @@ int PartitionInterface<Matrix, Vector>::partitionZoltan2()
 template <class Matrix, class Vector>
 int PartitionInterface<Matrix,Vector>::partition()
 {
-#ifdef HAVE_SHYLU_ZOLTAN2
+#ifdef HAVE_SHYLUCORE_ZOLTAN2
   return partitionZoltan2();
 #else
   return 1;
@@ -99,7 +99,7 @@ int PartitionInterface<Epetra_CrsMatrix, Epetra_MultiVector>::partition()
     {
       return partitionIsorropia();
     }
-#ifdef HAVE_SHYLU_ZOLTAN2
+#ifdef HAVE_SHYLUCORE_ZOLTAN2
   else if (partitioningPackage.compare("Zoltan2") == 0)
     {
       return partitionZoltan2();

@@ -51,7 +51,7 @@ template <class Matrix, class Vector>
 int
 DirectSolverInterface<Matrix, Vector>::solve(Vector* b, Vector* x)
 {
-#ifdef HAVE_SHYLU_AMESOS2 
+#ifdef HAVE_SHYLUCORE_AMESOS2 
   return solveAmesos2(b, x);
 #else
   return 1;
