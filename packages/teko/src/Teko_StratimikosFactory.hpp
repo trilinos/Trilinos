@@ -29,6 +29,8 @@ public:
   StratimikosFactory();
 
   StratimikosFactory(const Teuchos::RCP<Teko::RequestHandler> & rh);
+  StratimikosFactory(const Teuchos::RCP<Stratimikos::DefaultLinearSolverBuilder> & builder,
+                     const Teuchos::RCP<Teko::RequestHandler> & rh);
     
   /** \brief Set the strategy object used to extract an
    * <tt>Epetra_Operator</tt> view of an input forward operator.
@@ -162,11 +164,26 @@ private:
   mutable Teuchos::RCP<Teko::InverseFactory> invFactory_;
   Teuchos::RCP<Teko::RequestHandler> reqHandler_;
   mutable std::vector<int> decomp_;
+  Teuchos::RCP<Stratimikos::DefaultLinearSolverBuilder> builder_; // builder to use for default solvers
 };
 
+/** Inject Teko into a solver builder with a specified name. Note that the builder
+  * is used to define the default solvers in Teko. Therefore any dynamically specified
+  * solver/preconditioner, will be inherited by Teko. This relationship does not persist,
+  * so no solvers added to the builder after the call to addTekoToStratimikosBuilder will
+  * be inherited. Finally, to avoid circular references Teko will not include itself in
+  * that list of solvers/precondtioners.
+  */
 void addTekoToStratimikosBuilder(Stratimikos::DefaultLinearSolverBuilder & builder,
                                const std::string & stratName="Teko");
 
+/** Inject Teko into a solver builder with a specified name. Note that the builder
+  * is used to define the default solvers in Teko. Therefore any dynamically specified
+  * solver/preconditioner, will be inherited by Teko. This relationship does not persist,
+  * so no solvers added to the builder after the call to addTekoToStratimikosBuilder will
+  * be inherited. Finally, to avoid circular references Teko will not include itself in
+  * that list of solvers/precondtioners.
+  */
 void addTekoToStratimikosBuilder(Stratimikos::DefaultLinearSolverBuilder & builder,
                                const Teuchos::RCP<Teko::RequestHandler> & rh,
                                const std::string & stratName="Teko");

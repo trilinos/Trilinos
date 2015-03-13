@@ -531,7 +531,7 @@ Epetra_Import::Epetra_Import( const Epetra_BlockMap &  targetMap, const Epetra_B
 
 //==============================================================================
 Epetra_Import::Epetra_Import( const Epetra_BlockMap &  targetMap, const Epetra_BlockMap & sourceMap,int NumRemotePIDs,const int * RemotePIDs,
-                              const int & NumExportIDs, const int * theExportLIDs,  const int * theExportPIDs)
+                              const int & numExportIDs, const int * theExportLIDs,  const int * theExportPIDs)
   : Epetra_Object("Epetra::Import"),
     TargetMap_(targetMap),
     SourceMap_(sourceMap),
@@ -553,13 +553,13 @@ Epetra_Import::Epetra_Import( const Epetra_BlockMap &  targetMap, const Epetra_B
 
   if(targetMap.GlobalIndicesInt())
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-    Construct_Expert<int>(targetMap, sourceMap,NumRemotePIDs,RemotePIDs,NumExportIDs,theExportLIDs,theExportPIDs);
+    Construct_Expert<int>(targetMap, sourceMap,NumRemotePIDs,RemotePIDs,numExportIDs,theExportLIDs,theExportPIDs);
 #else
     throw ReportError("Epetra_Import::Epetra_Import: ERROR, GlobalIndicesInt but no API for it.",-1);
 #endif
   else if(targetMap.GlobalIndicesLongLong())
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-    Construct_Expert<long long>(targetMap, sourceMap,NumRemotePIDs,RemotePIDs,NumExportIDs,theExportLIDs,theExportPIDs);
+    Construct_Expert<long long>(targetMap, sourceMap,NumRemotePIDs,RemotePIDs,numExportIDs,theExportLIDs,theExportPIDs);
 #else
     throw ReportError("Epetra_Import::Epetra_Import: ERROR, GlobalIndicesLongLong but no API for it.",-1);
 #endif

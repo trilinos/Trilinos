@@ -144,7 +144,29 @@ SphericalParametrization<T, N>::SphericalParametrization(
 }
 
 //
-// Evaluation for SphericalParemetrization
+// Normal vector for SphericalParametrization
+//
+template<typename T, Index N>
+inline
+Vector<T, N>
+SphericalParametrization<T, N>::get_normal(
+    Vector<T, dimension_const<N, 2>::value> const & parameters
+) const
+{
+  T const &
+  phi = parameters(0);
+
+  T const &
+  theta = parameters(1);
+
+  Vector<T, N>
+  normal(sin(phi) * sin(theta), cos(phi), sin(phi) * cos(theta));
+
+  return normal;
+}
+
+//
+// Evaluation for SphericalParametrization
 //
 template<typename T, Index N>
 inline
@@ -153,14 +175,8 @@ SphericalParametrization<T, N>::operator()(
     Vector<T, dimension_const<N, 2>::value> const & parameters
 )
 {
-  T const &
-  phi = parameters(0);
-
-  T const &
-  theta = parameters(1);
-
   Vector<T, N> const
-  normal(sin(phi) * sin(theta), cos(phi), sin(phi) * cos(theta));
+  normal = get_normal(parameters);
 
   // Localization tensor
   Tensor<T, N> const
@@ -196,14 +212,14 @@ StereographicParametrization<T, N>::StereographicParametrization(
 }
 
 //
-// Evaluation for StereographicParemetrization
+// Normal vector for StereographicParametrization
 //
 template<typename T, Index N>
 inline
-void
-StereographicParametrization<T, N>::operator()(
+Vector<T, N>
+StereographicParametrization<T, N>::get_normal(
     Vector<T, dimension_const<N, 2>::value> const & parameters
-)
+) const
 {
   T const &
   x = parameters(0);
@@ -218,6 +234,22 @@ StereographicParametrization<T, N>::operator()(
   normal(2.0 * x, 2.0 * y, r2 - 1.0);
 
   normal /= (r2 + 1.0);
+
+  return normal;
+}
+
+//
+// Evaluation for StereographicParametrization
+//
+template<typename T, Index N>
+inline
+void
+StereographicParametrization<T, N>::operator()(
+    Vector<T, dimension_const<N, 2>::value> const & parameters
+)
+{
+  Vector<T, N> const
+  normal = get_normal(parameters);
 
   // Localization tensor
   Tensor<T, N> const
@@ -253,14 +285,14 @@ ProjectiveParametrization<T, N>::ProjectiveParametrization(
 }
 
 //
-// Evaluation for ProjectiveParemetrization
+// Normal vector for ProjectiveParametrization
 //
 template<typename T, Index N>
 inline
-void
-ProjectiveParametrization<T, N>::operator()(
-    Vector<T, dimension_const<N, 4>::value> const & parameters
-)
+Vector<T, N>
+ProjectiveParametrization<T, N>::get_normal(
+    Vector<T, dimension_const<N, 3>::value> const & parameters
+) const
 {
   T const &
   x = parameters(0);
@@ -271,11 +303,33 @@ ProjectiveParametrization<T, N>::operator()(
   T const &
   z = parameters(2);
 
-  T const &
-  lambda = parameters(3);
-
-  const Vector<T, N>
+  Vector<T, N>
   normal(x, y, z);
+
+  T const
+  n = norm(normal);
+
+  if (n > 0.0) {
+    normal /= n;
+  } else {
+    normal = Vector<T, N>(1.0, 1.0, 1.0);
+  }
+
+  return normal;
+}
+
+//
+// Evaluation for ProjectiveParametrization
+//
+template<typename T, Index N>
+inline
+void
+ProjectiveParametrization<T, N>::operator()(
+    Vector<T, dimension_const<N, 3>::value> const & parameters
+)
+{
+  const Vector<T, N>
+  normal = get_normal(parameters);
 
   // Localization tensor
   Tensor<T, N> const
@@ -284,16 +338,13 @@ ProjectiveParametrization<T, N>::operator()(
   T const
   determinant = det(Q);
 
-  T const
-  function = determinant + lambda * (x * x + y * y + z * z - 1.0);
-
-  if (function < minimum_) {
-    minimum_ = function;
+  if (determinant < minimum_) {
+    minimum_ = determinant;
     arg_minimum_ = parameters;
   }
 
-  if (function > maximum_) {
-    maximum_ = function;
+  if (determinant > maximum_) {
+    maximum_ = determinant;
     arg_maximum_ = parameters;
   }
 
@@ -314,7 +365,7 @@ TangentParametrization<T, N>::TangentParametrization(
 }
 
 //
-// Evaluation for TangentParemetrization
+// Evaluation for TangentParametrization
 //
 template<typename T, Index N>
 inline
@@ -377,7 +428,7 @@ CartesianParametrization<T, N>::CartesianParametrization(
 }
 
 //
-// Evaluation for CartesianParemetrization
+// Evaluation for CartesianParametrization
 //
 template<typename T, Index N>
 inline

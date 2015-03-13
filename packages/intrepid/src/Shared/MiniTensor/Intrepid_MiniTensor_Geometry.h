@@ -368,6 +368,9 @@ public:
   void
   operator()(Vector<T, dimension_const<N, 2>::value> const & parameters);
 
+  Vector<T, N>
+  get_normal(Vector<T, dimension_const<N, 2>::value> const & parameters) const;
+
   T
   get_minimum() const {return minimum_;}
 
@@ -379,6 +382,12 @@ public:
 
   Vector<T, 2>
   get_arg_maximum() const {return arg_maximum_;}
+
+  Vector<T, N>
+  get_normal_minimum() const {return get_normal(arg_minimum_);}
+
+  Vector<T, N>
+  get_normal_maximum() const {return get_normal(arg_maximum_);}
 
 private:
 
@@ -408,6 +417,9 @@ public:
 
   StereographicParametrization(Tensor4<T, N> const & A);
 
+  Vector<T, N>
+  get_normal(Vector<T, dimension_const<N, 2>::value> const & parameters) const;
+
   void
   operator()(Vector<T, dimension_const<N, 2>::value> const & parameters);
 
@@ -422,6 +434,12 @@ public:
 
   Vector<T, 2>
   get_arg_maximum() const {return arg_maximum_;}
+
+  Vector<T, N>
+  get_normal_minimum() const {return get_normal(arg_minimum_);}
+
+  Vector<T, N>
+  get_normal_maximum() const {return get_normal(arg_maximum_);}
 
 private:
 
@@ -454,11 +472,11 @@ public:
   ///
   ProjectiveParametrization(Tensor4<T, N> const & A);
 
-  ///
-  ///
-  ///
   void
-  operator()(Vector<T, dimension_const<N, 4>::value> const & parameters);
+  operator()(Vector<T, dimension_const<N, 3>::value> const & parameters);
+
+  Vector<T, N>
+  get_normal(Vector<T, dimension_const<N, 3>::value> const & parameters) const;
 
   T
   get_minimum() const {return minimum_;}
@@ -466,11 +484,17 @@ public:
   T
   get_maximum() const {return maximum_;}
 
-  Vector<T, 4>
+  Vector<T, 3>
   get_arg_minimum() const {return arg_minimum_;}
 
-  Vector<T, 4>
+  Vector<T, 3>
   get_arg_maximum() const {return arg_maximum_;}
+
+  Vector<T, N>
+  get_normal_minimum() const {return get_normal(arg_minimum_);}
+
+  Vector<T, N>
+  get_normal_maximum() const {return get_normal(arg_maximum_);}
 
 private:
 
@@ -480,13 +504,13 @@ private:
   T
   minimum_;
 
-  Vector<T, 4>
+  Vector<T, 3>
   arg_minimum_;
 
   T
   maximum_;
 
-  Vector<T, 4>
+  Vector<T, 3>
   arg_maximum_;
 };
 

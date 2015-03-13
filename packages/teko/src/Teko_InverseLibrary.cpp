@@ -484,6 +484,10 @@ RCP<InverseLibrary> InverseLibrary::buildFromParameterList(const Teuchos::Parame
 RCP<InverseLibrary> InverseLibrary::buildFromParameterList(const Teuchos::ParameterList & pl,
                                                            const Teuchos::RCP<Stratimikos::DefaultLinearSolverBuilder> & strat)
 {
+   // if strat is set to null, use the defaults
+   if(strat==Teuchos::null)
+     return buildFromParameterList(pl,true);
+
    // build from Stratimikos or allocate a new inverse library
    RCP<InverseLibrary> invLib = InverseLibrary::buildFromStratimikos(strat);
 

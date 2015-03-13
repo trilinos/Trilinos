@@ -61,6 +61,7 @@
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_ParameterList_GlobalEvaluationData.hpp"
 #include "Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.hpp"
+#include "Panzer_LinearObjFactory_Utilities.hpp"
 
 #include "Thyra_TpetraThyraWrappers.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
@@ -336,10 +337,10 @@ setupModel(const Teuchos::RCP<panzer::WorksetContainer> & wc,
   // Second: build the responses
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
-  // responseLibrary_ = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wc,lof_->getUniqueGlobalIndexerBase(),lof_));
   responseLibrary_->initialize(wc,lof_->getUniqueGlobalIndexerBase(),lof_);
 
   buildResponses(physicsBlocks,eqset_factory,volume_cm_factory,closure_models,user_data,writeGraph,graphPrefix+"Responses_");
+  buildDistroParamDfDp_RL(wc,physicsBlocks,bcs,eqset_factory,bc_factory,volume_cm_factory,closure_models,user_data,writeGraph,graphPrefix+"Response_DfDp_");
 }
 
 template <typename Scalar>
@@ -492,6 +493,8 @@ panzer::ModelEvaluator<Scalar>::createOutArgsImpl() const
 
       if(!parameters_[p]->is_distributed)
         outArgs.setSupports(MEB::OUT_ARG_DfDp,p,MEB::DerivativeSupport(MEB::DERIV_MV_BY_COL));
+      else if(parameters_[p]->is_distributed && parameters_[p]->global_indexer!=Teuchos::null)
+        outArgs.setSupports(MEB::OUT_ARG_DfDp,p,MEB::DerivativeSupport(MEB::DERIV_LINEAR_OP));
     }
   
     prototypeOutArgs_ = outArgs;
@@ -520,6 +523,44 @@ panzer::ModelEvaluator<Scalar>::
 get_W_factory() const
 {
   return solverFactory_;
+}
+
+template <typename Scalar>
+Teuchos::RCP<Thyra::LinearOpBase<Scalar> > 
+panzer::ModelEvaluator<Scalar>::
+create_DfDp_op(int p) const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  TEUCHOS_ASSERT(0<=p && p<this->Np());
+
+  // assert that DfDp is supported
+  const ParameterObject & po = *parameters_[p];
+
+  if(po.is_distributed && po.global_indexer!=Teuchos::null) {
+    TEUCHOS_ASSERT(prototypeOutArgs_.supports(MEB::OUT_ARG_DfDp,p).supports(MEB::DERIV_LINEAR_OP));
+
+    // for a distributed parameter, figure it out from the 
+    // response library
+    RCP<Response_Residual<Traits::Jacobian> > response_jacobian
+      = rcp_dynamic_cast<Response_Residual<Traits::Jacobian> >(po.dfdp_rl->template getResponse<Traits::Jacobian>("RESIDUAL"));
+
+    return response_jacobian->allocateJacobian();
+  }
+  else if(!po.is_distributed) {
+    TEUCHOS_ASSERT(prototypeOutArgs_.supports(MEB::OUT_ARG_DfDp,p).supports(MEB::DERIV_MV_BY_COL));
+
+    // this is a scalar parameter (its easy to create!)
+    return Thyra::createMember(*get_f_space());
+  }
+
+  // shourld never get here
+  TEUCHOS_ASSERT(false);
+
+  return Teuchos::null;
 }
 
 template <typename Scalar>
@@ -971,15 +1012,54 @@ panzer::ModelEvaluator<Scalar>::
 evalModelImpl_basic_dfdp_distro(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                                 const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::null;
+
+   typedef Thyra::ModelEvaluatorBase MEB;
+
   TEUCHOS_ASSERT(required_basic_dfdp_distro(outArgs));
 
-  TEUCHOS_ASSERT(false);
+  // loop over parameters, and then build a dfdp_rl only if they are distributed
+  // and the user has provided the UGI. Note that this may be overly expensive if they
+  // don't actually want those sensitivites because memory will be allocated unneccesarily.
+  // It would be good to do this "just in time", but for now this is sufficient.
+  for(std::size_t p=0;p<parameters_.size();p++) {
 
-  // setup all the assembly in arguments (this is parameters and
-  // x/x_dot). At this point with the exception of the one time dirichlet
-  // beta that is all thats neccessary.
-  panzer::AssemblyEngineInArgs ae_inargs;
-  setupAssemblyInArgs(inArgs,ae_inargs);
+    // parameter is not distributed, a different path is
+    // taken for those to compute dfdp
+    if(!parameters_[p]->is_distributed)
+      continue;
+
+    // parameter is distributed but has no global indexer.
+    // thus the user doesn't want sensitivities!
+    if(parameters_[p]->dfdp_rl==null)
+      continue;
+
+    // have derivatives been requested?
+    MEB::Derivative<Scalar> deriv = outArgs.get_DfDp(p);
+    if(deriv.isEmpty())
+      continue;
+ 
+    ResponseLibrary<Traits> & rLibrary = *parameters_[p]->dfdp_rl;
+
+    // get the response and tell it to fill the derivative operator
+    RCP<Response_Residual<Traits::Jacobian> > response_jacobian =
+      rcp_dynamic_cast<Response_Residual<Traits::Jacobian> >(rLibrary.getResponse<Traits::Jacobian>("RESIDUAL"));
+    response_jacobian->setJacobian(deriv.getLinearOp());
+
+    // setup all the assembly in arguments (this is parameters and x/x_dot). 
+    // make sure the correct seeding is performed
+    panzer::AssemblyEngineInArgs ae_inargs;
+    setupAssemblyInArgs(inArgs,ae_inargs);
+
+    ae_inargs.sensitivities_name = (*parameters_[p]->names)[0]; // distributed parameters can only have one name!
+    ae_inargs.gather_seeds.push_back(1.0); // this assumes that gather point is always the zero index of
+                                           // gather seeds
+    rLibrary.addResponsesToInArgs<Traits::Jacobian>(ae_inargs);
+
+    rLibrary.evaluate<Traits::Jacobian>(ae_inargs);
+  }
 }
 
 template <typename Scalar>
@@ -1062,6 +1142,55 @@ required_basic_dfdp_distro(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &out
    }
 
    return activeFPArgs;
+}
+
+template <typename Scalar>
+void panzer::ModelEvaluator<Scalar>::
+buildDistroParamDfDp_RL(
+       const Teuchos::RCP<panzer::WorksetContainer> & wc,
+       const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+       const std::vector<panzer::BC> & bcs,
+       const panzer::EquationSetFactory & eqset_factory,
+       const panzer::BCStrategyFactory& bc_factory,
+       const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+       const Teuchos::ParameterList& closure_models,
+       const Teuchos::ParameterList& user_data,
+       const bool write_graphviz_file,
+       const std::string& graphviz_file_prefix)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::null;
+
+  // loop over parameters, and then build a dfdp_rl only if they are distributed
+  // and the user has provided the UGI. Note that this may be overly expensive if they
+  // don't actually want those sensitivites because memory will be allocated unneccesarily.
+  // It would be good to do this "just in time", but for now this is sufficient.
+  for(std::size_t p=0;p<parameters_.size();p++) {
+    // parameter is not distributed, a different path is
+    // taken for those to compute dfdp
+    if(!parameters_[p]->is_distributed)
+      continue;
+
+    // parameter is distributed but has no global indexer.
+    // thus the user doesn't want sensitivities!
+    if(parameters_[p]->global_indexer==null)
+      continue;
+
+    // build the linear object factory that has the correct sizing for
+    // the sensitivity matrix (parameter sized domain, residual sized range)
+    RCP<const LinearObjFactory<Traits> > param_lof = cloneWithNewDomain(*lof_,parameters_[p]->global_indexer);
+
+    // the user wants global sensitivities, hooray! Build and setup the response library 
+    RCP<ResponseLibrary<Traits> > rLibrary
+        = Teuchos::rcp(new ResponseLibrary<Traits>(wc,lof_->getUniqueGlobalIndexerBase(),param_lof,true));
+    rLibrary->buildResidualResponseEvaluators(physicsBlocks,eqset_factory,bcs,bc_factory,
+                                              cm_factory,closure_models,user_data,
+                                              write_graphviz_file,graphviz_file_prefix);
+
+    // make sure parameter response library is correct
+    parameters_[p]->dfdp_rl = rLibrary;
+  }
 }
 
 template <typename Scalar>

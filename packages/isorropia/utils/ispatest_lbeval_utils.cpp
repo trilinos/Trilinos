@@ -70,7 +70,7 @@ static void printMatrix(const char *txt, int *myA, int *myX, int *myB,
                         int numRows, int numCols, const Epetra_Comm &comm);
 static int make_my_A(const Epetra_RowMatrix &matrix, int *myA, const Epetra_Comm &comm);
 
-static int compute_hypergraph_metrics(const Epetra_BlockMap &rowmap, 
+static int compute_hypergraph_metrics(const Epetra_BlockMap &rowmap,
             const Epetra_BlockMap &colmap,
             int numGlobalColumns,
             Isorropia::Epetra::CostDescriber &costs,
@@ -103,7 +103,7 @@ int compute_balance(const Epetra_Vector &wgts, double myGoalWeight,
     weightLocal += wgts[i];
   }
 
-  /* My degree of imbalance. 
+  /* My degree of imbalance.
    * If myGoalWeight is zero, I'm in perfect balance since I got what I wanted.
    */
   double goalWeight = myGoalWeight * weightTotal;
@@ -161,7 +161,7 @@ int compute_graph_metrics(const Epetra_RowMatrix &matrix,
     delete [] nborLID;
     delete [] tmp;
   }
- 
+
   return compute_graph_metrics(rmap, cmap, myRows, costs, myGoalWeight,
                                balance, numCuts, cutWgt, cutn, cutl);
 
@@ -193,14 +193,14 @@ int compute_graph_metrics(const Epetra_CrsGraph &graph,
     }
     delete [] nborLID;
   }
- 
+
   return compute_graph_metrics(rmap, cmap, myRows, costs, myGoalWeight,
                                balance, numCuts, cutWgt, cutn, cutl);
 
 }
 
 static int compute_graph_metrics(const Epetra_BlockMap &rowmap, const Epetra_BlockMap &colmap,
-            std::vector<std::vector<int> > &rows, 
+            std::vector<std::vector<int> > &rows,
             Isorropia::Epetra::CostDescriber &costs, double &myGoalWeight,
             double &balance, int &numCuts, double &cutWgt, double &cutn, double &cutl)
 {
@@ -310,7 +310,7 @@ static int compute_graph_metrics(const Epetra_BlockMap &rowmap, const Epetra_Blo
         }
 
         if (nborProc != myProc){
-          localNumCuts++;            // number of graph edges that are cut 
+          localNumCuts++;            // number of graph edges that are cut
           nbors.insert(nborProc);     // count number of neighboring processes
           localCutWgt += wgt;        // sum of weights of cut edges
         }
@@ -320,9 +320,9 @@ static int compute_graph_metrics(const Epetra_BlockMap &rowmap, const Epetra_Blo
 
       if (numNbors > 0){
         // implied hyperedge is vertex and neighbors, if cut, add in its he weight
-        localCutn += heWeight;   
+        localCutn += heWeight;
 
-        // sum of (number of partitions - 1) weighted by the 
+        // sum of (number of partitions - 1) weighted by the
         // implied hyperedge weight
         localCutl += (numNbors * heWeight);
       }
@@ -358,10 +358,10 @@ int compute_hypergraph_metrics(const Epetra_RowMatrix &matrix,
             double &myGoalWeight,
             double &balance, double &cutn, double &cutl)  // output
 {
-  const Epetra_BlockMap &rmap = 
+  const Epetra_BlockMap &rmap =
     static_cast<const Epetra_BlockMap &>(matrix.RowMatrixRowMap());
 
-  const Epetra_BlockMap &cmap = 
+  const Epetra_BlockMap &cmap =
     static_cast<const Epetra_BlockMap &>(matrix.RowMatrixColMap());
 
   return compute_hypergraph_metrics(rmap, cmap,
@@ -381,7 +381,7 @@ int compute_hypergraph_metrics(const Epetra_CrsGraph &graph,
                                      myGoalWeight,
                                      balance, cutn, cutl);
 }
-static int compute_hypergraph_metrics(const Epetra_BlockMap &rowmap, 
+static int compute_hypergraph_metrics(const Epetra_BlockMap &rowmap,
             const Epetra_BlockMap &colmap,
             int numGlobalColumns,
             Isorropia::Epetra::CostDescriber &costs,
@@ -437,15 +437,15 @@ static int compute_hypergraph_metrics(const Epetra_BlockMap &rowmap,
     return 1;
   }
 
-  /* Compute cutl and cutn. 
+  /* Compute cutl and cutn.
    */
 
-  int totalHEWeights = 0; 
+  int totalHEWeights = 0;
 
   int numHEWeights = hyperEdgeWeights.size();
 
   comm.SumAll(&numHEWeights, &totalHEWeights, 1);
- 
+
   if ((totalHEWeights > 0) && (totalHEWeights <  numGlobalColumns)){
     if (myProc == 0)
       std::cerr << "Must supply either no h.e. weights or else supply at least one for each column" << std::endl;
@@ -465,7 +465,7 @@ static int compute_hypergraph_metrics(const Epetra_BlockMap &rowmap,
   for (int j=0; j<numMyCols; j++){
     colGIDS.insert(colmap.GID(j));
   }
-  
+
   /* Divide columns among processes, then each process computes its
    * assigned columns' cutl and cutn.
    *  TODO - numGlobalColumns can be less than nprocs
@@ -485,7 +485,7 @@ static int compute_hypergraph_metrics(const Epetra_BlockMap &rowmap,
     colTotals = new int [colCount[myProc]];
     if (totalHEWeights > 0){
       colWeights = new double [colCount[myProc]];
-    } 
+    }
   }
   int *colLocal= new int [ncols + 1];
   double *localWeights = NULL;
@@ -501,8 +501,8 @@ static int compute_hypergraph_metrics(const Epetra_BlockMap &rowmap,
     // All processes send info to the process reponsible
     // for the next group of columns
 
-    int ncols = colCount[i];
-    int colEnd = colStart + ncols;
+    int numCols = colCount[i];
+    int colEnd = colStart + numCols;
     for (int j=colStart,k=0; j < colEnd; j++,k++){
       gidIter = colGIDS.find(j);
       if (gidIter != colGIDS.end()){
@@ -512,27 +512,27 @@ static int compute_hypergraph_metrics(const Epetra_BlockMap &rowmap,
         colLocal[k] = 0;
       }
       if (totalHEWeights > 0){
-        std::map<int, float>::iterator heWgtIter = hyperEdgeWeights.find(j);
-        if (heWgtIter != hyperEdgeWeights.end()){
+        std::map<int, float>::iterator theHeWgtIter = hyperEdgeWeights.find(j);
+        if (theHeWgtIter != hyperEdgeWeights.end()){
           // I have the edge weight for column j
-          localWeights[k] = heWgtIter->second;
+          localWeights[k] = theHeWgtIter->second;
         }
         else{
           localWeights[k] = 0.0;
         }
       }
-      
+
     }
 #ifdef HAVE_MPI
-    MPI_Reduce(colLocal, colTotals, ncols, MPI_INT, MPI_SUM, i, mcomm);
+    MPI_Reduce(colLocal, colTotals, numCols, MPI_INT, MPI_SUM, i, mcomm);
     if (totalHEWeights > 0){
-      MPI_Reduce(localWeights, colWeights, ncols, MPI_DOUBLE, MPI_SUM, i, mcomm);
+      MPI_Reduce(localWeights, colWeights, numCols, MPI_DOUBLE, MPI_SUM, i, mcomm);
     }
     // TODO handle possible MPI error
 #else
-    memcpy(colTotals, colLocal, ncols * sizeof(int));
+    memcpy(colTotals, colLocal, numCols * sizeof(int));
     if (totalHEWeights > 0){
-      memcpy(colWeights, localWeights, ncols * sizeof(double));
+      memcpy(colWeights, localWeights, numCols * sizeof(double));
     }
 #endif
     colStart = colEnd;
@@ -563,8 +563,8 @@ static int compute_hypergraph_metrics(const Epetra_BlockMap &rowmap,
   return 0;
 }
 
-// Print out the graph or linear system showing the partitioning, for debugging or 
-// educational purposes.  
+// Print out the graph or linear system showing the partitioning, for debugging or
+// educational purposes.
 // The display only makes sense for 10 or fewer processes, and fairly small
 // graphs or linear systems.
 
@@ -755,7 +755,7 @@ static int make_my_A(const Epetra_RowMatrix &matrix, int *myA, const Epetra_Comm
     for (int j=0; j < rowLen; j++){
 
       int colGID = colmap.GID(myIndices[j]);
-      
+
       row[colGID - base] = me + 1;
     }
   }
@@ -802,7 +802,7 @@ static void printMatrix(const char *txt, int *myA, int *myX, int *myB,
     std::cout << std::endl;
 
     int *row = A;
- 
+
     for (int i=0; i < numRows; i++, row += numCols){
       std::cout << i%10 << " ";
       for (int j=0; j < numCols; j++){
@@ -826,7 +826,7 @@ static void printMatrix(const char *txt, int *myA, int *myX, int *myB,
         std::cout << "]";
       }
       std::cout << std::endl;
-    
+
     }
     std::cout << "  ";
     for (int j=0; j<numCols; j++){
@@ -840,7 +840,7 @@ static void printMatrix(const char *txt, int *myA, int *myX, int *myB,
       std::cout << "     " << x[next_x++] - 1 << std::endl;
       columnsRemaining--;
       int pad = numCols + 7;
-      while(columnsRemaining){ 
+      while(columnsRemaining){
         for( int i=0; i < pad; i++){
           std::cout << " ";
         }

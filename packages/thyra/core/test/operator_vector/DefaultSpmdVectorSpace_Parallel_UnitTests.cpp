@@ -230,8 +230,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace_Parall
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, emptyProcSimpleMultiVecAdjointApply,
   Scalar )
 {
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
-  //typedef Teuchos::ScalarTraits<ScalarMag> SMT; // unused
+  // typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag; // unused
+  // typedef Teuchos::ScalarTraits<ScalarMag> SMT; // unused
   const Ordinal localDim = g_localDim;
   PRINT_VAR(localDim);
   const Ordinal numCols1 = g_numCols1;
