@@ -89,6 +89,12 @@ int main(int argc, char *argv[])
     using Teuchos::rcp;
 
 
+    bool success = true;
+    string pass = "End Result: TEST PASSED";
+    string fail = "End Result: TEST FAILED";
+
+
+
     bool verbose = false, proc_verbose = true;
     bool leftprec = false;      // left preconditioning or right.
     int frequency = -1;        // frequency of status test output.
@@ -154,7 +160,10 @@ int main(int argc, char *argv[])
 
     int err = EpetraExt::MatrixMarketFileToCrsMatrix(file_name, Comm, A);
     if (err != 0 && myPID == 0)
+      {
         cout << "Matrix file could not be read in!!!, info = "<< err << endl;
+        success = false;
+      }
 
     int n = A->NumGlobalRows();
 
@@ -306,8 +315,12 @@ int main(int argc, char *argv[])
         bool set = problem->setProblem();
         if (set == false) {
         if (proc_verbose)
+          {
           cout << endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << endl;
-        return -1;
+          }
+          cout << fail << endl;
+          success = false;
+          return -1;
         }
 
         // Create an iterative solver manager.
@@ -332,6 +345,14 @@ int main(int argc, char *argv[])
             cout << "Relative residual tolerance: " << tol << endl;
             cout << endl;
         }
+
+        if(tol > 1e-5)
+          {
+            success = false;
+          }
+
+
+
         //
         // Perform solve
         //
@@ -369,10 +390,10 @@ int main(int argc, char *argv[])
             {
                 double actRes = actual_resids[i]/rhs_norm[i];
                 std::cout<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
-                if (actRes > tol) badRes = true;
+                if (actRes > tol)
+                  {badRes = true; success = false;}
             }
         }
-
 
         file_number++;
         if (file_number >= maxFiles+startFile)
@@ -390,7 +411,11 @@ int main(int argc, char *argv[])
             if (err != 0)
             {
                 if (myPID == 0)
-                  cout << "Could not open file: "<< file_name << endl;
+                  {
+                    cout << "Could not open file: "<< file_name << endl;
+                    
+                  }
+                success = false;
             }
             else
             {
@@ -410,7 +435,10 @@ int main(int argc, char *argv[])
                 if (err != 0)
                 {
                     if (myPID==0)
+                      {
                         cout << "Could not open file: "<< file_name << endl;
+                        success = false;
+                      }
                 }
                 else
                 {
@@ -422,7 +450,16 @@ int main(int argc, char *argv[])
         }
     }
 //#ifdef TIMING_OUTPUT
-        cout << "Time to solve" << ftime.totalElapsedTime() << endl;
+        cout << "Time to solve: " << ftime.totalElapsedTime() << endl;
+        if(success)
+          {
+            cout << pass << endl;
+          }
+        else
+          {
+            cout << fail << endl;
+          }
+
 //#endif
     if (redistA != NULL) delete redistA;
     if (iterb1 != NULL) delete iterb1;

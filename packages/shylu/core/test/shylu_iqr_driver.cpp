@@ -132,6 +132,10 @@ int main(int argc, char** argv)
     Epetra_SerialComm Comm;
 #endif
 
+    bool success = true;
+    string pass = "End Result: TEST PASSED";
+    string fail = "End Result: TEST FAILED";
+    
     int nProcs = Comm.NumProc();
     int myPID = Comm.MyPID();
     bool verbose = (myPID == 0);
@@ -156,6 +160,7 @@ int main(int argc, char** argv)
                 std::cout << "!!! Error registering preconditioner ShyLU with"
                           << " Ifpack_DynamicFactory. Exiting." << std::endl;
             }
+            cout << fail << endl;
             MPI_Finalize();
             return -1;
         }
@@ -179,10 +184,12 @@ int main(int argc, char** argv)
         Teuchos::CommandLineProcessor::EParseCommandLineReturn parseReturn =
                                                      cl.parse (argc, argv);
         if ( parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) {
+          cout << fail << endl;
             MPI_Finalize();
             return 0;
         }
         if( parseReturn != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL   ) {
+          cout << fail << endl;
             MPI_Finalize();
             return -2;
         }
@@ -233,6 +240,7 @@ int main(int argc, char** argv)
                 std::cout << "!!! Matrix file could not be read in, info = "<<
                      err << std::endl;
             }
+            cout << fail << endl;
             MPI_Finalize();
             return -3;
         }
@@ -265,6 +273,7 @@ int main(int argc, char** argv)
             std::cout << "!!! Matrix file could not be read in, info = "<<
              err << std::endl;
         }
+        cout << fail << endl;
         MPI_Finalize();
         return -3;
     }
@@ -360,6 +369,7 @@ int main(int argc, char** argv)
             std::cout << "!!! ML parameter list not found. Exiting."
                 << std::endl;
         }
+        cout << fail << endl;
         MPI_Finalize();
         return -4;
     }
@@ -370,6 +380,7 @@ int main(int argc, char** argv)
             std::cout << "!!! Belos parameter list not found. Exiting." <<
                      std::endl;
         }
+        cout << fail << endl;
         MPI_Finalize();
         return -5;
     }
@@ -444,6 +455,7 @@ int main(int argc, char** argv)
           std::cout << "!!! Belos::LinearProblem failed to set up correctly."
           << " Exiting." << std::endl;
         }
+        cout << fail << endl;
         MPI_Finalize();
         return -6;
     }
@@ -460,6 +472,7 @@ int main(int argc, char** argv)
             std::cout << "!!! Linear solver did not converge to prescribed"
             <<" precision. Test failed." << std::endl;
         }
+        cout << fail << endl;
         MPI_Finalize();
         return -7;
     }
@@ -502,7 +515,8 @@ int main(int argc, char** argv)
                         iterA);
         }
         if (err != 0) {
-            if (myPID == 0) cout << "Could not open file: "<< file_name << endl;
+          if (myPID == 0) cout << "Could not open file: "<< file_name << endl;
+          success = false;
         }
         else
         {
@@ -535,6 +549,7 @@ int main(int argc, char** argv)
             if (err != 0) {
                 if (myPID==0)
                     cout << "Could not open file: "<< file_name << endl;
+                success = false;
             }
             else {
                 if (mapAvail) {
@@ -554,6 +569,16 @@ int main(int argc, char** argv)
 
     // Release the ML preconditioner, destroying MPI subcommunicators before the call to
     // MPI_Finalize() in order to avoid MPI errors (this is related to ParMETIS, I think).
+
+
+
+    if(success)
+      cout << pass << endl;
+    else
+      cout << fail << endl;
+
+
+
     MLprec.reset();
 
     MPI_Finalize();

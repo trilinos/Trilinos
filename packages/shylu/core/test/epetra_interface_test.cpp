@@ -71,6 +71,11 @@ int main(int argc, char** argv)
   Epetra_SerialComm Comm;
 #endif
 
+
+  bool success = true;
+  string pass = "End Result: TEST PASSED";
+  string fail = "End Result: TEST FAILED";
+
   int myPID = Comm.MyPID();
   if(myPID == 0)
     {
@@ -91,6 +96,7 @@ int main(int argc, char** argv)
   if(err!=0 && myPID ==0)
     {
       cout << "Error reading matrix file, info = " << err << endl;
+      cout << fail << endl;
       exit(1);
     }
   n = A->NumGlobalRows();
@@ -250,7 +256,10 @@ int main(int argc, char** argv)
   
 #endif
 
-
+  if(success)
+    {
+      cout << pass << endl;
+    }
 
 }
 
