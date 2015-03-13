@@ -8,6 +8,8 @@ namespace ShyLU{
 
 #ifdef HAVE_SHYLUCORE_TPETRA
   //Tpetra
+  // FIXME : The nodetype has changed and this should use the
+  // new Kokkos nodes rather than the classic one.
   typedef KokkosClassic::DefaultNode::DefaultNodeType node;
  
   template class DirectSolverInterface<
