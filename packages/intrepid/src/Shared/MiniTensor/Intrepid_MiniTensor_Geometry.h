@@ -435,6 +435,12 @@ public:
   Vector<T, 2>
   get_arg_maximum() const {return arg_maximum_;}
 
+  Vector<T, N>
+  get_normal_minimum() const {return get_normal(arg_minimum_);}
+
+  Vector<T, N>
+  get_normal_maximum() const {return get_normal(arg_maximum_);}
+
 private:
 
   Tensor4<T, N> const &

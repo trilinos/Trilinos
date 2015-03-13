@@ -212,14 +212,14 @@ StereographicParametrization<T, N>::StereographicParametrization(
 }
 
 //
-// Evaluation for StereographicParemetrization
+// Normal vector for StereographicParametrization
 //
 template<typename T, Index N>
 inline
-void
-StereographicParametrization<T, N>::operator()(
+Vector<T, N>
+StereographicParametrization<T, N>::get_normal(
     Vector<T, dimension_const<N, 2>::value> const & parameters
-)
+) const
 {
   T const &
   x = parameters(0);
@@ -234,6 +234,22 @@ StereographicParametrization<T, N>::operator()(
   normal(2.0 * x, 2.0 * y, r2 - 1.0);
 
   normal /= (r2 + 1.0);
+
+  return normal;
+}
+
+//
+// Evaluation for StereographicParemetrization
+//
+template<typename T, Index N>
+inline
+void
+StereographicParametrization<T, N>::operator()(
+    Vector<T, dimension_const<N, 2>::value> const & parameters
+)
+{
+  Vector<T, N> const
+  normal = get_normal(parameters);
 
   // Localization tensor
   Tensor<T, N> const
