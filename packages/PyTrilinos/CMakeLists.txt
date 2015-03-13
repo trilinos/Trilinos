@@ -213,7 +213,12 @@ INCLUDE(UseSWIG)
 # Python module mpi4py is optional, and only of interest if MPI is
 # enabled
 IF(TPL_ENABLE_MPI)
-  FIND_PACKAGE(Mpi4Py)
+  SET(TPL_ENABLE_MPI4PY ON CACHE BOOL "Use Mpi4Py")
+  IF(TPL_ENABLE_MPI4PY)
+    FIND_PACKAGE(Mpi4Py)
+  ELSE(TPL_ENABLE_MPI4PY)
+    SET(Mpi4Py_FOUND OFF)
+  ENDIF(TPL_ENABLE_MPI4PY)
 ENDIF(TPL_ENABLE_MPI)
 
 # Python module petsc4py is required if NOX_ENABLE_PETSC is true
