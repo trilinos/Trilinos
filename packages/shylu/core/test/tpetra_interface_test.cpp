@@ -7,7 +7,7 @@
 #include "ShyLUCore_config.h"
 
 //Tperta
-#ifdef HAVE_SHYLU_TPETRA
+#ifdef HAVE_SHYLUCORE_TPETRA
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Version.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
@@ -32,7 +32,7 @@
 #include "Epetra_LinearProblem.h"
 
 // Teuchos includes
-#ifdef HAVE_SHYLU_TPETRA
+#ifdef HAVE_SHYLUCORE_TPETRA
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_RCP.hpp"
@@ -134,7 +134,7 @@ int main(int argc, char** argv)
   Teuchos::writeParameterListToXmlOStream(*pLUList, std::cout);
 
 
-#ifdef HAVE_SHYLU_ZOLTAN2
+#ifdef HAVE_SHYLUCORE_ZOLTAN2
 
   cout << "HSTER";
 
@@ -146,7 +146,7 @@ int main(int argc, char** argv)
 #endif
 
 
-#ifdef HAVE_SHYLU_AMESOS2
+#ifdef HAVE_SHYLUCORE_AMESOS2
   
   pLUList->set("Direct Solver Package", "Amesos2");
   ptemp = pLUList->sublist("Amesos2 Input");
