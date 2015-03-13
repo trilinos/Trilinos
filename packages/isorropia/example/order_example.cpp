@@ -1,4 +1,3 @@
-/*
 //@HEADER
 //************************************************************************
 //
@@ -37,7 +36,6 @@
 //
 //************************************************************************
 //@HEADER
-*/
 
 /** \file test_orderer.cpp
 
@@ -60,8 +58,8 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_SerialComm.h"
-#include "Epetra_CrsMatrix.h" 
-#include "Epetra_Map.h" 
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_Map.h"
 
 // Teuchos includes
 #include "Teuchos_GlobalMPISession.hpp"
