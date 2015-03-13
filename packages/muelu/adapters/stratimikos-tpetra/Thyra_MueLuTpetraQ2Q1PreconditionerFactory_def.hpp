@@ -344,13 +344,15 @@ namespace Thyra {
 
     RCP<Matrix>    A_12         = MatrixFactory::Build(tmp_A_12->getRangeMap(), newDomainMap2,            tmp_A_12->getNodeMaxNumRowEntries());
     RCP<Matrix>    A_21         = MatrixFactory::Build(newRangeMap2,            tmp_A_21->getDomainMap(), tmp_A_21->getNodeMaxNumRowEntries());
-    RCP<Matrix>    A_22         = MatrixFactory::Build(newRangeMap2,            newDomainMap2,            1);
 
     RCP<CrsMatrix> A_11_crs     = rcp_dynamic_cast<CrsMatrixWrap>(A_11)    ->getCrsMatrix();
     RCP<CrsMatrix> A_12_crs     = rcp_dynamic_cast<CrsMatrixWrap>(A_12)    ->getCrsMatrix();
     RCP<CrsMatrix> A_21_crs     = rcp_dynamic_cast<CrsMatrixWrap>(A_21)    ->getCrsMatrix();
-    RCP<CrsMatrix> A_22_crs     = rcp_dynamic_cast<CrsMatrixWrap>(A_22)    ->getCrsMatrix();
     RCP<CrsMatrix> A_11_crs_9Pt = rcp_dynamic_cast<CrsMatrixWrap>(A_11_9Pt)->getCrsMatrix();
+
+#if 0
+    RCP<Matrix>    A_22         = MatrixFactory::Build(newRangeMap2,            newDomainMap2,            1);
+    RCP<CrsMatrix> A_22_crs     = rcp_dynamic_cast<CrsMatrixWrap>(A_22)    ->getCrsMatrix();
 
     // FIXME: why do we need to perturb A_22?
     Array<SC> smallVal(1, 1.0e-9);
@@ -371,8 +373,23 @@ namespace Thyra {
       A_21_crs->insertGlobalValues(newRowElem2[row], newInds,                        vals);
       A_22_crs->insertGlobalValues(newRowElem2[row], Array<LO>(1, newRowElem2[row]), smallVal);
     }
-    A_21_crs->fillComplete(tmp_A_21->getDomainMap(), newRangeMap2);
     A_22_crs->fillComplete(newDomainMap2,            newRangeMap2);
+#else
+    ArrayView<const LO> inds;
+    ArrayView<const SC> vals;
+    for (LO row = 0; row < as<LO>(numRows2); ++row) {
+      tmp_A_21->getLocalRowView(row, inds, vals);
+
+      size_t nnz = inds.size();
+      Array<GO> newInds(nnz, 0);
+      for (LO colID = 0; colID < as<LO>(nnz); colID++)
+        newInds[colID] = colElem1[inds[colID]];
+
+      A_21_crs->insertGlobalValues(newRowElem2[row], newInds, vals);
+    }
+    A_21_crs->fillComplete(tmp_A_21->getDomainMap(), newRangeMap2);
+    RCP<CrsMatrix> A_22_crs = Teuchos::null;
+#endif
 
     // Create new A12 with map so that the global indices of the ColMap starts
     // from numVel+1 (where numVel is the number of rows in the A11 block)
@@ -682,8 +699,7 @@ namespace Thyra {
     ParameterList patternParams = *(patternFact->GetValidParameterList());
     // Our prolongator constructs the exact pattern we are going to use,
     // therefore we do not expand it
-    if (paramList.isParameter("emin: pattern order"))
-      patternParams.set("emin: pattern order", paramList.get<int>("emin: pattern order"));
+    patternParams.set("emin: pattern order", 0);
     patternFact->SetParameterList(patternParams);
     patternFact->SetFactory("A", AFact);
     patternFact->SetFactory("P", Q2Q1Fact);

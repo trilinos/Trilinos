@@ -408,8 +408,13 @@ namespace MueLu {
     if (pressureMode) CptDepends2Pattern(*A,       *myCpts, P, 999999);
     else              CptDepends2Pattern(*AForPat, *myCpts, P, 0);
 
-    if (pressureMode) Utils::Write("Pp_tent.mm", *P);
-    else              Utils::Write("Pv_tent.mm", *P);
+    if (pressureMode) {
+      Utils::Write("Ap_l"      + MueLu::toString(fineLevel.GetLevelID())   + ".mm", *A);
+      Utils::Write("Pp_tent_l" + MueLu::toString(coarseLevel.GetLevelID()) + ".mm", *P);
+    } else {
+      Utils::Write("Av_l"      + MueLu::toString(fineLevel.GetLevelID())   + ".mm", *A);
+      Utils::Write("Pv_tent_l" + MueLu::toString(coarseLevel.GetLevelID()) + ".mm", *P);
+    }
 
     // Construct coarse map
     RCP<const Map> coarseMap = P->getDomainMap();
@@ -764,9 +769,6 @@ namespace MueLu {
       }
     }
 
-    // Reusing the space for the candidateList to store index
-    std::vector<LO>& index = candidateList;
-
     // Add additional CPOINTs based on some score which includes the number of
     // CPOINTs that an FPOINT depends on as well as its distance (both graph
     // and coordinate) to nearby CPOINTs.
@@ -836,6 +838,7 @@ namespace MueLu {
           }
         }
 
+        std::vector<LO> index(numCandidates);
         for (size_t p = 0; p < numCandidates; p++)
           index[p] = p;
         Muelu_az_dsort2(score, index);
