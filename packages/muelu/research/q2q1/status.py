@@ -46,13 +46,11 @@ def main():
   skip = options.skip
   data = options.data
 
+  # We assume that the coordinates are amalgamated, i.e. there are no
+  # duplicates for velocity
   coords = np.loadtxt("coord-l" + str(L) + "-" + V)
-  if V == 'p':
-    x = coords[:, 0]
-    y = coords[:, 1]
-  else:
-    x = coords[0:-1:2, 0]
-    y = coords[0:-1:2, 1]
+  x = coords[:, 0]
+  y = coords[:, 1]
 
   area = 90
 
@@ -67,34 +65,22 @@ def main():
   fig = plt.figure()
 
   k = 0
-  for file in sort_nicely(glob.glob(data + "-l" + str(L) + "-" + V + "-*" + ("" if V == 'p' else ".1"))):
+  for file in sort_nicely(glob.glob(data + "-l" + str(L) + "-" + V + "-*")):
     k = k+1
     if k <= skip:
       continue
 
     colors = np.loadtxt(file)
+    print('len(colors) = %d' % len(colors))
+    print('len(x) = %d' % len(x))
     assert len(colors) == len(x)
 
     # one can use any key on keyboard to progress to the next plot
     cid = fig.canvas.mpl_connect('key_press_event', moveon)
 
-    if V == 'v':
-      plt.subplot(121)
-
     s = plt.scatter(x, y, c=colors, vmin=min_color, vmax=max_color, s=area, cmap=q2q1)
     s.set_alpha(0.75)
     plt.title(file)
-
-    if V == 'v':
-      file2 = file[:-1] + '2'
-      colors2 = np.loadtxt(file2)
-
-      plt.subplot(122)
-
-      s = plt.scatter(x, y, c=colors2, vmin=min_color, vmax=max_color, s=area, cmap=q2q1)
-      s.set_alpha(0.75)
-
-      plt.title(file2)
 
     if ui == False:
       plt.savefig(file + '.png', format='png')

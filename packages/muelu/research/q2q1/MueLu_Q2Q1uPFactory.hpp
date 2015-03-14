@@ -158,8 +158,8 @@ namespace MueLu {
     void CreateCrsPointers (const Matrix& A, ArrayRCP<const size_t>& ia, ArrayRCP<const LO>& ja) const;
     void CptDepends2Pattern(const Matrix& A, const MyCptList& myCpts, RCP<Matrix>& P, LO offset) const;
 
-    void DumpStatus(const std::vector<char>& status, bool pressureMode, const std::string& filename) const;
-    void DumpCoords(const MultiVector&       coords, const std::string& filename) const;
+    void DumpStatus(const std::string& filename, const std::vector<char>& status, int NDim, bool isAmalgamated = true) const;
+    void DumpCoords(const std::string& filename, const MultiVector& coords) const;
   };
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -362,17 +362,20 @@ namespace MueLu {
       std::string depPrefix = std::string("dep0-l") + toString(fineLevel.GetLevelID()) + (pressureMode ? "-p-" : "-v-");
 
       std::vector<char> depStatus(N);
-      for (int k = 0; k < Cptlist.size(); k++) {
+      // Graph is unamalgamted, so we need to skip some CPOINTs as they are
+      // essentially duplicated for different velocities
+      for (int k = 0; k < Cptlist.size(); k += NDim) {
 
         for (Xpetra::global_size_t i = 0; i < N; i++) {
           bool isPresent = false;
           for (int j = 0; j < numCpts[i]; j++)
             if ((*myCpts)(i)[j] == Cptlist[k])
               isPresent = true;
-          depStatus[i] = (isPresent ? CPOINT : UNASSIGNED);
+          depStatus[i] = (isPresent ? FPOINT : UNASSIGNED);
         }
+        depStatus[Cptlist[k]] = CPOINT;
 
-        DumpStatus(depStatus, pressureMode, depPrefix + toString(k));
+        DumpStatus(depPrefix + toString(k), depStatus, NDim, false);
       }
     }
 
@@ -396,10 +399,11 @@ namespace MueLu {
           for (int j = 0; j < numCpts[i]; j++)
             if ((*myCpts)(i)[j] == Cptlist[k])
               isPresent = true;
-          depStatus[i] = (isPresent ? CPOINT : UNASSIGNED);
+          depStatus[i] = (isPresent ? FPOINT : UNASSIGNED);
         }
+        depStatus[Cptlist[k]] = CPOINT;
 
-        DumpStatus(depStatus, pressureMode, depPrefix + toString(k));
+        DumpStatus(depPrefix + toString(k), depStatus, NDim, false);
       }
     }
 
@@ -580,8 +584,8 @@ namespace MueLu {
     std::string st = std::string("status-l") + toString(levelID) + (pressureMode ? "-p-" : "-v-");
     int dumpCount = 0;
     if (doStatusOutput) {
-      DumpCoords(coords, "coord-l" + toString(levelID) + (pressureMode ? "-p" : "-v"));
-      DumpStatus(status, pressureMode, st + i2s(dumpCount++) + "-A");
+      DumpCoords("coord-l" + toString(levelID) + (pressureMode ? "-p" : "-v"), coords);
+      DumpStatus(st + i2s(dumpCount++) + "-A", status, NDim);
     }
 
     std::vector<short>& numCpts = myCpts.getNumCpts();
@@ -613,7 +617,7 @@ namespace MueLu {
           status[newCpt] = CPOINT;
 
           if (doStatusOutput)
-            DumpStatus(status, pressureMode, st + i2s(dumpCount++) + "-B");
+            DumpStatus(st + i2s(dumpCount++) + "-B", status, NDim);
         }
         numCandidates--;
         // FIXME: Why is there no i++ here?
@@ -626,7 +630,7 @@ namespace MueLu {
           status[newCpt] = CPOINT;
 
           if (doStatusOutput)
-            DumpStatus(status, pressureMode, st + i2s(dumpCount++) + "-C");
+            DumpStatus(st + i2s(dumpCount++) + "-C", status, NDim);
         }
         i++;
       }
@@ -658,7 +662,7 @@ namespace MueLu {
           }
         }
         if (dumpStatus && doStatusOutput)
-          DumpStatus(status, pressureMode, st + i2s(dumpCount++) + "-D");
+          DumpStatus(st + i2s(dumpCount++) + "-D", status, NDim);
 
         // Update myCpts() to reflect dependence of neighbors on newCpt
         for (size_t k = 0; k < dist3.size(); k++) {
@@ -730,7 +734,7 @@ namespace MueLu {
         }
         dist4.resize(numNewCandidates);
         if (dumpStatus && doStatusOutput)
-          DumpStatus(status, pressureMode, st + i2s(dumpCount++) + "-E");
+          DumpStatus(st + i2s(dumpCount++) + "-E", status, pressureMode);
 
         // Now remove all TWOTIMERs from the old candidate list
         size_t numOldCandidates = 0;
@@ -745,7 +749,7 @@ namespace MueLu {
           }
         }
         if (dumpStatus && doStatusOutput)
-          DumpStatus(status, pressureMode, st + i2s(dumpCount++) + "-F");
+          DumpStatus(st + i2s(dumpCount++) + "-F", status, NDim);
 
         // Sort the candidates based on distances (breaking ties via degrees,
         // encouraging points near boundary). First, we order new candidates
@@ -854,7 +858,7 @@ namespace MueLu {
             myCpts(newCpt)[0] = newCpt;
 
             if (doStatusOutput)
-              DumpStatus(status, pressureMode, st + i2s(dumpCount++) + "-G");
+              DumpStatus(st + i2s(dumpCount++) + "-G", status, NDim);
 
             std::vector<LO> dist1, dist2, dist3, dist4;
             CompDistances(A, newCpt, 3, dist1, dist2, dist3, dist4);
@@ -1401,31 +1405,22 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  DumpStatus(const std::vector<char>& status, bool pressureMode, const std::string& filename) const {
+  DumpStatus(const std::string& filename, const std::vector<char>& status, int NDim, bool isAmalgamated) const {
     const std::string dirName = OUTPUT_DIR;
 
     struct stat sb;
     TEUCHOS_TEST_FOR_EXCEPTION(stat(dirName.c_str(), &sb) != 0 || !S_ISDIR(sb.st_mode), Exceptions::RuntimeError,
                                "Please create a \"" << dirName << "\" directory");
 
-    if (pressureMode) {
-      std::ofstream ofs((dirName + filename).c_str());
-      for (size_t i = 0; i < status.size(); i++)
-        ofs << status[i] << std::endl;
-
-    } else {
-      std::ofstream ofs1((dirName + filename + ".1").c_str());
-      std::ofstream ofs2((dirName + filename + ".2").c_str());
-      for (size_t i = 0; i < status.size(); i += 2) {
-        ofs1 << status[i+0] << std::endl;
-        ofs2 << status[i+1] << std::endl;
-      }
-    }
+    std::ofstream ofs((dirName + filename).c_str());
+    size_t step = (isAmalgamated ? 1 : NDim);
+    for (size_t i = 0; i < status.size(); i += step)
+      ofs << status[i] << std::endl;
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  DumpCoords(const MultiVector& coords, const std::string& filename) const {
+  DumpCoords(const std::string& filename, const MultiVector& coords) const {
     const std::string dirName = OUTPUT_DIR;
 
     struct stat sb;
