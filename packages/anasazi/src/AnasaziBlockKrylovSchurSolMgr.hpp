@@ -29,9 +29,9 @@
 #ifndef ANASAZI_BLOCK_KRYLOV_SCHUR_SOLMGR_HPP
 #define ANASAZI_BLOCK_KRYLOV_SCHUR_SOLMGR_HPP
 
-/*! \file AnasaziBlockKrylovSchurSolMgr.hpp
- *  \brief The Anasazi::BlockKrylovSchurSolMgr provides a solver manager for the BlockKrylovSchur eigensolver.
-*/
+/// \file AnasaziBlockKrylovSchurSolMgr.hpp
+/// \brief The Anasazi::BlockKrylovSchurSolMgr class provides a user
+///   interface for the block Krylov-Schur eigensolver.
 
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziTypes.hpp"
@@ -53,15 +53,21 @@
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-
 /** \example BlockKrylovSchur/BlockKrylovSchurEpetraEx.cpp
-    This is an example of how to use the Anasazi::BlockKrylovSchurSolMgr solver manager, using Epetra data structures.
+    \brief Use Anasazi::BlockKrylovSchurSolMgr to solve a standard
+      (not generalized) eigenvalue problem, using Epetra data
+      structures.
 */
 
 /// \example BlockKrylovSchur/BlockKrylovSchurEpetraExGenAmesos.cpp
-/// \brief This example computes the eigenvalues of smallest magnitude
-///   of a generalized eigenvalue problem \f$K x = \lambda M x\f$,
-///   using Anasazi's implementation of the block Krylov-Schur method.
+/// \brief Compute smallest eigenvalues of a generalized eigenvalue
+///   problem, using block Krylov-Schur with Epetra and an Amesos direct
+///   solver.
+///
+/// This example computes the eigenvalues of smallest magnitude of a
+/// generalized eigenvalue problem \f$K x = \lambda M x\f$, using
+/// Anasazi's implementation of the block Krylov-Schur method, with
+/// Epetra linear algebra and a direct solver from the Amesos package.
 ///
 /// Anasazi computes the smallest-magnitude eigenvalues using a
 /// shift-and-invert strategy.  For simplicity, this example uses a
@@ -84,20 +90,21 @@
 /// sparse direct solver KLU to do so.  Trilinos' Amesos package has
 /// an interface to KLU.
 
-/** \example BlockKrylovSchur/BlockKrylovSchurEpetraExGenAmesos.cpp
-    This is an example of how to use the Anasazi::BlockKrylovSchurSolMgr solver manager to solve a generalized eigenvalue problem, using Epetra data stuctures and the Amesos solver package.
-*/
-
 /** \example BlockKrylovSchur/BlockKrylovSchurEpetraExGenAztecOO.cpp
-    This is an example of how to use the Anasazi::BlockKrylovSchurSolMgr solver manager to solve a generalized eigenvalue problem, using Epetra data stuctures and the AztecOO solver package.
+    \brief Use Anasazi::BlockKrylovSchurSolMgr to solve a generalized
+      eigenvalue problem, using Epetra data stuctures and the AztecOO
+      package of iterative linear solvers and preconditioners.
 */
 
 /** \example BlockKrylovSchur/BlockKrylovSchurEpetraExGenBelos.cpp
-    This is an example of how to use the Anasazi::BlockKrylovSchurSolMgr solver manager to solve a generalized eigenvalue problem, using Epetra data stuctures and the Belos solver package.
+    \brief Use Anasazi::BlockKrylovSchurSolMgr to solve a generalized
+      eigenvalue problem, using Epetra data stuctures and the Belos
+      iterative linear solver package.
 */
 
 /** \example BlockKrylovSchur/BlockKrylovSchurEpetraExSVD.cpp
-    This is an example of how to use the Anasazi::BlockKrylovSchurSolMgr solver manager to compute an SVD, using Epetra data structures.
+    \brief Use Anasazi::BlockKrylovSchurSolMgr to compute a singular
+      value decomposition (SVD), using Epetra data structures.
 */
 
 namespace Anasazi {

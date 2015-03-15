@@ -1,6 +1,10 @@
-// This example computes the eigenvalues of largest magnitude of an
-// eigenvalue problem $A x = \lambda x$, using Anasazi's
-// implementation of the LOBPCG method.
+/// \example LOBPCGEpetra.cpp
+/// \brief Use LOBPCG with Epetra test problem from Galeri.
+///
+/// This example computes the eigenvalues of largest magnitude of an
+/// eigenvalue problem $A x = \lambda x$, using Anasazi's
+/// implementation of the LOBPCG method, with Epetra linear algebra.
+/// It uses the Galeri package to construct the test problem.
 
 // Include header for LOBPCG eigensolver
 #include "AnasaziLOBPCGSolMgr.hpp"
@@ -24,9 +28,6 @@
 #  include "Epetra_SerialComm.h"
 #endif // EPETRA_MPI
 
-// ****************************************************************************
-// BEGIN MAIN ROUTINE
-// ****************************************************************************
 
 int
 main (int argc, char *argv[])
@@ -48,6 +49,9 @@ main (int argc, char *argv[])
   // Epetra_Operator.
   typedef Epetra_MultiVector MV;
   typedef Epetra_Operator OP;
+  // Anasazi's interface to the linear algebra implementation's
+  // vectors and multivectors is MultiVecTraits.  This is a C++ traits
+  // interface.  It is templated on Scalar and MV (see above).
   typedef Anasazi::MultiVecTraits<double, Epetra_MultiVector> MVT;
 
 #ifdef EPETRA_MPI

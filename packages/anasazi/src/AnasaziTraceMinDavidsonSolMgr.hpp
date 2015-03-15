@@ -39,19 +39,19 @@
 #include "AnasaziTraceMinBaseSolMgr.hpp"
 #include "AnasaziTraceMinDavidson.hpp"
 
-/** \example TraceMinDavidson/TraceMinDavidsonGeneralizedEx.cpp
+/** \example TraceMinDavidsonGeneralizedEx.cpp
     This is an example of how to use the TraceMinDavidsonSolMgr solver manager to solve a generalized eigenvalue problem, using Tpetra data stuctures.
 */
 
-/** \example TraceMinDavidson/TraceMinDavidsonLaplacianEx.cpp
+/** \example TraceMinDavidsonLaplacianEx.cpp
     This is an example of how to use the TraceMinDavidsonSolMgr solver manager to compute the Fiedler vector, using Tpetra data stuctures and an Ifpack2 preconditioner.
 */
 
-/** \example TraceMinDavidson/TraceMinDavidsonSpecTransEx.cpp
+/** \example TraceMinDavidsonSpecTransEx.cpp
     This is an example of how to use the TraceMinDavidsonSolMgr solver manager to compute the largest eigenpairs of a matrix via an invisible spectral transformation, using Tpetra data stuctures.
 */
 
-/** \example TraceMinDavidson/TraceMinDavidsonUserOpEx.cpp
+/** \example TraceMinDavidsonUserOpEx.cpp
     This is an example of how to use the TraceMinDavidsonSolMgr solver manager to solve a standard eigenvalue problem where the matrix is not explicitly available, using Tpetra data stuctures.
 */
 
@@ -79,12 +79,12 @@ namespace Experimental {
  *      It will query the underlying TraceMinDavidson eigensolver to determine when eigenvectors should be locked.<br>
  *      If not specified via setLockingStatusTest(), \c lockingtest is a StatusTestResNorm object.
  *    - \c debugtest allows a user to specify additional monitoring of the iteration, encapsulated in a StatusTest object<br>
- *      If not specified via setDebugStatusTest(), \c debugtest is ignored.<br> 
+ *      If not specified via setDebugStatusTest(), \c debugtest is ignored.<br>
  *      In most cases, it should return ::Failed; if it returns ::Passed, solve() will throw an AnasaziError exception.
  *
- * Additionally, the solver manager will terminate and restart solve() when the subspace is full, 
+ * Additionally, the solver manager will terminate and restart solve() when the subspace is full,
  * and it will terminate solve and return after a specified number of restarts.
- * 
+ *
  * Much of this behavior is controlled via parameters and options passed to the
  * solver manager. For more information, see TraceMinDavidsonSolMgr().
 
@@ -103,20 +103,20 @@ class TraceMinDavidsonSolMgr : public TraceMinBaseSolMgr<ScalarType,MV,OP> {
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
     typedef Teuchos::ScalarTraits<MagnitudeType> MT;
-    
+
   public:
 
   //! @name Constructors
-  //@{ 
+  //@{
 
-  /*! \brief Basic constructor for TraceMinDavidsonSolMgr. 
+  /*! \brief Basic constructor for TraceMinDavidsonSolMgr.
    *
    * This constructor accepts the Eigenproblem to be solved in addition
-   * to a parameter list of options for the solver manager. 
+   * to a parameter list of options for the solver manager.
    * Since this class inherits from TraceMinBaseSolMgr, it accepts the same options as TraceMinBaseSolMgr(), with a few additions:
    *   - \c "Use Harmonic Ritz Values" - a \c bool specifying whether to compute the harmonic Ritz values.  Unless you're computing interior eigenpairs, this should be false. Default: false
-   *   - \c "Block Size" - an \c int specifying the block size to be used by the underlying solver. 
-   *                       If the eigenvalues are clustered, you may want to use a larger block size to capture the correct multiplicity. 
+   *   - \c "Block Size" - an \c int specifying the block size to be used by the underlying solver.
+   *                       If the eigenvalues are clustered, you may want to use a larger block size to capture the correct multiplicity.
    *                       Default: 1
    *   - \c "Num Blocks" - an \c int specifying the maximum number of blocks in the subspace. After we compute this many blocks, we will restart.
    *   - \c "Num Restart Blocks" - an \c int specifying how many blocks we keep when restarting.  We will extract the most significant
@@ -142,15 +142,15 @@ class TraceMinDavidsonSolMgr : public TraceMinBaseSolMgr<ScalarType,MV,OP> {
 
     // Returns true if the subspace is full
     bool needToRestart(const Teuchos::RCP< TraceMinBase<ScalarType,MV,OP> > solver)
-    { 
-      return (solver->getCurSubspaceDim() == solver->getMaxSubspaceDim()); 
+    {
+      return (solver->getCurSubspaceDim() == solver->getMaxSubspaceDim());
     };
 
     // Performs a restart by reinitializing TraceMinDavidson with the most significant part of the basis
     bool performRestart(int &numRestarts, Teuchos::RCP< TraceMinBase<ScalarType,MV,OP> > solver);
 
     // Returns a TraceMinDavidson solver
-    Teuchos::RCP< TraceMinBase<ScalarType,MV,OP> > createSolver( 
+    Teuchos::RCP< TraceMinBase<ScalarType,MV,OP> > createSolver(
             const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > &sorter,
             const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >      &outputtest,
             const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
@@ -240,7 +240,7 @@ bool TraceMinDavidsonSolMgr<ScalarType,MV,OP>::performRestart(int &numRestarts, 
 
   // send the new state to the solver
   newstate.NEV = oldstate.NEV;
-  solver->initialize(newstate);	
+  solver->initialize(newstate);
 
   return true;
 }
