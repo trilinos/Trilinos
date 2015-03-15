@@ -48,26 +48,13 @@ INPUT                  = index.doc groups.doc ../src ../thyra/src ../epetra/src 
 RECURSIVE              = YES
 EXCLUDE                = ../src/ModalAnalysisSolvers ../src/AnasaziDenseMatTraits.hpp ../src/AnasaziDirectSolver.hpp
 EXCLUDE_PATTERNS       = *.x *.o *.out
-EXAMPLE_PATH           = ../epetra/example/LOBPCG/LOBPCGEpetraEx.cpp                     \
-                         ../epetra/example/LOBPCG/LOBPCGEpetraExSimple.cpp               \
-                         ../epetra/example/LOBPCG/LOBPCGEpetraExGen.cpp                  \
-                         ../epetra/example/LOBPCG/LOBPCGEpetraExGenPrecIfpack.cpp        \
-                         ../epetra/example/BlockDavidson/BlockDavidsonEpetraEx.cpp       \
-                         ../epetra/example/BlockDavidson/BlockDavidsonEpetraExGen.cpp    \
-                         ../epetra/example/BlockDavidson/BlockDavidsonEpetraExGenPrecIfpack.cpp        \
-                         ../epetra/example/BlockKrylovSchur/BlockKrylovSchurEpetraEx.cpp               \
-                         ../epetra/example/BlockKrylovSchur/BlockKrylovSchurEpetraExGenAmesos.cpp      \
-                         ../epetra/example/BlockKrylovSchur/BlockKrylovSchurEpetraExGenAztecOO.cpp     \
-                         ../epetra/example/BlockKrylovSchur/BlockKrylovSchurEpetraExGenBelos.cpp       \
-                         ../epetra/example/BlockKrylovSchur/BlockKrylovSchurEpetraExSVD.cpp            \
-                         ../epetra/example/GeneralizedDavidson/GeneralizedDavidsonEpetraExFileIfpack.cpp  \
-                         ../epetra/example/MVOPTester/MVOPTesterEx.cpp \
-                         ../tpetra/example/TraceMinDavidson/TraceMinDavidsonGeneralizedEx.cpp \
-                         ../tpetra/example/TraceMinDavidson/TraceMinDavidsonLaplacianEx.cpp   \
-                         ../tpetra/example/TraceMinDavidson/TraceMinDavidsonSpecTransEx.cpp   \
-                         ../tpetra/example/TraceMinDavidson/TraceMinDavidsonUserOpEx.cpp \
-                         ../tpetra/example/CustomStatusTest/LOBPCGCustomStatusTest.cpp
+#
+# Set up paths and patterns for examples
+#
+EXAMPLE_PATH           = ../epetra/example ../tpetra/example
+EXAMPLE_RECURSIVE      = YES
 EXAMPLE_PATTERNS       = *.cpp *.hpp
+#
 IMAGE_PATH             = ./images
 ALPHABETICAL_INDEX     = YES
 COLS_IN_ALPHA_INDEX    = 4
