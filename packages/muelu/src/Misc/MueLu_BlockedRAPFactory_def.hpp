@@ -123,6 +123,17 @@ namespace MueLu {
 
     GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*bAc, "Ac (blocked)");
 
+    // static int run = 1;
+    // RCP<CrsMatrixWrap> A11 = rcp(new CrsMatrixWrap(bAc->getMatrix(0,0)));
+    // Utils::Write(toString(run) + "_A_11.mm", *A11);
+    // if (!bAc->getMatrix(1,1).is_null()) {
+      // RCP<CrsMatrixWrap> A22 = rcp(new CrsMatrixWrap(bAc->getMatrix(1,1)));
+      // Utils::Write(toString(run) + "_A_22.mm", *A22);
+    // }
+    // RCP<CrsMatrixWrap> Am = rcp(new CrsMatrixWrap(bAc->Merge()));
+    // Utils::Write(toString(run) + "_A.mm", *Am);
+    // run++;
+
     Set<RCP <Matrix> >(coarseLevel, "A", bAc);
 
     if (transferFacts_.begin() != transferFacts_.end()) {

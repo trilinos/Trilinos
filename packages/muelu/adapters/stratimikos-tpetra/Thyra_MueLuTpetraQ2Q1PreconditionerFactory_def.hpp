@@ -376,6 +376,9 @@ namespace Thyra {
     }
     A_22_crs->fillComplete(newDomainMap2,            newRangeMap2);
 #else
+    RCP<Matrix>    A_22     = Teuchos::null;
+    RCP<CrsMatrix> A_22_crs = Teuchos::null;
+
     ArrayView<const LO> inds;
     ArrayView<const SC> vals;
     for (LO row = 0; row < as<LO>(numRows2); ++row) {
@@ -389,7 +392,6 @@ namespace Thyra {
       A_21_crs->insertGlobalValues(newRowElem2[row], newInds, vals);
     }
     A_21_crs->fillComplete(tmp_A_21->getDomainMap(), newRangeMap2);
-    RCP<CrsMatrix> A_22_crs = Teuchos::null;
 #endif
 
     // Create new A12 with map so that the global indices of the ColMap starts
@@ -479,6 +481,20 @@ namespace Thyra {
     H->Keep("Ptent", M.GetFactory("Ptent").get());
     H->Setup(M, 0, MUELU_GPD("max levels", int, 3));
 
+#if 1
+    for (int i = 1; i < H->GetNumLevels(); i++) {
+      RCP<Matrix>           P     = H->GetLevel(i)->template Get<RCP<Matrix> >("P");
+      RCP<BlockedCrsMatrix> Pcrs  = rcp_dynamic_cast<BlockedCrsMatrix>(P);
+      RCP<CrsMatrix>        Ppcrs = Pcrs->getMatrix(1,1);
+      RCP<Matrix>           Pp    = rcp(new CrsMatrixWrap(Ppcrs));
+      RCP<CrsMatrix>        Pvcrs = Pcrs->getMatrix(0,0);
+      RCP<Matrix>           Pv    = rcp(new CrsMatrixWrap(Pvcrs));
+
+      Utils::Write("Pp_l" + MueLu::toString(i) + ".mm", *Pp);
+      Utils::Write("Pv_l" + MueLu::toString(i) + ".mm", *Pv);
+    }
+#endif
+
     // -------------------------------------------------------------------------
     // Preconditioner construction - I.b (Vanka smoothers for unfiltered matrix)
     // -------------------------------------------------------------------------
@@ -493,19 +509,29 @@ namespace Thyra {
     innerSolverList.set("partitioner: overlap",               as<int>(1));
     innerSolverList.set("relaxation: type",                   "Gauss-Seidel");
     innerSolverList.set("relaxation: sweeps",                 as<int>(1));
-    innerSolverList.set("relaxation: damping factor",         0.5);
+    innerSolverList.set("relaxation: damping factor",         MUELU_GPD("relaxation: damping factor", double, 0.5));
     innerSolverList.set("relaxation: zero starting solution", false);
     // innerSolverList.set("relaxation: backward mode",true);  NOT SUPPORTED YET
 
     std::string ifpackType = "SCHWARZ";
 
     RCP<SmootherPrototype> smootherPrototype = rcp(new TrilinosSmoother(ifpackType, schwarzList));
-    M.SetFactory("Smoother", rcp(new SmootherFactory(smootherPrototype)));
+    RCP<SmootherFactory>   smootherFact = rcp(new SmootherFactory(smootherPrototype));
+    M.SetFactory("Smoother", smootherFact);
 
-    RCP<SmootherPrototype> coarseSolverPrototype = rcp(new BlockedDirectSolver());
-    RCP<SmootherFactory>   coarseSolverFact      = rcp(new SmootherFactory(coarseSolverPrototype, Teuchos::null));
-    //    M.SetFactory("CoarseSolver", coarseSolverFact);
-    M.SetFactory("CoarseSolver", rcp(new SmootherFactory(smootherPrototype)));
+#if 1
+#if 0
+    // Use direct coarse solver
+    RCP<SmootherPrototype> coarsePrototype = rcp(new BlockedDirectSolver());
+#else
+    // Use Vanka coarse solver
+    RCP<SmootherPrototype> coarsePrototype = smootherPrototype;
+#endif
+    RCP<SmootherFactory>   coarseFact = rcp(new SmootherFactory(coarsePrototype, Teuchos::null));
+    M.SetFactory("CoarseSolver", coarseFact);
+#else
+    M.SetFactory("CoarseSolver", Teuchos::null);
+#endif
 
 #ifdef HAVE_MUELU_DEBUG
     M.ResetDebugData();
@@ -742,9 +768,9 @@ namespace Thyra {
     ArrayRCP<size_t> iaB (iaA .size());
     ArrayRCP<LO>     jaB (jaA .size());
     ArrayRCP<SC>     valB(valA.size());
-    for (size_t i = 0; i < iaA .size(); i++) iaB [i] = iaA[i];
-    for (size_t i = 0; i < jaA .size(); i++) jaB [i] = jaA[i];
-    for (size_t i = 0; i < valA.size(); i++) valB[i] = Teuchos::ScalarTraits<SC>::magnitude(valA[i]);
+    for (int i = 0; i < iaA .size(); i++) iaB [i] = iaA[i];
+    for (int i = 0; i < jaA .size(); i++) jaB [i] = jaA[i];
+    for (int i = 0; i < valA.size(); i++) valB[i] = Teuchos::ScalarTraits<SC>::magnitude(valA[i]);
 
     RCP<Matrix> B = rcp(new CrsMatrixWrap(A.getRowMap(), A.getColMap(), 0, Xpetra::StaticProfile));
     RCP<CrsMatrix> Bcrs = rcp_dynamic_cast<CrsMatrixWrap>(B)->getCrsMatrix();
