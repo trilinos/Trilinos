@@ -910,11 +910,14 @@ kronecker(Tensor<S, N> const & A, Tensor4<T, N> const & B)
           typename Promote<S, T>::type
           s = 0.0;
 
+          // we assume A is the direction cosine matrix
+          // have s_{i}\be_{i} = s_{i'}\be_{i'}, want s_{i}
+          // s_{i} = A_{i',i}s_{i'}
           for (Index p = 0; p < dimension; ++p) {
             for (Index q = 0; q < dimension; ++q) {
               for (Index m = 0; m < dimension; ++m) {
                 for (Index n = 0; n < dimension; ++n) {
-                  s += A(i,p) * A(j,q) * A(k,m) * A(l,n) * B(p,q,m,n);
+                  s += A(p,i) * A(q,j) * A(m,k) * A(n,l) * B(p,q,m,n);
                 }
               }
             }
