@@ -70,9 +70,8 @@ LOCA::AnasaziOperator::ShiftInvert2Matrix::ShiftInvert2Matrix(
 {
   shift = eigenParams->get("Shift",0.0);
 
-  NOX::Abstract::Group::ReturnType status;
-  status = grp->computeSecondShiftedMatrix(0.0, 1.0);
-  status = grp->computeShiftedMatrix(1.0, -shift);
+  grp->computeSecondShiftedMatrix(0.0, 1.0);
+  grp->computeShiftedMatrix(1.0, -shift);
 }
 
 LOCA::AnasaziOperator::ShiftInvert2Matrix::~ShiftInvert2Matrix()
@@ -124,12 +123,10 @@ void
 LOCA::AnasaziOperator::ShiftInvert2Matrix::beginPostProcessing()
 {
   // Make sure mass matrix is up-to-date
-  NOX::Abstract::Group::ReturnType status;
-  status = grp->computeShiftedMatrix(0.0, 1.0);
+  grp->computeShiftedMatrix(0.0, 1.0);
 
   // Make sure Jacobian is up-to-date
-  status = grp->computeJacobian();
-
+  grp->computeJacobian();
 }
 
 void
