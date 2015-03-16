@@ -168,7 +168,6 @@ namespace Anasazi {
     //@{
 
     typedef MultiVecTraits<ScalarType,MV> MVT;
-    typedef MultiVecTraitsExt<ScalarType,MV> MVText;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
 
     //@}
@@ -292,7 +291,7 @@ namespace Anasazi {
     const ScalarType ZERO = SCT::zero();
 
     // early exit if V has zero-size or if k==0
-    if (MVT::GetNumberVecs(V) == 0 || MVText::GetGlobalLength(V) == 0 || k == 0) {
+    if (MVT::GetNumberVecs(V) == 0 || MVT::GetGlobalLength(V) == 0 || k == 0) {
       return;
     }
 

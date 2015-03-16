@@ -208,7 +208,7 @@ namespace Anasazi {
     int GetNumberVecs () const { return MVT::GetNumberVecs( *Thyra_MV ); }
 
     //! Obtain the number of vectors in *this.
-    ANASAZI_DEPRECATED int GetVecLength () const { return MVT::GetVecLength( *Thyra_MV ); }
+    ptrdiff_t GetGlobalLength () const { return MVT::GetGlobalLength( *Thyra_MV ); }
 
     //@}
 

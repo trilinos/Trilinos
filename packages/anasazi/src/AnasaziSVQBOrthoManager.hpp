@@ -60,7 +60,6 @@ namespace Anasazi {
     typedef Teuchos::ScalarTraits<ScalarType>  SCT;
     typedef Teuchos::ScalarTraits<MagnitudeType>  SCTM;
     typedef MultiVecTraits<ScalarType,MV>      MVT;
-    typedef MultiVecTraitsExt<ScalarType,MV>   MVText;
     typedef OperatorTraits<ScalarType,MV,OP>   OPT;
     std::string dbgstr;
 
@@ -422,11 +421,11 @@ namespace Anasazi {
 
     // get sizes of X,MX
     int xc = MVT::GetNumberVecs(X);
-    ptrdiff_t xr = MVText::GetGlobalLength( X );
+    ptrdiff_t xr = MVT::GetGlobalLength( X );
 
     // get sizes of Q[i]
     int nq = Q.length();
-    ptrdiff_t qr = (nq == 0) ? 0 : MVText::GetGlobalLength(*Q[0]);
+    ptrdiff_t qr = (nq == 0) ? 0 : MVT::GetGlobalLength(*Q[0]);
     ptrdiff_t qsize = 0;
     std::vector<int> qcs(nq);
     for (int i=0; i<nq; i++) {
@@ -464,7 +463,7 @@ namespace Anasazi {
     // check the size of the C[i] against the Q[i] and consistency between Q[i]
     for (int i=0; i<nq; i++) {
       // check size of Q[i]
-      TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength( *Q[i] ) != qr, std::invalid_argument, 
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength( *Q[i] ) != qr, std::invalid_argument, 
                           "Anasazi::SVQBOrthoManager::findBasis(): Size of Q not mutually consistant" );
       TEUCHOS_TEST_FOR_EXCEPTION( qr < qcs[i], std::invalid_argument, 
                           "Anasazi::SVQBOrthoManager::findBasis(): Q has less rows than columns" );
@@ -552,7 +551,7 @@ namespace Anasazi {
 
     // test sizes of X,MX
     int mxc = (this->_hasOp) ? MVT::GetNumberVecs( *MX ) : xc;
-    ptrdiff_t mxr = (this->_hasOp) ? MVText::GetGlobalLength( *MX )  : xr;
+    ptrdiff_t mxr = (this->_hasOp) ? MVT::GetGlobalLength( *MX )  : xr;
     TEUCHOS_TEST_FOR_EXCEPTION( xc != mxc || xr != mxr, std::invalid_argument, 
                         "Anasazi::SVQBOrthoManager::findBasis(): Size of X not consistant with MX" );
 

@@ -62,7 +62,7 @@ public:
   
   //! Copy constructor, performs a deep copy.
   MyMultiVec(const MyMultiVec& rhs) :
-    Length_(rhs.GetVecLength()),
+    Length_(rhs.GetGlobalLength()),
     NumberVecs_(rhs.NumberVecs_)
   {
     Check();
@@ -149,7 +149,7 @@ public:
     return(new MyMultiVec(Length_, values));
   }
   
-  int GetVecLength () const
+  ptrdiff_t GetGlobalLength () const
   {
     return(Length_);
   }
@@ -165,7 +165,7 @@ public:
                         ScalarType beta)
   {
     
-    assert (Length_ == A.GetVecLength());
+    assert (Length_ == A.GetGlobalLength());
     assert (B.numRows() == A.GetNumberVecs());
     assert (B.numCols() <= NumberVecs_);
 
@@ -227,8 +227,8 @@ public:
     assert (NumberVecs_ == A.GetNumberVecs());
     assert (NumberVecs_ == B.GetNumberVecs());
     
-    assert (Length_ == A.GetVecLength());
-    assert (Length_ == B.GetVecLength());
+    assert (Length_ == A.GetGlobalLength());
+    assert (Length_ == B.GetGlobalLength());
     
     for (int v = 0 ; v < NumberVecs_ ; ++v) {
       for (int i = 0 ; i < Length_ ; ++i) {
@@ -249,7 +249,7 @@ public:
     MyA = dynamic_cast<MyMultiVec*>(&const_cast<Anasazi::MultiVec<ScalarType> &>(A)); 
     assert (MyA != 0);
     
-    assert (A.GetVecLength() == Length_);
+    assert (A.GetGlobalLength() == Length_);
     assert (NumberVecs_ <= B.numCols());
     assert (A.GetNumberVecs() <= B.numRows());
     
@@ -294,7 +294,7 @@ public:
     
     assert (NumberVecs_ <= (int)b.size());
     assert (NumberVecs_ == A.GetNumberVecs());
-    assert (Length_ == A.GetVecLength());
+    assert (Length_ == A.GetGlobalLength());
     
 #ifdef HAVE_ANASAZI_EXPERIMENTAL
     if (conj == Anasazi::CONJ) {
@@ -347,7 +347,7 @@ public:
     assert (MyA != 0);
     
     assert (A.GetNumberVecs() >= (int)index.size());
-    assert (A.GetVecLength() == Length_);
+    assert (A.GetGlobalLength() == Length_);
     
     for (unsigned int v = 0 ; v < index.size() ; ++v) {
       for (int i = 0 ; i < Length_ ; ++i) {

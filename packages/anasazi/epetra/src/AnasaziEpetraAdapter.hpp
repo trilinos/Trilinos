@@ -194,11 +194,7 @@ namespace Anasazi {
 
     //@}
 
-    //! Obtain the number of vectors in *this.
-    ANASAZI_DEPRECATED int GetVecLength () const { return GlobalLength(); }
-
     //! The number of rows in the multivector.
-    //! \note This method supersedes GetVecLength, which will be deprecated.
     ptrdiff_t GetGlobalLength () const 
     {
        if ( Map().GlobalIndicesLongLong() )
@@ -1014,8 +1010,13 @@ namespace Anasazi {
     //@{ 
 
     //! Obtain the vector length of \c mv.
-    ANASAZI_DEPRECATED static int GetVecLength( const Epetra_MultiVector& mv )
-    { return mv.GlobalLength(); }
+    static ptrdiff_t GetGlobalLength( const Epetra_MultiVector& mv )
+    { 
+      if (mv.Map().GlobalIndicesLongLong())
+        return static_cast<ptrdiff_t>( mv.GlobalLength64() );
+      else
+        return static_cast<ptrdiff_t>( mv.GlobalLength() );
+    }
 
     //! Obtain the number of vectors in \c mv
     static int GetNumberVecs( const Epetra_MultiVector& mv )
@@ -1403,26 +1404,6 @@ namespace Anasazi {
     
   };
 
-  template<>
-  class MultiVecTraitsExt<double, Epetra_MultiVector>
-  {
-  public:
-    //! @name New attribute methods
-    //@{
-
-    //! Obtain the vector length of \c mv.
-    //! \note This method supersedes GetVecLength, which will be deprecated.
-    static ptrdiff_t GetGlobalLength( const Epetra_MultiVector& mv )
-    { 
-      if (mv.Map().GlobalIndicesLongLong())
-        return static_cast<ptrdiff_t>( mv.GlobalLength64() );
-      else
-        return static_cast<ptrdiff_t>( mv.GlobalLength() );
-    }
-
-    //@}
-  };
-  
 } // end of Anasazi namespace 
 
 #endif 

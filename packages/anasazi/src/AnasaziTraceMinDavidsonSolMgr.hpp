@@ -98,7 +98,6 @@ class TraceMinDavidsonSolMgr : public TraceMinBaseSolMgr<ScalarType,MV,OP> {
 
   private:
     typedef MultiVecTraits<ScalarType,MV> MVT;
-    typedef MultiVecTraitsExt<ScalarType,MV> MVText;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -194,8 +193,8 @@ TraceMinDavidsonSolMgr<ScalarType,MV,OP>::TraceMinDavidsonSolMgr( const Teuchos:
          "Anasazi::TraceMinDavidsonSolMgr::constructor(): \"Num Blocks\" must be strictly greater than \"Num Restart Blocks\".");
 
   std::stringstream ss;
-  ss << "Anasazi::TraceMinDavidsonSolMgr::constructor(): Potentially impossible orthogonality requests. Reduce basis size (" << static_cast<ptrdiff_t>(this->numBlocks_)*this->blockSize_ << ") or locking size (" << this->maxLocked_ << ") because " << static_cast<ptrdiff_t>(this->numBlocks_) << "*" << this->blockSize_ << " + " << this->maxLocked_ << " > " << MVText::GetGlobalLength(*this->problem_->getInitVec()) << ".";
-  TEUCHOS_TEST_FOR_EXCEPTION(static_cast<ptrdiff_t>(this->numBlocks_)*this->blockSize_ + this->maxLocked_ > MVText::GetGlobalLength(*this->problem_->getInitVec()),
+  ss << "Anasazi::TraceMinDavidsonSolMgr::constructor(): Potentially impossible orthogonality requests. Reduce basis size (" << static_cast<ptrdiff_t>(this->numBlocks_)*this->blockSize_ << ") or locking size (" << this->maxLocked_ << ") because " << static_cast<ptrdiff_t>(this->numBlocks_) << "*" << this->blockSize_ << " + " << this->maxLocked_ << " > " << MVT::GetGlobalLength(*this->problem_->getInitVec()) << ".";
+  TEUCHOS_TEST_FOR_EXCEPTION(static_cast<ptrdiff_t>(this->numBlocks_)*this->blockSize_ + this->maxLocked_ > MVT::GetGlobalLength(*this->problem_->getInitVec()),
          std::invalid_argument, ss.str());
 
   TEUCHOS_TEST_FOR_EXCEPTION(this->maxLocked_ + this->blockSize_ < this->problem_->getNEV(), std::invalid_argument,

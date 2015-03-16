@@ -452,7 +452,6 @@ namespace Experimental {
     //
     typedef SolverUtils<ScalarType,MV,OP>                 Utils;
     typedef MultiVecTraits<ScalarType,MV>                 MVT;
-    typedef MultiVecTraitsExt<ScalarType,MV>              MVText;
     typedef OperatorTraits<ScalarType,MV,OP>              OPT;
     typedef Teuchos::ScalarTraits<ScalarType>             SCT;
     typedef typename SCT::magnitudeType                   MagnitudeType;
@@ -1202,7 +1201,7 @@ namespace Experimental {
     if (newstate.V != Teuchos::null) {
       om_->stream(Debug) << "Copying V from the user\n";
 
-      TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*newstate.V) != MVText::GetGlobalLength(*V_), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.V) != MVT::GetGlobalLength(*V_), std::invalid_argument,
              "Anasazi::TraceMinBase::initialize(newstate): Vector length of V not correct." );
       TEUCHOS_TEST_FOR_EXCEPTION( newstate.curDim < blockSize_, std::invalid_argument,
              "Anasazi::TraceMinBase::initialize(newstate): Rank of new state must be at least blockSize().");
@@ -1328,7 +1327,7 @@ namespace Experimental {
     {
       om_->stream(Debug) << "Copying MV\n";
 
-      TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*newstate.MopV) != MVText::GetGlobalLength(*MV_), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.MopV) != MVT::GetGlobalLength(*MV_), std::invalid_argument,
              "Anasazi::TraceMinBase::initialize(newstate): Vector length of MV not correct." );
 
       TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.MopV) < curDim_, std::invalid_argument,
@@ -1414,7 +1413,7 @@ namespace Experimental {
     {
       om_->stream(Debug) << "Copying MV\n";
 
-      TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*newstate.KV) != MVText::GetGlobalLength(*KV_), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.KV) != MVT::GetGlobalLength(*KV_), std::invalid_argument,
              "Anasazi::TraceMinBase::initialize(newstate): Vector length of MV not correct." );
 
       TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.KV) < curDim_, std::invalid_argument,
@@ -1533,7 +1532,7 @@ namespace Experimental {
 
       if(computeAllRes_ == false)
       {
-        TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.X) != blockSize_ || MVText::GetGlobalLength(*newstate.X) != MVText::GetGlobalLength(*X_),
+        TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.X) != blockSize_ || MVT::GetGlobalLength(*newstate.X) != MVT::GetGlobalLength(*X_),
                std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): Size of X must be consistent with block size and length of V.");
 
         if(newstate.X != X_) {
@@ -1542,7 +1541,7 @@ namespace Experimental {
       }
       else
       {
-        TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.X) != curDim_ || MVText::GetGlobalLength(*newstate.X) != MVText::GetGlobalLength(*X_),
+        TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.X) != curDim_ || MVT::GetGlobalLength(*newstate.X) != MVT::GetGlobalLength(*X_),
                std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): Size of X must be consistent with current dimension and length of V.");
 
         if(newstate.X != X_) {
@@ -1570,7 +1569,7 @@ namespace Experimental {
       {
         if(computeAllRes_ == false)
         {
-          TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.KX) != blockSize_ || MVText::GetGlobalLength(*newstate.KX) != MVText::GetGlobalLength(*KX_),
+          TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.KX) != blockSize_ || MVT::GetGlobalLength(*newstate.KX) != MVT::GetGlobalLength(*KX_),
                  std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): Size of KX must be consistent with block size and length of V.");
 
           if(newstate.KX != KX_) {
@@ -1579,7 +1578,7 @@ namespace Experimental {
         }
         else
         {
-          TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.KX) != curDim_ || MVText::GetGlobalLength(*newstate.KX) != MVText::GetGlobalLength(*KX_),
+          TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.KX) != curDim_ || MVT::GetGlobalLength(*newstate.KX) != MVT::GetGlobalLength(*KX_),
                  std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): Size of KX must be consistent with current dimension and length of V.");
 
           if (newstate.KX != KX_) {
@@ -1592,7 +1591,7 @@ namespace Experimental {
       {
         if(computeAllRes_ == false)
         {
-          TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.MX) != blockSize_ || MVText::GetGlobalLength(*newstate.MX) != MVText::GetGlobalLength(*MX_),
+          TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.MX) != blockSize_ || MVT::GetGlobalLength(*newstate.MX) != MVT::GetGlobalLength(*MX_),
                  std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): Size of MX must be consistent with block size and length of V.");
 
           if (newstate.MX != MX_) {
@@ -1601,7 +1600,7 @@ namespace Experimental {
         }
         else
         {
-          TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.MX) != curDim_ || MVText::GetGlobalLength(*newstate.MX) != MVText::GetGlobalLength(*MX_),
+          TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.MX) != curDim_ || MVT::GetGlobalLength(*newstate.MX) != MVT::GetGlobalLength(*MX_),
                  std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): Size of MX must be consistent with current dimension and length of V.");
 
           if (newstate.MX != MX_) {
@@ -1625,7 +1624,7 @@ namespace Experimental {
 
       if(computeAllRes_ == false)
       {
-        TEUCHOS_TEST_FOR_EXCEPTION(MVText::GetGlobalLength(*newstate.R) != MVText::GetGlobalLength(*X_),
+        TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetGlobalLength(*newstate.R) != MVT::GetGlobalLength(*X_),
                std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): vector length of newstate.R not correct." );
         TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.R) != blockSize_,
                std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): newstate.R must have at least block size vectors." );
@@ -1635,7 +1634,7 @@ namespace Experimental {
       }
       else
       {
-        TEUCHOS_TEST_FOR_EXCEPTION(MVText::GetGlobalLength(*newstate.R) != MVText::GetGlobalLength(*X_),
+        TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetGlobalLength(*newstate.R) != MVT::GetGlobalLength(*X_),
                std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): vector length of newstate.R not correct." );
         TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.R) != curDim_,
                std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): newstate.R must have at least curDim vectors." );
@@ -1746,7 +1745,7 @@ namespace Experimental {
     if (newstate.V != Teuchos::null) {
       om_->stream(Debug) << "Copying V from the user\n";
 
-      TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*newstate.V) != MVText::GetGlobalLength(*V_), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.V) != MVT::GetGlobalLength(*V_), std::invalid_argument,
              "Anasazi::TraceMinBase::initialize(newstate): Vector length of V not correct." );
       TEUCHOS_TEST_FOR_EXCEPTION( newstate.curDim < blockSize_, std::invalid_argument,
              "Anasazi::TraceMinBase::initialize(newstate): Rank of new state must be at least blockSize().");
@@ -1897,7 +1896,7 @@ namespace Experimental {
     {
       om_->stream(Debug) << "Copying KV\n";
 
-      TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*newstate.KV) != MVText::GetGlobalLength(*KV_), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.KV) != MVT::GetGlobalLength(*KV_), std::invalid_argument,
              "Anasazi::TraceMinBase::initialize(newstate): Vector length of KV not correct." );
 
       TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.KV) < curDim_, std::invalid_argument,
@@ -1974,7 +1973,7 @@ namespace Experimental {
     {
       om_->stream(Debug) << "Copying MV\n";
 
-      TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*newstate.MopV) != MVText::GetGlobalLength(*MV_), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.MopV) != MVT::GetGlobalLength(*MV_), std::invalid_argument,
              "Anasazi::TraceMinBase::initialize(newstate): Vector length of MV not correct." );
 
       TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.MopV) < curDim_, std::invalid_argument,
@@ -2094,7 +2093,7 @@ namespace Experimental {
 
       if(computeAllRes_ == false)
       {
-        TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.X) != blockSize_ || MVText::GetGlobalLength(*newstate.X) != MVText::GetGlobalLength(*X_),
+        TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.X) != blockSize_ || MVT::GetGlobalLength(*newstate.X) != MVT::GetGlobalLength(*X_),
                std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): Size of X must be consistent with block size and length of V.");
 
         if(newstate.X != X_) {
@@ -2103,7 +2102,7 @@ namespace Experimental {
       }
       else
       {
-        TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.X) != curDim_ || MVText::GetGlobalLength(*newstate.X) != MVText::GetGlobalLength(*X_),
+        TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.X) != curDim_ || MVT::GetGlobalLength(*newstate.X) != MVT::GetGlobalLength(*X_),
                std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): Size of X must be consistent with current dimension and length of V.");
 
         if(newstate.X != X_) {
@@ -2131,7 +2130,7 @@ namespace Experimental {
       {
         if(computeAllRes_ == false)
         {
-          TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.KX) != blockSize_ || MVText::GetGlobalLength(*newstate.KX) != MVText::GetGlobalLength(*KX_),
+          TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.KX) != blockSize_ || MVT::GetGlobalLength(*newstate.KX) != MVT::GetGlobalLength(*KX_),
                  std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): Size of KX must be consistent with block size and length of V.");
 
           if(newstate.KX != KX_) {
@@ -2140,7 +2139,7 @@ namespace Experimental {
         }
         else
         {
-          TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.KX) != curDim_ || MVText::GetGlobalLength(*newstate.KX) != MVText::GetGlobalLength(*KX_),
+          TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.KX) != curDim_ || MVT::GetGlobalLength(*newstate.KX) != MVT::GetGlobalLength(*KX_),
                  std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): Size of KX must be consistent with current dimension and length of V.");
 
           if (newstate.KX != KX_) {
@@ -2153,7 +2152,7 @@ namespace Experimental {
       {
         if(computeAllRes_ == false)
         {
-          TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.MX) != blockSize_ || MVText::GetGlobalLength(*newstate.MX) != MVText::GetGlobalLength(*MX_),
+          TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.MX) != blockSize_ || MVT::GetGlobalLength(*newstate.MX) != MVT::GetGlobalLength(*MX_),
                  std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): Size of MX must be consistent with block size and length of V.");
 
           if (newstate.MX != MX_) {
@@ -2162,7 +2161,7 @@ namespace Experimental {
         }
         else
         {
-          TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.MX) != curDim_ || MVText::GetGlobalLength(*newstate.MX) != MVText::GetGlobalLength(*MX_),
+          TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.MX) != curDim_ || MVT::GetGlobalLength(*newstate.MX) != MVT::GetGlobalLength(*MX_),
                  std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): Size of MX must be consistent with current dimension and length of V.");
 
           if (newstate.MX != MX_) {
@@ -2221,7 +2220,7 @@ namespace Experimental {
 
       if(computeAllRes_ == false)
       {
-        TEUCHOS_TEST_FOR_EXCEPTION(MVText::GetGlobalLength(*newstate.R) != MVText::GetGlobalLength(*X_),
+        TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetGlobalLength(*newstate.R) != MVT::GetGlobalLength(*X_),
                std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): vector length of newstate.R not correct." );
         TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.R) != blockSize_,
                std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): newstate.R must have at least block size vectors." );
@@ -2231,7 +2230,7 @@ namespace Experimental {
       }
       else
       {
-        TEUCHOS_TEST_FOR_EXCEPTION(MVText::GetGlobalLength(*newstate.R) != MVText::GetGlobalLength(*X_),
+        TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetGlobalLength(*newstate.R) != MVT::GetGlobalLength(*X_),
                std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): vector length of newstate.R not correct." );
         TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.R) != curDim_,
                std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): newstate.R must have at least curDim vectors." );
@@ -2327,7 +2326,7 @@ namespace Experimental {
              "Anasazi::TraceMinBase::setSize(): eigenproblem did not specify initial vectors to clone from.");
     }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(numAuxVecs_+blockSize*static_cast<ptrdiff_t>(numBlocks) > MVText::GetGlobalLength(*tmp),std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(numAuxVecs_+blockSize*static_cast<ptrdiff_t>(numBlocks) > MVT::GetGlobalLength(*tmp),std::invalid_argument,
            "Anasazi::TraceMinBase::setSize(): max subspace dimension and auxilliary subspace too large.  Potentially impossible orthogonality constraints.");
 
     // New subspace dimension

@@ -71,20 +71,20 @@ public:
     assert (MyY != 0);
     
     assert (X.GetNumberVecs() == Y.GetNumberVecs());
-    assert (X.GetVecLength() == Y.GetVecLength());
+    assert (X.GetGlobalLength() == Y.GetGlobalLength());
    
     if (diag_.size() == 0)
     {
       // This is a tridiagonal matrix
       for (int v = 0 ; v < X.GetNumberVecs() ; ++v)
       {
-        for (int i = 0 ; i < X.GetVecLength() ; ++i)
+        for (int i = 0 ; i < X.GetGlobalLength() ; ++i)
         {
           if (i == 0)
           {
             (*MyY)[v][i] = (d_ * (*MyX)[v][i] + u_ * (*MyX)[v][i + 1]);
           }
-          else if (i == X.GetVecLength() - 1)
+          else if (i == X.GetGlobalLength() - 1)
           {
             (*MyY)[v][i] = (d_ * (*MyX)[v][i] + l_ * (*MyX)[v][i-1]);
           }
@@ -100,7 +100,7 @@ public:
       // This is a diagonal matrix
       for (int v = 0 ; v < X.GetNumberVecs() ; ++v)
       {
-        for (int i = 0 ; i < X.GetVecLength() ; ++i)
+        for (int i = 0 ; i < X.GetGlobalLength() ; ++i)
         {
           (*MyY)[v][i] = diag_[i] * (*MyX)[v][i];
         }
