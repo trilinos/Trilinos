@@ -6,11 +6,11 @@ namespace ShyLU{
 
   template class DirectSolverInterface<Epetra_CrsMatrix, Epetra_MultiVector>;
 
-#pragma message( "NO HAVE_SHYLUCORE_TPETRA")
+
 
 #if defined(HAVE_SHYLUCORE_TPETRA)
 
-#pragma message( "HAVE_SHYLUCORE_TPETRA")
+
    
   typedef Tpetra::Details::DefaultTypes::node_type node_type;
 
