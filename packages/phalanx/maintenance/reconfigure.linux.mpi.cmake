@@ -26,7 +26,7 @@ cmake \
 -D HWLOC_INCLUDE_DIRS:FILEPATH="/home/rppawlo/install/gnu4.8.2/hwloc/include" \
 -D HWLOC_LIBRARY_DIRS:FILEPATH="/home/rppawlo/install/gnu4.8.2/hwloc/lib" \
 -D TPL_ENABLE_Boost:BOOL=ON \
--D Boost_INCLUDE_DIRS:FILEPATH="/home/rppawlo/install/gnu4.8.2/boost/include" \
+-D Boost_INCLUDE_DIRS:FILEPATH="/home/rppawlo/install/gnu4.8.2/boost_1_57/include" \
 -D TPL_BLAS_LIBRARIES:PATH="/home/rppawlo/install/gnu4.8.2/blas/libblas.a" \
 -D TPL_LAPACK_LIBRARIES:PATH="/home/rppawlo/install/gnu4.8.2/lapack/liblapack.a" \
 -D CMAKE_CXX_COMPILER:FILEPATH="/home/rppawlo/install/gnu4.8.2/mpich/bin/mpicxx" \
@@ -35,7 +35,7 @@ cmake \
 -D CMAKE_CXX_FLAGS:STRING="-g -ansi -Wno-long-long -Wno-unused-local-typedefs -Wno-maybe-uninitialized" \
 -D CMAKE_C_FLAGS:STRING="" \
 -D CMAKE_Fortran_FLAGS:STRING="" \
--D Trilinos_ENABLE_CXX11:BOOL=OFF \
+-D Trilinos_ENABLE_CXX11:BOOL=ON \
 -D CMAKE_VERBOSE_MAKEFILE:BOOL=OFF \
 -D Trilinos_VERBOSE_CONFIGURE:BOOL=OFF \
 -D CMAKE_SKIP_RULE_DEPENDENCY=ON \
