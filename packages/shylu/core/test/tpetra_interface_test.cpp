@@ -89,15 +89,22 @@ int main(int argc, char** argv)
       cout << "Starting Tpetra interface test" << endl;
     }
 
-    typedef double scalar_type;
+
+  bool success = true;
+  string pass = "End Result: TEST PASSED";
+  string fail = "End Result: TEST PASSED";
+
+  typedef double scalar_type;
   typedef int local_o_type;
   typedef int global_o_type;
-  typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
+  //typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
+  
+  typedef Tpetra::Details::DefaultTypes::node_type node_type;
+
   typedef Tpetra::CrsMatrix<scalar_type, local_o_type, global_o_type, node_type> Matrix_t;
   typedef Tpetra::MultiVector<scalar_type, local_o_type, global_o_type, node_type> Vector_t;
 
 
-  
   Teuchos::ParameterList defaultParameters;
   Teuchos::RCP <node_type> node = Teuchos::rcp(new node_type(defaultParameters));
   
@@ -105,13 +112,19 @@ int main(int argc, char** argv)
   string matrixFileName = "wathenSmall.mtx";
   
   //Get Matrix
-  Teuchos::RCP<Matrix_t> A = Tpetra::MatrixMarket::Reader<Matrix_t>::readSparseFile(matrixFileName, comm, node);
+  Teuchos::RCP<Matrix_t> A = Tpetra::MatrixMarket::Reader<Matrix_t>::readSparseFile(matrixFileName, comm, node); //removed node
+
+  if( &A == NULL)
+    {
+      success = false;
+    }
 
 
   Teuchos::RCP<Vector_t> x = Teuchos::rcp(new Vector_t(A->getColMap(), 1));
   Teuchos::RCP<Vector_t> b = Teuchos::rcp(new Vector_t(A->getRowMap(), 1));
   b->randomize();
   x->randomize();
+
 
   /*-----------------have_interface-----------------*/
   /*---The have_interface checks is all the parameter list makes sense---*/
@@ -136,12 +149,14 @@ int main(int argc, char** argv)
 
 #ifdef HAVE_SHYLUCORE_ZOLTAN2
 
-  cout << "HSTER";
-
   ShyLU::PartitionInterface<Matrix_t, Vector_t> partI3(A.get(), pLUList.get());
   partI3.partition();
  
   cout << "Done with graph - parmetis" << endl;
+
+#else
+
+  success = false;
 
 #endif
 
@@ -166,9 +181,25 @@ int main(int argc, char** argv)
   ShyLU::DirectSolverInterface<Matrix_t, Vector_t> directsolver2(A.get(), pLUList.get());
 directsolver2.solve(b.get(),x.get());
 
+//Note: should multiple to set b and x for success
+
+
   cout << "Done with Amesos-KLU2" << endl;
+
+#else
+  
+  sucess = false;
+
   
 #endif
+
+  if(myPID == 0)
+    {
+      if(success)
+        cout << pass << endl;
+      else
+        cout << fail << endl;
+    }
 
   
 }

@@ -9,15 +9,15 @@ namespace ShyLU{
 
 #ifdef HAVE_SHYLUCORE_TPETRA
   //Tpetra
-  typedef KokkosClassic::DefaultNode::DefaultNodeType node;
+  //typedef KokkosClassic::DefaultNode::DefaultNodeType node;
  
   template class PartitionInterface<
-    Tpetra::CrsMatrix<float, int, int, node>,
-    Tpetra::MultiVector<float,int,int, node> >;
+    Tpetra::CrsMatrix<float, int, int>,
+    Tpetra::MultiVector<float,int,int> >;
 
   template class PartitionInterface<
-    Tpetra::CrsMatrix<double, int, int, node> ,
-    Tpetra::MultiVector<double, int, int, node> >;
+    Tpetra::CrsMatrix<double, int, int> ,
+    Tpetra::MultiVector<double, int, int> >;
 #endif
   /*
   template class PartitionInterface<

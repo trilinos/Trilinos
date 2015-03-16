@@ -9,30 +9,31 @@
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     belos_driver
     SOURCES shylu_belos_driver.cpp
-    COMM mpi
+    COMM serial mpi
     )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     iqr_driver
     SOURCES shylu_iqr_driver.cpp
-    COMM mpi
+    COMM serial mpi
     NUM_MPI_PROCS 4
     )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
 	epetra_interface
 	SOURCES epetra_interface_test.cpp 
-	COMM mpi
+	COMM serial mpi
 	NUM_MPI_PROCS 4
 	)
 
-IF (${PACKAGE_NAME}_ENABLE_Zoltan2 AND ${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
+#IF (${PACKAGE_NAME}_ENABLE_Zoltan2 AND ${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
+IF(HAVE_SHYLUCORE_TPETRA)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
 	tpetra_interface
 	SOURCES tpetra_interface_test.cpp 
-	COMM mpi
+	COMM serial mpi
 	NUM_MPI_PROCS 4
 	)
 
