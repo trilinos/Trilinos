@@ -151,6 +151,7 @@ TEST(BulkData_test, test3DProblemSharingOfDifferentFacesWithSameNodesTwoProc)
 
         {
             stk::io::StkMeshIoBroker exodusFileReader(communicator);
+            exodusFileReader.set_sideset_face_creation_behavior(stk::io::StkMeshIoBroker::STK_IO_SIDESET_FACE_CREATION_CURRENT);
             exodusFileReader.set_bulk_data(stkMeshBulkData);
             exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
             exodusFileReader.create_input_mesh();
@@ -176,6 +177,7 @@ TEST(BulkData_test, test3DProblemSharingOfDifferentFacesWithSameNodesOneProc)
 
         {
             stk::io::StkMeshIoBroker exodusFileReader(communicator);
+            exodusFileReader.set_sideset_face_creation_behavior(stk::io::StkMeshIoBroker::STK_IO_SIDESET_FACE_CREATION_CURRENT);
             exodusFileReader.set_bulk_data(stkMeshBulkData);
             exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
             exodusFileReader.create_input_mesh();
@@ -184,7 +186,7 @@ TEST(BulkData_test, test3DProblemSharingOfDifferentFacesWithSameNodesOneProc)
 
         std::vector<size_t> globalCounts;
         stk::mesh::comm_mesh_counts(stkMeshBulkData, globalCounts);
-        EXPECT_EQ(2u, globalCounts[stk::topology::FACE_RANK]);
+        EXPECT_EQ(1u, globalCounts[stk::topology::FACE_RANK]);
     }
 }
 

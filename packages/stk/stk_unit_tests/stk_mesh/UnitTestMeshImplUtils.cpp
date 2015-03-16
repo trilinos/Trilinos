@@ -34,6 +34,7 @@
 #include <stddef.h>                     // for size_t
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/GetEntities.hpp>       // for comm_mesh_counts, count_entities
+#include <stk_mesh/base/CreateFaces.hpp>       // for comm_mesh_counts, count_entities
 #include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <gtest/gtest.h>
@@ -107,6 +108,48 @@ TEST ( MeshImplUtils, find_elements_these_nodes_have_in_common )
 
   expected_num_elements = 1;
   EXPECT_EQ(expected_num_elements, elements.size());
+}
+
+TEST ( MeshImplUtils, find_faces_these_nodes_have_in_common )
+{
+  stk::ParallelMachine communicator = MPI_COMM_WORLD;
+  int numProcs = stk::parallel_machine_size(communicator);
+  if (numProcs > 2) {
+    return;
+  }
+
+  const unsigned spatialDim = 3;
+  stk::mesh::MetaData meta(spatialDim);
+  stk::mesh::BulkData bulk(meta, communicator);
+
+  setup2Block2HexMesh(bulk);
+  stk::mesh::create_faces(bulk);
+
+  const unsigned numNodesPerEdge = 2;
+
+  //edge 2-6 is connected to elements 1 and 2
+  stk::mesh::EntityId edge_2_6_nodeIds[] = {2, 6};
+  stk::mesh::Entity edge_2_6_nodes[numNodesPerEdge];
+  edge_2_6_nodes[0] = bulk.get_entity(stk::topology::NODE_RANK, edge_2_6_nodeIds[0]);
+  edge_2_6_nodes[1] = bulk.get_entity(stk::topology::NODE_RANK, edge_2_6_nodeIds[1]);
+
+  //edge 5-6 is only connected to element 1
+  stk::mesh::EntityId edge_5_6_nodeIds[] = {5, 6};
+  stk::mesh::Entity edge_5_6_nodes[numNodesPerEdge];
+  edge_5_6_nodes[0] = bulk.get_entity(stk::topology::NODE_RANK, edge_5_6_nodeIds[0]);
+  edge_5_6_nodes[1] = bulk.get_entity(stk::topology::NODE_RANK, edge_5_6_nodeIds[1]);
+
+  std::vector<stk::mesh::Entity> faces;
+
+  stk::mesh::impl::find_faces_these_nodes_have_in_common(bulk, numNodesPerEdge, edge_2_6_nodes, faces);
+
+  size_t expected_num_faces = 3;
+  EXPECT_EQ(expected_num_faces, faces.size());
+
+  stk::mesh::impl::find_faces_these_nodes_have_in_common(bulk, numNodesPerEdge, edge_5_6_nodes, faces);
+
+  expected_num_faces = 2;
+  EXPECT_EQ(expected_num_faces, faces.size());
 }
 
 TEST ( MeshImplUtils, find_locally_owned_elements_these_nodes_have_in_common )

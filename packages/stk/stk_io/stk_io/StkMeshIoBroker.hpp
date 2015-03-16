@@ -261,6 +261,15 @@ namespace stk {
       void set_bulk_data(Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data);
       void set_bulk_data(stk::mesh::BulkData &arg_bulk_data);
 
+      enum SideSetFaceCreationBehavior {
+          STK_IO_SIDESET_FACE_CREATION_CLASSIC = 42,
+          STK_IO_SIDESET_FACE_CREATION_CURRENT = 73
+      };
+      void set_sideset_face_creation_behavior(SideSetFaceCreationBehavior behavior)
+      {
+          m_sideset_face_creation_behavior = behavior;
+      }
+
       // Create the Ioss::DatabaseIO associated with the specified filename
       // and type (exodus by default). The routine checks that the
       // file exists and is readable and will throw an exception if not.
@@ -628,6 +637,9 @@ namespace stk {
       StkMeshIoBroker(const StkMeshIoBroker&); // Do not implement
       StkMeshIoBroker& operator=(const StkMeshIoBroker&); // Do not implement
       size_t m_active_mesh_index;
+
+      SideSetFaceCreationBehavior m_sideset_face_creation_behavior;
+
     };
 
     inline Teuchos::RCP<Ioss::Region> StkMeshIoBroker::get_output_io_region(size_t output_file_index) {

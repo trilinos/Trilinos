@@ -162,7 +162,7 @@ struct create_face_impl
 
         EntityVector permuted_face_nodes(faceTopology.num_nodes());
         stk::mesh::Entity element = m_bucket[ielem];
-        stk::mesh::impl::find_face_nodes_for_side<Topology>(mesh, element, side_ordinal, permuted_face_nodes);
+        stk::mesh::impl::find_face_nodes_for_side(mesh, element, side_ordinal, permuted_face_nodes);
         Entity face;
 
         typename face_map_type::iterator iface = m_face_map.find(permuted_face_nodes);
