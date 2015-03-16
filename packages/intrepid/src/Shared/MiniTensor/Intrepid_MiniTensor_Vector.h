@@ -146,7 +146,12 @@ public:
       iType index3);
 
   template<class ArrayT, typename iType>
-  Vector(ArrayT & data, iType index1, iType index2, iType index3, iType index4);
+  Vector(
+      ArrayT & data,
+      iType index1,
+      iType index2,
+      iType index3,
+      iType index4);
 
   template<class ArrayT, typename iType>
   Vector(
@@ -219,7 +224,7 @@ public:
       iType index4,
       iType index5,
       iType index6);
-  #endif
+ #endif
 
   Vector(T const * data_ptr);
 
