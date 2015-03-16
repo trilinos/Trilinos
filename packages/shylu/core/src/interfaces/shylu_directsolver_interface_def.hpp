@@ -70,7 +70,7 @@ DirectSolverInterface<Epetra_CrsMatrix, Epetra_MultiVector>::solve(Epetra_MultiV
     }
   else if(solverpackage.compare("Amesos2")==0)
     {
-#ifdef HAVE_SHYLU_AMESOS2
+#ifdef HAVE_SHYLUCORE_AMESOS2
       	returnvalue = solveAmesos2(b,x);
 #else
 	cout << "Amesos2 is not installed \n";
@@ -83,11 +83,12 @@ DirectSolverInterface<Epetra_CrsMatrix, Epetra_MultiVector>::solve(Epetra_MultiV
       }
     return returnvalue;
 }
-#ifdef HAVE_SHYLU_AMESOS2
+#ifdef HAVE_SHYLUCORE_AMESOS2
 template <class Matrix, class Vector>
 int DirectSolverInterface<Matrix,Vector>::solveAmesos2(Vector* b, Vector* x)
 {
 
+#pragma message("solve amesos2 compiled")
   //cout << "odd call";
   Teuchos::ParameterList subList = pList->sublist("Amesos2 Input");
   string solvertype = Teuchos::getParameter<string>(subList, "Solver");
