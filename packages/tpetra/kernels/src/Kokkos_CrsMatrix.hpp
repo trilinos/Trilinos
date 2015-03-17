@@ -110,12 +110,14 @@ namespace Kokkos {
 /// The stride is one for the compressed sparse row storage format (as
 /// is used by CrsMatrix), but may be greater than one for other
 /// sparse matrix storage formats (e.g., ELLPACK or jagged diagonal).
-template<class MatrixType>
+template<class MatrixType, class SizeType = typename MatrixType::size_type>
 struct SparseRowView {
   //! The type of the values in the row.
   typedef typename MatrixType::value_type value_type;
   //! The type of the column indices in the row.
   typedef typename MatrixType::ordinal_type ordinal_type;
+  //! The type of array offsets and strides.
+  typedef SizeType size_type;
 
 private:
   //! Array of values in the row.
@@ -123,7 +125,7 @@ private:
   //! Array of (local) column indices in the row.
   ordinal_type* colidx_;
   //! Stride between successive entries in the row.
-  const int stride_;
+  const size_type stride_;
 
 public:
   /// \brief Constructor
@@ -136,10 +138,11 @@ public:
   KOKKOS_INLINE_FUNCTION
   SparseRowView (value_type* const values,
                  ordinal_type* const colidx__,
-                 const int stride,
-                 const int count) :
+                 const size_type& stride,
+                 const size_type& count) :
     values_ (values), colidx_ (colidx__), stride_ (stride), length (count)
   {}
+
   /// \brief Constructor
   ///
   /// \param values [in] Array of the row's values.
@@ -149,10 +152,10 @@ public:
   /// \param count [in] Number of entries in the row.
   KOKKOS_INLINE_FUNCTION
   SparseRowView (const typename MatrixType::values_type& values,
-      const typename MatrixType::index_type& colidx__,
-                 const int& stride,
-                 const int& count,
-                 const int& idx) :
+                 const typename MatrixType::index_type& colidx__,
+                 const size_type& stride,
+                 const size_type& count,
+                 const size_type& idx) :
     values_ (&values(idx)), colidx_ (&colidx__(idx)), stride_ (stride), length (count)
   {}
 
@@ -161,14 +164,14 @@ public:
   /// This is a public const field rather than a public const method,
   /// in order to avoid possible overhead of a method call if the
   /// compiler is unable to inline that method call.
-  const int length;
+  const size_type length;
 
   /// \brief Reference to the value of entry i in this row of the sparse matrix.
   ///
   /// "Entry i" is not necessarily the entry with column index i, nor
   /// does i necessarily correspond to the (local) row index.
   KOKKOS_INLINE_FUNCTION
-  value_type& value (const int& i) const {
+  value_type& value (const size_type& i) const {
     return values_[i*stride_];
   }
 
@@ -177,7 +180,7 @@ public:
   /// "Entry i" is not necessarily the entry with column index i, nor
   /// does i necessarily correspond to the (local) row index.
   KOKKOS_INLINE_FUNCTION
-  ordinal_type& colidx (const int& i) const {
+  ordinal_type& colidx (const size_type& i) const {
     return colidx_[i*stride_];
   }
 };
@@ -190,12 +193,14 @@ public:
 /// This class is like SparseRowView, except that it provides a const
 /// view.  This class exists in order to let users get a const view of
 /// a row of a nonconst matrix.
-template<class MatrixType>
+template<class MatrixType, class SizeType = typename MatrixType::size_type>
 struct SparseRowViewConst {
   //! The type of the values in the row.
   typedef const typename MatrixType::non_const_value_type value_type;
   //! The type of the column indices in the row.
   typedef const typename MatrixType::non_const_ordinal_type ordinal_type;
+  //! The type of array offsets and strides.
+  typedef SizeType size_type;
 
 private:
   //! Array of values in the row.
@@ -203,7 +208,7 @@ private:
   //! Array of (local) column indices in the row.
   ordinal_type* colidx_;
   //! Stride between successive entries in the row.
-  const int stride_;
+  const size_type stride_;
 
 public:
   /// \brief Constructor
@@ -220,6 +225,7 @@ public:
                       const int count) :
     values_ (values), colidx_ (colidx__), stride_ (stride), length (count)
   {}
+
   /// \brief Constructor
   ///
   /// \param values [in] Array of the row's values.
@@ -229,10 +235,10 @@ public:
   /// \param count [in] Number of entries in the row.
   KOKKOS_INLINE_FUNCTION
   SparseRowViewConst (const typename MatrixType::values_type& values,
-      const typename MatrixType::index_type& colidx__,
-                 const int& stride,
-                 const int& count,
-                 const int& idx) :
+                      const typename MatrixType::index_type& colidx__,
+                      const size_type& stride,
+                      const size_type& count,
+                      const size_type& idx) :
     values_ (&values(idx)), colidx_ (&colidx__(idx)), stride_ (stride), length (count)
   {}
 
@@ -241,23 +247,25 @@ public:
   /// This is a public const field rather than a public const method,
   /// in order to avoid possible overhead of a method call if the
   /// compiler is unable to inline that method call.
-  const int length;
+  const size_type length;
 
-  /// \brief (Const) reference to the value of entry i in this row of the sparse matrix.
+  /// \brief (Const) reference to the value of entry i in this row of
+  ///   the sparse matrix.
   ///
   /// "Entry i" is not necessarily the entry with column index i, nor
   /// does i necessarily correspond to the (local) row index.
   KOKKOS_INLINE_FUNCTION
-  value_type& value (const int& i) const {
+  value_type& value (const size_type& i) const {
     return values_[i*stride_];
   }
 
-  /// \brief (Const) reference to the column index of entry i in this row of the sparse matrix.
+  /// \brief (Const) reference to the column index of entry i in this
+  ///   row of the sparse matrix.
   ///
   /// "Entry i" is not necessarily the entry with column index i, nor
   /// does i necessarily correspond to the (local) row index.
   KOKKOS_INLINE_FUNCTION
-  ordinal_type& colidx (const int& i) const {
+  ordinal_type& colidx (const size_type& i) const {
     return colidx_[i*stride_];
   }
 };
@@ -302,20 +310,20 @@ struct DeviceConfig {
 /// Trilinos traditionally uses to describe compressed sparse row
 /// storage for sparse matrices, as described, for example, in Saad
 /// (2nd ed.).
-template<typename ScalarType,
-         typename OrdinalType,
+template<class ScalarType,
+         class OrdinalType,
          class Device,
          class MemoryTraits = void,
-         typename SizeType = size_t>
+         class SizeType = size_t>
 class CrsMatrix {
 private:
   typedef typename Kokkos::ViewTraits<ScalarType*,Device,void,void>::host_mirror_space host_mirror_space ;
 public:
-  typedef Device        execution_space;
-  typedef ScalarType    value_type;
-  typedef OrdinalType   ordinal_type;
-  typedef MemoryTraits  memory_traits;
-  typedef SizeType      size_type;
+  typedef typename Device::execution_space execution_space;
+  typedef ScalarType                       value_type;
+  typedef OrdinalType                      ordinal_type;
+  typedef MemoryTraits                     memory_traits;
+  typedef SizeType                         size_type;
 
   //! Type of a host-memory mirror of the sparse matrix.
   typedef CrsMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits> HostMirror;
@@ -354,7 +362,7 @@ public:
   /// better solution though.
 
   //! Type of the graph structure of the sparse matrix.
-  typedef Kokkos::StaticCrsGraph<OrdinalType, Kokkos::LayoutLeft, Device,SizeType> StaticCrsGraphType;
+  typedef Kokkos::StaticCrsGraph<OrdinalType, Kokkos::LayoutLeft, Device, SizeType> StaticCrsGraphType;
 
   //! Type of column indices in the sparse matrix.
   typedef typename StaticCrsGraphType::entries_type index_type;
@@ -363,10 +371,10 @@ public:
   //! Kokkos Array type of the entries (values) in the sparse matrix.
   typedef Kokkos::View<value_type*, Kokkos::LayoutRight, execution_space, MemoryTraits> values_type;
   //! Const version of the type of the entries in the sparse matrix.
-  typedef typename values_type::const_value_type  const_value_type;
+  typedef typename values_type::const_value_type const_value_type;
   //! Nonconst version of the type of the entries in the sparse matrix.
-  typedef typename values_type::non_const_value_type  non_const_value_type;
-  typedef typename index_type ::non_const_value_type  non_const_ordinal_type;
+  typedef typename values_type::non_const_value_type non_const_value_type;
+  typedef typename index_type ::non_const_value_type non_const_ordinal_type;
 
 #ifdef KOKKOS_USE_CUSPARSE
   cusparseHandle_t cusparse_handle;
@@ -386,7 +394,7 @@ public:
   /// properties of the graph, not the matrix.  Then CrsMatrix needs
   /// methods to get these from the graph.
   CrsMatrix()
-    : graph(), values(), _numRows (0), _numCols (0), _nnz (0)
+    : graph(), values(), numRows_ (0), numCols_ (0), nnz_ (0)
     {}
 
   //------------------------------------
@@ -400,9 +408,9 @@ public:
   CrsMatrix(const CrsMatrix<SType,OType,DType,MTType,IType> & B) {
     graph = B.graph;
     values = B.values;
-    _numRows = B.numRows();
-    _numCols = B.numCols();
-    _nnz = B.nnz();
+    numRows_ = B.numRows();
+    numCols_ = B.numCols();
+    nnz_ = B.nnz();
   }
 
   //------------------------------------
@@ -413,9 +421,9 @@ public:
              const StaticCrsGraphType & arg_graph )
     : graph( arg_graph )
     , values( arg_label , arg_graph.entries.dimension_0() )
-    , _numRows( arg_graph.row_map.dimension_0() - 1 )
-    , _numCols( maximum_entry( arg_graph ) + 1 )
-    , _nnz( arg_graph.entries.dimension_0() )
+    , numRows_( arg_graph.row_map.dimension_0() - 1 )
+    , numCols_( maximum_entry( arg_graph ) + 1 )
+    , nnz_( arg_graph.entries.dimension_0() )
     {}
 
   //------------------------------------
@@ -490,9 +498,9 @@ public:
              values_type vals,
              row_map_type rows,
              index_type cols) :
-    _numRows (nrows),
-    _numCols (ncols),
-    _nnz (annz)
+    numRows_ (nrows),
+    numCols_ (ncols),
+    nnz_ (annz)
   {
     graph.row_map = rows;
     graph.entries = cols;
@@ -522,9 +530,9 @@ public:
              StaticCrsGraphType graph_) :
     graph(graph_),
     values(vals),
-    _numRows (graph_.row_map.dimension_0()-1),
-    _numCols (ncols),
-    _nnz (graph_.entries.dimension_0())
+    numRows_ (graph_.row_map.dimension_0()-1),
+    numCols_ (ncols),
+    nnz_ (graph_.entries.dimension_0())
   {
 #ifdef KOKKOS_USE_CUSPARSE
     cusparseCreate(&cusparse_handle);
@@ -540,29 +548,6 @@ public:
           ScalarType* val,
           OrdinalType* rows,
           OrdinalType* cols);
-
-  //! This is a method only for testing that creates a random sparse matrix.
-  void
-  generate (const std::string &label,
-            OrdinalType nrows,
-            OrdinalType ncols,
-            OrdinalType target_nnz,
-            OrdinalType varianz_nel_row,
-            OrdinalType width_row);
-
-  void
-  generate (const std::string &label,
-      OrdinalType nrows,
-      OrdinalType ncols,
-      OrdinalType cols_per_row);
-
-  void
-  generate (const std::string &label);
-
-  void
-  generateHostGraph (OrdinalType nrows,
-      OrdinalType ncols,
-      OrdinalType cols_per_row);
 
   // FIXME (mfh 29 Sep 2013) See notes on the three-argument version
   // of this method below.
@@ -628,25 +613,14 @@ public:
     }
   }
 
-  // FIXME (mfh 29 Sep 2013) It doesn't really make sense to template
-  // on the scalar or ordinal types of the input, since direct
-  // assignment of the underlying Views (which is how this operator
-  // works) won't work if the types aren't compatible.  It would make
-  // more sense to template on things like the Device and
-  // MemoryTraits.
-  //
-  // COMMENT: (CRT 1 Oct 2013) the alternative it to template on the incoming type,
-  // But that way it still matches this function even if you try to assign a vector
-  // to a matrix. Using the same scalar type and ordinal type as the 'this' matrix does
-  // not necessaryily work because of things like const / non-const
-
+  //! Attempt to assign the input matrix to \c *this.
   template<typename aScalarType, typename aOrdinalType, class aDevice, class aMemoryTraits,typename aSizeType>
   CrsMatrix&
-  operator= (const CrsMatrix<aScalarType,aOrdinalType,aDevice,aMemoryTraits, aSizeType>& mtx)
+  operator= (const CrsMatrix<aScalarType, aOrdinalType, aDevice, aMemoryTraits, aSizeType>& mtx)
   {
-    _numRows = mtx.numRows();
-    _numCols = mtx.numCols();
-    _nnz = mtx.nnz();
+    numRows_ = mtx.numRows ();
+    numCols_ = mtx.numCols ();
+    nnz_ = mtx.nnz ();
     graph = mtx.graph;
     values = mtx.values;
     dev_config = mtx.dev_config;
@@ -654,101 +628,56 @@ public:
   }
 
   //! The number of rows in the sparse matrix.
-  KOKKOS_INLINE_FUNCTION
-  ordinal_type numRows() const {
-    return _numRows;
+  KOKKOS_INLINE_FUNCTION ordinal_type numRows () const {
+    return numRows_;
   }
+
   //! The number of columns in the sparse matrix.
-  KOKKOS_INLINE_FUNCTION
-  ordinal_type numCols() const {
-    return _numCols;
+  KOKKOS_INLINE_FUNCTION ordinal_type numCols () const {
+    return numCols_;
   }
+
   //! The number of stored entries in the sparse matrix.
-  KOKKOS_INLINE_FUNCTION
-  ordinal_type nnz() const {
-    return _nnz;
+  KOKKOS_INLINE_FUNCTION ordinal_type nnz () const {
+    return nnz_;
   }
 
   friend struct SparseRowView<CrsMatrix>;
 
-  //! Return a view of row i of the matrix.
+  /// \brief Return a view of row i of the matrix.
+  ///
+  /// If row i does not belong to the matrix, return an empty view.
   KOKKOS_INLINE_FUNCTION
-  SparseRowView<CrsMatrix> row (int i) const {
-    const int start = graph.row_map(i);
-    const int count = graph.row_map(i+1) - start;
+  SparseRowView<CrsMatrix> row (const ordinal_type i) const {
+    const size_type start = graph.row_map(i);
+    const size_type count = graph.row_map(i+1) - start;
 
-
-    // If the last row in a matrix has zero entries the SparseRowView constructor
-    // taking views will not pass the bounds check. The violation is only done
-    // in an address calculation [ &values(start) ] and is not used since count is
-    // zero, but the bounds check will fail. This will most likely also trigger a
-    // invalid read message with valgrind.
-#if defined ( KOKKOS_EXPRESSION_CHECK )
-    if(count==0) return SparseRowView<CrsMatrix> (NULL,NULL,1,0);
-#endif
-    return SparseRowView<CrsMatrix> (values, graph.entries, 1, count,start);
-  }
-
-  //! Return a const view of row i of the matrix.
-  KOKKOS_INLINE_FUNCTION
-  SparseRowViewConst<CrsMatrix> rowConst (int i) const {
-    const int start = graph.row_map(i);
-    const int count = graph.row_map(i+1) - start;
-
-#if defined ( KOKKOS_EXPRESSION_CHECK )
-    if(count==0) return SparseRowViewConst<CrsMatrix> (NULL,NULL,1,0);
-#endif
-    return SparseRowViewConst<CrsMatrix> (values, graph.entries, 1, count,start);
-  }
-
-private:
-
-  ordinal_type _numRows;
-  ordinal_type _numCols;
-  ordinal_type _nnz;
-
-public:
-
-  // FIXME: [HCE 2013-12-03] The following members will be removed soon.
-
-  // FIXME (mfh 28 Sep 2013) std::vector should never appear in this
-  // class, except perhaps as an input format for compatibility.
-
-  std::vector<OrdinalType> h_entries_;
-  std::vector<OrdinalType> rows_;
-
-  // FIXME (mfh 29 Sep 2013) There should not be an "insertInGraph"
-  // method.  If you want to insert into the graph, you should get the
-  // graph and insert into it.  If you want to change the structure of
-  // the matrix, you should be required to specify a value to put in
-  // the new spot.
-  //
-  // Furthermore, this should be a device function, by analogy with
-  // UnorderedMap.
-  void
-  insertInGraph (const OrdinalType rowi, OrdinalType *cols, const size_t ncol)
-  {
-    OrdinalType* const start = &h_entries_[rows_[rowi]];
-    OrdinalType* const end   = &h_entries_[rows_[rowi+1]];
-    for (size_t i = 0; i < ncol; ++i) {
-      OrdinalType *iter = start;
-      while (iter < end && *iter != -1 && *iter != cols[i]) {
-        ++iter;
-      }
-
-      // FIXME (mfh 29 Sep 2013) Use of assert() statements is only
-      // acceptable for debugging.  It's legitimate for insertions to
-      // fail.  We should use the techniques that Dan Sunderland uses
-      // in UnorderedMap; for example:
-      //
-      // 1. Insertion should return an indication of success or failure
-      // 2. The graph should keep track of the number of failed insertions
-
-      assert (iter != end );
-      *iter = cols[i];
+    if (count == 0) {
+      return SparseRowView<CrsMatrix> (NULL, NULL, 1, 0);
+    } else {
+      return SparseRowView<CrsMatrix> (values, graph.entries, 1, count, start);
     }
   }
 
+  /// \brief Return a const view of row i of the matrix.
+  ///
+  /// If row i does not belong to the matrix, return an empty view.
+  KOKKOS_INLINE_FUNCTION
+  SparseRowViewConst<CrsMatrix> rowConst (const ordinal_type i) const {
+    const size_type start = graph.row_map(i);
+    const size_type count = graph.row_map(i+1) - start;
+
+    if (count == 0) {
+      return SparseRowViewConst<CrsMatrix> (NULL, NULL, 1, 0);
+    } else {
+      return SparseRowViewConst<CrsMatrix> (values, graph.entries, 1, count, start);
+    }
+  }
+
+private:
+  ordinal_type numRows_;
+  ordinal_type numCols_;
+  ordinal_type nnz_;
 };
 
 //----------------------------------------------------------------------------
@@ -768,16 +697,16 @@ import (const std::string &label,
   std::string str = label;
   values = values_type (str.append (".values"), annz);
 
-  _numRows = nrows;
-  _numCols = ncols;
-  _nnz = annz;
+  numRows_ = nrows;
+  numCols_ = ncols;
+  nnz_ = annz;
 
   // FIXME (09 Aug 2013) CrsArray only takes std::vector for now.
   // We'll need to fix that.
-  std::vector<int> row_lengths (_numRows, 0);
+  std::vector<int> row_lengths (numRows_, 0);
 
   // FIXME (mfh 21 Jun 2013) This calls for a parallel_for kernel.
-  for (int i = 0; i < _numRows; ++i) {
+  for (int i = 0; i < numRows_; ++i) {
     row_lengths[i] = rows[i + 1] - rows[i];
   }
 
@@ -789,7 +718,7 @@ import (const std::string &label,
   // FIXME (mfh 21 Jun 2013) This needs to be a parallel copy.
   // Furthermore, why are the arrays copied twice? -- once here, to a
   // host view, and once below, in the deep copy?
-  for (OrdinalType i = 0; i < _nnz; ++i) {
+  for (OrdinalType i = 0; i < nnz_; ++i) {
     if (val) {
       h_values(i) = val[i];
     }
@@ -798,152 +727,6 @@ import (const std::string &label,
 
   Kokkos::deep_copy (values, h_values);
   Kokkos::deep_copy (graph.entries, h_entries);
-}
-
-template<typename ScalarType, typename OrdinalType, class Device, class MemoryTraits, typename SizeType>
-void
-CrsMatrix<ScalarType, OrdinalType, Device, MemoryTraits, SizeType >::
-generate (const std::string &label,
-          OrdinalType nrows,
-          OrdinalType ncols,
-          OrdinalType target_nnz,
-          OrdinalType varianz_nel_row,
-          OrdinalType width_row)
-{
-  _numRows = nrows;
-  _numCols = ncols;
-
-  graph.row_map = row_map_type ("CrsMatrix::rowPtr", nrows + 1);
-  typename row_map_type::HostMirror h_row_map = Kokkos::create_mirror_view (graph.row_map);
-
-  // FIXME (mfh 21 Jun 2013) What is this method actualy doing?  It
-  // looks like it's not setting the structure or values of the matrix
-  // at all.
-
-  OrdinalType elements_per_row = target_nnz / nrows;
-  srand(13721);
-  h_row_map(0) = 0;
-
-  for (int rowi = 0; rowi < nrows; ++rowi) {
-   // int varianz = (1.0 * rand() / INT_MAX - 0.5) * varianz_nel_row;
-   // h_row_map(row + 1) = h_row_map(row) + elements_per_row + varianz;
-  }
-
-  _nnz = h_row_map(nrows);
-  values = values_type("CrsMatrix::values", _nnz);
-  graph.entries = index_type("CrsMatrix::colInd", _nnz);
-  typename values_type::HostMirror h_values = Kokkos::create_mirror_view(values);
-  typename index_type::HostMirror h_entries = Kokkos::create_mirror_view(graph.entries);
-
-  for(int rowi = 0; rowi < nrows; rowi++) {
-    for(int k = h_row_map(rowi); k < h_row_map(rowi + 1); k++) {
-      //int pos = (1.0 * rand() / INT_MAX - 0.5) * width_row;
-
-      //if(pos < 0) pos += ncols;
-
-     // if(pos >= ncols) pos -= ncols;
-
-     // h_entries(k) = pos;
-     // h_values(k) = 100.0 * rand() / INT_MAX - 50.0;
-    }
-  }
-
-  Kokkos::deep_copy(values, h_values);
-  Kokkos::deep_copy(graph.entries, h_entries);
-  Kokkos::deep_copy(graph.row_map, h_row_map);
-
-}
-
-template<typename ScalarType, typename OrdinalType, class Device, class MemoryTraits, typename SizeType>
-void
-CrsMatrix<ScalarType, OrdinalType, Device, MemoryTraits, SizeType >::
-generate (const std::string &label,
-    OrdinalType nrows,
-    OrdinalType ncols,
-    OrdinalType cols_per_row)
-{
-  _numRows = nrows;
-  _numCols = ncols;
-  _nnz = nrows*cols_per_row;
-
-  std::string str = label;
-  values = values_type (str.append (".values"), _nnz);
-
-
-  std::vector<int> row_lengths (_numRows, 0);
-
-  // FIXME (mfh 21 Jun 2013) This calls for a parallel_for kernel.
-  for (int i = 0; i < _numRows; ++i) {
-    row_lengths[i] = cols_per_row;
-  }
-
-  str = label;
-  graph = Kokkos::create_staticcrsgraph<StaticCrsGraphType> (str.append (".graph"), row_lengths);
-  typename values_type::HostMirror h_values = Kokkos::create_mirror_view (values);
-  typename index_type::HostMirror h_entries = Kokkos::create_mirror_view (graph.entries);
-
-  // FIXME (mfh 21 Jun 2013) Why is this copy not a parallel copy?
-  // Furthermore, why are the arrays copied twice? -- once here, to a
-  // host view, and once below, in the deep copy?
-  for (OrdinalType i = 0; i < _nnz; ++i) {
-    h_values(i) = ScalarType();
-    h_entries(i) = OrdinalType();
-  }
-
-  Kokkos::deep_copy (values, h_values);
-  Kokkos::deep_copy (graph.entries, h_entries);
-}
-template<typename ScalarType, typename OrdinalType, class Device, class MemoryTraits, typename SizeType>
-void
-CrsMatrix<ScalarType, OrdinalType, Device, MemoryTraits, SizeType >::
-generate (const std::string &label)
-{
-  // Compress the entries
-  size_t ptr_from= 0, ptr_to = 0;
-  int cur_row = 0;
-  while ( ptr_from < h_entries_.size()) {
-    size_t  row_stop = rows_[cur_row+1];
-    while (ptr_from < row_stop) {
-      if ( h_entries_[ptr_from] == OrdinalType(-1)) {
-        ptr_from = row_stop;
-      } else {
-        h_entries_[ptr_to++] = h_entries_[ptr_from++];
-      }
-    }
-    rows_[++cur_row] = ptr_to;
-  }
-  OrdinalType nrows = rows_.size()-1;
-  OrdinalType nnz_ = ptr_to;
-
-  h_entries_.resize(nnz_);
-
-  //sort the rows
-  for (OrdinalType i=0; i<nrows; ++i )
-    std::sort(&h_entries_[i], &h_entries_[i+1]);
-
-  // generate the matrix
-  import(label, nrows, nrows, nnz_, NULL, &rows_[0], &h_entries_[0]);
-
-}
-
-
-template<typename ScalarType, typename OrdinalType, class Device, class MemoryTraits, typename SizeType>
-void
-CrsMatrix<ScalarType, OrdinalType, Device, MemoryTraits, SizeType >::
-generateHostGraph ( OrdinalType nrows,
-    OrdinalType ncols,
-    OrdinalType cols_per_row)
-{
-  _numRows = nrows;
-  _numCols = ncols;
-  _nnz = nrows*cols_per_row;
-
-  h_entries_.resize(_nnz, OrdinalType(-1));
-  rows_.resize(_numRows+1);
-  rows_[0] = 0;
-  for (OrdinalType i = 0; i < _numRows; ++i)
-    rows_[i+1] = rows_[i]+cols_per_row;
-
 }
 
 template<class DeviceType>
