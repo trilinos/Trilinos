@@ -335,6 +335,14 @@ int client_test3(NNTI_buffer_t *local_multiuse_mr)
     memset(&remote_multiuse_mr, 0, sizeof(NNTI_buffer_t));
     xdr_NNTI_buffer_t(&recv_xdrs, &remote_multiuse_mr);
 
+    if (logging_debug(multiuse_debug_level)) {
+        fprint_NNTI_buffer(logger_get_file(), "remote_multiuse_mr",
+                "after XDR decode", &remote_multiuse_mr);
+
+        fprint_NNTI_buffer(logger_get_file(), "local_multiuse_mr",
+                "before GET", local_multiuse_mr);
+    }
+
     /*
      * this is just an ACK that we are done with the recv_mr.
      */
@@ -409,6 +417,7 @@ int client(void)
     MPI_Bcast(&url[0], NNTI_URL_LEN, MPI_CHAR, 0, MPI_COMM_WORLD);
     NNTI_connect(&trans_hdl, url, 5000, &server_hdl);
 
+    for (int i=0;i<100;i++) {
     /* I play the target role here */
     success = client_test1(&local_multiuse_mr);
     if (success == FALSE) {
@@ -445,6 +454,7 @@ int client(void)
 
     /* I am the PUT initiator and the GET target */
     server_test3(&local_multiuse_mr);
+    }
 
 out:
     NNTI_free(&local_multiuse_mr);
@@ -709,7 +719,7 @@ void server_test3(NNTI_buffer_t *local_multiuse_mr)
     log_debug(multiuse_debug_level, "exit");
 }
 
-void server(void)
+int server(void)
 {
     int success=TRUE;
     char url[NNTI_URL_LEN];
@@ -726,6 +736,7 @@ void server(void)
     MPI_Bcast(&url[0], NNTI_URL_LEN, MPI_CHAR, 0, MPI_COMM_WORLD);
     log_debug(multiuse_debug_level, "multiuse server url is %s", url);
 
+    for (int i=0;i<100;i++) {
     /* I play the initiator role here */
     server_test1(&local_multiuse_mr);
 
@@ -761,6 +772,7 @@ void server(void)
         goto out;
     }
     fprintf(stdout, "TEST #6 passed\n");
+    }
 
 out:
     NNTI_free(&local_multiuse_mr);
@@ -769,7 +781,7 @@ out:
 
     log_debug(multiuse_debug_level, "exit");
 
-    return;
+    return(success);
 }
 
 NNTI_transport_id_t get_transport_from_env()
@@ -793,7 +805,7 @@ NNTI_transport_id_t get_transport_from_env()
 
 int main(int argc, char *argv[])
 {
-	int success=0;
+	int success=TRUE, result=TRUE;
     int nprocs, rank;
 
     NNTI_transport_id_t trans_id=NNTI_DEFAULT_TRANSPORT;
@@ -818,7 +830,7 @@ int main(int argc, char *argv[])
     	success=client();
     }
 
-    MPI_Bcast(&success, 1, MPI_INT, 1, MPI_COMM_WORLD);
+    MPI_Reduce(&success, &result, 1, MPI_INT, MPI_MIN, 1, MPI_COMM_WORLD);
 
     NNTI_fini(&trans_hdl);
 
