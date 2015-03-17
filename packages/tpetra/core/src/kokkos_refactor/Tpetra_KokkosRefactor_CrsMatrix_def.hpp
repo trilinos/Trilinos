@@ -1242,13 +1242,6 @@ namespace Tpetra {
       this->storageStatus_ = Details::STORAGE_1D_PACKED;
     }
 
-    RCP<Teuchos::ParameterList> lclparams;
-    if (params.is_null ()) {
-      lclparams = Teuchos::parameterList ();
-    } else {
-      lclparams = Teuchos::sublist (params, "Local Graph");
-    }
-
     // Make the local graph, using the arrays of row offsets and
     // column indices that we built above.  The local graph should be
     // null, but we delete it first so that any memory can be freed
@@ -1261,16 +1254,9 @@ namespace Tpetra {
       typename Graph::LocalStaticCrsGraphType (k_inds, k_ptrs_const);
 
     // Make the local matrix, using the local graph and vals array.
-
-    // FIXME (mfh 28 Aug 2014) "Local Sparse Ops" sublist is now ignored.
-
-    // k_lclMatrix_ = k_local_matrix_type ("Tpetra::CrsMatrix::k_lclMatrix_",
-    //                                     getNodeNumCols (), k_vals,
-    //                                     staticGraph_->getLocalGraph_Kokkos ());
     k_lclMatrix_ = k_local_matrix_type ("Tpetra::CrsMatrix::k_lclMatrix_",
                                         getNodeNumCols (), k_vals,
                                         myGraph_->k_lclGraph_);
-    // FIXME (mfh 28 Aug 2014) "Local Sparse Ops" sublist is now ignored.
   }
 
   template <class Scalar,
@@ -1502,14 +1488,11 @@ namespace Tpetra {
       this->storageStatus_ = Details::STORAGE_1D_PACKED;
     }
 
-    // FIXME (mfh 28 Aug 2014) "Local Matrix" sublist is now ignored.
-
     // Build the local sparse matrix object.
     k_lclMatrix_ = k_local_matrix_type ("Tpetra::CrsMatrix::k_lclMatrix_",
                                         getDomainMap ()->getNodeNumElements (),
                                         k_vals,
                                         staticGraph_->getLocalGraph_Kokkos ());
-    // FIXME (mfh 28 Aug 2014) "Local Sparse Ops" sublist is now ignored.
   }
 
   template<class Scalar,
