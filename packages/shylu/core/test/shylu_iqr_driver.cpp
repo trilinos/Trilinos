@@ -161,7 +161,9 @@ int main(int argc, char** argv)
                           << " Ifpack_DynamicFactory. Exiting." << std::endl;
             }
             cout << fail << endl;
+#ifdef HAVE_MPI
             MPI_Finalize();
+#endif
             return -1;
         }
     }
@@ -185,12 +187,16 @@ int main(int argc, char** argv)
                                                      cl.parse (argc, argv);
         if ( parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) {
           cout << fail << endl;
+#ifdef HAVE_MPI
             MPI_Finalize();
+#endif
             return 0;
         }
         if( parseReturn != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL   ) {
           cout << fail << endl;
+#ifdef HAVE_MPI
             MPI_Finalize();
+#endif
             return -2;
         }
     }
@@ -241,7 +247,9 @@ int main(int argc, char** argv)
                      err << std::endl;
             }
             cout << fail << endl;
+#ifdef HAVE_MPI
             MPI_Finalize();
+#endif
             return -3;
         }
     }
@@ -274,7 +282,9 @@ int main(int argc, char** argv)
              err << std::endl;
         }
         cout << fail << endl;
+#ifdef HAVE_MPI
         MPI_Finalize();
+#endif
         return -3;
     }
 
@@ -370,7 +380,9 @@ int main(int argc, char** argv)
                 << std::endl;
         }
         cout << fail << endl;
+#ifdef HAVE_MPI
         MPI_Finalize();
+#endif
         return -4;
     }
     ParameterList mlParameters = globalParams->sublist("ML parameters");
@@ -381,7 +393,9 @@ int main(int argc, char** argv)
                      std::endl;
         }
         cout << fail << endl;
+#ifdef HAVE_MPI
         MPI_Finalize();
+#endif
         return -5;
     }
     ParameterList belosParams = globalParams->sublist("Belos parameters");
@@ -456,7 +470,9 @@ int main(int argc, char** argv)
           << " Exiting." << std::endl;
         }
         cout << fail << endl;
+#ifdef HAVE_MPI
         MPI_Finalize();
+#endif
         return -6;
     }
 
@@ -473,7 +489,9 @@ int main(int argc, char** argv)
             <<" precision. Test failed." << std::endl;
         }
         cout << fail << endl;
+#ifdef HAVE_MPI
         MPI_Finalize();
+#endif
         return -7;
     }
     // Print time measurements
@@ -580,8 +598,9 @@ int main(int argc, char** argv)
 
 
     MLprec.reset();
-
+#ifdef HAVE_MPI
     MPI_Finalize();
+#endif
     return 0;
 }
 

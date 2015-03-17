@@ -88,7 +88,7 @@ template <class Matrix, class Vector>
 int DirectSolverInterface<Matrix,Vector>::solveAmesos2(Vector* b, Vector* x)
 {
 
-#pragma message("solve amesos2 compiled")
+  //#pragma message("solve amesos2 compiled")
   //cout << "odd call";
   Teuchos::ParameterList subList = pList->sublist("Amesos2 Input");
   string solvertype = Teuchos::getParameter<string>(subList, "Solver");

@@ -187,9 +187,15 @@ SET(PARAKLETE_KLU_COMMON
   )
 
 
-SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_KLU_COMMON},
-        PROPERTIES
-        COMPILE_FLAGS "-Wno-all -Wno-pedantic")
+  IF(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+        SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_KLU_COMMON},
+                PROPERTIES
+                COMPILE_FLAGS "-Wno-all -Wno-pedantic")
+  ELSE()
+       SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_KLU_COMMON},
+                PROPERTIES
+                COMPILE_FLAGS "-Wno-all")
+  ENDIF()
 
          
 
@@ -243,9 +249,16 @@ IF (${PACKAGE_NAME}_ENABLE_KLU)
     )
     
 
-    SET_SOURCE_FILES_PROPERTIES(${KLU_FILES},
-        PROPERTIES
-        COMPILE_FLAGS "-Wno-all -Wno-pedantic")
+    IF(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+        SET_SOURCE_FILES_PROPERTIES(${KLU_FILES},
+                PROPERTIES
+                COMPILE_FLAGS "-Wno-all -Wno-pedantic")
+    ELSE()
+         SET_SOURCE_FILES_PROPERTIES(${KLU_FILES},
+                PROPERTIES
+                COMPILE_FLAGS "-Wno-all")
+    ENDIF()
+
 
 
     SET(SOURCES ${SOURCES}
@@ -288,9 +301,15 @@ IF (${PACKAGE_NAME}_ENABLE_PARAKLETE)
     )
 
 
-   SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_HEADERS},
-                              PROPERTIES
-                              COMPILE_FLAGS "-Wno-all -Wno-pedantic")
+   IF(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+                              SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_HEADERS},
+                                PROPERTIES
+                                COMPILE_FLAGS "-Wno-all -Wno-pedantic")
+   ELSE()
+        SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_HEADERS},
+                                PROPERTIES
+                                COMPILE_FLAGS "-Wno-all ")
+   ENDIF()
   
 
 
@@ -369,11 +388,17 @@ IF (${PACKAGE_NAME}_ENABLE_PARAKLETE)
     SuiteSparse/BTF/Source/amesos_btf_l_strongcomp.c
  )
 
- 
+    
+    IF(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+
      SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_SOURCE},
                               PROPERTIES
                               COMPILE_FLAGS "-Wno-all -Wno-pedantic")
- 
+   ELSE()
+      SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_SOURCE},
+                              PROPERTIES
+                              COMPILE_FLAGS "-Wno-all")
+  ENDIF()
 
 
   SET(SOURCES ${SOURCES}

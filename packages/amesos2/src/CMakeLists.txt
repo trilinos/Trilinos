@@ -166,6 +166,7 @@ IF (${PACKAGE_NAME}_ENABLE_LAPACK)
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_KLU2)
+  
   APPEND_SET(HEADERS
     Amesos2_KLU2.hpp
     Amesos2_KLU2_decl.hpp
@@ -181,6 +182,40 @@ IF (${PACKAGE_NAME}_ENABLE_KLU2)
    APPEND_SET(SOURCES
       Amesos2_KLU2.cpp
       )
+
+
+   SET(KLU_HEADERS
+        SuiteSparse/KLU2/Source/klu2_analyze_given.hpp
+        SuiteSparse/KLU2/Source/klu2_analyze.hpp
+        SuiteSparse/KLU2/Source/klu2_defaults.hpp
+        SuiteSparse/KLU2/Source/klu2_diagnostics.hpp 
+        SuiteSparse/KLU2/Source/klu2_dump.hpp
+        SuiteSparse/KLU2/Source/klu2_extract.hpp
+        SuiteSparse/KLU2/Source/klu2_factor.hpp
+        SuiteSparse/KLU2/Source/klu2_free_numeric.hpp 
+        SuiteSparse/KLU2/Source/klu2_free_symbolic.hpp
+        SuiteSparse/KLU2/Source/klu2_refactor.hpp
+        SuiteSparse/KLU2/Source/klu2.hpp
+        SuiteSparse/KLU2/Source/klu2_kernel.hpp
+        SuiteSparse/KLU2/Source/klu2_memory.hpp
+        SuiteSparse/KLU2/Source/klu2_refactor.hpp
+        SuiteSparse/KLU2/Source/klu2_scale.hpp
+        SuiteSparse/KLU2/Source/klu2_solve.hpp
+        SuiteSparse/KLU2/Source/klu2_sort.hpp
+        SuiteSparse/KLU2/Source/klu2_tsolve.hpp
+        SuiteSparse/KLU2/Include/klu2_ext.hpp
+        SuiteSparse/KLU2/Include/klu2.h
+        SuiteSparse/KLU2/Include/klu2_internal.h
+        SuiteSparse/KLU2/Include/klu2_ordinaltraits.h
+        SuiteSparse/KLU2/Include/klu2_scalartraits.h
+        SuiteSparse/KLU2/Include/klu2_version.h
+     )
+
+     #IF(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+              SET_SOURCE_FILES_PROPERTIES(${KLU_HEADERS},
+              PROPERTIES
+              COMPILE_FLAGS "-Wno-shadow")
+
 
     APPEND_SET(HEADERS
         SuiteSparse/KLU2/Source/klu2_analyze_given.hpp

@@ -456,6 +456,10 @@ int TestOneMatrix( const std::vector<bool> AmesosClassesInstalled,
     RangemapMax = 1 ;
     DomainmapMax = 1 ;
   }
+  else{
+    RangemapMax = 4;
+    DomainmapMax = 4;
+  }
 
 
 

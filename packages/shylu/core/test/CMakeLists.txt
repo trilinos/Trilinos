@@ -10,6 +10,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     belos_driver
     SOURCES shylu_belos_driver.cpp
     COMM serial mpi
+    NUM_MPI_PROCS 4
     )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -45,6 +46,5 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(ShyLUDriverFiles
     shylu_no_iqr_parameters.xml wathen96.mtx wathenSmall.mtx wathenTiny.mtx
     shylu_iqr_parameters.seq.xml
     ShyLU_epetra_interface.xml
-#    EXEDEPS aztec_driver belos_driver
     EXEDEPS belos_driver iqr_driver epetra_interface
     )

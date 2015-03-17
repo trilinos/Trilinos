@@ -111,8 +111,13 @@ int main(int argc, char *argv[])
     Teuchos::ParameterList shyLUList ;    // ShyLU parameters
     string ipFileName = "ShyLU.xml";       // TODO : Accept as i/p
 
+#ifdef HAVE_MPI
     nProcs = mpiSession.getNProc();
     myPID = Comm.MyPID();
+#else
+    nProcs = 1;
+    myPID = 0;
+#endif
 
     if (myPID == 0)
     {
