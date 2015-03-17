@@ -933,20 +933,12 @@ bool MOERTEL::Overlap::buildPoly(std::vector<double>& source_xi, std::vector<dou
 
   // Go to the end of the input poly data
 
-  for(unsigned int i = static_cast<unsigned int>(index); i < source_xi.size(); i++){
+  const unsigned int source_xi_size = source_xi.size();
+  for(unsigned int i = static_cast<unsigned int>(index); i < source_xi_size; ++i){
 
-    if(i + 1 >= source_xi.size() - 1){ // p is at the beginning of the list
-
-      point_p[0] = source_xi[0];
-      point_p[1] = source_eta[0];
-
-    }
-    else {
-
-      point_p[0] = source_xi[i + 1];
-      point_p[1] = source_eta[i + 1];
-
-    }
+    const int slot = (i+1)%source_xi_size;
+    point_p[0] = source_xi[slot];
+    point_p[1] = source_eta[slot];
 
     p_in = Clip_TestPoint(N, PE, point_p, eps); // true if point is inside edge
 

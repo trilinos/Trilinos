@@ -276,6 +276,7 @@ void MOERTEL::Node::Reset()
   pnode_.clear();
 
   // Delete internal state of M and D integration
+  LMdof_.clear();
   Drow_ = Teuchos::null;
   Mrow_ = Teuchos::null;
   Mmodrow_ = Teuchos::null;
