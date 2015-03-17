@@ -142,8 +142,8 @@ namespace Tpetra {
     typedef LocalOrdinal local_ordinal_type;
     //! This class' second template parameter; the type of global indices.
     typedef GlobalOrdinal global_ordinal_type;
-    //! This class' third template parameter; the Kokkos device type.
-    typedef DeviceType execution_space;
+    //! This class' Kokkos execution space.
+    typedef typename DeviceType::execution_space execution_space;
     /// \brief The Kokkos Node type used by this class.
     ///
     /// This type depends on the DeviceType template parameter.  In
@@ -1623,7 +1623,10 @@ namespace Tpetra {
     ///
     /// This is only a valid representation of the local graph if the
     /// (global) graph is fill complete.
-    LocalStaticCrsGraphType getLocalGraph_Kokkos () const;
+    LocalStaticCrsGraphType getLocalGraph () const;
+
+    //! Get the local graph (DEPRECATED: call getLocalGraph() instead).
+    TEUCHOS_DEPRECATED LocalStaticCrsGraphType getLocalGraph_Kokkos () const;
 
     void fillLocalGraph (const Teuchos::RCP<Teuchos::ParameterList>& params);
 
@@ -1658,7 +1661,7 @@ namespace Tpetra {
     Teuchos::RCP<const export_type> exporter_;
 
     //! Local graph; only initialized after first fillComplete() call.
-    LocalStaticCrsGraphType k_lclGraph_;
+    LocalStaticCrsGraphType lclGraph_;
 
     // Local and Global Counts
     // nodeNumEntries_ and nodeNumAllocated_ are required to be always consistent

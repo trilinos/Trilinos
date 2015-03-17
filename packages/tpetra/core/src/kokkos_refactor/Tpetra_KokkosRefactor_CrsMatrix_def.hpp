@@ -1249,14 +1249,14 @@ namespace Tpetra {
     //
     // FIXME (mfh 06,28 Aug 2014) It would make more sense for
     // Tpetra::CrsGraph to have a protected method that accepts k_inds
-    // and k_ptrs, and creates the local graph k_lclGraph_.
-    myGraph_->k_lclGraph_ =
+    // and k_ptrs, and creates the local graph lclGraph_.
+    myGraph_->lclGraph_ =
       typename Graph::LocalStaticCrsGraphType (k_inds, k_ptrs_const);
 
     // Make the local matrix, using the local graph and vals array.
     k_lclMatrix_ = k_local_matrix_type ("Tpetra::CrsMatrix::k_lclMatrix_",
                                         getNodeNumCols (), k_vals,
-                                        myGraph_->k_lclGraph_);
+                                        myGraph_->lclGraph_);
   }
 
   template <class Scalar,
@@ -1296,7 +1296,7 @@ namespace Tpetra {
     ArrayRCP<Array<LO> > lclInds2D = staticGraph_->lclInds2D_;
     size_t nodeNumEntries   = staticGraph_->nodeNumEntries_;
     size_t nodeNumAllocated = staticGraph_->nodeNumAllocated_;
-    row_map_type k_rowPtrs_ = staticGraph_->k_lclGraph_.row_map;
+    row_map_type k_rowPtrs_ = staticGraph_->lclGraph_.row_map;
 
     row_map_type k_ptrs; // "packed" row offsets array
     t_ValuesType k_vals; // "packed" values array
@@ -1492,7 +1492,7 @@ namespace Tpetra {
     k_lclMatrix_ = k_local_matrix_type ("Tpetra::CrsMatrix::k_lclMatrix_",
                                         getDomainMap ()->getNodeNumElements (),
                                         k_vals,
-                                        staticGraph_->getLocalGraph_Kokkos ());
+                                        staticGraph_->getLocalGraph ());
   }
 
   template<class Scalar,

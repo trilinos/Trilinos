@@ -466,11 +466,11 @@ namespace Tpetra {
     : DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, node_type> (rowMap)
     , rowMap_ (rowMap)
     , colMap_ (colMap)
-    , k_lclGraph_ (k_local_graph_)
+    , lclGraph_ (k_local_graph_)
     , globalNumEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , globalNumDiags_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , globalMaxNumRowEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
-    , nodeNumEntries_ (0) // FIXME (mfh 17 Mar 2014) should get from k_lclGraph_ right now
+    , nodeNumEntries_ (0) // FIXME (mfh 17 Mar 2014) should get from lclGraph_ right now
     , nodeNumAllocated_ (Teuchos::OrdinalTraits<size_t>::invalid ())
     , pftype_ (StaticProfile)
     , numAllocForAllRows_ (0)
@@ -531,19 +531,11 @@ namespace Tpetra {
     setDomainRangeMaps (rowMap_, rowMap_);
     makeImportExport ();
 
-    RCP<ParameterList> lclparams;
-    if (params.is_null ()) {
-      lclparams = parameterList ();
-    } else {
-      lclparams = sublist (params, "Local Graph");
-    }
-    // FIXME (mfh 28 Aug 2014) "Local Graph" sublist not used.
+    k_lclInds1D_ = lclGraph_.entries;
+    k_rowPtrs_ = lclGraph_.row_map;
 
-    k_lclInds1D_ = k_lclGraph_.entries;
-    k_rowPtrs_ = k_lclGraph_.row_map;
-
-    typename LocalStaticCrsGraphType::row_map_type d_ptrs = k_lclGraph_.row_map;
-    typename LocalStaticCrsGraphType::entries_type d_inds = k_lclGraph_.entries;
+    typename LocalStaticCrsGraphType::row_map_type d_ptrs = lclGraph_.row_map;
+    typename LocalStaticCrsGraphType::entries_type d_inds = lclGraph_.entries;
 
     // Reset local properties
     upperTriangular_ = true;
@@ -3923,7 +3915,7 @@ namespace Tpetra {
     // FIXME (mfh 28 Aug 2014) "Local Graph" sublist no longer used.
 
     // Build the local graph.
-    k_lclGraph_ = LocalStaticCrsGraphType (k_inds, k_ptrs_const);
+    lclGraph_ = LocalStaticCrsGraphType (k_inds, k_ptrs_const);
 
     // TODO (mfh 13 Mar 2014) getNodeNumDiags(), isUpperTriangular(),
     // and isLowerTriangular() depend on computeGlobalConstants(), in
@@ -4267,6 +4259,17 @@ namespace Tpetra {
     importer_ = Teuchos::rcp_const_cast<import_type> (newImporter);
   }
 
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  typename CrsGraph<
+    LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::LocalStaticCrsGraphType
+  CrsGraph<
+    LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
+  getLocalGraph () const
+  {
+    return lclGraph_;
+  }
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   typename CrsGraph<
@@ -4277,9 +4280,8 @@ namespace Tpetra {
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   getLocalGraph_Kokkos () const
   {
-    return k_lclGraph_;
+    return lclGraph_;
   }
-
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
@@ -4512,7 +4514,7 @@ namespace Tpetra {
       }
     } // globallyIndexed() && lclNumRows > 0
 
-    k_lclGraph_ = LocalStaticCrsGraphType (k_lclInds1D_, k_rowPtrs_);
+    lclGraph_ = LocalStaticCrsGraphType (k_lclInds1D_, k_rowPtrs_);
     indicesAreLocal_  = true;
     indicesAreGlobal_ = false;
     checkInternalState ();
