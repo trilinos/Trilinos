@@ -380,7 +380,7 @@ public:
   /// the graph, not the matrix.  Then CrsMatrix needs methods to get
   /// these from the graph.
   CrsMatrix () :
-    numCols_ (0), nnz_ (0)
+    numCols_ (0)
   {}
 
   //! Copy constructor (shallow copy).
@@ -392,8 +392,7 @@ public:
   CrsMatrix (const CrsMatrix<SType,OType,DType,MTType,IType> & B) :
     graph (B.graph),
     values (B.values),
-    numCols_ (B.numCols ()),
-    nnz_ (B.nnz ())
+    numCols_ (B.numCols ())
   {}
 
   /// \brief Construct with a graph that will be shared.
@@ -403,8 +402,7 @@ public:
              const StaticCrsGraphType& arg_graph) :
     graph (arg_graph),
     values (arg_label, arg_graph.entries.dimension_0 ()),
-    numCols_ (maximum_entry (arg_graph) + 1),
-    nnz_ (arg_graph.entries.dimension_0 ())
+    numCols_ (maximum_entry (arg_graph) + 1)
   {}
 
   /// \brief Constructor that copies raw arrays of host data in
@@ -481,16 +479,21 @@ public:
              const index_type& cols) :
     graph (cols, rows),
     values (vals),
-    numCols_ (ncols),
-    nnz_ (annz)
+    numCols_ (ncols)
   {
     const size_type actualNumRows = (rows.dimension_0 () != 0) ?
       (rows.dimension_0 () - static_cast<size_type> (1)) :
       static_cast<size_type> (0);
     if (nrows != actualNumRows) {
       std::ostringstream os;
-      os << "Input arguments nrows = " << nrows << " != the actual number of "
+      os << "Input argument nrows = " << nrows << " != the actual number of "
         "rows " << actualNumRows << " according to the 'rows' input argument.";
+      throw std::invalid_argument (os.str ());
+    }
+    if (annz != nnz ()) {
+      std::ostringstream os;
+      os << "Input argument annz = " << annz
+         << " != this->nnz () = " << nnz () << ".";
       throw std::invalid_argument (os.str ());
     }
 
@@ -519,8 +522,7 @@ public:
              const StaticCrsGraphType& graph_) :
     graph (graph_),
     values (vals),
-    numCols_ (ncols),
-    nnz_ (graph_.entries.dimension_0 ())
+    numCols_ (ncols)
   {
 #ifdef KOKKOS_USE_CUSPARSE
     cusparseCreate (&cusparse_handle);
@@ -607,7 +609,6 @@ public:
   operator= (const CrsMatrix<aScalarType, aOrdinalType, aDevice, aMemoryTraits, aSizeType>& mtx)
   {
     numCols_ = mtx.numCols ();
-    nnz_ = mtx.nnz ();
     graph = mtx.graph;
     values = mtx.values;
     dev_config = mtx.dev_config;
@@ -626,7 +627,7 @@ public:
 
   //! The number of stored entries in the sparse matrix.
   KOKKOS_INLINE_FUNCTION ordinal_type nnz () const {
-    return nnz_;
+    return graph.entries.dimension_0 ();
   }
 
   friend struct SparseRowView<CrsMatrix>;
@@ -663,7 +664,6 @@ public:
 
 private:
   ordinal_type numCols_;
-  ordinal_type nnz_;
 };
 
 //----------------------------------------------------------------------------
@@ -684,7 +684,6 @@ import (const std::string &label,
   values = values_type (str.append (".values"), annz);
 
   numCols_ = ncols;
-  nnz_ = annz;
 
   // FIXME (09 Aug 2013) CrsArray only takes std::vector for now.
   // We'll need to fix that.
@@ -703,7 +702,7 @@ import (const std::string &label,
   // FIXME (mfh 21 Jun 2013) This needs to be a parallel copy.
   // Furthermore, why are the arrays copied twice? -- once here, to a
   // host view, and once below, in the deep copy?
-  for (OrdinalType i = 0; i < nnz_; ++i) {
+  for (OrdinalType i = 0; i < annz; ++i) {
     if (val) {
       h_values(i) = val[i];
     }
