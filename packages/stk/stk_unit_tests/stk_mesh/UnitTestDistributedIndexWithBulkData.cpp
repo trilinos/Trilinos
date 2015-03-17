@@ -38,8 +38,8 @@
 #include <stk_util/parallel/DistributedIndex.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
-#include <exampleMeshes/StkMeshFromGeneratedMesh.h>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
+#include <stk_unit_test_utils/StkMeshFromGeneratedMesh.h>
 
 namespace {
 

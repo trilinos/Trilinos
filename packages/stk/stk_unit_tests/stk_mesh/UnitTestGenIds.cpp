@@ -51,33 +51,10 @@
 #include "stk_io/StkMeshIoBroker.hpp"
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_util/stk_config.h>
-
+#include <stk_unit_test_utils/getOption.h>
 #include <stdint.h>
 
 //====================
-extern int gl_argc;
-extern char** gl_argv;
-
-inline std::string getOption(const std::string& option, const std::string defaultString="no")
-{
-    std::string returnValue = defaultString;
-    if ( gl_argv != 0 )
-    {
-        for (int i=0;i<gl_argc;i++)
-        {
-            std::string input_argv(gl_argv[i]);
-            if ( option == input_argv )
-            {
-                if ( (i+1) < gl_argc )
-                {
-                    returnValue = std::string(gl_argv[i+1]);
-                }
-                break;
-            }
-        }
-    }
-    return returnValue;
-}
 
 #if defined(STK_HAS_MPI)  // this means MPI is available
 
@@ -133,7 +110,7 @@ TEST(GeneratedIds, StkMeshApproach1)
 {
     MpiInfo mpiInfo(MPI_COMM_WORLD);
 
-    std::string exodusFileName = getOption("-i", "generated:10x10x10");
+    std::string exodusFileName = unitTestUtils::getOption("-i", "generated:10x10x10");
     const int spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
     stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, mpiInfo.getMpiComm());
@@ -219,7 +196,7 @@ TEST(GeneratedIds, StkMeshApproach2)
 {
     MpiInfo mpiInfo(MPI_COMM_WORLD);
 
-    std::string exodusFileName = getOption("-i", "generated:10x10x10");
+    std::string exodusFileName = unitTestUtils::getOption("-i", "generated:10x10x10");
     const int spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
     stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, mpiInfo.getMpiComm());
@@ -275,44 +252,6 @@ TEST(GeneratedIds, StkMeshApproach2)
         EXPECT_EQ(goldId, idsObtained[i]);
     }
 }
-
-////////////////////////////////////////////////////////////////////
-
-//TEST(GeneratedIds, useInternallDifferentIds)
-//{
-//    MpiInfo mpiInfo(MPI_COMM_WORLD);
-//
-//    std::string exodusFileName = getOption("-i", "generated:10x10x10");
-//    const int spatialDim = 3;
-//    stk::mesh::MetaData stkMeshMetaData(spatialDim);
-//    stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, mpiInfo.getMpiComm());
-//
-//    // STK IO module will be described in separate chapter.
-//    // It is used here to read the mesh data from the Exodus file and populate an STK Mesh.
-//    // The order of the following lines in {} are important
-//    {
-//      stk::io::StkMeshIoBroker exodusFileReader(mpiInfo.getMpiComm());
-//
-//      // Inform STK IO which STK Mesh objects to populate later
-//      exodusFileReader.set_bulk_data(stkMeshBulkData);
-//
-//      exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
-//
-//      // Populate the MetaData which has the descriptions of the Parts and Fields.
-//      exodusFileReader.create_input_mesh();
-//
-//      // Populate entities in STK Mesh from Exodus file
-//      exodusFileReader.populate_bulk_data();
-//    }
-//
-//    ////////////////////////////////////////////////////q
-//
-//    std::vector<size_t> count1;
-//    stk::mesh::comm_mesh_counts(stkMeshBulkData, count1);
-//    size_t totalIdsInUse = count1[stk::topology::NODE_RANK];
-//    size_t goldNum = 11*11*11;
-//    EXPECT_EQ(goldNum, totalIdsInUse);
-//}
 
 ////////////////////////////////////////////////////////////////////
 

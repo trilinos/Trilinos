@@ -45,7 +45,7 @@
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityRank
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include <exampleMeshes/StkMeshFromGeneratedMesh.h>
+#include <stk_unit_test_utils/StkMeshFromGeneratedMesh.h>
 #include "unit_tests/Setup2Block2HexMesh.hpp"
 
 using stk::mesh::MetaData;

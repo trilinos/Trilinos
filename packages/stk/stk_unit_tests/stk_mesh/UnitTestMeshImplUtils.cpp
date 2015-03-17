@@ -45,7 +45,7 @@
 #include "unit_tests/Setup2Block2HexMesh.hpp"
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_io/StkMeshIoBroker.hpp"
-#include "unit_tests/UnitTestMeshUtils.hpp"
+#include <stk_unit_test_utils/getOption.h>
 #include "BulkDataTester.hpp"
 
 using stk::mesh::MetaData;
@@ -260,7 +260,7 @@ public:
         m_mesh = new stk::mesh::BulkData(*m_meta,communicator);
         std::ostringstream oss;
         oss << "generated:" << num_x << "x" << num_y << "x" << m_mesh->parallel_size() << "|sideset:xXyYzZ";
-        std::string exodusFileName = getOption("-i", oss.str());
+        std::string exodusFileName = unitTestUtils::getOption("-i", oss.str());
         stk::io::StkMeshIoBroker exodus_file_reader(communicator);
         exodus_file_reader.set_bulk_data(*m_mesh);
         exodus_file_reader.add_mesh_database(exodusFileName, stk::io::READ_MESH);

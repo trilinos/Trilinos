@@ -42,7 +42,7 @@
 
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_util/unit_test_support/perf_unit_util.hpp>
-#include <optionParsing/getOption.h>
+#include <stk_unit_test_utils/getOption.h>
 
 namespace
 {

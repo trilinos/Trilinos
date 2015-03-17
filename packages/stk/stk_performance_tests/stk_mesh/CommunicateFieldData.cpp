@@ -49,7 +49,7 @@
 #include <vector>
 #include <string>
 
-#include <optionParsing/getOption.h>
+#include <stk_unit_test_utils/getOption.h>
 
 namespace
 {

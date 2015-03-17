@@ -58,7 +58,7 @@
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
 #include <unit_tests/UnitTestRingFixture.hpp>  // for test_shift_ring
 #include <unit_tests/Setup8Quad4ProcMesh.hpp>
-#include "unit_tests/UnitTestMeshUtils.hpp"
+#include <stk_unit_test_utils/getOption.h>
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, has_superset
@@ -3067,88 +3067,6 @@ TEST(DocTestBulkData, inducedPartMembershipIgnoredForNonOwnedHigherRankedEntitie
     }
 }
 
-//TEST(BulkData, testProblem)
-//{
-//    MPI_Comm communicator = MPI_COMM_WORLD;
-//    //int numProcs = stk::parallel_machine_size(communicator);
-//
-//    //if(numProcs == 4)
-//    {
-//        const int spatialDim = 2;
-//        stk::mesh::MetaData stkMeshMetaData(spatialDim);
-//        BulkDataTester *stkMeshBulkData = new BulkDataTester(stkMeshMetaData, communicator);
-//
-//        std::string exodusFileName = getOption("-i", "mesh.exo");
-//
-//        // STK IO module will be described in separate chapter.
-//        // It is used here to read the mesh data from the Exodus file and populate an STK Mesh.
-//        // The order of the following lines in {} are important
-//        {
-//            stk::io::StkMeshIoBroker exodusFileReader(communicator);
-//
-//            // Inform STK IO which STK Mesh objects to populate later
-//            exodusFileReader.set_bulk_data(*stkMeshBulkData);
-//
-//            exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
-//
-//            // Populate the MetaData which has the descriptions of the Parts and Fields.
-//            exodusFileReader.create_input_mesh();
-//
-//            // Populate entities in STK Mesh from Exodus file
-//            exodusFileReader.populate_bulk_data();
-//        }
-//
-//        stkMeshBulkData->modification_begin();
-//        stkMeshBulkData->modification_end();
-//
-//        std::vector<size_t> globalCounts;
-//        stk::mesh::comm_mesh_counts(*stkMeshBulkData, globalCounts);
-//
-//        delete stkMeshBulkData;
-//    }
-//}
-//
-//TEST(BulkData, testProblem1)
-//{
-//    MPI_Comm communicator = MPI_COMM_WORLD;
-//    //int numProcs = stk::parallel_machine_size(communicator);
-//
-//    //if(numProcs == 4)
-//    {
-//        const int spatialDim = 3;
-//        stk::mesh::MetaData stkMeshMetaData(spatialDim);
-//        BulkDataTester *stkMeshBulkData = new BulkDataTester(stkMeshMetaData, communicator);
-//
-//        std::string exodusFileName = getOption("-i", "mesh.exo");
-//
-//        // STK IO module will be described in separate chapter.
-//        // It is used here to read the mesh data from the Exodus file and populate an STK Mesh.
-//        // The order of the following lines in {} are important
-//        {
-//            stk::io::StkMeshIoBroker exodusFileReader(communicator);
-//
-//            // Inform STK IO which STK Mesh objects to populate later
-//            exodusFileReader.set_bulk_data(*stkMeshBulkData);
-//
-//            exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
-//
-//            // Populate the MetaData which has the descriptions of the Parts and Fields.
-//            exodusFileReader.create_input_mesh();
-//
-//            // Populate entities in STK Mesh from Exodus file
-//            exodusFileReader.populate_bulk_data();
-//        }
-//
-//        stkMeshBulkData->modification_begin();
-//        stkMeshBulkData->modification_end();
-//
-//        std::vector<size_t> globalCounts;
-//        stk::mesh::comm_mesh_counts(*stkMeshBulkData, globalCounts);
-//
-//        delete stkMeshBulkData;
-//    }
-//}
-
 TEST(BulkData, ModificationEnd)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
@@ -3160,7 +3078,7 @@ TEST(BulkData, ModificationEnd)
         stk::mesh::MetaData stkMeshMetaData(spatialDim);
         stk::mesh::unit_test::BulkDataTester *stkMeshBulkData = new stk::mesh::unit_test::BulkDataTester(stkMeshMetaData, communicator);
 
-        std::string exodusFileName = getOption("-i", "generated:1x1x4");
+        std::string exodusFileName = unitTestUtils::getOption("-i", "generated:1x1x4");
 
         // STK IO module will be described in separate chapter.
         // It is used here to read the mesh data from the Exodus file and populate an STK Mesh.
@@ -3241,7 +3159,7 @@ TEST(BulkData, set_parallel_owner_rank_but_not_comm_lists)
     const int spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
     stk::mesh::unit_test::BulkDataTester mesh(stkMeshMetaData, communicator);
-    std::string exodusFileName = getOption("-i", "generated:1x1x1|sideset:xXyYzZ");
+    std::string exodusFileName = unitTestUtils::getOption("-i", "generated:1x1x1|sideset:xXyYzZ");
     {
         stk::io::StkMeshIoBroker exodusFileReader(communicator);
         exodusFileReader.set_bulk_data(mesh);
@@ -3296,7 +3214,7 @@ TEST(BulkData, resolve_ownership_of_modified_entities_trivial)
     const int spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
     stk::mesh::unit_test::BulkDataTester mesh(stkMeshMetaData, communicator);
-    std::string exodusFileName = getOption("-i", "generated:1x1x3");
+    std::string exodusFileName = unitTestUtils::getOption("-i", "generated:1x1x3");
     {
         stk::io::StkMeshIoBroker exodusFileReader(communicator);
         exodusFileReader.set_bulk_data(mesh);
@@ -3330,49 +3248,6 @@ TEST(BulkData, resolve_ownership_of_modified_entities_trivial)
     }
 }
 
-//TEST(BulkData, resolve_ownership_of_modified_entities_nominal)
-//{
-//    MPI_Comm communicator = MPI_COMM_WORLD;
-//    int numProcs = stk::parallel_machine_size(communicator);
-//    const int myRank = stk::parallel_machine_rank(communicator);
-//
-//    if(numProcs != 3)
-//    {
-//        return;
-//    }
-//
-//    const int spatialDim = 3;
-//    stk::mesh::MetaData stkMeshMetaData(spatialDim);
-//    stk::mesh::unit_test::BulkDataTester mesh(stkMeshMetaData, communicator);
-//    std::string exodusFileName = getOption("-i", "generated:1x1x3");
-//    {
-//        stk::io::StkMeshIoBroker exodusFileReader(communicator);
-//        exodusFileReader.set_bulk_data(mesh);
-//        exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
-//        exodusFileReader.create_input_mesh();
-//        exodusFileReader.populate_bulk_data();
-//    }
-//    std::vector<Entity> modified_entities;
-//    if (myRank == 0) {
-//
-//    }
-//    else if (myRank == 1) {
-//        modified_entities.push_back(mesh.get_entity(stk::topology::NODE_RANK, 5));
-//    }
-//    else {
-//    }
-//    mesh.my_resolve_ownership_of_modified_entities(modified_entities);
-//    if (myRank == 0) {
-//        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), CEOUtils::STATE_OWNED, 1));
-//    }
-//    else if (myRank == 1) {
-//        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), CEOUtils::STATE_OWNED, 1));
-//    }
-//    else {
-//        EXPECT_TRUE(check_state(mesh, EntityKey(NODE_RANK, 5), CEOUtils::STATE_OWNED, 1));
-//    }
-//}
-
 TEST(BulkData, verify_closure_count_is_correct)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
@@ -3385,7 +3260,7 @@ TEST(BulkData, verify_closure_count_is_correct)
         stk::mesh::MetaData stkMeshMetaData(spatialDim);
         stk::mesh::unit_test::BulkDataTester *stkMeshBulkData = new stk::mesh::unit_test::BulkDataTester(stkMeshMetaData, communicator);
 
-        std::string exodusFileName = getOption("-i", "generated:1x1x2");
+        std::string exodusFileName = unitTestUtils::getOption("-i", "generated:1x1x2");
 
         // STK IO module will be described in separate chapter.
         // It is used here to read the mesh data from the Exodus file and populate an STK Mesh.

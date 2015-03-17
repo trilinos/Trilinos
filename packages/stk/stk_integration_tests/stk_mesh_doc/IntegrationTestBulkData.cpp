@@ -55,7 +55,7 @@
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
 #include <unit_tests/UnitTestRingFixture.hpp>  // for test_shift_ring
 #include <unit_tests/Setup8Quad4ProcMesh.hpp>
-#include "unit_tests/UnitTestMeshUtils.hpp"
+#include <stk_unit_test_utils/getOption.h>
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, has_superset
@@ -92,7 +92,7 @@ TEST(BulkData_test, use_entity_ids_for_resolving_sharing)
 
     if(stkMeshBulkData.parallel_size() == 2)
     {
-        std::string exodusFileName = getOption("-i", "mesh.exo");
+        std::string exodusFileName = unitTestUtils::getOption("-i", "mesh.exo");
 
         {
             stk::io::StkMeshIoBroker exodusFileReader(communicator);
@@ -119,7 +119,7 @@ TEST(BulkData_test, testTwoDimProblemForSharingOfDifferentEdgesWithSameNodesFour
 
     if ( stkMeshBulkData.parallel_size() == 4 )
     {
-        std::string exodusFileName = getOption("-i", "mesh.exo");
+        std::string exodusFileName = unitTestUtils::getOption("-i", "mesh.exo");
 
         {
             stk::io::StkMeshIoBroker exodusFileReader(communicator);
@@ -147,7 +147,7 @@ TEST(BulkData_test, test3DProblemSharingOfDifferentFacesWithSameNodesTwoProc)
 
     if ( stkMeshBulkData.parallel_size() == 2 )
     {
-        std::string exodusFileName = getOption("-i", "mesh.exo");
+        std::string exodusFileName = unitTestUtils::getOption("-i", "mesh.exo");
 
         {
             stk::io::StkMeshIoBroker exodusFileReader(communicator);
@@ -173,7 +173,7 @@ TEST(BulkData_test, test3DProblemSharingOfDifferentFacesWithSameNodesOneProc)
     stk::mesh::unit_test::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
     if ( stkMeshBulkData.parallel_size() == 1 )
     {
-        std::string exodusFileName = getOption("-i", "mesh.exo");
+        std::string exodusFileName = unitTestUtils::getOption("-i", "mesh.exo");
 
         {
             stk::io::StkMeshIoBroker exodusFileReader(communicator);
