@@ -3260,7 +3260,7 @@ NNTI_result_t NNTI_gni_wait (
                 "end of NNTI_wait", status);
     }
 
-    if (is_wr_complete(gni_wr)) {
+    if (nnti_rc == NNTI_OK) {
 
         gni_wr->state=NNTI_GNI_WR_STATE_WAIT_COMPLETE;
 
@@ -4643,7 +4643,7 @@ static void create_status(
     nnti_gni_connection_t    *conn       =NULL;
 
     status->op = wr->ops;
-    if (is_wr_complete(gni_wr)) {
+    if (nnti_rc == NNTI_OK) {
         status->result = wr->result;
     } else {
         status->result = nnti_rc;
