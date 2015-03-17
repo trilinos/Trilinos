@@ -44,7 +44,7 @@
 #ifndef ROL_TPETRAMULTIVECTOR_HPP
 #define ROL_TPETRAMULTIVECTOR_HPP
 
-/** \class ROL::EpetraMultiVector
+/** \class ROL::TpetraMultiVector
     \brief Implements the ROL::Vector interface for a Tpetra_MultiVector.
     \author Created by Greg von Winckel
 */
@@ -60,6 +60,7 @@ class TpetraMultiVector : public Vector<Real> {
 
     typedef Tpetra::MultiVector<Real,LO,GO,Node> MV;
     typedef Teuchos::RCP<MV> MVP;
+    typedef Teuchos::RCP<const MV> CMVP;
     typedef TpetraMultiVector TMV;
     typedef Teuchos::RCP<TMV> TMVP; 
  
@@ -131,7 +132,7 @@ class TpetraMultiVector : public Vector<Real> {
             tpetra_vec_->scale(1.0,*ex.getVector());
         }
 
-        MVP getVector() const {
+        CMVP getVector() const {
             return this->tpetra_vec_;
         }
 

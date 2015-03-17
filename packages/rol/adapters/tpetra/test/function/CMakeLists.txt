@@ -2,7 +2,7 @@ INCLUDE(TribitsAddExecutableAndTest)
 
 IF(${PROJECT_NAME}_ENABLE_Tpetra)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    TpetraMultiVectorInterface
+    TpetraBoundConstraintInterface
     SOURCES test_01.cpp
     DEPLIBS tpetra
     ARGS PrintItAll
