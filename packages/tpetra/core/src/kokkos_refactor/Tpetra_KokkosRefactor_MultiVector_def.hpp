@@ -2949,7 +2949,9 @@ namespace Tpetra {
       "colRng.size() = " << colRng.size () << " > this->getNumVectors() = "
       << numVecs << ".");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      numVecs > 0 && colRng.size () > 0 && (colRng.lbound () < 0 || colRng.ubound () >= numVecs),
+      numVecs != 0 && colRng.size () != 0 &&
+      (colRng.lbound () < static_cast<Teuchos::Ordinal> (0) ||
+       static_cast<size_t> (colRng.ubound ()) >= numVecs),
       std::invalid_argument, "Nonempty input range [" << colRng.lbound () <<
       "," << colRng.ubound () << "] exceeds the valid range of column indices "
       "[0, " << numVecs << "].");
