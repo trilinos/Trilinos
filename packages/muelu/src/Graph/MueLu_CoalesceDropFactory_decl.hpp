@@ -125,11 +125,10 @@ namespace MueLu {
      RCP<PreDropFunctionBaseClass> predrop_;
 
     //! Method to merge rows of matrix for systems of PDEs.
-    void MergeRows(Matrix const & A, LO const &row, std::set<LO> &cols,
-                   LO const &blkSize, Map const &colMap, GO const &indexBase, Map const &nonUniqueMap) const;
+    void MergeRows(const Matrix& A, const LO row, Array<LO>& cols, const Array<LO>& translation) const;
 
     //! Method to create merged  map for systems of PDEs.
-    void AmalgamateMap(LO const blockSize, Map const & sourceMap, RCP<const Map> &amalgamatedMap) const;
+    void AmalgamateMap(const Map& sourceMap, const LO blockSize, RCP<const Map>& amalgamatedMap, Array<LO>& translation) const;
 
   }; //class CoalesceDropFactory
 
