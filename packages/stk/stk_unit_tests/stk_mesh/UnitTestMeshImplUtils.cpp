@@ -1082,3 +1082,195 @@ TEST(MeshImplUtils, verify_internal_fix_node_sharing_delete_on_2015_03_06)
         EXPECT_EQ( 2u, entity_counts[3] );
     }
 }
+
+void call_get_or_create_face_at_element_side_and_check(stk::mesh::BulkData & mesh, stk::mesh::Entity element, unsigned side_ordinal, unsigned new_face_global_id, stk::mesh::Part & part) {
+    mesh.modification_begin();
+    stk::mesh::PartVector add_parts(1, &part);
+    stk::mesh::Entity new_face = stk::mesh::impl::get_or_create_face_at_element_side(mesh, element, side_ordinal, new_face_global_id, part);
+    mesh.modification_end();
+    ASSERT_TRUE( mesh.is_valid(new_face) );
+    EXPECT_EQ( new_face_global_id, mesh.identifier(new_face) );
+    ASSERT_EQ( 1u, mesh.num_elements(new_face));
+    stk::mesh::Entity attached_element = *mesh.begin_elements(new_face);
+    EXPECT_EQ( element, attached_element );
+    unsigned attached_side_ordinal = *mesh.begin_element_ordinals(new_face);
+    EXPECT_EQ( side_ordinal, attached_side_ordinal );
+    EXPECT_TRUE( mesh.bucket(new_face).member(part) );
+    unsigned other_element_global_id = 2;
+    stk::mesh::Entity other_element = mesh.get_entity(stk::topology::ELEMENT_RANK, other_element_global_id);
+    EXPECT_EQ( 0u, mesh.num_faces(other_element) );
+}
+
+TEST( MeshImplUtils, test_create_face_for_sideset)
+{
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(pm);
+    if (numProcs != 1) {
+        return;
+    }
+    stk::io::StkMeshIoBroker fixture(pm);
+
+    fixture.add_mesh_database("generated:1x1x2", stk::io::READ_MESH);
+    fixture.create_input_mesh();
+    stk::topology quad4_topology = stk::topology::QUAD_4;
+    stk::mesh::Part & quad4_part = fixture.meta_data().get_topology_root_part(quad4_topology);
+
+    stk::mesh::Part & new_topology_sub_part = fixture.meta_data().declare_part("My Fancy Part",stk::topology::FACE_RANK);
+    fixture.meta_data().declare_part_subset(quad4_part, new_topology_sub_part);
+    fixture.populate_bulk_data();
+
+    stk::mesh::BulkData & mesh = fixture.bulk_data();
+
+    unsigned elem_global_id = 1;
+    stk::mesh::Entity element = mesh.get_entity(stk::topology::ELEMENT_RANK,elem_global_id);
+    unsigned side_ordinal = 5;
+    unsigned new_face_global_id = 42;
+
+
+    stk::mesh::Entity new_face = mesh.get_entity(stk::topology::FACE_RANK, new_face_global_id);
+    EXPECT_FALSE( mesh.is_valid(new_face) );
+    call_get_or_create_face_at_element_side_and_check(mesh,element,side_ordinal,new_face_global_id,quad4_part);
+    call_get_or_create_face_at_element_side_and_check(mesh,element,side_ordinal,new_face_global_id,quad4_part);
+    call_get_or_create_face_at_element_side_and_check(mesh,element,side_ordinal,new_face_global_id,new_topology_sub_part);
+}
+
+
+TEST( MeshImplUtils, test_connect_face_to_other_elements)
+{
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(pm);
+    if (numProcs != 1) {
+        return;
+    }
+    stk::io::StkMeshIoBroker fixture(pm);
+
+    fixture.add_mesh_database("generated:1x1x2", stk::io::READ_MESH);
+    fixture.create_input_mesh();
+    fixture.populate_bulk_data();
+
+    stk::mesh::BulkData & mesh = fixture.bulk_data();
+
+    stk::topology quad4_topology = stk::topology::QUAD_4;
+    stk::mesh::Part & quad4_part = fixture.meta_data().get_topology_root_part(quad4_topology);
+
+    unsigned elem_global_id = 1;
+    stk::mesh::Entity element = mesh.get_entity(stk::topology::ELEMENT_RANK,elem_global_id);
+    unsigned side_ordinal = 5;
+    unsigned new_face_global_id = 42;
+
+    call_get_or_create_face_at_element_side_and_check(mesh,element,side_ordinal,new_face_global_id,quad4_part);
+    stk::mesh::Entity new_face = mesh.get_entity(stk::topology::FACE_RANK, new_face_global_id);
+    ASSERT_TRUE( mesh.is_valid(new_face) );
+    mesh.modification_begin();
+    stk::mesh::impl::connect_face_to_other_elements(mesh,new_face,element,side_ordinal);
+    mesh.modification_end();
+
+    ASSERT_EQ( 2u, mesh.num_elements(new_face));
+    unsigned other_element_global_id = 2;
+    stk::mesh::Entity other_element = mesh.get_entity(stk::topology::ELEMENT_RANK, other_element_global_id);
+    ASSERT_EQ( 1u, mesh.num_faces(other_element) );
+    stk::mesh::Entity attached_face = *mesh.begin_faces(other_element);
+    EXPECT_EQ( new_face, attached_face );
+
+    unsigned attached_side_ordinal = *mesh.begin_face_ordinals(other_element);
+    const unsigned expected_other_element_side_ordinal = 4;
+    EXPECT_EQ( expected_other_element_side_ordinal, attached_side_ordinal );
+}
+
+
+TEST( MeshImplUtils, test_create_shell_status) {
+    std::vector<stk::topology> element_topology_vector;
+    element_topology_vector.push_back(stk::topology(stk::topology::HEX_8));
+    stk::topology original_element_topology = stk::topology::HEX_8;
+    std::vector<stk::mesh::impl::ShellStatus> element_shell_status;
+    stk::mesh::impl::create_shell_status(element_topology_vector,original_element_topology,element_shell_status);
+    ASSERT_EQ( 1u, element_shell_status.size() );
+    EXPECT_EQ( stk::mesh::impl::NO_SHELLS, element_shell_status[0] );
+
+    element_topology_vector.push_back(stk::topology(stk::topology::HEX_8));
+    stk::mesh::impl::create_shell_status(element_topology_vector,original_element_topology,element_shell_status);
+    ASSERT_EQ( 2u, element_shell_status.size() );
+    EXPECT_EQ( stk::mesh::impl::NO_SHELLS, element_shell_status[0] );
+    EXPECT_EQ( stk::mesh::impl::NO_SHELLS, element_shell_status[1] );
+
+    element_topology_vector.push_back(stk::topology(stk::topology::SHELL_QUAD_4));
+    stk::mesh::impl::create_shell_status(element_topology_vector,original_element_topology,element_shell_status);
+    ASSERT_EQ( 3u, element_shell_status.size() );
+    EXPECT_EQ( stk::mesh::impl::YES_SHELLS_BOTH_SHELLS_OR_BOTH_SOLIDS, element_shell_status[0] );
+    EXPECT_EQ( stk::mesh::impl::YES_SHELLS_BOTH_SHELLS_OR_BOTH_SOLIDS, element_shell_status[1] );
+    EXPECT_EQ( stk::mesh::impl::YES_SHELLS_ONE_SHELL_ONE_SOLID, element_shell_status[2] );
+
+    original_element_topology = stk::topology::SHELL_QUAD_4;
+    stk::mesh::impl::create_shell_status(element_topology_vector,original_element_topology,element_shell_status);
+    ASSERT_EQ( 3u, element_shell_status.size() );
+    EXPECT_EQ( stk::mesh::impl::YES_SHELLS_ONE_SHELL_ONE_SOLID, element_shell_status[0] );
+    EXPECT_EQ( stk::mesh::impl::YES_SHELLS_ONE_SHELL_ONE_SOLID, element_shell_status[1] );
+    EXPECT_EQ( stk::mesh::impl::YES_SHELLS_BOTH_SHELLS_OR_BOTH_SOLIDS, element_shell_status[2] );
+
+}
+
+
+
+TEST( MeshImplUtils, test_connect_face_to_other_elements_2)
+{
+    std::vector<int> face_nodes(4);
+    face_nodes[0] = 5;
+    face_nodes[1] = 6;
+    face_nodes[2] = 7;
+    face_nodes[3] = 8;
+
+    stk::topology element_side_topology = stk::topology::QUAD_4;
+
+    std::vector<int> element_side_nodes(4);
+    element_side_nodes[0] = 5;
+    element_side_nodes[1] = 6;
+    element_side_nodes[2] = 7;
+    element_side_nodes[3] = 8;
+
+    EXPECT_TRUE(stk::mesh::impl::should_face_be_connected_to_element_side(face_nodes,element_side_nodes,element_side_topology,stk::mesh::impl::NO_SHELLS));
+    EXPECT_TRUE(stk::mesh::impl::should_face_be_connected_to_element_side(face_nodes,element_side_nodes,element_side_topology,stk::mesh::impl::YES_SHELLS_BOTH_SHELLS_OR_BOTH_SOLIDS));
+    EXPECT_FALSE(stk::mesh::impl::should_face_be_connected_to_element_side(face_nodes,element_side_nodes,element_side_topology,stk::mesh::impl::YES_SHELLS_ONE_SHELL_ONE_SOLID));
+
+    element_side_nodes[0] = 5;
+    element_side_nodes[1] = 8;
+    element_side_nodes[2] = 7;
+    element_side_nodes[3] = 6;
+
+    EXPECT_TRUE(stk::mesh::impl::should_face_be_connected_to_element_side(face_nodes,element_side_nodes,element_side_topology,stk::mesh::impl::NO_SHELLS));
+    EXPECT_FALSE(stk::mesh::impl::should_face_be_connected_to_element_side(face_nodes,element_side_nodes,element_side_topology,stk::mesh::impl::YES_SHELLS_BOTH_SHELLS_OR_BOTH_SOLIDS));
+    EXPECT_TRUE(stk::mesh::impl::should_face_be_connected_to_element_side(face_nodes,element_side_nodes,element_side_topology,stk::mesh::impl::YES_SHELLS_ONE_SHELL_ONE_SOLID));
+
+    element_side_nodes[0] = 5;
+    element_side_nodes[1] = 6;
+    element_side_nodes[2] = 7;
+    element_side_nodes[3] = 9;
+
+    EXPECT_FALSE(stk::mesh::impl::should_face_be_connected_to_element_side(face_nodes,element_side_nodes,element_side_topology,stk::mesh::impl::NO_SHELLS));
+    EXPECT_FALSE(stk::mesh::impl::should_face_be_connected_to_element_side(face_nodes,element_side_nodes,element_side_topology,stk::mesh::impl::YES_SHELLS_BOTH_SHELLS_OR_BOTH_SOLIDS));
+    EXPECT_FALSE(stk::mesh::impl::should_face_be_connected_to_element_side(face_nodes,element_side_nodes,element_side_topology,stk::mesh::impl::YES_SHELLS_ONE_SHELL_ONE_SOLID));
+
+    face_nodes[0] = 5;
+    face_nodes[1] = 8;
+    face_nodes[2] = 7;
+    face_nodes[3] = 6;
+
+    element_side_nodes[0] = 5;
+    element_side_nodes[1] = 6;
+    element_side_nodes[2] = 7;
+    element_side_nodes[3] = 8;
+
+    EXPECT_TRUE(stk::mesh::impl::should_face_be_connected_to_element_side(face_nodes,element_side_nodes,element_side_topology,stk::mesh::impl::NO_SHELLS));
+    EXPECT_FALSE(stk::mesh::impl::should_face_be_connected_to_element_side(face_nodes,element_side_nodes,element_side_topology,stk::mesh::impl::YES_SHELLS_BOTH_SHELLS_OR_BOTH_SOLIDS));
+    EXPECT_TRUE(stk::mesh::impl::should_face_be_connected_to_element_side(face_nodes,element_side_nodes,element_side_topology,stk::mesh::impl::YES_SHELLS_ONE_SHELL_ONE_SOLID));
+
+    element_side_nodes[0] = 5;
+    element_side_nodes[1] = 8;
+    element_side_nodes[2] = 7;
+    element_side_nodes[3] = 6;
+
+    EXPECT_TRUE(stk::mesh::impl::should_face_be_connected_to_element_side(face_nodes,element_side_nodes,element_side_topology,stk::mesh::impl::NO_SHELLS));
+    EXPECT_TRUE(stk::mesh::impl::should_face_be_connected_to_element_side(face_nodes,element_side_nodes,element_side_topology,stk::mesh::impl::YES_SHELLS_BOTH_SHELLS_OR_BOTH_SOLIDS));
+    EXPECT_FALSE(stk::mesh::impl::should_face_be_connected_to_element_side(face_nodes,element_side_nodes,element_side_topology,stk::mesh::impl::YES_SHELLS_ONE_SHELL_ONE_SOLID));
+
+
+}

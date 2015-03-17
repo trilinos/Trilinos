@@ -391,6 +391,53 @@ stk::parallel::DistributedIndex::KeySpanVector convert_entity_keys_to_spans( con
 void internal_fix_node_sharing_delete_on_2015_03_06(stk::mesh::BulkData& bulk_data);
 
 
+stk::mesh::Entity get_or_create_face_at_element_side(stk::mesh::BulkData & bulk,
+                                                     stk::mesh::Entity elem,
+                                                     int side_ordinal,
+                                                     int new_face_global_id,
+                                                     stk::mesh::Part & part);
+
+void connect_face_to_other_elements(stk::mesh::BulkData & bulk,
+                                    stk::mesh::Entity face,
+                                    stk::mesh::Entity elem_with_face,
+                                    int elem_with_face_side_ordinal);
+
+
+enum ShellStatus {
+    NO_SHELLS = 25,
+    YES_SHELLS_ONE_SHELL_ONE_SOLID = 31,
+    YES_SHELLS_BOTH_SHELLS_OR_BOTH_SOLIDS = 46
+};
+
+void create_shell_status(const std::vector<stk::topology> & elements_touching_surface, stk::topology original_element_topology, std::vector<ShellStatus> & element_shell_status);
+
+template<typename ENTITY_ID>
+bool should_face_be_connected_to_element_side(std::vector<ENTITY_ID> & face_nodes,
+                                              std::vector<ENTITY_ID> & element_side_nodes,
+                                              stk::topology element_side_topology,
+                                              ShellStatus  shell_status)
+{
+    bool should_connect = false;
+    const std::pair<bool, unsigned> equiv_result = element_side_topology.equivalent(face_nodes, element_side_nodes);
+    const bool nodes_match = equiv_result.first;
+    if (nodes_match) {
+       if (NO_SHELLS == shell_status) {
+           should_connect = true;
+       }
+       else {
+           const unsigned permutation_of_element_side = equiv_result.second;
+           const bool element_side_polarity_matches_face_nodes = permutation_of_element_side < element_side_topology.num_positive_permutations();
+           if (YES_SHELLS_ONE_SHELL_ONE_SOLID == shell_status) {
+               should_connect = !element_side_polarity_matches_face_nodes;
+           }
+           else { // YES_SHELLS_BOTH_SHELS_OR_BOTH_SOLIDS
+               should_connect = element_side_polarity_matches_face_nodes;
+           }
+       }
+    }
+    return should_connect;
+}
+
 } // namespace impl
 } // namespace mesh
 } // namespace stk

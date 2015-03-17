@@ -209,7 +209,7 @@ void BulkData::unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackPr
                     if(ip < this->parallel_rank())
                     {
                         shared_itr->global_key = sentity.global_key;
-                    }
+                   }
                     this->internal_mark_entity(entity, BulkData::IS_SHARED);
                 }
             }

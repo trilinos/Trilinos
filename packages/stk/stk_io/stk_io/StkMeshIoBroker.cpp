@@ -85,7 +85,7 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_topology/topology.hpp"    // for topology::num_nodes
 #include "stk_util/util/ParameterList.hpp"  // for Type, Type::DOUBLE, etc
-#include "stk_io/impl/StkIoImpl.hpp"
+
 
 namespace {
 
@@ -511,8 +511,8 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
                             bulk.change_entity_parts( side, add_parts );
                         }
                         else if (behavior == stk::io::StkMeshIoBroker::STK_IO_SIDESET_FACE_CREATION_CURRENT) {
-                            stk::mesh::Entity new_face = stk::io::impl::get_or_create_face_at_element_side(bulk,elem,side_ordinal,side_ids[is],*sb_part);
-                            stk::io::impl::connect_face_to_other_elements(bulk,new_face,elem,side_ordinal);
+                            stk::mesh::Entity new_face = stk::mesh::impl::get_or_create_face_at_element_side(bulk,elem,side_ordinal,side_ids[is],*sb_part);
+                            stk::mesh::impl::connect_face_to_other_elements(bulk,new_face,elem,side_ordinal);
                         }
                     }
                 }
