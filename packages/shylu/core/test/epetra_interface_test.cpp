@@ -5,10 +5,8 @@
 //#include "Zoltan2_config.h"
 
 #ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
+#  include "Epetra_MpiComm.h"
+#endif // HAVE_MPI
 #include "Epetra_SerialComm.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"
@@ -81,7 +79,7 @@ int main(int argc, char** argv)
     {
       cout << "Starting Epetra interface test" << endl;
     }
-  
+
   /*----------------Load a test matrix---------------*/
   string matrixFileName = "wathenSmall.mtx";
   Epetra_CrsMatrix *A;
@@ -102,7 +100,7 @@ int main(int argc, char** argv)
   n = A->NumGlobalRows();
 
   //Make b vecotor
-  
+
   Epetra_Map vecMap(n,0,Comm);
   b = new Epetra_MultiVector(vecMap,1,false);
   b->Random();
@@ -121,26 +119,26 @@ int main(int argc, char** argv)
 
   /*----------------partitioning_interface--------------*/
   /*-----------Will use check the epetra matrix on partition_interface------*/
-  
+
 
   //Isorropia Test - graph/Parmetis
   pLUList->set("Partitioning Package","Isorropia");
   Teuchos::ParameterList ptemp;
   ptemp = pLUList->sublist("Isorropia Input");
-  
+
   Teuchos::ParameterList pptemp;
   pptemp = ptemp.sublist("Zoltan");
   pptemp.set("GRAPH_PACKAGE", "Parmetis");
   pptemp.set("DEBUG_LEVEL", "1");
-  
+
   ptemp.set("partitioning method", "graph");
   ptemp.set("Zoltan", pptemp);
   pLUList->set("Isorropia Input", ptemp);
-  
+
   cout << " \n\n--------------------BIG BREAK --------------\n\n";
   Teuchos::writeParameterListToXmlOStream(*pLUList, std::cout);
 
-  
+
   ShyLU::PartitionInterface<Epetra_CrsMatrix, Epetra_MultiVector> partI(A, pLUList.get());
   partI.partition();
   AHat = partI.reorderMatrix();
@@ -154,19 +152,19 @@ int main(int argc, char** argv)
    /*
 
    //Isorropia Test - Graph/PT-Scotch
-  pLUList->set("Partitioning Package","Isorropia"); 
+  pLUList->set("Partitioning Package","Isorropia");
   ptemp = pLUList->sublist("Isorropia Input");
-  
+
   //Teuchos::ParameterList pptemp;
   pptemp = ptemp.sublist("Zoltan");
   pptemp.set("GRAPH_PACKAGE", "scotch");
   pptemp.set("DEBUG_LEVEL", "1");
- 
+
 
   ptemp.set("partitioning method", "graph");
   ptemp.set("Zoltan", pptemp);
   pLUList->set("Isorropia Input", ptemp);
-  
+
   cout << " \n\n--------------------BIG BREAK --------------\n\n";
   Teuchos::writeParameterListToXmlOStream(*pLUList, std::cout);
 
@@ -178,18 +176,18 @@ int main(int argc, char** argv)
 
    */
 
-  //Zoltan2 Test 
+  //Zoltan2 Test
 
 #if defined(HAVE_SHYLU_ZOLTAN2) || defined(HAVE_SHYLU_ZOLTAN2)
-  
+
    //Isorropia Test - Graph/ParMetis
-  pLUList->set("Partitioning Package","Zoltan2"); 
+  pLUList->set("Partitioning Package","Zoltan2");
   ptemp = pLUList->sublist("Zoltan2 Input");
   ptemp.set("algorithm", "parmetis");
   ptemp.set("debug_level", "detailed_status");
   pLUList->set("Zoltan2 Input", ptemp);
-  
-  
+
+
   cout << " \n\n--------------------BIG BREAK --------------\n\n";
   Teuchos::writeParameterListToXmlOStream(*pLUList, std::cout);
 
@@ -223,7 +221,7 @@ int main(int argc, char** argv)
 
   cout << " \n\n--------------------BIG BREAK --------------\n\n";
   Teuchos::writeParameterListToXmlOStream(*pLUList, std::cout);
-  
+
   ShyLU::DirectSolverInterface<Epetra_CrsMatrix, Epetra_MultiVector> directsolver(A, pLUList.get());
   directsolver.solve(b,x);
 
@@ -233,7 +231,7 @@ int main(int argc, char** argv)
 
   //Amesos2 -klu2
 #ifdef HAVE_SHYLU_AMESOS2
-  
+
   pLUList->set("Direct Solver Package", "Amesos2");
   ptemp = pLUList->sublist("Amesos2 Input");
   //pptemp = ptemp.sublist("Amesos_Klu Input");
@@ -248,12 +246,12 @@ int main(int argc, char** argv)
 
   cout << " \n\n--------------------BIG BREAK --------------\n\n";
   Teuchos::writeParameterListToXmlOStream(*pLUList, std::cout);
-  
+
   ShyLU::DirectSolverInterface<Epetra_CrsMatrix, Epetra_MultiVector> directsolver2(A, pLUList.get());
   directsolver2.solve(b,x);
 
   cout << "Done with Amesos-KLU2" << endl;
-  
+
 #endif
 
   if(success)

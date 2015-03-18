@@ -53,7 +53,11 @@
 
 #include "Isorropia_config.h" // Just for HAVE_MPI
 
+#ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
+#else
+#include "Epetra_SerialComm.h"
+#endif
 #include "Epetra_CrsMatrix.h"
 
 // EpetraExt includes
