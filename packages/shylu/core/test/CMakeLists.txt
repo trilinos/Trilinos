@@ -27,19 +27,25 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 	NUM_MPI_PROCS 4
 	)
 
-#IF (${PACKAGE_NAME}_ENABLE_Zoltan2 AND ${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
 IF(HAVE_SHYLUCORE_TPETRA)
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE(
 	tpetra_interface
 	SOURCES tpetra_interface_test.cpp 
 	COMM serial mpi
-	NUM_MPI_PROCS 4
 	)
 
 ENDIF()
 
+IF(HAVE_SHYLUCORE_TPETRA AND TPL_ENABLE_SuperLU)
+  TRIBITS_ADD_TEST(
+	tpetra_interface
+    NAME tpetra_interface_with_superlu
+	COMM serial mpi
+	NUM_MPI_PROCS 4
+	)
+ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(ShyLUDriverFiles
     SOURCE_FILES ShyLU.xml shylu_iqr_parameters.xml
