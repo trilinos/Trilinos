@@ -389,7 +389,7 @@ namespace Tpetra {
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
             const Teuchos::RCP<const map_type>& colMap,
-            const t_RowPtrs& rowPointers,
+            const typename local_graph_type::row_map_type& rowPointers,
             const t_LocalOrdinal_1D& columnIndices,
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
@@ -1070,6 +1070,8 @@ namespace Tpetra {
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
     typedef Teuchos::ArrayRCP<size_t>::size_type size_type;
+    typedef typename local_graph_type::row_map_type::non_const_type
+      non_const_row_map_type;
     const char tfecfFuncName[] = "allocateIndices: ";
 
     // This is a protected function, only callable by us.  If it was
@@ -1094,7 +1096,7 @@ namespace Tpetra {
       //
       //  STATIC ALLOCATION PROFILE
       //
-      t_RowPtrsNC k_rowPtrs ("Tpetra::CrsGraph::ptr", numRows + 1);
+      non_const_row_map_type k_rowPtrs ("Tpetra::CrsGraph::ptr", numRows + 1);
 
       if (k_numAllocPerRow_.dimension_0 () != 0) {
         // It's OK to throw std::invalid_argument here, because we
@@ -2857,7 +2859,7 @@ namespace Tpetra {
   CrsGraph<
     LocalOrdinal, GlobalOrdinal,
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  setAllIndices (const t_RowPtrs& rowPointers,
+  setAllIndices (const typename local_graph_type::row_map_type& rowPointers,
                  const t_LocalOrdinal_1D& columnIndices)
   {
     const char tfecfFuncName[] = "setAllIndices: ";
@@ -3614,7 +3616,8 @@ namespace Tpetra {
     using Teuchos::rcp;
     typedef ArrayRCP<size_t>::size_type size_type;
     typedef t_numRowEntries_ row_entries_type;
-    typedef t_RowPtrsNC row_offsets_type;
+    typedef typename local_graph_type::row_map_type row_map_type;
+    typedef typename row_map_type::non_const_type non_const_row_map_type;
     typedef t_LocalOrdinal_1D lclinds_1d_type;
 
     const size_t lclNumRows = this->getNodeNumRows ();
@@ -3622,11 +3625,10 @@ namespace Tpetra {
     // This method's goal is to fill in the two arrays (compressed
     // sparse row format) that define the sparse graph's structure.
     //
-    // Use t_RowPtrs and not local_graph_type::row_map_type for
-    // k_ptrs, because the latter is const and we need to modify
-    // k_ptrs here.
-    row_offsets_type k_ptrs;
-    t_RowPtrs k_ptrs_const;
+    // Use the nonconst version of row_map_type for k_ptrs, because
+    // the latter is const and we need to modify k_ptrs here.
+    non_const_row_map_type k_ptrs;
+    row_map_type k_ptrs_const;
     lclinds_1d_type k_inds;
 
     // The number of entries in each locally owned row.  This is a
@@ -3664,10 +3666,10 @@ namespace Tpetra {
       // cheap to compute and useful as a sanity check.
       size_t lclTotalNumEntries = 0;
       // This will be a host view of packed row offsets.
-      typename row_offsets_type::HostMirror h_ptrs;
+      typename non_const_row_map_type::HostMirror h_ptrs;
       {
         // Allocate the packed row offsets array.
-        k_ptrs = row_offsets_type ("Tpetra::CrsGraph::ptr", lclNumRows+1);
+        k_ptrs = non_const_row_map_type ("Tpetra::CrsGraph::ptr", lclNumRows+1);
         k_ptrs_const = k_ptrs;
         //
         // FIXME hack until we get parallel_scan in kokkos
@@ -3790,7 +3792,7 @@ namespace Tpetra {
         size_t lclTotalNumEntries = 0;
         {
           // Allocate the packed row offsets array.
-          k_ptrs = row_offsets_type ("Tpetra::CrsGraph::ptr", lclNumRows + 1);
+          k_ptrs = non_const_row_map_type ("Tpetra::CrsGraph::ptr", lclNumRows + 1);
           k_ptrs_const = k_ptrs;
           //
           // FIXME hack until we get parallel_scan in kokkos
@@ -3798,7 +3800,7 @@ namespace Tpetra {
           // Unlike in the 2-D storage case above, we don't need the
           // host view of the packed row offsets array after packing
           // the row offsets.
-          typename row_offsets_type::HostMirror h_k_ptrs =
+          typename non_const_row_map_type::HostMirror h_k_ptrs =
             create_mirror_view (k_ptrs);
           h_k_ptrs(0) = 0;
           for (size_t i = 0; i < lclNumRows; ++i) {
@@ -3836,7 +3838,7 @@ namespace Tpetra {
 
         // Pack the column indices from unpacked k_lclInds1D_ into
         // packed k_inds.  We will replace k_lclInds1D_ below.
-        typedef pack_functor<t_LocalOrdinal_1D, t_RowPtrs> inds_packer_type;
+        typedef pack_functor<t_LocalOrdinal_1D, row_map_type> inds_packer_type;
         inds_packer_type f (k_inds, k_lclInds1D_, k_ptrs, k_rowPtrs_);
         Kokkos::parallel_for (lclNumRows, f);
 

@@ -231,7 +231,7 @@ namespace Tpetra {
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
              const Teuchos::RCP<const map_type>& colMap,
-             const t_RowPtrs & rowPointers,
+             const typename local_matrix_type::row_map_type& rowPointers,
              const t_LocalOrdinal_1D & columnIndices,
              const t_ValuesType & values,
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
@@ -755,7 +755,8 @@ namespace Tpetra {
       // three arrays in the classic compressed sparse row format.)
 
       const size_t lclNumRows = staticGraph_->getNodeNumRows ();
-      typename Graph::t_RowPtrs k_ptrs = staticGraph_->k_rowPtrs_;
+      typename Graph::local_graph_type::row_map_type k_ptrs =
+        staticGraph_->k_rowPtrs_;
       TEUCHOS_TEST_FOR_EXCEPTION(
         k_ptrs.dimension_0 () != lclNumRows+1, std::logic_error,
         "Tpetra::CrsMatrix::allocateValues: With StaticProfile, row offsets "
@@ -832,8 +833,8 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::rcp;
     typedef ArrayRCP<size_t>::size_type size_type;
+    typedef typename local_matrix_type::row_map_type row_map_type;
     typedef typename Graph::t_numRowEntries_ row_entries_type;
-    typedef typename Graph::t_RowPtrsNC row_offsets_type;
     typedef typename Graph::t_LocalOrdinal_1D lclinds_1d_type;
     typedef t_ValuesType values_type;
 
@@ -856,8 +857,8 @@ namespace Tpetra {
     //
     // Use the nonconst version of row_map_type for k_ptrs,
     // because row_map_type is const and we need to modify k_ptrs here.
-    row_offsets_type k_ptrs;
-    t_RowPtrs k_ptrs_const;
+    typename row_map_type::non_const_type k_ptrs;
+    row_map_type k_ptrs_const;
     lclinds_1d_type k_inds;
     values_type k_vals;
 
@@ -899,13 +900,13 @@ namespace Tpetra {
       // cheap to compute and useful as a sanity check.
       size_t lclTotalNumEntries = 0;
       // This will be a host view of packed row offsets.
-      typename row_offsets_type::HostMirror h_ptrs;
+      typename row_map_type::non_const_type::HostMirror h_ptrs;
       {
         // Allocate the packed row offsets array.  We use a nonconst
         // temporary (packedRowOffsets) here, because k_ptrs is const.
         // We will assign packedRowOffsets to k_ptrs below.
-        row_offsets_type packedRowOffsets ("Tpetra::CrsGraph::ptr",
-                                           lclNumRows+1);
+        typename row_map_type::non_const_type packedRowOffsets ("Tpetra::CrsGraph::ptr",
+                                                                lclNumRows+1);
         //
         // FIXME hack until we get parallel_scan in kokkos
         //
@@ -1059,13 +1060,13 @@ namespace Tpetra {
         // cheap to compute and useful as a sanity check.
         size_t lclTotalNumEntries = 0;
         // This will be a host view of packed row offsets.
-        typename row_offsets_type::HostMirror h_ptrs;
+        typename row_map_type::non_const_type::HostMirror h_ptrs;
         {
           // Allocate the packed row offsets array.  We use a nonconst
           // temporary (packedRowOffsets) here, because k_ptrs is
           // const.  We will assign packedRowOffsets to k_ptrs below.
-          row_offsets_type packedRowOffsets ("Tpetra::CrsGraph::ptr",
-                                             lclNumRows+1);
+          typename row_map_type::non_const_type packedRowOffsets ("Tpetra::CrsGraph::ptr",
+                                                                  lclNumRows+1);
           //
           // FIXME hack until we get parallel_scan in Kokkos
           //
@@ -1277,7 +1278,7 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef typename Graph::t_numRowEntries_ row_entries_type;
     typedef typename Graph::local_graph_type::row_map_type row_map_type;
-    typedef typename Graph::t_RowPtrsNC row_offsets_type;
+    typedef typename row_map_type::non_const_type non_const_row_map_type;
 
     const size_t lclNumRows = getNodeNumRows();
     const map_type& rowMap = * (getRowMap ());
@@ -1356,9 +1357,10 @@ namespace Tpetra {
       // cheap to compute and useful as a sanity check.
       size_t lclTotalNumEntries = 0;
       // This will be a host view of packed row offsets.
-      typename row_offsets_type::HostMirror h_ptrs;
+      typename non_const_row_map_type::HostMirror h_ptrs;
       {
-        row_offsets_type packedRowOffsets ("Tpetra::CrsGraph::ptr", lclNumRows+1);
+        non_const_row_map_type packedRowOffsets ("Tpetra::CrsGraph::ptr",
+                                                 lclNumRows+1);
         //
         // FIXME hack until we get parallel_scan in Kokkos
         //
@@ -1440,8 +1442,8 @@ namespace Tpetra {
       if (nodeNumEntries != nodeNumAllocated) {
         // We have to pack the 1-D storage, since the user didn't fill
         // up all requested storage.
-        typename Graph::t_RowPtrsNC tmpk_ptrs ("Tpetra::CrsGraph::ptr",
-                                               lclNumRows+1);
+        non_const_row_map_type tmpk_ptrs ("Tpetra::CrsGraph::ptr",
+                                          lclNumRows+1);
         // Total number of entries in the matrix on the calling
         // process.  We will compute this in the loop below.  It's
         // cheap to compute and useful as a sanity check.
@@ -1451,7 +1453,7 @@ namespace Tpetra {
           //
           // FIXME hack until we get parallel_scan in Kokkos
           //
-          typename row_offsets_type::HostMirror h_ptrs =
+          typename non_const_row_map_type::HostMirror h_ptrs =
             create_mirror_view (tmpk_ptrs);
           h_ptrs(0) = 0;
           for (size_t i = 0; i < lclNumRows; ++i) {
@@ -2845,7 +2847,7 @@ namespace Tpetra {
   CrsMatrix<
     Scalar, LocalOrdinal, GlobalOrdinal,
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  setAllValues (const t_RowPtrs& rowPointers,
+  setAllValues (const typename local_matrix_type::row_map_type& rowPointers,
                 const t_LocalOrdinal_1D& columnIndices,
                 const t_ValuesType& values)
   {

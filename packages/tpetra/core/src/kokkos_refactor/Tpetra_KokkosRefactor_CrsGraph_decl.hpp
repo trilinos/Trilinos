@@ -158,8 +158,10 @@ namespace Tpetra {
     //! DEPRECATED; use local_graph_type (above) instead.
     typedef local_graph_type LocalStaticCrsGraphType TPETRA_DEPRECATED;
 
-    typedef typename local_graph_type::row_map_type::const_type t_RowPtrs;
-    typedef typename local_graph_type::row_map_type::non_const_type t_RowPtrsNC;
+    //! DEPRECATED; use <tt>local_graph_type::row_map_type</tt> instead.
+    typedef typename local_graph_type::row_map_type t_RowPtrs TPETRA_DEPRECATED;
+    //! DEPRECATED; use <tt>local_graph_type::row_map_type::non_const_type</tt> instead.
+    typedef typename local_graph_type::row_map_type::non_const_type t_RowPtrsNC TPETRA_DEPRECATED;
     typedef typename local_graph_type::entries_type::non_const_type t_LocalOrdinal_1D;
 
     //! The Map specialization used by this class.
@@ -337,7 +339,7 @@ namespace Tpetra {
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
-              const t_RowPtrs & rowPointers,
+              const typename local_graph_type::row_map_type& rowPointers,
               const t_LocalOrdinal_1D & columnIndices,
               const Teuchos::RCP<Teuchos::ParameterList>& params = null);
 
@@ -888,7 +890,7 @@ namespace Tpetra {
     /// \warning This method is intended for expert developer use
     ///   only, and should never be called by user code.
     void
-    setAllIndices (const t_RowPtrs & rowPointers,
+    setAllIndices (const typename local_graph_type::row_map_type& rowPointers,
                    const t_LocalOrdinal_1D & columnIndices);
 
     /// \brief Set the graph's data directly, using 1-D storage.
@@ -1764,7 +1766,7 @@ namespace Tpetra {
     ///
     /// [we may delete this to save memory on fillComplete, if "Delete
     /// Row Pointers" is specified.]
-    t_RowPtrs k_rowPtrs_;
+    typename local_graph_type::row_map_type::const_type k_rowPtrs_;
 
     //@}
     /// \name 2-D storage (DynamicProfile) data structures

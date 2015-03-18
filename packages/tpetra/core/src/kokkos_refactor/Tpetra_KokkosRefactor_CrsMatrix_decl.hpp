@@ -124,12 +124,16 @@ namespace Tpetra {
     //! The CrsGraph specialization suitable for this CrsMatrix specialization.
     typedef CrsGraph<LocalOrdinal, GlobalOrdinal, node_type> crs_graph_type;
 
-    typedef typename crs_graph_type::t_RowPtrs t_RowPtrs;
-    typedef typename crs_graph_type::t_LocalOrdinal_1D t_LocalOrdinal_1D;
-
     /// \brief The specialization of Kokkos::CrsMatrix that represents
     ///   the part of the sparse matrix on each MPI process.
     typedef Kokkos::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void, size_t> local_matrix_type;
+
+    //! DEPRECATED; use <tt>local_matrix_type::row_map_type</tt> instead.
+    typedef typename local_matrix_type::row_map_type t_RowPtrs TPETRA_DEPRECATED;
+    //! DEPRECATED; use <tt>local_matrix_type::row_map_type::non_const_type</tt> instead.
+    typedef typename local_matrix_type::row_map_type::non_const_type t_RowPtrsNC TPETRA_DEPRECATED;
+
+    typedef typename crs_graph_type::t_LocalOrdinal_1D t_LocalOrdinal_1D;
     typedef typename local_matrix_type::values_type t_ValuesType;
 
     //! DEPRECATED; use local_matrix_type instead.
@@ -291,7 +295,7 @@ namespace Tpetra {
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::RCP<const map_type>& colMap,
-               const t_RowPtrs & rowPointers,
+               const typename local_matrix_type::row_map_type& rowPointers,
                const t_LocalOrdinal_1D & columnIndices,
                const t_ValuesType & values,
                const Teuchos::RCP<Teuchos::ParameterList>& params = null);
@@ -854,7 +858,7 @@ namespace Tpetra {
        \warning This method is intended for expert developer use only, and should never be called by user code.
     */
     void
-    setAllValues (const t_RowPtrs& rowPointers,
+    setAllValues (const typename local_matrix_type::row_map_type& rowPointers,
                   const t_LocalOrdinal_1D& columnIndices,
                   const t_ValuesType& values);
 
