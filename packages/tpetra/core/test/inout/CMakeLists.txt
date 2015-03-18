@@ -4,15 +4,15 @@
 # distributed over all of them, and as long as Proc 0 has enough
 # memory to handle all the sparse matrix's data.
 IF(Tpetra_INST_INT_LONG)
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  MatrixMarket_Tpetra_CrsMatrix_InOutTest
-  SOURCES
-    MatrixMarket_Tpetra_CrsMatrix_InOutTest.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  ARGS ""
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    MatrixMarket_Tpetra_CrsMatrix_InOutTest
+    SOURCES
+      MatrixMarket_Tpetra_CrsMatrix_InOutTest.cpp
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ARGS ""
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    )
 ENDIF()
 
 # This test should work for any number of MPI processes, as long as
@@ -41,27 +41,22 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-# FIXME (mfh 22 Jul 2014) My recent fix to Bug 6176 breaks this test.
-# Neither Andrey nor I are convinced that the test for Bug 5800 is the
-# right test.  Thus, I am disabling the Bug 5800 test below, for now.
-
-# # This test only makes sense for 1 MPI process.
-# TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#   MatrixMarket_MV_Output_Perm
-#   SOURCES
-#     MatrixMarket_MV_Output_Perm.cpp
-#     ${TEUCHOS_STD_UNIT_TEST_MAIN}
-#   ARGS
-#   COMM serial mpi
-#   NUM_MPI_PROCS 1
-#   STANDARD_PASS_OUTPUT
-#   )
+# This test only makes sense for 1 MPI process.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Bug5800
+  SOURCES
+    Bug5800
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
 
 # This test doesn't actually run as part of the check-in tests; it
 # just builds.  It's good for testing Matrix Market input and output
 # for Map and CrsMatrix, with arbitrary files.  The test should work
 # with or without MPI support.
-IF (Tpetra_INST_INT_LONG)
 TRIBITS_ADD_EXECUTABLE(
   MatrixMarket_Tpetra_CrsMatrix_FileTest
   SOURCES
@@ -69,7 +64,6 @@ TRIBITS_ADD_EXECUTABLE(
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   )
-ENDIF()
 
 # This test has both lower and upper bounds on the number of MPI
 # processes for which it makes sense to run.

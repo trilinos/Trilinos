@@ -306,9 +306,10 @@ testReadAndWriteFile (Teuchos::FancyOStream& out,
                       const std::string& matrixInFile)
 {
   typedef double ST;
-  typedef int LO;
-  typedef long GO;
-  typedef Tpetra::Details::DefaultTypes::node_type NT;
+  typedef Tpetra::Map<>::local_ordinal_type LO;
+  typedef Tpetra::Map<>::global_ordinal_type GO;
+  typedef Tpetra::Map<>::node_type NT;
+
   typedef Tpetra::Map<LO, GO, NT> map_type;
   typedef Tpetra::CrsMatrix<ST, LO, GO, NT> crs_matrix_type;
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
