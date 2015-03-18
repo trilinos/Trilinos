@@ -181,7 +181,7 @@ namespace Stokhos {
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
     typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
     typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Graph;
-    typedef typename Graph::local_graph_type::non_const_type RowPtrs;
+    typedef typename Graph::local_graph_type::row_map_type::non_const_type RowPtrs;
     typedef typename Graph::local_graph_type::entries_type::non_const_type LocalIndices;
 
     // Build domain map if necessary
