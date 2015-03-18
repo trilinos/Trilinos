@@ -146,11 +146,11 @@ public:
   typedef Kokkos::View<     Scalar * , Kokkos::LayoutLeft, Device >  LocalVectorType ;
   typedef Kokkos::DualView< Scalar** , Kokkos::LayoutLeft, Device >  LocalDualVectorType;
 
-  typedef Tpetra::Map<int, int, NodeType>                 MapType;
-  typedef Tpetra::Vector<Scalar,int,int,NodeType>         GlobalVectorType;
-  typedef Tpetra::CrsMatrix<Scalar,int,int,NodeType>      GlobalMatrixType;
-  typedef typename GlobalMatrixType::k_local_matrix_type  LocalMatrixType ;
-  typedef typename LocalMatrixType::StaticCrsGraphType    LocalGraphType ;
+  typedef Tpetra::Map<int, int, NodeType>              MapType;
+  typedef Tpetra::Vector<Scalar,int,int,NodeType>      GlobalVectorType;
+  typedef Tpetra::CrsMatrix<Scalar,int,int,NodeType>   GlobalMatrixType;
+  typedef typename GlobalMatrixType::local_matrix_type LocalMatrixType;
+  typedef typename LocalMatrixType::StaticCrsGraphType LocalGraphType;
 
 
   typedef NodeNodeGraph< typename FixtureType::elem_node_type
