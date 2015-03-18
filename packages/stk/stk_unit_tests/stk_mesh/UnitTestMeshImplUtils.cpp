@@ -1020,69 +1020,6 @@ TEST(MeshImplUtils, do_these_nodes_have_any_shell_elements_in_common_hexshellwra
     }
 }
 
-
-TEST(MeshImplUtils, verify_internal_fix_node_sharing_delete_on_2015_03_06)
-{
-    stk::ParallelMachine pm = MPI_COMM_WORLD;
-    int numProcs = stk::parallel_machine_size(pm);
-    int myRank = stk::parallel_machine_rank(pm);
-    if (numProcs != 2) { return; }
-    unsigned spatialDim = 2;
-    stk::mesh::MetaData meta(spatialDim);
-    stk::mesh::Part& block_1 = meta.declare_part_with_topology("block_1", stk::topology::QUAD_4_2D);
-    stk::mesh::Part& block_2 = meta.declare_part_with_topology("block_2", stk::topology::LINE_2);
-    stk::mesh::BulkData mesh(meta, pm);
-    mesh.modification_begin();
-    Entity node1, node2, node3, node4, node5, node6;
-    Entity edge1;
-    if (myRank == 0)
-    {
-        Entity element = mesh.declare_entity(stk::topology::ELEMENT_RANK,1,block_1);
-        node1 = mesh.declare_entity(stk::topology::NODE_RANK,1);
-        node2 = mesh.declare_entity(stk::topology::NODE_RANK,2); // shared
-        node3 = mesh.declare_entity(stk::topology::NODE_RANK,3); // shared
-        node4 = mesh.declare_entity(stk::topology::NODE_RANK,4);
-        mesh.declare_relation(element,node1,0);
-        mesh.declare_relation(element,node2,1);
-        mesh.declare_relation(element,node3,2);
-        mesh.declare_relation(element,node4,3);
-        edge1 = mesh.declare_entity(stk::topology::EDGE_RANK,1,block_2); // shared
-        mesh.declare_relation(element,edge1,2);
-        mesh.declare_relation(edge1,node2,0);
-        mesh.declare_relation(edge1,node3,1);
-    }
-    if (myRank == 1)
-    {
-        Entity element = mesh.declare_entity(stk::topology::ELEMENT_RANK,2,block_1);
-        node2 = mesh.declare_entity(stk::topology::NODE_RANK,2); // shared
-        node5 = mesh.declare_entity(stk::topology::NODE_RANK,5);
-        node6 = mesh.declare_entity(stk::topology::NODE_RANK,6);
-        node3 = mesh.declare_entity(stk::topology::NODE_RANK,3); // shared
-        mesh.declare_relation(element,node2,0);
-        mesh.declare_relation(element,node5,1);
-        mesh.declare_relation(element,node6,2);
-        mesh.declare_relation(element,node3,3);
-        edge1 = mesh.declare_entity(stk::topology::EDGE_RANK,1,block_2); // shared
-        mesh.declare_relation(element,edge1,3);
-        mesh.declare_relation(edge1,node2,0);
-        mesh.declare_relation(edge1,node3,1);
-    }
-    // add node sharing is NOT called
-    stk::mesh::impl::internal_fix_node_sharing_delete_on_2015_03_06(mesh);
-    EXPECT_NO_THROW(mesh.modification_end());
-    EXPECT_TRUE(mesh.bucket(node2).shared());
-    EXPECT_TRUE(mesh.bucket(node3).shared());
-    EXPECT_TRUE(mesh.bucket(edge1).shared());
-    {
-        std::vector<size_t> entity_counts;
-        stk::mesh::comm_mesh_counts(mesh,entity_counts);
-        EXPECT_EQ( 6u, entity_counts[0] );
-        EXPECT_EQ( 1u, entity_counts[1] );
-        EXPECT_EQ( 0u, entity_counts[2] );
-        EXPECT_EQ( 2u, entity_counts[3] );
-    }
-}
-
 void call_get_or_create_face_at_element_side_and_check(stk::mesh::BulkData & mesh, stk::mesh::Entity element, unsigned side_ordinal, unsigned new_face_global_id, stk::mesh::Part & part) {
     mesh.modification_begin();
     stk::mesh::PartVector add_parts(1, &part);
