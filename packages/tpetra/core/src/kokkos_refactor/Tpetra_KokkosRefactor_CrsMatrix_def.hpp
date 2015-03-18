@@ -854,9 +854,8 @@ namespace Tpetra {
     // sparse row format) that define the sparse graph's and matrix's
     // structure, and the sparse matrix's values.
     //
-    // Use t_RowPtrs and not
-    // Graph::LocalStaticCrsGraphType::row_map_type for k_ptrs,
-    // because the latter is const and we need to modify k_ptrs here.
+    // Use the nonconst version of row_map_type for k_ptrs,
+    // because row_map_type is const and we need to modify k_ptrs here.
     row_offsets_type k_ptrs;
     t_RowPtrs k_ptrs_const;
     lclinds_1d_type k_inds;
@@ -991,7 +990,7 @@ namespace Tpetra {
 
       // StaticProfile also means that the graph's array of row
       // offsets must already be allocated.
-      typename Graph::LocalStaticCrsGraphType::row_map_type curRowOffsets =
+      typename Graph::local_graph_type::row_map_type curRowOffsets =
         myGraph_->k_rowPtrs_;
       TEUCHOS_TEST_FOR_EXCEPTION(
         curRowOffsets.dimension_0 () == 0, std::logic_error,
@@ -1116,7 +1115,7 @@ namespace Tpetra {
         // Pack the column indices from unpacked k_lclInds1D_ into
         // packed k_inds.  We will replace k_lclInds1D_ below.
         typedef pack_functor<typename Graph::t_LocalOrdinal_1D,
-          typename Graph::LocalStaticCrsGraphType::row_map_type>
+          typename Graph::local_graph_type::row_map_type>
           inds_packer_type;
         inds_packer_type indsPacker (k_inds, myGraph_->k_lclInds1D_,
                                      k_ptrs, curRowOffsets);
@@ -1125,7 +1124,7 @@ namespace Tpetra {
         // Pack the values from unpacked k_values1D_ into packed
         // k_vals.  We will replace k_values1D_ below.
         typedef pack_functor<t_ValuesType,
-          typename Graph::LocalStaticCrsGraphType::row_map_type>
+          typename Graph::local_graph_type::row_map_type>
           vals_packer_type;
         vals_packer_type valsPacker (k_vals, this->k_values1D_,
                                      k_ptrs, curRowOffsets);
@@ -1251,7 +1250,7 @@ namespace Tpetra {
     // Tpetra::CrsGraph to have a protected method that accepts k_inds
     // and k_ptrs, and creates the local graph lclGraph_.
     myGraph_->lclGraph_ =
-      typename Graph::LocalStaticCrsGraphType (k_inds, k_ptrs_const);
+      typename Graph::local_graph_type (k_inds, k_ptrs_const);
 
     // Make the local matrix, using the local graph and vals array.
     lclMatrix_ = local_matrix_type ("Tpetra::CrsMatrix::lclMatrix_",
@@ -1277,7 +1276,7 @@ namespace Tpetra {
     using Teuchos::rcp;
     typedef LocalOrdinal LO;
     typedef typename Graph::t_numRowEntries_ row_entries_type;
-    typedef typename Graph::LocalStaticCrsGraphType::row_map_type row_map_type;
+    typedef typename Graph::local_graph_type::row_map_type row_map_type;
     typedef typename Graph::t_RowPtrsNC row_offsets_type;
 
     const size_t lclNumRows = getNodeNumRows();
@@ -1469,7 +1468,7 @@ namespace Tpetra {
 
         // Pack k_values1D_ into k_vals.  We will replace k_values1D_ below.
         typedef pack_functor<t_ValuesType,
-          typename Graph::LocalStaticCrsGraphType::row_map_type>
+          typename Graph::local_graph_type::row_map_type>
           packer_type;
         packer_type valsPacker (k_vals, k_values1D_, tmpk_ptrs, k_rowPtrs_);
         Kokkos::parallel_for (lclNumRows, valsPacker);
@@ -5166,7 +5165,7 @@ namespace Tpetra {
     typedef Tpetra::MultiVector<RangeScalar, LO, GO, node_type> RMV;
     typedef Tpetra::MultiVector<Scalar, LO, GO, node_type> MMV;
     typedef typename DMV::dual_view_type::host_mirror_space HMDT ;
-    typedef typename Graph::LocalStaticCrsGraphType k_local_graph_type;
+    typedef typename Graph::local_graph_type k_local_graph_type;
     typedef typename k_local_graph_type::size_type offset_type;
     const char prefix[] = "Tpetra::CrsMatrix::localGaussSeidel: ";
 
@@ -5236,7 +5235,7 @@ namespace Tpetra {
     typedef Tpetra::MultiVector<RangeScalar, LO, GO, node_type> RMV;
     typedef Tpetra::MultiVector<Scalar, LO, GO, node_type> MMV;
     typedef typename DMV::dual_view_type::host_mirror_space HMDT ;
-    typedef typename Graph::LocalStaticCrsGraphType k_local_graph_type;
+    typedef typename Graph::local_graph_type k_local_graph_type;
     typedef typename k_local_graph_type::size_type offset_type;
     const char prefix[] = "Tpetra::CrsMatrix::reorderedLocalGaussSeidel: ";
 
@@ -5269,7 +5268,7 @@ namespace Tpetra {
     D_lcl.stride (D_stride);
 
     local_matrix_type lclMatrix = this->getLocalMatrix ();
-    typename Graph::LocalStaticCrsGraphType lclGraph = lclMatrix.graph;
+    typename Graph::local_graph_type lclGraph = lclMatrix.graph;
     typename local_matrix_type::index_type ind = lclGraph.entries;
     typename local_matrix_type::row_map_type ptr = lclGraph.row_map;
     typename local_matrix_type::values_type val = lclMatrix.values;

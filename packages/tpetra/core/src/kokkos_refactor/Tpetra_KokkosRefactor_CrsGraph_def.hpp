@@ -461,7 +461,7 @@ namespace Tpetra {
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
             const Teuchos::RCP<const map_type>& colMap,
-            const LocalStaticCrsGraphType& k_local_graph_,
+            const local_graph_type& k_local_graph_,
             const Teuchos::RCP<Teuchos::ParameterList>& params)
     : DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, node_type> (rowMap)
     , rowMap_ (rowMap)
@@ -534,8 +534,8 @@ namespace Tpetra {
     k_lclInds1D_ = lclGraph_.entries;
     k_rowPtrs_ = lclGraph_.row_map;
 
-    typename LocalStaticCrsGraphType::row_map_type d_ptrs = lclGraph_.row_map;
-    typename LocalStaticCrsGraphType::entries_type d_inds = lclGraph_.entries;
+    typename local_graph_type::row_map_type d_ptrs = lclGraph_.row_map;
+    typename local_graph_type::entries_type d_inds = lclGraph_.entries;
 
     // Reset local properties
     upperTriangular_ = true;
@@ -3622,7 +3622,7 @@ namespace Tpetra {
     // This method's goal is to fill in the two arrays (compressed
     // sparse row format) that define the sparse graph's structure.
     //
-    // Use t_RowPtrs and not LocalStaticCrsGraphType::row_map_type for
+    // Use t_RowPtrs and not local_graph_type::row_map_type for
     // k_ptrs, because the latter is const and we need to modify
     // k_ptrs here.
     row_offsets_type k_ptrs;
@@ -3915,7 +3915,7 @@ namespace Tpetra {
     // FIXME (mfh 28 Aug 2014) "Local Graph" sublist no longer used.
 
     // Build the local graph.
-    lclGraph_ = LocalStaticCrsGraphType (k_inds, k_ptrs_const);
+    lclGraph_ = local_graph_type (k_inds, k_ptrs_const);
 
     // TODO (mfh 13 Mar 2014) getNodeNumDiags(), isUpperTriangular(),
     // and isLowerTriangular() depend on computeGlobalConstants(), in
@@ -4262,7 +4262,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   typename CrsGraph<
     LocalOrdinal, GlobalOrdinal,
-    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::LocalStaticCrsGraphType
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::local_graph_type
   CrsGraph<
     LocalOrdinal, GlobalOrdinal,
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
@@ -4274,7 +4274,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   typename CrsGraph<
     LocalOrdinal, GlobalOrdinal,
-    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::LocalStaticCrsGraphType
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::local_graph_type
   CrsGraph<
     LocalOrdinal, GlobalOrdinal,
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
@@ -4514,7 +4514,7 @@ namespace Tpetra {
       }
     } // globallyIndexed() && lclNumRows > 0
 
-    lclGraph_ = LocalStaticCrsGraphType (k_lclInds1D_, k_rowPtrs_);
+    lclGraph_ = local_graph_type (k_lclInds1D_, k_rowPtrs_);
     indicesAreLocal_  = true;
     indicesAreGlobal_ = false;
     checkInternalState ();

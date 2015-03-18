@@ -151,12 +151,16 @@ namespace Tpetra {
     /// for backwards compatibility.
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
 
+    //! The type of the part of the sparse graph on each MPI process.
     typedef Kokkos::StaticCrsGraph<LocalOrdinal,
                                    Kokkos::LayoutLeft,
-                                   execution_space, size_t> LocalStaticCrsGraphType;
-    typedef Kokkos::View<const size_t*, execution_space> t_RowPtrs;
-    typedef Kokkos::View<      size_t*, execution_space> t_RowPtrsNC;
-    typedef Kokkos::View<LocalOrdinal*, execution_space> t_LocalOrdinal_1D;
+                                   execution_space, size_t> local_graph_type;
+    //! DEPRECATED; use local_graph_type (above) instead.
+    typedef local_graph_type LocalStaticCrsGraphType TPETRA_DEPRECATED;
+
+    typedef typename local_graph_type::row_map_type::const_type t_RowPtrs;
+    typedef typename local_graph_type::row_map_type::non_const_type t_RowPtrsNC;
+    typedef typename local_graph_type::entries_type::non_const_type t_LocalOrdinal_1D;
 
     //! The Map specialization used by this class.
     typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, node_type> map_type;
@@ -382,7 +386,7 @@ namespace Tpetra {
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
-              const LocalStaticCrsGraphType& lclGraph,
+              const local_graph_type& lclGraph,
               const Teuchos::RCP<Teuchos::ParameterList>& params);
 
     /// \brief Create a cloned CrsGraph for a different Node type.
@@ -1623,10 +1627,10 @@ namespace Tpetra {
     ///
     /// This is only a valid representation of the local graph if the
     /// (global) graph is fill complete.
-    LocalStaticCrsGraphType getLocalGraph () const;
+    local_graph_type getLocalGraph () const;
 
     //! Get the local graph (DEPRECATED: call getLocalGraph() instead).
-    TPETRA_DEPRECATED LocalStaticCrsGraphType getLocalGraph_Kokkos () const;
+    TPETRA_DEPRECATED local_graph_type getLocalGraph_Kokkos () const;
 
     void fillLocalGraph (const Teuchos::RCP<Teuchos::ParameterList>& params);
 
@@ -1661,7 +1665,7 @@ namespace Tpetra {
     Teuchos::RCP<const export_type> exporter_;
 
     //! Local graph; only initialized after first fillComplete() call.
-    LocalStaticCrsGraphType lclGraph_;
+    local_graph_type lclGraph_;
 
     // Local and Global Counts
     // nodeNumEntries_ and nodeNumAllocated_ are required to be always consistent
