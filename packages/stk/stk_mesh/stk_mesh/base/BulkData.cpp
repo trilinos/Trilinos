@@ -323,6 +323,7 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
 /*           (mesh_meta_data.spatial_dimension() == 2 ? ConnectivityMap::fixed_edges_map_2d() : ConnectivityMap::fixed_edges_map()) */
         bucket_capacity),
     m_use_identifiers_for_resolving_sharing(false),
+    m_did_any_shared_entity_change_parts(false),
     m_modSummary(*this)
 #ifdef STK_MESH_MODIFICATION_COUNTERS
     , m_num_bulk_data_counter++,
@@ -641,6 +642,8 @@ bool BulkData::modification_begin(const std::string description)
   // // It might be overkill to call this on every modification cycle.
 
   m_sync_state = MODIFIABLE ;
+
+  m_did_any_shared_entity_change_parts = false;
 
   return true ;
 }
@@ -4293,7 +4296,16 @@ void BulkData::update_comm_list_based_on_changes_in_comm_map()
 
 bool BulkData::internal_modification_end_for_change_parts()
 {
-    if (this->parallel_size() > 1 && stk::mesh::impl::shared_entities_modified_on_any_proc(*this, this->parallel())) {
+    int global_shared_modified = 0;
+    int local_shared_modified = 0;
+    if (m_did_any_shared_entity_change_parts)
+    {
+        local_shared_modified = 1;
+    }
+
+    stk::all_reduce_max(parallel(), &local_shared_modified, &global_shared_modified, 1);
+
+    if (this->parallel_size() > 1 && global_shared_modified > 0 /*stk::mesh::impl::shared_entities_modified_on_any_proc(*this, this->parallel())*/) {
       internal_resolve_shared_membership();
     }
 
@@ -5469,6 +5481,11 @@ void BulkData::internal_move_entity_to_new_bucket(stk::mesh::Entity entity, cons
     EntityRank e_rank = entity_rank(entity);
     stk::mesh::impl::Partition *partition = m_bucket_repository.get_or_create_partition(e_rank, newBucketPartList);
 
+    if ( !m_did_any_shared_entity_change_parts && bucket_old && bucket_old->shared() )
+    {
+        m_did_any_shared_entity_change_parts = true;
+    }
+
     if (bucket_old != NULL)
     {
       bucket_old->getPartition()->move_to(entity, *partition);
@@ -5640,6 +5657,12 @@ void BulkData::internal_propagate_induced_part_changes_to_downward_connected_ent
         }
         else
         {
+          Bucket *bucket_old = bucket_ptr(e_to);
+          if ( !m_did_any_shared_entity_change_parts && bucket_old && bucket_old->shared())
+          {
+             m_did_any_shared_entity_change_parts = true;
+          }
+
           // Shared, do not remove memberships now.
           // Wait until modification_end.
           if ( !delParts.empty() )
@@ -5648,6 +5671,7 @@ void BulkData::internal_propagate_induced_part_changes_to_downward_connected_ent
           }
           m_modSummary.track_induced_parts(entity, e_to, addParts, emptyParts);
           internal_change_entity_parts( e_to , addParts , emptyParts );
+
         }
       }
     }
