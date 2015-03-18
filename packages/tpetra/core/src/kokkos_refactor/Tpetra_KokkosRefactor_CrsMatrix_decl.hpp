@@ -136,7 +136,8 @@ namespace Tpetra {
     typedef typename local_matrix_type::row_map_type::non_const_type t_RowPtrsNC TPETRA_DEPRECATED;
     //! DEPRECATED; use <tt>local_graph_type::entries_type::non_const_type</tt> instead.
     typedef typename local_graph_type::entries_type::non_const_type t_LocalOrdinal_1D TPETRA_DEPRECATED;
-    typedef typename local_matrix_type::values_type t_ValuesType;
+    //! DEPRECATED; use <tt>local_matrix_type::values_type</tt> instead.
+    typedef typename local_matrix_type::values_type t_ValuesType TPETRA_DEPRECATED;
 
     //! DEPRECATED; use local_matrix_type instead.
     typedef local_matrix_type k_local_matrix_type TPETRA_DEPRECATED;
@@ -299,7 +300,7 @@ namespace Tpetra {
                const Teuchos::RCP<const map_type>& colMap,
                const typename local_matrix_type::row_map_type& rowPointers,
                const typename local_graph_type::entries_type::non_const_type& columnIndices,
-               const t_ValuesType & values,
+               const typename local_matrix_type::values_type& values,
                const Teuchos::RCP<Teuchos::ParameterList>& params = null);
 
     /// \brief Constructor specifying column Map and arrays containing
@@ -862,7 +863,7 @@ namespace Tpetra {
     void
     setAllValues (const typename local_matrix_type::row_map_type& rowPointers,
                   const typename local_graph_type::entries_type::non_const_type& columnIndices,
-                  const t_ValuesType& values);
+                  const typename local_matrix_type::values_type& values);
 
     //! Sets the 1D pointer arrays of the graph.
     /**
@@ -2263,7 +2264,9 @@ namespace Tpetra {
 
   public:
     //! Get the Kokkos local values
-    t_ValuesType getLocalValuesView () const { return k_values1D_; }
+    typename local_matrix_type::values_type getLocalValuesView () const {
+      return k_values1D_;
+    }
 
   private:
     // Friend declaration for nonmember function.
@@ -2775,7 +2778,7 @@ namespace Tpetra {
     /// allocation always matches that of graph_, as the graph does
     /// the allocation for the matrix.
     //@{
-    t_ValuesType k_values1D_;
+    typename local_matrix_type::values_type k_values1D_;
     Teuchos::ArrayRCP<Teuchos::Array<impl_scalar_type> > values2D_;
     //@}
 

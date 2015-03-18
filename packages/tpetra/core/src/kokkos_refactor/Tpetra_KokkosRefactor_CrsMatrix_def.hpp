@@ -233,7 +233,7 @@ namespace Tpetra {
              const Teuchos::RCP<const map_type>& colMap,
              const typename local_matrix_type::row_map_type& rowPointers,
              const typename local_graph_type::entries_type::non_const_type& columnIndices,
-             const t_ValuesType & values,
+             const typename local_matrix_type::values_type& values,
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap),
     storageStatus_ (Details::STORAGE_1D_PACKED),
@@ -769,7 +769,8 @@ namespace Tpetra {
       const size_t lclTotalNumEntries = k_ptrs(lclNumRows);
 
       // Allocate array of (packed???) matrix values.
-      k_values1D_ = t_ValuesType ("Tpetra::CrsMatrix::val", lclTotalNumEntries);
+      typedef typename local_matrix_type::values_type values_type;
+      k_values1D_ = values_type ("Tpetra::CrsMatrix::val", lclTotalNumEntries);
     }
     else {
       // "Dynamic profile" means the number of matrix entries in each
@@ -836,7 +837,7 @@ namespace Tpetra {
     typedef typename local_matrix_type::row_map_type row_map_type;
     typedef typename Graph::t_numRowEntries_ row_entries_type;
     typedef typename Graph::local_graph_type::entries_type::non_const_type lclinds_1d_type;
-    typedef t_ValuesType values_type;
+    typedef typename local_matrix_type::values_type values_type;
 
     // fillComplete() only calls fillLocalGraphAndMatrix() if the
     // matrix owns the graph, which means myGraph_ is not null.
@@ -946,7 +947,7 @@ namespace Tpetra {
 
       // Allocate the arrays of packed column indices and values.
       k_inds = lclinds_1d_type ("Tpetra::CrsGraph::ind", lclTotalNumEntries);
-      k_vals = t_ValuesType ("Tpetra::CrsMatrix::val", lclTotalNumEntries);
+      k_vals = values_type ("Tpetra::CrsMatrix::val", lclTotalNumEntries);
 
       // We need host views of the above, since 2-D storage lives on host.
       typename lclinds_1d_type::HostMirror h_inds = create_mirror_view (k_inds);
@@ -1103,7 +1104,7 @@ namespace Tpetra {
 
         // Allocate the arrays of packed column indices and values.
         k_inds = lclinds_1d_type ("Tpetra::CrsGraph::ind", lclTotalNumEntries);
-        k_vals = t_ValuesType ("Tpetra::CrsMatrix::val", lclTotalNumEntries);
+        k_vals = values_type ("Tpetra::CrsMatrix::val", lclTotalNumEntries);
 
         // curRowOffsets (myGraph_->k_rowPtrs_) (???), k_lclInds1D_,
         // and k_values1D_ are currently unpacked.  Pack them, using
@@ -1124,9 +1125,7 @@ namespace Tpetra {
 
         // Pack the values from unpacked k_values1D_ into packed
         // k_vals.  We will replace k_values1D_ below.
-        typedef pack_functor<t_ValuesType,
-          typename Graph::local_graph_type::row_map_type>
-          vals_packer_type;
+        typedef pack_functor<values_type, row_map_type> vals_packer_type;
         vals_packer_type valsPacker (k_vals, this->k_values1D_,
                                      k_ptrs, curRowOffsets);
         Kokkos::parallel_for (lclNumRows, valsPacker);
@@ -1279,6 +1278,7 @@ namespace Tpetra {
     typedef typename Graph::t_numRowEntries_ row_entries_type;
     typedef typename Graph::local_graph_type::row_map_type row_map_type;
     typedef typename row_map_type::non_const_type non_const_row_map_type;
+    typedef typename local_matrix_type::values_type values_type;
 
     const size_t lclNumRows = getNodeNumRows();
     const map_type& rowMap = * (getRowMap ());
@@ -1299,7 +1299,7 @@ namespace Tpetra {
     row_map_type k_rowPtrs_ = staticGraph_->lclGraph_.row_map;
 
     row_map_type k_ptrs; // "packed" row offsets array
-    t_ValuesType k_vals; // "packed" values array
+    values_type k_vals; // "packed" values array
 
     // May we ditch the old allocations for the packed (and otherwise
     // "optimized") allocations, later in this routine?  Request
@@ -1396,10 +1396,9 @@ namespace Tpetra {
         "process = " << lclTotalNumEntries << ".");
 
       // Allocate the array of packed values.
-      k_vals = t_ValuesType ("Tpetra::CrsMatrix::val", lclTotalNumEntries);
+      k_vals = values_type ("Tpetra::CrsMatrix::val", lclTotalNumEntries);
       // We need a host view of the above, since 2-D storage lives on host.
-      typename t_ValuesType::HostMirror h_vals =
-        Kokkos::create_mirror_view (k_vals);
+      typename values_type::HostMirror h_vals = create_mirror_view (k_vals);
       // Pack the values on the host.
       for (size_t lclRow = 0; lclRow < lclNumRows; ++lclRow) {
         const size_t numEnt = h_numRowEnt(lclRow);
@@ -1466,12 +1465,10 @@ namespace Tpetra {
 
         // Allocate the "packed" values array.
         // It has exactly the right number of entries.
-        k_vals = t_ValuesType ("Tpetra::CrsMatrix::val", lclTotalNumEntries);
+        k_vals = values_type ("Tpetra::CrsMatrix::val", lclTotalNumEntries);
 
         // Pack k_values1D_ into k_vals.  We will replace k_values1D_ below.
-        typedef pack_functor<t_ValuesType,
-          typename Graph::local_graph_type::row_map_type>
-          packer_type;
+        typedef pack_functor<values_type, row_map_type> packer_type;
         packer_type valsPacker (k_vals, k_values1D_, tmpk_ptrs, k_rowPtrs_);
         Kokkos::parallel_for (lclNumRows, valsPacker);
       }
@@ -2829,7 +2826,8 @@ namespace Tpetra {
         // FIXME (mfh 24 Dec 2014) Once CrsMatrix implements DualView
         // semantics, this would be the place to mark memory as
         // modified.
-        Kokkos::Impl::ViewFill<t_ValuesType> (k_values1D_, theAlpha);
+        typedef typename local_matrix_type::values_type values_type;
+        Kokkos::Impl::ViewFill<values_type> (k_values1D_, theAlpha);
       }
       else if (profType == DynamicProfile) {
         for (size_t row = 0; row < nlrs; ++row) {
@@ -2849,7 +2847,7 @@ namespace Tpetra {
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   setAllValues (const typename local_matrix_type::row_map_type& rowPointers,
                 const typename local_graph_type::entries_type::non_const_type& columnIndices,
-                const t_ValuesType& values)
+                const typename local_matrix_type::values_type& values)
   {
     const char tfecfFuncName[] = "setAllValues";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -5381,8 +5379,8 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::rcp;
     typedef CrsMatrix<T, LocalOrdinal, GlobalOrdinal, node_type> out_mat_type;
-    typedef typename out_mat_type::t_ValuesType out_vals_type;
     typedef typename out_mat_type::local_matrix_type out_lcl_mat_type;
+    typedef typename out_lcl_mat_type::values_type out_vals_type;
     typedef ArrayRCP<size_t>::size_type size_type;
     const char tfecfFuncName[] = "convert";
 
