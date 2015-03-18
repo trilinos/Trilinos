@@ -232,7 +232,7 @@ namespace Tpetra {
   CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
              const Teuchos::RCP<const map_type>& colMap,
              const typename local_matrix_type::row_map_type& rowPointers,
-             const t_LocalOrdinal_1D & columnIndices,
+             const typename local_graph_type::entries_type::non_const_type& columnIndices,
              const t_ValuesType & values,
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap),
@@ -835,7 +835,7 @@ namespace Tpetra {
     typedef ArrayRCP<size_t>::size_type size_type;
     typedef typename local_matrix_type::row_map_type row_map_type;
     typedef typename Graph::t_numRowEntries_ row_entries_type;
-    typedef typename Graph::t_LocalOrdinal_1D lclinds_1d_type;
+    typedef typename Graph::local_graph_type::entries_type::non_const_type lclinds_1d_type;
     typedef t_ValuesType values_type;
 
     // fillComplete() only calls fillLocalGraphAndMatrix() if the
@@ -1115,7 +1115,7 @@ namespace Tpetra {
 
         // Pack the column indices from unpacked k_lclInds1D_ into
         // packed k_inds.  We will replace k_lclInds1D_ below.
-        typedef pack_functor<typename Graph::t_LocalOrdinal_1D,
+        typedef pack_functor<typename Graph::local_graph_type::entries_type::non_const_type,
           typename Graph::local_graph_type::row_map_type>
           inds_packer_type;
         inds_packer_type indsPacker (k_inds, myGraph_->k_lclInds1D_,
@@ -2848,7 +2848,7 @@ namespace Tpetra {
     Scalar, LocalOrdinal, GlobalOrdinal,
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   setAllValues (const typename local_matrix_type::row_map_type& rowPointers,
-                const t_LocalOrdinal_1D& columnIndices,
+                const typename local_graph_type::entries_type::non_const_type& columnIndices,
                 const t_ValuesType& values)
   {
     const char tfecfFuncName[] = "setAllValues";

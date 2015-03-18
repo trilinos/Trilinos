@@ -390,7 +390,7 @@ namespace Tpetra {
   CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
             const Teuchos::RCP<const map_type>& colMap,
             const typename local_graph_type::row_map_type& rowPointers,
-            const t_LocalOrdinal_1D& columnIndices,
+            const typename local_graph_type::entries_type::non_const_type& columnIndices,
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
     , rowMap_(rowMap)
@@ -1072,6 +1072,7 @@ namespace Tpetra {
     typedef Teuchos::ArrayRCP<size_t>::size_type size_type;
     typedef typename local_graph_type::row_map_type::non_const_type
       non_const_row_map_type;
+    typedef typename local_graph_type::entries_type::non_const_type col_inds_type;
     const char tfecfFuncName[] = "allocateIndices: ";
 
     // This is a protected function, only callable by us.  If it was
@@ -1158,10 +1159,10 @@ namespace Tpetra {
       // is currently a device View.  Should instead use a DualView.
       const size_type numInds = static_cast<size_type> (k_rowPtrs_(numRows));
       if (lg == LocalIndices) {
-        k_lclInds1D_ = t_LocalOrdinal_1D ("Tpetra::CrsGraph::ind", numInds);
+        k_lclInds1D_ = col_inds_type ("Tpetra::CrsGraph::ind", numInds);
       }
       else {
-        k_gblInds1D_ = t_GlobalOrdinal_1D ("Tpetra::CrsGraph::ind", numInds);
+        k_gblInds1D_ = col_inds_type ("Tpetra::CrsGraph::ind", numInds);
         gblInds1D_ = Kokkos::Compat::persistingView (k_gblInds1D_);
       }
       nodeNumAllocated_ = numInds;
@@ -2860,7 +2861,7 @@ namespace Tpetra {
     LocalOrdinal, GlobalOrdinal,
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   setAllIndices (const typename local_graph_type::row_map_type& rowPointers,
-                 const t_LocalOrdinal_1D& columnIndices)
+                 const typename local_graph_type::entries_type::non_const_type& columnIndices)
   {
     const char tfecfFuncName[] = "setAllIndices: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -3618,7 +3619,7 @@ namespace Tpetra {
     typedef t_numRowEntries_ row_entries_type;
     typedef typename local_graph_type::row_map_type row_map_type;
     typedef typename row_map_type::non_const_type non_const_row_map_type;
-    typedef t_LocalOrdinal_1D lclinds_1d_type;
+    typedef typename local_graph_type::entries_type::non_const_type lclinds_1d_type;
 
     const size_t lclNumRows = this->getNodeNumRows ();
 
@@ -3838,7 +3839,7 @@ namespace Tpetra {
 
         // Pack the column indices from unpacked k_lclInds1D_ into
         // packed k_inds.  We will replace k_lclInds1D_ below.
-        typedef pack_functor<t_LocalOrdinal_1D, row_map_type> inds_packer_type;
+        typedef pack_functor<typename local_graph_type::entries_type::non_const_type, row_map_type> inds_packer_type;
         inds_packer_type f (k_inds, k_lclInds1D_, k_ptrs, k_rowPtrs_);
         Kokkos::parallel_for (lclNumRows, f);
 
@@ -3962,6 +3963,7 @@ namespace Tpetra {
     using Teuchos::RCP;
     typedef GlobalOrdinal GO;
     typedef LocalOrdinal LO;
+    typedef typename local_graph_type::entries_type::non_const_type col_inds_type;
     const char tfecfFuncName[] = "reindexColumns: ";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -4013,7 +4015,7 @@ namespace Tpetra {
     // (is not empty) on the calling process.  In that case, we
     // allocate the first (1-D storage) if the graph has a static
     // profile, else we allocate the second (2-D storage).
-    t_LocalOrdinal_1D newLclInds1D;
+    typename local_graph_type::entries_type::non_const_type newLclInds1D;
     Teuchos::ArrayRCP<Teuchos::Array<LO> > newLclInds2D;
 
     // If indices aren't allocated, that means the calling process
@@ -4026,8 +4028,8 @@ namespace Tpetra {
           if (pftype_ == StaticProfile) {
             // Allocate storage for the new local indices.
             RCP<node_type> node = getRowMap ()->getNode ();
-            newLclInds1D = t_LocalOrdinal_1D ("Tpetra::CrsGraph::ind",
-                                              nodeNumAllocated_);
+            newLclInds1D =
+              col_inds_type ("Tpetra::CrsGraph::ind", nodeNumAllocated_);
             // Attempt to convert the new indices locally.
             for (size_t lclRow = 0; lclRow < lclNumRows; ++lclRow) {
               const RowInfo rowInfo = getRowInfo (lclRow);
@@ -4426,6 +4428,7 @@ namespace Tpetra {
     using Teuchos::Array;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
+    typedef typename local_graph_type::entries_type::non_const_type lcl_col_inds_type;
     const char tfecfFuncName[] = "makeIndicesLocal";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -4452,7 +4455,7 @@ namespace Tpetra {
         if (nodeNumAllocated_ && Kokkos::Impl::is_same<LO,GO>::value) {
           k_lclInds1D_ = Kokkos::Impl::if_c<Kokkos::Impl::is_same<LO,GO>::value,
             t_GlobalOrdinal_1D,
-            t_LocalOrdinal_1D >::select (k_gblInds1D_, k_lclInds1D_);
+            lcl_col_inds_type >::select (k_gblInds1D_, k_lclInds1D_);
         }
         else {
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -4461,7 +4464,7 @@ namespace Tpetra {
             "developers.");
           const size_t numEnt = k_rowPtrs_[lclNumRows];
 
-          k_lclInds1D_ = t_LocalOrdinal_1D ("Tpetra::CrsGraph::lclind", numEnt);
+          k_lclInds1D_ = lcl_col_inds_type ("Tpetra::CrsGraph::lclind", numEnt);
         }
 
         for (size_t r = 0; r < lclNumRows; ++r) {
@@ -4484,7 +4487,7 @@ namespace Tpetra {
         // We've converted column indices from global to local, so we
         // can deallocate the global column indices (which we know are
         // in 1-D storage, because the graph has static profile).
-        k_gblInds1D_ = t_GlobalOrdinal_1D ();
+        k_gblInds1D_ = lcl_col_inds_type ();
         gblInds1D_ = Teuchos::null;
       }
       else {  // the graph has dynamic profile (2-D index storage)

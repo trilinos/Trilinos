@@ -162,7 +162,8 @@ namespace Tpetra {
     typedef typename local_graph_type::row_map_type t_RowPtrs TPETRA_DEPRECATED;
     //! DEPRECATED; use <tt>local_graph_type::row_map_type::non_const_type</tt> instead.
     typedef typename local_graph_type::row_map_type::non_const_type t_RowPtrsNC TPETRA_DEPRECATED;
-    typedef typename local_graph_type::entries_type::non_const_type t_LocalOrdinal_1D;
+    //! DEPRECATED; use <tt>local_graph_type::entries_type::non_const_type</tt> instead.
+    typedef typename local_graph_type::entries_type::non_const_type t_LocalOrdinal_1D TPETRA_DEPRECATED;
 
     //! The Map specialization used by this class.
     typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, node_type> map_type;
@@ -340,7 +341,7 @@ namespace Tpetra {
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
               const typename local_graph_type::row_map_type& rowPointers,
-              const t_LocalOrdinal_1D & columnIndices,
+              const typename local_graph_type::entries_type::non_const_type& columnIndices,
               const Teuchos::RCP<Teuchos::ParameterList>& params = null);
 
     /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
@@ -891,7 +892,7 @@ namespace Tpetra {
     ///   only, and should never be called by user code.
     void
     setAllIndices (const typename local_graph_type::row_map_type& rowPointers,
-                   const t_LocalOrdinal_1D & columnIndices);
+                   const typename local_graph_type::entries_type::non_const_type& columnIndices);
 
     /// \brief Set the graph's data directly, using 1-D storage.
     ///
@@ -1718,7 +1719,7 @@ namespace Tpetra {
     ///   - The calling process has a nonzero number of entries
     ///   - The graph has StaticProfile (1-D storage)
     ///   - The graph is locally indexed
-    t_LocalOrdinal_1D k_lclInds1D_;
+    typename local_graph_type::entries_type::non_const_type k_lclInds1D_;
 
     //! Type of the k_gblInds1D_ array of global column indices.
     typedef Kokkos::View<GlobalOrdinal*, execution_space> t_GlobalOrdinal_1D;

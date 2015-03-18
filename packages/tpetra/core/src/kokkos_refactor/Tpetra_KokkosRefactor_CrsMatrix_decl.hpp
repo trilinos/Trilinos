@@ -127,13 +127,15 @@ namespace Tpetra {
     /// \brief The specialization of Kokkos::CrsMatrix that represents
     ///   the part of the sparse matrix on each MPI process.
     typedef Kokkos::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void, size_t> local_matrix_type;
+    //! The part of the sparse matrix's graph on each MPI process.
+    typedef typename crs_graph_type::local_graph_type local_graph_type;
 
     //! DEPRECATED; use <tt>local_matrix_type::row_map_type</tt> instead.
     typedef typename local_matrix_type::row_map_type t_RowPtrs TPETRA_DEPRECATED;
     //! DEPRECATED; use <tt>local_matrix_type::row_map_type::non_const_type</tt> instead.
     typedef typename local_matrix_type::row_map_type::non_const_type t_RowPtrsNC TPETRA_DEPRECATED;
-
-    typedef typename crs_graph_type::t_LocalOrdinal_1D t_LocalOrdinal_1D;
+    //! DEPRECATED; use <tt>local_graph_type::entries_type::non_const_type</tt> instead.
+    typedef typename local_graph_type::entries_type::non_const_type t_LocalOrdinal_1D TPETRA_DEPRECATED;
     typedef typename local_matrix_type::values_type t_ValuesType;
 
     //! DEPRECATED; use local_matrix_type instead.
@@ -296,7 +298,7 @@ namespace Tpetra {
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::RCP<const map_type>& colMap,
                const typename local_matrix_type::row_map_type& rowPointers,
-               const t_LocalOrdinal_1D & columnIndices,
+               const typename local_graph_type::entries_type::non_const_type& columnIndices,
                const t_ValuesType & values,
                const Teuchos::RCP<Teuchos::ParameterList>& params = null);
 
@@ -859,7 +861,7 @@ namespace Tpetra {
     */
     void
     setAllValues (const typename local_matrix_type::row_map_type& rowPointers,
-                  const t_LocalOrdinal_1D& columnIndices,
+                  const typename local_graph_type::entries_type::non_const_type& columnIndices,
                   const t_ValuesType& values);
 
     //! Sets the 1D pointer arrays of the graph.

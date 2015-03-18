@@ -182,7 +182,7 @@ namespace Stokhos {
     typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
     typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Graph;
     typedef typename Graph::local_graph_type::non_const_type RowPtrs;
-    typedef typename Graph::t_LocalOrdinal_1D LocalIndices;
+    typedef typename Graph::local_graph_type::entries_type::non_const_type LocalIndices;
 
     // Build domain map if necessary
     if (flat_domain_map == Teuchos::null)
