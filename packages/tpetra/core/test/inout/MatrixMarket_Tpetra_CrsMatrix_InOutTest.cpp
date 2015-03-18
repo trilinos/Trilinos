@@ -39,10 +39,7 @@
 // ************************************************************************
 // @HEADER
 
-// Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
-// only the .cu version of this file is actually compiled
 #include <Tpetra_ConfigDefs.hpp>
-
 #include <MatrixMarket_Tpetra.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Util.hpp> // sort2, merge2

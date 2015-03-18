@@ -71,3 +71,13 @@ TRIBITS_ADD_EXECUTABLE(
   )
 ENDIF()
 
+# This test has both lower and upper bounds on the number of MPI
+# processes for which it makes sense to run.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Bug6288
+  SOURCES Bug6288.cpp
+  ARGS ""
+  COMM mpi
+  NUM_MPI_PROCS 2-32
+  STANDARD_PASS_OUTPUT
+  )
