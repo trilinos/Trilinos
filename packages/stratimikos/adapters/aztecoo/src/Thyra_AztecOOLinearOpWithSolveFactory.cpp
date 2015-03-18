@@ -963,22 +963,22 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
       //
       // Forward solve
       RCP<const Epetra_Operator>
-        epetraOps[]
+        theEpetraOps[]
         = { epetra_epetraPrecOp };
       Teuchos::ETransp
-        epetraOpsTransp[]
+        theEpetraOpsTransp[]
         = { overall_epetra_epetraPrecOpTransp==NOTRANS
             ? Teuchos::NO_TRANS
             : Teuchos::TRANS };
       // Here we must toggle the apply mode since aztecoo applies the
       // preconditioner using ApplyInverse(...)
       PO::EApplyMode
-        epetraOpsApplyMode[]
+        theEpetraOpsApplyMode[]
         = { epetra_epetraPrecOpApplyAs==EPETRA_OP_APPLY_APPLY
             ? PO::APPLY_MODE_APPLY_INVERSE
             : PO::APPLY_MODE_APPLY };
       if(
-        epetraOpsTransp[0] == Teuchos::NO_TRANS
+        theEpetraOpsTransp[0] == Teuchos::NO_TRANS
         &&
         epetra_epetraPrecOpApplyAs==EPETRA_OP_APPLY_APPLY_INVERSE
         )
@@ -986,7 +986,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
         aztec_fwd_epetra_epetraPrecOp = epetra_epetraPrecOp;
       }
       else {
-        aztec_fwd_epetra_epetraPrecOp = rcp(new PO(1,epetraOps,epetraOpsTransp,epetraOpsApplyMode));
+        aztec_fwd_epetra_epetraPrecOp = rcp(new PO(1,theEpetraOps,theEpetraOpsTransp,theEpetraOpsApplyMode));
       }
       aztecFwdSolver->SetPrecOperator(
         const_cast<Epetra_Operator*>(&*aztec_fwd_epetra_epetraPrecOp));
@@ -1001,13 +1001,13 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
         epetra_epetraPrecOpAdjointSupport == EPETRA_OP_ADJOINT_SUPPORTED
         )
       {
-        epetraOpsTransp[0] = (
+        theEpetraOpsTransp[0] = (
           overall_epetra_epetraPrecOpTransp==NOTRANS
           ? Teuchos::TRANS
           : Teuchos::NO_TRANS
           );
         if(
-          epetraOpsTransp[0] == Teuchos::NO_TRANS
+          theEpetraOpsTransp[0] == Teuchos::NO_TRANS
           &&
           epetra_epetraPrecOpApplyAs==EPETRA_OP_APPLY_APPLY_INVERSE
           )
@@ -1016,7 +1016,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
         }
         else {
           aztec_adj_epetra_epetraPrecOp = rcp(
-            new PO(1,epetraOps,epetraOpsTransp,epetraOpsApplyMode));
+            new PO(1,theEpetraOps,theEpetraOpsTransp,theEpetraOpsApplyMode));
         }
         aztecAdjSolver->SetPrecOperator(
           const_cast<Epetra_Operator*>(&*aztec_adj_epetra_epetraPrecOp));
