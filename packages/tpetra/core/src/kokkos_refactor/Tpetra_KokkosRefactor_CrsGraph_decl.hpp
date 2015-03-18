@@ -1626,7 +1626,7 @@ namespace Tpetra {
     LocalStaticCrsGraphType getLocalGraph () const;
 
     //! Get the local graph (DEPRECATED: call getLocalGraph() instead).
-    TEUCHOS_DEPRECATED LocalStaticCrsGraphType getLocalGraph_Kokkos () const;
+    TPETRA_DEPRECATED LocalStaticCrsGraphType getLocalGraph_Kokkos () const;
 
     void fillLocalGraph (const Teuchos::RCP<Teuchos::ParameterList>& params);
 

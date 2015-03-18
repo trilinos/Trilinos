@@ -304,10 +304,10 @@ namespace Tpetra {
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
              const Teuchos::RCP<const map_type>& colMap,
-             const k_local_matrix_type& lclMatrix,
+             const local_matrix_type& lclMatrix,
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap),
-    k_lclMatrix_ (lclMatrix),
+    lclMatrix_ (lclMatrix),
     storageStatus_ (Details::STORAGE_1D_PACKED),
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
@@ -329,7 +329,7 @@ namespace Tpetra {
     staticGraph_ = myGraph_;
     computeGlobalConstants ();
 
-    k_values1D_ = k_lclMatrix_.values;
+    k_values1D_ = lclMatrix_.values;
 
     // FIXME (mfh 28 Aug 2014) "Preserve Local Graph" bool parameter no longer used.
 
@@ -1254,9 +1254,9 @@ namespace Tpetra {
       typename Graph::LocalStaticCrsGraphType (k_inds, k_ptrs_const);
 
     // Make the local matrix, using the local graph and vals array.
-    k_lclMatrix_ = k_local_matrix_type ("Tpetra::CrsMatrix::k_lclMatrix_",
-                                        getNodeNumCols (), k_vals,
-                                        myGraph_->lclGraph_);
+    lclMatrix_ = local_matrix_type ("Tpetra::CrsMatrix::lclMatrix_",
+                                    getNodeNumCols (), k_vals,
+                                    myGraph_->lclGraph_);
   }
 
   template <class Scalar,
@@ -1489,10 +1489,10 @@ namespace Tpetra {
     }
 
     // Build the local sparse matrix object.
-    k_lclMatrix_ = k_local_matrix_type ("Tpetra::CrsMatrix::k_lclMatrix_",
-                                        getDomainMap ()->getNodeNumElements (),
-                                        k_vals,
-                                        staticGraph_->getLocalGraph ());
+    lclMatrix_ = local_matrix_type ("Tpetra::CrsMatrix::lclMatrix_",
+                                    getDomainMap ()->getNodeNumElements (),
+                                    k_vals,
+                                    staticGraph_->getLocalGraph ());
   }
 
   template<class Scalar,
@@ -2755,7 +2755,7 @@ namespace Tpetra {
   scale (const Scalar& alpha)
   {
     typedef LocalOrdinal LO;
-    typedef Kokkos::SparseRowView<k_local_matrix_type> row_view_type;
+    typedef Kokkos::SparseRowView<local_matrix_type> row_view_type;
     typedef typename Teuchos::Array<Scalar>::size_type size_type;
     const char tfecfFuncName[] = "scale: ";
     const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
@@ -2774,9 +2774,9 @@ namespace Tpetra {
     }
     else {
       if (staticGraph_->getProfileType () == StaticProfile) {
-        const LO lclNumRows = k_lclMatrix_.numRows ();
+        const LO lclNumRows = lclMatrix_.numRows ();
         for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-          row_view_type row_i = k_lclMatrix_.row (lclRow);
+          row_view_type row_i = lclMatrix_.row (lclRow);
           for (LO k = 0; k < row_i.length; ++k) {
             // FIXME (mfh 02 Jan 2015) This assumes CUDA UVM.
             row_i.value (k) *= theAlpha;
@@ -5114,14 +5114,14 @@ namespace Tpetra {
         Kokkos::MV_MultiplyTranspose (RST::zero (),
                                       Y.template getLocalView<DeviceType> (),
                                       theAlpha,
-                                      k_lclMatrix_,
+                                      lclMatrix_,
                                       X.template getLocalView<DeviceType> (),
                                       conjugate);
       }
       else {
         Kokkos::MV_Multiply (Y.template getLocalView<DeviceType> (),
                              theAlpha,
-                             k_lclMatrix_,
+                             lclMatrix_,
                              X.template getLocalView<DeviceType> ());
       }
     }
@@ -5131,7 +5131,7 @@ namespace Tpetra {
         Kokkos::MV_MultiplyTranspose (theBeta,
                                       Y.template getLocalView<DeviceType> (),
                                       theAlpha,
-                                      k_lclMatrix_,
+                                      lclMatrix_,
                                       X.template getLocalView<DeviceType> (),
                                       conjugate);
       }
@@ -5139,7 +5139,7 @@ namespace Tpetra {
         Kokkos::MV_Multiply (theBeta,
                              Y.template getLocalView<DeviceType> (),
                              theAlpha,
-                             k_lclMatrix_,
+                             lclMatrix_,
                              X.template getLocalView<DeviceType> ());
       }
     }
@@ -5193,11 +5193,11 @@ namespace Tpetra {
     X_lcl.stride (X_stride);
     D_lcl.stride (D_stride);
 
-    k_local_matrix_type lclMatrix = this->getLocalMatrix ();
+    local_matrix_type lclMatrix = this->getLocalMatrix ();
     k_local_graph_type lclGraph = lclMatrix.graph;
-    typename k_local_matrix_type::row_map_type ptr = lclGraph.row_map;
-    typename k_local_matrix_type::index_type ind = lclGraph.entries;
-    typename k_local_matrix_type::values_type val = lclMatrix.values;
+    typename local_matrix_type::row_map_type ptr = lclGraph.row_map;
+    typename local_matrix_type::index_type ind = lclGraph.entries;
+    typename local_matrix_type::values_type val = lclMatrix.values;
     const offset_type* const ptrRaw = ptr.ptr_on_device ();
     const LO* const indRaw = ind.ptr_on_device ();
     const impl_scalar_type* const valRaw = val.ptr_on_device ();
@@ -5268,11 +5268,11 @@ namespace Tpetra {
     X_lcl.stride (X_stride);
     D_lcl.stride (D_stride);
 
-    k_local_matrix_type lclMatrix = this->getLocalMatrix ();
+    local_matrix_type lclMatrix = this->getLocalMatrix ();
     typename Graph::LocalStaticCrsGraphType lclGraph = lclMatrix.graph;
-    typename k_local_matrix_type::index_type ind = lclGraph.entries;
-    typename k_local_matrix_type::row_map_type ptr = lclGraph.row_map;
-    typename k_local_matrix_type::values_type val = lclMatrix.values;
+    typename local_matrix_type::index_type ind = lclGraph.entries;
+    typename local_matrix_type::row_map_type ptr = lclGraph.row_map;
+    typename local_matrix_type::values_type val = lclMatrix.values;
     const offset_type* const ptrRaw = ptr.ptr_on_device ();
     const LO* const indRaw = ind.ptr_on_device ();
     const impl_scalar_type* const valRaw = val.ptr_on_device ();
@@ -5356,7 +5356,7 @@ namespace Tpetra {
       uplo = Teuchos::LOWER_TRI;
     }
 
-    k_local_matrix_type A_lcl = this->getLocalMatrix ();
+    local_matrix_type A_lcl = this->getLocalMatrix ();
     typename DMV::dual_view_type::t_host X_lcl = X.template getLocalView<HMDT> ();
     typename RMV::dual_view_type::t_host Y_lcl = Y.template getLocalView<HMDT> ();
     triSolveKokkos (X_lcl, A_lcl, Y_lcl, uplo, diag, mode);
@@ -5381,7 +5381,7 @@ namespace Tpetra {
     using Teuchos::rcp;
     typedef CrsMatrix<T, LocalOrdinal, GlobalOrdinal, node_type> out_mat_type;
     typedef typename out_mat_type::t_ValuesType out_vals_type;
-    typedef typename out_mat_type::k_local_matrix_type out_lcl_mat_type;
+    typedef typename out_mat_type::local_matrix_type out_lcl_mat_type;
     typedef ArrayRCP<size_t>::size_type size_type;
     const char tfecfFuncName[] = "convert";
 
@@ -5405,7 +5405,7 @@ namespace Tpetra {
       // Convert the values from Scalar to T, and stuff them directly
       // into the matrix to return.
       const size_type numVals =
-        static_cast<size_type> (this->k_lclMatrix_.values.dimension_0 ());
+        static_cast<size_type> (this->lclMatrix_.values.dimension_0 ());
 
       // FIXME (mfh 05 Aug 2014) Write a copy kernel (impl_scalar_type and
       // T differ, so we can't use Kokkos::deep_copy).
@@ -5415,10 +5415,10 @@ namespace Tpetra {
       for (size_type k = 0; k < numVals; ++k) {
         newVals1D(k) = static_cast<T> (this->k_values1D_(k));
       }
-      newmat->k_lclMatrix_ =
-        out_lcl_mat_type ("Tpetra::CrsMatrix::k_lclMatrix_",
-                          this->k_lclMatrix_.numCols (), newVals1D,
-                          this->k_lclMatrix_.graph);
+      newmat->lclMatrix_ =
+        out_lcl_mat_type ("Tpetra::CrsMatrix::lclMatrix_",
+                          this->lclMatrix_.numCols (), newVals1D,
+                          this->lclMatrix_.graph);
       newmat->k_values1D_ = newVals1D;
       // Since newmat has a static (const) graph, the graph already
       // has a column Map, and Import and Export objects already exist
@@ -5461,7 +5461,7 @@ namespace Tpetra {
                                       StaticProfile));
 
       // Convert this matrix's values from Scalar to T.
-      const size_type numVals = this->k_lclMatrix_.values.dimension_0 ();
+      const size_type numVals = this->lclMatrix_.values.dimension_0 ();
       ArrayRCP<T> newVals1D (numVals);
       // FIXME (mfh 05 Aug 2014) This assumes UVM.
       for (size_type k = 0; k < numVals; ++k) {

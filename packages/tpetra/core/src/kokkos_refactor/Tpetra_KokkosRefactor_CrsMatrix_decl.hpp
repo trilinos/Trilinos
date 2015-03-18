@@ -126,9 +126,15 @@ namespace Tpetra {
 
     typedef typename crs_graph_type::t_RowPtrs t_RowPtrs;
     typedef typename crs_graph_type::t_LocalOrdinal_1D t_LocalOrdinal_1D;
-    typedef Kokkos::View<impl_scalar_type*, execution_space> t_ValuesType;
-    typedef Kokkos::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space,
-                              void, size_t> k_local_matrix_type;
+
+    /// \brief The specialization of Kokkos::CrsMatrix that represents
+    ///   the part of the sparse matrix on each MPI process.
+    typedef Kokkos::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void, size_t> local_matrix_type;
+    typedef typename local_matrix_type::values_type t_ValuesType;
+
+    //! DEPRECATED; use local_matrix_type instead.
+    typedef local_matrix_type k_local_matrix_type TPETRA_DEPRECATED;
+
     //@}
     //! @name Constructors and destructor
     //@{
@@ -342,7 +348,7 @@ namespace Tpetra {
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::RCP<const map_type>& colMap,
-               const k_local_matrix_type& lclMatrix,
+               const local_matrix_type& lclMatrix,
                const Teuchos::RCP<Teuchos::ParameterList>& params = null);
 
     // This friend declaration makes the clone() method work.
@@ -978,7 +984,7 @@ namespace Tpetra {
     /// \brief Perform a fillComplete on a matrix that already has data.
     ///
     /// The matrix must already have filled local 1-D storage
-    /// (k_lclInds1D_ and k_rowPtrs_ for the graph, and k_values1D_ in
+    /// (k_clInds1D_ and k_rowPtrs_ for the graph, and k_values1D_ in
     /// the matrix).  If the matrix has been constructed in any other
     /// way, this method will throw an exception.  This routine is
     /// needed to support other Trilinos packages and should not be
@@ -1146,9 +1152,8 @@ namespace Tpetra {
     //! This matrix's graph, as a CrsGraph.
     Teuchos::RCP<const crs_graph_type> getCrsGraph () const;
 
-    //! Return the underlying local kokkos mtx
-    k_local_matrix_type getLocalMatrix () const {return k_lclMatrix_; }
-
+    //! The local sparse matrix.
+    local_matrix_type getLocalMatrix () const {return lclMatrix_; }
 
     /// \brief Number of global elements in the row map of this matrix.
     ///
@@ -2749,7 +2754,7 @@ namespace Tpetra {
     //@}
 
     //! The local sparse matrix.
-    k_local_matrix_type k_lclMatrix_;
+    local_matrix_type lclMatrix_;
 
     /// \name Sparse matrix values.
     ///

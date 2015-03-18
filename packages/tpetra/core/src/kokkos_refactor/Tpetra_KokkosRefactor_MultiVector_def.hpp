@@ -3780,7 +3780,7 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  TEUCHOS_DEPRECATED
+  TPETRA_DEPRECATED
   KokkosClassic::MultiVector<
     Scalar, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
   MultiVector<
