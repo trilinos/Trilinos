@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //               ShyLU: Hybrid preconditioner package
 //                 Copyright 2012 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -66,18 +66,16 @@
 
 // Epetra includes
 #ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#else
+#  include "Epetra_MpiComm.h"
+#endif // HAVE_MPI
 #include "Epetra_SerialComm.h"
-#endif
-#include "Epetra_SerialComm.h"
-#include "Epetra_Time.h" 
-#include "Epetra_CrsMatrix.h" 
-#include "Epetra_Map.h" 
-#include "Epetra_MultiVector.h" 
+#include "Epetra_Time.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_Map.h"
+#include "Epetra_MultiVector.h"
 #include "Epetra_LinearProblem.h"
-#include "Epetra_Import.h" 
-#include "Epetra_Export.h" 
+#include "Epetra_Import.h"
+#include "Epetra_Export.h"
 
 // Teuchos includes
 #include "Teuchos_GlobalMPISession.hpp"

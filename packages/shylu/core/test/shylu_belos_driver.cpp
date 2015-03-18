@@ -17,10 +17,8 @@
 
 // Epetra includes
 #ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
+#  include "Epetra_MpiComm.h"
+#endif // HAVE_MPI
 #include "Epetra_SerialComm.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"
@@ -418,7 +416,7 @@ int main(int argc, char *argv[])
                 if (myPID == 0)
                   {
                     cout << "Could not open file: "<< file_name << endl;
-                    
+
                   }
                 success = false;
             }

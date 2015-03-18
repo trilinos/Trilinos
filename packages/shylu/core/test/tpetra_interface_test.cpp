@@ -20,10 +20,8 @@
 
 
 #ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
+#  include "Epetra_MpiComm.h"
+#endif // HAVE_MPI
 #include "Epetra_SerialComm.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"
@@ -98,7 +96,7 @@ int main(int argc, char** argv)
   typedef int local_o_type;
   typedef int global_o_type;
   //typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
-  
+
   typedef Tpetra::Details::DefaultTypes::node_type node_type;
 
   typedef Tpetra::CrsMatrix<scalar_type, local_o_type, global_o_type, node_type> Matrix_t;
@@ -107,10 +105,10 @@ int main(int argc, char** argv)
 
   Teuchos::ParameterList defaultParameters;
   Teuchos::RCP <node_type> node = Teuchos::rcp(new node_type(defaultParameters));
-  
+
   /*----------------Load a test matrix---------------*/
   string matrixFileName = "wathenSmall.mtx";
-  
+
   //Get Matrix
   Teuchos::RCP<Matrix_t> A = Tpetra::MatrixMarket::Reader<Matrix_t>::readSparseFile(matrixFileName, comm, node); //removed node
 
@@ -136,13 +134,13 @@ int main(int argc, char** argv)
   /*----------------partitioning_interface--------------*/
   /*-----------Will use check the epetra matrix on partition_interface------*/
 
-  pLUList->set("Partitioning Package","Zoltan2"); 
+  pLUList->set("Partitioning Package","Zoltan2");
   Teuchos::ParameterList ptemp = pLUList->sublist("Zoltan2 Input");
   ptemp.set("algorithm", "parmetis");
   ptemp.set("debug_level", "detailed_status");
   pLUList->set("Zoltan2 Input", ptemp);
-  
-  
+
+
   cout << " \n\n--------------------BIG BREAK --------------\n\n";
   Teuchos::writeParameterListToXmlOStream(*pLUList, std::cout);
 
@@ -151,7 +149,7 @@ int main(int argc, char** argv)
 
   ShyLU::PartitionInterface<Matrix_t, Vector_t> partI3(A.get(), pLUList.get());
   partI3.partition();
- 
+
   cout << "Done with graph - parmetis" << endl;
 
 #else
@@ -162,7 +160,7 @@ int main(int argc, char** argv)
 
 
 #ifdef HAVE_SHYLUCORE_AMESOS2
-  
+
   pLUList->set("Direct Solver Package", "Amesos2");
   ptemp = pLUList->sublist("Amesos2 Input");
   //pptemp = ptemp.sublist("Amesos_Klu Input");
@@ -177,7 +175,7 @@ int main(int argc, char** argv)
 
   cout << " \n\n--------------------BIG BREAK --------------\n\n";
   Teuchos::writeParameterListToXmlOStream(*pLUList, std::cout);
-  
+
   ShyLU::DirectSolverInterface<Matrix_t, Vector_t> directsolver2(A.get(), pLUList.get());
 directsolver2.solve(b.get(),x.get());
 
@@ -187,10 +185,10 @@ directsolver2.solve(b.get(),x.get());
   cout << "Done with Amesos-KLU2" << endl;
 
 #else
-  
+
   sucess = false;
 
-  
+
 #endif
 
   if(myPID == 0)
@@ -201,6 +199,6 @@ directsolver2.solve(b.get(),x.get());
         cout << fail << endl;
     }
 
-  
+
 }
 
