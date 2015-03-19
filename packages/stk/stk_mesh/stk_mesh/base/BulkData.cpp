@@ -4157,7 +4157,7 @@ void BulkData::internal_resolve_parallel_create()
   Trace_("stk::mesh::BulkData::internal_resolve_parallel_create");
 
   ThrowRequireMsg(parallel_size() > 1, "Do not call this in serial");
-  std::vector<Entity> shared_modified ;
+  std::vector<Entity> shared_modified;
 
   // Update the parallel index and
   // output shared and modified entities.
