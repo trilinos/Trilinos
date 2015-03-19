@@ -452,14 +452,14 @@ CartesianParametrization<T, N>::CartesianParametrization(
 }
 
 //
-// Evaluation for CartesianParametrization
+// Normal vector for CartesianParametrization
 //
 template<typename T, Index N>
 inline
-void
-CartesianParametrization<T, N>::operator()(
+Vector<T, N>
+CartesianParametrization<T, N>::get_normal(
     Vector<T, dimension_const<N, 3>::value> const & parameters
-)
+) const
 {
   T const &
   x = parameters(0);
@@ -470,8 +470,24 @@ CartesianParametrization<T, N>::operator()(
   T const
   z = parameters(2);
 
-  const Vector<T, N>
+  Vector<T, N> const
   normal(x, y, z);
+
+  return normal;
+}
+
+//
+// Evaluation for CartesianParametrization
+//
+template<typename T, Index N>
+inline
+void
+CartesianParametrization<T, N>::operator()(
+    Vector<T, dimension_const<N, 3>::value> const & parameters
+)
+{
+  Vector<T, N>
+  normal = get_normal(parameters);
 
   // Localization tensor
   Tensor<T, N> const
