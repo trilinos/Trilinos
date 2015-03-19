@@ -5,7 +5,7 @@
 #
 # Package options
 #
-PROJECT_NAME           = "Tpetra Matrix/Vector Services"
+PROJECT_NAME           = "Tpetra parallel linear algebra"
 PROJECT_NUMBER         = "Version of the Day"
 
 OUTPUT_DIRECTORY       = .
@@ -47,28 +47,32 @@ QUIET                  = NO
 WARNINGS               = YES
 WARN_IF_UNDOCUMENTED   = YES
 WARN_FORMAT            = "$file:$line: $text"
-INPUT                  = index.doc groups.doc \
-                         ../src ../ext ../inout ../rti ../example \
-                         ../example/Lesson01-Init/index.doc \
-                         ../example/Lesson02-Map-Vector/index.doc \
-                         ../example/Lesson03-Power-Method/index.doc \
-                         ../example/Lesson04-Sparse-Matrix-Fill/index.doc \
-                         ../example/Lesson05-Redistribution/index.doc \
-                         ../example/Lesson06-Custom-Operator/index.doc
+INPUT                  = ../core/doc/index.doc \
+                         ../core/doc/groups.doc \
+                         ../core/src \
+                         ../core/ext \
+                         ../core/inout \
+                         ../core/rti \
+                         ../core/example/Lesson01-Init/index.doc \
+                         ../core/example/Lesson02-Map-Vector/index.doc \
+                         ../core/example/Lesson03-Power-Method/index.doc \
+                         ../core/example/Lesson04-Sparse-Matrix-Fill/index.doc \
+                         ../core/example/Lesson05-Redistribution/index.doc \
+                         ../core/example/Lesson06-Custom-Operator/index.doc
 FILE_PATTERNS          = *.hpp *.cpp
 RECURSIVE              = YES
 EXCLUDE                = ../src/Tpetra_ImportExportData.hpp \
-                         ../src/Tpetra_ExplicitInstantiationHelpers.hpp \
-                         ../src/Tpetra_CrsMatrix_def.hpp \
-                         ../src/Tpetra_CrsMatrixMultiplyOp_def.hpp \
-                         ../src/Tpetra_CrsMatrixSolveOp_def.hpp \
-                         ../src/Tpetra_Map_def.hpp \
-                         ../ext/TpetraExt_BlockExtraction_def.hpp \
-                         ../example/advanced/ \
-                         ../example/not-built/
-
+                         ../src/Tpetra_ExplicitInstantiationHelpers.hpp
 EXCLUDE_PATTERNS       = *.x *.o *.out
-EXAMPLE_PATH           =  ../example
+#
+# Set up paths and patterns for examples
+#
+EXAMPLE_PATH           =  ../core/example/Lesson01-Init \
+                          ../core/example/Lesson02-Map-Vector \
+                          ../core/example/Lesson03-Power-Method \
+                          ../core/example/Lesson04-Sparse-Matrix-Fill \
+                          ../core/example/Lesson05-Redistribution \
+                          ../core/example/Lesson06-Custom-Operator
 EXAMPLE_RECURSIVE       = YES
 EXAMPLE_PATTERNS       = *.cpp *.hpp
 IMAGE_PATH             = 
@@ -93,14 +97,11 @@ EXPAND_ONLY_PREDEF     = YES
 SEARCH_INCLUDES        = YES
 INCLUDE_FILE_PATTERNS  = 
 PREDEFINED             = DOXYGEN_SHOULD_SKIP_THIS DOXYGEN_USE_ONLY
-INCLUDE_PATH           = ../src
+INCLUDE_PATH           = ../core/src ../core/src/kokkos_refactor
 EXPAND_AS_DEFINED      = 
 #
 # Links to other packages
 #
-TAGFILES               = ../../common/tag_files/teuchos.tag=../../../teuchos/doc/html ../../common/tag_files/epetra.tag=../../../epetra/doc/html \
-                         ../../common/tag_files/belos.tag=../../../belos/doc/html ../../common/tag_files/anasazi.tag=../../../anasazi/doc/html \
-                         ../../common/tag_files/kokkos.tag=../../../kokkos/doc/html 
 GENERATE_TAGFILE       = ../../common/tag_files/tpetra.tag
 ALLEXTERNALS           = NO
 EXTERNAL_GROUPS        = NO
