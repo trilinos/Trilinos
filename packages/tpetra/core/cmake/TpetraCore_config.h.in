@@ -28,6 +28,9 @@
 #  define HAVE_TPETRA_CUDA
 #endif // HAVE_TPETRACORE_CUDA
 
+/* Determine if we have the quadmath TPL */
+#cmakedefine HAVE_TPETRACORE_QUADMATH
+
 /* Determine if we have QD */
 #cmakedefine HAVE_TPETRACORE_QD
 #ifdef HAVE_TPETRACORE_QD
