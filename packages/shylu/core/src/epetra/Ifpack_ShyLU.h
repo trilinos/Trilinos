@@ -61,10 +61,10 @@
    */
 #define BLOCK_DIAGONAL_Si
 
-#include "Isorropia_config.h" // Just for HAVE_MPI
+#include "ShyLUCore_config.h"
 
 // Epetra includes
-#ifdef HAVE_MPI
+#ifdef HAVE_SHYLUCORE_MPI
 #include "Epetra_MpiComm.h"
 #else
 #include "Epetra_SerialComm.h"

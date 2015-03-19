@@ -3,7 +3,7 @@
 */
 
 /* define if we want to use MPI */
-#cmakedefine HAVE_MPI
+#cmakedefine HAVE_SHYLUCORE_MPI
 
 #cmakedefine HAVE_SHYLUCORE_TPETRA
 

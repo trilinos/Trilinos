@@ -63,7 +63,7 @@
 
 #include "shylu.h"
 #include "shylu_util.h"
-#ifdef HAVE_MPI
+#ifdef HAVE_SHYLUCORE_MPI
 #include <Epetra_MpiComm.h>
 #else
 #include <Epetra_SerialComm.h>
@@ -102,11 +102,11 @@ int create_matrices
 
     /* --------------- Create the maps for the DBBD form ------------------- */
     // Create the local and distributed row map
-#ifdef HAVE_MPI
+#ifdef HAVE_SHYLUCORE_MPI
     Epetra_MpiComm LComm(MPI_COMM_SELF);
 #else
     Epetra_SerialComm LComm;
-#endif // HAVE_MPI
+#endif // HAVE_SHYLUCORE_MPI
 
     // Use Serial Comm for the local blocks.
     Epetra_Map LocalDRowMap(-1, Dnr, DRowElems, 0, LComm);
@@ -807,11 +807,11 @@ int shylu_symbolic_factor
     }
 
     // Set the maps, importers and multivectors to be used in the solve once.
-#ifdef HAVE_MPI
+#ifdef HAVE_SHYLUCORE_MPI
     Epetra_MpiComm LComm(MPI_COMM_SELF);
 #else
     Epetra_SerialComm LComm;
-#endif // HAVE_MPI
+#endif // HAVE_SHYLUCORE_MPI
     data->LDRowMap = Teuchos::rcp(new Epetra_Map(-1, data->Dnr,
                                  data->DRowElems, 0, LComm));
     data->LGRowMap = Teuchos::rcp(new Epetra_Map(-1, data->Snr,
@@ -897,11 +897,11 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
 #endif
 
     // Create the local and distributed row map
-#ifdef HAVE_MPI
+#ifdef HAVE_SHYLUCORE_MPI
     Epetra_MpiComm LComm(MPI_COMM_SELF);
 #else
     Epetra_SerialComm LComm;
-#endif // HAVE_MPI
+#endif // HAVE_SHYLUCORE_MPI
     Epetra_Map LocalDRowMap(-1, data->Dnr, data->DRowElems, 0, LComm);
     Teuchos::RCP<Epetra_CrsMatrix> Sbar;
 

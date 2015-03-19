@@ -55,12 +55,12 @@
 #include <iostream>
 #include <sstream>
 
-#include "Isorropia_config.h" // Just for HAVE_MPI
+#include "ShyLUCore_config.h"
 
 // Epetra includes
-#ifdef HAVE_MPI
+#ifdef HAVE_SHYLUCORE_MPI
 #  include "Epetra_MpiComm.h"
-#endif // HAVE_MPI
+#endif // HAVE_SHYLUCORE_MPI
 #include "Epetra_SerialComm.h"
 #include "Epetra_Time.h"
 #include "Epetra_CrsMatrix.h"

@@ -62,12 +62,12 @@
    */
 #define BLOCK_DIAGONAL_Si
 
-#include "Isorropia_config.h" // Just for HAVE_MPI
+#include "shylu_util.h"
 
 // Epetra includes
-#ifdef HAVE_MPI
+#ifdef HAVE_SHYLUCORE_MPI
 #  include "Epetra_MpiComm.h"
-#endif // HAVE_MPI
+#endif // HAVE_SHYLUCORE_MPI
 #include "Epetra_SerialComm.h"
 #include "Epetra_Time.h"
 #include "Epetra_CrsMatrix.h"
@@ -92,13 +92,12 @@
 #include "Amesos_BaseSolver.h"
 
 #include "shylu.h"
-#include "shylu_util.h"
 
 using namespace std;
 
 int main(int argc, char *argv[])
 {
-#ifdef HAVE_MPI
+#ifdef HAVE_SHYLUCORE_MPI
     Teuchos::GlobalMPISession mpiSession(&argc, &argv, 0);
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
