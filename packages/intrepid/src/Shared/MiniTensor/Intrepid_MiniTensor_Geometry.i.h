@@ -175,6 +175,8 @@ SphericalParametrization<T, N>::operator()(
     Vector<T, dimension_const<N, 2>::value> const & parameters
 )
 {
+  assert(parameters.get_dimension() == 2);
+
   Vector<T, N> const
   normal = get_normal(parameters);
 
@@ -248,6 +250,8 @@ StereographicParametrization<T, N>::operator()(
     Vector<T, dimension_const<N, 2>::value> const & parameters
 )
 {
+  assert(parameters.get_dimension() == 2);
+
   Vector<T, N> const
   normal = get_normal(parameters);
 
@@ -328,7 +332,9 @@ ProjectiveParametrization<T, N>::operator()(
     Vector<T, dimension_const<N, 3>::value> const & parameters
 )
 {
-  const Vector<T, N>
+  assert(parameters.get_dimension() == 3);
+
+  Vector<T, N> const
   normal = get_normal(parameters);
 
   // Localization tensor
@@ -365,17 +371,15 @@ TangentParametrization<T, N>::TangentParametrization(
 }
 
 //
-// Evaluation for TangentParametrization
+// Normal vector for TangentParametrization
 //
 template<typename T, Index N>
 inline
-void
-TangentParametrization<T, N>::operator()(
+Vector<T, N>
+TangentParametrization<T, N>::get_normal(
     Vector<T, dimension_const<N, 2>::value> const & parameters
-)
+) const
 {
-  assert(parameters.get_dimension() == 2);
-
   T const &
   x = parameters(0);
 
@@ -392,7 +396,27 @@ TangentParametrization<T, N>::operator()(
     normal(0) = x * sin(r) / r;
     normal(1) = y * sin(r) / r;
     normal(2) = cos(r);
+  } else {
+    normal(2) = 1.0;
   }
+
+  return normal;
+}
+
+//
+// Evaluation for TangentParametrization
+//
+template<typename T, Index N>
+inline
+void
+TangentParametrization<T, N>::operator()(
+    Vector<T, dimension_const<N, 2>::value> const & parameters
+)
+{
+  assert(parameters.get_dimension() == 2);
+
+  Vector<T, N> const
+  normal = get_normal(parameters);
 
   // Localization tensor
   Tensor<T, N> const
