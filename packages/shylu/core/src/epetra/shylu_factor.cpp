@@ -496,31 +496,6 @@ int extract_matrices
         delete DColMap;
     }
 
-#if 0
-    if (insertValues)
-    {
-#ifdef TIMING_OUTPUT
-    Teuchos::Time ttime("transpose time");
-    ttime.start();
-#endif
-        bool MakeDataContiguous = true;
-        ssym->transposer = Teuchos::RCP<EpetraExt::RowMatrix_Transpose>(new EpetraExt::RowMatrix_Transpose(MakeDataContiguous));
-        ssym->DT = Teuchos::rcp( dynamic_cast<Epetra_CrsMatrix *>(&(*ssym->transposer)(*D)), false);
-
-#ifdef TIMING_OUTPUT
-    ttime.stop();
-    cout << "Transpose Time" << ttime.totalElapsedTime() << endl;
-    ttime.reset();
-#endif
-
-    }
-    else
-    {
-        ssym->transposer->fwd();
-        //ssym->ReIdx_LP->fwd(); // TODO: Needed ?
-    }
-#endif
-
     // A is no longer needed
     delete[] LeftIndex;
     delete[] LeftValues;
