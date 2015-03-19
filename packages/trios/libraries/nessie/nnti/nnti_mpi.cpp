@@ -899,14 +899,14 @@ NNTI_result_t NNTI_mpi_send (
         mpi_mem_hdl->wr_queue.push_back(mpi_wr);
         nthread_unlock(&mpi_mem_hdl->wr_queue_lock);
 
+        log_debug(nnti_debug_level, "sending to (rank=%d, tag=%d)", dest_rank, tag);
+
     } else {
         NNTI_mpi_put(msg_hdl, 0, msg_hdl->payload_size, dest_hdl, 0, wr);
     }
 
-    log_debug(nnti_debug_level, "sending to (rank=%d, tag=%d)", dest_rank, tag);
-
 cleanup:
-    log_debug(nnti_debug_level, "exit");
+    log_debug(nnti_debug_level, "exit (wr=%p ; mpi_wr=%p ; last_op=%d)", wr, (mpi_work_request*)wr->transport_private, ((mpi_work_request*)wr->transport_private)->last_op);
 
     return(nnti_rc);
 }
@@ -934,7 +934,7 @@ NNTI_result_t NNTI_mpi_put (
     mpi_work_request  *mpi_wr=NULL;
     int                dest_rank;
 
-    log_debug(nnti_debug_level, "enter");
+    log_debug(nnti_debug_level, "enter (wr=%p)", wr);
 
     assert(src_buffer_hdl);
     assert(dest_buffer_hdl);
@@ -1006,7 +1006,10 @@ NNTI_result_t NNTI_mpi_put (
     mpi_wr->active_requests |= RDMA_CMD_REQUEST_ACTIVE;
     mpi_wr->active_requests |= PUT_SEND_REQUEST_ACTIVE;
 
-    log_debug(nnti_debug_level, "putting to (%s, dest_rank=%d)", dest_buffer_hdl->buffer_owner.url, dest_rank);
+    log_debug(nnti_debug_level, "putting to (%s, dest_rank=%d, cmd_tag=%d, put_data_tag=%d)",
+            dest_buffer_hdl->buffer_owner.url, dest_rank,
+            dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.cmd_tag,
+            dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.put_data_tag);
 
     wr->transport_id     =src_buffer_hdl->transport_id;
     wr->reg_buf          =(NNTI_buffer_t*)src_buffer_hdl;
@@ -1018,7 +1021,7 @@ NNTI_result_t NNTI_mpi_put (
     nthread_unlock(&mpi_mem_hdl->wr_queue_lock);
 
 cleanup:
-    log_debug(nnti_debug_level, "exit");
+    log_debug(nnti_debug_level, "exit (wr=%p ; mpi_wr=%p ; last_op=%d)", wr, (mpi_work_request*)wr->transport_private, ((mpi_work_request*)wr->transport_private)->last_op);
 
     return(nnti_rc);
 }
@@ -1128,7 +1131,10 @@ NNTI_result_t NNTI_mpi_get (
     mpi_wr->active_requests |= RDMA_CMD_REQUEST_ACTIVE;
     mpi_wr->active_requests |= GET_RECV_REQUEST_ACTIVE;
 
-    log_debug(nnti_debug_level, "getting from (%s, src_rank=%d)", src_buffer_hdl->buffer_owner.url, src_rank);
+    log_debug(nnti_debug_level, "getting from (%s, src_rank=%d, cmd_tag=%d, get_data_tag=%d)",
+            dest_buffer_hdl->buffer_owner.url, src_rank,
+            src_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.cmd_tag,
+            dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.get_data_tag);
 
     wr->transport_id     =dest_buffer_hdl->transport_id;
     wr->reg_buf          =(NNTI_buffer_t*)dest_buffer_hdl;
@@ -1140,7 +1146,7 @@ NNTI_result_t NNTI_mpi_get (
     nthread_unlock(&mpi_mem_hdl->wr_queue_lock);
 
 cleanup:
-    log_debug(nnti_debug_level, "exit");
+    log_debug(nnti_debug_level, "exit (wr=%p ; mpi_wr=%p ; last_op=%d)", wr, (mpi_work_request*)wr->transport_private, ((mpi_work_request*)wr->transport_private)->last_op);
 
     return(nnti_rc);
 }
