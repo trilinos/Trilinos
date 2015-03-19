@@ -39,10 +39,7 @@
 // ************************************************************************
 // @HEADER
 
-// Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
-// only the .cu version of this file is actually compiled
 #include <Tpetra_ConfigDefs.hpp>
-
 #include <MatrixMarket_Tpetra.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Util.hpp> // sort2, merge2
@@ -580,37 +577,38 @@ testCrsMatrix (Teuchos::FancyOStream& out, const GlobalOrdinalType indexBase)
 
 } // namespace (anonymous)
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrixOutputInput, IndexBase0, ScalarType, LocalOrdinalType, GlobalOrdinalType, NodeType )
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrixOutputInput, IndexBase0, ST, LO, GO, NT )
 {
   const GlobalOrdinalType indexBase = 0;
-  success = testCrsMatrix<ScalarType, LocalOrdinalType, GlobalOrdinalType, NodeType> (out, indexBase);
+  success = testCrsMatrix<ST, LO, GO, NT> (out, indexBase);
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrixOutputInput, IndexBase1, ScalarType, LocalOrdinalType, GlobalOrdinalType, NodeType )
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrixOutputInput, IndexBase1, ST, LO, GO, NT )
 {
   const GlobalOrdinalType indexBase = 1;
-  success = testCrsMatrix<ScalarType, LocalOrdinalType, GlobalOrdinalType, NodeType> (out, indexBase);
+  success = testCrsMatrix<ST, LO, GO, NT> (out, indexBase);
 }
 
-
-// Unit test macro isn't smart enough to deal with namespace qualifications.
-typedef Tpetra::Details::DefaultTypes::node_type the_node_type;
-
 // We instantiate tests for all combinations of the following parameters:
-// - indexBase = {0, 1}
-// - ST = {double, float}
-// - GO = {int, long}
-//
-// We should really use the Tpetra ETI system to control which GO we
-// test here, but int and long are the two most important cases.
+//   - indexBase = {0, 1}
+//   - Scalar = {double, float}
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrixOutputInput, IndexBase0, double, int, int, the_node_type )
+#if defined(HAVE_TPETRA_INST_DOUBLE)
+#  define UNIT_TEST_GROUP( LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrixOutputInput, IndexBase0, double, LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrixOutputInput, IndexBase1, double, LO, GO, NODE )
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrixOutputInput, IndexBase1, double, int, int, the_node_type )
+#elif defined(HAVE_TPETRA_INST_FLOAT)
+#  define UNIT_TEST_GROUP( LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrixOutputInput, IndexBase0, float, LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrixOutputInput, IndexBase1, float, LO, GO, NODE )
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrixOutputInput, IndexBase0, double, int, long, the_node_type )
+#else
+#  define UNIT_TEST_GROUP( LO, GO, NODE )
+#endi
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrixOutputInput, IndexBase1, double, int, long, the_node_type )
 
+  TPETRA_ETI_MANGLING_TYPEDEFS()
 
+  TPETRA_INSTANTIATE_LGN( UNIT_TEST_GROUP )
 
