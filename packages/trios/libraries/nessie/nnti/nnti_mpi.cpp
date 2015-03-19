@@ -2510,7 +2510,11 @@ static int process_event(
     mpi_mem_hdl=MPI_MEM_HDL(reg_buf);
     assert(mpi_mem_hdl);
 
-    if (event->MPI_TAG == mpi_mem_hdl->cmd_tag) {
+    if ((mpi_wr->op_state == BUFFER_INIT) &&
+        (event->MPI_TAG == mpi_mem_hdl->cmd_tag)) {
+        /* this is an RDMA target work request.  the command
+         * message tells us the operation being performed by
+         * the remote initiator.  */
         mpi_wr->last_op = mpi_wr->cmd_msg.op;
     }
 
