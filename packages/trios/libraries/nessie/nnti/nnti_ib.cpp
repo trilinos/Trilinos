@@ -6050,16 +6050,17 @@ static NNTI_result_t wr_pool_deregister(
             log_error(nnti_debug_level, "deregistering the ACK buffer failed");
         }
         trios_stop_timer("deregister", callTime);
+
+        if (config.use_mlock) {
+            trios_start_timer(callTime);
+            munlock(ib_wr->ack_mr->addr, ib_wr->ack_mr->length);
+            trios_stop_timer("munlock", callTime);
+        }
+
         ib_wr->ack_mr=NULL;
     } else {
         log_debug(nnti_debug_level, "exit ib_wr(%p) - not registered", ib_wr);
         return(NNTI_OK);
-    }
-
-    if (config.use_mlock) {
-        trios_start_timer(callTime);
-        munlock(ib_wr->ack_mr->addr, ib_wr->ack_mr->length);
-        trios_stop_timer("munlock", callTime);
     }
 
     log_debug(nnti_debug_level, "exit");
