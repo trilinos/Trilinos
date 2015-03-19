@@ -2,7 +2,7 @@
 #define IQR_GMRES_TOOLS_H
 
 #include <iostream>
-#include <gmres.h>
+#include <shylu_internal_gmres.h>
 
 #include <Epetra_Operator.h>
 
@@ -11,7 +11,7 @@
     In particular it stores informations of a computed gmres which are useful
     for the followings gmres, such as initial guess or preconditioner.
     It is even possible to have nested right preconditioners using
-    the pointer to gmres_tools *P.
+    the pointer to shylu_internal_gmres_tools *P.
     Data stored are:
         v : array of basis vectors (for "AP^-1 y" and  "Ax")
         w : for future use: same as v but basis of "x" and "P^-1y".
@@ -77,7 +77,7 @@ GMRESManager< Map, MultiVector, LocalMatrix, LocalVector >::GMRESManager(const M
       map_(map)
 {
     if (rest < 0) {
-        std::cout << "gmres_tools: restart must be positive" << std::endl;
+        std::cout << "shylu_internal_gmres_tools: restart must be positive" << std::endl;
         exit(1);
     }
 

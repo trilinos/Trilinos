@@ -78,8 +78,8 @@
 #include "Ifpack.h"
 #endif
 
-#include "gmres.h"
-#include "gmres_tools.h"
+#include "shylu_internal_gmres.h"
+#include "shylu_internal_gmres_tools.h"
 
 int create_matrices
 (

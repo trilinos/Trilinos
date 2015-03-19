@@ -40,8 +40,8 @@ APPEND_SET(HEADERS
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
-  gmres.h
-  gmres_tools.h
+  shylu_internal_gmres.h
+  shylu_internal_gmres_tools.h
   IQRSolver.h
   shylu_debug_manager.hpp
   Ifpack_ShyLU.h
