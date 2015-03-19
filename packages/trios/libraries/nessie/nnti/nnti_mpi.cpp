@@ -1517,6 +1517,8 @@ NNTI_result_t NNTI_mpi_wait (
     MPI_Status event;
     int done=FALSE;
 
+    int ops_completed=0;
+
     log_level debug_level=nnti_debug_level;
 
     long entry_time=trios_get_time_ms();
@@ -1558,8 +1560,15 @@ NNTI_result_t NNTI_mpi_wait (
                 return NNTI_ECANCELED;
             }
 
-            check_atomic_operation();
-            check_target_buffer_progress();
+            ops_completed += check_atomic_operation();
+            ops_completed += check_target_buffer_progress();
+
+            if (ops_completed > 0) {
+                ops_completed=0;
+                if (is_wr_complete(mpi_wr) == TRUE) {
+                    break;
+                }
+            }
 
             log_debug(debug_level, "waiting on wr(%p) request(%p)", wr , mpi_wr->request_ptr);
 
@@ -1713,6 +1722,8 @@ NNTI_result_t NNTI_mpi_waitany (
     MPI_Status   event;
     int done=FALSE;
 
+    int ops_completed=0;
+
     int which_req=0;
 
     long elapsed_time=0;
@@ -1768,8 +1779,15 @@ NNTI_result_t NNTI_mpi_waitany (
                 return NNTI_ECANCELED;
             }
 
-            check_atomic_operation();
-            check_target_buffer_progress();
+            ops_completed += check_atomic_operation();
+            ops_completed += check_target_buffer_progress();
+
+            if (ops_completed > 0) {
+                ops_completed=0;
+                if (is_any_wr_complete(wr_list, wr_count, which) == TRUE) {
+                    break;
+                }
+            }
 
             log_debug(debug_level, "waiting on wr_list(%p)", wr_list);
 
@@ -1966,6 +1984,8 @@ NNTI_result_t NNTI_mpi_waitall (
     MPI_Status  *events=NULL;
     int done=FALSE;
 
+    int ops_completed=0;
+
     long elapsed_time=0;
 //    long timeout_per_call;
 
@@ -2018,8 +2038,15 @@ NNTI_result_t NNTI_mpi_waitall (
                 return NNTI_ECANCELED;
             }
 
-            check_atomic_operation();
-            check_target_buffer_progress();
+            ops_completed += check_atomic_operation();
+            ops_completed += check_target_buffer_progress();
+
+            if (ops_completed > 0) {
+                ops_completed=0;
+                if (is_all_wr_complete(wr_list, wr_count) == TRUE) {
+                    break;
+                }
+            }
 
             log_debug(debug_level, "waiting on wr_list(%p)", wr_list);
 
@@ -2253,7 +2280,7 @@ cleanup:
 
 static int check_target_buffer_progress()
 {
-    int nnti_rc=NNTI_OK;
+    int ops_completed=0;
 
     mpi_memory_handle *mpi_mem_hdl=NULL;
     mpi_work_request  *mpi_wr   =NULL;
@@ -2321,9 +2348,7 @@ static int check_target_buffer_progress()
 
         if (rc == MPI_SUCCESS) {
             /* case 1: success */
-            if (done == TRUE) {
-                nnti_rc = NNTI_OK;
-            } else {
+            if (done == 0) {
                 continue;
             }
         }
@@ -2331,7 +2356,6 @@ static int check_target_buffer_progress()
         else {
             log_error(debug_level, "MPI_Test() failed (request=%p): rc=%d",
                     mpi_wr->request_ptr, rc);
-            nnti_rc = NNTI_EIO;
             break;
         }
 
@@ -2339,6 +2363,9 @@ static int check_target_buffer_progress()
 
         if (((mpi_wr->last_op == MPI_OP_GET_TARGET) && (mpi_wr->op_state == RDMA_READ_COMPLETE)) ||
             ((mpi_wr->last_op == MPI_OP_PUT_TARGET) && (mpi_wr->op_state == RDMA_WRITE_COMPLETE))) {
+
+            ops_completed++;
+
             // the op is complete
             if (!(reg_buf->ops & NNTI_BOP_WITH_EVENTS)) {
                 // app doesn't want events, so we can recycle the work request
@@ -2360,12 +2387,12 @@ static int check_target_buffer_progress()
 
     log_debug(debug_level, "exit");
 
-    return(nnti_rc);
+    return(ops_completed);
 }
 
 static int check_atomic_operation(void)
 {
-    int nnti_rc=NNTI_OK;
+    int ops_completed=0;
 
     int rc=MPI_SUCCESS;
 
@@ -2402,16 +2429,13 @@ static int check_atomic_operation(void)
 
     if (rc == MPI_SUCCESS) {
     	/* case 1: success */
-    	if (done) {
-    		nnti_rc = NNTI_OK;
-    	} else {
+    	if (done == 0) {
     		goto cleanup;
     	}
     }
     /* MPI_Test failure */
     else {
     	log_error(debug_level, "MPI_Test(atomics_recv_request) failed: rc=%d", rc);
-    	nnti_rc = NNTI_EIO;
     	goto cleanup;
     }
 
@@ -2447,11 +2471,12 @@ static int check_atomic_operation(void)
     nthread_unlock(&nnti_mpi_lock);
     if (rc != MPI_SUCCESS) {
         log_error(nnti_debug_level, "failed to send with Isend");
-        nnti_rc = NNTI_EBADRPC;
         goto cleanup;
     }
 
     nthread_unlock(&atomic->lock);
+
+    ops_completed++;
 
     post_atomics_recv_request();
 
@@ -2460,7 +2485,7 @@ cleanup:
 
     log_debug(debug_level, "exit");
 
-    return(nnti_rc);
+    return(ops_completed);
 }
 
 
