@@ -372,6 +372,15 @@ MPI_Comm parallel_comm();
 MPI_Comm parallel_world_comm();
 
 /**
+ * @brief Function <b>parallel_intercomm</b> returns the current MPI intercommunicator used by
+ * the sierra environment.
+ *
+ * @return          a <b>MPI_Comm</b> value of the current MPI
+ *              communicator.
+ */
+MPI_Comm parallel_intercomm();
+
+/**
  * @brief Function <b>peer_group</b> returns the peer group rank for an application of type
  *        EXEC_TYPE_PEER.
  *
