@@ -25,7 +25,7 @@
 #include <cmath>
 #include <iostream>
 
-#include <gmres_tools.h>
+#include <shylu_internal_gmres_tools.h>
 
 namespace IQR
 {
