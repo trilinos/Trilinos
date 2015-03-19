@@ -11,7 +11,7 @@ fei: .[*.hpp] base[*.hpp *.h] support-Trilinos[*.hpp]
 galeri: src[*.h]
 ifpack: src[*.h]
 ifpack2: src[*.hpp]
-intrepid: src/[*.hpp] src/Cell[*.hpp] src/Discretization/Basis[*.hpp] src/Discretization/FunctionSpaceTools[*.hpp] src/Discretization/Integration[*.hpp] src/Shared[*.hpp] src/Shared/MiniTensor[*.h]
+intrepid: src/[*.hpp] src/Cell[*.hpp] src/Discretization/Basis[*.hpp] src/Discretization/FunctionSpaceTools[*.hpp] src/Discretization/Integration[*.hpp] src/Shared[*.hpp] src/Shared/MiniTensor[*.h] src/Kokkos[*.hpp]
 kokkos: core/src[*.h *.hpp]containers/src[*.hpp] algorithms/src[*.hpp]
 mesquite: src/Mesh[*.hpp] src/TargetCalculator[*.hpp] src/Control[*.hpp] src/ObjectiveFunction[*.hpp] src/Misc[*.hpp] src/MappingFunction[*.hpp] src/MappingFunction/Lagrange[*.hpp] src/MappingFunction/Linear[*.hpp] src/QualityAssessor[*.hpp] src/QualityMetric[*.hpp] src/QualityMetric/Shape[*.hpp] src/QualityMetric/Untangle[*.hpp] src/QualityMetric/Smoothness[*.hpp] src/QualityMetric/TMP[*.hpp] src/QualityMetric/Debug[*.hpp] src/QualityMetric/Volume[*.hpp] src/Wrappers[*.hpp] src/TargetMetric[*.hpp] src/TargetMetric/Shape[*.hpp] src/TargetMetric/Untangle[*.hpp] src/TargetMetric/ShapeSizeOrient[*.hpp] src/TargetMetric/Misc[*.hpp] src/TargetMetric/ShapeSize[*.hpp] src/TargetMetric/Size[*.hpp] src/TargetMetric/ShapeOrient[*.hpp] src/QualityImprover[*.hpp] src/QualityImprover/TopologyModifier[*.hpp] src/QualityImprover/OptSolvers[*.hpp] src/QualityImprover/Relaxation[*.hpp] src/include[*.hpp] src/Control
 ml: src[*.h *.H] src/Utils[*.h] src/Include[*.h] src/Comm[*.h] src/Operator[*.h] src/FEGrid[*.h] src/Main[*.h] src/Smoother[*.h] src/Krylov[*.h] src/Coarsen[*.h] src/MLAPI[*.h]
