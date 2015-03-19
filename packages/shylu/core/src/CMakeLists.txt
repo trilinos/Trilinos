@@ -44,8 +44,8 @@ APPEND_SET(HEADERS
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
-  epetra/gmres.h
-  epetra/gmres_tools.h
+  epetra/shylu_internal_gmres.h
+  epetra/shylu_internal_gmres_tools.h
   epetra/IQRSolver.h
   epetra/shylu_debug_manager.hpp
   epetra/Ifpack_ShyLU.h
