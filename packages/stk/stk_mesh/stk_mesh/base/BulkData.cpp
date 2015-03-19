@@ -5481,7 +5481,7 @@ void BulkData::internal_move_entity_to_new_bucket(stk::mesh::Entity entity, cons
     EntityRank e_rank = entity_rank(entity);
     stk::mesh::impl::Partition *partition = m_bucket_repository.get_or_create_partition(e_rank, newBucketPartList);
 
-    if ( !m_did_any_shared_entity_change_parts && bucket_old && bucket_old->shared() )
+     if ( !m_did_any_shared_entity_change_parts && bucket_old && (bucket_old->shared() || this->in_send_ghost(entity_key(entity)) || this->in_receive_ghost(entity_key(entity)) ))
     {
         m_did_any_shared_entity_change_parts = true;
     }
@@ -5633,7 +5633,7 @@ void BulkData::internal_propagate_induced_part_changes_to_downward_connected_ent
                 if (remote_changes_needed)
                 {
                     Bucket *bucket_old = bucket_ptr(e_to);
-                    if ( !m_did_any_shared_entity_change_parts && bucket_old && bucket_old->shared())
+                    if ( !m_did_any_shared_entity_change_parts && bucket_old && (bucket_old->shared()  || this->in_send_ghost(entity_key(entity)) || this->in_receive_ghost(entity_key(entity)) ))
                     {
                        m_did_any_shared_entity_change_parts = true;
                     }
