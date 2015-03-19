@@ -539,14 +539,6 @@ public:
           OrdinalType* rows,
           OrdinalType* cols);
 
-  // FIXME (mfh 29 Sep 2013) See notes on the three-argument version
-  // of this method below.
-  void
-  insertInGraph(OrdinalType rowi, OrdinalType col)
-  {
-    insertInGraph(rowi, &col, 1);
-  }
-
   // FIXME (mfh 29 Sep 2013) We need a way to disable atomic updates
   // for ScalarType types that do not support them.  We're pretty much
   // limited to ScalarType = float, double, and {u}int{32,64}_t.  It
