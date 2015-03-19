@@ -2274,7 +2274,7 @@ NNTI_result_t NNTI_ib_put (
             log_error(nnti_debug_level, "failed to post send: %s", strerror(errno));
             rc=NNTI_EIO;
         }
-        trios_stop_timer("NNTI_ib_get - ibv_post_send", call_time);
+        trios_stop_timer("NNTI_ib_put - ibv_post_send", call_time);
 
         if (config.use_rdma_target_ack) {
             send_ack(ib_wr);
