@@ -110,8 +110,10 @@ struct EnvData
   {
     m_execMap[EXEC_TYPE_LAG].m_master      = -1;
     m_execMap[EXEC_TYPE_LAG].m_groupComm   = MPI_COMM_NULL;
+    m_execMap[EXEC_TYPE_LAG].m_interComm   = MPI_COMM_NULL;
     m_execMap[EXEC_TYPE_FLUID].m_master    = -1;
     m_execMap[EXEC_TYPE_FLUID].m_groupComm = MPI_COMM_NULL;
+    m_execMap[EXEC_TYPE_FLUID].m_interComm = MPI_COMM_NULL;
     stk_classic::register_log_ostream(std::cout, "cout");
     stk_classic::register_log_ostream(std::cerr, "cerr");
     

@@ -69,6 +69,7 @@ namespace sierra {
       MPI_Comm              m_groupComm;
       int                   m_master;
       MPI_Comm              m_worldComm;
+      MPI_Comm              m_interComm;
     };
   }
 }
@@ -112,6 +113,8 @@ struct EnvData
   MPI_Comm		m_worldComm;
 
   MPI_Comm		m_parallelComm;
+  MPI_Comm      m_interComm;
+
   int			m_parallelSize;
   int			m_parallelRank;
 
