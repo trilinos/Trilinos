@@ -5434,6 +5434,17 @@ void BulkData::internal_adjust_entity_and_downward_connectivity_closure_count(st
     }
 }
 
+void fill_inducible_parts_from_list(const PartVector & partList, EntityRank rank, PartVector &induciblePartsFromList)
+{
+    for(size_t i = 0; i < partList.size(); i++)
+    {
+        if(partList[i]->should_induce(rank))
+        {
+            induciblePartsFromList.push_back(partList[i]);
+        }
+    }
+}
+
 void BulkData::internal_change_entity_parts(
   Entity entity ,
   const PartVector & add_parts ,
@@ -5459,22 +5470,11 @@ void BulkData::internal_change_entity_parts(
         internal_move_entity_to_new_bucket(entity, newBucketPartList);
 
         EntityRank e_rank = entity_rank(entity);
+
         PartVector inducible_parts_added;
-        for(size_t i = 0; i < add_parts.size(); i++)
-        {
-            if(add_parts[i]->should_induce(e_rank))
-            {
-                inducible_parts_added.push_back(add_parts[i]);
-            }
-        }
+        fill_inducible_parts_from_list(add_parts, e_rank, inducible_parts_added);
         PartVector inducible_parts_removed;
-        for(size_t i = 0; i < parts_removed.size(); i++)
-        {
-            if(parts_removed[i]->should_induce(e_rank))
-            {
-                inducible_parts_removed.push_back(parts_removed[i]);
-            }
-        }
+        fill_inducible_parts_from_list(parts_removed, e_rank, inducible_parts_removed);
 
         if(always_propagate_internal_changes || !inducible_parts_removed.empty())
         {
