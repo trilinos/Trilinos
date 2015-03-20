@@ -1166,7 +1166,7 @@ int testProjectGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
 double MVDiff(const MV &X, const MV &Y)
 {
   typedef MultiVecTraits<double,MV>    MVT;
-  typedef OperatorTraits<double,MV,OP> OPT;
+  //typedef OperatorTraits<double,MV,OP> OPT; // unused
   typedef ScalarTraits<double>         SCT;
   typedef SCT::magnitudeType           MT;
 
