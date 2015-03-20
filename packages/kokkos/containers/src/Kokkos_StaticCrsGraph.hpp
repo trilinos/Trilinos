@@ -132,6 +132,7 @@ public:
    */
   ~StaticCrsGraph() {}
 
+  KOKKOS_INLINE_FUNCTION
   size_type numRows() const {
     return (row_map.dimension_0 () != 0) ?
       row_map.dimension_0 () - static_cast<size_type> (1) :

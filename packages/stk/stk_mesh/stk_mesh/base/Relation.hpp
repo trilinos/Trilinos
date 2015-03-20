@@ -308,34 +308,36 @@ void get_entities_through_relations(
         EntityRank             entities_related_rank ,
         std::vector<Entity> & entities_related );
 
-/** \brief  Induce entities' part membership based upon relationships
- *          between entities. Insert the result into 'induced_parts'.
- */
-void induced_part_membership( const Part & part ,
+// DEPRECATED 2015-03-18
+STK_DEPRECATED(void induced_part_membership( const Part & part ,
                               EntityRank entity_rank_from ,
                               EntityRank entity_rank_to ,
-                              OrdinalVector & induced_parts);
+                              OrdinalVector & induced_parts));
 
 /** \brief  Induce entities' part membership based upon relationships
  *          between entities.  Do not include and parts in the 'omit' list.
  */
-void induced_part_membership(const BulkData& mesh,
-                             const Entity entity_from ,
-                              const OrdinalVector       & omit ,
-                                    EntityRank            entity_rank_to ,
-                                    OrdinalVector       & induced_parts);
-STK_DEPRECATED(void induced_part_membership(const BulkData& mesh, const PartVector& all_parts,
-                             const Entity entity_from ,
-                              const OrdinalVector       & omit ,
-                                    EntityRank            entity_rank_to ,
-                                    OrdinalVector       & induced_parts)); // deprecated on March 2, 2015
+// DEPRECATED 2015-03-18
+STK_DEPRECATED(void induced_part_membership(const BulkData       & mesh,
+                                            const Entity           entity_from ,
+                                            const OrdinalVector  & omit ,
+                                            EntityRank             entity_rank_to ,
+                                            OrdinalVector        & induced_parts));
+// DEPRECATED 2015-03-02
+STK_DEPRECATED(void induced_part_membership(const BulkData       & mesh,
+                                            const PartVector     & all_parts,
+                                            const Entity           entity_from ,
+                                            const OrdinalVector  & omit ,
+                                            EntityRank             entity_rank_to ,
+                                            OrdinalVector        & induced_parts));
 
 /** \brief  Induce an entity's part membership based upon relationships
  *          from other entities.  Do not include and parts in the 'omit' list.
  */
-void induced_part_membership(const BulkData& mesh, const Entity entity ,
-                              const OrdinalVector & omit ,
-                                    OrdinalVector & induced_parts);
+void induced_part_membership(const BulkData& mesh,
+                             const Entity entity ,
+                             const OrdinalVector & omit ,
+                             OrdinalVector & induced_parts);
 
 
 //----------------------------------------------------------------------

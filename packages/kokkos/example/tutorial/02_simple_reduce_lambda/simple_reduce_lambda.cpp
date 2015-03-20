@@ -67,9 +67,11 @@ int main (int argc, char* argv[]) {
   // functor.  The lambda takes the same arguments as the functor's
   // operator().
   int sum = 0;
-  Kokkos::parallel_reduce (n, [=] (const int i, int& lsum) {
-    lsum += i*i;
-  }, sum);
+  // The KOKKOS_LAMBDA macro replaces the capture-by-value clause [=].
+  // It also handles any other syntax needed for CUDA.
+  Kokkos::parallel_reduce (n, KOKKOS_LAMBDA (const int i, int& lsum) {
+      lsum += i*i;
+    }, sum);
   printf ("Sum of squares of integers from 0 to %i, "
           "computed in parallel, is %i\n", n - 1, sum);
 

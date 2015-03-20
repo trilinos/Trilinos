@@ -25,7 +25,7 @@
 #include <cmath>
 #include <iostream>
 
-#include <gmres_tools.h>
+#include <shylu_internal_gmres_tools.h>
 
 namespace IQR
 {
@@ -98,7 +98,7 @@ int GMRES(const Operator &A, MultiVector &x, const MultiVector &b,
 {
     // Storing a reference to the parallel map
   //auto& b.Map() = b.Map();
-    int myPID = b.Map().Comm().MyPID();
+  //int myPID = b.Map().Comm().MyPID();
 
     Scalar resid;
     int i(0), j(1), k(0);

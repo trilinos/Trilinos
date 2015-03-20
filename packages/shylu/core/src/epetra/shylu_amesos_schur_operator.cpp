@@ -48,7 +48,7 @@
 
 */
 
-#include "AmesosSchurOperator.h"
+#include "shylu_amesos_schur_operator.h"
 
 AmesosSchurOperator::AmesosSchurOperator(Epetra_CrsMatrix* A):
     A_(A),

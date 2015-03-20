@@ -47,7 +47,12 @@
 /// \file Kokkos_ArithTraits.hpp
 /// \brief Declaration and definition of Kokkos::Details::ArithTraits
 
+#include <TpetraKernels_config.h>
 #include <Kokkos_Complex.hpp>
+
+#ifdef HAVE_TPETRAKERNELS_QUADMATH
+#  include <quadmath.h>
+#endif // HAVE_TPETRAKERNELS_QUADMATH
 
 #include <cfloat>
 #include <climits>
@@ -56,7 +61,7 @@
 #include <complex> // std::complex
 #include <limits> // std::numeric_limits
 #ifdef __CUDACC__
-#include <math_constants.h>
+#  include <math_constants.h>
 #endif
 //
 // mfh 24 Dec 2013: Temporary measure for testing; will go away.
@@ -1079,6 +1084,129 @@ public:
   }
 };
 
+#ifdef HAVE_TPETRAKERNELS_QUADMATH
+
+// CUDA does not support __float128 in device functions, so none of
+// the class methods in this specialization are marked as device
+// functions.
+template<>
+class ArithTraits<__float128> {
+public:
+  typedef __float128 val_type;
+  typedef val_type mag_type;
+
+  static const bool is_specialized = true;
+  static const bool is_signed = true;
+  static const bool is_integer = false;
+  static const bool is_exact = false;
+  static const bool is_complex = false;
+
+  static bool isInf (const __float128 x) {
+    return isinfq (x);
+  }
+  static bool isNan (const __float128 x) {
+    return isnanq (x);
+  }
+  static mag_type abs (const __float128 x) {
+    return fabsq (x);
+  }
+  static __float128 zero () {
+    return 0.0;
+  }
+  static __float128 one () {
+    return 1.0;
+  }
+  static __float128 min () {
+    return FLT128_MIN;
+  }
+  static __float128 max () {
+    return FLT128_MAX;
+  }
+  static mag_type real (const __float128 x) {
+    return x;
+  }
+  static mag_type imag (const __float128 /* x */) {
+    return 0.0;
+  }
+  static __float128 conj (const __float128 x) {
+    return x;
+  }
+  static __float128 pow (const __float128 x, const __float128 y) {
+    return powq (x, y);
+  }
+  static __float128 sqrt (const __float128 x) {
+    return sqrtq (x);
+  }
+  static __float128 log (const __float128 x) {
+    return logq (x);
+  }
+  static __float128 log10 (const __float128 x) {
+    return log10q (x);
+  }
+  static mag_type epsilon () {
+    return FLT128_EPSILON;
+  }
+
+  // Backwards compatibility with Teuchos::ScalarTraits.
+  typedef mag_type magnitudeType;
+  typedef double halfPrecision;
+  // Unfortunately, we can't rely on a standard __float256 type.
+  typedef __float128 doublePrecision;
+
+  static const bool isComplex = false;
+  static const bool isOrdinal = false;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = true;
+  static bool isnaninf (const __float128 x) {
+    return isNan (x) || isInf (x);
+  }
+  static magnitudeType magnitude (const __float128 x) {
+    return abs (x);
+  }
+  static __float128 conjugate (const __float128 x) {
+    return conj (x);
+  }
+  static std::string name () {
+    return "__float128";
+  }
+  static __float128 squareroot (const __float128 x) {
+    return sqrt (x);
+  }
+  static __float128 nan () {
+    return strtoflt128 ("NAN()", NULL); // ???
+  }
+  static mag_type eps () {
+    return epsilon ();
+  }
+  static mag_type sfmin () {
+    return FLT128_MIN; // ???
+  }
+  static int base () {
+    return 2;
+  }
+  static mag_type prec () {
+    return eps () * static_cast<mag_type> (base ());
+  }
+  static int t () {
+    return FLT_MANT_DIG;
+  }
+  static mag_type rnd () {
+    return 1.0;
+  }
+  static int emin () {
+    return FLT128_MIN_EXP;
+  }
+  static mag_type rmin () {
+    return FLT128_MIN; // ??? // should be base^(emin-1)
+  }
+  static int emax () {
+    return FLT128_MAX_EXP;
+  }
+  static mag_type rmax () {
+    return FLT128_MAX; // ??? // should be (base^emax)*(1-eps)
+  }
+};
+#endif // HAVE_TPETRAKERNELS_QUADMATH
 
 template<>
 class ArithTraits< ::Kokkos::complex<float> > {

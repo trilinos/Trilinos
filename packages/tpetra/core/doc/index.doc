@@ -32,7 +32,6 @@ include
 <li> OpenMP </li>
 <li> POSIX Threads (Pthreads) </li>
 <li> Nvidia's CUDA programming model for graphics processing units (GPUs) </li>
-<li> Intel's Threading Building Blocks </li>
 </ul>
 
 %Tpetra differs from %Epetra, Trilinos' previous distributed linear
@@ -104,11 +103,8 @@ of a distributed object.
 
 <li>
 \c Node: Computational classes in %Tpetra will also be templated on a
-\c Node type. This node fulfills the \ref kokkos_node_api "Kokkos Node
-API" and allows the %Tpetra objects to perform parallel computation on
-one of a number of shared-memory nodes, including multi-core CPUs and
-GPUs.  You can set the Node type to control what shared-memory
-parallel programming model %Tpetra will use.
+\c Node type. This specifies the node-level parallel programming model
+for %Tpetra objects to use.
 </li>
 </ul>
 
@@ -176,6 +172,7 @@ nightly tests on many different platforms.
 <li> \ref Tpetra_Lesson03 </li>
 <li> \ref Tpetra_Lesson04 </li>
 <li> \ref Tpetra_Lesson05 </li>
+<li> \ref Tpetra_Lesson06 </li>
 </ul>
 
 */

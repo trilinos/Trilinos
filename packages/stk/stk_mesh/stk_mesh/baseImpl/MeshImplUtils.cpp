@@ -40,6 +40,8 @@
 #include <stk_util/util/SameType.hpp>
 #include <stk_util/util/StaticAssert.hpp>
 #include "stk_util/parallel/DistributedIndex.hpp"  // for DistributedIndex, etc
+#include <stk_mesh/base/FEMHelpers.hpp>
+#include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 
 #include <vector>
 
@@ -495,60 +497,6 @@ convert_entity_keys_to_spans( const MetaData & meta )
   return spans ;
 }
 
-void internal_fix_node_sharing_delete_on_2015_03_06(stk::mesh::BulkData& bulk_data)
-{
-    stk::CommAll comm(bulk_data.parallel());
-
-    for (int phase=0;phase<2;++phase)
-    {
-        for (int i=0;i<bulk_data.parallel_size();++i)
-        {
-            if ( i != bulk_data.parallel_rank() )
-            {
-                const stk::mesh::BucketVector& buckets = bulk_data.buckets(stk::topology::NODE_RANK);
-                for (size_t j=0;j<buckets.size();++j)
-                {
-                    const stk::mesh::Bucket& bucket = *buckets[j];
-                    if ( bucket.owned() )
-                    {
-                        for (size_t k=0;k<bucket.size();++k)
-                        {
-                            stk::mesh::EntityKey key = bulk_data.entity_key(bucket[k]);
-                            comm.send_buffer(i).pack<stk::mesh::EntityKey>(key);
-                        }
-                    }
-                }
-            }
-        }
-
-        if (phase == 0 )
-        {
-            comm.allocate_buffers( bulk_data.parallel_size()/4 );
-        }
-        else
-        {
-            comm.communicate();
-        }
-    }
-
-    for (int i=0;i<bulk_data.parallel_size();++i)
-    {
-        if ( i != bulk_data.parallel_rank() )
-        {
-            while(comm.recv_buffer(i).remaining())
-            {
-                stk::mesh::EntityKey key;
-                comm.recv_buffer(i).unpack<stk::mesh::EntityKey>(key);
-                stk::mesh::Entity node = bulk_data.get_entity(key);
-                if ( bulk_data.is_valid(node) )
-                {
-                    bulk_data.add_node_sharing(node, i);
-                }
-            }
-        }
-    }
-}
-
 void find_face_nodes_for_side(BulkData& mesh, Entity element, int side_ordinal, EntityVector & permuted_face_nodes)
 {
     stk::topology elemTopology = mesh.bucket(element).topology();
@@ -596,6 +544,123 @@ void find_face_nodes_for_side(BulkData& mesh, Entity element, int side_ordinal, 
     }
 }
 
+void get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(const BulkData       & mesh,
+                             const Entity           entity_from,
+                             const OrdinalVector  & omit,
+                                   EntityRank       entity_rank_to,
+                                   OrdinalVector  & induced_parts)
+{
+  const Bucket   & bucket_from    = mesh.bucket(entity_from);
+  const int      local_proc_rank  = mesh.parallel_rank();
+  const EntityRank entity_rank_from = bucket_from.entity_rank();
+  const bool dont_check_owner     = mesh.parallel_size() == 1; // critical for fmwk
+  ThrowAssert(entity_rank_from > entity_rank_to);
+
+  // Only induce parts for normal (not back) relations. Can only trust
+  // 'entity_from' to be accurate if it is owned by the local process.
+  if ( dont_check_owner || local_proc_rank == mesh.parallel_owner_rank(entity_from) ) {
+
+    const stk::mesh::PartVector &superset_parts = bucket_from.supersets();
+
+    // Contributions of the 'from' entity:
+    for ( size_t i=0; i<superset_parts.size(); i++ ) {
+      Part & part = *superset_parts[i] ;
+      if ( part.should_induce(entity_rank_from) && ! contains_ordinal( omit.begin(), omit.end() , part.mesh_meta_data_ordinal() )) {
+          insert_ordinal( induced_parts , part.mesh_meta_data_ordinal() );
+      }
+    }
+  }
+}
+
+
+
+stk::mesh::Entity get_or_create_face_at_element_side(stk::mesh::BulkData & bulk,
+                                                     stk::mesh::Entity elem,
+                                                     int side_ordinal,
+                                                     int new_face_global_id,
+                                                     stk::mesh::Part & part)
+{
+    stk::mesh::Entity new_face = stk::mesh::Entity();
+    unsigned elem_num_faces = bulk.num_faces(elem);
+    const stk::mesh::Entity * elem_faces = bulk.begin_faces(elem);
+    const stk::mesh::ConnectivityOrdinal * elem_ord_it = bulk.begin_face_ordinals(elem);
+    for (unsigned i=0 ; i<elem_num_faces ; ++i) {
+        if (elem_ord_it[i] == static_cast<unsigned>(side_ordinal)) {
+            new_face = elem_faces[i];
+            break;
+        }
+    }
+    if (!bulk.is_valid(new_face)) {
+        new_face = stk::mesh::declare_element_side(bulk, new_face_global_id, elem, side_ordinal, &part);
+    } else {
+        stk::mesh::PartVector add_parts(1, &part);
+        bulk.change_entity_parts(new_face, add_parts );
+    }
+    return new_face;
+}
+
+void create_shell_status(const std::vector<stk::topology> & elements_touching_surface, stk::topology original_element_topology, std::vector<ShellStatus> & element_shell_status) {
+    element_shell_status.resize(elements_touching_surface.size(),NO_SHELLS);
+    const bool original_element_is_shell = original_element_topology.is_shell();
+    bool got_shells = original_element_is_shell;
+    if (!original_element_is_shell) {
+        for (size_t i=0 ; i<elements_touching_surface.size() ; ++i) {
+            if (elements_touching_surface[i].is_shell()) {
+                got_shells = true;
+                break;
+            }
+        }
+    }
+    if (got_shells) {
+        for (size_t i=0 ; i<elements_touching_surface.size() ; ++i) {
+            if (original_element_is_shell == elements_touching_surface[i].is_shell() ) {
+                element_shell_status[i] = YES_SHELLS_BOTH_SHELLS_OR_BOTH_SOLIDS;
+            }
+            else {
+                element_shell_status[i] = YES_SHELLS_ONE_SHELL_ONE_SOLID;
+            }
+        }
+    }
+}
+
+
+
+void connect_face_to_other_elements(stk::mesh::BulkData & bulk,
+                                      stk::mesh::Entity face,
+                                      stk::mesh::Entity elem_with_face,
+                                      int elem_with_face_side_ordinal
+)
+{
+    stk::topology elem_topology = bulk.bucket(elem_with_face).topology();
+    stk::topology side_topology = elem_topology.face_topology(elem_with_face_side_ordinal);
+    int num_side_nodes = side_topology.num_nodes();
+    std::vector<stk::mesh::Entity> side_nodes(num_side_nodes);
+    elem_topology.face_nodes(bulk.begin_nodes(elem_with_face),elem_with_face_side_ordinal,&side_nodes[0]);
+    std::vector<stk::mesh::Entity> common_elements;
+    stk::mesh::impl::find_elements_these_nodes_have_in_common(bulk,num_side_nodes,&side_nodes[0],common_elements);
+
+    std::vector<stk::topology> element_topology_touching_surface_vector(common_elements.size());
+    for (size_t i=0 ; i<common_elements.size() ; ++i) {
+        element_topology_touching_surface_vector[i] = bulk.bucket(common_elements[i]).topology();
+    }
+    std::vector<ShellStatus> element_shell_status;
+    create_shell_status(element_topology_touching_surface_vector, elem_topology, element_shell_status);
+    for (size_t count=0 ; count<common_elements.size() ; ++count) {
+        if (common_elements[count] != elem_with_face) {
+            stk::mesh::Entity other_elem = common_elements[count];
+            stk::topology other_elem_topology = element_topology_touching_surface_vector[count];
+            for (unsigned other_elem_side = 0; other_elem_side < other_elem_topology.num_faces() ; ++other_elem_side) {
+                stk::topology other_elem_side_topology = other_elem_topology.face_topology(other_elem_side);
+                std::vector<stk::mesh::Entity> other_elem_side_nodes(other_elem_side_topology.num_nodes());
+                other_elem_topology.face_nodes(bulk.begin_nodes(other_elem),other_elem_side,&other_elem_side_nodes[0]);
+                if (should_face_be_connected_to_element_side(side_nodes,other_elem_side_nodes,other_elem_side_topology,element_shell_status[count])) {
+                    stk::mesh::declare_element_side(bulk, other_elem, face, other_elem_side);
+                    break;
+                }
+            }
+        }
+    }
+}
 
 } // namespace impl
 } // namespace mesh

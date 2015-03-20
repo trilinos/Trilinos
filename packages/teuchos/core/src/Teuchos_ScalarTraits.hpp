@@ -59,6 +59,20 @@
 #include <arprec/mp_real.h>
 #endif
 
+#ifdef HAVE_TEUCHOSCORE_QUADMATH
+#include <quadmath.h>
+
+// GCC / libquadmath doesn't implement an std::ostream operator<< for
+// __float128, so we have to write our own.  At least libquadmath
+// provides a printing function specifically for __float128.
+//
+// FIXME (mfh 19 Mar 2015) This will break if users have already
+// defined their own operator<< in the global namespace.
+std::ostream&
+operator<< (std::ostream& out, const __float128& x);
+
+#endif // HAVE_TEUCHOSCORE_QUADMATH
+
 #ifdef HAVE_TEUCHOS_QD
 #include <qd/qd_real.h>
 #include <qd/dd_real.h>
@@ -104,7 +118,7 @@ bool generic_real_isnaninf(const Scalar &x)
   if (isnaninf(VALUE)) { \
     std::ostringstream omsg; \
     omsg << MSG; \
-    Teuchos::throwScalarTraitsNanInfError(omsg.str());	\
+    Teuchos::throwScalarTraitsNanInfError(omsg.str());  \
   }
 
 
@@ -725,12 +739,108 @@ struct ScalarTraits<double>
 #endif
 
 
-#ifdef HAVE_TEUCHOS_QD
+#ifdef HAVE_TEUCHOSCORE_QUADMATH
 
+template<>
+struct ScalarTraits<__float128> {
+  typedef __float128 magnitudeType;
+  // Unfortunately, we can't rely on a standard __float256 type.  It
+  // might make sense to use qd_real, but mixing quadmath and QD might
+  // cause unforeseen issues.
+  typedef __float128 doublePrecision;
+  typedef double halfPrecision;
+
+  static const bool isComplex = false;
+  static const bool isOrdinal = false;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = true;
+
+  static __float128 eps () {
+    return FLT128_EPSILON;
+  }
+  static __float128 sfmin () {
+    return FLT128_MIN; // ???
+  }
+  static __float128 base () {
+    return 2;
+  }
+  static __float128 prec () {
+    return eps () * base ();
+  }
+  static __float128 t () {
+    return FLT128_MANT_DIG;
+  }
+  static __float128 rnd () {
+    return 1.0;
+  }
+  static __float128 emin () {
+    return FLT128_MIN_EXP;
+  }
+  static __float128 rmin () {
+    return FLT128_MIN; // ??? // should be base^(emin-1)
+  }
+  static __float128 emax () {
+    return FLT128_MAX_EXP;
+  }
+  static __float128 rmax () {
+    return FLT128_MAX; // ??? // should be (base^emax)*(1-eps)
+  }
+  static magnitudeType magnitude (const __float128& x) {
+    return fabsq (x);
+  }
+  static __float128 zero () {
+    return 0.0;
+  }
+  static __float128 one () {
+    return 1.0;
+  }
+  static __float128 conjugate (const __float128& x) {
+    return x;
+  }
+  static __float128 real (const __float128& x) {
+    return x;
+  }
+  static __float128 imag (const __float128& /* x */) {
+    return 0.0;
+  }
+  static __float128 nan () {
+    return strtoflt128 ("NAN()", NULL); // ???
+  }
+  static bool isnaninf (const __float128& x) {
+    return isinfq (x) || isnanq (x);
+  }
+  static inline void seedrandom (unsigned int s) {
+    std::srand (s);
+#ifdef __APPLE__
+    // throw away first random number to address bug 3655
+    // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
+    random ();
+#endif
+  }
+  static std::string name () {
+    return "__float128";
+  }
+  static __float128 squareroot (const __float128& x) {
+    return sqrtq (x);
+  }
+  static __float128 pow (const __float128& x, const __float128& y) {
+    return powq (x, y);
+  }
+  static __float128 log (const __float128& x) {
+    return logq (x);
+  }
+  static __float128 log10 (const __float128& x) {
+    return log10q (x);
+  }
+};
+#endif // HAVE_TEUCHOSCORE_QUADMATH
+
+
+
+#ifdef HAVE_TEUCHOS_QD
 
 bool operator&&(const dd_real &a, const dd_real &b);
 bool operator&&(const qd_real &a, const qd_real &b);
-
 
 template<>
 struct ScalarTraits<dd_real>
@@ -897,7 +1007,7 @@ struct ScalarTraits<mpf_class>
   static inline bool isnaninf(mpf_class x) { return false; } // mpf_class currently can't handle nan or inf!
   static inline void seedrandom(unsigned int s) {
     unsigned long int seedVal = static_cast<unsigned long int>(s);
-    gmp_rng.seed( seedVal );	
+    gmp_rng.seed( seedVal );
   }
   static inline mpf_class random() {
     return gmp_rng.get_f();

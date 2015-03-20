@@ -76,6 +76,8 @@
 /* Deprecated */
 #cmakedefine HAVE_TEUCHOSCORE_QD
 
+#cmakedefine HAVE_TEUCHOSCORE_QUADMATH
+
 #cmakedefine HAVE_TEUCHOS_DOUBLE_TO_QD
 
 #cmakedefine HAVE_TEUCHOS_ARPREC

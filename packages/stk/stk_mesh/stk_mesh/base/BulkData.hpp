@@ -747,8 +747,8 @@ protected: //functions
    *                  => update via field relation
    */
   void internal_change_entity_parts( Entity ,
-                                     const std::vector<Part*> & add_parts ,
-                                     const std::vector<Part*> & remove_parts,
+                                     const PartVector & add_parts ,
+                                     const PartVector & remove_parts,
                                      bool always_propagate_internal_changes=true);
   virtual bool internal_destroy_entity( Entity entity, bool was_ghost = false );
 
@@ -942,7 +942,7 @@ private: //functions
   void internal_change_entity_key(EntityKey old_key, EntityKey new_key, Entity entity);
 
   void addMeshEntities(stk::topology::rank_t rank, const std::vector<stk::mesh::EntityId> new_ids,
-         const std::vector<Part*> &rem, const std::vector<Part*> &add, std::vector<Entity>& requested_entities);
+         const PartVector &rem, const PartVector &add, EntityVector &requested_entities);
 
   // Forbidden
   BulkData();
@@ -988,18 +988,14 @@ private: //functions
   Entity internal_declare_entity( EntityRank ent_rank , EntityId ent_id ,
                                    const PartVector & parts );
 
-  void internal_fill_remove_parts_list(stk::mesh::Entity entity,
-                                       stk::mesh::Entity e_to,
-                                       EntityRank erank,
-                                       const std::vector<Part*> & removed,
-                                       EntityVector &temp_entities,
-                                       OrdinalVector &empty,
-                                       OrdinalVector &scratchOrdinalVector,
-                                       OrdinalVector &partsThatShouldStillBeInduced,
-                                       PartVector &delParts);
+  void internal_fill_parts_to_actually_remove(const PartVector & removed,
+                                              OrdinalVector &scratchOrdinalVector,
+                                              OrdinalVector &partsThatShouldStillBeInduced,
+                                              PartVector &delParts);
 
   void internal_propagate_induced_part_changes_to_downward_connected_entities( Entity entity,
-                                                                               const std::vector<Part*> & removed );
+                                                                               const PartVector & added,
+                                                                               const PartVector & removed );
 
   Ghosting & internal_create_ghosting( const std::string & name );
   void internal_verify_inputs_and_change_ghosting(
@@ -1023,20 +1019,20 @@ private: //functions
   void internal_throw_error_if_manipulating_internal_part_memberships(const PartVector & parts);
 
   void internal_adjust_closure_count(Entity entity,
-                                       const std::vector<Part*> & add_parts,
-                                       const std::vector<Part*> & remove_parts);
+                                       const PartVector & add_parts,
+                                       const PartVector & remove_parts);
   void internal_adjust_entity_and_downward_connectivity_closure_count(stk::mesh::Entity entity, stk::mesh::Bucket *bucket_old, uint16_t closureCountAdjustment);
 
   void internal_fill_new_part_list_and_removed_part_list(stk::mesh::Entity entity,
-                                                           const std::vector<Part*> & add_parts,
-                                                           const std::vector<Part*> & remove_parts,
+                                                           const PartVector & add_parts,
+                                                           const PartVector & remove_parts,
                                                            OrdinalVector &newBucketPartList,
-                                                           std::vector<Part*> &parts_removed);
+                                                           PartVector &parts_removed);
   void internal_move_entity_to_new_bucket(stk::mesh::Entity entity, const OrdinalVector &newBucketPartList);
 
   void internal_verify_change_parts( const MetaData   & meta ,
                                      const Entity entity ,
-                                     const std::vector<Part*> & parts ) const;
+                                     const PartVector & parts ) const;
 
   void require_entity_owner( const Entity entity, int owner) const ;
 
@@ -1078,7 +1074,7 @@ private: //functions
                                              bool bad_comm,
                                              EntityKey recv_entity_key,
                                              int recv_owner_rank,
-                                             std::vector<Part*> const& recv_parts,
+                                             PartVector const& recv_parts,
                                              std::vector<Relation> const& recv_relations,
                                              std::vector<int> const& recv_comm,
                                              std::ostream & error_log);
@@ -1087,7 +1083,7 @@ private: //functions
                                                   EntityKey &            recv_entity_key,
                                                   int       &            recv_owner_rank,
                                                   unsigned  &            recv_comm_count,
-                                                  std::vector<Part*>&    recv_parts,
+                                                  PartVector &    recv_parts,
                                                   std::vector<Relation>& recv_relations,
                                                   std::vector<int>    &  recv_comm,
                                                   bool&                  bad_comm);
@@ -1161,7 +1157,7 @@ protected: //data
 private: // data
   Parallel m_parallel;
   VolatileFastSharedCommMap m_volatile_fast_shared_comm_map;
-  std::vector<Part*> m_ghost_parts;
+  PartVector m_ghost_parts;
   std::list<size_t, tracking_allocator<size_t, DeletedEntityTag> > m_deleted_entities;
   int m_num_fields;
   bool m_keep_fields_updated;
@@ -1173,7 +1169,7 @@ private: // data
   mutable SelectorBucketMap m_selector_to_buckets_map;
   impl::BucketRepository m_bucket_repository; // needs to be destructed first!
   bool m_use_identifiers_for_resolving_sharing;
-
+  bool m_did_any_shared_entity_change_parts;
   stk::EmptyModificationSummary m_modSummary;
   // If needing debug info for modifications, comment out above line and uncomment line below
   // stk::ModificationSummary m_modSummary;

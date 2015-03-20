@@ -1072,7 +1072,11 @@ namespace Tpetra {
     typedef Teuchos::ArrayRCP<size_t>::size_type size_type;
     typedef typename local_graph_type::row_map_type::non_const_type
       non_const_row_map_type;
-    typedef typename local_graph_type::entries_type::non_const_type col_inds_type;
+    typedef typename local_graph_type::entries_type::non_const_type
+      lcl_col_inds_type;
+    typedef Kokkos::View<GlobalOrdinal*,
+      typename lcl_col_inds_type::array_layout,
+      DeviceType> gbl_col_inds_type;
     const char tfecfFuncName[] = "allocateIndices: ";
 
     // This is a protected function, only callable by us.  If it was
@@ -1159,10 +1163,10 @@ namespace Tpetra {
       // is currently a device View.  Should instead use a DualView.
       const size_type numInds = static_cast<size_type> (k_rowPtrs_(numRows));
       if (lg == LocalIndices) {
-        k_lclInds1D_ = col_inds_type ("Tpetra::CrsGraph::ind", numInds);
+        k_lclInds1D_ = lcl_col_inds_type ("Tpetra::CrsGraph::ind", numInds);
       }
       else {
-        k_gblInds1D_ = col_inds_type ("Tpetra::CrsGraph::ind", numInds);
+        k_gblInds1D_ = gbl_col_inds_type ("Tpetra::CrsGraph::ind", numInds);
         gblInds1D_ = Kokkos::Compat::persistingView (k_gblInds1D_);
       }
       nodeNumAllocated_ = numInds;
@@ -4428,7 +4432,11 @@ namespace Tpetra {
     using Teuchos::Array;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    typedef typename local_graph_type::entries_type::non_const_type lcl_col_inds_type;
+    typedef typename local_graph_type::entries_type::non_const_type
+      lcl_col_inds_type;
+    typedef Kokkos::View<GlobalOrdinal*,
+      typename lcl_col_inds_type::array_layout,
+      DeviceType> gbl_col_inds_type;
     const char tfecfFuncName[] = "makeIndicesLocal";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -4487,7 +4495,7 @@ namespace Tpetra {
         // We've converted column indices from global to local, so we
         // can deallocate the global column indices (which we know are
         // in 1-D storage, because the graph has static profile).
-        k_gblInds1D_ = lcl_col_inds_type ();
+        k_gblInds1D_ = gbl_col_inds_type ();
         gblInds1D_ = Teuchos::null;
       }
       else {  // the graph has dynamic profile (2-D index storage)

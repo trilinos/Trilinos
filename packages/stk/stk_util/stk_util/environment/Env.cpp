@@ -317,6 +317,12 @@ parallel_comm()
 }
 
 MPI_Comm
+parallel_intercomm()
+{
+  return stk::EnvData::instance().m_interComm;
+}
+
+MPI_Comm
 parallel_world_comm()
 {
   return stk::EnvData::instance().m_worldComm;

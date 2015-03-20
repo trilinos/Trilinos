@@ -50,7 +50,7 @@
 #include "stk_mesh/base/Types.hpp"      // for PartVector, BucketVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
-
+#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 
 namespace {
 
@@ -290,3 +290,4 @@ TEST( StkMeshIoBroker, large_mesh_test )
     ASSERT_TRUE(ok);
   }
 }
+

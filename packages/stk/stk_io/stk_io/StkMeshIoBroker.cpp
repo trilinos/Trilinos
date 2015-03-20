@@ -86,6 +86,7 @@
 #include "stk_topology/topology.hpp"    // for topology::num_nodes
 #include "stk_util/util/ParameterList.hpp"  // for Type, Type::DOUBLE, etc
 
+
 namespace {
 
   template <typename T>
@@ -443,89 +444,9 @@ namespace {
     return entities.size();
   }
 
-  namespace {
 
-  stk::mesh::Entity get_or_create_face_at_element_side(stk::mesh::BulkData & bulk,
-                                                       stk::mesh::Entity elem,
-                                                       int side_ordinal,
-                                                       int new_face_global_id,
-                                                       const stk::mesh::PartVector & add_parts
-  )
-  {
-      stk::mesh::Entity new_face = stk::mesh::Entity();
-      unsigned elem_num_faces = bulk.num_faces(elem);
-      const stk::mesh::Entity * elem_faces = bulk.begin_faces(elem);
-      const stk::mesh::ConnectivityOrdinal * elem_ord_it = bulk.begin_face_ordinals(elem);
-      for (unsigned i=0 ; i<elem_num_faces ; ++i) {
-          if (elem_ord_it[i] == static_cast<unsigned>(side_ordinal)) {
-              new_face = elem_faces[i];
-              break;
-          }
-      }
-      if (!bulk.is_valid(new_face)) {
-          new_face = stk::mesh::declare_element_side(bulk, new_face_global_id, elem, side_ordinal);
-      }
-      bulk.change_entity_parts(new_face, add_parts );
-      return new_face;
-  }
 
-  void connect_face_to_other_elements(stk::mesh::BulkData & bulk,
-                                      stk::mesh::Entity face,
-                                      stk::mesh::Entity elem_with_face,
-                                      int elem_with_face_side_ordinal
-                                      )
-  {
-      stk::topology elem_topology = bulk.bucket(elem_with_face).topology();
-      stk::topology side_topology = elem_topology.face_topology(elem_with_face_side_ordinal);
-      int num_side_nodes = side_topology.num_nodes();
-      std::vector<stk::mesh::Entity> side_nodes(num_side_nodes);
-      elem_topology.face_nodes(bulk.begin_nodes(elem_with_face),elem_with_face_side_ordinal,&side_nodes[0]);
-      std::vector<stk::mesh::Entity> common_elements;
-      stk::mesh::impl::find_elements_these_nodes_have_in_common(bulk,num_side_nodes,&side_nodes[0],common_elements);
 
-      bool is_shell_or_connected_to_shell = false;
-      for (unsigned elem_count=0; elem_count < common_elements.size(); ++elem_count) {
-          if (bulk.bucket(common_elements[elem_count]).topology().is_shell()) {
-              is_shell_or_connected_to_shell = true;
-              break;
-          }
-      }
-
-      for (size_t count = 0; count < common_elements.size(); ++count) {
-          if (common_elements[count] != elem_with_face) {
-              stk::mesh::Entity other_elem = common_elements[count];
-              stk::topology other_elem_topology = bulk.bucket(other_elem).topology();
-              for (unsigned other_elem_side = 0; other_elem_side < other_elem_topology.num_faces() ; ++other_elem_side) {
-                  stk::topology other_elem_side_topology = other_elem_topology.face_topology(other_elem_side);
-                  std::vector<stk::mesh::Entity> other_elem_side_nodes(other_elem_side_topology.num_nodes());
-                  other_elem_topology.face_nodes(bulk.begin_nodes(other_elem),other_elem_side,&other_elem_side_nodes[0]);
-                  std::pair<bool, unsigned> equiv_result = other_elem_side_topology.equivalent(side_nodes, other_elem_side_nodes);
-                  const bool does_valid_permutation_exist = equiv_result.first;
-                  if (does_valid_permutation_exist) {
-                      if (is_shell_or_connected_to_shell) {
-                          bool same_type = (elem_topology.is_shell() == other_elem_topology.is_shell());
-                          const unsigned permutation_index = equiv_result.second;
-                          const bool face_polarity_matches_other_elem_side_polarity = permutation_index < other_elem_side_topology.num_positive_permutations();
-                          const bool same_types_and_aligned_normals = same_type && face_polarity_matches_other_elem_side_polarity;
-                          const bool different_types_and_opposing_normals = !same_type && !face_polarity_matches_other_elem_side_polarity;
-                          if (same_types_and_aligned_normals || different_types_and_opposing_normals)
-                          {
-                              stk::mesh::declare_element_side(bulk, other_elem, face, other_elem_side);
-                              break;
-                          }
-                      }
-                      else
-                      {
-                          stk::mesh::declare_element_side(bulk, other_elem, face, other_elem_side);
-                          break;
-                      }
-                  }
-              }
-          }
-      }
-  }
-
-  } // namespace
 
 // ========================================================================
 template <typename INT>
@@ -590,8 +511,8 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
                             bulk.change_entity_parts( side, add_parts );
                         }
                         else if (behavior == stk::io::StkMeshIoBroker::STK_IO_SIDESET_FACE_CREATION_CURRENT) {
-                            stk::mesh::Entity new_face = get_or_create_face_at_element_side(bulk,elem,side_ordinal,side_ids[is],add_parts);
-                            connect_face_to_other_elements(bulk,new_face,elem,side_ordinal);
+                            stk::mesh::Entity new_face = stk::mesh::impl::get_or_create_face_at_element_side(bulk,elem,side_ordinal,side_ids[is],*sb_part);
+                            stk::mesh::impl::connect_face_to_other_elements(bulk,new_face,elem,side_ordinal);
                         }
                     }
                 }

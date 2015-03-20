@@ -1362,7 +1362,7 @@ namespace Tpetra {
     ///
     /// The Frobenius norm of the matrix is defined as
     /// \f\[
-    ///   \|A\|_F = \sqrt{\sum_{i,j} \|\a_{ij}\|^2}.
+    ///   \|A\|_F = \sqrt{\sum_{i,j} \|A(i,j)\|^2}.
     /// \f\].
     ///
     /// If the matrix is fill complete, then the computed value is
