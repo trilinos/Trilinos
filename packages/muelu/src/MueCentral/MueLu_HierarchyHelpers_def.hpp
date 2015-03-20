@@ -230,7 +230,7 @@ namespace MueLu {
   void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializableDataToHierarchy(HierarchyManager& HM, Hierarchy& H, const ParameterList& paramList) {
     for (ParameterList::ConstIterator it = paramList.begin(); it != paramList.end(); it++) {
       const std::string& levelName = it->first;
-
+      
       // Check for mach of the form "level X" where X is a positive integer
       if (paramList.isSublist(levelName) && levelName.find("level ") == 0 && levelName.size() > 6) {
         int levelID = strtol(levelName.substr(6).c_str(), 0, 0);
@@ -257,7 +257,7 @@ namespace MueLu {
               level->Set(name, Teuchos::getValue<RCP<Matrix > >     (it2->second));
             else if (name == "Nullspace" || name == "Coordinates")
               level->Set(name, Teuchos::getValue<RCP<MultiVector > >(it2->second));
-
+	    level->AddKeepFlag(name);
             M->SetFactory(name, NoFactory::getRCP());
           }
         }
