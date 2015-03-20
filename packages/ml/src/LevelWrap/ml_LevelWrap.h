@@ -45,16 +45,16 @@ namespace ML_Epetra
 
     //! Constructs a Level Wrap (using R=P^T)
     LevelWrap(Teuchos::RCP<Epetra_CrsMatrix> A0,
-	      Teuchos::RCP<Epetra_CrsMatrix> P0,
-	      const Teuchos::ParameterList& List,
-	      const bool ComputePrec = true);
+              Teuchos::RCP<Epetra_CrsMatrix> P0,
+              const Teuchos::ParameterList& List,
+              const bool ComputePrec = true);
 
     //! Constructs a Level Wrap (using different R)
     LevelWrap(Teuchos::RCP<Epetra_CrsMatrix> A0,
-	      Teuchos::RCP<Epetra_CrsMatrix> P0,
-	      Teuchos::RCP<Epetra_CrsMatrix> R0,
-	      const Teuchos::ParameterList& List,
-	      const bool ComputePrec = true);
+              Teuchos::RCP<Epetra_CrsMatrix> P0,
+              Teuchos::RCP<Epetra_CrsMatrix> R0,
+              const Teuchos::ParameterList& List,
+              const bool ComputePrec = true);
     //@}
 
 
@@ -95,7 +95,7 @@ namespace ML_Epetra
     int DestroyPreconditioner();
 
     //! Sets use transpose (not implemented).
-    int SetUseTranspose(bool UseTranspose){return(-1);}
+    int SetUseTranspose(bool /* useTranspose */){return(-1);}
 
     //! Returns the infinity norm (not implemented).
     double NormInf() const {return(0.0);};
