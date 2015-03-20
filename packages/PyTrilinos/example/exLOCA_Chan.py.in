@@ -258,39 +258,66 @@ def main():
   #     "scale": scale}
   p = LOCA.ParameterVector()
   p.addParameter("alpha", alpha)
-  p.addParameter("beta", beta)
+  p.addParameter("beta" , beta )
   p.addParameter("scale", scale)
 
-  interface = ChanProblemInterface(numGlobalElements, comm, globalData, N, alpha, beta, scale)
+  interface = ChanProblemInterface(numGlobalElements,
+                                   comm,
+                                   globalData,
+                                   N,
+                                   alpha,
+                                   beta,
+                                   scale)
 
   # Get the solution vector from the problem
   soln    = interface.initialGuess
-  noxSoln = NOX.Epetra.Vector(soln, NOX.Epetra.Vector.CreateView)
+  noxSoln = NOX.Epetra.Vector(soln,
+                              NOX.Epetra.Vector.CreateView)
 
   # Define the Jacobian linear system
-  mf     = NOX.Epetra.MatrixFree(noxParams,interface,noxSoln)
-  fdc    = NOX.Epetra.FiniteDifferenceColoring(printParams, interface,
-					       soln, interface.getGraph(),
+  mf     = NOX.Epetra.MatrixFree(noxParams,
+                                 interface,
+                                 noxSoln)
+  fdc    = NOX.Epetra.FiniteDifferenceColoring(printParams,
+                                               interface,
+					       soln,
+                                               interface.getGraph(),
 					       True)
-  linSys = NOX.Epetra.LinearSystemAztecOO(printParams, lsParams, mf, mf, fdc,
-					  fdc, soln)
+  linSys = NOX.Epetra.LinearSystemAztecOO(printParams,
+                                          lsParams,
+                                          mf,
+                                          mf,
+                                          fdc,
+					  fdc,
+                                          soln)
 
   # Create the Group
-  initialGuess = NOX.Epetra.Vector(soln, NOX.Epetra.Vector.CreateView)
+  initialGuess = NOX.Epetra.Vector(soln,
+                                   NOX.Epetra.Vector.CreateView)
   # print LOCA.foo_pl(printParams)
   # print LOCA.foo_gd(globalData)
   # print LOCA.foo_pv(p)
-  group = LOCA.Epetra.Group(globalData, printParams, interface, initialGuess, linSys, p)
+  group = LOCA.Epetra.Group(globalData,
+                            printParams,
+                            interface,
+                            initialGuess,
+                            linSys,
+                            p)
   # print LOCA.Epetra.foo_g(group)
 
   # Create the convergence tests
-  normF = NOX.StatusTest.NormF(1.0e-8)
-  maxIters = NOX.StatusTest.MaxIters(maxNewtonIters)
-  converged = NOX.StatusTest.Combo(NOX.StatusTest.Combo.OR, normF, maxIters)
+  normF     = NOX.StatusTest.NormF(1.0e-8)
+  maxIters  = NOX.StatusTest.MaxIters(maxNewtonIters)
+  converged = NOX.StatusTest.Combo(NOX.StatusTest.Combo.OR,
+                                   normF,
+                                   maxIters)
 
   # Create the stepper
   print("Making stepper")
-  stepper = LOCA.Stepper(globalData, group, converged, paramList)
+  stepper = LOCA.Stepper(globalData,
+                         group,
+                         converged,
+                         paramList)
 
   # Perform continuation run
   print("About to run stepper")
