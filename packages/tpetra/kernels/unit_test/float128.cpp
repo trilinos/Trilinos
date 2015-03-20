@@ -64,6 +64,35 @@
 #include <Kokkos_ArithTraits.hpp>
 #include <Kokkos_Core.hpp>
 
+
+// GCC / libquadmath doesn't implement an std::ostream operator<< for
+// __float128, so we have to write our own.  At least libquadmath
+// provides a printing function specifically for __float128.
+//
+// FIXME (mfh 19 Mar 2015) This will break if users have already
+// defined their own operator<< in the global namespace.  Note that we
+// already have implemented this in Teuchos_ScalarTraits.hpp, which is
+// why we enclose this in an anonymous namespace.
+namespace {
+std::ostream&
+operator<< (std::ostream& out, const __float128& x)
+{
+  const size_t bufSize = 128;
+  char buf[128];
+
+  const int numCharPrinted = quadmath_snprintf (buf, bufSize, "%.30Qe", x);
+  if (static_cast<size_t> (numCharPrinted) >= bufSize) {
+    std::ostringstream os;
+    os << "Failed to print __float128 value: buffer has " << bufSize
+       << " characters, but quadmath_snprintf wanted " << numCharPrinted
+       << " characters!";
+    throw std::runtime_error (os.str ());
+  }
+  out << buf;
+  return out;
+}
+}
+
 using std::cout;
 using std::endl;
 
