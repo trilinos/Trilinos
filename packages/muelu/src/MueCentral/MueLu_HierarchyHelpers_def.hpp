@@ -235,13 +235,14 @@ namespace MueLu {
       if (paramList.isSublist(levelName) && levelName.find("level ") == 0 && levelName.size() > 6) {
         int levelID = strtol(levelName.substr(6).c_str(), 0, 0);
         if (levelID > 0)  {
+	  RCP<FactoryManager> M = Teuchos::rcp_dynamic_cast<FactoryManager>(HM.GetFactoryManager(levelID));
+	  TEUCHOS_TEST_FOR_EXCEPTION(M.is_null(), Exceptions::InvalidArgument, "MueLu::Utils::AddNonSerializableDataToHierarchy: cannot get FactoryManager");
+
           // Do enough level adding so we can be sure to add the data to the right place
           for (int i = H.GetNumLevels(); i <= levelID; i++)
             H.AddNewLevel();
 
           RCP<Level> level = H.GetLevel(levelID);
-
-          RCP<FactoryManager> M = rcp(new FactoryManager());
 
           // Grab the level sublist & loop over parameters
           const ParameterList& levelList = paramList.sublist(levelName);
@@ -259,8 +260,6 @@ namespace MueLu {
 
             M->SetFactory(name, NoFactory::getRCP());
           }
-
-          HM.AddFactoryManager(levelID, 1, M);
         }
       }
     }
