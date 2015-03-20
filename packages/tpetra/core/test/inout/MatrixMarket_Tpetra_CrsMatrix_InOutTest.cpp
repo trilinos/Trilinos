@@ -45,6 +45,7 @@
 #include <Tpetra_Util.hpp> // sort2, merge2
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
+#include "TpetraCore_ETIHelperMacros.h"
 
 namespace { // anonymous
 
@@ -579,13 +580,13 @@ testCrsMatrix (Teuchos::FancyOStream& out, const GlobalOrdinalType indexBase)
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrixOutputInput, IndexBase0, ST, LO, GO, NT )
 {
-  const GlobalOrdinalType indexBase = 0;
+  const GO indexBase = 0;
   success = testCrsMatrix<ST, LO, GO, NT> (out, indexBase);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrixOutputInput, IndexBase1, ST, LO, GO, NT )
 {
-  const GlobalOrdinalType indexBase = 1;
+  const GO indexBase = 1;
   success = testCrsMatrix<ST, LO, GO, NT> (out, indexBase);
 }
 
@@ -605,7 +606,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrixOutputInput, IndexBase1, ST, LO, GO,
 
 #else
 #  define UNIT_TEST_GROUP( LO, GO, NODE )
-#endi
+#endif
 
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
