@@ -46,6 +46,25 @@
 // encounters a NaN or an Inf.
 //#define TEUCHOS_SCALAR_TRAITS_THROW_NAN_INF_ERR
 
+#ifdef HAVE_TEUCHOSCORE_QUADMATH
+std::ostream&
+operator<< (std::ostream& out, const __float128& x)
+{
+  const size_t bufSize = 128;
+  char buf[128];
+
+  const int numCharPrinted = quadmath_snprintf (buf, bufSize, "%.30Qe", x);
+  if (static_cast<size_t> (numCharPrinted) >= bufSize) {
+    std::ostringstream os;
+    os << "Failed to print __float128 value: buffer has " << bufSize
+       << " characters, but quadmath_snprintf wanted " << numCharPrinted
+       << " characters!";
+    throw std::runtime_error (os.str ());
+  }
+  out << buf;
+  return out;
+}
+#endif // HAVE_TEUCHOSCORE_QUADMATH
 
 namespace {
 
