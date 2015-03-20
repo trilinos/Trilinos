@@ -57,7 +57,7 @@
 #include "shylu_symbolic.h"
 #include "shylu_config.h"
 #include "shylu_probing_operator.h"
-#include "AmesosSchurOperator.h"
+#include "shylu_amesos_schur_operator.h"
 
 #include <IQRSolver.h>
 

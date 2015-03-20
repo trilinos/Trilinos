@@ -49,7 +49,7 @@ APPEND_SET(HEADERS
   epetra/IQRSolver.h
   epetra/shylu_debug_manager.hpp
   epetra/Ifpack_ShyLU.h
-  epetra/AmesosSchurOperator.h
+  epetra/shylu_amesos_schur_operator.h
   epetra/shylu_util.h
   epetra/shylu_symbolic.h
   epetra/shylu.h
@@ -71,7 +71,7 @@ APPEND_SET(SOURCES
   epetra/IQRSolver.cpp
   epetra/shylu_factor.cpp
   epetra/Ifpack_ShyLU.cpp
-  epetra/AmesosSchurOperator.cpp
+  epetra/shylu_amesos_schur_operator.cpp
   epetra/shylu_probing_operator.cpp
   epetra/shylu_local_schur_operator.cpp
   epetra/shylu_util.cpp

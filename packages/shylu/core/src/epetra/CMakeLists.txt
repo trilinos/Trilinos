@@ -45,7 +45,7 @@ APPEND_SET(HEADERS
   IQRSolver.h
   shylu_debug_manager.hpp
   Ifpack_ShyLU.h
-  AmesosSchurOperator.h
+  shylu_amesos_schur_operator.h
   shylu_util.h
   shylu_symbolic.h
   shylu.h
@@ -61,7 +61,7 @@ APPEND_SET(SOURCES
   IQRSolver.cpp
   shylu_factor.cpp
   Ifpack_ShyLU.cpp
-  AmesosSchurOperator.cpp
+  shylu_amesos_schur_operator.cpp
   shylu_probing_operator.cpp
   shylu_local_schur_operator.cpp
   shylu_util.cpp
