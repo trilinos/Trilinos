@@ -1,29 +1,29 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //
 //                 Anasazi: Block Eigensolvers Package
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 //
@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
   int MyPID;
 #ifdef HAVE_MPI
   MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
-#else 
+#else
   MyPID = 0;
 #endif
   bool verbose = false;
@@ -111,10 +111,10 @@ int main(int argc, char *argv[])
   typedef Anasazi::MultiVec<ST> MV;
   typedef Anasazi::Operator<ST> OP;
   typedef Anasazi::MultiVecTraits<ST,MV> MVT;
-  typedef Anasazi::OperatorTraits<ST,MV,OP> OPT;
+  //typedef Anasazi::OperatorTraits<ST,MV,OP> OPT; // unused
 
   // Create an output manager to handle the I/O from the solver
-  RCP<Anasazi::OutputManager<ST> > MyOM 
+  RCP<Anasazi::OutputManager<ST> > MyOM
     = rcp( new Anasazi::BasicOutputManager<ST>() );
   if (verbose) {
     MyOM->setVerbosity( Anasazi::Warnings );
@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
   nnz = -1;
   info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
   if (info == 0 || nnz < 0) {
-    MyOM->stream(Anasazi::Warnings) 
+    MyOM->stream(Anasazi::Warnings)
       << "Warning reading '" << filename << "'" << endl
       << "End Result: TEST FAILED" << endl;
 #ifdef HAVE_MPI
