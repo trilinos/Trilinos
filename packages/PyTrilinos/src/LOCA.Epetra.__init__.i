@@ -229,6 +229,18 @@ from .. import Abstract
 %import(module="Abstract") "LOCA_Abstract_Group.H"
 %import(module="Abstract") "LOCA_Abstract_TransposeSolveGroup.H"
 
+// The above %import(module="Abstract") ... directives can cause an
+// "import Abstract" to appear in the .py file, causing Abstract to
+// point to NOX.Abstract.  Force it back to LOCA.Abstract.  Also,
+// ___init__ was pointing to Pitchfork/___init__.so (?!?), so I fix
+// that, too.
+%pythoncode
+%{
+del ___init__
+from .. import Abstract
+from .  import ___init__
+%}
+
 // Director exception handling
 %feature("director:except")
 {
