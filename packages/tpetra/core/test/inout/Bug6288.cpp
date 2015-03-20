@@ -63,7 +63,6 @@ testImpl (Teuchos::FancyOStream& out,
   typedef Tpetra::MatrixMarket::Writer<crs_matrix_type> writer_type;
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
   typedef MV::scalar_type scalar_type;
-  typedef MV::local_ordinal_type LO;
   typedef MV::global_ordinal_type GO;
   typedef Tpetra::global_size_t GST;
 
