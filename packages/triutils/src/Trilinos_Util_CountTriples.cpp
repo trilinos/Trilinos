@@ -93,12 +93,33 @@ void Trilinos_Util_CountTriples_internal(
       if (NULL == fgets( buffer, BUFSIZE, in_file ))
         throw "Trilinos_Util_CountTriples_internal: I/O error.";
 
-      if(sizeof(int) == sizeof(int_type))
-        sscanf( buffer, "%d %d %d %d", &num_rows, &num_cols, &num_nz, &hdr_type ) ;
-      else if(sizeof(long long) == sizeof(int_type))
-        sscanf( buffer, "%lld %lld %lld %d", &num_rows, &num_cols, &num_nz, &hdr_type ) ;
-      else
+      // mfh 20 Mar 2015: We use temporaries of the type corresponding
+      // to the sscanf format specifiers, in order to avoid compiler
+      // warnings about the sscanf output arguments' types not
+      // matching their corresponding format specifiers.  This was a
+      // harmless warning, because the 'sizeof' branch prevented
+      // incorrect execution, but the warning is easy to fix.
+      if(sizeof(int) == sizeof(int_type)) {
+        int num_rows_int = -1;
+        int num_cols_int = -1;
+        int num_nz_int = -1;
+        sscanf( buffer, "%d %d %d %d", &num_rows_int, &num_cols_int, &num_nz_int, &hdr_type ) ;
+        num_rows = static_cast<int_type> (num_rows_int);
+        num_cols = static_cast<int_type> (num_cols_int);
+        num_nz = static_cast<int_type> (num_nz_int);
+      }
+      else if(sizeof(long long) == sizeof(int_type)) {
+        long long num_rows_ll = -1;
+        long long num_cols_ll = -1;
+        long long num_nz_ll = -1;
+        sscanf( buffer, "%lld %lld %lld %d", &num_rows_ll, &num_cols_ll, &num_nz_ll, &hdr_type ) ;
+        num_rows = static_cast<int_type> (num_rows_ll);
+        num_cols = static_cast<int_type> (num_cols_ll);
+        num_nz = static_cast<int_type> (num_nz_ll);
+      }
+      else {
         assert(false);
+      }
       if( hdr_type != 0 ) {
         if ( hdr_type == -131313 )
           printf("Bad Tim Davis header line.  Should have four  values and the fourth must be zero.\n");
@@ -107,8 +128,27 @@ void Trilinos_Util_CountTriples_internal(
         exit(1);
       }
       if ( num_rows != num_cols ) {
-        printf( "Bad Tim Davis header line.  First two values, number of rows and columns must be equal.  We see %d and %d\n" ,
-            num_rows, num_cols ) ;
+        if(sizeof(int) == sizeof(int_type)) {
+          // mfh 20 Mar 2015: See above note on use of temporaries to
+          // avoid compiler warnings.
+          const int num_rows_int = static_cast<int> (num_rows);
+          const int num_cols_int = static_cast<int> (num_cols);
+          printf( "Bad Tim Davis header line.  First two values, number of "
+                  "rows and columns must be equal.  We see %d and %d\n" ,
+                  num_rows_int, num_cols_int ) ;
+        }
+        else if(sizeof(long long) == sizeof(int_type)) {
+          // mfh 20 Mar 2015: See above note on use of temporaries to
+          // avoid compiler warnings.
+          const long long num_rows_ll = static_cast<long long> (num_rows);
+          const long long num_cols_ll = static_cast<long long> (num_cols);
+          printf( "Bad Tim Davis header line.  First two values, number of "
+                  "rows and columns must be equal.  We see %lld and %lld\n" ,
+                  num_rows_ll, num_cols_ll ) ;
+        }
+        else {
+          assert(false);
+        }
       }
     }
 
@@ -116,10 +156,24 @@ void Trilinos_Util_CountTriples_internal(
       int_type i, j;
       float val ;
       i = -13 ;   // Check for blank lines
-      if(sizeof(int) == sizeof(int_type))
-        sscanf( buffer, "%d %d %f", &i, &j, &val ) ;
-      else if(sizeof(long long) == sizeof(int_type))
-        sscanf( buffer, "%lld %lld %f", &i, &j, &val ) ;
+      if(sizeof(int) == sizeof(int_type)) {
+        // mfh 20 Mar 2015: See above note on use of temporaries to
+        // avoid compiler warnings.
+        int i_int = i;
+        int j_int = j;
+        sscanf( buffer, "%d %d %f", &i_int, &j_int, &val ) ;
+        i = static_cast<int_type> (i_int);
+        j = static_cast<int_type> (j_int);
+      }
+      else if(sizeof(long long) == sizeof(int_type)) {
+        // mfh 20 Mar 2015: See above note on use of temporaries to
+        // avoid compiler warnings.
+        long long i_ll = i;
+        long long j_ll = j;
+        sscanf( buffer, "%lld %lld %f", &i_ll, &j_ll, &val ) ;
+        i = static_cast<int_type> (i_ll);
+        j = static_cast<int_type> (j_ll);
+      }
       else
         assert(false);
 
@@ -131,7 +185,7 @@ void Trilinos_Util_CountTriples_internal(
           int_type oldvecsize = vecsize;
           vecsize += EPETRA_MAX((int_type) 1000,needvecsize-vecsize) ;
           non_zeros.resize(vecsize) ;
-          for ( int_type i= oldvecsize; i < vecsize ; i++ ) non_zeros[i] = 0 ;
+          for ( int_type ii = oldvecsize; ii < vecsize ; ii++ ) non_zeros[ii] = 0 ;
         }
         N_rows = EPETRA_MAX( N_rows, i ) ;
         if (symmetric) N_rows = EPETRA_MAX( N_rows, j ) ;
@@ -156,18 +210,54 @@ void Trilinos_Util_CountTriples_internal(
 
   if ( TimDavisHeader && comm.MyPID() == 0)  {
     if ( num_rows != N_rows ) {
-      if(sizeof(int) == sizeof(int_type))
-        printf( " Bad Tim Davis Header Line.  The first value should be the number of rows.  We see %d, but the actual number of rows is: %d\n",
-            num_rows, N_rows );
-      else if(sizeof(long long) == sizeof(int_type))
-        printf( " Bad Tim Davis Header Line.  The first value should be the number of rows.  We see %lld, but the actual number of rows is: %lld\n",
-            num_rows, N_rows );
-      else
+      if(sizeof(int) == sizeof(int_type)) {
+        // mfh 20 Mar 2015: See above note on use of temporaries to
+        // avoid compiler warnings.
+        const int num_rows_int = static_cast<int> (num_rows);
+        const int N_rows_int = static_cast<int> (N_rows);
+        printf( " Bad Tim Davis Header Line.  The first value should be the "
+                "number of rows.  We see %d, but the actual number of rows "
+                "is: %d\n",
+                num_rows_int, N_rows_int );
+      }
+      else if(sizeof(long long) == sizeof(int_type)) {
+        // mfh 20 Mar 2015: See above note on use of temporaries to
+        // avoid compiler warnings.
+        const long long num_rows_ll = static_cast<long long> (num_rows);
+        const long long N_rows_ll = static_cast<long long> (N_rows);
+        printf( " Bad Tim Davis Header Line.  The first value should be the "
+                "number of rows.  We see %lld, but the actual number of rows "
+                "is: %lld\n",
+            num_rows_ll, N_rows_ll );
+      }
+      else {
         assert(false);
+      }
     }
     if ( num_nz != nnz ) {
-      printf( " Bad Tim Davis Header Line.  The third value should be the number of non-zeros.  We see %d, but the actual number of non-zeros is: %d\n",
-          num_nz, nnz );
+      if(sizeof(int) == sizeof(int_type)) {
+        // mfh 20 Mar 2015: See above note on use of temporaries to
+        // avoid compiler warnings.
+        const int num_nz_int = static_cast<int> (num_nz);
+        const int nnz_int = static_cast<int> (nnz);
+        printf( " Bad Tim Davis Header Line.  The third value should be the "
+                "number of non-zeros.  We see %d, but the actual number of "
+                "non-zeros is: %d\n",
+                num_nz_int, nnz_int );
+      }
+      else if(sizeof(long long) == sizeof(int_type)) {
+        // mfh 20 Mar 2015: See above note on use of temporaries to
+        // avoid compiler warnings.
+        const long long num_nz_ll = static_cast<long long> (num_nz);
+        const long long nnz_ll = static_cast<long long> (nnz);
+        printf( " Bad Tim Davis Header Line.  The third value should be the "
+                "number of non-zeros.  We see %lld, but the actual number of "
+                "non-zeros is: %lld\n",
+                num_nz_ll, nnz_ll );
+      }
+      else {
+        assert(false);
+      }
     }
   }
 
