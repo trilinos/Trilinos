@@ -76,6 +76,7 @@ namespace phalanx_test {
   // ********************************************************
   TEUCHOS_UNIT_TEST(mdfield, IntrepidIssue)
   {
+#ifdef HAVE_INTREPID_KOKKOSCORE
     using namespace std;
     using namespace Teuchos;
     using namespace PHX;
@@ -125,6 +126,11 @@ namespace phalanx_test {
     // NOTE: Need to add a call to an intrepid function here.
 
     PHX::FinalizeKokkosDevice();
-  }
+#else
+   TEUCHOS_TEST_FOR_EXCEPTION( !(0==1),
+                                std::logic_error,
+                                "MDField_Intrepid has to have HAVE_INTREPID_KOKKOSCORE ON for this test");
 
+#endif
+  }
 }
