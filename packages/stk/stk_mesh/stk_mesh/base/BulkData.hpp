@@ -321,8 +321,7 @@ public:
    */
   void change_entity_parts( Entity entity,
       const PartVector & add_parts ,
-      const PartVector & remove_parts = PartVector(),
-      bool always_propagate_internal_changes=true);
+      const PartVector & remove_parts = PartVector());
 
   /** \brief Change part-membership of the specified entities by adding
    * and/or removing parts for each entity.
@@ -340,8 +339,7 @@ public:
    */
   void batch_change_entity_parts( const stk::mesh::EntityVector& entities,
                             const std::vector<PartVector>& add_parts,
-                            const std::vector<PartVector>& remove_parts,
-                            bool always_propagate_internal_changes=true );
+                            const std::vector<PartVector>& remove_parts);
 
   /** \brief  Request the destruction an entity on the local process.
    *
@@ -747,9 +745,9 @@ protected: //functions
    *                  => update via field relation
    */
   void internal_change_entity_parts( Entity ,
-                                     const PartVector & add_parts ,
-                                     const PartVector & remove_parts,
-                                     bool always_propagate_internal_changes=true);
+                                     const std::vector<Part*> & add_parts ,
+                                     const std::vector<Part*> & remove_parts);
+
   virtual bool internal_destroy_entity( Entity entity, bool was_ghost = false );
 
   void internal_change_ghosting( Ghosting & ghosts,
@@ -763,8 +761,7 @@ protected: //functions
   //the propagation that stk-mesh does.
   void internal_verify_and_change_entity_parts( Entity entity,
                                                 const PartVector & add_parts ,
-                                                const PartVector & remove_parts,
-                                                bool always_propagate_internal_changes=true );
+                                                const PartVector & remove_parts);
 
   void internal_insert_all_parts_induced_from_higher_rank_entities_to_vector(stk::mesh::Entity entity,
                                                                                stk::mesh::Entity e_to,

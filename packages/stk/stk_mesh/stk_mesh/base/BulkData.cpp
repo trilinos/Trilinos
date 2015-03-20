@@ -5252,8 +5252,7 @@ void BulkData::internal_throw_error_if_manipulating_internal_part_memberships(co
 
 void BulkData::change_entity_parts( Entity entity,
     const PartVector & add_parts ,
-    const PartVector & remove_parts,
-    bool always_propagate_internal_changes)
+    const PartVector & remove_parts)
 {
     INCREMENT_ENTITY_MODIFICATION_COUNTER(PUBLIC, entity_rank(entity), DESTROY_ALL_GHOSTING);
     bool stkMeshRunningUnderFramework = m_add_fmwk_data;
@@ -5262,13 +5261,12 @@ void BulkData::change_entity_parts( Entity entity,
         internal_throw_error_if_manipulating_internal_part_memberships(add_parts);
         internal_throw_error_if_manipulating_internal_part_memberships(remove_parts);
     }
-    internal_verify_and_change_entity_parts(entity, add_parts, remove_parts, always_propagate_internal_changes);
+    internal_verify_and_change_entity_parts(entity, add_parts, remove_parts);
 }
 
 void BulkData::batch_change_entity_parts( const stk::mesh::EntityVector& entities,
                           const std::vector<PartVector>& add_parts,
-                          const std::vector<PartVector>& remove_parts,
-                          bool always_propagate_internal_changes)
+                          const std::vector<PartVector>& remove_parts)
 {
     bool stkMeshRunningUnderFramework = m_add_fmwk_data;
     if(!stkMeshRunningUnderFramework)
@@ -5288,7 +5286,7 @@ void BulkData::batch_change_entity_parts( const stk::mesh::EntityVector& entitie
                     <<"BulkData::change_entity_parts(vector-of-entities) can not be called within an outer modification scope.");
 
     for(size_t i=0; i<entities.size(); ++i) {
-      internal_verify_and_change_entity_parts(entities[i], add_parts[i], remove_parts[i], always_propagate_internal_changes);
+      internal_verify_and_change_entity_parts(entities[i], add_parts[i], remove_parts[i]);
     }
 
     internal_modification_end_for_change_parts();
@@ -5354,8 +5352,7 @@ void fill_remove_parts_and_subsets_minus_parts_in_add_parts_list(const PartVecto
 
 void BulkData::internal_verify_and_change_entity_parts( Entity entity,
                                                         const PartVector & add_parts ,
-                                                        const PartVector & remove_parts,
-                                                        bool always_propagate_internal_changes)
+                                                        const PartVector & remove_parts)
 {
     require_ok_to_modify();
 
@@ -5383,8 +5380,7 @@ void BulkData::internal_verify_and_change_entity_parts( Entity entity,
 
     internal_change_entity_parts(entity,
                                  addPartsAndSupersets,
-                                 removePartsAndSubsetsMinusPartsInAddPartsList,
-                                 always_propagate_internal_changes);
+                                 removePartsAndSubsetsMinusPartsInAddPartsList);
 }
 
 void BulkData::internal_verify_add_and_remove_part_ranks_consistent_with_entity_rank(const PartVector & add_parts ,
@@ -5447,9 +5443,8 @@ void fill_inducible_parts_from_list(const PartVector & partList, EntityRank rank
 
 void BulkData::internal_change_entity_parts(
   Entity entity ,
-  const PartVector & add_parts ,
-  const PartVector & remove_parts,
-  bool always_propagate_internal_changes )
+  const std::vector<Part*> & add_parts ,
+  const std::vector<Part*> & remove_parts)
 {
     require_ok_to_modify();
     m_modSummary.track_change_entity_parts(entity, add_parts, remove_parts);
@@ -5476,10 +5471,7 @@ void BulkData::internal_change_entity_parts(
         PartVector inducible_parts_removed;
         fill_inducible_parts_from_list(parts_removed, e_rank, inducible_parts_removed);
 
-        if(always_propagate_internal_changes || !inducible_parts_removed.empty())
-        {
-            internal_propagate_induced_part_changes_to_downward_connected_entities(entity, inducible_parts_added, inducible_parts_removed);
-        }
+        internal_propagate_induced_part_changes_to_downward_connected_entities(entity, inducible_parts_added, inducible_parts_removed);
     }
 }
 
