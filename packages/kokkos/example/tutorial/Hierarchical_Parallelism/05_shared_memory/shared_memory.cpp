@@ -49,7 +49,7 @@
 #include <cstdio>
 #include <cstdlib>
 
-#ifdef KOKKOS_HAVE_CXX11 
+#ifdef KOKKOS_HAVE_CXX11
 
 #define TEAM_SIZE 16
 #define VECTOR_LENGTH 16
@@ -69,60 +69,73 @@ struct find_2_tuples {
   typedef Kokkos::View<int**,SharedSpace,Kokkos::MemoryUnmanaged> shared_2d_int;
   typedef Kokkos::View<int*,SharedSpace,Kokkos::MemoryUnmanaged> shared_1d_int;
 
-
-  find_2_tuples(int chunk_size_, Kokkos::DualView<int*> data_,
-                Kokkos::DualView<int**> histogram_):chunk_size(chunk_size_),
-                data(data_.d_view),histogram(histogram_.d_view) {
-      data_.sync<ExecutionSpace>();
-      histogram_.sync<ExecutionSpace>();
-      histogram_.modify<ExecutionSpace>();
+  find_2_tuples (const int chunk_size_,
+                 Kokkos::DualView<int*> data_,
+                 Kokkos::DualView<int**> histogram_) :
+    chunk_size (chunk_size_),
+    data (data_.d_view),
+    histogram (histogram_.d_view)
+  {
+      data_.sync<ExecutionSpace> ();
+      histogram_.sync<ExecutionSpace> ();
+      histogram_.modify<ExecutionSpace> ();
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator() ( const team_member & thread) const {
+  void operator() (const team_member& thread) const {
+    using Kokkos::parallel_for;
+    using Kokkos::TeamThreadRange;
+
     // FIXME (mfh 23 Oct 2014) It seems like we should use
     // thread.team_size() here, instead of TEAM_SIZE.  However, the
     // example still fails in that case.  Not sure what to do.
 
-    shared_2d_int l_histogram(thread.team_shmem(),TEAM_SIZE,TEAM_SIZE);
-    shared_1d_int l_data(thread.team_shmem(),chunk_size+1);
+    //const auto team_size = thread.team_size ();
+    const auto team_size = TEAM_SIZE;
 
-    const int i = thread.league_rank() * chunk_size;
-    thread.team_par_for( chunk_size , [&] (int& j) {
+    shared_2d_int l_histogram (thread.team_shmem (), team_size, team_size);
+    shared_1d_int l_data (thread.team_shmem (), chunk_size + 1);
+
+    const int i = thread.league_rank () * chunk_size;
+    // Inner parallel lambdas may capture by reference to avoid copy overhead.
+    parallel_for (TeamThreadRange (thread, chunk_size), [&] (const int& j) {
       l_data(j) = data(i+j);
     });
 
-    thread.team_par_for( chunk_size , [&] (int& k) {
-      for(int l = 0; l < TEAM_SIZE; l++)
-        l_histogram(k,l) = 0;
-    });
-
-    thread.team_barrier();
-
-    for(int j = 0; j<chunk_size; j++) {
-      thread.team_par_for( chunk_size , [&] (int& k) {
-        for(int l = 0; l < TEAM_SIZE; l++) {
-          if((l_data(j) == k) && (l_data(j+1)==l))
-            l_histogram(k,l)++;
+    parallel_for (TeamThreadRange (thread, chunk_size), [&] (const int& k) {
+        for (int l = 0; l < team_size; ++l) {
+          l_histogram(k,l) = 0;
         }
       });
+
+    thread.team_barrier();
+
+    for (int j = 0; j < chunk_size; ++j) {
+      parallel_for (TeamThreadRange (thread, chunk_size), [&] (const int& k) {
+          for (int l = 0; l < team_size; ++l) {
+            if (l_data(j) == k && l_data(j+1) == l) {
+              l_histogram(k,l)++;
+            }
+          }
+        });
     }
 
-    thread.team_par_for( chunk_size , [&] (int& k) {
-      for(int l = 0; l < TEAM_SIZE; l++) {
-        Kokkos::atomic_fetch_add(&histogram(k,l),l_histogram(k,l));
-      }
-    });
-    thread.team_barrier();
+    parallel_for (TeamThreadRange (thread, chunk_size), [&] (const int& k) {
+        for (int l = 0; l < team_size; ++l) {
+          Kokkos::atomic_fetch_add (&histogram(k,l), l_histogram(k,l));
+        }
+      });
+    thread.team_barrier ();
   }
 
-  size_t team_shmem_size( int team_size ) const {
-    return shared_2d_int::shmem_size(team_size,team_size) +
-           shared_1d_int::shmem_size(chunk_size+1);
+  // Tell Kokkos how much shared memory the parallel kernel needs.
+  size_t team_shmem_size (const int team_size) const {
+    return shared_2d_int::shmem_size (team_size, team_size) +
+           shared_1d_int::shmem_size (chunk_size + 1);
   }
 };
 
-int main(int narg, char* args[]) {
+int main (int narg, char* args[]) {
   Kokkos::initialize(narg,args);
 
   int chunk_size = 1024;
