@@ -124,7 +124,10 @@ private:
   value_type* values_;
   //! Array of (local) column indices in the row.
   ordinal_type* colidx_;
-  //! Stride between successive entries in the row.
+  /// \brief Stride between successive entries in the row.
+  ///
+  /// For compressed sparse row (CSR) storage, this is always one.
+  /// This might be greater than one for storage formats like ELLPACK.
   const size_type stride_;
 
 public:
@@ -164,14 +167,19 @@ public:
   /// This is a public const field rather than a public const method,
   /// in order to avoid possible overhead of a method call if the
   /// compiler is unable to inline that method call.
-  const size_type length;
+  ///
+  /// We assume that rows contain no duplicate entries (i.e., entries
+  /// with the same column index).  Thus, a row may have up to
+  /// A.numCols() entries.  This means that the correct type of
+  /// 'length' is ordinal_type.
+  const ordinal_type length;
 
   /// \brief Reference to the value of entry i in this row of the sparse matrix.
   ///
   /// "Entry i" is not necessarily the entry with column index i, nor
   /// does i necessarily correspond to the (local) row index.
   KOKKOS_INLINE_FUNCTION
-  value_type& value (const size_type& i) const {
+  value_type& value (const ordinal_type& i) const {
     return values_[i*stride_];
   }
 
@@ -180,7 +188,7 @@ public:
   /// "Entry i" is not necessarily the entry with column index i, nor
   /// does i necessarily correspond to the (local) row index.
   KOKKOS_INLINE_FUNCTION
-  ordinal_type& colidx (const size_type& i) const {
+  ordinal_type& colidx (const ordinal_type& i) const {
     return colidx_[i*stride_];
   }
 };
@@ -207,7 +215,10 @@ private:
   value_type* values_;
   //! Array of (local) column indices in the row.
   ordinal_type* colidx_;
-  //! Stride between successive entries in the row.
+  /// \brief Stride between successive entries in the row.
+  ///
+  /// For compressed sparse row (CSR) storage, this is always one.
+  /// This might be greater than one for storage formats like ELLPACK.
   const size_type stride_;
 
 public:
@@ -247,7 +258,12 @@ public:
   /// This is a public const field rather than a public const method,
   /// in order to avoid possible overhead of a method call if the
   /// compiler is unable to inline that method call.
-  const size_type length;
+  ///
+  /// We assume that rows contain no duplicate entries (i.e., entries
+  /// with the same column index).  Thus, a row may have up to
+  /// A.numCols() entries.  This means that the correct type of
+  /// 'length' is ordinal_type.
+  const ordinal_type length;
 
   /// \brief (Const) reference to the value of entry i in this row of
   ///   the sparse matrix.
@@ -255,7 +271,7 @@ public:
   /// "Entry i" is not necessarily the entry with column index i, nor
   /// does i necessarily correspond to the (local) row index.
   KOKKOS_INLINE_FUNCTION
-  value_type& value (const size_type& i) const {
+  value_type& value (const ordinal_type& i) const {
     return values_[i*stride_];
   }
 
@@ -265,7 +281,7 @@ public:
   /// "Entry i" is not necessarily the entry with column index i, nor
   /// does i necessarily correspond to the (local) row index.
   KOKKOS_INLINE_FUNCTION
-  ordinal_type& colidx (const size_type& i) const {
+  ordinal_type& colidx (const ordinal_type& i) const {
     return colidx_[i*stride_];
   }
 };
@@ -432,7 +448,7 @@ public:
   CrsMatrix (const std::string &label,
              OrdinalType nrows,
              OrdinalType ncols,
-             OrdinalType annz,
+             size_type annz,
              ScalarType* val,
              OrdinalType* rows,
              OrdinalType* cols,
@@ -473,7 +489,7 @@ public:
   CrsMatrix (const std::string& label,
              const OrdinalType nrows,
              const OrdinalType ncols,
-             const OrdinalType annz,
+             const size_type annz,
              const values_type& vals,
              const row_map_type& rows,
              const index_type& cols) :
@@ -481,9 +497,9 @@ public:
     values (vals),
     numCols_ (ncols)
   {
-    const size_type actualNumRows = (rows.dimension_0 () != 0) ?
-      (rows.dimension_0 () - static_cast<size_type> (1)) :
-      static_cast<size_type> (0);
+    const ordinal_type actualNumRows = (rows.dimension_0 () != 0) ?
+      static_cast<ordinal_type> (rows.dimension_0 () - static_cast<size_type> (1)) :
+      static_cast<ordinal_type> (0);
     if (nrows != actualNumRows) {
       std::ostringstream os;
       os << "Input argument nrows = " << nrows << " != the actual number of "
@@ -532,9 +548,9 @@ public:
 
   void
   import (const std::string &label,
-          OrdinalType nrows,
-          OrdinalType ncols,
-          OrdinalType annz,
+          const OrdinalType nrows,
+          const OrdinalType ncols,
+          const size_type annz,
           ScalarType* val,
           OrdinalType* rows,
           OrdinalType* cols);
@@ -618,7 +634,7 @@ public:
   }
 
   //! The number of stored entries in the sparse matrix.
-  KOKKOS_INLINE_FUNCTION ordinal_type nnz () const {
+  KOKKOS_INLINE_FUNCTION size_type nnz () const {
     return graph.entries.dimension_0 ();
   }
 
@@ -665,9 +681,9 @@ template< typename ScalarType , typename OrdinalType, class Device, class Memory
 void
 CrsMatrix<ScalarType , OrdinalType, Device, MemoryTraits, SizeType >::
 import (const std::string &label,
-        OrdinalType nrows,
-        OrdinalType ncols,
-        OrdinalType annz,
+        const OrdinalType nrows,
+        const OrdinalType ncols,
+        const size_type annz,
         ScalarType* val,
         OrdinalType* rows,
         OrdinalType* cols)
@@ -694,7 +710,7 @@ import (const std::string &label,
   // FIXME (mfh 21 Jun 2013) This needs to be a parallel copy.
   // Furthermore, why are the arrays copied twice? -- once here, to a
   // host view, and once below, in the deep copy?
-  for (OrdinalType i = 0; i < annz; ++i) {
+  for (size_type i = 0; i < annz; ++i) {
     if (val) {
       h_values(i) = val[i];
     }
@@ -705,6 +721,7 @@ import (const std::string &label,
   Kokkos::deep_copy (graph.entries, h_entries);
 }
 
+// FIXME (mfh 20 Mar 2015) Shouldn't this use ordinal_type instead of int?
 template<class DeviceType>
 inline int RowsPerThread(const int NNZPerRow) {
   if(NNZPerRow == 0) return 1;
@@ -723,12 +740,13 @@ inline int RowsPerThread<Kokkos::Cuda>(const int NNZPerRow) {
 
 //----------------------------------------------------------------------------
 
-template< class DeviceType , typename ScalarType , int NNZPerRow=27>
+template<class DeviceType, typename ScalarType, int NNZPerRow=27>
 struct MV_MultiplyShflThreadsPerRow {
 private:
+  typedef typename Kokkos::Impl::remove_const< ScalarType >::type value_type;
 
-  typedef typename Kokkos::Impl::remove_const< ScalarType >::type value_type ;
-
+  // The shuffle operation only works with CUDA, and only works for
+  // certain ScalarType types.
 #ifdef KOKKOS_HAVE_CUDA
   enum { shfl_possible =
     Kokkos::Impl::is_same< DeviceType , Kokkos::Cuda >::value &&
@@ -781,38 +799,47 @@ template<class RangeVector,
          int dobeta,
          int ExplicitVectorLength = 8>
 struct MV_MultiplyFunctor {
-  typedef typename CrsMatrix::execution_space                  execution_space ;
-  typedef typename CrsMatrix::ordinal_type                 size_type ;
-  typedef typename CrsMatrix::non_const_value_type         value_type ;
-  typedef typename Kokkos::View<value_type*, execution_space>  range_values;
-  typedef typename Kokkos::TeamPolicy< execution_space >       team_policy ;
-  typedef typename team_policy::member_type                team_member ;
+  typedef typename CrsMatrix::execution_space execution_space;
+  typedef typename CrsMatrix::size_type       size_type;
+  typedef typename CrsMatrix::ordinal_type    ordinal_type;
+  typedef typename CrsMatrix::non_const_value_type value_type;
+  typedef typename Kokkos::View<value_type*, execution_space> range_values;
+  typedef typename Kokkos::TeamPolicy<execution_space>        team_policy;
+  typedef typename team_policy::member_type                   team_member;
 
-  typedef Vectorization<execution_space,ExplicitVectorLength> vectorization;
+  typedef Vectorization<execution_space, ExplicitVectorLength> vectorization;
 
   CoeffVector1 beta;
   CoeffVector2 alpha;
-  CrsMatrix  m_A ;
-  DomainVector  m_x ;
-  RangeVector  m_y ;
-  size_type n;
+  CrsMatrix  m_A;
+  DomainVector  m_x;
+  RangeVector  m_y;
+  /// \brief The number of columns in the input and output MultiVectors.
+  ///
+  /// Its approxpriate type is therefore size_type, but we don't
+  /// expect the input and output MultiVectors to have more columns
+  /// than the sparse matrix has rows or columns.  Thus, we prefer the
+  /// (likely both smaller and signed, vs. the larger and likely
+  /// unsigned) size_type.
+  ordinal_type n;
   int rows_per_thread;
 
-  MV_MultiplyFunctor(const  CoeffVector1 beta_,
-      const CoeffVector2 alpha_,
-      const CrsMatrix  m_A_,
-      const DomainVector  m_x_,
-      const RangeVector  m_y_,
-      const size_type n_,
-      const int rows_per_thread_):
-      beta(beta_), alpha(alpha_), m_A(m_A_), m_x(m_x_), m_y(m_y_), n(n_), rows_per_thread(rows_per_thread_) {}
-
-  //--------------------------------------------------------------------------
+  MV_MultiplyFunctor (const CoeffVector1 beta_,
+                      const CoeffVector2 alpha_,
+                      const CrsMatrix m_A_,
+                      const DomainVector m_x_,
+                      const RangeVector m_y_,
+                      const ordinal_type n_,
+                      const int rows_per_thread_) :
+      beta (beta_), alpha (alpha_),
+      m_A (m_A_), m_x (m_x_), m_y (m_y_), n (n_),
+      rows_per_thread (rows_per_thread_)
+  {}
 
   template<int UNROLL>
-  KOKKOS_INLINE_FUNCTION
-  void strip_mine (const team_member & dev, const size_type & iRow, const size_type& kk) const {
-
+  KOKKOS_INLINE_FUNCTION void
+  strip_mine (const team_member& dev, const size_type& iRow, const size_type& kk) const
+  {
     value_type sum[UNROLL];
 
 #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
@@ -821,7 +848,7 @@ struct MV_MultiplyFunctor {
 #ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
 #endif
-    for (size_type k = 0 ; k < UNROLL ; ++k) {
+    for (int k = 0; k < UNROLL; ++k) {
       // NOTE (mfh 09 Aug 2013) This requires that assignment from int
       // (in this case, 0) to value_type be defined.  It's not for
       // types like arprec and dd_real.
@@ -837,6 +864,16 @@ struct MV_MultiplyFunctor {
 
     const SparseRowView<CrsMatrix> row = m_A.row(iRow);
 
+    // NOTE (mfh 20 Mar 2015) Unfortunately, Kokkos::Vectorization
+    // lacks a typedef for determining the type of the return value of
+    // begin().  I know that it returns int now, but this may change
+    // at some point.
+    //
+    // The correct type of iEntry is ordinal_type.  This is because we
+    // assume that rows have no duplicate entries.  As a result, a row
+    // cannot have more entries than the number of columns in the
+    // matrix.
+
 #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
@@ -846,36 +883,40 @@ struct MV_MultiplyFunctor {
 #ifdef KOKKOS_HAVE_PRAGMA_LOOPCOUNT
 #pragma loop count (15)
 #endif
-    for (size_type iEntry = vectorization::begin(); iEntry < row.length; iEntry += vectorization::increment ) {
+    for (ordinal_type iEntry = static_cast<ordinal_type> (vectorization::begin ());
+         iEntry < static_cast<ordinal_type> (row.length);
+         iEntry += static_cast<ordinal_type> (vectorization::increment)) {
       const value_type val = row.value(iEntry);
-      const size_type ind = row.colidx(iEntry);
+      const ordinal_type ind = row.colidx(iEntry);
 
 #ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
 #endif
-      for (size_type k = 0; k < UNROLL; ++k) {
+      for (int k = 0; k < UNROLL; ++k) {
         sum[k] +=  val * m_x(ind, kk + k);
       }
     }
 
-    if(doalpha == -1)
+    if (doalpha == -1) {
       for (int ii=0; ii < UNROLL; ++ii) {
         sum[ii] = -vectorization::reduce(sum[ii]);
       }
-    else
+    }
+    else {
       for (int ii=0; ii < UNROLL; ++ii) {
         sum[ii] = vectorization::reduce(sum[ii]);
       }
+    }
 
     if (vectorization::is_lane_0(dev)) {
-      if(doalpha * doalpha != 1) {
+      if (doalpha * doalpha != 1) {
 #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
 #ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
 #endif
-        for (size_type k = 0; k < UNROLL; ++k) {
+        for (int k = 0; k < UNROLL; ++k) {
           sum[k] *= alpha(kk + k);
         }
       }
@@ -887,17 +928,17 @@ struct MV_MultiplyFunctor {
 #ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
 #endif
-        for (size_type k = 0; k < UNROLL; ++k) {
+        for (int k = 0; k < UNROLL; ++k) {
           m_y(iRow, kk + k) = sum[k];
         }
-      } else if(dobeta == 1) {
+      } else if (dobeta == 1) {
 #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
 #ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
 #endif
-        for (size_type k = 0; k < UNROLL; ++k) {
+        for (int k = 0; k < UNROLL; ++k) {
           m_y(iRow, kk + k) += sum[k];
         }
       } else if (dobeta == -1) {
@@ -907,7 +948,7 @@ struct MV_MultiplyFunctor {
 #ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
 #endif
-        for (size_type k = 0; k < UNROLL; ++k) {
+        for (int k = 0; k < UNROLL; ++k) {
           m_y(iRow, kk + k) = -m_y(iRow, kk + k) +  sum[k];
         }
       } else {
@@ -917,18 +958,29 @@ struct MV_MultiplyFunctor {
 #ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
 #endif
-        for (size_type k = 0; k < UNROLL; ++k) {
+        for (int k = 0; k < UNROLL; ++k) {
           m_y(iRow, kk + k) = beta(kk + k) * m_y(iRow, kk + k) + sum[k] ;
         }
       }
     }
   }
 
-  KOKKOS_INLINE_FUNCTION
-  void strip_mine_1 (const team_member & dev, const size_type& iRow) const {
+  KOKKOS_INLINE_FUNCTION void
+  strip_mine_1 (const team_member& dev, const size_type& iRow) const
+  {
     value_type sum = 0;
 
-      const SparseRowViewConst<CrsMatrix> row = m_A.rowConst(iRow);
+    const SparseRowViewConst<CrsMatrix> row = m_A.rowConst(iRow);
+
+    // NOTE (mfh 20 Mar 2015) Unfortunately, Kokkos::Vectorization
+    // lacks a typedef for determining the type of the return value of
+    // begin().  I know that it returns int now, but this may change
+    // at some point.
+    //
+    // The correct type of iEntry is ordinal_type.  This is because we
+    // assume that rows have no duplicate entries.  As a result, a row
+    // cannot have more entries than the number of columns in the
+    // matrix.
 
 #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -939,17 +991,18 @@ struct MV_MultiplyFunctor {
 #ifdef KOKKOS_HAVE_PRAGMA_LOOPCOUNT
 #pragma loop count (15)
 #endif
-      for(size_type iEntry = vectorization::begin(); iEntry < row.length; iEntry += vectorization::increment) {
-        sum += row.value(iEntry) * m_x(row.colidx(iEntry),0);
-      }
+    for (ordinal_type iEntry = static_cast<ordinal_type> (vectorization::begin ());
+         iEntry < static_cast<ordinal_type> (row.length);
+         iEntry += static_cast<ordinal_type> (vectorization::increment)) {
+      sum += row.value(iEntry) * m_x(row.colidx(iEntry),0);
+    }
 
-    sum = vectorization::reduce(sum);
+    sum = vectorization::reduce (sum);
 
-    if (vectorization::is_lane_0(dev)) {
-
-      if(doalpha == -1)
+    if (vectorization::is_lane_0 (dev)) {
+      if (doalpha == -1) {
         sum *= value_type(-1);
-      else if(doalpha * doalpha != 1) {
+      } else if (doalpha * doalpha != 1) {
         sum *= alpha(0);
       }
 
@@ -966,107 +1019,125 @@ struct MV_MultiplyFunctor {
   }
 
 
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const team_member & dev) const {
-    for(int loop = 0; loop < rows_per_thread; loop++) {
-      const size_type iRow = vectorization::global_thread_rank(dev) * rows_per_thread + loop;
-    if(iRow>=m_A.numRows()) return;
+  KOKKOS_INLINE_FUNCTION void
+  operator() (const team_member& dev) const
+  {
+    for (int loop = 0; loop < rows_per_thread; ++loop) {
 
-    size_type kk = 0;
+      // NOTE (mfh 20 Mar 2015) Unfortunately, Kokkos::Vectorization
+      // lacks a typedef for determining the type of the return value
+      // of global_thread_rank().  I know that it returns int now, but
+      // this may change at some point.
+      //
+      // iRow represents a row of the matrix, so its correct type is
+      // ordinal_type.
+
+      const ordinal_type iRow =
+        vectorization::global_thread_rank(dev) * rows_per_thread + loop;
+      if (iRow >= m_A.numRows ()) {
+        return;
+      }
+
+      // mfh 20 Mar 2015: This relates to n, so its correct type is
+      // ordinal_type.  Once we can use C++11 without protection, the
+      // right thing to do would be to use decltype to pick up n's
+      // type here, rather than assuming that it's ordinal_type.
+      ordinal_type kk = 0;
 
 #ifdef KOKKOS_FAST_COMPILE
-    for (; kk + 4 <= n; kk += 4) {
-      strip_mine<4>(dev, iRow, kk);
-    }
-    for( ; kk < n; ++kk) {
-      strip_mine<1>(dev, iRow, kk);
-    }
+      for (; kk + 4 <= n; kk += 4) {
+        strip_mine<4>(dev, iRow, kk);
+      }
+      for( ; kk < n; ++kk) {
+        strip_mine<1>(dev, iRow, kk);
+      }
 #else
 #  ifdef __CUDA_ARCH__
-    if ((n > 8) && (n % 8 == 1)) {
-      strip_mine<9>(dev, iRow, kk);
-      kk += 9;
-    }
-    for(; kk + 8 <= n; kk += 8)
-      strip_mine<8>(dev, iRow, kk);
-    if(kk < n)
-      switch(n - kk) {
-#  else // NOT a CUDA device
-        if ((n > 16) && (n % 16 == 1)) {
-          strip_mine<17>(dev, iRow, kk);
-          kk += 17;
-        }
-
-        for (; kk + 16 <= n; kk += 16) {
-          strip_mine<16>(dev, iRow, kk);
-        }
-
-        if(kk < n)
-          switch(n - kk) {
-          case 15:
-            strip_mine<15>(dev, iRow, kk);
-            break;
-
-          case 14:
-            strip_mine<14>(dev, iRow, kk);
-            break;
-
-          case 13:
-            strip_mine<13>(dev, iRow, kk);
-            break;
-
-          case 12:
-            strip_mine<12>(dev, iRow, kk);
-            break;
-
-          case 11:
-            strip_mine<11>(dev, iRow, kk);
-            break;
-
-          case 10:
-            strip_mine<10>(dev, iRow, kk);
-            break;
-
-          case 9:
-            strip_mine<9>(dev, iRow, kk);
-            break;
-
-          case 8:
-            strip_mine<8>(dev, iRow, kk);
-            break;
-#  endif // __CUDA_ARCH__
-          case 7:
-            strip_mine<7>(dev, iRow, kk);
-            break;
-
-          case 6:
-            strip_mine<6>(dev, iRow, kk);
-            break;
-
-          case 5:
-            strip_mine<5>(dev, iRow, kk);
-            break;
-
-          case 4:
-            strip_mine<4>(dev, iRow, kk);
-            break;
-
-          case 3:
-            strip_mine<3>(dev, iRow, kk);
-            break;
-
-          case 2:
-            strip_mine<2>(dev, iRow, kk);
-            break;
-
-          case 1:
-            strip_mine_1(dev, iRow);
-            break;
-          }
-#endif // KOKKOS_FAST_COMPILE
+      if ((n > 8) && (n % 8 == 1)) {
+        strip_mine<9>(dev, iRow, kk);
+        kk += 9;
       }
+      for(; kk + 8 <= n; kk += 8)
+        strip_mine<8>(dev, iRow, kk);
+      if(kk < n)
+        switch(n - kk) {
+#  else // NOT a CUDA device
+          if ((n > 16) && (n % 16 == 1)) {
+            strip_mine<17>(dev, iRow, kk);
+            kk += 17;
+          }
+
+          for (; kk + 16 <= n; kk += 16) {
+            strip_mine<16>(dev, iRow, kk);
+          }
+
+          if(kk < n)
+            switch(n - kk) {
+            case 15:
+              strip_mine<15>(dev, iRow, kk);
+              break;
+
+            case 14:
+              strip_mine<14>(dev, iRow, kk);
+              break;
+
+            case 13:
+              strip_mine<13>(dev, iRow, kk);
+              break;
+
+            case 12:
+              strip_mine<12>(dev, iRow, kk);
+              break;
+
+            case 11:
+              strip_mine<11>(dev, iRow, kk);
+              break;
+
+            case 10:
+              strip_mine<10>(dev, iRow, kk);
+              break;
+
+            case 9:
+              strip_mine<9>(dev, iRow, kk);
+              break;
+
+            case 8:
+              strip_mine<8>(dev, iRow, kk);
+              break;
+#  endif // __CUDA_ARCH__
+            case 7:
+              strip_mine<7>(dev, iRow, kk);
+              break;
+
+            case 6:
+              strip_mine<6>(dev, iRow, kk);
+              break;
+
+            case 5:
+              strip_mine<5>(dev, iRow, kk);
+              break;
+
+            case 4:
+              strip_mine<4>(dev, iRow, kk);
+              break;
+
+            case 3:
+              strip_mine<3>(dev, iRow, kk);
+              break;
+
+            case 2:
+              strip_mine<2>(dev, iRow, kk);
+              break;
+
+            case 1:
+              strip_mine_1(dev, iRow);
+              break;
+            }
+#endif // KOKKOS_FAST_COMPILE
+        }
     }
   };
+
 
   template<class RangeVector,
            class CrsMatrix,
@@ -1077,42 +1148,55 @@ struct MV_MultiplyFunctor {
            int dobeta,
            int ExplicitVectorLength = 8>
   struct MV_MultiplySingleFunctor {
-    typedef typename CrsMatrix::execution_space                   execution_space ;
-    typedef typename CrsMatrix::ordinal_type                    size_type ;
-    typedef typename CrsMatrix::non_const_value_type         value_type ;
+    typedef typename CrsMatrix::execution_space      execution_space;
+    typedef typename CrsMatrix::ordinal_type         ordinal_type;
+    typedef typename CrsMatrix::non_const_value_type value_type;
     typedef typename Kokkos::View<value_type*, typename CrsMatrix::execution_space> range_values;
-    typedef typename Kokkos::TeamPolicy< execution_space >       team_policy ;
-    typedef typename team_policy::member_type                team_member ;
+    typedef typename Kokkos::TeamPolicy<execution_space> team_policy;
+    typedef typename team_policy::member_type            team_member;
 
     //typedef MV_MultiplyShflThreadsPerRow< execution_space , value_type , NNZPerRow > ShflThreadsPerRow ;
     typedef Vectorization<execution_space,ExplicitVectorLength> vectorization;
 
     CoeffVector1 beta;
     CoeffVector2 alpha;
-    CrsMatrix  m_A ;
-    DomainVector  m_x ;
-    RangeVector  m_y ;
+    CrsMatrix  m_A;
+    DomainVector m_x;
+    RangeVector m_y;
+    // FIXME (mfh 20 Mar 2015) This should have type ordinal_type.
     int rows_per_thread;
 
-    MV_MultiplySingleFunctor(
-        const  CoeffVector1 beta_,
-        const CoeffVector2 alpha_,
-        const CrsMatrix  m_A_,
-        const DomainVector  m_x_,
-        const RangeVector  m_y_,
-        const int rows_per_thread_):
-        beta(beta_), alpha(alpha_),
-        m_A(m_A_), m_x(m_x_), m_y(m_y_),
-        rows_per_thread(rows_per_thread_) {}
+    MV_MultiplySingleFunctor (const CoeffVector1 beta_,
+                              const CoeffVector2 alpha_,
+                              const CrsMatrix m_A_,
+                              const DomainVector m_x_,
+                              const RangeVector m_y_,
+                              const int rows_per_thread_) :
+      beta (beta_), alpha (alpha_),
+      m_A (m_A_), m_x (m_x_), m_y (m_y_),
+      rows_per_thread (rows_per_thread_)
+    {}
 
-    KOKKOS_INLINE_FUNCTION
-    void operator()(const team_member & dev) const {
-
-      for(int loop = 0; loop < rows_per_thread; loop++) {
-        const size_type iRow = vectorization::global_thread_rank(dev)*rows_per_thread + loop;
-        if(iRow>=m_A.numRows()) return;
+    KOKKOS_INLINE_FUNCTION void
+    operator() (const team_member& dev) const
+    {
+      // FIXME (mfh 20 Mar 2015) The correct type of 'loop' should be
+      // ordinal_type, not int.  Ditto for rows_per_thread.
+      for (int loop = 0; loop < rows_per_thread; ++loop) {
+        // NOTE (mfh 20 Mar 2015) Unfortunately, Kokkos::Vectorization
+        // lacks a typedef for determining the type of the return
+        // value of global_thread_rank().  I know that it returns int
+        // now, but this may change at some point.
+        //
+        // iRow represents a row of the matrix, so its correct type is
+        // ordinal_type.
+        const ordinal_type iRow =
+          vectorization::global_thread_rank (dev) * rows_per_thread + loop;
+        if (iRow >= m_A.numRows ()) {
+          return;
+        }
         const SparseRowViewConst<CrsMatrix> row = m_A.rowConst(iRow);
-        const size_type row_length = row.length ;
+        const ordinal_type row_length = static_cast<ordinal_type> (row.length);
         value_type sum = 0;
 
         #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
@@ -1124,16 +1208,18 @@ struct MV_MultiplyFunctor {
         #ifdef KOKKOS_HAVE_PRAGMA_LOOPCOUNT
         #pragma loop count (15)
         #endif
-        for (size_type iEntry = vectorization::begin(); iEntry < row_length; iEntry += vectorization::increment) {
+        for (ordinal_type iEntry = static_cast<ordinal_type> (vectorization::begin());
+             iEntry < static_cast<ordinal_type> (row_length);
+             iEntry += static_cast<ordinal_type> (vectorization::increment)) {
           sum += row.value(iEntry) * m_x(row.colidx(iEntry));
         }
 
         sum = vectorization::reduce(sum);
 
-
-        if (vectorization::is_lane_0(dev)) {
-          if (doalpha == -1) sum *= value_type(-1);
-          else if (doalpha * doalpha != 1) {
+        if (vectorization::is_lane_0 (dev)) {
+          if (doalpha == -1) {
+            sum *= value_type(-1);
+          } else if (doalpha * doalpha != 1) {
             sum *= alpha(0);
           }
 
@@ -1233,7 +1319,7 @@ struct MV_MultiplyFunctor {
     }
   } // namespace Impl
 
-  // This TansposeFunctor is functional, but not necessarily performant.
+  // This TransposeFunctor is functional, but not necessarily performant.
   template<class RangeVector,
            class CrsMatrix,
            class DomainVector,
@@ -1244,48 +1330,51 @@ struct MV_MultiplyFunctor {
            bool conjugate = false,
            int NNZPerRow = 27>
   struct MV_MultiplyTransposeFunctor {
-    typedef typename CrsMatrix::execution_space                   execution_space ;
-    typedef typename CrsMatrix::ordinal_type                    size_type ;
-    typedef typename CrsMatrix::non_const_value_type         value_type ;
-    typedef typename Kokkos::View<value_type*, execution_space>  range_values;
+    typedef typename CrsMatrix::execution_space                 execution_space;
+    typedef typename CrsMatrix::ordinal_type                    ordinal_type;
+    typedef typename CrsMatrix::size_type                       size_type;
+    typedef typename CrsMatrix::non_const_value_type            value_type;
+    typedef typename Kokkos::View<value_type*, execution_space> range_values;
 
-    typedef MV_MultiplyShflThreadsPerRow< execution_space , value_type , NNZPerRow > ShflThreadsPerRow ;
+    typedef MV_MultiplyShflThreadsPerRow<execution_space, value_type, NNZPerRow> ShflThreadsPerRow;
 
     CoeffVector1 beta;
     CoeffVector2 alpha;
     CrsMatrix  m_A ;
     DomainVector  m_x ;
     RangeVector  m_y ;
-    size_type n;
+    ordinal_type n;
 
+    // This is an iteration over rows of the matrix (modulo the
+    // shuffle width), so the correct type of i is ordinal_type.
     KOKKOS_INLINE_FUNCTION
-    void operator() (const size_type i) const {
+    void operator() (const ordinal_type i) const {
       typedef Kokkos::Details::ArithTraits<value_type> ATV;
 
-      const size_type iRow = i / ShflThreadsPerRow::device_value;
+      const ordinal_type iRow = i / ShflThreadsPerRow::device_value;
       const int lane = static_cast<int> (i) % ShflThreadsPerRow::device_value;
       const SparseRowViewConst<CrsMatrix> row = m_A.rowConst(iRow);
 
-      for (size_type iEntry = lane;
-           iEntry < row.length;
-           iEntry += ShflThreadsPerRow::device_value) {
+      for (ordinal_type iEntry = static_cast<ordinal_type> (lane);
+           iEntry < static_cast<ordinal_type> (row.length);
+           iEntry += static_cast<ordinal_type> (ShflThreadsPerRow::device_value)) {
         const value_type val = conjugate ?
           ATV::conj (row.value(iEntry)) :
           row.value(iEntry);
-        const size_type ind = row.colidx(iEntry);
+        const ordinal_type ind = row.colidx(iEntry);
 
         if (doalpha != 1) {
 #ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
 #endif
-          for (size_type k = 0; k < n; ++k) {
+          for (ordinal_type k = 0; k < n; ++k) {
             atomic_add (&m_y(ind,k), value_type(alpha(k) * val * m_x(iRow, k)));
           }
         } else {
 #ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
 #endif
-          for (size_type k = 0; k < n; ++k) {
+          for (ordinal_type k = 0; k < n; ++k) {
             atomic_add (&m_y(ind,k), value_type(val * m_x(iRow, k)));
           }
         }
@@ -1304,10 +1393,10 @@ struct MV_MultiplyFunctor {
            bool conjugate = false,
            int NNZPerRow = 27 >
   struct MV_MultiplyTransposeSingleFunctor {
-    typedef typename CrsMatrix::execution_space                   execution_space ;
-    typedef typename CrsMatrix::ordinal_type                    size_type ;
-    typedef typename CrsMatrix::non_const_value_type         value_type ;
-    typedef typename Kokkos::View<value_type*, execution_space>  range_values;
+    typedef typename CrsMatrix::execution_space      execution_space;
+    typedef typename CrsMatrix::ordinal_type         ordinal_type;
+    typedef typename CrsMatrix::non_const_value_type value_type;
+    typedef typename Kokkos::View<value_type*, execution_space> range_values;
 
     typedef MV_MultiplyShflThreadsPerRow< execution_space , value_type , NNZPerRow > ShflThreadsPerRow ;
 
@@ -1316,23 +1405,23 @@ struct MV_MultiplyFunctor {
     CrsMatrix  m_A ;
     DomainVector  m_x ;
     RangeVector  m_y ;
-    size_type n;
+    ordinal_type n;
 
     KOKKOS_INLINE_FUNCTION
-    void operator() (const size_type i) const {
+    void operator() (const ordinal_type i) const {
       typedef Kokkos::Details::ArithTraits<value_type> ATV;
 
-      const size_type iRow = i / ShflThreadsPerRow::device_value;
+      const ordinal_type iRow = i / ShflThreadsPerRow::device_value;
       const int lane = static_cast<int> (i) % ShflThreadsPerRow::device_value;
       const SparseRowViewConst<CrsMatrix> row = m_A.rowConst(iRow);
 
-      for (size_type iEntry = lane;
-           iEntry < row.length;
-           iEntry += ShflThreadsPerRow::device_value) {
+      for (ordinal_type iEntry = static_cast<ordinal_type> (lane);
+           iEntry < static_cast<ordinal_type> (row.length);
+           iEntry += static_cast<ordinal_type> (ShflThreadsPerRow::device_value)) {
         const value_type val = conjugate ?
           ATV::conj (row.value(iEntry)) :
           row.value(iEntry);
-        const size_type ind = row.colidx(iEntry);
+        const ordinal_type ind = row.colidx(iEntry);
 
         if (doalpha != 1) {
           atomic_add (&m_y(ind), value_type(alpha(0) * val * m_x(iRow)));
@@ -1358,12 +1447,14 @@ MV_MultiplyTranspose (typename Kokkos::Impl::enable_if<DomainVector::Rank == 2, 
                       const DomainVector &x,
                       const bool conjugate = false)
 {
+  typedef typename TCrsMatrix::ordinal_type ordinal_type;
+
   // FIXME (mfh 02 Jan 2015) Is numRows() always signed?  More
   // importantly, if the calling process owns zero rows in the row
   // Map, numRows() should return 0, not -1.
   //
   //Special case for zero Rows RowMap
-  if (A.numRows () == -1) {
+  if (A.numRows () == static_cast<ordinal_type> (-1)) {
     return;
   }
 
@@ -1475,6 +1566,10 @@ MV_MultiplyTranspose (typename Kokkos::Impl::enable_if<DomainVector::Rank == 2, 
 #else // NOT KOKKOS_FAST_COMPILE
 */
 
+    // FIXME (mfh 20 Mar 2015) The dimension doesn't have type int.
+    // On the other hand, this is the number of columns in the input
+    // (and output) MultiVectors, so it's not likely to be large (the
+    // typical case is < 100).
     int numVecs = x.dimension_1();
     CoeffVector1 beta = betav;
     CoeffVector2 alpha = alphav;
@@ -1496,7 +1591,7 @@ MV_MultiplyTranspose (typename Kokkos::Impl::enable_if<DomainVector::Rank == 2, 
       typename CoeffVector1::HostMirror h_b = Kokkos::create_mirror_view(beta);
       typename CoeffVector1::value_type s_b = (typename CoeffVector1::value_type) dobeta;
 
-      for(int i = 0; i < numVecs; ++i) {
+      for (int i = 0; i < numVecs; ++i) {
         h_b(i) = s_b;
       }
 
@@ -1511,7 +1606,7 @@ MV_MultiplyTranspose (typename Kokkos::Impl::enable_if<DomainVector::Rank == 2, 
       }
     }
 
-    const typename CrsMatrixType::ordinal_type nrow = A.numRows();
+    const ordinal_type nrow = A.numRows ();
 
     if (conjugate) {
       typedef MV_MultiplyTransposeFunctor<RangeVectorType, CrsMatrixType,
@@ -1759,13 +1854,17 @@ mv_multiply_team_policy (const int nrow, const int rows_per_thread, const int in
                const TCrsMatrix& A,
                const DomainVector& x)
   {
-    if(A.numRows()<=0) return;
+    typedef typename TCrsMatrix::ordinal_type ordinal_type;
+
+    if (A.numRows () <= static_cast<ordinal_type> (0)) {
+      return;
+    }
     if (doalpha == 0) {
       if (dobeta==2) {
-              V_MulScalar(y,betav,y);
+        V_MulScalar (y, betav, y);
       }
       else {
-              V_MulScalar(y,typename RangeVector::value_type(dobeta),y);
+        V_MulScalar (y, typename RangeVector::value_type (dobeta), y);
       }
       return;
     } else {
@@ -1803,7 +1902,9 @@ mv_multiply_team_policy (const int nrow, const int rows_per_thread, const int in
 
       Impl::MV_Multiply_Check_Compatibility(betav,y,alphav,A,x,doalpha,dobeta);
 
-      const int NNZPerRow = A.nnz()/A.numRows();
+      // NNZPerRow could be anywhere from 0, to A.numRows()*A.numCols().
+      // Thus, the appropriate type is size_type.
+      const typename CrsMatrixType::size_type NNZPerRow = A.nnz () / A.numRows ();
 
 #ifndef KOKKOS_FAST_COMPILE
 
@@ -1991,7 +2092,7 @@ template <class RangeVector,
         if(NNZPerRow>=96) {
           typedef Vectorization<typename RangeVector::execution_space,8> vec_type;
           typedef MV_MultiplyFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
-                                   CoeffVector1Type, CoeffVector2Type, doalpha, dobeta,vec_type::increment> OpType ;
+            CoeffVector1Type, CoeffVector2Type, doalpha, dobeta,vec_type::increment> OpType ;
 
           const typename CrsMatrixType::ordinal_type nrow = A.numRows();
 

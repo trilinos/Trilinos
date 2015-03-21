@@ -154,7 +154,7 @@ namespace Tpetra {
     //! The type of the part of the sparse graph on each MPI process.
     typedef Kokkos::StaticCrsGraph<LocalOrdinal,
                                    Kokkos::LayoutLeft,
-                                   execution_space, size_t> local_graph_type;
+                                   execution_space> local_graph_type;
     //! DEPRECATED; use local_graph_type (above) instead.
     typedef local_graph_type LocalStaticCrsGraphType TPETRA_DEPRECATED;
 
