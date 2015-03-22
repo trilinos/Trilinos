@@ -80,12 +80,18 @@ compilerToolsetChoices = (["all"] + compilerToolsetArray + [""])
 usageHelp = r"""install-devtools.py [OPTIONS]
 
 This script drives the installation of a number of tools needed by many
-TriBITS-based projects.  The most typically usage is:
+TriBITS-based projects.  The most typical usage is to first create a scratch
+directory with::
+
+  mkdir scratch
+  cd scratch
+
+and then run:
 
   install-devtools.py --install-dir=<dev_env_base> \
    --parallel=<num-procs> --do-all
 
-which by default installs the following tools in the dev env install
+By default, this installs the following tools in the dev env install
 directory:
 
   <dev_env_base>/

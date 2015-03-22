@@ -39,7 +39,46 @@
 
 # Find Python executable which is needed for dependency file building
 MACRO(TRIBITS_FIND_PYTHON)
-  SET(PythonInterp_FIND_VERSION "2.4")
+  SET(PythonInterp_FIND_VERSION_MIN "2.4")
+  IF ("${PythonInterp_FIND_VERSION_DEFAULT}" STREQUAL "")
+    SET(PythonInterp_FIND_VERSION_DEFAULT "${PythonInterp_FIND_VERSION_MIN}")
+  ENDIF()
+  ADVANCED_SET(PythonInterp_FIND_VERSION  ${PythonInterp_FIND_VERSION_DEFAULT}
+    CACHE  STRING
+    "Default version of Python to find (must be ${PythonInterp_FIND_VERSION_DEFAULT} or greater")
+  IF (PythonInterp_FIND_VERSION  VERSION_LESS  "${PythonInterp_FIND_VERSION_MIN}")
+    MESSAGE_WRAPPER(FATAL_ERROR  "Error,"
+      " PythonInterp_FIND_VERSION=${PythonInterp_FIND_VERSION} < ${PythonInterp_FIND_VERSION_MIN}"
+      " is now allowed!" )
+  ENDIF()
   ADVANCED_SET(PythonInterp_MUST_BE_FOUND FALSE CACHE BOOL "Require Python to be found or not.")
-  FIND_PACKAGE(PythonInterp)
+  IF (TRIBITS_FIND_PYTHON_UNITTEST)
+    SET(PYTHON_EXECUTABLE  ${PYTHON_EXECUTABLE_UNITTEST_VAL}) 
+  ELSE()
+    FIND_PACKAGE(PythonInterp)
+  ENDIF()
+ENDMACRO()
+
+
+# TriBITS Wrapper for finding Python (or not) for a TriBITS project.
+MACRO(TRIBITS_FIND_PYTHON_INTERP)
+  IF (${PROJECT_NAME}_REQUIRES_PYTHON)
+    SET(${PROJECT_NAME}_USES_PYTHON  TRUE)
+  ENDIF()
+  IF ("${${PROJECT_NAME}_USES_PYTHON}" STREQUAL "")
+    # Unless the project tells us they can use Python or not, let's go ahead
+    # and look for Python in case some packages want to use it.
+    SET(${PROJECT_NAME}_USES_PYTHON  TRUE)
+  ENDIF()
+  IF (${PROJECT_NAME}_USES_PYTHON)
+    TRIBITS_FIND_PYTHON()
+    PRINT_VAR(PYTHON_EXECUTABLE)
+    IF (${PROJECT_NAME}_REQUIRES_PYTHON  AND  PYTHON_EXECUTABLE  STREQUAL "")
+      MESSAGE_WRAPPER(FATAL_ERROR "Error, PYTHON_EXECUTABLE='' but"
+        " ${PROJECT_NAME}_REQUIRES_PYTHON=${${PROJECT_NAME}_REQUIRES_PYTHON}!" )
+    ENDIF()
+  ELSE()
+    MESSAGE_WRAPPER("-- " "NOTE: Skipping check for Python because"
+      " ${PROJECT_NAME}_USES_PYTHON='${${PROJECT_NAME}_USES_PYTHON}'")
+  ENDIF()
 ENDMACRO()

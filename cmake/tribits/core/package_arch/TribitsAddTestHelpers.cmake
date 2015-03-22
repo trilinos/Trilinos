@@ -39,6 +39,7 @@
 
 
 INCLUDE(TribitsAddExecutableTestHelpers)
+INCLUDE(TribitsTestCategories)
 
 INCLUDE(ParseVariableArguments)
 INCLUDE(GlobalSet)

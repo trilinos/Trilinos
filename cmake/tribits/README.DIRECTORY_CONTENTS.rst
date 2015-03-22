@@ -20,6 +20,8 @@ TriBITS refactorings of TriBITS.
 
 **Version.cmake**: Version of TriBITS.  This gets included by TriBITS.cmake
 
+.. _TriBITS Core:
+
 **core/**: Core TriBITS package-based architecture for CMake projects. This
 only depends on raw CMake and contains just the minimal support for building,
 testing, installing, and deployment.  Only depends on CMake and nothing else.

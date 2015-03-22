@@ -515,8 +515,8 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
       ENDIF()
 
       # Check for valid usage (sorted by most common to least common)
-      IF (LIB_IN_SE_PKG AND NOT LIB_TESTONLY) #PARSE_TESTONLY=TRUE/FASLE The
-        # library being created here is a library dependent on a regular
+      IF (LIB_IN_SE_PKG AND NOT LIB_TESTONLY) #PARSE_TESTONLY=TRUE/FASLE
+        # The library being created here is a library dependent on a regular
         # (non-TESTONLY) lib in this SE package.  This is valid usage of
         # DEPLIBS.  There is no need to link this new lib to the SE package's
         # upstream dependent SE package and TPL libraries because thse are
@@ -527,11 +527,11 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
         # dependent on a regular (non-TESTONLY) lib.  This is valid usage of
         # DEPLIBS.  In the case of test-only libraries, we always link in
         # the upstream libs.
-      ELSEIF (PARSE_TESTONLY AND LIB_TESTONLY) # LIB_IN_SE_PKG=TRUE/FASLE The
-        # library being created here is TESTONLY library and is dependent on
-        # another TESTONLY library.  This is valid usage of DEPLIBS.  In this
-        # case we just hope that this SE package correctly specified a TEST
-        # dependency on the upstream SE package that owns this upstream
+      ELSEIF (PARSE_TESTONLY AND LIB_TESTONLY) # LIB_IN_SE_PKG=TRUE/FASLE
+        # The library being created here is TESTONLY library and is dependent
+        # on another TESTONLY library.  This is valid usage of DEPLIBS.  In
+        # this case we just hope that this SE package correctly specified a
+        # TEST dependency on the upstream SE package that owns this upstream
         # TESTONLY library.
         IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
           MESSAGE("-- "

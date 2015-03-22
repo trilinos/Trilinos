@@ -15,7 +15,9 @@ EXTRA_FILES = \
   TribitsCommonTPLsList.txt \
   checkin-test-help.txt \
   gitdist-help.txt \
+  clone_extra_repos-help.txt \
   snapshot-dir-help.txt \
+  install_devtools-help.txt \
   TriBITS.README.DIRECTORY_CONTENTS.rst \
   TribitsMacroFunctionDoc.rst \
   UtilsMacroFunctionDoc.rst

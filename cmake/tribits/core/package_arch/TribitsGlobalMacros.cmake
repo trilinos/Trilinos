@@ -141,16 +141,6 @@ ENDMACRO()
 
 
 #
-# Find Python
-#
-
-MACRO(TRIBITS_FIND_PYTHON_INTERP)
-  INCLUDE(TribitsFindPythonInterp)
-  TRIBITS_FIND_PYTHON()
-  PRINT_VAR(PYTHON_EXECUTABLE)
-ENDMACRO()
-
-#
 # Define and option to include a file that reads in a bunch of options
 #
 #
