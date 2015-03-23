@@ -2327,6 +2327,27 @@ namespace Tpetra {
     }
   }
 
+  namespace { // (anonymous)
+    template<class OriginalOffsetType, class DeviceType>
+    class CopyOffsets {
+    public:
+      typedef typename DeviceType::execution_space execution_space;
+
+      CopyOffsets (const Kokkos::View<size_t*, DeviceType>& ptr_out,
+                   const Kokkos::View<const OriginalOffsetType*, DeviceType>& ptr_in) :
+        ptr_out_ (ptr_out),
+        ptr_in_ (ptr_in)
+      {}
+
+      KOKKOS_INLINE_FUNCTION void operator () (const ptrdiff_t& i) const {
+        ptr_out_(i) = static_cast<size_t> (ptr_in_(i));
+      }
+
+    private:
+      Kokkos::View<size_t*, DeviceType> ptr_out_;
+      Kokkos::View<const OriginalOffsetType*, DeviceType> ptr_in_;
+    };
+  } // namespace (anonymous)
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Teuchos::ArrayRCP<const size_t>
@@ -2335,7 +2356,92 @@ namespace Tpetra {
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   getNodeRowPtrs () const
   {
+    // FIXME (mfh 22 Mar 2015) Something in the
+    // Tpetra::Experimental::BlockCrsMatrix test breaks when I enable
+    // the disabled code below.  The issue appears to be that the code
+    // assumes that it really gets a view (not a deep copy) of the row
+    // offsets.
+#if 0
     return Kokkos::Compat::persistingView (k_rowPtrs_);
+#else
+    using Kokkos::ViewAllocateWithoutInitializing;
+    using Kokkos::create_mirror_view;
+    using Teuchos::ArrayRCP;
+    typedef typename local_graph_type::row_map_type row_map_type;
+    typedef typename row_map_type::non_const_value_type row_offset_type;
+    const char prefix[] = "Tpetra::CrsGraph::getNodeRowPtrs: ";
+    const char suffix[] = "  Please report this bug to the Tpetra developers.";
+    const size_t size = k_rowPtrs_.dimension_0 ();
+    const bool same = Kokkos::Impl::is_same<size_t, row_offset_type>::value;
+
+    if (size == 0) {
+      return ArrayRCP<const size_t> ();
+    }
+
+    ArrayRCP<const row_offset_type> ptr_rot;
+    ArrayRCP<const size_t> ptr_st;
+    if (same) { // size_t == row_offset_type
+      // NOTE (mfh 22 Mar 2015) In a debug build of Kokkos, the result
+      // of create_mirror_view might actually be a new allocation.
+      // This helps with debugging when there are two memory spaces.
+      typename row_map_type::HostMirror ptr_h = create_mirror_view (k_rowPtrs_);
+      Kokkos::deep_copy (ptr_h, k_rowPtrs_);
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ptr_h.dimension_0 () != k_rowPtrs_.dimension_0 (), std::logic_error,
+        prefix << "size_t == row_offset_type, but ptr_h.dimension_0() = "
+        << ptr_h.dimension_0 () << " != k_rowPtrs_.dimension_0() = "
+        << k_rowPtrs_.dimension_0 () << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        same && size != 0 && k_rowPtrs_.ptr_on_device () == NULL, std::logic_error,
+        prefix << "size_t == row_offset_type and k_rowPtrs_.dimension_0() = "
+        << size << " != 0, but k_rowPtrs_.ptr_on_device() == NULL." << suffix);
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        same && size != 0 && ptr_h.ptr_on_device () == NULL, std::logic_error,
+        prefix << "size_t == row_offset_type and k_rowPtrs_.dimension_0() = "
+        << size << " != 0, but create_mirror_view(k_rowPtrs_).ptr_on_device() "
+        "== NULL." << suffix);
+#endif // HAVE_TPETRA_DEBUG
+      ptr_rot = Kokkos::Compat::persistingView (ptr_h);
+    }
+    else { // size_t != row_offset_type
+      typedef Kokkos::View<size_t*, DeviceType> ret_view_type;
+      ret_view_type ptr_d (ViewAllocateWithoutInitializing ("ptr"), size);
+      CopyOffsets<row_offset_type, DeviceType> functor (ptr_d, k_rowPtrs_);
+      Kokkos::parallel_for (size, functor);
+      typename ret_view_type::HostMirror ptr_h = create_mirror_view (ptr_d);
+      Kokkos::deep_copy (ptr_h, ptr_d);
+      ptr_st = Kokkos::Compat::persistingView (ptr_h);
+    }
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      same && size != 0 && ptr_rot.is_null (), std::logic_error,
+      prefix << "size_t == row_offset_type and size = " << size
+      << " != 0, but ptr_rot is null." << suffix);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! same && size != 0 && ptr_st.is_null (), std::logic_error,
+      prefix << "size_t != row_offset_type and size = " << size
+      << " != 0, but ptr_st is null." << suffix);
+#endif // HAVE_TPETRA_DEBUG
+
+    // If size_t == row_offset_type, return a persisting host view of
+    // k_rowPtrs_.  Otherwise, return a size_t host copy of k_rowPtrs_.
+#ifdef HAVE_TPETRA_DEBUG
+    ArrayRCP<const size_t> retval =
+      Kokkos::Impl::if_c<same,
+        ArrayRCP<const row_offset_type>,
+        ArrayRCP<const size_t> >::select (ptr_rot, ptr_st);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      size != 0 && retval.is_null (), std::logic_error,
+      prefix << "size = " << size << " != 0, but retval is null." << suffix);
+    return retval;
+#else
+    return Kokkos::Impl::if_c<same,
+      ArrayRCP<const row_offset_type>,
+      ArrayRCP<const size_t> >::select (ptr_rot, ptr_st);
+#endif // HAVE_TPETRA_DEBUG
+
+#endif // 0
   }
 
 

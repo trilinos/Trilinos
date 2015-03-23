@@ -805,12 +805,21 @@ namespace Tpetra {
       "Requires that getCrsGraph() is not null.");
     try {
       rowPointers = relevantGraph->getNodeRowPtrs ();
+    }
+    catch (std::exception &e) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        true, std::runtime_error,
+        "Caught exception while calling graph->getNodeRowPtrs(): "
+        << e.what ());
+    }
+    try {
       columnIndices = relevantGraph->getNodePackedIndices ();
     }
     catch (std::exception &e) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         true, std::runtime_error,
-        "Caught exception while calling getCrsGraph()->getAllIndices().");
+        "Caught exception while calling graph->getNodePackedIndices(): "
+        << e.what ());
     }
     Teuchos::ArrayRCP<const impl_scalar_type> vals =
       Kokkos::Compat::persistingView (k_values1D_);

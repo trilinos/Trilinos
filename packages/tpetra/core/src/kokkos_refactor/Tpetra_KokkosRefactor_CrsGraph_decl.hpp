@@ -906,11 +906,14 @@ namespace Tpetra {
     setAllIndices (const Teuchos::ArrayRCP<size_t> & rowPointers,
                    const Teuchos::ArrayRCP<LocalOrdinal> & columnIndices);
 
-    //! Get an Teuchos::ArrayRCP of the row-offsets.
-    /*!  The returned buffer exists in host-memory. This method may return Teuchos::null
-      if "Delete Row Pointers" was \c true on fillComplete().
-    */
-    Teuchos::ArrayRCP<const size_t> getNodeRowPtrs() const;
+    /// \brief Get a host view of the row offsets.
+    ///
+    /// \note Please prefer getLocalGraph() to get the row offsets.
+    ///
+    /// This may return either a copy or a view of the row offsets.
+    /// In either case, it will <i>always</i> live in host memory,
+    /// never in (CUDA) device memory.
+    Teuchos::ArrayRCP<const size_t> getNodeRowPtrs () const;
 
     //! Get an Teuchos::ArrayRCP of the packed column-indices.
     /*!  The returned buffer exists in host-memory.
