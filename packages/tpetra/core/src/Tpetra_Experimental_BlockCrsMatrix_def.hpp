@@ -56,7 +56,9 @@ namespace Experimental {
     dist_object_type (Teuchos::rcp (new map_type ())), // nonnull, so DistObject doesn't throw
     graph_ (Teuchos::rcp (new map_type ()), 0), // FIXME (mfh 16 May 2014) no empty ctor yet
     blockSize_ (static_cast<LO> (0)),
+#if defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP)
     ptr_ (NULL),
+#endif
     ind_ (NULL),
     X_colMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
     Y_rowMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
@@ -76,7 +78,9 @@ namespace Experimental {
     graph_ (graph),
     rowMeshMap_ (* (graph.getRowMap ())),
     blockSize_ (blockSize),
+#if defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP)
     ptr_ (NULL), // to be initialized below
+#endif
     ind_ (NULL), // to be initialized below
     val_ (NULL), // to be initialized below
     X_colMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
@@ -107,7 +111,22 @@ namespace Experimental {
     domainPointMap_ = BMV::makePointMap (* (graph.getDomainMap ()), blockSize);
     rangePointMap_ = BMV::makePointMap (* (graph.getRangeMap ()), blockSize);
 
+#if defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP)
     ptr_ = graph.getNodeRowPtrs ().getRawPtr ();
+#else
+    {
+      typedef typename crs_graph_type::local_graph_type::row_map_type row_map_type;
+      typedef typename row_map_type::HostMirror::non_const_type nc_host_row_map_type;
+
+      row_map_type ptr_d = graph.getLocalGraph ().row_map;
+      // FIXME (mfh 23 Mar 2015) Once we write a Kokkos kernel for the
+      // mat-vec, we won't need a host version of this.
+      nc_host_row_map_type ptr_h_nc = Kokkos::create_mirror_view (ptr_d);
+      Kokkos::deep_copy (ptr_h_nc, ptr_d);
+      ptr_ = ptr_h_nc;
+    }
+#endif
+
     ind_ = graph.getNodePackedIndices ().getRawPtr ();
     valView_.resize (graph.getNodeNumEntries () * offsetPerBlock ());
     val_ = valView_.getRawPtr ();
@@ -125,7 +144,9 @@ namespace Experimental {
     domainPointMap_ (domainPointMap),
     rangePointMap_ (rangePointMap),
     blockSize_ (blockSize),
+#if defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP)
     ptr_ (NULL), // to be initialized below
+#endif
     ind_ (NULL), // to be initialized below
     X_colMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
     Y_rowMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
@@ -152,7 +173,21 @@ namespace Experimental {
       "BlockCrsMatrix constructor: The input blockSize = " << blockSize <<
       " <= 0.  The block size must be positive.");
 
+#if defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP)
     ptr_ = graph.getNodeRowPtrs ().getRawPtr ();
+#else
+    {
+      typedef typename crs_graph_type::local_graph_type::row_map_type row_map_type;
+      typedef typename row_map_type::HostMirror::non_const_type nc_host_row_map_type;
+
+      row_map_type ptr_d = graph.getLocalGraph ().row_map;
+      // FIXME (mfh 23 Mar 2015) Once we write a Kokkos kernel for the
+      // mat-vec, we won't need a host version of this.
+      nc_host_row_map_type ptr_h_nc = Kokkos::create_mirror_view (ptr_d);
+      Kokkos::deep_copy (ptr_h_nc, ptr_d);
+      ptr_ = ptr_h_nc;
+    }
+#endif
     ind_ = graph.getNodePackedIndices ().getRawPtr ();
     valView_.resize (graph.getNodeNumEntries () * offsetPerBlock ());
     val_ = valView_.getRawPtr ();

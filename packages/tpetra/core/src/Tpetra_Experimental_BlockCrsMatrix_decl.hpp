@@ -654,8 +654,18 @@ private:
   map_type rangePointMap_;
   //! The number of degrees of freedom per mesh point.
   LO blockSize_;
+
+#if defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP)
   //! Raw pointer to the graph's array of row offsets.
   const size_t* ptr_;
+#else
+  /// \brief The graph's array of row offsets.
+  ///
+  /// FIXME (mfh 23 Mar 2015) Once we write a Kokkos kernel for the
+  /// mat-vec, we won't need a host version of this.
+  typename crs_graph_type::local_graph_type::row_map_type::HostMirror ptr_;
+#endif
+
   //! Raw pointer to the graph's array of column indices.
   const LO* ind_;
   /// \brief Array of values in the matrix.
