@@ -144,7 +144,7 @@ private:
   {
     const ParallelFor & self = * ((const ParallelFor *) arg );
 
-    typename Policy::member_type member( exec , self.m_policy , self.m_shared );
+    typename Policy::member_type member( & exec , self.m_policy , self.m_shared );
 
     for ( ; member.valid() ; member.next() ) {
       self.ParallelFor::template driver< typename Policy::work_tag >( member );
@@ -294,7 +294,7 @@ private:
     // Initialize thread-local value
     reference_type update = ValueInit::init( self.m_func , exec.reduce_memory() );
 
-    typename Policy::member_type member( exec , self.m_policy , self.m_shared );
+    typename Policy::member_type member( & exec , self.m_policy , self.m_shared );
     for ( ; member.valid() ; member.next() ) {
       self.ParallelReduce::template driver< work_tag >( member , update );
     }

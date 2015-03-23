@@ -623,6 +623,9 @@ public:
     {}
 #endif
 
+  //----------------------------------------
+
+  static member_type & member_null();
 };
 
 inline

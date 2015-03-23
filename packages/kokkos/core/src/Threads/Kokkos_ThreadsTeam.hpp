@@ -71,9 +71,9 @@ private:
   typedef Kokkos::Threads execution_space ;
   typedef execution_space::scratch_memory_space space ;
 
-  Impl::ThreadsExec   & m_exec ;
-  space                 m_team_shared ;
+  ThreadsExec * const   m_exec ;
   ThreadsExec * const * m_team_base ; ///< Base for team fan-in
+  space                 m_team_shared ;
   int                   m_team_shared_size ;
   int                   m_team_size ;
   int                   m_team_rank ;
@@ -102,8 +102,8 @@ public:
 
       // If not root then wait for release
       if ( m_team_rank_rev ) {
-        m_exec.state() = ThreadsExec::Rendezvous ;
-        Impl::spinwait( m_exec.state() , ThreadsExec::Rendezvous );
+        m_exec->state() = ThreadsExec::Rendezvous ;
+        Impl::spinwait( m_exec->state() , ThreadsExec::Rendezvous );
       }
 
       return ! m_team_rank_rev ;
@@ -147,11 +147,13 @@ public:
     typedef typename if_c< sizeof(ValueType) < TEAM_REDUCE_SIZE
                          , ValueType , void >::type type ;
 
-    type * const local_value = ((type*) m_team_base[0]->scratch_memory());
-    if(team_rank() == thread_id) *local_value = value;
-    memory_fence();
-    team_barrier();
-    value = *local_value;
+    if ( m_team_base ) {
+      type * const local_value = ((type*) m_team_base[0]->scratch_memory());
+      if(team_rank() == thread_id) *local_value = value;
+      memory_fence();
+      team_barrier();
+      value = *local_value;
+    }
 #endif
   }
 
@@ -164,7 +166,9 @@ public:
       // Make sure there is enough scratch space:
       typedef typename if_c< sizeof(Type) < TEAM_REDUCE_SIZE , Type , void >::type type ;
 
-      *((volatile type*) m_exec.scratch_memory() ) = value ;
+      if ( 0 == m_exec ) return value ;
+
+      *((volatile type*) m_exec->scratch_memory() ) = value ;
 
       memory_fence();
 
@@ -212,7 +216,9 @@ public:
       typedef typename if_c< sizeof(value_type) < TEAM_REDUCE_SIZE
                            , value_type , void >::type type ;
 
-      type * const local_value = ((type*) m_exec.scratch_memory());
+      if ( 0 == m_exec ) return value ;
+
+      type * const local_value = ((type*) m_exec->scratch_memory());
 
       // Set this thread's contribution
       *local_value = value ;
@@ -263,7 +269,9 @@ public:
       // Make sure there is enough scratch space:
       typedef typename if_c< sizeof(ArgType) < TEAM_REDUCE_SIZE , ArgType , void >::type type ;
 
-      volatile type * const work_value  = ((type*) m_exec.scratch_memory());
+      if ( 0 == m_exec ) return type(0);
+
+      volatile type * const work_value  = ((type*) m_exec->scratch_memory());
 
       *work_value = value ;
 
@@ -317,12 +325,12 @@ public:
   // Private for the driver
 
   template< class Arg0 , class Arg1 >
-  ThreadsExecTeamMember( Impl::ThreadsExec & exec
+  ThreadsExecTeamMember( Impl::ThreadsExec * exec
                        , const TeamPolicy< Arg0 , Arg1 , Kokkos::Threads > & team 
                        , const int shared_size )
     : m_exec( exec )
-    , m_team_shared(0,0)
     , m_team_base(0)
+    , m_team_shared(0,0)
     , m_team_shared_size( shared_size )
     , m_team_size(0)
     , m_team_rank(0)
@@ -334,18 +342,18 @@ public:
       if ( team.league_size() ) {
         // Execution is using device-team interface:
 
-        const int pool_rank_rev = exec.pool_size() - ( exec.pool_rank() + 1 );
+        const int pool_rank_rev = m_exec->pool_size() - ( m_exec->pool_rank() + 1 );
         const int team_rank_rev = pool_rank_rev % team.team_alloc();
 
         // May be using fewer threads per team than a multiple of threads per core,
         // some threads will idle.
 
         if ( team_rank_rev < team.team_size() ) {
-          const size_t pool_league_size     = exec.pool_size() / team.team_alloc() ;
+          const size_t pool_league_size     = m_exec->pool_size() / team.team_alloc() ;
           const size_t pool_league_rank_rev = pool_rank_rev / team.team_alloc() ;
           const size_t pool_league_rank     = pool_league_size - ( pool_league_rank_rev + 1 );
 
-          m_team_base        = exec.pool_base() + team.team_alloc() * pool_league_rank_rev ;
+          m_team_base        = m_exec->pool_base() + team.team_alloc() * pool_league_rank_rev ;
           m_team_size        = team.team_size() ;
           m_team_rank        = team.team_size() - ( team_rank_rev + 1 );
           m_team_rank_rev    = team_rank_rev ;
@@ -359,8 +367,21 @@ public:
       }
     }
 
+  ThreadsExecTeamMember()
+    : m_exec(0)
+    , m_team_base(0)
+    , m_team_shared(0,0)
+    , m_team_shared_size(0)
+    , m_team_size(0)
+    , m_team_rank(0)
+    , m_team_rank_rev(0)
+    , m_league_size(0)
+    , m_league_end(0)
+    , m_league_rank(0)
+    {}
+
   inline
-  ThreadsExec & threads_exec_team_base() const { return **m_team_base ; }
+  ThreadsExec & threads_exec_team_base() const { return m_team_base ? **m_team_base : *m_exec ; }
 
   bool valid() const
     { return m_league_rank < m_league_end ; }
@@ -384,6 +405,7 @@ public:
       set_team_shared();
     }
 };
+
 } /* namespace Impl */
 } /* namespace Kokkos */
 
