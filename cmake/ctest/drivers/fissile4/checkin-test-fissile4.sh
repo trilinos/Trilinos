@@ -87,7 +87,6 @@ $TRILINOS_BASE_DIR/Trilinos/checkin-test.py \
 --st-extra-builds=MPI_DEBUG_ST,SERIAL_RELEASE_ST \
 --disable-packages=$DISABLE_PACKAGES \
 --skip-case-no-email \
---ctest-options="-E '(Ifpack2_unit_tests|TpetraCore_ExpBlockCrsMatrix_MPI_4)'" \
 $EXTRA_ARGS
 
 
