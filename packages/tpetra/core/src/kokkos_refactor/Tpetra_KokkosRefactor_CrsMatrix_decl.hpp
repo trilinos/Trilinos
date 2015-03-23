@@ -124,11 +124,13 @@ namespace Tpetra {
     //! The CrsGraph specialization suitable for this CrsMatrix specialization.
     typedef CrsGraph<LocalOrdinal, GlobalOrdinal, node_type> crs_graph_type;
 
-    /// \brief The specialization of Kokkos::CrsMatrix that represents
-    ///   the part of the sparse matrix on each MPI process.
-    typedef Kokkos::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void> local_matrix_type;
     //! The part of the sparse matrix's graph on each MPI process.
     typedef typename crs_graph_type::local_graph_type local_graph_type;
+
+    /// \brief The specialization of Kokkos::CrsMatrix that represents
+    ///   the part of the sparse matrix on each MPI process.
+    typedef Kokkos::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space,void,
+                              typename local_graph_type::size_type> local_matrix_type;
 
     //! DEPRECATED; use <tt>local_matrix_type::row_map_type</tt> instead.
     typedef typename local_matrix_type::row_map_type t_RowPtrs TPETRA_DEPRECATED;

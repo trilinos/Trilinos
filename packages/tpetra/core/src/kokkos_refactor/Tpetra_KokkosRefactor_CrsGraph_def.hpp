@@ -577,7 +577,8 @@ namespace Tpetra {
           }
         }
         nodeMaxNumRowEntries_ =
-          std::max (d_ptrs(rlcid + 1) - d_ptrs(rlcid), nodeMaxNumRowEntries_);
+          std::max (static_cast<size_t> (d_ptrs(rlcid + 1) - d_ptrs(rlcid)),
+                    nodeMaxNumRowEntries_);
       }
     }
 
