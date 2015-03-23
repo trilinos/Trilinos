@@ -49,6 +49,7 @@
 	to include necessary C++ headers.
 */
 
+#include "TeuchosCore_config.h"
 #include "Teuchos_config.h"
 
 #ifdef HAVE_TEUCHOS_DEBUG

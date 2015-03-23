@@ -57,14 +57,8 @@
 
 #cmakedefine HAVE_TEUCHOS_LAPACKLARND
 
-#cmakedefine HAVE_TEUCHOSCORE_CXX11
-
-#cmakedefine HAVE_TEUCHOSCORE_BOOST
-
 /* Deprecated */
 #cmakedefine HAVE_TEUCHOS_BOOST
-
-#cmakedefine HAVE_TEUCHOSCORE_QT
 
 /* Deprecated */
 #cmakedefine HAVE_TEUCHOS_QT
@@ -73,17 +67,9 @@
 
 #cmakedefine HAVE_TEUCHOSNUMERICS_EIGEN
 
-/* Deprecated */
-#cmakedefine HAVE_TEUCHOSCORE_QD
-
-#cmakedefine HAVE_TEUCHOSCORE_QUADMATH
-
 #cmakedefine HAVE_TEUCHOS_DOUBLE_TO_QD
 
 #cmakedefine HAVE_TEUCHOS_ARPREC
-
-/* Deprecated */
-#cmakedefine HAVE_TEUCHOSCORE_ARPREC
 
 #cmakedefine HAVE_TEUCHOS_DOUBLE_TO_ARPREC
 
@@ -100,8 +86,6 @@
 #cmakedefine HAVE_TEUCHOS_DEBUG
 
 #cmakedefine HAVE_TEUCHOS_DEBUG_RCP_NODE_TRACING
-
-#cmakedefine HAS_TEUCHOS_BOOST_IS_POLYMORPHIC
 
 #cmakedefine HAVE_TEUCHOS_DEMANGLE
 
