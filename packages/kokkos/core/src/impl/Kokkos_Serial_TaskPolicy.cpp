@@ -56,6 +56,18 @@
 
 namespace Kokkos {
 namespace Experimental {
+
+TaskPolicy< Kokkos::Serial >::member_type &
+TaskPolicy< Kokkos::Serial >::member_null()
+{
+  static member_type s(0,0,0); return s ;
+}
+
+} // namespace Experimental
+} // namespace Kokkos
+
+namespace Kokkos {
+namespace Experimental {
 namespace Impl {
 
 typedef TaskMember<  Kokkos::Serial , void , void > Task ;

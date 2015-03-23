@@ -237,8 +237,7 @@ public:
 
   template< class ValueType, class JoinOp >
   KOKKOS_INLINE_FUNCTION
-  ValueType team_reduce( const ValueType & value
-                                         , const JoinOp & ) const
+  ValueType team_reduce( const ValueType & value , const JoinOp & ) const
     {
       return value ;
     }
