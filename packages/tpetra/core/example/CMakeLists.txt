@@ -10,5 +10,4 @@ ADD_SUBDIRECTORY(Lesson03-Power-Method)
 ADD_SUBDIRECTORY(Lesson05-Redistribution)
 ADD_SUBDIRECTORY(Lesson06-Custom-Operator)
 
-ADD_SUBDIRECTORY(old)
 ADD_SUBDIRECTORY(advanced)

@@ -15,10 +15,7 @@ Other examples
 ==============
 
 The advanced/ subdirectory contains examples best suited for either
-advanced Tpetra users or Tpetra developers.  The old/ subdirectory
-contains old examples that we plan either to remove or to rewrite.
-Finally, the not-built/ subdirectory contains examples that were not
-being built or tested; we left them as they were.
+advanced Tpetra users or Tpetra developers.
 
 Note to Tpetra developers
 =========================
