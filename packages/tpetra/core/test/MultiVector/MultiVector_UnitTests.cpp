@@ -45,6 +45,7 @@
 #include <Tpetra_TestingUtilities.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Vector.hpp>
+#include <Kokkos_ArithTraits.hpp>
 #include <Teuchos_DefaultSerialComm.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <iterator>
