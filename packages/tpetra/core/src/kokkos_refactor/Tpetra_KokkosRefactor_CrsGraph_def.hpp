@@ -2327,27 +2327,32 @@ namespace Tpetra {
     }
   }
 
+
   namespace { // (anonymous)
-    template<class OriginalOffsetType, class DeviceType>
+    template<class OutputViewType, class InputViewType>
     class CopyOffsets {
     public:
-      typedef typename DeviceType::execution_space execution_space;
+      typedef typename OutputViewType::execution_space execution_space;
 
-      CopyOffsets (const Kokkos::View<size_t*, DeviceType>& ptr_out,
-                   const Kokkos::View<const OriginalOffsetType*, DeviceType>& ptr_in) :
+      CopyOffsets (const OutputViewType& ptr_out,
+                   const InputViewType& ptr_in) :
         ptr_out_ (ptr_out),
         ptr_in_ (ptr_in)
       {}
 
       KOKKOS_INLINE_FUNCTION void operator () (const ptrdiff_t& i) const {
-        ptr_out_(i) = static_cast<size_t> (ptr_in_(i));
+        typedef typename OutputViewType::non_const_value_type value_type;
+        // FIXME (mfh 22 Mar 2015) Change this into parallel_reduce
+        // and check for overflow.
+        ptr_out_(i) = static_cast<value_type> (ptr_in_(i));
       }
 
     private:
-      Kokkos::View<size_t*, DeviceType> ptr_out_;
-      Kokkos::View<const OriginalOffsetType*, DeviceType> ptr_in_;
+      OutputViewType ptr_out_;
+      InputViewType ptr_in_;
     };
   } // namespace (anonymous)
+
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Teuchos::ArrayRCP<const size_t>
@@ -2407,7 +2412,7 @@ namespace Tpetra {
     else { // size_t != row_offset_type
       typedef Kokkos::View<size_t*, DeviceType> ret_view_type;
       ret_view_type ptr_d (ViewAllocateWithoutInitializing ("ptr"), size);
-      CopyOffsets<row_offset_type, DeviceType> functor (ptr_d, k_rowPtrs_);
+      CopyOffsets<ret_view_type, row_map_type> functor (ptr_d, k_rowPtrs_);
       Kokkos::parallel_for (size, functor);
       typename ret_view_type::HostMirror ptr_h = create_mirror_view (ptr_d);
       Kokkos::deep_copy (ptr_h, ptr_d);
@@ -3024,12 +3029,55 @@ namespace Tpetra {
   setAllIndices (const Teuchos::ArrayRCP<size_t>& rowPointers,
                  const Teuchos::ArrayRCP<LocalOrdinal>& columnIndices)
   {
-    Kokkos::View<size_t*, execution_space> k_ptr =
-      Kokkos::Compat::getKokkosViewDeepCopy<DeviceType> (rowPointers ());
+    using Kokkos::View;
+    typedef typename local_graph_type::row_map_type row_map_type;
+    typedef typename row_map_type::non_const_value_type row_offset_type;
+    typedef View<size_t*,
+      typename row_map_type::HostMirror::array_layout,
+      typename row_map_type::HostMirror::execution_space,
+      Kokkos::MemoryUnmanaged> input_view_type;
+    typedef typename row_map_type::non_const_type nc_row_map_type;
+
+    const size_t size = static_cast<size_t> (rowPointers.size ());
+    const bool same = Kokkos::Impl::is_same<size_t, row_offset_type>::value;
+    input_view_type ptr_in (rowPointers.getRawPtr (), size);
+
+    nc_row_map_type ptr_rot ("Tpetra::CrsGraph::ptr", size);
+
+    if (same) { // size_t == row_offset_type
+      // This compile-time logic ensures that the compiler never sees
+      // an assignment of View<row_offset_type*, ...> to View<size_t*,
+      // ...> unless size_t == row_offset_type.
+      input_view_type ptr_decoy (rowPointers.getRawPtr (), size); // never used
+      Kokkos::deep_copy (Kokkos::Impl::if_c<same,
+                           nc_row_map_type,
+                           input_view_type>::select (ptr_rot, ptr_decoy),
+                         ptr_in);
+    }
+    else { // size_t != row_offset_type
+      const bool inHostMemory =
+        Kokkos::Impl::is_same<typename row_map_type::memory_space,
+          typename row_map_type::HostMirror::memory_space>::value;
+      if (inHostMemory) {
+        // Copy (with cast from size_t to row_offset_type) to ptr_rot.
+        typedef CopyOffsets<nc_row_map_type, input_view_type> functor_type;
+        functor_type functor (ptr_rot, ptr_in);
+        Kokkos::parallel_for (size, functor);
+      }
+      else { // Copy input row offsets to device first.
+        View<size_t*, execution_space> ptr_st ("Tpetra::CrsGraph::ptr", size);
+        Kokkos::deep_copy (ptr_st, ptr_in);
+        // Copy on device (with cast size_t -> row_offset_type) to ptr_rot.
+        typedef CopyOffsets<nc_row_map_type,
+          View<size_t*, execution_space> > functor_type;
+        functor_type functor (ptr_rot, ptr_st);
+        Kokkos::parallel_for (size, functor);
+      }
+    }
+
     Kokkos::View<LocalOrdinal*, execution_space> k_ind =
       Kokkos::Compat::getKokkosViewDeepCopy<DeviceType> (columnIndices ());
-
-    setAllIndices (k_ptr, k_ind);
+    setAllIndices (ptr_rot, k_ind);
   }
 
 
