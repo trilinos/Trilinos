@@ -73,7 +73,7 @@ int PartitionInterface<Matrix, Vector>::partitionZoltan2()
 {
  
   ParameterList subList = pList->sublist("Zoltan2 Input");
-  Teuchos::RCP<Matrix> rA(A);
+  Teuchos::RCP<Matrix> rA(A, false);
   zadapter = new Zoltan2::XpetraCrsMatrixAdapter<Matrix, Vector>(rA);
   zproblem = new Zoltan2::PartitioningProblem<Zoltan2::XpetraCrsMatrixAdapter <Matrix, Vector> >(zadapter, &subList);
   zproblem->solve();
@@ -153,7 +153,7 @@ Vector* PartitionInterface<Matrix, Vector>::reorderVector(Vector* x)
   Vector *b = NULL;
   string partitioningPackage = Teuchos::getParameter<string>(*pList, "Partitioning Package");
 #if defined(HAVE_ZOLTAN2_PARMETIS) || defined(HAVE_ZOLTAN2_SCOTCH) 
-      Teuchos::RCP<Vector> rx(x);
+      Teuchos::RCP<Vector> rx(x, false);
       Zoltan2::XpetraMultiVectorAdapter<Vector> tempVecAdapter(rx);
       tempVecAdapter.applyPartitioningSolution(*x, b, zproblem->getSolution());
 #endif
