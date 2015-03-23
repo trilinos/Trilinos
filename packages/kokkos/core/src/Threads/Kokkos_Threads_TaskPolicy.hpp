@@ -85,8 +85,13 @@ private:
 
   // 7 pointers + 5 integers
 
+#if defined( KOKKOS_HAVE_CXX11 )
   TaskMember( const TaskMember & ) = delete ;
   TaskMember & operator = ( const TaskMember & ) = delete ;
+#else
+  TaskMember( const TaskMember & );
+  TaskMember & operator = ( const TaskMember & );
+#endif
 
   static void * allocate( const unsigned arg_size );
   static void deallocate( void * );
@@ -328,8 +333,14 @@ public:
   inline
   TaskMember() : TaskMember< Kokkos::Threads , void , void >(), m_result() {}
 
+#if defined( KOKKOS_HAVE_CXX11 )
   TaskMember( const TaskMember & ) = delete ;
   TaskMember & operator = ( const TaskMember & ) = delete ;
+#else
+private:
+  TaskMember( const TaskMember & );
+  TaskMember & operator = ( const TaskMember & );
+#endif
 };
 
 /** \brief  Callback functions will cast
@@ -379,7 +390,11 @@ private:
   int m_default_dependence_capacity ;
   int m_team_size ;    ///< Fixed size of a task-team
 
+#if defined( KOKKOS_HAVE_CXX11 )
   TaskPolicy & operator = ( const TaskPolicy & ) = delete ;
+#else
+  TaskPolicy & operator = ( const TaskPolicy & );
+#endif
 
   template< class FunctorType >
   static inline
