@@ -47,7 +47,7 @@
   INSTMACRO( Sacado::MP::Vector<STORAGE>, LO, GO, N )
 
 #define INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L, NUM, D, LO, GO, N) \
-  typedef Stokhos::StaticFixedStorage<L,S,NUM,typename D::execution_space> SFS_ ## L ## _ ## S ## _ ## NUM ## _ ## D; \
+  typedef Stokhos::StaticFixedStorage<L,S,NUM,D::execution_space> SFS_ ## L ## _ ## S ## _ ## NUM ## _ ## D; \
   INSTANTIATE_MP_VECTOR_STORAGE(INSTMACRO, SFS_ ## L ## _ ## S ## _ ## NUM ## _ ## D, LO, GO, N)
 
 #if defined(__MIC__)
