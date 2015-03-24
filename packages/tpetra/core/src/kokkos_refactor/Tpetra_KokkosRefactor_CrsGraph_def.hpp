@@ -3025,9 +3025,7 @@ namespace Tpetra {
     using Kokkos::View;
     typedef typename local_graph_type::row_map_type row_map_type;
     typedef typename row_map_type::non_const_value_type row_offset_type;
-    typedef View<size_t*,
-      typename row_map_type::HostMirror::array_layout,
-      typename row_map_type::HostMirror::execution_space,
+    typedef View<size_t*, Kokkos::HostSpace,
       Kokkos::MemoryUnmanaged> input_view_type;
     typedef typename row_map_type::non_const_type nc_row_map_type;
 
@@ -3048,9 +3046,10 @@ namespace Tpetra {
                          ptr_in);
     }
     else { // size_t != row_offset_type
+      // CudaUvmSpace != HostSpace, so this will be false in that case.
       const bool inHostMemory =
         Kokkos::Impl::is_same<typename row_map_type::memory_space,
-          typename row_map_type::HostMirror::memory_space>::value;
+          Kokkos::HostSpace>::value;
       if (inHostMemory) {
         // Copy (with cast from size_t to row_offset_type) to ptr_rot.
         typedef CopyOffsets<nc_row_map_type, input_view_type> functor_type;
@@ -3058,9 +3057,15 @@ namespace Tpetra {
         Kokkos::parallel_for (size, functor);
       }
       else { // Copy input row offsets to device first.
+        //
+        // FIXME (mfh 24 Mar 2015) If CUDA UVM, running in the host's
+        // execution space would avoid the double copy.
+        //
         View<size_t*, execution_space> ptr_st ("Tpetra::CrsGraph::ptr", size);
         Kokkos::deep_copy (ptr_st, ptr_in);
-        // Copy on device (with cast size_t -> row_offset_type) to ptr_rot.
+        // Copy on device (casting from size_t to row_offset_type) to
+        // ptr_rot.  This executes in the output View's execution
+        // space, which is the same as DeviceType::execution_space.
         typedef CopyOffsets<nc_row_map_type,
           View<size_t*, execution_space> > functor_type;
         functor_type functor (ptr_rot, ptr_st);
