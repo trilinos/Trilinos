@@ -1563,7 +1563,7 @@ namespace Experimental {
               // invalid.  However, only remember which ones were
               // invalid in a debug build, because that might take a
               // lot of space.
-              for (size_t k = 0; k < numEntries; ++k) {
+              for (LO k = 0; k < numEntries; ++k) {
                 if (! dstColMap.isNodeLocalElement (lclSrcCols[k])) {
                   lclErr = true;
 #ifdef HAVE_TPETRA_DEBUG
