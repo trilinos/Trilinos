@@ -12,11 +12,11 @@ typedef double value_type;
 typedef int    ordinal_type;
 typedef size_t size_type;
 
-typedef Kokkos::OpenMP host_type; 
+typedef Kokkos::OpenMP space_type; 
 
 using namespace Example;
 
-typedef CrsMatrixBase<value_type,ordinal_type,size_type,host_type> CrsMatrixBaseType;
+typedef CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBaseType;
 typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
 typedef CrsRowView<CrsMatrixBaseType> CrsRowViewType;
 

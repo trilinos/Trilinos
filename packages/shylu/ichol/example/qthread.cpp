@@ -6,13 +6,19 @@
 #include <Kokkos_Qthread.hpp>  
 #include <Qthread/Kokkos_Qthread_TaskPolicy.hpp> 
 
+#include <Kokkos_Threads.hpp>  
+#include <Threads/Kokkos_Threads_TaskPolicy.hpp> 
+
 #include <iostream>
 #include <string>
 #include <typeinfo>
 
 using namespace std;
 
+#define EXEC_SPACE_IS_SERIAL
 typedef Kokkos::Serial ExecSpace;
+
+//typedef Kokkos::Threads ExecSpace;
 //typedef Kokkos::Qthread ExecSpace;
 
 struct DoNothing {
@@ -42,7 +48,11 @@ struct DoNothing {
 
       Kokkos::parallel_for(range,
                            [&](int i) { 
-                             cout << " i = " << i << endl;
+                             stringstream s;
+                             s << " i = " << i 
+                               << ",  member rank = " << member.team_rank() 
+                               << endl;
+                             cout << s.str();
                            });
 
       int result = 0;
@@ -59,9 +69,15 @@ struct DoNothing {
 
 int main (int argc, char *argv[]) {
   
-  int threads_count = 16;
-  Kokkos::Qthread::initialize( threads_count );
-  Kokkos::Qthread::print_configuration( std::cout , true );
+  const int nthreads = 16;
+
+  ExecSpace::initialize(nthreads);
+
+#ifdef EXEC_SPACE_IS_SERIAL
+  // do nothing
+#else
+  ExecSpace::print_configuration(std::cout, true);
+#endif
 
   cout << "Default execution space initialized = "
        << typeid(Kokkos::DefaultExecutionSpace).name()
@@ -69,25 +85,27 @@ int main (int argc, char *argv[]) {
 
   Kokkos::Experimental::TaskPolicy<ExecSpace> policy;
 
-  // single-task interface
   {
+    cout << " == Task only interface == " << endl;
     Kokkos::Experimental::Future<DoNothing::TaskFunctor::value_type,ExecSpace> 
       future = policy.create(DoNothing::TaskFunctor(), 0);
     policy.spawn(future);
     Kokkos::Experimental::wait(future);
     cout << "future value from single task = " << future.get() << endl;
+    cout << " ========================= " << endl;
   }
 
-  // team-task interface
   {
+    cout << " == Task data interface == " << endl;
     Kokkos::Experimental::Future<DoNothing::TaskFunctor::value_type,ExecSpace> 
       future = policy.create_team(DoNothing::TaskFunctor(), 0);
     policy.spawn(future);
     Kokkos::Experimental::wait(future); 
     cout << "future value from team task = " << future.get() << endl;
+    cout << " ========================= " << endl;
   }
 
-  Kokkos::Qthread::finalize();
+  ExecSpace::finalize();
   
   return 0;
 }

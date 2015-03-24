@@ -32,7 +32,8 @@ namespace Example {
       CrsExecViewType _A;
       
     public:
-      typedef typename CrsExecViewType::policy_type::member_type member_type;
+      typedef typename CrsExecViewType::policy_type policy_type;
+      typedef typename policy_type::member_type member_type;
       typedef int value_type;
 
       TaskFunctor(const CrsExecViewType A)
@@ -43,7 +44,7 @@ namespace Example {
       
       // task execution
       void apply(value_type &r_val) {
-        r_val = IChol::invoke<CrsExecViewType,ParallelForType>(member_type(), _A);
+        r_val = IChol::invoke<CrsExecViewType,ParallelForType>(policy_type::member_null(), _A);
       }
 
       // task-data execution

@@ -6,6 +6,9 @@
 #include <Kokkos_Qthread.hpp>
 #include <Qthread/Kokkos_Qthread_TaskPolicy.hpp>
 
+#include <Kokkos_Threads.hpp>
+#include <Threads/Kokkos_Threads_TaskPolicy.hpp>
+
 #include "util.hpp"
 
 #include "crs_matrix_base.hpp"
@@ -23,9 +26,13 @@ typedef double value_type;
 typedef int    ordinal_type;
 typedef size_t size_type;
 
-typedef Kokkos::Serial space_type; 
+//typedef Kokkos::Serial space_type; 
+typedef Kokkos::Threads space_type; 
+//typedef Kokkos::Qthread space_type; 
 
 using namespace Example;
+
+typedef space_type ExecSpace;
 
 typedef CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBaseType;
 typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
@@ -43,7 +50,8 @@ int main (int argc, char *argv[]) {
     return -1;
   }
 
-  Kokkos::initialize();
+  const int nthreads = 16;
+  ExecSpace::initialize(nthreads);
   cout << "Default execution space initialized = "
        << typeid(Kokkos::DefaultExecutionSpace).name()
        << endl;
@@ -73,7 +81,7 @@ int main (int argc, char *argv[]) {
   cout << "Block Partitioned Matrix H = " << endl
        << H << endl;
 
-  Kokkos::finalize();
+  ExecSpace::finalize();
 
   return 0;
 }

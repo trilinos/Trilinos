@@ -70,9 +70,9 @@ int main (int argc, char *argv[]) {
   }
 
   // Kokkos::initialize();
-  const int threads_count = 16;
-  Kokkos::Qthread::initialize( threads_count );
-  Kokkos::Qthread::print_configuration( std::cout , true );
+  const int nthreads = 16;
+  Kokkos::Qthread::initialize(nthreads);
+  Kokkos::Qthread::print_configuration(std::cout, true);
 
   cout << "Default execution space initialized = "
        << typeid(Kokkos::DefaultExecutionSpace).name()

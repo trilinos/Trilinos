@@ -1,5 +1,14 @@
 #include <Kokkos_Core.hpp>
 
+#include <Kokkos_TaskPolicy.hpp>
+#include <impl/Kokkos_Serial_TaskPolicy.hpp>
+
+#include <Kokkos_Qthread.hpp>
+#include <Qthread/Kokkos_Qthread_TaskPolicy.hpp>
+
+#include <Kokkos_Threads.hpp>
+#include <Threads/Kokkos_Threads_TaskPolicy.hpp>
+
 #include "util.hpp"
 #include "graph_helper_scotch.hpp"
 
@@ -8,9 +17,15 @@
 #include "crs_row_view.hpp"
 
 #include "crs_team_view.hpp"
+#include "crs_task_view.hpp"
 
 #include "sequential_for.hpp"
+#include "parallel_for.hpp"
+
+#include "task_policy_graphviz.hpp"
 #include "team_factory.hpp"
+#include "task_factory.hpp"
+#include "task_team_factory.hpp"
 
 #include "ichol.hpp"
 
@@ -20,25 +35,40 @@ typedef double value_type;
 typedef int    ordinal_type;
 typedef int    size_type;
 
-typedef Kokkos::OpenMP space_type; 
+//#define USE_SEQUENTIAL_FOR
+//typedef Kokkos::Serial space_type; 
+
+typedef Kokkos::Threads space_type; 
+//typedef Kokkos::Qthread space_type; 
 
 using namespace Example;
+
+typedef space_type ExecSpace;
 
 typedef CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBaseType;
 typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
 
-typedef TeamFactory<TeamPolicy,TeamThreadLoopRegion> TeamFactoryType;
-typedef CrsTeamView<CrsMatrixBaseType,TeamFactoryType> CrsTeamViewType;
+#ifdef USE_SEQUENTIAL_FOR
+typedef TaskTeamFactory<TeamPolicy,Future,TeamThreadLoopRegion> TaskFactoryType;
+typedef SequentialFor ForType;
+#else
+typedef TaskTeamFactory<Kokkos::Experimental::TaskPolicy<space_type>,
+                        Kokkos::Experimental::Future<int,space_type>,
+                        Kokkos::Impl::TeamThreadRangeBoundariesStruct> TaskFactoryType;
+typedef ParallelFor ForType;
+#endif
 
+typedef CrsTaskView<CrsMatrixBaseType,TaskFactoryType> CrsTaskViewType;
 typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType;
 
 int main (int argc, char *argv[]) {
-  if (argc < 2) {
-    cout << "Usage: " << argv[0] << " filename" << endl;
+  if (argc < 3) {
+    cout << "Usage: " << argv[0] << " filename nthreads" << endl;
     return -1;
   }
-  
-  Kokkos::initialize();
+
+  const int nthreads = atoi(argv[2]);
+  ExecSpace::initialize(nthreads);
   cout << "Default execution space initialized = "
        << typeid(Kokkos::DefaultExecutionSpace).name()
        << endl;
@@ -65,16 +95,24 @@ int main (int argc, char *argv[]) {
   
   cout << UU << endl;
   
-  CrsTeamViewType U(UU);
+  CrsTaskViewType U(UU);
   U.fillRowViewArray();
-  
+
   {
     int r_val = 0;
-    typedef typename CrsTeamViewType::policy_type::member_type member_type;
+    typedef typename CrsTaskViewType::policy_type policy_type;
 
+#ifdef USE_SEQUENTIAL_FOR
     IChol<Uplo::Upper,AlgoIChol::RightUnblockedOpt1>
-      ::TaskFunctor<CrsTeamViewType,SequentialFor>(U).apply(member_type(), r_val);
-  
+      ::TaskFunctor<CrsTaskViewType,ForType>(U).apply(policy_type::member_null(), r_val);
+#else
+    policy_type policy;
+    auto future = policy.create_team(IChol<Uplo::Upper,AlgoIChol::RightUnblockedOpt1>
+                                     ::TaskFunctor<CrsTaskViewType,ForType>(U), 0);
+    policy.spawn(future);
+    Kokkos::Experimental::wait(future);
+#endif
+
     if (r_val != 0)  {
       cout << " Error = " << r_val << endl;
       return r_val;
@@ -82,7 +120,7 @@ int main (int argc, char *argv[]) {
     cout << UU << endl;
   }
 
-  Kokkos::finalize();
+  ExecSpace::finalize();
 
   return 0;
 }
