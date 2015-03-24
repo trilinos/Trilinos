@@ -235,14 +235,14 @@ namespace MueLu {
       if (paramList.isSublist(levelName) && levelName.find("level ") == 0 && levelName.size() > 6) {
         int levelID = strtol(levelName.substr(6).c_str(), 0, 0);
         if (levelID > 0)  {
-	  RCP<FactoryManager> M = Teuchos::rcp_dynamic_cast<FactoryManager>(HM.GetFactoryManager(levelID));
-	  TEUCHOS_TEST_FOR_EXCEPTION(M.is_null(), Exceptions::InvalidArgument, "MueLu::Utils::AddNonSerializableDataToHierarchy: cannot get FactoryManager");
-
           // Do enough level adding so we can be sure to add the data to the right place
           for (int i = H.GetNumLevels(); i <= levelID; i++)
             H.AddNewLevel();
 
           RCP<Level> level = H.GetLevel(levelID);
+
+	  RCP<FactoryManager> M = Teuchos::rcp_dynamic_cast<FactoryManager>(HM.GetFactoryManager(levelID));
+	  TEUCHOS_TEST_FOR_EXCEPTION(M.is_null(), Exceptions::InvalidArgument, "MueLu::Utils::AddNonSerializableDataToHierarchy: cannot get FactoryManager");
 
           // Grab the level sublist & loop over parameters
           const ParameterList& levelList = paramList.sublist(levelName);
@@ -253,12 +253,21 @@ namespace MueLu {
                                        Exceptions::InvalidArgument,
                                        "MueLu::Utils::AddNonSerializableDataToHierarchy: parameter list contains unknown data type");
 
-            if (name == "A" || name == "P" || name == "R")
-              level->Set(name, Teuchos::getValue<RCP<Matrix > >     (it2->second));
-            else if (name == "Nullspace" || name == "Coordinates")
-              level->Set(name, Teuchos::getValue<RCP<MultiVector > >(it2->second));
-	    level->AddKeepFlag(name);
-            M->SetFactory(name, NoFactory::getRCP());
+            if (name == "A") {
+              level->Set(name, Teuchos::getValue<RCP<Matrix > >     (it2->second),NoFactory::get());	   
+	      M->SetFactory(name, NoFactory::getRCP());
+	    }
+	    else if( name == "P" || name == "R") {
+	      //	      level->Request(name,M->GetFactory(name).get(),M->GetFactory("A").get());// won't work
+	      level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);	      
+              level->Set(name, Teuchos::getValue<RCP<Matrix > >     (it2->second), M->GetFactory(name).get());
+	    }
+            else if (name == "Nullspace" || name == "Coordinates"){
+              level->Set(name, Teuchos::getValue<RCP<MultiVector > >(it2->second), NoFactory::get());
+	      M->SetFactory(name, NoFactory::getRCP());
+	    }
+	    
+
           }
         }
       }
