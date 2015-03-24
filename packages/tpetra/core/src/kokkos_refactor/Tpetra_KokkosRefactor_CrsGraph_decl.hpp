@@ -1565,13 +1565,13 @@ namespace Tpetra {
     ///   greater than or equal to the number of entries in the
     ///   given row).
     ///
-    /// The hint optimizes for the case of calling this method
-    /// several times with the same row (as it would be in
+    /// The hint optimizes for the case of calling this method several
+    /// times with the same row (as it would be in
     /// transformLocalValues) when several index inputs occur in
-    /// consecutive sequence.  This may occur (for example) when
-    /// there are multiple degrees of freedom per mesh point, and
-    /// users are handling the assignment of degrees of freedom to
-    /// global indices manually (rather than letting BlockMap take
+    /// consecutive sequence.  This may occur (for example) when there
+    /// are multiple degrees of freedom per mesh point, and users are
+    /// handling the assignment of degrees of freedom to global
+    /// indices manually (rather than letting some other class take
     /// care of it).  In that case, users might choose to assign the
     /// degrees of freedom for a mesh point to consecutive global
     /// indices.  Epetra implements the hint for this reason.

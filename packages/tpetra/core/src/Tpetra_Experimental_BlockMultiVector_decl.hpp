@@ -118,16 +118,17 @@ template<class S, class LO, class GO, class N> class BlockCrsMatrix;
 /// object.
 ///
 /// Design philosophy of the new block objects:
+/// <ol>
+/// <li> Each mesh point has the same number of degrees of freedom </li>
+/// <li> A BlockMultiVector <i>views</i> a MultiVector, but <i>is
+///      not</i> a MultiVector (that is, BlockMultiVector is
+///      <i>not</i> a subclass of MultiVector) </li>
+/// </ol>
 ///
-///   1. Each mesh point has the same number of degrees of freedom
-///   2. A BlockMultiVector might <i>have</i> a MultiVector, but <i>is
-///      not</i> a MultiVector (i.e., is not a subclass of MultiVector)
-///
-/// Point 1 lets us omit the whole untested and probably broken
-/// infrastructure of Tpetra::BlockMap.  Users fill by mesh points,
-/// not degrees of freedom.  Thus, they mainly care about the
-/// distribution of mesh points, not so much about what GID we assign
-/// to which degree of freedom.  The latter is just another Map from
+/// Point 1 means that users fill by mesh points, not degrees of
+/// freedom.  Thus, they mainly care about the distribution of mesh
+/// points, not so much about what GID we assign to which degree of
+/// freedom.  The latter is just another Map (the "point Map") from
 /// their perspective, if they care at all.  Preconditioners that
 /// respect the block structure also just want the mesh Map.
 /// Iterative linear solvers treat the matrix and preconditioner as
