@@ -165,7 +165,6 @@ int main(int argc, char** argv)
   ptemp = pLUList->sublist("Amesos2 Input");
   //pptemp = ptemp.sublist("Amesos_Klu Input");
 
-
   //pptemp.set("PrintTiming", true);
   //pptemp.set("PrintStatus", true);
   ptemp.set("Solver", "SuperLU");
@@ -181,12 +180,11 @@ directsolver2.solve(b.get(),x.get());
 
 //Note: should multiple to set b and x for success
 
-
-  cout << "Done with Amesos-KLU2" << endl;
+  cout << "Done with Amesos2-SuperLU" << endl;
 
 #else
 
-  sucess = false;
+  success = false;
 
 
 #endif
