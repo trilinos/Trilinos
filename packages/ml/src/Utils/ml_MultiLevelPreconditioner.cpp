@@ -1229,6 +1229,9 @@ ComputePreconditioner(const bool CheckPreconditioner)
     // ====================================================================== //
 
     ML_Create(&ml_nodes_,MaxCreationLevels);
+#ifdef ML_MPI
+    ml_nodes_->comm->USR_comm = dynamic_cast<const Epetra_MpiComm*>(&Comm())->Comm(); 
+#endif
     ML_Set_Label(ml_nodes_, const_cast<char*>("nodes"));
 #ifdef HAVE_ML_EPETRAEXT
     NodeMatrix_ = ModifyEpetraMatrixColMap(*NodeMatrix_,
