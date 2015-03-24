@@ -107,6 +107,9 @@
 
 using namespace std;
 
+/** \brief ShyLU's interface to be used as an Ifpack Preconditioner
+ *
+ */
 class Ifpack_ShyLU: public Ifpack_Preconditioner
 {
     public:

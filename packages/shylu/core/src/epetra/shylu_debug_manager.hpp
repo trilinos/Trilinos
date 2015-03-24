@@ -65,6 +65,9 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 
+/** \brief Call reponsible for handeling debugging
+ *
+ */
 class DebugManager
 {
     public:
