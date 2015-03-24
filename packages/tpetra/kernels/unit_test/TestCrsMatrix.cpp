@@ -66,7 +66,7 @@ namespace { // anonymous
   // \param whichMatrix [in] The index of the matrix to create.
   template<typename MemorySpace>
   void
-  makeSparseMatrix (Kokkos::View<size_t*, MemorySpace>& ptr,
+  makeSparseMatrix (Kokkos::View<typename MemorySpace::size_type*, MemorySpace>& ptr,
                     Kokkos::View<int*, MemorySpace>& ind,
                     Kokkos::View<double*, MemorySpace>& val,
                     int& numRows,
@@ -77,12 +77,13 @@ namespace { // anonymous
     using Kokkos::HostSpace;
     using Kokkos::MemoryUnmanaged;
     using Kokkos::View;
+    typedef typename MemorySpace::size_type size_type;
 
     if (whichMatrix == 0) {
       numRows = 10;
       numCols = 10;
       nnz = 21;
-      const size_t ptrRaw[] = {0, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21};
+      const size_type ptrRaw[] = {0, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21};
       const int indRaw[] = {0, 1, 9,
                             1, 2,
                             2, 3,
@@ -104,7 +105,7 @@ namespace { // anonymous
                                4.0, 12.0,
                                4.5, 13.0};
 
-      typedef View<size_t*,MemorySpace> ptr_type ;
+      typedef View<size_type*,MemorySpace> ptr_type ;
       typedef View<int*,   MemorySpace> ind_type ;
       typedef View<double*,MemorySpace> val_type ;
 
@@ -135,7 +136,7 @@ namespace { // anonymous
   Kokkos::CrsMatrix<double, int, MemorySpace>
   makeCrsMatrix ()
   {
-    Kokkos::View<size_t*, MemorySpace> ptr;
+    Kokkos::View<typename MemorySpace::size_type*, MemorySpace> ptr;
     Kokkos::View<int*, MemorySpace> ind;
     Kokkos::View<double*, MemorySpace> val;
     int numRows;
