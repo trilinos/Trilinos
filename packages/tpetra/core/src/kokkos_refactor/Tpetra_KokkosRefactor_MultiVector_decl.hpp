@@ -1953,7 +1953,7 @@ namespace Tpetra {
     //! Number of packets to send per LID
     virtual size_t constantNumberOfPackets () const;
 
-    /// \brief Whether lass implements old or new interface
+    //! Whether this class implements the old or new interface of DistObject.
     virtual bool useNewInterface () { return true; }
 
     virtual void
