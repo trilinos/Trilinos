@@ -1,18 +1,25 @@
 KOKKOS_PATH = ../../../..
 SRC = $(wildcard *.cpp)
 
+default: build
+	echo "Start Build"
+	
 ifeq ($(CUDA), yes)
-CC = nvcc
-CCFLAGS = -O3 -arch=sm_35 -ccbin=/usr/local/gcc/4.8.3/bin/g++ 
-LINK = /usr/local/gcc/4.8.3/bin/g++
+CXX = nvcc_wrapper
+CXXFLAGS = -O3
+LINK = nvcc_wrapper
 LINKFLAGS = 
 EXE = $(SRC:.cpp=.cuda)
+KOKKOS_DEVICES = "Cuda,OpenMP"
+KOKKOS_ARCH = "SNB,Kepler35"
 else
-CC = g++
-CCFLAGS = -O3
+CXX = g++
+CXXFLAGS = -O3
 LINK = g++
 LINKFLAGS =  
 EXE = $(SRC:.cpp=.host)
+KOKKOS_DEVICES = "OpenMP"
+KOKKOS_ARCH = "SNB"
 endif
 
 DEPFLAGS = -M
@@ -22,29 +29,18 @@ LIB =
 
 include $(KOKKOS_PATH)/Makefile.kokkos
 
-EXTRA_INC = $(KOKKOS_INC)
-EXTRA_LIB = $(KOKKOS_LINK)
+build: $(EXE)
 
-all: $(OBJ)
-	$(LINK) $(LINKFLAGS) $(EXTRA_PATH) $(OBJ) $(EXTRA_LIB) $(LIB) -o $(EXE)
-	rm *.o *.d libkokkoscore.a kokkos_depend.cpp
+$(EXE): $(OBJ) $(KOKKOS_LINK_DEPENDS)
+	$(LINK) $(KOKKOS_LDFLAGS) $(LINKFLAGS) $(EXTRA_PATH) $(OBJ) $(KOKKOS_LIBS) $(LIB) -o $(EXE)
 
-clean: 
-	rm *.o *.d libkokkoscore.a kokkos_depend.cpp *.cuda *.host
+clean: kokkos-clean 
+	rm -f *.o *.cuda *.host
 
 # Compilation rules
 
-%.o:%.cu
-	$(CC) $(CCFLAGS) $(EXTRA_INC) -c $<
+%.o:%.cpp $(KOKKOS_CPP_DEPENDS)
+	$(CXX) $(KOKKOS_CPPFLAGS) $(KOKKOS_CXXFLAGS) $(CXXFLAGS) $(EXTRA_INC) -c $<
 
-%.o:%.cpp
-	$(CC) $(CCFLAGS) $(EXTRA_INC) -c $<
 
-%.d:%.cpp
-	$(CC) $(CCFLAGS) $(EXTRA_INC) $(DEPFLAGS) $< > $@
-
-# Individual dependencies
-
-DEPENDS = $(OBJ:.o=.d)
-sinclude $(DEPENDS)
 

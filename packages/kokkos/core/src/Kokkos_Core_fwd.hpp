@@ -94,7 +94,7 @@ struct Device;
 namespace Kokkos {
 
 #if   defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_CUDA )
-  typedef Kokkos::Cuda DefaultExecutionSpace ;
+  typedef Cuda DefaultExecutionSpace ;
 #elif defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP )
   typedef OpenMP DefaultExecutionSpace ;
 #elif defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS )
@@ -113,7 +113,7 @@ namespace Kokkos {
   typedef Serial DefaultHostExecutionSpace ;
 #elif defined ( KOKKOS_HAVE_OPENMP )
   typedef OpenMP DefaultHostExecutionSpace ;
-#elif defined ( KOKKOS_HAVE_THREADS )
+#elif defined ( KOKKOS_HAVE_PTHREAD )
   typedef Threads DefaultHostExecutionSpace ;
 #elif defined ( KOKKOS_HAVE_SERIAL )
   typedef Serial DefaultHostExecutionSpace ;
