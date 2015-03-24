@@ -318,30 +318,10 @@ public:
   //@}
 
 protected:
-  template <class S,class LO,class GO,class N>
-  friend Teuchos::RCP< Vector<S,LO,GO,N> >
-  createVectorFromView(const RCP<const Map<LO,GO,N> > &,const ArrayRCP<S> &);
-
   typedef KokkosClassic::MultiVector<Scalar,node_type> KMV;
   typedef KokkosClassic::DefaultArithmetic<KMV>   MVT;
 }; // class Vector
 
-
-/// \brief Nonmember function to create a Vector with view semantics
-///   using user-allocated data.
-///
-/// \warning This function is DEPRECATED and exists only for backwards
-///   compatibility with the "classic" version of Tpetra.
-/// \relatesalso Vector
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >
-createVectorFromView (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &map,
-                      const ArrayRCP<Scalar> &view)
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    true, std::logic_error, "Tpetra::createVectorFromView: "
-    "Not implemented for Node = KokkosDeviceWrapperNode");
-}
 
 /// \brief Return a deep copy of the Vector \c src.
 ///

@@ -446,7 +446,6 @@ Import = Import_default
 ///////////////////////////
 // %ignore Tpetra::Vector::getLocalMV;
 // %ignore Tpetra::Vector::getLocalMVNonConst;
-%warnfilter(302) Tpetra::createVectorFromView;
 %feature("notabstract") Tpetra::Vector;
 %include "Tpetra_Vector_decl.hpp"
 %include "Tpetra_KokkosRefactor_Vector_decl.hpp"
