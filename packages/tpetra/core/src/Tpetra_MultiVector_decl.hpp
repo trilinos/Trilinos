@@ -51,7 +51,6 @@
 #else
 #include "Tpetra_DistObject.hpp"
 #endif
-#include "Tpetra_ViewAccepter.hpp"
 #include <Kokkos_MultiVector.hpp>
 #include <Teuchos_BLAS_types.hpp>
 
@@ -1481,25 +1480,6 @@ namespace Tpetra {
       }
     };
 
-    template<class MultiVectorType>
-    Teuchos::RCP<MultiVectorType>
-    CreateMultiVectorFromView<MultiVectorType>::
-    create (const Teuchos::RCP<const map_type>& map,
-            const Teuchos::ArrayRCP<scalar_type>& view,
-            const size_t LDA,
-            const size_t numVectors)
-    {
-      using Teuchos::rcp;
-      typedef Tpetra::details::ViewAccepter<node_type> VAN;
-
-      // This uses a protected MultiVector constructor, but this
-      // nonmember function was declared a friend of MultiVector.
-      //
-      // The ViewAccepter expression will fail to compile for
-      // unsupported Kokkos Node types.
-      return rcp (new MultiVectorType (map, VAN::template acceptView<scalar_type> (view),
-                                       LDA, numVectors, HOST_VIEW_CONSTRUCTOR));
-    }
   } // namespace Details
 
 #endif // defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP)

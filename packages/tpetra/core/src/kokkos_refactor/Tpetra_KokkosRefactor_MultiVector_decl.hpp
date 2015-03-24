@@ -2043,31 +2043,6 @@ namespace Tpetra {
       }
     };
 
-    // Partial specialization for the Kokkos refactor specialization
-    // of Tpetra::MultiVector.
-    template<class S, class LO, class GO, class DeviceType>
-    struct CreateMultiVectorFromView<MultiVector<S, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > {
-      typedef S scalar_type;
-      typedef LO local_ordinal_type;
-      typedef GO global_ordinal_type;
-      typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
-      typedef ::Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
-      typedef MultiVector<S, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > MultiVectorType;
-
-      static Teuchos::RCP<MultiVectorType>
-      create (const Teuchos::RCP<const map_type>& map,
-              const Teuchos::ArrayRCP<scalar_type>& view,
-              const size_t LDA,
-              const size_t numVectors)
-      {
-        (void) map;
-        (void) view;
-        (void) LDA;
-        (void) numVectors;
-
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
-      }
-    };
   } // namespace Details
 
   template <class ST, class LO, class GO, class DT>
