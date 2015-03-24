@@ -81,14 +81,6 @@ namespace TSQR {
       /// it in parallel).
       size_t ncores() const { return ncores_; }
 
-      /// \brief Cache size hint (in bytes) used for the factorization.
-      ///
-      /// This method is deprecated, because the name is misleading.
-      /// Please call \c cache_size_hint() instead.
-      size_t TEUCHOS_DEPRECATED cache_block_size() const {
-        return seq_.cache_size_hint();
-      }
-
       //! Cache size hint (in bytes) used for the factorization.
       size_t cache_size_hint() const { return seq_.cache_size_hint(); }
 

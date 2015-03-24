@@ -408,14 +408,6 @@ namespace TSQR {
       return strategy_.cache_size_hint();
     }
 
-    /// \brief Cache size hint (in bytes) used for the factorization.
-    ///
-    /// This method is deprecated, because the name is misleading.
-    /// Please call \c cache_size_hint() instead.
-    size_t TEUCHOS_DEPRECATED cache_block_size () const {
-      return strategy_.cache_size_hint();
-    }
-
     /// \brief Compute QR factorization (implicitly stored Q factor) of A.
     ///
     /// Compute the QR factorization in place of the nrows by ncols

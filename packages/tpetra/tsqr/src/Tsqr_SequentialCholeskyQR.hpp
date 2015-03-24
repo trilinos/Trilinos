@@ -85,14 +85,6 @@ namespace TSQR {
     /// \c SequentialTsqr.
     typedef int FactorOutput;
 
-    /// \brief Cache size hint (in bytes).
-    ///
-    /// This method is deprecated, because the name is misleading.
-    /// Please call \c cache_size_hint() instead.
-    size_t TEUCHOS_DEPRECATED cache_block_size () const {
-      return strategy_.cache_size_hint();
-    }
-
     //! Cache size hint (in bytes).
     size_t cache_size_hint () const { return strategy_.cache_size_hint(); }
 
