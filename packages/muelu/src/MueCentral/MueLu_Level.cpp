@@ -388,7 +388,11 @@ namespace MueLu {
         //         outputter.outputField((ss1.str()).substr(0,30));
 
         // factory ptr
-        outputter.outputField(factory);
+        if (factory == NoFactory::get())
+          outputter.outputField("NoFactory");
+        else
+          outputter.outputField(factory);
+
 
         int reqcount = NumRequests(factory, ename); // request counter
         outputter.outputField(reqcount);
