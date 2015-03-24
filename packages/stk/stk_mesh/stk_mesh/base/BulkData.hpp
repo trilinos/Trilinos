@@ -690,14 +690,6 @@ public:
    */
   void allocate_field_data();
 
-#ifndef STK_BUILT_IN_SIERRA // DELETE public functions BTW 2015-02-13 and 2015-03-04
-  STK_DEPRECATED(inline void mark_entity(Entity entity, entitySharing sharedType));
-  STK_DEPRECATED(inline entitySharing is_entity_marked(Entity entity) const);
-  STK_DEPRECATED(inline bool add_node_sharing_called() const);
-  STK_DEPRECATED(inline PairIterEntityComm entity_comm_map_shared(const EntityKey & key) const)
-  { return this->internal_entity_comm_map_shared(key); }
-#endif // STK_BUILT_IN_SIERRA
-
 protected: //functions
 
   const EntityCommListInfoVector & internal_comm_list() const { return m_entity_comm_list; }
