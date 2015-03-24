@@ -111,14 +111,14 @@ int main(int argc, char** argv) {
   }
 
   //Now call Isorropia::createBalancedCopyto create a balanced
-  //copy of crsgraph. 
+  //copy of crsgraph.
 
   if (localProc == 0) {
     std::cout << "Hypergraph partitioning" << std::endl;
   }
 
   Teuchos::ParameterList paramlist;
-  //No parameters. By default, Isorropia will use Zoltan hypergraph 
+  //No parameters. By default, Isorropia will use Zoltan hypergraph
   //partitioning, treating the graph columns as hyperedges and the
   //graph rows as vertices.
 
@@ -163,6 +163,8 @@ int main(int argc, char** argv) {
     std::cout << std::endl;
     std::cout << std::endl;
   }
+#else
+  (void) balanced_graph; // unused
 #endif
 
 
@@ -213,7 +215,7 @@ int main(int argc, char** argv) {
     MPI_Finalize();
     return(-1);
   }
- 
+
   // Results
 
 #ifdef HAVE_ISPATEST
@@ -239,6 +241,8 @@ int main(int argc, char** argv) {
     std::cout << "                     Balance " << bal1 << " cutN " << cutn1 << " cutL " << cutl1;
     std::cout << std::endl;
   }
+#else
+  (void) balanced_matrix; // unused
 #endif
 
   MPI_Finalize();
@@ -315,8 +319,8 @@ Teuchos::RCP<Epetra_CrsMatrix>
       coefs[j] = 1.0;
     }
 
-    int err = matrix->InsertGlobalValues(global_row, nnz_per_row,
-                                         &coefs[0], &indices[0]);
+    err = matrix->InsertGlobalValues(global_row, nnz_per_row,
+                                     &coefs[0], &indices[0]);
     if (err < 0) {
       err = matrix->ReplaceGlobalValues(global_row, nnz_per_row,
                                         &coefs[0], &indices[0]);
