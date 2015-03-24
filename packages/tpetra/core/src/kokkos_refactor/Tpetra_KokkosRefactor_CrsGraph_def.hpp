@@ -2362,21 +2362,15 @@ namespace Tpetra {
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   getNodeRowPtrs () const
   {
-    // FIXME (mfh 22 Mar 2015) Something in the
-    // Tpetra::Experimental::BlockCrsMatrix test breaks when I enable
-    // the disabled code below.  The issue appears to be that the code
-    // assumes that it really gets a view (not a deep copy) of the row
-    // offsets.
-#if 0
-    return Kokkos::Compat::persistingView (k_rowPtrs_);
-#else
     using Kokkos::ViewAllocateWithoutInitializing;
     using Kokkos::create_mirror_view;
     using Teuchos::ArrayRCP;
     typedef typename local_graph_type::row_map_type row_map_type;
     typedef typename row_map_type::non_const_value_type row_offset_type;
+#ifdef HAVE_TPETRA_DEBUG
     const char prefix[] = "Tpetra::CrsGraph::getNodeRowPtrs: ";
     const char suffix[] = "  Please report this bug to the Tpetra developers.";
+#endif // HAVE_TPETRA_DEBUG
     const size_t size = k_rowPtrs_.dimension_0 ();
     const bool same = Kokkos::Impl::is_same<size_t, row_offset_type>::value;
 
@@ -2446,8 +2440,6 @@ namespace Tpetra {
       ArrayRCP<const row_offset_type>,
       ArrayRCP<const size_t> >::select (ptr_rot, ptr_st);
 #endif // HAVE_TPETRA_DEBUG
-
-#endif // 0
   }
 
 
