@@ -53,7 +53,6 @@
 
 #include <Kokkos_HostSpace.hpp>
 #include <Kokkos_CudaSpace.hpp>
-#include <Kokkos_CudaTypes.hpp>
 #include <Kokkos_View.hpp>
 
 #include <Cuda/Kokkos_Cuda_BasicAllocators.hpp>
@@ -103,8 +102,8 @@ template< typename ValueType
         , class MemorySpace
         , class AliasType =
             typename Kokkos::Impl::if_c< ( sizeof(ValueType) ==  4 ) , int ,
-            typename Kokkos::Impl::if_c< ( sizeof(ValueType) ==  8 ) , int2 ,
-            typename Kokkos::Impl::if_c< ( sizeof(ValueType) == 16 ) , int4 , void
+            typename Kokkos::Impl::if_c< ( sizeof(ValueType) ==  8 ) , ::int2 ,
+            typename Kokkos::Impl::if_c< ( sizeof(ValueType) == 16 ) , ::int4 , void
             >::type
             >::type
             >::type

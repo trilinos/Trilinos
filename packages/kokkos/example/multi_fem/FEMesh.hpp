@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
+// 
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-//
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,42 +35,52 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
+// 
 // ************************************************************************
 //@HEADER
 */
 
-#include <ParallelComm.hpp>
+#ifndef KOKKOS_FEMESH_HPP
+#define KOKKOS_FEMESH_HPP
 
+#include <utility>
+#include <limits>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 
 #include <Kokkos_Core.hpp>
+#include <Kokkos_StaticCrsGraph.hpp>
+
+#include <ParallelComm.hpp>
+#include <ParallelDataMap.hpp>
+
+namespace HybridFEM {
 
 //----------------------------------------------------------------------------
+/** \brief  Finite element mesh fixture for hybrid parallel performance tests.
+ */
+template< typename CoordScalarType , unsigned ElemNodeCount , class Device >
+struct FEMesh {
+
+  typedef typename Device::size_type size_type ;
+
+  static const size_type element_node_count = ElemNodeCount ;
+
+  typedef Kokkos::View< CoordScalarType*[3] , Device >       node_coords_type ;
+  typedef Kokkos::View< size_type*[ElemNodeCount], Device >  elem_node_ids_type ;
+  typedef Kokkos::StaticCrsGraph< size_type[2] ,  Device >   node_elem_ids_type ;
+
+  node_coords_type         node_coords ;
+  elem_node_ids_type       elem_node_ids ;
+  node_elem_ids_type       node_elem_ids ;
+  Kokkos::ParallelDataMap  parallel_data_map ;
+};
+
 //----------------------------------------------------------------------------
 
-int main( int argc , char ** argv )
-{
-  comm::Machine machine = comm::Machine::init( & argc , & argv );
+} /* namespace HybridFEM */
 
-  std::ostringstream msg ;
-
-  msg << "MPI rank(" << comm::rank(machine) << ") {" ;
-
-  Kokkos::Threads::print_configuration( msg );
-
-#if defined( KOKKOS_HAVE_CUDA )
-  Kokkos::Cuda::print_configuration( msg );
-#endif
-
-  msg << "}" << std::endl ;
-
-  std::cout << msg.str();
-
-  comm::Machine::finalize();
-
-  return 0 ;
-}
+#endif /* #ifndef KOKKOS_FEMESH_HPP */
 

@@ -45,7 +45,6 @@
 
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Qthread.hpp>
-#include <Kokkos_CrsArray.hpp>
 
 #include <Qthread/Kokkos_Qthread_TaskPolicy.hpp>
 
@@ -56,7 +55,6 @@
 
 #include <TestViewAPI.hpp>
 
-#include <TestCrsArray.hpp>
 #include <TestTeam.hpp>
 #include <TestRange.hpp>
 #include <TestReduce.hpp>
@@ -112,10 +110,6 @@ TEST_F( qthread , team_tag )
 {
   TestTeamPolicy< Kokkos::Qthread >::test_for( 1000 );
   TestTeamPolicy< Kokkos::Qthread >::test_reduce( 1000 );
-}
-
-TEST_F( qthread, crsarray) {
-  TestCrsArray< Kokkos::Qthread >();
 }
 
 TEST_F( qthread, long_reduce) {

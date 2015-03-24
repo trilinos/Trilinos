@@ -48,8 +48,6 @@
 #include <impl/Kokkos_ViewTileLeft.hpp>
 #include <impl/Kokkos_Serial_TaskPolicy.hpp>
 
-#include <Kokkos_CrsArray.hpp>
-
 //----------------------------------------------------------------------------
 
 #include <TestViewImpl.hpp>
@@ -60,7 +58,6 @@
 #include <TestTile.hpp>
 #include <TestRange.hpp>
 #include <TestTeam.hpp>
-#include <TestCrsArray.hpp>
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
 #include <TestAggregate.hpp>
@@ -128,10 +125,6 @@ TEST_F( serial , team_tag )
 {
   TestTeamPolicy< Kokkos::Serial >::test_for( 1000 );
   TestTeamPolicy< Kokkos::Serial >::test_reduce( 1000 );
-}
-
-TEST_F( serial, crsarray) {
-  TestCrsArray< Kokkos::Serial >();
 }
 
 TEST_F( serial, long_reduce) {

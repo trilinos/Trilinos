@@ -195,7 +195,7 @@ test_product_tensor_matrix(
   matrix.block =
     Stokhos::create_stochastic_product_tensor< TensorType >( *basis,
                                                              *Cijk );
-  matrix.graph = Kokkos::create_crsarray<graph_type>( std::string("test crs graph") , graph );
+  matrix.graph = Kokkos::create_staticcrsgraph<graph_type>( std::string("test crs graph") , graph );
 
   const size_t inner_length         = matrix.block.dimension();
   const size_t inner_length_aligned = matrix.block.aligned_dimension();
@@ -313,7 +313,7 @@ test_product_tensor_diagonal_matrix(
   matrix_type matrix ;
 
   matrix.block  = Stokhos::SymmetricDiagonalSpec< Device >( stoch_length );
-  matrix.graph  = Kokkos::create_crsarray<graph_type>(
+  matrix.graph  = Kokkos::create_staticcrsgraph<graph_type>(
     std::string("test product tensor graph") , fem_graph );
   matrix.values = block_vector_type(
     Kokkos::ViewAllocateWithoutInitializing("matrix"), matrix.block.matrix_size() , fem_graph_length );
@@ -468,7 +468,7 @@ test_product_flat_commuted_matrix(
 
   matrix_type matrix ;
 
-  matrix.graph = Kokkos::create_crsarray<matrix_graph_type>(
+  matrix.graph = Kokkos::create_staticcrsgraph<matrix_graph_type>(
     std::string("testing") , flat_graph );
 
   const size_t flat_graph_length = matrix.graph.entries.dimension_0();
@@ -624,7 +624,7 @@ test_product_flat_original_matrix(
 
   matrix_type matrix ;
 
-  matrix.graph = Kokkos::create_crsarray<matrix_graph_type>( std::string("testing") , flat_graph );
+  matrix.graph = Kokkos::create_staticcrsgraph<matrix_graph_type>( std::string("testing") , flat_graph );
 
   const size_t flat_graph_length = matrix.graph.entries.dimension_0();
 
@@ -717,7 +717,7 @@ test_tiled_product_tensor_matrix(
   matrix.block =
     Stokhos::create_stochastic_product_tensor< TensorType >( *basis, *Cijk,
                                                              params);
-  matrix.graph = Kokkos::create_crsarray<graph_type>( std::string("test crs graph") , graph );
+  matrix.graph = Kokkos::create_staticcrsgraph<graph_type>( std::string("test crs graph") , graph );
 
   const size_t inner_length      = matrix.block.dimension();
   const size_t inner_length_aligned = matrix.block.aligned_dimension();
@@ -827,7 +827,7 @@ test_simple_tiled_product_tensor_matrix(
   matrix.block =
     Stokhos::create_stochastic_product_tensor< TensorType >( *basis, *Cijk,
                                                              params);
-  matrix.graph = Kokkos::create_crsarray<graph_type>( std::string("test crs graph") , graph );
+  matrix.graph = Kokkos::create_staticcrsgraph<graph_type>( std::string("test crs graph") , graph );
 
   const size_t inner_length      = matrix.block.dimension();
   const size_t inner_length_aligned = matrix.block.aligned_dimension();
@@ -936,7 +936,7 @@ test_lexo_block_tensor(
   matrix.block =
     Stokhos::create_stochastic_product_tensor< TensorType >( *basis,
                                                              *Cijk );
-  matrix.graph = Kokkos::create_crsarray<graph_type>( std::string("test crs graph") , graph );
+  matrix.graph = Kokkos::create_staticcrsgraph<graph_type>( std::string("test crs graph") , graph );
 
   const size_t inner_length      = matrix.block.dimension();
 
@@ -1043,7 +1043,7 @@ test_linear_tensor(
     Stokhos::create_stochastic_product_tensor< TensorType >( *basis,
                                                              *Cijk,
                                                              params );
-  matrix.graph = Kokkos::create_crsarray<graph_type>( std::string("test crs graph") , graph );
+  matrix.graph = Kokkos::create_staticcrsgraph<graph_type>( std::string("test crs graph") , graph );
 
   const size_t inner_length         = matrix.block.tensor().dimension();
   const size_t inner_length_aligned = matrix.block.tensor().aligned_dimension();
@@ -1148,7 +1148,7 @@ test_original_matrix_free_vec(
   std::vector<vec_type> tmp( outer_length ) ;
 
   for (size_t block=0; block<outer_length; ++block) {
-    matrix[block].graph = Kokkos::create_crsarray<matrix_graph_type>( std::string("testing") , fem_graph );
+    matrix[block].graph = Kokkos::create_staticcrsgraph<matrix_graph_type>( std::string("testing") , fem_graph );
 
     matrix[block].values = matrix_values_type( Kokkos::ViewAllocateWithoutInitializing("matrix"), graph_length );
 
@@ -1292,7 +1292,7 @@ test_original_matrix_free_view(
   Kokkos::deep_copy( x , ScalarType(1.0) );
 
   for (size_t block=0; block<outer_length; ++block) {
-    matrix[block].graph = Kokkos::create_crsarray<matrix_graph_type>(
+    matrix[block].graph = Kokkos::create_staticcrsgraph<matrix_graph_type>(
       std::string("testing") , fem_graph );
 
     matrix[block].values = matrix_values_type( "matrix" , graph_length );

@@ -45,8 +45,6 @@
 
 #include <Kokkos_Core.hpp>
 
-#include <Kokkos_CrsArray.hpp>
-
 //----------------------------------------------------------------------------
 
 #include <TestViewImpl.hpp>
@@ -55,7 +53,6 @@
 #include <TestViewAPI.hpp>
 #include <TestViewSubview.hpp>
 
-#include <TestCrsArray.hpp>
 #include <TestRange.hpp>
 #include <TestTeam.hpp>
 #include <TestReduce.hpp>
@@ -147,10 +144,6 @@ TEST_F( openmp , team_tag )
 {
   TestTeamPolicy< Kokkos::OpenMP >::test_for(1000);
   TestTeamPolicy< Kokkos::OpenMP >::test_reduce(1000);
-}
-
-TEST_F( openmp, crsarray) {
-  TestCrsArray< Kokkos::OpenMP >();
 }
 
 TEST_F( openmp, long_reduce) {

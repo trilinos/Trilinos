@@ -46,7 +46,7 @@
 #include <iomanip>
 
 #include "Kokkos_Core.hpp"
-#include "Kokkos_CrsArray.hpp"
+#include "Kokkos_StaticCrsGraph.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_MatrixMarket.hpp"
@@ -82,7 +82,7 @@ public:
   typedef Device execution_space;
   typedef ValueType value_type;
   typedef Kokkos::View< value_type[], Layout, execution_space > values_type;
-  typedef Kokkos::CrsArray< int , Layout, execution_space , int > graph_type;
+  typedef Kokkos::StaticCrsGraph< int , Layout, execution_space , int > graph_type;
 
   typedef CrsMatrix< ValueType, typename values_type::host_mirror_space, Layout> HostMirror;
 

@@ -49,8 +49,6 @@
 
 #include <Kokkos_Core.hpp>
 
-#include <Kokkos_CrsArray.hpp>
-
 #include <Threads/Kokkos_Threads_TaskPolicy.hpp>
 
 //----------------------------------------------------------------------------
@@ -61,7 +59,6 @@
 #include <TestViewSubview.hpp>
 #include <TestAtomic.hpp>
 
-#include <TestCrsArray.hpp>
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
 #include <TestRange.hpp>

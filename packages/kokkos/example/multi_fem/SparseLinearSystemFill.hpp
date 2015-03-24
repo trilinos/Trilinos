@@ -216,7 +216,7 @@ struct GraphFactory {
       offset += work.size();
     }
 
-    graph = Kokkos::create_crsarray< graph_type >( "node_node_ids" , node_node_ids );
+    graph = Kokkos::create_staticcrsgraph< graph_type >( "node_node_ids" , node_node_ids );
 
     //------------------------------------
     // ( element , node_row , node_column ) -> matrix_crs_column

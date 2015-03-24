@@ -48,7 +48,7 @@
 #include <impl/Kokkos_Timer.hpp>
 
 #include <Kokkos_Core.hpp>
-#include <Kokkos_CrsArray.hpp>
+#include <Kokkos_StaticCrsGraph.hpp>
 
 #include <LinAlgBLAS.hpp>
 
@@ -59,7 +59,7 @@ struct CrsMatrix {
   typedef Device      execution_space ;
   typedef ScalarType  value_type ;
 
-  typedef CrsArray< int , execution_space , void , int >  graph_type ;
+  typedef StaticCrsGraph< int , execution_space , void , int >  graph_type ;
   typedef View< value_type* , execution_space >   coefficients_type ;
 
   graph_type         graph ;

@@ -43,7 +43,7 @@
 #define STOKHOS_BLOCKCRSMATRIX_HPP
 
 #include "Kokkos_Core.hpp"
-#include "Kokkos_CrsArray.hpp"
+#include "Kokkos_StaticCrsGraph.hpp"
 
 #include "Stokhos_Multiply.hpp"
 
@@ -65,7 +65,7 @@ public:
   typedef typename execution_space::size_type size_type;
   typedef ValueType value_type;
   typedef BlockSpec block_spec;
-  typedef Kokkos::CrsArray< size_type , execution_space > graph_type;
+  typedef Kokkos::StaticCrsGraph< size_type , execution_space > graph_type;
   typedef Kokkos::View< value_type**, Kokkos::LayoutLeft, execution_space > block_vector_type ;
 
   block_vector_type  values;

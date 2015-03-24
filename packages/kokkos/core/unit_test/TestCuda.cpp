@@ -51,8 +51,6 @@
 
 #include <impl/Kokkos_ViewTileLeft.hpp>
 
-#include <Kokkos_CrsArray.hpp>
-
 //----------------------------------------------------------------------------
 
 #include <TestViewImpl.hpp>
@@ -60,7 +58,6 @@
 
 #include <TestViewAPI.hpp>
 #include <TestViewSubview.hpp>
-#include <TestCrsArray.hpp>
 #include <TestTile.hpp>
 
 #include <TestReduce.hpp>
@@ -208,11 +205,6 @@ TEST_F( cuda, team_tag )
 {
   TestTeamPolicy< Kokkos::Cuda >::test_for(1000);
   TestTeamPolicy< Kokkos::Cuda >::test_reduce(1000);
-}
-
-TEST_F( cuda, crsarray )
-{
-  TestCrsArray< Kokkos::Cuda >();
 }
 
 TEST_F( cuda, reduce )
