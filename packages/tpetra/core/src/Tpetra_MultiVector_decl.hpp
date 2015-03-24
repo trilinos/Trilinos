@@ -106,28 +106,6 @@ namespace Tpetra {
              const Teuchos::RCP<typename dst_mv_type::node_type>& node2);
     };
 
-    /// \brief Implementation of createMultiVectorFromView
-    /// \tparam MultiVectorType A specialization of Tpetra::MultiVector.
-    ///
-    /// This struct lets us do partial specialization of the nonmember
-    /// template function createMultiVectorFromView.  This is
-    /// particularly useful so that we can partially specialize this
-    /// function for the new Kokkos refactor specializations of
-    /// MultiVector.
-    template<class MultiVectorType>
-    struct CreateMultiVectorFromView {
-      typedef typename MultiVectorType::scalar_type scalar_type;
-      typedef typename MultiVectorType::local_ordinal_type local_ordinal_type;
-      typedef typename MultiVectorType::global_ordinal_type global_ordinal_type;
-      typedef typename MultiVectorType::node_type node_type;
-      typedef ::Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
-
-      static Teuchos::RCP<MultiVectorType>
-      create (const Teuchos::RCP<const map_type>& map,
-              const Teuchos::ArrayRCP<scalar_type>& view,
-              const size_t LDA,
-              const size_t numVectors);
-    };
   } // namespace Details
 
 
@@ -1275,12 +1253,6 @@ namespace Tpetra {
     //! \name View constructors, used only by nonmember constructors.
     //@{
 
-    // Implementation detail of the nonmember "constructor" function
-    // createMultiVectorFromView.  Please consider this function
-    // DEPRECATED.
-    template <class MultiVectorType>
-    friend struct Details::CreateMultiVectorFromView;
-
     /// \brief View constructor with user-allocated data.
     ///
     /// Please consider this constructor DEPRECATED.
@@ -1568,57 +1540,6 @@ namespace Tpetra {
   {
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
     return Teuchos::rcp (new MV (map, numVectors));
-  }
-
-} // namespace Tpetra
-
-namespace Tpetra {
-
-  // NOTE to Tpetra developers: Define createMultiVectorFromView after
-  // including the declarations header for the Kokkos refactor version
-  // of MultiVector, so that createMultiVectorFromView's
-  // implementation can pick up the partial specialization of
-  // CreateMultiVectorFromView.
-
-  /// \brief Nonmember MultiVector constructor with view semantics
-  ///   using user-allocated data.
-  /// \relatesalso MultiVector
-  /// \relatesalso Vector
-  ///
-  /// \warning This function is DEPRECATED.  Please use the Kokkos
-  ///   refactor version of Tpetra, with constructors that accept
-  ///   Kokkos::DualView.
-  ///
-  /// \warning This function is not supported for all Kokkos Node types.
-  ///
-  /// \param map [in] The Map describing the distribution of rows of
-  ///   the multivector.
-  /// \param view [in/out] A pointer to column-major dense matrix
-  ///   data.  This will be the multivector's data on the calling
-  ///   process.  The multivector will use the pointer directly,
-  ///   without copying.
-  /// \param LDA [in] The leading dimension (a.k.a. "stride") of the
-  ///   column-major input data.
-  /// \param numVectors [in] The number of columns in the input data.
-  ///   This will be the number of vectors in the returned
-  ///   multivector.
-  ///
-  /// \node To Kokkos and Tpetra developers: If you add a new Kokkos
-  ///   Node type that is a host Node type (where memory lives in user
-  ///   space, not in a different space as on a GPU), you will need to
-  ///   add a specialization of Tpetra::details::ViewAccepter for your
-  ///   new Node type.
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  TPETRA_DEPRECATED
-  Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  createMultiVectorFromView (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-                             const Teuchos::ArrayRCP<Scalar>& view,
-                             const size_t LDA,
-                             const size_t numVectors)
-  {
-    typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> mv_type;
-    typedef Details::CreateMultiVectorFromView<mv_type> impl_type;
-    return impl_type::create (map, view, LDA, numVectors);
   }
 
 } // namespace Tpetra

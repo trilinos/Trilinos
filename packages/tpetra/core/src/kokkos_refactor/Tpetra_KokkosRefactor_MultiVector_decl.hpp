@@ -1919,14 +1919,8 @@ namespace Tpetra {
               const EWhichNorm whichNorm) const;
 
     //@}
-    //! @name View constructors, used only by nonmember constructors.
+    //! @name Misc. implementation details
     //@{
-
-    template <class S,class LO,class GO,class N>
-    friend Teuchos::RCP<MultiVector<S,LO,GO,N> >
-    createMultiVectorFromView (const Teuchos::RCP<const Map<LO, GO, N> >&,
-                               const Teuchos::ArrayRCP<S>&,
-                               const size_t, const size_t);
 
     // Return true if and only if VectorIndex is a valid column index.
     bool vectorIndexOutOfRange (const size_t VectorIndex) const;

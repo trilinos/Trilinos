@@ -4237,46 +4237,6 @@ namespace Tpetra {
     return Teuchos::rcp (new MV (map, numVectors));
   }
 
-  /// \brief Nonmember MultiVector constructor with view semantics using user-allocated data.
-  /// \relatesalso MultiVector
-  /// \relatesalso Vector
-  ///
-  /// \warning This function is not supported for all Kokkos Node types.
-  ///
-  /// \param map [in] The Map describing the distribution of rows of
-  ///   the multivector.
-  /// \param view [in/out] A pointer to column-major dense matrix
-  ///   data.  This will be the multivector's data on the calling
-  ///   process.  The multivector will use the pointer directly,
-  ///   without copying.
-  /// \param LDA [in] The leading dimension (a.k.a. "stride") of the
-  ///   column-major input data.
-  /// \param numVectors [in] The number of columns in the input data.
-  ///   This will be the number of vectors in the returned
-  ///   multivector.
-  ///
-  /// \node To Kokkos and Tpetra developers: If you add a new Kokkos
-  ///   Node type that is a host Node type (where memory lives in user
-  ///   space, not in a different space as on a GPU), you will need to
-  ///   add a specialization of Tpetra::details::ViewAccepter for your
-  ///   new Node type.
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >
-  createMultiVectorFromView (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >& map,
-                             const Teuchos::ArrayRCP<Scalar>& view,
-                             const size_t LDA,
-                             const size_t numVectors)
-  {
-    (void) map;
-    (void) view;
-    (void) LDA;
-    (void) numVectors;
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Tpetra::createMultiVectorFromView: "
-      "Not implemented for Node = KokkosDeviceWrapperNode.");
-  }
-
   template <class ST, class LO, class GO, class DeviceType>
   MultiVector<ST, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
   createCopy (const MultiVector<ST, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& src)
