@@ -177,11 +177,11 @@ int main(int argc, char *argv[])
         Indices[1] = MyGlobalElements[i]+1;
         NumEntries = 2;
       }
-     int ierr;
-     ierr = A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices);
-     IFPACK_CHK_ERR(ierr);
-     ierr = A.InsertGlobalValues(MyGlobalElements[i], 1, &two, MyGlobalElements+i); // Put in the diagonal entry
-     IFPACK_CHK_ERR(ierr);
+     int ierr2;
+     ierr2 = A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices);
+     IFPACK_CHK_ERR(ierr2);
+     ierr2 = A.InsertGlobalValues(MyGlobalElements[i], 1, &two, MyGlobalElements+i); // Put in the diagonal entry
+     IFPACK_CHK_ERR(ierr2);
     }
 
   // Finish up
