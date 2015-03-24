@@ -2174,36 +2174,30 @@ namespace Experimental {
     // Scale X so each vector is of length 1
     {
       // Get norm of each vector in X
-      int nvecs;
-      if(computeAllRes_)
-        nvecs = curDim_;
-      else
-        nvecs = blockSize_;
-      std::vector<int> dimind(nvecs);
-      for(int i=0; i<nvecs; i++)
-        dimind[i] = i;
-      RCP<MV> lclX = MVT::CloneViewNonConst(*X_,dimind);
+      const int nvecs = computeAllRes_ ? curDim_ : blockSize_;
+      Teuchos::Range1D dimind2 (0, nvecs-1);
+      RCP<MV> lclX = MVT::CloneViewNonConst(*X_, dimind2);
       std::vector<ScalarType> normvec(nvecs);
       orthman_->normMat(*lclX,normvec);
 
       // Scale X, KX, and MX accordingly
-      for(int i=0; i<nvecs; i++)
-        normvec[i] = ONE/normvec[i];
-      MVT::MvScale(*lclX,normvec);
-      if(Op_ != Teuchos::null)
-      {
-        RCP<MV> lclKX = MVT::CloneViewNonConst(*KX_,dimind);
-        MVT::MvScale(*lclKX,normvec);
+      for (int i = 0; i < nvecs; ++i) {
+        normvec[i] = ONE / normvec[i];
       }
-      if(hasM_)
-      {
-        RCP<MV> lclMX = MVT::CloneViewNonConst(*MX_,dimind);
-        MVT::MvScale(*lclMX,normvec);
+      MVT::MvScale (*lclX, normvec);
+      if (Op_ != Teuchos::null) {
+        RCP<MV> lclKX = MVT::CloneViewNonConst (*KX_, dimind2);
+        MVT::MvScale (*lclKX, normvec);
+      }
+      if (hasM_) {
+        RCP<MV> lclMX = MVT::CloneViewNonConst (*MX_, dimind2);
+        MVT::MvScale (*lclMX, normvec);
       }
 
       // Scale eigenvalues
-      for(int i=0; i<nvecs; i++)
+      for (int i = 0; i < nvecs; ++i) {
         theta_[i] = theta_[i] * normvec[i] * normvec[i];
+      }
     }
 
     // Compute R
