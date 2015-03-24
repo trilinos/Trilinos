@@ -29,7 +29,7 @@ cmake \
 -D CMAKE_C_COMPILER:FILEPATH="/home/rppawlo/install/gnu4.8.2/mpich/bin/mpicc" \
 -D CMAKE_Fortran_COMPILER:FILEPATH="/home/rppawlo/install/gnu4.8.2/mpich/bin/mpif90" \
 -D Trilinos_ENABLE_Fortran:BOOL=ON \
--D CMAKE_CXX_FLAGS:STRING="-g -Wall" \
+-D CMAKE_CXX_FLAGS:STRING="-g -Wall -DGLIBCXX_FORCE_NEW" \
 -D CMAKE_C_FLAGS:STRING="" \
 -D CMAKE_VERBOSE_MAKEFILE:BOOL=OFF \
 -D Trilinos_VERBOSE_CONFIGURE:BOOL=OFF \
@@ -39,4 +39,6 @@ cmake \
 -D Trilinos_ENABLE_CHECKED_STL:BOOL=OFF \
 -D Trilinos_ENABLE_INSTALL_CMAKE_CONFIG_FILES:BOOL=OFF \
 -D Trilinos_ENABLE_COVERAGE_TESTING:BOOL=ON \
+-D MEMORYCHECK_COMMAND="/usr/bin/valgrind" \
+-D MEMORYCHECK_COMMAND_OPTIONS="-v --trace-children=yes --leak-check=full --num-callers=50" \
 ../Trilinos 
