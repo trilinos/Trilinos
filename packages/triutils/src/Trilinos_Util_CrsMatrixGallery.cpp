@@ -1127,14 +1127,14 @@ void Trilinos_Util::CrsMatrixGallery::TCreateExactSolution(void)
 
     } else if( ExactSolutionType_ == "quad_x" ) {
 
-      int_type*& MyGlobalElements = MyGlobalElementsPtr<int_type>();
+      int_type*& MyGlobalElements2 = MyGlobalElementsPtr<int_type>();
 
       // always suppose to have Dirichlet boundary
       // conditions, and those points have already been eliminated
       // from the matrix
       double hx = lx_/(NumGlobalElements_+1);
       for( int i=0 ; i<NumMyElements_ ; i++ ) {
-        double x = (MyGlobalElements[i]+1)*hx;
+        double x = (MyGlobalElements2[i]+1)*hx;
         for (int j = 0 ; j < NumVectors_ ; ++j)
           (*ExactSolution_)[j][i] = x*(1.-x);
       }
@@ -1315,8 +1315,8 @@ void Trilinos_Util::CrsMatrixGallery::TCreateRHS(void)
       ExactSolQuadXY(x,y,u,ux,uy,uxx,uyy);
 
       for (int j = 0 ; j < NumVectors_ ; ++j) {
-        for (int j = 0 ; j < NumVectors_ ; ++j) {
-          (*rhs_)[j][i] = uxx+uyy;
+        for (int jj = 0 ; jj < NumVectors_ ; ++jj) {
+          (*rhs_)[jj][i] = uxx+uyy;
         }
       }
     }
@@ -3859,11 +3859,11 @@ void Trilinos_Util::VbrMatrixGallery::TCreateVbrMatrix(void)
     Epetra_Util Util;
     double r = 0.0;
 
-    for( int i=0 ; i<CrsNumEntries ; ++i ) {
+    for( int ii=0 ; ii<CrsNumEntries ; ++ii ) {
 
       for( int k=0 ; k<BlockRows ; ++k ) { // rows
         for( int h=0 ; h<BlockRows ; ++h ) { // cols
-          if( k == h ) VbrValues[k+h*BlockRows] = CrsValues[i];
+          if( k == h ) VbrValues[k+h*BlockRows] = CrsValues[ii];
           else {
             switch( ExpandTypeInt ) {
               case 0:
@@ -3874,7 +3874,7 @@ void Trilinos_Util::VbrMatrixGallery::TCreateVbrMatrix(void)
                 r = Util.RandomDouble();
                 // scale it so that the sum of the block off-diagonal
                 // is not greater than the block diangonal
-                r /= (1.5*CrsValues[i]*BlockRows);
+                r /= (1.5*CrsValues[ii]*BlockRows);
                 break;
             }
             VbrValues[k+h*BlockRows] = r;

@@ -184,7 +184,9 @@ void Trilinos_Util_create_vbr(
     *N_update = N_blk_equations;
 
     *update = (int *) malloc(N_blk_equations*sizeof(int));
-    for (int i=0; i<N_blk_equations; i++) (*update)[i] = i;
+    for (int ii = 0; ii < N_blk_equations; ++ii) {
+      (*update)[ii] = ii;
+    }
 
     *bindx = (int   *) realloc((void *) (*bindx),
         (*n_blk_nonzeros+1)*sizeof(int)) ;

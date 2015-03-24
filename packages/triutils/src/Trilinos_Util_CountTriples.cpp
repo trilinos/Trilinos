@@ -74,7 +74,7 @@ void Trilinos_Util_CountTriples_internal(
   const int BUFSIZE = 800 ;
   char buffer[BUFSIZE] ;
   bool first_off_diag = true ;
-  bool upper ;
+  bool upper = false ;
 
   int_type num_rows = -1 ;
   int_type num_cols = -1 ;
