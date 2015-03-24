@@ -60,7 +60,6 @@
 #  error "Ifpack2::SupportGraph requires that Trilinos be built with Lemon support."
 #endif // HAVE_IFPACK2_LEMON
 
-#include "Ifpack2_Condest.hpp"
 #include "Ifpack2_Heap.hpp"
 #include "Ifpack2_LocalFilter.hpp"
 #include "Ifpack2_Parameters.hpp"
@@ -76,7 +75,6 @@ SupportGraph (const Teuchos::RCP<const row_matrix_type>& A) :
   A_ (A),
   Athresh_ (Teuchos::ScalarTraits<magnitude_type>::zero()),
   Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one()),
-  Condest_ (-Teuchos::ScalarTraits<magnitude_type>::one()),
   Randomize_ (1),
   NumForests_ (1),
   KeepDiag_ (Teuchos::ScalarTraits<magnitude_type>::one()),
@@ -248,27 +246,6 @@ double SupportGraph<MatrixType>::getComputeTime () const {
 template<class MatrixType>
 double SupportGraph<MatrixType>::getApplyTime () const {
   return ApplyTime_;
-}
-
-
-template<class MatrixType>
-typename SupportGraph<MatrixType>::magnitude_type
-SupportGraph<MatrixType>::
-computeCondEst (CondestType CT,
-                local_ordinal_type MaxIters,
-                magnitude_type Tol,
-                const Teuchos::Ptr<const row_matrix_type>& matrix)
-{
-  if (! isComputed()) {
-    return -STM::one();
-  }
-
-  // NOTE: this is computing the *local* condest
-  if (Condest_ == -STM::one()) {
-    Condest_ = Ifpack2::Condest(*this, CT, MaxIters, Tol, matrix);
-  }
-
-  return Condest_;
 }
 
 
@@ -752,8 +729,6 @@ describe (Teuchos::FancyOStream &out,
       "===========" << endl;
     out << "Absolute threshold: " << getAbsoluteThreshold() << endl;
     out << "Relative threshold: " << getRelativeThreshold() << endl;
-
-    out << "Condition number estimate: " << Condest_ << endl;
 
     if (isComputed()) {
       out << "Number of nonzeros in A: " << A_->getGlobalNumEntries() << endl;

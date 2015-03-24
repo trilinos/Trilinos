@@ -47,7 +47,6 @@
 #include "Ifpack2_LinearPartitioner.hpp"
 #include "Ifpack2_Details_UserPartitioner_decl.hpp"
 #include "Ifpack2_Details_UserPartitioner_def.hpp"
-#include <Ifpack2_Condest.hpp>
 #include <Ifpack2_Parameters.hpp>
 
 namespace Ifpack2 {
@@ -59,7 +58,6 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
   if (A.getRawPtr () != A_.getRawPtr ()) { // it's a different matrix
     IsInitialized_ = false;
     IsComputed_ = false;
-    Condest_ = -STM::one ();
     Partitioner_ = Teuchos::null;
     Importer_ = Teuchos::null;
     W_ = Teuchos::null;
@@ -90,7 +88,6 @@ BlockRelaxation (const Teuchos::RCP<const row_matrix_type>& A)
   IsParallel_ (false),
   ZeroStartingSolution_ (true),
   DoBackwardGS_ (false),
-  Condest_ (-STM::one ()),
   IsInitialized_ (false),
   IsComputed_ (false),
   NumInitialize_ (0),
@@ -269,34 +266,6 @@ double BlockRelaxation<MatrixType,ContainerType>::getApplyFlops() const {
 
 //==========================================================================
 template<class MatrixType,class ContainerType>
-typename BlockRelaxation<MatrixType, ContainerType>::magnitude_type
-BlockRelaxation<MatrixType,ContainerType>::getCondEst () const
-{
-  return Condest_;
-}
-
-//==========================================================================
-template<class MatrixType,class ContainerType>
-typename BlockRelaxation<MatrixType, ContainerType>::magnitude_type
-BlockRelaxation<MatrixType,ContainerType>::
-computeCondEst (CondestType CT,
-                typename MatrixType::local_ordinal_type MaxIters,
-                magnitude_type Tol,
-                const Teuchos::Ptr<const row_matrix_type>& matrix)
-{
-  if (! isComputed ()) {// cannot compute right now
-    return -STM::one ();
-  }
-
-  // always compute it. Call Condest() with no parameters to get
-  // the previous estimate.
-  Condest_ = Ifpack2::Condest (*this, CT, MaxIters, Tol, matrix);
-
-  return Condest_;
-}
-
-//==========================================================================
-template<class MatrixType,class ContainerType>
 void
 BlockRelaxation<MatrixType,ContainerType>::
 apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
@@ -462,7 +431,6 @@ void BlockRelaxation<MatrixType,ContainerType>::compute()
 
   // reset values
   IsComputed_ = false;
-  Condest_ = -STM::one ();
 
   // Extract the submatrices
   ExtractSubmatrices ();
@@ -1021,8 +989,7 @@ describe (Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) 
         << ((PrecType_ == Ifpack2::Details::GS && DoBackwardGS_) ? "true" : "false")
         << endl
         << "zero starting solution: "
-        << (ZeroStartingSolution_ ? "true" : "false") << endl
-        << "condition number estimate: " << Condest_ << endl;
+        << (ZeroStartingSolution_ ? "true" : "false") << endl;
 
     out << "===============================================================================" << endl;
     out << "Phase           # calls    Total Time (s)     Total MFlops      MFlops/s       " << endl;

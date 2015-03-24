@@ -63,8 +63,7 @@ RILUK<MatrixType>::RILUK (const Teuchos::RCP<const row_matrix_type>& Matrix_in)
     applyTime_ (0.0),
     RelaxValue_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
     Athresh_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
-    Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ()),
-    Condest_ (-Teuchos::ScalarTraits<magnitude_type>::one ())
+    Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ())
 {}
 
 
@@ -83,8 +82,7 @@ RILUK<MatrixType>::RILUK (const Teuchos::RCP<const crs_matrix_type>& Matrix_in)
     applyTime_ (0.0),
     RelaxValue_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
     Athresh_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
-    Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ()),
-    Condest_ (-Teuchos::ScalarTraits<magnitude_type>::one ())
+    Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ())
 {}
 
 
@@ -109,7 +107,6 @@ RILUK<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     L_ = Teuchos::null;
     U_ = Teuchos::null;
     D_ = Teuchos::null;
-    Condest_ = -Teuchos::ScalarTraits<magnitude_type>::one();
     A_ = A;
   }
 }
@@ -955,59 +952,6 @@ multiply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordina
     U_->apply (Y_tmp, Y, mode);
     Y.update (one, Y_tmp, one); // (account for implicit unit diagonal)
   }
-}
-
-
-template<class MatrixType>
-typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
-RILUK<MatrixType>::computeCondEst (Teuchos::ETransp mode) const
-{
-  if (Condest_ != -Teuchos::ScalarTraits<magnitude_type>::one ()) {
-    return Condest_;
-  }
-  // Create a vector with all values equal to one
-  vec_type ones (U_->getDomainMap ());
-  vec_type onesResult (L_->getRangeMap ());
-  ones.putScalar (Teuchos::ScalarTraits<scalar_type>::one ());
-
-  apply (ones, onesResult, mode); // Compute the effect of the solve on the vector of ones
-  onesResult.abs (onesResult); // Make all values non-negative
-  Teuchos::Array<magnitude_type> norms (1);
-  onesResult.normInf (norms ());
-  Condest_ = norms[0];
-  return Condest_;
-}
-
-
-template<class MatrixType>
-typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
-RILUK<MatrixType>::
-computeCondEst (CondestType CT,
-                local_ordinal_type MaxIters,
-                magnitude_type Tol,
-                const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& Matrix)
-{
-  // Forestall "unused variable" compiler warnings.
-  (void) CT;
-  (void) MaxIters;
-  (void) Tol;
-  (void) Matrix;
-
-  if (Condest_ != -Teuchos::ScalarTraits<magnitude_type>::one() ) {
-    return Condest_;
-  }
-  // Create a vector with all values equal to one
-  vec_type ones (U_->getDomainMap ());
-  vec_type onesResult (L_->getRangeMap ());
-  ones.putScalar (Teuchos::ScalarTraits<scalar_type>::one ());
-
-  // Compute the effect of the solve on the vector of ones
-  apply (ones, onesResult, Teuchos::NO_TRANS);
-  onesResult.abs (onesResult); // Make all values non-negative
-  Teuchos::Array<magnitude_type> norms (1);
-  onesResult.normInf (norms ());
-  Condest_ = norms[0];
-  return Condest_;
 }
 
 

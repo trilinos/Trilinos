@@ -918,32 +918,6 @@ LocalFilter<MatrixType>::getFrobeniusNorm () const
   return STM::squareroot (sumSquared); // Different for each process; that's OK.
 }
 
-
-template<class MatrixType>
-TPETRA_DEPRECATED void
-LocalFilter<MatrixType>::
-getGlobalRowView (global_ordinal_type GlobalRow,
-                  Teuchos::ArrayRCP<const global_ordinal_type> &indices,
-                  Teuchos::ArrayRCP<const scalar_type> &values) const
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-    "Ifpack2::LocalFilter does not implement getGlobalRowView.");
-}
-
-
-template<class MatrixType>
-TPETRA_DEPRECATED
-void
-LocalFilter<MatrixType>::
-getLocalRowView (local_ordinal_type LocalRow,
-                 Teuchos::ArrayRCP<const local_ordinal_type> &indices,
-                 Teuchos::ArrayRCP<const scalar_type> &values) const
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-    "Ifpack2::LocalFilter does not implement getLocalRowView.");
-}
-
-
 template<class MatrixType>
 std::string
 LocalFilter<MatrixType>::description () const

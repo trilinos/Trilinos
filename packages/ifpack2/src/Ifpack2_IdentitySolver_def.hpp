@@ -44,7 +44,6 @@
 #define IFPACK2_IDENTITY_SOLVER_DEF_HPP
 
 #include "Ifpack2_IdentitySolver_decl.hpp"
-#include "Ifpack2_Condest.hpp"
 
 namespace Ifpack2 {
 
@@ -59,8 +58,7 @@ IdentitySolver (const Teuchos::RCP<const row_matrix_type>& A)
     numApply_ (0),
     initializeTime_(0.0),
     computeTime_(0.0),
-    applyTime_(0.0),
-    condEst_ (-Teuchos::ScalarTraits<magnitude_type>::one ())
+    applyTime_(0.0)
 {
 }
 
@@ -160,23 +158,6 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     }
   }
   ++numApply_;
-}
-
-template<class MatrixType>
-typename IdentitySolver<MatrixType>::magnitude_type
-IdentitySolver<MatrixType>::
-computeCondEst (CondestType CT,
-                local_ordinal_type MaxIters,
-                magnitude_type Tol,
-                const Teuchos::Ptr<const row_matrix_type>& matrix)
-{
-  // Forestall compiler warnings for unused variables.
-  (void) CT;
-  (void) MaxIters;
-  (void) Tol;
-  (void) matrix;
-
-  return -Teuchos::ScalarTraits<magnitude_type>::one ();
 }
 
 template <class MatrixType>

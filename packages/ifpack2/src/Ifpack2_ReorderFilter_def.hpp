@@ -578,28 +578,6 @@ permuteReorderedToOriginalTempl (const Tpetra::MultiVector<DomainScalar,local_or
   }
 }
 
-
-template<class MatrixType>
-TPETRA_DEPRECATED void
-ReorderFilter<MatrixType>::
-getGlobalRowView (global_ordinal_type GlobalRow,
-                  Teuchos::ArrayRCP<const global_ordinal_type> &indices,
-                  Teuchos::ArrayRCP<const scalar_type> &values) const
-{
-  throw std::runtime_error("Ifpack2::ReorderFilter does not implement getGlobalRowView.");
-}
-
-
-template<class MatrixType>
-TPETRA_DEPRECATED void
-ReorderFilter<MatrixType>::
-getLocalRowView (local_ordinal_type LocalRow,
-                 Teuchos::ArrayRCP<const local_ordinal_type> &indices,
-                 Teuchos::ArrayRCP<const scalar_type> &values) const
-{
-  throw std::runtime_error("Ifpack2::ReorderFilter does not implement getLocalRowView.");
-}
-
 } // namespace Ifpack2
 
 #define IFPACK2_REORDERFILTER_INSTANT(S,LO,GO,N)                        \

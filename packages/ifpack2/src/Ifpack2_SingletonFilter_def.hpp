@@ -582,25 +582,7 @@ typename SingletonFilter<MatrixType>::mag_type SingletonFilter<MatrixType>::getF
   throw std::runtime_error("Ifpack2::SingletonFilter does not implement getFrobeniusNorm.");
 }
 
-//==========================================================================
-template<class MatrixType>
-TPETRA_DEPRECATED  void SingletonFilter<MatrixType>::getGlobalRowView(GlobalOrdinal GlobalRow,
-                                                                     Teuchos::ArrayRCP<const GlobalOrdinal> &indices,
-                                                                     Teuchos::ArrayRCP<const Scalar>        &values) const
-{
-  throw std::runtime_error("Ifpack2::SingletonFilter does not implement getGlobalRowView.");
-}
-
-//==========================================================================
-template<class MatrixType>
-TPETRA_DEPRECATED  void SingletonFilter<MatrixType>::getLocalRowView(LocalOrdinal LocalRow,
-                                                                    Teuchos::ArrayRCP<const LocalOrdinal> &indices,
-                                                                    Teuchos::ArrayRCP<const Scalar>       &values) const
-{
-  throw std::runtime_error("Ifpack2::SingletonFilter does not implement getLocalRowView.");
-}
-
-}// namespace Ifpack2
+} // namespace Ifpack2
 
 #define IFPACK2_SINGLETONFILTER_INSTANT(S,LO,GO,N)                            \
   template class Ifpack2::SingletonFilter< Tpetra::CrsMatrix<S, LO, GO, N> >;
