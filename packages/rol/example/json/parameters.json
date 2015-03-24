@@ -1,0 +1,52 @@
+{
+    "ROL" : {
+        "Algorithm"                    : "Trust-Region with Truncated CG",
+        "Maximum Number of Iterations" : 100,
+        "Gradient Tolerance"           : 1.e-6, 
+        "Step Tolerance"               : 1.e-12,
+
+        "Nonlinear CG": {
+            "Nonlinear CG Type" :"Polak-Ribiere" 
+        },
+
+        "Quasi-Newton Method" : {
+            "Secant Type"            : "Limited Memory BFGS",
+            "Maximum Secant Storage" : 30
+        },
+
+        "Newton-Krylov" : {
+            "Krylov Method"                       : "Conjugate Gradients",
+            "Maximum Number of Krylov Iterations" : 5,
+            "Use Secant Preconditioning"          : false,
+            "Absolute Krylov Tolerance"           : 1.e-4,
+            "Relative Krylov Tolerance"           : 1.e-2
+        },
+
+        "Linesearch" : { 
+            "Linesearch Type"                        : "Backtracking",
+            "Linesearch Curvature Condition"         : "Strong Wolfe Conditions",
+            "Initial Linesearch Parameter"           : 1.0e4,
+            "Curvature Conditions Parameter"         : 0.9,
+            "Sufficient Decrease Parameter"          : 1.0e-4,
+            "Backtracking Rate"                      : 0.5,
+            "Maximum Number of Function Evaluations" : 20
+        },       
+
+        "Trust-Region" : {
+            "Trust-Region Subproblem Solver Type"  : "Cauchy Point",
+            "Initial Trust-Region Radius"          : 1.e-0,
+            "Minimum Trust-Region Radius"          : 1.e-12,
+            "Maximum Trust-Region Radius"          : 5.e3, 
+            "Step Acceptance Parameter"            : 0.05,
+            "Radius Shrinking Threshold"           : 0.05,
+            "Radius Growing Threshold"             : 0.9,
+            "Radius Shrinking Rate (Negative rho)" : 0.0625,
+            "Radius Shrinking Rate (Positive rho)" : 0.25,
+            "Radius Growing Rate"                  : 2.5,
+            "Trust-Region Safeguard"               : 1.e4,
+            "Use Inexact Objective Function"       : false,
+            "Use Inexact Gradient"                 : false,
+            "Use Inexact Hessian-Times-A-Vector"   : false
+        }
+    }
+}

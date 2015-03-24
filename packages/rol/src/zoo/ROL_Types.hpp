@@ -1175,6 +1175,10 @@ namespace ROL {
  *  <li>\link rol/example/gross-pitaevskii/example_01.hpp Minimizing the Gross-Pitaevskii functional \endlink</li>
  *  <li>\link rol/example/gross-pitaevskii/example_02.hpp Gross-Pitaevskii functional with \f$H^1\f$ gradient \endlink</li>
  *  </ol>
+ *  <li><b>Examples using Third Party Libraries</b></li> 
+ *  <ol>
+ *  <li>\link rol/example/json/example_01.cpp Using a JSON file to provide ROL with parameters\endlink</li> 
+ *  </ol>
  *  </ul> 
 */  
 
