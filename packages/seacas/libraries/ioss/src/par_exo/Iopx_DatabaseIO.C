@@ -921,7 +921,6 @@ namespace Iopx {
 
   void DatabaseIO::get_step_times()
   {
-    bool exists = false;
     double last_time = DBL_MAX;
     int timestep_count = 0;
     std::vector<double> tsteps(0);
@@ -1720,7 +1719,6 @@ namespace Iopx {
         std::string side_set_name;
         Ioss::SideSet *side_set = NULL;
 
-        int64_t number_distribution_factors = 0;
         {
 	  bool db_has_name = false;
           side_set_name = get_entity_name(get_file_pointer(), EX_SIDE_SET, id, "surface",
@@ -2363,7 +2361,7 @@ namespace Iopx {
           Ioss::CommSet *css = get_region()->get_commset("commset_node");
           if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
             int64_t *idata = static_cast<int64_t*>(data);
-            for (size_t i=0; i < nodeCount; i++) {
+            for (int64_t i=0; i < nodeCount; i++) {
               idata[i] = myProcessor;
             }
 
@@ -2379,7 +2377,7 @@ namespace Iopx {
           }
           else {
             int *idata = static_cast<int*>(data);
-            for (size_t i=0; i < nodeCount; i++) {
+            for (int64_t i=0; i < nodeCount; i++) {
               idata[i] = myProcessor;
             }
 
@@ -3092,7 +3090,7 @@ namespace Iopx {
       size_t proc_offset = 0;
       if (ge->property_exists("processor_offset"))
         proc_offset = ge->get_property("processor_offset").get_int();
-      size_t file_count = num_entity;
+      ssize_t file_count = num_entity;
       if (ge->property_exists("locally_owned_count"))
         file_count = ge->get_property("locally_owned_count").get_int();
 
@@ -3109,7 +3107,7 @@ namespace Iopx {
             exodus_error(get_file_pointer(), __LINE__, myProcessor);
         }
       } else if (type == EX_NODE_SET) {
-        for (size_t i=0; i < comp_count; i++) {
+        for (int i=0; i < comp_count; i++) {
           std::vector<double> file_data; file_data.reserve(file_count);
           map_nodeset_data(nodesetOwnedNodes[ge], rdata, file_data, i, comp_count);
           int ierr = ex_put_partial_one_attr(get_file_pointer(), type, id, proc_offset+1, file_count,
@@ -4389,7 +4387,7 @@ namespace Iopx {
             num_out = nodeMap.map_field_to_db_scalar_order(static_cast<int64_t*>(variables),
 							   temp, begin_offset, count, stride, 0);
 
-          if (num_out != nodeCount) {
+          if (num_out != (size_t)nodeCount) {
             std::ostringstream errmsg;
             errmsg << "ERROR: Problem outputting nodal variable '" << var_name
 		   << "' with index = " << var_index << " to file "

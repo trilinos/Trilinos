@@ -169,7 +169,8 @@ namespace {
     int processor_count = 0;
     MPI_Comm_size(comm, &processor_count);
     size_t max_comm = sendcnts[processor_count-1] + senddisp[processor_count-1];
-    if (max_comm < 1<<31) {
+    size_t one = 1;
+    if (max_comm < one<<31) {
       // count and displacement data in range, need to copy to integer vector.
       std::vector<int> send_cnt(sendcnts.begin(), sendcnts.end());
       std::vector<int> send_dis(senddisp.begin(), senddisp.end());

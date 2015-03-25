@@ -153,6 +153,9 @@ namespace Iotr {
       success = false;
       break;
     }
+    default:
+      success = false;
+      
     return success;
   }
 }

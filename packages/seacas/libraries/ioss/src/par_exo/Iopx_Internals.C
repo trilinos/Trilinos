@@ -664,8 +664,6 @@ int Internals::put_metadata(const Mesh &mesh)
   int varid = 0;
 
   int map_type  = get_type(exodusFilePtr, EX_MAPS_INT64_DB);
-  int bulk_type = get_type(exodusFilePtr, EX_BULK_INT64_DB);
-  int ids_type  = get_type(exodusFilePtr, EX_IDS_INT64_DB);
 
   char errmsg[MAX_ERR_LENGTH];
   const char *routine = "Internals::put_metadata()";
