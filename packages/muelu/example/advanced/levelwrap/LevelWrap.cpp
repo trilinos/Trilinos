@@ -478,6 +478,44 @@ int main(int argc, char *argv[]) {
     }
 
 
+    // =========================================================================
+    // Solve #6 (level wrap, the fast way, P only, explicit transpose)
+    // =========================================================================
+    out << thickSeparator << std::endl;
+    out << prefSeparator << " Solve 6: LevelWrap, Fast Way, P only, explicit transpose "<< prefSeparator <<std::endl;
+    {
+      Teuchos::ParameterList MueLuList, level1;
+      level1.set("P",P);
+      level1.set("Nullspace",nullspace);
+      MueLuList.set("level 1",level1);
+      MueLuList.set("verbosity","high");
+      MueLuList.set("coarse: max size",100);
+      MueLuList.set("transpose: use implicit",false);
+      MueLuList.set("max levels",4);
+#ifdef HAVE_MUELU_BELOS
+      MueLuExamples::solve_system_list(lib,A,X,B,MueLuList,SList);
+#endif
+    }
+
+
+    // =========================================================================
+    // Solve #7 (level wrap, the fast way, P only, implicit transpose)
+    // =========================================================================
+    out << thickSeparator << std::endl;
+    out << prefSeparator << " Solve 7: LevelWrap, Fast Way, P only, implicit transpose "<< prefSeparator <<std::endl;
+    {
+      Teuchos::ParameterList MueLuList, level1;
+      level1.set("P",P);
+      level1.set("Nullspace",nullspace);
+      MueLuList.set("level 1",level1);
+      MueLuList.set("verbosity","high");
+      MueLuList.set("coarse: max size",100);
+      MueLuList.set("transpose: use implicit",true);
+      MueLuList.set("max levels",2);
+#ifdef HAVE_MUELU_BELOS
+      MueLuExamples::solve_system_list(lib,A,X,B,MueLuList,SList);
+#endif
+    }
     success = true;
   }
 
