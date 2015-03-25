@@ -598,7 +598,7 @@ public:
   {
     SparseRowView<CrsMatrix> row_view = this->row (rowi);
     const int length = row_view.length;
-    for (size_t i = 0; i < ncol; ++i) {
+    for (OrdinalType i = 0; i < ncol; ++i) {
       for (int j = 0; j < length; ++j) {
         if (row_view.colidx(j) == cols[i]) {
           if (force_atomic) {
