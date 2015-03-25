@@ -8,6 +8,13 @@
 int
 main (int argc, char **argv)
 {
+  typedef Ifpack2::Test::ST ST;
+  typedef Ifpack2::Test::GO GO;
+  typedef Ifpack2::Test::STS STS;
+  typedef Ifpack2::Test::map_type map_type;
+  typedef Ifpack2::Test::multivector_type multivector_type;
+  typedef Ifpack2::Test::sparse_mat_type sparse_mat_type;
+
   // global_size_t: Tpetra defines this unsigned integer type big
   // enough to hold any global dimension or amount of data.
   using Tpetra::global_size_t;
