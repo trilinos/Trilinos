@@ -3024,8 +3024,9 @@ namespace Tpetra {
   {
     using Kokkos::View;
     typedef typename local_graph_type::row_map_type row_map_type;
+    typedef typename row_map_type::array_layout layout_type;
     typedef typename row_map_type::non_const_value_type row_offset_type;
-    typedef View<size_t*, Kokkos::HostSpace,
+    typedef View<size_t*, layout_type , Kokkos::HostSpace,
       Kokkos::MemoryUnmanaged> input_view_type;
     typedef typename row_map_type::non_const_type nc_row_map_type;
 
@@ -3061,19 +3062,19 @@ namespace Tpetra {
         // FIXME (mfh 24 Mar 2015) If CUDA UVM, running in the host's
         // execution space would avoid the double copy.
         //
-        View<size_t*, execution_space> ptr_st ("Tpetra::CrsGraph::ptr", size);
+        View<size_t*, layout_type ,execution_space > ptr_st ("Tpetra::CrsGraph::ptr", size);
         Kokkos::deep_copy (ptr_st, ptr_in);
         // Copy on device (casting from size_t to row_offset_type) to
         // ptr_rot.  This executes in the output View's execution
         // space, which is the same as DeviceType::execution_space.
         typedef CopyOffsets<nc_row_map_type,
-          View<size_t*, execution_space> > functor_type;
+          View<size_t*, layout_type ,execution_space> > functor_type;
         functor_type functor (ptr_rot, ptr_st);
         Kokkos::parallel_for (size, functor);
       }
     }
 
-    Kokkos::View<LocalOrdinal*, execution_space> k_ind =
+    Kokkos::View<LocalOrdinal*, layout_type , execution_space > k_ind =
       Kokkos::Compat::getKokkosViewDeepCopy<DeviceType> (columnIndices ());
     setAllIndices (ptr_rot, k_ind);
   }
