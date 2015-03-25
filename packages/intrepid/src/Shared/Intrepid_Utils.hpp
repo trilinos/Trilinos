@@ -64,41 +64,41 @@ namespace Intrepid {
  **                                                                                               **
  ***************************************************************************************************
  ***************************************************************************************************/
-  
-  
+
+
   /** \brief  Returns the rank of fields in a function space of the specified type.
-  
-  Field rank is defined as the number of indices needed to specify function value and 
+
+  Field rank is defined as the number of indices needed to specify function value and
   equals 0, 1,or 2 for scalars, vectors and tensors, respectively. The scalar field
   spaces in Intrepid are FUNCTION_SPACE_HGRAD and FUNCTION_SPACE_HVOL. The vector field
   spaces are FUNCTION_SPACE_HCURL, FUNCTION_SPACE_HDIV and FUNCTION_SPACE_VECTOR_HGRAD.
   FUNCTION_SPACE_TENSOR_HGRAD contains rank-2 tensors.
-  
+
   \param  spaceType         [in]     -  function space type
   \return rank of the fields in the specified function space
   */
-  int getFieldRank(const EFunctionSpace spaceType); 
-  
-  
-  
-  /** \brief  Returns rank of an operator. 
-  
+  int getFieldRank(const EFunctionSpace spaceType);
+
+
+
+  /** \brief  Returns rank of an operator.
+
   When an operator acts on a field of a certain rank, the result can be a field with the
   same or a different rank. Operator rank is defined the difference between the ranks of
   the output field and the input field:
   \verbatim
   Rank(OPERATOR) = Rank(OPERATOR(FIELD)) - Rank(FIELD)
   \endverbatim
-  Therefore, operator rank allows us to figure out the rank of the result: 
+  Therefore, operator rank allows us to figure out the rank of the result:
   \verbatim
   Rank(OPERATOR(FIELD)) = Rank(FIELD) + Rank(OPERATOR)
   \endverbatim
-  and provides means to size properly arrays for output results. The following table 
+  and provides means to size properly arrays for output results. The following table
   summarizes operator ranks (~ denotes undefined, below slash means 3D).
   By default, in 1D any operator other than VALUE has rank 1, i.e., GRAD, CURL and DIV
-  reduce to d/dx and Dk are the higher-order derivatives d^k/dx^k. Only scalar functions 
+  reduce to d/dx and Dk are the higher-order derivatives d^k/dx^k. Only scalar functions
   are allowed in 1D.
-  
+
   \verbatim
   |========|======|============================|=========|==========|==========|==========|
   | field  | rank |  FUNCTION_SPACE_[type]     |  VALUE  | GRAD, Dk |   CURL   |    DIV   |
@@ -110,7 +110,7 @@ namespace Intrepid {
   |   1D   |   0  |  HGRAD, HVOL only          |    0    |     1    |     1    |     1    |
   |=======================================================================================|
   \endverbatim
-  
+
   \param  spaceType        [in]    - function space type
   \param  operatorType     [in]    - the operator acting on the specified function space
   \param  spaceDim         [in]    - spatial dimension
@@ -119,37 +119,37 @@ namespace Intrepid {
   int getOperatorRank(const EFunctionSpace spaceType,
                       const EOperator      operatorType,
                       const int            spaceDim);
-  
-  
-  
+
+
+
   /** \brief  Returns order of an operator.
-    
+
     \param  operatorType       [in]    - type of the operator whose order we want to know
     \return result ranges from 0 (for OPERATOR_VALUE) to 10 (OPERATOR_D10)
     */
   int getOperatorOrder(const EOperator operatorType);
-  
-  
-  
+
+
+
   /** \brief  Returns the ordinal of a partial derivative of order k based on the multiplicities of
     the partials dx, dy, and dz.
-    
+
     By default, any implementation of Intrepid::Basis method returns partials of order k
   (specified by OPERATOR_Dk) as a multiset ordered by the lexicographical order of the
-    partial derivatives multiplicities. For example, the 10 derivatives of order 3 in 3D 
+    partial derivatives multiplicities. For example, the 10 derivatives of order 3 in 3D
     are enumerated as:
     \verbatim
     D3={(3,0,0),(2,1,0),(2,0,1),(1,2,0),(1,1,1),(1,0,2),(0,3,0),(0,2,1),(0,1,2),(0,0,3)}
   \endverbatim
     The enumeration formula for this lexicographical order is
-    <table>   
+    <table>
     <tr> <td>\f$i(xMult)            = 0\f$                            </td> <td>in 1D (only 1 derivative)</td> </tr>
     <tr> <td>\f$i(xMult,yMult)      =yMult\f$                         </td> <td>in 2D</td> </tr>
     <tr> <td>\f$i(xMult,yMult,zMult)=zMult+\sum_{r = 0}^{k-xMult} r\f$</td> <td>in 3D</td> </tr>
     </table>
     where the order k of Dk is implicitly defined by xMult + yMult + zMult. Space dimension is
     implicitly defined by the default values of the multiplicities of y and z derivatives.
-  
+
   \param  xMult            [in]    - multiplicity of dx
     \param  yMult            [in]    - multiplicity of dy (default = -1)
   \param  zMult            [in]    - multiplicity of dz (default = -1)
@@ -158,12 +158,12 @@ namespace Intrepid {
   int getDkEnumeration(const int xMult,
                        const int yMult = -1,
                        const int zMult = -1);
-  
-  
-  
+
+
+
   /** \brief  Returns multiplicities of dx, dy, and dz based on the enumeration of the partial
     derivative, its order and the space dimension. Inverse of the getDkEnumeration() method.
-    
+
     \param  partialMult      [out]    - array with the multiplicities f dx, dy and dz
     \param  derivativeEnum   [in]     - enumeration of the partial derivative
     \param  operatorType     [in]     - k-th partial derivative Dk
@@ -173,32 +173,32 @@ namespace Intrepid {
                            const int             derivativeEnum,
                            const EOperator       operatorType,
                            const int             spaceDim);
-  
-  
-  
-  /** \brief  Returns cardinality of Dk, i.e., the number of all derivatives of order k. 
-    
-    The set of all partial derivatives of order k is isomorphic to the set of all multisets 
-    of cardinality k with elements taken from the sets {x}, {x,y}, and {x,y,z} in 1D, 2D, 
+
+
+
+  /** \brief  Returns cardinality of Dk, i.e., the number of all derivatives of order k.
+
+    The set of all partial derivatives of order k is isomorphic to the set of all multisets
+    of cardinality k with elements taken from the sets {x}, {x,y}, and {x,y,z} in 1D, 2D,
     and 3D respectively. For example, the partial derivative
     \f$\displaystyle D\{1,2,1\}f = \frac{d^4 f}{dx dy^2 dz}\f$  maps to the multiset
-    \f$\{x, y, z\}\f$ with multiplicities \f$\{1,2,1\}\f$. The number of all such multisets 
+    \f$\{x, y, z\}\f$ with multiplicities \f$\{1,2,1\}\f$. The number of all such multisets
     is given by the binomial coefficient
     \f[       \begin{pmatrix} spaceDim + k - 1 \\ spaceDim - 1 \end{pmatrix}              \f]
 Therefore:
     \li     in 1D: cardinality = 1\n
     \li     in 2D: cardinality = k + 1\n
     \li     in 3D: cardinality = (k + 1)*(k + 2)/2
-    
+
     \param  operatorType     [in]     - k-th derivative operator Dk
     \param  spaceDim         [in]     - space dimension
     \return the number of all partial derivatives of order k
     */
   int getDkCardinality(const EOperator operatorType,
                        const int       spaceDim);
-  
-  
-  
+
+
+
 /***************************************************************************************************
  ***************************************************************************************************
  **                                                                                               **
@@ -206,9 +206,9 @@ Therefore:
  **                                                                                               **
  ***************************************************************************************************
  ***************************************************************************************************/
-  
+
   /** \brief  Fills <var>ordinalToTag_</var> and <var>tagToOrdinal_</var> by basis-specific tag data
-    
+
     \param  tagToOrdinal     [out]  - Lookup table for the DoF's ordinal by its tag
     \param  ordinalToTag     [out]  - Lookup table for the DoF's tag by its ordinal
     \param  tags             [in]   - a set of basis-dependent tags in flat (rank-1) array format.
@@ -226,9 +226,9 @@ Therefore:
                          const int                                      posScDim,
                          const int                                      posScOrd,
                          const int                                      posDfOrd);
-  
-  
-  
+
+
+
 /***************************************************************************************************
  ***************************************************************************************************
  **                                                                                               **
@@ -236,18 +236,18 @@ Therefore:
  **                                                                                               **
  ***************************************************************************************************
  ***************************************************************************************************/
-  
+
   enum TypeOfExactData{
     INTREPID_UTILS_FRACTION=0,
     INTREPID_UTILS_SCALAR
   };
-  
+
 /***************************************************************************************************
  *                                                                                                 *
  *               Utility functions for handling external data in tests                             *
  *                                                                                                 *
  ***************************************************************************************************/
-  
+
 /** \brief  Compares the values in the test matrix <var><b>testMat</b></var> to precomputed
             analytic values stored in a file, where the input matrix is an array of arrays.
 
@@ -325,26 +325,26 @@ void getAnalytic(Scalar * testMat,
  *                                                                                                 *
  ***************************************************************************************************/
 
-  
+
 /** \brief  Checks if the rank of the array argument is in the required range.
-    
+
     \param  errmsg          [out] - error message
     \param  array           [in]  - array argument
     \param  lowerBound      [in]  - lower bound for the rank of the array
     \param  upperBound      [in]  - upper bound for the rank of the array
-    
+
     \return true if lowerBound <= array.rank() <= rankR, false otherwise
   */
   template<class Array>
   bool requireRankRange(std::string&   errmsg,
-                        const Array&   array, 
-                        const int      lowerBound, 
+                        const Array&   array,
+                        const int      lowerBound,
                         const int      upperBound);
 
-  
-  
+
+
   /** \brief  Checks if two arrays have matching ranks.
-    
+
       \param  errmsg          [out] - error message
       \param  array1          [in]  - first array argument
       \param  array2          [in]  - second array argument
@@ -352,20 +352,20 @@ void getAnalytic(Scalar * testMat,
       \return true if array.rank1() == array2.rank(), false otherwise
     */
   template<class Array1, class Array2>
-  bool requireRankMatch(std::string&   errmsg, 
-                        const Array1&  array1, 
+  bool requireRankMatch(std::string&   errmsg,
+                        const Array1&  array1,
                         const Array2&  array2);
 
 
-  
+
   /** \brief  Checks if the specified array dimension is in the required range.
-    
+
       \param  errmsg          [out] - error message
       \param  array           [in]  - array argument
       \param  dim             [in]  - dimension ordinal, 0 <= dim < array
       \param  lowerBound      [in]  - lower bound for dimension <var>dim</var>
       \param  upperBound      [in]  - upper bound for dimension <var>dim</var>
-    
+
       \return true if lowerBound <= array.dimension(dim) <= upperBound, false otherwise
     */
   template<class Array>
@@ -376,7 +376,7 @@ void getAnalytic(Scalar * testMat,
                              const int     upperBound);
 
 
-  
+
   /** \brief  Checks arrays for a single matching dimension.
 
       \param  errmsg          [out] - error message
@@ -384,20 +384,20 @@ void getAnalytic(Scalar * testMat,
       \param  a1_dim0         [in]  - dimension ordinal for first array
       \param  array2          [in]  - second array argument
       \param  a2_dim0         [in]  - dimension ordinal for second array
-    
+
       \return true if array1.dimension(a1_dim0) == array2.dimension(a2_dim0), false otherwise
     */
   template<class Array1, class Array2>
   bool requireDimensionMatch(std::string&   errmsg,
-                             const Array1&  array1, 
+                             const Array1&  array1,
                              const int      a1_dim0,
-                             const Array2&  array2, 
+                             const Array2&  array2,
                              const int      a2_dim0);
 
 
-  
+
   /** \brief  Checks arrays for two matching dimensions.
-    
+
       \param  errmsg          [out] - error message
       \param  array1          [in]  - first array argument
       \param  a1_dim0         [in]  - 1st dimension ordinal for first array
@@ -405,20 +405,20 @@ void getAnalytic(Scalar * testMat,
       \param  array2          [in]  - second array argument
       \param  a2_dim0         [in]  - 1st dimension ordinal for second array
       \param  a2_dim1         [in]  - 2nd dimension ordinal for second array
-    
+
       \return true if array1.dimension(a1_dim*) == array2.dimension(a2_dim*) for *={0,1}, false otherwise
     */
   template<class Array1, class Array2>
   bool requireDimensionMatch(std::string&   errmsg,
-                             const Array1&  array1, 
+                             const Array1&  array1,
                              const int      a1_dim0, const int a1_dim1,
-                             const Array2&  array2, 
+                             const Array2&  array2,
                              const int      a2_dim0, const int a2_dim1);
 
 
-  
+
   /** \brief  Checks arrays for three matching dimensions.
-    
+
       \param  errmsg          [out] - error message
       \param  array1          [in]  - first array argument
       \param  a1_dim0         [in]  - 1st dimension ordinal for first array
@@ -428,20 +428,20 @@ void getAnalytic(Scalar * testMat,
       \param  a2_dim0         [in]  - 1st dimension ordinal for second array
       \param  a2_dim1         [in]  - 2nd dimension ordinal for second array
       \param  a2_dim2         [in]  - 3rd dimension ordinal for second array
-    
+
       \return true if array1.dimension(a1_dim*) == array2.dimension(a2_dim*) for *={0,1,2}, false otherwise
     */
   template<class Array1, class Array2>
   bool requireDimensionMatch(std::string&   errmsg,
-                             const Array1&  array1, 
+                             const Array1&  array1,
                              const int      a1_dim0, const int a1_dim1, const int a1_dim2,
-                             const Array2&  array2, 
+                             const Array2&  array2,
                              const int      a2_dim0, const int a2_dim1, const int a2_dim2);
 
-  
+
 
   /** \brief  Checks arrays for four matching dimensions.
-    
+
       \param  errmsg          [out] - error message
       \param  array1          [in]  - first array argument
       \param  a1_dim0         [in]  - 1st dimension ordinal for first array
@@ -453,20 +453,20 @@ void getAnalytic(Scalar * testMat,
       \param  a2_dim1         [in]  - 2nd dimension ordinal for second array
       \param  a2_dim2         [in]  - 3rd dimension ordinal for second array
       \param  a2_dim3         [in]  - 4th dimension ordinal for second array
-    
+
       \return true if array1.dimension(a1_dim*) == array2.dimension(a2_dim*) for *={0,1,2,3}, false otherwise
     */
   template<class Array1, class Array2>
   bool requireDimensionMatch(std::string&   errmsg,
-                             const Array1&  array1, 
+                             const Array1&  array1,
                              const int      a1_dim0, const int a1_dim1, const int a1_dim2, const int a1_dim3,
-                             const Array2&  array2, 
+                             const Array2&  array2,
                              const int      a2_dim0, const int a2_dim1, const int a2_dim2, const int a2_dim3);
 
 
-  
+
   /** \brief  Checks arrays for five matching dimensions.
-    
+
       \param  errmsg          [out] - error message
       \param  array1          [in]  - first array argument
       \param  a1_dim0         [in]  - 1st dimension ordinal for first array
@@ -480,26 +480,26 @@ void getAnalytic(Scalar * testMat,
       \param  a2_dim2         [in]  - 3rd dimension ordinal for second array
       \param  a2_dim3         [in]  - 4th dimension ordinal for second array
       \param  a2_dim4         [in]  - 5th dimension ordinal for second array
-    
+
       \return true if array1.dimension(a1_dim*) == array2.dimension(a2_dim*) for *={0,1,2,3,4}, false otherwise
     */
   template<class Array1, class Array2>
   bool requireDimensionMatch(std::string&   errmsg,
-                             const Array1&  array1, 
-                             const int      a1_dim0, const int a1_dim1, 
+                             const Array1&  array1,
+                             const int      a1_dim0, const int a1_dim1,
                              const int      a1_dim2, const int a1_dim3, const int a1_dim4,
-                             const Array2&  array2, 
-                             const int      a2_dim0, const int a2_dim1, 
+                             const Array2&  array2,
+                             const int      a2_dim0, const int a2_dim1,
                              const int      a2_dim2, const int a2_dim3, const int a2_dim4);
 
 
-  
+
   /** \brief  Checks arrays for all their dimensions match. Arrays with equal ranks required.
-    
+
       \param  errmsg          [out] - error message
       \param  array1          [in]  - first array argument
       \param  array2          [in]  - second array argument
-    
+
       \return true if array1.dimension(i) == array2.dimension(i), 0 <= i < rank, false otherwise.
    */
   template<class Array1, class Array2>
@@ -530,7 +530,7 @@ int compareToAnalytic(const Teuchos::Array< Teuchos::Array<Scalar> > testMat,
                       Scalar reltol,
                       int iprint,
                       TypeOfExactData analyticDataType ) {
-  
+
   // This little trick lets us print to std::cout only if
   // iprint > 0.
   Teuchos::RCP<std::ostream> outStream;
@@ -539,19 +539,18 @@ int compareToAnalytic(const Teuchos::Array< Teuchos::Array<Scalar> > testMat,
     outStream = Teuchos::rcp(&std::cout, false);
   else
     outStream = Teuchos::rcp(&bhs, false);
-  
+
   // Save the format state of the original std::cout.
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
-  
+
   std::string line;
-  std::string chunk;
   Scalar testentry;
   Scalar abstol;
   Scalar absdiff;
   int i=0, j=0;
   int err = 0;
-  
+
   while (! inputFile.eof() )
     {
     std::getline (inputFile,line);
@@ -600,10 +599,10 @@ int compareToAnalytic(const Teuchos::Array< Teuchos::Array<Scalar> > testMat,
     }
     i++;
     }
-  
+
   // reset format state of std::cout
   std::cout.copyfmt(oldFormatState);
-  
+
   return err;
 } // end compareToAnalytic
 
@@ -615,7 +614,7 @@ int compareToAnalytic(const Scalar * testMat,
                       Scalar reltol,
                       int iprint,
                       TypeOfExactData analyticDataType ) {
-  
+
   // This little trick lets us print to std::cout only if
   // iprint > 0.
   Teuchos::RCP<std::ostream> outStream;
@@ -624,19 +623,18 @@ int compareToAnalytic(const Scalar * testMat,
     outStream = Teuchos::rcp(&std::cout, false);
   else
     outStream = Teuchos::rcp(&bhs, false);
-  
+
   // Save the format state of the original std::cout.
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
-  
+
   std::string line;
-  std::string chunk;
   Scalar testentry;
   Scalar abstol;
   Scalar absdiff;
   int i=0, j=0, offset=0;
   int err = 0;
-  
+
   while (! inputFile.eof() )
     {
     std::getline (inputFile,line);
@@ -686,10 +684,10 @@ int compareToAnalytic(const Scalar * testMat,
     i++;
     offset = j;
     }
-  
+
   // reset format state of std::cout
   std::cout.copyfmt(oldFormatState);
-  
+
   return err;
 } // end compareToAnalytic
 
@@ -699,16 +697,15 @@ template<class Scalar>
 void getAnalytic(Teuchos::Array< Teuchos::Array<Scalar> > & testMat,
                  std::ifstream & inputFile,
                  TypeOfExactData analyticDataType ) {
-  
+
   // Save the format state of the original std::cout.
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
-  
+
   std::string line;
-  std::string chunk;
   Scalar testentry;
   int i=0, j=0;
-  
+
   while (! inputFile.eof() )
     {
     std::getline (inputFile,line);
@@ -741,7 +738,7 @@ void getAnalytic(Teuchos::Array< Teuchos::Array<Scalar> > & testMat,
     }
     i++;
     }
-  
+
   // reset format state of std::cout
   std::cout.copyfmt(oldFormatState);
 } // end getAnalytic
@@ -752,16 +749,15 @@ template<class Scalar>
 void getAnalytic(Scalar * testMat,
                  std::ifstream & inputFile,
                  TypeOfExactData analyticDataType) {
-  
+
   // Save the format state of the original std::cout.
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
-  
+
   std::string line;
-  std::string chunk;
   Scalar testentry;
   int i=0, j=0, offset=0;
-  
+
   while (! inputFile.eof() )
     {
     std::getline (inputFile,line);
@@ -795,7 +791,7 @@ void getAnalytic(Scalar * testMat,
     i++;
     offset = j;
     }
-  
+
   // reset format state of std::cout
   std::cout.copyfmt(oldFormatState);
 } // end getAnalytic
@@ -810,13 +806,13 @@ void getAnalytic(Scalar * testMat,
 
 template<class Array>
 bool requireRankRange(std::string&   errmsg,
-                      const Array&   array, 
-                      const int      lowerBound, 
+                      const Array&   array,
+                      const int      lowerBound,
                       const int      upperBound){
-  
+
   TEUCHOS_TEST_FOR_EXCEPTION( (lowerBound > upperBound) , std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireRankRange): lowerBound <= upperBound required!");
-  
+
   bool OK = true;
   if( (lowerBound == upperBound) && !(getrank(array) == lowerBound) ) {
     errmsg += "\n>>> Array rank = ";
@@ -841,13 +837,13 @@ bool requireRankRange(std::string&   errmsg,
 
 
 template<class Array1, class Array2>
-bool requireRankMatch(std::string&   errmsg, 
-                      const Array1&  array1, 
-                      const Array2&  array2){    
+bool requireRankMatch(std::string&   errmsg,
+                      const Array1&  array1,
+                      const Array2&  array2){
   bool OK = true;
   if(getrank(array1) != getrank(array2) ) {
     errmsg += "\n>>> Array ranks are required to match.";
-    OK = false; 
+    OK = false;
   }
   return OK;
 }
@@ -859,18 +855,18 @@ bool requireDimensionRange(std::string&  errmsg,
                            const int     dim,
                            const int     lowerBound,
                            const int     upperBound){
-  
+
   TEUCHOS_TEST_FOR_EXCEPTION( (lowerBound > upperBound) , std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionRange): lowerBound <= upperBound required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= dim) && (dim < getrank(array) ) ), 
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= dim) && (dim < getrank(array) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionRange): 0 <= dim < array.rank() required!");
-  
+
   bool OK = true;
   if( (lowerBound > upperBound) || ( dim >= getrank(array) ) ) {
     errmsg += "\n>>> Unexpected error: ";
     OK = false;
-  }  
+  }
   if( (lowerBound == upperBound) && !(array.dimension(dim) == lowerBound) ) {
     errmsg += "\n>>> dimension(";
     errmsg += (char)(48 + dim);
@@ -883,7 +879,7 @@ bool requireDimensionRange(std::string&  errmsg,
     errmsg += " required.";
     OK = false;
   }
-  else if( (lowerBound < upperBound) && 
+  else if( (lowerBound < upperBound) &&
            !( (lowerBound <= array.dimension(dim) ) && (array.dimension(dim) <= upperBound) ) ){
     errmsg += "\n>>> dimension(";
     errmsg += (char)(48 + dim);
@@ -907,10 +903,10 @@ template<class Array1, class Array2>
 bool requireDimensionMatch(std::string&   errmsg,
                            const Array1&  array1,
                            const int      a1_dim0,
-                           const Array2&  array2, 
+                           const Array2&  array2,
                            const int      a2_dim0){
-  
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim0) && (a1_dim0 < getrank(array1) ) ), 
+
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim0) && (a1_dim0 < getrank(array1) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim0 < array1.rank() required!");
   TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim0) && (a2_dim0 < getrank(array2) ) ),
@@ -933,15 +929,15 @@ bool requireDimensionMatch(std::string&   errmsg,
 
 template<class Array1, class Array2>
 bool requireDimensionMatch(std::string&   errmsg,
-                           const Array1&  array1, 
+                           const Array1&  array1,
                            const int      a1_dim0, const int a1_dim1,
-                           const Array2&  array2, 
+                           const Array2&  array2,
                            const int      a2_dim0, const int a2_dim1){
-  
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim0) && (a1_dim0 < getrank(array1) ) ), 
+
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim0) && (a1_dim0 < getrank(array1) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim0 < array1.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim1) && (a1_dim1 < getrank(array1) ) ), 
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim1) && (a1_dim1 < getrank(array1) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim1 < array1.rank() required!");
   TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim0) && (a2_dim0 < getrank(array2) ) ),
@@ -950,7 +946,7 @@ bool requireDimensionMatch(std::string&   errmsg,
   TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim1) && (a2_dim1 < getrank(array2) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim1 < array2.rank() required!");
- 
+
   bool OK = true;
   if( !requireDimensionMatch(errmsg, array1, a1_dim0, array2, a2_dim0) ){
     OK = false;
@@ -965,18 +961,18 @@ bool requireDimensionMatch(std::string&   errmsg,
 
 template<class Array1, class Array2>
 bool requireDimensionMatch(std::string&   errmsg,
-                           const Array1&  array1, 
+                           const Array1&  array1,
                            const int      a1_dim0, const int a1_dim1, const int a1_dim2,
-                           const Array2&  array2, 
+                           const Array2&  array2,
                            const int      a2_dim0, const int a2_dim1, const int a2_dim2){
-  
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim0) && (a1_dim0 < getrank(array1) ) ), 
+
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim0) && (a1_dim0 < getrank(array1) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim0 < array1.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim1) && (a1_dim1 < getrank(array1) ) ), 
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim1) && (a1_dim1 < getrank(array1) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim1 < array1.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim2) && (a1_dim2 < getrank(array1) ) ), 
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim2) && (a1_dim2 < getrank(array1) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim2 < array1.rank() required!");
   TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim0) && (a2_dim0 < getrank(array2) ) ),
@@ -988,8 +984,8 @@ bool requireDimensionMatch(std::string&   errmsg,
   TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim2) && (a2_dim2 < getrank(array2) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim2 < array2.rank() required!");
-  
-  
+
+
   bool OK = true;
   if( !requireDimensionMatch(errmsg, array1, a1_dim0, array2, a2_dim0) ){
     OK = false;
@@ -1007,21 +1003,21 @@ bool requireDimensionMatch(std::string&   errmsg,
 
 template<class Array1, class Array2>
 bool requireDimensionMatch(std::string&   errmsg,
-                           const Array1&  array1, 
+                           const Array1&  array1,
                            const int      a1_dim0, const int a1_dim1, const int a1_dim2, const int a1_dim3,
-                           const Array2&  array2, 
+                           const Array2&  array2,
                            const int      a2_dim0, const int a2_dim1, const int a2_dim2, const int a2_dim3){
-  
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim0) && (a1_dim0 < getrank(array1) ) ), 
+
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim0) && (a1_dim0 < getrank(array1) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim0 < array1.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim1) && (a1_dim1 < getrank(array1) ) ), 
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim1) && (a1_dim1 < getrank(array1) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim1 < array1.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim2) && (a1_dim2 < getrank(array1) ) ), 
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim2) && (a1_dim2 < getrank(array1) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim2 < array1.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim3) && (a1_dim3 < getrank(array1) ) ), 
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim3) && (a1_dim3 < getrank(array1) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim3 < array1.rank() required!");
   TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim0) && (a2_dim0 < getrank(array2) ) ),
@@ -1056,26 +1052,26 @@ bool requireDimensionMatch(std::string&   errmsg,
 
 template<class Array1, class Array2>
 bool requireDimensionMatch(std::string&   errmsg,
-                           const Array1&  array1, 
-                           const int      a1_dim0, const int a1_dim1, const int a1_dim2, 
+                           const Array1&  array1,
+                           const int      a1_dim0, const int a1_dim1, const int a1_dim2,
                            const int      a1_dim3, const int a1_dim4,
-                           const Array2&  array2, 
-                           const int      a2_dim0, const int a2_dim1, const int a2_dim2, 
+                           const Array2&  array2,
+                           const int      a2_dim0, const int a2_dim1, const int a2_dim2,
                            const int      a2_dim3, const int a2_dim4){
-  
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim0) && (a1_dim0 < getrank(array1) ) ), 
+
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim0) && (a1_dim0 < getrank(array1) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim0 < array1.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim1) && (a1_dim1 < getrank(array1) ) ), 
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim1) && (a1_dim1 < getrank(array1) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim1 < array1.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim2) && (a1_dim2 < getrank(array1) ) ), 
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim2) && (a1_dim2 < getrank(array1) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim2 < array1.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim3) && (a1_dim3 < getrank(array1) ) ), 
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim3) && (a1_dim3 < getrank(array1) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim3 < array1.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim4) && (a1_dim4 < getrank(array1) ) ), 
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim4) && (a1_dim4 < getrank(array1) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim4 < array1.rank() required!");
   TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim0) && (a2_dim0 < getrank(array2) ) ),
@@ -1093,7 +1089,7 @@ bool requireDimensionMatch(std::string&   errmsg,
   TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim4) && (a2_dim4 < getrank(array2) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim4 < array2.rank() required!");
-  
+
   bool OK = true;
   if( !requireDimensionMatch(errmsg, array1, a1_dim0, array2, a2_dim0) ){
     OK = false;
@@ -1119,17 +1115,17 @@ template<class Array1, class Array2>
 bool requireDimensionMatch(std::string&   errmsg,
                            const Array1&  array1,
                            const Array2&  array2){
-  
+
   TEUCHOS_TEST_FOR_EXCEPTION( !requireRankMatch(errmsg, array1, array2 ), std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): Arrays with equal ranks are required to test for all dimensions match." )
-  
-  bool OK = true;  
+
+  bool OK = true;
   for(int dim = 0; dim < getrank(array1); dim++){
     if( !requireDimensionMatch(errmsg, array1, dim, array2, dim) ){
       OK = false;
       break;
     }
-  } 
+  }
   return OK;
 }
 
