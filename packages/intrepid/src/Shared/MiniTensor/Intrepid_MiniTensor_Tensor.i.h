@@ -551,8 +551,9 @@ Tensor<T, N>::fill(T const & s)
 template<typename T, Index N>
 template<class ArrayT, typename iType>
 inline
-void
-Tensor<T, N>::fill(ArrayT & data, iType index1)
+typename Kokkos::Impl::enable_if< !Kokkos::Impl::is_same<ArrayT,T*>::value, void>::type
+Tensor<T, N>::fill(ArrayT & data, 
+            iType index1)
 {
   TensorBase<T, Store>::fill(data, index1);
   return;

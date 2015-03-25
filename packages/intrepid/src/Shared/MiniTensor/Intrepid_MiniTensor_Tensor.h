@@ -315,7 +315,7 @@ public:
   /// \param data_ptr pointer into array for filling components
   ///
   template<class ArrayT, typename iType>
-  void
+  typename Kokkos::Impl::enable_if< !Kokkos::Impl::is_same<ArrayT, T*>::value, void>::type
   fill(ArrayT & data, iType index1);
 
   template<class ArrayT, typename iType>
