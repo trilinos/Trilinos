@@ -8,10 +8,7 @@
 #include <iostream>
 #include <stdexcept> // For some recently added error handling
 
-#define MAX(a,b) (a<b?b:a)
-
 namespace Kokkos {
-
 
 template<typename Scalar, class device>
 struct MultiVectorDynamic{
