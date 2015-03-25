@@ -88,6 +88,7 @@ template <class Matrix, class Vector>
 int DirectSolverInterface<Matrix,Vector>::solveAmesos2(Vector* b, Vector* x)
 {
 
+
   //#pragma message("solve amesos2 compiled")
   //cout << "odd call";
   Teuchos::ParameterList subList = pList->sublist("Amesos2 Input");
@@ -95,12 +96,18 @@ int DirectSolverInterface<Matrix,Vector>::solveAmesos2(Vector* b, Vector* x)
   Teuchos::ParameterList subsubList = subList.sublist(solvertype + " Input");
   Teuchos::RCP<Amesos2::Solver<Matrix, Vector> > solver;
   solver = Amesos2::create<Matrix, Vector>
-    (solvertype, Teuchos::rcp(A,false), Teuchos::rcp(x,false), Teuchos::rcp(b,false));
+    (solvertype, 
+     //     Teuchos::RCP<Matrix>::rcpFromRef(*A),
+     //  Teuchos::RCP<Vector>::rcpFromRef(*x),
+     // Teuchos::RCP<Vector>::repFromRef(*b));
+
+     Teuchos::rcp(A,false), Teuchos::rcp(x,false), Teuchos::rcp(b,false));
 
   solver->symbolicFactorization().numericFactorization().solve();
 
   return 0;
 }
+
 #endif
 
 }// end namespace

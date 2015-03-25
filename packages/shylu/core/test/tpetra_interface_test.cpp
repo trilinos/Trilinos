@@ -118,10 +118,24 @@ int main(int argc, char** argv)
     }
 
 
-  Teuchos::RCP<Vector_t> x = Teuchos::rcp(new Vector_t(A->getColMap(), 1));
+  //Note:: Tpetra::MatrixMarket::Reader is providing A->getColMap() wrong and equal A->row
+  Teuchos::RCP<Vector_t> x = Teuchos::rcp(new Vector_t(A->getRowMap(), 1));
   Teuchos::RCP<Vector_t> b = Teuchos::rcp(new Vector_t(A->getRowMap(), 1));
   b->randomize();
   x->randomize();
+
+    cout << "num_vector: " << b->getNumVectors() << " " 
+       << x->getNumVectors() << endl;
+  cout << "length: " << b->getGlobalLength() << " "
+       << x->getGlobalLength() << endl;
+
+  cout << "A length" << A->getGlobalNumRows() << " " << A->getGlobalNumCols() << endl;
+  cout << "A local length" << A->getNodeNumRows() << " " << A->getNodeNumCols() << endl;
+
+ 
+
+ 
+
 
 
   /*-----------------have_interface-----------------*/
@@ -174,6 +188,16 @@ int main(int argc, char** argv)
 
   cout << " \n\n--------------------BIG BREAK --------------\n\n";
   Teuchos::writeParameterListToXmlOStream(*pLUList, std::cout);
+
+  cout << "num_vector: " << b->getNumVectors() << " " 
+       << x->getNumVectors() << endl;
+  cout << "length: " << b->getGlobalLength() << " "
+       << x->getGlobalLength() << endl;
+
+  cout << "A length" << A->getGlobalNumRows() << " " << A->getGlobalNumCols() << endl;
+  cout << "A local length" << A->getNodeNumRows() << " " << A->getNodeNumCols() << endl;
+
+
 
   ShyLU::DirectSolverInterface<Matrix_t, Vector_t> directsolver2(A.get(), pLUList.get());
 directsolver2.solve(b.get(),x.get());
