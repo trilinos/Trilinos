@@ -208,10 +208,8 @@ public:
    *              a parallel-consistent exception will be thrown.
    */
 
-  enum ModificationEndAuraOption{MODIFICATION_END_ADD_AURA, MODIFICATION_END_NO_AURA};
+  bool modification_end( modification_optimization opt = MOD_END_SORT);
 
-  bool modification_end( modification_optimization opt = MOD_END_SORT,
-                         ModificationEndAuraOption aura_option=MODIFICATION_END_ADD_AURA );
   bool modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt = MOD_END_SORT);
 
   /** \brief  Give away ownership of entities to other parallel processes.
@@ -875,6 +873,7 @@ protected: //functions
   void check_mesh_consistency();
   bool comm_mesh_verify_parallel_consistency(std::ostream & error_log);
   void delete_shared_entities_which_are_no_longer_in_owned_closure();
+  void write_modification_counts();
 
 private: //functions
 
@@ -1080,7 +1079,6 @@ private: //functions
 
   void reset_modification_counters();
   std::string create_modification_counts_filename() const;
-  void write_modification_counts();
   void write_modification_counts_to_stream_for_method_type(std::ostream& out, enum PublicOrInternalMethod methodType);
   void write_modification_counts_to_stream(std::ostream& out);
   void write_entity_modification_entry(std::ostream& out,

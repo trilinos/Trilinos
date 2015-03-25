@@ -4237,17 +4237,13 @@ void print_bucket_data(const stk::mesh::BulkData& mesh)
 }
 
 
-bool BulkData::modification_end( modification_optimization opt,
-                                 ModificationEndAuraOption aura_option)
+bool BulkData::modification_end( modification_optimization opt)
 {
   Trace_("stk::mesh::BulkData::modification_end");
 
-  bool return_value;
-  if(aura_option == MODIFICATION_END_ADD_AURA) {
-    return_value = internal_modification_end( true, opt );
-  } else {
-    return_value = internal_modification_end( false, opt );
-  }
+  const bool aura_always_on = true;
+  const bool return_value = internal_modification_end( aura_always_on, opt );
+
 #ifdef STK_VERBOSE_OUTPUT
   print_bucket_data(*this);
 #endif
