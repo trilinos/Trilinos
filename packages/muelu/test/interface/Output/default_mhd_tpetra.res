@@ -131,9 +131,9 @@ A 0    9999  29995     3.00  1
 A 1    3333   9997     3.00  1
 A 2    1111   3331     3.00  1
 
-Smoother (level 0) both : "Ifpack2::AdditiveSchwarz": {Initialized: true, Computed: true, Overlap level: 0, Subdomain reordering: "none", Combine mode: "ZERO", Global matrix dimensions: [9999, 9999], Inner solver: {"Ifpack2::RILUK": {Initialized: true, Computed: true, Level-of-fill: 0, Global matrix dimensions: [9999, 9999], Global nnz: 29995}}}
+Smoother (level 0) both : "Ifpack2::AdditiveSchwarz": {Initialized: true, Computed: true, Iterations: 1, Overlap level: 0, Subdomain reordering: "none", Combine mode: "ZERO", Global matrix dimensions: [9999, 9999], Inner solver: {"Ifpack2::RILUK": {Initialized: true, Computed: true, Level-of-fill: 0, Global matrix dimensions: [9999, 9999], Global nnz: 29995}}}
 
-Smoother (level 1) both : "Ifpack2::AdditiveSchwarz": {Initialized: true, Computed: true, Overlap level: 0, Subdomain reordering: "none", Combine mode: "ZERO", Global matrix dimensions: [3333, 3333], Inner solver: {"Ifpack2::RILUK": {Initialized: true, Computed: true, Level-of-fill: 0, Global matrix dimensions: [3333, 3333], Global nnz: 9997}}}
+Smoother (level 1) both : "Ifpack2::AdditiveSchwarz": {Initialized: true, Computed: true, Iterations: 1, Overlap level: 0, Subdomain reordering: "none", Combine mode: "ZERO", Global matrix dimensions: [3333, 3333], Inner solver: {"Ifpack2::RILUK": {Initialized: true, Computed: true, Level-of-fill: 0, Global matrix dimensions: [3333, 3333], Global nnz: 9997}}}
 
 Smoother (level 2) pre  : SuperLU solver interface, direct solve
 Smoother (level 2) post : no smoother
