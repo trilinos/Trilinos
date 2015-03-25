@@ -327,33 +327,35 @@ fflush( stderr );
 
 void Task::add_dependence( Task * before )
 {
-  int const state = *((volatile const int *) & m_state );
+  if ( before != 0 ) {
 
- // Can add dependence during construction or during execution
+    int const state = *((volatile const int *) & m_state );
 
-  if ( ( Kokkos::Experimental::TASK_STATE_CONSTRUCTING == state ||
-         Kokkos::Experimental::TASK_STATE_EXECUTING    == state ) &&
-       before != 0 &&
-       m_dep_size < m_dep_capacity ) {
+    // Can add dependence during construction or during execution
 
-    ++m_dep_size ;
+    if ( ( Kokkos::Experimental::TASK_STATE_CONSTRUCTING == state ||
+           Kokkos::Experimental::TASK_STATE_EXECUTING    == state ) &&
+         m_dep_size < m_dep_capacity ) {
 
-    assign( m_dep + (m_dep_size-1) , before );
+      ++m_dep_size ;
 
-    memory_fence();
-  }
-  else {
+      assign( m_dep + (m_dep_size-1) , before );
+
+      memory_fence();
+    }
+    else {
 
 fprintf( stderr
-       , "TaskMember< Threads >::add_dependence ERROR : task[%lx]{ state(%d) dep_size(%d) before(%lx) }\n"
+       , "TaskMember< Threads >::add_dependence ERROR : task[%lx]{ state(%d) dep_size(%d) m_dep_capacity(%d) }\n"
        , (unsigned long) this
        , m_state
        , m_dep_size
-       , (unsigned long) before
+       , m_dep_capacity
        );
 fflush( stderr );
 
-    Kokkos::Impl::throw_runtime_exception("TaskMember< Threads >::add_dependence ERROR");
+      Kokkos::Impl::throw_runtime_exception("TaskMember< Threads >::add_dependence ERROR");
+    }
   }
 }
 
