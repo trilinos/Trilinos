@@ -84,7 +84,8 @@ namespace Impl {
       }
 
 #ifdef KOKKOS_HAVE_SERIAL
-      if(Kokkos::Impl::is_same<Kokkos::Serial,Kokkos::DefaultExecutionSpace>::value) {
+      if(Kokkos::Impl::is_same<Kokkos::Serial,Kokkos::DefaultExecutionSpace>::value ||
+         Kokkos::Impl::is_same<Kokkos::Serial,Kokkos::DefaultHostExecutionSpace>::value ) {
         nthreads = 1;
       }
 #endif
@@ -97,7 +98,8 @@ namespace Impl {
       if(Kokkos::hwloc::available())
         numa = Kokkos::hwloc::get_available_numa_count();
 #ifdef KOKKOS_HAVE_SERIAL
-      if(Kokkos::Impl::is_same<Kokkos::Serial,Kokkos::DefaultExecutionSpace>::value) {
+      if(Kokkos::Impl::is_same<Kokkos::Serial,Kokkos::DefaultExecutionSpace>::value ||
+         Kokkos::Impl::is_same<Kokkos::Serial,Kokkos::DefaultHostExecutionSpace>::value ) {
         numa = 1;
       }
 #endif
@@ -140,7 +142,8 @@ namespace Impl {
                        * Kokkos::hwloc::get_available_numa_count();
       }
 #ifdef KOKKOS_HAVE_SERIAL
-      if(Kokkos::Impl::is_same<Kokkos::Serial,Kokkos::DefaultExecutionSpace>::value) {
+      if(Kokkos::Impl::is_same<Kokkos::Serial,Kokkos::DefaultExecutionSpace>::value ||
+         Kokkos::Impl::is_same<Kokkos::Serial,Kokkos::DefaultHostExecutionSpace>::value ) {
         nthreads = 1;
       }
 #endif
@@ -153,7 +156,8 @@ namespace Impl {
       if(Kokkos::hwloc::available())
         numa = Kokkos::hwloc::get_available_numa_count();
 #ifdef KOKKOS_HAVE_SERIAL
-      if(Kokkos::Impl::is_same<Kokkos::Serial,Kokkos::DefaultExecutionSpace>::value) {
+      if(Kokkos::Impl::is_same<Kokkos::Serial,Kokkos::DefaultExecutionSpace>::value ||
+         Kokkos::Impl::is_same<Kokkos::Serial,Kokkos::DefaultHostExecutionSpace>::value ) {
         numa = 1;
       }
 #endif
