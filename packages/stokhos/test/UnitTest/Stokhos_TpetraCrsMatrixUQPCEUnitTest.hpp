@@ -2306,5 +2306,5 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 #define CRSMATRIX_UQ_PCE_TESTS_N(N)                                     \
   typedef Stokhos::DeviceForNode2<N>::type Device;                      \
-  typedef Stokhos::DynamicStorage<int,double,typename Device::execution_space> DS;                \
+  typedef Stokhos::DynamicStorage<int,double,Device::execution_space> DS; \
   CRSMATRIX_UQ_PCE_TESTS_SLGN(DS, int, int, N)
