@@ -37,7 +37,6 @@
 #include "stk_mesh/base/Types.hpp"      // for ConnectivityOrdinal, etc
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include "stk_util/environment/ReportHandler.hpp"
-#include <stk_util/util/TrackingAllocator.hpp>
 
 namespace stk {
 namespace mesh {
@@ -105,9 +104,9 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
   static const EntityRank target_rank = TargetRank;
   static const ConnectivityType connectivity_type = FIXED_CONNECTIVITY;
 
-  typedef TrackedVectorMetaFunc<Entity, BucketRelationTag>::type              EntityVector;
-  typedef TrackedVectorMetaFunc<ConnectivityOrdinal, BucketRelationTag>::type ConnectivityOrdinalVector;
-  typedef TrackedVectorMetaFunc<Permutation, BucketRelationTag>::type         PermutationVector;
+  typedef std::vector<Entity> EntityVector;
+  typedef std::vector<ConnectivityOrdinal> ConnectivityOrdinalVector;
+  typedef std::vector<Permutation> PermutationVector;
 
   BucketConnectivity() //default constructed BucketConnectivity implies connectivity is not used
     : m_num_connectivity(0u)
@@ -552,13 +551,11 @@ public:
   static const EntityRank target_rank = TargetRank;
   static const ConnectivityType connectivity_type = DYNAMIC_CONNECTIVITY;
 
-  typedef typename DynamicConnectivityTagSelector<TargetRank>::type TagType;
-
-  typedef typename TrackedVectorMetaFunc<Entity,              TagType>::type              EntityVector;
-  typedef typename TrackedVectorMetaFunc<ConnectivityOrdinal, TagType>::type ConnectivityOrdinalVector;
-  typedef typename TrackedVectorMetaFunc<Permutation,         TagType>::type         PermutationVector;
-  typedef typename TrackedVectorMetaFunc<uint32_t,            TagType>::type              UInt32Vector;
-  typedef typename TrackedVectorMetaFunc<uint16_t,            TagType>::type              UInt16Vector;
+  typedef std::vector<Entity>              EntityVector;
+  typedef std::vector<ConnectivityOrdinal> ConnectivityOrdinalVector;
+  typedef std::vector<Permutation>         PermutationVector;
+  typedef std::vector<uint32_t>            UInt32Vector;
+  typedef std::vector<uint16_t>            UInt16Vector;
 
   static const unsigned chunk_size = 1u;
 

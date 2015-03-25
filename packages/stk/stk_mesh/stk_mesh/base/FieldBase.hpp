@@ -47,7 +47,7 @@
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_topology/topology.hpp"    // for topology, topology::rank_t, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
-#include "stk_util/util/TrackingAllocator.hpp"
+
 namespace shards { class ArrayDimTag; }
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class UnitTestFieldImpl; } }
@@ -65,12 +65,7 @@ struct FieldMetaData
   int m_bytes_per_entity;   // num bytes per entity, 0 means bucket does not have this field
 };
 
-#ifdef __IBMCPP__
-// The IBM compiler is easily confused by complex template types...
-typedef std::vector<FieldMetaData>                               FieldMetaDataVector;
-#else
-typedef TrackedVectorMetaFunc<FieldMetaData, FieldDataTag>::type FieldMetaDataVector;
-#endif
+typedef std::vector<FieldMetaData> FieldMetaDataVector;
 
 //----------------------------------------------------------------------
 /** \ingroup stk_stk_mesh_module

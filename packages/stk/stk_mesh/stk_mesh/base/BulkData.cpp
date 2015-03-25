@@ -74,7 +74,6 @@
 #include "stk_util/util/NamedPair.hpp"
 #include "stk_util/util/PairIter.hpp"   // for PairIter
 #include "stk_util/util/SameType.hpp"   // for SameType, etc
-#include "stk_util/util/TrackingAllocator.hpp"  // for tracking_allocator
 #include <stk_util/parallel/GenerateParallelUniqueIDs.hpp>
 
 namespace stk {
@@ -875,7 +874,7 @@ void BulkData::generate_new_ids(stk::topology::rank_t rank, size_t numIdsNeeded,
         }
     }
 
-    std::list<size_t, tracking_allocator<size_t, DeletedEntityTag> >::iterator iter = m_deleted_entities_current_modification_cycle.begin();
+    std::list<size_t>::iterator iter = m_deleted_entities_current_modification_cycle.begin();
     for (; iter != m_deleted_entities_current_modification_cycle.end(); ++iter)
     {
         size_t local_offset = *iter;
@@ -1181,8 +1180,8 @@ void BulkData::new_bucket_caching(EntityRank rank, Bucket* new_bucket)
         Selector const& sel = itr->first.second;
         const EntityRank map_rank = itr->first.first;
         if (map_rank == rank && sel(*new_bucket)) {
-          TrackedBucketVector& cached_buckets = itr->second;
-          TrackedBucketVector::iterator lb_itr = std::lower_bound(cached_buckets.begin(), cached_buckets.end(), new_bucket, BucketIdComparator());
+          BucketVector & cached_buckets = itr->second;
+          BucketVector::iterator lb_itr = std::lower_bound(cached_buckets.begin(), cached_buckets.end(), new_bucket, BucketIdComparator());
           cached_buckets.insert(lb_itr, new_bucket);
         }
       }
@@ -1306,8 +1305,8 @@ void BulkData::destroy_bucket_callback(EntityRank rank, Bucket const& dying_buck
       Selector const& sel = itr->first.second;
       const EntityRank map_rank = itr->first.first;
       if (map_rank == rank && sel(dying_bucket)) {
-        TrackedBucketVector & cached_buckets = itr->second;
-        TrackedBucketVector::iterator lb_itr = std::lower_bound(cached_buckets.begin(), cached_buckets.end(), bucket_id, BucketIdComparator());
+        BucketVector & cached_buckets = itr->second;
+        BucketVector::iterator lb_itr = std::lower_bound(cached_buckets.begin(), cached_buckets.end(), bucket_id, BucketIdComparator());
         ThrowAssertMsg(lb_itr != cached_buckets.end() && (*lb_itr)->bucket_id() == bucket_id,
                        "Error, bucket id " << bucket_id << ":\n " << dying_bucket << "\nWas selected by selector " << sel << " but was not in the cache");
         cached_buckets.erase(lb_itr);
@@ -1360,7 +1359,7 @@ void BulkData::reorder_buckets_callback(EntityRank rank, const std::vector<unsig
 {
   for (SelectorBucketMap::iterator itr = m_selector_to_buckets_map.begin(), end = m_selector_to_buckets_map.end();
        itr != end; ++itr) {
-    TrackedBucketVector& cached_buckets = itr->second;
+    BucketVector& cached_buckets = itr->second;
     std::sort(cached_buckets.begin(), cached_buckets.end(), BucketIdComparator());
   }
 
@@ -1645,15 +1644,15 @@ BucketVector const& BulkData::get_buckets(EntityRank rank, Selector const& selec
   SelectorBucketMap::iterator fitr =
     m_selector_to_buckets_map.find(search_item);
   if (fitr != m_selector_to_buckets_map.end()) {
-    TrackedBucketVector const& rv = fitr->second;
-    return reinterpret_cast<BucketVector const&>(rv);
+    BucketVector const& rv = fitr->second;
+    return rv;
   }
   else {
     BucketVector const& all_buckets_for_rank = buckets(rank); // lots of potential side effects! Need to happen before map insertion
     std::pair<SelectorBucketMap::iterator, bool> insert_rv =
-      m_selector_to_buckets_map.insert(std::make_pair( std::make_pair(rank, selector), TrackedBucketVector() ));
+      m_selector_to_buckets_map.insert(std::make_pair( std::make_pair(rank, selector), BucketVector() ));
     ThrowAssertMsg(insert_rv.second, "Should not have already been in map");
-    TrackedBucketVector& map_buckets = insert_rv.first->second;
+    BucketVector& map_buckets = insert_rv.first->second;
     for (size_t i = 0, e = all_buckets_for_rank.size(); i < e; ++i) {
       if (selector(*all_buckets_for_rank[i])) {
         map_buckets.push_back(all_buckets_for_rank[i]);
