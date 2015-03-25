@@ -144,10 +144,6 @@ namespace MueLu {
     HierarchyUtils<SC,LO,GO,NO>::AddNonSerializableDataToHierarchy(*mueLuFactory,*H, nonSerialList);
     
     mueLuFactory->SetupHierarchy(*H);
-
-    //    H->print(std::cout,MueLu::Debug);
-
-    //    exit(1);
     return rcp(new TpetraOperator<SC,LO,GO,NO>(H));
 
 
