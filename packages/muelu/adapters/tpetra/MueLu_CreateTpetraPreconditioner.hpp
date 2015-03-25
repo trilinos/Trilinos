@@ -139,8 +139,7 @@ namespace MueLu {
     H->GetLevel(0)->Set("Nullspace", nullspace);
 
     
-    Teuchos::ParameterList nonSerialList;
-    Teuchos::ParameterList dummyList;
+    Teuchos::ParameterList nonSerialList,dummyList;
     ExtractNonSerializableData(paramList, dummyList, nonSerialList);    
     HierarchyUtils<SC,LO,GO,NO>::AddNonSerializableDataToHierarchy(*mueLuFactory,*H, nonSerialList);
     

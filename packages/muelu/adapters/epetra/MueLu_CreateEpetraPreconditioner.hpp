@@ -78,14 +78,7 @@ namespace MueLu {
     bool hasParamList = paramListIn.numParams();
 
     RCP<HierarchyManager> mueLuFactory;
-    ParameterList nonSerialList, paramList;
-    if (hasParamList) {
-      // Separate serializable and non-serializable data from the parameter list
-      // The data is put into paramList and nonSerialList
-      ExtractNonSerializableData(paramListIn, paramList, nonSerialList);
-    } else {
-      paramList = paramListIn;
-    }
+    ParameterList paramList = paramListIn;
 
     std::string syntaxStr = "parameterlist: syntax";
     if (hasParamList && paramList.isParameter(syntaxStr) && paramList.get<std::string>(syntaxStr) == "ml") {
@@ -145,8 +138,9 @@ namespace MueLu {
     }
     H->GetLevel(0)->Set("Nullspace", nullspace);
 
-    if (hasParamList)
-      HierarchyUtils<SC,LO,GO,NO>::AddNonSerializableDataToHierarchy(*mueLuFactory, *H, nonSerialList);
+    Teuchos::ParameterList nonSerialList,dummyList;
+    ExtractNonSerializableData(paramList, dummyList, nonSerialList);    
+    HierarchyUtils<SC,LO,GO,NO>::AddNonSerializableDataToHierarchy(*mueLuFactory,*H, nonSerialList);
 
     mueLuFactory->SetupHierarchy(*H);
 
