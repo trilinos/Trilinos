@@ -16,6 +16,12 @@ ELSE()
   SET(${PACKAGE_NAME}_ENABLE_AMESOS_UMFPACK_DEFAULT OFF)
 ENDIF()
 
+IF(HAVE_INTREPID_KOKKOSCORE)
+  MESSAGE(STATUS "Enable Kokkos support: ON")
+ELSE()
+  MESSAGE(STATUS "Enable Kokkos support: OFF")
+ENDIF()
+
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_AMESOS_UMFPACK
   HAVE_INTREPID_AMESOS_UMFPACK
   "Enable Amesos with UmfPack functionality."
@@ -32,20 +38,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG_INF_CHECK
   "Enable a host of runtime debug checking for infs and nans."
   ${${PROJECT_NAME}_ENABLE_DEBUG}
   )
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  HAVE_INTREPID_KOKKOSCORE
-  HAVE_INTREPID_KOKKOSCORE
-  "Enable Kokkos support in Intrepid."
-  OFF
-  )
-
-IF(HAVE_INTREPID_KOKKOSCORE)
-  MESSAGE(STATUS "Enable Kokkos support: ON")
-ELSE()
-  MESSAGE(STATUS "Enable Kokkos support: OFF")
-ENDIF()
-
 
 #
 # C) Add the libraries, tests, and examples
