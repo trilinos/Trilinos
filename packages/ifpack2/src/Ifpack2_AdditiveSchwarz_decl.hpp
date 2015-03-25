@@ -528,7 +528,7 @@ public:
   /// this parameter, the following procedure specifies the default:
   /// <ol>
   /// <li> If <tt>LocalInverseType</tt> is just Preconditioner, then
-  ///      this class uses a default, which is currently "ILUT". </il>
+  ///      this class uses a default, which is currently "ILUT". </li>
   /// <li> If <tt>LocalInverseType</tt> is a concrete Preconditioner
   ///      subclass, and if that subclass is in the above supported
   ///      list of subdomain solver types, then this class uses that
@@ -719,6 +719,9 @@ private:
   //! Set up the localized matrix and the singleton filter.
   void setup ();
 
+  //! Local portion of the apply.
+  void localApply(MV &OverlappingX, MV &OverlappingY) const;
+
   /// \brief Whether the current ParameterList has a parameter for the
   ///   inner preconditioner's name.
   bool hasInnerPrecName () const;
@@ -825,6 +828,10 @@ private:
   bool FilterSingletons_;
   //! Matrix from which singleton rows have been filtered.
   Teuchos::RCP<SingletonFilter<row_matrix_type> > SingletonMatrix_;
+  //! The number of iterations to be done.
+  int NumIterations_;
+  //! True if and only if the initial guess is zero.
+  bool ZeroStartingSolution_;
 
   //! The total number of successful calls to initialize().
   int NumInitialize_;

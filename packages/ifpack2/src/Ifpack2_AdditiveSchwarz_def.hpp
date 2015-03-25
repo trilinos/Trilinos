@@ -352,6 +352,8 @@ AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A) :
   ReorderingAlgorithm_ ("none"),
   UseSubdomain_ (false),
   FilterSingletons_ (false),
+  NumIterations_(1),
+  ZeroStartingSolution_(true),
   NumInitialize_ (0),
   NumCompute_ (0),
   NumApply_ (0),
@@ -377,6 +379,8 @@ AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A,
   ReorderingAlgorithm_ ("none"),
   UseSubdomain_ (false),
   FilterSingletons_ (false),
+  NumIterations_(1),
+  ZeroStartingSolution_(true),
   NumInitialize_ (0),
   NumCompute_ (0),
   NumApply_ (0),
@@ -429,7 +433,7 @@ Teuchos::RCP<const Tpetra::RowMatrix<typename MatrixType::scalar_type, typename 
 template<class MatrixType,class LocalInverseType>
 void
 AdditiveSchwarz<MatrixType,LocalInverseType>::
-apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &X,
+apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &B,
        Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &Y,
        Teuchos::ETransp mode,
        scalar_type alpha,
@@ -439,6 +443,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   using Teuchos::TimeMonitor;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  typedef Teuchos::ScalarTraits<scalar_type> STS;
 
   const std::string timerName ("Ifpack2::AdditiveSchwarz::apply");
   RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
@@ -471,10 +476,10 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       "setInnerPreconditioner() with a null input, you must then call it with "
       "a nonnull input before you may call initialize() or compute().");
     TEUCHOS_TEST_FOR_EXCEPTION(
-      X.getNumVectors() != Y.getNumVectors(), std::invalid_argument,
+      B.getNumVectors() != Y.getNumVectors(), std::invalid_argument,
       "Ifpack2::AdditiveSchwarz::apply: "
-      "X and Y must have the same number of columns.  X has "
-      << X.getNumVectors() << " columns, but Y has " << Y.getNumVectors() << ".");
+      "B and Y must have the same number of columns.  B has "
+      << B.getNumVectors() << " columns, but Y has " << Y.getNumVectors() << ".");
     TEUCHOS_TEST_FOR_EXCEPTION(
       alpha != ONE, std::logic_error,
       "Ifpack2::AdditiveSchwarz::apply: Not implemented for alpha != 1.");
@@ -482,10 +487,12 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       beta != ZERO, std::logic_error,
       "Ifpack2::AdditiveSchwarz::apply: Not implemented for beta != 0.");
 
-    const size_t numVectors = X.getNumVectors ();
+    const size_t numVectors = B.getNumVectors ();
 
-    RCP<MV> OverlappingX,OverlappingY;
+    RCP<MV> OverlappingB,OverlappingY;
+    RCP<MV> globalOverlappingB;
 
+    // set up for overlap communication
     if (IsOverlapping_) {
       TEUCHOS_TEST_FOR_EXCEPTION(
         OverlappingMatrix_.is_null (), std::logic_error,
@@ -496,10 +503,8 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       // Setup if we're overlapping
       //
       // MV's constructor fills with zeros.
-      OverlappingX = rcp (new MV (OverlappingMatrix_->getRowMap (), numVectors));
+      OverlappingB = rcp (new MV (OverlappingMatrix_->getRowMap (), numVectors));
       OverlappingY = rcp (new MV (OverlappingMatrix_->getRowMap (), numVectors));
-      OverlappingMatrix_->importMultiVector (X, *OverlappingX, Tpetra::INSERT);
-      // FIXME from Ifpack1: Will not work with non-zero starting solutions.
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(
@@ -511,12 +516,12 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       // localMap_ has the same number of indices on each process that
       // Matrix_->getRowMap() does on that process.  Thus, we can do
       // the Import step without creating a new MV, just by viewing
-      // OverlappingX using Matrix_->getRowMap ().
-      OverlappingX = rcp (new MV (localMap_, numVectors));
+      // OverlappingB using Matrix_->getRowMap ().
+      OverlappingB = rcp (new MV (localMap_, numVectors));
       OverlappingY = rcp (new MV (localMap_, numVectors));
 
-      RCP<MV> globalOverlappingX =
-        OverlappingX->offsetViewNonConst (Matrix_->getRowMap (), 0);
+      globalOverlappingB =
+        OverlappingB->offsetViewNonConst (Matrix_->getRowMap (), 0);
 
       // Create Import object on demand, if necessary.
       if (DistributedImporter_.is_null ()) {
@@ -527,59 +532,63 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
           rcp (new import_type (Matrix_->getRowMap (),
                                 Matrix_->getDomainMap ()));
       }
-      globalOverlappingX->doImport (X, *DistributedImporter_, Tpetra::INSERT);
     }
 
-    if (FilterSingletons_) {
-      // process singleton filter
-      MV ReducedX (SingletonMatrix_->getRowMap (), numVectors);
-      MV ReducedY (SingletonMatrix_->getRowMap (), numVectors);
-      SingletonMatrix_->SolveSingletons (*OverlappingX, *OverlappingY);
-      SingletonMatrix_->CreateReducedRHS (*OverlappingY, *OverlappingX, ReducedX);
+    RCP<MV> R = rcp(new MV(B.getMap(),numVectors));
+    RCP<MV> C = rcp(new MV(Y.getMap(),numVectors)); //TODO no need to initialize to zero?
 
-      // process reordering
-      if (! UseReordering_) {
-        Inverse_->apply (ReducedX, ReducedY);
+    for (int ni=0; ni<NumIterations_; ++ni)
+    {
+
+      Tpetra::deep_copy(*R, B);
+      if (!ZeroStartingSolution_ || ni > 0) {
+        //calculate residual
+        Matrix_->apply (Y, *R, mode, -STS::one(), STS::one());
+      }
+
+      // do communication if necessary
+      if (IsOverlapping_) {
+        OverlappingMatrix_->importMultiVector (*R, *OverlappingB, Tpetra::INSERT);
+        //JJH We don't need to import the solution Y we are always solving AY=R with initial guess zero
+        //if (ZeroStartingSolution_ == false)
+        //  OverlappingMatrix_->importMultiVector (Y, *OverlappingY, Tpetra::INSERT);
+        /*
+          FIXME from Ifpack1: Will not work with non-zero starting solutions.
+          TODO  JJH 3/20/15   I don't know whether this comment is still valid.
+
+          Here is the log for the associated commit 720b2fa4 to Ifpack1:
+
+          "Added a note to recall that the nonzero starting solution will not
+          work properly if reordering, filtering or wider overlaps are used. This only
+          applied to methods like Jacobi, Gauss-Seidel, and SGS (in both point and block
+          version), and not to ILU-type preconditioners."
+        */
+      } else {
+        globalOverlappingB->doImport (*R, *DistributedImporter_, Tpetra::INSERT);
+      }
+
+      // local solve
+      localApply(*OverlappingB, *OverlappingY);
+
+      // do communication if necessary
+      if (IsOverlapping_) {
+        OverlappingMatrix_->exportMultiVector (*OverlappingY, *C, CombineMode_);
       }
       else {
-        MV ReorderedX (ReducedX, Teuchos::Copy);
-        MV ReorderedY (ReducedY, Teuchos::Copy);
-        ReorderedLocalizedMatrix_->permuteOriginalToReordered (ReducedX, ReorderedX);
-        Inverse_->apply (ReorderedX, ReorderedY);
-        ReorderedLocalizedMatrix_->permuteReorderedToOriginal (ReorderedY, ReducedY);
+        // mfh 16 Apr 2014: Make a view of Y with the same Map as
+        // OverlappingY, so that we can copy OverlappingY into Y.  This
+        // replaces code that iterates over all entries of OverlappingY,
+        // copying them one at a time into Y.  That code assumed that
+        // the rows of Y and the rows of OverlappingY have the same
+        // global indices in the same order; see Bug 5992.
+        RCP<MV> C_view = C->offsetViewNonConst (OverlappingY->getMap (), 0);
+        Tpetra::deep_copy (*C_view, *OverlappingY);
       }
 
-      // finish up with singletons
-      SingletonMatrix_->UpdateLHS (ReducedY, *OverlappingY);
-    }
-    else {
+      Y.update(STS::one(), *C, STS::one()); 
 
-      // process reordering
-      if (! UseReordering_) {
-        Inverse_->apply (*OverlappingX, *OverlappingY);
-      }
-      else {
-        MV ReorderedX (*OverlappingX, Teuchos::Copy);
-        MV ReorderedY (*OverlappingY, Teuchos::Copy);
-        ReorderedLocalizedMatrix_->permuteOriginalToReordered (*OverlappingX, ReorderedX);
-        Inverse_->apply (ReorderedX, ReorderedY);
-        ReorderedLocalizedMatrix_->permuteReorderedToOriginal (ReorderedY, *OverlappingY);
-      }
     }
 
-    if (IsOverlapping_) {
-      OverlappingMatrix_->exportMultiVector (*OverlappingY, Y, CombineMode_);
-    }
-    else {
-      // mfh 16 Apr 2014: Make a view of Y with the same Map as
-      // OverlappingY, so that we can copy OverlappingY into Y.  This
-      // replaces code that iterates over all entries of OverlappingY,
-      // copying them one at a time into Y.  That code assumed that
-      // the rows of Y and the rows of OverlappingY have the same
-      // global indices in the same order; see Bug 5992.
-      RCP<MV> Y_view = Y.offsetViewNonConst (OverlappingY->getMap (), 0);
-      Tpetra::deep_copy (*Y_view, *OverlappingY);
-    }
   } // Stop timing here.
 
   ++NumApply_;
@@ -588,6 +597,50 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   // calls.  Thus, we use = instead of +=.
   ApplyTime_ = timer->totalElapsedTime ();
 }
+
+template<class MatrixType,class LocalInverseType>
+void
+AdditiveSchwarz<MatrixType,LocalInverseType>::
+localApply(MV &OverlappingB, MV &OverlappingY) const
+{
+  const size_t numVectors = OverlappingB.getNumVectors ();
+  if (FilterSingletons_) {
+    // process singleton filter
+    MV ReducedB (SingletonMatrix_->getRowMap (), numVectors);
+    MV ReducedY (SingletonMatrix_->getRowMap (), numVectors);
+    SingletonMatrix_->SolveSingletons (OverlappingB, OverlappingY);
+    SingletonMatrix_->CreateReducedRHS (OverlappingY, OverlappingB, ReducedB);
+
+    // process reordering
+    if (! UseReordering_) {
+      Inverse_->apply (ReducedB, ReducedY);
+    }
+    else {
+      MV ReorderedB (ReducedB, Teuchos::Copy);
+      MV ReorderedY (ReducedY, Teuchos::Copy);
+      ReorderedLocalizedMatrix_->permuteOriginalToReordered (ReducedB, ReorderedB);
+      Inverse_->apply (ReorderedB, ReorderedY);
+      ReorderedLocalizedMatrix_->permuteReorderedToOriginal (ReorderedY, ReducedY);
+    }
+
+    // finish up with singletons
+    SingletonMatrix_->UpdateLHS (ReducedY, OverlappingY);
+  }
+  else {
+
+    // process reordering
+    if (! UseReordering_) {
+      Inverse_->apply (OverlappingB, OverlappingY);
+    }
+    else {
+      MV ReorderedB (OverlappingB, Teuchos::Copy);
+      MV ReorderedY (OverlappingY, Teuchos::Copy);
+      ReorderedLocalizedMatrix_->permuteOriginalToReordered (OverlappingB, ReorderedB);
+      Inverse_->apply (ReorderedB, ReorderedY);
+      ReorderedLocalizedMatrix_->permuteReorderedToOriginal (ReorderedY, OverlappingY);
+    }
+  }
+} //localApply method
 
 
 template<class MatrixType,class LocalInverseType>
@@ -627,6 +680,7 @@ setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
     "method should have replaced a null input list with a nonnull empty list "
     "by this point.  Please report this bug to the Ifpack2 developers.");
 
+  // TODO JJH 24March2015  The list needs to be validated.  Not sure why this is commented out.
   // try {
   //   List_.validateParameters (* getValidParameters ());
   // }
@@ -773,6 +827,9 @@ setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
       }
     }
   }
+
+  NumIterations_ = plist->get<int>("schwarz: num iterations", NumIterations_);
+  ZeroStartingSolution_ = plist->get<bool>("schwarz: zero starting solution", ZeroStartingSolution_);
 }
 
 
@@ -788,9 +845,11 @@ getValidParameters () const
   using Teuchos::rcp_const_cast;
 
   if (validParams_.is_null ()) {
-    const int overlapLevel = 0;
-    const bool useReordering = false;
-    const bool filterSingletons = false;
+    const int  overlapLevel         = 0;
+    const bool useReordering        = false;
+    const bool filterSingletons     = false;
+    const int  numIterations        = 1;
+    const bool zeroStartingSolution = true;
     ParameterList reorderingSublist;
     reorderingSublist.set ("order_method", std::string ("rcm"));
 
@@ -804,11 +863,16 @@ getValidParameters () const
     // ONLY.  It is IGNORED.
     plist->set ("schwarz: compute condest", false);
     plist->set ("schwarz: filter singletons", filterSingletons);
+    plist->set ("schwarz: num iterations", numIterations);
+    plist->set ("schwarz: zero starting solution", zeroStartingSolution);
 
     // FIXME (mfh 18 Nov 2013) Get valid parameters from inner solver.
+    //        JJH The inner solver should handle its own validation.
     //
     // FIXME (mfh 18 Nov 2013) Get valid parameters from Zoltan2, if
     // Zoltan2 was enabled in the build.
+    //        JJH Zoltan2 should handle its own validation.
+    //
 
     validParams_ = rcp_const_cast<const ParameterList> (plist);
   }
@@ -1012,6 +1076,7 @@ std::string AdditiveSchwarz<MatrixType,LocalInverseType>::description () const
   }
   out << "Initialized: " << (isInitialized () ? "true" : "false")
       << ", Computed: " << (isComputed () ? "true" : "false")
+      << ", Iterations: " << NumIterations_
       << ", Overlap level: " << OverlapLevel_
       << ", Subdomain reordering: \"" << ReorderingAlgorithm_ << "\"";
   out << ", Combine mode: \"";
