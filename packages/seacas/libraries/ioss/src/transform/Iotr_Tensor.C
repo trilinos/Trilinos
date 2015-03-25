@@ -152,9 +152,9 @@ namespace Iotr {
     case INVARIANTS:
       success = false;
       break;
-    }
     default:
       success = false;
+    }
       
     return success;
   }

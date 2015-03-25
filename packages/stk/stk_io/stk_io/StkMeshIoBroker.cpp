@@ -2100,6 +2100,25 @@ namespace stk {
 	      stk::mesh::EntityRank rank = part_primary_entity_rank(*part);
 	      // Get Ioss::GroupingEntity corresponding to this part...
 	      Ioss::GroupingEntity *entity = region->get_entity(part->name());
+
+	      // If the sideset has only a single sideblock and it
+	      // shares the same name as the parent sideset, then the
+	      // entity that we want to output on at this point is the
+	      // sideblock and not the sideset.  If there are multiple
+	      // sideblocks in the sideset, then they will be output
+	      // separately...
+	      if (entity != NULL && entity->type() == Ioss::SIDESET) {
+		Ioss::SideSet *sset = dynamic_cast<Ioss::SideSet*>(entity);
+		size_t block_count = sset->block_count();
+		if (block_count == 1) {
+		  Ioss::GroupingEntity *ssblock = sset->get_side_block(part->name());
+		  if (ssblock) {
+		    // NOTE: 'entity' is reset at this point.
+		    entity = ssblock;
+		  }
+		}
+	      }
+
 	      if (entity != NULL && entity->type() != Ioss::SIDESET) {
 		put_field_data(bulk_data, *part, rank, entity, m_named_fields, m_subset_selector.get());
 	      }
