@@ -48,7 +48,6 @@
 #include <stk_mesh/base/EntityCommDatabase.hpp>  // for EntityCommDatabase
 #include <stk_mesh/base/Ghosting.hpp>   // for Ghosting
 #include <stk_mesh/base/Selector.hpp>   // for Selector
-#include <stk_mesh/base/Trace.hpp>      // for TraceIfWatching, etc
 #include <stk_mesh/base/Types.hpp>      // for MeshIndex, EntityRank, etc
 #include <stk_mesh/baseImpl/BucketRepository.hpp>  // for BucketRepository
 #include <stk_mesh/baseImpl/EntityRepository.hpp>  // for EntityRepository, etc

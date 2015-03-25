@@ -856,9 +856,6 @@ inline void BulkData::compress_relation_capacity(Entity entity)
 
 inline void BulkData::set_mesh_index(Entity entity, Bucket * in_bucket, Bucket::size_type ordinal )
 {
-  // The trace statement forces this method to be defined after Entity
-  TraceIfWatching("stk::mesh::BulkData::set_mesh_index", LOG_ENTITY, entity_key(entity));
-
   entity_setter_debug_check(entity);
 
   if (in_bucket != NULL) {
@@ -893,9 +890,6 @@ inline void BulkData::set_local_id(Entity entity, unsigned id)
 
 inline bool BulkData::internal_set_parallel_owner_rank_but_not_comm_lists(Entity entity, int in_owner_rank)
 {
-  TraceIfWatching("stk::mesh::BulkData::set_entity_owner_rank", LOG_ENTITY, entity_key(entity));
-  DiagIfWatching(LOG_ENTITY, entity_key(entity), "new owner: " << in_owner_rank);
-
   entity_setter_debug_check(entity);
 
   int & nonconst_processor_rank = bucket(entity).m_owner_ranks[bucket_ordinal(entity)];

@@ -35,7 +35,6 @@
 #include <stddef.h>                     // for NULL, size_t
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <stk_mesh/base/Part.hpp>       // for Part, contain, etc
-#include <stk_mesh/base/Trace.hpp>      // for TraceIf
 #include <stk_mesh/base/Types.hpp>      // for PartVector, EntityRank
 #include <stk_util/environment/ReportHandler.hpp>  // for ThrowErrorMsgIf
 #include <vector>                       // for vector, etc
@@ -133,8 +132,6 @@ const PartVector PartRepository::get_mesh_parts() const
 
 Part * PartRepository::declare_part( const std::string & arg_name , EntityRank arg_rank, bool force_no_induce )
 {
-  TraceIf("stk::mesh::impl::PartRepository::declare_part", LOG_PART);
-
   const PartVector & all_parts = get_all_parts();
   Part * p = find( all_parts, arg_name );
 
@@ -167,7 +164,6 @@ void PartRepository::declare_subset_impl( Part & superset_part, Part & subset_pa
 void PartRepository::declare_subset( Part & superset, Part & subset )
 {
   static const char method[] = "stk::mesh::impl::PartRepository::declare_subset" ;
-  TraceIf(method, LOG_PART);
 
   if ( ! contain( subset.supersets() , superset ) ) {
 

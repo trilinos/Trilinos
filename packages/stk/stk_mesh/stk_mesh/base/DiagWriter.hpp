@@ -39,13 +39,6 @@
 #include <stk_mesh/base/Types.hpp>      // for EntityProc
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
 
-#ifdef STK_MESH_TRACE_ENABLED
-#include <stk_mesh/base/DiagWriter_fwd.hpp>
-#include <stk_util/util/Writer.hpp>
-#include <stk_util/util/Trace.hpp>
-#include <stk_util/util/WriterParser.hpp>
-#endif
-
 namespace stk { namespace diag { class Writer; } }
 namespace stk { namespace mesh { class Part; } }
 

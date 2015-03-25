@@ -39,11 +39,7 @@ char** gl_argv=0;
 
 int main(int argc, char **argv)
 {
-#ifdef STK_MESH_TRACE_ENABLED
-    use_case::UseCaseEnvironment use_case_environment(&argc, &argv); 
-#else
     stk::parallel_machine_init(&argc, &argv);
-#endif
 
     testing::InitGoogleTest(&argc, argv);
 
@@ -52,9 +48,7 @@ int main(int argc, char **argv)
 
     int returnVal = RUN_ALL_TESTS();
 
-#ifndef STK_MESH_TRACE_ENABLED
     stk::parallel_machine_finalize();
-#endif
 
     return returnVal;
 }
