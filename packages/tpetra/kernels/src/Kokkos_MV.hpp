@@ -2442,19 +2442,27 @@ normVector MV_Norm1(const normVector &r, const VectorType & x, int n = -1)
 template<class XVector>
 struct MV_NormInf_Functor
 {
-  typedef typename XVector::execution_space        execution_space;
-  typedef typename XVector::size_type            size_type;
-  typedef typename XVector::non_const_value_type          xvalue_type;
+  typedef typename XVector::execution_space             execution_space;
+  typedef typename XVector::size_type                   size_type;
+  typedef typename XVector::non_const_value_type        xvalue_type;
   typedef Details::InnerProductSpaceTraits<xvalue_type> IPT;
-  typedef typename IPT::dot_type               value_type[];
+  typedef typename IPT::mag_type                        mag_type;
+  typedef mag_type                                      value_type[];
 
-  typename XVector::const_type m_x ;
+  typename XVector::const_type m_x;
   size_type value_count;
 
-  MV_NormInf_Functor(XVector x):m_x(x),value_count(x.dimension_1()) {}
-  //--------------------------------------------------------------------------
+  MV_NormInf_Functor (const XVector& x) :
+    m_x(x), value_count (x.dimension_1 ())
+  {}
+
+  KOKKOS_INLINE_FUNCTION mag_type
+  max (const mag_type& x, const mag_type& y) const {
+    return (x > y) ? x : y;
+  }
+
   KOKKOS_INLINE_FUNCTION
-  void operator()( const size_type i, value_type sum ) const
+  void operator() (const size_type i, value_type sum) const
   {
 #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -2462,12 +2470,12 @@ struct MV_NormInf_Functor
 #ifdef KOKKOS_HAVE_PRAGMA_VECTOR
 #pragma vector always
 #endif
-    for(size_type k=0;k<value_count;k++){
-      sum[k] = MAX(sum[k],Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::abs(m_x(i,k)));
+    for (size_type k = 0; k < value_count; ++k) {
+      sum[k] = max (sum[k], IPT::norm (m_x(i,k)));
     }
   }
 
-  KOKKOS_INLINE_FUNCTION void init( value_type update) const
+  KOKKOS_INLINE_FUNCTION void init (value_type update) const
   {
 #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -2475,11 +2483,13 @@ struct MV_NormInf_Functor
 #ifdef KOKKOS_HAVE_PRAGMA_VECTOR
 #pragma vector always
 #endif
-    for(size_type k=0;k<value_count;k++)
-      update[k] = 0;
+    for (size_type k = 0; k < value_count; ++k) {
+      update[k] = Details::ArithTraits<mag_type>::zero ();
+    }
   }
-  KOKKOS_INLINE_FUNCTION void join( volatile value_type  update ,
-                                    const volatile value_type  source ) const
+
+  KOKKOS_INLINE_FUNCTION void
+  join (volatile value_type update, const volatile value_type source) const
   {
 #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -2487,8 +2497,8 @@ struct MV_NormInf_Functor
 #ifdef KOKKOS_HAVE_PRAGMA_VECTOR
 #pragma vector always
 #endif
-    for(size_type k=0;k<value_count;k++){
-      update[k] = MAX(update[k],source[k]);
+    for (size_type k = 0; k < value_count; ++k) {
+      update[k] = max (update[k], source[k]);
     }
   }
 };
@@ -3155,35 +3165,42 @@ V_Norm1( const VectorType & x, int n = -1)
 template<class XVector>
 struct V_NormInf_Functor
 {
-  typedef typename XVector::execution_space        execution_space;
-  typedef typename XVector::size_type            size_type;
-  typedef typename XVector::non_const_value_type          xvalue_type;
+  typedef typename XVector::execution_space             execution_space;
+  typedef typename XVector::size_type                   size_type;
+  typedef typename XVector::non_const_value_type        xvalue_type;
   typedef Details::InnerProductSpaceTraits<xvalue_type> IPT;
-  typedef typename IPT::dot_type               value_type;
+  typedef typename IPT::mag_type                        mag_type;
+  typedef mag_type                                      value_type;
 
-  typename XVector::const_type m_x ;
+  typename XVector::const_type m_x;
 
-  V_NormInf_Functor(XVector x):m_x(x) {}
-  //--------------------------------------------------------------------------
+  V_NormInf_Functor (const XVector& x) : m_x (x) {}
+
+  KOKKOS_INLINE_FUNCTION mag_type
+  max (const mag_type& x, const mag_type& y) const {
+    return (x > y) ? x : y;
+  }
+
   KOKKOS_INLINE_FUNCTION
-  void operator()( const size_type i, value_type& sum ) const
+  void operator() (const size_type i, value_type& sum) const
   {
-    sum = MAX(sum,Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::abs(m_x(i)));
+    sum = max (sum, IPT::norm (m_x(i)));
   }
 
   KOKKOS_INLINE_FUNCTION void init (value_type& update) const
   {
-    update = Details::ArithTraits<value_type>::zero ();
+    update = Details::ArithTraits<mag_type>::zero ();
   }
-  KOKKOS_INLINE_FUNCTION void join( volatile value_type&  update ,
-                                    const volatile value_type&  source ) const
+
+  KOKKOS_INLINE_FUNCTION void
+  join (volatile value_type& update, const volatile value_type& source) const
   {
-    update = MAX(update,source);
+    update = max (update, source);
   }
 };
 
 template<class VectorType>
-typename Details::InnerProductSpaceTraits<typename VectorType::non_const_value_type>::dot_type
+typename Details::InnerProductSpaceTraits<typename VectorType::non_const_value_type>::mag_type
 V_NormInf (const VectorType& x, int n = -1)
 {
   if (n < 0) {
@@ -3191,7 +3208,7 @@ V_NormInf (const VectorType& x, int n = -1)
   }
 
   typedef Details::InnerProductSpaceTraits<typename VectorType::non_const_value_type> IPT;
-  typedef typename IPT::dot_type value_type;
+  typedef typename IPT::mag_type value_type;
   value_type ret_val;
   Kokkos::parallel_reduce (n, V_NormInf_Functor<VectorType> (x), ret_val);
   return ret_val;
