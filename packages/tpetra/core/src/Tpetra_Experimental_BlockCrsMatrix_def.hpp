@@ -2422,14 +2422,12 @@ namespace Experimental {
       }
       const size_t numEnt =
         unpackRowCount<ST, LO, GO, HES> (importsK, offset, numBytes, numBytesPerValue);
-#ifdef HAVE_TPETRA_DEBUG
       if (numEnt > maxRowNumEnt) {
         std::ostream& err = this->markLocalErrorAndGetStream ();
         err << prefix << "At i = " << i << ", numEnt = " << numEnt
             << " > maxRowNumEnt = " << maxRowNumEnt << endl;
         continue;
       }
-#endif // HAVE_TPETRA_DEBUG
 
       const size_t numScalarEnt = numEnt * blockSize * blockSize;
       const LO lclRow = importLIDs[i];
@@ -2440,14 +2438,12 @@ namespace Experimental {
       const size_t numBytesOut =
         unpackRow<ST, LO, GO, HES> (gidsOut, valsOut, importsK, offset, numBytes,
                                     numEnt, numBytesPerValue, blockSize);
-#ifdef HAVE_TPETRA_DEBUG
       if (numBytes != numBytesOut) {
         std::ostream& err = this->markLocalErrorAndGetStream ();
         err << prefix << "At i = " << i << ", numBytes = " << numBytes
             << " != numBytesOut = " << numBytesOut << ".";
         continue;
       }
-#endif // HAVE_TPETRA_DEBUG
 
       // Convert incoming global indices to local indices.
       lids_out_type lidsOut = subview (lclColInds, pair_type (0, numEnt));
