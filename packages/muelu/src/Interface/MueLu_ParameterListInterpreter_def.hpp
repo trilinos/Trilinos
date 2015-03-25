@@ -115,7 +115,11 @@ namespace MueLu {
       SetFactoryParameterList(paramList);
 
     } else {
-      Validate(paramList);
+      // The validator doesn't work correctly for non-serializable data (Hint: template parameters), so strip it out
+      Teuchos::ParameterList validList, nonSerialList;
+
+      ExtractNonSerializableData(paramList, validList, nonSerialList);
+      Validate(validList);
       SetEasyParameterList(paramList);
     }
   }
@@ -159,11 +163,11 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetEasyParameterList(const Teuchos::ParameterList& constParamList) {
     ParameterList paramList;
+
     MUELU_SET_VAR_2LIST(constParamList, constParamList, "problem: type", std::string, problemType);
     if (problemType != "unknown") {
       paramList = *MasterList::GetProblemSpecificList(problemType);
       paramList.setParameters(constParamList);
-
     } else {
       // Create a non const copy of the parameter list
       // Working with a modifiable list is much much easier than with original one
@@ -269,14 +273,17 @@ namespace MueLu {
       RCP<FactoryManager> levelManager = rcp(new FactoryManager(*defaultManager));
       levelManager->SetVerbLevel(defaultManager->GetVerbLevel());
 
-      ParameterList levelList;
-      if (paramList.isSublist("level " + toString(levelID)))
-        levelList = paramList.sublist("level " + toString(levelID), true/*mustAlreadyExist*/);
-
       std::vector<keep_pair> keeps;
-      UpdateFactoryManager(levelList, paramList, *levelManager, levelID, keeps);
+      if (paramList.isSublist("level " + toString(levelID))) {
+	// We do this so the parameters on the level get flagged correctly as "used"
+	ParameterList & levelList = paramList.sublist("level " + toString(levelID), true/*mustAlreadyExist*/);
+	UpdateFactoryManager(levelList, paramList, *levelManager, levelID, keeps);
+      }	else {
+	ParameterList levelList;
+	UpdateFactoryManager(levelList, paramList, *levelManager, levelID, keeps);
+      }
+      
       this->keep_[levelID] = keeps;
-
       this->AddFactoryManager(levelID, 1, levelManager);
     }
 
@@ -352,6 +359,16 @@ namespace MueLu {
       reuseType = "none";
       this->GetOStream(Warnings0) << "Ignoring \"emin\" reuse option it is only compatible with \"emin\" multigrid algorithm" << std::endl;
     }
+
+    // == Non-serializable data ===
+    // Check both the parameter and the type
+    bool have_userA=false, have_userP=false, have_userR=false, have_userNS=false, have_userCO=false;
+    if (paramList.isParameter("A") &&           !paramList.get<RCP<Matrix> >("A").is_null())                have_userA=true;
+    if (paramList.isParameter("P") &&           !paramList.get<RCP<Matrix> >("P").is_null())                have_userP=true;
+    if (paramList.isParameter("R") &&           !paramList.get<RCP<Matrix> >("R").is_null())                have_userR=true;
+    if (paramList.isParameter("Nullspace") &&   !paramList.get<RCP<MultiVector> >("Nullspace").is_null())   have_userNS=true;
+    if (paramList.isParameter("Coordinates") && !paramList.get<RCP<MultiVector> >("Coordinates").is_null()) have_userCO=true;
+
 
     // === Smoothing ===
     // FIXME: should custom smoother check default list too?
@@ -573,13 +590,20 @@ namespace MueLu {
 
     // Nullspace
     RCP<NullspaceFactory> nullSpace = rcp(new NullspaceFactory());
-    nullSpace->SetFactory("Nullspace", manager.GetFactory("Ptent"));
-    manager.SetFactory("Nullspace", nullSpace);
+    if(!have_userNS) {
+      nullSpace->SetFactory("Nullspace", manager.GetFactory("Ptent"));
+      manager.SetFactory("Nullspace", nullSpace);
+    }
 
     // === Prolongation ===
-    if (multigridAlgo == "unsmoothed") {
+    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo != "unsmoothed" && multigridAlgo != "sa" && multigridAlgo != "pg" && multigridAlgo != "emin",
+                               Exceptions::RuntimeError, "Unknown multigrid algorithm: \"" << multigridAlgo << "\". Please consult User's Guide.");
+    if(have_userP) {
+      // User prolongator
+      manager.SetFactory("P", NoFactory::getRCP());
+    } else if (multigridAlgo == "unsmoothed") {
+      // Unsmoothed aggregation
       manager.SetFactory("P", Ptent);
-
     } else if (multigridAlgo == "sa") {
       // Smoothed aggregation
       RCP<SaPFactory> P = rcp(new SaPFactory());
@@ -657,46 +681,62 @@ namespace MueLu {
         isSymmetric = true;
       }
 
-      RCP<Factory> R;
-      if (isSymmetric)  R = rcp(new TransPFactory());
-      else              R = rcp(new GenericRFactory());
-
-      R->SetFactory("P", manager.GetFactory("P"));
-      manager.SetFactory("R", R);
+      if(have_userR) {
+	manager.SetFactory("R", NoFactory::getRCP());
+      } else {
+	RCP<Factory> R;
+	if (isSymmetric)  R = rcp(new TransPFactory());
+	else              R = rcp(new GenericRFactory());
+	
+	R->SetFactory("P", manager.GetFactory("P"));
+	manager.SetFactory("R", R);
+      }
 
     } else {
       manager.SetFactory("R", Teuchos::null);
     }
 
     // === RAP ===
-    RCP<RAPFactory> RAP = rcp(new RAPFactory());
-    ParameterList RAPparams;
-    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "transpose: use implicit", bool, RAPparams);
+    RCP<RAPFactory> RAP;
+    if(have_userA) {
+      manager.SetFactory("A", NoFactory::getRCP());
+    } else  {
+      RAP = rcp(new RAPFactory());
+      ParameterList RAPparams;
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "transpose: use implicit", bool, RAPparams);
 #if REUSE_MATRIX_GRAPHS
-    if (reuseType == "RP") {
-      RAPparams.set("Keep AP Pattern",  true);
-      RAPparams.set("Keep RAP Pattern", true);
-    }
+      // This should be enable once Tpetra supports proper graph reuse in MMM
+      // At the moment, only Epetra does, and Tpetra throws
+      if (reuseType == "RP") {
+	RAPparams.set("Keep AP Pattern",  true);
+	RAPparams.set("Keep RAP Pattern", true);
+      }
 #endif
-    RAP->SetParameterList(RAPparams);
-    RAP->SetFactory("P", manager.GetFactory("P"));
-    if (!this->implicitTranspose_)
-      RAP->SetFactory("R", manager.GetFactory("R"));
-    if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: export visualization data", bool, true)) {
-      RCP<AggregationExportFactory> aggExport = rcp(new AggregationExportFactory());
-      aggExport->SetFactory("DofsPerNode", manager.GetFactory("DofsPerNode"));
-      RAP->AddTransferFactory(aggExport);
-    }
-    manager.SetFactory("A", RAP);
+      RAP->SetParameterList(RAPparams);
+      RAP->SetFactory("P", manager.GetFactory("P"));
+      if (!this->implicitTranspose_)
+	RAP->SetFactory("R", manager.GetFactory("R"));
+      if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: export visualization data", bool, true)) {
+	RCP<AggregationExportFactory> aggExport = rcp(new AggregationExportFactory());
+	aggExport->SetFactory("DofsPerNode", manager.GetFactory("DofsPerNode"));
+	RAP->AddTransferFactory(aggExport);
+      }
+      manager.SetFactory("A", RAP);
+    }      
+
 
     // === Coordinates ===
     if (useCoordinates_) {
-      RCP<CoordinatesTransferFactory> coords = rcp(new CoordinatesTransferFactory());
-      coords->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
-      coords->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
-      manager.SetFactory("Coordinates", coords);
-
-      RAP->AddTransferFactory(manager.GetFactory("Coordinates"));
+      if(have_userCO) {
+	manager.SetFactory("Coordinates", NoFactory::getRCP());
+      } else {
+	RCP<CoordinatesTransferFactory> coords = rcp(new CoordinatesTransferFactory());
+	coords->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
+	coords->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
+	manager.SetFactory("Coordinates", coords);
+	
+	RAP->AddTransferFactory(manager.GetFactory("Coordinates"));
+      }
     }
 
     if (reuseType == "RP" || reuseType == "RAP" || reuseType == "full")

@@ -295,13 +295,16 @@ namespace MueLu {
     PrintMonitor m0(*this, "Level " +  Teuchos::Utils::toString(coarseLevelID), static_cast<MsgType>(GetVerbLevel()));
 
     // Build coarse level hierarchy
+    RCP<Operator> Ac = Teuchos::null;
     TopRAPFactory coarseRAPFactory(fineLevelManager, coarseLevelManager);
-    if (!isFinestLevel) {
+
+    if (level.IsAvailable("A")) {
+      Ac = level.Get<RCP<Operator> >("A");
+    } else if (!isFinestLevel) {
       // We only build here, the release is done later
       coarseRAPFactory.Build(*level.GetPreviousLevel(), level);
     }
 
-    RCP<Operator> Ac = Teuchos::null;
     if (level.IsAvailable("A"))
       Ac = level.Get<RCP<Operator> >("A");
     RCP<Matrix> Acm = rcp_dynamic_cast<Matrix>(Ac);

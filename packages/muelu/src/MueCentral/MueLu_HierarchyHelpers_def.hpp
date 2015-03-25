@@ -85,7 +85,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void TopRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & fineLevel, Level & coarseLevel) const {
-    if (PFact_ != Teuchos::null) {
+    if ((PFact_ != Teuchos::null) && (PFact_ != NoFactory::getRCP())) {
       RCP<Operator> oP = coarseLevel.Get<RCP<Operator> >("P", PFact_.get());
       RCP<Matrix>    P = rcp_dynamic_cast<Matrix>(oP);
       if (!P.is_null()) coarseLevel.Set("P",  P, NoFactory::get());
@@ -95,7 +95,7 @@ namespace MueLu {
 
     }
 
-    if (RFact_ != Teuchos::null) {
+    if ((RFact_ != Teuchos::null) && (RFact_ != NoFactory::getRCP()) ) {
       RCP<Operator> oR = coarseLevel.Get<RCP<Operator> >("R", RFact_.get());
       RCP<Matrix>    R = rcp_dynamic_cast<Matrix>(oR);
       if (!R.is_null()) coarseLevel.Set("R",  R, NoFactory::get());
