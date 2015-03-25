@@ -61,15 +61,6 @@ template<class Scalar,
      class LocalOrdinal,
      class GlobalOrdinal,
      class Node>
-TEUCHOS_DEPRECATED
-RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-RowMatrixTransposer (const crs_matrix_type& origMatrix)
-  : origMatrix_ (Teuchos::rcpFromRef (origMatrix)) {}
-
-template<class Scalar,
-     class LocalOrdinal,
-     class GlobalOrdinal,
-     class Node>
 Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 createTranspose ()

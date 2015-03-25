@@ -67,7 +67,6 @@
 #include "Ifpack2_SupportGraph_decl.hpp"
 #endif
 
-#include "Ifpack2_Condest.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
 #include "Ifpack2_LocalFilter_def.hpp"
 #include "Ifpack2_OverlappingRowMatrix_def.hpp"
@@ -349,8 +348,6 @@ AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A) :
   IsOverlapping_ (false),
   OverlapLevel_ (0),
   CombineMode_ (Tpetra::ZERO),
-  Condest_ (-Teuchos::ScalarTraits<magnitude_type>::one ()),
-  ComputeCondest_ (true),
   UseReordering_ (false),
   ReorderingAlgorithm_ ("none"),
   UseSubdomain_ (false),
@@ -376,8 +373,6 @@ AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A,
   IsOverlapping_ (false),
   OverlapLevel_ (overlapLevel),
   CombineMode_ (Tpetra::ZERO),
-  Condest_ (-Teuchos::ScalarTraits<magnitude_type>::one ()),
-  ComputeCondest_ (true),
   UseReordering_ (false),
   ReorderingAlgorithm_ ("none"),
   UseSubdomain_ (false),
@@ -650,8 +645,6 @@ setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
   // values, which could be different than their values in the
   // original list.
 
-  ComputeCondest_ = plist->get ("schwarz: compute condest", ComputeCondest_);
-
   bool gotCombineMode = false;
   try {
     CombineMode_ = getIntegralValue<Tpetra::CombineMode> (List_, "schwarz: combine mode");
@@ -797,7 +790,6 @@ getValidParameters () const
   if (validParams_.is_null ()) {
     const int overlapLevel = 0;
     const bool useReordering = false;
-    const bool computeCondest = false;
     const bool filterSingletons = false;
     ParameterList reorderingSublist;
     reorderingSublist.set ("order_method", std::string ("rcm"));
@@ -808,7 +800,9 @@ getValidParameters () const
     plist->set ("schwarz: overlap level", overlapLevel);
     plist->set ("schwarz: use reordering", useReordering);
     plist->set ("schwarz: reordering list", reorderingSublist);
-    plist->set ("schwarz: compute condest", computeCondest);
+    // mfh 24 Mar 2015: We accept this for backwards compatibility
+    // ONLY.  It is IGNORED.
+    plist->set ("schwarz: compute condest", false);
     plist->set ("schwarz: filter singletons", filterSingletons);
 
     // FIXME (mfh 18 Nov 2013) Get valid parameters from inner solver.
@@ -849,7 +843,6 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
 
     IsInitialized_ = false;
     IsComputed_ = false;
-    Condest_ = -Teuchos::ScalarTraits<magnitude_type>::one ();
 
     RCP<const Teuchos::Comm<int> > comm = Matrix_->getComm ();
     RCP<const map_type> rowMap = Matrix_->getRowMap ();
@@ -946,7 +939,6 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::compute ()
     TimeMonitor timeMon (*timer);
 
     IsComputed_ = false;
-    Condest_ = -Teuchos::ScalarTraits<magnitude_type>::one ();
     Inverse_->compute ();
   } // Stop timing here.
 
@@ -964,33 +956,6 @@ template<class MatrixType,class LocalInverseType>
 bool AdditiveSchwarz<MatrixType,LocalInverseType>::isComputed() const
 {
   return IsComputed_;
-}
-
-
-template<class MatrixType,class LocalInverseType>
-typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
-AdditiveSchwarz<MatrixType,LocalInverseType>::
-computeCondEst (CondestType CT,
-                local_ordinal_type MaxIters,
-                magnitude_type Tol,
-                const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &Matrix_in)
-{
-  // The preconditioner must have been computed in order to estimate
-  // its condition number.
-  if (! isComputed ()) {
-    return -Teuchos::ScalarTraits<magnitude_type>::one ();
-  }
-
-  Condest_ = Ifpack2::Condest (*this, CT, MaxIters, Tol, Matrix_in);
-  return Condest_;
-}
-
-
-template<class MatrixType,class LocalInverseType>
-typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
-AdditiveSchwarz<MatrixType,LocalInverseType>::getCondEst() const
-{
-  return Condest_;
 }
 
 
@@ -1485,7 +1450,6 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     IsComputed_ = false;
 
     // Reset all the state computed in initialize() and compute().
-    Condest_ = -Teuchos::ScalarTraits<magnitude_type>::one ();
     OverlappingMatrix_ = Teuchos::null;
     ReorderedLocalizedMatrix_ = Teuchos::null;
     innerMatrix_ = Teuchos::null;

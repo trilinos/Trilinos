@@ -3780,18 +3780,6 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  TPETRA_DEPRECATED
-  KokkosClassic::MultiVector<
-    Scalar, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
-  MultiVector<
-    Scalar, LocalOrdinal, GlobalOrdinal,
-    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  getLocalMVNonConst ()
-  {
-    return this->getLocalMV ();
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   std::string
   MultiVector<
     Scalar, LocalOrdinal, GlobalOrdinal,

@@ -1105,19 +1105,6 @@ namespace Tpetra {
     ///   backwards compatibility use case.
     KokkosClassic::MultiVector<Scalar, node_type> getLocalMV () const;
 
-    /// \brief A nonconst reference to a view of the underlying
-    ///   KokkosClassic::MultiVector object.
-    ///
-    /// \brief This method is for expert users only.
-    ///   It may change or be removed at any time.
-    ///
-    /// \warning This method is DEPRECATED.  It may disappear at any
-    ///   time.  Please call getLocalMV() instead.  There was never
-    ///   actually a need for a getLocalMVNonConst() method, as far as
-    ///   I can tell.
-    TPETRA_DEPRECATED KokkosClassic::MultiVector<Scalar, node_type>
-    getLocalMVNonConst ();
-
     /// \brief Get the Kokkos::DualView which implements local storage.
     ///
     /// Instead of getting the Kokkos::DualView, we highly recommend

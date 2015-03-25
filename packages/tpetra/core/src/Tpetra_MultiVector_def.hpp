@@ -3093,14 +3093,6 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  TEUCHOS_DEPRECATED
-  KokkosClassic::MultiVector<Scalar,Node>&
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,true>::
-  getLocalMVNonConst () {
-    return lclMV_;
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   std::string
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,true>::
   description() const

@@ -61,12 +61,6 @@ namespace Belos {
     }
   } // namespace (anonymous)
 
-  BELOS_DEPRECATED const char* 
-  toString (const StatusType status)
-  {
-    return convertStatusTypeToRawString (status);
-  }
-
   std::string
   convertStatusTypeToString (const StatusType status)
   {

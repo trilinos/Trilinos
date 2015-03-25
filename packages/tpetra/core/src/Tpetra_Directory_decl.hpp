@@ -132,32 +132,6 @@ namespace Tpetra {
     //! @name Constructors/Destructor.
     //@{
 
-    /// \brief Constructor.
-    ///
-    /// \param map [in] The Map object for which to create the Directory.
-    ///
-    /// \note This constructor is invoked by Map's constructor, using
-    ///   the Map's <tt>this</tt> pointer as the input argument.
-    explicit TPETRA_DEPRECATED Directory (const map_type& map);
-
-    /// \brief Constructor (using a tie break class to decide ownership).
-    ///
-    /// \param map [in] The Map object for which to create the Directory.
-    /// \param tie_break [in] A TieBreak instance to determine ownership.
-    ///
-    /// \note This constructor is NOT invoked by Map's constructor,
-    ///   and for now only works with noncontiguous Maps.
-    explicit TPETRA_DEPRECATED
-    Directory (const map_type& map,
-               const Tpetra::Details::TieBreak<LocalOrdinal,GlobalOrdinal>& tie_break);
-
-    /// \brief Constructor (preserved for backwards compatibility with 11.4).
-    ///
-    /// This constructor is DEPRECATED.  Please use the constructor
-    /// that takes a <tt>const map_type&</tt>.
-    explicit TPETRA_DEPRECATED
-    Directory (const Teuchos::RCP<const map_type>& map);
-
     /// \brief Default constructor: the only one you should use.
     ///
     /// To initialize the Directory, call the appropriate initialize()
@@ -290,15 +264,6 @@ namespace Tpetra {
                          const Teuchos::ArrayView<const GlobalOrdinal>& globalIDs,
                          const Teuchos::ArrayView<int>& nodeIDs) const;
 
-    /// \brief DEPRECATED method; does not work.
-    ///
-    /// This method only exists so that the 11.4 backwards
-    /// compatibility build passes.  This method does NOT succeed.  It
-    /// throws an exception on all calling processes, in fact.
-    LookupStatus TEUCHOS_DEPRECATED
-    getDirectoryEntries (const Teuchos::ArrayView<const GlobalOrdinal>& globalIDs,
-                         const Teuchos::ArrayView<int>& nodeIDs) const;
-
     /// \brief Given a global ID list, return a list of their owning
     ///   process IDs and their corresponding local IDs.
     ///
@@ -337,16 +302,6 @@ namespace Tpetra {
     LookupStatus
     getDirectoryEntries (const map_type& map,
                          const Teuchos::ArrayView<const GlobalOrdinal>& globalIDs,
-                         const Teuchos::ArrayView<int>& nodeIDs,
-                         const Teuchos::ArrayView<LocalOrdinal>& localIDs) const;
-
-    /// \brief DEPRECATED method; does not work.
-    ///
-    /// This method only exists so that the 11.4 backwards
-    /// compatibility build passes.  This method does NOT succeed.  It
-    /// throws an exception on all calling processes, in fact.
-    LookupStatus TEUCHOS_DEPRECATED
-    getDirectoryEntries (const Teuchos::ArrayView<const GlobalOrdinal>& globalIDs,
                          const Teuchos::ArrayView<int>& nodeIDs,
                          const Teuchos::ArrayView<LocalOrdinal>& localIDs) const;
 

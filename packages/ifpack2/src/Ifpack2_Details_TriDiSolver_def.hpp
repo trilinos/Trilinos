@@ -43,7 +43,6 @@
 #ifndef IFPACK2_DETAILS_TRIDISOLVER_DEF_HPP
 #define IFPACK2_DETAILS_TRIDISOLVER_DEF_HPP
 
-#include "Ifpack2_Condest.hpp"
 #include "Ifpack2_LocalFilter.hpp"
 #include "Teuchos_LAPACK.hpp"
 
@@ -164,25 +163,6 @@ template<class MatrixType>
 double
 TriDiSolver<MatrixType, false>::getApplyTime () const {
   return applyTime_;
-}
-
-
-template<class MatrixType>
-typename TriDiSolver<MatrixType, false>::magnitude_type
-TriDiSolver<MatrixType, false>::
-computeCondEst (CondestType type,
-                local_ordinal_type maxIters,
-                magnitude_type tol,
-                const Teuchos::Ptr<const row_matrix_type>& matrix)
-{
-  return Ifpack2::Condest (*this, type, maxIters, tol, matrix);
-}
-
-
-template<class MatrixType>
-typename TriDiSolver<MatrixType, false>::magnitude_type
-TriDiSolver<MatrixType, false>::getCondEst () const {
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
 }
 
 
@@ -347,10 +327,10 @@ void TriDiSolver<MatrixType, false>::factor (Teuchos::SerialTriDiMatrix<int, sca
   Teuchos::LAPACK<int, scalar_type> lapack;
   int INFO = 0;
   lapack.GTTRF (A.numRowsCols (),
-		A.DL(),
-		A.D(),
-		A.DU(),
-		A.DU2(),
+                A.DL(),
+                A.D(),
+                A.DU(),
+                A.DU2(),
                 ipiv.getRawPtr (), &INFO);
   // INFO < 0 is a bug.
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -421,10 +401,10 @@ applyImpl (const MV& X,
     const char trans =
       (mode == CONJ_TRANS ? 'C' : (mode == TRANS ? 'T' : 'N'));
     lapack.GTTRS (trans, A_local_tridi_.numRowsCols(), numVecs,
-		  A_local_tridi_.DL(),
-		  A_local_tridi_.D(),
-		  A_local_tridi_.DU(),
-		  A_local_tridi_.DU2(),		 
+                  A_local_tridi_.DL(),
+                  A_local_tridi_.D(),
+                  A_local_tridi_.DU(),
+                  A_local_tridi_.DU2(),
                   ipiv_.getRawPtr (), Y_ptr, Y_stride, &INFO);
     TEUCHOS_TEST_FOR_EXCEPTION(
       INFO != 0, std::runtime_error, "Ifpack2::Details::TriDiSolver::"
@@ -544,8 +524,8 @@ std::string TriDiSolver<MatrixType, false>::description () const
 
 
 template<class MatrixType>
-void TriDiSolver<MatrixType, false>::describeLocal (Teuchos::FancyOStream& out, 
-						    const Teuchos::EVerbosityLevel verbLevel) const {
+void TriDiSolver<MatrixType, false>::describeLocal (Teuchos::FancyOStream& out,
+                                                    const Teuchos::EVerbosityLevel verbLevel) const {
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
   using Teuchos::RCP;
@@ -673,8 +653,8 @@ void TriDiSolver<MatrixType, false>::extract (Teuchos::SerialTriDiMatrix<int, sc
       // We use += instead of =, in case there are duplicate entries
       // in the row.  There should not be, but why not be general?
       // NOTE: we only extract the TriDi part of the row matrix. Do not extract DU2
-      if( localCol >= localRow-1 && localCol <= localRow+1 ) 
-	A_local_tridi(localRow, localCol) += val;
+      if( localCol >= localRow-1 && localCol <= localRow+1 )
+        A_local_tridi(localRow, localCol) += val;
     }
   }
 }
@@ -762,24 +742,6 @@ TriDiSolver<MatrixType, true>::getComputeTime () const {
 template<class MatrixType>
 double
 TriDiSolver<MatrixType, true>::getApplyTime () const {
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
-}
-
-
-template<class MatrixType>
-typename TriDiSolver<MatrixType, true>::magnitude_type
-TriDiSolver<MatrixType, true>::computeCondEst (CondestType CT,
-                local_ordinal_type MaxIters,
-                magnitude_type Tol,
-                const Teuchos::Ptr<const row_matrix_type>& Matrix)
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
-}
-
-
-template<class MatrixType>
-typename TriDiSolver<MatrixType, true>::magnitude_type
-TriDiSolver<MatrixType, true>::getCondEst () const {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
 }
 

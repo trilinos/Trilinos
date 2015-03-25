@@ -157,14 +157,6 @@ namespace TSQR {
     /// input is merely a suggestion.
     size_t cache_size_hint() const { return nodeTsqr_->cache_size_hint(); }
 
-    /// \brief Cache size hint in bytes used by the intranode part of TSQR.
-    ///
-    /// This method is deprecated; please call \c cache_size_hint()
-    /// instead.
-    size_t TEUCHOS_DEPRECATED cache_block_size() const {
-      return nodeTsqr_->cache_size_hint();
-    }
-
     /// \brief Does the R factor have a nonnegative diagonal?
     ///
     /// Tsqr implements a QR factorization (of a distributed matrix).
