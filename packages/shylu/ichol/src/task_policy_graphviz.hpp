@@ -24,7 +24,8 @@ namespace Example {
     Task() : _label("no-name") { }
     Task(const Task &b) : _label(b._label) { }
     Task(const string label) : _label(label) { }
-    
+    virtual~Task() { }
+
     void addDependence(Task *b) {  if (b != NULL) _dep_tasks.insert(b); }
     void clearDependence() { _dep_tasks.clear(); }
     
@@ -74,6 +75,7 @@ namespace Example {
   class TaskPolicy : public Disp {
   public:
     typedef class TeamThreadMember member_type;
+    static member_type member_null() { return member_type(); }
 
     template<typename TaskFunctorType> 
     Future create(const TaskFunctorType &func, const int dep_size) {

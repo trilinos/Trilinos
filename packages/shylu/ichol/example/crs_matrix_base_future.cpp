@@ -17,6 +17,8 @@ typedef Kokkos::Experimental::Future<int,space_type> future_type;
 
 using namespace Example;
 
+typedef space_type ExecSpace;
+
 class SimpleTask : public Disp {
 private:
   double _data;
@@ -44,8 +46,8 @@ typedef size_t           size_type;
 typedef CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBaseType;
 
 int main (int argc, char *argv[]) {
-
-  Kokkos::initialize();
+  
+  ExecSpace::initialize();
   cout << "Default execution space initialized = " 
        << typeid(Kokkos::DefaultExecutionSpace).name()
        << endl;
@@ -60,7 +62,7 @@ int main (int argc, char *argv[]) {
     cout << A << endl;
   }
 
-  Kokkos::finalize();
+  ExecSpace::finalize();
 
   return 0;
 }

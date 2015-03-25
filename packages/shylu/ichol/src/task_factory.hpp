@@ -27,11 +27,10 @@ namespace Example {
     typedef PolicyType policy_type;
     typedef FutureType future_type;
     
-  public:
     template<typename TaskFunctorType>
     static 
     future_type create(policy_type &policy, const TaskFunctorType &func) {
-      return policy.create(func, 20); 
+      return policy.create_team(func, 20); 
     }
     
     static

@@ -29,7 +29,7 @@ namespace Example {
     typedef typename CrsExecViewType::row_view_type     row_view_type;
     typedef typename CrsExecViewType::team_factory_type team_factory_type;
 
-    scale<ScalarType,CrsExecViewType,ParallelForType>(beta, C);
+    scale<ScalarType,CrsExecViewType,ParallelForType>(member, beta, C);
 
     //row_view_type a, b, c;
     for (ordinal_type k=0;k<A.NumRows();++k) {

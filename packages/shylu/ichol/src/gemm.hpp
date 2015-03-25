@@ -37,7 +37,8 @@ namespace Example {
       CrsExecViewType _A, _B, _C;
 
     public:
-      typedef typename CrsExecViewType::policy_type::member_type member_type;
+      typedef typename CrsExecViewType::policy_type policy_type;
+      typedef typename policy_type::member_type member_type;
       typedef int value_type;
 
       TaskFunctor(const ScalarType alpha,
@@ -56,7 +57,7 @@ namespace Example {
 
       // task execution
       void apply(value_type &r_val) {
-        r_val = Gemm::invoke<ScalarType,CrsExecViewType,ParallelForType>(member_type(),
+        r_val = Gemm::invoke<ScalarType,CrsExecViewType,ParallelForType>(policy_type::member_null(),
                                                                          _alpha, _A, _B, _beta, _C);
       }
 

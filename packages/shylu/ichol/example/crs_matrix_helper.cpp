@@ -15,10 +15,12 @@ typedef double value_type;
 typedef int    ordinal_type;
 typedef int    size_type;
 
-//typedef Kokkos::Qthread space_type;
 typedef Kokkos::Serial space_type;
+//typedef Kokkos::Qthread space_type;
 
 using namespace Example;
+
+typedef space_type ExecSpace;
 
 typedef CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBaseType;
 typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
@@ -33,7 +35,7 @@ int main (int argc, char *argv[]) {
     return -1;
   }
   
-  Kokkos::initialize();
+  ExecSpace::initialize();
   cout << "Default execution space initialized = "
        << typeid(Kokkos::DefaultExecutionSpace).name()
        << endl;
@@ -90,7 +92,7 @@ int main (int argc, char *argv[]) {
   }
 
 
-  Kokkos::finalize();
+  ExecSpace::finalize();
 
   return 0;
 }

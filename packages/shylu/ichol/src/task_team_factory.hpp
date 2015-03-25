@@ -23,37 +23,11 @@ namespace Example {
   template<typename PolicyType,
            typename FutureType,
            template<typename,typename> class ThreadLoopRegionType>
-  class TaskTeamFactory {
+  class TaskTeamFactory : public TaskFactory<PolicyType,FutureType>,
+                          public TeamFactory<PolicyType,ThreadLoopRegionType> {
   public:
     typedef PolicyType policy_type;
     typedef FutureType future_type;
-
-    template<typename TaskFunctorType>
-    static
-    future_type create(policy_type &policy, const TaskFunctorType &func) {
-      return policy.create_team(func, 20);
-    }
-
-    static
-    void spawn(policy_type &policy, const future_type &obj) {
-      policy.spawn(obj);
-    }
-
-    static
-    void addDependence(policy_type &policy,
-                       const future_type &after, const future_type &before) {
-      policy.add_dependence(after, before);
-    }
-
-    template<typename OrdinalType, typename MemberType>
-    static
-    ThreadLoopRegionType<OrdinalType,MemberType>
-    createThreadLoopRegion(const MemberType  &thread,
-                           const OrdinalType &begin,
-                           const OrdinalType &end) {
-      return ThreadLoopRegionType<OrdinalType,MemberType>(thread, begin, end);
-    }
-
   };
 
 }

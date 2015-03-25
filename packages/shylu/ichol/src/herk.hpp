@@ -36,7 +36,8 @@ namespace Example {
       CrsExecViewType _A, _C;
 
     public:
-      typedef typename CrsExecViewType::policy_type::member_type member_type;
+      typedef typename CrsExecViewType::policy_type policy_type;
+      typedef typename policy_type::member_type member_type;
       typedef int value_type;
 
       TaskFunctor(const ScalarType alpha,
@@ -53,12 +54,14 @@ namespace Example {
 
       // task execution
       void apply(value_type &r_val) {
-        r_val = Herk::invoke<ScalarType,CrsExecViewType,ParallelForType>(member_type(), _alpha, _A, _beta, _C);
+        r_val = Herk::invoke<ScalarType,CrsExecViewType,ParallelForType>(policy_type::member_null(),
+                                                                         _alpha, _A, _beta, _C);
       }
 
       // task-data execution
       void apply(const member_type &member, value_type &r_val) const {
-        r_val = Herk::invoke<ScalarType,CrsExecViewType,ParallelForType>(member, _alpha, _A, _beta, _C);
+        r_val = Herk::invoke<ScalarType,CrsExecViewType,ParallelForType>(member,
+                                                                         _alpha, _A, _beta, _C);
       }
 
     };

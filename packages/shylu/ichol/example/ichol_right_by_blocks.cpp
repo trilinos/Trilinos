@@ -1,12 +1,15 @@
 #include <Kokkos_Core.hpp>
+
 #include <Kokkos_TaskPolicy.hpp>
 #include <impl/Kokkos_Serial_TaskPolicy.hpp>
 
 #include <Kokkos_Qthread.hpp>
 #include <Qthread/Kokkos_Qthread_TaskPolicy.hpp>
+
+#include <Kokkos_Threads.hpp>
+#include <Threads/Kokkos_Threads_TaskPolicy.hpp>
                                                            
 #include "util.hpp"
-#include "sequential_for.hpp"
 #include "graph_helper_scotch.hpp"
 
 #include "crs_matrix_base.hpp"
@@ -14,10 +17,16 @@
 #include "crs_row_view.hpp"
 
 #include "crs_matrix_helper.hpp"
+
+#include "crs_team_view.hpp"
 #include "crs_task_view.hpp"
+
+#include "sequential_for.hpp"
+#include "parallel_for.hpp"
 
 #include "task_policy_graphviz.hpp"
 #include "task_factory.hpp"
+#include "team_factory.hpp"
 #include "task_team_factory.hpp"
 
 #include "ichol.hpp"
@@ -29,10 +38,16 @@ typedef int    ordinal_type;
 typedef int    size_type;
 
 // space 
-typedef Kokkos::Serial space_type;
+//#define USE_SEQUENTIAL_FOR
+//typedef Kokkos::Serial space_type;
+
+typedef Kokkos::Threads space_type;
 //typedef Kokkos::Qthread space_type;
 
 using namespace Example;
+
+// exec space
+typedef space_type ExecSpace;
 
 // flat matrix 
 typedef CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBaseType;
@@ -41,15 +56,14 @@ typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
 // scotch reordering
 typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType;
 
-#define USE_GRAPHVIZ
-
-#ifdef USE_GRAPHVIZ
+#ifdef USE_SEQUENTIAL_FOR
 typedef TaskTeamFactory<TaskPolicy,Future,TeamThreadLoopRegion> TaskFactoryType;
+typedef SequentialFor ForType;
 #else
 typedef TaskTeamFactory<Kokkos::Experimental::TaskPolicy<space_type>,
                         Kokkos::Experimental::Future<int,space_type>,
-                        TeamThreadLoopRegion> TaskFactoryType;
-using Kokkos::Experimental::wait;
+                        Kokkos::Impl::TeamThreadRangeBoundariesStruct> TaskFactoryType;
+typedef ParallelFor ForType;
 #endif
 
 // block representation for CrsMatrix
@@ -60,15 +74,18 @@ typedef CrsMatrixBase<CrsTaskViewType,ordinal_type,size_type,space_type> CrsHier
 typedef CrsTaskView<CrsHierBaseType,TaskFactoryType> CrsHierViewType;
 
 int main (int argc, char *argv[]) {
-  if (argc < 2) {
-    cout << "Usage: " << argv[0] << " filename" << endl;
+  if (argc < 3) {
+    cout << "Usage: " << argv[0] << " filename nthreads" << endl;
     return -1;
   }
 
-  // Kokkos::initialize();
-  const int threads_count = 16;
-  Kokkos::Qthread::initialize( threads_count );
-  Kokkos::Qthread::print_configuration( std::cout , true );
+  const int nthreads = atoi(argv[2]);
+  ExecSpace::initialize(nthreads);
+
+#ifdef USE_SEQUENTIAL_FOR
+#else
+  ExecSpace::print_configuration(std::cout, true);
+#endif
 
   cout << "Default execution space initialized = "
        << typeid(Kokkos::DefaultExecutionSpace).name()
@@ -107,20 +124,22 @@ int main (int argc, char *argv[]) {
   CrsHierViewType H(HH);
 
   {
-    typedef typename CrsTaskViewType::policy_type::member_type member_type;
+    int r_val = 0;
+    typedef typename CrsTaskViewType::policy_type policy_type;
 
-    IChol<Uplo::Upper,AlgoIChol::RightByBlocks>::invoke<CrsHierViewType,SequentialFor>(member_type(), H);
+    IChol<Uplo::Upper,AlgoIChol::RightByBlocks>::
+      TaskFunctor<CrsHierViewType,ForType>(H).apply(policy_type::member_null(), r_val);
     
-#ifdef USE_GRAPHVIZ
+#ifdef USE_SEQUENTIAL_FOR
     // do nothing
 #else
     for (ordinal_type k=0;k<HH.NumNonZeros();++k) 
-      wait(HH.Value(k).Future());
+      Kokkos::Experimental::wait(HH.Value(k).Future());
 #endif
     
     cout << UU << endl;
     
-#ifdef USE_GRAPHVIZ
+#ifdef USE_SEQUENTIAL_FOR
     ofstream out;
     out.open("graph_right.gv");
     if (!out.good()) {
@@ -128,13 +147,12 @@ int main (int argc, char *argv[]) {
       return -1;
     }
     
-    TaskFactoryType::policy_type policy;
+    policy_type policy;
     policy.graphviz(out);
 #endif
   }
   
-  Kokkos::Qthread::finalize();
-  //Kokkos::finalize(); 
+  ExecSpace::finalize();
   
   return 0;
 }

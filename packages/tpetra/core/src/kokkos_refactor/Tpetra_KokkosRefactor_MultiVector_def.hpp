@@ -1763,7 +1763,7 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION(
       numNorms < numVecs, std::runtime_error, "Tpetra::MultiVector::normImpl: "
       "'norms' must have at least as many entries as the number of vectors in "
-      "*this.  norms.dimension_0() = " << numVecs << " < this->getNumVectors()"
+      "*this.  norms.dimension_0() = " << numNorms << " < this->getNumVectors()"
       " = " << numVecs << ".");
 
     const std::pair<size_t, size_t> colRng (0, numVecs);

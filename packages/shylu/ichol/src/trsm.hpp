@@ -37,7 +37,8 @@ namespace Example {
       CrsExecViewType _A, _B;
 
     public:
-      typedef typename CrsExecViewType::policy_type::member_type member_type;
+      typedef typename CrsExecViewType::policy_type policy_type;
+      typedef typename policy_type::member_type member_type;
       typedef int value_type;
 
       TaskFunctor(const int diag,
@@ -54,8 +55,8 @@ namespace Example {
 
       // task execution
       void apply(value_type &r_val) {
-        r_val = Trsm::invoke<ScalarType,CrsExecViewType,ParallelForType>(member_type(),
-                                                                        _diag, _alpha, _A, _B);
+        r_val = Trsm::invoke<ScalarType,CrsExecViewType,ParallelForType>(policy_type::member_null(),
+                                                                         _diag, _alpha, _A, _B);
       }
 
       // task-data execution
