@@ -83,10 +83,6 @@ namespace mesh {
 
 namespace impl {
 int Counter::counter = 0;
-
-#ifdef STK_MESH_ANALYZE_DYN_CONN
-std::vector<DynConnData> DynConnMetrics::m_data;
-#endif
 }
 
 // Static constant on BulkData:
@@ -345,9 +341,6 @@ BulkData::~BulkData()
   ParallelMachine world = MPI_COMM_WORLD; // HACK, but necessary to work with Fmwk
   const int real_rank = parallel_machine_rank(world);
   print_max_stk_memory_usage(world, real_rank, std::cout);
-#endif
-#ifdef STK_MESH_ANALYZE_DYN_CONN
-  print_dynamic_connectivity_profile(parallel(), parallel_rank(), std::cout);
 #endif
 
 #ifdef SIERRA_MIGRATION

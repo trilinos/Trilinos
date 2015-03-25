@@ -81,8 +81,6 @@ struct AuxRelationTag {};
 struct DeletedEntityTag {};
 struct VolatileFastSharedCommMapTag {};
 
-void print_dynamic_connectivity_profile( ParallelMachine parallel, int parallel_rank, std::ostream & out);
-
 void print_max_stk_memory_usage( ParallelMachine parallel, int parallel_rank, std::ostream & out);
 
 //----------------------------------------------------------------------
