@@ -267,10 +267,6 @@ void BulkData::resolve_entity_sharing(stk::mesh::EntityRank entityRank, std::vec
 
 //----------------------------------------------------------------------
 
-#ifdef STK_MESH_MODIFICATION_COUNTERS
-unsigned BulkData::m_num_bulk_data_counter = 0;
-#endif
-
 BulkData::BulkData( MetaData & mesh_meta_data ,
                     ParallelMachine parallel
 #ifdef SIERRA_MIGRATION
@@ -324,19 +320,7 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_use_identifiers_for_resolving_sharing(false),
     m_did_any_shared_entity_change_parts(false),
     m_modSummary(*this)
-#ifdef STK_MESH_MODIFICATION_COUNTERS
-    , m_num_bulk_data_counter++,
-    m_modification_counters(),
-    m_entity_modification_counters()
-#endif
 {
-#ifdef STK_MESH_MODIFICATION_COUNTERS
-  std::ofstream outfile(create_modification_counts_filename().c_str());
-  write_modification_labels_to_stream(outfile);
-  outfile.close();
-  reset_modification_counters();
-#endif
-
   mesh_meta_data.set_mesh_bulk_data(this);
 
   if (m_field_data_manager == NULL)
@@ -352,145 +336,6 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
   internal_create_ghosting( "shared_aura" );
 
   m_sync_state = SYNCHRONIZED ;
-}
-
-void BulkData::reset_modification_counters()
-{
-#ifdef STK_MESH_MODIFICATION_COUNTERS
-    for(unsigned j=0; j<static_cast<unsigned>(NumMethodTypes); ++j)
-    {
-        for(unsigned i=0; i<static_cast<unsigned>(NumModificationTypes); ++i)
-        {
-            m_modification_counters[j][i] = 0;
-        }
-        for(unsigned i=0; i<static_cast<unsigned>(NumEntityModificationTypes); ++i)
-        {
-            for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<mesh_meta_data().entity_rank_count(); rank++)
-            {
-                m_entity_modification_counters[j][rank][i] = 0;
-            }
-        }
-    }
-#endif
-}
-
-std::string BulkData::convert_label_for_method_type(const std::string &label, enum PublicOrInternalMethod methodType)
-{
-    std::string newLabel = label;
-    if(methodType == INTERNAL)
-    {
-        newLabel = "INTERNAL-" + label;
-    }
-    return newLabel;
-}
-
-void BulkData::write_modification_entry_label(std::ostream& out, const std::string& label, enum PublicOrInternalMethod methodType)
-{
-    out << convert_label_for_method_type(label, methodType) << ", ";
-}
-
-void BulkData::write_entity_modification_entry_label(std::ostream& out, const std::string& label, enum PublicOrInternalMethod methodType)
-{
-#ifdef STK_MESH_MODIFICATION_COUNTERS
-    for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<mesh_meta_data().entity_rank_count(); rank++)
-    {
-        out << convert_label_for_method_type(label, methodType) <<"["<<rank<<"], ";
-    }
-    out << convert_label_for_method_type(label, methodType) << ", ";
-#endif
-}
-
-void BulkData::write_modification_labels_to_stream_for_method_type(std::ostream& out, enum PublicOrInternalMethod methodType)
-{
-#ifdef STK_MESH_MODIFICATION_COUNTERS
-    write_entity_modification_entry_label(out, "declare_entity", methodType);
-    write_entity_modification_entry_label(out, "destroy_entity", methodType);
-    write_entity_modification_entry_label(out, "change_entity_id", methodType);
-    write_entity_modification_entry_label(out, "change_entity_parts", methodType);
-    write_modification_entry_label(out, "change_entity_owner", methodType);
-    write_modification_entry_label(out, "create_ghosting", methodType);
-    write_modification_entry_label(out, "change_ghosting", methodType);
-    write_modification_entry_label(out, "destroy_ghosting", methodType);
-    write_modification_entry_label(out, "destroy_all_ghosting", methodType);
-    write_modification_entry_label(out, "declare_relation", methodType);
-    out << convert_label_for_method_type("destroy_relation", methodType);
-#endif
-}
-
-void BulkData::write_modification_labels_to_stream(std::ostream& out)
-{
-#ifdef STK_MESH_MODIFICATION_COUNTERS
-    out << "modification cycle, ";
-    write_modification_labels_to_stream_for_method_type(out, PUBLIC);
-    out << ", ";
-    write_modification_labels_to_stream_for_method_type(out, INTERNAL);
-    out << std::endl;
-#endif
-}
-
-void BulkData::write_entity_modification_entry(std::ostream& out,
-                                               enum PublicOrInternalMethod methodType,
-                                               EntityModificationTypes entityModification)
-{
-#ifdef STK_MESH_MODIFICATION_COUNTERS
-    unsigned sum = 0;
-    for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<mesh_meta_data().entity_rank_count(); rank++)
-    {
-        out << m_entity_modification_counters[methodType][rank][entityModification]<<", ";
-        sum += m_entity_modification_counters[methodType][rank][entityModification];
-    }
-    out << sum << ", ";
-#endif
-}
-
-void BulkData::write_modification_counts_to_stream_for_method_type(std::ostream& out, enum PublicOrInternalMethod methodType)
-{
-#ifdef STK_MESH_MODIFICATION_COUNTERS
-    write_entity_modification_entry(out, methodType, DECLARE_ENTITY);
-    write_entity_modification_entry(out, methodType, DESTROY_ENTITY);
-    write_entity_modification_entry(out, methodType, CHANGE_ENTITY_ID);
-    write_entity_modification_entry(out, methodType, CHANGE_ENTITY_PARTS);
-    out << m_modification_counters[methodType][CHANGE_ENTITY_OWNER]<<", ";
-    out << m_modification_counters[methodType][CREATE_GHOSTING]<<", ";
-    out << m_modification_counters[methodType][CHANGE_GHOSTING]<<", ";
-    out << m_modification_counters[methodType][DESTROY_GHOSTING]<<", ";
-    out << m_modification_counters[methodType][DESTROY_ALL_GHOSTING]<<", ";
-    out << m_modification_counters[methodType][DECLARE_RELATION]<<", ";
-    out << m_modification_counters[methodType][DESTROY_RELATION];
-#endif
-}
-
-void BulkData::write_modification_counts_to_stream(std::ostream& out)
-{
-#ifdef STK_MESH_MODIFICATION_COUNTERS
-    out << synchronized_count()<<", ";
-    write_modification_counts_to_stream_for_method_type(out, PUBLIC);
-    out << ", ";
-    write_modification_counts_to_stream_for_method_type(out, INTERNAL);
-    out << std::endl;
-#endif
-}
-
-std::string BulkData::create_modification_counts_filename() const
-{
-    std::string fileName;
-#ifdef STK_MESH_MODIFICATION_COUNTERS
-    std::ostringstream oss;
-    int numProcs = parallel_machine_size(MPI_COMM_WORLD);
-    int procId = parallel_machine_rank(MPI_COMM_WORLD);
-    oss<<"modification_counts_"<<m_num_bulk_data_counter<<"_np"<<numProcs<<"."<<procId<<".csv";
-    fileName = oss.str();
-#endif
-    return fileName;
-}
-
-void BulkData::write_modification_counts()
-{
-#ifdef STK_MESH_MODIFICATION_COUNTERS
-    std::ofstream outfile(create_modification_counts_filename().c_str(), std::ios::app);
-    write_modification_counts_to_stream(outfile);
-    reset_modification_counters();
-#endif
 }
 
 BulkData::~BulkData()
@@ -807,14 +652,12 @@ void BulkData::initialize_arrays()
 
 Entity BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id)
 {
-    INCREMENT_ENTITY_MODIFICATION_COUNTER(PUBLIC, ent_rank, DECLARE_ENTITY);
     PartVector parts(1, &mesh_meta_data().universal_part());
     return internal_declare_entity(ent_rank, ent_id, parts);
 }
 
 Entity BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id , Part& part)
 {
-    INCREMENT_ENTITY_MODIFICATION_COUNTER(PUBLIC, ent_rank, DECLARE_ENTITY);
     PartVector parts(1, &part);
     return internal_declare_entity( ent_rank, ent_id, parts);
 }
@@ -822,7 +665,6 @@ Entity BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id , Part& p
 Entity BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
                                  const PartVector & parts )
 {
-    INCREMENT_ENTITY_MODIFICATION_COUNTER(PUBLIC, ent_rank, DECLARE_ENTITY);
     return internal_declare_entity(ent_rank, ent_id, parts);
 }
 
@@ -897,7 +739,6 @@ void BulkData::change_entity_id( EntityId id, Entity entity)
 #endif
 
   EntityRank e_rank = entity_rank(entity);
-  INCREMENT_ENTITY_MODIFICATION_COUNTER(PUBLIC, e_rank, CHANGE_ENTITY_ID);
 
   require_ok_to_modify();
   m_modSummary.track_change_entity_id(id, entity);
@@ -912,8 +753,6 @@ void BulkData::change_entity_id( EntityId id, Entity entity)
 
 void BulkData::internal_change_entity_key( EntityKey old_key, EntityKey new_key, Entity entity)
 {
-  INCREMENT_ENTITY_MODIFICATION_COUNTER(INTERNAL, old_key.rank(), CHANGE_ENTITY_ID);
-
   m_entity_repo.update_entity_key(new_key, old_key, entity);
   set_entity_key(entity, new_key);
   this->bucket(entity).getPartition()->set_flag_needs_to_be_sorted(true);
@@ -923,7 +762,6 @@ void BulkData::internal_change_entity_key( EntityKey old_key, EntityKey new_key,
 
 bool BulkData::destroy_entity( Entity entity, bool was_ghost )
 {
-    INCREMENT_ENTITY_MODIFICATION_COUNTER(PUBLIC, entity_rank(entity), DESTROY_ENTITY);
     return internal_destroy_entity(entity, was_ghost);
 }
 
@@ -943,8 +781,6 @@ bool BulkData::internal_destroy_entity( Entity entity, bool was_ghost )
 
   const bool ghost = was_ghost || in_receive_ghost(key);
   const EntityRank erank = entity_rank(entity);
-
-  INCREMENT_ENTITY_MODIFICATION_COUNTER(INTERNAL, erank, DESTROY_ENTITY);
 
   const EntityRank end_rank = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
   for (EntityRank irank = static_cast<EntityRank>(erank + 1); irank != end_rank; ++irank) {
@@ -1109,7 +945,6 @@ void BulkData::generate_new_entities(const std::vector<size_t>& requests,
 
 std::pair<Entity, bool> BulkData::internal_create_entity(EntityKey key, size_t preferred_offset)
 {
-    INCREMENT_ENTITY_MODIFICATION_COUNTER(INTERNAL, key.rank(), DECLARE_ENTITY);
     return m_entity_repo.internal_create_entity(key, preferred_offset);
 }
 
@@ -1849,8 +1684,6 @@ bool BulkData::internal_declare_relation(Entity e_from, Entity e_to,
                                          unsigned sync_count, bool is_back_relation,
                                          Permutation permut)
 {
-  INCREMENT_MODIFICATION_COUNTER(INTERNAL, DECLARE_RELATION);
-
   m_modSummary.track_declare_relation(e_from, e_to, local_id, permut);
 
   const MeshIndex& idx = mesh_index(e_from);
@@ -1885,7 +1718,6 @@ void BulkData::declare_relation( Entity e_from ,
                                  const RelationIdentifier local_id ,
                                  Permutation permut)
 {
-  INCREMENT_MODIFICATION_COUNTER(PUBLIC, DECLARE_RELATION);
   OrdinalVector ordinal_scratch;
   PartVector part_scratch;
   internal_declare_relation(e_from, e_to, local_id, permut, ordinal_scratch, part_scratch);
@@ -1898,7 +1730,6 @@ void BulkData::declare_relation( Entity e_from ,
                                  OrdinalVector& ordinal_scratch,
                                  PartVector& part_scratch)
 {
-    INCREMENT_MODIFICATION_COUNTER(PUBLIC, DECLARE_RELATION);
     internal_declare_relation(e_from, e_to, local_id, permut, ordinal_scratch, part_scratch);
 }
 
@@ -2000,7 +1831,6 @@ bool BulkData::destroy_relation( Entity e_from ,
                                  Entity e_to,
                                  const RelationIdentifier local_id )
 {
-    INCREMENT_MODIFICATION_COUNTER(PUBLIC, DESTROY_RELATION);
     return internal_destroy_relation(e_from, e_to,  local_id);
 }
 
@@ -2008,8 +1838,6 @@ bool BulkData::internal_destroy_relation( Entity e_from ,
                                  Entity e_to,
                                  const RelationIdentifier local_id )
 {
-    INCREMENT_MODIFICATION_COUNTER(INTERNAL, DESTROY_RELATION);
-
   require_ok_to_modify();
   m_modSummary.track_destroy_relation(e_from, e_to, local_id);
 
@@ -2398,7 +2226,6 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change,
                                     bool regenerate_aura,
                                     modification_optimization mod_optimization )
 {
-    INCREMENT_MODIFICATION_COUNTER(PUBLIC, CHANGE_ENTITY_OWNER);
     const bool modStatus = modification_begin("change_entity_owner");
     ThrowRequireMsg(modStatus, "BulkData::change_entity_owner() must not be called from within a modification cycle.");
     this->internal_change_entity_owner(arg_change, regenerate_aura, mod_optimization);
@@ -2411,8 +2238,6 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
                                              bool regenerate_aura,
                                              modification_optimization mod_optimization )
 {
-  INCREMENT_MODIFICATION_COUNTER(INTERNAL, CHANGE_ENTITY_OWNER);
-
   require_ok_to_modify();
   m_modSummary.track_change_entity_owner(arg_change);
 
@@ -2670,14 +2495,11 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
 
 Ghosting & BulkData::create_ghosting( const std::string & name )
 {
-    INCREMENT_MODIFICATION_COUNTER(PUBLIC, CREATE_GHOSTING);
     return internal_create_ghosting(name);
 }
 
 Ghosting & BulkData::internal_create_ghosting( const std::string & name )
 {
-    INCREMENT_MODIFICATION_COUNTER(INTERNAL, CREATE_GHOSTING);
-
   require_ok_to_modify();
 
   // Verify name is the same on all processors,
@@ -2758,7 +2580,6 @@ void comm_sync_send_recv(
 
 void BulkData::destroy_ghosting( Ghosting& ghost_layer )
 {
-  INCREMENT_MODIFICATION_COUNTER(PUBLIC, DESTROY_GHOSTING);
   std::vector<EntityKey> receive_list;
   ghost_layer.receive_list(receive_list);
   internal_verify_inputs_and_change_ghosting(ghost_layer, std::vector<stk::mesh::EntityProc>(), receive_list);
@@ -2768,8 +2589,6 @@ void BulkData::destroy_ghosting( Ghosting& ghost_layer )
 
 void BulkData::destroy_all_ghosting()
 {
-  INCREMENT_MODIFICATION_COUNTER(PUBLIC, DESTROY_ALL_GHOSTING);
-
   require_ok_to_modify();
 
   // Clear Ghosting data
@@ -2815,7 +2634,6 @@ void BulkData::change_ghosting(
   const std::vector<EntityProc> & add_send ,
   const std::vector<EntityKey> & remove_receive )
 {
-    INCREMENT_MODIFICATION_COUNTER(PUBLIC, CHANGE_GHOSTING);
     internal_verify_inputs_and_change_ghosting(ghosts, add_send, remove_receive);
 }
 
@@ -3076,8 +2894,6 @@ void BulkData::internal_change_ghosting(
   bool is_full_regen)
 {
   m_modSummary.track_change_ghosting(ghosting, add_send, remove_receive);
-
-  INCREMENT_MODIFICATION_COUNTER(INTERNAL, CHANGE_GHOSTING);
 
   //------------------------------------
   // Copy ghosting lists into more efficiently edited container.
@@ -4189,8 +4005,6 @@ bool BulkData::modification_end( modification_optimization opt)
   print_bucket_data(*this);
 #endif
 
-  write_modification_counts();
-
   return return_value;
 }
 
@@ -5181,7 +4995,6 @@ void BulkData::change_entity_parts( Entity entity,
     const PartVector & add_parts ,
     const PartVector & remove_parts)
 {
-    INCREMENT_ENTITY_MODIFICATION_COUNTER(PUBLIC, entity_rank(entity), DESTROY_ALL_GHOSTING);
     bool stkMeshRunningUnderFramework = m_add_fmwk_data;
     if(!stkMeshRunningUnderFramework)
     {

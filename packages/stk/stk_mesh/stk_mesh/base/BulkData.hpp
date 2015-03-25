@@ -79,7 +79,6 @@ namespace stk { class CommAll; }
 
 #include "EntityCommListInfo.hpp"
 #include "EntityLess.hpp"
-#include "StkDebuggingMacros.hpp"
 #include "SharedEntityType.hpp"
 
 namespace stk {
@@ -1076,19 +1075,6 @@ private: //functions
                                                   bool&                  bad_comm);
 
 
-  void reset_modification_counters();
-  std::string create_modification_counts_filename() const;
-  void write_modification_counts_to_stream_for_method_type(std::ostream& out, enum PublicOrInternalMethod methodType);
-  void write_modification_counts_to_stream(std::ostream& out);
-  void write_entity_modification_entry(std::ostream& out,
-                                         enum PublicOrInternalMethod methodType,
-                                         EntityModificationTypes entityModification);
-  void write_modification_labels_to_stream_for_method_type(std::ostream& out, enum PublicOrInternalMethod methodType);
-  void write_modification_labels_to_stream(std::ostream& out);
-  void write_modification_entry_label(std::ostream& out, const std::string& label, enum PublicOrInternalMethod methodType);
-  void write_entity_modification_entry_label(std::ostream& out, const std::string& label, enum PublicOrInternalMethod methodType);
-  std::string convert_label_for_method_type(const std::string &label, enum PublicOrInternalMethod methodType);
-
   struct MarkAsModified
   {
       MarkAsModified(BulkData & mesh_in) : mesh(mesh_in) {}
@@ -1159,11 +1145,6 @@ private: // data
   stk::EmptyModificationSummary m_modSummary;
   // If needing debug info for modifications, comment out above line and uncomment line below
   // stk::ModificationSummary m_modSummary;
-#ifdef STK_MESH_MODIFICATION_COUNTERS
-  static unsigned m_num_bulk_data_counter;
-  unsigned m_modification_counters[NumMethodTypes][NumModificationTypes];
-  unsigned m_entity_modification_counters[NumMethodTypes][stk::topology::NUM_RANKS][NumEntityModificationTypes];
-#endif
 
 };
 
