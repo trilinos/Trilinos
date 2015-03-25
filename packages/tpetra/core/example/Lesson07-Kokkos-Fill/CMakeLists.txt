@@ -1,0 +1,12 @@
+ASSERT_DEFINED (Tpetra_ENABLE_Kokkos_Refactor)
+ASSERT_DEFINED (${PROJECT_NAME}_ENABLE_CXX11)
+
+IF (Tpetra_ENABLE_Kokkos_Refactor AND ${PROJECT_NAME}_ENABLE_CXX11)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    lesson07_kokkos_fill
+    SOURCES 05_solve.cpp
+    ARGS 
+    COMM mpi
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF ()
