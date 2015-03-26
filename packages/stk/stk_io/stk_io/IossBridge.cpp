@@ -737,6 +737,9 @@ namespace stk {
               std::string name = namedFields[i].db_name();
               entity->field_add(Ioss::Field(name, field_type.second, field_type.first,
                                             filter_role, entity_size));
+	      if (entity->type() == Ioss::NODEBLOCK) {
+		namedFields[i].m_forceNodeblockOutput = true;
+	      }
             }
           }
           // If this is a sideset, check the subset parts for the field also...
@@ -752,6 +755,9 @@ namespace stk {
                   std::string name = namedFields[i].db_name();
                   entity->field_add(Ioss::Field(name, field_type.second, field_type.first,
                                                 filter_role, entity_size));
+		  if (entity->type() == Ioss::NODEBLOCK) {
+		    namedFields[i].m_forceNodeblockOutput = true;
+		  }
                 }
               }
             }

@@ -1109,11 +1109,11 @@ void process_sidesets_df(Ioss::Region &region, stk::mesh::BulkData &bulk)
 }
 
 void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
-        stk::mesh::EntityRank part_type,
-        Ioss::GroupingEntity *io_entity,
-        const std::vector<stk::io::FieldAndName> &namedFields,
-        Ioss::Field::RoleType filter_role,
-        const stk::mesh::Selector *subset_selector)
+		    stk::mesh::EntityRank part_type,
+		    Ioss::GroupingEntity *io_entity,
+		    const std::vector<stk::io::FieldAndName> &namedFields,
+		    Ioss::Field::RoleType filter_role,
+		    const stk::mesh::Selector *subset_selector)
 {
     std::vector<stk::mesh::Entity> entities;
     if(io_entity->type() == Ioss::SIDEBLOCK)
@@ -1140,10 +1140,16 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
 
     for (size_t i=0;i<namedFields.size();i++)
     {
-        const stk::mesh::FieldBase *f = namedFields[i].field();
-        std::string field_name = namedFields[i].db_name();
-        // NOTE: Multi-state issues are currently handled at field_add time
-        stk::io::field_data_to_ioss(bulk, f, entities, io_entity, field_name, filter_role);
+      const stk::mesh::FieldBase *f = namedFields[i].field();
+      std::string field_name = namedFields[i].db_name();
+      // There is ugliness here to deal with the output of fields on the nodes of a part,
+      // either on the nodeblock or on a nodeset part created from the part nodes.
+      if ((namedFields[i].m_forceNodeblockOutput && io_entity->type() == Ioss::NODEBLOCK) ||
+	  stk::io::is_field_on_part(f, part_type, part) ||
+	  (io_entity->type() != Ioss::NODEBLOCK && io_entity->field_exists(field_name))) {
+	// NOTE: Multi-state issues are currently handled at field_add time
+	stk::io::field_data_to_ioss(bulk, f, entities, io_entity, field_name, filter_role);
+      }
     }
 }
 
