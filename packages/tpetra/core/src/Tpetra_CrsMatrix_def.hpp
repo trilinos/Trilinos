@@ -4172,12 +4172,10 @@ namespace Tpetra {
     const char tfecfFuncName[] = "localMultiply()";
 #endif // HAVE_TPETRA_DEBUG
     typedef Teuchos::ScalarTraits<RangeScalar> RST;
-    // const KokkosClassic::MultiVector<DomainScalar,Node> *lclX = &X.getLocalMV();
     KokkosClassic::MultiVector<DomainScalar,Node> X_lcl = X.getLocalMV ();
     const KokkosClassic::MultiVector<DomainScalar,Node>* lclX = &X_lcl;
 
     KokkosClassic::MultiVector<RangeScalar,Node> Y_lcl = Y.getLocalMV ();
-    // KokkosClassic::MultiVector<RangeScalar,Node>        *lclY = &Y.getLocalMVNonConst();
     KokkosClassic::MultiVector<RangeScalar,Node>* lclY = &Y_lcl;
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -4270,11 +4268,9 @@ namespace Tpetra {
     const char tfecfFuncName[] = "localSolve()";
 #endif // HAVE_TPETRA_DEBUG
 
-    //const KokkosClassic::MultiVector<RangeScalar,Node> *lclY = &Y.getLocalMV();
     KokkosClassic::MultiVector<RangeScalar,Node> Y_lcl = Y.getLocalMV ();
     const KokkosClassic::MultiVector<RangeScalar,Node>* lclY = &Y_lcl;
 
-    //KokkosClassic::MultiVector<DomainScalar,Node>      *lclX = &X.getLocalMVNonConst();
     KokkosClassic::MultiVector<DomainScalar,Node> X_lcl = X.getLocalMV ();
     KokkosClassic::MultiVector<DomainScalar,Node>* lclX = &X_lcl;
 

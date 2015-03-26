@@ -579,14 +579,14 @@ int Epetra_LevelSolver<Node>::Apply(const Tpetra::MultiVector<double,int,int,Nod
      }
 
      MVstride = importMV_->getStride();
-     Xbptr = &(importMV_->getLocalMVNonConst()); // not sure if necessary
+     Xbptr = &(importMV_->getLocalMV()); // not sure if necessary
    }
    else
    {
      X = Y;         // Need to put Y data into X
 
      MVstride = X.getStride();
-     Xbptr = &(X.getLocalMVNonConst());
+     Xbptr = &(X.getLocalMV());
    }
 
    KMV & Xb = *Xbptr;

@@ -414,7 +414,6 @@ Import = Import_default
 // Tpetra MultiVector support //
 ////////////////////////////////
 %ignore Tpetra::MultiVector::getLocalMV;
-%ignore Tpetra::MultiVector::getLocalMVNonConst;
 %typemap(in)
   (const Teuchos::ArrayView<const Scalar> & A, size_t LDA, size_t NumVectors)
   (PyArrayObject * array=NULL, int is_new=0)
@@ -445,7 +444,6 @@ Import = Import_default
 // Tpetra Vector support //
 ///////////////////////////
 // %ignore Tpetra::Vector::getLocalMV;
-// %ignore Tpetra::Vector::getLocalMVNonConst;
 %feature("notabstract") Tpetra::Vector;
 %include "Tpetra_Vector_decl.hpp"
 %include "Tpetra_KokkosRefactor_Vector_decl.hpp"

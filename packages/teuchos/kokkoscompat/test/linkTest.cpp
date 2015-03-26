@@ -337,7 +337,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP2D_of_2DView ) {
 // of the Tpetra::MultiVector (which created the View).
 //
 // We will use this example to implement the Tpetra::MultiVector
-// methods getLocalMV() and getLocalMVNonConst().
+// method getLocalMV().
 //
 // Preserving Tpetra's current interface will not require a way to
 // return a View that is an owning (i.e., persisting) view of a
