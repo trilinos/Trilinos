@@ -597,7 +597,7 @@ bool test_scalar(int nteams, int team_size, int test) {
   Kokkos::deep_copy(d_flag,h_flag);
   #ifdef KOKKOS_HAVE_CXX11
   if(test==0)
-  Kokkos::parallel_for( Kokkos::TeamPolicy<ExecutionSpace>(nteams,team_size,8),
+  Kokkos::parallel_for( std::string("A") , Kokkos::TeamPolicy<ExecutionSpace>(nteams,team_size,8),
       functor_vec_red<Scalar, ExecutionSpace>(d_flag));
   if(test==1)
   Kokkos::parallel_for( Kokkos::TeamPolicy<ExecutionSpace>(nteams,team_size,8),
@@ -609,7 +609,7 @@ bool test_scalar(int nteams, int team_size, int test) {
   Kokkos::parallel_for( Kokkos::TeamPolicy<ExecutionSpace>(nteams,team_size,8),
       functor_vec_for<Scalar, ExecutionSpace>(d_flag));
   if(test==4)
-  Kokkos::parallel_for( Kokkos::TeamPolicy<ExecutionSpace>(nteams,team_size,8),
+  Kokkos::parallel_for( "B" , Kokkos::TeamPolicy<ExecutionSpace>(nteams,team_size,8),
       functor_vec_single<Scalar, ExecutionSpace>(d_flag));
   if(test==5)
   Kokkos::parallel_for( Kokkos::TeamPolicy<ExecutionSpace>(nteams,team_size),

@@ -205,6 +205,22 @@ void parallel_for( const size_t        work_count ,
   (void) Impl::ParallelFor< FunctorType , policy >( Impl::CopyWithoutTracking::apply(functor) , policy(0,work_count) );
 }
 
+template< class ExecPolicy , class FunctorType >
+inline
+void parallel_for( const std::string & str
+                 , const ExecPolicy  & policy
+                 , const FunctorType & functor )
+{
+  #ifdef KOKKOS_HAVE_DEBUG
+  std::cout << "Starting parallel_for kernel: " << str << std::endl;
+  #endif
+  parallel_for(policy,functor);
+  #ifdef KOKKOS_HAVE_DEBUG
+  std::cout << "End (dispatch) parallel_for kernel: " << str << std::endl;
+  #endif
+  (void) str;
+}
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
@@ -402,6 +418,57 @@ void parallel_reduce( const size_t        work_count
   (void) Impl::ParallelReduce< FunctorType , policy >( Impl::CopyWithoutTracking::apply(functor) , policy(0,work_count) , Impl::CopyWithoutTracking::apply(result_view) );
 }
 
+template< class ExecPolicy , class FunctorType , class ResultType >
+inline
+void parallel_reduce( const std::string & str
+                    , const ExecPolicy  & policy
+                    , const FunctorType & functor
+                    , ResultType * result)
+{
+  #ifdef KOKKOS_HAVE_DEBUG
+  std::cout << "Starting parallel_reduce kernel: " << str << std::endl;
+  #endif
+  parallel_reduce(policy,functor,result);
+  #ifdef KOKKOS_HAVE_DEBUG
+  std::cout << "End (dispatch) parallel_reduce kernel: " << str << std::endl;
+  #endif
+  (void) str;
+}
+
+template< class ExecPolicy , class FunctorType , class ResultType >
+inline
+void parallel_reduce( const std::string & str
+                    , const ExecPolicy  & policy
+                    , const FunctorType & functor
+                    , ResultType & result)
+{
+  #ifdef KOKKOS_HAVE_DEBUG
+  std::cout << "Starting parallel_reduce kernel: " << str << std::endl;
+  #endif
+  parallel_reduce(policy,functor,result);
+  #ifdef KOKKOS_HAVE_DEBUG
+  std::cout << "End (dispatch) parallel_reduce kernel: " << str << std::endl;
+  #endif
+  (void) str;
+}
+
+template< class ExecPolicy , class FunctorType >
+inline
+void parallel_reduce( const std::string & str
+                    , const ExecPolicy  & policy
+                    , const FunctorType & functor)
+{
+  #ifdef KOKKOS_HAVE_DEBUG
+  std::cout << "Starting parallel_reduce kernel: " << str << std::endl;
+  #endif
+  parallel_reduce(policy,functor);
+  #ifdef KOKKOS_HAVE_DEBUG
+  std::cout << "End (dispatch) parallel_reduce kernel: " << str << std::endl;
+  #endif
+  (void) str;
+}
+
+
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
@@ -585,6 +652,22 @@ void parallel_scan( const size_t        work_count ,
   typedef Kokkos::RangePolicy< execution_space > policy ;
 
   (void) Impl::ParallelScan< FunctorType , policy >( Impl::CopyWithoutTracking::apply(functor) , policy(0,work_count) );
+}
+
+template< class ExecutionPolicy , class FunctorType >
+inline
+void parallel_scan( const std::string& str
+                  , const ExecutionPolicy & policy
+                  , const FunctorType     & functor)
+{
+  #ifdef KOKKOS_HAVE_DEBUG
+  std::cout << "Starting parallel_scan kernel: " << str << std::endl;
+  #endif
+  parallel_scan(policy,functor);
+  #ifdef KOKKOS_HAVE_DEBUG
+  std::cout << "End (dispatch) parallel_scan kernel: " << str << std::endl;
+  #endif
+  (void) str;
 }
 
 } // namespace Kokkos
