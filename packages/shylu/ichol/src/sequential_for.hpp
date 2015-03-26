@@ -42,8 +42,8 @@ namespace Example {
 
   public:
     TeamThreadLoopRegion(const member_type  &thread,
-                     const ordinal_type &begin, 
-                     const ordinal_type &end) 
+                         const ordinal_type &begin, 
+                         const ordinal_type &end) 
       : _thread(thread),
         _begin(begin),
         _end(end) { }

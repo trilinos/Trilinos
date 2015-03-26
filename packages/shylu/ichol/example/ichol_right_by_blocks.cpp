@@ -119,6 +119,9 @@ int main (int argc, char *argv[]) {
                              S.RangeVector(),
                              S.TreeVector());
 
+  for (ordinal_type k=0;k<HH.NumNonZeros();++k)                                                                      
+    HH.Value(k).fillRowViewArray();  
+
   cout << HH << endl;
 
   CrsHierViewType H(HH);
@@ -133,8 +136,8 @@ int main (int argc, char *argv[]) {
 #ifdef USE_SEQUENTIAL_FOR
     // do nothing
 #else
-    for (ordinal_type k=0;k<HH.NumNonZeros();++k) 
-      Kokkos::Experimental::wait(HH.Value(k).Future());
+    policy_type policy;
+    Kokkos::Experimental::wait(policy);
 #endif
     
     cout << UU << endl;

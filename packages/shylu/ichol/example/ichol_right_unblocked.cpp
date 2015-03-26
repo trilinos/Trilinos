@@ -110,7 +110,7 @@ int main (int argc, char *argv[]) {
     auto future = policy.create_team(IChol<Uplo::Upper,AlgoIChol::RightUnblockedOpt1>
                                      ::TaskFunctor<CrsTaskViewType,ForType>(U), 0);
     policy.spawn(future);
-    Kokkos::Experimental::wait(future);
+    Kokkos::Experimental::wait(policy);
 #endif
 
     if (r_val != 0)  {
