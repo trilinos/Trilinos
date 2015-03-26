@@ -62,7 +62,7 @@ namespace Example {
 
       // if found, return index for the location, 
       // otherwise return -1 (not found), -2 (end of array)
-      return (*aj == loc ? (aj - _aj) : (-1 - (aj == _ajn)));      
+      return (aj < _ajn ? (*aj == loc ? aj - _aj : -1) : -2);
     }
 
     KOKKOS_INLINE_FUNCTION

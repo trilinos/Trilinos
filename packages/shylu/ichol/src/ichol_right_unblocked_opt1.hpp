@@ -57,6 +57,8 @@ namespace Example {
                           r1t.Value(j) /= alpha;
                         });
 
+        member.team_barrier();
+
         // hermitian rank update
         ParallelForType(team_factory_type::createThreadLoopRegion(member, 1, nnz_r1t),
                         [&](const ordinal_type i) {

@@ -35,10 +35,10 @@ typedef double value_type;
 typedef int    ordinal_type;
 typedef int    size_type;
 
-//#define USE_SEQUENTIAL_FOR
-//typedef Kokkos::Serial space_type;
+#define USE_SEQUENTIAL_FOR
+typedef Kokkos::Serial space_type;
 
-typedef Kokkos::Threads space_type;
+//typedef Kokkos::Threads space_type;
 //typedef Kokkos::Qthread space_type;
 
 using namespace Example;
