@@ -131,9 +131,9 @@ ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
 
     // scaling vectors
     {
-      double NormInf;
-      LHS->NormInf(&NormInf);
-      LHS->Scale(1.0 / NormInf);
+      double theNormInf;
+      LHS->NormInf(&theNormInf);
+      LHS->Scale(1.0 / theNormInf);
     }
 
     // ========================================================= //
