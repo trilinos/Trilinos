@@ -46,6 +46,7 @@
 #define KOKKOS_ATOMIC_ASSEMBLY_X86_HPP
 namespace Kokkos {
 
+#ifdef KOKKOS_ENABLE_ASM
 #ifndef __CUDA_ARCH__
 template<>
 KOKKOS_INLINE_FUNCTION
@@ -135,15 +136,45 @@ void atomic_decrement<long long int>(volatile long long int* a) {
   );
 }
 #endif
+#endif
 
 namespace Impl {
   struct cas128_t
   {
     uint64_t lower;
     uint64_t upper;
+
+    KOKKOS_INLINE_FUNCTION
+    cas128_t () {
+      lower = 0;
+      upper = 0;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    cas128_t (const cas128_t& a) {
+      lower = a.lower;
+      upper = a.upper;
+    }
+    KOKKOS_INLINE_FUNCTION
+    cas128_t (volatile cas128_t* a) {
+      lower = a->lower;
+      upper = a->upper;
+    }
+
     KOKKOS_INLINE_FUNCTION
     bool operator != (const cas128_t& a) const {
       return (lower != a.lower) || upper!=a.upper;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator = (const cas128_t& a) {
+      lower = a.lower;
+      upper = a.upper;
+    }
+    KOKKOS_INLINE_FUNCTION
+    void operator = (const cas128_t& a) volatile {
+      lower = a.lower;
+      upper = a.upper;
     }
   }
   __attribute__ (( __aligned__( 16 ) ));
@@ -153,6 +184,7 @@ namespace Impl {
 
   inline cas128_t cas128( volatile cas128_t * ptr, cas128_t cmp,  cas128_t swap )
   {
+    #ifdef KOKKOS_ENABLE_ASM
     bool swapped = false;
     __asm__ __volatile__
     (
@@ -167,6 +199,15 @@ namespace Impl {
      , "q" ( swapped )
     );
     return cmp;
+    #else
+      cas128_t tmp(ptr);
+      if(tmp !=  cmp) {
+        return tmp;
+      } else {
+        *ptr = swap;
+        return swap;
+      }
+    #endif
   }
 
 }
