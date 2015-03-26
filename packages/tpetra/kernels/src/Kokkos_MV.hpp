@@ -1390,7 +1390,6 @@ struct MultiVecDotFunctor {
       throw std::invalid_argument (os.str ());
 #endif
     }
-
   }
 
   KOKKOS_INLINE_FUNCTION void
@@ -1444,23 +1443,6 @@ struct MultiVecDotFunctor {
   final (const value_type dst) const
   {
     const size_type numVecs = value_count;
-
-#if !defined(__CUDA_ARCH__)
-    // DEBUGGING ONLY
-    {
-      std::ostringstream os;
-      os << "numVecs: " << numVecs << ", dst: [";
-      for (size_t j = 0; j < numVecs; ++j) {
-        os << dst[j];
-        if (j + 1 < numVecs) {
-          os << ", ";
-        }
-      }
-      os << "]" << std::endl;
-      std::cerr << os.str ();
-    }
-#endif
-
 #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
@@ -1470,22 +1452,6 @@ struct MultiVecDotFunctor {
     for (size_type k = 0; k < numVecs; ++k) {
       dots_(k) = dst[k];
     }
-
-#if !defined(__CUDA_ARCH__)
-    // DEBUGGING ONLY
-    {
-      std::ostringstream os;
-      os << "numVecs: " << numVecs << ", dots_: [";
-      for (size_t j = 0; j < numVecs; ++j) {
-        os << dots_(j);
-        if (j + 1 < numVecs) {
-          os << ", ";
-        }
-      }
-      os << "]" << std::endl;
-      std::cerr << os.str ();
-    }
-#endif
   }
 };
 
