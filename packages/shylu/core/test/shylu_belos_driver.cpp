@@ -362,7 +362,12 @@ int main(int argc, char *argv[])
 //#ifdef TIMING_OUTPUT
         ftime.start();
 //#endif
-        Belos::ReturnType ret = solver->solve();
+        // mfh 26 Mar 2015: Don't introduce a variable (like 'ret')
+        // unless you plan to use it.  The commented-out code causes a
+        // build warning.
+        //
+        //Belos::ReturnType ret = solver->solve();
+        solver->solve ();
 //#ifdef TIMING_OUTPUT
         ftime.stop();
 //#endif
@@ -378,7 +383,7 @@ int main(int argc, char *argv[])
         //
         // Compute actual residuals.
         //
-        bool badRes = false;
+        //bool badRes = false; // unused
         std::vector<double> actual_resids( numrhs );
         std::vector<double> rhs_norm( numrhs );
         Epetra_MultiVector resid((*rcpA).RowMap(), numrhs);
@@ -393,8 +398,10 @@ int main(int argc, char *argv[])
             {
                 double actRes = actual_resids[i]/rhs_norm[i];
                 std::cout<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
-                if (actRes > tol)
-                  {badRes = true; success = false;}
+                if (actRes > tol) {
+                  //badRes = true; // unused
+                  success = false;
+                }
             }
         }
 
