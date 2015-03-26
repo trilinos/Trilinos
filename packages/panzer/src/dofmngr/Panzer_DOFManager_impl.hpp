@@ -464,7 +464,7 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
    */
   typedef KokkosClassic::MultiVector<GO,Node> KMV;
   Array<GO> columnSums(numFields_);
-  DefaultArithmetic<KMV>::Sum(non_overlap_mv->getLocalMVNonConst(), columnSums());
+  DefaultArithmetic<KMV>::Sum(non_overlap_mv->getLocalMV(), columnSums());
   size_t localsum=0;
   for(int i=0;i<columnSums.size();++i){
     localsum+=columnSums[i];
