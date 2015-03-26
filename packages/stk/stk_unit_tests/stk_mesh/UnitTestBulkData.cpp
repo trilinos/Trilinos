@@ -1828,6 +1828,7 @@ bool is_entity_key_shared(const stk::mesh::BulkData & mesh, stk::mesh::EntityKey
     return !shared_procs.empty();
 }
 
+#if 0
 #ifndef STK_BUILT_IN_SIERRA // DELETE this test between 2015-02-13 and 2015-03-04
 TEST(BulkData, test_entity_comm_map_shared)
 {
@@ -1843,6 +1844,7 @@ TEST(BulkData, test_entity_comm_map_shared)
   EXPECT_TRUE( shared_comm_map.empty() );
 }
 #endif // STK_BUILT_IN_SIERRA
+#endif
 
 TEST(BulkData, testParallelSideCreation)
 {
