@@ -38,6 +38,11 @@
 #cmakedefine KOKKOS_HAVE_CXX11
 #cmakedefine KOKKOS_HAVE_CUSPARSE
 
-#endif
+// Don't forbid users from defining this macro on the command line,
+// but still make sure that CMake logic can control its definition.
+#if ! defined(KOKKOS_HAVE_CXX11_DISPATCH_LAMBDA)
+#cmakedefine KOKKOS_HAVE_CXX11_DISPATCH_LAMBDA 1
+#endif // KOKKOS_HAVE_CXX11_DISPATCH_LAMBDA
 
-#endif
+#endif // KOKKOS_FOR_SIERRA
+#endif // KOKKOS_CORE_CONFIG_H
