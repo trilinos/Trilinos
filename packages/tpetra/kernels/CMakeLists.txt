@@ -3,6 +3,9 @@
 #
 TRIBITS_SUBPACKAGE(Kernels)
 
+# If building in debug mode, define the HAVE_TPETRAKERNELS_DEBUG macro.
+TRIBITS_ADD_DEBUG_OPTION()
+
 #
 # Set up subpackage-specific configuration options
 #

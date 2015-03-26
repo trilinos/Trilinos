@@ -1,6 +1,9 @@
 #ifndef TPETRAKERNELS_CONFIG_H
 #define TPETRAKERNELS_CONFIG_H
 
+/* Define if building in debug mode */
+#cmakedefine HAVE_TPETRAKERNELS_DEBUG
+
 /* Define this macro if the quadmath TPL is enabled */
 #cmakedefine HAVE_TPETRAKERNELS_QUADMATH
 
