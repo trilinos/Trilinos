@@ -106,7 +106,7 @@ public:
   virtual double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
                          const int MaxIters = 1550,
                          const double Tol = 1e-9,
-                         Epetra_RowMatrix* Matrix = 0)
+                         Epetra_RowMatrix* matrix = 0)
   {
     return(-1.0);
   }
@@ -192,13 +192,13 @@ public:
     return(os);
   }
 
-  //! Sets the use of transpose 9NOT SUPPORTED)
-  int SetUseTranspose(bool UseTranspose)
+  //! Sets the use of transpose (NOT SUPPORTED)
+  int SetUseTranspose(bool useTranspose)
   {
-    if (UseTranspose == true)
+    if (useTranspose) {
       ML_CHK_ERR(-1);
-
-    return(0);
+    }
+    return 0;
   }
 
   //! Applies the matrix to a vector (NOT SUPPORTED)
