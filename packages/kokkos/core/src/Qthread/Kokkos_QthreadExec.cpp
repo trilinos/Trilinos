@@ -372,15 +372,17 @@ void QthreadExec::exec_all( Qthread & , QthreadExecFunctionPointer func , const 
   for ( int jshep = 0 ; jshep < s_number_shepherds ; ++jshep ) {
     const int num_clone = jshep != main_shep ? s_number_workers_per_shepherd : s_number_workers_per_shepherd - 1 ;
 
-    int ret = qthread_fork_clones_to_local_priority
-      ( driver_exec_all   /* function */
-      , NULL              /* function data block */
-      , NULL              /* pointer to return value feb */
-      , jshep             /* shepherd number */
-      , num_clone - 1     /* number of instances - 1 */
-      );
+    if ( num_clone ) {
+      const int ret = qthread_fork_clones_to_local_priority
+        ( driver_exec_all   /* function */
+        , NULL              /* function data block */
+        , NULL              /* pointer to return value feb */
+        , jshep             /* shepherd number */
+        , num_clone - 1     /* number of instances - 1 */
+        );
 
-   assert(ret == QTHREAD_SUCCESS);
+      assert(ret == QTHREAD_SUCCESS);
+    }
   }
 #endif
 
