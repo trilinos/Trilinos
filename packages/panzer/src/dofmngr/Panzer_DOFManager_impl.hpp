@@ -54,6 +54,7 @@
 #include "Panzer_ConnManager.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
+#include "Panzer_DOF_Functors.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Panzer_NodalFieldPattern.hpp"
 
@@ -462,12 +463,33 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
 
  /* 10. Use KokkosClassic::DefaultArithmetic to locally sum.
    */
-  typedef KokkosClassic::MultiVector<GO,Node> KMV;
+  /* 
+ typedef KokkosClassic::MultiVector<GO,Node> KMV;
   Array<GO> columnSums(numFields_);
   DefaultArithmetic<KMV>::Sum(non_overlap_mv->getLocalMV(), columnSums());
   size_t localsum=0;
   for(int i=0;i<columnSums.size();++i){
     localsum+=columnSums[i];
+  }
+  */
+  // ROGER
+
+  GO localsum=0;
+  {  
+    // We should be using kokkos here, but we have a locking
+    // condition.  For now this will be serial until we sort it out.
+    typedef typename Tpetra::MultiVector<GO,Node> MV;
+    typedef typename MV::dual_view_type::t_dev KV;
+    typedef typename MV::dual_view_type::t_dev::memory_space DMS;
+    KV values = non_overlap_mv->template getLocalView<DMS>();
+    // auto mv_size = values.dimension_0();
+    // panzer::dof_functors::SumRank2<GO,KV> functor(values);
+    // Kokkos::parallel_reduce(mv_size,panzer::dof_functors::SumRank2<GO,typename MV::dual_view_type::t_dev>(values),localsum);
+
+    // Relies on UVM
+    for (int i=0; i < values.dimension_0(); ++i)
+      for (int j=0; j < values.dimension_1(); ++j)
+	localsum += values(i,j);
   }
 
  /* 11. Create a map using local sums to generate final GIDs.
