@@ -61,6 +61,7 @@
 #include <MueLu.hpp>
 #include <MueLu_Level.hpp>
 #include <MueLu_MLParameterListInterpreter.hpp>
+#include <MueLu_ParameterListInterpreter.hpp>
 #ifdef HAVE_MUELU_TPETRA
 #include <Tpetra_Operator.hpp>
 #include <MueLu_TpetraOperator.hpp>
@@ -96,9 +97,15 @@ const std::string prefSeparator = "=====================================";
 namespace MueLuExamples {
 #include <MueLu_UseShortNames.hpp>
 // --------------------------------------------------------------------------------------
-void solve_system_list(Xpetra::UnderlyingLib & lib, Teuchos::RCP<Matrix> & A, Teuchos::RCP<Vector>&  X, Teuchos::RCP<Vector> & B, Teuchos::ParameterList & MueLuList, Teuchos::RCP<Teuchos::ParameterList> & SList) {
+  void solve_system_list(Xpetra::UnderlyingLib & lib, Teuchos::RCP<Matrix> & A, Teuchos::RCP<Vector>&  X, Teuchos::RCP<Vector> & B, Teuchos::ParameterList & MueLuList, Teuchos::RCP<Teuchos::ParameterList> & SList, const std::string & fname) {
     using Teuchos::RCP;
     using Teuchos::rcp;
+    int myRank  = A->getRowMap()->getComm()->getRank();
+
+    std::filebuf    buffer;
+    std::streambuf* oldbuffer = NULL;
+
+
 #ifdef HAVE_MUELU_BELOS
 #ifdef HAVE_MUELU_TPETRA
     typedef Tpetra::Operator<SC,LO,GO> Tpetra_Operator;
@@ -107,7 +114,19 @@ void solve_system_list(Xpetra::UnderlyingLib & lib, Teuchos::RCP<Matrix> & A, Te
     typedef Tpetra::MultiVector<SC,LO,GO> Tpetra_MultiVector;
     if(lib==Xpetra::UseTpetra) {
       RCP<Tpetra_CrsMatrix>   At = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(A);
+
+      // Redirect output
+      if (myRank == 0) {
+	buffer.open((fname + ".out").c_str(), std::ios::out);
+	oldbuffer = std::cout.rdbuf(&buffer);
+      }
       RCP<Tpetra_Operator>    Mt = MueLu::CreateTpetraPreconditioner(At,MueLuList);
+      // Redirect output back
+      if(myRank==0) {
+	std::cout.rdbuf(oldbuffer);
+	buffer.close();        
+      }
+      
       RCP<Tpetra_MultiVector> Xt = Xpetra::toTpetra(*X);
       RCP<Tpetra_MultiVector> Bt = Xpetra::toTpetra(*B);
       typedef Tpetra_MultiVector MV;
@@ -127,7 +146,18 @@ void solve_system_list(Xpetra::UnderlyingLib & lib, Teuchos::RCP<Matrix> & A, Te
 #ifdef HAVE_MUELU_EPETRA
     if(lib==Xpetra::UseEpetra) {
       RCP<Epetra_CrsMatrix>   Ae = Xpetra::MatrixMatrix::Op2NonConstEpetraCrs(A);
+
+      // Redirect output
+      if (myRank == 0) {
+	buffer.open((fname + ".out").c_str(), std::ios::out);
+	oldbuffer = std::cout.rdbuf(&buffer);
+      }
       RCP<Epetra_Operator>    Me = MueLu::CreateEpetraPreconditioner(Ae,MueLuList);
+      // Redirect output back
+      if(myRank==0) {
+	std::cout.rdbuf(oldbuffer);
+	buffer.close();        
+      }
       RCP<Epetra_MultiVector> Xe = rcp(&Xpetra::toEpetra(*X),false);
       RCP<Epetra_MultiVector> Be = rcp(&Xpetra::toEpetra(*B),false);
       typedef Epetra_MultiVector MV;
@@ -147,10 +177,11 @@ void solve_system_list(Xpetra::UnderlyingLib & lib, Teuchos::RCP<Matrix> & A, Te
 #endif
 #endif // #ifdef HAVE_MUELU_BELOS
 
+
   }
 
 // --------------------------------------------------------------------------------------
-  void solve_system_hierarchy(Xpetra::UnderlyingLib & lib, Teuchos::RCP<Matrix> & A, Teuchos::RCP<Vector>&  X, Teuchos::RCP<Vector> & B, Teuchos::RCP<Hierarchy> & H, Teuchos::RCP<Teuchos::ParameterList> & SList) {
+void solve_system_hierarchy(Xpetra::UnderlyingLib & lib, Teuchos::RCP<Matrix> & A, Teuchos::RCP<Vector>&  X, Teuchos::RCP<Vector> & B, Teuchos::RCP<Hierarchy> & H, Teuchos::RCP<Teuchos::ParameterList> & SList) {
     using Teuchos::RCP;
     using Teuchos::rcp;
     
@@ -283,6 +314,9 @@ bool compare_to_gold(int myRank, const std::string & baseFile) {
     run_sed("'s/KLU2 solver interface/<Direct> solver interface/'", baseFile);
     run_sed("'s/Basker solver interface/<Direct> solver interface/'", baseFile);
     
+    // Nuke all pointers
+    run_sed("'s/0x[0-9a-f]*//g'",baseFile);
+
     // Strip template args for some classes
     std::vector<std::string> classes;
     classes.push_back("Xpetra::Matrix");
@@ -340,7 +374,7 @@ int main(int argc, char *argv[]) {
   bool success = true;
   //  bool verbose = true;
   RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-  //  int numProc = comm->getSize();
+  int numProc = comm->getSize();
   int myRank  = comm->getRank();
   RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   Teuchos::FancyOStream& out = *fancy;
@@ -400,15 +434,13 @@ int main(int argc, char *argv[]) {
   out << thickSeparator << std::endl;
   out << prefSeparator << " Solve 1: Standard "<< prefSeparator <<std::endl;
   {
-    // Use an ML-style parameter list for variety
-    std::string fname = "Output/operator_solve_1";
-    Teuchos::ParameterList MLList;
-    MLList.set("ML output", 10);
-    MLList.set("coarse: type","Amesos-Superlu");
-#ifdef HAVE_AMESOS2_KLU2
-    MLList.set("coarse: type","Amesos-KLU");
-#endif
-    
+    std::string fname = "Output/operator_solve_1_np" + Teuchos::toString(numProc);
+    std::srand(12345);
+
+    Teuchos::ParameterList MueLuList;
+    MueLuList.set("verbosity","high");
+    MueLuList.set("coarse: max size",100);
+
     std::filebuf    buffer;
     std::streambuf* oldbuffer = NULL;
     if (myRank == 0) {
@@ -417,7 +449,7 @@ int main(int argc, char *argv[]) {
       oldbuffer = std::cout.rdbuf(&buffer);
     }
     
-    MLParameterListInterpreter mueLuFactory(MLList);
+    ParameterListInterpreter mueLuFactory(MueLuList);
     RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
     Teuchos::RCP<FactoryManagerBase> LevelFactory = mueLuFactory.GetFactoryManager(1);
     H->setlib(lib);
@@ -441,19 +473,20 @@ int main(int argc, char *argv[]) {
     // Extract R,P & Ac for LevelWrap Usage
     H->GetLevel(1)->Get("R",R);
     H->GetLevel(1)->Get("P",P);
-    H->GetLevel(1)->Get("A",Ac);
-    
+    H->GetLevel(1)->Get("A",Ac);    
     nullspace = H->GetLevel(1)->Get<RCP<MultiVector> >("Nullspace",LevelFactory->GetFactory("Nullspace").get());
   }
-  out << thickSeparator << std::endl;
   
-#if 0
+
   // =========================================================================
   // Solve #5 (level wrap, the fast way, P, R + Nullspace)
   // =========================================================================
   out << thickSeparator << std::endl;
   out << prefSeparator << " Solve 5: LevelWrap, Fast Way, P, R "<< prefSeparator <<std::endl;
   {
+    std::string fname = "Output/operator_solve_5_np" + Teuchos::toString(numProc);
+    std::srand(12345);
+
     Teuchos::ParameterList MueLuList, level1;
     level1.set("R",R);
     level1.set("P",P);
@@ -462,7 +495,8 @@ int main(int argc, char *argv[]) {
     MueLuList.set("verbosity","high");
     MueLuList.set("coarse: max size",100);
 #ifdef HAVE_MUELU_BELOS
-     MueLuExamples::solve_system_list(lib,A,X,B,MueLuList,SList);
+    MueLuExamples::solve_system_list(lib,A,X,B,MueLuList,SList,fname);
+    success = success && MueLuExamples::compare_to_gold(myRank,fname);
 #endif
     }
 
@@ -473,6 +507,9 @@ int main(int argc, char *argv[]) {
   out << thickSeparator << std::endl;
   out << prefSeparator << " Solve 6: LevelWrap, Fast Way, P only, explicit transpose "<< prefSeparator <<std::endl;
   {
+    std::string fname = "Output/operator_solve_6_np" + Teuchos::toString(numProc);
+    std::srand(12345);
+
     Teuchos::ParameterList MueLuList, level1;
     level1.set("P",P);
     level1.set("Nullspace",nullspace);
@@ -482,7 +519,8 @@ int main(int argc, char *argv[]) {
     MueLuList.set("transpose: use implicit",false);
     MueLuList.set("max levels",4);
 #ifdef HAVE_MUELU_BELOS
-     MueLuExamples::solve_system_list(lib,A,X,B,MueLuList,SList);
+    MueLuExamples::solve_system_list(lib,A,X,B,MueLuList,SList,fname);
+    success = success && MueLuExamples::compare_to_gold(myRank,fname);
 #endif
   }
 
@@ -493,6 +531,9 @@ int main(int argc, char *argv[]) {
   out << thickSeparator << std::endl;
   out << prefSeparator << " Solve 7: LevelWrap, Fast Way, P only, implicit transpose "<< prefSeparator <<std::endl;
   {
+    std::string fname = "Output/operator_solve_7_np" + Teuchos::toString(numProc);
+    std::srand(12345);
+
     Teuchos::ParameterList MueLuList, level1;
     level1.set("P",P);
     level1.set("Nullspace",nullspace);
@@ -502,10 +543,11 @@ int main(int argc, char *argv[]) {
     MueLuList.set("transpose: use implicit",true);
     MueLuList.set("max levels",2);
 #ifdef HAVE_MUELU_BELOS
-     MueLuExamples::solve_system_list(lib,A,X,B,MueLuList,SList);
+    MueLuExamples::solve_system_list(lib,A,X,B,MueLuList,SList,fname);
+    success = success && MueLuExamples::compare_to_gold(myRank,fname);
 #endif
   }
-#endif
+
   
   if (myRank == 0)
     std::cout << std::endl << "End Result: TEST " << (!success ? "FAILED" : "PASSED") << std::endl;
