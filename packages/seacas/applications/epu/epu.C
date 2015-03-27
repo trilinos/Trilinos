@@ -1750,11 +1750,11 @@ namespace {
 	  INT global_element = global_element_numbers[p][i];
 
 	  if (cur_pos == global_element_map.end() || *cur_pos != global_element) {
-	    std::pair<GMapIter, GMapIter> iter = std::equal_range(global_element_map.begin(),
-								  global_element_map.end(),
-								  global_element);
-	    SMART_ASSERT(iter.first  != iter.second);
-	    cur_pos = iter.first;
+	    GMapIter iter = std::lower_bound(global_element_map.begin(),
+					     global_element_map.end(),
+					     global_element);
+	    SMART_ASSERT(iter != global_element_map.end());
+	    cur_pos = iter;
 	  }
 	  element_value = cur_pos - global_element_map.begin();
 	  local_element_to_global[p][i] = element_value;
@@ -1914,11 +1914,11 @@ namespace {
 	INT global_node = global_node_numbers[p][i];
 
 	if (cur_pos == global_node_map.end() || *cur_pos != global_node) {
-	  std::pair<GMapIter, GMapIter> iter = std::equal_range(global_node_map.begin(),
-								global_node_map.end(),
-								global_node);
-	  SMART_ASSERT(iter.first  != iter.second);
-	  cur_pos = iter.first;
+	  GMapIter iter = std::lower_bound(global_node_map.begin(),
+					   global_node_map.end(),
+					   global_node);
+	  SMART_ASSERT(iter != global_node_map.end());
+	  cur_pos = iter;
 	}
 	nodal_value = cur_pos - global_node_map.begin();
 	local_node_to_global[p][i] = nodal_value;
