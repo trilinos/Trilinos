@@ -48,7 +48,8 @@ template<typename Scalar>
 	
 };
 #ifdef HAVE_INTREPID_KOKKOSCORE	
-	
+
+#if defined( KOKKOS_HAVE_OPENMP )	
 template<typename Scalar>
 	struct MultiGemm<Scalar,Kokkos::OpenMP,Kokkos::LayoutLeft,2>{
 	static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha,
@@ -228,6 +229,7 @@ struct blasOpenMPLeft {
                    
   }
 };*/
+
 template<typename Scalar>
 	struct MultiGemm<Scalar,Kokkos::OpenMP,Kokkos::LayoutLeft,3>{
 		static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha,
@@ -254,6 +256,7 @@ template<typename Scalar>
 	}
 	
 };
+#endif
 #ifdef KOKKOS_HAVE_CUDA
 	
 	struct MultiGemm<double,Kokkos::Cuda,Kokkos::LayoutLeft,2>{
@@ -356,8 +359,9 @@ cublasSgemmBatched(transA,  transB,
 		const int m = static_cast<int> (C.dimension_1()),
         n = static_cast<int> (C.dimension_2 ()),
         k = (transA == Teuchos::NO_TRANS ? A.dimension_2 () : A.dimension_1 ());
-
+#if defined( KOKKOS_HAVE_OPENMP ) 
 	Kokkos::parallel_for(C.dimension(0),blasOpenMPBatchRight<Scalar>(A,B,C,m,n,k,transA,transB,alpha,beta));
+#endif
 	}
 	
 };
@@ -372,8 +376,9 @@ cublasSgemmBatched(transA,  transB,
 		const int m = static_cast<int> (C.dimension_1()),
         n = static_cast<int> (C.dimension_2 ()),
         k = (transA == Teuchos::NO_TRANS ? A.dimension_2 () : A.dimension_1 ());
+#if defined( KOKKOS_HAVE_OPENMP ) 
 	Kokkos::parallel_for(C.dimension(0),blasOpenMPBatchRight<Scalar>(A,B,C,m,n,k,transA,transB,alpha,beta));
-
+#endif
 	}
 	
 };
@@ -390,8 +395,8 @@ int main(){
 
    Kokkos::initialize();
   //initialize viewsto random values
-  {
-	
+#if defined( KOKKOS_HAVE_OPENMP )	
+   {
 	Kokkos::View<double**,Kokkos::LayoutLeft,Kokkos::OpenMP> inputview1("X",5,5);
 	Kokkos::View<double**,Kokkos::LayoutLeft,Kokkos::OpenMP> inputview2("Y",5,5);
 	Kokkos::View<double**,Kokkos::LayoutLeft,Kokkos::OpenMP> outputview2("Z",5,5);
@@ -464,7 +469,7 @@ for(int i=0;i<5;i++){
 	std::cout <<std::endl;
 }*/
 }
-
+#endif
 //begin scope 4
 {
 Intrepid::FieldContainer<double>testcontainerA(5,5);
@@ -637,6 +642,7 @@ for(int i=0;i<2;i++){
 }*/
 	
 }//end scope 7
+#if defined( KOKKOS_HAVE_OPENMP )
 {//end scope 8
     Kokkos::View<double***,Kokkos::LayoutRight,Kokkos::OpenMP> inputview1("X",1000,5,6);
 	Kokkos::View<double***,Kokkos::LayoutRight,Kokkos::OpenMP> inputview2("Y",1000,6,5);
@@ -679,7 +685,7 @@ for(int i=0;i<2;i++){
 }*/
 
 }
-
+#endif
    Kokkos::finalize();
   
 #endif 
