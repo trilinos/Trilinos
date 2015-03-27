@@ -68,7 +68,7 @@ createTranspose ()
 {
   using Teuchos::RCP;
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    std::string prefix = std::string("Tpetra ")+ label + std::string(": ");
+    std::string prefix = std::string("Tpetra ")+ label_ + std::string(": ");
     using Teuchos::TimeMonitor;
     Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("Transpose Local"))));
 #endif
