@@ -152,16 +152,16 @@ test_fundamentals(Index const dimension)
 
 #ifdef HAVE_INTREPID_KOKKOSCORE
   //test Tensor fill and create for Kokkos data types
-  Kokkos::View<Scalar *, Kokkos::Serial>
+  Kokkos::View<Scalar *, Kokkos::DefaultExecutionSpace>
   X1("X1_kokkos", dimension);
 
-  Kokkos::View<Scalar **, Kokkos::Serial>
+  Kokkos::View<Scalar **, Kokkos::DefaultExecutionSpace>
   X2("X2_kokkos", dimension, dimension);
 
-  Kokkos::View<Scalar ***, Kokkos::Serial>
+  Kokkos::View<Scalar ***, Kokkos::DefaultExecutionSpace>
   X3("X3_kokkos", dimension, dimension, dimension);
 
-  Kokkos::View<Scalar ****, Kokkos::Serial>
+  Kokkos::View<Scalar ****, Kokkos::DefaultExecutionSpace>
   X4("X4_kokkos", dimension, dimension, dimension, dimension);
 
   Kokkos::deep_copy(X1, 3.1);

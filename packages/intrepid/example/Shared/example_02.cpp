@@ -68,14 +68,8 @@ int main(){
 	std::vector<double>regularfortimevector;
 	std::vector<double>parallelfortimevector;
 	std::vector<double>nestedparallelfortimevector;
-#if defined( KOKKOS_HAVE_CUDA )
-  //Kokkos::Cuda::host_mirror_device_type::initialize();
-  Kokkos::initialize();
-  hyperthreads =256;
-  std::cout << "CUDA device has been initialized" <<std::endl;
-#else
 
- #if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_HAVE_OPENMP )
  int num_threads = 4;
 
  if (Kokkos::hwloc::available()) {
@@ -89,7 +83,7 @@ int main(){
   std::cout << "OpenMP device has been initialized" <<std::endl;
   std::cout <<"   number of threads= " << num_threads<<std::endl;
   std::cout << "available threads: " << omp_get_max_threads() << std::endl;
- #endif
+
 	 if ( Kokkos::hwloc::available() ) {
     std::cout << "hwloc( NUMA[" << Kokkos::hwloc::get_available_numa_count()
         << "] x CORE["    << Kokkos::hwloc::get_available_cores_per_numa()
@@ -98,6 +92,9 @@ int main(){
         << std::endl ;
        hyperthreads = Kokkos::hwloc::get_available_threads_per_core();
   }
+#else
+Kokkos::initialize();
+hyperthreads =256;
 #endif
 std::cout << "hyperthreads= " <<hyperthreads<< std::endl;
 
@@ -110,7 +107,6 @@ for(int itt=0;itt<loop1.size();itt++){
         Kokkos::Random_XorShift64_Pool<> rand_pool64(5374857);
         Kokkos::fill_random(inputview1,rand_pool64,100);	
         Kokkos::fill_random(inputview2,rand_pool64,100);
-
 
 	//generate random data
 	/*
@@ -167,19 +163,16 @@ std::cout <<"loopvalues test: "<<1000000/loop1[itt]<<"\n";
 
  std::cout << std::endl << "finalize" << std::endl;
 
-#if defined( KOKKOS_HAVE_CUDA )
-  Kokkos::finalize();
-  //Kokkos::Cuda::host_mirror_device_type::finalize();
-#else
 
 #if defined( KOKKOS_HAVE_OPENMP )
   Kokkos::OpenMP::finalize();
-#endif
+#else
+  Kokkos::finalize();
 #endif
 std::ofstream ofs ("intelphiperformance.csv", std::ofstream::out);
 for(int i=0;i<loop1.size();i++){
 	ofs<<loop1[i]<<","<<regularfortimevector[i]<<","<<parallelfortimevector[i]<<","<<nestedparallelfortimevector[i]<<"\n";
 }
 ofs.close();
-	return 0;
-	}
+	return 0
+}
