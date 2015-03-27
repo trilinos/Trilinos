@@ -160,112 +160,98 @@ int ex_open_int (const char  *path,
 
   /* The EX_READ mode is the default if EX_WRITE is not specified... */
   if (!(mode & EX_WRITE)) { /* READ ONLY */
-#if defined(__LIBCATAMOUNT__)
-    if ((status = nc_open (path, NC_NOWRITE, &exoid)) != NC_NOERR)
-#else
-      if ((status = nc_open (path, NC_NOWRITE|NC_SHARE, &exoid)) != NC_NOERR)
-#endif
-	{
-	  /* NOTE: netCDF returns an id of -1 on an error - but no error code! */
-	  /* It is possible that the user is trying to open a netcdf4
-	     file, but the netcdf4 capabilities aren't available in the
-	     netcdf linked to this library. Note that we can't just use a
-	     compile-time define since we could be using a shareable
-	     netcdf library, so the netcdf4 capabilities aren't known
-	     until runtime...
+      if ((status = nc_open (path, NC_NOWRITE|NC_SHARE, &exoid)) != NC_NOERR) {
+	/* NOTE: netCDF returns an id of -1 on an error - but no error code! */
+	/* It is possible that the user is trying to open a netcdf4
+	   file, but the netcdf4 capabilities aren't available in the
+	   netcdf linked to this library. Note that we can't just use a
+	   compile-time define since we could be using a shareable
+	   netcdf library, so the netcdf4 capabilities aren't known
+	   until runtime...
 	  
-	     Netcdf-4.X does not (yet?) have a function that can be
-	     queried to determine whether the library being used was
-	     compiled with --enable-netcdf4, so that isn't very
-	     helpful.. 
+	   Netcdf-4.X does not (yet?) have a function that can be
+	   queried to determine whether the library being used was
+	   compiled with --enable-netcdf4, so that isn't very
+	   helpful.. 
 
-	     At this time, query the beginning of the file and see if it
-	     is an HDF-5 file and if it is assume that the open failure
-	     is due to the netcdf library not enabling netcdf4 features...
+	   At this time, query the beginning of the file and see if it
+	   is an HDF-5 file and if it is assume that the open failure
+	   is due to the netcdf library not enabling netcdf4 features...
+	*/
+	int type = 0;
+	ex_check_file_type(path, &type);
+	  
+	if (type == 5) {
+	  /* This is an hdf5 (netcdf4) file. Since the nc_open failed,
+	     the assumption is that the netcdf doesn't have netcdf4
+	     capabilities enabled.  Tell the user...
 	  */
-	  int type = 0;
-	  ex_check_file_type(path, &type);
-	  
-	  if (type == 5) {
-	    /* This is an hdf5 (netcdf4) file. Since the nc_open failed,
-	       the assumption is that the netcdf doesn't have netcdf4
-	       capabilities enabled.  Tell the user...
-	    */
-	    fprintf(stderr,
-		    "EXODUS: Error: Attempting to open the netcdf-4 file:\n\t'%s'\n\twith a netcdf library that does not support netcdf-4\n",
-		    path);
-	    exerrval = status;
-	  }
-	  sprintf(errmsg,"Error: failed to open %s read only",path);
-	  ex_err("ex_open",errmsg,exerrval); 
-	  return(EX_FATAL);
-	} 
+	  fprintf(stderr,
+		  "EXODUS: Error: Attempting to open the netcdf-4 file:\n\t'%s'\n\twith a netcdf library that does not support netcdf-4\n",
+		  path);
+	  exerrval = status;
+	}
+	sprintf(errmsg,"Error: failed to open %s read only",path);
+	ex_err("ex_open",errmsg,exerrval); 
+	return(EX_FATAL);
+      } 
   }
-  else /* (mode & EX_WRITE) READ/WRITE */
-    {
-#if defined(__LIBCATAMOUNT__)
-      if ((status = nc_open (path, NC_WRITE, &exoid)) != NC_NOERR)
-#else
-	if ((status = nc_open (path, NC_WRITE|NC_SHARE, &exoid)) != NC_NOERR)
-#endif
-	  {
-	    /* NOTE: netCDF returns an id of -1 on an error - but no error code! */
-	    if (status == 0)
-	      exerrval = EX_FATAL;
-	    else
-	      exerrval = status;
-	    sprintf(errmsg,"Error: failed to open %s write only",path);
-	    ex_err("ex_open",errmsg,exerrval); 
-	    return(EX_FATAL);
-	  } 
+  else {/* (mode & EX_WRITE) READ/WRITE */
+    if ((status = nc_open (path, NC_WRITE|NC_SHARE, &exoid)) != NC_NOERR) {
+      /* NOTE: netCDF returns an id of -1 on an error - but no error code! */
+      exerrval = status;
+      sprintf(errmsg,"Error: failed to open %s write only",path);
+      ex_err("ex_open",errmsg,exerrval); 
+      return(EX_FATAL);
+    } 
+    
+    /* turn off automatic filling of netCDF variables */
+    if ((status = nc_set_fill (exoid, NC_NOFILL, &old_fill)) != NC_NOERR) {
+      exerrval = status;
+      sprintf(errmsg,
+	      "Error: failed to set nofill mode in file id %d",
+	      exoid);
+      ex_err("ex_open", errmsg, exerrval);
+      return (EX_FATAL);
+    }
 
-      /* turn off automatic filling of netCDF variables */
-      if ((status = nc_set_fill (exoid, NC_NOFILL, &old_fill)) != NC_NOERR) {
+    stat_att = nc_inq_att(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, &att_type, &att_len);
+    stat_dim = nc_inq_dimid(exoid, DIM_STR_NAME, &dim_str_name);
+    if(stat_att != NC_NOERR || stat_dim != NC_NOERR) {
+      if ((status=nc_redef (exoid)) != NC_NOERR) {
 	exerrval = status;
-	sprintf(errmsg,
-		"Error: failed to set nofill mode in file id %d",
-		exoid);
-	ex_err("ex_open", errmsg, exerrval);
+	sprintf(errmsg,"Error: failed to place file id %d into define mode",exoid);
+	ex_err("ex_open",errmsg,exerrval);
 	return (EX_FATAL);
       }
 
-      stat_att = nc_inq_att(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, &att_type, &att_len);
-      stat_dim = nc_inq_dimid(exoid, DIM_STR_NAME, &dim_str_name);
-      if(stat_att != NC_NOERR || stat_dim != NC_NOERR) {
-	if ((status=nc_redef (exoid)) != NC_NOERR) {
+      if (stat_att != NC_NOERR) {
+	int max_so_far = 32;
+	nc_put_att_int(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, NC_INT, 1, &max_so_far);
+      }
+
+      /* If the DIM_STR_NAME variable does not exist on the database, we need to add it now. */
+      if(stat_dim != NC_NOERR) {
+	/* Not found; set to default value of 32+1. */
+	int max_name = ex_default_max_name_length < 32 ? 32 : ex_default_max_name_length;
+	if ((status = nc_def_dim(exoid, DIM_STR_NAME, max_name+1, &dim_str_name)) != NC_NOERR) {
 	  exerrval = status;
-	  sprintf(errmsg,"Error: failed to place file id %d into define mode",exoid);
-	  ex_err("ex_open",errmsg,exerrval);
-	  return (EX_FATAL);
-	}
-
-	if (stat_att != NC_NOERR) {
-	  int max_so_far = 32;
-	  nc_put_att_int(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, NC_INT, 1, &max_so_far);
-	}
-
-	/* If the DIM_STR_NAME variable does not exist on the database, we need to add it now. */
-	if(stat_dim != NC_NOERR) {
-	  /* Not found; set to default value of 32+1. */
-	  int max_name = ex_default_max_name_length < 32 ? 32 : ex_default_max_name_length;
-	  if ((status = nc_def_dim(exoid, DIM_STR_NAME, max_name+1, &dim_str_name)) != NC_NOERR) {
-	    exerrval = status;
-	    sprintf(errmsg,
-		    "Error: failed to define string name dimension in file id %d",
-		    exoid);
-	    ex_err("ex_open",errmsg,exerrval);
-	    return (EX_FATAL);
-	  }
-	}
-	if ((exerrval=nc_enddef (exoid)) != NC_NOERR) {
 	  sprintf(errmsg,
-		  "Error: failed to complete definition in file id %d", 
+		  "Error: failed to define string name dimension in file id %d",
 		  exoid);
 	  ex_err("ex_open",errmsg,exerrval);
 	  return (EX_FATAL);
 	}
       }
+      if ((exerrval=nc_enddef (exoid)) != NC_NOERR) {
+	sprintf(errmsg,
+		"Error: failed to complete definition in file id %d", 
+		exoid);
+	ex_err("ex_open",errmsg,exerrval);
+	return (EX_FATAL);
+      }
     }
+  }
 
   /* determine version of EXODUS II file, and the word size of
    * floating point and integer values stored in the file
@@ -288,17 +274,17 @@ int ex_open_int (const char  *path,
     return(EX_FATAL);
   }
    
-  if (nc_get_att_int (exoid, NC_GLOBAL, ATT_FLT_WORDSIZE, &file_wordsize) != NC_NOERR)
-    {  /* try old (prior to db version 2.02) attribute name */
-      if (nc_get_att_int (exoid,NC_GLOBAL,ATT_FLT_WORDSIZE_BLANK,&file_wordsize) != NC_NOERR)
-	{
-	  exerrval  = EX_FATAL;
-	  sprintf(errmsg,"Error: failed to get file wordsize from file id: %d",
-		  exoid);
-	  ex_err("ex_open",errmsg,exerrval);
-	  return(exerrval);
-	}
-    }
+  if (nc_get_att_int (exoid, NC_GLOBAL, ATT_FLT_WORDSIZE, &file_wordsize) != NC_NOERR) {
+    /* try old (prior to db version 2.02) attribute name */
+    if (nc_get_att_int (exoid,NC_GLOBAL,ATT_FLT_WORDSIZE_BLANK,&file_wordsize) != NC_NOERR)
+      {
+	exerrval  = EX_FATAL;
+	sprintf(errmsg,"Error: failed to get file wordsize from file id: %d",
+		exoid);
+	ex_err("ex_open",errmsg,exerrval);
+	return(exerrval);
+      }
+  }
 
   /* See if int64 status attribute exists and if so, what data is stored as int64 
    * Older files don't have the attribute, so it is not an error if it is missing

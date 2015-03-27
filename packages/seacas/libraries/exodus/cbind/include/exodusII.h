@@ -58,8 +58,8 @@
 #endif
 
 /* EXODUS II version number */
-#define EX_API_VERS 6.09f
-#define EX_API_VERS_NODOT 609
+#define EX_API_VERS 6.11f
+#define EX_API_VERS_NODOT 611
 #define EX_VERS EX_API_VERS
 #define NEMESIS_API_VERSION		EX_API_VERS
 #define NEMESIS_API_VERSION_NODOT	EX_API_VERS_NODOT
@@ -474,11 +474,6 @@ extern "C" {
   EXODUS_EXPORT int ex_get_names (int exoid,
 				  ex_entity_type obj_type,
 				  char **names);
-
-  EXODUS_EXPORT int ex_get_nset_var_tab (int  exoid,
-					 int  num_nodesets,
-					 int  num_nset_var,
-					 int *nset_var_tab);
 
   EXODUS_EXPORT int ex_get_n_nodal_var (int   exoid,
 					int   time_step,
