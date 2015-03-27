@@ -435,6 +435,7 @@ int main(int argc, char *argv[]) {
   out << prefSeparator << " Solve 1: Standard "<< prefSeparator <<std::endl;
   {
     std::string fname = "Output/operator_solve_1_np" + Teuchos::toString(numProc);
+    fname = fname + (lib == Xpetra::UseEpetra ? "_epetra" : "_tpetra");
     std::srand(12345);
 
     Teuchos::ParameterList MueLuList;
@@ -485,6 +486,7 @@ int main(int argc, char *argv[]) {
   out << prefSeparator << " Solve 5: LevelWrap, Fast Way, P, R "<< prefSeparator <<std::endl;
   {
     std::string fname = "Output/operator_solve_5_np" + Teuchos::toString(numProc);
+    fname = fname + (lib == Xpetra::UseEpetra ? "_epetra" : "_tpetra");
     std::srand(12345);
 
     Teuchos::ParameterList MueLuList, level1;
@@ -508,6 +510,7 @@ int main(int argc, char *argv[]) {
   out << prefSeparator << " Solve 6: LevelWrap, Fast Way, P only, explicit transpose "<< prefSeparator <<std::endl;
   {
     std::string fname = "Output/operator_solve_6_np" + Teuchos::toString(numProc);
+    fname = fname + (lib == Xpetra::UseEpetra ? "_epetra" : "_tpetra");
     std::srand(12345);
 
     Teuchos::ParameterList MueLuList, level1;
@@ -532,6 +535,7 @@ int main(int argc, char *argv[]) {
   out << prefSeparator << " Solve 7: LevelWrap, Fast Way, P only, implicit transpose "<< prefSeparator <<std::endl;
   {
     std::string fname = "Output/operator_solve_7_np" + Teuchos::toString(numProc);
+    fname = fname + (lib == Xpetra::UseEpetra ? "_epetra" : "_tpetra");
     std::srand(12345);
 
     Teuchos::ParameterList MueLuList, level1;
