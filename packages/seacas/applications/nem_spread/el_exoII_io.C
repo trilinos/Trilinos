@@ -55,7 +55,11 @@
 #include "sort_utils.h"                 // for gds_qsort
 template <typename T, typename INT> class Globals;
 
+#if __cplusplus > 199711L
+#define TOPTR(x) x.data()
+#else
 #define TOPTR(x) (x.empty() ? NULL : &x[0])
+#endif
 
 #ifndef TRUE
 #define TRUE  1

@@ -64,7 +64,11 @@
 #error "Requires exodusII version 4.68 or later"
 #endif
 
+#if __cplusplus > 199711L
+#define TOPTR(x) x.data()
+#else
 #define TOPTR(x) (x.empty() ? NULL : &x[0])
+#endif
 
 namespace {
 template <typename T>
