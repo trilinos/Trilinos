@@ -82,7 +82,7 @@ public:
   //@{
 
   //! Constructor that takes the matrix to transpose.
-  RowMatrixTransposer (const Teuchos::RCP<const crs_matrix_type>& origMatrix);
+  RowMatrixTransposer (const Teuchos::RCP<const crs_matrix_type>& origMatrix,const std::string & label = std::string());
 
   //@}
   //! @name Methods for computing the explicit transpose.
@@ -104,6 +104,9 @@ public:
 private:
   //! The original matrix to be transposed.
   Teuchos::RCP<const crs_matrix_type> origMatrix_;
+
+  //! Label for timers
+  std::string label_;
 };
 
 

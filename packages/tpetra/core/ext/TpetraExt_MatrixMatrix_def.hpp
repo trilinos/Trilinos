@@ -996,10 +996,12 @@ void mult_AT_B_newmatrix(
 #endif
 
   Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Crcp(&C,false);
-  if(needs_final_export)
+  if(needs_final_export) {
+    Teuchos::ParameterList labelList;
+    labelList.set("Timer Label",label);
     Ctemp->exportAndFillComplete(Crcp,*Ctemp->getGraph()->getExporter(),
-                                 B.getDomainMap(),A.getDomainMap());
-
+                                 B.getDomainMap(),A.getDomainMap(),rcp(&labelList,false));
+  }
 #ifdef COMPUTE_MMM_STATISTICS
   printMultiplicationStatistics(Ctemp->getGraph()->getExporter(),label+std::string(" AT_B MMM"));
 #endif

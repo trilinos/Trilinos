@@ -46,6 +46,7 @@
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Export.hpp>
 #include <Tpetra_Import.hpp>
+#include <Teuchos_TimeMonitor.hpp>
 
 namespace Tpetra {
 
@@ -54,8 +55,8 @@ template<class Scalar,
      class GlobalOrdinal,
      class Node>
 RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-RowMatrixTransposer (const Teuchos::RCP<const crs_matrix_type>& origMatrix)
-  : origMatrix_ (origMatrix) {}
+RowMatrixTransposer (const Teuchos::RCP<const crs_matrix_type>& origMatrix,const std::string & label)
+  : origMatrix_(origMatrix), label_(label) {}
 
 template<class Scalar,
      class LocalOrdinal,
@@ -66,9 +67,17 @@ RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 createTranspose ()
 {
   using Teuchos::RCP;
-
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    std::string prefix = std::string("Tpetra ")+ label + std::string(": ");
+    using Teuchos::TimeMonitor;
+    Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("Transpose Local"))));
+#endif
   // Do the local transpose
   RCP<crs_matrix_type> transMatrixWithSharedRows = createTransposeLocal ();
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("Transpose TAFC"))));
+#endif
 
   // If transMatrixWithSharedRows has an exporter, that's what we
   // want.  If it doesn't, the rows aren't actually shared, and we're
