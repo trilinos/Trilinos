@@ -5414,7 +5414,7 @@ namespace Iopx {
 
         // Read the names...
         // (Currently, names are read for every block.  We could save them...)
-        int ierr = ex_get_variable_names(get_file_pointer(), type, nvar, names);
+        ierr = ex_get_variable_names(get_file_pointer(), type, nvar, names);
         if (ierr < 0)
           exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
