@@ -200,7 +200,7 @@ template void eliminate_omitted_nodes(RegionVector &part_mesh,
 	  if (iter == global_node_map.end()) {
 	    INT n = global_node;
 	    std::cerr << n << "\n";
-	    SMART_ASSERT(iter.first != global_node_map.end());
+	    SMART_ASSERT(iter != global_node_map.end());
 	  }
 	  cur_pos = iter;
 	}
