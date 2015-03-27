@@ -213,7 +213,7 @@ namespace {
     std::vector<int> children(num_children);
     ex_get_group_ids(exoid, NULL, TOPTR(children));
     prefix += '\t';
-    for (size_t i=0; i < num_children; i++) {
+    for (int i=0; i < num_children; i++) {
       print_groups(children[i], prefix);
     }
 #endif
@@ -225,14 +225,14 @@ namespace {
 #if !defined(NO_EXODUS_SUPPORT)
     // Assume exodusII...
     std::string inpfile = interface.filename();
-    float version = 0.0;
+    float vers = 0.0;
     int CPU_word_size = 0;
     int IO_word_size = 0;
 
     int exoid = ex_open (inpfile.c_str(),
-			 EX_READ, &CPU_word_size, &IO_word_size, &version);
+			 EX_READ, &CPU_word_size, &IO_word_size, &vers);
 
-    int num_groups = print_groups(exoid,"");
+    print_groups(exoid,"");
 #endif
   }
 
