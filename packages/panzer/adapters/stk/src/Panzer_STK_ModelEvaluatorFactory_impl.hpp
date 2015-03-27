@@ -792,7 +792,7 @@ namespace panzer_stk_classic {
       RCP<panzer::ThyraObjContainer<double> > tloc = Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(loc);
       tloc->set_x_th(x_vec);
 
-      panzer::evaluateInitialCondition(wkstContainer, phx_ic_field_managers, loc, 0.0);
+      panzer::evaluateInitialCondition(wkstContainer, phx_ic_field_managers, loc, lof, 0.0);
     }
     else {
       const std::string & vectorFile = initial_cond_pl.sublist("Vector File").get<std::string>("File Name");

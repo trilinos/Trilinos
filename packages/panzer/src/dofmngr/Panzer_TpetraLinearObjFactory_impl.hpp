@@ -199,7 +199,7 @@ TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                              const LinearObjContainer & globalBCRows,
                              LinearObjContainer & ghostedObjs,
-                             bool zeroVectorRows) const
+                             bool zeroVectorRows, bool adjustX) const
 {
    typedef Teuchos::ArrayRCP<const double>::Ordinal Ordinal;
 
@@ -213,6 +213,7 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
    // pull out jacobian and vector
    Teuchos::RCP<CrsMatrixType> A = t_ghosted.get_A();
    Teuchos::RCP<VectorType> f = t_ghosted.get_f();
+   if(adjustX) f = t_ghosted.get_x();
    Teuchos::ArrayRCP<double> f_array = f!=Teuchos::null ? f->get1dViewNonConst() : Teuchos::null;
 
    const VectorType & local_bcs  = *(t_localBCRows.get_x());

@@ -579,7 +579,16 @@ buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm
     name->push_back(itr->first);
     p.set("Dependent Names", name);
 
-    Teuchos::RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildScatterInitialCondition<EvalT>(p);
+    // Create an identity map
+    Teuchos::RCP<std::map<std::string,std::string> > names_map = Teuchos::rcp(new std::map<std::string,std::string>);
+    names_map->insert(std::make_pair(itr->first,itr->first));
+    p.set("Dependent Map", names_map);
+
+    // Set flag for ScatterDirichlet evaluators
+    p.set("Scatter Initial Condition", true);
+
+    // Use ScatterDirichlet to scatter the initial condition
+    Teuchos::RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildScatterDirichlet<EvalT>(p);
     
     fm.template registerEvaluator<EvalT>(op);
 

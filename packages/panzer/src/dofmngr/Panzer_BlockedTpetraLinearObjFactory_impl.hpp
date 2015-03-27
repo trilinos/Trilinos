@@ -186,7 +186,7 @@ void BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,N
 adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                              const LinearObjContainer & globalBCRows,
                              LinearObjContainer & ghostedObjs,
-                             bool zeroVectorRows) const
+                             bool zeroVectorRows, bool adjustX) const
 {
    typedef Teuchos::ArrayRCP<const double>::Ordinal Ordinal;
 
@@ -212,6 +212,8 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
    RCP<ProductVectorBase<ScalarT> > f = rcp_dynamic_cast<ProductVectorBase<ScalarT> >(b_ghosted.get_f());
    RCP<ProductVectorBase<ScalarT> > local_bcs  = rcp_dynamic_cast<ProductVectorBase<ScalarT> >(b_localBCRows.get_x(),true);
    RCP<ProductVectorBase<ScalarT> > global_bcs = rcp_dynamic_cast<ProductVectorBase<ScalarT> >(b_globalBCRows.get_x(),true);
+
+   if(adjustX) f = rcp_dynamic_cast<ProductVectorBase<ScalarT> >(b_ghosted.get_x());
 
    // sanity check!
    if(A!=Teuchos::null) TEUCHOS_ASSERT(A->productRange()->numBlocks()==(int) blockDim);
