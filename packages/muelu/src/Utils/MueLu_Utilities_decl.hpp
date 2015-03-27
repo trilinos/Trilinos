@@ -466,7 +466,7 @@ namespace MueLu {
     Note: Currently, an error is thrown if the matrix isn't a Tpetra::CrsMatrix or Epetra_CrsMatrix.
     In principle, however, we could allow any Epetra_RowMatrix because the Epetra transposer does.
     */
-    static RCP<Matrix> Transpose(Matrix& Op, bool optimizeTranspose = false);
+    static RCP<Matrix> Transpose(Matrix& Op, bool optimizeTranspose = false,const std::string & label = std::string());
 
     //! Scale an Epetra matrix.
     static void MyOldScaleMatrix_Epetra(Matrix& Op, const Teuchos::ArrayRCP<SC>& scalingVector, bool doFillComplete, bool doOptimizeStorage);
@@ -518,7 +518,7 @@ namespace MueLu {
 
   public:
 
-    static RCP<Matrix>      Transpose               (Matrix& Op, bool optimizeTranspose = false);
+    static RCP<Matrix>      Transpose               (Matrix& Op, bool optimizeTranspose = false,const std::string & label = std::string());
     static void             MyOldScaleMatrix_Epetra (Matrix& Op, const Teuchos::ArrayRCP<SC>& scalingVector, bool doFillComplete, bool doOptimizeStorage);
     static void             TwoMatrixAdd            (const Matrix& A, bool transposeA, SC alpha, Matrix& B, SC beta);
     static void             TwoMatrixAdd            (const Matrix& A, bool transposeA, SC alpha,

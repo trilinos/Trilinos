@@ -1597,8 +1597,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  Transpose (Matrix& Op, bool optimizeTranspose) {
-   Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("YY Entire Transpose"));
+  Transpose (Matrix& Op, bool optimizeTranspose,const std::string & label) {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
     std::string TorE = "epetra";
 #else
@@ -1620,11 +1619,8 @@ namespace MueLu {
         const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpetraOp = Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2TpetraCrs(Op);
 
         RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A;
-        {
-          Teuchos::TimeMonitor tmm(*Teuchos::TimeMonitor::getNewTimer("YY Tpetra Transpose Only"));
-          Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(rcpFromRef(tpetraOp)); //more than meets the eye
-          A = transposer.createTranspose();
-        }
+	Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(rcpFromRef(tpetraOp),label); //more than meets the eye
+	A = transposer.createTranspose();
 
         RCP<TpetraCrsMatrix> AA = rcp(new TpetraCrsMatrix(A) );
         RCP<CrsMatrix> AAA = rcp_implicit_cast<CrsMatrix>(AA);
