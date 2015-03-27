@@ -690,10 +690,7 @@ int generate_loadbal(Machine_Description* machine,
         tmp_z     = z_ptr;
         tmp_v2p   = lb->vertex2proc;
 
-	if (problem->local_mech == 1)
-	  FREE_GRAPH = 0;
-	else
-	  FREE_GRAPH = 0;/* Have Chaco to free the adjacency -- not anymore, using vectors*/	  
+	FREE_GRAPH = 0;
 
         for(int cnt = 0; cnt < machine->num_dims; cnt++) 
           tmpdim[cnt] = machine->dim[cnt];
@@ -1066,7 +1063,7 @@ namespace {
 			  Graph_Description<INT>* graph,
 			  int            check_type)
   {
-    INT   *pt_list;
+    INT   *pt_list = NULL;
     size_t nelem;
     INT   *hold_elem = NULL;
     size_t nhold;
@@ -1283,23 +1280,44 @@ namespace {
 
     if(problem->global_mech == 1 || problem->local_mech == 1) {
 
-      pt_list = (INT*)malloc(graph->max_nsur * sizeof(INT));
+      pt_list   = (INT*)malloc(graph->max_nsur * sizeof(INT));
+      if (pt_list == NULL) {
+	Gen_Error(0, "fatal: insufficient memory for pt_list");
+	return 0;
+      }
       hold_elem = (INT*)malloc(graph->max_nsur * sizeof(INT));
-      problems  = (int*)malloc(mesh->num_nodes * sizeof(int));
+      if (hold_elem == NULL) {
+	Gen_Error(0, "fatal: insufficient memory for hold_elem");
+	free(pt_list);
+	return 0;
+      }
 
-      if(!(pt_list) || !(hold_elem) || !(problems))
-	{
-	  Gen_Error(0, "fatal: insufficient memory");
-	  return 0;
-	}
+      problems  = (int*)malloc(mesh->num_nodes * sizeof(int));
+      if (problems == NULL) {
+	Gen_Error(0, "fatal: insufficient memory for problems");
+	free(pt_list);
+	free(hold_elem);
+	return 0;
+      }
 
       int *proc_cnt     = (int*)malloc(machine->num_procs * sizeof(int));
-      INT *local_number = (INT*)malloc(mesh->num_elems * sizeof(INT));
+      if (proc_cnt == NULL) {
+	Gen_Error(0, "fatal: insufficient memory for proc_cnt");
+	free(pt_list);
+	free(hold_elem);
+	free(problems);
+	return 0;
+      }
 
-      if((!(proc_cnt) || !(local_number))) {
-	  Gen_Error(0, "fatal: insufficient memory");
-	  return 0;
-	}
+      INT *local_number = (INT*)malloc(mesh->num_elems * sizeof(INT));
+      if (local_number == NULL) {
+	Gen_Error(0, "fatal: insufficient memory for local_number");
+	free(pt_list);
+	free(hold_elem);
+	free(problems);
+	free(proc_cnt);
+	return 0;
+      }
 
       if(check_type == LOCAL_ISSUES) {
 	for(int pcnt=0; pcnt < machine->num_procs; pcnt++)
@@ -1611,9 +1629,15 @@ namespace {
 
     /* allocate space to hold info about surounding elements */
     pt_list   = (INT*)malloc(graph->max_nsur * sizeof(INT));
+    if (pt_list == NULL) {
+      Gen_Error(0, "fatal: insufficient memory for pt_list");
+      return 0;
+    }
+
     hold_elem = (INT*)malloc(graph->max_nsur * sizeof(INT));
-    if(!(pt_list) || !(hold_elem)) {
-      Gen_Error(0, "fatal: insufficient memory");
+    if (hold_elem == NULL) {
+      Gen_Error(0, "fatal: insufficient memory for hold_elem");
+      free(pt_list);
       return 0;
     }
 
@@ -2743,11 +2767,6 @@ namespace {
     /* Initialize Zoltan */
     Zoltan_Initialize(argc, argv, &ver);
     zz = Zoltan_Create(MPI_COMM_WORLD);
-    if (ierr) {
-      fprintf(stderr, "Error returned from Zoltan_Create (%s:%d)\n",
-	      __FILE__, __LINE__);
-      goto End;
-    }
 
     /* Register Callback functions */
     /* Using global Zoltan_Data; could register it here instead as data field. */

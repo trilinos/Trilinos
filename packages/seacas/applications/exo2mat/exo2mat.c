@@ -244,7 +244,7 @@ int main (int argc, char *argv[])
     i,j,k,n,n1,n2,cpu_word_size,io_word_size,exo_file,err,
     num_axes,num_nodes,num_elements,num_blocks,
     num_side_sets,num_node_sets,num_time_steps,
-    num_qa_lines,num_info_lines,num_global_vars,
+    num_info_lines,num_global_vars,
     num_nodal_vars,num_element_vars,num_nodeset_vars, num_sideset_vars,
     *ids,*iscr,*num_elem_in_block,*junk,
     *elem_list,*side_list,
@@ -367,7 +367,6 @@ int main (int argc, char *argv[])
   err = ex_get_init(exo_file,line,
 	&num_axes,&num_nodes,&num_elements,&num_blocks,
         &num_node_sets,&num_side_sets);
-  num_qa_lines   = ex_inquire_int(exo_file,EX_INQ_QA);
   num_info_lines = ex_inquire_int(exo_file,EX_INQ_INFO);
   num_time_steps = ex_inquire_int(exo_file,EX_INQ_TIME);
   err=ex_get_variable_param(exo_file,EX_GLOBAL,&num_global_vars);
