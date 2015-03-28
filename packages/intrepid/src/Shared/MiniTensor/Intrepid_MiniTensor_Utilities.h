@@ -43,11 +43,7 @@
 #define Intrepid_MiniTensor_Utilities_h
 
 #include "Intrepid_ConfigDefs.hpp"
-#ifdef HAVE_INTREPID_KOKKOSCORE
 #include "Sacado.hpp"
-#else
-#include "Sacado_No_Kokkos.hpp"
-#endif
 
 namespace Intrepid {
 

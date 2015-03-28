@@ -43,11 +43,7 @@
 #include <vector>
 
 #include "Intrepid_FieldContainer.hpp"
-#ifdef HAVE_INTREPID_KOKKOSCORE
 #include "Sacado.hpp"
-#else
-#include "Sacado_No_Kokkos.hpp"
-#endif
 #include "Intrepid_MiniTensor.h"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_UnitTestRepository.hpp"
