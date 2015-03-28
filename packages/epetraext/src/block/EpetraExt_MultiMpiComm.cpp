@@ -65,9 +65,9 @@ MultiMpiComm::MultiMpiComm(MPI_Comm globalMpiComm, int subDomainProcs, int numTi
   //Need to construct subComm for each sub domain, compute subDomainRank,
   //and check that all integer arithmatic works out correctly.
 
-  int ierrmpi, size, rank;
-  ierrmpi = MPI_Comm_size(globalMpiComm, &size);
-  ierrmpi = MPI_Comm_rank(globalMpiComm, &rank);
+  int size, rank;
+  (void) MPI_Comm_size(globalMpiComm, &size);
+  (void) MPI_Comm_rank(globalMpiComm, &rank);
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     subDomainProcs <= 0,
@@ -89,10 +89,10 @@ MultiMpiComm::MultiMpiComm(MPI_Comm globalMpiComm, int subDomainProcs, int numTi
   MPI_Comm time_split_MPI_Comm;
   subDomainRank = rank / subDomainProcs;
   timeDomainRank = rank % subDomainProcs;
-  ierrmpi =  MPI_Comm_split(globalMpiComm, subDomainRank, rank,
-                            &split_MPI_Comm);
-  ierrmpi =  MPI_Comm_split(globalMpiComm, timeDomainRank, rank,
-                            &time_split_MPI_Comm);
+  (void) MPI_Comm_split(globalMpiComm, subDomainRank, rank,
+                        &split_MPI_Comm);
+  (void) MPI_Comm_split(globalMpiComm, timeDomainRank, rank,
+                        &time_split_MPI_Comm);
 
   // Construct second epetra communicators
   subComm = new Epetra_MpiComm(split_MPI_Comm);
@@ -139,9 +139,8 @@ MultiMpiComm::MultiMpiComm(const Epetra_MpiComm& EpetraMpiComm_, int numTimeStep
   // Create split communicators for time domain
   MPI_Comm time_split_MPI_Comm;
   int rank = EpetraMpiComm_.MyPID();
-  int ierrmpi =  MPI_Comm_split(EpetraMpiComm_.Comm(), rank, rank,
-                                &time_split_MPI_Comm);
-  (void) ierrmpi; // Silence "unused variable" compiler warning.
+  (void) MPI_Comm_split(EpetraMpiComm_.Comm(), rank, rank,
+                        &time_split_MPI_Comm);
   timeComm = new Epetra_MpiComm(time_split_MPI_Comm);
   numTimeDomains = EpetraMpiComm_.NumProc();
   timeDomainRank = rank;

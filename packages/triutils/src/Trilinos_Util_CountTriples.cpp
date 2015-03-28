@@ -159,8 +159,8 @@ void Trilinos_Util_CountTriples_internal(
       if(sizeof(int) == sizeof(int_type)) {
         // mfh 20 Mar 2015: See above note on use of temporaries to
         // avoid compiler warnings.
-        int i_int = i;
-        int j_int = j;
+        int i_int;
+        int j_int;
         sscanf( buffer, "%d %d %f", &i_int, &j_int, &val ) ;
         i = static_cast<int_type> (i_int);
         j = static_cast<int_type> (j_int);
@@ -168,8 +168,8 @@ void Trilinos_Util_CountTriples_internal(
       else if(sizeof(long long) == sizeof(int_type)) {
         // mfh 20 Mar 2015: See above note on use of temporaries to
         // avoid compiler warnings.
-        long long i_ll = i;
-        long long j_ll = j;
+        long long i_ll;
+        long long j_ll;
         sscanf( buffer, "%lld %lld %f", &i_ll, &j_ll, &val ) ;
         i = static_cast<int_type> (i_ll);
         j = static_cast<int_type> (j_ll);
