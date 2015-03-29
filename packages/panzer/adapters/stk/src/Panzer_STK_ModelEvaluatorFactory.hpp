@@ -197,7 +197,8 @@ namespace panzer_stk_classic {
                               const panzer::BCStrategyFactory & bc_factory,
                               const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & user_cm_factory,
                               bool is_transient,bool is_explicit,
-                              const Teuchos::Ptr<const Teuchos::ParameterList> & bc_list=Teuchos::null) const;
+                              const Teuchos::Ptr<const Teuchos::ParameterList> & bc_list=Teuchos::null,
+                              const Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > & physics_me=Teuchos::null) const;
 
     /** \brief Setup the initial conditions in a model evaluator. Note that this
       *        is entirely self contained.
