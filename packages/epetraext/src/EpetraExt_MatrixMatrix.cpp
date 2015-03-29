@@ -711,7 +711,6 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
   MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM I&X Extract")));
 #endif
 
-  int i;
   int *rowptr=0, *colind=0;
   double *vals=0;
 
@@ -719,7 +718,7 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
 
   if(Mrowmap.SameAs(targetMap)) {
     // Short Circuit: The Row and Target Maps are the Same
-    for(i=0; i<Mview.numRows; ++i) {
+    for(int i=0; i<Mview.numRows; ++i) {
       Mview.numEntriesPerRow[i] = rowptr[i+1]-rowptr[i];
       Mview.indices[i]          = colind + rowptr[i];
       Mview.values[i]           = vals + rowptr[i];
@@ -753,7 +752,7 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
   }
   else {
     // Only LID can tell me who is local and who is remote
-    for(i=0; i<Mview.numRows; ++i) {
+    for(int i=0; i<Mview.numRows; ++i) {
       int mlid = Mrowmap.LID(Mrows[i]);
       if (mlid < 0) {
         Mview.remote[i] = true;
@@ -799,7 +798,7 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
 
     int_type* MremoteRows = Mview.numRemote>0 ? new int_type[Mview.numRemote] : NULL;
     int offset = 0;
-    for(i=0; i<Mview.numRows; ++i) {
+    for(int i=0; i<Mview.numRows; ++i) {
       if (Mview.remote[i]) {
         MremoteRows[offset++] = Mrows[i];
       }
@@ -839,8 +838,11 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
 
     //Finally, use the freshly imported data to fill in the gaps in our views
     int N;
-    if(Mview.importMatrix->use_lw) N = Mview.importMatrix->RowMapLW_->NumMyElements();
-    else N = Mview.importMatrix->RowMapEP_->NumMyElements();
+    if (Mview.importMatrix->use_lw) {
+      N = Mview.importMatrix->RowMapLW_->NumMyElements();
+    } else {
+      N = Mview.importMatrix->RowMapEP_->NumMyElements();
+    }
 
     if(N > 0) {
       rowptr = &Mview.importMatrix->rowptr_[0];
@@ -849,7 +851,7 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
     }
 
 
-    for(i=0; i<Mview.numRows; ++i) {
+    for(int i=0; i<Mview.numRows; ++i) {
       if (Mview.remote[i]) {
         int importLID = MremoteRowMap.LID(Mrows[i]);
         Mview.numEntriesPerRow[i] = rowptr[importLID+1]-rowptr[importLID];
@@ -860,9 +862,15 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
 
 
     int_type * MyColGIDs = 0;
-        if(Mview.importMatrix->ColMap_.NumMyElements()>0)
-                Mview.importMatrix->ColMap_.MyGlobalElementsPtr(MyColGIDs);
-    Mview.importColMap = new Epetra_Map((int_type) -1,Mview.importMatrix->ColMap_.NumMyElements(),MyColGIDs,(int_type) Mview.importMatrix->ColMap_.IndexBase64(),M.Comm());
+    if(Mview.importMatrix->ColMap_.NumMyElements()>0) {
+      Mview.importMatrix->ColMap_.MyGlobalElementsPtr(MyColGIDs);
+    }
+    Mview.importColMap =
+      new Epetra_Map (static_cast<int_type> (-1),
+                      Mview.importMatrix->ColMap_.NumMyElements (),
+                      MyColGIDs,
+                      static_cast<int_type> (Mview.importMatrix->ColMap_.IndexBase64 ()),
+                      M.Comm ());
     delete [] MremoteRows;
 #ifdef ENABLE_MMM_TIMINGS
     MM=Teuchos::null;
@@ -871,7 +879,6 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
     // Cleanup
     delete Rimporter;
     delete importer;
-
   }
   return(0);
 }
