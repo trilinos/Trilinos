@@ -1381,6 +1381,8 @@ void BulkData::dump_all_mesh_info(std::ostream& out) const
       }
       out << "}" << std::endl;
 
+      EntityRank b_rank = bucket->entity_rank();
+
       for (size_t b_ord = 0, b_end = bucket->size(); b_ord < b_end; ++b_ord) {
         Entity entity = (*bucket)[b_ord];
         out << "      " << print_entity_key(m_mesh_meta_data, entity_key(entity)) << "(offset: " << entity.local_offset() << ")" << std::endl;
@@ -1391,11 +1393,15 @@ void BulkData::dump_all_mesh_info(std::ostream& out) const
             out << "        Connectivity to " << rank_names[r] << std::endl;
             Entity const* entities = bucket->begin(b_ord, r);
             ConnectivityOrdinal const* ordinals = bucket->begin_ordinals(b_ord, r);
+            Permutation const *permutations = bucket->begin_permutations(b_ord, r);
             const int num_conn         = bucket->num_connectivity(b_ord, r);
             for (int c_itr = 0; c_itr < num_conn; ++c_itr) {
               out << "          [" << ordinals[c_itr] << "]  " << entity_key(entities[c_itr]) << "  ";
               if (r != stk::topology::NODE_RANK) {
                 out << this->bucket(entities[c_itr]).topology();
+                if (b_rank != stk::topology::NODE_RANK) {
+                    out << " permutation index " << permutations[c_itr];
+                }
               }
               out << std::endl;
             }
@@ -1679,6 +1685,39 @@ bool BulkData::internal_declare_relation(Entity e_from, Entity e_to,
 {
   m_modSummary.track_declare_relation(e_from, e_to, local_id, permut);
 
+  // should be in debug only or somewhere else
+//  if ((entity_rank(e_from) > entity_rank(e_to)) && (entity_rank(e_from) <= stk::topology::ELEMENT_RANK)
+//      && (entity_rank(e_to) > stk::topology::NODE_RANK))
+//  {
+//      stk::topology e_from_topo  = mesh_index(e_from).bucket->topology();
+//      stk::topology e_to_topo    = mesh_index(e_to).bucket->topology();
+//
+//      if ((e_from_topo == stk::topology::INVALID_TOPOLOGY) || (e_to_topo == stk::topology::INVALID_TOPOLOGY))
+//      {
+//          // nothing to do
+//      }
+//      else
+//      {
+//          Permutation just_permutation = static_cast<Permutation>(Relation::permutation(permut));
+//          bool ok = check_permutation(e_from, e_to, local_id, just_permutation);
+//
+//          if (!ok)
+//          {
+//              std::ostringstream msgBuff;
+//
+//              Entity const *e_from_nodes = begin_nodes(e_from);
+//              Entity const *e_to_nodes   = begin_nodes(e_to);
+//
+//              Permutation computed_perm  = find_permutation(e_from_topo, e_from_nodes, e_to_topo, e_to_nodes, local_id);
+//
+//              msgBuff << "P" << parallel_rank() << ": internal_declare_relation from " << entity_key(e_from)
+//                                      << " to " << entity_key(e_to) << " got incorrect permutation arg " << permut
+//                                      << "; find_permutation computed " << computed_perm << std::endl;
+//              ThrowRequireMsg(false,  msgBuff.str());
+//          }
+//      }
+//  }
+
   const MeshIndex& idx = mesh_index(e_from);
 
   bool modified = idx.bucket->declare_relation(idx.bucket_ordinal, e_to, static_cast<ConnectivityOrdinal>(local_id), permut);
@@ -1705,6 +1744,62 @@ bool BulkData::internal_declare_relation(Entity e_from, Entity e_to,
   }
   return modified;
 }
+
+bool BulkData::check_permutation(Entity entity, Entity rel_entity, unsigned rel_ordinal, Permutation expected) const
+{
+    const stk::topology &entity_topo = mesh_index(entity).bucket->topology();
+    const stk::topology &rel_topo    = mesh_index(rel_entity).bucket->topology();
+    Entity const *entity_nodes     = begin_nodes(entity);
+    Entity const *rel_entity_nodes = begin_nodes(rel_entity);
+
+    Permutation computed_permutation = find_permutation(entity_topo, entity_nodes,
+                                                        rel_topo, rel_entity_nodes, rel_ordinal);
+
+    return computed_permutation == expected;
+}
+
+Permutation BulkData::find_permutation( const stk::topology &hr_entity_topo,
+                              Entity const *hr_entity_nodes,
+                              const stk::topology &side_topo,
+                              Entity const *side_nodes,
+                              unsigned side_ordinal) const
+{
+    Entity expected_nodes[100];
+    switch (side_topo.rank())
+    {
+    case stk::topology::EDGE_RANK:
+        hr_entity_topo.edge_nodes(hr_entity_nodes, side_ordinal, expected_nodes);
+        break;
+    case stk::topology::FACE_RANK:
+        hr_entity_topo.face_nodes(hr_entity_nodes, side_ordinal, expected_nodes);
+        break;
+    default:
+        return INVALID_PERMUTATION;
+    }
+
+    Permutation retval = INVALID_PERMUTATION;
+
+    int permuted[100];
+    const int nv = side_topo.num_nodes();
+    const int np = side_topo.num_permutations() ;
+    int p = 0 ;
+    for ( ; p < np ; ++p ) {
+      side_topo.permutation_node_ordinals(p, permuted);
+
+      // ALAN: can we replace this with equivalent? method on topology
+      int j = 0 ;
+      for ( ; j < nv && side_nodes[j] == expected_nodes[permuted[j]] ; ++j );
+
+      if ( nv == j )
+      {
+          retval = static_cast<Permutation>(p);
+          break;
+      }
+    }
+
+    return retval;
+}
+
 
 void BulkData::declare_relation( Entity e_from ,
                                  Entity e_to ,
@@ -4149,6 +4244,7 @@ void BulkData::check_mesh_consistency()
     m_modSummary.write_summary(m_sync_count);
 
 #ifndef NDEBUG
+    ThrowErrorMsgIf(!stk::mesh::impl::check_permutations_on_all(*this), "Permutation checks failed.");
     std::ostringstream msg ;
     bool is_consistent = true;
     is_consistent = comm_mesh_verify_parallel_consistency( msg );
@@ -4341,10 +4437,10 @@ void connectUpwardEntityToEntity(stk::mesh::BulkData& mesh, stk::mesh::Entity up
     ordinal_scratch.reserve(64);
     stk::mesh::PartVector part_scratch;
     part_scratch.reserve(64);
-    stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation>(0);
+    stk::mesh::Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
 
     stk::topology upward_entity_topology = mesh.bucket(upward_entity).topology();
-    std::vector<stk::mesh::Entity> nodes_of_this_edge(num_nodes);
+    std::vector<stk::mesh::Entity> nodes_of_this_side(num_nodes);
     unsigned entity_ordinal = 100000;
     stk::mesh::Entity const * upward_entity_nodes = mesh.begin_nodes(upward_entity);
 
@@ -4353,21 +4449,26 @@ void connectUpwardEntityToEntity(stk::mesh::BulkData& mesh, stk::mesh::Entity up
     {
         if(entity_rank == stk::topology::EDGE_RANK)
         {
-          upward_entity_topology.edge_nodes(upward_entity_nodes, k, nodes_of_this_edge.begin());
+          upward_entity_topology.edge_nodes(upward_entity_nodes, k, nodes_of_this_side.begin());
           entity_top = upward_entity_topology.edge_topology();
         }
         else
         {
-          upward_entity_topology.face_nodes(upward_entity_nodes, k, nodes_of_this_edge.begin());
+          upward_entity_topology.face_nodes(upward_entity_nodes, k, nodes_of_this_side.begin());
           entity_top = upward_entity_topology.face_topology();
         }
-        if ( entity_top.equivalent(nodes, nodes_of_this_edge).first )
+        if ( entity_top.equivalent(nodes, nodes_of_this_side).first )
         {
             entity_ordinal = k;
             break;
         }
     }
     ThrowRequireMsg(entity_ordinal !=100000, "Program error. Contact sierra-help for support.");
+    if ((entity_rank > stk::topology::NODE_RANK) && (mesh.entity_rank(upward_entity) > entity_rank))
+    {
+        perm = mesh.find_permutation(upward_entity_topology, upward_entity_nodes, entity_top, nodes, entity_ordinal);
+        ThrowRequireMsg(perm != INVALID_PERMUTATION, "find_permutation could not find permutation that produces a match");
+    }
     mesh.declare_relation(upward_entity, entity, entity_ordinal, perm, ordinal_scratch, part_scratch);
 }
 
@@ -4499,6 +4600,9 @@ void connect_ghosted_entities_received_to_ghosted_upwardly_connected_entities(st
 
     if (!mesh.connectivity_map().valid(entity_rank, stk::topology::ELEMENT_RANK) )
     {
+//        ThrowRequireMsg(entity_rank == stk::topology::EDGE_RANK,
+//                       "connect_ghosted_entities_to_ghosted_upwardly_connected_entities seems broken");
+
         std::vector<stk::mesh::Entity> elementsConnectedToNodes;
         const stk::mesh::BucketVector& entity_buckets = mesh.buckets(entity_rank);
         for(size_t bucketIndex = 0; bucketIndex < entity_buckets.size(); bucketIndex++)
@@ -5707,39 +5811,27 @@ void unpack_not_owned_verify_compare_closure_relations( const BulkData &        
 {
     const Bucket & bucket = mesh.bucket(entity);
     const Ordinal bucket_ordinal = mesh.bucket_ordinal(entity);
-    EntityRank erank = mesh.entity_rank(entity);
-    const EntityRank end_rank = static_cast<EntityRank>(MetaData::get(mesh).entity_rank_count());
-
-    EntityRank irank = stk::topology::BEGIN_RANK;
-
-    Entity const *rels_itr = bucket.begin(bucket_ordinal, irank);
-    Entity const *rels_end = bucket.end(bucket_ordinal, irank);
-    ConnectivityOrdinal const *ords_itr = bucket.begin_ordinals(bucket_ordinal, irank);
-    Permutation const *perms_itr = bucket.begin_permutations(bucket_ordinal, irank);
+    const EntityRank end_rank = mesh.entity_rank(entity);
 
     std::vector<Relation>::const_iterator jr = recv_relations.begin();
 
-    for(; !bad_rel && jr != recv_relations.end() &&
-            jr->entity_rank() < erank; ++jr, ++rels_itr, ++ords_itr)
+    for(EntityRank irank=stk::topology::BEGIN_RANK; !bad_rel && irank<end_rank && jr != recv_relations.end();++irank)
     {
-        while((rels_itr == rels_end) && (irank < end_rank))
-        {
-            // There are no more relations of the current, so try the next
-            // higher rank if there is one.
-            ++irank;
-            rels_itr = bucket.begin(bucket_ordinal, irank);
-            rels_end = bucket.end(bucket_ordinal, irank);
-            ords_itr = bucket.begin_ordinals(bucket_ordinal, irank);
-            perms_itr = bucket.begin_permutations(bucket_ordinal, irank);
-        }
-        bad_rel = (rels_itr == rels_end) || (jr->entity() != *rels_itr)
-                || (static_cast<ConnectivityOrdinal>(jr->getOrdinal()) != *ords_itr);
+        Entity const *rels_itr = bucket.begin(bucket_ordinal, irank);
+        Entity const *rels_end = bucket.end(bucket_ordinal, irank);
+        ConnectivityOrdinal const *ords_itr = bucket.begin_ordinals(bucket_ordinal, irank);
 
-        if(perms_itr)
+        for(;rels_itr!=rels_end;++rels_itr,++ords_itr)
         {
-            bad_rel = (bad_rel || (static_cast<Permutation>(jr->permutation()) != *perms_itr));
-            ++perms_itr;
+            bool is_this_relation_the_same = jr->entity() == *rels_itr;
+            bool is_this_ordinal_the_same  = static_cast<ConnectivityOrdinal>(jr->getOrdinal()) == *ords_itr;
+            bad_rel = !is_this_relation_the_same || !is_this_ordinal_the_same;
+            ++jr;
+            if (bad_rel) break;
         }
+
+        bool recv_relation_still_has_entity_of_irank = jr != recv_relations.end() && jr->entity_rank() == irank;
+        bad_rel = bad_rel || recv_relation_still_has_entity_of_irank;
     }
 }
 

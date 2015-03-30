@@ -1853,9 +1853,15 @@ TEST(BulkData, testParallelSideCreation)
     // both processors that share the side with different global ids.  Then synchonization
     // is done as a second step.
     //
-    // 1---3---5
+    // 1---4---5
     // | 1 | 2 |
-    // 2---4---6
+    // 2---3---6
+
+    // element 1 conn = { 1, 2, 3, 4 }
+    // element 2 conn = { 3, 4, 5, 6 }
+
+    // edge is nodes 3-4 (element 1, side id 2, perm 0)
+    // edge is nodes 3-4 (element 2, side id 0, perm 0)
     //
     // To test this, we use the mesh above, with each elem going on a separate
     // proc, one elem per proc. Node 3 is the node we'll be testing.
@@ -1904,6 +1910,16 @@ TEST(BulkData, testParallelSideCreation)
             nodes.push_back(mesh.declare_entity(stk::topology::NODE_RANK, id, empty_parts));
         }
 
+        // 1-2, 1
+        // 2-3, 2
+        // 3-4, 3
+        // 4-1, 4
+
+        // 3-4, 1
+        // 4-5, 2
+        // 5-6, 3
+        // 6-3, 4
+
         // Create element
         const EntityId elem_id = p_rank + 1;
         //Entity elem = mesh.declare_entity(elem_rank, elem_id, empty_parts);
@@ -1932,7 +1948,15 @@ TEST(BulkData, testParallelSideCreation)
         {
             mesh.declare_relation(side, *itr, side_rel_id);
         }
-        mesh.declare_relation(elem, side, 0);
+        stk::topology elem_top = mesh.bucket(elem).topology();
+        unsigned local_side_id = 2;
+        if (p_rank == 1)
+        {
+            local_side_id = 0;
+        }
+        stk::mesh::Permutation perm1 = mesh.find_permutation(elem_top, &nodes[0], elem_top.side_topology(local_side_id), &side_nodes[0], local_side_id);
+        ASSERT_TRUE(perm1 != stk::mesh::Permutation::INVALID_PERMUTATION);
+        mesh.declare_relation(elem, side, local_side_id, perm1);
         mesh.modification_end();
 
         // Expect that the side is not shared, but the nodes of side are shared
@@ -1949,7 +1973,7 @@ TEST(BulkData, testParallelSideCreation)
 
         // Delete the local side and create new, shared side
         side = sides[0];
-        bool destroyrelationship = mesh.destroy_relation(elem, side, 0);
+        bool destroyrelationship = mesh.destroy_relation(elem, side, local_side_id);
         EXPECT_TRUE(destroyrelationship);
         mesh.modification_end();
         //must call this here to delete ghosts, kills relationship between side and ghost of elem on other proc, allows side to be deleted in next phase
@@ -1970,7 +1994,9 @@ TEST(BulkData, testParallelSideCreation)
         {
             mesh.declare_relation(side, *itr, side_rel_id);
         }
-        mesh.declare_relation(elem, side, 0);
+        stk::mesh::Permutation perm2 = mesh.find_permutation(elem_top, &nodes[0], elem_top.side_topology(local_side_id), &side_nodes[0], local_side_id);
+        ASSERT_TRUE(perm1 != stk::mesh::Permutation::INVALID_PERMUTATION);
+        mesh.declare_relation(elem, side, local_side_id, perm2);
 
         mesh.modification_end();
 

@@ -45,7 +45,7 @@ TEST(ModificationSummary, testString)
         writer.track_declare_entity(stk::topology::NODE_RANK, newId, addParts);
 
         stk::mesh::Entity element1 = stkMeshBulkData.get_entity(stk::topology::ELEM_RANK, 1);
-        stk::mesh::Permutation permut = static_cast<stk::mesh::Permutation>(0);
+        stk::mesh::Permutation permut = stk::mesh::Permutation::INVALID_PERMUTATION;
         stk::mesh::RelationIdentifier rel = 0;
 
         writer.track_declare_relation(element1, node1, rel, permut);

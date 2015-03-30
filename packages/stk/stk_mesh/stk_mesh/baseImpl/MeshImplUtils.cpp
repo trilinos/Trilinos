@@ -181,7 +181,7 @@ int check_no_shared_elements_or_higher(const BulkData& mesh)
 }
 
 
-
+//// THIS NEEDS TO BE FIXED FOR HIGHER-ORDER EDGES!    Discovered by Flint & Patrick, 2015-02-24.
 void connectEntityToEdge(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity entity,
         stk::mesh::Entity edge, const stk::mesh::Entity* nodes, size_t numNodes)
 {
@@ -196,7 +196,7 @@ void connectEntityToEdge(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity
     ordinal_scratch.reserve(64);
     stk::mesh::PartVector part_scratch;
     part_scratch.reserve(64);
-    stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation>(0);
+    stk::mesh::Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
 
     // now what
     stk::topology entity_topology = stkMeshBulkData.bucket(entity).topology();
@@ -209,10 +209,10 @@ void connectEntityToEdge(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity
         entityNodes[k] =stkMeshBulkData.identifier(elem_nodes[k]);
     }
 
+    stk::topology edge_top = entity_topology.edge_topology();
     for (size_t k=0;k<entity_topology.num_edges();k++)
     {
         entity_topology.edge_nodes(entityNodes, k, nodeIds.begin());
-        stk::topology edge_top = entity_topology.edge_topology();
         if ( edge_top.equivalent(nodeIds, nodeIdsForEdge).first )
         {
             edge_ordinal = k;
@@ -220,6 +220,9 @@ void connectEntityToEdge(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity
         }
     }
     ThrowRequireMsg(edge_ordinal !=100000, "Program error. Contact sierra-help for support.");
+
+    perm = stkMeshBulkData.find_permutation(entity_topology, elem_nodes, edge_top, nodes, edge_ordinal);
+
     stkMeshBulkData.declare_relation(entity, edge, edge_ordinal, perm, ordinal_scratch, part_scratch);
 }
 
@@ -497,10 +500,10 @@ convert_entity_keys_to_spans( const MetaData & meta )
   return spans ;
 }
 
-void find_face_nodes_for_side(BulkData& mesh, Entity element, int side_ordinal, EntityVector & permuted_face_nodes)
+void find_side_nodes(BulkData& mesh, Entity element, int side_ordinal, EntityVector & permuted_side_nodes)
 {
     stk::topology elemTopology = mesh.bucket(element).topology();
-    stk::topology faceTopology = elemTopology.face_topology(side_ordinal);
+    stk::topology sideTopology = elemTopology.side_topology(side_ordinal);
     const size_t num_elem_nodes = elemTopology.num_nodes();
 
     std::vector<EntityId> elem_node_ids(num_elem_nodes);
@@ -512,35 +515,35 @@ void find_face_nodes_for_side(BulkData& mesh, Entity element, int side_ordinal, 
 
     // Use node identifier instead of node local_offset for cross-processor consistency.
     typedef std::vector<EntityId>  EntityIdVector;
-    EntityIdVector side_node_ids(faceTopology.num_nodes());
-    elemTopology.face_nodes(elem_node_ids, side_ordinal, side_node_ids.begin());
+    EntityIdVector side_node_ids(sideTopology.num_nodes());
+    elemTopology.side_nodes(elem_node_ids, side_ordinal, side_node_ids.begin());
     unsigned smallest_permutation;
-    permuted_face_nodes.resize(faceTopology.num_nodes());
+    permuted_side_nodes.resize(sideTopology.num_nodes());
     //if this is a shell OR these nodes are connected to a shell
-    EntityVector side_nodes(faceTopology.num_nodes());
-    for (unsigned count=0 ; count<faceTopology.num_nodes() ; ++count) {
+    EntityVector side_nodes(sideTopology.num_nodes());
+    for (unsigned count=0 ; count<sideTopology.num_nodes() ; ++count) {
         side_nodes[count] = mesh.get_entity(stk::topology::NODE_RANK,side_node_ids[count]);
     }
-    bool is_connected_to_shell = stk::mesh::impl::do_these_nodes_have_any_shell_elements_in_common(mesh,faceTopology.num_nodes(),&side_nodes[0]);
+    bool is_connected_to_shell = stk::mesh::impl::do_these_nodes_have_any_shell_elements_in_common(mesh,sideTopology.num_nodes(),&side_nodes[0]);
 
     if (elemTopology.is_shell() || is_connected_to_shell) {
 
-        EntityIdVector element_node_id_vector(faceTopology.num_nodes());
-        EntityIdVector element_node_ordinal_vector(faceTopology.num_nodes());
-        EntityVector element_node_vector(faceTopology.num_nodes());
-        elemTopology.face_node_ordinals(side_ordinal, &element_node_ordinal_vector[0]);
-        for (unsigned count = 0; count < faceTopology.num_nodes(); ++count) {
+        EntityIdVector element_node_id_vector(sideTopology.num_nodes());
+        EntityIdVector element_node_ordinal_vector(sideTopology.num_nodes());
+        EntityVector element_node_vector(sideTopology.num_nodes());
+        elemTopology.side_node_ordinals(side_ordinal, &element_node_ordinal_vector[0]);
+        for (unsigned count = 0; count < sideTopology.num_nodes(); ++count) {
             element_node_vector[count] = mesh.begin_nodes(element)[element_node_ordinal_vector[count]];
             element_node_id_vector[count] = mesh.identifier(element_node_vector[count]);
         }
-        smallest_permutation = faceTopology.lexicographical_smallest_permutation_preserve_polarity(side_node_ids, element_node_id_vector);
-        faceTopology.permutation_nodes(&element_node_vector[0], smallest_permutation, permuted_face_nodes.begin());
+        smallest_permutation = sideTopology.lexicographical_smallest_permutation_preserve_polarity(side_node_ids, element_node_id_vector);
+        sideTopology.permutation_nodes(&element_node_vector[0], smallest_permutation, permuted_side_nodes.begin());
     }
     else {
-        smallest_permutation = faceTopology.lexicographical_smallest_permutation(side_node_ids);
-        EntityVector face_nodes(faceTopology.num_nodes());
-        elemTopology.face_nodes(elem_nodes, side_ordinal, face_nodes.begin());
-        faceTopology.permutation_nodes(face_nodes, smallest_permutation, permuted_face_nodes.begin());
+        smallest_permutation = sideTopology.lexicographical_smallest_permutation(side_node_ids);
+        EntityVector side_nodes(sideTopology.num_nodes());
+        elemTopology.side_nodes(elem_nodes, side_ordinal, side_nodes.begin());
+        sideTopology.permutation_nodes(side_nodes, smallest_permutation, permuted_side_nodes.begin());
     }
 }
 
@@ -660,6 +663,75 @@ void connect_face_to_other_elements(stk::mesh::BulkData & bulk,
             }
         }
     }
+}
+
+void pack_downward_relations_if_valid_permutation_exists(stk::mesh::BulkData& mesh, stk::mesh::Entity some_entity, std::vector<stk::mesh::Relation>& recv_relations1)
+{
+    recv_relations1.clear();
+    unsigned bucket_ordinal = mesh.bucket_ordinal(some_entity);
+    const stk::mesh::Bucket& bucket = mesh.bucket(some_entity);
+    for(EntityRank irank=stk::topology::EDGE_RANK; irank<mesh.entity_rank(some_entity);++irank)
+    {
+        Entity const *rels_itr = bucket.begin(bucket_ordinal, irank);
+        Entity const *rels_end = bucket.end(bucket_ordinal, irank);
+        stk::mesh::ConnectivityOrdinal const *ords_itr = bucket.begin_ordinals(bucket_ordinal, irank);
+        stk::mesh::Permutation const *perms = bucket.begin_permutations(bucket_ordinal, irank);
+
+        for(;rels_itr!=rels_end;++rels_itr,++ords_itr, ++perms)
+        {
+            if ( *perms != stk::mesh::Permutation::INVALID_PERMUTATION )
+            {
+                recv_relations1.push_back(stk::mesh::Relation(*rels_itr, mesh.entity_rank(*rels_itr), *ords_itr));
+                uint32_t perm_attr = static_cast<uint32_t>(*perms);
+                recv_relations1.back().set_attribute(perm_attr);
+            }
+        }
+    }
+}
+
+bool check_permutations_on_all(stk::mesh::BulkData& mesh)
+{
+    std::ostringstream os;
+    bool all_ok = true;
+    std::vector<stk::mesh::Relation> entity_relations;
+    stk::mesh::EntityRank end_rank = static_cast<stk::mesh::EntityRank>(mesh.mesh_meta_data().entity_rank_count());
+    for (stk::mesh::EntityRank irank=stk::topology::FACE_RANK; irank<end_rank; ++irank)
+    {
+        const stk::mesh::BucketVector &buckets = mesh.buckets(irank);
+        for (size_t i=0;i<buckets.size();++i)
+        {
+            const stk::mesh::Bucket &bucket = *buckets[i];
+            for (size_t j=0;j<bucket.size();++j)
+            {
+                stk::mesh::Entity entity = bucket[j];
+                pack_downward_relations_if_valid_permutation_exists(mesh, entity, entity_relations);
+                for (size_t k=0;k<entity_relations.size();++k)
+                {
+                    if (mesh.entity_rank(entity) < stk::topology::ELEM_RANK)
+                    {
+                        bool valid_permutation = mesh.check_permutation(entity,
+                                                           entity_relations[k].entity(),
+                                                           static_cast<unsigned>(entity_relations[k].getOrdinal()),
+                                                           static_cast<stk::mesh::Permutation>(entity_relations[k].attribute())
+                                                                   );
+                        if (!valid_permutation)
+                        {
+                            all_ok = false;
+                            os << "For processor " << mesh.parallel_rank() << " entity " << mesh.entity_key(entity) << " did not "
+                                    << "get the right permutation for its relationship with entity " << mesh.entity_key(entity_relations[k].entity()) << " with invalid permutation " << entity_relations[k].attribute() <<  std::endl;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if ( !all_ok )
+    {
+        std::cerr << os.str();
+    }
+
+    return all_ok;
 }
 
 } // namespace impl
