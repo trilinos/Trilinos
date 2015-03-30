@@ -61,10 +61,16 @@ echo "
 
 echo "
 -DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH='$DRIVERS_BASE_DIR/gcc-4.8.3-base-options.cmake,$DRIVERS_BASE_DIR/trilinos-tpls-gcc.4.8.3.cmake'
+-DCMAKE_BUILD_TYPE=RELEASE
+-DTrilinos_ENABLE_DEBUG=ON
+-DTPL_ENABLE_MPI=ON
 " > MPI_DEBUG_ST.config
 
 echo "
 -DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH='$DRIVERS_BASE_DIR/gcc-4.8.3-base-options.cmake,$DRIVERS_BASE_DIR/trilinos-tpls-gcc.4.8.3.cmake'
+-DCMAKE_BUILD_TYPE=RELEASE
+-DTrilinos_ENABLE_DEBUG=OFF
+-DTPL_ENABLE_MPI=OFF
 " > SERIAL_RELEASE_ST.config
 
 #
