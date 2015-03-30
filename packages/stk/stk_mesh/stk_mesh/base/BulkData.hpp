@@ -48,7 +48,6 @@
 #include <stk_mesh/base/EntityCommDatabase.hpp>  // for EntityCommDatabase
 #include <stk_mesh/base/Ghosting.hpp>   // for Ghosting
 #include <stk_mesh/base/Selector.hpp>   // for Selector
-#include <stk_mesh/base/Trace.hpp>      // for TraceIfWatching, etc
 #include <stk_mesh/base/Types.hpp>      // for MeshIndex, EntityRank, etc
 #include <stk_mesh/baseImpl/BucketRepository.hpp>  // for BucketRepository
 #include <stk_mesh/baseImpl/EntityRepository.hpp>  // for EntityRepository, etc
@@ -80,7 +79,6 @@ namespace stk { class CommAll; }
 
 #include "EntityCommListInfo.hpp"
 #include "EntityLess.hpp"
-#include "StkDebuggingMacros.hpp"
 #include "SharedEntityType.hpp"
 
 namespace stk {
@@ -208,10 +206,8 @@ public:
    *              a parallel-consistent exception will be thrown.
    */
 
-  enum ModificationEndAuraOption{MODIFICATION_END_ADD_AURA, MODIFICATION_END_NO_AURA};
+  bool modification_end( modification_optimization opt = MOD_END_SORT);
 
-  bool modification_end( modification_optimization opt = MOD_END_SORT,
-                         ModificationEndAuraOption aura_option=MODIFICATION_END_ADD_AURA );
   bool modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt = MOD_END_SORT);
 
   /** \brief  Give away ownership of entities to other parallel processes.
@@ -321,8 +317,7 @@ public:
    */
   void change_entity_parts( Entity entity,
       const PartVector & add_parts ,
-      const PartVector & remove_parts = PartVector(),
-      bool always_propagate_internal_changes=true);
+      const PartVector & remove_parts = PartVector());
 
   /** \brief Change part-membership of the specified entities by adding
    * and/or removing parts for each entity.
@@ -340,8 +335,7 @@ public:
    */
   void batch_change_entity_parts( const stk::mesh::EntityVector& entities,
                             const std::vector<PartVector>& add_parts,
-                            const std::vector<PartVector>& remove_parts,
-                            bool always_propagate_internal_changes=true );
+                            const std::vector<PartVector>& remove_parts);
 
   /** \brief  Request the destruction an entity on the local process.
    *
@@ -692,14 +686,6 @@ public:
    */
   void allocate_field_data();
 
-#ifndef STK_BUILT_IN_SIERRA // DELETE public functions BTW 2015-02-13 and 2015-03-04
-  STK_DEPRECATED(inline void mark_entity(Entity entity, entitySharing sharedType));
-  STK_DEPRECATED(inline entitySharing is_entity_marked(Entity entity) const);
-  STK_DEPRECATED(inline bool add_node_sharing_called() const);
-  STK_DEPRECATED(inline PairIterEntityComm entity_comm_map_shared(const EntityKey & key) const)
-  { return this->internal_entity_comm_map_shared(key); }
-#endif // STK_BUILT_IN_SIERRA
-
 protected: //functions
 
   const EntityCommListInfoVector & internal_comm_list() const { return m_entity_comm_list; }
@@ -747,9 +733,9 @@ protected: //functions
    *                  => update via field relation
    */
   void internal_change_entity_parts( Entity ,
-                                     const PartVector & add_parts ,
-                                     const PartVector & remove_parts,
-                                     bool always_propagate_internal_changes=true);
+                                     const std::vector<Part*> & add_parts ,
+                                     const std::vector<Part*> & remove_parts);
+
   virtual bool internal_destroy_entity( Entity entity, bool was_ghost = false );
 
   void internal_change_ghosting( Ghosting & ghosts,
@@ -763,8 +749,7 @@ protected: //functions
   //the propagation that stk-mesh does.
   void internal_verify_and_change_entity_parts( Entity entity,
                                                 const PartVector & add_parts ,
-                                                const PartVector & remove_parts,
-                                                bool always_propagate_internal_changes=true );
+                                                const PartVector & remove_parts);
 
   void internal_insert_all_parts_induced_from_higher_rank_entities_to_vector(stk::mesh::Entity entity,
                                                                                stk::mesh::Entity e_to,
@@ -886,6 +871,7 @@ protected: //functions
   void check_mesh_consistency();
   bool comm_mesh_verify_parallel_consistency(std::ostream & error_log);
   void delete_shared_entities_which_are_no_longer_in_owned_closure();
+  void write_modification_counts();
 
 private: //functions
 
@@ -1089,20 +1075,6 @@ private: //functions
                                                   bool&                  bad_comm);
 
 
-  void reset_modification_counters();
-  std::string create_modification_counts_filename() const;
-  void write_modification_counts();
-  void write_modification_counts_to_stream_for_method_type(std::ostream& out, enum PublicOrInternalMethod methodType);
-  void write_modification_counts_to_stream(std::ostream& out);
-  void write_entity_modification_entry(std::ostream& out,
-                                         enum PublicOrInternalMethod methodType,
-                                         EntityModificationTypes entityModification);
-  void write_modification_labels_to_stream_for_method_type(std::ostream& out, enum PublicOrInternalMethod methodType);
-  void write_modification_labels_to_stream(std::ostream& out);
-  void write_modification_entry_label(std::ostream& out, const std::string& label, enum PublicOrInternalMethod methodType);
-  void write_entity_modification_entry_label(std::ostream& out, const std::string& label, enum PublicOrInternalMethod methodType);
-  std::string convert_label_for_method_type(const std::string &label, enum PublicOrInternalMethod methodType);
-
   struct MarkAsModified
   {
       MarkAsModified(BulkData & mesh_in) : mesh(mesh_in) {}
@@ -1173,11 +1145,6 @@ private: // data
   stk::EmptyModificationSummary m_modSummary;
   // If needing debug info for modifications, comment out above line and uncomment line below
   // stk::ModificationSummary m_modSummary;
-#ifdef STK_MESH_MODIFICATION_COUNTERS
-  static unsigned m_num_bulk_data_counter;
-  unsigned m_modification_counters[NumMethodTypes][NumModificationTypes];
-  unsigned m_entity_modification_counters[NumMethodTypes][stk::topology::NUM_RANKS][NumEntityModificationTypes];
-#endif
 
 };
 

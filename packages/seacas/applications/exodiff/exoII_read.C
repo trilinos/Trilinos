@@ -246,10 +246,10 @@ const string& ExoII_Read<INT>::SS_Var_Name(int index) const
 }
 
 template <typename INT>
-Exo_Block<INT>* ExoII_Read<INT>::Get_Elmt_Block_by_Index(int block_index) const
+Exo_Block<INT>* ExoII_Read<INT>::Get_Elmt_Block_by_Index(size_t block_index) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(block_index >= 0 && block_index < num_elmt_blocks);
+  SMART_ASSERT(block_index < num_elmt_blocks);
   return &eblocks[block_index];
 }
 
@@ -257,7 +257,7 @@ template <typename INT>
 Exo_Block<INT>* ExoII_Read<INT>::Get_Elmt_Block_by_Id(size_t id) const
 {
   SMART_ASSERT(Check_State());
-  for (int i=0; i < num_elmt_blocks; i++) {
+  for (size_t i=0; i < num_elmt_blocks; i++) {
     if (eblocks[i].Id() == id) {
       return &eblocks[i];
     }
@@ -266,19 +266,19 @@ Exo_Block<INT>* ExoII_Read<INT>::Get_Elmt_Block_by_Id(size_t id) const
 }
 
 template <typename INT>
-Exo_Entity* ExoII_Read<INT>::Get_Entity_by_Index(EXOTYPE type, int block_index) const
+Exo_Entity* ExoII_Read<INT>::Get_Entity_by_Index(EXOTYPE type, size_t block_index) const
 {
   SMART_ASSERT(Check_State());
   
   switch (type) {
   case EX_ELEM_BLOCK:
-    SMART_ASSERT(block_index >= 0 && block_index < num_elmt_blocks);
+    SMART_ASSERT(block_index < num_elmt_blocks);
     return &eblocks[block_index];
   case EX_NODE_SET:
-    SMART_ASSERT(block_index >= 0 && block_index < num_node_sets);
+    SMART_ASSERT(block_index < num_node_sets);
     return &nsets[block_index];
   case EX_SIDE_SET:
-    SMART_ASSERT(block_index >= 0 && block_index < num_side_sets);
+    SMART_ASSERT(block_index < num_side_sets);
     return &ssets[block_index];
   default:
     return NULL;
@@ -291,21 +291,21 @@ Exo_Entity* ExoII_Read<INT>::Get_Entity_by_Id(EXOTYPE type, size_t id) const
   SMART_ASSERT(Check_State());
   switch (type) {
   case EX_ELEM_BLOCK:
-    for (int i=0; i < num_elmt_blocks; i++) {
+    for (size_t i=0; i < num_elmt_blocks; i++) {
       if (eblocks[i].Id() == id) {
 	return &eblocks[i];
       }
     }
     break;
   case EX_NODE_SET:
-    for (int i=0; i < num_node_sets; i++) {
+    for (size_t i=0; i < num_node_sets; i++) {
       if (nsets[i].Id() == id) {
 	return &nsets[i];
       }
     }
     break;
   case EX_SIDE_SET:
-    for (int i=0; i < num_side_sets; i++) {
+    for (size_t i=0; i < num_side_sets; i++) {
       if (ssets[i].Id() == id) {
 	return &ssets[i];
       }
@@ -321,7 +321,7 @@ template <typename INT>
 Node_Set<INT>* ExoII_Read<INT>::Get_Node_Set_by_Id(size_t set_id) const
 {
   SMART_ASSERT(Check_State());
-  for (int i=0; i < num_node_sets; i++) {
+  for (size_t i=0; i < num_node_sets; i++) {
     if (nsets[i].Id() == set_id) {
       return &nsets[i];
     }
@@ -333,7 +333,7 @@ template <typename INT>
 Side_Set<INT>* ExoII_Read<INT>::Get_Side_Set_by_Id(size_t set_id) const
 {
   SMART_ASSERT(Check_State());
-  for (int i=0; i < num_side_sets; i++) {
+  for (size_t i=0; i < num_side_sets; i++) {
     if (ssets[i].Id() == set_id) {
       return &ssets[i];
     }
@@ -342,7 +342,7 @@ Side_Set<INT>* ExoII_Read<INT>::Get_Side_Set_by_Id(size_t set_id) const
 }
 
 template <typename INT>
-string ExoII_Read<INT>::Load_Elmt_Block_Description(int block_index) const
+string ExoII_Read<INT>::Load_Elmt_Block_Description(size_t block_index) const
 {
   SMART_ASSERT(Check_State());
   if (!Open()) return "ERROR:  Must open file before loading blocks!";
@@ -362,7 +362,7 @@ string ExoII_Read<INT>::Load_Elmt_Block_Descriptions() const
   SMART_ASSERT(Check_State());
   if (!Open()) return "ERROR:  Must open file before loading blocks!";
   
-  for (int b = 0; b < num_elmt_blocks; ++b) {
+  for (size_t b = 0; b < num_elmt_blocks; ++b) {
     eblocks[b].Load_Connectivity();
     //    eblocks[b].Load_Attributes();
   }
@@ -371,7 +371,7 @@ string ExoII_Read<INT>::Load_Elmt_Block_Descriptions() const
 }
 
 template <typename INT>
-string ExoII_Read<INT>::Free_Elmt_Block(int block_index) const
+string ExoII_Read<INT>::Free_Elmt_Block(size_t block_index) const
 {
   SMART_ASSERT(Check_State());
   
@@ -390,7 +390,7 @@ string ExoII_Read<INT>::Free_Elmt_Blocks() const
 {
   SMART_ASSERT(Check_State());
   
-  for (int b = 0; b < num_elmt_blocks; ++b) {
+  for (size_t b = 0; b < num_elmt_blocks; ++b) {
     eblocks[b].Free_Connectivity();
     eblocks[b].Free_Attributes();
   }
@@ -399,7 +399,7 @@ string ExoII_Read<INT>::Free_Elmt_Blocks() const
 }
 
 template <typename INT>
-string ExoII_Read<INT>::Give_Connectivity(int block_index,
+string ExoII_Read<INT>::Give_Connectivity(size_t block_index,
 					  size_t& num_e,
 					  size_t& npe,
 					  INT*& new_conn)
@@ -411,7 +411,7 @@ string ExoII_Read<INT>::Give_Connectivity(int block_index,
   
 
 template <typename INT>
-size_t ExoII_Read<INT>::Block_Id(int block_index) const
+size_t ExoII_Read<INT>::Block_Id(size_t block_index) const
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(block_index >= 0 && block_index < num_elmt_blocks);
@@ -422,7 +422,7 @@ template <typename INT>
 int ExoII_Read<INT>::Block_Index(size_t block_id) const
 {
   SMART_ASSERT(Check_State());
-  for (int b = 0; b < num_elmt_blocks; ++b)
+  for (size_t b = 0; b < num_elmt_blocks; ++b)
     if (eblocks[b].Id() == block_id)
       return b;
   return -1;
@@ -432,7 +432,7 @@ template <typename INT>
 int ExoII_Read<INT>::Node_Set_Index(size_t id) const
 {
   SMART_ASSERT(Check_State());
-  for (int b = 0; b < num_node_sets; ++b)
+  for (size_t b = 0; b < num_node_sets; ++b)
     if (nsets[b].Id() == id)
       return b;
   return -1;
@@ -442,7 +442,7 @@ template <typename INT>
 int ExoII_Read<INT>::Side_Set_Index(size_t id) const
 {
   SMART_ASSERT(Check_State());
-  for (int b = 0; b < num_side_sets; ++b)
+  for (size_t b = 0; b < num_side_sets; ++b)
     if (ssets[b].Id() == id)
       return b;
   return -1;
@@ -823,32 +823,32 @@ string ExoII_Read<INT>::Load_Global_Results(int t1, int t2, double proportion)
 }
 
 template <typename INT>
-size_t ExoII_Read<INT>::Side_Set_Id(int set_index) const
+size_t ExoII_Read<INT>::Side_Set_Id(size_t set_index) const
 {
   SMART_ASSERT(Check_State());
   
-  if (set_index < 0 || set_index >= num_side_sets) return 0;
+  if (set_index >= num_side_sets) return 0;
   
   return ssets[set_index].Id();
 }
 
 template <typename INT>
-Side_Set<INT>* ExoII_Read<INT>::Get_Side_Set_by_Index(int side_set_index) const
+Side_Set<INT>* ExoII_Read<INT>::Get_Side_Set_by_Index(size_t side_set_index) const
 {
   SMART_ASSERT(Check_State());
   
-  if (side_set_index < 0 || side_set_index >= num_side_sets) return NULL;
+  if (side_set_index >= num_side_sets) return NULL;
   
   return &ssets[side_set_index];
 }
 
 
 template <typename INT>
-Node_Set<INT>* ExoII_Read<INT>::Get_Node_Set_by_Index(int set_index) const
+Node_Set<INT>* ExoII_Read<INT>::Get_Node_Set_by_Index(size_t set_index) const
 {
   SMART_ASSERT(Check_State());
   
-  if (set_index < 0 || set_index >= num_node_sets) return NULL;
+  if (set_index >= num_node_sets) return NULL;
   
   return &nsets[set_index];
 }
@@ -933,7 +933,7 @@ void ExoII_Read<INT>::Display_Stats(std::ostream& s) const
     
     s << "                   ELEMENT BLOCKS" << std::endl;
     s << "\tIndex \tId     num elmts    nodes/elmt num attr  type" << std::endl;
-    for (int b = 0; b < num_elmt_blocks; ++b) {
+    for (size_t b = 0; b < num_elmt_blocks; ++b) {
       s << "\t" << b << "   \t" << eblocks[b].Id()
 	<< "  \t"    << eblocks[b].Size()
 	<< "  \t\t"  << eblocks[b].num_nodes_per_elmt
@@ -947,7 +947,7 @@ void ExoII_Read<INT>::Display_Stats(std::ostream& s) const
     
     s << "              NODE SETS " << std::endl
       << "\tIndex \tId     length \tdistribution factors length" << std::endl;
-    for (int nset = 0; nset < num_node_sets; ++nset) {
+    for (size_t nset = 0; nset < num_node_sets; ++nset) {
       s << "\t"   << nset << "  \t" << nsets[nset].Id()
 	<< "  \t" << nsets[nset].Size()
 	<< "  \t" << nsets[nset].num_dist_factors << std::endl;
@@ -959,7 +959,7 @@ void ExoII_Read<INT>::Display_Stats(std::ostream& s) const
     
     s << "              SIDE SETS " << std::endl
       << "\tIndex \tId     length \tdistribution factors length" << std::endl;
-    for (int sset = 0; sset < num_side_sets; ++sset) {
+    for (size_t sset = 0; sset < num_side_sets; ++sset) {
       s << "\t"   << sset << "  \t" << ssets[sset].Id()
 	<< "  \t" << ssets[sset].Size()
 	<< "  \t" << ssets[sset].num_dist_factors << std::endl;
@@ -1057,7 +1057,7 @@ void ExoII_Read<INT>::Display(std::ostream& s) const
     
     s << "                   ELEMENT BLOCKS" << std::endl;
     s << "\tIndex \tId     num elmts    nodes/elmt num attr  type" << std::endl;
-    for (int b = 0; b < num_elmt_blocks; ++b) {
+    for (size_t b = 0; b < num_elmt_blocks; ++b) {
       s << "\t" << b << "   \t" << eblocks[b].Id()
         << "  \t"    << eblocks[b].Size()
         << "  \t\t"  << eblocks[b].num_nodes_per_elmt
@@ -1071,7 +1071,7 @@ void ExoII_Read<INT>::Display(std::ostream& s) const
     
     s << "              NODE SETS " << std::endl
       << "\tIndex \tId     length \tdistribution factors length" << std::endl;
-    for (int nset = 0; nset < num_node_sets; ++nset) {
+    for (size_t nset = 0; nset < num_node_sets; ++nset) {
       s << "\t"   << nset << "  \t" << nsets[nset].Id()
         << "  \t" << nsets[nset].Size()
         << "  \t" << nsets[nset].num_dist_factors << std::endl;
@@ -1083,7 +1083,7 @@ void ExoII_Read<INT>::Display(std::ostream& s) const
     
     s << "              SIDE SETS " << std::endl
       << "\tIndex \tId     length \tdistribution factors length" << std::endl;
-    for (int sset = 0; sset < num_side_sets; ++sset) {
+    for (size_t sset = 0; sset < num_side_sets; ++sset) {
       s << "\t"   << sset << "  \t" << ssets[sset].Id()
         << "  \t" << ssets[sset].Size()
         << "  \t" << ssets[sset].num_dist_factors << std::endl;
@@ -1176,7 +1176,7 @@ template <typename INT>
 int ExoII_Read<INT>::Elmt_Block_Index(size_t eblock_id) const
 {
   SMART_ASSERT(Check_State());
-  for (int b = 0; b < num_elmt_blocks; ++b)
+  for (size_t b = 0; b < num_elmt_blocks; ++b)
     if (eblocks[b].Id() == eblock_id)
       return b;
   return -1;
@@ -1186,7 +1186,7 @@ template <typename INT>
 int ExoII_Read<INT>::NSet_Index(size_t nset_id) const
 {
   SMART_ASSERT(Check_State());
-  for (int n = 0; n < num_node_sets; ++n)
+  for (size_t n = 0; n < num_node_sets; ++n)
     if (nsets[n].Id() == nset_id)
       return n;
   return -1;
@@ -1196,7 +1196,7 @@ template <typename INT>
 int ExoII_Read<INT>::SSet_Index(size_t sset_id) const
 {
   SMART_ASSERT(Check_State());
-  for (int s = 0; s < num_side_sets; ++s)
+  for (size_t s = 0; s < num_side_sets; ++s)
     if (ssets[s].Id() == sset_id)
       return s;
   return -1;
@@ -1350,7 +1350,7 @@ void ExoII_Read<INT>::Get_Init_Data()
   }
   
   coord_names.clear();
-  for (int i = 0; i < dimension; ++i) {
+  for (size_t i = 0; i < dimension; ++i) {
     coord_names.push_back(coords[i]);
   }
   free_name_array(coords, 3);
@@ -1371,7 +1371,7 @@ void ExoII_Read<INT>::Get_Init_Data()
     }
     
     size_t e_count = 0;
-    for (int b = 0; b < num_elmt_blocks; ++b) {
+    for (size_t b = 0; b < num_elmt_blocks; ++b) {
       if (ids[b] <= EX_INVALID_ID) {
 	std::cout << "EXODIFF  WARNING:  Element block Id "
 		  << "for block index " << b << " is " << ids[b]
@@ -1391,7 +1391,7 @@ void ExoII_Read<INT>::Get_Init_Data()
 
     // Gather the attribute names (even though not all attributes are on all blocks)
     std::set<std::string> names;
-    for (int b = 0; b < num_elmt_blocks; ++b) {
+    for (size_t b = 0; b < num_elmt_blocks; ++b) {
       for (int a = 0; a < eblocks[b].attr_count(); a++) {
 	names.insert(eblocks[b].Get_Attribute_Name(a));
       }
@@ -1415,7 +1415,7 @@ void ExoII_Read<INT>::Get_Init_Data()
       exit(1);
     }
 
-    for (int nset = 0; nset < num_node_sets; ++nset) {
+    for (size_t nset = 0; nset < num_node_sets; ++nset) {
       if (ids[nset] <= EX_INVALID_ID) {
 	std::cout << "EXODIFF  WARNING: Nodeset Id "
 		  << "for nodeset index " << nset << " is " << ids[nset]
@@ -1440,7 +1440,7 @@ void ExoII_Read<INT>::Get_Init_Data()
       exit(1);
     }
 
-    for (int sset = 0; sset < num_side_sets; ++sset) {
+    for (size_t sset = 0; sset < num_side_sets; ++sset) {
       if (ids[sset] <= EX_INVALID_ID) {
 	std::cout << "EXODIFF  WARNING:  Sideset Id "
 		  << "for sideset index " << sset << " is " << ids[sset]

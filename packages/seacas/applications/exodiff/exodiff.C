@@ -46,7 +46,7 @@
 #  define ST_ZU   "%lu"
 #endif
 
-#include <math.h>
+#include <cmath>
 #include <time.h>
 #include <iostream>
 #include <fstream>
@@ -1019,14 +1019,6 @@ namespace {
     return 0;
   }
 
-#if defined(__APPLE__) && !defined(isnan)
-  /* for Mac OSX 10, this isnan function may need to be manually declared;
-   * however, on some g++ versions, isnan is a macro so it doesn't need
-   * to be manually declared...
-   */
-  extern "C" int isnan(double value);
-#endif
-
   bool Invalid_Values(const double *values, size_t count)
   {
     bool valid = true;
@@ -1038,12 +1030,10 @@ namespace {
     
     
       for (size_t i=0; i < count; i++) {
-#if (defined(__GNUC__) && (__GNUC__ == 2 && __GNUC_MINOR__ == 96)) || (defined(linux) && __PGI) || (defined(linux) && __INTEL_COMPILER)
-	if (__isnan(values[i]))
-#elif defined(interix)
+#if defined(interix)
 	  if (values[i] != values[i]) 
 #else
-	    if (isnan(values[i]))
+	    if (std::isnan(values[i]))
 #endif
 	      {
 		valid = false;

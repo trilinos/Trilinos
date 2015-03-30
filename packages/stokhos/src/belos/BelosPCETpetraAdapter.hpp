@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,14 +35,12 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
 #ifndef BELOS_PCE_TPETRA_ADAPTER_HPP
 #define BELOS_PCE_TPETRA_ADAPTER_HPP
-
-#include <Kokkos_NodeTrace.hpp>
 
 /*! \file BelosTpetraAdapter.hpp
     \brief Provides several interfaces between Belos virtual classes and Tpetra concrete classes.
@@ -77,7 +75,7 @@ namespace Belos {
   //
   ////////////////////////////////////////////////////////////////////
 
-  /*! 
+  /*!
    * \brief Specialization of Tpetra MultiVecTraits for PCE scalar types
    *
    * Currently this is just a hack to pull out the degree 0 term for
@@ -96,19 +94,17 @@ namespace Belos {
     typedef Sacado::PCE::OrthogPoly<BaseScalar,Storage> Scalar;
 
     static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > Clone( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const int numvecs )
-    { 
+    {
       return Teuchos::rcp( new Tpetra::MultiVector<Scalar,LO,GO,Node>(mv.getMap(),numvecs));
     }
 
     static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
-      KOKKOS_NODE_TRACE("Belos::MVT::CloneCopy(MV)")
-      return Teuchos::rcp( new Tpetra::MultiVector<Scalar,LO,GO,Node>( mv ) ); 
+      return Teuchos::rcp( new Tpetra::MultiVector<Scalar,LO,GO,Node>( mv ) );
     }
 
     static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
-    { 
-      KOKKOS_NODE_TRACE("Belos::MVT::CloneCopy(MV,ind)")
+    {
       TEUCHOS_TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneCopy(mv,index): numvecs must be greater than zero.");
 #ifdef HAVE_TPETRA_DEBUG
@@ -128,33 +124,32 @@ namespace Belos {
       return mv.subCopy(Teuchos::Range1D(index.front(),index.back()));
     }
 
-    static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > 
-    CloneCopy (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, 
-	       const Teuchos::Range1D& index)
-    { 
-      KOKKOS_NODE_TRACE("Belos::MVT::CloneCopy(MV,ind)")
-      const bool validRange = index.size() > 0 && 
-	index.lbound() >= 0 && 
-	index.ubound() < GetNumberVecs(mv);
+    static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> >
+    CloneCopy (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv,
+               const Teuchos::Range1D& index)
+    {
+      const bool validRange = index.size() > 0 &&
+        index.lbound() >= 0 &&
+        index.ubound() < GetNumberVecs(mv);
       if (! validRange)
-	{
-	  std::ostringstream os;
-	  os << "Belos::MultiVecTraits<Scalar, Tpetra::MultiVector<...> >::"
-	    "CloneCopy(mv,index=[" << index.lbound() << ", " << index.ubound() 
-	     << "]): ";
-	  TEUCHOS_TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
-			     os.str() << "Empty index range is not allowed.");
-	  TEUCHOS_TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
-			     os.str() << "Index range includes negative "
-			     "index/ices, which is not allowed.");
-	  // Range1D bounds are signed; size_t is unsigned.
-	  TEUCHOS_TEST_FOR_EXCEPTION(index.ubound() >= GetNumberVecs(mv),
-			     std::invalid_argument, 
-			     os.str() << "Index range exceeds number of vectors " 
-			     << mv.getNumVectors() << " in the input multivector.");
-	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
-			     os.str() << "Should never get here!");
-	}
+        {
+          std::ostringstream os;
+          os << "Belos::MultiVecTraits<Scalar, Tpetra::MultiVector<...> >::"
+            "CloneCopy(mv,index=[" << index.lbound() << ", " << index.ubound()
+             << "]): ";
+          TEUCHOS_TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
+                             os.str() << "Empty index range is not allowed.");
+          TEUCHOS_TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+                             os.str() << "Index range includes negative "
+                             "index/ices, which is not allowed.");
+          // Range1D bounds are signed; size_t is unsigned.
+          TEUCHOS_TEST_FOR_EXCEPTION(index.ubound() >= GetNumberVecs(mv),
+                             std::invalid_argument,
+                             os.str() << "Index range exceeds number of vectors "
+                             << mv.getNumVectors() << " in the input multivector.");
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                             os.str() << "Should never get here!");
+        }
       return mv.subCopy (index);
     }
 
@@ -181,34 +176,34 @@ namespace Belos {
     }
 
 
-    static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > 
-    CloneViewNonConst (Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, 
-		       const Teuchos::Range1D& index)
+    static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> >
+    CloneViewNonConst (Tpetra::MultiVector<Scalar,LO,GO,Node>& mv,
+                       const Teuchos::Range1D& index)
     {
       // NOTE (mfh 11 Jan 2011) We really should check for possible
       // overflow of int here.  However, the number of columns in a
       // multivector typically fits in an int.
       const int numCols = static_cast<int> (mv.getNumVectors());
-      const bool validRange = index.size() > 0 && 
-	index.lbound() >= 0 && index.ubound() < numCols;
+      const bool validRange = index.size() > 0 &&
+        index.lbound() >= 0 && index.ubound() < numCols;
       if (! validRange)
-	{
-	  std::ostringstream os;
-	  os << "Belos::MultiVecTraits<Scalar, Tpetra::MultiVector<...> >::"
-	    "CloneViewNonConst(mv,index=[" << index.lbound() << ", " 
-	     << index.ubound() << "]): ";
-	  TEUCHOS_TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
-			     os.str() << "Empty index range is not allowed.");
-	  TEUCHOS_TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
-			     os.str() << "Index range includes negative "
-			     "index/ices, which is not allowed.");
-	  TEUCHOS_TEST_FOR_EXCEPTION(index.ubound() >= numCols, std::invalid_argument, 
-			     os.str() << "Index range exceeds number of "
-			     "vectors " << numCols << " in the input "
-			     "multivector.");
-	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
-			     os.str() << "Should never get here!");
-	}
+        {
+          std::ostringstream os;
+          os << "Belos::MultiVecTraits<Scalar, Tpetra::MultiVector<...> >::"
+            "CloneViewNonConst(mv,index=[" << index.lbound() << ", "
+             << index.ubound() << "]): ";
+          TEUCHOS_TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
+                             os.str() << "Empty index range is not allowed.");
+          TEUCHOS_TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+                             os.str() << "Index range includes negative "
+                             "index/ices, which is not allowed.");
+          TEUCHOS_TEST_FOR_EXCEPTION(index.ubound() >= numCols, std::invalid_argument,
+                             os.str() << "Index range exceeds number of "
+                             "vectors " << numCols << " in the input "
+                             "multivector.");
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                             os.str() << "Should never get here!");
+        }
       return mv.subViewNonConst (index);
     }
 
@@ -234,34 +229,34 @@ namespace Belos {
       return mv.subView(Teuchos::Range1D(index.front(),index.back()));
     }
 
-    static Teuchos::RCP<const Tpetra::MultiVector<Scalar,LO,GO,Node> > 
-    CloneView (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, 
-	       const Teuchos::Range1D& index)
+    static Teuchos::RCP<const Tpetra::MultiVector<Scalar,LO,GO,Node> >
+    CloneView (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv,
+               const Teuchos::Range1D& index)
     {
       // NOTE (mfh 11 Jan 2011) We really should check for possible
       // overflow of int here.  However, the number of columns in a
       // multivector typically fits in an int.
       const int numCols = static_cast<int> (mv.getNumVectors());
-      const bool validRange = index.size() > 0 && 
-	index.lbound() >= 0 && index.ubound() < numCols;
+      const bool validRange = index.size() > 0 &&
+        index.lbound() >= 0 && index.ubound() < numCols;
       if (! validRange)
-	{
-	  std::ostringstream os;
-	  os << "Belos::MultiVecTraits<Scalar, Tpetra::MultiVector<...> >::"
-	    "CloneView(mv, index=[" << index.lbound() << ", " 
-	     << index.ubound() << "]): ";
-	  TEUCHOS_TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
-			     os.str() << "Empty index range is not allowed.");
-	  TEUCHOS_TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
-			     os.str() << "Index range includes negative "
-			     "index/ices, which is not allowed.");
-	  TEUCHOS_TEST_FOR_EXCEPTION(index.ubound() >= numCols, std::invalid_argument, 
-			     os.str() << "Index range exceeds number of "
-			     "vectors " << numCols << " in the input "
-			     "multivector.");
-	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
-			     os.str() << "Should never get here!");
-	}
+        {
+          std::ostringstream os;
+          os << "Belos::MultiVecTraits<Scalar, Tpetra::MultiVector<...> >::"
+            "CloneView(mv, index=[" << index.lbound() << ", "
+             << index.ubound() << "]): ";
+          TEUCHOS_TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
+                             os.str() << "Empty index range is not allowed.");
+          TEUCHOS_TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+                             os.str() << "Index range includes negative "
+                             "index/ices, which is not allowed.");
+          TEUCHOS_TEST_FOR_EXCEPTION(index.ubound() >= numCols, std::invalid_argument,
+                             os.str() << "Index range exceeds number of "
+                             "vectors " << numCols << " in the input "
+                             "multivector.");
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                             os.str() << "Should never get here!");
+        }
       return mv.subView (index);
     }
 
@@ -274,21 +269,20 @@ namespace Belos {
     static bool HasConstantStride( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     { return mv.isConstantStride(); }
 
-    static void MvTimesMatAddMv( Scalar alpha, const Tpetra::MultiVector<Scalar,LO,GO,Node>& A, 
-                                 const Teuchos::SerialDenseMatrix<int,BaseScalar>& B, 
+    static void MvTimesMatAddMv( Scalar alpha, const Tpetra::MultiVector<Scalar,LO,GO,Node>& A,
+                                 const Teuchos::SerialDenseMatrix<int,BaseScalar>& B,
                                  Scalar beta, Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
       Teuchos::SerialDenseMatrix<int,Scalar> B_pce(B.numRows(), B.numCols());
       for (int i=0; i<B.numRows(); i++)
-	for (int j=0; j<B.numCols(); j++)
-	  B_pce(i,j) = B(i,j);
+        for (int j=0; j<B.numCols(); j++)
+          B_pce(i,j) = B(i,j);
       MvTimesMatAddMv(alpha, A, B_pce, beta, mv);
     }
-    static void MvTimesMatAddMv( Scalar alpha, const Tpetra::MultiVector<Scalar,LO,GO,Node>& A, 
-                                 const Teuchos::SerialDenseMatrix<int,Scalar>& B, 
+    static void MvTimesMatAddMv( Scalar alpha, const Tpetra::MultiVector<Scalar,LO,GO,Node>& A,
+                                 const Teuchos::SerialDenseMatrix<int,Scalar>& B,
                                  Scalar beta, Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
-      KOKKOS_NODE_TRACE("Belos::MVT::MvTimesMatAddMv()")
 #ifdef HAVE_BELOS_TPETRA_TIMERS
       Teuchos::TimeMonitor lcltimer(*mvTimesMatAddMvTimer_);
 #endif
@@ -312,25 +306,24 @@ namespace Belos {
     { mv.scale(alpha); }
 
     static void MvScale ( Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<BaseScalar>& alphas )
-    { 
+    {
       std::vector<Scalar> alphas_pce(alphas.size());
       for (int i=0; i<alphas.size(); i++) alphas_pce[i] = alphas[i];
-      mv.scale(alphas_pce); 
+      mv.scale(alphas_pce);
     }
     static void MvScale ( Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<Scalar>& alphas )
     { mv.scale(alphas); }
 
     static void MvTransMv( Scalar alpha, const Tpetra::MultiVector<Scalar,LO,GO,Node>& A, const Tpetra::MultiVector<Scalar,LO,GO,Node>& B, Teuchos::SerialDenseMatrix<int,BaseScalar>& C)
-    { 
+    {
       Teuchos::SerialDenseMatrix<int,Scalar> C_pce(C.numRows(), C.numCols());
       MvTransMv(alpha, A, B, C_pce);
       for (int i=0; i<C.numRows(); i++)
-	for (int j=0; j<C.numCols(); j++)
-	  C(i,j) = C_pce(i,j).coeff(0);
-    }      
+        for (int j=0; j<C.numCols(); j++)
+          C(i,j) = C_pce(i,j).coeff(0);
+    }
     static void MvTransMv( Scalar alpha, const Tpetra::MultiVector<Scalar,LO,GO,Node>& A, const Tpetra::MultiVector<Scalar,LO,GO,Node>& B, Teuchos::SerialDenseMatrix<int,Scalar>& C)
-    { 
-      KOKKOS_NODE_TRACE("Belos::MVT::MvTransMv()")
+    {
 #ifdef HAVE_BELOS_TPETRA_TIMERS
       Teuchos::TimeMonitor lcltimer(*mvTransMvTimer_);
 #endif
@@ -358,7 +351,7 @@ namespace Belos {
         // no accumulation to do; simply extract the multivector data into C
         // extract a copy of the result into the array view (and therefore, the SerialDenseMatrix)
         C_mv.get1dCopy(C_view,strideC);
-      }  
+      }
       else {
         // get a const host view of the data in C_mv
         Teuchos::ArrayRCP<const Scalar> C_mv_view = C_mv.get1dView();
@@ -392,11 +385,11 @@ namespace Belos {
       Teuchos::Array<Scalar> pce_dots(A.getNumVectors());
       A.dot(B, pce_dots);
       for (unsigned int i=0; i<A.getNumVectors(); i++)
-      	dots[i] = pce_dots[i].coeff(0);
+        dots[i] = pce_dots[i].coeff(0);
     }
 
     static void MvNorm(const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, std::vector<typename Teuchos::ScalarTraits<BaseScalar>::magnitudeType> &normvec, NormType type=TwoNorm)
-    { 
+    {
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(normvec.size() < (typename std::vector<int>::size_type)mv.getNumVectors(),std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::MvNorm(mv,normvec): normvec must have room for all norms.");
@@ -405,30 +398,29 @@ namespace Belos {
       //Teuchos::Array<Scalar> pce_norms(mv.getNumVectors());
       switch (type) {
         case OneNorm:
-	  mv.norm1(av(0,mv.getNumVectors()));
-	  // mv.norm1(pce_norms);
-	  // for (unsigned int i=0; i<mv.getNumVectors(); i++)
-	  //   normvec[i] = pce_norms[i].coeff(0);
+          mv.norm1(av(0,mv.getNumVectors()));
+          // mv.norm1(pce_norms);
+          // for (unsigned int i=0; i<mv.getNumVectors(); i++)
+          //   normvec[i] = pce_norms[i].coeff(0);
           break;
         case TwoNorm:
           mv.norm2(av(0,mv.getNumVectors()));
-	  // mv.dot(mv, pce_norms);
-	  // for (unsigned int i=0; i<mv.getNumVectors(); i++)
-	  //   normvec[i] = std::sqrt(pce_norms[i].coeff(0));
+          // mv.dot(mv, pce_norms);
+          // for (unsigned int i=0; i<mv.getNumVectors(); i++)
+          //   normvec[i] = std::sqrt(pce_norms[i].coeff(0));
           break;
         case InfNorm:
           mv.normInf(av(0,mv.getNumVectors()));
-	  // mv.normInf(pce_norms);
-	  // for (unsigned int i=0; i<mv.getNumVectors(); i++)
-	  //   normvec[i] = pce_norms[i].coeff(0);
+          // mv.normInf(pce_norms);
+          // for (unsigned int i=0; i<mv.getNumVectors(); i++)
+          //   normvec[i] = pce_norms[i].coeff(0);
           break;
       }
-      
+
     }
 
     static void SetBlock( const Tpetra::MultiVector<Scalar,LO,GO,Node>& A, const std::vector<int>& index, Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
-      KOKKOS_NODE_TRACE("Belos::MVT::SetBlock()")
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION((typename std::vector<int>::size_type)A.getNumVectors() < index.size(),std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::SetBlock(A,index,mv): index must be the same size as A.");
@@ -445,12 +437,10 @@ namespace Belos {
     }
 
     static void
-    SetBlock (const Tpetra::MultiVector<Scalar,LO,GO,Node>& A, 
-	      const Teuchos::Range1D& index, 
-	      Tpetra::MultiVector<Scalar,LO,GO,Node>& mv)
+    SetBlock (const Tpetra::MultiVector<Scalar,LO,GO,Node>& A,
+              const Teuchos::Range1D& index,
+              Tpetra::MultiVector<Scalar,LO,GO,Node>& mv)
     {
-      KOKKOS_NODE_TRACE("Belos::MVT::SetBlock()")
-
       // Range1D bounds are signed; size_t is unsigned.
       // Assignment of Tpetra::MultiVector is a deep copy.
 
@@ -461,18 +451,18 @@ namespace Belos {
       const size_t maxInt = static_cast<size_t> (Teuchos::OrdinalTraits<int>::max());
       const bool overflow = maxInt < A.getNumVectors() && maxInt < mv.getNumVectors();
       if (overflow)
-	{
-	  std::ostringstream os;
-	  os <<	"Belos::MultiVecTraits<Scalar, Tpetra::MultiVector<Scalar, ..."
-	    "> >::SetBlock(A, index=[" << index.lbound() << ", " 
-	     << index.ubound() << "], mv): ";
-	  TEUCHOS_TEST_FOR_EXCEPTION(maxInt < A.getNumVectors(), std::range_error,
-			     os.str() << "Number of columns in the input multi"
-			     "vector 'A' (a size_t) overflows int.");
-	  TEUCHOS_TEST_FOR_EXCEPTION(maxInt < mv.getNumVectors(), std::range_error,
-			     os.str() << "Number of columns in the output multi"
-			     "vector 'mv' (a size_t) overflows int.");
-	}
+        {
+          std::ostringstream os;
+          os << "Belos::MultiVecTraits<Scalar, Tpetra::MultiVector<Scalar, ..."
+            "> >::SetBlock(A, index=[" << index.lbound() << ", "
+             << index.ubound() << "], mv): ";
+          TEUCHOS_TEST_FOR_EXCEPTION(maxInt < A.getNumVectors(), std::range_error,
+                             os.str() << "Number of columns in the input multi"
+                             "vector 'A' (a size_t) overflows int.");
+          TEUCHOS_TEST_FOR_EXCEPTION(maxInt < mv.getNumVectors(), std::range_error,
+                             os.str() << "Number of columns in the output multi"
+                             "vector 'mv' (a size_t) overflows int.");
+        }
       // We've already validated the static casts above.
       const int numColsA = static_cast<int> (A.getNumVectors());
       const int numColsMv = static_cast<int> (mv.getNumVectors());
@@ -482,23 +472,23 @@ namespace Belos {
       const bool validSource = index.size() <= numColsA;
 
       if (! validIndex || ! validSource)
-	{
-	  std::ostringstream os;
-	  os <<	"Belos::MultiVecTraits<Scalar, Tpetra::MultiVector<Scalar, ..."
-	    "> >::SetBlock(A, index=[" << index.lbound() << ", " 
-	     << index.ubound() << "], mv): ";
-	  TEUCHOS_TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
-			     os.str() << "Range lower bound must be nonnegative.");
-	  TEUCHOS_TEST_FOR_EXCEPTION(index.ubound() >= numColsMv, std::invalid_argument,
-			     os.str() << "Range upper bound must be less than "
-			     "the number of columns " << numColsA << " in the "
-			     "'mv' output argument.");
-	  TEUCHOS_TEST_FOR_EXCEPTION(index.size() > numColsA, std::invalid_argument,
-			     os.str() << "Range must have no more elements than"
-			     " the number of columns " << numColsA << " in the "
-			     "'A' input argument.");
-	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
-	}
+        {
+          std::ostringstream os;
+          os << "Belos::MultiVecTraits<Scalar, Tpetra::MultiVector<Scalar, ..."
+            "> >::SetBlock(A, index=[" << index.lbound() << ", "
+             << index.ubound() << "], mv): ";
+          TEUCHOS_TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+                             os.str() << "Range lower bound must be nonnegative.");
+          TEUCHOS_TEST_FOR_EXCEPTION(index.ubound() >= numColsMv, std::invalid_argument,
+                             os.str() << "Range upper bound must be less than "
+                             "the number of columns " << numColsA << " in the "
+                             "'mv' output argument.");
+          TEUCHOS_TEST_FOR_EXCEPTION(index.size() > numColsA, std::invalid_argument,
+                             os.str() << "Range must have no more elements than"
+                             " the number of columns " << numColsA << " in the "
+                             "'A' input argument.");
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+        }
       typedef Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > MV_ptr;
       typedef Teuchos::RCP<const Tpetra::MultiVector<Scalar,LO,GO,Node> > const_MV_ptr;
 
@@ -507,33 +497,31 @@ namespace Belos {
       // the index range is different than [0, (# columns in mv) - 1].
       MV_ptr mv_view;
       if (index.lbound() == 0 && index.ubound()+1 == numColsMv)
-	mv_view = Teuchos::rcpFromRef (mv); // Non-const, non-owning RCP
+        mv_view = Teuchos::rcpFromRef (mv); // Non-const, non-owning RCP
       else
-	mv_view = CloneViewNonConst (mv, index);
+        mv_view = CloneViewNonConst (mv, index);
 
       // View of the relevant column(s) of the source multivector A.
       // If A has fewer columns than mv_view, then create a view of
       // the first index.size() columns of A.
       const_MV_ptr A_view;
       if (index.size() == numColsA)
-	A_view = Teuchos::rcpFromRef (A); // Const, non-owning RCP
+        A_view = Teuchos::rcpFromRef (A); // Const, non-owning RCP
       else
-	A_view = CloneView (A, Teuchos::Range1D(0, index.size()-1));
+        A_view = CloneView (A, Teuchos::Range1D(0, index.size()-1));
 
       // Assignment of Tpetra::MultiVector objects via operator=()
       // assumes that both arguments have compatible Maps.  If
       // HAVE_TPETRA_DEBUG is defined at compile time, operator=()
       // will throw an std::runtime_error if the Maps are
       // incompatible.
-      *mv_view = *A_view; 
+      *mv_view = *A_view;
     }
 
     static void
-    Assign (const Tpetra::MultiVector<Scalar,LO,GO,Node>& A, 
-	    Tpetra::MultiVector<Scalar,LO,GO,Node>& mv)
+    Assign (const Tpetra::MultiVector<Scalar,LO,GO,Node>& A,
+            Tpetra::MultiVector<Scalar,LO,GO,Node>& mv)
     {
-      KOKKOS_NODE_TRACE("Belos::MVT::Assign()")
-
       // Range1D bounds are signed; size_t is unsigned.
       // Assignment of Tpetra::MultiVector is a deep copy.
 
@@ -544,59 +532,58 @@ namespace Belos {
       const size_t maxInt = static_cast<size_t> (Teuchos::OrdinalTraits<int>::max());
       const bool overflow = maxInt < A.getNumVectors() && maxInt < mv.getNumVectors();
       if (overflow)
-	{
-	  std::ostringstream os;
-	  os <<	"Belos::MultiVecTraits<Scalar, Tpetra::MultiVector<Scalar, ..."
-	    "> >::Assign(A, mv): ";
-	  TEUCHOS_TEST_FOR_EXCEPTION(maxInt < A.getNumVectors(), std::range_error,
-			     os.str() << "Number of columns in the input multi"
-			     "vector 'A' (a size_t) overflows int.");
-	  TEUCHOS_TEST_FOR_EXCEPTION(maxInt < mv.getNumVectors(), std::range_error,
-			     os.str() << "Number of columns in the output multi"
-			     "vector 'mv' (a size_t) overflows int.");
-	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
-	}
+        {
+          std::ostringstream os;
+          os << "Belos::MultiVecTraits<Scalar, Tpetra::MultiVector<Scalar, ..."
+            "> >::Assign(A, mv): ";
+          TEUCHOS_TEST_FOR_EXCEPTION(maxInt < A.getNumVectors(), std::range_error,
+                             os.str() << "Number of columns in the input multi"
+                             "vector 'A' (a size_t) overflows int.");
+          TEUCHOS_TEST_FOR_EXCEPTION(maxInt < mv.getNumVectors(), std::range_error,
+                             os.str() << "Number of columns in the output multi"
+                             "vector 'mv' (a size_t) overflows int.");
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+        }
       // We've already validated the static casts above.
       const int numColsA = static_cast<int> (A.getNumVectors());
       const int numColsMv = static_cast<int> (mv.getNumVectors());
       if (numColsA > numColsMv)
-	{
-	  std::ostringstream os;
-	  os <<	"Belos::MultiVecTraits<Scalar, Tpetra::MultiVector<Scalar, ..."
-	    "> >::Assign(A, mv): ";
-	  TEUCHOS_TEST_FOR_EXCEPTION(numColsA > numColsMv, std::invalid_argument,
-			     os.str() << "Input multivector 'A' has " 
-			     << numColsA << " columns, but output multivector "
-			     "'mv' has only " << numColsMv << " columns.");
-	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
-	}
+        {
+          std::ostringstream os;
+          os << "Belos::MultiVecTraits<Scalar, Tpetra::MultiVector<Scalar, ..."
+            "> >::Assign(A, mv): ";
+          TEUCHOS_TEST_FOR_EXCEPTION(numColsA > numColsMv, std::invalid_argument,
+                             os.str() << "Input multivector 'A' has "
+                             << numColsA << " columns, but output multivector "
+                             "'mv' has only " << numColsMv << " columns.");
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+        }
       // Assignment of Tpetra::MultiVector objects via operator=()
       // assumes that both arguments have compatible Maps.  If
       // HAVE_TPETRA_DEBUG is defined at compile time, operator=()
       // will throw an std::runtime_error if the Maps are
       // incompatible.
       if (numColsA == numColsMv)
-	mv = A;
+        mv = A;
       else
-	{
-	  Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > mv_view = 
-	    CloneViewNonConst (mv, Teuchos::Range1D(0, numColsA-1));
-	  *mv_view = A;
-	}
+        {
+          Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > mv_view =
+            CloneViewNonConst (mv, Teuchos::Range1D(0, numColsA-1));
+          *mv_view = A;
+        }
     }
 
 
     static void MvRandom( Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
-    { 
-      KOKKOS_NODE_TRACE("Belos::MVT::randomize()")
-      mv.randomize(); 
+    {
+      mv.randomize();
     }
 
     static void MvInit( Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, Scalar alpha = Teuchos::ScalarTraits<Scalar>::zero() )
     { mv.putScalar(alpha); }
 
     static void MvPrint( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, std::ostream& os )
-    { 
+    {
       Teuchos::FancyOStream fos(Teuchos::rcp(&os,false));
       mv.describe(fos,Teuchos::VERB_EXTREME);
     }
@@ -607,7 +594,7 @@ namespace Belos {
     ///
     typedef Tpetra::TsqrAdaptor< Tpetra::MultiVector< Scalar, LO, GO, Node > > tsqr_adaptor_type;
 #endif // HAVE_BELOS_TSQR
-  };        
+  };
 
   ////////////////////////////////////////////////////////////////////
   //
@@ -616,17 +603,17 @@ namespace Belos {
   ////////////////////////////////////////////////////////////////////
 
   /// \brief Partial specialization of OperatorTraits for Tpetra::Operator.
-  template <class BaseScalar, class Storage, class LO, class GO, class Node> 
+  template <class BaseScalar, class Storage, class LO, class GO, class Node>
   class OperatorTraits <BaseScalar, Tpetra::MultiVector<Sacado::PCE::OrthogPoly<BaseScalar,Storage>,LO,GO,Node>, Tpetra::Operator<Sacado::PCE::OrthogPoly<BaseScalar,Storage>,LO,GO,Node> >
   {
   public:
     typedef Sacado::PCE::OrthogPoly<BaseScalar,Storage> Scalar;
-    static void 
-    Apply (const Tpetra::Operator<Scalar,LO,GO,Node>& Op, 
-	   const Tpetra::MultiVector<Scalar,LO,GO,Node>& X,
-	   Tpetra::MultiVector<Scalar,LO,GO,Node>& Y,
-	   ETrans trans=NOTRANS)
-    { 
+    static void
+    Apply (const Tpetra::Operator<Scalar,LO,GO,Node>& Op,
+           const Tpetra::MultiVector<Scalar,LO,GO,Node>& X,
+           Tpetra::MultiVector<Scalar,LO,GO,Node>& Y,
+           ETrans trans=NOTRANS)
+    {
       switch (trans) {
         case NOTRANS:
           Op.apply(X,Y,Teuchos::NO_TRANS);
@@ -638,15 +625,15 @@ namespace Belos {
           Op.apply(X,Y,Teuchos::CONJ_TRANS);
           break;
       default:
-	const std::string scalarName = Teuchos::TypeNameTraits<Scalar>::name();
-	const std::string loName = Teuchos::TypeNameTraits<LO>::name();
-	const std::string goName = Teuchos::TypeNameTraits<GO>::name();
-	const std::string nodeName = Teuchos::TypeNameTraits<Node>::name();
-	const std::string otName = "Belos::OperatorTraits<" + scalarName 
-	  + "," + loName + "," + goName + "," + nodeName + ">";
-	TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, otName << ": Should never "
-			   "get here; fell through a switch statement.  "
-			   "Please report this bug to the Belos developers.");
+        const std::string scalarName = Teuchos::TypeNameTraits<Scalar>::name();
+        const std::string loName = Teuchos::TypeNameTraits<LO>::name();
+        const std::string goName = Teuchos::TypeNameTraits<GO>::name();
+        const std::string nodeName = Teuchos::TypeNameTraits<Node>::name();
+        const std::string otName = "Belos::OperatorTraits<" + scalarName
+          + "," + loName + "," + goName + "," + nodeName + ">";
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, otName << ": Should never "
+                           "get here; fell through a switch statement.  "
+                           "Please report this bug to the Belos developers.");
       }
     }
 
@@ -657,7 +644,7 @@ namespace Belos {
     }
   };
 
-} // end of Belos namespace 
+} // end of Belos namespace
 
-#endif 
+#endif
 // end of file BELOS_PCE_TPETRA_ADAPTER_HPP

@@ -49,6 +49,9 @@
 
 #include <iostream>
 
+#include <sys/types.h>
+#include <unistd.h>
+
 namespace panzer {
   
   inline void pauseToAttach(MPI_Comm mpicomm)

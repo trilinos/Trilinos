@@ -118,6 +118,18 @@ int ex_copy (int in_exoid, int out_exoid)
    out_large = ex_large_model(out_exoid);
    
    /*
+    * Get integer sizes for both input and output databases.
+    * Currently they should both match or there will be an error.
+    */
+   if (ex_int64_status(in_exoid) != ex_int64_status(out_exoid)) {
+     exerrval = EX_WRONGFILETYPE;
+     sprintf(errmsg,
+	     "Error: integer sizes do not match for input and output databases.");
+     ex_err("ex_copy",errmsg,exerrval);
+     return (EX_FATAL);
+   }
+   
+   /*
     * get number of dimensions, number of variables, number of global
     * atts, and dimension id of unlimited dimension, if any
     */
@@ -502,6 +514,7 @@ int cpy_var_def(int in_id,int out_id,int rec_dim_id,char *var_nm)
    * to an output netCDF file. 
    */
 
+  char errmsg[MAX_ERR_LENGTH];
   int status;
   int *dim_in_id;
   int *dim_out_id;
@@ -564,7 +577,14 @@ int cpy_var_def(int in_id,int out_id,int rec_dim_id,char *var_nm)
     (void)nc_def_var(out_id, var_nm, nc_flt_code(out_id), nbr_dim, dim_out_id, &var_out_id);
     ex_compress_variable(out_id, var_out_id, 2);
   } else {
-    (void)nc_def_var(out_id, var_nm, var_type,            nbr_dim, dim_out_id, &var_out_id);
+    if ((status = nc_def_var(out_id, var_nm, var_type, nbr_dim, dim_out_id, &var_out_id)) != NC_NOERR) {
+      exerrval = status;
+      sprintf(errmsg,
+	      "Error: failed to define %s variable in file id %d",
+	      var_nm, out_id);
+      ex_err("ex_copy",errmsg,exerrval);
+      return (EX_FATAL);
+    }
     ex_compress_variable(out_id, var_out_id, 1);
   }
 

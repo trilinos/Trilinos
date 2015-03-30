@@ -322,9 +322,6 @@ PairIterEntityComm EntityCommDatabase::comm( const EntityKey & key, const Ghosti
 
 bool EntityCommDatabase::insert( const EntityKey & key, const EntityCommInfo & val, int owner )
 {
-  TraceIfWatching("stk::mesh::EntityComm::insert", LOG_ENTITY, key);
-  DiagIfWatching(LOG_ENTITY, key, "owner " << owner);
-
   insert(key);
   EntityCommInfoVector & comm_map = m_last_lookup->second.comm_map;
   m_last_lookup->second.owner_rank = owner;
@@ -344,8 +341,6 @@ bool EntityCommDatabase::insert( const EntityKey & key, const EntityCommInfo & v
 
 bool EntityCommDatabase::erase( const EntityKey & key, const EntityCommInfo & val )
 {
-  TraceIfWatching("stk::mesh::EntityComm::erase(comm)", LOG_ENTITY, key);
-
   if (!cached_find(key)) return false;
 
   EntityCommInfoVector & comm_map = m_last_lookup->second.comm_map;
@@ -368,8 +363,6 @@ bool EntityCommDatabase::erase( const EntityKey & key, const EntityCommInfo & va
 
 bool EntityCommDatabase::erase( const EntityKey & key, const Ghosting & ghost )
 {
-  TraceIfWatching("stk::mesh::EntityComm::erase(ghost)", LOG_ENTITY, key);
-
   if (!cached_find(key)) return false;
 
   EntityCommInfoVector & comm_map = m_last_lookup->second.comm_map;
@@ -400,8 +393,6 @@ bool EntityCommDatabase::erase( const EntityKey & key, const Ghosting & ghost )
 
 void EntityCommDatabase::comm_clear_ghosting(const EntityKey & key)
 {
-  TraceIfWatching("stk::mesh::EntityComm::comm_clear_ghosting", LOG_ENTITY, key);
-
   if (!cached_find(key)) return;
 
   EntityCommInfoVector & comm_map = m_last_lookup->second.comm_map;
@@ -418,8 +409,6 @@ void EntityCommDatabase::comm_clear_ghosting(const EntityKey & key)
 
 void EntityCommDatabase::comm_clear(const EntityKey & key)
 {
-  TraceIfWatching("stk::mesh::EntityComm::comm_clear", LOG_ENTITY, key);
-
   if (!cached_find(key)) return;
 
   m_last_lookup = m_comm_map.erase(m_last_lookup);
@@ -430,9 +419,6 @@ bool EntityCommDatabase::change_owner_rank(const EntityKey& key, int owner)
 {
   // Do not add key to map, only update rank if it was already in the map
   if (cached_find(key)) {
-    TraceIfWatching("stk::mesh::EntityComm::change_owner_rank", LOG_ENTITY, key);
-    DiagIfWatching(LOG_ENTITY, key, "new owner " << owner);
-
     const int orig_owner = m_last_lookup->second.owner_rank;
     m_last_lookup->second.owner_rank = owner;
     return orig_owner != owner;

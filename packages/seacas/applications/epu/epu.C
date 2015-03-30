@@ -440,7 +440,7 @@ int main(int argc, char* argv[])
 }
 
 template <typename T, typename INT>
-int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T float_or_double, INT integer_type )
+int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T float_or_double, INT)
 {
   SMART_ASSERT(sizeof(T) == ExodusFile::io_word_size());
 
@@ -1750,11 +1750,11 @@ namespace {
 	  INT global_element = global_element_numbers[p][i];
 
 	  if (cur_pos == global_element_map.end() || *cur_pos != global_element) {
-	    std::pair<GMapIter, GMapIter> iter = std::equal_range(global_element_map.begin(),
-								  global_element_map.end(),
-								  global_element);
-	    SMART_ASSERT(iter.first  != iter.second);
-	    cur_pos = iter.first;
+	    GMapIter iter = std::lower_bound(global_element_map.begin(),
+					     global_element_map.end(),
+					     global_element);
+	    SMART_ASSERT(iter != global_element_map.end());
+	    cur_pos = iter;
 	  }
 	  element_value = cur_pos - global_element_map.begin();
 	  local_element_to_global[p][i] = element_value;
@@ -1914,11 +1914,11 @@ namespace {
 	INT global_node = global_node_numbers[p][i];
 
 	if (cur_pos == global_node_map.end() || *cur_pos != global_node) {
-	  std::pair<GMapIter, GMapIter> iter = std::equal_range(global_node_map.begin(),
-								global_node_map.end(),
-								global_node);
-	  SMART_ASSERT(iter.first  != iter.second);
-	  cur_pos = iter.first;
+	  GMapIter iter = std::lower_bound(global_node_map.begin(),
+					   global_node_map.end(),
+					   global_node);
+	  SMART_ASSERT(iter != global_node_map.end());
+	  cur_pos = iter;
 	}
 	nodal_value = cur_pos - global_node_map.begin();
 	local_node_to_global[p][i] = nodal_value;
@@ -3000,8 +3000,7 @@ namespace {
   }
 
   template <typename T, typename U>
-  void map_nodeset_vars(U &local_set, size_t entity_count, size_t glob_entity_count,
-			std::vector<T> &values, T *global_values)
+  void map_nodeset_vars(U&, size_t, size_t, std::vector<T> &, T *)
   {
     throw std::runtime_error("Internal Error!");
   }

@@ -745,6 +745,7 @@ namespace Iogn {
 
         Ioss::ElementBlock * el_block = get_region()->get_element_block(touching_blocks[0]);
         ef_block->set_parent_element_block(el_block);
+	add_transient_fields(ef_block);
       }
       else
       {
@@ -772,6 +773,7 @@ namespace Iogn {
 
           Ioss::ElementBlock * el_block = get_region()->get_element_block(touching_block);
           ef_block->set_parent_element_block(el_block);
+	  add_transient_fields(ef_block);
         }
       }
     }
@@ -792,7 +794,7 @@ namespace Iogn {
 
   unsigned DatabaseIO::entity_field_support() const
   {
-    return Ioss::NODEBLOCK | Ioss::ELEMENTBLOCK | Ioss::REGION;
+    return Ioss::NODEBLOCK | Ioss::ELEMENTBLOCK | Ioss::REGION | Ioss::NODESET | Ioss::SIDESET;
   }
 
   void DatabaseIO::add_transient_fields(Ioss::GroupingEntity *entity)

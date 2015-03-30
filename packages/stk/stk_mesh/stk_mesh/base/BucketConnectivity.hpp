@@ -481,10 +481,6 @@ struct Counter
   static int counter;
 };
 
-// Uncomment to enable profiling
-//#define STK_MESH_ANALYZE_DYN_CONN
-
-
 // Profiling data for an individual dynamic connectivity object
 struct DynConnData
 {
@@ -544,11 +540,6 @@ struct DynConnData
   {}
 };
 
-struct DynConnMetrics
-{
-  static std::vector<DynConnData> m_data;
-};
-
 template<EntityRank TargetRank >
 class BucketConnectivity<TargetRank, DYNAMIC_CONNECTIVITY>
 {
@@ -589,10 +580,6 @@ public:
     , m_rank_sensitive_lower_connectivity_cmp(*m_bulk_data)
     , m_last_capacity(0)
   {
-#ifdef STK_MESH_ANALYZE_DYN_CONN
-    DynConnMetrics::m_data.push_back(DynConnData(from_rank, target_rank));
-    m_data_idx = DynConnMetrics::m_data.size() - 1;
-#endif
   }
 
   // Entity iterator
@@ -917,11 +904,6 @@ public:
 
 private:
 
-  DynConnData& profile_data() const
-  {
-    return DynConnMetrics::m_data[m_data_idx];
-  }
-
   void copy_connectivity(unsigned from_ordinal, SelfType& to, unsigned to_ordinal)
   {
     unsigned num_conn    = m_num_connectivities[from_ordinal];
@@ -990,26 +972,6 @@ private:
 
   void resize_and_order_by_index(unsigned capacity = 0u)
   {
-#ifdef STK_MESH_ANALYZE_DYN_CONN
-    if (capacity != 0u) {
-      ++profile_data().m_num_growths;
-    }
-
-    if (m_targets.capacity() > profile_data().m_max_capacity) {
-      profile_data().m_max_capacity = m_targets.capacity();
-      profile_data().m_total_unused_memory = m_targets.capacity() - m_total_connectivities;
-      profile_data().m_unused_capacity = m_targets.capacity() - m_targets.size();
-      profile_data().m_total_num_conn = m_total_connectivities;
-      const size_t total_unused_active = m_targets.size() - m_total_connectivities;
-      size_t total_unused_chunk_capacity = 0;
-      for (size_t i = 0, e = m_num_connectivities.size(); i < e; ++i) {
-        total_unused_chunk_capacity += num_chunks(m_num_connectivities[i]) * chunk_size - m_num_connectivities[i];
-      }
-      profile_data().m_abandoned_space = total_unused_active - total_unused_chunk_capacity;
-      profile_data().m_unused_chunk_capacity = total_unused_chunk_capacity;
-    }
-#endif
-
     //compute needed capacity
     if (capacity == 0u) {
       for( size_t i=0, e=m_indices.size(); i<e; ++i) {
@@ -1086,12 +1048,6 @@ private:
     //copy to end
     if (!last_entity_by_index)
     {
-#ifdef STK_MESH_ANALYZE_DYN_CONN
-      if (chunks_used_by_entity > 0) {
-        ++profile_data().m_num_entity_relocations;
-      }
-#endif
-
       uint32_t new_index = static_cast<uint32_t>(m_targets.size());
 
       m_targets.insert(m_targets.end(), chunks_needed_by_entity*chunk_size, invalid);

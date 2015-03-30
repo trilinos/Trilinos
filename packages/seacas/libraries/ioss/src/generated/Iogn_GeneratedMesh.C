@@ -1577,7 +1577,7 @@ namespace Iogn {
       variableCount[Ioss::NODESET] = count;
     }
     else if (type == "surface" || type == "sideset") {
-      variableCount[Ioss::SURFACE] = count;
+      variableCount[Ioss::SIDEBLOCK] = count;
     }
     else {
       std::cerr << "ERROR: (Iogn::GeneratedMesh::set_variable_count)\n"

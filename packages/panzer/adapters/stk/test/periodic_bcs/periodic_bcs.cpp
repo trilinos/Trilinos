@@ -290,7 +290,7 @@ namespace panzer {
           Tuple<double,3> coord_left;
           Tuple<double,3> coord_right;
           int flag0 = 0;
-          for(std::size_t j=0;j<sideIds.size();j++){
+          for(std::size_t j=0;j<sideIds_edge.size();j++){
             if(pair.first == sideIds_edge[j]){
               coord_left = sideCoords_edge[j];
               flag0++;
@@ -414,7 +414,7 @@ namespace panzer {
           Tuple<double,3> coord_left;
           Tuple<double,3> coord_right;
           int flag0 = 0;
-          for(std::size_t j=0;j<sideIds.size();j++){
+          for(std::size_t j=0;j<sideIds_edge.size();j++){
             if(pair.first == sideIds_edge[j]){
               coord_left = sideCoords_edge[j];
               flag0++;
@@ -557,7 +557,7 @@ namespace panzer {
              Tuple<double,3> coord_left;
              Tuple<double,3> coord_right;
              int flag0 = 0;
-             for(std::size_t j=0;j<sideIds_left.size();j++){
+             for(std::size_t j=0;j<sideIds_edge_left.size();j++){
                if(pair.first == sideIds_edge_left[j]){
                  coord_left = sideCoords_edge_left[j];
                  flag0++;
@@ -640,7 +640,7 @@ namespace panzer {
              Tuple<double,3> coord_top;
              Tuple<double,3> coord_bottom;
              int flag0 = 0;
-             for(std::size_t j=0;j<sideIds_top.size();j++){
+             for(std::size_t j=0;j<sideIds_edge_top.size();j++){
                if(pair.first == sideIds_edge_top[j]){
                  coord_top = sideCoords_edge_top[j];
                  flag0++;
@@ -785,7 +785,7 @@ namespace panzer {
              Tuple<double,3> coord_top;
              Tuple<double,3> coord_bottom;
              int flag0 = 0;
-             for(std::size_t j=0;j<sideIds_top.size();j++){
+             for(std::size_t j=0;j<sideIds_edge_top.size();j++){
                if(pair.first == sideIds_edge_top[j]){
                  coord_top = sideCoords_edge_top[j];
                  flag0++;
@@ -1001,7 +1001,7 @@ namespace panzer {
           Tuple<double,3> coord_top;
           Tuple<double,3> coord_bottom;
           int flag_tb = 0;
-          for(std::size_t j=0;j<sideIds_top.size();j++){
+          for(std::size_t j=0;j<sideIds_edge_top.size();j++){
             if(pair.first == sideIds_edge_top[j]){
               coord_top = sideCoords_edge_top[j];
               flag_tb++;
@@ -1016,7 +1016,7 @@ namespace panzer {
           Tuple<double,3> coord_left;
           Tuple<double,3> coord_right;
           int flag_lr = 0;
-          for(std::size_t j=0;j<sideIds_left.size();j++){
+          for(std::size_t j=0;j<sideIds_edge_left.size();j++){
             if(pair.first == sideIds_edge_left[j]){
               coord_left = sideCoords_edge_left[j];
               flag_lr++;

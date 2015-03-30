@@ -33,7 +33,7 @@
 #include "EJ_mapping.h"
 #include <smart_assert.h>               // for SMART_ASSERT
 #include <stddef.h>                     // for size_t
-#include <algorithm>                    // for sort, equal_range, remove, etc
+#include <algorithm>                    // for sort, remove, etc
 #include <iostream>                     // for operator<<, cerr, etc
 #include <utility>                      // for pair, make_pair
 #include "Ioss_ElementBlock.h"          // for ElementBlock
@@ -194,15 +194,15 @@ template void eliminate_omitted_nodes(RegionVector &part_mesh,
 
 	if (global_node > 0) {
 	if (cur_pos == global_node_map.end() || *cur_pos != global_node) {
-	  std::pair<V_INT_iterator, V_INT_iterator> iter = std::equal_range(global_node_map.begin(),
-									    global_node_map.end(),
-									    global_node);
-	  if (iter.first == iter.second) {
+	  V_INT_iterator iter = std::lower_bound(global_node_map.begin(),
+						 global_node_map.end(),
+						 global_node);
+	  if (iter == global_node_map.end()) {
 	    INT n = global_node;
 	    std::cerr << n << "\n";
-	    SMART_ASSERT(iter.first != iter.second);
+	    SMART_ASSERT(iter != global_node_map.end());
 	  }
-	  cur_pos = iter.first;
+	  cur_pos = iter;
 	}
 	size_t nodal_value = cur_pos - global_node_map.begin();
 	local_node_map[noffset+i] = nodal_value;

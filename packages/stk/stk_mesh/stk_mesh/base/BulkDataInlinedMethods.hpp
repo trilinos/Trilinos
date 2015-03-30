@@ -735,23 +735,6 @@ inline EntityState BulkData::state(Entity entity) const
   return static_cast<EntityState>(m_entity_states[entity.local_offset()]);
 }
 
-#ifndef STK_BUILT_IN_SIERRA // DELETE ifdef BTW 2015-02-13 and 2015-03-04
-inline void BulkData::mark_entity(Entity entity, entitySharing sharedType)
-{
-    this->internal_mark_entity(entity,sharedType);
-}
-
-inline BulkData::entitySharing BulkData::is_entity_marked(Entity entity) const
-{
-    return this->internal_is_entity_marked(entity);
-}
-
-inline bool BulkData::add_node_sharing_called() const
-{
-  return this->internal_add_node_sharing_called();
-}
-#endif // STK_BUILT_IN_SIERRA
-
 inline void BulkData::internal_mark_entity(Entity entity, entitySharing sharedType)
 {
     m_mark_entity[entity.local_offset()] = static_cast<int>(sharedType);
@@ -873,9 +856,6 @@ inline void BulkData::compress_relation_capacity(Entity entity)
 
 inline void BulkData::set_mesh_index(Entity entity, Bucket * in_bucket, Bucket::size_type ordinal )
 {
-  // The trace statement forces this method to be defined after Entity
-  TraceIfWatching("stk::mesh::BulkData::set_mesh_index", LOG_ENTITY, entity_key(entity));
-
   entity_setter_debug_check(entity);
 
   if (in_bucket != NULL) {
@@ -910,9 +890,6 @@ inline void BulkData::set_local_id(Entity entity, unsigned id)
 
 inline bool BulkData::internal_set_parallel_owner_rank_but_not_comm_lists(Entity entity, int in_owner_rank)
 {
-  TraceIfWatching("stk::mesh::BulkData::set_entity_owner_rank", LOG_ENTITY, entity_key(entity));
-  DiagIfWatching(LOG_ENTITY, entity_key(entity), "new owner: " << in_owner_rank);
-
   entity_setter_debug_check(entity);
 
   int & nonconst_processor_rank = bucket(entity).m_owner_ranks[bucket_ordinal(entity)];

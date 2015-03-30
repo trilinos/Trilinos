@@ -49,7 +49,6 @@
 #include "stk_mesh/base/Part.hpp"       // for Part, etc
 #include "stk_mesh/base/PropertyBase.hpp"  // for Property
 #include "stk_mesh/base/Selector.hpp"   // for Selector
-#include "stk_mesh/base/Trace.hpp"      // for DiagIfWatching, etc
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank, etc
 #include "stk_mesh/baseImpl/PartRepository.hpp"  // for PartRepository
 #include "stk_topology/topology.hpp"    // for topology, etc
@@ -124,9 +123,6 @@ void MetaData::assign_cell_topology(
   const CellTopology       cell_topology)
 {
   const size_t part_ordinal = part.mesh_meta_data_ordinal();
-
-  TraceIfWatching("stk::mesh::assign_cell_topology", LOG_PART, part_ordinal);
-  DiagIfWatching(LOG_PART, part_ordinal, "assigning cell topo: " << cell_topology.getName());
 
   if (part_ordinal >= m_partCellTopologyVector.size()) {
     m_partCellTopologyVector.resize(part_ordinal + 1);

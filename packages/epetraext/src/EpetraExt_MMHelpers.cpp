@@ -572,16 +572,16 @@ LightweightMap::LightweightMap():Data_(0),IsLongLong(false),IsInt(false){;}
 
 //=========================================================================
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-void LightweightMap::Construct_int(int NumGlobalElements,int NumMyElements, const int * MyGlobalElements, long long IndexBase, bool GenerateHash)
+void LightweightMap::Construct_int(int /* numGlobalElements */, int numMyElements, const int * myGlobalElements, long long /* indexBase */, bool GenerateHash)
 {
   Data_=new LightweightMapData();
-  Data_->MyGlobalElements_int_.resize(NumMyElements);
+  Data_->MyGlobalElements_int_.resize(numMyElements);
 
   // Build the hash table
-  if(GenerateHash) Data_->LIDHash_int_ = new Epetra_HashTable<int>(NumMyElements + 1 );
-    for(int i=0; i < NumMyElements; ++i ) {
-      Data_->MyGlobalElements_int_[i]=MyGlobalElements[i];
-      if(GenerateHash) Data_->LIDHash_int_->Add(MyGlobalElements[i], i);
+  if(GenerateHash) Data_->LIDHash_int_ = new Epetra_HashTable<int>(numMyElements + 1 );
+    for(int i=0; i < numMyElements; ++i ) {
+      Data_->MyGlobalElements_int_[i] = myGlobalElements[i];
+      if(GenerateHash) Data_->LIDHash_int_->Add(myGlobalElements[i], i);
     }
   IsLongLong = false;
   IsInt = true;
@@ -589,16 +589,16 @@ void LightweightMap::Construct_int(int NumGlobalElements,int NumMyElements, cons
 #endif
 
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-void LightweightMap::Construct_LL(long long NumGlobalElements,int NumMyElements, const long long * MyGlobalElements, long long IndexBase, bool GenerateHash)
+void LightweightMap::Construct_LL(long long /* numGlobalElements */, int numMyElements, const long long * myGlobalElements, long long /* indexBase */, bool GenerateHash)
 {
   Data_=new LightweightMapData();
-  Data_->MyGlobalElements_LL_.resize(NumMyElements);
+  Data_->MyGlobalElements_LL_.resize(numMyElements);
 
   // Build the hash table
-  if(GenerateHash) Data_->LIDHash_LL_ = new Epetra_HashTable<long long>(NumMyElements + 1 );
-    for(int i=0; i < NumMyElements; ++i ) {
-      Data_->MyGlobalElements_LL_[i]=MyGlobalElements[i];
-      if(GenerateHash) Data_->LIDHash_LL_->Add(MyGlobalElements[i], i);
+  if(GenerateHash) Data_->LIDHash_LL_ = new Epetra_HashTable<long long>(numMyElements + 1 );
+    for(int i=0; i < numMyElements; ++i ) {
+      Data_->MyGlobalElements_LL_[i] = myGlobalElements[i];
+      if(GenerateHash) Data_->LIDHash_LL_->Add(myGlobalElements[i], i);
     }
   IsLongLong = true;
   IsInt = false;
@@ -606,21 +606,21 @@ void LightweightMap::Construct_LL(long long NumGlobalElements,int NumMyElements,
 #endif
 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-LightweightMap::LightweightMap(int NumGlobalElements,int NumMyElements, const int * MyGlobalElements, int IndexBase, bool GenerateHash)
+LightweightMap::LightweightMap(int numGlobalElements,int numMyElements, const int * myGlobalElements, int indexBase, bool GenerateHash)
 {
-  Construct_int(NumGlobalElements, NumMyElements, MyGlobalElements, IndexBase, GenerateHash);
+  Construct_int(numGlobalElements, numMyElements, myGlobalElements, indexBase, GenerateHash);
 }
 #endif
 
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-LightweightMap::LightweightMap(long long NumGlobalElements,int NumMyElements, const long long * MyGlobalElements, int IndexBase, bool GenerateHash)
+LightweightMap::LightweightMap(long long numGlobalElements,int numMyElements, const long long * myGlobalElements, int indexBase, bool GenerateHash)
 {
-  Construct_LL(NumGlobalElements, NumMyElements, MyGlobalElements, IndexBase, GenerateHash);
+  Construct_LL(numGlobalElements, numMyElements, myGlobalElements, indexBase, GenerateHash);
 }
 
-LightweightMap::LightweightMap(long long NumGlobalElements,int NumMyElements, const long long * MyGlobalElements, long long IndexBase, bool GenerateHash)
+LightweightMap::LightweightMap(long long numGlobalElements,int numMyElements, const long long * myGlobalElements, long long indexBase, bool GenerateHash)
 {
-  Construct_LL(NumGlobalElements, NumMyElements, MyGlobalElements, IndexBase, GenerateHash);
+  Construct_LL(numGlobalElements, numMyElements, myGlobalElements, indexBase, GenerateHash);
 }
 #endif
 
@@ -699,10 +699,10 @@ int LightweightMap::NumMyElements() const {
 
 //=========================================================================
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-int LightweightMap::LID(int GID) const {
-  if(Data_->CopyMap_) return Data_->CopyMap_->LID(GID);
+int LightweightMap::LID(int gid) const {
+  if(Data_->CopyMap_) return Data_->CopyMap_->LID(gid);
   if(IsInt)
-    return Data_->LIDHash_int_->Get(GID);
+    return Data_->LIDHash_int_->Get(gid);
   else if(IsLongLong)
     throw "EpetraExt::LightweightMap::LID: Int version called for long long map";
   else
@@ -710,11 +710,11 @@ int LightweightMap::LID(int GID) const {
 }
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-int LightweightMap::LID(long long GID) const {
+int LightweightMap::LID(long long gid) const {
 
-  if(Data_->CopyMap_) return Data_->CopyMap_->LID(GID);
+  if(Data_->CopyMap_) return Data_->CopyMap_->LID(gid);
   if(IsLongLong)
-    return Data_->LIDHash_LL_->Get(GID);
+    return Data_->LIDHash_LL_->Get(gid);
   else if(IsInt)
     throw "EpetraExt::LightweightMap::LID: Long long version called for int map";
   else
@@ -724,25 +724,25 @@ int LightweightMap::LID(long long GID) const {
 
 //=========================================================================
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-int LightweightMap::GID(int LID) const {
-  if(Data_->CopyMap_) return Data_->CopyMap_->GID(LID);
-  if(LID < 0 || LID > (int)Data_->MyGlobalElements_int_.size()) return -1;
-  return Data_->MyGlobalElements_int_[LID];
+int LightweightMap::GID(int lid) const {
+  if(Data_->CopyMap_) return Data_->CopyMap_->GID(lid);
+  if(lid < 0 || lid > (int)Data_->MyGlobalElements_int_.size()) return -1;
+  return Data_->MyGlobalElements_int_[lid];
 }
 #endif
-long long LightweightMap::GID64(int LID) const {
-  if(Data_->CopyMap_) return Data_->CopyMap_->GID64(LID);
+long long LightweightMap::GID64(int lid) const {
+  if(Data_->CopyMap_) return Data_->CopyMap_->GID64(lid);
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   if(IsInt) {
-    if(LID < 0 || LID > (int)Data_->MyGlobalElements_int_.size()) return -1;
-    return Data_->MyGlobalElements_int_[LID];
+    if(lid < 0 || lid > (int)Data_->MyGlobalElements_int_.size()) return -1;
+    return Data_->MyGlobalElements_int_[lid];
   }
   else
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   if(IsLongLong) {
-    if(LID < 0 || LID > (int)Data_->MyGlobalElements_LL_.size()) return -1;
-    return Data_->MyGlobalElements_LL_[LID];
+    if(lid < 0 || lid > (int)Data_->MyGlobalElements_LL_.size()) return -1;
+    return Data_->MyGlobalElements_LL_[lid];
   }
   else
 #endif
@@ -932,8 +932,6 @@ void MakeColMapAndReindexSort<long long>(int& NumRemoteColGIDs, long long*& Remo
 template <class GO>
 int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std::vector<GO> Gcolind)
 {
-  int i,j;
-
 #ifdef ENABLE_MMM_TIMINGS
   using Teuchos::TimeMonitor;
   Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: LWCRS-3.1")));
@@ -965,8 +963,8 @@ int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std:
   // the remote count.  These numberings will be separate because no local LID is greater than numDomainElements.
   int NumLocalColGIDs = 0;
   int NumRemoteColGIDs = 0;
-  for(i = 0; i < numMyBlockRows; i++) {
-    for(j = rowptr_[i]; j < rowptr_[i+1]; j++) {
+  for(int i = 0; i < numMyBlockRows; i++) {
+    for(int j = rowptr_[i]; j < rowptr_[i+1]; j++) {
       GO GID = Gcolind[j];
       // Check if GID matches a row GID
       int LID = DomainMap_.LID(GID);
@@ -1018,18 +1016,18 @@ int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std:
     Colindices.Size(numMyBlockCols);
   GO* RemoteColindices = Colindices.Values() + NumLocalColGIDs; // Points to back end of Colindices
 
-  for(i = 0; i < NumRemoteColGIDs; i++)
+  for(int i = 0; i < NumRemoteColGIDs; i++)
     RemoteColindices[i] = RemoteGIDList[i];
 
   // Build permute array for *remote* reindexing.
   std::vector<int> RemotePermuteIDs(NumRemoteColGIDs);
-  for(i=0; i<NumRemoteColGIDs; i++) RemotePermuteIDs[i]=i;
+  for(int i=0; i<NumRemoteColGIDs; i++) RemotePermuteIDs[i]=i;
 
   MakeColMapAndReindexSort<GO>(NumRemoteColGIDs, RemoteColindices, RemotePermuteIDs, RemoteOwningPIDs);
 
   // Reverse the permutation to get the information we actually care about
   std::vector<int> ReverseRemotePermuteIDs(NumRemoteColGIDs);
-  for(i=0; i<NumRemoteColGIDs; i++) ReverseRemotePermuteIDs[RemotePermuteIDs[i]]=i;
+  for(int i=0; i<NumRemoteColGIDs; i++) ReverseRemotePermuteIDs[RemotePermuteIDs[i]]=i;
 
   // Build permute array for *local* reindexing.
   bool use_local_permute=false;
@@ -1049,7 +1047,7 @@ int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std:
         DomainMap_.MyGlobalElementsPtr(MyGlobalElements);
     int NumLocalAgain = 0;
     use_local_permute = true;
-    for(i = 0; i < numDomainElements; i++) {
+    for(int i = 0; i < numDomainElements; i++) {
       if(LocalGIDs[i]) {
         LocalPermuteIDs[i] = NumLocalAgain;
         Colindices[NumLocalAgain++] = MyGlobalElements[i];
@@ -1079,8 +1077,8 @@ int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std:
 #endif
 
   // Low-cost reindex of the matrix
-  for(i=0; i<numMyBlockRows; i++){
-    for(j=rowptr_[i]; j<rowptr_[i+1]; j++){
+  for(int i=0; i<numMyBlockRows; i++){
+    for(int j=rowptr_[i]; j<rowptr_[i+1]; j++){
       int ID=colind_[j];
       if(ID < numDomainElements){
         if(use_local_permute) colind_[j] = LocalPermuteIDs[colind_[j]];
@@ -1693,13 +1691,12 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   if (communication_needed) {
 #ifdef HAVE_MPI
     // Do the exchange of remote data
-    int i,curr_pid;
     const int * ExportPIDs = RowImporter.ExportPIDs();
 
     // Use the fact that the export procs are sorted to avoid building a hash table.
     // NOTE: The +1's on the message size lists are to avoid std::vector problems if a proc has no sends or recvs.
     std::vector<int> SendSizes(MDistor->NumSends()+1,0);
-    for(i=0, curr_pid=0; i<NumExportIDs; i++) {
+    for(int i=0, curr_pid=0; i<NumExportIDs; i++) {
       if(i>0 &&  ExportPIDs[i] > ExportPIDs[i-1]) curr_pid++;
       SendSizes[curr_pid] +=Sizes_[i];
 
@@ -1724,10 +1721,15 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
       // Do the reverse communication
       // NOTE: Make the vector one too large to avoid std::vector errors
       ReverseRecvSizes.resize(MyDistor->NumSends()+1);
-      int msg_tag=MpiComm->GetMpiTag();
-          MPI_Datatype data_type = sizeof(int_type) == 4 ? MPI_INT : MPI_LONG_LONG;
-      boundary_exchange_varsize<int_type>(*MpiComm,data_type,MyDistor->NumReceives(),MyDistor->ProcsFrom(),ReverseSendSizes.size() ? &ReverseSendSizes[0] : 0, ReverseSendBuffer.size() ? &ReverseSendBuffer[0] : 0,
-                                      MyDistor->NumSends(),MyDistor->ProcsTo(),ReverseRecvSizes.size() ? &ReverseRecvSizes[0] : 0,ReverseRecvBuffer,1,msg_tag);
+      const int msg_tag2 = MpiComm->GetMpiTag ();
+      MPI_Datatype data_type = sizeof(int_type) == 4 ? MPI_INT : MPI_LONG_LONG;
+      boundary_exchange_varsize<int_type> (*MpiComm, data_type, MyDistor->NumReceives (),
+                                           MyDistor->ProcsFrom (),
+                                           ReverseSendSizes.size() ? &ReverseSendSizes[0] : 0,
+                                           ReverseSendBuffer.size() ? &ReverseSendBuffer[0] : 0,
+                                           MyDistor->NumSends (), MyDistor->ProcsTo (),
+                                           ReverseRecvSizes.size() ? &ReverseRecvSizes[0] : 0,
+                                           ReverseRecvBuffer, 1, msg_tag2);
     }
 #endif
   }
