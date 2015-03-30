@@ -1119,7 +1119,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 }
 
-#if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_STOKHOS_AMESOS2)
+#if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_STOKHOS_AMESOS2) && defined(HAVE_STOKHOS_IFPACK2)
 
 //
 // Test simple CG solve with MueLu preconditioning for a 1-D Laplacian matrix
