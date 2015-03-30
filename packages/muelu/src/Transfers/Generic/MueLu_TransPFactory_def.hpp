@@ -77,10 +77,11 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Transpose P", coarseLevel);
+    std::string label = "MueLu::TransP-" + Teuchos::toString(coarseLevel.GetLevelID());
 
     RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P");
 
-    RCP<Matrix> R = Utils2::Transpose(*P, true);
+    RCP<Matrix> R = Utils2::Transpose(*P, true,label);
 
     RCP<ParameterList> params = rcp(new ParameterList());;
     params->set("printLoadBalancingInfo", true);
