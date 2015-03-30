@@ -119,7 +119,6 @@ int main(int argc, char *argv[]) {
     //
     if (numrhs != 1) {
       X = rcp( new Epetra_MultiVector( A->Map(), numrhs ) );
-      X->Seed();
       X->Random();
       B = rcp( new Epetra_MultiVector( A->Map(), numrhs ) );
       OPT::Apply( *A, *X, *B );
