@@ -1,255 +1,203 @@
-verbosity = high
-coarse: max size = 100
-max levels = 10   [default]
-number of equations = 1   [default]
-
-Clearing old data (if any)
-MueLu::Amesos2Smoother: using "Superlu"
-MueLu::AmesosSmoother: using "Superlu"
-Using default factory (MueLu::SmootherFactory{pre = MueLu::DirectSolver{type = }, post = null}) for building 'CoarseSolver'.
-Using default factory (MueLu::SmootherFactory{pre = MueLu::TrilinosSmoother{type = RELAXATION}, post = pre}) for building 'Smoother'.
-Using default factory (MueLu::AmalgamationFactory) for building 'UnAmalgamationInfo'.
 Level 0
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
-  IFPACK (Local SGS, sweeps=1, damping=1)
-MueLu::Amesos2Smoother: using "Superlu"
-MueLu::AmesosSmoother: using "Superlu"
-Using default factory (MueLu::SmootherFactory{pre = MueLu::DirectSolver{type = }, post = null}) for building 'CoarseSolver'.
-Using default factory (MueLu::SmootherFactory{pre = MueLu::TrilinosSmoother{type = RELAXATION}, post = pre}) for building 'Smoother'.
-Using default factory (MueLu::AmalgamationFactory) for building 'UnAmalgamationInfo'.
+ relaxation: type = symmetric Gauss-Seidel   [unused]
+ relaxation: sweeps = 1   [unused]
+ relaxation: damping factor = 1   [unused]
+
 Level 1
  Prolongator smoothing (MueLu::SaPFactory)
   Matrix filtering (MueLu::FilteredAFactory)
    Build (MueLu::CoalesceDropFactory)
-    lightweight wrap = 1
-    algorithm = "classical": threshold = 0, blocksize = 1
-    Detected 0 Dirichlet nodes
-    Number of dropped entries in unamalgamated matrix graph: 0/49600 (0%)
-   Filtered matrix is not being constructed as no filtering is being done
+   aggregation: drop tol = 0   [default]
+   aggregation: Dirichlet threshold = 0   [default]
+   aggregation: drop scheme = classical   [default]
+   lightweight wrap = 1
+
+  filtered matrix: use lumping = 1   [default]
+  filtered matrix: reuse graph = 1   [default]
+  filtered matrix: reuse eigenvalue = 1   [default]
+
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
-    Algo "Phase - (Dirichlet)"
-     BuildAggregates (Phase - (Dirichlet))
-       aggregated : 0 (phase), 0/10000 [0.00%] (total)
-       remaining  : 10000
-       aggregates : 0 (phase), 0 (total)
-    Algo "Phase 1 (main)"
-     BuildAggregates (Phase 1 (main))
-       aggregated : 8390 (phase), 8390/10000 [83.90%] (total)
-       remaining  : 1610
-       aggregates : 1700 (phase), 1700 (total)
-    Algo "Phase 2 (cleanup)"
-     BuildAggregates (Phase 2 (cleanup))
-       aggregated : 1610 (phase), 10000/10000 [100.00%] (total)
-       remaining  : 0
-       aggregates : 0 (phase), 1700 (total)
-    Algo "Phase 3 (emergency)"
-     BuildAggregates (Phase 3 (emergency))
-       aggregated : 0 (phase), 10000/10000 [100.00%] (total)
-       remaining  : 0
-       aggregates : 0 (phase), 1700 (total)
-    Algo "Phase - (isolated)"
-     BuildAggregates (Phase - (isolated))
-       aggregated : 0 (phase), 10000/10000 [100.00%] (total)
-       remaining  : 0
-       aggregates : 0 (phase), 1700 (total)
-    "UC": MueLu::Aggregates{nGlobalAggregates = 1700}
+   aggregation: mode = old   [default]
+   aggregation: max agg size = -1   [default]
+   aggregation: min agg size = 2   [default]
+   aggregation: max selected neighbors = 0   [default]
+   aggregation: ordering = natural   [default]
+   aggregation: enable phase 1 = 1   [default]
+   aggregation: enable phase 2a = 1   [default]
+   aggregation: enable phase 2b = 1   [default]
+   aggregation: enable phase 3 = 1   [default]
+   aggregation: preserve Dirichlet points = 0   [default]
+   UseOnePtAggregationAlgorithm = 0   [default]
+   UsePreserveDirichletAggregationAlgorithm = 0   [default]
+   UseUncoupledAggregationAlgorithm = 1   [default]
+   UseMaxLinkAggregationAlgorithm = 1   [default]
+   UseIsolatedNodeAggregationAlgorithm = 1   [default]
+   UseEmergencyAggregationAlgorithm = 1   [default]
+   OnePt aggregate map name =    [default]
+
    Build (MueLu::AmalgamationFactory)
-    AmalagamationFactory::Build(): found fullblocksize=1 and stridedblocksize=1 from strided maps. offset=0
+   [empty list]
+
    Nullspace factory (MueLu::NullspaceFactory)
-    Generating canonical nullspace: dimension = 1
+   Fine level nullspace = Nullspace
+
    Build (MueLu::CoarseMapFactory)
-    domainGIDOffset: 0 block size: 1 stridedBlockId: -1
-   Column map is consistent with the row map, good.
-   TentativePFactory : aggregates do not cross process boundaries
-   Ptent size =  10000 x 1700, nnz = 10000
-   Ptent Load balancing info
-   Ptent   # active processes: 1/1
-   Ptent   # rows per proc   : avg = 1.00e+04,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
-   Ptent   #  nnz per proc   : avg = 1.00e+04,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
-  Eigenvalue estimate
-   Calculating max eigenvalue estimate now (max iters = 10)
-   Prolongator damping factor = 0.70 (1.33 / 1.89)
-  Fused (I-omega*D^{-1} A)*Ptent
-  P size =  10000 x 1700, nnz = 24807
-  P Load balancing info
-  P   # active processes: 1/1
-  P   # rows per proc   : avg = 1.00e+04,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
-  P   #  nnz per proc   : avg = 2.48e+04,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
+   Striding info = {}   [default]
+   Strided block id = -1   [default]
+   Domain GID offsets = {0}   [default]
+
+  [empty list]
+
+ sa: damping factor = 1.33   [default]
+ sa: calculate eigenvalue estimate = 0   [default]
+ sa: eigenvalue estimate num iterations = 10   [default]
+
  Transpose P (MueLu::TransPFactory)
-  R size =  1700 x 10000, nnz = 24807
-  R Load balancing info
-  R   # active processes: 1/1
-  R   # rows per proc   : avg = 1.70e+03,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
-  R   #  nnz per proc   : avg = 2.48e+04,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
+ [empty list]
+
  Computing Ac (MueLu::RAPFactory)
-  MxM: A x P
-  MxM: R x (AP) (explicit)
-  Ac size =  1700 x 1700, nnz = 14928
-  Ac Load balancing info
-  Ac   # active processes: 1/1
-  Ac   # rows per proc   : avg = 1.70e+03,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
-  Ac   #  nnz per proc   : avg = 1.49e+04,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
+ transpose: use implicit = 0   [default]
+ Keep AP Pattern = 0   [default]
+ Keep RAP Pattern = 0   [default]
+ CheckMainDiagonal = 0   [default]
+ RepairMainDiagonal = 0   [default]
+
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
-  IFPACK (Local SGS, sweeps=1, damping=1)
-MueLu::Amesos2Smoother: using "Superlu"
-MueLu::AmesosSmoother: using "Superlu"
-Using default factory (MueLu::SmootherFactory{pre = MueLu::DirectSolver{type = }, post = null}) for building 'CoarseSolver'.
-Using default factory (MueLu::SmootherFactory{pre = MueLu::TrilinosSmoother{type = RELAXATION}, post = pre}) for building 'Smoother'.
-Using default factory (MueLu::AmalgamationFactory) for building 'UnAmalgamationInfo'.
+ relaxation: type = symmetric Gauss-Seidel   [unused]
+ relaxation: sweeps = 1   [unused]
+ relaxation: damping factor = 1   [unused]
+
 Level 2
  Prolongator smoothing (MueLu::SaPFactory)
   Matrix filtering (MueLu::FilteredAFactory)
    Build (MueLu::CoalesceDropFactory)
-    lightweight wrap = 1
-    algorithm = "classical": threshold = 0.00, blocksize = 1
-    Detected 0 Dirichlet nodes
-    Number of dropped entries in unamalgamated matrix graph: 0/14928 (0.00%)
-   Filtered matrix is not being constructed as no filtering is being done
+   aggregation: drop tol = 0   [default]
+   aggregation: Dirichlet threshold = 0   [default]
+   aggregation: drop scheme = classical   [default]
+   lightweight wrap = 1
+
+  filtered matrix: use lumping = 1   [default]
+  filtered matrix: reuse graph = 1   [default]
+  filtered matrix: reuse eigenvalue = 1   [default]
+
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
-    Algo "Phase - (Dirichlet)"
-     BuildAggregates (Phase - (Dirichlet))
-       aggregated : 0 (phase), 0/1700 [0.00%] (total)
-       remaining  : 1700
-       aggregates : 0 (phase), 0 (total)
-    Algo "Phase 1 (main)"
-     BuildAggregates (Phase 1 (main))
-       aggregated : 1649 (phase), 1649/1700 [97.00%] (total)
-       remaining  : 51
-       aggregates : 192 (phase), 192 (total)
-    Algo "Phase 2 (cleanup)"
-     BuildAggregates (Phase 2 (cleanup))
-       aggregated : 51 (phase), 1700/1700 [100.00%] (total)
-       remaining  : 0
-       aggregates : 0 (phase), 192 (total)
-    Algo "Phase 3 (emergency)"
-     BuildAggregates (Phase 3 (emergency))
-       aggregated : 0 (phase), 1700/1700 [100.00%] (total)
-       remaining  : 0
-       aggregates : 0 (phase), 192 (total)
-    Algo "Phase - (isolated)"
-     BuildAggregates (Phase - (isolated))
-       aggregated : 0 (phase), 1700/1700 [100.00%] (total)
-       remaining  : 0
-       aggregates : 0 (phase), 192 (total)
-    "UC": MueLu::Aggregates{nGlobalAggregates = 192}
+   aggregation: mode = old   [default]
+   aggregation: max agg size = -1   [default]
+   aggregation: min agg size = 2   [default]
+   aggregation: max selected neighbors = 0   [default]
+   aggregation: ordering = natural   [default]
+   aggregation: enable phase 1 = 1   [default]
+   aggregation: enable phase 2a = 1   [default]
+   aggregation: enable phase 2b = 1   [default]
+   aggregation: enable phase 3 = 1   [default]
+   aggregation: preserve Dirichlet points = 0   [default]
+   UseOnePtAggregationAlgorithm = 0   [default]
+   UsePreserveDirichletAggregationAlgorithm = 0   [default]
+   UseUncoupledAggregationAlgorithm = 1   [default]
+   UseMaxLinkAggregationAlgorithm = 1   [default]
+   UseIsolatedNodeAggregationAlgorithm = 1   [default]
+   UseEmergencyAggregationAlgorithm = 1   [default]
+   OnePt aggregate map name =    [default]
+
    Build (MueLu::AmalgamationFactory)
-    AmalagamationFactory::Build(): found fullblocksize=1 and stridedblocksize=1 from strided maps. offset=0
+   [empty list]
+
    Nullspace factory (MueLu::NullspaceFactory)
+   Fine level nullspace = Nullspace
+
    Build (MueLu::CoarseMapFactory)
-    domainGIDOffset: 0 block size: 1 stridedBlockId: -1
-   Column map is consistent with the row map, good.
-   TentativePFactory : aggregates do not cross process boundaries
-   Ptent size =  1700 x 192, nnz = 1700
-   Ptent Load balancing info
-   Ptent   # active processes: 1/1
-   Ptent   # rows per proc   : avg = 1.70e+03,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
-   Ptent   #  nnz per proc   : avg = 1.70e+03,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
-  Eigenvalue estimate
-   Calculating max eigenvalue estimate now (max iters = 10)
-   Prolongator damping factor = 0.98 (1.33 / 1.35)
-  Fused (I-omega*D^{-1} A)*Ptent
-  P size =  1700 x 192, nnz = 4551
-  P Load balancing info
-  P   # active processes: 1/1
-  P   # rows per proc   : avg = 1.70e+03,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
-  P   #  nnz per proc   : avg = 4.55e+03,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
+   Striding info = {}   [default]
+   Strided block id = -1   [default]
+   Domain GID offsets = {0}   [default]
+
+  [empty list]
+
+ sa: damping factor = 1.33   [default]
+ sa: calculate eigenvalue estimate = 0   [default]
+ sa: eigenvalue estimate num iterations = 10   [default]
+
  Transpose P (MueLu::TransPFactory)
-  R size =  192 x 1700, nnz = 4551
-  R Load balancing info
-  R   # active processes: 1/1
-  R   # rows per proc   : avg = 1.92e+02,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
-  R   #  nnz per proc   : avg = 4.55e+03,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
+ [empty list]
+
  Computing Ac (MueLu::RAPFactory)
-  MxM: A x P
-  MxM: R x (AP) (explicit)
-  Ac size =  192 x 192, nnz = 1674
-  Ac Load balancing info
-  Ac   # active processes: 1/1
-  Ac   # rows per proc   : avg = 1.92e+02,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
-  Ac   #  nnz per proc   : avg = 1.67e+03,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
+ transpose: use implicit = 0   [default]
+ Keep AP Pattern = 0   [default]
+ Keep RAP Pattern = 0   [default]
+ CheckMainDiagonal = 0   [default]
+ RepairMainDiagonal = 0   [default]
+
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
-  IFPACK (Local SGS, sweeps=1, damping=1)
-MueLu::Amesos2Smoother: using "Superlu"
-MueLu::AmesosSmoother: using "Superlu"
-Using default factory (MueLu::SmootherFactory{pre = MueLu::DirectSolver{type = }, post = null}) for building 'CoarseSolver'.
-Using default factory (MueLu::SmootherFactory{pre = MueLu::TrilinosSmoother{type = RELAXATION}, post = pre}) for building 'Smoother'.
-Using default factory (MueLu::AmalgamationFactory) for building 'UnAmalgamationInfo'.
+ relaxation: type = symmetric Gauss-Seidel   [unused]
+ relaxation: sweeps = 1   [unused]
+ relaxation: damping factor = 1   [unused]
+
 Level 3
  Prolongator smoothing (MueLu::SaPFactory)
   Matrix filtering (MueLu::FilteredAFactory)
    Build (MueLu::CoalesceDropFactory)
-    lightweight wrap = 1
-    algorithm = "classical": threshold = 0.00, blocksize = 1
-    Detected 0 Dirichlet nodes
-    Number of dropped entries in unamalgamated matrix graph: 0/1674 (0.00%)
-   Filtered matrix is not being constructed as no filtering is being done
+   aggregation: drop tol = 0   [default]
+   aggregation: Dirichlet threshold = 0   [default]
+   aggregation: drop scheme = classical   [default]
+   lightweight wrap = 1
+
+  filtered matrix: use lumping = 1   [default]
+  filtered matrix: reuse graph = 1   [default]
+  filtered matrix: reuse eigenvalue = 1   [default]
+
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
-    Algo "Phase - (Dirichlet)"
-     BuildAggregates (Phase - (Dirichlet))
-       aggregated : 0 (phase), 0/192 [0.00%] (total)
-       remaining  : 192
-       aggregates : 0 (phase), 0 (total)
-    Algo "Phase 1 (main)"
-     BuildAggregates (Phase 1 (main))
-       aggregated : 178 (phase), 178/192 [92.71%] (total)
-       remaining  : 14
-       aggregates : 24 (phase), 24 (total)
-    Algo "Phase 2 (cleanup)"
-     BuildAggregates (Phase 2 (cleanup))
-       aggregated : 14 (phase), 192/192 [100.00%] (total)
-       remaining  : 0
-       aggregates : 0 (phase), 24 (total)
-    Algo "Phase 3 (emergency)"
-     BuildAggregates (Phase 3 (emergency))
-       aggregated : 0 (phase), 192/192 [100.00%] (total)
-       remaining  : 0
-       aggregates : 0 (phase), 24 (total)
-    Algo "Phase - (isolated)"
-     BuildAggregates (Phase - (isolated))
-       aggregated : 0 (phase), 192/192 [100.00%] (total)
-       remaining  : 0
-       aggregates : 0 (phase), 24 (total)
-    "UC": MueLu::Aggregates{nGlobalAggregates = 24}
+   aggregation: mode = old   [default]
+   aggregation: max agg size = -1   [default]
+   aggregation: min agg size = 2   [default]
+   aggregation: max selected neighbors = 0   [default]
+   aggregation: ordering = natural   [default]
+   aggregation: enable phase 1 = 1   [default]
+   aggregation: enable phase 2a = 1   [default]
+   aggregation: enable phase 2b = 1   [default]
+   aggregation: enable phase 3 = 1   [default]
+   aggregation: preserve Dirichlet points = 0   [default]
+   UseOnePtAggregationAlgorithm = 0   [default]
+   UsePreserveDirichletAggregationAlgorithm = 0   [default]
+   UseUncoupledAggregationAlgorithm = 1   [default]
+   UseMaxLinkAggregationAlgorithm = 1   [default]
+   UseIsolatedNodeAggregationAlgorithm = 1   [default]
+   UseEmergencyAggregationAlgorithm = 1   [default]
+   OnePt aggregate map name =    [default]
+
    Build (MueLu::AmalgamationFactory)
-    AmalagamationFactory::Build(): found fullblocksize=1 and stridedblocksize=1 from strided maps. offset=0
+   [empty list]
+
    Nullspace factory (MueLu::NullspaceFactory)
+   Fine level nullspace = Nullspace
+
    Build (MueLu::CoarseMapFactory)
-    domainGIDOffset: 0 block size: 1 stridedBlockId: -1
-   Column map is consistent with the row map, good.
-   TentativePFactory : aggregates do not cross process boundaries
-   Ptent size =  192 x 24, nnz = 192
-   Ptent Load balancing info
-   Ptent   # active processes: 1/1
-   Ptent   # rows per proc   : avg = 1.92e+02,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
-   Ptent   #  nnz per proc   : avg = 1.92e+02,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
-  Eigenvalue estimate
-   Calculating max eigenvalue estimate now (max iters = 10)
-   Prolongator damping factor = 0.96 (1.33 / 1.38)
-  Fused (I-omega*D^{-1} A)*Ptent
-  P size =  192 x 24, nnz = 512
-  P Load balancing info
-  P   # active processes: 1/1
-  P   # rows per proc   : avg = 1.92e+02,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
-  P   #  nnz per proc   : avg = 5.12e+02,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
+   Striding info = {}   [default]
+   Strided block id = -1   [default]
+   Domain GID offsets = {0}   [default]
+
+  [empty list]
+
+ sa: damping factor = 1.33   [default]
+ sa: calculate eigenvalue estimate = 0   [default]
+ sa: eigenvalue estimate num iterations = 10   [default]
+
  Transpose P (MueLu::TransPFactory)
-  R size =  24 x 192, nnz = 512
-  R Load balancing info
-  R   # active processes: 1/1
-  R   # rows per proc   : avg = 2.40e+01,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
-  R   #  nnz per proc   : avg = 5.12e+02,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
+ [empty list]
+
  Computing Ac (MueLu::RAPFactory)
-  MxM: A x P
-  MxM: R x (AP) (explicit)
-  Ac size =  24 x 24, nnz = 192
-  Ac Load balancing info
-  Ac   # active processes: 1/1
-  Ac   # rows per proc   : avg = 2.40e+01,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
-  Ac   #  nnz per proc   : avg = 1.92e+02,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
- Max coarse size (<= 100) achieved
- Setup Smoother (MueLu::AmesosSmoother{type = <ignored>})
+ transpose: use implicit = 0   [default]
+ Keep AP Pattern = 0   [default]
+ Keep RAP Pattern = 0   [default]
+ CheckMainDiagonal = 0   [default]
+ RepairMainDiagonal = 0   [default]
+
+ Setup Smoother (MueLu::AmesosSmoother{type = Superlu})
+ presmoother ->
+  [empty list]
+
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---
@@ -263,12 +211,12 @@ A 1     1700  14928     8.78  1
 A 2      192   1674     8.72  1
 A 3       24    192     8.00  1
 
-Smoother (level 0) both : IFPACK (Local SGS, sweeps=1, damping=1)
+Smoother (level 0) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
 
-Smoother (level 1) both : IFPACK (Local SGS, sweeps=1, damping=1)
+Smoother (level 1) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
 
-Smoother (level 2) both : IFPACK (Local SGS, sweeps=1, damping=1)
+Smoother (level 2) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
 
-Smoother (level 3) pre  : MueLu::AmesosSmoother{type = <ignored>}
+Smoother (level 3) pre  : MueLu::AmesosSmoother{type = Superlu}
 Smoother (level 3) post : no smoother
 
