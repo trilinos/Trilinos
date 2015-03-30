@@ -1499,7 +1499,6 @@ void jacobi_A_B_newmatrix(
   using Teuchos::ArrayView;
   typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
   typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
-
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix = std::string("TpetraExt ")+ label + std::string(": ");
   using Teuchos::TimeMonitor;
@@ -1857,7 +1856,9 @@ void import_and_extract_views(
 #endif
 
     // Now create a new matrix into which we can import the remote rows of M that we need.
-    Mview.importMatrix = Tpetra::importAndFillCompleteCrsMatrix<CrsMatrix_t>(Teuchos::rcp(&M,false),*importer,M.getDomainMap(),M.getRangeMap(),Teuchos::null);
+    Teuchos::ParameterList labelList;
+    labelList.set("Timer Label",label);
+    Mview.importMatrix = Tpetra::importAndFillCompleteCrsMatrix<CrsMatrix_t>(Teuchos::rcp(&M,false),*importer,M.getDomainMap(),M.getRangeMap(),Teuchos::rcp(&labelList,false));
 
 #ifdef COMPUTE_MMM_STATISTICS
     printMultiplicationStatistics(importer,label+std::string(" I&X MMM"));

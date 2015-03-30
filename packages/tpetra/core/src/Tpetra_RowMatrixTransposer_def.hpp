@@ -88,8 +88,12 @@ createTranspose ()
     return transMatrixWithSharedRows;
   }
   else {
+    Teuchos::ParameterList labelList;
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    labelList.set("Timer Label",label_);
+#endif
     // Use the Export object to do a fused Export and fillComplete.
-    return exportAndFillCompleteCrsMatrix<crs_matrix_type> (transMatrixWithSharedRows, *exporter);
+    return exportAndFillCompleteCrsMatrix<crs_matrix_type> (transMatrixWithSharedRows, *exporter,Teuchos::null,Teuchos::null,Teuchos::rcp(&labelList,false));
   }
 }
 
