@@ -487,6 +487,9 @@ public:
   void change_ghosting( Ghosting & ghosts,
                         const std::vector<EntityProc> & add_send ,
                         const std::vector<EntityKey> & remove_receive = std::vector<EntityKey>());
+  void batch_change_ghosting( Ghosting & ghosts,
+                        const std::vector<EntityProc> & add_send ,
+                        const std::vector<EntityKey> & remove_receive = std::vector<EntityKey>());
 
   // Clear all ghosts for a particular ghosting.
   void destroy_ghosting( Ghosting& ghost_layer );
@@ -759,6 +762,7 @@ protected: //functions
 
   bool internal_modification_end_for_change_entity_owner( bool regenerate_aura, modification_optimization opt );
   bool internal_modification_end_for_change_parts();
+  void internal_modification_end_for_change_ghosting();
 
   void mark_entity_and_upward_related_entities_as_modified(Entity entity);
 

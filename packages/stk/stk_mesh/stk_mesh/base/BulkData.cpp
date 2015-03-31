@@ -2630,6 +2630,20 @@ void BulkData::change_ghosting(
     internal_verify_inputs_and_change_ghosting(ghosts, add_send, remove_receive);
 }
 
+void BulkData::batch_change_ghosting(
+    Ghosting & ghosts ,
+    const std::vector<EntityProc> & add_send ,
+    const std::vector<EntityKey> & remove_receive )
+{
+    bool starting_modification = modification_begin();
+    ThrowRequireMsg(starting_modification, "ERROR: BulkData already being modified,\n"
+                    <<"BulkData::batch_change_ghosting(...) can not be called within an outer modification scope.");
+
+    internal_verify_inputs_and_change_ghosting(ghosts, add_send, remove_receive);
+
+    internal_modification_end_for_change_ghosting();
+}
+
 void BulkData::internal_verify_inputs_and_change_ghosting(
   Ghosting & ghosts ,
   const std::vector<EntityProc> & add_send ,
@@ -4034,6 +4048,20 @@ void BulkData::update_comm_list_based_on_changes_in_comm_map()
                         m_entity_comm_list.end() , IsInvalid() );
     m_entity_comm_list.erase( i , m_entity_comm_list.end() );
   }
+}
+
+void BulkData::internal_modification_end_for_change_ghosting()
+{
+    internal_resolve_send_ghost_membership();
+
+    m_bucket_repository.internal_sort_bucket_entities();
+
+    if(parallel_size() > 1)
+    {
+        check_mesh_consistency();
+    }
+
+    m_sync_state = SYNCHRONIZED ;
 }
 
 bool BulkData::internal_modification_end_for_change_parts()
