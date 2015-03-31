@@ -70,7 +70,7 @@ using namespace Intrepid;
 }
 
 int main(int argc, char *argv[]) {
-
+#ifndef KOKKOS_HAVE_CUDA
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if
@@ -105,12 +105,12 @@ int main(int argc, char *argv[]) {
     << "===============================================================================\n"\
     << "| TEST 1: Basis creation, exception testing                                   |\n"\
     << "===============================================================================\n";
-
+#endif
   
   // Define basis and error flag
   Basis_HGRAD_LINE_C1_FEM<double, FieldContainer<double> > lineBasis;
   int errorFlag = 0;
-
+#ifndef KOKKOS_HAVE_CUDA
   // Initialize throw counter for exception testing
   int nException     = 0;
   int throwCounter   = 0;
@@ -439,6 +439,6 @@ int main(int argc, char *argv[]) {
 
   // reset format state of std::cout
   std::cout.copyfmt(oldFormatState);
-
+#endif
   return errorFlag;
 }
