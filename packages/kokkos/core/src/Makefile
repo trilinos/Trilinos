@@ -49,7 +49,7 @@ messages:
 	echo "Start Build"
 
 build-makefile-kokkos:
-	rm Makefile.kokkos
+	rm -f Makefile.kokkos
 	echo "#Global Settings used to generate this library" >> Makefile.kokkos
 	echo "KOKKOS_PATH = $(PREFIX)" >> Makefile.kokkos
 	echo "KOKKOS_DEVICES = $(KOKKOS_DEVICES)" >> Makefile.kokkos
