@@ -226,7 +226,7 @@ evaluateDirichletBCs(const panzer::AssemblyEngineInArgs& in)
 
   // allocate a counter to keep track of where this processor set dirichlet boundary conditions
   Teuchos::RCP<LinearObjContainer> localCounter = localCounter_;
-  m_lin_obj_factory->initializeGhostedContainer(LinearObjContainer::X,*localCounter); // store counter in X
+  m_lin_obj_factory->initializeGhostedContainer(LinearObjContainer::F,*localCounter); // store counter in F
   localCounter->initialize();
      // this has only an X vector. The evaluate BCs will add a one to each row
      // that has been set as a dirichlet condition on this processor
@@ -235,19 +235,19 @@ evaluateDirichletBCs(const panzer::AssemblyEngineInArgs& in)
   this->evaluateBCs(panzer::BCT_Dirichlet, in,localCounter);
 
   Teuchos::RCP<LinearObjContainer> summedGhostedCounter = summedGhostedCounter_;
-  m_lin_obj_factory->initializeGhostedContainer(LinearObjContainer::X,*summedGhostedCounter); // store counter in X
+  m_lin_obj_factory->initializeGhostedContainer(LinearObjContainer::F,*summedGhostedCounter); // store counter in X
   summedGhostedCounter->initialize();
 
   // do communication to build summed ghosted counter for dirichlet conditions
   Teuchos::RCP<LinearObjContainer> globalCounter = globalCounter_;
   {
-     m_lin_obj_factory->initializeContainer(LinearObjContainer::X,*globalCounter); // store counter in X
+     m_lin_obj_factory->initializeContainer(LinearObjContainer::F,*globalCounter); // store counter in X
      globalCounter->initialize();
-     m_lin_obj_factory->ghostToGlobalContainer(*localCounter,*globalCounter,LOC::X);
+     m_lin_obj_factory->ghostToGlobalContainer(*localCounter,*globalCounter,LOC::F);
         // Here we do the reduction across all processors so that the number of times
         // a dirichlet condition is applied is summed into the global counter
 
-     m_lin_obj_factory->globalToGhostContainer(*globalCounter,*summedGhostedCounter,LOC::X);
+     m_lin_obj_factory->globalToGhostContainer(*globalCounter,*summedGhostedCounter,LOC::F);
         // finally we move the summed global vector into a local ghosted vector
         // so that the dirichlet conditions can be applied to both the ghosted
         // right hand side and the ghosted matrix

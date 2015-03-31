@@ -40,8 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_BlockedEpetraLinearObjFactory_decl_hpp__
-#define __Panzer_BlockedEpetraLinearObjFactory_decl_hpp__
+#ifndef __Panzer_BlockedEpetraLinearObjFactory_hpp__
+#define __Panzer_BlockedEpetraLinearObjFactory_hpp__
 
 #include <map>
 

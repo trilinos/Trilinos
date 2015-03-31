@@ -321,21 +321,6 @@ addResponse(const std::string & responseName,
   modelFact_tm->buildObjects(builder);
 
   addResponse(responseName,wkst_desc,modelFact_tm);
-/*
-  // build a response object for each evaluation type
-  ResponseBase_Builder<TraitsT> respData_builder(modelFact_tm,responseName,wkst_desc);
-  responseObjects_[responseName].buildObjects(respData_builder);
-
-  // associate response objects with all workset descriptors
-  for(std::size_t i=0;i<wkst_desc.size();i++) {
-    const WorksetDescriptor & desc = wkst_desc[i];
-
-    // add response factory TM to vector that stores them
-    std::vector<std::pair<std::string,RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > & block_tm 
-        = respFactories_[desc];
-    block_tm.push_back(std::make_pair(responseName,modelFact_tm));
-  }
-*/
 }
 
 template <typename TraitsT>

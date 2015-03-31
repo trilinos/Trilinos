@@ -593,7 +593,7 @@ evaluateFields(typename TRAITS::EvalData workset)
              int lid = LIDs[offset];
 
              // set the value and seed the FAD object
-             field(worksetCellIndex,basis) = ScalarT(LIDs.size(), x[lid]);
+             field(worksetCellIndex,basis).val() = x[lid];
              field(worksetCellIndex,basis).fastAccessDx(offset) = seed_value;
            }
          }

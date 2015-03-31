@@ -209,7 +209,7 @@ writeVector(const std::string & identifier,const LinearObjContainer & loc,int id
 template <typename Traits,typename LocalOrdinalT>
 Teuchos::RCP<LinearObjContainer> EpetraLinearObjFactory<Traits,LocalOrdinalT>::buildLinearObjContainer() const
 {
-   Teuchos::RCP<EpetraLinearObjContainer> container = Teuchos::rcp(new EpetraLinearObjContainer(getMap(),getMap()));
+   Teuchos::RCP<EpetraLinearObjContainer> container = Teuchos::rcp(new EpetraLinearObjContainer(getColMap(),getMap()));
 
    return container;
 }
@@ -217,7 +217,7 @@ Teuchos::RCP<LinearObjContainer> EpetraLinearObjFactory<Traits,LocalOrdinalT>::b
 template <typename Traits,typename LocalOrdinalT>
 Teuchos::RCP<LinearObjContainer> EpetraLinearObjFactory<Traits,LocalOrdinalT>::buildGhostedLinearObjContainer() const
 {
-   Teuchos::RCP<EpetraLinearObjContainer> container = Teuchos::rcp(new EpetraLinearObjContainer(getGhostedMap(),getGhostedMap()));
+   Teuchos::RCP<EpetraLinearObjContainer> container = Teuchos::rcp(new EpetraLinearObjContainer(getGhostedColMap(),getGhostedMap()));
 
    return container;
 }
@@ -235,13 +235,13 @@ void EpetraLinearObjFactory<Traits,LocalOrdinalT>::globalToGhostContainer(const 
    // Operations occur if the GLOBAL container has the correct targets!
    // Users set the GLOBAL continer arguments
    if ( !is_null(e_in.get_x()) && !is_null(e_out.get_x()) && ((mem & LOC::X)==LOC::X))
-     globalToGhostEpetraVector(*e_in.get_x(),*e_out.get_x());
+     globalToGhostEpetraVector(*e_in.get_x(),*e_out.get_x(),true);
   
    if ( !is_null(e_in.get_dxdt()) && !is_null(e_out.get_dxdt()) && ((mem & LOC::DxDt)==LOC::DxDt))
-     globalToGhostEpetraVector(*e_in.get_dxdt(),*e_out.get_dxdt());
+     globalToGhostEpetraVector(*e_in.get_dxdt(),*e_out.get_dxdt(),true);
 
    if ( !is_null(e_in.get_f()) && !is_null(e_out.get_f()) && ((mem & LOC::F)==LOC::F))
-      globalToGhostEpetraVector(*e_in.get_f(),*e_out.get_f());
+      globalToGhostEpetraVector(*e_in.get_f(),*e_out.get_f(),false);
 }
 
 template <typename Traits,typename LocalOrdinalT>
@@ -257,24 +257,27 @@ void EpetraLinearObjFactory<Traits,LocalOrdinalT>::ghostToGlobalContainer(const 
   // Operations occur if the GLOBAL container has the correct targets!
   // Users set the GLOBAL continer arguments
    if ( !is_null(e_in.get_x()) && !is_null(e_out.get_x()) && ((mem & LOC::X)==LOC::X))
-     ghostToGlobalEpetraVector(*e_in.get_x(),*e_out.get_x());
+     ghostToGlobalEpetraVector(*e_in.get_x(),*e_out.get_x(),true);
 
    if ( !is_null(e_in.get_f()) && !is_null(e_out.get_f()) && ((mem & LOC::F)==LOC::F))
-     ghostToGlobalEpetraVector(*e_in.get_f(),*e_out.get_f());
+     ghostToGlobalEpetraVector(*e_in.get_f(),*e_out.get_f(),false);
 
    if ( !is_null(e_in.get_A()) && !is_null(e_out.get_A()) && ((mem & LOC::Mat)==LOC::Mat))
      ghostToGlobalEpetraMatrix(*e_in.get_A(),*e_out.get_A());
 }
 
 template <typename Traits,typename LocalOrdinalT>
-void EpetraLinearObjFactory<Traits,LocalOrdinalT>::ghostToGlobalEpetraVector(const Epetra_Vector & in,Epetra_Vector & out) const
+void EpetraLinearObjFactory<Traits,LocalOrdinalT>::ghostToGlobalEpetraVector(const Epetra_Vector & in,Epetra_Vector & out,bool col) const
 {
    using Teuchos::RCP;
 
    // do the global distribution
-   RCP<Epetra_Export> exporter = getGhostedExport();
-   out.PutScalar(0.0);
-   out.Export(in,*exporter,Add);
+   RCP<Epetra_Export> exporter = col ? getGhostedColExport() : getGhostedExport();
+   TEUCHOS_ASSERT(out.PutScalar(0.0)==0);
+
+   int errCode = out.Export(in,*exporter,Add);
+   TEUCHOS_TEST_FOR_EXCEPTION(errCode!=0,std::runtime_error,
+                              "Epetra_Vector::Export returned an error code of " << errCode << "!");
 }
 
 template <typename Traits,typename LocalOrdinalT>
@@ -289,12 +292,12 @@ void EpetraLinearObjFactory<Traits,LocalOrdinalT>::ghostToGlobalEpetraMatrix(con
 }
 
 template <typename Traits,typename LocalOrdinalT>
-void EpetraLinearObjFactory<Traits,LocalOrdinalT>::globalToGhostEpetraVector(const Epetra_Vector & in,Epetra_Vector & out) const
+void EpetraLinearObjFactory<Traits,LocalOrdinalT>::globalToGhostEpetraVector(const Epetra_Vector & in,Epetra_Vector & out,bool col) const
 {
    using Teuchos::RCP;
 
    // do the global distribution
-   RCP<Epetra_Import> importer = getGhostedImport();
+   RCP<Epetra_Import> importer = col ? getGhostedColImport() : getGhostedImport();
    out.PutScalar(0.0);
    out.Import(in,*importer,Insert);
 }
@@ -311,16 +314,16 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
    const EpetraLinearObjContainer & e_globalBCRows = Teuchos::dyn_cast<const EpetraLinearObjContainer>(globalBCRows); 
    EpetraLinearObjContainer & e_ghosted = Teuchos::dyn_cast<EpetraLinearObjContainer>(ghostedObjs); 
 
-   TEUCHOS_ASSERT(!Teuchos::is_null(e_localBCRows.get_x()));
-   TEUCHOS_ASSERT(!Teuchos::is_null(e_globalBCRows.get_x()));
+   TEUCHOS_ASSERT(!Teuchos::is_null(e_localBCRows.get_f()));
+   TEUCHOS_ASSERT(!Teuchos::is_null(e_globalBCRows.get_f()));
    
    // pull out jacobian and vector
    Teuchos::RCP<Epetra_CrsMatrix> A = e_ghosted.get_A();
    Teuchos::RCP<Epetra_Vector> f = e_ghosted.get_f();
    if(adjustX) f = e_ghosted.get_x();
 
-   const Epetra_Vector & local_bcs  = *(e_localBCRows.get_x());
-   const Epetra_Vector & global_bcs = *(e_globalBCRows.get_x());
+   const Epetra_Vector & local_bcs  = *(e_localBCRows.get_f());
+   const Epetra_Vector & global_bcs = *(e_globalBCRows.get_f());
 
    TEUCHOS_ASSERT(local_bcs.MyLength()==global_bcs.MyLength());
    for(int i=0;i<local_bcs.MyLength();i++) {
@@ -373,7 +376,7 @@ applyDirichletBCs(const LinearObjContainer & counter,
   const ThyraObjContainer<double> & th_counter = dyn_cast<const ThyraObjContainer<double> >(counter);
   ThyraObjContainer<double> & th_result  = dyn_cast<ThyraObjContainer<double> >(result);
   
-  RCP<const Thyra::VectorBase<double> > count = th_counter.get_x_th();
+  RCP<const Thyra::VectorBase<double> > count = th_counter.get_f_th();
   RCP<const Thyra::VectorBase<double> > f_in = th_counter.get_f_th();
   RCP<Thyra::VectorBase<double> > f_out = th_result.get_f_th();
 
@@ -454,10 +457,10 @@ void EpetraLinearObjFactory<Traits,LocalOrdinalT>::initializeContainer(int mem,E
    loc.clear();
 
    if((mem & ELOC::X) == ELOC::X)
-      loc.set_x(getEpetraVector());
+      loc.set_x(getEpetraColVector());
 
    if((mem & ELOC::DxDt) == ELOC::DxDt)
-      loc.set_dxdt(getEpetraVector());
+      loc.set_dxdt(getEpetraColVector());
     
    if((mem & ELOC::F) == ELOC::F)
       loc.set_f(getEpetraVector());
@@ -481,10 +484,10 @@ void EpetraLinearObjFactory<Traits,LocalOrdinalT>::initializeGhostedContainer(in
    loc.clear();
 
    if((mem & ELOC::X) == ELOC::X)
-      loc.set_x(getGhostedEpetraVector());
+      loc.set_x(getGhostedEpetraColVector());
 
    if((mem & ELOC::DxDt) == ELOC::DxDt)
-      loc.set_dxdt(getGhostedEpetraVector());
+      loc.set_dxdt(getGhostedEpetraColVector());
     
    if((mem & ELOC::F) == ELOC::F) {
       loc.set_f(getGhostedEpetraVector());
@@ -561,12 +564,36 @@ const Teuchos::RCP<Epetra_Import> EpetraLinearObjFactory<Traits,LocalOrdinalT>::
 }
 
 template <typename Traits,typename LocalOrdinalT>
+const Teuchos::RCP<Epetra_Import> EpetraLinearObjFactory<Traits,LocalOrdinalT>::getGhostedColImport() const
+{
+   if(!hasColProvider_)
+      colImporter_ = getGhostedImport(); // they are the same in this case
+
+   if(colImporter_==Teuchos::null)
+      colImporter_ = Teuchos::rcp(new Epetra_Import(*getGhostedColMap(),*getColMap()));
+
+   return colImporter_;
+}
+
+template <typename Traits,typename LocalOrdinalT>
 const Teuchos::RCP<Epetra_Export> EpetraLinearObjFactory<Traits,LocalOrdinalT>::getGhostedExport() const
 {
    if(exporter_==Teuchos::null)
       exporter_ = Teuchos::rcp(new Epetra_Export(*getGhostedMap(),*getMap()));
 
    return exporter_;
+}
+
+template <typename Traits,typename LocalOrdinalT>
+const Teuchos::RCP<Epetra_Export> EpetraLinearObjFactory<Traits,LocalOrdinalT>::getGhostedColExport() const
+{
+   if(!hasColProvider_)
+      colExporter_ = getGhostedExport(); // they are the same in this case
+
+   if(colExporter_==Teuchos::null)
+      colExporter_ = Teuchos::rcp(new Epetra_Export(*getGhostedColMap(),*getColMap()));
+
+   return colExporter_;
 }
 
 // "Build" functions
@@ -695,9 +722,23 @@ const Teuchos::RCP<Epetra_CrsGraph> EpetraLinearObjFactory<Traits,LocalOrdinalT>
 }
 
 template <typename Traits,typename LocalOrdinalT>
+Teuchos::RCP<Epetra_Vector> EpetraLinearObjFactory<Traits,LocalOrdinalT>::getGhostedEpetraColVector() const
+{
+   Teuchos::RCP<const Epetra_Map> eMap = getGhostedColMap(); 
+   return Teuchos::rcp(new Epetra_Vector(*eMap));
+}
+
+template <typename Traits,typename LocalOrdinalT>
 Teuchos::RCP<Epetra_Vector> EpetraLinearObjFactory<Traits,LocalOrdinalT>::getGhostedEpetraVector() const
 {
    Teuchos::RCP<const Epetra_Map> eMap = getGhostedMap(); 
+   return Teuchos::rcp(new Epetra_Vector(*eMap));
+}
+
+template <typename Traits,typename LocalOrdinalT>
+Teuchos::RCP<Epetra_Vector> EpetraLinearObjFactory<Traits,LocalOrdinalT>::getEpetraColVector() const
+{
+   Teuchos::RCP<const Epetra_Map> eMap = getColMap(); 
    return Teuchos::rcp(new Epetra_Vector(*eMap));
 }
 

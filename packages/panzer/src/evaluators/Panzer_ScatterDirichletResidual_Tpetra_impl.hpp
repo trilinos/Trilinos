@@ -163,7 +163,7 @@ preEvaluate(typename TRAITS::PreEvalData d)
     Teuchos::RCP<LOC> tpetraContainer 
           = Teuchos::rcp_dynamic_cast<LOC>(d.gedc.getDataObject("Dirichlet Counter"),true);
 
-    dirichletCounter_ = tpetraContainer->get_x();
+    dirichletCounter_ = tpetraContainer->get_f();
     TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
   }
 }
@@ -360,7 +360,7 @@ preEvaluate(typename TRAITS::PreEvalData d)
     Teuchos::RCP<LOC> tpetraContainer 
           = Teuchos::rcp_dynamic_cast<LOC>(d.gedc.getDataObject("Dirichlet Counter"),true);
 
-    dirichletCounter_ = tpetraContainer->get_x();
+    dirichletCounter_ = tpetraContainer->get_f();
     TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
   }
 }
@@ -553,7 +553,7 @@ preEvaluate(typename TRAITS::PreEvalData d)
     Teuchos::RCP<LOC> tpetraContainer 
           = Teuchos::rcp_dynamic_cast<LOC>(d.gedc.getDataObject("Dirichlet Counter"),true);
 
-    dirichletCounter_ = tpetraContainer->get_x();
+    dirichletCounter_ = tpetraContainer->get_f();
     TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
   }
 }

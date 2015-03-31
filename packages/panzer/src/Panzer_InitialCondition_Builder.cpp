@@ -104,7 +104,7 @@ void panzer::evaluateInitialCondition(WorksetContainer & wkstContainer,
   Teuchos::RCP<LOC> globalCounter = lo_factory.buildPrimitiveLinearObjContainer();
   Teuchos::RCP<LOC> summedGhostedCounter = lo_factory.buildPrimitiveGhostedLinearObjContainer();
 
-  lo_factory.initializeGhostedContainer(LOC::X,*localCounter); // store counter in X
+  lo_factory.initializeGhostedContainer(LOC::F,*localCounter); // store counter in F
   localCounter->initialize();
 
   ped.gedc.addDataObject("Residual Scatter Container",ghostedloc);
@@ -130,18 +130,18 @@ void panzer::evaluateInitialCondition(WorksetContainer & wkstContainer,
     }
   }
 
-  lo_factory.initializeGhostedContainer(LOC::X,*summedGhostedCounter); // store counter in X
+  lo_factory.initializeGhostedContainer(LOC::F,*summedGhostedCounter); // store counter in F
   summedGhostedCounter->initialize();
 
   // do communication to build summed ghosted counter for dirichlet conditions
   {
-    lo_factory.initializeContainer(LOC::X,*globalCounter); // store counter in X
+    lo_factory.initializeContainer(LOC::F,*globalCounter); // store counter in F
     globalCounter->initialize();
-    lo_factory.ghostToGlobalContainer(*localCounter,*globalCounter,LOC::X);
+    lo_factory.ghostToGlobalContainer(*localCounter,*globalCounter,LOC::F);
         // Here we do the reduction across all processors so that the number of times
         // a dirichlet condition is applied is summed into the global counter
 
-   lo_factory.globalToGhostContainer(*globalCounter,*summedGhostedCounter,LOC::X);
+   lo_factory.globalToGhostContainer(*globalCounter,*summedGhostedCounter,LOC::F);
         // finally we move the summed global vector into a local ghosted vector
         // so that the dirichlet conditions can be applied to both the ghosted
         // right hand side and the ghosted matrix
