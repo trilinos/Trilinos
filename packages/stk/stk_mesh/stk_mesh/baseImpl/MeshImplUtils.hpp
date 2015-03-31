@@ -397,7 +397,7 @@ void get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(const BulkData&
 stk::mesh::Entity get_or_create_face_at_element_side(stk::mesh::BulkData & bulk,
                                                      stk::mesh::Entity elem,
                                                      int side_ordinal,
-                                                     int new_face_global_id,
+                                                     stk::mesh::EntityId new_face_global_id,
                                                      stk::mesh::Part & part);
 
 void connect_face_to_other_elements(stk::mesh::BulkData & bulk,
