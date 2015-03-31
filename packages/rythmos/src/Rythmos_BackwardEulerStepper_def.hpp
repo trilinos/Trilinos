@@ -531,7 +531,6 @@ Scalar BackwardEulerStepper<Scalar>::takeStep(Scalar dt,
 
   {
 
-    typedef ScalarTraits<Scalar> ST;
     typedef ScalarTraits<ScalarMag> SMT;
 
     Teuchos::OSTab tab(out);
