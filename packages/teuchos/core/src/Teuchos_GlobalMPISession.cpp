@@ -150,7 +150,13 @@ GlobalMPISession::~GlobalMPISession()
 {
 
 #ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
-  Kokkos::finalize_all();
+  try {
+    Kokkos::finalize_all();
+  }
+  catch (const std::runtime_error& e) {
+    std::cerr << "Kokkos::finalize_all failed:\n"
+              << e.what() << "\n";
+  }
 #endif
 
   haveMPIState_ = false;

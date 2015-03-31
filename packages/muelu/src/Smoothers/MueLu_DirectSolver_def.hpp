@@ -78,8 +78,12 @@ namespace MueLu {
     // Amesos and Amesos2 solver prototypes. The construction really depends on configuration options.
     bool triedEpetra = false, triedTpetra = false;
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
-    sTpetra_ = rcp(new Amesos2Smoother(type_, paramList));
-    TEUCHOS_TEST_FOR_EXCEPTION(sTpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Amesos2 direct solver");
+    try {
+      sTpetra_ = rcp(new Amesos2Smoother(type_, paramList));
+      TEUCHOS_TEST_FOR_EXCEPTION(sTpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Amesos2 direct solver");
+    } catch (Exceptions::RuntimeError& e) {
+      this->GetOStream(Debug) << "Skipping Amesos2Smoother construction due to an error: \n" << e.what() << std::endl;
+    }
     triedTpetra = true;
 #endif
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
@@ -87,16 +91,17 @@ namespace MueLu {
       // GetAmesosSmoother masks the template argument matching, and simply throws if template arguments are incompatible with Epetra
       sEpetra_ = GetAmesosSmoother<SC,LO,GO,NO>(type_, paramList);
       TEUCHOS_TEST_FOR_EXCEPTION(sEpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Amesos direct solver");
-    } catch (Exceptions::RuntimeError) {
+    } catch (Exceptions::RuntimeError& e) {
       // AmesosSmoother throws if Scalar != double, LocalOrdinal != int, GlobalOrdinal != int
-      this->GetOStream(Debug) << "Skipping AmesosSmoother construction due to incorrect type" << std::endl;
+      this->GetOStream(Debug) << "Skipping AmesosSmoother construction due to an error: \n" << e.what() << std::endl;
     }
     triedEpetra = true;
 #endif
 
     // Check if we were able to construct at least one solver. In many cases that's all we need, for instance if a user
     // simply wants to use Tpetra only stack, never enables Amesos, and always runs Tpetra objects.
-    TEUCHOS_TEST_FOR_EXCEPTION(!triedEpetra && !triedTpetra, Exceptions::RuntimeError, "Unable to construct direct solver. Plase enable (TPETRA and AMESOS2) or (EPETRA and AMESOS)");
+    TEUCHOS_TEST_FOR_EXCEPTION(!triedEpetra && !triedTpetra, Exceptions::RuntimeError, "Unable to construct any direct solver."
+                               "Plase enable (TPETRA and AMESOS2) or (EPETRA and AMESOS)");
 
     this->SetParameterList(paramList);
   }
@@ -117,11 +122,29 @@ namespace MueLu {
     // where one first runs hierarchy with tpetra matrix, and then with epetra.
     bool useTpetra = (currentLevel.lib() == Xpetra::UseTpetra);
     s_ = (useTpetra ? sTpetra_ : sEpetra_);
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        s_.is_null(),
-        Exceptions::RuntimeError,
-        "Direct solver for " << (useTpetra ? "Tpetra" : "Epetra") << " was not constructed"
-        );
+    if (s_.is_null()) {
+      if (useTpetra) {
+#if not defined(HAVE_MUELU_AMESOS2)
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
+            "Error: running in Tpetra mode, but MueLu with Amesos2 was disabled during the configure stage.\n"
+            "Please make sure that:\n"
+            "  - Amesos2 is enabled (Trilinos_ENABLE_Amesos2=ON),\n"
+            "  - Amesos2 is available for MueLu to use (MueLu_ENABLE_Amesos2=ON)\n");
+#else
+#endif
+      } else {
+#if not defined(HAVE_MUELU_AMESOS)
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
+            "Error: running in Epetra mode, but MueLu with Amesos was disabled during the configure stage.\n"
+            "Please make sure that:\n"
+            "  - Amesos is enabled (you can do that with Trilinos_ENABLE_Amesos=ON),\n"
+            "  - Amesos is available for MueLu to use (MueLu_ENABLE_Amesos=ON)\n");
+#else
+#endif
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
+          "Direct solver for " << (useTpetra ? "Tpetra" : "Epetra") << " was not constructed");
+    }
 
     s_->DeclareInput(currentLevel);
   }
