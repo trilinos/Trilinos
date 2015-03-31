@@ -234,7 +234,7 @@ class MultiVectorDefault : public MultiVector<Real> {
 
             for(int i=0;i<numVectors_;++i) {
                 for(int j=0;j<numVectors_;++j) {
-                    B(i,j) = alpha*mvec_[j]->dot(*A.getVector(i)); 
+                    B(i,j) = alpha*mvec_[j]->dot(*A.getVector(i));
                 }  
             }
         }                  
