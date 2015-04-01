@@ -68,33 +68,27 @@ typedef Tpetra::MultiVector<RealT, LO, GO, Node> MV;
 
 int main(int argc, char *argv[]) {
 
-    Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
-
     using Teuchos::RCP;
     using Teuchos::rcp; 
-    typedef RCP<MV> MVP; 
+    typedef RCP<MV> MVP;
 
-    int iprint     = argc - 1;
-    Teuchos::RCP<std::ostream> outStream;
+    Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
+    typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
+    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
+    RCP<const Tpetra::Comm<int> > comm = platform.getComm();
+ 
+
+    int iprint = argc - 1;
     Teuchos::oblackholestream bhs; // outputs nothing
+    std::ostream& outStream = (iprint > 0) ? std::cout : bhs;
 
-    if (iprint > 0)
-        outStream = Teuchos::rcp(&std::cout, false);
-    else
-        outStream = Teuchos::rcp(&bhs, false);
-
-    int errorFlag  = 0;
+    int errorFlag = 0;
 
     double errtol = ROL::ROL_THRESHOLD;
 
     try {
-
-        typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
-
-        Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-        RCP<const Tpetra::Comm<int> > comm = platform.getComm();
-
         // Dimension of the optimization vector
+
         int dim = 10; 
       
         RCP<Map> map = rcp( new Map(dim,0,comm) );
@@ -117,18 +111,18 @@ int main(int argc, char *argv[]) {
 
         // norm of x
         RealT xnorm = x.norm();
-        *outStream << "\nNorm of ROL::TpetraMultiVector x: " << xnorm << "\n";
+        outStream << "\nNorm of ROL::TpetraMultiVector x: " << xnorm << "\n";
 
         // norm of y
         RealT ynorm = y.norm();
-        *outStream << "\nNorm of ROL::TpetraMultiVector y: " << ynorm << "\n"; 
+        outStream << "\nNorm of ROL::TpetraMultiVector y: " << ynorm << "\n"; 
 
         // scale x
         x.scale(0.5);
         RealT xnorm2 = x.norm();
-        *outStream << "\nNorm of half of x: " << xnorm2 << "\n";
+        outStream << "\nNorm of half of x: " << xnorm2 << "\n";
         if ( std::abs(xnorm/xnorm2 - 2.0) > errtol ) {
-            *outStream << "---> POSSIBLE ERROR ABOVE!\n";
+            outStream << "---> POSSIBLE ERROR ABOVE!\n";
             errorFlag++;
         }
 
@@ -136,10 +130,10 @@ int main(int argc, char *argv[]) {
         RCP<ROL::Vector<RealT> > z = x.clone();
         z->set(x);
         RealT znorm = z->norm();
-            *outStream << "\nNorm of ROL::Vector z (clone of x): " << znorm << "\n";
+            outStream << "\nNorm of ROL::Vector z (clone of x): " << znorm << "\n";
 
         if ( std::abs(xnorm2 - znorm) > errtol ) {
-            *outStream << "---> POSSIBLE ERROR ABOVE!\n";
+            outStream << "---> POSSIBLE ERROR ABOVE!\n";
             errorFlag++;
         }
 
@@ -150,39 +144,39 @@ int main(int argc, char *argv[]) {
         y.zero();
         z->axpy(-1.0, y);
         znorm = z->norm();
-        *outStream << "\nNorm of (x - x) - 0: " << znorm << "\n";
+        outStream << "\nNorm of (x - x) - 0: " << znorm << "\n";
         if ( std::abs(znorm) > errtol ) {
-            *outStream << "---> POSSIBLE ERROR ABOVE!\n";
+            outStream << "---> POSSIBLE ERROR ABOVE!\n";
             errorFlag++;
         }
 
         // set x to first basis vector
         z = x.basis(0);
         znorm = z->norm();
-        *outStream << "\nNorm of ROL::Vector z (first basis vector): " << znorm << "\n";
+        outStream << "\nNorm of ROL::Vector z (first basis vector): " << znorm << "\n";
         if ( std::abs(znorm-1.0) > errtol ) {
-            *outStream << "---> POSSIBLE ERROR ABOVE!\n";
+            outStream << "---> POSSIBLE ERROR ABOVE!\n";
             errorFlag++;
         }
 
         // set x to middle basis vector
         z = x.basis(dim/2);
         znorm = z->norm();
-        *outStream << "\nNorm of ROL::Vector z ('middle' basis vector): " << znorm << "\n";
+        outStream << "\nNorm of ROL::Vector z ('middle' basis vector): " << znorm << "\n";
         if ( std::abs(znorm-1.0) > errtol ) {
-            *outStream << "---> POSSIBLE ERROR ABOVE!\n";
+            outStream << "---> POSSIBLE ERROR ABOVE!\n";
             errorFlag++;
         }
 
         // set x to last basis vector
         z = x.basis(dim-1);
         znorm = z->norm();
-        *outStream << "\nNorm of ROL::Vector z (last basis vector): " << znorm << "\n";
+        outStream << "\nNorm of ROL::Vector z (last basis vector): " << znorm << "\n";
         if ( std::abs(znorm-1.0) > errtol ) {
-            *outStream << "---> POSSIBLE ERROR ABOVE!\n";
+            outStream << "---> POSSIBLE ERROR ABOVE!\n";
              errorFlag++;
         }
-         
+        
         /*---[ End Test of ROL::TpetraMultiVector methods ] ---*/
  
         /*---[ Begin Test of optimization using ROL::TpetraMultiVector ]---*/
@@ -200,14 +194,16 @@ int main(int argc, char *argv[]) {
         MVP hv_rcp    = rcp(new MV(map,1,true));
         MVP ihhv_rcp  = rcp(new MV(map,1,true));
  
-        RealT left = -1e0, right = 1e0; 
-        for (int i=0; i<dim; i++) {
+        int numElem = map->getNodeNumElements();
+         
+        for( LO lclRow = 0; lclRow < static_cast<LO> (numElem); ++lclRow) {
+            const GO gblRow = map->getGlobalElement(lclRow);
+            k_rcp->replaceGlobalValue(gblRow,0,gblRow+1.0);
+        }
 
-            k_rcp->replaceLocalValue(i,0,i+1.0);
-            xtest_rcp->replaceLocalValue(i,0,( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left );
-            d_rcp->replaceLocalValue(i,0,( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left );
-            v_rcp->replaceLocalValue(i,0,( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left );
-        }   
+        xtest_rcp->randomize();
+        d_rcp->randomize();
+        v_rcp->randomize();
 
         RCP<ROL::Vector<RealT> > k = rcp(new ROL::TpetraMultiVector<RealT,LO,GO,Node>(k_rcp));
 
@@ -222,11 +218,11 @@ int main(int argc, char *argv[]) {
         ROL::ZOO::Objective_Zakharov<RealT> obj(k);
 
         
-        *outStream << "\nChecking Gradient and Hessian: " << znorm << "\n";
+        outStream << "\nChecking Gradient and Hessian: " << znorm << "\n";
 
-        obj.checkGradient(xtest, d, true, *outStream);                             *outStream << "\n"; 
-        obj.checkHessVec(xtest, v, true, *outStream);                              *outStream << "\n";  
-        obj.checkHessSym(xtest, d, v, true, *outStream);                           *outStream << "\n";
+        obj.checkGradient(xtest, d, true, outStream);                             outStream << "\n"; 
+        obj.checkHessVec(xtest, v, true, outStream);                              outStream << "\n";  
+        obj.checkHessSym(xtest, d, v, true, outStream);                           outStream << "\n";
    
         // Check inverse Hessian 
         RealT tol=0;
@@ -268,16 +264,17 @@ int main(int argc, char *argv[]) {
 
         // Compute Error
         RealT abserr = x.norm();
-        *outStream << std::scientific << "\n   Absolute Error: " << abserr;
+        outStream << std::scientific << "\n   Absolute Error: " << abserr;
         if ( abserr > sqrt(ROL::ROL_EPSILON) ) {
             errorFlag += 1;
         }
 
         /*---[ End Test of optimization using ROL::TpetraMultiVector ]---*/
+
     }
 
     catch (std::logic_error err) {
-        *outStream << err.what() << "\n";
+        outStream << err.what() << "\n";
         errorFlag = -1000;
     }; // end try
 
