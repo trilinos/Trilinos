@@ -1,3 +1,4 @@
+ADD_SUBDIRECTORY(Benchmarks)
 
 IF (${PACKAGE_NAME}_ENABLE_RTI)
   # FIXME (mfh 16 Jan 2015) The MultiPrec examples do not link
