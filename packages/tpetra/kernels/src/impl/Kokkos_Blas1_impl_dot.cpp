@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#include<impl/Kokkos_Blas1_impl.hpp>
-#include<climits>
+#include <Kokkos_Blas1_impl.hpp>
+#include <climits>
 
 namespace KokkosBlas {
 namespace Impl {

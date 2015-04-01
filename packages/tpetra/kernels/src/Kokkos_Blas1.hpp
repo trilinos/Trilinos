@@ -40,30 +40,66 @@
 // ************************************************************************
 //@HEADER
 */
-#ifndef KOKKOS_BLAS1_H_
-#define KOKKOS_BLAS1_H_
 
-#include<Kokkos_Core.hpp>
-#include<Kokkos_InnerProductSpaceTraits.hpp>
-#include<impl/Kokkos_Blas1_impl.hpp>
+#ifndef KOKKOS_BLAS1_HPP_
+#define KOKKOS_BLAS1_HPP_
+
+#include <Kokkos_Blas1_impl.hpp>
+#ifdef KOKKOS_HAVE_CXX11
+#  include <type_traits>
+#endif // KOKKOS_HAVE_CXX11
 
 namespace KokkosBlas {
 
+/// \brief Return the dot product of the two vectors x and y.
+///
+/// \tparam XVector Type of the first vector x; a 1-D Kokkos::View.
+/// \tparam YVector Type of the second vector y; a 1-D Kokkos::View.
+///
+/// \param x [in] Input 1-D View.
+/// \param y [in] Input 1-D View.
+///
+/// \return The dot product result; a single value.
 template<class XVector,class YVector>
 typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type
-dot (const XVector& x, const YVector& y) {
+dot (const XVector& x, const YVector& y)
+{
+#ifdef KOKKOS_HAVE_CXX11
+  // Make sure that both x and y have the same rank.
+  static_assert (XVector::rank == YVector::rank, "KokkosBlas::dot: Vector ranks do not match.");
+  // Make sure that x (and therefore y) is rank 1.
+  static_assert (XVector::rank == 1, "KokkosBlas::dot: Both Vector inputs must have rank 1.");
+#else
+  // We prefer to use C++11 static_assert, because it doesn't give
+  // "unused typedef" warnings, like the constructs below do.
+  //
+  // Make sure that both x and y have the same rank.
   typedef typename
-    Kokkos::Impl::StaticAssert<XVector::rank == YVector::rank >::type Blas1_Dot_VectorRanksDontMatch;
+    Kokkos::Impl::StaticAssert<XVector::rank == YVector::rank>::type Blas1_dot_vector_ranks_do_not_match;
+  // Make sure that x (and therefore y) is rank 1.
   typedef typename
-    Kokkos::Impl::StaticAssert<XVector::rank == 1 >::type Blas1_Dot_VectorRanksNotOne;
+    Kokkos::Impl::StaticAssert<XVector::rank == 1 >::type Blas1_dot_vector_rank_not_one;
+#endif // KOKKOS_HAVE_CXX11
 
-  typedef Kokkos::View<typename XVector::const_value_type*,typename XVector::array_layout,
-                       typename XVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       typename XVector::specialize> XVector_Internal;
-  typedef Kokkos::View<typename YVector::const_value_type*,typename YVector::array_layout,
-                       typename YVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       typename YVector::specialize> YVector_Internal;
+  // Check compatibility of dimensions at run time.
+  if (x.dimension_0 () != y.dimension_0 ()) {
+    std::ostringstream os;
+    os << "KokkosBlas::dot: Dimensions do not match: "
+       << ", x: " << x.dimension_0 () << " x 1"
+       << ", y: " << y.dimension_0 () << " x 1";
+    Kokkos::Impl::throw_runtime_exception (os.str ());
+  }
 
+  typedef Kokkos::View<typename XVector::const_value_type*,
+    typename XVector::array_layout,
+    typename XVector::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    typename XVector::specialize> XVector_Internal;
+  typedef Kokkos::View<typename YVector::const_value_type*,
+    typename YVector::array_layout,
+    typename YVector::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    typename YVector::specialize> YVector_Internal;
   XVector_Internal x_i = x;
   YVector_Internal y_i = y;
 
@@ -77,9 +113,9 @@ dot (const XVector& x, const YVector& y) {
                    typename YVector_Internal::device_type,
                    typename YVector_Internal::memory_traits,
                    typename YVector_Internal::specialize
-                   >::dot(x_i,y_i);
+                   >::dot (x_i, y_i);
 }
 
-}
+} // namespace KokkosBlas
 
-#endif
+#endif // KOKKOS_BLAS1_HPP_

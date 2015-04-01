@@ -40,11 +40,12 @@
 // ************************************************************************
 //@HEADER
 */
-#ifndef KOKKOS_BLAS1_IMPL_H_
-#define KOKKOS_BLAS1_IMPL_H_
+#ifndef KOKKOS_BLAS1_IMPL_HPP_
+#define KOKKOS_BLAS1_IMPL_HPP_
 
-#include<Kokkos_Core.hpp>
-#include<Kokkos_InnerProductSpaceTraits.hpp>
+#include <TpetraKernels_config.h>
+#include <Kokkos_Core.hpp>
+#include <Kokkos_InnerProductSpaceTraits.hpp>
 
 namespace KokkosBlas {
 namespace Impl {
@@ -195,4 +196,4 @@ struct Dot<const double*,Kokkos::LayoutLeft,Kokkos::Device<Kokkos::Cuda,Kokkos::
 }
 }
 
-#endif
+#endif // KOKKOS_BLAS1_IMPL_HPP_
