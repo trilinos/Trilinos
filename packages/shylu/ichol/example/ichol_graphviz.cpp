@@ -105,10 +105,7 @@ int main (int argc, char *argv[]) {
     CrsMatrixHelper::flat2hier(Uplo::Upper, RR, HH,
                                S.NumBlocks(),
                                S.RangeVector(),
-                               S.TreeVector());
-    
-    //for (ordinal_type k=0;k<HH.NumNonZeros();++k) 
-    //  HH.Value(k).fillRowViewArray();
+                               S.TreeVector());    
 
     CrsHierViewType H(HH);  
     
@@ -116,7 +113,7 @@ int main (int argc, char *argv[]) {
     typedef typename CrsTaskViewType::policy_type policy_type;                                                
                                                                                                               
     IChol<Uplo::Upper,AlgoIChol::RightByBlocks>::                                                             
-      TaskFunctor<CrsHierViewType,ForType>(H).apply(policy_type::member_null(), r_val);   
+      TaskFunctor<ForType,CrsHierViewType>(H).apply(policy_type::member_null(), r_val);   
     
     ofstream out;
     out.open("graph.gv");

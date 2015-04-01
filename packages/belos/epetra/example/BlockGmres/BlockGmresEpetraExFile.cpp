@@ -133,7 +133,6 @@ bool debug = false;
   if (numrhs>1) {
     X = rcp( new Epetra_MultiVector( *Map, numrhs ) );
     B = rcp( new Epetra_MultiVector( *Map, numrhs ) );
-    X->Seed();
     X->Random();
     OPT::Apply( *A, *X, *B );
     X->PutScalar( 0.0 );

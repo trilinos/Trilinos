@@ -159,7 +159,7 @@ int main(int argc, char* argv[])
         bool testTranspose;
         double maxResid;
         double maxSolutionError;
-        double maxSlackErrorFrac;
+        //double maxSlackErrorFrac;
         Teuchos::ParameterList
           paramList("AztecOOLinearOpWithSolveFactory");
         Teuchos::ParameterList
@@ -184,7 +184,7 @@ int main(int argc, char* argv[])
           adjSolvePL.set("Max Iterations",mtp.maxIters);
           maxResid = mtp.maxResid;
           maxSolutionError = mtp.maxSolutionError;
-          maxSlackErrorFrac = mtp.maxSlackErrorFrac;
+          //maxSlackErrorFrac = mtp.maxSlackErrorFrac;
         }
         else {
           out << "using aztec preconditioning ... ";
@@ -194,7 +194,7 @@ int main(int argc, char* argv[])
           adjSolvePL.set("Max Iterations",mtp.maxPrecIters);
           maxResid = mtp.maxPrecResid;
           maxSolutionError = mtp.maxPrecSolutionError;
-          maxSlackErrorFrac = mtp.maxPrecSlackErrorFrac;
+          //maxSlackErrorFrac = mtp.maxPrecSlackErrorFrac;
         }
         std::ostringstream oss;
         Teuchos::FancyOStream fancy_oss(Teuchos::rcp(&oss,false));

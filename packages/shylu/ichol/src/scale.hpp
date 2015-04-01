@@ -20,9 +20,9 @@ namespace Example {
   template<typename T> T ScaleTraits<T>::one  = 1;
   template<typename T> T ScaleTraits<T>::zero = 0;
 
-  template<typename ScalarType,
-           typename CrsExecViewType,
-           typename ParallelForType>
+  template<typename ParallelForType,
+           typename ScalarType,
+           typename CrsExecViewType>
   KOKKOS_INLINE_FUNCTION
   int
   scale(const typename CrsExecViewType::policy_type::member_type &member,

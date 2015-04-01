@@ -57,3 +57,7 @@ SET(QT_QMAKE_EXECUTABLE ${TPL_INSTALL_DIR}/qt-4.8.2/bin/qmake CACHE FILEPATH "" 
 # TriKota Hack!
 # Must force this varible in the Dakota configure process
 SET(BOOST_INCLUDEDIR ${Boost_INCLUDE_DIRS}  CACHE PATH  "" FORCE)
+
+# Disable TPLs we don't have on this system by default
+SET(TPL_ENABLE_Netcdf  OFF  CACHE  BOOL
+  "Set in trilinos-tpls-gcc.4.8.3.cmake" )

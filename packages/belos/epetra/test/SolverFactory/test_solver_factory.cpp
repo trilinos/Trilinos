@@ -267,7 +267,6 @@ main (int argc, char *argv[])
     RCP<Epetra_Operator> A = makeMatrix (comm, domainMap, rangeMap);
     // "Solution" input/output multivector.
     RCP<MV> X_exact = rcp (new MV (*domainMap, numRHS));
-    X_exact->Seed ();
     X_exact->Random ();
     RCP<MV> X = rcp (new MV (*domainMap, numRHS));
     X->PutScalar (0.0);

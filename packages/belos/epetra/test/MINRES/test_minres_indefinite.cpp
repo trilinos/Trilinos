@@ -149,7 +149,6 @@ main(int argc, char *argv[])
 
     // Make a random exact solution.
     Teuchos::RCP<Epetra_MultiVector> X_exact (new Epetra_MultiVector (epetraMap, numrhs));
-    X_exact->Seed();
     MVT::MvRandom (*X_exact);
 
     // Compute the right-hand side as B = A*X.

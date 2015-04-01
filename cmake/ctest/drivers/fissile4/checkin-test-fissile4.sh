@@ -31,7 +31,7 @@ TRILINOS_BASE_DIR_ABS=$(readlink -f $TRILINOS_BASE_DIR)
 DRIVERS_BASE_DIR="$TRILINOS_BASE_DIR_ABS/Trilinos/cmake/ctest/drivers/fissile4"
 
 # Packages in Trilinos to disable (mostly for auotmated CI server)
-DISABLE_PACKAGES=CTrilinos,ForTrilinos,PyTrilinos,Didasko,Mesquite,Phdmesh,Pliris,Claps,Amesos2,STK,FEApp,TriKota,Optika
+DISABLE_PACKAGES=ForTrilinos,PyTrilinos,Didasko,Mesquite,Phdmesh,Pliris,Claps,Amesos2,STK,FEApp,TriKota,Optika
 
 # Check to make sure that the env has been loaded correctly
 if [ "$LOADED_TRIBITS_DEV_ENV" != "gcc-4.8.3" ] ; then
@@ -61,10 +61,16 @@ echo "
 
 echo "
 -DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH='$DRIVERS_BASE_DIR/gcc-4.8.3-base-options.cmake,$DRIVERS_BASE_DIR/trilinos-tpls-gcc.4.8.3.cmake'
+-DCMAKE_BUILD_TYPE=RELEASE
+-DTrilinos_ENABLE_DEBUG=ON
+-DTPL_ENABLE_MPI=ON
 " > MPI_DEBUG_ST.config
 
 echo "
 -DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH='$DRIVERS_BASE_DIR/gcc-4.8.3-base-options.cmake,$DRIVERS_BASE_DIR/trilinos-tpls-gcc.4.8.3.cmake'
+-DCMAKE_BUILD_TYPE=RELEASE
+-DTrilinos_ENABLE_DEBUG=OFF
+-DTPL_ENABLE_MPI=OFF
 " > SERIAL_RELEASE_ST.config
 
 #
@@ -87,6 +93,7 @@ $TRILINOS_BASE_DIR/Trilinos/checkin-test.py \
 --st-extra-builds=MPI_DEBUG_ST,SERIAL_RELEASE_ST \
 --disable-packages=$DISABLE_PACKAGES \
 --skip-case-no-email \
+--ctest-options="-E '(Intrepid_example_Shared_Example_03|Intrepid_example_Shared_Example_04|Ifpack2_unit_tests$)'" \
 $EXTRA_ARGS
 
 

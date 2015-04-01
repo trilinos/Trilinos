@@ -366,13 +366,6 @@ void respawn( TaskPolicy<ExecSpace>   & policy
 template< class ExecSpace >
 void wait( TaskPolicy< ExecSpace > & );
 
-template< class A0 , class A1 >
-inline
-void wait( const Future<A0,A1> & future )
-{
-  wait( Future< void , typename Future<A0,A1>::execution_space >( future ) );
-}
-
 } /* namespace Experimental */
 } /* namespace Kokkos */
 

@@ -10,29 +10,29 @@ namespace Example {
 
   using namespace std;
 
-  template<typename CrsTaskViewType,
-           typename ParallelForType>
+  template<typename ParallelForType,
+           typename CrsTaskViewType>
   KOKKOS_INLINE_FUNCTION
   static int genScalarTask_UpperRightByBlocks(typename CrsTaskViewType::policy_type &policy,
                                               const CrsTaskViewType &A);
 
-  template<typename CrsTaskViewType,
-           typename ParallelForType>
+  template<typename ParallelForType,
+           typename CrsTaskViewType>
   KOKKOS_INLINE_FUNCTION
   static int genTrsmTasks_UpperRightByBlocks(typename CrsTaskViewType::policy_type &policy,
                                              const CrsTaskViewType &A,
                                              const CrsTaskViewType &B);
 
-  template<typename CrsTaskViewType,
-           typename ParallelForType>
+  template<typename ParallelForType,
+           typename CrsTaskViewType>
   KOKKOS_INLINE_FUNCTION
   static int genHerkTasks_UpperRightByBlocks(typename CrsTaskViewType::policy_type &policy,
                                              const CrsTaskViewType &A,
                                              const CrsTaskViewType &C);
 
   template<>
-  template<typename CrsTaskViewType,
-           typename ParallelForType>
+  template<typename ParallelForType,
+           typename CrsTaskViewType>
   KOKKOS_INLINE_FUNCTION
   int
   IChol<Uplo::Upper,AlgoIChol::RightByBlocks>
@@ -59,13 +59,13 @@ namespace Example {
         // -----------------------------------------------------
 
         // A11 = chol(A11)
-        genScalarTask_UpperRightByBlocks<CrsTaskViewType,ParallelForType>(policy, A11);
+        genScalarTask_UpperRightByBlocks<ParallelForType,CrsTaskViewType>(policy, A11);
 
         // A12 = inv(triu(A11)') * A12
-        genTrsmTasks_UpperRightByBlocks<CrsTaskViewType,ParallelForType>(policy, A11, A12);
+        genTrsmTasks_UpperRightByBlocks<ParallelForType,CrsTaskViewType>(policy, A11, A12);
 
         // A22 = A22 - A12' * A12
-        genHerkTasks_UpperRightByBlocks<CrsTaskViewType,ParallelForType>(policy, A12, A22);
+        genHerkTasks_UpperRightByBlocks<ParallelForType,CrsTaskViewType>(policy, A12, A22);
 
         // -----------------------------------------------------
         Merge_3x3_to_2x2(A00, A01, A02, /**/ ATL, ATR,

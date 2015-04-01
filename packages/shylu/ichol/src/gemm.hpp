@@ -15,9 +15,9 @@ namespace Example {
 
     // data-parallel interface
     // =======================
-    template<typename ScalarType,
-             typename CrsExecViewType,
-             typename ParallelForType>
+    template<typename ParallelForType,
+             typename ScalarType,
+             typename CrsExecViewType>
     KOKKOS_INLINE_FUNCTION
     static int invoke(const typename CrsExecViewType::policy_type::member_type &member,
                       const ScalarType alpha,
@@ -28,9 +28,9 @@ namespace Example {
 
     // task-data parallel interface
     // ============================
-    template<typename ScalarType,
-             typename CrsExecViewType,
-             typename ParallelForType>
+    template<typename ParallelForType,
+             typename ScalarType,
+             typename CrsExecViewType>
     class TaskFunctor {
     private:
       ScalarType _alpha, _beta;
@@ -57,13 +57,13 @@ namespace Example {
 
       // task execution
       void apply(value_type &r_val) {
-        r_val = Gemm::invoke<ScalarType,CrsExecViewType,ParallelForType>(policy_type::member_null(),
+        r_val = Gemm::invoke<ParallelForType,ScalarType,CrsExecViewType>(policy_type::member_null(),
                                                                          _alpha, _A, _B, _beta, _C);
       }
 
       // task-data execution
       void apply(const member_type &member, value_type &r_val) {
-        r_val = Gemm::invoke<ScalarType,CrsExecViewType,ParallelForType>(member,
+        r_val = Gemm::invoke<ParallelForType,ScalarType,CrsExecViewType>(member,
                                                                          _alpha, _A, _B, _beta, _C);
       }
 

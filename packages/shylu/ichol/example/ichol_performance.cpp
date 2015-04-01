@@ -179,7 +179,7 @@ int main (int argc, char *argv[]) {
       typedef typename CrsTaskViewType::policy_type policy_type;
       
       IChol<Uplo::Upper,AlgoIChol::RightByBlocks>::
-        TaskFunctor<CrsHierViewType,ForType>(H).apply(policy_type::member_null(), r_val);
+        TaskFunctor<ForType,CrsHierViewType>(H).apply(policy_type::member_null(), r_val);
 
       t[++cnt] = timer.seconds();
       
@@ -217,7 +217,7 @@ int main (int argc, char *argv[]) {
       
       policy_type policy;
       auto future = policy.create_team(IChol<Uplo::Upper,AlgoIChol::RightUnblockedOpt1>
-                                       ::TaskFunctor<CrsTaskViewType,ForType>(R), 0);
+                                       ::TaskFunctor<ForType,CrsTaskViewType>(R), 0);
       policy.spawn(future);
       Kokkos::Experimental::wait(policy);
       

@@ -255,7 +255,6 @@ public:
 
   void schedule();
   static void execute_ready_tasks();
-  static void wait( const Future< void , Kokkos::Serial > & );
 
   //----------------------------------------
 
@@ -823,10 +822,6 @@ public:
     {}
 #endif
 
-  inline static
-  void wait( const Future< void , Kokkos::Serial > & future )
-  { task_root_type::wait( future ); }
-
   //----------------------------------------
 
   static member_type & member_null();
@@ -835,10 +830,6 @@ public:
 inline
 void wait( TaskPolicy< Kokkos::Serial > & )
 { Impl::TaskMember< Kokkos::Serial , void , void >::execute_ready_tasks(); }
-
-inline
-void wait( const Future< void , Kokkos::Serial > & future )
-{ Impl::TaskMember< Kokkos::Serial , void , void >::wait( future ); }
 
 } /* namespace Experimental */
 } // namespace Kokkos

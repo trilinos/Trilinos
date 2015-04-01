@@ -26,8 +26,16 @@ SET(${PROJECT_NAME}_EXTRA_LINK_FLAGS
 SET(BUILD_SHARED_LIBS  ON  CACHE  BOOL
   "Set by default in gcc-4.8.3-base-options.cmake")
 
+# Turn on explicit template instantaition by default
+SET(Trilinos_ENABLE_EXPLICIT_INSTANTIATION  ON  CACHE BOOL
+  "Set by default in gcc-4.8.3-base-options.cmake")
+
 # Set up valgrind options
 SET( MEMORYCHECK_COMMAND
-  /projects/vera/common_tools/valgrind-3.9.0/bin/valgrind)
+  /projects/vera/common_tools/valgrind-3.9.0/bin/valgrind
+  CACHE  FILEPATH
+  "Set by default in gcc-4.8.3-base-options.cmake")
 SET( MEMORYCHECK_COMMAND_OPTIONS
-  "-q --trace-children=yes --tool=memcheck --leak-check=yes --leak-check=full --workaround-gcc296-bugs=yes --num-callers=50")
+  "-q --trace-children=yes --tool=memcheck --leak-check=yes --leak-check=full --workaround-gcc296-bugs=yes --num-callers=50"
+  CACHE  STRING
+  "Set by default in gcc-4.8.3-base-options.cmake")
