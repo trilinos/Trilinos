@@ -45,6 +45,7 @@
 
 #include <stdio.h>
 #include <iostream>
+#include <sstream>
 #include <Threads/Kokkos_Threads_TaskPolicy.hpp>
 
 #if defined( KOKKOS_HAVE_PTHREAD )
@@ -72,6 +73,54 @@ Task * const    s_denied = reinterpret_cast<Task*>( ~((unsigned long)0) - 1 );
 namespace Kokkos {
 namespace Experimental {
 
+TaskPolicy< Kokkos::Threads >::TaskPolicy
+  ( const unsigned arg_default_dependence_capacity
+  , const unsigned arg_team_size
+  )
+  : m_default_dependence_capacity( arg_default_dependence_capacity )
+  , m_team_size( arg_team_size )
+{
+  const int threads_total    = Threads::thread_pool_size(0);
+  const int threads_per_numa = Threads::thread_pool_size(1);
+  const int threads_per_core = Threads::thread_pool_size(2);
+
+  if ( 0 == arg_team_size ) {
+    // If a team task then claim for execution until count is zero
+    // Issue: team collectives cannot assume which pool members are in the team.
+    // Issue: team must only span a single NUMA region.
+
+    // If more than one thread per core then map cores to work team,
+    // else  map numa to work team.
+
+    if      ( 1 < threads_per_core ) m_team_size = threads_per_core ;
+    else if ( 1 < threads_per_numa ) m_team_size = threads_per_numa ;
+    else                             m_team_size = 1 ;
+  }
+
+  // Verify a valid team size
+  const bool valid_team_size =
+    ( 0 < m_team_size && m_team_size < threads_total ) &&
+    (
+      ( 1                == m_team_size ) ||
+      ( threads_per_core == m_team_size ) ||
+      ( threads_per_numa == m_team_size )
+    );
+
+  if ( ! valid_team_size ) {
+    std::ostringstream msg ;
+
+    msg << "Kokkos::Experimental::TaskPolicy< Kokkos::Threads > ERROR"
+        << " invalid team_size(" << m_team_size << ")"
+        << " threads_per_core(" << threads_per_core << ")"
+        << " threads_per_numa(" << threads_per_numa << ")"
+        << " threads_total(" << threads_total << ")"
+        ;
+
+    Kokkos::Impl::throw_runtime_exception( msg.str() );
+
+  }
+}
+
 TaskPolicy< Kokkos::Threads >::member_type &
 TaskPolicy< Kokkos::Threads >::member_null()
 {
@@ -85,8 +134,10 @@ void wait( Kokkos::Experimental::TaskPolicy< Kokkos::Threads > & policy )
 
   enum { BASE_SHMEM = 1024 };
 
+  void * const arg = reinterpret_cast<void*>( long( policy.m_team_size ) );
+
   Kokkos::Impl::ThreadsExec::resize_scratch( 0 , member_type::team_reduce_size() + BASE_SHMEM );
-  Kokkos::Impl::ThreadsExec::start( & Impl::Task::execute_ready_tasks_driver , 0 );
+  Kokkos::Impl::ThreadsExec::start( & Impl::Task::execute_ready_tasks_driver , arg );
   Kokkos::Impl::ThreadsExec::fence();
 }
 
@@ -103,26 +154,6 @@ void Task::throw_error_verify_type()
 {
   Kokkos::Impl::throw_runtime_exception("TaskMember< Threads >::verify_type ERROR");
 }
-
-//----------------------------------------------------------------------------
-
-int Task::team_fixed_size()
-{
-  // If a team task then claim for execution until count is zero
-  // Issue: team collectives cannot assume which pool members are in the team.
-  // Issue: team must only span a single NUMA region.
-
-  // If more than one thread per core then map cores to work team,
-  // else  map numa to work team.
-
-  const int threads_per_numa = Threads::thread_pool_size(1);
-  const int threads_per_core = Threads::thread_pool_size(2);
-  const int threads_per_team = 1 < threads_per_core ? threads_per_core : threads_per_numa ;
-
-  return threads_per_team ;
-}
-
-//----------------------------------------------------------------------------
 
 void Task::deallocate( void * ptr )
 {
@@ -490,14 +521,16 @@ void Task::complete_executed_task( Task * task , volatile int * const queue_coun
 
 //----------------------------------------------------------------------------
 
-void Task::execute_ready_tasks_driver( Kokkos::Impl::ThreadsExec & exec , const void * )
+void Task::execute_ready_tasks_driver( Kokkos::Impl::ThreadsExec & exec , const void * arg )
 {
   typedef Kokkos::Impl::ThreadsExecTeamMember member_type ;
 
   // Whole pool is calling this function
 
   // Create the thread team member with shared memory for the given task.
-  member_type member( & exec , TeamPolicy< Kokkos::Threads >( 1 , team_fixed_size() ) , 0 );
+  const int team_size = reinterpret_cast<long>( arg );
+
+  member_type member( & exec , TeamPolicy< Kokkos::Threads >( 1 , team_size ) , 0 );
 
   Kokkos::Impl::ThreadsExec & exec_team_base = member.threads_exec_team_base();
 
@@ -553,17 +586,6 @@ void Task::execute_ready_tasks_driver( Kokkos::Impl::ThreadsExec & exec , const 
   }
 
   exec.fan_in();
-}
-
-void Task::execute_ready_tasks()
-{
-  typedef Kokkos::Impl::ThreadsExecTeamMember member_type ;
-
-  enum { BASE_SHMEM = 1024 };
-
-  Kokkos::Impl::ThreadsExec::resize_scratch( 0 , member_type::team_reduce_size() + BASE_SHMEM );
-  Kokkos::Impl::ThreadsExec::start( & Task::execute_ready_tasks_driver , 0 );
-  Kokkos::Impl::ThreadsExec::fence();
 }
 
 } /* namespace Impl */
