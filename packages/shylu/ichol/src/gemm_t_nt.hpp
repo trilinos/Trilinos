@@ -11,9 +11,9 @@ namespace Example {
   using namespace std;
 
   template<>
-  template<typename ScalarType,
-           typename CrsExecViewType,
-           typename ParallelForType>
+  template<typename ParallelForType,
+           typename ScalarType,
+           typename CrsExecViewType>
   KOKKOS_INLINE_FUNCTION
   int
   Gemm<Trans::ConjTranspose,Trans::NoTranspose,
@@ -29,7 +29,7 @@ namespace Example {
     typedef typename CrsExecViewType::row_view_type     row_view_type;
     typedef typename CrsExecViewType::team_factory_type team_factory_type;
 
-    scale<ScalarType,CrsExecViewType,ParallelForType>(member, beta, C);
+    scale<ParallelForType,ScalarType,CrsExecViewType>(member, beta, C);
 
     //row_view_type a, b, c;
     for (ordinal_type k=0;k<A.NumRows();++k) {

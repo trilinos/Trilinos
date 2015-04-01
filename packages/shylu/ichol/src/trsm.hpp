@@ -15,9 +15,9 @@ namespace Example {
 
     // data-parallel interface
     // =======================
-    template<typename ScalarType,
-             typename CrsExecViewType,
-             typename ParallelForType>
+    template<typename ParallelForType,
+             typename ScalarType,
+             typename CrsExecViewType>
     KOKKOS_INLINE_FUNCTION
     static int invoke(const typename CrsExecViewType::policy_type::member_type &member,
                       const int diag,
@@ -27,9 +27,9 @@ namespace Example {
 
     // task-data parallel interface
     // ============================
-    template<typename ScalarType,
-             typename CrsExecViewType,
-             typename ParallelForType>
+    template<typename ParallelForType,
+             typename ScalarType,
+             typename CrsExecViewType>
     class TaskFunctor {
     private:
       int _diag;
@@ -55,13 +55,13 @@ namespace Example {
 
       // task execution
       void apply(value_type &r_val) {
-        r_val = Trsm::invoke<ScalarType,CrsExecViewType,ParallelForType>(policy_type::member_null(),
+        r_val = Trsm::invoke<ParallelForType,ScalarType,CrsExecViewType>(policy_type::member_null(),
                                                                          _diag, _alpha, _A, _B);
       }
 
       // task-data execution
       void apply(const member_type &member, value_type &r_val) const {
-        r_val = Trsm::invoke<ScalarType,CrsExecViewType,ParallelForType>(member,
+        r_val = Trsm::invoke<ParallelForType,ScalarType,CrsExecViewType>(member,
                                                                         _diag, _alpha, _A, _B);
       }
 

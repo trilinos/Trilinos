@@ -14,8 +14,8 @@ namespace Example {
   using namespace std;
 
   template<>
-  template<typename CrsExecViewType,
-           typename ParallelForType>
+  template<typename ParallelForType,
+           typename CrsExecViewType>
   KOKKOS_INLINE_FUNCTION
   int
   IChol<Uplo::Upper,AlgoIChol::RightUnblockedOpt1>
