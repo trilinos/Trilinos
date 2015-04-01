@@ -2068,6 +2068,24 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
 namespace Kokkos {
 namespace Impl {
 
+template< class ExecSpace , class DT , class DL, class DD, class DM, class DS >
+struct ViewDefaultConstruct< ExecSpace , Kokkos::View<DT,DL,DD,DM,DS> , true >
+{
+  Kokkos::View<DT,DL,DD,DM,DS> * const m_ptr ;
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  void operator()( const typename ExecSpace::size_type& i ) const
+    { new(m_ptr+i) Kokkos::View<DT,DL,DD,DM,DS>(); }
+
+  ViewDefaultConstruct( Kokkos::View<DT,DL,DD,DM,DS> * pointer , size_t capacity )
+    : m_ptr( pointer )
+    {
+      Kokkos::RangePolicy< ExecSpace > range( 0 , capacity );
+      parallel_for( range , *this );
+      ExecSpace::fence();
+    }
+};
+
 template< class SrcDataType , class SrcArg1Type , class SrcArg2Type , class SrcArg3Type
         , class SubArg0_type , class SubArg1_type , class SubArg2_type , class SubArg3_type
         , class SubArg4_type , class SubArg5_type , class SubArg6_type , class SubArg7_type
