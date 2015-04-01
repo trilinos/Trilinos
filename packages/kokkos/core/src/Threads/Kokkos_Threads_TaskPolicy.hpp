@@ -412,6 +412,10 @@ private:
 
 public:
 
+  // Valid team sizes are 1,
+  // Threads::pool_size(1) == threads per numa, or
+  // Threads::pool_size(2) == threads per core
+
   TaskPolicy( const unsigned arg_default_dependence_capacity = 4
             , const unsigned arg_team_size = 0 /* default from thread pool topology */
             );

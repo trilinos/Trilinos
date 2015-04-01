@@ -99,7 +99,7 @@ TaskPolicy< Kokkos::Threads >::TaskPolicy
 
   // Verify a valid team size
   const bool valid_team_size =
-    ( 0 < m_team_size && m_team_size < threads_total ) &&
+    ( 0 < m_team_size && m_team_size <= threads_total ) &&
     (
       ( 1                == m_team_size ) ||
       ( threads_per_core == m_team_size ) ||

@@ -90,7 +90,7 @@ int main (int argc, char *argv[]) {
     Kokkos::Experimental::Future<DoNothing::TaskFunctor::value_type,ExecSpace> 
       future = policy.create(DoNothing::TaskFunctor(), 0);
     policy.spawn(future);
-    Kokkos::Experimental::wait(future);
+    Kokkos::Experimental::wait(policy);
     cout << "future value from single task = " << future.get() << endl;
     cout << " ========================= " << endl;
   }
@@ -100,7 +100,7 @@ int main (int argc, char *argv[]) {
     Kokkos::Experimental::Future<DoNothing::TaskFunctor::value_type,ExecSpace> 
       future = policy.create_team(DoNothing::TaskFunctor(), 0);
     policy.spawn(future);
-    Kokkos::Experimental::wait(future); 
+    Kokkos::Experimental::wait(policy); 
     cout << "future value from team task = " << future.get() << endl;
     cout << " ========================= " << endl;
   }
