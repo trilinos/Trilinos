@@ -131,7 +131,7 @@ int main (int argc, char *argv[]) {
     typedef typename CrsTaskViewType::policy_type policy_type;
 
     IChol<Uplo::Upper,AlgoIChol::RightByBlocks>::
-      TaskFunctor<CrsHierViewType,ForType>(H).apply(policy_type::member_null(), r_val);
+      TaskFunctor<ForType,CrsHierViewType>(H).apply(policy_type::member_null(), r_val);
     
 #ifdef USE_SEQUENTIAL_FOR
     // do nothing

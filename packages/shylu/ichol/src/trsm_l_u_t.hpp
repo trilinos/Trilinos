@@ -12,9 +12,9 @@ namespace Example {
   using namespace std;
 
   template<>
-  template<typename ScalarType,
-           typename CrsExecViewType,
-           typename ParallelForType>
+  template<typename ParallelForType,
+           typename ScalarType,
+           typename CrsExecViewType>
   KOKKOS_INLINE_FUNCTION
   int
   Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,

@@ -10,9 +10,9 @@ namespace Example {
 
   using namespace std;
 
-  template<typename ScalarType,
-           typename CrsExecViewType,
-           typename ParallelForType>
+  template<typename ParallelForType,
+           typename ScalarType,
+           typename CrsExecViewType>
   KOKKOS_INLINE_FUNCTION
   int
   her_r(const typename CrsExecViewType::policy_type::member_type &member,
@@ -21,8 +21,8 @@ namespace Example {
         const CrsExecViewType &A);
 
   template<>
-  template<typename CrsExecViewType,
-           typename ParallelForType>
+  template<typename ParallelForType,
+           typename CrsExecViewType>
   KOKKOS_INLINE_FUNCTION
   int
   IChol<Uplo::Upper,AlgoIChol::RightUnblocked>
@@ -65,10 +65,10 @@ namespace Example {
       }
 
       // sparse inverse scale
-      scale<ScalarType,CrsExecViewType,ParallelForType>(member, 1.0/real(alpha_val), a12t);
+      scale<ParallelForType,ScalarType,CrsExecViewType>(member, 1.0/real(alpha_val), a12t);
 
       // hermitian rank update
-      her_r<ScalarType,CrsExecViewType,ParallelForType>(member, -1.0, a12t, A22);
+      her_r<ParallelForType,ScalarType,CrsExecViewType>(member, -1.0, a12t, A22);
 
       // -----------------------------------------------------
       Merge_3x3_to_2x2(A00,  a01,     A02,  /**/ ATL, ATR,
@@ -80,9 +80,9 @@ namespace Example {
     return 0;
   }
 
-  template<typename ScalarType,
-           typename CrsExecViewType,
-           typename ParallelFor>
+  template<typename ParallelFor,
+           typename ScalarType,
+           typename CrsExecViewType>
   KOKKOS_INLINE_FUNCTION
   int
   her_r(const typename CrsExecViewType::policy_type::member_type &member,

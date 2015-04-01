@@ -16,8 +16,8 @@ namespace Example {
 
   // use Upper Triangular part only
   template<>
-  template<typename CrsExecViewType,
-           typename ParallelForType>
+  template<typename ParallelForType,
+           typename CrsExecViewType>
   KOKKOS_INLINE_FUNCTION
   int
   IChol<Uplo::Upper,AlgoIChol::RightBlocked>
@@ -48,16 +48,16 @@ namespace Example {
       A22.fillRowViewArray();      
 
       int r_val = IChol<Uplo::Upper,AlgoIChol::RightUnblockedOpt1>
-        ::invoke<CrsExecViewType,ParallelForType>(member, A11);
+        ::invoke<ParallelForType,CrsExecViewType>(member, A11);
 
       if (r_val)
         return A00.NumRows() + r_val;
 
       Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,AlgoTrsm::ForRightBlocked>
-        ::invoke<value_type,CrsExecViewType,ParallelForType>(member, Diag::NonUnit, 1.0, A11, A12);
+        ::invoke<ParallelForType,value_type,CrsExecViewType>(member, Diag::NonUnit, 1.0, A11, A12);
 
       Herk<Uplo::Upper,Trans::ConjTranspose,AlgoHerk::ForRightBlocked>
-        ::invoke<value_type,CrsExecViewType,ParallelForType>(member, -1.0, A12, 1.0, A22);
+        ::invoke<ParallelForType,value_type,CrsExecViewType>(member, -1.0, A12, 1.0, A22);
 
       // -----------------------------------------------------
       Merge_3x3_to_2x2(A00, A01, A02, /**/ ATL, ATR,

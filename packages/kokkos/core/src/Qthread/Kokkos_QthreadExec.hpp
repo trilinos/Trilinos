@@ -150,7 +150,6 @@ public:
   void exec_all_reduce( const FunctorType & func ) const
     {
       typedef Kokkos::Impl::FunctorValueJoin< FunctorType , ArgTag > ValueJoin ;
-      typedef Kokkos::Impl::FunctorValueOps<  FunctorType , ArgTag > ValueOps ;
 
       const int rev_rank = m_worker_size - ( m_worker_rank + 1 );
 
