@@ -5909,65 +5909,7 @@ TEST(BulkData, test_destroy_ghosted_entity_then_create_locally_owned_entity_with
     }
 }
 
-TEST(BulkData, test_permutations_for_all_topologies)
-{
-	stk::ParallelMachine pm = MPI_COMM_WORLD;
-	const int p_rank = stk::parallel_machine_rank(pm);
-	const int p_size = stk::parallel_machine_size(pm);
 
-	if (p_size != 1) {
-		return;
-	}
-
-	int spatial_dimension;
-	stk::mesh::EntityId element_id[1] = {1};
-
-	// check that the permutations define the same sides
-	for (stk::topology topo = stk::topology::BEGIN_TOPOLOGY; topo < stk::topology::END_TOPOLOGY; ++topo)
-	{
-
-		if (topo.defined_on_spatial_dimension(2u)) {spatial_dimension = 2;}
-		else if (topo.defined_on_spatial_dimension(3u)) {spatial_dimension = 3;}
-
-		stk::mesh::MetaData meta(spatial_dimension);
-		stk::mesh::BulkData bulk(meta, pm);
-		stk::mesh::Part &elem_part = meta.declare_part_with_topology("elem_part", topo);
-		meta.commit();
-		bulk.modification_begin();
-
-		//specific to topology
-		switch (topo) {
-		case stk::topology::TRI_3:
-		case stk::topology::TRIANGLE_3: {
-			stk::mesh::EntityId elem_node_ids[3] = { 1, 2, 3 };
-			stk::mesh::declare_element(bulk, elem_part, element_id[0],
-					elem_node_ids);
-			stk::mesh::create_edges(bulk);
-			stk::mesh::create_faces(bulk);
-			break;
-		}
-		case stk::topology::TRI_4:
-		case stk::topology::TRIANGLE_4: {
-			stk::mesh::EntityId elem_node_ids[4] = { 1, 2, 3, 4 };
-			stk::mesh::declare_element(bulk, elem_part, element_id[0],
-					elem_node_ids);
-			stk::mesh::create_edges(bulk);
-			stk::mesh::create_faces(bulk);
-			break;
-		}
-		}
-  //stk::mesh::EntityId element_ids [2] = {1, 2};
-  //stk::mesh::EntityId elem_node_ids [][4] = {{1, 2, 3, 4}, {4, 3, 6, 5}};
-  // Start with all entities on proc 0
-  //std::vector<stk::mesh::Entity> elems;
-  //if (p_rank == 0) {
-  //stk::mesh::declare_element(bulk, elem_part , element_id[0], elem_node_ids );
-  //elems.push_back(stk::mesh::declare_element(bulk, elem_part ,element_ids[1], elem_node_ids[1] ) );
-  //}
-     bulk.modification_end();
-
-   }
-}
 
 
 }// empty namespace
