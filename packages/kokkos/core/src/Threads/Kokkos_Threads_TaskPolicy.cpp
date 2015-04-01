@@ -79,6 +79,17 @@ TaskPolicy< Kokkos::Threads >::member_null()
   return s ;
 }
 
+void wait( Kokkos::Experimental::TaskPolicy< Kokkos::Threads > & policy )
+{
+  typedef Kokkos::Impl::ThreadsExecTeamMember member_type ;
+
+  enum { BASE_SHMEM = 1024 };
+
+  Kokkos::Impl::ThreadsExec::resize_scratch( 0 , member_type::team_reduce_size() + BASE_SHMEM );
+  Kokkos::Impl::ThreadsExec::start( & Impl::Task::execute_ready_tasks_driver , 0 );
+  Kokkos::Impl::ThreadsExec::fence();
+}
+
 } /* namespace Experimental */
 } /* namespace Kokkos */
 
@@ -553,11 +564,6 @@ void Task::execute_ready_tasks()
   Kokkos::Impl::ThreadsExec::resize_scratch( 0 , member_type::team_reduce_size() + BASE_SHMEM );
   Kokkos::Impl::ThreadsExec::start( & Task::execute_ready_tasks_driver , 0 );
   Kokkos::Impl::ThreadsExec::fence();
-}
-
-void Task::wait( const Future< void , Kokkos::Threads > & f )
-{
-  execute_ready_tasks();
 }
 
 } /* namespace Impl */

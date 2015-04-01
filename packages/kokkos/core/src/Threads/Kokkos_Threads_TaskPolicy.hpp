@@ -108,8 +108,6 @@ private:
   static TaskMember * pop_ready_task( TaskMember * volatile * const queue );
   static void complete_executed_task( TaskMember * , volatile int * const );
 
-  static void execute_ready_tasks_driver( Kokkos::Impl::ThreadsExec & , const void * );
-
   static void throw_error_verify_type();
 
 protected:
@@ -130,6 +128,8 @@ protected:
     {}
 
 public:
+
+  static void execute_ready_tasks_driver( Kokkos::Impl::ThreadsExec & , const void * );
 
   static int team_fixed_size();
 
@@ -373,6 +373,8 @@ public:
 
 namespace Kokkos {
 namespace Experimental {
+
+void wait( TaskPolicy< Kokkos::Threads > & );
 
 template<>
 class TaskPolicy< Kokkos::Threads >
@@ -626,18 +628,9 @@ public:
   //----------------------------------------
 
   static member_type & member_null();
+
+  friend void wait( TaskPolicy< Kokkos::Threads > & );
 };
-
-inline
-void wait( TaskPolicy< Kokkos::Threads > & )
-{
-  Impl::TaskMember< Kokkos::Threads , void , void >::execute_ready_tasks();
-}
-
-inline
-void wait( const Future< void , Kokkos::Threads > & future )
-{ Impl::TaskMember< Kokkos::Threads , void , void >::wait( future ); }
-
 
 } /* namespace Experimental */
 } /* namespace Kokkos */

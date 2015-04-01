@@ -113,6 +113,7 @@ Task::~TaskMember()
 Task::TaskMember( const function_verify_type   arg_verify
                 , const function_dealloc_type  arg_dealloc
                 , const function_apply_type    arg_apply
+                , volatile int &               arg_active_count
                 , const unsigned               arg_sizeof_derived
                 , const unsigned               arg_dependence_capacity
                 )
@@ -124,6 +125,7 @@ Task::TaskMember( const function_verify_type   arg_verify
   , m_dep_size( 0 )
   , m_ref_count( 0 )
   , m_state( Kokkos::Experimental::TASK_STATE_CONSTRUCTING )
+  , m_active_count( arg_active_count )
   , m_qfeb(0)
 {
   qthread_empty( & m_qfeb ); // Set to full when complete
@@ -132,6 +134,7 @@ Task::TaskMember( const function_verify_type   arg_verify
 
 Task::TaskMember( const function_dealloc_type  arg_dealloc
                 , const function_apply_type    arg_apply
+                , volatile int &               arg_active_count
                 , const unsigned               arg_sizeof_derived
                 , const unsigned               arg_dependence_capacity
                 )
@@ -143,6 +146,7 @@ Task::TaskMember( const function_dealloc_type  arg_dealloc
   , m_dep_size( 0 )
   , m_ref_count( 0 )
   , m_state( Kokkos::Experimental::TASK_STATE_CONSTRUCTING )
+  , m_active_count( arg_active_count )
   , m_qfeb(0)
 {
   qthread_empty( & m_qfeb ); // Set to full when complete
@@ -259,6 +263,9 @@ aligned_t Task::qthread_func( void * arg )
     qthread_fill( & task->m_qfeb );
   }
 
+  // Decrement active task count before returning.
+  Kokkos::atomic_decrement( & task->m_active_count );
+
   return 0 ;
 }
 
@@ -280,6 +287,9 @@ void Task::schedule()
 
   m_state = Kokkos::Experimental::TASK_STATE_WAITING ;
 
+  // Increment active task count before spawning.
+  Kokkos::atomic_increment( & m_active_count );
+
   qthread_spawn( & Task::qthread_func /* function */
                , this                 /* function argument */
                , 0
@@ -290,15 +300,19 @@ void Task::schedule()
                );
 }
 
-void Task::wait( const Future< void, Kokkos::Qthread> & f )
+} // namespace Impl
+} // namespace Experimental
+} // namespace Kokkos
+
+namespace Kokkos {
+namespace Experimental {
+
+void wait( Kokkos::Experimental::TaskPolicy< Kokkos::Qthread > & policy )
 {
-  if ( f.m_task ) {
-    aligned_t tmp ;
-    qthread_readFF( & tmp , & f.m_task->m_qfeb );
-  }
+  volatile int * const active_task_count = & policy.m_active_count ;
+  while ( *active_task_count ) qthread_yield();
 }
 
-} // namespace Impl
 } // namespace Experimental
 } // namespace Kokkos
 

@@ -270,6 +270,13 @@ TEST_F( qthread , task_policy )
   for ( long i = 0 ; i < 40 ; ++i ) TestTaskPolicy::test_fib2< Kokkos::Qthread >(i);
 }
 
+#if defined( KOKKOS_HAVE_CXX11 )
+// TEST_F( qthread , task_team )
+// {
+//   TestTaskPolicy::test_task_team< Kokkos::Qthread >(1000);
+// }
+#endif
+
 //----------------------------------------------------------------------------
 
 } // namespace test
