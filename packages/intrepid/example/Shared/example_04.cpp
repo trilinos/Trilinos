@@ -262,9 +262,9 @@ template<typename Scalar>
 #ifdef KOKKOS_HAVE_CUDA
 	
 	struct MultiGemm<double,Kokkos::Cuda,Kokkos::LayoutLeft,2>{
-		static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha,
+		static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, double alpha,
            Kokkos::View<double**,Kokkos::LayoutLeft,Kokkos::Cuda> A,  Kokkos::View<double**,Kokkos::LayoutLeft,Kokkos::Cuda> B,
-          Scalar beta, Kokkos::View<double**,Kokkos::LayoutLeft,Kokkos::Cuda> C){
+          double beta, Kokkos::View<double**,Kokkos::LayoutLeft,Kokkos::Cuda> C){
 		const int m = static_cast<int> (C.dimension_0()),
         n = static_cast<int> (C.dimension_1 ()),
         k = (transA == Teuchos::NO_TRANS ? A.dimension_1 () : A.dimension_0 ());
@@ -314,7 +314,7 @@ cublasDgemm(transA, transB, n, m, k, alpha, B.ptr_on_device(), n, A.ptr_on_devic
 };
 
 	struct MultiGemm<double,Kokkos::Cuda,Kokkos::LayoutLeft,3>{
-		static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha,
+		static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, double alpha,
            Kokkos::View<double***,Kokkos::LayoutLeft,Kokkos::Cuda> A,  Kokkos::View<double***,Kokkos::LayoutLeft,Kokkos::Cuda> B,
           double beta, Kokkos::View<double***,Kokkos::LayoutLeft,Kokkos::Cuda> C){
 		const int m = static_cast<int> (C.dimension_1()),

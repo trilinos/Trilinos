@@ -2074,7 +2074,9 @@ void CellTools<Scalar>::mapToReferenceFrameInitGuess(ArrayRefPoint        &     
                                                      const shards::CellTopology &  cellTopo,
                                                      const int &                   whichCell)
 {
-  INTREPID_VALIDATE( validateArguments_mapToReferenceFrame(refPoints, initGuess, physPoints, cellWorkset, cellTopo, whichCell) );
+ArrayWrapper<Scalar,ArrayInitGuess, Rank<ArrayInitGuess >::value, true>initGuessWrap(initGuess);
+ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, false>refPointsWrap(refPoints);
+ INTREPID_VALIDATE( validateArguments_mapToReferenceFrame(refPoints, initGuess, physPoints, cellWorkset, cellTopo, whichCell) );
   int spaceDim  = (int)cellTopo.getDimension();
   int numPoints;
   int numCells=0;
@@ -2100,7 +2102,7 @@ void CellTools<Scalar>::mapToReferenceFrameInitGuess(ArrayRefPoint        &     
     for(int c = 0; c < numCells; c++){
       for(int p = 0; p < numPoints; p++){
         for(int d = 0; d < spaceDim; d++){
-          xOld(c, p, d) = initGuess(c, p, d);
+          xOld(c, p, d) = initGuessWrap(c, p, d);
         }// d
       }// p
     }// c
@@ -2116,7 +2118,7 @@ void CellTools<Scalar>::mapToReferenceFrameInitGuess(ArrayRefPoint        &     
     // Set initial guess to xOld
     for(int p = 0; p < numPoints; p++){
       for(int d = 0; d < spaceDim; d++){
-        xOld(p, d) = initGuess(p, d);
+        xOld(p, d) = initGuessWrap(p, d);
       }// d
     }// p
   }
@@ -2165,7 +2167,27 @@ void CellTools<Scalar>::mapToReferenceFrameInitGuess(ArrayRefPoint        &     
     }
 
     // initialize next Newton step
-    xOld = refPoints;
+//    xOld = refPoints;
+int refPointsRank=getrank(refPoints);
+if (refPointsRank==3){
+   for(int i=0;i<refPoints.dimension(0);i++){
+      for(int j=0;j<refPoints.dimension(1);j++){
+         for(int k=0;k<refPoints.dimension(2);k++){
+            xOld(i,j,k) = refPointsWrap(i,j,k);
+         }
+      }
+   }
+}else if(refPointsRank==2){
+   for(int i=0;i<refPoints.dimension(0);i++){
+      for(int j=0;j<refPoints.dimension(1);j++){
+         xOld(i,j) = refPointsWrap(i,j);
+      }
+   }
+
+}
+
+
+
   } // for(iter)
 }
 
