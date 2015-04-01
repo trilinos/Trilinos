@@ -101,7 +101,7 @@ class TpetraMultiVector : public Vector<Real> {
             Real v; // Need this to make a 1-element ArrayView
             Teuchos::ArrayView<Real> val(&v,1);
             tpetra_vec_->norm2(val);
-            return val[0];
+            return val[0]/std::sqrt(tpetra_vec_->getMap()->getComm()->getSize());
         } 
 
         /** \brief Clone to make a new (uninitialized) vector.
@@ -145,7 +145,6 @@ class TpetraMultiVector : public Vector<Real> {
             size_t n = tpetra_vec_->getNumVectors();  
              
             MVP e = rcp( new MV(tpetra_vec_->getMap(),n,true) );  
-
             e->replaceLocalValue(i,0,1.0);
 
             return rcp(new TMV(e) );  
