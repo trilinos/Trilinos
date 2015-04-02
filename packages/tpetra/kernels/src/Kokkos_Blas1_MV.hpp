@@ -160,6 +160,76 @@ dot (const RV& dots, const XMV& x, const YMV& y)
     >::dot (dots_i, x_i, y_i);
 }
 
+
+/// \brief Fill the multivector (2-D View) X with the given value.
+///
+/// \tparam XMV 2-D output View
+///
+/// \param X [out] Output 2-D View.
+/// \param val [in] Value with which to fill the entries of X.
+template<class XMV>
+void
+fill (const XMV& X, const typename XMV::non_const_value_type& val)
+{
+#ifdef KOKKOS_HAVE_CXX11
+  // XMV must be a Kokkos::View specialization.
+  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::fill (MultiVector): "
+                 "The first argument X is not a Kokkos::View.");
+  // XMV must be nonconst (else it can't be an output argument).
+  static_assert (Kokkos::Impl::is_same<typename XMV::value_type, typename XMV::non_const_value_type>::value,
+                 "KokkosBlas::fill (MultiVector): X is const.  "
+                 "It must be nonconst, because it is an output argument "
+                 "(we have to be able to write to its entries).");
+  // XMV must have rank 2.
+  static_assert (XMV::rank == 2, "KokkosBlas::fill (MultiVector): "
+                 "The first argument X must have rank 2.");
+#else
+  // We prefer to use C++11 static_assert, because it doesn't give
+  // "unused typedef" warnings, like the constructs below do.
+  //
+  // XMV must be a Kokkos::View specialization.
+  typedef typename
+    Kokkos::Impl::StaticAssert<Kokkos::Impl::is_view<XMV>::value>::type XMVIsNotView;
+  // XMV must be nonconst (else it can't be an output argument).
+  typedef typename
+    Kokkos::Impl::StaticAssert<Kokkos::Impl::is_same<typename XMV::value_type,
+      typename XMV::non_const_value_type>::value>::type XMV_is_const;
+  // XMV must have rank 2.
+  typedef typename
+    Kokkos::Impl::StaticAssert<XMV::rank == 2 >::type XMV_not_rank_2;
+#endif // KOKKOS_HAVE_CXX11
+
+  // Any View can be assigned to an unmanaged View, and it's safe to
+  // use them here.
+  typedef Kokkos::View<typename XMV::non_const_value_type**,
+    typename XMV::array_layout,
+    typename XMV::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    typename XMV::specialize> XMV_Internal;
+
+#ifdef KOKKOS_HAVE_CXX11
+  // XMV_Internal must be nonconst (else it can't be an output argument).
+  static_assert (Kokkos::Impl::is_same<typename XMV_Internal::value_type, typename XMV_Internal::non_const_value_type>::value,
+                 "KokkosBlas::fill (MultiVector): XMV_Internal is const.  "
+                 "Please report this bug to the Tpetra developers.");
+  // XMV_Internal must have rank 2.
+  static_assert (XMV_Internal::rank == 2, "KokkosBlas::fill (MultiVector): "
+                 "KokkosBlas::fill (MultiVector): XMV_Internal does not have rank 2.  "
+                 "Please report this bug to the Tpetra developers.");
+#endif // KOKKOS_HAVE_CXX11
+
+  XMV_Internal X_internal = X;
+
+  Impl::Fill_MV<
+    typename XMV_Internal::value_type**,
+    typename XMV_Internal::array_layout,
+    typename XMV_Internal::device_type,
+    typename XMV_Internal::memory_traits,
+    typename XMV_Internal::specialize
+    >::fill (X_internal, val);
+}
+
+
 } // namespace KokkosBlas
 
 #endif // KOKKOS_BLAS1_MV_HPP_

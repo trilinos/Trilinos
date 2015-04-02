@@ -93,12 +93,12 @@ benchmarkKokkos (std::ostream& out,
   {
     TimeMonitor timeMon (*vecFillTimer);
     for (int k = 0; k < numTrials; ++k) {
-      Kokkos::Impl::ViewFill<mv_type> (x, 1.0);
+      KokkosBlas::fill (x, 1.0);
     }
   }
 
   mv_type y ("y", numRows, numCols);
-  Kokkos::Impl::ViewFill<mv_type> (y, -1.0);
+  KokkosBlas::fill (y, -1.0);
 
   // Benchmark computing the dot product of two Vectors.
   typedef Kokkos::View<double*, Kokkos::LayoutLeft> dots_type;
@@ -140,8 +140,12 @@ benchmarkRaw (std::ostream& out,
   RCP<Time> vecFillTimer = getTimer ("Raw: Vector: Fill");
   RCP<Time> vecDotTimer = getTimer ("Raw: Vector: Dot");
 
+  if (numTrials <= 0) {
+    return true; // trivially
+  }
+
   // Benchmark creation of a Vector.
-  double* x = 0 ;
+  double* x = NULL;
   {
     TimeMonitor timeMon (*vecCreateTimer);
     // This benchmarks both vector creation and vector destruction.

@@ -530,6 +530,147 @@ struct Dot_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda, Kokkos::
 };
 #endif // KOKKOS_HAVE_CUDA
 
+//
+// fill
+//
+
+template<class XMV, class SizeType = typename XMV::size_type>
+struct MV_FillFunctor {
+  typedef typename XMV::execution_space             execution_space;
+  typedef SizeType                                        size_type;
+  typedef typename XMV::non_const_value_type            xvalue_type;
+
+  const size_type numCols_;
+  const xvalue_type val_;
+  XMV X_;
+
+  MV_FillFunctor (const XMV& X, const xvalue_type& val) :
+    numCols_ (X.dimension_1 ()), val_ (val), X_ (X)
+  {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const size_type& i) const
+  {
+    for (size_type j = 0; j < numCols_; ++j) {
+      X_(i,j) = val_;
+    }
+  }
+};
+
+template<class XV, class SizeType = typename XV::size_type>
+struct V_FillFunctor {
+  typedef typename XV::execution_space            execution_space;
+  typedef SizeType                                      size_type;
+  typedef typename XV::non_const_value_type           xvalue_type;
+
+  const xvalue_type val_;
+  XV x_;
+
+  V_FillFunctor (const XV& x, const xvalue_type& val) :
+    val_ (val), x_ (x)
+  {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const size_type& i) const
+  {
+    x_(i) = val_;
+  }
+};
+
+//! Implementation of KokkosBlas::fill for multivectors.
+template<class XT, class XL, class XD, class XM, class XS>
+struct Fill_MV {
+  typedef Kokkos::View<XT,XL,XD,XM,XS> XMV;
+  typedef typename XMV::execution_space execution_space;
+  typedef typename XMV::size_type size_type;
+
+  static void fill (const XMV& X, const typename XMV::non_const_value_type& val)
+  {
+    const size_type numRows = X.dimension_0 ();
+    const size_type numCols = X.dimension_1 ();
+
+    // The first condition helps avoid overflow with the
+    // multiplication in the second condition.
+    if (numRows < static_cast<size_type> (INT_MAX) &&
+        numRows * numCols < static_cast<size_type> (INT_MAX)) {
+      Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
+      MV_FillFunctor<XMV, int> op (X, val);
+      Kokkos::parallel_for (policy, op);
+    }
+    else {
+      Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows);
+      MV_FillFunctor<XMV, size_type> op (X, val);
+      Kokkos::parallel_for (policy, op);
+    }
+  }
+};
+
+#ifdef KOKKOS_HAVE_SERIAL
+template<>
+struct Fill_MV<double**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
+               Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault> {
+  typedef Kokkos::View<double**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault> XMV;
+  typedef Kokkos::Serial execution_type;
+  typedef XMV::size_type size_type;
+
+  static void fill (const XMV& X, const double& val);
+};
+#endif // KOKKOS_HAVE_SERIAL
+
+#ifdef KOKKOS_HAVE_OPENMP
+template<>
+struct Fill_MV<double**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
+               Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault> {
+  typedef Kokkos::View<double**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault> XMV;
+  typedef Kokkos::OpenMP execution_type;
+  typedef XMV::size_type size_type;
+
+  static void fill (const XMV& X, const double& val);
+};
+#endif // KOKKOS_HAVE_OPENMP
+
+#ifdef KOKKOS_HAVE_PTHREAD
+template<>
+struct Fill_MV<double**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
+               Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault> {
+  typedef Kokkos::View<double**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault> XMV;
+  typedef Kokkos::Threads execution_type;
+  typedef XMV::size_type size_type;
+
+  static void fill (const XMV& X, const double& val);
+};
+#endif // KOKKOS_HAVE_PTHREAD
+
+#ifdef KOKKOS_HAVE_CUDA
+template<>
+struct Fill_MV<double**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
+               Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault> {
+  typedef Kokkos::View<double**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault> XMV;
+  typedef Kokkos::Cuda execution_type;
+  typedef XMV::size_type size_type;
+
+  static void fill (const XMV& X, const double& val);
+};
+#endif // KOKKOS_HAVE_CUDA
+
+#ifdef KOKKOS_HAVE_CUDA
+template<>
+struct Fill_MV<double**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
+               Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault> {
+  typedef Kokkos::View<double**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault> XMV;
+  typedef Kokkos::Cuda execution_type;
+  typedef XMV::size_type size_type;
+
+  static void fill (const XMV& X, const double& val);
+};
+#endif // KOKKOS_HAVE_CUDA
+
+
 } // namespace Impl
 } // namespace KokkosBlas
 
