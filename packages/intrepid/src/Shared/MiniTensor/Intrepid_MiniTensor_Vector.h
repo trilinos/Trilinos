@@ -126,21 +126,18 @@ public:
 #ifdef HAVE_INTREPID_KOKKOSCORE
   template<class ArrayT, typename iType>
   Vector(
-      typename Kokkos::Impl::enable_if<
-          !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      typename not_index<ArrayT>::type & data,
       iType index1);
 
   template<class ArrayT, typename iType>
   Vector(
-      typename Kokkos::Impl::enable_if<
-          !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      typename not_index<ArrayT>::type & data,
       iType index1,
       iType index2);
 
   template<class ArrayT, typename iType>
   Vector(
-      typename Kokkos::Impl::enable_if<
-          !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      typename not_index<ArrayT>::type & data,
       iType index1,
       iType index2,
       iType index3);
@@ -175,15 +172,13 @@ public:
   template<class ArrayT, typename iType>
   Vector(
       Index const dimension,
-      typename Kokkos::Impl::enable_if<
-          !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      typename not_index<ArrayT>::type & data,
       iType index1);
 
   template<class ArrayT, typename iType>
   Vector(
       Index const dimension,
-      typename Kokkos::Impl::enable_if<
-          !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      typename not_index<ArrayT>::type & data,
       iType index1,
       iType index2);
 
