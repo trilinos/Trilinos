@@ -265,7 +265,24 @@ void parallel_reduce( const ExecPolicy  & policy
                     , typename Impl::enable_if< ! Impl::is_integral< ExecPolicy >::value >::type * = 0
                     )
 {
-  (void) Impl::ParallelReduce< FunctorType , ExecPolicy >( Impl::CopyWithoutTracking::apply(functor) , policy );
+  typedef typename
+    Impl::FunctorPolicyExecutionSpace< FunctorType , ExecPolicy >::execution_space
+      execution_space ;
+
+  typedef Kokkos::Impl::FunctorValueTraits< FunctorType , typename ExecPolicy::work_tag >  ValueTraits ;
+
+  typedef typename Kokkos::Impl::if_c< (ValueTraits::StaticValueSize != 0)
+                                     , typename ValueTraits::value_type
+                                     , typename ValueTraits::pointer_type
+                                     >::type value_type ;
+
+  Kokkos::View< value_type
+              , HostSpace
+              , Kokkos::MemoryUnmanaged
+              >
+    result_view ;
+
+  (void) Impl::ParallelReduce< FunctorType , ExecPolicy >( Impl::CopyWithoutTracking::apply(functor) , policy , result_view );
 }
 
 // integral range policy
@@ -294,7 +311,7 @@ void parallel_reduce( const size_t        work_count
               >
     result_view ;
 
-  (void) Impl::ParallelReduce< FunctorType , policy >( Impl::CopyWithoutTracking::apply(functor) , policy(0,work_count) , Impl::CopyWithoutTracking::apply(result_view) );
+  (void) Impl::ParallelReduce< FunctorType , policy >( Impl::CopyWithoutTracking::apply(functor) , policy(0,work_count) , result_view );
 }
 
 // general policy and view ouput
