@@ -2,6 +2,8 @@ KOKKOS_PATH = ../..
 
 GTEST_PATH = ../../TPL/gtest
 
+vpath %.cpp ${KOKKOS_PATH}/containers/unit_tests
+
 default: build_all
 	echo "End Build"
 	
@@ -20,7 +22,7 @@ else
 	LINKFLAGS ?=  
 endif
 
-CXXFLAGS += -I$(GTEST_PATH)
+CXXFLAGS += -I$(GTEST_PATH) -I${KOKKOS_PATH}/containers/unit_tests
 
 TEST_TARGETS = 
 TARGETS = 
@@ -87,3 +89,4 @@ clean: kokkos-clean
 
 gtest-all.o:$(GTEST_PATH)/gtest/gtest-all.cc 
 	$(CXX) $(KOKKOS_CPPFLAGS) $(KOKKOS_CXXFLAGS) $(CXXFLAGS) $(EXTRA_INC) -c $(GTEST_PATH)/gtest/gtest-all.cc
+
