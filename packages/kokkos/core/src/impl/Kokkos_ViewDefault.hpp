@@ -86,6 +86,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
 
   }
 
+#if 0
   //------------------------------------
   /** \brief  Extract Rank-0 from Rank-1 */
 
@@ -2025,6 +2026,8 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
     dst.m_tracker = src.m_tracker ;
 
   }
+
+#endif
 
   //------------------------------------
   /** \brief  Deep copy data from compatible value type, layout, rank, and specialization.
