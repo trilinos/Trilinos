@@ -147,7 +147,7 @@ public:
   static void finalize() {}
 
   //! Print configuration information to the given output stream.
-  static void print_configuration( std::ostream & , const bool detail = false );
+  static void print_configuration( std::ostream & , const bool detail = false ) {}
 
   //--------------------------------------------------------------------------
 

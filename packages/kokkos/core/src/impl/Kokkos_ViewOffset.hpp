@@ -315,8 +315,8 @@ struct ViewOffset< ShapeType , LayoutLeft
   // This subview must be 2 == rank and 2 == rank_dynamic
   // due to only having stride #0.
   // The source dimension #0 must be non-zero for stride-one leading dimension.
-  // If source is rank deficient then set to zero.
-  // Return whether the subview introduced noncontiguity
+  // At most subsequent dimension can be non-zero.
+  // Return whether the subview introduced noncontiguity.
   template< class S , class L >
   KOKKOS_INLINE_FUNCTION
   typename Impl::enable_if<( 2 == shape_type::rank &&
@@ -335,21 +335,20 @@ struct ViewOffset< ShapeType , LayoutLeft
                 , const size_t n7
                 )
     {
-      // N0 = n0 ;
       // N1 = second non-zero dimension
       // S0 = stride for second non-zero dimension
-      shape_type::N0 = 0 ;
+      shape_type::N0 = n0 ;
       shape_type::N1 = 0 ;
       S0 = 0 ;
 
-      if ( 0 == n0 ) {}
-      else if (                n1 ) { shape_type::N0 = n0 ; shape_type::N1 = n1 ; S0 = rhs.stride_1(); }
-      else if ( 2 < S::rank && n2 ) { shape_type::N0 = n0 ; shape_type::N1 = n2 ; S0 = rhs.stride_2(); }
-      else if ( 3 < S::rank && n3 ) { shape_type::N0 = n0 ; shape_type::N1 = n3 ; S0 = rhs.stride_3(); }
-      else if ( 4 < S::rank && n4 ) { shape_type::N0 = n0 ; shape_type::N1 = n4 ; S0 = rhs.stride_4(); }
-      else if ( 5 < S::rank && n5 ) { shape_type::N0 = n0 ; shape_type::N1 = n5 ; S0 = rhs.stride_5(); }
-      else if ( 6 < S::rank && n6 ) { shape_type::N0 = n0 ; shape_type::N1 = n6 ; S0 = rhs.stride_6(); }
-      else if ( 7 < S::rank && n7 ) { shape_type::N0 = n0 ; shape_type::N1 = n7 ; S0 = rhs.stride_7(); }
+      if      ( 0 == n0 ) {}
+      else if (                n1 ) { shape_type::N1 = n1 ; S0 = rhs.stride_1(); }
+      else if ( 2 < S::rank && n2 ) { shape_type::N1 = n2 ; S0 = rhs.stride_2(); }
+      else if ( 3 < S::rank && n3 ) { shape_type::N1 = n3 ; S0 = rhs.stride_3(); }
+      else if ( 4 < S::rank && n4 ) { shape_type::N1 = n4 ; S0 = rhs.stride_4(); }
+      else if ( 5 < S::rank && n5 ) { shape_type::N1 = n5 ; S0 = rhs.stride_5(); }
+      else if ( 6 < S::rank && n6 ) { shape_type::N1 = n6 ; S0 = rhs.stride_6(); }
+      else if ( 7 < S::rank && n7 ) { shape_type::N1 = n7 ; S0 = rhs.stride_7(); }
 
       // Introduce noncontiguity if change the first dimension
       // or took a range of a dimension after the second.
@@ -791,8 +790,8 @@ struct ViewOffset< ShapeType , LayoutRight
   // This subview must be 2 == rank and 2 == rank_dynamic
   // due to only having stride #(rank-1).
   // The source dimension #(rank-1) must be non-zero for stride-one leading dimension.
-  // If source is rank deficient then set to zero.
-  // Return whether the subview introduced noncontiguity
+  // At most one prior dimension can be non-zero.
+  // Return whether the subview introduced noncontiguity.
   template< class S , class L >
   KOKKOS_INLINE_FUNCTION
   typename Impl::enable_if<( 2 == shape_type::rank &&
@@ -822,17 +821,17 @@ struct ViewOffset< ShapeType , LayoutRight
       // N1 = last non-zero dimension
       // SR = stride for second non-zero dimension
       shape_type::N0 = 0 ;
-      shape_type::N1 = 0 ;
+      shape_type::N1 = nR ;
       SR = 0 ;
 
       if ( 0 == nR ) {}
-      else if (                n0 ) { shape_type::N0 = n0 ; shape_type::N1 = nR ; SR = rhs.stride_0(); }
-      else if ( 2 < S::rank && n1 ) { shape_type::N0 = n1 ; shape_type::N1 = nR ; SR = rhs.stride_1(); }
-      else if ( 3 < S::rank && n2 ) { shape_type::N0 = n2 ; shape_type::N1 = nR ; SR = rhs.stride_2(); }
-      else if ( 4 < S::rank && n3 ) { shape_type::N0 = n3 ; shape_type::N1 = nR ; SR = rhs.stride_3(); }
-      else if ( 5 < S::rank && n4 ) { shape_type::N0 = n4 ; shape_type::N1 = nR ; SR = rhs.stride_4(); }
-      else if ( 6 < S::rank && n5 ) { shape_type::N0 = n5 ; shape_type::N1 = nR ; SR = rhs.stride_5(); }
-      else if ( 7 < S::rank && n6 ) { shape_type::N0 = n6 ; shape_type::N1 = nR ; SR = rhs.stride_6(); }
+      else if (                n0 ) { shape_type::N0 = n0 ; SR = rhs.stride_0(); }
+      else if ( 2 < S::rank && n1 ) { shape_type::N0 = n1 ; SR = rhs.stride_1(); }
+      else if ( 3 < S::rank && n2 ) { shape_type::N0 = n2 ; SR = rhs.stride_2(); }
+      else if ( 4 < S::rank && n3 ) { shape_type::N0 = n3 ; SR = rhs.stride_3(); }
+      else if ( 5 < S::rank && n4 ) { shape_type::N0 = n4 ; SR = rhs.stride_4(); }
+      else if ( 6 < S::rank && n5 ) { shape_type::N0 = n5 ; SR = rhs.stride_5(); }
+      else if ( 7 < S::rank && n6 ) { shape_type::N0 = n6 ; SR = rhs.stride_6(); }
 
       // Introduce noncontiguous if change the last dimension
       // or take a range of a dimension other than the second-to-last dimension.
