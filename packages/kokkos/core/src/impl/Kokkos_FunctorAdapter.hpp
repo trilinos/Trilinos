@@ -409,6 +409,46 @@ struct FunctorValueInit< FunctorType , ArgTag , T * , Enable >
 };
 
 /* 'init' function provided for single value */
+template< class FunctorType , class T >
+struct FunctorValueInit
+  < FunctorType
+  , void
+  , T &
+    // First  substitution failure when FunctorType::init does not exist.
+#if defined( KOKKOS_HAVE_CXX11 )
+    // Second substitution failure when FunctorType::init is not compatible.
+  , decltype( FunctorValueInitFunction< FunctorType , void >::enable_if( & FunctorType::init ) )
+#else
+  , typename Impl::enable_if< 0 < sizeof( & FunctorType::init ) >::type
+#endif
+  >
+{
+  KOKKOS_FORCEINLINE_FUNCTION static
+  T & init( const FunctorType & f , void * p )
+    { f.init( *((T*)p) ); return *((T*)p) ; }
+};
+
+/* 'init' function provided for array value */
+template< class FunctorType , class T >
+struct FunctorValueInit
+  < FunctorType
+  , void
+  , T *
+    // First  substitution failure when FunctorType::init does not exist.
+#if defined( KOKKOS_HAVE_CXX11 )
+    // Second substitution failure when FunctorType::init is not compatible
+  , decltype( FunctorValueInitFunction< FunctorType , void >::enable_if( & FunctorType::init ) )
+#else
+  , typename Impl::enable_if< 0 < sizeof( & FunctorType::init ) >::type
+#endif
+  >
+{
+  KOKKOS_FORCEINLINE_FUNCTION static
+  T * init( const FunctorType & f , void * p )
+    { f.init( (T*)p ); return (T*)p ; }
+};
+
+/* 'init' function provided for single value */
 template< class FunctorType , class ArgTag , class T >
 struct FunctorValueInit
   < FunctorType
@@ -425,7 +465,7 @@ struct FunctorValueInit
 {
   KOKKOS_FORCEINLINE_FUNCTION static
   T & init( const FunctorType & f , void * p )
-    { f.init( *((T*)p) ); return *((T*)p) ; }
+    { f.init( ArgTag() , *((T*)p) ); return *((T*)p) ; }
 };
 
 /* 'init' function provided for array value */
@@ -445,7 +485,7 @@ struct FunctorValueInit
 {
   KOKKOS_FORCEINLINE_FUNCTION static
   T * init( const FunctorType & f , void * p )
-    { f.init( (T*)p ); return (T*)p ; }
+    { f.init( ArgTag() , (T*)p ); return (T*)p ; }
 };
 
 } // namespace Impl
