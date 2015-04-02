@@ -265,9 +265,9 @@ void parallel_reduce( const ExecPolicy  & policy
                     , typename Impl::enable_if< ! Impl::is_integral< ExecPolicy >::value >::type * = 0
                     )
 {
-  typedef typename
-    Impl::FunctorPolicyExecutionSpace< FunctorType , ExecPolicy >::execution_space
-      execution_space ;
+  // typedef typename
+  //   Impl::FunctorPolicyExecutionSpace< FunctorType , ExecPolicy >::execution_space
+  //     execution_space ;
 
   typedef Kokkos::Impl::FunctorValueTraits< FunctorType , typename ExecPolicy::work_tag >  ValueTraits ;
 
