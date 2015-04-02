@@ -164,7 +164,6 @@ TEST(FEMHelper, check_permutation_consistency_using_FEMHelper_parallel)
 TEST(FEMHelper, test_permutations_for_all_topologies)
 {
 	stk::ParallelMachine pm = MPI_COMM_WORLD;
-	//const int p_rank = stk::parallel_machine_rank(pm);
 	const int p_size = stk::parallel_machine_size(pm);
 
 	if (p_size != 1) {
@@ -172,53 +171,165 @@ TEST(FEMHelper, test_permutations_for_all_topologies)
 	}
 
 	int spatial_dimension;
+	stk::topology topo;
 	stk::mesh::EntityId element_id[1] = {1};
 
+	//stk::topology test_topologies[8] = {stk::topology::TRI_3_2D, stk::topology::QUAD_4_2D, stk::topology::SHELL_TRI_3,
+	//		                            stk::topology::SHELL_QUAD_4, stk::topology::TET_4, stk::topology::PYRAMID_5,
+	//									stk::topology::WEDGE_6, stk::topology::HEX_8};
+
+	stk::topology test_topologies[8] = {stk::topology::TRI_3_2D, stk::topology::TET_4};
+
 	// check that the permutations define the same sides
-	for (stk::topology topo = stk::topology::BEGIN_TOPOLOGY; topo < stk::topology::END_TOPOLOGY; ++topo)
+	for (size_t index = 0; index < 2; ++index)
 	{
-
-		if (topo.defined_on_spatial_dimension(2u)) {spatial_dimension = 2;}
-		else if (topo.defined_on_spatial_dimension(3u)) {spatial_dimension = 3;}
-
-		stk::mesh::MetaData meta(spatial_dimension);
-		stk::mesh::BulkData bulk(meta, pm);
-		stk::mesh::Part &elem_part = meta.declare_part_with_topology("elem_part", topo);
-		meta.commit();
-		bulk.modification_begin();
-
-		//specific to topology
-		switch (topo) {
-		case stk::topology::TRIANGLE_3: {
-			stk::mesh::EntityId elem_node_ids[3] = { 1, 2, 3 };
-			stk::mesh::declare_element(bulk, elem_part, element_id[0],
-					elem_node_ids);
-			stk::mesh::create_edges(bulk);
-			stk::mesh::create_faces(bulk);
-			break;
-		}
-		case stk::topology::TRIANGLE_4: {
-			stk::mesh::EntityId elem_node_ids[4] = { 1, 2, 3, 4 };
-			stk::mesh::declare_element(bulk, elem_part, element_id[0],
-					elem_node_ids);
-			stk::mesh::create_edges(bulk);
-			stk::mesh::create_faces(bulk);
-			break;
-		}
-		default :
+		topo = test_topologies[index];
+		std::cout << "topology " << topo << " topology rank " << topo.rank() << " topology dimension " << topo.dimension() << std::endl;
+		if(topo.rank() == stk::topology::ELEMENT_RANK)
 		{
+			spatial_dimension = topo.dimension();
+
+			stk::mesh::MetaData meta(spatial_dimension);
+			stk::mesh::BulkData bulk(meta, pm);
+			stk::mesh::Part &elem_part = meta.declare_part_with_topology("elem_part", topo);
+
+			//specific to topology
+			switch (topo)
+			{
+				case stk::topology::TRI_3_2D:
+				{
+					stk::mesh::EntityId elem_node_ids[3] = { 1, 2, 3 };
+					stk::mesh::EntityId side_ids[3] = { 1, 2, 3 };
+
+			        unsigned gold_side_node_ids[3][2] = {{1, 2}, {3, 2}, {3, 1}}; //note that 2nd is inverted from the normal way you'd set this side up
+			        unsigned gold_side_permutations[3] = { 0, 1, 0 };  //the permutation of 1 is consistent with inversion of side 2 from above
+
+					uint num_sides = topo.num_sides();
+
+					meta.commit();
+					bulk.modification_begin();
+
+					stk::mesh::Entity elem = stk::mesh::declare_element(bulk, elem_part, element_id[0], elem_node_ids);
+
+					stk::mesh::EntityVector sub_topo_nodes;
+
+					for(uint i = 0; i < num_sides; ++i)
+					{
+						sub_topo_nodes.clear();
+
+						stk::mesh::Entity side = bulk.declare_entity(stk::topology::EDGE_RANK, side_ids[i], meta.get_topology_root_part(stk::topology::LINE_2));
+
+						for (uint j = 0; j < topo.sub_topology(stk::topology::EDGE_RANK).num_nodes(); ++j)
+						{
+							stk::mesh::Entity side_node = bulk.get_entity(stk::topology::NODE_RANK, gold_side_node_ids[i][j]);
+							sub_topo_nodes.push_back(side_node);
+							bulk.declare_relation(side, side_node, j);
+						}
+
+						std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation = get_ordinal_and_permutation(bulk, elem, stk::topology::EDGE_RANK, sub_topo_nodes);
+
+						EXPECT_EQ(ordinalAndPermutation.second, gold_side_permutations[i]);
+						EXPECT_EQ(ordinalAndPermutation.first, i);
+					}
+
+					//bulk.modification_begin();
+					//stk::mesh::create_edges(bulk);
+					//stk::mesh::create_faces(bulk);
+					bulk.modification_end();
+					break;
+				}
+				case stk::topology::QUAD_4_2D:
+				{
+					//stk::mesh::EntityId elem_node_ids[1][4] = {{ 1, 2, 3, 4 }};
+					//stk::mesh::Entity elem = stk::mesh::declare_element(bulk, elem_part, element_id[0], elem_node_ids[0]);
+					//stk::mesh::create_edges(bulk);
+					//stk::mesh::create_faces(bulk);
+					break;
+				}
+				case stk::topology::TET_4:
+				{
+					stk::mesh::EntityId elem_node_ids[4] = { 1, 2, 3, 4 };
+					stk::mesh::EntityId side_ids[4] = { 1, 2, 3, 4 };
+					stk::mesh::EntityId edge_ids[6] = { 1, 2, 3, 4, 5, 6 };
+
+					//note that 2nd is 1st cyclic rotation but should give permutation 1 , 3rd is inverted from the normal way you'd set this side up
+					//so permutation is 3 which is first negative permutation
+			        unsigned gold_side_node_ids[4][3] = {{1, 2, 4}, {3, 4, 2}, {1, 3, 4}, {1, 3, 2}};
+			        //the permutation of 1 is consistent with inversion of side 2 from above
+			        unsigned gold_side_permutations[4] = { 0, 1, 3, 0 };
+			        //note that 5th is inverted from normal way you'd set this edge up
+					unsigned gold_edge_node_ids[6][2] = {{1, 2}, {2, 3}, {3, 1}, {1, 4}, {4, 2}, {3, 4}};
+					//the permutation of 1 is consistent with inversion of edge 5 from above
+					unsigned gold_edge_permutations[6] = { 0, 0, 0, 0, 1, 0};
+
+
+					uint num_sides = topo.num_sides();
+					uint num_edges = topo.num_edges();
+
+					meta.commit();
+					bulk.modification_begin();
+
+					stk::mesh::Entity elem = stk::mesh::declare_element(bulk, elem_part, element_id[0], elem_node_ids);
+
+					stk::mesh::EntityVector sub_topo_nodes;
+					stk::mesh::EntityVector edge_nodes;
+
+					for(uint i = 0; i < num_sides; ++i)
+					{
+						sub_topo_nodes.clear();
+
+						stk::mesh::Entity side = bulk.declare_entity(stk::topology::FACE_RANK, side_ids[i], meta.get_topology_root_part(stk::topology::TRI_3));
+
+						for (uint j = 0; j < topo.sub_topology(stk::topology::FACE_RANK).num_nodes(); ++j)
+						{
+							stk::mesh::Entity side_node = bulk.get_entity(stk::topology::NODE_RANK, gold_side_node_ids[i][j]);
+							sub_topo_nodes.push_back(side_node);
+							bulk.declare_relation(side, side_node, j);
+							std::cout << " side " << i << " node " << bulk.identifier(side_node) << std::endl;
+						}
+
+						std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation = get_ordinal_and_permutation(bulk, elem, stk::topology::FACE_RANK, sub_topo_nodes);
+
+						EXPECT_EQ(gold_side_permutations[i],ordinalAndPermutation.second);
+						EXPECT_EQ(i, ordinalAndPermutation.first);
+					}
+
+					for(uint i = 0; i < num_edges; ++i)
+					{
+						edge_nodes.clear();
+
+						stk::mesh::Entity edge = bulk.declare_entity(stk::topology::EDGE_RANK, edge_ids[i], meta.get_topology_root_part(stk::topology::LINE_2));
+
+						for (uint j = 0; j < topo.sub_topology(stk::topology::EDGE_RANK).num_nodes(); ++j)
+						{
+							stk::mesh::Entity edge_node = bulk.get_entity(stk::topology::NODE_RANK, gold_edge_node_ids[i][j]);
+							edge_nodes.push_back(edge_node);
+							bulk.declare_relation(edge, edge_node, j);
+							std::cout << " edge " << i << " node " << bulk.identifier(edge_node) << std::endl;
+						}
+
+						std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation = get_ordinal_and_permutation(bulk, elem, stk::topology::EDGE_RANK, edge_nodes);
+
+						EXPECT_EQ(ordinalAndPermutation.second, gold_edge_permutations[i]);
+						EXPECT_EQ(ordinalAndPermutation.first, i);
+					}
+
+                    break;
+				}
+				default :
+				{
+					throw std::runtime_error("Invalid Topology\n");
+				}
+			}
+				//stk::mesh::EntityId element_ids [2] = {1, 2};
+				//stk::mesh::EntityId elem_node_ids [][4] = {{1, 2, 3, 4}, {4, 3, 6, 5}};
+				// Start with all entities on proc 0
+				//std::vector<stk::mesh::Entity> elems;
+				//if (p_rank == 0) {
+				//stk::mesh::declare_element(bulk, elem_part , element_id[0], elem_node_ids );
+				//elems.push_back(stk::mesh::declare_element(bulk, elem_part ,element_ids[1], elem_node_ids[1] ) );
+				//}
 
 		}
-		}
-  //stk::mesh::EntityId element_ids [2] = {1, 2};
-  //stk::mesh::EntityId elem_node_ids [][4] = {{1, 2, 3, 4}, {4, 3, 6, 5}};
-  // Start with all entities on proc 0
-  //std::vector<stk::mesh::Entity> elems;
-  //if (p_rank == 0) {
-  //stk::mesh::declare_element(bulk, elem_part , element_id[0], elem_node_ids );
-  //elems.push_back(stk::mesh::declare_element(bulk, elem_part ,element_ids[1], elem_node_ids[1] ) );
-  //}
-     bulk.modification_end();
-
    }
 }
