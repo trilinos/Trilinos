@@ -4062,6 +4062,89 @@ namespace {
     SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "X_noncontig->subCopy(Range1D(2,2))" );
   }
 
+
+  // Create a MultiVector with zero rows on some processes, but a
+  // nonzero number of columns.  Make sure that getLocalLength(),
+  // getGlobalLength(), and getNumVectors() return the correct values.
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, DimsWithSomeZeroRows, LO, GO, ST, Node )
+  {
+    using Teuchos::outArg;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+    typedef Tpetra::MultiVector<ST, LO, GO, Node> MV;
+    typedef Tpetra::global_size_t GST;
+
+    out << "Tpetra::MultiVector: Test MultiVector dimensions when some "
+      "processes have zero rows" << endl;
+
+    int lclSuccess = 1;
+    int gblSuccess = 1;
+    std::ostringstream errStrm; // for error collection
+
+    RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    const int myRank = comm->getRank ();
+    const int numProcs = comm->getSize ();
+
+    // Create a Map that puts nothing on Process 0 and something on
+    // the other processes.
+    const size_t lclNumRowsWhenPopulated = 1;
+    const size_t lclNumRows = (myRank == 0) ?
+      size_t (0) :
+      lclNumRowsWhenPopulated;
+    const GST gblNumRows = (numProcs == 1) ?
+      GST (0) :
+      GST ((numProcs - 1) * lclNumRowsWhenPopulated);
+    const GO indexBase = 0;
+    RCP<const map_type> map =
+      rcp (new map_type (gblNumRows, lclNumRows, indexBase, comm));
+
+    const size_t numCols = 3;
+    MV X (map, numCols);
+
+    size_t reportedNumCols = 0;
+    try {
+      reportedNumCols = X.getNumVectors ();
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": X.getNumVectors() threw exception: "
+              << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "X.getNumVectors() threw exception" );
+    if (reportedNumCols != numCols) {
+      lclSuccess = 0;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "reportedNumCols != numCols" );
+
+    size_t reportedLclNumRows = 0;
+    try {
+      reportedLclNumRows = X.getLocalLength ();
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": X.getNumVectors() threw exception: "
+              << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "X.getNumVectors() threw exception" );
+    if (reportedLclNumRows != lclNumRows) {
+      lclSuccess = 0;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "reportedLclNumRows != lclNumRows" );
+
+    size_t reportedGblNumRows = 0;
+    try {
+      reportedGblNumRows = X.getGlobalLength ();
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": X.getNumVectors() threw exception: "
+              << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "X.getNumVectors() threw exception" );
+    if (reportedGblNumRows != gblNumRows) {
+      lclSuccess = 0;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "reportedGblNumRows != gblNumRows" );
+  }
+
 //
 // INSTANTIATIONS
 //
@@ -4100,7 +4183,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, getDualView       , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DualViewCtor      , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ViewCtor          , LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, SubViewSomeZeroRows, LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, SubViewSomeZeroRows, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DimsWithSomeZeroRows, LO, GO, SCALAR, NODE )
 
 
 #if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
