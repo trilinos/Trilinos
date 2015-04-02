@@ -172,6 +172,7 @@ T atomic_compare_exchange( volatile T * const dest, const T & compare,
   return tmp.t ;
 }
 
+#ifdef KOKKOS_HAVE_CXX11
 template < typename T >
 KOKKOS_INLINE_FUNCTION
 T atomic_compare_exchange( volatile T * const dest, const T & compare,
@@ -179,22 +180,16 @@ T atomic_compare_exchange( volatile T * const dest, const T & compare,
                                     sizeof(T) != sizeof(long) &&
                                     sizeof(T) == sizeof(Impl::cas128_t), const T & >::type val )
 {
-#ifdef KOKKOS_HAVE_CXX11
   union U {
     Impl::cas128_t i ;
     T t ;
     KOKKOS_INLINE_FUNCTION U() {};
   } tmp ;
-#else
-  union U {
-    Impl::cas128_t i ;
-    T t ;
-  } tmp ;
-#endif
 
   tmp.i = Impl::cas128( (Impl::cas128_t*) dest , *((Impl::cas128_t*)&compare) , *((Impl::cas128_t*)&val) );
   return tmp.t ;
 }
+#endif
 //----------------------------------------------------------------------------
 
 #elif defined( KOKKOS_ATOMICS_USE_OMP31 )
