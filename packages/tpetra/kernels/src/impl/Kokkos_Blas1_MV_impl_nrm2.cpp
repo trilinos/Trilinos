@@ -52,10 +52,16 @@ namespace Impl {
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
 
 void
-Nrm2_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-        const double**, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault>::
+Nrm2_MV<double*,
+        KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+        Kokkos::Impl::ViewDefault,
+        const double**,
+        Kokkos::LayoutLeft,
+        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+        Kokkos::Impl::ViewDefault>::
 nrm2_squared (const RV& r, const XMV& X)
 {
   using Kokkos::ALL;
@@ -86,7 +92,8 @@ nrm2_squared (const RV& r, const XMV& X)
   // entries within a column (vector lanes).
 
   // int is generally faster than size_t, but check for overflow first.
-  if (numRows < static_cast<size_type> (INT_MAX)) {
+  if (numRows < static_cast<size_type> (INT_MAX) &&
+      numRows * numCols < static_cast<size_type> (INT_MAX)) {
     typedef V_Nrm2Squared_Functor<RV1D, XMV1D, int> functor_type;
     Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
 
@@ -116,10 +123,16 @@ nrm2_squared (const RV& r, const XMV& X)
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
 
 void
-Nrm2_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-        const double**, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault>::
+Nrm2_MV<double*,
+        KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+        Kokkos::Impl::ViewDefault,
+        const double**,
+        Kokkos::LayoutLeft,
+        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+        Kokkos::Impl::ViewDefault>::
 nrm2_squared (const RV& r, const XMV& X)
 {
   using Kokkos::ALL;
@@ -150,7 +163,8 @@ nrm2_squared (const RV& r, const XMV& X)
   // entries within a column (vector lanes).
 
   // int is generally faster than size_t, but check for overflow first.
-  if (numRows < static_cast<size_type> (INT_MAX)) {
+  if (numRows < static_cast<size_type> (INT_MAX) &&
+      numRows * numCols < static_cast<size_type> (INT_MAX)) {
     typedef V_Nrm2Squared_Functor<RV1D, XMV1D, int> functor_type;
     Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
 
@@ -180,10 +194,16 @@ nrm2_squared (const RV& r, const XMV& X)
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
 
 void
-Nrm2_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-        const double**, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault>::
+Nrm2_MV<double*,
+        KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+        Kokkos::Impl::ViewDefault,
+        const double**,
+        Kokkos::LayoutLeft,
+        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+        Kokkos::Impl::ViewDefault>::
 nrm2_squared (const RV& r, const XMV& X)
 {
   using Kokkos::ALL;
@@ -214,7 +234,8 @@ nrm2_squared (const RV& r, const XMV& X)
   // entries within a column (vector lanes).
 
   // int is generally faster than size_t, but check for overflow first.
-  if (numRows < static_cast<size_type> (INT_MAX)) {
+  if (numRows < static_cast<size_type> (INT_MAX) &&
+      numRows * numCols < static_cast<size_type> (INT_MAX)) {
     typedef V_Nrm2Squared_Functor<RV1D, XMV1D, int> functor_type;
     Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
 
@@ -244,10 +265,16 @@ nrm2_squared (const RV& r, const XMV& X)
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaSpace
 
 void
-Nrm2_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-        const double**, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault>::
+Nrm2_MV<double*,
+        KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+        Kokkos::Impl::ViewDefault,
+        const double**,
+        Kokkos::LayoutLeft,
+        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+        Kokkos::Impl::ViewDefault>::
 nrm2_squared (const RV& r, const XMV& X)
 {
   using Kokkos::ALL;
@@ -278,7 +305,8 @@ nrm2_squared (const RV& r, const XMV& X)
   // entries within a column (vector lanes).
 
   // int is generally faster than size_t, but check for overflow first.
-  if (numRows < static_cast<size_type> (INT_MAX)) {
+  if (numRows < static_cast<size_type> (INT_MAX) &&
+      numRows * numCols < static_cast<size_type> (INT_MAX)) {
     typedef V_Nrm2Squared_Functor<RV1D, XMV1D, int> functor_type;
     Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
 
@@ -308,10 +336,16 @@ nrm2_squared (const RV& r, const XMV& X)
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaUVMSpace
 
 void
-Nrm2_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-        const double**, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault>::
+Nrm2_MV<double*,
+        KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+        Kokkos::Impl::ViewDefault,
+        const double**,
+        Kokkos::LayoutLeft,
+        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+        Kokkos::Impl::ViewDefault>::
 nrm2_squared (const RV& r, const XMV& X)
 {
   using Kokkos::ALL;
@@ -342,7 +376,8 @@ nrm2_squared (const RV& r, const XMV& X)
   // entries within a column (vector lanes).
 
   // int is generally faster than size_t, but check for overflow first.
-  if (numRows < static_cast<size_type> (INT_MAX)) {
+  if (numRows < static_cast<size_type> (INT_MAX) &&
+      numRows * numCols < static_cast<size_type> (INT_MAX)) {
     typedef V_Nrm2Squared_Functor<RV1D, XMV1D, int> functor_type;
     Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
 

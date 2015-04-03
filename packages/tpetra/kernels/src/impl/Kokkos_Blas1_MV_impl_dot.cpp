@@ -52,12 +52,21 @@ namespace Impl {
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
 
 void
-Dot_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-       const double**, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-       const double**, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault>::
+Dot_MV<double*,
+       KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault>::
 dot (const RV& r, const XMV& X, const XMV& Y)
 {
   using Kokkos::ALL;
@@ -68,7 +77,7 @@ dot (const RV& r, const XMV& X, const XMV& Y)
   typedef Kokkos::View<YMV::value_type*, YMV::array_layout, YMV::device_type, YMV::memory_traits, YMV::specialize> YMV1D;
 
   const size_type numRows = X.dimension_0 ();
-  const size_type numVecs = X.dimension_1 ();
+  const size_type numCols = X.dimension_1 ();
 
   // NOTE (mfh 01 Apr 2015): For LayoutLeft, it's reasonable to do one
   // column at a time.  This ensures contiguous access.  However, it
@@ -84,7 +93,7 @@ dot (const RV& r, const XMV& X, const XMV& Y)
     typedef V_Dot_Functor<RV1D, XMV1D, YMV1D, int> functor_type;
     Kokkos::RangePolicy<XMV::execution_space, int> policy (0, numRows);
 
-    for (size_type j = 0; j < numVecs; ++j) {
+    for (size_type j = 0; j < numCols; ++j) {
       functor_type op (subview (r, j), subview (X, ALL (), j), subview (Y, ALL (), j));
       typename RV1D::non_const_value_type unusedResult;
       Kokkos::parallel_reduce (policy, op, unusedResult);
@@ -95,7 +104,7 @@ dot (const RV& r, const XMV& X, const XMV& Y)
     typedef V_Dot_Functor<RV1D, XMV1D, YMV1D, size_type> functor_type;
     Kokkos::RangePolicy<XMV::execution_space, size_type> policy (0, numRows);
 
-    for (size_type j = 0; j < numVecs; ++j) {
+    for (size_type j = 0; j < numCols; ++j) {
       functor_type op (subview (r, j), subview (X, ALL (), j), subview (Y, ALL (), j));
       typename RV1D::non_const_value_type unusedResult;
       Kokkos::parallel_reduce (policy, op, unusedResult);
@@ -114,12 +123,21 @@ dot (const RV& r, const XMV& X, const XMV& Y)
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
 
 void
-Dot_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-       const double**, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-       const double**, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault>::
+Dot_MV<double*,
+       KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault>::
 dot (const RV& r, const XMV& X, const XMV& Y)
 {
   using Kokkos::ALL;
@@ -130,7 +148,7 @@ dot (const RV& r, const XMV& X, const XMV& Y)
   typedef Kokkos::View<YMV::value_type*, YMV::array_layout, YMV::device_type, YMV::memory_traits, YMV::specialize> YMV1D;
 
   const size_type numRows = X.dimension_0 ();
-  const size_type numVecs = X.dimension_1 ();
+  const size_type numCols = X.dimension_1 ();
 
   // NOTE (mfh 01 Apr 2015): For LayoutLeft, it's reasonable to do one
   // column at a time.  This ensures contiguous access.  However, it
@@ -146,7 +164,7 @@ dot (const RV& r, const XMV& X, const XMV& Y)
     typedef V_Dot_Functor<RV1D, XMV1D, YMV1D, int> functor_type;
     Kokkos::RangePolicy<XMV::execution_space, int> policy (0, numRows);
 
-    for (size_type j = 0; j < numVecs; ++j) {
+    for (size_type j = 0; j < numCols; ++j) {
       functor_type op (subview (r, j), subview (X, ALL (), j), subview (Y, ALL (), j));
       typename RV1D::non_const_value_type unusedResult;
       Kokkos::parallel_reduce (policy, op, unusedResult);
@@ -157,7 +175,7 @@ dot (const RV& r, const XMV& X, const XMV& Y)
     typedef V_Dot_Functor<RV1D, XMV1D, YMV1D, size_type> functor_type;
     Kokkos::RangePolicy<XMV::execution_space, size_type> policy (0, numRows);
 
-    for (size_type j = 0; j < numVecs; ++j) {
+    for (size_type j = 0; j < numCols; ++j) {
       functor_type op (subview (r, j), subview (X, ALL (), j), subview (Y, ALL (), j));
       typename RV1D::non_const_value_type unusedResult;
       Kokkos::parallel_reduce (policy, op, unusedResult);
@@ -176,12 +194,21 @@ dot (const RV& r, const XMV& X, const XMV& Y)
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
 
 void
-Dot_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-       const double**, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-       const double**, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault>::
+Dot_MV<double*,
+       KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault>::
 dot (const RV& r, const XMV& X, const XMV& Y)
 {
   using Kokkos::ALL;
@@ -192,7 +219,7 @@ dot (const RV& r, const XMV& X, const XMV& Y)
   typedef Kokkos::View<YMV::value_type*, YMV::array_layout, YMV::device_type, YMV::memory_traits, YMV::specialize> YMV1D;
 
   const size_type numRows = X.dimension_0 ();
-  const size_type numVecs = X.dimension_1 ();
+  const size_type numCols = X.dimension_1 ();
 
   // NOTE (mfh 01 Apr 2015): For LayoutLeft, it's reasonable to do one
   // column at a time.  This ensures contiguous access.  However, it
@@ -208,7 +235,7 @@ dot (const RV& r, const XMV& X, const XMV& Y)
     typedef V_Dot_Functor<RV1D, XMV1D, YMV1D, int> functor_type;
     Kokkos::RangePolicy<XMV::execution_space, int> policy (0, numRows);
 
-    for (size_type j = 0; j < numVecs; ++j) {
+    for (size_type j = 0; j < numCols; ++j) {
       functor_type op (subview (r, j), subview (X, ALL (), j), subview (Y, ALL (), j));
       typename RV1D::non_const_value_type unusedResult;
       Kokkos::parallel_reduce (policy, op, unusedResult);
@@ -219,7 +246,7 @@ dot (const RV& r, const XMV& X, const XMV& Y)
     typedef V_Dot_Functor<RV1D, XMV1D, YMV1D, size_type> functor_type;
     Kokkos::RangePolicy<XMV::execution_space, size_type> policy (0, numRows);
 
-    for (size_type j = 0; j < numVecs; ++j) {
+    for (size_type j = 0; j < numCols; ++j) {
       functor_type op (subview (r, j), subview (X, ALL (), j), subview (Y, ALL (), j));
       typename RV1D::non_const_value_type unusedResult;
       Kokkos::parallel_reduce (policy, op, unusedResult);
@@ -238,12 +265,21 @@ dot (const RV& r, const XMV& X, const XMV& Y)
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaSpace
 
 void
-Dot_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-       const double**, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-       const double**, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault>::
+Dot_MV<double*,
+       KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault>::
 dot (const RV& r, const XMV& X, const XMV& Y)
 {
   using Kokkos::ALL;
@@ -254,7 +290,7 @@ dot (const RV& r, const XMV& X, const XMV& Y)
   typedef Kokkos::View<YMV::value_type*, YMV::array_layout, YMV::device_type, YMV::memory_traits, YMV::specialize> YMV1D;
 
   const size_type numRows = X.dimension_0 ();
-  const size_type numVecs = X.dimension_1 ();
+  const size_type numCols = X.dimension_1 ();
 
   // NOTE (mfh 01 Apr 2015): For LayoutLeft, it's reasonable to do one
   // column at a time.  This ensures contiguous access.  However, it
@@ -270,7 +306,7 @@ dot (const RV& r, const XMV& X, const XMV& Y)
     typedef V_Dot_Functor<RV1D, XMV1D, YMV1D, int> functor_type;
     Kokkos::RangePolicy<XMV::execution_space, int> policy (0, numRows);
 
-    for (size_type j = 0; j < numVecs; ++j) {
+    for (size_type j = 0; j < numCols; ++j) {
       functor_type op (subview (r, j), subview (X, ALL (), j), subview (Y, ALL (), j));
       typename RV1D::non_const_value_type unusedResult;
       Kokkos::parallel_reduce (policy, op, unusedResult);
@@ -281,7 +317,7 @@ dot (const RV& r, const XMV& X, const XMV& Y)
     typedef V_Dot_Functor<RV1D, XMV1D, YMV1D, size_type> functor_type;
     Kokkos::RangePolicy<XMV::execution_space, size_type> policy (0, numRows);
 
-    for (size_type j = 0; j < numVecs; ++j) {
+    for (size_type j = 0; j < numCols; ++j) {
       functor_type op (subview (r, j), subview (X, ALL (), j), subview (Y, ALL (), j));
       typename RV1D::non_const_value_type unusedResult;
       Kokkos::parallel_reduce (policy, op);
@@ -300,12 +336,21 @@ dot (const RV& r, const XMV& X, const XMV& Y)
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaUVMSpace
 
 void
-Dot_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-       const double**, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-       const double**, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault>::
+Dot_MV<double*,
+       KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault>::
 dot (const RV& r, const XMV& X, const XMV& Y)
 {
   using Kokkos::ALL;
@@ -316,7 +361,7 @@ dot (const RV& r, const XMV& X, const XMV& Y)
   typedef Kokkos::View<YMV::value_type*, YMV::array_layout, YMV::device_type, YMV::memory_traits, YMV::specialize> YMV1D;
 
   const size_type numRows = X.dimension_0 ();
-  const size_type numVecs = X.dimension_1 ();
+  const size_type numCols = X.dimension_1 ();
 
   // NOTE (mfh 01 Apr 2015): For LayoutLeft, it's reasonable to do one
   // column at a time.  This ensures contiguous access.  However, it
@@ -332,7 +377,7 @@ dot (const RV& r, const XMV& X, const XMV& Y)
     typedef V_Dot_Functor<RV1D, XMV1D, YMV1D, int> functor_type;
     Kokkos::RangePolicy<XMV::execution_space, int> policy (0, numRows);
 
-    for (size_type j = 0; j < numVecs; ++j) {
+    for (size_type j = 0; j < numCols; ++j) {
       functor_type op (subview (r, j), subview (X, ALL (), j), subview (Y, ALL (), j));
       typename RV1D::non_const_value_type unusedResult;
       Kokkos::parallel_reduce (policy, op, unusedResult);
@@ -343,7 +388,7 @@ dot (const RV& r, const XMV& X, const XMV& Y)
     typedef V_Dot_Functor<RV1D, XMV1D, YMV1D, size_type> functor_type;
     Kokkos::RangePolicy<XMV::execution_space, size_type> policy (0, numRows);
 
-    for (size_type j = 0; j < numVecs; ++j) {
+    for (size_type j = 0; j < numCols; ++j) {
       functor_type op (subview (r, j), subview (X, ALL (), j), subview (Y, ALL (), j));
       typename RV1D::non_const_value_type unusedResult;
       Kokkos::parallel_reduce (policy, op, unusedResult);

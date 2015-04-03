@@ -75,12 +75,12 @@ benchmarkKokkos (std::ostream& out,
   using std::endl;
   typedef Kokkos::View<double**, Kokkos::LayoutLeft> mv_type;
 
-  RCP<Time> vecCreateTimer = getTimer ("Kokkos: Vector: Create");
-  RCP<Time> vecFillTimer = getTimer ("Kokkos: Vector: Fill");
-  RCP<Time> vecNrm2Timer = getTimer ("Kokkos: Vector: Nrm2");
-  RCP<Time> vecDotTimer = getTimer ("Kokkos: Vector: Dot");
+  RCP<Time> vecCreateTimer = getTimer ("Kokkos: MV: Create");
+  RCP<Time> vecFillTimer = getTimer ("Kokkos: MV: Fill");
+  RCP<Time> vecNrm2Timer = getTimer ("Kokkos: MV: Nrm2");
+  RCP<Time> vecDotTimer = getTimer ("Kokkos: MV: Dot");
 
-  // Benchmark creation of a Vector.
+  // Benchmark creation of a MultiVector.
   mv_type x;
   {
     TimeMonitor timeMon (*vecCreateTimer);
@@ -98,7 +98,7 @@ benchmarkKokkos (std::ostream& out,
     }
   }
 
-  // Benchmark computing the (square of the) 2-norm of a Vector.
+  // Benchmark computing the (square of the) 2-norm of a MultiVector.
   typedef Kokkos::View<double*, Kokkos::LayoutLeft> norms_type;
   norms_type norms ("norms", numCols);
   {
@@ -164,16 +164,16 @@ benchmarkRaw (std::ostream& out,
               const int numTrials)
 {
   using std::endl;
-  RCP<Time> vecCreateTimer = getTimer ("Raw: Vector: Create");
-  RCP<Time> vecFillTimer = getTimer ("Raw: Vector: Fill");
-  RCP<Time> vecNrm2Timer = getTimer ("Raw: Vector: Nrm2");
-  RCP<Time> vecDotTimer = getTimer ("Raw: Vector: Dot");
+  RCP<Time> vecCreateTimer = getTimer ("Raw: MV: Create");
+  RCP<Time> vecFillTimer = getTimer ("Raw: MV: Fill");
+  RCP<Time> vecNrm2Timer = getTimer ("Raw: MV: Nrm2");
+  RCP<Time> vecDotTimer = getTimer ("Raw: MV: Dot");
 
   if (numTrials <= 0) {
     return true; // trivially
   }
 
-  // Benchmark creation of a Vector.
+  // Benchmark creation of a MultiVector.
   double* x = NULL;
   {
     TimeMonitor timeMon (*vecCreateTimer);
@@ -200,7 +200,7 @@ benchmarkRaw (std::ostream& out,
     }
   }
 
-  // Benchmark computing the (square of the) 2-norm of a Vector.
+  // Benchmark computing the (square of the) 2-norm of a MultiVector.
   double* norms = new double [numCols];
   {
     TimeMonitor timeMon (*vecNrm2Timer);

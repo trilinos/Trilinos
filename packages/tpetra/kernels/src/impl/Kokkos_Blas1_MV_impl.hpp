@@ -363,6 +363,8 @@ struct Dot_MV {
       }
       case 1: {
         // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
+        using Kokkos::ALL;
+        using Kokkos::subview;
         typedef Kokkos::View<typename RV::value_type, typename RV::array_layout,
             typename RV::device_type, typename RV::memory_traits,
             typename RV::specialize> RV1D;
@@ -370,7 +372,8 @@ struct Dot_MV {
             XL,XD,XM,XS> XMV1D;
         typedef Kokkos::View<typename YMV::const_value_type*,
             YL,YD,YM,YS> YMV1D;
-        V_Dot_Functor<RV1D, XMV1D, YMV1D> op (r, X, Y);
+        typedef V_Dot_Functor<RV1D, XMV1D, YMV1D> op_type;
+        op_type op (subview (r, 0), subview (X, ALL (), 0), subview (Y, ALL (), 0));
         Kokkos::parallel_reduce (numRows, op);
         break;
       }
@@ -387,14 +390,23 @@ struct Dot_MV {
 
 #ifdef KOKKOS_HAVE_SERIAL
 template<>
-struct Dot_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
-              Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-              const double**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
-              Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-              const double**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
-              Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault> {
+struct Dot_MV<double*,
+              Kokkos::Serial::array_layout,
+              Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
+              Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+              Kokkos::Impl::ViewDefault,
+              const double**,
+              Kokkos::LayoutLeft,
+              Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
+              Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+              Kokkos::Impl::ViewDefault,
+              const double**,
+              Kokkos::LayoutLeft,
+              Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
+              Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+              Kokkos::Impl::ViewDefault> {
   typedef double* RT;
-  typedef Kokkos::LayoutLeft RL;
+  typedef Kokkos::Serial::array_layout RL;
   typedef Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace> RD;
   typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> RM;
   typedef Kokkos::Impl::ViewDefault RS;
@@ -416,14 +428,23 @@ struct Dot_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Serial, Kokkos
 
 #ifdef KOKKOS_HAVE_OPENMP
 template<>
-struct Dot_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
-              Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-              const double**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
-              Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-              const double**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
-              Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault> {
+struct Dot_MV<double*,
+              Kokkos::OpenMP::array_layout,
+              Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
+              Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+              Kokkos::Impl::ViewDefault,
+              const double**,
+              Kokkos::LayoutLeft,
+              Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
+              Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+              Kokkos::Impl::ViewDefault,
+              const double**,
+              Kokkos::LayoutLeft,
+              Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
+              Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+              Kokkos::Impl::ViewDefault> {
   typedef double* RT;
-  typedef Kokkos::LayoutLeft RL;
+  typedef Kokkos::OpenMP::array_layout RL;
   typedef Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace> RD;
   typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> RM;
   typedef Kokkos::Impl::ViewDefault RS;
@@ -445,14 +466,23 @@ struct Dot_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::OpenMP, Kokkos
 
 #ifdef KOKKOS_HAVE_PTHREAD
 template<>
-struct Dot_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
-              Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-              const double**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
-              Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-              const double**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
-              Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault> {
+struct Dot_MV<double*,
+              Kokkos::Threads::array_layout,
+              Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
+              Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+              Kokkos::Impl::ViewDefault,
+              const double**,
+              Kokkos::LayoutLeft,
+              Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
+              Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+              Kokkos::Impl::ViewDefault,
+              const double**,
+              Kokkos::LayoutLeft,
+              Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
+              Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+              Kokkos::Impl::ViewDefault> {
   typedef double* RT;
-  typedef Kokkos::LayoutLeft RL;
+  typedef Kokkos::Threads::array_layout RL;
   typedef Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace> RD;
   typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> RM;
   typedef Kokkos::Impl::ViewDefault RS;
@@ -474,14 +504,23 @@ struct Dot_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Threads, Kokko
 
 #ifdef KOKKOS_HAVE_CUDA
 template<>
-struct Dot_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
-              Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-              const double**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
-              Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-              const double**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
-              Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault> {
+struct Dot_MV<double*,
+              Kokkos::Cuda::array_layout,
+              Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
+              Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+              Kokkos::Impl::ViewDefault,
+              const double**,
+              Kokkos::LayoutLeft,
+              Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
+              Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+              Kokkos::Impl::ViewDefault,
+              const double**,
+              Kokkos::LayoutLeft,
+              Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
+              Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+              Kokkos::Impl::ViewDefault> {
   typedef double* RT;
-  typedef Kokkos::LayoutLeft RL;
+  typedef Kokkos::Cuda::array_layout RL;
   typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> RD;
   typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> RM;
   typedef Kokkos::Impl::ViewDefault RS;
@@ -503,14 +542,23 @@ struct Dot_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda, Kokkos::
 
 #ifdef KOKKOS_HAVE_CUDA
 template<>
-struct Dot_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
-              Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-              const double**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
-              Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-              const double**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
-              Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault> {
+struct Dot_MV<double*,
+              Kokkos::Cuda::array_layout,
+              Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
+              Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+              Kokkos::Impl::ViewDefault,
+              const double**,
+              Kokkos::LayoutLeft,
+              Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
+              Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+              Kokkos::Impl::ViewDefault,
+              const double**,
+              Kokkos::LayoutLeft,
+              Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
+              Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+              Kokkos::Impl::ViewDefault> {
   typedef double* RT;
-  typedef Kokkos::LayoutLeft RL;
+  typedef Kokkos::Cuda::array_layout RL;
   typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace> RD;
   typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> RM;
   typedef Kokkos::Impl::ViewDefault RS;
@@ -723,6 +771,57 @@ struct V_Nrm2Squared_Functor
   }
 };
 
+// Partial specialization for Scalar=double.
+template<class RL, class RD, class RM, class RS,
+         class XL, class XD, class XM, class XS>
+struct V_Nrm2Squared_Functor<
+  Kokkos::View<double, RL, RD, RM, RS>,
+  Kokkos::View<const double*, XL, XD, XM, XS>,
+  int>
+{
+  typedef Kokkos::View<double, RL, RD, RM, RS> RV;
+  typedef Kokkos::View<const double*, XL, XD, XM, XS> XV;
+
+  typedef typename XV::execution_space execution_space;
+  typedef int                                size_type;
+  typedef double                           xvalue_type;
+  typedef double                            value_type;
+
+  RV m_r;
+  XV m_x;
+
+  V_Nrm2Squared_Functor (const RV& r, const XV& x) :
+    m_r (r), m_x (x)
+  {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const size_type& i, value_type& sum) const
+  {
+    const double tmp = m_x(i);
+    sum += tmp * tmp;
+  }
+
+  KOKKOS_INLINE_FUNCTION void init (value_type& update) const
+  {
+    update = 0.0;
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  join (volatile value_type& update,
+        const volatile value_type& source) const
+  {
+    update += source;
+  }
+
+  // On device, write the reduction result to the output View.
+  KOKKOS_INLINE_FUNCTION void
+  final (const value_type& dst) const
+  {
+    m_r() = dst;
+  }
+};
+
+
 /// \brief Column-wise 2-norm functor for multivectors; works for
 ///   any layout, but best performance with LayoutRight.
 ///
@@ -848,16 +947,25 @@ struct Nrm2_MV {
 //
 // Currently, we include specializations for Scalar = double,
 // LayoutLeft (which is what Tpetra::MultiVector uses at the moment),
-// and all execution spaces.  This may change in the future.
+// and all execution spaces.  This may change in the future.  The
+// output 1-D View _always_ uses the execution space's default array
+// layout, which is what Tpetra::MultiVector wants for the output
+// argument of norm2().
 
 #ifdef KOKKOS_HAVE_SERIAL
 template<>
-struct Nrm2_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
-               Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-               const double**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
-               Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault> {
+struct Nrm2_MV<double*,
+               Kokkos::Serial::array_layout,
+               Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
+               Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+               Kokkos::Impl::ViewDefault,
+               const double**,
+               Kokkos::LayoutLeft,
+               Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
+               Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+               Kokkos::Impl::ViewDefault> {
   typedef double* RT;
-  typedef Kokkos::LayoutLeft RL;
+  typedef Kokkos::Serial::array_layout RL;
   typedef Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace> RD;
   typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> RM;
   typedef Kokkos::Impl::ViewDefault RS;
@@ -879,12 +987,18 @@ struct Nrm2_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Serial, Kokko
 
 #ifdef KOKKOS_HAVE_OPENMP
 template<>
-struct Nrm2_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
-               Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-               const double**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
-               Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault> {
+struct Nrm2_MV<double*,
+               Kokkos::OpenMP::array_layout,
+               Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
+               Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+               Kokkos::Impl::ViewDefault,
+               const double**,
+               Kokkos::LayoutLeft,
+               Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
+               Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+               Kokkos::Impl::ViewDefault> {
   typedef double* RT;
-  typedef Kokkos::LayoutLeft RL;
+  typedef Kokkos::OpenMP::array_layout RL;
   typedef Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace> RD;
   typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> RM;
   typedef Kokkos::Impl::ViewDefault RS;
@@ -906,12 +1020,18 @@ struct Nrm2_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::OpenMP, Kokko
 
 #ifdef KOKKOS_HAVE_PTHREAD
 template<>
-struct Nrm2_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
-               Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-               const double**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
-               Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault> {
+struct Nrm2_MV<double*,
+               Kokkos::Threads::array_layout,
+               Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
+               Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+               Kokkos::Impl::ViewDefault,
+               const double**,
+               Kokkos::LayoutLeft,
+               Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
+               Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+               Kokkos::Impl::ViewDefault> {
   typedef double* RT;
-  typedef Kokkos::LayoutLeft RL;
+  typedef Kokkos::Threads::array_layout RL;
   typedef Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace> RD;
   typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> RM;
   typedef Kokkos::Impl::ViewDefault RS;
@@ -932,13 +1052,18 @@ struct Nrm2_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Threads, Kokk
 #endif // KOKKOS_HAVE_PTHREAD
 
 #ifdef KOKKOS_HAVE_CUDA
-template<>
-struct Nrm2_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
-               Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-               const double**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
-               Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault> {
+struct Nrm2_MV<double*,
+               Kokkos::Cuda::array_layout,
+               Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
+               Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+               Kokkos::Impl::ViewDefault,
+               const double**,
+               Kokkos::LayoutLeft,
+               Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
+               Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+               Kokkos::Impl::ViewDefault> {
   typedef double* RT;
-  typedef Kokkos::LayoutLeft RL;
+  typedef Kokkos::Cuda::array_layout RL;
   typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> RD;
   typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> RM;
   typedef Kokkos::Impl::ViewDefault RS;
@@ -960,12 +1085,18 @@ struct Nrm2_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda, Kokkos:
 
 #ifdef KOKKOS_HAVE_CUDA
 template<>
-struct Nrm2_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
-               Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-               const double**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
-               Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault> {
+struct Nrm2_MV<double*,
+               Kokkos::Cuda::array_layout,
+               Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
+               Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+               Kokkos::Impl::ViewDefault,
+               const double**,
+               Kokkos::LayoutLeft,
+               Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
+               Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+               Kokkos::Impl::ViewDefault> {
   typedef double* RT;
-  typedef Kokkos::LayoutLeft RL;
+  typedef Kokkos::Cuda::array_layout RL;
   typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace> RD;
   typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> RM;
   typedef Kokkos::Impl::ViewDefault RS;

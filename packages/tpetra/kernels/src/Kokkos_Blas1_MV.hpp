@@ -209,12 +209,14 @@ fill (const XMV& X, const typename XMV::non_const_value_type& val)
 
 #ifdef KOKKOS_HAVE_CXX11
   // XMV_Internal must be nonconst (else it can't be an output argument).
-  static_assert (Kokkos::Impl::is_same<typename XMV_Internal::value_type, typename XMV_Internal::non_const_value_type>::value,
+  static_assert (Kokkos::Impl::is_same<typename XMV_Internal::value_type,
+                   typename XMV_Internal::non_const_value_type>::value,
                  "KokkosBlas::fill (MultiVector): XMV_Internal is const.  "
                  "Please report this bug to the Tpetra developers.");
   // XMV_Internal must have rank 2.
   static_assert (XMV_Internal::rank == 2, "KokkosBlas::fill (MultiVector): "
-                 "KokkosBlas::fill (MultiVector): XMV_Internal does not have rank 2.  "
+                 "KokkosBlas::fill (MultiVector): "
+                 "XMV_Internal does not have rank 2.  "
                  "Please report this bug to the Tpetra developers.");
 #endif // KOKKOS_HAVE_CXX11
 
@@ -228,7 +230,6 @@ fill (const XMV& X, const typename XMV::non_const_value_type& val)
     typename XMV_Internal::specialize
     >::fill (X_internal, val);
 }
-
 
 
 /// \brief Compute the squares of 2-norms of the columns of the

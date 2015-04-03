@@ -51,6 +51,7 @@
 #include <KokkosCompat_View.hpp>
 #include <Kokkos_MV.hpp>
 #include <Kokkos_MV_GEMM.hpp>
+#include <Kokkos_Blas1_MV.hpp>
 #include <Kokkos_Random.hpp>
 
 namespace { // (anonymous)
@@ -1528,61 +1529,21 @@ namespace Tpetra {
         << lclNumRows << " x " << numVecs << ".  Please report this bug to "
         "the Tpetra developers.");
 
-      if (lclNumRows == 0) {
-        const mag_type zeroMag = Kokkos::Details::ArithTraits<mag_type>::zero ();
-        Kokkos::Impl::ViewFill<norms_view_type> (theNorms, zeroMag);
+      if (constantStride && whichNorm == IMPL_NORM_TWO) {
+        KokkosBlas::nrm2_squared (theNorms, X);
       }
-      else { // lclNumRows != 0
-        if (numVecs == 1) {
-          // Special case 1: The MultiVector only has a single column.
-          // The single-vector norm kernel may be more efficient.
-          const size_t ZERO = static_cast<size_t> (0);
-          vec_view_type X_k = subview (X, ALL (), ZERO);
-          norm_view_type norm_k = subview (theNorms, ZERO);
-
-          if (whichNorm == IMPL_NORM_INF) {
-            Kokkos::VecNormInfFunctor<vec_view_type,norm_view_type> f (X_k, norm_k);
-            Kokkos::parallel_reduce (lclNumRows, f);
-          }
-          else if (whichNorm == IMPL_NORM_ONE) {
-            Kokkos::VecNorm1Functor<vec_view_type,norm_view_type> f (X_k, norm_k);
-            Kokkos::parallel_reduce (lclNumRows, f);
-          }
-          else if (whichNorm == IMPL_NORM_TWO) {
-            Kokkos::VecNorm2SquaredFunctor<vec_view_type,norm_view_type> f (X_k, norm_k);
-            Kokkos::parallel_reduce (lclNumRows, f);
-          }
-          else {
-            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
-          }
+      else {
+        if (lclNumRows == 0) {
+          const mag_type zeroMag = Kokkos::Details::ArithTraits<mag_type>::zero ();
+          Kokkos::Impl::ViewFill<norms_view_type> (theNorms, zeroMag);
         }
-        else if (constantStride) {
-          // Special case 2: The MultiVector has constant stride.
-          if (whichNorm == IMPL_NORM_INF) {
-            Kokkos::MultiVecNormInfFunctor<mv_view_type,norms_view_type> f (X, theNorms);
-            Kokkos::parallel_reduce (lclNumRows, f);
-          }
-          else if (whichNorm == IMPL_NORM_ONE) {
-            Kokkos::MultiVecNorm1Functor<mv_view_type,norms_view_type> f (X, theNorms);
-            Kokkos::parallel_reduce (lclNumRows, f);
-          }
-          else if (whichNorm == IMPL_NORM_TWO) {
-            Kokkos::MultiVecNorm2SquaredFunctor<mv_view_type,norms_view_type> f (X, theNorms);
-            Kokkos::parallel_reduce (lclNumRows, f);
-          }
-          else {
-            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
-          }
-        }
-        else { // numVecs != 1 && ! constantStride
-          // FIXME (mfh 15 Jul 2014) This does a kernel launch for every
-          // column.  It might be better to have a kernel that does the
-          // work all at once.  On the other hand, we don't prioritize
-          // performance of MultiVector views of noncontiguous columns.
-          for (size_t k = 0; k < numVecs; ++k) {
-            const size_t X_col = constantStride ? k : whichVecs[k];
-            vec_view_type X_k = subview (X, ALL (), X_col);
-            norm_view_type norm_k = subview (theNorms, k);
+        else { // lclNumRows != 0
+          if (numVecs == 1) {
+            // Special case 1: The MultiVector only has a single column.
+            // The single-vector norm kernel may be more efficient.
+            const size_t ZERO = static_cast<size_t> (0);
+            vec_view_type X_k = subview (X, ALL (), ZERO);
+            norm_view_type norm_k = subview (theNorms, ZERO);
 
             if (whichNorm == IMPL_NORM_INF) {
               Kokkos::VecNormInfFunctor<vec_view_type,norm_view_type> f (X_k, norm_k);
@@ -1599,8 +1560,52 @@ namespace Tpetra {
             else {
               TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
             }
-          } // for k = each column
-        } // numVecs != 1 and ! constantStride
+          }
+          else if (constantStride) {
+            // Special case 2: The MultiVector has constant stride.
+            if (whichNorm == IMPL_NORM_INF) {
+              Kokkos::MultiVecNormInfFunctor<mv_view_type,norms_view_type> f (X, theNorms);
+              Kokkos::parallel_reduce (lclNumRows, f);
+            }
+            else if (whichNorm == IMPL_NORM_ONE) {
+              Kokkos::MultiVecNorm1Functor<mv_view_type,norms_view_type> f (X, theNorms);
+              Kokkos::parallel_reduce (lclNumRows, f);
+            }
+            else if (whichNorm == IMPL_NORM_TWO) {
+              KokkosBlas::nrm2_squared (theNorms, X);
+            }
+            else {
+              TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+            }
+          }
+          else { // numVecs != 1 && ! constantStride
+            // FIXME (mfh 15 Jul 2014) This does a kernel launch for every
+            // column.  It might be better to have a kernel that does the
+            // work all at once.  On the other hand, we don't prioritize
+            // performance of MultiVector views of noncontiguous columns.
+            for (size_t k = 0; k < numVecs; ++k) {
+              const size_t X_col = constantStride ? k : whichVecs[k];
+              vec_view_type X_k = subview (X, ALL (), X_col);
+              norm_view_type norm_k = subview (theNorms, k);
+
+              if (whichNorm == IMPL_NORM_INF) {
+                Kokkos::VecNormInfFunctor<vec_view_type,norm_view_type> f (X_k, norm_k);
+                Kokkos::parallel_reduce (lclNumRows, f);
+              }
+              else if (whichNorm == IMPL_NORM_ONE) {
+                Kokkos::VecNorm1Functor<vec_view_type,norm_view_type> f (X_k, norm_k);
+                Kokkos::parallel_reduce (lclNumRows, f);
+              }
+              else if (whichNorm == IMPL_NORM_TWO) {
+                Kokkos::VecNorm2SquaredFunctor<vec_view_type,norm_view_type> f (X_k, norm_k);
+                Kokkos::parallel_reduce (lclNumRows, f);
+              }
+              else {
+                TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+              }
+            } // for k = each column
+          } // numVecs != 1 and ! constantStride
+        }
       } // lclNumRows != 0
     }
 
