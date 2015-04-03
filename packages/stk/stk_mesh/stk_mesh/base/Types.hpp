@@ -218,8 +218,6 @@ struct RelationType
   {
     USES      = 0 ,
     USED_BY   = 1 ,
-    CHILD     = 2 ,
-    PARENT    = 3 ,
     EMBEDDED  = 0x00ff , // 4
     CONTACT   = 0x00ff , // 5
     AUXILIARY = 0x00ff ,
