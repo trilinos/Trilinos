@@ -288,6 +288,7 @@ std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> get_ordinal_an
     unsigned num_entities_of_sub_topology = elemTopology.num_sub_topology(to_rank);
     unsigned max_nodes_possible = 100;
     stk::mesh::EntityVector nodes_of_sub_topology(max_nodes_possible);
+    std::pair<bool, unsigned> result;
 
     for (unsigned i=0;i<num_entities_of_sub_topology;++i)
     {
@@ -296,7 +297,19 @@ std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> get_ordinal_an
         ThrowRequireMsg(num_nodes<=max_nodes_possible, "Program error. Exceeded expected array dimensions. Contact sierra-help for support.");
         nodes_of_sub_topology.resize(num_nodes);
         elemTopology.sub_topology_nodes(elemNodes, to_rank, i, nodes_of_sub_topology.begin());
-        std::pair<bool, unsigned> result = sub_topology.equivalent(nodes_of_sub_rank, nodes_of_sub_topology);
+        if (!elemTopology.is_shell())
+        {
+           result = sub_topology.equivalent(nodes_of_sub_rank, nodes_of_sub_topology);
+        }
+        else
+        {
+           result = sub_topology.equivalent(nodes_of_sub_rank, nodes_of_sub_topology);
+           if (result.first && result.second >= sub_topology.num_positive_permutations())
+           {
+        	   result.first = false;
+           }
+        }
+
         if (result.first == true)
         {
             ordinalAndPermutation.first = static_cast<stk::mesh::ConnectivityOrdinal>(i);
