@@ -77,6 +77,7 @@ benchmarkKokkos (std::ostream& out,
 
   RCP<Time> vecCreateTimer = getTimer ("Kokkos: Vector: Create");
   RCP<Time> vecFillTimer = getTimer ("Kokkos: Vector: Fill");
+  RCP<Time> vecNrm2Timer = getTimer ("Kokkos: Vector: Nrm2");
   RCP<Time> vecDotTimer = getTimer ("Kokkos: Vector: Dot");
 
   // Benchmark creation of a Vector.
@@ -94,6 +95,33 @@ benchmarkKokkos (std::ostream& out,
     TimeMonitor timeMon (*vecFillTimer);
     for (int k = 0; k < numTrials; ++k) {
       KokkosBlas::fill (x, 1.0);
+    }
+  }
+
+  // Benchmark computing the (square of the) 2-norm of a Vector.
+  typedef Kokkos::View<double*, Kokkos::LayoutLeft> norms_type;
+  norms_type norms ("norms", numCols);
+  {
+    TimeMonitor timeMon (*vecNrm2Timer);
+    for (int k = 0; k < numTrials; ++k) {
+      KokkosBlas::nrm2_squared (norms, x);
+    }
+  }
+
+  if (numTrials > 0 && numCols > 0) {
+    norms_type::HostMirror norms_h = Kokkos::create_mirror_view (norms);
+    Kokkos::deep_copy (norms_h, norms);
+
+    for (int j = 0; j < numCols; ++j) {
+      const double expectedResult = static_cast<double> (numRows);
+      if (norms_h(j) != expectedResult) {
+        out << "Kokkos 2-norm (squared) result is wrong!  Expected "
+            << expectedResult << " but got " << norms_h(j) << " instead."
+            << endl;
+        return false;
+      } else {
+         return true;
+      }
     }
   }
 
@@ -138,6 +166,7 @@ benchmarkRaw (std::ostream& out,
   using std::endl;
   RCP<Time> vecCreateTimer = getTimer ("Raw: Vector: Create");
   RCP<Time> vecFillTimer = getTimer ("Raw: Vector: Fill");
+  RCP<Time> vecNrm2Timer = getTimer ("Raw: Vector: Nrm2");
   RCP<Time> vecDotTimer = getTimer ("Raw: Vector: Dot");
 
   if (numTrials <= 0) {
@@ -171,6 +200,22 @@ benchmarkRaw (std::ostream& out,
     }
   }
 
+  // Benchmark computing the (square of the) 2-norm of a Vector.
+  double* norms = new double [numCols];
+  {
+    TimeMonitor timeMon (*vecNrm2Timer);
+    for (int k = 0; k < numTrials; ++k) {
+      for (int j = 0; j < numCols; ++j) {
+        double sum = 0.0;
+        double* x_j = x + numRows * j;
+        for (int i = 0; i < numRows; ++i) {
+          sum += x_j[i] * x_j[i];
+        }
+        norms[j] = sum;
+      }
+    }
+  }
+
   double* y = new double [numRows * numCols];
   for (int j = 0; j < numCols; ++j) {
     double* y_j = y + numRows * j;
@@ -197,6 +242,10 @@ benchmarkRaw (std::ostream& out,
         dots[j] = sum;
       }
     }
+  }
+  if (norms != NULL) {
+    delete [] norms;
+    norms = NULL;
   }
 
   if (x != NULL) {
