@@ -621,8 +621,6 @@ public:
 } // namespace Impl
 } // namespace Kokkos
 
-#ifdef KOKKOS_HAVE_CXX11
-
 namespace Kokkos {
 
 namespace Impl {
@@ -733,6 +731,8 @@ void parallel_reduce(const Impl::TeamThreadRangeBoundariesStruct<iType,Impl::Ser
   result = loop_boundaries.thread.team_reduce(result,Impl::JoinAdd<ValueType>());
 }
 
+#ifdef KOKKOS_HAVE_CXX11
+
 /** \brief  Intra-thread vector parallel_reduce. Executes lambda(iType i, ValueType & val) for each i=0..N-1.
  *
  * The range i=0..N-1 is mapped to all vector lanes of the the calling thread and a reduction of
@@ -755,6 +755,8 @@ void parallel_reduce(const Impl::TeamThreadRangeBoundariesStruct<iType,Impl::Ser
 
   init_result = loop_boundaries.thread.team_reduce(result,Impl::JoinLambdaAdapter<ValueType,JoinType>(join));
 }
+
+#endif // KOKKOS_HAVE_CXX11
 
 } //namespace Kokkos
 
@@ -873,7 +875,6 @@ void single(const Impl::ThreadSingleStruct<Impl::SerialTeamMember>& , const Func
   lambda(val);
 }
 }
-#endif // KOKKOS_HAVE_CXX11
 
 #endif // defined( KOKKOS_HAVE_SERIAL )
 #endif /* #define KOKKOS_SERIAL_HPP */
