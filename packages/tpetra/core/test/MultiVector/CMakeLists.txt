@@ -8,6 +8,19 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ${MAXNP}
   )
 
+# This test requires exactly 2 MPI processes.  It could be rewritten
+# so that it will run with more, but then the test would just waste
+# the remaining processes.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  MV_subViewSomeZeroRows
+  SOURCES
+    MV_subViewSomeZeroRows
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+  )
+
 # This test comes from zoltan2/test/temp/multivectorTest.cpp.  It
 # mimics the recursive bisection algorithm in Zoltan2, and times data
 # migration.
