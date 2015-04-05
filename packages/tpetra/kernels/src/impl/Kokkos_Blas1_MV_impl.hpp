@@ -1209,6 +1209,384 @@ struct Nrm2_MV<double*,
 };
 #endif // KOKKOS_HAVE_CUDA
 
+//
+// nrm1
+//
+
+/// \brief 1-norm functor for single vectors.
+///
+/// \tparam RV 0-D output View
+/// \tparam XV 1-D input View
+/// \tparam SizeType Index type.  Use int (32 bits) if possible.
+template<class RV, class XV, class SizeType = typename XV::size_type>
+struct V_Nrm1_Functor
+{
+  typedef typename XV::execution_space              execution_space;
+  typedef SizeType                                        size_type;
+  typedef typename XV::non_const_value_type             xvalue_type;
+  typedef Kokkos::Details::InnerProductSpaceTraits<xvalue_type> IPT;
+  typedef Kokkos::Details::ArithTraits<typename IPT::mag_type>   AT;
+  typedef typename IPT::mag_type                         value_type;
+
+  RV m_r;
+  XV m_x;
+
+  V_Nrm1_Functor (const RV& r, const XV& x) :
+    m_r (r), m_x (x)
+  {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const size_type& i, value_type& sum) const
+  {
+    sum += IPT::norm (m_x(i)); // absolute value
+  }
+
+  KOKKOS_INLINE_FUNCTION void init (value_type& update) const
+  {
+    update = AT::zero ();
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  join (volatile value_type& update,
+        const volatile value_type& source) const
+  {
+    update += source;
+  }
+
+  // On device, write the reduction result to the output View.
+  KOKKOS_INLINE_FUNCTION void final (const value_type& dst) const
+  {
+    m_r() = dst;
+  }
+};
+
+/// \brief 1-norm functor for multivectors.
+///
+/// \tparam RV 1-D output View
+/// \tparam XMV 2-D input View
+/// \tparam SizeType Index type.  Use int (32 bits) if possible.
+template<class RV, class XMV, class SizeType = typename XMV::size_type>
+struct MV_Nrm1_Functor {
+  typedef typename XMV::execution_space             execution_space;
+  typedef SizeType                                        size_type;
+  typedef typename XMV::non_const_value_type            xvalue_type;
+  typedef Kokkos::Details::InnerProductSpaceTraits<xvalue_type> IPT;
+  typedef Kokkos::Details::ArithTraits<typename IPT::mag_type>   AT;
+  typedef typename IPT::mag_type                       value_type[];
+
+  const size_type value_count;
+  RV norms_;
+  XMV X_;
+
+  MV_Nrm1_Functor (const RV& norms, const XMV& X) :
+    value_count (norms_.dimension_0 ()), norms_ (norms), X_ (X)
+  {}
+
+  KOKKOS_INLINE_FUNCTION void
+  operator() (const size_type& i, value_type sum) const
+  {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for (size_type k = 0; k < value_count; ++k) {
+      sum[k] += IPT::norm (X_(i,k)); // absolute value
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  init (value_type update) const
+  {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for (size_type k = 0; k < value_count; ++k) {
+      update[k] = AT::zero ();
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  join (volatile value_type update,
+        const volatile value_type source) const
+  {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for (size_type k = 0; k < value_count; ++k) {
+      update[k] += source[k];
+    }
+  }
+
+  // On device, write the reduction result to the output View.
+  KOKKOS_INLINE_FUNCTION void
+  final (const value_type dst) const
+  {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+    for (size_type k = 0; k < value_count; ++k) {
+      norms_(k) = dst[k];
+    }
+  }
+};
+
+//! Implementation of KokkosBlas::nrm1 for multivectors.
+template<class RT, class RL, class RD, class RM, class RS,
+         class XT, class XL, class XD, class XM, class XS>
+struct Nrm1_MV {
+  typedef Kokkos::View<RT,RL,RD,RM,RS> RV;
+  typedef Kokkos::View<XT,XL,XD,XM,XS> XMV;
+  typedef typename XMV::execution_space execution_space;
+  typedef typename XMV::size_type size_type;
+
+  /// \brief Compute the 1-norm(s) of the column(s) of the multivector
+  ///   (2-D View) X, and store result(s) in r.
+  static void nrm1 (const RV& r, const XMV& X)
+  {
+    const size_type numRows = X.dimension_0 ();
+    const size_type numCols = X.dimension_1 ();
+
+    // int is generally faster than size_t, but check for overflow first.
+    if (numRows < static_cast<size_type> (INT_MAX) &&
+        numRows * numCols < static_cast<size_type> (INT_MAX)) {
+      typedef MV_Nrm1_Functor<RV, XMV, int> functor_type;
+      Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
+      functor_type op (r, X);
+      Kokkos::parallel_reduce (policy, op);
+    }
+    else {
+      typedef MV_Nrm1_Functor<RV, XMV, int> functor_type;
+      Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows);
+      functor_type op (r, X);
+      Kokkos::parallel_reduce (policy, op);
+    }
+  }
+
+  //! Compute the 1-norm of X(:,X_col), and store result in r(0).
+  static void nrm1 (const RV& r, const XMV& X, const size_t X_col)
+  {
+    using Kokkos::ALL;
+    using Kokkos::subview;
+    typedef Kokkos::View<typename RV::value_type,
+      typename RV::array_layout,
+      typename RV::device_type,
+      typename RV::memory_traits,
+      typename RV::specialize> RV0D;
+    typedef Kokkos::View<typename XMV::const_value_type*,
+      typename XMV::array_layout,
+      typename XMV::device_type,
+      typename XMV::memory_traits,
+      typename XMV::specialize> XMV1D;
+
+    const size_type numRows = X.dimension_0 ();
+    const size_type numCols = X.dimension_1 ();
+
+    // int is generally faster than size_t, but check for overflow first.
+    if (numRows < static_cast<size_type> (INT_MAX) &&
+        numRows * numCols < static_cast<size_type> (INT_MAX)) {
+      typedef V_Nrm1_Functor<RV0D, XMV1D, int> functor_type;
+      Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
+      functor_type op (subview (r, 0), subview (X, ALL (), X_col));
+      Kokkos::parallel_reduce (policy, op);
+    }
+    else {
+      typedef V_Nrm1_Functor<RV0D, XMV1D, size_type> functor_type;
+      Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows);
+      functor_type op (subview (r, 0), subview (X, ALL (), X_col));
+      Kokkos::parallel_reduce (policy, op);
+    }
+  }
+};
+
+// Full specializations for cases of interest for Tpetra::MultiVector.
+//
+// Currently, we include specializations for Scalar = double,
+// LayoutLeft (which is what Tpetra::MultiVector uses at the moment),
+// and all execution spaces.  This may change in the future.  The
+// output 1-D View _always_ uses the execution space's default array
+// layout, which is what Tpetra::MultiVector wants for the output
+// argument of norm1().
+
+#ifdef KOKKOS_HAVE_SERIAL
+template<>
+struct Nrm1_MV<double*,
+               Kokkos::Serial::array_layout,
+               Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
+               Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+               Kokkos::Impl::ViewDefault,
+               const double**,
+               Kokkos::LayoutLeft,
+               Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
+               Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+               Kokkos::Impl::ViewDefault> {
+  typedef double* RT;
+  typedef Kokkos::Serial::array_layout RL;
+  typedef Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace> RD;
+  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> RM;
+  typedef Kokkos::Impl::ViewDefault RS;
+  typedef Kokkos::View<RT,RL,RD,RM,RS> RV;
+
+  typedef const double** XT;
+  typedef Kokkos::LayoutLeft XL;
+  typedef Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace> XD;
+  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> XM;
+  typedef Kokkos::Impl::ViewDefault XS;
+  typedef Kokkos::View<XT,XL,XD,XM,XS> XMV;
+
+  typedef XMV::execution_space execution_space;
+  typedef XMV::size_type size_type;
+
+  static void nrm1 (const RV& r, const XMV& X);
+  static void nrm1 (const RV& r, const XMV& X, const size_t X_col);
+};
+#endif // KOKKOS_HAVE_SERIAL
+
+#ifdef KOKKOS_HAVE_OPENMP
+template<>
+struct Nrm1_MV<double*,
+               Kokkos::OpenMP::array_layout,
+               Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
+               Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+               Kokkos::Impl::ViewDefault,
+               const double**,
+               Kokkos::LayoutLeft,
+               Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
+               Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+               Kokkos::Impl::ViewDefault> {
+  typedef double* RT;
+  typedef Kokkos::OpenMP::array_layout RL;
+  typedef Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace> RD;
+  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> RM;
+  typedef Kokkos::Impl::ViewDefault RS;
+  typedef Kokkos::View<RT,RL,RD,RM,RS> RV;
+
+  typedef const double** XT;
+  typedef Kokkos::LayoutLeft XL;
+  typedef Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace> XD;
+  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> XM;
+  typedef Kokkos::Impl::ViewDefault XS;
+  typedef Kokkos::View<XT,XL,XD,XM,XS> XMV;
+
+  typedef XMV::execution_space execution_space;
+  typedef XMV::size_type size_type;
+
+  static void nrm1 (const RV& r, const XMV& X);
+  static void nrm1 (const RV& r, const XMV& X, const size_t X_col);
+};
+#endif // KOKKOS_HAVE_OPENMP
+
+#ifdef KOKKOS_HAVE_PTHREAD
+template<>
+struct Nrm1_MV<double*,
+               Kokkos::Threads::array_layout,
+               Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
+               Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+               Kokkos::Impl::ViewDefault,
+               const double**,
+               Kokkos::LayoutLeft,
+               Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
+               Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+               Kokkos::Impl::ViewDefault> {
+  typedef double* RT;
+  typedef Kokkos::Threads::array_layout RL;
+  typedef Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace> RD;
+  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> RM;
+  typedef Kokkos::Impl::ViewDefault RS;
+  typedef Kokkos::View<RT,RL,RD,RM,RS> RV;
+
+  typedef const double** XT;
+  typedef Kokkos::LayoutLeft XL;
+  typedef Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace> XD;
+  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> XM;
+  typedef Kokkos::Impl::ViewDefault XS;
+  typedef Kokkos::View<XT,XL,XD,XM,XS> XMV;
+
+  typedef XMV::execution_space execution_space;
+  typedef XMV::size_type size_type;
+
+  static void nrm1 (const RV& r, const XMV& X);
+  static void nrm1 (const RV& r, const XMV& X, const size_t X_col);
+};
+#endif // KOKKOS_HAVE_PTHREAD
+
+#ifdef KOKKOS_HAVE_CUDA
+struct Nrm1_MV<double*,
+               Kokkos::Cuda::array_layout,
+               Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
+               Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+               Kokkos::Impl::ViewDefault,
+               const double**,
+               Kokkos::LayoutLeft,
+               Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
+               Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+               Kokkos::Impl::ViewDefault> {
+  typedef double* RT;
+  typedef Kokkos::Cuda::array_layout RL;
+  typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> RD;
+  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> RM;
+  typedef Kokkos::Impl::ViewDefault RS;
+  typedef Kokkos::View<RT,RL,RD,RM,RS> RV;
+
+  typedef const double** XT;
+  typedef Kokkos::LayoutLeft XL;
+  typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> XD;
+  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> XM;
+  typedef Kokkos::Impl::ViewDefault XS;
+  typedef Kokkos::View<XT,XL,XD,XM,XS> XMV;
+
+  typedef XMV::execution_space execution_space;
+  typedef XMV::size_type size_type;
+
+  static void nrm1 (const RV& r, const XMV& X);
+  static void nrm1 (const RV& r, const XMV& X, const size_t X_col);
+};
+#endif // KOKKOS_HAVE_CUDA
+
+#ifdef KOKKOS_HAVE_CUDA
+template<>
+struct Nrm1_MV<double*,
+               Kokkos::Cuda::array_layout,
+               Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
+               Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+               Kokkos::Impl::ViewDefault,
+               const double**,
+               Kokkos::LayoutLeft,
+               Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
+               Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+               Kokkos::Impl::ViewDefault> {
+  typedef double* RT;
+  typedef Kokkos::Cuda::array_layout RL;
+  typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace> RD;
+  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> RM;
+  typedef Kokkos::Impl::ViewDefault RS;
+  typedef Kokkos::View<RT,RL,RD,RM,RS> RV;
+
+  typedef const double** XT;
+  typedef Kokkos::LayoutLeft XL;
+  typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace> XD;
+  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> XM;
+  typedef Kokkos::Impl::ViewDefault XS;
+  typedef Kokkos::View<XT,XL,XD,XM,XS> XMV;
+
+  typedef XMV::execution_space execution_space;
+  typedef XMV::size_type size_type;
+
+  static void nrm1 (const RV& r, const XMV& X);
+  static void nrm1 (const RV& r, const XMV& X, const size_t X_col);
+};
+#endif // KOKKOS_HAVE_CUDA
+
 } // namespace Impl
 } // namespace KokkosBlas
 

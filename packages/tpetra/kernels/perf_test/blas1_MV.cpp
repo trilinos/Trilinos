@@ -80,6 +80,8 @@ benchmarkKokkos (std::ostream& out,
   RCP<Time> vecFillTimer = getTimer ("Kokkos: MV: Fill");
   RCP<Time> vecNrm2Timer = getTimer ("Kokkos: MV: Nrm2 (2-arg)");
   RCP<Time> vecNrm2Timer2 = getTimer ("Kokkos: MV: Nrm2 (3-arg)");
+  RCP<Time> vecNrm1Timer = getTimer ("Kokkos: MV: Nrm1 (2-arg)");
+  RCP<Time> vecNrm1Timer2 = getTimer ("Kokkos: MV: Nrm1 (3-arg)");
   RCP<Time> vecDotTimer = getTimer ("Kokkos: MV: Dot (3-arg)");
   RCP<Time> vecDotTimer2 = getTimer ("Kokkos: MV: Dot (5-arg)");
 
@@ -152,6 +154,55 @@ benchmarkKokkos (std::ostream& out,
     }
   }
 
+  // Benchmark computing the 1-norm of a MultiVector.
+  {
+    TimeMonitor timeMon (*vecNrm1Timer);
+    for (int k = 0; k < numTrials; ++k) {
+      KokkosBlas::nrm1 (norms, x);
+    }
+  }
+
+  if (numTrials > 0 && numCols > 0) {
+    norms_type::HostMirror norms_h = Kokkos::create_mirror_view (norms);
+    Kokkos::deep_copy (norms_h, norms);
+
+    for (int j = 0; j < numCols; ++j) {
+      const double expectedResult = static_cast<double> (numRows);
+      if (norms_h(j) != expectedResult) {
+        out << "Kokkos 1-norm result is wrong!  Expected " << expectedResult
+            << " but got " << norms_h(j) << " instead." << endl;
+        success = false;
+      }
+    }
+  }
+
+  // Benchmark computing the 1-norm of a MultiVector, using the
+  // 3-argument variant.
+  {
+    TimeMonitor timeMon (*vecNrm1Timer2);
+    for (int k = 0; k < numTrials; ++k) {
+      for (int j = 0; j < numCols; ++j) {
+        KokkosBlas::nrm1 (norms, x, j);
+      }
+    }
+  }
+
+  if (numTrials > 0 && numCols > 0) {
+    norms_type::HostMirror norms_h = Kokkos::create_mirror_view (norms);
+    Kokkos::deep_copy (norms_h, norms);
+
+    for (int j = 0; j < numCols; ++j) {
+      const double expectedResult = static_cast<double> (numRows);
+      if (norms_h(j) != expectedResult) {
+        out << "Kokkos 1-norm result (3-arg variant) is wrong!  "
+            << "Expected " << expectedResult << " but got " << norms_h(j)
+            << " instead." << endl;
+        success = false;
+      }
+    }
+  }
+
+
   mv_type y ("y", numRows, numCols);
   KokkosBlas::fill (y, -1.0);
 
@@ -219,6 +270,7 @@ benchmarkRaw (std::ostream& out,
   RCP<Time> vecCreateTimer = getTimer ("Raw: MV: Create");
   RCP<Time> vecFillTimer = getTimer ("Raw: MV: Fill");
   RCP<Time> vecNrm2Timer = getTimer ("Raw: MV: Nrm2");
+  RCP<Time> vecNrm1Timer = getTimer ("Raw: MV: Nrm1");
   RCP<Time> vecDotTimer = getTimer ("Raw: MV: Dot");
 
   if (numTrials <= 0) {
@@ -262,6 +314,22 @@ benchmarkRaw (std::ostream& out,
         double* x_j = x + numRows * j;
         for (int i = 0; i < numRows; ++i) {
           sum += x_j[i] * x_j[i];
+        }
+        norms[j] = sum;
+      }
+    }
+  }
+
+  // Benchmark computing the 1-norm of a MultiVector.
+  {
+    TimeMonitor timeMon (*vecNrm1Timer);
+    for (int k = 0; k < numTrials; ++k) {
+      for (int j = 0; j < numCols; ++j) {
+        double sum = 0.0;
+        double* x_j = x + numRows * j;
+        for (int i = 0; i < numRows; ++i) {
+          const double tmp = x_j[i] < 0.0 ? -x_j[i] : x_j[i];
+          sum += tmp;
         }
         norms[j] = sum;
       }
