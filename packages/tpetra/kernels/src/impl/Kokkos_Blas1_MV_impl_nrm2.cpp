@@ -113,6 +113,51 @@ nrm2_squared (const RV& r, const XMV& X)
   }
 }
 
+void
+Nrm2_MV<double*,
+        KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+        Kokkos::Impl::ViewDefault,
+        const double**,
+        Kokkos::LayoutLeft,
+        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+        Kokkos::Impl::ViewDefault>::
+nrm2_squared (const RV& r, const XMV& X, const size_t X_col)
+{
+  using Kokkos::ALL;
+  using Kokkos::subview;
+  typedef Kokkos::View<RV::value_type,
+    RV::array_layout,
+    RV::device_type,
+    RV::memory_traits,
+    RV::specialize> RV0D;
+  typedef Kokkos::View<XMV::const_value_type*,
+    XMV::array_layout,
+    XMV::device_type,
+    XMV::memory_traits,
+    XMV::specialize> XMV1D;
+
+  const size_type numRows = X.dimension_0 ();
+  const size_type numCols = X.dimension_1 ();
+
+  // int is generally faster than size_t, but check for overflow first.
+  if (numRows < static_cast<size_type> (INT_MAX) &&
+      numRows * numCols < static_cast<size_type> (INT_MAX)) {
+    typedef V_Nrm2Squared_Functor<RV0D, XMV1D, int> functor_type;
+    Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
+    functor_type op (subview (r, 0), subview (X, ALL (), X_col));
+    Kokkos::parallel_reduce (policy, op);
+  }
+  else {
+    typedef V_Nrm2Squared_Functor<RV0D, XMV1D, size_type> functor_type;
+    Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows);
+    functor_type op (subview (r, 0), subview (X, ALL (), X_col));
+    Kokkos::parallel_reduce (policy, op);
+  }
+}
+
 #undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
 #endif // KOKKOS_HAVE_SERIAL
@@ -181,6 +226,51 @@ nrm2_squared (const RV& r, const XMV& X)
       functor_type op (subview (r, j), subview (X, ALL (), j));
       Kokkos::parallel_reduce (policy, op);
     }
+  }
+}
+
+void
+Nrm2_MV<double*,
+        KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+        Kokkos::Impl::ViewDefault,
+        const double**,
+        Kokkos::LayoutLeft,
+        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+        Kokkos::Impl::ViewDefault>::
+nrm2_squared (const RV& r, const XMV& X, const size_t X_col)
+{
+  using Kokkos::ALL;
+  using Kokkos::subview;
+  typedef Kokkos::View<RV::value_type,
+    RV::array_layout,
+    RV::device_type,
+    RV::memory_traits,
+    RV::specialize> RV0D;
+  typedef Kokkos::View<XMV::const_value_type*,
+    XMV::array_layout,
+    XMV::device_type,
+    XMV::memory_traits,
+    XMV::specialize> XMV1D;
+
+  const size_type numRows = X.dimension_0 ();
+  const size_type numCols = X.dimension_1 ();
+
+  // int is generally faster than size_t, but check for overflow first.
+  if (numRows < static_cast<size_type> (INT_MAX) &&
+      numRows * numCols < static_cast<size_type> (INT_MAX)) {
+    typedef V_Nrm2Squared_Functor<RV0D, XMV1D, int> functor_type;
+    Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
+    functor_type op (subview (r, 0), subview (X, ALL (), X_col));
+    Kokkos::parallel_reduce (policy, op);
+  }
+  else {
+    typedef V_Nrm2Squared_Functor<RV0D, XMV1D, size_type> functor_type;
+    Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows);
+    functor_type op (subview (r, 0), subview (X, ALL (), X_col));
+    Kokkos::parallel_reduce (policy, op);
   }
 }
 
@@ -255,6 +345,51 @@ nrm2_squared (const RV& r, const XMV& X)
   }
 }
 
+void
+Nrm2_MV<double*,
+        KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+        Kokkos::Impl::ViewDefault,
+        const double**,
+        Kokkos::LayoutLeft,
+        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+        Kokkos::Impl::ViewDefault>::
+nrm2_squared (const RV& r, const XMV& X, const size_t X_col)
+{
+  using Kokkos::ALL;
+  using Kokkos::subview;
+  typedef Kokkos::View<RV::value_type,
+    RV::array_layout,
+    RV::device_type,
+    RV::memory_traits,
+    RV::specialize> RV0D;
+  typedef Kokkos::View<XMV::const_value_type*,
+    XMV::array_layout,
+    XMV::device_type,
+    XMV::memory_traits,
+    XMV::specialize> XMV1D;
+
+  const size_type numRows = X.dimension_0 ();
+  const size_type numCols = X.dimension_1 ();
+
+  // int is generally faster than size_t, but check for overflow first.
+  if (numRows < static_cast<size_type> (INT_MAX) &&
+      numRows * numCols < static_cast<size_type> (INT_MAX)) {
+    typedef V_Nrm2Squared_Functor<RV0D, XMV1D, int> functor_type;
+    Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
+    functor_type op (subview (r, 0), subview (X, ALL (), X_col));
+    Kokkos::parallel_reduce (policy, op);
+  }
+  else {
+    typedef V_Nrm2Squared_Functor<RV0D, XMV1D, size_type> functor_type;
+    Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows);
+    functor_type op (subview (r, 0), subview (X, ALL (), X_col));
+    Kokkos::parallel_reduce (policy, op);
+  }
+}
+
 #undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
 #endif // KOKKOS_HAVE_PTHREAD
@@ -326,6 +461,51 @@ nrm2_squared (const RV& r, const XMV& X)
   }
 }
 
+void
+Nrm2_MV<double*,
+        KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+        Kokkos::Impl::ViewDefault,
+        const double**,
+        Kokkos::LayoutLeft,
+        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+        Kokkos::Impl::ViewDefault>::
+nrm2_squared (const RV& r, const XMV& X, const size_t X_col)
+{
+  using Kokkos::ALL;
+  using Kokkos::subview;
+  typedef Kokkos::View<RV::value_type,
+    RV::array_layout,
+    RV::device_type,
+    RV::memory_traits,
+    RV::specialize> RV0D;
+  typedef Kokkos::View<XMV::const_value_type*,
+    XMV::array_layout,
+    XMV::device_type,
+    XMV::memory_traits,
+    XMV::specialize> XMV1D;
+
+  const size_type numRows = X.dimension_0 ();
+  const size_type numCols = X.dimension_1 ();
+
+  // int is generally faster than size_t, but check for overflow first.
+  if (numRows < static_cast<size_type> (INT_MAX) &&
+      numRows * numCols < static_cast<size_type> (INT_MAX)) {
+    typedef V_Nrm2Squared_Functor<RV0D, XMV1D, int> functor_type;
+    Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
+    functor_type op (subview (r, 0), subview (X, ALL (), X_col));
+    Kokkos::parallel_reduce (policy, op);
+  }
+  else {
+    typedef V_Nrm2Squared_Functor<RV0D, XMV1D, size_type> functor_type;
+    Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows);
+    functor_type op (subview (r, 0), subview (X, ALL (), X_col));
+    Kokkos::parallel_reduce (policy, op);
+  }
+}
+
 #undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
 #endif // KOKKOS_HAVE_CUDA
@@ -394,6 +574,51 @@ nrm2_squared (const RV& r, const XMV& X)
       functor_type op (subview (r, j), subview (X, ALL (), j));
       Kokkos::parallel_reduce (policy, op);
     }
+  }
+}
+
+void
+Nrm2_MV<double*,
+        KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+        Kokkos::Impl::ViewDefault,
+        const double**,
+        Kokkos::LayoutLeft,
+        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+        Kokkos::Impl::ViewDefault>::
+nrm2_squared (const RV& r, const XMV& X, const size_t X_col)
+{
+  using Kokkos::ALL;
+  using Kokkos::subview;
+  typedef Kokkos::View<RV::value_type,
+    RV::array_layout,
+    RV::device_type,
+    RV::memory_traits,
+    RV::specialize> RV0D;
+  typedef Kokkos::View<XMV::const_value_type*,
+    XMV::array_layout,
+    XMV::device_type,
+    XMV::memory_traits,
+    XMV::specialize> XMV1D;
+
+  const size_type numRows = X.dimension_0 ();
+  const size_type numCols = X.dimension_1 ();
+
+  // int is generally faster than size_t, but check for overflow first.
+  if (numRows < static_cast<size_type> (INT_MAX) &&
+      numRows * numCols < static_cast<size_type> (INT_MAX)) {
+    typedef V_Nrm2Squared_Functor<RV0D, XMV1D, int> functor_type;
+    Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
+    functor_type op (subview (r, 0), subview (X, ALL (), X_col));
+    Kokkos::parallel_reduce (policy, op);
+  }
+  else {
+    typedef V_Nrm2Squared_Functor<RV0D, XMV1D, size_type> functor_type;
+    Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows);
+    functor_type op (subview (r, 0), subview (X, ALL (), X_col));
+    Kokkos::parallel_reduce (policy, op);
   }
 }
 

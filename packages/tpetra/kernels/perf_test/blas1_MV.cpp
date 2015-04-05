@@ -74,10 +74,12 @@ benchmarkKokkos (std::ostream& out,
 {
   using std::endl;
   typedef Kokkos::View<double**, Kokkos::LayoutLeft> mv_type;
+  bool success = true;
 
   RCP<Time> vecCreateTimer = getTimer ("Kokkos: MV: Create");
   RCP<Time> vecFillTimer = getTimer ("Kokkos: MV: Fill");
-  RCP<Time> vecNrm2Timer = getTimer ("Kokkos: MV: Nrm2");
+  RCP<Time> vecNrm2Timer = getTimer ("Kokkos: MV: Nrm2 (2-arg)");
+  RCP<Time> vecNrm2Timer2 = getTimer ("Kokkos: MV: Nrm2 (3-arg)");
   RCP<Time> vecDotTimer = getTimer ("Kokkos: MV: Dot (3-arg)");
   RCP<Time> vecDotTimer2 = getTimer ("Kokkos: MV: Dot (5-arg)");
 
@@ -119,9 +121,33 @@ benchmarkKokkos (std::ostream& out,
         out << "Kokkos 2-norm (squared) result is wrong!  Expected "
             << expectedResult << " but got " << norms_h(j) << " instead."
             << endl;
-        return false;
-      } else {
-         return true;
+        success = false;
+      }
+    }
+  }
+
+  // Benchmark computing the (square of the) 2-norm of a MultiVector,
+  // using the 3-argument variant.
+  {
+    TimeMonitor timeMon (*vecNrm2Timer2);
+    for (int k = 0; k < numTrials; ++k) {
+      for (int j = 0; j < numCols; ++j) {
+        KokkosBlas::nrm2_squared (norms, x, j);
+      }
+    }
+  }
+
+  if (numTrials > 0 && numCols > 0) {
+    norms_type::HostMirror norms_h = Kokkos::create_mirror_view (norms);
+    Kokkos::deep_copy (norms_h, norms);
+
+    for (int j = 0; j < numCols; ++j) {
+      const double expectedResult = static_cast<double> (numRows);
+      if (norms_h(j) != expectedResult) {
+        out << "Kokkos 2-norm (squared) result (3-arg variant) is wrong!  "
+            << "Expected " << expectedResult << " but got " << norms_h(j)
+            << " instead." << endl;
+        success = false;
       }
     }
   }
@@ -148,9 +174,7 @@ benchmarkKokkos (std::ostream& out,
       if (dots_h(j) != expectedResult) {
         out << "Kokkos dot product result is wrong!  Expected " << expectedResult
             << " but got " << dots_h(j) << " instead." << endl;
-        return false;
-      } else {
-        return true;
+        success = false;
       }
     }
   }
@@ -173,17 +197,15 @@ benchmarkKokkos (std::ostream& out,
     for (int j = 0; j < numCols; ++j) {
       const double expectedResult = static_cast<double> (numRows) * -1.0;
       if (dots_h(j) != expectedResult) {
-        out << "Kokkos dot product result (using one-at-a-time kernel) is "
-            << "wrong!  Expected " << expectedResult << " but got " << dots_h(j)
+        out << "Kokkos dot product result (5-arg variant) is wrong!  "
+            << "Expected " << expectedResult << " but got " << dots_h(j)
             << " instead." << endl;
-        return false;
-      } else {
-        return true;
+        success = false;
       }
     }
   }
 
-  return true;
+  return success;
 }
 
 

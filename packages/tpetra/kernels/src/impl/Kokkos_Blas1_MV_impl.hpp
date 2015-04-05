@@ -988,8 +988,44 @@ struct Nrm2_MV {
     }
     else {
       typedef MV_Nrm2Squared_Right_FunctorVector<RV, XMV, size_type> functor_type;
-      Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
+      Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows);
       functor_type op (r, X);
+      Kokkos::parallel_reduce (policy, op);
+    }
+  }
+
+  /// \brief Compute the square of the 2-norm of X(:,X_col), and store
+  ///   result in r(0).
+  static void nrm2_squared (const RV& r, const XMV& X, const size_t X_col)
+  {
+    using Kokkos::ALL;
+    using Kokkos::subview;
+    typedef Kokkos::View<typename RV::value_type,
+      typename RV::array_layout,
+      typename RV::device_type,
+      typename RV::memory_traits,
+      typename RV::specialize> RV0D;
+    typedef Kokkos::View<typename XMV::const_value_type*,
+      typename XMV::array_layout,
+      typename XMV::device_type,
+      typename XMV::memory_traits,
+      typename XMV::specialize> XMV1D;
+
+    const size_type numRows = X.dimension_0 ();
+    const size_type numCols = X.dimension_1 ();
+
+    // int is generally faster than size_t, but check for overflow first.
+    if (numRows < static_cast<size_type> (INT_MAX) &&
+        numRows * numCols < static_cast<size_type> (INT_MAX)) {
+      typedef V_Nrm2Squared_Functor<RV0D, XMV1D, int> functor_type;
+      Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
+      functor_type op (subview (r, 0), subview (X, ALL (), X_col));
+      Kokkos::parallel_reduce (policy, op);
+    }
+    else {
+      typedef V_Nrm2Squared_Functor<RV0D, XMV1D, size_type> functor_type;
+      Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows);
+      functor_type op (subview (r, 0), subview (X, ALL (), X_col));
       Kokkos::parallel_reduce (policy, op);
     }
   }
@@ -1034,6 +1070,7 @@ struct Nrm2_MV<double*,
   typedef XMV::size_type size_type;
 
   static void nrm2_squared (const RV& r, const XMV& X);
+  static void nrm2_squared (const RV& r, const XMV& X, const size_t X_col);
 };
 #endif // KOKKOS_HAVE_SERIAL
 
@@ -1067,6 +1104,7 @@ struct Nrm2_MV<double*,
   typedef XMV::size_type size_type;
 
   static void nrm2_squared (const RV& r, const XMV& X);
+  static void nrm2_squared (const RV& r, const XMV& X, const size_t X_col);
 };
 #endif // KOKKOS_HAVE_OPENMP
 
@@ -1100,6 +1138,7 @@ struct Nrm2_MV<double*,
   typedef XMV::size_type size_type;
 
   static void nrm2_squared (const RV& r, const XMV& X);
+  static void nrm2_squared (const RV& r, const XMV& X, const size_t X_col);
 };
 #endif // KOKKOS_HAVE_PTHREAD
 
@@ -1132,6 +1171,7 @@ struct Nrm2_MV<double*,
   typedef XMV::size_type size_type;
 
   static void nrm2_squared (const RV& r, const XMV& X);
+  static void nrm2_squared (const RV& r, const XMV& X, const size_t X_col);
 };
 #endif // KOKKOS_HAVE_CUDA
 
@@ -1165,6 +1205,7 @@ struct Nrm2_MV<double*,
   typedef XMV::size_type size_type;
 
   static void nrm2_squared (const RV& r, const XMV& X);
+  static void nrm2_squared (const RV& r, const XMV& X, const size_t X_col);
 };
 #endif // KOKKOS_HAVE_CUDA
 
