@@ -664,6 +664,166 @@ nrm1 (const RV& norms, const XMV& X, const size_t X_col)
       >::nrm1 (norms_internal, X_internal, X_col);
 }
 
+/// \brief Compute the inf-norms of the columns of the multivector
+///   (2-D View) X.
+///
+/// \tparam RV 1-D output View
+/// \tparam XMV 2-D input View
+///
+/// \param norms [out] Output 1-D View to which to write results.
+/// \param X [in] Input 2-D View.
+template<class RV, class XMV>
+void
+nrmInf (const RV& norms, const XMV& X)
+{
+#ifdef KOKKOS_HAVE_CXX11
+  // RV, XMV, and YMV must be Kokkos::View specializations.
+  static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::nrmInf (MV, 2-arg): "
+                 "The output argument is not a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::nrmInf (MV, 2-arg): "
+                 "The first input argument X is not a Kokkos::View.");
+  // RV must be nonconst (else it can't be an output argument).
+  static_assert (Kokkos::Impl::is_same<typename RV::value_type, typename RV::non_const_value_type>::value,
+                 "KokkosBlas::nrmInf (MV, 2-arg): The output argument is const.  "
+                 "It must be nonconst, because it is an output argument "
+                 "(we have to be able to write to its entries).");
+  // RV must have rank 1, and XMV must have rank 2.
+  static_assert (RV::rank == 1, "KokkosBlas::nrmInf (MV, 2-arg): "
+                 "The output argument must have rank 1.");
+  static_assert (XMV::rank == 2, "KokkosBlas::nrmInf (MV, 2-arg): "
+                 "The first input argument x must have rank 2.");
+#else
+  // We prefer to use C++11 static_assert, because it doesn't give
+  // "unused typedef" warnings, like the constructs below do.
+  typedef typename
+    Kokkos::Impl::StaticAssert<Kokkos::Impl::is_view<RV>::value>::type RV_is_not_Kokkos_View;
+  typedef typename
+    Kokkos::Impl::StaticAssert<Kokkos::Impl::is_view<XMV>::value>::type XMV_is_not_Kokkos_View;
+  typedef typename
+    Kokkos::Impl::StaticAssert<Kokkos::Impl::is_same<typename RV::value_type,
+      typename RV::non_const_value_type>::value>::type RV_is_const;
+  typedef typename
+    Kokkos::Impl::StaticAssert<RV::rank == 1 >::type Blas1_NrmInf_RV_rank_not_1;
+  typedef typename
+    Kokkos::Impl::StaticAssert<XMV::rank == 2 >::type Blas1_NrmInf_XMV_rank_not_2;
+#endif // KOKKOS_HAVE_CXX11
+
+  // Check compatibility of dimensions at run time.
+  if (norms.dimension_0 () != X.dimension_1 ()) {
+    std::ostringstream os;
+    os << "KokkosBlas::nrmInf (MV, 2-arg): Dimensions do not match: "
+       << "norms: " << norms.dimension_0 () << " x 1"
+       << ", X: " << X.dimension_0 () << " x " << X.dimension_1 ();
+    Kokkos::Impl::throw_runtime_exception (os.str ());
+  }
+
+  // Any View can be assigned to an unmanaged View, and it's safe to
+  // use them here.
+  typedef Kokkos::View<typename RV::non_const_value_type*,
+    typename RV::array_layout,
+    typename RV::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    typename RV::specialize> RV_Internal;
+  typedef Kokkos::View<typename XMV::const_value_type**,
+    typename XMV::array_layout,
+    typename XMV::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    typename XMV::specialize> XMV_Internal;
+
+  RV_Internal norms_internal = norms;
+  XMV_Internal X_internal = X;
+
+  Impl::NrmInf_MV<
+    typename RV_Internal::value_type*,
+    typename RV_Internal::array_layout,
+    typename RV_Internal::device_type,
+    typename RV_Internal::memory_traits,
+    typename RV_Internal::specialize,
+    typename XMV_Internal::value_type**,
+    typename XMV_Internal::array_layout,
+    typename XMV_Internal::device_type,
+    typename XMV_Internal::memory_traits,
+    typename XMV_Internal::specialize
+      >::nrmInf (norms_internal, X_internal);
+}
+
+/// \brief Compute the inf-norm of X(:,X_col), and store the result in
+///   norms(0).
+///
+/// \tparam RV 1-D output View
+/// \tparam XMV 2-D input View
+///
+/// \param norms [out] Output 1-D View to which to write results.
+/// \param X [in] Input 2-D View.
+/// \param X_col [i] Column of X to process.
+template<class RV, class XMV>
+void
+nrmInf (const RV& norms, const XMV& X, const size_t X_col)
+{
+#ifdef KOKKOS_HAVE_CXX11
+  // RV, XMV, and YMV must be Kokkos::View specializations.
+  static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::nrmInf "
+                 "(MV, 3-arg): The output argument is not a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::nrmInf "
+                 "(MV, 3-arg): The first input argument X is not a "
+                 "Kokkos::View.");
+  // RV must be nonconst (else it can't be an output argument).
+  static_assert (Kokkos::Impl::is_same<typename RV::value_type,
+                   typename RV::non_const_value_type>::value,
+                 "KokkosBlas::nrmInf (MV, 3-arg): The output argument "
+                 "is const.  It must be nonconst, because it is an output "
+                 "argument (we have to be able to write to its entries).");
+  // RV must have rank 1, and XMV must have rank 2.
+  static_assert (RV::rank == 1, "KokkosBlas::nrmInf (MV, 3-arg): "
+                 "The output argument must have rank 1.");
+  static_assert (XMV::rank == 2, "KokkosBlas::nrmInf (MV, 3-arg): "
+                 "The first input argument x must have rank 2.");
+#else
+  // We prefer to use C++11 static_assert, because it doesn't give
+  // "unused typedef" warnings, like the constructs below do.
+  typedef typename
+    Kokkos::Impl::StaticAssert<Kokkos::Impl::is_view<RV>::value>::type RV_is_not_Kokkos_View;
+  typedef typename
+    Kokkos::Impl::StaticAssert<Kokkos::Impl::is_view<XMV>::value>::type XMV_is_not_Kokkos_View;
+  typedef typename
+    Kokkos::Impl::StaticAssert<Kokkos::Impl::is_same<typename RV::value_type,
+      typename RV::non_const_value_type>::value>::type RV_is_const;
+  typedef typename
+    Kokkos::Impl::StaticAssert<RV::rank == 1 >::type Blas1_NrmInf_RV_rank_not_1;
+  typedef typename
+    Kokkos::Impl::StaticAssert<XMV::rank == 2 >::type Blas1_NrmInf_XMV_rank_not_2;
+#endif // KOKKOS_HAVE_CXX11
+
+  // Any View can be assigned to an unmanaged View, and it's safe to
+  // use them here.
+  typedef Kokkos::View<typename RV::non_const_value_type*,
+    typename RV::array_layout,
+    typename RV::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    typename RV::specialize> RV_Internal;
+  typedef Kokkos::View<typename XMV::const_value_type**,
+    typename XMV::array_layout,
+    typename XMV::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    typename XMV::specialize> XMV_Internal;
+
+  RV_Internal norms_internal = norms;
+  XMV_Internal X_internal = X;
+
+  Impl::NrmInf_MV<
+    typename RV_Internal::value_type*,
+    typename RV_Internal::array_layout,
+    typename RV_Internal::device_type,
+    typename RV_Internal::memory_traits,
+    typename RV_Internal::specialize,
+    typename XMV_Internal::value_type**,
+    typename XMV_Internal::array_layout,
+    typename XMV_Internal::device_type,
+    typename XMV_Internal::memory_traits,
+    typename XMV_Internal::specialize
+      >::nrmInf (norms_internal, X_internal, X_col);
+}
+
 } // namespace KokkosBlas
 
 #endif // KOKKOS_BLAS1_MV_HPP_

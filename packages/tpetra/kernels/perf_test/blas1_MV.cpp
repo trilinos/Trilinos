@@ -84,6 +84,8 @@ benchmarkKokkos (std::ostream& out,
   RCP<Time> vecNrm1Timer2 = getTimer ("Kokkos: MV: Nrm1 (3-arg)");
   RCP<Time> vecDotTimer = getTimer ("Kokkos: MV: Dot (3-arg)");
   RCP<Time> vecDotTimer2 = getTimer ("Kokkos: MV: Dot (5-arg)");
+  RCP<Time> vecNrmInfTimer = getTimer ("Kokkos: MV: NrmInf (2-arg)");
+  RCP<Time> vecNrmInfTimer2 = getTimer ("Kokkos: MV: NrmInf (3-arg)");
 
   // Benchmark creation of a MultiVector.
   mv_type x;
@@ -254,6 +256,54 @@ benchmarkKokkos (std::ostream& out,
     }
   }
 
+  // Benchmark computing the inf-norm of a MultiVector.
+  {
+    TimeMonitor timeMon (*vecNrmInfTimer);
+    for (int k = 0; k < numTrials; ++k) {
+      KokkosBlas::nrmInf (norms, x);
+    }
+  }
+
+  if (numTrials > 0 && numCols > 0) {
+    norms_type::HostMirror norms_h = Kokkos::create_mirror_view (norms);
+    Kokkos::deep_copy (norms_h, norms);
+
+    for (int j = 0; j < numCols; ++j) {
+      const double expectedResult = 1.0;
+      if (norms_h(j) != expectedResult) {
+        out << "Kokkos inf-norm result is wrong!  Expected " << expectedResult
+            << " but got " << norms_h(j) << " instead." << endl;
+        success = false;
+      }
+    }
+  }
+
+  // Benchmark computing the inf-norm of a MultiVector, using the
+  // 3-argument variant.
+  {
+    TimeMonitor timeMon (*vecNrmInfTimer2);
+    for (int k = 0; k < numTrials; ++k) {
+      for (int j = 0; j < numCols; ++j) {
+        KokkosBlas::nrmInf (norms, x, j);
+      }
+    }
+  }
+
+  if (numTrials > 0 && numCols > 0) {
+    norms_type::HostMirror norms_h = Kokkos::create_mirror_view (norms);
+    Kokkos::deep_copy (norms_h, norms);
+
+    for (int j = 0; j < numCols; ++j) {
+      const double expectedResult = 1.0;
+      if (norms_h(j) != expectedResult) {
+        out << "Kokkos inf-norm result (3-arg variant) is wrong!  "
+            << "Expected " << expectedResult << " but got " << norms_h(j)
+            << " instead." << endl;
+        success = false;
+      }
+    }
+  }
+
   return success;
 }
 
@@ -270,6 +320,7 @@ benchmarkRaw (std::ostream& out,
   RCP<Time> vecNrm2Timer = getTimer ("Raw: MV: Nrm2");
   RCP<Time> vecNrm1Timer = getTimer ("Raw: MV: Nrm1");
   RCP<Time> vecDotTimer = getTimer ("Raw: MV: Dot");
+  RCP<Time> vecNrmInfTimer = getTimer ("Raw: MV: NrmInf");
   bool success = true;
 
   if (numTrials <= 0) {
@@ -331,6 +382,24 @@ benchmarkRaw (std::ostream& out,
           sum += tmp;
         }
         norms[j] = sum;
+      }
+    }
+  }
+
+  // Benchmark computing the inf-norm of a MultiVector.
+  {
+    TimeMonitor timeMon (*vecNrmInfTimer);
+    for (int k = 0; k < numTrials; ++k) {
+      for (int j = 0; j < numCols; ++j) {
+        double norm = 0.0;
+        double* x_j = x + numRows * j;
+        for (int i = 0; i < numRows; ++i) {
+          const double tmp = x_j[i];
+          if (norm < tmp) {
+            norm = tmp;
+          }
+        }
+        norms[j] = norm;
       }
     }
   }
