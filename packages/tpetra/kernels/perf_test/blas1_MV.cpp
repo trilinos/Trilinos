@@ -202,11 +202,9 @@ benchmarkKokkos (std::ostream& out,
     }
   }
 
-
+  // Benchmark computing the dot product of two MultiVectors.
   mv_type y ("y", numRows, numCols);
   KokkosBlas::fill (y, -1.0);
-
-  // Benchmark computing the dot product of two MultiVectors.
   typedef Kokkos::View<double*, Kokkos::LayoutLeft> dots_type;
   dots_type dots ("dots", numCols);
   {
@@ -272,9 +270,10 @@ benchmarkRaw (std::ostream& out,
   RCP<Time> vecNrm2Timer = getTimer ("Raw: MV: Nrm2");
   RCP<Time> vecNrm1Timer = getTimer ("Raw: MV: Nrm1");
   RCP<Time> vecDotTimer = getTimer ("Raw: MV: Dot");
+  bool success = true;
 
   if (numTrials <= 0) {
-    return true; // trivially
+    return success; // trivial success
   }
 
   // Benchmark creation of a MultiVector.
@@ -336,6 +335,7 @@ benchmarkRaw (std::ostream& out,
     }
   }
 
+  // Benchmark computing the dot product of two MultiVectors.
   double* y = new double [numRows * numCols];
   for (int j = 0; j < numCols; ++j) {
     double* y_j = y + numRows * j;
@@ -343,8 +343,6 @@ benchmarkRaw (std::ostream& out,
       y_j[i] = -1.0;
     }
   }
-
-  // Benchmark computing the dot product of two MultiVectors.
   double* dots = new double [numCols];
   for (int j = 0; j < numCols; ++j) {
     dots[j] = 0.0;
@@ -378,7 +376,7 @@ benchmarkRaw (std::ostream& out,
   }
 
   if (numTrials == 0) {
-    return true; // trivially
+    return success;
   }
   else { // numTrials > 0
     const double expectedResult = static_cast<double> (numRows) * -1.0;
@@ -388,14 +386,15 @@ benchmarkRaw (std::ostream& out,
       if (dots != NULL) {
         delete [] dots;
       }
-      return false;
+      success = false;
     } else {
       if (dots != NULL) {
         delete [] dots;
       }
-      return true;
     }
   }
+
+  return success;
 }
 
 
