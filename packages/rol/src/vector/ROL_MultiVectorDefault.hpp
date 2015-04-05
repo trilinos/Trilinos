@@ -90,16 +90,28 @@ class MultiVectorDefault : public MultiVector<Real> {
         ~MultiVectorDefault() {}
 
         // Make a new MultiVector of the same dimensions 
-        PMV clone() {
+        PMV clone() const {
             APV x(numVectors_);
             for(int i=0;i<numVectors_;++i) {
                 x[i] = mvec_[i]->clone();
             }    
             return Teuchos::rcp(new MultiVectorDefault<Real>(x));
         } 
+ 
+       // Make a new MultiVector of specified dimension
+        PMV clone( const int numvecs ) const {
+            APV x(numvecs);
+            for(int i=0;i<numvecs;++i) {
+                x[i] = mvec_[i]->clone();
+            }    
+            return Teuchos::rcp(new MultiVectorDefault<Real>(x));
+        } 
+
+
+
 
         // Make a deep copy of this MultiVector
-        PMV deepCopy() {
+        PMV deepCopy() const {
             APV x(numVectors_);
             for(int i=0;i<numVectors_;++i) {
                 x[i] = mvec_[i]->clone();
@@ -109,7 +121,7 @@ class MultiVectorDefault : public MultiVector<Real> {
         }
 
         // Make a deep copy specified vectors in the MultiVector
-        PMV deepCopy(const std::vector<int> &index) {
+        PMV deepCopy(const std::vector<int> &index) const {
             int n = index.size();
             APV x(n);
             for(int i=0;i<n;++i) {
@@ -132,7 +144,7 @@ class MultiVectorDefault : public MultiVector<Real> {
         } 
 
         // Make a const shallow copy specified vectors in the MultiVector
-        const PMV shallowCopyConst(const std::vector<int> &index) {
+        const PMV shallowCopyConst(const std::vector<int> &index) const {
             int n = index.size();
             APV x(n);
             for(int i=0;i<n;++i) {
