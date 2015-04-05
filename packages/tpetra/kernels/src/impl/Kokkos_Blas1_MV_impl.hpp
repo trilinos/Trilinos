@@ -67,8 +67,8 @@ struct V_Dot_Functor
   typedef typename IPT::dot_type                         value_type;
 
   RV m_r;
-  typename XV::const_type m_x;
-  typename YV::const_type m_y;
+  XV m_x;
+  YV m_y;
 
   V_Dot_Functor (const RV& r, const XV& x, const YV& y) :
     m_r (r), m_x (x), m_y (y)
@@ -380,6 +380,38 @@ struct Dot_MV {
       } // switch
     } // if-else
   }
+
+  /// \brief Compute the dot product of X(:,X_col) and Y(:,Y_col), and
+  ///   store result in r(0).
+  static void
+  dot (const RV& r, const XMV& X, const size_t X_col,
+       const YMV& Y, const size_t Y_col)
+  {
+    // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
+    using Kokkos::ALL;
+    using Kokkos::subview;
+    typedef Kokkos::View<typename RV::value_type, typename RV::array_layout,
+      typename RV::device_type, typename RV::memory_traits,
+      typename RV::specialize> RV0D;
+    typedef Kokkos::View<typename XMV::const_value_type*, XL, XD, XM, XS> XMV1D;
+    typedef Kokkos::View<typename YMV::const_value_type*, YL, YD, YM, YS> YMV1D;
+
+    const size_type numRows = X.dimension_0 ();
+    const size_type numCols = X.dimension_1 ();
+    if (numRows < static_cast<size_type> (INT_MAX) &&
+        numRows * numCols < static_cast<size_type> (INT_MAX)) {
+      typedef V_Dot_Functor<RV0D, XMV1D, YMV1D, int> op_type;
+      op_type op (subview (r, 0), subview (X, ALL (), X_col),
+                  subview (Y, ALL (), Y_col));
+      Kokkos::parallel_reduce (numRows, op);
+    }
+    else {
+      typedef V_Dot_Functor<RV0D, XMV1D, YMV1D, size_type> op_type;
+      op_type op (subview (r, 0), subview (X, ALL (), X_col),
+                  subview (Y, ALL (), Y_col));
+      Kokkos::parallel_reduce (numRows, op);
+    }
+  }
 };
 
 // Full specializations for cases of interest for Tpetra::MultiVector.
@@ -423,6 +455,10 @@ struct Dot_MV<double*,
   typedef XMV::size_type size_type;
 
   static void dot (const RV& r, const XMV& X, const YMV& Y);
+
+  static void
+  dot (const RV& r, const XMV& X, const size_t X_col,
+       const YMV& Y, const size_t Y_col);
 };
 #endif // KOKKOS_HAVE_SERIAL
 
@@ -461,6 +497,10 @@ struct Dot_MV<double*,
   typedef XMV::size_type size_type;
 
   static void dot (const RV& r, const XMV& X, const YMV& Y);
+
+  static void
+  dot (const RV& r, const XMV& X, const size_t X_col,
+       const YMV& Y, const size_t Y_col);
 };
 #endif // KOKKOS_HAVE_OPENMP
 
@@ -499,6 +539,10 @@ struct Dot_MV<double*,
   typedef XMV::size_type size_type;
 
   static void dot (const RV& r, const XMV& X, const YMV& Y);
+
+  static void
+  dot (const RV& r, const XMV& X, const size_t X_col,
+       const YMV& Y, const size_t Y_col);
 };
 #endif // KOKKOS_HAVE_PTHREAD
 
@@ -537,6 +581,10 @@ struct Dot_MV<double*,
   typedef XMV::size_type size_type;
 
   static void dot (const RV& r, const XMV& X, const YMV& Y);
+
+  static void
+  dot (const RV& r, const XMV& X, const size_t X_col,
+       const YMV& Y, const size_t Y_col);
 };
 #endif // KOKKOS_HAVE_CUDA
 
@@ -575,6 +623,10 @@ struct Dot_MV<double*,
   typedef XMV::size_type size_type;
 
   static void dot (const RV& r, const XMV& X, const YMV& Y);
+
+  static void
+  dot (const RV& r, const XMV& X, const size_t X_col,
+       const YMV& Y, const size_t Y_col);
 };
 #endif // KOKKOS_HAVE_CUDA
 

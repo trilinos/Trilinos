@@ -78,7 +78,8 @@ benchmarkKokkos (std::ostream& out,
   RCP<Time> vecCreateTimer = getTimer ("Kokkos: MV: Create");
   RCP<Time> vecFillTimer = getTimer ("Kokkos: MV: Fill");
   RCP<Time> vecNrm2Timer = getTimer ("Kokkos: MV: Nrm2");
-  RCP<Time> vecDotTimer = getTimer ("Kokkos: MV: Dot");
+  RCP<Time> vecDotTimer = getTimer ("Kokkos: MV: Dot (3-arg)");
+  RCP<Time> vecDotTimer2 = getTimer ("Kokkos: MV: Dot (5-arg)");
 
   // Benchmark creation of a MultiVector.
   mv_type x;
@@ -128,7 +129,7 @@ benchmarkKokkos (std::ostream& out,
   mv_type y ("y", numRows, numCols);
   KokkosBlas::fill (y, -1.0);
 
-  // Benchmark computing the dot product of two Vectors.
+  // Benchmark computing the dot product of two MultiVectors.
   typedef Kokkos::View<double*, Kokkos::LayoutLeft> dots_type;
   dots_type dots ("dots", numCols);
   {
@@ -149,10 +150,39 @@ benchmarkKokkos (std::ostream& out,
             << " but got " << dots_h(j) << " instead." << endl;
         return false;
       } else {
-         return true;
+        return true;
       }
     }
   }
+
+  // Benchmark computing the dot product of two MultiVectors,
+  // using the variant that selects a column at a time.
+  {
+    TimeMonitor timeMon (*vecDotTimer2);
+    for (int k = 0; k < numTrials; ++k) {
+      for (int j = 0; j < numCols; ++j) {
+        KokkosBlas::dot (dots, x, j, y, j);
+      }
+    }
+  }
+
+  if (numTrials > 0 && numCols > 0) {
+    dots_type::HostMirror dots_h = Kokkos::create_mirror_view (dots);
+    Kokkos::deep_copy (dots_h, dots);
+
+    for (int j = 0; j < numCols; ++j) {
+      const double expectedResult = static_cast<double> (numRows) * -1.0;
+      if (dots_h(j) != expectedResult) {
+        out << "Kokkos dot product result (using one-at-a-time kernel) is "
+            << "wrong!  Expected " << expectedResult << " but got " << dots_h(j)
+            << " instead." << endl;
+        return false;
+      } else {
+        return true;
+      }
+    }
+  }
+
   return true;
 }
 
@@ -224,7 +254,7 @@ benchmarkRaw (std::ostream& out,
     }
   }
 
-  // Benchmark computing the dot product of two Vectors.
+  // Benchmark computing the dot product of two MultiVectors.
   double* dots = new double [numCols];
   for (int j = 0; j < numCols; ++j) {
     dots[j] = 0.0;

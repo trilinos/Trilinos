@@ -113,6 +113,51 @@ dot (const RV& r, const XMV& X, const XMV& Y)
   }
 }
 
+void
+Dot_MV<double*,
+       KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault>::
+dot (const RV& r, const XMV& X, const size_t X_col,
+     const XMV& Y, const size_t Y_col)
+{
+  // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
+  using Kokkos::ALL;
+  using Kokkos::subview;
+  typedef Kokkos::View<RV::value_type, RV::array_layout,
+    RV::device_type, RV::memory_traits, RV::specialize> RV0D;
+  typedef Kokkos::View<XMV::const_value_type*, XMV::array_layout, XMV::device_type, XMV::memory_traits, XMV::specialize> XMV1D;
+  typedef Kokkos::View<YMV::const_value_type*, YMV::array_layout, YMV::device_type, YMV::memory_traits, YMV::specialize> YMV1D;
+
+  const size_type numRows = X.dimension_0 ();
+  const size_type numCols = X.dimension_1 ();
+  if (numRows < static_cast<size_type> (INT_MAX) &&
+      numRows * numCols < static_cast<size_type> (INT_MAX)) {
+    typedef V_Dot_Functor<RV0D, XMV1D, YMV1D, int> op_type;
+    op_type op (subview (r, 0), subview (X, ALL (), X_col),
+                subview (Y, ALL (), Y_col));
+    Kokkos::parallel_reduce (numRows, op);
+  }
+  else {
+    typedef V_Dot_Functor<RV0D, XMV1D, YMV1D, size_type> op_type;
+    op_type op (subview (r, 0), subview (X, ALL (), X_col),
+                subview (Y, ALL (), Y_col));
+    Kokkos::parallel_reduce (numRows, op);
+  }
+}
+
+
 #undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
 #endif // KOKKOS_HAVE_SERIAL
@@ -181,6 +226,50 @@ dot (const RV& r, const XMV& X, const XMV& Y)
       Kokkos::parallel_reduce (policy, op, unusedResult);
       (void) unusedResult;
     }
+  }
+}
+
+void
+Dot_MV<double*,
+       KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault>::
+dot (const RV& r, const XMV& X, const size_t X_col,
+     const XMV& Y, const size_t Y_col)
+{
+  // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
+  using Kokkos::ALL;
+  using Kokkos::subview;
+  typedef Kokkos::View<RV::value_type, RV::array_layout,
+    RV::device_type, RV::memory_traits, RV::specialize> RV0D;
+  typedef Kokkos::View<XMV::const_value_type*, XMV::array_layout, XMV::device_type, XMV::memory_traits, XMV::specialize> XMV1D;
+  typedef Kokkos::View<YMV::const_value_type*, YMV::array_layout, YMV::device_type, YMV::memory_traits, YMV::specialize> YMV1D;
+
+  const size_type numRows = X.dimension_0 ();
+  const size_type numCols = X.dimension_1 ();
+  if (numRows < static_cast<size_type> (INT_MAX) &&
+      numRows * numCols < static_cast<size_type> (INT_MAX)) {
+    typedef V_Dot_Functor<RV0D, XMV1D, YMV1D, int> op_type;
+    op_type op (subview (r, 0), subview (X, ALL (), X_col),
+                subview (Y, ALL (), Y_col));
+    Kokkos::parallel_reduce (numRows, op);
+  }
+  else {
+    typedef V_Dot_Functor<RV0D, XMV1D, YMV1D, size_type> op_type;
+    op_type op (subview (r, 0), subview (X, ALL (), X_col),
+                subview (Y, ALL (), Y_col));
+    Kokkos::parallel_reduce (numRows, op);
   }
 }
 
@@ -255,6 +344,50 @@ dot (const RV& r, const XMV& X, const XMV& Y)
   }
 }
 
+void
+Dot_MV<double*,
+       KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault>::
+dot (const RV& r, const XMV& X, const size_t X_col,
+     const XMV& Y, const size_t Y_col)
+{
+  // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
+  using Kokkos::ALL;
+  using Kokkos::subview;
+  typedef Kokkos::View<RV::value_type, RV::array_layout,
+    RV::device_type, RV::memory_traits, RV::specialize> RV0D;
+  typedef Kokkos::View<XMV::const_value_type*, XMV::array_layout, XMV::device_type, XMV::memory_traits, XMV::specialize> XMV1D;
+  typedef Kokkos::View<YMV::const_value_type*, YMV::array_layout, YMV::device_type, YMV::memory_traits, YMV::specialize> YMV1D;
+
+  const size_type numRows = X.dimension_0 ();
+  const size_type numCols = X.dimension_1 ();
+  if (numRows < static_cast<size_type> (INT_MAX) &&
+      numRows * numCols < static_cast<size_type> (INT_MAX)) {
+    typedef V_Dot_Functor<RV0D, XMV1D, YMV1D, int> op_type;
+    op_type op (subview (r, 0), subview (X, ALL (), X_col),
+                subview (Y, ALL (), Y_col));
+    Kokkos::parallel_reduce (numRows, op);
+  }
+  else {
+    typedef V_Dot_Functor<RV0D, XMV1D, YMV1D, size_type> op_type;
+    op_type op (subview (r, 0), subview (X, ALL (), X_col),
+                subview (Y, ALL (), Y_col));
+    Kokkos::parallel_reduce (numRows, op);
+  }
+}
+
 #undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
 #endif // KOKKOS_HAVE_PTHREAD
@@ -326,6 +459,50 @@ dot (const RV& r, const XMV& X, const XMV& Y)
   }
 }
 
+void
+Dot_MV<double*,
+       KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault>::
+dot (const RV& r, const XMV& X, const size_t X_col,
+     const XMV& Y, const size_t Y_col)
+{
+  // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
+  using Kokkos::ALL;
+  using Kokkos::subview;
+  typedef Kokkos::View<RV::value_type, RV::array_layout,
+    RV::device_type, RV::memory_traits, RV::specialize> RV0D;
+  typedef Kokkos::View<XMV::const_value_type*, XMV::array_layout, XMV::device_type, XMV::memory_traits, XMV::specialize> XMV1D;
+  typedef Kokkos::View<YMV::const_value_type*, YMV::array_layout, YMV::device_type, YMV::memory_traits, YMV::specialize> YMV1D;
+
+  const size_type numRows = X.dimension_0 ();
+  const size_type numCols = X.dimension_1 ();
+  if (numRows < static_cast<size_type> (INT_MAX) &&
+      numRows * numCols < static_cast<size_type> (INT_MAX)) {
+    typedef V_Dot_Functor<RV0D, XMV1D, YMV1D, int> op_type;
+    op_type op (subview (r, 0), subview (X, ALL (), X_col),
+                subview (Y, ALL (), Y_col));
+    Kokkos::parallel_reduce (numRows, op);
+  }
+  else {
+    typedef V_Dot_Functor<RV0D, XMV1D, YMV1D, size_type> op_type;
+    op_type op (subview (r, 0), subview (X, ALL (), X_col),
+                subview (Y, ALL (), Y_col));
+    Kokkos::parallel_reduce (numRows, op);
+  }
+}
+
 #undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
 #endif // KOKKOS_HAVE_CUDA
@@ -394,6 +571,50 @@ dot (const RV& r, const XMV& X, const XMV& Y)
       Kokkos::parallel_reduce (policy, op, unusedResult);
       (void) unusedResult;
     }
+  }
+}
+
+void
+Dot_MV<double*,
+       KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault>::
+dot (const RV& r, const XMV& X, const size_t X_col,
+     const XMV& Y, const size_t Y_col)
+{
+  // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
+  using Kokkos::ALL;
+  using Kokkos::subview;
+  typedef Kokkos::View<RV::value_type, RV::array_layout,
+    RV::device_type, RV::memory_traits, RV::specialize> RV0D;
+  typedef Kokkos::View<XMV::const_value_type*, XMV::array_layout, XMV::device_type, XMV::memory_traits, XMV::specialize> XMV1D;
+  typedef Kokkos::View<YMV::const_value_type*, YMV::array_layout, YMV::device_type, YMV::memory_traits, YMV::specialize> YMV1D;
+
+  const size_type numRows = X.dimension_0 ();
+  const size_type numCols = X.dimension_1 ();
+  if (numRows < static_cast<size_type> (INT_MAX) &&
+      numRows * numCols < static_cast<size_type> (INT_MAX)) {
+    typedef V_Dot_Functor<RV0D, XMV1D, YMV1D, int> op_type;
+    op_type op (subview (r, 0), subview (X, ALL (), X_col),
+                subview (Y, ALL (), Y_col));
+    Kokkos::parallel_reduce (numRows, op);
+  }
+  else {
+    typedef V_Dot_Functor<RV0D, XMV1D, YMV1D, size_type> op_type;
+    op_type op (subview (r, 0), subview (X, ALL (), X_col),
+                subview (Y, ALL (), Y_col));
+    Kokkos::parallel_reduce (numRows, op);
   }
 }
 

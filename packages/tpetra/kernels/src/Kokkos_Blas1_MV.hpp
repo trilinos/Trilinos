@@ -160,6 +160,117 @@ dot (const RV& dots, const XMV& x, const YMV& y)
     >::dot (dots_i, x_i, y_i);
 }
 
+/// \brief Compute the dot product of X(:,X_col) and Y(:,Y_col), and
+///   store result in r(0).
+///
+/// \tparam RV 1-D output View
+/// \tparam XMV 2-D input View
+/// \tparam YMV 2-D input View
+///
+/// \param dots [out] Output 1-D View to which to write results.
+/// \param X [in] Input 2-D View.
+/// \param X_col [in] Column of X to use.
+/// \param Y [in] Input 2-D View.
+/// \param Y_col [in] Column of Y to use.
+template<class RV, class XMV, class YMV>
+void
+dot (const RV& dots, const XMV& X, const size_t X_col, const YMV& Y, const size_t Y_col)
+{
+#ifdef KOKKOS_HAVE_CXX11
+  // RV, XMV, and YMV must be Kokkos::View specializations.
+  static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::dot (MV, 5 arg): "
+                 "The output argument is not a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::dot (MV, 5 arg): "
+                 "The first input argument x is not a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::dot (MV, 5 arg): "
+                 "The second input argument y is not a Kokkos::View.");
+  // RV must be nonconst (else it can't be an output argument).
+  static_assert (Kokkos::Impl::is_same<typename RV::value_type, typename RV::non_const_value_type>::value,
+                 "KokkosBlas::dot (MV, 5 arg): The output argument is const.  "
+                 "It must be nonconst, because it is an output argument "
+                 "(we have to be able to write to its entries).");
+  static_assert (RV::rank == 1, "KokkosBlas::dot (MV, 5 arg): "
+                 "The output argument must have rank 1.");
+  static_assert (XMV::rank == 2, "KokkosBlas::dot (MV, 5 arg): "
+                 "The first input argument x must have rank 2.");
+  static_assert (YMV::rank == 2, "KokkosBlas::dot (MV, 5 arg): "
+                 "The second input argument y must have rank 2.");
+#else
+  // We prefer to use C++11 static_assert, because it doesn't give
+  // "unused typedef" warnings, like the constructs below do.
+  //
+  // RV, XMV, and YMV must be Kokkos::View specializations.
+  typedef typename
+    Kokkos::Impl::StaticAssert<Kokkos::Impl::is_view<RV>::value>::type RVIsNotView;
+  typedef typename
+    Kokkos::Impl::StaticAssert<Kokkos::Impl::is_view<XMV>::value>::type XMVIsNotView;
+  typedef typename
+    Kokkos::Impl::StaticAssert<Kokkos::Impl::is_view<YMV>::value>::type YMVIsNotView;
+
+  // RV must be nonconst (else it can't be an output argument).
+  typedef typename
+    Kokkos::Impl::StaticAssert<Kokkos::Impl::is_same<typename RV::value_type,
+      typename RV::non_const_value_type>::value>::type RV_is_const;
+
+  typedef typename
+    Kokkos::Impl::StaticAssert<RV::rank == 1 >::type Blas1_Dot_MultiVectorRanksDontMatch;
+  typedef typename
+    Kokkos::Impl::StaticAssert<XMV::rank == 2 >::type Blas1_Dot_XMultiVectorRankNot2;
+  typedef typename
+    Kokkos::Impl::StaticAssert<YMV::rank == 2 >::type Blas1_Dot_YMultiVectorRankNot2;
+#endif // KOKKOS_HAVE_CXX11
+
+  // Check compatibility of dimensions at run time.
+  if (X.dimension_0 () != Y.dimension_0 () ||
+      dots.dimension_0 () < typename RV::size_type (1)) {
+    std::ostringstream os;
+    os << "KokkosBlas::dot (MV, 5 arg): Dimensions do not match: "
+       << "dots: " << dots.dimension_0 () << " x 1"
+       << ", x: " << X.dimension_0 () << " x " << X.dimension_1 ()
+       << ", y: " << Y.dimension_0 () << " x " << Y.dimension_1 ();
+    Kokkos::Impl::throw_runtime_exception (os.str ());
+  }
+
+  // Any View can be assigned to an unmanaged View, and it's safe to
+  // use them here.
+  typedef Kokkos::View<typename RV::non_const_value_type*,
+    typename RV::array_layout,
+    typename RV::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    typename RV::specialize> RV_Internal;
+  typedef Kokkos::View<typename XMV::const_value_type**,
+    typename XMV::array_layout,
+    typename XMV::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    typename XMV::specialize> XMV_Internal;
+  typedef Kokkos::View<typename YMV::const_value_type**,
+    typename YMV::array_layout,
+    typename YMV::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    typename YMV::specialize> YMV_Internal;
+
+  RV_Internal dots_i = dots;
+  XMV_Internal X_internal = X;
+  YMV_Internal Y_internal = Y;
+
+  return Impl::Dot_MV<
+    typename RV_Internal::value_type*,
+    typename RV_Internal::array_layout,
+    typename RV_Internal::device_type,
+    typename RV_Internal::memory_traits,
+    typename RV_Internal::specialize,
+    typename XMV_Internal::value_type**,
+    typename XMV_Internal::array_layout,
+    typename XMV_Internal::device_type,
+    typename XMV_Internal::memory_traits,
+    typename XMV_Internal::specialize,
+    typename YMV_Internal::value_type**,
+    typename YMV_Internal::array_layout,
+    typename YMV_Internal::device_type,
+    typename YMV_Internal::memory_traits,
+    typename YMV_Internal::specialize
+      >::dot (dots_i, X_internal, X_col, Y_internal, Y_col);
+}
 
 /// \brief Fill the multivector (2-D View) X with the given value.
 ///
