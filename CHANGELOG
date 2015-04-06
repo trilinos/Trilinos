@@ -1,0 +1,11 @@
+###############################################################################
+#                                                                             #
+# Trilinos Release 11.14 Changelog                                            #
+#                                                                             #
+###############################################################################
+
+Release update 11.14.2 Apr 02, 2015
+
+1. AztecOO - Disable memory check error message due to portability issues.
+
+2. Zoltan  - Fix memory freeing error when the comm plan is not used
