@@ -60,513 +60,554 @@ using stk::mesh::EntityRank;
 
 TEST(FEMHelper, get_ordinal_and_permutation)
 {
-    if (stk::parallel_machine_size(MPI_COMM_WORLD) == 2)
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) == 2)
+  {
+    unsigned gold_side_node_ids[4] = {5,6,8,7};
+    unsigned gold_num_nodes = 4;
+
+    stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
+    std::string name = "generated:1x1x2";
+    stkMeshIoBroker.add_mesh_database(name, stk::io::READ_MESH);
+    stkMeshIoBroker.create_input_mesh();
+    stkMeshIoBroker.populate_bulk_data();
+
+    stk::mesh::BulkData &mesh = stkMeshIoBroker.bulk_data();
+
+    unsigned elem_id = 0;
+    unsigned gold_local_side_id = 0;
+    unsigned perm_value = 0;
+
+    if (mesh.parallel_rank()==0)
     {
-        unsigned gold_side_node_ids[4] = {5,6,8,7};
-        unsigned gold_num_nodes = 4;
-
-        stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
-        std::string name = "generated:1x1x2";
-        stkMeshIoBroker.add_mesh_database(name, stk::io::READ_MESH);
-        stkMeshIoBroker.create_input_mesh();
-        stkMeshIoBroker.populate_bulk_data();
-
-        stk::mesh::BulkData &mesh = stkMeshIoBroker.bulk_data();
-
-        unsigned elem_id = 0;
-        unsigned gold_local_side_id = 0;
-        unsigned perm_value = 0;
-
-        if (mesh.parallel_rank()==0)
-        {
-            gold_local_side_id=5;
-            elem_id = 1;
-            perm_value = 0;
-        }
-        else
-        {
-            gold_local_side_id=4;
-            elem_id = 2;
-            perm_value = 4;
-        }
-
-        stk::mesh::Permutation gold_permutation = static_cast<stk::mesh::Permutation>(perm_value);
-
-        stk::mesh::Entity elem = mesh.get_entity(stk::topology::ELEM_RANK, elem_id);
-        EXPECT_TRUE(mesh.bucket(elem).owned());
-
-        stk::mesh::EntityVector side_nodes(gold_num_nodes);
-        for(unsigned i = 0; i < gold_num_nodes; ++i)
-        {
-            stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, gold_side_node_ids[i]);
-            side_nodes[i] = node;
-        }
-
-        stk::mesh::EntityRank to_rank = stk::topology::FACE_RANK;
-        std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation = get_ordinal_and_permutation(mesh, elem, to_rank, side_nodes);
-
-        ASSERT_TRUE(ordinalAndPermutation.first != stk::mesh::INVALID_CONNECTIVITY_ORDINAL);
-        ASSERT_TRUE(ordinalAndPermutation.second != stk::mesh::INVALID_PERMUTATION);
-
-        EXPECT_EQ(gold_local_side_id, ordinalAndPermutation.first);
-        EXPECT_EQ(gold_permutation, ordinalAndPermutation.second);
+      gold_local_side_id=5;
+      elem_id = 1;
+      perm_value = 0;
     }
+    else
+    {
+      gold_local_side_id=4;
+      elem_id = 2;
+      perm_value = 4;
+    }
+
+    stk::mesh::Permutation gold_permutation = static_cast<stk::mesh::Permutation>(perm_value);
+
+    stk::mesh::Entity elem = mesh.get_entity(stk::topology::ELEM_RANK, elem_id);
+    EXPECT_TRUE(mesh.bucket(elem).owned());
+
+    stk::mesh::EntityVector side_nodes(gold_num_nodes);
+    for(unsigned i = 0; i < gold_num_nodes; ++i)
+    {
+      stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, gold_side_node_ids[i]);
+      side_nodes[i] = node;
+    }
+
+    stk::mesh::EntityRank to_rank = stk::topology::FACE_RANK;
+    std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation
+      = get_ordinal_and_permutation(mesh, elem, to_rank, side_nodes);
+
+    ASSERT_TRUE(ordinalAndPermutation.first != stk::mesh::INVALID_CONNECTIVITY_ORDINAL);
+    ASSERT_TRUE(ordinalAndPermutation.second != stk::mesh::INVALID_PERMUTATION);
+
+    EXPECT_EQ(gold_local_side_id, ordinalAndPermutation.first);
+    EXPECT_EQ(gold_permutation, ordinalAndPermutation.second);
+  }
 }
 
 TEST(FEMHelper, check_permutation_consistency_using_FEMHelper_parallel)
 {
-    if (stk::parallel_machine_size(MPI_COMM_WORLD) == 2)
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) == 2)
+  {
+    stk::mesh::EntityId global_side_id = 1;
+    unsigned gold_side_node_ids[4] = {5,6,8,7};
+    unsigned gold_num_nodes = 4;
+
+    stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
+    std::string name = "generated:1x1x2";
+    stkMeshIoBroker.add_mesh_database(name, stk::io::READ_MESH);
+    stkMeshIoBroker.create_input_mesh();
+    stkMeshIoBroker.populate_bulk_data();
+
+    stk::mesh::BulkData &mesh = stkMeshIoBroker.bulk_data();
+
+    unsigned elem_id = 0;
+
+    if (mesh.parallel_rank()==0)
     {
-        stk::mesh::EntityId global_side_id = 1;
-        unsigned gold_side_node_ids[4] = {5,6,8,7};
-        unsigned gold_num_nodes = 4;
-
-        stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
-        std::string name = "generated:1x1x2";
-        stkMeshIoBroker.add_mesh_database(name, stk::io::READ_MESH);
-        stkMeshIoBroker.create_input_mesh();
-        stkMeshIoBroker.populate_bulk_data();
-
-        stk::mesh::BulkData &mesh = stkMeshIoBroker.bulk_data();
-
-        unsigned elem_id = 0;
-
-        if (mesh.parallel_rank()==0)
-        {
-            elem_id = 1;
-        }
-        else
-        {
-            elem_id = 2;
-        }
-
-        stk::mesh::Entity elem = mesh.get_entity(stk::topology::ELEM_RANK, elem_id);
-        EXPECT_TRUE(mesh.bucket(elem).owned());
-
-        stk::mesh::EntityVector side_nodes(gold_num_nodes);
-        for(unsigned i = 0; i < gold_num_nodes; ++i) {
-            stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, gold_side_node_ids[i]);
-            side_nodes[i] = node;
-        }
-
-        stk::mesh::Part &part = mesh.mesh_meta_data().get_topology_root_part(stk::topology::QUAD_4);
-        mesh.modification_begin();
-        stk::mesh::Entity side = declare_element_to_sub_topology_with_nodes(mesh, elem, side_nodes, global_side_id, stk::topology::FACE_RANK, part);
-        EXPECT_NO_THROW(mesh.modification_end());
-
-        std::vector<size_t> mesh_counts;
-        stk::mesh::comm_mesh_counts(mesh, mesh_counts);
-        size_t numFacesGlobal = 1u;
-        EXPECT_EQ(numFacesGlobal, mesh_counts[stk::topology::FACE_RANK]);
-        EXPECT_TRUE(mesh.is_valid(side));
+      elem_id = 1;
     }
+    else
+    {
+      elem_id = 2;
+    }
+
+    stk::mesh::Entity elem = mesh.get_entity(stk::topology::ELEM_RANK, elem_id);
+    EXPECT_TRUE(mesh.bucket(elem).owned());
+
+    stk::mesh::EntityVector side_nodes(gold_num_nodes);
+    for(unsigned i = 0; i < gold_num_nodes; ++i) {
+      stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, gold_side_node_ids[i]);
+      side_nodes[i] = node;
+    }
+
+    stk::mesh::Part &part = mesh.mesh_meta_data().get_topology_root_part(stk::topology::QUAD_4);
+    mesh.modification_begin();
+    stk::mesh::Entity side
+      = declare_element_to_sub_topology_with_nodes(mesh, elem, side_nodes, global_side_id, stk::topology::FACE_RANK, part);
+    EXPECT_NO_THROW(mesh.modification_end());
+
+    std::vector<size_t> mesh_counts;
+    stk::mesh::comm_mesh_counts(mesh, mesh_counts);
+    size_t numFacesGlobal = 1u;
+    EXPECT_EQ(numFacesGlobal, mesh_counts[stk::topology::FACE_RANK]);
+    EXPECT_TRUE(mesh.is_valid(side));
+  }
 }
 
 template <typename DATATYPE, size_t IDIM, size_t JDIM>
 std::vector <std::vector<DATATYPE> > build_2D_vector(std::array< std::array <DATATYPE, JDIM>, IDIM> inputarray)
 {
-    std::vector <std::vector<DATATYPE> > retval(IDIM);
+  std::vector <std::vector<DATATYPE> > retval(IDIM);
 
-    for (unsigned i = 0; i < IDIM; ++i) {
-        retval[i].resize(JDIM);
-        for (unsigned j = 0; j < JDIM; ++j) {
-            retval[i][j] = inputarray[i][j];
-        }
+  for (unsigned i = 0; i < IDIM; ++i) {
+    retval[i].resize(JDIM);
+    for (unsigned j = 0; j < JDIM; ++j) {
+      retval[i][j] = inputarray[i][j];
     }
+  }
 
-    return retval;
+  return retval;
 }
 
 void build_element_from_topology_verify_ordinals_and_permutations(stk::mesh::BulkData &bulk,
-		const stk::topology topo,
-		stk::mesh::EntityId * elem_node_ids,
-		stk::mesh::EntityId * side_ids,
-		stk::mesh::EntityId * edge_ids,
-		const std::vector < std::vector < unsigned > > &gold_side_node_ids,
-		const unsigned * gold_side_permutations,
-		const std::vector < std::vector < unsigned > > &gold_edge_node_ids,
-		const unsigned * gold_edge_permutations)
+                                                                  const stk::topology topo,
+                                                                  stk::mesh::EntityId * elem_node_ids,
+                                                                  stk::mesh::EntityId * side_ids,
+                                                                  stk::mesh::EntityId * edge_ids,
+                                                                  const std::vector < std::vector < unsigned > > &gold_side_node_ids,
+                                                                  const unsigned * gold_side_permutations,
+                                                                  const std::vector < std::vector < unsigned > > &gold_edge_node_ids,
+                                                                  const unsigned * gold_edge_permutations)
 {
-	stk::mesh::EntityId element_id[1] = {1};
-	stk::mesh::MetaData &meta = bulk.mesh_meta_data();
-	stk::mesh::Part &elem_part = meta.declare_part_with_topology("elem_part", topo);
+  stk::mesh::EntityId element_id[1] = {1};
+  stk::mesh::MetaData &meta = bulk.mesh_meta_data();
+  stk::mesh::Part &elem_part = meta.declare_part_with_topology("elem_part", topo);
 
-	meta.commit();
-	bulk.modification_begin();
+  meta.commit();
+  bulk.modification_begin();
 
-	stk::mesh::Entity elem = stk::mesh::declare_element(bulk, elem_part, element_id[0], elem_node_ids);
+  stk::mesh::Entity elem = stk::mesh::declare_element(bulk, elem_part, element_id[0], elem_node_ids);
 
-	stk::mesh::EntityVector side_nodes;
-	uint num_sides = topo.num_sides();
-	stk::topology::rank_t sub_topo_rank = topo.side_rank();
+  stk::mesh::EntityVector side_nodes;
+  uint num_sides = topo.num_sides();
+  stk::topology::rank_t sub_topo_rank = topo.side_rank();
 
-	for(uint i = 0; i < num_sides; ++i)
-	{
-		stk::topology sub_topo = topo.side_topology(i);
-		side_nodes.clear();
+  for(uint i = 0; i < num_sides; ++i)
+  {
+    stk::topology sub_topo = topo.side_topology(i);
+    side_nodes.clear();
 
-		stk::mesh::Entity side = bulk.declare_entity(sub_topo_rank, side_ids[i], meta.get_topology_root_part(sub_topo));
+    stk::mesh::Entity side = bulk.declare_entity(sub_topo_rank, side_ids[i], meta.get_topology_root_part(sub_topo));
 
-		for (uint j = 0; j < sub_topo.num_nodes(); ++j)
-		{
-			stk::mesh::Entity side_node = bulk.get_entity(stk::topology::NODE_RANK, gold_side_node_ids[i][j]);
-			side_nodes.push_back(side_node);
-			bulk.declare_relation(side, side_node, j);
-		}
+    for (uint j = 0; j < sub_topo.num_nodes(); ++j)
+    {
+      stk::mesh::Entity side_node = bulk.get_entity(stk::topology::NODE_RANK, gold_side_node_ids[i][j]);
+      side_nodes.push_back(side_node);
+      bulk.declare_relation(side, side_node, j);
+    }
 
-		std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation = get_ordinal_and_permutation(bulk, elem, sub_topo_rank, side_nodes);
+    std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation
+      = get_ordinal_and_permutation(bulk, elem, sub_topo_rank, side_nodes);
 
-		EXPECT_EQ(ordinalAndPermutation.second, gold_side_permutations[i]);
-		EXPECT_EQ(ordinalAndPermutation.first, i);
-	}
+    EXPECT_EQ(ordinalAndPermutation.second, gold_side_permutations[i]);
+    EXPECT_EQ(ordinalAndPermutation.first, i);
+  }
 
-	if (edge_ids == NULL) {
-		bulk.modification_end();
-		return;
-	}
+  if (edge_ids == NULL) {
+    bulk.modification_end();
+    return;
+  }
 
-	stk::mesh::EntityVector edge_nodes;
-	uint num_edges = topo.num_edges();
+  stk::mesh::EntityVector edge_nodes;
+  uint num_edges = topo.num_edges();
 
-	for(uint i = 0; i < num_edges; ++i)
-	{
-		edge_nodes.clear();
+  for(uint i = 0; i < num_edges; ++i)
+  {
+    edge_nodes.clear();
 
-		stk::mesh::Entity edge = bulk.declare_entity(stk::topology::EDGE_RANK, edge_ids[i], meta.get_topology_root_part(topo.edge_topology()));
+    stk::mesh::Entity edge = bulk.declare_entity(stk::topology::EDGE_RANK, edge_ids[i],
+                                                 meta.get_topology_root_part(topo.edge_topology()));
 
-		for (uint j = 0; j < topo.edge_topology().num_nodes(); ++j)
-		{
-			stk::mesh::Entity edge_node = bulk.get_entity(stk::topology::NODE_RANK, gold_edge_node_ids[i][j]);
-			edge_nodes.push_back(edge_node);
-			bulk.declare_relation(edge, edge_node, j);
-		}
+    for (uint j = 0; j < topo.edge_topology().num_nodes(); ++j)
+    {
+      stk::mesh::Entity edge_node = bulk.get_entity(stk::topology::NODE_RANK, gold_edge_node_ids[i][j]);
+      edge_nodes.push_back(edge_node);
+      bulk.declare_relation(edge, edge_node, j);
+    }
 
-		std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation = get_ordinal_and_permutation(bulk, elem, stk::topology::EDGE_RANK, edge_nodes);
+    std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation
+      = get_ordinal_and_permutation(bulk, elem, stk::topology::EDGE_RANK, edge_nodes);
 
-		EXPECT_EQ(ordinalAndPermutation.second, gold_edge_permutations[i]);
-		EXPECT_EQ(ordinalAndPermutation.first, i);
-	}
+    EXPECT_EQ(ordinalAndPermutation.second, gold_edge_permutations[i]);
+    EXPECT_EQ(ordinalAndPermutation.first, i);
+  }
 
-	bulk.modification_end();
+  bulk.modification_end();
 }
 
 void verify_unbuildable_element(stk::mesh::BulkData &bulk,
-		const stk::topology topo,
-		stk::mesh::EntityId * elem_node_ids,
-		stk::mesh::EntityId * side_ids,
-		const std::vector < std::vector < unsigned > > &gold_side_node_ids,
-		bool *sides_connectibility_check,
-		stk::mesh::EntityId * edge_ids,
-		const std::vector < std::vector < unsigned > > &gold_edge_node_ids,
-		bool *edges_connectibility_check)
+                                const stk::topology topo,
+                                stk::mesh::EntityId * elem_node_ids,
+                                stk::mesh::EntityId * side_ids,
+                                const std::vector < std::vector < unsigned > > &gold_side_node_ids,
+                                bool *sides_connectibility_check,
+                                stk::mesh::EntityId * edge_ids,
+                                const std::vector < std::vector < unsigned > > &gold_edge_node_ids,
+                                bool *edges_connectibility_check)
 {
-	stk::mesh::EntityId element_id[1] = {1};
-	stk::mesh::MetaData &meta = bulk.mesh_meta_data();
-	stk::mesh::Part &elem_part = meta.declare_part_with_topology("elem_part", topo);
+  stk::mesh::EntityId element_id[1] = {1};
+  stk::mesh::MetaData &meta = bulk.mesh_meta_data();
+  stk::mesh::Part &elem_part = meta.declare_part_with_topology("elem_part", topo);
 
-	meta.commit();
-	bulk.modification_begin();
+  meta.commit();
+  bulk.modification_begin();
 
-	stk::mesh::Entity elem = stk::mesh::declare_element(bulk, elem_part, element_id[0], elem_node_ids);
+  stk::mesh::Entity elem = stk::mesh::declare_element(bulk, elem_part, element_id[0], elem_node_ids);
 
-	stk::mesh::EntityVector side_nodes;
-	uint num_sides = topo.num_sides();
-	stk::topology::rank_t sub_topo_rank = topo.side_rank();
+  stk::mesh::EntityVector side_nodes;
+  uint num_sides = topo.num_sides();
+  stk::topology::rank_t sub_topo_rank = topo.side_rank();
 
-	for(uint i = 0; i < num_sides; ++i)
-	{
-		stk::topology sub_topo = topo.side_topology(i);
-		side_nodes.clear();
+  for(uint i = 0; i < num_sides; ++i)
+  {
+    stk::topology sub_topo = topo.side_topology(i);
+    side_nodes.clear();
 
-		stk::mesh::Entity side = bulk.declare_entity(sub_topo_rank, side_ids[i], meta.get_topology_root_part(sub_topo));
+    stk::mesh::Entity side = bulk.declare_entity(sub_topo_rank, side_ids[i], meta.get_topology_root_part(sub_topo));
 
-		for (uint j = 0; j < sub_topo.num_nodes(); ++j)
-		{
-			stk::mesh::Entity side_node = bulk.get_entity(stk::topology::NODE_RANK, gold_side_node_ids[i][j]);
-			side_nodes.push_back(side_node);
-			bulk.declare_relation(side, side_node, j);
-		}
+    for (uint j = 0; j < sub_topo.num_nodes(); ++j)
+    {
+      stk::mesh::Entity side_node = bulk.get_entity(stk::topology::NODE_RANK, gold_side_node_ids[i][j]);
+      side_nodes.push_back(side_node);
+      bulk.declare_relation(side, side_node, j);
+    }
 
-		std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation = get_ordinal_and_permutation(bulk, elem, sub_topo_rank, side_nodes);
+    std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation
+      = get_ordinal_and_permutation(bulk, elem, sub_topo_rank, side_nodes);
 
-		if (sides_connectibility_check[i])
-		{
-		  EXPECT_NE(ordinalAndPermutation.first, stk::mesh::ConnectivityOrdinal::INVALID_CONNECTIVITY_ORDINAL);
-		  EXPECT_NE(ordinalAndPermutation.second, stk::mesh::Permutation::INVALID_PERMUTATION);
-		}
-		else
-		{
-		  EXPECT_EQ(ordinalAndPermutation.first, stk::mesh::ConnectivityOrdinal::INVALID_CONNECTIVITY_ORDINAL);
-		  EXPECT_EQ(ordinalAndPermutation.second, stk::mesh::Permutation::INVALID_PERMUTATION);
-		}
-	}
+    if (sides_connectibility_check[i])
+    {
+      EXPECT_NE(ordinalAndPermutation.first, stk::mesh::ConnectivityOrdinal::INVALID_CONNECTIVITY_ORDINAL);
+      EXPECT_NE(ordinalAndPermutation.second, stk::mesh::Permutation::INVALID_PERMUTATION);
+    }
+    else
+    {
+      EXPECT_EQ(ordinalAndPermutation.first, stk::mesh::ConnectivityOrdinal::INVALID_CONNECTIVITY_ORDINAL);
+      EXPECT_EQ(ordinalAndPermutation.second, stk::mesh::Permutation::INVALID_PERMUTATION);
+    }
+  }
 
-	if (edge_ids == NULL) {
-		bulk.modification_end();
-		return;
-	}
+  if (edge_ids == NULL) {
+    bulk.modification_end();
+    return;
+  }
 
-	stk::mesh::EntityVector edge_nodes;
-	uint num_edges = topo.num_edges();
+  stk::mesh::EntityVector edge_nodes;
+  uint num_edges = topo.num_edges();
 
-	for(uint i = 0; i < num_edges; ++i)
-	{
-		edge_nodes.clear();
+  for(uint i = 0; i < num_edges; ++i)
+  {
+    edge_nodes.clear();
 
-		stk::mesh::Entity edge = bulk.declare_entity(stk::topology::EDGE_RANK, edge_ids[i], meta.get_topology_root_part(topo.edge_topology()));
+    stk::mesh::Entity edge = bulk.declare_entity(stk::topology::EDGE_RANK, edge_ids[i],
+                                                 meta.get_topology_root_part(topo.edge_topology()));
 
-		for (uint j = 0; j < topo.edge_topology().num_nodes(); ++j)
-		{
-			stk::mesh::Entity edge_node = bulk.get_entity(stk::topology::NODE_RANK, gold_edge_node_ids[i][j]);
-			edge_nodes.push_back(edge_node);
-			bulk.declare_relation(edge, edge_node, j);
-		}
+    for (uint j = 0; j < topo.edge_topology().num_nodes(); ++j)
+    {
+      stk::mesh::Entity edge_node = bulk.get_entity(stk::topology::NODE_RANK, gold_edge_node_ids[i][j]);
+      edge_nodes.push_back(edge_node);
+      bulk.declare_relation(edge, edge_node, j);
+    }
 
-		std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation = get_ordinal_and_permutation(bulk, elem, stk::topology::EDGE_RANK, edge_nodes);
+    std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation
+      = get_ordinal_and_permutation(bulk, elem, stk::topology::EDGE_RANK, edge_nodes);
 
-		if (edges_connectibility_check[i])
-		{
-		  EXPECT_NE(ordinalAndPermutation.first, stk::mesh::ConnectivityOrdinal::INVALID_CONNECTIVITY_ORDINAL);
-		  EXPECT_NE(ordinalAndPermutation.second, stk::mesh::Permutation::INVALID_PERMUTATION);
-		}
-		else
-		{
-		  EXPECT_EQ(ordinalAndPermutation.first, stk::mesh::ConnectivityOrdinal::INVALID_CONNECTIVITY_ORDINAL);
-		  EXPECT_EQ(ordinalAndPermutation.second, stk::mesh::Permutation::INVALID_PERMUTATION);
-		}
-	}
+    if (edges_connectibility_check[i])
+    {
+      EXPECT_NE(ordinalAndPermutation.first, stk::mesh::ConnectivityOrdinal::INVALID_CONNECTIVITY_ORDINAL);
+      EXPECT_NE(ordinalAndPermutation.second, stk::mesh::Permutation::INVALID_PERMUTATION);
+    }
+    else
+    {
+      EXPECT_EQ(ordinalAndPermutation.first, stk::mesh::ConnectivityOrdinal::INVALID_CONNECTIVITY_ORDINAL);
+      EXPECT_EQ(ordinalAndPermutation.second, stk::mesh::Permutation::INVALID_PERMUTATION);
+    }
+  }
 
-	bulk.modification_end();
+  bulk.modification_end();
 }
 
 TEST(FEMHelper, test_permutations_for_key_topologies)
 {
-	stk::ParallelMachine pm = MPI_COMM_WORLD;
-	const int p_size = stk::parallel_machine_size(pm);
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  const int p_size = stk::parallel_machine_size(pm);
 
-	if (p_size != 1) {
-		return;
-	}
+  if (p_size != 1) {
+    return;
+  }
 
-	int spatial_dimension;
-	stk::topology topo;
+  int spatial_dimension;
+  stk::topology topo;
 
-	const unsigned num_test_topologies = 10;
-	stk::topology test_topologies[num_test_topologies] = {stk::topology::TRI_3_2D, stk::topology::QUAD_4_2D, stk::topology::SHELL_TRI_3,
-	                                                      stk::topology::SHELL_QUAD_4, stk::topology::TET_4, stk::topology::PYRAMID_5,
-	                                                      stk::topology::WEDGE_6, stk::topology::HEX_8, stk::topology::TRI_6_2D,
-														  stk::topology::TET_10};
+  const unsigned num_test_topologies = 10;
+  stk::topology test_topologies[num_test_topologies] = {stk::topology::TRI_3_2D, stk::topology::QUAD_4_2D,
+                                                        stk::topology::SHELL_TRI_3, stk::topology::SHELL_QUAD_4,
+                                                        stk::topology::TET_4, stk::topology::PYRAMID_5,
+                                                        stk::topology::WEDGE_6, stk::topology::HEX_8,
+                                                        stk::topology::TRI_6_2D, stk::topology::TET_10};
 
-	// check that the permutations define the same sides
-	for (size_t index = 0; index < num_test_topologies; ++index)
-	{
-		topo = test_topologies[index];
-		std::cout << "topology " << topo << " topology rank " << topo.rank() << " topology dimension " << topo.dimension() << std::endl;
-		if(topo.rank() == stk::topology::ELEMENT_RANK)
-		{
-			spatial_dimension = topo.dimension();
+  // check that the permutations define the same sides
+  for (size_t index = 0; index < num_test_topologies; ++index)
+  {
+    topo = test_topologies[index];
+    std::cout << "topology " << topo << " topology rank " << topo.rank()
+              << " topology dimension " << topo.dimension() << std::endl;
 
-			stk::mesh::MetaData meta(spatial_dimension);
-			stk::mesh::BulkData bulk(meta, pm);
+    if(topo.rank() == stk::topology::ELEMENT_RANK)
+    {
+      spatial_dimension = topo.dimension();
 
-			//specific to topology
-			switch (topo)
-			{
-				case stk::topology::TRI_3_2D:
-				{
-					std::array <stk::mesh::EntityId, 3> elem_node_ids = { {1, 2, 3}};
-					std::array <stk::mesh::EntityId, 3> side_ids = { {1, 2, 3}};
+      stk::mesh::MetaData meta(spatial_dimension);
+      stk::mesh::BulkData bulk(meta, pm);
 
-					std::array < std::array <unsigned, 2>, 3 > gold_side_node_ids_data = {{{{1,2}},{{3,2}},{{3,1}}}};
-					std::vector < std::vector < unsigned > > gold_side_node_ids = build_2D_vector(gold_side_node_ids_data);
-					unsigned gold_side_permutations[3] = { 0, 1, 0 };  //the permutation of 1 is consistent with inversion of side 2 from above
-					stk::mesh::EntityId * edge_ids = NULL;
-					std::vector < std::vector < unsigned > > gold_edge_node_ids;
-					unsigned *  gold_edge_permutations = NULL;
+      //specific to topology
+      switch (topo)
+      {
+      case stk::topology::TRI_3_2D:
+        {
+          std::array <stk::mesh::EntityId, 3> elem_node_ids = { {1, 2, 3}};
+          std::array <stk::mesh::EntityId, 3> side_ids = { {1, 2, 3}};
 
-					build_element_from_topology_verify_ordinals_and_permutations(bulk, topo, &elem_node_ids[0], &side_ids[0], edge_ids, gold_side_node_ids,
-																				 &gold_side_permutations[0], gold_edge_node_ids, gold_edge_permutations);
-					break;
-				}
-				case stk::topology::QUAD_4_2D:
-				{
-			    std::array <stk::mesh::EntityId, 4> elem_node_ids = {{1, 2, 3, 4}};
-					std::array <stk::mesh::EntityId, 4> side_ids = { {1, 2, 3, 4}};
+          std::array < std::array <unsigned, 2>, 3 > gold_side_node_ids_data = {{{{1,2}},{{3,2}},{{3,1}}}};
+          std::vector < std::vector < unsigned > > gold_side_node_ids = build_2D_vector(gold_side_node_ids_data);
+          unsigned gold_side_permutations[3] = { 0, 1, 0 };
+          stk::mesh::EntityId * edge_ids = NULL;
+          std::vector < std::vector < unsigned > > gold_edge_node_ids;
+          unsigned *  gold_edge_permutations = NULL;
 
-					//note that 3rd is inverted from the normal way you'd set this side up
-					std::array < std::array <unsigned, 2>, 4 > gold_side_node_ids_data = {{ {{1,2}}, {{2,3}}, {{4,3}}, {{4,1}} }};
+          build_element_from_topology_verify_ordinals_and_permutations(bulk, topo, &elem_node_ids[0], &side_ids[0],
+                                                                       edge_ids, gold_side_node_ids,
+                                                                       &gold_side_permutations[0], gold_edge_node_ids,
+                                                                       gold_edge_permutations);
+          break;
+        }
+      case stk::topology::QUAD_4_2D:
+        {
+          std::array <stk::mesh::EntityId, 4> elem_node_ids = {{1, 2, 3, 4}};
+          std::array <stk::mesh::EntityId, 4> side_ids = { {1, 2, 3, 4}};
 
-					std::vector < std::vector < unsigned > > gold_side_node_ids = build_2D_vector(gold_side_node_ids_data);
-					unsigned gold_side_permutations[4] = { 0, 0, 1, 0 };  //the permutation of 1 is consistent with inversion of side 3 from above
-					stk::mesh::EntityId * edge_ids = NULL;
-					std::vector < std::vector < unsigned > > gold_edge_node_ids;
-					unsigned *  gold_edge_permutations = NULL;
+          std::array < std::array <unsigned, 2>, 4 > gold_side_node_ids_data = {{ {{1,2}}, {{2,3}}, {{4,3}}, {{4,1}} }};
+          std::vector < std::vector < unsigned > > gold_side_node_ids = build_2D_vector(gold_side_node_ids_data);
+          unsigned gold_side_permutations[4] = { 0, 0, 1, 0 };
+          stk::mesh::EntityId * edge_ids = NULL;
+          std::vector < std::vector < unsigned > > gold_edge_node_ids;
+          unsigned *  gold_edge_permutations = NULL;
 
-					build_element_from_topology_verify_ordinals_and_permutations(bulk, topo, &elem_node_ids[0], &side_ids[0], edge_ids, gold_side_node_ids,
-																				 &gold_side_permutations[0], gold_edge_node_ids, gold_edge_permutations);
-
-					break;
-				}
-				case stk::topology::SHELL_TRI_3:
-				{
-				  std::array <stk::mesh::EntityId, 3> elem_node_ids = {{1, 2, 3}};
-					std::array <stk::mesh::EntityId, 2> side_ids = {{1, 2}};
-					std::array <stk::mesh::EntityId, 3> edge_ids = {{1, 2, 3}};
-
-					std::array < std::array <unsigned, 3>, 2 > gold_side_node_ids_data = {{ {{1,2,3}}, {{3,2,1}} }};
-					std::vector < std::vector < unsigned > > gold_side_node_ids = build_2D_vector(gold_side_node_ids_data);
-					unsigned gold_side_permutations[2] = { 0, 1 };
-
-					std::array < std::array <unsigned, 2>, 3 > gold_edge_node_ids_data = {{ {{1,2}}, {{3,2}}, {{3,1}} }};
-					std::vector < std::vector < unsigned > > gold_edge_node_ids = build_2D_vector(gold_edge_node_ids_data);
-					unsigned gold_edge_permutations[4] = { 0, 1, 0 };
-
-					build_element_from_topology_verify_ordinals_and_permutations(bulk, topo, &elem_node_ids[0], &side_ids[0], &edge_ids[0], gold_side_node_ids,
-																				 &gold_side_permutations[0], gold_edge_node_ids, &gold_edge_permutations[0]);
+          build_element_from_topology_verify_ordinals_and_permutations(bulk, topo, &elem_node_ids[0], &side_ids[0],
+                                                                       edge_ids, gold_side_node_ids,
+                                                                       &gold_side_permutations[0], gold_edge_node_ids,
+                                                                       gold_edge_permutations);
 
           break;
-				}
-				case stk::topology::SHELL_QUAD_4:
-				{
-				  std::array <stk::mesh::EntityId, 4> elem_node_ids = {{1, 2, 3, 4}};
-					std::array <stk::mesh::EntityId, 2> side_ids = {{1, 2}};
-					std::array <stk::mesh::EntityId, 4> edge_ids = {{1, 2, 3, 4}};
+        }
+      case stk::topology::SHELL_TRI_3:
+        {
+          std::array <stk::mesh::EntityId, 3> elem_node_ids = {{1, 2, 3}};
+          std::array <stk::mesh::EntityId, 2> side_ids = {{1, 2}};
+          std::array <stk::mesh::EntityId, 3> edge_ids = {{1, 2, 3}};
 
-					std::array < std::array <unsigned, 4>, 2 > gold_side_node_ids_data = {{ {{1,2,3,4}}, {{4,3,2,1}} }};
-					std::vector < std::vector < unsigned > > gold_side_node_ids = build_2D_vector(gold_side_node_ids_data);
-					unsigned gold_side_permutations[2] = { 0, 1 };
+          std::array < std::array <unsigned, 3>, 2 > gold_side_node_ids_data = {{ {{1,2,3}}, {{3,2,1}} }};
+          std::vector < std::vector < unsigned > > gold_side_node_ids = build_2D_vector(gold_side_node_ids_data);
+          unsigned gold_side_permutations[2] = { 0, 1 };
 
-					std::array < std::array <unsigned, 2>, 4 > gold_edge_node_ids_data = {{ {{1,2}}, {{2,3}}, {{4,3}}, {{4,1}} }};
-					std::vector < std::vector < unsigned > > gold_edge_node_ids = build_2D_vector(gold_edge_node_ids_data);
-					unsigned gold_edge_permutations[4] = { 0, 0, 1, 0 };
+          std::array < std::array <unsigned, 2>, 3 > gold_edge_node_ids_data = {{ {{1,2}}, {{3,2}}, {{3,1}} }};
+          std::vector < std::vector < unsigned > > gold_edge_node_ids = build_2D_vector(gold_edge_node_ids_data);
+          unsigned gold_edge_permutations[4] = { 0, 1, 0 };
 
-					build_element_from_topology_verify_ordinals_and_permutations(bulk, topo, &elem_node_ids[0], &side_ids[0], &edge_ids[0], gold_side_node_ids,
-																				 &gold_side_permutations[0], gold_edge_node_ids, &gold_edge_permutations[0]);
+          build_element_from_topology_verify_ordinals_and_permutations(bulk, topo, &elem_node_ids[0], &side_ids[0],
+                                                                       &edge_ids[0], gold_side_node_ids,
+                                                                       &gold_side_permutations[0], gold_edge_node_ids,
+                                                                       &gold_edge_permutations[0]);
 
           break;
-				}
-				case stk::topology::TET_4:
-				{
-				  std::array <stk::mesh::EntityId, 4> elem_node_ids = {{1, 2, 3, 4}};
-					std::array <stk::mesh::EntityId, 4> side_ids = {{1, 2, 3, 4}};
-					std::array <stk::mesh::EntityId, 6> edge_ids = {{1, 2, 3, 4, 5, 6}};
+        }
+      case stk::topology::SHELL_QUAD_4:
+        {
+          std::array <stk::mesh::EntityId, 4> elem_node_ids = {{1, 2, 3, 4}};
+          std::array <stk::mesh::EntityId, 2> side_ids = {{1, 2}};
+          std::array <stk::mesh::EntityId, 4> edge_ids = {{1, 2, 3, 4}};
 
-					std::array < std::array <unsigned, 3>, 4 > gold_side_node_ids_data = {{ {{1,2,4}}, {{2,3,4}}, {{1,3,4}}, {{3,2,1}} }};
-					std::vector < std::vector < unsigned > > gold_side_node_ids = build_2D_vector(gold_side_node_ids_data);
-					unsigned gold_side_permutations[4] = { 0, 0, 3, 1 };
+          std::array < std::array <unsigned, 4>, 2 > gold_side_node_ids_data = {{ {{1,2,3,4}}, {{4,3,2,1}} }};
+          std::vector < std::vector < unsigned > > gold_side_node_ids = build_2D_vector(gold_side_node_ids_data);
+          unsigned gold_side_permutations[2] = { 0, 1 };
 
-					std::array < std::array <unsigned, 2>, 6 > gold_edge_node_ids_data = {{ {{1,2}}, {{2,3}}, {{3,1}}, {{1,4}}, {{4,2}}, {{3,4}} }};
-					std::vector < std::vector < unsigned > > gold_edge_node_ids = build_2D_vector(gold_edge_node_ids_data);
-					unsigned gold_edge_permutations[6] = { 0, 0, 0, 0, 1, 0 };
+          std::array < std::array <unsigned, 2>, 4 > gold_edge_node_ids_data = {{ {{1,2}}, {{2,3}}, {{4,3}}, {{4,1}} }};
+          std::vector < std::vector < unsigned > > gold_edge_node_ids = build_2D_vector(gold_edge_node_ids_data);
+          unsigned gold_edge_permutations[4] = { 0, 0, 1, 0 };
 
-					build_element_from_topology_verify_ordinals_and_permutations(bulk, topo, &elem_node_ids[0], &side_ids[0], &edge_ids[0], gold_side_node_ids,
-																				 &gold_side_permutations[0], gold_edge_node_ids, &gold_edge_permutations[0]);
+          build_element_from_topology_verify_ordinals_and_permutations(bulk, topo, &elem_node_ids[0], &side_ids[0],
+                                                                       &edge_ids[0], gold_side_node_ids,
+                                                                       &gold_side_permutations[0], gold_edge_node_ids,
+                                                                       &gold_edge_permutations[0]);
+
           break;
-				}
-				case stk::topology::PYRAMID_5:
-				{
-				  std::array <stk::mesh::EntityId, 5> elem_node_ids = {{1, 2, 3, 4, 5}};
-				  std::array <stk::mesh::EntityId, 5> side_ids = {{1, 2, 3, 4, 5}};
-				  std::array <stk::mesh::EntityId, 8> edge_ids = {{1, 2, 3, 4, 5, 6, 7, 8}};
+        }
+      case stk::topology::TET_4:
+        {
+          std::array <stk::mesh::EntityId, 4> elem_node_ids = {{1, 2, 3, 4}};
+          std::array <stk::mesh::EntityId, 4> side_ids = {{1, 2, 3, 4}};
+          std::array <stk::mesh::EntityId, 6> edge_ids = {{1, 2, 3, 4, 5, 6}};
 
-				  std::array < std::array <unsigned, 4>, 5 > gold_side_node_ids_data = {{ {{1,2,5,0}}, {{2,3,5,0}}, {{3,4,5,0}}, {{4,5,1,0}}, {{1,4,3,2}} }};
-					std::vector < std::vector < unsigned > > gold_side_node_ids = build_2D_vector(gold_side_node_ids_data);
-				  unsigned gold_side_permutations[5] = { 0, 0, 0, 3, 0 };
+          std::array < std::array <unsigned, 3>, 4 > gold_side_node_ids_data = {{ {{1,2,4}}, {{2,3,4}},
+                                                                                  {{1,3,4}}, {{3,2,1}} }};
+          std::vector < std::vector < unsigned > > gold_side_node_ids = build_2D_vector(gold_side_node_ids_data);
+          unsigned gold_side_permutations[4] = { 0, 0, 3, 1 };
 
-				  std::array < std::array <unsigned, 2>, 8 > gold_edge_node_ids_data = {{ {{1,2}}, {{2,3}}, {{3,4}}, {{4,1}}, {{1,5}}, {{2,5}}, {{5,3}}, {{4,5}} }};
-					std::vector < std::vector < unsigned > > gold_edge_node_ids = build_2D_vector(gold_edge_node_ids_data);
-				  unsigned gold_edge_permutations[8] = { 0, 0, 0, 0, 0, 0, 1, 0 };
+          std::array < std::array <unsigned, 2>, 6 > gold_edge_node_ids_data = {{ {{1,2}}, {{2,3}}, {{3,1}},
+                                                                                  {{1,4}}, {{4,2}}, {{3,4}} }};
+          std::vector < std::vector < unsigned > > gold_edge_node_ids = build_2D_vector(gold_edge_node_ids_data);
+          unsigned gold_edge_permutations[6] = { 0, 0, 0, 0, 1, 0 };
 
-				  build_element_from_topology_verify_ordinals_and_permutations(bulk, topo, &elem_node_ids[0], &side_ids[0], &edge_ids[0], gold_side_node_ids,
-				      &gold_side_permutations[0], gold_edge_node_ids, &gold_edge_permutations[0]);
+          build_element_from_topology_verify_ordinals_and_permutations(bulk, topo, &elem_node_ids[0], &side_ids[0],
+                                                                       &edge_ids[0], gold_side_node_ids,
+                                                                       &gold_side_permutations[0], gold_edge_node_ids,
+                                                                       &gold_edge_permutations[0]);
+          break;
+        }
+      case stk::topology::PYRAMID_5:
+        {
+          std::array <stk::mesh::EntityId, 5> elem_node_ids = {{1, 2, 3, 4, 5}};
+          std::array <stk::mesh::EntityId, 5> side_ids = {{1, 2, 3, 4, 5}};
+          std::array <stk::mesh::EntityId, 8> edge_ids = {{1, 2, 3, 4, 5, 6, 7, 8}};
 
-				  break;
-				}
-				case stk::topology::WEDGE_6:
-				{
-				  std::array <stk::mesh::EntityId, 6> elem_node_ids = {{1, 2, 3, 4, 5, 6}};
-				  std::array <stk::mesh::EntityId, 5> side_ids = {{1, 2, 3, 4, 5}};
-				  std::array <stk::mesh::EntityId, 9> edge_ids = {{1, 2, 3, 4, 5, 6, 7, 8, 9}};
+          std::array < std::array <unsigned, 4>, 5 > gold_side_node_ids_data = {{ {{1,2,5,0}}, {{2,3,5,0}},
+                                                                                  {{3,4,5,0}}, {{4,5,1,0}},
+                                                                                  {{1,4,3,2}} }};
+          std::vector < std::vector < unsigned > > gold_side_node_ids = build_2D_vector(gold_side_node_ids_data);
+          unsigned gold_side_permutations[5] = { 0, 0, 0, 3, 0 };
 
-				  std::array < std::array <unsigned, 4>, 5 > gold_side_node_ids_data = {{ {{1,2,5,4}}, {{3,6,5,2}}, {{1,4,6,3}}, {{1,2,3,0}}, {{4,5,6,0}} }};
-					std::vector < std::vector < unsigned > > gold_side_node_ids = build_2D_vector(gold_side_node_ids_data);
-				  unsigned gold_side_permutations[5] = { 0, 1, 0, 3, 0 };
+          std::array < std::array <unsigned, 2>, 8 > gold_edge_node_ids_data = {{ {{1,2}}, {{2,3}}, {{3,4}}, {{4,1}},
+                                                                                  {{1,5}}, {{2,5}}, {{5,3}}, {{4,5}} }};
+          std::vector < std::vector < unsigned > > gold_edge_node_ids = build_2D_vector(gold_edge_node_ids_data);
+          unsigned gold_edge_permutations[8] = { 0, 0, 0, 0, 0, 0, 1, 0 };
 
-				  std::array < std::array <unsigned, 2>, 9 > gold_edge_node_ids_data = {{ {{1,2}}, {{2,3}}, {{3,1}}, {{4,5}}, {{5,6}}, {{6,4}}, {{1,4}}, {{5,2}}, {{3,6}} }};
-					std::vector < std::vector < unsigned > > gold_edge_node_ids = build_2D_vector(gold_edge_node_ids_data);
-				  unsigned gold_edge_permutations[9] = { 0, 0, 0, 0, 0, 0, 0, 1, 0 };
+          build_element_from_topology_verify_ordinals_and_permutations(bulk, topo, &elem_node_ids[0], &side_ids[0],
+                                                                       &edge_ids[0], gold_side_node_ids,
+                                                                       &gold_side_permutations[0], gold_edge_node_ids,
+                                                                       &gold_edge_permutations[0]);
 
-				  build_element_from_topology_verify_ordinals_and_permutations(bulk, topo, &elem_node_ids[0], &side_ids[0], &edge_ids[0], gold_side_node_ids,
-				      &gold_side_permutations[0], gold_edge_node_ids, &gold_edge_permutations[0]);
+          break;
+        }
+      case stk::topology::WEDGE_6:
+        {
+          std::array <stk::mesh::EntityId, 6> elem_node_ids = {{1, 2, 3, 4, 5, 6}};
+          std::array <stk::mesh::EntityId, 5> side_ids = {{1, 2, 3, 4, 5}};
+          std::array <stk::mesh::EntityId, 9> edge_ids = {{1, 2, 3, 4, 5, 6, 7, 8, 9}};
 
-				  break;
-				}
-				case stk::topology::HEX_8:
-				{
-				  std::array <stk::mesh::EntityId, 8> elem_node_ids = {{1, 2, 3, 4, 5, 6, 7, 8}};
-				  std::array <stk::mesh::EntityId, 6> side_ids = {{1, 2, 3, 4, 5, 6}};
-				  std::array <stk::mesh::EntityId, 12> edge_ids = {{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}};
+          std::array < std::array <unsigned, 4>, 5 > gold_side_node_ids_data = {{ {{1,2,5,4}}, {{3,6,5,2}},
+                                                                                  {{1,4,6,3}}, {{1,2,3,0}},
+                                                                                  {{4,5,6,0}} }};
+          std::vector < std::vector < unsigned > > gold_side_node_ids = build_2D_vector(gold_side_node_ids_data);
+          unsigned gold_side_permutations[5] = { 0, 1, 0, 3, 0 };
 
-				  std::array < std::array <unsigned, 4>, 6 > gold_side_node_ids_data = {{ {{1,2,6,5}}, {{2,3,7,6}}, {{3,4,8,7}}, {{1,5,8,4}}, {{1,2,3,4}}, {{5, 6, 7, 8}} }};
-					std::vector < std::vector < unsigned > > gold_side_node_ids = build_2D_vector(gold_side_node_ids_data);
-				  unsigned gold_side_permutations[6] = { 0, 0, 0, 0, 4, 0 };
+          std::array < std::array <unsigned, 2>, 9 > gold_edge_node_ids_data = {{ {{1,2}}, {{2,3}}, {{3,1}},
+                                                                                  {{4,5}}, {{5,6}}, {{6,4}},
+                                                                                  {{1,4}}, {{5,2}}, {{3,6}} }};
+          std::vector < std::vector < unsigned > > gold_edge_node_ids = build_2D_vector(gold_edge_node_ids_data);
+          unsigned gold_edge_permutations[9] = { 0, 0, 0, 0, 0, 0, 0, 1, 0 };
 
-				  std::array < std::array <unsigned, 2>, 12 > gold_edge_node_ids_data = {{ {{1,2}}, {{2,3}}, {{3,4}}, {{4,1}}, {{5,6}}, {{6,7}}, {{7,8}}, {{8,5}}, {{1,5}}, {{2,6}}, {{7,3}}, {{4,8}} }};
-					std::vector < std::vector < unsigned > > gold_edge_node_ids = build_2D_vector(gold_edge_node_ids_data);
-				  unsigned gold_edge_permutations[12] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0 };
+          build_element_from_topology_verify_ordinals_and_permutations(bulk, topo, &elem_node_ids[0], &side_ids[0],
+                                                                       &edge_ids[0], gold_side_node_ids,
+                                                                       &gold_side_permutations[0], gold_edge_node_ids,
+                                                                       &gold_edge_permutations[0]);
 
-				  build_element_from_topology_verify_ordinals_and_permutations(bulk, topo, &elem_node_ids[0], &side_ids[0], &edge_ids[0], gold_side_node_ids,
-				      &gold_side_permutations[0], gold_edge_node_ids, &gold_edge_permutations[0]);
+          break;
+        }
+      case stk::topology::HEX_8:
+        {
+          std::array <stk::mesh::EntityId, 8> elem_node_ids = {{1, 2, 3, 4, 5, 6, 7, 8}};
+          std::array <stk::mesh::EntityId, 6> side_ids = {{1, 2, 3, 4, 5, 6}};
+          std::array <stk::mesh::EntityId, 12> edge_ids = {{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}};
 
-				  break;
-				}
-				case stk::topology::TRI_6_2D:
-				{
-				  std::array <stk::mesh::EntityId, 6> elem_node_ids = {{1, 2, 3, 4, 5, 6}};
-				  std::array <stk::mesh::EntityId, 3> side_ids = {{1, 2, 3}};
+          std::array < std::array <unsigned, 4>, 6 > gold_side_node_ids_data = {{ {{1,2,6,5}}, {{2,3,7,6}}, {{3,4,8,7}},
+                                                                                  {{1,5,8,4}}, {{1,2,3,4}}, {{5,6,7,8}} }};
+          std::vector < std::vector < unsigned > > gold_side_node_ids = build_2D_vector(gold_side_node_ids_data);
+          unsigned gold_side_permutations[6] = { 0, 0, 0, 0, 4, 0 };
 
-				  std::array < std::array <unsigned, 3>, 3 > gold_side_node_ids_data = {{ {{1,2,4}}, {{3,2,5}}, {{3,1,6}} }};
-					std::vector < std::vector < unsigned > > gold_side_node_ids = build_2D_vector(gold_side_node_ids_data);
-				  unsigned gold_side_permutations[3] = { 0, 1, 0};
+          std::array < std::array <unsigned, 2>, 12 > gold_edge_node_ids_data = {{ {{1,2}}, {{2,3}}, {{3,4}}, {{4,1}},
+                                                                                   {{5,6}}, {{6,7}}, {{7,8}}, {{8,5}},
+                                                                                   {{1,5}}, {{2,6}}, {{7,3}}, {{4,8}} }};
+          std::vector < std::vector < unsigned > > gold_edge_node_ids = build_2D_vector(gold_edge_node_ids_data);
+          unsigned gold_edge_permutations[12] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0 };
 
-				  stk::mesh::EntityId * edge_ids = NULL;
-				  std::vector < std::vector < unsigned > > gold_edge_node_ids;
-				  unsigned *  gold_edge_permutations = NULL;
+          build_element_from_topology_verify_ordinals_and_permutations(bulk, topo, &elem_node_ids[0], &side_ids[0],
+                                                                       &edge_ids[0], gold_side_node_ids,
+                                                                       &gold_side_permutations[0], gold_edge_node_ids,
+                                                                       &gold_edge_permutations[0]);
 
-				  build_element_from_topology_verify_ordinals_and_permutations(bulk, topo, &elem_node_ids[0], &side_ids[0], edge_ids, gold_side_node_ids,
-				      &gold_side_permutations[0], gold_edge_node_ids, gold_edge_permutations);
+          break;
+        }
+      case stk::topology::TRI_6_2D:
+        {
+          std::array <stk::mesh::EntityId, 6> elem_node_ids = {{1, 2, 3, 4, 5, 6}};
+          std::array <stk::mesh::EntityId, 3> side_ids = {{1, 2, 3}};
 
-				  break;
-				}
-				case stk::topology::TET_10:
-				{
-			    std::array <stk::mesh::EntityId, 10> elem_node_ids = {{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}};
-					std::array <stk::mesh::EntityId, 4> side_ids = {{1, 2, 3, 4}};
-					std::array <stk::mesh::EntityId, 6> edge_ids = {{1, 2, 3, 4, 5, 6}};
+          std::array < std::array <unsigned, 3>, 3 > gold_side_node_ids_data = {{ {{1,2,4}}, {{3,2,5}}, {{3,1,6}} }};
+          std::vector < std::vector < unsigned > > gold_side_node_ids = build_2D_vector(gold_side_node_ids_data);
+          unsigned gold_side_permutations[3] = { 0, 1, 0};
 
-					std::array < std::array <unsigned, 6>, 4 > gold_side_node_ids_data = {{ {{1,2,4, 5,9,8}},
-					                                                                        {{4,2,3, 9,6,10}},
-					                                                                        {{1,4,3, 8,10,7}},
-					                                                                        {{1,3,2, 7,6,5}} }};
-					std::vector < std::vector < unsigned > > gold_side_node_ids = build_2D_vector(gold_side_node_ids_data);
-					unsigned gold_side_permutations[4] = { 0, 2, 0, 0 };
+          stk::mesh::EntityId * edge_ids = NULL;
+          std::vector < std::vector < unsigned > > gold_edge_node_ids;
+          unsigned *  gold_edge_permutations = NULL;
 
-					std::array < std::array <unsigned, 3>, 6 > gold_edge_node_ids_data = {{ {{1,2, 5}}, {{2,3, 6}}, {{3,1, 7}},
-					                                                                        {{1,4, 8}}, {{4,2, 9}}, {{3,4, 10}} }};
-					std::vector < std::vector < unsigned > > gold_edge_node_ids = build_2D_vector(gold_edge_node_ids_data);
-					unsigned gold_edge_permutations[6] = { 0, 0, 0, 0, 1, 0 };
+          build_element_from_topology_verify_ordinals_and_permutations(bulk, topo, &elem_node_ids[0], &side_ids[0],
+                                                                       edge_ids, gold_side_node_ids,
+                                                                       &gold_side_permutations[0], gold_edge_node_ids,
+                                                                       gold_edge_permutations);
 
-					build_element_from_topology_verify_ordinals_and_permutations(bulk, topo, &elem_node_ids[0], &side_ids[0], &edge_ids[0], gold_side_node_ids,
-																				 &gold_side_permutations[0], gold_edge_node_ids, &gold_edge_permutations[0]);
+          break;
+        }
+      case stk::topology::TET_10:
+        {
+          std::array <stk::mesh::EntityId, 10> elem_node_ids = {{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}};
+          std::array <stk::mesh::EntityId, 4> side_ids = {{1, 2, 3, 4}};
+          std::array <stk::mesh::EntityId, 6> edge_ids = {{1, 2, 3, 4, 5, 6}};
 
-					break;
-			    }
-				default :
-				{
-					throw std::runtime_error("Invalid Topology\n");
-				}
-			}
-		}
+          std::array < std::array <unsigned, 6>, 4 > gold_side_node_ids_data = {{ {{1,2,4, 5,9,8}},
+                                                                                  {{4,2,3, 9,6,10}},
+                                                                                  {{1,4,3, 8,10,7}},
+                                                                                  {{1,3,2, 7,6,5}} }};
+          std::vector < std::vector < unsigned > > gold_side_node_ids = build_2D_vector(gold_side_node_ids_data);
+          unsigned gold_side_permutations[4] = { 0, 2, 0, 0 };
+
+          std::array < std::array <unsigned, 3>, 6 > gold_edge_node_ids_data = {{ {{1,2, 5}}, {{2,3, 6}}, {{3,1, 7}},
+                                                                                  {{1,4, 8}}, {{4,2, 9}}, {{3,4, 10}} }};
+          std::vector < std::vector < unsigned > > gold_edge_node_ids = build_2D_vector(gold_edge_node_ids_data);
+          unsigned gold_edge_permutations[6] = { 0, 0, 0, 0, 1, 0 };
+
+          build_element_from_topology_verify_ordinals_and_permutations(bulk, topo, &elem_node_ids[0], &side_ids[0],
+                                                                       &edge_ids[0], gold_side_node_ids,
+                                                                       &gold_side_permutations[0], gold_edge_node_ids,
+                                                                       &gold_edge_permutations[0]);
+
+          break;
+        }
+      default :
+        {
+          throw std::runtime_error("Invalid Topology\n");
+        }
+      }
+    }
   }
 }
 
@@ -589,7 +630,9 @@ TEST(FEMHelper, verify_connectibility_failure)
   for (size_t index = 0; index < num_test_topologies; ++index)
   {
     topo = test_topologies[index];
-    std::cout << "topology " << topo << " topology rank " << topo.rank() << " topology dimension " << topo.dimension() << std::endl;
+    std::cout << "topology " << topo << " topology rank " << topo.rank()
+              << " topology dimension " << topo.dimension() << std::endl;
+
     if(topo.rank() == stk::topology::ELEMENT_RANK)
     {
       spatial_dimension = topo.dimension();
@@ -601,49 +644,54 @@ TEST(FEMHelper, verify_connectibility_failure)
       switch (topo)
       {
       case stk::topology::PYRAMID_5:
-      {
-        std::array <stk::mesh::EntityId, 5> elem_node_ids = {{1, 2, 3, 4, 5}};
-        std::array <stk::mesh::EntityId, 5> side_ids = {{1, 2, 3, 4, 5}};
-        std::array <stk::mesh::EntityId, 8> edge_ids = {{1, 2, 3, 4, 5, 6, 7, 8}};
+        {
+          std::array <stk::mesh::EntityId, 5> elem_node_ids = {{1, 2, 3, 4, 5}};
+          std::array <stk::mesh::EntityId, 5> side_ids = {{1, 2, 3, 4, 5}};
+          std::array <stk::mesh::EntityId, 8> edge_ids = {{1, 2, 3, 4, 5, 6, 7, 8}};
 
-        std::array < std::array <unsigned, 4>, 5 > gold_side_node_ids_data = {{ {{1,2,5,0}}, {{2,3,5,0}}, {{3,4,5,0}}, {{4,5,1,0}}, {{1,3,4,2}} }};
-				std::vector < std::vector < unsigned > > gold_side_node_ids = build_2D_vector(gold_side_node_ids_data);
+          std::array < std::array <unsigned, 4>, 5 > gold_side_node_ids_data = {{ {{1,2,5,0}}, {{2,3,5,0}},
+                                                                                  {{3,4,5,0}}, {{4,5,1,0}},
+                                                                                  {{1,3,4,2}} }};
+          std::vector < std::vector < unsigned > > gold_side_node_ids = build_2D_vector(gold_side_node_ids_data);
 
-        std::array < std::array <unsigned, 2>, 8 > gold_edge_node_ids_data = {{ {{1,2}}, {{2,3}}, {{3,4}}, {{4,1}}, {{1,5}}, {{2,5}}, {{5,3}}, {{4,5}} }};
-				std::vector < std::vector < unsigned > > gold_edge_node_ids = build_2D_vector(gold_edge_node_ids_data);
+          std::array < std::array <unsigned, 2>, 8 > gold_edge_node_ids_data = {{ {{1,2}}, {{2,3}}, {{3,4}}, {{4,1}},
+                                                                                  {{1,5}}, {{2,5}}, {{5,3}}, {{4,5}} }};
+          std::vector < std::vector < unsigned > > gold_edge_node_ids = build_2D_vector(gold_edge_node_ids_data);
 
-        bool sides_connectibility_check[5] = { 1, 1, 1, 1, 0 };
-        bool edges_connectibility_check[8] = { 1, 1, 1, 1, 1, 1, 1, 1 };
-        verify_unbuildable_element(bulk, topo, &elem_node_ids[0], &side_ids[0], gold_side_node_ids, sides_connectibility_check,
-            &edge_ids[0], gold_edge_node_ids, edges_connectibility_check);
-        break;
-      }
+          bool sides_connectibility_check[5] = { 1, 1, 1, 1, 0 };
+          bool edges_connectibility_check[8] = { 1, 1, 1, 1, 1, 1, 1, 1 };
+          verify_unbuildable_element(bulk, topo, &elem_node_ids[0], &side_ids[0], gold_side_node_ids,
+                                     sides_connectibility_check, &edge_ids[0], gold_edge_node_ids,
+                                     edges_connectibility_check);
+          break;
+        }
       case stk::topology::TET_10:
-      {
-        std::array <stk::mesh::EntityId, 10> elem_node_ids = {{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}};
-        std::array <stk::mesh::EntityId, 4> side_ids = {{1, 2, 3, 4}};
-        std::array <stk::mesh::EntityId, 6> edge_ids = {{1, 2, 3, 4, 5, 6}};
+        {
+          std::array <stk::mesh::EntityId, 10> elem_node_ids = {{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}};
+          std::array <stk::mesh::EntityId, 4> side_ids = {{1, 2, 3, 4}};
+          std::array <stk::mesh::EntityId, 6> edge_ids = {{1, 2, 3, 4, 5, 6}};
 
-        std::array < std::array <unsigned, 6>, 4 > gold_side_node_ids_data = {{ {{1,2,4, 5,9,8}},
-            {{4,2,3, 9,6,10}},
-            {{1,4,3, 8,10,7}},
-            {{1,3,2, 7,6,5}} }};
-				std::vector < std::vector < unsigned > > gold_side_node_ids = build_2D_vector(gold_side_node_ids_data);
+          std::array < std::array <unsigned, 6>, 4 > gold_side_node_ids_data = {{ {{1,2,4, 5,9,8}},
+                                                                                  {{4,2,3, 9,6,10}},
+                                                                                  {{1,4,3, 8,10,7}},
+                                                                                  {{1,3,2, 7,6,5}} }};
+          std::vector < std::vector < unsigned > > gold_side_node_ids = build_2D_vector(gold_side_node_ids_data);
 
-        std::array < std::array <unsigned, 3>, 6 > gold_edge_node_ids_data = {{ {{1,2, 5}}, {{2,3, 6}}, {{3,1, 7}},
-            {{1,4, 8}}, {{4,9, 2}}, {{3,4, 10}} }};
-				std::vector < std::vector < unsigned > > gold_edge_node_ids = build_2D_vector(gold_edge_node_ids_data);
+          std::array < std::array <unsigned, 3>, 6 > gold_edge_node_ids_data = {{ {{1,2, 5}}, {{2,3, 6}}, {{3,1, 7}},
+                                                                                  {{1,4, 8}}, {{4,9, 2}}, {{3,4, 10}} }};
+          std::vector < std::vector < unsigned > > gold_edge_node_ids = build_2D_vector(gold_edge_node_ids_data);
 
-        bool sides_connectibility_check[4] = { 1, 1, 1, 1 };
-        bool edges_connectibility_check[6] = { 1, 1, 1, 1, 0, 1 };
-        verify_unbuildable_element(bulk, topo, &elem_node_ids[0], &side_ids[0], gold_side_node_ids, sides_connectibility_check,
-            &edge_ids[0], gold_edge_node_ids, edges_connectibility_check);
-        break;
-      }
+          bool sides_connectibility_check[4] = { 1, 1, 1, 1 };
+          bool edges_connectibility_check[6] = { 1, 1, 1, 1, 0, 1 };
+          verify_unbuildable_element(bulk, topo, &elem_node_ids[0], &side_ids[0], gold_side_node_ids,
+                                     sides_connectibility_check, &edge_ids[0], gold_edge_node_ids,
+                                     edges_connectibility_check);
+          break;
+        }
       default:
-      {
-        throw std::runtime_error("Invalid Topology\n");
-      }
+        {
+          throw std::runtime_error("Invalid Topology\n");
+        }
       }
     }
   }
