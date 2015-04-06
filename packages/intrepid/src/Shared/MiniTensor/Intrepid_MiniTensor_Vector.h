@@ -126,18 +126,18 @@ public:
 #ifdef HAVE_INTREPID_KOKKOSCORE
   template<class ArrayT, typename iType>
   Vector(
-      typename not_index<ArrayT>::type & data,
+      typename apply_diff<ArrayT, Index>::type & data,
       iType index1);
 
   template<class ArrayT, typename iType>
   Vector(
-      typename not_index<ArrayT>::type & data,
+      typename apply_diff<ArrayT, Index>::type & data,
       iType index1,
       iType index2);
 
   template<class ArrayT, typename iType>
   Vector(
-      typename not_index<ArrayT>::type & data,
+      typename apply_diff<ArrayT, Index>::type & data,
       iType index1,
       iType index2,
       iType index3);
@@ -172,13 +172,13 @@ public:
   template<class ArrayT, typename iType>
   Vector(
       Index const dimension,
-      typename not_index<ArrayT>::type & data,
+      typename apply_diff<ArrayT, Index>::type & data,
       iType index1);
 
   template<class ArrayT, typename iType>
   Vector(
       Index const dimension,
-      typename not_index<ArrayT>::type & data,
+      typename apply_diff<ArrayT, Index>::type & data,
       iType index1,
       iType index2);
 

@@ -137,13 +137,13 @@ public:
 
   template<class ArrayT, typename iType>
   Tensor(
-      typename not_index<ArrayT>::type & data,
+      typename apply_diff<ArrayT, Index>::type & data,
       iType index1,
       iType index2);
 
   template<class ArrayT, typename iType>
   Tensor(
-      typename not_index<ArrayT>::type & data,
+      typename apply_diff<ArrayT, Index>::type & data,
       iType index1,
       iType index2,
       iType index3);
@@ -176,7 +176,7 @@ public:
   template<class ArrayT, typename iType>
   Tensor(
       Index const dimension,
-      typename not_index<ArrayT>::type & data,
+      typename apply_diff<ArrayT, Index>::type & data,
       iType index1,
       iType index2);
 
@@ -312,7 +312,7 @@ public:
   /// \param data_ptr pointer into array for filling components
   ///
   template<class ArrayT, typename iType>
-  typename Kokkos::Impl::enable_if< !Kokkos::Impl::is_same<ArrayT, T*>::value, void>::type
+  typename if_diff<ArrayT, T*, void>::type
   fill(ArrayT & data, iType index1);
 
   template<class ArrayT, typename iType>

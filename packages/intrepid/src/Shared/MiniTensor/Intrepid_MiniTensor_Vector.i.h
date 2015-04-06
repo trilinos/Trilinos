@@ -94,7 +94,7 @@ template<typename T, Index N>
 template<class ArrayT, typename iType>
 inline
 Vector<T, N>::Vector(
-    typename not_index<ArrayT>::type & data,
+    typename apply_diff<ArrayT, Index>::type & data,
     iType index1) :
     TensorBase<T, Store>::TensorBase(N, ORDER, data, index1)
 {
@@ -105,7 +105,7 @@ template<typename T, Index N>
 template<class ArrayT, typename iType>
 inline
 Vector<T, N>::Vector(
-    typename not_index<ArrayT>::type & data,
+    typename apply_diff<ArrayT, Index>::type & data,
     iType index1,
     iType index2) :
     TensorBase<T, Store>::TensorBase(N, ORDER, data, index1, index2)
@@ -117,7 +117,7 @@ template<typename T, Index N>
 template<class ArrayT, typename iType>
 inline
 Vector<T, N>::Vector(
-    typename not_index<ArrayT>::type & data,
+    typename apply_diff<ArrayT, Index>::type & data,
     iType index1,
     iType index2,
     iType index3) :
@@ -200,7 +200,7 @@ template<class ArrayT, typename iType>
 inline
 Vector<T, N>::Vector(
     Index const dimension,
-    typename not_index<ArrayT>::type & data,
+    typename apply_diff<ArrayT, Index>::type & data,
     iType index1) :
     TensorBase<T, Store>::TensorBase(dimension, ORDER, data, index1)
 {
@@ -212,7 +212,7 @@ template<class ArrayT, typename iType>
 inline
 Vector<T, N>::Vector(
     Index const dimension,
-    typename not_index<ArrayT>::type & data,
+    typename apply_diff<ArrayT, Index>::type & data,
     iType index1,
     iType index2) :
     TensorBase<T, Store>::TensorBase(dimension, ORDER, data, index1, index2)
