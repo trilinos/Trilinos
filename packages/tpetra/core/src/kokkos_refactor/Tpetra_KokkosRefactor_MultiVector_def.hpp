@@ -1485,10 +1485,10 @@ namespace Tpetra {
       IMPL_NORM_INF  //<! Use the infinity-norm
     };
 
-    template<class MultiVecViewType, class NormsViewType>
+    template<class RV, class XMV>
     void
-    lclNormImpl (const NormsViewType& normsOut,
-                 const MultiVecViewType& X_lcl,
+    lclNormImpl (const RV& normsOut,
+                 const XMV& X_lcl,
                  const size_t lclNumRows,
                  const size_t numVecs,
                  const Teuchos::ArrayView<const size_t>& whichVecs,
@@ -1497,27 +1497,28 @@ namespace Tpetra {
     {
       using Kokkos::ALL;
       using Kokkos::subview;
-      typedef NormsViewType norms_view_type;
-      typedef MultiVecViewType mv_view_type;
-      typedef typename NormsViewType::non_const_value_type mag_type;
-      typedef typename MultiVecViewType::non_const_value_type impl_scalar_type;
-      // Type of a View of a single column of a MultiVector's local data.
-      //
-      // FIXME (mfh 04 Mar 2015) The layout may need to change, once we
-      // allow dual_view_type to have a layout other than LayoutLeft.
-      typedef Kokkos::View<impl_scalar_type*, typename mv_view_type::array_layout,
-        typename mv_view_type::device_type> vec_view_type;
-      // Type of a View of a single norm result (one entry).
-      typedef Kokkos::View<mag_type,
-        typename NormsViewType::device_type> norm_view_type;
+      typedef typename RV::non_const_value_type mag_type;
+
+#ifdef KOKKOS_HAVE_CXX11
+      static_assert (Kokkos::Impl::is_view<RV>::value,
+                     "Tpetra::MultiVector::lclNormImpl: "
+                     "The first argument RV is not a Kokkos::View.");
+      static_assert (RV::rank == 1, "Tpetra::MultiVector::lclNormImpl: "
+                     "The first argument normsOut must have rank 1.");
+      static_assert (Kokkos::Impl::is_view<XMV>::value,
+                     "Tpetra::MultiVector::lclNormImpl: "
+                     "The second argument X_lcl is not a Kokkos::View.");
+      static_assert (XMV::rank == 2, "Tpetra::MultiVector::lclNormImpl: "
+                     "The second argument X_lcl must have rank 2.");
+#endif // KOKKOS_HAVE_CXX11
 
       // In case the input dimensions don't match, make sure that we
       // don't overwrite memory that doesn't belong to us, by using
       // subset views with the minimum dimensions over all input.
       const std::pair<size_t, size_t> rowRng (0, lclNumRows);
       const std::pair<size_t, size_t> colRng (0, numVecs);
-      norms_view_type theNorms = subview (normsOut, colRng);
-      mv_view_type X = subview (X_lcl, rowRng, colRng);
+      RV theNorms = subview (normsOut, colRng);
+      XMV X = subview (X_lcl, rowRng, colRng);
 
       // mfh 10 Mar 2015: Kokkos::(Dual)View subviews don't quite
       // behave how you think when they have zero rows.  In that case,
@@ -1529,83 +1530,47 @@ namespace Tpetra {
         << lclNumRows << " x " << numVecs << ".  Please report this bug to "
         "the Tpetra developers.");
 
-      if (constantStride && whichNorm == IMPL_NORM_TWO) {
-        KokkosBlas::nrm2_squared (theNorms, X);
+      if (lclNumRows == 0) {
+        const mag_type zeroMag = Kokkos::Details::ArithTraits<mag_type>::zero ();
+        Kokkos::Impl::ViewFill<RV> (theNorms, zeroMag);
       }
-      else {
-        if (lclNumRows == 0) {
-          const mag_type zeroMag = Kokkos::Details::ArithTraits<mag_type>::zero ();
-          Kokkos::Impl::ViewFill<norms_view_type> (theNorms, zeroMag);
+      else { // lclNumRows != 0
+        if (constantStride) {
+          if (whichNorm == IMPL_NORM_INF) {
+            KokkosBlas::nrmInf (theNorms, X);
+          }
+          else if (whichNorm == IMPL_NORM_ONE) {
+            KokkosBlas::nrm1 (theNorms, X);
+          }
+          else if (whichNorm == IMPL_NORM_TWO) {
+            KokkosBlas::nrm2_squared (theNorms, X);
+          }
+          else {
+            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+          }
         }
-        else { // lclNumRows != 0
-          if (numVecs == 1) {
-            // Special case 1: The MultiVector only has a single column.
-            // The single-vector norm kernel may be more efficient.
-            const size_t ZERO = static_cast<size_t> (0);
-            vec_view_type X_k = subview (X, ALL (), ZERO);
-            norm_view_type norm_k = subview (theNorms, ZERO);
-
+        else { // not constant stride
+          // NOTE (mfh 15 Jul 2014) This does a kernel launch for
+          // every column.  It might be better to have a kernel that
+          // does the work all at once.  On the other hand, we don't
+          // prioritize performance of MultiVector views of
+          // noncontiguous columns.
+          for (size_t k = 0; k < numVecs; ++k) {
+            const size_t X_col = constantStride ? k : whichVecs[k];
             if (whichNorm == IMPL_NORM_INF) {
-              Kokkos::VecNormInfFunctor<vec_view_type,norm_view_type> f (X_k, norm_k);
-              Kokkos::parallel_reduce (lclNumRows, f);
+              KokkosBlas::nrmInf (theNorms, k, X, X_col);
             }
             else if (whichNorm == IMPL_NORM_ONE) {
-              Kokkos::VecNorm1Functor<vec_view_type,norm_view_type> f (X_k, norm_k);
-              Kokkos::parallel_reduce (lclNumRows, f);
+              KokkosBlas::nrm1 (theNorms, k, X, X_col);
             }
             else if (whichNorm == IMPL_NORM_TWO) {
-              Kokkos::VecNorm2SquaredFunctor<vec_view_type,norm_view_type> f (X_k, norm_k);
-              Kokkos::parallel_reduce (lclNumRows, f);
+              KokkosBlas::nrm2_squared (theNorms, k, X, X_col);
             }
             else {
               TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
             }
-          }
-          else if (constantStride) {
-            // Special case 2: The MultiVector has constant stride.
-            if (whichNorm == IMPL_NORM_INF) {
-              Kokkos::MultiVecNormInfFunctor<mv_view_type,norms_view_type> f (X, theNorms);
-              Kokkos::parallel_reduce (lclNumRows, f);
-            }
-            else if (whichNorm == IMPL_NORM_ONE) {
-              Kokkos::MultiVecNorm1Functor<mv_view_type,norms_view_type> f (X, theNorms);
-              Kokkos::parallel_reduce (lclNumRows, f);
-            }
-            else if (whichNorm == IMPL_NORM_TWO) {
-              KokkosBlas::nrm2_squared (theNorms, X);
-            }
-            else {
-              TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
-            }
-          }
-          else { // numVecs != 1 && ! constantStride
-            // FIXME (mfh 15 Jul 2014) This does a kernel launch for every
-            // column.  It might be better to have a kernel that does the
-            // work all at once.  On the other hand, we don't prioritize
-            // performance of MultiVector views of noncontiguous columns.
-            for (size_t k = 0; k < numVecs; ++k) {
-              const size_t X_col = constantStride ? k : whichVecs[k];
-              vec_view_type X_k = subview (X, ALL (), X_col);
-              norm_view_type norm_k = subview (theNorms, k);
-
-              if (whichNorm == IMPL_NORM_INF) {
-                Kokkos::VecNormInfFunctor<vec_view_type,norm_view_type> f (X_k, norm_k);
-                Kokkos::parallel_reduce (lclNumRows, f);
-              }
-              else if (whichNorm == IMPL_NORM_ONE) {
-                Kokkos::VecNorm1Functor<vec_view_type,norm_view_type> f (X_k, norm_k);
-                Kokkos::parallel_reduce (lclNumRows, f);
-              }
-              else if (whichNorm == IMPL_NORM_TWO) {
-                Kokkos::VecNorm2SquaredFunctor<vec_view_type,norm_view_type> f (X_k, norm_k);
-                Kokkos::parallel_reduce (lclNumRows, f);
-              }
-              else {
-                TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
-              }
-            } // for k = each column
-          } // numVecs != 1 and ! constantStride
-        }
+          } // for each column
+        } // constantStride
       } // lclNumRows != 0
     }
 
@@ -1696,9 +1661,12 @@ namespace Tpetra {
     using Teuchos::REDUCE_SUM;
     using Teuchos::reduceAll;
     // View of all the norm results.
-    typedef Kokkos::View<mag_type*, execution_space> norms_view_type;
+    typedef Kokkos::View<mag_type*, execution_space> RV;
 
     const size_t numVecs = this->getNumVectors ();
+    if (numVecs == 0) {
+      return; // nothing to do
+    }
     const size_t lclNumRows = this->getLocalLength ();
     const size_t numNorms = static_cast<size_t> (norms.dimension_0 ());
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1708,7 +1676,7 @@ namespace Tpetra {
       " = " << numVecs << ".");
 
     const std::pair<size_t, size_t> colRng (0, numVecs);
-    norms_view_type normsOut = subview (norms, colRng);
+    RV normsOut = subview (norms, colRng);
 
     EWhichNormImpl lclNormType;
     if (whichNorm == NORM_ONE) {
@@ -1730,31 +1698,26 @@ namespace Tpetra {
     if (! oneMemorySpace && view_.modified_host >= view_.modified_device) {
       // DualView was last modified on host, so run the local kernel there.
       // This means we need a host mirror of the array of norms too.
-      typedef typename dual_view_type::t_host mv_view_type;
-      lclNormImpl<mv_view_type, norms_view_type> (normsOut, view_.h_view,
-                                                  lclNumRows, numVecs,
-                                                  this->whichVectors_,
-                                                  this->isConstantStride (),
-                                                  lclNormType);
-      typename norms_view_type::HostMirror normsOutHost = Kokkos::create_mirror_view (normsOut);
-      gblNormImpl<typename norms_view_type::HostMirror> (normsOutHost, comm,
-                                                         this->isDistributed (),
-                                                         lclNormType);
+      typedef typename dual_view_type::t_host XMV;
+      lclNormImpl<RV, XMV> (normsOut, view_.h_view, lclNumRows, numVecs,
+                            this->whichVectors_, this->isConstantStride (),
+                            lclNormType);
+      typename RV::HostMirror normsOutHost =
+        Kokkos::create_mirror_view (normsOut);
+      gblNormImpl<typename RV::HostMirror> (normsOutHost, comm,
+                                            this->isDistributed (),
+                                            lclNormType);
       Kokkos::deep_copy (normsOut, normsOutHost);
     }
     else {
       // DualView was last modified on device, so run the local kernel there.
-      typedef typename dual_view_type::t_dev mv_view_type;
-      lclNormImpl<mv_view_type, norms_view_type> (normsOut, view_.d_view,
-                                                  lclNumRows, numVecs,
-                                                  this->whichVectors_,
-                                                  this->isConstantStride (),
-                                                  lclNormType);
-      gblNormImpl<norms_view_type> (normsOut, comm, this->isDistributed (), lclNormType);
+      typedef typename dual_view_type::t_dev XMV;
+      lclNormImpl<RV, XMV> (normsOut, view_.d_view, lclNumRows, numVecs,
+                            this->whichVectors_, this->isConstantStride (),
+                            lclNormType);
+      gblNormImpl<RV> (normsOut, comm, this->isDistributed (), lclNormType);
     }
   }
-
-
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
