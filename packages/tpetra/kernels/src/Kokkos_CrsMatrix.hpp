@@ -1952,15 +1952,16 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
                         typename TCrsMatrix::memory_traits,
                         typename TCrsMatrix::size_type>
       CrsMatrixType;
+      typedef typename CrsMatrixType::size_type size_type;
 
       Impl::MV_Multiply_Check_Compatibility(betav,y,alphav,A,x,doalpha,dobeta);
 
       // NNZPerRow could be anywhere from 0, to A.numRows()*A.numCols().
       // Thus, the appropriate type is size_type.
-      const typename CrsMatrixType::size_type NNZPerRow = A.nnz () / A.numRows ();
+      const size_type NNZPerRow = A.nnz () / A.numRows ();
 
       int vector_length = 1;
-      while( (vector_length*2*3 <= NNZPerRow) && (vector_length<32) ) vector_length*=2;
+      while( (static_cast<size_type> (vector_length*2*3) <= NNZPerRow) && (vector_length<32) ) vector_length*=2;
 
 #ifndef KOKKOS_FAST_COMPILE // This uses templated fucntions on doalpha and dobeta and will produce 16 kernels
 
@@ -2093,8 +2094,9 @@ template <class RangeVector,
           CoeffVector1Type, CoeffVector2Type, doalpha, dobeta> OpType ;
 
         OpType op(betav,alphav,A,x,y,x.dimension_1(),RowsPerThread<typename RangeVector::execution_space >(NNZPerRow)) ;
+        int rows_per_thread = RowsPerThread<typename RangeVector::execution_space >(NNZPerRow);
         Kokkos::parallel_for( Kokkos::TeamPolicy< typename RangeVector::execution_space >
-             ( A.numRows() ,RowsPerThread<typename RangeVector::execution_space >(NNZPerRow), vector_length ) , op );
+			      ( (A.numRows()+rows_per_thread-1)/rows_per_thread ,rows_per_thread, vector_length ) , op );
 
       }
 
@@ -2135,8 +2137,9 @@ template <class RangeVector,
       const typename CrsMatrixType::ordinal_type nrow = A.numRows();
 
       OpType op(betav,alphav,A,x,y,x.dimension_1(),RowsPerThread<typename RangeVector::execution_space >(NNZPerRow)) ;
+      int rows_per_thread = RowsPerThread<typename RangeVector::execution_space >(NNZPerRow);
       Kokkos::parallel_for( Kokkos::TeamPolicy< typename RangeVector::execution_space >
-           ( A.numRows() ,RowsPerThread<typename RangeVector::execution_space >(NNZPerRow), vector_length ) , op );
+			    ( (A.numRows()+rows_per_thread-1)/rows_per_thread ,rows_per_thread, vector_length ) , op );
 
 #endif // KOKKOS_FAST_COMPILE
     }

@@ -1,6 +1,6 @@
 KOKKOS_PATH = ../..
 
-PREFIX ?= /use/local/lib/kokkos
+PREFIX ?= /usr/local/lib/kokkos
 
 default: messages build-lib
 	echo "End Build"

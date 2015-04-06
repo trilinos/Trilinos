@@ -72,14 +72,28 @@ benchmarkKokkos (std::ostream& out,
                  const int numCols,
                  const int numTrials)
 {
+#ifdef KOKKOS_HAVE_SERIAL
+  typedef Kokkos::Serial execution_space;
+#else
+  typedef Kokkos::View<double**, Kokkos::LayoutLeft>::execution_space execution_space;
+#endif // KOKKOS_HAVE_SERIAL
+
   using std::endl;
-  typedef Kokkos::View<double**, Kokkos::LayoutLeft> mv_type;
+  typedef Kokkos::View<double**, Kokkos::LayoutLeft, execution_space> mv_type;
+  bool success = true;
 
-  RCP<Time> vecCreateTimer = getTimer ("Kokkos: Vector: Create");
-  RCP<Time> vecFillTimer = getTimer ("Kokkos: Vector: Fill");
-  RCP<Time> vecDotTimer = getTimer ("Kokkos: Vector: Dot");
+  RCP<Time> vecCreateTimer = getTimer ("Kokkos: MV: Create");
+  RCP<Time> vecFillTimer = getTimer ("Kokkos: MV: Fill");
+  RCP<Time> vecNrm2Timer = getTimer ("Kokkos: MV: Nrm2 (contiguous)");
+  RCP<Time> vecNrm2Timer2 = getTimer ("Kokkos: MV: Nrm2 (noncontiguous)");
+  RCP<Time> vecNrm1Timer = getTimer ("Kokkos: MV: Nrm1 (contiguous)");
+  RCP<Time> vecNrm1Timer2 = getTimer ("Kokkos: MV: Nrm1 (noncontiguous)");
+  RCP<Time> vecDotTimer = getTimer ("Kokkos: MV: Dot (contiguous)");
+  RCP<Time> vecDotTimer2 = getTimer ("Kokkos: MV: Dot (noncontiguous)");
+  RCP<Time> vecNrmInfTimer = getTimer ("Kokkos: MV: NrmInf (contiguous)");
+  RCP<Time> vecNrmInfTimer2 = getTimer ("Kokkos: MV: NrmInf (noncontiguous)");
 
-  // Benchmark creation of a Vector.
+  // Benchmark creation of a MultiVector.
   mv_type x;
   {
     TimeMonitor timeMon (*vecCreateTimer);
@@ -93,15 +107,113 @@ benchmarkKokkos (std::ostream& out,
   {
     TimeMonitor timeMon (*vecFillTimer);
     for (int k = 0; k < numTrials; ++k) {
-      Kokkos::Impl::ViewFill<mv_type> (x, 1.0);
+      KokkosBlas::fill (x, 1.0);
     }
   }
 
-  mv_type y ("y", numRows, numCols);
-  Kokkos::Impl::ViewFill<mv_type> (y, -1.0);
+  // Benchmark computing the (square of the) 2-norm of a MultiVector.
+  typedef Kokkos::View<double*, execution_space> norms_type;
+  norms_type norms ("norms", numCols);
+  {
+    TimeMonitor timeMon (*vecNrm2Timer);
+    for (int k = 0; k < numTrials; ++k) {
+      KokkosBlas::nrm2_squared (norms, x);
+    }
+  }
 
-  // Benchmark computing the dot product of two Vectors.
-  typedef Kokkos::View<double*, Kokkos::LayoutLeft> dots_type;
+  if (numTrials > 0 && numCols > 0) {
+    norms_type::HostMirror norms_h = Kokkos::create_mirror_view (norms);
+    Kokkos::deep_copy (norms_h, norms);
+
+    for (int j = 0; j < numCols; ++j) {
+      const double expectedResult = static_cast<double> (numRows);
+      if (norms_h(j) != expectedResult) {
+        out << "Kokkos 2-norm (squared) result is wrong!  Expected "
+            << expectedResult << " but got " << norms_h(j) << " instead."
+            << endl;
+        success = false;
+      }
+    }
+  }
+
+  // Benchmark computing the (square of the) 2-norm of a MultiVector,
+  // using the 4-argument variant.
+  {
+    TimeMonitor timeMon (*vecNrm2Timer2);
+    for (int k = 0; k < numTrials; ++k) {
+      for (int j = 0; j < numCols; ++j) {
+        KokkosBlas::nrm2_squared (norms, j, x, j);
+      }
+    }
+  }
+
+  if (numTrials > 0 && numCols > 0) {
+    norms_type::HostMirror norms_h = Kokkos::create_mirror_view (norms);
+    Kokkos::deep_copy (norms_h, norms);
+
+    for (int j = 0; j < numCols; ++j) {
+      const double expectedResult = static_cast<double> (numRows);
+      if (norms_h(j) != expectedResult) {
+        out << "Kokkos 2-norm (squared) result (3-arg variant) is wrong!  "
+            << "Expected " << expectedResult << " but got " << norms_h(j)
+            << " instead." << endl;
+        success = false;
+      }
+    }
+  }
+
+  // Benchmark computing the 1-norm of a MultiVector.
+  {
+    TimeMonitor timeMon (*vecNrm1Timer);
+    for (int k = 0; k < numTrials; ++k) {
+      KokkosBlas::nrm1 (norms, x);
+    }
+  }
+
+  if (numTrials > 0 && numCols > 0) {
+    norms_type::HostMirror norms_h = Kokkos::create_mirror_view (norms);
+    Kokkos::deep_copy (norms_h, norms);
+
+    for (int j = 0; j < numCols; ++j) {
+      const double expectedResult = static_cast<double> (numRows);
+      if (norms_h(j) != expectedResult) {
+        out << "Kokkos 1-norm result is wrong!  Expected " << expectedResult
+            << " but got " << norms_h(j) << " instead." << endl;
+        success = false;
+      }
+    }
+  }
+
+  // Benchmark computing the 1-norm of a MultiVector, using the
+  // 4-argument variant.
+  {
+    TimeMonitor timeMon (*vecNrm1Timer2);
+    for (int k = 0; k < numTrials; ++k) {
+      for (int j = 0; j < numCols; ++j) {
+        KokkosBlas::nrm1 (norms, j, x, j);
+      }
+    }
+  }
+
+  if (numTrials > 0 && numCols > 0) {
+    norms_type::HostMirror norms_h = Kokkos::create_mirror_view (norms);
+    Kokkos::deep_copy (norms_h, norms);
+
+    for (int j = 0; j < numCols; ++j) {
+      const double expectedResult = static_cast<double> (numRows);
+      if (norms_h(j) != expectedResult) {
+        out << "Kokkos 1-norm result (3-arg variant) is wrong!  "
+            << "Expected " << expectedResult << " but got " << norms_h(j)
+            << " instead." << endl;
+        success = false;
+      }
+    }
+  }
+
+  // Benchmark computing the dot product of two MultiVectors.
+  mv_type y ("y", numRows, numCols);
+  KokkosBlas::fill (y, -1.0);
+  typedef Kokkos::View<double*, Kokkos::LayoutLeft, execution_space> dots_type;
   dots_type dots ("dots", numCols);
   {
     TimeMonitor timeMon (*vecDotTimer);
@@ -119,13 +231,86 @@ benchmarkKokkos (std::ostream& out,
       if (dots_h(j) != expectedResult) {
         out << "Kokkos dot product result is wrong!  Expected " << expectedResult
             << " but got " << dots_h(j) << " instead." << endl;
-        return false;
-      } else {
-         return true;
+        success = false;
       }
     }
   }
-  return true;
+
+  // Benchmark computing the dot product of two MultiVectors,
+  // using the variant that selects a column at a time.
+  {
+    TimeMonitor timeMon (*vecDotTimer2);
+    for (int k = 0; k < numTrials; ++k) {
+      for (int j = 0; j < numCols; ++j) {
+        KokkosBlas::dot (dots, j, x, j, y, j);
+      }
+    }
+  }
+
+  if (numTrials > 0 && numCols > 0) {
+    dots_type::HostMirror dots_h = Kokkos::create_mirror_view (dots);
+    Kokkos::deep_copy (dots_h, dots);
+
+    for (int j = 0; j < numCols; ++j) {
+      const double expectedResult = static_cast<double> (numRows) * -1.0;
+      if (dots_h(j) != expectedResult) {
+        out << "Kokkos dot product result (5-arg variant) is wrong!  "
+            << "Expected " << expectedResult << " but got " << dots_h(j)
+            << " instead." << endl;
+        success = false;
+      }
+    }
+  }
+
+  // Benchmark computing the inf-norm of a MultiVector.
+  {
+    TimeMonitor timeMon (*vecNrmInfTimer);
+    for (int k = 0; k < numTrials; ++k) {
+      KokkosBlas::nrmInf (norms, x);
+    }
+  }
+
+  if (numTrials > 0 && numCols > 0) {
+    norms_type::HostMirror norms_h = Kokkos::create_mirror_view (norms);
+    Kokkos::deep_copy (norms_h, norms);
+
+    for (int j = 0; j < numCols; ++j) {
+      const double expectedResult = 1.0;
+      if (norms_h(j) != expectedResult) {
+        out << "Kokkos inf-norm result is wrong!  Expected " << expectedResult
+            << " but got " << norms_h(j) << " instead." << endl;
+        success = false;
+      }
+    }
+  }
+
+  // Benchmark computing the inf-norm of a MultiVector, using the
+  // 4-argument variant.
+  {
+    TimeMonitor timeMon (*vecNrmInfTimer2);
+    for (int k = 0; k < numTrials; ++k) {
+      for (int j = 0; j < numCols; ++j) {
+        KokkosBlas::nrmInf (norms, j, x, j);
+      }
+    }
+  }
+
+  if (numTrials > 0 && numCols > 0) {
+    norms_type::HostMirror norms_h = Kokkos::create_mirror_view (norms);
+    Kokkos::deep_copy (norms_h, norms);
+
+    for (int j = 0; j < numCols; ++j) {
+      const double expectedResult = 1.0;
+      if (norms_h(j) != expectedResult) {
+        out << "Kokkos inf-norm result (3-arg variant) is wrong!  "
+            << "Expected " << expectedResult << " but got " << norms_h(j)
+            << " instead." << endl;
+        success = false;
+      }
+    }
+  }
+
+  return success;
 }
 
 
@@ -136,12 +321,20 @@ benchmarkRaw (std::ostream& out,
               const int numTrials)
 {
   using std::endl;
-  RCP<Time> vecCreateTimer = getTimer ("Raw: Vector: Create");
-  RCP<Time> vecFillTimer = getTimer ("Raw: Vector: Fill");
-  RCP<Time> vecDotTimer = getTimer ("Raw: Vector: Dot");
+  RCP<Time> vecCreateTimer = getTimer ("Raw: MV: Create");
+  RCP<Time> vecFillTimer = getTimer ("Raw: MV: Fill");
+  RCP<Time> vecNrm2Timer = getTimer ("Raw: MV: Nrm2");
+  RCP<Time> vecNrm1Timer = getTimer ("Raw: MV: Nrm1");
+  RCP<Time> vecDotTimer = getTimer ("Raw: MV: Dot");
+  RCP<Time> vecNrmInfTimer = getTimer ("Raw: MV: NrmInf");
+  bool success = true;
 
-  // Benchmark creation of a Vector.
-  double* x = 0 ;
+  if (numTrials <= 0) {
+    return success; // trivial success
+  }
+
+  // Benchmark creation of a MultiVector.
+  double* x = NULL;
   {
     TimeMonitor timeMon (*vecCreateTimer);
     // This benchmarks both vector creation and vector destruction.
@@ -167,6 +360,57 @@ benchmarkRaw (std::ostream& out,
     }
   }
 
+  // Benchmark computing the (square of the) 2-norm of a MultiVector.
+  double* norms = new double [numCols];
+  {
+    TimeMonitor timeMon (*vecNrm2Timer);
+    for (int k = 0; k < numTrials; ++k) {
+      for (int j = 0; j < numCols; ++j) {
+        double sum = 0.0;
+        double* x_j = x + numRows * j;
+        for (int i = 0; i < numRows; ++i) {
+          sum += x_j[i] * x_j[i];
+        }
+        norms[j] = sum;
+      }
+    }
+  }
+
+  // Benchmark computing the 1-norm of a MultiVector.
+  {
+    TimeMonitor timeMon (*vecNrm1Timer);
+    for (int k = 0; k < numTrials; ++k) {
+      for (int j = 0; j < numCols; ++j) {
+        double sum = 0.0;
+        double* x_j = x + numRows * j;
+        for (int i = 0; i < numRows; ++i) {
+          const double tmp = x_j[i] < 0.0 ? -x_j[i] : x_j[i];
+          sum += tmp;
+        }
+        norms[j] = sum;
+      }
+    }
+  }
+
+  // Benchmark computing the inf-norm of a MultiVector.
+  {
+    TimeMonitor timeMon (*vecNrmInfTimer);
+    for (int k = 0; k < numTrials; ++k) {
+      for (int j = 0; j < numCols; ++j) {
+        double norm = 0.0;
+        double* x_j = x + numRows * j;
+        for (int i = 0; i < numRows; ++i) {
+          const double tmp = x_j[i];
+          if (norm < tmp) {
+            norm = tmp;
+          }
+        }
+        norms[j] = norm;
+      }
+    }
+  }
+
+  // Benchmark computing the dot product of two MultiVectors.
   double* y = new double [numRows * numCols];
   for (int j = 0; j < numCols; ++j) {
     double* y_j = y + numRows * j;
@@ -174,8 +418,6 @@ benchmarkRaw (std::ostream& out,
       y_j[i] = -1.0;
     }
   }
-
-  // Benchmark computing the dot product of two Vectors.
   double* dots = new double [numCols];
   for (int j = 0; j < numCols; ++j) {
     dots[j] = 0.0;
@@ -194,6 +436,10 @@ benchmarkRaw (std::ostream& out,
       }
     }
   }
+  if (norms != NULL) {
+    delete [] norms;
+    norms = NULL;
+  }
 
   if (x != NULL) {
     delete [] x;
@@ -205,7 +451,7 @@ benchmarkRaw (std::ostream& out,
   }
 
   if (numTrials == 0) {
-    return true; // trivially
+    return success;
   }
   else { // numTrials > 0
     const double expectedResult = static_cast<double> (numRows) * -1.0;
@@ -215,14 +461,15 @@ benchmarkRaw (std::ostream& out,
       if (dots != NULL) {
         delete [] dots;
       }
-      return false;
+      success = false;
     } else {
       if (dots != NULL) {
         delete [] dots;
       }
-      return true;
     }
   }
+
+  return success;
 }
 
 

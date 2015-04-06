@@ -52,57 +52,172 @@ namespace Impl {
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
 
 void
-Dot_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-       const double**, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-       const double**, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault>::
+Dot_MV<double*,
+       KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault>::
 dot (const RV& r, const XMV& X, const XMV& Y)
 {
-  using Kokkos::ALL;
-  using Kokkos::subview;
-  // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
-  typedef Kokkos::View<RV::value_type, RV::array_layout, RV::device_type, RV::memory_traits, RV::specialize> RV1D;
-  typedef Kokkos::View<XMV::value_type*, XMV::array_layout, XMV::device_type, XMV::memory_traits, XMV::specialize> XMV1D;
-  typedef Kokkos::View<YMV::value_type*, YMV::array_layout, YMV::device_type, YMV::memory_traits, YMV::specialize> YMV1D;
-
   const size_type numRows = X.dimension_0 ();
   const size_type numVecs = X.dimension_1 ();
 
-  // NOTE (mfh 01 Apr 2015): For LayoutLeft, it's reasonable to do one
-  // column at a time.  This ensures contiguous access.  However, it
-  // comes at the cost of doing a kernel launch for every column.
-  //
-  // The "right way" to do LayoutLeft is to cache block.
-  // Overdecompose hardware teams by ~6-10x.  Within each cache block,
-  // parallelize first over columns (threads), then over entries
-  // within a column (vector lanes).
+  // TODO (mfh 06 Apr 2015) Figure out the optimal max unroll length.
+  // It depends on the number of concurrent memory streams that the
+  // processor supports, not so much on the SIMD length.
 
-  // int is generally faster than size_t, but check for overflow first.
-  if (numRows < static_cast<typename XMV::size_type> (INT_MAX)) {
-    typedef V_Dot_Functor<RV1D, XMV1D, YMV1D, int> functor_type;
-    Kokkos::RangePolicy<XMV::execution_space, int> policy (0, numRows);
-
-    for (size_type j = 0; j < numVecs; ++j) {
-      functor_type op (subview (r, j), subview (X, ALL (), j), subview (Y, ALL (), j));
-      typename RV1D::non_const_value_type unusedResult;
-      Kokkos::parallel_reduce (policy, op, unusedResult);
-      (void) unusedResult;
-    }
+  if (numVecs > 16) {
+    MV_Dot_Right_FunctorVector<RV, XMV, YMV> op (r, X, Y);
+    Kokkos::parallel_reduce (numRows, op);
   }
   else {
-    typedef V_Dot_Functor<RV1D, XMV1D, YMV1D, size_type> functor_type;
-    Kokkos::RangePolicy<XMV::execution_space, size_type> policy (0, numRows);
-
-    for (size_type j = 0; j < numVecs; ++j) {
-      functor_type op (subview (r, j), subview (X, ALL (), j), subview (Y, ALL (), j));
-      typename RV1D::non_const_value_type unusedResult;
-      Kokkos::parallel_reduce (policy, op, unusedResult);
-      (void) unusedResult;
+    switch (numVecs) {
+    case 16: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 16> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
     }
+    case 15: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 15> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 14: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 14> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 13: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 13> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 12: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 12> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 11: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 11> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 10: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 10> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 9: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 9> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 8: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 8> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 7: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 7> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 6: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 6> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 5: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 5> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 4: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 4> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 3: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 3> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 2: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 2> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 1: {
+      // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
+      using Kokkos::ALL;
+      using Kokkos::subview;
+      // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
+      typedef Kokkos::View<RV::value_type, RV::array_layout, RV::device_type, RV::memory_traits, RV::specialize> RV0D;
+      typedef Kokkos::View<XMV::value_type*, XMV::array_layout, XMV::device_type, XMV::memory_traits, XMV::specialize> XMV1D;
+      typedef Kokkos::View<YMV::value_type*, YMV::array_layout, YMV::device_type, YMV::memory_traits, YMV::specialize> YMV1D;
+      typedef V_Dot_Functor<RV0D, XMV1D, YMV1D> op_type;
+      op_type op (subview (r, 0), subview (X, ALL (), 0), subview (Y, ALL (), 0));
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    } // switch
+  } // if-else
+}
+
+void
+Dot_MV<double*,
+       KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault>::
+dot (const RV& r, const size_t r_col, const XMV& X, const size_t X_col,
+     const XMV& Y, const size_t Y_col)
+{
+  // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
+  using Kokkos::ALL;
+  using Kokkos::subview;
+  typedef Kokkos::View<RV::value_type, RV::array_layout,
+    RV::device_type, RV::memory_traits, RV::specialize> RV0D;
+  typedef Kokkos::View<XMV::const_value_type*, XMV::array_layout, XMV::device_type, XMV::memory_traits, XMV::specialize> XMV1D;
+  typedef Kokkos::View<YMV::const_value_type*, YMV::array_layout, YMV::device_type, YMV::memory_traits, YMV::specialize> YMV1D;
+
+  const size_type numRows = X.dimension_0 ();
+  const size_type numCols = X.dimension_1 ();
+  if (numRows < static_cast<size_type> (INT_MAX) &&
+      numRows * numCols < static_cast<size_type> (INT_MAX)) {
+    typedef V_Dot_Functor<RV0D, XMV1D, YMV1D, int> op_type;
+    op_type op (subview (r, r_col), subview (X, ALL (), X_col),
+                subview (Y, ALL (), Y_col));
+    Kokkos::parallel_reduce (numRows, op);
+  }
+  else {
+    typedef V_Dot_Functor<RV0D, XMV1D, YMV1D, size_type> op_type;
+    op_type op (subview (r, r_col), subview (X, ALL (), X_col),
+                subview (Y, ALL (), Y_col));
+    Kokkos::parallel_reduce (numRows, op);
   }
 }
+
 
 #undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
@@ -114,55 +229,169 @@ dot (const RV& r, const XMV& X, const XMV& Y)
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
 
 void
-Dot_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-       const double**, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-       const double**, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault>::
+Dot_MV<double*,
+       KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault>::
 dot (const RV& r, const XMV& X, const XMV& Y)
 {
-  using Kokkos::ALL;
-  using Kokkos::subview;
-  // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
-  typedef Kokkos::View<RV::value_type, RV::array_layout, RV::device_type, RV::memory_traits, RV::specialize> RV1D;
-  typedef Kokkos::View<XMV::value_type*, XMV::array_layout, XMV::device_type, XMV::memory_traits, XMV::specialize> XMV1D;
-  typedef Kokkos::View<YMV::value_type*, YMV::array_layout, YMV::device_type, YMV::memory_traits, YMV::specialize> YMV1D;
-
   const size_type numRows = X.dimension_0 ();
   const size_type numVecs = X.dimension_1 ();
 
-  // NOTE (mfh 01 Apr 2015): For LayoutLeft, it's reasonable to do one
-  // column at a time.  This ensures contiguous access.  However, it
-  // comes at the cost of doing a kernel launch for every column.
-  //
-  // The "right way" to do LayoutLeft is to cache block.
-  // Overdecompose hardware teams by ~6-10x.  Within each cache block,
-  // parallelize first over columns (threads), then over entries
-  // within a column (vector lanes).
+  // TODO (mfh 06 Apr 2015) Figure out the optimal max unroll length.
+  // It depends on the number of concurrent memory streams that the
+  // processor supports, not so much on the SIMD length.
 
-  // int is generally faster than size_t, but check for overflow first.
-  if (numRows < static_cast<typename XMV::size_type> (INT_MAX)) {
-    typedef V_Dot_Functor<RV1D, XMV1D, YMV1D, int> functor_type;
-    Kokkos::RangePolicy<XMV::execution_space, int> policy (0, numRows);
-
-    for (size_type j = 0; j < numVecs; ++j) {
-      functor_type op (subview (r, j), subview (X, ALL (), j), subview (Y, ALL (), j));
-      typename RV1D::non_const_value_type unusedResult;
-      Kokkos::parallel_reduce (policy, op, unusedResult);
-      (void) unusedResult;
-    }
+  if (numVecs > 16) {
+    MV_Dot_Right_FunctorVector<RV, XMV, YMV> op (r, X, Y);
+    Kokkos::parallel_reduce (numRows, op);
   }
   else {
-    typedef V_Dot_Functor<RV1D, XMV1D, YMV1D, size_type> functor_type;
-    Kokkos::RangePolicy<XMV::execution_space, size_type> policy (0, numRows);
-
-    for (size_type j = 0; j < numVecs; ++j) {
-      functor_type op (subview (r, j), subview (X, ALL (), j), subview (Y, ALL (), j));
-      typename RV1D::non_const_value_type unusedResult;
-      Kokkos::parallel_reduce (policy, op, unusedResult);
-      (void) unusedResult;
+    switch (numVecs) {
+    case 16: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 16> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
     }
+    case 15: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 15> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 14: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 14> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 13: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 13> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 12: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 12> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 11: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 11> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 10: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 10> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 9: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 9> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 8: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 8> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 7: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 7> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 6: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 6> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 5: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 5> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 4: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 4> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 3: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 3> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 2: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 2> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 1: {
+      // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
+      using Kokkos::ALL;
+      using Kokkos::subview;
+      // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
+      typedef Kokkos::View<RV::value_type, RV::array_layout, RV::device_type, RV::memory_traits, RV::specialize> RV0D;
+      typedef Kokkos::View<XMV::value_type*, XMV::array_layout, XMV::device_type, XMV::memory_traits, XMV::specialize> XMV1D;
+      typedef Kokkos::View<YMV::value_type*, YMV::array_layout, YMV::device_type, YMV::memory_traits, YMV::specialize> YMV1D;
+      typedef V_Dot_Functor<RV0D, XMV1D, YMV1D> op_type;
+      op_type op (subview (r, 0), subview (X, ALL (), 0), subview (Y, ALL (), 0));
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    } // switch
+  } // if-else
+}
+
+void
+Dot_MV<double*,
+       KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault>::
+dot (const RV& r, const size_t r_col, const XMV& X, const size_t X_col,
+     const XMV& Y, const size_t Y_col)
+{
+  // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
+  using Kokkos::ALL;
+  using Kokkos::subview;
+  typedef Kokkos::View<RV::value_type, RV::array_layout,
+    RV::device_type, RV::memory_traits, RV::specialize> RV0D;
+  typedef Kokkos::View<XMV::const_value_type*, XMV::array_layout, XMV::device_type, XMV::memory_traits, XMV::specialize> XMV1D;
+  typedef Kokkos::View<YMV::const_value_type*, YMV::array_layout, YMV::device_type, YMV::memory_traits, YMV::specialize> YMV1D;
+
+  const size_type numRows = X.dimension_0 ();
+  const size_type numCols = X.dimension_1 ();
+  if (numRows < static_cast<size_type> (INT_MAX) &&
+      numRows * numCols < static_cast<size_type> (INT_MAX)) {
+    typedef V_Dot_Functor<RV0D, XMV1D, YMV1D, int> op_type;
+    op_type op (subview (r, r_col), subview (X, ALL (), X_col),
+                subview (Y, ALL (), Y_col));
+    Kokkos::parallel_reduce (numRows, op);
+  }
+  else {
+    typedef V_Dot_Functor<RV0D, XMV1D, YMV1D, size_type> op_type;
+    op_type op (subview (r, r_col), subview (X, ALL (), X_col),
+                subview (Y, ALL (), Y_col));
+    Kokkos::parallel_reduce (numRows, op);
   }
 }
 
@@ -176,55 +405,169 @@ dot (const RV& r, const XMV& X, const XMV& Y)
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
 
 void
-Dot_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-       const double**, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-       const double**, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault>::
+Dot_MV<double*,
+       KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault>::
 dot (const RV& r, const XMV& X, const XMV& Y)
 {
-  using Kokkos::ALL;
-  using Kokkos::subview;
-  // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
-  typedef Kokkos::View<RV::value_type, RV::array_layout, RV::device_type, RV::memory_traits, RV::specialize> RV1D;
-  typedef Kokkos::View<XMV::value_type*, XMV::array_layout, XMV::device_type, XMV::memory_traits, XMV::specialize> XMV1D;
-  typedef Kokkos::View<YMV::value_type*, YMV::array_layout, YMV::device_type, YMV::memory_traits, YMV::specialize> YMV1D;
-
   const size_type numRows = X.dimension_0 ();
   const size_type numVecs = X.dimension_1 ();
 
-  // NOTE (mfh 01 Apr 2015): For LayoutLeft, it's reasonable to do one
-  // column at a time.  This ensures contiguous access.  However, it
-  // comes at the cost of doing a kernel launch for every column.
-  //
-  // The "right way" to do LayoutLeft is to cache block.
-  // Overdecompose hardware teams by ~6-10x.  Within each cache block,
-  // parallelize first over columns (threads), then over entries
-  // within a column (vector lanes).
+  // TODO (mfh 06 Apr 2015) Figure out the optimal max unroll length.
+  // It depends on the number of concurrent memory streams that the
+  // processor supports, not so much on the SIMD length.
 
-  // int is generally faster than size_t, but check for overflow first.
-  if (numRows < static_cast<typename XMV::size_type> (INT_MAX)) {
-    typedef V_Dot_Functor<RV1D, XMV1D, YMV1D, int> functor_type;
-    Kokkos::RangePolicy<XMV::execution_space, int> policy (0, numRows);
-
-    for (size_type j = 0; j < numVecs; ++j) {
-      functor_type op (subview (r, j), subview (X, ALL (), j), subview (Y, ALL (), j));
-      typename RV1D::non_const_value_type unusedResult;
-      Kokkos::parallel_reduce (policy, op, unusedResult);
-      (void) unusedResult;
-    }
+  if (numVecs > 16) {
+    MV_Dot_Right_FunctorVector<RV, XMV, YMV> op (r, X, Y);
+    Kokkos::parallel_reduce (numRows, op);
   }
   else {
-    typedef V_Dot_Functor<RV1D, XMV1D, YMV1D, size_type> functor_type;
-    Kokkos::RangePolicy<XMV::execution_space, size_type> policy (0, numRows);
-
-    for (size_type j = 0; j < numVecs; ++j) {
-      functor_type op (subview (r, j), subview (X, ALL (), j), subview (Y, ALL (), j));
-      typename RV1D::non_const_value_type unusedResult;
-      Kokkos::parallel_reduce (policy, op, unusedResult);
-      (void) unusedResult;
+    switch (numVecs) {
+    case 16: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 16> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
     }
+    case 15: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 15> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 14: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 14> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 13: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 13> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 12: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 12> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 11: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 11> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 10: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 10> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 9: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 9> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 8: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 8> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 7: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 7> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 6: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 6> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 5: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 5> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 4: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 4> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 3: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 3> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 2: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 2> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 1: {
+      // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
+      using Kokkos::ALL;
+      using Kokkos::subview;
+      // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
+      typedef Kokkos::View<RV::value_type, RV::array_layout, RV::device_type, RV::memory_traits, RV::specialize> RV0D;
+      typedef Kokkos::View<XMV::value_type*, XMV::array_layout, XMV::device_type, XMV::memory_traits, XMV::specialize> XMV1D;
+      typedef Kokkos::View<YMV::value_type*, YMV::array_layout, YMV::device_type, YMV::memory_traits, YMV::specialize> YMV1D;
+      typedef V_Dot_Functor<RV0D, XMV1D, YMV1D> op_type;
+      op_type op (subview (r, 0), subview (X, ALL (), 0), subview (Y, ALL (), 0));
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    } // switch
+  } // if-else
+}
+
+void
+Dot_MV<double*,
+       KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault>::
+dot (const RV& r, const size_t r_col, const XMV& X, const size_t X_col,
+     const XMV& Y, const size_t Y_col)
+{
+  // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
+  using Kokkos::ALL;
+  using Kokkos::subview;
+  typedef Kokkos::View<RV::value_type, RV::array_layout,
+    RV::device_type, RV::memory_traits, RV::specialize> RV0D;
+  typedef Kokkos::View<XMV::const_value_type*, XMV::array_layout, XMV::device_type, XMV::memory_traits, XMV::specialize> XMV1D;
+  typedef Kokkos::View<YMV::const_value_type*, YMV::array_layout, YMV::device_type, YMV::memory_traits, YMV::specialize> YMV1D;
+
+  const size_type numRows = X.dimension_0 ();
+  const size_type numCols = X.dimension_1 ();
+  if (numRows < static_cast<size_type> (INT_MAX) &&
+      numRows * numCols < static_cast<size_type> (INT_MAX)) {
+    typedef V_Dot_Functor<RV0D, XMV1D, YMV1D, int> op_type;
+    op_type op (subview (r, r_col), subview (X, ALL (), X_col),
+                subview (Y, ALL (), Y_col));
+    Kokkos::parallel_reduce (numRows, op);
+  }
+  else {
+    typedef V_Dot_Functor<RV0D, XMV1D, YMV1D, size_type> op_type;
+    op_type op (subview (r, r_col), subview (X, ALL (), X_col),
+                subview (Y, ALL (), Y_col));
+    Kokkos::parallel_reduce (numRows, op);
   }
 }
 
@@ -238,55 +581,169 @@ dot (const RV& r, const XMV& X, const XMV& Y)
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaSpace
 
 void
-Dot_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-       const double**, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-       const double**, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault>::
+Dot_MV<double*,
+       KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault>::
 dot (const RV& r, const XMV& X, const XMV& Y)
 {
-  using Kokkos::ALL;
-  using Kokkos::subview;
-  // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
-  typedef Kokkos::View<RV::value_type, RV::array_layout, RV::device_type, RV::memory_traits, RV::specialize> RV1D;
-  typedef Kokkos::View<XMV::value_type*, XMV::array_layout, XMV::device_type, XMV::memory_traits, XMV::specialize> XMV1D;
-  typedef Kokkos::View<YMV::value_type*, YMV::array_layout, YMV::device_type, YMV::memory_traits, YMV::specialize> YMV1D;
-
   const size_type numRows = X.dimension_0 ();
   const size_type numVecs = X.dimension_1 ();
 
-  // NOTE (mfh 01 Apr 2015): For LayoutLeft, it's reasonable to do one
-  // column at a time.  This ensures contiguous access.  However, it
-  // comes at the cost of doing a kernel launch for every column.
-  //
-  // The "right way" to do LayoutLeft is to cache block.
-  // Overdecompose hardware teams by ~6-10x.  Within each cache block,
-  // parallelize first over columns (threads), then over entries
-  // within a column (vector lanes).
+  // TODO (mfh 06 Apr 2015) Figure out the optimal max unroll length.
+  // It depends on the number of concurrent memory streams that the
+  // processor supports, not so much on the SIMD length.
 
-  // int is generally faster than size_t, but check for overflow first.
-  if (numRows < static_cast<typename XMV::size_type> (INT_MAX)) {
-    typedef V_Dot_Functor<RV1D, XMV1D, YMV1D, int> functor_type;
-    Kokkos::RangePolicy<XMV::execution_space, int> policy (0, numRows);
-
-    for (size_type j = 0; j < numVecs; ++j) {
-      functor_type op (subview (r, j), subview (X, ALL (), j), subview (Y, ALL (), j));
-      typename RV1D::non_const_value_type unusedResult;
-      Kokkos::parallel_reduce (policy, op, unusedResult);
-      (void) unusedResult;
-    }
+  if (numVecs > 16) {
+    MV_Dot_Right_FunctorVector<RV, XMV, YMV> op (r, X, Y);
+    Kokkos::parallel_reduce (numRows, op);
   }
   else {
-    typedef V_Dot_Functor<RV1D, XMV1D, YMV1D, size_type> functor_type;
-    Kokkos::RangePolicy<XMV::execution_space, size_type> policy (0, numRows);
-
-    for (size_type j = 0; j < numVecs; ++j) {
-      functor_type op (subview (r, j), subview (X, ALL (), j), subview (Y, ALL (), j));
-      typename RV1D::non_const_value_type unusedResult;
-      Kokkos::parallel_reduce (policy, op);
-      (void) unusedResult;
+    switch (numVecs) {
+    case 16: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 16> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
     }
+    case 15: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 15> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 14: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 14> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 13: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 13> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 12: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 12> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 11: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 11> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 10: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 10> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 9: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 9> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 8: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 8> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 7: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 7> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 6: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 6> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 5: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 5> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 4: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 4> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 3: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 3> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 2: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 2> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 1: {
+      // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
+      using Kokkos::ALL;
+      using Kokkos::subview;
+      // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
+      typedef Kokkos::View<RV::value_type, RV::array_layout, RV::device_type, RV::memory_traits, RV::specialize> RV0D;
+      typedef Kokkos::View<XMV::value_type*, XMV::array_layout, XMV::device_type, XMV::memory_traits, XMV::specialize> XMV1D;
+      typedef Kokkos::View<YMV::value_type*, YMV::array_layout, YMV::device_type, YMV::memory_traits, YMV::specialize> YMV1D;
+      typedef V_Dot_Functor<RV0D, XMV1D, YMV1D> op_type;
+      op_type op (subview (r, 0), subview (X, ALL (), 0), subview (Y, ALL (), 0));
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    } // switch
+  } // if-else
+}
+
+void
+Dot_MV<double*,
+       KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault>::
+dot (const RV& r, const size_t r_col, const XMV& X, const size_t X_col,
+     const XMV& Y, const size_t Y_col)
+{
+  // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
+  using Kokkos::ALL;
+  using Kokkos::subview;
+  typedef Kokkos::View<RV::value_type, RV::array_layout,
+    RV::device_type, RV::memory_traits, RV::specialize> RV0D;
+  typedef Kokkos::View<XMV::const_value_type*, XMV::array_layout, XMV::device_type, XMV::memory_traits, XMV::specialize> XMV1D;
+  typedef Kokkos::View<YMV::const_value_type*, YMV::array_layout, YMV::device_type, YMV::memory_traits, YMV::specialize> YMV1D;
+
+  const size_type numRows = X.dimension_0 ();
+  const size_type numCols = X.dimension_1 ();
+  if (numRows < static_cast<size_type> (INT_MAX) &&
+      numRows * numCols < static_cast<size_type> (INT_MAX)) {
+    typedef V_Dot_Functor<RV0D, XMV1D, YMV1D, int> op_type;
+    op_type op (subview (r, r_col), subview (X, ALL (), X_col),
+                subview (Y, ALL (), Y_col));
+    Kokkos::parallel_reduce (numRows, op);
+  }
+  else {
+    typedef V_Dot_Functor<RV0D, XMV1D, YMV1D, size_type> op_type;
+    op_type op (subview (r, r_col), subview (X, ALL (), X_col),
+                subview (Y, ALL (), Y_col));
+    Kokkos::parallel_reduce (numRows, op);
   }
 }
 
@@ -300,55 +757,169 @@ dot (const RV& r, const XMV& X, const XMV& Y)
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaUVMSpace
 
 void
-Dot_MV<double*, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-       const double**, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault,
-       const double**, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-       Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault>::
+Dot_MV<double*,
+       KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault>::
 dot (const RV& r, const XMV& X, const XMV& Y)
 {
-  using Kokkos::ALL;
-  using Kokkos::subview;
-  // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
-  typedef Kokkos::View<RV::value_type, RV::array_layout, RV::device_type, RV::memory_traits, RV::specialize> RV1D;
-  typedef Kokkos::View<XMV::value_type*, XMV::array_layout, XMV::device_type, XMV::memory_traits, XMV::specialize> XMV1D;
-  typedef Kokkos::View<YMV::value_type*, YMV::array_layout, YMV::device_type, YMV::memory_traits, YMV::specialize> YMV1D;
-
   const size_type numRows = X.dimension_0 ();
   const size_type numVecs = X.dimension_1 ();
 
-  // NOTE (mfh 01 Apr 2015): For LayoutLeft, it's reasonable to do one
-  // column at a time.  This ensures contiguous access.  However, it
-  // comes at the cost of doing a kernel launch for every column.
-  //
-  // The "right way" to do LayoutLeft is to cache block.
-  // Overdecompose hardware teams by ~6-10x.  Within each cache block,
-  // parallelize first over columns (threads), then over entries
-  // within a column (vector lanes).
+  // TODO (mfh 06 Apr 2015) Figure out the optimal max unroll length.
+  // It depends on the number of concurrent memory streams that the
+  // processor supports, not so much on the SIMD length.
 
-  // int is generally faster than size_t, but check for overflow first.
-  if (numRows < static_cast<typename XMV::size_type> (INT_MAX)) {
-    typedef V_Dot_Functor<RV1D, XMV1D, YMV1D, int> functor_type;
-    Kokkos::RangePolicy<XMV::execution_space, int> policy (0, numRows);
-
-    for (size_type j = 0; j < numVecs; ++j) {
-      functor_type op (subview (r, j), subview (X, ALL (), j), subview (Y, ALL (), j));
-      typename RV1D::non_const_value_type unusedResult;
-      Kokkos::parallel_reduce (policy, op, unusedResult);
-      (void) unusedResult;
-    }
+  if (numVecs > 16) {
+    MV_Dot_Right_FunctorVector<RV, XMV, YMV> op (r, X, Y);
+    Kokkos::parallel_reduce (numRows, op);
   }
   else {
-    typedef V_Dot_Functor<RV1D, XMV1D, YMV1D, size_type> functor_type;
-    Kokkos::RangePolicy<XMV::execution_space, size_type> policy (0, numRows);
-
-    for (size_type j = 0; j < numVecs; ++j) {
-      functor_type op (subview (r, j), subview (X, ALL (), j), subview (Y, ALL (), j));
-      typename RV1D::non_const_value_type unusedResult;
-      Kokkos::parallel_reduce (policy, op, unusedResult);
-      (void) unusedResult;
+    switch (numVecs) {
+    case 16: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 16> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
     }
+    case 15: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 15> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 14: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 14> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 13: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 13> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 12: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 12> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 11: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 11> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 10: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 10> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 9: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 9> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 8: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 8> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 7: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 7> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 6: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 6> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 5: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 5> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 4: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 4> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 3: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 3> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 2: {
+      MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 2> op (r, X, Y);
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    case 1: {
+      // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
+      using Kokkos::ALL;
+      using Kokkos::subview;
+      // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
+      typedef Kokkos::View<RV::value_type, RV::array_layout, RV::device_type, RV::memory_traits, RV::specialize> RV0D;
+      typedef Kokkos::View<XMV::value_type*, XMV::array_layout, XMV::device_type, XMV::memory_traits, XMV::specialize> XMV1D;
+      typedef Kokkos::View<YMV::value_type*, YMV::array_layout, YMV::device_type, YMV::memory_traits, YMV::specialize> YMV1D;
+      typedef V_Dot_Functor<RV0D, XMV1D, YMV1D> op_type;
+      op_type op (subview (r, 0), subview (X, ALL (), 0), subview (Y, ALL (), 0));
+      Kokkos::parallel_reduce (numRows, op);
+      break;
+    }
+    } // switch
+  } // if-else
+}
+
+void
+Dot_MV<double*,
+       KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault,
+       const double**,
+       Kokkos::LayoutLeft,
+       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+       Kokkos::Impl::ViewDefault>::
+dot (const RV& r, const size_t r_col, const XMV& X, const size_t X_col,
+     const XMV& Y, const size_t Y_col)
+{
+  // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
+  using Kokkos::ALL;
+  using Kokkos::subview;
+  typedef Kokkos::View<RV::value_type, RV::array_layout,
+    RV::device_type, RV::memory_traits, RV::specialize> RV0D;
+  typedef Kokkos::View<XMV::const_value_type*, XMV::array_layout, XMV::device_type, XMV::memory_traits, XMV::specialize> XMV1D;
+  typedef Kokkos::View<YMV::const_value_type*, YMV::array_layout, YMV::device_type, YMV::memory_traits, YMV::specialize> YMV1D;
+
+  const size_type numRows = X.dimension_0 ();
+  const size_type numCols = X.dimension_1 ();
+  if (numRows < static_cast<size_type> (INT_MAX) &&
+      numRows * numCols < static_cast<size_type> (INT_MAX)) {
+    typedef V_Dot_Functor<RV0D, XMV1D, YMV1D, int> op_type;
+    op_type op (subview (r, r_col), subview (X, ALL (), X_col),
+                subview (Y, ALL (), Y_col));
+    Kokkos::parallel_reduce (numRows, op);
+  }
+  else {
+    typedef V_Dot_Functor<RV0D, XMV1D, YMV1D, size_type> op_type;
+    op_type op (subview (r, r_col), subview (X, ALL (), X_col),
+                subview (Y, ALL (), Y_col));
+    Kokkos::parallel_reduce (numRows, op);
   }
 }
 

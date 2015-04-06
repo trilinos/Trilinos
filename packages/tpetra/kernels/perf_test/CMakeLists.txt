@@ -1,20 +1,21 @@
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+# At some point, we may wish to make this into real "performance
+# tests," in the sense that they can pass or fail.  At that point, use
+# "CATEGORIES PERFORMANCE" to mark them as such.  For now, we just
+# build the executables for manual use, but don't run the tests.  They
+# build correctly with or without MPI, but only run them with a single
+# MPI process.
+
+TRIBITS_ADD_EXECUTABLE(
   blas1
   SOURCES blas1.cpp
-  ARGS ""
   COMM serial mpi
-  NUM_MPI_PROCS 1
-  STANDARD_PASS_OUTPUT
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE(
   blas1_MV
   SOURCES blas1_MV.cpp
-  ARGS ""
   COMM serial mpi
-  NUM_MPI_PROCS 1
-  STANDARD_PASS_OUTPUT
   )
