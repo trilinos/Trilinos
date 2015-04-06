@@ -1,8 +1,12 @@
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
+# These are performance tests, so we mark them as such.
+# This ensures that they only run if you want them to.
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   blas1
+  CATEGORIES PERFORMANCE
   SOURCES blas1.cpp
   ARGS ""
   COMM serial mpi
@@ -12,6 +16,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   blas1_MV
+  CATEGORIES PERFORMANCE
   SOURCES blas1_MV.cpp
   ARGS ""
   COMM serial mpi
