@@ -64,6 +64,23 @@ Nrm2_MV<double*,
         Kokkos::Impl::ViewDefault>::
 nrm2_squared (const RV& r, const XMV& X)
 {
+  Dot_MV<double*,
+    KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    Kokkos::Impl::ViewDefault,
+    const double**,
+    Kokkos::LayoutLeft,
+    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    Kokkos::Impl::ViewDefault,
+    const double**,
+    Kokkos::LayoutLeft,
+    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    Kokkos::Impl::ViewDefault>::dot (r, X, X);
+
+#if 0
   using Kokkos::ALL;
   using Kokkos::subview;
   // RV needs to turn 0-D, and XMV needs to turn 1-D.
@@ -111,6 +128,7 @@ nrm2_squared (const RV& r, const XMV& X)
       Kokkos::parallel_reduce (policy, op);
     }
   }
+#endif // 0
 }
 
 void
@@ -180,6 +198,23 @@ Nrm2_MV<double*,
         Kokkos::Impl::ViewDefault>::
 nrm2_squared (const RV& r, const XMV& X)
 {
+  Dot_MV<double*,
+    KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    Kokkos::Impl::ViewDefault,
+    const double**,
+    Kokkos::LayoutLeft,
+    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    Kokkos::Impl::ViewDefault,
+    const double**,
+    Kokkos::LayoutLeft,
+    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    Kokkos::Impl::ViewDefault>::dot (r, X, X);
+
+#if 0
   using Kokkos::ALL;
   using Kokkos::subview;
   // RV needs to turn 0-D, and XMV needs to turn 1-D.
@@ -227,6 +262,7 @@ nrm2_squared (const RV& r, const XMV& X)
       Kokkos::parallel_reduce (policy, op);
     }
   }
+#endif // 0
 }
 
 void
@@ -296,70 +332,21 @@ Nrm2_MV<double*,
         Kokkos::Impl::ViewDefault>::
 nrm2_squared (const RV& r, const XMV& X)
 {
-  using Kokkos::ALL;
-  using Kokkos::subview;
-  // RV needs to turn 0-D, and XMV needs to turn 1-D.
-  typedef Kokkos::View<typename RV::value_type,
-    typename RV::array_layout,
-    typename RV::device_type,
-    typename RV::memory_traits,
-    typename RV::specialize> RV0D;
-  typedef Kokkos::View<typename XMV::value_type*,
-    typename XMV::array_layout,
-    typename XMV::device_type,
-    typename XMV::memory_traits,
-    typename XMV::specialize> XMV1D;
-
-Dot_MV<double*,
-        KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-        Kokkos::Impl::ViewDefault,
-        const double**,
-        Kokkos::LayoutLeft,
-        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-        Kokkos::Impl::ViewDefault,
-        const double**,
-        Kokkos::LayoutLeft,
-        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-        Kokkos::Impl::ViewDefault>::dot (r, X, X);
-  return;
-
-  const size_type numRows = X.dimension_0 ();
-  const size_type numCols = X.dimension_1 ();
-
-  // NOTE (mfh 02 Apr 2015): For LayoutLeft, it's reasonable to do
-  // one column at a time.  This ensures contiguous access.
-  // However, it comes at the cost of doing a kernel launch for
-  // every column.
-  //
-  // The "right way" to do LayoutLeft is to cache block.
-  // Overdecompose hardware teams by ~6-10x.  Within each cache
-  // block, parallelize first over columns (threads), then over
-  // entries within a column (vector lanes).
-
-  // int is generally faster than size_t, but check for overflow first.
-  if (numRows < static_cast<size_type> (INT_MAX) &&
-      numRows * numCols < static_cast<size_type> (INT_MAX)) {
-    typedef V_Nrm2Squared_Functor<RV0D, XMV1D, int> functor_type;
-    Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
-
-    for (size_type j = 0; j < numCols; ++j) {
-      functor_type op (subview (r, j), subview (X, ALL (), j));
-      Kokkos::parallel_reduce (policy, op);
-    }
-  }
-  else {
-    typedef V_Nrm2Squared_Functor<RV0D, XMV1D, size_type> functor_type;
-    Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows);
-
-    for (size_type j = 0; j < numCols; ++j) {
-      functor_type op (subview (r, j), subview (X, ALL (), j));
-      Kokkos::parallel_reduce (policy, op);
-    }
-  }
+  Dot_MV<double*,
+    KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    Kokkos::Impl::ViewDefault,
+    const double**,
+    Kokkos::LayoutLeft,
+    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    Kokkos::Impl::ViewDefault,
+    const double**,
+    Kokkos::LayoutLeft,
+    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    Kokkos::Impl::ViewDefault>::dot (r, X, X);
 }
 
 void
@@ -429,6 +416,23 @@ Nrm2_MV<double*,
         Kokkos::Impl::ViewDefault>::
 nrm2_squared (const RV& r, const XMV& X)
 {
+  Dot_MV<double*,
+    KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    Kokkos::Impl::ViewDefault,
+    const double**,
+    Kokkos::LayoutLeft,
+    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    Kokkos::Impl::ViewDefault,
+    const double**,
+    Kokkos::LayoutLeft,
+    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    Kokkos::Impl::ViewDefault>::dot (r, X, X);
+
+#if 0
   using Kokkos::ALL;
   using Kokkos::subview;
   // RV needs to turn 0-D, and XMV needs to turn 1-D.
@@ -476,6 +480,8 @@ nrm2_squared (const RV& r, const XMV& X)
       Kokkos::parallel_reduce (policy, op);
     }
   }
+
+#endif // 0
 }
 
 void
@@ -545,6 +551,23 @@ Nrm2_MV<double*,
         Kokkos::Impl::ViewDefault>::
 nrm2_squared (const RV& r, const XMV& X)
 {
+  Dot_MV<double*,
+    KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    Kokkos::Impl::ViewDefault,
+    const double**,
+    Kokkos::LayoutLeft,
+    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    Kokkos::Impl::ViewDefault,
+    const double**,
+    Kokkos::LayoutLeft,
+    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    Kokkos::Impl::ViewDefault>::dot (r, X, X);
+
+#if 0
   using Kokkos::ALL;
   using Kokkos::subview;
   // RV needs to turn 0-D, and XMV needs to turn 1-D.
@@ -592,6 +615,7 @@ nrm2_squared (const RV& r, const XMV& X)
       Kokkos::parallel_reduce (policy, op);
     }
   }
+#endif // 0
 }
 
 void
