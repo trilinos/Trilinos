@@ -54,23 +54,53 @@ namespace mesh {
 
 //----------------------------------------------------------------------------
 
+namespace {
+
+unsigned count_parallel_consistent_parts(const MetaData & meta, const unsigned* first, const unsigned* last) {
+    unsigned count = 0;
+    for (unsigned part_index=0; part_index < last-first; ++part_index) {
+        const unsigned part_ordinal = first[part_index];
+        if ( (part_ordinal != meta.locally_owned_part().mesh_meta_data_ordinal()) &&
+                (part_ordinal != meta.globally_shared_part().mesh_meta_data_ordinal()) &&
+                (meta.get_parts()[part_ordinal]->entity_membership_is_parallel_consistent() )) {
+            ++count;
+        }
+    }
+    return count;
+}
+
+void pack_bucket_part_list(const Bucket & bucket, CommBuffer & buf ) {
+    const MetaData & meta = bucket.mesh().mesh_meta_data();
+    const std::pair<const unsigned *, const unsigned *>
+      part_ordinals = bucket.superset_part_ordinals();
+    buf.pack<unsigned>( count_parallel_consistent_parts(meta, part_ordinals.first, part_ordinals.second) );
+    unsigned nparts = part_ordinals.second - part_ordinals.first;
+    for (unsigned part_index=0; part_index < nparts; ++part_index) {
+        const unsigned part_ordinal = part_ordinals.first[part_index];
+        if ( (part_ordinal != meta.locally_owned_part().mesh_meta_data_ordinal()) &&
+             (part_ordinal != meta.globally_shared_part().mesh_meta_data_ordinal()) &&
+             (meta.get_parts()[part_ordinal]->entity_membership_is_parallel_consistent() )) {
+            buf.pack<unsigned>(part_ordinal);
+        }
+    }
+}
+
+}
+
 void pack_entity_info(const BulkData& mesh, CommBuffer & buf , const Entity entity )
 {
   const EntityKey & key   = mesh.entity_key(entity);
   const unsigned    owner = mesh.parallel_owner_rank(entity);
-  const std::pair<const unsigned *, const unsigned *>
-    part_ordinals = mesh.bucket(entity).superset_part_ordinals();
-
-  const unsigned nparts = part_ordinals.second - part_ordinals.first ;
-  const unsigned tot_rel = mesh.count_relations(entity);
-  Bucket& bucket = mesh.bucket(entity);
-  unsigned ebo   = mesh.bucket_ordinal(entity);
 
   buf.pack<EntityKey>( key );
   buf.pack<unsigned>( owner );
-  buf.pack<unsigned>( nparts );
-  buf.pack<unsigned>( part_ordinals.first , nparts );
+  pack_bucket_part_list(mesh.bucket(entity), buf);
+
+  const unsigned tot_rel = mesh.count_relations(entity);
   buf.pack<unsigned>( tot_rel );
+
+  Bucket& bucket = mesh.bucket(entity);
+  unsigned ebo   = mesh.bucket_ordinal(entity);
 
   ThrowAssertMsg(mesh.is_valid(entity), "BulkData at " << &mesh << " does not know Entity " << entity.local_offset());
   const EntityRank end_rank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
@@ -92,11 +122,6 @@ void pack_entity_info(const BulkData& mesh, CommBuffer & buf , const Entity enti
           } else {
             buf.pack<unsigned>(0u);
           }
-        } else { // relation to invalid entity (FIXED CONNECTIVITY CASE)
-          // TODO:  Consider not communicating relations to invalid entities...
-          buf.pack<EntityKey>( EntityKey() ); // invalid EntityKey
-          buf.pack<unsigned>( rel_ordinals[i] );
-          buf.pack<unsigned>(0u); // permutation
         }
       }
     }
@@ -138,9 +163,6 @@ void unpack_entity_info(
     buf.unpack<EntityKey>( rel_key );
     buf.unpack<unsigned>( rel_id );
     buf.unpack<unsigned>( rel_attr );
-    if (rel_key == EntityKey()) {
-      continue;
-    }
     Entity const entity =
       mesh.get_entity( rel_key.rank(), rel_key.id() );
     if ( mesh.is_valid(entity) ) {

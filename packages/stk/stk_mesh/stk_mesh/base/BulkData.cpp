@@ -2879,19 +2879,6 @@ void BulkData::ghost_entities_and_fields(Ghosting & ghosting, const std::set<Ent
 
           unpack_entity_info( buf, *this, key, owner, parts, relations );
 
-          // Must not have the locally_owned_part or globally_shared_part
-
-          remove( parts , meta.locally_owned_part() );
-          remove( parts , meta.globally_shared_part() );
-          PartVector tempParts;
-          tempParts.reserve(parts.size());
-          for (size_t i = 0; i < parts.size(); ++i) {
-            if (parts[i]->entity_membership_is_parallel_consistent()) {
-              tempParts.push_back(parts[i]);
-            }
-          }
-          parts.swap(tempParts);
-
           if (owner != this->parallel_rank()) {
             // We will also add the entity to the part corresponding to the 'ghosts' ghosting.
             stk::mesh::Part& ghost_part = *m_ghost_parts[ghosting.ordinal()];
@@ -2935,11 +2922,12 @@ void BulkData::ghost_entities_and_fields(Ghosting & ghosting, const std::set<Ent
       }
     }
 
+#ifndef NDEBUG
     if (parallel_size() > 1) {
       all_reduce( parallel() , ReduceSum<1>( & error_count ) );
     }
-
     ThrowErrorMsgIf( error_count, error_msg.str() );
+#endif
 
     if ( record_entity_comm_size_before_changing_it < m_entity_comm_list.size() ) {
       // Added new ghosting entities to the list,
