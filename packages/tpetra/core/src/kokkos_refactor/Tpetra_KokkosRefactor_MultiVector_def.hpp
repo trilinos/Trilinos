@@ -966,7 +966,9 @@ namespace Tpetra {
       using Kokkos::ALL;
       using Kokkos::subview;
       typedef typename RV::non_const_value_type dot_type;
+#ifdef HAVE_TPETRA_DEBUG
       const char prefix[] = "Tpetra::MultiVector::lclDotImpl: ";
+#endif // HAVE_TPETRA_DEBUG
 
 #ifdef KOKKOS_HAVE_CXX11
       static_assert (Kokkos::Impl::is_view<RV>::value,
