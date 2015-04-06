@@ -325,6 +325,14 @@ stk::mesh::Entity declare_element_to_sub_topology_with_nodes(stk::mesh::BulkData
 {
     std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation = get_ordinal_and_permutation(mesh, elem, to_rank, sub_topology_nodes);
 
+    if ((ordinalAndPermutation.first == stk::mesh::ConnectivityOrdinal::INVALID_CONNECTIVITY_ORDINAL)
+    		|| (ordinalAndPermutation.second == stk::mesh::Permutation::INVALID_PERMUTATION))
+    {
+    	stk::mesh::Entity invalid;
+    	invalid = stk::mesh::Entity::InvalidEntity;
+    	return invalid;
+    }
+
     stk::mesh::Entity side = mesh.declare_entity(to_rank, global_sub_topology_id, part);
     for (unsigned i=0;i<sub_topology_nodes.size();++i)
     {
