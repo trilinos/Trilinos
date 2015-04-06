@@ -313,7 +313,7 @@ TEST(FEMHelper, test_permutations_for_key_topologies)
 				}
 				case stk::topology::SHELL_TRI_3:
 				{
-			    std::array <stk::mesh::EntityId, 3> elem_node_ids = {{1, 2, 3}};
+				    std::array <stk::mesh::EntityId, 3> elem_node_ids = {{1, 2, 3}};
 					std::array <stk::mesh::EntityId, 2> side_ids = {{1, 2}};
 					std::array <stk::mesh::EntityId, 3> edge_ids = {{1, 2, 3}};
 
@@ -344,7 +344,7 @@ TEST(FEMHelper, test_permutations_for_key_topologies)
 				}
 				case stk::topology::SHELL_QUAD_4:
 				{
-				  std::array <stk::mesh::EntityId, 4> elem_node_ids = {{1, 2, 3, 4}};
+				    std::array <stk::mesh::EntityId, 4> elem_node_ids = {{1, 2, 3, 4}};
 					std::array <stk::mesh::EntityId, 2> side_ids = {{1, 2}};
 					std::array <stk::mesh::EntityId, 4> edge_ids = {{1, 2, 3, 4}};
 
@@ -375,7 +375,7 @@ TEST(FEMHelper, test_permutations_for_key_topologies)
 				}
 				case stk::topology::TET_4:
 				{
-				  std::array <stk::mesh::EntityId, 4> elem_node_ids = {{1, 2, 3, 4}};
+				    std::array <stk::mesh::EntityId, 4> elem_node_ids = {{1, 2, 3, 4}};
 					std::array <stk::mesh::EntityId, 4> side_ids = {{1, 2, 3, 4}};
 					std::array <stk::mesh::EntityId, 6> edge_ids = {{1, 2, 3, 4, 5, 6}};
 
