@@ -174,7 +174,7 @@ dot (const RV& dots, const XMV& x, const YMV& y)
 /// \param Y_col [in] Column of Y to use.
 template<class RV, class XMV, class YMV>
 void
-dot (const RV& dots, const XMV& X, const size_t X_col, const YMV& Y, const size_t Y_col)
+dot (const RV& dots, const size_t dots_col, const XMV& X, const size_t X_col, const YMV& Y, const size_t Y_col)
 {
 #ifdef KOKKOS_HAVE_CXX11
   // RV, XMV, and YMV must be Kokkos::View specializations.
@@ -269,7 +269,7 @@ dot (const RV& dots, const XMV& X, const size_t X_col, const YMV& Y, const size_
     typename YMV_Internal::device_type,
     typename YMV_Internal::memory_traits,
     typename YMV_Internal::specialize
-      >::dot (dots_i, X_internal, X_col, Y_internal, Y_col);
+      >::dot (dots_i, dots_col, X_internal, X_col, Y_internal, Y_col);
 }
 
 /// \brief Fill the multivector (2-D View) X with the given value.
@@ -427,7 +427,7 @@ nrm2_squared (const RV& norms, const XMV& X)
 }
 
 /// \brief Compute the 2-norm of X(:,X_col), and store the result in
-///   norms(0).
+///   norms(norms_col).
 ///
 /// \tparam RV 1-D output View
 /// \tparam XMV 2-D input View
@@ -437,7 +437,7 @@ nrm2_squared (const RV& norms, const XMV& X)
 /// \param X_col [i] Column of X to process.
 template<class RV, class XMV>
 void
-nrm2_squared (const RV& norms, const XMV& X, const size_t X_col)
+nrm2_squared (const RV& norms, const size_t norms_col, const XMV& X, const size_t X_col)
 {
 #ifdef KOKKOS_HAVE_CXX11
   // RV, XMV, and YMV must be Kokkos::View specializations.
@@ -500,7 +500,7 @@ nrm2_squared (const RV& norms, const XMV& X, const size_t X_col)
     typename XMV_Internal::device_type,
     typename XMV_Internal::memory_traits,
     typename XMV_Internal::specialize
-      >::nrm2_squared (norms_internal, X_internal, X_col);
+      >::nrm2_squared (norms_internal, norms_col, X_internal, X_col);
 }
 
 /// \brief Compute the 1-norms of the columns of the multivector (2-D
@@ -588,7 +588,7 @@ nrm1 (const RV& norms, const XMV& X)
 
 
 /// \brief Compute the 1-norm of X(:,X_col), and store the result in
-///   norms(0).
+///   norms(norms_col).
 ///
 /// \tparam RV 1-D output View
 /// \tparam XMV 2-D input View
@@ -598,7 +598,7 @@ nrm1 (const RV& norms, const XMV& X)
 /// \param X_col [i] Column of X to process.
 template<class RV, class XMV>
 void
-nrm1 (const RV& norms, const XMV& X, const size_t X_col)
+nrm1 (const RV& norms, const size_t norms_col, const XMV& X, const size_t X_col)
 {
 #ifdef KOKKOS_HAVE_CXX11
   // RV, XMV, and YMV must be Kokkos::View specializations.
@@ -661,7 +661,7 @@ nrm1 (const RV& norms, const XMV& X, const size_t X_col)
     typename XMV_Internal::device_type,
     typename XMV_Internal::memory_traits,
     typename XMV_Internal::specialize
-      >::nrm1 (norms_internal, X_internal, X_col);
+      >::nrm1 (norms_internal, norms_col, X_internal, X_col);
 }
 
 /// \brief Compute the inf-norms of the columns of the multivector
@@ -748,7 +748,7 @@ nrmInf (const RV& norms, const XMV& X)
 }
 
 /// \brief Compute the inf-norm of X(:,X_col), and store the result in
-///   norms(0).
+///   norms(norms_col).
 ///
 /// \tparam RV 1-D output View
 /// \tparam XMV 2-D input View
@@ -758,7 +758,7 @@ nrmInf (const RV& norms, const XMV& X)
 /// \param X_col [i] Column of X to process.
 template<class RV, class XMV>
 void
-nrmInf (const RV& norms, const XMV& X, const size_t X_col)
+nrmInf (const RV& norms, const size_t norms_col, const XMV& X, const size_t X_col)
 {
 #ifdef KOKKOS_HAVE_CXX11
   // RV, XMV, and YMV must be Kokkos::View specializations.
@@ -821,7 +821,7 @@ nrmInf (const RV& norms, const XMV& X, const size_t X_col)
     typename XMV_Internal::device_type,
     typename XMV_Internal::memory_traits,
     typename XMV_Internal::specialize
-      >::nrmInf (norms_internal, X_internal, X_col);
+      >::nrmInf (norms_internal, norms_col, X_internal, X_col);
 }
 
 } // namespace KokkosBlas

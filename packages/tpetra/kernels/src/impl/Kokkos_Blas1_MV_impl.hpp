@@ -382,9 +382,10 @@ struct Dot_MV {
   }
 
   /// \brief Compute the dot product of X(:,X_col) and Y(:,Y_col), and
-  ///   store result in r(0).
+  ///   store result in r(r_col).
   static void
-  dot (const RV& r, const XMV& X, const size_t X_col,
+  dot (const RV& r, const size_t r_col,
+       const XMV& X, const size_t X_col,
        const YMV& Y, const size_t Y_col)
   {
     // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
@@ -401,13 +402,13 @@ struct Dot_MV {
     if (numRows < static_cast<size_type> (INT_MAX) &&
         numRows * numCols < static_cast<size_type> (INT_MAX)) {
       typedef V_Dot_Functor<RV0D, XMV1D, YMV1D, int> op_type;
-      op_type op (subview (r, 0), subview (X, ALL (), X_col),
+      op_type op (subview (r, r_col), subview (X, ALL (), X_col),
                   subview (Y, ALL (), Y_col));
       Kokkos::parallel_reduce (numRows, op);
     }
     else {
       typedef V_Dot_Functor<RV0D, XMV1D, YMV1D, size_type> op_type;
-      op_type op (subview (r, 0), subview (X, ALL (), X_col),
+      op_type op (subview (r, r_col), subview (X, ALL (), X_col),
                   subview (Y, ALL (), Y_col));
       Kokkos::parallel_reduce (numRows, op);
     }
@@ -457,7 +458,8 @@ struct Dot_MV<double*,
   static void dot (const RV& r, const XMV& X, const YMV& Y);
 
   static void
-  dot (const RV& r, const XMV& X, const size_t X_col,
+  dot (const RV& r, const size_t r_col,
+       const XMV& X, const size_t X_col,
        const YMV& Y, const size_t Y_col);
 };
 #endif // KOKKOS_HAVE_SERIAL
@@ -499,7 +501,8 @@ struct Dot_MV<double*,
   static void dot (const RV& r, const XMV& X, const YMV& Y);
 
   static void
-  dot (const RV& r, const XMV& X, const size_t X_col,
+  dot (const RV& r, const size_t r_col,
+       const XMV& X, const size_t X_col,
        const YMV& Y, const size_t Y_col);
 };
 #endif // KOKKOS_HAVE_OPENMP
@@ -541,7 +544,8 @@ struct Dot_MV<double*,
   static void dot (const RV& r, const XMV& X, const YMV& Y);
 
   static void
-  dot (const RV& r, const XMV& X, const size_t X_col,
+  dot (const RV& r, const size_t r_col,
+       const XMV& X, const size_t X_col,
        const YMV& Y, const size_t Y_col);
 };
 #endif // KOKKOS_HAVE_PTHREAD
@@ -583,7 +587,8 @@ struct Dot_MV<double*,
   static void dot (const RV& r, const XMV& X, const YMV& Y);
 
   static void
-  dot (const RV& r, const XMV& X, const size_t X_col,
+  dot (const RV& r, const size_t r_col,
+       const XMV& X, const size_t X_col,
        const YMV& Y, const size_t Y_col);
 };
 #endif // KOKKOS_HAVE_CUDA
@@ -625,7 +630,8 @@ struct Dot_MV<double*,
   static void dot (const RV& r, const XMV& X, const YMV& Y);
 
   static void
-  dot (const RV& r, const XMV& X, const size_t X_col,
+  dot (const RV& r, const size_t r_col,
+       const XMV& X, const size_t X_col,
        const YMV& Y, const size_t Y_col);
 };
 #endif // KOKKOS_HAVE_CUDA
@@ -995,8 +1001,8 @@ struct Nrm2_MV {
   }
 
   /// \brief Compute the square of the 2-norm of X(:,X_col), and store
-  ///   result in r(0).
-  static void nrm2_squared (const RV& r, const XMV& X, const size_t X_col)
+  ///   result in r(r_col).
+  static void nrm2_squared (const RV& r, const size_t r_col, const XMV& X, const size_t X_col)
   {
     using Kokkos::ALL;
     using Kokkos::subview;
@@ -1019,13 +1025,13 @@ struct Nrm2_MV {
         numRows * numCols < static_cast<size_type> (INT_MAX)) {
       typedef V_Nrm2Squared_Functor<RV0D, XMV1D, int> functor_type;
       Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
-      functor_type op (subview (r, 0), subview (X, ALL (), X_col));
+      functor_type op (subview (r, r_col), subview (X, ALL (), X_col));
       Kokkos::parallel_reduce (policy, op);
     }
     else {
       typedef V_Nrm2Squared_Functor<RV0D, XMV1D, size_type> functor_type;
       Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows);
-      functor_type op (subview (r, 0), subview (X, ALL (), X_col));
+      functor_type op (subview (r, r_col), subview (X, ALL (), X_col));
       Kokkos::parallel_reduce (policy, op);
     }
   }
@@ -1070,7 +1076,7 @@ struct Nrm2_MV<double*,
   typedef XMV::size_type size_type;
 
   static void nrm2_squared (const RV& r, const XMV& X);
-  static void nrm2_squared (const RV& r, const XMV& X, const size_t X_col);
+  static void nrm2_squared (const RV& r, const size_t r_col, const XMV& X, const size_t X_col);
 };
 #endif // KOKKOS_HAVE_SERIAL
 
@@ -1104,7 +1110,7 @@ struct Nrm2_MV<double*,
   typedef XMV::size_type size_type;
 
   static void nrm2_squared (const RV& r, const XMV& X);
-  static void nrm2_squared (const RV& r, const XMV& X, const size_t X_col);
+  static void nrm2_squared (const RV& r, const size_t r_col, const XMV& X, const size_t X_col);
 };
 #endif // KOKKOS_HAVE_OPENMP
 
@@ -1138,7 +1144,7 @@ struct Nrm2_MV<double*,
   typedef XMV::size_type size_type;
 
   static void nrm2_squared (const RV& r, const XMV& X);
-  static void nrm2_squared (const RV& r, const XMV& X, const size_t X_col);
+  static void nrm2_squared (const RV& r, const size_t r_col, const XMV& X, const size_t X_col);
 };
 #endif // KOKKOS_HAVE_PTHREAD
 
@@ -1171,7 +1177,7 @@ struct Nrm2_MV<double*,
   typedef XMV::size_type size_type;
 
   static void nrm2_squared (const RV& r, const XMV& X);
-  static void nrm2_squared (const RV& r, const XMV& X, const size_t X_col);
+  static void nrm2_squared (const RV& r, const size_t r_col, const XMV& X, const size_t X_col);
 };
 #endif // KOKKOS_HAVE_CUDA
 
@@ -1205,7 +1211,7 @@ struct Nrm2_MV<double*,
   typedef XMV::size_type size_type;
 
   static void nrm2_squared (const RV& r, const XMV& X);
-  static void nrm2_squared (const RV& r, const XMV& X, const size_t X_col);
+  static void nrm2_squared (const RV& r, const size_t r_col, const XMV& X, const size_t X_col);
 };
 #endif // KOKKOS_HAVE_CUDA
 
@@ -1373,8 +1379,8 @@ struct Nrm1_MV {
     }
   }
 
-  //! Compute the 1-norm of X(:,X_col), and store result in r(0).
-  static void nrm1 (const RV& r, const XMV& X, const size_t X_col)
+  //! Compute the 1-norm of X(:,X_col), and store result in r(r_col).
+  static void nrm1 (const RV& r, const size_t r_col, const XMV& X, const size_t X_col)
   {
     using Kokkos::ALL;
     using Kokkos::subview;
@@ -1397,13 +1403,13 @@ struct Nrm1_MV {
         numRows * numCols < static_cast<size_type> (INT_MAX)) {
       typedef V_Nrm1_Functor<RV0D, XMV1D, int> functor_type;
       Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
-      functor_type op (subview (r, 0), subview (X, ALL (), X_col));
+      functor_type op (subview (r, r_col), subview (X, ALL (), X_col));
       Kokkos::parallel_reduce (policy, op);
     }
     else {
       typedef V_Nrm1_Functor<RV0D, XMV1D, size_type> functor_type;
       Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows);
-      functor_type op (subview (r, 0), subview (X, ALL (), X_col));
+      functor_type op (subview (r, r_col), subview (X, ALL (), X_col));
       Kokkos::parallel_reduce (policy, op);
     }
   }
@@ -1448,7 +1454,7 @@ struct Nrm1_MV<double*,
   typedef XMV::size_type size_type;
 
   static void nrm1 (const RV& r, const XMV& X);
-  static void nrm1 (const RV& r, const XMV& X, const size_t X_col);
+  static void nrm1 (const RV& r, const size_t r_col, const XMV& X, const size_t X_col);
 };
 #endif // KOKKOS_HAVE_SERIAL
 
@@ -1482,7 +1488,7 @@ struct Nrm1_MV<double*,
   typedef XMV::size_type size_type;
 
   static void nrm1 (const RV& r, const XMV& X);
-  static void nrm1 (const RV& r, const XMV& X, const size_t X_col);
+  static void nrm1 (const RV& r, const size_t r_col, const XMV& X, const size_t X_col);
 };
 #endif // KOKKOS_HAVE_OPENMP
 
@@ -1516,7 +1522,7 @@ struct Nrm1_MV<double*,
   typedef XMV::size_type size_type;
 
   static void nrm1 (const RV& r, const XMV& X);
-  static void nrm1 (const RV& r, const XMV& X, const size_t X_col);
+  static void nrm1 (const RV& r, const size_t r_col, const XMV& X, const size_t X_col);
 };
 #endif // KOKKOS_HAVE_PTHREAD
 
@@ -1549,7 +1555,7 @@ struct Nrm1_MV<double*,
   typedef XMV::size_type size_type;
 
   static void nrm1 (const RV& r, const XMV& X);
-  static void nrm1 (const RV& r, const XMV& X, const size_t X_col);
+  static void nrm1 (const RV& r, const size_t r_col, const XMV& X, const size_t X_col);
 };
 #endif // KOKKOS_HAVE_CUDA
 
@@ -1583,7 +1589,7 @@ struct Nrm1_MV<double*,
   typedef XMV::size_type size_type;
 
   static void nrm1 (const RV& r, const XMV& X);
-  static void nrm1 (const RV& r, const XMV& X, const size_t X_col);
+  static void nrm1 (const RV& r, const size_t r_col, const XMV& X, const size_t X_col);
 };
 #endif // KOKKOS_HAVE_CUDA
 
@@ -1761,8 +1767,8 @@ struct NrmInf_MV {
     }
   }
 
-  //! Compute the inf-norm of X(:,X_col), and store result in r(0).
-  static void nrmInf (const RV& r, const XMV& X, const size_t X_col)
+  //! Compute the inf-norm of X(:,X_col), and store result in r(r_col).
+  static void nrmInf (const RV& r, const size_t r_col, const XMV& X, const size_t X_col)
   {
     using Kokkos::ALL;
     using Kokkos::subview;
@@ -1785,13 +1791,13 @@ struct NrmInf_MV {
         numRows * numCols < static_cast<size_type> (INT_MAX)) {
       typedef V_NrmInf_Functor<RV0D, XMV1D, int> functor_type;
       Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
-      functor_type op (subview (r, 0), subview (X, ALL (), X_col));
+      functor_type op (subview (r, r_col), subview (X, ALL (), X_col));
       Kokkos::parallel_reduce (policy, op);
     }
     else {
       typedef V_NrmInf_Functor<RV0D, XMV1D, size_type> functor_type;
       Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows);
-      functor_type op (subview (r, 0), subview (X, ALL (), X_col));
+      functor_type op (subview (r, r_col), subview (X, ALL (), X_col));
       Kokkos::parallel_reduce (policy, op);
     }
   }
@@ -1836,7 +1842,7 @@ struct NrmInf_MV<double*,
   typedef XMV::size_type size_type;
 
   static void nrmInf (const RV& r, const XMV& X);
-  static void nrmInf (const RV& r, const XMV& X, const size_t X_col);
+  static void nrmInf (const RV& r, const size_t r_col, const XMV& X, const size_t X_col);
 };
 #endif // KOKKOS_HAVE_SERIAL
 
@@ -1870,7 +1876,7 @@ struct NrmInf_MV<double*,
   typedef XMV::size_type size_type;
 
   static void nrmInf (const RV& r, const XMV& X);
-  static void nrmInf (const RV& r, const XMV& X, const size_t X_col);
+  static void nrmInf (const RV& r, const size_t r_col, const XMV& X, const size_t X_col);
 };
 #endif // KOKKOS_HAVE_OPENMP
 
@@ -1904,7 +1910,7 @@ struct NrmInf_MV<double*,
   typedef XMV::size_type size_type;
 
   static void nrmInf (const RV& r, const XMV& X);
-  static void nrmInf (const RV& r, const XMV& X, const size_t X_col);
+  static void nrmInf (const RV& r, const size_t r_col, const XMV& X, const size_t X_col);
 };
 #endif // KOKKOS_HAVE_PTHREAD
 
@@ -1937,7 +1943,7 @@ struct NrmInf_MV<double*,
   typedef XMV::size_type size_type;
 
   static void nrmInf (const RV& r, const XMV& X);
-  static void nrmInf (const RV& r, const XMV& X, const size_t X_col);
+  static void nrmInf (const RV& r, const size_t r_col, const XMV& X, const size_t X_col);
 };
 #endif // KOKKOS_HAVE_CUDA
 
@@ -1971,7 +1977,7 @@ struct NrmInf_MV<double*,
   typedef XMV::size_type size_type;
 
   static void nrmInf (const RV& r, const XMV& X);
-  static void nrmInf (const RV& r, const XMV& X, const size_t X_col);
+  static void nrmInf (const RV& r, const size_t r_col, const XMV& X, const size_t X_col);
 };
 #endif // KOKKOS_HAVE_CUDA
 

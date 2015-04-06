@@ -124,7 +124,7 @@ NrmInf_MV<double*,
         Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
         Kokkos::MemoryTraits<Kokkos::Unmanaged>,
         Kokkos::Impl::ViewDefault>::
-nrmInf (const RV& r, const XMV& X, const size_t X_col)
+nrmInf (const RV& r, const size_t r_col, const XMV& X, const size_t X_col)
 {
   using Kokkos::ALL;
   using Kokkos::subview;
@@ -147,13 +147,13 @@ nrmInf (const RV& r, const XMV& X, const size_t X_col)
       numRows * numCols < static_cast<size_type> (INT_MAX)) {
     typedef V_NrmInf_Functor<RV0D, XMV1D, int> functor_type;
     Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
-    functor_type op (subview (r, 0), subview (X, ALL (), X_col));
+    functor_type op (subview (r, r_col), subview (X, ALL (), X_col));
     Kokkos::parallel_reduce (policy, op);
   }
   else {
     typedef V_NrmInf_Functor<RV0D, XMV1D, size_type> functor_type;
     Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows);
-    functor_type op (subview (r, 0), subview (X, ALL (), X_col));
+    functor_type op (subview (r, r_col), subview (X, ALL (), X_col));
     Kokkos::parallel_reduce (policy, op);
   }
 }
@@ -240,7 +240,7 @@ NrmInf_MV<double*,
         Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
         Kokkos::MemoryTraits<Kokkos::Unmanaged>,
         Kokkos::Impl::ViewDefault>::
-nrmInf (const RV& r, const XMV& X, const size_t X_col)
+nrmInf (const RV& r, const size_t r_col, const XMV& X, const size_t X_col)
 {
   using Kokkos::ALL;
   using Kokkos::subview;
@@ -263,13 +263,13 @@ nrmInf (const RV& r, const XMV& X, const size_t X_col)
       numRows * numCols < static_cast<size_type> (INT_MAX)) {
     typedef V_NrmInf_Functor<RV0D, XMV1D, int> functor_type;
     Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
-    functor_type op (subview (r, 0), subview (X, ALL (), X_col));
+    functor_type op (subview (r, r_col), subview (X, ALL (), X_col));
     Kokkos::parallel_reduce (policy, op);
   }
   else {
     typedef V_NrmInf_Functor<RV0D, XMV1D, size_type> functor_type;
     Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows);
-    functor_type op (subview (r, 0), subview (X, ALL (), X_col));
+    functor_type op (subview (r, r_col), subview (X, ALL (), X_col));
     Kokkos::parallel_reduce (policy, op);
   }
 }
@@ -356,7 +356,7 @@ NrmInf_MV<double*,
         Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
         Kokkos::MemoryTraits<Kokkos::Unmanaged>,
         Kokkos::Impl::ViewDefault>::
-nrmInf (const RV& r, const XMV& X, const size_t X_col)
+nrmInf (const RV& r, const size_t r_col, const XMV& X, const size_t X_col)
 {
   using Kokkos::ALL;
   using Kokkos::subview;
@@ -379,13 +379,13 @@ nrmInf (const RV& r, const XMV& X, const size_t X_col)
       numRows * numCols < static_cast<size_type> (INT_MAX)) {
     typedef V_NrmInf_Functor<RV0D, XMV1D, int> functor_type;
     Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
-    functor_type op (subview (r, 0), subview (X, ALL (), X_col));
+    functor_type op (subview (r, r_col), subview (X, ALL (), X_col));
     Kokkos::parallel_reduce (policy, op);
   }
   else {
     typedef V_NrmInf_Functor<RV0D, XMV1D, size_type> functor_type;
     Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows);
-    functor_type op (subview (r, 0), subview (X, ALL (), X_col));
+    functor_type op (subview (r, r_col), subview (X, ALL (), X_col));
     Kokkos::parallel_reduce (policy, op);
   }
 }
@@ -472,7 +472,7 @@ NrmInf_MV<double*,
         Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
         Kokkos::MemoryTraits<Kokkos::Unmanaged>,
         Kokkos::Impl::ViewDefault>::
-nrmInf (const RV& r, const XMV& X, const size_t X_col)
+nrmInf (const RV& r, const size_t r_col, const XMV& X, const size_t X_col)
 {
   using Kokkos::ALL;
   using Kokkos::subview;
@@ -495,13 +495,13 @@ nrmInf (const RV& r, const XMV& X, const size_t X_col)
       numRows * numCols < static_cast<size_type> (INT_MAX)) {
     typedef V_NrmInf_Functor<RV0D, XMV1D, int> functor_type;
     Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
-    functor_type op (subview (r, 0), subview (X, ALL (), X_col));
+    functor_type op (subview (r, r_col), subview (X, ALL (), X_col));
     Kokkos::parallel_reduce (policy, op);
   }
   else {
     typedef V_NrmInf_Functor<RV0D, XMV1D, size_type> functor_type;
     Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows);
-    functor_type op (subview (r, 0), subview (X, ALL (), X_col));
+    functor_type op (subview (r, r_col), subview (X, ALL (), X_col));
     Kokkos::parallel_reduce (policy, op);
   }
 }
@@ -588,7 +588,7 @@ NrmInf_MV<double*,
         Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
         Kokkos::MemoryTraits<Kokkos::Unmanaged>,
         Kokkos::Impl::ViewDefault>::
-nrmInf (const RV& r, const XMV& X, const size_t X_col)
+nrmInf (const RV& r, const size_t r_col, const XMV& X, const size_t X_col)
 {
   using Kokkos::ALL;
   using Kokkos::subview;
@@ -611,13 +611,13 @@ nrmInf (const RV& r, const XMV& X, const size_t X_col)
       numRows * numCols < static_cast<size_type> (INT_MAX)) {
     typedef V_NrmInf_Functor<RV0D, XMV1D, int> functor_type;
     Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
-    functor_type op (subview (r, 0), subview (X, ALL (), X_col));
+    functor_type op (subview (r, r_col), subview (X, ALL (), X_col));
     Kokkos::parallel_reduce (policy, op);
   }
   else {
     typedef V_NrmInf_Functor<RV0D, XMV1D, size_type> functor_type;
     Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows);
-    functor_type op (subview (r, 0), subview (X, ALL (), X_col));
+    functor_type op (subview (r, r_col), subview (X, ALL (), X_col));
     Kokkos::parallel_reduce (policy, op);
   }
 }

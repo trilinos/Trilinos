@@ -79,13 +79,13 @@ benchmarkKokkos (std::ostream& out,
   RCP<Time> vecCreateTimer = getTimer ("Kokkos: MV: Create");
   RCP<Time> vecFillTimer = getTimer ("Kokkos: MV: Fill");
   RCP<Time> vecNrm2Timer = getTimer ("Kokkos: MV: Nrm2 (2-arg)");
-  RCP<Time> vecNrm2Timer2 = getTimer ("Kokkos: MV: Nrm2 (3-arg)");
+  RCP<Time> vecNrm2Timer2 = getTimer ("Kokkos: MV: Nrm2 (4-arg)");
   RCP<Time> vecNrm1Timer = getTimer ("Kokkos: MV: Nrm1 (2-arg)");
-  RCP<Time> vecNrm1Timer2 = getTimer ("Kokkos: MV: Nrm1 (3-arg)");
+  RCP<Time> vecNrm1Timer2 = getTimer ("Kokkos: MV: Nrm1 (4-arg)");
   RCP<Time> vecDotTimer = getTimer ("Kokkos: MV: Dot (3-arg)");
-  RCP<Time> vecDotTimer2 = getTimer ("Kokkos: MV: Dot (5-arg)");
+  RCP<Time> vecDotTimer2 = getTimer ("Kokkos: MV: Dot (6-arg)");
   RCP<Time> vecNrmInfTimer = getTimer ("Kokkos: MV: NrmInf (2-arg)");
-  RCP<Time> vecNrmInfTimer2 = getTimer ("Kokkos: MV: NrmInf (3-arg)");
+  RCP<Time> vecNrmInfTimer2 = getTimer ("Kokkos: MV: NrmInf (4-arg)");
 
   // Benchmark creation of a MultiVector.
   mv_type x;
@@ -131,12 +131,12 @@ benchmarkKokkos (std::ostream& out,
   }
 
   // Benchmark computing the (square of the) 2-norm of a MultiVector,
-  // using the 3-argument variant.
+  // using the 4-argument variant.
   {
     TimeMonitor timeMon (*vecNrm2Timer2);
     for (int k = 0; k < numTrials; ++k) {
       for (int j = 0; j < numCols; ++j) {
-        KokkosBlas::nrm2_squared (norms, x, j);
+        KokkosBlas::nrm2_squared (norms, j, x, j);
       }
     }
   }
@@ -179,12 +179,12 @@ benchmarkKokkos (std::ostream& out,
   }
 
   // Benchmark computing the 1-norm of a MultiVector, using the
-  // 3-argument variant.
+  // 4-argument variant.
   {
     TimeMonitor timeMon (*vecNrm1Timer2);
     for (int k = 0; k < numTrials; ++k) {
       for (int j = 0; j < numCols; ++j) {
-        KokkosBlas::nrm1 (norms, x, j);
+        KokkosBlas::nrm1 (norms, j, x, j);
       }
     }
   }
@@ -236,7 +236,7 @@ benchmarkKokkos (std::ostream& out,
     TimeMonitor timeMon (*vecDotTimer2);
     for (int k = 0; k < numTrials; ++k) {
       for (int j = 0; j < numCols; ++j) {
-        KokkosBlas::dot (dots, x, j, y, j);
+        KokkosBlas::dot (dots, j, x, j, y, j);
       }
     }
   }
@@ -279,12 +279,12 @@ benchmarkKokkos (std::ostream& out,
   }
 
   // Benchmark computing the inf-norm of a MultiVector, using the
-  // 3-argument variant.
+  // 4-argument variant.
   {
     TimeMonitor timeMon (*vecNrmInfTimer2);
     for (int k = 0; k < numTrials; ++k) {
       for (int j = 0; j < numCols; ++j) {
-        KokkosBlas::nrmInf (norms, x, j);
+        KokkosBlas::nrmInf (norms, j, x, j);
       }
     }
   }
