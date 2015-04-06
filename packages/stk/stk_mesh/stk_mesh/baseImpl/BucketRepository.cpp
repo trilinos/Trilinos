@@ -38,7 +38,6 @@
 #include <stdexcept>                    // for runtime_error
 #include <stk_mesh/base/Bucket.hpp>     // for Bucket, raw_part_equal
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
-#include <stk_mesh/base/Trace.hpp>      // for TraceIf
 #include <stk_mesh/baseImpl/Partition.hpp>  // for Partition, lower_bound
 #include "boost/array.hpp"              // for array
 #include "stk_mesh/base/BucketConnectivity.hpp"  // for BucketConnectivity
@@ -159,8 +158,6 @@ Partition *BucketRepository::get_or_create_partition(
   const OrdinalVector &parts)
 {
   enum { KEY_TMP_BUFFER_SIZE = 64 };
-
-  TraceIf("stk::mesh::impl::BucketRepository::get_or_create_partition", LOG_BUCKET);
 
   ThrowRequireMsg(MetaData::get(m_mesh).check_rank(arg_entity_rank),
                   "Entity rank " << arg_entity_rank << " is invalid");

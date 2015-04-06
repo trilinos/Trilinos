@@ -105,6 +105,10 @@ struct create_single_edge_impl
   {
     typedef topology::topology_type< Topology::edge_topology> EdgeTopology;
 
+    Topology     elem_topo;
+    EdgeTopology edge_topo;
+
+
     BulkData & mesh = m_mesh;
     PartVector add_parts;
 
@@ -151,7 +155,7 @@ struct create_single_edge_impl
     typename impl::edge_map_type::iterator iedge = m_edge_map.find(edge_nodes);
 
     Entity edge;
-    Permutation perm = static_cast<Permutation>(0);
+    Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
     if (iedge == m_edge_map.end()) {
       ThrowRequireMsg(m_count_edges < m_available_ids.size(), "Error: edge generation exhausted available identifier list. Report to sierra-help");
       EntityId edge_id = m_available_ids[m_count_edges];
@@ -168,6 +172,8 @@ struct create_single_edge_impl
     else {
       edge = iedge->second;
     }
+    perm = mesh.find_permutation(elem_topo, &elem_nodes[0], edge_topo, &edge_nodes[0], m_edge_ordinal);
+    ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
     mesh.declare_relation(ielem, edge, m_edge_ordinal, perm, ordinal_scratch, part_scratch);
   }
 
@@ -211,6 +217,9 @@ struct create_edge_impl
   operator()(Topology t)
   {
     typedef topology::topology_type< Topology::edge_topology> EdgeTopology;
+
+    stk::topology elem_topo = m_bucket.topology();
+    EdgeTopology edge_topo;
 
     BulkData & mesh = m_bucket.mesh();
     PartVector add_parts;
@@ -262,7 +271,7 @@ struct create_edge_impl
         typename impl::edge_map_type::iterator iedge = m_edge_map.find(edge_nodes);
 
         Entity edge;
-        Permutation perm = static_cast<Permutation>(0);
+        Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
         if (iedge == m_edge_map.end()) {
           ThrowRequireMsg(m_count_edges < m_available_ids.size(), "Error: edge generation exhausted available identifier list. Report to sierra-help");
           EntityId edge_id = m_available_ids[m_count_edges];
@@ -279,6 +288,8 @@ struct create_edge_impl
         else {
           edge = iedge->second;
         }
+        perm = mesh.find_permutation(elem_topo, &elem_nodes[0], edge_topo, &edge_nodes[0], e);
+        ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
         mesh.declare_relation(m_bucket[ielem], edge, e, perm, ordinal_scratch, part_scratch);
       }
     }
@@ -314,6 +325,9 @@ struct connect_face_impl
   operator()(Topology t)
   {
     typedef topology::topology_type< Topology::edge_topology> EdgeTopology;
+
+    stk::topology face_topo = m_bucket.topology();
+    EdgeTopology edge_topo;
 
     BulkData & mesh = m_bucket.mesh();
 
@@ -363,7 +377,8 @@ struct connect_face_impl
         //which is fine
         if (iedge != m_edge_map.end()) {
           Entity edge = iedge->second;
-          Permutation perm = static_cast<Permutation>(0);
+          Permutation perm = mesh.find_permutation(face_topo, &face_nodes[0], edge_topo, &edge_nodes[0], e);
+          ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
           mesh.declare_relation(m_bucket[iface], edge, e, perm, ordinal_scratch, part_scratch);
         }
       }

@@ -17,16 +17,16 @@ namespace Example {
 
     // data-parallel interface
     // =======================
-    template<typename CrsExecViewType, 
-             typename ParallelForType>
+    template<typename ParallelForType,
+             typename CrsExecViewType>
     KOKKOS_INLINE_FUNCTION
     static int invoke(const typename CrsExecViewType::policy_type::member_type &member, 
                       const CrsExecViewType &A);
 
     // task-data parallel interface
     // ============================
-    template<typename CrsExecViewType, 
-             typename ParallelForType>
+    template<typename ParallelForType,
+             typename CrsExecViewType>
     class TaskFunctor {
     private:
       CrsExecViewType _A;
@@ -44,12 +44,12 @@ namespace Example {
       
       // task execution
       void apply(value_type &r_val) {
-        r_val = IChol::invoke<CrsExecViewType,ParallelForType>(policy_type::member_null(), _A);
+        r_val = IChol::invoke<ParallelForType,CrsExecViewType>(policy_type::member_null(), _A);
       }
 
       // task-data execution
       void apply(const member_type &member, value_type &r_val) const {
-        r_val = IChol::invoke<CrsExecViewType,ParallelForType>(member, _A);
+        r_val = IChol::invoke<ParallelForType,CrsExecViewType>(member, _A);
       }
 
     };

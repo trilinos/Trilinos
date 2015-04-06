@@ -53,6 +53,7 @@
 #include <TestViewImpl.hpp>
 
 #include <TestViewAPI.hpp>
+#include <TestViewOfClass.hpp>
 #include <TestViewSubview.hpp>
 #include <TestAtomic.hpp>
 #include <TestTile.hpp>
@@ -84,6 +85,11 @@ TEST_F( serial, view_impl) {
 
 TEST_F( serial, view_api) {
   TestViewAPI< double , Kokkos::Serial >();
+}
+
+TEST_F( serial , view_nested_view )
+{
+  ::Test::view_nested_view< Kokkos::Serial >();
 }
 
 TEST_F( serial, view_subview_left_0 ) {

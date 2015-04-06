@@ -42,16 +42,13 @@
 #include <ctime>
 #include <vector>
 
-#include "Intrepid_FieldContainer.hpp"
-#ifdef HAVE_INTREPID_KOKKOSCORE
 #include "Sacado.hpp"
-#else
-#include "Sacado_No_Kokkos.hpp"
-#endif
+#include "Intrepid_FieldContainer.hpp"
 #include "Intrepid_MiniTensor.h"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Sacado.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -1109,6 +1106,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, TemplateMetaProgramming)
     TEST_COMPARE(is_equal, ==, true);
   }
 
+#ifndef KOKKOS_HAVE_CUDA
   {
     //
     // use double explicitly
@@ -1156,6 +1154,8 @@ TEUCHOS_UNIT_TEST(MiniTensor, TemplateMetaProgramming)
 
     TEST_COMPARE(type_string, ==, fad_string);
   }
+#endif
+
 }
 
 } // namespace Intrepid

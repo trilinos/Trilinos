@@ -34,13 +34,13 @@ int main(){
     Kokkos::fill_random(inputview2,rand_pool64,100);
         
   //test getrank partial template specialization for kokkos views and field containers
-	std::cout <<"Rankstuff: "<<getrank(inputview1)<<","<<getrank(inview2FieldContainer)<<std::endl;
+//	std::cout <<"Rankstuff: "<<getrank(inputview1)<<","<<getrank(inview2FieldContainer)<<std::endl;
 	
 //	int numDataLeftPts = inputview1.dimension(1);
     int numCells       = outputview2.dimension(0);
     int numPoints      = outputview2.dimension(1);
     int matDim         = outputview2.dimension(2);
-    std::cout <<numCells<<","<<numPoints<<","<<matDim<<std::endl; 
+//    std::cout <<numCells<<","<<numPoints<<","<<matDim<<std::endl; 
   //setup field container using values from kokkos view and set output to zeros
     for(int cell = 0; cell < numCells; cell++) {
         for(int point = 0; point < numPoints; point++) {
@@ -68,7 +68,7 @@ int main(){
     }// C-loop	
     Kokkos::fence();
     double timestructviews = structviewstimer.seconds();
-    std::cout <<std::setprecision(9)<<"Time for structviews"<<timestructviews<<std::endl;
+//    std::cout <<std::setprecision(9)<<"Time for structviews"<<timestructviews<<std::endl;
     
 
     Kokkos::fence();
@@ -88,7 +88,7 @@ int main(){
 	 	
  	Kokkos::fence();	
     double timerawviews = rawviewstimer.seconds();
-    std::cout <<"Time for rawviews"<<timerawviews<<std::endl;
+ //   std::cout <<"Time for rawviews"<<timerawviews<<std::endl;
 
 
  /*           
@@ -123,7 +123,7 @@ int main(){
     Kokkos::fence();
 double timerfieldcontainermultiply=fieldcontainertimer.seconds();
 
-std::cout <<"FieldContainerTimer: "<<timerfieldcontainermultiply <<std::endl;
+//std::cout <<"FieldContainerTimer: "<<timerfieldcontainermultiply <<std::endl;
 
    Kokkos::finalize();
   

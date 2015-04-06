@@ -59,9 +59,9 @@
 #include <iostream>
 
 // external package headers
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include <Epetra_Comm.h>   // Epetra_Comm.h defines std:: as a global namespace
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
 #else
 #include <Epetra_SerialComm.h>

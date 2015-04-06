@@ -216,7 +216,7 @@ namespace panzer {
     elof->initializeContainer(panzer::EpetraLinearObjContainer::X,*loc);
     Teuchos::RCP<panzer::EpetraLinearObjContainer> eloc = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
     eloc->get_x()->PutScalar(0.0);
-    panzer::evaluateInitialCondition(*wkstContainer, phx_ic_field_managers, loc, 0.0);
+    panzer::evaluateInitialCondition(*wkstContainer, phx_ic_field_managers, loc, *elof, 0.0);
     
     Teuchos::RCP<Epetra_Vector> x = eloc->get_x();
     for (int i=0; i < x->MyLength(); ++i)

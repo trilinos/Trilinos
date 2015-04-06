@@ -81,8 +81,12 @@ namespace MueLu {
     // Ifpack and Ifpack2 smoother prototypes. The construction really depends on configuration options.
     bool triedEpetra = false, triedTpetra = false;
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
-    sTpetra_ = rcp(new Ifpack2Smoother(type_, paramList, overlap_));
-    TEUCHOS_TEST_FOR_EXCEPTION(sTpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Ifpack2 smoother");
+    try {
+      sTpetra_ = rcp(new Ifpack2Smoother(type_, paramList, overlap_));
+      TEUCHOS_TEST_FOR_EXCEPTION(sTpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Ifpack2 smoother");
+    } catch (Exceptions::RuntimeError& e) {
+      this->GetOStream(Debug) << "Skipping Ifpack22Smoother construction due to an error: \n" << e.what() << std::endl;
+    }
     triedTpetra = true;
 #endif
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
@@ -90,16 +94,16 @@ namespace MueLu {
       // GetIfpackSmoother masks the template argument matching, and simply throws if template arguments are incompatible with Epetra
       sEpetra_ = GetIfpackSmoother<SC,LO,GO,NO>(TrilinosSmoother::Ifpack2ToIfpack1Type(type_), TrilinosSmoother::Ifpack2ToIfpack1Param(paramList), overlap_);
       TEUCHOS_TEST_FOR_EXCEPTION(sEpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Ifpack smoother");
-    } catch (Exceptions::RuntimeError) {
+    } catch (Exceptions::RuntimeError& e) {
       // IfpackSmoother throws if Scalar != double, LocalOrdinal != int, GlobalOrdinal != int
-      this->GetOStream(Debug) << "Skipping IfpackSmoother construction due to incorrect type" << std::endl;
+      this->GetOStream(Debug) << "Skipping IfpackSmoother construction due to an error:\n" << e.what() << std::endl;
     }
     triedEpetra = true;
 #endif
 
     // Check if we were able to construct at least one smoother. In many cases that's all we need, for instance if a user
     // simply wants to use Tpetra only stack, never enables Ifpack, and always runs Tpetra objects.
-    TEUCHOS_TEST_FOR_EXCEPTION(!triedEpetra && !triedTpetra,      Exceptions::RuntimeError, "Unable to construct Ifpack/Ifpack2 smoother."
+    TEUCHOS_TEST_FOR_EXCEPTION(!triedEpetra && !triedTpetra,      Exceptions::RuntimeError, "Unable to construct any smoother."
                                "Plase enable (TPETRA and IFPACK2) or (EPETRA and IFPACK)");
 
     this->SetParameterList(paramList);
@@ -121,7 +125,29 @@ namespace MueLu {
     // where one first runs hierarchy with tpetra matrix, and then with epetra.
     bool useTpetra = (currentLevel.lib() == Xpetra::UseTpetra);
     s_ = (useTpetra ? sTpetra_ : sEpetra_);
-    TEUCHOS_TEST_FOR_EXCEPTION(s_.is_null(), Exceptions::RuntimeError, "Smoother for " << (useTpetra ? "Tpetra" : "Epetra") << " was not constructed");
+    if (s_.is_null()) {
+      if (useTpetra) {
+#if not defined(HAVE_MUELU_IFPACK22)
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
+            "Error: running in Tpetra mode, but MueLu with Ifpack2 was disabled during the configure stage.\n"
+            "Please make sure that:\n"
+            "  - Ifpack2 is enabled (Trilinos_ENABLE_Ifpack2=ON),\n"
+            "  - Ifpack2 is available for MueLu to use (MueLu_ENABLE_Ifpack2=ON)\n");
+#else
+#endif
+      } else {
+#if not defined(HAVE_MUELU_IFPACK)
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
+            "Error: running in Epetra mode, but MueLu with Ifpack was disabled during the configure stage.\n"
+            "Please make sure that:\n"
+            "  - Ifpack is enabled (you can do that with Trilinos_ENABLE_Ifpack=ON),\n"
+            "  - Ifpack is available for MueLu to use (MueLu_ENABLE_Ifpack=ON)\n");
+#else
+#endif
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
+          "Smoother for " << (useTpetra ? "Tpetra" : "Epetra") << " was not constructed");
+    }
 
     s_->DeclareInput(currentLevel);
   }

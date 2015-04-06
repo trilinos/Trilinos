@@ -745,8 +745,8 @@ int ex_get_side_set_node_list(int exoid,
 	}
       case EX_EL_TRIANGLE:
 	{
-	  if (side_num+1 < 1 || side_num+1 > 5) /* side number range check */
-	    {
+	  if (ndim == 2) {   /* 2d TRIs */
+	    if (side_num+1 < 1 || side_num+1 > 3) {
 	      exerrval = EX_BADPARAM;
 	      sprintf(errmsg,
 		      "Error: Invalid triangle edge number %"ST_ZU" in file id %d",
@@ -756,47 +756,54 @@ int ex_get_side_set_node_list(int exoid,
 	      goto cleanup;
 	    }
 
-	  if (ndim == 2)   /* 2d TRIs */
-	    {
-	      get_nodes(exoid, side_set_node_list, node_pos,   connect, connect_offset+tri_table[side_num][0]-1);
-	      get_nodes(exoid, side_set_node_list, node_pos+1, connect, connect_offset+tri_table[side_num][1]-1);
-	      set_count(exoid, side_set_node_cnt_list, elem_ndx, 2);   /* 2 node object */
-	      if (num_nodes_per_elem > 3)   /* 6-node TRI  */
-		{
-		  get_nodes(exoid, side_set_node_list, node_pos+2, connect, connect_offset+tri_table[side_num][2]-1);
-		  set_count(exoid, side_set_node_cnt_list, elem_ndx, 3); /* 3 node object */
-		}
+	    get_nodes(exoid, side_set_node_list, node_pos,   connect, connect_offset+tri_table[side_num][0]-1);
+	    get_nodes(exoid, side_set_node_list, node_pos+1, connect, connect_offset+tri_table[side_num][1]-1);
+	    set_count(exoid, side_set_node_cnt_list, elem_ndx, 2);   /* 2 node object */
+	    if (num_nodes_per_elem > 3)   /* 6-node TRI  */
+	      {
+		get_nodes(exoid, side_set_node_list, node_pos+2, connect, connect_offset+tri_table[side_num][2]-1);
+		set_count(exoid, side_set_node_cnt_list, elem_ndx, 3); /* 3 node object */
+	      }
+	  }
+	  else if (ndim == 3) {  /* 3d TRIs */
+	    if (side_num+1 < 1 || side_num+1 > 5) {
+	      exerrval = EX_BADPARAM;
+	      sprintf(errmsg,
+		      "Error: Invalid triangle edge number %"ST_ZU" in file id %d",
+		      side_num+1, exoid);
+	      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
+	      err_stat = EX_FATAL;
+	      goto cleanup;
 	    }
-	  else if (ndim == 3)  /* 3d TRIs */
-	    {
-	      get_nodes(exoid, side_set_node_list, node_pos,   connect, connect_offset+tri3_table[side_num][0]-1);
-	      get_nodes(exoid, side_set_node_list, node_pos+1, connect, connect_offset+tri3_table[side_num][1]-1);
-	      set_count(exoid, side_set_node_cnt_list, elem_ndx, 2);   /* 2 node object */
-	      if (side_num+1 <= 2)  /* 3- or 6-node face */
-		{
-		  if (num_nodes_per_elem == 3)  /* 3-node face */
-		    {
-		      set_count(exoid, side_set_node_cnt_list, elem_ndx, 3); /* 3 node object */
-		      get_nodes(exoid, side_set_node_list, node_pos+2, connect, connect_offset+tri3_table[side_num][2]-1);
-		    }
-		  else   /* 6-node face */
-		    {
-		      set_count(exoid, side_set_node_cnt_list, elem_ndx, 6); /* 6 node object */
-		      get_nodes(exoid, side_set_node_list, node_pos+2, connect, connect_offset+tri3_table[side_num][2]-1);
-		      get_nodes(exoid, side_set_node_list, node_pos+3, connect, connect_offset+tri3_table[side_num][3]-1);
-		      get_nodes(exoid, side_set_node_list, node_pos+4, connect, connect_offset+tri3_table[side_num][4]-1);
-		      get_nodes(exoid, side_set_node_list, node_pos+5, connect, connect_offset+tri3_table[side_num][5]-1);
-		    }
-		}
-	      else /* 2- or 3-node edge */
-		{
-		  if (num_nodes_per_elem > 3)  /* 3-node edge */
-		    {
-		      set_count(exoid, side_set_node_cnt_list, elem_ndx, 3); /* 3 node object */
-		      get_nodes(exoid, side_set_node_list, node_pos+2, connect, connect_offset+tri3_table[side_num][2]-1);
-		    }
-		}
-	    }
+
+	    get_nodes(exoid, side_set_node_list, node_pos,   connect, connect_offset+tri3_table[side_num][0]-1);
+	    get_nodes(exoid, side_set_node_list, node_pos+1, connect, connect_offset+tri3_table[side_num][1]-1);
+	    set_count(exoid, side_set_node_cnt_list, elem_ndx, 2);   /* 2 node object */
+	    if (side_num+1 <= 2)  /* 3- or 6-node face */
+	      {
+		if (num_nodes_per_elem == 3)  /* 3-node face */
+		  {
+		    set_count(exoid, side_set_node_cnt_list, elem_ndx, 3); /* 3 node object */
+		    get_nodes(exoid, side_set_node_list, node_pos+2, connect, connect_offset+tri3_table[side_num][2]-1);
+		  }
+		else   /* 6-node face */
+		  {
+		    set_count(exoid, side_set_node_cnt_list, elem_ndx, 6); /* 6 node object */
+		    get_nodes(exoid, side_set_node_list, node_pos+2, connect, connect_offset+tri3_table[side_num][2]-1);
+		    get_nodes(exoid, side_set_node_list, node_pos+3, connect, connect_offset+tri3_table[side_num][3]-1);
+		    get_nodes(exoid, side_set_node_list, node_pos+4, connect, connect_offset+tri3_table[side_num][4]-1);
+		    get_nodes(exoid, side_set_node_list, node_pos+5, connect, connect_offset+tri3_table[side_num][5]-1);
+		  }
+	      }
+	    else /* 2- or 3-node edge */
+	      {
+		if (num_nodes_per_elem > 3)  /* 3-node edge */
+		  {
+		    set_count(exoid, side_set_node_cnt_list, elem_ndx, 3); /* 3 node object */
+		    get_nodes(exoid, side_set_node_list, node_pos+2, connect, connect_offset+tri3_table[side_num][2]-1);
+		  }
+	      }
+	  }
 	  break;
 	}
       case EX_EL_QUAD:

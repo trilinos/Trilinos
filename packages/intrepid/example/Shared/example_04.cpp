@@ -49,12 +49,11 @@ template<typename Scalar>
 };
 #ifdef HAVE_INTREPID_KOKKOSCORE	
 
-#if defined( KOKKOS_HAVE_OPENMP )	
 template<typename Scalar>
-	struct MultiGemm<Scalar,Kokkos::OpenMP,Kokkos::LayoutLeft,2>{
+	struct MultiGemm<Scalar,Kokkos::DefaultExecutionSpace,Kokkos::LayoutLeft,2>{
 	static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha,
-          Kokkos::View<Scalar**,Kokkos::LayoutLeft,Kokkos::OpenMP> A, Kokkos::View<Scalar**,Kokkos::LayoutLeft,Kokkos::OpenMP> B,
-          Scalar beta, Kokkos::View<Scalar**,Kokkos::LayoutLeft,Kokkos::OpenMP> C){
+          Kokkos::View<Scalar**,Kokkos::LayoutLeft,Kokkos::DefaultExecutionSpace> A, Kokkos::View<Scalar**,Kokkos::LayoutLeft,Kokkos::DefaultExecutionSpace> B,
+          Scalar beta, Kokkos::View<Scalar**,Kokkos::LayoutLeft,Kokkos::DefaultExecutionSpace> C){
 	Teuchos::BLAS<int,Scalar>blas;
 	    const int m = static_cast<int> (C.dimension_0 ()),
         n = static_cast<int> (C.dimension_1 ()),
@@ -71,10 +70,10 @@ template<typename Scalar>
 };
 
 template<typename Scalar>
-	struct MultiGemm<Scalar,Kokkos::OpenMP,Kokkos::LayoutRight,2>{
+	struct MultiGemm<Scalar,Kokkos::DefaultExecutionSpace,Kokkos::LayoutRight,2>{
 	static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha,
-          Kokkos::View<Scalar**,Kokkos::LayoutRight,Kokkos::OpenMP> A, Kokkos::View<Scalar**,Kokkos::LayoutRight,Kokkos::OpenMP> B,
-          Scalar beta, Kokkos::View<Scalar**,Kokkos::LayoutRight,Kokkos::OpenMP> C){
+          Kokkos::View<Scalar**,Kokkos::LayoutRight,Kokkos::DefaultExecutionSpace> A, Kokkos::View<Scalar**,Kokkos::LayoutRight,Kokkos::DefaultExecutionSpace> B,
+          Scalar beta, Kokkos::View<Scalar**,Kokkos::LayoutRight,Kokkos::DefaultExecutionSpace> C){
 	Teuchos::BLAS<int,Scalar>blas;
 	    const int m = static_cast<int> (C.dimension_0 ()),
         n = static_cast<int> (C.dimension_1 ()),
@@ -231,10 +230,10 @@ struct blasOpenMPLeft {
 };*/
 
 template<typename Scalar>
-	struct MultiGemm<Scalar,Kokkos::OpenMP,Kokkos::LayoutLeft,3>{
+	struct MultiGemm<Scalar,Kokkos::DefaultExecutionSpace,Kokkos::LayoutLeft,3>{
 		static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha,
-           Kokkos::View<Scalar***,Kokkos::LayoutLeft,Kokkos::OpenMP> A,  Kokkos::View<Scalar***,Kokkos::LayoutLeft,Kokkos::OpenMP> B,
-          Scalar beta, Kokkos::View<Scalar***,Kokkos::LayoutLeft,Kokkos::OpenMP> C){
+           Kokkos::View<Scalar***,Kokkos::LayoutLeft,Kokkos::DefaultExecutionSpace> A,  Kokkos::View<Scalar***,Kokkos::LayoutLeft,Kokkos::DefaultExecutionSpace> B,
+          Scalar beta, Kokkos::View<Scalar***,Kokkos::LayoutLeft,Kokkos::DefaultExecutionSpace> C){
 		const int m = static_cast<int> (C.dimension_1()),
         n = static_cast<int> (C.dimension_2 ()),
         k = (transA == Teuchos::NO_TRANS ? A.dimension_2 () : A.dimension_1 ());
@@ -244,10 +243,10 @@ template<typename Scalar>
 	
 };
 template<typename Scalar>
-	struct MultiGemm<Scalar,Kokkos::OpenMP,Kokkos::LayoutRight,3>{
+	struct MultiGemm<Scalar,Kokkos::DefaultExecutionSpace,Kokkos::LayoutRight,3>{
 		static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha,
-           Kokkos::View<Scalar***,Kokkos::LayoutRight,Kokkos::OpenMP> A,  Kokkos::View<Scalar***,Kokkos::LayoutRight,Kokkos::OpenMP> B,
-          Scalar beta, Kokkos::View<Scalar***,Kokkos::LayoutRight,Kokkos::OpenMP> C){
+           Kokkos::View<Scalar***,Kokkos::LayoutRight,Kokkos::DefaultExecutionSpace> A,  Kokkos::View<Scalar***,Kokkos::LayoutRight,Kokkos::DefaultExecutionSpace> B,
+          Scalar beta, Kokkos::View<Scalar***,Kokkos::LayoutRight,Kokkos::DefaultExecutionSpace> C){
 		const int m = static_cast<int> (C.dimension_1()),
         n = static_cast<int> (C.dimension_2 ()),
         k = (transA == Teuchos::NO_TRANS ? A.dimension_2 () : A.dimension_1 ());
@@ -257,12 +256,15 @@ template<typename Scalar>
 	
 };
 #endif
+
+// The Following stuff doesn't compile at all with Cuda. And it can't for example Scalar is not defined because its explicit specialisations.
+#if false
 #ifdef KOKKOS_HAVE_CUDA
 	
 	struct MultiGemm<double,Kokkos::Cuda,Kokkos::LayoutLeft,2>{
-		static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha,
+		static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, double alpha,
            Kokkos::View<double**,Kokkos::LayoutLeft,Kokkos::Cuda> A,  Kokkos::View<double**,Kokkos::LayoutLeft,Kokkos::Cuda> B,
-          Scalar beta, Kokkos::View<double**,Kokkos::LayoutLeft,Kokkos::Cuda> C){
+          double beta, Kokkos::View<double**,Kokkos::LayoutLeft,Kokkos::Cuda> C){
 		const int m = static_cast<int> (C.dimension_0()),
         n = static_cast<int> (C.dimension_1 ()),
         k = (transA == Teuchos::NO_TRANS ? A.dimension_1 () : A.dimension_0 ());
@@ -312,7 +314,7 @@ cublasDgemm(transA, transB, n, m, k, alpha, B.ptr_on_device(), n, A.ptr_on_devic
 };
 
 	struct MultiGemm<double,Kokkos::Cuda,Kokkos::LayoutLeft,3>{
-		static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha,
+		static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, double alpha,
            Kokkos::View<double***,Kokkos::LayoutLeft,Kokkos::Cuda> A,  Kokkos::View<double***,Kokkos::LayoutLeft,Kokkos::Cuda> B,
           double beta, Kokkos::View<double***,Kokkos::LayoutLeft,Kokkos::Cuda> C){
 		const int m = static_cast<int> (C.dimension_1()),
@@ -384,6 +386,7 @@ cublasSgemmBatched(transA,  transB,
 };
 #endif
 #endif
+
 }
 
 
@@ -395,17 +398,17 @@ int main(){
 
    Kokkos::initialize();
   //initialize viewsto random values
-#if defined( KOKKOS_HAVE_OPENMP )	
+
    {
-	Kokkos::View<double**,Kokkos::LayoutLeft,Kokkos::OpenMP> inputview1("X",5,5);
-	Kokkos::View<double**,Kokkos::LayoutLeft,Kokkos::OpenMP> inputview2("Y",5,5);
-	Kokkos::View<double**,Kokkos::LayoutLeft,Kokkos::OpenMP> outputview2("Z",5,5);
+	Kokkos::View<double**,Kokkos::LayoutLeft,Kokkos::DefaultExecutionSpace> inputview1("X",5,5);
+	Kokkos::View<double**,Kokkos::LayoutLeft,Kokkos::DefaultExecutionSpace> inputview2("Y",5,5);
+	Kokkos::View<double**,Kokkos::LayoutLeft,Kokkos::DefaultExecutionSpace> outputview2("Z",5,5);
 
   //fill with random numbers
 	Kokkos::Random_XorShift64_Pool<> rand_pool64(5374857);
     Kokkos::fill_random(inputview1,rand_pool64,100);	
     Kokkos::fill_random(inputview2,rand_pool64,100);
-    KokkosDenseMat::MultiGemm<double,Kokkos::OpenMP,Kokkos::LayoutLeft,2>::GEMM(Teuchos::NO_TRANS,Teuchos::NO_TRANS,1,inputview1,inputview2,1,outputview2);   
+    KokkosDenseMat::MultiGemm<double,Kokkos::DefaultExecutionSpace,Kokkos::LayoutLeft,2>::GEMM(Teuchos::NO_TRANS,Teuchos::NO_TRANS,1,inputview1,inputview2,1,outputview2);
     /* 
 std::cout <<"A:"<<std::endl;
 for(int i=0;i<5;i++){
@@ -435,15 +438,15 @@ for(int i=0;i<5;i++){
 
 {// scope 2 
 
-	Kokkos::View<double**,Kokkos::LayoutRight,Kokkos::OpenMP> inputview1("X",5,5);
-	Kokkos::View<double**,Kokkos::LayoutRight,Kokkos::OpenMP> inputview2("Y",5,5);
-	Kokkos::View<double**,Kokkos::LayoutRight,Kokkos::OpenMP> outputview2("Z",5,5);
+	Kokkos::View<double**,Kokkos::LayoutRight,Kokkos::DefaultExecutionSpace> inputview1("X",5,5);
+	Kokkos::View<double**,Kokkos::LayoutRight,Kokkos::DefaultExecutionSpace> inputview2("Y",5,5);
+	Kokkos::View<double**,Kokkos::LayoutRight,Kokkos::DefaultExecutionSpace> outputview2("Z",5,5);
 
   //fill with random numbers
 	Kokkos::Random_XorShift64_Pool<> rand_pool64(5374857);
     Kokkos::fill_random(inputview1,rand_pool64,100);	
     Kokkos::fill_random(inputview2,rand_pool64,100);
-    KokkosDenseMat::MultiGemm<double,Kokkos::OpenMP,Kokkos::LayoutRight,2>::GEMM(Teuchos::NO_TRANS,Teuchos::NO_TRANS,1,inputview1,inputview2,1,outputview2);    
+    KokkosDenseMat::MultiGemm<double,Kokkos::DefaultExecutionSpace,Kokkos::LayoutRight,2>::GEMM(Teuchos::NO_TRANS,Teuchos::NO_TRANS,1,inputview1,inputview2,1,outputview2);
 /*std::cout <<"A:"<<std::endl;
 for(int i=0;i<5;i++){
 	for (int j=0;j<5;j++){
@@ -469,7 +472,7 @@ for(int i=0;i<5;i++){
 	std::cout <<std::endl;
 }*/
 }
-#endif
+
 //begin scope 4
 {
 Intrepid::FieldContainer<double>testcontainerA(5,5);
@@ -642,17 +645,17 @@ for(int i=0;i<2;i++){
 }*/
 	
 }//end scope 7
-#if defined( KOKKOS_HAVE_OPENMP )
+
 {//end scope 8
-    Kokkos::View<double***,Kokkos::LayoutRight,Kokkos::OpenMP> inputview1("X",1000,5,6);
-	Kokkos::View<double***,Kokkos::LayoutRight,Kokkos::OpenMP> inputview2("Y",1000,6,5);
-	Kokkos::View<double***,Kokkos::LayoutRight,Kokkos::OpenMP> outputview2("Z",1000,5,5);
+    Kokkos::View<double***,Kokkos::LayoutRight,Kokkos::DefaultExecutionSpace> inputview1("X",1000,5,6);
+	Kokkos::View<double***,Kokkos::LayoutRight,Kokkos::DefaultExecutionSpace> inputview2("Y",1000,6,5);
+	Kokkos::View<double***,Kokkos::LayoutRight,Kokkos::DefaultExecutionSpace> outputview2("Z",1000,5,5);
 
   //fill with random numbers
 	Kokkos::Random_XorShift64_Pool<> rand_pool64(5374857);
     Kokkos::fill_random(inputview1,rand_pool64,100);	
     Kokkos::fill_random(inputview2,rand_pool64,100);
-    KokkosDenseMat::MultiGemm<double,Kokkos::OpenMP,Kokkos::LayoutRight,3>::GEMM(Teuchos::NO_TRANS,Teuchos::NO_TRANS,1,inputview1,inputview2,1,outputview2);  
+    KokkosDenseMat::MultiGemm<double,Kokkos::DefaultExecutionSpace,Kokkos::LayoutRight,3>::GEMM(Teuchos::NO_TRANS,Teuchos::NO_TRANS,1,inputview1,inputview2,1,outputview2);
 /*	std::cout <<"A:"<<std::endl;
 for(int i=0;i<2;i++){
 	for (int j=0;j<5;j++){
@@ -685,7 +688,7 @@ for(int i=0;i<2;i++){
 }*/
 
 }
-#endif
+
    Kokkos::finalize();
   
 #endif 

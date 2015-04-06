@@ -86,12 +86,16 @@ ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,
   // grab map from evaluated names to field names
   fieldMap_ = p.get< Teuchos::RCP< std::map<std::string,std::string> > >("Dependent Map");
 
-  Teuchos::RCP<PHX::DataLayout> dl = 
-    p.get< Teuchos::RCP<panzer::PureBasis> >("Basis")->functional;
+  // determine if we are scattering an initial condition
+  scatterIC_ = p.isParameter("Scatter Initial Condition") ? p.get<bool>("Scatter Initial Condition") : false;
 
-  side_subcell_dim_ = p.get<int>("Side Subcell Dimension");
-  local_side_id_ = p.get<int>("Local Side ID");
-
+  Teuchos::RCP<PHX::DataLayout> dl = (!scatterIC_) ? 
+    p.get< Teuchos::RCP<panzer::PureBasis> >("Basis")->functional : 
+    p.get< Teuchos::RCP<const panzer::PureBasis> >("Basis")->functional;
+  if (!scatterIC_) {
+    side_subcell_dim_ = p.get<int>("Side Subcell Dimension");
+    local_side_id_ = p.get<int>("Local Side ID");
+  }
   
   // build the vector of fields that this is dependent on
   scatterFields_.resize(names.size());
@@ -102,7 +106,7 @@ ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,
     this->addDependentField(scatterFields_[eq]);
   }
 
-  checkApplyBC_ = p.get<bool>("Check Apply BC");
+  checkApplyBC_ = p.isParameter("Check Apply BC") ? p.get<bool>("Check Apply BC") : false;
   if (checkApplyBC_) {
     applyBC_.resize(names.size());
     for (std::size_t eq = 0; eq < names.size(); ++eq) {
@@ -133,7 +137,6 @@ postRegistrationSetup(typename TRAITS::SetupData d,
     // get field ID from DOF manager
     std::string fieldName = fieldMap_->find(scatterFields_[fd].fieldTag().name())->second;
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
-
     // fill field data object
     this->utils.setFieldData(scatterFields_[fd],fm);
 
@@ -182,8 +185,9 @@ evaluateFields(typename TRAITS::EvalData workset)
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
    Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer = epetraContainer_;
-   Teuchos::RCP<Epetra_Vector> r = epetraContainer->get_f(); 
-
+   Teuchos::RCP<Epetra_Vector> r = (!scatterIC_) ? 
+     epetraContainer->get_f() : 
+     epetraContainer->get_x();
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
    //       "getElementGIDs" can be cheaper. However the lookup for LIDs
@@ -198,31 +202,50 @@ evaluateFields(typename TRAITS::EvalData workset)
       // loop over each field to be scattered
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
          int fieldNum = fieldIds_[fieldIndex];
+
+         if (!scatterIC_) {
+           // this call "should" get the right ordering according to the Intrepid basis
+           const std::pair<std::vector<int>,std::vector<int> > & indicePair 
+             = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
+           const std::vector<int> & elmtOffset = indicePair.first;
+           const std::vector<int> & basisIdMap = indicePair.second;
    
-         // this call "should" get the right ordering according to the Intrepid basis
-         const std::pair<std::vector<int>,std::vector<int> > & indicePair 
-               = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
-         const std::vector<int> & elmtOffset = indicePair.first;
-         const std::vector<int> & basisIdMap = indicePair.second;
-   
-         // loop over basis functions
-         for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-            int offset = elmtOffset[basis];
-            int lid = LIDs[offset];
-            if(lid<0) // not on this processor!
+           // loop over basis functions
+           for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
+             int offset = elmtOffset[basis];
+             int lid = LIDs[offset];
+             if(lid<0) // not on this processor!
                continue;
 
-            int basisId = basisIdMap[basis];
+             int basisId = basisIdMap[basis];
 
-            if (checkApplyBC_)
-              if (!applyBC_[fieldIndex](worksetCellIndex,basisId))
-                continue;
+             if (checkApplyBC_)
+               if (!applyBC_[fieldIndex](worksetCellIndex,basisId))
+                 continue;
 
-            (*r)[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
+             (*r)[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
             
-            // record that you set a dirichlet condition
-            if(dirichletCounter_!=Teuchos::null)
-              (*dirichletCounter_)[lid] = 1.0; 
+             // record that you set a dirichlet condition
+             if(dirichletCounter_!=Teuchos::null)
+               (*dirichletCounter_)[lid] = 1.0; 
+           }
+         } else {
+           // this call "should" get the right ordering according to the Intrepid basis
+           const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
+   
+           // loop over basis functions
+           for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
+             int offset = elmtOffset[basis];
+             int lid = LIDs[offset];
+             if(lid<0) // not on this processor!
+               continue;
+
+             (*r)[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basis);
+            
+             // record that you set a dirichlet condition
+             if(dirichletCounter_!=Teuchos::null)
+               (*dirichletCounter_)[lid] = 1.0; 
+           }
          }
       }
    }
@@ -252,12 +275,16 @@ ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,
   // grab map from evaluated names to field names
   fieldMap_ = p.get< Teuchos::RCP< std::map<std::string,std::string> > >("Dependent Map");
 
-  Teuchos::RCP<PHX::DataLayout> dl = 
-    p.get< Teuchos::RCP<panzer::PureBasis> >("Basis")->functional;
+  // determine if we are scattering an initial condition
+  scatterIC_ = p.isParameter("Scatter Initial Condition") ? p.get<bool>("Scatter Initial Condition") : false;
 
-  side_subcell_dim_ = p.get<int>("Side Subcell Dimension");
-  local_side_id_ = p.get<int>("Local Side ID");
-
+  Teuchos::RCP<PHX::DataLayout> dl = (!scatterIC_) ? 
+    p.get< Teuchos::RCP<panzer::PureBasis> >("Basis")->functional : 
+    p.get< Teuchos::RCP<const panzer::PureBasis> >("Basis")->functional;
+  if (!scatterIC_) {
+    side_subcell_dim_ = p.get<int>("Side Subcell Dimension");
+    local_side_id_ = p.get<int>("Local Side ID");
+  }
   
   // build the vector of fields that this is dependent on
   scatterFields_.resize(names.size());
@@ -268,7 +295,7 @@ ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,
     this->addDependentField(scatterFields_[eq]);
   }
 
-  checkApplyBC_ = p.get<bool>("Check Apply BC");
+  checkApplyBC_ = p.isParameter("Check Apply BC") ? p.get<bool>("Check Apply BC") : false;
   if (checkApplyBC_) {
     applyBC_.resize(names.size());
     for (std::size_t eq = 0; eq < names.size(); ++eq) {
@@ -299,7 +326,6 @@ postRegistrationSetup(typename TRAITS::SetupData d,
     // get field ID from DOF manager
     std::string fieldName = fieldMap_->find(scatterFields_[fd].fieldTag().name())->second;
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
-
     // fill field data object
     this->utils.setFieldData(scatterFields_[fd],fm);
 
@@ -361,8 +387,9 @@ evaluateFields(typename TRAITS::EvalData workset)
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
    Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer = epetraContainer_;
-   Teuchos::RCP<Epetra_Vector> r = epetraContainer->get_f(); 
-
+   Teuchos::RCP<Epetra_Vector> r = (!scatterIC_) ? 
+     epetraContainer->get_f() : 
+     epetraContainer->get_x();
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
    //       "getElementGIDs" can be cheaper. However the lookup for LIDs
@@ -378,41 +405,70 @@ evaluateFields(typename TRAITS::EvalData workset)
       // loop over each field to be scattered
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
          int fieldNum = fieldIds_[fieldIndex];
+
+         if (!scatterIC_) {
+           // this call "should" get the right ordering according to the Intrepid basis
+           const std::pair<std::vector<int>,std::vector<int> > & indicePair 
+             = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
+           const std::vector<int> & elmtOffset = indicePair.first;
+           const std::vector<int> & basisIdMap = indicePair.second;
    
-         // this call "should" get the right ordering according to the Intrepid basis
-         const std::pair<std::vector<int>,std::vector<int> > & indicePair 
-               = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
-         const std::vector<int> & elmtOffset = indicePair.first;
-         const std::vector<int> & basisIdMap = indicePair.second;
-   
-         // loop over basis functions
-         for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-            int offset = elmtOffset[basis];
-            int lid = LIDs[offset];
-            if(lid<0) // not on this processor!
+           // loop over basis functions
+           for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
+             int offset = elmtOffset[basis];
+             int lid = LIDs[offset];
+             if(lid<0) // not on this processor!
                continue;
+             
+             int basisId = basisIdMap[basis];
 
-            int basisId = basisIdMap[basis];
+             if (checkApplyBC_)
+               if (!applyBC_[fieldIndex](worksetCellIndex,basisId))
+                 continue;
 
-            if (checkApplyBC_)
-              if (!applyBC_[fieldIndex](worksetCellIndex,basisId))
-                continue;
+             ScalarT value = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
+             // (*r)[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basisId).val();
 
-            ScalarT value = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
-            // (*r)[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basisId).val();
-
-            // then scatter the sensitivity vectors
-            if(value.size()==0) 
-              for(std::size_t d=0;d<dfdp_vectors_.size();d++)
-                (*dfdp_vectors_[d])[lid] = 0.0;
-            else
-              for(int d=0;d<value.size();d++) {
-                (*dfdp_vectors_[d])[lid] = value.fastAccessDx(d);
-              }
+             // then scatter the sensitivity vectors
+             if(value.size()==0) 
+               for(std::size_t d=0;d<dfdp_vectors_.size();d++)
+                 (*dfdp_vectors_[d])[lid] = 0.0;
+             else
+               for(int d=0;d<value.size();d++) {
+                 (*dfdp_vectors_[d])[lid] = value.fastAccessDx(d);
+               }
             
-            // record that you set a dirichlet condition
-            if(dirichletCounter_!=Teuchos::null)
-              (*dirichletCounter_)[lid] = 1.0;
+             // record that you set a dirichlet condition
+             if(dirichletCounter_!=Teuchos::null)
+               (*dirichletCounter_)[lid] = 1.0;
+           }
+         } else {
+           // this call "should" get the right ordering according to the Intrepid basis
+           const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
+
+           // loop over basis functions
+           for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
+             int offset = elmtOffset[basis];
+             int lid = LIDs[offset];
+             if(lid<0) // not on this processor!
+               continue;
+             
+             ScalarT value = (scatterFields_[fieldIndex])(worksetCellIndex,basis);
+             // (*r)[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basis).val();
+
+             // then scatter the sensitivity vectors
+             if(value.size()==0) 
+               for(std::size_t d=0;d<dfdp_vectors_.size();d++)
+                 (*dfdp_vectors_[d])[lid] = 0.0;
+             else
+               for(int d=0;d<value.size();d++) {
+                 (*dfdp_vectors_[d])[lid] = value.fastAccessDx(d);
+               }
+            
+             // record that you set a dirichlet condition
+             if(dirichletCounter_!=Teuchos::null)
+               (*dirichletCounter_)[lid] = 1.0;
+           }
          }
       }
    }
@@ -492,7 +548,6 @@ postRegistrationSetup(typename TRAITS::SetupData d,
     // get field ID from DOF manager
     std::string fieldName = fieldMap_->find(scatterFields_[fd].fieldTag().name())->second;
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
-
     // fill field data object
     this->utils.setFieldData(scatterFields_[fd],fm);
 
@@ -546,7 +601,6 @@ evaluateFields(typename TRAITS::EvalData workset)
    TEUCHOS_ASSERT(epetraContainer!=Teuchos::null);
    Teuchos::RCP<Epetra_Vector> r = epetraContainer->get_f(); 
    Teuchos::RCP<Epetra_CrsMatrix> Jac = epetraContainer->get_A();
-
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
    //       "getElementGIDs" can be cheaper. However the lookup for LIDs

@@ -415,10 +415,6 @@ back_relation_type(const RelationType relType)
     return RelationType::USED_BY;
   case RelationType::USED_BY:
     return RelationType::USES;
-  case RelationType::CHILD:
-    return RelationType::PARENT;
-  case RelationType::PARENT:
-    return RelationType::CHILD;
   default:
     return relType;
   }

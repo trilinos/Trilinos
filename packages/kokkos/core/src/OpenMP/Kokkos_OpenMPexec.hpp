@@ -546,8 +546,6 @@ int OpenMP::thread_pool_rank()
 } // namespace Kokkos
 
 
-#ifdef KOKKOS_HAVE_CXX11
-
 namespace Kokkos {
 
 template<typename iType>
@@ -759,8 +757,6 @@ void single(const Impl::ThreadSingleStruct<Impl::OpenMPexecTeamMember>& single_s
   single_struct.team_member.team_broadcast(val,0);
 }
 }
-
-#endif // KOKKOS_HAVE_CXX11
 
 #endif /* #ifndef KOKKOS_OPENMPEXEC_HPP */
 

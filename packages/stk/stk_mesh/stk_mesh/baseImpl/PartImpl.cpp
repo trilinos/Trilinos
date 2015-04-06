@@ -34,15 +34,10 @@
 #include <stk_mesh/baseImpl/PartImpl.hpp>
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <stk_mesh/base/Part.hpp>       // for insert
-#include <stk_mesh/base/Trace.hpp>      // for TraceIfWatching, etc
 #include <stk_util/environment/ReportHandler.hpp>  // for ThrowErrorMsgIf
 #include "stk_mesh/base/Types.hpp"      // for EntityRank, etc
 #include "stk_topology/topology.hpp"    // for topology, operator<<, etc
 #include "stk_topology/topology.hpp"    // for topology::rank
-
-#ifdef STK_MESH_TRACE_ENABLED
-#include <stk_mesh/base/Entity.hpp>
-#endif
 
 namespace stk { namespace mesh { class MetaData; } }
 
@@ -55,17 +50,11 @@ namespace impl {
 
 void PartImpl::add_part_to_subset( Part & part)
 {
-  TraceIfWatching("stk::mesh::impl::PartImpl::add_part_to_subset", LOG_PART, static_cast<size_t>(m_ordinal));
-  DiagIfWatching(LOG_PART, static_cast<size_t>(m_ordinal), "New subset is: " << part );
-
   insert( m_subsets, part );
 }
 
 void PartImpl::add_part_to_superset( Part & part )
 {
-  TraceIfWatching("stk::mesh::impl::PartImpl::add_part_to_superset", LOG_PART, static_cast<size_t>(m_ordinal));
-  DiagIfWatching(LOG_PART, static_cast<size_t>(m_ordinal), "New superset is: " << part );
-
   insert( m_supersets, part );
 }
 
@@ -87,13 +76,10 @@ PartImpl::PartImpl( MetaData          * arg_meta_data,
     m_force_no_induce(arg_force_no_induce),
     m_entity_membership_is_parallel_consistent(true)
 {
-  TraceIfWatching("stk::mesh::impl::PartImpl::PartImpl", LOG_PART, arg_ordinal);
-  DiagIfWatching(LOG_PART, static_cast<size_t>(m_ordinal), "Name is: " << arg_name << ", rank is : " << arg_rank );
 }
 
 void PartImpl::set_primary_entity_rank( EntityRank entity_rank )
 {
-  TraceIfWatching("stk::mesh::impl::PartImpl::set_primary_entity_rank", LOG_PART, static_cast<size_t>(m_ordinal));
   if ( entity_rank == m_entity_rank ) return;
 
   const bool rank_already_set = m_entity_rank != InvalidEntityRank && entity_rank != m_entity_rank;
@@ -112,7 +98,6 @@ void PartImpl::set_primary_entity_rank( EntityRank entity_rank )
 
 void PartImpl::set_topology( stk::topology topo )
 {
-  TraceIfWatching("stk::mesh::impl::PartImpl::set_topology", LOG_PART, static_cast<size_t>(m_ordinal));
   if ( topo == stk::topology::INVALID_TOPOLOGY || topo == m_topology ) return;
 
   ThrowErrorMsgIf( m_topology != stk::topology::INVALID_TOPOLOGY && m_topology != topo,

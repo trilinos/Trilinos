@@ -1357,7 +1357,7 @@ void create_edges(stk::mesh::unit_test::BulkDataTester& stkMeshBulkData, std::ve
         edgeEntities[edge_index] = edge;
 
         std::vector<stk::mesh::Entity> ghostedElements(10);
-        stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation>(0);
+        stk::mesh::Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
         {
             std::vector<stk::mesh::Entity> nodes(2);
             ASSERT_EQ(2u, nodeIdsForEdge[edge_index].size());

@@ -7080,6 +7080,15 @@ namespace Tpetra {
     typedef CrsMatrix<Scalar, LO, GO, NT> this_type;
     typedef Vector<int, LO, GO, NT> IntVectorType;
 
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    std::string label;
+    if(!params.is_null())
+      label = params->get("Timer Label",label);
+    std::string prefix = std::string("Tpetra ")+ label + std::string(": ");
+    using Teuchos::TimeMonitor;
+    Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Pack-1"))));
+#endif
+
     // Make sure that the input argument rowTransfer is either an
     // Import or an Export.  Import and Export are the only two
     // subclasses of Transfer that we defined, but users might
@@ -7262,7 +7271,9 @@ namespace Tpetra {
     /***************************************************/
     /***** 2) From Tpera::DistObject::doTransfer() ****/
     /***************************************************/
-
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC ImportSetup"))));
+#endif 
     // Get the owning PIDs
     RCP<const import_type> MyImporter = getGraph ()->getImporter ();
 
@@ -7318,6 +7329,9 @@ namespace Tpetra {
         "getDomainMap (), or (domainMap == rowTransfer.getTargetMap () and "
         "getDomainMap () == getRowMap ()).");
     }
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Pack-2"))));
+#endif 
 
     // Tpetra-specific stuff
     //
@@ -7436,6 +7450,10 @@ namespace Tpetra {
     // numExportPacketsPerLID_ each have only a device view.
     // numImportPacketsPerLIDs_ is a device view, and also has a host
     // view (host_numImportPacketsPerLID_).
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Transfer"))));
+#endif 
+
     if (communication_needed) {
       if (reverseMode) {
         if (constantNumPackets == 0) { // variable number of packets per LID
@@ -7492,6 +7510,9 @@ namespace Tpetra {
     // In the latter case, imports_ only has a device view.
     // numImportPacketsPerLIDs_ is a device view, and also has a host
     // view (host_numImportPacketsPerLID_).
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Unpack-1"))));
+#endif 
     size_t mynnz =
       Import_Util::unpackAndCombineWithOwningPIDsCount (*this, RemoteLIDs,
                                                         destMat->imports_old_ (),
@@ -7543,7 +7564,9 @@ namespace Tpetra {
     /**************************************************************/
     /**** 4) Call Optimized MakeColMap w/ no Directory Lookups ****/
     /**************************************************************/
-
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Unpack-2"))));
+#endif 
     // Call an optimized version of makeColMap that avoids the
     // Directory lookups (since the Import object knows who owns all
     // the GIDs).
@@ -7580,6 +7603,9 @@ namespace Tpetra {
     /***************************************************/
     /**** 5) Sort                                   ****/
     /***************************************************/
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Unpack-3"))));
+#endif 
     Import_Util::sortCrsEntries (CSR_rowptr (),
                                  CSR_colind_LID (),
                                  CSR_vals ());
@@ -7620,6 +7646,9 @@ namespace Tpetra {
     /**** 7) Build Importer & Call ESFC             ****/
     /***************************************************/
     // Pre-build the importer using the existing PIDs
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC ESFC"))));
+#endif 
     RCP<import_type> MyImport = rcp (new import_type (MyDomainMap, MyColMap, RemotePids));
     destMat->expertStaticFillComplete (MyDomainMap, MyRangeMap, MyImport);
   }

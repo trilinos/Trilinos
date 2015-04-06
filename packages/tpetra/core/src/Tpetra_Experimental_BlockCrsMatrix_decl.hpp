@@ -294,7 +294,7 @@ public:
   //! Get the (mesh) graph.
   virtual Teuchos::RCP<const Tpetra::RowGraph<LO,GO,Node> > getGraph () const;
 
-  crs_graph_type getCrsGraph () const { return graph_; }
+  const crs_graph_type & getCrsGraph () const { return graph_; }
 
   /// \brief Version of apply() that takes BlockMultiVector input and output.
   ///

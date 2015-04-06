@@ -283,10 +283,10 @@ void skin_mesh_attach_new_sides_to_connected_entities(BulkData & mesh,
       EntityVector side_nodes(side_topology.num_nodes());
       element_topology.side_nodes(elem_nodes, side_ordinal, side_nodes.begin());
 
-      unsigned perm_id = side_topology.lexicographical_smallest_permutation(side_nodes, consider_negative_permutations);
+      unsigned lexmin_perm_id = side_topology.lexicographical_smallest_permutation(side_nodes, consider_negative_permutations);
 
       EntityVector ordered_side_nodes(side_nodes.size());
-      side_topology.permutation_nodes(side_nodes, perm_id, ordered_side_nodes.begin());
+      side_topology.permutation_nodes(side_nodes, lexmin_perm_id, ordered_side_nodes.begin());
 
       // attach nodes to side
       for (size_t i=0, ie=ordered_side_nodes.size(); i<ie; ++i) {
@@ -294,7 +294,13 @@ void skin_mesh_attach_new_sides_to_connected_entities(BulkData & mesh,
       }
 
       // attach side to element
-      mesh.declare_relation( elem, side, static_cast<RelationIdentifier>(side_ordinal), static_cast<Permutation>(perm_id));
+      Permutation permut =
+              mesh.find_permutation(element_topology, elem_nodes,
+                                    side_topology, &ordered_side_nodes[0], side_ordinal);
+      ThrowRequireMsg(permut != INVALID_PERMUTATION, ":  skin_mesh_attach_new_sides_to_connected_entities could not find valid permutation to connect face to element");
+      mesh.declare_relation(elem, side, static_cast<RelationIdentifier>(side_ordinal), permut);
+      // mesh.declare_relation( elem, side, static_cast<RelationIdentifier>(side_ordinal), static_cast<Permutation>(perm_id));
+
     }
 
     PartVector add_parts(skin_parts);

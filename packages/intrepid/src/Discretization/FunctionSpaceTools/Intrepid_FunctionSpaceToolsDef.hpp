@@ -118,7 +118,1099 @@ void FunctionSpaceTools::HVOLtransformVALUE(ArrayTypeOut        & outVals,
   ArrayTools::scalarMultiplyDataField<Scalar>(outVals, jacobianDet, inVals, true);
 
 }
+template<class Scalar>
+void FunctionSpaceTools::integrate(Intrepid::FieldContainer<Scalar>            & outputValues,
+                                   const Intrepid::FieldContainer<Scalar>   & leftValues,
+                                   const Intrepid::FieldContainer<Scalar>  & rightValues,
+                                   const ECompEngine           compEngine,
+                                   const bool            sumInto) {
+int outRank = getrank(outputValues);
+int lRank = getrank(leftValues);
+switch (outRank) {
+ case 1:{
+      switch (lRank){
+    case 2:{
+ #ifdef HAVE_INTREPID_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftValues.rank()  != 2 ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataDataScalar): Rank of the left input argument must equal 2!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (rightValues.rank() != 2 ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataDataScalar): Rank of right input argument must equal 2!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputValues.rank() != 1 ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataDataScalar): Rank of output argument must equal 1!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftValues.dimension(0) != rightValues.dimension(0) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataDataScalar): Zeroth dimensions (number of integration domains) of the left and right input containers must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftValues.dimension(1) != rightValues.dimension(1) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataDataScalar): First dimensions (numbers of integration points) of the left and right input containers must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputValues.dimension(0) != rightValues.dimension(0) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataDataScalar): Zeroth dimensions (numbers of integration domains) of the input and output containers must agree!");
+#endif
 
+  // get sizes
+  int numCells      = leftValues.dimension(0);
+  int numPoints     = leftValues.dimension(1);
+
+  switch(compEngine) {
+    case COMP_CPP: {
+      if (sumInto) {
+        for (int cl = 0; cl < numCells; cl++) {
+          Scalar tmpVal(0);
+          for (int qp = 0; qp < numPoints; qp++) {
+            tmpVal += leftValues(cl, qp)*rightValues(cl, qp);
+          } // P-loop
+          outputValues(cl) += tmpVal;
+        } // C-loop
+      }
+      else {
+        for (int cl = 0; cl < numCells; cl++) {
+          Scalar tmpVal(0);
+          for (int qp = 0; qp < numPoints; qp++) {
+            tmpVal += leftValues(cl, qp)*rightValues(cl, qp);
+          } // P-loop
+          outputValues(cl) = tmpVal;
+        } // C-loop
+      }
+    }
+    break;
+
+    case COMP_BLAS: {
+      int incr = 1;              // increment
+      if (sumInto) {
+        for (int cl=0; cl < numCells; cl++) {
+          Teuchos::BLAS<int, Scalar> myblas;
+          outputValues(cl) += myblas.DOT(numPoints, &leftValues[cl*numPoints], incr, &rightValues[cl*numPoints], incr);
+        }
+      }
+      else {
+        for (int cl=0; cl < numCells; cl++) {
+          Teuchos::BLAS<int, Scalar> myblas;
+          outputValues(cl) = myblas.DOT(numPoints, &leftValues[cl*numPoints], incr, &rightValues[cl*numPoints], incr);
+        }
+      }
+    }
+    break;
+
+    default:
+      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+                          ">>> ERROR (ArrayTools::contractDataDataScalar): Computational engine not defined!");
+  } // switch(compEngine)  
+    }
+    break;
+    case 3:{
+#ifdef HAVE_INTREPID_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftValues.rank()  != 3 ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataDataVector): Rank of the left input argument must equal 3!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (rightValues.rank() != 3 ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataDataVector): Rank of right input argument must equal 3!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputValues.rank() != 1 ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataDataVector): Rank of output argument must equal 1!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftValues.dimension(0) != rightValues.dimension(0) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataDataVector): Zeroth dimensions (number of integration domains) of the left and right input containers must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftValues.dimension(1) != rightValues.dimension(1) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataDataVector): First dimensions (numbers of integration points) of the left and right input containers must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftValues.dimension(2) != rightValues.dimension(2) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataDataVector): Second dimensions (numbers of vector components) of the left and right input containers must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputValues.dimension(0) != rightValues.dimension(0) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataDataVector): Zeroth dimensions (numbers of integration domains) of the input and output containers must agree!");
+#endif
+
+  // get sizes
+  int numCells        = leftValues.dimension(0);
+  int numPoints       = leftValues.dimension(1);
+  int dimVec          = leftValues.dimension(2);
+
+  switch(compEngine) {
+    case COMP_CPP: {
+      if (sumInto) {
+        for (int cl = 0; cl < numCells; cl++) {
+          Scalar tmpVal(0);
+          for (int qp = 0; qp < numPoints; qp++) {
+            for (int iVec = 0; iVec < dimVec; iVec++) {
+              tmpVal += leftValues(cl, qp, iVec)*rightValues(cl, qp, iVec);
+            } // D-loop
+          } // P-loop
+          outputValues(cl) += tmpVal;
+        } // C-loop
+      }
+      else {
+        for (int cl = 0; cl < numCells; cl++) {
+          Scalar tmpVal(0);
+          for (int qp = 0; qp < numPoints; qp++) {
+            for (int iVec = 0; iVec < dimVec; iVec++) {
+              tmpVal += leftValues(cl, qp, iVec)*rightValues(cl, qp, iVec);
+            } // D-loop
+          } // P-loop
+          outputValues(cl) = tmpVal;
+        } // C-loop
+      }
+    }
+    break;
+
+    case COMP_BLAS: {
+      int skip = numPoints*dimVec;  // size of the left data chunk per cell
+      int incr = 1;                 // increment
+      if (sumInto) {
+        for (int cl=0; cl < numCells; cl++) {
+          Teuchos::BLAS<int, Scalar> myblas;
+          outputValues(cl) += myblas.DOT(skip, &leftValues[cl*skip], incr, &rightValues[cl*skip], incr);
+        }
+      }
+      else {
+        for (int cl=0; cl < numCells; cl++) {
+          Teuchos::BLAS<int, Scalar> myblas;
+          outputValues(cl) = myblas.DOT(skip, &leftValues[cl*skip], incr, &rightValues[cl*skip], incr);
+        }
+      }
+    }
+    break;
+
+    default:
+      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+                          ">>> ERROR (ArrayTools::contractDataDataVector): Computational engine not defined!");
+  } // switch(compEngine)
+
+
+}
+
+    break;
+    case 4:{
+#ifdef HAVE_INTREPID_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftValues.rank()  != 4 ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataDataTensor): Rank of the left input argument must equal 4");
+  TEUCHOS_TEST_FOR_EXCEPTION( (rightValues.rank() != 4 ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataDataTensor): Rank of right input argument must equal 4!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputValues.rank() != 1 ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataDataTensor): Rank of output argument must equal 1!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftValues.dimension(0) != rightValues.dimension(0) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataDataTensor): Zeroth dimensions (number of integration domains) of the left and right input containers must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftValues.dimension(1) != rightValues.dimension(1) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataDataTensor): First dimensions (numbers of integration points) of the left and right input containers must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftValues.dimension(2) != rightValues.dimension(2) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataDataTensor): Second dimensions (first tensor dimensions) of the left and right input containers must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftValues.dimension(3) != rightValues.dimension(3) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataDataTensor): Third dimensions (second tensor dimensions) of the left and right input containers must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputValues.dimension(0) != rightValues.dimension(0) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataDataTensor): Zeroth dimensions (numbers of integration domains) of the input and output containers must agree!");
+#endif
+
+  // get sizes
+  int numCells        = leftValues.dimension(0);
+  int numPoints       = leftValues.dimension(1);
+  int dim1Tensor      = leftValues.dimension(2);
+  int dim2Tensor      = leftValues.dimension(3);
+
+  switch(compEngine) {
+    case COMP_CPP: {
+      if (sumInto) { 
+        for (int cl = 0; cl < numCells; cl++) {
+          Scalar tmpVal(0);
+          for (int qp = 0; qp < numPoints; qp++) {
+            for (int iTens1 = 0; iTens1 < dim1Tensor; iTens1++) {
+              for (int iTens2 = 0; iTens2 < dim2Tensor; iTens2++) {
+                tmpVal += leftValues(cl, qp, iTens1, iTens2)*rightValues(cl, qp, iTens1, iTens2);
+              } // D2-loop
+            } // D1-loop
+          } // P-loop
+          outputValues(cl) += tmpVal;
+        } // C-loop
+      }
+      else {
+        for (int cl = 0; cl < numCells; cl++) {
+          Scalar tmpVal(0);
+          for (int qp = 0; qp < numPoints; qp++) {
+            for (int iTens1 = 0; iTens1 < dim1Tensor; iTens1++) {
+              for (int iTens2 = 0; iTens2 < dim2Tensor; iTens2++) {
+                tmpVal += leftValues(cl, qp, iTens1, iTens2)*rightValues(cl, qp, iTens1, iTens2);
+              } // D2-loop
+            } // D1-loop
+          } // P-loop
+          outputValues(cl) = tmpVal;
+        } // C-loop
+      }
+    }
+    break;
+
+    case COMP_BLAS: {
+      int skip = numPoints*dim1Tensor*dim2Tensor;  // size of the left data chunk per cell
+      int incr = 1;                                // increment
+      if (sumInto) {
+        for (int cl=0; cl < numCells; cl++) {
+          Teuchos::BLAS<int, Scalar> myblas;
+          outputValues(cl) += myblas.DOT(skip, &leftValues[cl*skip], incr, &rightValues[cl*skip], incr);
+        }
+      }
+      else {
+        for (int cl=0; cl < numCells; cl++) {
+          Teuchos::BLAS<int, Scalar> myblas;
+          outputValues(cl) = myblas.DOT(skip, &leftValues[cl*skip], incr, &rightValues[cl*skip], incr);
+        }
+      }
+    }
+    break;
+
+    default:
+      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+                          ">>> ERROR (ArrayTools::contractDataDataTensor): Computational engine not defined!");
+  } // switch(compEngine)
+
+}
+    break;
+    default:
+#ifdef HAVE_INTREPID_DEBUG
+
+      TEUCHOS_TEST_FOR_EXCEPTION( ((lRank != 2) && (lRank != 3) && (lRank != 4)), std::invalid_argument,
+                          ">>> ERROR (FunctionSpaceTools::dataIntegral): Left data input container must have rank 2, 3 or 4.");
+
+#endif
+    break;
+
+}
+
+}
+ break;
+ case 2:{
+  switch (lRank) {
+    case 2:{
+#ifdef HAVE_INTREPID_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION( (rightValues.rank()  != 3 ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataFieldScalar): Rank of the fields input argument must equal 3!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftValues.rank() != 2 ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataFieldScalar): Rank of the data input argument must equal 2!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputValues.rank() != 2 ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataFieldScalar): Rank of output argument must equal 2!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (rightValues.dimension(0) != leftValues.dimension(0) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataFieldScalar): Zeroth dimensions (number of integration domains) of the fields and data input containers must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (rightValues.dimension(2) != leftValues.dimension(1)) && (leftValues.dimension(1) != 1) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataFieldScalar): Second dimension of fields input container and first dimension of data input container (number of integration points) must agree or first data dimension must be 1!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputValues.dimension(0) != rightValues.dimension(0) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataFieldScalar): Zeroth dimensions (numbers of integration domains) of the fields input and output containers must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputValues.dimension(1) != rightValues.dimension(1) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataFieldScalar): First dimensions (number of fields) of the fields input and output containers must agree!");
+#endif
+
+  // get sizes
+  int numCells       = rightValues.dimension(0);
+  int numFields      = rightValues.dimension(1);
+  int numPoints      = rightValues.dimension(2);
+  int numDataPoints  = leftValues.dimension(1);
+
+  ECompEngine myCompEngine = (numDataPoints == 1 ? COMP_CPP : compEngine);
+
+  switch(myCompEngine) {
+    case COMP_CPP: {
+      if (sumInto) {
+        if (numDataPoints != 1) { // nonconstant data
+          for (int cl = 0; cl < numCells; cl++) {
+            for (int lbf = 0; lbf < numFields; lbf++) {
+              Scalar tmpVal(0);
+              for (int qp = 0; qp < numPoints; qp++) {
+                tmpVal += rightValues(cl, lbf, qp)*leftValues(cl, qp);
+              } // P-loop
+              outputValues(cl, lbf) += tmpVal;
+            } // F-loop
+          } // C-loop
+        }
+        else { // constant data
+          for (int cl = 0; cl < numCells; cl++) {
+            for (int lbf = 0; lbf < numFields; lbf++) {
+              Scalar tmpVal(0);
+              for (int qp = 0; qp < numPoints; qp++) {
+                tmpVal += rightValues(cl, lbf, qp)*leftValues(cl, 0);
+              } // P-loop
+              outputValues(cl, lbf) += tmpVal;
+            } // F-loop
+          } // C-loop
+        } // numDataPoints
+      }
+      else {
+        if (numDataPoints != 1) { // nonconstant data
+          for (int cl = 0; cl < numCells; cl++) {
+            for (int lbf = 0; lbf < numFields; lbf++) {
+              Scalar tmpVal(0);
+              for (int qp = 0; qp < numPoints; qp++) {
+                tmpVal += rightValues(cl, lbf, qp)*leftValues(cl, qp);
+              } // P-loop
+              outputValues(cl, lbf) = tmpVal;
+            } // F-loop
+          } // C-loop
+        }
+        else { // constant data
+          for (int cl = 0; cl < numCells; cl++) {
+            for (int lbf = 0; lbf < numFields; lbf++) {
+              Scalar tmpVal(0);
+              for (int qp = 0; qp < numPoints; qp++) {
+                tmpVal += rightValues(cl, lbf, qp)*leftValues(cl, 0);
+              } // P-loop
+              outputValues(cl, lbf) = tmpVal;
+            } // F-loop
+          } // C-loop
+        } // numDataPoints
+      }
+    }
+    break;
+
+    case COMP_BLAS: {
+      /*
+       GEMM parameters and their values.
+       (Note: It is assumed that the result needs to be transposed into row-major format.
+              Think of left and right input matrices as A(p x f) and B(p x 1), respectively,
+              even though the indexing is ((C),F,P) and ((C),P). Due to BLAS formatting
+              assumptions, we are computing (A^T*B)^T = B^T*A.)
+       TRANSA   TRANS
+       TRANSB   NO_TRANS
+       M        #rows(B^T)                            = 1
+       N        #cols(A)                              = number of input fields
+       K        #cols(B^T)                            = number of integration points * size of data
+       ALPHA    1.0
+       A        right data for cell cl                = &rightFields[cl*skipR]
+       LDA      #rows(B)                              = number of integration points * size of data
+       B        left data for cell cl                 = &leftFields[cl*skipL]
+       LDB      #rows(A)                              = number of integration points * size of data
+       BETA     0.0
+       C        result for cell cl                    = &outputFields[cl*skipOp]
+       LDC      #rows(C)                              = 1
+      */
+      int numData  = numPoints;
+      int skipL    = numFields*numPoints;       // size of the left data chunk per cell
+      int skipR    = numPoints;                 // size of the right data chunk per cell
+      int skipOp   = numFields;                 // size of the output data chunk per cell
+      Scalar alpha(1.0);                        // these are left unchanged by GEMM
+      Scalar beta(0.0);
+      if (sumInto) {
+        beta = 1.0;
+      }
+
+      for (int cl=0; cl < numCells; cl++) {
+        /* Use this if data is used in row-major format */
+        Teuchos::BLAS<int, Scalar> myblas;
+        myblas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS,
+                    1, numFields, numData,
+                    alpha, &leftValues[cl*skipR], numData,
+                    &rightValues[cl*skipL], numData,
+                    beta, &outputValues[cl*skipOp], 1);
+        /* Use this if data is used in column-major format */
+        /*
+        myblas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS,
+                    numFields, 1, numData,
+                    alpha, &inputFields[cl*skipL], numData,
+                    &inputData[cl*skipR], numData,
+                    beta, &outputFields[cl*skipOp], numFields);
+        */
+      }
+    }
+    break;
+
+    default:
+      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+                          ">>> ERROR (ArrayTools::contractDataFieldScalar): Computational engine not defined!");
+  } // switch(compEngine)
+    }
+    break;
+    case 3:{
+    #ifdef HAVE_INTREPID_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION( (rightValues.rank()  != 4 ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataFieldVector): Rank of the fields input argument must equal 4!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftValues.rank() != 3 ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataFieldVector): Rank of the data input argument must equal 3!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputValues.rank() != 2 ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataFieldVector): Rank of output argument must equal 2!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (rightValues.dimension(0) != leftValues.dimension(0) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataFieldVector): Zeroth dimensions (number of integration domains) of the fields and data input containers must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (rightValues.dimension(2) != leftValues.dimension(1)) && (leftValues.dimension(1) != 1) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataFieldVector): Second dimension of the fields input container and first dimension of data input container (number of integration points) must agree or first data dimension must be 1!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (rightValues.dimension(3) != leftValues.dimension(2) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataFieldVector): Third dimension of the fields input container and second dimension of data input container (vector index) must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputValues.dimension(0) != rightValues.dimension(0) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataFieldVector): Zeroth dimensions (numbers of integration domains) of the fields input and output containers must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputValues.dimension(1) != rightValues.dimension(1) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataFieldVector): First dimensions of output container and fields input container (number of fields) must agree!");
+#endif
+
+  // get sizes
+  int numCells       = rightValues.dimension(0);
+  int numFields      = rightValues.dimension(1);
+  int numPoints      = rightValues.dimension(2);
+  int dimVec         = rightValues.dimension(3);
+  int numDataPoints  = leftValues.dimension(1);
+
+  ECompEngine myCompEngine = (numDataPoints == 1 ? COMP_CPP : compEngine);
+
+  switch(myCompEngine) {
+    case COMP_CPP: {
+      if (sumInto) {
+        if (numDataPoints != 1) { // nonconstant data
+          for (int cl = 0; cl < numCells; cl++) {
+              for (int lbf = 0; lbf < numFields; lbf++) {
+                Scalar tmpVal(0);
+                for (int qp = 0; qp < numPoints; qp++) {
+                  for (int iVec = 0; iVec < dimVec; iVec++) {
+                    tmpVal += rightValues(cl, lbf, qp, iVec)*leftValues(cl, qp, iVec);
+                  } // D-loop
+                } // P-loop
+                outputValues(cl, lbf) += tmpVal;
+              } // F-loop
+          } // C-loop
+        }
+        else { // constant data
+          for (int cl = 0; cl < numCells; cl++) {
+              for (int lbf = 0; lbf < numFields; lbf++) {
+                Scalar tmpVal(0);
+                for (int qp = 0; qp < numPoints; qp++) {
+                  for (int iVec = 0; iVec < dimVec; iVec++) {
+                    tmpVal += rightValues(cl, lbf, qp, iVec)*leftValues(cl, 0, iVec);
+                  } //D-loop
+                } // P-loop
+                outputValues(cl, lbf) += tmpVal;
+              } // F-loop
+          } // C-loop
+        } // numDataPoints
+      }
+      else {
+        if (numDataPoints != 1) { // nonconstant data
+          for (int cl = 0; cl < numCells; cl++) {
+              for (int lbf = 0; lbf < numFields; lbf++) {
+                Scalar tmpVal(0);
+                for (int qp = 0; qp < numPoints; qp++) {
+                  for (int iVec = 0; iVec < dimVec; iVec++) {
+                    tmpVal += rightValues(cl, lbf, qp, iVec)*leftValues(cl, qp, iVec);
+                  } // D-loop
+                } // P-loop
+                outputValues(cl, lbf) = tmpVal;
+              } // F-loop
+          } // C-loop
+        }
+        else { // constant data
+          for (int cl = 0; cl < numCells; cl++) {
+              for (int lbf = 0; lbf < numFields; lbf++) {
+                Scalar tmpVal(0);
+                for (int qp = 0; qp < numPoints; qp++) {
+                  for (int iVec = 0; iVec < dimVec; iVec++) {
+                    tmpVal += rightValues(cl, lbf, qp, iVec)*leftValues(cl, 0, iVec);
+                  } //D-loop
+                } // P-loop
+                outputValues(cl, lbf) = tmpVal;
+              } // F-loop
+          } // C-loop
+        } // numDataPoints
+      }
+    }
+    break;
+
+    case COMP_BLAS: {
+      /*
+       GEMM parameters and their values.
+       (Note: It is assumed that the result needs to be transposed into row-major format.
+              Think of left and right input matrices as A(p x f) and B(p x 1), respectively,
+              even though the indexing is ((C),F,P) and ((C),P). Due to BLAS formatting
+              assumptions, we are computing (A^T*B)^T = B^T*A.)
+       TRANSA   TRANS
+       TRANSB   NO_TRANS
+       M        #rows(B^T)                            = 1
+       N        #cols(A)                              = number of input fields
+       K        #cols(B^T)                            = number of integration points * size of data
+       ALPHA    1.0
+       A        right data for cell cl                = &rightFields[cl*skipR]
+       LDA      #rows(B)                              = number of integration points * size of data
+       B        left data for cell cl                 = &leftFields[cl*skipL]
+       LDB      #rows(A)                              = number of integration points * size of data
+       BETA     0.0
+       C        result for cell cl                    = &outputFields[cl*skipOp]
+       LDC      #rows(C)                              = 1
+      */
+      int numData  = numPoints*dimVec;
+      int skipL    = numFields*numData;         // size of the left data chunk per cell
+      int skipR    = numData;                   // size of the right data chunk per cell
+      int skipOp   = numFields;                 // size of the output data chunk per cell
+      Scalar alpha(1.0);                        // these are left unchanged by GEMM
+      Scalar beta(0.0);
+      if (sumInto) {
+        beta = 1.0;
+      }
+
+      for (int cl=0; cl < numCells; cl++) {
+        /* Use this if data is used in row-major format */
+        Teuchos::BLAS<int, Scalar> myblas;
+        myblas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS,
+                    1, numFields, numData,
+                    alpha, &leftValues[cl*skipR], numData,
+                    &rightValues[cl*skipL], numData,
+                    beta, &outputValues[cl*skipOp], 1);
+        /* Use this if data is used in column-major format */
+        /*
+        myblas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS,
+                    numFields, 1, numData,
+                    alpha, &inputFields[cl*skipL], numData,
+                    &inputData[cl*skipR], numData,
+                    beta, &outputFields[cl*skipOp], numFields);
+        */
+      }
+    }
+    break;
+
+    default:
+      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+                          ">>> ERROR (ArrayTools::contractDataFieldVector): Computational engine not defined!");
+  } // switch(compEngine)
+    }
+    break;
+    case 4:{
+#ifdef HAVE_INTREPID_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION( (rightValues.rank()  != 5 ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataFieldTensor): Rank of the fields input argument must equal 5!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftValues.rank() != 4 ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataFieldTensor): Rank of the data input argument must equal 4!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputValues.rank() != 2 ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataFieldTensor): Rank of output argument must equal 2!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (rightValues.dimension(0) != leftValues.dimension(0) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataFieldTensor): Zeroth dimensions (number of integration domains) of the fields and data input containers must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( ( (rightValues.dimension(2) != leftValues.dimension(1)) && (leftValues.dimension(1) != 1) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataFieldTensor): Second dimension of the fields input container and first dimension of data input container (number of integration points) must agree or first data dimension must be 1!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (rightValues.dimension(3) != leftValues.dimension(2) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataFieldTensor): Third dimension of the fields input container and second dimension of data input container (first tensor dimension) must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (rightValues.dimension(4) != leftValues.dimension(3) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataFieldTensor): Fourth dimension of the fields input container and third dimension of data input container (second tensor dimension) must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputValues.dimension(0) != rightValues.dimension(0) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataFieldTensor): Zeroth dimensions (numbers of integration domains) of the fields input and output containers must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputValues.dimension(1) != rightValues.dimension(1) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractDataFieldTensor): First dimensions (number of fields) of output container and fields input container must agree!");
+#endif
+
+  // get sizes
+  int numCells       = rightValues.dimension(0);
+  int numFields      = rightValues.dimension(1);
+  int numPoints      = rightValues.dimension(2);
+  int dim1Tens       = rightValues.dimension(3);
+  int dim2Tens       = rightValues.dimension(4);
+  int numDataPoints  = leftValues.dimension(1);
+
+  ECompEngine myCompEngine = (numDataPoints == 1 ? COMP_CPP : compEngine);
+
+  switch(myCompEngine) {
+    case COMP_CPP: {
+      if (sumInto) {
+        if (numDataPoints != 1) { // nonconstant data
+          for (int cl = 0; cl < numCells; cl++) {
+              for (int lbf = 0; lbf < numFields; lbf++) {
+                Scalar tmpVal(0);
+                for (int qp = 0; qp < numPoints; qp++) {
+                  for (int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
+                    for (int iTens2 =0; iTens2 < dim2Tens; iTens2++) {
+                      tmpVal += rightValues(cl, lbf, qp, iTens1, iTens2)*leftValues(cl, qp, iTens1, iTens2);
+                    } // D2-loop
+                  } // D1-loop
+                } // P-loop
+                outputValues(cl, lbf) += tmpVal;
+              } // F-loop
+          } // C-loop
+        }
+        else { // constant data
+          for (int cl = 0; cl < numCells; cl++) {
+              for (int lbf = 0; lbf < numFields; lbf++) {
+                Scalar tmpVal(0);
+                for (int qp = 0; qp < numPoints; qp++) {
+                  for (int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
+                    for (int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
+                      tmpVal += rightValues(cl, lbf, qp, iTens1, iTens2)*leftValues(cl, 0, iTens1, iTens2);
+                    } // D2-loop
+                  } // D1-loop
+                } // P-loop
+                outputValues(cl, lbf) += tmpVal;
+              } // F-loop
+          } // C-loop
+        } // numDataPoints
+      }
+      else {
+        if (numDataPoints != 1) { // nonconstant data
+          for (int cl = 0; cl < numCells; cl++) {
+              for (int lbf = 0; lbf < numFields; lbf++) {
+                Scalar tmpVal(0);
+                for (int qp = 0; qp < numPoints; qp++) {
+                  for (int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
+                    for (int iTens2 =0; iTens2 < dim2Tens; iTens2++) {
+                      tmpVal += rightValues(cl, lbf, qp, iTens1, iTens2)*leftValues(cl, qp, iTens1, iTens2);
+                    } // D2-loop
+                  } // D1-loop
+                } // P-loop
+                outputValues(cl, lbf) = tmpVal;
+              } // F-loop
+          } // C-loop
+        }
+        else { // constant data
+          for (int cl = 0; cl < numCells; cl++) {
+              for (int lbf = 0; lbf < numFields; lbf++) {
+                Scalar tmpVal(0);
+                for (int qp = 0; qp < numPoints; qp++) {
+                  for (int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
+                    for (int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
+                      tmpVal += rightValues(cl, lbf, qp, iTens1, iTens2)*leftValues(cl, 0, iTens1, iTens2);
+                    } // D2-loop
+                  } // D1-loop
+                } // P-loop
+                outputValues(cl, lbf) = tmpVal;
+              } // F-loop
+          } // C-loop
+        } // numDataPoints
+      }
+    }
+    break;
+
+    case COMP_BLAS: {
+      /*
+       GEMM parameters and their values.
+       (Note: It is assumed that the result needs to be transposed into row-major format.
+              Think of left and right input matrices as A(p x f) and B(p x 1), respectively,
+              even though the indexing is ((C),F,P) and ((C),P). Due to BLAS formatting
+              assumptions, we are computing (A^T*B)^T = B^T*A.)
+       TRANSA   TRANS
+       TRANSB   NO_TRANS
+       M        #rows(B^T)                            = 1
+       N        #cols(A)                              = number of input fields
+       K        #cols(B^T)                            = number of integration points * size of data
+       ALPHA    1.0
+       A        right data for cell cl                = &rightFields[cl*skipR]
+       LDA      #rows(B)                              = number of integration points * size of data
+       B        left data for cell cl                 = &leftFields[cl*skipL]
+       LDB      #rows(A)                              = number of integration points * size of data
+       BETA     0.0
+       C        result for cell cl                    = &outputFields[cl*skipOp]
+       LDC      #rows(C)                              = 1
+      */
+      int numData  = numPoints*dim1Tens*dim2Tens;
+      int skipL    = numFields*numData;         // size of the left data chunk per cell
+      int skipR    = numData;                   // size of the right data chunk per cell
+      int skipOp   = numFields;                 // size of the output data chunk per cell
+      Scalar alpha(1.0);                        // these are left unchanged by GEMM
+      Scalar beta(0.0);
+      if (sumInto) {
+        beta = 1.0;
+      }
+
+      for (int cl=0; cl < numCells; cl++) {
+        /* Use this if data is used in row-major format */
+        Teuchos::BLAS<int, Scalar> myblas;
+        myblas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS,
+                    1, numFields, numData,
+                    alpha, &leftValues[cl*skipR], numData,
+                    &rightValues[cl*skipL], numData,
+                    beta, &outputValues[cl*skipOp], 1);
+        /* Use this if data is used in column-major format */
+        /*
+        myblas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS,
+                    numFields, 1, numData,
+                    alpha, &inputFields[cl*skipL], numData,
+                    &inputData[cl*skipR], numData,
+                    beta, &outputFields[cl*skipOp], numFields);
+        */
+      }
+    }
+    break;
+
+    default:
+      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+                          ">>> ERROR (ArrayTools::contractDataFieldTensor): Computational engine not defined!");
+  } // switch(compEngine)    
+}
+    break;
+  default:
+#ifdef HAVE_INTREPID_DEBUG
+
+TEUCHOS_TEST_FOR_EXCEPTION( ((lRank != 2) && (lRank != 3) && (lRank != 4)), std::invalid_argument,
+                          ">>> ERROR (FunctionSpaceTools::functionalIntegral): Data input container must have rank 2, 3 or 4.");
+
+#endif
+    break;
+}
+
+}
+ break;
+ case 3:{
+  switch (lRank) {
+    case 3:{ 
+#ifdef HAVE_INTREPID_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftValues.rank()  != 3 ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractFieldFieldScalar): Rank of the left input argument must equal 3!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (rightValues.rank() != 3 ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractFieldFieldScalar): Rank of right input argument must equal 3!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputValues.rank() != 3 ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractFieldFieldScalar): Rank of output argument must equal 3!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftValues.dimension(0) != rightValues.dimension(0) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractFieldFieldScalar): Zeroth dimensions (number of integration domains) of the left and right input containers must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftValues.dimension(2) != rightValues.dimension(2) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractFieldFieldScalar): Second dimensions (numbers of integration points) of the left and right input containers must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputValues.dimension(0) != rightValues.dimension(0) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractFieldFieldScalar): Zeroth dimensions (numbers of integration domains) of the input and output containers must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputValues.dimension(1) != leftValues.dimension(1) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractFieldFieldScalar): First dimension of output container and first dimension of left input container must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputValues.dimension(2) != rightValues.dimension(1) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractFieldFieldScalar): Second dimension of output container and first dimension of right input container must agree!");
+#endif
+
+  // get sizes
+  int numCells        = leftValues.dimension(0);
+  int numLeftFields   = leftValues.dimension(1);
+  int numRightFields  = rightValues.dimension(1);
+  int numPoints       = leftValues.dimension(2);
+
+  switch(compEngine) {
+    case COMP_CPP: {
+      if (sumInto) {
+        for (int cl = 0; cl < numCells; cl++) {
+          for (int lbf = 0; lbf < numLeftFields; lbf++) {
+            for (int rbf = 0; rbf < numRightFields; rbf++) {
+              Scalar tmpVal(0);
+              for (int qp = 0; qp < numPoints; qp++) {
+                tmpVal += leftValues(cl, lbf, qp)*rightValues(cl, rbf, qp);
+              } // P-loop
+              outputValues(cl, lbf, rbf) += tmpVal;
+            } // R-loop
+          } // L-loop
+        } // C-loop
+      }
+      else {
+        for (int cl = 0; cl < numCells; cl++) {
+          for (int lbf = 0; lbf < numLeftFields; lbf++) {
+            for (int rbf = 0; rbf < numRightFields; rbf++) {
+              Scalar tmpVal(0);
+              for (int qp = 0; qp < numPoints; qp++) {
+                tmpVal += leftValues(cl, lbf, qp)*rightValues(cl, rbf, qp);
+              } // P-loop
+              outputValues(cl, lbf, rbf) = tmpVal;
+            } // R-loop
+          } // L-loop
+        } // C-loop
+      }
+    }
+    break;
+
+    case COMP_BLAS: {
+      /*
+       GEMM parameters and their values.
+       (Note: It is assumed that the result needs to be transposed into row-major format.
+              Think of left and right input matrices as A(p x l) and B(p x r), respectively,
+              even though the indexing is ((C),L,P) and ((C),R,P). Due to BLAS formatting
+              assumptions, we are computing (A^T*B)^T = B^T*A.)
+       TRANSA   TRANS
+       TRANSB   NO_TRANS
+       M        #rows(B^T)                            = number of right fields
+       N        #cols(A)                              = number of left fields
+       K        #cols(B^T)                            = number of integration points
+       ALPHA    1.0
+       A        right data for cell cl                = &rightFields[cl*skipR]
+       LDA      #rows(B)                              = number of integration points 
+       B        left data for cell cl                 = &leftFields[cl*skipL]
+       LDB      #rows(A)                              = number of integration points
+       BETA     0.0
+       C        result for cell cl                    = &outputFields[cl*skipOp]
+       LDC      #rows(C)                              = number of right fields
+      */
+      int skipL    = numLeftFields*numPoints;       // size of the left data chunk per cell
+      int skipR    = numRightFields*numPoints;      // size of the right data chunk per cell
+      int skipOp   = numLeftFields*numRightFields;  // size of the output data chunk per cell
+      Scalar alpha(1.0);                            // these are left unchanged by GEMM
+      Scalar beta(0.0);
+      if (sumInto) {
+        beta = 1.0;
+      }
+
+      for (int cl=0; cl < numCells; cl++) {
+        /* Use this if data is used in row-major format */
+        Teuchos::BLAS<int, Scalar> myblas;
+        myblas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS,
+                    numRightFields, numLeftFields, numPoints,
+                    alpha, &rightValues[cl*skipR], numPoints,
+                    &leftValues[cl*skipL], numPoints,
+                    beta, &outputValues[cl*skipOp], numRightFields);
+        /* Use this if data is used in column-major format */
+        /*
+        myblas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS,
+                    numLeftFields, numRightFields, numPoints,
+                    alpha, &leftFields[cl*skipL], numPoints,
+                    &rightFields[cl*skipR], numPoints,
+                    beta, &outputFields[cl*skipOp], numLeftFields);
+        */
+      }
+    }
+    break;
+
+    default:
+      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+                          ">>> ERROR (ArrayTools::contractFieldFieldScalar): Computational engine not defined!");
+  } // switch(compEngine)
+
+} 
+   break;
+    case 4:{
+#ifdef HAVE_INTREPID_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftValues.rank()  != 4 ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractFieldFieldVector): Rank of the left input argument must equal 4!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (rightValues.rank() != 4 ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractFieldFieldVector): Rank of right input argument must equal 4!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputValues.rank() != 3 ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractFieldFieldVector): Rank of output argument must equal 3!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftValues.dimension(0) != rightValues.dimension(0) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractFieldFieldVector): Zeroth dimensions (number of integration domains) of the left and right input containers must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftValues.dimension(2) != rightValues.dimension(2) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractFieldFieldVector): Second dimensions (numbers of integration points) of the left and right input containers must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftValues.dimension(3) != rightValues.dimension(3) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractFieldFieldVector): Third dimensions (numbers of vector components) of the left and right input containers must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputValues.dimension(0) != rightValues.dimension(0) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractFieldFieldVector): Zeroth dimensions (numbers of integration domains) of the input and output containers must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputValues.dimension(1) != leftValues.dimension(1) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractFieldFieldVector): First dimension of output container and first dimension of left input container must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputValues.dimension(2) != rightValues.dimension(1) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractFieldFieldVector): Second dimension of output container and first dimension of right input container must agree!");
+#endif
+
+  // get sizes
+  int numCells        = leftValues.dimension(0);
+  int numLeftFields   = leftValues.dimension(1);
+  int numRightFields  = rightValues.dimension(1);
+  int numPoints       = leftValues.dimension(2);
+  int dimVec          = leftValues.dimension(3);
+
+  switch(compEngine) {
+    case COMP_CPP: {
+      if (sumInto) {
+        for (int cl = 0; cl < numCells; cl++) {
+          for (int lbf = 0; lbf < numLeftFields; lbf++) {
+            for (int rbf = 0; rbf < numRightFields; rbf++) {
+              Scalar tmpVal(0);
+              for (int qp = 0; qp < numPoints; qp++) {
+                for (int iVec = 0; iVec < dimVec; iVec++) {
+                  tmpVal += leftValues(cl, lbf, qp, iVec)*rightValues(cl, rbf, qp, iVec);
+                } //D-loop
+              } // P-loop
+              outputValues(cl, lbf, rbf) += tmpVal;
+            } // R-loop
+          } // L-loop
+        } // C-loop
+      }
+      else {
+        for (int cl = 0; cl < numCells; cl++) {
+          for (int lbf = 0; lbf < numLeftFields; lbf++) {
+            for (int rbf = 0; rbf < numRightFields; rbf++) {
+              Scalar tmpVal(0);
+              for (int qp = 0; qp < numPoints; qp++) {
+                for (int iVec = 0; iVec < dimVec; iVec++) {
+                  tmpVal += leftValues(cl, lbf, qp, iVec)*rightValues(cl, rbf, qp, iVec);
+                } //D-loop
+              } // P-loop
+              outputValues(cl, lbf, rbf) = tmpVal;
+            } // R-loop
+          } // L-loop
+        } // C-loop
+      }
+    }
+    break;
+
+    case COMP_BLAS: {
+      /*
+       GEMM parameters and their values.
+       (Note: It is assumed that the result needs to be transposed into row-major format.
+              Think of left and right input matrices as A(p x l) and B(p x r), respectively,
+              even though the indexing is ((C),L,P) and ((C),R,P). Due to BLAS formatting
+              assumptions, we are computing (A^T*B)^T = B^T*A.)
+       TRANSA   TRANS
+       TRANSB   NO_TRANS
+       M        #rows(B^T)                            = number of right fields
+       N        #cols(A)                              = number of left fields
+       K        #cols(B^T)                            = number of integration points * size of vector
+       ALPHA    1.0
+       A        right data for cell cl                = &rightFields[cl*skipR]
+       LDA      #rows(B)                              = number of integration points * size of vector
+       B        left data for cell cl                 = &leftFields[cl*skipL]
+       LDB      #rows(A)                              = number of integration points * size of vector
+       BETA     0.0
+       C        result for cell cl                    = &outputFields[cl*skipOp]
+       LDC      #rows(C)                              = number of right fields
+      */
+      int numData  = numPoints*dimVec;              
+      int skipL    = numLeftFields*numData;         // size of the left data chunk per cell
+      int skipR    = numRightFields*numData;        // size of the right data chunk per cell
+      int skipOp   = numLeftFields*numRightFields;  // size of the output data chunk per cell
+      Scalar alpha(1.0);                            // these are left unchanged by GEMM
+      Scalar beta(0.0);
+      if (sumInto) {
+        beta = 1.0;
+      }
+
+      for (int cl=0; cl < numCells; cl++) {
+        /* Use this if data is used in row-major format */
+        Teuchos::BLAS<int, Scalar> myblas;
+        myblas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS,
+                    numRightFields, numLeftFields, numData,
+                    alpha, &rightValues[cl*skipR], numData,
+                    &leftValues[cl*skipL], numData,
+                    beta, &outputValues[cl*skipOp], numRightFields);
+        /* Use this if data is used in column-major format */
+        /*
+        myblas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS,
+                    numLeftFields, numRightFields, numData,
+                    alpha, &leftFields[cl*skipL], numData,
+                    &rightFields[cl*skipR], numData,
+                    beta, &outputFields[cl*skipOp], numLeftFields);
+        */
+      }
+    }
+    break;
+
+    default:
+      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+                          ">>> ERROR (ArrayTools::contractFieldFieldVector): Computational engine not defined!");
+  } // switch(compEngine)
+}
+    break;
+    case 5:{
+#ifdef HAVE_INTREPID_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftValues.rank()  != 5 ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractFieldFieldTensor): Rank of the left input argument must equal 5!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (rightValues.rank() != 5 ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractFieldFieldTensor): Rank of right input argument must equal 5!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputValues.rank() != 3 ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractFieldFieldTensor): Rank of output argument must equal 3!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftValues.dimension(0) != rightValues.dimension(0) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractFieldFieldTensor): Zeroth dimensions (number of integration domains) of the left and right input containers must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftValues.dimension(2) != rightValues.dimension(2) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractFieldFieldTensor): Second dimensions (numbers of integration points) of the left and right input containers must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftValues.dimension(3) != rightValues.dimension(3) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractFieldFieldTensor): Third dimensions (first tensor dimensions) of the left and right input containers must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (leftValues.dimension(4) != rightValues.dimension(4) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractFieldFieldTensor): Fourth dimensions (second tensor dimensions) of the left and right input containers must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputValues.dimension(0) != rightValues.dimension(0) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractFieldFieldTensor): Zeroth dimensions (numbers of integration domains) of the input and output containers must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputValues.dimension(1) != leftValues.dimension(1) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractFieldFieldTensor): First dimension of output container and first dimension of left input container must agree!");
+  TEUCHOS_TEST_FOR_EXCEPTION( (outputValues.dimension(2) != rightValues.dimension(1) ), std::invalid_argument,
+                      ">>> ERROR (ArrayTools::contractFieldFieldTensor): Second dimension of output container and first dimension of right input container must agree!");
+#endif
+
+  // get sizes
+  int numCells        = leftValues.dimension(0);
+  int numLeftFields   = leftValues.dimension(1);
+  int numRightFields  = rightValues.dimension(1);
+  int numPoints       = leftValues.dimension(2);
+  int dim1Tensor      = leftValues.dimension(3);
+  int dim2Tensor      = leftValues.dimension(4);
+
+  switch(compEngine) {
+    case COMP_CPP: {
+      if (sumInto) {
+        for (int cl = 0; cl < numCells; cl++) {
+          for (int lbf = 0; lbf < numLeftFields; lbf++) {
+            for (int rbf = 0; rbf < numRightFields; rbf++) {
+              Scalar tmpVal(0);
+              for (int qp = 0; qp < numPoints; qp++) {
+                for (int iTens1 = 0; iTens1 < dim1Tensor; iTens1++) {
+                  for (int iTens2 = 0; iTens2 < dim2Tensor; iTens2++) {
+                    tmpVal += leftValues(cl, lbf, qp, iTens1, iTens2)*rightValues(cl, rbf, qp, iTens1, iTens2);
+                  } // D2-loop
+                } // D1-loop
+              } // P-loop
+              outputValues(cl, lbf, rbf) += tmpVal;
+            } // R-loop
+          } // L-loop
+        } // C-loop
+      }
+      else {
+        for (int cl = 0; cl < numCells; cl++) {
+          for (int lbf = 0; lbf < numLeftFields; lbf++) {
+            for (int rbf = 0; rbf < numRightFields; rbf++) {
+              Scalar tmpVal(0);
+              for (int qp = 0; qp < numPoints; qp++) {
+                for (int iTens1 = 0; iTens1 < dim1Tensor; iTens1++) {
+                  for (int iTens2 = 0; iTens2 < dim2Tensor; iTens2++) {
+                    tmpVal += leftValues(cl, lbf, qp, iTens1, iTens2)*rightValues(cl, rbf, qp, iTens1, iTens2);
+                  } // D2-loop
+                } // D1-loop
+              } // P-loop
+              outputValues(cl, lbf, rbf) = tmpVal;
+            } // R-loop
+          } // L-loop
+        } // C-loop
+      }
+    }
+    break;
+
+    case COMP_BLAS: {
+      /*
+       GEMM parameters and their values.
+       (Note: It is assumed that the result needs to be transposed into row-major format.
+              Think of left and right input matrices as A(p x l) and B(p x r), respectively,
+              even though the indexing is ((C),L,P) and ((C),R,P). Due to BLAS formatting
+              assumptions, we are computing (A^T*B)^T = B^T*A.)
+       TRANSA   TRANS
+       TRANSB   NO_TRANS
+       M        #rows(B^T)                            = number of right fields
+       N        #cols(A)                              = number of left fields
+       K        #cols(B^T)                            = number of integration points * size of tensor
+       ALPHA    1.0
+       A        right data for cell cl                = &rightFields[cl*skipR]
+       LDA      #rows(B)                              = number of integration points * size of tensor
+       B        left data for cell cl                 = &leftFields[cl*skipL]
+       LDB      #rows(A)                              = number of integration points * size of tensor
+       BETA     0.0
+       C        result for cell cl                    = &outputFields[cl*skipOp]
+       LDC      #rows(C)                              = number of right fields
+      */
+      int numData  = numPoints*dim1Tensor*dim2Tensor;              
+      int skipL    = numLeftFields*numData;         // size of the left data chunk per cell
+      int skipR    = numRightFields*numData;        // size of the right data chunk per cell
+      int skipOp   = numLeftFields*numRightFields;  // size of the output data chunk per cell
+      Scalar alpha(1.0);                            // these are left unchanged by GEMM
+      Scalar beta(0.0);
+      if (sumInto) {
+        beta = 1.0;
+      }
+
+      for (int cl=0; cl < numCells; cl++) {
+        /* Use this if data is used in row-major format */
+        Teuchos::BLAS<int, Scalar> myblas;
+        myblas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS,
+                    numRightFields, numLeftFields, numData,
+                    alpha, &rightValues[cl*skipR], numData,
+                    &leftValues[cl*skipL], numData,
+                    beta, &outputValues[cl*skipOp], numRightFields);
+        /* Use this if data is used in column-major format */
+        /*
+        myblas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS,
+                    numLeftFields, numRightFields, numData,
+                    alpha, &leftFields[cl*skipL], numData,
+                    &rightFields[cl*skipR], numData,
+                    beta, &outputFields[cl*skipOp], numLeftFields);
+        */
+      }
+    }
+    break;
+
+    default:
+      TEUCHOS_TEST_FOR_EXCEPTION( ( ~isValidCompEngine(compEngine) ), std::invalid_argument,
+                          ">>> ERROR (ArrayTools::contractFieldFieldTensor): Computational engine not defined!");
+  } // switch(compEngine)
+}
+    break;
+    default:
+#ifdef HAVE_INTREPID_DEBUG
+
+      TEUCHOS_TEST_FOR_EXCEPTION( ((lRank != 3) && (lRank != 4) && (lRank != 5)), std::invalid_argument,
+                          ">>> ERROR (FunctionSpaceTools::operatorIntegral): Left fields input container must have rank 3, 4 or 5.");
+
+#endif
+     break;
+}
+
+
+
+}
+ break;
+default:
+#ifdef HAVE_INTREPID_DEBUG
+
+    TEUCHOS_TEST_FOR_EXCEPTION( ((outRank != 1) && (outRank != 2) && (outRank != 3)), std::invalid_argument,
+                                ">>> ERROR (FunctionSpaceTools::integrate): Output container must have rank 1, 2 or 3.");
+
+#endif
+break;
+}
+}
 template<class Scalar, class ArrayOut, class ArrayInLeft, class ArrayInRight>
 void FunctionSpaceTools::integrate(ArrayOut            & outputValues,
                                    const ArrayInLeft   & leftValues,
@@ -129,7 +1221,6 @@ void FunctionSpaceTools::integrate(ArrayOut            & outputValues,
      ArrayWrapper<Scalar,ArrayInLeft, Rank<ArrayInLeft >::value, true>leftValuesWrap(leftValues);
 	 ArrayWrapper<Scalar,ArrayInRight, Rank<ArrayInRight >::value, true>rightValuesWrap(rightValues);
 	 int outRank = getrank(outputValues);
-
   switch (outRank) {
     case 1: 
       dataIntegral<Scalar>(outputValuesWrap, leftValuesWrap, rightValuesWrap, compEngine, sumInto);

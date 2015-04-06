@@ -1229,6 +1229,9 @@ ComputePreconditioner(const bool CheckPreconditioner)
     // ====================================================================== //
 
     ML_Create(&ml_nodes_,MaxCreationLevels);
+    ml_nodes_->comm->ML_nprocs = Comm().NumProc();
+    ml_nodes_->comm->ML_mypid  = Comm().MyPID();
+    ml_nodes_->output_level = OutputLevel;
 #ifdef ML_MPI
     ml_nodes_->comm->USR_comm = dynamic_cast<const Epetra_MpiComm*>(&Comm())->Comm(); 
 #endif

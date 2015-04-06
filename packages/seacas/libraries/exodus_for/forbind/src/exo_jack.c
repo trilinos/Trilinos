@@ -102,10 +102,6 @@
 
 #endif /* 64 vs 32 bit build */
 
-extern int      ncopts;         /* default is (NC_FATAL | NC_VERBOSE) */
-extern int      exerrval;       /* global integer that contains a
-                                 * Exodus-specific error code */
-
 /* blank fill C string to make FORTRAN string */
 static void
 ex_fcdcpy(char *fstring,        /* output string to be blank-filled */

@@ -104,11 +104,11 @@ int main (int argc, char *argv[]) {
 
 #ifdef USE_SEQUENTIAL_FOR
     IChol<Uplo::Upper,AlgoIChol::RightBlocked>
-      ::TaskFunctor<CrsTaskViewType,ForType>(U).apply(policy_type::member_null(), r_val);
+      ::TaskFunctor<ForType,CrsTaskViewType>(U).apply(policy_type::member_null(), r_val);
 #else
     policy_type policy;
     auto future = policy.create_team(IChol<Uplo::Upper,AlgoIChol::RightBlocked>
-                                     ::TaskFunctor<CrsTaskViewType,ForType>(U), 0);
+                                     ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
     policy.spawn(future);
     Kokkos::Experimental::wait(policy);
 #endif

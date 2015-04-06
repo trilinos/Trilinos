@@ -351,7 +351,6 @@ namespace Sacado {
 
   //! Base template specification for string names of types
   template <typename T> struct StringName {
-    KOKKOS_INLINE_FUNCTION
     static std::string eval() { return ""; }
   };
 
@@ -411,7 +410,6 @@ namespace Sacado {
     static const t& eval(const t& x) { return x; }        \
   };                                                      \
   template <> struct StringName< t > {                    \
-    KOKKOS_INLINE_FUNCTION                                \
     static std::string eval() { return NAME; }            \
   };                                                      \
   template <> struct IsEqual< t > {                       \

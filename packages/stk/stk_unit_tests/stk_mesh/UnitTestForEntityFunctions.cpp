@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <string>
-#include "StkMeshUnitTestUtils.hpp"
+#include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names, etc
@@ -96,7 +96,7 @@ TEST(ForEntityFunction, test_for_each_node_run)
         BulkDataForEntityTester bulkData(metaData, communicator);
 
         std::string generatedMeshSpec = "generated:1x1x4";
-        stk::mesh::unit_test::readMesh(generatedMeshSpec, bulkData, communicator);
+        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData, communicator);
 
         int numNodes = 0;
         CountNumNodesAlgorithm countNumNodesAlgorithm(numNodes);
@@ -145,7 +145,7 @@ TEST(ForEntityFunction, test_for_communicated_entities_run)
         BulkDataForEntityTester bulkData(metaData, communicator);
 
         std::string generatedMeshSpec = "generated:1x1x4";
-        stk::mesh::unit_test::readMesh(generatedMeshSpec, bulkData, communicator);
+        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData, communicator);
 
         size_t numCommunicatedEntities = 0;
         CountNumCommunicatedEntitiesAlgorithm countNumCommunicatedEntitiesAlgorithm(numCommunicatedEntities);

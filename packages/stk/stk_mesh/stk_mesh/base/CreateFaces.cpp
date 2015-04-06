@@ -163,7 +163,7 @@ struct create_face_impl
                   topology faceTopology = elemTopology.face_topology(side_ordinal);
                   stk::mesh::Entity element = m_bucket[ielem];
                   EntityVector permuted_face_nodes(faceTopology.num_nodes());
-                  stk::mesh::impl::find_face_nodes_for_side(mesh, element, side_ordinal, permuted_face_nodes);
+                  stk::mesh::impl::find_side_nodes(mesh, element, side_ordinal, permuted_face_nodes);
                   Entity face;
 
                   typename face_map_type::iterator iface = m_face_map.find(permuted_face_nodes);
@@ -183,11 +183,18 @@ struct create_face_impl
                           Entity & node = permuted_face_nodes[n];
                           mesh.declare_relation(face,node,n);
                       }
+
+                      Permutation permut = mesh.find_permutation(elemTopology, elem_nodes,
+                                                                                       faceTopology, &permuted_face_nodes[0], side_ordinal);
+                      mesh.declare_relation(m_bucket[ielem], face, side_ordinal, permut);
                   }
                   else {
                       face = iface->second;
+                      Permutation permut = mesh.find_permutation(elemTopology, elem_nodes,
+                                                                 faceTopology, &permuted_face_nodes[0], side_ordinal);
+                      ThrowRequireMsg(permut != INVALID_PERMUTATION, "CreateFaces:  could not find valid permutation to connect face to element");
+                      mesh.declare_relation(m_bucket[ielem], face, side_ordinal, permut);
                   }
-                  mesh.declare_relation(m_bucket[ielem], face, side_ordinal);
               }
               else { //
                   topology faceTopology = elemTopology.face_topology(side_ordinal);

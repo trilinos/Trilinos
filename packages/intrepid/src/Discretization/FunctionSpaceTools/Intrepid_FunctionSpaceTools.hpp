@@ -405,6 +405,13 @@ class FunctionSpaceTools {
         \param  sumInto         [in] - If TRUE, sum into given output array,
                                        otherwise overwrite it. Default: FALSE.
   */
+  template<class Scalar>
+  static void integrate(Intrepid::FieldContainer<Scalar>            & outputValues,
+                                   const Intrepid::FieldContainer<Scalar>   & leftValues,
+                                   const Intrepid::FieldContainer<Scalar>  & rightValues,
+                                   const ECompEngine           compEngine,
+                                   const bool            sumInto = false);
+
   template<class Scalar, class ArrayOut, class ArrayInLeft, class ArrayInRight>
   static void integrate(ArrayOut            & outputValues,
                         const ArrayInLeft   & leftValues,

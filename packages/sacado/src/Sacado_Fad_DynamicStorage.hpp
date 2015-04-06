@@ -81,21 +81,22 @@ namespace Sacado {
       //! Assignment
       KOKKOS_INLINE_FUNCTION
       DynamicStorage& operator=(const DynamicStorage& x) {
-        val_ = x.val_;
-        if (sz_ != x.sz_) {
-          sz_ = x.sz_;
-          if (x.sz_ > len_) {
-            if (len_ != 0)
-              ds_array<U>::destroy_and_release(dx_, len_);
-            len_ = x.sz_;
-            dx_ = ds_array<U>::get_and_fill(x.dx_, sz_);
+        if (this != &x) {
+          val_ = x.val_;
+          if (sz_ != x.sz_) {
+            sz_ = x.sz_;
+            if (x.sz_ > len_) {
+              if (len_ != 0)
+                ds_array<U>::destroy_and_release(dx_, len_);
+              len_ = x.sz_;
+              dx_ = ds_array<U>::get_and_fill(x.dx_, sz_);
+            }
+            else
+              ds_array<U>::copy(x.dx_, dx_, sz_);
           }
           else
             ds_array<U>::copy(x.dx_, dx_, sz_);
         }
-        else
-          ds_array<U>::copy(x.dx_, dx_, sz_);
-
         return *this;
       }
 

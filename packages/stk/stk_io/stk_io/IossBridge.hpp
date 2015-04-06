@@ -214,7 +214,8 @@ struct FieldAndName
 {
 public:
   FieldAndName(stk::mesh::FieldBase *my_field, const std::string& my_db_name) :
-    m_field(my_field), m_dbName(my_db_name), m_wasFound(false) {}
+    m_field(my_field), m_dbName(my_db_name),
+    m_wasFound(false), m_forceNodeblockOutput(false) {}
   stk::mesh::FieldBase *field() const {return m_field;};
   std::string db_name() const {return m_dbName;}
   void set_db_name(const std::string &name) {m_dbName = name;}
@@ -223,6 +224,10 @@ private:
   std::string m_dbName;
 public:
   bool m_wasFound;
+  // Field is not defined on UNIVERSAL part, but we still want to output it on the nodeblock.
+  // This is done to output, for example, nodal fields that exist on an element block without
+  // creating a nodeset for the nodes of the element block.
+  mutable bool m_forceNodeblockOutput; 
 };
 
 std::string get_field_name(const stk::mesh::FieldBase &f, Ioss::DatabaseUsage dbUsage);

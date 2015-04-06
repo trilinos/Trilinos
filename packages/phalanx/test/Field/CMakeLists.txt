@@ -5,63 +5,6 @@ TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT
 
 TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/../Utilities)
 
-IF(PHX_KOKKOS_DEVICE_TYPE_CUDA2)
-  IF( TPL_ENABLE_MPI )
-      CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
-  ENDIF()
-
-  CUDA_INCLUDE_DIRECTORIES( "." )
-  CUDA_INCLUDE_DIRECTORIES( ${KokkosCore_INCLUDE_DIRS}
-                             ${Phalanx_INCLUDE_DIRS})
-  CUDA_COMPILE( COMPILETIME_OBJECTS_CUDA MDField_Compiletime_CU.cu )
-  CUDA_COMPILE( RUNTIME_OBJECTS_CUDA MDField_Runtime_CU.cu )
-  CUDA_COMPILE( SI_OBJECTS_CUDA MDField_SimulatedIntrepid_CU.cu )
-IF(Phalanx_ENABLE_Intrepid)
-  CUDA_COMPILE( SI_OBJECTS_CUDA MDField_Intrepid_CU.cu )
-ENDIF(Phalanx_ENABLE_Intrepid)
-  #LIST( APPEND SOURCES ${OBJECTS_CUDA} )
- 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  mdfield_compiletime
-  SOURCES  
-     ${COMPILETIME_OBJECTS_CUDA} 
-     ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  TESTONLYLIBS phalanx_test_utilities
-  NUM_MPI_PROCS 1
-  ) 
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  mdfield_runtime
-  SOURCES 
-     ${RUNTIME_OBJECTS_CUDA}
-     ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  TESTONLYLIBS phalanx_test_utilities
-  NUM_MPI_PROCS 1
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  mdfield_simulated_intrepid
-  SOURCES 
-     ${SI_OBJECTS_CUDA}
-     ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  TESTONLYLIBS phalanx_test_utilities
-  NUM_MPI_PROCS 1
-  )
-
-IF(Phalanx_ENABLE_Intrepid)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    mdfield_simulated_intrepid
-    SOURCES 
-       ${SI_OBJECTS_CUDA}
-       ${TEUCHOS_STD_UNIT_TEST_MAIN}
-    TESTONLYLIBS phalanx_test_utilities
-    NUM_MPI_PROCS 1
-    )
-ENDIF(Phalanx_ENABLE_Intrepid)
-
-
-ELSE()
-
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   mdfield_compiletime
@@ -100,7 +43,6 @@ IF(Phalanx_ENABLE_Intrepid)
     )
 ENDIF(Phalanx_ENABLE_Intrepid)
 
-ENDIF()
 
 # Will add this test in a later commit
 

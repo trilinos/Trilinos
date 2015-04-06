@@ -46,7 +46,7 @@
 #  define ST_ZU   "%lu"
 #endif
 
-#include <math.h>
+#include <cmath>
 #include <time.h>
 #include <iostream>
 #include <fstream>
@@ -346,7 +346,7 @@ namespace {
     checking_invalid = false;
     invalid_data = false;
   
-    if (sigfillset(&(sigact.sa_mask)) == -1) perror("sigfillset failed");
+    sigfillset(&(sigact.sa_mask));
     sigact.sa_handler = floating_point_exception_handler;
     if (sigaction(SIGFPE, &sigact, 0) == -1) perror("sigaction failed");
 #if defined(LINUX) && defined(GNU)
@@ -1019,14 +1019,6 @@ namespace {
     return 0;
   }
 
-#if defined(__APPLE__) && !defined(isnan)
-  /* for Mac OSX 10, this isnan function may need to be manually declared;
-   * however, on some g++ versions, isnan is a macro so it doesn't need
-   * to be manually declared...
-   */
-  extern "C" int isnan(double value);
-#endif
-
   bool Invalid_Values(const double *values, size_t count)
   {
     bool valid = true;
@@ -1038,12 +1030,10 @@ namespace {
     
     
       for (size_t i=0; i < count; i++) {
-#if (defined(__GNUC__) && (__GNUC__ == 2 && __GNUC_MINOR__ == 96)) || (defined(linux) && __PGI) || (defined(linux) && __INTEL_COMPILER)
-	if (__isnan(values[i]))
-#elif defined(interix)
+#if defined(interix)
 	  if (values[i] != values[i]) 
 #else
-	    if (isnan(values[i]))
+	    if (std::isnan(values[i]))
 #endif
 	      {
 		valid = false;
@@ -1066,7 +1056,7 @@ namespace {
 				 int fno, const string &name, bool *diff_flag)
     {
       const double *vals = NULL;
-      if (fno == 1 || !interface.summary_flag) {
+      if (idx >= 0 && (fno == 1 || !interface.summary_flag)) {
 	filen.Load_Nodal_Results(time_step, idx);
 	vals = filen.Get_Nodal_Results(idx);
     
@@ -1086,7 +1076,7 @@ namespace {
 				 int fno, const string &name, bool *diff_flag)
     {
       const double *vals = NULL;
-      if (fno == 1 || !interface.summary_flag) {
+      if (idx >= 0 && (fno == 1 || !interface.summary_flag)) {
 	vals = filen.Get_Nodal_Results(t.step1, t.step2, t.proportion, idx);
     
 	if (vals != NULL) {
@@ -1148,7 +1138,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
     // Global variables.
     file1.Load_Global_Results(step1);
     const double* vals1 = file1.Get_Global_Results();
-    const double* vals2 = 0;
+    const double* vals2 = NULL;
     if (!interface.summary_flag) {
       file2.Load_Global_Results(t2.step1, t2.step2, t2.proportion);
       vals2 = file2.Get_Global_Results();
@@ -1602,7 +1592,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	}
 
 	double v2 = 0;
-	double* vals2 = 0;
+	double* vals2 = NULL;
 	if (!interface.summary_flag) {
 	  // Without mapping, get result for this nset
 	  nset2->Load_Results(t2.step1, t2.step2, t2.proportion, vidx2);
@@ -1764,7 +1754,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	}
 
 	double v2 = 0;
-	double* vals2 = 0;
+	double* vals2 = NULL;
 	if (!interface.summary_flag) {
 	  sset2->Load_Results(t2.step1, t2.step2, t2.proportion, vidx2);
 	  vals2 = (double*)sset2->Get_Results(vidx2);

@@ -49,12 +49,12 @@
 
 #define AM_MULTIPLY 0
 #define AM_INVERT   1
-#define AM_FACTOR   2 
+#define AM_FACTOR   2
 
 //=========================================================================
 // Constructor
-EpetraExt_BlockDiagMatrix::EpetraExt_BlockDiagMatrix(const Epetra_BlockMap& Map,bool zero_out)
-  : Epetra_DistObject(Map, "EpetraExt::BlockDiagMatrix"),
+EpetraExt_BlockDiagMatrix::EpetraExt_BlockDiagMatrix(const Epetra_BlockMap& map,bool zero_out)
+  : Epetra_DistObject(map, "EpetraExt::BlockDiagMatrix"),
     HasComputed_(false),
     ApplyMode_(AM_MULTIPLY),
     DataMap_(0),
@@ -76,7 +76,7 @@ EpetraExt_BlockDiagMatrix::~EpetraExt_BlockDiagMatrix(){
 
 
 //=========================================================================
-// Copy constructor.  
+// Copy constructor.
 EpetraExt_BlockDiagMatrix::EpetraExt_BlockDiagMatrix(const EpetraExt_BlockDiagMatrix& Source)
   : Epetra_DistObject(Source),
     HasComputed_(false),
@@ -94,15 +94,15 @@ EpetraExt_BlockDiagMatrix::EpetraExt_BlockDiagMatrix(const EpetraExt_BlockDiagMa
 // Allocate
 void EpetraExt_BlockDiagMatrix::Allocate(){
 
-  int DataSize=0, NumBlocks=NumMyBlocks();
+  int dataSize=0, NumBlocks=NumMyBlocks();
   Pivots_=new int[NumMyUnknowns()];
   int *ElementSize=new int[NumBlocks];
-  
+
   for(int i=0;i<NumBlocks;i++) {
     ElementSize[i]=BlockSize(i)*BlockSize(i);
-    DataSize+=ElementSize[i];
+    dataSize+=ElementSize[i];
   }
-  
+
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   if(Map().GlobalIndicesInt()) {
     DataMap_=new Epetra_BlockMap(-1,Map().NumMyElements(),Map().MyGlobalElements(),ElementSize,0,Map().Comm());
@@ -117,7 +117,7 @@ void EpetraExt_BlockDiagMatrix::Allocate(){
 #endif
     throw "EpetraExt_BlockDiagMatrix::Allocate: GlobalIndices type unknown";
 
-  Values_=new double[DataSize];  
+  Values_=new double[dataSize];
   delete [] ElementSize;
 }
 
@@ -176,7 +176,7 @@ int EpetraExt_BlockDiagMatrix::Compute(){
   int info;
 
   if(ApplyMode_==AM_MULTIPLY)
-    // Multiply mode - noop    
+    // Multiply mode - noop
     return 0;
   else {
     // Factorization - Needed for both 'factor' and 'invert' modes
@@ -184,12 +184,12 @@ int EpetraExt_BlockDiagMatrix::Compute(){
     for(int i=0;i<NumBlocks;i++){
       int Nb=BlockSize(i);
       if(Nb==1) {
-        // Optimize for Block Size 1        
+        // Optimize for Block Size 1
         Values_[DataMap_->FirstPointInElement(i)]=1.0/Values_[DataMap_->FirstPointInElement(i)];
       }
       else if(Nb==2) {
         // Optimize for Block Size 2
-        double * v=&Values_[DataMap_->FirstPointInElement(i)];          
+        double * v=&Values_[DataMap_->FirstPointInElement(i)];
         double d=1/(v[0]*v[3]-v[1]*v[2]);
         double v0old=v[0];
         v[0]=v[3]*d;
@@ -203,7 +203,7 @@ int EpetraExt_BlockDiagMatrix::Compute(){
         if(info) EPETRA_CHK_ERR(-2);
       }
     }
-    
+
     if(ApplyMode_==AM_INVERT){
       // Invert - Use the factorization and invert the blocks in-place
       int lwork=3*DataMap_->MaxMyElementSize();
@@ -220,7 +220,7 @@ int EpetraExt_BlockDiagMatrix::Compute(){
           if(info) EPETRA_CHK_ERR(-3);
         }
       }
-    }      
+    }
   }
   HasComputed_=true;
   return 0;
@@ -231,19 +231,19 @@ int EpetraExt_BlockDiagMatrix::Compute(){
 int EpetraExt_BlockDiagMatrix::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const{
   int info;
   // Sanity Checks
-  int NumVectors=X.NumVectors();  
+  int NumVectors=X.NumVectors();
   if(NumVectors!=Y.NumVectors())
     EPETRA_CHK_ERR(-1);
   if(!HasComputed_ && (ApplyMode_==AM_INVERT || ApplyMode_==AM_FACTOR))
     EPETRA_CHK_ERR(-2);
-  
+
   //NTS: MultiVector's MyLength and [] Operators are  "points" level operators
   //not a "block/element" level operators.
 
   const int *vlist=DataMap_->FirstPointInElementList();
   const int *xlist=Map().FirstPointInElementList();
   const int *blocksize=Map().ElementSizeList();
-  
+
   if(ApplyMode_==AM_MULTIPLY || ApplyMode_==AM_INVERT){
     // Multiply & Invert mode have the same apply
     int NumBlocks=NumMyBlocks();
@@ -251,22 +251,22 @@ int EpetraExt_BlockDiagMatrix::ApplyInverse(const Epetra_MultiVector& X, Epetra_
       int Nb=blocksize[i];
       int vidx0=vlist[i];
       int xidx0=xlist[i];
-      for(int j=0;j<NumVectors;j++){	
-	if(Nb==1) {
-	  // Optimize for size = 1
-	  Y[j][xidx0]=Values_[vidx0]*X[j][xidx0];
-	}
-	else if(Nb==2){
-	  // Optimize for size = 2
-	  Y[j][xidx0  ]=Values_[vidx0  ]*X[j][xidx0] + Values_[vidx0+2]*X[j][xidx0+1];
-	  Y[j][xidx0+1]=Values_[vidx0+1]*X[j][xidx0] + Values_[vidx0+3]*X[j][xidx0+1];
-	}
-	else{
-	  // "Large" Block - Use BLAS
-	  //void 	GEMV (const char TRANS, const int M, const int N, const double ALPHA, const double *A, const int LDA, const double *X, const double BETA, double *Y, const int INCX=1, const int INCY=1) const 
-	  GEMV('N',Nb,Nb,1.0,&Values_[vidx0],Nb,&X[j][xidx0],0.0,&Y[j][xidx0]);
-	}
-      }   
+      for(int j=0;j<NumVectors;j++){
+        if(Nb==1) {
+          // Optimize for size = 1
+          Y[j][xidx0]=Values_[vidx0]*X[j][xidx0];
+        }
+        else if(Nb==2){
+          // Optimize for size = 2
+          Y[j][xidx0  ]=Values_[vidx0  ]*X[j][xidx0] + Values_[vidx0+2]*X[j][xidx0+1];
+          Y[j][xidx0+1]=Values_[vidx0+1]*X[j][xidx0] + Values_[vidx0+3]*X[j][xidx0+1];
+        }
+        else{
+          // "Large" Block - Use BLAS
+          //void        GEMV (const char TRANS, const int M, const int N, const double ALPHA, const double *A, const int LDA, const double *X, const double BETA, double *Y, const int INCX=1, const int INCY=1) const
+          GEMV('N',Nb,Nb,1.0,&Values_[vidx0],Nb,&X[j][xidx0],0.0,&Y[j][xidx0]);
+        }
+      }
     }
   }
   else{
@@ -275,27 +275,27 @@ int EpetraExt_BlockDiagMatrix::ApplyInverse(const Epetra_MultiVector& X, Epetra_
     for(int i=0;i<NumBlocks;i++){
       int Nb=blocksize[i];
       int vidx0=vlist[i];
-      int xidx0=xlist[i];      
+      int xidx0=xlist[i];
       for(int j=0;j<NumVectors;j++){
-	if(Nb==1) {
-	  // Optimize for size = 1 - use the inverse
-	  Y[j][xidx0]=Values_[vidx0]*X[j][xidx0];
-	}
-	else if(Nb==2){
-	  // Optimize for size = 2 - use the inverse
-	  Y[j][xidx0  ]=Values_[vidx0  ]*X[j][xidx0] + Values_[vidx0+2]*X[j][xidx0+1];
-	  Y[j][xidx0+1]=Values_[vidx0+1]*X[j][xidx0] + Values_[vidx0+3]*X[j][xidx0+1];
-	}
-	else{
-	  // "Large" Block - use LAPACK
-	  //    void 	GETRS (const char TRANS, const int N, const int NRHS, const double *A, const int LDA, const int *IPIV, double *X, const int LDX, int *INFO) const 
-	  for(int k=0;k<Nb;k++) Y[j][xidx0+k]=X[j][xidx0+k];
-	  LAPACK.GETRS('N',Nb,1,&Values_[vidx0],Nb,&Pivots_[xidx0],&Y[j][xidx0],Nb,&info);
-	  if(info) EPETRA_CHK_ERR(info);
-	}
+        if(Nb==1) {
+          // Optimize for size = 1 - use the inverse
+          Y[j][xidx0]=Values_[vidx0]*X[j][xidx0];
+        }
+        else if(Nb==2){
+          // Optimize for size = 2 - use the inverse
+          Y[j][xidx0  ]=Values_[vidx0  ]*X[j][xidx0] + Values_[vidx0+2]*X[j][xidx0+1];
+          Y[j][xidx0+1]=Values_[vidx0+1]*X[j][xidx0] + Values_[vidx0+3]*X[j][xidx0+1];
+        }
+        else{
+          // "Large" Block - use LAPACK
+          //    void    GETRS (const char TRANS, const int N, const int NRHS, const double *A, const int LDA, const int *IPIV, double *X, const int LDX, int *INFO) const
+          for(int k=0;k<Nb;k++) Y[j][xidx0+k]=X[j][xidx0+k];
+          LAPACK.GETRS('N',Nb,1,&Values_[vidx0],Nb,&Pivots_[xidx0],&Y[j][xidx0],Nb,&info);
+          if(info) EPETRA_CHK_ERR(info);
+        }
       }
-    }    
-  }  
+    }
+  }
   return 0;
 }
 
@@ -307,13 +307,13 @@ int EpetraExt_BlockDiagMatrix::ApplyInverse(const Epetra_MultiVector& X, Epetra_
 void EpetraExt_BlockDiagMatrix::Print(std::ostream & os) const{
   int MyPID = DataMap_->Comm().MyPID();
   int NumProc = DataMap_->Comm().NumProc();
-  
+
   for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
       int NumMyElements1 =DataMap_->NumMyElements();
       int MaxElementSize1 = DataMap_->MaxElementSize();
-	  int * MyGlobalElements1_int = 0;
-	  long long * MyGlobalElements1_LL = 0;
+          int * MyGlobalElements1_int = 0;
+          long long * MyGlobalElements1_LL = 0;
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   if(DataMap_->GlobalIndicesInt()) {
       MyGlobalElements1_int = DataMap_->MyGlobalElements();
@@ -332,37 +332,37 @@ void EpetraExt_BlockDiagMatrix::Print(std::ostream & os) const{
       if (MaxElementSize1!=1) FirstPointInElementList1 = DataMap_->FirstPointInElementList();
 
       if (MyPID==0) {
-	os.width(8);
-	os <<  "     MyPID"; os << "    ";
-	os.width(12);
-	if (MaxElementSize1==1)
-	  os <<  "GID  ";
-	else
-	  os <<  "     GID/Point";
-	os.width(20);
-	os <<  "Values ";
-	os << std::endl;
+        os.width(8);
+        os <<  "     MyPID"; os << "    ";
+        os.width(12);
+        if (MaxElementSize1==1)
+          os <<  "GID  ";
+        else
+          os <<  "     GID/Point";
+        os.width(20);
+        os <<  "Values ";
+        os << std::endl;
       }
       for (int i=0; i < NumMyElements1; i++) {
-	for (int ii=0; ii< DataMap_->ElementSize(i); ii++) {
-	  int iii;
-	  os.width(10);
-	  os <<  MyPID; os << "    ";
-	  os.width(10);
-	  if (MaxElementSize1==1) {
-	    os << (MyGlobalElements1_int ? MyGlobalElements1_int[i] : MyGlobalElements1_LL[i]) << "    ";
-	    iii = i;
-	  }
-	  else {
-	    os <<  (MyGlobalElements1_int ? MyGlobalElements1_int[i] : MyGlobalElements1_LL[i]) << "/" << ii << "    ";
-	    iii = FirstPointInElementList1[i]+ii;
-	  }
+        for (int ii=0; ii< DataMap_->ElementSize(i); ii++) {
+          int iii;
+          os.width(10);
+          os <<  MyPID; os << "    ";
+          os.width(10);
+          if (MaxElementSize1==1) {
+            os << (MyGlobalElements1_int ? MyGlobalElements1_int[i] : MyGlobalElements1_LL[i]) << "    ";
+            iii = i;
+          }
+          else {
+            os <<  (MyGlobalElements1_int ? MyGlobalElements1_int[i] : MyGlobalElements1_LL[i]) << "/" << ii << "    ";
+            iii = FirstPointInElementList1[i]+ii;
+          }
           os.width(20);
           os <<  Values_[iii];
-	  os << std::endl;
-	}
+          os << std::endl;
+        }
       }
-      os << std::flush; 
+      os << std::flush;
     }
 
     // Do a few global ops to give I/O a chance to complete
@@ -384,7 +384,7 @@ int EpetraExt_BlockDiagMatrix::CheckSizes(const Epetra_SrcDistObject& Source){
  //=========================================================================
 // Perform ID copies and permutations that are on processor.
 int EpetraExt_BlockDiagMatrix::CopyAndPermute(const Epetra_SrcDistObject& Source,
-                                           int NumSameIDs, 
+                                           int NumSameIDs,
                                            int NumPermuteIDs,
                                            int * PermuteToLIDs,
                                            int * PermuteFromLIDs,
@@ -408,8 +408,7 @@ int EpetraExt_BlockDiagMatrix::CopyAndPermute(const Epetra_SrcDistObject& Source
     FromFirstPointInElementList = A.DataMap().FirstPointInElementList();
     FromElementSizeList = A.DataMap().ElementSizeList();
   }
-  int j, jj, jjj, k;
-  
+
   int NumSameEntries;
 
   bool Case1 = false;
@@ -430,43 +429,74 @@ int EpetraExt_BlockDiagMatrix::CopyAndPermute(const Epetra_SrcDistObject& Source
   }
 
   // Short circuit for the case where the source and target vector is the same.
-  if (To==From) NumSameEntries = 0;
-  
+  if (To==From) {
+    NumSameEntries = 0;
+  }
+
   // Do copy first
   if (NumSameIDs>0)
     if (To!=From) {
-      if (CombineMode==Epetra_AddLocalAlso) for (int j=0; j<NumSameEntries; j++) To[j] += From[j]; // Add to existing value
-      else for (int j=0; j<NumSameEntries; j++) To[j] = From[j];
+      if (CombineMode==Epetra_AddLocalAlso) {
+        for (int j=0; j<NumSameEntries; j++) {
+          To[j] += From[j]; // Add to existing value
+        }
+      } else {
+        for (int j=0; j<NumSameEntries; j++) {
+          To[j] = From[j];
+        }
+      }
     }
   // Do local permutation next
   if (NumPermuteIDs>0) {
-  
+
     // Point entry case
     if (Case1) {
-      
-      if (CombineMode==Epetra_AddLocalAlso) for (int j=0; j<NumPermuteIDs; j++) To[PermuteToLIDs[j]] += From[PermuteFromLIDs[j]]; // Add to existing value
-      else for (int j=0; j<NumPermuteIDs; j++) To[PermuteToLIDs[j]] = From[PermuteFromLIDs[j]];
+
+      if (CombineMode==Epetra_AddLocalAlso) {
+        for (int j=0; j<NumPermuteIDs; j++) {
+          To[PermuteToLIDs[j]] += From[PermuteFromLIDs[j]]; // Add to existing value
+        }
+      }
+      else {
+        for (int j=0; j<NumPermuteIDs; j++) {
+          To[PermuteToLIDs[j]] = From[PermuteFromLIDs[j]];
+        }
+      }
     }
     // constant element size case
     else if (Case2) {
-      
-      for (j=0; j<NumPermuteIDs; j++) {
-	jj = MaxElementSize*PermuteToLIDs[j];
-	jjj = MaxElementSize*PermuteFromLIDs[j];
-      if (CombineMode==Epetra_AddLocalAlso) for (k=0; k<MaxElementSize; k++) To[jj+k] += From[jjj+k]; // Add to existing value
-      else for (k=0; k<MaxElementSize; k++) To[jj+k] = From[jjj+k];
+      for (int j=0; j<NumPermuteIDs; j++) {
+        int jj = MaxElementSize*PermuteToLIDs[j];
+        int jjj = MaxElementSize*PermuteFromLIDs[j];
+        if (CombineMode==Epetra_AddLocalAlso) {
+          for (int k=0; k<MaxElementSize; k++) {
+            To[jj+k] += From[jjj+k]; // Add to existing value
+          }
+        }
+        else {
+          for (int k=0; k<MaxElementSize; k++) {
+            To[jj+k] = From[jjj+k];
+          }
+        }
       }
     }
-    
+
     // variable element size case
     else {
-      
-      for (j=0; j<NumPermuteIDs; j++) {
-	jj = ToFirstPointInElementList[PermuteToLIDs[j]];
-	jjj = FromFirstPointInElementList[PermuteFromLIDs[j]];
-	int ElementSize = FromElementSizeList[PermuteFromLIDs[j]];
-      if (CombineMode==Epetra_AddLocalAlso) for (k=0; k<ElementSize; k++) To[jj+k] += From[jjj+k]; // Add to existing value
-      else for (k=0; k<ElementSize; k++) To[jj+k] = From[jjj+k];
+      for (int j=0; j<NumPermuteIDs; j++) {
+        int jj = ToFirstPointInElementList[PermuteToLIDs[j]];
+        int jjj = FromFirstPointInElementList[PermuteFromLIDs[j]];
+        int ElementSize = FromElementSizeList[PermuteFromLIDs[j]];
+        if (CombineMode==Epetra_AddLocalAlso) {
+          for (int k=0; k<ElementSize; k++) {
+            To[jj+k] += From[jjj+k]; // Add to existing value
+          }
+        }
+        else {
+          for (int k=0; k<ElementSize; k++) {
+            To[jj+k] = From[jjj+k];
+          }
+        }
       }
     }
   }
@@ -503,7 +533,7 @@ int EpetraExt_BlockDiagMatrix::PackAndPrepare(const Epetra_SrcDistObject& Source
     FromElementSizeList = A.DataMap().ElementSizeList();
   }
 
-  SizeOfPacket = MaxElementSize * (int)sizeof(double); 
+  SizeOfPacket = MaxElementSize * (int)sizeof(double);
 
   if(NumExportIDs*SizeOfPacket>LenExports) {
     if (LenExports>0) delete [] Exports;
@@ -515,28 +545,28 @@ int EpetraExt_BlockDiagMatrix::PackAndPrepare(const Epetra_SrcDistObject& Source
 
   if (NumExportIDs>0) {
     ptr = (double *) Exports;
-    
+
     // Point entry case
     if (MaxElementSize==1) for (j=0; j<NumExportIDs; j++) *ptr++ = From[ExportLIDs[j]];
 
     // constant element size case
-    else if (ConstantElementSize) {      
+    else if (ConstantElementSize) {
       for (j=0; j<NumExportIDs; j++) {
-	jj = MaxElementSize*ExportLIDs[j];
-	  for (k=0; k<MaxElementSize; k++)
-	    *ptr++ = From[jj+k];
+        jj = MaxElementSize*ExportLIDs[j];
+          for (k=0; k<MaxElementSize; k++)
+            *ptr++ = From[jj+k];
       }
     }
-    
+
     // variable element size case
-    else {     
+    else {
       SizeOfPacket = MaxElementSize;
       for (j=0; j<NumExportIDs; j++) {
-	ptr = (double *) Exports + j*SizeOfPacket;
-	jj = FromFirstPointInElementList[ExportLIDs[j]];
-	int ElementSize = FromElementSizeList[ExportLIDs[j]];
-	  for (k=0; k<ElementSize; k++)
-	    *ptr++ = From[jj+k];
+        ptr = (double *) Exports + j*SizeOfPacket;
+        jj = FromFirstPointInElementList[ExportLIDs[j]];
+        int ElementSize = FromElementSizeList[ExportLIDs[j]];
+          for (k=0; k<ElementSize; k++)
+            *ptr++ = From[jj+k];
       }
     }
   }
@@ -547,12 +577,12 @@ int EpetraExt_BlockDiagMatrix::PackAndPrepare(const Epetra_SrcDistObject& Source
 
 //=========================================================================
 // Perform any unpacking and combining after call to DoTransfer().
-int EpetraExt_BlockDiagMatrix::UnpackAndCombine(const Epetra_SrcDistObject& Source, 
+int EpetraExt_BlockDiagMatrix::UnpackAndCombine(const Epetra_SrcDistObject& Source,
                                              int NumImportIDs,
-                                             int* ImportLIDs, 
+                                             int* ImportLIDs,
                                              int LenImports,
                                              char* Imports,
-                                             int& SizeOfPacket, 
+                                             int& SizeOfPacket,
                                              Epetra_Distributor& Distor,
                                              Epetra_CombineMode CombineMode,
                                              const Epetra_OffsetIndex * Indexor){
@@ -561,7 +591,7 @@ int EpetraExt_BlockDiagMatrix::UnpackAndCombine(const Epetra_SrcDistObject& Sour
   (void)Distor;
   (void)Indexor;
   int j, jj, k;
-  
+
   if(    CombineMode != Add
       && CombineMode != Zero
       && CombineMode != Insert
@@ -582,116 +612,116 @@ int EpetraExt_BlockDiagMatrix::UnpackAndCombine(const Epetra_SrcDistObject& Sour
     ToFirstPointInElementList = DataMap().FirstPointInElementList();
     ToElementSizeList = DataMap().ElementSizeList();
   }
-  
+
   double * ptr;
   // Unpack it...
 
   ptr = (double *) Imports;
-    
+
   // Point entry case
   if (MaxElementSize==1) {
-      
+
       if (CombineMode==Add)
-	for (j=0; j<NumImportIDs; j++) To[ImportLIDs[j]] += *ptr++; // Add to existing value
+        for (j=0; j<NumImportIDs; j++) To[ImportLIDs[j]] += *ptr++; // Add to existing value
       else if(CombineMode==Insert)
-	for (j=0; j<NumImportIDs; j++) To[ImportLIDs[j]] = *ptr++;
+        for (j=0; j<NumImportIDs; j++) To[ImportLIDs[j]] = *ptr++;
       else if(CombineMode==AbsMax)
         for (j=0; j<NumImportIDs; j++) {
-	  To[ImportLIDs[j]] = EPETRA_MAX( To[ImportLIDs[j]],std::abs(*ptr));
-	  ptr++;
-	}
+          To[ImportLIDs[j]] = EPETRA_MAX( To[ImportLIDs[j]],std::abs(*ptr));
+          ptr++;
+        }
       // Note:  The following form of averaging is not a true average if more that one value is combined.
       //        This might be an issue in the future, but we leave this way for now.
       else if(CombineMode==Average)
-	for (j=0; j<NumImportIDs; j++) {To[ImportLIDs[j]] += *ptr++; To[ImportLIDs[j]] /= 2;}
+        for (j=0; j<NumImportIDs; j++) {To[ImportLIDs[j]] += *ptr++; To[ImportLIDs[j]] /= 2;}
   }
 
   // constant element size case
 
   else if (ConstantElementSize) {
-   
+
     if (CombineMode==Add) {
       for (j=0; j<NumImportIDs; j++) {
-	jj = MaxElementSize*ImportLIDs[j];
-	  for (k=0; k<MaxElementSize; k++)
-	    To[jj+k] += *ptr++; // Add to existing value
+        jj = MaxElementSize*ImportLIDs[j];
+          for (k=0; k<MaxElementSize; k++)
+            To[jj+k] += *ptr++; // Add to existing value
       }
     }
     else if(CombineMode==Insert) {
       for (j=0; j<NumImportIDs; j++) {
-	jj = MaxElementSize*ImportLIDs[j];
-	  for (k=0; k<MaxElementSize; k++)
-	    To[jj+k] = *ptr++;
+        jj = MaxElementSize*ImportLIDs[j];
+          for (k=0; k<MaxElementSize; k++)
+            To[jj+k] = *ptr++;
       }
     }
     else if(CombineMode==AbsMax) {
       for (j=0; j<NumImportIDs; j++) {
-	jj = MaxElementSize*ImportLIDs[j];
-	for (k=0; k<MaxElementSize; k++) {
-	    To[jj+k] = EPETRA_MAX( To[jj+k], std::abs(*ptr));
-	    ptr++;
-	}
+        jj = MaxElementSize*ImportLIDs[j];
+        for (k=0; k<MaxElementSize; k++) {
+            To[jj+k] = EPETRA_MAX( To[jj+k], std::abs(*ptr));
+            ptr++;
+        }
       }
     }
     // Note:  The following form of averaging is not a true average if more that one value is combined.
     //        This might be an issue in the future, but we leave this way for now.
     else if(CombineMode==Average) {
       for (j=0; j<NumImportIDs; j++) {
-	jj = MaxElementSize*ImportLIDs[j];
-	  for (k=0; k<MaxElementSize; k++)
-	    { To[jj+k] += *ptr++; To[jj+k] /= 2;}
+        jj = MaxElementSize*ImportLIDs[j];
+          for (k=0; k<MaxElementSize; k++)
+            { To[jj+k] += *ptr++; To[jj+k] /= 2;}
       }
     }
   }
-    
+
   // variable element size case
 
   else {
-      
+
     SizeOfPacket = MaxElementSize;
 
     if (CombineMode==Add) {
       for (j=0; j<NumImportIDs; j++) {
-	ptr = (double *) Imports + j*SizeOfPacket;
-	jj = ToFirstPointInElementList[ImportLIDs[j]];
-	int ElementSize = ToElementSizeList[ImportLIDs[j]];
-	  for (k=0; k<ElementSize; k++)
-	    To[jj+k] += *ptr++; // Add to existing value
+        ptr = (double *) Imports + j*SizeOfPacket;
+        jj = ToFirstPointInElementList[ImportLIDs[j]];
+        int ElementSize = ToElementSizeList[ImportLIDs[j]];
+          for (k=0; k<ElementSize; k++)
+            To[jj+k] += *ptr++; // Add to existing value
       }
     }
     else  if(CombineMode==Insert){
       for (j=0; j<NumImportIDs; j++) {
-	ptr = (double *) Imports + j*SizeOfPacket;
-	jj = ToFirstPointInElementList[ImportLIDs[j]];
-	int ElementSize = ToElementSizeList[ImportLIDs[j]];
-	  for (k=0; k<ElementSize; k++)
-	    To[jj+k] = *ptr++;
+        ptr = (double *) Imports + j*SizeOfPacket;
+        jj = ToFirstPointInElementList[ImportLIDs[j]];
+        int ElementSize = ToElementSizeList[ImportLIDs[j]];
+          for (k=0; k<ElementSize; k++)
+            To[jj+k] = *ptr++;
       }
     }
     else  if(CombineMode==AbsMax){
       for (j=0; j<NumImportIDs; j++) {
-	ptr = (double *) Imports + j*SizeOfPacket;
-	jj = ToFirstPointInElementList[ImportLIDs[j]];
-	int ElementSize = ToElementSizeList[ImportLIDs[j]];
-	for (k=0; k<ElementSize; k++) {
-	    To[jj+k] = EPETRA_MAX( To[jj+k], std::abs(*ptr));
-	    ptr++;
-	}
+        ptr = (double *) Imports + j*SizeOfPacket;
+        jj = ToFirstPointInElementList[ImportLIDs[j]];
+        int ElementSize = ToElementSizeList[ImportLIDs[j]];
+        for (k=0; k<ElementSize; k++) {
+            To[jj+k] = EPETRA_MAX( To[jj+k], std::abs(*ptr));
+            ptr++;
+        }
       }
     }
     // Note:  The following form of averaging is not a true average if more that one value is combined.
     //        This might be an issue in the future, but we leave this way for now.
     else if(CombineMode==Average) {
       for (j=0; j<NumImportIDs; j++) {
-	ptr = (double *) Imports + j*SizeOfPacket;
-	jj = ToFirstPointInElementList[ImportLIDs[j]];
-	int ElementSize = ToElementSizeList[ImportLIDs[j]];
-	  for (k=0; k<ElementSize; k++)
-	    { To[jj+k] += *ptr++; To[jj+k] /= 2;}
+        ptr = (double *) Imports + j*SizeOfPacket;
+        jj = ToFirstPointInElementList[ImportLIDs[j]];
+        int ElementSize = ToElementSizeList[ImportLIDs[j]];
+          for (k=0; k<ElementSize; k++)
+            { To[jj+k] += *ptr++; To[jj+k] /= 2;}
       }
     }
   }
-  
+
   return(0);
 }
-  
+

@@ -318,9 +318,9 @@ struct ViewDefaultConstruct< ExecSpace , Type , true >
 {
   Type * const m_ptr ;
 
-  KOKKOS_INLINE_FUNCTION
-  void operator()( const typename ExecSpace::size_type i ) const
-    { new( m_ptr + i ) Type(); }
+  KOKKOS_FORCEINLINE_FUNCTION
+  void operator()( const typename ExecSpace::size_type& i ) const
+    { m_ptr[i] = Type(); }
 
   ViewDefaultConstruct( Type * pointer , size_t capacity )
     : m_ptr( pointer )

@@ -86,11 +86,13 @@ namespace Sacado {
       //! Assignment
       KOKKOS_INLINE_FUNCTION
       StaticStorage& operator=(const StaticStorage& x) {
-        val_ = x.val_;
-        sz_ = x.sz_;
-        //ss_array<T>::copy(x.dx_, dx_, sz_);
-        for (int i=0; i<sz_; i++)
-          dx_[i] = x.dx_[i];
+        if (this != &x) {
+          val_ = x.val_;
+          sz_ = x.sz_;
+          //ss_array<T>::copy(x.dx_, dx_, sz_);
+          for (int i=0; i<sz_; i++)
+            dx_[i] = x.dx_[i];
+        }
         return *this;
       }
 

@@ -34,7 +34,7 @@
 #include <gtest/gtest.h>
 #include "stk_mesh/base/MetaData.hpp"
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
-#include "StkMeshUnitTestUtils.hpp"
+#include <stk_unit_test_utils/ioUtils.hpp>
 
 namespace
 {
@@ -47,7 +47,7 @@ TEST(UnitTestChangeParts, test_throw_on_internal_part_change)
     stk::mesh::BulkData bulkData(metaData, communicator);
 
     std::string generatedMeshSpec = "generated:1x1x4";
-    stk::mesh::unit_test::readMesh(generatedMeshSpec, bulkData, communicator);
+    stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData, communicator);
 
     stk::mesh::Entity node = bulkData.get_entity(stk::topology::NODE_RANK, 1);
 

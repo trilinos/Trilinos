@@ -3,6 +3,7 @@
 
 #include <stk_mesh/base/BulkData.hpp>
 #include <unit_tests/BulkDataTester.hpp>
+#include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <mpi.h>
@@ -41,11 +42,7 @@ private:
 
     void readExodusFileIntoStkMesh(const std::string& generatedMeshSpecification, stk::mesh::BulkData &stkMeshBulkData, MPI_Comm communicator)
     {
-        stk::io::StkMeshIoBroker exodusFileReader(communicator);
-        exodusFileReader.set_bulk_data(stkMeshBulkData);
-        exodusFileReader.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
-        exodusFileReader.create_input_mesh();
-        exodusFileReader.populate_bulk_data();
+        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpecification, stkMeshBulkData, communicator);
     }
 
 private:

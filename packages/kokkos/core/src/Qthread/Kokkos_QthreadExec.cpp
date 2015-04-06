@@ -91,8 +91,8 @@ int s_worker_reduce_end   = 0 ; /* End of worker reduction memory    */
 int s_worker_shared_end   = 0 ; /* Total of worker scratch memory    */
 int s_worker_shared_begin = 0 ; /* Beginning of worker shared memory */
 
-QthreadExecFunctionPointer s_active_function = 0 ;
-const void               * s_active_function_arg = 0 ;
+QthreadExecFunctionPointer volatile s_active_function = 0 ;
+const void               * volatile s_active_function_arg = 0 ;
 
 } /* namespace */
 } /* namespace Impl */
@@ -202,7 +202,22 @@ namespace {
 
 aligned_t driver_exec_all( void * arg )
 {
-  (*s_active_function)( ** worker_exec() , s_active_function_arg );
+  QthreadExec & exec = **worker_exec();
+
+  (*s_active_function)( exec , s_active_function_arg );
+
+/*
+  fprintf( stdout
+         , "QthreadExec driver worker(%d:%d) shepherd(%d:%d) shepherd_worker(%d:%d) done\n"
+         , exec.worker_rank()
+         , exec.worker_size()
+         , exec.shepherd_rank()
+         , exec.shepherd_size()
+         , exec.shepherd_worker_rank()
+         , exec.shepherd_worker_size()
+         );
+  fflush(stdout);
+*/
 
   return 0 ;
 }
@@ -234,7 +249,25 @@ aligned_t driver_resize_worker_scratch( void * arg )
 
   while ( lock_end );
 
+/*
+  fprintf( stdout
+         , "QthreadExec resize worker(%d:%d) shepherd(%d:%d) shepherd_worker(%d:%d) done\n"
+         , (**exec).worker_rank()
+         , (**exec).worker_size()
+         , (**exec).shepherd_rank()
+         , (**exec).shepherd_size()
+         , (**exec).shepherd_worker_rank()
+         , (**exec).shepherd_worker_size()
+         );
+  fflush(stdout);
+*/
+
   //----------------------------------------
+
+  if ( ! ok ) {
+    fprintf( stderr , "Kokkos::QthreadExec resize failed\n" );
+    fflush( stderr );
+  }
 
   return 0 ;
 }
@@ -277,8 +310,9 @@ QthreadExec::QthreadExec()
 void QthreadExec::clear_workers()
 {
   for ( int iwork = 0 ; iwork < s_number_workers ; ++iwork ) {
-    free( s_exec[iwork] );
+    QthreadExec * const exec = s_exec[iwork] ;
     s_exec[iwork] = 0 ;
+    free( exec );
   }
 }
 
@@ -300,6 +334,11 @@ void QthreadExec::resize_worker_scratch( const int reduce_size , const int share
   if ( s_worker_reduce_end < exec_all_reduce_alloc ||
        s_worker_shared_end < shepherd_shared_end ) {
 
+/*
+  fprintf( stdout , "QthreadExec::resize\n");
+  fflush(stdout);
+*/
+
     // Clear current worker memory before allocating new worker memory
     clear_workers();
 
@@ -309,21 +348,34 @@ void QthreadExec::resize_worker_scratch( const int reduce_size , const int share
     s_worker_shared_end   = shepherd_shared_end ;
 
     // Need to query which shepherd this main 'process' is running...
+ 
+    const int main_shep = qthread_shep();
 
     // Have each worker resize its memory for proper first-touch
-    for ( int jshep = 0 ; jshep < s_number_shepherds ; ++jshep ) {
 #if 1
-    for ( int i = jshep ? 0 : 1 ; i < s_number_workers_per_shepherd ; ++i ) {
-
-      // Unit tests hang with this call:
-      //
-      // qthread_fork_to_local_priority( driver_resize_workers , NULL , NULL , jshep );
-      //
-
+    for ( int jshep = 0 ; jshep < s_number_shepherds ; ++jshep ) {
+    for ( int i = jshep != main_shep ? 0 : 1 ; i < s_number_workers_per_shepherd ; ++i ) {
       qthread_fork_to( driver_resize_worker_scratch , NULL , NULL , jshep );
+    }}
+#else
+    // If this function is used before the 'qthread.task_policy' unit test
+    // the 'qthread.task_policy' unit test fails with a seg-fault within libqthread.so.
+    for ( int jshep = 0 ; jshep < s_number_shepherds ; ++jshep ) {
+      const int num_clone = jshep != main_shep ? s_number_workers_per_shepherd : s_number_workers_per_shepherd - 1 ;
+
+      if ( num_clone ) {
+        const int ret = qthread_fork_clones_to_local_priority
+          ( driver_resize_worker_scratch   /* function */
+          , NULL                           /* function data block */
+          , NULL                           /* pointer to return value feb */
+          , jshep                          /* shepherd number */
+          , num_clone - 1                  /* number of instances - 1 */
+          );
+
+        assert(ret == QTHREAD_SUCCESS);
+      }
     }
 #endif
-    }
 
     driver_resize_worker_scratch( NULL );
 
@@ -348,6 +400,11 @@ void QthreadExec::exec_all( Qthread & , QthreadExecFunctionPointer func , const 
 {
   verify_is_process("QthreadExec::exec_all(...)",true);
 
+/*
+  fprintf( stdout , "QthreadExec::exec_all\n");
+  fflush(stdout);
+*/
+
   s_active_function     = func ;
   s_active_function_arg = arg ;
 
@@ -358,12 +415,6 @@ void QthreadExec::exec_all( Qthread & , QthreadExecFunctionPointer func , const 
 #if 1
   for ( int jshep = 0 , iwork = 0 ; jshep < s_number_shepherds ; ++jshep ) {
   for ( int i = jshep != main_shep ? 0 : 1 ; i < s_number_workers_per_shepherd ; ++i , ++iwork ) {
-
-    // Unit tests hang with this call:
-    //
-    // qthread_fork_to_local_priority( driver_exec_all , NULL , NULL , jshep );
-    //
-
     qthread_fork_to( driver_exec_all , NULL , NULL , jshep );
   }}
 #else
@@ -372,15 +423,17 @@ void QthreadExec::exec_all( Qthread & , QthreadExecFunctionPointer func , const 
   for ( int jshep = 0 ; jshep < s_number_shepherds ; ++jshep ) {
     const int num_clone = jshep != main_shep ? s_number_workers_per_shepherd : s_number_workers_per_shepherd - 1 ;
 
-    int ret = qthread_fork_clones_to_local_priority
-      ( driver_exec_all   /* function */
-      , NULL              /* function data block */
-      , NULL              /* pointer to return value feb */
-      , jshep             /* shepherd number */
-      , num_clone - 1     /* number of instances - 1 */
-      );
+    if ( num_clone ) {
+      const int ret = qthread_fork_clones_to_local_priority
+        ( driver_exec_all   /* function */
+        , NULL              /* function data block */
+        , NULL              /* pointer to return value feb */
+        , jshep             /* shepherd number */
+        , num_clone - 1     /* number of instances - 1 */
+        );
 
-   assert(ret == QTHREAD_SUCCESS);
+      assert(ret == QTHREAD_SUCCESS);
+    }
   }
 #endif
 

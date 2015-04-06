@@ -10,31 +10,27 @@ TRIBITS_PACKAGE(Moertel)
 # B) Set up package-specific options
 #
 
-#TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Experimental
-#  HAVE_KOKKOSCLASSIC_EXPERIMENTAL
-#  "Enable experimental."
-#  OFF )
+# For some reason, cannot set the default to ${${PROJECT_NAME}_ENABLE_SEACAS}
+TRIBITS_ADD_OPTION_AND_DEFINE( 
+  Moertel_ENABLE_Exodus
+  MOERTEL_HAVE_EXODUS
+  "Enable Exodus mesh support in Moertel"
+#  ${${PROJECT_NAME}_ENABLE_SEACAS}
+  OFF
+)
 
-IF(Moertel_ENABLE_Mesh)
+TRIBITS_ADD_OPTION_AND_DEFINE( 
+  Moertel_ENABLE_Morkon
+  MOERTEL_HAVE_MORKON
+  "Enable new Kokkos MorKon subpackage support"
+  OFF 
+)
 
-  # Exodus is optional, it can be missing or come in through SEACAS
-  IF(${PACKAGE_NAME}_ENABLE_SEACASExodus)
-    SET(HAVE_MOERTEL_EXODUS ${${PACKAGE_NAME}_ENABLE_SEACASExodus})
-    SET(HAVE_MOERTEL_SEACAS ON)
-    INCLUDE_DIRECTORIES(${SEACASExodus_INCLUDE_DIRS})
-  ENDIF()
+IF(Moertel_ENABLE_Exodus)
 
-  # Nemesis is optional, it can be missing or come in through SEACAS
-  # It is only needed when MPI is enabled, and if Exodus is present
-  IF(TPL_ENABLE_MPI AND HAVE_MOERTEL_EXODUS)
-    IF(${PACKAGE_NAME}_ENABLE_SEACASNemesis)
-      SET(HAVE_MOERTEL_NEMESIS ${${PACKAGE_NAME}_ENABLE_SEACASNemesis})
-    ENDIF()
-  ENDIF()
+    INCLUDE_DIRECTORIES(${SEACAS_INCLUDE_DIRS})
 
 ENDIF()
-
-
 
 
 #
@@ -42,6 +38,9 @@ ENDIF()
 #
 
 ADD_SUBDIRECTORY(src)
+IF(Moertel_ENABLE_Morkon)
+  ADD_SUBDIRECTORY(morkon)
+ENDIF()
 
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 

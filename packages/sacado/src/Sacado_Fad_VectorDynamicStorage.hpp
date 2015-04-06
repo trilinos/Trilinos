@@ -95,25 +95,26 @@ namespace Sacado {
       //! Assignment
       KOKKOS_INLINE_FUNCTION
       VectorDynamicStorage& operator=(const VectorDynamicStorage& x) {
-        *val_ = *x.val_;
-        if (sz_ != x.sz_) {
-          sz_ = x.sz_;
-          if (x.sz_ > len_) {
+        if (this != &x) {
+          *val_ = *x.val_;
+          if (sz_ != x.sz_) {
+            sz_ = x.sz_;
+            if (x.sz_ > len_) {
 #if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
-            if (!owns_mem)
-              throw "Can\'t resize beyond original size when memory isn't owned!";
+              if (!owns_mem)
+                throw "Can\'t resize beyond original size when memory isn't owned!";
 #endif
-            if (len_ != 0)
-              ds_array<U>::destroy_and_release(dx_, len_);
-            len_ = x.sz_;
-            dx_ = ds_array<U>::strided_get_and_fill(x.dx_, x.stride_, sz_);
+              if (len_ != 0)
+                ds_array<U>::destroy_and_release(dx_, len_);
+              len_ = x.sz_;
+              dx_ = ds_array<U>::strided_get_and_fill(x.dx_, x.stride_, sz_);
+            }
+            else
+              ds_array<U>::strided_copy(x.dx_, x.stride_, dx_, stride_, sz_);
           }
           else
             ds_array<U>::strided_copy(x.dx_, x.stride_, dx_, stride_, sz_);
         }
-        else
-          ds_array<U>::strided_copy(x.dx_, x.stride_, dx_, stride_, sz_);
-
         return *this;
       }
 

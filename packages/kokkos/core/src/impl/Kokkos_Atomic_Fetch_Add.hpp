@@ -222,6 +222,7 @@ T atomic_fetch_add( volatile T * const dest ,
   return oldval.t ;
 }
 
+#ifdef KOKKOS_HAVE_CXX11
 template < typename T >
 KOKKOS_INLINE_FUNCTION
 T atomic_fetch_add( volatile T * const dest ,
@@ -229,18 +230,11 @@ T atomic_fetch_add( volatile T * const dest ,
                                     sizeof(T) != sizeof(long) &&
                                     sizeof(T) == sizeof(Impl::cas128_t) , const T >::type val )
 {
-#ifdef KOKKOS_HAVE_CXX11
   union U {
     Impl::cas128_t i ;
     T t ;
     KOKKOS_INLINE_FUNCTION U() {};
   } assume , oldval , newval ;
-#else
-  union U {
-    Impl::cas128_t i ;
-    T t ;
-  } assume , oldval , newval ;
-#endif
 
   oldval.t = *dest ;
 
@@ -252,6 +246,7 @@ T atomic_fetch_add( volatile T * const dest ,
 
   return oldval.t ;
 }
+#endif
 //----------------------------------------------------------------------------
 
 #elif defined( KOKKOS_ATOMICS_USE_OMP31 )

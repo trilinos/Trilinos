@@ -34,7 +34,23 @@ struct Return_Type{
     typedef Scalar const_return_type;
     };
 
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(SACADO_KOKKOS_HPP)    
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+
+template<class arg1, class arg2, class arg3, class arg4, class arg5, class Scalar>
+struct Return_Type<const Kokkos::View<arg1,arg2,arg3,arg4,arg5>, Scalar>{
+      typedef Kokkos::View<arg1,arg2,arg3,arg4,arg5> ViewType;
+      typedef typename ViewType::reference_type return_type;
+      typedef typename ViewType::reference_type const_return_type;
+};
+
+template<class arg1, class arg2, class arg3, class arg4, class arg5, class Scalar>
+struct Return_Type< Kokkos::View<arg1,arg2,arg3,arg4,arg5>, Scalar>{
+      typedef Kokkos::View<arg1,arg2,arg3,arg4,arg5> ViewType;
+      typedef typename ViewType::reference_type return_type;
+      typedef typename ViewType::reference_type const_return_type;
+};
+
+/*
 
 template<class arg1, class arg2, class arg3, class arg4, class Scalar>
 struct Return_Type<const Kokkos::View<arg1,arg2,arg3,arg4,Kokkos::Impl::ViewSpecializeSacadoFad>, Scalar>{
@@ -49,6 +65,7 @@ struct Return_Type< Kokkos::View<arg1,arg2,arg3,arg4,Kokkos::Impl::ViewSpecializ
       typedef typename ViewType::fad_view_type return_type;
       typedef typename ViewType::fad_view_type const_return_type;
 };
+*/
 #endif
 
 template<class DataT,int leftrank>

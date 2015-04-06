@@ -328,9 +328,6 @@ void Task::execute_ready_tasks()
   }
 }
 
-void Task::wait( const Future< void , Kokkos::Serial > & )
-{ execute_ready_tasks(); }
-
 } // namespace Impl
 } // namespace Experimental
 } // namespace Kokkos

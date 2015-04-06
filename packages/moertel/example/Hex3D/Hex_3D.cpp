@@ -48,7 +48,7 @@
  * \date Last update do Doxygen: 20-March-06
  *
  */
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
 #else
@@ -63,7 +63,7 @@
 #include "Galeri_Utils.h"
 #include "Galeri_FiniteElements.h"
 
-#if defined(HAVE_SEACAS_EXODUS) || defined(HAVE_MOERTEL_EXODUS)
+#ifdef MOERTEL_HAVE_EXODUS
 #include "ExodusInterface.h"
 #endif
 
@@ -474,7 +474,7 @@ int main(int argc, char *argv[])
     //manager.SetInputMatrix(&A,false);
     //manager.Solve(list,LHS,RHS);
 	
-#if defined(HAVE_SEACAS_EXODUS) || defined(HAVE_MOERTEL_EXODUS)
+#ifdef MOERTEL_HAVE_EXODUS
 
     // ==================    //
     // Output using ExodusII //

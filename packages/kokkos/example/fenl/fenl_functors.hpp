@@ -373,11 +373,22 @@ public:
     }
   }
 
+  // For the reduce phase:
+  KOKKOS_INLINE_FUNCTION
+  void init( const TagFillNodeSet & , unsigned & update ) const { update = 0 ; }
+
+  KOKKOS_INLINE_FUNCTION
+  void join( const TagFillNodeSet & 
+           , volatile       unsigned & update
+           , volatile const unsigned & input ) const { update += input ; }
+
+  // For the scan phase::
   KOKKOS_INLINE_FUNCTION
   void init( unsigned & update ) const { update = 0 ; }
 
   KOKKOS_INLINE_FUNCTION
-  void join( volatile unsigned & update , const volatile unsigned & input ) const { update += input ; }
+  void join( volatile       unsigned & update
+           , volatile const unsigned & input ) const { update += input ; }
 
   //------------------------------------
 };

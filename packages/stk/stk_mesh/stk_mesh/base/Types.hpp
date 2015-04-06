@@ -81,8 +81,6 @@ struct AuxRelationTag {};
 struct DeletedEntityTag {};
 struct VolatileFastSharedCommMapTag {};
 
-void print_dynamic_connectivity_profile( ParallelMachine parallel, int parallel_rank, std::ostream & out);
-
 void print_max_stk_memory_usage( ParallelMachine parallel, int parallel_rank, std::ostream & out);
 
 //----------------------------------------------------------------------
@@ -220,8 +218,6 @@ struct RelationType
   {
     USES      = 0 ,
     USED_BY   = 1 ,
-    CHILD     = 2 ,
-    PARENT    = 3 ,
     EMBEDDED  = 0x00ff , // 4
     CONTACT   = 0x00ff , // 5
     AUXILIARY = 0x00ff ,
@@ -326,7 +322,7 @@ ConnectivityOrdinal& operator++(ConnectivityOrdinal& ord)
 
 enum Permutation
 {
-  INVALID_PERMUTATION = ~0U
+  INVALID_PERMUTATION = 65536 // max-uint16_t because it is stored in Relation::attribute, which is bit-masked by getOrientation
 };
 
 enum ConnectivityId

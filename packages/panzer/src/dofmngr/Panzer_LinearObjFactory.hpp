@@ -215,7 +215,7 @@ public:
    virtual void adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                                              const LinearObjContainer & globalBCRows,
                                              LinearObjContainer & ghostedObjs,
-                                             bool zeroVectorRows=false) const = 0;
+                                             bool zeroVectorRows=false, bool adjustX=false) const = 0;
 
    /** Adjust a vector by replacing selected rows with the value of the evaluated
      * dirichlet conditions. This is handled through the standard container mechanism.

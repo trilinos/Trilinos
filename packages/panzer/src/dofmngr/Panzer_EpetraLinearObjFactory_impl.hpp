@@ -304,7 +304,7 @@ void EpetraLinearObjFactory<Traits,LocalOrdinalT>::
 adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                              const LinearObjContainer & globalBCRows,
                              LinearObjContainer & ghostedObjs,
-                             bool zeroVectorRows) const
+                             bool zeroVectorRows, bool adjustX) const
           
 {
    const EpetraLinearObjContainer & e_localBCRows = Teuchos::dyn_cast<const EpetraLinearObjContainer>(localBCRows); 
@@ -317,6 +317,7 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
    // pull out jacobian and vector
    Teuchos::RCP<Epetra_CrsMatrix> A = e_ghosted.get_A();
    Teuchos::RCP<Epetra_Vector> f = e_ghosted.get_f();
+   if(adjustX) f = e_ghosted.get_x();
 
    const Epetra_Vector & local_bcs  = *(e_localBCRows.get_x());
    const Epetra_Vector & global_bcs = *(e_globalBCRows.get_x());

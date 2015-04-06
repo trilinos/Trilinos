@@ -1,28 +1,7 @@
-/* src/Moertel_config.h.in.  Generated from configure.ac by autoheader.  */
+#ifndef MOERTEL_CONFIG_H
+#define MOERTEL_CONFIG_H
 
-/* Define if want to build examples */
-#cmakedefine HAVE_EXAMPLES
+/* Define if we have Exodus in Seacas */
+#cmakedefine MOERTEL_HAVE_EXODUS
 
-/* Define if you want to build export makefiles. */
-#cmakedefine HAVE_EXPORT_MAKEFILES
-
-/* Define if want to build galeri */
-#cmakedefine HAVE_GALERI
-
-/* Define if you are using gnumake - this will shorten your link lines. */
-#cmakedefine HAVE_GNUMAKE
-
-/* Define if want to build moertel-examples */
-#cmakedefine HAVE_MOERTEL_EXAMPLES
-
-/* Define if we have Exodus as a TPL */
-#cmakedefine HAVE_MOERTEL_EXODUS
-
-/* Define if we have Nemesis as a TPL */
-#cmakedefine HAVE_MOERTEL_NEMESIS
-
-/* Define if we want to use SEACAS (ExodusII/Nemesis) */
-#cmakedefine HAVE_MOERTEL_SEACAS
-
-/* define if we want to use MPI */
-#cmakedefine HAVE_MPI
+#endif

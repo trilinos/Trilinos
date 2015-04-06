@@ -45,11 +45,7 @@
 #include <complex>
 
 #include "Intrepid_ConfigDefs.hpp"
-#ifdef HAVE_INTREPID_KOKKOSCORE
 #include "Sacado.hpp"
-#else
-#include "Sacado_No_Kokkos.hpp"
-#endif
 
 namespace Intrepid {
 
@@ -207,6 +203,20 @@ template <>
 struct dimension_string<4> {
   static string eval() {return string("4");}
 };
+
+// Needed to avoid type confusion when using Kokkos
+#ifdef HAVE_INTREPID_KOKKOSCORE
+
+#include<Kokkos_Core.hpp>
+
+template <typename T>
+struct not_index
+{
+  typedef typename Kokkos::Impl::enable_if<
+      !Kokkos::Impl::is_same<T, Index>::value, T>::type type;
+};
+
+#endif // HAVE_INTREPID_KOKKOSCORE
 
 } // namespace Intrepid
 

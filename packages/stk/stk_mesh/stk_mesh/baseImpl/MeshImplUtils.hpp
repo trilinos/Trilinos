@@ -81,6 +81,7 @@ void internal_clean_and_verify_parallel_change(
 
 int check_no_shared_elements_or_higher(const BulkData& mesh);
 int check_for_connected_nodes(const BulkData& mesh);
+bool check_permutations_on_all(stk::mesh::BulkData& mesh);
 
 //template <typename Topology>
 //typename boost::enable_if_c< (Topology::num_faces > 0u), void>::type
@@ -131,7 +132,7 @@ int check_for_connected_nodes(const BulkData& mesh);
 //    }
 //}
 
-void find_face_nodes_for_side(BulkData& mesh, Entity element, int side_ordinal, EntityVector & permuted_face_nodes);
+void find_side_nodes(BulkData& mesh, Entity element, int side_ordinal, EntityVector & permuted_face_nodes);
 
 
 template<class DO_THIS_FOR_ENTITY_IN_CLOSURE, class DESIRED_ENTITY>
@@ -397,7 +398,7 @@ void get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(const BulkData&
 stk::mesh::Entity get_or_create_face_at_element_side(stk::mesh::BulkData & bulk,
                                                      stk::mesh::Entity elem,
                                                      int side_ordinal,
-                                                     int new_face_global_id,
+                                                     stk::mesh::EntityId new_face_global_id,
                                                      stk::mesh::Part & part);
 
 void connect_face_to_other_elements(stk::mesh::BulkData & bulk,
