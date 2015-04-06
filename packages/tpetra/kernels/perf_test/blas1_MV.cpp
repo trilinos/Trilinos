@@ -327,6 +327,8 @@ benchmarkRaw (std::ostream& out,
   RCP<Time> vecNrm1Timer = getTimer ("Raw: MV: Nrm1");
   RCP<Time> vecDotTimer = getTimer ("Raw: MV: Dot");
   RCP<Time> vecNrmInfTimer = getTimer ("Raw: MV: NrmInf");
+  RCP<Time> vecAxpyTimer = getTimer ("Raw: MV: Axpy");
+  RCP<Time> vecAxpbyTimer = getTimer ("Raw: MV: Axpby");
   bool success = true;
 
   if (numTrials <= 0) {
@@ -426,8 +428,8 @@ benchmarkRaw (std::ostream& out,
     TimeMonitor timeMon (*vecDotTimer);
     for (int k = 0; k < numTrials; ++k) {
       for (int j = 0; j < numCols; ++j) {
-        double* x_j = x + numRows * j;
-        double* y_j = y + numRows * j;
+        double* const x_j = x + numRows * j;
+        double* const y_j = y + numRows * j;
         double sum = 0.0;
         for (int i = 0; i < numRows; ++i) {
           sum += x_j[i] * y_j[i];
@@ -436,6 +438,39 @@ benchmarkRaw (std::ostream& out,
       }
     }
   }
+
+  // Benchmark y := alpha*x + beta*y for beta = 0 and beta != 0.
+  {
+    TimeMonitor timeMon (*vecAxpyTimer);
+    const double alpha = 3.0;
+
+    for (int k = 0; k < numTrials; ++k) {
+      for (int j = 0; j < numCols; ++j) {
+        double* const x_j = x + numRows * j;
+        double* const y_j = y + numRows * j;
+        for (int i = 0; i < numRows; ++i) {
+          y_j[i] += alpha * x_j[i];
+        }
+      }
+    }
+  }
+  {
+    TimeMonitor timeMon (*vecAxpbyTimer);
+    const double alpha = 3.0;
+    const double beta = 4.0;
+
+    for (int k = 0; k < numTrials; ++k) {
+      for (int j = 0; j < numCols; ++j) {
+        double* const x_j = x + numRows * j;
+        double* const y_j = y + numRows * j;
+        for (int i = 0; i < numRows; ++i) {
+          y_j[i] = alpha * x_j[i] + beta * y_j[i];
+        }
+      }
+    }
+  }
+
+
   if (norms != NULL) {
     delete [] norms;
     norms = NULL;
