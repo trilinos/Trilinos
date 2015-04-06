@@ -2094,8 +2094,9 @@ template <class RangeVector,
           CoeffVector1Type, CoeffVector2Type, doalpha, dobeta> OpType ;
 
         OpType op(betav,alphav,A,x,y,x.dimension_1(),RowsPerThread<typename RangeVector::execution_space >(NNZPerRow)) ;
+        int rows_per_thread = RowsPerThread<typename RangeVector::execution_space >(NNZPerRow);
         Kokkos::parallel_for( Kokkos::TeamPolicy< typename RangeVector::execution_space >
-             ( A.numRows() ,RowsPerThread<typename RangeVector::execution_space >(NNZPerRow), vector_length ) , op );
+			      ( (A.numRows()+rows_per_thread-1)/rows_per_thread ,rows_per_thread, vector_length ) , op );
 
       }
 
@@ -2136,8 +2137,9 @@ template <class RangeVector,
       const typename CrsMatrixType::ordinal_type nrow = A.numRows();
 
       OpType op(betav,alphav,A,x,y,x.dimension_1(),RowsPerThread<typename RangeVector::execution_space >(NNZPerRow)) ;
+      int rows_per_thread = RowsPerThread<typename RangeVector::execution_space >(NNZPerRow);
       Kokkos::parallel_for( Kokkos::TeamPolicy< typename RangeVector::execution_space >
-           ( A.numRows() ,RowsPerThread<typename RangeVector::execution_space >(NNZPerRow), vector_length ) , op );
+			    ( (A.numRows()+rows_per_thread-1)/rows_per_thread ,rows_per_thread, vector_length ) , op );
 
 #endif // KOKKOS_FAST_COMPILE
     }
