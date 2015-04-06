@@ -1568,7 +1568,7 @@ public:
       pcoord_t *task_communication_edge_weight_,
       int recursion_depth,
       part_t *part_no_array,
-      part_t *machine_dimensions
+      const part_t *machine_dimensions
   ):  PartitionMapping<Adapter>(problemComm, NULL, NULL, NULL, env_const_),
       proc_to_task_xadj(0),
       proc_to_task_adj(0),
@@ -1675,7 +1675,7 @@ public:
    */
   pcoord_t **shiftMachineCoordinates(
       int machine_dim,
-      part_t *machine_dimensions,
+      const part_t *machine_dimensions,
       part_t numProcs,
       pcoord_t **mCoords){
     pcoord_t **result_machine_coords = NULL;
@@ -1902,7 +1902,7 @@ void coordinateTaskMapperInterface(
     part_t *proc_to_task_adj, /*output*/
     int recursion_depth,
     part_t *part_no_array,
-    part_t *machine_dimensions
+    const part_t *machine_dimensions
 )
 {
 
