@@ -133,14 +133,14 @@ echo -e "\tmake -j -f ${KOKKOS_PATH}/algorithms/unit_tests/Makefile ${KOKKOS_OPT
 echo "" >> Makefile
 echo "test: build-test" >> Makefile
 echo -e "\tcd core/unit_test; \\" >> Makefile
-echo -e "\tmake -j -f ${KOKKOS_PATH}/core/unit_test/Makefile ${KOKKOS_OPTIONS} test" >> Makefile
+echo -e "\tmake -f ${KOKKOS_PATH}/core/unit_test/Makefile ${KOKKOS_OPTIONS} test" >> Makefile
 echo -e "\tcd core/perf_test; \\" >> Makefile
-echo -e "\tmake -j -f ${KOKKOS_PATH}/core/perf_test/Makefile ${KOKKOS_OPTIONS} test" >> Makefile
+echo -e "\tmake -f ${KOKKOS_PATH}/core/perf_test/Makefile ${KOKKOS_OPTIONS} test" >> Makefile
 echo -e "\tcd containers/unit_tests; \\" >> Makefile
-echo -e "\tmake -j -f ${KOKKOS_PATH}/containers/unit_tests/Makefile ${KOKKOS_OPTIONS} test" >> Makefile
+echo -e "\tmake -f ${KOKKOS_PATH}/containers/unit_tests/Makefile ${KOKKOS_OPTIONS} test" >> Makefile
 echo -e "\tcd containers/performance_tests; \\" >> Makefile
-echo -e "\tmake -j -f ${KOKKOS_PATH}/containers/performance_tests/Makefile ${KOKKOS_OPTIONS} test" >> Makefile
+echo -e "\tmake -f ${KOKKOS_PATH}/containers/performance_tests/Makefile ${KOKKOS_OPTIONS} test" >> Makefile
 echo -e "\tcd algorithms/unit_tests; \\" >> Makefile
-echo -e "\tmake -j -f ${KOKKOS_PATH}/algorithms/unit_tests/Makefile ${KOKKOS_OPTIONS} test" >> Makefile
+echo -e "\tmake -f ${KOKKOS_PATH}/algorithms/unit_tests/Makefile ${KOKKOS_OPTIONS} test" >> Makefile
 
 
