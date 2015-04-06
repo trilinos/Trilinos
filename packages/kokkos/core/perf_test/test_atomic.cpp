@@ -44,19 +44,11 @@
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
-#include <ctime>
 
 #include <Kokkos_Core.hpp>
+#include <impl/Kokkos_Timer.hpp>
 
-#ifndef DEVICE
-#define DEVICE 1
-#endif
-#if DEVICE==1
-typedef Kokkos::Threads execution_space;
-#endif
-#if DEVICE==2
-typedef Kokkos::Cuda execution_space;
-#endif
+typedef Kokkos::DefaultExecutionSpace execution_space;
 
 #define RESET		0
 #define BRIGHT 		1
@@ -418,23 +410,19 @@ T LoopVariantNonAtomic(int loop, int test) {
 
 template<class T>
 void Loop(int loop, int test, const char* type_name) {
-  timespec starttime,endtime;
   LoopVariant<T>(loop,test);
 
-  clock_gettime(CLOCK_REALTIME,&starttime);
+  Kokkos::Impl::Timer timer;
   T res = LoopVariant<T>(loop,test);
-  clock_gettime(CLOCK_REALTIME,&endtime);
-  double time1 = endtime.tv_sec - starttime.tv_sec + 1.0 * (endtime.tv_nsec - starttime.tv_nsec) / 1000000000;
+  double time1 = timer.seconds();
 
-  clock_gettime(CLOCK_REALTIME,&starttime);
+  timer.reset();
   T resNonAtomic = LoopVariantNonAtomic<T>(loop,test);
-  clock_gettime(CLOCK_REALTIME,&endtime);
-  double time2 = endtime.tv_sec - starttime.tv_sec + 1.0 * (endtime.tv_nsec - starttime.tv_nsec) / 1000000000;
+  double time2 = timer.seconds();
 
-  clock_gettime(CLOCK_REALTIME,&starttime);
+  timer.reset();
   T resSerial = LoopVariantSerial<T>(loop,test);
-  clock_gettime(CLOCK_REALTIME,&endtime);
-  double time3 = endtime.tv_sec - starttime.tv_sec + 1.0 * (endtime.tv_nsec - starttime.tv_nsec) / 1000000000;
+  double time3 = timer.seconds();
 
   time1*=1e6/loop;
   time2*=1e6/loop;
@@ -466,33 +454,18 @@ int main(int argc, char* argv[])
   int type = -1;
   int loop = 1000000;
   int test = -1;
-  int numa = 1;
-  int threads_per_numa = 8;
-  int device = 0;
 
   for(int i=0;i<argc;i++)
   {
-     if((strcmp(argv[i],"-t")==0)||(strcmp(argv[i],"--threads")==0)) {threads_per_numa=atoi(argv[++i]); continue;}
-     if((strcmp(argv[i],"--numa")==0)) {numa=atoi(argv[++i]); continue;}
      if((strcmp(argv[i],"--test")==0)) {test=atoi(argv[++i]); continue;}
      if((strcmp(argv[i],"--type")==0)) {type=atoi(argv[++i]); continue;}
      if((strcmp(argv[i],"-l")==0)||(strcmp(argv[i],"--loop")==0)) {loop=atoi(argv[++i]); continue;}
-     if((strcmp(argv[i], "-d") == 0) || (strcmp(argv[i], "--device") == 0)) {
-       device = atoi(argv[++i]);
-       continue;
-     }
   }
 
-#if DEVICE==1
-  Kokkos::Threads::initialize( numa * threads_per_numa , numa );
-#endif
 
-#if DEVICE==2
-  Kokkos::Cuda::SelectDevice select_device(device);
-  Kokkos::Cuda::initialize(select_device);
-#endif
+  Kokkos::initialize(argc,argv);
 
-  printf("Using %i numa regions with %i threads\n",numa,threads);
+
   printf("Using %s\n",Kokkos::atomic_query_version());
   bool all_tests = false;
   if(type==-1) all_tests = true;
@@ -525,13 +498,7 @@ int main(int argc, char* argv[])
     else type++;
   }
 
-#if DEVICE==1
-  Kokkos::Threads::finalize();
-#endif
-#if DEVICE==2
-  Kokkos::Cuda::finalize();
-#endif
-
+  Kokkos::finalize();
 
 }
 
