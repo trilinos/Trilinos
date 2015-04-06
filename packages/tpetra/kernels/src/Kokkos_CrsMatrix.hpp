@@ -2008,7 +2008,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
 
       OpType op(beta,alpha,A,x,y,RowsPerThread<typename RangeVector::execution_space >(NNZPerRow)) ;
       Kokkos::parallel_for( Kokkos::TeamPolicy< typename RangeVector::execution_space >
-           ( nrow ,RowsPerThread<typename RangeVector::execution_space >(NNZPerRow), vec_tor_length ) , op );
+           ( nrow ,RowsPerThread<typename RangeVector::execution_space >(NNZPerRow), vector_length ) , op );
 
 #endif // KOKKOS_FAST_COMPILE
     }

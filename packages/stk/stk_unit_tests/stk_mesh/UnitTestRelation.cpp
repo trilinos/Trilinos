@@ -486,7 +486,19 @@ TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
     edge = mesh.declare_entity(edge_rank, 1 /*id*/, sides_parts);
 
     // Set up relation from elem to edge
-    mesh.declare_relation( elem, edge, 0 /*rel-id*/ );
+    unsigned local_side_id = 2;
+    if (p_rank == 1)
+    {
+        local_side_id = 0;
+    }
+    stk::topology elem_top = mesh.bucket(elem).topology();
+    stk::mesh::EntityVector side_nodes(2);
+    side_nodes[0] = mesh.get_entity(stk::topology::NODE_RANK, 3);
+    side_nodes[1] = mesh.get_entity(stk::topology::NODE_RANK, 4);
+
+    stk::mesh::Permutation perm1 = mesh.find_permutation(elem_top, &nodes[0], elem_top.side_topology(local_side_id), &side_nodes[0], local_side_id);
+    ASSERT_TRUE(perm1 != stk::mesh::Permutation::INVALID_PERMUTATION);
+    mesh.declare_relation(elem, edge, local_side_id, perm1);
   }
 
   if (p_rank < 2) {

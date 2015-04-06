@@ -155,7 +155,7 @@ namespace Iotr {
     default:
       success = false;
     }
-      
+
     return success;
   }
 }

@@ -388,6 +388,14 @@ public:
   virtual void generate_new_entities(const std::vector<size_t>& requests,
       std::vector<Entity>& requested_entities);
 
+  Permutation find_permutation( const stk::topology &hr_entity_topo,
+                                Entity const *higher_rank_entity_nodes,
+                                const stk::topology &side_topo,
+                                Entity const *side_nodes,
+                                unsigned side_ordinal) const;
+
+  bool check_permutation(Entity entity, Entity rel_entity, unsigned rel_ordinal, Permutation expected) const;
+
   //------------------------------------
   /** \brief  Declare a relation and its converse between
    *          entities in the same mesh.
@@ -411,7 +419,7 @@ public:
   void declare_relation( Entity e_from ,
       Entity e_to ,
       const RelationIdentifier local_id,
-      Permutation permutation = static_cast<Permutation>(0));
+      Permutation permutation = stk::mesh::Permutation::INVALID_PERMUTATION);
 
   void declare_relation( Entity e_from ,
       Entity e_to ,
@@ -485,6 +493,9 @@ public:
    *    in or be added to this ghosting.
    */
   void change_ghosting( Ghosting & ghosts,
+                        const std::vector<EntityProc> & add_send ,
+                        const std::vector<EntityKey> & remove_receive = std::vector<EntityKey>());
+  void batch_change_ghosting( Ghosting & ghosts,
                         const std::vector<EntityProc> & add_send ,
                         const std::vector<EntityKey> & remove_receive = std::vector<EntityKey>());
 
@@ -759,6 +770,7 @@ protected: //functions
 
   bool internal_modification_end_for_change_entity_owner( bool regenerate_aura, modification_optimization opt );
   bool internal_modification_end_for_change_parts();
+  void internal_modification_end_for_change_ghosting();
 
   void mark_entity_and_upward_related_entities_as_modified(Entity entity);
 

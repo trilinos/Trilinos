@@ -64,7 +64,11 @@
 #error "Requires exodusII version 4.68 or later"
 #endif
 
+#if __cplusplus > 199711L
+#define TOPTR(x) x.data()
+#else
 #define TOPTR(x) (x.empty() ? NULL : &x[0])
+#endif
 
 namespace {
 template <typename T>
@@ -874,6 +878,7 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
     if (debug_level & 1)
       std::cerr << time_stamp(tsFormat);
 
+    std::ios::fmtflags f(std::cerr.flags());
     std::cerr << "Step " << std::setw(step_width) << time_step+1 <<  "/" << num_time_steps << ", time "
 	      << std::scientific << std::setprecision(4) << time_val
 	      << " (Part " << std::setw(part_width) << p+1 << "/" << part_count 
@@ -895,6 +900,7 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
     if (debug_level & 1) {
       std::cerr << "\n";
     }
+    std::cerr.flags(f);
   }
 
   /*************************************************************************/
@@ -1056,6 +1062,7 @@ namespace {
 	    if (!approx_equal(x[node],local_x[i]) ||
 		!approx_equal(y[node],local_y[i]) ||
 		!approx_equal(z[node],local_z[i])) {
+	      std::ios::fmtflags f(std::cerr.flags());
 	      std::cerr << "\nWARNING: Node " << node+1
 			<< " has different coordinates in at least two parts.\n"
 			<< "         this may indicate that this id has been reused in the current part.\n"
@@ -1066,6 +1073,7 @@ namespace {
 			<< std::setw(14) << local_x[i] << std::setw(14) << local_y[i] << std::setw(14) << local_z[i]
 			<< " from part " << part << std::endl;
 
+	      std::cerr.flags(f);
 	    }
 	  }
 	}
@@ -1089,6 +1097,7 @@ namespace {
 	  if (x[node] != FILL_VALUE && y[node] != FILL_VALUE) {
 	    if (!approx_equal(x[node],local_x[i]) ||
 		!approx_equal(y[node],local_y[i])) {
+	      std::ios::fmtflags f(std::cerr.flags());
 	      std::cerr << "\nWARNING: Node " << node+1
 			<< " has different coordinates in at least two parts.\n"
 			<< "         this may indicate that this id has been reused in the current part.\n"
@@ -1098,6 +1107,7 @@ namespace {
 			<< "         new value = "
 			<< std::setw(14) << local_x[i] << std::setw(14) << local_y[i]
 			<< " from part " << part << std::endl;
+	      std::cerr.flags(f);
 	    }
 	  }
 	}

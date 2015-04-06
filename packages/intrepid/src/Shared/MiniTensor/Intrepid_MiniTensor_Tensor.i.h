@@ -100,8 +100,7 @@ template<typename T, Index N>
 template<class ArrayT, typename iType>
 inline
 Tensor<T, N>::Tensor(
-    typename Kokkos::Impl::enable_if<
-        !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+    typename not_index<ArrayT>::type & data,
     iType index1,
     iType index2) :
     TensorBase<T, Store>::TensorBase(N, ORDER, data, index1, index2)
@@ -113,8 +112,7 @@ template<typename T, Index N>
 template<class ArrayT, typename iType>
 inline
 Tensor<T, N>::Tensor(
-    typename Kokkos::Impl::enable_if<
-        !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+    typename not_index<ArrayT>::type & data,
     iType index1,
     iType index2,
     iType index3) :
@@ -206,8 +204,7 @@ template<class ArrayT, typename iType>
 inline
 Tensor<T, N>::Tensor(
     Index const dimension,
-    typename Kokkos::Impl::enable_if<
-        !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+    typename not_index<ArrayT>::type & data,
     iType index1,
     iType index2) :
     TensorBase<T, Store>::TensorBase(dimension, ORDER, data, index1, index2)

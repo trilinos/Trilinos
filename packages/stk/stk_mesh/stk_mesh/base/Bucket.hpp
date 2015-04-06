@@ -575,11 +575,11 @@ bool Bucket::has_permutation(EntityRank rank) const
   case stk::topology::NODE_RANK:
     return m_node_kind == FIXED_CONNECTIVITY ? m_fixed_node_connectivity.has_permutation() : m_dynamic_node_connectivity.has_permutation();
   case stk::topology::EDGE_RANK:
-    return m_edge_kind == FIXED_CONNECTIVITY ? m_fixed_node_connectivity.has_permutation() : m_dynamic_node_connectivity.has_permutation();
+    return m_edge_kind == FIXED_CONNECTIVITY ? m_fixed_edge_connectivity.has_permutation() : m_dynamic_edge_connectivity.has_permutation();
   case stk::topology::FACE_RANK:
-    return m_face_kind == FIXED_CONNECTIVITY ? m_fixed_node_connectivity.has_permutation() : m_dynamic_node_connectivity.has_permutation();
+    return m_face_kind == FIXED_CONNECTIVITY ? m_fixed_face_connectivity.has_permutation() : m_dynamic_face_connectivity.has_permutation();
   case stk::topology::ELEMENT_RANK:
-    return m_element_kind == FIXED_CONNECTIVITY ? m_fixed_node_connectivity.has_permutation() : m_dynamic_node_connectivity.has_permutation();
+    return m_element_kind == FIXED_CONNECTIVITY ? m_fixed_element_connectivity.has_permutation() : m_dynamic_element_connectivity.has_permutation();
   default:
     return m_dynamic_other_connectivity.has_permutation();
   }

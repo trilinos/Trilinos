@@ -37,7 +37,7 @@ ENDIF()
 IF(HAVE_SHYLUCORE_TPETRA AND HAVE_SHYLUCORE_AMESOS2 AND TPL_ENABLE_SuperLU AND ${PACKAGE_NAME}_ENABLE_ParMETIS)
   TRIBITS_ADD_TEST(
 	tpetra_interface
-    NAME tpetra_interface_with_superlu
+        NAME tpetra_interface_with_superlu
 	COMM serial mpi
 	NUM_MPI_PROCS 4
 	)
@@ -67,6 +67,6 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(ShyLUDriverFiles
     shylu_no_iqr_parameters.xml wathen96.mtx wathenSmall.mtx wathenTiny.mtx
     shylu_iqr_parameters.seq.xml
     ShyLU_epetra_interface.xml
-    EXEDEPS belos_driver iqr_driver epetra_interface tpetra_interface 
+    EXEDEPS belos_driver iqr_driver epetra_interface
     )
 

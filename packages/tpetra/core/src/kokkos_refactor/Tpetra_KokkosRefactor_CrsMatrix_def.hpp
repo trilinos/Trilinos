@@ -7511,7 +7511,7 @@ namespace Tpetra {
     // numImportPacketsPerLIDs_ is a device view, and also has a host
     // view (host_numImportPacketsPerLID_).
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Unpack"))));
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Unpack-1"))));
 #endif 
     size_t mynnz =
       Import_Util::unpackAndCombineWithOwningPIDsCount (*this, RemoteLIDs,
@@ -7564,7 +7564,9 @@ namespace Tpetra {
     /**************************************************************/
     /**** 4) Call Optimized MakeColMap w/ no Directory Lookups ****/
     /**************************************************************/
-
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Unpack-2"))));
+#endif 
     // Call an optimized version of makeColMap that avoids the
     // Directory lookups (since the Import object knows who owns all
     // the GIDs).
@@ -7601,6 +7603,9 @@ namespace Tpetra {
     /***************************************************/
     /**** 5) Sort                                   ****/
     /***************************************************/
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Unpack-3"))));
+#endif 
     Import_Util::sortCrsEntries (CSR_rowptr (),
                                  CSR_colind_LID (),
                                  CSR_vals ());

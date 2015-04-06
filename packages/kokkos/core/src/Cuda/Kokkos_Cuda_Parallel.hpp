@@ -1040,8 +1040,6 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#ifdef KOKKOS_HAVE_CXX11
-
 namespace Kokkos {
 namespace Impl {
   template<typename iType>
@@ -1397,8 +1395,6 @@ void single(const Impl::ThreadSingleStruct<Impl::CudaTeamMember>& single_struct,
 }
 
 }
-
-#endif // KOKKOS_HAVE_CXX11
 
 namespace Kokkos {
 

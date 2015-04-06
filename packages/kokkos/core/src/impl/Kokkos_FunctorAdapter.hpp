@@ -674,10 +674,11 @@ struct FunctorValueJoin
 } // namespace Impl
 } // namespace Kokkos
 
-#ifdef KOKKOS_HAVE_CXX11
 namespace Kokkos {
 
 namespace Impl {
+
+#if defined( KOKKOS_HAVE_CXX11 )
 
   template<typename ValueType, class JoinOp, class Enable = void>
   struct JoinLambdaAdapter {
@@ -736,6 +737,8 @@ namespace Impl {
     }
   };
 
+#endif
+
   template<typename ValueType>
   struct JoinAdd {
     typedef ValueType value_type;
@@ -759,7 +762,6 @@ namespace Impl {
 
 }
 }
-#endif
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

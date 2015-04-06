@@ -513,7 +513,7 @@ Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,Glob
   {
     const LocalOrdinal rowOffset = lclRowInd-meshRowMap.getMinLocalIndex();
 
-    for (size_t i = 0; i < numLocalRows; ++i)
+    for (LocalOrdinal i = 0; i < numLocalRows; ++i)
     {
 
       for (int j = 0; j < blockSize*blockSize; ++j)
@@ -536,7 +536,64 @@ Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,Glob
   return bcrsmatrix;
 }
 
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
+Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  create_full_local_matrix(const Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& graph, const int blockSize)
+{
 
+  Teuchos::RCP<Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > bcrsmatrix =
+      Teuchos::rcp(new Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(*graph, blockSize));
+
+  const LocalOrdinal numLocalRows = bcrsmatrix->getNodeNumRows();
+  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& meshRowMap = *bcrsmatrix->getRowMap();
+
+  Teuchos::Array<GlobalOrdinal> col(1);
+  Teuchos::Array<Scalar> coef(1);
+
+  const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+  const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+  const Scalar two = one+one;
+  const Scalar three = one+one+one;
+
+  Teuchos::Array<Scalar> basematrix(numLocalRows*numLocalRows, zero);
+  basematrix[0] = two*three;
+  basematrix[1] = three;
+  basematrix[2] = one;
+
+  basematrix[3] = three*two;
+  basematrix[4] = three*two;
+  basematrix[5] = three;
+
+  basematrix[6] = two;
+  basematrix[7] = two*three;
+  basematrix[8] = two*three;
+
+  Teuchos::Array<Scalar> assembleMatrix(blockSize*blockSize, zero);
+
+  Teuchos::Array<LocalOrdinal> lclColInds(1);
+
+  for (LocalOrdinal lclRowInd = meshRowMap.getMinLocalIndex (); lclRowInd <= meshRowMap.getMaxLocalIndex(); ++lclRowInd)
+  {
+    const LocalOrdinal rowOffset = lclRowInd-meshRowMap.getMinLocalIndex();
+
+    for (LocalOrdinal i = 0; i < numLocalRows; ++i)
+    {
+
+      for (int j = 0; j < blockSize*blockSize; ++j)
+        assembleMatrix[j] = zero;
+      const size_t indexBaseMatrix = numLocalRows*rowOffset+i;
+
+      for (int j = 0; j < blockSize; ++j)
+        assembleMatrix[(blockSize+1)*j] = basematrix[indexBaseMatrix];
+
+      lclColInds[0] = meshRowMap.getMinLocalIndex () + i;
+      bcrsmatrix->replaceLocalValues(lclRowInd, lclColInds.getRawPtr(), &assembleMatrix[0], 1);
+
+    }
+  }
+
+  return bcrsmatrix;
+}
 
   template<class Scalar = Tpetra::RowMatrix<>::scalar_type,
            class LocalOrdinal =

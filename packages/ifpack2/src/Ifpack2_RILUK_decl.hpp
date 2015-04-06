@@ -528,7 +528,6 @@ public:
 
 private:
   typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
-  typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vec_type;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
@@ -542,6 +541,9 @@ private:
   /// wrap it, so we just return A.
   static Teuchos::RCP<const row_matrix_type>
   makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A);
+
+protected:
+  typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vec_type;
 
   //! The (original) input matrix for which to compute ILU(k).
   Teuchos::RCP<const row_matrix_type> A_;

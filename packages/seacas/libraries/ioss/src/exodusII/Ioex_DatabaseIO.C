@@ -2637,7 +2637,8 @@ namespace Ioex {
 
               int old_status = ex_int64_status(get_file_pointer());
               ex_set_int64_status(get_file_pointer(), EX_BULK_INT64_API);             
-              ex_get_sets(get_file_pointer(), 1, &set_params[ins]);
+              int error = ex_get_sets(get_file_pointer(), 1, &set_params[ins]);
+	      if (error < 0) {exodus_error(get_file_pointer(), __LINE__, myProcessor);}
               ex_set_int64_status(get_file_pointer(), old_status);            
 
               compute_node_status();

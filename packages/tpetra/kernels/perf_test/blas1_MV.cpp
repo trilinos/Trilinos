@@ -141,7 +141,7 @@ benchmarkRaw (std::ostream& out,
   RCP<Time> vecDotTimer = getTimer ("Raw: Vector: Dot");
 
   // Benchmark creation of a Vector.
-  double* x;
+  double* x = 0 ;
   {
     TimeMonitor timeMon (*vecCreateTimer);
     // This benchmarks both vector creation and vector destruction.

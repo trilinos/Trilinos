@@ -4700,14 +4700,14 @@ namespace Iopx {
               assert(i32data.size() == file_count);
               // Maps local to "global_implicit"
               map_local_to_global_implicit(TOPTR(i32data), file_count, nodeGlobalImplicitMap);
-              out_data = &i32data[0];
+              out_data = TOPTR(i32data);
             } else {
               i64data.reserve(file_count);
               assert(i64data.size() == file_count);
               map_nodeset_id_data(nodeOwningProcessor, nodesetOwnedNodes[ns], myProcessor,
                                   (int64_t*)data, num_to_get, i64data);
               map_local_to_global_implicit(TOPTR(i64data), file_count, nodeGlobalImplicitMap);
-              out_data = &i64data[0];
+              out_data = TOPTR(i64data);
             }
           }
           int ierr = ex_put_partial_set(get_file_pointer(), type, id, proc_offset+1, file_count, out_data, NULL);
@@ -5401,7 +5401,7 @@ namespace Iopx {
             std::fill(truth_table.begin(), truth_table.end(), 1);
           }
           else {
-            int ierr = ex_get_truth_table(get_file_pointer(), type, block_count, nvar, &truth_table[0]);
+            int ierr = ex_get_truth_table(get_file_pointer(), type, block_count, nvar, TOPTR(truth_table));
             if (ierr < 0)
               exodus_error(get_file_pointer(), __LINE__, myProcessor);
           }
@@ -5414,7 +5414,7 @@ namespace Iopx {
 
         // Read the names...
         // (Currently, names are read for every block.  We could save them...)
-        int ierr = ex_get_variable_names(get_file_pointer(), type, nvar, names);
+        ierr = ex_get_variable_names(get_file_pointer(), type, nvar, names);
         if (ierr < 0)
           exodus_error(get_file_pointer(), __LINE__, myProcessor);
 

@@ -1919,13 +1919,21 @@ int Internals::put_non_define_data(const Mesh&,
 	nl_ncnt_cmap += comm.nodeMap[icm].entityCount;
 
 	// fill the cmap data index
-	nc_inq_varid(exodusFilePtr, VAR_N_COMM_DATA_IDX, &commIndexVar);
+	status = nc_inq_varid(exodusFilePtr, VAR_N_COMM_DATA_IDX, &commIndexVar);
+	if (status != NC_NOERR) {
+	  ex_opts(EX_VERBOSE);
+	  sprintf(errmsg,
+		  "Error: failed to locate node communication map in file id %d",
+		  exodusFilePtr);
+	  ex_err(routine, errmsg, status);
+	  return (EX_FATAL);
+	}
 	status=nc_put_var1_longlong(exodusFilePtr, commIndexVar, start, &nl_ncnt_cmap);
 
 	if (status != NC_NOERR) {
 	  ex_opts(EX_VERBOSE);
 	  sprintf(errmsg,
-		  "Error: failed to output internal element map index in file ID %d",
+		  "Error: failed to output node communication map index in file ID %d",
 		  exodusFilePtr);
 	  ex_err(routine, errmsg, status);
 	  return (EX_FATAL);
@@ -1978,7 +1986,15 @@ int Internals::put_non_define_data(const Mesh&,
 	nl_ecnt_cmap += comm.elementMap[icm].entityCount;
 
 	// fill the cmap data index
-	nc_inq_varid(exodusFilePtr, VAR_E_COMM_DATA_IDX, &elemCommIndexVar);
+	status = nc_inq_varid(exodusFilePtr, VAR_E_COMM_DATA_IDX, &elemCommIndexVar);
+	if (status != NC_NOERR) {
+	  ex_opts(EX_VERBOSE);
+	  sprintf(errmsg,
+		  "Error: failed to locate element communication map in file id %d",
+		  exodusFilePtr);
+	  ex_err(routine, errmsg, status);
+	  return (EX_FATAL);
+	}
 	status=nc_put_var1_longlong(exodusFilePtr, elemCommIndexVar, start, &nl_ecnt_cmap);
 	if (status != NC_NOERR) {
 	  ex_opts(EX_VERBOSE);
@@ -2035,7 +2051,16 @@ int Internals::put_non_define_data(const std::vector<ElemBlock> &blocks)
     for (int iblk = 0; iblk < num_elem_blk; iblk++) {
       if (blocks[iblk].attributeCount > 0 && blocks[iblk].entityCount > 0) {
 	int varid;
-	nc_inq_varid(exodusFilePtr, VAR_NAME_ATTRIB(iblk+1), &varid);
+	int status = nc_inq_varid(exodusFilePtr, VAR_NAME_ATTRIB(iblk+1), &varid);
+	if (status != NC_NOERR) {
+	  ex_opts(EX_VERBOSE);
+	  char errmsg[MAX_ERR_LENGTH];
+	  sprintf(errmsg,
+		  "Error: failed to locate variable name attribute in file id %d",
+		  exodusFilePtr);
+	  ex_err("put_non_define_data", errmsg, status);
+	  return (EX_FATAL);
+	}
 	
 	for (int i = 0; i < blocks[iblk].attributeCount; i++) {
 	  start[0] = i;
@@ -2080,7 +2105,16 @@ int Internals::put_non_define_data(const std::vector<FaceBlock> &blocks)
     for (int iblk = 0; iblk < num_face_blk; iblk++) {
       if (blocks[iblk].attributeCount > 0 && blocks[iblk].entityCount > 0) {
 	int varid;
-	nc_inq_varid(exodusFilePtr, VAR_NAME_FATTRIB(iblk+1), &varid);
+	int status = nc_inq_varid(exodusFilePtr, VAR_NAME_FATTRIB(iblk+1), &varid);
+	if (status != NC_NOERR) {
+	  char errmsg[MAX_ERR_LENGTH];
+	  ex_opts(EX_VERBOSE);
+	  sprintf(errmsg,
+		  "Error: failed to locate face variable name attribute in file id %d",
+		  exodusFilePtr);
+	  ex_err("put_non_define_data", errmsg, status);
+	  return (EX_FATAL);
+	}
 	
 	for (int i = 0; i < blocks[iblk].attributeCount; i++) {
 	  start[0] = i;
@@ -2125,7 +2159,16 @@ int Internals::put_non_define_data(const std::vector<EdgeBlock> &blocks)
     for (int iblk = 0; iblk < num_edge_blk; iblk++) {
       if (blocks[iblk].attributeCount > 0 && blocks[iblk].entityCount > 0) {
 	int varid;
-	nc_inq_varid(exodusFilePtr, VAR_NAME_EATTRIB(iblk+1), &varid);
+	int status = nc_inq_varid(exodusFilePtr, VAR_NAME_EATTRIB(iblk+1), &varid);
+	if (status != NC_NOERR) {
+	  ex_opts(EX_VERBOSE);
+	  char errmsg[MAX_ERR_LENGTH];
+	  sprintf(errmsg,
+		  "Error: failed to locate element variable name attribute in file id %d",
+		  exodusFilePtr);
+	  ex_err("put_non_define_data", errmsg, status);
+	  return (EX_FATAL);
+	}
 	
 	for (int i = 0; i < blocks[iblk].attributeCount; i++) {
 	  start[0] = i;
@@ -3425,9 +3468,15 @@ namespace {
     char errmsg[MAX_ERR_LENGTH];
     const char *routine = "Internals::define_netcdf_vars()";
 
-    nc_inq_dimid (exoid, DIM_STR_NAME, &namestrdim);
+    int status=nc_inq_dimid (exoid, DIM_STR_NAME, &namestrdim);
+    if (status != NC_NOERR) {
+      sprintf(errmsg,
+	      "Error: failed to get string length in file id %d",exoid);
+      ex_err(routine,errmsg,status);
+      return(EX_FATAL);
+    }
 
-    int status=nc_def_dim(exoid, dim_num, count, &dimid);
+    status=nc_def_dim(exoid, dim_num, count, &dimid);
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
       sprintf(errmsg,

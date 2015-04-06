@@ -403,9 +403,9 @@ TensorBase<T, ST>::fill(ComponentValue const value)
 
   default:
     std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-    std::cerr << std::endl;
+    std::cerr << '\n';
     std::cerr << "Unknown specification of value for filling components.";
-    std::cerr << std::endl;
+    std::cerr << '\n';
     exit(1);
     break;
   }
@@ -440,10 +440,7 @@ inline
 void
 TensorBase<T, ST>::fill(ArrayT & data, iType index1)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      (index1 != 0),
-      std::invalid_argument,
-      "ERROR: last argument must be 0.");
+  assert(index1 == 0);
 
   Index const
   number_components = get_number_components();
@@ -454,10 +451,11 @@ TensorBase<T, ST>::fill(ArrayT & data, iType index1)
   switch (rank) {
 
   default:
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        (rank < 1 || 1 < rank),
-        std::invalid_argument,
-        "ERROR: rank calculation.");
+    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
+    std::cerr << '\n';
+    std::cerr << "Invalid rank.";
+    std::cerr << '\n';
+    exit(1);
     break;
 
   case 1:
@@ -476,10 +474,7 @@ inline
 void
 TensorBase<T, ST>::fill(ArrayT & data, iType index1, iType index2)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      (index2 != 0),
-      std::invalid_argument,
-      "ERROR: last argument must be zero.");
+  assert(index2 == 0);
 
   Index const
   number_components = get_number_components();
@@ -498,20 +493,18 @@ TensorBase<T, ST>::fill(ArrayT & data, iType index1, iType index2)
     sub_dimension /= dim;
     ++rank;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        (sub_dimension < 1),
-        std::invalid_argument,
-        "ERROR: rank calculation.");
+    assert(sub_dimension >= 1);
 
   }
 
   switch (rank) {
 
   default:
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        (rank < 1 || 2 < rank),
-        std::invalid_argument,
-        "ERROR: rank calculation.");
+    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
+    std::cerr << '\n';
+    std::cerr << "Invalid rank.";
+    std::cerr << '\n';
+    exit(1);
     break;
 
   case 1:
@@ -538,10 +531,7 @@ inline
 void
 TensorBase<T, ST>::fill(ArrayT & data, iType index1, iType index2, iType index3)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      (index3 != 0),
-      std::invalid_argument,
-      "ERROR: last argument must be zero.");
+  assert(index3 == 0);
 
   Index const
   number_components = get_number_components();
@@ -560,20 +550,18 @@ TensorBase<T, ST>::fill(ArrayT & data, iType index1, iType index2, iType index3)
     sub_dimension /= dim;
     ++rank;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        (sub_dimension < 1),
-        std::invalid_argument,
-        "ERROR: rank calculation.");
+    assert(sub_dimension >= 1);
 
   }
 
   switch (rank) {
 
   default:
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        (rank < 1 || 3 < rank),
-        std::invalid_argument,
-        "ERROR: rank calculation.");
+    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
+    std::cerr << '\n';
+    std::cerr << "Invalid rank.";
+    std::cerr << '\n';
+    exit(1);
     break;
 
   case 1:
@@ -615,10 +603,7 @@ TensorBase<T, ST>::fill(
     iType index3,
     iType index4)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      (index4 != 0),
-      std::invalid_argument,
-      "ERROR: last argument must be zero.");
+  assert(index4 == 0);
 
   Index const
   number_components = get_number_components();
@@ -637,20 +622,18 @@ TensorBase<T, ST>::fill(
     sub_dimension /= dim;
     ++rank;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        (sub_dimension < 1),
-        std::invalid_argument,
-        "ERROR: rank calculation.");
+    assert(sub_dimension >= 1);
 
   }
 
   switch (rank) {
 
   default:
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        (rank < 1 || 4 < rank),
-        std::invalid_argument,
-        "ERROR: rank calculation.");
+    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
+    std::cerr << '\n';
+    std::cerr << "Invalid rank.";
+    std::cerr << '\n';
+    exit(1);
     break;
 
   case 1:
@@ -706,10 +689,7 @@ TensorBase<T, ST>::fill(
     iType index4,
     iType index5)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      (index5 != 0),
-      std::invalid_argument,
-      "ERROR: last argument must be zero.");
+  assert(index5 == 0);
 
   Index const
   number_components = get_number_components();
@@ -728,20 +708,18 @@ TensorBase<T, ST>::fill(
     sub_dimension /= dim;
     ++rank;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        (sub_dimension < 1),
-        std::invalid_argument,
-        "ERROR: rank calculation.");
+    assert(sub_dimension >= 1);
 
   }
 
   switch (rank) {
 
   default:
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        (rank < 1 || 5 < rank),
-        std::invalid_argument,
-        "ERROR: rank calculation.");
+    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
+    std::cerr << '\n';
+    std::cerr << "Invalid rank.";
+    std::cerr << '\n';
+    exit(1);
     break;
 
   case 1:
@@ -813,10 +791,7 @@ TensorBase<T, ST>::fill(
     iType index5,
     iType index6)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      (index6 != 0),
-      std::invalid_argument,
-      "ERROR: last argument must be zero.");
+  assert(index6 == 0);
 
   Index const
   number_components = get_number_components();
@@ -835,20 +810,18 @@ TensorBase<T, ST>::fill(
     sub_dimension /= dim;
     ++rank;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        (sub_dimension < 1),
-        std::invalid_argument,
-        "ERROR: rank calculation.");
+    assert(sub_dimension >= 1);
 
   }
 
   switch (rank) {
 
   default:
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        (rank < 1 || 6 < rank),
-        std::invalid_argument,
-        "ERROR: rank calculation.");
+    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
+    std::cerr << '\n';
+    std::cerr << "Invalid rank.";
+    std::cerr << '\n';
+    exit(1);
     break;
 
   case 1:
