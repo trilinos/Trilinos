@@ -156,88 +156,69 @@ void unpack_entity_info(
 
 void pack_field_values(const BulkData& mesh, CommBuffer & buf , Entity entity )
 {
-  if (!mesh.is_field_updating_active()) {
-    return;
-  }
-
-  const Bucket   & bucket = mesh.bucket(entity);
-  const MetaData & mesh_meta_data = MetaData::get(mesh);
-
-  const std::vector< FieldBase * > & fields = mesh_meta_data.get_fields();
-
-  for ( std::vector< FieldBase * >::const_iterator
-        i = fields.begin() ; i != fields.end() ; ++i ) {
-
-    const FieldBase & f = **i ;
-
-    if(is_matching_rank(f, bucket)) {
-
-      if ( f.data_traits().is_pod ) {
-        const unsigned size = field_bytes_per_entity( f, bucket );
-
-	buf.pack<unsigned>( size );
-
-	if ( size ) {
-	  unsigned char * const ptr =
-	    reinterpret_cast<unsigned char *>( stk::mesh::field_data( f , entity ) );
-	  buf.pack<unsigned char>( ptr , size );
-	}
-      }
+    if (!mesh.is_field_updating_active()) {
+        return;
     }
-  }
+    const Bucket   & bucket = mesh.bucket(entity);
+    const MetaData & mesh_meta_data = MetaData::get(mesh);
+    const std::vector< FieldBase * > & fields = mesh_meta_data.get_fields(bucket.entity_rank());
+    for ( std::vector< FieldBase * >::const_iterator
+            i = fields.begin() ; i != fields.end() ; ++i ) {
+        const FieldBase & f = **i ;
+        if ( f.data_traits().is_pod ) {
+            const unsigned size = field_bytes_per_entity( f, bucket );
+#ifndef NDEBUG
+            buf.pack<unsigned>( size );
+#endif
+            if ( size ) {
+                unsigned char * const ptr =
+                        reinterpret_cast<unsigned char *>( stk::mesh::field_data( f , entity ) );
+                buf.pack<unsigned char>( ptr , size );
+            }
+        }
+    }
 }
 
 bool unpack_field_values(const BulkData& mesh,
-  CommBuffer & buf , Entity entity , std::ostream & error_msg )
+                         CommBuffer & buf , Entity entity , std::ostream & error_msg )
 {
-  if (!mesh.is_field_updating_active()) {
-    return true;
-  }
-
-  const Bucket   & bucket = mesh.bucket(entity);
-  const MetaData & mesh_meta_data = MetaData::get(mesh);
-
-  const std::vector< FieldBase * > & fields = mesh_meta_data.get_fields();
-
-  const std::vector< FieldBase * >::const_iterator i_end = fields.end();
-  const std::vector< FieldBase * >::const_iterator i_beg = fields.begin();
-
-  std::vector< FieldBase * >::const_iterator i ;
-
-  bool ok = true ;
-
-  for ( i = i_beg ; i_end != i ; ) {
-    const FieldBase & f = **i ; ++i ;
-
-    if(is_matching_rank(f, bucket)) {
-
-      if ( f.data_traits().is_pod ) {
-
-	const unsigned size = field_bytes_per_entity( f, bucket );
-	unsigned recv_data_size = 0 ;
-	buf.unpack<unsigned>( recv_data_size );
-
-	if ( size != recv_data_size ) {
-	  if ( ok ) {
-	    ok = false ;
-	    error_msg << mesh.identifier(entity);
-	  }
-	  error_msg << " " << f.name();
-	  error_msg << " " << size ;
-	  error_msg << " != " << recv_data_size ;
-	  buf.skip<unsigned char>( recv_data_size );
-	}
-	else if ( size ) { // Non-zero and equal
-	  unsigned char * ptr =
-	    reinterpret_cast<unsigned char *>( stk::mesh::field_data( f , entity ) );
-	  buf.unpack<unsigned char>( ptr , size );
-	}
-
-      }
+    if (!mesh.is_field_updating_active()) {
+        return true;
     }
-  }
-
-  return ok ;
+    const Bucket   & bucket = mesh.bucket(entity);
+    const MetaData & mesh_meta_data = MetaData::get(mesh);
+    const std::vector< FieldBase * > & fields = mesh_meta_data.get_fields(bucket.entity_rank());
+    const std::vector< FieldBase * >::const_iterator i_end = fields.end();
+    const std::vector< FieldBase * >::const_iterator i_beg = fields.begin();
+    std::vector< FieldBase * >::const_iterator i ;
+    bool ok = true ;
+    for ( i = i_beg ; i_end != i ; ) {
+        const FieldBase & f = **i ; ++i ;
+        if ( f.data_traits().is_pod ) {
+            const unsigned size = field_bytes_per_entity( f, bucket );
+#ifndef NDEBUG
+            unsigned recv_data_size = 0 ;
+            buf.unpack<unsigned>( recv_data_size );
+            if ( size != recv_data_size ) {
+                if ( ok ) {
+                    ok = false ;
+                    error_msg << mesh.identifier(entity);
+                }
+                error_msg << " " << f.name();
+                error_msg << " " << size ;
+                error_msg << " != " << recv_data_size ;
+                buf.skip<unsigned char>( recv_data_size );
+            }
+#endif
+            if ( size )
+            { // Non-zero and equal
+                unsigned char * ptr =
+                        reinterpret_cast<unsigned char *>( stk::mesh::field_data( f , entity ) );
+                buf.unpack<unsigned char>( ptr , size );
+            }
+        }
+    }
+    return ok ;
 }
 
 //----------------------------------------------------------------------
