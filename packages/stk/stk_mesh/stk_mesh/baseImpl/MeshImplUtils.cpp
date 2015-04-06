@@ -541,9 +541,9 @@ void find_side_nodes(BulkData& mesh, Entity element, int side_ordinal, EntityVec
     }
     else {
         smallest_permutation = sideTopology.lexicographical_smallest_permutation(side_node_ids);
-        EntityVector side_nodes(sideTopology.num_nodes());
-        elemTopology.side_nodes(elem_nodes, side_ordinal, side_nodes.begin());
-        sideTopology.permutation_nodes(side_nodes, smallest_permutation, permuted_side_nodes.begin());
+        EntityVector non_shell_side_nodes(sideTopology.num_nodes());
+        elemTopology.side_nodes(elem_nodes, side_ordinal, non_shell_side_nodes.begin());
+        sideTopology.permutation_nodes(non_shell_side_nodes, smallest_permutation, permuted_side_nodes.begin());
     }
 }
 
