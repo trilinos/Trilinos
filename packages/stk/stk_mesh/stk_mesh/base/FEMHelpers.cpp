@@ -297,7 +297,7 @@ std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> get_ordinal_an
         ThrowRequireMsg(num_nodes<=max_nodes_possible, "Program error. Exceeded expected array dimensions. Contact sierra-help for support.");
         nodes_of_sub_topology.resize(num_nodes);
         elemTopology.sub_topology_nodes(elemNodes, to_rank, i, nodes_of_sub_topology.begin());
-        if (!elemTopology.is_shell())
+        if (!elemTopology.is_shell() || (to_rank == stk::topology::EDGE_RANK))
         {
            result = sub_topology.equivalent(nodes_of_sub_rank, nodes_of_sub_topology);
         }
