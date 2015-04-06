@@ -829,57 +829,6 @@ struct V_Nrm2Squared_Functor
   }
 };
 
-// Partial specialization for Scalar=double.
-template<class RL, class RD, class RM, class RS,
-         class XL, class XD, class XM, class XS>
-struct V_Nrm2Squared_Functor<
-  Kokkos::View<double, RL, RD, RM, RS>,
-  Kokkos::View<const double*, XL, XD, XM, XS>,
-  int>
-{
-  typedef Kokkos::View<double, RL, RD, RM, RS> RV;
-  typedef Kokkos::View<const double*, XL, XD, XM, XS> XV;
-
-  typedef typename XV::execution_space execution_space;
-  typedef int                                size_type;
-  typedef double                           xvalue_type;
-  typedef double                            value_type;
-
-  RV m_r;
-  XV m_x;
-
-  V_Nrm2Squared_Functor (const RV& r, const XV& x) :
-    m_r (r), m_x (x)
-  {}
-
-  KOKKOS_INLINE_FUNCTION
-  void operator() (const size_type& i, value_type& sum) const
-  {
-    const double tmp = m_x(i);
-    sum += tmp * tmp;
-  }
-
-  KOKKOS_INLINE_FUNCTION void init (value_type& update) const
-  {
-    update = 0.0;
-  }
-
-  KOKKOS_INLINE_FUNCTION void
-  join (volatile value_type& update,
-        const volatile value_type& source) const
-  {
-    update += source;
-  }
-
-  // On device, write the reduction result to the output View.
-  KOKKOS_INLINE_FUNCTION void
-  final (const value_type& dst) const
-  {
-    m_r() = dst;
-  }
-};
-
-
 /// \brief Column-wise 2-norm functor for multivectors; works for
 ///   any layout, but best performance with LayoutRight.
 ///

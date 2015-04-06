@@ -72,20 +72,26 @@ benchmarkKokkos (std::ostream& out,
                  const int numCols,
                  const int numTrials)
 {
+#ifdef KOKKOS_HAVE_SERIAL
+  typedef Kokkos::Serial execution_space;
+#else
+  typedef Kokkos::View<double**, Kokkos::LayoutLeft>::execution_space execution_space;
+#endif // KOKKOS_HAVE_SERIAL
+
   using std::endl;
-  typedef Kokkos::View<double**, Kokkos::LayoutLeft> mv_type;
+  typedef Kokkos::View<double**, Kokkos::LayoutLeft, execution_space> mv_type;
   bool success = true;
 
   RCP<Time> vecCreateTimer = getTimer ("Kokkos: MV: Create");
   RCP<Time> vecFillTimer = getTimer ("Kokkos: MV: Fill");
-  RCP<Time> vecNrm2Timer = getTimer ("Kokkos: MV: Nrm2 (2-arg)");
-  RCP<Time> vecNrm2Timer2 = getTimer ("Kokkos: MV: Nrm2 (4-arg)");
-  RCP<Time> vecNrm1Timer = getTimer ("Kokkos: MV: Nrm1 (2-arg)");
-  RCP<Time> vecNrm1Timer2 = getTimer ("Kokkos: MV: Nrm1 (4-arg)");
-  RCP<Time> vecDotTimer = getTimer ("Kokkos: MV: Dot (3-arg)");
-  RCP<Time> vecDotTimer2 = getTimer ("Kokkos: MV: Dot (6-arg)");
-  RCP<Time> vecNrmInfTimer = getTimer ("Kokkos: MV: NrmInf (2-arg)");
-  RCP<Time> vecNrmInfTimer2 = getTimer ("Kokkos: MV: NrmInf (4-arg)");
+  RCP<Time> vecNrm2Timer = getTimer ("Kokkos: MV: Nrm2 (contiguous)");
+  RCP<Time> vecNrm2Timer2 = getTimer ("Kokkos: MV: Nrm2 (noncontiguous)");
+  RCP<Time> vecNrm1Timer = getTimer ("Kokkos: MV: Nrm1 (contiguous)");
+  RCP<Time> vecNrm1Timer2 = getTimer ("Kokkos: MV: Nrm1 (noncontiguous)");
+  RCP<Time> vecDotTimer = getTimer ("Kokkos: MV: Dot (contiguous)");
+  RCP<Time> vecDotTimer2 = getTimer ("Kokkos: MV: Dot (noncontiguous)");
+  RCP<Time> vecNrmInfTimer = getTimer ("Kokkos: MV: NrmInf (contiguous)");
+  RCP<Time> vecNrmInfTimer2 = getTimer ("Kokkos: MV: NrmInf (noncontiguous)");
 
   // Benchmark creation of a MultiVector.
   mv_type x;
@@ -106,7 +112,7 @@ benchmarkKokkos (std::ostream& out,
   }
 
   // Benchmark computing the (square of the) 2-norm of a MultiVector.
-  typedef Kokkos::View<double*, Kokkos::LayoutLeft> norms_type;
+  typedef Kokkos::View<double*, execution_space> norms_type;
   norms_type norms ("norms", numCols);
   {
     TimeMonitor timeMon (*vecNrm2Timer);
@@ -207,7 +213,7 @@ benchmarkKokkos (std::ostream& out,
   // Benchmark computing the dot product of two MultiVectors.
   mv_type y ("y", numRows, numCols);
   KokkosBlas::fill (y, -1.0);
-  typedef Kokkos::View<double*, Kokkos::LayoutLeft> dots_type;
+  typedef Kokkos::View<double*, Kokkos::LayoutLeft, execution_space> dots_type;
   dots_type dots ("dots", numCols);
   {
     TimeMonitor timeMon (*vecDotTimer);
