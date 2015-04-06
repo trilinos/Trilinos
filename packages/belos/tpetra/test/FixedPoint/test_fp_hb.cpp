@@ -40,127 +40,164 @@
 //@HEADER
 //
 // This driver reads a problem from a Harwell-Boeing (HB) file.
-// The right-hand-side from the HB file is used instead of random vectors.
+// The right-hand-side corresponds to a randomly generated solution.
 // The initial guesses are all set to zero.
 //
 // NOTE: No preconditioner is used in this case.
 //
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
-#include "BelosEpetraAdapter.hpp"
-#include "BelosFixedPointSolMgr.hpp"
-#include "createEpetraProblem.hpp"
-#include "Trilinos_Util.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_Map.h"
-#include "Teuchos_CommandLineProcessor.hpp"
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_StandardCatchMacros.hpp"
+#include "BelosTpetraAdapter.hpp"
+#include "BelosBlockCGSolMgr.hpp"
+
+// I/O for Harwell-Boeing files
+#define HIDE_TPETRA_INOUT_IMPLEMENTATIONS
+#include <Tpetra_MatrixIO.hpp>
+
+#include <Teuchos_CommandLineProcessor.hpp>
+#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_GlobalMPISession.hpp>
+#include <Teuchos_StandardCatchMacros.hpp>
+#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_CrsMatrix.hpp>
+#include <Kokkos_DefaultNode.hpp>
+
+using namespace Teuchos;
+using Tpetra::Operator;
+using Tpetra::CrsMatrix;
+using Tpetra::MultiVector;
+using std::endl;
+using std::cout;
+using std::vector;
+using Teuchos::tuple;
 
 int main(int argc, char *argv[]) {
-  //
-  Teuchos::GlobalMPISession session(&argc, &argv, NULL);
-  //
-  using Teuchos::ParameterList;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  typedef double                          ST;
-  typedef Epetra_Operator                 OP;
-  typedef Epetra_MultiVector              MV;
+
+  typedef double                           ST;
+  typedef ScalarTraits<ST>                SCT;
+  typedef SCT::magnitudeType               MT;
+  typedef Tpetra::Operator<ST,int>         OP;
+  typedef Tpetra::MultiVector<ST,int>      MV;
+  typedef Tpetra::Vector<ST,int>           VV;
   typedef Belos::OperatorTraits<ST,MV,OP> OPT;
   typedef Belos::MultiVecTraits<ST,MV>    MVT;
-  
+
+  GlobalMPISession mpisess(&argc,&argv,&cout);
+
   bool success = false;
   bool verbose = false;
   try {
+    const ST one  = SCT::one();
+
+    int MyPID = 0;
+
+    typedef Tpetra::DefaultPlatform::DefaultPlatformType           Platform;
+    typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
+
+    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
+    RCP<const Comm<int> > comm = platform.getComm();
+    RCP<Node>             node = platform.getNode();
+
     //
     // Get test parameters from command-line processor
     //
     bool proc_verbose = false;
+    bool debug = false;
     int frequency = -1;  // how often residuals are printed by solver
-    int numrhs = 1;  // total number of right-hand sides to solve for
-    int maxiters = -1;  // maximum number of iterations for solver to use
+    int numrhs = 1;      // total number of right-hand sides to solve for
+    int maxiters = -1;   // maximum number of iterations for solver to use
     std::string filename("bcsstk14.hb");
-    double tol = 1.0e-5;  // relative residual tolerance
+    MT tol = 1.0e-5;     // relative residual tolerance
 
-    Teuchos::CommandLineProcessor cmdp(false,true);
+    CommandLineProcessor cmdp(false,true);
     cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+    cmdp.setOption("debug","nodebug",&debug,"Run debugging checks.");
     cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
-    cmdp.setOption("tol",&tol,"Relative residual tolerance used byfixed point solver.");
+    cmdp.setOption("tol",&tol,"Relative residual tolerance used by CG solver.");
     cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
     cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
-    cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 := adapted to problem).");
-    if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
+    cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 := adapted to problem/block size).");
+    if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
       return -1;
     }
-    if (!verbose)
+    if (debug) {
+      verbose = true;
+    }
+    if (!verbose) {
       frequency = -1;  // reset frequency if test is not verbose
-    //
-    // Get the problem
-    //
-    int MyPID;
-    RCP<Epetra_CrsMatrix> A;
-    RCP<Epetra_MultiVector> B, X;
-    int return_val =Belos::createEpetraProblem(filename,NULL,&A,&B,&X,&MyPID);
-    if(return_val != 0) return return_val;
+    }
+
+    MyPID = rank(*comm);
     proc_verbose = ( verbose && (MyPID==0) );
 
+    if (proc_verbose) {
+      std::cout << Belos::Belos_Version() << std::endl << std::endl;
+    }
+
+    //
+    // Get the data from the HB file and build the Map,Matrix
+    //
+    RCP<CrsMatrix<ST,int> > A;
+    Tpetra::Utils::readHBMatrix(filename,comm,node,A);
+    RCP<const Tpetra::Map<int> > map = A->getDomainMap();
+
+    // Create initial vectors
+    RCP<MultiVector<ST,int> > B, X;
+    X = rcp( new MultiVector<ST,int>(map,numrhs) );
+    MVT::MvRandom( *X );
+    B = rcp( new MultiVector<ST,int>(map,numrhs) );
+    OPT::Apply( *A, *X, *B );
+    MVT::MvInit( *X, 0.0 );
+
+
     // Scale down the rhs
-    std::vector<double> norm( MVT::GetNumberVecs(*B));
+    std::vector<ST> norm( MVT::GetNumberVecs(*B));
     MVT::MvNorm(*B,norm);
     for(int i=0; i< MVT::GetNumberVecs(*B); i++)
       norm[i] = 1.0 / norm[i];
     MVT::MvScale(*B,norm);
 
-    // Drastically bump the diagonal and then rescale so FP can converge
-    Epetra_Vector diag(A->RowMap());
-    A->ExtractDiagonalCopy(diag);
-    for(int i=0; i<diag.MyLength(); i++)
-      diag[i]=diag[i]*1e4;
-    A->ReplaceDiagonalValues(diag);
+    // Rescale so FP can converge
+    VV diag(A->getRowMap());
+    Teuchos::ArrayRCP<ST> dd=diag.getDataNonConst();
 
-    for(int i=0; i<diag.MyLength(); i++)
-      diag[i] = 1.0/sqrt(diag[i]);
-    A->LeftScale(diag);
-    A->RightScale(diag);
+    A->getLocalDiagCopy(diag);
 
-    //
-    // Solve using Belos
-    //
-  
-    //
-    // *****Construct initial guess and random right-hand-sides *****
-    //
-    if (numrhs != 1) {
-      X = rcp( new Epetra_MultiVector( A->Map(), numrhs ) );
-      MVT::MvRandom( *X );
-      B = rcp( new Epetra_MultiVector( A->Map(), numrhs ) );
-      OPT::Apply( *A, *X, *B );
-      MVT::MvInit( *X, 0.0 );
-    }
+    for(int i=0; i<(int)dd.size(); i++)
+      dd[i] = 1.0/sqrt(dd[i]);
+    A->leftScale(diag);
+    A->rightScale(diag);
+
+
     //
     // ********Other information used by block solver***********
     // *****************(can be user specified)******************
     //
-    const int NumGlobalElements = B->GlobalLength();
-    if (maxiters == -1)
-      maxiters = NumGlobalElements - 1; // maximum number of iterations to run
+    const int NumGlobalElements = B->getGlobalLength();
+    if (maxiters == -1) {
+      maxiters = NumGlobalElements- 1; // maximum number of iterations to run
+    }
     //
     ParameterList belosList;
     belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
     belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
-    if (verbose) {
-      belosList.set( "Verbosity", Belos::Errors + Belos::Warnings +
-          Belos::TimingDetails + Belos::FinalSummary + Belos::StatusTestDetails );
-      if (frequency > 0)
-        belosList.set( "Output Frequency", frequency );
+    int verbLevel = Belos::Errors + Belos::Warnings;
+    if (debug) {
+      verbLevel += Belos::Debug;
     }
-    else
-      belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
+    if (verbose) {
+      verbLevel += Belos::TimingDetails + Belos::FinalSummary + Belos::StatusTestDetails;
+    }
+    belosList.set( "Verbosity", verbLevel );
+    if (verbose) {
+      if (frequency > 0) {
+        belosList.set( "Output Frequency", frequency );
+      }
+    }
     //
     // Construct an unpreconditioned linear problem instance.
     //
-    Belos::LinearProblem<double,MV,OP> problem( A, X, B );
+    Belos::LinearProblem<ST,MV,OP> problem( A, X, B );
     bool set = problem.setProblem();
     if (set == false) {
       if (proc_verbose)
@@ -168,10 +205,12 @@ int main(int argc, char *argv[]) {
       return -1;
     }
     //
-    // Create an iterative solver manager.
+    // *******************************************************************
+    // *************Start the block CG iteration***********************
+    // *******************************************************************
     //
-    RCP< Belos::SolverManager<double,MV,OP> > newSolver
-      = rcp( new Belos::FixedPointSolMgr<double,MV,OP>(rcp(&problem,false), rcp(&belosList,false)));
+    Belos::BlockCGSolMgr<ST,MV,OP> solver( rcp(&problem,false), rcp(&belosList,false) );
+
     //
     // **********Print out information about problem*******************
     //
@@ -179,45 +218,47 @@ int main(int argc, char *argv[]) {
       std::cout << std::endl << std::endl;
       std::cout << "Dimension of matrix: " << NumGlobalElements << std::endl;
       std::cout << "Number of right-hand sides: " << numrhs << std::endl;
-      std::cout << "Max number of iterations: " << maxiters << std::endl;
+      std::cout << "Max number of CG iterations: " << maxiters << std::endl;
       std::cout << "Relative residual tolerance: " << tol << std::endl;
       std::cout << std::endl;
     }
     //
     // Perform solve
     //
-    Belos::ReturnType ret = newSolver->solve();
+    Belos::ReturnType ret = solver.solve();
     //
     // Compute actual residuals.
     //
     bool badRes = false;
-    std::vector<double> actual_resids( numrhs );
-    std::vector<double> rhs_norm( numrhs );
-    Epetra_MultiVector resid(A->Map(), numrhs);
+    std::vector<MT> actual_resids( numrhs );
+    std::vector<MT> rhs_norm( numrhs );
+    MultiVector<ST,int> resid(map, numrhs);
     OPT::Apply( *A, *X, resid );
-    MVT::MvAddMv( -1.0, resid, 1.0, *B, resid );
+    MVT::MvAddMv( -one, resid, one, *B, resid );
     MVT::MvNorm( resid, actual_resids );
     MVT::MvNorm( *B, rhs_norm );
     if (proc_verbose) {
       std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
-      for ( int i=0; i<numrhs; i++) {
-        double actRes = actual_resids[i]/rhs_norm[i];
+    }
+    for ( int i=0; i<numrhs; i++) {
+      MT actRes = actual_resids[i]/rhs_norm[i];
+      if (proc_verbose) {
         std::cout<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
-        if (actRes > tol) badRes = true;
       }
+      if (actRes > tol) badRes = true;
     }
 
-    success = ret==Belos::Converged && !badRes;
+    success = (ret==Belos::Converged && !badRes);
 
     if (success) {
       if (proc_verbose)
-        std::cout << std::endl << "End Result: TEST PASSED" << std::endl;
+        std::cout << "\nEnd Result: TEST PASSED" << std::endl;
     } else {
       if (proc_verbose)
-        std::cout << std::endl << "End Result: TEST FAILED" << std::endl;
+        std::cout << "\nEnd Result: TEST FAILED" << std::endl;
     }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
-}
+} // end test_bl_cg_hb.cpp
