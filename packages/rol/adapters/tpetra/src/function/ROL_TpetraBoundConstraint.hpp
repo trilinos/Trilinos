@@ -327,6 +327,7 @@ namespace ROL {
     template <class Real, class LO, class GO, class Node>
     class TpetraBoundConstraint : public BoundConstraint<Real> {
 
+         
         typedef Tpetra::MultiVector<Real,LO,GO,Node> MV;
         typedef Teuchos::RCP<MV> MVP;
         typedef Teuchos::RCP<const MV> CMVP;
@@ -335,7 +336,8 @@ namespace ROL {
         typedef typename MV::dual_view_type::t_dev ViewType;
 
         private:
-            int dim_;
+            int gblDim_;
+            int lclDim_;
             MVP lp_;
             MVP up_;
 
@@ -343,39 +345,53 @@ namespace ROL {
             ViewType u_;           // Kokkos view of Upper bounds
             Real min_diff_;
             Real scale_;
+            Teuchos::RCP<const Tpetra::Comm<int> > comm_; 
 
         public:
 
             TpetraBoundConstraint(MVP lp, MVP up, Real scale = 1.0) :  
-                dim_(lp->getGlobalLength()),
+                gblDim_(lp->getGlobalLength()),
+                lclDim_(lp->getLocalLength()),
                 lp_(lp),
                 up_(up),
                 l_(lp->getDualView().d_view), 
                 u_(up->getDualView().d_view), 
-                scale_(scale) {
+                scale_(scale),
+                comm_(lp->getMap()->getComm()) {
 
                 KokkosStructs::MinGap<Real,ViewType> findmin(l_,u_);
-                Real mingap = 0;
+                Real lclMinGap = 0;
 
-                Kokkos::parallel_reduce(dim_,findmin,mingap); 
+                // Reduce for this MPI process
+                Kokkos::parallel_reduce(lclDim_,findmin,lclMinGap); 
+
+                Real gblMinGap;
+
+                // Reduce over MPI processes                 
+                Teuchos::reduceAll<int,Real>(*comm_,Teuchos::REDUCE_MIN,lclMinGap,Teuchos::outArg(gblMinGap));
           
-                min_diff_ = 0.5*mingap;
+                min_diff_ = 0.5*gblMinGap;
             } 
      
+
             bool isFeasible( const Vector<Real> &x ) {
 
                 Teuchos::RCP<const MV > xp =
                     (Teuchos::dyn_cast<TMV>(const_cast<Vector<Real> &>(x))).getVector();
 
-                int feasible = 1;
+                int lclFeasible = 1;
                  
                 ViewType x_lcl = xp->getDualView().d_view;
-
+                
                 KokkosStructs::Feasible<Real,ViewType> check(x_lcl, l_, u_);
 
-                Kokkos::parallel_reduce(dim_,check,feasible);
+                Kokkos::parallel_reduce(lclDim_,check,lclFeasible);
 
-                return feasible == 1 ? true : false;
+                Real gblFeasible;
+
+                Teuchos::reduceAll<int,Real>(*comm_,Teuchos::REDUCE_MIN,lclFeasible,Teuchos::outArg(gblFeasible));
+
+                return gblFeasible == 1 ? true : false;
             }            
 
             void project( Vector<Real> &x ) {
@@ -387,7 +403,7 @@ namespace ROL {
 
                 KokkosStructs::Project<Real,ViewType> proj(x_lcl,l_,u_);
 
-                Kokkos::parallel_for(dim_,proj);
+                Kokkos::parallel_for(lclDim_,proj);
             }   
  
 
@@ -404,7 +420,7 @@ namespace ROL {
 
                 KokkosStructs::PruneLowerActive<Real,ViewType> prune(v_lcl,x_lcl,l_,epsn);
 
-                Kokkos::parallel_for(dim_,prune);                
+                Kokkos::parallel_for(lclDim_,prune);                
             }
               
             void pruneUpperActive(Vector<Real> &v, const Vector<Real> &x, Real eps) {
@@ -420,7 +436,7 @@ namespace ROL {
 
                 KokkosStructs::PruneUpperActive<Real,ViewType> prune(v_lcl,x_lcl,u_,epsn);
 
-                Kokkos::parallel_for(dim_,prune);                
+                Kokkos::parallel_for(lclDim_,prune);                
             }
          
             void pruneActive(Vector<Real> &v, const Vector<Real> &x, Real eps) {
@@ -436,7 +452,7 @@ namespace ROL {
 
                 KokkosStructs::PruneActive<Real,ViewType> prune(v_lcl,x_lcl,l_,u_,epsn);
 
-                Kokkos::parallel_for(dim_,prune);                
+                Kokkos::parallel_for(lclDim_,prune);                
             }
          
             void pruneLowerActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps) {
@@ -455,7 +471,7 @@ namespace ROL {
 
                 KokkosStructs::GradPruneLowerActive<Real,ViewType> prune(v_lcl,g_lcl,x_lcl,l_,epsn);
 
-                Kokkos::parallel_for(dim_,prune);                
+                Kokkos::parallel_for(lclDim_,prune);                
             }
        
              void pruneUpperActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps) {
@@ -474,7 +490,7 @@ namespace ROL {
 
                 KokkosStructs::GradPruneUpperActive<Real,ViewType> prune(v_lcl,g_lcl,x_lcl,u_,epsn);
 
-                Kokkos::parallel_for(dim_,prune);                
+                Kokkos::parallel_for(lclDim_,prune);                
             }
 
             void pruneActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps) {
@@ -493,7 +509,7 @@ namespace ROL {
 
                 KokkosStructs::GradPruneActive<Real,ViewType> prune(v_lcl,g_lcl,x_lcl,l_,u_,epsn);
 
-                Kokkos::parallel_for(dim_,prune);                
+                Kokkos::parallel_for(lclDim_,prune);                
             }
 
             void setVectorToUpperBound(Vector<Real> &u) {
