@@ -95,6 +95,7 @@ endif
 
 KOKKOS_CPPFLAGS = -I./ -I$(KOKKOS_PATH)/core/src -I$(KOKKOS_PATH)/containers/src -I$(KOKKOS_PATH)/algorithms/src
 KOKKOS_CXXFLAGS =
+KOKKOS_LIBS = 
 
 #Generating the KokkosCore_config.h file
 
@@ -141,7 +142,7 @@ ifeq ($(KOKKOS_INTERNAL_USE_HWLOC), 1)
 	KOKKOS_CPPFLAGS += -I$(HWLOC_PATH)/include
 	KOKKOS_LDFLAGS += -L$(HWLOC_PATH)/lib 
         KOKKOS_LIBS += -lhwloc
-	tmp := $(shell echo "\#define KOKKOS_ENABLE_HWLOC 1" >> KokkosCore_config.tmp )
+	tmp := $(shell echo "\#define KOKKOS_HAVE_HWLOC 1" >> KokkosCore_config.tmp )
 endif
 
 ifeq ($(KOKKOS_INTERNAL_USE_LIBRT), 1)
@@ -213,7 +214,7 @@ KOKKOS_HEADERS += $(wildcard $(KOKKOS_PATH)/algorithms/src/*.hpp)
 KOKKOS_SRC = $(wildcard $(KOKKOS_PATH)/core/src/impl/*.cpp)
 KOKKOS_SRC += $(wildcard $(KOKKOS_PATH)/containers/src/impl/*.cpp)
 KOKKOS_LDFLAGS = -L$(shell pwd)
-KOKKOS_LIBS = -lkokkos
+KOKKOS_LIBS += -lkokkos
 
 ifeq ($(KOKKOS_INTERNAL_USE_CUDA), 1)
 	KOKKOS_SRC += $(wildcard $(KOKKOS_PATH)/core/src/Cuda/*.cpp)
