@@ -141,6 +141,13 @@ class MultiVector {
                           const Teuchos::SerialDenseMatrix<int,Real> &B,
                           const Real beta) = 0;
 
+        /** \brief Perform the axpy operation columnwise on the MultiVector
+            \f$ y_i\leftarrow y_i+\alpha x_i\f$ where \f$y\f$ is this MultiVector
+            @param[in] alpha is the scaling factor
+            @param[in] mv is the 
+        */
+        virtual void axpy(const Real alpha, const MV& x) = 0;
+
 
         /** \brief Scale the MultiVector by a single scalar alpha 
             \f$\text{this}\leftarrow\alpha\text{this}\f$

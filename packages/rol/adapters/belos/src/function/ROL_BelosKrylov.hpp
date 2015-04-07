@@ -57,17 +57,20 @@
 #include "BelosSolverManager.hpp"   
 
 #include "ROL_Krylov.hpp"
-#include "ROL_BelosVector.hpp"
+#include "ROL_BelosMultiVector.hpp"
 #include "ROL_BelosOperator.hpp"
+#include "ROL_MultiVectorDefault.hpp"
 
 namespace ROL {
 
     template<class Real>
     class BelosKrylov : public Krylov<Real> {
  
-        typedef Real               ST;
-        typedef LinearOperator<ST> OP;
-        typedef Vector<ST>         MV;
+        typedef Real                      ST;
+        typedef LinearOperator<ST>        OP;
+        typedef Vector<ST>                V;  
+        typedef MultiVector<ST>           MV;
+        typedef MultiVectorDefault<ST>    MVD;
 
         // For testing
 	typedef Belos::MultiVecTraits<ST,MV>    MVT;
@@ -105,14 +108,18 @@ namespace ROL {
 
 
             /// \brief Compute solution vector
-            void run( MV &x, OP& A, const MV &b, OP &M, int &iter, int &flag )  {
+            void run( V &x, OP& A, const V &b, OP &M, int &iter, int &flag )  {
 
                 // Need to get RCPs for x,A,b, and M
-                Teuchos::RCP<MV>       xp = Teuchos::rcpFromRef(x);
+                Teuchos::RCP<V>        xp = Teuchos::rcpFromRef(x);
                 Teuchos::RCP<OP>       Ap = Teuchos::rcpFromRef(A);
-                Teuchos::RCP<const MV> bp = Teuchos::rcpFromRef(b);
+                Teuchos::RCP<const V>  bp = Teuchos::rcpFromRef(b);
                 Teuchos::RCP<OP>       Mp = Teuchos::rcpFromRef(M);
 
+                // Wrap x and b in ROL::MultiVector objects 
+                MVD xmv(xp);
+                MVD bmv(bp);
+ 
                 problem_->setOperator(Ap);
                 problem_->setLeftPrec(Mp);
                 problem_->setProblem(xp,bp);
