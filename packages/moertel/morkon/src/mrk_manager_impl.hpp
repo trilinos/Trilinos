@@ -100,28 +100,28 @@ bool Morkon_Manager<DeviceType, DIM>::commit_interfaces()
     interface.m_committed = true;
   }
 
-  // Generate Kokkos::CrsMatrixOfKVecs that maps internal segment_ids (e.g., face_ids) to sorted vectors of
+  // Generate Kokkos::CrsMatrixOfKVecs that maps internal face_ids (e.g., face_ids) to sorted vectors of
   // (interface_id, side) pairs.
   //
   // As needed, generates and populates
   //   - m_non_dense_node_ids
   //   - m_skin_mesh
   //   - m_fields.m_node_coords
-  //   - m_seg_ifc_side, the sparce matrix that maps from seg_id to its (interface_id, side) pair(s).
+  //   - m_face_ifc_side, the sparce matrix that maps from face_id to its (interface_id, side) pair(s).
   return internalize_interfaces();
 }
 
 
 template <typename DeviceType, unsigned int DIM >
 bool
-Morkon_Manager<DeviceType, DIM>::declare_all_interfaces(segment_interface_mat_t segs_in_ifcs, 
+Morkon_Manager<DeviceType, DIM>::declare_all_interfaces(face_interface_mat_t faces_in_ifcs, 
                                                         skin_only_mesh_t dense_idx_mesh,
                                                         points_t node_coords,
                                                         local_to_global_idx_t non_dense_node_ids,
                                                         on_boundary_table_t boundary_node_table)
 {
   m_skin_mesh            =      dense_idx_mesh;
-  m_seg_ifc_side_mat     =        segs_in_ifcs;
+  m_face_ifc_side_mat     =        faces_in_ifcs;
   m_fields.m_node_coords =         node_coords;
   m_non_dense_node_ids   =  non_dense_node_ids;
   m_is_ifc_boundary_node = boundary_node_table;
@@ -134,13 +134,13 @@ bool Morkon_Manager<DeviceType, DIM>::mortar_integrate(Tpetra::CrsMatrix<> *D_to
 
   // Using the internal SkinOnlyMesh, populate
   //   - m_fields.m_node_normals
-  //   - m_fields.m_segment_normals
+  //   - m_fields.m_face_normals
   if (!compute_face_and_node_normals())
   {
     return false;
   }
 
-  // Generate vector of (nms_seg_id, ms_seg_id, interface_id) triples.
+  // Generate vector of (nms_face_id, ms_face_id, interface_id) triples.
   contact_search_results_t  coarse_contacts;
   if (!find_possible_contact_face_pairs(coarse_contacts))
   {
@@ -197,14 +197,14 @@ Morkon_Manager<DeviceType, DIM>::Morkon_Manager(MPI_Comm mpi_comm, int printleve
 template <typename DeviceType, unsigned int DIM >
 bool Morkon_Manager<DeviceType, DIM>::internalize_interfaces()
 {
-  // Count up the numbers of nodes, segments, and interfaces.  Want to be able to go
+  // Count up the numbers of nodes, faces, and interfaces.  Want to be able to go
   // from a (face_id, face_id) pair to a (non_mrtr_sd_face_id, mrtr_sd_face_id, ifc_id) triple.
   // This could be done by constructing a crs_repn from face_id to (ifc_id, side) here, with
   // the ifc_ids sorted for each face.  When the face-face searches are done, traverse the
   // lists for the pair to find the matching ifc_id.
 
   // Thus, gill in the following:
-  segment_interface_mat_t         segs_in_ifcs;
+  face_interface_mat_t         faces_in_ifcs;
   skin_only_mesh_t              dense_idx_mesh;
   points_t                         node_coords;
   local_to_global_idx_t     non_dense_node_ids;
@@ -227,7 +227,7 @@ bool Morkon_Manager<DeviceType, DIM>::internalize_interfaces()
 
   // Now call declare_all_interfaces(..) since we have the data on the Device side we need for
   // its arguments.
-  bool ok = declare_all_interfaces(segs_in_ifcs, dense_idx_mesh, node_coords, non_dense_node_ids,
+  bool ok = declare_all_interfaces(faces_in_ifcs, dense_idx_mesh, node_coords, non_dense_node_ids,
                                    is_ifc_boundary_node);
   return false;
 }
@@ -238,9 +238,9 @@ bool Morkon_Manager<DeviceType, DIM>::compute_face_and_node_normals()
   // We can make this function provide a useful return value having the implementations
   // do a parallel_reduce with a num_errs reduction variable as argument.
 
-  compute_segment_normals<DeviceType, DIM>(m_skin_mesh, m_fields);
+  compute_face_normals<DeviceType, DIM>(m_skin_mesh, m_fields);
 
-  compute_node_normals_from_segments<DeviceType, DIM>(m_skin_mesh, m_fields);
+  compute_node_normals_from_faces<DeviceType, DIM>(m_skin_mesh, m_fields);
 
   return true;
 }
@@ -248,7 +248,7 @@ bool Morkon_Manager<DeviceType, DIM>::compute_face_and_node_normals()
 template <typename DeviceType, unsigned int DIM >
 bool Morkon_Manager<DeviceType, DIM>::find_possible_contact_face_pairs(contact_search_results_t &)
 {
-  // Implement with a functor over the segments.
+  // Implement with a functor over the faces.
   std::cout << "Need to write :find_possible_contact_face_pairs()" << std::endl;
   return false;
 }

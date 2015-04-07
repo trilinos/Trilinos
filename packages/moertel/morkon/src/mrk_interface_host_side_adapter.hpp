@@ -60,7 +60,7 @@ struct Interface_HostSideAdapter
     double[DIM]                m_coords;
   };
 
-  struct SegmentInfo
+  struct FaceInfo
   {
     global_idx_t                     m_id;
     InterfaceBase::SideEnum        m_side;
@@ -68,10 +68,10 @@ struct Interface_HostSideAdapter
   };
 
   typedef typename std::map<typename global_idx_t, NodeInfo>   node_map_type;
-  typedef typename std::map<typename global_idx_t, SegmentInfo> seg_map_type;
+  typedef typename std::map<typename global_idx_t, FaceInfo> face_map_type;
 
   node_map_type   m_nodes;
-  seg_map_type m_segments;
+  face_map_type m_faces;
 };
 
 

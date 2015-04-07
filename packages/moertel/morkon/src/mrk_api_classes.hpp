@@ -84,7 +84,7 @@ public:
 
   // For pulling data in from the host space.
   bool hsa_add_node(SideEnum which_side, global_idx_t gbl_node_id, const double coords[]);
-  bool hsa_add_segment(SideEnum which_side, global_idx_t gbl_seg_id, int num_nodes, const global_idx_t glb_nids[]);
+  bool hsa_add_face(SideEnum which_side, global_idx_t gbl_face_id, int num_nodes, const global_idx_t glb_nids[]);
 
   // No more changes via public API after this.
   bool commited() const { return m_committed; }
@@ -124,7 +124,7 @@ class Morkon_Manager
 
   typedef Mrk_MortarPallets<DeviceType, DIM>   mortar_pallets_t;
 
-  typedef Kokkos::CrsMatrix<local_idx_t, local_idx_t, DeviceType>         segment_interface_mat_t;
+  typedef Kokkos::CrsMatrix<local_idx_t, local_idx_t, DeviceType>         face_interface_mat_t;
   typedef Kokkos::View<local_idx_t *[3], execution_space>  contact_search_results_t;
   typedef Kokkos::CrsMatrix<bool, local_idx_t, DeviceType>                    on_boundary_table_t;
   typedef Kokkos::CrsMatrix<local_idx_t, local_idx_t, DeviceType>             node_support_sets_t;
@@ -143,7 +143,7 @@ public:
   bool commit_interfaces();
 
   // When data is already on device; called at end of commit_interfaces().
-  bool declare_all_interfaces(segment_interface_mat_t segs_in_ifcs, 
+  bool declare_all_interfaces(face_interface_mat_t faces_in_ifcs, 
                               skin_only_mesh_t dense_idx_mesh,
                               points_t node_coords,
                               local_to_global_idx_t non_dense_node_ids,
@@ -164,7 +164,7 @@ private:
   Teuchos::RCP<Tpetra::Map<> >  m_problem_map;
   interfaces_map_t               m_interfaces;
   skin_only_mesh_t                m_skin_mesh;
-  segment_interface_mat_t  m_seg_ifc_side_mat;
+  face_interface_mat_t  m_face_ifc_side_mat;
   fields_t                           m_fields;
 
   local_to_global_idx_t  m_non_dense_node_ids;

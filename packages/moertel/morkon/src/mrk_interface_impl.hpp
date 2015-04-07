@@ -104,7 +104,7 @@ bool Interface<DeviceType, DIM>::hsa_add_node(SideEnum which_side, global_idx_t 
 
 
 template <typename DeviceType, unsigned int DIM>
-bool Interface<DeviceType, DIM>::hsa_add_segment(SideEnum which_side, global_idx_t gbl_seg_id, int num_nodes, const global_idx_t gbl_nids[])
+bool Interface<DeviceType, DIM>::hsa_add_face(SideEnum which_side, global_idx_t gbl_face_id, int num_nodes, const global_idx_t gbl_nids[])
 {
   if (m_commited || (m_sides[which_side].dimension_0() > 0))
   {
@@ -123,22 +123,22 @@ bool Interface<DeviceType, DIM>::hsa_add_segment(SideEnum which_side, global_idx
     return false;
   }
 
-  Interface_HostSideAdapter::seg_map_type::iterator probe = ifc_hsa->m_segments.find(gbl_seg_id);
-  if (probe != m_segs.end())
+  Interface_HostSideAdapter::face_map_type::iterator probe = ifc_hsa->m_faces.find(gbl_face_id);
+  if (probe != m_faces.end())
   {
     return false;
   }
 
-  Interface_HostSideAdapter::SegmentInfo seg_info;
-  seg_info.m_id        = gbl_seg_id;
-  seg_info.m_side      = which_side;
-  seg_info.m_nodes.resize(num_nodes);
+  Interface_HostSideAdapter::FaceInfo face_info;
+  face_info.m_id        = gbl_face_id;
+  face_info.m_side      = which_side;
+  face_info.m_nodes.resize(num_nodes);
   for (int i =  0; i < num_nodes; ++i)
   {
-    seg_info.m_nodes[i] = gbl_node_ids[i];
+    face_info.m_nodes[i] = gbl_node_ids[i];
   }
 
-  ifc_hsa->m_segments.insert(probe, std::pair(gbl_node_id, seg_info));
+  ifc_hsa->m_faces.insert(probe, std::pair(gbl_node_id, face_info));
 
   return true;
 }
