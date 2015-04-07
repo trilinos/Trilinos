@@ -296,6 +296,8 @@ public:
   template< class FunctorType >
   static int team_size_recommended( const FunctorType & );
 
+  template< class FunctorType >
+  static int team_size_recommended( const FunctorType & , const int&);
   //----------------------------------------
   /** \brief  Construct policy with the given instance of the execution space */
   TeamPolicy( const execution_space & , int league_size_request , int team_size_request );

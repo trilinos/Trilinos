@@ -466,6 +466,12 @@ public:
   static int team_size_recommended( const FunctorType & )
     { return execution_space::thread_pool_size(2); }
 
+
+  template< class FunctorType >
+  inline static
+  int team_size_recommended( const FunctorType &, const int& )
+    { return execution_space::thread_pool_size(2); }
+
   //----------------------------------------
 
   inline int team_size() const { return m_team_size ; }

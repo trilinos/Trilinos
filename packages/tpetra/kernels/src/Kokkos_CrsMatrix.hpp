@@ -1972,9 +1972,12 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
 
       OpType op(betav,alphav,A,x,y,RowsPerThread<typename RangeVector::execution_space >(NNZPerRow)) ;
 
+      const int rows_per_thread = RowsPerThread<typename RangeVector::execution_space >(NNZPerRow);
+      const int team_size = Kokkos::TeamPolicy< typename RangeVector::execution_space >::team_size_recommended(op,vector_length);
+      const int rows_per_team = rows_per_thread * team_size;
+      const int nteams = (nrow+rows_per_team-1)/rows_per_team;
       Kokkos::parallel_for( Kokkos::TeamPolicy< typename RangeVector::execution_space >
-         ( nrow ,RowsPerThread<typename RangeVector::execution_space >(NNZPerRow), vector_length ) , op );
-
+         ( nteams , team_size , vector_length ) , op );
 #else // NOT KOKKOS_FAST_COMPILE
 
       typedef MV_MultiplySingleFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
@@ -2008,8 +2011,11 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
       const typename CrsMatrixType::ordinal_type nrow = A.numRows();
 
       OpType op(beta,alpha,A,x,y,RowsPerThread<typename RangeVector::execution_space >(NNZPerRow)) ;
+      const int team_size = Kokkos::TeamPolicy< typename RangeVector::execution_space >::team_size_recommended(op,vector_length);
+      const int rows_per_team = rows_per_thread * team_size;
+      const int nteams = (nrow+rows_per_team-1)/rows_per_team;
       Kokkos::parallel_for( Kokkos::TeamPolicy< typename RangeVector::execution_space >
-           ( nrow ,RowsPerThread<typename RangeVector::execution_space >(NNZPerRow), vector_length ) , op );
+         ( nteams , team_size , vector_length ) , op );
 
 #endif // KOKKOS_FAST_COMPILE
     }
@@ -2094,9 +2100,14 @@ template <class RangeVector,
           CoeffVector1Type, CoeffVector2Type, doalpha, dobeta> OpType ;
 
         OpType op(betav,alphav,A,x,y,x.dimension_1(),RowsPerThread<typename RangeVector::execution_space >(NNZPerRow)) ;
-        int rows_per_thread = RowsPerThread<typename RangeVector::execution_space >(NNZPerRow);
+
+        const int rows_per_thread = RowsPerThread<typename RangeVector::execution_space >(NNZPerRow);
+        const int team_size = Kokkos::TeamPolicy< typename RangeVector::execution_space >::team_size_recommended(op,vector_length);
+        const int rows_per_team = rows_per_thread * team_size;
+        const int nteams = (A.numRows()+rows_per_team-1)/rows_per_team;
+
         Kokkos::parallel_for( Kokkos::TeamPolicy< typename RangeVector::execution_space >
-			      ( (A.numRows()+rows_per_thread-1)/rows_per_thread ,rows_per_thread, vector_length ) , op );
+			      ( nteams, team_size, vector_length ) , op );
 
       }
 
@@ -2137,9 +2148,12 @@ template <class RangeVector,
       const typename CrsMatrixType::ordinal_type nrow = A.numRows();
 
       OpType op(betav,alphav,A,x,y,x.dimension_1(),RowsPerThread<typename RangeVector::execution_space >(NNZPerRow)) ;
-      int rows_per_thread = RowsPerThread<typename RangeVector::execution_space >(NNZPerRow);
+      const int rows_per_thread = RowsPerThread<typename RangeVector::execution_space >(NNZPerRow);
+      const int team_size = Kokkos::TeamPolicy< typename RangeVector::execution_space >::team_size_recommended(op,vector_length);
+      const int rows_per_team = rows_per_thread * team_size;
+      const int nteams = (A.numRows()+rows_per_team-1)/rows_per_team;
       Kokkos::parallel_for( Kokkos::TeamPolicy< typename RangeVector::execution_space >
-			    ( (A.numRows()+rows_per_thread-1)/rows_per_thread ,rows_per_thread, vector_length ) , op );
+			    ( nteams , team_size , vector_length ) , op );
 
 #endif // KOKKOS_FAST_COMPILE
     }

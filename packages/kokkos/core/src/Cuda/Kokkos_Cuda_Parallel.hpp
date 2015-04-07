@@ -283,6 +283,14 @@ public:
   static int team_size_recommended( const FunctorType & functor )
     { return team_size_max( functor ); }
 
+  template< class FunctorType >
+  static int team_size_recommended( const FunctorType & functor , const int vector_length)
+    {
+      int max = team_size_max( functor )/vector_length;
+      if(max<1) max = 1;
+      return max;
+    }
+
   inline static
   int vector_length_max()
     { return Impl::CudaTraits::WarpSize; }
