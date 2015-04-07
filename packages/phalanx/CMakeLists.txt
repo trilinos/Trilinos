@@ -56,7 +56,7 @@ ELSEIF(${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE STREQUAL "SERIAL")
   SET(PHX_KOKKOS_DEVICE_TYPE_SERIAL ON)
   MESSAGE(STATUS "Execution Space: SERIAL")
 ELSE()
-  MESSAGE(FATAL_ERROR, " The specified device type ${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE = ${${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE} is not valid!  Please set this to one of the valid device types: SERIAL,OPENMP,CUDA,THREADS.")
+  MESSAGE(FATAL_ERROR, " The specified device type ${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE = ${${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE} is not valid!  Please set this to one of the valid device types: SERIAL,OPENMP,CUDA,THREAD.")
 ENDIF()
 
 # Index size type
