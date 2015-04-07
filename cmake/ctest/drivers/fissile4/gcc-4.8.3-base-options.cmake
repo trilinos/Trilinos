@@ -30,6 +30,10 @@ SET(BUILD_SHARED_LIBS  ON  CACHE  BOOL
 SET(Trilinos_ENABLE_EXPLICIT_INSTANTIATION  ON  CACHE BOOL
   "Set by default in gcc-4.8.3-base-options.cmake")
 
+# Turn on KLU2 in Amesos2
+SET(Amesos2_ENABLE_KLU2  ON  CACHE BOOL
+  "Set by default in gcc-4.8.3-base-options.cmake")
+
 # Set up valgrind options
 SET( MEMORYCHECK_COMMAND
   /projects/vera/common_tools/valgrind-3.9.0/bin/valgrind
