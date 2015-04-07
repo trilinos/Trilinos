@@ -96,6 +96,7 @@ endif
 KOKKOS_CPPFLAGS = -I./ -I$(KOKKOS_PATH)/core/src -I$(KOKKOS_PATH)/containers/src -I$(KOKKOS_PATH)/algorithms/src
 KOKKOS_CXXFLAGS =
 KOKKOS_LIBS = 
+KOKKOS_LDFLAGS = -L$(shell pwd)
 
 #Generating the KokkosCore_config.h file
 
@@ -158,7 +159,7 @@ ifeq ($(KOKKOS_INTERNAL_CUDA_USE_LDG), 1)
 endif
 
 ifeq ($(KOKKOS_INTERNAL_CUDA_USE_UVM), 1)
-  tmp := $(shell echo "\#define KOKKOS_CUDA_USE_UVM 1" >> KokkosCore_config.tmp )
+	tmp := $(shell echo "\#define KOKKOS_CUDA_USE_UVM 1" >> KokkosCore_config.tmp )
 endif
 
 ifeq ($(KOKKOS_INTERNAL_USE_CUDA), 1)
@@ -172,24 +173,26 @@ endif
 #Add Architecture flags
 
 ifeq ($(KOKKOS_INTERNAL_USE_ARCH_AVX), 1)
-  KOKKOS_CXXFLAGS += -mavx
+	KOKKOS_CXXFLAGS += -mavx
+	KOKKOS_LDFLAGS += -mavx
 endif
 ifeq ($(KOKKOS_INTERNAL_USE_ARCH_KNC), 1)
-  KOKKOS_CXXFLAGS += -mmic
+	KOKKOS_CXXFLAGS += -mmic
+	KOKKOS_LDFLAGS += -mmic
 endif
 
 ifeq ($(KOKKOS_INTERNAL_USE_CUDA), 1)
 ifeq ($(KOKKOS_INTERNAL_USE_KEPLER30), 1)
-  KOKKOS_CXXFLAGS += -arch=sm_30
+	KOKKOS_CXXFLAGS += -arch=sm_30
 endif
 ifeq ($(KOKKOS_INTERNAL_USE_KEPLER35), 1)
-  KOKKOS_CXXFLAGS += -arch=sm_35
+	KOKKOS_CXXFLAGS += -arch=sm_35
 endif
 ifeq ($(KOKKOS_INTERNAL_USE_KEPLER37), 1)
-  KOKKOS_CXXFLAGS += -arch=sm_37
+	KOKKOS_CXXFLAGS += -arch=sm_37
 endif
 ifeq ($(KOKKOS_INTERNAL_USE_MAXWELL50), 1)
-  KOKKOS_CXXFLAGS += -arch=sm_50
+	KOKKOS_CXXFLAGS += -arch=sm_50
 endif
 endif
  
@@ -213,7 +216,6 @@ KOKKOS_HEADERS += $(wildcard $(KOKKOS_PATH)/algorithms/src/*.hpp)
 
 KOKKOS_SRC = $(wildcard $(KOKKOS_PATH)/core/src/impl/*.cpp)
 KOKKOS_SRC += $(wildcard $(KOKKOS_PATH)/containers/src/impl/*.cpp)
-KOKKOS_LDFLAGS = -L$(shell pwd)
 KOKKOS_LIBS += -lkokkos
 
 ifeq ($(KOKKOS_INTERNAL_USE_CUDA), 1)
