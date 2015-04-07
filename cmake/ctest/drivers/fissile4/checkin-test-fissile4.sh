@@ -93,7 +93,6 @@ $TRILINOS_BASE_DIR/Trilinos/checkin-test.py \
 --st-extra-builds=MPI_DEBUG_ST,SERIAL_RELEASE_ST \
 --disable-packages=$DISABLE_PACKAGES \
 --skip-case-no-email \
---ctest-options="-E '(Intrepid_example_Shared_Example_03|Intrepid_example_Shared_Example_04|Ifpack2_unit_tests$)'" \
 $EXTRA_ARGS
 
 
