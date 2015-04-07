@@ -1933,6 +1933,1825 @@ struct NrmInf_MV<double*,
 };
 #endif // KOKKOS_HAVE_CUDA
 
+// Functor for multivectors X and Y and 1-D views a and b, that
+// computes any of the following:
+//
+// 1. R(i,j) = alpha*X(i,j) + beta*Y(i,j) for alpha,beta in -1,0,1
+// 2. R(i,j) = a(j)*X(i,j) + beta*Y(i,j) for beta in -1,0,1
+// 3. R(i,j) = alpha*X(i,j) + beta*Y(i,j) for alpha in -1,0,1
+// 4. R(i,j) = a(j)*X(i,j) + b(j)*Y(i,j)
+//
+// The template parameters scalar_x and scalar_y correspond to alpha
+// resp. beta in the operation y = alpha*x + beta*y.  The values -1,
+// 0, and -1 correspond to literal values of those coefficients.  The
+// value 2 tells the functor to use the corresponding vector of
+// coefficients.  Any literal coefficient of zero has BLAS semantics
+// of ignoring the corresponding (multi)vector entry.  This does not
+// apply to coefficients in the a and b vectors, if they are used.
+template<class RV, class aVector, class XMV, class bVector, class YMV,
+         int scalar_x, int scalar_y, class SizeType = typename RV::size_type>
+struct MV_Axpby_Functor
+{
+  typedef typename RV::execution_space execution_space;
+  typedef SizeType                           size_type;
+  typedef Kokkos::Details::ArithTraits<typename RV::non_const_value_type> ATS;
+
+  const size_type numCols;
+  RV m_r;
+  XMV m_x;
+  YMV m_y;
+  aVector m_a;
+  bVector m_b;
+
+  MV_Axpby_Functor (const RV& r, const XMV& x, const YMV& y,
+                    const aVector& a, const bVector& b) :
+    numCols (x.dimension_1 ()), m_r (r), m_x (x), m_y (y), m_a (a), m_b (b)
+  {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const size_type& i) const
+  {
+    // scalar_x and scalar_y are compile-time constants (since they
+    // are template parameters), so the compiler should evaluate these
+    // branches at compile time.
+    if (scalar_x == 0 && scalar_y == 0) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = ATS::zero ();
+      }
+    }
+    if (scalar_x == 0 && scalar_y == -1) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = -m_y(i,k);
+      }
+    }
+    if (scalar_x == 0 && scalar_y == 1) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = m_y(i,k);
+      }
+    }
+    if (scalar_x == 0 && scalar_y == 2) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = m_b(k)*m_y(i,k);
+      }
+    }
+    if (scalar_x == -1 && scalar_y == 0) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = -m_x(i,k);
+      }
+    }
+    if (scalar_x == -1 && scalar_y == -1) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = -m_x(i,k) - m_y(i,k);
+      }
+    }
+    if (scalar_x == -1 && scalar_y == 1) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = -m_x(i,k) + m_y(i,k);
+      }
+    }
+    if (scalar_x == -1 && scalar_y == 2) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = -m_x(i,k) + m_b(k)*m_y(i,k);
+      }
+    }
+    if (scalar_x == 1 && scalar_y == 0) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = m_x(i,k);
+      }
+    }
+    if (scalar_x == 1 && scalar_y == -1) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = m_x(i,k) - m_y(i,k);
+      }
+    }
+    if (scalar_x == 1 && scalar_y == 1) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = m_x(i,k) + m_y(i,k);
+      }
+    }
+    if (scalar_x == 1 && scalar_y == 2) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = m_x(i,k) + m_b(k)*m_y(i,k);
+      }
+    }
+    if (scalar_x == 2 && scalar_y == 0) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = m_a(k)*m_x(i,k);
+      }
+    }
+    if (scalar_x == 2 && scalar_y == -1) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = m_a(k)*m_x(i,k) - m_y(i,k);
+      }
+    }
+    if (scalar_x == 2 && scalar_y == 1) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = m_a(k)*m_x(i,k) + m_y(i,k);
+      }
+    }
+    if (scalar_x == 2 && scalar_y == 2) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = m_a(k)*m_x(i,k) + m_b(k)*m_y(i,k);
+      }
+    }
+  }
+};
+
+// Variant of MV_Axpby_Functor, where a and b are scalars.
+// This functor computes any of the following:
+//
+// 1. R(i,j) = alpha*X(i,j) + beta*Y(i,j) for alpha,beta in -1,0,1
+// 2. R(i,j) = a*X(i,j) + beta*Y(i,j) for beta in -1,0,1
+// 3. R(i,j) = alpha*X(i,j) + beta*Y(i,j) for alpha in -1,0,1
+// 4. R(i,j) = a*X(i,j) + b*Y(i,j)
+//
+// The template parameters scalar_x and scalar_y correspond to alpha
+// resp. beta in the operation y = alpha*x + beta*y.  The values -1,
+// 0, and -1 correspond to literal values of those coefficients.  The
+// value 2 tells the functor to use the corresponding vector of
+// coefficients.  Any literal coefficient of zero has BLAS semantics
+// of ignoring the corresponding (multi)vector entry.  This does not
+// apply to coefficients in the a and b vectors, if they are used.
+//
+// This version works by partial specialization on aVector and bVector.
+// In this partial specialization, both aVector and bVector are scalars.
+template<class RV, class XMV, class YMV, int scalar_x, int scalar_y,
+         class SizeType>
+struct MV_Axpby_Functor<RV, typename XMV::non_const_value_type, XMV,
+                        typename YMV::non_const_value_type, YMV,
+                        scalar_x, scalar_y, SizeType>
+{
+  typedef typename RV::execution_space execution_space;
+  typedef SizeType                           size_type;
+  typedef Kokkos::Details::ArithTraits<typename RV::non_const_value_type> ATS;
+
+  const size_type numCols;
+  RV m_r;
+  XMV m_x;
+  YMV m_y;
+  const typename XMV::non_const_value_type m_a;
+  const typename YMV::non_const_value_type m_b;
+
+  MV_Axpby_Functor (const RV& r, const XMV& x, const YMV& y,
+                  const typename XMV::non_const_value_type& a,
+                  const typename YMV::non_const_value_type& b) :
+    numCols (x.dimension_1 ()), m_r (r), m_x (x), m_y (y), m_a (a), m_b (b)
+  {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const size_type& i) const
+  {
+    // scalar_x and scalar_y are compile-time constants (since they
+    // are template parameters), so the compiler should evaluate these
+    // branches at compile time.
+    if (scalar_x == 0 && scalar_y == 0) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = ATS::zero ();
+      }
+    }
+    if (scalar_x == 0 && scalar_y == -1) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = -m_y(i,k);
+      }
+    }
+    if (scalar_x == 0 && scalar_y == 1) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = m_y(i,k);
+      }
+    }
+    if (scalar_x == 0 && scalar_y == 2) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = m_b*m_y(i,k);
+      }
+    }
+    if (scalar_x == -1 && scalar_y == 0) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = -m_x(i,k);
+      }
+    }
+    if (scalar_x == -1 && scalar_y == -1) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = -m_x(i,k) - m_y(i,k);
+      }
+    }
+    if (scalar_x == -1 && scalar_y == 1) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = -m_x(i,k) + m_y(i,k);
+      }
+    }
+    if (scalar_x == -1 && scalar_y == 2) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = -m_x(i,k) + m_b*m_y(i,k);
+      }
+    }
+    if (scalar_x == 1 && scalar_y == 0) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = m_x(i,k);
+      }
+    }
+    if (scalar_x == 1 && scalar_y == -1) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = m_x(i,k) - m_y(i,k);
+      }
+    }
+    if (scalar_x == 1 && scalar_y == 1) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = m_x(i,k) + m_y(i,k);
+      }
+    }
+    if (scalar_x == 1 && scalar_y == 2) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = m_x(i,k) + m_b*m_y(i,k);
+      }
+    }
+    if (scalar_x == 2 && scalar_y == 0) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = m_a*m_x(i,k);
+      }
+    }
+    if (scalar_x == 2 && scalar_y == -1) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = m_a*m_x(i,k) - m_y(i,k);
+      }
+    }
+    if (scalar_x == 2 && scalar_y == 1) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = m_a*m_x(i,k) + m_y(i,k);
+      }
+    }
+    if (scalar_x == 2 && scalar_y == 2) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#pragma vector always
+#endif
+      for (size_type k = 0; k < numCols; ++k) {
+        m_r(i,k) = m_a*m_x(i,k) + m_b*m_y(i,k);
+      }
+    }
+  }
+};
+
+
+// Column-unrolled variant of MV_Axpby_Functor.  The number of columns
+// in X and Y, UNROLL, is a compile-time constant.
+template<class RV, class aVector, class XMV, class bVector, class YMV,
+         int scalar_x, int scalar_y, int UNROLL, class SizeType>
+struct MV_Axpby_Unroll_Functor
+{
+  typedef typename RV::execution_space execution_space;
+  typedef SizeType                           size_type;
+  typedef Kokkos::Details::ArithTraits<typename RV::non_const_value_type> ATS;
+
+  RV m_r;
+  XMV m_x;
+  YMV m_y;
+  aVector m_a;
+  bVector m_b;
+
+  MV_Axpby_Unroll_Functor (const RV& r, const XMV& x, const YMV& y,
+                           const aVector& a, const bVector& b) :
+    m_r (r), m_x (x), m_y (y), m_a (a), m_b (b)
+  {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const size_type& i) const
+  {
+    // scalar_x and scalar_y are compile-time constants (since they
+    // are template parameters), so the compiler should evaluate these
+    // branches at compile time.
+    if (scalar_x == 0 && scalar_y == 0) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = ATS::zero ();
+      }
+    }
+    if (scalar_x == 0 && scalar_y == -1) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = -m_y(i,k);
+      }
+    }
+    if (scalar_x == 0 && scalar_y == 1) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = m_y(i,k);
+      }
+    }
+    if (scalar_x == 0 && scalar_y == 2) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = m_b(k)*m_y(i,k);
+      }
+    }
+    if (scalar_x == -1 && scalar_y == 0) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = -m_x(i,k);
+      }
+    }
+    if (scalar_x == -1 && scalar_y == -1) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = -m_x(i,k) - m_y(i,k);
+      }
+    }
+    if (scalar_x == -1 && scalar_y == 1) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = -m_x(i,k) + m_y(i,k);
+      }
+    }
+    if (scalar_x == -1 && scalar_y == 2) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = -m_x(i,k) + m_b(k)*m_y(i,k);
+      }
+    }
+    if (scalar_x == 1 && scalar_y == 0) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = m_x(i,k);
+      }
+    }
+    if (scalar_x == 1 && scalar_y == -1) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = m_x(i,k) - m_y(i,k);
+      }
+    }
+    if (scalar_x == 1 && scalar_y == 1) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = m_x(i,k) + m_y(i,k);
+      }
+    }
+    if (scalar_x == 1 && scalar_y == 2) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = m_x(i,k) + m_b(k)*m_y(i,k);
+      }
+    }
+    if (scalar_x == 2 && scalar_y == 0) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = m_a(k)*m_x(i,k);
+      }
+    }
+    if (scalar_x == 2 && scalar_y == -1) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = m_a(k)*m_x(i,k) - m_y(i,k);
+      }
+    }
+    if (scalar_x == 2 && scalar_y == 1) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = m_a(k)*m_x(i,k) + m_y(i,k);
+      }
+    }
+    if (scalar_x == 2 && scalar_y == 2) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = m_a(k)*m_x(i,k) + m_b(k)*m_y(i,k);
+      }
+    }
+  }
+};
+
+
+// Variant of MV_Axpby_Unroll_Functor for single coefficients (rather
+// than vectors of coefficients) a and b.  The number of columns in X
+// and Y, UNROLL, is a compile-time constant.
+template<class RV, class XMV, class YMV,
+         int scalar_x, int scalar_y, int UNROLL, class SizeType>
+struct MV_Axpby_Unroll_Functor<RV, typename XMV::non_const_value_type, XMV,
+                               typename YMV::non_const_value_type, YMV,
+                               scalar_x, scalar_y, UNROLL, SizeType>
+{
+  typedef typename RV::execution_space execution_space;
+  typedef SizeType                           size_type;
+  typedef Kokkos::Details::ArithTraits<typename RV::non_const_value_type> ATS;
+
+  RV m_r;
+  XMV m_x;
+  YMV m_y;
+  const typename XMV::non_const_value_type m_a;
+  const typename YMV::non_const_value_type m_b;
+
+  MV_Axpby_Unroll_Functor (const RV& r, const XMV& x, const YMV& y,
+                           const typename XMV::non_const_value_type& a,
+                           const typename YMV::non_const_value_type& b) :
+    m_r (r), m_x (x), m_y (y), m_a (a), m_b (b)
+  {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const size_type& i) const
+  {
+    // scalar_x and scalar_y are compile-time constants (since they
+    // are template parameters), so the compiler should evaluate these
+    // branches at compile time.
+    if (scalar_x == 0 && scalar_y == 0) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = ATS::zero ();
+      }
+    }
+    if (scalar_x == 0 && scalar_y == -1) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = -m_y(i,k);
+      }
+    }
+    if (scalar_x == 0 && scalar_y == 1) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = m_y(i,k);
+      }
+    }
+    if (scalar_x == 0 && scalar_y == 2) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = m_b*m_y(i,k);
+      }
+    }
+    if (scalar_x == -1 && scalar_y == 0) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = -m_x(i,k);
+      }
+    }
+    if (scalar_x == -1 && scalar_y == -1) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = -m_x(i,k) - m_y(i,k);
+      }
+    }
+    if (scalar_x == -1 && scalar_y == 1) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = -m_x(i,k) + m_y(i,k);
+      }
+    }
+    if (scalar_x == -1 && scalar_y == 2) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = -m_x(i,k) + m_b*m_y(i,k);
+      }
+    }
+    if (scalar_x == 1 && scalar_y == 0) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = m_x(i,k);
+      }
+    }
+    if (scalar_x == 1 && scalar_y == -1) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = m_x(i,k) - m_y(i,k);
+      }
+    }
+    if (scalar_x == 1 && scalar_y == 1) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = m_x(i,k) + m_y(i,k);
+      }
+    }
+    if (scalar_x == 1 && scalar_y == 2) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = m_x(i,k) + m_b*m_y(i,k);
+      }
+    }
+    if (scalar_x == 2 && scalar_y == 0) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = m_a*m_x(i,k);
+      }
+    }
+    if (scalar_x == 2 && scalar_y == -1) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = m_a*m_x(i,k) - m_y(i,k);
+      }
+    }
+    if (scalar_x == 2 && scalar_y == 1) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = m_a*m_x(i,k) + m_y(i,k);
+      }
+    }
+    if (scalar_x == 2 && scalar_y == 2) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_r(i,k) = m_a*m_x(i,k) + m_b*m_y(i,k);
+      }
+    }
+  }
+};
+
+// Single-vector version of MV_Axpby_Functor.  By default, a and b are
+// still 1-D Views.  Below is a partial specialization that lets both
+// of them be scalars.  This functor computes any of the following:
+//
+// 1. Y(i) = alpha*X(i) + beta*Y(i) for alpha,beta in -1,0,1
+// 2. Y(i) = a(0)*X(i) + beta*Y(i) for beta in -1,0,1
+// 3. Y(i) = alpha*X(i) + b(0)*Y(i) for alpha in -1,0,1
+// 4. Y(i) = a(0)*X(i) + b(0)*Y(i)
+//
+// The template parameters scalar_x and scalar_y correspond to alpha
+// resp. beta in the operation y = alpha*x + beta*y.  The values -1,
+// 0, and -1 correspond to literal values of those coefficients.  The
+// value 2 tells the functor to use the corresponding vector of
+// coefficients.  Any literal coefficient of zero has BLAS semantics
+// of ignoring the corresponding (multi)vector entry.  This does not
+// apply to coefficients in the a and b vectors, if they are used.
+template<class RV, class AV, class XV, class BV, class YV,
+         int scalar_x, int scalar_y, class SizeType>
+struct V_Axpby_Functor {
+  typedef typename RV::execution_space execution_space;
+  typedef SizeType                           size_type;
+  typedef Kokkos::Details::ArithTraits<typename RV::non_const_value_type> ATS;
+
+  RV m_r;
+  XV m_x;
+  YV m_y;
+  AV m_a;
+  BV m_b;
+
+  V_Axpby_Functor (const RV& r, const XV& x, const YV& y,
+                   const AV& a, const BV& b) :
+    m_r (r), m_x (x), m_y (y), m_a (a), m_b (b)
+  {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const size_type& i) const
+  {
+    // scalar_x and scalar_y are compile-time constants (since they
+    // are template parameters), so the compiler should evaluate these
+    // branches at compile time.
+    if (scalar_x == 0 && scalar_y == 0) {
+      m_r(i) = ATS::zero ();
+    }
+    if (scalar_x == 0 && scalar_y == -1) {
+      m_r(i) = -m_y(i);
+    }
+    if (scalar_x == 0 && scalar_y == 1) {
+      m_r(i) = m_y(i);
+    }
+    if (scalar_x == 0 && scalar_y == 2) {
+      m_r(i) = m_b(0)*m_y(i);
+    }
+    if (scalar_x == -1 && scalar_y == 0) {
+      m_r(i) = -m_x(i);
+    }
+    if (scalar_x == -1 && scalar_y == -1) {
+      m_r(i) = -m_x(i) - m_y(i);
+    }
+    if (scalar_x == -1 && scalar_y == 1) {
+      m_r(i) = -m_x(i) + m_y(i);
+    }
+    if (scalar_x == -1 && scalar_y == 2) {
+      m_r(i) = -m_x(i) + m_b(0)*m_y(i);
+    }
+    if (scalar_x == 1 && scalar_y == 0) {
+      m_r(i) = m_x(i);
+    }
+    if (scalar_x == 1 && scalar_y == -1) {
+      m_r(i) = m_x(i) - m_y(i);
+    }
+    if (scalar_x == 1 && scalar_y == 1) {
+      m_r(i) = m_x(i) + m_y(i);
+    }
+    if (scalar_x == 1 && scalar_y == 2) {
+      m_r(i) = m_x(i) + m_b(0)*m_y(i);
+    }
+    if (scalar_x == 2 && scalar_y == 0) {
+      m_r(i) = m_a(0)*m_x(i);
+    }
+    if (scalar_x == 2 && scalar_y == -1) {
+      m_r(i) = m_a(0)*m_x(i) - m_y(i);
+    }
+    if (scalar_x == 2 && scalar_y == 1) {
+      m_r(i) = m_a(0)*m_x(i) + m_y(i);
+    }
+    if (scalar_x == 2 && scalar_y == 2) {
+      m_r(i) = m_a(0)*m_x(i) + m_b(0)*m_y(i);
+    }
+  }
+};
+
+
+// Partial specialization of V_Axpby_Functor that lets a and b be
+// scalars (rather than 1-D Views, as in the most general version
+// above).  This functor computes any of the following:
+//
+// 1. Y(i) = alpha*X(i) + beta*Y(i) for alpha,beta in -1,0,1
+// 2. Y(i) = a*X(i) + beta*Y(i) for beta in -1,0,1
+// 3. Y(i) = alpha*X(i) + b*Y(i) for alpha in -1,0,1
+// 4. Y(i) = a*X(i) + b*Y(i)
+//
+// The template parameters scalar_x and scalar_y correspond to alpha
+// resp. beta in the operation y = alpha*x + beta*y.  The values -1,
+// 0, and -1 correspond to literal values of those coefficients.  The
+// value 2 tells the functor to use the corresponding vector of
+// coefficients.  Any literal coefficient of zero has BLAS semantics
+// of ignoring the corresponding (multi)vector entry.  This does not
+// apply to coefficients in the a and b vectors, if they are used.
+template<class RV, class XV, class YV,
+         int scalar_x, int scalar_y, class SizeType>
+struct V_Axpby_Functor<RV, typename XV::non_const_value_type, XV,
+                       typename YV::non_const_value_type, YV,
+                       scalar_x, scalar_y, SizeType> {
+  typedef typename RV::execution_space execution_space;
+  typedef SizeType                           size_type;
+  typedef Kokkos::Details::ArithTraits<typename RV::non_const_value_type> ATS;
+
+  RV m_r;
+  XV m_x;
+  YV m_y;
+  const typename XV::non_const_value_type m_a;
+  const typename YV::non_const_value_type m_b;
+
+  V_Axpby_Functor (const RV& r, const XV& x, const YV& y,
+                   const typename XV::non_const_value_type& a,
+                   const typename YV::non_const_value_type& b) :
+    m_r (r), m_x (x), m_y (y), m_a (a), m_b (b)
+  {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const size_type& i) const
+  {
+    // scalar_x and scalar_y are compile-time constants (since they
+    // are template parameters), so the compiler should evaluate these
+    // branches at compile time.
+    if (scalar_x == 0 && scalar_y == 0) {
+      m_r(i) = ATS::zero ();
+    }
+    if (scalar_x == 0 && scalar_y == -1) {
+      m_r(i) = -m_y(i);
+    }
+    if (scalar_x == 0 && scalar_y == 1) {
+      m_r(i) = m_y(i);
+    }
+    if (scalar_x == 0 && scalar_y == 2) {
+      m_r(i) = m_b*m_y(i);
+    }
+    if (scalar_x == -1 && scalar_y == 0) {
+      m_r(i) = -m_x(i);
+    }
+    if (scalar_x == -1 && scalar_y == -1) {
+      m_r(i) = -m_x(i) - m_y(i);
+    }
+    if (scalar_x == -1 && scalar_y == 1) {
+      m_r(i) = -m_x(i) + m_y(i);
+    }
+    if (scalar_x == -1 && scalar_y == 2) {
+      m_r(i) = -m_x(i) + m_b*m_y(i);
+    }
+    if (scalar_x == 1 && scalar_y == 0) {
+      m_r(i) = m_x(i);
+    }
+    if (scalar_x == 1 && scalar_y == -1) {
+      m_r(i) = m_x(i) - m_y(i);
+    }
+    if (scalar_x == 1 && scalar_y == 1) {
+      m_r(i) = m_x(i) + m_y(i);
+    }
+    if (scalar_x == 1 && scalar_y == 2) {
+      m_r(i) = m_x(i) + m_b*m_y(i);
+    }
+    if (scalar_x == 2 && scalar_y == 0) {
+      m_r(i) = m_a*m_x(i);
+    }
+    if (scalar_x == 2 && scalar_y == -1) {
+      m_r(i) = m_a*m_x(i) - m_y(i);
+    }
+    if (scalar_x == 2 && scalar_y == 1) {
+      m_r(i) = m_a*m_x(i) + m_y(i);
+    }
+    if (scalar_x == 2 && scalar_y == 2) {
+      m_r(i) = m_a*m_x(i) + m_b*m_y(i);
+    }
+  }
+};
+
+// Invoke the unrolled multivector functor that computes any of the
+// following:
+//
+// 1. R(i,j) = a*X(i,j) + b*Y(i,j) for a,b in -1,0,1
+// 2. R(i,j) = av(j)*X(i,j) + b*Y(i,j) for b in -1,0,1
+// 3. R(i,j) = a*X(i,j) + b*Y(i,j) for a in -1,0,1
+// 4. R(i,j) = av(j)*X(i,j) + bv(j)*Y(i,j)
+//
+// a and b come in as integers.  The values -1, 0, and 1 correspond to
+// the literal values of the coefficients.  The value 2 tells the
+// functor to use the corresponding vector of coefficients: a == 2
+// means use av, and b == 2 means use bv.  Otherwise, av resp. vb are
+// ignored.
+//
+// Any literal coefficient of zero has BLAS semantics of ignoring the
+// corresponding (multi)vector entry.  This does NOT apply to
+// coefficients in av and bv vectors, if they are used.
+//
+// Either av and bv are both 1-D Views, or av and bv are both scalars.
+template<class RMV, class aVector, class XMV,
+         class bVector, class YMV, int UNROLL, class SizeType>
+void
+MV_Axpby_Unrolled (const RMV& r, const aVector& av, const XMV& x,
+                   const bVector& bv, const YMV& y,
+                   int a = 2, int b = 2)
+{
+  typedef typename XMV::execution_space execution_space;
+
+  if (a == 0 && b == 0) {
+    MV_Axpby_Unroll_Functor<RMV, aVector, XMV, bVector, YMV, 0, 0, UNROLL, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == 0 && b == -1) {
+    MV_Axpby_Unroll_Functor<RMV, aVector, XMV, bVector, YMV, 0, -1, UNROLL, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == 0 && b == 1) {
+    MV_Axpby_Unroll_Functor<RMV, aVector, XMV, bVector, YMV, 0, 1, UNROLL, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == 0 && b == 2) {
+    MV_Axpby_Unroll_Functor<RMV, aVector, XMV, bVector, YMV, 0, 2, UNROLL, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  // a == -1
+  if (a == -1 && b == 0) {
+    MV_Axpby_Unroll_Functor<RMV, aVector, XMV, bVector, YMV, -1, 0, UNROLL, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == -1 && b == -1) {
+    MV_Axpby_Unroll_Functor<RMV, aVector, XMV, bVector, YMV, -1, -1, UNROLL, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == -1 && b == 1) {
+    MV_Axpby_Unroll_Functor<RMV, aVector, XMV, bVector, YMV, -1, 1, UNROLL, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == -1 && b == 2) {
+    MV_Axpby_Unroll_Functor<RMV, aVector, XMV, bVector, YMV, -1, 2, UNROLL, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  // a == 1
+  if (a == 1 && b == 0) {
+    MV_Axpby_Unroll_Functor<RMV, aVector, XMV, bVector, YMV, 1, 0, UNROLL, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == 1 && b == -1) {
+    MV_Axpby_Unroll_Functor<RMV, aVector, XMV, bVector, YMV, 1, -1, UNROLL, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == 1 && b == 1) {
+    MV_Axpby_Unroll_Functor<RMV, aVector, XMV, bVector, YMV, 1, 1, UNROLL, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == 1 && b == 2) {
+    MV_Axpby_Unroll_Functor<RMV, aVector, XMV, bVector, YMV, 1, 2, UNROLL, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  // a and b arbitrary (not -1, 0, or 1)
+
+  MV_Axpby_Unroll_Functor<RMV, aVector, XMV, bVector, YMV, 2, 2, UNROLL, SizeType> op (r, x, y, av, bv);
+  const SizeType numRows = x.dimension_0 ();
+  Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+  Kokkos::parallel_for (policy, op);
+}
+
+
+// Invoke the "generic" (not unrolled) multivector functor that
+// computes any of the following:
+//
+// 1. R(i,j) = a*X(i,j) + b*Y(i,j) for a,b in -1,0,1
+// 2. R(i,j) = av(j)*X(i,j) + b*Y(i,j) for b in -1,0,1
+// 3. R(i,j) = a*X(i,j) + b*Y(i,j) for a in -1,0,1
+// 4. R(i,j) = av(j)*X(i,j) + bv(j)*Y(i,j)
+//
+// a and b come in as integers.  The values -1, 0, and 1 correspond to
+// the literal values of the coefficients.  The value 2 tells the
+// functor to use the corresponding vector of coefficients: a == 2
+// means use av, and b == 2 means use bv.  Otherwise, av resp. vb are
+// ignored.
+//
+// Any literal coefficient of zero has BLAS semantics of ignoring the
+// corresponding (multi)vector entry.  This does NOT apply to
+// coefficients in av and bv vectors, if they are used.
+//
+// Either av and bv are both 1-D Views, or av and bv are both scalars.
+template<class RVector, class aVector, class XVector,
+         class bVector, class YVector, class SizeType>
+void
+MV_Axpby_Generic (const RVector& r, const aVector& av, const XVector& x,
+                  const bVector& bv, const YVector& y,
+                  int a = 2, int b = 2)
+{
+  typedef typename XVector::execution_space execution_space;
+
+  if (a == 0 && b == 0) {
+    MV_Axpby_Functor<RVector, aVector, XVector, bVector, YVector, 0, 0, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == 0 && b == -1) {
+    MV_Axpby_Functor<RVector, aVector, XVector, bVector, YVector, 0, -1, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == 0 && b == 1) {
+    MV_Axpby_Functor<RVector, aVector, XVector, bVector, YVector, 0, 1, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == 0 && b == 2) {
+    MV_Axpby_Functor<RVector, aVector, XVector, bVector, YVector, 0, 2, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  // a == -1
+  if (a == -1 && b == 0) {
+    MV_Axpby_Functor<RVector, aVector, XVector, bVector, YVector, -1, 0, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == -1 && b == -1) {
+    MV_Axpby_Functor<RVector, aVector, XVector, bVector, YVector, -1, -1, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == -1 && b == 1) {
+    MV_Axpby_Functor<RVector, aVector, XVector, bVector, YVector, -1, 1, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == -1 && b == 2) {
+    MV_Axpby_Functor<RVector, aVector, XVector, bVector, YVector, -1, 2, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  // a == 1
+  if (a == 1 && b == 0) {
+    MV_Axpby_Functor<RVector, aVector, XVector, bVector, YVector, 1, 0, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == 1 && b == -1) {
+    MV_Axpby_Functor<RVector, aVector, XVector, bVector, YVector, 1, -1, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == 1 && b == 1) {
+    MV_Axpby_Functor<RVector, aVector, XVector, bVector, YVector, 1, 1, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == 1 && b == 2) {
+    MV_Axpby_Functor<RVector, aVector, XVector, bVector, YVector, 1, 2, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  // a and b arbitrary (not -1, 0, or 1)
+
+  MV_Axpby_Functor<RVector, aVector, XVector, bVector, YVector, 2, 2, SizeType> op (r, x, y, av, bv);
+  const SizeType numRows = x.dimension_0 ();
+  Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+  Kokkos::parallel_for (policy, op);
+}
+
+// Variant of MV_Axpby_Generic for single vectors (1-D Views) r, x,
+// and y.  As above, either av and bv are both 1-D Views (and only the
+// first entry of each will be read), or both av and bv are scalars.
+template<class RV, class aVector, class XV,
+         class bVector, class YV, class SizeType>
+void
+V_Axpby_Generic (const RV& r, const aVector& av, const XV& x,
+                 const bVector& bv, const YV& y,
+                 int a = 2, int b = 2)
+{
+  typedef typename RV::execution_space execution_space;
+
+  if (a == 0 && b == 0) {
+    V_Axpby_Functor<RV, aVector, XV, bVector, YV, 0, 0, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == 0 && b == -1) {
+    V_Axpby_Functor<RV, aVector, XV, bVector, YV, 0, -1, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == 0 && b == 1) {
+    V_Axpby_Functor<RV, aVector, XV, bVector, YV, 0, 1, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == 0 && b == 2) {
+    V_Axpby_Functor<RV, aVector, XV, bVector, YV, 0, 2, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  // a == -1
+  if (a == -1 && b == 0) {
+    V_Axpby_Functor<RV, aVector, XV, bVector, YV, -1, 0, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == -1 && b == -1) {
+    V_Axpby_Functor<RV, aVector, XV, bVector, YV, -1, -1, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == -1 && b == 1) {
+    V_Axpby_Functor<RV, aVector, XV, bVector, YV, -1, 1, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == -1 && b == 2) {
+    V_Axpby_Functor<RV, aVector, XV, bVector, YV, -1, 2, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  // a == 1
+  if (a == 1 && b == 0) {
+    V_Axpby_Functor<RV, aVector, XV, bVector, YV, 1, 0, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == 1 && b == -1) {
+    V_Axpby_Functor<RV, aVector, XV, bVector, YV, 1, -1, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == 1 && b == 1) {
+    V_Axpby_Functor<RV, aVector, XV, bVector, YV, 1, 1, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == 1 && b == 2) {
+    V_Axpby_Functor<RV, aVector, XV, bVector, YV, 1, 2, SizeType> op (r, x, y, av, bv);
+    const SizeType numRows = x.dimension_0 ();
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+
+  // a and b arbitrary (not -1, 0, or 1)
+  V_Axpby_Functor<RV, aVector, XV, bVector, YV, 2, 2, SizeType> op (r, x, y, av, bv);
+  const SizeType numRows = x.dimension_0 ();
+  Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+  Kokkos::parallel_for (policy, op);
+}
+
+// Compute any of the following, in a way optimized for X, Y, and R
+// being LayoutLeft:
+//
+// 1. R(i,j) = a*X(i,j) + b*Y(i,j) for a,b in -1,0,1
+// 2. R(i,j) = av(j)*X(i,j) + b*Y(i,j) for b in -1,0,1
+// 3. R(i,j) = a*X(i,j) + b*Y(i,j) for a in -1,0,1
+// 4. R(i,j) = av(j)*X(i,j) + bv(j)*Y(i,j)
+//
+// a and b come in as integers.  The values -1, 0, and 1 correspond to
+// the literal values of the coefficients.  The value 2 tells the
+// functor to use the corresponding vector of coefficients: a == 2
+// means use av, and b == 2 means use bv.  Otherwise, av resp. vb are
+// ignored.
+//
+// Any literal coefficient of zero has BLAS semantics of ignoring the
+// corresponding (multi)vector entry.  This does NOT apply to
+// coefficients in av and bv vectors, if they are used.
+//
+// Either av and bv are both 1-D Views, or av and bv are both scalars.
+template<class RMV, class aVector, class XMV,
+         class bVector, class YMV, class SizeType>
+void
+MV_Axpby_Invoke_Left (const RMV& r, const aVector& av, const XMV& x,
+                      const bVector& bv, const YMV& y,
+                      int a = 2, int b = 2)
+{
+  const SizeType numCols = x.dimension_1 ();
+
+  switch (numCols) {
+  case 1: {
+    typedef Kokkos::View<typename RMV::value_type*, typename RMV::array_layout,
+      typename RMV::device_type, typename RMV::memory_traits,
+      typename RMV::specialize> RV;
+    typedef Kokkos::View<typename XMV::value_type*, typename XMV::array_layout,
+      typename XMV::device_type, typename XMV::memory_traits,
+      typename XMV::specialize> XV;
+    typedef Kokkos::View<typename YMV::value_type*, typename YMV::array_layout,
+      typename YMV::device_type, typename YMV::memory_traits,
+      typename YMV::specialize> YV;
+
+    RV r_0 = Kokkos::subview (r, Kokkos::ALL (), 0);
+    XV x_0 = Kokkos::subview (x, Kokkos::ALL (), 0);
+    YV y_0 = Kokkos::subview (y, Kokkos::ALL (), 0);
+    V_Axpby_Generic<RV, aVector, XV, bVector, YV, SizeType> (r_0, av, x_0, bv, y_0, a, b);
+    break;
+  }
+  case 2:
+    MV_Axpby_Unrolled<RMV, aVector, XMV, bVector, YMV, 2, SizeType> (r, av, x, bv, y, a, b);
+    break;
+  case 3:
+    MV_Axpby_Unrolled<RMV, aVector, XMV, bVector, YMV, 3, SizeType> (r, av, x, bv, y, a, b);
+    break;
+  case 4:
+    MV_Axpby_Unrolled<RMV, aVector, XMV, bVector, YMV, 4, SizeType> (r, av, x, bv, y, a, b);
+    break;
+  case 5:
+    MV_Axpby_Unrolled<RMV, aVector, XMV, bVector, YMV, 5, SizeType> (r, av, x, bv, y, a, b);
+    break;
+  case 6:
+    MV_Axpby_Unrolled<RMV, aVector, XMV, bVector, YMV, 6, SizeType> (r, av, x, bv, y, a, b);
+    break;
+  case 7:
+    MV_Axpby_Unrolled<RMV, aVector, XMV, bVector, YMV, 7, SizeType> (r, av, x, bv, y, a, b);
+    break;
+  case 8:
+    MV_Axpby_Unrolled<RMV, aVector, XMV, bVector, YMV, 8, SizeType> (r, av, x, bv, y, a, b);
+    break;
+  case 9:
+    MV_Axpby_Unrolled<RMV, aVector, XMV, bVector, YMV, 9, SizeType> (r, av, x, bv, y, a, b);
+    break;
+  case 10:
+    MV_Axpby_Unrolled<RMV, aVector, XMV, bVector, YMV, 10, SizeType> (r, av, x, bv, y, a, b);
+    break;
+  case 11:
+    MV_Axpby_Unrolled<RMV, aVector, XMV, bVector, YMV, 11, SizeType> (r, av, x, bv, y, a, b);
+    break;
+  case 12:
+    MV_Axpby_Unrolled<RMV, aVector, XMV, bVector, YMV, 12, SizeType> (r, av, x, bv, y, a, b);
+    break;
+  case 13:
+    MV_Axpby_Unrolled<RMV, aVector, XMV, bVector, YMV, 13, SizeType> (r, av, x, bv, y, a, b);
+    break;
+  case 14:
+    MV_Axpby_Unrolled<RMV, aVector, XMV, bVector, YMV, 14, SizeType> (r, av, x, bv, y, a, b);
+    break;
+  case 15:
+    MV_Axpby_Unrolled<RMV, aVector, XMV, bVector, YMV, 15, SizeType> (r, av, x, bv, y, a, b);
+    break;
+  case 16:
+    MV_Axpby_Unrolled<RMV, aVector, XMV, bVector, YMV, 16, SizeType> (r, av, x, bv, y, a, b);
+    break;
+  default:
+    MV_Axpby_Generic<RMV, aVector, XMV, bVector, YMV, SizeType> (r, av, x, bv, y, a, b);
+  }
+}
+
+// Compute any of the following, in a way optimized for X, Y, and R
+// being LayoutRight:
+//
+// 1. R(i,j) = a*X(i,j) + b*Y(i,j) for a,b in -1,0,1
+// 2. R(i,j) = av(j)*X(i,j) + b*Y(i,j) for b in -1,0,1
+// 3. R(i,j) = a*X(i,j) + b*Y(i,j) for a in -1,0,1
+// 4. R(i,j) = av(j)*X(i,j) + bv(j)*Y(i,j)
+//
+// a and b come in as integers.  The values -1, 0, and 1 correspond to
+// the literal values of the coefficients.  The value 2 tells the
+// functor to use the corresponding vector of coefficients: a == 2
+// means use av, and b == 2 means use bv.  Otherwise, av resp. vb are
+// ignored.
+//
+// Any literal coefficient of zero has BLAS semantics of ignoring the
+// corresponding (multi)vector entry.  This does NOT apply to
+// coefficients in av and bv vectors, if they are used.
+//
+// Either av and bv are both 1-D Views, or av and bv are both scalars.
+template<class RMV, class aVector, class XMV,
+         class bVector, class YMV, class SizeType>
+void
+MV_Axpby_Invoke_Right (const RMV& r, const aVector& av, const XMV& x,
+                       const bVector& bv, const YMV& y,
+                       int a = 2, int b = 2)
+{
+  const SizeType numCols = x.dimension_1 ();
+
+  if (numCols == 1) {
+    typedef Kokkos::View<typename RMV::value_type*, typename RMV::array_layout,
+      typename RMV::device_type, typename RMV::memory_traits,
+      typename RMV::specialize> RV;
+    typedef Kokkos::View<typename XMV::value_type*, typename XMV::array_layout,
+      typename XMV::device_type, typename XMV::memory_traits,
+      typename XMV::specialize> XV;
+    typedef Kokkos::View<typename YMV::value_type*, typename YMV::array_layout,
+      typename YMV::device_type, typename YMV::memory_traits,
+      typename YMV::specialize> YV;
+
+    RV r_0 = Kokkos::subview (r, Kokkos::ALL (), 0);
+    XV x_0 = Kokkos::subview (x, Kokkos::ALL (), 0);
+    YV y_0 = Kokkos::subview (y, Kokkos::ALL (), 0);
+    V_Axpby_Generic<RMV, aVector, XMV, bVector, YMV, 1, SizeType> (r_0, av, x_0, bv, y_0, a, b);
+  }
+  else {
+    MV_Axpby_Generic<RMV, aVector, XMV, bVector, YMV, SizeType> (r, av, x, bv, y, a, b);
+  }
+}
+
+//! Implementation of KokkosBlas::axpby for multivectors.
+template<class RT, class RL, class RD, class RM, class RS,
+         class XT, class XL, class XD, class XM, class XS,
+         class YT, class YL, class YD, class YM, class YS>
+struct Axpby_MV {
+  typedef Kokkos::View<RT,RL,RD,RM,RS> RMV;
+  typedef Kokkos::View<XT,XL,XD,XM,XS> XMV;
+  typedef Kokkos::View<YT,YL,YD,YM,YS> YMV;
+  typedef typename XMV::size_type size_type;
+  typedef Kokkos::Details::ArithTraits<typename XMV::non_const_value_type> ATA;
+  typedef Kokkos::Details::ArithTraits<typename YMV::non_const_value_type> ATB;
+
+  static void
+  axpby (const RMV& R, const typename XMV::non_const_value_type& alpha,
+         const XMV& X, const typename YMV::non_const_value_type& beta,
+         const YMV& Y)
+  {
+    const size_type numRows = X.dimension_0 ();
+    const size_type numCols = X.dimension_1 ();
+    int a, b;
+    if (alpha == ATA::zero ()) {
+      a = 0;
+    }
+    else if (alpha == -ATA::one ()) {
+      a = -1;
+    }
+    else if (alpha == ATA::one ()) {
+      a = 1;
+    }
+    else {
+      a = 2;
+    }
+    if (beta == ATB::zero ()) {
+      b = 0;
+    }
+    else if (beta == -ATB::one ()) {
+      b = -1;
+    }
+    else if (beta == ATB::one ()) {
+      b = 1;
+    }
+    else {
+      b = 2;
+    }
+
+    if (numRows < static_cast<size_type> (INT_MAX) &&
+        numRows * numCols < static_cast<size_type> (INT_MAX)) {
+      typedef int index_type;
+      MV_Axpby_Invoke_Left<RMV, typename XMV::non_const_value_type, XMV,
+        typename YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
+                                                              beta, Y, a, b);
+    }
+    else {
+      typedef typename XMV::size_type index_type;
+      MV_Axpby_Invoke_Left<RMV, typename XMV::non_const_value_type, XMV,
+        typename YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
+                                                              beta, Y, a, b);
+    }
+  }
+};
+
+// Compute any of the following:
+//
+// 1. R(i,j) = a*X(i,j) + b*Y(i,j) for a,b in -1,0,1
+// 2. R(i,j) = av(j)*X(i,j) + b*Y(i,j) for b in -1,0,1
+// 3. R(i,j) = a*X(i,j) + b*Y(i,j) for a in -1,0,1
+// 4. R(i,j) = av(j)*X(i,j) + bv(j)*Y(i,j)
+//
+// a and b come in as integers.  The values -1, 0, and 1 correspond to
+// the literal values of the coefficients.  The value 2 tells the
+// functor to use the corresponding vector of coefficients: a == 2
+// means use av, and b == 2 means use bv.  Otherwise, av resp. vb are
+// ignored.
+//
+// Any literal coefficient of zero has BLAS semantics of ignoring the
+// corresponding (multi)vector entry.  This does NOT apply to
+// coefficients in av and bv vectors, if they are used.
+//
+// Either av and bv are both 1-D Views, or av and bv are both scalars.
+template<class RT, class RL, class RD, class RM, class RS,
+         class AT, class AL, class AD, class AM, class AS,
+         class XT, class XL, class XD, class XM, class XS,
+         class BT, class BL, class BD, class BM, class BS,
+         class YT, class YL, class YD, class YM, class YS>
+struct Axpby_MV_V {
+  typedef Kokkos::View<RT,RL,RD,RM,RS> RMV;
+  typedef Kokkos::View<AT,AL,AD,AM,AS> AV;
+  typedef Kokkos::View<XT,XL,XD,XM,XS> XMV;
+  typedef Kokkos::View<BT,BL,BD,BM,BS> BV;
+  typedef Kokkos::View<YT,YL,YD,YM,YS> YMV;
+  typedef typename XMV::size_type size_type;
+  typedef Kokkos::Details::ArithTraits<typename XMV::non_const_value_type> ATA;
+  typedef Kokkos::Details::ArithTraits<typename YMV::non_const_value_type> ATB;
+
+  static void
+  axpby (const RMV& R, const AV& av, const XMV& X, const BV& bv, const YMV& Y)
+  {
+    const size_type numRows = X.dimension_0 ();
+    const size_type numCols = X.dimension_1 ();
+    int a = 2, b = 2;
+    if (av.dimension_0 () == 0) {
+      a = 0;
+    }
+    if (bv.dimension_0 () == 0) {
+      b = 0;
+    }
+    if (numRows < static_cast<size_type> (INT_MAX) &&
+        numRows * numCols < static_cast<size_type> (INT_MAX)) {
+      typedef int index_type;
+      MV_Axpby_Invoke_Left<RMV, AV, XMV, BV, YMV, index_type> (R, av, X,
+                                                               bv, Y, a, b);
+    }
+    else {
+      typedef typename XMV::size_type index_type;
+      MV_Axpby_Invoke_Left<RMV, AV, XMV, BV, YMV, index_type> (R, av, X,
+                                                               bv, Y, a, b);
+    }
+  }
+};
+
+#ifdef KOKKOS_HAVE_SERIAL
+
+template<>
+struct Axpby_MV<double**,
+                Kokkos::LayoutLeft,
+                Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
+                Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                Kokkos::Impl::ViewDefault,
+                const double**,
+                Kokkos::LayoutLeft,
+                Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
+                Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                Kokkos::Impl::ViewDefault,
+                const double**,
+                Kokkos::LayoutLeft,
+                Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
+                Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                Kokkos::Impl::ViewDefault> {
+  typedef double** RT;
+  typedef Kokkos::LayoutLeft RL;
+  typedef Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace> RD;
+  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> RM;
+  typedef Kokkos::Impl::ViewDefault RS;
+  typedef Kokkos::View<RT,RL,RD,RM,RS> RMV;
+
+  typedef const double** XT;
+  typedef Kokkos::LayoutLeft XL;
+  typedef Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace> XD;
+  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> XM;
+  typedef Kokkos::Impl::ViewDefault XS;
+  typedef Kokkos::View<XT,XL,XD,XM,XS> XMV;
+
+  typedef const double** YT;
+  typedef Kokkos::LayoutLeft YL;
+  typedef Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace> YD;
+  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> YM;
+  typedef Kokkos::Impl::ViewDefault YS;
+  typedef Kokkos::View<YT,YL,YD,YM,YS> YMV;
+
+  typedef XMV::size_type size_type;
+  typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA;
+  typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB;
+
+  static void
+  axpby (const RMV& R, const XMV::non_const_value_type& alpha, const XMV& X,
+         const YMV::non_const_value_type& beta, const YMV& Y);
+};
+
+#endif // KOKKOS_HAVE_SERIAL
+
+#ifdef KOKKOS_HAVE_OPENMP
+
+template<>
+struct Axpby_MV<double**,
+                Kokkos::LayoutLeft,
+                Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
+                Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                Kokkos::Impl::ViewDefault,
+                const double**,
+                Kokkos::LayoutLeft,
+                Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
+                Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                Kokkos::Impl::ViewDefault,
+                const double**,
+                Kokkos::LayoutLeft,
+                Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
+                Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                Kokkos::Impl::ViewDefault> {
+  typedef double** RT;
+  typedef Kokkos::LayoutLeft RL;
+  typedef Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace> RD;
+  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> RM;
+  typedef Kokkos::Impl::ViewDefault RS;
+  typedef Kokkos::View<RT,RL,RD,RM,RS> RMV;
+
+  typedef const double** XT;
+  typedef Kokkos::LayoutLeft XL;
+  typedef Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace> XD;
+  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> XM;
+  typedef Kokkos::Impl::ViewDefault XS;
+  typedef Kokkos::View<XT,XL,XD,XM,XS> XMV;
+
+  typedef const double** YT;
+  typedef Kokkos::LayoutLeft YL;
+  typedef Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace> YD;
+  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> YM;
+  typedef Kokkos::Impl::ViewDefault YS;
+  typedef Kokkos::View<YT,YL,YD,YM,YS> YMV;
+
+  typedef XMV::size_type size_type;
+  typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA;
+  typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB;
+
+  static void
+  axpby (const RMV& R, const XMV::non_const_value_type& alpha, const XMV& X,
+         const YMV::non_const_value_type& beta, const YMV& Y);
+};
+
+#endif // KOKKOS_HAVE_OPENMP
+
+#ifdef KOKKOS_HAVE_PTHREAD
+
+template<>
+struct Axpby_MV<double**,
+                Kokkos::LayoutLeft,
+                Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
+                Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                Kokkos::Impl::ViewDefault,
+                const double**,
+                Kokkos::LayoutLeft,
+                Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
+                Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                Kokkos::Impl::ViewDefault,
+                const double**,
+                Kokkos::LayoutLeft,
+                Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
+                Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                Kokkos::Impl::ViewDefault> {
+  typedef double** RT;
+  typedef Kokkos::LayoutLeft RL;
+  typedef Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace> RD;
+  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> RM;
+  typedef Kokkos::Impl::ViewDefault RS;
+  typedef Kokkos::View<RT,RL,RD,RM,RS> RMV;
+
+  typedef const double** XT;
+  typedef Kokkos::LayoutLeft XL;
+  typedef Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace> XD;
+  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> XM;
+  typedef Kokkos::Impl::ViewDefault XS;
+  typedef Kokkos::View<XT,XL,XD,XM,XS> XMV;
+
+  typedef const double** YT;
+  typedef Kokkos::LayoutLeft YL;
+  typedef Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace> YD;
+  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> YM;
+  typedef Kokkos::Impl::ViewDefault YS;
+  typedef Kokkos::View<YT,YL,YD,YM,YS> YMV;
+
+  typedef XMV::size_type size_type;
+  typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA;
+  typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB;
+
+  static void
+  axpby (const RMV& R, const XMV::non_const_value_type& alpha, const XMV& X,
+         const YMV::non_const_value_type& beta, const YMV& Y);
+};
+
+#endif // KOKKOS_HAVE_PTHREAD
+
+#ifdef KOKKOS_HAVE_CUDA
+
+template<>
+struct Axpby_MV<double**,
+                Kokkos::LayoutLeft,
+                Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
+                Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                Kokkos::Impl::ViewDefault,
+                const double**,
+                Kokkos::LayoutLeft,
+                Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
+                Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                Kokkos::Impl::ViewDefault,
+                const double**,
+                Kokkos::LayoutLeft,
+                Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
+                Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                Kokkos::Impl::ViewDefault> {
+  typedef double** RT;
+  typedef Kokkos::LayoutLeft RL;
+  typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> RD;
+  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> RM;
+  typedef Kokkos::Impl::ViewDefault RS;
+  typedef Kokkos::View<RT,RL,RD,RM,RS> RMV;
+
+  typedef const double** XT;
+  typedef Kokkos::LayoutLeft XL;
+  typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> XD;
+  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> XM;
+  typedef Kokkos::Impl::ViewDefault XS;
+  typedef Kokkos::View<XT,XL,XD,XM,XS> XMV;
+
+  typedef const double** YT;
+  typedef Kokkos::LayoutLeft YL;
+  typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> YD;
+  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> YM;
+  typedef Kokkos::Impl::ViewDefault YS;
+  typedef Kokkos::View<YT,YL,YD,YM,YS> YMV;
+
+  typedef XMV::size_type size_type;
+  typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA;
+  typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB;
+
+  static void
+  axpby (const RMV& R, const XMV::non_const_value_type& alpha, const XMV& X,
+         const YMV::non_const_value_type& beta, const YMV& Y);
+};
+
+#endif // KOKKOS_HAVE_CUDA
+
+#ifdef KOKKOS_HAVE_CUDA
+
+template<>
+struct Axpby_MV<double**,
+                Kokkos::LayoutLeft,
+                Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
+                Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                Kokkos::Impl::ViewDefault,
+                const double**,
+                Kokkos::LayoutLeft,
+                Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
+                Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                Kokkos::Impl::ViewDefault,
+                const double**,
+                Kokkos::LayoutLeft,
+                Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
+                Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                Kokkos::Impl::ViewDefault> {
+  typedef double** RT;
+  typedef Kokkos::LayoutLeft RL;
+  typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace> RD;
+  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> RM;
+  typedef Kokkos::Impl::ViewDefault RS;
+  typedef Kokkos::View<RT,RL,RD,RM,RS> RMV;
+
+  typedef const double** XT;
+  typedef Kokkos::LayoutLeft XL;
+  typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace> XD;
+  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> XM;
+  typedef Kokkos::Impl::ViewDefault XS;
+  typedef Kokkos::View<XT,XL,XD,XM,XS> XMV;
+
+  typedef const double** YT;
+  typedef Kokkos::LayoutLeft YL;
+  typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace> YD;
+  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> YM;
+  typedef Kokkos::Impl::ViewDefault YS;
+  typedef Kokkos::View<YT,YL,YD,YM,YS> YMV;
+
+  typedef XMV::size_type size_type;
+  typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA;
+  typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB;
+
+  static void
+  axpby (const RMV& R, const XMV::non_const_value_type& alpha, const XMV& X,
+         const YMV::non_const_value_type& beta, const YMV& Y);
+};
+
+#endif // KOKKOS_HAVE_CUDA
 
 } // namespace Impl
 } // namespace KokkosBlas

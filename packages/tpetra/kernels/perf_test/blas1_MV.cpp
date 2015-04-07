@@ -92,6 +92,8 @@ benchmarkKokkos (std::ostream& out,
   RCP<Time> vecDotTimer2 = getTimer ("Kokkos: MV: Dot (noncontiguous)");
   RCP<Time> vecNrmInfTimer = getTimer ("Kokkos: MV: NrmInf (contiguous)");
   RCP<Time> vecNrmInfTimer2 = getTimer ("Kokkos: MV: NrmInf (noncontiguous)");
+  RCP<Time> vecAxpyTimer = getTimer ("Kokkos: MV: Axpy");
+  RCP<Time> vecAxpbyTimer = getTimer ("Kokkos: MV: Axpby");
 
   // Benchmark creation of a MultiVector.
   mv_type x;
@@ -307,6 +309,26 @@ benchmarkKokkos (std::ostream& out,
             << " instead." << endl;
         success = false;
       }
+    }
+  }
+
+  // Benchmark y := alpha*x + beta*y for beta = 0 and beta != 0.
+  {
+    TimeMonitor timeMon (*vecAxpyTimer);
+    const double alpha = 3.0;
+    const double beta = 0.0;
+
+    for (int k = 0; k < numTrials; ++k) {
+      KokkosBlas::axpby (y, alpha, x, beta, y);
+    }
+  }
+  {
+    TimeMonitor timeMon (*vecAxpbyTimer);
+    const double alpha = 3.0;
+    const double beta = 4.0;
+
+    for (int k = 0; k < numTrials; ++k) {
+      KokkosBlas::axpby (y, alpha, x, beta, y);
     }
   }
 

@@ -824,6 +824,108 @@ nrmInf (const RV& norms, const size_t norms_col, const XMV& X, const size_t X_co
       >::nrmInf (norms_internal, norms_col, X_internal, X_col);
 }
 
+
+namespace { // (anonymous)
+
+template<class T, bool isView>
+struct GetInternalTypeForAxpby {
+  typedef T type;
+};
+
+template<class T>
+struct GetInternalTypeForAxpby<T, true> {
+  typedef Kokkos::View<typename T::const_value_type*,
+                       typename T::array_layout,
+                       typename T::device_type,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       typename T::specialize> type;
+};
+
+
+  // typedef typename Kokkos::Impl::if_c<
+  //   Kokkos::Impl::is_view<BV>::value, // if BV is a Kokkos::View,
+  //   Kokkos::View<typename BV::const_value_type*,
+  //     typename BV::array_layout,
+  //     typename BV::device_type,
+  //     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+  //     typename BV::specialize>, // use the unmanaged version of BV,
+  //   BV >::type BV_Internal; // else just use BV.
+
+} // namespace (anonymous)
+
+
+template<class RMV, class AV, class XMV, class BV, class YMV>
+void
+axpby (const RMV& R, const AV& a, const XMV& X, const BV& b, const YMV& Y)
+{
+#ifdef KOKKOS_HAVE_CXX11
+  // RV, XMV, and YMV must be Kokkos::View specializations.
+  static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::dot (MV): "
+                 "The output argument is not a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::dot (MV): "
+                 "The first input argument x is not a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::dot (MV): "
+                 "The second input argument y is not a Kokkos::View.");
+  // RV must be nonconst (else it can't be an output argument).
+  static_assert (Kokkos::Impl::is_same<typename RMV::value_type, typename RMV::non_const_value_type>::value,
+                 "KokkosBlas::axpby (MV): R is const.  "
+                 "It must be nonconst, because it is an output argument "
+                 "(we have to be able to write to its entries).");
+  static_assert (RMV::rank == 2, "KokkosBlas::axpby (MV): "
+                 "R must have rank 2.");
+  static_assert (XMV::rank == 2, "KokkosBlas::axpby (MV): "
+                 "X must have rank 2.");
+  static_assert (YMV::rank == 2, "KokkosBlas::axpby (MV): "
+                 "Y must have rank 2.");
+#endif // KOKKOS_HAVE_CXX11
+
+  // TODO Check compatibility of dimensions at run time.
+
+  // Any View can be assigned to an unmanaged View, and it's safe to
+  // use them here.
+  typedef Kokkos::View<typename RMV::non_const_value_type**,
+    typename RMV::array_layout,
+    typename RMV::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    typename RMV::specialize> RMV_Internal;
+  typedef typename GetInternalTypeForAxpby<AV, Kokkos::Impl::is_view<AV>::value>::type AV_Internal;
+  typedef Kokkos::View<typename XMV::const_value_type**,
+    typename XMV::array_layout,
+    typename XMV::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    typename XMV::specialize> XMV_Internal;
+  typedef typename GetInternalTypeForAxpby<BV, Kokkos::Impl::is_view<BV>::value>::type BV_Internal;
+  typedef Kokkos::View<typename YMV::const_value_type**,
+    typename YMV::array_layout,
+    typename YMV::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    typename YMV::specialize> YMV_Internal;
+
+  RMV_Internal R_internal = R;
+  AV_Internal  a_internal = a;
+  XMV_Internal X_internal = X;
+  BV_Internal  b_internal = b;
+  YMV_Internal Y_internal = Y;
+
+  return Impl::Axpby_MV<
+    typename RMV_Internal::value_type**,
+    typename RMV_Internal::array_layout,
+    typename RMV_Internal::device_type,
+    typename RMV_Internal::memory_traits,
+    typename RMV_Internal::specialize,
+    typename XMV_Internal::value_type**,
+    typename XMV_Internal::array_layout,
+    typename XMV_Internal::device_type,
+    typename XMV_Internal::memory_traits,
+    typename XMV_Internal::specialize,
+    typename YMV_Internal::value_type**,
+    typename YMV_Internal::array_layout,
+    typename YMV_Internal::device_type,
+    typename YMV_Internal::memory_traits,
+    typename YMV_Internal::specialize
+      >::axpby (R_internal, a_internal, X_internal, b_internal, Y_internal);
+}
+
 } // namespace KokkosBlas
 
 #endif // KOKKOS_BLAS1_MV_HPP_
