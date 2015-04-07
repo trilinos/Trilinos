@@ -1098,6 +1098,7 @@ struct Nrm2_MV<double*,
 #endif // KOKKOS_HAVE_PTHREAD
 
 #ifdef KOKKOS_HAVE_CUDA
+template<>
 struct Nrm2_MV<double*,
                Kokkos::Cuda::array_layout,
                Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
@@ -1476,6 +1477,7 @@ struct Nrm1_MV<double*,
 #endif // KOKKOS_HAVE_PTHREAD
 
 #ifdef KOKKOS_HAVE_CUDA
+template<>
 struct Nrm1_MV<double*,
                Kokkos::Cuda::array_layout,
                Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
@@ -1864,6 +1866,7 @@ struct NrmInf_MV<double*,
 #endif // KOKKOS_HAVE_PTHREAD
 
 #ifdef KOKKOS_HAVE_CUDA
+template<>
 struct NrmInf_MV<double*,
                  Kokkos::Cuda::array_layout,
                  Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
