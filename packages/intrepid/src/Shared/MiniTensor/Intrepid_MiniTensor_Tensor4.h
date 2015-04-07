@@ -316,6 +316,51 @@ Tensor4<T, N> const
 identity_3(Index const dimension);
 
 ///
+/// Levi-Civita symbol
+///
+template<typename T, Index N>
+Tensor4<T, N> const
+levi_civita_4();
+
+template<typename T>
+Tensor4<T, DYNAMIC> const
+levi_civita_4(Index const dimension);
+
+template<typename T, Index N>
+Tensor4<T, N> const
+levi_civita_4(Index const dimension);
+
+///
+/// Permutation symbol
+///
+template<typename T, Index N>
+Tensor4<T, N> const
+permutation_4();
+
+template<typename T>
+Tensor4<T, DYNAMIC> const
+permutation_4(Index const dimension);
+
+template<typename T, Index N>
+Tensor4<T, N> const
+permutation_4(Index const dimension);
+
+///
+/// Alternating symbol
+///
+template<typename T, Index N>
+Tensor4<T, N> const
+alternator_4();
+
+template<typename T>
+Tensor4<T, DYNAMIC> const
+alternator_4(Index const dimension);
+
+template<typename T, Index N>
+Tensor4<T, N> const
+alternator_4(Index const dimension);
+
+///
 /// 4th-order inverse
 /// \return \f$ B such that B : A = A : B = I_1 \f$
 ///

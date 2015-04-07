@@ -1588,9 +1588,7 @@ zero(Index const dimension)
   return Tensor<T, N>(dimension, ZEROS);
 }
 
-//
-// R^N 2nd-order identity tensor
-//
+// Local utility functions
 namespace {
 
 template<typename T, Index N>
@@ -1642,6 +1640,9 @@ void fill_levi_civita(Tensor<T, N> & A)
 
 } // anonymous namespace
 
+//
+// R^N 2nd-order identity tensor
+//
 template<typename T, Index N>
 inline
 Tensor<T, N> const
@@ -1716,7 +1717,7 @@ eye(Index const dimension)
 template<typename T, Index N>
 inline
 Tensor<T, N> const
-levi_civita()
+levi_civita_2()
 {
   Tensor<T, N>
   A(N, ZEROS);
@@ -1729,7 +1730,7 @@ levi_civita()
 template<typename T>
 inline
 Tensor<T, DYNAMIC> const
-levi_civita(Index const dimension)
+levi_civita_2(Index const dimension)
 {
   Tensor<T, DYNAMIC>
   A(dimension, ZEROS);
@@ -1739,11 +1740,10 @@ levi_civita(Index const dimension)
   return A;
 }
 
-
 template<typename T, Index N>
 inline
 Tensor<T, N> const
-levi_civita(Index const dimension)
+levi_civita_2(Index const dimension)
 {
   if (N != DYNAMIC) assert(dimension == N);
 
@@ -1755,6 +1755,60 @@ levi_civita(Index const dimension)
   return A;
 }
 
+//
+// Permutation symbol
+//
+template<typename T, Index N>
+inline
+Tensor<T, N> const
+permutation_2()
+{
+  return levi_civita_2<T, N>();
+}
+
+template<typename T>
+inline
+Tensor<T, DYNAMIC> const
+permutation_2(Index const dimension)
+{
+  return levi_civita_2<T>(dimension);
+}
+
+
+template<typename T, Index N>
+inline
+Tensor<T, N> const
+permutation_2(Index const dimension)
+{
+  return levi_civita_2<T, N>(dimension);
+}
+
+//
+// Alternating symbol
+//
+template<typename T, Index N>
+inline
+Tensor<T, N> const
+alternator_2()
+{
+  return levi_civita_2<T, N>();
+}
+
+template<typename T>
+inline
+Tensor<T, DYNAMIC> const
+alternator_2(Index const dimension)
+{
+  return levi_civita_2<T>(dimension);
+}
+
+template<typename T, Index N>
+inline
+Tensor<T, N> const
+alternator_2(Index const dimension)
+{
+  return levi_civita_2<T, N>(dimension);
+}
 
 //
 // R^N 2nd-order tensor transpose

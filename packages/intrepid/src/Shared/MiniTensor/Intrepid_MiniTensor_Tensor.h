@@ -680,45 +680,45 @@ eye(Index const dimension);
 ///
 template<typename T, Index N>
 Tensor<T, N> const
-levi_civita();
+levi_civita_2();
 
 template<typename T>
 Tensor<T, DYNAMIC> const
-levi_civita(Index const dimension);
+levi_civita_2(Index const dimension);
 
 template<typename T, Index N>
 Tensor<T, N> const
-levi_civita(Index const dimension);
+levi_civita_2(Index const dimension);
 
 ///
 /// Permutation symbol
 ///
 template<typename T, Index N>
 Tensor<T, N> const
-permutation();
+permutation_2();
 
 template<typename T>
 Tensor<T, DYNAMIC> const
-permutation(Index const dimension);
+permutation_2(Index const dimension);
 
 template<typename T, Index N>
 Tensor<T, N> const
-permutation(Index const dimension);
+permutation_2(Index const dimension);
 
 ///
 /// Alternating symbol
 ///
 template<typename T, Index N>
 Tensor<T, N> const
-alternator();
+alternator_2();
 
 template<typename T>
 Tensor<T, DYNAMIC> const
-alternator(Index const dimension);
+alternator_2(Index const dimension);
 
 template<typename T, Index N>
 Tensor<T, N> const
-alternator(Index const dimension);
+alternator_2(Index const dimension);
 
 ///
 /// R^N 2nd-order tensor transpose
