@@ -51,6 +51,8 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
+#include "stk_mesh/base/FEMHelpers.hpp"
+#include "stk_mesh/base/Field.hpp"
 
 namespace {
 
@@ -126,6 +128,70 @@ TEST( StkMeshIoBroker, iofixture )
   }
   // Since correctness can only be established by running SEACAS tools, correctness
   // checking is left to the test XML.
+}
+
+TEST( StkMeshIoBroker, testModifyTopology )
+{
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    stk::io::StkMeshIoBroker fixture(pm);
+    std::string generated_mesh_spec = "generated:1x1x2";
+    const unsigned p_size = stk::parallel_machine_size(pm);
+    if (p_size > 1) { return; }
+
+    // Initialize meta data from exodus file
+    fixture.add_mesh_database(generated_mesh_spec, stk::io::READ_MESH);
+    fixture.create_input_mesh();
+
+    stk::mesh::MetaData & meta_data = fixture.meta_data();
+    stk::mesh::Part & side_set_part = meta_data.declare_part_with_topology("Side Set Part",stk::topology::QUAD_4);
+    stk::mesh::Part & inactive_part = meta_data.declare_part("Inactive Part");
+    typedef stk::mesh::Field<int> ScalarFieldType;
+    ScalarFieldType & side_set_field = meta_data.declare_field<ScalarFieldType>(stk::topology::FACE_RANK,"My Sideset Field",1u);
+    const int initial_value = 1;
+    stk::mesh::put_field(side_set_field,side_set_part,&initial_value);
+    stk::io::put_io_part_attribute(side_set_part);
+    meta_data.commit();
+    fixture.populate_bulk_data();
+    stk::mesh::BulkData & mesh = fixture.bulk_data();
+
+    std::string output_base_filename = "StkMeshIoBroker.testModifyTopology.e";
+    size_t output_index = 0;
+    ASSERT_NO_THROW(output_index = fixture.create_output_mesh(output_base_filename, stk::io::WRITE_RESULTS));
+    fixture.add_field(output_index,side_set_field);
+    double time_step = 0;
+    ASSERT_NO_THROW(fixture.process_output_request(output_index, time_step));
+
+    mesh.modification_begin();
+    stk::mesh::Entity element = mesh.get_entity(stk::topology::ELEMENT_RANK,1);
+    stk::mesh::Entity side = mesh.declare_entity(stk::topology::FACE_RANK,1,side_set_part);
+    const int side_0 = 0;
+    stk::mesh::declare_element_side(mesh,element,side,side_0);
+    mesh.modification_end();
+
+    std::string output_base_filename2 = "StkMeshIoBroker.testModifyTopology2.e";
+    ASSERT_NO_THROW(output_index = fixture.create_output_mesh(output_base_filename2, stk::io::WRITE_RESULTS));
+    fixture.add_field(output_index,side_set_field);
+
+    time_step = 0.1;
+    ASSERT_NO_THROW(fixture.process_output_request(output_index, time_step));
+
+    mesh.modification_begin();
+    stk::mesh::PartVector add_parts;
+    add_parts.push_back(&inactive_part);
+    mesh.change_entity_parts(element,add_parts);
+    EXPECT_TRUE(mesh.destroy_relation(element,side,side_0));
+    EXPECT_TRUE(mesh.destroy_entity(side));
+    mesh.modification_end();
+
+    std::string output_base_filename3 = "StkMeshIoBroker.testModifyTopology3.e";
+    ASSERT_NO_THROW(output_index = fixture.create_output_mesh(output_base_filename3, stk::io::WRITE_RESULTS));
+    stk::mesh::Selector active_selector = !inactive_part;
+    fixture.set_subset_selector(output_index,active_selector);
+    fixture.add_field(output_index,side_set_field);
+
+    time_step = 0.2;
+    ASSERT_NO_THROW(fixture.process_output_request(output_index, time_step));
+
 }
 
 TEST( StkMeshIoBroker, active_only )
