@@ -634,46 +634,91 @@ diag(Tensor<T, N> const & A);
 /// All components are zero
 ///
 template<typename T, Index N>
-const Tensor<T, N>
+Tensor<T, N> const
 zero();
 
 template<typename T>
-const Tensor<T, DYNAMIC>
+Tensor<T, DYNAMIC> const
 zero(Index const dimension);
 
 template<typename T, Index N>
-const Tensor<T, N>
+Tensor<T, N> const
 zero(Index const dimension);
 
 ///
 /// 2nd-order identity tensor
 ///
 template<typename T, Index N>
-const Tensor<T, N>
+Tensor<T, N> const
 identity();
 
 template<typename T>
-const Tensor<T, DYNAMIC>
+Tensor<T, DYNAMIC> const
 identity(Index const dimension);
 
 template<typename T, Index N>
-const Tensor<T, N>
+Tensor<T, N> const
 identity(Index const dimension);
 
 ///
 /// 2nd-order identity tensor, à la Matlab
 ///
 template<typename T, Index N>
-const Tensor<T, N>
+Tensor<T, N> const
 eye();
 
 template<typename T>
-const Tensor<T, DYNAMIC>
+Tensor<T, DYNAMIC> const
 eye(Index const dimension);
 
 template<typename T, Index N>
-const Tensor<T, N>
+Tensor<T, N> const
 eye(Index const dimension);
+
+///
+/// Levi-Civita symbol
+///
+template<typename T, Index N>
+Tensor<T, N> const
+levi_civita_2();
+
+template<typename T>
+Tensor<T, DYNAMIC> const
+levi_civita_2(Index const dimension);
+
+template<typename T, Index N>
+Tensor<T, N> const
+levi_civita_2(Index const dimension);
+
+///
+/// Permutation symbol
+///
+template<typename T, Index N>
+Tensor<T, N> const
+permutation_2();
+
+template<typename T>
+Tensor<T, DYNAMIC> const
+permutation_2(Index const dimension);
+
+template<typename T, Index N>
+Tensor<T, N> const
+permutation_2(Index const dimension);
+
+///
+/// Alternating symbol
+///
+template<typename T, Index N>
+Tensor<T, N> const
+alternator_2();
+
+template<typename T>
+Tensor<T, DYNAMIC> const
+alternator_2(Index const dimension);
+
+template<typename T, Index N>
+Tensor<T, N> const
+alternator_2(Index const dimension);
 
 ///
 /// R^N 2nd-order tensor transpose

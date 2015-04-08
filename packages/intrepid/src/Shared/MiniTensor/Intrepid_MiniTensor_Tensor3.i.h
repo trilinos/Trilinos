@@ -319,6 +319,158 @@ Tensor3<T, N>::operator()(Index const i, Index const j, Index const k)
   return self[(i * dimension + j) * dimension + k];
 }
 
+// Local utility functions
+namespace {
+
+template<typename T, Index N>
+inline
+void ones_in_diagonal(Tensor3<T, N> & A)
+{
+  Index const
+  dimension = A.get_dimension();
+
+  switch (dimension) {
+
+  default:
+    for (Index i = 0; i < dimension; ++i) {
+      A(i, i, i) = 1.0;
+    }
+    break;
+
+  case 3:
+    A(0, 0, 0) = 1.0;
+    A(1, 1, 1) = 1.0;
+    A(2, 2, 2) = 1.0;
+    break;
+
+  case 2:
+    A(0, 0, 0) = 1.0;
+    A(1, 1, 1) = 1.0;
+    break;
+
+  }
+
+  return;
+}
+
+template<typename T, Index N>
+inline
+void fill_levi_civita(Tensor3<T, N> & A)
+{
+  Index const
+  dimension = A.get_dimension();
+
+  for (Index i = 0; i < dimension; ++i) {
+    for (Index j = 0; j < dimension; ++j) {
+      for (Index k = 0; k < dimension; ++k) {
+        A(i, j, k) = levi_civita<T>(i, j, k);
+      }
+    }
+  }
+
+  return;
+}
+
+} // anonymous namespace
+
+//
+// Levi-Civita symbol
+//
+template<typename T, Index N>
+inline
+Tensor3<T, N> const
+levi_civita_3()
+{
+  Tensor3<T, N>
+  A(N, ZEROS);
+
+  fill_levi_civita(A);
+
+  return A;
+}
+
+template<typename T>
+inline
+Tensor3<T, DYNAMIC> const
+levi_civita_3(Index const dimension)
+{
+  Tensor3<T, DYNAMIC>
+  A(dimension, ZEROS);
+
+  fill_levi_civita(A);
+
+  return A;
+}
+
+template<typename T, Index N>
+inline
+Tensor3<T, N> const
+levi_civita_3(Index const dimension)
+{
+  if (N != DYNAMIC) assert(dimension == N);
+
+  Tensor3<T, DYNAMIC>
+  A(dimension, ZEROS);
+
+  fill_levi_civita(A);
+
+  return A;
+}
+
+//
+// Permutation symbol
+//
+template<typename T, Index N>
+inline
+Tensor3<T, N> const
+permutation_3()
+{
+  return levi_civita_3<T, N>();
+}
+
+template<typename T>
+inline
+Tensor3<T, DYNAMIC> const
+permutation_3(Index const dimension)
+{
+  return levi_civita_3<T>(dimension);
+}
+
+template<typename T, Index N>
+inline
+Tensor3<T, N> const
+permutation_3(Index const dimension)
+{
+  return levi_civita_3<T, N>(dimension);
+}
+
+//
+// Alternating symbol
+//
+template<typename T, Index N>
+inline
+Tensor3<T, N> const
+alternator_3()
+{
+  return levi_civita_3<T, N>();
+}
+
+template<typename T>
+inline
+Tensor3<T, DYNAMIC> const
+alternator_3(Index const dimension)
+{
+  return levi_civita_3<T>(dimension);
+}
+
+template<typename T, Index N>
+inline
+Tensor3<T, N> const
+alternator_3(Index const dimension)
+{
+  return levi_civita_3<T, N>(dimension);
+}
+
 } // namespace Intrepid
 
 #endif // Intrepid_MiniTensor_Tensor3_i_h

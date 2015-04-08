@@ -327,6 +327,51 @@ Tensor3<typename Promote<S, T>::type, N>
 dot2(Tensor<S, N> const & A, Tensor3<T, N> const & B);
 
 ///
+/// Levi-Civita symbol
+///
+template<typename T, Index N>
+Tensor3<T, N> const
+levi_civita_3();
+
+template<typename T>
+Tensor3<T, DYNAMIC> const
+levi_civita_3(Index const dimension);
+
+template<typename T, Index N>
+Tensor3<T, N> const
+levi_civita_3(Index const dimension);
+
+///
+/// Permutation symbol
+///
+template<typename T, Index N>
+Tensor3<T, N> const
+permutation_3();
+
+template<typename T>
+Tensor3<T, DYNAMIC> const
+permutation_3(Index const dimension);
+
+template<typename T, Index N>
+Tensor3<T, N> const
+permutation_3(Index const dimension);
+
+///
+/// Alternating symbol
+///
+template<typename T, Index N>
+Tensor3<T, N> const
+alternator_3();
+
+template<typename T>
+Tensor3<T, DYNAMIC> const
+alternator_3(Index const dimension);
+
+template<typename T, Index N>
+Tensor3<T, N> const
+alternator_3(Index const dimension);
+
+///
 /// 3rd-order tensor input
 /// \param A 3rd-order tensor
 /// \param is input stream

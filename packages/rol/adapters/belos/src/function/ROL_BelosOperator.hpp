@@ -42,7 +42,7 @@
 // @HEADER
 
 /** 
-    \class Belos::OperatorTraits<Scalar,ROL::Vector<Scalar>,ROL::LinearOperator<Scalar>> 
+    \class Belos::OperatorTraits<Scalar,ROL::MultiVector<Scalar>,ROL::LinearOperator<Scalar>> 
     \brief Provides interface for using ROL::LinearOperator with Belos solvers
            (excluding block solvers).    
     \author Created by Greg von Winckel
@@ -57,23 +57,26 @@
 #include "BelosMultiVecTraits.hpp"
 #include "BelosOperatorTraits.hpp"
 
-#include "ROL_Vector.hpp"
+#include "ROL_MultiVector.hpp"
 #include "ROL_LinearOperator.hpp"
 
 namespace Belos {
 
     template<class Scalar>
-    class OperatorTraits<Scalar,ROL::Vector<Scalar>,ROL::LinearOperator<Scalar>> {
+    class OperatorTraits<Scalar,ROL::MultiVector<Scalar>,ROL::LinearOperator<Scalar>> {
         public:
             static void
             /// Note that ROL and Belos use reverse orderings
             /// for input and output vectors
             Apply(const ROL::LinearOperator<Scalar>& Op,
-                  const ROL::Vector<Scalar> &X,
-                        ROL::Vector<Scalar> &Y,
+                  const ROL::MultiVector<Scalar> &X,
+                        ROL::MultiVector<Scalar> &Y,
                   const ETrans trans = NOTRANS) {
                  Scalar tol=0;
-                 Op.apply(Y,X,tol);    
+                 int n = X.getNumberOfVectors();
+                 for(int i=0;i<n;++i) {
+                     Op.apply(*(Y.getVector(i)),*(X.getVector(i)),tol);    
+                 }
             }
 
             static bool

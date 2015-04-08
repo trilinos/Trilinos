@@ -64,13 +64,16 @@ Ptr<T>::Ptr( ENull /*null_in*/ )
 
 template<class T> inline
 Ptr<T>::Ptr( T *ptr_in )
-  : ptr_(ptr_in)
+  :ptr_(ptr_in)
 {}
 
 
 template<class T> inline
 Ptr<T>::Ptr(const Ptr<T>& ptr_in)
   :ptr_(ptr_in.ptr_)
+#ifdef TEUCHOS_DEBUG
+  ,rcp_(ptr_in.access_rcp())
+#endif
 {}
 
 
@@ -78,6 +81,9 @@ template<class T>
 template<class T2> inline
 Ptr<T>::Ptr(const Ptr<T2>& ptr_in)
   :ptr_(ptr_in.get())
+#ifdef TEUCHOS_DEBUG
+  ,rcp_(ptr_in.access_rcp())
+#endif
 {}
 
 
@@ -85,6 +91,9 @@ template<class T> inline
 Ptr<T>& Ptr<T>::operator=(const Ptr<T>& ptr_in)
 {
   ptr_ = ptr_in.get();
+#ifdef TEUCHOS_DEBUG
+  rcp_ = ptr_in.rcp_;
+#endif
   return *this;
 }
 

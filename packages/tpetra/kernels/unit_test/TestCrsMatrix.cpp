@@ -39,8 +39,7 @@
 // ************************************************************************
 //@HEADER
 
-#include <gtest/gtest.h>
-
+#include <Teuchos_UnitTestHarness.hpp>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_CrsMatrix.hpp>
 #include <stdexcept>
@@ -169,20 +168,11 @@ namespace { // anonymous
     Kokkos::finalize ();
   }
 
+  TEUCHOS_UNIT_TEST( CrsMatrix, Compile )
+  {
+    // For now, just test that CrsMatrix compiles.
+    testCrsMatrix<Kokkos::DefaultExecutionSpace> ();
+  }
+
 } // namespace (anonymous)
-
-namespace Test {
-
-class CrsMatrix : public ::testing::Test {
-protected:
-  static void SetUpTestCase() {}
-  static void TearDownTestCase() {}
-};
-
-// Just test that CrsMatrix compiles.
-TEST_F( CrsMatrix, Compile ) {
-  testCrsMatrix<Kokkos::DefaultExecutionSpace> ();
-}
-
-} // namespace test
 

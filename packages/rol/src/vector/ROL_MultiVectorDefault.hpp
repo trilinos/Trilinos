@@ -164,6 +164,12 @@ class MultiVectorDefault : public MultiVector<Real> {
             return numVectors_;
         }
 
+        void axpy(const Real alpha, const MV& x) {
+            for(int i=0;i<numVectors_;++i) {
+                mvec_[i]->axpy(alpha,*(x.getVector(i)));
+            }  
+        } 
+
         // Generic BLAS level 3 matrix multiplication
         // \f$\text{this}\leftarrow \alpha A B+\beta\text{this}\f$   
         void gemm(const Real alpha,

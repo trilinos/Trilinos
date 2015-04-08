@@ -165,9 +165,42 @@ dot (const RV& r, const XMV& X, const XMV& Y)
       typedef Kokkos::View<RV::value_type, RV::array_layout, RV::device_type, RV::memory_traits, RV::specialize> RV0D;
       typedef Kokkos::View<XMV::value_type*, XMV::array_layout, XMV::device_type, XMV::memory_traits, XMV::specialize> XMV1D;
       typedef Kokkos::View<YMV::value_type*, YMV::array_layout, YMV::device_type, YMV::memory_traits, YMV::specialize> YMV1D;
-      typedef V_Dot_Functor<RV0D, XMV1D, YMV1D> op_type;
-      op_type op (subview (r, 0), subview (X, ALL (), 0), subview (Y, ALL (), 0));
-      Kokkos::parallel_reduce (numRows, op);
+#if 0
+      if (numRows < static_cast<size_type> (INT_MAX) &&
+          numRows * numVecs < static_cast<size_type> (INT_MAX)) {
+        typedef V_Dot_Functor<RV0D, XMV1D, YMV1D, int> op_type;
+        Kokkos::RangePolicy<XMV::execution_space, int> policy (0, numRows);
+        op_type op (subview (r, 0), subview (X, ALL (), 0), subview (Y, ALL (), 0));
+        Kokkos::parallel_reduce (policy, op);
+      }
+      else {
+        typedef V_Dot_Functor<RV0D, XMV1D, YMV1D, size_type> op_type;
+        Kokkos::RangePolicy<XMV::execution_space, size_type> policy (0, numRows);
+        op_type op (subview (r, 0), subview (X, ALL (), 0), subview (Y, ALL (), 0));
+        Kokkos::parallel_reduce (policy, op);
+      }
+#else
+      RV0D r_0 = subview (r, 0);
+      XMV1D X_0 = subview (X, ALL (), 0);
+      YMV1D Y_0 = subview (Y, ALL (), 0);
+
+      if (numRows < static_cast<size_type> (INT_MAX) &&
+          numRows * numVecs < static_cast<size_type> (INT_MAX)) {
+        double sum = 0.0;
+        const int lclNumRows = static_cast<int> (numRows);
+        for (int i = 0; i < lclNumRows; ++i) {
+          sum += X_0(i) * Y_0(i);
+        }
+        r_0() = sum;
+      }
+      else {
+        double sum = 0.0;
+        for (size_type i = 0; i < numRows; ++i) {
+          sum += X_0(i) * Y_0(i);
+        }
+        r_0() = sum;
+      }
+#endif // 0
       break;
     }
     } // switch

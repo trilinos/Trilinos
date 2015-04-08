@@ -1146,7 +1146,7 @@ namespace Tpetra {
       typedef typename dual_view_type::t_host XMV;
       // I consider it more polite to sync *this, then to sync A.
       // A is a "guest" of this method, and is passed in const.
-      this->view_.sync<typename XMV::memory_space> ();
+      this->view_.template sync<typename XMV::memory_space> ();
       lclDotImpl<RV, XMV> (dotsOut, view_.h_view, A.view_.h_view,
                            lclNumRows, numVecs,
                            this->whichVectors_, A.whichVectors_,
@@ -1162,7 +1162,7 @@ namespace Tpetra {
       typedef typename dual_view_type::t_dev XMV;
       // I consider it more polite to sync *this, then to sync A.
       // A is a "guest" of this method, and is passed in const.
-      this->view_.sync<typename XMV::memory_space> ();
+      this->view_.template sync<typename XMV::memory_space> ();
       lclDotImpl<RV, XMV> (dotsOut, view_.d_view, A.view_.d_view,
                            lclNumRows, numVecs,
                            this->whichVectors_, A.whichVectors_,
