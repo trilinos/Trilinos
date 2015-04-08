@@ -1,5 +1,9 @@
 
-How to snapshot Kokkos from github.com/kokkos to Trilinos.
+Developers of Kokkos (those who commit modifications to Kokkos)
+must maintain the snapshot of Kokkos in the Trilinos repository.
+
+This file contains instructions for how to
+snapshot Kokkos from github.com/kokkos to Trilinos.
 
 ------------------------------------------------------------------------
 *** EVERYTHING GOES RIGHT WORKFLOW ***
