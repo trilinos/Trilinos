@@ -48,6 +48,33 @@
 #  include <type_traits>
 #endif // KOKKOS_HAVE_CXX11
 
+// Define this if you want some of the methods below to print out
+// information about the types that they use internally.  This is
+// useful for figuring out whether they are using the right
+// specialization of the kernel.
+//
+// #define TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO 1
+
+#ifdef TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+#  include <cxxabi.h>
+
+namespace {
+  // Print the type of t in demangled (human-readable) form.  This is
+  // useful for debugging whether KokkosBlas::axpby() is calling one
+  // of the full specializations, or the generic version of the
+  // kernel.  See the following link for information about the
+  // demangling function we call below:
+  //
+  // https://gcc.gnu.org/onlinedocs/libstdc++/manual/ext_demangling.html
+  template<class T>
+  std::string demangledTypeName (const T& t) {
+    int status = 0;
+    return abi::__cxa_demangle (typeid (t).name (), 0, 0, &status);
+  }
+}
+#endif // TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+
+
 namespace KokkosBlas {
 
 /// \brief Compute the column-wise dot products of two multivectors.
@@ -827,6 +854,11 @@ nrmInf (const RV& norms, const size_t norms_col, const XMV& X, const size_t X_co
 
 namespace { // (anonymous)
 
+// axpby() accepts both scalar coefficients a and b, and vector
+// coefficients (apply one for each column of the input multivectors).
+// This traits class helps axpby() select the correct specialization
+// of AV and BV (the type of a resp. b) for invoking the
+// implementation.
 template<class T, bool isView>
 struct GetInternalTypeForAxpby {
   typedef T type;
@@ -840,7 +872,6 @@ struct GetInternalTypeForAxpby<T, true> {
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                        typename T::specialize> type;
 };
-
 
   // typedef typename Kokkos::Impl::if_c<
   //   Kokkos::Impl::is_view<BV>::value, // if BV is a Kokkos::View,
@@ -879,7 +910,18 @@ axpby (const RMV& R, const AV& a, const XMV& X, const BV& b, const YMV& Y)
                  "Y must have rank 2.");
 #endif // KOKKOS_HAVE_CXX11
 
-  // TODO Check compatibility of dimensions at run time.
+  // Check compatibility of dimensions at run time.
+  if (X.dimension_0 () != Y.dimension_0 () ||
+      X.dimension_1 () != Y.dimension_1 () ||
+      X.dimension_0 () != R.dimension_0 () ||
+      X.dimension_1 () != R.dimension_1 ()) {
+    std::ostringstream os;
+    os << "KokkosBlas::axpby (MV): Dimensions of R, X, and Y do not match: "
+       << "R: " << R.dimension_0 () << " x " << R.dimension_1 ()
+       << ", X: " << X.dimension_0 () << " x " << X.dimension_1 ()
+       << ", Y: " << Y.dimension_0 () << " x " << Y.dimension_1 ();
+    Kokkos::Impl::throw_runtime_exception (os.str ());
+  }
 
   // Any View can be assigned to an unmanaged View, and it's safe to
   // use them here.
@@ -906,6 +948,18 @@ axpby (const RMV& R, const AV& a, const XMV& X, const BV& b, const YMV& Y)
   XMV_Internal X_internal = X;
   BV_Internal  b_internal = b;
   YMV_Internal Y_internal = Y;
+
+#ifdef TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+  using std::cerr;
+  using std::endl;
+  cerr << "KokkosBlas::axpby:" << endl
+       << "  RMV_Internal: " << demangledTypeName (R_internal) << endl
+       << "  AV_Internal: " << demangledTypeName (a_internal) << endl
+       << "  XMV_Internal: " << demangledTypeName (X_internal) << endl
+       << "  BV_Internal: " << demangledTypeName (b_internal) << endl
+       << "  YMV_Internal: " << demangledTypeName (Y_internal) << endl
+       << endl;
+#endif // TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
 
   return Impl::Axpby_MV<
     typename RMV_Internal::value_type**,
