@@ -188,10 +188,10 @@ Entity declare_element_to_entity(BulkData & mesh, Entity elem, Entity entity,
     if(0 == num_side_nodes)
     {
         Permutation node_perm = stk::mesh::Permutation::INVALID_PERMUTATION;
-        Entity const *elem_nodes = mesh.begin_nodes(elem);
+        Entity const *elem_nodes_local = mesh.begin_nodes(elem);
         for(unsigned i = 0; i < entity_top.num_nodes(); ++i)
         {
-            Entity node = elem_nodes[entity_node_ordinals[i]];
+            Entity node = elem_nodes_local[entity_node_ordinals[i]];
             mesh.declare_relation(entity, node, i, node_perm, ordinal_scratch, part_scratch);
         }
     }

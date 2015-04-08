@@ -35,9 +35,11 @@
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
+#include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Types.hpp>      // for MeshIndex, EntityRank, etc
 #include <stk_mesh/baseImpl/BucketRepository.hpp>  // for BucketRepository
+#include <stk_mesh/base/EntityLess.hpp>
 
 namespace stk { namespace mesh { namespace unit_test {
 
@@ -203,10 +205,6 @@ public:
         return comm_mesh_verify_parallel_consistency(error_log);
     }
 
-
-
-
-
     void my_internal_resolve_shared_modify_delete()
     {
         this->internal_resolve_shared_modify_delete();
@@ -265,6 +263,26 @@ public:
     void my_delete_shared_entities_which_are_no_longer_in_owned_closure()
     {
         delete_shared_entities_which_are_no_longer_in_owned_closure();
+    }
+
+    void my_ghost_entities_and_fields(Ghosting & ghosting, const std::set<EntityProc , EntityLess>& new_send)
+    {
+        ghost_entities_and_fields(ghosting, new_send);
+    }
+
+    void my_add_closure_entities(const stk::mesh::Ghosting& ghosting, const stk::mesh::EntityProcVec& entities, std::set <stk::mesh::EntityProc , stk::mesh::EntityLess > &entitiesWithClosure)
+    {
+        add_closure_entities(ghosting, entities, entitiesWithClosure);
+    }
+
+    void my_internal_modification_end_for_change_ghosting()
+    {
+        internal_modification_end_for_change_ghosting();
+    }
+
+    bool my_in_send_ghost(const stk::mesh::Ghosting& ghosting, stk::mesh::EntityKey key, int proc)
+    {
+        return in_send_ghost(ghosting, key, proc);
     }
 };
 

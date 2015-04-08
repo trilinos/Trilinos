@@ -495,9 +495,9 @@ public:
   void change_ghosting( Ghosting & ghosts,
                         const std::vector<EntityProc> & add_send ,
                         const std::vector<EntityKey> & remove_receive = std::vector<EntityKey>());
-  void batch_change_ghosting( Ghosting & ghosts,
-                        const std::vector<EntityProc> & add_send ,
-                        const std::vector<EntityKey> & remove_receive = std::vector<EntityKey>());
+
+  void batch_add_to_ghosting( Ghosting & ghosts,
+                        const std::vector<EntityProc> & add_send);
 
   // Clear all ghosts for a particular ghosting.
   void destroy_ghosting( Ghosting& ghost_layer );
@@ -699,6 +699,19 @@ public:
 
 protected: //functions
 
+  bool inputs_ok_and_need_ghosting(Ghosting & ghosts ,
+                               const std::vector<EntityProc> & add_send ,
+                               const std::vector<EntityKey> & remove_receive,
+                               std::vector<EntityProc> &filtered_add_send);
+
+  void internal_batch_add_to_ghosting(Ghosting & ghosts , const std::vector<EntityProc> & add_send);
+
+  bool in_send_ghost( const Ghosting & ghosting, EntityKey key, int proc) const;
+  void ghost_entities_and_fields(Ghosting & ghosting, const std::set<EntityProc , EntityLess>& new_send);
+
+  void conditionally_add_entity_to_ghosting_set(const stk::mesh::Ghosting &ghosting, stk::mesh::Entity entity, int toProc, std::set <stk::mesh::EntityProc , stk::mesh::EntityLess > &entitiesWithClosure);
+  void add_closure_entities(const stk::mesh::Ghosting& ghosting, const stk::mesh::EntityProcVec& entities, std::set <stk::mesh::EntityProc , stk::mesh::EntityLess > &entitiesWithClosure);
+
   const EntityCommListInfoVector & internal_comm_list() const { return m_entity_comm_list; }
   PairIterEntityComm internal_entity_comm_map(const EntityKey & key) const { return m_entity_comm_map.comm(key); }
   PairIterEntityComm internal_entity_comm_map(const EntityKey & key, const Ghosting & sub ) const { return m_entity_comm_map.comm(key,sub); }
@@ -753,6 +766,8 @@ protected: //functions
                                  const std::vector<EntityProc> & add_send ,
                                  const std::vector<EntityKey> & remove_receive,
                                  bool is_full_regen = false);
+
+  void internal_add_to_ghosting( Ghosting &ghosting, const std::vector<EntityProc> &add_send);
 
   //Optional parameter 'always_propagate_internal_changes' is always true except when this function
   //is being called from the sierra-framework. The fmwk redundantly does its own propagation of the
@@ -1000,8 +1015,6 @@ private: //functions
                                     Ghosting & ghosts ,
                                     const std::vector<EntityProc> & add_send ,
                                     const std::vector<EntityKey> & remove_receive );
-
-  void ghost_entities_and_fields(Ghosting & ghosting, const std::set<EntityProc , EntityLess>& new_send);
 
   bool internal_modification_end_for_entity_creation( EntityRank entity_rank, bool regenerate_aura, modification_optimization opt );
   void internal_establish_new_owner(stk::mesh::Entity entity);
