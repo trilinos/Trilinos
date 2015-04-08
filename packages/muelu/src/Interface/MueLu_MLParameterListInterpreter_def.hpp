@@ -336,7 +336,6 @@ namespace MueLu {
       RebalancedRFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Restriction")));
       RebalancedRFact->SetFactory("R", RFact);
       RebalancedRFact->SetFactory("Importer",    RepartitionFact);
-      //RebalancedRFact->DisableMultipleCheckGlobally();
             
       // Compute Ac from rebalanced P and R
       RebalancedAFact = Teuchos::rcp(new RebalanceAcFactory());

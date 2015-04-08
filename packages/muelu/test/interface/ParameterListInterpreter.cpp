@@ -116,7 +116,11 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> dirList;
     dirList.push_back("EasyParameterListInterpreter/");
     dirList.push_back("FactoryParameterListInterpreter/");
-#ifdef HAVE_AMESOS2_KLU2 // run ML parameter list tests only if KLU is available
+#if defined(HAVE_MPI) && defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_AMESOS2_KLU2)
+    // The ML interpreter have internal ifdef, which means that the resulting
+    // output would depend on configuration (reguarl interpreter does not have
+    // that). Therefore, we need to stabilize the configuration here.
+    // In addition, we run ML parameter list tests only if KLU is available
     dirList.push_back("MLParameterListInterpreter/");
     dirList.push_back("MLParameterListInterpreter2/");
 #endif
@@ -175,12 +179,10 @@ int main(int argc, char *argv[]) {
         // first to include "test" verbosity
         Teuchos::ParameterList paramList;
         Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFile, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
-        switch (k) {
-          case 0: paramList                     .set("verbosity", "test"); break; // easy
-          case 1: paramList.sublist("Hierarchy").set("verbosity", "Test"); break; // factory
-          case 2: paramList                     .set("ML output",     42); break; // ML
-          case 3: paramList                     .set("ML output",     10); break; // ML
-        }
+        if      (dirList[k] == "EasyParameterListInterpreter/")     paramList                     .set("verbosity", "test");
+        else if (dirList[k] == "FactoryParameterListInterpreter/")  paramList.sublist("Hierarchy").set("verbosity", "Test");
+        else if (dirList[k] == "MLParameterListInterpreter/")       paramList                     .set("ML output",     42);
+        else if (dirList[k] == "MLParameterListInterpreter2/")      paramList                     .set("ML output",     10);
 
         try {
           Teuchos::RCP<HierarchyManager> mueluFactory;
@@ -189,13 +191,14 @@ int main(int argc, char *argv[]) {
           // here we have to distinguish between the general MueLu parameter list interpreter
           // and the ML parameter list interpreter. Note that the ML paramter interpreter also
           // works with Tpetra matrices.
-          if (k < 2) {
+          if (dirList[k] == "EasyParameterListInterpreter/" ||
+              dirList[k] == "FactoryParameterListInterpreter/") {
             mueluFactory = Teuchos::rcp(new ParameterListInterpreter(paramList));
 
-          } else if (k == 2) {
+          } else if (dirList[k] == "MLParameterListInterpreter/") {
             mueluFactory = Teuchos::rcp(new MLParameterListInterpreter(paramList));
 
-          } else if (k == 3) {
+          } else if (dirList[k] == "MLParameterListInterpreter2/") {
             std::cout << "ML ParameterList: " << std::endl;
             std::cout << paramList << std::endl;
             RCP<ParameterList> mueluParamList = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(paramList,"SA"));
@@ -208,7 +211,7 @@ int main(int argc, char *argv[]) {
 
           H->GetLevel(0)->Set<RCP<Matrix> >("A", A);
 
-          if (k == 2) {
+          if (dirList[k] == "MLParameterListInterpreter/") {
             // MLParameterInterpreter needs the nullspace information if rebalancing is active!
             // add default constant null space vector
             RCP<MultiVector> nullspace = MultiVectorFactory::Build(A->getRowMap(), 1);
