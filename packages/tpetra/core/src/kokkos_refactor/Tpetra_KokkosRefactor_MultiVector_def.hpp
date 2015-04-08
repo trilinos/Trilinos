@@ -2102,47 +2102,7 @@ namespace Tpetra {
   scale (const Scalar& alpha,
          const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& A)
   {
-    const char tfecfFuncName[] = "scale(alpha,A): ";
-    const size_t numVecs = getNumVectors ();
-
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-       getLocalLength () != A.getLocalLength (), std::runtime_error,
-       "MultiVectors do not have the same local length.  "
-       "this->getLocalLength() = " << getLocalLength ()
-       << " != A.getLocalLength() = " << A.getLocalLength () << ".");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      A.getNumVectors () != numVecs, std::runtime_error,
-      "MultiVectors do not have the same number of columns (vectors).  "
-       "this->getNumVectors() = " << getNumVectors ()
-       << " != A.getNumVectors() = " << A.getNumVectors () << ".");
-
-    // FIXME (mfh 07 Jan 2015) We shouldn't call modify() or sync() on
-    // the input MultiVector, because it's const.  We should instead
-    // move _this_ MultiVector's data to the space where A's data have
-    // been most recently updated.
-
-    if (isConstantStride () && A.isConstantStride ()) {
-      view_.template sync<DeviceType>();
-      view_.template modify<DeviceType>();
-      Kokkos::MV_MulScalar (view_.d_view, alpha, A.view_.d_view);
-    }
-    else {
-      using Kokkos::ALL;
-      using Kokkos::subview;
-      typedef Kokkos::View<impl_scalar_type*, DeviceType> view_type;
-
-      view_.template sync<DeviceType> ();
-      view_.template modify<DeviceType> ();
-      A.view_.template sync<DeviceType> ();
-      A.view_.template modify<DeviceType> ();
-      for (size_t k = 0; k < numVecs; ++k) {
-        const size_t this_col = isConstantStride () ? k : whichVectors_[k];
-        view_type vector_k = subview (view_.d_view, ALL (), this_col);
-        const size_t A_col = isConstantStride () ? k : A.whichVectors_[k];
-        view_type vector_Ak = subview (A.view_.d_view, ALL (), A_col);
-        Kokkos::V_MulScalar (vector_k, alpha, vector_Ak);
-      }
-    }
+    this->update (alpha, A, Teuchos::ScalarTraits<Scalar>::zero ());
   }
 
 
@@ -2258,8 +2218,6 @@ namespace Tpetra {
     using Kokkos::ALL;
     using Kokkos::subview;
     const char tfecfFuncName[] = "update: ";
-
-    // FIXME (mfh 07 Jan 2015) See note on two-argument scale() above.
 
     const size_t lclNumRows = getLocalLength ();
     const size_t numVecs = getNumVectors ();
