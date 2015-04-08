@@ -200,10 +200,6 @@ private:
     POLARITY_IDENTITY   = 0x80
   };
 
-  static bool polarity(unsigned orient) {
-    return (orient & POLARITY_MASK) == POLARITY_POSITIVE;
-  }
-
   static unsigned permutation(unsigned orient) {
     return orient & ~POLARITY_MASK;
   }
@@ -252,11 +248,26 @@ private:
    * i.e. the face's normal defined by a clockwise ordering is outward.
    */
   bool polarity() const
-  { return compute_polarity(getOrientation()); }
+  { ThrowRequireMsg(false, "This method is deprecated!"); return compute_polarity(getOrientation()); }
+
+  static bool polarity(unsigned orient)
+  { ThrowRequireMsg(false, "This method is deprecated!"); return (orient & POLARITY_MASK) == POLARITY_POSITIVE; }
 
   // TODO: This doesn't belong here. This is topology information.
   static bool compute_polarity(attribute_type orientation)
-  { return (orientation & POLARITY_MASK) == POLARITY_POSITIVE; }
+  { ThrowRequireMsg(false, "This method is deprecated!"); return (orientation & POLARITY_MASK) == POLARITY_POSITIVE; }
+
+  bool polarity(stk::topology to_topology) const
+  { return compute_polarity(to_topology, getOrientation()); }
+
+  static bool compute_polarity(const stk::topology & topology, unsigned orientation_or_permutation)
+  {
+    // After the POLARITY bit is removed, this should be replaced with a test (permutation < topology.num_positive_permutations()).
+    const unsigned permutation = orientation_or_permutation & ~stk::mesh::Relation::POLARITY_MASK;
+    ThrowAssert(permutation < topology.num_permutations());
+    const bool polarity = permutation < topology.num_positive_permutations();
+    return polarity;
+  }
 
   unsigned permutation() const {
     return getOrientation() & ~POLARITY_MASK;
