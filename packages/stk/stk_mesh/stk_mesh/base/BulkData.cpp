@@ -2805,27 +2805,23 @@ bool BulkData::inputs_ok_and_need_ghosting(Ghosting & ghosts ,
     return anyProcsHaveNewGhosts;
 }
 
-void BulkData::batch_add_to_ghosting(
-    Ghosting & ghosts ,
-    const std::vector<EntityProc> & add_send)
+void BulkData::batch_add_to_ghosting(Ghosting &ghosting, const EntityProcVec &entitiesAndDestinationProcs)
 {
     std::vector<stk::mesh::EntityProc> filtered_add_send;
     std::vector<stk::mesh::EntityKey> empty_vector;
 
-    if (inputs_ok_and_need_ghosting(ghosts , add_send , empty_vector, filtered_add_send))
+    if (inputs_ok_and_need_ghosting(ghosting , entitiesAndDestinationProcs , empty_vector, filtered_add_send))
     {
-        internal_batch_add_to_ghosting(ghosts, filtered_add_send);
+        internal_batch_add_to_ghosting(ghosting, filtered_add_send);
     }
 }
 
-void BulkData::internal_batch_add_to_ghosting(
-    Ghosting & ghosts ,
-    const std::vector<EntityProc> & add_send)
+void BulkData::internal_batch_add_to_ghosting(Ghosting &ghosting, const EntityProcVec &entitiesAndDestinationProcs)
 {
     bool starting_modification = modification_begin();
     ThrowRequireMsg(starting_modification, "ERROR: BulkData already being modified,\n"
                     <<"BulkData::batch_add_to_ghosting(...) can not be called within an outer modification scope.");
-    internal_add_to_ghosting( ghosts , add_send );
+    internal_add_to_ghosting( ghosting , entitiesAndDestinationProcs );
     internal_modification_end_for_change_ghosting();
 }
 

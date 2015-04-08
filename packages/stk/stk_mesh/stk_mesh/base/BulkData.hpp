@@ -496,8 +496,7 @@ public:
                         const std::vector<EntityProc> & add_send ,
                         const std::vector<EntityKey> & remove_receive = std::vector<EntityKey>());
 
-  void batch_add_to_ghosting( Ghosting & ghosts,
-                        const std::vector<EntityProc> & add_send);
+  void batch_add_to_ghosting(Ghosting &ghosting, const EntityProcVec &entitiesAndDestinationProcs);
 
   // Clear all ghosts for a particular ghosting.
   void destroy_ghosting( Ghosting& ghost_layer );
@@ -704,7 +703,7 @@ protected: //functions
                                const std::vector<EntityKey> & remove_receive,
                                std::vector<EntityProc> &filtered_add_send);
 
-  void internal_batch_add_to_ghosting(Ghosting & ghosts , const std::vector<EntityProc> & add_send);
+  void internal_batch_add_to_ghosting(Ghosting &ghosting, const EntityProcVec &entitiesAndDestinationProcs);
 
   bool in_send_ghost( const Ghosting & ghosting, EntityKey key, int proc) const;
   void ghost_entities_and_fields(Ghosting & ghosting, const std::set<EntityProc , EntityLess>& new_send);
