@@ -111,6 +111,7 @@ benchmarkTpetra (RCP<const Comm<int> > comm,
   typedef Tpetra::Vector<ST, LO, GO, NT> vector_type;
   typedef typename vector_type::dot_type dot_type;
   typedef typename vector_type::mag_type mag_type;
+  typedef Teuchos::ScalarTraits<ST> STS;
   const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
 
   RCP<Time> mapCreateTimer = getTimer ("Tpetra: Map: Create");
@@ -118,6 +119,7 @@ benchmarkTpetra (RCP<const Comm<int> > comm,
   RCP<Time> vecRandTimer = getTimer ("Tpetra: Vector: Rand");
   RCP<Time> vecNormTimer = getTimer ("Tpetra: Vector: Norm");
   RCP<Time> vecDotTimer = getTimer ("Tpetra: Vector: Dot");
+  RCP<Time> vecAxpyTimer = getTimer ("Tpetra: Vector: Axpy");
 
   // Benchmark creation of a Map with a given number of indices per
   // process, telling the Map to compute the global number of indices.
@@ -182,6 +184,15 @@ benchmarkTpetra (RCP<const Comm<int> > comm,
     }
   }
 
+  // Benchmark axpy (3-argument update).
+  const ST HALF = STS::one () / (STS::one () + STS::one ());
+  {
+    TimeMonitor timeMon (*vecAxpyTimer);
+    for (int k = 0; k < numVecDotTrials; ++k) {
+      y->update (HALF, *x, STS::zero ());
+    }
+  }
+
   // Trick the compiler into not complaining that normResults and
   // dotResults never get used, by printing them to the equivalent of
   // /dev/null.
@@ -215,6 +226,7 @@ benchmarkEpetra (const Epetra_Comm& comm,
   RCP<Time> vecRandTimer = getTimer ("Epetra: Vector: Rand");
   RCP<Time> vecNormTimer = getTimer ("Epetra: Vector: Norm");
   RCP<Time> vecDotTimer = getTimer ("Epetra: Vector: Dot");
+  RCP<Time> vecAxpyTimer = getTimer ("Epetra: Vector: Axpy");
 
   // Benchmark creation of a Map with a given number of indices per
   // process, telling the Map to compute the global number of indices.
@@ -273,6 +285,15 @@ benchmarkEpetra (const Epetra_Comm& comm,
     for (int k = 0; k < numVecDotTrials; ++k) {
       // "Confuse" the compiler so it doesn't optimize away the dot() calls.
       x->Dot (*y, &dotResults[k % 2]);
+    }
+  }
+
+  // Benchmark axpy (3-argument update).
+  const ST HALF = 0.5;
+  {
+    TimeMonitor timeMon (*vecAxpyTimer);
+    for (int k = 0; k < numVecDotTrials; ++k) {
+      y->Update (HALF, *x, 0.0);
     }
   }
 
