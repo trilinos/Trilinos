@@ -240,6 +240,57 @@ integer_power(T const & X, Index const exponent)
 }
 
 //
+// Utility for Kronecker delta in 2D
+//
+template<typename T>
+inline
+T
+kronecker_delta(Index const i, Index const j)
+{
+  assert(0 <= i && i < 2);
+  assert(0 <= j && j < 2);
+
+  if (i == j) return T(1);
+
+  return T(0);
+}
+
+//
+// Utility for Kronecker delta in 3D
+//
+template<typename T>
+inline
+T
+kronecker_delta(Index const i, Index const j, Index const k)
+{
+  assert(0 <= i && i < 3);
+  assert(0 <= j && j < 3);
+  assert(0 <= k && k < 3);
+
+  if (i == j && j == k) return T(1);
+
+  return T(0);
+}
+
+//
+// Utility for Kronecker delta in 4D
+//
+template<typename T>
+inline
+T
+kronecker_delta(Index const i, Index const j, Index const k, Index const l)
+{
+  assert(0 <= i && i < 4);
+  assert(0 <= j && j < 4);
+  assert(0 <= k && k < 4);
+  assert(0 <= l && l < 4);
+
+  if (i == j && j == k && k == l) return T(1);
+
+  return T(0);
+}
+
+//
 // Utility for Levi-Civita/permutation/alternating symbol in 2D
 //
 template<typename T>
@@ -291,6 +342,7 @@ levi_civita(Index const i, Index const j, Index const k, Index const l)
   assert(0 <= i && i < 4);
   assert(0 <= j && j < 4);
   assert(0 <= k && k < 4);
+  assert(0 <= l && l < 4);
 
   if (i == 0 && j == 1 && k == 2 && l == 3) return T(1);
   if (i == 1 && j == 2 && k == 3 && l == 0) return T(1);
