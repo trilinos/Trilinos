@@ -1,0 +1,68 @@
+
+How to snapshot Kokkos from github.com/kokkos to Trilinos.
+
+------------------------------------------------------------------------
+*** EVERYTHING GOES RIGHT WORKFLOW ***
+
+1) Given a 'git clone' of Kokkos and of Trilinos repositories.
+1.1) Let ${KOKKOS} be the absolute path to the Kokkos clone.
+     This path *must* terminate with the directory name 'kokkos';
+     e.g., ${HOME}/kokkos .
+1.2) Let ${TRILINOS} be the absolute path to the Trilinos directory.
+
+2) Given that the Kokkos build & test is clean and
+   changes are committed to the Kokkos clone.
+
+
+3) Snapshot the Kokkos clone into the Trilinos clone.
+   Only have one snapshot in the Trilinos clone per planned 'git push'.
+
+3.1) Overwrite ${TRILINOS}/packages/kokkos with the content of ${KOKKOS}:
+	${KOKKOS}/config/snapshot.py --verbose ${KOKKOS} ${TRILINOS}/packages
+
+3.2) Verify the snapshot commit happened as expected
+	cd ${TRILINOS}/packages/kokos
+	git log -1 --name-only
+
+
+4) Modify, build, and test Trilinos with the Kokkos snapshot.
+
+5) Given that that the Trilinos build & test is clean and
+   changes are committed to the Trilinos clone.
+
+6) Attempt push to the Kokkos repository.
+   If push fails then you must 'remove the Kokkos snapshot'
+   from your Trilinos clone.
+   See below.
+
+7) Attempt to push to the Trilinos repository.
+   If updating for a failed push requires you to change Kokkos you must
+   'remove the Kokkos snapshot' from your Trilinos clone.
+   See below.
+
+------------------------------------------------------------------------
+*** REMOVE THE KOKKOS SNAPSHOT FROM YOUR TRILINOS CLONE ***
+
+1) Query the Trilinos clone commit log.
+	git log --oneline
+
+2) IF more than one outstanding commit then you can remove just the
+   Kokkos snapshot commit with 'git rebase -i'.  Edit the rebase file.
+   Remove or comment out the Kokkos snapshot commit entry.
+	git rebase -i
+
+3) IF the Kokkos snapshot commit is the one and only
+   outstanding commit then remove just than commit.
+	git reset --hard HEAD~1
+
+------------------------------------------------------------------------
+*** REGARDING 'snapshot.py' TOOL ***
+
+The 'snapshot.py' tool is developed and maintained by the
+Center for Computing Research (CCR)
+Software Engineering, Maintenance, and Support (SEMS) team.
+
+Contact <email> for questions>
+
+------------------------------------------------------------------------
+
