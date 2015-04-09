@@ -133,8 +133,8 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
   TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
                               "Error: finite difference order must be 1,2,3, or 4" );
 
-  using FiniteDifference::shifts;
-  using FiniteDifference::weights;
+  using Finite_Difference_Arrays::shifts;
+  using Finite_Difference_Arrays::weights;
 
   Real tol = std::sqrt(ROL_EPSILON);
 
@@ -247,8 +247,8 @@ std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real
   TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
                               "Error: finite difference order must be 1,2,3, or 4" );
 
-  using FiniteDifference::shifts;
-  using FiniteDifference::weights;
+  using Finite_Difference_Arrays::shifts;
+  using Finite_Difference_Arrays::weights;
 
 
   Real tol = std::sqrt(ROL_EPSILON);
