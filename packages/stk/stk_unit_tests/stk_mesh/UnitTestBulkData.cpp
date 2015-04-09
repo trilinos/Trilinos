@@ -5909,9 +5909,6 @@ TEST(BulkData, test_destroy_ghosted_entity_then_create_locally_owned_entity_with
     }
 }
 
-
-
-
 }// empty namespace
 
 
