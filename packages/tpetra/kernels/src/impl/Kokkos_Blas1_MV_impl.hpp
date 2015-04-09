@@ -3383,22 +3383,76 @@ MV_Axpby_Invoke_Right (const RMV& r, const aVector& av, const XMV& x,
   }
 }
 
-//! Implementation of KokkosBlas::axpby for multivectors.
-template<class RT, class RL, class RD, class RM, class RS,
-         class XT, class XL, class XD, class XM, class XS,
-         class YT, class YL, class YD, class YM, class YS>
-struct Axpby_MV {
-  typedef Kokkos::View<RT,RL,RD,RM,RS> RMV;
-  typedef Kokkos::View<XT,XL,XD,XM,XS> XMV;
-  typedef Kokkos::View<YT,YL,YD,YM,YS> YMV;
+/// \brief Implementation of KokkosBlas::axpby for (multi)vectors.
+///
+/// Compute any of the following, depending on the types of the input arguments of axpxy()
+///
+/// 1. R(i,j) = av(j)*X(i,j) + bv(j)*Y(i,j) (if R, X, and Y are 2-D,
+///    and av and bv are 1-D)
+///
+/// 2. R(i,j) = av*X(i,j) + bv*Y(i,j) (if R, X, and Y are 2-D,
+///    and av and bv are scalars)
+///
+/// 3. R(i) = av()*X(i) + bv()*Y(i) (if R, X, and Y are 1-D, and av
+///    and bv are 0-D Views (not scalars))
+///
+/// 4. R(i) = av*X(i) + bv*Y(i) (if R, X, and Y are 1-D, and av and bv
+///    are scalars)
+///
+// Any <i>scalar</i> coefficient of zero has BLAS semantics of
+/// ignoring the corresponding (multi)vector entry.  This does NOT
+/// apply to coefficients in av and bv vectors, if they are used.
+template<class RMV, class AV, class XMV, class BV, class YMV, int rank = RMV::rank>
+struct Axpby {};
+
+// Partial specialization for RMV, XMV, and YMV rank-2 Views.
+template<class RMV, class AV, class XMV, class BV, class YMV>
+struct Axpby<RMV, AV, XMV, BV, YMV, 2>
+{
+  typedef typename XMV::size_type size_type;
+
+  static void
+  axpby (const RMV& R, const AV& av, const XMV& X,
+         const BV& bv, const YMV& Y)
+  {
+    const size_type numRows = X.dimension_0 ();
+    const size_type numCols = X.dimension_1 ();
+    int a = 2, b = 2;
+    if (av.dimension_0 () == 0) {
+      a = 0;
+    }
+    if (bv.dimension_0 () == 0) {
+      b = 0;
+    }
+    if (numRows < static_cast<size_type> (INT_MAX) &&
+        numRows * numCols < static_cast<size_type> (INT_MAX)) {
+      typedef int index_type;
+      MV_Axpby_Invoke_Left<RMV, AV, XMV, BV, YMV, index_type> (R, av, X,
+                                                               bv, Y, a, b);
+    }
+    else {
+      typedef typename XMV::size_type index_type;
+      MV_Axpby_Invoke_Left<RMV, AV, XMV, BV, YMV, index_type> (R, av, X,
+                                                               bv, Y, a, b);
+    }
+  }
+};
+
+// Partial specialization for RMV, XMV, and YMV rank-2 Views,
+// and AV and BV scalars.
+template<class RMV, class XMV, class YMV>
+struct Axpby<RMV, typename XMV::non_const_value_type, XMV,
+             typename YMV::non_const_value_type, YMV, 2>
+{
+  typedef typename XMV::non_const_value_type AV;
+  typedef typename YMV::non_const_value_type BV;
   typedef typename XMV::size_type size_type;
   typedef Kokkos::Details::ArithTraits<typename XMV::non_const_value_type> ATA;
   typedef Kokkos::Details::ArithTraits<typename YMV::non_const_value_type> ATB;
 
   static void
-  axpby (const RMV& R, const typename XMV::non_const_value_type& alpha,
-         const XMV& X, const typename YMV::non_const_value_type& beta,
-         const YMV& Y)
+  axpby (const RMV& R, const AV& alpha, const XMV& X,
+         const BV& beta, const YMV& Y)
   {
     const size_type numRows = X.dimension_0 ();
     const size_type numCols = X.dimension_1 ();
@@ -3431,74 +3485,66 @@ struct Axpby_MV {
     if (numRows < static_cast<size_type> (INT_MAX) &&
         numRows * numCols < static_cast<size_type> (INT_MAX)) {
       typedef int index_type;
-      MV_Axpby_Invoke_Left<RMV, typename XMV::non_const_value_type, XMV,
-        typename YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
-                                                              beta, Y, a, b);
+      MV_Axpby_Invoke_Left<RMV, AV, XMV, BV, YMV, index_type> (R, alpha, X,
+                                                               beta, Y, a, b);
     }
     else {
       typedef typename XMV::size_type index_type;
-      MV_Axpby_Invoke_Left<RMV, typename XMV::non_const_value_type, XMV,
-        typename YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
-                                                              beta, Y, a, b);
+      MV_Axpby_Invoke_Left<RMV, AV, XMV, BV, YMV, index_type> (R, alpha, X,
+                                                               beta, Y, a, b);
     }
   }
 };
 
-// Compute any of the following:
-//
-// 1. R(i,j) = a*X(i,j) + b*Y(i,j) for a,b in -1,0,1
-// 2. R(i,j) = av(j)*X(i,j) + b*Y(i,j) for b in -1,0,1
-// 3. R(i,j) = a*X(i,j) + b*Y(i,j) for a in -1,0,1
-// 4. R(i,j) = av(j)*X(i,j) + bv(j)*Y(i,j)
-//
-// a and b come in as integers.  The values -1, 0, and 1 correspond to
-// the literal values of the coefficients.  The value 2 tells the
-// functor to use the corresponding vector of coefficients: a == 2
-// means use av, and b == 2 means use bv.  Otherwise, av resp. vb are
-// ignored.
-//
-// Any literal coefficient of zero has BLAS semantics of ignoring the
-// corresponding (multi)vector entry.  This does NOT apply to
-// coefficients in av and bv vectors, if they are used.
-//
-// Either av and bv are both 1-D Views, or av and bv are both scalars.
-template<class RT, class RL, class RD, class RM, class RS,
-         class AT, class AL, class AD, class AM, class AS,
-         class XT, class XL, class XD, class XM, class XS,
-         class BT, class BL, class BD, class BM, class BS,
-         class YT, class YL, class YD, class YM, class YS>
-struct Axpby_MV_V {
-  typedef Kokkos::View<RT,RL,RD,RM,RS> RMV;
-  typedef Kokkos::View<AT,AL,AD,AM,AS> AV;
-  typedef Kokkos::View<XT,XL,XD,XM,XS> XMV;
-  typedef Kokkos::View<BT,BL,BD,BM,BS> BV;
-  typedef Kokkos::View<YT,YL,YD,YM,YS> YMV;
+// Partial specialization for RMV, XMV, and YMV rank-1 Views,
+// and AV and BV scalars.
+template<class RMV, class XMV, class YMV>
+struct Axpby<RMV, typename XMV::non_const_value_type, XMV,
+             typename YMV::non_const_value_type, YMV, 1>
+{
+  typedef typename XMV::non_const_value_type AV;
+  typedef typename YMV::non_const_value_type BV;
   typedef typename XMV::size_type size_type;
   typedef Kokkos::Details::ArithTraits<typename XMV::non_const_value_type> ATA;
   typedef Kokkos::Details::ArithTraits<typename YMV::non_const_value_type> ATB;
 
   static void
-  axpby (const RMV& R, const AV& av, const XMV& X, const BV& bv, const YMV& Y)
+  axpby (const RMV& R, const AV& alpha, const XMV& X,
+         const BV& beta, const YMV& Y)
   {
     const size_type numRows = X.dimension_0 ();
     const size_type numCols = X.dimension_1 ();
-    int a = 2, b = 2;
-    if (av.dimension_0 () == 0) {
+    int a = 2;
+    if (alpha == ATA::zero ()) {
       a = 0;
     }
-    if (bv.dimension_0 () == 0) {
+    else if (alpha == -ATA::one ()) {
+      a = -1;
+    }
+    else if (alpha == ATA::one ()) {
+      a = 1;
+    }
+    int b = 2;
+    if (beta == ATB::zero ()) {
       b = 0;
     }
+    else if (beta == -ATB::one ()) {
+      b = -1;
+    }
+    else if (beta == ATB::one ()) {
+      b = 1;
+    }
+
     if (numRows < static_cast<size_type> (INT_MAX) &&
         numRows * numCols < static_cast<size_type> (INT_MAX)) {
       typedef int index_type;
-      MV_Axpby_Invoke_Left<RMV, AV, XMV, BV, YMV, index_type> (R, av, X,
-                                                               bv, Y, a, b);
+      V_Axpby_Generic<RMV, typename XMV::non_const_value_type, XMV,
+        index_type> (R, alpha, X, a);
     }
     else {
       typedef typename XMV::size_type index_type;
-      MV_Axpby_Invoke_Left<RMV, AV, XMV, BV, YMV, index_type> (R, av, X,
-                                                               bv, Y, a, b);
+      V_Axpby_Generic<RMV, typename XMV::non_const_value_type, XMV,
+        index_type> (R, alpha, X, a);
     }
   }
 };
@@ -3506,42 +3552,41 @@ struct Axpby_MV_V {
 #ifdef KOKKOS_HAVE_SERIAL
 
 template<>
-struct Axpby_MV<double**,
-                Kokkos::LayoutLeft,
-                Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
-                Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                Kokkos::Impl::ViewDefault,
-                const double**,
-                Kokkos::LayoutLeft,
-                Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
-                Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                Kokkos::Impl::ViewDefault,
-                const double**,
-                Kokkos::LayoutLeft,
-                Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
-                Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                Kokkos::Impl::ViewDefault> {
-  typedef double** RT;
-  typedef Kokkos::LayoutLeft RL;
-  typedef Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace> RD;
-  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> RM;
-  typedef Kokkos::Impl::ViewDefault RS;
-  typedef Kokkos::View<RT,RL,RD,RM,RS> RMV;
-
-  typedef const double** XT;
-  typedef Kokkos::LayoutLeft XL;
-  typedef Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace> XD;
-  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> XM;
-  typedef Kokkos::Impl::ViewDefault XS;
-  typedef Kokkos::View<XT,XL,XD,XM,XS> XMV;
-
-  typedef const double** YT;
-  typedef Kokkos::LayoutLeft YL;
-  typedef Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace> YD;
-  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> YM;
-  typedef Kokkos::Impl::ViewDefault YS;
-  typedef Kokkos::View<YT,YL,YD,YM,YS> YMV;
-
+struct Axpby<Kokkos::View<double**,
+                          Kokkos::LayoutLeft,
+                          Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                          Kokkos::Impl::ViewDefault>,
+             double,
+             Kokkos::View<const double**,
+                          Kokkos::LayoutLeft,
+                          Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                          Kokkos::Impl::ViewDefault>,
+             double,
+             Kokkos::View<const double**,
+                          Kokkos::LayoutLeft,
+                          Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                          Kokkos::Impl::ViewDefault>, 2>
+{
+  typedef Kokkos::View<double**,
+                       Kokkos::LayoutLeft,
+                       Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       Kokkos::Impl::ViewDefault> RMV;
+  typedef double AV;
+  typedef Kokkos::View<const double**,
+                       Kokkos::LayoutLeft,
+                       Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       Kokkos::Impl::ViewDefault> XMV;
+  typedef double BV;
+  typedef Kokkos::View<const double**,
+                       Kokkos::LayoutLeft,
+                       Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       Kokkos::Impl::ViewDefault> YMV;
   typedef XMV::size_type size_type;
   typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA;
   typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB;
@@ -3556,42 +3601,41 @@ struct Axpby_MV<double**,
 #ifdef KOKKOS_HAVE_OPENMP
 
 template<>
-struct Axpby_MV<double**,
-                Kokkos::LayoutLeft,
-                Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
-                Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                Kokkos::Impl::ViewDefault,
-                const double**,
-                Kokkos::LayoutLeft,
-                Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
-                Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                Kokkos::Impl::ViewDefault,
-                const double**,
-                Kokkos::LayoutLeft,
-                Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
-                Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                Kokkos::Impl::ViewDefault> {
-  typedef double** RT;
-  typedef Kokkos::LayoutLeft RL;
-  typedef Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace> RD;
-  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> RM;
-  typedef Kokkos::Impl::ViewDefault RS;
-  typedef Kokkos::View<RT,RL,RD,RM,RS> RMV;
-
-  typedef const double** XT;
-  typedef Kokkos::LayoutLeft XL;
-  typedef Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace> XD;
-  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> XM;
-  typedef Kokkos::Impl::ViewDefault XS;
-  typedef Kokkos::View<XT,XL,XD,XM,XS> XMV;
-
-  typedef const double** YT;
-  typedef Kokkos::LayoutLeft YL;
-  typedef Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace> YD;
-  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> YM;
-  typedef Kokkos::Impl::ViewDefault YS;
-  typedef Kokkos::View<YT,YL,YD,YM,YS> YMV;
-
+struct Axpby<Kokkos::View<double**,
+                          Kokkos::LayoutLeft,
+                          Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                          Kokkos::Impl::ViewDefault>,
+             double,
+             Kokkos::View<const double**,
+                          Kokkos::LayoutLeft,
+                          Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                          Kokkos::Impl::ViewDefault>,
+             double,
+             Kokkos::View<const double**,
+                          Kokkos::LayoutLeft,
+                          Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                          Kokkos::Impl::ViewDefault>, 2>
+{
+  typedef Kokkos::View<double**,
+                       Kokkos::LayoutLeft,
+                       Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       Kokkos::Impl::ViewDefault> RMV;
+  typedef double AV;
+  typedef Kokkos::View<const double**,
+                       Kokkos::LayoutLeft,
+                       Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       Kokkos::Impl::ViewDefault> XMV;
+  typedef double BV;
+  typedef Kokkos::View<const double**,
+                       Kokkos::LayoutLeft,
+                       Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       Kokkos::Impl::ViewDefault> YMV;
   typedef XMV::size_type size_type;
   typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA;
   typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB;
@@ -3606,42 +3650,41 @@ struct Axpby_MV<double**,
 #ifdef KOKKOS_HAVE_PTHREAD
 
 template<>
-struct Axpby_MV<double**,
-                Kokkos::LayoutLeft,
-                Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
-                Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                Kokkos::Impl::ViewDefault,
-                const double**,
-                Kokkos::LayoutLeft,
-                Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
-                Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                Kokkos::Impl::ViewDefault,
-                const double**,
-                Kokkos::LayoutLeft,
-                Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
-                Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                Kokkos::Impl::ViewDefault> {
-  typedef double** RT;
-  typedef Kokkos::LayoutLeft RL;
-  typedef Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace> RD;
-  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> RM;
-  typedef Kokkos::Impl::ViewDefault RS;
-  typedef Kokkos::View<RT,RL,RD,RM,RS> RMV;
-
-  typedef const double** XT;
-  typedef Kokkos::LayoutLeft XL;
-  typedef Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace> XD;
-  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> XM;
-  typedef Kokkos::Impl::ViewDefault XS;
-  typedef Kokkos::View<XT,XL,XD,XM,XS> XMV;
-
-  typedef const double** YT;
-  typedef Kokkos::LayoutLeft YL;
-  typedef Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace> YD;
-  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> YM;
-  typedef Kokkos::Impl::ViewDefault YS;
-  typedef Kokkos::View<YT,YL,YD,YM,YS> YMV;
-
+struct Axpby<Kokkos::View<double**,
+                          Kokkos::LayoutLeft,
+                          Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                          Kokkos::Impl::ViewDefault>,
+             double,
+             Kokkos::View<const double**,
+                          Kokkos::LayoutLeft,
+                          Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                          Kokkos::Impl::ViewDefault>,
+             double,
+             Kokkos::View<const double**,
+                          Kokkos::LayoutLeft,
+                          Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                          Kokkos::Impl::ViewDefault>, 2>
+{
+  typedef Kokkos::View<double**,
+                       Kokkos::LayoutLeft,
+                       Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       Kokkos::Impl::ViewDefault> RMV;
+  typedef double AV;
+  typedef Kokkos::View<const double**,
+                       Kokkos::LayoutLeft,
+                       Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       Kokkos::Impl::ViewDefault> XMV;
+  typedef double BV;
+  typedef Kokkos::View<const double**,
+                       Kokkos::LayoutLeft,
+                       Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       Kokkos::Impl::ViewDefault> YMV;
   typedef XMV::size_type size_type;
   typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA;
   typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB;
@@ -3656,42 +3699,41 @@ struct Axpby_MV<double**,
 #ifdef KOKKOS_HAVE_CUDA
 
 template<>
-struct Axpby_MV<double**,
-                Kokkos::LayoutLeft,
-                Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
-                Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                Kokkos::Impl::ViewDefault,
-                const double**,
-                Kokkos::LayoutLeft,
-                Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
-                Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                Kokkos::Impl::ViewDefault,
-                const double**,
-                Kokkos::LayoutLeft,
-                Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
-                Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                Kokkos::Impl::ViewDefault> {
-  typedef double** RT;
-  typedef Kokkos::LayoutLeft RL;
-  typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> RD;
-  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> RM;
-  typedef Kokkos::Impl::ViewDefault RS;
-  typedef Kokkos::View<RT,RL,RD,RM,RS> RMV;
-
-  typedef const double** XT;
-  typedef Kokkos::LayoutLeft XL;
-  typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> XD;
-  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> XM;
-  typedef Kokkos::Impl::ViewDefault XS;
-  typedef Kokkos::View<XT,XL,XD,XM,XS> XMV;
-
-  typedef const double** YT;
-  typedef Kokkos::LayoutLeft YL;
-  typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> YD;
-  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> YM;
-  typedef Kokkos::Impl::ViewDefault YS;
-  typedef Kokkos::View<YT,YL,YD,YM,YS> YMV;
-
+struct Axpby<Kokkos::View<double**,
+                          Kokkos::LayoutLeft,
+                          Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                          Kokkos::Impl::ViewDefault>,
+             double,
+             Kokkos::View<const double**,
+                          Kokkos::LayoutLeft,
+                          Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                          Kokkos::Impl::ViewDefault>,
+             double,
+             Kokkos::View<const double**,
+                          Kokkos::LayoutLeft,
+                          Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                          Kokkos::Impl::ViewDefault>, 2>
+{
+  typedef Kokkos::View<double**,
+                       Kokkos::LayoutLeft,
+                       Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       Kokkos::Impl::ViewDefault> RMV;
+  typedef double AV;
+  typedef Kokkos::View<const double**,
+                       Kokkos::LayoutLeft,
+                       Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       Kokkos::Impl::ViewDefault> XMV;
+  typedef double BV;
+  typedef Kokkos::View<const double**,
+                       Kokkos::LayoutLeft,
+                       Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       Kokkos::Impl::ViewDefault> YMV;
   typedef XMV::size_type size_type;
   typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA;
   typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB;
@@ -3706,42 +3748,41 @@ struct Axpby_MV<double**,
 #ifdef KOKKOS_HAVE_CUDA
 
 template<>
-struct Axpby_MV<double**,
-                Kokkos::LayoutLeft,
-                Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
-                Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                Kokkos::Impl::ViewDefault,
-                const double**,
-                Kokkos::LayoutLeft,
-                Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
-                Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                Kokkos::Impl::ViewDefault,
-                const double**,
-                Kokkos::LayoutLeft,
-                Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
-                Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                Kokkos::Impl::ViewDefault> {
-  typedef double** RT;
-  typedef Kokkos::LayoutLeft RL;
-  typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace> RD;
-  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> RM;
-  typedef Kokkos::Impl::ViewDefault RS;
-  typedef Kokkos::View<RT,RL,RD,RM,RS> RMV;
-
-  typedef const double** XT;
-  typedef Kokkos::LayoutLeft XL;
-  typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace> XD;
-  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> XM;
-  typedef Kokkos::Impl::ViewDefault XS;
-  typedef Kokkos::View<XT,XL,XD,XM,XS> XMV;
-
-  typedef const double** YT;
-  typedef Kokkos::LayoutLeft YL;
-  typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace> YD;
-  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> YM;
-  typedef Kokkos::Impl::ViewDefault YS;
-  typedef Kokkos::View<YT,YL,YD,YM,YS> YMV;
-
+struct Axpby<Kokkos::View<double**,
+                          Kokkos::LayoutLeft,
+                          Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                          Kokkos::Impl::ViewDefault>,
+             double,
+             Kokkos::View<const double**,
+                          Kokkos::LayoutLeft,
+                          Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                          Kokkos::Impl::ViewDefault>,
+             double,
+             Kokkos::View<const double**,
+                          Kokkos::LayoutLeft,
+                          Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                          Kokkos::Impl::ViewDefault>, 2>
+{
+  typedef Kokkos::View<double**,
+                       Kokkos::LayoutLeft,
+                       Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       Kokkos::Impl::ViewDefault> RMV;
+  typedef double AV;
+  typedef Kokkos::View<const double**,
+                       Kokkos::LayoutLeft,
+                       Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       Kokkos::Impl::ViewDefault> XMV;
+  typedef double BV;
+  typedef Kokkos::View<const double**,
+                       Kokkos::LayoutLeft,
+                       Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       Kokkos::Impl::ViewDefault> YMV;
   typedef XMV::size_type size_type;
   typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA;
   typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB;
@@ -4383,7 +4424,7 @@ MV_Scal_Invoke_Right (const RMV& r, const aVector& av, const XMV& x, int a = 2)
   }
 }
 
-/// \brief Implementation of KokkosBlas::scal for multivectors.
+/// \brief Implementation of KokkosBlas::scal for (multi)vectors.
 ///
 /// Compute any of the following:
 ///

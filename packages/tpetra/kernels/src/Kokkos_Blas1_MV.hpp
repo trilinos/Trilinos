@@ -961,23 +961,9 @@ axpby (const RMV& R, const AV& a, const XMV& X, const BV& b, const YMV& Y)
        << endl;
 #endif // TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
 
-  return Impl::Axpby_MV<
-    typename RMV_Internal::value_type**,
-    typename RMV_Internal::array_layout,
-    typename RMV_Internal::device_type,
-    typename RMV_Internal::memory_traits,
-    typename RMV_Internal::specialize,
-    typename XMV_Internal::value_type**,
-    typename XMV_Internal::array_layout,
-    typename XMV_Internal::device_type,
-    typename XMV_Internal::memory_traits,
-    typename XMV_Internal::specialize,
-    typename YMV_Internal::value_type**,
-    typename YMV_Internal::array_layout,
-    typename YMV_Internal::device_type,
-    typename YMV_Internal::memory_traits,
-    typename YMV_Internal::specialize
-      >::axpby (R_internal, a_internal, X_internal, b_internal, Y_internal);
+  return Impl::Axpby<RMV_Internal, AV_Internal, XMV_Internal,
+    BV_Internal, YMV_Internal>::axpby (R_internal, a_internal, X_internal,
+                                       b_internal, Y_internal);
 }
 
 
