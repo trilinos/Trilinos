@@ -732,6 +732,15 @@ bool check_permutations_on_all(stk::mesh::BulkData& mesh)
         std::cerr << os.str();
     }
 
+
+    int verified_ok = all_ok ? 1 : 0;
+    if (mesh.parallel_size() > 1) 
+    {
+        all_reduce( mesh.parallel() , ReduceMin<1>( & verified_ok ) );
+    }
+
+    all_ok = verified_ok == 1;
+
     return all_ok;
 }
 
