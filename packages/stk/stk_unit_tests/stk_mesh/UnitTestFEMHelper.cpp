@@ -370,8 +370,6 @@ TEST(FEMHelper, test_permutations_for_key_topologies)
   for (size_t index = 0; index < num_test_topologies; ++index)
   {
     topo = test_topologies[index];
-    std::cout << "topology " << topo << " topology rank " << topo.rank()
-              << " topology dimension " << topo.dimension() << std::endl;
 
     if(topo.rank() == stk::topology::ELEMENT_RANK)
     {
@@ -630,8 +628,6 @@ TEST(FEMHelper, verify_connectibility_failure)
   for (size_t index = 0; index < num_test_topologies; ++index)
   {
     topo = test_topologies[index];
-    std::cout << "topology " << topo << " topology rank " << topo.rank()
-              << " topology dimension " << topo.dimension() << std::endl;
 
     if(topo.rank() == stk::topology::ELEMENT_RANK)
     {

@@ -278,22 +278,33 @@ Entity declare_element_edge(
 }
 
 
-std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> get_ordinal_and_permutation(stk::mesh::BulkData& mesh, stk::mesh::Entity parent_entity, stk::mesh::EntityRank to_rank, stk::mesh::EntityVector &nodes_of_sub_rank)
+std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation>
+get_ordinal_and_permutation(stk::mesh::BulkData& mesh, stk::mesh::Entity parent_entity, stk::mesh::EntityRank to_rank, stk::mesh::EntityVector &nodes_of_sub_rank)
 {
     std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation = std::make_pair(stk::mesh::INVALID_CONNECTIVITY_ORDINAL,
             stk::mesh::INVALID_PERMUTATION);
+
+    unsigned nodes_of_sub_rank_size = nodes_of_sub_rank.size();
 
     const Entity* elemNodes = mesh.begin_nodes(parent_entity);
     stk::topology elemTopology = mesh.bucket(parent_entity).topology();
     unsigned num_entities_of_sub_topology = elemTopology.num_sub_topology(to_rank);
     unsigned max_nodes_possible = 100;
-    stk::mesh::EntityVector nodes_of_sub_topology(max_nodes_possible);
+    stk::mesh::EntityVector nodes_of_sub_topology;
+    nodes_of_sub_topology.reserve(max_nodes_possible);
     std::pair<bool, unsigned> result;
 
     for (unsigned i=0;i<num_entities_of_sub_topology;++i)
     {
         stk::topology sub_topology = elemTopology.sub_topology(to_rank, i);
         unsigned num_nodes = sub_topology.num_nodes();
+
+        if (num_nodes !=  nodes_of_sub_rank_size)
+        {
+          continue;
+        }
+
+        ThrowRequireMsg(num_nodes == nodes_of_sub_rank.size(), "AHA! num_nodes != nodes_of_sub_rank.size()");
         ThrowRequireMsg(num_nodes<=max_nodes_possible, "Program error. Exceeded expected array dimensions. Contact sierra-help for support.");
         nodes_of_sub_topology.resize(num_nodes);
         elemTopology.sub_topology_nodes(elemNodes, to_rank, i, nodes_of_sub_topology.begin());
