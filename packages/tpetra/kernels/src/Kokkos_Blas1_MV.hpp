@@ -52,6 +52,7 @@
 #include <Kokkos_Blas1_MV_impl_nrmInf.hpp>
 #include <Kokkos_Blas1_MV_impl_recip.hpp>
 #include <Kokkos_Blas1_MV_impl_scal.hpp>
+#include <Kokkos_Blas1_MV_impl_sum.hpp>
 #include <Kokkos_Blas1_MV_impl_update.hpp>
 
 #ifdef KOKKOS_HAVE_CXX11
@@ -1303,6 +1304,64 @@ reciprocal (const RMV& R, const XMV& X)
   Impl::Reciprocal<RMV_Internal, XMV_Internal>::reciprocal (R_internal, X_internal);
 }
 
+//! Compute sum of each column of X, and write to corresponding entry of R.
+template<class RV, class XMV>
+void
+sum (const RV& R, const XMV& X)
+{
+#ifdef KOKKOS_HAVE_CXX11
+  // RMV and XMV must be Kokkos::View specializations.
+  static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::sum: "
+                 "R is not a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::sum: "
+                 "X is not a Kokkos::View.");
+  // RV must be nonconst (else it can't be an output argument).
+  static_assert (Kokkos::Impl::is_same<typename RV::value_type, typename RV::non_const_value_type>::value,
+                 "KokkosBlas::sum: R is const.  "
+                 "It must be nonconst, because it is an output argument "
+                 "(we have to be able to write to its entries).");
+  static_assert ((RV::rank == 0 && XMV::rank == 1) || (RV::rank == 1 && XMV::rank == 2),
+                 "KokkosBlas::sum: Ranks of R and X do not match.");
+#endif // KOKKOS_HAVE_CXX11
+
+  // TODO Check compatibility of dimensions at run time.
+
+  // Create unmanaged versions of the input Views.  XMV may be rank 1
+  // or rank 2, and RV may be rank 0 or rank 1.
+  typedef Kokkos::View<
+    typename Kokkos::Impl::if_c<
+      RV::rank == 0,
+      typename RV::non_const_value_type,
+      typename RV::non_const_value_type* >::type,
+    typename RV::array_layout,
+    typename RV::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    typename RV::specialize> RV_Internal;
+
+  typedef Kokkos::View<
+    typename Kokkos::Impl::if_c<
+      XMV::rank == 1,
+      typename XMV::const_value_type*,
+      typename XMV::const_value_type** >::type,
+    typename XMV::array_layout,
+    typename XMV::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    typename XMV::specialize> XMV_Internal;
+
+  RV_Internal R_internal = R;
+  XMV_Internal X_internal = X;
+
+#ifdef TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+  using std::cerr;
+  using std::endl;
+  cerr << "KokkosBlas::sum:" << endl
+       << "  RV_Internal: " << demangledTypeName (R_internal) << endl
+       << "  XMV_Internal: " << demangledTypeName (X_internal) << endl
+       << endl;
+#endif // TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+
+  Impl::Sum<RV_Internal, XMV_Internal>::sum (R_internal, X_internal);
+}
 
 } // namespace KokkosBlas
 

@@ -1637,17 +1637,16 @@ namespace Tpetra {
   meanValue (const Teuchos::ArrayView<impl_scalar_type>& means) const
   {
     // KR FIXME Overload this method to take a View.
-
     using Kokkos::ALL;
     using Kokkos::subview;
-    using Teuchos::Array;
-    using Teuchos::arcp_const_cast;
+    using Teuchos::Comm;
+    using Teuchos::RCP;
     using Teuchos::reduceAll;
     using Teuchos::REDUCE_SUM;
     typedef Kokkos::Details::ArithTraits<impl_scalar_type> ATS;
 
-    const size_t lclNumRows = getLocalLength ();
-    const size_t numVecs = getNumVectors ();
+    const size_t lclNumRows = this->getLocalLength ();
+    const size_t numVecs = this->getNumVectors ();
     const size_t numMeans = static_cast<size_t> (means.size ());
 
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1655,35 +1654,93 @@ namespace Tpetra {
       "Tpetra::MultiVector::meanValue: means.size() = " << numMeans
       << " != this->getNumVectors() = " << numVecs << ".");
 
-    // compute local components of the means
-    // sum these across all nodes
-    view_.template sync<DeviceType> ();
-    if (isConstantStride ()) {
-      Kokkos::MV_Sum (means.getRawPtr (), view_.d_view, lclNumRows);
-    }
-    else {
-      const std::pair<size_t, size_t> rowRng (0, lclNumRows);
-      for (size_t j = 0; j < numVecs; ++j) {
-        typedef Kokkos::View<impl_scalar_type*, DeviceType> view_type;
-        const size_t col = whichVectors_[j];
-        view_type X_col = subview (view_.d_view, rowRng, col);
-        means[j] = Kokkos::V_Sum (X_col);
+    const std::pair<size_t, size_t> rowRng (0, lclNumRows);
+    const std::pair<size_t, size_t> colRng (0, numVecs);
+
+    // Make sure that the final output view has the same layout as the
+    // temporary view's HostMirror.  Left or Right doesn't matter for
+    // a 1-D array anyway; this is just to placate the compiler.
+    typedef Kokkos::View<impl_scalar_type*, execution_space> local_view_type;
+    typedef Kokkos::View<impl_scalar_type*,
+      typename local_view_type::HostMirror::array_layout,
+      Kokkos::HostSpace,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+      typename local_view_type::HostMirror::specialize> host_local_view_type;
+    host_local_view_type meansOut (means.getRawPtr (), numMeans);
+
+    RCP<const Comm<int> > comm = this->getMap ().is_null () ? Teuchos::null :
+      this->getMap ()->getComm ();
+
+    // FIXME (mfh 05 Mar 2015) DualView flags are not indicative when
+    // the two memory spaces are the same, so we check the latter.
+    const bool oneMemorySpace =
+      Kokkos::Impl::is_same<typename dual_view_type::t_dev::memory_space,
+                            typename dual_view_type::t_host::memory_space>::value;
+    if (! oneMemorySpace && view_.modified_host >= view_.modified_device) {
+      // DualView was last modified on host, so run the local kernel there.
+      typename dual_view_type::t_host X_lcl =
+        subview (this->view_.h_view, rowRng, colRng);
+
+      // Compute the local sum of each column.
+      typename local_view_type::HostMirror lclSums ("MV::meanValue tmp", numVecs);
+      if (isConstantStride ()) {
+        KokkosBlas::sum (lclSums, X_lcl);
+      }
+      else {
+        for (size_t j = 0; j < numVecs; ++j) {
+          const size_t col = whichVectors_[j];
+          KokkosBlas::sum (subview (lclSums, j), subview (X_lcl, ALL (), col));
+        }
+      }
+
+      // If there are multiple MPI processes, the all-reduce reads
+      // from lclSums, and writes to meansOut.  Otherwise, we just
+      // copy lclSums into meansOut.
+      if (! comm.is_null () && this->isDistributed ()) {
+        reduceAll (*comm, REDUCE_SUM, static_cast<int> (numVecs),
+                   lclSums.ptr_on_device (), meansOut.ptr_on_device ());
+      }
+      else {
+        Kokkos::deep_copy (meansOut, lclSums);
       }
     }
-    if (this->isDistributed ()) {
-      Teuchos::Array<impl_scalar_type> lmeans (means);
-      // only combine if we are a distributed MV
-      reduceAll (*this->getMap ()->getComm (), REDUCE_SUM,
-                 static_cast<int> (numVecs), lmeans.getRawPtr (),
-                 means.getRawPtr ());
+    else {
+      // DualView was last modified on device, so run the local kernel there.
+      typename dual_view_type::t_dev X_lcl =
+        subview (this->view_.d_view, rowRng, colRng);
+
+      // Compute the local sum of each column.
+      local_view_type lclSums ("MV::meanValue tmp", numVecs);
+      if (isConstantStride ()) {
+        KokkosBlas::sum (lclSums, X_lcl);
+      }
+      else {
+        for (size_t j = 0; j < numVecs; ++j) {
+          const size_t col = whichVectors_[j];
+          KokkosBlas::sum (subview (lclSums, j), subview (X_lcl, ALL (), col));
+        }
+      }
+
+      // If there are multiple MPI processes, the all-reduce reads
+      // from lclSums, and writes to meansOut.  (We assume that MPI
+      // can read device memory.)  Otherwise, we just copy lclSums
+      // into meansOut.
+      if (! comm.is_null () && this->isDistributed ()) {
+        reduceAll (*comm, REDUCE_SUM, static_cast<int> (numVecs),
+                   lclSums.ptr_on_device (), meansOut.ptr_on_device ());
+      }
+      else {
+        Kokkos::deep_copy (meansOut, lclSums);
+      }
     }
+
     // mfh 12 Apr 2012: Don't take out the cast from the ordinal type
     // to the magnitude type, since operator/ (std::complex<T>, int)
     // isn't necessarily defined.
     const impl_scalar_type OneOverN =
-      ATS::one () / static_cast<mag_type> (getGlobalLength ());
+      ATS::one () / static_cast<mag_type> (this->getGlobalLength ());
     for (size_t k = 0; k < numMeans; ++k) {
-      means[k] = means[k] * OneOverN;
+      meansOut(k) = meansOut(k) * OneOverN;
     }
   }
 
