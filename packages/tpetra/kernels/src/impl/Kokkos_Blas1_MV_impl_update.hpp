@@ -58,12 +58,12 @@ namespace Impl {
 //
 // Z(i,j) = alpha*X(i,j) + beta*Y(i,j) + gamma*Z(i,j)
 //
-// with special cases for alpha, beta, or gamma in -1, 0, 1.
+// with special cases for alpha, beta, or gamma = 0.
 //
 // The template parameters scalar_x, scalar_y, and scalar_z correspond
 // to alpha, beta, resp. gammar in the operation Z = alpha*X + beta*Y
-// + gamma*Z.  The values -1, 0, and -1 correspond to literal values
-// of those coefficients.  The value 2 tells the functor to use the
+// + gamma*Z.  The value 0 corresponds to literal values of those
+// coefficients.  The value 2 tells the functor to use the
 // corresponding input coefficient.  Any literal coefficient of zero
 // has BLAS semantics of ignoring the corresponding (multi)vector
 // entry.
@@ -132,21 +132,7 @@ struct MV_Update_Functor
             Z_(i,k) = ATS::zero ();
           }
         }
-        else if (scalar_z == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = -Z_(i,k);
-          }
-        }
-        else if (scalar_z == 1) {
-          return; // nothing to do: Z = Z
-        }
-        else if (scalar_z == 2) {
+        else {
 #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
@@ -158,99 +144,7 @@ struct MV_Update_Functor
           }
         }
       }
-      else if (scalar_y == -1) {
-        if (scalar_z == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = -Y_(i,k);
-          }
-        }
-        else if (scalar_z == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = -Y_(i,k) - Z_(i,k);
-          }
-        }
-        else if (scalar_z == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = -Y_(i,k) + Z_(i,k);
-          }
-        }
-        else if (scalar_z == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = -Y_(i,k) + gamma_ * Z_(i,k);
-          }
-        }
-      }
-      else if (scalar_y == 1) {
-        if (scalar_z == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = Y_(i,k);
-          }
-        }
-        else if (scalar_z == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = Y_(i,k) - Z_(i,k);
-          }
-        }
-        else if (scalar_z == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = Y_(i,k) + Z_(i,k);
-          }
-        }
-        else if (scalar_z == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = Y_(i,k) + gamma_ * Z_(i,k);
-          }
-        }
-      }
-      else if (scalar_y == 2) {
+      else {
         if (scalar_z == 0) {
 #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -262,29 +156,7 @@ struct MV_Update_Functor
             Z_(i,k) = beta_ * Y_(i,k);
           }
         }
-        else if (scalar_z == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = beta_ * Y_(i,k) - Z_(i,k);
-          }
-        }
-        else if (scalar_z == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = beta_ * Y_(i,k) + Z_(i,k);
-          }
-        }
-        else if (scalar_z == 2) {
+        else {
 #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
@@ -298,387 +170,9 @@ struct MV_Update_Functor
       }
     }
     //
-    // scalar_ x == -1
+    // scalar_x == 2
     //
-    else if (scalar_x == -1) {
-      if (scalar_y == 0) {
-        if (scalar_z == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = -X_(i,k);
-          }
-        }
-        else if (scalar_z == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = -X_(i,k) - Z_(i,k);
-          }
-        }
-        else if (scalar_z == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = -X_(i,k) + Z_(i,k);
-          }
-        }
-        else if (scalar_z == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = -X_(i,k) + gamma_ * Z_(i,k);
-          }
-        }
-      }
-      else if (scalar_y == -1) {
-        if (scalar_z == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = -X_(i,k) - Y_(i,k);
-          }
-        }
-        else if (scalar_z == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = -X_(i,k) - Y_(i,k) - Z_(i,k);
-          }
-        }
-        else if (scalar_z == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = -X_(i,k) - Y_(i,k) + Z_(i,k);
-          }
-        }
-        else if (scalar_z == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = -X_(i,k) - Y_(i,k) + gamma_ * Z_(i,k);
-          }
-        }
-      }
-      else if (scalar_y == 1) {
-        if (scalar_z == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = -X_(i,k) + Y_(i,k);
-          }
-        }
-        else if (scalar_z == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = -X_(i,k) + Y_(i,k) - Z_(i,k);
-          }
-        }
-        else if (scalar_z == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = -X_(i,k) + Y_(i,k) + Z_(i,k);
-          }
-        }
-        else if (scalar_z == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = -X_(i,k) + Y_(i,k) + gamma_ * Z_(i,k);
-          }
-        }
-      }
-      else if (scalar_y == 2) {
-        if (scalar_z == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = -X_(i,k) + beta_ * Y_(i,k);
-          }
-        }
-        else if (scalar_z == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = -X_(i,k) + beta_ * Y_(i,k) - Z_(i,k);
-          }
-        }
-        else if (scalar_z == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = -X_(i,k) + beta_ * Y_(i,k) + Z_(i,k);
-          }
-        }
-        else if (scalar_z == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = -X_(i,k) + beta_ * Y_(i,k) + gamma_ * Z_(i,k);
-          }
-        }
-      }
-    }
-    //
-    // scalar_ x == 1
-    //
-    else if (scalar_x == 1) {
-      if (scalar_y == 0) {
-        if (scalar_z == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = X_(i,k);
-          }
-        }
-        else if (scalar_z == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = X_(i,k) - Z_(i,k);
-          }
-        }
-        else if (scalar_z == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = X_(i,k) + Z_(i,k);
-          }
-        }
-        else if (scalar_z == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = X_(i,k) + gamma_ * Z_(i,k);
-          }
-        }
-      }
-      else if (scalar_y == -1) {
-        if (scalar_z == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = X_(i,k) - Y_(i,k);
-          }
-        }
-        else if (scalar_z == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = X_(i,k) - Y_(i,k) - Z_(i,k);
-          }
-        }
-        else if (scalar_z == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = X_(i,k) - Y_(i,k) + Z_(i,k);
-          }
-        }
-        else if (scalar_z == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = X_(i,k) - Y_(i,k) + gamma_ * Z_(i,k);
-          }
-        }
-      }
-      else if (scalar_y == 1) {
-        if (scalar_z == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = X_(i,k) + Y_(i,k);
-          }
-        }
-        else if (scalar_z == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = X_(i,k) + Y_(i,k) - Z_(i,k);
-          }
-        }
-        else if (scalar_z == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = X_(i,k) + Y_(i,k) + Z_(i,k);
-          }
-        }
-        else if (scalar_z == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = X_(i,k) + Y_(i,k) + gamma_ * Z_(i,k);
-          }
-        }
-      }
-      else if (scalar_y == 2) {
-        if (scalar_z == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = X_(i,k) + beta_ * Y_(i,k);
-          }
-        }
-        else if (scalar_z == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = X_(i,k) + beta_ * Y_(i,k) - Z_(i,k);
-          }
-        }
-        else if (scalar_z == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = X_(i,k) + beta_ * Y_(i,k) + Z_(i,k);
-          }
-        }
-        else if (scalar_z == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = X_(i,k) + beta_ * Y_(i,k) + gamma_ * Z_(i,k);
-          }
-        }
-      }
-    }
-    //
-    // scalar_ x == 2
-    //
-    else if (scalar_x == 2) {
+    else {
       if (scalar_y == 0) {
         if (scalar_z == 0) {
 #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
@@ -691,29 +185,7 @@ struct MV_Update_Functor
             Z_(i,k) = alpha_ * X_(i,k);
           }
         }
-        else if (scalar_z == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = alpha_ * X_(i,k) - Z_(i,k);
-          }
-        }
-        else if (scalar_z == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = alpha_ * X_(i,k) + Z_(i,k);
-          }
-        }
-        else if (scalar_z == 2) {
+        else {
 #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
@@ -725,99 +197,7 @@ struct MV_Update_Functor
           }
         }
       }
-      else if (scalar_y == -1) {
-        if (scalar_z == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = alpha_ * X_(i,k) - Y_(i,k);
-          }
-        }
-        else if (scalar_z == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = alpha_ * X_(i,k) - Y_(i,k) - Z_(i,k);
-          }
-        }
-        else if (scalar_z == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = alpha_ * X_(i,k) - Y_(i,k) + Z_(i,k);
-          }
-        }
-        else if (scalar_z == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = alpha_ * X_(i,k) - Y_(i,k) + gamma_ * Z_(i,k);
-          }
-        }
-      }
-      else if (scalar_y == 1) {
-        if (scalar_z == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = alpha_ * X_(i,k) + Y_(i,k);
-          }
-        }
-        else if (scalar_z == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = alpha_ * X_(i,k) + Y_(i,k) - Z_(i,k);
-          }
-        }
-        else if (scalar_z == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = alpha_ * X_(i,k) + Y_(i,k) + Z_(i,k);
-          }
-        }
-        else if (scalar_z == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = alpha_ * X_(i,k) + Y_(i,k) + gamma_ * Z_(i,k);
-          }
-        }
-      }
-      else if (scalar_y == 2) {
+      else {
         if (scalar_z == 0) {
 #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -829,29 +209,7 @@ struct MV_Update_Functor
             Z_(i,k) = alpha_ * X_(i,k) + beta_ * Y_(i,k);
           }
         }
-        else if (scalar_z == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = alpha_ * X_(i,k) + beta_ * Y_(i,k) - Z_(i,k);
-          }
-        }
-        else if (scalar_z == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-          for (size_type k = 0; k < numCols; ++k) {
-            Z_(i,k) = alpha_ * X_(i,k) + beta_ * Y_(i,k) + Z_(i,k);
-          }
-        }
-        else if (scalar_z == 2) {
+        else {
 #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
@@ -871,12 +229,12 @@ struct MV_Update_Functor
 //
 // Z(i) = alpha*X(i) + beta*Y(i) + gamma*Z(i)
 //
-// with special cases for alpha, beta, or gamma in -1, 0, 1.
+// with special cases for alpha, beta, or gamma = 0.
 //
 // The template parameters scalar_x, scalar_y, and scalar_z correspond
 // to alpha, beta, resp. gammar in the operation Z = alpha*X + beta*Y
-// + gamma*Z.  The values -1, 0, and -1 correspond to literal values
-// of those coefficients.  The value 2 tells the functor to use the
+// + gamma*Z.  The value 0 corresponds to literal values of those
+// coefficients.  The value 2 tells the functor to use the
 // corresponding input coefficient.  Any literal coefficient of zero
 // has BLAS semantics of ignoring the corresponding vector entry.
 template<class XV, class YV, class ZV,
@@ -936,238 +294,36 @@ struct V_Update_Functor
         if (scalar_z == 0) {
           Z_(i) = ATS::zero ();
         }
-        else if (scalar_z == -1) {
-          Z_(i) = -Z_(i);
-        }
-        else if (scalar_z == 1) {
-          return; // nothing to do
-        }
-        else if (scalar_z == 2) {
+        else {
           Z_(i) = gamma_ * Z_(i);
         }
       }
-      else if (scalar_y == -1) {
-        if (scalar_z == 0) {
-          Z_(i) = -Y_(i);
-        }
-        else if (scalar_z == -1) {
-          Z_(i) = -Y_(i) - Z_(i);
-        }
-        else if (scalar_z == 1) {
-          Z_(i) = -Y_(i) + Z_(i);
-        }
-        else if (scalar_z == 2) {
-          Z_(i) = -Y_(i) + gamma_ * Z_(i);
-        }
-      }
-      else if (scalar_y == 1) {
-        if (scalar_z == 0) {
-          Z_(i) = Y_(i);
-        }
-        else if (scalar_z == -1) {
-          Z_(i) = Y_(i) - Z_(i);
-        }
-        else if (scalar_z == 1) {
-          Z_(i) = Y_(i) + Z_(i);
-        }
-        else if (scalar_z == 2) {
-          Z_(i) = Y_(i) + gamma_ * Z_(i);
-        }
-      }
-      else if (scalar_y == 2) {
+      else {
         if (scalar_z == 0) {
           Z_(i) = beta_ * Y_(i);
         }
-        else if (scalar_z == -1) {
-          Z_(i) = beta_ * Y_(i) - Z_(i);
-        }
-        else if (scalar_z == 1) {
-          Z_(i) = beta_ * Y_(i) + Z_(i);
-        }
-        else if (scalar_z == 2) {
+        else {
           Z_(i) = beta_ * Y_(i) + gamma_ * Z_(i);
-        }
-      }
-    }
-    //
-    // scalar_ x == -1
-    //
-    else if (scalar_x == -1) {
-      if (scalar_y == 0) {
-        if (scalar_z == 0) {
-          Z_(i) = -X_(i);
-        }
-        else if (scalar_z == -1) {
-          Z_(i) = -X_(i) - Z_(i);
-        }
-        else if (scalar_z == 1) {
-          Z_(i) = -X_(i) + Z_(i);
-        }
-        else if (scalar_z == 2) {
-          Z_(i) = -X_(i) + gamma_ * Z_(i);
-        }
-      }
-      else if (scalar_y == -1) {
-        if (scalar_z == 0) {
-          Z_(i) = -X_(i) - Y_(i);
-        }
-        else if (scalar_z == -1) {
-          Z_(i) = -X_(i) - Y_(i) - Z_(i);
-        }
-        else if (scalar_z == 1) {
-          Z_(i) = -X_(i) - Y_(i) + Z_(i);
-        }
-        else if (scalar_z == 2) {
-          Z_(i) = -X_(i) - Y_(i) + gamma_ * Z_(i);
-        }
-      }
-      else if (scalar_y == 1) {
-        if (scalar_z == 0) {
-          Z_(i) = -X_(i) + Y_(i);
-        }
-        else if (scalar_z == -1) {
-          Z_(i) = -X_(i) + Y_(i) - Z_(i);
-        }
-        else if (scalar_z == 1) {
-          Z_(i) = -X_(i) + Y_(i) + Z_(i);
-        }
-        else if (scalar_z == 2) {
-          Z_(i) = -X_(i) + Y_(i) + gamma_ * Z_(i);
-        }
-      }
-      else if (scalar_y == 2) {
-        if (scalar_z == 0) {
-          Z_(i) = -X_(i) + beta_ * Y_(i);
-        }
-        else if (scalar_z == -1) {
-          Z_(i) = -X_(i) + beta_ * Y_(i) - Z_(i);
-        }
-        else if (scalar_z == 1) {
-          Z_(i) = -X_(i) + beta_ * Y_(i) + Z_(i);
-        }
-        else if (scalar_z == 2) {
-          Z_(i) = -X_(i) + beta_ * Y_(i) + gamma_ * Z_(i);
-        }
-      }
-    }
-    //
-    // scalar_ x == 1
-    //
-    else if (scalar_x == 1) {
-      if (scalar_y == 0) {
-        if (scalar_z == 0) {
-          Z_(i) = X_(i);
-        }
-        else if (scalar_z == -1) {
-          Z_(i) = X_(i) - Z_(i);
-        }
-        else if (scalar_z == 1) {
-          Z_(i) = X_(i) + Z_(i);
-        }
-        else if (scalar_z == 2) {
-          Z_(i) = X_(i) + gamma_ * Z_(i);
-        }
-      }
-      else if (scalar_y == -1) {
-        if (scalar_z == 0) {
-          Z_(i) = X_(i) - Y_(i);
-        }
-        else if (scalar_z == -1) {
-          Z_(i) = X_(i) - Y_(i) - Z_(i);
-        }
-        else if (scalar_z == 1) {
-          Z_(i) = X_(i) - Y_(i) + Z_(i);
-        }
-        else if (scalar_z == 2) {
-          Z_(i) = X_(i) - Y_(i) + gamma_ * Z_(i);
-        }
-      }
-      else if (scalar_y == 1) {
-        if (scalar_z == 0) {
-          Z_(i) = X_(i) + Y_(i);
-        }
-        else if (scalar_z == -1) {
-          Z_(i) = X_(i) + Y_(i) - Z_(i);
-        }
-        else if (scalar_z == 1) {
-          Z_(i) = X_(i) + Y_(i) + Z_(i);
-        }
-        else if (scalar_z == 2) {
-          Z_(i) = X_(i) + Y_(i) + gamma_ * Z_(i);
-        }
-      }
-      else if (scalar_y == 2) {
-        if (scalar_z == 0) {
-          Z_(i) = X_(i) + beta_ * Y_(i);
-        }
-        else if (scalar_z == -1) {
-          Z_(i) = X_(i) + beta_ * Y_(i) - Z_(i);
-        }
-        else if (scalar_z == 1) {
-          Z_(i) = X_(i) + beta_ * Y_(i) + Z_(i);
-        }
-        else if (scalar_z == 2) {
-          Z_(i) = X_(i) + beta_ * Y_(i) + gamma_ * Z_(i);
         }
       }
     }
     //
     // scalar_ x == 2
     //
-    else if (scalar_x == 2) {
+    else {
       if (scalar_y == 0) {
         if (scalar_z == 0) {
           Z_(i) = alpha_ * X_(i);
         }
-        else if (scalar_z == -1) {
-          Z_(i) = alpha_ * X_(i) - Z_(i);
-        }
-        else if (scalar_z == 1) {
-          Z_(i) = alpha_ * X_(i) + Z_(i);
-        }
-        else if (scalar_z == 2) {
+        else {
           Z_(i) = alpha_ * X_(i) + gamma_ * Z_(i);
         }
       }
-      else if (scalar_y == -1) {
-        if (scalar_z == 0) {
-          Z_(i) = alpha_ * X_(i) - Y_(i);
-        }
-        else if (scalar_z == -1) {
-          Z_(i) = alpha_ * X_(i) - Y_(i) - Z_(i);
-        }
-        else if (scalar_z == 1) {
-          Z_(i) = alpha_ * X_(i) - Y_(i) + Z_(i);
-        }
-        else if (scalar_z == 2) {
-          Z_(i) = alpha_ * X_(i) - Y_(i) + gamma_ * Z_(i);
-        }
-      }
-      else if (scalar_y == 1) {
-        if (scalar_z == 0) {
-          Z_(i) = alpha_ * X_(i) + Y_(i);
-        }
-        else if (scalar_z == -1) {
-          Z_(i) = alpha_ * X_(i) + Y_(i) - Z_(i);
-        }
-        else if (scalar_z == 1) {
-          Z_(i) = alpha_ * X_(i) + Y_(i) + Z_(i);
-        }
-        else if (scalar_z == 2) {
-          Z_(i) = alpha_ * X_(i) + Y_(i) + gamma_ * Z_(i);
-        }
-      }
-      else if (scalar_y == 2) {
+      else {
         if (scalar_z == 0) {
           Z_(i) = alpha_ * X_(i) + beta_ * Y_(i);
         }
-        else if (scalar_z == -1) {
-          Z_(i) = alpha_ * X_(i) + beta_ * Y_(i) - Z_(i);
-        }
-        else if (scalar_z == 1) {
-          Z_(i) = alpha_ * X_(i) + beta_ * Y_(i) + Z_(i);
-        }
-        else if (scalar_z == 2) {
+        else {
           Z_(i) = alpha_ * X_(i) + beta_ * Y_(i) + gamma_ * Z_(i);
         }
       }
@@ -1180,13 +336,13 @@ struct V_Update_Functor
 //
 // Z(i,j) = alpha*X(i,j) + beta*Y(i,j) + gamma*Z(i,j)
 //
-// with special cases for alpha, beta, or gamma in -1, 0, 1.
+// with special cases for alpha, beta, or gamma = 0.
 //
-// a, b, and c come in as integers.  The values -1, 0, and 1
-// correspond to the literal values of the coefficients.  The value 2
-// tells the functor to use the corresponding coefficients: a == 2
-// means use alpha, b == 2 means use beta, and c == 2 means use gamma.
-// Otherwise, the corresponding coefficients are ignored.
+// a, b, and c come in as integers.  The value 0 corresponds to the
+// literal values of the coefficients.  The value 2 tells the functor
+// to use the corresponding coefficients: a == 2 means use alpha, b ==
+// 2 means use beta, and c == 2 means use gamma.  Otherwise, the
+// corresponding coefficients are ignored.
 //
 // Any literal coefficient of zero has BLAS semantics of ignoring the
 // corresponding multivector entry.
@@ -1227,224 +383,18 @@ MV_Update_Generic (const typename XMV::non_const_value_type& alpha, const XMV& X
         MV_Update_Functor<XMV, YMV, ZMV, 0, 0, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
         Kokkos::parallel_for (policy, op);
       }
-      else if (c == -1) {
-        MV_Update_Functor<XMV, YMV, ZMV, 0, 0, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        MV_Update_Functor<XMV, YMV, ZMV, 0, 0, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
+      else {
         MV_Update_Functor<XMV, YMV, ZMV, 0, 0, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
         Kokkos::parallel_for (policy, op);
       }
     }
-    else if (b == -1) {
-      if (c == 0) {
-        MV_Update_Functor<XMV, YMV, ZMV, 0, -1, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == -1) {
-        MV_Update_Functor<XMV, YMV, ZMV, 0, -1, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        MV_Update_Functor<XMV, YMV, ZMV, 0, -1, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
-        MV_Update_Functor<XMV, YMV, ZMV, 0, -1, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-    }
-    else if (b == 1) {
-      if (c == 0) {
-        MV_Update_Functor<XMV, YMV, ZMV, 0, 1, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == -1) {
-        MV_Update_Functor<XMV, YMV, ZMV, 0, 1, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        MV_Update_Functor<XMV, YMV, ZMV, 0, 1, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
-        MV_Update_Functor<XMV, YMV, ZMV, 0, 1, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-    }
-    else if (b == 2) {
+    else {
       if (c == 0) {
         MV_Update_Functor<XMV, YMV, ZMV, 0, 2, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
         Kokkos::parallel_for (policy, op);
       }
-      else if (c == -1) {
-        MV_Update_Functor<XMV, YMV, ZMV, 0, 2, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        MV_Update_Functor<XMV, YMV, ZMV, 0, 2, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
+      else {
         MV_Update_Functor<XMV, YMV, ZMV, 0, 2, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-    }
-  }
-  //
-  // a == -1
-  //
-  else if (a == -1) {
-    if (b == 0) {
-      if (c == 0) {
-        MV_Update_Functor<XMV, YMV, ZMV, -1, 0, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == -1) {
-        MV_Update_Functor<XMV, YMV, ZMV, -1, 0, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        MV_Update_Functor<XMV, YMV, ZMV, -1, 0, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
-        MV_Update_Functor<XMV, YMV, ZMV, -1, 0, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-    }
-    else if (b == -1) {
-      if (c == 0) {
-        MV_Update_Functor<XMV, YMV, ZMV, -1, -1, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == -1) {
-        MV_Update_Functor<XMV, YMV, ZMV, -1, -1, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        MV_Update_Functor<XMV, YMV, ZMV, -1, -1, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
-        MV_Update_Functor<XMV, YMV, ZMV, -1, -1, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-    }
-    else if (b == 1) {
-      if (c == 0) {
-        MV_Update_Functor<XMV, YMV, ZMV, -1, 1, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == -1) {
-        MV_Update_Functor<XMV, YMV, ZMV, -1, 1, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        MV_Update_Functor<XMV, YMV, ZMV, -1, 1, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
-        MV_Update_Functor<XMV, YMV, ZMV, -1, 1, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-    }
-    else if (b == 2) {
-      if (c == 0) {
-        MV_Update_Functor<XMV, YMV, ZMV, -1, 2, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == -1) {
-        MV_Update_Functor<XMV, YMV, ZMV, -1, 2, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        MV_Update_Functor<XMV, YMV, ZMV, -1, 2, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
-        MV_Update_Functor<XMV, YMV, ZMV, -1, 2, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-    }
-  }
-  //
-  // a == 1
-  //
-  else if (a == 1) {
-    if (b == 0) {
-      if (c == 0) {
-        MV_Update_Functor<XMV, YMV, ZMV, 1, 0, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == -1) {
-        MV_Update_Functor<XMV, YMV, ZMV, 1, 0, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        MV_Update_Functor<XMV, YMV, ZMV, 1, 0, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
-        MV_Update_Functor<XMV, YMV, ZMV, 1, 0, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-    }
-    else if (b == -1) {
-      if (c == 0) {
-        MV_Update_Functor<XMV, YMV, ZMV, 1, -1, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == -1) {
-        MV_Update_Functor<XMV, YMV, ZMV, 1, -1, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        MV_Update_Functor<XMV, YMV, ZMV, 1, -1, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
-        MV_Update_Functor<XMV, YMV, ZMV, 1, -1, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-    }
-    else if (b == 1) {
-      if (c == 0) {
-        MV_Update_Functor<XMV, YMV, ZMV, 1, 1, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == -1) {
-        MV_Update_Functor<XMV, YMV, ZMV, 1, 1, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        MV_Update_Functor<XMV, YMV, ZMV, 1, 1, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
-        MV_Update_Functor<XMV, YMV, ZMV, 1, 1, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-    }
-    else if (b == 2) {
-      if (c == 0) {
-        MV_Update_Functor<XMV, YMV, ZMV, 1, 2, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == -1) {
-        MV_Update_Functor<XMV, YMV, ZMV, 1, 2, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        MV_Update_Functor<XMV, YMV, ZMV, 1, 2, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
-        MV_Update_Functor<XMV, YMV, ZMV, 1, 2, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
         Kokkos::parallel_for (policy, op);
       }
     }
@@ -1452,75 +402,23 @@ MV_Update_Generic (const typename XMV::non_const_value_type& alpha, const XMV& X
   //
   // a == 2
   //
-  else if (a == 2) {
+  else {
     if (b == 0) {
       if (c == 0) {
         MV_Update_Functor<XMV, YMV, ZMV, 2, 0, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
         Kokkos::parallel_for (policy, op);
       }
-      else if (c == -1) {
-        MV_Update_Functor<XMV, YMV, ZMV, 2, 0, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        MV_Update_Functor<XMV, YMV, ZMV, 2, 0, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
+      else {
         MV_Update_Functor<XMV, YMV, ZMV, 2, 0, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
         Kokkos::parallel_for (policy, op);
       }
     }
-    else if (b == -1) {
-      if (c == 0) {
-        MV_Update_Functor<XMV, YMV, ZMV, 2, -1, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == -1) {
-        MV_Update_Functor<XMV, YMV, ZMV, 2, -1, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        MV_Update_Functor<XMV, YMV, ZMV, 2, -1, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
-        MV_Update_Functor<XMV, YMV, ZMV, 2, -1, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-    }
-    else if (b == 1) {
-      if (c == 0) {
-        MV_Update_Functor<XMV, YMV, ZMV, 2, 1, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == -1) {
-        MV_Update_Functor<XMV, YMV, ZMV, 2, 1, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        MV_Update_Functor<XMV, YMV, ZMV, 2, 1, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
-        MV_Update_Functor<XMV, YMV, ZMV, 2, 1, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-    }
-    else if (b == 2) {
+    else {
       if (c == 0) {
         MV_Update_Functor<XMV, YMV, ZMV, 2, 2, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
         Kokkos::parallel_for (policy, op);
       }
-      else if (c == -1) {
-        MV_Update_Functor<XMV, YMV, ZMV, 2, 2, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        MV_Update_Functor<XMV, YMV, ZMV, 2, 2, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
+      else {
         MV_Update_Functor<XMV, YMV, ZMV, 2, 2, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
         Kokkos::parallel_for (policy, op);
       }
@@ -1534,13 +432,13 @@ MV_Update_Generic (const typename XMV::non_const_value_type& alpha, const XMV& X
 //
 // Z(i) = alpha*X(i) + beta*Y(i) + gamma*Z(i)
 //
-// with special cases for alpha, beta, or gamma in -1, 0, 1.
+// with special cases for alpha, beta, or gamma = 0.
 //
-// a, b, and c come in as integers.  The values -1, 0, and 1
-// correspond to the literal values of the coefficients.  The value 2
-// tells the functor to use the corresponding coefficients: a == 2
-// means use alpha, b == 2 means use beta, and c == 2 means use gamma.
-// Otherwise, the corresponding coefficients are ignored.
+// a, b, and c come in as integers.  The value 0 corresponds to the
+// literal values of the coefficients.  The value 2 tells the functor
+// to use the corresponding coefficients: a == 2 means use alpha, b ==
+// 2 means use beta, and c == 2 means use gamma.  Otherwise, the
+// corresponding coefficients are ignored.
 //
 // Any literal coefficient of zero has BLAS semantics of ignoring the
 // corresponding vector entry.
@@ -1581,224 +479,18 @@ V_Update_Generic (const typename XV::non_const_value_type& alpha, const XV& X,
         V_Update_Functor<XV, YV, ZV, 0, 0, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
         Kokkos::parallel_for (policy, op);
       }
-      else if (c == -1) {
-        V_Update_Functor<XV, YV, ZV, 0, 0, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        V_Update_Functor<XV, YV, ZV, 0, 0, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
+      else {
         V_Update_Functor<XV, YV, ZV, 0, 0, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
         Kokkos::parallel_for (policy, op);
       }
     }
-    else if (b == -1) {
-      if (c == 0) {
-        V_Update_Functor<XV, YV, ZV, 0, -1, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == -1) {
-        V_Update_Functor<XV, YV, ZV, 0, -1, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        V_Update_Functor<XV, YV, ZV, 0, -1, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
-        V_Update_Functor<XV, YV, ZV, 0, -1, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-    }
-    else if (b == 1) {
-      if (c == 0) {
-        V_Update_Functor<XV, YV, ZV, 0, 1, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == -1) {
-        V_Update_Functor<XV, YV, ZV, 0, 1, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        V_Update_Functor<XV, YV, ZV, 0, 1, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
-        V_Update_Functor<XV, YV, ZV, 0, 1, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-    }
-    else if (b == 2) {
+    else {
       if (c == 0) {
         V_Update_Functor<XV, YV, ZV, 0, 2, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
         Kokkos::parallel_for (policy, op);
       }
-      else if (c == -1) {
-        V_Update_Functor<XV, YV, ZV, 0, 2, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        V_Update_Functor<XV, YV, ZV, 0, 2, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
+      else {
         V_Update_Functor<XV, YV, ZV, 0, 2, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-    }
-  }
-  //
-  // a == -1
-  //
-  else if (a == -1) {
-    if (b == 0) {
-      if (c == 0) {
-        V_Update_Functor<XV, YV, ZV, -1, 0, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == -1) {
-        V_Update_Functor<XV, YV, ZV, -1, 0, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        V_Update_Functor<XV, YV, ZV, -1, 0, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
-        V_Update_Functor<XV, YV, ZV, -1, 0, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-    }
-    else if (b == -1) {
-      if (c == 0) {
-        V_Update_Functor<XV, YV, ZV, -1, -1, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == -1) {
-        V_Update_Functor<XV, YV, ZV, -1, -1, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        V_Update_Functor<XV, YV, ZV, -1, -1, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
-        V_Update_Functor<XV, YV, ZV, -1, -1, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-    }
-    else if (b == 1) {
-      if (c == 0) {
-        V_Update_Functor<XV, YV, ZV, -1, 1, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == -1) {
-        V_Update_Functor<XV, YV, ZV, -1, 1, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        V_Update_Functor<XV, YV, ZV, -1, 1, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
-        V_Update_Functor<XV, YV, ZV, -1, 1, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-    }
-    else if (b == 2) {
-      if (c == 0) {
-        V_Update_Functor<XV, YV, ZV, -1, 2, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == -1) {
-        V_Update_Functor<XV, YV, ZV, -1, 2, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        V_Update_Functor<XV, YV, ZV, -1, 2, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
-        V_Update_Functor<XV, YV, ZV, -1, 2, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-    }
-  }
-  //
-  // a == 1
-  //
-  else if (a == 1) {
-    if (b == 0) {
-      if (c == 0) {
-        V_Update_Functor<XV, YV, ZV, 1, 0, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == -1) {
-        V_Update_Functor<XV, YV, ZV, 1, 0, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        V_Update_Functor<XV, YV, ZV, 1, 0, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
-        V_Update_Functor<XV, YV, ZV, 1, 0, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-    }
-    else if (b == -1) {
-      if (c == 0) {
-        V_Update_Functor<XV, YV, ZV, 1, -1, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == -1) {
-        V_Update_Functor<XV, YV, ZV, 1, -1, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        V_Update_Functor<XV, YV, ZV, 1, -1, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
-        V_Update_Functor<XV, YV, ZV, 1, -1, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-    }
-    else if (b == 1) {
-      if (c == 0) {
-        V_Update_Functor<XV, YV, ZV, 1, 1, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == -1) {
-        V_Update_Functor<XV, YV, ZV, 1, 1, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        V_Update_Functor<XV, YV, ZV, 1, 1, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
-        V_Update_Functor<XV, YV, ZV, 1, 1, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-    }
-    else if (b == 2) {
-      if (c == 0) {
-        V_Update_Functor<XV, YV, ZV, 1, 2, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == -1) {
-        V_Update_Functor<XV, YV, ZV, 1, 2, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        V_Update_Functor<XV, YV, ZV, 1, 2, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
-        V_Update_Functor<XV, YV, ZV, 1, 2, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
         Kokkos::parallel_for (policy, op);
       }
     }
@@ -1806,75 +498,23 @@ V_Update_Generic (const typename XV::non_const_value_type& alpha, const XV& X,
   //
   // a == 2
   //
-  else if (a == 2) {
+  else {
     if (b == 0) {
       if (c == 0) {
         V_Update_Functor<XV, YV, ZV, 2, 0, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
         Kokkos::parallel_for (policy, op);
       }
-      else if (c == -1) {
-        V_Update_Functor<XV, YV, ZV, 2, 0, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        V_Update_Functor<XV, YV, ZV, 2, 0, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
+      else {
         V_Update_Functor<XV, YV, ZV, 2, 0, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
         Kokkos::parallel_for (policy, op);
       }
     }
-    else if (b == -1) {
-      if (c == 0) {
-        V_Update_Functor<XV, YV, ZV, 2, -1, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == -1) {
-        V_Update_Functor<XV, YV, ZV, 2, -1, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        V_Update_Functor<XV, YV, ZV, 2, -1, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
-        V_Update_Functor<XV, YV, ZV, 2, -1, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-    }
-    else if (b == 1) {
-      if (c == 0) {
-        V_Update_Functor<XV, YV, ZV, 2, 1, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == -1) {
-        V_Update_Functor<XV, YV, ZV, 2, 1, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        V_Update_Functor<XV, YV, ZV, 2, 1, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
-        V_Update_Functor<XV, YV, ZV, 2, 1, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-    }
-    else if (b == 2) {
+    else {
       if (c == 0) {
         V_Update_Functor<XV, YV, ZV, 2, 2, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
         Kokkos::parallel_for (policy, op);
       }
-      else if (c == -1) {
-        V_Update_Functor<XV, YV, ZV, 2, 2, -1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 1) {
-        V_Update_Functor<XV, YV, ZV, 2, 2, 1, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
-      }
-      else if (c == 2) {
+      else {
         V_Update_Functor<XV, YV, ZV, 2, 2, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
         Kokkos::parallel_for (policy, op);
       }
@@ -1889,7 +529,7 @@ V_Update_Generic (const typename XV::non_const_value_type& alpha, const XV& X,
 ///
 /// Z(i,j) = alpha*X(i,j) + beta*Y(i,j) + gamma*Z(i,j),
 ///
-/// with special cases for alpha, beta, or gamma in -1, 0, 1.
+/// with special cases for alpha, beta, or gamma = 0.
 template<class XMV, class YMV, class ZMV, int rank = ZMV::rank>
 struct Update {};
 
@@ -1935,35 +575,17 @@ struct Update<XMV, YMV, ZMV, 2>
     if (alpha == ATA::zero ()) {
       a = 0;
     }
-    else if (alpha == -ATA::one ()) {
-      a = -1;
-    }
-    else if (alpha == ATA::one ()) {
-      a = 1;
-    }
     else {
       a = 2;
     }
     if (beta == ATB::zero ()) {
       b = 0;
     }
-    else if (beta == -ATB::one ()) {
-      b = -1;
-    }
-    else if (beta == ATB::one ()) {
-      b = 1;
-    }
     else {
       b = 2;
     }
     if (gamma == ATC::zero ()) {
       c = 0;
-    }
-    else if (gamma == -ATC::one ()) {
-      c = -1;
-    }
-    else if (gamma == ATC::one ()) {
-      c = 1;
     }
     else {
       c = 2;
@@ -2289,35 +911,17 @@ struct Update<XV, YV, ZV, 1>
     if (alpha == ATA::zero ()) {
       a = 0;
     }
-    else if (alpha == -ATA::one ()) {
-      a = -1;
-    }
-    else if (alpha == ATA::one ()) {
-      a = 1;
-    }
     else {
       a = 2;
     }
     if (beta == ATB::zero ()) {
       b = 0;
     }
-    else if (beta == -ATB::one ()) {
-      b = -1;
-    }
-    else if (beta == ATB::one ()) {
-      b = 1;
-    }
     else {
       b = 2;
     }
     if (gamma == ATC::zero ()) {
       c = 0;
-    }
-    else if (gamma == -ATC::one ()) {
-      c = -1;
-    }
-    else if (gamma == ATC::one ()) {
-      c = 1;
     }
     else {
       c = 2;

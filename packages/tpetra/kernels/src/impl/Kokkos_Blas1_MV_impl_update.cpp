@@ -79,35 +79,17 @@ update (const XMV::non_const_value_type& alpha, const XMV& X,
   if (alpha == ATA::zero ()) {
     a = 0;
   }
-  else if (alpha == -ATA::one ()) {
-    a = -1;
-  }
-  else if (alpha == ATA::one ()) {
-    a = 1;
-  }
   else {
     a = 2;
   }
   if (beta == ATB::zero ()) {
     b = 0;
   }
-  else if (beta == -ATB::one ()) {
-    b = -1;
-  }
-  else if (beta == ATB::one ()) {
-    b = 1;
-  }
   else {
     b = 2;
   }
   if (gamma == ATC::zero ()) {
     c = 0;
-  }
-  else if (gamma == -ATC::one ()) {
-    c = -1;
-  }
-  else if (gamma == ATC::one ()) {
-    c = 1;
   }
   else {
     c = 2;
@@ -161,35 +143,17 @@ update (const XMV::non_const_value_type& alpha, const XMV& X,
   if (alpha == ATA::zero ()) {
     a = 0;
   }
-  else if (alpha == -ATA::one ()) {
-    a = -1;
-  }
-  else if (alpha == ATA::one ()) {
-    a = 1;
-  }
   else {
     a = 2;
   }
   if (beta == ATB::zero ()) {
     b = 0;
   }
-  else if (beta == -ATB::one ()) {
-    b = -1;
-  }
-  else if (beta == ATB::one ()) {
-    b = 1;
-  }
   else {
     b = 2;
   }
   if (gamma == ATC::zero ()) {
     c = 0;
-  }
-  else if (gamma == -ATC::one ()) {
-    c = -1;
-  }
-  else if (gamma == ATC::one ()) {
-    c = 1;
   }
   else {
     c = 2;
@@ -243,35 +207,17 @@ update (const XMV::non_const_value_type& alpha, const XMV& X,
   if (alpha == ATA::zero ()) {
     a = 0;
   }
-  else if (alpha == -ATA::one ()) {
-    a = -1;
-  }
-  else if (alpha == ATA::one ()) {
-    a = 1;
-  }
   else {
     a = 2;
   }
   if (beta == ATB::zero ()) {
     b = 0;
   }
-  else if (beta == -ATB::one ()) {
-    b = -1;
-  }
-  else if (beta == ATB::one ()) {
-    b = 1;
-  }
   else {
     b = 2;
   }
   if (gamma == ATC::zero ()) {
     c = 0;
-  }
-  else if (gamma == -ATC::one ()) {
-    c = -1;
-  }
-  else if (gamma == ATC::one ()) {
-    c = 1;
   }
   else {
     c = 2;
@@ -325,35 +271,17 @@ update (const XMV::non_const_value_type& alpha, const XMV& X,
   if (alpha == ATA::zero ()) {
     a = 0;
   }
-  else if (alpha == -ATA::one ()) {
-    a = -1;
-  }
-  else if (alpha == ATA::one ()) {
-    a = 1;
-  }
   else {
     a = 2;
   }
   if (beta == ATB::zero ()) {
     b = 0;
   }
-  else if (beta == -ATB::one ()) {
-    b = -1;
-  }
-  else if (beta == ATB::one ()) {
-    b = 1;
-  }
   else {
     b = 2;
   }
   if (gamma == ATC::zero ()) {
     c = 0;
-  }
-  else if (gamma == -ATC::one ()) {
-    c = -1;
-  }
-  else if (gamma == ATC::one ()) {
-    c = 1;
   }
   else {
     c = 2;
@@ -407,35 +335,17 @@ update (const XMV::non_const_value_type& alpha, const XMV& X,
   if (alpha == ATA::zero ()) {
     a = 0;
   }
-  else if (alpha == -ATA::one ()) {
-    a = -1;
-  }
-  else if (alpha == ATA::one ()) {
-    a = 1;
-  }
   else {
     a = 2;
   }
   if (beta == ATB::zero ()) {
     b = 0;
   }
-  else if (beta == -ATB::one ()) {
-    b = -1;
-  }
-  else if (beta == ATB::one ()) {
-    b = 1;
-  }
   else {
     b = 2;
   }
   if (gamma == ATC::zero ()) {
     c = 0;
-  }
-  else if (gamma == -ATC::one ()) {
-    c = -1;
-  }
-  else if (gamma == ATC::one ()) {
-    c = 1;
   }
   else {
     c = 2;
