@@ -99,13 +99,33 @@ void Objective<Real>::hessVec( Vector<Real> &hv, const Vector<Real> &v, const Ve
   hv.scale(1.0/h);
 } 
 
+
 template <class Real>
 std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Real> &x,
                                                                 const Vector<Real> &g,
                                                                 const Vector<Real> &d,
                                                                 const bool printToStream,
                                                                 std::ostream & outStream,
-                                                                const int numSteps ) {
+                                                                const int numSteps,
+                                                                const int order ) {
+
+  TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
+                              "Error: finite difference order must be 1,2,3, or 4" );
+
+  // Finite difference steps in axpy form    
+  int steps[4][4] = { {  1,  0,  0, 0 },  // First order
+                      { -1,  2,  0, 0 },  // Second order
+                      { -1,  2,  1, 0 },  // Third order
+                      { -1, -1,  3, 1 }   // Fourth order
+                    };
+
+  // Finite difference weights     
+  Real weights[4][5] = { { -1.0,          1.0, 0.0,      0.0,      0.0      },  // First order
+                         {  0.0,     -1.0/2.0, 1.0/2.0,  0.0,      0.0      },  // Second order
+                         { -1.0/2.0, -1.0/3.0, 1.0,     -1.0/6.0,  0.0      },  // Third order
+                         {  0.0,     -2.0/3.0, 1.0/12.0, 2.0/3.0, -1.0/12.0 }   // Fourth order
+                       };
+
   Real tol = std::sqrt(ROL_EPSILON);
 
   int numVals = 4;
@@ -118,10 +138,11 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(outStream);
 
+
   // Evaluate objective value at x.
   this->update(x);
-  Real fval_at_x = this->value(x,tol);
 
+  
   // Compute gradient at x.
   Teuchos::RCP<Vector<Real> > gtmp = g.clone();
   this->gradient(*gtmp, x, tol);
@@ -130,18 +151,29 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
   // Temporary vectors.
   Teuchos::RCP<Vector<Real> > xnew = x.clone();
 
-  Real fval_at_xnew = 0;
   for (int i=0; i<numSteps; i++) {
-    // Evaluate objective value at x+eta*d.
+
     xnew->set(x);
-    xnew->axpy(eta, d);
-    this->update(*xnew);
-    fval_at_xnew = this->value(*xnew,tol);
 
     // Compute gradient, finite-difference gradient, and absolute error.
     gCheck[i][0] = eta;
     gCheck[i][1] = dtg;
-    gCheck[i][2] = (fval_at_xnew - fval_at_x) / eta;
+
+    gCheck[i][2] = weights[order-1][0] * this->value(x,tol);
+
+    for(int j=0; j<order; ++j) {
+        // Evaluate at x <- x+eta*c_i*d.
+        xnew->axpy(eta*steps[order-1][j], d);
+
+        // Only evaluate at steps where the weight is nonzero  
+        if( weights[order-1][j+1] != 0 ) {        
+            this->update(*xnew);
+            gCheck[i][2] += weights[order-1][j+1] * this->value(*xnew,tol);
+        }
+    }
+
+    gCheck[i][2] /= eta;
+
     gCheck[i][3] = std::abs(gCheck[i][2] - gCheck[i][1]);
 
     if (printToStream) {
@@ -171,13 +203,41 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
   return gCheck;
 } // checkGradient
 
+
+
+
+
+
+
+
+
+
 template <class Real>
 std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real> &x,
                                                                const Vector<Real> &hv,
                                                                const Vector<Real> &v,
                                                                const bool printToStream,
                                                                std::ostream & outStream,
-                                                               const int numSteps ) {
+                                                               const int numSteps,
+                                                               const int order ) {
+
+  TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
+                              "Error: finite difference order must be 1,2,3, or 4" );
+
+  // Finite difference steps in axpy form    
+  int steps[4][4] = { {  1,  0,  0, 0 },  // First order
+                      { -1,  2,  0, 0 },  // Second order
+                      { -1,  2,  1, 0 },  // Third order
+                      { -1, -1,  3, 1 }   // Fourth order
+                    };
+
+  // Finite difference weights     
+  Real weights[4][5] = { { -1.0,          1.0, 0.0,      0.0,      0.0      },  // First order
+                         {  0.0,     -1.0/2.0, 1.0/2.0,  0.0,      0.0      },  // Second order
+                         { -1.0/2.0, -1.0/3.0, 1.0,     -1.0/6.0,  0.0      },  // Third order
+                         {  0.0,     -2.0/3.0, 1.0/12.0, 2.0/3.0, -1.0/12.0 }   // Fourth order
+                       };
+
   Real tol = std::sqrt(ROL_EPSILON);
 
   int numVals = 4;
@@ -201,24 +261,40 @@ std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real
   Real normHv = Hv->norm();
 
   // Temporary vectors.
+  Teuchos::RCP<Vector<Real> > gdif = hv.clone();
   Teuchos::RCP<Vector<Real> > gnew = hv.clone();
   Teuchos::RCP<Vector<Real> > xnew = x.clone();
 
   for (int i=0; i<numSteps; i++) {
+
     // Evaluate objective value at x+eta*d.
     xnew->set(x);
-    xnew->axpy(eta, v);
-    this->update(*xnew);
-    this->gradient(*gnew, *xnew, tol);
-    gnew->axpy(-1.0, *g);
-    gnew->scale(1.0/eta);
+
+    gdif->set(*g);
+    gdif->scale(weights[order-1][0]);
+
+    for(int j=0; j<order; ++j) {
+
+        // Evaluate at x <- x+eta*c_i*d.
+        xnew->axpy(eta*steps[order-1][j], v);
+
+        // Only evaluate at steps where the weight is nonzero  
+        if( weights[order-1][j+1] != 0 ) {
+            this->update(*xnew);
+            this->gradient(*gnew, *xnew, tol); 
+            gdif->axpy(weights[order-1][j+1],*gnew);
+        }
+       
+    }
+
+    gdif->scale(1.0/eta);    
 
     // Compute norms of hessvec, finite-difference hessvec, and error.
     hvCheck[i][0] = eta;
     hvCheck[i][1] = normHv;
-    hvCheck[i][2] = gnew->norm();
-    gnew->axpy(-1.0, *Hv);
-    hvCheck[i][3] = gnew->norm();
+    hvCheck[i][2] = gdif->norm();
+    gdif->axpy(-1.0, *Hv);
+    hvCheck[i][3] = gdif->norm();
 
     if (printToStream) {
       if (i==0) {
