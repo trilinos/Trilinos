@@ -93,7 +93,7 @@ $TRILINOS_BASE_DIR/Trilinos/checkin-test.py \
 --st-extra-builds=MPI_DEBUG_ST,SERIAL_RELEASE_ST \
 --disable-packages=$DISABLE_PACKAGES \
 --skip-case-no-email \
---ctest-options="-E '(MueLu_ParameterListInterpreterEpetra$|MueLu_ParameterListInterpreterTpetra)'" \
+--ctest-options="-E '(MueLu_ParameterListInterpreterEpetra$|MueLu_ParameterListInterpreterTpetra|TeuchosComm_DefaultMpiComm_TagTests_MPI_4)'" \
 $EXTRA_ARGS
 
 
