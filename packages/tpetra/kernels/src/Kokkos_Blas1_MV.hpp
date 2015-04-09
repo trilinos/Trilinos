@@ -909,12 +909,12 @@ axpby (const RMV& R, const AV& a, const XMV& X, const BV& b, const YMV& Y)
                  "KokkosBlas::axpby (MV): R is const.  "
                  "It must be nonconst, because it is an output argument "
                  "(we have to be able to write to its entries).");
-  static_assert (RMV::rank == 2, "KokkosBlas::axpby (MV): "
-                 "R must have rank 2.");
-  static_assert (XMV::rank == 2, "KokkosBlas::axpby (MV): "
-                 "X must have rank 2.");
-  static_assert (YMV::rank == 2, "KokkosBlas::axpby (MV): "
-                 "Y must have rank 2.");
+  static_assert (RMV::rank == XMV::rank, "KokkosBlas::axpby (MV): "
+                 "R and X must have the same rank.");
+  static_assert (RMV::rank == YMV::rank, "KokkosBlas::axpby (MV): "
+                 "R and Y must have the same rank.");
+  static_assert (RMV::rank == 1 || RMV::rank == 2, "KokkosBlas::axpby (MV): "
+                 "RMV, XMV, and YMV must either have rank 1 or rank 2.");
 #endif // KOKKOS_HAVE_CXX11
 
   // Check compatibility of dimensions at run time.
@@ -930,21 +930,36 @@ axpby (const RMV& R, const AV& a, const XMV& X, const BV& b, const YMV& Y)
     Kokkos::Impl::throw_runtime_exception (os.str ());
   }
 
-  // Any View can be assigned to an unmanaged View, and it's safe to
-  // use them here.
-  typedef Kokkos::View<typename RMV::non_const_value_type**,
+  // Create unmanaged versions of the input Views.  RMV, XMV, and YMV
+  // may be rank 1 or rank 2.  AV and BV may be either rank-1 Views,
+  // or scalar values.
+  typedef Kokkos::View<
+    typename Kokkos::Impl::if_c<
+      RMV::rank == 1,
+      typename RMV::non_const_value_type*,
+      typename RMV::non_const_value_type** >::type,
     typename RMV::array_layout,
     typename RMV::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
     typename RMV::specialize> RMV_Internal;
-  typedef typename GetInternalTypeForAxpby<AV, Kokkos::Impl::is_view<AV>::value>::type AV_Internal;
-  typedef Kokkos::View<typename XMV::const_value_type**,
+  typedef typename GetInternalTypeForAxpby<
+    AV, Kokkos::Impl::is_view<AV>::value>::type AV_Internal;
+  typedef Kokkos::View<
+    typename Kokkos::Impl::if_c<
+      XMV::rank == 1,
+      typename XMV::non_const_value_type*,
+      typename XMV::non_const_value_type** >::type,
     typename XMV::array_layout,
     typename XMV::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
     typename XMV::specialize> XMV_Internal;
-  typedef typename GetInternalTypeForAxpby<BV, Kokkos::Impl::is_view<BV>::value>::type BV_Internal;
-  typedef Kokkos::View<typename YMV::const_value_type**,
+  typedef typename GetInternalTypeForAxpby<
+    BV, Kokkos::Impl::is_view<BV>::value>::type BV_Internal;
+  typedef Kokkos::View<
+    typename Kokkos::Impl::if_c<
+      YMV::rank == 1,
+      typename YMV::non_const_value_type*,
+      typename YMV::non_const_value_type** >::type,
     typename YMV::array_layout,
     typename YMV::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
