@@ -2337,7 +2337,7 @@ namespace Tpetra {
           col_host_view_type Y_k = subview (Y_lcl, ALL (), Y_col);
           col_host_view_type X_k = subview (X_lcl, ALL (), X_col);
 #endif // KOKKOS_HAVE_CXX11
-          Kokkos::V_Add (Y_k, theAlpha, X_k, theBeta, Y_k);
+          KokkosBlas::axpby (Y_k, theAlpha, X_k, theBeta, Y_k);
         }
       }
     }
@@ -2368,7 +2368,7 @@ namespace Tpetra {
           col_dev_view_type Y_k = subview (Y_lcl, ALL (), Y_col);
           col_dev_view_type X_k = subview (X_lcl, ALL (), X_col);
 #endif // KOKKOS_HAVE_CXX11
-          Kokkos::V_Add (Y_k, theAlpha, X_k, theBeta, Y_k);
+          KokkosBlas::axpby (Y_k, theAlpha, X_k, theBeta, Y_k);
         }
       }
     }
