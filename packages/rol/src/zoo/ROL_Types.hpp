@@ -978,7 +978,7 @@ namespace ROL {
   }
 
   // For use in gradient and Hessian checks
-  namespace FiniteDifference {
+  namespace Finite_Difference_Arrays {
 
     // Finite difference steps in axpy form    
     const int shifts[4][4] = { {  1,  0,  0, 0 },  // First order
