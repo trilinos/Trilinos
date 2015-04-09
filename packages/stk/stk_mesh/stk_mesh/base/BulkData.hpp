@@ -1149,6 +1149,7 @@ protected: //data
   std::vector<FmwkId> m_fmwk_global_ids;
   mutable std::vector<RelationVector* > m_fmwk_aux_relations;   // Relations that can't be managed by STK such as PARENT/CHILD
 #endif
+  bool m_do_create_aura;
 
 private: // data
   Parallel m_parallel;

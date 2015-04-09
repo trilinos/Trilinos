@@ -296,6 +296,7 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_fmwk_global_ids(),
     m_fmwk_aux_relations(),
 #endif
+    m_do_create_aura(true),
     m_parallel( parallel ),
     m_volatile_fast_shared_comm_map(),
     m_ghost_parts(),
@@ -3960,8 +3961,7 @@ void print_bucket_data(const stk::mesh::BulkData& mesh)
 
 bool BulkData::modification_end( modification_optimization opt)
 {
-  const bool aura_always_on = true;
-  const bool return_value = internal_modification_end( aura_always_on, opt );
+  const bool return_value = internal_modification_end( m_do_create_aura, opt );
 
 #ifdef STK_VERBOSE_OUTPUT
   print_bucket_data(*this);
