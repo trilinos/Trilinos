@@ -51,6 +51,7 @@
 #include <Kokkos_Blas1_MV_impl_nrm2.hpp>
 #include <Kokkos_Blas1_MV_impl_nrmInf.hpp>
 #include <Kokkos_Blas1_MV_impl_scal.hpp>
+#include <Kokkos_Blas1_MV_impl_update.hpp>
 
 #ifdef KOKKOS_HAVE_CXX11
 #  include <type_traits>
@@ -1134,6 +1135,100 @@ abs (const RMV& R, const XMV& X)
   Impl::Abs<RMV_Internal, XMV_Internal>::abs (R_internal, X_internal);
 }
 
+
+//! Compute Z := alpha*X + beta*Y + gamma*Z.
+template<class XMV, class YMV, class ZMV>
+void
+update (const typename XMV::non_const_value_type& alpha, const XMV& X,
+        const typename YMV::non_const_value_type& beta, const YMV& Y,
+        const typename ZMV::non_const_value_type& gamma, const ZMV& Z)
+{
+#ifdef KOKKOS_HAVE_CXX11
+  // XMV, YMV, and ZMV must be Kokkos::View specializations.
+  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::update (MV): "
+                 "X is not a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::update (MV): "
+                 "Y is not a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<ZMV>::value, "KokkosBlas::update (MV): "
+                 "Z is not a Kokkos::View.");
+
+  // ZMV must be nonconst (else it can't be an output argument).
+  static_assert (Kokkos::Impl::is_same<typename ZMV::value_type, typename ZMV::non_const_value_type>::value,
+                 "KokkosBlas::update (MV): Z is const.  "
+                 "It must be nonconst, because it is an output argument "
+                 "(we have to be able to write to its entries).");
+  static_assert (ZMV::rank == XMV::rank, "KokkosBlas::update (MV): "
+                 "X and Z must have the same rank.");
+  static_assert (ZMV::rank == YMV::rank, "KokkosBlas::update (MV): "
+                 "Y and Z must have the same rank.");
+  static_assert (ZMV::rank == 1 || ZMV::rank == 2, "KokkosBlas::update (MV): "
+                 "XMV, YMV, and ZMV must either have rank 1 or rank 2.");
+#endif // KOKKOS_HAVE_CXX11
+
+  // Check compatibility of dimensions at run time.
+  if (X.dimension_0 () != Y.dimension_0 () ||
+      X.dimension_1 () != Y.dimension_1 () ||
+      X.dimension_0 () != Z.dimension_0 () ||
+      X.dimension_1 () != Z.dimension_1 ()) {
+    std::ostringstream os;
+    os << "KokkosBlas::update (MV): Dimensions of X, Y, and Z do not match: "
+       << "Z: " << Z.dimension_0 () << " x " << Z.dimension_1 ()
+       << ", X: " << X.dimension_0 () << " x " << X.dimension_1 ()
+       << ", Y: " << Y.dimension_0 () << " x " << Y.dimension_1 ();
+    Kokkos::Impl::throw_runtime_exception (os.str ());
+  }
+
+  // Create unmanaged versions of the input Views.  XMV, YMV, and ZMV
+  // may be rank 1 or rank 2, but they must all have the same rank.
+
+  typedef Kokkos::View<
+    typename Kokkos::Impl::if_c<
+      XMV::rank == 1,
+      typename XMV::non_const_value_type*,
+      typename XMV::non_const_value_type** >::type,
+    typename XMV::array_layout,
+    typename XMV::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    typename XMV::specialize> XMV_Internal;
+
+  typedef Kokkos::View<
+    typename Kokkos::Impl::if_c<
+      YMV::rank == 1,
+      typename YMV::non_const_value_type*,
+      typename YMV::non_const_value_type** >::type,
+    typename YMV::array_layout,
+    typename YMV::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    typename YMV::specialize> YMV_Internal;
+
+  typedef Kokkos::View<
+    typename Kokkos::Impl::if_c<
+      ZMV::rank == 1,
+      typename ZMV::non_const_value_type*,
+      typename ZMV::non_const_value_type** >::type,
+    typename ZMV::array_layout,
+    typename ZMV::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    typename ZMV::specialize> ZMV_Internal;
+
+  XMV_Internal X_internal = X;
+  YMV_Internal Y_internal = Y;
+  ZMV_Internal Z_internal = Z;
+
+#ifdef TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+  using std::cerr;
+  using std::endl;
+  cerr << "KokkosBlas::update:" << endl
+       << "  XMV_Internal: " << demangledTypeName (X_internal) << endl
+       << "  YMV_Internal: " << demangledTypeName (Y_internal) << endl
+       << "  ZMV_Internal: " << demangledTypeName (Z_internal) << endl
+       << endl;
+#endif // TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+
+  return Impl::Update<XMV_Internal, YMV_Internal,
+    ZMV_Internal>::update (alpha, X_internal, beta, Y_internal,
+                           gamma, Z_internal);
+}
 
 } // namespace KokkosBlas
 
