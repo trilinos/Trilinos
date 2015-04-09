@@ -207,7 +207,7 @@ struct compute_node_normals_from_faces
   {
     //tev compiler error. 
     // error: ‘morkon_exp::compute_node_normals_from_faces<Kokkos::Serial, 3u>::node_to_faces_t’ has no member named ‘row_map’
-    // assert(m_node_to_faces.row_map.dimension_0() == m_node_normals.dimension_0());
+    assert(m_node_to_faces.graph.row_map.dimension_0() == m_node_normals.dimension_0());
   }
 
   KOKKOS_INLINE_FUNCTION
