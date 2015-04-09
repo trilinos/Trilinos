@@ -2184,7 +2184,7 @@ namespace Tpetra {
       if (isConstantStride () && A.isConstantStride ()) {
         view_.template sync<DeviceType> ();
         view_.template modify<DeviceType> ();
-        Kokkos::MV_Reciprocal (view_.d_view, A.view_.d_view);
+        KokkosBlas::reciprocal (view_.d_view, A.view_.d_view);
       }
       else {
         using Kokkos::ALL;
@@ -2204,7 +2204,7 @@ namespace Tpetra {
           view_type vector_k = subview (view_.d_view, ALL (), this_col);
           const size_t A_col = isConstantStride () ? k : A.whichVectors_[k];
           view_type vector_Ak = subview (A.view_.d_view, ALL (), A_col);
-          Kokkos::V_Reciprocal(vector_k, vector_Ak);
+          KokkosBlas::reciprocal(vector_k, vector_Ak);
         }
       }
     }
