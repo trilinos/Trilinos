@@ -41,7 +41,7 @@
 //@HEADER
 */
 
-#include <Kokkos_Blas1_MV_impl.hpp>
+#include <Kokkos_Blas1_MV_impl_scal.hpp>
 #include <climits>
 
 namespace KokkosBlas {

@@ -43,7 +43,14 @@
 #ifndef KOKKOS_BLAS1_MV_HPP_
 #define KOKKOS_BLAS1_MV_HPP_
 
-#include <Kokkos_Blas1_MV_impl.hpp>
+#include <Kokkos_Blas1_MV_impl_axpby.hpp>
+#include <Kokkos_Blas1_MV_impl_dot.hpp>
+#include <Kokkos_Blas1_MV_impl_fill.hpp>
+#include <Kokkos_Blas1_MV_impl_nrm1.hpp>
+#include <Kokkos_Blas1_MV_impl_nrm2.hpp>
+#include <Kokkos_Blas1_MV_impl_nrmInf.hpp>
+#include <Kokkos_Blas1_MV_impl_scal.hpp>
+
 #ifdef KOKKOS_HAVE_CXX11
 #  include <type_traits>
 #endif // KOKKOS_HAVE_CXX11
