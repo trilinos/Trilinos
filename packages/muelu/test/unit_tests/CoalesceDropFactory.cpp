@@ -111,5 +111,335 @@ namespace MueLuTests {
 
   } //PreDrop
 
+  TEUCHOS_UNIT_TEST(CoalesceDropFactory, AmalgamationBasic)
+  {
+    // unit test for block size 3.
+    // lightweight wrap = false
+    out << "version: " << MueLu::Version() << std::endl;
+
+    RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+
+    Level fineLevel;
+    TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(fineLevel);
+
+    int nx = 3*comm->getSize();
+    RCP<Matrix> A = TestHelpers::TestFactory<SC,LO,GO,NO>::Build1DPoisson(nx);
+    A->SetFixedBlockSize(3, 0);
+    fineLevel.Set("A", A);
+    CoalesceDropFactory dropFact = CoalesceDropFactory();
+    dropFact.SetParameter("lightweight wrap",Teuchos::ParameterEntry(false));
+    fineLevel.Request("Graph", &dropFact);
+    fineLevel.Request("DofsPerNode", &dropFact);
+
+    dropFact.Build(fineLevel);
+
+    fineLevel.print(out);
+    RCP<GraphBase> graph = fineLevel.Get<RCP<GraphBase> >("Graph", &dropFact);
+    LO myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &dropFact);
+    TEST_EQUALITY(Teuchos::as<int>(graph->GetDomainMap()->getGlobalNumElements()) == comm->getSize(), true);
+    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 3, true);
+    bool bCorrectGraph = false;
+    if (comm->getSize() == 1 && graph->getNeighborVertices(0).size() == 1) {
+      bCorrectGraph = true;
+    } else {
+      if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
+        if (graph->getNeighborVertices(0).size() == 2) bCorrectGraph = true;
+      }
+      else {
+        if (graph->getNeighborVertices(0).size() == 3) bCorrectGraph = true;
+      }
+    }
+    TEST_EQUALITY(bCorrectGraph, true);
+  } // AmalgamationBasic
+
+  TEUCHOS_UNIT_TEST(CoalesceDropFactory, AmalgamationStrided)
+  {
+    // unit test for block size 3 using a strided map
+    // lightweight wrap = false
+    out << "version: " << MueLu::Version() << std::endl;
+
+    RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+
+    Level fineLevel;
+    TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(fineLevel);
+
+    int nx = 3*comm->getSize();
+    RCP<Matrix> A = TestHelpers::TestFactory<SC,LO,GO,NO>::Build1DPoisson(nx);
+
+    std::vector<size_t> stridingInfo;
+    stridingInfo.push_back(Teuchos::as<size_t>(3));
+    LocalOrdinal stridedBlockId = -1;
+
+    RCP<const Xpetra::StridedMap<LocalOrdinal, GlobalOrdinal, Node> > stridedRangeMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(
+                                                  A->getRangeMap(),
+                                                  stridingInfo,
+                                                  stridedBlockId,
+                                                  0 /*offset*/
+                                                  );
+    RCP<const Map> stridedDomainMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(
+                                            A->getDomainMap(),
+                                            stridingInfo,
+                                            stridedBlockId,
+                                            0 /*offset*/
+                                            );
+
+    if(A->IsView("stridedMaps") == true) A->RemoveView("stridedMaps");
+    A->CreateView("stridedMaps", stridedRangeMap, stridedDomainMap);
+
+    fineLevel.Set("A", A);
+    CoalesceDropFactory dropFact = CoalesceDropFactory();
+    dropFact.SetParameter("lightweight wrap",Teuchos::ParameterEntry(false));
+    fineLevel.Request("Graph", &dropFact);
+    fineLevel.Request("DofsPerNode", &dropFact);
+
+    dropFact.Build(fineLevel);
+
+    fineLevel.print(out);
+    RCP<GraphBase> graph = fineLevel.Get<RCP<GraphBase> >("Graph", &dropFact);
+    LO myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &dropFact);
+    TEST_EQUALITY(Teuchos::as<int>(graph->GetDomainMap()->getGlobalNumElements()) == comm->getSize(), true);
+    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 3, true);
+    bool bCorrectGraph = false;
+    if (comm->getSize() == 1 && graph->getNeighborVertices(0).size() == 1) {
+      bCorrectGraph = true;
+    } else {
+      if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
+        if (graph->getNeighborVertices(0).size() == 2) bCorrectGraph = true;
+      }
+      else {
+        if (graph->getNeighborVertices(0).size() == 3) bCorrectGraph = true;
+      }
+    }
+    TEST_EQUALITY(bCorrectGraph, true);
+  } // AmalgamationStrided
+
+  TEUCHOS_UNIT_TEST(CoalesceDropFactory, AmalgamationStrided2)
+  {
+    // unit test for block size 3 = (2,1). wrap block 0
+    // lightweight wrap = false
+    out << "version: " << MueLu::Version() << std::endl;
+
+    RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+    Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
+
+    // create strided map information
+    std::vector<size_t> stridingInfo;
+    stridingInfo.push_back(Teuchos::as<size_t>(2));
+    stridingInfo.push_back(Teuchos::as<size_t>(1));
+    LocalOrdinal stridedBlockId = 0;
+
+    RCP<const StridedMap> dofMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, 3*comm->getSize(), 0,
+                                  stridingInfo, comm,
+                                  stridedBlockId /*blockId*/, 0 /*offset*/);
+
+    /////////////////////////////////////////////////////
+
+    Teuchos::RCP<Matrix> mtx = TestHelpers::TestFactory<SC,LO,GO,NO>::BuildTridiag(dofMap, 2.0, -1.0, -1.0);
+
+    Level fineLevel;
+    TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(fineLevel);
+
+    RCP<const Xpetra::StridedMap<LocalOrdinal, GlobalOrdinal, Node> > stridedRangeMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(
+                                                  mtx->getRangeMap(),
+                                                  stridingInfo,
+                                                  stridedBlockId,
+                                                  0 /*offset*/
+                                                  );
+    RCP<const Map> stridedDomainMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(
+                                            mtx->getDomainMap(),
+                                            stridingInfo,
+                                            stridedBlockId,
+                                            0 /*offset*/
+                                            );
+
+    if(mtx->IsView("stridedMaps") == true) mtx->RemoveView("stridedMaps");
+    mtx->CreateView("stridedMaps", stridedRangeMap, stridedDomainMap);
+
+    fineLevel.Set("A", mtx);
+    CoalesceDropFactory dropFact = CoalesceDropFactory();
+    dropFact.SetParameter("lightweight wrap",Teuchos::ParameterEntry(false));
+    fineLevel.Request("Graph", &dropFact);
+    fineLevel.Request("DofsPerNode", &dropFact);
+
+    dropFact.Build(fineLevel);
+
+    fineLevel.print(out);
+    RCP<GraphBase> graph = fineLevel.Get<RCP<GraphBase> >("Graph", &dropFact);
+
+    LO myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &dropFact);
+    TEST_EQUALITY(Teuchos::as<int>(graph->GetDomainMap()->getGlobalNumElements()) == comm->getSize(), true);
+    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 3, true);
+    bool bCorrectGraph = false;
+    if (comm->getSize() == 1 && graph->getNeighborVertices(0).size() == 1) {
+      bCorrectGraph = true;
+    } else {
+      if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
+        if (graph->getNeighborVertices(0).size() == 2) bCorrectGraph = true;
+      }
+      else {
+        if (graph->getNeighborVertices(0).size() == 3) bCorrectGraph = true;
+      }
+    }
+    TEST_EQUALITY(bCorrectGraph, true);
+  } // AmalgamationStrided2
+
+  TEUCHOS_UNIT_TEST(CoalesceDropFactory, AmalgamationStridedOffset)
+  {
+    // unit test for block size 9 = (2,3,4). wrap block 1.
+    // lightweight wrap = false
+    out << "version: " << MueLu::Version() << std::endl;
+
+    RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+    Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
+
+    // create strided map information
+    std::vector<size_t> stridingInfo;
+    stridingInfo.push_back(Teuchos::as<size_t>(2));
+    stridingInfo.push_back(Teuchos::as<size_t>(3));
+    stridingInfo.push_back(Teuchos::as<size_t>(4));
+    LocalOrdinal stridedBlockId = 1;
+    GlobalOrdinal offset = 19;
+
+    RCP<const StridedMap> dofMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, 9*comm->getSize(), 0,
+                                  stridingInfo, comm,
+                                  stridedBlockId, offset);
+
+    /////////////////////////////////////////////////////
+
+    Teuchos::RCP<Matrix> mtx = TestHelpers::TestFactory<SC,LO,GO,NO>::BuildTridiag(dofMap, 2.0, -1.0, -3.0);
+
+    Level fineLevel;
+    TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(fineLevel);
+
+    RCP<const Map> stridedRangeMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(
+                                                  mtx->getRangeMap(),
+                                                  stridingInfo,
+                                                  stridedBlockId,
+                                                  offset
+                                                  );
+    RCP<const Map> stridedDomainMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(
+                                            mtx->getDomainMap(),
+                                            stridingInfo,
+                                            stridedBlockId,
+                                            offset
+                                            );
+
+    if(mtx->IsView("stridedMaps") == true) mtx->RemoveView("stridedMaps");
+    mtx->CreateView("stridedMaps", stridedRangeMap, stridedDomainMap);
+
+    fineLevel.Set("A", mtx);
+    CoalesceDropFactory dropFact = CoalesceDropFactory();
+    dropFact.SetParameter("lightweight wrap",Teuchos::ParameterEntry(false));
+    fineLevel.Request("Graph", &dropFact);
+    fineLevel.Request("DofsPerNode", &dropFact);
+
+    dropFact.Build(fineLevel);
+
+    fineLevel.print(out);
+    RCP<GraphBase> graph = fineLevel.Get<RCP<GraphBase> >("Graph", &dropFact);
+
+    LO myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &dropFact);
+    TEST_EQUALITY(Teuchos::as<int>(graph->GetDomainMap()->getGlobalNumElements()) == comm->getSize(), true);
+    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 9, true);
+    bool bCorrectGraph = false;
+    if (comm->getSize() == 1 && graph->getNeighborVertices(0).size() == 1) {
+      bCorrectGraph = true;
+    } else {
+      if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
+        if (graph->getNeighborVertices(0).size() == 2) bCorrectGraph = true;
+      }
+      else {
+        if (graph->getNeighborVertices(0).size() == 3) bCorrectGraph = true;
+      }
+    }
+    TEST_EQUALITY(bCorrectGraph, true);
+  } // AmalgamationStridedOffset
+
+  TEUCHOS_UNIT_TEST(CoalesceDropFactory, AmalgamationLightweight)
+  {
+    // unit test for block size 3
+    // lightweight wrap = true
+    out << "version: " << MueLu::Version() << std::endl;
+
+    RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+    Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
+
+    Level fineLevel;
+    TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(fineLevel);
+
+    RCP<const Map> dofMap = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, 3*comm->getSize(), 0, comm);
+    Teuchos::RCP<Matrix> mtx = TestHelpers::TestFactory<SC,LO,GO,NO>::BuildTridiag(dofMap, 2.0, -1.0, -1.0);
+    mtx->SetFixedBlockSize(3, 0);
+    fineLevel.Set("A", mtx);
+
+    CoalesceDropFactory dropFact = CoalesceDropFactory();
+    dropFact.SetParameter("lightweight wrap",Teuchos::ParameterEntry(true));
+    fineLevel.Request("Graph", &dropFact);
+    fineLevel.Request("DofsPerNode", &dropFact);
+
+    dropFact.Build(fineLevel);
+
+    RCP<GraphBase> graph = fineLevel.Get<RCP<GraphBase> >("Graph", &dropFact);
+    LO myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &dropFact);
+    TEST_EQUALITY(Teuchos::as<int>(graph->GetDomainMap()->getGlobalNumElements()) == comm->getSize(), true);
+    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 3, true);
+    bool bCorrectGraph = false;
+    if (comm->getSize() == 1 && graph->getNeighborVertices(0).size() == 1) {
+      bCorrectGraph = true;
+    } else {
+      if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
+        if (graph->getNeighborVertices(0).size() == 2) bCorrectGraph = true;
+      }
+      else {
+        if (graph->getNeighborVertices(0).size() == 3) bCorrectGraph = true;
+      }
+    }
+    TEST_EQUALITY(bCorrectGraph, true);
+  } // AmalgamationLightweight
+
+  TEUCHOS_UNIT_TEST(CoalesceDropFactory, AmalgamationLightweightDrop)
+  {
+    // unit test for block size 1
+    // lightweight wrap = true
+    // drop small values
+    out << "version: " << MueLu::Version() << std::endl;
+
+    RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+    Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
+
+    Level fineLevel;
+    TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(fineLevel);
+
+    RCP<const Map> dofMap = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, 3*comm->getSize(), 0, comm);
+    Teuchos::RCP<Matrix> mtx = TestHelpers::TestFactory<SC,LO,GO,NO>::BuildTridiag(dofMap, 1.0, -1.0, -0.0001);
+    mtx->SetFixedBlockSize(1, 0);
+    fineLevel.Set("A", mtx);
+
+    CoalesceDropFactory dropFact = CoalesceDropFactory();
+    dropFact.SetParameter("lightweight wrap",Teuchos::ParameterEntry(true));
+    dropFact.SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(0.5));
+    fineLevel.Request("Graph", &dropFact);
+    fineLevel.Request("DofsPerNode", &dropFact);
+
+    dropFact.Build(fineLevel);
+
+    RCP<GraphBase> graph = fineLevel.Get<RCP<GraphBase> >("Graph", &dropFact);
+    LO myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &dropFact);
+    TEST_EQUALITY(Teuchos::as<int>(graph->GetDomainMap()->getGlobalNumElements()) == 3*comm->getSize(), true);
+    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 1, true);
+    bool bCorrectGraph = false;
+    if (comm->getSize() == 1 && graph->getNeighborVertices(0).size() == 1) {
+      bCorrectGraph = true;
+    } else {
+      if (comm->getRank() == 0 ) {
+        if (graph->getNeighborVertices(0).size() == 1) bCorrectGraph = true;
+      }
+      else {
+        if (graph->getNeighborVertices(0).size() == 3) bCorrectGraph = true;
+      }
+    }
+    TEST_EQUALITY(bCorrectGraph, true);
+  } // AmalgamationLightweightDrop
+
 } // namespace MueLuTests
 

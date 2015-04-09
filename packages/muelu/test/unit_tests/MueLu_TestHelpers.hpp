@@ -183,6 +183,122 @@ namespace MueLuTests {
         return Op;
       } // BuildMatrix()
 
+      // Create a tridiagonal matrix (stencil = [b,a,c]) with the specified number of rows
+      // dofMap: row map of matrix
+      static RCP<Matrix> BuildTridiag(RCP<const Map> dofMap, Scalar a, Scalar b, Scalar c, Xpetra::UnderlyingLib lib=Xpetra::NotSpecified) { //global_size_t
+
+        if (lib == Xpetra::NotSpecified)
+          lib = TestHelpers::Parameters::getLib();
+
+        RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+
+        Teuchos::RCP<Matrix> mtx = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(dofMap, 3);
+
+        LocalOrdinal NumMyElements = dofMap->getNodeNumElements();
+        Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = dofMap->getNodeElementList();
+        GlobalOrdinal indexBase = dofMap->getIndexBase();
+
+        GlobalOrdinal NumEntries;
+        LocalOrdinal  nnz = 3;
+        std::vector<Scalar>        Values(nnz);
+        std::vector<GlobalOrdinal> Indices(nnz);
+
+        // access information from strided block map
+        std::vector<size_t> strInfo = std::vector<size_t>();
+        size_t blockSize = 1;
+        LocalOrdinal blockId = -1;
+        GlobalOrdinal offset = 0;
+
+        Teuchos::RCP<const StridedMap> strdofMap = Teuchos::rcp_dynamic_cast<const StridedMap>(dofMap);
+        if(strdofMap != Teuchos::null) {
+          strInfo = strdofMap->getStridingData();
+          blockSize = strdofMap->getFixedBlockSize();
+          blockId = strdofMap->getStridedBlockId();
+          offset = strdofMap->getOffset();
+          TEUCHOS_TEST_FOR_EXCEPTION(blockId > -1 && strInfo[blockId]==1, MueLu::Exceptions::RuntimeError,
+                                             "MueLu::TestHelpers::BuildTridiag: strInfo block size must be > 1.");
+          // todo: write one more special case for a row being first and last bock row
+        } else {
+          // no striding information. emulate block matrix
+          blockId = 0;
+          strInfo.push_back(blockSize); // default block size = 1
+        }
+
+        GlobalOrdinal rrmax = (dofMap->getMaxAllGlobalIndex()-offset-indexBase) / blockSize;
+
+        // loop over all rows
+        for (LocalOrdinal i = 0; i < NumMyElements; i++) {
+
+          GlobalOrdinal rr = (MyGlobalElements[i]-offset-indexBase) / blockSize + indexBase;  // node index
+
+          // distinguish 5 different cases
+
+          GlobalOrdinal blockOffset = 0;
+          for (LocalOrdinal k=0; k<blockId; k++)
+            blockOffset += Teuchos::as<GlobalOrdinal>(strInfo[k]);
+
+          if (MyGlobalElements[i] == blockOffset + offset + indexBase) {
+            // very first row
+            Indices[0] = MyGlobalElements[i];
+            Values [0] = a;
+            Indices[1] = MyGlobalElements[i] + 1;
+            Values [1] = c;
+            NumEntries = 2;
+          } else if (MyGlobalElements[i] == rrmax * Teuchos::as<GO>(blockSize) + blockOffset + Teuchos::as<GO>(strInfo[blockId]) - 1 + offset + indexBase) {
+            // very last row
+            Indices[0] = MyGlobalElements[i] - 1;
+            Values [0] = b;
+            Indices[1] = MyGlobalElements[i];
+            Values [1] = a;
+            NumEntries = 2;
+          } else if (MyGlobalElements[i] == rr * Teuchos::as<GO>(blockSize) + blockOffset + Teuchos::as<GO>(strInfo[blockId]) - 1 + offset + indexBase) {
+            // last row in current node block
+            Indices[0] = MyGlobalElements[i] - 1;
+            Values [0] = b;
+            Indices[1] = MyGlobalElements[i];
+            Values [1] = a;
+            Indices[2] = (rr+1)*blockSize + blockOffset + offset + indexBase;
+            Values [2] = c;
+            NumEntries = 3;
+          } else if (MyGlobalElements[i] == rr * Teuchos::as<GO>(blockSize) + blockOffset + offset + indexBase) {
+            // first row in current node block
+            Indices[0] = (rr-1)*blockSize + blockOffset + strInfo[blockId] - 1 + offset + indexBase;
+            Values [0] = b;
+            Indices[1] = MyGlobalElements[i];
+            Values [1] = a;
+            Indices[2] = MyGlobalElements[i] + 1;
+            Values [2] = c;
+            NumEntries = 3;
+          } else {
+            // usual row entries in block rows
+            Indices[0] = MyGlobalElements[i] - 1;
+            Values [0] = b;
+            Indices[1] = MyGlobalElements[i];
+            Values [1] = a;
+            Indices[2] = MyGlobalElements[i] + 1;
+            Values [2] = c;
+            NumEntries = 3;
+          }
+
+          // debug output
+          /*std::cout << "--------> Proc " << comm->getRank() << " lrow " << i << " grow " << MyGlobalElements[i] << " node " << rr << " values = " ;
+          for (size_t k = 0; k < NumEntries; k++) {
+            std::cout << " " << Indices[k] << "->" << Values[k] << "   ";
+          }
+          std::cout << std::endl;*/
+
+          // put the off-diagonal entries
+          // Xpetra wants ArrayViews (sigh)
+          Teuchos::ArrayView<Scalar>        av(&Values [0], NumEntries);
+          Teuchos::ArrayView<GlobalOrdinal> iv(&Indices[0], NumEntries);
+          mtx->insertGlobalValues(MyGlobalElements[i], iv, av);
+        }
+
+        mtx->fillComplete();
+
+        return mtx;
+      } // BuildTridiag()
+
       // Create a 1D Poisson matrix with the specified number of rows
       // nx: global number of rows
       static RCP<Matrix> Build1DPoisson(int nx, Xpetra::UnderlyingLib lib=Xpetra::NotSpecified) { //global_size_t
