@@ -977,6 +977,27 @@ namespace ROL {
     return CONSTRAINT_EQUALITY;
   }
 
+  // For use in gradient and Hessian checks
+  namespace FiniteDifference {
+
+    // Finite difference steps in axpy form    
+    const int shifts[4][4] = { {  1,  0,  0, 0 },  // First order
+                               { -1,  2,  0, 0 },  // Second order
+                               { -1,  2,  1, 0 },  // Third order
+                               { -1, -1,  3, 1 }   // Fourth order
+                             };
+
+      // Finite difference weights     
+     const double weights[4][5] = { { -1.0,          1.0, 0.0,      0.0,      0.0      },  // First order
+                                    {  0.0,     -1.0/2.0, 1.0/2.0,  0.0,      0.0      },  // Second order
+                                    { -1.0/2.0, -1.0/3.0, 1.0,     -1.0/6.0,  0.0      },  // Third order
+                                    {  0.0,     -2.0/3.0, 1.0/12.0, 2.0/3.0, -1.0/12.0 }   // Fourth order
+                                  };
+
+  }
+
+
+
 } // namespace ROL
 
 

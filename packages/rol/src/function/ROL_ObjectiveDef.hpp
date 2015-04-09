@@ -100,6 +100,7 @@ void Objective<Real>::hessVec( Vector<Real> &hv, const Vector<Real> &v, const Ve
 } 
 
 
+
 template <class Real>
 std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Real> &x,
                                                                 const Vector<Real> &g,
@@ -109,40 +110,46 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
                                                                 const int numSteps,
                                                                 const int order ) {
 
+  std::vector<Real> steps(numSteps);
+  for(int i=0;i<numSteps;++i) {
+    steps[i] = pow(10,-i);
+  }
+
+  return checkGradient(x,g,d,steps,printToStream,outStream,order);
+
+} // checkGradient
+
+
+
+template <class Real>
+std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Real> &x,
+                                                                const Vector<Real> &g,
+                                                                const Vector<Real> &d,
+                                                                const std::vector<Real> &steps,
+                                                                const bool printToStream,
+                                                                std::ostream & outStream,
+                                                                const int order ) {
+
   TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
                               "Error: finite difference order must be 1,2,3, or 4" );
 
-  // Finite difference steps in axpy form    
-  int steps[4][4] = { {  1,  0,  0, 0 },  // First order
-                      { -1,  2,  0, 0 },  // Second order
-                      { -1,  2,  1, 0 },  // Third order
-                      { -1, -1,  3, 1 }   // Fourth order
-                    };
-
-  // Finite difference weights     
-  Real weights[4][5] = { { -1.0,          1.0, 0.0,      0.0,      0.0      },  // First order
-                         {  0.0,     -1.0/2.0, 1.0/2.0,  0.0,      0.0      },  // Second order
-                         { -1.0/2.0, -1.0/3.0, 1.0,     -1.0/6.0,  0.0      },  // Third order
-                         {  0.0,     -2.0/3.0, 1.0/12.0, 2.0/3.0, -1.0/12.0 }   // Fourth order
-                       };
+  using FiniteDifference::shifts;
+  using FiniteDifference::weights;
 
   Real tol = std::sqrt(ROL_EPSILON);
 
+  int numSteps = steps.size();
   int numVals = 4;
   std::vector<Real> tmp(numVals);
   std::vector<std::vector<Real> > gCheck(numSteps, tmp);
-  Real eta_factor = 1e-1;
-  Real eta = 1.0;
 
   // Save the format state of the original outStream.
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(outStream);
 
-
   // Evaluate objective value at x.
   this->update(x);
 
-  
   // Compute gradient at x.
   Teuchos::RCP<Vector<Real> > gtmp = g.clone();
   this->gradient(*gtmp, x, tol);
@@ -152,6 +159,8 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
   Teuchos::RCP<Vector<Real> > xnew = x.clone();
 
   for (int i=0; i<numSteps; i++) {
+
+    Real eta = steps[i];
 
     xnew->set(x);
 
@@ -163,9 +172,9 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
 
     for(int j=0; j<order; ++j) {
         // Evaluate at x <- x+eta*c_i*d.
-        xnew->axpy(eta*steps[order-1][j], d);
+        xnew->axpy(eta*shifts[order-1][j], d);
 
-        // Only evaluate at steps where the weight is nonzero  
+        // Only evaluate at shifts where the weight is nonzero  
         if( weights[order-1][j+1] != 0 ) {        
             this->update(*xnew);
             gCheck[i][2] += weights[order-1][j+1] * this->value(*xnew,tol);
@@ -193,8 +202,6 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
                 << "\n";
     }
 
-    // Update eta.
-    eta = eta*eta_factor;
   }
 
   // Reset format state of outStream.
@@ -202,8 +209,6 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
 
   return gCheck;
 } // checkGradient
-
-
 
 
 
@@ -220,31 +225,38 @@ std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real
                                                                std::ostream & outStream,
                                                                const int numSteps,
                                                                const int order ) {
+  std::vector<Real> steps(numSteps);
+  for(int i=0;i<numSteps;++i) {
+    steps[i] = pow(10,-i);
+  }
+
+  return checkHessVec(x,hv,v,steps,printToStream,outStream,order);
+} // checkHessVec
+
+
+
+template <class Real>
+std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real> &x,
+                                                               const Vector<Real> &hv,
+                                                               const Vector<Real> &v,
+                                                               const std::vector<Real> &steps,
+                                                               const bool printToStream,
+                                                               std::ostream & outStream,
+                                                               const int order ) {
 
   TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
                               "Error: finite difference order must be 1,2,3, or 4" );
 
-  // Finite difference steps in axpy form    
-  int steps[4][4] = { {  1,  0,  0, 0 },  // First order
-                      { -1,  2,  0, 0 },  // Second order
-                      { -1,  2,  1, 0 },  // Third order
-                      { -1, -1,  3, 1 }   // Fourth order
-                    };
+  using FiniteDifference::shifts;
+  using FiniteDifference::weights;
 
-  // Finite difference weights     
-  Real weights[4][5] = { { -1.0,          1.0, 0.0,      0.0,      0.0      },  // First order
-                         {  0.0,     -1.0/2.0, 1.0/2.0,  0.0,      0.0      },  // Second order
-                         { -1.0/2.0, -1.0/3.0, 1.0,     -1.0/6.0,  0.0      },  // Third order
-                         {  0.0,     -2.0/3.0, 1.0/12.0, 2.0/3.0, -1.0/12.0 }   // Fourth order
-                       };
 
   Real tol = std::sqrt(ROL_EPSILON);
 
+  int numSteps = steps.size();
   int numVals = 4;
   std::vector<Real> tmp(numVals);
   std::vector<std::vector<Real> > hvCheck(numSteps, tmp);
-  Real eta_factor = 1e-1;
-  Real eta = 1.0;
 
   // Save the format state of the original outStream.
   Teuchos::oblackholestream oldFormatState;
@@ -267,6 +279,8 @@ std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real
 
   for (int i=0; i<numSteps; i++) {
 
+    Real eta = steps[i]; 
+
     // Evaluate objective value at x+eta*d.
     xnew->set(x);
 
@@ -276,9 +290,9 @@ std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real
     for(int j=0; j<order; ++j) {
 
         // Evaluate at x <- x+eta*c_i*d.
-        xnew->axpy(eta*steps[order-1][j], v);
+        xnew->axpy(eta*shifts[order-1][j], v);
 
-        // Only evaluate at steps where the weight is nonzero  
+        // Only evaluate at shifts where the weight is nonzero  
         if( weights[order-1][j+1] != 0 ) {
             this->update(*xnew);
             this->gradient(*gnew, *xnew, tol); 
@@ -313,8 +327,6 @@ std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real
                 << "\n";
     }
 
-    // Update eta.
-    eta = eta*eta_factor;
   }
 
   // Reset format state of outStream.
@@ -322,6 +334,7 @@ std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real
 
   return hvCheck;
 } // checkHessVec
+
 
 
 template<class Real>
