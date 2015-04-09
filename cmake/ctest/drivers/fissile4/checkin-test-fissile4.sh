@@ -93,9 +93,8 @@ $TRILINOS_BASE_DIR/Trilinos/checkin-test.py \
 --st-extra-builds=MPI_DEBUG_ST,SERIAL_RELEASE_ST \
 --disable-packages=$DISABLE_PACKAGES \
 --skip-case-no-email \
---ctest-options="-E '(MueLu_ParameterListInterpreterEpetra$|MueLu_ParameterListInterpreterTpetra|TeuchosComm_DefaultMpiComm_TagTests_MPI_4|Intrepid_test_Discretization_Integration_Test_01)'" \
+--ctest-options="-E '(MueLu_ParameterListInterpreterEpetra$|MueLu_ParameterListInterpreterTpetra|TeuchosComm_DefaultMpiComm_TagTests_MPI_4|Intrepid_test_Discretization_Integration_Test_01|Panzer_StokhosAssembly_MPI_2)'" \
 $EXTRA_ARGS
-
 
 # --ctest-options="-E '(Piro_AnalysisDriver|Stokhos_Linear2D_Diffusion_GMRES_KLR|Panzer_STK_ResponseLibraryTest|MueLu_|Amesos2_|Rythmos_ImplicitRK_UnitTest_MPI_1|SEACASExodus_exodus_unit_tests|Intrepid_test_Discretization_Basis_HGRAD_TRI_Cn_FEM_Test_02_MPI_1|Intrepid_test_Discretization_Basis_HDIV_TET_In_FEM_Test_02_MPI_1|Intrepid_test_Discretization_Basis_HGRAD_TET_Cn_FEM_Test_02_MPI_1|Sundance_BesselTest2D_MPI_1|ThyraTpetraAdapters_TpetraThyraWrappersUnitTests_serial|Ifpack2_RILUKSingleProcessUnitTests)'"
 
