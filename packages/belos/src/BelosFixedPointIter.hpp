@@ -190,7 +190,7 @@ class FixedPointIter : virtual public FixedPointIteration<ScalarType,MV,OP> {
   const LinearProblem<ScalarType,MV,OP>& getProblem() const { return *lp_; }
 
   //! Get the blocksize to be used by the iterative solver in solving this linear problem.
-  int getBlockSize() const { return blockSize_; }
+  int getBlockSize() const { return numRHS_; }
 
   //! \brief Set the blocksize to be used by the iterative solver in solving this linear problem.
   void setBlockSize(int blockSize);
@@ -218,7 +218,7 @@ class FixedPointIter : virtual public FixedPointIteration<ScalarType,MV,OP> {
   // Algorithmic parameters
   //
   // blockSize_ is the solver block size.
-  int blockSize_;
+  int numRHS_;
 
   //  
   // Current solver state
@@ -258,12 +258,12 @@ class FixedPointIter : virtual public FixedPointIteration<ScalarType,MV,OP> {
     lp_(problem),
     om_(printer),
     stest_(tester),
-    blockSize_(0),
+    numRHS_(0),
     initialized_(false),
     stateStorageInitialized_(false),
     iter_(0)
   {
-    setBlockSize(params.get("Block Size",1));
+    setBlockSize(params.get("Block Size",MVT::GetNumberVecs(*problem->getCurrRHSVec())));
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -272,7 +272,6 @@ class FixedPointIter : virtual public FixedPointIteration<ScalarType,MV,OP> {
   void FixedPointIter<ScalarType,MV,OP>::setStateSize ()
   {
     if (!stateStorageInitialized_) {
-
       // Check if there is any multivector to clone from.
       Teuchos::RCP<const MV> lhsMV = lp_->getLHS();
       Teuchos::RCP<const MV> rhsMV = lp_->getRHS();
@@ -289,8 +288,8 @@ class FixedPointIter : virtual public FixedPointIteration<ScalarType,MV,OP> {
 	  Teuchos::RCP<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
 	  TEUCHOS_TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
 			     "Belos::FixedPointIter::setStateSize(): linear problem does not specify multivectors to clone from.");
-	  R_ = MVT::Clone( *tmp, blockSize_ );
-	  Z_ = MVT::Clone( *tmp, blockSize_ );
+	  R_ = MVT::Clone( *tmp, numRHS_ );
+	  Z_ = MVT::Clone( *tmp, numRHS_ );
 	}
 	
 	// State storage has now been initialized.
@@ -307,16 +306,18 @@ class FixedPointIter : virtual public FixedPointIteration<ScalarType,MV,OP> {
     // This routine only allocates space; it doesn't not perform any computation
     // any change in size will invalidate the state of the solver.
 
+    TEUCHOS_TEST_FOR_EXCEPTION(blockSize != MVT::GetNumberVecs(*lp_->getCurrRHSVec()), std::invalid_argument, "Belos::FixedPointIter::setBlockSize size must match # RHS.");
+
     TEUCHOS_TEST_FOR_EXCEPTION(blockSize <= 0, std::invalid_argument, "Belos::FixedPointIter::setBlockSize was passed a non-positive argument.");
-    if (blockSize == blockSize_) {
+    if (blockSize == numRHS_) {
       // do nothing
       return;
     }
 
-    if (blockSize!=blockSize_)
+    if (blockSize!=numRHS_)
       stateStorageInitialized_ = false;
 
-    blockSize_ = blockSize;
+    numRHS_ = blockSize;
 
     initialized_ = false;
 
@@ -346,10 +347,12 @@ class FixedPointIter : virtual public FixedPointIteration<ScalarType,MV,OP> {
     const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
 
     if (newstate.R != Teuchos::null) {
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*R_) != MVT::GetNumberVecs(*newstate.R),
+				  std::invalid_argument, errstr );
 
       TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*newstate.R) != MVText::GetGlobalLength(*R_),
                           std::invalid_argument, errstr );
-      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.R) != blockSize_,
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.R) != numRHS_,
                           std::invalid_argument, errstr );
 
       // Copy basis vectors from newstate into V
@@ -393,7 +396,7 @@ class FixedPointIter : virtual public FixedPointIteration<ScalarType,MV,OP> {
     Teuchos::RCP<const MV> rhs = lp_->getCurrRHSVec();
 
     // Temp vector
-    Teuchos::RCP<MV> tmp = MVT::Clone( *R_, blockSize_ );
+    Teuchos::RCP<MV> tmp = MVT::Clone( *R_, numRHS_ );
 
     ////////////////////////////////////////////////////////////////
     // Iterate until the status test tells us to stop.
