@@ -43,6 +43,7 @@
 #ifndef KOKKOS_BLAS1_MV_HPP_
 #define KOKKOS_BLAS1_MV_HPP_
 
+#include <Kokkos_Blas1_MV_impl_abs.hpp>
 #include <Kokkos_Blas1_MV_impl_axpby.hpp>
 #include <Kokkos_Blas1_MV_impl_dot.hpp>
 #include <Kokkos_Blas1_MV_impl_fill.hpp>
@@ -1059,6 +1060,78 @@ scal (const RMV& R, const AV& a, const XMV& X)
 #endif // TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
 
   Impl::Scal<RMV_Internal, AV_Internal, XMV_Internal>::scal (R_internal, a_internal, X_internal);
+}
+
+
+/// \brief R(i,j) = abs(X(i,j))
+///
+/// Replace each entry in R with the absolute value (magnitude) of the
+/// corresponding entry in X.
+template<class RMV, class XMV>
+void
+abs (const RMV& R, const XMV& X)
+{
+#ifdef KOKKOS_HAVE_CXX11
+  // RMV and XMV must be Kokkos::View specializations.
+  static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::abs (MV): "
+                 "R is not a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::abs (MV): "
+                 "X is not a Kokkos::View.");
+  // RMV must be nonconst (else it can't be an output argument).
+  static_assert (Kokkos::Impl::is_same<typename RMV::value_type, typename RMV::non_const_value_type>::value,
+                 "KokkosBlas::abs (MV): R is const.  "
+                 "It must be nonconst, because it is an output argument "
+                 "(we have to be able to write to its entries).");
+  static_assert (RMV::rank == XMV::rank, "KokkosBlas::abs (MV): "
+                 "R and X must have the same rank.");
+  static_assert (RMV::rank == 1 || RMV::rank == 2, "KokkosBlas::abs (MV): "
+                 "RMV and XMV must either have rank 1 or rank 2.");
+#endif // KOKKOS_HAVE_CXX11
+
+  // Check compatibility of dimensions at run time.
+  if (X.dimension_0 () != R.dimension_0 () ||
+      X.dimension_1 () != R.dimension_1 ()) {
+    std::ostringstream os;
+    os << "KokkosBlas::abs (MV): Dimensions of R and X do not match: "
+       << "R: " << R.dimension_0 () << " x " << R.dimension_1 ()
+       << ", X: " << X.dimension_0 () << " x " << X.dimension_1 ();
+    Kokkos::Impl::throw_runtime_exception (os.str ());
+  }
+
+  // Create unmanaged versions of the input Views.  RMV and XMV may be
+  // rank 1 or rank 2.
+  typedef Kokkos::View<
+    typename Kokkos::Impl::if_c<
+      RMV::rank == 1,
+      typename RMV::non_const_value_type*,
+      typename RMV::non_const_value_type** >::type,
+    typename RMV::array_layout,
+    typename RMV::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    typename RMV::specialize> RMV_Internal;
+  typedef Kokkos::View<
+    typename Kokkos::Impl::if_c<
+      XMV::rank == 1,
+      typename XMV::non_const_value_type*,
+      typename XMV::non_const_value_type** >::type,
+    typename XMV::array_layout,
+    typename XMV::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    typename XMV::specialize> XMV_Internal;
+
+  RMV_Internal R_internal = R;
+  XMV_Internal X_internal = X;
+
+#ifdef TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+  using std::cerr;
+  using std::endl;
+  cerr << "KokkosBlas::abs:" << endl
+       << "  RMV_Internal: " << demangledTypeName (R_internal) << endl
+       << "  XMV_Internal: " << demangledTypeName (X_internal) << endl
+       << endl;
+#endif // TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+
+  Impl::Abs<RMV_Internal, XMV_Internal>::abs (R_internal, X_internal);
 }
 
 
