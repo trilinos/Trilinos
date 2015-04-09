@@ -2384,11 +2384,8 @@ namespace Tpetra {
           const Scalar& gamma)
   {
     using Kokkos::ALL;
-    using Kokkos::V_Add;
     using Kokkos::subview;
     const char tfecfFuncName[] = "update(alpha,A,beta,B,gamma): ";
-
-    // FIXME (mfh 07 Jan 2015) See note on two-argument scale() above.
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       getLocalLength () != A.getLocalLength (), std::invalid_argument,
@@ -2417,16 +2414,10 @@ namespace Tpetra {
     const impl_scalar_type theGamma = static_cast<impl_scalar_type> (gamma);
 
     if (isConstantStride() && A.isConstantStride () && B.isConstantStride ()) {
-      if (theGamma == zero) {
-        Kokkos::MV_Add (view_.d_view, theAlpha, A.view_.d_view, theBeta,
-                        B.view_.d_view);
-      } else {
-        Kokkos::MV_Add (view_.d_view, theAlpha, A.view_.d_view, theGamma,
-                        view_.d_view);
-        Kokkos::MV_Add (view_.d_view, theBeta, B.view_.d_view, one,
-                        view_.d_view);
-      }
-    } else {
+      KokkosBlas::update (theAlpha, A.view_.d_view, theBeta, B.view_.d_view,
+                          theGamma, this->view_.d_view);
+    }
+    else {
       // Some input (or *this) is not constant stride,
       // so perform the update one column at a time.
 
@@ -2438,25 +2429,10 @@ namespace Tpetra {
         const size_t this_col = isConstantStride () ? k : whichVectors_[k];
         const size_t A_col = A.isConstantStride () ? k : A.whichVectors_[k];
         const size_t B_col = B.isConstantStride () ? k : B.whichVectors_[k];
-        if (theGamma == zero) {
-          // TODO: make sure it only uses LocalLength for add.
-          V_Add (subview (view_.d_view, rowRng, this_col),
-                 theAlpha,
-                 subview (A.view_.d_view, rowRng, A_col),
-                 theBeta,
-                 subview (B.view_.d_view, rowRng, B_col));
-        } else {
-          V_Add (subview (view_.d_view, rowRng, this_col),
-                 theAlpha,
-                 subview (A.view_.d_view, rowRng, A_col),
-                 theGamma,
-                 subview (view_.d_view, rowRng, this_col));
-          V_Add (subview (view_.d_view, rowRng, this_col),
-                 theBeta,
-                 subview (B.view_.d_view, rowRng, B_col),
-                 one,
-                 subview (view_.d_view, rowRng, this_col));
-        }
+
+        KokkosBlas::update (theAlpha, subview (A.view_.d_view, rowRng, A_col),
+                            theBeta, subview (B.view_.d_view, rowRng, B_col),
+                            theGamma, subview (this->view_.d_view, rowRng, this_col));
       }
     }
   }
