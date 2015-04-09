@@ -84,16 +84,16 @@ nrm2_squared (const RV& r, const XMV& X)
   using Kokkos::ALL;
   using Kokkos::subview;
   // RV needs to turn 0-D, and XMV needs to turn 1-D.
-  typedef Kokkos::View<typename RV::value_type,
-    typename RV::array_layout,
-    typename RV::device_type,
-    typename RV::memory_traits,
-    typename RV::specialize> RV0D;
-  typedef Kokkos::View<typename XMV::value_type*,
-    typename XMV::array_layout,
-    typename XMV::device_type,
-    typename XMV::memory_traits,
-    typename XMV::specialize> XMV1D;
+  typedef Kokkos::View<RV::value_type,
+    RV::array_layout,
+    RV::device_type,
+    RV::memory_traits,
+    RV::specialize> RV0D;
+  typedef Kokkos::View<XMV::value_type*,
+    XMV::array_layout,
+    XMV::device_type,
+    XMV::memory_traits,
+    XMV::specialize> XMV1D;
 
   const size_type numRows = X.dimension_0 ();
   const size_type numCols = X.dimension_1 ();
@@ -218,16 +218,16 @@ nrm2_squared (const RV& r, const XMV& X)
   using Kokkos::ALL;
   using Kokkos::subview;
   // RV needs to turn 0-D, and XMV needs to turn 1-D.
-  typedef Kokkos::View<typename RV::value_type,
-    typename RV::array_layout,
-    typename RV::device_type,
-    typename RV::memory_traits,
-    typename RV::specialize> RV0D;
-  typedef Kokkos::View<typename XMV::value_type*,
-    typename XMV::array_layout,
-    typename XMV::device_type,
-    typename XMV::memory_traits,
-    typename XMV::specialize> XMV1D;
+  typedef Kokkos::View<RV::value_type,
+    RV::array_layout,
+    RV::device_type,
+    RV::memory_traits,
+    RV::specialize> RV0D;
+  typedef Kokkos::View<XMV::value_type*,
+    XMV::array_layout,
+    XMV::device_type,
+    XMV::memory_traits,
+    XMV::specialize> XMV1D;
 
   const size_type numRows = X.dimension_0 ();
   const size_type numCols = X.dimension_1 ();
@@ -436,16 +436,16 @@ nrm2_squared (const RV& r, const XMV& X)
   using Kokkos::ALL;
   using Kokkos::subview;
   // RV needs to turn 0-D, and XMV needs to turn 1-D.
-  typedef Kokkos::View<typename RV::value_type,
-    typename RV::array_layout,
-    typename RV::device_type,
-    typename RV::memory_traits,
-    typename RV::specialize> RV0D;
-  typedef Kokkos::View<typename XMV::value_type*,
-    typename XMV::array_layout,
-    typename XMV::device_type,
-    typename XMV::memory_traits,
-    typename XMV::specialize> XMV1D;
+  typedef Kokkos::View<RV::value_type,
+    RV::array_layout,
+    RV::device_type,
+    RV::memory_traits,
+    RV::specialize> RV0D;
+  typedef Kokkos::View<XMV::value_type*,
+    XMV::array_layout,
+    XMV::device_type,
+    XMV::memory_traits,
+    XMV::specialize> XMV1D;
 
   const size_type numRows = X.dimension_0 ();
   const size_type numCols = X.dimension_1 ();
@@ -571,16 +571,16 @@ nrm2_squared (const RV& r, const XMV& X)
   using Kokkos::ALL;
   using Kokkos::subview;
   // RV needs to turn 0-D, and XMV needs to turn 1-D.
-  typedef Kokkos::View<typename RV::value_type,
-    typename RV::array_layout,
-    typename RV::device_type,
-    typename RV::memory_traits,
-    typename RV::specialize> RV0D;
-  typedef Kokkos::View<typename XMV::value_type*,
-    typename XMV::array_layout,
-    typename XMV::device_type,
-    typename XMV::memory_traits,
-    typename XMV::specialize> XMV1D;
+  typedef Kokkos::View<RV::value_type,
+    RV::array_layout,
+    RV::device_type,
+    RV::memory_traits,
+    RV::specialize> RV0D;
+  typedef Kokkos::View<XMV::value_type*,
+    XMV::array_layout,
+    XMV::device_type,
+    XMV::memory_traits,
+    XMV::specialize> XMV1D;
 
   const size_type numRows = X.dimension_0 ();
   const size_type numCols = X.dimension_1 ();

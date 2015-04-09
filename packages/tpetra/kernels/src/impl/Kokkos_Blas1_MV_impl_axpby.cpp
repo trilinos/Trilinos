@@ -102,14 +102,14 @@ axpby (const RMV& R, const XMV::non_const_value_type& alpha,
   if (numRows < static_cast<size_type> (INT_MAX) &&
       numRows * numCols < static_cast<size_type> (INT_MAX)) {
     typedef int index_type;
-    MV_Axpby_Invoke_Left<RMV, typename XMV::non_const_value_type, XMV,
-      typename YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
+    MV_Axpby_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
+      YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
                                                             beta, Y, a, b);
   }
   else {
-    typedef typename XMV::size_type index_type;
-    MV_Axpby_Invoke_Left<RMV, typename XMV::non_const_value_type, XMV,
-      typename YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
+    typedef XMV::size_type index_type;
+    MV_Axpby_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
+      YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
                                                             beta, Y, a, b);
   }
 }
@@ -174,14 +174,14 @@ axpby (const RMV& R, const XMV::non_const_value_type& alpha,
   if (numRows < static_cast<size_type> (INT_MAX) &&
       numRows * numCols < static_cast<size_type> (INT_MAX)) {
     typedef int index_type;
-    MV_Axpby_Invoke_Left<RMV, typename XMV::non_const_value_type, XMV,
-      typename YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
+    MV_Axpby_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
+      YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
                                                             beta, Y, a, b);
   }
   else {
-    typedef typename XMV::size_type index_type;
-    MV_Axpby_Invoke_Left<RMV, typename XMV::non_const_value_type, XMV,
-      typename YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
+    typedef XMV::size_type index_type;
+    MV_Axpby_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
+      YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
                                                             beta, Y, a, b);
   }
 }
@@ -246,14 +246,14 @@ axpby (const RMV& R, const XMV::non_const_value_type& alpha,
   if (numRows < static_cast<size_type> (INT_MAX) &&
       numRows * numCols < static_cast<size_type> (INT_MAX)) {
     typedef int index_type;
-    MV_Axpby_Invoke_Left<RMV, typename XMV::non_const_value_type, XMV,
-      typename YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
+    MV_Axpby_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
+      YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
                                                             beta, Y, a, b);
   }
   else {
-    typedef typename XMV::size_type index_type;
-    MV_Axpby_Invoke_Left<RMV, typename XMV::non_const_value_type, XMV,
-      typename YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
+    typedef XMV::size_type index_type;
+    MV_Axpby_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
+      YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
                                                             beta, Y, a, b);
   }
 }
@@ -318,14 +318,14 @@ axpby (const RMV& R, const XMV::non_const_value_type& alpha,
   if (numRows < static_cast<size_type> (INT_MAX) &&
       numRows * numCols < static_cast<size_type> (INT_MAX)) {
     typedef int index_type;
-    MV_Axpby_Invoke_Left<RMV, typename XMV::non_const_value_type, XMV,
-      typename YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
+    MV_Axpby_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
+      YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
                                                             beta, Y, a, b);
   }
   else {
-    typedef typename XMV::size_type index_type;
-    MV_Axpby_Invoke_Left<RMV, typename XMV::non_const_value_type, XMV,
-      typename YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
+    typedef XMV::size_type index_type;
+    MV_Axpby_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
+      YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
                                                             beta, Y, a, b);
   }
 }
@@ -390,14 +390,14 @@ axpby (const RMV& R, const XMV::non_const_value_type& alpha,
   if (numRows < static_cast<size_type> (INT_MAX) &&
       numRows * numCols < static_cast<size_type> (INT_MAX)) {
     typedef int index_type;
-    MV_Axpby_Invoke_Left<RMV, typename XMV::non_const_value_type, XMV,
-      typename YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
+    MV_Axpby_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
+      YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
                                                             beta, Y, a, b);
   }
   else {
-    typedef typename XMV::size_type index_type;
-    MV_Axpby_Invoke_Left<RMV, typename XMV::non_const_value_type, XMV,
-      typename YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
+    typedef XMV::size_type index_type;
+    MV_Axpby_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
+      YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
                                                             beta, Y, a, b);
   }
 }

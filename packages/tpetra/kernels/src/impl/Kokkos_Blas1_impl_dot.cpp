@@ -60,14 +60,14 @@ Dot<const double*,Kokkos::LayoutLeft,Kokkos::Device<IMPL_EXEC_BLAS,IMPL_MEM_BLAS
 
     // With Intel 15 in a serial test with 100000 elements for 1000 trials
     // using int instead of size_t is 2x faster
-    if(x.dimension_0() < typename XVector::size_type(INT_MAX)) {
-      Kokkos::RangePolicy<typename XVector::execution_space, int> policy(0,x.dimension_0());
+    if(x.dimension_0() < XVector::size_type(INT_MAX)) {
+      Kokkos::RangePolicy<XVector::execution_space, int> policy(0,x.dimension_0());
       Kokkos::parallel_reduce(policy,
         DotFunctor<XVector,XVector,int>(x,y),
         result);
       return result;
     } else {
-      Kokkos::RangePolicy<typename XVector::execution_space> policy(0,x.dimension_0());
+      Kokkos::RangePolicy<XVector::execution_space> policy(0,x.dimension_0());
       Kokkos::parallel_reduce(policy,
         DotFunctor<XVector,XVector>(x,y),
         result);
@@ -91,14 +91,14 @@ Dot<const double*,Kokkos::LayoutLeft,Kokkos::Device<IMPL_EXEC_BLAS,IMPL_MEM_BLAS
 
     // With Intel 15 in a serial test with 100000 elements for 1000 trials
     // using int instead of size_t is 2x faster
-    if(x.dimension_0() < typename XVector::size_type(INT_MAX)) {
-      Kokkos::RangePolicy<typename XVector::execution_space, int> policy(0,x.dimension_0());
+    if(x.dimension_0() < XVector::size_type(INT_MAX)) {
+      Kokkos::RangePolicy<XVector::execution_space, int> policy(0,x.dimension_0());
       Kokkos::parallel_reduce(policy,
         DotFunctor<XVector,XVector,int>(x,y),
         result);
       return result;
     } else {
-      Kokkos::RangePolicy<typename XVector::execution_space> policy(0,x.dimension_0());
+      Kokkos::RangePolicy<XVector::execution_space> policy(0,x.dimension_0());
       Kokkos::parallel_reduce(policy,
         DotFunctor<XVector,XVector>(x,y),
         result);
@@ -122,14 +122,14 @@ Dot<const double*,Kokkos::LayoutLeft,Kokkos::Device<IMPL_EXEC_BLAS,IMPL_MEM_BLAS
 
     // With Intel 15 in a serial test with 100000 elements for 1000 trials
     // using int instead of size_t is 2x faster
-    if(x.dimension_0() < typename XVector::size_type(INT_MAX)) {
-      Kokkos::RangePolicy<typename XVector::execution_space, int> policy(0,x.dimension_0());
+    if(x.dimension_0() < XVector::size_type(INT_MAX)) {
+      Kokkos::RangePolicy<XVector::execution_space, int> policy(0,x.dimension_0());
       Kokkos::parallel_reduce(policy,
         DotFunctor<XVector,XVector,int>(x,y),
         result);
       return result;
     } else {
-      Kokkos::RangePolicy<typename XVector::execution_space> policy(0,x.dimension_0());
+      Kokkos::RangePolicy<XVector::execution_space> policy(0,x.dimension_0());
       Kokkos::parallel_reduce(policy,
         DotFunctor<XVector,XVector>(x,y),
         result);
@@ -153,14 +153,14 @@ Dot<const double*,Kokkos::LayoutLeft,Kokkos::Device<IMPL_EXEC_BLAS,IMPL_MEM_BLAS
 
     // With Intel 15 in a serial test with 100000 elements for 1000 trials
     // using int instead of size_t is 2x faster
-    if(x.dimension_0() < typename XVector::size_type(INT_MAX)) {
-      Kokkos::RangePolicy<typename XVector::execution_space, int> policy(0,x.dimension_0());
+    if(x.dimension_0() < XVector::size_type(INT_MAX)) {
+      Kokkos::RangePolicy<XVector::execution_space, int> policy(0,x.dimension_0());
       Kokkos::parallel_reduce(policy,
         DotFunctor<XVector,XVector,int>(x,y),
         result);
       return result;
     } else {
-      Kokkos::RangePolicy<typename XVector::execution_space> policy(0,x.dimension_0());
+      Kokkos::RangePolicy<XVector::execution_space> policy(0,x.dimension_0());
       Kokkos::parallel_reduce(policy,
         DotFunctor<XVector,XVector>(x,y),
         result);
@@ -182,14 +182,14 @@ Dot<const double*,Kokkos::LayoutLeft,Kokkos::Device<IMPL_EXEC_BLAS,IMPL_MEM_BLAS
 
     // With Intel 15 in a serial test with 100000 elements for 1000 trials
     // using int instead of size_t is 2x faster
-    if(x.dimension_0() < typename XVector::size_type(INT_MAX)) {
-      Kokkos::RangePolicy<typename XVector::execution_space, int> policy(0,x.dimension_0());
+    if(x.dimension_0() < XVector::size_type(INT_MAX)) {
+      Kokkos::RangePolicy<XVector::execution_space, int> policy(0,x.dimension_0());
       Kokkos::parallel_reduce(policy,
         DotFunctor<XVector,XVector,int>(x,y),
         result);
       return result;
     } else {
-      Kokkos::RangePolicy<typename XVector::execution_space> policy(0,x.dimension_0());
+      Kokkos::RangePolicy<XVector::execution_space> policy(0,x.dimension_0());
       Kokkos::parallel_reduce(policy,
         DotFunctor<XVector,XVector>(x,y),
         result);

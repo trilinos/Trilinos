@@ -73,8 +73,8 @@ fill (const XMV& X, const double& val)
   // within a column (vector lanes).
 
   // int is generally faster than size_t, but check for overflow first.
-  if (numRows < static_cast<typename XMV::size_type> (INT_MAX) &&
-      numRows * numCols < static_cast<typename XMV::size_type> (INT_MAX)) {
+  if (numRows < static_cast<XMV::size_type> (INT_MAX) &&
+      numRows * numCols < static_cast<XMV::size_type> (INT_MAX)) {
     typedef V_FillFunctor<XMV1D, int> functor_type;
     Kokkos::RangePolicy<XMV::execution_space, int> policy (0, numRows);
 
@@ -127,8 +127,8 @@ fill (const XMV& X, const double& val)
   // within a column (vector lanes).
 
   // int is generally faster than size_t, but check for overflow first.
-  if (numRows < static_cast<typename XMV::size_type> (INT_MAX) &&
-      numRows * numCols < static_cast<typename XMV::size_type> (INT_MAX)) {
+  if (numRows < static_cast<XMV::size_type> (INT_MAX) &&
+      numRows * numCols < static_cast<XMV::size_type> (INT_MAX)) {
     typedef V_FillFunctor<XMV1D, int> functor_type;
     Kokkos::RangePolicy<XMV::execution_space, int> policy (0, numRows);
 
@@ -179,8 +179,8 @@ fill (const XMV& X, const double& val)
   // within a column (vector lanes).
 
   // int is generally faster than size_t, but check for overflow first.
-  if (numRows < static_cast<typename XMV::size_type> (INT_MAX) &&
-      numRows * numCols < static_cast<typename XMV::size_type> (INT_MAX)) {
+  if (numRows < static_cast<XMV::size_type> (INT_MAX) &&
+      numRows * numCols < static_cast<XMV::size_type> (INT_MAX)) {
     typedef V_FillFunctor<XMV1D, int> functor_type;
     Kokkos::RangePolicy<XMV::execution_space, int> policy (0, numRows);
 
@@ -231,8 +231,8 @@ fill (const XMV& X, const double& val)
   // within a column (vector lanes).
 
   // int is generally faster than size_t, but check for overflow first.
-  if (numRows < static_cast<typename XMV::size_type> (INT_MAX) &&
-      numRows * numCols < static_cast<typename XMV::size_type> (INT_MAX)) {
+  if (numRows < static_cast<XMV::size_type> (INT_MAX) &&
+      numRows * numCols < static_cast<XMV::size_type> (INT_MAX)) {
     typedef V_FillFunctor<XMV1D, int> functor_type;
     Kokkos::RangePolicy<XMV::execution_space, int> policy (0, numRows);
 
@@ -283,8 +283,8 @@ fill (const XMV& X, const double& val)
   // within a column (vector lanes).
 
   // int is generally faster than size_t, but check for overflow first.
-  if (numRows < static_cast<typename XMV::size_type> (INT_MAX) &&
-      numRows * numCols < static_cast<typename XMV::size_type> (INT_MAX)) {
+  if (numRows < static_cast<XMV::size_type> (INT_MAX) &&
+      numRows * numCols < static_cast<XMV::size_type> (INT_MAX)) {
     typedef V_FillFunctor<XMV1D, int> functor_type;
     Kokkos::RangePolicy<XMV::execution_space, int> policy (0, numRows);
 
