@@ -85,8 +85,8 @@ struct MV_Update_Functor
   ZMV Z_;
 
   MV_Update_Functor (const typename XMV::non_const_value_type& alpha, const XMV& X,
-                     const typename YMV::non_const_value_type& beta, const XMV& Y,
-                     const typename ZMV::non_const_value_type& gamma, const XMV& Z) :
+                     const typename YMV::non_const_value_type& beta, const YMV& Y,
+                     const typename ZMV::non_const_value_type& gamma, const ZMV& Z) :
     numCols (X.dimension_1 ()),
     alpha_ (alpha), X_ (X),
     beta_ (beta), Y_ (Y),
@@ -897,8 +897,8 @@ struct V_Update_Functor
   ZV Z_;
 
   V_Update_Functor (const typename XV::non_const_value_type& alpha, const XV& X,
-                    const typename YV::non_const_value_type& beta, const XV& Y,
-                    const typename ZV::non_const_value_type& gamma, const XV& Z) :
+                    const typename YV::non_const_value_type& beta, const YV& Y,
+                    const typename ZV::non_const_value_type& gamma, const ZV& Z) :
     numCols (X.dimension_1 ()),
     alpha_ (alpha), X_ (X),
     beta_ (beta), Y_ (Y),
@@ -1980,6 +1980,272 @@ struct Update<XMV, YMV, ZMV, 2>
     }
   }
 };
+
+//
+// Specializations for different Kokkos devices.
+//
+
+#ifdef KOKKOS_HAVE_SERIAL
+#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Serial
+#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
+
+template<>
+struct Update<Kokkos::View<const double**,
+                           Kokkos::LayoutLeft,
+                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                           Kokkos::Impl::ViewDefault>,
+              Kokkos::View<const double**,
+                           Kokkos::LayoutLeft,
+                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                           Kokkos::Impl::ViewDefault>,
+              Kokkos::View<double**,
+                           Kokkos::LayoutLeft,
+                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                           Kokkos::Impl::ViewDefault>,
+              2>
+{
+  typedef Kokkos::View<const double**,
+                       Kokkos::LayoutLeft,
+                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       Kokkos::Impl::ViewDefault> XMV;
+  typedef Kokkos::View<const double**,
+                       Kokkos::LayoutLeft,
+                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       Kokkos::Impl::ViewDefault> YMV;
+  typedef Kokkos::View<double**,
+                       Kokkos::LayoutLeft,
+                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       Kokkos::Impl::ViewDefault> ZMV;
+  typedef XMV::size_type size_type;
+  typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA;
+  typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB;
+  typedef Kokkos::Details::ArithTraits<ZMV::non_const_value_type> ATC;
+
+  static void
+  update (const XMV::non_const_value_type& alpha, const XMV& X,
+          const YMV::non_const_value_type& beta, const YMV& Y,
+          const ZMV::non_const_value_type& gamma, const ZMV& Z);
+};
+
+#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
+#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
+#endif // KOKKOS_HAVE_SERIAL
+
+#ifdef KOKKOS_HAVE_OPENMP
+#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::OpenMP
+#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
+
+template<>
+struct Update<Kokkos::View<const double**,
+                           Kokkos::LayoutLeft,
+                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                           Kokkos::Impl::ViewDefault>,
+              Kokkos::View<const double**,
+                           Kokkos::LayoutLeft,
+                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                           Kokkos::Impl::ViewDefault>,
+              Kokkos::View<double**,
+                           Kokkos::LayoutLeft,
+                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                           Kokkos::Impl::ViewDefault>,
+              2>
+{
+  typedef Kokkos::View<const double**,
+                       Kokkos::LayoutLeft,
+                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       Kokkos::Impl::ViewDefault> XMV;
+  typedef Kokkos::View<const double**,
+                       Kokkos::LayoutLeft,
+                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       Kokkos::Impl::ViewDefault> YMV;
+  typedef Kokkos::View<double**,
+                       Kokkos::LayoutLeft,
+                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       Kokkos::Impl::ViewDefault> ZMV;
+  typedef XMV::size_type size_type;
+  typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA;
+  typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB;
+  typedef Kokkos::Details::ArithTraits<ZMV::non_const_value_type> ATC;
+
+  static void
+  update (const XMV::non_const_value_type& alpha, const XMV& X,
+          const YMV::non_const_value_type& beta, const YMV& Y,
+          const ZMV::non_const_value_type& gamma, const ZMV& Z);
+};
+
+#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
+#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
+#endif // KOKKOS_HAVE_OPENMP
+
+#ifdef KOKKOS_HAVE_PTHREAD
+#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Threads
+#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
+
+template<>
+struct Update<Kokkos::View<const double**,
+                           Kokkos::LayoutLeft,
+                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                           Kokkos::Impl::ViewDefault>,
+              Kokkos::View<const double**,
+                           Kokkos::LayoutLeft,
+                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                           Kokkos::Impl::ViewDefault>,
+              Kokkos::View<double**,
+                           Kokkos::LayoutLeft,
+                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                           Kokkos::Impl::ViewDefault>,
+              2>
+{
+  typedef Kokkos::View<const double**,
+                       Kokkos::LayoutLeft,
+                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       Kokkos::Impl::ViewDefault> XMV;
+  typedef Kokkos::View<const double**,
+                       Kokkos::LayoutLeft,
+                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       Kokkos::Impl::ViewDefault> YMV;
+  typedef Kokkos::View<double**,
+                       Kokkos::LayoutLeft,
+                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       Kokkos::Impl::ViewDefault> ZMV;
+  typedef XMV::size_type size_type;
+  typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA;
+  typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB;
+  typedef Kokkos::Details::ArithTraits<ZMV::non_const_value_type> ATC;
+
+  static void
+  update (const XMV::non_const_value_type& alpha, const XMV& X,
+          const YMV::non_const_value_type& beta, const YMV& Y,
+          const ZMV::non_const_value_type& gamma, const ZMV& Z);
+};
+
+#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
+#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
+#endif // KOKKOS_HAVE_PTHREAD
+
+#ifdef KOKKOS_HAVE_CUDA
+#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Cuda
+#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaSpace
+
+template<>
+struct Update<Kokkos::View<const double**,
+                           Kokkos::LayoutLeft,
+                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                           Kokkos::Impl::ViewDefault>,
+              Kokkos::View<const double**,
+                           Kokkos::LayoutLeft,
+                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                           Kokkos::Impl::ViewDefault>,
+              Kokkos::View<double**,
+                           Kokkos::LayoutLeft,
+                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                           Kokkos::Impl::ViewDefault>,
+              2>
+{
+  typedef Kokkos::View<const double**,
+                       Kokkos::LayoutLeft,
+                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       Kokkos::Impl::ViewDefault> XMV;
+  typedef Kokkos::View<const double**,
+                       Kokkos::LayoutLeft,
+                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       Kokkos::Impl::ViewDefault> YMV;
+  typedef Kokkos::View<double**,
+                       Kokkos::LayoutLeft,
+                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       Kokkos::Impl::ViewDefault> ZMV;
+  typedef XMV::size_type size_type;
+  typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA;
+  typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB;
+  typedef Kokkos::Details::ArithTraits<ZMV::non_const_value_type> ATC;
+
+  static void
+  update (const XMV::non_const_value_type& alpha, const XMV& X,
+          const YMV::non_const_value_type& beta, const YMV& Y,
+          const ZMV::non_const_value_type& gamma, const ZMV& Z);
+};
+
+#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
+#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
+#endif // KOKKOS_HAVE_CUDA
+
+#ifdef KOKKOS_HAVE_CUDA
+#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Cuda
+#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaUVMSpace
+
+template<>
+struct Update<Kokkos::View<const double**,
+                           Kokkos::LayoutLeft,
+                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                           Kokkos::Impl::ViewDefault>,
+              Kokkos::View<const double**,
+                           Kokkos::LayoutLeft,
+                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                           Kokkos::Impl::ViewDefault>,
+              Kokkos::View<double**,
+                           Kokkos::LayoutLeft,
+                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                           Kokkos::Impl::ViewDefault>,
+              2>
+{
+  typedef Kokkos::View<const double**,
+                       Kokkos::LayoutLeft,
+                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       Kokkos::Impl::ViewDefault> XMV;
+  typedef Kokkos::View<const double**,
+                       Kokkos::LayoutLeft,
+                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       Kokkos::Impl::ViewDefault> YMV;
+  typedef Kokkos::View<double**,
+                       Kokkos::LayoutLeft,
+                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                       Kokkos::Impl::ViewDefault> ZMV;
+  typedef XMV::size_type size_type;
+  typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA;
+  typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB;
+  typedef Kokkos::Details::ArithTraits<ZMV::non_const_value_type> ATC;
+
+  static void
+  update (const XMV::non_const_value_type& alpha, const XMV& X,
+          const YMV::non_const_value_type& beta, const YMV& Y,
+          const ZMV::non_const_value_type& gamma, const ZMV& Z);
+};
+
+#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
+#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
+#endif // KOKKOS_HAVE_CUDA
+
+
 
 // Partial specialization for XV, YV, and ZV rank-1 Views.
 template<class XV, class YV, class ZV>

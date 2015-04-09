@@ -1185,8 +1185,8 @@ update (const typename XMV::non_const_value_type& alpha, const XMV& X,
   typedef Kokkos::View<
     typename Kokkos::Impl::if_c<
       XMV::rank == 1,
-      typename XMV::non_const_value_type*,
-      typename XMV::non_const_value_type** >::type,
+      typename XMV::const_value_type*,
+      typename XMV::const_value_type** >::type,
     typename XMV::array_layout,
     typename XMV::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -1195,8 +1195,8 @@ update (const typename XMV::non_const_value_type& alpha, const XMV& X,
   typedef Kokkos::View<
     typename Kokkos::Impl::if_c<
       YMV::rank == 1,
-      typename YMV::non_const_value_type*,
-      typename YMV::non_const_value_type** >::type,
+      typename YMV::const_value_type*,
+      typename YMV::const_value_type** >::type,
     typename YMV::array_layout,
     typename YMV::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
