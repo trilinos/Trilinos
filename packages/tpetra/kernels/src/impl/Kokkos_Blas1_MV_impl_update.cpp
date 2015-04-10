@@ -102,7 +102,7 @@ update (const XMV::non_const_value_type& alpha, const XMV& X,
     MV_Update_Generic<XMV, YMV, ZMV, index_type> (alpha, X, beta, Y, gamma, Z, a, b, c);
   }
   else {
-    typedef typename XMV::size_type index_type;
+    typedef XMV::size_type index_type;
     MV_Update_Generic<XMV, YMV, ZMV, index_type> (alpha, X, beta, Y, gamma, Z, a, b, c);
   }
 }
@@ -168,7 +168,7 @@ update (const XMV::non_const_value_type& alpha, const XMV& X,
     MV_Update_Generic<XMV, YMV, ZMV, index_type> (alpha, X, beta, Y, gamma, Z, a, b, c);
   }
   else {
-    typedef typename XMV::size_type index_type;
+    typedef XMV::size_type index_type;
     MV_Update_Generic<XMV, YMV, ZMV, index_type> (alpha, X, beta, Y, gamma, Z, a, b, c);
   }
 }
@@ -234,7 +234,7 @@ update (const XMV::non_const_value_type& alpha, const XMV& X,
     MV_Update_Generic<XMV, YMV, ZMV, index_type> (alpha, X, beta, Y, gamma, Z, a, b, c);
   }
   else {
-    typedef typename XMV::size_type index_type;
+    typedef XMV::size_type index_type;
     MV_Update_Generic<XMV, YMV, ZMV, index_type> (alpha, X, beta, Y, gamma, Z, a, b, c);
   }
 }
@@ -300,7 +300,7 @@ update (const XMV::non_const_value_type& alpha, const XMV& X,
     MV_Update_Generic<XMV, YMV, ZMV, index_type> (alpha, X, beta, Y, gamma, Z, a, b, c);
   }
   else {
-    typedef typename XMV::size_type index_type;
+    typedef XMV::size_type index_type;
     MV_Update_Generic<XMV, YMV, ZMV, index_type> (alpha, X, beta, Y, gamma, Z, a, b, c);
   }
 }
@@ -366,7 +366,7 @@ update (const XMV::non_const_value_type& alpha, const XMV& X,
     MV_Update_Generic<XMV, YMV, ZMV, index_type> (alpha, X, beta, Y, gamma, Z, a, b, c);
   }
   else {
-    typedef typename XMV::size_type index_type;
+    typedef XMV::size_type index_type;
     MV_Update_Generic<XMV, YMV, ZMV, index_type> (alpha, X, beta, Y, gamma, Z, a, b, c);
   }
 }

@@ -83,7 +83,7 @@ abs (const RMV& R, const XMV& X)
     MV_Abs_Generic<RMV, XMV, index_type> (R, X);
   }
   else {
-    typedef typename XMV::size_type index_type;
+    typedef XMV::size_type index_type;
     MV_Abs_Generic<RMV, XMV, index_type> (R, X);
   }
 }
@@ -129,7 +129,7 @@ abs (const RMV& R, const XMV& X)
     MV_Abs_Generic<RMV, XMV, index_type> (R, X);
   }
   else {
-    typedef typename XMV::size_type index_type;
+    typedef XMV::size_type index_type;
     MV_Abs_Generic<RMV, XMV, index_type> (R, X);
   }
 }
@@ -175,7 +175,7 @@ abs (const RMV& R, const XMV& X)
     MV_Abs_Generic<RMV, XMV, index_type> (R, X);
   }
   else {
-    typedef typename XMV::size_type index_type;
+    typedef XMV::size_type index_type;
     MV_Abs_Generic<RMV, XMV, index_type> (R, X);
   }
 }
@@ -221,7 +221,7 @@ abs (const RMV& R, const XMV& X)
     MV_Abs_Generic<RMV, XMV, index_type> (R, X);
   }
   else {
-    typedef typename XMV::size_type index_type;
+    typedef XMV::size_type index_type;
     MV_Abs_Generic<RMV, XMV, index_type> (R, X);
   }
 }
@@ -267,7 +267,7 @@ abs (const RMV& R, const XMV& X)
     MV_Abs_Generic<RMV, XMV, index_type> (R, X);
   }
   else {
-    typedef typename XMV::size_type index_type;
+    typedef XMV::size_type index_type;
     MV_Abs_Generic<RMV, XMV, index_type> (R, X);
   }
 }
