@@ -119,7 +119,7 @@ TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 # D) Do standard postprocessing
 #
 
-INSTALL(PROGRAMS maintenance/phalanx_create_evaluator.py 
+INSTALL(PROGRAMS scripts/phalanx_create_evaluator.py 
 	DESTINATION bin) 
 
 TRIBITS_PACKAGE_POSTPROCESS()
