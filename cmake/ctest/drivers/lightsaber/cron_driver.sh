@@ -26,6 +26,11 @@ export TDD_HTTP_PROXY="http://wwwproxy.sandia.gov:80"
 export http_proxy="http://wwwproxy.sandia.gov:80"
 export TDD_FORCE_CMAKE_INSTALL=1
 
+
+module load gcc/4.7.2
+
+env
+
 # Machine independent cron_driver:
 #
 
