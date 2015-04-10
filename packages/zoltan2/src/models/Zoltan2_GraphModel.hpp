@@ -937,30 +937,30 @@ GraphModel<Adapter>::GraphModel(
       ia->get2ndAdjsView(primaryEType, secondAdjEType, offsets, nborIds);
     }
     Z2_FORWARD_EXCEPTIONS;
+  }
 
-    numLocalEdges_ = offsets[numLocalVertices_];
+  numLocalEdges_ = offsets[numLocalVertices_];
 
-    edgeGids_ = arcp<const zgid_t>(nborIds, 0, numLocalEdges_, false);
-    offsets_ = arcp<const lno_t>(offsets, 0, numLocalVertices_ + 1, false);
+  edgeGids_ = arcp<const zgid_t>(nborIds, 0, numLocalEdges_, false);
+  offsets_ = arcp<const lno_t>(offsets, 0, numLocalVertices_ + 1, false);
 
-    // Get edge weights
-    nWeightsPerEdge_ = ia->getNumWeightsPer2ndAdj(primaryEType, secondAdjEType);
+  // Get edge weights
+  nWeightsPerEdge_ = ia->getNumWeightsPer2ndAdj(primaryEType, secondAdjEType);
 
-    if (nWeightsPerEdge_ > 0){
-      input_t *wgts = new input_t [nWeightsPerEdge_];
-      eWeights_ = arcp(wgts, 0, nWeightsPerEdge_, true);
-    }
+  if (nWeightsPerEdge_ > 0){
+    input_t *wgts = new input_t [nWeightsPerEdge_];
+    eWeights_ = arcp(wgts, 0, nWeightsPerEdge_, true);
+  }
 
-    for (int w=0; w < nWeightsPerEdge_; w++){
-      const scalar_t *ewgts=NULL;
-      int stride=0;
+  for (int w=0; w < nWeightsPerEdge_; w++){
+    const scalar_t *ewgts=NULL;
+    int stride=0;
 
-      ia->get2ndAdjWeightsView(primaryEType, secondAdjEType,
-                               ewgts, stride, w);
+    ia->get2ndAdjWeightsView(primaryEType, secondAdjEType,
+			     ewgts, stride, w);
 
-      ArrayRCP<const scalar_t> wgtArray(ewgts, 0, numLocalEdges_, false);
-      eWeights_[w] = input_t(wgtArray, stride);
-    }
+    ArrayRCP<const scalar_t> wgtArray(ewgts, 0, numLocalEdges_, false);
+    eWeights_[w] = input_t(wgtArray, stride);
   }
 
   shared_constructor(ia, modelFlags);
