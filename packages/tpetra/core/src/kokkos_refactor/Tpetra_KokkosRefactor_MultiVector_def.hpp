@@ -1234,21 +1234,19 @@ namespace Tpetra {
     using Teuchos::REDUCE_SUM;
     typedef Kokkos::Details::ArithTraits<impl_scalar_type> ATS;
     typedef Kokkos::Details::ArithTraits<mag_type> ATM;
-    typedef Kokkos::View<impl_scalar_type*, DeviceType> view_type;
-    const char tfecfFuncName[] = "normWeighted";
+    typedef Kokkos::View<mag_type*, DeviceType> norms_view_type;
+    const char tfecfFuncName[] = "normWeighted: ";
 
-    const size_t lclNumRows = this->getLocalLength ();
     const size_t numVecs = this->getNumVectors ();
-
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       static_cast<size_t> (norms.size ()) != numVecs, std::runtime_error,
-      ": norms.size() must be as large as the number of vectors in *this.");
+      "norms.size() = " << norms.size () << " != this->getNumVectors() = "
+      << numVecs << ".");
 
     const bool OneW = (weights.getNumVectors () == 1);
-
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! OneW && weights.getNumVectors () != numVecs, std::runtime_error,
-      ": The input MultiVector of weights must contain either one column, "
+      "The input MultiVector of weights must contain either one column, "
       "or must have the same number of columns as *this.  "
       "weights.getNumVectors() = " << weights.getNumVectors ()
       << " and this->getNumVectors() = " << numVecs << ".");
@@ -1256,82 +1254,58 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! this->getMap ()->isCompatible (*weights.getMap ()), std::runtime_error,
-      ": MultiVectors do not have compatible Maps:" << std::endl
+      "MultiVectors do not have compatible Maps:" << std::endl
       << "this->getMap(): " << std::endl << *this->getMap()
       << "weights.getMap(): " << std::endl << *weights.getMap() << std::endl);
 #else
+    const size_t lclNumRows = this->getLocalLength ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       lclNumRows != weights.getLocalLength (), std::runtime_error,
-      ": MultiVectors do not have the same local length.");
-#endif
+      "MultiVectors do not have the same local length.");
+#endif // HAVE_TPETRA_DEBUG
 
-    // Unfortunately, we have to use a dot product function for
-    // intermediate results.  This means that intermediate results
-    // have type dot_type, not mag_type.  Thus, we need a temporary
-    // array.  Once we finish the local part of the computation, we
-    // can take magnitudes and do the MPI all-reduce over mag_type.
-    typename Kokkos::View<dot_type*, DeviceType>::HostMirror lclDots ("lclDots", numVecs);
+    norms_view_type lclNrms ("lclNrms", numVecs);
 
     view_.template sync<DeviceType> ();
     weights.view_.template sync<DeviceType> ();
-    if (isConstantStride ()) {
-      if (OneW) {
-        view_type weights_0 =
-          subview (weights.view_.d_view, ALL (), 0);
-        Kokkos::MV_DotWeighted (lclDots.ptr_on_device (), weights_0,
-                                view_.d_view, lclNumRows);
-      } else
-        Kokkos::MV_DotWeighted (lclDots.ptr_on_device (), weights.view_.d_view,
-                                view_.d_view, lclNumRows);
+
+    typename dual_view_type::t_dev X_lcl = this->view_.d_view;
+    typename dual_view_type::t_dev W_lcl = weights.view_.d_view;
+
+    if (isConstantStride () && ! OneW) {
+        KokkosBlas::nrm2w_squared (lclNrms, X_lcl, W_lcl);
     }
     else {
-      // FIXME (mfh 11 Mar 2014) Once we have strided Views, we won't
-      // have to write the explicit for loop over columns any more.
-      if (OneW) {
-        view_type weights_0 =
-          subview (weights.view_.d_view, ALL (), 0);
-        for (size_t k = 0; k < numVecs; ++k) {
-          const size_t curCol = whichVectors_[k];
-          view_type vector_k = subview (view_.d_view, ALL (), curCol);
-          lclDots(k) = Kokkos::V_DotWeighted (weights_0, vector_k, lclNumRows);
-        }
-      } else {
-        for (size_t k = 0; k < numVecs; ++k) {
-          const size_t curCol = whichVectors_[k];
-          view_type weights_k =
-            subview (weights.view_.d_view, ALL (), curCol);
-          view_type vector_k = subview (view_.d_view, ALL (), curCol);
-          lclDots(k) = Kokkos::V_DotWeighted (weights_k, vector_k, lclNumRows);
-        }
+      for (size_t j = 0; j < numVecs; ++j) {
+        const size_t X_col = this->isConstantStride () ? j :
+          this->whichVectors_[j];
+        const size_t W_col = OneW ? static_cast<size_t> (0) :
+          (weights.isConstantStride () ? j : weights.whichVectors_[j]);
+        KokkosBlas::nrm2w_squared (subview (lclNrms, j),
+                                   subview (X_lcl, ALL (), X_col),
+                                   subview (W_lcl, ALL (), W_col));
       }
     }
 
     const mag_type OneOverN =
-      ATM::one () / static_cast<mag_type> (getGlobalLength ());
+      ATM::one () / static_cast<mag_type> (this->getGlobalLength ());
+    RCP<const Comm<int> > comm = this->getMap ().is_null () ?
+      Teuchos::null : this->getMap ()->getComm ();
 
-    if (this->isDistributed ()) {
-      typename Kokkos::View<mag_type*, DeviceType>::HostMirror lclNorms ("lclNorms", numVecs);
+    if (! comm.is_null () && this->isDistributed ()) {
+      // Assume that MPI can access device memory.
+      reduceAll<int, mag_type> (*comm, REDUCE_SUM, static_cast<int> (numVecs),
+                                lclNrms.ptr_on_device (), norms.getRawPtr ());
       for (size_t k = 0; k < numVecs; ++k) {
-        lclNorms(k) = ATS::abs (lclDots(k));
-      }
-
-      RCP<const Comm<int> > comm =
-        this->getMap ().is_null () ? null : this->getMap ()->getComm ();
-      if (comm.is_null ()) {
-        for (size_t k = 0; k < numVecs; ++k) {
-          norms[k] = ATM::zero ();
-        }
-      } else {
-        reduceAll<int, mag_type> (*comm, REDUCE_SUM, static_cast<int> (numVecs),
-                                  lclNorms.ptr_on_device (), norms.getRawPtr ());
-        for (size_t k = 0; k < numVecs; ++k) {
-          norms[k] = ATM::sqrt (norms[k] * OneOverN);
-        }
+        norms[k] = ATM::sqrt (norms[k] * OneOverN);
       }
     }
     else {
+      typename norms_view_type::HostMirror lclNrms_h =
+        Kokkos::create_mirror_view (lclNrms);
+      Kokkos::deep_copy (lclNrms_h, lclNrms);
       for (size_t k = 0; k < numVecs; ++k) {
-        norms[k] = ATM::sqrt (ATS::magnitude (lclDots(k)) * OneOverN);
+        norms[k] = ATM::sqrt (ATS::magnitude (lclNrms_h(k)) * OneOverN);
       }
     }
   }
