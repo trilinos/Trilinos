@@ -146,9 +146,9 @@ ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value, true>inputFields
       // inputFields is (C,F,P,D)
       if(getrank(inputFields) == 4){
         
-        for(int cell = 0; cell < outputFields.dimension(0); cell++){
-          for(int field = 0; field < outputFields.dimension(1); field++){
-            for(int point = 0; point < outputFields.dimension(2); point++){
+        for(int cell = 0; cell < static_cast<int>(outputFields.dimension(0)); cell++){
+          for(int field = 0; field < static_cast<int>(outputFields.dimension(1)); field++){
+            for(int point = 0; point < static_cast<int>(outputFields.dimension(2)); point++){
               // 
               outputFieldsWrap(cell, field, point, 0) = \
                 inputDataWrap(cell, point, 1)*inputFieldsWrap(cell, field, point, 2) - 
@@ -168,9 +168,9 @@ ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value, true>inputFields
       // inputFields is (F,P,D)
       else if(getrank(inputFields) == 3){
         
-        for(int cell = 0; cell < outputFields.dimension(0); cell++){
-          for(int field = 0; field < outputFields.dimension(1); field++){
-            for(int point = 0; point < outputFields.dimension(2); point++){
+        for(int cell = 0; cell < static_cast<int>(outputFields.dimension(0)); cell++){
+          for(int field = 0; field < static_cast<int>(outputFields.dimension(1)); field++){
+            for(int point = 0; point < static_cast<int>(outputFields.dimension(2)); point++){
               // 
               outputFieldsWrap(cell, field, point, 0) = \
 		inputDataWrap(cell, point, 1)*inputFieldsWrap(field, point, 2) - 
@@ -198,9 +198,9 @@ ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value, true>inputFields
       // inputFields is (C,F,P,D)
       if(getrank(inputFields) == 4){
         
-        for(int cell = 0; cell < outputFields.dimension(0); cell++){
-          for(int field = 0; field < outputFields.dimension(1); field++){
-            for(int point = 0; point < outputFields.dimension(2); point++){
+        for(int cell = 0; cell < static_cast<int>(outputFields.dimension(0)); cell++){
+          for(int field = 0; field < static_cast<int>(outputFields.dimension(1)); field++){
+            for(int point = 0; point < static_cast<int>(outputFields.dimension(2)); point++){
               outputFieldsWrap(cell, field, point) = \
                 inputDataWrap(cell, point, 0)*inputFieldsWrap(cell, field, point, 1) - 
                 inputDataWrap(cell, point, 1)*inputFieldsWrap(cell, field, point, 0); 
@@ -211,9 +211,9 @@ ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value, true>inputFields
       // inputFields is (F,P,D)
       else if(getrank(inputFields) == 3) {
         
-        for(int cell = 0; cell < outputFields.dimension(0); cell++){
-          for(int field = 0; field < outputFields.dimension(1); field++){
-            for(int point = 0; point < outputFields.dimension(2); point++){
+        for(int cell = 0; cell < static_cast<int>(outputFields.dimension(0)); cell++){
+          for(int field = 0; field < static_cast<int>(outputFields.dimension(1)); field++){
+            for(int point = 0; point < static_cast<int>(outputFields.dimension(2)); point++){
               outputFieldsWrap(cell, field, point) = \
                 inputDataWrap(cell, point, 0)*inputFieldsWrap(field, point, 1) - 
                 inputDataWrap(cell, point, 1)*inputFieldsWrap(field, point, 0); 

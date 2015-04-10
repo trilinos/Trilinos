@@ -867,7 +867,7 @@ bool requireDimensionRange(std::string&  errmsg,
     errmsg += "\n>>> Unexpected error: ";
     OK = false;
   }
-  if( (lowerBound == upperBound) && !(array.dimension(dim) == lowerBound) ) {
+  if( (lowerBound == upperBound) && !(static_cast<int>(array.dimension(dim)) == lowerBound) ) {
     errmsg += "\n>>> dimension(";
     errmsg += (char)(48 + dim);
     errmsg += ") = ";
@@ -880,7 +880,7 @@ bool requireDimensionRange(std::string&  errmsg,
     OK = false;
   }
   else if( (lowerBound < upperBound) &&
-           !( (lowerBound <= array.dimension(dim) ) && (array.dimension(dim) <= upperBound) ) ){
+           !( (lowerBound <= array.dimension(dim) ) && (static_cast<int>(array.dimension(dim)) <= upperBound) ) ){
     errmsg += "\n>>> dimension(";
     errmsg += (char)(48 + dim);
     errmsg += ") = ";
@@ -914,7 +914,7 @@ bool requireDimensionMatch(std::string&   errmsg,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim0 < array2.rank() required!");
 
   bool OK = true;
-  if(array1.dimension(a1_dim0) != array2.dimension(a2_dim0) ){
+  if(static_cast<int>(array1.dimension(a1_dim0)) != static_cast<int>(array2.dimension(a2_dim0)) ){
     errmsg += "\n>>> dimension(";
     errmsg += (char)(48 + a1_dim0);
     errmsg += ") of 1st array and dimension(";
@@ -1033,7 +1033,7 @@ bool requireDimensionMatch(std::string&   errmsg,
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim3 < array2.rank() required!");
   bool OK = true;
-  if( !requireDimensionMatch(errmsg, array1, a1_dim0, array2, a2_dim0) ){
+  if( !requireDimensionMatch(errmsg, array1, static_cast<int>(a1_dim0), array2, static_cast<int>(a2_dim0)) ){
     OK = false;
   }
   if( !requireDimensionMatch(errmsg, array1, a1_dim1, array2, a2_dim1) ){
