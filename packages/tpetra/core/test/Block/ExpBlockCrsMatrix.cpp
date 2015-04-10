@@ -788,6 +788,139 @@ namespace {
     TEST_EQUALITY_CONST( gblSuccess, 1 );
   }
 
+  // Test writing of a BlockCrsMatrix.
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ExpBlockCrsMatrix, write, Scalar, LO, GO, Node )
+  {
+    typedef Tpetra::Experimental::BlockMultiVector<Scalar, LO, GO, Node> BMV;
+    typedef Tpetra::Experimental::BlockVector<Scalar, LO, GO, Node> BV;
+    typedef Tpetra::Experimental::BlockCrsMatrix<Scalar, LO, GO, Node> BCM;
+    typedef Tpetra::MultiVector<Scalar, LO, GO, Node> mv_type;
+    typedef Tpetra::Vector<Scalar, LO, GO, Node> vec_type;
+    typedef Tpetra::CrsGraph<LO, GO, Node> graph_type;
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+    // The typedef below is also a test.  BlockCrsMatrix must have
+    // this typedef, or this test won't compile.
+    typedef typename BCM::little_block_type little_block_type;
+    typedef typename BV::little_vec_type little_vec_type;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef typename STS::magnitudeType MT;
+
+    out << "Testing Tpetra::Experimental::BlockCrsMatrix basic "
+      "functionality" << endl;
+    Teuchos::OSTab tab0 (out);
+
+    RCP<const Comm<int> > comm = getDefaultComm ();
+    RCP<Node> node = getNode<Node> ();
+    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+
+    out << "Creating mesh row Map" << endl;
+
+    const size_t numLocalMeshPoints = 12;
+    const GO indexBase = 1;
+    // Use a block size that is not a power of 2, to test correctness
+    // in case the matrix pads blocks for SIMD-ization.
+    const LO blockSize = 3;
+    const size_t entriesPerBlock = blockSize * blockSize;
+
+    // mfh 20 May 2014: Tpetra::CrsGraph still needs the row Map as an
+    // RCP.  Later interface changes will let us pass in the Map by
+    // const reference and assume view semantics.
+    RCP<const map_type> meshRowMapPtr =
+      rcp (new map_type (INVALID, numLocalMeshPoints, indexBase, comm, node));
+    const map_type& meshRowMap = *meshRowMapPtr;
+
+    // Make a graph.  It will have two entries per global row i_gbl:
+    // (i_gbl, (i_gbl+1) % N) and (i_gbl, (i_gbl+2) % N), where N is
+    // the global number of rows and columns.  We don't include the
+    // diagonal, to make the Maps more interesting.
+    out << "Creating mesh graph" << endl;
+
+    const size_t maxNumEntPerRow = 2;
+    graph_type graph (meshRowMapPtr, maxNumEntPerRow, Tpetra::StaticProfile);
+
+    // Fill the graph.
+    Teuchos::Array<GO> gblColInds (maxNumEntPerRow);
+    const GO globalNumRows = meshRowMap.getGlobalNumElements ();
+    for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
+         lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
+      const GO gblRowInd = meshRowMap.getGlobalElement (lclRowInd);
+      for (size_t k = 0; k < maxNumEntPerRow; ++k) {
+        const GO gblColInd = indexBase +
+          ((gblRowInd - indexBase) + static_cast<GO> (k + 1)) % static_cast<GO> (globalNumRows);
+        gblColInds[k] = gblColInd;
+      }
+      graph.insertGlobalIndices (gblRowInd, gblColInds ());
+    }
+    graph.fillComplete ();
+
+    // Get the graph's column Map (the "mesh column Map").
+    map_type meshColMap = * (graph.getColMap ());
+
+    out << "Creating BlockCrsMatrix" << endl;
+
+    // Construct the BlockCrsMatrix.
+    BCM blockMat = BCM (graph, blockSize);
+
+    out << "Test getLocalRowView and replaceLocalValues" << endl;
+
+    Array<Scalar> tempBlockSpace (maxNumEntPerRow * entriesPerBlock);
+
+    // Test that getLocalRowView returns the right column indices.
+    Array<LO> lclColInds (maxNumEntPerRow);
+    Array<LO> myLclColIndsCopy (maxNumEntPerRow);
+    for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
+         lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
+      const LO* myLclColInds = NULL;
+      Scalar* myVals = NULL;
+      LO numEnt = 0;
+      blockMat.getLocalRowView (lclRowInd, myLclColInds, myVals, numEnt);
+
+      // Compute what the local column indices in this row _should_ be.
+      const GO gblRowInd = meshRowMap.getGlobalElement (lclRowInd);
+      for (LO k = 0; k < numEnt; ++k) {
+        const GO gblColInd = indexBase +
+          ((gblRowInd - indexBase) + static_cast<GO> (k + 1)) %
+          static_cast<GO> (globalNumRows);
+        lclColInds[k] = meshColMap.getLocalElement (gblColInd);
+      }
+      // CrsGraph doesn't technically need to promise to sort by local
+      // column indices, so we sort both arrays before comparing.
+      std::sort (lclColInds.begin (), lclColInds.end ());
+      std::copy (myLclColInds, myLclColInds + 2, myLclColIndsCopy.begin ());
+      std::sort (myLclColIndsCopy.begin (), myLclColIndsCopy.end ());
+      TEST_COMPARE_ARRAYS( lclColInds, myLclColIndsCopy );
+
+      // Fill the entries in the row with zeros.
+      std::fill (tempBlockSpace.begin (), tempBlockSpace.end (), STS::zero ());
+      blockMat.replaceLocalValues (lclRowInd, lclColInds.getRawPtr (),
+                                         tempBlockSpace.getRawPtr (), numEnt);
+
+      // Create a block pattern which verifies that the matrix stores
+      // blocks in row-major order.
+      for (LO k = 0; k < numEnt; ++k) {
+        Scalar* const tempBlockPtr = tempBlockSpace.getRawPtr () +
+          k * blockSize * blockSize;
+        little_block_type tempBlock (tempBlockPtr, blockSize, blockSize, 1);
+        for (LO j = 0; j < blockSize; ++j) {
+          for (LO i = 0; i < blockSize; ++i) {
+            tempBlock(i,j) = static_cast<Scalar> (static_cast<MT> (j + i * blockSize) + 0.0123);
+          }
+        }
+      } // for each entry in the row
+      blockMat.replaceLocalValues (lclRowInd, lclColInds.getRawPtr (),
+                                         tempBlockSpace.getRawPtr (), numEnt);
+    } // for each local row
+
+    blockMat.describe(out,Teuchos::VERB_EXTREME);
+
+    Teuchos::ParameterList pl;
+    //pl.set("precision",3);
+    //pl.set("zero-based indexing",true);
+    //pl.set("always use parallel algorithm",true);
+    //pl.set("print MatrixMarket header",false);
+    Tpetra::Experimental::blockCrsMatrixWriter(blockMat, "savedBlockMatrix.m", pl);
+  }
+
 
   // Test BlockCrsMatrix::setAllToScalar.
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ExpBlockCrsMatrix, SetAllToScalar, Scalar, LO, GO, Node )
@@ -1721,6 +1854,7 @@ namespace {
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, ctor, SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, basic, SCALAR, LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, write, SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, SetAllToScalar, SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, ImportCopy, SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, ExportDiffRowMaps, SCALAR, LO, GO, NODE )
