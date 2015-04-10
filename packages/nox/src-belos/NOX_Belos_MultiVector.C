@@ -115,10 +115,10 @@ NOX::Belos::MultiVector::CloneView(int index[], int numvecs)
   return new NOX::Belos::MultiVector(*newVec, true);
 }
 
-int
-NOX::Belos::MultiVector::GetVecLength() const
+ptrdiff_t
+NOX::Belos::MultiVector::GetGlobalLength() const
 {
-  return vecPtr->length();
+  return static_cast<ptrdiff_t>(vecPtr->length());
 }
 
 int

@@ -177,7 +177,6 @@ namespace Belos {
     public Details::RealSolverManager<ScalarType, MV, OP, false> {
   private:
     typedef MultiVecTraits<ScalarType,MV> MVT;
-    typedef MultiVecTraitsExt<ScalarType,MV> MVText;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -806,7 +805,7 @@ void RCGSolMgr<ScalarType,MV,OP,false>::initializeStateStorage() {
     else {
 
       // Initialize the state storage
-      TEUCHOS_TEST_FOR_EXCEPTION(static_cast<ptrdiff_t>(numBlocks_) > MVText::GetGlobalLength(*rhsMV),std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(static_cast<ptrdiff_t>(numBlocks_) > MVT::GetGlobalLength(*rhsMV),std::invalid_argument,
                          "Belos::RCGSolMgr::initializeStateStorage(): Cannot generate a Krylov basis with dimension larger the operator!");
 
       // If the subspace has not been initialized before, generate it using the RHS from lp_.
@@ -1125,7 +1124,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,false>::solve() {
   problem_->setLSIndex( currIdx );
 
   // Check the number of blocks and change them if necessary.
-  ptrdiff_t dim = MVText::GetGlobalLength( *(problem_->getRHS()) );
+  ptrdiff_t dim = MVT::GetGlobalLength( *(problem_->getRHS()) );
   if (numBlocks_ > dim) {
     numBlocks_ = Teuchos::asSafe<int>(dim);
     params_->set("Num Blocks", numBlocks_);

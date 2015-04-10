@@ -184,10 +184,10 @@ namespace Belos {
         }
 
         /// \brief Return number of elements in vector
-        static BELOS_DEPRECATED int
-        GetVecLength(const MV& mv) {
-            return mv.dimension();
-        }
+        static ptrdiff_t 
+        GetGlobalLength(const MV& mv) {
+            return static_cast<ptrdiff_t>(mv.dimension());
+        }   
 
         /// \brief ROL Vectors have a single column
         static int 
@@ -321,16 +321,6 @@ namespace Belos {
         }
 
     }; // END MultiVecTraits
-
-
-    template<class Scalar>
-    class MultiVecTraitsExt<Scalar,ROL::Vector<Scalar>> {
-         public:
-             typedef ROL::Vector<Scalar> MV;
-             static ptrdiff_t GetGlobalLength(const MV& mv) {
-                 return static_cast<ptrdiff_t>(mv.dimension());
-             }   
-    };
 
 }
 

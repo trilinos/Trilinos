@@ -362,9 +362,9 @@ namespace Belos {
       return X_view;
     }
 
-    static int
-    GetVecLength (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv) {
-      return mv.getGlobalLength ();
+    static ptrdiff_t
+    GetGlobalLength (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv) {
+      return Teuchos::as<ptrdiff_t> (mv.getGlobalLength ());
     }
 
     static int
@@ -1144,8 +1144,8 @@ namespace Belos {
       return X_view;
     }
 
-     BELOS_DEPRECATED static int GetVecLength (const MV& mv) {
-      return static_cast<int> (mv.getGlobalLength ());
+    static ptrdiff_t GetGlobalLength (const MV& mv) {
+      return static_cast<ptrdiff_t> (mv.getGlobalLength ());
     }
 
     static int GetNumberVecs (const MV& mv) {
@@ -1619,19 +1619,6 @@ namespace Belos {
     HasApplyTranspose (const Tpetra::Operator<Scalar,LO,GO,Node>& Op)
     {
       return Op.hasTransposeApply ();
-    }
-  };
-
-  // Partial specialization for MV=Tpetra::MultiVector.
-  template<class BaseScalar, class Storage, class LO, class GO, class Node>
-  class MultiVecTraitsExt<BaseScalar,
-                          Tpetra::MultiVector<Sacado::MP::Vector<Storage>,
-                                              LO, GO, Node> > {
-  public:
-    typedef Sacado::MP::Vector<Storage> Scalar;
-    typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
-    static ptrdiff_t GetGlobalLength( const MV& mv ) {
-      return Teuchos::as<ptrdiff_t> (mv.getGlobalLength ());
     }
   };
 

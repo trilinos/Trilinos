@@ -82,7 +82,6 @@ class FixedPointIter : virtual public FixedPointIteration<ScalarType,MV,OP> {
   // Convenience typedefs
   //
   typedef MultiVecTraits<ScalarType,MV> MVT;
-  typedef MultiVecTraitsExt<ScalarType,MV> MVText;
   typedef OperatorTraits<ScalarType,MV,OP> OPT;
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename SCT::magnitudeType MagnitudeType;
@@ -350,7 +349,7 @@ class FixedPointIter : virtual public FixedPointIteration<ScalarType,MV,OP> {
       TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*R_) != MVT::GetNumberVecs(*newstate.R),
 				  std::invalid_argument, errstr );
 
-      TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*newstate.R) != MVText::GetGlobalLength(*R_),
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.R) != MVT::GetGlobalLength(*R_),
                           std::invalid_argument, errstr );
       TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.R) != numRHS_,
                           std::invalid_argument, errstr );

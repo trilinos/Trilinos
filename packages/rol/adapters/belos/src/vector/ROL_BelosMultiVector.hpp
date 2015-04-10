@@ -168,13 +168,6 @@ namespace Belos {
                 return mv.shallowCopyConst(stdex); 
             }
              
-            /** \brief Get length of the columns of the MultiVector
-
-                @return Vector length 
-            */
-            static BELOS_DEPRECATED int GetVecLength(const MV& mv) {
-                return static_cast<int>(mv.getLength());
-            }              
 
             /** \brief Get length of the columns of the MultiVector
 
