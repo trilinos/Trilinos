@@ -134,6 +134,17 @@ namespace MueLu {
 
     GetOStream(Parameters0) << "lightweight wrap = " << doExperimentalWrap << std::endl;
 
+    // decide wether to use the fast-track code path for standard maps or the somewhat slower
+    // code path for non-standard maps
+    bool bNonStandardMaps = false;
+    if (A->IsView("stridedMaps") == true) {
+      Teuchos::RCP<const Map> myMap = A->getRowMap("stridedMaps");
+      Teuchos::RCP<const StridedMap> strMap = Teuchos::rcp_dynamic_cast<const StridedMap>(myMap);
+      TEUCHOS_TEST_FOR_EXCEPTION(strMap == null, Exceptions::RuntimeError, "Map is not of type StridedMap");
+      if (strMap->getStridedBlockId() != -1 || strMap->getOffset() > 0)
+        bNonStandardMaps = true;
+    }
+
     if (doExperimentalWrap) {
       std::string algo = pL.get<std::string>("aggregation: drop scheme");
 
@@ -264,8 +275,8 @@ namespace MueLu {
           Set(currentLevel, "Graph",       graph);
           Set(currentLevel, "DofsPerNode", 1);
 
-        } else if (A->GetFixedBlockSize() > 1 && threshold == STS::zero()) {
-          // Case 3:  Multiple DOF/node problem without dropping
+        } else if (A->GetFixedBlockSize() > 1 && threshold == STS::zero() && bNonStandardMaps == false) {
+          // Case 3:  Multiple DOF/node problem without dropping for standard maps (fast code path)
 
           const RCP<const Map> rowMap = A->getRowMap();
           const RCP<const Map> colMap = A->getColMap();
@@ -356,12 +367,259 @@ namespace MueLu {
           Set(currentLevel, "Graph",       graph);
           Set(currentLevel, "DofsPerNode", blkSize);
 
+        } else if (A->GetFixedBlockSize() > 1 && threshold == STS::zero() && bNonStandardMaps == true) {
+          // Case 4:  Multiple DOF/node problem without dropping for non-standard (strided) maps
+
+          const RCP<const Map> rowMap = A->getRowMap();
+          const RCP<const Map> colMap = A->getColMap();
+
+          graphType = "amalgamated";
+
+          // build node row map (uniqueMap) and node column map (nonUniqueMap)
+          // the arrays rowTranslation and colTranslation contain the local node id
+          // given a local dof id.
+          RCP<const Map> uniqueMap, nonUniqueMap;
+          Array<LO>      rowTranslation, colTranslation;
+          AmalgamateMapStrided(*rowMap, *A, uniqueMap,    rowTranslation);
+          AmalgamateMapStrided(*colMap, *A, nonUniqueMap, colTranslation);
+
+          // get number of local nodes
+          LO numRows = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
+
+          // Allocate space for the local graph
+          ArrayRCP<LO> rows    = ArrayRCP<LO>(numRows+1);
+          ArrayRCP<LO> columns = ArrayRCP<LO>(A->getNodeNumEntries());
+
+          const ArrayRCP<bool> amalgBoundaryNodes(numRows, false);
+
+          // Detect and record rows that correspond to Dirichlet boundary conditions
+          // TODO If we use ArrayRCP<LO>, then we can record boundary nodes as usual.  Size
+          // TODO the array one bigger than the number of local rows, and the last entry can
+          // TODO hold the actual number of boundary nodes.  Clever, huh?
+          ArrayRCP<const bool > pointBoundaryNodes;
+          pointBoundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
+
+          // extract striding information
+          GO offset = 0;                           //< the global dof offset for a strided map
+          LO blkSize = A->GetFixedBlockSize();     //< the full block size (number of dofs per node in strided map)
+          LO blkId   = -1;                         //< the block id within the strided map (or -1 if it is a full block map)
+          LO blkPartSize = A->GetFixedBlockSize(); //< stores the size of the block within the strided map
+          if (A->IsView("stridedMaps") == true) {
+            Teuchos::RCP<const Map> myMap = A->getRowMap("stridedMaps");
+            Teuchos::RCP<const StridedMap> strMap = Teuchos::rcp_dynamic_cast<const StridedMap>(myMap);
+            TEUCHOS_TEST_FOR_EXCEPTION(strMap == null, Exceptions::RuntimeError, "Map is not of type StridedMap");
+            offset = strMap->getOffset();
+            blkSize = Teuchos::as<const LO>(strMap->getFixedBlockSize());
+            blkId   = strMap->getStridedBlockId();
+            if (blkId > -1)
+              blkPartSize = Teuchos::as<LO>(strMap->getStridingData()[blkId]);
+          }
+
+          // loop over all local nodes
+          LO realnnz = 0;
+          rows[0] = 0;
+          Array<LO> indicesExtra;
+          for (LO row = 0; row < numRows; row++) {
+            ArrayView<const LO> indices;
+            indicesExtra.resize(0);
+
+            // The amalgamated row is marked as Dirichlet iff all point rows are Dirichlet
+            // Note, that pointBoundaryNodes lives on the dofmap (and not the node map).
+            // Therefore, looping over all dofs is fine here. We use blkPartSize as we work
+            // with local ids.
+            // TODO: Here we have different options of how to define a node to be a boundary (or Dirichlet)
+            // node.
+            bool isBoundary = false;
+            isBoundary = true;
+            for (LO j = 0; j < blkPartSize; j++) {
+              if (!pointBoundaryNodes[row*blkPartSize+j]) {
+                isBoundary = false;
+                break;
+              }
+            }
+
+            // Merge rows of A
+            // The array indicesExtra contains local column node ids for the current local node "row"
+            if (!isBoundary)
+              MergeRowsStrided(*A, row, indicesExtra, colTranslation);
+            else
+              indicesExtra.push_back(row);
+            indices   = indicesExtra;
+            numTotal += indices.size();
+
+            // add the local column node ids to the full columns array which
+            // contains the local column node ids for all local node rows
+            LO nnz = indices.size(), rownnz = 0;
+            for (LO colID = 0; colID < nnz; colID++) {
+              LO col = indices[colID];
+              columns[realnnz++] = col;
+              rownnz++;
+            }
+
+            if (rownnz == 1) {
+              // If the only element remaining after filtering is diagonal, mark node as boundary
+              // FIXME: this should really be replaced by the following
+              //    if (indices.size() == 1 && indices[0] == row)
+              //        boundaryNodes[row] = true;
+              // We do not do it this way now because there is no framework for distinguishing isolated
+              // and boundary nodes in the aggregation algorithms
+              amalgBoundaryNodes[row] = true;
+            }
+            rows[row+1] = realnnz;
+          } //for (LO row = 0; row < numRows; row++)
+          columns.resize(realnnz);
+
+          RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, uniqueMap, nonUniqueMap, "amalgamated graph of A"));
+          graph->SetBoundaryNodeMap(amalgBoundaryNodes);
+
+          if (GetVerbLevel() & Statistics0) {
+            GO numLocalBoundaryNodes  = 0;
+            GO numGlobalBoundaryNodes = 0;
+
+            for (LO i = 0; i < amalgBoundaryNodes.size(); ++i)
+              if (amalgBoundaryNodes[i])
+                numLocalBoundaryNodes++;
+
+            RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+            sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+            GetOStream(Statistics0) << "Detected " << numGlobalBoundaryNodes
+                                       << " agglomerated Dirichlet nodes" << std::endl;
+          }
+
+          Set(currentLevel, "Graph",       graph);
+          Set(currentLevel, "DofsPerNode", blkSize); // full block size
+
         } else if (A->GetFixedBlockSize() > 1 && threshold != STS::zero()) {
-          // Case 4:  Multiple DOF/node problem with dropping
+          // Case 5:  Multiple DOF/node problem with dropping for non-standard (strided) maps
+
+          const RCP<const Map> rowMap = A->getRowMap();
+          const RCP<const Map> colMap = A->getColMap();
+
+          graphType = "amalgamated";
+
+          // build node row map (uniqueMap) and node column map (nonUniqueMap)
+          // the arrays rowTranslation and colTranslation contain the local node id
+          // given a local dof id.
+          RCP<const Map> uniqueMap, nonUniqueMap;
+          Array<LO>      rowTranslation, colTranslation;
+          AmalgamateMapStrided(*rowMap, *A, uniqueMap,    rowTranslation);
+          AmalgamateMapStrided(*colMap, *A, nonUniqueMap, colTranslation);
+
+          // get number of local nodes
+          LO numRows = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
+
+          // Allocate space for the local graph
+          ArrayRCP<LO> rows    = ArrayRCP<LO>(numRows+1);
+          ArrayRCP<LO> columns = ArrayRCP<LO>(A->getNodeNumEntries());
+
+          const ArrayRCP<bool> amalgBoundaryNodes(numRows, false);
+
+          // Detect and record rows that correspond to Dirichlet boundary conditions
+          // TODO If we use ArrayRCP<LO>, then we can record boundary nodes as usual.  Size
+          // TODO the array one bigger than the number of local rows, and the last entry can
+          // TODO hold the actual number of boundary nodes.  Clever, huh?
+          ArrayRCP<const bool > pointBoundaryNodes;
+          pointBoundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
+
+          // extract striding information
+          GO offset = 0;                           //< the global dof offset for a strided map
+          LO blkSize = A->GetFixedBlockSize();     //< the full block size (number of dofs per node in strided map)
+          LO blkId   = -1;                         //< the block id within the strided map (or -1 if it is a full block map)
+          LO blkPartSize = A->GetFixedBlockSize(); //< stores the size of the block within the strided map
+          if (A->IsView("stridedMaps") == true) {
+            Teuchos::RCP<const Map> myMap = A->getRowMap("stridedMaps");
+            Teuchos::RCP<const StridedMap> strMap = Teuchos::rcp_dynamic_cast<const StridedMap>(myMap);
+            TEUCHOS_TEST_FOR_EXCEPTION(strMap == null, Exceptions::RuntimeError, "Map is not of type StridedMap");
+            offset = strMap->getOffset();
+            blkSize = Teuchos::as<const LO>(strMap->getFixedBlockSize());
+            blkId   = strMap->getStridedBlockId();
+            if (blkId > -1)
+              blkPartSize = Teuchos::as<LO>(strMap->getStridingData()[blkId]);
+          }
+
+          // extract diagonal data for dropping strategy
+          RCP<Vector> ghostedDiag = MueLu::Utils<SC,LO,GO,NO>::GetMatrixOverlappedDiagonal(*A);
+          const ArrayRCP<const SC> ghostedDiagVals = ghostedDiag->getData(0);
+
+          // loop over all local nodes
+          LO realnnz = 0;
+          rows[0] = 0;
+          Array<LO> indicesExtra;
+          for (LO row = 0; row < numRows; row++) {
+            ArrayView<const LO> indices;
+            indicesExtra.resize(0);
+
+            // The amalgamated row is marked as Dirichlet iff all point rows are Dirichlet
+            // Note, that pointBoundaryNodes lives on the dofmap (and not the node map).
+            // Therefore, looping over all dofs is fine here. We use blkPartSize as we work
+            // with local ids.
+            // TODO: Here we have different options of how to define a node to be a boundary (or Dirichlet)
+            // node.
+            bool isBoundary = false;
+            isBoundary = true;
+            for (LO j = 0; j < blkPartSize; j++) {
+              if (!pointBoundaryNodes[row*blkPartSize+j]) {
+                isBoundary = false;
+                break;
+              }
+            }
+
+            // Merge rows of A
+            // The array indicesExtra contains local column node ids for the current local node "row"
+            if (!isBoundary)
+              MergeRowsWithDropping(*A, row, ghostedDiagVals, threshold, indicesExtra, colTranslation);
+            else
+              indicesExtra.push_back(row);
+            indices   = indicesExtra;
+            numTotal += indices.size();
+
+            // add the local column node ids to the full columns array which
+            // contains the local column node ids for all local node rows
+            LO nnz = indices.size(), rownnz = 0;
+            for (LO colID = 0; colID < nnz; colID++) {
+              LO col = indices[colID];
+              columns[realnnz++] = col;
+              rownnz++;
+            }
+
+            if (rownnz == 1) {
+              // If the only element remaining after filtering is diagonal, mark node as boundary
+              // FIXME: this should really be replaced by the following
+              //    if (indices.size() == 1 && indices[0] == row)
+              //        boundaryNodes[row] = true;
+              // We do not do it this way now because there is no framework for distinguishing isolated
+              // and boundary nodes in the aggregation algorithms
+              amalgBoundaryNodes[row] = true;
+            }
+            rows[row+1] = realnnz;
+          } //for (LO row = 0; row < numRows; row++)
+          columns.resize(realnnz);
+
+          RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, uniqueMap, nonUniqueMap, "amalgamated graph of A"));
+          graph->SetBoundaryNodeMap(amalgBoundaryNodes);
+
+          if (GetVerbLevel() & Statistics0) {
+            GO numLocalBoundaryNodes  = 0;
+            GO numGlobalBoundaryNodes = 0;
+
+            for (LO i = 0; i < amalgBoundaryNodes.size(); ++i)
+              if (amalgBoundaryNodes[i])
+                numLocalBoundaryNodes++;
+
+            RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+            sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+            GetOStream(Statistics0) << "Detected " << numGlobalBoundaryNodes
+                                       << " agglomerated Dirichlet nodes" << std::endl;
+          }
+
+          Set(currentLevel, "Graph",       graph);
+          Set(currentLevel, "DofsPerNode", blkSize); // full block size
+        } /* else if (A->GetFixedBlockSize() > 1 && threshold != STS::zero()) {
+          // Case 5:  Multiple DOF/node problem with dropping
           // TODO
           graphType="amalgamated";
           throw Exceptions::NotImplemented("Fast CoalesceDrop with multiple DOFs and dropping is not yet implemented.");
-        }
+        }*/
 
       } else if (algo == "distance laplacian") {
         LO blkSize   = A->GetFixedBlockSize();
@@ -584,7 +842,7 @@ namespace MueLu {
         }
       }
 
-      if (GetVerbLevel() & Statistics0) {
+      if ((GetVerbLevel() & Statistics0) && !(A->GetFixedBlockSize() > 1 && threshold != STS::zero())) {
           RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
           GO numGlobalTotal, numGlobalDropped;
           sumAll(comm, numTotal,   numGlobalTotal);
@@ -803,6 +1061,140 @@ namespace MueLu {
     cols.resize(pos+1);
   }
 
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MergeRowsStrided(const Matrix& A, const LO row, Array<LO>& cols, const Array<LO>& translation) const {
+    typedef typename ArrayView<const LO>::size_type size_type;
+
+    // extract striding information
+    LO blkSize = A.GetFixedBlockSize();  //< stores the size of the block within the strided map
+    if (A.IsView("stridedMaps") == true) {
+      Teuchos::RCP<const Map> myMap = A.getRowMap("stridedMaps");
+      Teuchos::RCP<const StridedMap> strMap = Teuchos::rcp_dynamic_cast<const StridedMap>(myMap);
+      TEUCHOS_TEST_FOR_EXCEPTION(strMap == null, Exceptions::RuntimeError, "Map is not of type StridedMap");
+      if (strMap->getStridedBlockId() > -1)
+        blkSize = Teuchos::as<LO>(strMap->getStridingData()[strMap->getStridedBlockId()]);
+    }
+
+    // count nonzero entries in all dof rows associated with node row
+    size_t nnz = 0, pos = 0;
+    for (LO j = 0; j < blkSize; j++)
+      nnz += A.getNumEntriesInLocalRow(row*blkSize+j);
+
+    if (nnz == 0) {
+      cols.resize(0);
+      return;
+    }
+
+    cols.resize(nnz);
+
+    // loop over all local dof rows associated with local node "row"
+    ArrayView<const LO> inds;
+    ArrayView<const SC> vals;
+    for (LO j = 0; j < blkSize; j++) {
+      A.getLocalRowView(row*blkSize+j, inds, vals);
+      size_type numIndices = inds.size();
+
+      if (numIndices == 0) // skip empty dof rows
+        continue;
+
+      // cols: stores all local node ids for current local node id "row"
+      cols[pos++] = translation[inds[0]];
+      for (size_type k = 1; k < numIndices; k++) {
+        LO nodeID = translation[inds[k]];
+        // Here we try to speed up the process by reducing the size of an array
+        // to sort. This works if the column nonzeros belonging to the same
+        // node are stored consequently.
+        if (nodeID != cols[pos-1])
+          cols[pos++] = nodeID;
+      }
+    }
+    cols.resize(pos);
+    nnz = pos;
+
+    // Sort and remove duplicates
+    std::sort(cols.begin(), cols.end());
+    pos = 0;
+    for (size_t j = 1; j < nnz; j++)
+      if (cols[j] != cols[pos])
+        cols[++pos] = cols[j];
+    cols.resize(pos+1);
+  }
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MergeRowsWithDropping(const Matrix& A, const LO row, const ArrayRCP<const SC>& ghostedDiagVals, SC threshold, Array<LO>& cols, const Array<LO>& translation) const {
+    typedef typename ArrayView<const LO>::size_type size_type;
+    typedef Teuchos::ScalarTraits<SC> STS;
+
+    // extract striding information
+    LO blkSize = A.GetFixedBlockSize();  //< stores the size of the block within the strided map
+    if (A.IsView("stridedMaps") == true) {
+      Teuchos::RCP<const Map> myMap = A.getRowMap("stridedMaps");
+      Teuchos::RCP<const StridedMap> strMap = Teuchos::rcp_dynamic_cast<const StridedMap>(myMap);
+      TEUCHOS_TEST_FOR_EXCEPTION(strMap == null, Exceptions::RuntimeError, "Map is not of type StridedMap");
+      if (strMap->getStridedBlockId() > -1)
+        blkSize = Teuchos::as<LO>(strMap->getStridingData()[strMap->getStridedBlockId()]);
+    }
+
+    // count nonzero entries in all dof rows associated with node row
+    size_t nnz = 0, pos = 0;
+    for (LO j = 0; j < blkSize; j++)
+      nnz += A.getNumEntriesInLocalRow(row*blkSize+j);
+
+    if (nnz == 0) {
+      cols.resize(0);
+      return;
+    }
+
+    cols.resize(nnz);
+
+    // loop over all local dof rows associated with local node "row"
+    ArrayView<const LO> inds;
+    ArrayView<const SC> vals;
+    for (LO j = 0; j < blkSize; j++) {
+      A.getLocalRowView(row*blkSize+j, inds, vals);
+      size_type numIndices = inds.size();
+
+      if (numIndices == 0) // skip empty dof rows
+        continue;
+
+      // cols: stores all local node ids for current local node id "row"
+      LO prevNodeID = -1;
+      for (size_type k = 0; k < numIndices; k++) {
+        LO dofID = inds[k];
+        LO nodeID = translation[inds[k]];
+
+        // we avoid a square root by using squared values
+        typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold*ghostedDiagVals[dofID]*ghostedDiagVals[row*blkSize+j]); // eps^2 * |a_ii| * |a_jj|
+        typename STS::magnitudeType aij = STS::magnitude(vals[k]*vals[k]);
+
+        // check dropping criterion
+        if (aij > aiiajj || (row*blkSize+j == dofID)) {
+          // accept entry in graph
+
+          // Here we try to speed up the process by reducing the size of an array
+          // to sort. This works if the column nonzeros belonging to the same
+          // node are stored consequently.
+          if (nodeID != prevNodeID) {
+            cols[pos++] = nodeID;
+            prevNodeID = nodeID;
+          }
+        }
+      }
+    }
+    cols.resize(pos);
+    nnz = pos;
+
+    // Sort and remove duplicates
+    std::sort(cols.begin(), cols.end());
+    pos = 0;
+    for (size_t j = 1; j < nnz; j++)
+      if (cols[j] != cols[pos])
+        cols[++pos] = cols[j];
+    cols.resize(pos+1);
+
+    return;
+  }
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AmalgamateMap(const Map& sourceMap, const LO blkSize, RCP<const Map>& amalgamatedMap, Array<LO>& translation) const {
     typedef typename ArrayView<const GO>::size_type size_type;
@@ -817,6 +1209,52 @@ namespace MueLu {
     const StridedMap *strMap = dynamic_cast<const StridedMap*>(&sourceMap);
     if (strMap != NULL)
       offset = strMap->getOffset();
+
+    Array<GO> elementList(numElements);
+    translation.resize(numElements);
+
+    size_type numRows = 0;
+    for (size_type id = 0; id < numElements; id++) {
+      GO dofID  = elementAList[id];
+      GO nodeID = AmalgamationFactory::DOFGid2NodeId(dofID, blkSize, offset, indexBase);
+
+      typename container::iterator it = filter.find(nodeID);
+      if (it == filter.end()) {
+        filter[nodeID] = numRows;
+
+        translation[id]      = numRows;
+        elementList[numRows] = nodeID;
+
+        numRows++;
+
+      } else {
+        translation[id]      = it->second;
+      }
+    }
+    elementList.resize(numRows);
+
+    amalgamatedMap = MapFactory::Build(sourceMap.lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, sourceMap.getComm());
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AmalgamateMapStrided(const Map& sourceMap, const Matrix& A, RCP<const Map>& amalgamatedMap, Array<LO>& translation) const {
+    typedef typename ArrayView<const GO>::size_type size_type;
+    typedef std::map<GO,size_type> container;
+
+    GO                      indexBase = sourceMap.getIndexBase();
+    ArrayView<const GO>     elementAList = sourceMap.getNodeElementList();
+    size_type               numElements  = elementAList.size();
+    container               filter; // TODO:  replace std::set with an object having faster lookup/insert, hashtable for instance
+
+    GO offset = 0;
+    LO blkSize = A.GetFixedBlockSize();
+    if (A.IsView("stridedMaps") == true) {
+      Teuchos::RCP<const Map> myMap = A.getRowMap("stridedMaps");
+      Teuchos::RCP<const StridedMap> strMap = Teuchos::rcp_dynamic_cast<const StridedMap>(myMap);
+      TEUCHOS_TEST_FOR_EXCEPTION(strMap == null, Exceptions::RuntimeError, "Map is not of type StridedMap");
+      offset = strMap->getOffset();
+      blkSize = Teuchos::as<const LO>(strMap->getFixedBlockSize());
+    }
 
     Array<GO> elementList(numElements);
     translation.resize(numElements);
