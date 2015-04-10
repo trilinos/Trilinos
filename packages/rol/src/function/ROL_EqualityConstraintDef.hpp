@@ -331,14 +331,40 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyJacobian(con
                                                                              const Vector<Real> &jv,
                                                                              const bool printToStream,
                                                                              std::ostream & outStream,
-                                                                             const int numSteps) {
+                                                                             const int numSteps,
+                                                                             const int order) {
+  std::vector<Real> steps(numSteps);
+  for(int i=0;i<numSteps;++i) {
+    steps[i] = pow(10,-i);
+  }
+ 
+  return checkApplyJacobian(x,v,jv,steps,printToStream,outStream,order);
+}
+
+
+
+
+template <class Real>
+std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyJacobian(const Vector<Real> &x,
+                                                                             const Vector<Real> &v,
+                                                                             const Vector<Real> &jv,
+                                                                             const std::vector<Real> &steps, 
+                                                                             const bool printToStream,
+                                                                             std::ostream & outStream,
+                                                                             const int order) {
+
+  TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
+                              "Error: finite difference order must be 1,2,3, or 4" );
+
+  using Finite_Difference_Arrays::shifts;
+  using Finite_Difference_Arrays::weights;
+
   Real tol = std::sqrt(ROL_EPSILON);
 
+  int numSteps = steps.size();
   int numVals = 4;
   std::vector<Real> tmp(numVals);
   std::vector<std::vector<Real> > jvCheck(numSteps, tmp);
-  Real eta_factor = 1e-1;
-  Real eta = 1.0;
 
   // Save the format state of the original outStream.
   Teuchos::oblackholestream oldFormatState;
@@ -354,24 +380,39 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyJacobian(con
   Real normJv = Jv->norm();
 
   // Temporary vectors.
+  Teuchos::RCP<Vector<Real> > cdif = jv.clone();
   Teuchos::RCP<Vector<Real> > cnew = jv.clone();
   Teuchos::RCP<Vector<Real> > xnew = x.clone();
 
   for (int i=0; i<numSteps; i++) {
-    // Evaluate constraint value at x+eta*v.
+
+    Real eta = steps[i];
+
     xnew->set(x);
-    xnew->axpy(eta, v);
-    this->update(*xnew);
-    this->value(*cnew, *xnew, tol);
-    cnew->axpy(-1.0, *c);
-    cnew->scale(1.0/eta);
+ 
+    cdif->set(*c);
+    cdif->scale(weights[order-1][0]);
+
+    for(int j=0; j<order; ++j) {
+
+       xnew->axpy(eta*shifts[order-1][j], v);
+
+       if( weights[order-1][j+1] != 0 ) {
+           this->update(*xnew);
+           this->value(*cnew,*xnew,tol);
+           cdif->axpy(weights[order-1][j+1],*cnew);    
+       }
+
+    }
+
+    cdif->scale(1.0/eta);    
 
     // Compute norms of Jacobian-vector products, finite-difference approximations, and error.
     jvCheck[i][0] = eta;
     jvCheck[i][1] = normJv;
-    jvCheck[i][2] = cnew->norm();
-    cnew->axpy(-1.0, *Jv);
-    jvCheck[i][3] = cnew->norm();
+    jvCheck[i][2] = cdif->norm();
+    cdif->axpy(-1.0, *Jv);
+    jvCheck[i][3] = cdif->norm();
 
     if (printToStream) {
       std::stringstream hist;
@@ -397,8 +438,6 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyJacobian(con
       outStream << hist.str();
     }
 
-    // Update eta.
-    eta = eta*eta_factor;
   }
 
   // Reset format state of outStream.
@@ -509,16 +548,39 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointHessi
                                                                                    const Vector<Real> &hv,
                                                                                    const bool printToStream,
                                                                                    std::ostream & outStream,
-                                                                                   const int numSteps) {
+                                                                                   const int numSteps,  
+                                                                                   const int order) {
+  std::vector<Real> steps(numSteps);
+  for(int i=0;i<numSteps;++i) {
+    steps[i] = pow(10,-i);
+  }
+ 
+  return checkApplyAdjointHessian(x,u,v,hv,steps,printToStream,outStream,order);
+
+}
+
+
+template <class Real>
+std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointHessian(const Vector<Real> &x,
+                                                                                   const Vector<Real> &u,
+                                                                                   const Vector<Real> &v,
+                                                                                   const Vector<Real> &hv,
+                                                                                   const std::vector<Real> &steps,  
+                                                                                   const bool printToStream,
+                                                                                   std::ostream & outStream,
+                                                                                   const int order) {
+  using Finite_Difference_Arrays::shifts;
+  using Finite_Difference_Arrays::weights;
+
   Real tol = std::sqrt(ROL_EPSILON);
 
+  int numSteps = steps.size();
   int numVals = 4;
   std::vector<Real> tmp(numVals);
   std::vector<std::vector<Real> > ahuvCheck(numSteps, tmp);
-  Real eta_factor = 1e-1;
-  Real eta = 1.0;
 
   // Temporary vectors.
+  Teuchos::RCP<Vector<Real> > AJdif = hv.clone();
   Teuchos::RCP<Vector<Real> > AJu = hv.clone();
   Teuchos::RCP<Vector<Real> > AHuv = hv.clone();
   Teuchos::RCP<Vector<Real> > AJnew = hv.clone();
@@ -536,20 +598,34 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointHessi
   Real normAHuv = AHuv->norm();
 
   for (int i=0; i<numSteps; i++) {
+
+    Real eta = steps[i];
+
     // Apply adjoint Jacobian to u at x+eta*v.
     xnew->set(x);
-    xnew->axpy(eta, v);
-    this->update(*xnew);
-    this->applyAdjointJacobian(*AJnew, u, *xnew, tol);
-    AJnew->axpy(-1.0, *AJu);
-    AJnew->scale(1.0/eta);
+
+    AJdif->set(*AJnew);
+    AJdif->scale(weights[order-1][0]);     
+
+    for(int j=0; j<order; ++j) {
+
+        xnew->axpy(eta*shifts[order-1][j],v);        
+
+        if( weights[order-1][j+1] != 0 ) {    
+            this->update(*xnew);
+            this->applyAdjointJacobian(*AJnew, u, *xnew, tol);
+            AJdif->axpy(weights[order-1][j+1],*AJnew);
+        }
+    }
+
+    AJdif->scale(1.0/eta);
 
     // Compute norms of Jacobian-vector products, finite-difference approximations, and error.
     ahuvCheck[i][0] = eta;
     ahuvCheck[i][1] = normAHuv;
-    ahuvCheck[i][2] = AJnew->norm();
-    AJnew->axpy(-1.0, *AHuv);
-    ahuvCheck[i][3] = AJnew->norm();
+    ahuvCheck[i][2] = AJdif->norm();
+    AJdif->axpy(-1.0, *AHuv);
+    ahuvCheck[i][3] = AJdif->norm();
 
     if (printToStream) {
       std::stringstream hist;
@@ -575,8 +651,6 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointHessi
       outStream << hist.str();
     }
 
-    // Update eta.
-    eta = eta*eta_factor;
   }
 
   // Reset format state of outStream.

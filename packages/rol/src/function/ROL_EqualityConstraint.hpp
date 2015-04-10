@@ -273,6 +273,19 @@ public:
   /** \brief Finite-difference check for the constraint Jacobian application.
 
       Details here.
+  */
+  virtual std::vector<std::vector<Real> > checkApplyJacobian( const Vector<Real> &x,
+                                                              const Vector<Real> &v,
+                                                              const Vector<Real> &jv,
+                                                              const std::vector<Real> &steps,
+                                                              const bool printToStream = true,
+                                                              std::ostream & outStream = std::cout,
+                                                              const int order = 1 ) ;
+
+
+  /** \brief Finite-difference check for the constraint Jacobian application.
+
+      Details here.
 
   */
   virtual std::vector<std::vector<Real> > checkApplyJacobian( const Vector<Real> &x,
@@ -280,7 +293,8 @@ public:
                                                               const Vector<Real> &jv,
                                                               const bool printToStream = true,
                                                               std::ostream & outStream = std::cout,
-                                                              const int numSteps = ROL_NUM_CHECKDERIV_STEPS ) ;
+                                                              const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
+                                                              const int order = 1 ) ;
 
   /** \brief Finite-difference check for the application of the adjoint of constraint Jacobian.
 
@@ -304,9 +318,23 @@ public:
                                                                    const Vector<Real> &u,
                                                                    const Vector<Real> &v,
                                                                    const Vector<Real> &hv,
+                                                                   const std::vector<Real> &step,
                                                                    const bool printToScreen = true,
                                                                    std::ostream & outStream = std::cout,
-                                                                   const int numSteps = ROL_NUM_CHECKDERIV_STEPS ) ;
+                                                                   const int order = 1 ) ;
+  /** \brief Finite-difference check for the application of the adjoint of constraint Hessian.
+
+      Details here.
+
+  */
+  virtual std::vector<std::vector<Real> > checkApplyAdjointHessian(const Vector<Real> &x,
+                                                                   const Vector<Real> &u,
+                                                                   const Vector<Real> &v,
+                                                                   const Vector<Real> &hv,
+                                                                   const bool printToScreen = true,
+                                                                   std::ostream & outStream = std::cout,
+                                                                   const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
+                                                                   const int order = 1 ) ;
 
 }; // class EqualityConstraint
 
