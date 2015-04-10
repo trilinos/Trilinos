@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "MueLu_ConfigDefs.hpp"
 
+#include "MueLu_config.hpp"
 
-#ifdef HAVE_ML_MATLAB
-
+#ifdef HAVE_MUELU_MATLAB
+#include "muemex.h"
 
 void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
   printf("Hello world.\n");
