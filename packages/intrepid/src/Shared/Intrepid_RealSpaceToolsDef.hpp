@@ -1764,7 +1764,7 @@ void RealSpaceTools<Scalar>::add(ArraySum & inoutSumArray, const ArrayIn & inArr
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::add): Array arguments must have identical ranks!");
     for (int i=0; i<getrank(inArray); i++) {
-      TEUCHOS_TEST_FOR_EXCEPTION( ( tatic_cast<int>(nArray.dimension(i)) != static_cast<int>(inoutSumArray.dimension(i)) ),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( static_cast<int>(nArray.dimension(i)) != static_cast<int>(inoutSumArray.dimension(i)) ),
                           std::invalid_argument,
                           ">>> ERROR (RealSpaceTools::add): Dimensions of array arguments do not agree!");
     }
