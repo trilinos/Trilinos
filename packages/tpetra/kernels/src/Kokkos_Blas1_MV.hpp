@@ -49,6 +49,7 @@
 #include <Kokkos_Blas1_MV_impl_fill.hpp>
 #include <Kokkos_Blas1_MV_impl_nrm1.hpp>
 #include <Kokkos_Blas1_MV_impl_nrm2.hpp>
+#include <Kokkos_Blas1_MV_impl_nrm2w.hpp>
 #include <Kokkos_Blas1_MV_impl_nrmInf.hpp>
 #include <Kokkos_Blas1_MV_impl_recip.hpp>
 #include <Kokkos_Blas1_MV_impl_scal.hpp>
@@ -1362,6 +1363,84 @@ sum (const RV& R, const XMV& X)
 
   Impl::Sum<RV_Internal, XMV_Internal>::sum (R_internal, X_internal);
 }
+
+/// \brief Compute the "weighted 2-norm" of each column of X, using
+///   weights in the corresponding column of W, and write the result
+///   to the corresponding entry of R.
+///
+/// For single vectors X and W, the "weighted 2-norm" is the 2-norm of
+/// the entry-wise quotient X(i) / W(i).  X and W have the same type.
+template<class RV, class XMV>
+void
+nrm2w_squared (const RV& R, const XMV& X, const XMV& W)
+{
+#ifdef KOKKOS_HAVE_CXX11
+  // RMV and XMV must be Kokkos::View specializations.
+  static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::nrm2w_squared: "
+                 "R is not a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::nrm2w_squared: "
+                 "X is not a Kokkos::View.");
+  // RV must be nonconst (else it can't be an output argument).
+  static_assert (Kokkos::Impl::is_same<typename RV::value_type, typename RV::non_const_value_type>::value,
+                 "KokkosBlas::nrm2w_squared: R is const.  "
+                 "It must be nonconst, because it is an output argument "
+                 "(we have to be able to write to its entries).");
+  static_assert ((RV::rank == 0 && XMV::rank == 1) || (RV::rank == 1 && XMV::rank == 2),
+                 "KokkosBlas::nrm2w_squared: Ranks of R and X do not match.  "
+                 "If R has rank 0, X and W must have rank 1.  "
+                 "If R has rank 1, X and W must have rank 2.");
+#endif // KOKKOS_HAVE_CXX11
+
+  // Check compatibility of dimensions at run time.
+  if (X.dimension_0 () != W.dimension_0 () ||
+      X.dimension_1 () != W.dimension_1 () ||
+      R.dimension_0 () != X.dimension_1 ()) {
+    std::ostringstream os;
+    os << "KokkosBlas::nrm2w_squared: Dimensions do not match: "
+       << "R: " << R.dimension_0 () << " x 1"
+       << ", X: " << X.dimension_0 () << " x " << X.dimension_1 ()
+       << ", W: " << W.dimension_0 () << " x " << W.dimension_1 ();
+    Kokkos::Impl::throw_runtime_exception (os.str ());
+  }
+
+  // Create unmanaged versions of the input Views.  XMV may be rank 1
+  // or rank 2, and RV may be rank 0 or rank 1.
+  typedef Kokkos::View<
+    typename Kokkos::Impl::if_c<
+      RV::rank == 0,
+      typename RV::non_const_value_type,
+      typename RV::non_const_value_type* >::type,
+    typename RV::array_layout,
+    typename RV::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    typename RV::specialize> RV_Internal;
+
+  typedef Kokkos::View<
+    typename Kokkos::Impl::if_c<
+      XMV::rank == 1,
+      typename XMV::const_value_type*,
+      typename XMV::const_value_type** >::type,
+    typename XMV::array_layout,
+    typename XMV::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    typename XMV::specialize> XMV_Internal;
+
+  RV_Internal R_internal = R;
+  XMV_Internal X_internal = X;
+  XMV_Internal W_internal = W;
+
+#ifdef TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+  using std::cerr;
+  using std::endl;
+  cerr << "KokkosBlas::nrm2w_squared:" << endl
+       << "  RV_Internal: " << demangledTypeName (R_internal) << endl
+       << "  XMV_Internal: " << demangledTypeName (X_internal) << endl
+       << endl;
+#endif // TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+
+  Impl::Nrm2w<RV_Internal, XMV_Internal>::nrm2w_squared (R_internal, X_internal, W_internal);
+}
+
 
 } // namespace KokkosBlas
 
