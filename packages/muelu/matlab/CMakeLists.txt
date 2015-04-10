@@ -3,17 +3,15 @@
 SET(HEADERS "")
 SET(SOURCES "")
 
-
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/)
-
-
 
 if(TPL_ENABLE_MATLAB)
   INCLUDE_DIRECTORIES(${MATLAB_INCLUDE_DIRS})
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../src)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../src)
-
+  # NTS: Until I figure out a better way to do this, all relevent
+  # source directories must be manually included here.  Grrr. -CMS
 
   # Must glob the binary dir last to get all of the auto-generated headers
   SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
