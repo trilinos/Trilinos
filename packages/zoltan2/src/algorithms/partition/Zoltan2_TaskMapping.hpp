@@ -659,13 +659,13 @@ public:
   /*! \brief Function is called whenever nprocs > no_task.
    * Function returns only the subset of processors that are closest to each other.
    *  \param proc_to_task_xadj holds the pointer to the task array
-   *  \param proc_to_task_xadj holds the indices of tasks wrt to proc_to_task_xadj array.
+   *  \param proc_to_task_adj holds the indices of tasks wrt to proc_to_task_xadj array.
    *  \param task_to_proc holds the processors mapped to tasks.
    */
   virtual void getMapping(
       int myRank,
       RCP<const Environment> env,
-      ArrayRCP <part_t> &proc_to_task_xadj, //  = allocMemory<part_t> (this->no_procs); //holds the pointer to the task array
+      ArrayRCP <part_t> &proc_to_task_xadj, //  = allocMemory<part_t> (this->no_procs+1); //holds the pointer to the task array
       ArrayRCP <part_t> &proc_to_task_adj, // = allocMemory<part_t>(this->no_tasks); //holds the indices of tasks wrt to proc_to_task_xadj array.
       ArrayRCP <part_t> &task_to_proc //allocMemory<part_t>(this->no_tasks); //holds the processors mapped to tasks.
   ) const = 0;
@@ -838,12 +838,12 @@ public:
   virtual void getMapping(
       int myRank,
       RCP<const Environment> env,
-      ArrayRCP <part_t> &rcp_proc_to_task_xadj, //  = allocMemory<part_t> (this->no_procs); //holds the pointer to the task array
+      ArrayRCP <part_t> &rcp_proc_to_task_xadj, //  = allocMemory<part_t> (this->no_procs+1); //holds the pointer to the task array
       ArrayRCP <part_t> &rcp_proc_to_task_adj, // = allocMemory<part_t>(this->no_tasks); //holds the indices of tasks wrt to proc_to_task_xadj array.
       ArrayRCP <part_t> &rcp_task_to_proc //allocMemory<part_t>(this->no_tasks); //holds the processors mapped to tasks.
   ) const{
 
-    rcp_proc_to_task_xadj = ArrayRCP <part_t> (this->no_procs);
+    rcp_proc_to_task_xadj = ArrayRCP <part_t> (this->no_procs+1);
     rcp_proc_to_task_adj = ArrayRCP <part_t> (this->no_tasks);
     rcp_task_to_proc = ArrayRCP <part_t> (this->no_tasks);
 
@@ -853,7 +853,7 @@ public:
 
 
     part_t invalid = 0;
-    fillContinousArray<part_t> (proc_to_task_xadj, this->no_procs, &invalid);
+    fillContinousArray<part_t> (proc_to_task_xadj, this->no_procs+1, &invalid);
 
     //obtain the number of parts that should be divided.
     part_t num_parts = MINOF(this->no_procs, this->no_tasks);
@@ -868,9 +868,9 @@ public:
     int permutations =  taskPerm * procPerm; //total number of permutations
 
     //holds the pointers to proc_adjList
-    part_t *proc_xadj = allocMemory<part_t> (num_parts);
+    part_t *proc_xadj = allocMemory<part_t> (num_parts+1);
     //holds the processors in parts according to the result of partitioning algorithm.
-    //the processors assigned to part x is at proc_adjList[ proc_xadj[x - 1] : proc_xadj[x] ]
+    //the processors assigned to part x is at proc_adjList[ proc_xadj[x] : proc_xadj[x+1] ]
     part_t *proc_adjList = allocMemory<part_t>(this->no_procs);
 
 
@@ -923,7 +923,7 @@ public:
     freeArray<pcoord_t *> (pcoords);
 
 
-    part_t *task_xadj = allocMemory<part_t> (num_parts);
+    part_t *task_xadj = allocMemory<part_t> (num_parts+1);
     part_t *task_adjList = allocMemory<part_t>(this->no_tasks);
     //fill task_adjList st: task_adjList[i] <- i.
     fillContinousArray<part_t>(task_adjList,this->no_tasks, NULL);
@@ -960,15 +960,10 @@ public:
     //filling proc_to_task_xadj, proc_to_task_adj, task_to_proc arrays.
     for(part_t i = 0; i < num_parts; ++i){
 
-      part_t proc_index_begin = 0;
-      part_t task_begin_index = 0;
-
-      if (i > 0) {
-        proc_index_begin = proc_xadj[i - 1];
-        task_begin_index = task_xadj[i - 1];
-      }
-      part_t proc_index_end = proc_xadj[i];
-      part_t task_end_index = task_xadj[i];
+      part_t proc_index_begin = proc_xadj[i];
+      part_t task_begin_index = task_xadj[i];
+      part_t proc_index_end = proc_xadj[i+1];
+      part_t task_end_index = task_xadj[i+1];
 
 
       if(proc_index_end - proc_index_begin != 1){
@@ -982,23 +977,22 @@ public:
 
 
     //holds the pointer to the task array
+    //convert proc_to_task_xadj to CSR index array
     part_t *proc_to_task_xadj_work = allocMemory<part_t> (this->no_procs);
-    proc_to_task_xadj_work[0] = proc_to_task_xadj[0];
-    for(part_t i = 1; i < this->no_procs; ++i){
-      proc_to_task_xadj[i] += proc_to_task_xadj[i - 1];
-      proc_to_task_xadj_work[i] = proc_to_task_xadj[i];
+    part_t sum = 0;
+    for(part_t i = 0; i < this->no_procs; ++i){
+      part_t tmp = proc_to_task_xadj[i];
+      proc_to_task_xadj[i] = sum;
+      sum += tmp;
+      proc_to_task_xadj_work[i] = sum;
     }
+    proc_to_task_xadj[this->no_procs] = sum;
 
     for(part_t i = 0; i < num_parts; ++i){
 
-      part_t proc_index_begin = 0;
-      part_t task_begin_index = 0;
-
-      if (i > 0) {
-        proc_index_begin = proc_xadj[i - 1];
-        task_begin_index = task_xadj[i - 1];
-      }
-      part_t task_end_index = task_xadj[i];
+      part_t proc_index_begin = proc_xadj[i];
+      part_t task_begin_index = task_xadj[i];
+      part_t task_end_index = task_xadj[i+1];
 
       part_t assigned_proc = proc_adjList[proc_index_begin];
 
@@ -1032,7 +1026,7 @@ protected:
 #endif
 
   //RCP<const Environment> env;
-  ArrayRCP<part_t> proc_to_task_xadj; //  = allocMemory<part_t> (this->no_procs); //holds the pointer to the task array
+  ArrayRCP<part_t> proc_to_task_xadj; //  = allocMemory<part_t> (this->no_procs+1); //holds the pointer to the task array
   ArrayRCP<part_t> proc_to_task_adj; // = allocMemory<part_t>(this->no_tasks); //holds the indices of tasks wrt to proc_to_task_xadj array.
   ArrayRCP<part_t> task_to_proc; //allocMemory<part_t>(this->no_procs); //holds the processors mapped to tasks.
   bool isOwnerofModel;
@@ -1051,7 +1045,7 @@ protected:
       this->proc_task_comm->getMapping(
           myRank,
           Teuchos::RCP<const Environment>(this->env, false),
-          this->proc_to_task_xadj, //  = allocMemory<part_t> (this->no_procs); //holds the pointer to the task array
+          this->proc_to_task_xadj, //  = allocMemory<part_t> (this->no_procs+1); //holds the pointer to the task array
           this->proc_to_task_adj, // = allocMemory<part_t>(this->no_tasks); //holds the indices of tasks wrt to proc_to_task_xadj array.
           this->task_to_proc //allocMemory<part_t>(this->no_procs); //holds the processors mapped to tasks.);
       );
@@ -1786,17 +1780,15 @@ public:
    */
   virtual void getPartsForProc(int procId, part_t &numParts, part_t *parts) const{
 
-    part_t task_begin = 0;
-    if (procId > 0) task_begin = this->proc_to_task_xadj[procId - 1];
-    part_t taskend = this->proc_to_task_xadj[procId];
+    part_t task_begin = this->proc_to_task_xadj[procId];
+    part_t taskend = this->proc_to_task_xadj[procId+1];
     parts = this->proc_to_task_adj.getRawPtr() + task_begin;
     numParts = taskend - task_begin;
   }
 
   ArrayView<part_t> getAssignedTaksForProc(part_t procId){
-    part_t task_begin = 0;
-    if (procId > 0) task_begin = this->proc_to_task_xadj[procId - 1];
-    part_t taskend = this->proc_to_task_xadj[procId];
+    part_t task_begin = this->proc_to_task_xadj[procId];
+    part_t taskend = this->proc_to_task_xadj[procId+1];
 
     /*
   cout << "part_t:" << procId << " taskCount:" << taskend - task_begin << endl;
@@ -1823,8 +1815,8 @@ public:
  * The result mapping can be obtained by
  *    -proc_to_task_xadj: which holds the beginning and end indices of 
  *     tasks on proc_to_task_adj that is assigned to a processor.
- *     the tasks assigned to processor i are between proc_to_task_xadj[i-1] and
- *     proc_to_task_xadj[i] on proc_to_task_adj.
+ *     the tasks assigned to processor i are between proc_to_task_xadj[i] and
+ *     proc_to_task_xadj[i+1] on proc_to_task_adj.
  *
  *    -proc_to_task_adj: holds the task adj array.
  *
@@ -1869,8 +1861,8 @@ public:
  *         in task graph.
  *  \param proc_to_task_xadj is is the output for tasks showing which proc 
  *         has the which parts.
- *        (proc-i will own the tasks from proc_to_task_xadj[i-1] to 
- *        proc_to_task_xadj[i])
+ *        (proc-i will own the tasks from proc_to_task_xadj[i] to 
+ *        proc_to_task_xadj[i+1])
  *  \param proc_to_task_adj is the ouput list of tasks pointed by 
  *        proc_to_task_xadj
  *  \param recursion_depth is the recursion depth that will be applied to 
@@ -1948,7 +1940,7 @@ void coordinateTaskMapperInterface(
 
   ctm->getProcTask(proc_to_task_xadj_, proc_to_task_adj_);
 
-  for (part_t i = 0; i < num_processors; ++i){
+  for (part_t i = 0; i <= num_processors; ++i){
     proc_to_task_xadj[i] = proc_to_task_xadj_[i];
   }
   for (part_t i = 0; i < num_tasks; ++i){

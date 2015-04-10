@@ -292,7 +292,7 @@ int main(int argc, char *argv[]){
 
         */
         RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
-        part_t *proc_to_task_xadj_ = new part_t[numProcs];
+        part_t *proc_to_task_xadj_ = new part_t[numProcs+1];
         part_t *proc_to_task_adj_ = new part_t[numParts];
 /*
         cout << "procDim:" << procDim <<

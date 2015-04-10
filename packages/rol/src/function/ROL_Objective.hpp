@@ -160,19 +160,26 @@ public:
       \f[
           \left| \frac{f(x+td) - f(x)}{t} - \langle \nabla f(x),d\rangle_{\mathcal{X}^*,\mathcal{X}}\right|.
       \f]
+      if the approximation is first order. More generally, difference approximation is
+      \f[
+          \frac{1}{t} \sum\limits_{i=1}^m w_i f(x+t c_i d)     
+      \f]
+      where m = order+1, \f$w_i\f$ are the difference weights and \f$c_i\f$ are the difference steps
       @param[in]      x             is an optimization variable.
       @param[in]      d             is a direction vector.
       @param[in]      printToStream is a flag that turns on/off output.
       @param[out]     outStream     is the output stream.
       @param[in]      numSteps      is a parameter which dictates the number of finite difference steps.
+      @param[in]      order         is the order of the finite difference approximation (1,2,3,4)
   */
   virtual std::vector<std::vector<Real> > checkGradient( const Vector<Real> &x,
                                                          const Vector<Real> &d,
                                                          const bool printToStream = true,
                                                          std::ostream & outStream = std::cout,
-                                                         const int numSteps = ROL_NUM_CHECKDERIV_STEPS ) {
+                                                         const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
+                                                         const int order = 1 ) {
 
-    return checkGradient(x, x.dual(), d, printToStream, outStream, numSteps);
+    return checkGradient(x, x.dual(), d, printToStream, outStream, numSteps, order);
 
   }
 
@@ -184,19 +191,90 @@ public:
       \f[
           \left| \frac{f(x+td) - f(x)}{t} - \langle \nabla f(x),d\rangle_{\mathcal{X}^*,\mathcal{X}}\right|.
       \f]
+      if the approximation is first order. More generally, difference approximation is
+      \f[
+          \frac{1}{t} \sum\limits_{i=1}^m w_i f(x+t c_i d)     
+      \f]
+      where m = order+1, \f$w_i\f$ are the difference weights and \f$c_i\f$ are the difference steps
+ 
       @param[in]      x             is an optimization variable.
       @param[in]      g             is used to create a temporary gradient vector.
       @param[in]      d             is a direction vector.
       @param[in]      printToStream is a flag that turns on/off output.
       @param[out]     outStream     is the output stream.
       @param[in]      numSteps      is a parameter which dictates the number of finite difference steps.
+      @param[in]      order         is the order of the finite difference approximation (1,2,3,4)
   */
   virtual std::vector<std::vector<Real> > checkGradient( const Vector<Real> &x,
                                                          const Vector<Real> &g,
                                                          const Vector<Real> &d,
                                                          const bool printToStream = true,
                                                          std::ostream & outStream = std::cout,
-                                                         const int numSteps = ROL_NUM_CHECKDERIV_STEPS );
+                                                         const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
+                                                         const int order = 1 );
+
+
+  /** \brief Finite-difference gradient check with specified step sizes.
+
+      This function computes a sequence of one-sided finite-difference checks for the gradient.  
+      At each step of the sequence, the finite difference step size is decreased.  The output 
+      compares the error 
+      \f[
+          \left| \frac{f(x+td) - f(x)}{t} - \langle \nabla f(x),d\rangle_{\mathcal{X}^*,\mathcal{X}}\right|.
+      \f]
+      if the approximation is first order. More generally, difference approximation is
+      \f[
+          \frac{1}{t} \sum\limits_{i=1}^m w_i f(x+t c_i d)     
+      \f]
+      where m = order+1, \f$w_i\f$ are the difference weights and \f$c_i\f$ are the difference steps
+      @param[in]      x             is an optimization variable.
+      @param[in]      d             is a direction vector.
+      @param[in]      steps         is vector of steps of user-specified size.
+      @param[in]      printToStream is a flag that turns on/off output.
+      @param[out]     outStream     is the output stream.
+      @param[in]      order         is the order of the finite difference approximation (1,2,3,4)
+  */
+  virtual std::vector<std::vector<Real> > checkGradient( const Vector<Real> &x,
+                                                         const Vector<Real> &d,
+                                                         const std::vector<Real> &steps,
+                                                         const bool printToStream = true,
+                                                         std::ostream & outStream = std::cout,
+                                                         const int order = 1 ) {
+
+    return checkGradient(x, x.dual(), d, steps, printToStream, outStream, order);
+
+  }
+
+
+  /** \brief Finite-difference gradient check with specified step sizes.
+
+      This function computes a sequence of one-sided finite-difference checks for the gradient.  
+      At each step of the sequence, the finite difference step size is decreased.  The output 
+      compares the error 
+      \f[
+          \left| \frac{f(x+td) - f(x)}{t} - \langle \nabla f(x),d\rangle_{\mathcal{X}^*,\mathcal{X}}\right|.
+      \f]
+      if the approximation is first order. More generally, difference approximation is
+      \f[
+          \frac{1}{t} \sum\limits_{i=1}^m w_i f(x+t c_i d)     
+      \f]
+      where m = order+1, \f$w_i\f$ are the difference weights and \f$c_i\f$ are the difference steps
+ 
+      @param[in]      x             is an optimization variable.
+      @param[in]      g             is used to create a temporary gradient vector.
+      @param[in]      d             is a direction vector.
+      @param[in]      steps         is vector of steps of user-specified size.
+      @param[in]      printToStream is a flag that turns on/off output.
+      @param[out]     outStream     is the output stream.
+      @param[in]      order         is the order of the finite difference approximation (1,2,3,4)
+  */
+  virtual std::vector<std::vector<Real> > checkGradient( const Vector<Real> &x,
+                                                         const Vector<Real> &g,
+                                                         const Vector<Real> &d,
+                                                         const std::vector<Real> &steps,
+                                                         const bool printToStream = true,
+                                                         std::ostream & outStream = std::cout,
+                                                         const int order = 1 );
 
   /** \brief Finite-difference Hessian-applied-to-vector check.
 
@@ -206,19 +284,26 @@ public:
       \f[
           \left\| \frac{\nabla f(x+td) - \nabla f(x)}{t} - \nabla^2 f(x)d\right\|_{\mathcal{X}^*}.
       \f]
+      if the approximation is first order. More generally, difference approximation is
+      \f[
+          \frac{1}{t} \sum\limits_{i=1}^m w_i \nabla f(x+t c_i d)     
+      \f]
+      where m = order+1, \f$w_i\f$ are the difference weights and \f$c_i\f$ are the difference steps
       @param[in]      x             is an optimization variable.
       @param[in]      d             is a direction vector.
       @param[in]      printToStream is a flag that turns on/off output.
       @param[out]     outStream     is the output stream.
       @param[in]      numSteps      is a parameter which dictates the number of finite difference steps.
+      @param[in]      order         is the order of the finite difference approximation (1,2,3,4)
   */
   virtual std::vector<std::vector<Real> > checkHessVec( const Vector<Real> &x,
                                                         const Vector<Real> &v,
                                                         const bool printToStream = true,
                                                         std::ostream & outStream = std::cout,
-                                                        const int numSteps = ROL_NUM_CHECKDERIV_STEPS ) {
+                                                        const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
+                                                        const int order = 1 ) {
 
-    return checkHessVec(x, x, v, printToStream, outStream, numSteps);
+    return checkHessVec(x, x, v, printToStream, outStream, numSteps, order);
 
   }
 
@@ -230,19 +315,88 @@ public:
       \f[
           \left\| \frac{\nabla f(x+td) - \nabla f(x)}{t} - \nabla^2 f(x)d\right\|_{\mathcal{X}^*}.
       \f]
+      if the approximation is first order. More generally, difference approximation is
+      \f[
+          \frac{1}{t} \sum\limits_{i=1}^m w_i \nabla f(x+t c_i d)     
+      \f]
+      where m = order+1, \f$w_i\f$ are the difference weights and \f$c_i\f$ are the difference steps
       @param[in]      x             is an optimization variable.
       @param[in]      hv            is used to create temporary gradient and Hessian-times-vector vectors.
       @param[in]      d             is a direction vector.
       @param[in]      printToStream is a flag that turns on/off output.
       @param[out]     outStream     is the output stream.
       @param[in]      numSteps      is a parameter which dictates the number of finite difference steps.
+      @param[in]      order         is the order of the finite difference approximation (1,2,3,4)
   */
   virtual std::vector<std::vector<Real> > checkHessVec( const Vector<Real> &x,
                                                         const Vector<Real> &hv,
                                                         const Vector<Real> &v,
                                                         const bool printToStream = true,
                                                         std::ostream & outStream = std::cout,
-                                                        const int numSteps = ROL_NUM_CHECKDERIV_STEPS ) ;
+                                                        const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
+                                                        const int order = 1) ;
+
+
+  /** \brief Finite-difference Hessian-applied-to-vector check with specified step sizes.
+
+      This function computes a sequence of one-sided finite-difference checks for the Hessian.  
+      At each step of the sequence, the finite difference step size is decreased.  The output 
+      compares the error 
+      \f[
+          \left\| \frac{\nabla f(x+td) - \nabla f(x)}{t} - \nabla^2 f(x)d\right\|_{\mathcal{X}^*}.
+      \f]
+      if the approximation is first order. More generally, difference approximation is
+      \f[
+          \frac{1}{t} \sum\limits_{i=1}^m w_i \nabla f(x+t c_i d)     
+      \f]
+      where m = order+1, \f$w_i\f$ are the difference weights and \f$c_i\f$ are the difference steps
+      @param[in]      x             is an optimization variable.
+      @param[in]      d             is a direction vector.
+      @param[in]      steps         is vector of steps of user-specified size.
+      @param[in]      printToStream is a flag that turns on/off output.
+      @param[out]     outStream     is the output stream.
+      @param[in]      order         is the order of the finite difference approximation (1,2,3,4)
+  */
+  virtual std::vector<std::vector<Real> > checkHessVec( const Vector<Real> &x,
+                                                        const Vector<Real> &v,
+                                                        const std::vector<Real> &steps,
+                                                        const bool printToStream = true,
+                                                        std::ostream & outStream = std::cout,
+                                                        const int order = 1 ) {
+
+    return checkHessVec(x, x, v, steps, printToStream, outStream, order);
+
+  }
+
+  /** \brief Finite-difference Hessian-applied-to-vector check with specified step sizes.
+
+      This function computes a sequence of one-sided finite-difference checks for the Hessian.  
+      At each step of the sequence, the finite difference step size is decreased.  The output 
+      compares the error 
+      \f[
+          \left\| \frac{\nabla f(x+td) - \nabla f(x)}{t} - \nabla^2 f(x)d\right\|_{\mathcal{X}^*}.
+      \f]
+      if the approximation is first order. More generally, difference approximation is
+      \f[
+          \frac{1}{t} \sum\limits_{i=1}^m w_i \nabla f(x+t c_i d)     
+      \f]
+      where m = order+1, \f$w_i\f$ are the difference weights and \f$c_i\f$ are the difference steps
+      @param[in]      x             is an optimization variable.
+      @param[in]      hv            is used to create temporary gradient and Hessian-times-vector vectors.
+      @param[in]      d             is a direction vector.
+      @param[in]      steps         is vector of steps of user-specified size.
+      @param[in]      printToStream is a flag that turns on/off output.
+      @param[out]     outStream     is the output stream.
+      @param[in]      order         is the order of the finite difference approximation (1,2,3,4)
+  */
+  virtual std::vector<std::vector<Real> > checkHessVec( const Vector<Real> &x,
+                                                        const Vector<Real> &hv,
+                                                        const Vector<Real> &v,
+                                                        const std::vector<Real> &steps,
+                                                        const bool printToStream = true,
+                                                        std::ostream & outStream = std::cout,
+                                                        const int order = 1) ;
+
 
   /** \brief Hessian symmetry check.
 

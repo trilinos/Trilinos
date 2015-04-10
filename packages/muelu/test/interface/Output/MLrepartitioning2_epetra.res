@@ -10,56 +10,83 @@ Level 0
  relaxation: damping factor = 1   [unused]
 
 Level 1
- Prolongator smoothing (MueLu::SaPFactory)
-  Build (MueLu::TentativePFactory)
-   Build (MueLu::UncoupledAggregationFactory)
-    Build (MueLu::CoalesceDropFactory)
-     Build (MueLu::AmalgamationFactory)
+ Build (MueLu::RebalanceTransferFactory)
+  Build (MueLu::RepartitionFactory)
+   Computing Ac (MueLu::RAPFactory)
+    Prolongator smoothing (MueLu::SaPFactory)
+     Build (MueLu::TentativePFactory)
+      Build (MueLu::UncoupledAggregationFactory)
+       Build (MueLu::CoalesceDropFactory)
+        Build (MueLu::AmalgamationFactory)
+        [empty list]
+
+       aggregation: drop tol = 0   [default]
+       aggregation: Dirichlet threshold = 0   [default]
+       aggregation: drop scheme = classical   [default]
+       lightweight wrap = 0   [default]
+
+      aggregation: mode = old   [default]
+      aggregation: max agg size = -1   [default]
+      aggregation: min agg size = 1   [unused]
+      aggregation: max selected neighbors = 0   [unused]
+      aggregation: ordering = natural   [unused]
+      aggregation: enable phase 1 = 1   [default]
+      aggregation: enable phase 2a = 1   [default]
+      aggregation: enable phase 2b = 1   [default]
+      aggregation: enable phase 3 = 1   [default]
+      aggregation: preserve Dirichlet points = 0   [default]
+      UseOnePtAggregationAlgorithm = 0   [default]
+      UsePreserveDirichletAggregationAlgorithm = 0   [unused]
+      UseUncoupledAggregationAlgorithm = 1   [default]
+      UseMaxLinkAggregationAlgorithm = 1   [default]
+      UseIsolatedNodeAggregationAlgorithm = 1   [default]
+      UseEmergencyAggregationAlgorithm = 1   [default]
+      OnePt aggregate map name =    [default]
+
+      Build (MueLu::CoarseMapFactory)
+      Striding info = {}   [default]
+      Strided block id = -1   [default]
+      Domain GID offsets = {0}   [default]
+
      [empty list]
 
-    aggregation: drop tol = 0   [default]
-    aggregation: Dirichlet threshold = 0   [default]
-    aggregation: drop scheme = classical   [default]
-    lightweight wrap = 0   [default]
+    sa: damping factor = 1.33333
+    sa: calculate eigenvalue estimate = 0   [default]
+    sa: eigenvalue estimate num iterations = 10   [default]
 
-   aggregation: mode = old   [default]
-   aggregation: max agg size = -1   [default]
-   aggregation: min agg size = 1   [unused]
-   aggregation: max selected neighbors = 0   [unused]
-   aggregation: ordering = natural   [unused]
-   aggregation: enable phase 1 = 1   [default]
-   aggregation: enable phase 2a = 1   [default]
-   aggregation: enable phase 2b = 1   [default]
-   aggregation: enable phase 3 = 1   [default]
-   aggregation: preserve Dirichlet points = 0   [default]
-   UseOnePtAggregationAlgorithm = 0   [default]
-   UsePreserveDirichletAggregationAlgorithm = 0   [unused]
-   UseUncoupledAggregationAlgorithm = 1   [default]
-   UseMaxLinkAggregationAlgorithm = 1   [default]
-   UseIsolatedNodeAggregationAlgorithm = 1   [default]
-   UseEmergencyAggregationAlgorithm = 1   [default]
-   OnePt aggregate map name =    [default]
+    Transpose P (MueLu::TransPFactory)
+    [empty list]
 
-   Build (MueLu::CoarseMapFactory)
-   Striding info = {}   [default]
-   Strided block id = -1   [default]
-   Domain GID offsets = {0}   [default]
+   transpose: use implicit = 0   [default]
+   Keep AP Pattern = 0   [default]
+   Keep RAP Pattern = 0   [default]
+   CheckMainDiagonal = 0   [default]
+   RepairMainDiagonal = 0
 
-  [empty list]
+  repartition: start level = 2   [default]
+  repartition: min rows per proc = 1000
+  repartition: max imbalance = 1.2
+  repartition: print partition distribution = 0   [default]
+  repartition: remap parts = 1   [default]
+  repartition: remap num values = 4   [default]
 
- sa: damping factor = 1.33333
- sa: calculate eigenvalue estimate = 0   [default]
- sa: eigenvalue estimate num iterations = 10   [default]
-
- Transpose P (MueLu::TransPFactory)
- [empty list]
-
- Computing Ac (MueLu::RAPFactory)
+ repartition: rebalance P and R = 0   [default]
  transpose: use implicit = 0   [default]
- Keep AP Pattern = 0   [default]
- Keep RAP Pattern = 0   [default]
- CheckMainDiagonal = 0   [default]
- RepairMainDiagonal = 0
+ repartition: use subcommunicators = 1   [default]
+ type = Interpolation
+ write start = -1   [default]
+ write end = -1   [default]
+
+ Build (MueLu::RebalanceTransferFactory)
+ repartition: rebalance P and R = 0   [default]
+ transpose: use implicit = 0   [default]
+ repartition: use subcommunicators = 1   [default]
+ type = Restriction
+ write start = -1   [default]
+ write end = -1   [default]
+
+ Computing Ac (MueLu::RebalanceAcFactory)
+ repartition: use subcommunicators = 1   [default]
 
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
  relaxation: type = symmetric Gauss-Seidel   [unused]
@@ -67,59 +94,83 @@ Level 1
  relaxation: damping factor = 1   [unused]
 
 Level 2
- Prolongator smoothing (MueLu::SaPFactory)
-  Build (MueLu::TentativePFactory)
-   Build (MueLu::UncoupledAggregationFactory)
-    Build (MueLu::CoalesceDropFactory)
-     Build (MueLu::AmalgamationFactory)
+ Build (MueLu::RebalanceTransferFactory)
+  Build (MueLu::RepartitionFactory)
+   Computing Ac (MueLu::RAPFactory)
+    Prolongator smoothing (MueLu::SaPFactory)
+     Build (MueLu::TentativePFactory)
+      Build (MueLu::UncoupledAggregationFactory)
+       Build (MueLu::CoalesceDropFactory)
+        Build (MueLu::AmalgamationFactory)
+        [empty list]
+
+       aggregation: drop tol = 0   [default]
+       aggregation: Dirichlet threshold = 0   [default]
+       aggregation: drop scheme = classical   [default]
+       lightweight wrap = 0   [default]
+
+      aggregation: mode = old   [default]
+      aggregation: max agg size = -1   [default]
+      aggregation: min agg size = 1   [unused]
+      aggregation: max selected neighbors = 0   [unused]
+      aggregation: ordering = natural   [unused]
+      aggregation: enable phase 1 = 1   [default]
+      aggregation: enable phase 2a = 1   [default]
+      aggregation: enable phase 2b = 1   [default]
+      aggregation: enable phase 3 = 1   [default]
+      aggregation: preserve Dirichlet points = 0   [default]
+      UseOnePtAggregationAlgorithm = 0   [default]
+      UsePreserveDirichletAggregationAlgorithm = 0   [unused]
+      UseUncoupledAggregationAlgorithm = 1   [default]
+      UseMaxLinkAggregationAlgorithm = 1   [default]
+      UseIsolatedNodeAggregationAlgorithm = 1   [default]
+      UseEmergencyAggregationAlgorithm = 1   [default]
+      OnePt aggregate map name =    [default]
+
+      Build (MueLu::CoarseMapFactory)
+      Striding info = {}   [default]
+      Strided block id = -1   [default]
+      Domain GID offsets = {0}   [default]
+
      [empty list]
 
-    aggregation: drop tol = 0   [default]
-    aggregation: Dirichlet threshold = 0   [default]
-    aggregation: drop scheme = classical   [default]
-    lightweight wrap = 0   [default]
+    sa: damping factor = 1.33333
+    sa: calculate eigenvalue estimate = 0   [default]
+    sa: eigenvalue estimate num iterations = 10   [default]
 
-   aggregation: mode = old   [default]
-   aggregation: max agg size = -1   [default]
-   aggregation: min agg size = 1   [unused]
-   aggregation: max selected neighbors = 0   [unused]
-   aggregation: ordering = natural   [unused]
-   aggregation: enable phase 1 = 1   [default]
-   aggregation: enable phase 2a = 1   [default]
-   aggregation: enable phase 2b = 1   [default]
-   aggregation: enable phase 3 = 1   [default]
-   aggregation: preserve Dirichlet points = 0   [default]
-   UseOnePtAggregationAlgorithm = 0   [default]
-   UsePreserveDirichletAggregationAlgorithm = 0   [unused]
-   UseUncoupledAggregationAlgorithm = 1   [default]
-   UseMaxLinkAggregationAlgorithm = 1   [default]
-   UseIsolatedNodeAggregationAlgorithm = 1   [default]
-   UseEmergencyAggregationAlgorithm = 1   [default]
-   OnePt aggregate map name =    [default]
+    Transpose P (MueLu::TransPFactory)
+    [empty list]
 
-   Nullspace factory (MueLu::NullspaceFactory)
-   Fine level nullspace = Nullspace
+   transpose: use implicit = 0   [default]
+   Keep AP Pattern = 0   [default]
+   Keep RAP Pattern = 0   [default]
+   CheckMainDiagonal = 0   [default]
+   RepairMainDiagonal = 0
 
-   Build (MueLu::CoarseMapFactory)
-   Striding info = {}   [default]
-   Strided block id = -1   [default]
-   Domain GID offsets = {0}   [default]
+  repartition: start level = 2   [default]
+  repartition: min rows per proc = 1000
+  repartition: max imbalance = 1.2
+  repartition: print partition distribution = 0   [default]
+  repartition: remap parts = 1   [default]
+  repartition: remap num values = 4   [default]
 
-  [empty list]
-
- sa: damping factor = 1.33333
- sa: calculate eigenvalue estimate = 0   [default]
- sa: eigenvalue estimate num iterations = 10   [default]
-
- Transpose P (MueLu::TransPFactory)
- [empty list]
-
- Computing Ac (MueLu::RAPFactory)
+ repartition: rebalance P and R = 0   [default]
  transpose: use implicit = 0   [default]
- Keep AP Pattern = 0   [default]
- Keep RAP Pattern = 0   [default]
- CheckMainDiagonal = 0   [default]
- RepairMainDiagonal = 0
+ repartition: use subcommunicators = 1   [default]
+ type = Interpolation
+ write start = -1   [default]
+ write end = -1   [default]
+
+ Build (MueLu::RebalanceTransferFactory)
+ repartition: rebalance P and R = 0   [default]
+ transpose: use implicit = 0   [default]
+ repartition: use subcommunicators = 1   [default]
+ type = Restriction
+ write start = -1   [default]
+ write end = -1   [default]
+
+ Computing Ac (MueLu::RebalanceAcFactory)
+ repartition: use subcommunicators = 1   [default]
 
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
  relaxation: type = symmetric Gauss-Seidel   [unused]
@@ -127,59 +178,83 @@ Level 2
  relaxation: damping factor = 1   [unused]
 
 Level 3
- Prolongator smoothing (MueLu::SaPFactory)
-  Build (MueLu::TentativePFactory)
-   Build (MueLu::UncoupledAggregationFactory)
-    Build (MueLu::CoalesceDropFactory)
-     Build (MueLu::AmalgamationFactory)
+ Build (MueLu::RebalanceTransferFactory)
+  Build (MueLu::RepartitionFactory)
+   Computing Ac (MueLu::RAPFactory)
+    Prolongator smoothing (MueLu::SaPFactory)
+     Build (MueLu::TentativePFactory)
+      Build (MueLu::UncoupledAggregationFactory)
+       Build (MueLu::CoalesceDropFactory)
+        Build (MueLu::AmalgamationFactory)
+        [empty list]
+
+       aggregation: drop tol = 0   [default]
+       aggregation: Dirichlet threshold = 0   [default]
+       aggregation: drop scheme = classical   [default]
+       lightweight wrap = 0   [default]
+
+      aggregation: mode = old   [default]
+      aggregation: max agg size = -1   [default]
+      aggregation: min agg size = 1   [unused]
+      aggregation: max selected neighbors = 0   [unused]
+      aggregation: ordering = natural   [unused]
+      aggregation: enable phase 1 = 1   [default]
+      aggregation: enable phase 2a = 1   [default]
+      aggregation: enable phase 2b = 1   [default]
+      aggregation: enable phase 3 = 1   [default]
+      aggregation: preserve Dirichlet points = 0   [default]
+      UseOnePtAggregationAlgorithm = 0   [default]
+      UsePreserveDirichletAggregationAlgorithm = 0   [unused]
+      UseUncoupledAggregationAlgorithm = 1   [default]
+      UseMaxLinkAggregationAlgorithm = 1   [default]
+      UseIsolatedNodeAggregationAlgorithm = 1   [default]
+      UseEmergencyAggregationAlgorithm = 1   [default]
+      OnePt aggregate map name =    [default]
+
+      Build (MueLu::CoarseMapFactory)
+      Striding info = {}   [default]
+      Strided block id = -1   [default]
+      Domain GID offsets = {0}   [default]
+
      [empty list]
 
-    aggregation: drop tol = 0   [default]
-    aggregation: Dirichlet threshold = 0   [default]
-    aggregation: drop scheme = classical   [default]
-    lightweight wrap = 0   [default]
+    sa: damping factor = 1.33333
+    sa: calculate eigenvalue estimate = 0   [default]
+    sa: eigenvalue estimate num iterations = 10   [default]
 
-   aggregation: mode = old   [default]
-   aggregation: max agg size = -1   [default]
-   aggregation: min agg size = 1   [unused]
-   aggregation: max selected neighbors = 0   [unused]
-   aggregation: ordering = natural   [unused]
-   aggregation: enable phase 1 = 1   [default]
-   aggregation: enable phase 2a = 1   [default]
-   aggregation: enable phase 2b = 1   [default]
-   aggregation: enable phase 3 = 1   [default]
-   aggregation: preserve Dirichlet points = 0   [default]
-   UseOnePtAggregationAlgorithm = 0   [default]
-   UsePreserveDirichletAggregationAlgorithm = 0   [unused]
-   UseUncoupledAggregationAlgorithm = 1   [default]
-   UseMaxLinkAggregationAlgorithm = 1   [default]
-   UseIsolatedNodeAggregationAlgorithm = 1   [default]
-   UseEmergencyAggregationAlgorithm = 1   [default]
-   OnePt aggregate map name =    [default]
+    Transpose P (MueLu::TransPFactory)
+    [empty list]
 
-   Nullspace factory (MueLu::NullspaceFactory)
-   Fine level nullspace = Nullspace
+   transpose: use implicit = 0   [default]
+   Keep AP Pattern = 0   [default]
+   Keep RAP Pattern = 0   [default]
+   CheckMainDiagonal = 0   [default]
+   RepairMainDiagonal = 0
 
-   Build (MueLu::CoarseMapFactory)
-   Striding info = {}   [default]
-   Strided block id = -1   [default]
-   Domain GID offsets = {0}   [default]
+  repartition: start level = 2   [default]
+  repartition: min rows per proc = 1000
+  repartition: max imbalance = 1.2
+  repartition: print partition distribution = 0   [default]
+  repartition: remap parts = 1   [default]
+  repartition: remap num values = 4   [default]
 
-  [empty list]
-
- sa: damping factor = 1.33333
- sa: calculate eigenvalue estimate = 0   [default]
- sa: eigenvalue estimate num iterations = 10   [default]
-
- Transpose P (MueLu::TransPFactory)
- [empty list]
-
- Computing Ac (MueLu::RAPFactory)
+ repartition: rebalance P and R = 0   [default]
  transpose: use implicit = 0   [default]
- Keep AP Pattern = 0   [default]
- Keep RAP Pattern = 0   [default]
- CheckMainDiagonal = 0   [default]
- RepairMainDiagonal = 0
+ repartition: use subcommunicators = 1   [default]
+ type = Interpolation
+ write start = -1   [default]
+ write end = -1   [default]
+
+ Build (MueLu::RebalanceTransferFactory)
+ repartition: rebalance P and R = 0   [default]
+ transpose: use implicit = 0   [default]
+ repartition: use subcommunicators = 1   [default]
+ type = Restriction
+ write start = -1   [default]
+ write end = -1   [default]
+
+ Computing Ac (MueLu::RebalanceAcFactory)
+ repartition: use subcommunicators = 1   [default]
 
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
  relaxation: type = symmetric Gauss-Seidel   [unused]
@@ -187,59 +262,83 @@ Level 3
  relaxation: damping factor = 1   [unused]
 
 Level 4
- Prolongator smoothing (MueLu::SaPFactory)
-  Build (MueLu::TentativePFactory)
-   Build (MueLu::UncoupledAggregationFactory)
-    Build (MueLu::CoalesceDropFactory)
-     Build (MueLu::AmalgamationFactory)
+ Build (MueLu::RebalanceTransferFactory)
+  Build (MueLu::RepartitionFactory)
+   Computing Ac (MueLu::RAPFactory)
+    Prolongator smoothing (MueLu::SaPFactory)
+     Build (MueLu::TentativePFactory)
+      Build (MueLu::UncoupledAggregationFactory)
+       Build (MueLu::CoalesceDropFactory)
+        Build (MueLu::AmalgamationFactory)
+        [empty list]
+
+       aggregation: drop tol = 0   [default]
+       aggregation: Dirichlet threshold = 0   [default]
+       aggregation: drop scheme = classical   [default]
+       lightweight wrap = 0   [default]
+
+      aggregation: mode = old   [default]
+      aggregation: max agg size = -1   [default]
+      aggregation: min agg size = 1   [unused]
+      aggregation: max selected neighbors = 0   [unused]
+      aggregation: ordering = natural   [unused]
+      aggregation: enable phase 1 = 1   [default]
+      aggregation: enable phase 2a = 1   [default]
+      aggregation: enable phase 2b = 1   [default]
+      aggregation: enable phase 3 = 1   [default]
+      aggregation: preserve Dirichlet points = 0   [default]
+      UseOnePtAggregationAlgorithm = 0   [default]
+      UsePreserveDirichletAggregationAlgorithm = 0   [unused]
+      UseUncoupledAggregationAlgorithm = 1   [default]
+      UseMaxLinkAggregationAlgorithm = 1   [default]
+      UseIsolatedNodeAggregationAlgorithm = 1   [default]
+      UseEmergencyAggregationAlgorithm = 1   [default]
+      OnePt aggregate map name =    [default]
+
+      Build (MueLu::CoarseMapFactory)
+      Striding info = {}   [default]
+      Strided block id = -1   [default]
+      Domain GID offsets = {0}   [default]
+
      [empty list]
 
-    aggregation: drop tol = 0   [default]
-    aggregation: Dirichlet threshold = 0   [default]
-    aggregation: drop scheme = classical   [default]
-    lightweight wrap = 0   [default]
+    sa: damping factor = 1.33333
+    sa: calculate eigenvalue estimate = 0   [default]
+    sa: eigenvalue estimate num iterations = 10   [default]
 
-   aggregation: mode = old   [default]
-   aggregation: max agg size = -1   [default]
-   aggregation: min agg size = 1   [unused]
-   aggregation: max selected neighbors = 0   [unused]
-   aggregation: ordering = natural   [unused]
-   aggregation: enable phase 1 = 1   [default]
-   aggregation: enable phase 2a = 1   [default]
-   aggregation: enable phase 2b = 1   [default]
-   aggregation: enable phase 3 = 1   [default]
-   aggregation: preserve Dirichlet points = 0   [default]
-   UseOnePtAggregationAlgorithm = 0   [default]
-   UsePreserveDirichletAggregationAlgorithm = 0   [unused]
-   UseUncoupledAggregationAlgorithm = 1   [default]
-   UseMaxLinkAggregationAlgorithm = 1   [default]
-   UseIsolatedNodeAggregationAlgorithm = 1   [default]
-   UseEmergencyAggregationAlgorithm = 1   [default]
-   OnePt aggregate map name =    [default]
+    Transpose P (MueLu::TransPFactory)
+    [empty list]
 
-   Nullspace factory (MueLu::NullspaceFactory)
-   Fine level nullspace = Nullspace
+   transpose: use implicit = 0   [default]
+   Keep AP Pattern = 0   [default]
+   Keep RAP Pattern = 0   [default]
+   CheckMainDiagonal = 0   [default]
+   RepairMainDiagonal = 0
 
-   Build (MueLu::CoarseMapFactory)
-   Striding info = {}   [default]
-   Strided block id = -1   [default]
-   Domain GID offsets = {0}   [default]
+  repartition: start level = 2   [default]
+  repartition: min rows per proc = 1000
+  repartition: max imbalance = 1.2
+  repartition: print partition distribution = 0   [default]
+  repartition: remap parts = 1   [default]
+  repartition: remap num values = 4   [default]
 
-  [empty list]
-
- sa: damping factor = 1.33333
- sa: calculate eigenvalue estimate = 0   [default]
- sa: eigenvalue estimate num iterations = 10   [default]
-
- Transpose P (MueLu::TransPFactory)
- [empty list]
-
- Computing Ac (MueLu::RAPFactory)
+ repartition: rebalance P and R = 0   [default]
  transpose: use implicit = 0   [default]
- Keep AP Pattern = 0   [default]
- Keep RAP Pattern = 0   [default]
- CheckMainDiagonal = 0   [default]
- RepairMainDiagonal = 0
+ repartition: use subcommunicators = 1   [default]
+ type = Interpolation
+ write start = -1   [default]
+ write end = -1   [default]
+
+ Build (MueLu::RebalanceTransferFactory)
+ repartition: rebalance P and R = 0   [default]
+ transpose: use implicit = 0   [default]
+ repartition: use subcommunicators = 1   [default]
+ type = Restriction
+ write start = -1   [default]
+ write end = -1   [default]
+
+ Computing Ac (MueLu::RebalanceAcFactory)
+ repartition: use subcommunicators = 1   [default]
 
  Setup Smoother (MueLu::AmesosSmoother{type = Klu})
  [empty list]

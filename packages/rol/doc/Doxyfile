@@ -492,6 +492,7 @@ INPUT                  = \
 ../src/algorithm \
 ../src/status \
 ../src/step \
+../src/sol \
 ../src/zoo \
 ../test/function \
 ../test/step \

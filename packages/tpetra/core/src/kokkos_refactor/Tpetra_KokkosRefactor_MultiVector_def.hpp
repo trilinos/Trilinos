@@ -1929,79 +1929,88 @@ namespace Tpetra {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    typedef Kokkos::Details::ArithTraits<impl_scalar_type> ATS;
-    typedef typename dual_view_type::t_dev::device_type DMS;
-    typedef typename dual_view_type::t_host::device_type HMS;
 
     const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
-    const size_t lclNumRows = getLocalLength ();
-    const size_t numVecs = getNumVectors ();
+    if (theAlpha == Kokkos::Details::ArithTraits<impl_scalar_type>::one ()) {
+      return; // do nothing
+    }
+    const size_t lclNumRows = this->getLocalLength ();
+    const size_t numVecs = this->getNumVectors ();
     const std::pair<size_t, size_t> rowRng (0, lclNumRows);
     const std::pair<size_t, size_t> colRng (0, numVecs);
 
-    // NOTE: can't substitute putScalar(0.0) for scale(0.0), because
-    //       the former will overwrite NaNs present in the
-    //       MultiVector, while the semantics of this call require
-    //       multiplying them by 0, which IEEE requires to be NaN
+    typedef typename dual_view_type::t_dev dev_view_type;
+    typedef typename dual_view_type::t_host host_view_type;
+    // NOTE (mfh 08 Apr 2015) We prefer to let the compiler deduce the
+    // type of the return value of subview.  This is because if we
+    // switch the array layout from LayoutLeft to LayoutRight
+    // (preferred for performance of block operations), the types
+    // below won't be valid.  (A view of a column of a LayoutRight
+    // multivector has LayoutStride, not LayoutLeft.)
+#ifndef KOKKOS_HAVE_CXX11
+    typedef Kokkos::View<impl_scalar_type*,
+      typename dev_view_type::array_layout,
+      typename dev_view_type::device_type,
+      typename dev_view_type::memory_traits,
+      typename dev_view_type::specialize> col_dev_view_type;
+    typedef Kokkos::View<impl_scalar_type*,
+      typename host_view_type::array_layout,
+      typename host_view_type::device_type,
+      typename host_view_type::memory_traits,
+      typename host_view_type::specialize> col_host_view_type;
+#endif // NOT KOKKOS_HAVE_CXX11
 
-    if (theAlpha == ATS::one ()) {
-      return; // do nothing
-    }
+    // We can't substitute putScalar(0.0) for scale(0.0), because the
+    // former will overwrite NaNs present in the MultiVector.  The
+    // semantics of this call require multiplying them by 0, which
+    // IEEE 754 requires to be NaN.
 
-    // Modify the most recently updated version of the data.  This
-    // avoids sync'ing, which could violate users' expectations.
-    if (view_.modified_device >= view_.modified_host) {
-      //
-      // Last modified in device memory, so modify data there.
-      //
-      // Type of the device memory View of the MultiVector's data.
-      typedef typename dual_view_type::t_dev mv_view_type;
-      // Type of a View of a single column of the MultiVector's data.
-      typedef Kokkos::View<impl_scalar_type*,
-        typename mv_view_type::array_layout, DMS> vec_view_type;
+    // FIXME (mfh 05 Mar 2015) DualView flags are not indicative when
+    // the two memory spaces are the same, so we check the latter.
+    const bool oneMemorySpace =
+      Kokkos::Impl::is_same<typename dev_view_type::memory_space,
+                            typename host_view_type::memory_space>::value;
+    if (! oneMemorySpace && view_.modified_host >= view_.modified_device) {
+#ifdef KOKKOS_HAVE_CXX11
+      auto Y_lcl = subview (this->view_.h_view, rowRng, colRng);
+#else
+      host_view_type Y_lcl = subview (this->view_.h_view, rowRng, colRng);
+#endif // KOKKOS_HAVE_CXX11
 
-      this->template modify<DMS> (); // we are about to modify on the device
-      mv_view_type X =
-        subview (this->getDualView ().template view<DMS> (),
-                               rowRng, colRng);
-      if (numVecs == 1) {
-        vec_view_type X_0 =
-          subview (X, ALL (), static_cast<size_t> (0));
-        Kokkos::V_MulScalar (X_0, theAlpha, X_0);
-      }
-      else if (isConstantStride ()) {
-        Kokkos::MV_MulScalar (X, theAlpha, X);
+      if (isConstantStride ()) {
+        KokkosBlas::scal (Y_lcl, theAlpha, Y_lcl);
       }
       else {
         for (size_t k = 0; k < numVecs; ++k) {
-          const size_t col = whichVectors_[k];
-          vec_view_type X_col = subview (X, ALL (), col);
-          Kokkos::V_MulScalar (X_col, theAlpha, X_col);
+          const size_t Y_col = this->isConstantStride () ? k : this->whichVectors_[k];
+#ifdef KOKKOS_HAVE_CXX11
+          auto Y_k = subview (Y_lcl, ALL (), Y_col);
+#else
+          col_host_view_type Y_k = subview (Y_lcl, ALL (), Y_col);
+#endif // KOKKOS_HAVE_CXX11
+          KokkosBlas::scal (Y_k, theAlpha, Y_k);
         }
       }
     }
-    else { // last modified in host memory, so modify data there.
-      typedef typename dual_view_type::t_host mv_view_type;
-      typedef Kokkos::View<impl_scalar_type*,
-        typename mv_view_type::array_layout, HMS> vec_view_type;
+    else { // work on device
+#ifdef KOKKOS_HAVE_CXX11
+      auto Y_lcl = subview (this->view_.d_view, rowRng, colRng);
+#else
+      dev_view_type Y_lcl = subview (this->view_.d_view, rowRng, colRng);
+#endif // KOKKOS_HAVE_CXX11
 
-      this->template modify<HMS> (); // we are about to modify on the host
-      mv_view_type X =
-        subview (this->getDualView ().template view<HMS> (),
-                               rowRng, colRng);
-      if (numVecs == 1) {
-        vec_view_type X_0 =
-          subview (X, ALL (), static_cast<size_t> (0));
-        Kokkos::V_MulScalar (X_0, theAlpha, X_0);
-      }
-      else if (isConstantStride ()) {
-        Kokkos::MV_MulScalar (X, theAlpha, X);
+      if (isConstantStride ()) {
+        KokkosBlas::scal (Y_lcl, theAlpha, Y_lcl);
       }
       else {
         for (size_t k = 0; k < numVecs; ++k) {
-          const size_t col = whichVectors_[k];
-          vec_view_type X_col = subview (X, ALL (), col);
-          Kokkos::V_MulScalar (X_col, theAlpha, X_col);
+          const size_t Y_col = this->isConstantStride () ? k : this->whichVectors_[k];
+#ifdef KOKKOS_HAVE_CXX11
+          auto Y_k = subview (Y_lcl, ALL (), Y_col);
+#else
+          col_dev_view_type Y_k = subview (Y_lcl, ALL (), Y_col);
+#endif // KOKKOS_HAVE_CXX11
+          KokkosBlas::scal (Y_k, theAlpha, Y_k);
         }
       }
     }
@@ -2011,49 +2020,25 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  scale (Teuchos::ArrayView<const Scalar> alphas)
+  scale (const Teuchos::ArrayView<const Scalar>& alphas)
   {
-    using Kokkos::ALL;
-    using Kokkos::subview;
-    using Teuchos::arcp_const_cast;
-    using Teuchos::ArrayRCP;
-
     const size_t numVecs = this->getNumVectors ();
     const size_t numAlphas = static_cast<size_t> (alphas.size ());
     TEUCHOS_TEST_FOR_EXCEPTION(
-      numAlphas != numVecs, std::invalid_argument, "Tpetra::MultiVector::scale("
-      "alphas): alphas.size() = " << numAlphas << " != this->getNumVectors() = "
+      numAlphas != numVecs, std::invalid_argument, "Tpetra::MultiVector::"
+      "scale: alphas.size() = " << numAlphas << " != this->getNumVectors() = "
       << numVecs << ".");
 
-    const size_t myLen = view_.dimension_0 ();
-    if (myLen == 0) {
-      return;
+    // Use a DualView to copy the scaling constants onto the device.
+    typedef Kokkos::DualView<impl_scalar_type*, execution_space> k_alphas_type ;
+    k_alphas_type k_alphas ("alphas::tmp", numAlphas);
+    k_alphas.template modify<typename k_alphas_type::host_mirror_space> ();
+    for (size_t i = 0; i < numAlphas; ++i) {
+      k_alphas.h_view(i) = static_cast<impl_scalar_type> (alphas[i]);
     }
-
-    if (isConstantStride ()) {
-      // Use a DualView to copy the scaling constants onto the device.
-      typedef Kokkos::DualView<impl_scalar_type*, execution_space> k_alphas_type ;
-      k_alphas_type k_alphas ("alphas::tmp", numAlphas);
-      k_alphas.template modify<typename k_alphas_type::host_mirror_space> ();
-      for (size_t i=0; i < numAlphas; ++i) {
-        k_alphas.h_view(i) = static_cast<impl_scalar_type> (alphas[i]);
-      }
-      k_alphas.template sync<execution_space> ();
-
-      // Modify the MultiVector on the device.
-      view_.template sync<DeviceType> ();
-      view_.template modify<DeviceType> ();
-      Kokkos::MV_MulScalar (view_.d_view, k_alphas.d_view, view_.d_view);
-    }
-    else {
-      typedef Kokkos::View<impl_scalar_type*, DeviceType> view_type;
-      for (size_t k = 0; k < numVecs; ++k) {
-        const size_t col = isConstantStride () ? k : whichVectors_[k];
-        const impl_scalar_type alpha_k = static_cast<impl_scalar_type> (alphas[k]);
-        view_type vector_k = subview (view_.d_view, ALL (), col);
-        Kokkos::V_MulScalar (vector_k, alpha_k, vector_k);
-      }
-    }
+    k_alphas.template sync<typename k_alphas_type::memory_space> ();
+    // Invoke the scale() overload that takes a device View of coefficients.
+    this->scale (k_alphas.d_view);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -2061,35 +2046,103 @@ namespace Tpetra {
   MultiVector<
     Scalar, LocalOrdinal, GlobalOrdinal,
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  scale (const Kokkos::View<const impl_scalar_type*, execution_space> alphas)
+  scale (const Kokkos::View<const impl_scalar_type*, execution_space>& alphas)
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    typedef Kokkos::View<impl_scalar_type*, execution_space> view_type;
-    typedef typename view_type::HostMirror host_view_type;
 
+    const size_t lclNumRows = this->getLocalLength ();
     const size_t numVecs = this->getNumVectors ();
     TEUCHOS_TEST_FOR_EXCEPTION(
       static_cast<size_t> (alphas.dimension_0 ()) != numVecs,
       std::invalid_argument, "Tpetra::MultiVector::scale(alphas): "
       "alphas.dimension_0() = " << alphas.dimension_0 ()
       << " != this->getNumVectors () = " << numVecs << ".");
-    if (this->getLocalLength () == 0) {
-      return;
-    }
+    const std::pair<size_t, size_t> rowRng (0, lclNumRows);
+    const std::pair<size_t, size_t> colRng (0, numVecs);
 
-    if (this->isConstantStride ()) {
-      view_.template sync<execution_space> ();
-      view_.template modify<execution_space> ();
-      Kokkos::MV_MulScalar (view_.d_view, alphas, view_.d_view);
+    typedef typename dual_view_type::t_dev dev_view_type;
+    typedef typename dual_view_type::t_host host_view_type;
+    // NOTE (mfh 08 Apr 2015) We prefer to let the compiler deduce the
+    // type of the return value of subview.  This is because if we
+    // switch the array layout from LayoutLeft to LayoutRight
+    // (preferred for performance of block operations), the types
+    // below won't be valid.  (A view of a column of a LayoutRight
+    // multivector has LayoutStride, not LayoutLeft.)
+#ifndef KOKKOS_HAVE_CXX11
+    typedef Kokkos::View<impl_scalar_type*,
+      typename dev_view_type::array_layout,
+      typename dev_view_type::device_type,
+      typename dev_view_type::memory_traits,
+      typename dev_view_type::specialize> col_dev_view_type;
+    typedef Kokkos::View<impl_scalar_type*,
+      typename host_view_type::array_layout,
+      typename host_view_type::device_type,
+      typename host_view_type::memory_traits,
+      typename host_view_type::specialize> col_host_view_type;
+#endif // NOT KOKKOS_HAVE_CXX11
+
+    const bool oneMemorySpace =
+      Kokkos::Impl::is_same<typename dev_view_type::memory_space,
+                            typename host_view_type::memory_space>::value;
+    if (! oneMemorySpace &&
+        this->view_.modified_host >= this->view_.modified_device) {
+      // Work in host memory.  This means we need to create a host
+      // mirror of the input View of coefficients.
+      typedef Kokkos::View<const impl_scalar_type*,
+        execution_space> input_view_type;
+      typename input_view_type::HostMirror alphas_h =
+        Kokkos::create_mirror_view (alphas);
+      Kokkos::deep_copy (alphas_h, alphas);
+
+#ifdef KOKKOS_HAVE_CXX11
+      auto Y_lcl = subview (this->view_.h_view, rowRng, colRng);
+#else
+      host_view_type Y_lcl = subview (this->view_.h_view, rowRng, colRng);
+#endif // KOKKOS_HAVE_CXX11
+
+      if (isConstantStride ()) {
+        KokkosBlas::scal (Y_lcl, alphas_h, Y_lcl);
+      }
+      else {
+        for (size_t k = 0; k < numVecs; ++k) {
+          const size_t Y_col = this->isConstantStride () ? k : this->whichVectors_[k];
+#ifdef KOKKOS_HAVE_CXX11
+          auto Y_k = subview (Y_lcl, ALL (), Y_col);
+#else
+          col_host_view_type Y_k = subview (Y_lcl, ALL (), Y_col);
+#endif // KOKKOS_HAVE_CXX11
+          // We don't have to use the entire 1-D View here; we can use
+          // the version that takes a scalar coefficient.
+          KokkosBlas::scal (Y_k, alphas_h(k), Y_k);
+        }
+      }
     }
-    else {
-      host_view_type h_alphas = Kokkos::create_mirror_view (alphas);
-      Kokkos::deep_copy (h_alphas, alphas);
-      for (size_t k = 0; k < numVecs; ++k) {
-        const size_t curCol = isConstantStride () ? k : whichVectors_[k];
-        view_type vector_k = subview (view_.d_view, ALL (), curCol);
-        Kokkos::V_MulScalar (vector_k, alphas(k), vector_k);
+    else { // Work in device memory, using the input View 'alphas' directly.
+#ifdef KOKKOS_HAVE_CXX11
+      auto Y_lcl = subview (this->view_.d_view, rowRng, colRng);
+#else
+      dev_view_type Y_lcl = subview (this->view_.d_view, rowRng, colRng);
+#endif // KOKKOS_HAVE_CXX11
+
+      if (isConstantStride ()) {
+        KokkosBlas::scal (Y_lcl, alphas, Y_lcl);
+      }
+      else {
+        for (size_t k = 0; k < numVecs; ++k) {
+          const size_t Y_col = this->isConstantStride () ? k : this->whichVectors_[k];
+#ifdef KOKKOS_HAVE_CXX11
+          auto Y_k = subview (Y_lcl, ALL (), Y_col);
+#else
+          col_dev_view_type Y_k = subview (Y_lcl, ALL (), Y_col);
+#endif // KOKKOS_HAVE_CXX11
+          //
+          // FIXME (mfh 08 Apr 2015) This assumes UVM.  It would be
+          // better to fix scal() so that it takes a 0-D View as the
+          // second argument.
+          //
+          KokkosBlas::scal (Y_k, alphas(k), Y_k);
+        }
       }
     }
   }
@@ -2102,47 +2155,7 @@ namespace Tpetra {
   scale (const Scalar& alpha,
          const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& A)
   {
-    const char tfecfFuncName[] = "scale(alpha,A): ";
-    const size_t numVecs = getNumVectors ();
-
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-       getLocalLength () != A.getLocalLength (), std::runtime_error,
-       "MultiVectors do not have the same local length.  "
-       "this->getLocalLength() = " << getLocalLength ()
-       << " != A.getLocalLength() = " << A.getLocalLength () << ".");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      A.getNumVectors () != numVecs, std::runtime_error,
-      "MultiVectors do not have the same number of columns (vectors).  "
-       "this->getNumVectors() = " << getNumVectors ()
-       << " != A.getNumVectors() = " << A.getNumVectors () << ".");
-
-    // FIXME (mfh 07 Jan 2015) We shouldn't call modify() or sync() on
-    // the input MultiVector, because it's const.  We should instead
-    // move _this_ MultiVector's data to the space where A's data have
-    // been most recently updated.
-
-    if (isConstantStride () && A.isConstantStride ()) {
-      view_.template sync<DeviceType>();
-      view_.template modify<DeviceType>();
-      Kokkos::MV_MulScalar (view_.d_view, alpha, A.view_.d_view);
-    }
-    else {
-      using Kokkos::ALL;
-      using Kokkos::subview;
-      typedef Kokkos::View<impl_scalar_type*, DeviceType> view_type;
-
-      view_.template sync<DeviceType> ();
-      view_.template modify<DeviceType> ();
-      A.view_.template sync<DeviceType> ();
-      A.view_.template modify<DeviceType> ();
-      for (size_t k = 0; k < numVecs; ++k) {
-        const size_t this_col = isConstantStride () ? k : whichVectors_[k];
-        view_type vector_k = subview (view_.d_view, ALL (), this_col);
-        const size_t A_col = isConstantStride () ? k : A.whichVectors_[k];
-        view_type vector_Ak = subview (A.view_.d_view, ALL (), A_col);
-        Kokkos::V_MulScalar (vector_k, alpha, vector_Ak);
-      }
-    }
+    this->update (alpha, A, Teuchos::ScalarTraits<Scalar>::zero ());
   }
 
 
@@ -2257,41 +2270,106 @@ namespace Tpetra {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    typedef Kokkos::View<impl_scalar_type*, DeviceType> view_type;
     const char tfecfFuncName[] = "update: ";
 
-    // FIXME (mfh 07 Jan 2015) See note on two-argument scale() above.
+    const size_t lclNumRows = getLocalLength ();
+    const size_t numVecs = getNumVectors ();
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      getLocalLength () != A.getLocalLength (), std::invalid_argument,
-      "The input MultiVector A has " << A.getLocalLength () << " local "
-      "row(s), but this MultiVector has " << getLocalLength () << " local "
-      "row(s).");
-    const size_t numVecs = getNumVectors ();
+      lclNumRows != A.getLocalLength (), std::invalid_argument,
+      "this->getLocalLength() = " << lclNumRows << " != A.getLocalLength() = "
+      << A.getLocalLength () << ".");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      A.getNumVectors () != numVecs, std::invalid_argument,
-      "The input MultiVector A has " << A.getNumVectors () << " column(s), "
-      "but this MultiVector has " << numVecs << " column(s).");
+      numVecs != A.getNumVectors (), std::invalid_argument,
+      "this->getNumVectors() = " << numVecs << " != A.getNumVectors() = "
+      << A.getNumVectors () << ".");
 
     const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
     const impl_scalar_type theBeta = static_cast<impl_scalar_type> (beta);
-    const size_t lclNumRows = getLocalLength ();
-    if (isConstantStride () && A.isConstantStride ()) {
-      Kokkos::MV_Add (view_.d_view, theAlpha, A.view_.d_view, theBeta,
-                      view_.d_view, lclNumRows);
+    const std::pair<size_t, size_t> rowRng (0, lclNumRows);
+    const std::pair<size_t, size_t> colRng (0, numVecs);
+
+    typedef typename dual_view_type::t_dev dev_view_type;
+    typedef typename dual_view_type::t_host host_view_type;
+#ifndef KOKKOS_HAVE_CXX11
+    typedef Kokkos::View<impl_scalar_type*,
+      typename dev_view_type::array_layout,
+      typename dev_view_type::device_type,
+      typename dev_view_type::memory_traits,
+      typename dev_view_type::specialize> col_dev_view_type;
+    typedef Kokkos::View<impl_scalar_type*,
+      typename host_view_type::array_layout,
+      typename host_view_type::device_type,
+      typename host_view_type::memory_traits,
+      typename host_view_type::specialize> col_host_view_type;
+#endif // NOT KOKKOS_HAVE_CXX11
+
+    // FIXME (mfh 05 Mar 2015) DualView flags are not indicative when
+    // the two memory spaces are the same, so we check the latter.
+    const bool oneMemorySpace =
+      Kokkos::Impl::is_same<typename dev_view_type::memory_space,
+                            typename host_view_type::memory_space>::value;
+    if (! oneMemorySpace && A.view_.modified_host >= A.view_.modified_device) {
+      // Work on host, where A's data were most recently modified.  A
+      // is a "guest" of this method, so it's more polite to sync
+      // *this, than to sync A.
+      this->view_.template sync<typename host_view_type::memory_space> ();
+#ifdef KOKKOS_HAVE_CXX11
+      auto Y_lcl = subview (this->view_.h_view, rowRng, colRng);
+      auto X_lcl = subview (A.view_.h_view, rowRng, colRng);
+#else
+      host_view_type Y_lcl = subview (this->view_.h_view, rowRng, colRng);
+      host_view_type X_lcl = subview (A.view_.h_view, rowRng, colRng);
+#endif // KOKKOS_HAVE_CXX11
+
+      if (isConstantStride () && A.isConstantStride ()) {
+        KokkosBlas::axpby (Y_lcl, theAlpha, X_lcl, theBeta, Y_lcl);
+      }
+      else {
+        // Make sure that Kokkos only uses the local length for add.
+        for (size_t k = 0; k < numVecs; ++k) {
+          const size_t Y_col = this->isConstantStride () ? k : this->whichVectors_[k];
+          const size_t X_col = A.isConstantStride () ? k : A.whichVectors_[k];
+#ifdef KOKKOS_HAVE_CXX11
+          auto Y_k = subview (Y_lcl, ALL (), Y_col);
+          auto X_k = subview (X_lcl, ALL (), X_col);
+#else
+          col_host_view_type Y_k = subview (Y_lcl, ALL (), Y_col);
+          col_host_view_type X_k = subview (X_lcl, ALL (), X_col);
+#endif // KOKKOS_HAVE_CXX11
+          Kokkos::V_Add (Y_k, theAlpha, X_k, theBeta, Y_k);
+        }
+      }
     }
-    else {
-      // Make sure that Kokkos only uses the local length for add.
-      const std::pair<size_t, size_t> rowRng (0, lclNumRows);
-      for (size_t k = 0; k < numVecs; ++k) {
-        const size_t this_col = isConstantStride () ? k : whichVectors_[k];
-        const size_t A_col = A.isConstantStride () ? k : A.whichVectors_[k];
-        view_type this_colView =
-          subview (view_.d_view, rowRng, this_col);
-        view_type A_colView =
-          subview (A.view_.d_view, rowRng, A_col);
-        Kokkos::V_Add (this_colView, theAlpha, A_colView,
-                       theBeta, this_colView);
+    else { // work on device
+      // A is a "guest" of this method, so it's more polite to sync
+      // *this, than to sync A.
+      this->view_.template sync<typename dev_view_type::memory_space> ();
+#ifdef KOKKOS_HAVE_CXX11
+      auto Y_lcl = subview (this->view_.d_view, rowRng, colRng);
+      auto X_lcl = subview (A.view_.d_view, rowRng, colRng);
+#else
+      dev_view_type Y_lcl = subview (this->view_.d_view, rowRng, colRng);
+      dev_view_type X_lcl = subview (A.view_.d_view, rowRng, colRng);
+#endif // KOKKOS_HAVE_CXX11
+
+      if (isConstantStride () && A.isConstantStride ()) {
+        KokkosBlas::axpby (Y_lcl, theAlpha, X_lcl, theBeta, Y_lcl);
+      }
+      else {
+        // Make sure that Kokkos only uses the local length for add.
+        for (size_t k = 0; k < numVecs; ++k) {
+          const size_t Y_col = this->isConstantStride () ? k : this->whichVectors_[k];
+          const size_t X_col = A.isConstantStride () ? k : A.whichVectors_[k];
+#ifdef KOKKOS_HAVE_CXX11
+          auto Y_k = subview (Y_lcl, ALL (), Y_col);
+          auto X_k = subview (X_lcl, ALL (), X_col);
+#else
+          col_dev_view_type Y_k = subview (Y_lcl, ALL (), Y_col);
+          col_dev_view_type X_k = subview (X_lcl, ALL (), X_col);
+#endif // KOKKOS_HAVE_CXX11
+          Kokkos::V_Add (Y_k, theAlpha, X_k, theBeta, Y_k);
+        }
       }
     }
   }

@@ -1,6 +1,9 @@
 #include "shylu_directsolver_interface_decl.hpp"
 #include "shylu_directsolver_interface_def.hpp"
+
+#ifdef HAVE_SHYLUCORE_TPETRA
 #include "Tpetra_ConfigDefs.hpp"
+#endif
 
 namespace ShyLU {
 

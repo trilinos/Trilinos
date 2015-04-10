@@ -562,11 +562,11 @@ Phalanx is distributed as a package in the <a href="http://trilinos.sandia.gov">
  
  - <b>Requires</b> the <a href="http://trilinos.sandia.gov/packages/sacado">Sacado Automatic Differentiation Library</a>, part of the <a href="http://trilinos.sandia.gov/">Trilinos Framework</a>.  This will automatically be enabled when you enable the phalanx library.
 
- - <b>Requires</b> the <a href="http://www.boost.org">Boost Template Metaprogramming (MPL) Library</a>.  This is a third party library (TPL) that must be installed on your machine.  You must enable the TPL and point to the path to the Boost library during Trilinos configuration.  An example configuration file can be found in Trilinos/packages/phalanx/maintenance/reconfigure.linux.mpi.cmake.
+ - <b>Requires</b> the <a href="http://www.boost.org">Boost Template Metaprogramming (MPL) Library</a>.  This is a third party library (TPL) that must be installed on your machine.  You must enable the TPL and point to the path to the Boost library during Trilinos configuration.  An example configuration file can be found in Trilinos/packages/phalanx/build_scripts/build_phalanx_gcc.sh.
 
 \subsection ug_step1_performance B. Performance Example Requirements
 
- - <b>Optional:</b> Some performance tests run comparisons against <a href="http://tvmet.sourceforge.net/">TVMET: Tiny Vector Matrix library using Expression Templates</a>.  This is to get a feel for how our "dumb" vector matrix objects perform compared to expression templates.  You must enable the tvmet TPL add the path to the TVMET library during Trilinos configuration.  An example configuration file can be found in Trilinos/packages/phalanx/maintenance/reconfigure.linux.mpi.cmake.
+ - <b>Optional:</b> Some performance tests run comparisons against <a href="http://tvmet.sourceforge.net/">TVMET: Tiny Vector Matrix library using Expression Templates</a>.  This is to get a feel for how our "dumb" vector matrix objects perform compared to expression templates.  You must enable the tvmet TPL add the path to the TVMET library during Trilinos configuration.  An example configuration file can be found in Trilinos/packages/phalanx/build_scripts/build_phalanx_gcc.sh.
 
 TVMET is optional and hidden behind an ifdef.  The performance tests will be built regardless of whether tvmet is enabled/disabled. 
 
@@ -966,7 +966,7 @@ PHX_EVALUATE_FIELDS(Density,d)
 
 The evaluators for the example problem in "phalanx/example/EnergyFlux" have been rewritten using the macro definitions and can be found in the directory "phalanx/test/Utilities/evaluators".  
 
-Finally, since writing even the above code contains much boilerplate, we have written a python script that will generate the above skeleton files for you.  All you need provide is the class name and the filename.  The script is called phalanx_create_evaluator.py and can be found in the "maintenance" directory.  A "make install" will place the script in the "bin" directory.  To generate a skeleton for the above function, you would execute the following command at the prompt:
+Finally, since writing even the above code contains much boilerplate, we have written a python script that will generate the above skeleton files for you.  All you need provide is the class name and the filename.  The script is called phalanx_create_evaluator.py and can be found in the "scripts" directory.  A "make install" will place the script in the "bin" directory.  To generate a skeleton for the above function, you would execute the following command at the prompt:
 
 \code
 > ./phalanx_create_evaluator.py -c -n Density Evaluator_Density
@@ -1353,7 +1353,7 @@ Explicit template instantiation can be used to speed up evaluator development bu
 The contiguous allocator is allocating space for all variables in an evaluation type in a single contiguous chunk of memory.  We allow for multiple scalar types in an evaluation type so the array is allocated using the type char and then based on scalar type sizes (using sizeof method) along with proper alignment, pointers to blocks of memory are handed to the fields using a reinterpret_cast.  DFad uses new to allocate the derivative arrays, so this memory is not contiguous.  The problem is that the field array memory is deleted as a char instead of it's various data types, so all DFad derivative arrays are leaked during the destruction.  There are two ways to alleviate this: (1) write a special Allocator to call the destructor of the field type for each field.  (2) Have Sacado implement a version of DFad that allows the user to allocate the DFad array and pass in the pointer during construction.  This will also require a new allocator.  Choice (2) will be handed in Phalanx in a later release.  Our current suggestion is that one should use DFad only if using the PHX::NewAllocator and use SFad if using the PHX::ContiguousAllocator. 
 
 \section faq9 9. The evaluators contain boilerplate.  Is there an easy way to automate creating the evaluators?
-YES!  There is a python script that will automatically generate the skeleton for evaluators.  It is found in the "maintenance" directory of phalanx and is called "phalanx_create_evaluator.py".  It will be install in the "bin" directory when trilinos is installed.  Example use can be found at the end of section \ref user_guide_step5 of the \ref user_guide.
+YES!  There is a python script that will automatically generate the skeleton for evaluators.  It is found in the "scripts" directory of phalanx and is called "phalanx_create_evaluator.py".  It will be install in the "bin" directory when trilinos is installed.  Example use can be found at the end of section \ref user_guide_step5 of the \ref user_guide.
 
 */
 

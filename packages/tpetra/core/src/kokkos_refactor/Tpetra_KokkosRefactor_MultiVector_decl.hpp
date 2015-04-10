@@ -1328,7 +1328,7 @@ namespace Tpetra {
     /// the entries of alpha are zero.  That means, for example, that
     /// if \c *this contains NaN entries before calling this method,
     /// the NaN entries will remain after this method finishes.
-    void scale (Teuchos::ArrayView<const Scalar> alpha);
+    void scale (const Teuchos::ArrayView<const Scalar>& alpha);
 
     /// \brief Scale each column in place: <tt>this[j] = alpha[j]*this[j]</tt>.
     ///
@@ -1338,7 +1338,7 @@ namespace Tpetra {
     /// the entries of alpha are zero.  That means, for example, that
     /// if \c *this contains NaN entries before calling this method,
     /// the NaN entries will remain after this method finishes.
-    void scale (const Kokkos::View<const impl_scalar_type*, execution_space> alpha);
+    void scale (const Kokkos::View<const impl_scalar_type*, execution_space>& alpha);
 
     /// \brief Scale in place: <tt>this = alpha * A</tt>.
     ///
