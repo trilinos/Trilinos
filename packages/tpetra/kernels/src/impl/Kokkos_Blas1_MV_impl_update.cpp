@@ -50,19 +50,20 @@ namespace Impl {
 #ifdef KOKKOS_HAVE_SERIAL
 #define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Serial
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
+#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 void
-Update<Kokkos::View<const double**,
+Update<Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
                     Kokkos::LayoutLeft,
                     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                     Kokkos::Impl::ViewDefault>,
-      Kokkos::View<const double**,
+      Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
                    Kokkos::LayoutLeft,
                    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                    Kokkos::Impl::ViewDefault>,
-      Kokkos::View<double**,
+      Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
                    Kokkos::LayoutLeft,
                    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -106,6 +107,7 @@ update (const XMV::non_const_value_type& alpha, const XMV& X,
   }
 }
 
+#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
 #endif // KOKKOS_HAVE_SERIAL
@@ -114,19 +116,20 @@ update (const XMV::non_const_value_type& alpha, const XMV& X,
 #ifdef KOKKOS_HAVE_OPENMP
 #define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::OpenMP
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
+#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 void
-Update<Kokkos::View<const double**,
+Update<Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
                     Kokkos::LayoutLeft,
                     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                     Kokkos::Impl::ViewDefault>,
-      Kokkos::View<const double**,
+      Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
                    Kokkos::LayoutLeft,
                    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                    Kokkos::Impl::ViewDefault>,
-      Kokkos::View<double**,
+      Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
                    Kokkos::LayoutLeft,
                    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -170,6 +173,7 @@ update (const XMV::non_const_value_type& alpha, const XMV& X,
   }
 }
 
+#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
 #endif // KOKKOS_HAVE_OPENMP
@@ -178,19 +182,20 @@ update (const XMV::non_const_value_type& alpha, const XMV& X,
 #ifdef KOKKOS_HAVE_PTHREAD
 #define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Threads
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
+#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 void
-Update<Kokkos::View<const double**,
+Update<Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
                     Kokkos::LayoutLeft,
                     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                     Kokkos::Impl::ViewDefault>,
-      Kokkos::View<const double**,
+      Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
                    Kokkos::LayoutLeft,
                    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                    Kokkos::Impl::ViewDefault>,
-      Kokkos::View<double**,
+      Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
                    Kokkos::LayoutLeft,
                    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -234,6 +239,7 @@ update (const XMV::non_const_value_type& alpha, const XMV& X,
   }
 }
 
+#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
 #endif // KOKKOS_HAVE_PTHREAD
@@ -242,19 +248,20 @@ update (const XMV::non_const_value_type& alpha, const XMV& X,
 #ifdef KOKKOS_HAVE_CUDA
 #define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Cuda
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaSpace
+#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 void
-Update<Kokkos::View<const double**,
+Update<Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
                     Kokkos::LayoutLeft,
                     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                     Kokkos::Impl::ViewDefault>,
-      Kokkos::View<const double**,
+      Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
                    Kokkos::LayoutLeft,
                    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                    Kokkos::Impl::ViewDefault>,
-      Kokkos::View<double**,
+      Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
                    Kokkos::LayoutLeft,
                    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -298,6 +305,7 @@ update (const XMV::non_const_value_type& alpha, const XMV& X,
   }
 }
 
+#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
 #endif // KOKKOS_HAVE_CUDA
@@ -306,19 +314,20 @@ update (const XMV::non_const_value_type& alpha, const XMV& X,
 #ifdef KOKKOS_HAVE_CUDA
 #define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Cuda
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaUVMSpace
+#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 void
-Update<Kokkos::View<const double**,
+Update<Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
                     Kokkos::LayoutLeft,
                     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                     Kokkos::Impl::ViewDefault>,
-      Kokkos::View<const double**,
+      Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
                    Kokkos::LayoutLeft,
                    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                    Kokkos::Impl::ViewDefault>,
-      Kokkos::View<double**,
+      Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
                    Kokkos::LayoutLeft,
                    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -362,6 +371,7 @@ update (const XMV::non_const_value_type& alpha, const XMV& X,
   }
 }
 
+#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
 #endif // KOKKOS_HAVE_CUDA
