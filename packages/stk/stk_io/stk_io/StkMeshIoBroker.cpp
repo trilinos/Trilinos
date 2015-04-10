@@ -1848,6 +1848,19 @@ namespace stk {
 	    {
 	      m_mesh_defined = true;
 
+	      // If using hdf5 as the underlying file type for exodus/netcdf,
+	      // it is more picky about overwriting an existing file -- if the
+	      // file is open, then it will abort; it will only overwrite an existing
+	      // file if it is not open.  Since overwriting restart files (input/output)
+	      // is a common usecase, we need to check at this point whether there are
+	      // any existing input files with the same name as the file we are attempting
+	      // to create here. However, due to symbolic links and other junk, it is often
+	      // difficult to determine that the files are the same, so..., If m_input_region
+	      // refers to a file, just close it since we should be done with it at this time...
+	      if (m_input_region) {
+		m_input_region->get_database()->closeDatabase();
+	      }
+
 	      // used in stk_adapt/stk_percept
 	      bool sort_stk_parts = m_region->property_exists("sort_stk_parts");
 
