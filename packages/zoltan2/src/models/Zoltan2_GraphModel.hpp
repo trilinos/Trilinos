@@ -931,8 +931,12 @@ GraphModel<Adapter>::GraphModel(
 
   if (!ia->avail2ndAdjs(primaryEType, secondAdjEType)) {
 
-    throw std::logic_error("MeshAdapter must provide 2nd adjacencies for "
-                           "graph construction");
+    try {
+      get2ndAdjsViewFromAdjs(ia,primaryEType,secondAdjEType,offsets,nborIds);
+    }
+    Z2_FORWARD_EXCEPTIONS;
+    /*throw std::logic_error("MeshAdapter must provide 2nd adjacencies for "
+      "graph construction");*/
 
   }
   else {  // avail2ndAdjs
