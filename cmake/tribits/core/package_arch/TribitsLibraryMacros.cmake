@@ -208,6 +208,7 @@ ENDFUNCTION()
 #   TRIBITS_ADD_LIBRARY(
 #     <libBaseName>
 #     [HEADERS <h0> <h1> ...]
+#     [HEADERS_INSTALL_SUBDIR <headerssubdir>]
 #     [NOINSTALLHEADERS <nih0> <hih1> ...]
 #     [SOURCES <src0> <src1> ...]
 #     [DEPLIBS <deplib0> <deplib1> ...]
@@ -256,6 +257,15 @@ ENDFUNCTION()
 #     helpful for some build tools, like MS Visual Studio).  By default, these
 #     headers will be installed (see `Install Targets
 #     (TRIBITS_ADD_LIBRARY())`_).
+#
+#   ``HEADERS_INSTALL_SUBDIR <headerssubdir>``
+#
+#     Optional subdirectory that the headers will be installed under the
+#     standard installation directory.  If ``<headerssubdir>!=""``, then the
+#     headers will be installed under
+#     ``${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/<headerssubdir>``.  Otherwise,
+#     they will be installed under ``${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/``.
+#     `Install Targets (TRIBITS_ADD_LIBRARY())`_.
 #
 #   ``NOINSTALLHEADERS <nih0> <hih1> ...``
 #
@@ -349,19 +359,25 @@ ENDFUNCTION()
 # ``${CMAKE_INSTALL_PREFIX}/lib/`` (actual install directory is given by
 # ``${PROJECT}_INSTALL_LIB_DIR``, see `Setting the install prefix at configure
 # time`_).  However, this install target will not get created if
-# ``${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS=FALSE`` and
+# `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_ is ``FASLE`` and
 # ``BUILD_SHARD_LIBS=OFF``.  But when ``BUILD_SHARD_LIBS=ON``, the install
-# target will get created.  Also, this install target will *not* get created
-# if ``TESTONLY`` or ``NO_INSTALL_LIB_OR_HEADERS`` are passed in.
+# target will get added.  Also, this install target will *not* get added if
+# ``TESTONLY`` or ``NO_INSTALL_LIB_OR_HEADERS`` are passed in.
 #
 # By default, an install target for the headers listed in ``HEADERS`` will get
-# created using ``INSTALL(FILES <h0> <h1> ...)``, but only if ``TESTONLY`` and
-# ``NO_INSTALL_LIB_OR_HEADERS`` are not passed in as well.  These headers get
-# installed into the flat directory ``${CMAKE_INSTALL_PREFIX}/include/`` (the
-# actual install directory is given by
-# ``${PROJECT_NAME}_INSTALL_INCLUDE_DIR``, see `Setting the install prefix at
-# configure time`_).  Note that an install target will *not* get created for
-# the headers listed in ``NOINSTALLHEADERS``.
+# added using ``INSTALL(FILES <h0> <h1> ...)``, but only if ``TESTONLY`` and
+# ``NO_INSTALL_LIB_OR_HEADERS`` are not passed in as well.  Also, the install
+# target for the headers will not get added if
+# `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_ is ``FASLE``.  If this
+# install target is added, then the headers get installed into the flat
+# directory ``${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/`` (default is
+# ``${CMAKE_INSTALL_PREFIX}/include/``, see `Setting the install prefix at
+# configure time`_).  If ``HEADERS_INSTALL_SUBDIR`` is set, then the headers
+# will be installed under
+# ``${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/<headerssubdir>/``.
+#
+# Note that an install target will *not* get created for the headers listed in
+# ``NOINSTALLHEADERS``.
 #
 # .. _Additional Library and Source File Properties (TRIBITS_ADD_LIBRARY()):
 #
@@ -415,10 +431,13 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
 
   PARSE_ARGUMENTS(
     PARSE #prefix
-    "HEADERS;NOINSTALLHEADERS;SOURCES;DEPLIBS;IMPORTEDLIBS;DEFINES;ADDED_LIB_TARGET_NAME_OUT" # Lists
+    "HEADERS;HEADERS_INSTALL_SUBDIR;NOINSTALLHEADERS;SOURCES;DEPLIBS;IMPORTEDLIBS;DEFINES;ADDED_LIB_TARGET_NAME_OUT" # Lists
     "TESTONLY;NO_INSTALL_LIB_OR_HEADERS;CUDALIBRARY" #Options
     ${ARGN} # Remaining arguments passed in
     )
+
+  # ToDo: Assert that HEADERS_INSTALL_SUBDIR has 0 or 1 entries!
+  # ToDo: Assert that ADDED_LIB_TARGET_NAME_OUT as 0 or 1 entries!
 
   IF(PARSE_HEADERS)
     LIST(REMOVE_DUPLICATES PARSE_HEADERS)
@@ -774,10 +793,10 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
     ENDIF()
 
     IF (INSTALL_HEADERS)
-      INSTALL(
-        FILES ${PARSE_HEADERS}
-        DESTINATION "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}"
-        COMPONENT ${PACKAGE_NAME}
+      TRIBITS_INSTALL_HEADERS(
+        HEADERS  ${PARSE_HEADERS}
+        INSTALL_SUBDIR  ${PARSE_HEADERS_INSTALL_SUBDIR}
+        COMPONENT  ${PACKAGE_NAME}
         )
     ENDIF()
 

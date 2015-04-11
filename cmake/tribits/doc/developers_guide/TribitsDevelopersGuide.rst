@@ -7197,24 +7197,24 @@ These options are described below.
 
   If ``${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`` is set to ``ON``, then
   any defined libraries or header files that are listed in calls to
-  `TRIBITS_ADD_LIBRARY()`_ will be installed (unless options are passed into
-  `TRIBITS_ADD_LIBRARY()`_ that disable installs).  If set to ``OFF``, then
-  headers and libraries will *not* be installed by default and only
-  ``INSTALLABLE`` executables added with `TRIBITS_ADD_EXECUTABLE()`_ will be
-  installed.  However, as described in `TribitsBuildQuickRef`_, shared
-  libraries will always be installed if enabled since they are needed by the
-  installed executables.
+  `TRIBITS_ADD_LIBRARY()`_ or `TRIBITS_INSTALL_HEADERS()`_ will be installed
+  (unless options are passed into `TRIBITS_ADD_LIBRARY()`_ that disable
+  installs).  If set to ``OFF``, then headers and libraries will *not* be
+  installed by default and only ``INSTALLABLE`` executables added with
+  `TRIBITS_ADD_EXECUTABLE()`_ will be installed.  However, as described in
+  `TribitsBuildQuickRef`_, shared libraries will always be installed if
+  enabled since they are needed by the installed executables.
   
-  For a TriBITS project that primarily is delivering libraries
+  For a TriBITS project that is primarily delivering libraries
   (e.g. Trilinos), then it makes sense to leave the TriBITS default which is
   ``ON`` or explicitly set::
   
-    SET(${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT ON)
+    SET(${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT  ON)
   
   For a TriBITS project that is primarily delivering executables (e.g. VERA),
   then it makes sense to set the default to::
   
-    SET(${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT OFF)
+    SET(${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT  OFF)
 
 .. _${PROJECT_NAME}_REQUIRES_PYTHON:
 
