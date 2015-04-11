@@ -47,6 +47,7 @@
 #include <Kokkos_Blas1_MV_impl_axpby.hpp>
 #include <Kokkos_Blas1_MV_impl_dot.hpp>
 #include <Kokkos_Blas1_MV_impl_fill.hpp>
+#include <Kokkos_Blas1_MV_impl_mult.hpp>
 #include <Kokkos_Blas1_MV_impl_nrm1.hpp>
 #include <Kokkos_Blas1_MV_impl_nrm2.hpp>
 #include <Kokkos_Blas1_MV_impl_nrm2w.hpp>
@@ -88,6 +89,36 @@ namespace {
 
 
 namespace KokkosBlas {
+
+namespace Impl {
+// parallel_for functor for computing the square root, in place, of a
+// one-dimensional View.  This is useful for following the MPI
+// all-reduce that computes the square of the two-norms of the local
+// columns of a Tpetra::MultiVector.
+//
+// mfh 14 Jul 2014: Carter says that, for now, the standard idiom for
+// operating on a single scalar value on the device, is to run in a
+// parallel_for with N = 1.
+//
+// FIXME (mfh 14 Jul 2014): If we could assume C++11, this functor
+// would go away.
+template<class ViewType>
+class SquareRootFunctor {
+public:
+  typedef typename ViewType::execution_space execution_space;
+  typedef typename ViewType::size_type size_type;
+
+  SquareRootFunctor (const ViewType& theView) : theView_ (theView) {}
+
+  KOKKOS_INLINE_FUNCTION void operator() (const size_type i) const {
+    typedef typename ViewType::value_type value_type;
+    theView_(i) = Kokkos::Details::ArithTraits<value_type>::sqrt (theView_(i));
+  }
+
+private:
+  ViewType theView_;
+};
+}
 
 /// \brief Compute the column-wise dot products of two multivectors.
 ///
@@ -1441,6 +1472,89 @@ nrm2w_squared (const RV& R, const XMV& X, const XMV& W)
   Impl::Nrm2w<RV_Internal, XMV_Internal>::nrm2w_squared (R_internal, X_internal, W_internal);
 }
 
+
+template<class CMV, class AV, class BMV>
+void
+mult (typename CMV::const_value_type& c,
+      const CMV& C,
+      typename AV::const_value_type& ab,
+      const AV& A,
+      const BMV& B)
+{
+#ifdef KOKKOS_HAVE_CXX11
+  // CMV and AMV must be Kokkos::View specializations.
+  static_assert (Kokkos::Impl::is_view<CMV>::value, "KokkosBlas::mult: "
+                 "C is not a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<AV>::value, "KokkosBlas::mult: "
+                 "A is not a Kokkos::View.");
+  // CMV must be nonconst (else it can't be an output argument).
+  static_assert (Kokkos::Impl::is_same<typename CMV::value_type,
+                   typename CMV::non_const_value_type>::value,
+                 "KokkosBlas::mult: C is const.  "
+                 "It must be nonconst, because it is an output argument "
+                 "(we have to be able to write to its entries).");
+  static_assert ((BMV::rank == 1 && CMV::rank == 1) ||
+                 (BMV::rank == 2 && CMV::rank == 2),
+                 "KokkosBlas::mult: C and B must be either both rank 1, "
+                 "or both rank 2.");
+  static_assert (AV::rank == 1, "KokkosBlas::mult: A must have rank 1.");
+#endif // KOKKOS_HAVE_CXX11
+
+  // Check compatibility of dimensions at run time.
+  if (C.dimension_0 () != A.dimension_0 () ||
+      C.dimension_0 () != B.dimension_0 () ||
+      C.dimension_1 () != B.dimension_1 ()) {
+    std::ostringstream os;
+    os << "KokkosBlas::mult: Dimensions do not match: "
+       << "C: " << C.dimension_0 () << " x " << C.dimension_1 ()
+       << ", A: " << A.dimension_0 () << " x " << A.dimension_0 ()
+       << ", B: " << B.dimension_0 () << " x " << B.dimension_1 ();
+    Kokkos::Impl::throw_runtime_exception (os.str ());
+  }
+
+  // Create unmanaged versions of the input Views.
+  typedef Kokkos::View<
+    typename Kokkos::Impl::if_c<
+      CMV::rank == 1,
+      typename CMV::non_const_value_type*,
+      typename CMV::non_const_value_type** >::type,
+    typename CMV::array_layout,
+    typename CMV::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    typename CMV::specialize> CMV_Internal;
+  typedef Kokkos::View<
+    typename AV::const_value_type*,
+    typename AV::array_layout,
+    typename AV::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    typename AV::specialize> AV_Internal;
+  typedef Kokkos::View<
+    typename Kokkos::Impl::if_c<
+      BMV::rank == 1,
+      typename BMV::const_value_type*,
+      typename BMV::const_value_type** >::type,
+    typename BMV::array_layout,
+    typename BMV::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    typename BMV::specialize> BMV_Internal;
+
+  CMV_Internal C_internal = C;
+  AV_Internal A_internal = A;
+  BMV_Internal B_internal = B;
+
+#ifdef TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+  using std::cerr;
+  using std::endl;
+  cerr << "KokkosBlas::mult:" << endl
+       << "  CMV_Internal: " << demangledTypeName (C_internal) << endl
+       << "  AV_Internal: " << demangledTypeName (A_internal) << endl
+       << "  BMV_Internal: " << demangledTypeName (B_internal) << endl
+       << endl;
+#endif // TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
+
+  Impl::Mult<CMV_Internal, AV_Internal, BMV_Internal>::mult (c, C_internal, ab,
+                                                             A_internal, B_internal);
+}
 
 } // namespace KokkosBlas
 

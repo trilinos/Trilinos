@@ -42,7 +42,6 @@
 */
 
 #include <Kokkos_Blas1_MV_impl_nrmInf.hpp>
-#include <climits>
 
 namespace KokkosBlas {
 namespace Impl {

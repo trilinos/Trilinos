@@ -43,7 +43,6 @@
 
 #include <Kokkos_Blas1_MV_impl_nrm2.hpp>
 #include <Kokkos_Blas1_MV_impl_dot.hpp>
-#include <climits>
 
 namespace KokkosBlas {
 namespace Impl {

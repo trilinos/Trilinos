@@ -3364,40 +3364,35 @@ namespace Tpetra {
       "() = " << numVecs << " != B.getNumVectors() = " << B.getNumVectors ()
       << ".");
 
-    if (isConstantStride () && A.isConstantStride ()) {
-      // FIXME (mfh 02 Oct 2014) Shouldn't it be asking if B has
-      // constant stride?  A is just a Vector; it only has one column,
-      // so it always has constant stride.
+    if (isConstantStride () && B.isConstantStride ()) {
+      // A is just a Vector; it only has one column, so it always has
+      // constant stride.
       //
-      // If both *this and A have constant stride, we can do an
+      // If both *this and B have constant stride, we can do an
       // element-wise multiply on all columns at once.
       view_.template sync<DeviceType> ();
       view_.template modify<DeviceType> ();
       A.view_.template sync<DeviceType> ();
-      A.view_.template modify<DeviceType> ();
       B.view_.template sync<DeviceType> ();
-      B.view_.template modify<DeviceType> ();
-      view_1d_type vector_A = subview (A.view_.d_view, ALL (), 0);
-      Kokkos::MV_ElementWiseMultiply (scalarThis, view_.d_view,
-                                      scalarAB, vector_A, B.view_.d_view);
+      KokkosBlas::mult (scalarThis, view_.d_view, scalarAB,
+                        subview (A.view_.d_view, ALL (), 0),
+                        B.view_.d_view);
     }
     else {
       view_.template sync<DeviceType> ();
       view_.template modify<DeviceType> ();
       A.view_.template sync<DeviceType> ();
-      A.view_.template modify<DeviceType> ();
       B.view_.template sync<DeviceType> ();
-      B.view_.template modify<DeviceType> ();
-      view_1d_type vector_A = subview (A.view_.d_view, ALL (), 0);
-      for (size_t k = 0; k < numVecs; ++k) {
-        const size_t this_col = isConstantStride () ? k : whichVectors_[k];
-        view_1d_type vector_k =
-          subview (view_.d_view, ALL (), this_col);
-        const size_t B_col = isConstantStride () ? k : B.whichVectors_[k];
-        view_1d_type vector_Bk =
-          subview (B.view_.d_view, ALL (), B_col);
-        Kokkos::V_ElementWiseMultiply (scalarThis, vector_k, scalarAB,
-                                       vector_A, vector_Bk);
+
+      for (size_t j = 0; j < numVecs; ++j) {
+        const size_t C_col = isConstantStride () ? j : whichVectors_[j];
+        const size_t B_col = B.isConstantStride () ? j : B.whichVectors_[j];
+
+        KokkosBlas::mult (scalarThis,
+                          subview (view_.d_view, ALL (), C_col),
+                          scalarAB,
+                          subview (A.view_.d_view, ALL (), 0),
+                          subview (B.view_.d_view, ALL (), B_col));
       }
     }
   }
