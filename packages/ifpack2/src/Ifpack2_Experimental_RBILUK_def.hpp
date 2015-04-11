@@ -46,6 +46,9 @@
 #include <Tpetra_Experimental_BlockMultiVector.hpp>
 #include <Ifpack2_Experimental_RBILUK.hpp>
 #include <Ifpack2_RILUK.hpp>
+// Need to include this if using the "classic" version of Tpetra,
+// since it may not get included in that case.
+#include <Kokkos_ArithTraits.hpp>
 
 namespace Ifpack2 {
 
