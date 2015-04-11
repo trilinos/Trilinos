@@ -126,12 +126,10 @@ namespace MueLu {
 
     //! Method to merge rows of matrix for systems of PDEs.
     void MergeRows(const Matrix& A, const LO row, Array<LO>& cols, const Array<LO>& translation) const;
-    void MergeRowsStrided(const Matrix& A, const LO row, Array<LO>& cols, const Array<LO>& translation) const;
     void MergeRowsWithDropping(const Matrix& A, const LO row, const ArrayRCP<const SC>& ghostedDiagVals, SC threshold, Array<LO>& cols, const Array<LO>& translation) const;
 
     //! Method to create merged  map for systems of PDEs.
-    void AmalgamateMap(const Map& sourceMap, const LO blockSize, RCP<const Map>& amalgamatedMap, Array<LO>& translation) const;
-    void AmalgamateMapStrided(const Map& sourceMap, const Matrix& A, RCP<const Map>& amalgamatedMap, Array<LO>& translation) const;
+    void AmalgamateMap(const Map& sourceMap, const Matrix& A, RCP<const Map>& amalgamatedMap, Array<LO>& translation) const;
 
   }; //class CoalesceDropFactory
 
