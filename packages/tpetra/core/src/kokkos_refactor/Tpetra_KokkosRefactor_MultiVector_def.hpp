@@ -49,7 +49,6 @@
 #endif
 
 #include <KokkosCompat_View.hpp>
-#include <Kokkos_MV.hpp>
 #include <Kokkos_MV_GEMM.hpp>
 #include <Kokkos_Blas1_MV.hpp>
 #include <Kokkos_Random.hpp>
@@ -1526,7 +1525,7 @@ namespace Tpetra {
           // point of doing parallel dispatch here is to keep the norm
           // results on the device, thus avoiding a copy to the host and
           // back again.
-          Kokkos::SquareRootFunctor<RV> f (normsOut);
+          KokkosBlas::Impl::SquareRootFunctor<RV> f (normsOut);
           Kokkos::parallel_for (numVecs, f);
         }
       }
@@ -3343,13 +3342,6 @@ namespace Tpetra {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-
-    typedef typename dual_view_type::t_dev view_2d_type;
-    typedef Kokkos::View<impl_scalar_type*,
-      typename view_2d_type::array_layout,
-      typename view_2d_type::device_type,
-      typename view_2d_type::memory_traits> view_1d_type;
-
     const char tfecfFuncName[] = "elementWiseMultiply: ";
     const size_t numVecs = this->getNumVectors ();
 
