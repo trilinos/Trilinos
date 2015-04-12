@@ -730,7 +730,6 @@ multiply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordina
           Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
           const Teuchos::ETransp mode) const
 {
-  const scalar_type zero = STM::zero ();
   const scalar_type one = STM::one ();
 
   if (mode != Teuchos::NO_TRANS) {
