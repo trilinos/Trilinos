@@ -2370,7 +2370,7 @@ namespace Tpetra {
 #endif // KOKKOS_HAVE_CXX11
 
       if (isConstantStride () && A.isConstantStride ()) {
-        KokkosBlas::axpby (Y_lcl, theAlpha, X_lcl, theBeta, Y_lcl);
+        KokkosBlas::axpby (theAlpha, X_lcl, theBeta, Y_lcl);
       }
       else {
         // Make sure that Kokkos only uses the local length for add.
@@ -2384,7 +2384,7 @@ namespace Tpetra {
           col_host_view_type Y_k = subview (Y_lcl, ALL (), Y_col);
           col_host_view_type X_k = subview (X_lcl, ALL (), X_col);
 #endif // KOKKOS_HAVE_CXX11
-          KokkosBlas::axpby (Y_k, theAlpha, X_k, theBeta, Y_k);
+          KokkosBlas::axpby (theAlpha, X_k, theBeta, Y_k);
         }
       }
     }
@@ -2401,7 +2401,7 @@ namespace Tpetra {
 #endif // KOKKOS_HAVE_CXX11
 
       if (isConstantStride () && A.isConstantStride ()) {
-        KokkosBlas::axpby (Y_lcl, theAlpha, X_lcl, theBeta, Y_lcl);
+        KokkosBlas::axpby (theAlpha, X_lcl, theBeta, Y_lcl);
       }
       else {
         // Make sure that Kokkos only uses the local length for add.
@@ -2415,7 +2415,7 @@ namespace Tpetra {
           col_dev_view_type Y_k = subview (Y_lcl, ALL (), Y_col);
           col_dev_view_type X_k = subview (X_lcl, ALL (), X_col);
 #endif // KOKKOS_HAVE_CXX11
-          KokkosBlas::axpby (Y_k, theAlpha, X_k, theBeta, Y_k);
+          KokkosBlas::axpby (theAlpha, X_k, theBeta, Y_k);
         }
       }
     }

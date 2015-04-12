@@ -928,63 +928,46 @@ struct GetInternalTypeForAxpby<T, true> {
 } // namespace (anonymous)
 
 
-template<class RMV, class AV, class XMV, class BV, class YMV>
+template<class AV, class XMV, class BV, class YMV>
 void
-axpby (const RMV& R, const AV& a, const XMV& X, const BV& b, const YMV& Y)
+axpby (const AV& a, const XMV& X, const BV& b, const YMV& Y)
 {
 #ifdef KOKKOS_HAVE_CXX11
-  // RV, XMV, and YMV must be Kokkos::View specializations.
-  static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::axpby (MV): "
-                 "The output argument is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::axpby (MV): "
-                 "The first input argument x is not a Kokkos::View.");
+                 "X is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::axpby (MV): "
-                 "The second input argument y is not a Kokkos::View.");
-  // RV must be nonconst (else it can't be an output argument).
-  static_assert (Kokkos::Impl::is_same<typename RMV::value_type, typename RMV::non_const_value_type>::value,
-                 "KokkosBlas::axpby (MV): R is const.  "
+                 "Y is not a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_same<typename YMV::value_type,
+                   typename YMV::non_const_value_type>::value,
+                 "KokkosBlas::axpby (MV): Y is const.  "
                  "It must be nonconst, because it is an output argument "
                  "(we have to be able to write to its entries).");
-  static_assert (RMV::rank == XMV::rank, "KokkosBlas::axpby (MV): "
-                 "R and X must have the same rank.");
-  static_assert (RMV::rank == YMV::rank, "KokkosBlas::axpby (MV): "
-                 "R and Y must have the same rank.");
-  static_assert (RMV::rank == 1 || RMV::rank == 2, "KokkosBlas::axpby (MV): "
-                 "RMV, XMV, and YMV must either have rank 1 or rank 2.");
+  static_assert (YMV::rank == XMV::rank, "KokkosBlas::axpby (MV): "
+                 "X and Y must have the same rank.");
+  static_assert (YMV::rank == 1 || YMV::rank == 2, "KokkosBlas::axpby (MV): "
+                 "XMV and YMV must either have rank 1 or rank 2.");
 #endif // KOKKOS_HAVE_CXX11
 
   // Check compatibility of dimensions at run time.
   if (X.dimension_0 () != Y.dimension_0 () ||
-      X.dimension_1 () != Y.dimension_1 () ||
-      X.dimension_0 () != R.dimension_0 () ||
-      X.dimension_1 () != R.dimension_1 ()) {
+      X.dimension_1 () != Y.dimension_1 ()) {
     std::ostringstream os;
-    os << "KokkosBlas::axpby (MV): Dimensions of R, X, and Y do not match: "
-       << "R: " << R.dimension_0 () << " x " << R.dimension_1 ()
-       << ", X: " << X.dimension_0 () << " x " << X.dimension_1 ()
+    os << "KokkosBlas::axpby (MV): Dimensions of X and Y do not match: "
+       << "X: " << X.dimension_0 () << " x " << X.dimension_1 ()
        << ", Y: " << Y.dimension_0 () << " x " << Y.dimension_1 ();
     Kokkos::Impl::throw_runtime_exception (os.str ());
   }
 
-  // Create unmanaged versions of the input Views.  RMV, XMV, and YMV
-  // may be rank 1 or rank 2.  AV and BV may be either rank-1 Views,
-  // or scalar values.
-  typedef Kokkos::View<
-    typename Kokkos::Impl::if_c<
-      RMV::rank == 1,
-      typename RMV::non_const_value_type*,
-      typename RMV::non_const_value_type** >::type,
-    typename RMV::array_layout,
-    typename RMV::device_type,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    typename RMV::specialize> RMV_Internal;
+  // Create unmanaged versions of the input Views.  XMV and YMV may be
+  // rank 1 or rank 2.  AV and BV may be either rank-1 Views, or
+  // scalar values.
   typedef typename GetInternalTypeForAxpby<
     AV, Kokkos::Impl::is_view<AV>::value>::type AV_Internal;
   typedef Kokkos::View<
     typename Kokkos::Impl::if_c<
       XMV::rank == 1,
-      typename XMV::non_const_value_type*,
-      typename XMV::non_const_value_type** >::type,
+      typename XMV::const_value_type*,
+      typename XMV::const_value_type** >::type,
     typename XMV::array_layout,
     typename XMV::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -1001,7 +984,6 @@ axpby (const RMV& R, const AV& a, const XMV& X, const BV& b, const YMV& Y)
     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
     typename YMV::specialize> YMV_Internal;
 
-  RMV_Internal R_internal = R;
   AV_Internal  a_internal = a;
   XMV_Internal X_internal = X;
   BV_Internal  b_internal = b;
@@ -1011,7 +993,6 @@ axpby (const RMV& R, const AV& a, const XMV& X, const BV& b, const YMV& Y)
   using std::cerr;
   using std::endl;
   cerr << "KokkosBlas::axpby:" << endl
-       << "  RMV_Internal: " << demangledTypeName (R_internal) << endl
        << "  AV_Internal: " << demangledTypeName (a_internal) << endl
        << "  XMV_Internal: " << demangledTypeName (X_internal) << endl
        << "  BV_Internal: " << demangledTypeName (b_internal) << endl
@@ -1019,9 +1000,8 @@ axpby (const RMV& R, const AV& a, const XMV& X, const BV& b, const YMV& Y)
        << endl;
 #endif // TPETRAKERNELS_PRINT_DEMANGLED_TYPE_INFO
 
-  return Impl::Axpby<RMV_Internal, AV_Internal, XMV_Internal,
-    BV_Internal, YMV_Internal>::axpby (R_internal, a_internal, X_internal,
-                                       b_internal, Y_internal);
+  return Impl::Axpby<AV_Internal, XMV_Internal, BV_Internal,
+    YMV_Internal>::axpby (a_internal, X_internal, b_internal, Y_internal);
 }
 
 

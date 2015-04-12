@@ -320,7 +320,7 @@ benchmarkKokkos (std::ostream& out,
     const double beta = 0.0;
 
     for (int k = 0; k < numTrials; ++k) {
-      KokkosBlas::axpby (y, alpha, x, beta, y);
+      KokkosBlas::axpby (alpha, x, beta, y);
     }
   }
   {
@@ -329,7 +329,7 @@ benchmarkKokkos (std::ostream& out,
     const double beta = 4.0;
 
     for (int k = 0; k < numTrials; ++k) {
-      KokkosBlas::axpby (y, alpha, x, beta, y);
+      KokkosBlas::axpby (alpha, x, beta, y);
     }
   }
 
