@@ -414,8 +414,6 @@ void RBILUK<MatrixType>::compute ()
 
     // Need some integer workspace and pointers
     local_ordinal_type NumUU;
-    Teuchos::ArrayView<const local_ordinal_type> UUI;
-    Teuchos::ArrayView<const scalar_type> UUV;
     for (size_t j = 0; j < num_cols; ++j) {
       colflag[j] = -1;
     }
@@ -528,8 +526,9 @@ void RBILUK<MatrixType>::compute ()
 
         LST* const d_raw = reinterpret_cast<LST*> (dmat.getRawPtr());
         int lapackInfo;
-        for (int i = 0; i < blockSize; ++i)
-          ipiv[i] = 0;
+        for (int k = 0; k < blockSize; ++k) {
+          ipiv[k] = 0;
+        }
 
         lapack.GETRF(blockSize, blockSize, d_raw, blockSize, ipiv.getRawPtr(), &lapackInfo);
         TEUCHOS_TEST_FOR_EXCEPTION(
