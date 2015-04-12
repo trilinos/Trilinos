@@ -4555,7 +4555,7 @@ namespace Tpetra {
       // constant stride copy of B.  We don't have to copy back, since
       // Gauss-Seidel won't modify B.
       RCP<MV> B_in_nonconst = getRowMapMultiVector (B, true);
-      *B_in_nonconst = B; // Copy from B into B_in(_nonconst).
+      deep_copy (*B_in_nonconst, B); // Copy from B into B_in(_nonconst).
       B_in = rcp_const_cast<const MV> (B_in_nonconst);
 
       TPETRA_EFFICIENCY_WARNING(
@@ -4648,18 +4648,21 @@ namespace Tpetra {
 
       // Do local Gauss-Seidel.
       if (direction != Symmetric) {
-        if(rowIndices.is_null())
+        if (rowIndices.is_null ()) {
           this->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
                                                    dampingFactor,
                                                    localDirection);
-        else
+        }
+        else {
           this->template reorderedLocalGaussSeidel<ST, ST> (*B_in, *X_colMap,
                                                             D, rowIndices,
                                                             dampingFactor,
                                                             localDirection);
-      } else { // direction == Symmetri
+        }
+      }
+      else { // direction == Symmetric
         const bool doImportBetweenDirections = false;
-        if(rowIndices.is_null()) {
+        if (rowIndices.is_null ()) {
           this->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
                                                    dampingFactor,
                                                    KokkosClassic::Forward);
@@ -4752,8 +4755,8 @@ namespace Tpetra {
       prefix << "The matrix is not fill complete.");
     TEUCHOS_TEST_FOR_EXCEPTION(
       numSweeps < 0, std::invalid_argument,
-      prefix << "The number of sweeps must be nonnegative, but you provided "
-      "numSweeps = " << numSweeps << " < 0.");
+      prefix << "The number of sweeps must be nonnegative, "
+      "but you provided numSweeps = " << numSweeps << " < 0.");
 
     // Translate from global to local sweep direction.
     // While doing this, validate the input.
@@ -4963,7 +4966,6 @@ namespace Tpetra {
       // use the cached row Map multivector to store a constant stride
       // copy of B.
       RCP<MV> B_in_nonconst = getRowMapMultiVector (B, true);
-
       try {
         deep_copy (*B_in_nonconst, B);
       } catch (std::exception& e) {
@@ -4994,16 +4996,19 @@ namespace Tpetra {
 
       // Do local Gauss-Seidel.
       if (direction != Symmetric) {
-        if(rowIndices.is_null())
+        if (rowIndices.is_null ()) {
           this->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
                                                    dampingFactor,
                                                    localDirection);
-        else
+        }
+        else {
           this->template reorderedLocalGaussSeidel<ST, ST> (*B_in, *X_colMap,
                                                             D, rowIndices,
                                                             dampingFactor,
                                                             localDirection);
-      } else { // direction == Symmetric
+        }
+      }
+      else { // direction == Symmetric
         if (rowIndices.is_null ()) {
           this->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
                                                    dampingFactor,
@@ -7273,7 +7278,7 @@ namespace Tpetra {
     /***************************************************/
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC ImportSetup"))));
-#endif 
+#endif
     // Get the owning PIDs
     RCP<const import_type> MyImporter = getGraph ()->getImporter ();
 
@@ -7331,7 +7336,7 @@ namespace Tpetra {
     }
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Pack-2"))));
-#endif 
+#endif
 
     // Tpetra-specific stuff
     //
@@ -7452,7 +7457,7 @@ namespace Tpetra {
     // view (host_numImportPacketsPerLID_).
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Transfer"))));
-#endif 
+#endif
 
     if (communication_needed) {
       if (reverseMode) {
@@ -7512,7 +7517,7 @@ namespace Tpetra {
     // view (host_numImportPacketsPerLID_).
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Unpack-1"))));
-#endif 
+#endif
     size_t mynnz =
       Import_Util::unpackAndCombineWithOwningPIDsCount (*this, RemoteLIDs,
                                                         destMat->imports_old_ (),
@@ -7566,7 +7571,7 @@ namespace Tpetra {
     /**************************************************************/
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Unpack-2"))));
-#endif 
+#endif
     // Call an optimized version of makeColMap that avoids the
     // Directory lookups (since the Import object knows who owns all
     // the GIDs).
@@ -7605,7 +7610,7 @@ namespace Tpetra {
     /***************************************************/
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Unpack-3"))));
-#endif 
+#endif
     Import_Util::sortCrsEntries (CSR_rowptr (),
                                  CSR_colind_LID (),
                                  CSR_vals ());
@@ -7648,7 +7653,7 @@ namespace Tpetra {
     // Pre-build the importer using the existing PIDs
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC ESFC"))));
-#endif 
+#endif
     RCP<import_type> MyImport = rcp (new import_type (MyDomainMap, MyColMap, RemotePids));
     destMat->expertStaticFillComplete (MyDomainMap, MyRangeMap, MyImport);
   }
