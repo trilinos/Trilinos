@@ -2202,7 +2202,111 @@ namespace Tpetra {
   scale (const Scalar& alpha,
          const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& A)
   {
-    this->update (alpha, A, Teuchos::ScalarTraits<Scalar>::zero ());
+    using Kokkos::ALL;
+    using Kokkos::subview;
+    const char tfecfFuncName[] = "scale: ";
+
+    const size_t lclNumRows = getLocalLength ();
+    const size_t numVecs = getNumVectors ();
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      lclNumRows != A.getLocalLength (), std::invalid_argument,
+      "this->getLocalLength() = " << lclNumRows << " != A.getLocalLength() = "
+      << A.getLocalLength () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      numVecs != A.getNumVectors (), std::invalid_argument,
+      "this->getNumVectors() = " << numVecs << " != A.getNumVectors() = "
+      << A.getNumVectors () << ".");
+
+    const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
+    const std::pair<size_t, size_t> rowRng (0, lclNumRows);
+    const std::pair<size_t, size_t> colRng (0, numVecs);
+
+    typedef typename dual_view_type::t_dev dev_view_type;
+    typedef typename dual_view_type::t_host host_view_type;
+#ifndef KOKKOS_HAVE_CXX11
+    typedef Kokkos::View<impl_scalar_type*,
+      typename dev_view_type::array_layout,
+      typename dev_view_type::device_type,
+      typename dev_view_type::memory_traits,
+      typename dev_view_type::specialize> col_dev_view_type;
+    typedef Kokkos::View<impl_scalar_type*,
+      typename host_view_type::array_layout,
+      typename host_view_type::device_type,
+      typename host_view_type::memory_traits,
+      typename host_view_type::specialize> col_host_view_type;
+#endif // NOT KOKKOS_HAVE_CXX11
+
+    // FIXME (mfh 05 Mar 2015) DualView flags are not indicative when
+    // the two memory spaces are the same, so we check the latter.
+    const bool oneMemorySpace =
+      Kokkos::Impl::is_same<typename dev_view_type::memory_space,
+                            typename host_view_type::memory_space>::value;
+    if (! oneMemorySpace && A.view_.modified_host >= A.view_.modified_device) {
+      // Work on host, where A's data were most recently modified.  A
+      // is a "guest" of this method, so it's more polite to sync
+      // *this, than to sync A.
+      this->view_.template sync<typename host_view_type::memory_space> ();
+      this->view_.template modify<typename host_view_type::memory_space> ();
+#ifdef KOKKOS_HAVE_CXX11
+      auto Y_lcl = subview (this->view_.h_view, rowRng, colRng);
+      auto X_lcl = subview (A.view_.h_view, rowRng, colRng);
+#else
+      host_view_type Y_lcl = subview (this->view_.h_view, rowRng, colRng);
+      host_view_type X_lcl = subview (A.view_.h_view, rowRng, colRng);
+#endif // KOKKOS_HAVE_CXX11
+
+      if (isConstantStride () && A.isConstantStride ()) {
+        KokkosBlas::scal (Y_lcl, theAlpha, X_lcl);
+      }
+      else {
+        // Make sure that Kokkos only uses the local length for add.
+        for (size_t k = 0; k < numVecs; ++k) {
+          const size_t Y_col = this->isConstantStride () ? k : this->whichVectors_[k];
+          const size_t X_col = A.isConstantStride () ? k : A.whichVectors_[k];
+#ifdef KOKKOS_HAVE_CXX11
+          auto Y_k = subview (Y_lcl, ALL (), Y_col);
+          auto X_k = subview (X_lcl, ALL (), X_col);
+#else
+          col_host_view_type Y_k = subview (Y_lcl, ALL (), Y_col);
+          col_host_view_type X_k = subview (X_lcl, ALL (), X_col);
+#endif // KOKKOS_HAVE_CXX11
+          KokkosBlas::scal (Y_k, theAlpha, X_k);
+        }
+      }
+    }
+    else { // work on device
+      // A is a "guest" of this method, so it's more polite to sync
+      // *this, than to sync A.
+      this->view_.template sync<typename dev_view_type::memory_space> ();
+      this->view_.template modify<typename dev_view_type::memory_space> ();
+#ifdef KOKKOS_HAVE_CXX11
+      auto Y_lcl = subview (this->view_.d_view, rowRng, colRng);
+      auto X_lcl = subview (A.view_.d_view, rowRng, colRng);
+#else
+      dev_view_type Y_lcl = subview (this->view_.d_view, rowRng, colRng);
+      dev_view_type X_lcl = subview (A.view_.d_view, rowRng, colRng);
+#endif // KOKKOS_HAVE_CXX11
+
+      if (isConstantStride () && A.isConstantStride ()) {
+        KokkosBlas::scal (Y_lcl, theAlpha, X_lcl);
+      }
+      else {
+        // Make sure that Kokkos only uses the local length for add.
+        for (size_t k = 0; k < numVecs; ++k) {
+          const size_t Y_col = this->isConstantStride () ? k : this->whichVectors_[k];
+          const size_t X_col = A.isConstantStride () ? k : A.whichVectors_[k];
+#ifdef KOKKOS_HAVE_CXX11
+          auto Y_k = subview (Y_lcl, ALL (), Y_col);
+          auto X_k = subview (X_lcl, ALL (), X_col);
+#else
+          col_dev_view_type Y_k = subview (Y_lcl, ALL (), Y_col);
+          col_dev_view_type X_k = subview (X_lcl, ALL (), X_col);
+#endif // KOKKOS_HAVE_CXX11
+          KokkosBlas::scal (Y_k, theAlpha, X_k);
+        }
+      }
+    }
   }
 
 
@@ -2361,6 +2465,7 @@ namespace Tpetra {
       // is a "guest" of this method, so it's more polite to sync
       // *this, than to sync A.
       this->view_.template sync<typename host_view_type::memory_space> ();
+      this->view_.template modify<typename host_view_type::memory_space> ();
 #ifdef KOKKOS_HAVE_CXX11
       auto Y_lcl = subview (this->view_.h_view, rowRng, colRng);
       auto X_lcl = subview (A.view_.h_view, rowRng, colRng);
@@ -2392,6 +2497,7 @@ namespace Tpetra {
       // A is a "guest" of this method, so it's more polite to sync
       // *this, than to sync A.
       this->view_.template sync<typename dev_view_type::memory_space> ();
+      this->view_.template modify<typename dev_view_type::memory_space> ();
 #ifdef KOKKOS_HAVE_CXX11
       auto Y_lcl = subview (this->view_.d_view, rowRng, colRng);
       auto X_lcl = subview (A.view_.d_view, rowRng, colRng);

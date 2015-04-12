@@ -1195,8 +1195,24 @@ MV_Axpby_Unrolled (const AV& av, const XMV& x,
     Kokkos::parallel_for (policy, op);
     return;
   }
-  // a and b arbitrary (not -1, 0, or 1)
+  // a == 2
+  if (a == 2 && b == 0) {
+    MV_Axpby_Unroll_Functor<AV, XMV, BV, YMV, 2, 0, UNROLL, SizeType> op (x, y, av, bv);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == 2 && b == -1) {
+    MV_Axpby_Unroll_Functor<AV, XMV, BV, YMV, 2, -1, UNROLL, SizeType> op (x, y, av, bv);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == 2 && b == 1) {
+    MV_Axpby_Unroll_Functor<AV, XMV, BV, YMV, 2, 1, UNROLL, SizeType> op (x, y, av, bv);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
 
+  // a and b arbitrary (not -1, 0, or 1)
   MV_Axpby_Unroll_Functor<AV, XMV, BV, YMV, 2, 2, UNROLL, SizeType> op (x, y, av, bv);
   Kokkos::parallel_for (policy, op);
 }
@@ -1307,8 +1323,24 @@ MV_Axpby_Generic (const AV& av, const XMV& x,
     Kokkos::parallel_for (policy, op);
     return;
   }
-  // a and b arbitrary (not -1, 0, or 1)
+  // a == 2
+  if (a == 2 && b == 0) {
+    MV_Axpby_Functor<AV, XMV, BV, YMV, 2, 0, SizeType> op (x, y, av, bv);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == 2 && b == -1) {
+    MV_Axpby_Functor<AV, XMV, BV, YMV, 2, -1, SizeType> op (x, y, av, bv);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == 2 && b == 1) {
+    MV_Axpby_Functor<AV, XMV, BV, YMV, 2, 1, SizeType> op (x, y, av, bv);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
 
+  // a and b arbitrary (not -1, 0, or 1)
   MV_Axpby_Functor<AV, XMV, BV, YMV, 2, 2, SizeType> op (x, y, av, bv);
   Kokkos::parallel_for (policy, op);
 }
@@ -1401,6 +1433,22 @@ V_Axpby_Generic (const AV& av, const XV& x,
   }
   if (a == 1 && b == 2) {
     V_Axpby_Functor<AV, XV, BV, YV, 1, 2, SizeType> op (x, y, av, bv);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  // a == 2
+  if (a == 2 && b == 0) {
+    V_Axpby_Functor<AV, XV, BV, YV, 2, 0, SizeType> op (x, y, av, bv);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == 2 && b == -1) {
+    V_Axpby_Functor<AV, XV, BV, YV, 2, -1, SizeType> op (x, y, av, bv);
+    Kokkos::parallel_for (policy, op);
+    return;
+  }
+  if (a == 2 && b == 1) {
+    V_Axpby_Functor<AV, XV, BV, YV, 2, 1, SizeType> op (x, y, av, bv);
     Kokkos::parallel_for (policy, op);
     return;
   }
