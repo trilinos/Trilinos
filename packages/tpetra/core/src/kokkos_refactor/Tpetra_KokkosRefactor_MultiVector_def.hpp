@@ -69,28 +69,45 @@ namespace { // (anonymous)
   ///   DualView to zero.  Kokkos does first-touch initialization.
   ///
   /// \return The allocated Kokkos::DualView.
-  template<class S, class LO, class GO, class D>
-  typename Tpetra::MultiVector<S, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D>, false>::dual_view_type
+  template<class ST, class LO, class GO, class DT>
+  typename Tpetra::MultiVector<ST, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<DT>, false>::dual_view_type
   allocDualView (const size_t lclNumRows, const size_t numCols, const bool zeroOut = true)
   {
-    typedef typename Tpetra::MultiVector<S, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D>, false>::dual_view_type dual_view_type;
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DT> NT;
+    typedef typename Tpetra::MultiVector<ST, LO, GO, NT, false>::dual_view_type dual_view_type;
     const char* label = "MV::DualView";
 
-    (void) zeroOut;
-    return dual_view_type (label, lclNumRows, numCols);
+    if (zeroOut) {
+      return dual_view_type (label, lclNumRows, numCols);
+    }
+    else {
+      // FIXME (mfh 18 Feb 2015, 12 Apr 2015) This is just a hack,
+      // until Kokkos::DualView accepts an AllocationProperties
+      // initial argument, just like Kokkos::View.  However, the hack
+      // is harmless, since it does what the (currently nonexistent)
+      // equivalent DualView constructor would have done anyway.
+      typename dual_view_type::t_dev d_view (Kokkos::ViewAllocateWithoutInitializing (label), lclNumRows, numCols);
+#ifdef HAVE_TPETRA_DEBUG
+      // Filling with NaN is a cheap and effective way to tell if
+      // downstream code is trying to use a MultiVector's data without
+      // them having been initialized.  ArithTraits lets us call nan()
+      // even if the scalar type doesn't define it; it just returns some
+      // undefined value in the latter case.  This won't hurt anything
+      // because by setting zeroOut=false, users already agreed that
+      // they don't care about the contents of the MultiVector.
+      const ST nan = Kokkos::Details::ArithTraits<ST>::nan ();
+      KokkosBlas::fill (d_view, nan);
+#endif // HAVE_TPETRA_DEBUG
+      typename dual_view_type::t_host h_view = Kokkos::create_mirror_view (d_view);
+      // Even though the user doesn't care about the contents of the
+      // MultiVector, the device and host views are still out of sync.
+      // We prefer to work in device memory.  The way to ensure this
+      // happens is to mark the device view as modified.
+      dual_view_type dv (d_view, h_view);
+      dv.template modify<typename dual_view_type::t_dev::memory_space> ();
 
-    // if (zeroOut) {
-    //   return dual_view_type (label, lclNumRows, numCols);
-    // } else {
-    //   // FIXME (mfh 18 Feb 2015) This is just a hack, until
-    //   // Kokkos::DualView accepts an AllocationProperties initial
-    //   // argument, just like Kokkos::View does.  However, the hack is
-    //   // harmless, since it does what the (currently nonexistent)
-    //   // equivalent DualView constructor would have done anyway.
-    //   typename dual_view_type::t_dev d_view (Kokkos::ViewAllocateWithoutInitializing (label), lclNumRows, numCols);
-    //   typename dual_view_type::t_host h_view = Kokkos::create_mirror_view (d_view);
-    //   return dual_view_type (d_view, h_view);
-    // }
+      return dual_view_type (d_view, h_view);
+    }
   }
 
   // Convert 1-D Teuchos::ArrayView to an unmanaged 1-D host Kokkos::View.
@@ -2417,15 +2434,16 @@ namespace Tpetra {
     using Kokkos::subview;
     const char tfecfFuncName[] = "update(alpha,A,beta,B,gamma): ";
 
+    const size_t lclNumRows = this->getLocalLength ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      getLocalLength () != A.getLocalLength (), std::invalid_argument,
+      lclNumRows != A.getLocalLength (), std::invalid_argument,
       "The input MultiVector A has " << A.getLocalLength () << " local "
-      "row(s), but this MultiVector has " << getLocalLength () << " local "
+      "row(s), but this MultiVector has " << lclNumRows << " local "
       "row(s).");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      getLocalLength () != B.getLocalLength (), std::invalid_argument,
+      lclNumRows != B.getLocalLength (), std::invalid_argument,
       "The input MultiVector B has " << B.getLocalLength () << " local "
-      "row(s), but this MultiVector has " << getLocalLength () << " local "
+      "row(s), but this MultiVector has " << lclNumRows << " local "
       "row(s).");
     const size_t numVecs = getNumVectors ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -2437,32 +2455,53 @@ namespace Tpetra {
       "The input MultiVector B has " << B.getNumVectors () << " column(s), "
       "but this MultiVector has " << numVecs << " column(s).");
 
-    const impl_scalar_type zero = Kokkos::Details::ArithTraits<impl_scalar_type>::zero ();
-    const impl_scalar_type one = Kokkos::Details::ArithTraits<impl_scalar_type>::one ();
     const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
     const impl_scalar_type theBeta = static_cast<impl_scalar_type> (beta);
     const impl_scalar_type theGamma = static_cast<impl_scalar_type> (gamma);
 
-    if (isConstantStride() && A.isConstantStride () && B.isConstantStride ()) {
-      KokkosBlas::update (theAlpha, A.view_.d_view, theBeta, B.view_.d_view,
-                          theGamma, this->view_.d_view);
+    // We're lucky if *this, A, and B are all sync'd to the same
+    // memory space.  If not, we have to sync _something_.  Unlike
+    // three-argument update() or (say) dot(), we may have to sync one
+    // of the inputs.  For now, we just sync _everything_ to device.
+    this->view_.template sync<typename dual_view_type::t_dev::memory_space> ();
+    A.view_.template sync<typename dual_view_type::t_dev::memory_space> ();
+    B.view_.template sync<typename dual_view_type::t_dev::memory_space> ();
+
+    // This method modifies *this.
+    this->template modify<typename dual_view_type::t_dev::memory_space> ();
+
+    const std::pair<size_t, size_t> rowRng (0, lclNumRows);
+    const std::pair<size_t, size_t> colRng (0, numVecs);
+
+    // Prefer 'auto' over specifying the type explicitly.  This avoids
+    // issues with a subview possibly having a different type than the
+    // original view.
+#ifdef KOKKOS_HAVE_CXX11
+    auto C_lcl = subview (this->view_.d_view, rowRng, colRng);
+    auto A_lcl = subview (A.view_.d_view, rowRng, colRng);
+    auto B_lcl = subview (B.view_.d_view, rowRng, colRng);
+#else
+    typename dual_view_type::t_dev C_lcl =
+      subview (this->view_.d_view, rowRng, colRng);
+    typename dual_view_type::t_dev A_lcl =
+      subview (A.view_.d_view, rowRng, colRng);
+    typename dual_view_type::t_dev B_lcl =
+      subview (B.view_.d_view, rowRng, colRng);
+#endif // KOKKOS_HAVE_CXX11
+
+    if (isConstantStride () && A.isConstantStride () && B.isConstantStride ()) {
+      KokkosBlas::update (theAlpha, A_lcl, theBeta, B_lcl, theGamma, C_lcl);
     }
     else {
       // Some input (or *this) is not constant stride,
       // so perform the update one column at a time.
-
-      // Make sure that Kokkos only uses the local length for add.
-      const size_t lclNumRows = this->getLocalLength ();
-      const std::pair<size_t, size_t> rowRng (0, lclNumRows);
-
       for (size_t k = 0; k < numVecs; ++k) {
         const size_t this_col = isConstantStride () ? k : whichVectors_[k];
         const size_t A_col = A.isConstantStride () ? k : A.whichVectors_[k];
         const size_t B_col = B.isConstantStride () ? k : B.whichVectors_[k];
-
-        KokkosBlas::update (theAlpha, subview (A.view_.d_view, rowRng, A_col),
-                            theBeta, subview (B.view_.d_view, rowRng, B_col),
-                            theGamma, subview (this->view_.d_view, rowRng, this_col));
+        KokkosBlas::update (theAlpha, subview (A_lcl, rowRng, A_col),
+                            theBeta, subview (B_lcl, rowRng, B_col),
+                            theGamma, subview (C_lcl, rowRng, this_col));
       }
     }
   }
@@ -2489,11 +2528,10 @@ namespace Tpetra {
     host_view_type hostView = view_.template view<host_type> ();
     // Get a subview of column j.
     host_view_type hostView_j;
-    if (isConstantStride ()) {
-      hostView_j = subview (hostView, ALL (), Kokkos::pair<int,int>(j,j+1));
-    } else {
-      hostView_j = subview (hostView, ALL (), Kokkos::pair<int,int>(whichVectors_[j],whichVectors_[j]+1));
-    }
+
+    const size_t colStart = isConstantStride () ? j : whichVectors_[j];
+    const std::pair<size_t, size_t> colRng (colStart, colStart+1);
+    hostView_j = subview (hostView, ALL (), colRng);
 
     // Wrap up the subview of column j in an ArrayRCP<const impl_scalar_type>.
     Teuchos::ArrayRCP<const impl_scalar_type> dataAsArcp =
