@@ -50,262 +50,175 @@ namespace Impl {
 #ifdef KOKKOS_HAVE_SERIAL
 #define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Serial
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
+#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 void
-Fill_MV<double**, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault>::
-fill (const XMV& X, const double& val)
+Fill<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
+                  Kokkos::LayoutLeft,
+                  Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                  Kokkos::Impl::ViewDefault>,
+     2>::
+fill (const XMV& X, const XMV::non_const_value_type& val)
 {
-  // XMV needs to turn 1-D.
-  typedef Kokkos::View<XMV::value_type*, XMV::array_layout, XMV::device_type,
-    XMV::memory_traits, XMV::specialize> XMV1D;
-
+  typedef XMV::size_type size_type;
   const size_type numRows = X.dimension_0 ();
   const size_type numCols = X.dimension_1 ();
 
-  // NOTE (mfh 02 Apr 2015): For LayoutLeft, it's reasonable to do one
-  // column at a time.  This ensures contiguous access.  However, it
-  // comes at the cost of doing a kernel launch for every column.
-  //
-  // The "right way" to do LayoutLeft is to cache block.
-  // Overdecompose hardware teams by ~6-10x.  Within each cache block,
-  // parallelize first over columns (threads), then over entries
-  // within a column (vector lanes).
-
-  // int is generally faster than size_t, but check for overflow first.
-  if (numRows < static_cast<XMV::size_type> (INT_MAX) &&
-      numRows * numCols < static_cast<XMV::size_type> (INT_MAX)) {
-    typedef V_FillFunctor<XMV1D, int> functor_type;
-    Kokkos::RangePolicy<XMV::execution_space, int> policy (0, numRows);
-
-    for (size_type j = 0; j < numCols; ++j) {
-      XMV1D X_j = Kokkos::subview (X, Kokkos::ALL (), j);
-      functor_type op (X_j, val);
-      Kokkos::parallel_for (policy, op);
-    }
+  // The first condition helps avoid overflow with the
+  // multiplication in the second condition.
+  if (numRows < static_cast<size_type> (INT_MAX) &&
+      numRows * numCols < static_cast<size_type> (INT_MAX)) {
+    MV_Fill_Invoke<XMV, int> (X, val);
   }
   else {
-    typedef V_FillFunctor<XMV1D, size_type> functor_type;
-    Kokkos::RangePolicy<XMV::execution_space, size_type> policy (0, numRows);
-
-    for (size_type j = 0; j < numCols; ++j) {
-      XMV1D X_j = Kokkos::subview (X, Kokkos::ALL (), j);
-      functor_type op (X_j, val);
-      Kokkos::parallel_for (policy, op);
-    }
+    MV_Fill_Invoke<XMV, size_type> (X, val);
   }
 }
 
 #undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
+#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #endif // KOKKOS_HAVE_SERIAL
 
 
 #ifdef KOKKOS_HAVE_OPENMP
 #define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::OpenMP
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
+#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 void
-Fill_MV<double**, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault>::
-fill (const XMV& X, const double& val)
+Fill<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
+                               Kokkos::LayoutLeft,
+                               Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                               Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                               Kokkos::Impl::ViewDefault>,
+                  2>::
+fill (const XMV& X, const XMV::non_const_value_type& val)
 {
-  // XMV needs to turn 1-D.
-  typedef Kokkos::View<XMV::value_type*, XMV::array_layout, XMV::device_type,
-    XMV::memory_traits, XMV::specialize> XMV1D;
-
+  typedef XMV::size_type size_type;
   const size_type numRows = X.dimension_0 ();
   const size_type numCols = X.dimension_1 ();
 
-  // NOTE (mfh 02 Apr 2015): For LayoutLeft, it's reasonable to do one
-  // column at a time.  This ensures contiguous access.  However, it
-  // comes at the cost of doing a kernel launch for every column.
-  //
-  // The "right way" to do LayoutLeft is to cache block.
-  // Overdecompose hardware teams by ~6-10x.  Within each cache block,
-  // parallelize first over columns (threads), then over entries
-  // within a column (vector lanes).
-
-  // int is generally faster than size_t, but check for overflow first.
-  if (numRows < static_cast<XMV::size_type> (INT_MAX) &&
-      numRows * numCols < static_cast<XMV::size_type> (INT_MAX)) {
-    typedef V_FillFunctor<XMV1D, int> functor_type;
-    Kokkos::RangePolicy<XMV::execution_space, int> policy (0, numRows);
-
-    for (size_type j = 0; j < numCols; ++j) {
-      functor_type op (Kokkos::subview (X, Kokkos::ALL (), j), val);
-      Kokkos::parallel_for (policy, op);
-    }
+  // The first condition helps avoid overflow with the
+  // multiplication in the second condition.
+  if (numRows < static_cast<size_type> (INT_MAX) &&
+      numRows * numCols < static_cast<size_type> (INT_MAX)) {
+    MV_Fill_Invoke<XMV, int> (X, val);
   }
   else {
-    typedef V_FillFunctor<XMV1D, size_type> functor_type;
-    Kokkos::RangePolicy<XMV::execution_space, size_type> policy (0, numRows);
-
-    for (size_type j = 0; j < numCols; ++j) {
-      functor_type op (Kokkos::subview (X, Kokkos::ALL (), j), val);
-      Kokkos::parallel_for (policy, op);
-    }
+    MV_Fill_Invoke<XMV, size_type> (X, val);
   }
 }
 
 #undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
+#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #endif // KOKKOS_HAVE_OPENMP
 
 
 #ifdef KOKKOS_HAVE_PTHREAD
 #define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Threads
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
+#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 void
-Fill_MV<double**, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault>::
-fill (const XMV& X, const double& val)
+Fill<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
+                               Kokkos::LayoutLeft,
+                               Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                               Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                               Kokkos::Impl::ViewDefault>,
+                  2>::
+fill (const XMV& X, const XMV::non_const_value_type& val)
 {
-  // XMV needs to turn 1-D.
-  typedef Kokkos::View<XMV::value_type*, XMV::array_layout, XMV::device_type,
-    XMV::memory_traits, XMV::specialize> XMV1D;
-
+  typedef XMV::size_type size_type;
   const size_type numRows = X.dimension_0 ();
   const size_type numCols = X.dimension_1 ();
 
-  // NOTE (mfh 02 Apr 2015): For LayoutLeft, it's reasonable to do one
-  // column at a time.  This ensures contiguous access.  However, it
-  // comes at the cost of doing a kernel launch for every column.
-  //
-  // The "right way" to do LayoutLeft is to cache block.
-  // Overdecompose hardware teams by ~6-10x.  Within each cache block,
-  // parallelize first over columns (threads), then over entries
-  // within a column (vector lanes).
-
-  // int is generally faster than size_t, but check for overflow first.
-  if (numRows < static_cast<XMV::size_type> (INT_MAX) &&
-      numRows * numCols < static_cast<XMV::size_type> (INT_MAX)) {
-    typedef V_FillFunctor<XMV1D, int> functor_type;
-    Kokkos::RangePolicy<XMV::execution_space, int> policy (0, numRows);
-
-    for (size_type j = 0; j < numCols; ++j) {
-      functor_type op (Kokkos::subview (X, Kokkos::ALL (), j), val);
-      Kokkos::parallel_for (policy, op);
-    }
+  // The first condition helps avoid overflow with the
+  // multiplication in the second condition.
+  if (numRows < static_cast<size_type> (INT_MAX) &&
+      numRows * numCols < static_cast<size_type> (INT_MAX)) {
+    MV_Fill_Invoke<XMV, int> (X, val);
   }
   else {
-    typedef V_FillFunctor<XMV1D, size_type> functor_type;
-    Kokkos::RangePolicy<XMV::execution_space, size_type> policy (0, numRows);
-
-    for (size_type j = 0; j < numCols; ++j) {
-      functor_type op (Kokkos::subview (X, Kokkos::ALL (), j), val);
-      Kokkos::parallel_for (policy, op);
-    }
+    MV_Fill_Invoke<XMV, size_type> (X, val);
   }
 }
 
 #undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
+#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #endif // KOKKOS_HAVE_PTHREAD
 
 
 #ifdef KOKKOS_HAVE_CUDA
 #define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Cuda
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaSpace
+#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 void
-Fill_MV<double**, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault>::
-fill (const XMV& X, const double& val)
+Fill<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
+                               Kokkos::LayoutLeft,
+                               Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                               Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                               Kokkos::Impl::ViewDefault>,
+                  2>::
+fill (const XMV& X, const XMV::non_const_value_type& val)
 {
-  // XMV needs to turn 1-D.
-  typedef Kokkos::View<XMV::value_type*, XMV::array_layout, XMV::device_type,
-    XMV::memory_traits, XMV::specialize> XMV1D;
-
+  typedef XMV::size_type size_type;
   const size_type numRows = X.dimension_0 ();
   const size_type numCols = X.dimension_1 ();
 
-  // NOTE (mfh 02 Apr 2015): For LayoutLeft, it's reasonable to do one
-  // column at a time.  This ensures contiguous access.  However, it
-  // comes at the cost of doing a kernel launch for every column.
-  //
-  // The "right way" to do LayoutLeft is to cache block.
-  // Overdecompose hardware teams by ~6-10x.  Within each cache block,
-  // parallelize first over columns (threads), then over entries
-  // within a column (vector lanes).
-
-  // int is generally faster than size_t, but check for overflow first.
-  if (numRows < static_cast<XMV::size_type> (INT_MAX) &&
-      numRows * numCols < static_cast<XMV::size_type> (INT_MAX)) {
-    typedef V_FillFunctor<XMV1D, int> functor_type;
-    Kokkos::RangePolicy<XMV::execution_space, int> policy (0, numRows);
-
-    for (size_type j = 0; j < numCols; ++j) {
-      functor_type op (Kokkos::subview (X, Kokkos::ALL (), j), val);
-      Kokkos::parallel_for (policy, op);
-    }
+  // The first condition helps avoid overflow with the
+  // multiplication in the second condition.
+  if (numRows < static_cast<size_type> (INT_MAX) &&
+      numRows * numCols < static_cast<size_type> (INT_MAX)) {
+    MV_Fill_Invoke<XMV, int> (X, val);
   }
   else {
-    typedef V_FillFunctor<XMV1D, size_type> functor_type;
-    Kokkos::RangePolicy<XMV::execution_space, size_type> policy (0, numRows);
-
-    for (size_type j = 0; j < numCols; ++j) {
-      functor_type op (Kokkos::subview (X, Kokkos::ALL (), j), val);
-      Kokkos::parallel_for (policy, op);
-    }
+    MV_Fill_Invoke<XMV, size_type> (X, val);
   }
 }
 
 #undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
+#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #endif // KOKKOS_HAVE_CUDA
 
 
 #ifdef KOKKOS_HAVE_CUDA
 #define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Cuda
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaUVMSpace
+#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 void
-Fill_MV<double**, Kokkos::LayoutLeft, Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, Kokkos::Impl::ViewDefault>::
-fill (const XMV& X, const double& val)
+Fill<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
+                               Kokkos::LayoutLeft,
+                               Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                               Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                               Kokkos::Impl::ViewDefault>,
+                  2>::
+fill (const XMV& X, const XMV::non_const_value_type& val)
 {
-  // XMV needs to turn 1-D.
-  typedef Kokkos::View<XMV::value_type*, XMV::array_layout, XMV::device_type,
-    XMV::memory_traits, XMV::specialize> XMV1D;
-
+  typedef XMV::size_type size_type;
   const size_type numRows = X.dimension_0 ();
   const size_type numCols = X.dimension_1 ();
 
-  // NOTE (mfh 02 Apr 2015): For LayoutLeft, it's reasonable to do one
-  // column at a time.  This ensures contiguous access.  However, it
-  // comes at the cost of doing a kernel launch for every column.
-  //
-  // The "right way" to do LayoutLeft is to cache block.
-  // Overdecompose hardware teams by ~6-10x.  Within each cache block,
-  // parallelize first over columns (threads), then over entries
-  // within a column (vector lanes).
-
-  // int is generally faster than size_t, but check for overflow first.
-  if (numRows < static_cast<XMV::size_type> (INT_MAX) &&
-      numRows * numCols < static_cast<XMV::size_type> (INT_MAX)) {
-    typedef V_FillFunctor<XMV1D, int> functor_type;
-    Kokkos::RangePolicy<XMV::execution_space, int> policy (0, numRows);
-
-    for (size_type j = 0; j < numCols; ++j) {
-      functor_type op (Kokkos::subview (X, Kokkos::ALL (), j), val);
-      Kokkos::parallel_for (policy, op);
-    }
+  // The first condition helps avoid overflow with the
+  // multiplication in the second condition.
+  if (numRows < static_cast<size_type> (INT_MAX) &&
+      numRows * numCols < static_cast<size_type> (INT_MAX)) {
+    MV_Fill_Invoke<XMV, int> (X, val);
   }
   else {
-    typedef V_FillFunctor<XMV1D, size_type> functor_type;
-    Kokkos::RangePolicy<XMV::execution_space, size_type> policy (0, numRows);
-
-    for (size_type j = 0; j < numCols; ++j) {
-      functor_type op (Kokkos::subview (X, Kokkos::ALL (), j), val);
-      Kokkos::parallel_for (policy, op);
-    }
+    MV_Fill_Invoke<XMV, size_type> (X, val);
   }
 }
 
 #undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
+#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #endif // KOKKOS_HAVE_CUDA
 
 } // namespace Impl
