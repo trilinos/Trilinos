@@ -1471,7 +1471,8 @@ namespace Tpetra {
               KokkosBlas::nrmInf (theNorms, k, X, X_col);
             }
             else if (whichNorm == IMPL_NORM_ONE) {
-              KokkosBlas::nrm1 (theNorms, k, X, X_col);
+              KokkosBlas::nrm1 (subview (theNorms, k),
+                                subview (X, ALL (), X_col));
             }
             else if (whichNorm == IMPL_NORM_TWO) {
               KokkosBlas::nrm2_squared (theNorms, k, X, X_col);
