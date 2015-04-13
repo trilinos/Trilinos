@@ -6,10 +6,10 @@ Level 0
  chebyshev: eigenvalue max iterations = 10   [default]
  chebyshev: zero starting solution = 1   [default]
  chebyshev: assume matrix does not change = 0   [default]
- 
+
  Setup Smoother (MueLu::Ifpack2Smoother{type = ILUT})
  [empty list]
- 
+
 Level 1
  Prolongator smoothing (MueLu::SaPFactory)
   Matrix filtering (MueLu::FilteredAFactory)
@@ -21,11 +21,11 @@ Level 1
    aggregation: Dirichlet threshold = 0   [default]
    aggregation: drop scheme = classical   [default]
    lightweight wrap = 1
-   
+
   filtered matrix: use lumping = 1   [default]
   filtered matrix: reuse graph = 1   [default]
   filtered matrix: reuse eigenvalue = 1   [default]
-  
+
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
    aggregation: mode = old   [default]
@@ -45,31 +45,31 @@ Level 1
    UseIsolatedNodeAggregationAlgorithm = 1   [default]
    UseEmergencyAggregationAlgorithm = 1   [default]
    OnePt aggregate map name =    [default]
-   
+
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
-   
+
    Build (MueLu::CoarseMapFactory)
    Striding info = {}   [default]
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
-   
+
   [empty list]
-  
+
  sa: damping factor = 1.33   [default]
  sa: calculate eigenvalue estimate = 0   [default]
  sa: eigenvalue estimate num iterations = 10   [default]
- 
+
  Transpose P (MueLu::TransPFactory)
  [empty list]
- 
+
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
- 
+
  Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
  chebyshev: ratio eigenvalue = 20
  chebyshev: min diagonal value = 2.22045e-16   [default]
@@ -77,10 +77,10 @@ Level 1
  chebyshev: eigenvalue max iterations = 10   [default]
  chebyshev: zero starting solution = 1   [default]
  chebyshev: assume matrix does not change = 0   [default]
- 
+
  Setup Smoother (MueLu::Ifpack2Smoother{type = ILUT})
  [empty list]
- 
+
 Level 2
  Prolongator smoothing (MueLu::SaPFactory)
   Matrix filtering (MueLu::FilteredAFactory)
@@ -92,11 +92,11 @@ Level 2
    aggregation: Dirichlet threshold = 0   [default]
    aggregation: drop scheme = classical   [default]
    lightweight wrap = 1
-   
+
   filtered matrix: use lumping = 1   [default]
   filtered matrix: reuse graph = 1   [default]
   filtered matrix: reuse eigenvalue = 1   [default]
-  
+
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
    aggregation: mode = old   [default]
@@ -116,35 +116,35 @@ Level 2
    UseIsolatedNodeAggregationAlgorithm = 1   [default]
    UseEmergencyAggregationAlgorithm = 1   [default]
    OnePt aggregate map name =    [default]
-   
+
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
-   
+
    Build (MueLu::CoarseMapFactory)
    Striding info = {}   [default]
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
-   
+
   [empty list]
-  
+
  sa: damping factor = 1.33   [default]
  sa: calculate eigenvalue estimate = 0   [default]
  sa: eigenvalue estimate num iterations = 10   [default]
- 
+
  Transpose P (MueLu::TransPFactory)
  [empty list]
- 
+
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
- 
+
  Setup Smoother (MueLu::Amesos2Smoother{type = Superlu})
- presmoother -> 
+ presmoother ->
   [empty list]
- 
+
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---

@@ -11,7 +11,7 @@ Level 0
  relaxation: fix tiny diagonal entries = 0   [default]
  relaxation: check diagonal entries = 0   [default]
  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
- 
+
 Level 1
  Build (MueLu::RebalanceTransferFactory)
   Build (MueLu::RepartitionFactory)
@@ -26,11 +26,11 @@ Level 1
       aggregation: Dirichlet threshold = 0   [default]
       aggregation: drop scheme = classical   [default]
       lightweight wrap = 1
-      
+
      filtered matrix: use lumping = 1   [default]
      filtered matrix: reuse graph = 1   [default]
      filtered matrix: reuse eigenvalue = 1   [default]
-     
+
      Build (MueLu::TentativePFactory)
       Build (MueLu::UncoupledAggregationFactory)
       aggregation: mode = old   [default]
@@ -50,48 +50,48 @@ Level 1
       UseIsolatedNodeAggregationAlgorithm = 1   [default]
       UseEmergencyAggregationAlgorithm = 1   [default]
       OnePt aggregate map name =    [default]
-      
+
       Nullspace factory (MueLu::NullspaceFactory)
       Fine level nullspace = Nullspace
-      
+
       Build (MueLu::CoarseMapFactory)
       Striding info = {}   [default]
       Strided block id = -1   [default]
       Domain GID offsets = {0}   [default]
-      
+
      [empty list]
-     
+
     sa: damping factor = 1.33   [default]
     sa: calculate eigenvalue estimate = 0   [default]
     sa: eigenvalue estimate num iterations = 10   [default]
-    
+
    Build (MueLu::CoordinatesTransferFactory)
    write start = -1   [default]
    write end = -1   [default]
-   
+
    transpose: use implicit = 1
    Keep AP Pattern = 0   [default]
    Keep RAP Pattern = 0   [default]
    CheckMainDiagonal = 0   [default]
    RepairMainDiagonal = 0   [default]
-   
+
   repartition: start level = 2   [default]
   repartition: min rows per proc = 800   [default]
   repartition: max imbalance = 1.2   [default]
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
   repartition: remap num values = 4   [default]
-  
+
  repartition: rebalance P and R = 0
  transpose: use implicit = 0   [default]
  repartition: use subcommunicators = 1   [default]
  type = Interpolation
  write start = -1   [default]
  write end = -1   [default]
- 
+
  Computing Ac (MueLu::RebalanceAcFactory)
  repartition: use subcommunicators = 1   [default]
- 
+
  Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
@@ -104,7 +104,7 @@ Level 1
  relaxation: fix tiny diagonal entries = 0   [default]
  relaxation: check diagonal entries = 0   [default]
  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
- 
+
 Level 2
  Build (MueLu::RebalanceTransferFactory)
   Build (MueLu::RepartitionFactory)
@@ -119,11 +119,11 @@ Level 2
       aggregation: Dirichlet threshold = 0   [default]
       aggregation: drop scheme = classical   [default]
       lightweight wrap = 1
-      
+
      filtered matrix: use lumping = 1   [default]
      filtered matrix: reuse graph = 1   [default]
      filtered matrix: reuse eigenvalue = 1   [default]
-     
+
      Build (MueLu::TentativePFactory)
       Build (MueLu::UncoupledAggregationFactory)
       aggregation: mode = old   [default]
@@ -143,52 +143,52 @@ Level 2
       UseIsolatedNodeAggregationAlgorithm = 1   [default]
       UseEmergencyAggregationAlgorithm = 1   [default]
       OnePt aggregate map name =    [default]
-      
+
       Nullspace factory (MueLu::NullspaceFactory)
       Fine level nullspace = Nullspace
-      
+
       Build (MueLu::CoarseMapFactory)
       Striding info = {}   [default]
       Strided block id = -1   [default]
       Domain GID offsets = {0}   [default]
-      
+
      [empty list]
-     
+
     sa: damping factor = 1.33   [default]
     sa: calculate eigenvalue estimate = 0   [default]
     sa: eigenvalue estimate num iterations = 10   [default]
-    
+
    Build (MueLu::CoordinatesTransferFactory)
    write start = -1   [default]
    write end = -1   [default]
-   
+
    transpose: use implicit = 1
    Keep AP Pattern = 0   [default]
    Keep RAP Pattern = 0   [default]
    CheckMainDiagonal = 0   [default]
    RepairMainDiagonal = 0   [default]
-   
+
   repartition: start level = 2   [default]
   repartition: min rows per proc = 800   [default]
   repartition: max imbalance = 1.2   [default]
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
   repartition: remap num values = 4   [default]
-  
+
  repartition: rebalance P and R = 0
  transpose: use implicit = 0   [default]
  repartition: use subcommunicators = 1   [default]
  type = Interpolation
  write start = -1   [default]
  write end = -1   [default]
- 
+
  Computing Ac (MueLu::RebalanceAcFactory)
  repartition: use subcommunicators = 1   [default]
- 
+
  Setup Smoother (MueLu::Amesos2Smoother{type = Superlu})
- presmoother -> 
+ presmoother ->
   [empty list]
- 
+
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---
@@ -221,7 +221,7 @@ Level 0
  relaxation: fix tiny diagonal entries = 0   [default]
  relaxation: check diagonal entries = 0   [default]
  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
- 
+
 Level 1
 Level 2
 

@@ -3,7 +3,7 @@ Level 0
  relaxation: type = symmetric Gauss-Seidel   [unused]
  relaxation: sweeps = 1   [unused]
  relaxation: damping factor = 1   [unused]
- 
+
 Level 1
  Build (MueLu::TentativePFactory)
   Build (MueLu::UncoupledAggregationFactory)
@@ -15,7 +15,7 @@ Level 1
    aggregation: Dirichlet threshold = 0   [default]
    aggregation: drop scheme = classical   [default]
    lightweight wrap = 1
-   
+
   aggregation: mode = old   [default]
   aggregation: max agg size = -1   [default]
   aggregation: min agg size = 2   [default]
@@ -33,32 +33,32 @@ Level 1
   UseIsolatedNodeAggregationAlgorithm = 1   [default]
   UseEmergencyAggregationAlgorithm = 1   [default]
   OnePt aggregate map name =    [default]
-  
+
   Nullspace factory (MueLu::NullspaceFactory)
   Fine level nullspace = Nullspace
-  
+
   Build (MueLu::CoarseMapFactory)
   Striding info = {}   [default]
   Strided block id = -1   [default]
   Domain GID offsets = {0}   [default]
-  
+
  [empty list]
- 
+
  Transpose P (MueLu::TransPFactory)
  [empty list]
- 
+
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
- 
+
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
  relaxation: type = symmetric Gauss-Seidel   [unused]
  relaxation: sweeps = 1   [unused]
  relaxation: damping factor = 1   [unused]
- 
+
 Level 2
  Build (MueLu::TentativePFactory)
   Build (MueLu::UncoupledAggregationFactory)
@@ -70,7 +70,7 @@ Level 2
    aggregation: Dirichlet threshold = 0   [default]
    aggregation: drop scheme = classical   [default]
    lightweight wrap = 1
-   
+
   aggregation: mode = old   [default]
   aggregation: max agg size = -1   [default]
   aggregation: min agg size = 2   [default]
@@ -88,31 +88,31 @@ Level 2
   UseIsolatedNodeAggregationAlgorithm = 1   [default]
   UseEmergencyAggregationAlgorithm = 1   [default]
   OnePt aggregate map name =    [default]
-  
+
   Nullspace factory (MueLu::NullspaceFactory)
   Fine level nullspace = Nullspace
-  
+
   Build (MueLu::CoarseMapFactory)
   Striding info = {}   [default]
   Strided block id = -1   [default]
   Domain GID offsets = {0}   [default]
-  
+
  [empty list]
- 
+
  Transpose P (MueLu::TransPFactory)
  [empty list]
- 
+
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
- 
+
  Setup Smoother (MueLu::AmesosSmoother{type = Superlu})
- presmoother -> 
+ presmoother ->
   [empty list]
- 
+
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---

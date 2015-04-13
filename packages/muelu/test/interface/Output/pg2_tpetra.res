@@ -11,7 +11,7 @@ Level 0
  relaxation: fix tiny diagonal entries = 0   [default]
  relaxation: check diagonal entries = 0   [default]
  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
- 
+
 Level 1
  Prolongator smoothing (PG-AMG) (MueLu::PgPFactory)
   Build (MueLu::TentativePFactory)
@@ -24,7 +24,7 @@ Level 1
     aggregation: Dirichlet threshold = 0   [default]
     aggregation: drop scheme = classical   [default]
     lightweight wrap = 1
-    
+
    aggregation: mode = old   [default]
    aggregation: max agg size = -1   [default]
    aggregation: min agg size = 2   [default]
@@ -42,36 +42,36 @@ Level 1
    UseIsolatedNodeAggregationAlgorithm = 1   [default]
    UseEmergencyAggregationAlgorithm = 1   [default]
    OnePt aggregate map name =    [default]
-   
+
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
-   
+
    Build (MueLu::CoarseMapFactory)
    Striding info = {}   [default]
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
-   
+
   [empty list]
-  
+
   PgPFactory::ComputeRowBasedOmega (MueLu::PgPFactory)
  Minimization norm = 2   [default]
  ReUseRowBasedOmegas = 0   [default]
- 
+
  Call prolongator factory for calculating restrictor (MueLu::GenericRFactory)
   Prolongator smoothing (PG-AMG) (MueLu::PgPFactory)
    PgPFactory::ComputeRowBasedOmega (MueLu::PgPFactory)
   Minimization norm = 2   [default]
   ReUseRowBasedOmegas = 0   [default]
-  
+
  [empty list]
- 
+
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
- 
+
  Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
@@ -84,7 +84,7 @@ Level 1
  relaxation: fix tiny diagonal entries = 0   [default]
  relaxation: check diagonal entries = 0   [default]
  relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
- 
+
 Level 2
  Prolongator smoothing (PG-AMG) (MueLu::PgPFactory)
   Build (MueLu::TentativePFactory)
@@ -97,7 +97,7 @@ Level 2
     aggregation: Dirichlet threshold = 0   [default]
     aggregation: drop scheme = classical   [default]
     lightweight wrap = 1
-    
+
    aggregation: mode = old   [default]
    aggregation: max agg size = -1   [default]
    aggregation: min agg size = 2   [default]
@@ -115,40 +115,40 @@ Level 2
    UseIsolatedNodeAggregationAlgorithm = 1   [default]
    UseEmergencyAggregationAlgorithm = 1   [default]
    OnePt aggregate map name =    [default]
-   
+
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
-   
+
    Build (MueLu::CoarseMapFactory)
    Striding info = {}   [default]
    Strided block id = -1   [default]
    Domain GID offsets = {0}   [default]
-   
+
   [empty list]
-  
+
   PgPFactory::ComputeRowBasedOmega (MueLu::PgPFactory)
  Minimization norm = 2   [default]
  ReUseRowBasedOmegas = 0   [default]
- 
+
  Call prolongator factory for calculating restrictor (MueLu::GenericRFactory)
   Prolongator smoothing (PG-AMG) (MueLu::PgPFactory)
    PgPFactory::ComputeRowBasedOmega (MueLu::PgPFactory)
   Minimization norm = 2   [default]
   ReUseRowBasedOmegas = 0   [default]
-  
+
  [empty list]
- 
+
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
- 
+
  Setup Smoother (MueLu::Amesos2Smoother{type = Superlu})
- presmoother -> 
+ presmoother ->
   [empty list]
- 
+
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---

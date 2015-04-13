@@ -20,7 +20,7 @@ Level 1
     aggregation: drop tol = 0   [default]
     aggregation: Dirichlet threshold = 0   [default]
     aggregation: drop scheme = classical   [default]
-    lightweight wrap = 0   [default]
+    lightweight wrap = 1   [default]
 
    aggregation: mode = old   [default]
    aggregation: max agg size = -1   [default]
@@ -77,7 +77,7 @@ Level 2
     aggregation: drop tol = 0   [default]
     aggregation: Dirichlet threshold = 0   [default]
     aggregation: drop scheme = classical   [default]
-    lightweight wrap = 0   [default]
+    lightweight wrap = 1   [default]
 
    aggregation: mode = old   [default]
    aggregation: max agg size = -1   [default]
@@ -137,7 +137,7 @@ Level 3
     aggregation: drop tol = 0   [default]
     aggregation: Dirichlet threshold = 0   [default]
     aggregation: drop scheme = classical   [default]
-    lightweight wrap = 0   [default]
+    lightweight wrap = 1   [default]
 
    aggregation: mode = old   [default]
    aggregation: max agg size = -1   [default]

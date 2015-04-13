@@ -4,12 +4,12 @@ Level 0
  schwarz: combine mode = Zero   [unused]
  schwarz: use reordering = 0   [unused]
  subdomain solver name = RILUK   [unused]
- subdomain solver parameters -> 
+ subdomain solver parameters ->
   fact: iluk level-of-fill = 0   [unused]
   fact: absolute threshold = 0   [unused]
   fact: relative threshold = 1   [unused]
   fact: relax value = 0   [unused]
- 
+
 Level 1
  Build (MueLu::TentativePFactory)
   Build (MueLu::UncoupledAggregationFactory)
@@ -21,7 +21,7 @@ Level 1
    aggregation: Dirichlet threshold = 0   [default]
    aggregation: drop scheme = classical   [default]
    lightweight wrap = 1
-   
+
   aggregation: mode = new   [unused]
   aggregation: max agg size = -1   [default]
   aggregation: min agg size = 2   [default]
@@ -39,35 +39,35 @@ Level 1
   UseIsolatedNodeAggregationAlgorithm = 1   [default]
   UseEmergencyAggregationAlgorithm = 1   [default]
   OnePt aggregate map name =    [default]
-  
+
   Nullspace factory (MueLu::NullspaceFactory)
   Fine level nullspace = Nullspace
-  
+
   Build (MueLu::CoarseMapFactory)
   Striding info = {}   [default]
   Strided block id = -1   [default]
   Domain GID offsets = {0}   [default]
-  
+
  [empty list]
- 
+
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 1
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
- 
+
  Setup Smoother (MueLu::Ifpack2Smoother{type = SCHWARZ})
  schwarz: overlap level = 1   [unused]
  schwarz: combine mode = Zero   [unused]
  schwarz: use reordering = 0   [unused]
  subdomain solver name = RILUK   [unused]
- subdomain solver parameters -> 
+ subdomain solver parameters ->
   fact: iluk level-of-fill = 0   [unused]
   fact: absolute threshold = 0   [unused]
   fact: relative threshold = 1   [unused]
   fact: relax value = 0   [unused]
- 
+
 Level 2
  Build (MueLu::TentativePFactory)
   Build (MueLu::UncoupledAggregationFactory)
@@ -79,7 +79,7 @@ Level 2
    aggregation: Dirichlet threshold = 0   [default]
    aggregation: drop scheme = classical   [default]
    lightweight wrap = 1
-   
+
   aggregation: mode = new   [unused]
   aggregation: max agg size = -1   [default]
   aggregation: min agg size = 2   [default]
@@ -97,28 +97,28 @@ Level 2
   UseIsolatedNodeAggregationAlgorithm = 1   [default]
   UseEmergencyAggregationAlgorithm = 1   [default]
   OnePt aggregate map name =    [default]
-  
+
   Nullspace factory (MueLu::NullspaceFactory)
   Fine level nullspace = Nullspace
-  
+
   Build (MueLu::CoarseMapFactory)
   Striding info = {}   [default]
   Strided block id = -1   [default]
   Domain GID offsets = {0}   [default]
-  
+
  [empty list]
- 
+
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 1
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
- 
+
  Setup Smoother (MueLu::Amesos2Smoother{type = Superlu})
- presmoother -> 
+ presmoother ->
   [empty list]
- 
+
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---
