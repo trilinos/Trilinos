@@ -60,7 +60,7 @@ if(TPL_ENABLE_MATLAB)
   # This is because Cmake will not allow me to *just call the mex linker*, and so I have to do this the hard way.
   #
   LINK_DIRECTORIES(${MATLAB_LIBRARY_DIRS})
-  TRIBITS)ADD_EXECUTABLE(muemex.${MEX_EXTENSION} SOURCES muemex.cpp NOEXEPREFIX NOEXESUFFIX)
+  TRIBITS_ADD_EXECUTABLE(muemex.${MEX_EXTENSION} SOURCES muemex.cpp NOEXEPREFIX NOEXESUFFIX)
   SET_TARGET_PROPERTIES(muemex.${MEX_EXTENSION} PROPERTIES SUFFIX "") # remove .exe extension
   TARGET_LINK_LIBRARIES(muemex.${MEX_EXTENSION} ${MLMEX_OPTS1} ${LINK_LIBS} ${MLMEX_OPTS2})
 
