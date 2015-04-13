@@ -187,8 +187,8 @@ namespace MueLuExamples {
 
       // Create a copy of outputs
       std::string cmd = "cp -f ";
-      system((cmd + baseFile + ".res "  + baseFile + ".resorig").c_str());
-      system((cmd + baseFile + ".out "  + baseFile + ".outorig").c_str());
+      system((cmd + baseFile + ".gold " + baseFile + ".gold_filtered").c_str());
+      system((cmd + baseFile + ".out "  + baseFile + ".out_filtered").c_str());
 
       // Tpetra produces different eigenvalues in Chebyshev due to using
       // std::rand() for generating random vectors, which may be initialized
@@ -231,7 +231,7 @@ namespace MueLuExamples {
 #endif
 
       // Run comparison (ignoring whitespaces)
-      cmd = "diff -u -w -I\"^\\s*$\" " + baseFile + ".res " + baseFile + ".out";
+      cmd = "diff -u -w -I\"^\\s*$\" " + baseFile + ".gold_filtered " + baseFile + ".out_filtered";
       int ret = system(cmd.c_str());
       if (ret)
         failed = true;
@@ -451,6 +451,6 @@ void run_sed(const std::string& pattern, const std::string& baseFile) {
   sed_pref = sed_pref +  "\"\" ";
 #endif
 
-  system((sed_pref + pattern + " " + baseFile + ".res").c_str());
-  system((sed_pref + pattern + " " + baseFile + ".out").c_str());
+  system((sed_pref + pattern + " " + baseFile + ".gold_filtered").c_str());
+  system((sed_pref + pattern + " " + baseFile + ".out_filtered").c_str());
 }
