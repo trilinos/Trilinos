@@ -70,9 +70,16 @@
 
 //#include <Kokkos_Vectorization.hpp>
 #include <impl/Kokkos_Error.hpp>
-
+#include <Kokkos_Sparse_CrsMatrix.hpp>
 namespace Kokkos {
+#if true
+  using KokkosSparse::CrsMatrix;
+  using KokkosSparse::RowsPerThread;
+  using KokkosSparse::SparseRowView;
+  using KokkosSparse::SparseRowViewConst;
+  using KokkosSparse::DeviceConfig;
 
+#else
 /// \class SparseRowView
 /// \brief View of a row of a sparse matrix.
 /// \tparam MatrixType Sparse matrix type, such as (but not limited to) CrsMatrix.
@@ -737,7 +744,7 @@ inline int RowsPerThread<Kokkos::Cuda>(const int NNZPerRow) {
   return 1;
 }
 #endif
-
+#endif
 //----------------------------------------------------------------------------
 
 template<class DeviceType, typename ScalarType, int NNZPerRow=27>
