@@ -123,8 +123,8 @@ private:
 #ifdef SIERRA_MIGRATION
     ,
     fwmk_relation_type_digits = 8,
-    fmwk_orientation_digits   = 24,
-    fmwk_orientation_mask     = ~(0u) >> fwmk_relation_type_digits
+    fmwk_permutation_digits   = 24,
+    fmwk_permutation_mask     = ~(0u) >> fwmk_relation_type_digits
 #endif
   };
 
@@ -200,25 +200,21 @@ private:
     POLARITY_IDENTITY   = 0x80
   };
 
-  static unsigned permutation(unsigned orient) {
-    return orient & ~POLARITY_MASK;
-  }
-
   /**
    * Construct filled-out relation, fmwk-style
    */
   // Only needed by Framework and Framework-based apps.
-  Relation(EntityRank, Entity obj, const unsigned relation_type, const unsigned ordinal, const unsigned orient = 0);
+  Relation(EntityRank, Entity obj, const unsigned relation_type, const unsigned ordinal, const unsigned permut = 0);
 
   // Only needed by Framework and Framework-based apps.
   inline void setMeshObj(Entity object, EntityRank object_rank);
 
   RelationType  getRelationType() const {
-    return static_cast<RelationType::relation_type_t >(attribute() >> fmwk_orientation_digits);
+    return static_cast<RelationType::relation_type_t >(attribute() >> fmwk_permutation_digits);
   }
 
   void setRelationType(RelationType relation_type) {
-    set_attribute( (relation_type << fmwk_orientation_digits) | getPermutation() );
+    set_attribute( (relation_type << fmwk_permutation_digits) | getPermutation() );
   }
 
   ConnectivityOrdinal getOrdinal() const {
@@ -229,20 +225,12 @@ private:
     m_raw_relation = Relation::raw_relation_id( entity_rank(), ordinal );
   }
 
-  attribute_type getOrientation() const {
-    ThrowRequireMsg(false, "This method is deprecated!"); return attribute() & fmwk_orientation_mask;
-  }
-
-  void setOrientation(attribute_type orientation) {
-    ThrowRequireMsg(false, "This method is deprecated!"); set_attribute( (getRelationType() << fmwk_orientation_digits) | orientation );
-  }
-
   Permutation getPermutation() const {
-    return static_cast<Permutation>(attribute() & fmwk_orientation_mask);
+    return static_cast<Permutation>(attribute() & fmwk_permutation_mask);
   }
 
   void setPermutation(unsigned perm) {
-    set_attribute( (getRelationType() << fmwk_orientation_digits) | perm );
+    set_attribute( (getRelationType() << fmwk_permutation_digits) | perm );
   }
 
   /**
@@ -255,31 +243,32 @@ private:
    * of face-nodes is compatible with the ordering of element nodes,
    * i.e. the face's normal defined by a clockwise ordering is outward.
    */
-  bool polarity() const
-  { ThrowRequireMsg(false, "This method is deprecated!"); return compute_polarity(getOrientation()); }
-
-  static bool polarity(unsigned orient)
-  { ThrowRequireMsg(false, "This method is deprecated!"); return (orient & POLARITY_MASK) == POLARITY_POSITIVE; }
-
-  // TODO: This doesn't belong here. This is topology information.
-  static bool compute_polarity(attribute_type orientation)
-  { ThrowRequireMsg(false, "This method is deprecated!"); return (orientation & POLARITY_MASK) == POLARITY_POSITIVE; }
-
-  bool polarity(stk::topology to_topology) const
-  { return compute_polarity(to_topology, getPermutation()); }
-
-  static bool compute_polarity(const stk::topology & topology, unsigned orientation_or_permutation)
+  static bool compute_polarity(const stk::topology & topology, unsigned permutation)
   {
-    // After the POLARITY bit is removed, this should be replaced with a test (permutation < topology.num_positive_permutations()).
-    const unsigned permutation = orientation_or_permutation & ~stk::mesh::Relation::POLARITY_MASK;
     ThrowAssert(permutation < topology.num_permutations());
     const bool polarity = permutation < topology.num_positive_permutations();
     return polarity;
   }
 
-  unsigned permutation() const {
-    ThrowRequireMsg(false, "This method is deprecated!"); return getOrientation() & ~POLARITY_MASK;
+// deprecated methods
+  attribute_type getOrientation() const
+  { ThrowRequireMsg(false, "This method is deprecated! Use getPermutation instead."); return attribute() & fmwk_permutation_mask; }
+  void setOrientation(attribute_type orientation)
+  { ThrowRequireMsg(false, "This method is deprecated! Use setPermutation instead."); set_attribute( (getRelationType() << fmwk_permutation_digits) | orientation ); }
+  static unsigned permutation(unsigned orient) {
+    ThrowRequireMsg(false, "This method is deprecated! It is no longer needed because orientation=permutation.");
+    return orient & ~POLARITY_MASK;
   }
+  bool polarity(stk::topology to_topology) const
+  { ThrowRequireMsg(false, "This method is deprecated! Use compute_polarity(topology, permutation) instead."); return compute_polarity(to_topology, getPermutation()); }
+  bool polarity() const
+  { ThrowRequireMsg(false, "This method is deprecated! Use compute_polarity(topology, permutation) instead."); return compute_polarity(getOrientation()); }
+  static bool polarity(unsigned orient)
+  { ThrowRequireMsg(false, "This method is deprecated! Use compute_polarity(topology, permutation) instead."); return (orient & POLARITY_MASK) == POLARITY_POSITIVE; }
+  static bool compute_polarity(attribute_type orientation)
+  { ThrowRequireMsg(false, "This method is deprecated! Use compute_polarity(topology, permutation) instead."); return (orientation & POLARITY_MASK) == POLARITY_POSITIVE; }
+  unsigned permutation() const
+  { ThrowRequireMsg(false, "This method is deprecated! Use getPermutation instead."); return getOrientation() & ~POLARITY_MASK; }
 
 private:
   bool has_fmwk_state() const { return getRelationType() != RelationType::INVALID; }
@@ -498,14 +487,14 @@ Entity Relation::entity() const
 #ifdef SIERRA_MIGRATION
 
 inline
-Relation::Relation(EntityRank rel_rank, Entity obj, const unsigned relation_type, const unsigned ordinal, const unsigned orient)
+Relation::Relation(EntityRank rel_rank, Entity obj, const unsigned relation_type, const unsigned ordinal, const unsigned permut)
   :
       m_raw_relation( Relation::raw_relation_id(rel_rank, ordinal )),
-      m_attribute( (relation_type << fmwk_orientation_digits) | orient ),
+      m_attribute( (relation_type << fmwk_permutation_digits) | permut ),
       m_target_entity(obj)
 {
-  ThrowAssertMsg( orient <= fmwk_orientation_mask,
-      "orientation " << orient << " exceeds maximum allowed value");
+  ThrowAssertMsg( permut <= fmwk_permutation_mask,
+      "permutation " << permut << " exceeds maximum allowed value");
 }
 
 inline
