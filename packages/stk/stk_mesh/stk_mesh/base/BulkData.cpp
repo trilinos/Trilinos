@@ -1919,7 +1919,7 @@ void BulkData::internal_declare_relation( Entity entity ,
   for ( i = rel.begin() ; i != rel.end() ; ++i ) {
     Entity e = i->entity();
     const unsigned n = i->relation_ordinal();
-    const Permutation permut = static_cast<Permutation>(i->getOrientation());
+    const Permutation permut = i->getPermutation();
     if ( entity_rank(e) < erank ) {
       internal_declare_relation( entity , e , n, permut, ordinal_scratch, part_scratch );
     }

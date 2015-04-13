@@ -218,11 +218,11 @@ private:
   }
 
   void setRelationType(RelationType relation_type) {
-    set_attribute( (relation_type << fmwk_orientation_digits) | getOrientation() );
+    set_attribute( (relation_type << fmwk_orientation_digits) | getPermutation() );
   }
 
-  RelationIdentifier getOrdinal() const {
-    return relation_ordinal();
+  ConnectivityOrdinal getOrdinal() const {
+    return static_cast<ConnectivityOrdinal>(relation_ordinal());
   }
 
   void setOrdinal(RelationIdentifier ordinal) {
@@ -230,11 +230,19 @@ private:
   }
 
   attribute_type getOrientation() const {
-    return attribute() & fmwk_orientation_mask;
+    ThrowRequireMsg(false, "This method is deprecated!"); return attribute() & fmwk_orientation_mask;
   }
 
   void setOrientation(attribute_type orientation) {
-    set_attribute( (getRelationType() << fmwk_orientation_digits) | orientation );
+    ThrowRequireMsg(false, "This method is deprecated!"); set_attribute( (getRelationType() << fmwk_orientation_digits) | orientation );
+  }
+
+  Permutation getPermutation() const {
+    return static_cast<Permutation>(attribute() & fmwk_orientation_mask);
+  }
+
+  void setPermutation(unsigned perm) {
+    set_attribute( (getRelationType() << fmwk_orientation_digits) | perm );
   }
 
   /**
@@ -258,7 +266,7 @@ private:
   { ThrowRequireMsg(false, "This method is deprecated!"); return (orientation & POLARITY_MASK) == POLARITY_POSITIVE; }
 
   bool polarity(stk::topology to_topology) const
-  { return compute_polarity(to_topology, getOrientation()); }
+  { return compute_polarity(to_topology, getPermutation()); }
 
   static bool compute_polarity(const stk::topology & topology, unsigned orientation_or_permutation)
   {
@@ -270,7 +278,7 @@ private:
   }
 
   unsigned permutation() const {
-    return getOrientation() & ~POLARITY_MASK;
+    ThrowRequireMsg(false, "This method is deprecated!"); return getOrientation() & ~POLARITY_MASK;
   }
 
 private:
