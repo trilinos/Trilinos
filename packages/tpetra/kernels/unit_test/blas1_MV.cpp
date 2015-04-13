@@ -140,6 +140,267 @@ testFill (std::ostream& out, const bool prvSuccess)
 }
 
 
+
+template<class Scalar, class Layout, class Device>
+bool
+testAxpby (std::ostream& out, const bool prvSuccess)
+{
+  using std::endl;
+  typedef Kokkos::View<Scalar**, Layout, Device> mv_type;
+  typedef typename mv_type::size_type size_type;
+  typedef Kokkos::Details::ArithTraits<Scalar> ATS;
+  bool curSuccess = true;
+
+  out << "Testing KokkosBlas::axpby" << endl;
+
+  const size_type numRows = 10;
+  const size_type numCols = 3;
+
+  mv_type X ("X", numRows, numCols);
+  //typename mv_type::HostMirror X_h = Kokkos::create_mirror_view (X);
+  mv_type Y ("Y", numRows, numCols);
+  typename mv_type::HostMirror Y_h = Kokkos::create_mirror_view (Y);
+
+  const Scalar ZERO = ATS::zero ();
+  const Scalar ONE = ATS::one ();
+  const Scalar TWO = ONE + ONE;
+  const Scalar THREE = TWO + ONE;
+  const Scalar FOUR = THREE + ONE;
+  const Scalar FIVE = FOUR + ONE;
+  const Scalar EIGHT = FOUR + FOUR;
+  const Scalar TEN = FIVE + FIVE;
+  const Scalar TWELVE = TEN + TWO;
+  const Scalar TWENTY_TWO = TWELVE + TEN;
+
+  Scalar alpha;
+  Scalar beta;
+
+  KokkosBlas::fill (X, ONE);
+  KokkosBlas::fill (Y, TWO);
+  alpha = ZERO;
+  beta = ZERO;
+  out << "  Test axpby(" << alpha << ", X, " << beta << ", Y)" << endl;
+
+  KokkosBlas::axpby (alpha, X, beta, Y);
+  Kokkos::deep_copy (Y_h, Y);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (Y_h(i,j) != ZERO) {
+        curSuccess = false;
+        out << "    FAILED: Y_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << ZERO << endl;
+      }
+    }
+  }
+
+  KokkosBlas::fill (X, FOUR);
+  KokkosBlas::fill (Y, FIVE);
+  alpha = ONE;
+  beta = ZERO;
+  out << "  Test axpby(" << alpha << ", X, " << beta << ", Y)" << endl;
+
+  KokkosBlas::axpby (alpha, X, beta, Y);
+  Kokkos::deep_copy (Y_h, Y);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (Y_h(i,j) != FOUR) {
+        curSuccess = false;
+        out << "    FAILED: Y_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << FOUR << endl;
+      }
+    }
+  }
+
+  KokkosBlas::fill (X, FOUR);
+  KokkosBlas::fill (Y, FIVE);
+  alpha = -ONE;
+  beta = ZERO;
+  out << "  Test axpby(" << alpha << ", X, " << beta << ", Y)" << endl;
+
+  KokkosBlas::axpby (alpha, X, beta, Y);
+  Kokkos::deep_copy (Y_h, Y);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (Y_h(i,j) != -FOUR) {
+        curSuccess = false;
+        out << "    FAILED: Y_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << -FOUR << endl;
+      }
+    }
+  }
+
+  KokkosBlas::fill (X, FOUR);
+  KokkosBlas::fill (Y, FIVE);
+  alpha = TWO;
+  beta = ZERO;
+  out << "  Test axpby(" << alpha << ", X, " << beta << ", Y)" << endl;
+
+  KokkosBlas::axpby (alpha, X, beta, Y);
+  Kokkos::deep_copy (Y_h, Y);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (Y_h(i,j) != EIGHT) {
+        curSuccess = false;
+        out << "    FAILED: Y_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << EIGHT << endl;
+      }
+    }
+  }
+
+  KokkosBlas::fill (X, FOUR);
+  KokkosBlas::fill (Y, FIVE);
+  alpha = ZERO;
+  beta = ONE;
+  out << "  Test axpby(" << alpha << ", X, " << beta << ", Y)" << endl;
+
+  KokkosBlas::axpby (alpha, X, beta, Y);
+  Kokkos::deep_copy (Y_h, Y);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (Y_h(i,j) != FIVE) {
+        curSuccess = false;
+        out << "    FAILED: Y_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << FIVE << endl;
+      }
+    }
+  }
+
+  KokkosBlas::fill (X, FOUR);
+  KokkosBlas::fill (Y, FIVE);
+  alpha = ZERO;
+  beta = -ONE;
+  out << "  Test axpby(" << alpha << ", X, " << beta << ", Y)" << endl;
+
+  KokkosBlas::axpby (alpha, X, beta, Y);
+  Kokkos::deep_copy (Y_h, Y);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (Y_h(i,j) != -FIVE) {
+        curSuccess = false;
+        out << "    FAILED: Y_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << -FIVE << endl;
+      }
+    }
+  }
+
+  KokkosBlas::fill (X, FOUR);
+  KokkosBlas::fill (Y, FIVE);
+  alpha = ZERO;
+  beta = TWO;
+  out << "  Test axpby(" << alpha << ", X, " << beta << ", Y)" << endl;
+
+  KokkosBlas::axpby (alpha, X, beta, Y);
+  Kokkos::deep_copy (Y_h, Y);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (Y_h(i,j) != TEN) {
+        curSuccess = false;
+        out << "    FAILED: Y_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << TEN << endl;
+      }
+    }
+  }
+
+  KokkosBlas::fill (X, TWO);
+  KokkosBlas::fill (Y, THREE);
+  alpha = ONE;
+  beta = ONE;
+  out << "  Test axpby(" << alpha << ", X, " << beta << ", Y)" << endl;
+
+  KokkosBlas::axpby (alpha, X, beta, Y);
+  Kokkos::deep_copy (Y_h, Y);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (Y_h(i,j) != FIVE) {
+        curSuccess = false;
+        out << "    FAILED: Y_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << FIVE << endl;
+      }
+    }
+  }
+
+  KokkosBlas::fill (X, TWO);
+  KokkosBlas::fill (Y, THREE);
+  alpha = -ONE;
+  beta = ONE;
+  out << "  Test axpby(" << alpha << ", X, " << beta << ", Y)" << endl;
+
+  KokkosBlas::axpby (alpha, X, beta, Y);
+  Kokkos::deep_copy (Y_h, Y);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (Y_h(i,j) != ONE) {
+        curSuccess = false;
+        out << "    FAILED: Y_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << ONE << endl;
+      }
+    }
+  }
+
+  KokkosBlas::fill (X, TWO);
+  KokkosBlas::fill (Y, THREE);
+  alpha = ONE;
+  beta = -ONE;
+  out << "  Test axpby(" << alpha << ", X, " << beta << ", Y)" << endl;
+
+  KokkosBlas::axpby (alpha, X, beta, Y);
+  Kokkos::deep_copy (Y_h, Y);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (Y_h(i,j) != -ONE) {
+        curSuccess = false;
+        out << "    FAILED: Y_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << -ONE << endl;
+      }
+    }
+  }
+
+  KokkosBlas::fill (X, FOUR);
+  KokkosBlas::fill (Y, FIVE);
+  alpha = THREE;
+  beta = ZERO;
+  out << "  Test axpby(" << alpha << ", X, " << beta << ", Y)" << endl;
+
+  KokkosBlas::axpby (alpha, X, beta, Y);
+  Kokkos::deep_copy (Y_h, Y);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (Y_h(i,j) != TWELVE) {
+        curSuccess = false;
+        out << "    FAILED: Y_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << TWELVE << endl;
+      }
+    }
+  }
+
+  KokkosBlas::fill (X, FOUR);
+  KokkosBlas::fill (Y, FIVE);
+  alpha = THREE;
+  beta = TWO;
+  out << "  Test axpby(" << alpha << ", X, " << beta << ", Y)" << endl;
+
+  KokkosBlas::axpby (alpha, X, beta, Y);
+  Kokkos::deep_copy (Y_h, Y);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (Y_h(i,j) != TWENTY_TWO) {
+        curSuccess = false;
+        out << "    FAILED: Y_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << TWENTY_TWO << endl;
+      }
+    }
+  }
+
+  if (curSuccess) {
+    out << "  SUCCESS" << endl;
+  } else {
+    out << "  FAILURE" << endl;
+  }
+  return curSuccess && prvSuccess;
+}
+
+
+
 template<class Scalar, class Layout, class Device>
 bool
 testSum (std::ostream& out, const bool prvSuccess)
