@@ -352,7 +352,7 @@ public:
   //! Type of a host-memory mirror of the sparse matrix.
   typedef CrsMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits> HostMirror;
   //! Type of the graph structure of the sparse matrix.
-  typedef Kokkos::StaticCrsGraph<OrdinalType, Kokkos::LayoutLeft, device_type, SizeType> StaticCrsGraphType;
+  typedef Kokkos::StaticCrsGraph<OrdinalType, Kokkos::LayoutLeft, execution_space, SizeType> StaticCrsGraphType;
   //! Type of column indices in the sparse matrix.
   typedef typename StaticCrsGraphType::entries_type index_type;
   //! Const version of the type of column indices in the sparse matrix.
