@@ -89,7 +89,7 @@ namespace MueLu {
         rcp(new validatorType(Teuchos::tuple<std::string>("classical", "distance laplacian"), "aggregation: drop scheme")));
     }
 #undef  SET_VALID_ENTRY
-    validParamList->set< bool >                  ("lightweight wrap",           false, "Experimental option for lightweight graph access");
+    validParamList->set< bool >                  ("lightweight wrap",           true, "Experimental option for lightweight graph access");
 
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory for UnAmalgamationInfo");
