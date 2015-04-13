@@ -39,8 +39,8 @@
 #include <Ioss_Utils.h>
 #include <assert.h>
 #include <exodusII.h>
-#include <exodusII/Ioex_DatabaseIO.h>
-#include <exodusII/Ioex_Internals.h>
+#include <exodus/Ioex_DatabaseIO.h>
+#include <exodus/Ioex_Internals.h>
 #include <float.h>
 #include <stddef.h>
 #include <sys/select.h>

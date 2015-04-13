@@ -30,11 +30,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <exodusII/Ioex_IOFactory.h>    // for Ioex IOFactory
+#include <exodus/Ioex_IOFactory.h>    // for Ioex IOFactory
 
-#include <exodusII/Ioex_DatabaseIO.h>   // for Ioex DatabaseIO
+#include <fpp_exo/Iofx_DatabaseIO.h>   // for Iofx DatabaseIO
 #if defined(HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
-#include <par_exo/Iopx_IOFactory.h>    // for Iopx DatabaseIO
+#include <par_exo/Iopx_DatabaseIO.h>    // for Iopx DatabaseIO
 #endif
 #include <tokenize.h>
 
@@ -63,11 +63,15 @@ namespace Ioex {
   }
 
   IOFactory::IOFactory()
-    : Ioss::IOFactory("exodusII")
+    : Ioss::IOFactory("exodus")
   {
-    Ioss::IOFactory::alias("exodusII", "exodusii");
-    Ioss::IOFactory::alias("exodusII", "exodus");
-    Ioss::IOFactory::alias("exodusII", "genesis");
+    Ioss::IOFactory::alias("exodus", "exodusii");
+    Ioss::IOFactory::alias("exodus", "exodusII");
+    Ioss::IOFactory::alias("exodus", "genesis");
+#if defined(HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
+    Ioss::IOFactory::alias("exodus", "dof_exodus");
+    Ioss::IOFactory::alias("exodus", "dof");
+#endif
   }
 
   Ioss::DatabaseIO* IOFactory::make_IO(const std::string& filename,
@@ -107,10 +111,10 @@ namespace Ioex {
     // Could call Iopx::DatabaseIO constructor directly, but that leads to some circular
     // dependencies and other yuks.
     if (decompose)
-      return Ioss::IOFactory::create("dof_exodus", filename, db_usage, communicator, properties);
+      return new Iopx::DatabaseIO(NULL, filename, db_usage, communicator, properties);
     else
 #endif
-      return new Ioex::DatabaseIO(NULL, filename, db_usage, communicator, properties);
+      return new Iofx::DatabaseIO(NULL, filename, db_usage, communicator, properties);
   }
 }
 

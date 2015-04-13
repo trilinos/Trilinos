@@ -30,7 +30,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <exodusII/Ioex_SuperElement.h>  // for SuperElement
+#include <exodus/Ioex_SuperElement.h>   // for SuperElement
 
 #include <Ioss_Field.h>                 // for Field, etc
 #include <Ioss_Property.h>              // for Property, etc

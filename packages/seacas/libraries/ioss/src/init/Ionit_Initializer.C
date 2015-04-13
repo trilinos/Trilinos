@@ -33,10 +33,7 @@
 #include <init/Ionit_Initializer.h>
 
 #if !defined(NO_EXODUS_SUPPORT)
-#include <exodusII/Ioex_IOFactory.h>
-#if defined(HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
-#include <par_exo/Iopx_IOFactory.h>
-#endif
+#include <exodus/Ioex_IOFactory.h>
 #endif
 #include <heartbeat/Iohb_DatabaseIO.h>
 #include <generated/Iogn_DatabaseIO.h>
@@ -74,10 +71,7 @@ namespace Ioss {
     Initializer::Initializer()
     {
 #if !defined(NO_EXODUS_SUPPORT)
-      Ioex::IOFactory::factory();    // ExodusII
-#if defined(HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
-      Iopx::IOFactory::factory();    // ExodusII
-#endif
+      Ioex::IOFactory::factory();    // Exodus
 #endif
       Iohb::IOFactory::factory();   // HeartBeat
       Iogn::IOFactory::factory();  // Generated

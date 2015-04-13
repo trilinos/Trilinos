@@ -40,7 +40,7 @@
 
 #include <Ioss_Utils.h>                 // for IOSS_WARNING
 #include <assert.h>                     // for assert
-#include <exodusII/Ioex_Internals.h>    // for Internals, ElemBlock, etc
+#include <exodus/Ioex_Internals.h>    // for Internals, ElemBlock, etc
 extern "C" {
 #include <exodusII_int.h>               // for EX_FATAL, EX_NOERR, etc
 }
