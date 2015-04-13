@@ -322,7 +322,7 @@ ConnectivityOrdinal& operator++(ConnectivityOrdinal& ord)
 
 enum Permutation
 {
-  NO_PERMUTATION = 0,
+  DEFAULT_PERMUTATION = 0,
   INVALID_PERMUTATION = 128
 };
 
