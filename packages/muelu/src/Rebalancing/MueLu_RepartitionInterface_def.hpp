@@ -26,7 +26,6 @@ namespace MueLu {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
     validParamList->set< RCP<const FactoryBase> >("A",                    Teuchos::null, "Factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("AmalgamatedPartition", Teuchos::null, "(advanced) Factory generating the AmalgamatedPartition (e.g. an IsorropiaInterface)");
-    //validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo",   Teuchos::null, "Generating factory of UnAmalgamationInfo");
 
     return validParamList;
   }
@@ -36,8 +35,6 @@ namespace MueLu {
   void RepartitionInterface<LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level & currentLevel) const {
     Input(currentLevel, "A");
     Input(currentLevel, "AmalgamatedPartition");
-    //Input(currentLevel, "UnAmalgamationInfo");
-
   } //DeclareInput()
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -49,7 +46,6 @@ namespace MueLu {
     //RCP<AmalgamationInfo> amalgInfo                     = Get< RCP<AmalgamationInfo> >(level, "UnAmalgamationInfo");
 
     RCP<const Teuchos::Comm< int > > comm = A->getRowMap()->getComm();
-    // const int myRank = comm->getRank();
 
     ArrayRCP<GO> amalgPartitionData = amalgPartition->getDataNonConst(0);
 
@@ -90,7 +86,7 @@ namespace MueLu {
     RCP<Xpetra::Vector<GO, LO, GO, NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, false);
     ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<int>(nodeMap->getNodeNumElements())*stridedblocksize != Teuchos::as<int>(rowMap->getNodeNumElements()), Exceptions::RuntimeError, "Inconsistency between nodeMap and dofMap");
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<int>(nodeMap->getNodeNumElements())*stridedblocksize != Teuchos::as<int>(rowMap->getNodeNumElements()), Exceptions::RuntimeError, "Inconsistency between nodeMap and dofMap: we are supporting block maps only. No support for general strided maps, yet!");
 
     //RCP<std::map<GO,std::vector<GO> > > nodegid2dofgids = amalgInfo->GetGlobalAmalgamationParams();
 

@@ -104,15 +104,16 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
     Input(currentLevel, "A");
+    Input(currentLevel, "UnAmalgamationInfo");
 
     const ParameterList& pL = GetParameterList();
     if (pL.get<bool>("lightweight wrap") == true) {
       if (pL.get<std::string>("aggregation: drop scheme") == "distance laplacian")
         Input(currentLevel, "Coordinates");
 
-    } else {
+    } /*else {
       Input(currentLevel, "UnAmalgamationInfo");
-    }
+    }*/
 
   }
 
@@ -128,6 +129,7 @@ namespace MueLu {
       GetOStream(Parameters0) << predrop_->description();
 
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
+    RCP<AmalgamationInfo> amalInfo = Get< RCP<AmalgamationInfo> >(currentLevel, "UnAmalgamationInfo");
 
     const ParameterList  & pL = GetParameterList();
     bool doExperimentalWrap = pL.get<bool>("lightweight wrap");
@@ -285,11 +287,12 @@ namespace MueLu {
 
           // build node row map (uniqueMap) and node column map (nonUniqueMap)
           // the arrays rowTranslation and colTranslation contain the local node id
-          // given a local dof id.
-          RCP<const Map> uniqueMap, nonUniqueMap;
-          Array<LO>      rowTranslation, colTranslation;
-          AmalgamateMap(*rowMap, *A, uniqueMap,    rowTranslation);
-          AmalgamateMap(*colMap, *A, nonUniqueMap, colTranslation);
+          // given a local dof id. The data is calculated by the AmalgamationFactory and
+          // stored in the variable container "UnAmalgamationInfo"
+          RCP<const Map> uniqueMap = amalInfo->getNodeRowMap();
+          RCP<const Map> nonUniqueMap = amalInfo->getNodeColMap();
+          Array<LO> rowTranslation = *(amalInfo->getRowTranslation());
+          Array<LO> colTranslation = *(amalInfo->getColTranslation());
 
           // get number of local nodes
           LO numRows = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
@@ -407,11 +410,12 @@ namespace MueLu {
 
           // build node row map (uniqueMap) and node column map (nonUniqueMap)
           // the arrays rowTranslation and colTranslation contain the local node id
-          // given a local dof id.
-          RCP<const Map> uniqueMap, nonUniqueMap;
-          Array<LO>      rowTranslation, colTranslation;
-          AmalgamateMap(*rowMap, *A, uniqueMap,    rowTranslation);
-          AmalgamateMap(*colMap, *A, nonUniqueMap, colTranslation);
+          // given a local dof id. The data is calculated by the AmalgamationFactory and
+          // stored in the variable container "UnAmalgamationInfo"
+          RCP<const Map> uniqueMap = amalInfo->getNodeRowMap();
+          RCP<const Map> nonUniqueMap = amalInfo->getNodeColMap();
+          Array<LO> rowTranslation = *(amalInfo->getRowTranslation());
+          Array<LO> colTranslation = *(amalInfo->getColTranslation());
 
           // get number of local nodes
           LO numRows = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
@@ -522,12 +526,7 @@ namespace MueLu {
 
           Set(currentLevel, "Graph",       graph);
           Set(currentLevel, "DofsPerNode", blkSize); // full block size
-        } /* else if (A->GetFixedBlockSize() > 1 && threshold != STS::zero()) {
-          // Case 5:  Multiple DOF/node problem with dropping
-          // TODO
-          graphType="amalgamated";
-          throw Exceptions::NotImplemented("Fast CoalesceDrop with multiple DOFs and dropping is not yet implemented.");
-        }*/
+        }
 
       } else if (algo == "distance laplacian") {
         LO blkSize   = A->GetFixedBlockSize();
@@ -596,7 +595,8 @@ namespace MueLu {
             TEUCHOS_TEST_FOR_EXCEPTION(uniqueMap->getIndexBase() != indexBase, Exceptions::Incompatible,
                                        "Different index bases for matrix and coordinates");
 
-            AmalgamateMap(*(A->getColMap()), *A, nonUniqueMap, colTranslation);
+            AmalgamationFactory::AmalgamateMap(*(A->getColMap()), *A, nonUniqueMap, colTranslation);
+
             graphType = "amalgamated";
           }
           LO numRows = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
@@ -763,15 +763,19 @@ namespace MueLu {
 
     } else {
 
-      Set(currentLevel, "Filtering", (predrop_ != Teuchos::null));
       //what Tobias has implemented
+
+      SC threshold = as<SC>(pL.get<double>("aggregation: drop tol"));
+      //GetOStream(Runtime0) << "algorithm = \"" << algo << "\": threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
+      GetOStream(Runtime0) << "algorithm = \"" << "failsafe" << "\": threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
+      Set(currentLevel, "Filtering", (threshold != STS::zero()));
 
       RCP<const Map> rowMap = A->getRowMap();
       RCP<const Map> colMap = A->getColMap();
 
       LO blockdim = 1;                          // block dim for fixed size blocks
       GO indexBase = rowMap->getIndexBase();    // index base of maps
-      GO offset    = 0; //indexBase;  ? doesn't make sense               // global offset of dof gids
+      GO offset    = 0;
 
       // 1) check for blocking/striding information
       if(A->IsView("stridedMaps") &&
@@ -779,36 +783,18 @@ namespace MueLu {
         Xpetra::viewLabel_t oldView = A->SwitchToView("stridedMaps"); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
         RCP<const StridedMap> strMap = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap());
         TEUCHOS_TEST_FOR_EXCEPTION(strMap == Teuchos::null,Exceptions::BadCast,"MueLu::CoalesceFactory::Build: cast to strided row map failed.");
-        blockdim = strMap->getFixedBlockSize(); // TODO shorten code
+        blockdim = strMap->getFixedBlockSize();
         offset   = strMap->getOffset();
         oldView = A->SwitchToView(oldView);
         GetOStream(Statistics0) << "CoalesceDropFactory::Build():" << " found blockdim=" << blockdim << " from strided maps. offset=" << offset << std::endl;
       } else GetOStream(Statistics0) << "CoalesceDropFactory::Build(): no striding information available. Use blockdim=1 with offset=0" << std::endl;
 
-      // 2) build (un)amalgamation information
-      //    prepare generation of nodeRowMap (of amalgamated matrix)
-      // TODO: special handling for blockdim=1
-      RCP<AmalgamationInfo> amalInfo = Get< RCP<AmalgamationInfo> >(currentLevel, "UnAmalgamationInfo");
-      RCP<std::vector<GO> > gNodeIds = amalInfo->GetNodeGIDVector();
-      GO cnt_amalRows = amalInfo->GetNumberOfNodes();
-
-      // inter processor communication: sum up number of block ids
-      GO num_blockids = 0;
-      Teuchos::reduceAll<int,GO>(*(A->getRowMap()->getComm()),Teuchos::REDUCE_SUM, cnt_amalRows, Teuchos::ptr(&num_blockids) );
-      GetOStream(Statistics0) << "CoalesceDropFactory::SetupAmalgamationData()" << " # of amalgamated blocks=" << num_blockids << std::endl;
-
-      // 3) generate row map for amalgamated matrix (graph of A)
+      // 2) get row map for amalgamated matrix (graph of A)
       //    with same distribution over all procs as row map of A
-      Teuchos::ArrayRCP<GO> arr_gNodeIds = Teuchos::arcp( gNodeIds );
-      Teuchos::RCP<Map> nodeMap = MapFactory::Build(A->getRowMap()->lib(), num_blockids, arr_gNodeIds(), indexBase, A->getRowMap()->getComm()); // note: nodeMap has same indexBase as row map of A (=dof map)
+      RCP<const Map> nodeMap = amalInfo->getNodeRowMap();
       GetOStream(Statistics0) << "CoalesceDropFactory: nodeMap " << nodeMap->getNodeNumElements() << "/" << nodeMap->getGlobalNumElements() << " elements" << std::endl;
 
-      /////////////////////// experimental
-      // vector of boundary node GIDs on current proc
-      //RCP<std::map<GO,bool> > gBoundaryNodes = Teuchos::rcp(new std::map<GO,bool>);
-      ////////////////////////////////////
-
-      // 4) create graph of amalgamated matrix
+      // 3) create graph of amalgamated matrix
       RCP<CrsGraph> crsGraph = CrsGraphFactory::Build(nodeMap, 10, Xpetra::DynamicProfile);
 
       LO numRows = A->getRowMap()->getNodeNumElements();
@@ -817,7 +803,9 @@ namespace MueLu {
       const ArrayRCP<int>  numberDirichletRowsPerNode(numNodes, 0); // helper array counting the number of Dirichlet nodes associated with node
       bool bIsDiagonalEntry = false;       // boolean flag stating that grid==gcid
 
-      // 5) do amalgamation. generate graph of amalgamated matrix
+      // 4) do amalgamation. generate graph of amalgamated matrix
+      //    Note, this code is much more inefficient than the leightwight implementation
+      //    Most of the work has already been done in the AmalgamationFactory
       for(LO row=0; row<numRows; row++) {
         // get global DOF id
         GO grid = rowMap->getGlobalElement(row);
@@ -836,15 +824,9 @@ namespace MueLu {
         RCP<std::vector<GO> > cnodeIds = Teuchos::rcp(new std::vector<GO>);  // global column block ids
         LO realnnz = 0;
         for(LO col=0; col<Teuchos::as<LO>(nnz); col++) {
-          //TEUCHOS_TEST_FOR_EXCEPTION(A->getColMap()->isNodeLocalElement(indices[col])==false,Exceptions::RuntimeError, "MueLu::CoalesceFactory::Amalgamate: Problem with columns. Error.");
           GO gcid = colMap->getGlobalElement(indices[col]); // global column id
 
-          if (grid == gcid) {
-
-          }
-
-          if((predrop_ == Teuchos::null && vals[col]!=0.0) ||
-             (predrop_ != Teuchos::null && predrop_->Drop(row,grid, col,indices[col],gcid,indices,vals) == false)) {
+          if(vals[col]!=0.0) {
             GO cnodeId = AmalgamationFactory::DOFGid2NodeId(gcid, blockdim, offset, indexBase);
             cnodeIds->push_back(cnodeId);
             realnnz++; // increment number of nnz in matrix row
@@ -852,49 +834,22 @@ namespace MueLu {
           }
         }
 
-        // todo avoid duplicate entries in cnodeIds
-
-        ////////////////// experimental
-        //if(gBoundaryNodes->count(nodeId) == 0)
-        //  (*gBoundaryNodes)[nodeId] = false;  // new node GID (probably no Dirichlet bdry node)
         if(realnnz == 1 && bIsDiagonalEntry == true) {
           LO lNodeId = nodeMap->getLocalElement(nodeId);
           numberDirichletRowsPerNode[lNodeId] += 1;      // increment Dirichlet row counter associated with lNodeId
           if (numberDirichletRowsPerNode[lNodeId] == blockdim) // mark full Dirichlet nodes
             amalgBoundaryNodes[lNodeId] = true;
         }
-        //  (*gBoundaryNodes)[nodeId] = true;
-        ///////////////////////////////
 
         Teuchos::ArrayRCP<GO> arr_cnodeIds = Teuchos::arcp( cnodeIds );
 
-        //TEUCHOS_TEST_FOR_EXCEPTION(crsGraph->getRowMap()->isNodeGlobalElement(nodeId)==false,Exceptions::RuntimeError, "MueLu::CoalesceFactory::Amalgamate: global row id does not belong to current proc. Error.");
         if(arr_cnodeIds.size() > 0 )
           crsGraph->insertGlobalIndices(nodeId, arr_cnodeIds());
       }
       // fill matrix graph
       crsGraph->fillComplete(nodeMap,nodeMap);
 
-      ///////////////// experimental
-      //LO nLocalBdryNodes = 0;
-      //GO nGlobalBdryNodes = 0;
-      //Array<GO> bdryNodeIds;
-      //for(typename std::map<GO,bool>::iterator it = gBoundaryNodes->begin(); it!=gBoundaryNodes->end(); it++) {
-      //  if ((*it).second == true) {
-      //    nLocalBdryNodes++;
-      //    bdryNodeIds.push_back((*it).first);
-      //  }
-      //}
-      //Teuchos::reduceAll<int,GO>(*(A->getRowMap()->getComm()),Teuchos::REDUCE_SUM, nLocalBdryNodes, Teuchos::ptr(&nGlobalBdryNodes) );
-      //GetOStream(Debug) << "CoalesceDropFactory::SetupAmalgamationData()" << " # detected Dirichlet boundary nodes = " << nGlobalBdryNodes << std::endl;
-
-      //RCP<const Map> gBoundaryNodeMap = MapFactory::Build(nodeMap->lib(),
-      //                                                    Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-      //                                                    bdryNodeIds,
-      //                                                    nodeMap->getIndexBase(), nodeMap->getComm());
-      //////////////////////////////
-
-      // 6) create MueLu Graph object
+      // 5) create MueLu Graph object
       RCP<GraphBase> graph = rcp(new Graph(crsGraph, "amalgamated graph of A"));
 
       // Detect and record rows that correspond to Dirichlet boundary conditions
@@ -911,8 +866,7 @@ namespace MueLu {
         GetOStream(Statistics0) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
       }
 
-
-      // 8) store results in Level
+      // 6) store results in Level
       //graph->SetBoundaryNodeMap(gBoundaryNodeMap);
       Set(currentLevel, "DofsPerNode", blockdim);
       Set(currentLevel, "Graph", graph);
@@ -1054,54 +1008,6 @@ namespace MueLu {
 
     return;
   }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AmalgamateMap(const Map& sourceMap, const Matrix& A, RCP<const Map>& amalgamatedMap, Array<LO>& translation) const {
-    typedef typename ArrayView<const GO>::size_type size_type;
-    typedef std::map<GO,size_type> container;
-
-    GO                      indexBase = sourceMap.getIndexBase();
-    ArrayView<const GO>     elementAList = sourceMap.getNodeElementList();
-    size_type               numElements  = elementAList.size();
-    container               filter; // TODO:  replace std::set with an object having faster lookup/insert, hashtable for instance
-
-    GO offset = 0;
-    LO blkSize = A.GetFixedBlockSize();
-    if (A.IsView("stridedMaps") == true) {
-      Teuchos::RCP<const Map> myMap = A.getRowMap("stridedMaps");
-      Teuchos::RCP<const StridedMap> strMap = Teuchos::rcp_dynamic_cast<const StridedMap>(myMap);
-      TEUCHOS_TEST_FOR_EXCEPTION(strMap == null, Exceptions::RuntimeError, "Map is not of type StridedMap");
-      offset = strMap->getOffset();
-      blkSize = Teuchos::as<const LO>(strMap->getFixedBlockSize());
-    }
-
-    Array<GO> elementList(numElements);
-    translation.resize(numElements);
-
-    size_type numRows = 0;
-    for (size_type id = 0; id < numElements; id++) {
-      GO dofID  = elementAList[id];
-      GO nodeID = AmalgamationFactory::DOFGid2NodeId(dofID, blkSize, offset, indexBase);
-
-      typename container::iterator it = filter.find(nodeID);
-      if (it == filter.end()) {
-        filter[nodeID] = numRows;
-
-        translation[id]      = numRows;
-        elementList[numRows] = nodeID;
-
-        numRows++;
-
-      } else {
-        translation[id]      = it->second;
-      }
-    }
-    elementList.resize(numRows);
-
-    amalgamatedMap = MapFactory::Build(sourceMap.lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, sourceMap.getComm());
-
-  }
-
 } //namespace MueLu
 
 #endif // MUELU_COALESCEDROPFACTORY_DEF_HPP
