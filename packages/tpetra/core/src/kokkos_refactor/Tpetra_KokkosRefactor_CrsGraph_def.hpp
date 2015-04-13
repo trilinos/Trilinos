@@ -1293,8 +1293,9 @@ namespace Tpetra {
         const size_t len = rowinfo.allocSize;
         const std::pair<size_t, size_t> rng (start, start + len);
         row_view_type rowView = subview (k_lclInds1D_, rng);
-        return Teuchos::ArrayView<const LO> (rowView.ptr_on_device (), len,
-                                             Teuchos::RCP_DISABLE_NODE_LOOKUP);
+
+        const LO* const rowViewRaw = (len == 0) ? NULL : rowView.ptr_on_device ();
+        return Teuchos::ArrayView<const LO> (rowViewRaw, len, Teuchos::RCP_DISABLE_NODE_LOOKUP);
       }
       else if (! lclInds2D_[rowinfo.localRow].empty ()) { // 2-D storage
         return lclInds2D_[rowinfo.localRow] ();
@@ -1327,8 +1328,9 @@ namespace Tpetra {
         const size_t len = rowinfo.allocSize;
         const std::pair<size_t, size_t> rng (start, start + len);
         row_view_type rowView = subview (k_lclInds1D_, rng);
-        return Teuchos::ArrayView<LO> (rowView.ptr_on_device (), len,
-                                       Teuchos::RCP_DISABLE_NODE_LOOKUP);
+
+        LO* const rowViewRaw = (len == 0) ? NULL : rowView.ptr_on_device ();
+        return Teuchos::ArrayView<LO> (rowViewRaw, len, Teuchos::RCP_DISABLE_NODE_LOOKUP);
       }
       else if (! lclInds2D_[rowinfo.localRow].empty ()) { // 2-D storage
         return lclInds2D_[rowinfo.localRow] ();
@@ -5482,6 +5484,8 @@ namespace Tpetra {
                     CombineMode /* CM */)
   {
     using Teuchos::ArrayView;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
 
     // FIXME (mfh 02 Apr 2012) REPLACE combine mode has a perfectly
     // reasonable meaning, whether or not the matrix is fill complete.
@@ -5500,23 +5504,25 @@ namespace Tpetra {
     // the imported row, i.e., the existing indices are cleared. CGB,
     // 6/17/2010
 
-    const char tfecfFuncName[] = "unpackAndCombine";
+    const char tfecfFuncName[] = "unpackAndCombine: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       importLIDs.size() != numPacketsPerLID.size(), std::runtime_error,
-      ": importLIDs and numPacketsPerLID must have the same size.");
+      "importLIDs and numPacketsPerLID must have the same size.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       isFillComplete (), std::runtime_error,
-      ": Import or Export operations are not allowed on the destination "
+      "Import or Export operations are not allowed on the destination "
       "CrsGraph if it is fill complete.");
     size_t importsOffset = 0;
 
-    typedef typename ArrayView<const LocalOrdinal>::const_iterator iter_type;
+    typedef typename ArrayView<const LO>::const_iterator iter_type;
     iter_type impLIDiter = importLIDs.begin();
     iter_type impLIDend = importLIDs.end();
 
     for (size_t i = 0; impLIDiter != impLIDend; ++impLIDiter, ++i) {
-      LocalOrdinal row_length = numPacketsPerLID[i];
-      ArrayView<const GlobalOrdinal> row (&imports[importsOffset], row_length);
+      LO row_length = numPacketsPerLID[i];
+
+      const GO* const row_raw = (row_length == 0) ? NULL : &imports[importsOffset];
+      ArrayView<const GlobalOrdinal> row (row_raw, row_length);
       insertGlobalIndicesFiltered (this->getMap ()->getGlobalElement (*impLIDiter), row);
       importsOffset += row_length;
     }
