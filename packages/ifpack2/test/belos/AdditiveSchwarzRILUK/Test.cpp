@@ -33,6 +33,8 @@ main (int argc, char **argv)
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
   RCP<const Teuchos::Comm<int> > comm =
     Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  const int myRank = comm->getRank ();
+  const int numProcs = comm->getSize ();
 
   // The number of rows and columns in the matrix.
   const global_size_t numGlobalElements = 50;
@@ -78,11 +80,54 @@ main (int argc, char **argv)
   b.putScalar (STS::one ());
   multivector_type x (map, 1, true);
 
-  // Solve the linear system.
-  Ifpack2::Test::solve (A, b, x, 1, 1, 100, 1000, 1.0e-8, false, "RILUK");
+  // Attempt to solve the linear system, with the following parameters:
+  //
+  //   - ILU(k) with k = 1
+  //   - Additive Schwarz overlap level: 1
+  //   - GMRES restart length: 100
+  //   - Maximum number of GMRES iterations (over all restarts): 1000
+  //   - GMRES relative residual tolerance: 1.0e-8
+  //   - Do not reorder
+
+  using Teuchos::reduceAll;
+  using Teuchos::REDUCE_MIN;
+  using Teuchos::outArg;
+  int lclSuccess = 1;
+  int gblSuccess = 1;
+  std::ostringstream errStrm;
+  try {
+    Ifpack2::Test::solve (A, b, x, 1, 1, 100, 1000, 1.0e-8, false, "RILUK");
+  }
+  catch (std::exception& e) {
+    lclSuccess = 0;
+    errStrm << e.what ();
+  }
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  if (gblSuccess != 1) {
+    // We assume that it's OK for MPI processes other than Proc 0 in
+    // MPI_COMM_WORLD to print to stderr.  That's generally true when
+    // we run tests.
+    cerr << "Belos solve with Ifpack2 preconditioner threw an exception "
+      "on one or more processes!" << endl;
+    for (int r = 0; r < numProcs; ++r) {
+      if (r == myRank) {
+        std::ostringstream os;
+        os << "Process " << myRank << ": " << errStrm.str () << endl;
+        cerr << os.str ();
+      }
+      comm->barrier (); // wait for output to finish
+      comm->barrier ();
+      comm->barrier ();
+    }
+  }
 
   if (comm->getRank () == 0) {
-    cout << "End Result: TEST PASSED" << endl;
+    if (gblSuccess == 1) {
+      cout << "End Result: TEST PASSED" << endl;
+    }
+    else {
+      cout << "End Result: TEST FAILED" << endl;
+    }
   }
   return EXIT_SUCCESS;
 }

@@ -1880,7 +1880,7 @@ By default, any libraries and header files defined by in the TriBITS project
 ``<Project>_INSTALL_LIB_DIR``.  However, if the primary desire is to install
 executables only, then the user can set::
 
-   -D <Project>_INSTALL_LIBRARIES_AND_HEADERS=ON
+   -D <Project>_INSTALL_LIBRARIES_AND_HEADERS=OFF
 
 which, if in addition static libraries are being built
 (i.e. ``BUILD_SHARED_LIBS=OFF``), this this option will result in no libraries

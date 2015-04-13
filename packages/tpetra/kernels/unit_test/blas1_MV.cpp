@@ -140,6 +140,379 @@ testFill (std::ostream& out, const bool prvSuccess)
 }
 
 
+
+template<class Scalar, class Layout, class Device>
+bool
+testAxpby (std::ostream& out, const bool prvSuccess)
+{
+  using std::endl;
+  typedef Kokkos::View<Scalar**, Layout, Device> mv_type;
+  typedef typename mv_type::size_type size_type;
+  typedef Kokkos::Details::ArithTraits<Scalar> ATS;
+  bool curSuccess = true;
+
+  out << "Testing KokkosBlas::axpby" << endl;
+
+  const size_type numRows = 10;
+  const size_type numCols = 3;
+
+  mv_type X ("X", numRows, numCols);
+  //typename mv_type::HostMirror X_h = Kokkos::create_mirror_view (X);
+  mv_type Y ("Y", numRows, numCols);
+  typename mv_type::HostMirror Y_h = Kokkos::create_mirror_view (Y);
+
+  const Scalar ZERO = ATS::zero ();
+  const Scalar ONE = ATS::one ();
+  const Scalar TWO = ONE + ONE;
+  const Scalar THREE = TWO + ONE;
+  const Scalar FOUR = THREE + ONE;
+  const Scalar FIVE = FOUR + ONE;
+  const Scalar EIGHT = FOUR + FOUR;
+  const Scalar TEN = FIVE + FIVE;
+  const Scalar TWELVE = TEN + TWO;
+  const Scalar TWENTY_TWO = TWELVE + TEN;
+
+  Scalar alpha;
+  Scalar beta;
+
+  KokkosBlas::fill (X, ONE);
+  KokkosBlas::fill (Y, TWO);
+  alpha = ZERO;
+  beta = ZERO;
+  out << "  Test axpby(" << alpha << ", X, " << beta << ", Y)" << endl;
+
+  KokkosBlas::axpby (alpha, X, beta, Y);
+  Kokkos::deep_copy (Y_h, Y);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (Y_h(i,j) != ZERO) {
+        curSuccess = false;
+        out << "    FAILED: Y_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << ZERO << endl;
+      }
+    }
+  }
+
+  KokkosBlas::fill (X, FOUR);
+  KokkosBlas::fill (Y, FIVE);
+  alpha = ONE;
+  beta = ZERO;
+  out << "  Test axpby(" << alpha << ", X, " << beta << ", Y)" << endl;
+
+  KokkosBlas::axpby (alpha, X, beta, Y);
+  Kokkos::deep_copy (Y_h, Y);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (Y_h(i,j) != FOUR) {
+        curSuccess = false;
+        out << "    FAILED: Y_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << FOUR << endl;
+      }
+    }
+  }
+
+  KokkosBlas::fill (X, FOUR);
+  KokkosBlas::fill (Y, FIVE);
+  alpha = -ONE;
+  beta = ZERO;
+  out << "  Test axpby(" << alpha << ", X, " << beta << ", Y)" << endl;
+
+  KokkosBlas::axpby (alpha, X, beta, Y);
+  Kokkos::deep_copy (Y_h, Y);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (Y_h(i,j) != -FOUR) {
+        curSuccess = false;
+        out << "    FAILED: Y_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << -FOUR << endl;
+      }
+    }
+  }
+
+  KokkosBlas::fill (X, FOUR);
+  KokkosBlas::fill (Y, FIVE);
+  alpha = TWO;
+  beta = ZERO;
+  out << "  Test axpby(" << alpha << ", X, " << beta << ", Y)" << endl;
+
+  KokkosBlas::axpby (alpha, X, beta, Y);
+  Kokkos::deep_copy (Y_h, Y);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (Y_h(i,j) != EIGHT) {
+        curSuccess = false;
+        out << "    FAILED: Y_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << EIGHT << endl;
+      }
+    }
+  }
+
+  KokkosBlas::fill (X, FOUR);
+  KokkosBlas::fill (Y, FIVE);
+  alpha = ZERO;
+  beta = ONE;
+  out << "  Test axpby(" << alpha << ", X, " << beta << ", Y)" << endl;
+
+  KokkosBlas::axpby (alpha, X, beta, Y);
+  Kokkos::deep_copy (Y_h, Y);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (Y_h(i,j) != FIVE) {
+        curSuccess = false;
+        out << "    FAILED: Y_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << FIVE << endl;
+      }
+    }
+  }
+
+  KokkosBlas::fill (X, FOUR);
+  KokkosBlas::fill (Y, FIVE);
+  alpha = ZERO;
+  beta = -ONE;
+  out << "  Test axpby(" << alpha << ", X, " << beta << ", Y)" << endl;
+
+  KokkosBlas::axpby (alpha, X, beta, Y);
+  Kokkos::deep_copy (Y_h, Y);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (Y_h(i,j) != -FIVE) {
+        curSuccess = false;
+        out << "    FAILED: Y_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << -FIVE << endl;
+      }
+    }
+  }
+
+  KokkosBlas::fill (X, FOUR);
+  KokkosBlas::fill (Y, FIVE);
+  alpha = ZERO;
+  beta = TWO;
+  out << "  Test axpby(" << alpha << ", X, " << beta << ", Y)" << endl;
+
+  KokkosBlas::axpby (alpha, X, beta, Y);
+  Kokkos::deep_copy (Y_h, Y);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (Y_h(i,j) != TEN) {
+        curSuccess = false;
+        out << "    FAILED: Y_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << TEN << endl;
+      }
+    }
+  }
+
+  KokkosBlas::fill (X, TWO);
+  KokkosBlas::fill (Y, THREE);
+  alpha = ONE;
+  beta = ONE;
+  out << "  Test axpby(" << alpha << ", X, " << beta << ", Y)" << endl;
+
+  KokkosBlas::axpby (alpha, X, beta, Y);
+  Kokkos::deep_copy (Y_h, Y);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (Y_h(i,j) != FIVE) {
+        curSuccess = false;
+        out << "    FAILED: Y_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << FIVE << endl;
+      }
+    }
+  }
+
+  KokkosBlas::fill (X, TWO);
+  KokkosBlas::fill (Y, THREE);
+  alpha = -ONE;
+  beta = ONE;
+  out << "  Test axpby(" << alpha << ", X, " << beta << ", Y)" << endl;
+
+  KokkosBlas::axpby (alpha, X, beta, Y);
+  Kokkos::deep_copy (Y_h, Y);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (Y_h(i,j) != ONE) {
+        curSuccess = false;
+        out << "    FAILED: Y_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << ONE << endl;
+      }
+    }
+  }
+
+  KokkosBlas::fill (X, TWO);
+  KokkosBlas::fill (Y, THREE);
+  alpha = ONE;
+  beta = -ONE;
+  out << "  Test axpby(" << alpha << ", X, " << beta << ", Y)" << endl;
+
+  KokkosBlas::axpby (alpha, X, beta, Y);
+  Kokkos::deep_copy (Y_h, Y);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (Y_h(i,j) != -ONE) {
+        curSuccess = false;
+        out << "    FAILED: Y_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << -ONE << endl;
+      }
+    }
+  }
+
+  KokkosBlas::fill (X, FOUR);
+  KokkosBlas::fill (Y, FIVE);
+  alpha = THREE;
+  beta = ZERO;
+  out << "  Test axpby(" << alpha << ", X, " << beta << ", Y)" << endl;
+
+  KokkosBlas::axpby (alpha, X, beta, Y);
+  Kokkos::deep_copy (Y_h, Y);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (Y_h(i,j) != TWELVE) {
+        curSuccess = false;
+        out << "    FAILED: Y_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << TWELVE << endl;
+      }
+    }
+  }
+
+  KokkosBlas::fill (X, FOUR);
+  KokkosBlas::fill (Y, FIVE);
+  alpha = THREE;
+  beta = TWO;
+  out << "  Test axpby(" << alpha << ", X, " << beta << ", Y)" << endl;
+
+  KokkosBlas::axpby (alpha, X, beta, Y);
+  Kokkos::deep_copy (Y_h, Y);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (Y_h(i,j) != TWENTY_TWO) {
+        curSuccess = false;
+        out << "    FAILED: Y_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << TWENTY_TWO << endl;
+      }
+    }
+  }
+
+  if (curSuccess) {
+    out << "  SUCCESS" << endl;
+  } else {
+    out << "  FAILURE" << endl;
+  }
+  return curSuccess && prvSuccess;
+}
+
+
+
+template<class Scalar, class Layout, class Device>
+bool
+testSum (std::ostream& out, const bool prvSuccess)
+{
+  using std::endl;
+  typedef Kokkos::View<Scalar**, Layout, Device> mv_type;
+  // sum() uses the Device's preferred Layout for the output array.
+  typedef Kokkos::View<Scalar*, Device> sums_type;
+  typedef typename mv_type::size_type size_type;
+  typedef Kokkos::Details::ArithTraits<Scalar> ATS;
+  bool curSuccess = true;
+
+  out << "Testing KokkosBlas::sum" << endl;
+
+  const size_type numRows = 4;
+  const size_type numCols = 3;
+
+  mv_type X ("X", numRows, numCols);
+  sums_type r ("r", numCols);
+
+  typename mv_type::HostMirror X_h = Kokkos::create_mirror_view (X);
+  typename sums_type::HostMirror r_h = Kokkos::create_mirror_view (r);
+
+  out << "  Test that the sum of zeros is zero" << endl;
+  KokkosBlas::fill (X, ATS::zero ());
+  KokkosBlas::sum (r, X);
+  Kokkos::deep_copy (r_h, r);
+  for (size_type j = 0; j < numCols; ++j) {
+    if (r_h(j) != ATS::zero ()) {
+      curSuccess = false;
+      out << "    FAILED: r_h(" << j << ") = " << r_h(j)
+          << " != " << ATS::zero () << endl;
+    }
+  }
+
+  // Tetractys test.
+  out << "  Test that the sum of [1, 2, 3, 4] is 10" << endl;
+  const Scalar ONE = ATS::one ();
+  const Scalar TWO = ONE + ONE;
+  const Scalar THREE = TWO + ONE;
+  const Scalar FOUR = THREE + ONE;
+  const Scalar TEN = ONE + TWO + THREE + FOUR;
+  for (size_type j = 0; j < numCols; ++j) {
+    X_h(0,j) = ONE;
+    X_h(1,j) = TWO;
+    X_h(2,j) = THREE;
+    X_h(3,j) = FOUR;
+  }
+  Kokkos::deep_copy (X, X_h);
+  KokkosBlas::sum (r, X);
+  KokkosBlas::fill (X, ATS::zero ());
+  KokkosBlas::sum (r, X);
+  Kokkos::deep_copy (r_h, r);
+  for (size_type j = 0; j < numCols; ++j) {
+    if (r_h(j) != TEN) {
+      curSuccess = false;
+      out << "    FAILED: r_h(" << j << ") = " << r_h(j)
+          << " != " << TEN << endl;
+    }
+  }
+
+#ifdef KOKKOS_HAVE_CXX11
+  if (numCols > 1) {
+    out << "  Repeat previous test, one column at a time" << endl;
+    // Make sure that we get the same result one column at a time, for a
+    // single vector (1-D Views), as we get when processing all the
+    // columns of the multivector at once (2-D Views).
+    for (size_type j = 0; j < numCols; ++j) {
+      auto X_j = Kokkos::subview (X, Kokkos::ALL (), j);
+      auto r_j = Kokkos::subview (r, j);
+      KokkosBlas::sum (r_j, X_j);
+    }
+    Kokkos::deep_copy (r_h, r);
+    for (size_type j = 0; j < numCols; ++j) {
+      if (r_h(j) != TEN) {
+        curSuccess = false;
+        out << "    FAILED: r_h(" << j << ") = " << r_h(j)
+            << " != " << TEN << endl;
+      }
+    }
+  }
+#endif // KOKKOS_HAVE_CXX11
+
+  // Make sure that sum() and nrm1() are different, by changing the
+  // tetractys test slightly.
+  out << "  Test that the sum of [-1, 2, -3, 4] is 2" << endl;
+  for (size_type j = 0; j < numCols; ++j) {
+    X_h(0,j) = -ONE;
+    X_h(1,j) = TWO;
+    X_h(2,j) = -THREE;
+    X_h(3,j) = FOUR;
+  }
+  Kokkos::deep_copy (X, X_h);
+  KokkosBlas::sum (r, X);
+  Kokkos::deep_copy (r_h, r);
+  for (size_type j = 0; j < numCols; ++j) {
+    if (r_h(j) != TWO) {
+      curSuccess = false;
+      out << "    FAILED: r_h(" << j << ") = " << r_h(j)
+          << " != " << TWO << endl;
+    }
+  }
+
+  if (curSuccess) {
+    out << "  SUCCESS" << endl;
+  } else {
+    out << "  FAILURE" << endl;
+  }
+  return curSuccess && prvSuccess;
+}
+
+
 template<class Scalar, class Layout, class Device>
 bool
 testAnyNorm (std::ostream& out, const EWhichNorm whichNorm, const bool prvSuccess)
@@ -445,6 +818,7 @@ testMV (std::ostream& out, const bool prvSuccess)
   }
   curSuccess = testNorm1<Scalar, Layout, Device> (out, curSuccess);
   curSuccess = testNormInf<Scalar, Layout, Device> (out, curSuccess);
+  curSuccess = testSum<Scalar, Layout, Device> (out, curSuccess);
   return curSuccess && prvSuccess;
 }
 

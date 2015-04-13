@@ -41,7 +41,7 @@
 //@HEADER
 */
 
-#include <Kokkos_Blas1_MV_impl.hpp>
+#include <Kokkos_Blas1_MV_impl_axpby.hpp>
 #include <climits>
 
 namespace KokkosBlas {
@@ -52,24 +52,20 @@ namespace Impl {
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
 
 void
-Axpby<Kokkos::View<double**,
-                   Kokkos::LayoutLeft,
-                   Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                   Kokkos::Impl::ViewDefault>,
-      double,
+Axpby<double,
       Kokkos::View<const double**,
                    Kokkos::LayoutLeft,
                    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                    Kokkos::Impl::ViewDefault>,
       double,
-      Kokkos::View<const double**,
+      Kokkos::View<double**,
                    Kokkos::LayoutLeft,
                    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                   Kokkos::Impl::ViewDefault>, 2>::
-axpby (const RMV& R, const XMV::non_const_value_type& alpha,
+                   Kokkos::Impl::ViewDefault>,
+      2>::
+axpby (const XMV::non_const_value_type& alpha,
        const XMV& X, const YMV::non_const_value_type& beta,
        const YMV& Y)
 {
@@ -104,15 +100,15 @@ axpby (const RMV& R, const XMV::non_const_value_type& alpha,
   if (numRows < static_cast<size_type> (INT_MAX) &&
       numRows * numCols < static_cast<size_type> (INT_MAX)) {
     typedef int index_type;
-    MV_Axpby_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
-      YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
-                                                            beta, Y, a, b);
+    MV_Axpby_Invoke_Left<XMV::non_const_value_type, XMV,
+      YMV::non_const_value_type, YMV, index_type> (alpha, X,
+                                                   beta, Y, a, b);
   }
   else {
     typedef XMV::size_type index_type;
-    MV_Axpby_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
-      YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
-                                                            beta, Y, a, b);
+    MV_Axpby_Invoke_Left<XMV::non_const_value_type, XMV,
+      YMV::non_const_value_type, YMV, index_type> (alpha, X,
+                                                   beta, Y, a, b);
   }
 }
 
@@ -126,24 +122,20 @@ axpby (const RMV& R, const XMV::non_const_value_type& alpha,
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
 
 void
-Axpby<Kokkos::View<double**,
-                   Kokkos::LayoutLeft,
-                   Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                   Kokkos::Impl::ViewDefault>,
-      double,
+Axpby<double,
       Kokkos::View<const double**,
                    Kokkos::LayoutLeft,
                    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                    Kokkos::Impl::ViewDefault>,
       double,
-      Kokkos::View<const double**,
+      Kokkos::View<double**,
                    Kokkos::LayoutLeft,
                    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                   Kokkos::Impl::ViewDefault>, 2>::
-axpby (const RMV& R, const XMV::non_const_value_type& alpha,
+                   Kokkos::Impl::ViewDefault>,
+      2>::
+axpby (const XMV::non_const_value_type& alpha,
        const XMV& X, const YMV::non_const_value_type& beta,
        const YMV& Y)
 {
@@ -178,15 +170,15 @@ axpby (const RMV& R, const XMV::non_const_value_type& alpha,
   if (numRows < static_cast<size_type> (INT_MAX) &&
       numRows * numCols < static_cast<size_type> (INT_MAX)) {
     typedef int index_type;
-    MV_Axpby_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
-      YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
-                                                            beta, Y, a, b);
+    MV_Axpby_Invoke_Left<XMV::non_const_value_type, XMV,
+      YMV::non_const_value_type, YMV, index_type> (alpha, X,
+                                                   beta, Y, a, b);
   }
   else {
     typedef XMV::size_type index_type;
-    MV_Axpby_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
-      YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
-                                                            beta, Y, a, b);
+    MV_Axpby_Invoke_Left<XMV::non_const_value_type, XMV,
+      YMV::non_const_value_type, YMV, index_type> (alpha, X,
+                                                   beta, Y, a, b);
   }
 }
 
@@ -200,24 +192,20 @@ axpby (const RMV& R, const XMV::non_const_value_type& alpha,
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
 
 void
-Axpby<Kokkos::View<double**,
-                   Kokkos::LayoutLeft,
-                   Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                   Kokkos::Impl::ViewDefault>,
-      double,
+Axpby<double,
       Kokkos::View<const double**,
                    Kokkos::LayoutLeft,
                    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                    Kokkos::Impl::ViewDefault>,
       double,
-      Kokkos::View<const double**,
+      Kokkos::View<double**,
                    Kokkos::LayoutLeft,
                    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                   Kokkos::Impl::ViewDefault>, 2>::
-axpby (const RMV& R, const XMV::non_const_value_type& alpha,
+                   Kokkos::Impl::ViewDefault>,
+      2>::
+axpby (const XMV::non_const_value_type& alpha,
        const XMV& X, const YMV::non_const_value_type& beta,
        const YMV& Y)
 {
@@ -252,15 +240,15 @@ axpby (const RMV& R, const XMV::non_const_value_type& alpha,
   if (numRows < static_cast<size_type> (INT_MAX) &&
       numRows * numCols < static_cast<size_type> (INT_MAX)) {
     typedef int index_type;
-    MV_Axpby_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
-      YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
-                                                            beta, Y, a, b);
+    MV_Axpby_Invoke_Left<XMV::non_const_value_type, XMV,
+      YMV::non_const_value_type, YMV, index_type> (alpha, X,
+                                                   beta, Y, a, b);
   }
   else {
     typedef XMV::size_type index_type;
-    MV_Axpby_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
-      YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
-                                                            beta, Y, a, b);
+    MV_Axpby_Invoke_Left<XMV::non_const_value_type, XMV,
+      YMV::non_const_value_type, YMV, index_type> (alpha, X,
+                                                   beta, Y, a, b);
   }
 }
 
@@ -274,24 +262,20 @@ axpby (const RMV& R, const XMV::non_const_value_type& alpha,
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaSpace
 
 void
-Axpby<Kokkos::View<double**,
-                   Kokkos::LayoutLeft,
-                   Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                   Kokkos::Impl::ViewDefault>,
-      double,
+Axpby<double,
       Kokkos::View<const double**,
                    Kokkos::LayoutLeft,
                    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                    Kokkos::Impl::ViewDefault>,
       double,
-      Kokkos::View<const double**,
+      Kokkos::View<double**,
                    Kokkos::LayoutLeft,
                    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                   Kokkos::Impl::ViewDefault>, 2>::
-axpby (const RMV& R, const XMV::non_const_value_type& alpha,
+                   Kokkos::Impl::ViewDefault>,
+      2>::
+axpby (const XMV::non_const_value_type& alpha,
        const XMV& X, const YMV::non_const_value_type& beta,
        const YMV& Y)
 {
@@ -326,15 +310,15 @@ axpby (const RMV& R, const XMV::non_const_value_type& alpha,
   if (numRows < static_cast<size_type> (INT_MAX) &&
       numRows * numCols < static_cast<size_type> (INT_MAX)) {
     typedef int index_type;
-    MV_Axpby_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
-      YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
-                                                            beta, Y, a, b);
+    MV_Axpby_Invoke_Left<XMV::non_const_value_type, XMV,
+      YMV::non_const_value_type, YMV, index_type> (alpha, X,
+                                                   beta, Y, a, b);
   }
   else {
     typedef XMV::size_type index_type;
-    MV_Axpby_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
-      YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
-                                                            beta, Y, a, b);
+    MV_Axpby_Invoke_Left<XMV::non_const_value_type, XMV,
+      YMV::non_const_value_type, YMV, index_type> (alpha, X,
+                                                   beta, Y, a, b);
   }
 }
 
@@ -348,24 +332,20 @@ axpby (const RMV& R, const XMV::non_const_value_type& alpha,
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaUVMSpace
 
 void
-Axpby<Kokkos::View<double**,
-                   Kokkos::LayoutLeft,
-                   Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                   Kokkos::Impl::ViewDefault>,
-      double,
+Axpby<double,
       Kokkos::View<const double**,
                    Kokkos::LayoutLeft,
                    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                    Kokkos::Impl::ViewDefault>,
       double,
-      Kokkos::View<const double**,
+      Kokkos::View<double**,
                    Kokkos::LayoutLeft,
                    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                   Kokkos::Impl::ViewDefault>, 2>::
-axpby (const RMV& R, const XMV::non_const_value_type& alpha,
+                   Kokkos::Impl::ViewDefault>,
+      2>::
+axpby (const XMV::non_const_value_type& alpha,
        const XMV& X, const YMV::non_const_value_type& beta,
        const YMV& Y)
 {
@@ -400,15 +380,15 @@ axpby (const RMV& R, const XMV::non_const_value_type& alpha,
   if (numRows < static_cast<size_type> (INT_MAX) &&
       numRows * numCols < static_cast<size_type> (INT_MAX)) {
     typedef int index_type;
-    MV_Axpby_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
-      YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
-                                                            beta, Y, a, b);
+    MV_Axpby_Invoke_Left<XMV::non_const_value_type, XMV,
+      YMV::non_const_value_type, YMV, index_type> (alpha, X,
+                                                   beta, Y, a, b);
   }
   else {
     typedef XMV::size_type index_type;
-    MV_Axpby_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
-      YMV::non_const_value_type, YMV, index_type> (R, alpha, X,
-                                                            beta, Y, a, b);
+    MV_Axpby_Invoke_Left<XMV::non_const_value_type, XMV,
+      YMV::non_const_value_type, YMV, index_type> (alpha, X,
+                                                   beta, Y, a, b);
   }
 }
 

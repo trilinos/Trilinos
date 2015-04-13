@@ -2874,25 +2874,28 @@ namespace Tpetra {
                        Scalar scalarThis)
   {
     using Teuchos::arcp_const_cast;
-    const char tfecfFuncName[] = "elementWiseMultiply()";
+    const char tfecfFuncName[] = "elementWiseMultiply: ";
 
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       getLocalLength() != A.getLocalLength() ||
       getLocalLength() != B.getLocalLength(), std::runtime_error,
-      ": MultiVectors do not have the same local length.");
+      "MultiVectors do not have the same local length.");
 #endif // HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       B.getNumVectors() != this->getNumVectors(), std::runtime_error,
-      ": MultiVectors 'this' and B must have the same number of vectors.");
-    try {
+      "MultiVectors 'this' and B must have the same number of vectors.");
+    if (scalarAB == Teuchos::ScalarTraits<Scalar>::zero ()) {
+      if (scalarThis == Teuchos::ScalarTraits<Scalar>::zero ()) {
+        this->putScalar (scalarThis);
+      }
+      else {
+        this->scale (scalarThis);
+      }
+    }
+    else { // scalarAB != 0
       MVT::ElemMult (lclMV_, scalarThis, scalarAB, (const KMV&) A.lclMV_,
                      (const KMV&) B.lclMV_);
-    }
-    catch (std::runtime_error &e) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true,std::runtime_error,
-          ": caught exception from Kokkos:" << std::endl
-          << e.what() << std::endl);
     }
   }
 

@@ -67,7 +67,6 @@ namespace Belos {
       typedef Scalar scalar_type;
       typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
       typedef MultiVecTraits<Scalar, MV> MVT;
-      typedef MultiVecTraitsExt<Scalar, MV> MVText;
       typedef Teuchos::SerialDenseMatrix<int, Scalar> mat_type;
 
     public:
@@ -304,7 +303,7 @@ namespace Belos {
                          << endl;
             resultStream << orthoManName
                          << "," << (orthoManName=="Simple" ? normalization : "N/A")
-                         << "," << MVText::GetGlobalLength(*X)
+                         << "," << MVT::GetGlobalLength(*X)
                          << "," << numCols
                          << "," << numBlocks
                          << "," << firstRunTimer->totalElapsedTime()
@@ -1164,7 +1163,7 @@ namespace Belos {
         // Frobenius norm instead, we should scale this bound by
         // $\sqrt{n}$.
 
-        const int numRows = MVText::GetGlobalLength(*S);
+        const int numRows = MVT::GetGlobalLength(*S);
         const int numCols = MVT::GetNumberVecs(*S);
         const int sizeS = MVT::GetNumberVecs(*S);
 
@@ -1312,7 +1311,7 @@ namespace Belos {
         // Total number of failed tests in this call of this routine.
         int numerr = 0;
 
-        const int numRows = MVText::GetGlobalLength(*S);
+        const int numRows = MVT::GetGlobalLength(*S);
         const int numCols = MVT::GetNumberVecs(*S);
         const int sizeS = MVT::GetNumberVecs(*S);
 
@@ -1489,7 +1488,7 @@ namespace Belos {
         // Total number of failed tests in this call of this routine.
         int numerr = 0;
 
-        const int numRows = MVText::GetGlobalLength(*S);
+        const int numRows = MVT::GetGlobalLength(*S);
         const int numCols = MVT::GetNumberVecs(*S);
         const int sizeS = MVT::GetNumberVecs(*S);
 
@@ -1626,7 +1625,7 @@ namespace Belos {
         // Total number of failed tests in this call of this routine.
         int numerr = 0;
 
-        const int numRows = MVText::GetGlobalLength(*S);
+        const int numRows = MVT::GetGlobalLength(*S);
         const int numCols = MVT::GetNumberVecs(*S);
         const int sizeS = MVT::GetNumberVecs(*S);
         const int sizeX1 = MVT::GetNumberVecs(*X1);

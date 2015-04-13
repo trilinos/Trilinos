@@ -743,6 +743,22 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     "X has " << X.getNumVectors () << " columns, but Y has "
     << Y.getNumVectors () << " columns.");
 
+#ifdef HAVE_IFPACK2_DEBUG
+  {
+    typedef Teuchos::ScalarTraits<magnitude_type> STM;
+    Teuchos::Array<magnitude_type> norms (X.getNumVectors ());
+    X.norm1 (norms ());
+    bool good = true;
+    for (typename Teuchos::Array<magnitude_type>::size_type j = 0; j < X.getNumVectors (); ++j) {
+      if (STM::isnaninf (norms[j])) {
+        good = false;
+        break;
+      }
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION( ! good, std::runtime_error, "Ifpack2::LocalFilter::apply: The 1-norm of the input X is NaN or Inf.");
+  }
+#endif // HAVE_IFPACK2_DEBUG
+
   if (&X == &Y) {
     // FIXME (mfh 23 Apr 2014) We have to do more work to figure out
     // if X and Y alias one another.  For example, we should check
@@ -754,6 +770,22 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   } else {
     applyNonAliased (X, Y, mode, alpha, beta);
   }
+
+#ifdef HAVE_IFPACK2_DEBUG
+  {
+    typedef Teuchos::ScalarTraits<magnitude_type> STM;
+    Teuchos::Array<magnitude_type> norms (Y.getNumVectors ());
+    Y.norm1 (norms ());
+    bool good = true;
+    for (typename Teuchos::Array<magnitude_type>::size_type j = 0; j < Y.getNumVectors (); ++j) {
+      if (STM::isnaninf (norms[j])) {
+        good = false;
+        break;
+      }
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION( ! good, std::runtime_error, "Ifpack2::LocalFilter::apply: The 1-norm of the output Y is NaN or Inf.");
+  }
+#endif // HAVE_IFPACK2_DEBUG
 }
 
 template<class MatrixType>

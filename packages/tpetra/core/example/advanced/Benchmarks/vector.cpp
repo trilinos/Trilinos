@@ -56,7 +56,6 @@
 #include <Tpetra_Vector.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_TimeMonitor.hpp>
-#include <impl/Kokkos_Timer.hpp>
 
 typedef Tpetra::global_size_t GST;
 using Teuchos::Array;
@@ -139,12 +138,10 @@ benchmarkTpetra (RCP<const Comm<int> > comm,
   RCP<vector_type> x;
   {
     TimeMonitor timeMon (*vecCreateTimer);
-    Kokkos::Impl::Timer timer;
     // This benchmarks both vector creation and vector destruction.
     for (int k = 0; k < numVecCreateTrials; ++k) {
       x = rcp (new vector_type (map));
     }
-    printf("Timer: %lf\n",timer.seconds());
   }
   if (x.is_null ()) { // no Vector create trials means no Vector
     return;

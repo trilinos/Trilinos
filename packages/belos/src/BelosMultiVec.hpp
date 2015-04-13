@@ -139,11 +139,7 @@ public:
   //@{ 
 
   //! The number of rows in the multivector.
-  BELOS_DEPRECATED virtual int GetVecLength () const = 0;
- 
-  //! The number of rows in the multivector.
-  //! \note This method supersedes GetVecLength, which will be deprecated.
-  virtual ptrdiff_t GetGlobalLength () const { return static_cast<ptrdiff_t>( this->GetVecLength() ); }
+  virtual ptrdiff_t GetGlobalLength () const = 0;
  
   //! The number of vectors (i.e., columns) in the multivector.
   virtual int GetNumberVecs () const = 0;
@@ -422,8 +418,8 @@ public:
     }
 
     ///
-    static int GetVecLength( const MultiVec<ScalarType>& mv )
-    { return mv.GetVecLength(); }
+    static ptrdiff_t GetGlobalLength( const MultiVec<ScalarType>& mv )
+    { return mv.GetGlobalLength(); }
     ///
     static int GetNumberVecs( const MultiVec<ScalarType>& mv )
     { return mv.GetNumberVecs(); }

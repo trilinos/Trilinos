@@ -70,9 +70,16 @@
 
 //#include <Kokkos_Vectorization.hpp>
 #include <impl/Kokkos_Error.hpp>
-
+#include <Kokkos_Sparse_CrsMatrix.hpp>
 namespace Kokkos {
+#if true
+  using KokkosSparse::CrsMatrix;
+  using KokkosSparse::RowsPerThread;
+  using KokkosSparse::SparseRowView;
+  using KokkosSparse::SparseRowViewConst;
+  using KokkosSparse::DeviceConfig;
 
+#else
 /// \class SparseRowView
 /// \brief View of a row of a sparse matrix.
 /// \tparam MatrixType Sparse matrix type, such as (but not limited to) CrsMatrix.
@@ -737,7 +744,7 @@ inline int RowsPerThread<Kokkos::Cuda>(const int NNZPerRow) {
   return 1;
 }
 #endif
-
+#endif
 //----------------------------------------------------------------------------
 
 template<class DeviceType, typename ScalarType, int NNZPerRow=27>
@@ -1229,10 +1236,12 @@ struct MV_MultiplyFunctor {
     KOKKOS_INLINE_FUNCTION void
     operator() (const team_member& dev) const
     {
-      // This should be a thread loop as soon as we can use C++11
-      // FIXME (mfh 20 Mar 2015) The correct type of 'loop' should be
-      // ordinal_type, not int.  Ditto for rows_per_thread.
-      for (int loop = 0; loop < rows_per_thread; ++loop) {
+      // This should be a thread loop as soon as we can use C++11.
+      //
+      // FIXME (mfh 20 Mar 2015, 11 Apr 2015) The correct type of
+      // 'loop' should be ordinal_type, not int.  Ditto for
+      // rows_per_thread.  The cast avoids a build warning.
+      for (int loop = 0; loop < static_cast<int> (rows_per_thread); ++loop) {
         // NOTE (mfh 20 Mar 2015) Unfortunately, Kokkos::Vectorization
         // lacks a typedef for determining the type of the return
         // value of global_thread_rank().  I know that it returns int
@@ -2107,7 +2116,7 @@ template <class RangeVector,
         const int nteams = (A.numRows()+rows_per_team-1)/rows_per_team;
 
         Kokkos::parallel_for( Kokkos::TeamPolicy< typename RangeVector::execution_space >
-			      ( nteams, team_size, vector_length ) , op );
+                              ( nteams, team_size, vector_length ) , op );
 
       }
 
@@ -2153,7 +2162,7 @@ template <class RangeVector,
       const int rows_per_team = rows_per_thread * team_size;
       const int nteams = (A.numRows()+rows_per_team-1)/rows_per_team;
       Kokkos::parallel_for( Kokkos::TeamPolicy< typename RangeVector::execution_space >
-			    ( nteams , team_size , vector_length ) , op );
+                            ( nteams , team_size , vector_length ) , op );
 
 #endif // KOKKOS_FAST_COMPILE
     }

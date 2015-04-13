@@ -41,8 +41,7 @@
 //@HEADER
 */
 
-#include <Kokkos_Blas1_MV_impl.hpp>
-#include <climits>
+#include <Kokkos_Blas1_MV_impl_scal.hpp>
 
 namespace KokkosBlas {
 namespace Impl {
@@ -88,7 +87,7 @@ scal (const RMV& R, XMV::non_const_value_type& alpha, const XMV& X)
       index_type> (R, alpha, X, a);
   }
   else {
-    typedef typename XMV::size_type index_type;
+    typedef XMV::size_type index_type;
     MV_Scal_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
       index_type> (R, alpha, X, a);
   }
@@ -140,7 +139,7 @@ scal (const RMV& R, XMV::non_const_value_type& alpha, const XMV& X)
       index_type> (R, alpha, X, a);
   }
   else {
-    typedef typename XMV::size_type index_type;
+    typedef XMV::size_type index_type;
     MV_Scal_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
       index_type> (R, alpha, X, a);
   }
@@ -192,7 +191,7 @@ scal (const RMV& R, XMV::non_const_value_type& alpha, const XMV& X)
       index_type> (R, alpha, X, a);
   }
   else {
-    typedef typename XMV::size_type index_type;
+    typedef XMV::size_type index_type;
     MV_Scal_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
       index_type> (R, alpha, X, a);
   }
@@ -244,7 +243,7 @@ scal (const RMV& R, XMV::non_const_value_type& alpha, const XMV& X)
       index_type> (R, alpha, X, a);
   }
   else {
-    typedef typename XMV::size_type index_type;
+    typedef XMV::size_type index_type;
     MV_Scal_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
       index_type> (R, alpha, X, a);
   }
@@ -296,7 +295,7 @@ scal (const RMV& R, XMV::non_const_value_type& alpha, const XMV& X)
       index_type> (R, alpha, X, a);
   }
   else {
-    typedef typename XMV::size_type index_type;
+    typedef XMV::size_type index_type;
     MV_Scal_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
       index_type> (R, alpha, X, a);
   }

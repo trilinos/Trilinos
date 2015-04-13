@@ -260,8 +260,8 @@ namespace Belos {
       return mv.subView (index);
     }
 
-    static int GetVecLength( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
-    { return mv.getGlobalLength(); }
+    static ptrdiff_t GetGlobalLength( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
+    { return static_cast<ptrdiff_t>(mv.getGlobalLength()); }
 
     static int GetNumberVecs( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     { return mv.getNumVectors(); }

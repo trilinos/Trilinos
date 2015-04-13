@@ -57,13 +57,7 @@
 #ifdef HAVE_TPETRACLASSIC_SERIAL
 #include <Kokkos_StandardNodeMemoryModel.hpp>
 #include "Kokkos_NodeHelpers.hpp"
-
-#ifdef HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT
-#  include "KokkosCore_config.h"
-#  ifdef KOKKOS_HAVE_SERIAL
-#    include "Kokkos_Serial.hpp"
-#  endif // KOKKOS_HAVE_SERIAL
-#endif // HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT
+#include <Kokkos_HostSpace.hpp>
 
 namespace KokkosClassic {
 
@@ -80,6 +74,12 @@ namespace KokkosClassic {
     /// That means we plan to deprecate it with the 11.14 release of
     /// Trilinos, and remove it entirely with the 12.0 release.
     static const bool classic = true;
+
+#ifdef KOKKOS_HAVE_SERIAL
+    typedef Kokkos::Serial execution_space;
+#else
+    typedef typename Kokkos::HostSpace::execution_space execution_space;
+#endif // KOKKOS_HAVE_SERIAL
 
     //! Constructor; sets default parameters.
     SerialNode ();

@@ -191,11 +191,6 @@ public:
     return(new MyMultiVec(Length_, values));
   }
 
-  int GetVecLength () const
-  {
-    return static_cast<int> (this->GetGlobalLength ());
-  }
-
   ptrdiff_t GetGlobalLength () const
   {
     return Length_;

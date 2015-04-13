@@ -100,7 +100,7 @@ namespace NOX {
 
 
       //! Obtain the vector length of *this multivector block.
-      virtual int GetVecLength() const;
+      virtual ptrdiff_t GetGlobalLength() const;
 
       //! Obtain the number of vectors in *this multivector block.
       virtual int GetNumberVecs() const;

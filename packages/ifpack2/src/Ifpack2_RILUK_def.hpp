@@ -854,6 +854,22 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     "Ifpack2::RILUK::apply: mode = Teuchos::CONJ_TRANS is not implemented for "
     "complex Scalar type.  Please talk to the Ifpack2 developers to get this "
     "fixed.  There is a FIXME in this file about this very issue.");
+#ifdef HAVE_IFPACK2_DEBUG
+  {
+    const magnitude_type D_nrm1 = D_->norm1 ();
+    TEUCHOS_TEST_FOR_EXCEPTION( STM::isnaninf (D_nrm1), std::runtime_error, "Ifpack2::RILUK::apply: The 1-norm of the stored diagonal is NaN or Inf.");
+    Teuchos::Array<magnitude_type> norms (X.getNumVectors ());
+    X.norm1 (norms ());
+    bool good = true;
+    for (typename Teuchos::Array<magnitude_type>::size_type j = 0; j < X.getNumVectors (); ++j) {
+      if (STM::isnaninf (norms[j])) {
+        good = false;
+        break;
+      }
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION( ! good, std::runtime_error, "Ifpack2::RILUK::apply: The 1-norm of the input X is NaN or Inf.");
+  }
+#endif // HAVE_IFPACK2_DEBUG
 
   const scalar_type one = STS::one ();
   const scalar_type zero = STS::zero ();
@@ -916,6 +932,21 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       }
     }
   } // Stop timing
+
+#ifdef HAVE_IFPACK2_DEBUG
+  {
+    Teuchos::Array<magnitude_type> norms (Y.getNumVectors ());
+    Y.norm1 (norms ());
+    bool good = true;
+    for (typename Teuchos::Array<magnitude_type>::size_type j = 0; j < Y.getNumVectors (); ++j) {
+      if (STM::isnaninf (norms[j])) {
+        good = false;
+        break;
+      }
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION( ! good, std::runtime_error, "Ifpack2::RILUK::apply: The 1-norm of the output Y is NaN or Inf.");
+  }
+#endif // HAVE_IFPACK2_DEBUG
 
   ++numApply_;
   applyTime_ = timer.totalElapsedTime ();

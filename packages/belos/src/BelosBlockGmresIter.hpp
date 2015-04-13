@@ -88,7 +88,6 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   // Convenience typedefs
   //
   typedef MultiVecTraits<ScalarType,MV> MVT;
-  typedef MultiVecTraitsExt<ScalarType,MV> MVText;
   typedef OperatorTraits<ScalarType,MV,OP> OPT;
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename SCT::magnitudeType MagnitudeType;
@@ -430,7 +429,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
         }
 
         // Initialize the state storage
-        TEUCHOS_TEST_FOR_EXCEPTION(blockSize_*static_cast<ptrdiff_t>(numBlocks_) > MVText::GetGlobalLength(*rhsMV),std::invalid_argument,
+        TEUCHOS_TEST_FOR_EXCEPTION(blockSize_*static_cast<ptrdiff_t>(numBlocks_) > MVT::GetGlobalLength(*rhsMV),std::invalid_argument,
                            "Belos::BlockGmresIter::setStateSize(): Cannot generate a Krylov basis with dimension larger the operator!");
 
         // If the subspace has not be initialized before, generate it using the LHS or RHS from lp_.
@@ -583,7 +582,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
 
       // initialize V_,z_, and curDim_
 
-      TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*newstate.V) != MVText::GetGlobalLength(*V_),
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.V) != MVT::GetGlobalLength(*V_),
                           std::invalid_argument, errstr );
       TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V) < blockSize_,
                           std::invalid_argument, errstr );

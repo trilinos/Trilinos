@@ -123,6 +123,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Mesquite              packages/mesquite                 PS
   MeshingGenie          packages/meshinggenie             EX
   TrilinosCouplings     packages/trilinoscouplings        SS
+  Pike                  packages/pike                     SS
   FEApp                 demos/FEApp                       SS # Capability demonstration package
   )
 

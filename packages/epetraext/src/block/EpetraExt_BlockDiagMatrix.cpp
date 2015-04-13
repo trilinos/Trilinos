@@ -312,24 +312,24 @@ void EpetraExt_BlockDiagMatrix::Print(std::ostream & os) const{
     if (MyPID==iproc) {
       int NumMyElements1 =DataMap_->NumMyElements();
       int MaxElementSize1 = DataMap_->MaxElementSize();
-          int * MyGlobalElements1_int = 0;
-          long long * MyGlobalElements1_LL = 0;
+      int * MyGlobalElements1_int = 0;
+      long long * MyGlobalElements1_LL = 0;
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-  if(DataMap_->GlobalIndicesInt()) {
-      MyGlobalElements1_int = DataMap_->MyGlobalElements();
-  }
-  else
+      if (DataMap_->GlobalIndicesInt ()) {
+        MyGlobalElements1_int = DataMap_->MyGlobalElements();
+      }
+      else
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-  if(DataMap_->GlobalIndicesLongLong()) {
-      MyGlobalElements1_LL = DataMap_->MyGlobalElements64();
-  }
-  else
+        if (DataMap_->GlobalIndicesLongLong ()) {
+          MyGlobalElements1_LL = DataMap_->MyGlobalElements64();
+        }
+        else
 #endif
-    throw "EpetraExt_BlockDiagMatrix::Print: GlobalIndices type unknown";
+          throw "EpetraExt_BlockDiagMatrix::Print: GlobalIndices type unknown";
 
-      int * FirstPointInElementList1;
-      if (MaxElementSize1!=1) FirstPointInElementList1 = DataMap_->FirstPointInElementList();
+      int * FirstPointInElementList1 = (MaxElementSize1 == 1) ?
+        NULL : DataMap_->FirstPointInElementList();
 
       if (MyPID==0) {
         os.width(8);
@@ -344,7 +344,7 @@ void EpetraExt_BlockDiagMatrix::Print(std::ostream & os) const{
         os << std::endl;
       }
       for (int i=0; i < NumMyElements1; i++) {
-        for (int ii=0; ii< DataMap_->ElementSize(i); ii++) {
+        for (int ii=0; ii < DataMap_->ElementSize(i); ii++) {
           int iii;
           os.width(10);
           os <<  MyPID; os << "    ";

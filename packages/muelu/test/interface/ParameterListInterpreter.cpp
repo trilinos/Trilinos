@@ -151,20 +151,12 @@ int main(int argc, char *argv[]) {
 #endif
         }
         baseFile = baseFile + (lib == Xpetra::UseEpetra ? "_epetra" : "_tpetra");
-        std::string resFile = baseFile + ".res";
-        std::ifstream f(resFile.c_str());
+        std::string goldFile = baseFile + ".gold";
+        std::ifstream f(goldFile.c_str());
         if (!f.good()) {
           if (myRank == 0)
-            std::cout << "Warning: comparison file " << resFile << " not found.  Skipping test" << std::endl;
+            std::cout << "Warning: comparison file " << goldFile << " not found.  Skipping test" << std::endl;
           continue;
-        }
-
-        std::string cmd;
-        if (myRank == 0 && std::ifstream((baseFile + ".resorig").c_str()).good()) {
-          // Original .res is present, restore it by changing extension
-          // from .resorig to .res
-          cmd = "mv -f " + baseFile + ".resorig " + baseFile + ".res";
-          system(cmd.c_str());
         }
 
         std::filebuf    buffer;
@@ -252,6 +244,7 @@ int main(int argc, char *argv[]) {
           }
         }
 
+        std::string cmd;
         if (myRank == 0) {
           // Redirect output back
           std::cout.rdbuf(oldbuffer);
@@ -259,8 +252,8 @@ int main(int argc, char *argv[]) {
 
           // Create a copy of outputs
           cmd = "cp -f ";
-          system((cmd + baseFile + ".res " + baseFile + ".resorig").c_str());
-          system((cmd + baseFile + ".out " + baseFile + ".outorig").c_str());
+          system((cmd + baseFile + ".gold " + baseFile + ".gold_filtered").c_str());
+          system((cmd + baseFile + ".out " + baseFile + ".out_filtered").c_str());
 
           // Tpetra produces different eigenvalues in Chebyshev due to using
           // std::rand() for generating random vectors, which may be initialized
@@ -300,7 +293,7 @@ int main(int argc, char *argv[]) {
 #endif
 
           // Run comparison (ignoring whitespaces)
-          cmd = "diff -u -w -I\"^\\s*$\" " + baseFile + ".res " + baseFile + ".out";
+          cmd = "diff -u -w -I\"^\\s*$\" " + baseFile + ".gold_filtered " + baseFile + ".out_filtered";
           int ret = system(cmd.c_str());
           if (ret)
             failed = true;
@@ -329,6 +322,6 @@ void run_sed(const std::string& pattern, const std::string& baseFile) {
   sed_pref = sed_pref +  "\"\" ";
 #endif
 
-  system((sed_pref + pattern + " " + baseFile + ".res").c_str());
-  system((sed_pref + pattern + " " + baseFile + ".out").c_str());
+  system((sed_pref + pattern + " " + baseFile + ".gold_filtered").c_str());
+  system((sed_pref + pattern + " " + baseFile + ".out_filtered").c_str());
 }

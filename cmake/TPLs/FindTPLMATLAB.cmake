@@ -88,8 +88,8 @@ TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( MATLAB
   )
 
 # Find mex & mexext
-SET(MATLAB_MEX_DIR ${MATLAB_ROOT}/bin)
-FIND_PROGRAM(MEX_COMPILER mex ${MATLAB_MEX_DIR})
+SET(MATLAB_MEX_DIR ${MATLAB_ROOT}/bin CACHE PATH "Directory of MATLAB mex compiler wrapper")
+FIND_PROGRAM(MEX_COMPILER mex ${MATLAB_MEX_DIR} NO_DEFAULT_PATH)
 IF(NOT MEX_COMPILER)
   MESSAGE(FATAL_ERROR " Could not find mex.")
 ENDIF()
@@ -107,9 +107,11 @@ ENDIF()
 
 # Find the matlab file exension from mexext
 EXECUTE_PROCESS(COMMAND ${MEX_MEXEXT} OUTPUT_VARIABLE MEX_EXTENSION OUTPUT_STRIP_TRAILING_WHITESPACE)
+SET(MEX_EXTENSION ${MEX_EXTENSION} CACHE STRING "MATLAB mex file extension")
 IF(NOT MEX_EXTENSION)
   MESSAGE(FATAL_ERROR " Platform-specific mex extension could not be found (hint: check to be sure mexext runs correctly).")
 ENDIF()
 IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
   MESSAGE("Platform-specific mex extension: " ${MEX_EXTENSION})
 ENDIF()
+ 

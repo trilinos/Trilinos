@@ -236,13 +236,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestUpperTriangularBlockCrsMatr
   const int blockSize = 5;
 
   RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph =
+  RCP<crs_graph_type> crsgraph =
     tif_utest::create_dense_local_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
   RCP<block_crs_matrix_type> bcrsmatrix =
     rcp_const_cast<block_crs_matrix_type> (tif_utest::create_triangular_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,false> (crsgraph, blockSize));
   bcrsmatrix->computeDiagonalGraph();
 
-  Ifpack2::Experimental::RBILUK<block_crs_matrix_type> prec (bcrsmatrix);
+  prec_type prec (bcrsmatrix);
 
   Teuchos::ParameterList params;
   params.set("fact: iluk level-of-fill", (LocalOrdinal) 0);
@@ -290,13 +290,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestFullLocalBlockCrsMatrix, Sc
   const int blockSize = 5;
 
   RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph =
+  RCP<crs_graph_type> crsgraph =
     tif_utest::create_dense_local_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
   RCP<block_crs_matrix_type> bcrsmatrix =
     rcp_const_cast<block_crs_matrix_type> (tif_utest::create_full_local_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> (crsgraph, blockSize));
   bcrsmatrix->computeDiagonalGraph();
 
-  Ifpack2::Experimental::RBILUK<block_crs_matrix_type> prec (bcrsmatrix);
+  prec_type prec (bcrsmatrix);
 
   Teuchos::ParameterList params;
   params.set("fact: iluk level-of-fill", (LocalOrdinal) 0);

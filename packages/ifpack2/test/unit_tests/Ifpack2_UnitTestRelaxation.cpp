@@ -478,9 +478,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, SGS_mult_sweeps, Scalar, Lo
   typedef Teuchos::ScalarTraits<Scalar> STS;
   typedef Teuchos::ScalarTraits<typename STS::magnitudeType> STM;
 
-  out << "Test multiple sweeps of Symmetric Gauss-Seidel" << endl;
+  out << "Test multiple Symmetric Gauss-Seidel sweeps with nontrivial Import"
+      << endl;
+  Teuchos::OSTab tab0 (out);
 
-  RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Comm<int> > comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
   const int myRank = comm->getRank ();
   const int numProcs = comm->getSize ();
 
@@ -644,17 +647,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, SGS_mult_sweeps, Scalar, Lo
   Y_diff.doImport (Y, import, Tpetra::REPLACE);
   Y_diff.update (STS::one (), Y_gather, -STS::one ());
 
-  typename STS::magnitudeType normInf;
-  try {
-    normInf = Y_diff.normInf ();
-  }
-  catch (std::exception& e) {
-    std::ostringstream os;
-    os << "Y_diff.normInf threw an exception: " << e.what () << endl;
-    std::cerr << os.str ();
-    throw;
-  }
+  typename STS::magnitudeType normInf = Y_diff.normInf ();
   TEST_EQUALITY(normInf, STM::zero ());
+
+  out << "Repeat test without setting starting solution to zero" << endl;
 
   // Repeat the test without setting the starting solution to zero.
   params.set ("relaxation: zero starting solution", false);
@@ -677,7 +673,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, SGS_mult_sweeps, Scalar, Lo
 
   Y_diff.doImport (Y, import, Tpetra::REPLACE);
   Y_diff.update (STS::one (), Y_gather, -STS::one ());
-  TEST_EQUALITY(Y_diff.normInf (), STM::zero ());
+  normInf = Y_diff.normInf ();
+  TEST_EQUALITY( normInf, STM::zero () );
 }
 
 

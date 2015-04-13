@@ -79,7 +79,6 @@ namespace Belos {
     typedef typename Teuchos::ScalarTraits<MagnitudeType> MGT;
     typedef Teuchos::ScalarTraits<ScalarType>  SCT;
     typedef MultiVecTraits<ScalarType,MV>      MVT;
-    typedef MultiVecTraitsExt<ScalarType,MV>   MVText;
     typedef OperatorTraits<ScalarType,MV,OP>   OPT;
 
   public:
@@ -595,7 +594,7 @@ namespace Belos {
 
     int nq = Q.size();
     int xc = MVT::GetNumberVecs( X );
-    ptrdiff_t xr = MVText::GetGlobalLength( X );
+    ptrdiff_t xr = MVT::GetGlobalLength( X );
     int rank = xc;
 
     // If the user doesn't want to store the normalization
@@ -644,7 +643,7 @@ namespace Belos {
     }
 
     int mxc = MVT::GetNumberVecs( *MX );
-    ptrdiff_t mxr = MVText::GetGlobalLength( *MX );
+    ptrdiff_t mxr = MVT::GetGlobalLength( *MX );
 
     // short-circuit
     TEUCHOS_TEST_FOR_EXCEPTION( xc == 0 || xr == 0, std::invalid_argument, "Belos::DGKSOrthoManager::projectAndNormalize(): X must be non-empty" );
@@ -760,14 +759,14 @@ namespace Belos {
 #endif
 
     int xc = MVT::GetNumberVecs( X );
-    ptrdiff_t xr = MVText::GetGlobalLength( X );
+    ptrdiff_t xr = MVT::GetGlobalLength( X );
     int nq = Q.size();
     std::vector<int> qcs(nq);
     // short-circuit
     if (nq == 0 || xc == 0 || xr == 0) {
       return;
     }
-    ptrdiff_t qr = MVText::GetGlobalLength ( *Q[0] );
+    ptrdiff_t qr = MVT::GetGlobalLength ( *Q[0] );
     // if we don't have enough C, expand it with null references
     // if we have too many, resize to throw away the latter ones
     // if we have exactly as many as we have Q, this call has no effect
@@ -787,7 +786,7 @@ namespace Belos {
       MX = Teuchos::rcp( &X, false );
     }
     int mxc = MVT::GetNumberVecs( *MX );
-    ptrdiff_t mxr = MVText::GetGlobalLength( *MX );
+    ptrdiff_t mxr = MVT::GetGlobalLength( *MX );
 
     // check size of X and Q w.r.t. common sense
     TEUCHOS_TEST_FOR_EXCEPTION( xc<0 || xr<0 || mxc<0 || mxr<0, std::invalid_argument,
@@ -799,7 +798,7 @@ namespace Belos {
     // tally up size of all Q and check/allocate C
     int baslen = 0;
     for (int i=0; i<nq; i++) {
-      TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength( *Q[i] ) != qr, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength( *Q[i] ) != qr, std::invalid_argument,
                           "Belos::DGKSOrthoManager::project(): Q lengths not mutually consistant" );
       qcs[i] = MVT::GetNumberVecs( *Q[i] );
       TEUCHOS_TEST_FOR_EXCEPTION( qr < qcs[i], std::invalid_argument,
@@ -849,7 +848,7 @@ namespace Belos {
     const MagnitudeType ZERO = SCT::magnitude(SCT::zero());
 
     int xc = MVT::GetNumberVecs( X );
-    ptrdiff_t xr = MVText::GetGlobalLength( X );
+    ptrdiff_t xr = MVT::GetGlobalLength( X );
 
     if (howMany == -1) {
       howMany = xc;
@@ -877,7 +876,7 @@ namespace Belos {
     }
 
     int mxc = (this->_hasOp) ? MVT::GetNumberVecs( *MX ) : xc;
-    ptrdiff_t mxr = (this->_hasOp) ? MVText::GetGlobalLength( *MX ) : xr;
+    ptrdiff_t mxr = (this->_hasOp) ? MVT::GetGlobalLength( *MX ) : xr;
 
     // check size of C, B
     TEUCHOS_TEST_FOR_EXCEPTION( xc == 0 || xr == 0, std::invalid_argument,

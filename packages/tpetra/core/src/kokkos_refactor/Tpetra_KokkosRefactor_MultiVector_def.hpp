@@ -49,7 +49,6 @@
 #endif
 
 #include <KokkosCompat_View.hpp>
-#include <Kokkos_MV.hpp>
 #include <Kokkos_MV_GEMM.hpp>
 #include <Kokkos_Blas1_MV.hpp>
 #include <Kokkos_Random.hpp>
@@ -70,28 +69,50 @@ namespace { // (anonymous)
   ///   DualView to zero.  Kokkos does first-touch initialization.
   ///
   /// \return The allocated Kokkos::DualView.
-  template<class S, class LO, class GO, class D>
-  typename Tpetra::MultiVector<S, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D>, false>::dual_view_type
+  template<class ST, class LO, class GO, class DT>
+  typename Tpetra::MultiVector<ST, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<DT>, false>::dual_view_type
   allocDualView (const size_t lclNumRows, const size_t numCols, const bool zeroOut = true)
   {
-    typedef typename Tpetra::MultiVector<S, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D>, false>::dual_view_type dual_view_type;
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DT> NT;
+    typedef typename Tpetra::MultiVector<ST, LO, GO, NT, false>::dual_view_type dual_view_type;
     const char* label = "MV::DualView";
 
     (void) zeroOut;
     return dual_view_type (label, lclNumRows, numCols);
 
-    // if (zeroOut) {
-    //   return dual_view_type (label, lclNumRows, numCols);
-    // } else {
-    //   // FIXME (mfh 18 Feb 2015) This is just a hack, until
-    //   // Kokkos::DualView accepts an AllocationProperties initial
-    //   // argument, just like Kokkos::View does.  However, the hack is
-    //   // harmless, since it does what the (currently nonexistent)
-    //   // equivalent DualView constructor would have done anyway.
-    //   typename dual_view_type::t_dev d_view (Kokkos::ViewAllocateWithoutInitializing (label), lclNumRows, numCols);
-    //   typename dual_view_type::t_host h_view = Kokkos::create_mirror_view (d_view);
-    //   return dual_view_type (d_view, h_view);
-    // }
+#if 0
+    if (zeroOut) {
+      return dual_view_type (label, lclNumRows, numCols);
+    }
+    else {
+      // FIXME (mfh 18 Feb 2015, 12 Apr 2015) This is just a hack,
+      // until Kokkos::DualView accepts an AllocationProperties
+      // initial argument, just like Kokkos::View.  However, the hack
+      // is harmless, since it does what the (currently nonexistent)
+      // equivalent DualView constructor would have done anyway.
+      typename dual_view_type::t_dev d_view (Kokkos::ViewAllocateWithoutInitializing (label), lclNumRows, numCols);
+#ifdef HAVE_TPETRA_DEBUG
+      // Filling with NaN is a cheap and effective way to tell if
+      // downstream code is trying to use a MultiVector's data without
+      // them having been initialized.  ArithTraits lets us call nan()
+      // even if the scalar type doesn't define it; it just returns some
+      // undefined value in the latter case.  This won't hurt anything
+      // because by setting zeroOut=false, users already agreed that
+      // they don't care about the contents of the MultiVector.
+      const ST nan = Kokkos::Details::ArithTraits<ST>::nan ();
+      KokkosBlas::fill (d_view, nan);
+#endif // HAVE_TPETRA_DEBUG
+      typename dual_view_type::t_host h_view = Kokkos::create_mirror_view (d_view);
+      // Even though the user doesn't care about the contents of the
+      // MultiVector, the device and host views are still out of sync.
+      // We prefer to work in device memory.  The way to ensure this
+      // happens is to mark the device view as modified.
+      dual_view_type dv (d_view, h_view);
+      dv.template modify<typename dual_view_type::t_dev::memory_space> ();
+
+      return dual_view_type (d_view, h_view);
+    }
+#endif // 0
   }
 
   // Convert 1-D Teuchos::ArrayView to an unmanaged 1-D host Kokkos::View.
@@ -1234,21 +1255,19 @@ namespace Tpetra {
     using Teuchos::REDUCE_SUM;
     typedef Kokkos::Details::ArithTraits<impl_scalar_type> ATS;
     typedef Kokkos::Details::ArithTraits<mag_type> ATM;
-    typedef Kokkos::View<impl_scalar_type*, DeviceType> view_type;
-    const char tfecfFuncName[] = "normWeighted";
+    typedef Kokkos::View<mag_type*, DeviceType> norms_view_type;
+    const char tfecfFuncName[] = "normWeighted: ";
 
-    const size_t lclNumRows = this->getLocalLength ();
     const size_t numVecs = this->getNumVectors ();
-
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       static_cast<size_t> (norms.size ()) != numVecs, std::runtime_error,
-      ": norms.size() must be as large as the number of vectors in *this.");
+      "norms.size() = " << norms.size () << " != this->getNumVectors() = "
+      << numVecs << ".");
 
     const bool OneW = (weights.getNumVectors () == 1);
-
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! OneW && weights.getNumVectors () != numVecs, std::runtime_error,
-      ": The input MultiVector of weights must contain either one column, "
+      "The input MultiVector of weights must contain either one column, "
       "or must have the same number of columns as *this.  "
       "weights.getNumVectors() = " << weights.getNumVectors ()
       << " and this->getNumVectors() = " << numVecs << ".");
@@ -1256,82 +1275,58 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! this->getMap ()->isCompatible (*weights.getMap ()), std::runtime_error,
-      ": MultiVectors do not have compatible Maps:" << std::endl
+      "MultiVectors do not have compatible Maps:" << std::endl
       << "this->getMap(): " << std::endl << *this->getMap()
       << "weights.getMap(): " << std::endl << *weights.getMap() << std::endl);
 #else
+    const size_t lclNumRows = this->getLocalLength ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       lclNumRows != weights.getLocalLength (), std::runtime_error,
-      ": MultiVectors do not have the same local length.");
-#endif
+      "MultiVectors do not have the same local length.");
+#endif // HAVE_TPETRA_DEBUG
 
-    // Unfortunately, we have to use a dot product function for
-    // intermediate results.  This means that intermediate results
-    // have type dot_type, not mag_type.  Thus, we need a temporary
-    // array.  Once we finish the local part of the computation, we
-    // can take magnitudes and do the MPI all-reduce over mag_type.
-    typename Kokkos::View<dot_type*, DeviceType>::HostMirror lclDots ("lclDots", numVecs);
+    norms_view_type lclNrms ("lclNrms", numVecs);
 
     view_.template sync<DeviceType> ();
     weights.view_.template sync<DeviceType> ();
-    if (isConstantStride ()) {
-      if (OneW) {
-        view_type weights_0 =
-          subview (weights.view_.d_view, ALL (), 0);
-        Kokkos::MV_DotWeighted (lclDots.ptr_on_device (), weights_0,
-                                view_.d_view, lclNumRows);
-      } else
-        Kokkos::MV_DotWeighted (lclDots.ptr_on_device (), weights.view_.d_view,
-                                view_.d_view, lclNumRows);
+
+    typename dual_view_type::t_dev X_lcl = this->view_.d_view;
+    typename dual_view_type::t_dev W_lcl = weights.view_.d_view;
+
+    if (isConstantStride () && ! OneW) {
+        KokkosBlas::nrm2w_squared (lclNrms, X_lcl, W_lcl);
     }
     else {
-      // FIXME (mfh 11 Mar 2014) Once we have strided Views, we won't
-      // have to write the explicit for loop over columns any more.
-      if (OneW) {
-        view_type weights_0 =
-          subview (weights.view_.d_view, ALL (), 0);
-        for (size_t k = 0; k < numVecs; ++k) {
-          const size_t curCol = whichVectors_[k];
-          view_type vector_k = subview (view_.d_view, ALL (), curCol);
-          lclDots(k) = Kokkos::V_DotWeighted (weights_0, vector_k, lclNumRows);
-        }
-      } else {
-        for (size_t k = 0; k < numVecs; ++k) {
-          const size_t curCol = whichVectors_[k];
-          view_type weights_k =
-            subview (weights.view_.d_view, ALL (), curCol);
-          view_type vector_k = subview (view_.d_view, ALL (), curCol);
-          lclDots(k) = Kokkos::V_DotWeighted (weights_k, vector_k, lclNumRows);
-        }
+      for (size_t j = 0; j < numVecs; ++j) {
+        const size_t X_col = this->isConstantStride () ? j :
+          this->whichVectors_[j];
+        const size_t W_col = OneW ? static_cast<size_t> (0) :
+          (weights.isConstantStride () ? j : weights.whichVectors_[j]);
+        KokkosBlas::nrm2w_squared (subview (lclNrms, j),
+                                   subview (X_lcl, ALL (), X_col),
+                                   subview (W_lcl, ALL (), W_col));
       }
     }
 
     const mag_type OneOverN =
-      ATM::one () / static_cast<mag_type> (getGlobalLength ());
+      ATM::one () / static_cast<mag_type> (this->getGlobalLength ());
+    RCP<const Comm<int> > comm = this->getMap ().is_null () ?
+      Teuchos::null : this->getMap ()->getComm ();
 
-    if (this->isDistributed ()) {
-      typename Kokkos::View<mag_type*, DeviceType>::HostMirror lclNorms ("lclNorms", numVecs);
+    if (! comm.is_null () && this->isDistributed ()) {
+      // Assume that MPI can access device memory.
+      reduceAll<int, mag_type> (*comm, REDUCE_SUM, static_cast<int> (numVecs),
+                                lclNrms.ptr_on_device (), norms.getRawPtr ());
       for (size_t k = 0; k < numVecs; ++k) {
-        lclNorms(k) = ATS::abs (lclDots(k));
-      }
-
-      RCP<const Comm<int> > comm =
-        this->getMap ().is_null () ? null : this->getMap ()->getComm ();
-      if (comm.is_null ()) {
-        for (size_t k = 0; k < numVecs; ++k) {
-          norms[k] = ATM::zero ();
-        }
-      } else {
-        reduceAll<int, mag_type> (*comm, REDUCE_SUM, static_cast<int> (numVecs),
-                                  lclNorms.ptr_on_device (), norms.getRawPtr ());
-        for (size_t k = 0; k < numVecs; ++k) {
-          norms[k] = ATM::sqrt (norms[k] * OneOverN);
-        }
+        norms[k] = ATM::sqrt (norms[k] * OneOverN);
       }
     }
     else {
+      typename norms_view_type::HostMirror lclNrms_h =
+        Kokkos::create_mirror_view (lclNrms);
+      Kokkos::deep_copy (lclNrms_h, lclNrms);
       for (size_t k = 0; k < numVecs; ++k) {
-        norms[k] = ATM::sqrt (ATS::magnitude (lclDots(k)) * OneOverN);
+        norms[k] = ATM::sqrt (ATS::magnitude (lclNrms_h(k)) * OneOverN);
       }
     }
   }
@@ -1552,7 +1547,7 @@ namespace Tpetra {
           // point of doing parallel dispatch here is to keep the norm
           // results on the device, thus avoiding a copy to the host and
           // back again.
-          Kokkos::SquareRootFunctor<RV> f (normsOut);
+          KokkosBlas::Impl::SquareRootFunctor<RV> f (normsOut);
           Kokkos::parallel_for (numVecs, f);
         }
       }
@@ -1637,17 +1632,16 @@ namespace Tpetra {
   meanValue (const Teuchos::ArrayView<impl_scalar_type>& means) const
   {
     // KR FIXME Overload this method to take a View.
-
     using Kokkos::ALL;
     using Kokkos::subview;
-    using Teuchos::Array;
-    using Teuchos::arcp_const_cast;
+    using Teuchos::Comm;
+    using Teuchos::RCP;
     using Teuchos::reduceAll;
     using Teuchos::REDUCE_SUM;
     typedef Kokkos::Details::ArithTraits<impl_scalar_type> ATS;
 
-    const size_t lclNumRows = getLocalLength ();
-    const size_t numVecs = getNumVectors ();
+    const size_t lclNumRows = this->getLocalLength ();
+    const size_t numVecs = this->getNumVectors ();
     const size_t numMeans = static_cast<size_t> (means.size ());
 
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1655,35 +1649,93 @@ namespace Tpetra {
       "Tpetra::MultiVector::meanValue: means.size() = " << numMeans
       << " != this->getNumVectors() = " << numVecs << ".");
 
-    // compute local components of the means
-    // sum these across all nodes
-    view_.template sync<DeviceType> ();
-    if (isConstantStride ()) {
-      Kokkos::MV_Sum (means.getRawPtr (), view_.d_view, lclNumRows);
-    }
-    else {
-      const std::pair<size_t, size_t> rowRng (0, lclNumRows);
-      for (size_t j = 0; j < numVecs; ++j) {
-        typedef Kokkos::View<impl_scalar_type*, DeviceType> view_type;
-        const size_t col = whichVectors_[j];
-        view_type X_col = subview (view_.d_view, rowRng, col);
-        means[j] = Kokkos::V_Sum (X_col);
+    const std::pair<size_t, size_t> rowRng (0, lclNumRows);
+    const std::pair<size_t, size_t> colRng (0, numVecs);
+
+    // Make sure that the final output view has the same layout as the
+    // temporary view's HostMirror.  Left or Right doesn't matter for
+    // a 1-D array anyway; this is just to placate the compiler.
+    typedef Kokkos::View<impl_scalar_type*, execution_space> local_view_type;
+    typedef Kokkos::View<impl_scalar_type*,
+      typename local_view_type::HostMirror::array_layout,
+      Kokkos::HostSpace,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+      typename local_view_type::HostMirror::specialize> host_local_view_type;
+    host_local_view_type meansOut (means.getRawPtr (), numMeans);
+
+    RCP<const Comm<int> > comm = this->getMap ().is_null () ? Teuchos::null :
+      this->getMap ()->getComm ();
+
+    // FIXME (mfh 05 Mar 2015) DualView flags are not indicative when
+    // the two memory spaces are the same, so we check the latter.
+    const bool oneMemorySpace =
+      Kokkos::Impl::is_same<typename dual_view_type::t_dev::memory_space,
+                            typename dual_view_type::t_host::memory_space>::value;
+    if (! oneMemorySpace && view_.modified_host >= view_.modified_device) {
+      // DualView was last modified on host, so run the local kernel there.
+      typename dual_view_type::t_host X_lcl =
+        subview (this->view_.h_view, rowRng, colRng);
+
+      // Compute the local sum of each column.
+      typename local_view_type::HostMirror lclSums ("MV::meanValue tmp", numVecs);
+      if (isConstantStride ()) {
+        KokkosBlas::sum (lclSums, X_lcl);
+      }
+      else {
+        for (size_t j = 0; j < numVecs; ++j) {
+          const size_t col = whichVectors_[j];
+          KokkosBlas::sum (subview (lclSums, j), subview (X_lcl, ALL (), col));
+        }
+      }
+
+      // If there are multiple MPI processes, the all-reduce reads
+      // from lclSums, and writes to meansOut.  Otherwise, we just
+      // copy lclSums into meansOut.
+      if (! comm.is_null () && this->isDistributed ()) {
+        reduceAll (*comm, REDUCE_SUM, static_cast<int> (numVecs),
+                   lclSums.ptr_on_device (), meansOut.ptr_on_device ());
+      }
+      else {
+        Kokkos::deep_copy (meansOut, lclSums);
       }
     }
-    if (this->isDistributed ()) {
-      Teuchos::Array<impl_scalar_type> lmeans (means);
-      // only combine if we are a distributed MV
-      reduceAll (*this->getMap ()->getComm (), REDUCE_SUM,
-                 static_cast<int> (numVecs), lmeans.getRawPtr (),
-                 means.getRawPtr ());
+    else {
+      // DualView was last modified on device, so run the local kernel there.
+      typename dual_view_type::t_dev X_lcl =
+        subview (this->view_.d_view, rowRng, colRng);
+
+      // Compute the local sum of each column.
+      local_view_type lclSums ("MV::meanValue tmp", numVecs);
+      if (isConstantStride ()) {
+        KokkosBlas::sum (lclSums, X_lcl);
+      }
+      else {
+        for (size_t j = 0; j < numVecs; ++j) {
+          const size_t col = whichVectors_[j];
+          KokkosBlas::sum (subview (lclSums, j), subview (X_lcl, ALL (), col));
+        }
+      }
+
+      // If there are multiple MPI processes, the all-reduce reads
+      // from lclSums, and writes to meansOut.  (We assume that MPI
+      // can read device memory.)  Otherwise, we just copy lclSums
+      // into meansOut.
+      if (! comm.is_null () && this->isDistributed ()) {
+        reduceAll (*comm, REDUCE_SUM, static_cast<int> (numVecs),
+                   lclSums.ptr_on_device (), meansOut.ptr_on_device ());
+      }
+      else {
+        Kokkos::deep_copy (meansOut, lclSums);
+      }
     }
+
     // mfh 12 Apr 2012: Don't take out the cast from the ordinal type
     // to the magnitude type, since operator/ (std::complex<T>, int)
     // isn't necessarily defined.
     const impl_scalar_type OneOverN =
-      ATS::one () / static_cast<mag_type> (getGlobalLength ());
+      ATS::one () / static_cast<mag_type> (this->getGlobalLength ());
     for (size_t k = 0; k < numMeans; ++k) {
-      means[k] = means[k] * OneOverN;
+      meansOut(k) = meansOut(k) * OneOverN;
     }
   }
 
@@ -2155,7 +2207,111 @@ namespace Tpetra {
   scale (const Scalar& alpha,
          const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& A)
   {
-    this->update (alpha, A, Teuchos::ScalarTraits<Scalar>::zero ());
+    using Kokkos::ALL;
+    using Kokkos::subview;
+    const char tfecfFuncName[] = "scale: ";
+
+    const size_t lclNumRows = getLocalLength ();
+    const size_t numVecs = getNumVectors ();
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      lclNumRows != A.getLocalLength (), std::invalid_argument,
+      "this->getLocalLength() = " << lclNumRows << " != A.getLocalLength() = "
+      << A.getLocalLength () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      numVecs != A.getNumVectors (), std::invalid_argument,
+      "this->getNumVectors() = " << numVecs << " != A.getNumVectors() = "
+      << A.getNumVectors () << ".");
+
+    const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
+    const std::pair<size_t, size_t> rowRng (0, lclNumRows);
+    const std::pair<size_t, size_t> colRng (0, numVecs);
+
+    typedef typename dual_view_type::t_dev dev_view_type;
+    typedef typename dual_view_type::t_host host_view_type;
+#ifndef KOKKOS_HAVE_CXX11
+    typedef Kokkos::View<impl_scalar_type*,
+      typename dev_view_type::array_layout,
+      typename dev_view_type::device_type,
+      typename dev_view_type::memory_traits,
+      typename dev_view_type::specialize> col_dev_view_type;
+    typedef Kokkos::View<impl_scalar_type*,
+      typename host_view_type::array_layout,
+      typename host_view_type::device_type,
+      typename host_view_type::memory_traits,
+      typename host_view_type::specialize> col_host_view_type;
+#endif // NOT KOKKOS_HAVE_CXX11
+
+    // FIXME (mfh 05 Mar 2015) DualView flags are not indicative when
+    // the two memory spaces are the same, so we check the latter.
+    const bool oneMemorySpace =
+      Kokkos::Impl::is_same<typename dev_view_type::memory_space,
+                            typename host_view_type::memory_space>::value;
+    if (! oneMemorySpace && A.view_.modified_host >= A.view_.modified_device) {
+      // Work on host, where A's data were most recently modified.  A
+      // is a "guest" of this method, so it's more polite to sync
+      // *this, than to sync A.
+      this->view_.template sync<typename host_view_type::memory_space> ();
+      this->view_.template modify<typename host_view_type::memory_space> ();
+#ifdef KOKKOS_HAVE_CXX11
+      auto Y_lcl = subview (this->view_.h_view, rowRng, colRng);
+      auto X_lcl = subview (A.view_.h_view, rowRng, colRng);
+#else
+      host_view_type Y_lcl = subview (this->view_.h_view, rowRng, colRng);
+      host_view_type X_lcl = subview (A.view_.h_view, rowRng, colRng);
+#endif // KOKKOS_HAVE_CXX11
+
+      if (isConstantStride () && A.isConstantStride ()) {
+        KokkosBlas::scal (Y_lcl, theAlpha, X_lcl);
+      }
+      else {
+        // Make sure that Kokkos only uses the local length for add.
+        for (size_t k = 0; k < numVecs; ++k) {
+          const size_t Y_col = this->isConstantStride () ? k : this->whichVectors_[k];
+          const size_t X_col = A.isConstantStride () ? k : A.whichVectors_[k];
+#ifdef KOKKOS_HAVE_CXX11
+          auto Y_k = subview (Y_lcl, ALL (), Y_col);
+          auto X_k = subview (X_lcl, ALL (), X_col);
+#else
+          col_host_view_type Y_k = subview (Y_lcl, ALL (), Y_col);
+          col_host_view_type X_k = subview (X_lcl, ALL (), X_col);
+#endif // KOKKOS_HAVE_CXX11
+          KokkosBlas::scal (Y_k, theAlpha, X_k);
+        }
+      }
+    }
+    else { // work on device
+      // A is a "guest" of this method, so it's more polite to sync
+      // *this, than to sync A.
+      this->view_.template sync<typename dev_view_type::memory_space> ();
+      this->view_.template modify<typename dev_view_type::memory_space> ();
+#ifdef KOKKOS_HAVE_CXX11
+      auto Y_lcl = subview (this->view_.d_view, rowRng, colRng);
+      auto X_lcl = subview (A.view_.d_view, rowRng, colRng);
+#else
+      dev_view_type Y_lcl = subview (this->view_.d_view, rowRng, colRng);
+      dev_view_type X_lcl = subview (A.view_.d_view, rowRng, colRng);
+#endif // KOKKOS_HAVE_CXX11
+
+      if (isConstantStride () && A.isConstantStride ()) {
+        KokkosBlas::scal (Y_lcl, theAlpha, X_lcl);
+      }
+      else {
+        // Make sure that Kokkos only uses the local length for add.
+        for (size_t k = 0; k < numVecs; ++k) {
+          const size_t Y_col = this->isConstantStride () ? k : this->whichVectors_[k];
+          const size_t X_col = A.isConstantStride () ? k : A.whichVectors_[k];
+#ifdef KOKKOS_HAVE_CXX11
+          auto Y_k = subview (Y_lcl, ALL (), Y_col);
+          auto X_k = subview (X_lcl, ALL (), X_col);
+#else
+          col_dev_view_type Y_k = subview (Y_lcl, ALL (), Y_col);
+          col_dev_view_type X_k = subview (X_lcl, ALL (), X_col);
+#endif // KOKKOS_HAVE_CXX11
+          KokkosBlas::scal (Y_k, theAlpha, X_k);
+        }
+      }
+    }
   }
 
 
@@ -2184,7 +2340,7 @@ namespace Tpetra {
       if (isConstantStride () && A.isConstantStride ()) {
         view_.template sync<DeviceType> ();
         view_.template modify<DeviceType> ();
-        Kokkos::MV_Reciprocal (view_.d_view, A.view_.d_view);
+        KokkosBlas::reciprocal (view_.d_view, A.view_.d_view);
       }
       else {
         using Kokkos::ALL;
@@ -2204,7 +2360,7 @@ namespace Tpetra {
           view_type vector_k = subview (view_.d_view, ALL (), this_col);
           const size_t A_col = isConstantStride () ? k : A.whichVectors_[k];
           view_type vector_Ak = subview (A.view_.d_view, ALL (), A_col);
-          Kokkos::V_Reciprocal(vector_k, vector_Ak);
+          KokkosBlas::reciprocal(vector_k, vector_Ak);
         }
       }
     }
@@ -2238,7 +2394,7 @@ namespace Tpetra {
     if (isConstantStride () && A.isConstantStride ()) {
       view_.template sync<DeviceType>();
       view_.template modify<DeviceType>();
-      Kokkos::MV_Abs(view_.d_view,A.view_.d_view);
+      KokkosBlas::abs (view_.d_view, A.view_.d_view);
     }
     else {
       using Kokkos::ALL;
@@ -2255,7 +2411,7 @@ namespace Tpetra {
         view_type vector_k = subview (view_.d_view, ALL (), this_col);
         const size_t A_col = isConstantStride () ? k : A.whichVectors_[k];
         view_type vector_Ak = subview (A.view_.d_view, ALL (), A_col);
-        Kokkos::V_Abs(vector_k, vector_Ak);
+        KokkosBlas::abs (vector_k, vector_Ak);
       }
     }
   }
@@ -2314,6 +2470,7 @@ namespace Tpetra {
       // is a "guest" of this method, so it's more polite to sync
       // *this, than to sync A.
       this->view_.template sync<typename host_view_type::memory_space> ();
+      this->view_.template modify<typename host_view_type::memory_space> ();
 #ifdef KOKKOS_HAVE_CXX11
       auto Y_lcl = subview (this->view_.h_view, rowRng, colRng);
       auto X_lcl = subview (A.view_.h_view, rowRng, colRng);
@@ -2323,7 +2480,7 @@ namespace Tpetra {
 #endif // KOKKOS_HAVE_CXX11
 
       if (isConstantStride () && A.isConstantStride ()) {
-        KokkosBlas::axpby (Y_lcl, theAlpha, X_lcl, theBeta, Y_lcl);
+        KokkosBlas::axpby (theAlpha, X_lcl, theBeta, Y_lcl);
       }
       else {
         // Make sure that Kokkos only uses the local length for add.
@@ -2337,7 +2494,7 @@ namespace Tpetra {
           col_host_view_type Y_k = subview (Y_lcl, ALL (), Y_col);
           col_host_view_type X_k = subview (X_lcl, ALL (), X_col);
 #endif // KOKKOS_HAVE_CXX11
-          Kokkos::V_Add (Y_k, theAlpha, X_k, theBeta, Y_k);
+          KokkosBlas::axpby (theAlpha, X_k, theBeta, Y_k);
         }
       }
     }
@@ -2345,6 +2502,7 @@ namespace Tpetra {
       // A is a "guest" of this method, so it's more polite to sync
       // *this, than to sync A.
       this->view_.template sync<typename dev_view_type::memory_space> ();
+      this->view_.template modify<typename dev_view_type::memory_space> ();
 #ifdef KOKKOS_HAVE_CXX11
       auto Y_lcl = subview (this->view_.d_view, rowRng, colRng);
       auto X_lcl = subview (A.view_.d_view, rowRng, colRng);
@@ -2354,7 +2512,7 @@ namespace Tpetra {
 #endif // KOKKOS_HAVE_CXX11
 
       if (isConstantStride () && A.isConstantStride ()) {
-        KokkosBlas::axpby (Y_lcl, theAlpha, X_lcl, theBeta, Y_lcl);
+        KokkosBlas::axpby (theAlpha, X_lcl, theBeta, Y_lcl);
       }
       else {
         // Make sure that Kokkos only uses the local length for add.
@@ -2368,7 +2526,7 @@ namespace Tpetra {
           col_dev_view_type Y_k = subview (Y_lcl, ALL (), Y_col);
           col_dev_view_type X_k = subview (X_lcl, ALL (), X_col);
 #endif // KOKKOS_HAVE_CXX11
-          Kokkos::V_Add (Y_k, theAlpha, X_k, theBeta, Y_k);
+          KokkosBlas::axpby (theAlpha, X_k, theBeta, Y_k);
         }
       }
     }
@@ -2384,21 +2542,19 @@ namespace Tpetra {
           const Scalar& gamma)
   {
     using Kokkos::ALL;
-    using Kokkos::V_Add;
     using Kokkos::subview;
     const char tfecfFuncName[] = "update(alpha,A,beta,B,gamma): ";
 
-    // FIXME (mfh 07 Jan 2015) See note on two-argument scale() above.
-
+    const size_t lclNumRows = this->getLocalLength ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      getLocalLength () != A.getLocalLength (), std::invalid_argument,
+      lclNumRows != A.getLocalLength (), std::invalid_argument,
       "The input MultiVector A has " << A.getLocalLength () << " local "
-      "row(s), but this MultiVector has " << getLocalLength () << " local "
+      "row(s), but this MultiVector has " << lclNumRows << " local "
       "row(s).");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      getLocalLength () != B.getLocalLength (), std::invalid_argument,
+      lclNumRows != B.getLocalLength (), std::invalid_argument,
       "The input MultiVector B has " << B.getLocalLength () << " local "
-      "row(s), but this MultiVector has " << getLocalLength () << " local "
+      "row(s), but this MultiVector has " << lclNumRows << " local "
       "row(s).");
     const size_t numVecs = getNumVectors ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -2410,53 +2566,53 @@ namespace Tpetra {
       "The input MultiVector B has " << B.getNumVectors () << " column(s), "
       "but this MultiVector has " << numVecs << " column(s).");
 
-    const impl_scalar_type zero = Kokkos::Details::ArithTraits<impl_scalar_type>::zero ();
-    const impl_scalar_type one = Kokkos::Details::ArithTraits<impl_scalar_type>::one ();
     const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
     const impl_scalar_type theBeta = static_cast<impl_scalar_type> (beta);
     const impl_scalar_type theGamma = static_cast<impl_scalar_type> (gamma);
 
-    if (isConstantStride() && A.isConstantStride () && B.isConstantStride ()) {
-      if (theGamma == zero) {
-        Kokkos::MV_Add (view_.d_view, theAlpha, A.view_.d_view, theBeta,
-                        B.view_.d_view);
-      } else {
-        Kokkos::MV_Add (view_.d_view, theAlpha, A.view_.d_view, theGamma,
-                        view_.d_view);
-        Kokkos::MV_Add (view_.d_view, theBeta, B.view_.d_view, one,
-                        view_.d_view);
-      }
-    } else {
+    // We're lucky if *this, A, and B are all sync'd to the same
+    // memory space.  If not, we have to sync _something_.  Unlike
+    // three-argument update() or (say) dot(), we may have to sync one
+    // of the inputs.  For now, we just sync _everything_ to device.
+    this->view_.template sync<typename dual_view_type::t_dev::memory_space> ();
+    A.view_.template sync<typename dual_view_type::t_dev::memory_space> ();
+    B.view_.template sync<typename dual_view_type::t_dev::memory_space> ();
+
+    // This method modifies *this.
+    this->template modify<typename dual_view_type::t_dev::memory_space> ();
+
+    const std::pair<size_t, size_t> rowRng (0, lclNumRows);
+    const std::pair<size_t, size_t> colRng (0, numVecs);
+
+    // Prefer 'auto' over specifying the type explicitly.  This avoids
+    // issues with a subview possibly having a different type than the
+    // original view.
+#ifdef KOKKOS_HAVE_CXX11
+    auto C_lcl = subview (this->view_.d_view, rowRng, colRng);
+    auto A_lcl = subview (A.view_.d_view, rowRng, colRng);
+    auto B_lcl = subview (B.view_.d_view, rowRng, colRng);
+#else
+    typename dual_view_type::t_dev C_lcl =
+      subview (this->view_.d_view, rowRng, colRng);
+    typename dual_view_type::t_dev A_lcl =
+      subview (A.view_.d_view, rowRng, colRng);
+    typename dual_view_type::t_dev B_lcl =
+      subview (B.view_.d_view, rowRng, colRng);
+#endif // KOKKOS_HAVE_CXX11
+
+    if (isConstantStride () && A.isConstantStride () && B.isConstantStride ()) {
+      KokkosBlas::update (theAlpha, A_lcl, theBeta, B_lcl, theGamma, C_lcl);
+    }
+    else {
       // Some input (or *this) is not constant stride,
       // so perform the update one column at a time.
-
-      // Make sure that Kokkos only uses the local length for add.
-      const size_t lclNumRows = this->getLocalLength ();
-      const std::pair<size_t, size_t> rowRng (0, lclNumRows);
-
       for (size_t k = 0; k < numVecs; ++k) {
         const size_t this_col = isConstantStride () ? k : whichVectors_[k];
         const size_t A_col = A.isConstantStride () ? k : A.whichVectors_[k];
         const size_t B_col = B.isConstantStride () ? k : B.whichVectors_[k];
-        if (theGamma == zero) {
-          // TODO: make sure it only uses LocalLength for add.
-          V_Add (subview (view_.d_view, rowRng, this_col),
-                 theAlpha,
-                 subview (A.view_.d_view, rowRng, A_col),
-                 theBeta,
-                 subview (B.view_.d_view, rowRng, B_col));
-        } else {
-          V_Add (subview (view_.d_view, rowRng, this_col),
-                 theAlpha,
-                 subview (A.view_.d_view, rowRng, A_col),
-                 theGamma,
-                 subview (view_.d_view, rowRng, this_col));
-          V_Add (subview (view_.d_view, rowRng, this_col),
-                 theBeta,
-                 subview (B.view_.d_view, rowRng, B_col),
-                 one,
-                 subview (view_.d_view, rowRng, this_col));
-        }
+        KokkosBlas::update (theAlpha, subview (A_lcl, rowRng, A_col),
+                            theBeta, subview (B_lcl, rowRng, B_col),
+                            theGamma, subview (C_lcl, rowRng, this_col));
       }
     }
   }
@@ -2483,11 +2639,10 @@ namespace Tpetra {
     host_view_type hostView = view_.template view<host_type> ();
     // Get a subview of column j.
     host_view_type hostView_j;
-    if (isConstantStride ()) {
-      hostView_j = subview (hostView, ALL (), Kokkos::pair<int,int>(j,j+1));
-    } else {
-      hostView_j = subview (hostView, ALL (), Kokkos::pair<int,int>(whichVectors_[j],whichVectors_[j]+1));
-    }
+
+    const size_t colStart = isConstantStride () ? j : whichVectors_[j];
+    const std::pair<size_t, size_t> colRng (colStart, colStart+1);
+    hostView_j = subview (hostView, ALL (), colRng);
 
     // Wrap up the subview of column j in an ArrayRCP<const impl_scalar_type>.
     Teuchos::ArrayRCP<const impl_scalar_type> dataAsArcp =
@@ -3336,13 +3491,6 @@ namespace Tpetra {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-
-    typedef typename dual_view_type::t_dev view_2d_type;
-    typedef Kokkos::View<impl_scalar_type*,
-      typename view_2d_type::array_layout,
-      typename view_2d_type::device_type,
-      typename view_2d_type::memory_traits> view_1d_type;
-
     const char tfecfFuncName[] = "elementWiseMultiply: ";
     const size_t numVecs = this->getNumVectors ();
 
@@ -3357,40 +3505,35 @@ namespace Tpetra {
       "() = " << numVecs << " != B.getNumVectors() = " << B.getNumVectors ()
       << ".");
 
-    if (isConstantStride () && A.isConstantStride ()) {
-      // FIXME (mfh 02 Oct 2014) Shouldn't it be asking if B has
-      // constant stride?  A is just a Vector; it only has one column,
-      // so it always has constant stride.
+    if (isConstantStride () && B.isConstantStride ()) {
+      // A is just a Vector; it only has one column, so it always has
+      // constant stride.
       //
-      // If both *this and A have constant stride, we can do an
+      // If both *this and B have constant stride, we can do an
       // element-wise multiply on all columns at once.
       view_.template sync<DeviceType> ();
       view_.template modify<DeviceType> ();
       A.view_.template sync<DeviceType> ();
-      A.view_.template modify<DeviceType> ();
       B.view_.template sync<DeviceType> ();
-      B.view_.template modify<DeviceType> ();
-      view_1d_type vector_A = subview (A.view_.d_view, ALL (), 0);
-      Kokkos::MV_ElementWiseMultiply (scalarThis, view_.d_view,
-                                      scalarAB, vector_A, B.view_.d_view);
+      KokkosBlas::mult (scalarThis, view_.d_view, scalarAB,
+                        subview (A.view_.d_view, ALL (), 0),
+                        B.view_.d_view);
     }
     else {
       view_.template sync<DeviceType> ();
       view_.template modify<DeviceType> ();
       A.view_.template sync<DeviceType> ();
-      A.view_.template modify<DeviceType> ();
       B.view_.template sync<DeviceType> ();
-      B.view_.template modify<DeviceType> ();
-      view_1d_type vector_A = subview (A.view_.d_view, ALL (), 0);
-      for (size_t k = 0; k < numVecs; ++k) {
-        const size_t this_col = isConstantStride () ? k : whichVectors_[k];
-        view_1d_type vector_k =
-          subview (view_.d_view, ALL (), this_col);
-        const size_t B_col = isConstantStride () ? k : B.whichVectors_[k];
-        view_1d_type vector_Bk =
-          subview (B.view_.d_view, ALL (), B_col);
-        Kokkos::V_ElementWiseMultiply (scalarThis, vector_k, scalarAB,
-                                       vector_A, vector_Bk);
+
+      for (size_t j = 0; j < numVecs; ++j) {
+        const size_t C_col = isConstantStride () ? j : whichVectors_[j];
+        const size_t B_col = B.isConstantStride () ? j : B.whichVectors_[j];
+
+        KokkosBlas::mult (scalarThis,
+                          subview (view_.d_view, ALL (), C_col),
+                          scalarAB,
+                          subview (A.view_.d_view, ALL (), 0),
+                          subview (B.view_.d_view, ALL (), B_col));
       }
     }
   }

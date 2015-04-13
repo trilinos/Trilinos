@@ -46,6 +46,9 @@
 #include <Tpetra_Experimental_BlockMultiVector.hpp>
 #include <Ifpack2_Experimental_RBILUK.hpp>
 #include <Ifpack2_RILUK.hpp>
+// Need to include this if using the "classic" version of Tpetra,
+// since it may not get included in that case.
+#include <Kokkos_ArithTraits.hpp>
 
 namespace Ifpack2 {
 
@@ -411,8 +414,6 @@ void RBILUK<MatrixType>::compute ()
 
     // Need some integer workspace and pointers
     local_ordinal_type NumUU;
-    Teuchos::ArrayView<const local_ordinal_type> UUI;
-    Teuchos::ArrayView<const scalar_type> UUV;
     for (size_t j = 0; j < num_cols; ++j) {
       colflag[j] = -1;
     }
@@ -525,8 +526,9 @@ void RBILUK<MatrixType>::compute ()
 
         LST* const d_raw = reinterpret_cast<LST*> (dmat.getRawPtr());
         int lapackInfo;
-        for (int i = 0; i < blockSize; ++i)
-          ipiv[i] = 0;
+        for (int k = 0; k < blockSize; ++k) {
+          ipiv[k] = 0;
+        }
 
         lapack.GETRF(blockSize, blockSize, d_raw, blockSize, ipiv.getRawPtr(), &lapackInfo);
         TEUCHOS_TEST_FOR_EXCEPTION(
@@ -728,7 +730,6 @@ multiply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordina
           Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
           const Teuchos::ETransp mode) const
 {
-  const scalar_type zero = STM::zero ();
   const scalar_type one = STM::one ();
 
   if (mode != Teuchos::NO_TRANS) {

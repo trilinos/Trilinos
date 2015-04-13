@@ -1,4 +1,4 @@
-#include "C.hpp"
+#include "wsp_c/C.hpp"
 #include "A.hpp"
 #include "B.hpp"
 

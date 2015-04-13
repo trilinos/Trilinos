@@ -258,6 +258,7 @@ int main(int argc, char *argv[]) {
     }
 
     RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+    dropFact->SetParameter("lightweight wrap",Teuchos::ParameterEntry(false));
     dropFact->SetVerbLevel(MueLu::Extreme);
 
     //RCP<PreDropFunctionConstVal> predrop = rcp(new PreDropFunctionConstVal(0.00001));

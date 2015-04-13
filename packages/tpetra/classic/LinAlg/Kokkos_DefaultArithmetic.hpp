@@ -1467,54 +1467,66 @@ namespace KokkosClassic {
               const MultiVector<Scalar,SerialNode> &A,
               const MultiVector<Scalar,SerialNode> &B)
     {
+      typedef Teuchos::ScalarTraits<Scalar> STS;
+      const char prefix[] = "KokkosClassic::DefaultArithmetic<KokkosClassic::"
+        "MultiVector<double, KokkosClassic::SerialNode> >::ElemMult: ";
+
       const size_t nR_A = A.getNumRows();
       const size_t nC_A = A.getNumCols();
       TEUCHOS_TEST_FOR_EXCEPTION(
-        nC_A != 1, std::runtime_error,
-        "DefaultArithmetic<" << Teuchos::typeName(A)
-        << ">::ElemMult(C,sC,sAB,A,B): A must have just 1 column.");
+        nC_A != 1, std::runtime_error, prefix << "A.getNumCols() = "
+        << nC_A << " != 1.");
 
       const size_t Cstride = C.getStride();
       const size_t Bstride = B.getStride();
-      const size_t nC_C = C.getNumCols();
       const size_t nR_C = C.getNumRows();
+      const size_t nC_C = C.getNumCols();
       TEUCHOS_TEST_FOR_EXCEPTION(
-        nC_C != B.getNumCols() || nR_A != B.getNumRows() || nR_C != B.getNumRows(),
-        std::runtime_error,
-        "DefaultArithmetic<" << Teuchos::typeName(A) << ">::ElemMult"
-        "(C,sC,sAB,A,B): A, B and C must have the same number of rows, "
+        nC_C != B.getNumCols() || nR_A != B.getNumRows() ||
+        nR_C != B.getNumRows(), std::runtime_error,
+        prefix << "A, B and C must have the same number of rows, "
         "and B and C must have the same number of columns.");
 
-      RCP<SerialNode> node = B.getNode();
-      ArrayRCP<Scalar> Cdata = C.getValuesNonConst();
-      ArrayRCP<const Scalar> Bdata = B.getValues();
-      ArrayRCP<const Scalar> Adata = A.getValues();
+      ArrayRCP<Scalar> C_0 = C.getValuesNonConst ();
+      ArrayRCP<const Scalar> B_0 = B.getValues ();
+      ArrayRCP<const Scalar> A_0 = A.getValues ();
 
-      if (scalarC == Teuchos::ScalarTraits<Scalar>::zero ()) {
-        MVElemMultOverwriteOp<Scalar> wdp;
-        wdp.scalarYZ = scalarAB;
-        // one kernel invocation for each column
-        for (size_t j=0; j<nC_C; ++j) {
-          wdp.x = Cdata(0,nR_C).getRawPtr();
-          wdp.y = Adata(0,nR_C).getRawPtr();
-          wdp.z = Bdata(0,nR_C).getRawPtr();
-          node->template parallel_for<MVElemMultOverwriteOp<Scalar> >(0,nR_C,wdp);
-          Cdata += Cstride;
-          Bdata += Bstride;
+      if (scalarC == STS::zero ()) {
+        if (scalarAB == STS::zero ()) {
+          for (size_t j = 0; j < nC_C; ++j) {
+            ArrayRCP<Scalar> C_j = C_0 + j*Cstride;
+            for (size_t i = 0; i < nR_C; ++i) {
+              C_j[i] = STS::zero ();
+            }
+          }
+        }
+        else { // scalarAB != 0
+          for (size_t j = 0; j < nC_C; ++j) {
+            ArrayRCP<Scalar> C_j = C_0 + j*Cstride;
+            ArrayRCP<const Scalar> B_j = B_0 + j*Bstride;
+            for (size_t i = 0; i < nR_C; ++i) {
+              C_j[i] = scalarAB * A_0[i] * B_j[i];
+            }
+          }
         }
       }
-      else {
-        MVElemMultOp<Scalar> wdp;
-        wdp.scalarX = scalarC;
-        wdp.scalarYZ = scalarAB;
-        // one kernel invocation for each column
-        for (size_t j=0; j<nC_C; ++j) {
-          wdp.x = Cdata(0,nR_C).getRawPtr();
-          wdp.y = Adata(0,nR_C).getRawPtr();
-          wdp.z = Bdata(0,nR_C).getRawPtr();
-          node->template parallel_for<MVElemMultOp<Scalar> >(0,nR_C,wdp);
-          Cdata += Cstride;
-          Bdata += Bstride;
+      else { // scalarC != 0
+        if (scalarAB == STS::zero ()) {
+          for (size_t j = 0; j < nC_C; ++j) {
+            ArrayRCP<Scalar> C_j = C_0 + j*Cstride;
+            for (size_t i = 0; i < nR_C; ++i) {
+              C_j[i] = scalarC * C_j[i];
+            }
+          }
+        }
+        else { // scalarAB != 0
+          for (size_t j = 0; j < nC_C; ++j) {
+            ArrayRCP<Scalar> C_j = C_0 + j*Cstride;
+            ArrayRCP<const Scalar> B_j = B_0 + j*Bstride;
+            for (size_t i = 0; i < nR_C; ++i) {
+              C_j[i] = scalarC * C_j[i] + scalarAB * A_0[i] * B_j[i];
+            }
+          }
         }
       }
     }
