@@ -746,7 +746,7 @@ bool check_permutations_on_all(stk::mesh::BulkData& mesh)
 
 
 // Fill a new send list from the receive list.
-void comm_recv_to_send(
+void send_entity_keys_to_owners(
   BulkData & mesh ,
   const std::set< EntityKey > & entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs,
         std::set< EntityProc , EntityLess > & entitiesToGhostOntoOtherProcessors )
@@ -826,7 +826,7 @@ void comm_sync_send_recv(
     const EntityKey entity_key = mesh.entity_key(i->first);
     const int proc = i->second;
 
-    all.send_buffer( i->second ).pack(entity_key).pack(proc);
+    all.send_buffer( proc ).pack(entity_key).pack(proc);
 
     if ( owner != parallel_rank ) {
       // I am not the owner of this entity.
@@ -867,12 +867,6 @@ void comm_sync_send_recv(
             MetaData::get(mesh).entity_rank_name(entity_key.rank()) <<
             "[" << entity_key.id() << "]");
         EntityProc tmp( e , proc );
-// Manoj: the following helps make tests pass for Aria, but the error is up stream related
-// to grabbing the wrong entities.
-//        if ( !mesh.in_shared(entity_key,proc) )
-//        {
-//            entitiesToGhostOntoOtherProcessors.insert( tmp );
-//        }
         entitiesToGhostOntoOtherProcessors.insert( tmp );
       }
       else if ( mesh.is_valid(e) ) {

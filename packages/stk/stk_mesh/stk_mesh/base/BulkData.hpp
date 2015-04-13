@@ -901,6 +901,21 @@ protected: //functions
 
 private: //functions
 
+  void generate_ghosting_receive_list(const stk::mesh::Ghosting &ghosting, const std::vector <EntityKey> &remove_receive,
+    std::set<EntityKey> &entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs);
+
+  void verify_and_filter_add_send(Ghosting & ghosts, const std::vector<EntityProc> & add_send, bool &need_to_change_ghosting,
+                                  bool &add_send_is_owned, std::vector <EntityProc> &filtered_add_send );
+
+  void verify_remove_receive(Ghosting & ghosts, const std::vector<EntityKey> & remove_receive, bool &need_to_change_ghosting, bool &remove_receive_are_part_of_this_ghosting);
+
+  bool check_errors_and_determine_if_ghosting_needed_in_parallel(const stk::mesh::Ghosting &ghosts,
+                                        bool add_send_is_owned,
+                                        bool remove_receive_are_part_of_this_ghosting,
+                                        bool need_to_change_ghosting,
+                                        const std::vector<EntityProc> & add_send,
+                                        const std::vector<EntityKey> & remove_receive);
+
   struct EntityParallelState {
     int                 from_proc;
     EntityState         state;

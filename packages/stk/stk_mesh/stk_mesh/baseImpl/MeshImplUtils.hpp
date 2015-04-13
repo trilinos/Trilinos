@@ -470,7 +470,7 @@ struct OnlyGhosts  {
     int proc;
 };
 
-void comm_recv_to_send(
+void send_entity_keys_to_owners(
   BulkData & mesh ,
   const std::set< EntityKey > & entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs ,
         std::set< EntityProc , EntityLess > & entitiesToGhostOntoOtherProcessors );
