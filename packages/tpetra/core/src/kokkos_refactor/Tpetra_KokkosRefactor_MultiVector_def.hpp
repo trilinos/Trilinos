@@ -1047,7 +1047,8 @@ namespace Tpetra {
           for (size_t k = 0; k < numVecs; ++k) {
             const size_t X_col = constantStrideX ? k : whichVecsX[k];
             const size_t Y_col = constantStrideY ? k : whichVecsY[k];
-            KokkosBlas::dot (theDots, k, X, X_col, Y, Y_col);
+            KokkosBlas::dot (subview (theDots, k), subview (X, ALL (), X_col),
+                             subview (Y, ALL (), Y_col));
           } // for each column
         } // constantStride
       } // lclNumRows != 0

@@ -64,21 +64,21 @@ Nrm2_MV<double*,
         Kokkos::Impl::ViewDefault>::
 nrm2_squared (const RV& r, const XMV& X)
 {
-  Dot_MV<double*,
+  Dot_MV<Kokkos::View<double*,
     KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault,
-    const double**,
+    Kokkos::Impl::ViewDefault>,
+    Kokkos::View<const double**,
     Kokkos::LayoutLeft,
     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault,
-    const double**,
+    Kokkos::Impl::ViewDefault>,
+    Kokkos::View<const double**,
     Kokkos::LayoutLeft,
     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault>::dot (r, X, X);
+    Kokkos::Impl::ViewDefault> >::dot (r, X, X);
 
 #if 0
   using Kokkos::ALL;
@@ -198,21 +198,21 @@ Nrm2_MV<double*,
         Kokkos::Impl::ViewDefault>::
 nrm2_squared (const RV& r, const XMV& X)
 {
-  Dot_MV<double*,
-    KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault,
-    const double**,
-    Kokkos::LayoutLeft,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault,
-    const double**,
-    Kokkos::LayoutLeft,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault>::dot (r, X, X);
+  Dot_MV<Kokkos::View<double*,
+      KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+      Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+      Kokkos::Impl::ViewDefault>,
+    Kokkos::View<const double**,
+      Kokkos::LayoutLeft,
+      Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+      Kokkos::Impl::ViewDefault>,
+    Kokkos::View<const double**,
+      Kokkos::LayoutLeft,
+      Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+      Kokkos::Impl::ViewDefault> >::dot (r, X, X);
 
 #if 0
   using Kokkos::ALL;
@@ -332,21 +332,21 @@ Nrm2_MV<double*,
         Kokkos::Impl::ViewDefault>::
 nrm2_squared (const RV& r, const XMV& X)
 {
-  Dot_MV<double*,
+  Dot_MV<Kokkos::View<double*,
     KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault,
-    const double**,
+    Kokkos::Impl::ViewDefault>,
+    Kokkos::View<const double**,
     Kokkos::LayoutLeft,
     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault,
-    const double**,
+    Kokkos::Impl::ViewDefault>,
+    Kokkos::View<const double**,
     Kokkos::LayoutLeft,
     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault>::dot (r, X, X);
+    Kokkos::Impl::ViewDefault> >::dot (r, X, X);
 }
 
 void

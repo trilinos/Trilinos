@@ -72,13 +72,14 @@ benchmarkKokkos (std::ostream& out,
                  const int numCols,
                  const int numTrials)
 {
+  using Kokkos::ALL;
+  using Kokkos::subview;
+  using std::endl;
 #ifdef KOKKOS_HAVE_SERIAL
   typedef Kokkos::Serial execution_space;
 #else
   typedef Kokkos::View<double**, Kokkos::LayoutLeft>::execution_space execution_space;
 #endif // KOKKOS_HAVE_SERIAL
-
-  using std::endl;
   typedef Kokkos::View<double**, Kokkos::LayoutLeft, execution_space> mv_type;
   bool success = true;
 
@@ -245,7 +246,9 @@ benchmarkKokkos (std::ostream& out,
     TimeMonitor timeMon (*vecDotTimer2);
     for (int k = 0; k < numTrials; ++k) {
       for (int j = 0; j < numCols; ++j) {
-        KokkosBlas::dot (dots, j, x, j, y, j);
+        KokkosBlas::dot (subview (dots, j),
+                         subview (x, ALL (), j),
+                         subview (y, ALL (), j));
       }
     }
   }
