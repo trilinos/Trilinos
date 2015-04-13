@@ -297,7 +297,8 @@ benchmarkKokkos (std::ostream& out,
     TimeMonitor timeMon (*vecNrmInfTimer2);
     for (int k = 0; k < numTrials; ++k) {
       for (int j = 0; j < numCols; ++j) {
-        KokkosBlas::nrmInf (norms, j, x, j);
+        KokkosBlas::nrmInf (subview (norms, j),
+                            subview (x, ALL (), j));
       }
     }
   }

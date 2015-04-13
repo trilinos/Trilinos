@@ -1468,7 +1468,8 @@ namespace Tpetra {
           for (size_t k = 0; k < numVecs; ++k) {
             const size_t X_col = constantStride ? k : whichVecs[k];
             if (whichNorm == IMPL_NORM_INF) {
-              KokkosBlas::nrmInf (theNorms, k, X, X_col);
+              KokkosBlas::nrmInf (subview (theNorms, k),
+                                  subview (X, ALL (), X_col));
             }
             else if (whichNorm == IMPL_NORM_ONE) {
               KokkosBlas::nrm1 (subview (theNorms, k),
