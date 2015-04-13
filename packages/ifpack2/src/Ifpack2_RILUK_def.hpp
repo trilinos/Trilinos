@@ -854,6 +854,10 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     "Ifpack2::RILUK::apply: mode = Teuchos::CONJ_TRANS is not implemented for "
     "complex Scalar type.  Please talk to the Ifpack2 developers to get this "
     "fixed.  There is a FIXME in this file about this very issue.");
+#ifdef HAVE_IFPACK2_DEBUG
+  const magnitude_type D_nrmInf = D_->normInf ();
+  TEUCHOS_TEST_FOR_EXCEPTION( STM::isnaninf (D_nrmInf), std::runtime_error, "Ifpack2::RILUK::apply: The stored diagonal has norm NaN or Inf.");
+#endif // HAVE_IFPACK2_DEBUG
 
   const scalar_type one = STS::one ();
   const scalar_type zero = STS::zero ();
