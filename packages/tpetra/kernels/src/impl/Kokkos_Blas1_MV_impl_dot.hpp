@@ -424,13 +424,16 @@ MV_Dot_Invoke (const RV& r, const XMV& X, const YMV& Y)
       typedef decltype (X_0) XMV1D;
       typedef decltype (Y_0) YMV1D;
 #else
-      typedef Kokkos::View<typename RV::value_type, typename RV::array_layout,
+      typedef Kokkos::View<typename RV::value_type,
+          typename RV::array_layout,
           typename RV::device_type, typename RV::memory_traits,
           typename RV::specialize> RV0D;
       typedef Kokkos::View<typename XMV::const_value_type*,
-          XL,XD,XM,XS> XMV1D;
+          typename XMV:device_type, typename XMV:memory_traits,
+          typename XMV:specialize> XMV1D;
       typedef Kokkos::View<typename YMV::const_value_type*,
-          YL,YD,YM,YS> YMV1D;
+          typename YMV:device_type, typename YMV:memory_traits,
+          typename YMV:specialize> YMV1D;
       RV0D r_0 = subview (r, 0);
       XMV1D X_0 = subview (X, ALL (), 0);
       YMV1D Y_0 = subview (Y, ALL (), 0);
