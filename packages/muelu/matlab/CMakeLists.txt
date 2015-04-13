@@ -8,10 +8,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/)
 
 if(TPL_ENABLE_MATLAB)
   INCLUDE_DIRECTORIES(${MATLAB_INCLUDE_DIRS})
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../src)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../src)
-  # NTS: Until I figure out a better way to do this, all relevent
-  # source directories must be manually included here.  Grrr. -CMS
 
   # Must glob the binary dir last to get all of the auto-generated headers
   SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
@@ -64,7 +60,7 @@ if(TPL_ENABLE_MATLAB)
   # This is because Cmake will not allow me to *just call the mex linker*, and so I have to do this the hard way.
   #
   LINK_DIRECTORIES(${MATLAB_LIBRARY_DIRS})
-  ADD_EXECUTABLE(muemex.${MEX_EXTENSION} muemex.cpp)
+  TRIBITS)ADD_EXECUTABLE(muemex.${MEX_EXTENSION} SOURCES muemex.cpp NOEXEPREFIX NOEXESUFFIX)
   SET_TARGET_PROPERTIES(muemex.${MEX_EXTENSION} PROPERTIES SUFFIX "") # remove .exe extension
   TARGET_LINK_LIBRARIES(muemex.${MEX_EXTENSION} ${MLMEX_OPTS1} ${LINK_LIBS} ${MLMEX_OPTS2})
 
