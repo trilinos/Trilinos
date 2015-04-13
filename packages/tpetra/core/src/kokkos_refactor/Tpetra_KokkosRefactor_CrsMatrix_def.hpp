@@ -2482,7 +2482,9 @@ namespace Tpetra {
       range_type range (rowinfo.offset1D, rowinfo.offset1D + rowinfo.allocSize);
       typedef View<const ST*, execution_space, MemoryUnmanaged> subview_type;
       subview_type sv = Kokkos::subview (k_values1D_, range);
-      return ArrayView<const ST> (sv.ptr_on_device (), rowinfo.allocSize);
+
+      const ST* const sv_raw = (rowinfo.allocSize == 0) ? NULL : sv.ptr_on_device ();
+      return ArrayView<const ST> (sv_raw, rowinfo.allocSize);
     }
     else if (values2D_ != null) {
       return values2D_[rowinfo.localRow] ();
@@ -6184,8 +6186,8 @@ namespace Tpetra {
     memcpy (valInTmp, valIn, numEnt * sizeof (Scalar));
     memcpy (indInTmp, indIn, numEnt * sizeof (GlobalOrdinal));
     const GlobalOrdinal gblRow = this->getRowMap ()->getGlobalElement (lclRow);
-    Teuchos::ArrayView<Scalar> val (valInTmp, numEnt);
-    Teuchos::ArrayView<GlobalOrdinal> ind (indInTmp, numEnt);
+    Teuchos::ArrayView<Scalar> val ((numEnt == 0) ? NULL : valInTmp, numEnt);
+    Teuchos::ArrayView<GlobalOrdinal> ind ((numEnt == 0) ? NULL : indInTmp, numEnt);
     this->combineGlobalValues (gblRow, ind, val, combineMode);
     return true;
   }
