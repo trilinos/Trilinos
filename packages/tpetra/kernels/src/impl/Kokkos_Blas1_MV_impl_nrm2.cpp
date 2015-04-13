@@ -42,7 +42,6 @@
 */
 
 #include <Kokkos_Blas1_MV_impl_nrm2.hpp>
-#include <Kokkos_Blas1_MV_impl_dot.hpp>
 
 namespace KokkosBlas {
 namespace Impl {
@@ -50,621 +49,195 @@ namespace Impl {
 #ifdef KOKKOS_HAVE_SERIAL
 #define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Serial
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
+#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 void
-Nrm2_MV<double*,
-        KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-        Kokkos::Impl::ViewDefault,
-        const double**,
-        Kokkos::LayoutLeft,
-        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-        Kokkos::Impl::ViewDefault>::
+Nrm2_MV<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
+                     KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+                     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                     Kokkos::Impl::ViewDefault>,
+        Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
+                     Kokkos::LayoutLeft,
+                     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                     Kokkos::Impl::ViewDefault>,
+        2>::
 nrm2_squared (const RV& r, const XMV& X)
 {
-  Dot_MV<Kokkos::View<double*,
-    KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault>,
-    Kokkos::View<const double**,
-    Kokkos::LayoutLeft,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault>,
-    Kokkos::View<const double**,
-    Kokkos::LayoutLeft,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> >::dot (r, X, X);
-
-#if 0
-  using Kokkos::ALL;
-  using Kokkos::subview;
-  // RV needs to turn 0-D, and XMV needs to turn 1-D.
-  typedef Kokkos::View<RV::value_type,
-    RV::array_layout,
-    RV::device_type,
-    RV::memory_traits,
-    RV::specialize> RV0D;
-  typedef Kokkos::View<XMV::value_type*,
-    XMV::array_layout,
-    XMV::device_type,
-    XMV::memory_traits,
-    XMV::specialize> XMV1D;
-
-  const size_type numRows = X.dimension_0 ();
-  const size_type numCols = X.dimension_1 ();
-
-  // NOTE (mfh 02 Apr 2015): For LayoutLeft, it's reasonable to do
-  // one column at a time.  This ensures contiguous access.
-  // However, it comes at the cost of doing a kernel launch for
-  // every column.
-  //
-  // The "right way" to do LayoutLeft is to cache block.
-  // Overdecompose hardware teams by ~6-10x.  Within each cache
-  // block, parallelize first over columns (threads), then over
-  // entries within a column (vector lanes).
-
-  // int is generally faster than size_t, but check for overflow first.
-  if (numRows < static_cast<size_type> (INT_MAX) &&
-      numRows * numCols < static_cast<size_type> (INT_MAX)) {
-    typedef V_Nrm2Squared_Functor<RV0D, XMV1D, int> functor_type;
-    Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
-
-    for (size_type j = 0; j < numCols; ++j) {
-      functor_type op (subview (r, j), subview (X, ALL (), j));
-      Kokkos::parallel_reduce (policy, op);
-    }
-  }
-  else {
-    typedef V_Nrm2Squared_Functor<RV0D, XMV1D, size_type> functor_type;
-    Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows);
-
-    for (size_type j = 0; j < numCols; ++j) {
-      functor_type op (subview (r, j), subview (X, ALL (), j));
-      Kokkos::parallel_reduce (policy, op);
-    }
-  }
-#endif // 0
-}
-
-void
-Nrm2_MV<double*,
-        KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-        Kokkos::Impl::ViewDefault,
-        const double**,
-        Kokkos::LayoutLeft,
-        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-        Kokkos::Impl::ViewDefault>::
-nrm2_squared (const RV& r, const size_t r_col, const XMV& X, const size_t X_col)
-{
-  using Kokkos::ALL;
-  using Kokkos::subview;
-  typedef Kokkos::View<RV::value_type,
-    RV::array_layout,
-    RV::device_type,
-    RV::memory_traits,
-    RV::specialize> RV0D;
-  typedef Kokkos::View<XMV::const_value_type*,
-    XMV::array_layout,
-    XMV::device_type,
-    XMV::memory_traits,
-    XMV::specialize> XMV1D;
-
+  typedef XMV::size_type size_type;
   const size_type numRows = X.dimension_0 ();
   const size_type numCols = X.dimension_1 ();
 
   // int is generally faster than size_t, but check for overflow first.
   if (numRows < static_cast<size_type> (INT_MAX) &&
       numRows * numCols < static_cast<size_type> (INT_MAX)) {
-    typedef V_Nrm2Squared_Functor<RV0D, XMV1D, int> functor_type;
-    Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
-    functor_type op (subview (r, r_col), subview (X, ALL (), X_col));
-    Kokkos::parallel_reduce (policy, op);
+    MV_Nrm2Squared_Invoke<RV, XMV, int> (r, X);
   }
   else {
-    typedef V_Nrm2Squared_Functor<RV0D, XMV1D, size_type> functor_type;
-    Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows);
-    functor_type op (subview (r, r_col), subview (X, ALL (), X_col));
-    Kokkos::parallel_reduce (policy, op);
+    MV_Nrm2Squared_Invoke<RV, XMV, size_type> (r, X);
   }
 }
 
 #undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
+#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #endif // KOKKOS_HAVE_SERIAL
 
 
 #ifdef KOKKOS_HAVE_OPENMP
 #define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::OpenMP
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
+#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 void
-Nrm2_MV<double*,
-        KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-        Kokkos::Impl::ViewDefault,
-        const double**,
-        Kokkos::LayoutLeft,
-        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-        Kokkos::Impl::ViewDefault>::
+Nrm2_MV<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
+                     KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+                     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                     Kokkos::Impl::ViewDefault>,
+        Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
+                     Kokkos::LayoutLeft,
+                     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                     Kokkos::Impl::ViewDefault>,
+        2>::
 nrm2_squared (const RV& r, const XMV& X)
 {
-  Dot_MV<Kokkos::View<double*,
-      KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-      Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-      Kokkos::Impl::ViewDefault>,
-    Kokkos::View<const double**,
-      Kokkos::LayoutLeft,
-      Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-      Kokkos::Impl::ViewDefault>,
-    Kokkos::View<const double**,
-      Kokkos::LayoutLeft,
-      Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-      Kokkos::Impl::ViewDefault> >::dot (r, X, X);
-
-#if 0
-  using Kokkos::ALL;
-  using Kokkos::subview;
-  // RV needs to turn 0-D, and XMV needs to turn 1-D.
-  typedef Kokkos::View<RV::value_type,
-    RV::array_layout,
-    RV::device_type,
-    RV::memory_traits,
-    RV::specialize> RV0D;
-  typedef Kokkos::View<XMV::value_type*,
-    XMV::array_layout,
-    XMV::device_type,
-    XMV::memory_traits,
-    XMV::specialize> XMV1D;
-
-  const size_type numRows = X.dimension_0 ();
-  const size_type numCols = X.dimension_1 ();
-
-  // NOTE (mfh 02 Apr 2015): For LayoutLeft, it's reasonable to do
-  // one column at a time.  This ensures contiguous access.
-  // However, it comes at the cost of doing a kernel launch for
-  // every column.
-  //
-  // The "right way" to do LayoutLeft is to cache block.
-  // Overdecompose hardware teams by ~6-10x.  Within each cache
-  // block, parallelize first over columns (threads), then over
-  // entries within a column (vector lanes).
-
-  // int is generally faster than size_t, but check for overflow first.
-  if (numRows < static_cast<size_type> (INT_MAX) &&
-      numRows * numCols < static_cast<size_type> (INT_MAX)) {
-    typedef V_Nrm2Squared_Functor<RV0D, XMV1D, int> functor_type;
-    Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
-
-    for (size_type j = 0; j < numCols; ++j) {
-      functor_type op (subview (r, j), subview (X, ALL (), j));
-      Kokkos::parallel_reduce (policy, op);
-    }
-  }
-  else {
-    typedef V_Nrm2Squared_Functor<RV0D, XMV1D, size_type> functor_type;
-    Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows);
-
-    for (size_type j = 0; j < numCols; ++j) {
-      functor_type op (subview (r, j), subview (X, ALL (), j));
-      Kokkos::parallel_reduce (policy, op);
-    }
-  }
-#endif // 0
-}
-
-void
-Nrm2_MV<double*,
-        KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-        Kokkos::Impl::ViewDefault,
-        const double**,
-        Kokkos::LayoutLeft,
-        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-        Kokkos::Impl::ViewDefault>::
-nrm2_squared (const RV& r, const size_t r_col, const XMV& X, const size_t X_col)
-{
-  using Kokkos::ALL;
-  using Kokkos::subview;
-  typedef Kokkos::View<RV::value_type,
-    RV::array_layout,
-    RV::device_type,
-    RV::memory_traits,
-    RV::specialize> RV0D;
-  typedef Kokkos::View<XMV::const_value_type*,
-    XMV::array_layout,
-    XMV::device_type,
-    XMV::memory_traits,
-    XMV::specialize> XMV1D;
-
+  typedef XMV::size_type size_type;
   const size_type numRows = X.dimension_0 ();
   const size_type numCols = X.dimension_1 ();
 
   // int is generally faster than size_t, but check for overflow first.
   if (numRows < static_cast<size_type> (INT_MAX) &&
       numRows * numCols < static_cast<size_type> (INT_MAX)) {
-    typedef V_Nrm2Squared_Functor<RV0D, XMV1D, int> functor_type;
-    Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
-    functor_type op (subview (r, r_col), subview (X, ALL (), X_col));
-    Kokkos::parallel_reduce (policy, op);
+    MV_Nrm2Squared_Invoke<RV, XMV, int> (r, X);
   }
   else {
-    typedef V_Nrm2Squared_Functor<RV0D, XMV1D, size_type> functor_type;
-    Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows);
-    functor_type op (subview (r, r_col), subview (X, ALL (), X_col));
-    Kokkos::parallel_reduce (policy, op);
+    MV_Nrm2Squared_Invoke<RV, XMV, size_type> (r, X);
   }
 }
 
 #undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
+#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #endif // KOKKOS_HAVE_OPENMP
 
 
 #ifdef KOKKOS_HAVE_PTHREAD
 #define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Threads
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
+#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 void
-Nrm2_MV<double*,
-        KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-        Kokkos::Impl::ViewDefault,
-        const double**,
-        Kokkos::LayoutLeft,
-        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-        Kokkos::Impl::ViewDefault>::
+Nrm2_MV<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
+                     KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+                     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                     Kokkos::Impl::ViewDefault>,
+        Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
+                     Kokkos::LayoutLeft,
+                     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                     Kokkos::Impl::ViewDefault>,
+        2>::
 nrm2_squared (const RV& r, const XMV& X)
 {
-  Dot_MV<Kokkos::View<double*,
-    KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault>,
-    Kokkos::View<const double**,
-    Kokkos::LayoutLeft,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault>,
-    Kokkos::View<const double**,
-    Kokkos::LayoutLeft,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> >::dot (r, X, X);
-}
-
-void
-Nrm2_MV<double*,
-        KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-        Kokkos::Impl::ViewDefault,
-        const double**,
-        Kokkos::LayoutLeft,
-        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-        Kokkos::Impl::ViewDefault>::
-nrm2_squared (const RV& r, const size_t r_col, const XMV& X, const size_t X_col)
-{
-  using Kokkos::ALL;
-  using Kokkos::subview;
-  typedef Kokkos::View<RV::value_type,
-    RV::array_layout,
-    RV::device_type,
-    RV::memory_traits,
-    RV::specialize> RV0D;
-  typedef Kokkos::View<XMV::const_value_type*,
-    XMV::array_layout,
-    XMV::device_type,
-    XMV::memory_traits,
-    XMV::specialize> XMV1D;
-
+  typedef XMV::size_type size_type;
   const size_type numRows = X.dimension_0 ();
   const size_type numCols = X.dimension_1 ();
 
   // int is generally faster than size_t, but check for overflow first.
   if (numRows < static_cast<size_type> (INT_MAX) &&
       numRows * numCols < static_cast<size_type> (INT_MAX)) {
-    typedef V_Nrm2Squared_Functor<RV0D, XMV1D, int> functor_type;
-    Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
-    functor_type op (subview (r, r_col), subview (X, ALL (), X_col));
-    Kokkos::parallel_reduce (policy, op);
+    MV_Nrm2Squared_Invoke<RV, XMV, int> (r, X);
   }
   else {
-    typedef V_Nrm2Squared_Functor<RV0D, XMV1D, size_type> functor_type;
-    Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows);
-    functor_type op (subview (r, r_col), subview (X, ALL (), X_col));
-    Kokkos::parallel_reduce (policy, op);
+    MV_Nrm2Squared_Invoke<RV, XMV, size_type> (r, X);
   }
 }
 
 #undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
+#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #endif // KOKKOS_HAVE_PTHREAD
 
 
 #ifdef KOKKOS_HAVE_CUDA
 #define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Cuda
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaSpace
+#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 void
-Nrm2_MV<double*,
-        KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-        Kokkos::Impl::ViewDefault,
-        const double**,
-        Kokkos::LayoutLeft,
-        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-        Kokkos::Impl::ViewDefault>::
+Nrm2_MV<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
+                     KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+                     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                     Kokkos::Impl::ViewDefault>,
+        Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
+                     Kokkos::LayoutLeft,
+                     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                     Kokkos::Impl::ViewDefault>,
+        2>::
 nrm2_squared (const RV& r, const XMV& X)
 {
-  Dot_MV<double*,
-    KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault,
-    const double**,
-    Kokkos::LayoutLeft,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault,
-    const double**,
-    Kokkos::LayoutLeft,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault>::dot (r, X, X);
-
-#if 0
-  using Kokkos::ALL;
-  using Kokkos::subview;
-  // RV needs to turn 0-D, and XMV needs to turn 1-D.
-  typedef Kokkos::View<RV::value_type,
-    RV::array_layout,
-    RV::device_type,
-    RV::memory_traits,
-    RV::specialize> RV0D;
-  typedef Kokkos::View<XMV::value_type*,
-    XMV::array_layout,
-    XMV::device_type,
-    XMV::memory_traits,
-    XMV::specialize> XMV1D;
-
-  const size_type numRows = X.dimension_0 ();
-  const size_type numCols = X.dimension_1 ();
-
-  // NOTE (mfh 02 Apr 2015): For LayoutLeft, it's reasonable to do
-  // one column at a time.  This ensures contiguous access.
-  // However, it comes at the cost of doing a kernel launch for
-  // every column.
-  //
-  // The "right way" to do LayoutLeft is to cache block.
-  // Overdecompose hardware teams by ~6-10x.  Within each cache
-  // block, parallelize first over columns (threads), then over
-  // entries within a column (vector lanes).
-
-  // int is generally faster than size_t, but check for overflow first.
-  if (numRows < static_cast<size_type> (INT_MAX) &&
-      numRows * numCols < static_cast<size_type> (INT_MAX)) {
-    typedef V_Nrm2Squared_Functor<RV0D, XMV1D, int> functor_type;
-    Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
-
-    for (size_type j = 0; j < numCols; ++j) {
-      functor_type op (subview (r, j), subview (X, ALL (), j));
-      Kokkos::parallel_reduce (policy, op);
-    }
-  }
-  else {
-    typedef V_Nrm2Squared_Functor<RV0D, XMV1D, size_type> functor_type;
-    Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows);
-
-    for (size_type j = 0; j < numCols; ++j) {
-      functor_type op (subview (r, j), subview (X, ALL (), j));
-      Kokkos::parallel_reduce (policy, op);
-    }
-  }
-
-#endif // 0
-}
-
-void
-Nrm2_MV<double*,
-        KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-        Kokkos::Impl::ViewDefault,
-        const double**,
-        Kokkos::LayoutLeft,
-        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-        Kokkos::Impl::ViewDefault>::
-nrm2_squared (const RV& r, const size_t r_col, const XMV& X, const size_t X_col)
-{
-  using Kokkos::ALL;
-  using Kokkos::subview;
-  typedef Kokkos::View<RV::value_type,
-    RV::array_layout,
-    RV::device_type,
-    RV::memory_traits,
-    RV::specialize> RV0D;
-  typedef Kokkos::View<XMV::const_value_type*,
-    XMV::array_layout,
-    XMV::device_type,
-    XMV::memory_traits,
-    XMV::specialize> XMV1D;
-
+  typedef XMV::size_type size_type;
   const size_type numRows = X.dimension_0 ();
   const size_type numCols = X.dimension_1 ();
 
   // int is generally faster than size_t, but check for overflow first.
   if (numRows < static_cast<size_type> (INT_MAX) &&
       numRows * numCols < static_cast<size_type> (INT_MAX)) {
-    typedef V_Nrm2Squared_Functor<RV0D, XMV1D, int> functor_type;
-    Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
-    functor_type op (subview (r, r_col), subview (X, ALL (), X_col));
-    Kokkos::parallel_reduce (policy, op);
+    MV_Nrm2Squared_Invoke<RV, XMV, int> (r, X);
   }
   else {
-    typedef V_Nrm2Squared_Functor<RV0D, XMV1D, size_type> functor_type;
-    Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows);
-    functor_type op (subview (r, r_col), subview (X, ALL (), X_col));
-    Kokkos::parallel_reduce (policy, op);
+    MV_Nrm2Squared_Invoke<RV, XMV, size_type> (r, X);
   }
 }
 
 #undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
+#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #endif // KOKKOS_HAVE_CUDA
 
 
 #ifdef KOKKOS_HAVE_CUDA
 #define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Cuda
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaUVMSpace
+#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 void
-Nrm2_MV<double*,
-        KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-        Kokkos::Impl::ViewDefault,
-        const double**,
-        Kokkos::LayoutLeft,
-        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-        Kokkos::Impl::ViewDefault>::
+Nrm2_MV<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
+                     KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
+                     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                     Kokkos::Impl::ViewDefault>,
+        Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
+                     Kokkos::LayoutLeft,
+                     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                     Kokkos::Impl::ViewDefault>,
+        2>::
 nrm2_squared (const RV& r, const XMV& X)
 {
-  Dot_MV<double*,
-    KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault,
-    const double**,
-    Kokkos::LayoutLeft,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault,
-    const double**,
-    Kokkos::LayoutLeft,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault>::dot (r, X, X);
-
-#if 0
-  using Kokkos::ALL;
-  using Kokkos::subview;
-  // RV needs to turn 0-D, and XMV needs to turn 1-D.
-  typedef Kokkos::View<RV::value_type,
-    RV::array_layout,
-    RV::device_type,
-    RV::memory_traits,
-    RV::specialize> RV0D;
-  typedef Kokkos::View<XMV::value_type*,
-    XMV::array_layout,
-    XMV::device_type,
-    XMV::memory_traits,
-    XMV::specialize> XMV1D;
-
-  const size_type numRows = X.dimension_0 ();
-  const size_type numCols = X.dimension_1 ();
-
-  // NOTE (mfh 02 Apr 2015): For LayoutLeft, it's reasonable to do
-  // one column at a time.  This ensures contiguous access.
-  // However, it comes at the cost of doing a kernel launch for
-  // every column.
-  //
-  // The "right way" to do LayoutLeft is to cache block.
-  // Overdecompose hardware teams by ~6-10x.  Within each cache
-  // block, parallelize first over columns (threads), then over
-  // entries within a column (vector lanes).
-
-  // int is generally faster than size_t, but check for overflow first.
-  if (numRows < static_cast<size_type> (INT_MAX) &&
-      numRows * numCols < static_cast<size_type> (INT_MAX)) {
-    typedef V_Nrm2Squared_Functor<RV0D, XMV1D, int> functor_type;
-    Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
-
-    for (size_type j = 0; j < numCols; ++j) {
-      functor_type op (subview (r, j), subview (X, ALL (), j));
-      Kokkos::parallel_reduce (policy, op);
-    }
-  }
-  else {
-    typedef V_Nrm2Squared_Functor<RV0D, XMV1D, size_type> functor_type;
-    Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows);
-
-    for (size_type j = 0; j < numCols; ++j) {
-      functor_type op (subview (r, j), subview (X, ALL (), j));
-      Kokkos::parallel_reduce (policy, op);
-    }
-  }
-#endif // 0
-}
-
-void
-Nrm2_MV<double*,
-        KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-        Kokkos::Impl::ViewDefault,
-        const double**,
-        Kokkos::LayoutLeft,
-        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-        Kokkos::Impl::ViewDefault>::
-nrm2_squared (const RV& r, const size_t r_col, const XMV& X, const size_t X_col)
-{
-  using Kokkos::ALL;
-  using Kokkos::subview;
-  typedef Kokkos::View<RV::value_type,
-    RV::array_layout,
-    RV::device_type,
-    RV::memory_traits,
-    RV::specialize> RV0D;
-  typedef Kokkos::View<XMV::const_value_type*,
-    XMV::array_layout,
-    XMV::device_type,
-    XMV::memory_traits,
-    XMV::specialize> XMV1D;
-
+  typedef XMV::size_type size_type;
   const size_type numRows = X.dimension_0 ();
   const size_type numCols = X.dimension_1 ();
 
   // int is generally faster than size_t, but check for overflow first.
   if (numRows < static_cast<size_type> (INT_MAX) &&
       numRows * numCols < static_cast<size_type> (INT_MAX)) {
-    typedef V_Nrm2Squared_Functor<RV0D, XMV1D, int> functor_type;
-    Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
-    functor_type op (subview (r, r_col), subview (X, ALL (), X_col));
-    Kokkos::parallel_reduce (policy, op);
+    MV_Nrm2Squared_Invoke<RV, XMV, int> (r, X);
   }
   else {
-    typedef V_Nrm2Squared_Functor<RV0D, XMV1D, size_type> functor_type;
-    Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows);
-    functor_type op (subview (r, r_col), subview (X, ALL (), X_col));
-    Kokkos::parallel_reduce (policy, op);
+    MV_Nrm2Squared_Invoke<RV, XMV, size_type> (r, X);
   }
 }
 
 #undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
+#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #endif // KOKKOS_HAVE_CUDA
 
 } // namespace Impl

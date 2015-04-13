@@ -1476,7 +1476,8 @@ namespace Tpetra {
                                 subview (X, ALL (), X_col));
             }
             else if (whichNorm == IMPL_NORM_TWO) {
-              KokkosBlas::nrm2_squared (theNorms, k, X, X_col);
+              KokkosBlas::nrm2_squared (subview (theNorms, k),
+                                        subview (X, ALL (), X_col));
             }
             else {
               TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
