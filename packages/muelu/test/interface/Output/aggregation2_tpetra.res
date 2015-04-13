@@ -16,6 +16,9 @@ Level 1
  Prolongator smoothing (MueLu::SaPFactory)
   Matrix filtering (MueLu::FilteredAFactory)
    Build (MueLu::CoalesceDropFactory)
+    Build (MueLu::AmalgamationFactory)
+    [empty list]
+
    aggregation: drop tol = 0   [default]
    aggregation: Dirichlet threshold = 0   [default]
    aggregation: drop scheme = classical   [default]
@@ -27,9 +30,6 @@ Level 1
   
   Build (MueLu::TentativePFactory)
    Build (MueLu::CoupledAggregationFactory)
-   [empty list]
-   
-   Build (MueLu::AmalgamationFactory)
    [empty list]
    
    Nullspace factory (MueLu::NullspaceFactory)
@@ -73,6 +73,9 @@ Level 2
  Prolongator smoothing (MueLu::SaPFactory)
   Matrix filtering (MueLu::FilteredAFactory)
    Build (MueLu::CoalesceDropFactory)
+    Build (MueLu::AmalgamationFactory)
+    [empty list]
+
    aggregation: drop tol = 0   [default]
    aggregation: Dirichlet threshold = 0   [default]
    aggregation: drop scheme = classical   [default]
@@ -84,9 +87,6 @@ Level 2
   
   Build (MueLu::TentativePFactory)
    Build (MueLu::CoupledAggregationFactory)
-   [empty list]
-   
-   Build (MueLu::AmalgamationFactory)
    [empty list]
    
    Nullspace factory (MueLu::NullspaceFactory)

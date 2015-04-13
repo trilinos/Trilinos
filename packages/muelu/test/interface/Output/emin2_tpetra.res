@@ -17,6 +17,9 @@ Level 1
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
+     Build (MueLu::AmalgamationFactory)
+     [empty list]
+
     aggregation: drop tol = 0   [default]
     aggregation: Dirichlet threshold = 0   [default]
     aggregation: drop scheme = classical   [default]
@@ -40,9 +43,6 @@ Level 1
    UseEmergencyAggregationAlgorithm = 1   [default]
    OnePt aggregate map name =    [default]
    
-   Build (MueLu::AmalgamationFactory)
-   [empty list]
-   
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
    
@@ -62,9 +62,9 @@ Level 1
  emin: num iterations = 4
  emin: num reuse iterations = 1   [default]
  emin: iterative method = sd
- P0 = Teuchos::RCP<Xpetra::Matrix<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ P0 = Teuchos::RCP<Xpetra::Matrix<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  Keep P0 = 0   [default]
- Constraint0 = Teuchos::RCP<MueLu::Constraint<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ Constraint0 = Teuchos::RCP<MueLu::Constraint<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  Keep Constraint0 = 0   [default]
  
  Transpose P (MueLu::TransPFactory)
@@ -95,6 +95,9 @@ Level 2
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
+     Build (MueLu::AmalgamationFactory)
+     [empty list]
+
     aggregation: drop tol = 0   [default]
     aggregation: Dirichlet threshold = 0   [default]
     aggregation: drop scheme = classical   [default]
@@ -118,9 +121,6 @@ Level 2
    UseEmergencyAggregationAlgorithm = 1   [default]
    OnePt aggregate map name =    [default]
    
-   Build (MueLu::AmalgamationFactory)
-   [empty list]
-   
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
    
@@ -140,9 +140,9 @@ Level 2
  emin: num iterations = 4
  emin: num reuse iterations = 1   [default]
  emin: iterative method = sd
- P0 = Teuchos::RCP<Xpetra::Matrix<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ P0 = Teuchos::RCP<Xpetra::Matrix<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  Keep P0 = 0   [default]
- Constraint0 = Teuchos::RCP<MueLu::Constraint<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ Constraint0 = Teuchos::RCP<MueLu::Constraint<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  Keep Constraint0 = 0   [default]
  
  Transpose P (MueLu::TransPFactory)

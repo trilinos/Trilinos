@@ -19,6 +19,9 @@ Level 1
     Prolongator smoothing (MueLu::SaPFactory)
      Matrix filtering (MueLu::FilteredAFactory)
       Build (MueLu::CoalesceDropFactory)
+       Build (MueLu::AmalgamationFactory)
+       [empty list]
+
       aggregation: drop tol = 0.02
       aggregation: Dirichlet threshold = 0   [default]
       aggregation: drop scheme = classical   [default]
@@ -47,9 +50,6 @@ Level 1
       UseIsolatedNodeAggregationAlgorithm = 1   [default]
       UseEmergencyAggregationAlgorithm = 1   [default]
       OnePt aggregate map name =    [default]
-
-      Build (MueLu::AmalgamationFactory)
-      [empty list]
 
       Nullspace factory (MueLu::NullspaceFactory)
       Fine level nullspace = Nullspace
@@ -123,6 +123,9 @@ Level 2
     Prolongator smoothing (MueLu::SaPFactory)
      Matrix filtering (MueLu::FilteredAFactory)
       Build (MueLu::CoalesceDropFactory)
+       Build (MueLu::AmalgamationFactory)
+       [empty list]
+
       aggregation: drop tol = 0.02
       aggregation: Dirichlet threshold = 0   [default]
       aggregation: drop scheme = classical   [default]
@@ -151,9 +154,6 @@ Level 2
       UseIsolatedNodeAggregationAlgorithm = 1   [default]
       UseEmergencyAggregationAlgorithm = 1   [default]
       OnePt aggregate map name =    [default]
-
-      Build (MueLu::AmalgamationFactory)
-      [empty list]
 
       Nullspace factory (MueLu::NullspaceFactory)
       Fine level nullspace = Nullspace
@@ -245,6 +245,9 @@ Level 1
   Prolongator smoothing (MueLu::SaPFactory)
    Matrix filtering (MueLu::FilteredAFactory)
     Build (MueLu::CoalesceDropFactory)
+     Build (MueLu::AmalgamationFactory)
+     [empty list]
+
     aggregation: drop tol = 0.02
     aggregation: Dirichlet threshold = 0   [default]
     aggregation: drop scheme = classical   [default]
@@ -310,6 +313,9 @@ Level 2
     Prolongator smoothing (MueLu::SaPFactory)
      Matrix filtering (MueLu::FilteredAFactory)
       Build (MueLu::CoalesceDropFactory)
+       Build (MueLu::AmalgamationFactory)
+       [empty list]
+
       aggregation: drop tol = 0.02
       aggregation: Dirichlet threshold = 0   [default]
       aggregation: drop scheme = classical   [default]
@@ -338,9 +344,6 @@ Level 2
       UseIsolatedNodeAggregationAlgorithm = 1   [default]
       UseEmergencyAggregationAlgorithm = 1   [default]
       OnePt aggregate map name =    [default]
-
-      Build (MueLu::AmalgamationFactory)
-      [empty list]
 
       Nullspace factory (MueLu::NullspaceFactory)
       Fine level nullspace = Nullspace
