@@ -96,7 +96,7 @@ dot (const RV& r, const XMV& X, const XMV& Y)
 #define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 void
-Dot_MV<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
+Dot_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::dot_type*,
                     KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
                     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -139,7 +139,7 @@ dot (const RV& r, const XMV& X, const XMV& Y)
 #define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 void
-Dot_MV<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
+Dot_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::dot_type*,
                     KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
                     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -182,7 +182,7 @@ dot (const RV& r, const XMV& X, const XMV& Y)
 #define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 void
-Dot_MV<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
+Dot_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::dot_type*,
                     KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
                     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -225,7 +225,7 @@ dot (const RV& r, const XMV& X, const XMV& Y)
 #define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 void
-Dot_MV<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
+Dot_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::dot_type*,
                     KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
                     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                     Kokkos::MemoryTraits<Kokkos::Unmanaged>,

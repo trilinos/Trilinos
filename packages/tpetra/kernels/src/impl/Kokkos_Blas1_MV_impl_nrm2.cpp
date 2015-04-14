@@ -52,7 +52,7 @@ namespace Impl {
 #define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 void
-Nrm2_MV<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
+Nrm2_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::mag_type*,
                      KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
                      Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                      Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -91,7 +91,7 @@ nrm2_squared (const RV& r, const XMV& X)
 #define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 void
-Nrm2_MV<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
+Nrm2_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::mag_type*,
                      KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
                      Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                      Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -130,7 +130,7 @@ nrm2_squared (const RV& r, const XMV& X)
 #define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 void
-Nrm2_MV<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
+Nrm2_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::mag_type*,
                      KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
                      Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                      Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -169,7 +169,7 @@ nrm2_squared (const RV& r, const XMV& X)
 #define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 void
-Nrm2_MV<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
+Nrm2_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::mag_type*,
                      KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
                      Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                      Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -208,7 +208,7 @@ nrm2_squared (const RV& r, const XMV& X)
 #define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 void
-Nrm2_MV<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
+Nrm2_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::mag_type*,
                      KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
                      Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                      Kokkos::MemoryTraits<Kokkos::Unmanaged>,

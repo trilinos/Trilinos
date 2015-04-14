@@ -338,7 +338,7 @@ struct Nrm2_MV<RV, XV, 1> {
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
 #define KOKKOSBLAS_IMPL_MV_SCALAR double
 template<>
-struct Nrm2_MV<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
+struct Nrm2_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::mag_type*,
                             KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
                             Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                             Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -350,7 +350,7 @@ struct Nrm2_MV<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
                             Kokkos::Impl::ViewDefault>,
                2>
 {
-  typedef Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
+  typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::mag_type*,
                        KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
                        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -372,7 +372,7 @@ struct Nrm2_MV<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
 #define KOKKOSBLAS_IMPL_MV_SCALAR double
 template<>
-struct Nrm2_MV<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
+struct Nrm2_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::mag_type*,
                             KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
                             Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                             Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -384,7 +384,7 @@ struct Nrm2_MV<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
                             Kokkos::Impl::ViewDefault>,
                2>
 {
-  typedef Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
+  typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::mag_type*,
                        KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
                        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -406,7 +406,7 @@ struct Nrm2_MV<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
 #define KOKKOSBLAS_IMPL_MV_SCALAR double
 template<>
-struct Nrm2_MV<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
+struct Nrm2_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::mag_type*,
                             KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
                             Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                             Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -418,7 +418,7 @@ struct Nrm2_MV<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
                             Kokkos::Impl::ViewDefault>,
                2>
 {
-  typedef Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
+  typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::mag_type*,
                        KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
                        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -440,7 +440,7 @@ struct Nrm2_MV<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaSpace
 #define KOKKOSBLAS_IMPL_MV_SCALAR double
 template<>
-struct Nrm2_MV<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
+struct Nrm2_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::mag_type*,
                             KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
                             Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                             Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -452,7 +452,7 @@ struct Nrm2_MV<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
                             Kokkos::Impl::ViewDefault>,
                2>
 {
-  typedef Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
+  typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::mag_type*,
                        KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
                        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -474,7 +474,7 @@ struct Nrm2_MV<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaUVMSpace
 #define KOKKOSBLAS_IMPL_MV_SCALAR double
 template<>
-struct Nrm2_MV<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
+struct Nrm2_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::mag_type*,
                             KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
                             Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                             Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -486,7 +486,7 @@ struct Nrm2_MV<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
                             Kokkos::Impl::ViewDefault>,
                2>
 {
-  typedef Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
+  typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::mag_type*,
                        KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
                        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
