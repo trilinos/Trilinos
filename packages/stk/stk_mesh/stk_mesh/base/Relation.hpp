@@ -251,23 +251,31 @@ private:
   }
 
 // deprecated methods
+  // Deprecated 2015-04-14
   attribute_type getOrientation() const
   { ThrowRequireMsg(false, "This method is deprecated! Use getPermutation instead."); return attribute() & fmwk_permutation_mask; }
-  void setOrientation(attribute_type orientation)
+  // Deprecated 2015-04-14
+  STK_DEPRECATED(void setOrientation(attribute_type orientation))
   { ThrowRequireMsg(false, "This method is deprecated! Use setPermutation instead."); set_attribute( (getRelationType() << fmwk_permutation_digits) | orientation ); }
-  static unsigned permutation(unsigned orient) {
+  // Deprecated 2015-04-14
+  STK_DEPRECATED(static unsigned permutation(unsigned orient)) {
     ThrowRequireMsg(false, "This method is deprecated! It is no longer needed because orientation=permutation.");
     return orient & ~POLARITY_MASK;
   }
-  bool polarity(stk::topology to_topology) const
+  // Deprecated 2015-04-14
+  STK_DEPRECATED(bool polarity(stk::topology to_topology) const)
   { ThrowRequireMsg(false, "This method is deprecated! Use compute_polarity(topology, permutation) instead."); return compute_polarity(to_topology, getPermutation()); }
-  bool polarity() const
+  // Deprecated 2015-04-14
+  STK_DEPRECATED(bool polarity() const)
   { ThrowRequireMsg(false, "This method is deprecated! Use compute_polarity(topology, permutation) instead."); return compute_polarity(getOrientation()); }
-  static bool polarity(unsigned orient)
+  // Deprecated 2015-04-14
+  STK_DEPRECATED(static bool polarity(unsigned orient))
   { ThrowRequireMsg(false, "This method is deprecated! Use compute_polarity(topology, permutation) instead."); return (orient & POLARITY_MASK) == POLARITY_POSITIVE; }
+  // Deprecated 2015-04-14
   static bool compute_polarity(attribute_type orientation)
   { ThrowRequireMsg(false, "This method is deprecated! Use compute_polarity(topology, permutation) instead."); return (orientation & POLARITY_MASK) == POLARITY_POSITIVE; }
-  unsigned permutation() const
+  // Deprecated 2015-04-14
+  STK_DEPRECATED(unsigned permutation() const)
   { ThrowRequireMsg(false, "This method is deprecated! Use getPermutation instead."); return getOrientation() & ~POLARITY_MASK; }
 
 private:
@@ -315,29 +323,6 @@ void get_entities_through_relations(
   const std::vector<Entity> & entities ,
         EntityRank             entities_related_rank ,
         std::vector<Entity> & entities_related );
-
-// DEPRECATED 2015-03-18
-STK_DEPRECATED(void induced_part_membership( const Part & part ,
-                              EntityRank entity_rank_from ,
-                              EntityRank entity_rank_to ,
-                              OrdinalVector & induced_parts));
-
-/** \brief  Induce entities' part membership based upon relationships
- *          between entities.  Do not include and parts in the 'omit' list.
- */
-// DEPRECATED 2015-03-18
-STK_DEPRECATED(void induced_part_membership(const BulkData       & mesh,
-                                            const Entity           entity_from ,
-                                            const OrdinalVector  & omit ,
-                                            EntityRank             entity_rank_to ,
-                                            OrdinalVector        & induced_parts));
-// DEPRECATED 2015-03-02
-STK_DEPRECATED(void induced_part_membership(const BulkData       & mesh,
-                                            const PartVector     & all_parts,
-                                            const Entity           entity_from ,
-                                            const OrdinalVector  & omit ,
-                                            EntityRank             entity_rank_to ,
-                                            OrdinalVector        & induced_parts));
 
 /** \brief  Induce an entity's part membership based upon relationships
  *          from other entities.  Do not include and parts in the 'omit' list.

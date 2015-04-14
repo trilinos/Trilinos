@@ -170,6 +170,11 @@ struct topology
   BOOST_GPU_ENABLED
   unsigned num_positive_permutations() const;
 
+  BOOST_GPU_ENABLED
+  bool is_positive_polarity(unsigned permutation_ordinal) const {
+      return (permutation_ordinal < num_positive_permutations());
+  }
+
   /// is this topology defined on the given spatial dimension
   BOOST_GPU_ENABLED
   bool defined_on_spatial_dimension(unsigned spatial_dimension) const;
