@@ -118,13 +118,18 @@ namespace MueLu {
     RCP<Array<LO> > colTranslation = Teuchos::null;
 
     if (fullblocksize > 1) {
-      RCP<Array<LO> > rowTranslation = rcp(new Array<LO>);
-      RCP<Array<LO> > colTranslation = rcp(new Array<LO>);
-      AmalgamateMap(*(A->getRowMap()), *A, uniqueMap,    *rowTranslation);
-      AmalgamateMap(*(A->getColMap()), *A, nonUniqueMap, *colTranslation);
+      // mfh 14 Apr 2015: These need to have different names than
+      // rowTranslation and colTranslation, in order to avoid
+      // shadowing warnings (-Wshadow with GCC).  Alternately, it
+      // looks like you could just assign to the existing variables in
+      // this scope, rather than creating new ones.
+      RCP<Array<LO> > theRowTranslation = rcp(new Array<LO>);
+      RCP<Array<LO> > theColTranslation = rcp(new Array<LO>);
+      AmalgamateMap(*(A->getRowMap()), *A, uniqueMap,    *theRowTranslation);
+      AmalgamateMap(*(A->getColMap()), *A, nonUniqueMap, *theColTranslation);
 
-      amalgamationData = rcp(new AmalgamationInfo(rowTranslation,
-                                                  colTranslation,
+      amalgamationData = rcp(new AmalgamationInfo(theRowTranslation,
+                                                  theColTranslation,
                                                   uniqueMap,
                                                   nonUniqueMap,
                                                   A->getColMap(),
