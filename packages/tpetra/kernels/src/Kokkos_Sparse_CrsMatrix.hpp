@@ -595,7 +595,7 @@ public:
       for (size_type j = 0; j < length; ++j) {
         if (row_view.colidx(j) == cols[i]) {
           if (force_atomic) {
-            atomic_add(&row_view.value(j), vals[i]);
+            Kokkos::atomic_add(&row_view.value(j), vals[i]);
           } else {
             row_view.value(j) += vals[i];
           }
@@ -620,7 +620,7 @@ public:
       for (int j = 0; j < length; ++j) {
         if (row_view.colidx(j) == cols[i]) {
           if (force_atomic) {
-            atomic_assign(&row_view.value(j), vals[i]);
+            Kokkos::atomic_assign(&row_view.value(j), vals[i]);
           } else {
             row_view.value(j) = vals[i];
           }
