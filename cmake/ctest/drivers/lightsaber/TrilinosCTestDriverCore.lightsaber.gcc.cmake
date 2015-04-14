@@ -88,9 +88,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DTPL_ENABLE_BLAS:BOOL=ON"
     "-DTPL_ENABLE_LAPACK:BOOL=ON"
     "-DTPL_ENABLE_MATLAB:BOOL=ON"
-    "-D MATLAB_ROOT:STRING=/nfsshare/matlab/"
-    "-D MATLAB_ARCH:STRING=glnxa64"
-    "-D Trilinos_EXTRA_LINK_FLAGS:STRING=\"-lrt -lm -lgfortran\""
+    "-DMATLAB_ROOT:STRING=/nfsshare/matlab/"
+    "-DMATLAB_ARCH:STRING=glnxa64"
+    "-DTrilinos_EXTRA_LINK_FLAGS:STRING='-lrt -lm -lgfortran'"
     )
 
   SET_DEFAULT(COMPILER_VERSION "GCC-4.7.2")
