@@ -173,10 +173,12 @@ struct V_Nrm2w_Functor
   }
 };
 
-//! Implementation of KokkosBlas::nrm2w for multivectors.
+/// \brief Implementation of KokkosBlas::nrm2w_squared for
+///   multivectors and single vectors.
 template<class RV, class XMV, int rank = XMV::rank>
 struct Nrm2w {};
 
+//! Specialization for multivectors.
 template<class RV, class XMV>
 struct Nrm2w<RV, XMV, 2> {
   typedef typename XMV::execution_space execution_space;
@@ -204,6 +206,35 @@ struct Nrm2w<RV, XMV, 2> {
   }
 };
 
+//! Specialization for single vectors.
+template<class R, class XV>
+struct Nrm2w<R, XV, 1> {
+  typedef typename XV::execution_space execution_space;
+  typedef typename XV::size_type size_type;
+
+  static void nrm2w_squared (const R& r, const XV& X, const XV& W)
+  {
+    const size_type numRows = X.dimension_0 ();
+
+    // int is generally faster than size_t, but check for overflow first.
+    if (numRows < static_cast<size_type> (INT_MAX)) {
+      typedef V_Nrm2w_Functor<R, XV, int> functor_type;
+      Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
+      functor_type op (r, X, W);
+      Kokkos::parallel_reduce (policy, op);
+    }
+    else {
+      typedef V_Nrm2w_Functor<R, XV, size_type> functor_type;
+      Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows);
+      functor_type op (r, X, W);
+      Kokkos::parallel_reduce (policy, op);
+    }
+  }
+};
+
+//
+// Declarations of full specializations
+//
 
 #ifdef KOKKOS_HAVE_SERIAL
 #define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Serial
@@ -233,8 +264,8 @@ struct Nrm2w<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits< KOKKOSBLAS_I
                        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                        Kokkos::Impl::ViewDefault> XMV;
-  typedef typename XMV::execution_space execution_space;
-  typedef typename XMV::size_type size_type;
+  typedef XMV::execution_space execution_space;
+  typedef XMV::size_type size_type;
 
   static void nrm2w_squared (const RV& r, const XMV& X, const XMV& W);
 };
@@ -273,8 +304,8 @@ struct Nrm2w<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits< KOKKOSBLAS_I
                        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                        Kokkos::Impl::ViewDefault> XMV;
-  typedef typename XMV::execution_space execution_space;
-  typedef typename XMV::size_type size_type;
+  typedef XMV::execution_space execution_space;
+  typedef XMV::size_type size_type;
 
   static void nrm2w_squared (const RV& r, const XMV& X, const XMV& W);
 };
@@ -313,8 +344,8 @@ struct Nrm2w<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits< KOKKOSBLAS_I
                        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                        Kokkos::Impl::ViewDefault> XMV;
-  typedef typename XMV::execution_space execution_space;
-  typedef typename XMV::size_type size_type;
+  typedef XMV::execution_space execution_space;
+  typedef XMV::size_type size_type;
 
   static void nrm2w_squared (const RV& r, const XMV& X, const XMV& W);
 };
@@ -353,8 +384,8 @@ struct Nrm2w<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits< KOKKOSBLAS_I
                        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                        Kokkos::Impl::ViewDefault> XMV;
-  typedef typename XMV::execution_space execution_space;
-  typedef typename XMV::size_type size_type;
+  typedef XMV::execution_space execution_space;
+  typedef XMV::size_type size_type;
 
   static void nrm2w_squared (const RV& r, const XMV& X, const XMV& W);
 };
@@ -393,8 +424,8 @@ struct Nrm2w<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits< KOKKOSBLAS_I
                        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                        Kokkos::Impl::ViewDefault> XMV;
-  typedef typename XMV::execution_space execution_space;
-  typedef typename XMV::size_type size_type;
+  typedef XMV::execution_space execution_space;
+  typedef XMV::size_type size_type;
 
   static void nrm2w_squared (const RV& r, const XMV& X, const XMV& W);
 };
@@ -404,32 +435,6 @@ struct Nrm2w<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits< KOKKOSBLAS_I
 #undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
 #endif // KOKKOS_HAVE_CUDA
 
-
-// Specialization for single vectors.
-template<class R, class XV>
-struct Nrm2w<R, XV, 1> {
-  typedef typename XV::execution_space execution_space;
-  typedef typename XV::size_type size_type;
-
-  static void nrm2w_squared (const R& r, const XV& X, const XV& W)
-  {
-    const size_type numRows = X.dimension_0 ();
-
-    // int is generally faster than size_t, but check for overflow first.
-    if (numRows < static_cast<size_type> (INT_MAX)) {
-      typedef V_Nrm2w_Functor<R, XV, int> functor_type;
-      Kokkos::RangePolicy<execution_space, int> policy (0, numRows);
-      functor_type op (r, X, W);
-      Kokkos::parallel_reduce (policy, op);
-    }
-    else {
-      typedef V_Nrm2w_Functor<R, XV, size_type> functor_type;
-      Kokkos::RangePolicy<execution_space, size_type> policy (0, numRows);
-      functor_type op (r, X, W);
-      Kokkos::parallel_reduce (policy, op);
-    }
-  }
-};
 
 } // namespace Impl
 } // namespace KokkosBlas
