@@ -1072,7 +1072,7 @@ public:
     typedef BlockCrsMatrix<Scalar, LO, GO, Node>           block_crs_matrix_type;
     typedef Tpetra::Import<LO, GO, Node>                   import_type;
     typedef Tpetra::Map<LO, GO, Node>                      map_type;
-    typedef Tpetra::MultiVector<Scalar, LO, GO, Node>      mv_type;
+    typedef Tpetra::MultiVector<GO, LO, GO, Node>          mv_type;
     typedef Tpetra::CrsGraph<LO, GO, Node>                 crs_graph_type;
 
     RCP<const map_type> const rowMap = A.getRowMap(); //"mesh" map
@@ -1089,7 +1089,7 @@ public:
       printMatrixMarketHeader = params.get<bool>("print MatrixMarket header");
 
     if (printMatrixMarketHeader && myRank==0) {
-      os << "%%MatrixMarket matrix coordinate real general" << std::endl; 
+      os << "%%MatrixMarket matrix coordinate real general" << std::endl;
       os << "% point representation of Tpetra::Experimental::BlockCrsMatrix" << std::endl;
       size_t numRows = A.getGlobalNumRows();
       size_t numCols = A.getGlobalNumCols();
@@ -1109,7 +1109,7 @@ public:
       //Create and populate vector of mesh GIDs corresponding to this pid's rows.
       //This vector will be imported one pid's worth of information at a time to pid 0.
       mv_type allMeshGids(allMeshGidsMap,1);
-      Teuchos::ArrayRCP<Scalar> allMeshGidsData = allMeshGids.getDataNonConst(0);
+      Teuchos::ArrayRCP<GO> allMeshGidsData = allMeshGids.getDataNonConst(0);
 
       for (size_t i=0; i<numRows; i++)
         allMeshGidsData[i] = rowMap->getGlobalElement(i);
@@ -1143,10 +1143,10 @@ public:
         // Use these values to build another importer that will get rows of the matrix.
 
         // The following import map will be non-trivial only on PE 0.
-        Teuchos::ArrayRCP<const Scalar> importMeshGidsData = importMeshGids.getData(0);
+        Teuchos::ArrayRCP<const GO> importMeshGidsData = importMeshGids.getData(0);
         Teuchos::Array<GO> importMeshGidsGO;
         importMeshGidsGO.reserve(importMeshGidsData.size());
-        for (int j=0; j<importMeshGidsData.size(); ++j)
+        for (typename Teuchos::ArrayRCP<const GO>::size_type j=0; j<importMeshGidsData.size(); ++j)
           importMeshGidsGO.push_back(importMeshGidsData[j]);
         RCP<const map_type> importMap = rcp(new map_type(TOT::invalid(), importMeshGidsGO(), rowMap->getIndexBase(), comm) );
 
