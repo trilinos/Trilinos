@@ -1096,7 +1096,7 @@ public:
       os << "% " << numRows << " block rows, " << numCols << " block columns" << std::endl;
       const LO blockSize = A.getBlockSize();
       os << "% block size " << blockSize << std::endl;
-      os << numRows*blockSize << " " << numCols*blockSize << " " << A.getGlobalNumEntries()*blockSize << std::endl;
+      os << numRows*blockSize << " " << numCols*blockSize << " " << A.getGlobalNumEntries()*blockSize*blockSize << std::endl;
     }
 
     if (numProcs==1 && !alwaysUseParallelAlgorithm) {
