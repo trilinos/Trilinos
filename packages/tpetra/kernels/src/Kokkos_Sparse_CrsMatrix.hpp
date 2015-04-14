@@ -589,7 +589,7 @@ public:
                  ScalarType vals[],
                  const bool force_atomic = false) const
   {
-    SparseRowView<CrsMatrix> row_view = this->row (rowi);
+    SparseRowView<CrsMatrix> row_view = this->template row<typename CrsMatrix::size_type> (rowi);
     const size_type length = row_view.length;
     for (OrdinalType i = 0; i < ncol; ++i) {
       for (size_type j = 0; j < length; ++j) {
@@ -614,7 +614,7 @@ public:
                  ScalarType vals[],
                  const bool force_atomic = false) const
   {
-    SparseRowView<CrsMatrix> row_view = this->row (rowi);
+    SparseRowView<CrsMatrix> row_view = this->template row<typename CrsMatrix::size_type> (rowi);
     const int length = row_view.length;
     for (OrdinalType i = 0; i < ncol; ++i) {
       for (int j = 0; j < length; ++j) {
