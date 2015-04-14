@@ -477,7 +477,7 @@ namespace Anasazi {
       }
       // clear C[i]
       C[i]->putScalar(ZERO);
-      newC[i] = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(*C[i]) );
+      newC[i] = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(C[i]->numRows(),C[i]->numCols()) );
     }
 
 

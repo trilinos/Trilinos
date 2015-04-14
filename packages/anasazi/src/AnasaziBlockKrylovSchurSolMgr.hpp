@@ -643,7 +643,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
             //
             // get non-const pointer to solver's basis so we can work in situ
             Teuchos::RCP<MV> solverbasis = Teuchos::rcp_const_cast<MV>(oldState.V);
-            Teuchos::SerialDenseMatrix<int,ScalarType> copyQnev(Qnev);
+            Teuchos::SerialDenseMatrix<int,ScalarType> copyQnev(Teuchos::Copy, *(oldState.Q), curDim, cur_nevBlocks );
             //
             // perform Householder QR of copyQnev = Q [D;0], where D is unit diag. We will want D below.
             std::vector<ScalarType> tau(cur_nevBlocks), work(cur_nevBlocks);
@@ -715,9 +715,8 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
           //
           // Create storage for the new Schur matrix of the Krylov-Schur factorization
           // Copy over the current quasi-triangular factorization of oldState.H which is stored in oldState.S.
-          Teuchos::SerialDenseMatrix<int,ScalarType> oldS(Teuchos::View, *(oldState.S), cur_nevBlocks+_blockSize, cur_nevBlocks);
           Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > newH =
-            Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( oldS ) );
+            Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::Copy, *(oldState.S), cur_nevBlocks+_blockSize, cur_nevBlocks) );
           //
           // Get a view of the B block of the current factorization
           Teuchos::SerialDenseMatrix<int,ScalarType> oldB(Teuchos::View, *(oldState.H), _blockSize, _blockSize, curDim, curDim-_blockSize);

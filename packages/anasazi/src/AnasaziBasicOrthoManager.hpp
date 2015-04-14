@@ -513,7 +513,7 @@ namespace Anasazi {
         Teuchos::TimeMonitor lcltimer( *timerReortho_ );
 #endif
         for (int i=0; i<nq; i++) {
-          Teuchos::SerialDenseMatrix<int,ScalarType> C2(*C[i]);
+          Teuchos::SerialDenseMatrix<int,ScalarType> C2(C[i]->numRows(), C[i]->numCols());
           
           // Apply another step of classical Gram-Schmidt
           MatOrthoManager<ScalarType,MV,OP>::innerProdMat(*Q[i],X,C2,MQ[i],MX);

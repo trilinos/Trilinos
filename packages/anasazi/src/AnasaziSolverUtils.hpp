@@ -269,7 +269,7 @@ namespace Anasazi {
     TEUCHOS_TEST_FOR_EXCEPTION(n != Q.numCols(), std::invalid_argument, "Anasazi::SolverUtils::permuteVectors(): size of permutation vector not equal to number of columns.");
 
     // Sort the primitive ritz vectors
-    Teuchos::SerialDenseMatrix<int,ScalarType> copyQ( Q );
+    Teuchos::SerialDenseMatrix<int,ScalarType> copyQ(Teuchos::Copy, Q, Q.numRows(), Q.numCols());
     for (int i=0; i<n; i++) {
       blas.COPY(m, copyQ[perm[i]], 1, Q[i], 1);
     }
