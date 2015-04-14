@@ -2989,10 +2989,12 @@ namespace Tpetra {
     using Kokkos::ALL;
     using Kokkos::subview;
     using Teuchos::Array;
+    using Teuchos::RCP;
     using Teuchos::rcp;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> MV;
     const char tfecfFuncName[] = "subView(Range1D): ";
 
+    const size_t lclNumRows = this->getLocalLength ();
     const size_t numVecs = this->getNumVectors ();
     // TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
     //   colRng.size() == 0, std::runtime_error, prefix << "Range must include "
@@ -3009,23 +3011,41 @@ namespace Tpetra {
       "," << colRng.ubound () << "] exceeds the valid range of column indices "
       "[0, " << numVecs << "].");
 
-    // FIXME (mfh 07 Mar 2015) The commented-out subview() invocations
-    // using ALL() don't work when some processes have zero rows, but
-    // the enabled code does work.
-    const std::pair<size_t, size_t> rows (0, this->getLocalLength ());
+    RCP<const MV> X_ret; // the MultiVector subview to return
+
+    // FIXME (mfh 14 Apr 2015) Apparently subview on DualView is still
+    // broken for the case of views with zero rows.  I will brutally
+    // enforce that the subview has the correct dimensions.  In
+    // particular, in the case of zero rows, I will, if necessary,
+    // create a new dual_view_type with zero rows and the correct
+    // number of columns.  In a debug build, I will use an all-reduce
+    // to ensure that it has the correct dimensions on all processes.
+
+    const std::pair<size_t, size_t> rows (0, lclNumRows);
     if (colRng.size () == 0) {
       const std::pair<size_t, size_t> cols (0, 0); // empty range
-      //dual_view_type X_sub = subview<dual_view_type> (view_, ALL (), cols);
-      dual_view_type X_sub = subview (view_, rows, cols);
-      return rcp (new MV (this->getMap (), X_sub, origView_));
+
+      dual_view_type X_sub = subview (this->view_, ALL (), cols);
+      if (lclNumRows == 0 && X_sub.dimension_1 () != 0) {
+        // mfh 14 Apr 2015: This is the "brutal enforcement" of which
+        // I spoke above.
+        X_sub = dual_view_type ("MV::DualView", 0, colRng.size ());
+      }
+      X_ret = rcp (new MV (this->getMap (), X_sub, origView_));
     }
     else {
       // resulting MultiVector is constant stride only if *this is
       if (isConstantStride ()) {
         const std::pair<size_t, size_t> cols (colRng.lbound (), colRng.ubound () + 1);
-        //dual_view_type X_sub = subview<dual_view_type> (view_, ALL (), cols);
-        dual_view_type X_sub = subview (view_, rows, cols);
-        return rcp (new MV (this->getMap (), X_sub, origView_));
+        dual_view_type X_sub = subview (view_, ALL (), cols);
+        if (lclNumRows == 0 &&
+            static_cast<size_t> (X_sub.dimension_1 ()) !=
+            static_cast<size_t> (colRng.size ())) {
+          // mfh 14 Apr 2015: This is the "brutal enforcement" of which
+          // I spoke above.
+          X_sub = dual_view_type ("MV::DualView", 0, colRng.size ());
+        }
+        X_ret = rcp (new MV (this->getMap (), X_sub, origView_));
       }
       else {
         if (colRng.size () == 1) {
@@ -3033,17 +3053,59 @@ namespace Tpetra {
           // constant stride, even though this MultiVector does not.
           const std::pair<size_t, size_t> col (whichVectors_[0] + colRng.lbound (),
                                                whichVectors_[0] + colRng.ubound () + 1);
-          //dual_view_type X_sub = subview<dual_view_type> (view_, ALL (), col);
-          dual_view_type X_sub = subview (view_, rows, col);
-          return rcp (new MV (this->getMap (), X_sub, origView_));
+          dual_view_type X_sub = subview (view_, ALL (), col);
+          if (lclNumRows == 0 &&
+              static_cast<size_t> (X_sub.dimension_1 ()) !=
+              static_cast<size_t> (colRng.size ())) {
+            // mfh 14 Apr 2015: This is the "brutal enforcement" of which
+            // I spoke above.
+            X_sub = dual_view_type ("MV::DualView", 0, colRng.size ());
+          }
+          X_ret = rcp (new MV (this->getMap (), X_sub, origView_));
         }
         else {
           Array<size_t> which (whichVectors_.begin () + colRng.lbound (),
                                whichVectors_.begin () + colRng.ubound () + 1);
-          return rcp (new MV (this->getMap (), view_, origView_, which));
+          X_ret = rcp (new MV (this->getMap (), view_, origView_, which));
         }
       }
     }
+
+#ifdef HAVE_TPETRA_DEBUG
+    using Teuchos::Comm;
+    using Teuchos::outArg;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+
+    RCP<const Comm<int> > comm = this->getMap ().is_null () ? Teuchos::null :
+      this->getMap ()->getComm ();
+    if (! comm.is_null ()) {
+      int lclSuccess = 1;
+      int gblSuccess = 1;
+
+      if (X_ret.is_null ()) {
+        lclSuccess = 0;
+      }
+      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        lclSuccess != 1, std::logic_error, "X_ret (the subview of this "
+        "MultiVector; the return value of this method) is null on some MPI "
+        "process in this MultiVector's communicator.  This should never "
+        "happen.  Please report this bug to the Tpetra developers.");
+
+      if (! X_ret.is_null () && X_ret->getNumVectors () != colRng.size ()) {
+        lclSuccess = 0;
+      }
+      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        lclSuccess != 1, std::logic_error,
+        "X_ret->getNumVectors() != colRng.size(), on at least one MPI process "
+        "in this MultiVector's communicator.  This should never happen.  "
+        "Please report this bug to the Tpetra developers.");
+    }
+#endif // HAVE_TPETRA_DEBUG
+
+    return X_ret;
   }
 
 
