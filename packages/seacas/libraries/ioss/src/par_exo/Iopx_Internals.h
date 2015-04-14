@@ -67,8 +67,8 @@ namespace Ioss {
    * required variable, dimension, and attribute definitions to the
    * underlying netcdf file with only a single ncredef call.
    *
-   * To use the application must create an Iopx::Internals instance
-   * and call the Iopx::Internals::write_meta_data() function.  This
+   * To use the application must create an Internals instance
+   * and call the Internals::write_meta_data() function.  This
    * function requires several classes as arguments including:
    * <ul>
    * <li> Mesh -- defines mesh global metadata
@@ -79,7 +79,7 @@ namespace Ioss {
    * parallel info.
    * </ul>
    *
-   * Calling Iopx::Internals::write_meta_data(), replaces the
+   * Calling Internals::write_meta_data(), replaces the
    * following exodusII and nemesis API calls:
    * <ul>
    * <li> ex_put_init(),
@@ -189,7 +189,7 @@ namespace Iopx {
   {
     ElemBlock() : name(""), id(0), entityCount(0),
 		  nodesPerEntity(0), edgesPerEntity(0), facesPerEntity(0),
-		  attributeCount(0), procOffset(0)
+		  attributeCount(0), offset_(-1), procOffset(0)
     {
       std::strcpy(elType, "");
     }
@@ -199,6 +199,7 @@ namespace Iopx {
 					edgesPerEntity(other.edgesPerEntity),
 					facesPerEntity(other.facesPerEntity),
 					attributeCount(other.attributeCount),
+					offset_(other.offset_),
 					procOffset(other.procOffset)
     {
       std::strcpy(elType, other.elType);
@@ -221,8 +222,8 @@ namespace Iopx {
     int64_t edgesPerEntity;
     int64_t facesPerEntity;
     int64_t attributeCount;
+    int64_t offset_;
     int64_t procOffset;
-    private:
   };
 
   struct NodeSet
@@ -313,6 +314,45 @@ namespace Iopx {
     int64_t dfProcOffset;
   };
 
+  struct CommunicationMap
+  {
+    CommunicationMap() : id(0), entityCount(0), type('U') {}
+    CommunicationMap(entity_id the_id, int64_t count, char the_type) :
+      id(the_id), entityCount(count), type(the_type) {}
+    bool operator==(const CommunicationMap&) const;
+    bool operator!=(const CommunicationMap& other) const {return !(*this == other);}
+    entity_id id;
+    int64_t entityCount;
+    char type; // 'n' for node, 'e' for element
+  };
+
+  struct CommunicationMetaData
+  {
+    CommunicationMetaData() : processorId(0), processorCount(0),
+			      globalNodes(0), globalElements(0),
+			      globalElementBlocks(0), globalNodeSets(0), globalSideSets(0),
+			      nodesInternal(0), nodesBorder(0), nodesExternal(0),
+			      elementsInternal(0), elementsBorder(0), outputNemesis(false) {}
+
+    std::vector<CommunicationMap> nodeMap;
+    std::vector<CommunicationMap> elementMap;
+    int processorId;
+    int processorCount;
+    int64_t globalNodes;
+    int64_t globalElements;
+    int64_t globalElementBlocks;
+    int64_t globalNodeSets;
+    int64_t globalSideSets;
+    int64_t nodesInternal;
+    int64_t nodesBorder;
+    int64_t nodesExternal;
+    int64_t elementsInternal;
+    int64_t elementsBorder;
+    bool    outputNemesis;
+    private:
+    CommunicationMetaData(const CommunicationMetaData &);
+  };
+
   class Redefine
   {
   public:
@@ -350,6 +390,7 @@ namespace Iopx {
 	std::vector<FaceSet>   facesets;
 	std::vector<ElemSet>   elemsets;
 	std::vector<SideSet>   sidesets;
+	CommunicationMetaData  comm;
   };
 
   class Internals
@@ -377,7 +418,8 @@ namespace Iopx {
 
     void get_global_counts(Mesh &mesh);
     
-    int put_metadata(const Mesh &mesh);
+    int put_metadata(const Mesh &mesh,
+		     const CommunicationMetaData &comm);
     int put_metadata(const std::vector<NodeBlock> &nodeblocks);
     int put_metadata(const std::vector<EdgeBlock> &edgeblocks);
     int put_metadata(const std::vector<FaceBlock> &faceblocks);
@@ -390,7 +432,7 @@ namespace Iopx {
 
     int put_metadata(const std::vector<SideSet> &sidesets);
 
-    int put_non_define_data(const Mesh &mesh);
+    int put_non_define_data(const CommunicationMetaData &comm);
     int put_non_define_data(const std::vector<NodeBlock> &nodeblocks);
     int put_non_define_data(const std::vector<EdgeBlock> &edgeblocks);
     int put_non_define_data(const std::vector<FaceBlock> &faceblocks);

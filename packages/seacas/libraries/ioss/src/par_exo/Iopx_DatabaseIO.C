@@ -583,8 +583,7 @@ namespace Iopx {
 
       // See if the "last_written_time" attribute exists and if it
       // does, check that it matches the largest time in 'tsteps'.
-      Iopx::Internals data(get_file_pointer(), maximumNameLength, util());
-      data.read_last_time_attribute(&last_time);
+      Ioex::read_last_time_attribute(get_file_pointer(), &last_time);
     }
 
     // Only add states that are less than or equal to the

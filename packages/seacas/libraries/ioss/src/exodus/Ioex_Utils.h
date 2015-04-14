@@ -39,6 +39,8 @@ namespace Ioex {
   typedef TopologyMap::value_type TopoMapPair;
 
   const char *Version();
+  bool check_processor_info(int exodusFilePtr, int processor_count, int processor_id);
+
   void update_last_time_attribute(int exodusFilePtr, double value);
   bool read_last_time_attribute(int exodusFilePtr, double *value);
 

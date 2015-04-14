@@ -376,10 +376,7 @@ namespace Iofx {
     {
       Ioss::SerializeIO serializeIO__(this);
 
-      get_file_pointer();
-
-      Iofx::Internals data(get_file_pointer(), maximumNameLength);
-      data.check_processor_info(util().parallel_size(), myProcessor);
+      Ioex::check_processor_info(get_file_pointer(), util().parallel_size(), myProcessor);
 
       read_region();
       read_communication_metadata();
@@ -572,10 +569,8 @@ namespace Iofx {
 
         // See if the "last_written_time" attribute exists and if it
         // does, check that it matches the largest time in 'tsteps'.
-        Iofx::Internals data(get_file_pointer(), maximumNameLength);
-        exists = data.read_last_time_attribute(&last_time);
+	exists = Ioex::read_last_time_attribute(get_file_pointer(), &last_time);
       }
-
       if (exists && isParallel) {
         // Assume that if it exists on 1 processor, it exists on
         // all... Sync value among processors since could have a
@@ -5259,7 +5254,7 @@ namespace Iofx {
       gather_communication_metadata(&mesh.comm);
 
       // Write the metadata to the exodusII file...
-      Iofx::Internals data(get_file_pointer(), maximumNameLength);
+      Iofx::Internals data(get_file_pointer(), maximumNameLength, util());
       int ierr = data.write_meta_data(mesh);
       
       if (ierr < 0)

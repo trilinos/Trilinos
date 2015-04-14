@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010
+// Copyright(C) 1999-2015
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
@@ -93,54 +93,6 @@ namespace {
   int output_names(const std::vector<T> &entities, int exoid, ex_entity_type nc_type);
 }
 
-bool Internals::check_processor_info(int processor_count, int processor_id)
-{
-  // A restart file may contain an attribute which contains
-  // information about the processor count and current processor id
-  // when the file was written.  This code checks whether that
-  // information matches the current processor count and id.  If it
-  // exists, but doesn't match, a warning message is printed.
-  // Eventually, this will be used to determine whether certain
-  // decomposition-related data in the file is valid or has been
-  // invalidated by a join/re-spread to a different number of
-  // processors.
-  bool matches = true;
-
-  nc_type att_type = NC_NAT;
-  size_t att_len = 0;
-  int status = nc_inq_att(exodusFilePtr, NC_GLOBAL, "processor_info", &att_type, &att_len);
-  if (status == NC_NOERR && att_type == NC_INT) {
-    // Attribute exists on this database, read it and check that the information
-    // matches the current processor count and procesor id.
-    int proc_info[2];
-    status = nc_get_att_int(exodusFilePtr, NC_GLOBAL, "processor_info", proc_info);
-    if (status == NC_NOERR) {
-      if (proc_info[0] != processor_count && proc_info[0] > 1) {
-	IOSS_WARNING << "Processor decomposition count in file (" << proc_info[0]
-		     << ") does not match current processor count (" << processor_count
-		     << ").\n";
-	matches = false;
-    }
-      if (proc_info[1] != processor_id) {
-	IOSS_WARNING << "This file was originally written on processor " << proc_info[1]
-		     << ", but is now being read on processor " << processor_id
-		     << ". This may cause problems if there is any processor-dependent data on the file.\n";
-	matches = false;
-      }
-    } else {
-      char errmsg[MAX_ERR_LENGTH];
-      const char *routine = "Internals::check_processor_info()";
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg,
-	      "Error: failed to read processor info attribute from file id %d", exodusFilePtr);
-      ex_err(routine,errmsg,status);
-      return(EX_FATAL);
-    }
-  }
-  return matches;
-}
-
-
 Redefine::Redefine(int exoid)
   : exodusFilePtr(exoid)
 {
@@ -151,7 +103,7 @@ Redefine::Redefine(int exoid)
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to put file id %d into define mode", exodusFilePtr);
-    ex_err("Iofx::Redefine::Redefine()",errmsg,status);
+    ex_err("Redefine::Redefine()",errmsg,status);
     exit(EXIT_FAILURE);
   }
 }
@@ -165,7 +117,7 @@ Redefine::~Redefine()
       char errmsg[MAX_ERR_LENGTH];
       sprintf(errmsg,
 	      "Error: failed to complete variable definitions in file id %d",exodusFilePtr);
-      ex_err("Iofx::Redefine::~Redefine()",errmsg,status);
+      ex_err("Redefine::~Redefine()",errmsg,status);
       exit(EXIT_FAILURE);
     }
   } catch (...) {
@@ -185,7 +137,11 @@ NodeBlock::NodeBlock(const Ioss::NodeBlock &other)
   } else {
     id = 1;
   }
-  entityCount = other.get_property("entity_count").get_int();
+  if (other.property_exists("locally_owned_count")) {
+    entityCount = other.get_property("locally_owned_count").get_int();
+  } else {
+    entityCount = other.get_property("entity_count").get_int();
+  }
   attributeCount = other.get_property("attribute_count").get_int();
 }
 
@@ -366,9 +322,16 @@ NodeSet::NodeSet(const Ioss::NodeSet &other)
   }
 
   id = other.get_property("id").get_int();
-  entityCount = other.get_property("entity_count").get_int();
+  if (other.property_exists("locally_owned_count")) {
+    entityCount = other.get_property("locally_owned_count").get_int();
+  } else {
+    entityCount = other.get_property("entity_count").get_int();
+  }
   attributeCount = other.get_property("attribute_count").get_int();
   dfCount = other.get_property("distribution_factor_count").get_int();
+  if (dfCount > 0 && dfCount != entityCount) {
+    dfCount = entityCount;
+  }
 }
 
 bool NodeSet::operator==(const NodeSet& other) const
@@ -496,19 +459,24 @@ bool CommunicationMap::operator==(const CommunicationMap& other) const
     type == other.type;
 }
 
-Internals::Internals(int exoid, int maximum_name_length)
+Internals::Internals(int exoid, int maximum_name_length, const Ioss::ParallelUtils &util)
   : exodusFilePtr(exoid),
     nodeMapVarID(),
     elementMapVarID(),
     commIndexVar(0),
     elemCommIndexVar(0),
-    maximumNameLength(maximum_name_length)
+    maximumNameLength(maximum_name_length),
+    parallelUtil(util)
 {}
 
-int Internals::write_meta_data(const Mesh &mesh)
+int Internals::write_meta_data(Mesh &mesh)
 {
   int ierr;
   {
+    // TODO: (Only needed for par_exo...)
+    // Determine global counts...
+    get_global_counts(mesh);
+
     Redefine the_database(exodusFilePtr);
 
     // Set the database to NOFILL mode.  Only writes values we want written...
@@ -546,7 +514,7 @@ int Internals::write_meta_data(const Mesh &mesh)
   }
 
   // NON-Define mode output...
-  ierr=put_non_define_data(mesh, mesh.comm);
+  ierr=put_non_define_data(mesh.comm);
   if (ierr != EX_NOERR) return(ierr);
 
   ierr=put_non_define_data(mesh.edgeblocks);
@@ -586,6 +554,113 @@ int Internals::write_meta_data(const Mesh &mesh)
   return(EX_NOERR);
 }
 
+void Internals::get_global_counts(Mesh &mesh)
+{
+  std::vector<int64_t> counts;
+  std::vector<int64_t> global_counts;
+  
+  counts.push_back(mesh.nodeblocks[0].entityCount);
+  for (size_t i=0; i < mesh.edgeblocks.size(); i++) {
+    counts.push_back(mesh.edgeblocks[i].entityCount);
+  }
+  for (size_t i=0; i < mesh.faceblocks.size(); i++) {
+    counts.push_back(mesh.faceblocks[i].entityCount);
+  }
+  for (size_t i=0; i < mesh.elemblocks.size(); i++) {
+    counts.push_back(mesh.elemblocks[i].entityCount);
+  }
+  for (size_t i=0; i < mesh.nodesets.size(); i++) {
+    counts.push_back(mesh.nodesets[i].entityCount);
+    counts.push_back(mesh.nodesets[i].dfCount);
+  }
+  for (size_t i=0; i < mesh.edgesets.size(); i++) {
+    counts.push_back(mesh.edgesets[i].entityCount);
+    counts.push_back(mesh.edgesets[i].dfCount);
+  }
+  for (size_t i=0; i < mesh.facesets.size(); i++) {
+    counts.push_back(mesh.facesets[i].entityCount);
+    counts.push_back(mesh.facesets[i].dfCount);
+  }
+  for (size_t i=0; i < mesh.elemsets.size(); i++) {
+    counts.push_back(mesh.elemsets[i].entityCount);
+    counts.push_back(mesh.elemsets[i].dfCount);
+  }
+  for (size_t i=0; i < mesh.sidesets.size(); i++) {
+    counts.push_back(mesh.sidesets[i].entityCount);
+    counts.push_back(mesh.sidesets[i].dfCount);
+  }
+
+  // Now gather this information on each processor so
+  // they can determine the offsets and totals...
+  global_counts.resize(counts.size() * parallelUtil.parallel_size());
+  
+  MPI_Allgather(&counts[0],        counts.size(), MPI_LONG_LONG_INT,
+		&global_counts[0], counts.size(), MPI_LONG_LONG_INT,
+		parallelUtil.communicator());
+  
+  std::vector<int64_t> offsets(counts.size());
+  
+  size_t my_proc = parallelUtil.parallel_rank();
+  size_t proc_count = parallelUtil.parallel_size();
+  
+  // Calculate offsets for each entity on each processor
+  for (size_t j=0; j < offsets.size(); j++) {
+    for (size_t i=0; i < my_proc; i++) {
+      offsets[j] += global_counts[i*offsets.size() + j];
+    }
+  }
+  
+  // Now calculate the total count of entities over all processors
+  for (size_t j=0; j < offsets.size(); j++) {
+    for (size_t i=1; i < proc_count; i++) {
+      global_counts[j] += global_counts[i*offsets.size() + j];
+    }
+  }
+
+  size_t j = 0;
+  mesh.nodeblocks[0].procOffset = offsets[j];
+  mesh.nodeblocks[0].entityCount = global_counts[j++];
+
+  for (size_t i=0; i < mesh.edgeblocks.size(); i++) {
+    mesh.edgeblocks[i].procOffset = offsets[j];
+    mesh.edgeblocks[i].entityCount = global_counts[j++];
+  }
+  for (size_t i=0; i < mesh.faceblocks.size(); i++) {
+    mesh.faceblocks[i].procOffset = offsets[j];
+    mesh.faceblocks[i].entityCount = global_counts[j++];
+  }
+  for (size_t i=0; i < mesh.elemblocks.size(); i++) {
+    mesh.elemblocks[i].procOffset = offsets[j];
+    mesh.elemblocks[i].entityCount = global_counts[j++];
+  }
+  for (size_t i=0; i < mesh.nodesets.size(); i++) {
+    mesh.nodesets[i].procOffset = offsets[j];
+    mesh.nodesets[i].entityCount = global_counts[j++];
+    mesh.nodesets[i].dfCount = global_counts[j++];
+  }
+  for (size_t i=0; i < mesh.edgesets.size(); i++) {
+    mesh.edgesets[i].procOffset = offsets[j];
+    mesh.edgesets[i].entityCount = global_counts[j++];
+    mesh.edgesets[i].dfCount = global_counts[j++];
+  }
+  for (size_t i=0; i < mesh.facesets.size(); i++) {
+    mesh.facesets[i].procOffset = offsets[j];
+    mesh.facesets[i].entityCount = global_counts[j++];
+    mesh.facesets[i].dfCount = global_counts[j++];
+  }
+  for (size_t i=0; i < mesh.elemsets.size(); i++) {
+    mesh.elemsets[i].procOffset = offsets[j];
+    mesh.elemsets[i].entityCount = global_counts[j++];
+    mesh.elemsets[i].dfCount = global_counts[j++];
+  }
+  for (size_t i=0; i < mesh.sidesets.size(); i++) {
+    mesh.sidesets[i].procOffset = offsets[j];
+    mesh.sidesets[i].entityCount = global_counts[j++];
+    mesh.sidesets[i].dfProcOffset = offsets[j];
+    mesh.sidesets[i].dfCount = global_counts[j++];
+  }
+}
+
 int Internals::put_metadata(const Mesh &mesh,
 			    const CommunicationMetaData &comm)
 {
@@ -595,7 +670,7 @@ int Internals::put_metadata(const Mesh &mesh,
   int namestrdim = 0;
   int varid = 0;
   int timedim    = 0;
-
+  
   int map_type  = get_type(exodusFilePtr, EX_MAPS_INT64_DB);
   int bulk_type = get_type(exodusFilePtr, EX_BULK_INT64_DB);
   int ids_type  = get_type(exodusFilePtr, EX_IDS_INT64_DB);
@@ -613,13 +688,12 @@ int Internals::put_metadata(const Mesh &mesh,
     return (EX_FATAL);
   }
 
-
   if (rootid == exodusFilePtr) {
     // We are creating a grouped file, the title and other attributes haveee
     // already been defined when the root group was created; don't redo now.
     int status = nc_put_att_text(rootid, NC_GLOBAL, ATT_TITLE,
 				 (int)std::strlen(mesh.title)+1, mesh.title);
-
+    
     // define some attributes...
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
@@ -631,7 +705,7 @@ int Internals::put_metadata(const Mesh &mesh,
 
     // For use later as a consistency check, define the number of processors and
     // the current processor id as an attribute of the file...
-    {
+    if (comm.outputNemesis) {
       int ltempsv[2];
       ltempsv[0] = comm.processorCount;
       ltempsv[1] = comm.processorId;
@@ -644,7 +718,7 @@ int Internals::put_metadata(const Mesh &mesh,
 	return(EX_FATAL);
       }
     }
-
+  
     // For use later to determine whether a timestep is corrupt, we define an attribute
     // containing the last written time...
     {
@@ -675,7 +749,7 @@ int Internals::put_metadata(const Mesh &mesh,
       }
     }
   }
-
+  
   // inquire previously defined dimensions
   int status=nc_inq_dimid (rootid, DIM_STR, &strdim);
   if (status != NC_NOERR) {
@@ -716,7 +790,7 @@ int Internals::put_metadata(const Mesh &mesh,
     ex_err(routine,errmsg,exerrval);
     return (EX_FATAL);
   }
-
+  
   int dim[1];
   dim[0] = timedim;
   if ((status = nc_def_var(exodusFilePtr, VAR_WHOLE_TIME, nc_flt_code(exodusFilePtr), 1, dim, &varid)) != NC_NOERR) {
@@ -728,7 +802,7 @@ int Internals::put_metadata(const Mesh &mesh,
     return (EX_FATAL);
   }
 
-  if (mesh.nodeblocks[0].entityCount > 0) {
+   if (mesh.nodeblocks[0].entityCount > 0) {
     status=nc_def_dim(exodusFilePtr, DIM_NUM_NODES, mesh.nodeblocks[0].entityCount, &numnoddim);
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
@@ -966,7 +1040,7 @@ int Internals::put_metadata(const Mesh &mesh,
 
   // ========================================================================
   status += define_coordinate_vars(exodusFilePtr, mesh.nodeblocks[0].entityCount, numnoddim,
-				  mesh.dimensionality, numdimdim, namestrdim);
+				   mesh.dimensionality, numdimdim, namestrdim);
   if (status != EX_NOERR) return EX_FATAL;
 
   // Define dimension for the number of processors
@@ -1739,16 +1813,15 @@ int Internals::put_metadata(const std::vector<EdgeBlock> &blocks)
 }
 
 
-int Internals::put_non_define_data(const Mesh&,
-				   const CommunicationMetaData &comm)
+int Internals::put_non_define_data(const CommunicationMetaData &comm)
 {
-  const char *routine = "Internals::put_non_define_data(mesh)";
-  char errmsg[MAX_ERR_LENGTH];
-  int status = 0;
   // Metadata that must be written outside of define mode...
-
-  // Output the file type
   if (comm.outputNemesis) {
+    const char *routine = "Internals::put_non_define_data(mesh)";
+    char errmsg[MAX_ERR_LENGTH];
+    int status = 0;
+
+    // Output the file type
     int varid;
     status=nc_inq_varid(exodusFilePtr, VAR_FILE_TYPE, &varid);
     if (status != NC_NOERR) {
@@ -3264,7 +3337,7 @@ namespace {
 
   int put_int_array(int exoid, const char *var_type, const std::vector<int> &array)
   {
-    const char *routine = "Iofx_Internals.C, put_int_array";
+    const char *routine = "Internals.C, put_int_array";
     char errmsg[MAX_ERR_LENGTH];
     int var_id;
     int status;
@@ -3291,7 +3364,7 @@ namespace {
 
   int put_id_array(int exoid, const char *var_type, const std::vector<entity_id> &ids)
   {
-    const char *routine = "Iofx_Internals.C, put_id_array";
+    const char *routine = "Internals.C, put_id_array";
     char errmsg[MAX_ERR_LENGTH];
     int var_id;
 
@@ -3327,7 +3400,7 @@ namespace {
   
   int define_coordinate_vars(int exodusFilePtr, int64_t nodes, int node_dim, int dimension, int dim_dim, int str_dim)
   {
-    const char *routine = "Iofx_Internals.C, define_coordinate_vars";
+    const char *routine = "Internals.C, define_coordinate_vars";
     char errmsg[MAX_ERR_LENGTH];
     int status;
     int dim[2];

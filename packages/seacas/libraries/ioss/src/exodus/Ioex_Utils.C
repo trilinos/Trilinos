@@ -1,4 +1,5 @@
 #include <exodus/Ioex_Utils.h>
+#include <exodusII_int.h>
 #include <Ioss_Utils.h>
 #include <Ioss_Region.h>
 #include <Ioss_ElementTopology.h>
@@ -36,58 +37,6 @@ namespace {
       }
       ex_put_coordinate_frames(exoid, nframes, TOPTR(ids), TOPTR(coordinates), TOPTR(tags));
     }
-  }
-
-  void update_last_time_attribute(int exodusFilePtr, double value)
-  {
-    char errmsg[MAX_ERR_LENGTH];
-    const char *routine = "Ioex::Utils::update_last_time_attribute()";
-    
-    double tmp = 0.0;
-    int rootid = (unsigned)exodusFilePtr & EX_FILE_ID_MASK;
-    int status = nc_get_att_double(rootid, NC_GLOBAL, "last_written_time", &tmp);
-    if (status == NC_NOERR && value > tmp) {
-      status=nc_put_att_double(rootid, NC_GLOBAL, "last_written_time",
-			       NC_DOUBLE, 1, &value);
-      if (status != NC_NOERR) {
-	ex_opts(EX_VERBOSE);
-	sprintf(errmsg,
-		"Error: failed to define 'last_written_time' attribute to file id %d",
-		exodusFilePtr);
-	ex_err(routine,errmsg,status);
-      }
-    }
-  }
-
-  bool read_last_time_attribute(int exodusFilePtr, double *value)
-  {
-    // Check whether the "last_written_time" attribute exists.  If it does,
-    // return the value of the attribute in 'value' and return 'true'.
-    // If not, don't change 'value' and return 'false'.
-    bool found = false;
-
-    int rootid = (unsigned)exodusFilePtr & EX_FILE_ID_MASK;
-    nc_type att_type = NC_NAT;
-    size_t att_len = 0;
-    int status = nc_inq_att(rootid, NC_GLOBAL, "last_written_time", &att_type, &att_len);
-    if (status == NC_NOERR && att_type == NC_DOUBLE) {
-      // Attribute exists on this database, read it...
-      double tmp = 0.0;
-      status = nc_get_att_double(rootid, NC_GLOBAL, "last_written_time", &tmp);
-      if (status == NC_NOERR) {
-	*value = tmp;
-	found = true;
-      } else {
-	char errmsg[MAX_ERR_LENGTH];
-	const char *routine = "Ioex::Utils::read_last_time_attribute()";
-	ex_opts(EX_VERBOSE);
-	sprintf(errmsg,
-		"Error: failed to read last_written_time attribute from file id %d", exodusFilePtr);
-	ex_err(routine,errmsg,status);
-	found = false;
-      }
-    }
-    return found;
   }
 
   template <typename INT>
@@ -141,6 +90,106 @@ namespace {
 
 namespace Ioex {
   const char *Version() {return "Ioex_DatabaseIO.C 2015/04/13";}
+
+  void update_last_time_attribute(int exodusFilePtr, double value)
+  {
+    char errmsg[MAX_ERR_LENGTH];
+    const char *routine = "Ioex::Utils::update_last_time_attribute()";
+    
+    double tmp = 0.0;
+    int rootid = (unsigned)exodusFilePtr & EX_FILE_ID_MASK;
+    int status = nc_get_att_double(rootid, NC_GLOBAL, "last_written_time", &tmp);
+    if (status == NC_NOERR && value > tmp) {
+      status=nc_put_att_double(rootid, NC_GLOBAL, "last_written_time",
+			       NC_DOUBLE, 1, &value);
+      if (status != NC_NOERR) {
+	ex_opts(EX_VERBOSE);
+	sprintf(errmsg,
+		"Error: failed to define 'last_written_time' attribute to file id %d",
+		exodusFilePtr);
+	ex_err(routine,errmsg,status);
+      }
+    }
+  }
+
+  bool read_last_time_attribute(int exodusFilePtr, double *value)
+  {
+    // Check whether the "last_written_time" attribute exists.  If it does,
+    // return the value of the attribute in 'value' and return 'true'.
+    // If not, don't change 'value' and return 'false'.
+    bool found = false;
+
+    int rootid = (unsigned)exodusFilePtr & EX_FILE_ID_MASK;
+    nc_type att_type = NC_NAT;
+    size_t att_len = 0;
+    int status = nc_inq_att(rootid, NC_GLOBAL, "last_written_time", &att_type, &att_len);
+    if (status == NC_NOERR && att_type == NC_DOUBLE) {
+      // Attribute exists on this database, read it...
+      double tmp = 0.0;
+      status = nc_get_att_double(rootid, NC_GLOBAL, "last_written_time", &tmp);
+      if (status == NC_NOERR) {
+	*value = tmp;
+	found = true;
+      } else {
+	char errmsg[MAX_ERR_LENGTH];
+	const char *routine = "Ioex::Utils::read_last_time_attribute()";
+	ex_opts(EX_VERBOSE);
+	sprintf(errmsg,
+		"Error: failed to read last_written_time attribute from file id %d", exodusFilePtr);
+	ex_err(routine,errmsg,status);
+	found = false;
+      }
+    }
+    return found;
+  }
+
+  bool check_processor_info(int exodusFilePtr, int processor_count, int processor_id)
+  {
+    // A restart file may contain an attribute which contains
+    // information about the processor count and current processor id
+    // when the file was written.  This code checks whether that
+    // information matches the current processor count and id.  If it
+    // exists, but doesn't match, a warning message is printed.
+    // Eventually, this will be used to determine whether certain
+    // decomposition-related data in the file is valid or has been
+    // invalidated by a join/re-spread to a different number of
+    // processors.
+    bool matches = true;
+
+    nc_type att_type = NC_NAT;
+    size_t att_len = 0;
+    int status = nc_inq_att(exodusFilePtr, NC_GLOBAL, "processor_info", &att_type, &att_len);
+    if (status == NC_NOERR && att_type == NC_INT) {
+      // Attribute exists on this database, read it and check that the information
+      // matches the current processor count and procesor id.
+      int proc_info[2];
+      status = nc_get_att_int(exodusFilePtr, NC_GLOBAL, "processor_info", proc_info);
+      if (status == NC_NOERR) {
+	if (proc_info[0] != processor_count && proc_info[0] > 1) {
+	  IOSS_WARNING << "Processor decomposition count in file (" << proc_info[0]
+		       << ") does not match current processor count (" << processor_count
+		       << ").\n";
+	  matches = false;
+	}
+	if (proc_info[1] != processor_id) {
+	  IOSS_WARNING << "This file was originally written on processor " << proc_info[1]
+		       << ", but is now being read on processor " << processor_id
+		       << ". This may cause problems if there is any processor-dependent data on the file.\n";
+	  matches = false;
+	}
+      } else {
+	char errmsg[MAX_ERR_LENGTH];
+	const char *routine = "Internals::check_processor_info()";
+	ex_opts(EX_VERBOSE);
+	sprintf(errmsg,
+		"Error: failed to read processor info attribute from file id %d", exodusFilePtr);
+	ex_err(routine,errmsg,status);
+	return(EX_FATAL);
+      }
+    }
+    return matches;
+  }
+
 
   bool type_match(const std::string& type, const char *substring)
   {
