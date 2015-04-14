@@ -866,7 +866,7 @@ struct MV_MultiplyFunctor {
       sum[k] = 0;
     }
 
-    const SparseRowView<CrsMatrix> row = m_A.row(iRow);
+    const SparseRowViewConst<CrsMatrix> row = m_A.template rowConst<typename CrsMatrix::size_type>(iRow);
 
     // NOTE (mfh 20 Mar 2015) Unfortunately, Kokkos::Vectorization
     // lacks a typedef for determining the type of the return value of
@@ -1010,7 +1010,7 @@ struct MV_MultiplyFunctor {
   {
     value_type sum = 0;
 
-    const SparseRowViewConst<CrsMatrix> row = m_A.rowConst(iRow);
+    const SparseRowViewConst<CrsMatrix> row = m_A.template rowConst<typename CrsMatrix::size_type>(iRow);
 
     // NOTE (mfh 20 Mar 2015) Unfortunately, Kokkos::Vectorization
     // lacks a typedef for determining the type of the return value of
@@ -1254,7 +1254,7 @@ struct MV_MultiplyFunctor {
         if (iRow >= m_A.numRows ()) {
           return;
         }
-        const SparseRowViewConst<CrsMatrix> row = m_A.rowConst(iRow);
+        const SparseRowViewConst<CrsMatrix> row = m_A.template rowConst<typename CrsMatrix::size_type>(iRow);
         const ordinal_type row_length = static_cast<ordinal_type> (row.length);
         value_type sum = 0;
 
@@ -1432,7 +1432,7 @@ struct MV_MultiplyFunctor {
 
       const ordinal_type iRow = i / ShflThreadsPerRow::device_value;
       const int lane = static_cast<int> (i) % ShflThreadsPerRow::device_value;
-      const SparseRowViewConst<CrsMatrix> row = m_A.rowConst(iRow);
+      const SparseRowViewConst<CrsMatrix> row = m_A.template rowConst<typename CrsMatrix::size_type>(iRow);
 
       for (ordinal_type iEntry = static_cast<ordinal_type> (lane);
            iEntry < static_cast<ordinal_type> (row.length);
@@ -1492,7 +1492,7 @@ struct MV_MultiplyFunctor {
 
       const ordinal_type iRow = i / ShflThreadsPerRow::device_value;
       const int lane = static_cast<int> (i) % ShflThreadsPerRow::device_value;
-      const SparseRowViewConst<CrsMatrix> row = m_A.rowConst(iRow);
+      const SparseRowViewConst<CrsMatrix> row = m_A.template rowConst<typename CrsMatrix::size_type>(iRow);
 
       for (ordinal_type iEntry = static_cast<ordinal_type> (lane);
            iEntry < static_cast<ordinal_type> (row.length);

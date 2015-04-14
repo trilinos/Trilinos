@@ -2785,7 +2785,7 @@ namespace Tpetra {
       if (staticGraph_->getProfileType () == StaticProfile) {
         const LO lclNumRows = lclMatrix_.numRows ();
         for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-          row_view_type row_i = lclMatrix_.row (lclRow);
+          row_view_type row_i = lclMatrix_.template row<typename row_view_type::size_type> (lclRow);
           for (LO k = 0; k < row_i.length; ++k) {
             // FIXME (mfh 02 Jan 2015) This assumes CUDA UVM.
             row_i.value (k) *= theAlpha;
@@ -5065,7 +5065,6 @@ namespace Tpetra {
                  RangeScalar beta) const
   {
     using Teuchos::NO_TRANS;
-    typedef Teuchos::ScalarTraits<RangeScalar> RST;
     // Just like Scalar and impl_scalar_type may differ in CrsMatrix,
     // RangeScalar and its corresponding impl_scalar_type may differ in
     // MultiVector.
@@ -5123,41 +5122,26 @@ namespace Tpetra {
       std::runtime_error, "X and Y may not alias one another.");
 #endif // HAVE_TPETRA_DEBUG
 
-    if (beta == RST::zero ()) {
-      // Y = alpha*op(M)*X with overwrite semantics
-      if (transpose) {
-        Kokkos::MV_MultiplyTranspose (RST::zero (),
-                                      Y.template getLocalView<DeviceType> (),
-                                      theAlpha,
-                                      lclMatrix_,
-                                      X.template getLocalView<DeviceType> (),
-                                      conjugate);
-      }
-      else {
-        Kokkos::MV_Multiply (Y.template getLocalView<DeviceType> (),
-                             theAlpha,
-                             lclMatrix_,
-                             X.template getLocalView<DeviceType> ());
-      }
-    }
-    else {
       // Y = alpha*op(M) + beta*Y
       if (transpose) {
-        Kokkos::MV_MultiplyTranspose (theBeta,
-                                      Y.template getLocalView<DeviceType> (),
-                                      theAlpha,
-                                      lclMatrix_,
-                                      X.template getLocalView<DeviceType> (),
-                                      conjugate);
-      }
-      else {
-        Kokkos::MV_Multiply (theBeta,
-                             Y.template getLocalView<DeviceType> (),
+        KokkosSparse::spmv ( conjugate?KokkosSparse::ConjugateTranspose:KokkosSparse::Transpose,
                              theAlpha,
                              lclMatrix_,
-                             X.template getLocalView<DeviceType> ());
+                             X.template getLocalView<DeviceType> (),
+                             theBeta,
+                             Y.template getLocalView<DeviceType> ()
+                            );
       }
-    }
+      else {
+        KokkosSparse::spmv ( KokkosSparse::NoTranspose,
+                             theAlpha,
+                             lclMatrix_,
+                             X.template getLocalView<DeviceType> (),
+                             theBeta,
+                             Y.template getLocalView<DeviceType> ()
+                            );
+      }
+
   }
 
   template <class Scalar,

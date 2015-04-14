@@ -54,6 +54,12 @@
 
 namespace KokkosSparse {
 
+// Blas like Transpose / Conjugate attributes for sparse kernels
+static char Transpose[] = "T";
+static char Conjugate[] = "C";
+static char ConjugateTranspose[] = "H";
+static char NoTranspose[] = "N";
+
 template<class DeviceType>
 inline int RowsPerThread(const int NNZPerRow) {
   if(NNZPerRow == 0) return 1;
@@ -655,30 +661,32 @@ public:
   /// \brief Return a view of row i of the matrix.
   ///
   /// If row i does not belong to the matrix, return an empty view.
+  template<typename SType>
   KOKKOS_INLINE_FUNCTION
-  SparseRowView<CrsMatrix> row (const ordinal_type i) const {
+  SparseRowView<CrsMatrix,SType> row (const ordinal_type i) const {
     const size_type start = graph.row_map(i);
     const size_type count = graph.row_map(i+1) - start;
 
     if (count == 0) {
-      return SparseRowView<CrsMatrix> (NULL, NULL, 1, 0);
+      return SparseRowView<CrsMatrix,SType> (NULL, NULL, 1, 0);
     } else {
-      return SparseRowView<CrsMatrix> (values, graph.entries, 1, count, start);
+      return SparseRowView<CrsMatrix,SType> (values, graph.entries, 1, count, start);
     }
   }
 
   /// \brief Return a const view of row i of the matrix.
   ///
   /// If row i does not belong to the matrix, return an empty view.
+  template<typename SType>
   KOKKOS_INLINE_FUNCTION
-  SparseRowViewConst<CrsMatrix> rowConst (const ordinal_type i) const {
+  SparseRowViewConst<CrsMatrix,SType> rowConst (const ordinal_type i) const {
     const size_type start = graph.row_map(i);
     const size_type count = graph.row_map(i+1) - start;
 
     if (count == 0) {
-      return SparseRowViewConst<CrsMatrix> (NULL, NULL, 1, 0);
+      return SparseRowViewConst<CrsMatrix,SType> (NULL, NULL, 1, 0);
     } else {
-      return SparseRowViewConst<CrsMatrix> (values, graph.entries, 1, count, start);
+      return SparseRowViewConst<CrsMatrix,SType> (values, graph.entries, 1, count, start);
     }
   }
 

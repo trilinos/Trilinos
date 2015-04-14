@@ -271,7 +271,7 @@ int test_crs_matrix_test(LocalOrdinalType numRows, LocalOrdinalType numCols, Loc
         Kokkos::deep_copy(A.values,h_values);
 
 #ifdef NEWKERNEL
-          KokkosSparse::spmv(1.0,A,x,0.0,y);
+          KokkosSparse::spmv("N",1.0,A,x,0.0,y);
 #else
           Kokkos::MV_Multiply(y,A,x);
 #endif
@@ -304,7 +304,7 @@ int test_crs_matrix_test(LocalOrdinalType numRows, LocalOrdinalType numCols, Loc
     Kokkos::Impl::Timer timer;
         for(LocalOrdinalType i=0;i<loop;i++)
 #ifdef NEWKERNEL
-          KokkosSparse::spmv(1.0,A,x,0.0,y);
+          KokkosSparse::spmv("N",1.0,A,x,0.0,y);
 #else
           Kokkos::MV_Multiply(y,A,x);
 #endif
@@ -382,13 +382,13 @@ int test_crs_matrix_test_singlevec(int numRows, int numCols, int nnz, int test, 
     typename Kokkos::CrsMatrix<Scalar,int,execution_space,void,int>::values_type x1("X1",numCols);
     typename Kokkos::CrsMatrix<Scalar,int,execution_space,void,int>::values_type y1("Y1",numRows);
 #ifdef NEWKERNEL
-          KokkosSparse::spmv(1.0,A,x1,0.0,y1);
+          KokkosSparse::spmv("N",1.0,A,x1,0.0,y1);
 #else
           Kokkos::MV_Multiply(y1,A,x1);
 #endif
 
 #ifdef NEWKERNEL
-          KokkosSparse::spmv(1.0,A,x,0.0,y);
+          KokkosSparse::spmv("N",1.0,A,x,0.0,y);
 #else
           Kokkos::MV_Multiply(y,A,x);
 #endif
@@ -415,7 +415,7 @@ int test_crs_matrix_test_singlevec(int numRows, int numCols, int nnz, int test, 
 
         for(int i=0;i<loop;i++)
 #ifdef NEWKERNEL
-          KokkosSparse::spmv(1.0,A,x,0.0,y);
+          KokkosSparse::spmv("N",1.0,A,x,0.0,y);
 #else
         Kokkos::MV_Multiply(y,A,x);
 #endif
