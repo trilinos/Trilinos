@@ -88,11 +88,15 @@ struct compute_face_normals<DeviceType, 2>
   KOKKOS_INLINE_FUNCTION
   void operator() (unsigned face_i) const
   {
+    //this function is hard-wired for two-node segments.
+
+    const unsigned int DIM(2);
+
     local_idx_t head_i, tail_i;
     tail_i = m_face_nodes(face_i, 0);
     head_i = m_face_nodes(face_i, 1);
 
-    double tail[2], head[2], ext[2];
+    double tail[DIM], head[DIM], ext[DIM];
     tail[0] = m_node_coords(tail_i, 0);
     tail[1] = m_node_coords(tail_i, 1);
     head[0] = m_node_coords(head_i, 0);
@@ -143,34 +147,40 @@ struct compute_face_normals<DeviceType, 3>
   KOKKOS_INLINE_FUNCTION
   void operator() (unsigned face_i) const
   {
-    local_idx_t node[3];
-    for (unsigned j = 0; j < 3; ++j)
-    {
+    const unsigned int DIM(3); 
+    const int NUM_NODES_PER_ELEMENT(3);
+    
+    /*
+      how does one handle multiple faces types? 
+      for example, four-node faces.
+    */
+
+    //is this hard-wired for three-node triangles?
+    local_idx_t node[NUM_NODES_PER_ELEMENT];
+    for (unsigned j = 0; j < NUM_NODES_PER_ELEMENT; ++j)
       node[j] = m_face_nodes(face_i, j);
-    }
 
-    double pts[3][3];
-    for (unsigned j = 0; j < 3; ++j)
-    {
-      for (unsigned k = 0; k < 3; ++k)
-      {
+    //is this hard-wired for three-node triangles?
+    //a vector has three components in three dimensions.
+    double pts[NUM_NODES_PER_ELEMENT][DIM];
+    for (unsigned j = 0; j < NUM_NODES_PER_ELEMENT; ++j) {
+      for (unsigned k = 0; k < DIM; ++k)
         pts[j][k] = m_node_coords(node[j], k);
-      }
-    }
+    }//end for for (unsigned j = 0; j < NUM_NODES_PER_ELEMENT; ++j) {
 
-    double vecs[2][3];
-    for (unsigned j = 0; j < 2; ++j)
-    {
-      for (unsigned k = 0; k < 3; ++k)
-      {
+    //is this hard-wired for three-node triangles?
+    //a vector has three components in three dimensions.
+    double vecs[2][DIM];
+    for (unsigned j = 0; j < 2; ++j) {
+      for (unsigned k = 0; k < DIM; ++k)
         vecs[j][k] = pts[j+1][k] - pts[j][k];
-      }
-    }
+    }//end for (unsigned j = 0; j < 2; ++j) {
 
     // WE NEED A 3D MATVEC & GEOMETRY HEADER LIBRARY THAT VECTORIZES, ETC.,
 
     // Cross product
-    double ext[3];
+    //a vector has three components in three dimensions.
+    double ext[DIM];
     ext[0] = vecs[0][1] * vecs[1][2] - vecs[0][2] * vecs[1][1];
     ext[1] = vecs[0][2] * vecs[1][0] - vecs[0][0] * vecs[1][2];
     ext[2] = vecs[0][0] * vecs[1][1] - vecs[0][1] * vecs[1][0];
@@ -218,25 +228,21 @@ struct compute_node_normals_from_faces
     const int num_faces = i_faces_end - i_faces_begin;
 
     double nml[DIM];
-    for (int i = 0; i < DIM; ++i) { nml[i] = 0; }
+    for (int i = 0; i < DIM; ++i) 
+      nml[i] = 0;
 
     // Sum the face normals
-    for (int j = i_faces_begin; j < i_faces_end; ++j)
-    {
+    for (int j = i_faces_begin; j < i_faces_end; ++j) {
       local_idx_t face_j = m_node_to_faces.entries(j);
-
       for (int k = 0; k < DIM; ++k)
-      {
         nml[k] += m_face_normals(face_j, k);
-      }
-    }
+    }//end for (int j = i_faces_begin; j < i_faces_end; ++j)
 
     // Average.
     for (int k; k < DIM; ++k)
-    {
       m_node_normals(node_i, k) = nml[k] /  num_faces;
-    }
   }
+
 };
 
 } // namespace morton_exp
