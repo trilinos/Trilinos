@@ -30,11 +30,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <exodus/Ioex_IOFactory.h>    // for Ioex IOFactory
+#include <exo_fac/Ioex_IOFactory.h>    // for Ioex IOFactory
 
-#include <fpp_exo/Iofx_DatabaseIO.h>   // for Iofx DatabaseIO
+#include <exo_fpp/Iofx_DatabaseIO.h>   // for Iofx DatabaseIO
 #if defined(HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
-#include <par_exo/Iopx_DatabaseIO.h>    // for Iopx DatabaseIO
+#include <exo_par/Iopx_DatabaseIO.h>    // for Iopx DatabaseIO
 #endif
 #include <tokenize.h>
 

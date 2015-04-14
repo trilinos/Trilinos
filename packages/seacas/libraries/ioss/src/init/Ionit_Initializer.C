@@ -33,7 +33,7 @@
 #include <init/Ionit_Initializer.h>
 
 #if !defined(NO_EXODUS_SUPPORT)
-#include <exodus/Ioex_IOFactory.h>
+#include <exo_fac/Ioex_IOFactory.h>
 #endif
 #include <heartbeat/Iohb_DatabaseIO.h>
 #include <generated/Iogn_DatabaseIO.h>

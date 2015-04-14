@@ -70,8 +70,11 @@ namespace Ioss {
   class ElementTopology;
 }
 
-namespace Iofx {
+namespace Ioex {
   struct CommunicationMetaData;
+}
+
+namespace Iofx {
   class DatabaseIO : public Ioex::DatabaseIO
   {
     public:
@@ -190,7 +193,7 @@ namespace Iofx {
                                         const Ioss::GroupingEntity *ge,
                                         int64_t count, void *variables) const;
       void write_meta_data();
-      void gather_communication_metadata(CommunicationMetaData *meta);
+      void gather_communication_metadata(Ioex::CommunicationMetaData *meta);
 
       // Read related metadata and store it in the region...
       void read_region();

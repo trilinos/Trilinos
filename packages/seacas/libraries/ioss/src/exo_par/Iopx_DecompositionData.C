@@ -32,7 +32,7 @@
 // 
 
 
-#include <par_exo/Iopx_DecompositionData.h>
+#include <exo_par/Iopx_DecompositionData.h>
 #include <Ioss_ElementTopology.h>       // for ElementTopology
 #include <Ioss_Field.h>                 // for Field, etc
 #include <Ioss_Map.h>                   // for Map, MapContainer

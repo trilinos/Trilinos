@@ -32,8 +32,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef IOSS_Iopx_Internals_h
-#define IOSS_Iopx_Internals_h
+#ifndef IOSS_Ioex_Internals_h
+#define IOSS_Ioex_Internals_h
 
 #include <exodusII.h>                   // for MAX_LINE_LENGTH, etc
 #include <stdint.h>                     // for int64_t
@@ -91,7 +91,7 @@ namespace Ioss {
    * <li> ne_put_cmap_params(),
    * </ul>
    */
-namespace Iopx {
+namespace Ioex {
   struct NodeBlock
   {
     NodeBlock() : name(""), id(0), entityCount(0), attributeCount(0), procOffset(0)
@@ -368,11 +368,11 @@ namespace Iopx {
   class Mesh
   {
   public:
-    Mesh() :   dimensionality(0)
+    Mesh() : title(), dimensionality(0), file_per_processor(true)
       {}
 
-      Mesh(int dim, char* the_title)
-	:  dimensionality(dim)
+      Mesh(int dim, char* the_title, bool file_pp)
+	:  dimensionality(dim), file_per_processor(file_pp)
 	{
 	  std::strncpy(title, the_title, MAX_LINE_LENGTH+1);
 	  title[MAX_LINE_LENGTH] = '\0';
@@ -380,7 +380,8 @@ namespace Iopx {
 
 	char title[MAX_LINE_LENGTH+1];
 	int dimensionality;
-
+	bool file_per_processor;
+	
 	std::vector<NodeBlock> nodeblocks;
 	std::vector<EdgeBlock> edgeblocks;
 	std::vector<FaceBlock> faceblocks;
@@ -417,7 +418,7 @@ namespace Iopx {
     Internals& operator=(const Internals& from); // do not implement
 
     void get_global_counts(Mesh &mesh);
-    
+
     int put_metadata(const Mesh &mesh,
 		     const CommunicationMetaData &comm);
     int put_metadata(const std::vector<NodeBlock> &nodeblocks);
@@ -456,4 +457,4 @@ namespace Iopx {
     Ioss::ParallelUtils parallelUtil;
   };
 }
-#endif /* IOSS_Iopx_Internals_h */
+#endif /* IOSS_Ioex_Internals_h */

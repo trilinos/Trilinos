@@ -40,7 +40,7 @@
 
 #include <Ioss_Utils.h>                 // for IOSS_WARNING
 #include <assert.h>                     // for assert
-#include <fpp_exo/Iofx_Internals.h>    // for Internals, ElemBlock, etc
+#include <exodus/Ioex_Internals.h>    // for Internals, ElemBlock, etc
 extern "C" {
 #include <exodusII_int.h>               // for EX_FATAL, EX_NOERR, etc
 }
@@ -68,7 +68,7 @@ extern "C" {
 #include "Ioss_VariableType.h"
 #include "exodusII.h"                   // for ex_err, ex_opts, etc
 
-using namespace Iofx;
+using namespace Ioex;
 
 namespace {
   nc_type get_type(int exoid, unsigned int type)
@@ -475,7 +475,9 @@ int Internals::write_meta_data(Mesh &mesh)
   {
     // TODO: (Only needed for par_exo...)
     // Determine global counts...
-    get_global_counts(mesh);
+    if (!mesh.file_per_processor) {
+      get_global_counts(mesh);
+    }
 
     Redefine the_database(exodusFilePtr);
 

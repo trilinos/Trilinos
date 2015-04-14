@@ -30,6 +30,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <exo_fpp/Iofx_DatabaseIO.h>
 #include <Ioss_CodeTypes.h>
 #include <Ioss_ElementTopology.h>
 #include <Ioss_ParallelUtils.h>
@@ -40,8 +41,7 @@
 #include <assert.h>
 #include <exodusII.h>
 #include <exodus/Ioex_Utils.h>
-#include <fpp_exo/Iofx_DatabaseIO.h>
-#include <fpp_exo/Iofx_Internals.h>
+#include <exodus/Ioex_Internals.h>
 #include <float.h>
 #include <stddef.h>
 #include <sys/select.h>
@@ -1180,7 +1180,7 @@ namespace Iofx {
     std::vector<int64_t> node_used(nodeCount);
     std::vector<std::vector<int> > inv_con(nodeCount);
     Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
-    assert(check_block_order(element_blocks));
+    assert(Ioex::check_block_order(element_blocks));
 
     {
       Ioss::SerializeIO serializeIO__(this);
@@ -1442,7 +1442,7 @@ namespace Iofx {
     nodeConnectivityStatus.resize(nodeCount);
 
     Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
-    assert(check_block_order(element_blocks));
+    assert(Ioex::check_block_order(element_blocks));
 
     for (int i=0; i < m_groupCount[EX_ELEM_BLOCK]; i++) {
       Ioss::ElementBlock *block = element_blocks[i];
@@ -1698,7 +1698,7 @@ namespace Iofx {
             // pairs so we are sure that all processors have the same
             // starting topo_map (size and order).
             Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
-            assert(check_block_order(element_blocks));
+            assert(Ioex::check_block_order(element_blocks));
 
             for (int i=0; i < m_groupCount[EX_ELEM_BLOCK]; i++) {
               Ioss::ElementBlock *block = element_blocks[i];
@@ -1971,7 +1971,7 @@ namespace Iofx {
         }
       }
       Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
-      assert(check_block_order(element_blocks));
+      assert(Ioex::check_block_order(element_blocks));
 
       for (int64_t i=0; i < m_groupCount[EX_ELEM_BLOCK]; i++) {
         if (block_ids[i] == 1) {
@@ -5054,16 +5054,17 @@ namespace Iofx {
       the_title[max_line_length] = '\0';
 
 
-      Iofx::Mesh mesh(spatialDimension, the_title);
+      bool file_per_processor = true;
+      Ioex::Mesh mesh(spatialDimension, the_title, file_per_processor);
 
       Ioex::get_id(node_blocks[0], EX_NODE_BLOCK, &ids_);
-      Iofx::NodeBlock N(*node_blocks[0]);
+      Ioex::NodeBlock N(*node_blocks[0]);
       mesh.nodeblocks.push_back(N);
 
       // Edge Blocks --
       {
         Ioss::EdgeBlockContainer edge_blocks = region->get_edge_blocks();
-        assert(check_block_order(edge_blocks));
+        assert(Ioex::check_block_order(edge_blocks));
         Ioss::EdgeBlockContainer::const_iterator I;
         // Set ids of all entities that have "id" property...
         for (I=edge_blocks.begin(); I != edge_blocks.end(); ++I) {
@@ -5075,7 +5076,7 @@ namespace Iofx {
           edgeCount += (*I)->get_property("entity_count").get_int();
           // Set ids of all entities that do not have "id" property...
           Ioex::get_id(*I, EX_EDGE_BLOCK, &ids_);
-          Iofx::EdgeBlock T(*(*I));
+          Ioex::EdgeBlock T(*(*I));
           if (std::find(mesh.edgeblocks.begin(), mesh.edgeblocks.end(), T) == mesh.edgeblocks.end()) {
             mesh.edgeblocks.push_back(T);
           }
@@ -5086,7 +5087,7 @@ namespace Iofx {
       // Face Blocks --
       {
         Ioss::FaceBlockContainer face_blocks = region->get_face_blocks();
-        assert(check_block_order(face_blocks));
+        assert(Ioex::check_block_order(face_blocks));
         Ioss::FaceBlockContainer::const_iterator I;
         // Set ids of all entities that have "id" property...
         for (I=face_blocks.begin(); I != face_blocks.end(); ++I) {
@@ -5098,7 +5099,7 @@ namespace Iofx {
           faceCount += (*I)->get_property("entity_count").get_int();
           // Set ids of all entities that do not have "id" property...
           Ioex::get_id(*I, EX_FACE_BLOCK, &ids_);
-          Iofx::FaceBlock T(*(*I));
+          Ioex::FaceBlock T(*(*I));
           if (std::find(mesh.faceblocks.begin(), mesh.faceblocks.end(), T) == mesh.faceblocks.end()) {
             mesh.faceblocks.push_back(T);
           }
@@ -5109,7 +5110,7 @@ namespace Iofx {
       // Element Blocks --
       {
         Ioss::ElementBlockContainer element_blocks = region->get_element_blocks();
-        assert(check_block_order(element_blocks));
+        assert(Ioex::check_block_order(element_blocks));
         Ioss::ElementBlockContainer::const_iterator I;
         // Set ids of all entities that have "id" property...
         for (I=element_blocks.begin(); I != element_blocks.end(); ++I) {
@@ -5121,7 +5122,7 @@ namespace Iofx {
           elementCount += (*I)->get_property("entity_count").get_int();
           // Set ids of all entities that do not have "id" property...
           Ioex::get_id(*I, EX_ELEM_BLOCK, &ids_);
-          Iofx::ElemBlock T(*(*I));
+          Ioex::ElemBlock T(*(*I));
           if (std::find(mesh.elemblocks.begin(), mesh.elemblocks.end(), T) == mesh.elemblocks.end()) {
             mesh.elemblocks.push_back(T);
           }
@@ -5139,7 +5140,7 @@ namespace Iofx {
 
         for (I=nodesets.begin(); I != nodesets.end(); ++I) {
           Ioex::get_id(*I, EX_NODE_SET, &ids_);
-          const Iofx::NodeSet T(*(*I));
+          const Ioex::NodeSet T(*(*I));
           if (std::find(mesh.nodesets.begin(), mesh.nodesets.end(), T) == mesh.nodesets.end()) {
             mesh.nodesets.push_back(T);
           }
@@ -5157,7 +5158,7 @@ namespace Iofx {
 
         for (I=edgesets.begin(); I != edgesets.end(); ++I) {
           Ioex::get_id(*I, EX_EDGE_SET, &ids_);
-          const Iofx::EdgeSet T(*(*I));
+          const Ioex::EdgeSet T(*(*I));
           if (std::find(mesh.edgesets.begin(), mesh.edgesets.end(), T) == mesh.edgesets.end()) {
             mesh.edgesets.push_back(T);
           }
@@ -5175,7 +5176,7 @@ namespace Iofx {
 
         for (I=facesets.begin(); I != facesets.end(); ++I) {
           Ioex::get_id(*I, EX_FACE_SET, &ids_);
-          const Iofx::FaceSet T(*(*I));
+          const Ioex::FaceSet T(*(*I));
           if (std::find(mesh.facesets.begin(), mesh.facesets.end(), T) == mesh.facesets.end()) {
             mesh.facesets.push_back(T);
           }
@@ -5193,7 +5194,7 @@ namespace Iofx {
 
         for (I=elementsets.begin(); I != elementsets.end(); ++I) {
           Ioex::get_id(*I, EX_ELEM_SET, &ids_);
-          const Iofx::ElemSet T(*(*I));
+          const Ioex::ElemSet T(*(*I));
           if (std::find(mesh.elemsets.begin(), mesh.elemsets.end(), T) == mesh.elemsets.end()) {
             mesh.elemsets.push_back(T);
           }
@@ -5244,7 +5245,7 @@ namespace Iofx {
 
       for (I=ssets.begin(); I != ssets.end(); ++I) {
         // Add a SideSet corresponding to this SideSet/SideBlock
-        Iofx::SideSet T(*(*I));
+        Ioex::SideSet T(*(*I));
         if (std::find(mesh.sidesets.begin(), mesh.sidesets.end(), T) == mesh.sidesets.end()) {
           mesh.sidesets.push_back(T);
         }
@@ -5254,7 +5255,7 @@ namespace Iofx {
       gather_communication_metadata(&mesh.comm);
 
       // Write the metadata to the exodusII file...
-      Iofx::Internals data(get_file_pointer(), maximumNameLength, util());
+      Ioex::Internals data(get_file_pointer(), maximumNameLength, util());
       int ierr = data.write_meta_data(mesh);
       
       if (ierr < 0)
@@ -5263,7 +5264,7 @@ namespace Iofx {
       output_other_meta_data();
     }
 
-    void DatabaseIO::gather_communication_metadata(CommunicationMetaData *meta)
+    void DatabaseIO::gather_communication_metadata(Ioex::CommunicationMetaData *meta)
     {
       // It's possible that we are a serial program outputting information
       // for later use by a parallel program.
@@ -5359,9 +5360,9 @@ namespace Iofx {
           int64_t id = Ioex::get_id(cs, (ex_entity_type)0, &ids_);
 
           if (type == "node") {
-            meta->nodeMap.push_back(Iofx::CommunicationMap(id, count, 'n'));
+            meta->nodeMap.push_back(Ioex::CommunicationMap(id, count, 'n'));
           } else if (type == "side") {
-            meta->elementMap.push_back(Iofx::CommunicationMap(id, count, 'e'));
+            meta->elementMap.push_back(Ioex::CommunicationMap(id, count, 'e'));
           } else {
             std::ostringstream errmsg;
             errmsg << "Internal Program Error...";

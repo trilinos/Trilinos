@@ -64,7 +64,22 @@ namespace Ioex {
   void write_coordinate_frames(int exoid, const Ioss::CoordinateFrameContainer &frames);
   
   template <typename T>
-  bool check_block_order(const std::vector<T*> &blocks);
+  bool check_block_order(const std::vector<T*> &blocks)
+  {
+#ifndef NDEBUG
+    // Verify that element blocks are defined in sorted offset order...
+    typename std::vector<T*>::const_iterator I;
+
+    int64_t eb_offset = -1;
+    for (I=blocks.begin(); I != blocks.end(); ++I) {
+      int64_t this_off = (*I)->get_offset();
+      if (this_off < eb_offset)
+	return false;
+      eb_offset = this_off;
+    }
+#endif
+    return true;
+  }
 
   bool find_displacement_field(Ioss::NameList &fields,
                                const Ioss::GroupingEntity *block,

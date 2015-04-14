@@ -1865,24 +1865,6 @@ namespace {
     return;
   }
 
-#ifndef NDEBUG
-  template <typename T>
-  bool check_block_order(const std::vector<T*> &blocks)
-  {
-    // Verify that element blocks are defined in sorted offset order...
-    typename std::vector<T*>::const_iterator I;
-
-    int64_t eb_offset = -1;
-    for (I=blocks.begin(); I != blocks.end(); ++I) {
-      int64_t this_off = (*I)->get_offset();
-      if (this_off < eb_offset)
-	return false;
-      eb_offset = this_off;
-    }
-    return true;
-  }
-#endif
-
   void check_variable_consistency(const ex_var_params &exo_params,
 				  int my_processor, const std::string& filename,
 				  const Ioss::ParallelUtils &util)
