@@ -49,11 +49,10 @@
 
 #include <Teuchos_StandardCatchMacros.hpp>
 
-#include <Epetra_MpiComm.h>
-#include <Epetra_SerialComm.h>
 #include <Epetra_RowMatrix.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_Map.h>
+#include <Epetra_Comm.h>
 
 // EpetraExt
 #include <EpetraExt_MatrixMatrix.h>
