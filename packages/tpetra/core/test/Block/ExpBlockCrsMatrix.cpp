@@ -791,17 +791,12 @@ namespace {
   // Test writing of a BlockCrsMatrix.
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ExpBlockCrsMatrix, write, Scalar, LO, GO, Node )
   {
-    typedef Tpetra::Experimental::BlockMultiVector<Scalar, LO, GO, Node> BMV;
-    typedef Tpetra::Experimental::BlockVector<Scalar, LO, GO, Node> BV;
     typedef Tpetra::Experimental::BlockCrsMatrix<Scalar, LO, GO, Node> BCM;
-    typedef Tpetra::MultiVector<Scalar, LO, GO, Node> mv_type;
-    typedef Tpetra::Vector<Scalar, LO, GO, Node> vec_type;
     typedef Tpetra::CrsGraph<LO, GO, Node> graph_type;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     // The typedef below is also a test.  BlockCrsMatrix must have
     // this typedef, or this test won't compile.
     typedef typename BCM::little_block_type little_block_type;
-    typedef typename BV::little_vec_type little_vec_type;
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename STS::magnitudeType MT;
 

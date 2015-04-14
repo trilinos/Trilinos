@@ -1173,12 +1173,7 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   void writeMatrixStrip(BlockCrsMatrix<Scalar,LO,GO,Node> const &A, std::ostream &os, Teuchos::ParameterList const &params) {
 
-    typedef Teuchos::OrdinalTraits<GO>                     TOT;
-    typedef BlockCrsMatrix<Scalar, LO, GO, Node>           block_crs_matrix_type;
-    typedef Tpetra::Import<LO, GO, Node>                   import_type;
     typedef Tpetra::Map<LO, GO, Node>                      map_type;
-    typedef Tpetra::MultiVector<Scalar, LO, GO, Node>      mv_type;
-    typedef Tpetra::CrsGraph<LO, GO, Node>                 crs_graph_type;
 
     size_t numRows = A.getGlobalNumRows();
     RCP<const map_type> rowMap = A.getRowMap();
