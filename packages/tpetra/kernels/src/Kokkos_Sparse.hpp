@@ -71,9 +71,11 @@ spmv(const char mode[],
 
 #ifdef KOKKOS_HAVE_CXX11
   // Make sure that both x and y have the same rank.
-  static_assert (XVector::rank == YVector::rank, "KokkosBlas::spmv: Vector ranks do not match.");
+  static_assert ((int) XVector::rank == (int) YVector::rank,
+                 "KokkosBlas::spmv: Vector ranks do not match.");
   // Make sure that x (and therefore y) is rank 1.
-  static_assert (XVector::rank == 1, "KokkosBlas::spmv: Both Vector inputs must have rank 1 or 2.");
+  static_assert ((int) XVector::rank == 1, "KokkosBlas::spmv: "
+                 "Both Vector inputs must have rank 1 or 2.");
   // Make sure that y is non-const.
   static_assert (Kokkos::Impl::is_same<typename YVector::value_type,
                                        typename YVector::non_const_value_type>::value,
@@ -85,10 +87,12 @@ spmv(const char mode[],
   //
   // Make sure that both x and y have the same rank.
   typedef typename
-    Kokkos::Impl::StaticAssert<XVector::rank == YVector::rank>::type Blas1_spmv_vector_ranks_do_not_match;
+    Kokkos::Impl::StaticAssert<(int) XVector::rank == (int) YVector::rank>::type
+    Blas1_spmv_vector_ranks_do_not_match;
   // Make sure that x (and therefore y) is rank 1.
   typedef typename
-    Kokkos::Impl::StaticAssert<XVector::rank == 1 >::type Blas1_spmv_vector_rank_not_one;
+    Kokkos::Impl::StaticAssert<(int) XVector::rank == 1 >::type
+    Blas1_spmv_vector_rank_not_one;
 #endif // KOKKOS_HAVE_CXX11
 
   // Check compatibility of dimensions at run time.
