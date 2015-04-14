@@ -1039,7 +1039,7 @@ namespace Anasazi {
       Epetra_MultiVector B_Pvec(::View, LocalMap, B.values(), B.stride(), B.numCols());
 
       TEUCHOS_TEST_FOR_EXCEPTION( mv.Multiply( 'N', 'N', alpha, A, B_Pvec, beta )!=0, EpetraMultiVecFailure,
-          "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvNorm call to Epetra_MultiVector::Multiply() returned a nonzero value.");
+          "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvTimesMatAddMv call to Epetra_MultiVector::Multiply() returned a nonzero value.");
     }
 
     /*! \brief Replace \c mv with \f$\alpha A + \beta B\f$.
