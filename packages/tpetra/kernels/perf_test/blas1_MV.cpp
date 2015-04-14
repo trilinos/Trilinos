@@ -84,7 +84,8 @@ benchmarkKokkos (std::ostream& out,
   bool success = true;
 
   RCP<Time> vecCreateTimer = getTimer ("Kokkos: MV: Create");
-  RCP<Time> vecFillTimer = getTimer ("Kokkos: MV: Fill");
+  RCP<Time> vecFillZeroTimer = getTimer ("Kokkos: MV: Fill zero");
+  RCP<Time> vecFillNonZeroTimer = getTimer ("Kokkos: MV: Fill nonzero");
   RCP<Time> vecNrm2Timer = getTimer ("Kokkos: MV: Nrm2 (contiguous)");
   RCP<Time> vecNrm2Timer2 = getTimer ("Kokkos: MV: Nrm2 (noncontiguous)");
   RCP<Time> vecNrm1Timer = getTimer ("Kokkos: MV: Nrm1 (contiguous)");
@@ -107,9 +108,17 @@ benchmarkKokkos (std::ostream& out,
     }
   }
 
-  // Benchmark filling a Vector.
+  // Benchmark filling a Vector with zero.
   {
-    TimeMonitor timeMon (*vecFillTimer);
+    TimeMonitor timeMon (*vecFillZeroTimer);
+    for (int k = 0; k < numTrials; ++k) {
+      KokkosBlas::fill (x, 0.0);
+    }
+  }
+
+  // Benchmark filling a Vector with a nonzero value.
+  {
+    TimeMonitor timeMon (*vecFillNonZeroTimer);
     for (int k = 0; k < numTrials; ++k) {
       KokkosBlas::fill (x, 1.0);
     }
@@ -361,7 +370,8 @@ benchmarkRaw (std::ostream& out,
 {
   using std::endl;
   RCP<Time> vecCreateTimer = getTimer ("Raw: MV: Create");
-  RCP<Time> vecFillTimer = getTimer ("Raw: MV: Fill");
+  RCP<Time> vecFillZeroTimer = getTimer ("Raw: MV: Fill zero");
+  RCP<Time> vecFillNonzeroTimer = getTimer ("Raw: MV: Fill nonzero");
   RCP<Time> vecNrm2Timer = getTimer ("Raw: MV: Nrm2");
   RCP<Time> vecNrm1Timer = getTimer ("Raw: MV: Nrm1");
   RCP<Time> vecDotTimer = getTimer ("Raw: MV: Dot");
@@ -388,9 +398,22 @@ benchmarkRaw (std::ostream& out,
     }
   }
 
-  // Benchmark filling a Vector.
+  // Benchmark filling a Vector with zeros.
   {
-    TimeMonitor timeMon (*vecFillTimer);
+    TimeMonitor timeMon (*vecFillZeroTimer);
+    for (int k = 0; k < numTrials; ++k) {
+      for (int j = 0; j < numCols; ++j) {
+        double* x_j = x + numRows * j;
+        for (int i = 0; i < numRows; ++i) {
+          x_j[i] = 0.0;
+        }
+      }
+    }
+  }
+
+  // Benchmark filling a Vector with a nonzero value.
+  {
+    TimeMonitor timeMon (*vecFillNonzeroTimer);
     for (int k = 0; k < numTrials; ++k) {
       for (int j = 0; j < numCols; ++j) {
         double* x_j = x + numRows * j;

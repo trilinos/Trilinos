@@ -44,6 +44,15 @@
 #include <Kokkos_Blas1_MV_impl_fill.hpp>
 #include <climits>
 
+
+#ifndef TPETRAKERNELS_KOKKOSBLAS_IMPL_USE_MEMSET
+#  define TPETRAKERNELS_KOKKOSBLAS_IMPL_USE_MEMSET 1
+#endif
+
+#ifdef TPETRAKERNELS_KOKKOSBLAS_IMPL_USE_MEMSET
+#  include <cstring> // for memset (see Kokkos::Serial specialization below)
+#endif // TPETRAKERNELS_KOKKOSBLAS_IMPL_USE_MEMSET
+
 namespace KokkosBlas {
 namespace Impl {
 
@@ -64,6 +73,49 @@ fill (const XMV& X, const XMV::non_const_value_type& val)
   typedef XMV::size_type size_type;
   const size_type numRows = X.dimension_0 ();
   const size_type numCols = X.dimension_1 ();
+
+#ifdef TPETRAKERNELS_KOKKOSBLAS_IMPL_USE_MEMSET
+
+  // Don't call one of the special cases (memset or 1-D fill) unless
+  // the memory in X is contiguous.
+  if (X.capacity () == numRows * numCols) {
+    if (val == Kokkos::Details::ArithTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::zero ()) {
+      // It might not necessarily be true for ALL Scalar types that
+      // memset with 0 does the right thing, but it certainly works
+      // here.
+      memset (X.ptr_on_device (), 0, numRows * sizeof (KOKKOSBLAS_IMPL_MV_SCALAR));
+    }
+    else {
+      typedef Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
+        Kokkos::LayoutLeft,
+        Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+        Kokkos::Impl::ViewDefault> XV1D;
+
+      XV1D X1D (X.ptr_on_device (), X.capacity ());
+      Kokkos::Impl::ViewFill<XV1D> (X1D, val);
+
+      // mfh 14 Apr 2015: This didn't actually help performance over
+      // using ViewFill on the 1-D View.  The key thing is using the
+      // right ViewFill specialization: 1-D is faster (.18 s / 26 s,
+      // for example).
+
+      // if (numRows < static_cast<size_type> (INT_MAX)) {
+      //   V_Fill_Invoke<XV1D, int> (X1D, val);
+      // }
+      // else {
+      //   V_Fill_Invoke<XV1D, size_type> (X1D, val);
+      // }
+    }
+    return;
+  }
+  //
+  // // mfh 14 Apr 2015: Not actually faster for me than the code below
+  //
+  //   Kokkos::Impl::ViewFill<XMV> (X, val);
+  //
+
+#endif // TPETRAKERNELS_KOKKOSBLAS_IMPL_USE_MEMSET
 
   // The first condition helps avoid overflow with the
   // multiplication in the second condition.
