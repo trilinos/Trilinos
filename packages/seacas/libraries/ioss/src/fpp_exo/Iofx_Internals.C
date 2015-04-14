@@ -40,7 +40,7 @@
 
 #include <Ioss_Utils.h>                 // for IOSS_WARNING
 #include <assert.h>                     // for assert
-#include <exodus/Ioex_Internals.h>    // for Internals, ElemBlock, etc
+#include <fpp_exo/Iofx_Internals.h>    // for Internals, ElemBlock, etc
 extern "C" {
 #include <exodusII_int.h>               // for EX_FATAL, EX_NOERR, etc
 }
@@ -68,7 +68,7 @@ extern "C" {
 #include "Ioss_VariableType.h"
 #include "exodusII.h"                   // for ex_err, ex_opts, etc
 
-using namespace Ioex;
+using namespace Iofx;
 
 namespace {
   nc_type get_type(int exoid, unsigned int type)
@@ -91,61 +91,6 @@ namespace {
 			     int dimension, int dim_dim, int str_dim);
   template <typename T>
   int output_names(const std::vector<T> &entities, int exoid, ex_entity_type nc_type);
-}
-
-#define stringify(X) #X
-#define version_string(X) stringify(X)
-
-void Internals::update_last_time_attribute(double value)
-{
-  char errmsg[MAX_ERR_LENGTH];
-  const char *routine = "Internals::update_last_time_attribute()";
-
-  double tmp = 0.0;
-  int rootid = (unsigned)exodusFilePtr & EX_FILE_ID_MASK;
-  int status = nc_get_att_double(rootid, NC_GLOBAL, "last_written_time", &tmp);
-  if (status == NC_NOERR && value > tmp) {
-    status=nc_put_att_double(rootid, NC_GLOBAL, "last_written_time",
-			     NC_DOUBLE, 1, &value);
-    if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg,
-	      "Error: failed to define 'last_written_time' attribute to file id %d",
-	      exodusFilePtr);
-      ex_err(routine,errmsg,status);
-    }
-  }
-}
-
-bool Internals::read_last_time_attribute(double *value)
-{
-  // Check whether the "last_written_time" attribute exists.  If it does,
-  // return the value of the attribute in 'value' and return 'true'.
-  // If not, don't change 'value' and return 'false'.
-  bool found = false;
-
-  int rootid = (unsigned)exodusFilePtr & EX_FILE_ID_MASK;
-  nc_type att_type = NC_NAT;
-  size_t att_len = 0;
-  int status = nc_inq_att(rootid, NC_GLOBAL, "last_written_time", &att_type, &att_len);
-  if (status == NC_NOERR && att_type == NC_DOUBLE) {
-    // Attribute exists on this database, read it...
-    double tmp = 0.0;
-    status = nc_get_att_double(rootid, NC_GLOBAL, "last_written_time", &tmp);
-    if (status == NC_NOERR) {
-      *value = tmp;
-      found = true;
-    } else {
-      char errmsg[MAX_ERR_LENGTH];
-      const char *routine = "Internals::read_last_time_attribute()";
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg,
-	      "Error: failed to read last_written_time attribute from file id %d", exodusFilePtr);
-      ex_err(routine,errmsg,status);
-      found = false;
-    }
-  }
-  return found;
 }
 
 bool Internals::check_processor_info(int processor_count, int processor_id)
@@ -206,7 +151,7 @@ Redefine::Redefine(int exoid)
     char errmsg[MAX_ERR_LENGTH];
     sprintf(errmsg,
 	    "Error: failed to put file id %d into define mode", exodusFilePtr);
-    ex_err("Ioex::Redefine::Redefine()",errmsg,status);
+    ex_err("Iofx::Redefine::Redefine()",errmsg,status);
     exit(EXIT_FAILURE);
   }
 }
@@ -220,7 +165,7 @@ Redefine::~Redefine()
       char errmsg[MAX_ERR_LENGTH];
       sprintf(errmsg,
 	      "Error: failed to complete variable definitions in file id %d",exodusFilePtr);
-      ex_err("Ioex::Redefine::~Redefine()",errmsg,status);
+      ex_err("Iofx::Redefine::~Redefine()",errmsg,status);
       exit(EXIT_FAILURE);
     }
   } catch (...) {
@@ -509,13 +454,13 @@ SideSet::SideSet(const Ioss::SideBlock &other)
   }
 
   id = other.get_property("id").get_int();
-  sideCount = other.get_property("entity_count").get_int();
+  entityCount = other.get_property("entity_count").get_int();
   dfCount = other.get_property("distribution_factor_count").get_int();
   std::string io_name = other.name();
 
   // KLUGE: universal_sideset has side dfCount...
   if (io_name == "universal_sideset")
-    dfCount = sideCount;
+    dfCount = entityCount;
 }
 
 SideSet::SideSet(const Ioss::SideSet &other)
@@ -527,19 +472,19 @@ SideSet::SideSet(const Ioss::SideSet &other)
   }
 
   id = other.get_property("id").get_int();
-  sideCount = other.get_property("entity_count").get_int();
+  entityCount = other.get_property("entity_count").get_int();
   dfCount = other.get_property("distribution_factor_count").get_int();
   std::string io_name = other.name();
 
   // KLUGE: universal_sideset has side dfCount...
   if (io_name == "universal_sideset")
-    dfCount = sideCount;
+    dfCount = entityCount;
 }
 
 bool SideSet::operator==(const SideSet& other) const
 {
   return id == other.id &&
-    sideCount == other.sideCount &&
+    entityCount == other.entityCount &&
     dfCount == other.dfCount &&
     name == other.name;
 }
@@ -3071,11 +3016,11 @@ int Internals::put_metadata(const std::vector<SideSet> &sidesets)
     // for a specific file and returns that value incremented.
     int cur_num_side_sets = (int)ex_inc_file_item(exodusFilePtr, ex_get_counter_list(EX_SIDE_SET));
 
-    if (sidesets[i].sideCount == 0)
+    if (sidesets[i].entityCount == 0)
       continue;
 
     status=nc_def_dim (exodusFilePtr, DIM_NUM_SIDE_SS(cur_num_side_sets+1),
-		       sidesets[i].sideCount, &dimid);
+		       sidesets[i].entityCount, &dimid);
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
       if (status == NC_ENAMEINUSE) {
@@ -3197,7 +3142,7 @@ int Internals::put_non_define_data(const std::vector<SideSet> &sidesets)
   // Now, write the status array
   std::vector<int> status(num_sidesets);
   for (int i = 0; i < num_sidesets; i++) {
-    status[i] = sidesets[i].sideCount > 0 ? 1 : 0;
+    status[i] = sidesets[i].entityCount > 0 ? 1 : 0;
   }
 
   if (put_int_array(exodusFilePtr, VAR_SS_STAT, status) != NC_NOERR)
@@ -3319,7 +3264,7 @@ namespace {
 
   int put_int_array(int exoid, const char *var_type, const std::vector<int> &array)
   {
-    const char *routine = "Ioex_Internals.C, put_int_array";
+    const char *routine = "Iofx_Internals.C, put_int_array";
     char errmsg[MAX_ERR_LENGTH];
     int var_id;
     int status;
@@ -3346,7 +3291,7 @@ namespace {
 
   int put_id_array(int exoid, const char *var_type, const std::vector<entity_id> &ids)
   {
-    const char *routine = "Ioex_Internals.C, put_id_array";
+    const char *routine = "Iofx_Internals.C, put_id_array";
     char errmsg[MAX_ERR_LENGTH];
     int var_id;
 
@@ -3382,7 +3327,7 @@ namespace {
   
   int define_coordinate_vars(int exodusFilePtr, int64_t nodes, int node_dim, int dimension, int dim_dim, int str_dim)
   {
-    const char *routine = "Ioex_Internals.C, define_coordinate_vars";
+    const char *routine = "Iofx_Internals.C, define_coordinate_vars";
     char errmsg[MAX_ERR_LENGTH];
     int status;
     int dim[2];

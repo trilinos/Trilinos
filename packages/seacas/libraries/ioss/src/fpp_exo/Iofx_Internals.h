@@ -32,8 +32,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef IOSS_Ioex_Internals_h
-#define IOSS_Ioex_Internals_h
+#ifndef IOSS_Iofx_Internals_h
+#define IOSS_Iofx_Internals_h
 
 #include <exodusII.h>                   // for MAX_LINE_LENGTH, etc
 #include <stdint.h>                     // for int64_t
@@ -66,8 +66,8 @@ namespace Ioss {
    * required variable, dimension, and attribute definitions to the
    * underlying netcdf file with only a single ncredef call.
    *
-   * To use the application must create an Ioex::Internals instance
-   * and call the Ioex::Internals::write_meta_data() function.  This
+   * To use the application must create an Iofx::Internals instance
+   * and call the Iofx::Internals::write_meta_data() function.  This
    * function requires several classes as arguments including:
    * <ul>
    * <li> Mesh -- defines mesh global metadata
@@ -78,7 +78,7 @@ namespace Ioss {
    * parallel info.
    * </ul>
    *
-   * Calling Ioex::Internals::write_meta_data(), replaces the
+   * Calling Iofx::Internals::write_meta_data(), replaces the
    * following exodusII and nemesis API calls:
    * <ul>
    * <li> ex_put_init(),
@@ -90,7 +90,7 @@ namespace Ioss {
    * <li> ne_put_cmap_params(),
    * </ul>
    */
-namespace Ioex {
+namespace Iofx {
   struct NodeBlock
   {
     NodeBlock() : name(""), id(0), entityCount(0), attributeCount(0)
@@ -285,7 +285,7 @@ namespace Ioex {
 
   struct SideSet
   {
-    SideSet() : name(""), id(0), sideCount(0), dfCount(0) { }
+    SideSet() : name(""), id(0), entityCount(0), dfCount(0) { }
     SideSet(const Ioss::SideBlock &other);
     SideSet(const Ioss::SideSet   &other);
     bool operator==(const SideSet&) const;
@@ -293,7 +293,7 @@ namespace Ioex {
 
     std::string name;
     entity_id id;
-    int64_t sideCount;
+    int64_t entityCount;
     int64_t dfCount;
   };
 
@@ -395,9 +395,6 @@ namespace Ioex {
      */
     bool check_processor_info(int processor_count, int processor_id);
 
-    void update_last_time_attribute(double value);
-    bool read_last_time_attribute(double *value);
-
   private:
     Internals(const Internals& from); // do not implement
     Internals& operator=(const Internals& from); // do not implement
@@ -440,4 +437,4 @@ namespace Ioex {
     int maximumNameLength; 
   };
 }
-#endif /* IOSS_Ioex_Internals_h */
+#endif /* IOSS_Iofx_Internals_h */

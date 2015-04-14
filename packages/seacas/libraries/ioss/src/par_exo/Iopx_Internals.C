@@ -93,59 +93,6 @@ namespace {
   int output_names(const std::vector<T> &entities, int exoid, ex_entity_type nc_type);
 }
 
-#define stringify(X) #X
-#define version_string(X) stringify(X)
-
-void Internals::update_last_time_attribute(double value)
-{
-  char errmsg[MAX_ERR_LENGTH];
-  const char *routine = "Internals::update_last_time_attribute()";
-
-  double tmp = 0.0;
-  int status = nc_get_att_double(exodusFilePtr, NC_GLOBAL, "last_written_time", &tmp);
-  if (status == NC_NOERR && value > tmp) {
-    status=nc_put_att_double(exodusFilePtr, NC_GLOBAL, "last_written_time",
-			     NC_DOUBLE, 1, &value);
-    if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg,
-	      "Error: failed to define 'last_written_time' attribute to file id %d",
-	      exodusFilePtr);
-      ex_err(routine,errmsg,status);
-    }
-  }
-}
-
-bool Internals::read_last_time_attribute(double *value)
-{
-  // Check whether the "last_written_time" attribute exists.  If it does,
-  // return the value of the attribute in 'value' and return 'true'.
-  // If not, don't change 'value' and return 'false'.
-  bool found = false;
-
-  nc_type att_type = NC_NAT;
-  size_t att_len = 0;
-  int status = nc_inq_att(exodusFilePtr, NC_GLOBAL, "last_written_time", &att_type, &att_len);
-  if (status == NC_NOERR && att_type == NC_DOUBLE) {
-    // Attribute exists on this database, read it...
-    double tmp = 0.0;
-    status = nc_get_att_double(exodusFilePtr, NC_GLOBAL, "last_written_time", &tmp);
-    if (status == NC_NOERR) {
-      *value = tmp;
-      found = true;
-    } else {
-      char errmsg[MAX_ERR_LENGTH];
-      const char *routine = "Internals::read_last_time_attribute()";
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg,
-	      "Error: failed to read last_written_time attribute from file id %d", exodusFilePtr);
-      ex_err(routine,errmsg,status);
-      found = false;
-    }
-  }
-  return found;
-}
-
 Redefine::Redefine(int exoid)
   : exodusFilePtr(exoid)
 {

@@ -371,9 +371,6 @@ namespace Iopx {
      */
     bool check_processor_info(int processor_count, int processor_id);
 
-    void update_last_time_attribute(double value);
-    bool read_last_time_attribute(double *value);
-
   private:
     Internals(const Internals& from); // do not implement
     Internals& operator=(const Internals& from); // do not implement
