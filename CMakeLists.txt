@@ -72,14 +72,6 @@ PROJECT(${PROJECT_NAME} NONE)
 # Set default C++ standard to C++11
 SET(Trilinos_ENABLE_CXX11_DEFAULT ON)
 
-# Check to see if the user disabled C++11 support intentionally. This
-# will be used to ensure that C++11 stayed on after the configure check.
-# If it didn't stay on and wasn't requested there will be a fatal error.
-SET(Trilinos_CXX11_DISABLED_BY_USER OFF)
-IF(DEFINED Trilinos_ENABLE_CXX11 AND NOT Trilinos_ENABLE_CXX11)
-  SET(Trilinos_CXX11_DISABLED_BY_USER ON)
-ENDIF()
-
 #
 # B) Pull in the TriBITS system and execute
 #
@@ -95,9 +87,3 @@ SET(${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION_DEFAULT FALSE
 
 # Do all of the processing for this Tribits project
 TRIBITS_PROJECT()
-
-
-#verify C++11 stayed on when it isn't explicitly disabled.
-IF(NOT Trilinos_CXX11_DISABLED_BY_USER AND NOT Trilinos_ENABLE_CXX11)
-  MESSAGE(FATAL_ERROR "C++11 is turned on, and your compiler does not support the necessary C++11 features.  Please upgrade your compiler - this is the best option. It is also possible to disable C++11 support using -DTrilinos_ENABLE_CXX11=OFF if you are sure that no enabled packages use C++11 features. Note that the list of packages that use C++11 features is not formally tracked by the build system.")
-ENDIF()
