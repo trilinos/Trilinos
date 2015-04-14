@@ -49,7 +49,7 @@
 #endif // KOKKOS_HAVE_CXX11
 
 #include <Kokkos_Sparse_CrsMatrix.hpp>
-#include <impl/Kokkos_Sparse_impl_spmv.hpp>
+#include <Kokkos_Sparse_impl_spmv.hpp>
 
 namespace KokkosSparse {
 
