@@ -143,9 +143,10 @@ namespace Ioex {
     dbState = Ioss::STATE_UNKNOWN;
 
     // Set exodusII warning level.
-#if 0
-    ex_opts(EX_VERBOSE|EX_DEBUG);
-#endif
+    if (util().get_environment("EX_DEBUG", isParallel)) {
+      std::cerr << "IOEX: Setting EX_VERBOSE|EX_DEBUG because EX_DEBUG environment variable is set.\n";
+      ex_opts(EX_VERBOSE|EX_DEBUG);
+    }
 
     if (!is_input()) {
       // Check whether appending to existing file...
