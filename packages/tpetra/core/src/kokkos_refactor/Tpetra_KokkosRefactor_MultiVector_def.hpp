@@ -3071,7 +3071,7 @@ namespace Tpetra {
         X_ret = rcp (new MV (this->getMap (), X_sub, origView_));
       }
       else {
-        if (colRng.size () == 1) {
+        if (static_cast<size_t> (colRng.size ()) == static_cast<size_t> (1)) {
           // We're only asking for one column, so the result does have
           // constant stride, even though this MultiVector does not.
           const std::pair<size_t, size_t> col (whichVectors_[0] + colRng.lbound (),
@@ -3109,7 +3109,8 @@ namespace Tpetra {
         "process in this MultiVector's communicator.  This should never "
         "happen.  Please report this bug to the Tpetra developers.");
 
-      if (! X_ret.is_null () && X_ret->getNumVectors () != colRng.size ()) {
+      if (! X_ret.is_null () &&
+          X_ret->getNumVectors () != static_cast<size_t> (colRng.size ())) {
         lclSuccess = 0;
       }
       reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
