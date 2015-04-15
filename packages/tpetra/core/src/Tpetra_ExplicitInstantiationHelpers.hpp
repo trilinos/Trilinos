@@ -69,11 +69,11 @@
 #  define TPETRA_MACRO_TEMPLATE_INSTANT_TBBNODE(SCALAR,LO,GO,INSTANT_MACRO)
 #endif
 
-/** \brief Instantiate a macro template for the KokkosClassic::TPINode */
+/** \brief Instantiate a macro template for the KokkosClassic::DoNotUse::TPINode */
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
 #  include <Kokkos_TPINode.hpp>
 #  define TPETRA_MACRO_TEMPLATE_INSTANT_TPINODE(SCALAR,LO,GO,INSTANT_MACRO)\
-     INSTANT_MACRO(SCALAR,LO,GO,KokkosClassic::TPINode)
+  INSTANT_MACRO(SCALAR,LO,GO,KokkosClassic::DoNotUse::TPINode)
 #else
 #  define TPETRA_MACRO_TEMPLATE_INSTANT_TPINODE(SCALAR,LO,GO,INSTANT_MACRO)
 #endif

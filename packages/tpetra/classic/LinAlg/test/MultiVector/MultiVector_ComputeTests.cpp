@@ -141,7 +141,7 @@ namespace {
 #endif
 
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  typedef KokkosClassic::TPINode KokkosClassic_TPINode;
+  typedef KokkosClassic::DoNotUse::TPINode KokkosClassic_TPINode;
 #define UNIT_TEST_TPINODE(SCALAR) \
   ALL_UNIT_TESTS_SCALAR_NODE( SCALAR, KokkosClassic_TPINode )
 #else

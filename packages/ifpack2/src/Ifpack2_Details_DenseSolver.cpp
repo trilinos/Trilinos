@@ -60,14 +60,6 @@ namespace Details {
 // otherwise the macro definition includes the whole rest of the file.
 #define IFPACK2_INST_DETAILS_DENSE_SOLVER(S,LO,GO) template class DenseSolver<Tpetra::CrsMatrix< S , LO , GO > >; template class DenseSolver<Tpetra::RowMatrix< S , LO , GO > >;
 
-  // FIXME (mfh 17,21 Jul 2014) Work-arounds for Ifpack2's incomplete
-  // ETI implementation.  It doesn't work if you write "template<>
-  // class ...", for some reason I don't fully understand.
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE) && defined(HAVE_TPETRA_INST_DOUBLE)
-  template class DenseSolver<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> >;
-  template class DenseSolver<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode> >;
-#endif
-
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 
   IFPACK2_INSTANTIATE_SLG(IFPACK2_INST_DETAILS_DENSE_SOLVER)

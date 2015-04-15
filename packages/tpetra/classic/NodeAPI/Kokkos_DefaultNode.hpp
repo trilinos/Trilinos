@@ -110,7 +110,7 @@ namespace Details {
   class DefaultNode {
   public:
 #if defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE)
-    typedef TPINode DefaultNodeType;
+    typedef ::KokkosClassic::DoNotUse::TPINode DefaultNodeType;
 #elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TBBNODE)
     typedef TBBNode DefaultNodeType;
 #elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPNODE)

@@ -44,10 +44,10 @@
 
 /// \file Kokkos_TPINode.hpp
 /// \brief Declaration and definition of the (now DEPRECATED)
-///   KokkosClassic::TPINode Node type.
-/// \warning KokkosClassic::TPINode has been DEPRECATED.  For a Node
-///   that uses Pthreads for thread-level parallelism, please use
-///   Kokkos::Compat::KokkosThreadsWrapperNode instead.
+///   KokkosClassic::DoNotUse::TPINode Node type.
+/// \warning KokkosClassic::DoNotUse::TPINode has been DEPRECATED.
+///   For a Node that uses Pthreads for thread-level parallelism,
+///   please use Kokkos::Compat::KokkosThreadsWrapperNode instead.
 
 #include "Kokkos_ConfigDefs.hpp"
 
@@ -141,6 +141,8 @@ namespace KokkosClassic {
     *(static_cast<ReductionType*>(work->reduce)) = const_wdp_wrapper->wdp.identity();
   }
 
+  namespace DoNotUse {
+
   /// \brief Node API implementation that uses the ThreadPool Trilinos
   ///   package for thread-level parallelism.
   /// \ingroup kokkos_node_api
@@ -217,6 +219,8 @@ namespace KokkosClassic {
     int curNumThreads_;
   };
 
+  } // namespace DoNotUse
+
 #ifdef _MSC_VER
 #pragma warning(push)
 // destructor could not be generated because a base class destructor is inaccessible
@@ -237,7 +241,7 @@ namespace KokkosClassic {
 namespace Kokkos {
   namespace Compat {
     template <>
-    struct NodeDevice<KokkosClassic::TPINode> {
+    struct NodeDevice<KokkosClassic::DoNotUse::TPINode> {
       typedef Kokkos::Threads type;
     };
   }

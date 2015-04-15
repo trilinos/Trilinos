@@ -61,11 +61,7 @@
 #include <MatrixMarket_Tpetra.hpp>
 #include <algorithm>
 #include <functional>
-#ifndef USE_KOKKOS_CLASSIC
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
-#else
-#include <Kokkos_TPINode.hpp>
-#endif
 #include <impl/Kokkos_Timer.hpp>
 
 template<class CrsMatrix, class Vector>
@@ -193,7 +189,6 @@ int main(int argc, char *argv[]) {
   typedef int                                                     Ordinal;
 
 #pragma message "HUHU?"
-#ifndef USE_KOKKOS_CLASSIC
 #ifdef COMPILE_CUDA
   typedef Kokkos::Compat::KokkosCudaWrapperNode                Node;
 #pragma message "Compile CUDA"
@@ -207,9 +202,6 @@ int main(int argc, char *argv[]) {
     typedef Kokkos::Compat::KokkosThreadsWrapperNode                Node;
     #endif
   #endif
-#endif
-#else
-  typedef KokkosClassic::TPINode                Node;
 #endif
   typedef Tpetra::MpiPlatform<Node>                            Platform;
   typedef Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal,Node>          CrsMatrix;

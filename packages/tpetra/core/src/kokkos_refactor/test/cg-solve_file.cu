@@ -59,11 +59,6 @@
 /*#include <MatrixMarket_Tpetra.hpp>
 #include <algorithm>
 #include <functional>
-#ifndef USE_KOKKOS_CLASSIC
-//#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
-#else
-#include <Kokkos_TPINode.hpp>
-#endif
 #include <impl/Kokkos_Timer.hpp>
 
 /*
@@ -192,7 +187,6 @@ int main(int argc, char *argv[]) {
   typedef Teuchos::ScalarTraits<Scalar>::magnitudeType            Magnitude;
   typedef int                                                     Ordinal;
 
-#ifndef USE_KOKKOS_CLASSIC
 #ifdef COMPILE_CUDA
   typedef Kokkos::Compat::KokkosCudaWrapperNode                Node;
 #else
@@ -203,9 +197,6 @@ int main(int argc, char *argv[]) {
       typedef Kokkos::Compat::KokkosOpenMPWrapperNode                Node;
     #endif
   #endif
-#endif
-#else
-  typedef KokkosClassic::TPINode                Node;
 #endif
   typedef Tpetra::MpiPlatform<Node>                            Platform;
   typedef Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal,Node>          CrsMatrix;

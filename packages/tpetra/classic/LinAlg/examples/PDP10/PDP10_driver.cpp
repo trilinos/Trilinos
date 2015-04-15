@@ -93,7 +93,7 @@
     return serialnode;
   }
 
-  using KokkosClassic::TPINode;
+  using KokkosClassic::DoNotUse::TPINode;
   template <>
   RCP<TPINode> getNode<TPINode>() {
     static RCP<TPINode> tpinode;

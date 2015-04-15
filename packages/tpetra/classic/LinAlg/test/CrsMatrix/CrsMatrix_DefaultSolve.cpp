@@ -410,7 +410,7 @@ namespace {
 #endif
 
 #ifdef HAVE_TPETRACLASSIC_THREADPOOL
-  typedef KokkosClassic::TPINode KokkosClassic_TPINode;
+  typedef KokkosClassic::DoNotUse::TPINode KokkosClassic_TPINode;
 #define UNIT_TEST_TPINODE(ORDINAL, SCALAR) \
   ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, KokkosClassic_TPINode )
 #else

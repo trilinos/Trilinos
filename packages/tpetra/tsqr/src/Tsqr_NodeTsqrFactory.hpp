@@ -203,12 +203,12 @@ namespace TSQR {
 
 #if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
   //
-  // Specialization of NodeTsqrFactory for KokkosClassic::TPINode.
+  // Specialization of NodeTsqrFactory for KokkosClassic::DoNotUse::TPINode.
   //
   template<class Scalar, class LocalOrdinal>
-  class NodeTsqrFactory<KokkosClassic::TPINode, Scalar, LocalOrdinal> {
+  class NodeTsqrFactory<KokkosClassic::DoNotUse::TPINode, Scalar, LocalOrdinal> {
   public:
-    typedef KokkosClassic::TPINode node_type;
+    typedef KokkosClassic::DoNotUse::TPINode node_type;
     typedef Teuchos::RCP<node_type> node_ptr;
     typedef KokkosNodeTsqr<LocalOrdinal, Scalar, node_type> node_tsqr_type;
 

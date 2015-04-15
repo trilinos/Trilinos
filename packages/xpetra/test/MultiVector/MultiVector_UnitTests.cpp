@@ -2677,7 +2677,7 @@ typedef std::complex<double> ComplexDouble;
 #endif
 
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  using KokkosClassic::TPINode;
+  using KokkosClassic::DoNotUse::TPINode;
 #define UNIT_TEST_TPINODE(MV, V, ORDINAL, SCALAR) \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MV, V, ORDINAL, SCALAR, TPINode )
 #else

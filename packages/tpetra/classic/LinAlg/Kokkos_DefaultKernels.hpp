@@ -123,12 +123,15 @@ namespace KokkosClassic {
 #endif // HAVE_TPETRACLASSIC_TBB
 
 #if defined(HAVE_TPETRACLASSIC_TPI)
-  class TPINode;
+  namespace DoNotUse {
+    class TPINode;
+  } // namespace DoNotUse
+
   //! Partial specialization for TPINode, using first-touch allocation.
   template <class Scalar, class Ordinal>
-  struct DefaultKernels<Scalar, Ordinal, TPINode> {
-    typedef DefaultHostSparseOps<void, Ordinal, TPINode, details::FirstTouchCRSAllocator> SparseOps;
-    typedef DefaultRelaxation<Scalar, Ordinal, TPINode> Relaxations;
+  struct DefaultKernels<Scalar, Ordinal, DoNotUse::TPINode> {
+    typedef DefaultHostSparseOps<void, Ordinal, DoNotUse::TPINode, details::FirstTouchCRSAllocator> SparseOps;
+    typedef DefaultRelaxation<Scalar, Ordinal, DoNotUse::TPINode> Relaxations;
   };
 #endif // HAVE_TPETRACLASSIC_TPI
 

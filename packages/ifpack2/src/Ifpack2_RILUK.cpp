@@ -51,11 +51,6 @@ namespace Ifpack2 {
 
 #define LCLINST(S,LO,GO) template class RILUK<Tpetra::CrsMatrix<S, LO, GO> >; template class RILUK<Tpetra::RowMatrix<S, LO, GO> >;
 
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE) && defined(HAVE_TPETRA_INST_DOUBLE)
-  template class RILUK<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> >;
-  template class RILUK<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode> >;
-#endif
-
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 
   IFPACK2_INSTANTIATE_SLG(LCLINST)

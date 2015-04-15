@@ -705,14 +705,14 @@ namespace KokkosClassic {
 #endif // defined (HAVE_TPETRACLASSIC_SERIAL)
 
 #if defined (HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE)
-  // Partial specialization for TPINode.
+  // Partial specialization for DoNotUse::TPINode.
   template<class Scalar>
-  class MultiVector<Scalar, TPINode> {
+  class MultiVector<Scalar, DoNotUse::TPINode> {
   public:
     typedef Scalar ScalarType;
-    typedef TPINode NodeType;
+    typedef DoNotUse::TPINode NodeType;
 
-    MultiVector (RCP<TPINode> node)
+    MultiVector (RCP<DoNotUse::TPINode> node)
       : node_(node)
       , numRows_(0)
       , numCols_(0)
@@ -806,13 +806,13 @@ namespace KokkosClassic {
       contigValues_[i + j*getStride()] = newVal;
     }
 
-    const MultiVector<Scalar,TPINode>
+    const MultiVector<Scalar,DoNotUse::TPINode>
     offsetView (size_t newNumRows,
                 size_t newNumCols,
                 size_t offsetRow,
                 size_t offsetCol) const
     {
-      MultiVector<Scalar,TPINode> B (this->getNode ());
+      MultiVector<Scalar,DoNotUse::TPINode> B (this->getNode ());
 
       const size_t origNumRows = this->getOrigNumRows ();
       const size_t origNumCols = this->getOrigNumCols ();
@@ -864,13 +864,13 @@ namespace KokkosClassic {
       return B;
     }
 
-    MultiVector<Scalar,TPINode>
+    MultiVector<Scalar,DoNotUse::TPINode>
     offsetViewNonConst (size_t newNumRows,
                         size_t newNumCols,
                         size_t offsetRow,
                         size_t offsetCol)
     {
-      MultiVector<Scalar,TPINode> B (this->getNode ());
+      MultiVector<Scalar,DoNotUse::TPINode> B (this->getNode ());
 
       const size_t origNumRows = this->getOrigNumRows ();
       const size_t origNumCols = this->getOrigNumCols ();
@@ -922,7 +922,7 @@ namespace KokkosClassic {
       return B;
     }
 
-    Teuchos::RCP<TPINode> getNode() const { return node_; }
+    Teuchos::RCP<DoNotUse::TPINode> getNode() const { return node_; }
     size_t getNumRows() const { return numRows_; }
     size_t getNumCols() const { return numCols_; }
     size_t getStride() const { return stride_; }
@@ -930,7 +930,7 @@ namespace KokkosClassic {
     size_t getOrigNumCols() const { return origNumCols_; }
 
   private:
-    Teuchos::RCP<TPINode> node_;
+    Teuchos::RCP<DoNotUse::TPINode> node_;
     Teuchos::ArrayRCP<Scalar> contigValues_;
     size_t numRows_;
     size_t numCols_;
