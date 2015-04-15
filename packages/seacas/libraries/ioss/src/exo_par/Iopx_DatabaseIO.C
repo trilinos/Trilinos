@@ -4510,6 +4510,13 @@ namespace Iopx {
       }
 
       {
+	if (!properties.exists("OMIT_QA_RECORDS")) {
+	  put_qa();
+	}
+	if (!properties.exists("OMIT_INFO_RECORDS")) {
+	  put_info();
+	}
+	
         // Write the metadata to the exodusII file...
         Ioex::Internals data(get_file_pointer(), maximumNameLength, util());
 	mesh.comm.outputNemesis = false;

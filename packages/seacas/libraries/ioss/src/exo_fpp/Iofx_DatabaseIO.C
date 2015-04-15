@@ -5252,6 +5252,16 @@ namespace Iofx {
       }
       m_groupCount[EX_SIDE_SET] = mesh.sidesets.size();
 
+      {
+	Ioss::SerializeIO       serializeIO__(this);
+	if (!properties.exists("OMIT_QA_RECORDS")) {
+	  put_qa();
+	}
+	if (!properties.exists("OMIT_INFO_RECORDS")) {
+	  put_info();
+	}
+      }
+
       gather_communication_metadata(&mesh.comm);
 
       // Write the metadata to the exodusII file...

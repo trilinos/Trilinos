@@ -1612,13 +1612,6 @@ namespace Ioex {
   {
     Ioss::SerializeIO       serializeIO__(this);
     
-    if (!properties.exists("OMIT_QA_RECORDS")) {
-      put_qa();
-    }
-    if (!properties.exists("OMIT_INFO_RECORDS")) {
-      put_info();
-    }
-
     // Write attribute names (if any)...
     char field_suffix_separator = get_field_separator();
     write_attribute_names(get_file_pointer(), EX_NODE_SET,   get_region()->get_nodesets(),       field_suffix_separator);
