@@ -86,28 +86,24 @@ spmv(const char mode[],
   // Check compatibility of dimensions at run time.
   if((mode[0]==NoTranspose[0])||(mode[0]==Conjugate[0])) {
     if ((x.dimension_1 () != y.dimension_1 ()) ||
-        (A.numCols() > x.dimension_0()) ||
-        (A.numRows() > y.dimension_0()) ){
+        (static_cast<size_t> (A.numCols ()) > static_cast<size_t> (x.dimension_0 ())) ||
+        (static_cast<size_t> (A.numRows ()) > static_cast<size_t> (y.dimension_0 ()))) {
       std::ostringstream os;
       os << "KokkosBlas::spmv: Dimensions do not match: "
          << ", A: " << A.numRows () << " x " << A.numCols()
-         << ", x: " << x.dimension_0 () << " x " << x.dimension_1()
-         << ", y: " << y.dimension_0 () << " x " << y.dimension_1()
-         ;
-
+         << ", x: " << x.dimension_0 () << " x " << x.dimension_1 ()
+         << ", y: " << y.dimension_0 () << " x " << y.dimension_1 ();
       Kokkos::Impl::throw_runtime_exception (os.str ());
     }
   } else {
     if ((x.dimension_1 () != y.dimension_1 ()) ||
-        (A.numCols() > y.dimension_0()) ||
-        (A.numRows() > x.dimension_0()) ){
+        (static_cast<size_t> (A.numCols ()) > static_cast<size_t> (y.dimension_0 ())) ||
+        (static_cast<size_t> (A.numRows ()) > static_cast<size_t> (x.dimension_0 ()))) {
       std::ostringstream os;
       os << "KokkosBlas::spmv: Dimensions do not match (transpose): "
          << ", A: " << A.numRows () << " x " << A.numCols()
-         << ", x: " << x.dimension_0 () << " x " << x.dimension_1()
-         << ", y: " << y.dimension_0 () << " x " << y.dimension_1()
-         ;
-
+         << ", x: " << x.dimension_0 () << " x " << x.dimension_1 ()
+         << ", y: " << y.dimension_0 () << " x " << y.dimension_1 ();
       Kokkos::Impl::throw_runtime_exception (os.str ());
     }
   }
