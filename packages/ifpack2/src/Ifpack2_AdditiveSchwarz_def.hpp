@@ -563,9 +563,9 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       //   Y.putScalar (STS::zero ());
       // }
       if (!ZeroStartingSolution_ || ni > 0) {
+#ifdef HAVE_IFPACK2_DEBUG
         std::cerr << "OMG HERE I AM: ni = " << ni << std::endl;
 
-#ifdef HAVE_IFPACK2_DEBUG
         {
           typedef typename STS::magnitudeType magnitude_type;
           typedef Teuchos::ScalarTraits<magnitude_type> STM;
