@@ -524,7 +524,7 @@ namespace Iopx {
     m_groupCount[EX_SIDE_SET] = info.num_side_sets;
 
     if (nodeCount == 0) {
-      IOSS_WARNING << "No nodes were found in the model, file '" << get_filename() << "'";
+      IOSS_WARNING << "No nodes were found in the model, file '" << get_filename() << "'\n";
     } else if (nodeCount < 0) {
       // NOTE: Code will not continue past this call...
       std::ostringstream errmsg;
@@ -534,7 +534,7 @@ namespace Iopx {
     }
 
     if (elementCount == 0) {
-      IOSS_WARNING << "No elements were found in the model, file: '" << get_filename() << "'";
+      IOSS_WARNING << "No elements were found in the model, file: '" << get_filename() << "'\n";
     }
 
     if (elementCount < 0) {

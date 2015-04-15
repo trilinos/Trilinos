@@ -445,7 +445,7 @@ namespace Iofx {
 
     if (nodeCount == 0) {
       std::string decoded_filename = util().decode_filename(get_filename(), isParallel);
-      IOSS_WARNING << "No nodes were found in the model, file '" << decoded_filename << "'";
+      IOSS_WARNING << "No nodes were found in the model, file '" << decoded_filename << "'\n";
     } else if (nodeCount < 0) {
       // NOTE: Code will not continue past this call...
       std::string decoded_filename = util().decode_filename(get_filename(), isParallel);
@@ -457,7 +457,7 @@ namespace Iofx {
 
     if (elementCount == 0) {
       std::string decoded_filename = util().decode_filename(get_filename(), isParallel);
-      IOSS_WARNING << "No elements were found in the model, file: '" << decoded_filename << "'";
+      IOSS_WARNING << "No elements were found in the model, file: '" << decoded_filename << "'\n";
     }
 
     if (elementCount < 0) {
