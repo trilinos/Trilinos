@@ -423,13 +423,26 @@ namespace Iopx {
       }
 
       // Check properties handled post-create/open...
+      // NOTE: Compression is not supported in parallel output at this time...
       if (properties.exists("COMPRESSION_LEVEL")) {
+#if 0
         int comp_level = properties.get("COMPRESSION_LEVEL").get_int();
         ex_set_option(exodusFilePtr, EX_OPT_COMPRESSION_LEVEL, comp_level);
+#else
+	if (myProcessor == 0) {
+	  IOSS_WARNING << "WARNING: Compression is not supported in single-file parallel output mode.\n";
+	}
+#endif
       }
       if (properties.exists("COMPRESSION_SHUFFLE")) {
+#if 0
         int shuffle = properties.get("COMPRESSION_SHUFFLE").get_int();
         ex_set_option(exodusFilePtr, EX_OPT_COMPRESSION_SHUFFLE, shuffle);
+#else
+	if (myProcessor == 0) {
+	  IOSS_WARNING << "WARNING: Compression is not supported in single-file parallel output mode.\n";
+	}
+#endif
       }
 
     }
