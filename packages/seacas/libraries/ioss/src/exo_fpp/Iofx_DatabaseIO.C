@@ -5252,6 +5252,8 @@ namespace Iofx {
       }
       m_groupCount[EX_SIDE_SET] = mesh.sidesets.size();
 
+      gather_communication_metadata(&mesh.comm);
+
       {
 	Ioss::SerializeIO       serializeIO__(this);
 	if (!properties.exists("OMIT_QA_RECORDS")) {
@@ -5260,18 +5262,16 @@ namespace Iofx {
 	if (!properties.exists("OMIT_INFO_RECORDS")) {
 	  put_info();
 	}
-      }
 
-      gather_communication_metadata(&mesh.comm);
-
-      // Write the metadata to the exodusII file...
-      Ioex::Internals data(get_file_pointer(), maximumNameLength, util());
-      int ierr = data.write_meta_data(mesh);
+	// Write the metadata to the exodusII file...
+	Ioex::Internals data(get_file_pointer(), maximumNameLength, util());
+	int ierr = data.write_meta_data(mesh);
       
-      if (ierr < 0)
-	Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	if (ierr < 0)
+	  Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
     
-      output_other_meta_data();
+	output_other_meta_data();
+      }
     }
 
     void DatabaseIO::gather_communication_metadata(Ioex::CommunicationMetaData *meta)

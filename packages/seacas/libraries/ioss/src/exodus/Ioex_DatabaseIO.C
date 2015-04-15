@@ -1610,8 +1610,6 @@ namespace Ioex {
 
   void DatabaseIO::output_other_meta_data()
   {
-    Ioss::SerializeIO       serializeIO__(this);
-    
     // Write attribute names (if any)...
     char field_suffix_separator = get_field_separator();
     write_attribute_names(get_file_pointer(), EX_NODE_SET,   get_region()->get_nodesets(),       field_suffix_separator);
