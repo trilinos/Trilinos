@@ -82,12 +82,16 @@
 #include <unit_tests/BulkDataTester.hpp>
 #include "UnitTestCEOCommonUtils.hpp"
 #include <stk_mesh/base/MeshUtils.hpp>
+#include <stk_unit_test_utils/ioUtils.hpp>
+#include <stk_util/parallel/CommSparse.hpp>
 
 namespace stk
 {
 namespace mesh
 {
 class FieldBase;
+void communicateSharedEntityInfo(stk::mesh::BulkData &mesh, stk::CommSparse &comm, std::vector<std::vector<stk::mesh::shared_entity_type> > &shared_entities);
+
 }
 }
 
@@ -5907,6 +5911,131 @@ TEST(BulkData, test_destroy_ghosted_entity_then_create_locally_owned_entity_with
         stkMeshBulkData.modification_end();
 
     }
+}
+
+TEST(FaceCreation, test_face_creation_2Hexes_2procs)
+{
+    int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+    if (numProcs==2)
+    {
+        stk::mesh::MetaData meta(3);
+        stk::mesh::unit_test::BulkDataFaceSharingTester mesh(meta, MPI_COMM_WORLD);
+
+        const std::string generatedMeshSpec = "generated:1x1x2";
+        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, mesh, MPI_COMM_WORLD);
+
+        int procId = stk::parallel_machine_rank(MPI_COMM_WORLD);
+
+        unsigned elem_id = procId+1;
+
+        stk::mesh::Entity elem = mesh.get_entity(stk::topology::ELEM_RANK, elem_id);
+
+        unsigned face_node_ids[] = { 5, 6, 8, 7 };
+        size_t num_nodes_on_entity = 4;
+        stk::mesh::EntityVector nodes(num_nodes_on_entity);
+        if (procId==0)
+        {
+            for(size_t n = 0; n < num_nodes_on_entity; ++n)
+            {
+                nodes[n] = mesh.get_entity(stk::topology::NODE_RANK, face_node_ids[n]);
+            }
+        }
+        else
+        {
+            for(size_t n = 0; n < num_nodes_on_entity; ++n)
+            {
+                unsigned index = num_nodes_on_entity - n - 1;
+                nodes[n] = mesh.get_entity(stk::topology::NODE_RANK, face_node_ids[index]);
+            }
+        }
+
+        mesh.modification_begin();
+
+        stk::mesh::Entity side = stk::mesh::declare_element_to_sub_topology_with_nodes(mesh, elem, nodes, 1+procId, stk::topology::FACE_RANK,
+                meta.get_topology_root_part(stk::topology::QUAD_4_2D));
+
+        EXPECT_TRUE(mesh.is_valid(side));
+
+        std::vector<stk::mesh::shared_entity_type> shared_entity_map;
+        mesh.my_markEntitiesForResolvingSharingInfoUsingNodes(stk::topology::FACE_RANK, shared_entity_map);
+
+        ASSERT_EQ(1u, shared_entity_map.size());
+
+        std::sort(shared_entity_map.begin(), shared_entity_map.end());
+
+        EXPECT_EQ(side, shared_entity_map[0].entity);
+
+        std::vector<std::vector<stk::mesh::shared_entity_type> > shared_entities(mesh.parallel_size());
+        mesh.my_fillSharedEntities(mesh.shared_ghosting(), mesh, shared_entity_map, shared_entities);
+
+        int otherProc = 1 - procId;
+        EXPECT_TRUE(shared_entities[procId].empty());
+        EXPECT_EQ(1u, shared_entities[otherProc].size());
+
+        stk::CommSparse comm(mesh.parallel());
+        communicateSharedEntityInfo(mesh, comm, shared_entities);
+        mesh.my_unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatNeedAlsoHaveEntity(comm, shared_entity_map);
+
+        EXPECT_TRUE(mesh.my_internal_is_entity_marked(side) == stk::mesh::BulkData::IS_SHARED);
+
+        mesh.resolveUniqueIdForSharedEntityAndCreateCommMapInfoForSharingProcs(shared_entity_map);
+
+        mesh.modification_end_for_entity_creation(stk::topology::FACE_RANK);
+
+        std::vector<size_t> counts;
+        stk::mesh::comm_mesh_counts(mesh, counts);
+        EXPECT_EQ(1u, counts[stk::topology::FACE_RANK]);
+    }
+}
+
+//
+TEST(BulkData, test_parallel_entity_sharing)
+{
+    stk::mesh::shared_entity_type sentity;
+
+    stk::mesh::Entity entity;
+    stk::mesh::EntityKey quad(stk::mesh::EntityKey(stk::topology::ELEM_RANK, 1));
+
+    entity.set_local_offset(1);
+    size_t num_nodes_on_entity = 4;
+    std::vector<stk::mesh::EntityKey> keys;
+    keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 1));
+    keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 2));
+    keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 3));
+    keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 4));
+
+    stk::topology topo = stk::topology::QUAD_4_2D;
+
+    sentity.entity = entity;
+    sentity.topology = topo;
+    sentity.nodes.resize(num_nodes_on_entity);
+    for(size_t n = 0; n < num_nodes_on_entity; ++n)
+    {
+        sentity.nodes[n]=keys[n];
+    }
+
+    sentity.local_key = quad;
+    sentity.global_key = quad;
+
+    std::vector<stk::mesh::shared_entity_type> shared_entity_map;
+    shared_entity_map.push_back(sentity);
+
+    stk::mesh::shared_entity_type entity_from_other_proc;
+
+    entity_from_other_proc.entity = entity;
+    entity_from_other_proc.topology = topo;
+    entity_from_other_proc.nodes.resize(num_nodes_on_entity);
+    for(size_t n = 0; n < num_nodes_on_entity; ++n)
+    {
+        int index = num_nodes_on_entity - n - 1;
+        entity_from_other_proc.nodes[n]=keys[index];
+    }
+
+    entity_from_other_proc.local_key = quad;
+    entity_from_other_proc.global_key = quad;
+
+    int matching_index = stk::mesh::unit_test::does_entity_exist_in_list(shared_entity_map, entity_from_other_proc);
+    EXPECT_TRUE(matching_index >= 0);
 }
 
 }// empty namespace

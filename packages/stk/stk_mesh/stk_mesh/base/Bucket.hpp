@@ -369,6 +369,13 @@ public:
 
   void debug_dump(std::ostream& out, unsigned ordinal = -1u) const;
 
+protected:
+  void change_existing_connectivity(unsigned bucket_ordinal, stk::mesh::Entity* new_nodes);
+  void change_existing_permutation_for_connected_element(unsigned bucket_ordinal_of_lower_ranked_entity, unsigned elem_connectivity_ordinal, stk::mesh::Permutation permut);
+  void change_existing_permutation_for_connected_edge(unsigned bucket_ordinal_of_higher_ranked_entity, unsigned edge_connectivity_ordinal, stk::mesh::Permutation permut);
+  void change_existing_permutation_for_connected_face(unsigned bucket_ordinal_of_higher_ranked_entity, unsigned face_connectivity_ordinal, stk::mesh::Permutation permut);
+  virtual ~Bucket();
+
 private:
 
   bool destroy_relation(Entity e_from, Entity e_to, const RelationIdentifier local_id );
@@ -408,9 +415,8 @@ private:
    */
   BulkData & bulk_data() const { return mesh(); }
 
-  ~Bucket();
-
   Bucket();
+
   Bucket( const Bucket & );
   Bucket & operator = ( const Bucket & );
 

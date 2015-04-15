@@ -49,6 +49,9 @@
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
+#include <stk_unit_test_utils/ioUtils.hpp>
+
+#include "BulkDataTester.hpp"
 
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { struct EntitySideComponent; } }
@@ -59,6 +62,7 @@ void unpack_not_owned_verify_compare_closure_relations( const BulkData &        
                                                         Entity                       entity,
                                                         std::vector<stk::mesh::Relation> const& recv_relations,
                                                         bool&                        bad_rel);
+
 }
 }
 
@@ -815,13 +819,11 @@ TEST(stkTopologyFunctions, check_permutation_consistency_parallel)
         unsigned global_side_id = 1;
         unsigned gold_side_ids[4] = {5,6,8,7};
 
-        stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
-        std::string name = "generated:1x1x2";
-        stkMeshIoBroker.add_mesh_database(name, stk::io::READ_MESH);
-        stkMeshIoBroker.create_input_mesh();
-        stkMeshIoBroker.populate_bulk_data();
+        stk::mesh::MetaData meta(3);
+        stk::mesh::unit_test::BulkDataFaceSharingTester mesh(meta, MPI_COMM_WORLD);
 
-        stk::mesh::BulkData &mesh = stkMeshIoBroker.bulk_data();
+        const std::string generatedMeshSpec = "generated:1x1x2";
+        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, mesh, MPI_COMM_WORLD);
 
         unsigned elem_id = 0;
         unsigned local_side_id = 0;
@@ -854,13 +856,20 @@ TEST(stkTopologyFunctions, check_permutation_consistency_parallel)
             nodes[i] = node;
         }
 
+        unsigned face_ords[2][4] = {
+                {0, 1, 2, 3},
+                {3, 2, 1, 0}
+        };
+
         mesh.modification_begin();
         stk::mesh::Entity side = mesh.declare_entity(stk::topology::FACE_RANK, global_side_id, parts);
-        for(unsigned i = 0; i < nodes.size(); ++i) {
-            mesh.declare_relation(side, nodes[i], i);
+        for(unsigned i = 0; i < nodes.size(); ++i)
+        {
+            mesh.declare_relation(side, nodes[i], face_ords[mesh.parallel_rank()][i]);
         }
         mesh.declare_relation(elem, side, local_side_id, perm);
-        EXPECT_NO_THROW(mesh.modification_end());
+
+        mesh.modification_end();
 
         std::vector<size_t> mesh_counts;
         stk::mesh::comm_mesh_counts(mesh, mesh_counts);

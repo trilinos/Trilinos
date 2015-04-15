@@ -720,7 +720,9 @@ protected: //functions
   PairIterEntityComm internal_entity_comm_map_shared(const EntityKey & key) const { return m_entity_comm_map.shared_comm_info(key); }
 
   void markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::EntityRank entityRank, std::vector<shared_entity_type>& shared_entities);
-  void gather_shared_nodes(std::vector<EntityKey> & shared_nodes);
+  virtual void sortNodesIfNeeded(std::vector<stk::mesh::EntityKey>& nodes);
+
+  void gather_shared_nodes(std::vector<Entity> & shared_nodes);
   inline bool internal_set_parallel_owner_rank_but_not_comm_lists(Entity entity, int in_owner_rank);
 
   impl::EntityRepository &get_entity_repository() { return m_entity_repo; }
@@ -788,9 +790,8 @@ protected: //functions
 
   void mark_entity_and_upward_related_entities_as_modified(Entity entity);
 
-  void resolveUniqueIdForSharedEntityAndCreateCommMapInfoForSharingProcs(std::vector<shared_entity_type> & shared_entity_map);
   void update_shared_entities_global_ids(std::vector<shared_entity_type> & shared_entity_map);
-  void resolve_entity_sharing(stk::mesh::EntityRank entityRank, std::vector<EntityKey> &entity_keys);
+  void resolve_entity_sharing(stk::mesh::EntityRank entityRank, std::vector<Entity> &entity_keys);
 
   void internal_resolve_shared_modify_delete();
   void update_comm_list_based_on_changes_in_comm_map();
@@ -800,6 +801,9 @@ protected: //functions
   void internal_resolve_parallel_create();
   void internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank(stk::mesh::EntityRank entityRank, std::vector<stk::mesh::Entity> & shared_new );
   virtual void internal_update_sharing_comm_map_and_fill_list_modified_shared_entities(std::vector<stk::mesh::Entity> & shared_new );
+  void extract_entity_from_shared_entity_type(const std::vector<shared_entity_type>& shared_entities, std::vector<Entity>& shared_new);
+  void fill_shared_entities_of_rank(stk::mesh::EntityRank rank, std::vector<Entity> &shared_new);
+
   virtual void internal_resolve_send_ghost_membership();
   virtual bool should_sort_buckets_by_first_entity_identifier() const;
   void resolve_ownership_of_modified_entities(const std::vector<stk::mesh::Entity> &shared_new);
@@ -898,6 +902,20 @@ protected: //functions
   bool comm_mesh_verify_parallel_consistency(std::ostream & error_log);
   void delete_shared_entities_which_are_no_longer_in_owned_closure();
   void write_modification_counts();
+  virtual void is_entity_shared(std::vector<shared_entity_type>& shared_entity_map, int proc_id, shared_entity_type &sentity);
+
+  void fillSharedEntities(stk::mesh::Ghosting& ghost_id,
+                          stk::mesh::BulkData &mesh,
+                          std::vector<shared_entity_type> & shared_entity_map,
+                          std::vector<std::vector<shared_entity_type> > &shared_entities);
+
+  void unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatNeedAlsoHaveEntity(stk::CommSparse &comm, std::vector<shared_entity_type> & shared_entity_map);
+
+  virtual void resolveUniqueIdForSharedEntityAndCreateCommMapInfoForSharingProcs(std::vector<shared_entity_type> & shared_entity_map);
+
+  inline void internal_mark_entity(Entity entity, entitySharing sharedType);
+
+  void internal_change_entity_key(EntityKey old_key, EntityKey new_key, Entity entity);
 
 private: //functions
 
@@ -958,15 +976,10 @@ private: //functions
   inline void set_entity_key(Entity entity, EntityKey key);
   void generate_send_list(const int p_rank, std::vector<EntityProc> & send_list);
 
-  void unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatNeedAlsoHaveEntity(stk::CommSparse &comm, std::vector<shared_entity_type> & shared_entity_map);
-
-  inline void internal_mark_entity(Entity entity, entitySharing sharedType);
   inline bool internal_add_node_sharing_called() const;
 
   void internal_change_owner_in_comm_data(const EntityKey& key, int new_owner);
   void internal_sync_comm_list_owners();
-
-  void internal_change_entity_key(EntityKey old_key, EntityKey new_key, Entity entity);
 
   void addMeshEntities(stk::topology::rank_t rank, const std::vector<stk::mesh::EntityId> new_ids,
          const PartVector &rem, const PartVector &add, EntityVector &requested_entities);
@@ -1125,10 +1138,7 @@ private: //functions
                                    stk::mesh::BulkData &mesh,
                                    std::vector<stk::mesh::EntityKey> nodes,
                                    EntityCommInfoVector &sharing_processors);
-  void fillSharedEntities(stk::mesh::Ghosting& ghost_id,
-                          stk::mesh::BulkData &mesh,
-                          std::vector<shared_entity_type> & shared_entity_map,
-                          std::vector<std::vector<shared_entity_type> > &shared_entities);
+
   void determineEntitiesThatNeedGhosting(stk::mesh::BulkData &stkMeshBulkData,
                                          stk::mesh::Entity edge,
                                          std::vector<stk::mesh::Entity>& entitiesConnectedToNodes,
