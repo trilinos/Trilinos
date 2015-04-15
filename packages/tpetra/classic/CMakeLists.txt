@@ -14,8 +14,8 @@ TRIBITS_ADD_DEBUG_OPTION()
 ASSERT_DEFINED(Tpetra_ENABLE_Kokkos_Refactor)
 
 #
-# Decide whether to enable KokkosClassic::OpenMPNode (which is
-# DEPRECATED and must be enabled explicitly).  This requires that
+# Decide whether to enable KokkosClassic::DoNotUse::OpenMPNode (which
+# is DEPRECATED and must be enabled explicitly).  This requires that
 # OpenMP be enabled in Trilinos.
 #
 ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_OpenMP)
@@ -23,7 +23,7 @@ GLOBAL_SET(${PACKAGE_NAME}_ENABLE_OpenMPNode_DEFAULT OFF)
 TRIBITS_ADD_OPTION_AND_DEFINE( 
   ${PACKAGE_NAME}_ENABLE_OpenMPNode
   HAVE_TPETRACLASSIC_OPENMP
-  "Enable the KokkosClassic::OpenMPNode Node type in ${PACKAGE_NAME} (only works if ${PROJECT_NAME}_ENABLE_OpenMP is enabled).  This Node type is DEPRECATED and OFF by default."
+  "Enable the KokkosClassic::DoNotUse::OpenMPNode Node type in ${PACKAGE_NAME} (only works if ${PROJECT_NAME}_ENABLE_OpenMP is enabled).  This Node type is DEPRECATED and OFF by default."
   ${${PACKAGE_NAME}_ENABLE_OpenMPNode_DEFAULT}
   )
 IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_OpenMPNode)

@@ -402,7 +402,7 @@ namespace {
 #endif
 
 #ifdef HAVE_TPETRACLASSIC_OPENMP
-  typedef KokkosClassic::OpenMPNode KokkosClassic_OpenMPNode;
+  typedef KokkosClassic::DoNotUse::OpenMPNode KokkosClassic_OpenMPNode;
 #define UNIT_TEST_OPENMPNODE(ORDINAL, SCALAR) \
   ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, KokkosClassic_OpenMPNode )
 #else

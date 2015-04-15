@@ -136,12 +136,15 @@ namespace KokkosClassic {
 #endif // HAVE_TPETRACLASSIC_TPI
 
 #if defined(HAVE_TPETRACLASSIC_OPENMP)
-  class OpenMPNode;
+  namespace DoNotUse {
+    class OpenMPNode;
+  } // namespace DoNotUse
+
   //! Partial specialization for OpenMPNode, using first-touch allocation.
   template <class Scalar, class Ordinal>
-  struct DefaultKernels<Scalar, Ordinal, OpenMPNode> {
-    typedef DefaultHostSparseOps<void, Ordinal, OpenMPNode, details::FirstTouchCRSAllocator> SparseOps;
-    typedef DefaultRelaxation<Scalar, Ordinal, OpenMPNode> Relaxations;
+  struct DefaultKernels<Scalar, Ordinal, DoNotUse::OpenMPNode> {
+    typedef DefaultHostSparseOps<void, Ordinal, DoNotUse::OpenMPNode, details::FirstTouchCRSAllocator> SparseOps;
+    typedef DefaultRelaxation<Scalar, Ordinal, DoNotUse::OpenMPNode> Relaxations;
   };
 #endif // HAVE_TPETRACLASSIC_OPENMP
 

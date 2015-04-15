@@ -114,7 +114,7 @@ namespace Details {
 #elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TBBNODE)
     typedef TBBNode DefaultNodeType;
 #elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPNODE)
-    typedef OpenMPNode DefaultNodeType;
+    typedef ::KokkosClassic::DoNotUse::OpenMPNode DefaultNodeType;
 #elif defined(HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT)
 #  if defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE)
     typedef ::Kokkos::Compat::KokkosCudaWrapperNode DefaultNodeType;

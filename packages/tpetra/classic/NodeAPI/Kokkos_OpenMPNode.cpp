@@ -49,6 +49,7 @@
 #include <Teuchos_ParameterList.hpp>
 
 namespace KokkosClassic {
+namespace DoNotUse {
 
   OpenMPNode::OpenMPNode () :
     curNumThreads_ (-1), // Default: Let OpenMP pick the number of threads
@@ -98,6 +99,7 @@ namespace KokkosClassic {
     return "OpenMP";
   }
 
+} // namespace DoNotUse
 } // namespace KokkosClassic
 
 #endif // HAVE_TPETRACLASSIC_OPENMP
