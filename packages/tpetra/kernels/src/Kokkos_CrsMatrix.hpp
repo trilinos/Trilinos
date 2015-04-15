@@ -54,8 +54,8 @@
 #include <algorithm>
 
 #include <Kokkos_Core.hpp>
+#include <Kokkos_ArithTraits.hpp>
 #include <Kokkos_StaticCrsGraph.hpp>
-#include <Kokkos_MV.hpp>
 
 #ifdef KOKKOS_USE_CUSPARSE
 #  include <cusparse.h>

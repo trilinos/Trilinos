@@ -49,7 +49,6 @@
   #include "Tpetra_Vector_decl.hpp"
 #endif
 #include <KokkosCompat_View.hpp>
-#include <Kokkos_MV.hpp>
 
 namespace Tpetra {
 
