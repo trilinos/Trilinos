@@ -45,8 +45,8 @@
 /// \file Tpetra_Experimental_BlockCrsMatrix_decl.hpp
 /// \brief Declaration of Tpetra::Experimental::BlockCrsMatrix
 
+#include <ctime>
 #include <Tpetra_ConfigDefs.hpp>
-#include <unistd.h>
 #include <Tpetra_CrsGraph.hpp>
 #include <Tpetra_RowMatrix.hpp>
 #include <Tpetra_Experimental_BlockMultiVector.hpp>
@@ -1089,7 +1089,10 @@ public:
       printMatrixMarketHeader = params.get<bool>("print MatrixMarket header");
 
     if (printMatrixMarketHeader && myRank==0) {
+      std::time_t now = std::time(NULL);
       os << "%%MatrixMarket matrix coordinate real general" << std::endl;
+      os << "% time stamp: " << ctime(&now);
+      os << "% written from " << numProcs << " processes" << std::endl;
       os << "% point representation of Tpetra::Experimental::BlockCrsMatrix" << std::endl;
       size_t numRows = A.getGlobalNumRows();
       size_t numCols = A.getGlobalNumCols();
@@ -1133,7 +1136,6 @@ public:
         TEUCHOS_TEST_FOR_EXCEPTION(myRank>0 && curStripSize!=0,
           std::runtime_error, "Tpetra::Experimental::blockCrsMatrixWriter: (pid "
           << myRank << ") map size should be zero, but is " << curStripSize);
-        comm->barrier();
         RCP<map_type> importMeshGidMap = rcp(new map_type(TOT::invalid(), importMeshGidList(), A.getIndexBase(), comm));
         import_type gidImporter(allMeshGidsMap, importMeshGidMap);
         mv_type importMeshGids(importMeshGidMap, 1);
