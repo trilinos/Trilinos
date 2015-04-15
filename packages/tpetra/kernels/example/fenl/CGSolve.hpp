@@ -47,8 +47,8 @@
 #include <cmath>
 #include <limits>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_CrsMatrix.hpp>
-#include <Kokkos_MV.hpp>
+#include <Kokkos_Blas1.hpp>
+#include <Kokkos_Sparse.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
 #include <WrapMPI.hpp>
@@ -103,11 +103,11 @@ struct CGSolve< ImportType , SparseMatrixType , VectorType ,
 
     /* p  = x       */  Kokkos::deep_copy( p , x );
     /* import p     */  import( pAll );
-    /* Ap = A * p   */  Kokkos::MV_Multiply( Ap , A , pAll );
-    /* b - Ap => r  */  Kokkos::V_Add( r , 1.0 , b , -1.0 , Ap );
+    /* Ap = A * p   */  KokkosSparse::spmv( "N" , 1.0 , A , pAll , 0.0 , Ap);
+    /* b - Ap => r  */  KokkosBlas::update( 1.0 , b , -1.0 , Ap , 0.0 , r);
     /* p  = r       */  Kokkos::deep_copy( p , r );
 
-    double old_rdot = Kokkos::Example::all_reduce( Kokkos::V_Dot( r , r ) , import.comm );
+    double old_rdot = Kokkos::Example::all_reduce( KokkosBlas::dot( r , r ) , import.comm );
 
     norm_res  = sqrt( old_rdot );
     iteration = 0 ;
@@ -121,20 +121,20 @@ struct CGSolve< ImportType , SparseMatrixType , VectorType ,
 
       timer.reset();
       /* import p    */  import( pAll );
-      /* Ap = A * p  */  Kokkos::MV_Multiply( Ap , A , pAll );
+      /* Ap = A * p  */  KokkosSparse::spmv( "N", 1.0, A , pAll, 0.0, Ap);
       execution_space::fence();
       matvec_time += timer.seconds();
 
-      const double pAp_dot = Kokkos::Example::all_reduce( Kokkos::V_Dot( p , Ap ) , import.comm );
+      const double pAp_dot = Kokkos::Example::all_reduce( KokkosBlas::dot( p , Ap ) , import.comm );
       const double alpha   = old_rdot / pAp_dot ;
 
-      /* x +=  alpha * p ;  */ Kokkos::V_Add( x ,  alpha, p  , 1.0 , x );
-      /* r += -alpha * Ap ; */ Kokkos::V_Add( r , -alpha, Ap , 1.0 , r );
+      /* x +=  alpha * p ;  */ KokkosBlas::axpby( alpha, p  , 1.0 , x );
+      /* r += -alpha * Ap ; */ KokkosBlas::axpby(-alpha, Ap , 1.0 , r );
 
-      const double r_dot = Kokkos::Example::all_reduce( Kokkos::V_Dot( r , r ) , import.comm );
+      const double r_dot = Kokkos::Example::all_reduce( KokkosBlas::dot( r , r ) , import.comm );
       const double beta  = r_dot / old_rdot ;
 
-      /* p = r + beta * p ; */ Kokkos::V_Add( p , 1.0 , r , beta , p );
+      /* p = r + beta * p ; */ KokkosBlas::axpby( 1.0 , r , beta , p );
 
       norm_res = sqrt( old_rdot = r_dot );
 

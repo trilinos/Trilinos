@@ -2029,7 +2029,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
 #endif // KOKKOS_FAST_COMPILE
     }
   }
-
+/*
 template <class RangeVector,
             class TCrsMatrix,
             class DomainVector,
@@ -2457,7 +2457,7 @@ template <class RangeVector,
       // Deep_copy in Kokkos is intended for copy between compatible objects.
     }
   } // namespace KokkosCrsMatrix
-
+*/
 } // namespace Kokkos
 
 #endif /* KOKKOS_CRSMATRIX_H_ */

@@ -43,7 +43,7 @@
 
 #ifndef KOKKOS_SPARSE_CRSMATRIX_HPP_
 #define KOKKOS_SPARSE_CRSMATRIX_HPP_
-
+#include <stdexcept>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_StaticCrsGraph.hpp>
 
