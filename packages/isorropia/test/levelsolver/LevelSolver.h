@@ -693,7 +693,7 @@ int Epetra_LevelSolver<Node>::Apply(const Tpetra::MultiVector<double,int,int,Nod
 /* /\*   using KokkosClassic::CrsGraph; *\/ */
 /* /\*   using KokkosClassic::DefaultArithmetic; *\/ */
 /* /\*   using KokkosClassic::DefaultSparseMultiply; *\/ */
-/* /\*   using KokkosClassic::SerialNode; *\/ */
+/* /\*   using KokkosClassic::DoNotUse::SerialNode; *\/ */
 /* /\*   using Teuchos::RCP; *\/ */
 /* /\*   using Teuchos::rcp; *\/ */
 /* /\*   using Teuchos::null; *\/ */

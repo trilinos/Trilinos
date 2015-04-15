@@ -108,30 +108,30 @@ namespace Details {
       \ingroup kokkos_node_api
     */
   class DefaultNode {
-    public:
+  public:
 #if defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE)
-      typedef TPINode DefaultNodeType;
+    typedef TPINode DefaultNodeType;
 #elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TBBNODE)
-      typedef TBBNode DefaultNodeType;
+    typedef TBBNode DefaultNodeType;
 #elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPNODE)
-      typedef OpenMPNode DefaultNodeType;
+    typedef OpenMPNode DefaultNodeType;
 #elif defined(HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT)
 #  if defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE)
-      typedef ::Kokkos::Compat::KokkosCudaWrapperNode DefaultNodeType;
+    typedef ::Kokkos::Compat::KokkosCudaWrapperNode DefaultNodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE)
-      typedef ::Kokkos::Compat::KokkosOpenMPWrapperNode DefaultNodeType;
+    typedef ::Kokkos::Compat::KokkosOpenMPWrapperNode DefaultNodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE)
-      typedef ::Kokkos::Compat::KokkosThreadsWrapperNode DefaultNodeType;
+    typedef ::Kokkos::Compat::KokkosThreadsWrapperNode DefaultNodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE)
-      typedef ::Kokkos::Compat::KokkosSerialWrapperNode DefaultNodeType;
+    typedef ::Kokkos::Compat::KokkosSerialWrapperNode DefaultNodeType;
 #  elif defined(HAVE_TPETRACLASSIC_SERIAL)
-      typedef SerialNode DefaultNodeType;
+    typedef ::KokkosClassic::DoNotUse::SerialNode DefaultNodeType;
 #  else
 #    error "No default Kokkos Node type specified.  Please set the CMake option KokkosClassic_DefaultNode to a valid Node type."
 #  endif // defined(HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT)
 #elif defined(HAVE_TPETRACLASSIC_SERIAL)
-      //! Typedef specifying the default node type.
-      typedef SerialNode DefaultNodeType;
+    //! Typedef specifying the default node type.
+    typedef ::KokkosClassic::DoNotUse::SerialNode DefaultNodeType;
 #else
 #  error "No default Kokkos Node type specified.  Please set the CMake option KokkosClassic_DefaultNode to a valid Node type."
 #endif

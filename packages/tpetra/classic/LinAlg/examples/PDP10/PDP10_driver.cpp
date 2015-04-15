@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -82,12 +82,12 @@
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Node type not defined.");
   }
 
-  using KokkosClassic::SerialNode;
+  using KokkosClassic::DoNotUse::SerialNode;
   template <>
   RCP<SerialNode> getNode<SerialNode>() {
     static RCP<SerialNode> serialnode;
     if (serialnode == null) {
-      Teuchos::ParameterList pl; 
+      Teuchos::ParameterList pl;
       serialnode = rcp(new SerialNode(pl));
     }
     return serialnode;
@@ -98,7 +98,7 @@
   RCP<TPINode> getNode<TPINode>() {
     static RCP<TPINode> tpinode;
     if (tpinode == null) {
-      Teuchos::ParameterList pl; 
+      Teuchos::ParameterList pl;
       pl.set("Num Threads",numPthreads);
       pl.set("Verbose",1);
       tpinode = rcp(new TPINode(pl));
@@ -111,7 +111,7 @@
   RCP<ThrustGPUNode> getNode<ThrustGPUNode>() {
     static RCP<ThrustGPUNode> thrustnode;
     if (thrustnode == null) {
-      Teuchos::ParameterList pl; 
+      Teuchos::ParameterList pl;
       pl.set("Device Number",0);
       pl.set("Verbose",1);
       thrustnode = rcp(new ThrustGPUNode(pl));
@@ -222,7 +222,7 @@
 
   /////////////////////////////////////////////////////////
   template <class Node>
-  CompStats power_method(RCP<Teuchos::Time> time, int N, size_t niters, float tolerance, bool verbose)  
+  CompStats power_method(RCP<Teuchos::Time> time, int N, size_t niters, float tolerance, bool verbose)
   {
     typedef KokkosClassic::MultiVector<float,Node>                        MV;
     typedef KokkosClassic::DefaultArithmetic< KokkosClassic::MultiVector<float,Node> > DMVA;
@@ -234,7 +234,7 @@
     // Variables needed for iteration
     const float ONE  = 1.0f;
     const float ZERO = 0.0f;
-  
+
     // create vectors
     KokkosClassic::MultiVector<float,Node> z(node), q(node), r(node);
     {
@@ -280,7 +280,7 @@
 
   /////////////////////////////////////////////////////////
   template <class Node>
-  CompStats conjugate_gradient(RCP<Teuchos::Time> time, int N, size_t niters, float tolerance, bool verbose) 
+  CompStats conjugate_gradient(RCP<Teuchos::Time> time, int N, size_t niters, float tolerance, bool verbose)
   {
     typedef KokkosClassic::MultiVector<float,Node> MV;
     typedef KokkosClassic::DefaultArithmetic<MV> DMVA;
@@ -347,7 +347,7 @@
   /////////////////////////////////////////////////////////
   // create a timer, for timing time.
   /////////////////////////////////////////////////////////
-  inline RCP<Teuchos::Time> getNewTimer(const std::string &lbl) 
+  inline RCP<Teuchos::Time> getNewTimer(const std::string &lbl)
   {
     return Teuchos::TimeMonitor::getNewTimer(lbl);
   }
@@ -385,30 +385,30 @@
 
     cout << endl << KokkosClassic::Kokkos_Version() << endl;
 
-    // 
+    //
     cout << "\nTesting SerialNode" << endl;
     sumTest<int,  SerialNode>(getNewTimer("sum int srl"  ),N);
     sumTest<float,SerialNode>(getNewTimer("sum float srl"),N);
     CompStats pm_serial = power_method      <SerialNode   >(getNewTimer("pm srl"),N,numIters,1e-5f,1);
     CompStats cg_serial = conjugate_gradient<SerialNode   >(getNewTimer("cg srl"),N,numIters,1e-5f,1);
-    // 
+    //
     cout << "\nTesting TPINode" << endl;
     sumTest<int,  TPINode>(getNewTimer("sum int tpi"),N);
     sumTest<float,TPINode>(getNewTimer("sum float tpi"),N);
     CompStats pm_tpi = power_method      <TPINode      >(getNewTimer("pm tpi"),N,numIters,1e-5f,1);
     CompStats cg_tpi = conjugate_gradient<TPINode      >(getNewTimer("cg tpi"),N,numIters,1e-5f,1);
-    // 
+    //
     cout << "\nTesting ThrustGPUNode" << endl;
     sumTest<int,  ThrustGPUNode>(getNewTimer("sum int gpu"),N);
     sumTest<float,ThrustGPUNode>(getNewTimer("sum float gpu"),N);
     CompStats pm_gpu = power_method      <ThrustGPUNode>(getNewTimer("pm gpu"),N,numIters,1e-5f,1);
     CompStats cg_gpu = conjugate_gradient<ThrustGPUNode>(getNewTimer("cg gpu"),N,numIters,1e-5f,1);
 
-    // 
+    //
     // Timings, or it didn't happen...
     //
     cout.precision(3);
-    cout << endl 
+    cout << endl
       << setw(6) << "test"    << "  " << setw(10) <<               "seconds"         << "  " << setw(10)<<               "flops"         << "  " << setw(13) << "mflops/second"                                                     << endl
       << setw(6) << "------"  << "  " << setw(10) <<               "----------"      << "  " << setw(10)<<               "----------"    << "  " << setw(13) << "-------------"                                                     << endl
       << setw(6) << "pm srl"  << "  " << setw(10) << scientific << pm_serial.seconds << "  " << setw(10)<< scientific << pm_serial.flops << "  " << setw(13) << fixed << pm_serial.flops/pm_serial.seconds/1.0e6 << endl

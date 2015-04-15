@@ -34,9 +34,9 @@ IF (${PACKAGE_NAME}_ENABLE_OpenMPNode AND NOT ${PROJECT_NAME}_ENABLE_OpenMP)
 ENDIF ()
 
 #
-# Decide whether to enable KokkosClassic::SerialNode.  It will be
-# DEPRECATED in the next Trilinos release.  It will also be disabled
-# by default if the Kokkos refactor version of Tpetra is enabled.
+# Decide whether to enable KokkosClassic::DoNotUseSerialNode.  It is
+# DEPRECATED and will go away ANY TIME.  It will also be disabled by
+# default if the Kokkos refactor version of Tpetra is enabled.
 #
 IF(NOT Tpetra_ENABLE_Kokkos_Refactor)
   GLOBAL_SET(${PACKAGE_NAME}_ENABLE_SerialNode_DEFAULT ON)
@@ -46,7 +46,7 @@ ENDIF()
 TRIBITS_ADD_OPTION_AND_DEFINE( 
   ${PACKAGE_NAME}_ENABLE_SerialNode
   HAVE_TPETRACLASSIC_SERIAL
-  "Add KokkosClassic::SerialNode to the list of enabled Node types."
+  "Add KokkosClassic::DoNotUse::SerialNode to the list of enabled Node types.  (DO NOT USE THIS!)"
   ${${PACKAGE_NAME}_ENABLE_SerialNode_DEFAULT}
   )
 IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_SerialNode)
@@ -111,7 +111,7 @@ ENDIF ()
 TRIBITS_ADD_OPTION_AND_DEFINE(
   KokkosClassic_TREAT_SERIALNODE_AS_DEVICE
   HAVE_KOKKOSCLASSIC_TREAT_SERIALNODE_AS_DEVICE
-  "Treat KokkosClassic::SerialNode as a device node instead of a host node, for kernels where there is a difference."
+  "Treat KokkosClassic::DoNotUse::SerialNode as a device node instead of a host node, for kernels where there is a difference."
   ${${PACKAGE_NAME}_ENABLE_DEBUG}
   )
 

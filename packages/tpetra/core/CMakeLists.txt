@@ -173,7 +173,7 @@ IF (Tpetra_ENABLE_Kokkos_Refactor)
     TRIBITS_ADD_OPTION_AND_DEFINE(
       Tpetra_INST_SERIALCLASSIC
       HAVE_TPETRA_INST_SERIALCLASSIC
-      "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over Node = KokkosClassic::SerialNode.  This option is OFF by default."
+      "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over Node = KokkosClassic::DoNotUse::SerialNode.  This option is OFF by default."
       OFF
       )
 
@@ -185,7 +185,7 @@ IF (Tpetra_ENABLE_Kokkos_Refactor)
     ELSE()
       GLOBAL_SET(HAVE_TPETRA_SERIALCLASSIC OFF)
       IF (HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALNODE) 
-        MESSAGE(FATAL_ERROR "Tpetra: set KokkosClassic SerialNode as default node type but its not enabled.")   
+        MESSAGE(FATAL_ERROR "Tpetra: set KokkosClassic::DoNotUse::SerialNode as default node type but its not enabled.")   
       ENDIF()
     ENDIF()
     IF(Tpetra_INST_SERIAL)
@@ -224,8 +224,8 @@ IF (Tpetra_ENABLE_Kokkos_Refactor)
     # Append the instantiation list
 
     IF(Tpetra_INST_SERIALCLASSIC) 
-      LIST(APPEND TpetraCore_ETI_NODES "KokkosClassic::SerialNode")
-      MESSAGE(STATUS "Enabling Node: KokkosClassic::SerialNode")
+      LIST(APPEND TpetraCore_ETI_NODES "KokkosClassic::DoNotUse::SerialNode")
+      MESSAGE(STATUS "Enabling Node: KokkosClassic::DoNotUse::SerialNode")
     ENDIF()
     IF(Tpetra_INST_SERIAL) 
       LIST(APPEND TpetraCore_ETI_NODES "Kokkos::Compat::KokkosSerialWrapperNode")
@@ -304,11 +304,11 @@ ENDIF() # Tpetra_ENABLE_Kokkos_Refactor
 
 
 MESSAGE(STATUS "Tpetra Node availability: ")
-MESSAGE(STATUS "   SerialNode (Kokkos::Classic): ${HAVE_TPETRA_SERIALCLASSIC}")
 MESSAGE(STATUS "   KokkosSerialWrapperNode:      ${HAVE_TPETRA_SERIAL}")
 MESSAGE(STATUS "   KokkosThreadsWrapperNode:     ${HAVE_TPETRA_PTHREAD}")
 MESSAGE(STATUS "   KokkosOpenMPWrapperNode:      ${HAVE_TPETRA_OPENMP}")
 MESSAGE(STATUS "   KokkosCudaWrapperNode:        ${HAVE_TPETRA_CUDA}")
+MESSAGE(STATUS "   SerialNode (classic):         ${HAVE_TPETRA_SERIALCLASSIC}")
 
 
 #-----------------------------------------------------------------------

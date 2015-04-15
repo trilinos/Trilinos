@@ -386,7 +386,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix,  SparseSolveImplicitIdentityUpper, ORDINAL, SCALAR, NODE )
 
 #ifdef HAVE_TPETRACLASSIC_SERIAL
-  typedef KokkosClassic::SerialNode KokkosClassic_SerialNode;
+  typedef KokkosClassic::DoNotUse::SerialNode KokkosClassic_SerialNode;
 #define UNIT_TEST_SERIALNODE(ORDINAL, SCALAR) \
   ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, KokkosClassic_SerialNode )
 #else

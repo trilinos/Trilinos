@@ -72,12 +72,12 @@ typedef int GlobalOrdinal;
 namespace Tpetra {
 
 #if defined(HAVE_KOKKOSCLASSIC_SERIAL)
-  TPETRA_MULTIVECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::SerialNode)
-  TPETRA_VECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::SerialNode)
-  TPETRA_CRSMATRIX_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::SerialNode)
-  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(Scalar,Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::SerialNode)
-  TPETRA_MATRIXMATRIX_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::SerialNode)
-  TPETRA_ROWMATRIXTRANSPOSE_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::SerialNode)
+  TPETRA_MULTIVECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::DoNotUse::SerialNode)
+  TPETRA_VECTOR_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::DoNotUse::SerialNode)
+  TPETRA_CRSMATRIX_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::DoNotUse::SerialNode)
+  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(Scalar,Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::DoNotUse::SerialNode)
+  TPETRA_MATRIXMATRIX_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::DoNotUse::SerialNode)
+  TPETRA_ROWMATRIXTRANSPOSE_INSTANT(Scalar,LocalOrdinal,GlobalOrdinal,KokkosClassic::DoNotUse::SerialNode)
 #endif // defined(HAVE_KOKKOSCLASSIC_SERIAL)
 
 #if defined(HAVE_KOKKOSCLASSIC_TBB)

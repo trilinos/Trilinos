@@ -247,12 +247,12 @@ namespace TSQR {
 
 #if defined(HAVE_KOKKOSCLASSIC_SERIAL)
   //
-  // Specialization of NodeTsqrFactory for KokkosClassic::SerialNode.
+  // Specialization of NodeTsqrFactory for KokkosClassic::DoNotUse::SerialNode.
   //
   template<class Scalar, class LocalOrdinal>
-  class NodeTsqrFactory<KokkosClassic::SerialNode, Scalar, LocalOrdinal> {
+  class NodeTsqrFactory<KokkosClassic::DoNotUse::SerialNode, Scalar, LocalOrdinal> {
   public:
-    typedef KokkosClassic::SerialNode node_type;
+    typedef KokkosClassic::DoNotUse::SerialNode node_type;
     typedef Teuchos::RCP<node_type> node_ptr;
     typedef SequentialTsqr<LocalOrdinal, Scalar> node_tsqr_type;
 

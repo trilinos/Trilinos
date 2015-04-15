@@ -266,7 +266,7 @@ namespace {
 
 #if defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE)
 #  if defined(HAVE_KOKKOSCLASSIC_SERIAL)
-  typedef KokkosClassic::SerialNode NodeType;
+  typedef KokkosClassic::DoNotUse::SerialNode NodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_TBB)
   typedef KokkosClassic::TBBNode NodeType;
 //#  elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
@@ -287,7 +287,7 @@ namespace {
 #  endif
 #elif defined (HAVE_KOKKOSCLASSIC_DEFAULTNODE_TBBNODE)
 #  if defined(HAVE_KOKKOSCLASSIC_SERIAL)
-  typedef KokkosClassic::SerialNode NodeType;
+  typedef KokkosClassic::DoNotUse::SerialNode NodeType;
 // #  elif defined(HAVE_KOKKOSCLASSIC_TBB)
 //   typedef KokkosClassic::TBBNode NodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
@@ -308,7 +308,7 @@ namespace {
 #  endif
 #elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPNODE)
 #  if defined(HAVE_KOKKOSCLASSIC_SERIAL)
-  typedef KokkosClassic::SerialNode NodeType;
+  typedef KokkosClassic::DoNotUse::SerialNode NodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_TBB)
   typedef KokkosClassic::TBBNode NodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
@@ -329,7 +329,7 @@ namespace {
 #  endif
 #elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE)
 #  if defined(HAVE_KOKKOSCLASSIC_SERIAL)
-  typedef KokkosClassic::SerialNode NodeType;
+  typedef KokkosClassic::DoNotUse::SerialNode NodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_TBB)
   typedef KokkosClassic::TBBNode NodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
@@ -350,7 +350,7 @@ namespace {
 #  endif
 #elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE)
 #  if defined(HAVE_KOKKOSCLASSIC_SERIAL)
-  typedef KokkosClassic::SerialNode NodeType;
+  typedef KokkosClassic::DoNotUse::SerialNode NodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_TBB)
   typedef KokkosClassic::TBBNode NodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
@@ -371,7 +371,7 @@ namespace {
 #  endif
 #elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE)
 #  if defined(HAVE_KOKKOSCLASSIC_SERIAL)
-  typedef KokkosClassic::SerialNode NodeType;
+  typedef KokkosClassic::DoNotUse::SerialNode NodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_TBB)
   typedef KokkosClassic::TBBNode NodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
@@ -392,7 +392,7 @@ namespace {
 #  endif
 #elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE)
 #  if defined(HAVE_KOKKOSCLASSIC_SERIAL)
-  typedef KokkosClassic::SerialNode NodeType;
+  typedef KokkosClassic::DoNotUse::SerialNode NodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_TBB)
   typedef KokkosClassic::TBBNode NodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
@@ -413,7 +413,7 @@ namespace {
 #  endif
 #elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALNODE)
 // #  if defined(HAVE_KOKKOSCLASSIC_SERIAL)
-//   typedef KokkosClassic::SerialNode NodeType;
+//   typedef KokkosClassic::DoNotUse::SerialNode NodeType;
 #  if defined(HAVE_KOKKOSCLASSIC_TBB)
   typedef KokkosClassic::TBBNode NodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)

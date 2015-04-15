@@ -52,7 +52,7 @@
 #  include "Tpetra_MultiVector_def.hpp"
 
 #  define TPETRA_MULTIVECTOR_SERIALNODE_INSTANT( SCALAR, LO, GO ) \
-  TPETRA_MULTIVECTOR_INSTANT( SCALAR, LO, GO, KokkosClassic::SerialNode )
+  TPETRA_MULTIVECTOR_INSTANT( SCALAR, LO, GO, KokkosClassic::DoNotUse::SerialNode )
 
 namespace Tpetra {
 

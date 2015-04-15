@@ -125,7 +125,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, ElemMult, SCALAR, NODE )
 
 #ifdef HAVE_KOKKOSCLASSIC_SERIAL
-  typedef KokkosClassic::SerialNode KokkosClassic_SerialNode;
+  typedef KokkosClassic::DoNotUse::SerialNode KokkosClassic_SerialNode;
 #define UNIT_TEST_SERIALNODE( SCALAR ) \
   ALL_UNIT_TESTS_SCALAR_NODE( SCALAR, KokkosClassic_SerialNode )
 #else

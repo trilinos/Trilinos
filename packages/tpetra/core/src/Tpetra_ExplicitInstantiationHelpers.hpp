@@ -78,11 +78,11 @@
 #  define TPETRA_MACRO_TEMPLATE_INSTANT_TPINODE(SCALAR,LO,GO,INSTANT_MACRO)
 #endif
 
-/** \brief Instantiate a macro template for the KokkosClassic::SerialNode */
+/** \brief Instantiate a macro template for the KokkosClassic::DoNotUse::SerialNode */
 #ifdef HAVE_KOKKOSCLASSIC_SERIAL
 #  include <Kokkos_SerialNode.hpp>
 #  define TPETRA_MACRO_TEMPLATE_INSTANT_SERIALNODE(SCALAR,LO,GO,INSTANT_MACRO)\
-   INSTANT_MACRO(SCALAR,LO,GO,KokkosClassic::SerialNode)
+  INSTANT_MACRO(SCALAR,LO,GO,KokkosClassic::DoNotUse::SerialNode)
 #else
 #  define TPETRA_MACRO_TEMPLATE_INSTANT_SERIALNODE(SCALAR,LO,GO,INSTANT_MACRO)
 #endif // HAVE_KOKKOSCLASSIC_SERIAL

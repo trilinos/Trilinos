@@ -85,9 +85,9 @@ namespace KokkosClassic {
 #ifdef HAVE_TPETRACLASSIC_SERIAL
 
   template <typename Scalar>
-  struct NodeGEMM<Scalar,SerialNode> {
+  struct NodeGEMM<Scalar,DoNotUse::SerialNode> {
     public:
-      static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha, const MultiVector<Scalar,SerialNode> &A, const MultiVector<Scalar,SerialNode> &B, Scalar beta, MultiVector<Scalar,SerialNode> &C) {
+      static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha, const MultiVector<Scalar,DoNotUse::SerialNode> &A, const MultiVector<Scalar,DoNotUse::SerialNode> &B, Scalar beta, MultiVector<Scalar,DoNotUse::SerialNode> &C) {
         Teuchos::BLAS<int,Scalar> blas;
         const int m = Teuchos::as<int>(C.getNumRows()),
                   n = Teuchos::as<int>(C.getNumCols()),
@@ -1359,12 +1359,12 @@ namespace KokkosClassic {
   };
 
 #ifdef HAVE_TPETRACLASSIC_SERIAL
-  // Partial specialization for Node=KokkosClassic::SerialNode.
+  // Partial specialization for Node=KokkosClassic::DoNotUse::SerialNode.
   template <class Scalar>
-  class DefaultArithmetic<MultiVector<Scalar, SerialNode> > :
-    public DefaultArithmeticBase<MultiVector<Scalar, SerialNode> > {
+  class DefaultArithmetic<MultiVector<Scalar, DoNotUse::SerialNode> > :
+    public DefaultArithmeticBase<MultiVector<Scalar, DoNotUse::SerialNode> > {
   public:
-    static void Init (MultiVector<Scalar, SerialNode> &A, Scalar alpha) {
+    static void Init (MultiVector<Scalar, DoNotUse::SerialNode> &A, Scalar alpha) {
       const size_t numRows = A.getNumRows ();
       const size_t numCols = A.getNumCols ();
       Scalar* const KOKKOSCLASSIC_RESTRICT A_raw = A.getValuesNonConst ().getRawPtr ();
@@ -1387,8 +1387,8 @@ namespace KokkosClassic {
     }
 
     static void
-    Recip (MultiVector<Scalar,SerialNode> &A,
-           const MultiVector<Scalar,SerialNode> &B)
+    Recip (MultiVector<Scalar,DoNotUse::SerialNode> &A,
+           const MultiVector<Scalar,DoNotUse::SerialNode> &B)
     {
       const size_t nR = A.getNumRows();
       const size_t nC = A.getNumCols();
@@ -1399,11 +1399,11 @@ namespace KokkosClassic {
         std::runtime_error,
         "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Recip(A,B): "
         "A and B must have the same dimensions.");
-      RCP<SerialNode> node = B.getNode();
+      RCP<DoNotUse::SerialNode> node = B.getNode();
       ArrayRCP<const Scalar> Bdata = B.getValues();
       ArrayRCP<Scalar>       Adata = A.getValuesNonConst();
       // prepare buffers
-      ReadyBufferHelper<SerialNode> rbh(node);
+      ReadyBufferHelper<DoNotUse::SerialNode> rbh(node);
       rbh.begin();
       rbh.template addConstBuffer<Scalar>(Bdata);
       rbh.template addNonConstBuffer<Scalar>(Adata);
@@ -1428,7 +1428,7 @@ namespace KokkosClassic {
     }
 
     static void
-    ReciprocalThreshold (MultiVector<Scalar,SerialNode>& A,
+    ReciprocalThreshold (MultiVector<Scalar,DoNotUse::SerialNode>& A,
                          const Scalar& minDiagVal)
     {
       const size_t numRows = A.getNumRows ();
@@ -1437,8 +1437,8 @@ namespace KokkosClassic {
       ArrayRCP<Scalar> A_data = A.getValuesNonConst ();
       Scalar* const A_ptr = A_data.getRawPtr ();
 
-      RCP<SerialNode> node = A.getNode ();
-      ReadyBufferHelper<SerialNode> rbh (node);
+      RCP<DoNotUse::SerialNode> node = A.getNode ();
+      ReadyBufferHelper<DoNotUse::SerialNode> rbh (node);
       rbh.begin();
       rbh.template addNonConstBuffer<Scalar> (A_data);
       rbh.end();
@@ -1461,15 +1461,15 @@ namespace KokkosClassic {
     }
 
     static void
-    ElemMult (MultiVector<Scalar,SerialNode> &C,
+    ElemMult (MultiVector<Scalar,DoNotUse::SerialNode> &C,
               Scalar scalarC,
               Scalar scalarAB,
-              const MultiVector<Scalar,SerialNode> &A,
-              const MultiVector<Scalar,SerialNode> &B)
+              const MultiVector<Scalar,DoNotUse::SerialNode> &A,
+              const MultiVector<Scalar,DoNotUse::SerialNode> &B)
     {
       typedef Teuchos::ScalarTraits<Scalar> STS;
       const char prefix[] = "KokkosClassic::DefaultArithmetic<KokkosClassic::"
-        "MultiVector<double, KokkosClassic::SerialNode> >::ElemMult: ";
+        "MultiVector<double, KokkosClassic::DoNotUse::SerialNode> >::ElemMult: ";
 
       const size_t nR_A = A.getNumRows();
       const size_t nC_A = A.getNumCols();
@@ -1532,8 +1532,8 @@ namespace KokkosClassic {
     }
 
     static void
-    Assign (MultiVector<Scalar,SerialNode> &A,
-            const MultiVector<Scalar,SerialNode> &B)
+    Assign (MultiVector<Scalar,DoNotUse::SerialNode> &A,
+            const MultiVector<Scalar,DoNotUse::SerialNode> &B)
     {
       const size_t numRows = A.getNumRows ();
       const size_t numCols = A.getNumCols ();
@@ -1574,8 +1574,8 @@ namespace KokkosClassic {
     }
 
     static void
-    Assign (MultiVector<Scalar,SerialNode>& A,
-            const MultiVector<Scalar,SerialNode>& B,
+    Assign (MultiVector<Scalar,DoNotUse::SerialNode>& A,
+            const MultiVector<Scalar,DoNotUse::SerialNode>& B,
             const ArrayView<const size_t>& whichVectors)
     {
       const size_t numRows = A.getNumRows ();
@@ -1607,8 +1607,8 @@ namespace KokkosClassic {
     }
 
     static void
-    Dot (const MultiVector<Scalar,SerialNode> &A,
-         const MultiVector<Scalar,SerialNode> &B,
+    Dot (const MultiVector<Scalar,DoNotUse::SerialNode> &A,
+         const MultiVector<Scalar,DoNotUse::SerialNode> &B,
          const ArrayView<Scalar> &dots)
     {
       typedef Teuchos::ScalarTraits<Scalar> STS;
@@ -1663,8 +1663,8 @@ namespace KokkosClassic {
     }
 
     static Scalar
-    Dot (const MultiVector<Scalar,SerialNode> &A,
-         const MultiVector<Scalar,SerialNode> &B)
+    Dot (const MultiVector<Scalar,DoNotUse::SerialNode> &A,
+         const MultiVector<Scalar,DoNotUse::SerialNode> &B)
     {
       typedef Teuchos::ScalarTraits<Scalar> STS;
 
@@ -1700,9 +1700,9 @@ namespace KokkosClassic {
     }
 
     static void
-    GESUM (MultiVector<Scalar,SerialNode> &B,
+    GESUM (MultiVector<Scalar,DoNotUse::SerialNode> &B,
            Scalar alpha,
-           const MultiVector<Scalar,SerialNode> &A,
+           const MultiVector<Scalar,DoNotUse::SerialNode> &A,
            Scalar beta)
     {
       const size_t nR = A.getNumRows ();
@@ -1741,11 +1741,11 @@ namespace KokkosClassic {
     }
 
     static void
-    GESUM (MultiVector<Scalar,SerialNode> &C,
+    GESUM (MultiVector<Scalar,DoNotUse::SerialNode> &C,
            Scalar alpha,
-           const MultiVector<Scalar,SerialNode> &A,
+           const MultiVector<Scalar,DoNotUse::SerialNode> &A,
            Scalar beta,
-           const MultiVector<Scalar,SerialNode> &B,
+           const MultiVector<Scalar,DoNotUse::SerialNode> &B,
            Scalar gamma)
     {
       const size_t nR = A.getNumRows();
@@ -1759,12 +1759,12 @@ namespace KokkosClassic {
         "DefaultArithmetic<" << Teuchos::typeName(A) << ">::GESUM"
         "(C,alpha,A,beta,B,gamma): A and B must have the same dimensions.");
 
-      RCP<SerialNode> node = B.getNode();
+      RCP<DoNotUse::SerialNode> node = B.getNode();
       ArrayRCP<const Scalar> Adata = A.getValues();
       ArrayRCP<const Scalar> Bdata = B.getValues();
       ArrayRCP<Scalar>       Cdata = C.getValuesNonConst();
       // prepare buffers
-      ReadyBufferHelper<SerialNode> rbh(node);
+      ReadyBufferHelper<DoNotUse::SerialNode> rbh(node);
       rbh.begin();
       rbh.template addConstBuffer<Scalar>(Adata);
       rbh.template addConstBuffer<Scalar>(Bdata);
@@ -1825,7 +1825,7 @@ namespace KokkosClassic {
     }
 
     static void
-    Norm1 (const MultiVector<Scalar,SerialNode> &A,
+    Norm1 (const MultiVector<Scalar,DoNotUse::SerialNode> &A,
            const ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms)
     {
       typedef Teuchos::ScalarTraits<Scalar> STS;
@@ -1845,10 +1845,10 @@ namespace KokkosClassic {
         std::fill (norms.begin(), norms.begin() + nC, STM::zero ());
         return;
       }
-      RCP<SerialNode> node = A.getNode();
+      RCP<DoNotUse::SerialNode> node = A.getNode();
       ArrayRCP<const Scalar> Adata = A.getValues();
       // prepare buffers
-      ReadyBufferHelper<SerialNode> rbh(node);
+      ReadyBufferHelper<DoNotUse::SerialNode> rbh(node);
       rbh.begin();
       rbh.template addConstBuffer<Scalar>(Adata);
       rbh.end();
@@ -1861,7 +1861,7 @@ namespace KokkosClassic {
     }
 
     static typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-    Norm1 (const MultiVector<Scalar,SerialNode> &A)
+    Norm1 (const MultiVector<Scalar,DoNotUse::SerialNode> &A)
     {
       typedef Teuchos::ScalarTraits<Scalar> STS;
       typedef typename STS::magnitudeType magnitude_type;
@@ -1872,10 +1872,10 @@ namespace KokkosClassic {
       if (nR*nC == 0) {
         return STM::zero ();
       }
-      RCP<SerialNode> node = A.getNode();
+      RCP<DoNotUse::SerialNode> node = A.getNode();
       ArrayRCP<const Scalar> Adata = A.getValues(0);
       // prepare buffers
-      ReadyBufferHelper<SerialNode> rbh(node);
+      ReadyBufferHelper<DoNotUse::SerialNode> rbh(node);
       rbh.begin();
       rbh.template addConstBuffer<Scalar>(Adata);
       rbh.end();
@@ -1885,7 +1885,7 @@ namespace KokkosClassic {
     }
 
     static void
-    Sum (const MultiVector<Scalar,SerialNode> &A,
+    Sum (const MultiVector<Scalar,DoNotUse::SerialNode> &A,
          const ArrayView<Scalar> &sums)
     {
       const size_t nR = A.getNumRows();
@@ -1901,10 +1901,10 @@ namespace KokkosClassic {
         std::fill( sums.begin(), sums.begin() + nC, Teuchos::ScalarTraits<Scalar>::zero() );
         return;
       }
-      RCP<SerialNode> node = A.getNode();
+      RCP<DoNotUse::SerialNode> node = A.getNode();
       ArrayRCP<const Scalar> Adata = A.getValues();
       // prepare buffers
-      ReadyBufferHelper<SerialNode> rbh(node);
+      ReadyBufferHelper<DoNotUse::SerialNode> rbh(node);
       rbh.begin();
       rbh.template addConstBuffer<Scalar>(Adata);
       rbh.end();
@@ -1916,16 +1916,16 @@ namespace KokkosClassic {
       }
     }
 
-    static Scalar Sum(const MultiVector<Scalar,SerialNode> &A) {
+    static Scalar Sum(const MultiVector<Scalar,DoNotUse::SerialNode> &A) {
       const size_t nR = A.getNumRows();
       const size_t nC = A.getNumCols();
       if (nR*nC == 0) {
         return Teuchos::ScalarTraits<Scalar>::zero();
       }
-      RCP<SerialNode> node = A.getNode();
+      RCP<DoNotUse::SerialNode> node = A.getNode();
       ArrayRCP<const Scalar> Adata = A.getValues(0);
       // prepare buffers
-      ReadyBufferHelper<SerialNode> rbh(node);
+      ReadyBufferHelper<DoNotUse::SerialNode> rbh(node);
       rbh.begin();
       rbh.template addConstBuffer<Scalar>(Adata);
       rbh.end();
@@ -1934,16 +1934,16 @@ namespace KokkosClassic {
       return node->parallel_reduce(0,nR,op);
     }
 
-    static typename Teuchos::ScalarTraits<Scalar>::magnitudeType NormInf(const MultiVector<Scalar,SerialNode> &A) {
+    static typename Teuchos::ScalarTraits<Scalar>::magnitudeType NormInf(const MultiVector<Scalar,DoNotUse::SerialNode> &A) {
       const size_t nR = A.getNumRows();
       const size_t nC = A.getNumCols();
       if (nR*nC == 0) {
         return Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero();
       }
-      RCP<SerialNode> node = A.getNode();
+      RCP<DoNotUse::SerialNode> node = A.getNode();
       ArrayRCP<const Scalar> Adata = A.getValues(0);
       // prepare buffers
-      ReadyBufferHelper<SerialNode> rbh(node);
+      ReadyBufferHelper<DoNotUse::SerialNode> rbh(node);
       rbh.begin();
       rbh.template addConstBuffer<Scalar>(Adata);
       rbh.end();
@@ -1952,7 +1952,7 @@ namespace KokkosClassic {
       return node->parallel_reduce(0,nR,op);
     }
 
-    static void NormInf(const MultiVector<Scalar,SerialNode> &A, const ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) {
+    static void NormInf(const MultiVector<Scalar,DoNotUse::SerialNode> &A, const ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) {
       const size_t nR = A.getNumRows();
       const size_t nC = A.getNumCols();
       const size_t Astride = A.getStride();
@@ -1962,10 +1962,10 @@ namespace KokkosClassic {
         std::fill( norms.begin(), norms.begin() + nC, Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero() );
         return;
       }
-      RCP<SerialNode> node = A.getNode();
+      RCP<DoNotUse::SerialNode> node = A.getNode();
       ArrayRCP<const Scalar> Adata = A.getValues();
       // prepare buffers
-      ReadyBufferHelper<SerialNode> rbh(node);
+      ReadyBufferHelper<DoNotUse::SerialNode> rbh(node);
       rbh.begin();
       rbh.template addConstBuffer<Scalar>(Adata);
       rbh.end();
@@ -1978,7 +1978,7 @@ namespace KokkosClassic {
     }
 
     static void
-    Norm2Squared (const MultiVector<Scalar,SerialNode> &A,
+    Norm2Squared (const MultiVector<Scalar,DoNotUse::SerialNode> &A,
                   const ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms)
     {
       typedef Teuchos::ScalarTraits<Scalar> STS;
@@ -2027,7 +2027,7 @@ namespace KokkosClassic {
     }
 
     static typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-    Norm2Squared (const MultiVector<Scalar,SerialNode> &A) {
+    Norm2Squared (const MultiVector<Scalar,DoNotUse::SerialNode> &A) {
       typedef Teuchos::ScalarTraits<Scalar> STS;
       typedef typename STS::magnitudeType magnitude_type;
       typedef Teuchos::ScalarTraits<magnitude_type> STM;
@@ -2061,17 +2061,17 @@ namespace KokkosClassic {
     }
 
     static typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-    WeightedNorm(const MultiVector<Scalar,SerialNode> &A, const MultiVector<Scalar,SerialNode> &weightVector) {
+    WeightedNorm(const MultiVector<Scalar,DoNotUse::SerialNode> &A, const MultiVector<Scalar,DoNotUse::SerialNode> &weightVector) {
       const size_t nR = A.getNumRows();
       const size_t nC = A.getNumCols();
       if (nR*nC == 0) {
         return Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero();
       }
-      RCP<SerialNode> node = A.getNode();
+      RCP<DoNotUse::SerialNode> node = A.getNode();
       ArrayRCP<const Scalar> Adata = A.getValues(0),
         Wdata = weightVector.getValues(0);
       // prepare buffers
-      ReadyBufferHelper<SerialNode> rbh(node);
+      ReadyBufferHelper<DoNotUse::SerialNode> rbh(node);
       rbh.begin();
       rbh.template addConstBuffer<Scalar>(Adata);
       rbh.template addConstBuffer<Scalar>(Wdata);
@@ -2082,7 +2082,7 @@ namespace KokkosClassic {
       return node->parallel_reduce(0,nR,op);
     }
 
-    static void WeightedNorm(const MultiVector<Scalar,SerialNode> &A, const MultiVector<Scalar,SerialNode> &weightVector, const ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) {
+    static void WeightedNorm(const MultiVector<Scalar,DoNotUse::SerialNode> &A, const MultiVector<Scalar,DoNotUse::SerialNode> &weightVector, const ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) {
       const size_t nR = A.getNumRows();
       const size_t nC = A.getNumCols();
       const size_t Astride = A.getStride(),
@@ -2093,12 +2093,12 @@ namespace KokkosClassic {
         std::fill( norms.begin(), norms.begin() + nC, Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero() );
         return;
       }
-      RCP<SerialNode> node = A.getNode();
+      RCP<DoNotUse::SerialNode> node = A.getNode();
       ArrayRCP<const Scalar> Adata = A.getValues(),
         Wdata = weightVector.getValues();
       const bool OneW = (weightVector.getNumCols() == 1);
       // prepare buffers
-      ReadyBufferHelper<SerialNode> rbh(node);
+      ReadyBufferHelper<DoNotUse::SerialNode> rbh(node);
       rbh.begin();
       rbh.template addConstBuffer<Scalar>(Adata);
       rbh.template addConstBuffer<Scalar>(Wdata);
@@ -2123,7 +2123,7 @@ namespace KokkosClassic {
       }
     }
 
-    static void Abs(MultiVector<Scalar,SerialNode> &A, const MultiVector<Scalar,SerialNode> &B) {
+    static void Abs(MultiVector<Scalar,DoNotUse::SerialNode> &A, const MultiVector<Scalar,DoNotUse::SerialNode> &B) {
       const size_t nR = A.getNumRows();
       const size_t nC = A.getNumCols();
       const size_t Astride = A.getStride();
@@ -2131,11 +2131,11 @@ namespace KokkosClassic {
       TEUCHOS_TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
                                  "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Abs(A,B): A and B must have the same dimensions.");
       if (nC*nR == 0) return;
-      RCP<SerialNode> node = A.getNode();
+      RCP<DoNotUse::SerialNode> node = A.getNode();
       ArrayRCP<const Scalar> Bdata = B.getValues();
       ArrayRCP<Scalar>       Adata = A.getValuesNonConst();
       // prepare buffers
-      ReadyBufferHelper<SerialNode> rbh(node);
+      ReadyBufferHelper<DoNotUse::SerialNode> rbh(node);
       rbh.begin();
       rbh.template addConstBuffer<Scalar>(Bdata);
       rbh.template addNonConstBuffer<Scalar>(Adata);
@@ -2160,18 +2160,18 @@ namespace KokkosClassic {
       }
     }
 
-    static void Scale(MultiVector<Scalar,SerialNode> &B, Scalar alpha, const MultiVector<Scalar,SerialNode> &A) {
+    static void Scale(MultiVector<Scalar,DoNotUse::SerialNode> &B, Scalar alpha, const MultiVector<Scalar,DoNotUse::SerialNode> &A) {
       const size_t nR = A.getNumRows();
       const size_t nC = A.getNumCols();
       const size_t Astride = A.getStride();
       const size_t Bstride = B.getStride();
       TEUCHOS_TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
                                  "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Scale(B,alpha,A): A and B must have the same dimensions.");
-      RCP<SerialNode> node = B.getNode();
+      RCP<DoNotUse::SerialNode> node = B.getNode();
       ArrayRCP<const Scalar> Adata = A.getValues();
       ArrayRCP<Scalar>       Bdata = B.getValuesNonConst();
       // prepare buffers
-      ReadyBufferHelper<SerialNode> rbh(node);
+      ReadyBufferHelper<DoNotUse::SerialNode> rbh(node);
       rbh.begin();
       rbh.template addConstBuffer<Scalar>(Adata);
       rbh.template addNonConstBuffer<Scalar>(Bdata);
@@ -2196,7 +2196,7 @@ namespace KokkosClassic {
       }
     }
 
-    static void Scale (MultiVector<Scalar,SerialNode> &A, Scalar alpha) {
+    static void Scale (MultiVector<Scalar,DoNotUse::SerialNode> &A, Scalar alpha) {
       const size_t nR = A.getNumRows ();
       const size_t nC = A.getNumCols ();
       const size_t A_stride = A.getStride ();
@@ -2213,12 +2213,12 @@ namespace KokkosClassic {
 #endif // HAVE_TPETRACLASSIC_SERIAL
 
 #ifdef HAVE_TPETRACLASSIC_SERIAL
-  // Full specialization for Scalar=double and Node=KokkosClassic::SerialNode.
+  // Full specialization for Scalar=double and Node=KokkosClassic::DoNotUse::SerialNode.
   template <>
-  class DefaultArithmetic<MultiVector<double, SerialNode> > :
-    public DefaultArithmeticBase<MultiVector<double, SerialNode> > {
+  class DefaultArithmetic<MultiVector<double, DoNotUse::SerialNode> > :
+    public DefaultArithmeticBase<MultiVector<double, DoNotUse::SerialNode> > {
   public:
-    static void Init (MultiVector<double, SerialNode> &A, double alpha) {
+    static void Init (MultiVector<double, DoNotUse::SerialNode> &A, double alpha) {
       const size_t numRows = A.getNumRows ();
       const size_t numCols = A.getNumCols ();
       double* KOKKOSCLASSIC_RESTRICT A_raw = A.getValuesNonConst ().getRawPtr ();
@@ -2242,8 +2242,8 @@ namespace KokkosClassic {
     }
 
     static void
-    Recip (MultiVector<double,SerialNode> &A,
-           const MultiVector<double,SerialNode> &B)
+    Recip (MultiVector<double,DoNotUse::SerialNode> &A,
+           const MultiVector<double,DoNotUse::SerialNode> &B)
     {
       const size_t nR = A.getNumRows();
       const size_t nC = A.getNumCols();
@@ -2280,7 +2280,7 @@ namespace KokkosClassic {
     }
 
     static void
-    ReciprocalThreshold (MultiVector<double,SerialNode>& A,
+    ReciprocalThreshold (MultiVector<double,DoNotUse::SerialNode>& A,
                          const double& minDiagVal)
     {
       const size_t numRows = A.getNumRows ();
@@ -2288,7 +2288,7 @@ namespace KokkosClassic {
       const size_t stride = A.getStride ();
       double* KOKKOSCLASSIC_RESTRICT A_ptr = A.getValuesNonConst ().getRawPtr ();
 
-      RCP<SerialNode> node = A.getNode ();
+      RCP<DoNotUse::SerialNode> node = A.getNode ();
       if (stride == numRows) {
         // One kernel invocation for all columns of the multivector.
         typedef ReciprocalThresholdOp<double> op_type;
@@ -2308,11 +2308,11 @@ namespace KokkosClassic {
     }
 
     static void
-    ElemMult (MultiVector<double,SerialNode> &C,
+    ElemMult (MultiVector<double,DoNotUse::SerialNode> &C,
               double scalarC,
               double scalarAB,
-              const MultiVector<double,SerialNode> &A,
-              const MultiVector<double,SerialNode> &B)
+              const MultiVector<double,DoNotUse::SerialNode> &A,
+              const MultiVector<double,DoNotUse::SerialNode> &B)
     {
       const size_t nR_A = A.getNumRows();
       const size_t nC_A = A.getNumCols();
@@ -2332,7 +2332,7 @@ namespace KokkosClassic {
         "(C,sC,sAB,A,B): A, B and C must have the same number of rows, "
         "and B and C must have the same number of columns.");
 
-      RCP<SerialNode> node = B.getNode();
+      RCP<DoNotUse::SerialNode> node = B.getNode();
       ArrayRCP<double> Cdata = C.getValuesNonConst();
       ArrayRCP<const double> Bdata = B.getValues();
       ArrayRCP<const double> Adata = A.getValues();
@@ -2367,8 +2367,8 @@ namespace KokkosClassic {
     }
 
     static void
-    Assign (MultiVector<double,SerialNode> &A,
-            const MultiVector<double,SerialNode> &B)
+    Assign (MultiVector<double,DoNotUse::SerialNode> &A,
+            const MultiVector<double,DoNotUse::SerialNode> &B)
     {
       const size_t numRows = A.getNumRows ();
       const size_t numCols = A.getNumCols ();
@@ -2407,8 +2407,8 @@ namespace KokkosClassic {
     }
 
     static void
-    Assign (MultiVector<double,SerialNode>& A,
-            const MultiVector<double,SerialNode>& B,
+    Assign (MultiVector<double,DoNotUse::SerialNode>& A,
+            const MultiVector<double,DoNotUse::SerialNode>& B,
             const ArrayView<const size_t>& whichVectors)
     {
       const size_t numRows = A.getNumRows ();
@@ -2438,8 +2438,8 @@ namespace KokkosClassic {
     }
 
     static void
-    Dot (const MultiVector<double,SerialNode> &A,
-         const MultiVector<double,SerialNode> &B,
+    Dot (const MultiVector<double,DoNotUse::SerialNode> &A,
+         const MultiVector<double,DoNotUse::SerialNode> &B,
          const ArrayView<double> &dots)
     {
       const size_t nR = A.getNumRows ();
@@ -2476,8 +2476,8 @@ namespace KokkosClassic {
     }
 
     static double
-    Dot (const MultiVector<double,SerialNode> &A,
-         const MultiVector<double,SerialNode> &B)
+    Dot (const MultiVector<double,DoNotUse::SerialNode> &A,
+         const MultiVector<double,DoNotUse::SerialNode> &B)
     {
       const size_t nR = A.getNumRows ();
       const size_t nC = A.getNumCols ();
@@ -2500,9 +2500,9 @@ namespace KokkosClassic {
     }
 
     static void
-    GESUM (MultiVector<double,SerialNode> &B,
+    GESUM (MultiVector<double,DoNotUse::SerialNode> &B,
            double alpha,
-           const MultiVector<double,SerialNode> &A,
+           const MultiVector<double,DoNotUse::SerialNode> &A,
            double beta)
     {
       const size_t nR = A.getNumRows ();
@@ -2555,11 +2555,11 @@ namespace KokkosClassic {
     }
 
     static void
-    GESUM (MultiVector<double,SerialNode> &C,
+    GESUM (MultiVector<double,DoNotUse::SerialNode> &C,
            double alpha,
-           const MultiVector<double,SerialNode> &A,
+           const MultiVector<double,DoNotUse::SerialNode> &A,
            double beta,
-           const MultiVector<double,SerialNode> &B,
+           const MultiVector<double,DoNotUse::SerialNode> &B,
            double gamma)
     {
       const size_t nR = A.getNumRows();
@@ -2573,12 +2573,12 @@ namespace KokkosClassic {
         "DefaultArithmetic<" << Teuchos::typeName(A) << ">::GESUM"
         "(C,alpha,A,beta,B,gamma): A and B must have the same dimensions.");
 
-      RCP<SerialNode> node = B.getNode();
+      RCP<DoNotUse::SerialNode> node = B.getNode();
       ArrayRCP<const double> Adata = A.getValues();
       ArrayRCP<const double> Bdata = B.getValues();
       ArrayRCP<double>       Cdata = C.getValuesNonConst();
       // prepare buffers
-      ReadyBufferHelper<SerialNode> rbh(node);
+      ReadyBufferHelper<DoNotUse::SerialNode> rbh(node);
       rbh.begin();
       rbh.addConstBuffer<double>(Adata);
       rbh.addConstBuffer<double>(Bdata);
@@ -2639,7 +2639,7 @@ namespace KokkosClassic {
     }
 
     static void
-    Norm1 (const MultiVector<double,SerialNode> &A,
+    Norm1 (const MultiVector<double,DoNotUse::SerialNode> &A,
            const ArrayView<double> &norms)
     {
       typedef double magnitude_type;
@@ -2658,10 +2658,10 @@ namespace KokkosClassic {
         std::fill (norms.begin(), norms.begin() + nC, STM::zero ());
         return;
       }
-      RCP<SerialNode> node = A.getNode();
+      RCP<DoNotUse::SerialNode> node = A.getNode();
       ArrayRCP<const double> Adata = A.getValues();
       // prepare buffers
-      ReadyBufferHelper<SerialNode> rbh(node);
+      ReadyBufferHelper<DoNotUse::SerialNode> rbh(node);
       rbh.begin();
       rbh.addConstBuffer<double>(Adata);
       rbh.end();
@@ -2674,7 +2674,7 @@ namespace KokkosClassic {
     }
 
     static double
-    Norm1 (const MultiVector<double,SerialNode> &A)
+    Norm1 (const MultiVector<double,DoNotUse::SerialNode> &A)
     {
       typedef double magnitude_type;
       typedef Teuchos::ScalarTraits<magnitude_type> STM;
@@ -2684,10 +2684,10 @@ namespace KokkosClassic {
       if (nR*nC == 0) {
         return STM::zero ();
       }
-      RCP<SerialNode> node = A.getNode();
+      RCP<DoNotUse::SerialNode> node = A.getNode();
       ArrayRCP<const double> Adata = A.getValues(0);
       // prepare buffers
-      ReadyBufferHelper<SerialNode> rbh(node);
+      ReadyBufferHelper<DoNotUse::SerialNode> rbh(node);
       rbh.begin();
       rbh.addConstBuffer<double>(Adata);
       rbh.end();
@@ -2697,7 +2697,7 @@ namespace KokkosClassic {
     }
 
     static void
-    Sum (const MultiVector<double,SerialNode> &A,
+    Sum (const MultiVector<double,DoNotUse::SerialNode> &A,
          const ArrayView<double> &sums)
     {
       const size_t nR = A.getNumRows();
@@ -2713,10 +2713,10 @@ namespace KokkosClassic {
         std::fill( sums.begin(), sums.begin() + nC, Teuchos::ScalarTraits<double>::zero() );
         return;
       }
-      RCP<SerialNode> node = A.getNode();
+      RCP<DoNotUse::SerialNode> node = A.getNode();
       ArrayRCP<const double> Adata = A.getValues();
       // prepare buffers
-      ReadyBufferHelper<SerialNode> rbh(node);
+      ReadyBufferHelper<DoNotUse::SerialNode> rbh(node);
       rbh.begin();
       rbh.addConstBuffer<double>(Adata);
       rbh.end();
@@ -2728,16 +2728,16 @@ namespace KokkosClassic {
       }
     }
 
-    static double Sum(const MultiVector<double,SerialNode> &A) {
+    static double Sum(const MultiVector<double,DoNotUse::SerialNode> &A) {
       const size_t nR = A.getNumRows();
       const size_t nC = A.getNumCols();
       if (nR*nC == 0) {
         return Teuchos::ScalarTraits<double>::zero();
       }
-      RCP<SerialNode> node = A.getNode();
+      RCP<DoNotUse::SerialNode> node = A.getNode();
       ArrayRCP<const double> Adata = A.getValues(0);
       // prepare buffers
-      ReadyBufferHelper<SerialNode> rbh(node);
+      ReadyBufferHelper<DoNotUse::SerialNode> rbh(node);
       rbh.begin();
       rbh.addConstBuffer<double>(Adata);
       rbh.end();
@@ -2746,16 +2746,16 @@ namespace KokkosClassic {
       return node->parallel_reduce(0,nR,op);
     }
 
-    static double NormInf(const MultiVector<double,SerialNode> &A) {
+    static double NormInf(const MultiVector<double,DoNotUse::SerialNode> &A) {
       const size_t nR = A.getNumRows();
       const size_t nC = A.getNumCols();
       if (nR*nC == 0) {
         return Teuchos::ScalarTraits<double>::zero();
       }
-      RCP<SerialNode> node = A.getNode();
+      RCP<DoNotUse::SerialNode> node = A.getNode();
       ArrayRCP<const double> Adata = A.getValues(0);
       // prepare buffers
-      ReadyBufferHelper<SerialNode> rbh(node);
+      ReadyBufferHelper<DoNotUse::SerialNode> rbh(node);
       rbh.begin();
       rbh.addConstBuffer<double>(Adata);
       rbh.end();
@@ -2764,7 +2764,7 @@ namespace KokkosClassic {
       return node->parallel_reduce(0,nR,op);
     }
 
-    static void NormInf(const MultiVector<double,SerialNode> &A, const ArrayView<double> &norms) {
+    static void NormInf(const MultiVector<double,DoNotUse::SerialNode> &A, const ArrayView<double> &norms) {
       const size_t nR = A.getNumRows();
       const size_t nC = A.getNumCols();
       const size_t Astride = A.getStride();
@@ -2774,10 +2774,10 @@ namespace KokkosClassic {
         std::fill( norms.begin(), norms.begin() + nC, Teuchos::ScalarTraits<double>::zero() );
         return;
       }
-      RCP<SerialNode> node = A.getNode();
+      RCP<DoNotUse::SerialNode> node = A.getNode();
       ArrayRCP<const double> Adata = A.getValues();
       // prepare buffers
-      ReadyBufferHelper<SerialNode> rbh(node);
+      ReadyBufferHelper<DoNotUse::SerialNode> rbh(node);
       rbh.begin();
       rbh.addConstBuffer<double>(Adata);
       rbh.end();
@@ -2790,7 +2790,7 @@ namespace KokkosClassic {
     }
 
     static void
-    Norm2Squared (const MultiVector<double,SerialNode> &A,
+    Norm2Squared (const MultiVector<double,DoNotUse::SerialNode> &A,
                   const ArrayView<double> &norms)
     {
       const size_t nR = A.getNumRows ();
@@ -2822,7 +2822,7 @@ namespace KokkosClassic {
     }
 
     static double
-    Norm2Squared (const MultiVector<double,SerialNode> &A) {
+    Norm2Squared (const MultiVector<double,DoNotUse::SerialNode> &A) {
       const size_t nR = A.getNumRows ();
       const size_t nC = A.getNumCols ();
       TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2842,17 +2842,17 @@ namespace KokkosClassic {
     }
 
     static double
-    WeightedNorm(const MultiVector<double,SerialNode> &A, const MultiVector<double,SerialNode> &weightVector) {
+    WeightedNorm(const MultiVector<double,DoNotUse::SerialNode> &A, const MultiVector<double,DoNotUse::SerialNode> &weightVector) {
       const size_t nR = A.getNumRows();
       const size_t nC = A.getNumCols();
       if (nR*nC == 0) {
         return Teuchos::ScalarTraits<double>::zero();
       }
-      RCP<SerialNode> node = A.getNode();
+      RCP<DoNotUse::SerialNode> node = A.getNode();
       ArrayRCP<const double> Adata = A.getValues(0),
         Wdata = weightVector.getValues(0);
       // prepare buffers
-      ReadyBufferHelper<SerialNode> rbh(node);
+      ReadyBufferHelper<DoNotUse::SerialNode> rbh(node);
       rbh.begin();
       rbh.addConstBuffer<double>(Adata);
       rbh.addConstBuffer<double>(Wdata);
@@ -2864,8 +2864,8 @@ namespace KokkosClassic {
     }
 
     static void
-    WeightedNorm (const MultiVector<double,SerialNode> &A,
-                  const MultiVector<double,SerialNode> &weightVector,
+    WeightedNorm (const MultiVector<double,DoNotUse::SerialNode> &A,
+                  const MultiVector<double,DoNotUse::SerialNode> &weightVector,
                   const ArrayView<double> &norms)
     {
       const size_t nR = A.getNumRows();
@@ -2878,12 +2878,12 @@ namespace KokkosClassic {
         std::fill( norms.begin(), norms.begin() + nC, Teuchos::ScalarTraits<double>::zero() );
         return;
       }
-      RCP<SerialNode> node = A.getNode();
+      RCP<DoNotUse::SerialNode> node = A.getNode();
       ArrayRCP<const double> Adata = A.getValues(),
         Wdata = weightVector.getValues();
       const bool OneW = (weightVector.getNumCols() == 1);
       // prepare buffers
-      ReadyBufferHelper<SerialNode> rbh(node);
+      ReadyBufferHelper<DoNotUse::SerialNode> rbh(node);
       rbh.begin();
       rbh.addConstBuffer<double>(Adata);
       rbh.addConstBuffer<double>(Wdata);
@@ -2908,7 +2908,7 @@ namespace KokkosClassic {
       }
     }
 
-    static void Abs(MultiVector<double,SerialNode> &A, const MultiVector<double,SerialNode> &B) {
+    static void Abs(MultiVector<double,DoNotUse::SerialNode> &A, const MultiVector<double,DoNotUse::SerialNode> &B) {
       const size_t nR = A.getNumRows();
       const size_t nC = A.getNumCols();
       const size_t Astride = A.getStride();
@@ -2916,11 +2916,11 @@ namespace KokkosClassic {
       TEUCHOS_TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
                                  "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Abs(A,B): A and B must have the same dimensions.");
       if (nC*nR == 0) return;
-      RCP<SerialNode> node = A.getNode();
+      RCP<DoNotUse::SerialNode> node = A.getNode();
       ArrayRCP<const double> Bdata = B.getValues();
       ArrayRCP<double>       Adata = A.getValuesNonConst();
       // prepare buffers
-      ReadyBufferHelper<SerialNode> rbh(node);
+      ReadyBufferHelper<DoNotUse::SerialNode> rbh(node);
       rbh.begin();
       rbh.addConstBuffer<double>(Bdata);
       rbh.addNonConstBuffer<double>(Adata);
@@ -2946,9 +2946,9 @@ namespace KokkosClassic {
     }
 
     static void
-    Scale (MultiVector<double,SerialNode> &B,
+    Scale (MultiVector<double,DoNotUse::SerialNode> &B,
            double alpha,
-           const MultiVector<double,SerialNode> &A)
+           const MultiVector<double,DoNotUse::SerialNode> &A)
     {
       const size_t nR = A.getNumRows();
       const size_t nC = A.getNumCols();
@@ -2982,7 +2982,7 @@ namespace KokkosClassic {
     }
 
     static void
-    Scale (MultiVector<double,SerialNode> &A, double alpha)
+    Scale (MultiVector<double,DoNotUse::SerialNode> &A, double alpha)
     {
       const size_t nR = A.getNumRows ();
       const size_t nC = A.getNumCols ();
