@@ -581,12 +581,20 @@ MV_Scal_Invoke_Left (const RMV& r, const AV& av, const XMV& x, int a = 2)
 
   switch (numCols) {
   case 1: {
-    typedef Kokkos::View<typename RMV::value_type*, typename RMV::array_layout,
-      typename RMV::device_type, typename RMV::memory_traits,
-      typename RMV::specialize> RV;
-    typedef Kokkos::View<typename XMV::value_type*, typename XMV::array_layout,
-      typename XMV::device_type, typename XMV::memory_traits,
-      typename XMV::specialize> XV;
+    typedef typename Kokkos::Impl::ViewSubview< RMV
+                              , Kokkos::ALL , unsigned int , void , void
+                              , void , void , void , void
+                              >::type RV;
+    typedef typename Kokkos::Impl::ViewSubview< XMV
+                              , Kokkos::ALL , unsigned int , void , void
+                              , void , void , void , void
+                              >::type XV;
+    //typedef Kokkos::View<typename RMV::value_type*, typename RMV::array_layout,
+    //  typename RMV::device_type, typename RMV::memory_traits,
+    //  typename RMV::specialize> RV;
+    //typedef Kokkos::View<typename XMV::value_type*, typename XMV::array_layout,
+    //  typename XMV::device_type, typename XMV::memory_traits,
+    //  typename XMV::specialize> XV;
 
     RV r_0 = Kokkos::subview (r, Kokkos::ALL (), 0);
     XV x_0 = Kokkos::subview (x, Kokkos::ALL (), 0);
