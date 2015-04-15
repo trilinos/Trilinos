@@ -148,6 +148,41 @@ namespace { // (anonymous)
     }
   };
 
+  // mfh 14 Apr 2015: Work-around for bug in Kokkos::subview, where
+  // taking a subview of a 0 x N DualView incorrectly always results
+  // in a 0 x 0 DualView.
+  template<class DualViewType>
+  DualViewType
+  takeSubview (const DualViewType& X,
+               const Kokkos::ALL&,
+               const std::pair<size_t, size_t>& colRng)
+  {
+    if (X.dimension_0 () == 0 && X.dimension_1 () != 0) {
+      return DualViewType ("MV::DualView", 0, colRng.second - colRng.first);
+    }
+    else {
+      return subview (X, Kokkos::ALL (), colRng);
+    }
+  }
+
+  // mfh 14 Apr 2015: Work-around for bug in Kokkos::subview, where
+  // taking a subview of a 0 x N DualView incorrectly always results
+  // in a 0 x 0 DualView.
+  template<class DualViewType>
+  DualViewType
+  takeSubview (const DualViewType& X,
+               const std::pair<size_t, size_t>& rowRng,
+               const std::pair<size_t, size_t>& colRng)
+  {
+    if (X.dimension_0 () == 0 && X.dimension_1 () != 0) {
+      return DualViewType ("MV::DualView", 0, colRng.second - colRng.first);
+    }
+    else {
+      return subview (X, rowRng, colRng);
+    }
+  }
+
+
 } // namespace (anonymous)
 
 
@@ -381,8 +416,8 @@ namespace Tpetra {
       // offsetView works correctly.
       const std::pair<size_t, size_t> colRng (whichVectors[0],
                                               whichVectors[0] + 1);
-      view_ = subview (view_, ALL (), colRng);
-      origView_ = subview (origView_, ALL (), colRng);
+      view_ = takeSubview (view_, ALL (), colRng);
+      origView_ = takeSubview (origView_, ALL (), colRng);
       // whichVectors_.size() == 0 means "constant stride."
       whichVectors_.clear ();
     }
@@ -454,8 +489,8 @@ namespace Tpetra {
       // offsetView works correctly.
       const std::pair<size_t, size_t> colRng (whichVectors[0],
                                               whichVectors[0] + 1);
-      view_ = subview (view_, ALL (), colRng);
-      origView_ = subview (origView_, ALL (), colRng);
+      view_ = takeSubview (view_, ALL (), colRng);
+      origView_ = takeSubview (origView_, ALL (), colRng);
       // whichVectors_.size() == 0 means "constant stride."
       whichVectors_.clear ();
     }
@@ -3024,27 +3059,15 @@ namespace Tpetra {
     const std::pair<size_t, size_t> rows (0, lclNumRows);
     if (colRng.size () == 0) {
       const std::pair<size_t, size_t> cols (0, 0); // empty range
-
-      dual_view_type X_sub = subview (this->view_, ALL (), cols);
-      if (lclNumRows == 0 && X_sub.dimension_1 () != 0) {
-        // mfh 14 Apr 2015: This is the "brutal enforcement" of which
-        // I spoke above.
-        X_sub = dual_view_type ("MV::DualView", 0, colRng.size ());
-      }
+      dual_view_type X_sub = takeSubview (this->view_, ALL (), cols);
       X_ret = rcp (new MV (this->getMap (), X_sub, origView_));
     }
     else {
-      // resulting MultiVector is constant stride only if *this is
+      // Returned MultiVector is constant stride only if *this is.
       if (isConstantStride ()) {
-        const std::pair<size_t, size_t> cols (colRng.lbound (), colRng.ubound () + 1);
-        dual_view_type X_sub = subview (view_, ALL (), cols);
-        if (lclNumRows == 0 &&
-            static_cast<size_t> (X_sub.dimension_1 ()) !=
-            static_cast<size_t> (colRng.size ())) {
-          // mfh 14 Apr 2015: This is the "brutal enforcement" of which
-          // I spoke above.
-          X_sub = dual_view_type ("MV::DualView", 0, colRng.size ());
-        }
+        const std::pair<size_t, size_t> cols (colRng.lbound (),
+                                              colRng.ubound () + 1);
+        dual_view_type X_sub = takeSubview (this->view_, ALL (), cols);
         X_ret = rcp (new MV (this->getMap (), X_sub, origView_));
       }
       else {
@@ -3053,14 +3076,7 @@ namespace Tpetra {
           // constant stride, even though this MultiVector does not.
           const std::pair<size_t, size_t> col (whichVectors_[0] + colRng.lbound (),
                                                whichVectors_[0] + colRng.ubound () + 1);
-          dual_view_type X_sub = subview (view_, ALL (), col);
-          if (lclNumRows == 0 &&
-              static_cast<size_t> (X_sub.dimension_1 ()) !=
-              static_cast<size_t> (colRng.size ())) {
-            // mfh 14 Apr 2015: This is the "brutal enforcement" of which
-            // I spoke above.
-            X_sub = dual_view_type ("MV::DualView", 0, colRng.size ());
-          }
+          dual_view_type X_sub = takeSubview (view_, ALL (), col);
           X_ret = rcp (new MV (this->getMap (), X_sub, origView_));
         }
         else {
@@ -3152,14 +3168,9 @@ namespace Tpetra {
       static_cast<size_t> (j) :
       static_cast<size_t> (this->whichVectors_[j]);
     const std::pair<size_t, size_t> rng (jj, jj+1);
-    if (view_.dimension_0 () > 0) {
-      return rcp (new V (this->getMap (),
-                         subview (view_, ALL (), rng),
-                         origView_));
-    } else {
-      // FIXME (mfh 04 Mar 2015) Doesn't this need to know about origView_?
-      return rcp (new V (this->getMap ()));
-    }
+    return rcp (new V (this->getMap (),
+                       takeSubview (this->view_, ALL (), rng),
+                       origView_));
   }
 
 
