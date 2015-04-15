@@ -78,6 +78,7 @@
 /// It defines a new implementation of Chebyshev iteration.
 
 #include "Ifpack2_Details_Chebyshev_decl.hpp"
+#include <Kokkos_ArithTraits.hpp>
 #include <cmath>
 
 // Uncommit the #define line below if you want Chebyshev to do extra
