@@ -542,6 +542,8 @@ namespace Thyra {
 
       level.Set<RCP<Matrix> >("A", rcpFromRef(Pattern));
 
+      RCP<AmalgamationFactory> amalgFactory = rcp(new AmalgamationFactory());
+
       RCP<CoalesceDropFactory> dropFactory = rcp(new CoalesceDropFactory());
       ParameterList dropParams = *(dropFactory->GetValidParameterList());
       dropParams.set("lightweight wrap",          true);
@@ -549,6 +551,7 @@ namespace Thyra {
       dropParams.set("aggregation: drop tol",     dropTol);
       // dropParams.set("Dirichlet detection threshold", <>);
       dropFactory->SetParameterList(dropParams);
+      dropFactory->SetFactory("UnAmalgamationInfo", amalgFactory);
 
       // Build
       level.Request("Graph", dropFactory.get());
