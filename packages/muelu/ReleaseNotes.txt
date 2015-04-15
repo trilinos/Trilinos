@@ -2,6 +2,25 @@
 Release Notes for Trilinos Package MueLu
 -----------------------------------------
 
+Trilinos 12.0:
+---------------
+
+* Hierarchy::Iterate now understands tolerance
+
+  When MueLu::Hierarchy is being used as a standalone solver, and not as a
+  preconditioner, a user may now create a stopping criteria based on a provided
+  tolerance for the relative residual in addition to the maximum number of
+  iterations
+
+* New reuse options option: "tP"
+
+  This reuse option allows reuse of only tentative prolongators, while
+  rebuilding smoothed prolongator and coarse level operators.
+
+* Selected bugfixes:
+    6301:  Operator complexity was computed incorrectly for large size problems
+
+
 Trilinos 11.14:
 ---------------
 
