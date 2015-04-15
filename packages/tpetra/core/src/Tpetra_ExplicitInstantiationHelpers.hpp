@@ -60,11 +60,11 @@
 // only used once in the entire mostly empty file.
 //
 
-/** \brief Instantiate a macro template for the KokkosClassic::TBBNode */
+/** \brief Instantiate a macro template for the KokkosClassic::DoNotUse::TBBNode */
 #ifdef HAVE_KOKKOSCLASSIC_TBB
 #  include <Kokkos_TBBNode.hpp>
 #  define TPETRA_MACRO_TEMPLATE_INSTANT_TBBNODE(SCALAR,LO,GO,INSTANT_MACRO)\
-     INSTANT_MACRO(SCALAR,LO,GO,KokkosClassic::TBBNode)
+    INSTANT_MACRO(SCALAR,LO,GO,KokkosClassic::DoNotUse::TBBNode)
 #else
 #  define TPETRA_MACRO_TEMPLATE_INSTANT_TBBNODE(SCALAR,LO,GO,INSTANT_MACRO)
 #endif

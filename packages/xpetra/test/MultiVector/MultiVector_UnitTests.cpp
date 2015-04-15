@@ -2669,7 +2669,7 @@ typedef std::complex<double> ComplexDouble;
 #endif // HAVE_KOKKOSCLASSIC_SERIAL
 
 #ifdef HAVE_KOKKOSCLASSIC_TBB
-  using KokkosClassic::TBBNode;
+  using KokkosClassic::DoNotUse::TBBNode;
 #define UNIT_TEST_TBBNODE(MV, V, ORDINAL, SCALAR) \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MV, V, ORDINAL, SCALAR, TBBNode )
 #else

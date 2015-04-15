@@ -112,7 +112,7 @@ namespace Details {
 #if defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE)
     typedef ::KokkosClassic::DoNotUse::TPINode DefaultNodeType;
 #elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TBBNODE)
-    typedef TBBNode DefaultNodeType;
+    typedef ::KokkosClassic::DoNotUse::TBBNode DefaultNodeType;
 #elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPNODE)
     typedef ::KokkosClassic::DoNotUse::OpenMPNode DefaultNodeType;
 #elif defined(HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT)

@@ -56,8 +56,7 @@ ENDIF ()
 #
 # Users may specify TpetraClassic_ENABLE_TPINode to enable
 # KokkosClassic::DoNotUse::TPINode explicitly.  It is DEPRECATED and
-# may be removed at any time.  This Node is also disabled by default
-# if the Kokkos refactor version of Tpetra is enabled.
+# and is disabled by default.
 #
 ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_ThreadPool)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ThreadPool)
@@ -83,9 +82,8 @@ ENDIF ()
 
 #
 # Users may specify TpetraClassic_ENABLE_TBBNode to enable
-# KokkosClassic::TBBNode explicitly.  It will be DEPRECATED in the
-# next Trilinos release.  This Node will also be disabled by default
-# if the Kokkos refactor version of Tpetra is enabled.
+# KokkosClassic::DoNotUse::TBBNode explicitly.  It has been DEPRECATED
+# and is disabled by default.
 #
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_TBB)
 IF(${PACKAGE_NAME}_ENABLE_TBB AND NOT Tpetra_ENABLE_Kokkos_Refactor)
@@ -100,7 +98,7 @@ ENDIF ()
 TRIBITS_ADD_OPTION_AND_DEFINE( 
   ${PACKAGE_NAME}_ENABLE_TBBNode
   HAVE_TPETRACLASSIC_TBB
-  "Enable KokkosClassic::TBBNode in ${PACKAGE_NAME}.  This Node type and this CMake option will be DEPRECATED in the next Trilinos release."
+  "Enable KokkosClassic::DoNotUse::TBBNode in ${PACKAGE_NAME}.  This Node type and this CMake option has been DEPRECATED."
   ${${PACKAGE_NAME}_ENABLE_TBBNode_DEFAULT}
   )
 IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_TBBNode)

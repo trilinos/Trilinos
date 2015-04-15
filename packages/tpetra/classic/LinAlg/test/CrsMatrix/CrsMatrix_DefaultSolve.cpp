@@ -394,7 +394,7 @@ namespace {
 #endif // HAVE_TPETRACLASSIC_SERIAL
 
 #ifdef HAVE_TPETRACLASSIC_TBB
-  typedef KokkosClassic::TBBNode KokkosClassic_TBBNode;
+  typedef KokkosClassic::DoNotUse::TBBNode KokkosClassic_TBBNode;
 #define UNIT_TEST_TBBNODE(ORDINAL, SCALAR) \
   ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, KokkosClassic_TBBNode )
 #else

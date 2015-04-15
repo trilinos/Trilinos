@@ -155,12 +155,12 @@ namespace TSQR {
 
 #ifdef HAVE_KOKKOSTSQR_TBB
   //
-  // Specialization of NodeTsqrFactory for KokkosClassic::TBBNode.
+  // Specialization of NodeTsqrFactory for KokkosClassic::DoNotUse::TBBNode.
   //
   template<class Scalar, class LocalOrdinal>
-  class NodeTsqrFactory<KokkosClassic::TBBNode, Scalar, LocalOrdinal> {
+  class NodeTsqrFactory<KokkosClassic::DoNotUse::TBBNode, Scalar, LocalOrdinal> {
   public:
-    typedef KokkosClassic::TBBNode node_type;
+    typedef KokkosClassic::DoNotUse::TBBNode node_type;
     typedef Teuchos::RCP<node_type> node_ptr;
     typedef TBB::TbbTsqr<LocalOrdinal, Scalar> node_tsqr_type;
 

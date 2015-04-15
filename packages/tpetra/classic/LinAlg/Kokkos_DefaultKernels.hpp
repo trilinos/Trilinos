@@ -113,12 +113,15 @@ namespace KokkosClassic {
 #endif // defined(HAVE_TPETRACLASSIC_SERIAL)
 
 #if defined(HAVE_TPETRACLASSIC_TBB)
-  class TBBNode;
+  namespace DoNotUse {
+    class TBBNode;
+  } // namespace DoNotUse
+
   //! Partial specialization for TBBNode, using first-touch allocation.
   template <class Scalar, class Ordinal>
-  struct DefaultKernels<Scalar, Ordinal, TBBNode> {
-    typedef DefaultHostSparseOps<void, Ordinal, TBBNode, details::FirstTouchCRSAllocator> SparseOps;
-    typedef DefaultRelaxation<Scalar, Ordinal, TBBNode> Relaxations;
+  struct DefaultKernels<Scalar, Ordinal, DoNotUse::TBBNode> {
+    typedef DefaultHostSparseOps<void, Ordinal, DoNotUse::TBBNode, details::FirstTouchCRSAllocator> SparseOps;
+    typedef DefaultRelaxation<Scalar, Ordinal, DoNotUse::TBBNode> Relaxations;
   };
 #endif // HAVE_TPETRACLASSIC_TBB
 

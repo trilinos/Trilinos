@@ -133,7 +133,7 @@ namespace {
 #endif // HAVE_KOKKOSCLASSIC_SERIAL
 
 #ifdef HAVE_KOKKOSCLASSIC_TBB
-  typedef KokkosClassic::TBBNode KokkosClassic_TBBNode;
+  typedef KokkosClassic::DoNotUse::TBBNode KokkosClassic_TBBNode;
 #define UNIT_TEST_TBBNODE(SCALAR) \
   ALL_UNIT_TESTS_SCALAR_NODE( SCALAR, KokkosClassic_TBBNode )
 #else
