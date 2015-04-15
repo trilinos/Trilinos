@@ -1,4 +1,4 @@
-function varargout = ml(varargin)
+function varargout = muelu(varargin)
 % Interface to the ML.  Sets Up/Runs/Queries/Cleans up the smoothed
 % aggregation algebraic multigrid solver ML.  In general, options
 % are identical to the Teuchos parameters found in the ML

@@ -89,6 +89,9 @@ typedef enum
 typedef int mwIndex;
 #endif
 
+//Declare and call default constructor for data_pack_list vector (starts empty)
+vector<muelu_data_pack*> muelu_data_pack_list::list;
+
 /**************************************************************/
 /**************************************************************/
 /**************************************************************/
@@ -102,15 +105,17 @@ typedef int mwIndex;
    mwi_array - Array of mwIndex objects [I]
    Return value: mwIndex objects cast down to ints
 */
-int* mwIndex_to_int(int N, mwIndex* mwi_array){
-  int i,*rv = new int[N];
-  for(i=0;i<N;i++)
-    rv[i] = (int)mwi_array[i];
-  return rv;
+int* mwIndex_to_int(int N, mwIndex* mwi_array)
+{
+	int i, *rv = new int[N];
+	for(i = 0; i < N; i++)
+		rv[i] = (int) mwi_array[i];
+	return rv;
 }
 
 /*******************************/ 
-Epetra_CrsMatrix* epetra_setup(int Nrows, int Ncols, int* rowind, int* colptr, double* vals) {
+Epetra_CrsMatrix* epetra_setup(int Nrows, int Ncols, int* rowind, int* colptr, double* vals)
+{
 	Epetra_SerialComm Comm;
 	Epetra_Map RangeMap(Nrows, 0, Comm);
 	Epetra_Map DomainMap(Ncols, 0, Comm);
@@ -123,7 +128,7 @@ Epetra_CrsMatrix* epetra_setup(int Nrows, int Ncols, int* rowind, int* colptr, d
     		A->InsertGlobalValues(rowind[j], 1, &vals[j], &i);
     	}
 	}
-	A->FillComplete(DomainMap,RangeMap);
+	A->FillComplete(DomainMap, RangeMap);
 	return A;
 }
 
@@ -169,7 +174,7 @@ int epetra_solve(Teuchos::ParameterList *SetupList, Teuchos::ParameterList *TPL,
 	int N = A->NumMyRows();
 	Epetra_Vector LHS(A->RowMap());
     Epetra_Vector RHS(A->RowMap());
-	RCP<Epetra_CrsMatrix> matrix = rcp(A);	
+	RCP<Epetra_CrsMatrix> matrix = rcp(A, false);	
 	RCP<Epetra_Vector> lhsPtr = rcp(&LHS);
 	RCP<Epetra_Vector> rhsPtr = rcp(&RHS);
     /* Fill LHS/RHS */
@@ -314,15 +319,15 @@ muelu_epetra_data_pack::~muelu_epetra_data_pack()
 */
 int muelu_epetra_data_pack::status()
 {
-	mexPrintf("**** Problem ID %d [MueLu_Epetra] ****\n",id);
+	mexPrintf("**** Problem ID %d [MueLu_Epetra] ****\n", id);
 	if(A)
-		mexPrintf("Matrix: %dx%d w/ %d nnz\n",A->NumGlobalRows(),A->NumGlobalCols(),A->NumMyNonzeros());
+		mexPrintf("Matrix: %dx%d w/ %d nnz\n", A->NumGlobalRows(), A->NumGlobalCols(), A->NumMyNonzeros());
 	//TODO: Find out what operator complexity is
 	//mexPrintf(" Operator complexity = %e\n",operator_complexity);
 	if(List)
 	{
 		mexPrintf("Parameter List:\n");
-		List->print(cout,1);
+		List->print(cout, 1);
 	}
 	mexPrintf("\n");
 	return IS_TRUE;
@@ -340,7 +345,8 @@ int muelu_epetra_data_pack::status()
    vals    - Nonzero values of matrix (CSC format) [I]
    Returns: IS_TRUE if setup was succesful, IS_FALSE otherwise
 */
-int muelu_epetra_data_pack::setup(int N, int* rowind, int* colptr, double* vals){
+int muelu_epetra_data_pack::setup(int N, int* rowind, int* colptr, double* vals)
+{
 	/* Matrix Fill */
 	A = epetra_setup(N, N, rowind, colptr, vals);
 	return IS_TRUE;
@@ -359,28 +365,23 @@ int muelu_epetra_data_pack::setup(int N, int* rowind, int* colptr, double* vals)
    iters   - number of iterations taken [O]
    Returns: IS_TRUE if solve was succesful, IS_FALSE otherwise
 */
-int muelu_epetra_data_pack::solve(Teuchos::ParameterList* TPL, Epetra_CrsMatrix* Amat, double* b, double* x,int &iters)
+int muelu_epetra_data_pack::solve(Teuchos::ParameterList* TPL, Epetra_CrsMatrix* Amat, double* b, double* x, int &iters)
 {
 	return epetra_solve(List, TPL, Amat, b, x, iters);
 }/*end solve*/
 
 /**************************************************************/
 /**************************************************************/
-/*********  muelu_data_pack list class functions **************/
+/*******  muelu_data_pack list namespace functions ************/
 /**************************************************************/
 /**************************************************************/
 
-muelu_data_pack_list::muelu_data_pack_list() : num_probs(0) , L(NULL) {}
-muelu_data_pack_list::~muelu_data_pack_list()
+void muelu_data_pack_list::clearAll()
 {
-	muelu_data_pack *old;
-	while (L != NULL)
-	{
-	    old = L;
-		L = L->next;
-	    delete old;
-	}/*end while*/
-}/*end destructor*/
+	for(auto i : list)
+		delete i;
+	list.clear();
+}
 
 /* add - Adds an muelu_data_pack to the list.
    Parameters:
@@ -389,27 +390,9 @@ muelu_data_pack_list::~muelu_data_pack_list()
 */
 int muelu_data_pack_list::add(muelu_data_pack *D)
 {
-  int idx_prev=0;
-  muelu_data_pack *iprev, *icurr;
-  if(!L)
-  {
-	L = D;
-	D->next = NULL;
-	D->id = 1;
-  }
-  else
-  {
-    /* Find the first numbering gap + add in D appropriately */
-    for(iprev = NULL, icurr = L; icurr && icurr->id - idx_prev == 1; iprev = icurr, idx_prev = iprev->id,icurr=icurr->next);
-    if(!iprev) L=D;
-    else iprev->next=D;
-    D->id=idx_prev+1;
-    D->next=icurr;
-    num_probs++;
-  }/*end if*/
-  return D->id;
+	list.push_back(D);
+	return list.size() - 1;
 }/*end add*/
-
 
 /* find - Finds problem by id
    Parameters:
@@ -417,47 +400,52 @@ int muelu_data_pack_list::add(muelu_data_pack *D)
    Returns: pointer to muelu_data_pack matching 'id', if found, NULL if not
    found.
 */
-muelu_data_pack* muelu_data_pack_list::find(int id){
-  muelu_data_pack *rv;
-  for(rv=L;rv && rv->id<id;rv=rv->next);
-  if(rv && rv->id==id) return rv;
-  else return NULL;
+muelu_data_pack* muelu_data_pack_list::find(int id)
+{
+	if(id >= list.size())
+	{
+		return NULL;
+	}
+	else
+	{
+		return list[id];
+	}
 }/*end find*/
-
 
 /* remove - Removes problem by id
    Parameters:
    id      - ID number [I]
    Returns: IS_TRUE if remove was succesful, IS_FALSE otherwise
 */
-int muelu_data_pack_list::remove(int id){
-  muelu_data_pack *iprev, *icurr;
-  if(!L) return IS_FALSE;
-  for(iprev=NULL,icurr=L; icurr && icurr->id<id; iprev=icurr,icurr=icurr->next);
-
-  if(!icurr || icurr->id!=id) return IS_FALSE;
-  else{
-    if(!iprev) L=icurr->next;
-    else iprev->next=icurr->next;
-    delete icurr;
-    return IS_TRUE;
-  }/*end else*/
+int muelu_data_pack_list::remove(int id)
+{
+	if(id >= list.size())
+	{
+		return IS_FALSE;
+	}
+	else
+	{
+		delete list[id];
+		list.erase(list.begin() + id);
+		return IS_TRUE;	
+	}
 }/*end remove*/
 
 
-/* size - Number of stored problems
-   Returns: num_probs
-*/
-int muelu_data_pack_list::size(){return num_probs;}
+/* size - Number of stored problems */
+int muelu_data_pack_list::size()
+{
+	return list.size();
+}
 
 /* Returns the status of all members of the list
    Returns IS_TRUE
 */
-int muelu_data_pack_list::status_all(){
-  muelu_data_pack *curr;
-  for(curr=L;curr;curr=curr->next)
-    curr->status();
-  return IS_TRUE;
+int muelu_data_pack_list::status_all()
+{
+	for(auto problem : list)
+		problem->status();
+	return IS_TRUE;
 }/*end status_all */
 
 /* sanity_check - sanity checks the first couple of arguements and returns the
@@ -470,15 +458,15 @@ int muelu_data_pack_list::status_all(){
 
 MODE_TYPE sanity_check(int nrhs, const mxArray *prhs[])
 {
-	MODE_TYPE rv=MODE_ERROR;
+	MODE_TYPE rv = MODE_ERROR;
 	double *modes;
 	/* Check for mode */
-	if(nrhs==0)
+	if(nrhs == 0)
 		mexErrMsgTxt("Error: Invalid Inputs\n");
 
 	/* Pull mode data from 1st Input */
-	modes=mxGetPr(prhs[0]);
-	switch ((MODE_TYPE)modes[0])
+	modes = mxGetPr(prhs[0]);
+	switch ((MODE_TYPE) modes[0])
 	{
 		case MODE_SETUP:
 			if(nrhs > 1 && mxIsSparse(prhs[1]))
@@ -546,89 +534,98 @@ void csc_print(int n, int* rowind, int* colptr, double* vals)
 
 void parse_list_item(Teuchos::ParameterList & List,char *option_name,const mxArray *prhs)
 {
-  mxClassID cid;
-  int i,M,N, *opt_int;
-  char *opt_char;
-  double *opt_float;
-  string opt_str;
-  Teuchos::ParameterList sublist;
-  mxArray *cell1,*cell2;
+	mxClassID cid;
+	int i,M,N, *opt_int;
+	char *opt_char;
+	double *opt_float;
+	string opt_str;
+	Teuchos::ParameterList sublist;
+	mxArray *cell1,*cell2;
 
-  /* Pull relevant info the the option value */
-  cid=mxGetClassID(prhs);
-  M=mxGetM(prhs);
-  N=mxGetN(prhs);
+	/* Pull relevant info the the option value */
+	cid=mxGetClassID(prhs);
+	M=mxGetM(prhs);
+	N=mxGetN(prhs);
 
-  /* Add to the Teuchos list */
-  switch(cid){
-  case mxCHAR_CLASS:
-    // String
-    opt_char=mxArrayToString(prhs);
-    opt_str=opt_char;
-    List.set(option_name, opt_str);
-    mxFree(opt_char);
-    break;
-  case mxDOUBLE_CLASS:
-  case mxSINGLE_CLASS:
-    // Single or double
-    //NTS: Does not deal with complex args
-    opt_float=mxGetPr(prhs);
-    if(M==1 && N==1 && ISINT(opt_float[0])) {
-      List.set(option_name, (int)opt_float[0]);
-    }/*end if*/
-    else if(M==1 && N==1){
-      List.set(option_name, opt_float[0]);
-    }/*end if*/
-    else if(M==0 || N==0){
-      List.set(option_name,(double*)NULL);
-    }
-    else{
-      List.set(option_name, opt_float);
-    }/*end else*/
-    break;
-  case mxLOGICAL_CLASS:
+	/* Add to the Teuchos list */
+	switch(cid){
+	case mxCHAR_CLASS:
+		// String
+    	opt_char=mxArrayToString(prhs);
+    	opt_str=opt_char;
+    	List.set(option_name, opt_str);
+    	mxFree(opt_char);
+    	break;
+	case mxDOUBLE_CLASS:
+	case mxSINGLE_CLASS:
+		// Single or double
+		//NTS: Does not deal with complex args
+		opt_float = mxGetPr(prhs);
+		if(M == 1 && N == 1 && ISINT(opt_float[0]))
+		{
+			List.set(option_name, (int) opt_float[0]);
+		} /*end if*/
+		else if(M == 1 && N == 1)
+		{
+			List.set(option_name, opt_float[0]);
+		}/*end if*/
+		else if(M == 0 || N == 0)
+		{
+			List.set(option_name, (double*) NULL);
+	  	}
+	  	else
+		{
+		    List.set(option_name, opt_float);
+		}/*end else*/
+		break;
+	case mxLOGICAL_CLASS:
     // Bool
-    if(M==1 && N==1) List.set(option_name, mxIsLogicalScalarTrue(prhs));
-    else List.set(option_name,mxGetLogicals(prhs));
-    //NTS: The else probably doesn't work.
+	if(M == 1 && N == 1)
+		List.set(option_name, mxIsLogicalScalarTrue(prhs));
+    else
+		List.set(option_name, mxGetLogicals(prhs));
+    	//NTS: The else probably doesn't work.
     break;
-  case mxINT8_CLASS:
-  case mxUINT8_CLASS:
-  case mxINT16_CLASS:
-  case mxUINT16_CLASS:
-  case mxINT32_CLASS:
-  case mxUINT32_CLASS:
-    // Integer
-    opt_int=(int*)mxGetData(prhs);
-    if(M==1 && N==1) List.set(option_name, opt_int[0]);
-    else List.set(option_name, opt_int);
-    break;
-    // NTS: 64-bit ints will break on a 32-bit machine.  We
-    // should probably detect machine type, or somthing, but that would
-    // involve a non-trivial quantity of autoconf kung fu.
-  case mxCELL_CLASS:
-    // Interpret a cell list as a nested teuchos list.
-    // NTS: Assuming that it's a 1D row ordered array
-    for(i=0;i<N;i+=2){
-      cell1=mxGetCell(prhs,i);
-      cell2=mxGetCell(prhs,i+1);
-      if(!mxIsChar(cell1))
-	mexErrMsgTxt("Error: Input options are not in ['parameter',value] format!\n");
-      opt_char=mxArrayToString(cell1);
-      parse_list_item(sublist,opt_char,cell2);
-      List.set(option_name,sublist);
-      mxFree(opt_char);
-    }
-    break;
-  case mxINT64_CLASS:
-  case mxUINT64_CLASS:
-  case mxFUNCTION_CLASS:
-  case mxUNKNOWN_CLASS:
-  case mxSTRUCT_CLASS:
-  default:
-    mexPrintf("Error parsing input option: %s [type=%d]\n",option_name,cid);
-    mexErrMsgTxt("Error: An input option is invalid!\n");
-  };
+	case mxINT8_CLASS:
+	case mxUINT8_CLASS:
+	case mxINT16_CLASS:
+	case mxUINT16_CLASS:
+	case mxINT32_CLASS:
+	case mxUINT32_CLASS:
+	    // Integer
+	    opt_int = (int*) mxGetData(prhs);
+	    if(M == 1 && N == 1)
+			List.set(option_name, opt_int[0]);
+	    else
+			List.set(option_name, opt_int);
+	    break;
+	    // NTS: 64-bit ints will break on a 32-bit machine.  We
+	    // should probably detect machine type, or somthing, but that would
+	    // involve a non-trivial quantity of autoconf kung fu.
+	case mxCELL_CLASS:
+		// Interpret a cell list as a nested teuchos list.
+		// NTS: Assuming that it's a 1D row ordered array
+		for(i = 0; i < N; i += 2)
+		{
+			cell1 = mxGetCell(prhs, i);
+			cell2 = mxGetCell(prhs, i + 1);
+			if(!mxIsChar(cell1))
+				mexErrMsgTxt("Error: Input options are not in ['parameter',value] format!\n");
+      		opt_char = mxArrayToString(cell1);
+      		parse_list_item(sublist, opt_char, cell2);
+      		List.set(option_name, sublist);
+      		mxFree(opt_char);
+    	}
+    	break;
+	case mxINT64_CLASS:
+	case mxUINT64_CLASS:
+	case mxFUNCTION_CLASS:
+	case mxUNKNOWN_CLASS:
+	case mxSTRUCT_CLASS:
+	default:
+	    mexPrintf("Error parsing input option: %s [type=%d]\n", option_name, cid);
+	    mexErrMsgTxt("Error: An input option is invalid!\n");
+	};
 }
 
 /**************************************************************/
@@ -645,7 +642,6 @@ Teuchos::ParameterList* build_teuchos_list(int nrhs,const mxArray *prhs[])
 {
 	Teuchos::ParameterList* TPL = new Teuchos::ParameterList;
 	char* option_name;
-
 	for(int i = 0; i < nrhs; i += 2)
 	{
 		if(i == nrhs - 1 || !mxIsChar(prhs[i]))
@@ -663,23 +659,30 @@ Teuchos::ParameterList* build_teuchos_list(int nrhs,const mxArray *prhs[])
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 {
-  int i, *id, sz, rv, *rowind, *colptr;
-  double *b, *x, *vals;
-  int nr, nc, iters;
-  string intf;
-  Teuchos::ParameterList* List;
-  MODE_TYPE mode;
-  static muelu_data_pack_list* PROBS = NULL;
-  //points to current working problem in list (muelu_data_pack is superclass)
-  muelu_data_pack* D = 0;
-  bool rewrap_ints = false;
-  //ml_maxwell_data_pack * Dhat=0;
-  Epetra_CrsMatrix* A;
-  /* Sanity Check Input */
-  mode = sanity_check(nrhs, prhs);
-
-  /* Set flag if mwIndex and int are not the same size */
-  /* NTS: This can be an issue on 64 bit architectures */
+	int* id;
+	int i;
+	int sz;
+	int rv;
+	int* rowind;
+	int* colptr;
+	//Arrays representing vectors
+	double* b;
+	double* x;
+	double* vals;
+	int nr;
+	int nc;
+	int iters;
+	string intf;
+	Teuchos::ParameterList* List;
+	MODE_TYPE mode;
+	bool rewrap_ints = false;
+	muelu_data_pack* D = nullptr;
+	//ml_maxwell_data_pack * Dhat=0;
+	Epetra_CrsMatrix* A;
+	/* Sanity Check Input */
+	mode = sanity_check(nrhs, prhs);
+	/* Set flag if mwIndex and int are not the same size */
+	/* NTS: This can be an issue on 64 bit architectures */
 	if(sizeof(int) != sizeof(mwIndex))
 		rewrap_ints=true;
 		switch(mode)
@@ -699,7 +702,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 				else
 					D = new muelu_epetra_data_pack();
 				D->List = List;
-			
 				/* Pull matrix in CSC format */
 				vals = mxGetPr(prhs[1]);
 				if(rewrap_ints)
@@ -712,13 +714,15 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 					rowind = (int*) mxGetIr(prhs[1]);
 					colptr = (int*) mxGetJc(prhs[1]);
 				}
+				mexPrintf("Finished setup phase.\n");
 				D->setup(nr, rowind, colptr, vals);
-				rv = PROBS->add(D);
+				rv = muelu_data_pack_list::add(D);
 				plhs[0] = mxCreateNumericMatrix(1, 1, mxINT32_CLASS, mxREAL);
 				id = (int*) mxGetData(plhs[0]);
 				id[0] = rv;
 				if(nlhs > 1)
 					plhs[1] = mxCreateDoubleScalar(D->operator_complexity);
+				D->id = rv;
 				if(rewrap_ints)
 				{
 					delete[] rowind;
@@ -729,42 +733,36 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 		    case MODE_SOLVE:
 				mexPrintf("MueMex in solving mode.\n");
 				/* Are there problems set up? */
-				if(!PROBS) mexErrMsgTxt("Error: No problems set up, cannot solve.\n");
-
+				if(muelu_data_pack_list::size() == 0)
+					mexErrMsgTxt("Error: No problems set up, cannot solve.\n");
 				/* Get the Problem Handle */
-				id=(int*)mxGetData(prhs[1]);
-				D=PROBS->find(id[0]);
-				if(!D) mexErrMsgTxt("Error: Problem handle not allocated.\n");
-
+				id = (int*) mxGetData(prhs[1]);
+				D = muelu_data_pack_list::find(id[0]);
+				if(!D)
+					mexErrMsgTxt("Error: Problem handle not allocated.\n");
 				/* Pull Problem Size */
-				nr=mxGetM(prhs[2]);
+				nr = mxGetM(prhs[2]);
 				A = D->GetMatrix();
-
 				/* Pull RHS */
-				b=mxGetPr(prhs[2]);
-
+				b = mxGetPr(prhs[2]);
 				/* Teuchos List*/
 				if(nrhs > 4)
 					List = build_teuchos_list(nrhs - 3, &(prhs[3]));
 				else
 					List = new Teuchos::ParameterList;
-
 				/* Allocate Solution Space */
 				plhs[0] = mxCreateDoubleMatrix(nr, 1, mxREAL);
 				x = mxGetPr(plhs[0]);
-
 				/* Sanity Check Matrix / RHS */
 				if(nr != A->NumMyRows() || A->NumMyRows() != A->NumMyCols())
-				  mexErrMsgTxt("Error: Size Mismatch in Input\n");
-
+					mexErrMsgTxt("Error: Size Mismatch in Input\n");
 				/* Run Solver */
 				D->solve(List, A, b, x, iters);
-
 				/* Output Iteration Count */
-				if(nlhs > 1){
-				  plhs[1] = mxCreateDoubleScalar((double)iters);
+				if(nlhs > 1)
+				{
+					plhs[1] = mxCreateDoubleScalar((double) iters);
 				}
-
 				/* Cleanup */
 				A = 0; // we don't own this
 				delete List;
@@ -772,87 +770,91 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 			case MODE_SOLVE_NEWMATRIX:
 				mexPrintf("MueMex in new matrix solving mode.\n");
 				/* Are there problems set up? */
-				if(!PROBS) mexErrMsgTxt("Error: No problems set up, cannot solve.\n");
-
+				if(muelu_data_pack_list::size() == 0)
+					mexErrMsgTxt("Error: No problems set up, cannot solve.\n");
 				/* Get the Problem Handle */
-				id=(int*)mxGetData(prhs[1]);
-				D=PROBS->find(id[0]);
-				if(!D) mexErrMsgTxt("Error: Problem handle not allocated.\n");
-
+				id = (int*) mxGetData(prhs[1]);
+				D = muelu_data_pack_list::find(id[0]);
+				if(!D)
+					mexErrMsgTxt("Error: Problem handle not allocated.\n");
 				/* Pull Problem Size */
-				nr=mxGetM(prhs[2]);
-				nc=mxGetN(prhs[2]);
-				if(nr!=D->NumMyRows() && nc!=D->NumMyCols()) mexErrMsgTxt("Error: Problem size mismatch.\n");
-
+				nr = mxGetM(prhs[2]);
+				nc = mxGetN(prhs[2]);
+				if(nr != D->NumMyRows() && nc != D->NumMyCols())
+					mexErrMsgTxt("Error: Problem size mismatch.\n");
 				/* Pull RHS */
-				b=mxGetPr(prhs[3]);
-
+				b = mxGetPr(prhs[3]);
 				/* Teuchos List*/
-				if(nrhs>4) List=build_teuchos_list(nrhs-4,&(prhs[4]));
-				else List=new Teuchos::ParameterList;
-
+				if(nrhs > 4)
+					List = build_teuchos_list(nrhs - 4, &(prhs[4]));
+				else
+					List = new Teuchos::ParameterList;
 				/* Allocate Solution Space */
-				plhs[0]=mxCreateDoubleMatrix(nr,1,mxREAL);
-				x=mxGetPr(plhs[0]);
-
+				plhs[0] = mxCreateDoubleMatrix(nr, 1, mxREAL);
+				x = mxGetPr(plhs[0]);
 				/* Sanity Check Matrix / RHS */
-				if(nr != nc || nr != (int)mxGetM(prhs[2]))
-				  mexErrMsgTxt("Error: Size Mismatch in Input\n");
-
+				if(nr != nc || nr != (int) mxGetM(prhs[2]))
+					mexErrMsgTxt("Error: Size Mismatch in Input\n");
 				// Grab the input matrix
-				A=epetra_setup_from_prhs(prhs[2],rewrap_ints);
-
+				A = epetra_setup_from_prhs(prhs[2], rewrap_ints);
 				/* Run Solver */
-				D->solve(List,A,b,x,iters);
-
+				D->solve(List, A, b, x, iters);
 				/* Output Iteration Count */
-				if(nlhs>1){
-				  plhs[1]=mxCreateDoubleScalar((double)iters);
+				if(nlhs > 1)
+				{
+					plhs[1] = mxCreateDoubleScalar((double) iters);
 				}
-
 				/* Cleanup */
 				delete List;
 				delete A;
 				break;
 		    case MODE_CLEANUP:
 				mexPrintf("MueMex in cleanup mode.\n");
-				if(PROBS && nrhs == 1){
-				  /* Cleanup all problems */
-				  sz=PROBS->size();
-				  for(i = 0; i < sz; i++)
-					mexUnlock();
-				  delete PROBS;PROBS=NULL;
-				  rv=1;
-				}/*end if*/
-				else if(PROBS && nrhs==2){
-				  /* Cleanup one problem */
-				  id=(int*)mxGetData(prhs[1]);
-				  rv=PROBS->remove(id[0]);
-				  if(rv) mexUnlock();
+				if(muelu_data_pack_list::size() > 0 && nrhs == 1)
+				{
+					/* Cleanup all problems */
+					for(auto problem : muelu_data_pack_list::list)
+						mexUnlock();
+					muelu_data_pack_list::clearAll();
+					rv = 1;
+				}
+				else if(muelu_data_pack_list::size() > 0 && nrhs==2)
+				{
+					/* Cleanup one problem */
+					id = (int*) mxGetData(prhs[1]);
+					rv = muelu_data_pack_list::remove(id[0]);
+					if(rv)
+						mexUnlock();
 				}/*end elseif*/
-				else rv=0;
+				else
+					rv = 0;
 				/* Set return value */
-				plhs[0]=mxCreateNumericMatrix(1,1,mxINT32_CLASS,mxREAL);
-				id=(int*)mxGetData(plhs[0]);id[0]=rv;
+				plhs[0] = mxCreateNumericMatrix(1, 1, mxINT32_CLASS, mxREAL);
+				id = (int*) mxGetData(plhs[0]);
+				id[0] = rv;
 		        break;
 		    case MODE_STATUS:
 				mexPrintf("MueMex in status checking mode.\n");
-				if(PROBS && nrhs==1){
+				if(muelu_data_pack_list::size() > 0 && nrhs == 1)
+				{
 				  /* Status check on all problems */
-				  rv=PROBS->status_all();
+					rv = muelu_data_pack_list::status_all();
 				}/*end if*/
-				else if(PROBS && nrhs==2){
-				  /* Status check one problem */
-				  id=(int*)mxGetData(prhs[1]);
-				  D=PROBS->find(id[0]);
-				  if(!D) mexErrMsgTxt("Error: Problem handle not allocated.\n");
-				  rv=D->status();
+				else if(muelu_data_pack_list::size() > 0 && nrhs == 2)
+				{
+					/* Status check one problem */
+					id = (int*) mxGetData(prhs[1]);
+					D = muelu_data_pack_list::find(id[0]);
+					if(!D)
+						mexErrMsgTxt("Error: Problem handle not allocated.\n");
+					rv = D->status();
 				}/*end elseif*/
-				else rv=0;
-
+				else
+					rv=0;
 				/* Set return value */
-				plhs[0]=mxCreateNumericMatrix(1,1,mxINT32_CLASS,mxREAL);
-				id=(int*)mxGetData(plhs[0]);id[0]=rv;
+				plhs[0] = mxCreateNumericMatrix(1, 1, mxINT32_CLASS, mxREAL);
+				id = (int*) mxGetData(plhs[0]);
+				id[0] = rv;
 		        break;
 		    case MODE_ERROR:
 		        mexPrintf("MueMex error.");

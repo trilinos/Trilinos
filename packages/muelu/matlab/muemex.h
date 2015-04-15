@@ -98,7 +98,7 @@ class mueluapi_data_pack : public muelu_data_pack
     public:
         mueluapi_data_pack();
         ~mueluapi_data_pack();
-        int setup(int N, int* rowind, int* colptr, double* vals);
+        int setup(int N, int* rowind, int* colptr, double* vals);A = [2 0 0; 0 4 1; 0 1 3]
         int status();
         int NumMyRows()
         {
@@ -124,7 +124,7 @@ class muelu_epetra_data_pack : public muelu_data_pack
         ~muelu_epetra_data_pack();
         int setup(int N, int* rowind, int* colptr, double* vals);
         int status();
-        int solve(Teuchos::ParameterList *TPL, Epetra_CrsMatrix *Amat, double*b, double*x,int &iters);
+        int solve(Teuchos::ParameterList* TPL, Epetra_CrsMatrix* Amat, double* b, double* x, int &iters);
         Epetra_CrsMatrix* GetMatrix()
         {
             return A;
@@ -141,53 +141,16 @@ class muelu_epetra_data_pack : public muelu_data_pack
         Epetra_CrsMatrix* A;
 };
 
-/**************************************************************/
-/**************************************************************/
-/**************************************************************/
-/* MueLu data pack list */
-class muelu_data_pack_list
+namespace muelu_data_pack_list
 {
-public:
-  muelu_data_pack_list();
-  ~muelu_data_pack_list();
-
-  /* add - Adds an MueLu_DATA_PACK to the list.
-     Parameters:
-     D       - The MueLu_DATA_PACK. [I]
-     Returns: problem id number of D
-  */
-  int add(muelu_data_pack *D);
-
-  /* find - Finds problem by id
-     Parameters:
-     id      - ID number [I]
-     Returns: pointer to MueLu_DATA_PACK matching 'id', if found, NULL if not
-     found.
-  */
-  muelu_data_pack* find(int id);
-
-  /* remove - Removes problem by id
-     Parameters:
-     id      - ID number [I]
-     Returns: IS_TRUE if remove was succesful, IS_FALSE otherwise
-  */
-  int remove(int id);
-
-  /* size - Number of stored problems
-     Returns: num_probs
-  */
-  int size();
-
-  /* Returns the status of all members of the list
-     Returns IS_TRUE
-  */
-  int status_all();
-
-protected:
-  int num_probs;
-  /* Note: This list is sorted */
-  muelu_data_pack *L;
-};
+	extern std::vector<muelu_data_pack*> list;
+	int add(muelu_data_pack* D);
+	muelu_data_pack* find(int id);
+	int remove(int id);
+	int size();
+	int status_all();
+	void clearAll();
+}
 
 /*
 
