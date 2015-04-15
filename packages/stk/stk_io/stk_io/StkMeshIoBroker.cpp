@@ -1360,7 +1360,7 @@ namespace stk {
 	if (is_index_valid(m_input_files, m_active_mesh_index)) {
 	  input_region = get_input_io_region().get();
 	}
-	Teuchos::RCP<OutputFile> output_file = Teuchos::rcp(new OutputFile(out_filename, m_communicator, db_type,
+	Teuchos::RCP<impl::OutputFile> output_file = Teuchos::rcp(new impl::OutputFile(out_filename, m_communicator, db_type,
 									   properties, input_region));
 	m_output_files.push_back(output_file);
 
@@ -1724,13 +1724,13 @@ namespace stk {
       {
 	std::string out_filename = filename;
 	stk::util::filename_substitution(out_filename);
-	Teuchos::RCP<Heartbeat> heartbeat = Teuchos::rcp(new Heartbeat(out_filename, hb_type,
+	Teuchos::RCP<impl::Heartbeat> heartbeat = Teuchos::rcp(new impl::Heartbeat(out_filename, hb_type,
 								       properties, m_communicator));
 	m_heartbeat.push_back(heartbeat);
 	return m_heartbeat.size()-1;
       }
 
-      Heartbeat::Heartbeat(const std::string &filename, HeartbeatType hb_type,
+      impl::Heartbeat::Heartbeat(const std::string &filename, HeartbeatType hb_type,
 			   Ioss::PropertyManager properties, stk::ParallelMachine comm)
 	: m_current_step(0), m_processor(0)
 	{
@@ -1803,7 +1803,7 @@ namespace stk {
 	  }
 	}
 
-	void Heartbeat::add_global_ref(const std::string &name, const boost::any *value,
+	void impl::Heartbeat::add_global_ref(const std::string &name, const boost::any *value,
 				       stk::util::ParameterType::Type type)
 	{
 	  if (m_processor == 0) {
@@ -1823,7 +1823,7 @@ namespace stk {
 	  }
 	}
 
-	void Heartbeat::process_output(int step, double time)
+	void impl::Heartbeat::process_output(int step, double time)
 	{
 	  if (m_processor == 0) {
 	    Ioss::State currentState = m_region->get_state();
@@ -1842,7 +1842,7 @@ namespace stk {
 	  }
 	}
 
-	void OutputFile::write_output_mesh(const stk::mesh::BulkData& bulk_data)
+	void impl::OutputFile::write_output_mesh(const stk::mesh::BulkData& bulk_data)
 	{
 	  if ( m_mesh_defined == false )
 	    {
@@ -1874,7 +1874,7 @@ namespace stk {
 	    }
 	}
 
-	void OutputFile::add_field(stk::mesh::FieldBase &field, const std::string &alternate_name)
+	void impl::OutputFile::add_field(stk::mesh::FieldBase &field, const std::string &alternate_name)
 	{
 	  ThrowErrorMsgIf (m_fields_defined,
 			   "Attempting to add fields after fields have already been written to the database.");
@@ -1911,7 +1911,7 @@ namespace stk {
 	  }
 	}
 
-	void OutputFile::add_global_ref(const std::string &name, const boost::any *value, stk::util::ParameterType::Type type)
+	void impl::OutputFile::add_global_ref(const std::string &name, const boost::any *value, stk::util::ParameterType::Type type)
 	{
 	  ThrowErrorMsgIf (m_fields_defined,
 			   "On region named " << m_region->name() <<
@@ -1921,7 +1921,7 @@ namespace stk {
 	  m_global_any_fields.push_back(GlobalAnyVariable(name, value, type));
 	}
 
-	void OutputFile::add_global(const std::string &name, const boost::any &value, stk::util::ParameterType::Type type)
+	void impl::OutputFile::add_global(const std::string &name, const boost::any &value, stk::util::ParameterType::Type type)
 	{
 	  ThrowErrorMsgIf (m_fields_defined,
 			   "On region named " << m_region->name() <<
@@ -1931,7 +1931,7 @@ namespace stk {
 	  internal_add_global(m_region, name, parameter_type.first, parameter_type.second);
 	}
 
-	void OutputFile::add_global(const std::string &globalVarName, Ioss::Field::BasicType dataType)
+	void impl::OutputFile::add_global(const std::string &globalVarName, Ioss::Field::BasicType dataType)
 	{
 	  ThrowErrorMsgIf (m_fields_defined,
 			   "On region named " << m_region->name() <<
@@ -1940,7 +1940,7 @@ namespace stk {
 	  internal_add_global(m_region, globalVarName, "scalar", dataType);
 	}
 
-	void OutputFile::add_global(const std::string &globalVarName, int component_count, Ioss::Field::BasicType dataType)
+	void impl::OutputFile::add_global(const std::string &globalVarName, int component_count, Ioss::Field::BasicType dataType)
 	{
 	  ThrowErrorMsgIf (m_fields_defined,
 			   "On region named " << m_region->name() <<
@@ -1949,7 +1949,7 @@ namespace stk {
 	  internal_add_global(m_region, globalVarName, component_count, dataType);
 	}
 
-	void OutputFile::add_global(const std::string &globalVarName, const std::string &storage, Ioss::Field::BasicType dataType)
+	void impl::OutputFile::add_global(const std::string &globalVarName, const std::string &storage, Ioss::Field::BasicType dataType)
 	{
 	  ThrowErrorMsgIf (m_fields_defined,
 			   "On region named " << m_region->name() <<
@@ -1958,33 +1958,33 @@ namespace stk {
 	  internal_add_global(m_region, globalVarName, storage, dataType);
 	}
 
-	void OutputFile::write_global(const std::string &globalVarName,
+	void impl::OutputFile::write_global(const std::string &globalVarName,
 				      const boost::any &value, stk::util::ParameterType::Type type)
 	{
 	  internal_write_parameter(m_region, globalVarName, value, type);
 	}
 
-	void OutputFile::write_global(const std::string &globalVarName, std::vector<double>& globalVarData)
+	void impl::OutputFile::write_global(const std::string &globalVarName, std::vector<double>& globalVarData)
 	{
 	  internal_write_global(m_region, globalVarName, globalVarData);
 	}
 
-	void OutputFile::write_global(const std::string &globalVarName, std::vector<int>& globalVarData)
+	void impl::OutputFile::write_global(const std::string &globalVarName, std::vector<int>& globalVarData)
 	{
 	  internal_write_global(m_region, globalVarName, globalVarData);
 	}
 
-	void OutputFile::write_global(const std::string &globalVarName, int globalVarData)
+	void impl::OutputFile::write_global(const std::string &globalVarName, int globalVarData)
 	{
 	  internal_write_global(m_region, globalVarName, globalVarData);
 	}
 
-	void OutputFile::write_global(const std::string &globalVarName, double globalVarData)
+	void impl::OutputFile::write_global(const std::string &globalVarName, double globalVarData)
 	{
 	  internal_write_global(m_region, globalVarName, globalVarData);
 	}
 
-	void OutputFile::setup_output_file(const std::string &filename, stk::ParallelMachine communicator,
+	void impl::OutputFile::setup_output_file(const std::string &filename, stk::ParallelMachine communicator,
 					   Ioss::PropertyManager &property_manager)
 	{
 	  ThrowErrorMsgIf (filename.empty(),
@@ -2005,7 +2005,7 @@ namespace stk {
 	  m_region = Teuchos::rcp(new Ioss::Region(dbo, filename));
 	}
 
-	void OutputFile::begin_output_step(double time, const stk::mesh::BulkData& bulk_data)
+	void impl::OutputFile::begin_output_step(double time, const stk::mesh::BulkData& bulk_data)
 	{
 	  if (!m_fields_defined) {
             define_output_fields(bulk_data);
@@ -2030,7 +2030,7 @@ namespace stk {
 	//
 	// To export the data to the database, call
 	// process_output_request().
-	void OutputFile::define_output_fields(const stk::mesh::BulkData& bulk_data)
+	void impl::OutputFile::define_output_fields(const stk::mesh::BulkData& bulk_data)
 	{
 	  if(m_fields_defined) {
             return;
@@ -2084,7 +2084,7 @@ namespace stk {
 	  m_fields_defined = true;
 	}
 
-	int OutputFile::process_output_request(double time, const stk::mesh::BulkData& bulk_data)
+	int impl::OutputFile::process_output_request(double time, const stk::mesh::BulkData& bulk_data)
 	{
 	  ThrowErrorMsgIf(m_non_any_global_variables_defined,
 			  "The output database " << m_region->name() << " has defined global variables, "
@@ -2099,7 +2099,7 @@ namespace stk {
 	  return m_current_output_step;
 	}
 
-	int OutputFile::write_defined_output_fields(const stk::mesh::BulkData& bulk_data)
+	int impl::OutputFile::write_defined_output_fields(const stk::mesh::BulkData& bulk_data)
 	{
 	  Ioss::Region *region = m_region.get();
 	  ThrowErrorMsgIf (region==NULL, "INTERNAL ERROR: Mesh Output Region pointer is NULL in write_defined_output_fields.");
@@ -2158,13 +2158,13 @@ namespace stk {
 	  return m_current_output_step;
 	}
 
-	void OutputFile::end_output_step()
+	void impl::OutputFile::end_output_step()
 	{
 	  m_region->end_state(m_current_output_step);
 	  m_region->end_mode(Ioss::STATE_TRANSIENT);
 	}
 
-	void OutputFile::set_subset_selector(Teuchos::RCP<stk::mesh::Selector> my_selector)
+	void impl::OutputFile::set_subset_selector(Teuchos::RCP<stk::mesh::Selector> my_selector)
 	{
 	  ThrowErrorMsgIf(m_mesh_defined,
 			  "ERROR: On region named " << m_region->name() <<
@@ -2172,12 +2172,12 @@ namespace stk {
 	  m_subset_selector = my_selector;
 	}
 
-	bool OutputFile::use_nodeset_for_part_nodes_fields() const
+	bool impl::OutputFile::use_nodeset_for_part_nodes_fields() const
 	{
 	  return m_use_nodeset_for_part_nodes_fields;
 	}
 
-	void OutputFile::use_nodeset_for_part_nodes_fields(bool true_false)
+	void impl::OutputFile::use_nodeset_for_part_nodes_fields(bool true_false)
 	{
 	  ThrowErrorMsgIf(m_mesh_defined,
 			  "ERROR: The use_nodeset_for_part_nodes_fields setting cannot be changed after "

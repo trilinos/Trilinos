@@ -82,6 +82,8 @@ namespace stk {
       stk::util::ParameterType::Type m_type;
     };
 
+namespace impl
+{
     class OutputFile
     {
     public:
@@ -160,6 +162,7 @@ namespace stk {
       OutputFile(const OutputFile &);
       const OutputFile & operator=(const OutputFile &);
     };
+}
 
     // ========================================================================
     // ========================================================================    
@@ -173,6 +176,8 @@ namespace stk {
       NONE        /* Ignored in this class, can be used by apps */
     };
 
+namespace impl
+{
     // ========================================================================
     class Heartbeat {
     public:
@@ -191,7 +196,7 @@ namespace stk {
       int m_current_step;
       int m_processor;
     };
-
+}
     // ========================================================================    
     //-BEGIN
     class StkMeshIoBroker {
@@ -630,8 +635,8 @@ namespace stk {
 
       const stk::mesh::ConnectivityMap* m_connectivity_map;
 
-      std::vector<Teuchos::RCP<OutputFile> > m_output_files;
-      std::vector<Teuchos::RCP<Heartbeat> > m_heartbeat;
+      std::vector<Teuchos::RCP<impl::OutputFile> > m_output_files;
+      std::vector<Teuchos::RCP<impl::Heartbeat> > m_heartbeat;
       std::vector<Teuchos::RCP<InputFile> > m_input_files;
 
       StkMeshIoBroker(const StkMeshIoBroker&); // Do not implement
