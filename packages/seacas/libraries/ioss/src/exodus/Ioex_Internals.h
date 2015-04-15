@@ -94,10 +94,11 @@ namespace Ioss {
 namespace Ioex {
   struct NodeBlock
   {
-    NodeBlock() : name(""), id(0), entityCount(0), attributeCount(0), procOffset(0)
+    NodeBlock() : name(""), id(0), entityCount(0), localOwnedCount(0), attributeCount(0), procOffset(0)
     {}
 
-    NodeBlock(const NodeBlock &other) : name(other.name), id(other.id), entityCount(other.entityCount),
+    NodeBlock(const NodeBlock &other) : name(other.name), id(other.id),
+					entityCount(other.entityCount), localOwnedCount(other.localOwnedCount),
 					attributeCount(other.attributeCount), procOffset(other.procOffset)
     {}
 
@@ -113,6 +114,7 @@ namespace Ioex {
     std::string name;
     entity_id id;
     int64_t entityCount;
+    int64_t localOwnedCount;
     int64_t attributeCount;
     int64_t procOffset;
     private:
@@ -228,8 +230,9 @@ namespace Ioex {
 
   struct NodeSet
   {
-    NodeSet() : name(""), id(0), entityCount(0), dfCount(0), procOffset(0) { }
-    NodeSet(const NodeSet &other) : name(other.name), id(other.id), entityCount(other.entityCount),
+    NodeSet() : name(""), id(0), entityCount(0), localOwnedCount(0), dfCount(0), procOffset(0) { }
+    NodeSet(const NodeSet &other) : name(other.name), id(other.id),
+				    entityCount(other.entityCount), localOwnedCount(other.localOwnedCount),
 				    attributeCount(other.attributeCount), dfCount(other.dfCount),
 				    procOffset(other.procOffset) {}
     NodeSet(const Ioss::NodeSet &other);
@@ -239,6 +242,7 @@ namespace Ioex {
     std::string name;
     entity_id id;
     int64_t entityCount;
+    int64_t localOwnedCount;
     int64_t attributeCount;
     int64_t dfCount;
     int64_t procOffset;

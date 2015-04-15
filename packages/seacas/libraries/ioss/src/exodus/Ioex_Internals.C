@@ -137,10 +137,11 @@ NodeBlock::NodeBlock(const Ioss::NodeBlock &other)
   } else {
     id = 1;
   }
+  entityCount = other.get_property("entity_count").get_int();
   if (other.property_exists("locally_owned_count")) {
-    entityCount = other.get_property("locally_owned_count").get_int();
+    localOwnedCount = other.get_property("locally_owned_count").get_int();
   } else {
-    entityCount = other.get_property("entity_count").get_int();
+    localOwnedCount = entityCount;
   }
   attributeCount = other.get_property("attribute_count").get_int();
 }
@@ -322,10 +323,11 @@ NodeSet::NodeSet(const Ioss::NodeSet &other)
   }
 
   id = other.get_property("id").get_int();
+  entityCount = other.get_property("entity_count").get_int();
   if (other.property_exists("locally_owned_count")) {
-    entityCount = other.get_property("locally_owned_count").get_int();
+    localOwnedCount = other.get_property("locally_owned_count").get_int();
   } else {
-    entityCount = other.get_property("entity_count").get_int();
+    localOwnedCount = entityCount;
   }
   attributeCount = other.get_property("attribute_count").get_int();
   dfCount = other.get_property("distribution_factor_count").get_int();
@@ -561,7 +563,7 @@ void Internals::get_global_counts(Mesh &mesh)
   std::vector<int64_t> counts;
   std::vector<int64_t> global_counts;
   
-  counts.push_back(mesh.nodeblocks[0].entityCount);
+  counts.push_back(mesh.nodeblocks[0].localOwnedCount);
   for (size_t i=0; i < mesh.edgeblocks.size(); i++) {
     counts.push_back(mesh.edgeblocks[i].entityCount);
   }
@@ -572,7 +574,7 @@ void Internals::get_global_counts(Mesh &mesh)
     counts.push_back(mesh.elemblocks[i].entityCount);
   }
   for (size_t i=0; i < mesh.nodesets.size(); i++) {
-    counts.push_back(mesh.nodesets[i].entityCount);
+    counts.push_back(mesh.nodesets[i].localOwnedCount);
     counts.push_back(mesh.nodesets[i].dfCount);
   }
   for (size_t i=0; i < mesh.edgesets.size(); i++) {
@@ -707,7 +709,7 @@ int Internals::put_metadata(const Mesh &mesh,
 
     // For use later as a consistency check, define the number of processors and
     // the current processor id as an attribute of the file...
-    if (comm.outputNemesis) {
+    if (comm.outputNemesis && comm.processorCount > 1) {
       int ltempsv[2];
       ltempsv[0] = comm.processorCount;
       ltempsv[1] = comm.processorId;
