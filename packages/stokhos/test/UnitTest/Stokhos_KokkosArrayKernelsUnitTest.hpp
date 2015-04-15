@@ -76,8 +76,8 @@
 #include "Stokhos_LexicographicBlockSparse3Tensor.hpp"
 
 #ifdef HAVE_STOKHOS_KOKKOSLINALG
-#include "Kokkos_CrsMatrix.hpp"
-#include "Kokkos_MV.hpp"
+#include "Kokkos_Sparse.hpp"
+#include "Kokkos_Blas1_MV.hpp"
 #endif
 
 namespace KokkosKernelsUnitTest {
@@ -679,7 +679,7 @@ template <typename value_type, typename Device>
 bool test_crs_matrix_free_kokkos(const UnitTestSetup<Device>& setup,
                                  Teuchos::FancyOStream& out) {
   typedef int ordinal_type;
-  typedef Kokkos::CrsMatrix<value_type,ordinal_type,Device> matrix_type;
+  typedef KokkosSparse::CrsMatrix<value_type,ordinal_type,Device> matrix_type;
   typedef typename matrix_type::values_type matrix_values_type;
   typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef Kokkos::View<value_type*, Kokkos::LayoutLeft, Device, Kokkos::MemoryUnmanaged> vec_type;
@@ -754,7 +754,7 @@ bool test_crs_matrix_free_kokkos(const UnitTestSetup<Device>& setup,
       multi_vec_type tmp_y_view =
         Kokkos::subview( tmp_y, Kokkos::ALL(),
                                          std::make_pair(0u,jdx));
-      Kokkos::MV_Multiply( tmp_y_view , matrix[k] , tmp_x_view  );
+      KokkosSparse::spmv(  "N", value_type(1.0), matrix[k] , tmp_x_view , value_type(0.0) , tmp_y_view );
       jdx = 0;
       for (kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
         vec_type tmp_y_view =
@@ -766,7 +766,7 @@ bool test_crs_matrix_free_kokkos(const UnitTestSetup<Device>& setup,
           value_type c = value(i_it);
           vec_type y_view = Kokkos::subview( y, Kokkos::ALL(), i );
           //Stokhos::update( value_type(1.0) , y_view , c , tmp_y_view );
-          Kokkos::V_Add(y_view, c, tmp_y_view, value_type(1.0), y_view);
+          KokkosBlas::update(c, tmp_y_view, value_type(1.0), y_view, value_type(0.0), y_view);
         }
       }
     }
