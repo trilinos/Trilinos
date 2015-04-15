@@ -21,6 +21,18 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+# This test only uses one process, and does not require or use MPI,
+# but it still works if MPI is enabled.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  MV_Kokkos_DualView_subview
+  SOURCES
+    MV_Kokkos_DualView_subview
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
 # This test comes from zoltan2/test/temp/multivectorTest.cpp.  It
 # mimics the recursive bisection algorithm in Zoltan2, and times data
 # migration.
