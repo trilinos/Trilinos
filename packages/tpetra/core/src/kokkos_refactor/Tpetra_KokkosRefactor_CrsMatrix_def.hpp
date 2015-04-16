@@ -6541,6 +6541,13 @@ namespace Tpetra {
       << " = " << numPacketsPerLID.size () << ".");
 
     // Use for sanity check on incoming number of entries in row.
+    //
+    // FIXME (mfh 16 Apr 2015) The upper bound is wrong when filtering
+    // out incoming entries when the target has a column Map.  This
+    // shows up when the target matrix has an overlapping row Map M1
+    // with M1 as the column Map (thus, "square") and the source
+    // matrix has a regular row Map and column Map -- the goal being
+    // for the target matrix to filter out incoming entries.
     const LO maxPossNumEnt = this->hasColMap () ?
       static_cast<LO> (this->getColMap ()->getNodeNumElements ()) :
       Teuchos::OrdinalTraits<LO>::max ();
