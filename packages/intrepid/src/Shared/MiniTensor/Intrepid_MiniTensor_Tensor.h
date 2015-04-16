@@ -311,6 +311,7 @@ public:
   /// Fill components from array defined by pointer.
   /// \param data_ptr pointer into array for filling components
   ///
+#ifdef HAVE_INTREPID_KOKKOSCORE 
   template<class ArrayT, typename iType>
   typename if_diff<ArrayT, T*, void>::type
   fill(ArrayT & data, iType index1);
@@ -347,7 +348,7 @@ public:
       iType index4,
       iType index5,
       iType index6);
-
+#endif
   void
   fill(T const * data_ptr);
 

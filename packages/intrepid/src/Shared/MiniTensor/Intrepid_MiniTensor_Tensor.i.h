@@ -545,6 +545,7 @@ Tensor<T, N>::fill(T const & s)
 //
 // Fill components from array defined by pointer.
 //
+#ifdef HAVE_INTREPID_KOKKOSCORE
 template<typename T, Index N>
 template<class ArrayT, typename iType>
 inline
@@ -630,7 +631,7 @@ Tensor<T, N>::fill(
       index6);
   return;
 }
-
+#endif
 template<typename T, Index N>
 inline
 void
