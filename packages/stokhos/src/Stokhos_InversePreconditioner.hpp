@@ -69,9 +69,9 @@ namespace Stokhos {
       Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Result, 
       ordinal_type m) const {
       Teuchos::RCP< Teuchos::SerialDenseMatrix<ordinal_type, value_type> > AA, UU, RR;
-      AA = Teuchos::rcp(new Teuchos::SerialDenseMatrix<ordinal_type, value_type> (A));
-      UU = Teuchos::rcp(new Teuchos::SerialDenseMatrix<ordinal_type, value_type> (Result));
-      RR = Teuchos::rcp(new Teuchos::SerialDenseMatrix<ordinal_type, value_type> (Input));
+      AA = Teuchos::rcp(new Teuchos::SerialDenseMatrix<ordinal_type, value_type> (Teuchos::Copy,A));
+      UU = Teuchos::rcp(new Teuchos::SerialDenseMatrix<ordinal_type, value_type> (Teuchos::Copy,Result));
+      RR = Teuchos::rcp(new Teuchos::SerialDenseMatrix<ordinal_type, value_type> (Teuchos::Copy,Input));
 
       // Setup solver
       Teuchos::SerialDenseSolver<ordinal_type, value_type> solver;

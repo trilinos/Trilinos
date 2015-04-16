@@ -351,7 +351,7 @@ CG(const Teuchos::SerialDenseMatrix<ordinal_type, value_type> & A,
   value_type resid;
   Teuchos::SerialDenseMatrix<ordinal_type, value_type> Ax(n,1);
   Ax.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,1.0, A, X, 0.0);
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type> r(B);
+  Teuchos::SerialDenseMatrix<ordinal_type, value_type> r(Teuchos::Copy,B);
   r-=Ax;
   resid=r.normFrobenius();
   Teuchos::SerialDenseMatrix<ordinal_type, value_type> p(r);
