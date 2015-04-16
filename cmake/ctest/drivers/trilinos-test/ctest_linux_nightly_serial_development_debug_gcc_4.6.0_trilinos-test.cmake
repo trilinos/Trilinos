@@ -76,7 +76,7 @@ SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 #Stratimikos there was one test failure
 #Rythmos Disabling Stratimikos caused a lot of build errors
 #stokhos there was one build error
-SET(EXTRA_EXCLUDE_PACKAGES MOOCHO Piro Stratimikos Rythmos Zoltan2 Panzer PyTrilinos)
+SET(EXTRA_EXCLUDE_PACKAGES MOOCHO Piro Stratimikos Rythmos Zoltan2 Panzer PyTrilinos Kokkos Tpetra Muelu)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_CXX11=OFF"
