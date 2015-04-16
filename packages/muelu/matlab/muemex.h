@@ -144,11 +144,13 @@ class muelu_epetra_data_pack : public muelu_data_pack
 namespace muelu_data_pack_list
 {
 	extern std::vector<muelu_data_pack*> list;
+	extern int nextID;
 	int add(muelu_data_pack* D);
 	muelu_data_pack* find(int id);
 	int remove(int id);
 	int size();
 	int status_all();
+	bool isInList(int id);
 	void clearAll();
 }
 

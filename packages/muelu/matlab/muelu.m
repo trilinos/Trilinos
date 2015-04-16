@@ -120,32 +120,37 @@ function varargout = muelu(varargin)
 % 05/22/2006 - Teuchos-friendly version.
 % 05/16/2006 - Initial Version.
 
-if(nargin>=2 && strcmp(varargin{1},'setup')),
+if(nargin >= 2 && strcmp(varargin{1},'setup')),
   % Setup mode
-  [out,oc]=muemex(0,varargin{2:nargin});
-  varargout{1}=out;
-  if(nargout==2),varargout{2}=oc;end 
-elseif(nargin>=3 && isnumeric(varargin{1}) && issparse(varargin{2})),
+  [out, oc] = muemex(0, varargin{2:nargin});
+  varargout{1} = out;
+  if(nargout == 2), varargout{2} = oc; end 
+elseif(nargin >= 3 && isnumeric(varargin{1}) && issparse(varargin{2})),
   % Solve mode (newmatrix)
-  if(size(varargin{2},1)~=length(varargin{3})), fprintf('ML: Error size mismatch between A + B\n');out=0;
-  else [sol,its]=muemex(6,varargin{:}); end
+  if(size(varargin{2}, 1) ~= length(varargin{3})), fprintf('ML: Error size mismatch between A + B\n');out=0;
+  else [sol, its] = muemex(6, varargin{:}); end
   varargout{1}=sol;
-  if(nargout==2), varargout{2}=its;end
-elseif(nargin>=2 && isnumeric(varargin{1}) && isnumeric(varargin{2}) ...
-       && (nargin==2 || ~isnumeric(varargin{3}))),
+  if(nargout == 2), varargout{2} = its; end
+elseif(nargin >= 2 && isnumeric(varargin{1}) && isnumeric(varargin{2}) ...
+       && (nargin == 2 || ~isnumeric(varargin{3}))),
   % Solve mode (reuse)
-  [sol,its]=muemex(1,varargin{:});
-  varargout{1}=sol;
-  if(nargout==2), varargout{2}=its;end  
-elseif(nargin>=1 && strcmp(varargin{1},'cleanup')),
+  [sol, its] = muemex(1, varargin{:});
+  varargout{1} = sol;
+  if(nargout == 2), varargout{2}=its;end  
+elseif(nargin>=1 && strcmp(varargin{1}, 'cleanup')),
   % Cleanup mode
-  varargout{1}=muemex(2,varargin{2:nargin});
-elseif(nargin>=1 && strcmp(varargin{1},'status')),
+  varargout{1} = muemex(2,varargin{2:nargin});
+elseif(nargin>=1 && strcmp(varargin{1}, 'status')),
   % Status mode
-  varargout{1}=muemex(3,varargin{2:nargin});  
-elseif(nargin>=2 && issparse(varargin{2}) && strcmp(varargin{1},'aggregate')),
+  varargout{1} = muemex(3,varargin{2:nargin});  
+elseif(nargin>=2 && issparse(varargin{2}) && strcmp(varargin{1}, 'aggregate')),
   % Aggregate mode
-  varargout{1}=muemex(4,varargin{2:nargin});
+  varargout{1} = muemex(4, varargin{2:nargin});
 else
-  fprintf('MueLu: Error! Invalid input, mode unspecified or insufficient parameters\n');
+  fprintf('Usage:');
+  fprintf('[h, oc] = muelu(''setup'', A) to setup a problem');
+  fprintf('muelu(''status''[, probID]) to get status of all problems, or a specific problem.');
+  fprintf('[x, its] = muelu(h, A, b[, paramName, paramValue, ...]) to solve problem #h');
+  fprintf('[x, its] = muelu(h, b[, paramName, paramValue, ...]) to solve problem #h with loaded matrix');
+  fprintf('muelu(''cleanup''[, id]) to free memory associated with all problems, or a specific one.');
 end
