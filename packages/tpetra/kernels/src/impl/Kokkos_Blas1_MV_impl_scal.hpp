@@ -413,8 +413,8 @@ struct V_Scal_Functor<RV, typename XV::non_const_value_type,
     if (scalar_x == -1) {
       m_r(i) = -m_x(i);
     }
-    if (scalar_x == -1) {
-      m_r(i) = -m_x(i);
+    if (scalar_x == 1) {
+      m_r(i) = m_x(i);
     }
     if (scalar_x == 2) {
       m_r(i) = m_a*m_x(i);
