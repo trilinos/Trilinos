@@ -6540,25 +6540,24 @@ namespace Tpetra {
       "importLIDs.size() = " << numImportLIDs << "  != numPacketsPerLID.size()"
       << " = " << numPacketsPerLID.size () << ".");
 
-    // Use for sanity check on incoming number of entries in row.
-    //
-    // FIXME (mfh 16 Apr 2015) The upper bound is wrong when filtering
-    // out incoming entries when the target has a column Map.  This
-    // shows up when the target matrix has an overlapping row Map M1
-    // with M1 as the column Map (thus, "square") and the source
-    // matrix has a regular row Map and column Map -- the goal being
-    // for the target matrix to filter out incoming entries.
-    const LO maxPossNumEnt = this->hasColMap () ?
-      static_cast<LO> (this->getColMap ()->getNodeNumElements ()) :
-      Teuchos::OrdinalTraits<LO>::max ();
-
+    // If a sanity check fails, keep track of some state at the
+    // "first" place where it fails.  After the first failure, "run
+    // through the motions" until the end of this method, then raise
+    // an error with an informative message.
     size_type firstBadIndex = 0;
     size_t firstBadOffset = 0;
     size_t firstBadExpectedNumBytes = 0;
     size_t firstBadNumBytes = 0;
     LO firstBadNumEnt = 0;
+    // We have sanity checks for three kinds of errors:
+    //
+    //   1. Offset into array of all the incoming data (for all rows)
+    //      is out of bounds
+    //   2. Too few bytes of incoming data for a row, given the
+    //      reported number of entries in those incoming data
+    //   3. Error in unpacking the row's incoming data
+    //
     bool outOfBounds = false;
-    bool badNumEnt = false;
     bool wrongNumBytes = false;
     bool unpackErr = false;
 
@@ -6594,15 +6593,6 @@ namespace Tpetra {
         const size_t expectedNumBytes = sizeof (LO) +
           static_cast<size_t> (numEnt) * (sizeof (Scalar) + sizeof (GO));
 
-        if (numEnt > maxPossNumEnt) {
-          firstBadIndex = i;
-          firstBadOffset = offset;
-          firstBadExpectedNumBytes = expectedNumBytes;
-          firstBadNumBytes = numBytes;
-          firstBadNumEnt = numEnt;
-          badNumEnt = true;
-          break;
-        }
         if (expectedNumBytes > numBytes) {
           firstBadIndex = i;
           firstBadOffset = offset;
@@ -6624,6 +6614,7 @@ namespace Tpetra {
         size_t tmpNumEnt = static_cast<size_t> (valInTmp.size ());
         if (tmpNumEnt < static_cast<size_t> (numEnt) ||
             static_cast<size_t> (indInTmp.size ()) < static_cast<size_t> (numEnt)) {
+          // Double the size of the temporary arrays for incoming data.
           tmpNumEnt = std::max (static_cast<size_t> (numEnt), tmpNumEnt * 2);
           valInTmp.resize (tmpNumEnt);
           indInTmp.resize (tmpNumEnt);
@@ -6643,19 +6634,14 @@ namespace Tpetra {
       }
     }
 
-    if (badNumEnt || wrongNumBytes || outOfBounds || unpackErr) {
+    if (wrongNumBytes || outOfBounds || unpackErr) {
       std::ostringstream os;
       os << "  importLIDs[i]: " << importLIDs[firstBadIndex]
          << ", bufSize: " << bufSize
          << ", offset: " << firstBadOffset
          << ", numBytes: " << firstBadNumBytes
          << ", expectedNumBytes: " << firstBadExpectedNumBytes
-         << ", numEnt: " << firstBadNumEnt
-         << ", maxPossNumEnt (could be very large; that generally means this "
-        "matrix has no column Map (yet)): " << maxPossNumEnt << ".";
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        badNumEnt, std::logic_error, "At index i = " << firstBadIndex
-        << ", numEnt > maxPossNumEnt." << os.str ());
+         << ", numEnt: " << firstBadNumEnt;
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         wrongNumBytes, std::logic_error, "At index i = " << firstBadIndex
         << ", expectedNumBytes > numBytes." << os.str ());
