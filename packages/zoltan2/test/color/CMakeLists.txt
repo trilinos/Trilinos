@@ -30,24 +30,11 @@ TRIBITS_ADD_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
-# We can't read this file?
-#TRIBITS_ADD_TEST(
-#  Coloring1
-#  NAME Coloring1_bcsstk30
-#  NUM_MPI_PROCS 4
-#  COMM serial mpi
-#  ARGS
-#   "--inputFile=bcsstk30"
-#  PASS_REGULAR_EXPRESSION "PASS"
-#  FAIL_REGULAR_EXPRESSION "FAIL"
-#  )
-
 # Command that copies files to the executable directory.
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_color_tests
   SOURCE_FILES
     simple.mtx
     commanche_dual.mtx
-    bcsstk30.mtx
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../data
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )
