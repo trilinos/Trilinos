@@ -643,7 +643,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
             //
             // get non-const pointer to solver's basis so we can work in situ
             Teuchos::RCP<MV> solverbasis = Teuchos::rcp_const_cast<MV>(oldState.V);
-            Teuchos::SerialDenseMatrix<int,ScalarType> copyQnev(Teuchos::Copy, *(oldState.Q), curDim, cur_nevBlocks );
+            Teuchos::SerialDenseMatrix<int,ScalarType> copyQnev(Teuchos::Copy, Qnev);
             //
             // perform Householder QR of copyQnev = Q [D;0], where D is unit diag. We will want D below.
             std::vector<ScalarType> tau(cur_nevBlocks), work(cur_nevBlocks);
