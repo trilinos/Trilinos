@@ -517,7 +517,6 @@ testCrsMatrix (Teuchos::FancyOStream& out, const GlobalOrdinalType indexBase)
 
   RCP<const Comm<int> > comm =
     Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-  RCP<NT> node = Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
 
   out << "Original sparse matrix:" << endl;
   out << matrix_symRealSmall << endl;
@@ -526,7 +525,7 @@ testCrsMatrix (Teuchos::FancyOStream& out, const GlobalOrdinalType indexBase)
   const global_size_t globalNumElts = 5;
   RCP<const map_type> rowMap =
     rcp (new map_type (globalNumElts, indexBase, comm,
-                       Tpetra::GloballyDistributed, node));
+                       Tpetra::GloballyDistributed));
 
   out << "Reading in the matrix" << endl;
   std::istringstream inStr (matrix_symRealSmall);
