@@ -98,10 +98,12 @@ class mueluapi_data_pack : public muelu_data_pack
     public:
         mueluapi_data_pack();
         ~mueluapi_data_pack();
-        int setup(int N, int* rowind, int* colptr, double* vals);A = [2 0 0; 0 4 1; 0 1 3]
+        int setup(int N, int* rowind, int* colptr, double* vals);
         int status();
         int NumMyRows()
         {
+
+Definition at line 269 of file Tpetra_Map_decl.hpp.
             return A->NumMyRows();
         }
         int NumMyCols()
@@ -113,7 +115,7 @@ class mueluapi_data_pack : public muelu_data_pack
         {
             return 0;
         }
-        //TODO: I assume MueLu multigrid needs some stuff here?
+        //TODO: I assume MueLu multigrid needs some members here?
 };
 */
 
@@ -171,6 +173,7 @@ class muelu_tpetra_data_pack : public muelu_data_pack
         int NumMyRows()
         {
             return A->
+		}
     private:
         Tpetra::CrsMatrix<>* A;
 };
