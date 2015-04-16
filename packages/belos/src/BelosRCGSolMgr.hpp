@@ -1928,8 +1928,8 @@ void RCGSolMgr<ScalarType,MV,OP,false>::getHarmonicVecs(const Teuchos::SerialDen
   int lwork = -1;
   int info = 0;
   // since SYGV destroys workspace, create copies of F,G
-  Teuchos::SerialDenseMatrix<int,ScalarType> F2( Teuchos::Copy, *F_, F_->numRows(), F_->numCols() );
-  Teuchos::SerialDenseMatrix<int,ScalarType> G2( Teuchos::Copy, *G_, G_->numRows(), G_->numCols() );
+  Teuchos::SerialDenseMatrix<int,ScalarType> F2( Teuchos::Copy, *F_ );
+  Teuchos::SerialDenseMatrix<int,ScalarType> G2( Teuchos::Copy, *G_ );
 
   // query for optimal workspace size
   lapack.SYGV(itype, jobz, uplo, n, G2.values(), G2.stride(), F2.values(), F2.stride(), &w[0], &work[0], lwork, &info);
