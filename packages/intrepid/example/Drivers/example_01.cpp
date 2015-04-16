@@ -799,7 +799,7 @@ int main(int argc, char *argv[]) {
                              hexGValsTransformed, hexGValsTransformedWeighted, COMP_CPP);
 
       // assemble into global matrix
-      int err = 0;
+     int err = 0;
       for (int row = 0; row < numFieldsG; row++){
         for (int col = 0; col < numFieldsG; col++){
             int rowIndex = elemToNode(k,row);

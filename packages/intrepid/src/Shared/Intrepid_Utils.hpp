@@ -880,7 +880,7 @@ bool requireDimensionRange(std::string&  errmsg,
     OK = false;
   }
   else if( (lowerBound < upperBound) &&
-           !( (lowerBound <= array.dimension(dim) ) && (static_cast<int>(array.dimension(dim)) <= upperBound) ) ){
+           !( (lowerBound <= static_cast<int>(array.dimension(dim)) ) && (static_cast<int>(array.dimension(dim)) <= upperBound) ) ){
     errmsg += "\n>>> dimension(";
     errmsg += (char)(48 + dim);
     errmsg += ") = ";

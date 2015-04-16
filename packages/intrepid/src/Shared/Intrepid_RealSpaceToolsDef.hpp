@@ -1793,7 +1793,7 @@ void RealSpaceTools<Scalar>::add(ArraySum & inoutSumArray, const ArrayIn & inArr
 	}else if(inArrayRank==3){
    for (int i=0; i<static_cast<int>(inArray.dimension(0)); i++)
     for (int j=0; j<static_cast<int>(inArray.dimension(1)); j++)
-      for (int k=0; k<inArray.dimension(2); k++){
+      for (int k=0; k<static_cast<int>(inArray.dimension(2)); k++){
           inoutSumArrayWrap(i,j,k) += inArrayWrap(i,j,k);
           }
 	}else if(inArrayRank==2){

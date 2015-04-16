@@ -53,7 +53,9 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#ifdef HAVE_INTREPID_KOKKOSCORE
 #include <Kokkos_Core.hpp>
+#endif
 
 using namespace std;
 using namespace Intrepid;

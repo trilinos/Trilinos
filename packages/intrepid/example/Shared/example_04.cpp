@@ -584,8 +584,8 @@ Intrepid::FieldContainer<double>testcontainerB(5);
 	for(int i=0;i<5;i++){
 		testcontainerB(i)=Teuchos::ScalarTraits<double>::random();
 }
-double result=	KokkosDenseMat::MultiGemm<double,void,void,1>::DDOT(5, &testcontainerA[0], 1, &testcontainerB[0], 1);
-/*
+/*double result=	KokkosDenseMat::MultiGemm<double,void,void,1>::DDOT(5, &testcontainerA[0], 1, &testcontainerB[0], 1);
+
 std::cout <<"A: "<<std::endl;
 	for(int i=0;i<5;i++){
 		std::cout <<testcontainerA(i)<<",";
