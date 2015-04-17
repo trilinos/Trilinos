@@ -51,7 +51,7 @@ void expectNumElementsInAura(stk::mesh::BulkData::AutomaticAuraOption autoAuraOp
     MPI_Comm communicator = MPI_COMM_WORLD;
     if (stk::parallel_machine_size(communicator) == 2)
     {
-        stk::mesh::MetaData meta(3);
+        stk::mesh::MetaData meta;
         stk::mesh::BulkData bulk(meta, communicator, autoAuraOption);
         stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x2", bulk, communicator);
 
@@ -72,7 +72,7 @@ TEST(StkMeshHowTo, useAuraDefaultBehavior)
     MPI_Comm communicator = MPI_COMM_WORLD;
     if (stk::parallel_machine_size(communicator) == 2)
     {
-        stk::mesh::MetaData meta(3);
+        stk::mesh::MetaData meta;
         stk::mesh::BulkData bulk(meta, communicator);
         stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x2", bulk, communicator);
 
