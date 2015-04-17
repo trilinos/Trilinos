@@ -1071,7 +1071,13 @@ namespace Tpetra {
       }
       else { // lclNumRows != 0
         if (constantStrideX && constantStrideY) {
-          KokkosBlas::dot (theDots, X, Y);
+          if(X.dimension_1() == 1) {
+            typename RV::non_const_value_type result =
+                KokkosBlas::dot (Kokkos::subview(X,Kokkos::ALL(),0),
+                                 Kokkos::subview(Y,Kokkos::ALL(),0));
+            Kokkos::deep_copy(theDots,result);
+          } else
+            KokkosBlas::dot (theDots, X, Y);
         }
         else { // not constant stride
           // NOTE (mfh 15 Jul 2014) This does a kernel launch for

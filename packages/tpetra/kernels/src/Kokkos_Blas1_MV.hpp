@@ -43,6 +43,7 @@
 #ifndef KOKKOS_BLAS1_MV_HPP_
 #define KOKKOS_BLAS1_MV_HPP_
 
+#include <Kokkos_Blas1.hpp>
 #include <Kokkos_Blas1_MV_impl_abs.hpp>
 #include <Kokkos_Blas1_MV_impl_axpby.hpp>
 #include <Kokkos_Blas1_MV_impl_dot.hpp>

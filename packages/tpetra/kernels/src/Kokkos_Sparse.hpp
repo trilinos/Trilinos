@@ -125,9 +125,9 @@ spmv(const char mode[],
   }
 
   typedef KokkosSparse::CrsMatrix<typename AMatrix::const_value_type,
-    typename AMatrix::const_ordinal_type,
+    typename AMatrix::non_const_ordinal_type,
     typename AMatrix::device_type,
-    typename AMatrix::memory_traits,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
     typename AMatrix::const_size_type> AMatrix_Internal;
   typedef Kokkos::View<typename XVector::const_value_type*,
     typename XVector::array_layout,
@@ -142,7 +142,6 @@ spmv(const char mode[],
   AMatrix_Internal A_i = A;
   XVector_Internal x_i = x;
   YVector_Internal y_i = y;
-
 
   return Impl::SPMV<typename AMatrix_Internal::value_type,
              typename AMatrix_Internal::ordinal_type,
