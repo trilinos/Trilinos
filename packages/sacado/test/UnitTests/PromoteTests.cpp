@@ -30,7 +30,7 @@
 // This test requires C++11 (for static_assert), so why not use the
 // standard type traits
 #include <type_traits>
-
+#include <utility>
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
