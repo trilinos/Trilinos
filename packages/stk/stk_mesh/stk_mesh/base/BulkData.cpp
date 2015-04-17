@@ -2329,14 +2329,13 @@ void BulkData::update_sharing_after_change_entity_owner()
 }
 
 void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change,
-                                    bool doAura,
                                     modification_optimization mod_optimization )
 {
     const bool modStatus = modification_begin("change_entity_owner");
     ThrowRequireMsg(modStatus, "BulkData::change_entity_owner() must not be called from within a modification cycle.");
     this->internal_change_entity_owner(arg_change, mod_optimization);
     update_sharing_after_change_entity_owner();
-    internal_modification_end_for_change_entity_owner(mod_optimization, doAura);
+    internal_modification_end_for_change_entity_owner(mod_optimization);
 }
 
 
@@ -4043,7 +4042,7 @@ bool BulkData::internal_modification_end_for_change_parts()
     return true;
 }
 
-bool BulkData::internal_modification_end_for_change_entity_owner( modification_optimization opt, bool doAura )
+bool BulkData::internal_modification_end_for_change_entity_owner( modification_optimization opt )
 {
   // The two states are MODIFIABLE and SYNCHRONiZED
   if ( m_sync_state == SYNCHRONIZED ) { return false ; }
@@ -4054,8 +4053,7 @@ bool BulkData::internal_modification_end_for_change_entity_owner( modification_o
 
   if (parallel_size() > 1)
   {
-//    if ( m_autoAuraOption == AUTO_AURA )
-    if ( doAura )
+    if ( m_autoAuraOption == AUTO_AURA )
     {
       internal_regenerate_aura();
     }

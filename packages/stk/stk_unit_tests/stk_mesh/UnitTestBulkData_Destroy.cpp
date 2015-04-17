@@ -166,7 +166,7 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
 
   //------------------------------
   { // No ghosting
-    RingFixture mesh( pm , nPerProc , false /* No element parts */ );
+    RingFixture mesh( pm , nPerProc , false /* No element parts */, stk::mesh::BulkData::NO_AUTO_AURA );
     mesh.m_meta_data.commit();
     BulkData& bulk = mesh.m_bulk_data;
 
@@ -174,7 +174,7 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
     mesh.generate_mesh( );
     ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk));
 
-    mesh.fixup_node_ownership(false /* regenerate_aura */, BulkData::MOD_END_COMPRESS_AND_SORT);
+    mesh.fixup_node_ownership(BulkData::MOD_END_COMPRESS_AND_SORT);
 
     // This process' first element in the loop
     // if a parallel mesh has a shared node

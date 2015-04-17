@@ -45,10 +45,11 @@ namespace mesh {
 namespace fixtures {
 
 BoxFixture::BoxFixture( stk::ParallelMachine pm ,
+                        stk::mesh::BulkData::AutomaticAuraOption autoAuraOption,
                         unsigned block_size,
                         const std::vector<std::string>& entity_names )
   : m_fem_meta ( spatial_dimension, entity_names ),
-    m_bulk_data ( m_fem_meta , pm , false, NULL, NULL, block_size ),
+    m_bulk_data ( m_fem_meta , pm , autoAuraOption, false, NULL, NULL, block_size ),
     m_comm_rank( stk::parallel_machine_rank( pm ) ),
     m_comm_size( stk::parallel_machine_size( pm ) ),
     m_elem_part( m_fem_meta.declare_part_with_topology("elem_part", stk::topology::HEX_8) ),

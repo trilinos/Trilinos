@@ -233,7 +233,6 @@ public:
    *  desired changes so that it can be called only once.
    */
   void change_entity_owner( const EntityProcVec & arg_change,
-                            bool doAura = true,
                             modification_optimization mod_optimization = MOD_END_SORT );
 
   /** \brief  Rotate the field data of multistate fields.
@@ -788,7 +787,7 @@ protected: //functions
                                                                                OrdinalVector &empty,
                                                                                OrdinalVector &to_add);
 
-  bool internal_modification_end_for_change_entity_owner( modification_optimization opt, bool doAura );
+  bool internal_modification_end_for_change_entity_owner( modification_optimization opt );
   bool internal_modification_end_for_change_parts();
   void internal_modification_end_for_change_ghosting();
 

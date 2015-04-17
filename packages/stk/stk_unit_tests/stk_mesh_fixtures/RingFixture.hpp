@@ -81,8 +81,7 @@ class RingFixture {
   /**
    * Make sure that element->owner_rank() == element->node[1]->owner_rank()
    */
-  void fixup_node_ownership(bool regenerate_aura = true,
-                            BulkData::modification_optimization mod_optimize = BulkData::MOD_END_SORT);
+  void fixup_node_ownership(BulkData::modification_optimization mod_optimize = BulkData::MOD_END_SORT);
 
  protected:
 

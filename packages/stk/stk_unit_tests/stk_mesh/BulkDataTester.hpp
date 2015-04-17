@@ -88,11 +88,12 @@ public:
 
     BulkDataTester(stk::mesh::MetaData &mesh_meta_data,
                    MPI_Comm comm,
+                   enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option,
                    bool add_fmwk_data,
                    ConnectivityMap const* arg_connectivity_map,
                    FieldDataManager *field_data_manager,
                    unsigned bucket_capacity) :
-            stk::mesh::BulkData(mesh_meta_data, comm, stk::mesh::BulkData::AUTO_AURA, add_fmwk_data, arg_connectivity_map, field_data_manager, bucket_capacity)
+            stk::mesh::BulkData(mesh_meta_data, comm, auto_aura_option, add_fmwk_data, arg_connectivity_map, field_data_manager, bucket_capacity)
     {
     }
 
@@ -169,9 +170,9 @@ public:
         BulkData::entity_comm_map_clear_ghosting(key);
     }
 
-    bool my_internal_modification_end_for_change_entity_owner( bool regenerate_aura, modification_optimization opt )
+    bool my_internal_modification_end_for_change_entity_owner(modification_optimization opt )
     {
-        return this->internal_modification_end_for_change_entity_owner(opt, regenerate_aura);
+        return this->internal_modification_end_for_change_entity_owner(opt);
     }
 
     bool my_is_entity_in_sharing_comm_map(stk::mesh::Entity entity)

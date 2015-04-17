@@ -94,7 +94,7 @@ TEST(UnitTestingOfBucket, testBucket)
 
   // Create MetaData, BulkData
   unsigned max_bucket_size = 4;
-  stk::mesh::fixtures::BoxFixture fixture(pm, max_bucket_size, entity_names);
+  stk::mesh::fixtures::BoxFixture fixture(pm, stk::mesh::BulkData::AUTO_AURA, max_bucket_size, entity_names);
   MetaData& meta = fixture.fem_meta();
   BulkData& bulk = fixture.bulk_data();
   // Create two scalar fields, temperature and volume. Put temperature

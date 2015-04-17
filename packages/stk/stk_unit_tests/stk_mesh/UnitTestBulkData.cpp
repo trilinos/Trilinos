@@ -122,7 +122,7 @@ extern char** gl_argv;
 namespace
 {
 
-void donate_one_element(stk::mesh::unit_test::BulkDataTester & mesh, bool aura)
+void donate_one_element(stk::mesh::unit_test::BulkDataTester & mesh)
 {
     const int p_rank = mesh.parallel_rank();
 
@@ -194,7 +194,7 @@ void donate_one_element(stk::mesh::unit_test::BulkDataTester & mesh, bool aura)
         }
     }
 
-    mesh.change_entity_owner(change, aura, BulkData::MOD_END_COMPRESS_AND_SORT);
+    mesh.change_entity_owner(change, BulkData::MOD_END_COMPRESS_AND_SORT);
 
     count_entities(select_owned, mesh, after_count);
 
@@ -205,7 +205,7 @@ void donate_one_element(stk::mesh::unit_test::BulkDataTester & mesh, bool aura)
     }
 }
 
-void donate_all_shared_nodes(stk::mesh::unit_test::BulkDataTester & mesh, bool aura)
+void donate_all_shared_nodes(stk::mesh::unit_test::BulkDataTester & mesh)
 {
     const int p_rank = mesh.parallel_rank();
 
@@ -237,7 +237,7 @@ void donate_all_shared_nodes(stk::mesh::unit_test::BulkDataTester & mesh, bool a
         }
     }
 
-    mesh.change_entity_owner(change, aura, BulkData::MOD_END_COMPRESS_AND_SORT);
+    mesh.change_entity_owner(change, BulkData::MOD_END_COMPRESS_AND_SORT);
 
     count_entities(select_used, mesh, after_count);
 
@@ -765,7 +765,6 @@ TEST(BulkData, testChangeOwner_ring)
 
     //------------------------------
     {
-        bool aura = false;
         RingFixture ring_mesh(pm, nPerProc, false /* no element parts */, stk::mesh::BulkData::NO_AUTO_AURA);
         BulkData & bulk = ring_mesh.m_bulk_data;
         ring_mesh.m_meta_data.commit();
@@ -774,7 +773,7 @@ TEST(BulkData, testChangeOwner_ring)
         ring_mesh.generate_mesh();
         ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk));
 
-        ring_mesh.fixup_node_ownership(aura, BulkData::MOD_END_COMPRESS_AND_SORT);
+        ring_mesh.fixup_node_ownership(BulkData::MOD_END_COMPRESS_AND_SORT);
 
         const Selector select_used = ring_mesh.m_meta_data.locally_owned_part() | ring_mesh.m_meta_data.globally_shared_part();
         const Selector select_all = ring_mesh.m_meta_data.universal_part();
@@ -791,7 +790,7 @@ TEST(BulkData, testChangeOwner_ring)
         {
             // Shift ring by two nodes and elements.
 
-            stk::unit_test::test_shift_ring(ring_mesh, false /* no aura */);
+            stk::unit_test::test_shift_ring(ring_mesh);
 
             count_entities(select_used, ring_mesh.m_bulk_data, local_count);
             ASSERT_TRUE( local_count[stk::topology::NODE_RANK] == nLocalNode);
@@ -806,7 +805,7 @@ TEST(BulkData, testChangeOwner_ring)
     //------------------------------
     // Test shift starting with ghosting but not regenerated ghosting.
     {
-        RingFixture ring_mesh(pm, nPerProc, false /* no element parts */);
+        RingFixture ring_mesh(pm, nPerProc, false /* no element parts */, stk::mesh::BulkData::NO_AUTO_AURA);
         BulkData& bulk = ring_mesh.m_bulk_data;
         ring_mesh.m_meta_data.commit();
 
@@ -824,14 +823,9 @@ TEST(BulkData, testChangeOwner_ring)
         ASSERT_EQ( local_count[stk::topology::NODE_RANK], nLocalNode);
         ASSERT_EQ( local_count[stk::topology::ELEMENT_RANK], nLocalElement);
 
-        count_entities(select_all, ring_mesh.m_bulk_data, local_count);
-        const unsigned n_extra = 1 < p_size ? 2 : 0;
-        ASSERT_TRUE( local_count[stk::topology::NODE_RANK] == nLocalNode + n_extra);
-        ASSERT_TRUE( local_count[stk::topology::ELEMENT_RANK] == nLocalElement + n_extra);
-
         if(1 < p_size)
         {
-            stk::unit_test::test_shift_ring(ring_mesh, false /* no aura */);
+            stk::unit_test::test_shift_ring(ring_mesh);
 
             count_entities(select_owned, ring_mesh.m_bulk_data, local_count);
             ASSERT_TRUE( local_count[stk::topology::NODE_RANK] == nPerProc);
@@ -875,7 +869,7 @@ TEST(BulkData, testChangeOwner_ring)
 
         if(1 < p_size)
         {
-            stk::unit_test::test_shift_ring(ring_mesh, true /* with aura */);
+            stk::unit_test::test_shift_ring(ring_mesh);
 
             count_entities(select_owned, ring_mesh.m_bulk_data, local_count);
             ASSERT_TRUE( local_count[stk::topology::NODE_RANK] == nPerProc);
@@ -938,7 +932,7 @@ TEST(BulkData, testChangeOwner_ring)
     // last processor give its shared node to P0
     if(1 < p_size)
     {
-        RingFixture ring_mesh(pm, nPerProc, false /* no element parts */);
+        RingFixture ring_mesh(pm, nPerProc, false /* no element parts */, stk::mesh::BulkData::NO_AUTO_AURA);
         BulkData& bulk = ring_mesh.m_bulk_data;
         ring_mesh.m_meta_data.commit();
 
@@ -963,7 +957,7 @@ TEST(BulkData, testChangeOwner_ring)
             change.push_back(entry);
         }
 
-        ring_mesh.m_bulk_data.change_entity_owner(change, false /* regenerate_aura */, BulkData::MOD_END_COMPRESS_AND_SORT);
+        ring_mesh.m_bulk_data.change_entity_owner(change, BulkData::MOD_END_COMPRESS_AND_SORT);
 
         count_entities(select_owned, ring_mesh.m_bulk_data, local_count);
         const unsigned n_node = p_rank == 0 ? nPerProc + 1 : (p_rank + 1 == p_size ? nPerProc - 1 : nPerProc );
@@ -974,12 +968,6 @@ TEST(BulkData, testChangeOwner_ring)
         count_entities(select_used, ring_mesh.m_bulk_data, local_count);
         ASSERT_EQ( nLocalNode, local_count[stk::topology::NODE_RANK]);
         ASSERT_EQ( nLocalElement, local_count[stk::topology::ELEMENT_RANK]);
-
-        // Moving the node disrupted ghosting on first and last process
-        count_entities(select_all, ring_mesh.m_bulk_data, local_count);
-        const unsigned n_extra = p_rank + 1 == p_size || p_rank == 0 ? 1 : 2;
-        ASSERT_EQ( nLocalNode + n_extra, local_count[stk::topology::NODE_RANK]);
-        ASSERT_EQ( nLocalElement + n_extra, local_count[stk::topology::ELEMENT_RANK]);
     }
 }
 
@@ -1003,8 +991,7 @@ TEST(BulkData, testChangeOwner_box)
 
     //------------------------------
     {
-        bool aura = false;
-        BoxFixture fixture(pm, 100);
+        BoxFixture fixture(pm, stk::mesh::BulkData::AUTO_AURA, 100);
         fixture.fem_meta().commit();
         stk::mesh::unit_test::BulkDataTester & bulk = fixture.bulk_data();
         int local_box[3][2] = { {0, 0}, {0, 0}, {0, 0}};
@@ -1015,14 +1002,13 @@ TEST(BulkData, testChangeOwner_box)
 
         if(1 < p_size)
         {
-            donate_one_element(bulk, aura);
+            donate_one_element(bulk);
         }
     }
 
     if(1 < p_size)
     {
-        bool aura = false;
-        BoxFixture fixture(pm, 100);
+        BoxFixture fixture(pm, stk::mesh::BulkData::AUTO_AURA, 100);
         fixture.fem_meta().commit();
         stk::mesh::unit_test::BulkDataTester & bulk = fixture.bulk_data();
         int local_box[3][2] = { {0, 0}, {0, 0}, {0, 0}};
@@ -1031,12 +1017,12 @@ TEST(BulkData, testChangeOwner_box)
         fixture.generate_boxes(root_box, local_box);
         ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk));
 
-        donate_all_shared_nodes(bulk, aura);
+        donate_all_shared_nodes(bulk);
     }
     //------------------------------
     if(1 < p_size)
     {
-        BoxFixture fixture(pm, 100);
+        BoxFixture fixture(pm, stk::mesh::BulkData::AUTO_AURA, 100);
         fixture.fem_meta().commit();
         stk::mesh::unit_test::BulkDataTester & bulk = fixture.bulk_data();
         int local_box[3][2] = { {0, 0}, {0, 0}, {0, 0}};
@@ -1045,13 +1031,13 @@ TEST(BulkData, testChangeOwner_box)
         fixture.generate_boxes(root_box, local_box);
         ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk));
 
-        donate_one_element(bulk, false /* no aura */);
+        donate_one_element(bulk);
     }
     //------------------------------
     // Introduce ghosts:
     if(1 < p_size)
     {
-        BoxFixture fixture(pm, 100);
+        BoxFixture fixture(pm, stk::mesh::BulkData::NO_AUTO_AURA, 100);
         stk::mesh::unit_test::BulkDataTester & bulk = fixture.bulk_data();
         MetaData & box_meta = fixture.fem_meta();
         box_meta.commit();
@@ -1071,10 +1057,10 @@ TEST(BulkData, testChangeOwner_box)
         count_entities(select_all, bulk, all_count);
         count_entities(select_used, bulk, used_count);
 
-        ASSERT_TRUE( used_count[0] < all_count[0]);
-        ASSERT_TRUE( used_count[3] < all_count[3]);
+        ASSERT_EQ( used_count[0], all_count[0]);
+        ASSERT_EQ( used_count[3], all_count[3]);
 
-        donate_all_shared_nodes(bulk, false /* don't regenerate aura */);
+        donate_all_shared_nodes(bulk);
 
         count_entities(select_all, bulk, all_count);
         count_entities(select_used, bulk, used_count);
@@ -2222,7 +2208,7 @@ TEST(BulkData, testFieldComm)
     {
         const int root_box[3][2] = { {0, 2}, {0, 2}, {0, 1}};  // emulate 2d box
 
-        BoxFixture fixture(pm, 100);
+        BoxFixture fixture(pm, stk::mesh::BulkData::AUTO_AURA, 100);
         PressureFieldType& p_field = fixture.fem_meta().declare_field<PressureFieldType>(stk::topology::NODE_RANK, "p");
         stk::mesh::put_field(p_field, fixture.fem_meta().universal_part());
         fixture.fem_meta().commit();
@@ -3702,7 +3688,7 @@ TEST(BulkData, change_entity_owner_no_aura_check)
 
   const int spatial_dimension = 2;
   stk::mesh::MetaData meta( spatial_dimension );
-  stk::mesh::unit_test::BulkDataTester bulk( meta, pm);
+  stk::mesh::unit_test::BulkDataTester bulk( meta, pm, stk::mesh::BulkData::NO_AUTO_AURA);
 
   std::vector<stk::mesh::Entity> elems;
   CEOUtils::fillMeshfor2Elem2ProcMoveAndTest(bulk, meta, elems);
@@ -3714,7 +3700,7 @@ TEST(BulkData, change_entity_owner_no_aura_check)
     entity_procs.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::NODE_RANK, 5), 1));
     entity_procs.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::NODE_RANK, 6), 1));
   }
-  bulk.change_entity_owner(entity_procs, false); //regenerate_aura, don't do it
+  bulk.change_entity_owner(entity_procs);
 
   CEOUtils::checkStatesAfterCEOME_2Elem2ProcMove_no_ghost(bulk);
 }
@@ -3753,7 +3739,7 @@ TEST(BulkData, modification_end_and_change_entity_owner_no_aura_check)
     entity_procs_flip.push_back(stk::mesh::EntityProc(mesh.get_entity(stk::topology::NODE_RANK, 5), 0));
     entity_procs_flip.push_back(stk::mesh::EntityProc(mesh.get_entity(stk::topology::NODE_RANK, 6), 0));
   }
-  mesh.change_entity_owner(entity_procs_flip, false); //also want to make sure and not generate an aura here
+  mesh.change_entity_owner(entity_procs_flip);
 
   CEOUtils::checkStatesAfterCEOME_2Elem2ProcFlip_no_ghost(mesh);
 }
