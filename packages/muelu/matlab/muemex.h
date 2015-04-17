@@ -69,6 +69,14 @@
 #ifdef HAVE_MUELU_MATLAB
 #include "mex.h"
 
+//Belos parameter defaults
+
+#define BELOS_MAX_BLOCKS 50
+#define BELOS_BLOCK_SIZE 1
+#define BELOS_MAX_RESTARTS 15
+#define BELOS_TOLERANCE 1e-05
+#define BELOS_MAX_ITERS -1
+
 class muelu_data_pack;
 class muelu_data_pack
 {
