@@ -400,6 +400,153 @@ testAxpby (std::ostream& out, const bool prvSuccess)
 }
 
 
+template<class Scalar, class Layout, class Device>
+bool
+testScal1Arg (std::ostream& out, /*const int theNumCols, */ const bool prvSuccess)
+{
+  using std::endl;
+  typedef Kokkos::View<Scalar**, Layout, Device> mv_type;
+  typedef typename mv_type::size_type size_type;
+  typedef Kokkos::Details::ArithTraits<Scalar> ATS;
+  bool curSuccess = true;
+
+  out << "Testing KokkosBlas::axpby" << endl;
+
+  const size_type numRows = 4;
+  const size_type numCols = 1; // static_cast<size_type> (theNumCols);
+
+  mv_type X ("X", numRows, numCols);
+  typename mv_type::HostMirror X_h = Kokkos::create_mirror_view (X);
+
+  const Scalar ZERO = ATS::zero ();
+  const Scalar ONE = ATS::one ();
+  const Scalar TWO = ONE + ONE;
+  Scalar alpha;
+
+  // Set up the test problem.
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      X_h(i,j) = static_cast<Scalar> (i + 1);
+    }
+  }
+  Kokkos::deep_copy (X, X_h);
+
+  // Test with alpha == 0.
+  alpha = ZERO;
+  out << "  Test scal(X, " << alpha << ", X)" << endl;
+  KokkosBlas::scal (X, alpha, X);
+  // Compare against the right answer.
+  Kokkos::deep_copy (X_h, X);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (X_h(i,j) != ZERO) {
+        curSuccess = false;
+        out << "    FAILED: X_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << ZERO << endl;
+      }
+    }
+  }
+
+  // Set up the test problem.
+  for (size_type j = 0; j < numCols; ++j) {
+    if (numRows > static_cast<size_type> (0)) {
+      X_h(0,j) = ONE;
+    }
+    for (size_type i = 1; i < numRows; ++i) {
+      X_h(i,j) = X_h(i-1,j) + ONE;
+    }
+  }
+  Kokkos::deep_copy (X, X_h);
+
+  // Test with alpha == 1.
+  alpha = ONE;
+  out << "  Test scal(X, " << alpha << ", X)" << endl;
+  KokkosBlas::scal (X, alpha, X);
+  // Compare against the right answer.
+  Kokkos::deep_copy (X_h, X);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (X_h(i,j) != static_cast<Scalar> (i + 1)) {
+        curSuccess = false;
+        out << "    FAILED: X_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << static_cast<Scalar> (i+1) << endl;
+      }
+    }
+  }
+
+  // Set up the test problem.
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      X_h(i,j) = static_cast<Scalar> (i + 1);
+    }
+  }
+  Kokkos::deep_copy (X, X_h);
+
+  // Test with alpha == -1.
+  alpha = -ONE;
+  out << "  Test scal(X, " << alpha << ", X)" << endl;
+  KokkosBlas::scal (X, alpha, X);
+  // Compare against the right answer.
+  Kokkos::deep_copy (X_h, X);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (X_h(i,j) != -static_cast<Scalar> (i + 1)) {
+        curSuccess = false;
+        out << "    FAILED: X_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << static_cast<Scalar> (i+1) << endl;
+      }
+    }
+  }
+
+  // Set up the test problem.
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      X_h(i,j) = static_cast<Scalar> (i + 1);
+    }
+  }
+  Kokkos::deep_copy (X, X_h);
+
+  // Test with alpha == 2.
+  alpha = TWO;
+  out << "  Test scal(X, " << alpha << ", X)" << endl;
+  KokkosBlas::scal (X, alpha, X);
+  // Compare against the right answer.
+  Kokkos::deep_copy (X_h, X);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (X_h(i,j) != TWO * static_cast<Scalar> (i + 1)) {
+        curSuccess = false;
+        out << "    FAILED: X_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << TWO * static_cast<Scalar> (i+1) << endl;
+      }
+    }
+  }
+
+  // Test with alpha == -2.
+  alpha = -TWO;
+  out << "  Test scal(X, " << alpha << ", X)" << endl;
+  KokkosBlas::scal (X, alpha, X);
+  // Compare against the right answer.
+  Kokkos::deep_copy (X_h, X);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (X_h(i,j) != -TWO * static_cast<Scalar> (i + 1)) {
+        curSuccess = false;
+        out << "    FAILED: X_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << -TWO * static_cast<Scalar> (i+1) << endl;
+      }
+    }
+  }
+
+  if (curSuccess) {
+    out << "  SUCCESS" << endl;
+  } else {
+    out << "  FAILURE" << endl;
+  }
+  return curSuccess && prvSuccess;
+}
+
+
 
 template<class Scalar, class Layout, class Device>
 bool
@@ -819,6 +966,7 @@ testMV (std::ostream& out, const bool prvSuccess)
   curSuccess = testNorm1<Scalar, Layout, Device> (out, curSuccess);
   curSuccess = testNormInf<Scalar, Layout, Device> (out, curSuccess);
   curSuccess = testSum<Scalar, Layout, Device> (out, curSuccess);
+  curSuccess = testScal1Arg<Scalar, Layout, Device> (out, curSuccess);
   return curSuccess && prvSuccess;
 }
 
