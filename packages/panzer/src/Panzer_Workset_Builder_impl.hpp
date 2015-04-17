@@ -459,7 +459,7 @@ panzer::buildEdgeWorksets(const panzer::PhysicsBlock & pb_a,
   // key is the pair of local face indices, value is a vector of cell indices that satisfy this pair
   std::map<std::pair<unsigned,unsigned>,std::vector<std::size_t> > element_list;
   for (std::size_t cell=0; cell < local_cell_ids_a.size(); ++cell)
-    element_list[std::make_pair<unsigned,unsigned>(local_side_ids_a[cell],local_side_ids_b[cell])].push_back(cell);
+    element_list[std::make_pair(local_side_ids_a[cell],local_side_ids_b[cell])].push_back(cell);
 
   // this is the lone iterator that will be used to loop over the element edge list
   std::map<std::pair<unsigned,unsigned>,std::vector<std::size_t> >::const_iterator edge;
