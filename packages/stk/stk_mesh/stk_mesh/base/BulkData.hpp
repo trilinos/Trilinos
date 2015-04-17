@@ -119,7 +119,7 @@ public:
       NumMethodTypes
   };
   enum AutomaticAuraOption {
-      NO_AURA,
+      NO_AUTO_AURA,
       AUTO_AURA
   };
 

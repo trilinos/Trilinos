@@ -766,7 +766,7 @@ TEST(BulkData, testChangeOwner_ring)
     //------------------------------
     {
         bool aura = false;
-        RingFixture ring_mesh(pm, nPerProc, false /* no element parts */, stk::mesh::BulkData::NO_AURA);
+        RingFixture ring_mesh(pm, nPerProc, false /* no element parts */, stk::mesh::BulkData::NO_AUTO_AURA);
         BulkData & bulk = ring_mesh.m_bulk_data;
         ring_mesh.m_meta_data.commit();
 
@@ -3739,7 +3739,7 @@ TEST(BulkData, modification_end_and_change_entity_owner_no_aura_check)
 
   const int spatial_dimension = 2;
   stk::mesh::MetaData meta( spatial_dimension );
-  stk::mesh::unit_test::BulkDataTester mesh( meta, pm, stk::mesh::BulkData::NO_AURA);
+  stk::mesh::unit_test::BulkDataTester mesh( meta, pm, stk::mesh::BulkData::NO_AUTO_AURA);
 
   CEOUtils::fillMeshfor2Elem2ProcFlipAndTest_no_ghost(mesh, meta);
 

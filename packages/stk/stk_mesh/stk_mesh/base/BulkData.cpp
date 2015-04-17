@@ -3975,7 +3975,6 @@ bool BulkData::modification_end( modification_optimization opt)
 
 bool BulkData::modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt)
 {
-  //  NKC, false here for aura off
   bool return_value = internal_modification_end_for_entity_creation( entity_rank, opt );
 
 #ifdef STK_VERBOSE_OUTPUT

@@ -113,7 +113,7 @@ TEST(UnitTestingOfRelation, testRelationNoGhosting)
   const unsigned nPerProc = 10;
 
   const bool aura_flag = false;
-  RingFixture mesh( pm , nPerProc , false /* No element parts */, stk::mesh::BulkData::NO_AURA );
+  RingFixture mesh( pm , nPerProc , false /* No element parts */, stk::mesh::BulkData::NO_AUTO_AURA );
   mesh.m_meta_data.commit();
 
   BulkData& ring_bulk = mesh.m_bulk_data;

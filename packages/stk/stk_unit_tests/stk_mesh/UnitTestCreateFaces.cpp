@@ -758,7 +758,7 @@ TEST ( UnitTestCreateFaces, HeterogeneousWithAura )
 
 TEST ( UnitTestCreateFaces, HeterogeneousNoAura )
 {
-    heterogeneous_create_faces_test(stk::mesh::BulkData::NO_AURA );
+    heterogeneous_create_faces_test(stk::mesh::BulkData::NO_AUTO_AURA );
 }
 
 TEST ( UnitTestCreateFaces, Degenerate )
