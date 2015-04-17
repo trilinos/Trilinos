@@ -118,6 +118,10 @@ public:
       INTERNAL,
       NumMethodTypes
   };
+  enum AutomaticAuraOption {
+      NO_AURA,
+      AUTO_AURA
+  };
 
   /** \brief  Construct mesh bulk data manager conformal to the given
    *          \ref stk::mesh::MetaData "meta data manager" and will
@@ -128,6 +132,7 @@ public:
    */
   BulkData(   MetaData & mesh_meta_data
             , ParallelMachine parallel
+            , enum AutomaticAuraOption auto_aura_option = AUTO_AURA
 #ifdef SIERRA_MIGRATION
             , bool add_fmwk_data = false
 #endif
@@ -228,7 +233,7 @@ public:
    *  desired changes so that it can be called only once.
    */
   void change_entity_owner( const EntityProcVec & arg_change,
-                            bool regenerate_aura = true,
+                            bool doAura = true,
                             modification_optimization mod_optimization = MOD_END_SORT );
 
   /** \brief  Rotate the field data of multistate fields.
@@ -749,7 +754,6 @@ protected: //functions
   inline void log_created_parallel_copy(Entity entity);
 
   void internal_change_entity_owner( const std::vector<EntityProc> & arg_change,
-                                     bool regenerate_aura = true,
                                      modification_optimization mod_optimization = MOD_END_SORT );
 
   /*  Entity modification consequences:
@@ -784,7 +788,7 @@ protected: //functions
                                                                                OrdinalVector &empty,
                                                                                OrdinalVector &to_add);
 
-  bool internal_modification_end_for_change_entity_owner( bool regenerate_aura, modification_optimization opt );
+  bool internal_modification_end_for_change_entity_owner( modification_optimization opt, bool doAura );
   bool internal_modification_end_for_change_parts();
   void internal_modification_end_for_change_ghosting();
 
@@ -853,7 +857,7 @@ protected: //functions
                                      NewOwnerMap & new_owner_map);
 
   impl::BucketRepository& bucket_repository() { return m_bucket_repository; }
-  virtual bool internal_modification_end( bool regenerate_aura, modification_optimization opt );
+  virtual bool internal_modification_end( modification_optimization opt );
 
   bool is_entity_in_sharing_comm_map(stk::mesh::Entity entity);
   void erase_sharing_info_using_key(stk::mesh::EntityKey key, stk::mesh::BulkData::GHOSTING_ID ghostingId);
@@ -1043,7 +1047,7 @@ private: //functions
                                     const std::vector<EntityProc> & add_send ,
                                     const std::vector<EntityKey> & remove_receive );
 
-  bool internal_modification_end_for_entity_creation( EntityRank entity_rank, bool regenerate_aura, modification_optimization opt );
+  bool internal_modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt );
   void internal_establish_new_owner(stk::mesh::Entity entity);
   void internal_update_parts_for_shared_entity(stk::mesh::Entity entity, const bool is_entity_shared, const bool did_i_just_become_owner);
   void internal_resolve_shared_modify_delete_second_pass();
@@ -1175,6 +1179,7 @@ protected: //data
   mutable std::vector<RelationVector* > m_fmwk_aux_relations;   // Relations that can't be managed by STK such as PARENT/CHILD
 #endif
   bool m_do_create_aura;
+  enum AutomaticAuraOption m_autoAuraOption;
 
 private: // data
   Parallel m_parallel;

@@ -76,8 +76,13 @@ public:
     {
     }
 
+    BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm, enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option) :
+            stk::mesh::BulkData(mesh_meta_data, comm, auto_aura_option)
+    {
+    }
+
     BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm, stk::mesh::ConnectivityMap const &conn_map) :
-            stk::mesh::BulkData(mesh_meta_data, comm, false, &conn_map)
+            stk::mesh::BulkData(mesh_meta_data, comm, stk::mesh::BulkData::AUTO_AURA, false, &conn_map)
     {
     }
 
@@ -87,7 +92,7 @@ public:
                    ConnectivityMap const* arg_connectivity_map,
                    FieldDataManager *field_data_manager,
                    unsigned bucket_capacity) :
-            stk::mesh::BulkData(mesh_meta_data, comm, add_fmwk_data, arg_connectivity_map, field_data_manager, bucket_capacity)
+            stk::mesh::BulkData(mesh_meta_data, comm, stk::mesh::BulkData::AUTO_AURA, add_fmwk_data, arg_connectivity_map, field_data_manager, bucket_capacity)
     {
     }
 
@@ -125,13 +130,13 @@ public:
     }
 
 
-    bool my_internal_modification_end(bool regenerate_aura = true, modification_optimization opt = MOD_END_COMPRESS_AND_SORT)
+    bool my_internal_modification_end(modification_optimization opt = MOD_END_COMPRESS_AND_SORT)
     {
-      return this->internal_modification_end(regenerate_aura, opt);
+      return this->internal_modification_end(opt);
     }
     void my_internal_change_entity_owner( const std::vector<stk::mesh::EntityProc> & arg_change, bool regenerate_aura = true, modification_optimization mod_optimization = MOD_END_SORT )
     {
-        this->internal_change_entity_owner(arg_change,regenerate_aura,mod_optimization);
+        this->internal_change_entity_owner(arg_change,mod_optimization);
     }
 
     void my_resolve_ownership_of_modified_entities(const std::vector<stk::mesh::Entity> &shared_new)
@@ -166,7 +171,7 @@ public:
 
     bool my_internal_modification_end_for_change_entity_owner( bool regenerate_aura, modification_optimization opt )
     {
-        return this->internal_modification_end_for_change_entity_owner(regenerate_aura, opt);
+        return this->internal_modification_end_for_change_entity_owner(opt, regenerate_aura);
     }
 
     bool my_is_entity_in_sharing_comm_map(stk::mesh::Entity entity)

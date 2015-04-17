@@ -117,7 +117,7 @@ class TopologyHelpersTestingFixture
 TopologyHelpersTestingFixture::TopologyHelpersTestingFixture(ParallelMachine pm)
   : spatial_dimension( 3 )
   , meta( spatial_dimension )
-  , bulk( meta, pm, 100 )
+  , bulk( meta, pm, stk::mesh::BulkData::AUTO_AURA )
   , element_rank( stk::topology::ELEMENT_RANK )
   , side_rank( meta.side_rank())
   , generic_element_part( meta.declare_part("another part", element_rank ) )

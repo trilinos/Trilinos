@@ -260,8 +260,9 @@ void BulkData::resolve_entity_sharing(stk::mesh::EntityRank entityRank, std::vec
 
 //----------------------------------------------------------------------
 
-BulkData::BulkData( MetaData & mesh_meta_data ,
-                    ParallelMachine parallel
+BulkData::BulkData( MetaData & mesh_meta_data
+                    , ParallelMachine parallel
+                    , enum AutomaticAuraOption auto_aura_option
 #ifdef SIERRA_MIGRATION
                     , bool add_fmwk_data
 #endif
@@ -293,7 +294,7 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_fmwk_global_ids(),
     m_fmwk_aux_relations(),
 #endif
-    m_do_create_aura(true),
+    m_autoAuraOption(auto_aura_option),
     m_parallel( parallel ),
     m_volatile_fast_shared_comm_map(),
     m_ghost_parts(),
@@ -2328,19 +2329,18 @@ void BulkData::update_sharing_after_change_entity_owner()
 }
 
 void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change,
-                                    bool regenerate_aura,
+                                    bool doAura,
                                     modification_optimization mod_optimization )
 {
     const bool modStatus = modification_begin("change_entity_owner");
     ThrowRequireMsg(modStatus, "BulkData::change_entity_owner() must not be called from within a modification cycle.");
-    this->internal_change_entity_owner(arg_change, regenerate_aura, mod_optimization);
+    this->internal_change_entity_owner(arg_change, mod_optimization);
     update_sharing_after_change_entity_owner();
-    internal_modification_end_for_change_entity_owner(regenerate_aura, mod_optimization);
+    internal_modification_end_for_change_entity_owner(mod_optimization, doAura);
 }
 
 
 void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg_change,
-                                             bool regenerate_aura,
                                              modification_optimization mod_optimization )
 {
   require_ok_to_modify();
@@ -3964,7 +3964,7 @@ void print_bucket_data(const stk::mesh::BulkData& mesh)
 
 bool BulkData::modification_end( modification_optimization opt)
 {
-  const bool return_value = internal_modification_end( m_do_create_aura, opt );
+  const bool return_value = internal_modification_end( opt );
 
 #ifdef STK_VERBOSE_OUTPUT
   print_bucket_data(*this);
@@ -3976,7 +3976,7 @@ bool BulkData::modification_end( modification_optimization opt)
 bool BulkData::modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt)
 {
   //  NKC, false here for aura off
-  bool return_value = internal_modification_end_for_entity_creation( entity_rank, true, opt );
+  bool return_value = internal_modification_end_for_entity_creation( entity_rank, opt );
 
 #ifdef STK_VERBOSE_OUTPUT
   print_bucket_data(*this);
@@ -4044,7 +4044,7 @@ bool BulkData::internal_modification_end_for_change_parts()
     return true;
 }
 
-bool BulkData::internal_modification_end_for_change_entity_owner( bool regenerate_aura, modification_optimization opt )
+bool BulkData::internal_modification_end_for_change_entity_owner( modification_optimization opt, bool doAura )
 {
   // The two states are MODIFIABLE and SYNCHRONiZED
   if ( m_sync_state == SYNCHRONIZED ) { return false ; }
@@ -4055,7 +4055,8 @@ bool BulkData::internal_modification_end_for_change_entity_owner( bool regenerat
 
   if (parallel_size() > 1)
   {
-    if ( regenerate_aura )
+//    if ( m_autoAuraOption == AUTO_AURA )
+    if ( doAura )
     {
       internal_regenerate_aura();
     }
@@ -4116,7 +4117,7 @@ void BulkData::check_mesh_consistency()
 #endif
 }
 
-bool BulkData::internal_modification_end( bool regenerate_aura, modification_optimization opt)
+bool BulkData::internal_modification_end( modification_optimization opt)
 {
   //require_ok_to_modify();
 
@@ -4148,7 +4149,7 @@ bool BulkData::internal_modification_end( bool regenerate_aura, modification_opt
     internal_resolve_shared_membership();
 
     // Regenerate the ghosting aura around all shared mesh entities.
-    if ( regenerate_aura ) { internal_regenerate_aura(); }
+    if ( m_autoAuraOption == AUTO_AURA ) { internal_regenerate_aura(); }
 
     internal_resolve_send_ghost_membership();
 
@@ -4489,7 +4490,7 @@ void connect_ghosted_entities_received_to_ghosted_upwardly_connected_entities(st
     }
 }
 
-bool BulkData::internal_modification_end_for_entity_creation( EntityRank entity_rank, bool regenerate_aura, modification_optimization opt )
+bool BulkData::internal_modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt )
 {
   // The two states are MODIFIABLE and SYNCHRONiZED
   if ( m_sync_state == SYNCHRONIZED ) { return false ; }

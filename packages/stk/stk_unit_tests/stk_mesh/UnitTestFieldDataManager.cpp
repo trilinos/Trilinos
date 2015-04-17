@@ -229,7 +229,7 @@ TEST(DefaultFieldDataManagerTest, AllocateFieldData)
         initializeTestField(meshMetaData);
 
         stk::mesh::DefaultFieldDataManager fieldDataManager(numRanks);
-        stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD,
+        stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA,
 #ifdef SIERRA_MIGRATION
  false,
 #endif
@@ -254,7 +254,7 @@ TEST(DefaultFieldDataManagerTest, AllocateFieldDataTwoBuckets)
 
         const size_t numRanks = meshMetaData.entity_rank_count();
         stk::mesh::DefaultFieldDataManager fieldDataManager(numRanks);
-        stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD,
+        stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA,
 #ifdef SIERRA_MIGRATION
  false,
 #endif
@@ -282,7 +282,7 @@ TEST(DefaultFieldDataManagerTest, TwoEntitiesTwoBuckets)
 
         const size_t numRanks = meshMetaData.entity_rank_count();
         stk::mesh::DefaultFieldDataManager fieldDataManager(numRanks);
-        stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD,
+        stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA,
 #ifdef SIERRA_MIGRATION
  false,
 #endif
@@ -302,7 +302,7 @@ TEST(ContiguousFieldDataManagerTest, AllocateFieldData)
         initializeTestField(meshMetaData);
 
         stk::mesh::ContiguousFieldDataManager fieldDataManager;
-        stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD,
+        stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA,
 #ifdef SIERRA_MIGRATION
  false,
 #endif
@@ -325,7 +325,7 @@ TEST(ContiguousFieldDataManagerTest, AllocateFieldDataAndReorderBuckets)
         initializeTestField(meshMetaData);
 
         stk::mesh::ContiguousFieldDataManager fieldDataManager;
-        stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD,
+        stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA,
 #ifdef SIERRA_MIGRATION
  false,
 #endif
@@ -357,7 +357,7 @@ TEST(ContiguousFieldDataManagerTest, TwoEntitiesTwoBuckets)
         initializeTestField(meshMetaData);
 
         stk::mesh::ContiguousFieldDataManager fieldDataManager;
-        stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD,
+        stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA,
 #ifdef SIERRA_MIGRATION
  false,
 #endif
@@ -415,7 +415,7 @@ TEST(ContiguousFieldDataManagerTest, nodalFieldNotOnAllNodeBuckets)
         initialize2Parts2Fields(meshMetaData);
 
         stk::mesh::ContiguousFieldDataManager fieldDataManager;
-        stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD,
+        stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA,
 #ifdef SIERRA_MIGRATION
  false,
 #endif

@@ -38,18 +38,18 @@
 namespace stk {
 namespace mesh {
 
-bool UnitTestModificationEndWrapper::wrap(stk::mesh::BulkData& mesh, bool generate_aura)
+bool UnitTestModificationEndWrapper::wrap(stk::mesh::BulkData& mesh)
 {
-  return mesh.internal_modification_end(generate_aura, BulkData::MOD_END_COMPRESS_AND_SORT );
+  return mesh.internal_modification_end(BulkData::MOD_END_COMPRESS_AND_SORT );
 }
 
 } // namespace mesh
 
 namespace unit_test {
 
-bool modification_end_wrapper(stk::mesh::BulkData& mesh, bool generate_aura)
+bool modification_end_wrapper(stk::mesh::BulkData& mesh)
 {
-  return stk::mesh::UnitTestModificationEndWrapper::wrap(mesh, generate_aura);
+  return stk::mesh::UnitTestModificationEndWrapper::wrap(mesh);
 }
 
 } // namespace unit_test

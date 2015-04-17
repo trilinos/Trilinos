@@ -1492,6 +1492,7 @@ namespace stk {
 	if (Teuchos::is_null(m_bulk_data)) {
 	  set_bulk_data(Teuchos::rcp( new stk::mesh::BulkData(   meta_data()
 								 , region->get_database()->util().communicator()
+								 , stk::mesh::BulkData::AUTO_AURA
 #ifdef SIERRA_MIGRATION
 								 , false
 #endif

@@ -268,7 +268,7 @@ TEST(BulkData, testChangeOwner_nodes)
 
     const int spatial_dimension = 3;
     MetaData meta(spatial_dimension);
-    BulkData bulk(meta, pm, 100);
+    BulkData bulk(meta, pm, stk::mesh::BulkData::AUTO_AURA);
 
     const PartVector no_parts;
 
@@ -401,7 +401,7 @@ TEST(BulkData, testCreateMoreExistingOwnershipIsKept)
 
   meta.commit();
 
-  BulkData bulk( meta , pm , 100 );
+  BulkData bulk( meta , pm , stk::mesh::BulkData::AUTO_AURA );
 
   bulk.modification_begin();
 
@@ -766,13 +766,13 @@ TEST(BulkData, testChangeOwner_ring)
     //------------------------------
     {
         bool aura = false;
-        RingFixture ring_mesh(pm, nPerProc, false /* no element parts */);
+        RingFixture ring_mesh(pm, nPerProc, false /* no element parts */, stk::mesh::BulkData::NO_AURA);
         BulkData & bulk = ring_mesh.m_bulk_data;
         ring_mesh.m_meta_data.commit();
 
         bulk.modification_begin();
         ring_mesh.generate_mesh();
-        ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk, aura));
+        ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk));
 
         ring_mesh.fixup_node_ownership(aura, BulkData::MOD_END_COMPRESS_AND_SORT);
 
@@ -1011,7 +1011,7 @@ TEST(BulkData, testChangeOwner_box)
 
         bulk.modification_begin();
         fixture.generate_boxes(root_box, local_box);
-        ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk, aura));
+        ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk));
 
         if(1 < p_size)
         {
@@ -1029,14 +1029,13 @@ TEST(BulkData, testChangeOwner_box)
 
         bulk.modification_begin();
         fixture.generate_boxes(root_box, local_box);
-        ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk, aura));
+        ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk));
 
         donate_all_shared_nodes(bulk, aura);
     }
     //------------------------------
     if(1 < p_size)
     {
-        bool aura = false;
         BoxFixture fixture(pm, 100);
         fixture.fem_meta().commit();
         stk::mesh::unit_test::BulkDataTester & bulk = fixture.bulk_data();
@@ -1044,7 +1043,7 @@ TEST(BulkData, testChangeOwner_box)
 
         bulk.modification_begin();
         fixture.generate_boxes(root_box, local_box);
-        ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk, aura));
+        ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk));
 
         donate_one_element(bulk, false /* no aura */);
     }
@@ -3740,7 +3739,7 @@ TEST(BulkData, modification_end_and_change_entity_owner_no_aura_check)
 
   const int spatial_dimension = 2;
   stk::mesh::MetaData meta( spatial_dimension );
-  stk::mesh::unit_test::BulkDataTester mesh( meta, pm);
+  stk::mesh::unit_test::BulkDataTester mesh( meta, pm, stk::mesh::BulkData::NO_AURA);
 
   CEOUtils::fillMeshfor2Elem2ProcFlipAndTest_no_ghost(mesh, meta);
 

@@ -166,16 +166,13 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
 
   //------------------------------
   { // No ghosting
-    const bool aura_flag = false ;
-
     RingFixture mesh( pm , nPerProc , false /* No element parts */ );
     mesh.m_meta_data.commit();
     BulkData& bulk = mesh.m_bulk_data;
 
     bulk.modification_begin();
     mesh.generate_mesh( );
-    ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk,
-                                                           false /*no aura*/));
+    ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk));
 
     mesh.fixup_node_ownership(false /* regenerate_aura */, BulkData::MOD_END_COMPRESS_AND_SORT);
 
@@ -214,7 +211,7 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
       ASSERT_TRUE( bulk.destroy_entity( node1 ) );
       node1 = Entity();
     }
-    ASSERT_TRUE( stk::unit_test::modification_end_wrapper(bulk, aura_flag) );
+    ASSERT_TRUE( stk::unit_test::modification_end_wrapper(bulk) );
 
     if ( bulk.is_valid(node0) ) {
       ASSERT_EQ( node0_elements - 1 , bulk.count_relations(node0) );

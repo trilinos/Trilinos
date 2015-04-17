@@ -60,7 +60,7 @@ TEST(stkMeshHowTo, useConnectivityMap)
     EXPECT_FALSE(minimal_connectivity.valid(stk::topology::EDGE_RANK, stk::topology::ELEM_RANK));
 
     bool add_fmwk_data = false;
-    stk::mesh::BulkData mesh(metaData, MPI_COMM_WORLD, add_fmwk_data, &minimal_connectivity);
+    stk::mesh::BulkData mesh(metaData, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA, add_fmwk_data, &minimal_connectivity);
     mesh.modification_begin();
 
     //set up 1 element (3-node triangle) that is fully downward connected to edges and nodes

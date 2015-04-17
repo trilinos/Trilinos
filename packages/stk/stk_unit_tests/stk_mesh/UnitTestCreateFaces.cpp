@@ -669,7 +669,7 @@ TEST ( UnitTestCreateFaces, Gears )
 
 }
 
-TEST ( UnitTestCreateFaces, Heterogeneous )
+void heterogeneous_create_faces_test(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
 {
   int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
   if (numprocs > 1)
@@ -683,7 +683,7 @@ TEST ( UnitTestCreateFaces, Heterogeneous )
   stk::mesh::fixtures::heterogeneous_mesh_meta_data( meta_data , node_coord );
   meta_data.commit();
 
-  stk::mesh::BulkData bulk_data( meta_data, MPI_COMM_WORLD );
+  stk::mesh::BulkData bulk_data( meta_data, MPI_COMM_WORLD, autoAuraOption );
   stk::mesh::fixtures::heterogeneous_mesh_bulk_data( bulk_data , node_coord );
 
   /*
@@ -749,6 +749,16 @@ TEST ( UnitTestCreateFaces, Heterogeneous )
     EXPECT_EQ( 45u, counts[face_rank] ); // faces
     EXPECT_EQ( 17u, counts[elem_rank] ); // elements
   }
+}
+
+TEST ( UnitTestCreateFaces, HeterogeneousWithAura )
+{
+    heterogeneous_create_faces_test(stk::mesh::BulkData::AUTO_AURA );
+}
+
+TEST ( UnitTestCreateFaces, HeterogeneousNoAura )
+{
+    heterogeneous_create_faces_test(stk::mesh::BulkData::NO_AURA );
 }
 
 TEST ( UnitTestCreateFaces, Degenerate )

@@ -81,7 +81,7 @@ TEST(UnitTestingOfBulkData, testChangeParts_ringmesh)
 
   bulk.modification_begin();
   ring_mesh.generate_mesh( );
-  ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk, false /* no aura */));
+  ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk));
 
   ring_mesh.fixup_node_ownership(false /* regenerate_aura */, BulkData::MOD_END_COMPRESS_AND_SORT);
 

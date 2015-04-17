@@ -67,7 +67,8 @@ class RingFixture {
 
   RingFixture( stk::ParallelMachine pm ,
                unsigned num_element_per_proc = 10 ,
-               bool use_element_parts = false );
+               bool use_element_parts = false,
+               enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option = stk::mesh::BulkData::AUTO_AURA);
 
   ~RingFixture() {}
 

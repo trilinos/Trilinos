@@ -67,7 +67,7 @@ TEST(stkMeshHowTo, useCustomConnectivityMap)
     EXPECT_TRUE(custom_connectivity.valid(stk::topology::EDGE_RANK, stk::topology::NODE_RANK));
 
     bool add_fmwk_data = false;
-    stk::mesh::BulkData mesh(metaData, MPI_COMM_WORLD, add_fmwk_data, &custom_connectivity);
+    stk::mesh::BulkData mesh(metaData, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA, add_fmwk_data, &custom_connectivity);
     mesh.modification_begin();
 
     //set up 1 element (3-node triangle) with elem->node and edge->node connections

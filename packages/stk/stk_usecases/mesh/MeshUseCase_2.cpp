@@ -83,7 +83,7 @@ typedef shards::Hexahedron<8>  ElementTraits ;
 
 UseCase_2_Mesh::UseCase_2_Mesh( stk::ParallelMachine comm ) :
   m_fem_metaData( SpatialDim )
-  , m_bulkData( m_fem_metaData , comm , field_data_chunk_size )
+  , m_bulkData( m_fem_metaData , comm , stk::mesh::BulkData::AUTO_AURA )
   , m_partLeft( m_fem_metaData.declare_part_with_topology( "block_left", stk::topology::HEX_8))
   , m_partRight( m_fem_metaData.declare_part_with_topology( "block_right", stk::topology::HEX_8))
   , m_coordinates_field( m_fem_metaData.declare_field< VectorFieldType >(stk::topology::NODE_RANK, "coordinates" ))

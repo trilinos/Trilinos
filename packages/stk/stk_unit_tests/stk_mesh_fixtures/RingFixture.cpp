@@ -56,10 +56,11 @@ namespace fixtures {
 
 RingFixture::RingFixture( stk::ParallelMachine pm ,
                           unsigned num_element_per_proc ,
-                          bool use_element_parts )
+                          bool use_element_parts,
+                          enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option)
   : m_spatial_dimension(2),
     m_meta_data( m_spatial_dimension ),
-    m_bulk_data( m_meta_data, pm ),
+    m_bulk_data( m_meta_data, pm, auto_aura_option ),
     m_element_parts(),
     m_element_part_extra( m_meta_data.declare_part("element_extra" , stk::topology::ELEMENT_RANK ) ),
     m_num_element_per_proc( num_element_per_proc ),
