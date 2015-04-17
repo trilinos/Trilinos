@@ -63,7 +63,7 @@ using stk::mesh::fixtures::RingFixture;
 //----------------------------------------------------------------------
 // Testing for mesh entities without relations
 
-TEST(UnitTestingOfBulkData, testDestroy_nodes)
+void testDestroy_nodes(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( pm );
@@ -82,7 +82,7 @@ TEST(UnitTestingOfBulkData, testDestroy_nodes)
 
   meta.commit();
 
-  BulkData bulk( meta , pm );
+  BulkData bulk( meta , pm, autoAuraOption );
 
   // Ids for all entities (all entities have type 0):
 
@@ -131,6 +131,16 @@ TEST(UnitTestingOfBulkData, testDestroy_nodes)
     e = bulk.get_entity( stk::topology::NODE_RANK , ids[ i ] );
     ASSERT_TRUE( !bulk.is_valid(e) );
   }
+}
+
+TEST(UnitTestingOfBulkData, testDestroy_nodes_with_aura)
+{
+    testDestroy_nodes(stk::mesh::BulkData::AUTO_AURA);
+}
+
+TEST(UnitTestingOfBulkData, testDestroy_nodes_without_aura)
+{
+    testDestroy_nodes(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
 //----------------------------------------------------------------------

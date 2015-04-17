@@ -1835,7 +1835,7 @@ TEST(BulkData, test_entity_comm_map_shared)
 #endif // STK_BUILT_IN_SIERRA
 #endif
 
-TEST(BulkData, testParallelSideCreation)
+void testParallelSideCreation(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
 {
     //
     // This unit-test is designed to test what happens when a shared sides are created on
@@ -1870,7 +1870,7 @@ TEST(BulkData, testParallelSideCreation)
 
     meta_data.commit();
 
-    BulkData mesh(meta_data, pm);
+    BulkData mesh(meta_data, pm, autoAuraOption);
     int p_rank = mesh.parallel_rank();
     int p_size = mesh.parallel_size();
 
@@ -2007,7 +2007,17 @@ TEST(BulkData, testParallelSideCreation)
         mesh.modification_end();
         mesh.modification_begin();
         mesh.modification_end();
-   }
+    }
+}
+
+TEST(BulkData, testParallelSideCreationWithAura)
+{
+    testParallelSideCreation(stk::mesh::BulkData::AUTO_AURA);
+}
+
+TEST(BulkData, testParallelSideCreationWithoutAura)
+{
+    testParallelSideCreation(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
 //----------------------------------------------------------------------
@@ -5330,7 +5340,7 @@ TEST(BulkData, show_API_for_batch_create_child_nodes)
     //write_mesh(filename, bulk);
 }
 
-TEST(BulkData, STK_ParallelPartConsistency_ChangeBlock)
+void Test_STK_ParallelPartConsistency_ChangeBlock(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   const int parallel_size = stk::parallel_machine_size(pm);
@@ -5344,7 +5354,7 @@ TEST(BulkData, STK_ParallelPartConsistency_ChangeBlock)
 
   unsigned spatialDim = 2;
   stk::mesh::MetaData meta(spatialDim);
-  stk::mesh::BulkData mesh(meta, pm);
+  stk::mesh::BulkData mesh(meta, pm, autoAuraOption);
 
   //declare 'block_1' which will hold element 1
   stk::mesh::Part& block_1 = meta.declare_part("block_1", stk::topology::ELEMENT_RANK);
@@ -5471,6 +5481,16 @@ TEST(BulkData, STK_ParallelPartConsistency_ChangeBlock)
     double value = (NULL == data_ptr) ? 0.0 : *data_ptr;
     EXPECT_DOUBLE_EQ(1.0, value);
   }
+}
+
+TEST(BulkData, STK_ParallelPartConsistency_ChangeBlock_WithAura)
+{
+    Test_STK_ParallelPartConsistency_ChangeBlock(stk::mesh::BulkData::AUTO_AURA);
+}
+
+TEST(BulkData, STK_ParallelPartConsistency_ChangeBlock_WithoutAura)
+{
+    Test_STK_ParallelPartConsistency_ChangeBlock(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
 TEST(BulkData, STK_Deimprint)
@@ -5710,7 +5730,6 @@ TEST(BulkData, ChangeAuraElementPart)
     EXPECT_TRUE(mesh.bucket(node6).member(block_2));
   }
 }
-
 
 TEST(BulkData, generate_new_ids)
 {
