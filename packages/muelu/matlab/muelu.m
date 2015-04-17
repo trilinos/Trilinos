@@ -147,10 +147,10 @@ elseif(nargin>=2 && issparse(varargin{2}) && strcmp(varargin{1}, 'aggregate')),
   % Aggregate mode
   varargout{1} = muemex(4, varargin{2:nargin});
 else
-  fprintf('Usage:');
-  fprintf('[h, oc] = muelu(''setup'', A) to setup a problem');
-  fprintf('muelu(''status''[, probID]) to get status of all problems, or a specific problem.');
-  fprintf('[x, its] = muelu(h, A, b[, paramName, paramValue, ...]) to solve problem #h');
-  fprintf('[x, its] = muelu(h, b[, paramName, paramValue, ...]) to solve problem #h with loaded matrix');
-  fprintf('muelu(''cleanup''[, id]) to free memory associated with all problems, or a specific one.');
+  fprintf('Usage:\n');
+  fprintf('[h, oc] = muelu(''setup'', A) to setup a problem\n');
+  fprintf('muelu(''status''[, probID]) to get status of all problems, or a specific problem.\n');
+  fprintf('[x, its] = muelu(h, A, b[, paramName, paramValue, ...]) to solve problem #h\n');
+  fprintf('[x, its] = muelu(h, b[, paramName, paramValue, ...]) to solve problem #h with loaded matrix\n');
+  fprintf('muelu(''cleanup''[, id]) to free memory associated with all problems, or a specific one.\n');
 end
