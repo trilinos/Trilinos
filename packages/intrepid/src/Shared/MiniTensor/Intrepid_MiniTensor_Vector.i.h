@@ -89,7 +89,7 @@ Vector<T, N>::Vector(ComponentValue const value) :
 //
 // Create vector from array
 //
-#ifdef HAVE_INTREPID_KOKKOSCORE
+#if defined(HAVE_INTREPID_KOKKOSCORE)
 template<typename T, Index N>
 template<class ArrayT, typename iType>
 inline

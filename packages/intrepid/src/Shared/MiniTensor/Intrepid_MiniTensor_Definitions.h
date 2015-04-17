@@ -205,7 +205,7 @@ struct dimension_string<4> {
 };
 
 // Needed to avoid type confusion when using Kokkos
-#ifdef HAVE_INTREPID_KOKKOSCORE
+#if defined(HAVE_INTREPID_KOKKOSCORE)
 
 #include<Kokkos_Core.hpp>
 

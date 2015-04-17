@@ -86,7 +86,7 @@ Tensor<T, N>::Tensor(Index const dimension, ComponentValue const value) :
 //  Create tensor from array
 //
 //
-#ifdef HAVE_INTREPID_KOKKOSCORE
+#if defined(HAVE_INTREPID_KOKKOSCORE)
 template<typename T, Index N>
 template<class ArrayT, typename iType>
 inline
@@ -545,7 +545,7 @@ Tensor<T, N>::fill(T const & s)
 //
 // Fill components from array defined by pointer.
 //
-#ifdef HAVE_INTREPID_KOKKOSCORE
+#if defined(HAVE_INTREPID_KOKKOSCORE)
 template<typename T, Index N>
 template<class ArrayT, typename iType>
 inline
