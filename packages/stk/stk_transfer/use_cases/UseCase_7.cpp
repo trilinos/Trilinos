@@ -31,9 +31,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <Intrepid_FieldContainer.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory> // for std::shared_ptr
 
+#include <Intrepid_FieldContainer.hpp>
 
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -140,9 +140,9 @@ bool use_case_7_driver(stk::ParallelMachine  comm,
 
   const double radius=.25;
   const std::vector<stk::mesh::FieldBase*> from_fields(1, &domain_coord_sum_field);
-  boost::shared_ptr<stk::transfer::STKNode >
+  std::shared_ptr<stk::transfer::STKNode >
     transfer_domain_mesh (new stk::transfer::STKNode(domain_entities, domain_coord_field, from_fields, radius));
-  boost::shared_ptr<stk::transfer:: MDMesh >
+  std::shared_ptr<stk::transfer:: MDMesh >
     transfer_range_mesh  (new stk::transfer:: MDMesh(ToValues, ToPoints,   radius, comm));
 
 

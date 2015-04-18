@@ -32,8 +32,7 @@
 // 
 
 #include <limits>
-
-#include <boost/shared_ptr.hpp>
+#include <memory> // for std::shared_ptr
 
 #include <Intrepid_FieldContainer.hpp>
 #include <Intrepid_Basis.hpp>
@@ -60,7 +59,7 @@ typedef Intrepid::FieldContainer<double>   MDArray;
 typedef Intrepid::FieldContainer<unsigned> MDArrayUInt;
 
 typedef Intrepid::Basis<double, MDArray> BasisType;
-typedef boost::shared_ptr<BasisType>     BasisTypeRCP;
+typedef std::shared_ptr<BasisType>     BasisTypeRCP;
 typedef std::map<unsigned,BasisTypeRCP>  BasisTable;
 
 unsigned parametric(std::vector<double> &para_coords,

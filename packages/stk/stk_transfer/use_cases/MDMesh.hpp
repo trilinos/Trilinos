@@ -31,7 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <boost/shared_ptr.hpp>
+#include <memory> // for std::shared_ptr
 
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
@@ -150,7 +150,7 @@ private :
   MDArray                      &m_values_field;
   const ParallelMachine                       m_comm;
 
-  typedef boost::shared_ptr<Record>         RecordPtr;
+  typedef std::shared_ptr<Record>           RecordPtr;
   typedef std::map<EntityKey,RecordPtr>     RecordMap;
   RecordMap                                 m_record_map;
 };

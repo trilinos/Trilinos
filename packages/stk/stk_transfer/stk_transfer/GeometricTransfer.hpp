@@ -38,8 +38,7 @@
 #include <vector>
 #include <string>
 #include <algorithm>
-
-#include <boost/shared_ptr.hpp>
+#include <memory> // for std::shared_ptr
 
 #include <stk_util/util/StaticAssert.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
@@ -99,8 +98,8 @@ public :
 
   enum {Dimension = 3};
 
-  GeometricTransfer(boost::shared_ptr<MeshA> &mesha,
-                    boost::shared_ptr<MeshB> &meshb,
+  GeometricTransfer(std::shared_ptr<MeshA> &mesha,
+                    std::shared_ptr<MeshB> &meshb,
                     const std::string &name,
                     const double expansion_factor = 1.5,
                     const stk::search::SearchMethod search_method = stk::search::BOOST_RTREE);
@@ -111,12 +110,12 @@ public :
   virtual void apply();
 
   void determine_entities_to_copy(typename MeshA::EntityProcVec &entities_to_copy) const;
-  const boost::shared_ptr<MeshA> mesha() const {return m_mesha;}
-  const boost::shared_ptr<MeshB> meshb() const {return m_meshb;}
+  const std::shared_ptr<MeshA> mesha() const {return m_mesha;}
+  const std::shared_ptr<MeshB> meshb() const {return m_meshb;}
 
 protected :
-  boost::shared_ptr<MeshA>               m_mesha;
-  boost::shared_ptr<MeshB>               m_meshb;
+  std::shared_ptr<MeshA>               m_mesha;
+  std::shared_ptr<MeshB>               m_meshb;
 
   void copy_domain_to_range_processors();
   void localize_entity_key_map();
@@ -219,8 +218,8 @@ private :
 
 
 
-template <class INTERPOLATE> GeometricTransfer<INTERPOLATE>::GeometricTransfer (boost::shared_ptr<MeshA> &mesha,
-                                                                                boost::shared_ptr<MeshB> &meshb,
+template <class INTERPOLATE> GeometricTransfer<INTERPOLATE>::GeometricTransfer (std::shared_ptr<MeshA> &mesha,
+                                                                                std::shared_ptr<MeshB> &meshb,
                                                                                 const std::string        &name,
                                                                                 const double              expansion_factor,
                                                                                 const stk::search::SearchMethod search_method) :
