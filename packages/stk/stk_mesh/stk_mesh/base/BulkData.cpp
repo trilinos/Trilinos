@@ -35,7 +35,6 @@
 #include <stddef.h>                     // for size_t, NULL
 #include <string.h>                     // for memcpy, strcmp
 #include <algorithm>                    // fom_deleted_entities_current_modification_cycler sort, lower_bound, unique, etc
-#include <boost/foreach.hpp>            // for auto_any_base, etc
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <sstream>
 #include <fstream>
@@ -1390,11 +1389,11 @@ void BulkData::dump_all_mesh_info(std::ostream& out) const
     out << "  All " << rank_names[i] << " entities:" << std::endl;
 
     const BucketVector& buckets = this->buckets(rank);
-    BOOST_FOREACH(Bucket* bucket, buckets) {
+    for(Bucket* bucket : buckets) {
       out << "    Found bucket " << bucket->bucket_id() << " with superset parts: { ";
       PartVector supersets;
       bucket->supersets(supersets);
-      BOOST_FOREACH(Part* part, supersets) {
+      for(Part* part : supersets) {
         out << part->name() << " ";
       }
       out << "}" << std::endl;
@@ -1428,7 +1427,7 @@ void BulkData::dump_all_mesh_info(std::ostream& out) const
 
         // Print field data
         if (m_num_fields > 0) {
-          BOOST_FOREACH(FieldBase* field, all_fields) {
+          for(FieldBase* field : all_fields) {
 
             if(static_cast<unsigned>(field->entity_rank()) != bucket->entity_rank()) continue;
 

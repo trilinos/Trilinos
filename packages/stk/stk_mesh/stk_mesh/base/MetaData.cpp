@@ -34,7 +34,6 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <string.h>                     // for strcmp, strncmp
 #include <Shards_CellTopologyManagedData.hpp>
-#include <boost/foreach.hpp>            // for auto_any_base, etc
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <sstream>
 #include <set>                          // for set
@@ -1186,13 +1185,13 @@ void MetaData::dump_all_meta_info(std::ostream& out) const
 
   out << "  All parts:\n";
   const PartVector& all_parts = m_part_repo.get_all_parts();
-  BOOST_FOREACH(const Part* part, all_parts) {
+  for(const Part* part : all_parts) {
     print(out, "    ", *part);
   }
 
   out << "  All fields:\n";
   const FieldVector& all_fields = m_field_repo.get_fields();
-  BOOST_FOREACH(const FieldBase* field, all_fields) {
+  for(const FieldBase* field : all_fields) {
      print(out, "    ", *field);
   }
 }
