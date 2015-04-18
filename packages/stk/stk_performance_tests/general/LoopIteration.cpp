@@ -187,6 +187,18 @@ TEST( loop_iteration, loop_iteration)
     std::cout << "BOOST_FOREACH took " << elapsedtime << " seconds." << std::endl;
     force_calculation(sum);
   }
+  {
+    boost::timer timer;
+    long long sum = 0;
+    for (size_t n = 0; n < num_repetitions; ++n) {
+      for( unsigned i : data ) {
+        sum += i;
+      }
+    }
+    double elapsedtime = timer.elapsed();
+    std::cout << "C++11 range-for took " << elapsedtime << " seconds." << std::endl;
+    force_calculation(sum);
+  }
 
   double elapsedtime = total_time.elapsed();
 
