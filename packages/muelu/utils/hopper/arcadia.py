@@ -10,7 +10,7 @@ import re
 
 # ========================= constants =========================
 PLATFORM     = "hopper"
-CPN          = 0                                                # number of physical cores per node (hopper has 24)
+CPN          = 0                                                # number of physical cores per node
 SCHEDULER    = ''                                               # HPC platform scheduler
 SCHED_HEADER = ''                                               # header for the platform scheduler
 NUM_RUNS     = 2                                                # number of same runs (for reproducibility)
@@ -35,10 +35,12 @@ def controller():
     p.add_option('-o', '--output',     dest="output",       default="screen")                           # output files for analysis
     p.add_option('-p', '--petra',      dest="petra",        default="both")                             # petra mode
     p.add_option('-N', '--nnodes',     dest="nnodes",       default="")                                 # custom node numbers
-    p.add_option('-s',                 dest="nscale",       default=8, type='int')                      # number of weak scaling runs
+    p.add_option('-s',                 dest="nscale",       default=8, type='int')                      # number of scaling runs
     p.add_option('-t', '--template',   dest="template",     default="sched.template")                   # template file for all runs
     p.add_option('-l', '--labels',     dest="ltmodule",     default="")                                 # labels and timelines
     p.add_option(      '--cpn',        dest="cpn",          default=CPN, type='int')                    # cores per node
+    p.add_option(      '--cps',        dest="cps",          default=-1, type='int')                     # cores per socket
+    p.add_option('-T', '--type',       dest="type",         default="weak")                             # scaling type (weak | strong)
     # FIXME (29 Sep 2014): unified interface is buggy, disabling
     p.add_option('-u', '--unified',    dest="unified",      action="store_true", default=False)         # by default, try to use unified
     p.add_option('-d', '--default',    dest="unified",      action="store_false")                       #   but sometimes we want to use
@@ -65,6 +67,9 @@ def controller():
     else:
         print("Unknown petra type %s" % options.petra)
         return
+
+    if options.type != 'weak' and options.type != 'strong':
+        raise RuntimeError("Scaling type must be one of (weak|strong)")
 
     if options.action == 'build':
         # validate options
@@ -123,12 +128,12 @@ def controller():
         nnodes = []         # number of nodes
         nx     = []         # single dimension of the problem
         if options.nnodes == "":
-            # main loop [weak scaling study]
-            # start with a problem on one node and problem size NxN (or NxNxN), then increase nodes quadratically (cubically)
-            # and each dimension linearly (so that the problem also increases quadratically (cubically))
+            # main loop [scaling study]
             for i in range(1, options.nscale+1):
-              nnodes.append(i**dim)
-              nx.append(i * options.nx)
+                if options.type == "weak":
+                    nnodes.append(i**dim)
+                else:
+                    nnodes.append(i**2)
 
         else:
             # custom number of nodes
@@ -137,7 +142,13 @@ def controller():
 
         cpn = options.cpn
         for i in range(0, len(nnodes)):
-            nx.append(int(options.nx * pow(nnodes[i] * float(cpn)/CPN, 1./dim)))
+            if options.type == "weak":
+                # scale problem size with the number of nodes
+                nx.append(int(options.nx * pow(nnodes[i] * float(cpn)/CPN, 1./dim)))
+
+            elif options.type == "strong":
+                # use same problem size for all nodes
+                nx.append(options.nx)
 
         global NUM_RUNS
         for i in range(0, len(nnodes)):
@@ -159,11 +170,11 @@ def controller():
                 os.system("echo -e '</ParameterList>'" + " >> " + unified_xml)
 
                 build(nnodes=nnodes[i], nx=nx[i], binary=options.binary, petra=petra, matrix=options.matrix,
-                      datafiles=[unified_xml], cmds=unified_cmd, template=options.template, output=options.output, cpn=cpn, unified=True, num_runs=1)
+                      datafiles=[unified_xml], cmds=unified_cmd, template=options.template, output=options.output, cpn=cpn, cps=options.cps, unified=True, num_runs=1)
 
             else:
                 build(nnodes=nnodes[i], nx=nx[i], binary=options.binary, petra=petra, matrix=options.matrix,
-                      datafiles=datafiles, cmds=cmds, template=options.template, output=options.output, cpn=cpn, unified=False, num_runs=NUM_RUNS)
+                      datafiles=datafiles, cmds=cmds, template=options.template, output=options.output, cpn=cpn, cps=options.cps, unified=False, num_runs=NUM_RUNS)
 
     elif options.action == 'run':
         run()
@@ -175,7 +186,7 @@ def controller():
 
     elif options.action == 'analyze':
         if (options.ltmodule == ""):
-          labels = LABELS
+          labels    = LABELS
           timelines = TIMELINES
           parsefunc = ""
 
@@ -188,7 +199,7 @@ def controller():
             parsefunc = ""
 
         analysis_runs = re.split(',', options.output)
-        r = analyze(petra, analysis_runs = analysis_runs, labels=labels, timelines=timelines, parsefunc=parsefunc)
+        r = analyze(petra, analysis_runs=analysis_runs, labels=labels, timelines=timelines, parsefunc=parsefunc, scaling_type=options.type)
         if r : print(r)
 
     else:
@@ -197,7 +208,7 @@ def controller():
 
 
 # ========================= main functions =========================
-def analyze(petra, analysis_runs, labels, timelines, parsefunc):
+def analyze(petra, analysis_runs, labels, timelines, parsefunc, scaling_type):
     # test which of [et]petra is being run
     has_epetra = (len(glob.glob(DIR_PREFIX + "**/*.epetra")) > 0) and (petra & 1)
     has_tpetra = (len(glob.glob(DIR_PREFIX + "**/*.tpetra")) > 0) and (petra & 2)
@@ -244,9 +255,12 @@ def analyze(petra, analysis_runs, labels, timelines, parsefunc):
         print(separator)
 
         for dir in sort_nicely(glob.glob(DIR_PREFIX + "*")):
-            os.chdir(dir)
+            if os.path.isdir(dir):
+                os.chdir(dir)
+            else:
+                continue
 
-            nnodes = dir.replace(DIR_PREFIX, '')
+            nnodes = float(dir.replace(DIR_PREFIX, ''))
 
             fullstr = "%19s |" % dir
 
@@ -288,9 +302,12 @@ def analyze(petra, analysis_runs, labels, timelines, parsefunc):
 
                         time_epetra[s] = stat_time(rtime_epetra)
 
-                        if nnodes == str(BASECASE):
+                        if nnodes == BASECASE:
                             basetime_epetra[s] = time_epetra[s]
-                        eff_epetra[s] = 100 * basetime_epetra[s] / time_epetra[s]
+                        if scaling_type == "weak":
+                            eff_epetra[s] = 100 * basetime_epetra[s] / time_epetra[s]
+                        else:
+                            eff_epetra[s] = 100 * (basetime_epetra[s] * BASECASE) / (time_epetra[s] * nnodes)
                         fullstr += "%13.2f %7.2f%%" % (time_epetra[s], eff_epetra[s])
 
                     except (RuntimeError, ValueError):
@@ -321,9 +338,13 @@ def analyze(petra, analysis_runs, labels, timelines, parsefunc):
 
                         time_tpetra[s] = stat_time(rtime_tpetra)
 
-                        if nnodes == str(BASECASE):
+                        if nnodes == BASECASE:
                             basetime_tpetra[s] = time_tpetra[s]
-                        eff_tpetra[s] = 100 * basetime_tpetra[s] / time_tpetra[s]
+
+                        if scaling_type == "weak":
+                            eff_tpetra[s] = 100 * basetime_tpetra[s] / time_tpetra[s]
+                        else:
+                            eff_tpetra[s] = 100 * (basetime_tpetra[s] * BASECASE) / (time_tpetra[s] * nnodes)
                         fullstr += "%13.2f %7.2f%%" % (time_tpetra[s], eff_tpetra[s])
 
                     except (RuntimeError, ValueError):
@@ -344,7 +365,7 @@ def analyze(petra, analysis_runs, labels, timelines, parsefunc):
                     tt = map(float, r[-1].split())
                     time_ml[s] = sum(tt)
 
-                    if nnodes == str(BASECASE):
+                    if nnodes == BASECASE:
                         basetime_ml[s] = time_ml[s]
                     eff_ml[s] = 100 * basetime_ml[s] / time_ml[s]
                     fullstr += "%13.2f %7.2f%%" % (time_ml[s], eff_ml[s])
@@ -353,7 +374,7 @@ def analyze(petra, analysis_runs, labels, timelines, parsefunc):
 
             os.chdir("..")
 
-def build(nnodes, nx, binary, petra, matrix, datafiles, cmds, template, output, cpn, unified, num_runs):
+def build(nnodes, nx, binary, petra, matrix, datafiles, cmds, template, output, cpn, cps, unified, num_runs):
     dir = DIR_PREFIX + str(nnodes)
     print("Building %s..." % dir)
 
@@ -363,20 +384,26 @@ def build(nnodes, nx, binary, petra, matrix, datafiles, cmds, template, output, 
         shutil.copy(afile, dir)
 
     sched_args = ""
-    if SCHEDULER == "pbs":
+    if PLATFORM == "hopper":
         sched_args  = "aprun"
         sched_args += " -ss"                                    # Demands strict memory containment per NUMA node
         sched_args += " -cc numa_node"                          # Controls how tasks are bound to cores and NUMA nodes
         sched_args += " -N " + str(cpn)                         # Number of tasks per node
-        if cpn % 4 == 0:
-            sched_args += " -S " + str(cpn/4)                   # Number of tasks per NUMA node (note: hopper has 4 NUMA nodes)
+        if cps != -1:
+            sched_args += " -S " + str(cps)                     # Number of tasks per NUMA node (note: hopper has 4 NUMA nodes)
 
-    elif SCHEDULER == "slurm":
+    elif PLATFORM == "shannon":
         # There some issues on Shannon with openmpi and srun, so we use mpirun instead
         sched_args  = "mpirun"
         sched_args += " --npernode " + str(cpn)
         sched_args += " --bind-to-core"
         # sched_args += " --map-by numa"                        # This conflicts with --npernode
+
+    elif PLATFORM == "volta":
+        sched_args  = "srun"
+        sched_args += " --ntasks-per-node " + str(cpn)
+        if cps != -1:
+            sched_args += " --ntasks-per-socket " + str(cps)
 
     script_path = dir + "/" + PETRA_PREFIX + str(nnodes) + "." + SCHEDULER
 
@@ -411,7 +438,6 @@ def clean():
         shutil.rmtree(dir)
 
 def run():
-    scheduler = "slurm"
     for dir in sort_nicely(glob.glob(DIR_PREFIX + "*")):
         print("Running %s..." % dir)
 
@@ -447,9 +473,26 @@ def stat_time(times):
 
 # ========================= main =========================
 def main():
+    global PLATFORM
     global CPN
     global SCHEDULER
     global SCHED_HEADER
+
+    # Try to detect platform
+    r = commands.getstatusoutput("hostname")
+    if r[0] != 0:
+        raise RuntimeError("Cannot run \"hostname\"")
+    hostname = r[1]
+    if   hostname[0:6] == "hopper":
+        PLATFORM = "hopper"
+    elif hostname[0:6] == "edison":
+        PLATFORM = "edison"
+    elif hostname[0:7] == "shannon":
+        PLATFORM = "shannon"
+    elif hostname[0:5] == "volta":
+        PLATFORM = "volta"
+    else:
+        raise RuntimerError("Unable to detect platform")
 
     # We double escape the \n, as it is later
     # passed to os.system
@@ -468,8 +511,11 @@ def main():
                         "#PBS -m ae\\n\\n"                         # abort/termination
                         "cd \\$PBS_O_WORKDIR\\n")
 
-    elif PLATFORM == "shannon":
-        CPN          = 16
+    elif PLATFORM == "shannon" or PLATFORM == "volta":
+        if   PLATFORM == "shannon":
+            CPN      = 16
+        elif PLATFORM == "volta":
+            CPN      = 24
         SCHEDULER    = "slurm"
         SCHED_HEADER = ("#!/bin/bash\\n"
                         "#SBATCH -N _NODES_\\n"
