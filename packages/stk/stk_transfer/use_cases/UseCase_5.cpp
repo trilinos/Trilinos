@@ -31,9 +31,11 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <memory> // for std::shared_ptr
-
 #include <Intrepid_FieldContainer.hpp>
+#include <boost/shared_ptr.hpp>
+
+
+
 #include <stk_mesh/base/Comm.hpp>
 
 #include <stk_util/use_cases/UseCaseEnvironment.hpp>
@@ -42,6 +44,8 @@
 #include "MDMesh.hpp"
 #include "LinearInterpolate.hpp"
 #include <stk_transfer/GeometricTransfer.hpp>
+
+
 
 bool use_case_5_driver(stk::ParallelMachine  comm)
 {
@@ -82,9 +86,9 @@ bool use_case_5_driver(stk::ParallelMachine  comm)
   }
 
   const double initial_radius   = .05;
-  std::shared_ptr<stk::transfer::MDMesh >
+  boost::shared_ptr<stk::transfer::MDMesh >
     transfer_domain_mesh (new stk::transfer::MDMesh(FromValues, FromPoints, initial_radius, comm));
-  std::shared_ptr<stk::transfer::MDMesh >
+  boost::shared_ptr<stk::transfer::MDMesh >
     transfer_range_mesh  (new stk::transfer::MDMesh(  ToValues, ToPoints,   initial_radius, comm));
 
   stk::transfer::GeometricTransfer<

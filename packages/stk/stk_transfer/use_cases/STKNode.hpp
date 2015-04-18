@@ -34,7 +34,7 @@
 #ifndef  STK_STKNODE_HPP
 #define  STK_STKNODE_HPP
 
-#include <memory>
+#include <boost/shared_ptr.hpp>
 
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
@@ -214,7 +214,7 @@ private :
   mesh::Ghosting       *m_transfer_entity_ghosting;
   mesh::EntityProcVec   m_entities_currently_ghosted;
 
-  typedef  std::shared_ptr<Record>        RecordPtr;
+  typedef  boost::shared_ptr<Record>      RecordPtr;
   typedef  std::map<EntityKey,RecordPtr>  RecordMap;
   RecordMap                               m_record_map;
 
