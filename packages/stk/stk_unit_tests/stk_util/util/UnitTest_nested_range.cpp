@@ -47,9 +47,8 @@ typedef std::vector< std::pair<int*,int*> > nested_pair_type;
 typedef stk::util::nested_range< nested_type > range;
 typedef stk::util::nested_range< nested_pair_type > pair_range;
 
-
 }
-/// srk 12/20/12 - these tests seem to hang on boost 1.50 / Trilinos build
+
 #if defined(STK_BUILT_IN_SIERRA)
 
 TEST ( nested_range, basic)

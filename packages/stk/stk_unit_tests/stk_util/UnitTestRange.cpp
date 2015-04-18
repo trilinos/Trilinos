@@ -35,11 +35,10 @@
 #include <stk_util/util/Foreach.hpp>    // for stk_foreach
 #include <utility>                      // for pair, make_pair
 #include <vector>                       // for vector
-#include "boost/foreach.hpp"            // for auto_any_base
+
 #include "boost/range/iterator_range_core.hpp"  // for operator==, etc
 #include "boost/range/iterator_range_io.hpp"  // for operator<<
 #include "boost/range/sub_range.hpp"    // for sub_range, operator==
-
 
 
 TEST( UnitTestRange, range )
@@ -70,7 +69,6 @@ TEST( UnitTestRange, range )
   }
 
   EXPECT_TRUE( a_range == array);
-
 }
 
 
