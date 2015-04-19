@@ -81,7 +81,7 @@ struct GetCoeffView<Kokkos::View<IT*,IL,ID,IM,IS>,DeviceType> {
 namespace KokkosSparse {
 namespace Impl {
 
-// This TansposeFunctor is functional, but not necessarily performant.
+// This TransposeFunctor is functional, but not necessarily performant.
 template<class AMatrix,
          class XVector,
          class YVector,

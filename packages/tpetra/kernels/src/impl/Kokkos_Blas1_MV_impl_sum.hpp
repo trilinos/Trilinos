@@ -234,10 +234,8 @@ MV_Sum_Invoke (const RV& r, const XMV& X)
   const SizeType numRows = static_cast<SizeType> (X.dimension_0 ());
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
 
-#ifdef KOKKOS_HAVE_CXX11
-  // We only give you a single-vector special case if you build with
-  // C++11 enabled, since we need 'decltype' to ensure that we have
-  // the right layouts for RV0D and XV1D.
+  // For the single-vector special case, we use 'decltype' to ensure
+  // that we have the right layouts for RV0D and XV1D.
   if (X.dimension_1 () == 1) {
     auto r_0 = Kokkos::subview (r, 0);
     auto X_0 = Kokkos::subview (X, Kokkos::ALL (), 0);
@@ -246,7 +244,6 @@ MV_Sum_Invoke (const RV& r, const XMV& X)
     V_Sum_Invoke<RV0D, XV1D, SizeType> (r_0, X_0);
     return;
   }
-#endif // KOKKOS_HAVE_CXX11
 
   typedef MV_Sum_Functor<RV, XMV, SizeType> functor_type;
   functor_type op (r, X);
@@ -291,12 +288,8 @@ struct Sum<RV, XV, 1> {
   static void sum (const RV& r, const XV& X)
   {
     typedef typename XV::size_type size_type;
-    const size_type numRows = X.dimension_0 ();
-    const size_type numCols = X.dimension_1 ();
-
     // int is generally faster than size_t, but check for overflow first.
-    if (numRows < static_cast<size_type> (INT_MAX) &&
-        numRows * numCols < static_cast<size_type> (INT_MAX)) {
+    if (X.dimension_0 () < static_cast<size_type> (INT_MAX)) {
       V_Sum_Invoke<RV, XV, int> (r, X);
     }
     else {

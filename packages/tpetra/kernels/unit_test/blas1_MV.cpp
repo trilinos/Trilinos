@@ -1239,7 +1239,7 @@ main (int argc, char* argv[])
 
   // Number of columns in the 2-D View(s) to test.
   int numCols = 3;
-  bool oneCol = true;
+  bool oneCol = false;
   bool testComplex = true;
 
   Teuchos::CommandLineProcessor cmdp (false, true);

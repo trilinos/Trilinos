@@ -910,7 +910,14 @@ sum (const RV& R, const XMV& X)
                  "KokkosBlas::sum: Ranks of R and X do not match.");
 #endif // KOKKOS_HAVE_CXX11
 
-  // TODO Check compatibility of dimensions at run time.
+  // Check compatibility of dimensions at run time.
+  if (RV::rank == 1 && R.dimension_0 () != X.dimension_1 ()) {
+    std::ostringstream os;
+    os << "KokkosBlas::sum: Dimensions of R and X do not match: ";
+    os << "R: " << R.dimension_0 () << " x 1, "
+       << "X: " << X.dimension_0 () << " x " << X.dimension_1 ();
+    Kokkos::Impl::throw_runtime_exception (os.str ());
+  }
 
   // Create unmanaged versions of the input Views.  XMV may be rank 1
   // or rank 2, and RV may be rank 0 or rank 1.
