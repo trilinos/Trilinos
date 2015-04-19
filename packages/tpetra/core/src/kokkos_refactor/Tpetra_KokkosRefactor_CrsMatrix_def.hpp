@@ -4310,7 +4310,7 @@ namespace Tpetra {
 
     // The kernels do not allow input or output with nonconstant stride.
     if (! X_in.isConstantStride () && importer.is_null ()) {
-      X = rcp (new MV (X_in)); // Constant-stride copy of X_in
+      X = rcp (new MV (X_in, Teuchos::Copy)); // Constant-stride copy of X_in
     } else {
       X = rcpFromRef (X_in); // Reference to X_in
     }
