@@ -60,10 +60,6 @@
 #include "Dimension.hpp"
 #include "Element_Linear2D.hpp"
 #include "Workset.hpp"
-#include "Phalanx_Allocator_Contiguous.hpp"
-
-// Debugging information
-//#include "Phalanx_TypeStrings.hpp"
 
 namespace PHX {
 
@@ -109,11 +105,6 @@ namespace PHX {
     >::type EvalToDataMap;
 
     // ******************************************************************
-    // *** Allocator Type
-    // ******************************************************************
-    typedef PHX::ContiguousAllocator<double> Allocator;
-
-    // ******************************************************************
     // *** User Defined Object Passed in for Evaluation Method
     // ******************************************************************
     typedef void* SetupData;
@@ -122,34 +113,7 @@ namespace PHX {
     typedef void* PostEvalData;
 
   };
- 
-  // ******************************************************************
-  // ******************************************************************
-  // Debug strings.  Specialize the Evaluation and Data types for the
-  // TypeString object in phalanx/src/Phalanx_TypeString.hpp.
-  // ******************************************************************
-  // ******************************************************************
 
-  // Evaluation Types
-/*  template<> struct TypeString<MyTraits::Residual> 
-  { static const std::string value; };
-
-  template<> struct TypeString<MyTraits::Jacobian> 
-  { static const std::string value; };
-
-  template<> struct TypeString<MyTraits::Jv> 
-  { static const std::string value; };
-
-  // Data Types
-  template<> struct TypeString<double> 
-  { static const std::string value; };
-
-  template<> struct TypeString< Sacado::Fad::SFad<double,8> > 
-  { static const std::string value; };
-
-  template<> struct TypeString< Sacado::Fad::SFad<double,1> > 
-  { static const std::string value; };
-*/
 }
 
 #endif
