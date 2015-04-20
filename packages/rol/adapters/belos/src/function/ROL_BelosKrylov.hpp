@@ -68,7 +68,7 @@ namespace ROL {
  
         typedef Real                      ST;
         typedef LinearOperator<ST>        OP;
-        typedef Vector<ST>                V;  
+        typedef Vector<Real>              V; 
         typedef MultiVector<ST>           MV;
         typedef MultiVectorDefault<ST>    MVD;
 
@@ -110,11 +110,24 @@ namespace ROL {
             /// \brief Compute solution vector
             void run( V &x, OP& A, const V &b, OP &M, int &iter, int &flag )  {
 
-                // Need to get RCPs for x,A,b, and M
-                Teuchos::RCP<V>        xp = Teuchos::rcpFromRef(x);
-                Teuchos::RCP<OP>       Ap = Teuchos::rcpFromRef(A);
-                Teuchos::RCP<const V>  bp = Teuchos::rcpFromRef(b);
-                Teuchos::RCP<OP>       Mp = Teuchos::rcpFromRef(M);
+                using Teuchos::RCP;
+                using Teuchos::rcp;
+                using Teuchos::rcpFromRef;
+
+
+                // Get pointers to ROL::Vectors
+                RCP<V>        xp = Teuchos::rcpFromRef(x);
+
+                // Wasteful, but have not yet implemented const case for MV
+                RCP<V>        bp = b.clone();
+                bp->set(b);
+
+                // Make ROL::MultiVectors from the pointers to ROL::Vectors
+                RCP<MV> xmvp = rcp(new MultiVectorDefault<Real>(xp));
+                RCP<MV> bmvp = rcp(new MultiVectorDefault<Real>(bp));
+
+                RCP<OP>       Ap = Teuchos::rcpFromRef(A);
+                RCP<OP>       Mp = Teuchos::rcpFromRef(M);
 
                 // Wrap x and b in ROL::MultiVector objects 
                 MVD xmv(xp);
@@ -122,7 +135,7 @@ namespace ROL {
  
                 problem_->setOperator(Ap);
                 problem_->setLeftPrec(Mp);
-                problem_->setProblem(xp,bp);
+                problem_->setProblem(xmvp,bmvp);
 
                 solver_->setProblem(problem_);
 

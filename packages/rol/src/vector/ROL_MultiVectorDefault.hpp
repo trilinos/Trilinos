@@ -87,6 +87,8 @@ class MultiVectorDefault : public MultiVector<Real> {
                                      numVectors_(1),
                                      length_(vec->dimension()) {} 
 
+        // Create a MultiVector from a pointer to a constant vector
+
         ~MultiVectorDefault() {}
 
         // Make a new MultiVector of the same dimensions 
