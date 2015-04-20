@@ -4,6 +4,12 @@
 #                                                                             #
 ###############################################################################
 
+Release update 11.14.3 Apr 21, 2015
+
+1. Teuchos - Fix a dangling reference in debug mode  in operator =()
+             and copy constructors.
+
+
 Release update 11.14.2 Apr 02, 2015
 
 1. AztecOO - Disable memory check error message due to portability issues.
