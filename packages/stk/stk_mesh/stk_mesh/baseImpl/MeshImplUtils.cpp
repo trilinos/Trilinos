@@ -673,18 +673,21 @@ void pack_downward_relations_if_valid_permutation_exists(stk::mesh::BulkData& me
     const stk::mesh::Bucket& bucket = mesh.bucket(some_entity);
     for(EntityRank irank=stk::topology::EDGE_RANK; irank<mesh.entity_rank(some_entity);++irank)
     {
-        Entity const *rels_itr = bucket.begin(bucket_ordinal, irank);
-        Entity const *rels_end = bucket.end(bucket_ordinal, irank);
-        stk::mesh::ConnectivityOrdinal const *ords_itr = bucket.begin_ordinals(bucket_ordinal, irank);
-        stk::mesh::Permutation const *perms = bucket.begin_permutations(bucket_ordinal, irank);
-
-        for(;rels_itr!=rels_end;++rels_itr,++ords_itr, ++perms)
+        if (bucket.has_permutation(irank))
         {
-            if ( *perms != stk::mesh::Permutation::INVALID_PERMUTATION )
+            Entity const *rels_itr = bucket.begin(bucket_ordinal, irank);
+            Entity const *rels_end = bucket.end(bucket_ordinal, irank);
+            stk::mesh::ConnectivityOrdinal const *ords_itr = bucket.begin_ordinals(bucket_ordinal, irank);
+            stk::mesh::Permutation const *perms = bucket.begin_permutations(bucket_ordinal, irank);
+
+            for(;rels_itr!=rels_end;++rels_itr,++ords_itr, ++perms)
             {
-                recv_relations1.push_back(stk::mesh::Relation(*rels_itr, mesh.entity_rank(*rels_itr), *ords_itr));
-                uint32_t perm_attr = static_cast<uint32_t>(*perms);
-                recv_relations1.back().set_attribute(perm_attr);
+                if ( *perms != stk::mesh::Permutation::INVALID_PERMUTATION )
+                {
+                    recv_relations1.push_back(stk::mesh::Relation(*rels_itr, mesh.entity_rank(*rels_itr), *ords_itr));
+                    uint32_t perm_attr = static_cast<uint32_t>(*perms);
+                    recv_relations1.back().set_attribute(perm_attr);
+                }
             }
         }
     }
