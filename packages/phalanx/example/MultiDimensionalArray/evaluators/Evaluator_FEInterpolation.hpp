@@ -84,9 +84,9 @@ private:
   //! Gradient values at quadrature points
   PHX::MDField<ScalarT,Cell,QuadPoint,Dim> val_grad_qp;
    
-  int num_nodes;
-  int num_qp;
-  int num_dim;
+  PHX::index_size_type num_nodes;
+  PHX::index_size_type num_qp;
+  PHX::index_size_type num_dim;
 
   // dummy field for unit testing mixed scalar types (double field in
   // Jacobian evaluation

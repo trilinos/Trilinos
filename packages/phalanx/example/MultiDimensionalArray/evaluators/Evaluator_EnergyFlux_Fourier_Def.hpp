@@ -73,36 +73,26 @@ postRegistrationSetup(typename Traits::SetupData d,
   this->utils.setFieldData(density,fm);
   this->utils.setFieldData(dc,fm);
   this->utils.setFieldData(grad_temp,fm);
-
-  num_qp = flux.dimension(1);
-  num_dim = flux.dimension(2);
+  
+  num_qp = Teuchos::as<PHX::index_size_type>(flux.dimension_1());
+  num_dim = Teuchos::as<PHX::index_size_type>(flux.dimension_2());
 }
 //*********************************************************************
 template<typename EvalT, typename Traits>
 KOKKOS_INLINE_FUNCTION
 void Fourier<EvalT, Traits>::operator () (const int i) const
- {
-   for (int qp = 0; qp < num_qp; ++qp)
-      for (int dim = 0; dim < num_dim; ++dim)
-        flux(i,qp,dim) =
-          - density(i,qp) * dc(i,qp) * grad_temp(i,qp,dim);
-  }
+{
+  for (PHX::index_size_type qp = 0; qp < num_qp; ++qp)
+    for (PHX::index_size_type dim = 0; dim < num_dim; ++dim)
+      flux(i,qp,dim) =
+	- density(i,qp) * dc(i,qp) * grad_temp(i,qp,dim);
+}
 
 //**********************************************************************
 template<typename EvalT, typename Traits>
 void Fourier<EvalT, Traits>::evaluateFields(typename Traits::EvalData d)
 { 
-/*  std::size_t num_cells = d.num_cells;
-
-  for (std::size_t cell = 0; cell < num_cells; ++cell)
-    for (std::size_t qp = 0; qp < num_qp; ++qp)
-      for (std::size_t dim = 0; dim < num_dim; ++dim)
-	flux(cell,qp,dim) = 
-	  - density(cell,qp) * dc(cell,qp) * grad_temp(cell,qp,dim);
-*/
-//  Kokkos::parallel_for (d.num_cells, Kokkos_Fourier<PHX::MDField<ScalarT,Cell,QuadPoint>,  PHX::MDField<ScalarT,Cell,QuadPoint,Dim> >(density,dc, grad_temp, num_qp, num_dim, flux));
-
-   Kokkos::parallel_for (d.num_cells, *this);
+  Kokkos::parallel_for(d.num_cells, *this);
 }
 
 //**********************************************************************
