@@ -502,11 +502,10 @@ struct Dot_MV<RV, XV, YV, 1> {
   }
 };
 
-// Full specializations for cases of interest for Tpetra::MultiVector.
 //
-// Currently, we include specializations for Scalar = double,
-// LayoutLeft (which is what Tpetra::MultiVector uses at the moment),
-// and all execution spaces.  This may change in the future.
+// Declarations of full specializations of Impl::Dot_MV for rank == 2.
+// Their definitions go in .cpp file(s) in this source directory.
+//
 
 #ifdef KOKKOS_HAVE_SERIAL
 #define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Serial

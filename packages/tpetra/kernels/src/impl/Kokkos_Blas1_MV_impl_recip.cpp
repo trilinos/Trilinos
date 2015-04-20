@@ -49,14 +49,15 @@ namespace Impl {
 #ifdef KOKKOS_HAVE_SERIAL
 #define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Serial
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
+#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 void
-Reciprocal<Kokkos::View<double**,
+Reciprocal<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
                  Kokkos::LayoutLeft,
                  Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                  Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                  Kokkos::Impl::ViewDefault>,
-           Kokkos::View<const double**,
+           Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
                         Kokkos::LayoutLeft,
                         Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                         Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -64,7 +65,6 @@ Reciprocal<Kokkos::View<double**,
            2>::
 reciprocal (const RMV& R, const XMV& X)
 {
-#ifdef KOKKOS_HAVE_CXX11
   static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::Impl::"
                  "Reciprocal<2-D>: RMV is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
@@ -73,7 +73,7 @@ reciprocal (const RMV& R, const XMV& X)
                  "RMV is not rank 2.");
   static_assert (XMV::rank == 2, "KokkosBlas::Impl::Reciprocal<2-D>: "
                  "XMV is not rank 2.");
-#endif // KOKKOS_HAVE_CXX11
+
   const size_type numRows = X.dimension_0 ();
   const size_type numCols = X.dimension_1 ();
   if (numRows < static_cast<size_type> (INT_MAX) &&
@@ -87,22 +87,24 @@ reciprocal (const RMV& R, const XMV& X)
   }
 }
 
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
+#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
+#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #endif // KOKKOS_HAVE_SERIAL
 
 
 #ifdef KOKKOS_HAVE_OPENMP
 #define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::OpenMP
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
+#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 void
-Reciprocal<Kokkos::View<double**,
+Reciprocal<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
                  Kokkos::LayoutLeft,
                  Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                  Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                  Kokkos::Impl::ViewDefault>,
-    Kokkos::View<const double**,
+    Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
                  Kokkos::LayoutLeft,
                  Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                  Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -110,7 +112,6 @@ Reciprocal<Kokkos::View<double**,
     2>::
 reciprocal (const RMV& R, const XMV& X)
 {
-#ifdef KOKKOS_HAVE_CXX11
   static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::Impl::"
                  "Reciprocal<2-D>: RMV is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
@@ -119,7 +120,7 @@ reciprocal (const RMV& R, const XMV& X)
                  "RMV is not rank 2.");
   static_assert (XMV::rank == 2, "KokkosBlas::Impl::Reciprocal<2-D>: "
                  "XMV is not rank 2.");
-#endif // KOKKOS_HAVE_CXX11
+
   const size_type numRows = X.dimension_0 ();
   const size_type numCols = X.dimension_1 ();
   if (numRows < static_cast<size_type> (INT_MAX) &&
@@ -133,22 +134,24 @@ reciprocal (const RMV& R, const XMV& X)
   }
 }
 
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
+#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
+#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #endif // KOKKOS_HAVE_OPENMP
 
 
 #ifdef KOKKOS_HAVE_PTHREAD
 #define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Threads
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
+#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 void
-Reciprocal<Kokkos::View<double**,
+Reciprocal<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
                  Kokkos::LayoutLeft,
                  Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                  Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                  Kokkos::Impl::ViewDefault>,
-    Kokkos::View<const double**,
+    Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
                  Kokkos::LayoutLeft,
                  Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                  Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -156,7 +159,6 @@ Reciprocal<Kokkos::View<double**,
     2>::
 reciprocal (const RMV& R, const XMV& X)
 {
-#ifdef KOKKOS_HAVE_CXX11
   static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::Impl::"
                  "Reciprocal<2-D>: RMV is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
@@ -165,7 +167,7 @@ reciprocal (const RMV& R, const XMV& X)
                  "RMV is not rank 2.");
   static_assert (XMV::rank == 2, "KokkosBlas::Impl::Reciprocal<2-D>: "
                  "XMV is not rank 2.");
-#endif // KOKKOS_HAVE_CXX11
+
   const size_type numRows = X.dimension_0 ();
   const size_type numCols = X.dimension_1 ();
   if (numRows < static_cast<size_type> (INT_MAX) &&
@@ -179,22 +181,24 @@ reciprocal (const RMV& R, const XMV& X)
   }
 }
 
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
+#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
+#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #endif // KOKKOS_HAVE_PTHREAD
 
 
 #ifdef KOKKOS_HAVE_CUDA
 #define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Cuda
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaSpace
+#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 void
-Reciprocal<Kokkos::View<double**,
+Reciprocal<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
                  Kokkos::LayoutLeft,
                  Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                  Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                  Kokkos::Impl::ViewDefault>,
-    Kokkos::View<const double**,
+    Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
                  Kokkos::LayoutLeft,
                  Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                  Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -202,7 +206,6 @@ Reciprocal<Kokkos::View<double**,
     2>::
 reciprocal (const RMV& R, const XMV& X)
 {
-#ifdef KOKKOS_HAVE_CXX11
   static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::Impl::"
                  "Reciprocal<2-D>: RMV is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
@@ -211,7 +214,7 @@ reciprocal (const RMV& R, const XMV& X)
                  "RMV is not rank 2.");
   static_assert (XMV::rank == 2, "KokkosBlas::Impl::Reciprocal<2-D>: "
                  "XMV is not rank 2.");
-#endif // KOKKOS_HAVE_CXX11
+
   const size_type numRows = X.dimension_0 ();
   const size_type numCols = X.dimension_1 ();
   if (numRows < static_cast<size_type> (INT_MAX) &&
@@ -225,22 +228,24 @@ reciprocal (const RMV& R, const XMV& X)
   }
 }
 
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
+#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
+#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #endif // KOKKOS_HAVE_CUDA
 
 
 #ifdef KOKKOS_HAVE_CUDA
 #define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Cuda
 #define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaUVMSpace
+#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 void
-Reciprocal<Kokkos::View<double**,
+Reciprocal<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
                  Kokkos::LayoutLeft,
                  Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                  Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                  Kokkos::Impl::ViewDefault>,
-    Kokkos::View<const double**,
+    Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
                  Kokkos::LayoutLeft,
                  Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
                  Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -248,7 +253,6 @@ Reciprocal<Kokkos::View<double**,
     2>::
 reciprocal (const RMV& R, const XMV& X)
 {
-#ifdef KOKKOS_HAVE_CXX11
   static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::Impl::"
                  "Reciprocal<2-D>: RMV is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
@@ -257,7 +261,7 @@ reciprocal (const RMV& R, const XMV& X)
                  "RMV is not rank 2.");
   static_assert (XMV::rank == 2, "KokkosBlas::Impl::Reciprocal<2-D>: "
                  "XMV is not rank 2.");
-#endif // KOKKOS_HAVE_CXX11
+
   const size_type numRows = X.dimension_0 ();
   const size_type numCols = X.dimension_1 ();
   if (numRows < static_cast<size_type> (INT_MAX) &&
@@ -271,8 +275,9 @@ reciprocal (const RMV& R, const XMV& X)
   }
 }
 
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
+#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
+#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #endif // KOKKOS_HAVE_CUDA
 
 } // namespace Impl

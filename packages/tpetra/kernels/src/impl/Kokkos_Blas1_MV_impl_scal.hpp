@@ -844,36 +844,36 @@ struct Scal<RMV, typename RMV::non_const_value_type, XMV, 1>
   }
 };
 
-
 //
-// mfh 08 Apr 2015: For now, we only provide full specializations for
-// the AV=scalar case of Scal<RMV, AV, XMV>.  The AV = 1-D View case
-// is less commonly used, and the generic kernel should work fine
-// there.
+// Declarations of full specializations of Impl::Scal for rank == 2.
+// Their definitions are in .cpp file(s) in this directory.
 //
 
 #ifdef KOKKOS_HAVE_SERIAL
+#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Serial
+#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
+#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 template<>
-struct Scal<Kokkos::View<double**,
+struct Scal<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
                          Kokkos::LayoutLeft,
                          Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                          Kokkos::Impl::ViewDefault>,
-            double,
-            Kokkos::View<const double**,
+            KOKKOSBLAS_IMPL_MV_SCALAR,
+            Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
                          Kokkos::LayoutLeft,
                          Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                          Kokkos::Impl::ViewDefault>,
             2>
 {
-  typedef Kokkos::View<double**,
+  typedef Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
                        Kokkos::LayoutLeft,
                        Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                        Kokkos::Impl::ViewDefault> RMV;
-  typedef Kokkos::View<double**,
+  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
                        Kokkos::LayoutLeft,
                        Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -886,29 +886,35 @@ struct Scal<Kokkos::View<double**,
   scal (const RMV& R, XMV::non_const_value_type& alpha, const XMV& X);
 };
 
+#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
+#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
+#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #endif // KOKKOS_HAVE_SERIAL
 
 #ifdef KOKKOS_HAVE_OPENMP
+#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::OpenMP
+#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
+#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 template<>
-struct Scal<Kokkos::View<double**,
+struct Scal<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
                          Kokkos::LayoutLeft,
                          Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                          Kokkos::Impl::ViewDefault>,
-            double,
-            Kokkos::View<const double**,
+            KOKKOSBLAS_IMPL_MV_SCALAR,
+            Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
                          Kokkos::LayoutLeft,
                          Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                          Kokkos::Impl::ViewDefault>, 2>
 {
-  typedef Kokkos::View<double**,
+  typedef Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
                        Kokkos::LayoutLeft,
                        Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                        Kokkos::Impl::ViewDefault> RMV;
-  typedef Kokkos::View<double**,
+  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
                        Kokkos::LayoutLeft,
                        Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -921,29 +927,35 @@ struct Scal<Kokkos::View<double**,
   scal (const RMV& R, XMV::non_const_value_type& alpha, const XMV& X);
 };
 
+#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
+#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
+#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #endif // KOKKOS_HAVE_OPENMP
 
 #ifdef KOKKOS_HAVE_PTHREAD
+#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Threads
+#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
+#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 template<>
-struct Scal<Kokkos::View<double**,
+struct Scal<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
                          Kokkos::LayoutLeft,
                          Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                          Kokkos::Impl::ViewDefault>,
-            double,
-            Kokkos::View<const double**,
+            KOKKOSBLAS_IMPL_MV_SCALAR,
+            Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
                          Kokkos::LayoutLeft,
                          Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                          Kokkos::Impl::ViewDefault>, 2>
 {
-  typedef Kokkos::View<double**,
+  typedef Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
                        Kokkos::LayoutLeft,
                        Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                        Kokkos::Impl::ViewDefault> RMV;
-  typedef Kokkos::View<double**,
+  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
                        Kokkos::LayoutLeft,
                        Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -956,29 +968,35 @@ struct Scal<Kokkos::View<double**,
   scal (const RMV& R, XMV::non_const_value_type& alpha, const XMV& X);
 };
 
+#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
+#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
+#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #endif // KOKKOS_HAVE_PTHREAD
 
 #ifdef KOKKOS_HAVE_CUDA
+#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Cuda
+#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaSpace
+#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 template<>
-struct Scal<Kokkos::View<double**,
+struct Scal<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
                          Kokkos::LayoutLeft,
                          Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                          Kokkos::Impl::ViewDefault>,
-            double,
-            Kokkos::View<const double**,
+            KOKKOSBLAS_IMPL_MV_SCALAR,
+            Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
                          Kokkos::LayoutLeft,
                          Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                          Kokkos::Impl::ViewDefault>, 2>
 {
-  typedef Kokkos::View<double**,
+  typedef Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
                        Kokkos::LayoutLeft,
                        Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                        Kokkos::Impl::ViewDefault> RMV;
-  typedef Kokkos::View<double**,
+  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
                        Kokkos::LayoutLeft,
                        Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -991,29 +1009,35 @@ struct Scal<Kokkos::View<double**,
   scal (const RMV& R, XMV::non_const_value_type& alpha, const XMV& X);
 };
 
+#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
+#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
+#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #endif // KOKKOS_HAVE_CUDA
 
 #ifdef KOKKOS_HAVE_CUDA
+#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Cuda
+#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaUVMSpace
+#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
 template<>
-struct Scal<Kokkos::View<double**,
+struct Scal<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
                          Kokkos::LayoutLeft,
                          Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                          Kokkos::Impl::ViewDefault>,
-            double,
-            Kokkos::View<const double**,
+            KOKKOSBLAS_IMPL_MV_SCALAR,
+            Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
                          Kokkos::LayoutLeft,
                          Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                          Kokkos::Impl::ViewDefault>, 2>
 {
-  typedef Kokkos::View<double**,
+  typedef Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
                        Kokkos::LayoutLeft,
                        Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
                        Kokkos::Impl::ViewDefault> RMV;
-  typedef Kokkos::View<double**,
+  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
                        Kokkos::LayoutLeft,
                        Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -1026,6 +1050,9 @@ struct Scal<Kokkos::View<double**,
   scal (const RMV& R, XMV::non_const_value_type& alpha, const XMV& X);
 };
 
+#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
+#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
+#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #endif // KOKKOS_HAVE_CUDA
 
 } // namespace Impl
