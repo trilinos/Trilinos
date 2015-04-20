@@ -47,272 +47,33 @@ namespace KokkosBlas {
 namespace Impl {
 
 #ifdef KOKKOS_HAVE_SERIAL
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Serial
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
-void
-Scal<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                  Kokkos::LayoutLeft,
-                  Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                  Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                  Kokkos::Impl::ViewDefault>,
-     KOKKOSBLAS_IMPL_MV_SCALAR,
-     Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                  Kokkos::LayoutLeft,
-                  Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                  Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                  Kokkos::Impl::ViewDefault>, 2>::
-scal (const RMV& R, XMV::non_const_value_type& alpha, const XMV& X)
-{
-  const size_type numRows = X.dimension_0 ();
-  const size_type numCols = X.dimension_1 ();
-  int a;
-  if (alpha == ATA::zero ()) {
-    a = 0;
-  }
-  else if (alpha == -ATA::one ()) {
-    a = -1;
-  }
-  else if (alpha == ATA::one ()) {
-    a = 1;
-  }
-  else {
-    a = 2;
-  }
+  KOKKOSBLAS_IMPL_MV_SCAL_RANK2_SINGLECOEFF_DEF( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
 
-  if (numRows < static_cast<size_type> (INT_MAX) &&
-      numRows * numCols < static_cast<size_type> (INT_MAX)) {
-    typedef int index_type;
-    MV_Scal_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
-      index_type> (R, alpha, X, a);
-  }
-  else {
-    typedef XMV::size_type index_type;
-    MV_Scal_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
-      index_type> (R, alpha, X, a);
-  }
-}
-
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #endif // KOKKOS_HAVE_SERIAL
 
-
 #ifdef KOKKOS_HAVE_OPENMP
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::OpenMP
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
-void
-Scal<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                  Kokkos::LayoutLeft,
-                  Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                  Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                  Kokkos::Impl::ViewDefault>,
-     KOKKOSBLAS_IMPL_MV_SCALAR,
-     Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                  Kokkos::LayoutLeft,
-                  Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                  Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                  Kokkos::Impl::ViewDefault>, 2>::
-scal (const RMV& R, XMV::non_const_value_type& alpha, const XMV& X)
-{
-  const size_type numRows = X.dimension_0 ();
-  const size_type numCols = X.dimension_1 ();
-  int a;
-  if (alpha == ATA::zero ()) {
-    a = 0;
-  }
-  else if (alpha == -ATA::one ()) {
-    a = -1;
-  }
-  else if (alpha == ATA::one ()) {
-    a = 1;
-  }
-  else {
-    a = 2;
-  }
+  KOKKOSBLAS_IMPL_MV_SCAL_RANK2_SINGLECOEFF_DEF( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
 
-  if (numRows < static_cast<size_type> (INT_MAX) &&
-      numRows * numCols < static_cast<size_type> (INT_MAX)) {
-    typedef int index_type;
-    MV_Scal_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
-      index_type> (R, alpha, X, a);
-  }
-  else {
-    typedef XMV::size_type index_type;
-    MV_Scal_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
-      index_type> (R, alpha, X, a);
-  }
-}
-
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #endif // KOKKOS_HAVE_OPENMP
 
-
 #ifdef KOKKOS_HAVE_PTHREAD
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Threads
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
-void
-Scal<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                  Kokkos::LayoutLeft,
-                  Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                  Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                  Kokkos::Impl::ViewDefault>,
-     KOKKOSBLAS_IMPL_MV_SCALAR,
-     Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                  Kokkos::LayoutLeft,
-                  Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                  Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                  Kokkos::Impl::ViewDefault>, 2>::
-scal (const RMV& R, XMV::non_const_value_type& alpha, const XMV& X)
-{
-  const size_type numRows = X.dimension_0 ();
-  const size_type numCols = X.dimension_1 ();
-  int a;
-  if (alpha == ATA::zero ()) {
-    a = 0;
-  }
-  else if (alpha == -ATA::one ()) {
-    a = -1;
-  }
-  else if (alpha == ATA::one ()) {
-    a = 1;
-  }
-  else {
-    a = 2;
-  }
+  KOKKOSBLAS_IMPL_MV_SCAL_RANK2_SINGLECOEFF_DEF( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
 
-  if (numRows < static_cast<size_type> (INT_MAX) &&
-      numRows * numCols < static_cast<size_type> (INT_MAX)) {
-    typedef int index_type;
-    MV_Scal_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
-      index_type> (R, alpha, X, a);
-  }
-  else {
-    typedef XMV::size_type index_type;
-    MV_Scal_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
-      index_type> (R, alpha, X, a);
-  }
-}
-
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #endif // KOKKOS_HAVE_PTHREAD
 
-
 #ifdef KOKKOS_HAVE_CUDA
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Cuda
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
-void
-Scal<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                  Kokkos::LayoutLeft,
-                  Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                  Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                  Kokkos::Impl::ViewDefault>,
-     KOKKOSBLAS_IMPL_MV_SCALAR,
-     Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                  Kokkos::LayoutLeft,
-                  Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                  Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                  Kokkos::Impl::ViewDefault>, 2>::
-scal (const RMV& R, XMV::non_const_value_type& alpha, const XMV& X)
-{
-  const size_type numRows = X.dimension_0 ();
-  const size_type numCols = X.dimension_1 ();
-  int a;
-  if (alpha == ATA::zero ()) {
-    a = 0;
-  }
-  else if (alpha == -ATA::one ()) {
-    a = -1;
-  }
-  else if (alpha == ATA::one ()) {
-    a = 1;
-  }
-  else {
-    a = 2;
-  }
+  KOKKOSBLAS_IMPL_MV_SCAL_RANK2_SINGLECOEFF_DEF( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
 
-  if (numRows < static_cast<size_type> (INT_MAX) &&
-      numRows * numCols < static_cast<size_type> (INT_MAX)) {
-    typedef int index_type;
-    MV_Scal_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
-      index_type> (R, alpha, X, a);
-  }
-  else {
-    typedef XMV::size_type index_type;
-    MV_Scal_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
-      index_type> (R, alpha, X, a);
-  }
-}
-
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #endif // KOKKOS_HAVE_CUDA
 
-
 #ifdef KOKKOS_HAVE_CUDA
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Cuda
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaUVMSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
-void
-Scal<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                  Kokkos::LayoutLeft,
-                  Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                  Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                  Kokkos::Impl::ViewDefault>,
-     KOKKOSBLAS_IMPL_MV_SCALAR,
-     Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                  Kokkos::LayoutLeft,
-                  Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                  Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                  Kokkos::Impl::ViewDefault>, 2>::
-scal (const RMV& R, XMV::non_const_value_type& alpha, const XMV& X)
-{
-  const size_type numRows = X.dimension_0 ();
-  const size_type numCols = X.dimension_1 ();
-  int a;
-  if (alpha == ATA::zero ()) {
-    a = 0;
-  }
-  else if (alpha == -ATA::one ()) {
-    a = -1;
-  }
-  else if (alpha == ATA::one ()) {
-    a = 1;
-  }
-  else {
-    a = 2;
-  }
+  KOKKOSBLAS_IMPL_MV_SCAL_RANK2_SINGLECOEFF_DEF( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 
-  if (numRows < static_cast<size_type> (INT_MAX) &&
-      numRows * numCols < static_cast<size_type> (INT_MAX)) {
-    typedef int index_type;
-    MV_Scal_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
-      index_type> (R, alpha, X, a);
-  }
-  else {
-    typedef XMV::size_type index_type;
-    MV_Scal_Invoke_Left<RMV, XMV::non_const_value_type, XMV,
-      index_type> (R, alpha, X, a);
-  }
-}
-
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #endif // KOKKOS_HAVE_CUDA
 
 } // namespace Impl

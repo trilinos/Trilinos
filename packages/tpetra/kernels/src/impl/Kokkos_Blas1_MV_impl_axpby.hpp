@@ -1713,7 +1713,6 @@ struct Axpby<typename XMV::non_const_value_type, XMV,
   static void
   axpby (const AV& alpha, const XMV& X, const BV& beta, const YMV& Y)
   {
-#ifdef KOKKOS_HAVE_CXX11
     static_assert (Kokkos::Impl::is_view<XMV>::value,
                    "KokkosBlas::Impl::Axpby::axpby (MV): "
                    "X is not a Kokkos::View.");
@@ -1730,7 +1729,7 @@ struct Axpby<typename XMV::non_const_value_type, XMV,
                    "X and Y must have the same rank.");
     static_assert (YMV::rank == 2, "KokkosBlas::Impl::Axpby::axpby (MV): "
                    "X and Y must have rank 2.");
-#endif // KOKKOS_HAVE_CXX11
+
     const size_type numRows = X.dimension_0 ();
     const size_type numCols = X.dimension_1 ();
     int a, b;
@@ -1788,7 +1787,6 @@ struct Axpby<typename XV::non_const_value_type, XV,
   static void
   axpby (const AV& alpha, const XV& X, const BV& beta, const YV& Y)
   {
-#ifdef KOKKOS_HAVE_CXX11
     static_assert (Kokkos::Impl::is_view<XV>::value,
                    "KokkosBlas::Impl::Axpby::axpby (V): "
                    "X is not a Kokkos::View.");
@@ -1805,7 +1803,6 @@ struct Axpby<typename XV::non_const_value_type, XV,
                    "X and Y must have the same rank.");
     static_assert (YV::rank == 1, "KokkosBlas::Impl::Axpby::axpby (V): "
                    "X and Y must have rank 1.");
-#endif // KOKKOS_HAVE_CXX11
 
     const size_type numRows = X.dimension_0 ();
     int a = 2;
@@ -1845,234 +1842,154 @@ struct Axpby<typename XV::non_const_value_type, XV,
 };
 
 //
+// Macro for declaration of full specialization of
+// KokkosBlas::Impl::Axpby for rank == 2.  This is NOT for users!!!
+// All the declarations of full specializations go in this header
+// file.  We may spread out definitions (see _DEF macro below) across
+// one or more .cpp files.
+//
+#define KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+template<> \
+struct Axpby<SCALAR, \
+             Kokkos::View<const SCALAR**, \
+                          LAYOUT, \
+                          Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                          Kokkos::Impl::ViewDefault>, \
+             SCALAR, \
+             Kokkos::View<SCALAR**, \
+                          LAYOUT, \
+                          Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                          Kokkos::Impl::ViewDefault>, \
+             2> \
+{ \
+  typedef SCALAR AV; \
+  typedef Kokkos::View<const SCALAR**, \
+                       LAYOUT, \
+                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                       Kokkos::Impl::ViewDefault> XMV; \
+  typedef SCALAR BV; \
+  typedef Kokkos::View<SCALAR**, \
+                       LAYOUT, \
+                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                       Kokkos::Impl::ViewDefault> YMV; \
+  typedef YMV::size_type size_type; \
+  typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA; \
+  typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB; \
+  \
+  static void \
+  axpby (const XMV::non_const_value_type& alpha, const XMV& X, \
+         const YMV::non_const_value_type& beta, const YMV& Y); \
+};
+
+
+//
 // Declarations of full specializations of Impl::Axpby for rank == 2.
 // Their definitions go in .cpp file(s) in this source directory.
 //
 
 #ifdef KOKKOS_HAVE_SERIAL
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Serial
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
-template<>
-struct Axpby<KOKKOSBLAS_IMPL_MV_SCALAR,
-             Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                          Kokkos::LayoutLeft,
-                          Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                          Kokkos::Impl::ViewDefault>,
-             KOKKOSBLAS_IMPL_MV_SCALAR,
-             Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                          Kokkos::LayoutLeft,
-                          Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                          Kokkos::Impl::ViewDefault>, 2>
-{
-  typedef KOKKOSBLAS_IMPL_MV_SCALAR AV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> XMV;
-  typedef KOKKOSBLAS_IMPL_MV_SCALAR BV;
-  typedef Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> YMV;
-  typedef YMV::size_type size_type;
-  typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA;
-  typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB;
+KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
 
-  static void
-  axpby (const XMV::non_const_value_type& alpha, const XMV& X,
-         const YMV::non_const_value_type& beta, const YMV& Y);
-};
-
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #endif // KOKKOS_HAVE_SERIAL
 
 #ifdef KOKKOS_HAVE_OPENMP
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::OpenMP
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
-template<>
-struct Axpby<KOKKOSBLAS_IMPL_MV_SCALAR,
-             Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                          Kokkos::LayoutLeft,
-                          Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                          Kokkos::Impl::ViewDefault>,
-             KOKKOSBLAS_IMPL_MV_SCALAR,
-             Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                          Kokkos::LayoutLeft,
-                          Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                          Kokkos::Impl::ViewDefault>, 2>
-{
-  typedef KOKKOSBLAS_IMPL_MV_SCALAR AV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> XMV;
-  typedef KOKKOSBLAS_IMPL_MV_SCALAR BV;
-  typedef Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> YMV;
-  typedef YMV::size_type size_type;
-  typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA;
-  typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB;
+KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
 
-  static void
-  axpby (const XMV::non_const_value_type& alpha, const XMV& X,
-         const YMV::non_const_value_type& beta, const YMV& Y);
-};
-
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #endif // KOKKOS_HAVE_OPENMP
 
 #ifdef KOKKOS_HAVE_PTHREAD
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Threads
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
-template<>
-struct Axpby<KOKKOSBLAS_IMPL_MV_SCALAR,
-             Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                          Kokkos::LayoutLeft,
-                          Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                          Kokkos::Impl::ViewDefault>,
-             KOKKOSBLAS_IMPL_MV_SCALAR,
-             Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                          Kokkos::LayoutLeft,
-                          Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                          Kokkos::Impl::ViewDefault>, 2>
-{
-  typedef KOKKOSBLAS_IMPL_MV_SCALAR AV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> XMV;
-  typedef KOKKOSBLAS_IMPL_MV_SCALAR BV;
-  typedef Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> YMV;
-  typedef YMV::size_type size_type;
-  typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA;
-  typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB;
+KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
 
-  static void
-  axpby (const XMV::non_const_value_type& alpha, const XMV& X,
-         const YMV::non_const_value_type& beta, const YMV& Y);
-};
-
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #endif // KOKKOS_HAVE_PTHREAD
 
 #ifdef KOKKOS_HAVE_CUDA
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Cuda
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
-template<>
-struct Axpby<KOKKOSBLAS_IMPL_MV_SCALAR,
-             Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                          Kokkos::LayoutLeft,
-                          Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                          Kokkos::Impl::ViewDefault>,
-             KOKKOSBLAS_IMPL_MV_SCALAR,
-             Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                          Kokkos::LayoutLeft,
-                          Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                          Kokkos::Impl::ViewDefault>, 2>
-{
-  typedef KOKKOSBLAS_IMPL_MV_SCALAR AV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> XMV;
-  typedef KOKKOSBLAS_IMPL_MV_SCALAR BV;
-  typedef Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> YMV;
-  typedef YMV::size_type size_type;
-  typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA;
-  typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB;
+KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
 
-  static void
-  axpby (const XMV::non_const_value_type& alpha, const XMV& X,
-         const YMV::non_const_value_type& beta, const YMV& Y);
-};
-
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #endif // KOKKOS_HAVE_CUDA
 
 #ifdef KOKKOS_HAVE_CUDA
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Cuda
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaUVMSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
-template<>
-struct Axpby<KOKKOSBLAS_IMPL_MV_SCALAR,
-             Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                          Kokkos::LayoutLeft,
-                          Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                          Kokkos::Impl::ViewDefault>,
-             KOKKOSBLAS_IMPL_MV_SCALAR,
-             Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                          Kokkos::LayoutLeft,
-                          Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                          Kokkos::Impl::ViewDefault>, 2>
-{
-  typedef KOKKOSBLAS_IMPL_MV_SCALAR AV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> XMV;
-  typedef KOKKOSBLAS_IMPL_MV_SCALAR BV;
-  typedef Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> YMV;
-  typedef YMV::size_type size_type;
-  typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA;
-  typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB;
+KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 
-  static void
-  axpby (const XMV::non_const_value_type& alpha, const XMV& X,
-         const YMV::non_const_value_type& beta, const YMV& Y);
-};
-
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
 #endif // KOKKOS_HAVE_CUDA
+
+
+//
+// Macro for definition of full specialization of
+// KokkosBlas::Impl::Axpby for rank == 2.  This is NOT for users!!!
+// We use this macro in one or more .cpp files in this directory.
+//
+
+#define KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+void \
+Axpby<SCALAR, \
+      Kokkos::View<const SCALAR**, \
+                   LAYOUT, \
+                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                   Kokkos::Impl::ViewDefault>, \
+      SCALAR, \
+      Kokkos::View<SCALAR**, \
+                   LAYOUT, \
+                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                   Kokkos::Impl::ViewDefault>, \
+      2>:: \
+axpby (const XMV::non_const_value_type& alpha, \
+       const XMV& X, const YMV::non_const_value_type& beta, \
+       const YMV& Y) \
+{ \
+  const size_type numRows = X.dimension_0 (); \
+  const size_type numCols = X.dimension_1 (); \
+  int a, b; \
+  if (alpha == ATA::zero ()) { \
+    a = 0; \
+  } \
+  else if (alpha == -ATA::one ()) { \
+    a = -1; \
+  } \
+  else if (alpha == ATA::one ()) { \
+    a = 1; \
+  } \
+  else { \
+    a = 2; \
+  } \
+  if (beta == ATB::zero ()) { \
+    b = 0; \
+  } \
+  else if (beta == -ATB::one ()) { \
+    b = -1; \
+  } \
+  else if (beta == ATB::one ()) { \
+    b = 1; \
+  } \
+  else { \
+    b = 2; \
+  } \
+  \
+  if (numRows < static_cast<size_type> (INT_MAX) && \
+      numRows * numCols < static_cast<size_type> (INT_MAX)) { \
+    typedef int index_type; \
+    MV_Axpby_Invoke_Left<XMV::non_const_value_type, XMV, \
+      YMV::non_const_value_type, YMV, index_type> (alpha, X, \
+                                                   beta, Y, a, b); \
+  } \
+  else { \
+    typedef XMV::size_type index_type; \
+    MV_Axpby_Invoke_Left<XMV::non_const_value_type, XMV, \
+      YMV::non_const_value_type, YMV, index_type> (alpha, X, \
+                                                   beta, Y, a, b); \
+  } \
+}
+
 
 } // namespace Impl
 } // namespace KokkosBlas

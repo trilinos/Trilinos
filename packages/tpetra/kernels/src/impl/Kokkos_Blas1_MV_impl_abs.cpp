@@ -48,237 +48,37 @@ namespace KokkosBlas {
 namespace Impl {
 
 #ifdef KOKKOS_HAVE_SERIAL
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Serial
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
-void
-Abs<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                 Kokkos::LayoutLeft,
-                 Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                 Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                 Kokkos::Impl::ViewDefault>,
-    Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                 Kokkos::LayoutLeft,
-                 Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                 Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                 Kokkos::Impl::ViewDefault>,
-    2>::
-abs (const RMV& R, const XMV& X)
-{
-  static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::Impl::"
-                 "Abs<2-D>: RMV is not a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
-                 "Abs<2-D>: XMV is not a Kokkos::View.");
-  static_assert (RMV::rank == 2, "KokkosBlas::Impl::Abs<2-D>: "
-                 "RMV is not rank 2.");
-  static_assert (XMV::rank == 2, "KokkosBlas::Impl::Abs<2-D>: "
-                 "XMV is not rank 2.");
+  KOKKOSBLAS_IMPL_MV_ABS_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
 
-  const size_type numRows = X.dimension_0 ();
-  const size_type numCols = X.dimension_1 ();
-  if (numRows < static_cast<size_type> (INT_MAX) &&
-      numRows * numCols < static_cast<size_type> (INT_MAX)) {
-    typedef int index_type;
-    MV_Abs_Generic<RMV, XMV, index_type> (R, X);
-  }
-  else {
-    typedef XMV::size_type index_type;
-    MV_Abs_Generic<RMV, XMV, index_type> (R, X);
-  }
-}
-
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
 #endif // KOKKOS_HAVE_SERIAL
 
 
 #ifdef KOKKOS_HAVE_OPENMP
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::OpenMP
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
-void
-Abs<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                 Kokkos::LayoutLeft,
-                 Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                 Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                 Kokkos::Impl::ViewDefault>,
-    Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                 Kokkos::LayoutLeft,
-                 Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                 Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                 Kokkos::Impl::ViewDefault>,
-    2>::
-abs (const RMV& R, const XMV& X)
-{
-  static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::Impl::"
-                 "Abs<2-D>: RMV is not a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
-                 "Abs<2-D>: XMV is not a Kokkos::View.");
-  static_assert (RMV::rank == 2, "KokkosBlas::Impl::Abs<2-D>: "
-                 "RMV is not rank 2.");
-  static_assert (XMV::rank == 2, "KokkosBlas::Impl::Abs<2-D>: "
-                 "XMV is not rank 2.");
+  KOKKOSBLAS_IMPL_MV_ABS_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
 
-  const size_type numRows = X.dimension_0 ();
-  const size_type numCols = X.dimension_1 ();
-  if (numRows < static_cast<size_type> (INT_MAX) &&
-      numRows * numCols < static_cast<size_type> (INT_MAX)) {
-    typedef int index_type;
-    MV_Abs_Generic<RMV, XMV, index_type> (R, X);
-  }
-  else {
-    typedef XMV::size_type index_type;
-    MV_Abs_Generic<RMV, XMV, index_type> (R, X);
-  }
-}
-
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
 #endif // KOKKOS_HAVE_OPENMP
 
 
 #ifdef KOKKOS_HAVE_PTHREAD
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Threads
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
-void
-Abs<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                 Kokkos::LayoutLeft,
-                 Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                 Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                 Kokkos::Impl::ViewDefault>,
-    Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                 Kokkos::LayoutLeft,
-                 Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                 Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                 Kokkos::Impl::ViewDefault>,
-    2>::
-abs (const RMV& R, const XMV& X)
-{
-  static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::Impl::"
-                 "Abs<2-D>: RMV is not a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
-                 "Abs<2-D>: XMV is not a Kokkos::View.");
-  static_assert (RMV::rank == 2, "KokkosBlas::Impl::Abs<2-D>: "
-                 "RMV is not rank 2.");
-  static_assert (XMV::rank == 2, "KokkosBlas::Impl::Abs<2-D>: "
-                 "XMV is not rank 2.");
+  KOKKOSBLAS_IMPL_MV_ABS_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
 
-  const size_type numRows = X.dimension_0 ();
-  const size_type numCols = X.dimension_1 ();
-  if (numRows < static_cast<size_type> (INT_MAX) &&
-      numRows * numCols < static_cast<size_type> (INT_MAX)) {
-    typedef int index_type;
-    MV_Abs_Generic<RMV, XMV, index_type> (R, X);
-  }
-  else {
-    typedef XMV::size_type index_type;
-    MV_Abs_Generic<RMV, XMV, index_type> (R, X);
-  }
-}
-
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
 #endif // KOKKOS_HAVE_PTHREAD
 
 
 #ifdef KOKKOS_HAVE_CUDA
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Cuda
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
-void
-Abs<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                 Kokkos::LayoutLeft,
-                 Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                 Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                 Kokkos::Impl::ViewDefault>,
-    Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                 Kokkos::LayoutLeft,
-                 Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                 Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                 Kokkos::Impl::ViewDefault>,
-    2>::
-abs (const RMV& R, const XMV& X)
-{
-  static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::Impl::"
-                 "Abs<2-D>: RMV is not a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
-                 "Abs<2-D>: XMV is not a Kokkos::View.");
-  static_assert (RMV::rank == 2, "KokkosBlas::Impl::Abs<2-D>: "
-                 "RMV is not rank 2.");
-  static_assert (XMV::rank == 2, "KokkosBlas::Impl::Abs<2-D>: "
-                 "XMV is not rank 2.");
+  KOKKOSBLAS_IMPL_MV_ABS_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
 
-  const size_type numRows = X.dimension_0 ();
-  const size_type numCols = X.dimension_1 ();
-  if (numRows < static_cast<size_type> (INT_MAX) &&
-      numRows * numCols < static_cast<size_type> (INT_MAX)) {
-    typedef int index_type;
-    MV_Abs_Generic<RMV, XMV, index_type> (R, X);
-  }
-  else {
-    typedef XMV::size_type index_type;
-    MV_Abs_Generic<RMV, XMV, index_type> (R, X);
-  }
-}
-
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
 #endif // KOKKOS_HAVE_CUDA
 
 
 #ifdef KOKKOS_HAVE_CUDA
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Cuda
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaUVMSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
-void
-Abs<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                 Kokkos::LayoutLeft,
-                 Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                 Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                 Kokkos::Impl::ViewDefault>,
-    Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                 Kokkos::LayoutLeft,
-                 Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                 Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                 Kokkos::Impl::ViewDefault>,
-    2>::
-abs (const RMV& R, const XMV& X)
-{
-  static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::Impl::"
-                 "Abs<2-D>: RMV is not a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
-                 "Abs<2-D>: XMV is not a Kokkos::View.");
-  static_assert (RMV::rank == 2, "KokkosBlas::Impl::Abs<2-D>: "
-                 "RMV is not rank 2.");
-  static_assert (XMV::rank == 2, "KokkosBlas::Impl::Abs<2-D>: "
-                 "XMV is not rank 2.");
+  KOKKOSBLAS_IMPL_MV_ABS_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUMVSpace )
 
-  const size_type numRows = X.dimension_0 ();
-  const size_type numCols = X.dimension_1 ();
-  if (numRows < static_cast<size_type> (INT_MAX) &&
-      numRows * numCols < static_cast<size_type> (INT_MAX)) {
-    typedef int index_type;
-    MV_Abs_Generic<RMV, XMV, index_type> (R, X);
-  }
-  else {
-    typedef XMV::size_type index_type;
-    MV_Abs_Generic<RMV, XMV, index_type> (R, X);
-  }
-}
-
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
 #endif // KOKKOS_HAVE_CUDA
 
 } // namespace Impl

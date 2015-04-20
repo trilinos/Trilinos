@@ -503,425 +503,217 @@ struct Dot_MV<RV, XV, YV, 1> {
 };
 
 //
-// Declarations of full specializations of Impl::Dot_MV for rank == 2.
-// Their definitions go in .cpp file(s) in this source directory.
+// Macro for declaration of full specialization of
+// KokkosBlas::Impl::Dot_MV for rank == 2.  This is NOT for users!!!
+// All the declarations of full specializations go in this header
+// file.  We may spread out definitions (see _DEF macro below) across
+// one or more .cpp files.
+//
+#define KOKKOSBLAS_IMPL_MV_DOT_RANK2_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+template<> \
+struct Dot_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::dot_type*, \
+                           EXEC_SPACE::array_layout, \
+                           Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                           Kokkos::Impl::ViewDefault>, \
+              Kokkos::View<const SCALAR**, \
+                           LAYOUT, \
+                           Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                           Kokkos::Impl::ViewDefault>, \
+              Kokkos::View<const SCALAR**, \
+                           LAYOUT, \
+                           Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                           Kokkos::Impl::ViewDefault>, \
+              2> \
+{ \
+  typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::dot_type*, \
+    EXEC_SPACE::array_layout, \
+    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+    Kokkos::Impl::ViewDefault> RV; \
+  typedef Kokkos::View<const SCALAR**, \
+    LAYOUT, \
+    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+    Kokkos::Impl::ViewDefault> XMV; \
+  typedef Kokkos::View<const SCALAR**, \
+    LAYOUT, \
+    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+    Kokkos::Impl::ViewDefault> YMV; \
+ \
+  static void dot (const RV& r, const XMV& X, const YMV& Y); \
+};
+
+//
+// Macro for declaration of full specialization of
+// KokkosBlas::Impl::Dot_MV for rank == 1.  This is NOT for users!!!
+// All the declarations of full specializations go in this header
+// file.  We may spread out definitions (see _DEF macro below) across
+// one or more .cpp files.
+//
+#define KOKKOSBLAS_IMPL_MV_DOT_RANK1_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+template<> \
+struct Dot_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::dot_type, \
+                           EXEC_SPACE::array_layout, \
+                           Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                           Kokkos::Impl::ViewDefault>, \
+              Kokkos::View<const SCALAR*, \
+                           LAYOUT, \
+                           Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                           Kokkos::Impl::ViewDefault>, \
+              Kokkos::View<const SCALAR*, \
+                           LAYOUT, \
+                           Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                           Kokkos::Impl::ViewDefault>, \
+              1> \
+{ \
+  typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::dot_type, \
+    EXEC_SPACE::array_layout, \
+    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+    Kokkos::Impl::ViewDefault> RV; \
+  typedef Kokkos::View<const SCALAR*, \
+    LAYOUT, \
+    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+    Kokkos::Impl::ViewDefault> XV; \
+  typedef Kokkos::View<const SCALAR*, \
+    LAYOUT, \
+    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+    Kokkos::Impl::ViewDefault> YV; \
+ \
+  static void dot (const RV& r, const XV& X, const YV& Y); \
+};
+
+//
+// Declarations of full specializations of Impl::Dot_MV for rank == 2
+// and rank == 1.  Their definitions go in .cpp file(s) in this source
+// directory.
 //
 
 #ifdef KOKKOS_HAVE_SERIAL
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Serial
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
-template<>
-struct Dot_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::dot_type*,
-                           KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              2>
-{
-  typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::dot_type*,
-    KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> RV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-    Kokkos::LayoutLeft,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> XMV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-    Kokkos::LayoutLeft,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> YMV;
+KOKKOSBLAS_IMPL_MV_DOT_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
 
-  static void dot (const RV& r, const XMV& X, const YMV& Y);
-};
+KOKKOSBLAS_IMPL_MV_DOT_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
 
-template<>
-struct Dot_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::dot_type,
-                           KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR*,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR*,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              1>
-{
-  typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::dot_type,
-    KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> RV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR*,
-    Kokkos::LayoutLeft,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> XV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR*,
-    Kokkos::LayoutLeft,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> YV;
-
-  static void dot (const RV& r, const XV& X, const YV& Y);
-};
-
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #endif // KOKKOS_HAVE_SERIAL
 
 
 #ifdef KOKKOS_HAVE_OPENMP
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::OpenMP
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
-template<>
-struct Dot_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::dot_type*,
-                           KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              2>
-{
-  typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::dot_type*,
-    KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> RV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-    Kokkos::LayoutLeft,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> XMV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-    Kokkos::LayoutLeft,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> YMV;
 
-  static void dot (const RV& r, const XMV& X, const YMV& Y);
-};
+KOKKOSBLAS_IMPL_MV_DOT_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
 
-template<>
-struct Dot_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::dot_type,
-                           KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR*,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR*,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              1>
-{
-  typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::dot_type,
-    KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> RV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR*,
-    Kokkos::LayoutLeft,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> XV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR*,
-    Kokkos::LayoutLeft,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> YV;
+KOKKOSBLAS_IMPL_MV_DOT_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
 
-  static void dot (const RV& r, const XV& X, const YV& Y);
-};
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #endif // KOKKOS_HAVE_OPENMP
 
 
 #ifdef KOKKOS_HAVE_PTHREAD
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Threads
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
-template<>
-struct Dot_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::dot_type*,
-                           KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              2>
-{
-  typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::dot_type*,
-    KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> RV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-    Kokkos::LayoutLeft,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> XMV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-    Kokkos::LayoutLeft,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> YMV;
 
-  static void dot (const RV& r, const XMV& X, const YMV& Y);
-};
+KOKKOSBLAS_IMPL_MV_DOT_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
 
-template<>
-struct Dot_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::dot_type,
-                           KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR*,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR*,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              1>
-{
-  typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::dot_type,
-    KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> RV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR*,
-    Kokkos::LayoutLeft,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> XV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR*,
-    Kokkos::LayoutLeft,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> YV;
+KOKKOSBLAS_IMPL_MV_DOT_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
 
-  static void dot (const RV& r, const XV& X, const YV& Y);
-};
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #endif // KOKKOS_HAVE_PTHREAD
 
 
 #ifdef KOKKOS_HAVE_CUDA
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Cuda
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
-template<>
-struct Dot_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::dot_type*,
-                           KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              2>
-{
-  typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::dot_type*,
-    KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> RV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-    Kokkos::LayoutLeft,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> XMV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-    Kokkos::LayoutLeft,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> YMV;
 
-  static void dot (const RV& r, const XMV& X, const YMV& Y);
-};
+KOKKOSBLAS_IMPL_MV_DOT_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
 
-template<>
-struct Dot_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::dot_type,
-                           KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR*,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR*,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              1>
-{
-  typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::dot_type,
-    KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> RV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR*,
-    Kokkos::LayoutLeft,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> XV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR*,
-    Kokkos::LayoutLeft,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> YV;
+KOKKOSBLAS_IMPL_MV_DOT_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
 
-  static void dot (const RV& r, const XV& X, const YV& Y);
-};
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #endif // KOKKOS_HAVE_CUDA
 
 
 #ifdef KOKKOS_HAVE_CUDA
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Cuda
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaUVMSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
-template<>
-struct Dot_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::dot_type*,
-                           KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              2>
-{
-  typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::dot_type*,
-    KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> RV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-    Kokkos::LayoutLeft,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> XMV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-    Kokkos::LayoutLeft,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> YMV;
 
-  static void dot (const RV& r, const XMV& X, const YMV& Y);
-};
+KOKKOSBLAS_IMPL_MV_DOT_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 
-template<>
-struct Dot_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::dot_type,
-                           KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR*,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR*,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              1>
-{
-  typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::dot_type,
-    KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> RV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR*,
-    Kokkos::LayoutLeft,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> XV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR*,
-    Kokkos::LayoutLeft,
-    Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-    Kokkos::Impl::ViewDefault> YV;
+KOKKOSBLAS_IMPL_MV_DOT_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 
-  static void dot (const RV& r, const XV& X, const YV& Y);
-};
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #endif // KOKKOS_HAVE_CUDA
+
+//
+// Macros for definition of full specializations
+//
+
+#define KOKKOSBLAS_IMPL_MV_DOT_RANK2_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+void \
+Dot_MV<Kokkos::View<SCALAR*, \
+                    EXEC_SPACE::array_layout, \
+                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                    Kokkos::Impl::ViewDefault>, \
+       Kokkos::View<const SCALAR**, \
+                    LAYOUT, \
+                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                    Kokkos::Impl::ViewDefault>, \
+       Kokkos::View<const SCALAR**, \
+                    LAYOUT, \
+                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                    Kokkos::Impl::ViewDefault>, \
+       2>:: \
+dot (const RV& r, const XMV& X, const XMV& Y) \
+{ \
+  typedef XMV::size_type size_type; \
+ \
+  const size_type numRows = X.dimension_0 (); \
+  const size_type numCols = X.dimension_1 (); \
+  if (numRows < static_cast<size_type> (INT_MAX) && \
+      numRows * numCols < static_cast<size_type> (INT_MAX)) { \
+    MV_Dot_Invoke<RV, XMV, YMV, int> (r, X, Y); \
+  } \
+  else { \
+    MV_Dot_Invoke<RV, XMV, YMV, size_type> (r, X, Y); \
+  } \
+}
+
+
+#define KOKKOSBLAS_IMPL_MV_DOT_RANK1_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+void \
+Dot_MV<Kokkos::View<SCALAR, \
+                    EXEC_SPACE::array_layout, \
+                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                    Kokkos::Impl::ViewDefault>, \
+       Kokkos::View<const SCALAR*, \
+                    LAYOUT, \
+                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                    Kokkos::Impl::ViewDefault>, \
+       Kokkos::View<const SCALAR*, \
+                    LAYOUT, \
+                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                    Kokkos::Impl::ViewDefault>, \
+       1>:: \
+dot (const RV& r, const XV& X, const XV& Y) \
+{ \
+  typedef typename XV::size_type size_type; \
+ \
+  const size_type numRows = X.dimension_0 (); \
+  if (numRows < static_cast<size_type> (INT_MAX)) { \
+    typedef V_Dot_Functor<RV, XV, YV, int> op_type; \
+    op_type op (r, X, Y); \
+    Kokkos::parallel_reduce (numRows, op); \
+  } \
+  else { \
+    typedef V_Dot_Functor<RV, XV, YV, size_type> op_type; \
+    op_type op (r, X, Y); \
+    Kokkos::parallel_reduce (numRows, op); \
+  } \
+}
 
 
 } // namespace Impl
