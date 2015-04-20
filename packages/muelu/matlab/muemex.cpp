@@ -81,7 +81,7 @@ typedef enum
 #define MUEMEX_DEFAULT_USEDEFAULTNS true
 
 /* Debugging */
-//#define VERBOSE_OUTPUT
+#define VERBOSE_OUTPUT
 
 /* Stuff for MATLAB R2006b vs. previous versions */
 #if(defined(MX_API_VER) && MX_API_VER >= 0x07030000)
@@ -242,7 +242,7 @@ int epetra_solve(Teuchos::ParameterList *SetupList, Teuchos::ParameterList *TPL,
     {
         mexPrintf("Sucess. Belos converged.\n");
         //now copy the sol'n vector from Xmv (multivector) to x[...] (raw array of doubles)
-        //this might work, because Xmv points to the same object in RAM as lhs, only treats it as an MV
+        //this should work, because Xmv points to the same object as lhs, only treats it as an MV
         lhs->ExtractCopy(x);
         return IS_TRUE;
     }
@@ -763,13 +763,14 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
             {
 				D = new mueluapi_data_pack();
             }
-            //Uncomment this when tpetra is supported, let that be an interface option			
-            /*
+            else if(intf == "epetra")
+            {
+                D = new muelu_epetra_data_pack();
+            }
             else if(intf == "tpetra")
             {
-				D = new muelu_epetra_data_pack();
+                //here would do tpetra data pack
             }
-            */
 			D->List = List;
 			/* Pull matrix in CSC format */
 			vals = mxGetPr(prhs[1]);

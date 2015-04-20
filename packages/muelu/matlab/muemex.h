@@ -75,7 +75,7 @@
 #define BELOS_BLOCK_SIZE 1
 #define BELOS_MAX_RESTARTS 15
 #define BELOS_TOLERANCE 1e-05
-#define BELOS_MAX_ITERS -1
+#define BELOS_MAX_ITERS 1000
 
 class muelu_data_pack;
 class muelu_data_pack
