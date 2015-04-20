@@ -82,13 +82,13 @@ public:
 
   ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                  const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
-                 const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof,
+                 const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> >& lof,
                  const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
                  const Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > & solverFactory,
                  const Teuchos::RCP<panzer::GlobalData>& global_data,
                  bool build_transient_support,double t_init);
 
-  ModelEvaluator(const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof,
+  ModelEvaluator(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> >& lof,
                  const Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > & solverFactory,
                  const Teuchos::RCP<panzer::GlobalData>& global_data,
                  bool build_transient_support,double t_init);
@@ -112,6 +112,9 @@ public:
 
   /** \brief . */
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int i) const;
+
+  /** \brief . */
+  const std::string & get_g_name(int i) const;
 
   /** \brief . */
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int i) const;
@@ -484,7 +487,7 @@ private: // data members
   bool build_transient_support_;
 
   // basic specific linear object objects
-  Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > lof_;
+  Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > lof_;
   mutable Teuchos::RCP<panzer::LinearObjContainer> ghostedContainer_;
 
   Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > solverFactory_;
