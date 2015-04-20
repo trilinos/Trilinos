@@ -39,17 +39,11 @@
 #include <stk_util/util/ci_string.hpp>  // for ci_string, operator<<
 #include <string>                       // for basic_string, operator==, etc
 #include <utility>                      // for pair
+#include <memory>                       // for shared_ptr
 #include "boost/functional/hash/hash.hpp"  // for hash
 #include "boost/smart_ptr/shared_array.hpp"  // for shared_array
-#include "boost/smart_ptr/shared_ptr.hpp"  // for shared_ptr
 #include "boost/unordered/unordered_set.hpp"  // for unordered_set, etc
 namespace boost { template <class T> struct hash; }
-
-//boost tr1 headers...
-//On the sun, couldn't get '#include <memory>' to work, so we're using the boost
-//form instead...
-
-
 
 namespace boost {
 
@@ -74,7 +68,7 @@ TEST(UnitTestBoost, testUnit)
 {
   {  
     double* d = new double;
-    boost::shared_ptr<double> dptr(d);
+    std::shared_ptr<double> dptr(d);
 
     ASSERT_EQ( dptr.get(), d);
 
@@ -84,17 +78,6 @@ TEST(UnitTestBoost, testUnit)
     ASSERT_EQ( dptr2.get(), d2);
   }
   
-  // Had to comment this out because boost/tr1/array.hpp is incompatible with
-  // stk_utest_macros.hpp
-  /*
-  boost::array<double,5> my_array;
-
-  my_array[0] = 5.0;
-
-  ASSERT_EQ( my_array[0], 5.0 );
-  ASSERT_EQ( my_array.size(), (boost::array<double,5>::size_type)5 );
-  */
-
   boost::unordered_set<int> int_set;
 
   int_set.insert(5);
@@ -114,6 +97,5 @@ TEST(UnitTestBoost, testUnit)
   ASSERT_TRUE( s == "this is a test" );
   
   std::cout << s << std::endl;
-  
 }
 

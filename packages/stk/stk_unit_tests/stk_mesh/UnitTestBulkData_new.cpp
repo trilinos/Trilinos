@@ -87,7 +87,7 @@ struct TestBoxFixture : public fixtures::BoxFixture
 {
   TestBoxFixture(stk::ParallelMachine pm = MPI_COMM_WORLD,
                  unsigned block_size = 1000) :
-    BoxFixture(pm, block_size),
+    BoxFixture(pm, stk::mesh::BulkData::AUTO_AURA, block_size),
     m_test_part ( m_fem_meta.declare_part ( "Test Part" ) ),
     m_cell_part ( m_fem_meta.declare_part ( "Cell list" , stk::topology::ELEM_RANK ) ),
     m_part_A_0 ( m_fem_meta.declare_part ( "Part A 0", stk::topology::NODE_RANK ) ),
@@ -780,7 +780,7 @@ TEST ( UnitTestBulkData_new , testEntityComm )
   create_vector.push_back ( &part_a );
   create_vector.push_back ( &part_b );
 
-  BulkData bulk ( fem_meta , MPI_COMM_WORLD , 100 );
+  BulkData bulk ( fem_meta , MPI_COMM_WORLD , stk::mesh::BulkData::AUTO_AURA );
 
   bulk.modification_begin();
 
@@ -1283,7 +1283,7 @@ TEST ( UnitTestBulkData_new , testCustomBucketCapacity )
   create_vector.push_back ( &node_part );
 
   const unsigned non_standard_bucket_capacity = 42;
-  BulkData bulk ( meta , MPI_COMM_WORLD , true, NULL, NULL, non_standard_bucket_capacity);
+  BulkData bulk ( meta , MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA , true, NULL, NULL, non_standard_bucket_capacity);
 
   bulk.modification_begin();
 

@@ -461,21 +461,21 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, adjustDirichlet)
    RCP<LinearObjContainer> ghosted_1   = la_factory->buildGhostedLinearObjContainer();
    RCP<LinearObjContainer> ghosted_sys = la_factory->buildGhostedLinearObjContainer();
 
-   la_factory->initializeGhostedContainer(LinearObjContainer::X,*ghosted_0);
-   la_factory->initializeGhostedContainer(LinearObjContainer::X,*ghosted_1);
+   la_factory->initializeGhostedContainer(LinearObjContainer::F,*ghosted_0);
+   la_factory->initializeGhostedContainer(LinearObjContainer::F,*ghosted_1);
    la_factory->initializeGhostedContainer(LinearObjContainer::F | LinearObjContainer::Mat,*ghosted_sys);
 
    RCP<BLOC> b_0   = rcp_dynamic_cast<BLOC>(ghosted_0);
    RCP<BLOC> b_1   = rcp_dynamic_cast<BLOC>(ghosted_1);
    RCP<BLOC> b_sys = rcp_dynamic_cast<BLOC>(ghosted_sys);
 
-   TEST_ASSERT(!Teuchos::is_null(b_0->get_x()));
-   TEST_ASSERT(!Teuchos::is_null(b_1->get_x()));
+   TEST_ASSERT(!Teuchos::is_null(b_0->get_f()));
+   TEST_ASSERT(!Teuchos::is_null(b_1->get_f()));
    TEST_ASSERT(!Teuchos::is_null(b_sys->get_f()));
    TEST_ASSERT(!Teuchos::is_null(b_sys->get_A()));
 
-   Thyra::assign(b_0->get_x().ptr(),0.0); // put some garbage in the systems
-   Thyra::assign(b_1->get_x().ptr(),0.0); // put some garbage in the systems
+   Thyra::assign(b_0->get_f().ptr(),0.0); // put some garbage in the systems
+   Thyra::assign(b_1->get_f().ptr(),0.0); // put some garbage in the systems
    Thyra::assign(b_sys->get_f().ptr(),-3.0); // put some garbage in the systems
 
    // b_sys->get_A()->PutScalar(-3.0);
@@ -495,8 +495,8 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, adjustDirichlet)
 
    if(myRank==0) {   
       for(int i=0;i<numBlocks;i++) {
-         RCP<Thyra::VectorBase<double> > x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_x())->getNonconstVectorBlock(i);
-         RCP<Thyra::VectorBase<double> > x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_x())->getNonconstVectorBlock(i);
+         RCP<Thyra::VectorBase<double> > x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_f())->getNonconstVectorBlock(i);
+         RCP<Thyra::VectorBase<double> > x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_f())->getNonconstVectorBlock(i);
 
          Teuchos::ArrayRCP<double> data_0,data_1;
          rcp_dynamic_cast<SpmdVectorBase<double> >(x_0)->getNonconstLocalData(Teuchos::ptrFromRef(data_0)); 
@@ -516,8 +516,8 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, adjustDirichlet)
    }
    else if(myRank==1) {
       for(int i=0;i<numBlocks;i++) {
-         RCP<Thyra::VectorBase<double> > x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_x())->getNonconstVectorBlock(i);
-         RCP<Thyra::VectorBase<double> > x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_x())->getNonconstVectorBlock(i);
+         RCP<Thyra::VectorBase<double> > x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_f())->getNonconstVectorBlock(i);
+         RCP<Thyra::VectorBase<double> > x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_f())->getNonconstVectorBlock(i);
 
          Teuchos::ArrayRCP<double> data_0,data_1;
          rcp_dynamic_cast<SpmdVectorBase<double> >(x_0)->getNonconstLocalData(Teuchos::ptrFromRef(data_0)); 
@@ -539,10 +539,10 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, adjustDirichlet)
       TEUCHOS_ASSERT(false);
 
    out << "LOCAL " << std::endl;
-   b_0->get_x()->describe(out,Teuchos::VERB_HIGH);
+   b_0->get_f()->describe(out,Teuchos::VERB_HIGH);
    out << std::endl;
    out << "GLOBAL " << std::endl;
-   b_1->get_x()->describe(out,Teuchos::VERB_HIGH);
+   b_1->get_f()->describe(out,Teuchos::VERB_HIGH);
    out << std::endl;
 
    // run test for conditions
@@ -649,21 +649,21 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, node_cell)
    RCP<LinearObjContainer> ghosted_1   = la_factory->buildGhostedLinearObjContainer();
    RCP<LinearObjContainer> ghosted_sys = la_factory->buildGhostedLinearObjContainer();
 
-   la_factory->initializeGhostedContainer(LinearObjContainer::X,*ghosted_0);
-   la_factory->initializeGhostedContainer(LinearObjContainer::X,*ghosted_1);
+   la_factory->initializeGhostedContainer(LinearObjContainer::F,*ghosted_0);
+   la_factory->initializeGhostedContainer(LinearObjContainer::F,*ghosted_1);
    la_factory->initializeGhostedContainer(LinearObjContainer::F | LinearObjContainer::Mat,*ghosted_sys);
 
    RCP<BLOC> b_0   = rcp_dynamic_cast<BLOC>(ghosted_0);
    RCP<BLOC> b_1   = rcp_dynamic_cast<BLOC>(ghosted_1);
    RCP<BLOC> b_sys = rcp_dynamic_cast<BLOC>(ghosted_sys);
 
-   TEST_ASSERT(!Teuchos::is_null(b_0->get_x()));
-   TEST_ASSERT(!Teuchos::is_null(b_1->get_x()));
+   TEST_ASSERT(!Teuchos::is_null(b_0->get_f()));
+   TEST_ASSERT(!Teuchos::is_null(b_1->get_f()));
    TEST_ASSERT(!Teuchos::is_null(b_sys->get_f()));
    TEST_ASSERT(!Teuchos::is_null(b_sys->get_A()));
 
-   Thyra::assign(b_0->get_x().ptr(),0.0); // put some garbage in the systems
-   Thyra::assign(b_1->get_x().ptr(),0.0); // put some garbage in the systems
+   Thyra::assign(b_0->get_f().ptr(),0.0); // put some garbage in the systems
+   Thyra::assign(b_1->get_f().ptr(),0.0); // put some garbage in the systems
    Thyra::assign(b_sys->get_f().ptr(),-3.0); // put some garbage in the systems
 
    for(int i=0;i<numBlocks;i++)
@@ -676,8 +676,8 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, node_cell)
    //   3. Set remotely
 
    if(myRank==0) {   
-      RCP<Thyra::VectorBase<double> > x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_x())->getNonconstVectorBlock(0);
-      RCP<Thyra::VectorBase<double> > x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_x())->getNonconstVectorBlock(0);
+      RCP<Thyra::VectorBase<double> > x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_f())->getNonconstVectorBlock(0);
+      RCP<Thyra::VectorBase<double> > x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_f())->getNonconstVectorBlock(0);
 
       Teuchos::ArrayRCP<double> data_0,data_1;
       rcp_dynamic_cast<SpmdVectorBase<double> >(x_0)->getNonconstLocalData(Teuchos::ptrFromRef(data_0)); 
@@ -695,8 +695,8 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, node_cell)
       data_1[5] = 2.0; // GID = 5
 
       {
-         x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_x())->getNonconstVectorBlock(1);
-         x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_x())->getNonconstVectorBlock(1);
+         x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_f())->getNonconstVectorBlock(1);
+         x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_f())->getNonconstVectorBlock(1);
 
          rcp_dynamic_cast<SpmdVectorBase<double> >(x_0)->getNonconstLocalData(Teuchos::ptrFromRef(data_0)); 
          rcp_dynamic_cast<SpmdVectorBase<double> >(x_1)->getNonconstLocalData(Teuchos::ptrFromRef(data_1)); 
@@ -705,8 +705,8 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, node_cell)
       }
    }
    else if(myRank==1) {
-      RCP<Thyra::VectorBase<double> > x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_x())->getNonconstVectorBlock(0);
-      RCP<Thyra::VectorBase<double> > x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_x())->getNonconstVectorBlock(0);
+      RCP<Thyra::VectorBase<double> > x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_f())->getNonconstVectorBlock(0);
+      RCP<Thyra::VectorBase<double> > x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_f())->getNonconstVectorBlock(0);
 
       Teuchos::ArrayRCP<double> data_0,data_1;
       rcp_dynamic_cast<SpmdVectorBase<double> >(x_0)->getNonconstLocalData(Teuchos::ptrFromRef(data_0)); 
@@ -727,10 +727,10 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, node_cell)
       TEUCHOS_ASSERT(false);
 
    out << "LOCAL " << std::endl;
-   b_0->get_x()->describe(out,Teuchos::VERB_HIGH);
+   b_0->get_f()->describe(out,Teuchos::VERB_HIGH);
    out << std::endl;
    out << "GLOBAL " << std::endl;
-   b_1->get_x()->describe(out,Teuchos::VERB_HIGH);
+   b_1->get_f()->describe(out,Teuchos::VERB_HIGH);
    out << std::endl;
 
    // run test for conditions

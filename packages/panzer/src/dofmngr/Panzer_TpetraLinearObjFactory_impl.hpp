@@ -207,8 +207,8 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
    const ContainerType & t_globalBCRows = Teuchos::dyn_cast<const ContainerType>(globalBCRows); 
    ContainerType & t_ghosted = Teuchos::dyn_cast<ContainerType>(ghostedObjs); 
 
-   TEUCHOS_ASSERT(!Teuchos::is_null(t_localBCRows.get_x()));
-   TEUCHOS_ASSERT(!Teuchos::is_null(t_globalBCRows.get_x()));
+   TEUCHOS_ASSERT(!Teuchos::is_null(t_localBCRows.get_f()));
+   TEUCHOS_ASSERT(!Teuchos::is_null(t_globalBCRows.get_f()));
    
    // pull out jacobian and vector
    Teuchos::RCP<CrsMatrixType> A = t_ghosted.get_A();
@@ -216,8 +216,8 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
    if(adjustX) f = t_ghosted.get_x();
    Teuchos::ArrayRCP<double> f_array = f!=Teuchos::null ? f->get1dViewNonConst() : Teuchos::null;
 
-   const VectorType & local_bcs  = *(t_localBCRows.get_x());
-   const VectorType & global_bcs = *(t_globalBCRows.get_x());
+   const VectorType & local_bcs  = *(t_localBCRows.get_f());
+   const VectorType & global_bcs = *(t_globalBCRows.get_f());
    Teuchos::ArrayRCP<const double> local_bcs_array = local_bcs.get1dView();
    Teuchos::ArrayRCP<const double> global_bcs_array = global_bcs.get1dView();
 

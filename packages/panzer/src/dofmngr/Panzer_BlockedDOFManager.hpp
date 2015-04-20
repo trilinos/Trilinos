@@ -40,8 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_BlockedDOFManager_decl_hpp__
-#define __Panzer_BlockedDOFManager_decl_hpp__
+#ifndef __Panzer_BlockedDOFManager_hpp__
+#define __Panzer_BlockedDOFManager_hpp__
 
 #include <map>
 
@@ -317,7 +317,7 @@ public:
      *   3. initializes the connectivity
      *   4. calls initComplete
      */
-   virtual void buildGlobalUnknowns(); // ?
+   virtual void buildGlobalUnknowns(); 
 
    /** build the global unknown numberings
      *   1. this builds the pattens
@@ -335,10 +335,10 @@ public:
      *       to notify interested parties of possible changes to the unknown structure
      *       and CRS matrix graph.
      */
-   virtual void buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & geomPattern); // ?
+   virtual void buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & geomPattern); 
 
    /** This method simply builds the global unknowns by using the passed in global indexers.
-     * The internal connection manager must for the underlying connection manager for all
+     * The internal connection manager must use the underlying connection manager for all
      * the global indexers. Finally only global indexers of type
      * <code>DOFManager</code> can be used at the moment.
      *

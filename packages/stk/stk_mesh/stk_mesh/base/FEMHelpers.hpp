@@ -111,6 +111,22 @@ Entity declare_element_edge( BulkData & mesh ,
                                const unsigned local_edge_id ,
                                Part * part = NULL );
 
+/** \brief finds oridinal and permutation of an entity relative to a parent entity
+ *
+ * This assumes parent is no higher rank than element and no less than edge and
+ * that child is of less rank than parent.
+ *
+ *
+ */
+std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> get_ordinal_and_permutation(stk::mesh::BulkData& mesh, stk::mesh::Entity parent_entity, stk::mesh::EntityRank to_rank, stk::mesh::EntityVector &nodes_of_sub_rank);
+
+/** \brief declares relation from an element to an entity of lower rank based on nodes that the entity contains
+ *
+ *
+ *
+ */
+stk::mesh::Entity declare_element_to_sub_topology_with_nodes(stk::mesh::BulkData &mesh, stk::mesh::Entity elem, stk::mesh::EntityVector &sub_topology_nodes,
+		        stk::mesh::EntityId global_sub_topology_id, stk::mesh::EntityRank to_rank, stk::mesh::Part &part);
 
 /**
  * Given an entity, subcell_rank, and subcell_id, return the nodes

@@ -358,7 +358,7 @@ namespace panzer {
     TEST_ASSERT(counter!=Teuchos::null);
 
     out << "evaluated" << std::endl;
-    RCP<Thyra::VectorBase<double> > count = Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(counter,true)->get_x_th();
+    RCP<Thyra::VectorBase<double> > count = Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(counter,true)->get_f_th();
     RCP<Thyra::VectorBase<double> > values = Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(global,true)->get_f_th();
 
     TEST_ASSERT(count!=Teuchos::null);

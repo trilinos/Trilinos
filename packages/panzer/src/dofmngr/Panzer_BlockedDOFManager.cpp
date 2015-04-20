@@ -44,7 +44,7 @@
 
 #include "Panzer_Traits.hpp"
 
-#include "Panzer_BlockedDOFManager_decl.hpp"
+#include "Panzer_BlockedDOFManager.hpp"
 #include "Panzer_BlockedDOFManager_impl.hpp"
 
 template class panzer::BlockedDOFManager<int,int>;

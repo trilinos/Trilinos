@@ -46,6 +46,7 @@
 #else
 #  include <Teuchos_DefaultSerialComm.hpp>
 #endif // HAVE_MPI
+#include <Teuchos_CommandLineProcessor.hpp>
 
 using Teuchos::Comm;
 using Teuchos::RCP;
@@ -73,25 +74,11 @@ kokkosNorm (const RV& norms, const XMV& X, const EWhichNorm whichNorm)
   }
 }
 
-template<class RV, class XMV>
-void
-kokkosNorm (const RV& norms, const XMV& X, const size_t j,
-            const EWhichNorm whichNorm)
-{
-  if (whichNorm == TPETRAKERNELS_TEST_NORM_INF) {
-    KokkosBlas::nrmInf (norms, X, j);
-  } else if (whichNorm == TPETRAKERNELS_TEST_NORM_ONE) {
-    KokkosBlas::nrm1 (norms, X, j);
-  } else if (whichNorm == TPETRAKERNELS_TEST_NORM_TWO) {
-    KokkosBlas::nrm2_squared (norms, X, j);
-  }
-}
-
 } // namespace (anonymous)
 
 template<class Scalar, class Layout, class Device>
 bool
-testFill (std::ostream& out, const bool prvSuccess)
+testFill (std::ostream& out, const int theNumCols, const bool oneCol)
 {
   using std::endl;
   typedef Kokkos::View<Scalar**, Layout, Device> mv_type;
@@ -102,7 +89,7 @@ testFill (std::ostream& out, const bool prvSuccess)
   out << "Testing KokkosBlas::fill" << endl;
 
   const size_type numRows = 10;
-  const size_type numCols = 3;
+  const size_type numCols = static_cast<size_type> (theNumCols);
 
   mv_type X ("X", numRows, numCols);
   typename mv_type::HostMirror X_h = Kokkos::create_mirror_view (X);
@@ -114,7 +101,8 @@ testFill (std::ostream& out, const bool prvSuccess)
     for (size_type i = 0; i < numRows; ++i) {
       if (X_h(i,j) != ATS::zero ()) {
         curSuccess = false;
-        out << "    FAILED: X_h(" << i << "," << j << ") = " << X_h(i,j) << " != " << ATS::zero () << endl;
+        out << "    FAILED: X_h(" << i << "," << j << ") = "
+            << X_h(i,j) << " != " << ATS::zero () << endl;
       }
     }
   }
@@ -126,7 +114,40 @@ testFill (std::ostream& out, const bool prvSuccess)
     for (size_type i = 0; i < numRows; ++i) {
       if (X_h(i,j) != ATS::one ()) {
         curSuccess = false;
-        out << "    FAILED: X_h(" << i << "," << j << ") = " << X_h(i,j) << " != " << ATS::one () << endl;
+        out << "    FAILED: X_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << ATS::one () << endl;
+      }
+    }
+  }
+
+  if (oneCol) {
+    out << "  Repeat previous test, one column at a time" << endl;
+
+    out << "    Test fill with zero" << endl;
+    for (size_type j = 0; j < numCols; ++j) {
+      auto X_j = Kokkos::subview (X, Kokkos::ALL (), j);
+      KokkosBlas::fill (X_j, ATS::zero ());
+      Kokkos::deep_copy (X_h, X);
+      for (size_type i = 0; i < numRows; ++i) {
+        if (X_h(i,j) != ATS::zero ()) {
+          curSuccess = false;
+          out << "    FAILED: X_h(" << i << "," << j << ") = "
+              << X_h(i,j) << " != " << ATS::zero () << endl;
+        }
+      }
+    }
+
+    out << "    Test fill with one" << endl;
+    for (size_type j = 0; j < numCols; ++j) {
+      auto X_j = Kokkos::subview (X, Kokkos::ALL (), j);
+      KokkosBlas::fill (X_j, ATS::one ());
+      Kokkos::deep_copy (X_h, X);
+      for (size_type i = 0; i < numRows; ++i) {
+        if (X_h(i,j) != ATS::one ()) {
+          curSuccess = false;
+          out << "    FAILED: X_h(" << i << "," << j << ") = "
+              << X_h(i,j) << " != " << ATS::one () << endl;
+        }
       }
     }
   }
@@ -136,14 +157,14 @@ testFill (std::ostream& out, const bool prvSuccess)
   } else {
     out << "  FAILURE" << endl;
   }
-  return curSuccess && prvSuccess;
+  return curSuccess;
 }
 
 
 
 template<class Scalar, class Layout, class Device>
 bool
-testAxpby (std::ostream& out, const bool prvSuccess)
+testAxpby (std::ostream& out, const int theNumCols)
 {
   using std::endl;
   typedef Kokkos::View<Scalar**, Layout, Device> mv_type;
@@ -154,7 +175,7 @@ testAxpby (std::ostream& out, const bool prvSuccess)
   out << "Testing KokkosBlas::axpby" << endl;
 
   const size_type numRows = 10;
-  const size_type numCols = 3;
+  const size_type numCols = static_cast<size_type> (theNumCols);
 
   mv_type X ("X", numRows, numCols);
   //typename mv_type::HostMirror X_h = Kokkos::create_mirror_view (X);
@@ -396,14 +417,168 @@ testAxpby (std::ostream& out, const bool prvSuccess)
   } else {
     out << "  FAILURE" << endl;
   }
-  return curSuccess && prvSuccess;
+  return curSuccess;
 }
-
 
 
 template<class Scalar, class Layout, class Device>
 bool
-testSum (std::ostream& out, const bool prvSuccess)
+testScal1Arg (std::ostream& out, const int theNumCols)
+{
+  using std::endl;
+  typedef Kokkos::View<Scalar**, Layout, Device> mv_type;
+  typedef typename mv_type::size_type size_type;
+  typedef Kokkos::Details::ArithTraits<Scalar> ATS;
+  bool curSuccess = true;
+
+  out << "Testing KokkosBlas::axpby" << endl;
+
+  const size_type numRows = 4;
+  const size_type numCols = static_cast<size_type> (theNumCols);
+
+  mv_type X ("X", numRows, numCols);
+  typename mv_type::HostMirror X_h = Kokkos::create_mirror_view (X);
+
+  const Scalar ZERO = ATS::zero ();
+  const Scalar ONE = ATS::one ();
+  const Scalar TWO = ONE + ONE;
+  Scalar alpha;
+
+  // Set up the test problem.
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      X_h(i,j) = static_cast<Scalar> (i + 1);
+    }
+  }
+  Kokkos::deep_copy (X, X_h);
+
+  // Test with alpha == 0.
+  alpha = ZERO;
+  out << "  Test scal(X, " << alpha << ", X)" << endl;
+  KokkosBlas::scal (X, alpha, X);
+  // Compare against the right answer.
+  Kokkos::deep_copy (X_h, X);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (X_h(i,j) != ZERO) {
+        curSuccess = false;
+        out << "    FAILED: X_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << ZERO << endl;
+      }
+    }
+  }
+
+  // Set up the test problem.
+  for (size_type j = 0; j < numCols; ++j) {
+    if (numRows > static_cast<size_type> (0)) {
+      X_h(0,j) = ONE;
+    }
+    for (size_type i = 1; i < numRows; ++i) {
+      X_h(i,j) = X_h(i-1,j) + ONE;
+    }
+  }
+  Kokkos::deep_copy (X, X_h);
+
+  // Test with alpha == 1.
+  alpha = ONE;
+  out << "  Test scal(X, " << alpha << ", X)" << endl;
+  KokkosBlas::scal (X, alpha, X);
+  // Compare against the right answer.
+  Kokkos::deep_copy (X_h, X);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (X_h(i,j) != static_cast<Scalar> (i + 1)) {
+        curSuccess = false;
+        out << "    FAILED: X_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << static_cast<Scalar> (i+1) << endl;
+      }
+    }
+  }
+
+  // Set up the test problem.
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      X_h(i,j) = static_cast<Scalar> (i + 1);
+    }
+  }
+  Kokkos::deep_copy (X, X_h);
+
+  // Test with alpha == -1.
+  alpha = -ONE;
+  out << "  Test scal(X, " << alpha << ", X)" << endl;
+  KokkosBlas::scal (X, alpha, X);
+  // Compare against the right answer.
+  Kokkos::deep_copy (X_h, X);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (X_h(i,j) != -static_cast<Scalar> (i + 1)) {
+        curSuccess = false;
+        out << "    FAILED: X_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << static_cast<Scalar> (i+1) << endl;
+      }
+    }
+  }
+
+  // Set up the test problem.
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      X_h(i,j) = static_cast<Scalar> (i + 1);
+    }
+  }
+  Kokkos::deep_copy (X, X_h);
+
+  // Test with alpha == 2.
+  alpha = TWO;
+  out << "  Test scal(X, " << alpha << ", X)" << endl;
+  KokkosBlas::scal (X, alpha, X);
+  // Compare against the right answer.
+  Kokkos::deep_copy (X_h, X);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      if (X_h(i,j) != TWO * static_cast<Scalar> (i + 1)) {
+        curSuccess = false;
+        out << "    FAILED: X_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << TWO * static_cast<Scalar> (i+1) << endl;
+      }
+    }
+  }
+
+  // Set up the test problem.
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      X_h(i,j) = static_cast<Scalar> (i + 1);
+    }
+  }
+  Kokkos::deep_copy (X, X_h);
+
+  // Test with alpha == -2.
+  alpha = -TWO;
+  out << "  Test scal(X, " << alpha << ", X)" << endl;
+  KokkosBlas::scal (X, alpha, X);
+  // Compare against the right answer.
+  Kokkos::deep_copy (X_h, X);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      const Scalar should = -TWO * static_cast<Scalar> (i + 1);
+      if (X_h(i,j) != should) {
+        curSuccess = false;
+        out << "    FAILED: X_h(" << i << "," << j << ") = " << X_h(i,j)
+            << " != " << should << endl;
+      }
+    }
+  }
+
+  if (curSuccess) {
+    out << "  SUCCESS" << endl;
+  } else {
+    out << "  FAILURE" << endl;
+  }
+  return curSuccess;
+}
+
+template<class Scalar, class Layout, class Device>
+bool
+testSum (std::ostream& out, const int theNumCols, const bool oneCol)
 {
   using std::endl;
   typedef Kokkos::View<Scalar**, Layout, Device> mv_type;
@@ -411,15 +586,33 @@ testSum (std::ostream& out, const bool prvSuccess)
   typedef Kokkos::View<Scalar*, Device> sums_type;
   typedef typename mv_type::size_type size_type;
   typedef Kokkos::Details::ArithTraits<Scalar> ATS;
+  const Scalar ZERO = ATS::zero ();
+  const Scalar ONE = ATS::one ();
+  const Scalar TWO = ONE + ONE;
+  const Scalar THREE = TWO + ONE;
+  const Scalar FOUR = THREE + ONE;
+  const Scalar TEN = ONE + TWO + THREE + FOUR;
   bool curSuccess = true;
 
   out << "Testing KokkosBlas::sum" << endl;
 
   const size_type numRows = 4;
-  const size_type numCols = 3;
+  const size_type numCols = static_cast<size_type> (theNumCols);
 
   mv_type X ("X", numRows, numCols);
   sums_type r ("r", numCols);
+
+  if (X.dimension_0 () != numRows || X.dimension_1 () != numCols) {
+    out << "  FAILED: X should be " << numRows << " x " << numCols
+        << ", but is " << X.dimension_0 () << " x " << X.dimension_1 ()
+        << " instead!" << endl;
+    return false;
+  }
+  if (r.dimension_0 () != numCols) {
+    out << "  FAILED: r should be " << numRows << " x 1, but is "
+        << r.dimension_0 () << " x 1 instead!" << endl;
+    return false;
+  }
 
   typename mv_type::HostMirror X_h = Kokkos::create_mirror_view (X);
   typename sums_type::HostMirror r_h = Kokkos::create_mirror_view (r);
@@ -436,13 +629,68 @@ testSum (std::ostream& out, const bool prvSuccess)
     }
   }
 
+  if (oneCol) {
+    out << "  Repeat previous test, one column at a time" << endl;
+    // Make sure that we get the same result one column at a time, for a
+    // single vector (1-D Views), as we get when processing all the
+    // columns of the multivector at once (2-D Views).
+    for (size_type j = 0; j < numCols; ++j) {
+      auto X_j = Kokkos::subview (X, Kokkos::ALL (), j);
+      auto r_j = Kokkos::subview (r, j);
+      KokkosBlas::sum (r_j, X_j);
+    }
+    Kokkos::deep_copy (r_h, r);
+    for (size_type j = 0; j < numCols; ++j) {
+      if (r_h(j) != ZERO) {
+        curSuccess = false;
+        out << "    FAILED: r_h(" << j << ") = " << r_h(j)
+            << " != " << ZERO << endl;
+      }
+    }
+  }
+
+  {
+    out << "  Test the sum of ones" << endl;
+    Scalar should = ZERO;
+    for (size_type i = 0; i < numRows; ++i) {
+      should += ONE;
+    }
+    KokkosBlas::fill (X, ONE);
+    KokkosBlas::sum (r, X);
+    Kokkos::deep_copy (r_h, r);
+    for (size_type j = 0; j < numCols; ++j) {
+      if (r_h(j) != should) {
+        curSuccess = false;
+        out << "    FAILED: r_h(" << j << ") = " << r_h(j)
+            << " != " << should << endl;
+      }
+    }
+  }
+
+  if (oneCol) {
+    out << "  Repeat previous test, one column at a time" << endl;
+    Scalar should = ZERO;
+    for (size_type i = 0; i < numRows; ++i) {
+      should += ONE;
+    }
+    for (size_type j = 0; j < numCols; ++j) {
+      auto X_j = Kokkos::subview (X, Kokkos::ALL (), j);
+      auto r_j = Kokkos::subview (r, j);
+      KokkosBlas::fill (X_j, ONE);
+      KokkosBlas::sum (r_j, X_j);
+    }
+    Kokkos::deep_copy (r_h, r);
+    for (size_type j = 0; j < numCols; ++j) {
+      if (r_h(j) != should) {
+        curSuccess = false;
+        out << "    FAILED: r_h(" << j << ") = " << r_h(j)
+            << " != " << should << endl;
+      }
+    }
+  }
+
   // Tetractys test.
   out << "  Test that the sum of [1, 2, 3, 4] is 10" << endl;
-  const Scalar ONE = ATS::one ();
-  const Scalar TWO = ONE + ONE;
-  const Scalar THREE = TWO + ONE;
-  const Scalar FOUR = THREE + ONE;
-  const Scalar TEN = ONE + TWO + THREE + FOUR;
   for (size_type j = 0; j < numCols; ++j) {
     X_h(0,j) = ONE;
     X_h(1,j) = TWO;
@@ -450,8 +698,6 @@ testSum (std::ostream& out, const bool prvSuccess)
     X_h(3,j) = FOUR;
   }
   Kokkos::deep_copy (X, X_h);
-  KokkosBlas::sum (r, X);
-  KokkosBlas::fill (X, ATS::zero ());
   KokkosBlas::sum (r, X);
   Kokkos::deep_copy (r_h, r);
   for (size_type j = 0; j < numCols; ++j) {
@@ -462,9 +708,9 @@ testSum (std::ostream& out, const bool prvSuccess)
     }
   }
 
-#ifdef KOKKOS_HAVE_CXX11
-  if (numCols > 1) {
+  if (oneCol) {
     out << "  Repeat previous test, one column at a time" << endl;
+    KokkosBlas::fill (r, ATS::zero ()); // reset r
     // Make sure that we get the same result one column at a time, for a
     // single vector (1-D Views), as we get when processing all the
     // columns of the multivector at once (2-D Views).
@@ -482,7 +728,6 @@ testSum (std::ostream& out, const bool prvSuccess)
       }
     }
   }
-#endif // KOKKOS_HAVE_CXX11
 
   // Make sure that sum() and nrm1() are different, by changing the
   // tetractys test slightly.
@@ -504,18 +749,40 @@ testSum (std::ostream& out, const bool prvSuccess)
     }
   }
 
+  if (oneCol) {
+    out << "  Repeat previous test, one column at a time" << endl;
+    KokkosBlas::fill (r, ATS::zero ()); // reset r
+    // Make sure that we get the same result one column at a time, for a
+    // single vector (1-D Views), as we get when processing all the
+    // columns of the multivector at once (2-D Views).
+    for (size_type j = 0; j < numCols; ++j) {
+      auto X_j = Kokkos::subview (X, Kokkos::ALL (), j);
+      auto r_j = Kokkos::subview (r, j);
+      KokkosBlas::sum (r_j, X_j);
+    }
+    Kokkos::deep_copy (r_h, r);
+    for (size_type j = 0; j < numCols; ++j) {
+      if (r_h(j) != TWO) {
+        curSuccess = false;
+        out << "    FAILED: r_h(" << j << ") = " << r_h(j)
+            << " != " << TWO << endl;
+      }
+    }
+  }
+
   if (curSuccess) {
     out << "  SUCCESS" << endl;
   } else {
     out << "  FAILURE" << endl;
   }
-  return curSuccess && prvSuccess;
+  return curSuccess;
 }
 
 
 template<class Scalar, class Layout, class Device>
 bool
-testAnyNorm (std::ostream& out, const EWhichNorm whichNorm, const bool prvSuccess)
+testAnyNorm (std::ostream& out, const EWhichNorm whichNorm,
+             const int theNumCols)
 {
   using Kokkos::subview;
   using std::endl;
@@ -530,7 +797,7 @@ testAnyNorm (std::ostream& out, const EWhichNorm whichNorm, const bool prvSucces
   bool curSuccess = true;
 
   const size_type numRows = 10;
-  const size_type numCols = 3;
+  const size_type numCols = static_cast<size_type> (theNumCols);
   norms_type X_norms ("X_norms", numCols);
   typename norms_type::HostMirror X_norms_h = Kokkos::create_mirror_view (X_norms);
 
@@ -544,16 +811,18 @@ testAnyNorm (std::ostream& out, const EWhichNorm whichNorm, const bool prvSucces
   }
   out << endl;
 
-  // Norm of an MV with zero rows is zero.
-  out << "  Test that the norm(s) of a(n M)V with zero rows is zero" << endl;
-  {
-    MV X_empty ("X_empty", 0, 1);
-    kokkosNorm<norms_type, MV> (subview (X_norms, pair_type (0, 1)), X_empty, whichNorm);
+  if (numCols != 1) {
+    // Norm of an MV with zero rows is zero.
+    out << "  Test that the norm(s) of a(n M)V with zero rows is zero" << endl;
+    {
+      MV X_empty ("X_empty", 0, 1);
+      kokkosNorm<norms_type, MV> (subview (X_norms, pair_type (0, 1)), X_empty, whichNorm);
 
-    Kokkos::deep_copy (X_norms_h, X_norms);
-    if (X_norms_h(0) != ATM::zero ()) {
-      curSuccess = false;
-      out << "    FAILED" << endl;
+      Kokkos::deep_copy (X_norms_h, X_norms);
+      if (X_norms_h(0) != ATM::zero ()) {
+        curSuccess = false;
+        out << "    FAILED" << endl;
+      }
     }
   }
 
@@ -599,7 +868,8 @@ testAnyNorm (std::ostream& out, const EWhichNorm whichNorm, const bool prvSucces
     Kokkos::deep_copy (X_norms_h, X_norms);
     if (X_norms_h(0) != ATM::zero ()) {
       curSuccess = false;
-      out << "    FAILED: Norm of a nondegenerate single-column MV full of zeros was not zero" << endl;
+      out << "    FAILED: Norm of a nondegenerate single-column MV "
+        "full of zeros was not zero" << endl;
     }
 
     kokkosNorm<norms_type, MV> (subview (X_norms, pair_type (0, numCols)), X2, whichNorm);
@@ -607,7 +877,8 @@ testAnyNorm (std::ostream& out, const EWhichNorm whichNorm, const bool prvSucces
     for (size_type j = 0; j < numCols; ++j) {
       if (X_norms_h(j) != ATM::zero ()) {
         curSuccess = false;
-        out << "    FAILED: Norm of a nondegenerate multicolumn MV full of zeros was not zero" << endl;
+        out << "    FAILED: Norm of a nondegenerate multicolumn MV "
+          "full of zeros was not zero" << endl;
         break;
       }
     }
@@ -617,13 +888,13 @@ testAnyNorm (std::ostream& out, const EWhichNorm whichNorm, const bool prvSucces
   } else {
     out << "  FAILURE" << endl;
   }
-  return curSuccess && prvSuccess;
+  return curSuccess;
 }
 
 
 template<class Scalar, class Layout, class Device>
 bool
-testNormInf (std::ostream& out, const bool prvSuccess)
+testNormInf (std::ostream& out, const int theNumCols)
 {
   using Kokkos::subview;
   using std::endl;
@@ -637,7 +908,7 @@ testNormInf (std::ostream& out, const bool prvSuccess)
   bool curSuccess = true;
 
   const size_type numRows = 10;
-  const size_type numCols = 3;
+  const size_type numCols = static_cast<size_type> (theNumCols);
   norms_type X_norms ("X_norms", numCols);
   typename norms_type::HostMirror X_norms_h =
     Kokkos::create_mirror_view (X_norms);
@@ -714,13 +985,13 @@ testNormInf (std::ostream& out, const bool prvSuccess)
   } else {
     out << "  FAILURE" << endl;
   }
-  return curSuccess && prvSuccess;
+  return curSuccess;
 }
 
 
 template<class Scalar, class Layout, class Device>
 bool
-testNorm1 (std::ostream& out, const bool prvSuccess)
+testNorm1 (std::ostream& out, const int theNumCols)
 {
   using Kokkos::subview;
   using std::endl;
@@ -734,7 +1005,7 @@ testNorm1 (std::ostream& out, const bool prvSuccess)
   bool curSuccess = true;
 
   const size_type numRows = 10;
-  const size_type numCols = 3;
+  const size_type numCols = static_cast<size_type> (theNumCols);
   norms_type X_norms ("X_norms", numCols);
   typename norms_type::HostMirror X_norms_h =
     Kokkos::create_mirror_view (X_norms);
@@ -800,76 +1071,100 @@ testNorm1 (std::ostream& out, const bool prvSuccess)
   } else {
     out << "  FAILURE" << endl;
   }
-  return curSuccess && prvSuccess;
+  return curSuccess;
 }
 
 template<class Scalar, class Layout, class Device>
 bool
-testMV (std::ostream& out, const bool prvSuccess)
+testMV (std::ostream& out, const int numCols, const bool oneCol)
 {
+  bool success = true;
   bool curSuccess = true;
 
-  curSuccess = testFill<Scalar, Layout, Device> (out, prvSuccess);
+  curSuccess = testFill<Scalar, Layout, Device> (out, numCols, oneCol);
+  success = success && curSuccess;
+
+  // The compiler frowns upon looping with enums, so we cast to int.
   for (int wn = static_cast<int> (TPETRAKERNELS_TEST_NORM_INF);
        wn < static_cast<int> (TPETRAKERNELS_TEST_NORM_INVALID);
        ++wn) {
     const EWhichNorm whichNorm = static_cast<EWhichNorm> (wn);
-    curSuccess = testAnyNorm<Scalar, Layout, Device> (out, whichNorm, curSuccess);
+    curSuccess = testAnyNorm<Scalar, Layout, Device> (out, whichNorm, numCols);
+    success = success && curSuccess;
   }
-  curSuccess = testNorm1<Scalar, Layout, Device> (out, curSuccess);
-  curSuccess = testNormInf<Scalar, Layout, Device> (out, curSuccess);
-  curSuccess = testSum<Scalar, Layout, Device> (out, curSuccess);
-  return curSuccess && prvSuccess;
-}
+  curSuccess = testNorm1<Scalar, Layout, Device> (out, numCols);
+  success = success && curSuccess;
+  curSuccess = testNormInf<Scalar, Layout, Device> (out, numCols);
+  success = success && curSuccess;
+  curSuccess = testSum<Scalar, Layout, Device> (out, numCols, oneCol);
+  success = success && curSuccess;
+  curSuccess = testScal1Arg<Scalar, Layout, Device> (out, numCols);
+  success = success && curSuccess;
 
+  return success;
+}
 
 template<class Scalar, class Device>
 bool
-testOverLayouts (std::ostream& out, const bool prvSuccess)
+testOverLayouts (std::ostream& out, const int numCols, const bool oneCol)
 {
   using std::endl;
   out << endl << "Testing Scalar = " << typeid (Scalar).name () << endl;
   bool curSuccess = true;
+  bool success = true;
 
   out << endl << "Testing LayoutLeft" << endl;
-  curSuccess = testMV<Scalar, Kokkos::LayoutLeft, Device> (out, curSuccess);
+  curSuccess = testMV<Scalar, Kokkos::LayoutLeft, Device> (out, numCols, oneCol);
+  success = success && curSuccess;
   out << endl << "Testing LayoutRight" << endl;
-  curSuccess = testMV<Scalar, Kokkos::LayoutRight, Device> (out, curSuccess);
+  curSuccess = testMV<Scalar, Kokkos::LayoutRight, Device> (out, numCols, oneCol);
+  success = success && curSuccess;
 
-  return curSuccess && prvSuccess;
+  return success;
 }
 
 template<class Device>
 bool
-testOverScalarsAndLayouts (std::ostream& out, const bool prvSuccess)
+testOverScalarsAndLayouts (std::ostream& out, const int numCols,
+                           const bool oneCol, const bool testComplex)
 {
-  const bool testComplex = true;
   bool curSuccess = true;
+  bool success = true;
 
-  curSuccess = testOverLayouts<double, Device> (out, curSuccess);
-  curSuccess = testOverLayouts<float, Device> (out, curSuccess);
-  curSuccess = testOverLayouts<int, Device> (out, curSuccess);
+  curSuccess = testOverLayouts<double, Device> (out, numCols, oneCol);
+  success = success && curSuccess;
+  curSuccess = testOverLayouts<float, Device> (out, numCols, oneCol);
+  success = success && curSuccess;
+  curSuccess = testOverLayouts<int, Device> (out, numCols, oneCol);
+  success = success && curSuccess;
 
   if (testComplex) {
-    curSuccess = testOverLayouts<Kokkos::complex<float>, Device> (out, curSuccess);
-    curSuccess = testOverLayouts<Kokkos::complex<double>, Device> (out, curSuccess);
+    curSuccess = testOverLayouts<Kokkos::complex<float>, Device> (out, numCols, oneCol);
+    success = success && curSuccess;
+    curSuccess = testOverLayouts<Kokkos::complex<double>, Device> (out, numCols, oneCol);
+    success = success && curSuccess;
   }
-  return curSuccess && prvSuccess;
+
+  return success;
 }
 
 bool
-testOverScalarsAndLayoutsAndDevices (std::ostream& out,
-                                     const bool prvSuccess)
+testOverScalarsAndLayoutsAndDevices (std::ostream& out, const int numCols,
+                                     const bool oneCol, const bool testComplex)
 {
   using std::endl;
   bool curSuccess = true;
+  bool success = true;
+
+  out << endl << "Test with numCols=" << numCols << endl << endl;
 
 #ifdef KOKKOS_HAVE_SERIAL
   {
     typedef Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace> device_type;
     if (Kokkos::Serial::is_initialized ()) {
       out << endl << "Testing Serial" << endl;
-      curSuccess = testOverScalarsAndLayouts<device_type> (out, curSuccess);
+      curSuccess = testOverScalarsAndLayouts<device_type> (out, numCols, oneCol, testComplex);
+      success = success && curSuccess;
     } else {
       out << endl << "Serial NOT initialized; skipping test" << endl;
     }
@@ -880,7 +1175,8 @@ testOverScalarsAndLayoutsAndDevices (std::ostream& out,
     typedef Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace> device_type;
     if (Kokkos::OpenMP::is_initialized ()) {
       out << endl << "Testing OpenMP" << endl;
-      curSuccess = testOverScalarsAndLayouts<device_type> (out, curSuccess);
+      curSuccess = testOverScalarsAndLayouts<device_type> (out, numCols, oneCol, testComplex);
+      success = success && curSuccess;
     } else {
       out << endl << "OpenMP NOT initialized; skipping test" << endl;
     }
@@ -891,7 +1187,8 @@ testOverScalarsAndLayoutsAndDevices (std::ostream& out,
     typedef Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace> device_type;
     if (Kokkos::Threads::is_initialized ()) {
       out << endl << "Testing Threads" << endl;
-      curSuccess = testOverScalarsAndLayouts<device_type> (out, curSuccess);
+      curSuccess = testOverScalarsAndLayouts<device_type> (out, numCols, oneCol, testComplex);
+      success = success && curSuccess;
     } else {
       out << endl << "Threads NOT initialized; skipping test" << endl;
     }
@@ -902,7 +1199,8 @@ testOverScalarsAndLayoutsAndDevices (std::ostream& out,
     typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> device_type;
     if (Kokkos::Cuda::is_initialized ()) {
       out << endl << "Testing Cuda,CudaSpace" << endl;
-      curSuccess = testOverScalarsAndLayouts<device_type> (out, curSuccess);
+      curSuccess = testOverScalarsAndLayouts<device_type> (out, numCols, oneCol, testComplex);
+      success = success && curSuccess;
     } else {
       out << endl << "Cuda NOT initialized; skipping test" << endl;
     }
@@ -911,14 +1209,15 @@ testOverScalarsAndLayoutsAndDevices (std::ostream& out,
     typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace> device_type;
     if (Kokkos::Cuda::is_initialized ()) {
       out << endl << "Testing Cuda,CudaUVMSpace" << endl;
-      curSuccess = testOverScalarsAndLayouts<device_type> (out, curSuccess);
+      curSuccess = testOverScalarsAndLayouts<device_type> (out, numCols, oneCol, testComplex);
+      success = success && curSuccess;
     } else {
       out << endl << "Cuda NOT initialized; skipping test" << endl;
     }
   }
 #endif // KOKKOS_HAVE_CUDA
 
-  return curSuccess && prvSuccess;
+  return success;
 }
 
 
@@ -938,9 +1237,36 @@ main (int argc, char* argv[])
 #endif // HAVE_MPI
   const int myRank = comm->getRank ();
 
+  // Number of columns in the 2-D View(s) to test.
+  int numCols = 3;
+  bool oneCol = false;
+  bool testComplex = true;
+
+  Teuchos::CommandLineProcessor cmdp (false, true);
+  cmdp.setOption ("numCols", &numCols,
+                  "Number of columns in the 2-D View(s) to test");
+  cmdp.setOption ("oneCol", "noOneCol", &oneCol, "Whether to test the 1-D View "
+                  "(single-column) versions of the kernels");
+  cmdp.setOption ("testComplex", "noTestComplex", &testComplex,
+                  "Whether to test complex arithmetic");
+  if (cmdp.parse (argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
+    if (myRank == 0) {
+      cout << "TEST FAILED to parse command-line arguments!" << endl;
+    }
+    return EXIT_FAILURE;
+  }
+
+  bool curSuccess = true;
   bool success = true;
 
-  success = testOverScalarsAndLayoutsAndDevices (std::cerr, success);
+  // Always test with numCols=1 first.
+  curSuccess = testOverScalarsAndLayoutsAndDevices (cout, 1, oneCol, testComplex);
+  success = curSuccess && success;
+  if (numCols != 1) {
+    curSuccess = testOverScalarsAndLayoutsAndDevices (cout, numCols,
+                                                      oneCol, testComplex);
+    success = curSuccess && success;
+  }
   if (success) {
     if (myRank == 0) {
       cout << "End Result: TEST PASSED" << endl;

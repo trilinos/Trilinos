@@ -31,74 +31,53 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#ifndef STK_MESH_FIXTURES_RING_FIXTURE_HPP
-#define STK_MESH_FIXTURES_RING_FIXTURE_HPP
-
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stddef.h>                     // for size_t
-#include <unit_tests/BulkDataTester.hpp>   // for BulkData
+#include <sstream>                      // for ostringstream, etc
+#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include <stk_mesh/base/Types.hpp>      // for EntityId, PartVector
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include <vector>                       // for vector
+#include <stk_mesh/base/GetEntities.hpp>
+#include "stk_mesh/base/Types.hpp"      // for BucketVector, PartVector
+#include "stk_unit_test_utils/ioUtils.hpp"
 namespace stk { namespace mesh { class Part; } }
 
+namespace
+{
+//BEGIN_AURA_EXAMPLES
+void expectNumElementsInAura(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption,
+                             unsigned numExpectedElementsInAura)
+{
+    MPI_Comm communicator = MPI_COMM_WORLD;
+    if (stk::parallel_machine_size(communicator) == 2)
+    {
+        stk::mesh::MetaData meta;
+        stk::mesh::BulkData bulk(meta, communicator, autoAuraOption);
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x2", bulk, communicator);
 
-
-
-namespace stk {
-namespace mesh {
-namespace fixtures {
-
-/**
- * Creates a ring mesh (circular loop of elements and nodes). Note that we create
- * a part for each locally owned element. This fixture is 1d, so elements are just lines.
- */
-
-class RingFixture {
- public:
-  const int             m_spatial_dimension;
-  MetaData              m_meta_data;
-  stk::mesh::unit_test::BulkDataTester m_bulk_data;
-  PartVector            m_element_parts ;
-  Part &                m_element_part_extra ;
-  const size_t          m_num_element_per_proc ;
-  std::vector<EntityId> m_node_ids , m_element_ids ;
-  Part &                m_beam_2_part;
-
-  RingFixture( stk::ParallelMachine pm ,
-               unsigned num_element_per_proc = 10 ,
-               bool use_element_parts = false,
-               enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option = stk::mesh::BulkData::AUTO_AURA);
-
-  ~RingFixture() {}
-
-  /**
-   * Generate a simple loop of mesh entities:
-   * node[i] : element[i] : node[ ( i + 1 ) % node.size() ]
-   */
-  void generate_mesh();
-
-  /**
-   * Make sure that element->owner_rank() == element->node[1]->owner_rank()
-   */
-  void fixup_node_ownership(BulkData::modification_optimization mod_optimize = BulkData::MOD_END_SORT);
-
- protected:
-
-  typedef std::multimap<EntityId, int> NodeToProcsMMap;
-  NodeToProcsMMap m_nodes_to_procs;
-
- private:
-
-   RingFixture();
-   RingFixture( const RingFixture & );
-   RingFixture & operator = ( const RingFixture & );
-
-   void fill_node_map(int proc_rank);
-};
-
+        EXPECT_EQ(numExpectedElementsInAura,
+                  stk::mesh::count_selected_entities(meta.aura_part(), bulk.buckets(stk::topology::ELEMENT_RANK)));
+    }
 }
+TEST(StkMeshHowTo, useNoAura)
+{
+    expectNumElementsInAura(stk::mesh::BulkData::NO_AUTO_AURA, 0);
 }
+TEST(StkMeshHowTo, useAutomaticGeneratedAura)
+{
+    expectNumElementsInAura(stk::mesh::BulkData::AUTO_AURA, 1);
 }
+TEST(StkMeshHowTo, useAuraDefaultBehavior)
+{
+    MPI_Comm communicator = MPI_COMM_WORLD;
+    if (stk::parallel_machine_size(communicator) == 2)
+    {
+        stk::mesh::MetaData meta;
+        stk::mesh::BulkData bulk(meta, communicator);
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x2", bulk, communicator);
 
-#endif
+        EXPECT_EQ(1u, stk::mesh::count_selected_entities(meta.aura_part(), bulk.buckets(stk::topology::ELEMENT_RANK)));
+    }
+}
+//END_AURA_EXAMPLES
+}

@@ -5,7 +5,6 @@ cmake \
 -D Trilinos_ENABLE_DEBUG=OFF \
 -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
 -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
--D Trilinos_ENABLE_KokkosClassic:BOOL=OFF \
 -D Trilinos_ENABLE_KokkosCore:BOOL=ON \
 -D Trilinos_ENABLE_KokkosAlgorithms:BOOL=ON \
 -D Trilinos_ENABLE_Xpetra:BOOL=OFF \
@@ -32,7 +31,7 @@ cmake \
 -D CMAKE_CXX_COMPILER:FILEPATH="/home/rppawlo/install/gnu4.8.2/mpich/bin/mpicxx" \
 -D CMAKE_C_COMPILER:FILEPATH="/home/rppawlo/install/gnu4.8.2/mpich/bin/mpicc" \
 -D CMAKE_Fortran_COMPILER:FILEPATH="/home/rppawlo/install/gnu4.8.2/mpich/bin/mpifort" \
--D CMAKE_CXX_FLAGS:STRING="-g -ansi -Wno-long-long -Wno-unused-local-typedefs -Wno-maybe-uninitialized" \
+-D CMAKE_CXX_FLAGS:STRING="-g -Wall" \
 -D CMAKE_C_FLAGS:STRING="" \
 -D CMAKE_Fortran_FLAGS:STRING="" \
 -D Trilinos_ENABLE_CXX11:BOOL=ON \
@@ -45,6 +44,7 @@ cmake \
 -D Trilinos_DEPS_XML_OUTPUT_FILE:FILEPATH="" \
 -D Trilinos_ENABLE_OpenMP:BOOL=ON \
 -D Kokkos_ENABLE_OpenMP:BOOL=ON \
+-D Trilinos_TPL_SYSTEM_INCLUDE_DIRS:BOOL=ON \
 ../Trilinos
 
 ##-D Trilinos_EXTRA_LINK_FLAGS:STRING="-L/usr/lib -lgfortran" \

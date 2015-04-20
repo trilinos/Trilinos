@@ -400,20 +400,20 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, adjustDirichlet)
    RCP<LinearObjContainer> ghosted_1   = la_factory->buildGhostedLinearObjContainer();
    RCP<LinearObjContainer> ghosted_sys = la_factory->buildGhostedLinearObjContainer();
 
-   la_factory->initializeGhostedContainer(LinearObjContainer::X,*ghosted_0);
-   la_factory->initializeGhostedContainer(LinearObjContainer::X,*ghosted_1);
+   la_factory->initializeGhostedContainer(LinearObjContainer::F,*ghosted_0);
+   la_factory->initializeGhostedContainer(LinearObjContainer::F,*ghosted_1);
    la_factory->initializeGhostedContainer(LinearObjContainer::F | LinearObjContainer::Mat,*ghosted_sys);
 
    RCP<LOC> t_0   = rcp_dynamic_cast<LOC>(ghosted_0);
    RCP<LOC> t_1   = rcp_dynamic_cast<LOC>(ghosted_1);
    RCP<LOC> t_sys = rcp_dynamic_cast<LOC>(ghosted_sys);
 
-   Teuchos::ArrayRCP<double> x_0_a = t_0->get_x()->get1dViewNonConst();
-   Teuchos::ArrayRCP<double> x_1_a = t_1->get_x()->get1dViewNonConst();
+   Teuchos::ArrayRCP<double> x_0_a = t_0->get_f()->get1dViewNonConst();
+   Teuchos::ArrayRCP<double> x_1_a = t_1->get_f()->get1dViewNonConst();
    Teuchos::ArrayRCP<double> f_a = t_sys->get_f()->get1dViewNonConst();
 
-   TEST_ASSERT(!Teuchos::is_null(t_0->get_x()));
-   TEST_ASSERT(!Teuchos::is_null(t_1->get_x()));
+   TEST_ASSERT(!Teuchos::is_null(t_0->get_f()));
+   TEST_ASSERT(!Teuchos::is_null(t_1->get_f()));
    TEST_ASSERT(!Teuchos::is_null(t_sys->get_f()));
    TEST_ASSERT(!Teuchos::is_null(t_sys->get_A()));
 

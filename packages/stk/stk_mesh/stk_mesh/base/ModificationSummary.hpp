@@ -32,6 +32,10 @@ public:
     {
     }
 
+    void track_add_to_ghosting(const stk::mesh::Ghosting & ghosts, const std::vector<stk::mesh::EntityProc> & add_send )
+    {
+    }
+
     void track_destroy_relation(stk::mesh::Entity e_from, stk::mesh::Entity e_to, stk::mesh::RelationIdentifier rel)
     {
     }
@@ -101,6 +105,8 @@ public:
     void track_induced_parts(stk::mesh::Entity entity, stk::mesh::Entity e_to, const stk::mesh::PartVector& add_parts, const stk::mesh::PartVector& emptyParts);
 
     void track_change_ghosting(const stk::mesh::Ghosting & ghosts, const std::vector<stk::mesh::EntityProc> & add_send , const std::vector<stk::mesh::EntityKey> & remove_receive );
+
+    void track_add_to_ghosting(const stk::mesh::Ghosting & ghosts, const std::vector<stk::mesh::EntityProc> & add_send );
 
     void track_destroy_relation(stk::mesh::Entity e_from, stk::mesh::Entity e_to, stk::mesh::RelationIdentifier rel);
 

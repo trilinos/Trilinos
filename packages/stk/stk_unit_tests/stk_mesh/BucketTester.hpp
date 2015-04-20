@@ -30,31 +30,51 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+#ifndef _BucketTesterr_hpp_
+#define _BucketTesterr_hpp_
 
-#ifndef unit_test_UnitTestModificationEndWrapper_hpp
-#define unit_test_UnitTestModificationEndWrapper_hpp
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/Bucket.hpp>
 
-namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { namespace unit_test {
 
-// must be in same namespace as BulkData to make friending w/out exposure possible
-
-namespace stk {
-namespace mesh {
-
-class UnitTestModificationEndWrapper
+class BucketTester : public stk::mesh::Bucket
 {
- public:
-  static bool wrap(stk::mesh::BulkData& mesh);
+public:
+
+//    BucketTester(stk::mesh::Bucket& bucket)
+//    {
+//    }
+
+    virtual ~BucketTester()
+    {
+    }
+
+    void my_change_exisiting_connectivity(unsigned bucket_ordinal, stk::mesh::Entity* new_nodes)
+    {
+        this->change_existing_connectivity(bucket_ordinal, new_nodes);
+    }
+
+    void my_change_exisiting_permutation_for_connected_element(unsigned bucket_ordinal_of_lower_ranked_entity,
+            unsigned elem_connectivity_ordinal, stk::mesh::Permutation permut)
+    {
+        this->change_existing_permutation_for_connected_element(bucket_ordinal_of_lower_ranked_entity,
+                elem_connectivity_ordinal, permut);
+    }
+
+    void my_change_exisiting_permutation_for_connected_edge(unsigned bucket_ordinal_of_higher_ranked_entity, unsigned edge_connectivity_ordinal,
+            stk::mesh::Permutation permut)
+    {
+        this->change_existing_permutation_for_connected_edge(bucket_ordinal_of_higher_ranked_entity, edge_connectivity_ordinal, permut);
+    }
+
+    void my_change_exisiting_permutation_for_connected_face(unsigned bucket_ordinal_of_higher_ranked_entity, unsigned face_connectivity_ordinal,
+            stk::mesh::Permutation permut)
+    {
+        this->change_existing_permutation_for_connected_face(bucket_ordinal_of_higher_ranked_entity, face_connectivity_ordinal, permut);
+    }
 };
 
-} // namespace mesh
-
-namespace unit_test {
-
-bool modification_end_wrapper(stk::mesh::BulkData& mesh);
-
-} // namespace unit_test
-
-} // namespace stk
+} } } // namespace stk mesh unit_test
 
 #endif

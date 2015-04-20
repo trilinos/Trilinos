@@ -63,7 +63,7 @@ using stk::mesh::fixtures::RingFixture;
 //----------------------------------------------------------------------
 // Testing for mesh entities without relations
 
-TEST(UnitTestingOfBulkData, testDestroy_nodes)
+void testDestroy_nodes(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( pm );
@@ -82,7 +82,7 @@ TEST(UnitTestingOfBulkData, testDestroy_nodes)
 
   meta.commit();
 
-  BulkData bulk( meta , pm );
+  BulkData bulk( meta , pm, autoAuraOption );
 
   // Ids for all entities (all entities have type 0):
 
@@ -133,6 +133,16 @@ TEST(UnitTestingOfBulkData, testDestroy_nodes)
   }
 }
 
+TEST(UnitTestingOfBulkData, testDestroy_nodes_with_aura)
+{
+    testDestroy_nodes(stk::mesh::BulkData::AUTO_AURA);
+}
+
+TEST(UnitTestingOfBulkData, testDestroy_nodes_without_aura)
+{
+    testDestroy_nodes(stk::mesh::BulkData::NO_AUTO_AURA);
+}
+
 //----------------------------------------------------------------------
 
 void assert_is_destroyed(const BulkData& mesh, const Entity entity )
@@ -166,18 +176,15 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
 
   //------------------------------
   { // No ghosting
-    const bool aura_flag = false ;
-
-    RingFixture mesh( pm , nPerProc , false /* No element parts */ );
+    RingFixture mesh( pm , nPerProc , false /* No element parts */, stk::mesh::BulkData::NO_AUTO_AURA );
     mesh.m_meta_data.commit();
     BulkData& bulk = mesh.m_bulk_data;
 
     bulk.modification_begin();
     mesh.generate_mesh( );
-    ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk,
-                                                           false /*no aura*/));
+    ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk));
 
-    mesh.fixup_node_ownership(false /* regenerate_aura */, BulkData::MOD_END_COMPRESS_AND_SORT);
+    mesh.fixup_node_ownership(BulkData::MOD_END_COMPRESS_AND_SORT);
 
     // This process' first element in the loop
     // if a parallel mesh has a shared node
@@ -214,7 +221,7 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
       ASSERT_TRUE( bulk.destroy_entity( node1 ) );
       node1 = Entity();
     }
-    ASSERT_TRUE( stk::unit_test::modification_end_wrapper(bulk, aura_flag) );
+    ASSERT_TRUE( stk::unit_test::modification_end_wrapper(bulk) );
 
     if ( bulk.is_valid(node0) ) {
       ASSERT_EQ( node0_elements - 1 , bulk.count_relations(node0) );

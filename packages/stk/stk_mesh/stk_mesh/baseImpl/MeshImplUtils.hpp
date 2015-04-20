@@ -442,6 +442,54 @@ bool should_face_be_connected_to_element_side(std::vector<ENTITY_ID> & face_node
     return should_connect;
 }
 
+struct StoreInEntityProcSet {
+    StoreInEntityProcSet(
+            BulkData & mesh_in,
+            std::set<stk::mesh::EntityProc, stk::mesh::EntityLess> & set_in)
+    :mesh(mesh_in)
+    ,myset(set_in) { }
+
+    void operator()(Entity entity) {
+      myset.insert(stk::mesh::EntityProc(entity,proc));
+    }
+
+    BulkData & mesh;
+    std::set<stk::mesh::EntityProc , stk::mesh::EntityLess> & myset;
+    int proc;
+};
+
+struct OnlyGhosts  {
+    OnlyGhosts(BulkData & mesh_in) : mesh(mesh_in) {}
+    bool operator()(Entity entity) {
+        const bool isValid = mesh.is_valid(entity);
+        const bool iDoNotOwnEntity = proc != mesh.parallel_owner_rank(entity);
+        const bool entityIsShared = mesh.in_shared( mesh.entity_key(entity) , proc );
+        return (isValid && iDoNotOwnEntity && !entityIsShared);
+    }
+    BulkData & mesh;
+    int proc;
+};
+
+void send_entity_keys_to_owners(
+  BulkData & mesh ,
+  const std::set< EntityKey > & entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs ,
+        std::set< EntityProc , EntityLess > & entitiesToGhostOntoOtherProcessors );
+
+void comm_sync_send_recv(
+  BulkData & mesh ,
+  std::set< EntityProc , EntityLess > & new_send ,
+  std::set< EntityKey > & new_recv );
+
+void insert_upward_relations(const BulkData& bulk_data, Entity rel_entity,
+                             const EntityRank rank_of_orig_entity,
+                             const int my_rank,
+                             const int share_proc,
+                             std::vector<EntityProc>& send);
+
+void move_unowned_entities_for_owner_to_ghost(
+  stk::mesh::BulkData & mesh ,
+  std::set< stk::mesh::EntityProc , stk::mesh::EntityLess > & entitiesToGhostOntoOtherProcessors);
+
 } // namespace impl
 } // namespace mesh
 } // namespace stk

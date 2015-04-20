@@ -55,25 +55,10 @@ Element_Linear2D::Element_Linear2D(std::vector<size_type> global_node_ids,
   m_local_element_index(local_element_index),
   m_global_node_ids(global_node_ids),
   m_owns_node(4, false)
-
-/*,
-  m_coords_mem(Teuchos::arcp<double>(4*2)),
-  m_phi_mem(Teuchos::arcp<double>(4*4)),
-  m_grad_phi_mem(Teuchos::arcp<double>(4*4*2)),
-  m_grad_phi_xy_mem(Teuchos::arcp<double>(4*4*2)),
-  m_det_jacobian_mem(Teuchos::arcp<double>(4)),
-  m_weights_mem(Teuchos::arcp<double>(4)),
-  m_coords(&(m_coords_mem[0]),4,2),
-  m_phi(&(m_phi_mem[0]),4,4),
-  m_grad_phi(&(m_grad_phi_mem[0]),4,4,2),
-  m_grad_phi_xy(&(m_grad_phi_xy_mem[0]),4,4,2),
-  m_det_jacobian(&(m_det_jacobian_mem[0]),4),
-  m_weights(&(m_weights_mem[0]),4)
-*/
 {
- int numQPs = this->numQuadraturePoints();
- int numNodes = this->numNodes(); 
- int numDims = 2;
+ const int numQPs = this->numQuadraturePoints();
+ const int numNodes = this->numNodes(); 
+ const int numDims = 2;
  m_coords = Kokkos::View<double**,PHX::Device>("mcoords", numNodes,numDims);
  m_phi = Kokkos::View<double**,PHX::Device>("phi", numQPs, numNodes);
  m_grad_phi = Kokkos::View<double***,PHX::Device>("m_grad_phi", numQPs, numNodes, numDims);
@@ -125,10 +110,10 @@ Element_Linear2D::Element_Linear2D(std::vector<size_type> global_node_ids,
   
   
 
-   for (std::size_t qp=0; qp < this->numQuadraturePoints(); ++qp)
-     for (std::size_t node=0; node < this->numNodes(); ++node)
-       for (std::size_t dim=0; dim < numDims; ++dim)
- 	m_grad_phi_xy(qp,node,dim) = 
+  for (int qp=0; qp < this->numQuadraturePoints(); ++qp)
+    for (int node=0; node < this->numNodes(); ++node)
+      for (int dim=0; dim < numDims; ++dim)
+	m_grad_phi_xy(qp,node,dim) = 
  	  (1.0 / m_det_jacobian(qp)) * m_grad_phi(qp,node,dim);
 
 }

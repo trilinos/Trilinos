@@ -188,10 +188,10 @@ Entity declare_element_to_entity(BulkData & mesh, Entity elem, Entity entity,
     if(0 == num_side_nodes)
     {
         Permutation node_perm = stk::mesh::Permutation::INVALID_PERMUTATION;
-        Entity const *elem_nodes = mesh.begin_nodes(elem);
+        Entity const *elem_nodes_local = mesh.begin_nodes(elem);
         for(unsigned i = 0; i < entity_top.num_nodes(); ++i)
         {
-            Entity node = elem_nodes[entity_node_ordinals[i]];
+            Entity node = elem_nodes_local[entity_node_ordinals[i]];
             mesh.declare_relation(entity, node, i, node_perm, ordinal_scratch, part_scratch);
         }
     }
@@ -275,6 +275,83 @@ Entity declare_element_edge(
         declare_element_edge(mesh, elem, edge, local_edge_id, part);
     }
     return edge;
+}
+
+
+std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation>
+get_ordinal_and_permutation(stk::mesh::BulkData& mesh, stk::mesh::Entity parent_entity, stk::mesh::EntityRank to_rank, stk::mesh::EntityVector &nodes_of_sub_rank)
+{
+    std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation = std::make_pair(stk::mesh::INVALID_CONNECTIVITY_ORDINAL,
+            stk::mesh::INVALID_PERMUTATION);
+
+    unsigned nodes_of_sub_rank_size = nodes_of_sub_rank.size();
+
+    const Entity* elemNodes = mesh.begin_nodes(parent_entity);
+    stk::topology elemTopology = mesh.bucket(parent_entity).topology();
+    unsigned num_entities_of_sub_topology = elemTopology.num_sub_topology(to_rank);
+    unsigned max_nodes_possible = 100;
+    stk::mesh::EntityVector nodes_of_sub_topology;
+    nodes_of_sub_topology.reserve(max_nodes_possible);
+    std::pair<bool, unsigned> result;
+
+    for (unsigned i=0;i<num_entities_of_sub_topology;++i)
+    {
+        stk::topology sub_topology = elemTopology.sub_topology(to_rank, i);
+        unsigned num_nodes = sub_topology.num_nodes();
+
+        if (num_nodes !=  nodes_of_sub_rank_size)
+        {
+          continue;
+        }
+
+        ThrowRequireMsg(num_nodes == nodes_of_sub_rank.size(), "AHA! num_nodes != nodes_of_sub_rank.size()");
+        ThrowRequireMsg(num_nodes<=max_nodes_possible, "Program error. Exceeded expected array dimensions. Contact sierra-help for support.");
+        nodes_of_sub_topology.resize(num_nodes);
+        elemTopology.sub_topology_nodes(elemNodes, to_rank, i, nodes_of_sub_topology.begin());
+        if (!elemTopology.is_shell() || (to_rank == stk::topology::EDGE_RANK))
+        {
+           result = sub_topology.equivalent(nodes_of_sub_rank, nodes_of_sub_topology);
+        }
+        else
+        {
+           result = sub_topology.equivalent(nodes_of_sub_rank, nodes_of_sub_topology);
+           if (result.first && result.second >= sub_topology.num_positive_permutations())
+           {
+        	   result.first = false;
+           }
+        }
+
+        if (result.first == true)
+        {
+            ordinalAndPermutation.first = static_cast<stk::mesh::ConnectivityOrdinal>(i);
+            ordinalAndPermutation.second = static_cast<stk::mesh::Permutation>(result.second);
+        }
+    }
+
+    return ordinalAndPermutation;
+}
+
+stk::mesh::Entity declare_element_to_sub_topology_with_nodes(stk::mesh::BulkData &mesh, stk::mesh::Entity elem, stk::mesh::EntityVector &sub_topology_nodes,
+        stk::mesh::EntityId global_sub_topology_id, stk::mesh::EntityRank to_rank, stk::mesh::Part &part)
+{
+    std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation = get_ordinal_and_permutation(mesh, elem, to_rank, sub_topology_nodes);
+
+    if ((ordinalAndPermutation.first == stk::mesh::ConnectivityOrdinal::INVALID_CONNECTIVITY_ORDINAL)
+    		|| (ordinalAndPermutation.second == stk::mesh::Permutation::INVALID_PERMUTATION))
+    {
+    	stk::mesh::Entity invalid;
+    	invalid = stk::mesh::Entity::InvalidEntity;
+    	return invalid;
+    }
+
+    stk::mesh::Entity side = mesh.declare_entity(to_rank, global_sub_topology_id, part);
+    for (unsigned i=0;i<sub_topology_nodes.size();++i)
+    {
+        mesh.declare_relation(side, sub_topology_nodes[i], i);
+    }
+
+    mesh.declare_relation(elem, side, ordinalAndPermutation.first, ordinalAndPermutation.second);
+    return side;
 }
 
 stk::topology get_subcell_nodes(const BulkData& mesh, const Entity entity,

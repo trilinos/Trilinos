@@ -322,7 +322,8 @@ ConnectivityOrdinal& operator++(ConnectivityOrdinal& ord)
 
 enum Permutation
 {
-  INVALID_PERMUTATION = 65536 // max-uint16_t because it is stored in Relation::attribute, which is bit-masked by getOrientation
+  DEFAULT_PERMUTATION = 0,
+  INVALID_PERMUTATION = 128
 };
 
 enum ConnectivityId

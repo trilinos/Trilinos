@@ -32,7 +32,6 @@
 // 
 
 #include <stddef.h>                     // for size_t
-#include <boost/foreach.hpp>            // for auto_any_base, etc
 #include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
 #include <gtest/gtest.h>
 #include <vector>                       // for vector, operator==
@@ -145,7 +144,7 @@ TEST( UnitTestChangeEntityId, change_id_large )
 
   const BucketVector & node_buckets = mesh.buckets(stk::topology::NODE_RANK);
 
-  BOOST_FOREACH(Bucket * b, node_buckets) {
+  for(Bucket * b : node_buckets) {
     int* nodal_field = stk::mesh::field_data( simple_nodal_field, *b );
     for (size_t i =0; i<b->size(); ++i) {
       nodal_field[i] = 1;
@@ -156,7 +155,7 @@ TEST( UnitTestChangeEntityId, change_id_large )
 
   std::vector<EntityId> old_ids;
   old_ids.reserve(num_elems);
-  BOOST_FOREACH(Bucket * b, elem_buckets) {
+  for(Bucket * b : elem_buckets) {
     for (size_t i =0; i<b->size(); ++i) {
       Entity e = (*b)[i];
       old_ids.push_back(mesh.identifier(e));
@@ -171,7 +170,7 @@ TEST( UnitTestChangeEntityId, change_id_large )
 
   std::vector<EntityId> new_ids_minus_num_elems;
   new_ids_minus_num_elems.reserve(num_elems);
-  BOOST_FOREACH(Bucket * b, elem_buckets) {
+  for(Bucket * b : elem_buckets) {
     for (size_t i =0; i<b->size(); ++i) {
       Entity e = (*b)[i];
       new_ids_minus_num_elems.push_back(mesh.identifier(e)-num_elems);
@@ -180,7 +179,7 @@ TEST( UnitTestChangeEntityId, change_id_large )
 
   EXPECT_TRUE(old_ids == new_ids_minus_num_elems);
 
-  BOOST_FOREACH(Bucket * b, node_buckets) {
+  for(Bucket * b : node_buckets) {
     int* nodal_field = stk::mesh::field_data( simple_nodal_field, *b );
     for (size_t i =0; i<b->size(); ++i) {
       EXPECT_TRUE( nodal_field[i] == 1);

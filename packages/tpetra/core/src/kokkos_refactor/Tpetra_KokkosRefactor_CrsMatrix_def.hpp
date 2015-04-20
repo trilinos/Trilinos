@@ -4310,7 +4310,7 @@ namespace Tpetra {
 
     // The kernels do not allow input or output with nonconstant stride.
     if (! X_in.isConstantStride () && importer.is_null ()) {
-      X = rcp (new MV (X_in)); // Constant-stride copy of X_in
+      X = rcp (new MV (X_in, Teuchos::Copy)); // Constant-stride copy of X_in
     } else {
       X = rcpFromRef (X_in); // Reference to X_in
     }
@@ -4344,6 +4344,12 @@ namespace Tpetra {
     // are permuted or belong to other processors.  We will compute
     // solution into the to-be-exported MV; get a view.
     if (importer != null) {
+      // FIXME (mfh 18 Apr 2015) Temporary fix suggested by Clark
+      // Dohrmann on Fri 17 Apr 2015.  At some point, we need to go
+      // back and figure out why this helps.  importMV_ SHOULD be
+      // completely overwritten in the localMultiply() call below,
+      // because beta == ZERO there.
+      importMV_->putScalar (ZERO);
       // Do the local computation.
       this->template localMultiply<Scalar, Scalar> (*X, *importMV_, mode,
                                                     alpha, ZERO);

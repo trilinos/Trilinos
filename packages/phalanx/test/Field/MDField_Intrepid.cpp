@@ -83,7 +83,6 @@ namespace phalanx_test {
     PHX::InitializeKokkosDevice();
 
     RCP<DataLayout> dl = rcp(new MDALayout<Cell,Point,Dim>(10,4,3));
-    typedef PHX::MDField<double,Cell,Node>::size_type size_type;
 
     // runtime non-const
     {

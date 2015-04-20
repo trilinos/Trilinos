@@ -478,16 +478,16 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, adjustDirichlet)
    RCP<LinearObjContainer> ghosted_1   = la_factory->buildGhostedLinearObjContainer();
    RCP<LinearObjContainer> ghosted_sys = la_factory->buildGhostedLinearObjContainer();
 
-   la_factory->initializeGhostedContainer(LinearObjContainer::X,*ghosted_0);
-   la_factory->initializeGhostedContainer(LinearObjContainer::X,*ghosted_1);
+   la_factory->initializeGhostedContainer(LinearObjContainer::F,*ghosted_0);
+   la_factory->initializeGhostedContainer(LinearObjContainer::F,*ghosted_1);
    la_factory->initializeGhostedContainer(LinearObjContainer::F | LinearObjContainer::Mat,*ghosted_sys);
 
    RCP<EpetraLinearObjContainer> e_0   = rcp_dynamic_cast<EpetraLinearObjContainer>(ghosted_0);
    RCP<EpetraLinearObjContainer> e_1   = rcp_dynamic_cast<EpetraLinearObjContainer>(ghosted_1);
    RCP<EpetraLinearObjContainer> e_sys = rcp_dynamic_cast<EpetraLinearObjContainer>(ghosted_sys);
 
-   TEST_ASSERT(!Teuchos::is_null(e_0->get_x()));
-   TEST_ASSERT(!Teuchos::is_null(e_1->get_x()));
+   TEST_ASSERT(!Teuchos::is_null(e_0->get_f()));
+   TEST_ASSERT(!Teuchos::is_null(e_1->get_f()));
    TEST_ASSERT(!Teuchos::is_null(e_sys->get_f()));
    TEST_ASSERT(!Teuchos::is_null(e_sys->get_A()));
 
@@ -501,27 +501,27 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, adjustDirichlet)
 
    if(myRank==0) {   
       // case 0
-      (*(e_0->get_x()))[0] = 1.0; // GID = 0
-      (*(e_1->get_x()))[0] = 1.0; // GID = 0
+      (*(e_0->get_f()))[0] = 1.0; // GID = 0
+      (*(e_1->get_f()))[0] = 1.0; // GID = 0
 
       // case 1
-      (*(e_0->get_x()))[2] = 1.0; // GID = 2
-      (*(e_1->get_x()))[2] = 2.0; // GID = 2
+      (*(e_0->get_f()))[2] = 1.0; // GID = 2
+      (*(e_1->get_f()))[2] = 2.0; // GID = 2
 
       // case 2
-      (*(e_1->get_x()))[5] = 2.0; // GID = 5
+      (*(e_1->get_f()))[5] = 2.0; // GID = 5
    }
    else if(myRank==1) {
       // case 0
-      (*(e_0->get_x()))[3] = 1.0; // GID = 9
-      (*(e_1->get_x()))[3] = 1.0; // GID = 9
+      (*(e_0->get_f()))[3] = 1.0; // GID = 9
+      (*(e_1->get_f()))[3] = 1.0; // GID = 9
 
       // case 1
-      (*(e_0->get_x()))[0] = 1.0; // GID = 2
-      (*(e_1->get_x()))[0] = 2.0; // GID = 2
+      (*(e_0->get_f()))[0] = 1.0; // GID = 2
+      (*(e_1->get_f()))[0] = 2.0; // GID = 2
 
       // case 2
-      (*(e_1->get_x()))[6] = 2.0; // GID = 4
+      (*(e_1->get_f()))[6] = 2.0; // GID = 4
    }
    else 
       TEUCHOS_ASSERT(false);
