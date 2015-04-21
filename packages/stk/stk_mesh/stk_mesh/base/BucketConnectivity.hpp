@@ -1137,7 +1137,6 @@ private:
         m_targets[i] = to;
         m_ordinals[i] = ordinal;
         if (has_permutation()) {
-          ThrowAssert(permutation == m_permutations[i-1u]);
           m_permutations[i] = permutation;
         }
         remove_connectivity(bucket_ordinal, to, ordinal);

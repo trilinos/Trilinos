@@ -666,7 +666,7 @@ public:
   size_t total_field_data_footprint(EntityRank rank) const;
 
   // Print all mesh info
-  void dump_all_mesh_info(std::ostream& out = std::cout) const;
+  void dump_all_mesh_info(std::ostream& out, bool parallel_barriers = false) const;
 
   // memoized version
   BucketVector const& get_buckets(EntityRank rank, Selector const& selector) const;
@@ -922,6 +922,7 @@ protected: //functions
 
 private: //functions
 
+  void internal_dump_all_mesh_info(std::ostream& out = std::cout) const;
   void generate_ghosting_receive_list(const stk::mesh::Ghosting &ghosting, const std::vector <EntityKey> &remove_receive,
     std::set<EntityKey> &entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs);
 
@@ -1198,7 +1199,7 @@ private: // data
   bool m_did_any_shared_entity_change_parts;
   stk::EmptyModificationSummary m_modSummary;
   // If needing debug info for modifications, comment out above line and uncomment line below
-  // stk::ModificationSummary m_modSummary;
+  //stk::ModificationSummary m_modSummary;
 
 };
 

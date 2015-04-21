@@ -1372,13 +1372,35 @@ void BulkData::reorder_buckets_callback(EntityRank rank, const std::vector<unsig
   m_field_data_manager->reorder_bucket_field_data(rank, fields, reorderedBucketIds);
 }
 
-void BulkData::dump_all_mesh_info(std::ostream& out) const
+void BulkData::dump_all_mesh_info(std::ostream& out, bool parallel_barriers) const
+{
+    if (parallel_barriers) {
+        const int p_size = this->parallel_size();
+        const int p_rank = this->parallel_rank();
+        for (int proc=0 ; proc<p_size ; ++proc) {
+            MPI_Barrier(this->parallel());
+            if (p_rank == proc) {
+                out << "PROCESSOR " << proc << " ------------------------\n";
+                this->internal_dump_all_mesh_info(out);
+            }
+        }
+    }
+    else
+    {
+        internal_dump_all_mesh_info(out);
+    }
+}
+
+void BulkData::internal_dump_all_mesh_info(std::ostream& out) const
 {
   // Dump output for metadata first
   m_mesh_meta_data.dump_all_meta_info(out);
 
   out << "BulkData "
       << " info...\n";
+
+  out << "ConnectivityMap = " << "\n";
+  out << this->connectivity_map();
 
   const FieldVector& all_fields = m_mesh_meta_data.get_fields();
 
@@ -1413,9 +1435,10 @@ void BulkData::dump_all_mesh_info(std::ostream& out) const
             Permutation const *permutations = bucket->begin_permutations(b_ord, r);
             const int num_conn         = bucket->num_connectivity(b_ord, r);
             for (int c_itr = 0; c_itr < num_conn; ++c_itr) {
-              out << "          [" << ordinals[c_itr] << "]  " << entity_key(entities[c_itr]) << "  ";
+              Entity target_entity = entities[c_itr];
+              out << "          [" << ordinals[c_itr] << "]  " << entity_key(target_entity) << "  ";
               if (r != stk::topology::NODE_RANK) {
-                out << this->bucket(entities[c_itr]).topology();
+                out << this->bucket(target_entity).topology();
                 if (b_rank != stk::topology::NODE_RANK) {
                     out << " permutation index " << permutations[c_itr];
                 }

@@ -233,6 +233,16 @@ struct ConnectivityMap
   map_type m_map;
 };
 
+inline std::ostream & operator<<(std::ostream &out, const ConnectivityMap & map)
+{
+   out << "From\\To:  NODE     EDGE     FACE     ELEM\n";
+   out << "NODE   :  "; for (int i=0 ; i<4 ; ++i) { out << map.m_map[0][i] << "  "; } out << "\n";
+   out << "EDGE   :  "; for (int i=0 ; i<4 ; ++i) { out << map.m_map[1][i] << "  "; } out << "\n";
+   out << "FACE   :  "; for (int i=0 ; i<4 ; ++i) { out << map.m_map[2][i] << "  "; } out << "\n";
+   out << "ELEM   :  "; for (int i=0 ; i<4 ; ++i) { out << map.m_map[3][i] << "  "; } out << "\n";
+   return out;
+}
+
 } //namespace mesh
 } //namespace stk
 

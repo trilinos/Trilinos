@@ -38,6 +38,7 @@
 
 #include <stddef.h>                     // for size_t
 #include <stdint.h>                     // for uint64_t
+#include <ostream>
 #include <iosfwd>                       // for ostream
 #include <limits>                       // for numeric_limits
 #include <stk_topology/topology.hpp>    // for topology, etc
@@ -303,6 +304,25 @@ enum ConnectivityType
   DYNAMIC_CONNECTIVITY,
   INVALID_CONNECTIVITY_TYPE
 };
+
+inline std::ostream & operator<<(std::ostream &out, ConnectivityType type)
+{
+  switch (type)
+  {
+      case ConnectivityType::FIXED_CONNECTIVITY:
+          out << "Fixed  ";
+          break;
+      case ConnectivityType::DYNAMIC_CONNECTIVITY:
+          out << "Dynamic";
+          break;
+      case ConnectivityType::INVALID_CONNECTIVITY_TYPE:
+          out << "Invalid";
+          break;
+      default:
+          out << "Unknown";
+  }
+  return out;
+}
 
 #define EXTRACT_BUCKET_ID(idx) ((idx) >> NUM_BUCKET_ORDINAL_BITS)
 
