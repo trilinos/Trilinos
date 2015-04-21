@@ -179,11 +179,6 @@ namespace panzer_stk_classic {
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > getLinearObjFactory() const
     { return m_lin_obj_factory; }
 
-    #ifdef HAVE_TEKO 
-    void setTekoRequestHandler(Teuchos::RCP<Teko::RequestHandler> & reqHandler)
-    { m_req_handler = reqHandler; }
-    #endif     
-
     bool isTransient() const  
     { return m_is_transient; }
 
@@ -255,7 +250,23 @@ namespace panzer_stk_classic {
                      const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
                      const Teuchos::RCP<panzer::ConnManagerBase<int> > & conn_manager,
                      const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
-                     const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm);
+                     const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm
+                     #ifdef HAVE_TEKO 
+                     , const Teuchos::RCP<Teko::RequestHandler> & req_handler=Teuchos::null
+                     #endif 
+                     ) const;
+
+    Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
+    buildLOWSFactory(bool blockedAssembly,
+                     const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
+                     const Teuchos::RCP<panzer::ConnManagerBase<int> > & conn_manager,
+                     const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
+                     const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
+                     const Teuchos::RCP<Teuchos::ParameterList> & strat_params
+                     #ifdef HAVE_TEKO 
+                     , const Teuchos::RCP<Teko::RequestHandler> & req_handler=Teuchos::null
+                     #endif 
+                     ) const;
 
     //! Get the workset container associated with the mesh database.
     Teuchos::RCP<panzer::WorksetContainer> getWorksetContainer() const 
@@ -342,11 +353,17 @@ namespace panzer_stk_classic {
     /** Build LOWS factory.
       */
     template <typename GO>
-    Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > buildLOWSFactory(bool blockedAssembly,
-                                                                                const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
-                                                                                const Teuchos::RCP<panzer_stk_classic::STKConnManager<GO> > & stkConn_manager,
-                                                                                const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
-                                                                                const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm);
+    Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > 
+    buildLOWSFactory(bool blockedAssembly,
+                     const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
+                     const Teuchos::RCP<panzer_stk_classic::STKConnManager<GO> > & stkConn_manager,
+                     const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
+                     const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
+                     const Teuchos::RCP<Teuchos::ParameterList> & strat_params
+                     #ifdef HAVE_TEKO 
+                     , const Teuchos::RCP<Teko::RequestHandler> & req_handler
+                     #endif 
+                     ) const;
 
     template <typename GO>
     void writeTopology(const panzer::BlockedDOFManager<int,GO> & blkDofs) const;
@@ -369,9 +386,6 @@ namespace panzer_stk_classic {
     Teuchos::RCP<panzer::ConnManagerBase<int> > m_conn_manager;
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > m_lin_obj_factory;
     Teuchos::RCP<panzer::GlobalData> m_global_data;
-    #ifdef HAVE_TEKO 
-    Teuchos::RCP<Teko::RequestHandler> m_req_handler;
-    #endif
     bool useDiscreteAdjoint;
     bool m_is_transient;
     bool m_blockedAssembly;

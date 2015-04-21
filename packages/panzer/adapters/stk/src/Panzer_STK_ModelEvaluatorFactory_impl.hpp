@@ -1542,15 +1542,61 @@ namespace panzer_stk_classic {
                    const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
                    const Teuchos::RCP<panzer::ConnManagerBase<int> > & conn_manager,
                    const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
-                   const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm)
+                   const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm
+                   #ifdef HAVE_TEKO 
+                   , const Teuchos::RCP<Teko::RequestHandler> & reqHandler
+                   #endif 
+                   ) const
   {
+    const Teuchos::ParameterList & p = *this->getParameterList();
+    const Teuchos::ParameterList & solncntl_params = p.sublist("Solution Control");
+
+    // Build stratimikos solver (note that this is a hard coded path to linear solver options in nox list!)
+    Teuchos::RCP<Teuchos::ParameterList> strat_params 
+       = Teuchos::rcp(new Teuchos::ParameterList(solncntl_params.sublist("NOX").sublist("Direction").
+                      sublist("Newton").sublist("Stratimikos Linear Solver").sublist("Stratimikos")));
+
+    return buildLOWSFactory(blockedAssembly,globalIndexer,conn_manager,mesh,mpi_comm,strat_params
+                            #ifdef HAVE_TEKO 
+                            , reqHandler
+                            #endif 
+                            );
+  }
+
+  template<typename ScalarT>
+  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > ModelEvaluatorFactory<ScalarT>::
+  buildLOWSFactory(bool blockedAssembly,
+                   const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
+                   const Teuchos::RCP<panzer::ConnManagerBase<int> > & conn_manager,
+                   const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
+                   const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
+                   const Teuchos::RCP<Teuchos::ParameterList> & strat_params
+                   #ifdef HAVE_TEKO 
+                   , const Teuchos::RCP<Teko::RequestHandler> & reqHandler
+                   #endif 
+                   ) const
+  {
+    #ifdef HAVE_TEKO 
+    Teuchos::RCP<Teko::RequestHandler> reqHandler_local = reqHandler;
+    if(reqHandler_local==Teuchos::null)
+      reqHandler_local = Teuchos::rcp(new Teko::RequestHandler);
+    #endif
+
     RCP<panzer_stk_classic::STKConnManager<panzer::Ordinal64> > long_conn = Teuchos::rcp_dynamic_cast<panzer_stk_classic::STKConnManager<panzer::Ordinal64> >(conn_manager);
     if(long_conn!=Teuchos::null)
-      return buildLOWSFactory(blockedAssembly,globalIndexer,long_conn,mesh,mpi_comm);
+      return buildLOWSFactory(blockedAssembly,globalIndexer,long_conn,mesh,mpi_comm,strat_params
+                              #ifdef HAVE_TEKO 
+                              , reqHandler_local
+                              #endif 
+                              );
 
     RCP<panzer_stk_classic::STKConnManager<int> > int_conn = Teuchos::rcp_dynamic_cast<panzer_stk_classic::STKConnManager<int> >(conn_manager);
     if(int_conn!=Teuchos::null)
-      return buildLOWSFactory(blockedAssembly,globalIndexer,int_conn,mesh,mpi_comm);
+      return buildLOWSFactory(blockedAssembly,globalIndexer,int_conn,mesh,mpi_comm,strat_params
+                              #ifdef HAVE_TEKO 
+                              , reqHandler_local
+                              #endif 
+                              );
 
     // should never reach this
     TEUCHOS_ASSERT(false);
@@ -1564,17 +1610,22 @@ namespace panzer_stk_classic {
                    const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
                    const Teuchos::RCP<panzer_stk_classic::STKConnManager<GO> > & stkConn_manager,
                    const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
-                   const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm)
+                   const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
+                   const Teuchos::RCP<Teuchos::ParameterList> & strat_params
+                   #ifdef HAVE_TEKO 
+                   , const Teuchos::RCP<Teko::RequestHandler> & reqHandler
+                   #endif 
+                   ) const
   {
-    Teuchos::ParameterList& p = *this->getNonconstParameterList();
-    Teuchos::ParameterList & solncntl_params = p.sublist("Solution Control");
+    const Teuchos::ParameterList & p = *this->getParameterList();
 
-    // Build stratimikos solver (note that this is a hard coded path to linear solver options in nox list!)
-    Teuchos::RCP<Teuchos::ParameterList> strat_params = Teuchos::rcp(new Teuchos::ParameterList);
-    {
-      *strat_params = solncntl_params.sublist("NOX").sublist("Direction").
-        sublist("Newton").sublist("Stratimikos Linear Solver").sublist("Stratimikos");
-    }
+    bool writeCoordinates = false;
+    if(p.sublist("Options").isType<bool>("Write Coordinates"))
+      writeCoordinates = p.sublist("Options").get<bool>("Write Coordinates");
+
+    bool writeTopo = false;
+    if(p.sublist("Options").isType<bool>("Write Topology"))
+      writeCoordinates = p.sublist("Options").get<bool>("Write Topology");
 
     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
 
@@ -1597,17 +1648,17 @@ namespace panzer_stk_classic {
     }
     #endif // MUELU
 
+
     #ifdef HAVE_TEKO
+    Teuchos::RCP<Teko::RequestHandler> reqHandler_local = reqHandler;
+
     if(!blockedAssembly) {
 
        std::string fieldName;
 
        // try to set request handler from member variable
-       Teuchos::RCP<Teko::RequestHandler> reqHandler = m_req_handler;
-       if(m_req_handler==Teuchos::null) {
-          reqHandler = Teuchos::rcp(new Teko::RequestHandler);
-          m_req_handler = reqHandler;
-       }
+       if(reqHandler_local==Teuchos::null)
+          reqHandler_local = Teuchos::rcp(new Teko::RequestHandler);
 
        // add in the coordinate parameter list callback handler
        if(determineCoordinateField(*globalIndexer,fieldName)) {
@@ -1617,9 +1668,8 @@ namespace panzer_stk_classic {
           Teuchos::RCP<panzer_stk_classic::ParameterListCallback<int,GO> > callback = Teuchos::rcp(new
                 panzer_stk_classic::ParameterListCallback<int,GO>(fieldName,fieldPatterns,stkConn_manager,
                 Teuchos::rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<int,GO> >(globalIndexer)));
-          reqHandler->addRequestCallback(callback);
+          reqHandler_local->addRequestCallback(callback);
 
-          bool writeCoordinates = p.sublist("Options").get("Write Coordinates",false);
           if(writeCoordinates) {
              // force parameterlistcallback to build coordinates
              callback->preRequest(Teko::RequestMesg(Teuchos::rcp(new Teuchos::ParameterList())));
@@ -1698,15 +1748,12 @@ namespace panzer_stk_classic {
        }
        // else write_out_the_mesg("Warning: No unique field determines the coordinates, coordinates unavailable!")
 
-       Teko::addTekoToStratimikosBuilder(linearSolverBuilder,reqHandler);
+       Teko::addTekoToStratimikosBuilder(linearSolverBuilder,reqHandler_local);
     }
     else {
        // try to set request handler from member variable
-       Teuchos::RCP<Teko::RequestHandler> reqHandler = m_req_handler;
-       if(m_req_handler==Teuchos::null) {
-          reqHandler = Teuchos::rcp(new Teko::RequestHandler);
-          m_req_handler = reqHandler;
-       }
+       if(reqHandler_local==Teuchos::null) 
+          reqHandler_local = Teuchos::rcp(new Teko::RequestHandler);
 
        std::string fieldName;
        if(determineCoordinateField(*globalIndexer,fieldName)) {
@@ -1714,12 +1761,11 @@ namespace panzer_stk_classic {
              Teuchos::rcp_dynamic_cast<const panzer::BlockedDOFManager<int,GO> >(globalIndexer);
           Teuchos::RCP<panzer_stk_classic::ParameterListCallbackBlocked<int,GO> > callback =
                 Teuchos::rcp(new panzer_stk_classic::ParameterListCallbackBlocked<int,GO>(stkConn_manager,blkDofs));
-          reqHandler->addRequestCallback(callback);
+          reqHandler_local->addRequestCallback(callback);
        }
 
-       Teko::addTekoToStratimikosBuilder(linearSolverBuilder,reqHandler);
+       Teko::addTekoToStratimikosBuilder(linearSolverBuilder,reqHandler_local);
 
-       bool writeCoordinates = p.sublist("Options").get("Write Coordinates",false);
        if(writeCoordinates) {
           Teuchos::RCP<const panzer::BlockedDOFManager<int,GO> > blkDofs =
              Teuchos::rcp_dynamic_cast<const panzer::BlockedDOFManager<int,GO> >(globalIndexer);
@@ -1767,7 +1813,6 @@ namespace panzer_stk_classic {
           }
        }
 
-       bool writeTopo = p.sublist("Options").get("Write Topology",false);
        if(writeTopo) {
           Teuchos::RCP<const panzer::BlockedDOFManager<int,GO> > blkDofs =
              Teuchos::rcp_dynamic_cast<const panzer::BlockedDOFManager<int,GO> >(globalIndexer);
