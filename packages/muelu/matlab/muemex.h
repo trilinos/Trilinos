@@ -60,7 +60,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
 
-/* TODO: Tpetra hdrs */
+/* TODO: Tpetra hdrs to get vector classes etc. */
 
 #include "Teuchos_ParameterList.hpp"
 #include "BelosSolverFactory.hpp"
@@ -71,9 +71,9 @@
 
 //Belos parameter defaults
 
-#define BELOS_MAX_BLOCKS 50
+#define BELOS_MAX_BLOCKS 100
 #define BELOS_BLOCK_SIZE 1
-#define BELOS_MAX_RESTARTS 15
+#define BELOS_MAX_RESTARTS 30
 #define BELOS_TOLERANCE 1e-05
 #define BELOS_MAX_ITERS 1000
 
@@ -85,14 +85,13 @@ class muelu_data_pack
         virtual ~muelu_data_pack();
         virtual int setup(int N, int* rowind, int* colptr, double* vals) = 0;
         virtual int status() = 0;
-        virtual int solve(Teuchos::ParameterList* TPL, Epetra_CrsMatrix* A, double* b, double* x, int &iters) = 0;
+        virtual int solve(Teuchos::RCP<Teuchos::ParameterList> TPL, Teuchos::RCP<Epetra_CrsMatrix> A, double* b, double* x, int &iters) = 0;
         virtual int NumMyRows() = 0;
         virtual int NumMyCols() = 0;
-        virtual Epetra_CrsMatrix* GetMatrix() = 0;
+        virtual Teuchos::RCP<Epetra_CrsMatrix> GetMatrix() = 0;
         int id;
-        Teuchos::ParameterList* List;
+        Teuchos::RCP<Teuchos::ParameterList> List;
         double operator_complexity;
-        muelu_data_pack* next;
 };
 
 
@@ -110,8 +109,6 @@ class mueluapi_data_pack : public muelu_data_pack
         int status();
         int NumMyRows()
         {
-
-Definition at line 269 of file Tpetra_Map_decl.hpp.
             return A->NumMyRows();
         }
         int NumMyCols()
@@ -134,8 +131,8 @@ class muelu_epetra_data_pack : public muelu_data_pack
         ~muelu_epetra_data_pack();
         int setup(int N, int* rowind, int* colptr, double* vals);
         int status();
-        int solve(Teuchos::ParameterList* TPL, Epetra_CrsMatrix* Amat, double* b, double* x, int &iters);
-        Epetra_CrsMatrix* GetMatrix()
+        int solve(Teuchos::RCP<Teuchos::ParameterList> TPL, Teuchos::RCP<Epetra_CrsMatrix> Amat, double* b, double* x, int &iters);
+        Teuchos::RCP<Epetra_CrsMatrix> GetMatrix()
         {
             return A;
         }
@@ -148,15 +145,15 @@ class muelu_epetra_data_pack : public muelu_data_pack
             return A->NumMyCols();
         }
     private:
-        Epetra_CrsMatrix* A;
+        Teuchos::RCP<Epetra_CrsMatrix> A;
 };
 
 namespace muelu_data_pack_list
 {
-	extern std::vector<muelu_data_pack*> list;
+	extern std::vector<Teuchos::RCP<muelu_data_pack>> list;
 	extern int nextID;
-	int add(muelu_data_pack* D);
-	muelu_data_pack* find(int id);
+	int add(Teuchos::RCP<muelu_data_pack> D);
+	Teuchos::RCP<muelu_data_pack> find(int id);
 	int remove(int id);
 	int size();
 	int status_all();

@@ -90,7 +90,7 @@ typedef int mwIndex;
 #endif
 
 //Declare and call default constructor for data_pack_list vector (starts empty)
-vector<muelu_data_pack*> muelu_data_pack_list::list;
+vector<RCP<muelu_data_pack>> muelu_data_pack_list::list;
 int muelu_data_pack_list::nextID = 0;
 
 /**************************************************************/
@@ -115,12 +115,12 @@ int* mwIndex_to_int(int N, mwIndex* mwi_array)
 }
 
 /*******************************/ 
-Epetra_CrsMatrix* epetra_setup(int Nrows, int Ncols, int* rowind, int* colptr, double* vals)
+RCP<Epetra_CrsMatrix> epetra_setup(int Nrows, int Ncols, int* rowind, int* colptr, double* vals)
 {
 	Epetra_SerialComm Comm;
 	Epetra_Map RangeMap(Nrows, 0, Comm);
 	Epetra_Map DomainMap(Ncols, 0, Comm);
-	Epetra_CrsMatrix *A = new Epetra_CrsMatrix(Epetra_DataAccess::Copy, RangeMap, DomainMap, 0);
+	RCP<Epetra_CrsMatrix> A = rcp(new Epetra_CrsMatrix(Epetra_DataAccess::Copy, RangeMap, DomainMap, 0));
 	/* Do the matrix assembly */
 	for(int i = 0; i < Ncols; i++)
 	{
@@ -134,7 +134,7 @@ Epetra_CrsMatrix* epetra_setup(int Nrows, int Ncols, int* rowind, int* colptr, d
 }
 
 /*******************************/
-Epetra_CrsMatrix * epetra_setup_from_prhs(const mxArray* mxa, bool rewrap_ints)
+RCP<Epetra_CrsMatrix> epetra_setup_from_prhs(const mxArray* mxa, bool rewrap_ints)
 {
 	int* colptr, *rowind;
 	double* vals = mxGetPr(mxa);
@@ -153,7 +153,7 @@ Epetra_CrsMatrix * epetra_setup_from_prhs(const mxArray* mxa, bool rewrap_ints)
 		colptr = (int*) mxGetJc(mxa);
 	}
 
-	Epetra_CrsMatrix* A = epetra_setup(nr, nc, rowind, colptr, vals);
+	RCP<Epetra_CrsMatrix> A = epetra_setup(nr, nc, rowind, colptr, vals);
 
 	if(rewrap_ints)
 	{
@@ -165,103 +165,107 @@ Epetra_CrsMatrix * epetra_setup_from_prhs(const mxArray* mxa, bool rewrap_ints)
 
 /*******************************/
 //Use Belos to solve the matrix, instead of AztecOO like in mlmex
-int epetra_solve(Teuchos::ParameterList *SetupList, Teuchos::ParameterList *TPL, Epetra_CrsMatrix* A, double* b, double* x, int &iters)
+int epetra_solve(RCP<Teuchos::ParameterList> SetupList, RCP<Teuchos::ParameterList> TPL, RCP<Epetra_CrsMatrix> A, double* b, double* x, int &iters)
 {
-    typedef double ST;
-    typedef Teuchos::ScalarTraits<ST> SCT;
-    typedef SCT::magnitudeType MT;
-    typedef Epetra_MultiVector MV;
-    typedef Epetra_Operator OP;
-    typedef Belos::MultiVecTraits<ST, MV> MVT;
-    typedef Belos::OperatorTraits<ST, MV, OP> OPT;
-    using Teuchos::ParameterList;
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    RCP<ParameterList> tmp = rcp(SetupList, false);
-    tmp->setParameters(*TPL);
+    int matSize = A->NumGlobalRows();
+    SetupList->setParameters(*TPL);
     //Set up X and B
     RCP<Epetra_Vector> lhs = rcp(new Epetra_Vector(A->RowMap()));
     RCP<Epetra_Vector> rhs = rcp(new Epetra_Vector(A->RowMap()));
-    lhs->PutScalar(0.0);
-    //Also zero-initialize the output array in case we return with an error
-    for(int i = 0; i < A->NumMyRows(); i++)
-    {
-        x[i] = 0.0;
-    }
-    //Print the incoming B vector, 10 elements per line
-    /*
-    mexPrintf("\n\n");
-    for(int i = 0; i < A->NumMyRows(); i++)
+    A->Print(cerr);
+    mexPrintf("B vector\n\n");
+    for(int i = 0; i < matSize; i++)
     {
         (*rhs)[i] = b[i];
-        mexPrintf("%8.4f ", (*rhs)[i]);
-        if(i % 10 == 9)
-            mexPrintf("\n");
+        //initialize the output vector & iteration count to 0 in case Belos doesn't provide answer
+        x[i] = 0;
+        (*lhs)[i] = 1;
     }
-    mexPrintf("\n\n");
-    */
+    iters = 0;
+    mexPrintf("\nThere are %d nonzero elements in the matrix.", A->NumGlobalNonzeros());
     //Problem construction requires Epetra_MultiVector for x and b
     RCP<Epetra_MultiVector> Bmv = Teuchos::rcp_implicit_cast<Epetra_MultiVector>(rhs);
+    for(int i = 0; i < matSize; i++)
+    {
+        if(i % 10 == 0)
+            mexPrintf("\n");
+        mexPrintf("%f ", (*Bmv)[0][i]);
+    }
     RCP<Epetra_MultiVector> Xmv = Teuchos::rcp_implicit_cast<Epetra_MultiVector>(lhs);
     //Use get() to actually set correct default values for Belos parameters
     //note: the user could have set these explicitly in the muelu() call from matlab
     //Default values #defined in muemex.h
-    tmp->get("Maximum Iterations", BELOS_MAX_ITERS);
-    tmp->get("Convergence Tolerance", BELOS_TOLERANCE);
-    tmp->get("Block Size", BELOS_BLOCK_SIZE);
-    tmp->get("Num Blocks", BELOS_MAX_BLOCKS);
-    tmp->get("Maximum Restarts", BELOS_MAX_RESTARTS);
+    /*
+    SetupList->get("Maximum Iterations", BELOS_MAX_ITERS);
+    SetupList->get("Convergence Tolerance", BELOS_TOLERANCE);
+    SetupList->get("Block Size", BELOS_BLOCK_SIZE);
+    SetupList->get("Num Blocks", BELOS_MAX_BLOCKS);
+    SetupList->get("Maximum Restarts", BELOS_MAX_RESTARTS);
+    */
+
     #ifdef VERBOSE_OUTPUT
-    tmp->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::TimingDetails + Belos::StatusTestDetails);
+    SetupList->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::Debug + Belos::FinalSummary + Belos::IterationDetails + Belos::OrthoDetails + Belos::TimingDetails + Belos::StatusTestDetails);
+    SetupList->set("Output Frequency", 1);
+    SetupList->set("Output Style", Belos::Brief);
     #else
-    tmp->set("Verbosity", Belos::Errors + Belos::Warnings);
+    SetupList->set("Verbosity", Belos::Errors + Belos::Warnings);
     #endif
-    //Wrap the main matrix A in an RCP for constructing problem object
-    //rcpA doesn't own the memory; the data_pack somehwere else does
-    RCP<Epetra_CrsMatrix> rcpA = rcp(A, false);
-    RCP<Belos::LinearProblem<ST, MV, OP>> problem = rcp(new Belos::LinearProblem<ST, MV, OP>(rcpA, Xmv, Bmv), true);
+    //rcpA doesn't own the memory; the data_pack in the main list does
+    SetupList->print();
+    RCP<Belos::LinearProblem<double, Epetra_MultiVector, Epetra_Operator>> problem = rcp(new Belos::LinearProblem<double, Epetra_MultiVector, Epetra_Operator>(A, Xmv, Bmv));
     bool set = problem->setProblem();
     if(!set)
     {
-        mexPrintf("Error: Unable to setup Belos::LinearProblem.\n");
+        mexPrintf("Error: Unable to set up Belos::LinearProblem.\n");
         return IS_FALSE;
     }
-    //Here, going to follow example on doc site and not use a SolverFactory object to create a SolverManager
-    RCP<Belos::SolverManager<ST, MV, OP>> solver = rcp(new Belos::PseudoBlockGmresSolMgr<ST, MV, OP>(problem, tmp));
+    RCP<Belos::SolverManager<double, Epetra_MultiVector, Epetra_Operator>> solver = rcp(new Belos::BlockGmresSolMgr<double, Epetra_MultiVector, Epetra_Operator>(problem, SetupList));
+    double norm2Left, norm2Right;
+    Xmv->Norm2(&norm2Left);
+    Bmv->Norm2(&norm2Right);
+    mexPrintf("X: %f B: %f\n", norm2Left, norm2Right);
     Belos::ReturnType result = solver->solve();
+    Xmv->Norm2(&norm2Left);
+    Bmv->Norm2(&norm2Right);
+    mexPrintf("X: %f B: %f\n", norm2Left, norm2Right);
+    mexPrintf("Solver acheived %f tolerance.\n", solver->achievedTol());
     if(solver->isLOADetected())
     {
         mexPrintf("Warning: Belos detected a loss of accuracy in solution.\n");
     }
-    if(result != Belos::Converged)
+    if(result == Belos::Unconverged)
     {
         mexPrintf("Error: Belos solver did not converge.\n");
+        iters = 0;
         return IS_FALSE;
     }
     else
     {
         mexPrintf("Sucess. Belos converged.\n");
-        //now copy the sol'n vector from Xmv (multivector) to x[...] (raw array of doubles)
-        //this should work, because Xmv points to the same object as lhs, only treats it as an MV
-        lhs->ExtractCopy(x);
+        iters = solver->getNumIters();
+        for(int i = 0; i < matSize; i++)
+        {
+            x[i] = (*Xmv)[0][i];
+            if(i % 10 == 0)
+                mexPrintf("\n");
+            mexPrintf("%f ", x[i]);
+        }
         return IS_TRUE;
     }
 }   /*end solve*/
 
 /**************************************************************/
 /**************************************************************/
-/**************** muelu_data_pack class functions ****************/
+/**************** muelu_data_pack class functions *************/
 /**************************************************************/
 /**************************************************************/
-muelu_data_pack::muelu_data_pack() : id(MUEMEX_ERROR), List(NULL), next(NULL) {}
-muelu_data_pack::~muelu_data_pack()
+muelu_data_pack::muelu_data_pack() : id(MUEMEX_ERROR)
 {
-	if(List)
-		delete List;
+    operator_complexity = 0;
 }
+muelu_data_pack::~muelu_data_pack() {}
 
 /*************************************************************
-
 **************************************************************
 *************** mueluapi_data_pack class functions ***********
 **************************************************************
@@ -331,12 +335,8 @@ int mueluapi_data_pack::solve(Teuchos::ParameterList *TPL, int N, double* b, dou
 /************* muelu_epetra_data_pack class functions ************/
 /**************************************************************/
 /**************************************************************/
-muelu_epetra_data_pack::muelu_epetra_data_pack():muelu_data_pack(), A(NULL) {}
-muelu_epetra_data_pack::~muelu_epetra_data_pack()
-{
-	if(A)
-		delete A;
-}
+muelu_epetra_data_pack::muelu_epetra_data_pack() : muelu_data_pack() {}
+muelu_epetra_data_pack::~muelu_epetra_data_pack() {}
 
 /* muelu_epetra_data_pack_status - This function does a status query on the
    MUELU_EPETRA_DATA_PACK passed in.
@@ -345,11 +345,11 @@ muelu_epetra_data_pack::~muelu_epetra_data_pack()
 int muelu_epetra_data_pack::status()
 {
 	mexPrintf("**** Problem ID %d [MueLu_Epetra] ****\n", id);
-	if(A)
+	if(!A.is_null())
 		mexPrintf("Matrix: %dx%d w/ %d nnz\n", A->NumGlobalRows(), A->NumGlobalCols(), A->NumMyNonzeros());
 	//TODO: Find out what operator complexity is
 	//mexPrintf(" Operator complexity = %e\n",operator_complexity);
-	if(List)
+	if(!List.is_null())
 	{
 		mexPrintf("Parameter List:\n");
 		List->print();
@@ -374,7 +374,6 @@ int muelu_epetra_data_pack::setup(int N, int* rowind, int* colptr, double* vals)
 {
 	/* Matrix Fill */
 	A = epetra_setup(N, N, rowind, colptr, vals);
-    operator_complexity = 0;
 	return IS_TRUE;
 }/*end setup*/
 
@@ -391,7 +390,7 @@ int muelu_epetra_data_pack::setup(int N, int* rowind, int* colptr, double* vals)
    iters   - number of iterations taken [O]
    Returns: IS_TRUE if solve was succesful, IS_FALSE otherwise
 */
-int muelu_epetra_data_pack::solve(Teuchos::ParameterList* TPL, Epetra_CrsMatrix* Amat, double* b, double* x, int &iters)
+int muelu_epetra_data_pack::solve(RCP<ParameterList> TPL, RCP<Epetra_CrsMatrix> Amat, double* b, double* x, int &iters)
 {
 	return epetra_solve(List, TPL, Amat, b, x, iters);
 }/*end solve*/
@@ -404,8 +403,7 @@ int muelu_epetra_data_pack::solve(Teuchos::ParameterList* TPL, Epetra_CrsMatrix*
 
 void muelu_data_pack_list::clearAll()
 {
-	for(auto i : list)
-		delete i;
+    //When items are cleared, RCPs will auto-delete the datapacks
 	list.clear();
 }
 
@@ -414,7 +412,7 @@ void muelu_data_pack_list::clearAll()
    D       - The muelu_data_pack. [I]
    Returns: problem id number of D
 */
-int muelu_data_pack_list::add(muelu_data_pack *D)
+int muelu_data_pack_list::add(RCP<muelu_data_pack> D)
 {
     D->id = nextID;
     nextID++;
@@ -428,7 +426,7 @@ int muelu_data_pack_list::add(muelu_data_pack *D)
    Returns: pointer to muelu_data_pack matching 'id', if found, NULL if not
    found.
 */
-muelu_data_pack* muelu_data_pack_list::find(int id)
+RCP<muelu_data_pack> muelu_data_pack_list::find(int id)
 {
 	if(isInList(id))
     {
@@ -438,7 +436,9 @@ muelu_data_pack* muelu_data_pack_list::find(int id)
                 return problem;
         }
     }
-    return NULL;
+    //auto-inits to NULL
+    RCP<muelu_data_pack> notFound;
+    return notFound;
 }/*end find*/
 
 /* remove - Removes problem by id
@@ -463,7 +463,6 @@ int muelu_data_pack_list::remove(int id)
         return IS_FALSE;
     }
     //delete the muelu_data_pack at the location pointed to by list[index]
-	delete list[index];
     //and then remove the pointer from the list
     mexPrintf("Removing problem with ID #%d and index %d\n", id, index);
 	list.erase(list.begin() + index);
@@ -594,21 +593,24 @@ void csc_print(int n, int* rowind, int* colptr, double* vals)
             mexPrintf("%d %d %20.16e\n", rowind[j], i, vals[j]);
 }
 
-void parse_list_item(Teuchos::ParameterList& List, char *option_name, const mxArray *prhs)
+void parse_list_item(RCP<ParameterList> List, char *option_name, const mxArray *prhs)
 {
+    //List shouldn't be NULL but if it is, initialize here
+    if(List.is_null())
+    {
+        List = rcp(new ParameterList);
+    }
 	mxClassID cid;
 	int i, M, N, *opt_int;
 	char *opt_char;
 	double *opt_float;
 	string opt_str;
-	Teuchos::ParameterList sublist;
+	RCP<ParameterList> sublist = rcp(new ParameterList);
 	mxArray *cell1, *cell2;
-
 	/* Pull relevant info the the option value */
 	cid = mxGetClassID(prhs);
 	M = mxGetM(prhs);
 	N = mxGetN(prhs);
-
 	/* Add to the Teuchos list */
 	switch(cid)
     {
@@ -616,7 +618,7 @@ void parse_list_item(Teuchos::ParameterList& List, char *option_name, const mxAr
 		    // String
         	opt_char = mxArrayToString(prhs);
         	opt_str = opt_char;
-        	List.set(option_name, opt_str);
+        	List->set(option_name, opt_str);
         	mxFree(opt_char);
         	break;
 	    case mxDOUBLE_CLASS:
@@ -626,27 +628,27 @@ void parse_list_item(Teuchos::ParameterList& List, char *option_name, const mxAr
 		    opt_float = mxGetPr(prhs);
 		    if(M == 1 && N == 1 && ISINT(opt_float[0]))
 		    {
-			    List.set(option_name, (int) opt_float[0]);
+			    List->set(option_name, (int) opt_float[0]);
 		    } /*end if*/
 		    else if(M == 1 && N == 1)
 		    {
-			    List.set(option_name, opt_float[0]);
+			    List->set(option_name, opt_float[0]);
 		    }/*end if*/
 		    else if(M == 0 || N == 0)
 		    {
-			    List.set(option_name, (double*) NULL);
+			    List->set(option_name, (double*) NULL);
 	      	}
 	      	else
 		    {
-		        List.set(option_name, opt_float);
+		        List->set(option_name, opt_float);
 		    }/*end else*/
 		    break;
 	    case mxLOGICAL_CLASS:
         // Bool
 	    if(M == 1 && N == 1)
-		    List.set(option_name, mxIsLogicalScalarTrue(prhs));
+		    List->set(option_name, mxIsLogicalScalarTrue(prhs));
         else
-		    List.set(option_name, mxGetLogicals(prhs));
+		    List->set(option_name, mxGetLogicals(prhs));
         	//NTS: The else probably doesn't work.
         break;
 	    case mxINT8_CLASS:
@@ -658,9 +660,9 @@ void parse_list_item(Teuchos::ParameterList& List, char *option_name, const mxAr
 	        // Integer
 	        opt_int = (int*) mxGetData(prhs);
 	        if(M == 1 && N == 1)
-			    List.set(option_name, opt_int[0]);
+			    List->set(option_name, opt_int[0]);
 	        else
-			    List.set(option_name, opt_int);
+			    List->set(option_name, opt_int);
 	        break;
 	        // NTS: 64-bit ints will break on a 32-bit machine.  We
 	        // should probably detect machine type, or somthing, but that would
@@ -676,7 +678,7 @@ void parse_list_item(Teuchos::ParameterList& List, char *option_name, const mxAr
 				    mexErrMsgTxt("Error: Input options are not in ['parameter',value] format!\n");
           		opt_char = mxArrayToString(cell1);
           		parse_list_item(sublist, opt_char, cell2);
-          		List.set(option_name, sublist);
+          		List->set(option_name, *sublist);
           		mxFree(opt_char);
         	}
         	break;
@@ -701,9 +703,9 @@ void parse_list_item(Teuchos::ParameterList& List, char *option_name, const mxAr
    prhs    - The problem inputs [I]
    Return value: Teuchos list containing all parameters passed in by the user.
 */
-Teuchos::ParameterList* build_teuchos_list(int nrhs,const mxArray *prhs[])
+RCP<ParameterList> build_teuchos_list(int nrhs, const mxArray *prhs[])
 {
-	Teuchos::ParameterList* TPL = new Teuchos::ParameterList;
+	RCP<ParameterList> TPL = rcp(new ParameterList);
 	char* option_name;
 	for(int i = 0; i < nrhs; i += 2)
 	{
@@ -712,7 +714,7 @@ Teuchos::ParameterList* build_teuchos_list(int nrhs,const mxArray *prhs[])
 		/* What option are we setting? */
     	option_name = mxArrayToString(prhs[i]);
     	/* Parse */
-    	parse_list_item(*TPL, option_name, prhs[i + 1]);
+    	parse_list_item(TPL, option_name, prhs[i + 1]);
     	/* Free memory */
     	mxFree(option_name);
 	}
@@ -734,13 +736,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 	int nc;
 	int iters;
 	string intf;
-	Teuchos::ParameterList* List;
+	RCP<ParameterList> List;
 	MODE_TYPE mode;
 	bool rewrap_ints = false;
-	muelu_data_pack* D = nullptr;
+	RCP<muelu_data_pack> D;
 	//ml_maxwell_data_pack * Dhat=0;
     //Local pointer to an active matrix
-	Epetra_CrsMatrix* A;
+	RCP<Epetra_CrsMatrix> A;
 	/* Sanity Check Input */
 	mode = sanity_check(nrhs, prhs);
 	/* Set flag if mwIndex and int are not the same size */
@@ -757,15 +759,15 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 			if(nrhs > 2)
 				List = build_teuchos_list(nrhs - 2, &(prhs[2]));
 			else
-				List = new Teuchos::ParameterList;
+				List = rcp(new ParameterList);
 			intf = List->get(MUEMEX_INTERFACE, "epetra");
 			if(intf == "mueluapi")
             {
-				D = new mueluapi_data_pack();
+				D = rcp(new mueluapi_data_pack());
             }
             else if(intf == "epetra")
             {
-                D = new muelu_epetra_data_pack();
+                D = rcp(new muelu_epetra_data_pack());
             }
             else if(intf == "tpetra")
             {
@@ -788,7 +790,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 			rv = muelu_data_pack_list::add(D);
             mexPrintf("Set up problem #%d\n", rv);
             plhs[0] = mxCreateNumericMatrix(1, 1, mxINT32_CLASS, mxREAL);
-            //sketchy but it works apparently
 			*((int*) mxGetData(plhs[0])) = rv;
 			if(nlhs > 1)
 				plhs[1] = mxCreateDoubleScalar(D->operator_complexity);
@@ -806,7 +807,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 			/* Get the Problem Handle */
 			id = (double*) mxGetData(prhs[1]);
 			D = muelu_data_pack_list::find(int(*id));
-			if(!D)
+			if(D.is_null())
             {
 				mexErrMsgTxt("Error: Problem handle not allocated.\n");
                 break;
@@ -820,7 +821,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 			if(nrhs > 4)
 				List = build_teuchos_list(nrhs - 3, &(prhs[3]));
 			else
-				List = new Teuchos::ParameterList;
+				List = rcp(new ParameterList);
 			/* Allocate Solution Space */
 			plhs[0] = mxCreateDoubleMatrix(nr, 1, mxREAL);
 			x = mxGetPr(plhs[0]);
@@ -836,9 +837,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 				plhs[1] = mxCreateDoubleScalar((double) iters);
 			}
 			/* Cleanup */
-			A = 0; // we don't own this
             mexPrintf("Belos solver returned %d\n", res);
-			delete List;
 	        break;
 		case MODE_SOLVE_NEWMATRIX:
 			mexPrintf("MueMex in new matrix solving mode.\n");
@@ -848,7 +847,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 			/* Get the Problem Handle */
 			id = (double*) mxGetData(prhs[1]);
 			D = muelu_data_pack_list::find(int(*id));
-			if(!D)
+			if(D.is_null())
 				mexErrMsgTxt("Error: Problem handle not allocated.\n");
 			/* Pull Problem Size */
 			nr = mxGetM(prhs[2]);
@@ -861,7 +860,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 			if(nrhs > 4)
 				List = build_teuchos_list(nrhs - 4, &(prhs[4]));
 			else
-				List = new Teuchos::ParameterList;
+				List = rcp(new ParameterList);
 			/* Allocate Solution Space */
 			plhs[0] = mxCreateDoubleMatrix(nr, 1, mxREAL);
 			x = mxGetPr(plhs[0]);
@@ -878,8 +877,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 				plhs[1] = mxCreateDoubleScalar((double) iters);
 			}
 			/* Cleanup */
-			delete List;
-			delete A;
 			break;
 	    case MODE_CLEANUP:
 			mexPrintf("MueMex in cleanup mode.\n");
@@ -921,12 +918,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 				/* Status check one problem */
                 int probID = *((double*) mxGetData(prhs[1]));
 				D = muelu_data_pack_list::find(probID);
-				if(!D)
+				if(D.is_null())
 					mexErrMsgTxt("Error: Problem handle not allocated.\n");
 				rv = D->status();
 			}/*end elseif*/
 			else
-                mexPrintf("No problems set up.");
+                mexPrintf("No problems set up.\n");
 				rv = 0;
 			/* Set return value */
 			plhs[0] = mxCreateNumericMatrix(1, 1, mxINT32_CLASS, mxREAL);
