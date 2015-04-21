@@ -50,6 +50,7 @@
 
 #include "Sacado_Traits.hpp"
 #include "Sacado_mpl_apply.hpp"
+#include "Stokhos_Is_Constant.hpp"
 
 #include "Stokhos_CrsProductTensor.hpp"
 
