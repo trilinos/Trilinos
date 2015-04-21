@@ -497,7 +497,8 @@ public:
                              rcpFromRef(g_nodal_residual),
                              rcpFromRef(g_nodal_delta),
                              cg_iteration_limit,
-                             cg_iteration_tolerance);
+                             cg_iteration_tolerance,
+                             print_flag);
           perf.mat_vec_time    += cgsolve.matvec_time ;
           perf.cg_iter_time    += cgsolve.iter_time ;
           perf.prec_setup_time += cgsolve.prec_setup_time ;
@@ -592,7 +593,7 @@ Perf fenl(
 
   typedef Problem< Scalar, Device , ElemOrder, CoeffFunctionType > ProblemType ;
 
-  const int print_flag = use_print && Kokkos::Impl::is_same< Kokkos::HostSpace , typename Device::memory_space >::value ;
+  const int print_flag = use_print && Kokkos::Impl::VerifyExecutionCanAccessMemorySpace< Kokkos::HostSpace::execution_space , typename Device::memory_space >::value ;
 
   // Read in any params from xml file
   Teuchos::RCP<Teuchos::ParameterList> fenlParams = Teuchos::parameterList();
