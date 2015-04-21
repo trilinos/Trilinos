@@ -50,11 +50,15 @@ namespace Impl {
 
   KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
 
+  KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DEF( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
+
 #endif // KOKKOS_HAVE_SERIAL
 
 #ifdef KOKKOS_HAVE_OPENMP
 
   KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
+
+  KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DEF( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
 
 #endif // KOKKOS_HAVE_OPENMP
 
@@ -62,17 +66,23 @@ namespace Impl {
 
   KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
 
+  KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DEF( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
+
 #endif // KOKKOS_HAVE_PTHREAD
 
 #ifdef KOKKOS_HAVE_CUDA
 
   KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
 
+  KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DEF( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
+
 #endif // KOKKOS_HAVE_CUDA
 
 #ifdef KOKKOS_HAVE_CUDA
 
   KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
+
+  KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DEF( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 
 #endif // KOKKOS_HAVE_CUDA
 
