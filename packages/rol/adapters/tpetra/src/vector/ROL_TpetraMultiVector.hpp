@@ -72,6 +72,13 @@ class TpetraMultiVector : public Vector<Real> {
 
         TpetraMultiVector(const MVP &tpetra_vec) : tpetra_vec_(tpetra_vec) {}
        
+        /** \brief Assign \f$y \leftarrow x \f$ where \f$y = \mbox{*this}\f$.
+        */
+        void set(const Vector<Real> &x) {
+            const TMV &ex = Teuchos::dyn_cast<const TMV>(x);
+            tpetra_vec_->assign(*ex.getVector()); 
+        }
+       
         /** \brief Compute \f$y \leftarrow x + y\f$ where \f$y = \mbox{*this}\f$.
         */
         void plus(const Vector<Real> &x) {
