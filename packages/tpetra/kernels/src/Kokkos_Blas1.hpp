@@ -45,9 +45,7 @@
 #define KOKKOS_BLAS1_HPP_
 
 #include <Kokkos_Blas1_impl.hpp>
-#ifdef KOKKOS_HAVE_CXX11
-#  include <type_traits>
-#endif // KOKKOS_HAVE_CXX11
+#include <type_traits> // requires C++11
 
 namespace KokkosBlas {
 
@@ -64,22 +62,10 @@ template<class XVector,class YVector>
 typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type
 dot (const XVector& x, const YVector& y)
 {
-#ifdef KOKKOS_HAVE_CXX11
-  // Make sure that both x and y have the same rank.
-  static_assert (XVector::rank == YVector::rank, "KokkosBlas::dot: Vector ranks do not match.");
-  // Make sure that x (and therefore y) is rank 1.
-  static_assert (XVector::rank == 1, "KokkosBlas::dot: Both Vector inputs must have rank 1.");
-#else
-  // We prefer to use C++11 static_assert, because it doesn't give
-  // "unused typedef" warnings, like the constructs below do.
-  //
-  // Make sure that both x and y have the same rank.
-  typedef typename
-    Kokkos::Impl::StaticAssert<XVector::rank == YVector::rank>::type Blas1_dot_vector_ranks_do_not_match;
-  // Make sure that x (and therefore y) is rank 1.
-  typedef typename
-    Kokkos::Impl::StaticAssert<XVector::rank == 1 >::type Blas1_dot_vector_rank_not_one;
-#endif // KOKKOS_HAVE_CXX11
+  static_assert ((int) XVector::rank == (int) YVector::rank,
+                 "KokkosBlas::dot: Vector ranks do not match.");
+  static_assert (XVector::rank == 1, "KokkosBlas::dot: "
+                 "Both Vector inputs must have rank 1.");
 
   // Check compatibility of dimensions at run time.
   if (x.dimension_0 () != y.dimension_0 ()) {
