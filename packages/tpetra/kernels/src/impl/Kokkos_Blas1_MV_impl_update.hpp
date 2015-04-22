@@ -92,25 +92,25 @@ struct MV_Update_Functor
     beta_ (beta), Y_ (Y),
     gamma_ (gamma), Z_ (Z)
   {
-#ifdef KOKKOS_HAVE_CXX11
-    // XMV, YMV, and ZMV must be Kokkos::View specializations.
     static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
                    "MV_Update_Functor: X is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::Impl::"
                    "MV_Update_Functor: Y is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<ZMV>::value, "KokkosBlas::Impl::"
                    "MV_Update_Functor: Z is not a Kokkos::View.");
-    // ZMV must be nonconst (else it can't be an output argument).
     static_assert (Kokkos::Impl::is_same<typename ZMV::value_type,
                    typename ZMV::non_const_value_type>::value,
                    "KokkosBlas::Impl::MV_Update_Functor: Z is const.  "
                    "It must be nonconst, because it is an output argument "
                    "(we have to be able to write to its entries).");
-    static_assert ((int) ZMV::rank == (int) XMV::rank && (int) ZMV::rank == (int) YMV::rank,
-                   "KokkosBlas::Impl::MV_Update_Functor: X, Y, and Z must have the same rank.");
+    // Casting enum values to int avoids compiler warnings about
+    // comparing different kinds of enum values.
+    static_assert ((int) ZMV::rank == (int) XMV::rank &&
+                   (int) ZMV::rank == (int) YMV::rank,
+                   "KokkosBlas::Impl::MV_Update_Functor: "
+                   "X, Y, and Z must have the same rank.");
     static_assert (ZMV::rank == 2, "KokkosBlas::Impl::MV_Update_Functor: "
                    "XMV, YMV, and ZMV must have rank 2.");
-#endif // KOKKOS_HAVE_CXX11
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -262,25 +262,25 @@ struct V_Update_Functor
     beta_ (beta), Y_ (Y),
     gamma_ (gamma), Z_ (Z)
   {
-#ifdef KOKKOS_HAVE_CXX11
-    // XV, YV, and ZV must be Kokkos::View specializations.
     static_assert (Kokkos::Impl::is_view<XV>::value, "KokkosBlas::Impl::"
                    "V_Update_Functor: X is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<YV>::value, "KokkosBlas::Impl::"
                    "V_Update_Functor: Y is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<ZV>::value, "KokkosBlas::Impl::"
                    "V_Update_Functor: Z is not a Kokkos::View.");
-    // ZV must be nonconst (else it can't be an output argument).
     static_assert (Kokkos::Impl::is_same<typename ZV::value_type,
                    typename ZV::non_const_value_type>::value,
                    "KokkosBlas::Impl::V_Update_Functor: Z is const.  "
                    "It must be nonconst, because it is an output argument "
                    "(we have to be able to write to its entries).");
-    static_assert ((int) ZV::rank == (int) XV::rank && (int) ZV::rank == (int) YV::rank,
-                   "KokkosBlas::Impl::V_Update_Functor: X, Y, and Z must have the same rank.");
+    // Casting to int avoids compiler warnings about comparing
+    // different kinds of enum values.
+    static_assert ((int) ZV::rank == (int) XV::rank &&
+                   (int) ZV::rank == (int) YV::rank,
+                   "KokkosBlas::Impl::V_Update_Functor: "
+                   "X, Y, and Z must have the same rank.");
     static_assert (ZV::rank == 1, "KokkosBlas::Impl::V_Update_Functor: "
                    "XV, YV, and ZV must have rank 1.");
-#endif // KOKKOS_HAVE_CXX11
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -353,25 +353,25 @@ MV_Update_Generic (const typename XMV::non_const_value_type& alpha, const XMV& X
                    const typename ZMV::non_const_value_type& gamma, const ZMV& Z,
                    int a = 2, int b = 2, int c = 2)
 {
-#ifdef KOKKOS_HAVE_CXX11
-    // XMV, YMV, and ZMV must be Kokkos::View specializations.
-    static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
-                   "MV_Update_Generic: X is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::Impl::"
-                   "MV_Update_Generic: Y is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<ZMV>::value, "KokkosBlas::Impl::"
-                   "MV_Update_Generic: Z is not a Kokkos::View.");
-    // ZMV must be nonconst (else it can't be an output argument).
-    static_assert (Kokkos::Impl::is_same<typename ZMV::value_type,
-                   typename ZMV::non_const_value_type>::value,
-                   "KokkosBlas::Impl::MV_Update_Generic: Z is const.  "
-                   "It must be nonconst, because it is an output argument "
-                   "(we have to be able to write to its entries).");
-    static_assert ((int) ZMV::rank == (int) XMV::rank && (int) ZMV::rank == (int) YMV::rank,
-                   "KokkosBlas::Impl::MV_Update_Generic: X, Y, and Z must have the same rank.");
-    static_assert (ZMV::rank == 2, "KokkosBlas::Impl::MV_Update_Generic: "
-                   "XMV, YMV, and ZMV must have rank 2.");
-#endif // KOKKOS_HAVE_CXX11
+  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
+                 "MV_Update_Generic: X is not a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::Impl::"
+                 "MV_Update_Generic: Y is not a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<ZMV>::value, "KokkosBlas::Impl::"
+                 "MV_Update_Generic: Z is not a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_same<typename ZMV::value_type,
+                 typename ZMV::non_const_value_type>::value,
+                 "KokkosBlas::Impl::MV_Update_Generic: Z is const.  "
+                 "It must be nonconst, because it is an output argument "
+                 "(we have to be able to write to its entries).");
+  // Casting to int avoids compiler warnings about comparing different
+  // kinds of enum values.
+  static_assert ((int) ZMV::rank == (int) XMV::rank &&
+                 (int) ZMV::rank == (int) YMV::rank,
+                 "KokkosBlas::Impl::MV_Update_Generic: "
+                 "X, Y, and Z must have the same rank.");
+  static_assert (ZMV::rank == 2, "KokkosBlas::Impl::MV_Update_Generic: "
+                 "XMV, YMV, and ZMV must have rank 2.");
 
   typedef typename XMV::execution_space execution_space;
   const SizeType numRows = X.dimension_0 ();
@@ -449,25 +449,25 @@ V_Update_Generic (const typename XV::non_const_value_type& alpha, const XV& X,
                   const typename ZV::non_const_value_type& gamma, const ZV& Z,
                   int a = 2, int b = 2, int c = 2)
 {
-#ifdef KOKKOS_HAVE_CXX11
-    // XV, YV, and ZV must be Kokkos::View specializations.
     static_assert (Kokkos::Impl::is_view<XV>::value, "KokkosBlas::Impl::"
                    "V_Update_Generic: X is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<YV>::value, "KokkosBlas::Impl::"
                    "V_Update_Generic: Y is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<ZV>::value, "KokkosBlas::Impl::"
                    "V_Update_Generic: Z is not a Kokkos::View.");
-    // ZV must be nonconst (else it can't be an output argument).
     static_assert (Kokkos::Impl::is_same<typename ZV::value_type,
                    typename ZV::non_const_value_type>::value,
                    "KokkosBlas::Impl::V_Update_Generic: Z is const.  "
                    "It must be nonconst, because it is an output argument "
                    "(we have to be able to write to its entries).");
-    static_assert ((int) ZV::rank == (int) XV::rank && (int) ZV::rank == (int) YV::rank,
-                   "KokkosBlas::Impl::V_Update_Generic: X, Y, and Z must have the same rank.");
+    // Casting to int avoids compiler warnings about comparing
+    // different kinds of enum values.
+    static_assert ((int) ZV::rank == (int) XV::rank &&
+                   (int) ZV::rank == (int) YV::rank,
+                   "KokkosBlas::Impl::V_Update_Generic: "
+                   "X, Y, and Z must have the same rank.");
     static_assert (ZV::rank == 1, "KokkosBlas::Impl::V_Update_Generic: "
                    "XV, YV, and ZV must have rank 1.");
-#endif // KOKKOS_HAVE_CXX11
 
   typedef typename XV::execution_space execution_space;
   const SizeType numRows = X.dimension_0 ();
@@ -547,26 +547,25 @@ struct Update<XMV, YMV, ZMV, 2>
           const typename YMV::non_const_value_type& beta, const YMV& Y,
           const typename ZMV::non_const_value_type& gamma, const ZMV& Z)
   {
-#ifdef KOKKOS_HAVE_CXX11
-    // XMV, YMV, and ZMV must be Kokkos::View specializations.
     static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
                    "Update<rank 2>::update: X is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::Impl::"
                    "Update<rank 2>::update: Y is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<ZMV>::value, "KokkosBlas::Impl::"
                    "Update<rank 2>::update: Z is not a Kokkos::View.");
-    // ZMV must be nonconst (else it can't be an output argument).
     static_assert (Kokkos::Impl::is_same<typename ZMV::value_type,
                      typename ZMV::non_const_value_type>::value,
                    "KokkosBlas::Impl::Update<rank 2>::update: Z is const.  "
                    "It must be nonconst, because it is an output argument "
                    "(we have to be able to write to its entries).");
-    static_assert ((int) ZMV::rank == (int) XMV::rank && (int) ZMV::rank == (int) YMV::rank,
+    // Casting to int avoids compiler warnings about comparing
+    // different kinds of enum values.
+    static_assert ((int) ZMV::rank == (int) XMV::rank &&
+                   (int) ZMV::rank == (int) YMV::rank,
                    "KokkosBlas::Impl::Update<rank 2>::update: "
                    "X, Y, and Z must have the same rank.");
     static_assert (ZMV::rank == 2, "KokkosBlas::Impl::Update<rank 2>::update: "
                    "XMV, YMV, and ZMV must have rank 2.");
-#endif // KOKKOS_HAVE_CXX11
 
     const size_type numRows = X.dimension_0 ();
     const size_type numCols = X.dimension_1 ();

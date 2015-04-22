@@ -71,11 +71,10 @@ struct V_NrmInf_Functor
   V_NrmInf_Functor (const RV& r, const XV& x) :
     m_r (r), m_x (x)
   {
-#ifdef KOKKOS_HAVE_CXX11
-    static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::Impl::V_NrmInf_Functor: "
-                   "R is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<XV>::value, "KokkosBlas::Impl::V_NrmInf_Functor: "
-                   "X is not a Kokkos::View.");
+    static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::Impl::"
+                   "V_NrmInf_Functor: R is not a Kokkos::View.");
+    static_assert (Kokkos::Impl::is_view<XV>::value, "KokkosBlas::Impl::"
+                   "V_NrmInf_Functor: X is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_same<typename RV::value_type,
                    typename RV::non_const_value_type>::value,
                    "KokkosBlas::Impl::V_NrmInf_Functor: R is const.  "
@@ -84,7 +83,6 @@ struct V_NrmInf_Functor
     static_assert (RV::rank == 0 && XV::rank == 1,
                    "KokkosBlas::Impl::V_NrmInf_Functor: "
                    "RV must have rank 0 and XV must have rank 1.");
-#endif // KOKKOS_HAVE_CXX11
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -138,11 +136,10 @@ struct MV_NrmInf_Functor {
   MV_NrmInf_Functor (const RV& norms, const XMV& X) :
     value_count (X.dimension_1 ()), norms_ (norms), X_ (X)
   {
-  #ifdef KOKKOS_HAVE_CXX11
-    static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::Impl::MV_NrmInf_Functor: "
-                   "R is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::MV_NrmInf_Functor: "
-                   "X is not a Kokkos::View.");
+    static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::Impl::"
+                   "MV_NrmInf_Functor: R is not a Kokkos::View.");
+    static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
+                   "MV_NrmInf_Functor: X is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_same<typename RV::value_type,
                    typename RV::non_const_value_type>::value,
                    "KokkosBlas::Impl::MV_NrmInf_Functor: R is const.  "
@@ -151,7 +148,6 @@ struct MV_NrmInf_Functor {
     static_assert (RV::rank == 1 && XMV::rank == 2,
                    "KokkosBlas::Impl::MV_NrmInf_Functor: "
                    "RV must have rank 1 and XMV must have rank 2.");
-#endif // KOKKOS_HAVE_CXX11
   }
 
   KOKKOS_INLINE_FUNCTION void
@@ -245,23 +241,20 @@ MV_NrmInf_Invoke (const RV& r, const XMV& X)
   const SizeType numRows = static_cast<SizeType> (X.dimension_0 ());
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
 
-#ifdef KOKKOS_HAVE_CXX11
-  // We only give you a single-vector special case if you build with
-  // C++11 enabled, since we need 'decltype' to ensure that we have
-  // the right layouts for RV0D and XV1D.
+  // If the input multivector (2-D View) only has one column, invoke
+  // the single-vector version of the kernel.
   if (X.dimension_1 () == 1) {
     auto r_0 = Kokkos::subview (r, 0);
     auto X_0 = Kokkos::subview (X, Kokkos::ALL (), 0);
     typedef decltype (r_0) RV0D;
     typedef decltype (X_0) XV1D;
     V_NrmInf_Invoke<RV0D, XV1D, SizeType> (r_0, X_0);
-    return;
   }
-#endif // KOKKOS_HAVE_CXX11
-
-  typedef MV_NrmInf_Functor<RV, XMV, SizeType> functor_type;
-  functor_type op (r, X);
-  Kokkos::parallel_reduce (policy, op);
+  else {
+    typedef MV_NrmInf_Functor<RV, XMV, SizeType> functor_type;
+    functor_type op (r, X);
+    Kokkos::parallel_reduce (policy, op);
+  }
 }
 
 

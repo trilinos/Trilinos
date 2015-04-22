@@ -50,10 +50,6 @@
 namespace KokkosBlas {
 namespace Impl {
 
-//
-// fill
-//
-
 template<class XMV, class SizeType = typename XMV::size_type>
 struct MV_FillFunctor {
   typedef typename XMV::execution_space             execution_space;
@@ -67,7 +63,6 @@ struct MV_FillFunctor {
   MV_FillFunctor (const XMV& X, const xvalue_type& val) :
     numCols_ (X.dimension_1 ()), val_ (val), X_ (X)
   {
-#ifdef KOKKOS_HAVE_CXX11
     static_assert (Kokkos::Impl::is_view<XMV>::value,
                    "KokkosBlas::Impl::MV_FillFunctor: "
                    "X is not a Kokkos::View.");
@@ -78,7 +73,6 @@ struct MV_FillFunctor {
                    "(we have to be able to write to its entries).");
     static_assert (XMV::rank == 2, "KokkosBlas::Impl::MV_FillFunctor: "
                    "XMV must have rank 2.");
-#endif // KOKKOS_HAVE_CXX11
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -102,7 +96,6 @@ struct V_FillFunctor {
   V_FillFunctor (const XV& x, const xvalue_type& val) :
     val_ (val), x_ (x)
   {
-#ifdef KOKKOS_HAVE_CXX11
     static_assert (Kokkos::Impl::is_view<XV>::value,
                    "KokkosBlas::Impl::V_FillFunctor: "
                    "X is not a Kokkos::View.");
@@ -113,7 +106,6 @@ struct V_FillFunctor {
                    "(we have to be able to write to its entries).");
     static_assert (XV::rank == 1, "KokkosBlas::Impl::V_FillFunctor: "
                    "XV must have rank 1.");
-#endif // KOKKOS_HAVE_CXX11
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -144,21 +136,18 @@ MV_Fill_Invoke (const XMV& X, const typename XMV::non_const_value_type& val)
   const SizeType numRows = static_cast<SizeType> (X.dimension_0 ());
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
 
-#ifdef KOKKOS_HAVE_CXX11
-  // We only give you a single-vector special case if you build with
-  // C++11 enabled, since we need 'decltype' to ensure that we have
-  // the right layout for XV1D.
+  // Special case for a multivector (2-D View) with a single column.
+  // In that case, use the single-vector version of the kernel.
   if (X.dimension_1 () == 1) {
     auto X_0 = Kokkos::subview (X, Kokkos::ALL (), 0);
     typedef decltype (X_0) XV1D;
     V_Fill_Invoke<XV1D, SizeType> (X_0, val);
-    return;
   }
-#endif // KOKKOS_HAVE_CXX11
-
-  typedef MV_FillFunctor<XMV, SizeType> functor_type;
-  functor_type op (X, val);
-  Kokkos::parallel_for (policy, op);
+  else {
+    typedef MV_FillFunctor<XMV, SizeType> functor_type;
+    functor_type op (X, val);
+    Kokkos::parallel_for (policy, op);
+  }
 }
 
 /// \brief Implementation of KokkosBlas::fill for multivectors and
@@ -166,6 +155,7 @@ MV_Fill_Invoke (const XMV& X, const typename XMV::non_const_value_type& val)
 template<class XMV, int rank = XMV::rank>
 struct Fill {};
 
+// Specialization for multivectors (2-D Views).
 template<class XMV>
 struct Fill<XMV, 2> {
   static void fill (const XMV& X, const typename XMV::non_const_value_type& val)
@@ -186,6 +176,7 @@ struct Fill<XMV, 2> {
   }
 };
 
+// Specialization for single vectors (1-D Views).
 template<class XV>
 struct Fill<XV, 1> {
   static void fill (const XV& X, const typename XV::non_const_value_type& val)

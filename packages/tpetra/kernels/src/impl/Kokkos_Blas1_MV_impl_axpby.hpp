@@ -86,7 +86,6 @@ struct MV_Axpby_Functor
   MV_Axpby_Functor (const XMV& X, const YMV& Y, const AV& a, const BV& b) :
     numCols (X.dimension_1 ()), m_x (X), m_y (Y), m_a (a), m_b (b)
   {
-#ifdef KOKKOS_HAVE_CXX11
     // XMV and YMV must be Kokkos::View specializations.
     static_assert (Kokkos::Impl::is_view<AV>::value, "KokkosBlas::Impl::"
                    "MV_Axpby_Functor: a is not a Kokkos::View.");
@@ -110,7 +109,6 @@ struct MV_Axpby_Functor
                    "AV must have rank 1.");
     static_assert (BV::rank == 1, "KokkosBlas::Impl::MV_Axpby_Functor: "
                    "BV must have rank 1.");
-#endif // KOKKOS_HAVE_CXX11
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -328,12 +326,10 @@ struct MV_Axpby_Functor<typename XMV::non_const_value_type, XMV,
                     const typename YMV::non_const_value_type& b) :
     numCols (X.dimension_1 ()), m_x (X), m_y (Y), m_a (a), m_b (b)
   {
-#ifdef KOKKOS_HAVE_CXX11
     static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
                    "MV_Axpby_Functor: X is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::Impl::"
                    "MV_Axpby_Functor: Y is not a Kokkos::View.");
-    // YMV must be nonconst (else it can't be an output argument).
     static_assert (Kokkos::Impl::is_same<typename YMV::value_type,
                    typename YMV::non_const_value_type>::value,
                    "KokkosBlas::Impl::MV_Axpby_Functor: Y is const.  "
@@ -343,7 +339,6 @@ struct MV_Axpby_Functor<typename XMV::non_const_value_type, XMV,
                    "MV_Axpby_Functor: X and Y must have the same rank.");
     static_assert (YMV::rank == 2, "KokkosBlas::Impl::MV_Axpby_Functor: "
                    "XMV and YMV must have rank 2.");
-#endif // KOKKOS_HAVE_CXX11
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -542,7 +537,6 @@ struct MV_Axpby_Unroll_Functor
   MV_Axpby_Unroll_Functor (const XMV& x, const YMV& y, const AV& a, const BV& b) :
     m_x (x), m_y (y), m_a (a), m_b (b)
   {
-#ifdef KOKKOS_HAVE_CXX11
     static_assert (Kokkos::Impl::is_view<AV>::value, "KokkosBlas::Impl::"
                    "MV_Axpby_Unroll_Functor: a is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
@@ -565,7 +559,6 @@ struct MV_Axpby_Unroll_Functor
                    "AV must have rank 1.");
     static_assert (BV::rank == 1, "KokkosBlas::Impl::MV_Axpby_Unroll_Functor: "
                    "BV must have rank 1.");
-#endif // KOKKOS_HAVE_CXX11
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -724,7 +717,6 @@ struct MV_Axpby_Unroll_Functor<typename XMV::non_const_value_type, XMV,
                            const typename YMV::non_const_value_type& b) :
     m_x (X), m_y (Y), m_a (a), m_b (b)
   {
-#ifdef KOKKOS_HAVE_CXX11
     static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
                    "MV_Axpby_Unroll_Functor: X is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::Impl::"
@@ -734,11 +726,10 @@ struct MV_Axpby_Unroll_Functor<typename XMV::non_const_value_type, XMV,
                    "KokkosBlas::Impl::MV_Axpby_Unroll_Functor: Y is const.  "
                    "It must be nonconst, because it is an output argument "
                    "(we have to be able to write to its entries).");
-    static_assert ((int) YMV::rank == (int) XMV::rank, "KokkosBlas::Impl::MV_Axpby_Unroll_Functor: "
-                   "X and Y must have the same rank.");
+    static_assert ((int) YMV::rank == (int) XMV::rank, "KokkosBlas::Impl::"
+                   "MV_Axpby_Unroll_Functor: X and Y must have the same rank.");
     static_assert (YMV::rank == 2, "KokkosBlas::Impl::MV_Axpby_Unroll_Functor: "
                    "XMV and YMV must have rank 2.");
-#endif // KOKKOS_HAVE_CXX11
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -904,7 +895,6 @@ struct V_Axpby_Functor {
   V_Axpby_Functor (const XV& x, const YV& y, const AV& a, const BV& b) :
     m_x (x), m_y (y), m_a (a), m_b (b)
   {
-#ifdef KOKKOS_HAVE_CXX11
     static_assert (Kokkos::Impl::is_view<XV>::value, "KokkosBlas::Impl::"
                    "V_Axpby_Functor: X is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<YV>::value, "KokkosBlas::Impl::"
@@ -914,11 +904,10 @@ struct V_Axpby_Functor {
                    "KokkosBlas::Impl::V_Axpby_Functor: Y is const.  "
                    "It must be nonconst, because it is an output argument "
                    "(we have to be able to write to its entries).");
-    static_assert ((int) YV::rank == (int) XV::rank, "KokkosBlas::Impl::V_Axpby_Functor: "
-                   "X and Y must have the same rank.");
+    static_assert ((int) YV::rank == (int) XV::rank, "KokkosBlas::Impl::"
+                   "V_Axpby_Functor: X and Y must have the same rank.");
     static_assert (YV::rank == 1, "KokkosBlas::Impl::V_Axpby_Functor: "
                    "XV and YV must have rank 1.");
-#endif // KOKKOS_HAVE_CXX11
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -1014,7 +1003,6 @@ struct V_Axpby_Functor<typename XV::non_const_value_type, XV,
                    const typename YV::non_const_value_type& b) :
     m_x (x), m_y (y), m_a (a), m_b (b)
   {
-#ifdef KOKKOS_HAVE_CXX11
     static_assert (Kokkos::Impl::is_view<XV>::value, "KokkosBlas::Impl::"
                    "V_Axpby_Functor: X is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<YV>::value, "KokkosBlas::Impl::"
@@ -1024,11 +1012,10 @@ struct V_Axpby_Functor<typename XV::non_const_value_type, XV,
                    "KokkosBlas::Impl::V_Axpby_Functor: R is const.  "
                    "It must be nonconst, because it is an output argument "
                    "(we have to be able to write to its entries).");
-    static_assert ((int) YV::rank == (int) XV::rank, "KokkosBlas::Impl::V_Axpby_Functor: "
-                   "X and Y must have the same rank.");
+    static_assert ((int) YV::rank == (int) XV::rank, "KokkosBlas::Impl::"
+                   "V_Axpby_Functor: X and Y must have the same rank.");
     static_assert (YV::rank == 1, "KokkosBlas::Impl::V_Axpby_Functor: "
                    "XV and YV must have rank 1.");
-#endif // KOKKOS_HAVE_CXX11
   }
 
   KOKKOS_INLINE_FUNCTION

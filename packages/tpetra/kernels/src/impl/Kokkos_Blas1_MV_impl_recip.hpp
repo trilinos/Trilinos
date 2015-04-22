@@ -50,11 +50,9 @@
 namespace KokkosBlas {
 namespace Impl {
 
+// Functor that implements entry-wise reciprocal:
 //
-// reciprocal
-//
-
-// Entry-wise reciprocal: R(i,j) = 1 / X(i,j).
+// R(i,j) = 1 / X(i,j).
 template<class RMV, class XMV, class SizeType = typename RMV::size_type>
 struct MV_Reciprocal_Functor
 {
@@ -69,7 +67,6 @@ struct MV_Reciprocal_Functor
   MV_Reciprocal_Functor (const RMV& R, const XMV& X) :
     numCols (X.dimension_1 ()), R_ (R), X_ (X)
   {
-#ifdef KOKKOS_HAVE_CXX11
     static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::Impl::"
                    "MV_Reciprocal_Functor: RMV is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
@@ -78,7 +75,6 @@ struct MV_Reciprocal_Functor
                    "MV_Reciprocal_Functor: RMV is not rank 2");
     static_assert (XMV::rank == 2, "KokkosBlas::Impl::"
                    "MV_Reciprocal_Functor: XMV is not rank 2");
-#endif // KOKKOS_HAVE_CXX11
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -107,12 +103,10 @@ struct MV_ReciprocalSelf_Functor
   MV_ReciprocalSelf_Functor (const RMV& R) :
     numCols (R.dimension_1 ()), R_ (R)
   {
-#ifdef KOKKOS_HAVE_CXX11
     static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::Impl::"
                    "MV_Reciprocal_Functor: RMV is not a Kokkos::View.");
     static_assert (RMV::rank == 2, "KokkosBlas::Impl::"
                    "MV_Reciprocal_Functor: RMV is not rank 2");
-#endif // KOKKOS_HAVE_CXX11
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -140,7 +134,6 @@ struct V_Reciprocal_Functor
 
   V_Reciprocal_Functor (const RV& R, const XV& X) : R_ (R), X_ (X)
   {
-#ifdef KOKKOS_HAVE_CXX11
     static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::Impl::"
                    "V_Reciprocal_Functor: RV is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<XV>::value, "KokkosBlas::Impl::"
@@ -149,7 +142,6 @@ struct V_Reciprocal_Functor
                    "V_Reciprocal_Functor: RV is not rank 1");
     static_assert (XV::rank == 1, "KokkosBlas::Impl::"
                    "V_Reciprocal_Functor: XV is not rank 1");
-#endif // KOKKOS_HAVE_CXX11
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -171,12 +163,10 @@ struct V_ReciprocalSelf_Functor
 
   V_ReciprocalSelf_Functor (const RV& R) : R_ (R)
   {
-#ifdef KOKKOS_HAVE_CXX11
     static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::Impl::"
                    "V_Reciprocal_Functor: RV is not a Kokkos::View.");
     static_assert (RV::rank == 1, "KokkosBlas::Impl::"
                    "V_Reciprocal_Functor: RV is not rank 1");
-#endif // KOKKOS_HAVE_CXX11
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -192,7 +182,6 @@ template<class RMV, class XMV, class SizeType>
 void
 MV_Reciprocal_Generic (const RMV& R, const XMV& X)
 {
-#ifdef KOKKOS_HAVE_CXX11
   static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::Impl::"
                  "MV_Reciprocal_Generic: RMV is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
@@ -201,7 +190,7 @@ MV_Reciprocal_Generic (const RMV& R, const XMV& X)
                  "MV_Reciprocal_Generic: RMV is not rank 2");
   static_assert (XMV::rank == 2, "KokkosBlas::Impl::"
                  "MV_Reciprocal_Generic: XMV is not rank 2");
-#endif // KOKKOS_HAVE_CXX11
+
   typedef typename XMV::execution_space execution_space;
   const SizeType numRows = X.dimension_0 ();
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
@@ -221,7 +210,6 @@ template<class RV, class XV, class SizeType>
 void
 V_Reciprocal_Generic (const RV& R, const XV& X)
 {
-#ifdef KOKKOS_HAVE_CXX11
   static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::Impl::"
                  "V_Reciprocal_Generic: RV is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<XV>::value, "KokkosBlas::Impl::"
@@ -230,7 +218,7 @@ V_Reciprocal_Generic (const RV& R, const XV& X)
                  "V_Reciprocal_Generic: RV is not rank 1");
   static_assert (XV::rank == 1, "KokkosBlas::Impl::"
                  "V_Reciprocal_Generic: XV is not rank 1");
-#endif // KOKKOS_HAVE_CXX11
+
   typedef typename XV::execution_space execution_space;
   const SizeType numRows = X.dimension_0 ();
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
@@ -255,7 +243,6 @@ struct Reciprocal<RMV, XMV, 2> {
 
   static void reciprocal (const RMV& R, const XMV& X)
   {
-#ifdef KOKKOS_HAVE_CXX11
     static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::Impl::"
                    "Reciprocal<2-D>: RMV is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
@@ -264,7 +251,7 @@ struct Reciprocal<RMV, XMV, 2> {
                    "RMV is not rank 2.");
     static_assert (XMV::rank == 2, "KokkosBlas::Impl::Reciprocal<2-D>: "
                    "XMV is not rank 2.");
-#endif // KOKKOS_HAVE_CXX11
+
     const size_type numRows = X.dimension_0 ();
     const size_type numCols = X.dimension_1 ();
     if (numRows < static_cast<size_type> (INT_MAX) &&
@@ -287,7 +274,6 @@ struct Reciprocal<RMV, XMV, 1>
 
   static void reciprocal (const RMV& R, const XMV& X)
   {
-#ifdef KOKKOS_HAVE_CXX11
     static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::Impl::"
                    "Reciprocal<1-D>: RMV is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
@@ -296,7 +282,6 @@ struct Reciprocal<RMV, XMV, 1>
                    "RMV is not rank 1.");
     static_assert (XMV::rank == 1, "KokkosBlas::Impl::Reciprocal<1-D>: "
                    "XMV is not rank 1.");
-#endif // KOKKOS_HAVE_CXX11
 
     const size_type numRows = X.dimension_0 ();
 

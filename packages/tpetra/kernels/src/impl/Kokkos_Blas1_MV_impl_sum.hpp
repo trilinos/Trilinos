@@ -73,7 +73,6 @@ struct V_Sum_Functor
   V_Sum_Functor (const RV& r, const XV& x) :
     m_r (r), m_x (x)
   {
-#ifdef KOKKOS_HAVE_CXX11
     static_assert (Kokkos::Impl::is_view<RV>::value,
                    "KokkosBlas::Impl::V_Sum_Functor: R is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<XV>::value,
@@ -86,7 +85,6 @@ struct V_Sum_Functor
     static_assert (RV::rank == 0 && XV::rank == 1,
                    "KokkosBlas::Impl::V_Sum_Functor: "
                    "RV must have rank 0 and XV must have rank 1.");
-#endif // KOKKOS_HAVE_CXX11
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -133,7 +131,6 @@ struct MV_Sum_Functor {
   MV_Sum_Functor (const RV& sums, const XMV& X) :
     value_count (X.dimension_1 ()), sums_ (sums), X_ (X)
   {
-#ifdef KOKKOS_HAVE_CXX11
     static_assert (Kokkos::Impl::is_view<RV>::value,
                    "KokkosBlas::Impl::MV_Sum_Functor: R is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<XMV>::value,
@@ -146,7 +143,6 @@ struct MV_Sum_Functor {
     static_assert (RV::rank == 1 && XMV::rank == 2,
                    "KokkosBlas::Impl::MV_Sum_Functor: "
                    "RV must have rank 1 and XMV must have rank 2.");
-#endif // KOKKOS_HAVE_CXX11
   }
 
   KOKKOS_INLINE_FUNCTION void

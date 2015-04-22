@@ -256,32 +256,16 @@ MV_Mult_Generic (typename CMV::const_value_type& c,
                  const AV& A,
                  const BMV& B)
 {
-  using Kokkos::ALL;
-  using Kokkos::subview;
   typedef Kokkos::Details::ArithTraits<typename AV::non_const_value_type> ATA;
   typedef Kokkos::Details::ArithTraits<typename CMV::non_const_value_type> ATC;
   typedef typename CMV::execution_space execution_space;
 
   if (C.dimension_1 () == 1) {
-    // It's better to use decltype if we have C++11, because that will
-    // always work, no matter the layout of CMV and BMV.  If either
-    // has LayoutRight, then the correct layout of a single column is
-    // LayoutStride, which the non-C++11 branch below won't get right.
-#ifdef KOKKOS_HAVE_CXX11
-    auto C_0 = subview (C, ALL (), 0);
-    auto B_0 = subview (B, ALL (), 0);
+    auto C_0 = Kokkos::subview (C, Kokkos::ALL (), 0);
+    auto B_0 = Kokkos::subview (B, Kokkos::ALL (), 0);
     typedef decltype (C_0) CV;
     typedef decltype (B_0) BV;
-#else
-    typedef Kokkos::View<typename CMV::value_type*,
-      typename CMV::array_layout, typename CMV::device_type,
-      typename CMV::memory_traits, typename CMV::specialize> CV;
-    typedef Kokkos::View<typename BMV::value_type*,
-      typename BMV::array_layout, typename BMV::device_type,
-      typename BMV::memory_traits, typename BMV::specialize> BV;
-    CV C_0 = subview (C, ALL (), 0);
-    BV B_0 = subview (B, ALL (), 0);
-#endif // KOKKOS_HAVE_CXX11
+
     V_Mult_Generic<CV, AV, BV, SizeType> (c, C_0, ab, A, B_0);
     return;
   }

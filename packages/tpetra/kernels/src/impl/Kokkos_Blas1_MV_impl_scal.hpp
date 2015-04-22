@@ -515,7 +515,6 @@ template<class RV, class AV, class XV, class SizeType>
 void
 V_Scal_Generic (const RV& r, const AV& av, const XV& x, int a = 2)
 {
-#ifdef KOKKOS_HAVE_CXX11
   static_assert (Kokkos::Impl::is_view<RV>::value,
                  "V_Scal_Generic: RV is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<XV>::value,
@@ -524,7 +523,6 @@ V_Scal_Generic (const RV& r, const AV& av, const XV& x, int a = 2)
                  "V_Scal_Generic: RV is not rank 1.");
   static_assert (XV::rank == 1,
                  "V_Scal_Generic: XV is not rank 1.");
-#endif // KOKKOS_HAVE_CXX11
 
   typedef typename RV::execution_space execution_space;
   const SizeType numRows = x.dimension_0 ();
