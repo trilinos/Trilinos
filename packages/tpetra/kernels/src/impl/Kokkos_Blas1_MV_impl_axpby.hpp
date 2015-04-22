@@ -1763,21 +1763,18 @@ struct Axpby<typename XV::non_const_value_type, XV,
   static void
   axpby (const AV& alpha, const XV& X, const BV& beta, const YV& Y)
   {
-    static_assert (Kokkos::Impl::is_view<XV>::value,
-                   "KokkosBlas::Impl::Axpby::axpby (V): "
-                   "X is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<YV>::value,
-                   "KokkosBlas::Impl::Axpby::axpby (V): "
-                   "Y is not a Kokkos::View.");
+    static_assert (Kokkos::Impl::is_view<XV>::value, "KokkosBlas::Impl::"
+                   "Axpby<rank-1>::axpby: X is not a Kokkos::View.");
+    static_assert (Kokkos::Impl::is_view<YV>::value, "KokkosBlas::Impl::"
+                   "Axpby<rank-1>::axpby: Y is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_same<typename YV::value_type,
                      typename YV::non_const_value_type>::value,
-                   "KokkosBlas::Impl::Axpby::axpby (V): Y is const.  "
+                   "KokkosBlas::Impl::Axpby<rank-1>::axpby: Y is const.  "
                    "It must be nonconst, because it is an output argument "
                    "(we have to be able to write to its entries).");
-    static_assert ((int) YV::rank == (int) XV::rank,
-                   "KokkosBlas::Impl::Axpby::axpby (V): "
-                   "X and Y must have the same rank.");
-    static_assert (YV::rank == 1, "KokkosBlas::Impl::Axpby::axpby (V): "
+    static_assert ((int) YV::rank == (int) XV::rank, "KokkosBlas::Impl::"
+                   "Axpby<rank-1>::axpby: X and Y must have the same rank.");
+    static_assert (YV::rank == 1, "KokkosBlas::Impl::Axpby<rank-1>::axpby: "
                    "X and Y must have rank 1.");
 
     const size_type numRows = X.dimension_0 ();
@@ -1824,6 +1821,7 @@ struct Axpby<typename XV::non_const_value_type, XV,
 // file.  We may spread out definitions (see _DEF macro below) across
 // one or more .cpp files.
 //
+
 #define KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 template<> \
 struct Axpby<SCALAR, \
@@ -1861,15 +1859,61 @@ struct Axpby<SCALAR, \
          const YMV::non_const_value_type& beta, const YMV& Y); \
 };
 
+//
+// Macro for declaration of full specialization of
+// KokkosBlas::Impl::Axpby for rank == 1.  This is NOT for users!!!
+// All the declarations of full specializations go in this header
+// file.  We may spread out definitions (see _DEF macro below) across
+// one or more .cpp files.
+//
+
+#define KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+template<> \
+struct Axpby<SCALAR, \
+             Kokkos::View<const SCALAR*, \
+                          LAYOUT, \
+                          Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                          Kokkos::Impl::ViewDefault>, \
+             SCALAR, \
+             Kokkos::View<SCALAR*, \
+                          LAYOUT, \
+                          Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                          Kokkos::Impl::ViewDefault>, \
+             1> \
+{ \
+  typedef SCALAR AV; \
+  typedef Kokkos::View<const SCALAR*, \
+                       LAYOUT, \
+                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                       Kokkos::Impl::ViewDefault> XV; \
+  typedef SCALAR BV; \
+  typedef Kokkos::View<SCALAR*, \
+                       LAYOUT, \
+                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                       Kokkos::Impl::ViewDefault> YV; \
+  typedef YV::size_type size_type; \
+  typedef Kokkos::Details::ArithTraits<XV::non_const_value_type> ATA; \
+  typedef Kokkos::Details::ArithTraits<YV::non_const_value_type> ATB; \
+  \
+  static void \
+  axpby (const AV& alpha, const XV& X, const BV& beta, const YV& Y); \
+};
 
 //
-// Declarations of full specializations of Impl::Axpby for rank == 2.
-// Their definitions go in .cpp file(s) in this source directory.
+// Declarations of full specializations of Impl::Axpby for rank == 2
+// and rank == 1.  Their definitions go in .cpp file(s) in this source
+// directory.
 //
 
 #ifdef KOKKOS_HAVE_SERIAL
 
 KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
+
+KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
 
 #endif // KOKKOS_HAVE_SERIAL
 
@@ -1877,11 +1921,15 @@ KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial,
 
 KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
 
+KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
+
 #endif // KOKKOS_HAVE_OPENMP
 
 #ifdef KOKKOS_HAVE_PTHREAD
 
 KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
+
+KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
 
 #endif // KOKKOS_HAVE_PTHREAD
 
@@ -1889,11 +1937,15 @@ KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads
 
 KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
 
+KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
+
 #endif // KOKKOS_HAVE_CUDA
 
 #ifdef KOKKOS_HAVE_CUDA
 
 KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
+
+KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 
 #endif // KOKKOS_HAVE_CUDA
 
@@ -1963,6 +2015,79 @@ axpby (const XMV::non_const_value_type& alpha, \
     MV_Axpby_Invoke_Left<XMV::non_const_value_type, XMV, \
       YMV::non_const_value_type, YMV, index_type> (alpha, X, \
                                                    beta, Y, a, b); \
+  } \
+}
+
+//
+// Macro for definition of full specialization of
+// KokkosBlas::Impl::Axpby for rank == 1.  This is NOT for users!!!
+// We use this macro in one or more .cpp files in this directory.
+//
+
+#define KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+void \
+Axpby<SCALAR, \
+      Kokkos::View<const SCALAR*, \
+                   LAYOUT, \
+                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                   Kokkos::Impl::ViewDefault>, \
+      SCALAR, \
+      Kokkos::View<SCALAR*, \
+                   LAYOUT, \
+                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                   Kokkos::Impl::ViewDefault>, \
+      1>:: \
+axpby (const AV& alpha, const XV& X, const AV& beta, const YV& Y) \
+{ \
+  static_assert (Kokkos::Impl::is_view<XV>::value, "KokkosBlas::Impl::" \
+                 "Axpby<rank-1>::axpby: X is not a Kokkos::View."); \
+  static_assert (Kokkos::Impl::is_view<YV>::value, "KokkosBlas::Impl::" \
+                 "Axpby<rank-1>::axpby: Y is not a Kokkos::View."); \
+  static_assert (Kokkos::Impl::is_same<YV::value_type, \
+                 YV::non_const_value_type>::value, \
+                 "KokkosBlas::Impl::Axpby<rank-1>::axpby: Y is const.  " \
+                 "It must be nonconst, because it is an output argument " \
+                 "(we have to be able to write to its entries)."); \
+  static_assert ((int) YV::rank == (int) XV::rank, "KokkosBlas::Impl::" \
+                 "Axpby<rank-1>::axpby: X and Y must have the same rank."); \
+  static_assert (YV::rank == 1, "KokkosBlas::Impl::Axpby<rank-1>::axpby: " \
+                 "X and Y must have rank 1."); \
+ \
+  const size_type numRows = X.dimension_0 (); \
+  int a = 2; \
+  if (alpha == ATA::zero ()) { \
+    a = 0; \
+  } \
+  else if (alpha == -ATA::one ()) { \
+    a = -1; \
+  } \
+  else if (alpha == ATA::one ()) { \
+    a = 1; \
+  } \
+  int b = 2; \
+  if (beta == ATB::zero ()) { \
+    b = 0; \
+  } \
+  else if (beta == -ATB::one ()) { \
+    b = -1; \
+  } \
+  else if (beta == ATB::one ()) { \
+    b = 1; \
+  } \
+ \
+  if (numRows < static_cast<size_type> (INT_MAX)) { \
+    typedef int index_type; \
+    V_Axpby_Generic<XV::non_const_value_type, XV, \
+      YV::non_const_value_type, YV, \
+      index_type> (alpha, X, beta, Y, a, b); \
+  } \
+  else { \
+    typedef XV::size_type index_type; \
+    V_Axpby_Generic<XV::non_const_value_type, XV, \
+      YV::non_const_value_type, YV, \
+      index_type> (alpha, X, beta, Y, a, b); \
   } \
 }
 
