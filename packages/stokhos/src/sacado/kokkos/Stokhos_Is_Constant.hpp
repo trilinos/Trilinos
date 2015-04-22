@@ -1,12 +1,11 @@
-/*
-//@HEADER
-// ************************************************************************
+// @HEADER
+// ***********************************************************************
 //
-//          Kokkos: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//                           Stokhos Package
+//                 Copyright (2009) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -35,52 +34,26 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
 //
-// ************************************************************************
-//@HEADER
-*/
+// ***********************************************************************
+// @HEADER
 
-#include <Kokkos_Blas1_MV_impl_abs.hpp>
-#include <climits>
+#ifndef STOKHOS_IS_CONSTANT_HPP
+#define STOKHOS_IS_CONSTANT_HPP
 
-namespace KokkosBlas {
-namespace Impl {
+#include "Kokkos_Macros.hpp"
 
-#ifdef KOKKOS_HAVE_SERIAL
+namespace Sacado {
 
-  KOKKOSBLAS_IMPL_MV_ABS_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
+  // Simple function to determine whether a UQ type (Ensemble, PCE) is
+  // constant.  Defaults to true for all types.
+  template <typename T>
+  KOKKOS_INLINE_FUNCTION
+  bool is_constant(const T& x) {
+    return true;
+  }
 
-#endif // KOKKOS_HAVE_SERIAL
+}
 
-
-#ifdef KOKKOS_HAVE_OPENMP
-
-  KOKKOSBLAS_IMPL_MV_ABS_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
-
-#endif // KOKKOS_HAVE_OPENMP
-
-
-#ifdef KOKKOS_HAVE_PTHREAD
-
-  KOKKOSBLAS_IMPL_MV_ABS_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
-
-#endif // KOKKOS_HAVE_PTHREAD
-
-
-#ifdef KOKKOS_HAVE_CUDA
-
-  KOKKOSBLAS_IMPL_MV_ABS_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
-
-#endif // KOKKOS_HAVE_CUDA
-
-
-#ifdef KOKKOS_HAVE_CUDA
-
-  KOKKOSBLAS_IMPL_MV_ABS_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
-
-#endif // KOKKOS_HAVE_CUDA
-
-} // namespace Impl
-} // namespace KokkosBlas
-
+#endif // STOKHOS_IS_CONSTANT_HPP

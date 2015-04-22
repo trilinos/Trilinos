@@ -480,6 +480,7 @@ IF (Stokhos_ENABLE_Sacado)
     sacado/kokkos/Stokhos_DynamicThreadedStorage_cuda.hpp
     sacado/kokkos/Stokhos_mpl_for_each.hpp
     sacado/kokkos/Stokhos_ViewStorage.hpp
+    sacado/kokkos/Stokhos_Is_Constant.hpp
     sacado/kokkos/Kokkos_View_Utils.hpp
     sacado/kokkos/vector/Stokhos_Sacado_Kokkos_MP_Vector.hpp
     sacado/kokkos/vector/Sacado_MP_Vector.hpp

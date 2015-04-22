@@ -79,7 +79,7 @@ template<typename Scalar>
 panzer::ModelEvaluator<Scalar>::
 ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
-               const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof,
+               const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> >& lof,
                const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
                const Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > & solverFactory,
                const Teuchos::RCP<panzer::GlobalData>& global_data,
@@ -133,7 +133,7 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
 
 template<typename Scalar>
 panzer::ModelEvaluator<Scalar>::
-ModelEvaluator(const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof,
+ModelEvaluator(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> >& lof,
                const Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > & solverFactory,
                const Teuchos::RCP<panzer::GlobalData>& global_data,
                bool build_transient_support,double t_init)
@@ -212,6 +212,16 @@ panzer::ModelEvaluator<Scalar>::get_p_space(int i) const
                              "panzer::ModelEvaluator::get_p_space: Requested parameter index out of range.");
 
   return parameters_[i]->space;
+}
+
+template<typename Scalar>
+const std::string & 
+panzer::ModelEvaluator<Scalar>::get_g_name(int i) const
+{
+  TEUCHOS_ASSERT(i>=0 && 
+                 static_cast<typename std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > >::size_type>(i)<responses_.size());
+
+  return responses_[i]->name;
 }
 
 template<typename Scalar>

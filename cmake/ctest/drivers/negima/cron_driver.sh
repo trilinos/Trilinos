@@ -29,7 +29,7 @@ export http_proxy="http://sonproxy.sandia.gov:80"
 . ~/.bashrc
 
 module load openmpi/1.8.4
-module load gcc/4.9.2
+module load gcc/5.1.0
 module load valgrind/3.10.1
 
 env

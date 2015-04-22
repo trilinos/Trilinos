@@ -47,197 +47,33 @@ namespace KokkosBlas {
 namespace Impl {
 
 #ifdef KOKKOS_HAVE_SERIAL
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Serial
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
-void
-NrmInf_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::mag_type*,
-                     KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-                     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                     Kokkos::Impl::ViewDefault>,
-        Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                     Kokkos::LayoutLeft,
-                     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                     Kokkos::Impl::ViewDefault>,
-        2>::
-nrmInf (const RV& r, const XMV& X)
-{
-  typedef XMV::size_type size_type;
-  const size_type numRows = X.dimension_0 ();
-  const size_type numCols = X.dimension_1 ();
+  KOKKOSBLAS_IMPL_MV_NRMINF_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
 
-  // int is generally faster than size_t, but check for overflow first.
-  if (numRows < static_cast<size_type> (INT_MAX) &&
-      numRows * numCols < static_cast<size_type> (INT_MAX)) {
-    MV_NrmInf_Invoke<RV, XMV, int> (r, X);
-  }
-  else {
-    MV_NrmInf_Invoke<RV, XMV, size_type> (r, X);
-  }
-}
-
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #endif // KOKKOS_HAVE_SERIAL
 
-
 #ifdef KOKKOS_HAVE_OPENMP
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::OpenMP
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
-void
-NrmInf_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::mag_type*,
-                     KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-                     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                     Kokkos::Impl::ViewDefault>,
-        Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                     Kokkos::LayoutLeft,
-                     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                     Kokkos::Impl::ViewDefault>,
-        2>::
-nrmInf (const RV& r, const XMV& X)
-{
-  typedef XMV::size_type size_type;
-  const size_type numRows = X.dimension_0 ();
-  const size_type numCols = X.dimension_1 ();
+  KOKKOSBLAS_IMPL_MV_NRMINF_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
 
-  // int is generally faster than size_t, but check for overflow first.
-  if (numRows < static_cast<size_type> (INT_MAX) &&
-      numRows * numCols < static_cast<size_type> (INT_MAX)) {
-    MV_NrmInf_Invoke<RV, XMV, int> (r, X);
-  }
-  else {
-    MV_NrmInf_Invoke<RV, XMV, size_type> (r, X);
-  }
-}
-
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #endif // KOKKOS_HAVE_OPENMP
 
-
 #ifdef KOKKOS_HAVE_PTHREAD
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Threads
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
-void
-NrmInf_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::mag_type*,
-                     KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-                     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                     Kokkos::Impl::ViewDefault>,
-        Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                     Kokkos::LayoutLeft,
-                     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                     Kokkos::Impl::ViewDefault>,
-        2>::
-nrmInf (const RV& r, const XMV& X)
-{
-  typedef XMV::size_type size_type;
-  const size_type numRows = X.dimension_0 ();
-  const size_type numCols = X.dimension_1 ();
+  KOKKOSBLAS_IMPL_MV_NRMINF_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
 
-  // int is generally faster than size_t, but check for overflow first.
-  if (numRows < static_cast<size_type> (INT_MAX) &&
-      numRows * numCols < static_cast<size_type> (INT_MAX)) {
-    MV_NrmInf_Invoke<RV, XMV, int> (r, X);
-  }
-  else {
-    MV_NrmInf_Invoke<RV, XMV, size_type> (r, X);
-  }
-}
-
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #endif // KOKKOS_HAVE_PTHREAD
 
-
 #ifdef KOKKOS_HAVE_CUDA
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Cuda
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
-void
-NrmInf_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::mag_type*,
-                     KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-                     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                     Kokkos::Impl::ViewDefault>,
-        Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                     Kokkos::LayoutLeft,
-                     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                     Kokkos::Impl::ViewDefault>,
-        2>::
-nrmInf (const RV& r, const XMV& X)
-{
-  typedef XMV::size_type size_type;
-  const size_type numRows = X.dimension_0 ();
-  const size_type numCols = X.dimension_1 ();
+  KOKKOSBLAS_IMPL_MV_NRMINF_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
 
-  // int is generally faster than size_t, but check for overflow first.
-  if (numRows < static_cast<size_type> (INT_MAX) &&
-      numRows * numCols < static_cast<size_type> (INT_MAX)) {
-    MV_NrmInf_Invoke<RV, XMV, int> (r, X);
-  }
-  else {
-    MV_NrmInf_Invoke<RV, XMV, size_type> (r, X);
-  }
-}
-
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #endif // KOKKOS_HAVE_CUDA
 
-
 #ifdef KOKKOS_HAVE_CUDA
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Cuda
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaUVMSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
 
-void
-NrmInf_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::mag_type*,
-                     KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-                     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                     Kokkos::Impl::ViewDefault>,
-        Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                     Kokkos::LayoutLeft,
-                     Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                     Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                     Kokkos::Impl::ViewDefault>,
-        2>::
-nrmInf (const RV& r, const XMV& X)
-{
-  typedef XMV::size_type size_type;
-  const size_type numRows = X.dimension_0 ();
-  const size_type numCols = X.dimension_1 ();
+  KOKKOSBLAS_IMPL_MV_NRMINF_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 
-  // int is generally faster than size_t, but check for overflow first.
-  if (numRows < static_cast<size_type> (INT_MAX) &&
-      numRows * numCols < static_cast<size_type> (INT_MAX)) {
-    MV_NrmInf_Invoke<RV, XMV, int> (r, X);
-  }
-  else {
-    MV_NrmInf_Invoke<RV, XMV, size_type> (r, X);
-  }
-}
-
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
 #endif // KOKKOS_HAVE_CUDA
 
 } // namespace Impl

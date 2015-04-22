@@ -14,15 +14,15 @@ ifeq ($(KOKKOS_INTERNAL_USE_CUDA), 1)
 	CXX = nvcc_wrapper
 	CXXFLAGS ?= -O3
 	LINK = $(CXX)
-	LINKFLAGS ?= 
+	LINKFLAGS ?= -lpthread
 else
 	CXX ?= g++
 	CXXFLAGS ?= -O3
 	LINK ?= $(CXX)
-	LINKFLAGS ?=  
+	LINKFLAGS ?= -lpthread
 endif
 
-CXXFLAGS += -I$(GTEST_PATH) -I${KOKKOS_PATH}/algorithms/unit_tests
+KOKKOS_CXXFLAGS += -I$(GTEST_PATH) -I${KOKKOS_PATH}/algorithms/unit_tests
 
 TEST_TARGETS = 
 TARGETS = 

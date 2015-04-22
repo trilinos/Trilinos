@@ -30,6 +30,7 @@
 #ifndef SACADO_TAY_TAYLOR_HPP
 #define SACADO_TAY_TAYLOR_HPP
 
+#include "Sacado_ConfigDefs.h"
 #include "Sacado_Base.hpp"
 #include "Sacado_Handle.hpp"
 #include <cmath>
@@ -332,6 +333,9 @@ namespace Sacado {
     template <typename T> Taylor<T> log(const Base< Taylor<T> >& a);
     template <typename T> Taylor<T> log10(const Base< Taylor<T> >& a);
     template <typename T> Taylor<T> sqrt(const Base< Taylor<T> >& a);
+#ifdef HAVE_SACADO_CXX11
+    template <typename T> Taylor<T> cbrt(const Base< Taylor<T> >& a);
+#endif
     template <typename T> Taylor<T> pow(const Base< Taylor<T> >& a,
                                         const Base< Taylor<T> >& b);
     template <typename T> Taylor<T> pow(const typename Taylor<T>::value_type& a,

@@ -45,12 +45,144 @@
 // @HEADER
 #ifndef MUEMEX_H
 #define MUEMEX_H
+
+#include <stdio.h>
+#include <string>
+#include <vector>
+
 #include "MueLu_config.hpp"
+#include "MueLu.hpp"
+
+/*Epetra headers*/
+#include "Epetra_SerialComm.h"
+#include "Epetra_Map.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_LinearProblem.h"
+
+/* TODO: Tpetra hdrs to get vector classes etc. */
+
+#include "Teuchos_ParameterList.hpp"
+#include "BelosSolverFactory.hpp"
+#include "BelosEpetraAdapter.hpp"
 
 #ifdef HAVE_MUELU_MATLAB
 #include "mex.h"
 
-// Include my prototypes here
+//Belos parameter defaults
+
+#define BELOS_MAX_BLOCKS 100
+#define BELOS_BLOCK_SIZE 1
+#define BELOS_MAX_RESTARTS 30
+#define BELOS_TOLERANCE 1e-05
+#define BELOS_MAX_ITERS 1000
+
+class muelu_data_pack;
+class muelu_data_pack
+{
+    public:
+        muelu_data_pack();
+        virtual ~muelu_data_pack();
+        virtual int setup(int N, int* rowind, int* colptr, double* vals) = 0;
+        virtual int status() = 0;
+        virtual int solve(Teuchos::RCP<Teuchos::ParameterList> TPL, Teuchos::RCP<Epetra_CrsMatrix> A, double* b, double* x, int &iters) = 0;
+        virtual int NumMyRows() = 0;
+        virtual int NumMyCols() = 0;
+        virtual Teuchos::RCP<Epetra_CrsMatrix> GetMatrix() = 0;
+        int id;
+        Teuchos::RCP<Teuchos::ParameterList> List;
+        double operator_complexity;
+};
+
+
+//Temporary, pretend mueluapi_data_pack is a muelu_epetra_data_pack
+
+#define mueluapi_data_pack muelu_epetra_data_pack
+
+/*
+class mueluapi_data_pack : public muelu_data_pack
+{
+    public:
+        mueluapi_data_pack();
+        ~mueluapi_data_pack();
+        int setup(int N, int* rowind, int* colptr, double* vals);
+        int status();
+        int NumMyRows()
+        {
+            return A->NumMyRows();
+        }
+        int NumMyCols()
+        {
+            return A->NumMyCols();
+        }
+    private:
+        Epetra_CrsMatrix* GetMatrix()
+        {
+            return 0;
+        }
+        //TODO: I assume MueLu multigrid needs some members here?
+};
+*/
+
+class muelu_epetra_data_pack : public muelu_data_pack
+{
+    public:
+        muelu_epetra_data_pack();
+        ~muelu_epetra_data_pack();
+        int setup(int N, int* rowind, int* colptr, double* vals);
+        int status();
+        int solve(Teuchos::RCP<Teuchos::ParameterList> TPL, Teuchos::RCP<Epetra_CrsMatrix> Amat, double* b, double* x, int &iters);
+        Teuchos::RCP<Epetra_CrsMatrix> GetMatrix()
+        {
+            return A;
+        }
+        int NumMyRows()
+        {
+            return A->NumMyRows();
+        }
+        int NumMyCols()
+        {
+            return A->NumMyCols();
+        }
+    private:
+        Teuchos::RCP<Epetra_CrsMatrix> A;
+};
+
+namespace muelu_data_pack_list
+{
+	extern std::vector<Teuchos::RCP<muelu_data_pack>> list;
+	extern int nextID;
+	int add(Teuchos::RCP<muelu_data_pack> D);
+	Teuchos::RCP<muelu_data_pack> find(int id);
+	int remove(int id);
+	int size();
+	int status_all();
+	bool isInList(int id);
+	void clearAll();
+}
+
+/*
+
+TODO: Implement the Tpetra option with this datapack type
+class muelu_tpetra_data_pack : public muelu_data_pack
+{
+    public:
+        muelu_tpetra_data_pack();
+        ~muelu_tpetra_data_pack();
+        int setup(int N, int* rowind, int* colptr, double* vals);
+        int status();
+        Tpetra_CrsMatrix* GetMatrix()
+        {
+            return A;
+        }
+        int NumMyRows()
+        {
+            return A->
+		}
+    private:
+        Tpetra::CrsMatrix<>* A;
+};
+*/
 
 #endif
 

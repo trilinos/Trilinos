@@ -104,6 +104,10 @@ const char computeBeforeApplyReminder[] =
   "unless the matrix has changed or you have changed parameters\n"
   "(by calling setParameters()).";
 
+} // namespace (anonymous)
+
+// ReciprocalThreshold stuff below needs to be in a namspace visible outside
+// of this file
 template<class XV, class SizeType = typename XV::size_type>
 struct V_ReciprocalThresholdSelfFunctor
 {
@@ -207,8 +211,6 @@ reciprocal_threshold (Tpetra::Vector<S,L,G,N>& V, const S& minVal)
 {
   GlobalReciprocalThreshold<Tpetra::Vector<S,L,G,N> >::compute (V, minVal);
 }
-
-} // namespace (anonymous)
 
 template<class ScalarType, class MV>
 void Chebyshev<ScalarType, MV>::checkInputMatrix () const

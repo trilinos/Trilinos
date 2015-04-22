@@ -52,6 +52,173 @@
 
 namespace TestViewSubview {
 
+template<class Layout, class Space>
+struct getView {
+  static
+    Kokkos::View<double**,Layout,Space> get(int n, int m) {
+      return Kokkos::View<double**,Layout,Space>("G",n,m);
+  }
+};
+
+template<class Space>
+struct getView<Kokkos::LayoutStride,Space> {
+  static
+    Kokkos::View<double**,Kokkos::LayoutStride,Space> get(int n, int m) {
+      const int rank = 2 ;
+      const int order[] = { 0, 1 };
+      const unsigned dim[] = { unsigned(n), unsigned(m) };
+      Kokkos::LayoutStride stride = Kokkos::LayoutStride::order_dimensions( rank , order , dim );
+      return Kokkos::View<double**,Kokkos::LayoutStride,Space>("G",stride);
+  }
+};
+
+template<class ViewType, class Space>
+struct fill_1D {
+  typedef typename Space::execution_space execution_space;
+  typedef typename ViewType::size_type size_type;
+  ViewType a;
+  double val;
+  fill_1D(ViewType a_, double val_):a(a_),val(val_) {
+  }
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const int i) const {
+    a(i) = val;
+  }
+};
+
+template<class ViewType, class Space>
+struct fill_2D {
+  typedef typename Space::execution_space execution_space;
+  typedef typename ViewType::size_type size_type;
+  ViewType a;
+  double val;
+  fill_2D(ViewType a_, double val_):a(a_),val(val_) {
+  }
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const int i) const{
+    for(int j = 0; j < static_cast<int>(a.dimension_1()); j++)
+      a(i,j) = val;
+  }
+};
+
+template<class Layout, class Space>
+void test_auto_1d ()
+{
+  typedef Kokkos::View<double**, Layout, Space> mv_type;
+  typedef typename mv_type::size_type size_type;
+  const double ZERO = 0.0;
+  const double ONE = 1.0;
+  const double TWO = 2.0;
+
+  const size_type numRows = 10;
+  const size_type numCols = 3;
+
+  mv_type X = getView<Layout,Space>::get(numRows, numCols);
+  typename mv_type::HostMirror X_h = Kokkos::create_mirror_view (X);
+
+  fill_2D<mv_type,Space> f1(X, ONE);
+  Kokkos::parallel_for(X.dimension_0(),f1);
+  Kokkos::deep_copy (X_h, X);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      ASSERT_TRUE(X_h(i,j) == ONE);
+    }
+  }
+
+  fill_2D<mv_type,Space> f2(X, 0.0);
+  Kokkos::parallel_for(X.dimension_0(),f2);
+  Kokkos::deep_copy (X_h, X);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      ASSERT_TRUE(X_h(i,j) == ZERO);
+    }
+  }
+
+  fill_2D<mv_type,Space> f3(X, TWO);
+  Kokkos::parallel_for(X.dimension_0(),f3);
+  Kokkos::deep_copy (X_h, X);
+  for (size_type j = 0; j < numCols; ++j) {
+    for (size_type i = 0; i < numRows; ++i) {
+      ASSERT_TRUE(X_h(i,j) == TWO);
+    }
+  }
+
+  for (size_type j = 0; j < numCols; ++j) {
+    auto X_j = Kokkos::subview (X, Kokkos::ALL (), j);
+
+    fill_1D<decltype(X_j),Space> f4(X_j, ZERO);
+    Kokkos::parallel_for(X_j.dimension_0(),f4);
+    Kokkos::deep_copy (X_h, X);
+    for (size_type i = 0; i < numRows; ++i) {
+      ASSERT_TRUE(X_h(i,j) == ZERO);
+    }
+
+    for (size_type j = 0; j < numCols; ++j) {
+      auto X_j = Kokkos::subview (X, Kokkos::ALL (), j);
+      fill_1D<decltype(X_j),Space> f5(X_j, ONE);
+      Kokkos::parallel_for(X_j.dimension_0(),f5);
+      Kokkos::deep_copy (X_h, X);
+      for (size_type i = 0; i < numRows; ++i) {
+        ASSERT_TRUE(X_h(i,j) == ONE);
+      }
+    }
+  }
+}
+
+template<class LD, class LS, class Space>
+void test_1d_strided_assignment_impl(bool a, bool b, bool c, bool d, int n, int m) {
+  Kokkos::View<double**,LS,Space> l2d("l2d",n,m);
+
+  int col = n>2?2:0;
+  int row = m>2?2:0;
+
+
+  if(a) {
+    Kokkos::View<double*,LD,Space> l1da = Kokkos::subview(l2d,Kokkos::ALL(),row);
+    ASSERT_TRUE( & l1da(0) == & l2d(0,row) );
+    if(n>1)
+      ASSERT_TRUE( & l1da(1) == & l2d(1,row) );
+  }
+  if(b && n>13) {
+    Kokkos::View<double*,LD,Space> l1db = Kokkos::subview(l2d,std::pair<unsigned,unsigned>(2,13),row);
+    ASSERT_TRUE( & l1db(0) == & l2d(2,row) );
+    ASSERT_TRUE( & l1db(1) == & l2d(3,row) );
+  }
+  if(c) {
+    Kokkos::View<double*,LD,Space> l1dc = Kokkos::subview(l2d,col,Kokkos::ALL());
+    ASSERT_TRUE( & l1dc(0) == & l2d(col,0) );
+    if(m>1)
+      ASSERT_TRUE( & l1dc(1) == & l2d(col,1) );
+  }
+  if(d && m>13) {
+    Kokkos::View<double*,LD,Space> l1dd = Kokkos::subview(l2d,col,std::pair<unsigned,unsigned>(2,13));
+    ASSERT_TRUE( & l1dd(0) == & l2d(col,2) );
+    ASSERT_TRUE( & l1dd(1) == & l2d(col,3) );
+  }
+
+}
+
+template<class Space >
+void test_1d_strided_assignment() {
+  test_1d_strided_assignment_impl<Kokkos::LayoutStride,Kokkos::LayoutLeft,Space>(true,true,true,true,17,3);
+  test_1d_strided_assignment_impl<Kokkos::LayoutStride,Kokkos::LayoutRight,Space>(true,true,true,true,17,3);
+
+  test_1d_strided_assignment_impl<Kokkos::LayoutLeft,Kokkos::LayoutLeft,Space>(true,true,false,false,17,3);
+  test_1d_strided_assignment_impl<Kokkos::LayoutRight,Kokkos::LayoutLeft,Space>(true,true,false,false,17,3);
+  test_1d_strided_assignment_impl<Kokkos::LayoutLeft,Kokkos::LayoutRight,Space>(false,false,true,true,17,3);
+  test_1d_strided_assignment_impl<Kokkos::LayoutRight,Kokkos::LayoutRight,Space>(false,false,true,true,17,3);
+
+  test_1d_strided_assignment_impl<Kokkos::LayoutLeft,Kokkos::LayoutLeft,Space>(true,true,false,false,17,1);
+  test_1d_strided_assignment_impl<Kokkos::LayoutLeft,Kokkos::LayoutLeft,Space>(true,true,true,true,1,17);
+  test_1d_strided_assignment_impl<Kokkos::LayoutRight,Kokkos::LayoutLeft,Space>(true,true,true,true,1,17);
+  test_1d_strided_assignment_impl<Kokkos::LayoutRight,Kokkos::LayoutLeft,Space>(true,true,false,false,17,1);
+
+  test_1d_strided_assignment_impl<Kokkos::LayoutLeft,Kokkos::LayoutRight,Space>(true,true,true,true,17,1);
+  test_1d_strided_assignment_impl<Kokkos::LayoutLeft,Kokkos::LayoutRight,Space>(false,false,true,true,1,17);
+  test_1d_strided_assignment_impl<Kokkos::LayoutRight,Kokkos::LayoutRight,Space>(false,false,true,true,1,17);
+  test_1d_strided_assignment_impl<Kokkos::LayoutRight,Kokkos::LayoutRight,Space>(true,true,true,true,17,1);
+}
+
 template< class Space >
 void test_left_0()
 {
