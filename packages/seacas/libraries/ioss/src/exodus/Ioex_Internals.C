@@ -641,6 +641,10 @@ void Internals::get_global_counts(Mesh &mesh)
     mesh.nodesets[i].procOffset = offsets[j];
     mesh.nodesets[i].entityCount = global_counts[j++];
     mesh.nodesets[i].dfCount = global_counts[j++];
+    if (mesh.nodesets[i].dfCount != 0) {
+      // Need to adjust for locally-owned only in the auto-join output.
+      mesh.nodesets[i].dfCount = mesh.nodesets[i].entityCount;
+    }
   }
   for (size_t i=0; i < mesh.edgesets.size(); i++) {
     mesh.edgesets[i].procOffset = offsets[j];
