@@ -77,7 +77,7 @@ namespace Impl {
 
 #ifdef KOKKOS_HAVE_CUDA
 
-  KOKKOSBLAS_IMPL_MV_ABS_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUMVSpace )
+  KOKKOSBLAS_IMPL_MV_ABS_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 
 #endif // KOKKOS_HAVE_CUDA
 
