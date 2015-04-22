@@ -39,6 +39,7 @@
 #include <cstdlib>                      // for malloc, free
 #include <limits>                       // for numeric_limits
 #include <new>                          // for operator new
+#include <stk_util/util/AllocatorMemoryUsage.hpp>
 
 
 
@@ -59,10 +60,13 @@ struct page_aligned_allocator_impl
 
 } // namespace detail
 
-template <typename T>
+template <typename T, typename Tag = void>
 class page_aligned_allocator
 {
 public:
+
+  typedef Tag                         tag;
+  typedef allocator_memory_usage<tag> memory_usage;
 
   // type definitions
   typedef T              value_type;
@@ -77,7 +81,7 @@ public:
   template <typename U>
   struct rebind
   {
-    typedef page_aligned_allocator<U> other;
+    typedef page_aligned_allocator<U,tag> other;
   };
 
 
@@ -87,7 +91,7 @@ public:
   page_aligned_allocator(const page_aligned_allocator&) {}
 
   template <typename U>
-  page_aligned_allocator (const page_aligned_allocator<U>&) {}
+  page_aligned_allocator (const page_aligned_allocator<U,tag>&) {}
 
   // destructor
   ~page_aligned_allocator() {}
@@ -107,6 +111,8 @@ public:
   {
     size_t size = num * sizeof(T);
 
+    memory_usage::allocate(size);
+
     pointer ret;
 
     if (use_page_aligned_memory(size)) {
@@ -122,6 +128,8 @@ public:
   static void deallocate(pointer p, size_type num)
   {
     size_t size = num * sizeof(T);
+
+    memory_usage::deallocate(size);
 
     if (use_page_aligned_memory(size)) {
       detail::page_aligned_allocator_impl::deallocate(p, size);
@@ -153,13 +161,13 @@ private:
 };
 
 // return that all specializations of the page_aligned_allocator with the same allocator and same tag are interchangeable
-template <typename T1, typename T2>
-inline bool operator==(const page_aligned_allocator<T1>&, const page_aligned_allocator<T2>&)
-{ return boost::is_same<T1,T2>::value; }
+template <typename T1, typename T2, typename Tag1, typename Tag2>
+inline bool operator==(const page_aligned_allocator<T1,Tag1>&, const page_aligned_allocator<T2,Tag2>&)
+{ return boost::is_same<Tag1,Tag2>::value; }
 
-template <typename T1, typename T2>
-inline bool operator!=(const page_aligned_allocator<T1>&, const page_aligned_allocator<T2>&)
-{ return !boost::is_same<T1,T2>::value; }
+template <typename T1, typename T2, typename Tag1, typename Tag2>
+inline bool operator!=(const page_aligned_allocator<T1,Tag1>&, const page_aligned_allocator<T2,Tag2>&)
+{ return !boost::is_same<Tag1,Tag2>::value; }
 
 } // namespace stk
 

@@ -34,6 +34,7 @@
 #ifndef STK_UTIL_STK_UTIL_UTIL_CACHE_ALIGNED_ALLOCATOR_HPP
 #define STK_UTIL_STK_UTIL_UTIL_CACHE_ALIGNED_ALLOCATOR_HPP
 
+#include <stk_util/util/AllocatorMemoryUsage.hpp>
 #include <cstdlib>
 #include <limits>
 #include <boost/type_traits/is_same.hpp>
@@ -41,11 +42,14 @@
 
 namespace stk {
 
-template <typename T, size_t CacheSize = 64 >
+template <typename T, typename Tag = void, size_t CacheSize = 64 >
 class cache_aligned_allocator
 {
 public:
   BOOST_STATIC_ASSERT(( CacheSize != 0u && !( CacheSize & (CacheSize-1u)) ));
+
+  typedef Tag                         tag;
+  typedef stk::allocator_memory_usage<tag> memory_usage;
 
   // type definitions
   typedef T              value_type;
@@ -60,7 +64,7 @@ public:
   template <typename U>
   struct rebind
   {
-    typedef cache_aligned_allocator<U> other;
+    typedef cache_aligned_allocator<U,tag> other;
   };
 
   // constructors
@@ -69,7 +73,7 @@ public:
   cache_aligned_allocator(const cache_aligned_allocator&) {}
 
   template <typename U>
-  cache_aligned_allocator (const cache_aligned_allocator<U>&) {}
+  cache_aligned_allocator (const cache_aligned_allocator<U,tag>&) {}
 
   // destructor
   ~cache_aligned_allocator() {}
@@ -90,6 +94,8 @@ public:
   {
     size_t size = num * sizeof(T);
 
+    memory_usage::allocate(size);
+
     pointer ptr = NULL;
 #if defined( __INTEL_COMPILER )
     ptr = static_cast<pointer>(_mm_malloc(size, CacheSize));
@@ -103,6 +109,7 @@ public:
   // deallocate storage p of deleted elements
   static void deallocate(pointer p, size_type num)
   {
+    memory_usage::deallocate(num * sizeof(T));
 #if defined( __INTEL_COMPILER )
     _mm_free(p);
 #else
@@ -124,13 +131,13 @@ public:
 };
 
 // return that all specializations of the cache_aligned_allocator with the same allocator and same tag are interchangeable
-template <typename T1, typename T2>
-inline bool operator==(const cache_aligned_allocator<T1>&, const cache_aligned_allocator<T2>&)
-{ return boost::is_same<T1,T2>::value; }
+template <typename T1, typename T2, typename Tag1, typename Tag2>
+inline bool operator==(const cache_aligned_allocator<T1,Tag1>&, const cache_aligned_allocator<T2,Tag2>&)
+{ return boost::is_same<Tag1,Tag2>::value; }
 
-template <typename T1, typename T2>
-inline bool operator!=(const cache_aligned_allocator<T1>&, const cache_aligned_allocator<T2>&)
-{ return !boost::is_same<T1,T2>::value; }
+template <typename T1, typename T2, typename Tag1, typename Tag2>
+inline bool operator!=(const cache_aligned_allocator<T1,Tag1>&, const cache_aligned_allocator<T2,Tag2>&)
+{ return !boost::is_same<Tag1,Tag2>::value; }
 
 } // namespace stk
 

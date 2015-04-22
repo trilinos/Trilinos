@@ -139,7 +139,7 @@ public:
     void swap_fields(const int field1, const int field2) { }
 
 private:
-    AllocatorAdaptor<page_aligned_allocator<unsigned char> > m_default_allocator;
+    AllocatorAdaptor<page_aligned_allocator<unsigned char, FieldDataTag> > m_default_allocator;
     size_t m_default_alignment_increment_bytes;
     std::vector<std::vector<unsigned char*> > m_field_raw_data;
     std::vector<size_t> m_num_bytes_allocated_per_field;
@@ -184,7 +184,7 @@ public:
 private:
     void clear_bucket_field_data(const EntityRank rm_rank, const unsigned rm_bucket_id, const std::vector<FieldBase*>  &all_fields);
 
-    AllocatorAdaptor<page_aligned_allocator<unsigned char> > m_default_allocator;
+    AllocatorAdaptor<page_aligned_allocator<unsigned char, FieldDataTag> > m_default_allocator;
     size_t m_default_alignment_increment_bytes;
     std::vector<unsigned char*> m_field_raw_data;
     std::vector<size_t> m_num_bytes_allocated_per_field;
