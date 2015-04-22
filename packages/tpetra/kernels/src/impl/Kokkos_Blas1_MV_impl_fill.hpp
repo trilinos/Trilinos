@@ -202,134 +202,96 @@ struct Fill<XV, 1> {
   }
 };
 
-// Full specializations for cases of interest for Tpetra::MultiVector.
 //
-// Currently, we include specializations for Scalar = double,
-// LayoutLeft (which is what Tpetra::MultiVector uses at the moment),
-// and all execution spaces.  This may change in the future.  The
-// output View _always_ uses the execution space's default array
-// layout, which is what Tpetra::MultiVector wants for the output
-// argument of norm1().
+// Macro for declaration of full specialization of
+// KokkosBlas::Impl::Fill for rank == 2.  This is NOT for users!!!
+// All the declarations of full specializations go in this header
+// file.  We may spread out definitions (see _DEF macro below) across
+// one or more .cpp files.
+//
+
+#define KOKKOSBLAS_IMPL_MV_FILL_RANK2_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+template<> \
+struct Fill<Kokkos::View<SCALAR**, \
+                         LAYOUT, \
+                         Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                         Kokkos::Impl::ViewDefault>, \
+            2> \
+{ \
+  typedef Kokkos::View<SCALAR**, \
+                       LAYOUT, \
+                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                       Kokkos::Impl::ViewDefault> XMV; \
+  static void fill (const XMV& X, const XMV::non_const_value_type& val); \
+};
+
+//
+// Declarations of full specializations of Impl::Fill for rank == 2.
+// Their definitions go in .cpp file(s) in this source directory.
+//
 
 #ifdef KOKKOS_HAVE_SERIAL
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Serial
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
-template<>
-struct Fill<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                         Kokkos::LayoutLeft,
-                         Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                         Kokkos::Impl::ViewDefault>,
-            2>
-{
-  typedef Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> XMV;
-  static void fill (const XMV& X, const XMV::non_const_value_type& val);
-};
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
+
+KOKKOSBLAS_IMPL_MV_FILL_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
+
 #endif // KOKKOS_HAVE_SERIAL
 
 #ifdef KOKKOS_HAVE_OPENMP
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::OpenMP
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
-template<>
-struct Fill<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                         Kokkos::LayoutLeft,
-                         Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                         Kokkos::Impl::ViewDefault>,
-            2>
-{
-  typedef Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> XMV;
-  static void fill (const XMV& X, const XMV::non_const_value_type& val);
-};
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
+
+KOKKOSBLAS_IMPL_MV_FILL_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
+
 #endif // KOKKOS_HAVE_OPENMP
 
 #ifdef KOKKOS_HAVE_PTHREAD
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Threads
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
-template<>
-struct Fill< Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                            Kokkos::LayoutLeft,
-                            Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                            Kokkos::Impl::ViewDefault>,
-               2>
-{
-  typedef Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> XMV;
-  static void fill (const XMV& X, const XMV::non_const_value_type& val);
-};
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
+
+KOKKOSBLAS_IMPL_MV_FILL_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
+
 #endif // KOKKOS_HAVE_PTHREAD
 
 #ifdef KOKKOS_HAVE_CUDA
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Cuda
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
-template<>
-struct Fill< Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                            Kokkos::LayoutLeft,
-                            Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                            Kokkos::Impl::ViewDefault>,
-               2>
-{
-  typedef Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> XMV;
-  static void fill (const XMV& X, const XMV::non_const_value_type& val);
-};
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
+
+KOKKOSBLAS_IMPL_MV_FILL_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
+
 #endif // KOKKOS_HAVE_CUDA
 
 #ifdef KOKKOS_HAVE_CUDA
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Cuda
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaUVMSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
-template<>
-struct Fill< Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                            Kokkos::LayoutLeft,
-                            Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                            Kokkos::Impl::ViewDefault>,
-               2>
-{
-  typedef Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> XMV;
-  static void fill (const XMV& X, const XMV::non_const_value_type& val);
-};
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
+
+KOKKOSBLAS_IMPL_MV_FILL_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
+
 #endif // KOKKOS_HAVE_CUDA
+
+//
+// Macro for definition of full specialization of
+// KokkosBlas::Impl::Fill for rank == 2.  This is NOT for users!!!  We
+// may spread out use of this macro across one or more .cpp files in
+// this directory.
+//
+
+#define KOKKOSBLAS_IMPL_MV_FILL_RANK2_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+void \
+Fill<Kokkos::View<SCALAR**, \
+                  LAYOUT, \
+                  Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                  Kokkos::Impl::ViewDefault>, \
+                  2>:: \
+fill (const XMV& X, const XMV::non_const_value_type& val) \
+{ \
+  typedef XMV::size_type size_type; \
+  const size_type numRows = X.dimension_0 (); \
+  const size_type numCols = X.dimension_1 (); \
+ \
+  if (numRows < static_cast<size_type> (INT_MAX) && \
+      numRows * numCols < static_cast<size_type> (INT_MAX)) { \
+    MV_Fill_Invoke<XMV, int> (X, val); \
+  } \
+  else { \
+    MV_Fill_Invoke<XMV, size_type> (X, val); \
+  } \
+}
+
 
 } // namespace Impl
 } // namespace KokkosBlas

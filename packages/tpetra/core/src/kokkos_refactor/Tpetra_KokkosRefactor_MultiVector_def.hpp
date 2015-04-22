@@ -77,10 +77,10 @@ namespace { // (anonymous)
     typedef typename Tpetra::MultiVector<ST, LO, GO, NT, false>::dual_view_type dual_view_type;
     const char* label = "MV::DualView";
 
+#if 0
     (void) zeroOut;
     return dual_view_type (label, lclNumRows, numCols);
-
-#if 0
+#else
     if (zeroOut) {
       return dual_view_type (label, lclNumRows, numCols);
     }

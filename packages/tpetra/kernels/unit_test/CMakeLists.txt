@@ -21,7 +21,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   blas1_MV_unit
-  SOURCES blas1_MV
+  SOURCES
+    blas1_MV
+    TpetraKernels_Blas1_MV_UnitTest_Cuda.cpp
+    TpetraKernels_Blas1_MV_UnitTest_OpenMP.cpp
+    TpetraKernels_Blas1_MV_UnitTest_Serial.cpp
+    TpetraKernels_Blas1_MV_UnitTests.hpp
+    TpetraKernels_Blas1_MV_UnitTest_Threads.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
   )
