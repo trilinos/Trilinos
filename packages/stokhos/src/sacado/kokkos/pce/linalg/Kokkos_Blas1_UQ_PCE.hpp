@@ -95,7 +95,7 @@ fill(const Kokkos::View< XT,XL,XD,XM,Kokkos::Impl::ViewPCEContiguous >& x,
   typedef Kokkos::View< XT,XL,XD,XM,S > XVector;
 
   // Use the existing fill() implementation if we can
-  if (is_constant(val)) {
+  if (Sacado::is_constant(val)) {
      typename XVector::flat_array_type x_flat = x;
      fill( x_flat, val.coeff(0) );
   }
