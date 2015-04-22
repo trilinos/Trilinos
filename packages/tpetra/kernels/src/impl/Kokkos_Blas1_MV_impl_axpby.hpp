@@ -1114,7 +1114,6 @@ MV_Axpby_Unrolled (const AV& av, const XMV& x,
                    const BV& bv, const YMV& y,
                    int a = 2, int b = 2)
 {
-#ifdef KOKKOS_HAVE_CXX11
   static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
                  "MV_Axpby_Unrolled: X is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::Impl::"
@@ -1124,11 +1123,11 @@ MV_Axpby_Unrolled (const AV& av, const XMV& x,
                  "KokkosBlas::Impl::MV_Axpby_Unrolled: Y is const.  "
                  "It must be nonconst, because it is an output argument "
                  "(we have to be able to write to its entries).");
-  static_assert ((int) YMV::rank == (int) XMV::rank, "KokkosBlas::Impl::MV_Axpby_Unrolled: "
-                 "X and Y must have the same rank.");
+  static_assert ((int) YMV::rank == (int) XMV::rank, "KokkosBlas::Impl::"
+                 "MV_Axpby_Unrolled: X and Y must have the same rank.");
   static_assert (YMV::rank == 2, "KokkosBlas::Impl::MV_Axpby_Unrolled: "
                  "XMV and YMV must have rank 2.");
-#endif // KOKKOS_HAVE_CXX11
+
   typedef typename YMV::execution_space execution_space;
   const SizeType numRows = x.dimension_0 ();
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
@@ -1242,7 +1241,6 @@ MV_Axpby_Generic (const AV& av, const XMV& x,
                   const BV& bv, const YMV& y,
                   int a = 2, int b = 2)
 {
-#ifdef KOKKOS_HAVE_CXX11
   static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
                  "MV_Axpby_Generic: X is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::Impl::"
@@ -1252,11 +1250,11 @@ MV_Axpby_Generic (const AV& av, const XMV& x,
                  "KokkosBlas::Impl::MV_Axpby_Generic: Y is const.  "
                  "It must be nonconst, because it is an output argument "
                  "(we have to be able to write to its entries).");
-  static_assert ((int) YMV::rank == (int) XMV::rank, "KokkosBlas::Impl::MV_Axpby_Generic: "
-                 "X and Y must have the same rank.");
+  static_assert ((int) YMV::rank == (int) XMV::rank, "KokkosBlas::Impl::"
+                 "MV_Axpby_Generic: X and Y must have the same rank.");
   static_assert (YMV::rank == 2, "KokkosBlas::Impl::MV_Axpby_Generic: "
                  "XMV and YMV must have rank 2.");
-#endif // KOKKOS_HAVE_CXX11
+
   typedef typename YMV::execution_space execution_space;
   const SizeType numRows = x.dimension_0 ();
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
@@ -1354,7 +1352,6 @@ V_Axpby_Generic (const AV& av, const XV& x,
                  const BV& bv, const YV& y,
                  int a = 2, int b = 2)
 {
-#ifdef KOKKOS_HAVE_CXX11
   static_assert (Kokkos::Impl::is_view<XV>::value, "KokkosBlas::Impl::"
                  "V_Axpby_Generic: X is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<YV>::value, "KokkosBlas::Impl::"
@@ -1364,11 +1361,10 @@ V_Axpby_Generic (const AV& av, const XV& x,
                  "KokkosBlas::Impl::V_Axpby_Generic: Y is const.  "
                  "It must be nonconst, because it is an output argument "
                  "(we have to be able to write to its entries).");
-  static_assert ((int) YV::rank == (int) XV::rank, "KokkosBlas::Impl::V_Axpby_Generic: "
-                 "X and Y must have the same rank.");
+  static_assert ((int) YV::rank == (int) XV::rank, "KokkosBlas::Impl::"
+                 "V_Axpby_Generic: X and Y must have the same rank.");
   static_assert (YV::rank == 1, "KokkosBlas::Impl::V_Axpby_Generic: "
                  "XV and YV must have rank 1.");
-#endif // KOKKOS_HAVE_CXX11
 
   typedef typename YV::execution_space execution_space;
   const SizeType numRows = x.dimension_0 ();
@@ -1483,34 +1479,28 @@ MV_Axpby_Invoke_Left (const AV& av, const XMV& x,
                       const BV& bv, const YMV& y,
                       int a = 2, int b = 2)
 {
-#ifdef KOKKOS_HAVE_CXX11
-    static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::MV_Axpby_Invoke_Left (MV): "
-                   "X is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::Impl::MV_Axpby_Invoke_Left (MV): "
-                   "Y is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_same<typename YMV::value_type,
-                     typename YMV::non_const_value_type>::value,
-                   "KokkosBlas::Impl::MV_Axpby_Invoke_Left (MV): Y is const.  "
-                   "It must be nonconst, because it is an output argument "
-                   "(we have to be able to write to its entries).");
-    static_assert ((int) YMV::rank == (int) XMV::rank, "KokkosBlas::Impl::MV_Axpby_Invoke_Left (MV): "
-                   "X and Y must have the same rank.");
-    static_assert (YMV::rank == 2, "KokkosBlas::Impl::MV_Axpby_Invoke_Left (MV): "
-                   "X and Y must have rank 2.");
-#endif // KOKKOS_HAVE_CXX11
+  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
+                 "MV_Axpby_Invoke_Left: X is not a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::Impl::"
+                 "MV_Axpby_Invoke_Left: Y is not a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_same<typename YMV::value_type,
+                 typename YMV::non_const_value_type>::value,
+                 "KokkosBlas::Impl::MV_Axpby_Invoke_Left: Y is const.  "
+                 "It must be nonconst, because it is an output argument "
+                 "(we have to be able to write to its entries).");
+  static_assert ((int) YMV::rank == (int) XMV::rank, "KokkosBlas::Impl::"
+                 "MV_Axpby_Invoke_Left: X and Y must have the same rank.");
+  static_assert (YMV::rank == 2, "KokkosBlas::Impl::MV_Axpby_Invoke_Left: "
+                 "X and Y must have rank 2.");
 
   const SizeType numCols = x.dimension_1 ();
   switch (numCols) {
   case 1: {
-    typedef Kokkos::View<typename XMV::value_type*, typename XMV::array_layout,
-      typename XMV::device_type, typename XMV::memory_traits,
-      typename XMV::specialize> XV;
-    typedef Kokkos::View<typename YMV::value_type*, typename YMV::array_layout,
-      typename YMV::device_type, typename YMV::memory_traits,
-      typename YMV::specialize> YV;
+    auto x_0 = Kokkos::subview (x, Kokkos::ALL (), 0);
+    auto y_0 = Kokkos::subview (y, Kokkos::ALL (), 0);
 
-    XV x_0 = Kokkos::subview (x, Kokkos::ALL (), 0);
-    YV y_0 = Kokkos::subview (y, Kokkos::ALL (), 0);
+    typedef decltype (x_0) XV;
+    typedef decltype (y_0) YV;
     V_Axpby_Generic<AV, XV, BV, YV, SizeType> (av, x_0, bv, y_0, a, b);
     break;
   }
@@ -1589,37 +1579,27 @@ MV_Axpby_Invoke_Right (const AV& av, const XMV& x,
                        const BV& bv, const YMV& y,
                        int a = 2, int b = 2)
 {
-#ifdef KOKKOS_HAVE_CXX11
-    static_assert (Kokkos::Impl::is_view<XMV>::value,
-                   "KokkosBlas::Impl::MV_Axpby_Invoke_Right (MV): "
-                   "X is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<YMV>::value,
-                   "KokkosBlas::Impl::MV_Axpby_Invoke_Right (MV): "
-                   "Y is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_same<typename YMV::value_type,
-                     typename YMV::non_const_value_type>::value,
-                   "KokkosBlas::Impl::MV_Axpby_Invoke_Right (MV): Y is const.  "
-                   "It must be nonconst, because it is an output argument "
-                   "(we have to be able to write to its entries).");
-    static_assert ((int) YMV::rank == (int) XMV::rank,
-                   "KokkosBlas::Impl::MV_Axpby_Invoke_Right (MV): "
-                   "X and Y must have the same rank.");
-    static_assert (YMV::rank == 2, "KokkosBlas::Impl::MV_Axpby_Invoke_Right (MV): "
-                   "X and Y must have rank 2.");
-#endif // KOKKOS_HAVE_CXX11
+  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
+                 "MV_Axpby_Invoke_Right: X is not a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::Impl::"
+                 "MV_Axpby_Invoke_Right: Y is not a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_same<typename YMV::value_type,
+                 typename YMV::non_const_value_type>::value,
+                 "KokkosBlas::Impl::MV_Axpby_Invoke_Right: Y is const.  "
+                 "It must be nonconst, because it is an output argument "
+                 "(we have to be able to write to its entries).");
+  static_assert ((int) YMV::rank == (int) XMV::rank, "KokkosBlas::Impl::"
+                 "MV_Axpby_Invoke_Right: X and Y must have the same rank.");
+  static_assert (YMV::rank == 2, "KokkosBlas::Impl::MV_Axpby_Invoke_Right: "
+                 "X and Y must have rank 2.");
 
   const SizeType numCols = x.dimension_1 ();
   if (numCols == 1) {
-    typedef Kokkos::View<typename XMV::value_type*, typename XMV::array_layout,
-      typename XMV::device_type, typename XMV::memory_traits,
-      typename XMV::specialize> XV;
-    typedef Kokkos::View<typename YMV::value_type*, typename YMV::array_layout,
-      typename YMV::device_type, typename YMV::memory_traits,
-      typename YMV::specialize> YV;
-
-    XV x_0 = Kokkos::subview (x, Kokkos::ALL (), 0);
-    YV y_0 = Kokkos::subview (y, Kokkos::ALL (), 0);
-    V_Axpby_Generic<AV, XMV, BV, YMV, 1, SizeType> (av, x_0, bv, y_0, a, b);
+    auto x_0 = Kokkos::subview (x, Kokkos::ALL (), 0);
+    auto y_0 = Kokkos::subview (y, Kokkos::ALL (), 0);
+    typedef decltype (x_0) XV;
+    typedef decltype (y_0) YV;
+    V_Axpby_Generic<AV, XV, BV, YV, SizeType> (av, x_0, bv, y_0, a, b);
   }
   else {
     MV_Axpby_Generic<AV, XMV, BV, YMV, SizeType> (av, x, bv, y, a, b);
@@ -1643,7 +1623,7 @@ MV_Axpby_Invoke_Right (const AV& av, const XMV& x,
 /// 4. Y(i) = av*X(i) + bv*Y(i) (if R, X, and Y are 1-D, and av and bv
 ///    are scalars)
 ///
-// Any <i>scalar</i> coefficient of zero has BLAS semantics of
+/// Any <i>scalar</i> coefficient of zero has BLAS semantics of
 /// ignoring the corresponding (multi)vector entry.  This does NOT
 /// apply to coefficients in av and bv vectors, if they are used.
 template<class AV, class XMV, class BV, class YMV, int rank = YMV::rank>
@@ -1658,24 +1638,20 @@ struct Axpby<AV, XMV, BV, YMV, 2>
   static void
   axpby (const AV& av, const XMV& X, const BV& bv, const YMV& Y)
   {
-#ifdef KOKKOS_HAVE_CXX11
-    static_assert (Kokkos::Impl::is_view<XMV>::value,
-                   "KokkosBlas::Impl::Axpby::axpby (MV): "
-                   "X is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<YMV>::value,
-                   "KokkosBlas::Impl::Axpby::axpby (MV): "
-                   "Y is not a Kokkos::View.");
+    static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
+                   "Axpby<rank-2>::axpby: X is not a Kokkos::View.");
+    static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::Impl::"
+                   "Axpby<rank-2>::axpby: Y is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_same<typename YMV::value_type,
                      typename YMV::non_const_value_type>::value,
-                   "KokkosBlas::Impl::Axpby::axpby (MV): Y is const.  "
+                   "KokkosBlas::Impl::Axpby<rank-2>::axpby: Y is const.  "
                    "It must be nonconst, because it is an output argument "
                    "(we have to be able to write to its entries).");
     static_assert ((int) YMV::rank == (int) XMV::rank,
-                   "KokkosBlas::Impl::Axpby::axpby (MV): "
+                   "KokkosBlas::Impl::Axpby<rank-2>::axpby (MV): "
                    "X and Y must have the same rank.");
-    static_assert (YMV::rank == 2, "KokkosBlas::Impl::Axpby::axpby (MV): "
+    static_assert (YMV::rank == 2, "KokkosBlas::Impl::Axpby<rank-2>::axpby: "
                    "X and Y must have rank 2.");
-#endif // KOKKOS_HAVE_CXX11
 
     const size_type numRows = X.dimension_0 ();
     const size_type numCols = X.dimension_1 ();
