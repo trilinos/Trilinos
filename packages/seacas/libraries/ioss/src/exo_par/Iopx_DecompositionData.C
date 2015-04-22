@@ -517,18 +517,21 @@ namespace Iopx {
         && method != "KWAY_GEOM"
         && method != "METIS_SFC"
 #endif
-      ) {
-      std::ostringstream errmsg;
-      errmsg << "ERROR: Invalid decomposition method specified: '" << method << "'\n"
-	     << "       Valid methods: LINEAR"
+      )
+      {
+	if (myProcessor == 0) {
+	  std::ostringstream errmsg;
+	  errmsg << "ERROR: Invalid decomposition method specified: '" << method << "'\n"
+		 << "       Valid methods: LINEAR"
 #if !defined(NO_ZOLTAN_SUPPORT)
-	     << ", BLOCK, CYCLIC, RANDOM, RCB, RIB, HSFC"
+		 << ", BLOCK, CYCLIC, RANDOM, RCB, RIB, HSFC"
 #endif
 #if !defined(NO_PARMETIS_SUPPORT)
-	     << ", KWAY, GEOM_KWAY, METIS_SFC"
+		 << ", KWAY, GEOM_KWAY, METIS_SFC"
 #endif
-	     << "\n";
-      std::cerr << errmsg.str();
+		 << "\n";
+	  std::cerr << errmsg.str();
+	}
       exit(EXIT_FAILURE);
     }
 
