@@ -60,7 +60,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
 
-/* TODO: Tpetra hdrs to get vector classes etc. */
+#include "Tpetra_CrsMatrix_decl.hpp"
 
 #include "Teuchos_ParameterList.hpp"
 #include "BelosSolverFactory.hpp"
@@ -68,14 +68,6 @@
 
 #ifdef HAVE_MUELU_MATLAB
 #include "mex.h"
-
-//Belos parameter defaults
-
-#define BELOS_MAX_BLOCKS 100
-#define BELOS_BLOCK_SIZE 1
-#define BELOS_MAX_RESTARTS 30
-#define BELOS_TOLERANCE 1e-05
-#define BELOS_MAX_ITERS 1000
 
 class muelu_data_pack;
 class muelu_data_pack
@@ -98,9 +90,8 @@ class muelu_data_pack
 //Temporary, pretend mueluapi_data_pack is a muelu_epetra_data_pack
 
 #define mueluapi_data_pack muelu_epetra_data_pack
-
 /*
-class mueluapi_data_pack : public muelu_data_pack
+class mueluapi_data_pack : public muelu_tpetra_data_pack
 {
     public:
         mueluapi_data_pack();
@@ -116,14 +107,12 @@ class mueluapi_data_pack : public muelu_data_pack
             return A->NumMyCols();
         }
     private:
-        Epetra_CrsMatrix* GetMatrix()
+        Teuchos::RCP<Tpetra::CrsMatrix<double, int, int,  GetMatrix()
         {
             return 0;
         }
-        //TODO: I assume MueLu multigrid needs some members here?
 };
 */
-
 class muelu_epetra_data_pack : public muelu_data_pack
 {
     public:
@@ -147,23 +136,7 @@ class muelu_epetra_data_pack : public muelu_data_pack
     private:
         Teuchos::RCP<Epetra_CrsMatrix> A;
 };
-
-namespace muelu_data_pack_list
-{
-	extern std::vector<Teuchos::RCP<muelu_data_pack>> list;
-	extern int nextID;
-	int add(Teuchos::RCP<muelu_data_pack> D);
-	Teuchos::RCP<muelu_data_pack> find(int id);
-	int remove(int id);
-	int size();
-	int status_all();
-	bool isInList(int id);
-	void clearAll();
-}
-
 /*
-
-TODO: Implement the Tpetra option with this datapack type
 class muelu_tpetra_data_pack : public muelu_data_pack
 {
     public:
@@ -180,9 +153,21 @@ class muelu_tpetra_data_pack : public muelu_data_pack
             return A->
 		}
     private:
-        Tpetra::CrsMatrix<>* A;
+        Teuchos::RCP<Tpetra::CrsMatrix<double, int, int>> A;
 };
 */
+namespace muelu_data_pack_list
+{
+	extern std::vector<Teuchos::RCP<muelu_data_pack>> list;
+	extern int nextID;
+	int add(Teuchos::RCP<muelu_data_pack> D);
+	Teuchos::RCP<muelu_data_pack> find(int id);
+	int remove(int id);
+	int size();
+	int status_all();
+	bool isInList(int id);
+	void clearAll();
+}
 
 #endif
 

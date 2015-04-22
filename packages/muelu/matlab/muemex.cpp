@@ -81,7 +81,7 @@ typedef enum
 #define MUEMEX_DEFAULT_USEDEFAULTNS true
 
 /* Debugging */
-#define VERBOSE_OUTPUT
+//#define VERBOSE_OUTPUT
 
 /* Stuff for MATLAB R2006b vs. previous versions */
 #if(defined(MX_API_VER) && MX_API_VER >= 0x07030000)
@@ -167,42 +167,38 @@ RCP<Epetra_CrsMatrix> epetra_setup_from_prhs(const mxArray* mxa, bool rewrap_int
 //Use Belos to solve the matrix, instead of AztecOO like in mlmex
 int epetra_solve(RCP<Teuchos::ParameterList> SetupList, RCP<Teuchos::ParameterList> TPL, RCP<Epetra_CrsMatrix> A, double* b, double* x, int &iters)
 {
-    int matSize = A->NumGlobalRows();
     SetupList->setParameters(*TPL);
     //Set up X and B
-    RCP<Epetra_Vector> lhs = rcp(new Epetra_Vector(A->RowMap()));
-    RCP<Epetra_Vector> rhs = rcp(new Epetra_Vector(A->RowMap()));
-    A->Print(cerr);
-    mexPrintf("B vector\n\n");
-    for(int i = 0; i < matSize; i++)
-    {
-        (*rhs)[i] = b[i];
-        //initialize the output vector & iteration count to 0 in case Belos doesn't provide answer
-        x[i] = 0;
-        (*lhs)[i] = 1;
-    }
-    iters = 0;
-    mexPrintf("\nThere are %d nonzero elements in the matrix.", A->NumGlobalNonzeros());
-    //Problem construction requires Epetra_MultiVector for x and b
-    RCP<Epetra_MultiVector> Bmv = Teuchos::rcp_implicit_cast<Epetra_MultiVector>(rhs);
+    Epetra_Map map = A->DomainMap();
+    RCP<Epetra_Vector> xVec = rcp(new Epetra_Vector(map));
+    RCP<Epetra_Vector> bVec = rcp(new Epetra_Vector(Epetra_DataAccess::Copy, map, b));
+    RCP<Epetra_MultiVector> lhs = rcp_implicit_cast<Epetra_MultiVector>(xVec);
+    RCP<Epetra_MultiVector> rhs = rcp_implicit_cast<Epetra_MultiVector>(bVec);
+    #ifdef VERBOSE_OUTPUT
+    int matSize = A->NumGlobalRows();
+    mexPrintf("lhs vec:\n");
     for(int i = 0; i < matSize; i++)
     {
         if(i % 10 == 0)
             mexPrintf("\n");
-        mexPrintf("%f ", (*Bmv)[0][i]);
+        mexPrintf("%f ", (*lhs)[0][i]);
+        if((*xVec)[i] != (*lhs)[0][i])
+            mexPrintf("not good");
     }
-    RCP<Epetra_MultiVector> Xmv = Teuchos::rcp_implicit_cast<Epetra_MultiVector>(lhs);
-    //Use get() to actually set correct default values for Belos parameters
-    //note: the user could have set these explicitly in the muelu() call from matlab
-    //Default values #defined in muemex.h
-    /*
-    SetupList->get("Maximum Iterations", BELOS_MAX_ITERS);
-    SetupList->get("Convergence Tolerance", BELOS_TOLERANCE);
-    SetupList->get("Block Size", BELOS_BLOCK_SIZE);
-    SetupList->get("Num Blocks", BELOS_MAX_BLOCKS);
-    SetupList->get("Maximum Restarts", BELOS_MAX_RESTARTS);
-    */
-
+    mexPrintf("\n\nrhs vec:\n");
+    for(int i = 0; i < matSize; i++)
+    {
+        if(i % 10 == 0)
+            mexPrintf("\n");
+        mexPrintf("%f ", (*rhs)[0][i]);
+        if((*bVec)[i] != (*rhs)[0][i])
+            mexPrintf("not good 2");
+    }
+    mexPrintf("\n\n");
+    #endif
+    RCP<Belos::LinearProblem<double, Epetra_MultiVector, Epetra_Operator>> problem = rcp(new Belos::LinearProblem<double, Epetra_MultiVector, Epetra_Operator>(A, lhs, rhs));
+    bool set = problem->setProblem();
+    TEUCHOS_TEST_FOR_EXCEPTION(!set, std::runtime_error, "Linear Problem failed to set up correctly!");
     #ifdef VERBOSE_OUTPUT
     SetupList->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::Debug + Belos::FinalSummary + Belos::IterationDetails + Belos::OrthoDetails + Belos::TimingDetails + Belos::StatusTestDetails);
     SetupList->set("Output Frequency", 1);
@@ -210,48 +206,23 @@ int epetra_solve(RCP<Teuchos::ParameterList> SetupList, RCP<Teuchos::ParameterLi
     #else
     SetupList->set("Verbosity", Belos::Errors + Belos::Warnings);
     #endif
-    //rcpA doesn't own the memory; the data_pack in the main list does
-    SetupList->print();
-    RCP<Belos::LinearProblem<double, Epetra_MultiVector, Epetra_Operator>> problem = rcp(new Belos::LinearProblem<double, Epetra_MultiVector, Epetra_Operator>(A, Xmv, Bmv));
-    bool set = problem->setProblem();
-    if(!set)
+    Belos::PseudoBlockGmresSolMgr<double, Epetra_MultiVector, Epetra_Operator> solver(problem, SetupList);
+    Belos::ReturnType ret = solver.solve();
+    int rv;
+    if(ret == Belos::Converged)
     {
-        mexPrintf("Error: Unable to set up Belos::LinearProblem.\n");
-        return IS_FALSE;
-    }
-    RCP<Belos::SolverManager<double, Epetra_MultiVector, Epetra_Operator>> solver = rcp(new Belos::BlockGmresSolMgr<double, Epetra_MultiVector, Epetra_Operator>(problem, SetupList));
-    double norm2Left, norm2Right;
-    Xmv->Norm2(&norm2Left);
-    Bmv->Norm2(&norm2Right);
-    mexPrintf("X: %f B: %f\n", norm2Left, norm2Right);
-    Belos::ReturnType result = solver->solve();
-    Xmv->Norm2(&norm2Left);
-    Bmv->Norm2(&norm2Right);
-    mexPrintf("X: %f B: %f\n", norm2Left, norm2Right);
-    mexPrintf("Solver acheived %f tolerance.\n", solver->achievedTol());
-    if(solver->isLOADetected())
-    {
-        mexPrintf("Warning: Belos detected a loss of accuracy in solution.\n");
-    }
-    if(result == Belos::Unconverged)
-    {
-        mexPrintf("Error: Belos solver did not converge.\n");
-        iters = 0;
-        return IS_FALSE;
+        mexPrintf("Success, Belos converged!\n");
+        iters = solver.getNumIters();        
+        rv = IS_TRUE;
     }
     else
     {
-        mexPrintf("Sucess. Belos converged.\n");
-        iters = solver->getNumIters();
-        for(int i = 0; i < matSize; i++)
-        {
-            x[i] = (*Xmv)[0][i];
-            if(i % 10 == 0)
-                mexPrintf("\n");
-            mexPrintf("%f ", x[i]);
-        }
-        return IS_TRUE;
+        mexPrintf("Belos failed to converge.\n");
+        iters = 0;
+        rv = IS_FALSE;    
     }
+    xVec->ExtractCopy(x);
+    return rv;
 }   /*end solve*/
 
 /**************************************************************/
