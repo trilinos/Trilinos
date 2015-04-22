@@ -479,7 +479,18 @@ void spmv_alpha(const char mode[], typename AMatrix::const_value_type& alpha, co
   }
 }
 
-
+// Implementation of KokkosSparse::spmv for mode == 'N' (no transpose).
+//
+// First 5 template parameters are the same as those of
+// Kokkos::CrsMatrix.  In particular:
+//
+// AT: type of each entry of the sparse matrix
+// AO: ordinal type (type of column indices) of the sparse matrix
+// AS: offset type (type of row offsets) of the sparse matrix
+//
+// Next 5 template parameters that start with X correspond to the
+// input Kokkos::View.  Last 5 template parameters that start with Y
+// correspond to the output Kokkos::View.
 template<class AT, class AO, class AD, class AM, class AS,
          class XT, class XL, class XD, class XM, class XS,
          class YT, class YL, class YD, class YM, class YS>
@@ -489,54 +500,164 @@ struct SPMV {
   typedef Kokkos::View<YT,YL,YD,YM,YS> YVector;
   typedef typename YVector::non_const_value_type Scalar;
 
-  static void spmv(const char mode[], const Scalar& alpha, const AMatrix& A, const XVector& x, const Scalar& beta, const YVector& y) {
-    if( alpha == Kokkos::Details::ArithTraits<Scalar>::zero () ) {
-      spmv_alpha<AMatrix,XVector,YVector,0>(mode,alpha,A,x,beta,y);
+  static void
+  spmv (const char mode[], const Scalar& alpha, const AMatrix& A,
+        const XVector& x, const Scalar& beta, const YVector& y)
+  {
+    if (alpha == Kokkos::Details::ArithTraits<Scalar>::zero ()) {
+      spmv_alpha<AMatrix,XVector,YVector,0> (mode, alpha, A, x, beta, y);
       return;
     }
-    if( alpha == Kokkos::Details::ArithTraits<Scalar>::one () ) {
-      spmv_alpha<AMatrix,XVector,YVector,1>(mode,alpha,A,x,beta,y);
+    if (alpha == Kokkos::Details::ArithTraits<Scalar>::one ()) {
+      spmv_alpha<AMatrix,XVector,YVector,1> (mode, alpha, A, x, beta, y);
       return;
     }
-    if( alpha == -Kokkos::Details::ArithTraits<Scalar>::one () ) {
-      spmv_alpha<AMatrix,XVector,YVector,-1>(mode,alpha,A,x,beta,y);
+    if (alpha == -Kokkos::Details::ArithTraits<Scalar>::one ()) {
+      spmv_alpha<AMatrix,XVector,YVector,-1> (mode, alpha, A, x, beta, y);
       return;
     }
-    spmv_alpha<AMatrix,XVector,YVector,2>(mode,alpha,A,x,beta,y);
+    spmv_alpha<AMatrix,XVector,YVector,2> (mode, alpha, A, x, beta, y);
   }
-
 };
+
+//
+// Macro for declaring a full specialization of the SPMV struct.
+// We use this macro below.
+//
+// SCALAR_TYPE: The type of each entry in the sparse matrix
+// ORDINAL_TYPE: The type of each column index in the sparse matrix
+// OFFSET_TYPE: The type of each row offset in the sparse matrix
+// LAYOUT_TYPE: The layout of the Kokkos::View vector arguments
+//   of the sparse matrix-vector multiply
+// EXEC_SPACE_TYPE: The execution space type
+// MEM_SPACE_TYPE: The memory space type
+//
+#define KOKKOSSPARSE_IMPL_SPMV_DECL( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE ) \
+template<> \
+struct SPMV<const SCALAR_TYPE, \
+            ORDINAL_TYPE, \
+            Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+            Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+            OFFSET_TYPE, \
+            const SCALAR_TYPE*, \
+            LAYOUT_TYPE, \
+            Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+            Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess>, \
+            Kokkos::Impl::ViewDefault, \
+            SCALAR_TYPE*, \
+            LAYOUT_TYPE, \
+            Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+            Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+            Kokkos::Impl::ViewDefault> \
+{ \
+  typedef CrsMatrix<const SCALAR_TYPE, \
+                    ORDINAL_TYPE, \
+                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+                    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                    OFFSET_TYPE> AMatrix; \
+  typedef Kokkos::View<const SCALAR_TYPE*, \
+                       LAYOUT_TYPE, \
+                       Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess>, \
+                       Kokkos::Impl::ViewDefault> XVector; \
+  typedef Kokkos::View<SCALAR_TYPE*, \
+                       LAYOUT_TYPE, \
+                       Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                       Kokkos::Impl::ViewDefault> YVector; \
+  typedef typename YVector::non_const_value_type Scalar; \
+ \
+  static void \
+  spmv (const char mode[], const Scalar& alpha, const AMatrix& A, \
+        const XVector& x, const Scalar& beta, const YVector& y); \
+};
+
+//
+// Declarations of full specializations of the SPMV struct.
+// Definitions go in various .cpp file(s) in this directory.
+//
+
+#ifdef KOKKOS_HAVE_SERIAL
+
+KOKKOSSPARSE_IMPL_SPMV_DECL( double, int, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
+
+#endif // KOKKOS_HAVE_SERIAL
 
 #ifdef KOKKOS_HAVE_OPENMP
-#define KOKKOSSPARSE_IMPL_MV_EXEC_SPACE Kokkos::OpenMP
-#define KOKKOSSPARSE_IMPL_MV_MEM_SPACE Kokkos::HostSpace
-#define KOKKOSSPARSE_IMPL_MV_DEVICE_TYPE Kokkos::Device<KOKKOSSPARSE_IMPL_MV_EXEC_SPACE,KOKKOSSPARSE_IMPL_MV_MEM_SPACE>
-#define KOKKOSSPARSE_IMPL_MV_SCALAR double
-template<>
-struct SPMV<const KOKKOSSPARSE_IMPL_MV_SCALAR, int, KOKKOSSPARSE_IMPL_MV_DEVICE_TYPE, Kokkos::MemoryTraits<Kokkos::Unmanaged>,size_t,
-            const KOKKOSSPARSE_IMPL_MV_SCALAR*, Kokkos::LayoutLeft, KOKKOSSPARSE_IMPL_MV_DEVICE_TYPE, Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess>,Kokkos::Impl::ViewDefault,
-            KOKKOSSPARSE_IMPL_MV_SCALAR*, Kokkos::LayoutLeft, KOKKOSSPARSE_IMPL_MV_DEVICE_TYPE, Kokkos::MemoryTraits<Kokkos::Unmanaged>,Kokkos::Impl::ViewDefault> {
-  typedef CrsMatrix<const KOKKOSSPARSE_IMPL_MV_SCALAR, int, KOKKOSSPARSE_IMPL_MV_DEVICE_TYPE, Kokkos::MemoryTraits<Kokkos::Unmanaged>,size_t> AMatrix;
-  typedef Kokkos::View<const KOKKOSSPARSE_IMPL_MV_SCALAR*, Kokkos::LayoutLeft, KOKKOSSPARSE_IMPL_MV_DEVICE_TYPE, Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess>,Kokkos::Impl::ViewDefault> XVector;
-  typedef Kokkos::View<KOKKOSSPARSE_IMPL_MV_SCALAR*, Kokkos::LayoutLeft, KOKKOSSPARSE_IMPL_MV_DEVICE_TYPE, Kokkos::MemoryTraits<Kokkos::Unmanaged>,Kokkos::Impl::ViewDefault> YVector;
-  typedef typename YVector::non_const_value_type Scalar;
 
-  static void spmv(const char mode[], const Scalar& alpha, const AMatrix& A, const XVector& x, const Scalar& beta, const YVector& y);
-};
-#undef KOKKOSSPARSE_IMPL_MV_EXEC_SPACE
-#undef KOKKOSSPARSE_IMPL_MV_MEM_SPACE
-#undef KOKKOSSPARSE_IMPL_MV_DEVICE_TYPE
-#undef KOKKOSSPARSE_IMPL_MV_SCALAR
-#endif
+KOKKOSSPARSE_IMPL_SPMV_DECL( double, int, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
 
+#endif // KOKKOS_HAVE_OPENMP
 
+#ifdef KOKKOS_HAVE_PTHREAD
+
+KOKKOSSPARSE_IMPL_SPMV_DECL( double, int, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
+
+#endif // KOKKOS_HAVE_PTHREAD
+
+#ifdef KOKKOS_HAVE_CUDA
+
+KOKKOSSPARSE_IMPL_SPMV_DECL( double, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
+
+#endif // KOKKOS_HAVE_CUDA
+
+#ifdef KOKKOS_HAVE_CUDA
+
+KOKKOSSPARSE_IMPL_SPMV_DECL( double, int, size_t, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
+
+#endif // KOKKOS_HAVE_CUDA
+
+//
+// Macro for defining a full specialization of SPMV::spmv.
+// We use this macro in various .cpp file(s) in this directory.
+//
+// SCALAR_TYPE: The type of each entry in the sparse matrix
+// ORDINAL_TYPE: The type of each column index in the sparse matrix
+// OFFSET_TYPE: The type of each row offset in the sparse matrix
+// LAYOUT_TYPE: The layout of the Kokkos::View vector arguments
+//   of the sparse matrix-vector multiply
+// EXEC_SPACE_TYPE: The execution space type
+// MEM_SPACE_TYPE: The memory space type
+//
+#define KOKKOSSPARSE_IMPL_SPMV_DEF( SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE ) \
+void \
+SPMV<const SCALAR_TYPE, \
+     ORDINAL_TYPE, \
+     Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+     Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+     OFFSET_TYPE, \
+     const SCALAR_TYPE*, \
+     Kokkos::LayoutLeft, \
+     Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+     Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess>, \
+     Kokkos::Impl::ViewDefault, \
+     SCALAR_TYPE*, \
+     Kokkos::LayoutLeft, \
+     Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
+     Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+     Kokkos::Impl::ViewDefault>:: \
+spmv (const char mode[], const Scalar& alpha, const AMatrix& A, \
+      const XVector& x, const Scalar& beta, const YVector& y) \
+{ \
+  if (alpha == Kokkos::Details::ArithTraits<Scalar>::zero ()) { \
+    spmv_alpha<AMatrix,XVector,YVector,0> (mode, alpha, A, x, beta, y); \
+    return; \
+  } \
+  if (alpha == Kokkos::Details::ArithTraits<Scalar>::one ()) { \
+    spmv_alpha<AMatrix,XVector,YVector,1> (mode, alpha, A, x, beta, y); \
+    return; \
+  } \
+  if (alpha == -Kokkos::Details::ArithTraits<Scalar>::one ()) { \
+    spmv_alpha<AMatrix,XVector,YVector,-1> (mode, alpha, A, x, beta, y); \
+    return; \
+  } \
+  spmv_alpha<AMatrix,XVector,YVector,2> (mode, alpha, A, x, beta, y); \
 }
-}
 
-namespace KokkosSparse {
-namespace Impl {
 
-// This TansposeFunctor is functional, but not necessarily performant.
+// Functor for implementing transpose and conjugate transpose sparse
+// matrix-vector multiply with multivector (2-D View) input and
+// output.  This functor works, but is not necessarily performant.
 template<class aCoeffs,
          class AMatrix,
          class XVector,
