@@ -198,6 +198,7 @@ namespace Belos {
             
             static void MvAddMv(Scalar alpha, const MV& A, 
                                 Scalar beta,  const MV& B, MV& mv) {
+
                 mv.set(A);
                 mv.scale(alpha);
                 mv.axpy(beta,B);    
