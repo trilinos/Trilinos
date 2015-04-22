@@ -64,9 +64,6 @@ namespace stk { namespace mesh { template <typename DataType = void> class Prope
 namespace stk {
 namespace mesh {
 
-// Tags used by tracking allocator
-struct FieldDataTag {};
-
 //----------------------------------------------------------------------
 /** \addtogroup stk_mesh_module
  *  \{
