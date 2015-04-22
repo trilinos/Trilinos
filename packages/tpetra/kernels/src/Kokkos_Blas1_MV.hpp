@@ -58,9 +58,7 @@
 #include <Kokkos_Blas1_MV_impl_sum.hpp>
 #include <Kokkos_Blas1_MV_impl_update.hpp>
 
-#ifdef KOKKOS_HAVE_CXX11
-#  include <type_traits>
-#endif // KOKKOS_HAVE_CXX11
+#include <type_traits> // requires C++11
 
 // Define this if you want some of the methods below to print out
 // information about the types that they use internally.  This is
@@ -134,7 +132,6 @@ template<class RV, class XMV, class YMV>
 void
 dot (const RV& R, const XMV& X, const YMV& Y)
 {
-#ifdef KOKKOS_HAVE_CXX11
   static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::dot: "
                  "R is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::dot: "
@@ -152,7 +149,6 @@ dot (const RV& R, const XMV& X, const YMV& Y)
                  (RV::rank == 1 && XMV::rank == 2),
                  "KokkosBlas::dot: Either RV has rank 0 and XMV and YMV have "
                  "rank 1, or RV has rank 1 and XMV and YMV have rank 2.");
-#endif // KOKKOS_HAVE_CXX11
 
   // Check compatibility of dimensions at run time.
   if (X.dimension_0 () != Y.dimension_0 () ||
@@ -224,7 +220,6 @@ template<class XMV>
 void
 fill (const XMV& X, const typename XMV::non_const_value_type& val)
 {
-#ifdef KOKKOS_HAVE_CXX11
   static_assert (Kokkos::Impl::is_view<XMV>::value,
                  "KokkosBlas::fill: X is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_same<typename XMV::value_type,
@@ -234,7 +229,6 @@ fill (const XMV& X, const typename XMV::non_const_value_type& val)
                  "to its entries).");
   static_assert (XMV::rank == 1 || XMV::rank == 2, "KokkosBlas::fill: "
                  "X must have rank 1 or rank 2.");
-#endif // KOKKOS_HAVE_CXX11
 
   // Assign to the View type for which Impl::Fill is most likely to
   // have a full specialization.
@@ -264,7 +258,6 @@ template<class RV, class XMV>
 void
 nrm2_squared (const RV& R, const XMV& X)
 {
-#ifdef KOKKOS_HAVE_CXX11
   static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::nrm2_squared: "
                  "R is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::nrm2_squared: "
@@ -278,7 +271,6 @@ nrm2_squared (const RV& R, const XMV& X)
                  (RV::rank == 1 && XMV::rank == 2),
                  "KokkosBlas::nrm2_squared: Either RV has rank 0 and XMV has "
                  "rank 1, or RV has rank 1 and XMV has rank 2.");
-#endif // KOKKOS_HAVE_CXX11
 
   // Check compatibility of dimensions at run time.
   if (RV::rank == 1 && R.dimension_0 () != X.dimension_1 ()) {
@@ -337,7 +329,6 @@ template<class RV, class XMV>
 void
 nrm1 (const RV& R, const XMV& X)
 {
-#ifdef KOKKOS_HAVE_CXX11
   static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::nrm1: "
                  "R is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::nrm1: "
@@ -351,7 +342,6 @@ nrm1 (const RV& R, const XMV& X)
                  (RV::rank == 1 && XMV::rank == 2),
                  "KokkosBlas::nrm1: Either RV has rank 0 and XMV has "
                  "rank 1, or RV has rank 1 and XMV has rank 2.");
-#endif // KOKKOS_HAVE_CXX11
 
   // Check compatibility of dimensions at run time.
   if (RV::rank == 1 && R.dimension_0 () != X.dimension_1 ()) {
@@ -409,7 +399,6 @@ template<class RV, class XMV>
 void
 nrmInf (const RV& R, const XMV& X)
 {
-#ifdef KOKKOS_HAVE_CXX11
   static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::nrmInf: "
                  "R is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::nrmInf: "
@@ -423,7 +412,6 @@ nrmInf (const RV& R, const XMV& X)
                  (RV::rank == 1 && XMV::rank == 2),
                  "KokkosBlas::nrmInf: Either RV has rank 0 and XMV has "
                  "rank 1, or RV has rank 1 and XMV has rank 2.");
-#endif // KOKKOS_HAVE_CXX11
 
   // Check compatibility of dimensions at run time.
   if (RV::rank == 1 && R.dimension_0 () != X.dimension_1 ()) {
@@ -506,27 +494,25 @@ template<class AV, class XMV, class BV, class YMV>
 void
 axpby (const AV& a, const XMV& X, const BV& b, const YMV& Y)
 {
-#ifdef KOKKOS_HAVE_CXX11
-  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::axpby (MV): "
+  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::axpby: "
                  "X is not a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::axpby (MV): "
+  static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::axpby: "
                  "Y is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_same<typename YMV::value_type,
-                   typename YMV::non_const_value_type>::value,
-                 "KokkosBlas::axpby (MV): Y is const.  "
-                 "It must be nonconst, because it is an output argument "
-                 "(we have to be able to write to its entries).");
-  static_assert (YMV::rank == XMV::rank, "KokkosBlas::axpby (MV): "
+                 typename YMV::non_const_value_type>::value,
+                 "KokkosBlas::axpby: Y is const.  It must be nonconst, "
+                 "because it is an output argument "
+                 "(we must be able to write to its entries).");
+  static_assert (YMV::rank == XMV::rank, "KokkosBlas::axpby: "
                  "X and Y must have the same rank.");
-  static_assert (YMV::rank == 1 || YMV::rank == 2, "KokkosBlas::axpby (MV): "
+  static_assert (YMV::rank == 1 || YMV::rank == 2, "KokkosBlas::axpby: "
                  "XMV and YMV must either have rank 1 or rank 2.");
-#endif // KOKKOS_HAVE_CXX11
 
   // Check compatibility of dimensions at run time.
   if (X.dimension_0 () != Y.dimension_0 () ||
       X.dimension_1 () != Y.dimension_1 ()) {
     std::ostringstream os;
-    os << "KokkosBlas::axpby (MV): Dimensions of X and Y do not match: "
+    os << "KokkosBlas::axpby: Dimensions of X and Y do not match: "
        << "X: " << X.dimension_0 () << " x " << X.dimension_1 ()
        << ", Y: " << Y.dimension_0 () << " x " << Y.dimension_1 ();
     Kokkos::Impl::throw_runtime_exception (os.str ());
@@ -583,28 +569,25 @@ template<class RMV, class AV, class XMV>
 void
 scal (const RMV& R, const AV& a, const XMV& X)
 {
-#ifdef KOKKOS_HAVE_CXX11
-  // RV, XMV, and YMV must be Kokkos::View specializations.
-  static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::scal (MV): "
+  static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::scal: "
                  "R is not a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::scal (MV): "
+  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::scal: "
                  "X is not a Kokkos::View.");
-  // RV must be nonconst (else it can't be an output argument).
-  static_assert (Kokkos::Impl::is_same<typename RMV::value_type, typename RMV::non_const_value_type>::value,
-                 "KokkosBlas::scal (MV): R is const.  "
+  static_assert (Kokkos::Impl::is_same<typename RMV::value_type,
+                 typename RMV::non_const_value_type>::value,
+                 "KokkosBlas::scal: R is const.  "
                  "It must be nonconst, because it is an output argument "
                  "(we have to be able to write to its entries).");
-  static_assert (RMV::rank == XMV::rank, "KokkosBlas::scal (MV): "
+  static_assert ((int) RMV::rank == (int) XMV::rank, "KokkosBlas::scal: "
                  "R and X must have the same rank.");
-  static_assert (RMV::rank == 1 || RMV::rank == 2, "KokkosBlas::scal (MV): "
+  static_assert (RMV::rank == 1 || RMV::rank == 2, "KokkosBlas::scal: "
                  "RMV and XMV must either have rank 1 or rank 2.");
-#endif // KOKKOS_HAVE_CXX11
 
   // Check compatibility of dimensions at run time.
   if (X.dimension_0 () != R.dimension_0 () ||
       X.dimension_1 () != R.dimension_1 ()) {
     std::ostringstream os;
-    os << "KokkosBlas::scal (MV): Dimensions of R and X do not match: "
+    os << "KokkosBlas::scal: Dimensions of R and X do not match: "
        << "R: " << R.dimension_0 () << " x " << R.dimension_1 ()
        << ", X: " << X.dimension_0 () << " x " << X.dimension_1 ();
     Kokkos::Impl::throw_runtime_exception (os.str ());
@@ -656,26 +639,28 @@ scal (const RMV& R, const AV& a, const XMV& X)
 ///
 /// Replace each entry in R with the absolute value (magnitude) of the
 /// corresponding entry in X.
+///
+/// \tparam RMV 1-D or 2-D Kokkos::View specialization.
+/// \tparam XMV 1-D or 2-D Kokkos::View specialization.  It must have
+///   the same rank as RMV, and its entries must be assignable to
+///   those of RMV.
 template<class RMV, class XMV>
 void
 abs (const RMV& R, const XMV& X)
 {
-#ifdef KOKKOS_HAVE_CXX11
-  // RMV and XMV must be Kokkos::View specializations.
-  static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::abs (MV): "
+  static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::abs: "
                  "R is not a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::abs (MV): "
+  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::abs: "
                  "X is not a Kokkos::View.");
-  // RMV must be nonconst (else it can't be an output argument).
-  static_assert (Kokkos::Impl::is_same<typename RMV::value_type, typename RMV::non_const_value_type>::value,
-                 "KokkosBlas::abs (MV): R is const.  "
+  static_assert (Kokkos::Impl::is_same<typename RMV::value_type,
+                 typename RMV::non_const_value_type>::value,
+                 "KokkosBlas::abs: R is const.  "
                  "It must be nonconst, because it is an output argument "
                  "(we have to be able to write to its entries).");
-  static_assert (RMV::rank == XMV::rank, "KokkosBlas::abs (MV): "
+  static_assert (RMV::rank == XMV::rank, "KokkosBlas::abs: "
                  "R and X must have the same rank.");
-  static_assert (RMV::rank == 1 || RMV::rank == 2, "KokkosBlas::abs (MV): "
+  static_assert (RMV::rank == 1 || RMV::rank == 2, "KokkosBlas::abs: "
                  "RMV and XMV must either have rank 1 or rank 2.");
-#endif // KOKKOS_HAVE_CXX11
 
   // Check compatibility of dimensions at run time.
   if (X.dimension_0 () != R.dimension_0 () ||
@@ -724,34 +709,38 @@ abs (const RMV& R, const XMV& X)
 }
 
 
-//! Compute Z := alpha*X + beta*Y + gamma*Z.
+/// \brief Compute Z := alpha*X + beta*Y + gamma*Z.
+///
+/// \tparam XMV 1-D or 2-D Kokkos::View specialization.
+/// \tparam YMV 1-D or 2-D Kokkos::View specialization.  It must have
+///   the same rank as XMV.
+/// \tparam ZMV 1-D or 2-D Kokkos::View specialization.  It must have
+///   the same rank as XMV and YMV, and it must make sense to add up
+///   the entries of XMV and YMV and assign them to the entries of
+///   ZMV.
 template<class XMV, class YMV, class ZMV>
 void
 update (const typename XMV::non_const_value_type& alpha, const XMV& X,
         const typename YMV::non_const_value_type& beta, const YMV& Y,
         const typename ZMV::non_const_value_type& gamma, const ZMV& Z)
 {
-#ifdef KOKKOS_HAVE_CXX11
-  // XMV, YMV, and ZMV must be Kokkos::View specializations.
-  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::update (MV): "
+  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::update: "
                  "X is not a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::update (MV): "
+  static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::update: "
                  "Y is not a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<ZMV>::value, "KokkosBlas::update (MV): "
+  static_assert (Kokkos::Impl::is_view<ZMV>::value, "KokkosBlas::update: "
                  "Z is not a Kokkos::View.");
-
-  // ZMV must be nonconst (else it can't be an output argument).
-  static_assert (Kokkos::Impl::is_same<typename ZMV::value_type, typename ZMV::non_const_value_type>::value,
-                 "KokkosBlas::update (MV): Z is const.  "
+  static_assert (Kokkos::Impl::is_same<typename ZMV::value_type,
+                 typename ZMV::non_const_value_type>::value,
+                 "KokkosBlas::update: Z is const.  "
                  "It must be nonconst, because it is an output argument "
                  "(we have to be able to write to its entries).");
-  static_assert (ZMV::rank == XMV::rank, "KokkosBlas::update (MV): "
+  static_assert (ZMV::rank == XMV::rank, "KokkosBlas::update: "
                  "X and Z must have the same rank.");
-  static_assert (ZMV::rank == YMV::rank, "KokkosBlas::update (MV): "
+  static_assert (ZMV::rank == YMV::rank, "KokkosBlas::update: "
                  "Y and Z must have the same rank.");
-  static_assert (ZMV::rank == 1 || ZMV::rank == 2, "KokkosBlas::update (MV): "
+  static_assert (ZMV::rank == 1 || ZMV::rank == 2, "KokkosBlas::update: "
                  "XMV, YMV, and ZMV must either have rank 1 or rank 2.");
-#endif // KOKKOS_HAVE_CXX11
 
   // Check compatibility of dimensions at run time.
   if (X.dimension_0 () != Y.dimension_0 () ||
@@ -827,22 +816,19 @@ template<class RMV, class XMV>
 void
 reciprocal (const RMV& R, const XMV& X)
 {
-#ifdef KOKKOS_HAVE_CXX11
-  // RMV and XMV must be Kokkos::View specializations.
-  static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::reciprocal (MV): "
+  static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::reciprocal: "
                  "R is not a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::reciprocal (MV): "
+  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::reciprocal: "
                  "X is not a Kokkos::View.");
-  // RMV must be nonconst (else it can't be an output argument).
-  static_assert (Kokkos::Impl::is_same<typename RMV::value_type, typename RMV::non_const_value_type>::value,
-                 "KokkosBlas::reciprocal (MV): R is const.  "
+  static_assert (Kokkos::Impl::is_same<typename RMV::value_type,
+                 typename RMV::non_const_value_type>::value,
+                 "KokkosBlas::reciprocal: R is const.  "
                  "It must be nonconst, because it is an output argument "
                  "(we have to be able to write to its entries).");
-  static_assert (RMV::rank == XMV::rank, "KokkosBlas::reciprocal (MV): "
+  static_assert (RMV::rank == XMV::rank, "KokkosBlas::reciprocal: "
                  "R and X must have the same rank.");
-  static_assert (RMV::rank == 1 || RMV::rank == 2, "KokkosBlas::reciprocal (MV): "
+  static_assert (RMV::rank == 1 || RMV::rank == 2, "KokkosBlas::reciprocal: "
                  "RMV and XMV must either have rank 1 or rank 2.");
-#endif // KOKKOS_HAVE_CXX11
 
   // Check compatibility of dimensions at run time.
   if (X.dimension_0 () != R.dimension_0 () ||
@@ -895,20 +881,17 @@ template<class RV, class XMV>
 void
 sum (const RV& R, const XMV& X)
 {
-#ifdef KOKKOS_HAVE_CXX11
-  // RMV and XMV must be Kokkos::View specializations.
   static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::sum: "
                  "R is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::sum: "
                  "X is not a Kokkos::View.");
-  // RV must be nonconst (else it can't be an output argument).
-  static_assert (Kokkos::Impl::is_same<typename RV::value_type, typename RV::non_const_value_type>::value,
+  static_assert (Kokkos::Impl::is_same<typename RV::value_type,
+                 typename RV::non_const_value_type>::value,
                  "KokkosBlas::sum: R is const.  "
                  "It must be nonconst, because it is an output argument "
                  "(we have to be able to write to its entries).");
   static_assert ((RV::rank == 0 && XMV::rank == 1) || (RV::rank == 1 && XMV::rank == 2),
                  "KokkosBlas::sum: Ranks of R and X do not match.");
-#endif // KOKKOS_HAVE_CXX11
 
   // Check compatibility of dimensions at run time.
   if (RV::rank == 1 && R.dimension_0 () != X.dimension_1 ()) {
@@ -966,14 +949,12 @@ template<class RV, class XMV>
 void
 nrm2w_squared (const RV& R, const XMV& X, const XMV& W)
 {
-#ifdef KOKKOS_HAVE_CXX11
-  // RMV and XMV must be Kokkos::View specializations.
   static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::nrm2w_squared: "
                  "R is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::nrm2w_squared: "
                  "X is not a Kokkos::View.");
-  // RV must be nonconst (else it can't be an output argument).
-  static_assert (Kokkos::Impl::is_same<typename RV::value_type, typename RV::non_const_value_type>::value,
+  static_assert (Kokkos::Impl::is_same<typename RV::value_type,
+                 typename RV::non_const_value_type>::value,
                  "KokkosBlas::nrm2w_squared: R is const.  "
                  "It must be nonconst, because it is an output argument "
                  "(we have to be able to write to its entries).");
@@ -981,7 +962,6 @@ nrm2w_squared (const RV& R, const XMV& X, const XMV& W)
                  "KokkosBlas::nrm2w_squared: Ranks of R and X do not match.  "
                  "If R has rank 0, X and W must have rank 1.  "
                  "If R has rank 1, X and W must have rank 2.");
-#endif // KOKKOS_HAVE_CXX11
 
   // Check compatibility of dimensions at run time.
   if (X.dimension_0 () != W.dimension_0 () ||
@@ -1042,13 +1022,10 @@ mult (typename CMV::const_value_type& c,
       const AV& A,
       const BMV& B)
 {
-#ifdef KOKKOS_HAVE_CXX11
-  // CMV and AMV must be Kokkos::View specializations.
   static_assert (Kokkos::Impl::is_view<CMV>::value, "KokkosBlas::mult: "
                  "C is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<AV>::value, "KokkosBlas::mult: "
                  "A is not a Kokkos::View.");
-  // CMV must be nonconst (else it can't be an output argument).
   static_assert (Kokkos::Impl::is_same<typename CMV::value_type,
                    typename CMV::non_const_value_type>::value,
                  "KokkosBlas::mult: C is const.  "
@@ -1059,7 +1036,6 @@ mult (typename CMV::const_value_type& c,
                  "KokkosBlas::mult: C and B must be either both rank 1, "
                  "or both rank 2.");
   static_assert (AV::rank == 1, "KokkosBlas::mult: A must have rank 1.");
-#endif // KOKKOS_HAVE_CXX11
 
   // Check compatibility of dimensions at run time.
   if (C.dimension_0 () != A.dimension_0 () ||

@@ -73,13 +73,12 @@ struct V_Dot_Functor
   V_Dot_Functor (const RV& r, const XV& x, const YV& y) :
     m_r (r), m_x (x), m_y (y)
   {
-#ifdef KOKKOS_HAVE_CXX11
-    static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::Impl::V_Dot_Functor: "
-                   "R is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<XV>::value, "KokkosBlas::Impl::V_Dot_Functor: "
-                   "X is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<YV>::value, "KokkosBlas::Impl::V_Dot_Functor: "
-                   "Y is not a Kokkos::View.");
+    static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::Impl::"
+                   "V_Dot_Functor: R is not a Kokkos::View.");
+    static_assert (Kokkos::Impl::is_view<XV>::value, "KokkosBlas::Impl::"
+                   "V_Dot_Functor: X is not a Kokkos::View.");
+    static_assert (Kokkos::Impl::is_view<YV>::value, "KokkosBlas::Impl::"
+                   "V_Dot_Functor: Y is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_same<typename RV::value_type,
                    typename RV::non_const_value_type>::value,
                    "KokkosBlas::Impl::V_Dot_Functor: R is const.  "
@@ -91,7 +90,6 @@ struct V_Dot_Functor
     static_assert (RV::rank == 0 && XV::rank == 1,
                    "KokkosBlas::Impl::V_Dot_Functor: "
                    "RV must have rank 0 and XV and YV must have rank 1.");
-#endif // KOKKOS_HAVE_CXX11
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -145,13 +143,12 @@ struct MV_Dot_Right_FunctorVector
   MV_Dot_Right_FunctorVector (const RV& r, const XMV& x, const YMV& y) :
     value_count (x.dimension_1 ()), m_r (r), m_x (x), m_y (y)
   {
-#ifdef KOKKOS_HAVE_CXX11
-    static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::Impl::MV_Dot_Right_FunctorVector: "
-                   "R is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::MV_Dot_Right_FunctorVector: "
-                   "X is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::Impl::MV_Dot_Right_FunctorVector: "
-                   "Y is not a Kokkos::View.");
+    static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::Impl::"
+                   "MV_Dot_Right_FunctorVector: R is not a Kokkos::View.");
+    static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
+                   "MV_Dot_Right_FunctorVector: X is not a Kokkos::View.");
+    static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::Impl::"
+                   "MV_Dot_Right_FunctorVector: Y is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_same<typename RV::value_type,
                    typename RV::non_const_value_type>::value,
                    "KokkosBlas::Impl::MV_Dot_Right_FunctorVector: R is const.  "
@@ -163,7 +160,6 @@ struct MV_Dot_Right_FunctorVector
     static_assert (RV::rank == 1 && XMV::rank == 2,
                    "KokkosBlas::Impl::MV_Dot_Right_FunctorVector: "
                    "RV must have rank 1 and XMV and YMV must have rank 2.");
-#endif // KOKKOS_HAVE_CXX11
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -255,13 +251,12 @@ struct MV_Dot_Right_FunctorUnroll
   MV_Dot_Right_FunctorUnroll (const RV& r, const XMV& x, const YMV& y) :
     value_count (x.dimension_1 ()), m_r (r), m_x (x), m_y (y)
   {
-#ifdef KOKKOS_HAVE_CXX11
-    static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::Impl::MV_Dot_Right_FunctorUnroll: "
-                   "R is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::MV_Dot_Right_FunctorUnroll: "
-                   "X is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::Impl::MV_Dot_Right_FunctorUnroll: "
-                   "Y is not a Kokkos::View.");
+    static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::Impl::"
+                   "MV_Dot_Right_FunctorUnroll: R is not a Kokkos::View.");
+    static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
+                   "MV_Dot_Right_FunctorUnroll: X is not a Kokkos::View.");
+    static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::Impl::"
+                   "MV_Dot_Right_FunctorUnroll: Y is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_same<typename RV::value_type,
                    typename RV::non_const_value_type>::value,
                    "KokkosBlas::Impl::MV_Dot_Right_FunctorUnroll: R is const.  "
@@ -273,7 +268,6 @@ struct MV_Dot_Right_FunctorUnroll
     static_assert (RV::rank == 1 && XMV::rank == 2,
                    "KokkosBlas::Impl::MV_Dot_Right_FunctorUnroll: "
                    "RV must have rank 1 and XMV and YMV must have rank 2.");
-#endif // KOKKOS_HAVE_CXX11
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -414,30 +408,12 @@ MV_Dot_Invoke (const RV& r, const XMV& X, const YMV& Y)
     }
     case 1: {
       // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
-      using Kokkos::ALL;
-      using Kokkos::subview;
-#ifdef KOKKOS_HAVE_CXX11
-      auto r_0 = subview (r, 0);
-      auto X_0 = subview (X, ALL (), 0);
-      auto Y_0 = subview (Y, ALL (), 0);
+      auto r_0 = Kokkos::subview (r, 0);
+      auto X_0 = Kokkos::subview (X, Kokkos::ALL (), 0);
+      auto Y_0 = Kokkos::subview (Y, Kokkos::ALL (), 0);
       typedef decltype (r_0) RV0D;
       typedef decltype (X_0) XMV1D;
       typedef decltype (Y_0) YMV1D;
-#else
-      typedef Kokkos::View<typename RV::value_type,
-          typename RV::array_layout,
-          typename RV::device_type, typename RV::memory_traits,
-          typename RV::specialize> RV0D;
-      typedef Kokkos::View<typename XMV::const_value_type*,
-          typename XMV::device_type, typename XMV::memory_traits,
-          typename XMV::specialize> XMV1D;
-      typedef Kokkos::View<typename YMV::const_value_type*,
-          typename YMV::device_type, typename YMV::memory_traits,
-          typename YMV::specialize> YMV1D;
-      RV0D r_0 = subview (r, 0);
-      XMV1D X_0 = subview (X, ALL (), 0);
-      YMV1D Y_0 = subview (Y, ALL (), 0);
-#endif // KOKKOS_HAVE_CXX11
 
       typedef V_Dot_Functor<RV0D, XMV1D, YMV1D, SizeType> op_type;
       op_type op (r_0, X_0, Y_0);
