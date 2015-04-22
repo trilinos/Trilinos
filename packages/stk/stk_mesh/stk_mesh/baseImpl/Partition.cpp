@@ -42,6 +42,7 @@
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, PartOrdinal, etc
 #include "stk_mesh/baseImpl/BucketRepository.hpp"  // for BucketRepository
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
+#include "stk_util/util/TrackingAllocator.hpp"  // for tracking_allocator
 namespace stk { namespace mesh { class FieldBase; } }
 
 
@@ -121,10 +122,12 @@ Partition::Partition(BulkData& mesh, BucketRepository *repo, EntityRank rank,
 // Only the BucketRepository will delete a Partition.
 Partition::~Partition()
 {
+  typedef tracking_allocator<Bucket, BucketTag> bucket_allocator;
   size_t num_bkts = m_buckets.size();
   for (size_t i = 0; i < num_bkts; ++i)
   {
-    delete m_buckets[i];
+    m_buckets[i]->~Bucket();
+    bucket_allocator().deallocate(m_buckets[i],1);
   }
 }
 

@@ -52,6 +52,7 @@
 #include <stk_mesh/baseImpl/BucketRepository.hpp>  // for BucketRepository
 #include <stk_mesh/baseImpl/EntityRepository.hpp>  // for EntityRepository, etc
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include <stk_util/util/TrackingAllocator.hpp>  // for tracking_allocator, etc
 #include <string>                       // for char_traits, string
 #include <utility>                      // for pair
 #include <vector>                       // for vector
@@ -1167,7 +1168,7 @@ protected: //data
   std::vector<MeshIndex> m_mesh_indexes;
   impl::EntityRepository m_entity_repo;
   EntityCommListInfoVector m_entity_comm_list;
-  std::list<size_t> m_deleted_entities_current_modification_cycle;
+  std::list<size_t, tracking_allocator<size_t, DeletedEntityTag> > m_deleted_entities_current_modification_cycle;
   GhostReuseMap m_ghost_reuse_map;
   std::vector<EntityKey> m_entity_keys;
   std::vector<uint16_t> m_entity_states;
@@ -1184,7 +1185,7 @@ private: // data
   Parallel m_parallel;
   VolatileFastSharedCommMap m_volatile_fast_shared_comm_map;
   PartVector m_ghost_parts;
-  std::list<size_t> m_deleted_entities;
+  std::list<size_t, tracking_allocator<size_t, DeletedEntityTag> > m_deleted_entities;
   int m_num_fields;
   bool m_keep_fields_updated;
   std::vector<unsigned> m_local_ids;

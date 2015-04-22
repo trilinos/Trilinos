@@ -46,6 +46,7 @@
 #include "boost/unordered/unordered_map.hpp"  // for unordered_map
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, hash_value
 #include "stk_util/util/NamedPair.hpp"
+#include "stk_util/util/TrackingAllocator.hpp"  // for tracking_allocator
 namespace stk { class CommBuffer; }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class Ghosting; } }
@@ -71,12 +72,14 @@ struct EntityComm
 class EntityCommDatabase
 {
   typedef std::pair<EntityKey const, EntityComm> map_value;
+  typedef tracking_allocator< map_value, EntityCommTag> map_allocator;
   typedef boost::hash<EntityKey> map_hash;
   typedef std::equal_to<EntityKey> map_predicate;
   typedef boost::unordered_map<  EntityKey
                                , EntityComm
                                , map_hash
                                , map_predicate
+                               , map_allocator
                               > map_type;
 
 public:

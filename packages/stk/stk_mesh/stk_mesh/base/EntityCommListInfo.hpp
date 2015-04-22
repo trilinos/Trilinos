@@ -1,8 +1,6 @@
 #ifndef STK_ENTITYCOMMLIST_INFO_HPP
 #define STK_ENTITYCOMMLIST_INFO_HPP
 
-#include <vector>
-
 namespace stk {
 namespace mesh {
 
@@ -29,7 +27,7 @@ bool operator==(const EntityCommListInfo& lhs, const EntityCommListInfo& rhs) { 
 inline
 bool operator!=(const EntityCommListInfo& lhs, const EntityCommListInfo& rhs) { return !(lhs == rhs); }
 
-typedef std::vector<EntityCommListInfo> EntityCommListInfoVector;
+typedef TrackedVectorMetaFunc<EntityCommListInfo, EntityCommTag>::type EntityCommListInfoVector;
 
 struct IsInvalid
 {

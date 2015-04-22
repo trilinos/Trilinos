@@ -38,6 +38,7 @@
 #include <stdint.h>                     // for uint64_t
 #include <cstddef>                      // for size_t
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include <stk_util/util/TrackingAllocator.hpp>
 #include <utility>                      // for pair
 #include <vector>                       // for vector
 
@@ -70,11 +71,11 @@ public:
   typedef std::pair<KeyType,KeyType>  KeySpan ;
   typedef std::pair<KeyType,ProcType> KeyProc ;
 
-  typedef std::vector<unsigned long> UnsignedVector;
-  typedef std::vector<long>          LongVector;
-  typedef std::vector<KeySpan>       KeySpanVector;
-  typedef std::vector<KeyType>       KeyTypeVector;
-  typedef std::vector<KeyProc>       KeyProcVector;
+  typedef TrackedVectorMetaFunc<unsigned long, DistributedIndex>::type UnsignedVector;
+  typedef TrackedVectorMetaFunc<long,          DistributedIndex>::type LongVector;
+  typedef TrackedVectorMetaFunc<KeySpan,       DistributedIndex>::type KeySpanVector;
+  typedef TrackedVectorMetaFunc<KeyType,       DistributedIndex>::type KeyTypeVector;
+  typedef TrackedVectorMetaFunc<KeyProc,       DistributedIndex>::type KeyProcVector;
 
   /*----------------------------------------*/
 
