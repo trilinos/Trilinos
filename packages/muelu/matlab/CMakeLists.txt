@@ -66,6 +66,7 @@ if(TPL_ENABLE_MATLAB)
 
   # Copy these files over from src tree
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Matlab_Output_cp
-    SOURCE_FILES muelu.m matlab
+    SOURCE_FILES muelu.m matlab setup.m
     )
 ENDIF()
+
