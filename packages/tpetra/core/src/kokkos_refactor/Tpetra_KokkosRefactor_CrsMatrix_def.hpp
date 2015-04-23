@@ -5363,9 +5363,22 @@ namespace Tpetra {
       (getNodeNumDiags () < getNodeNumRows ()) ? "U" : "N";
 
     local_matrix_type A_lcl = this->getLocalMatrix ();
-    typename DMV::dual_view_type::t_host X_lcl = X.template getLocalView<HMDT> ();
-    typename RMV::dual_view_type::t_host Y_lcl = Y.template getLocalView<HMDT> ();
-    KokkosSparse::trsv (uplo.c_str (), trans.c_str (), diag.c_str (), A_lcl, Y_lcl, X_lcl);
+
+    if (X.isConstantStride () && Y.isConstantStride ()) {
+      typename DMV::dual_view_type::t_host X_lcl = X.template getLocalView<HMDT> ();
+      typename RMV::dual_view_type::t_host Y_lcl = Y.template getLocalView<HMDT> ();
+      KokkosSparse::trsv (uplo.c_str (), trans.c_str (), diag.c_str (), A_lcl, Y_lcl, X_lcl);
+    }
+    else {
+      const size_t numVecs = std::min (X.getNumVectors (), Y.getNumVectors ());
+      for (size_t j = 0; j < numVecs; ++j) {
+        auto X_j = X.getVector (j);
+        auto Y_j = X.getVector (j);
+        auto X_lcl = X_j->template getLocalView<HMDT> ();
+        auto Y_lcl = Y_j->template getLocalView<HMDT> ();
+        KokkosSparse::trsv (uplo.c_str (), trans.c_str (), diag.c_str (), A_lcl, Y_lcl, X_lcl);
+      }
+    }
   }
 
 
