@@ -46,6 +46,7 @@
 #  include "Tpetra_KokkosRefactor_CrsMatrix_decl.hpp"
 #endif
 #include <Kokkos_Sparse.hpp>
+#include <Kokkos_Sparse_impl_sor.hpp>
 
 namespace Tpetra {
 
