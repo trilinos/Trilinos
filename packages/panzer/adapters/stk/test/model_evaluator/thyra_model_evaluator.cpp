@@ -625,6 +625,8 @@ namespace panzer {
     typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
     typedef panzer::ModelEvaluator<double> PME;
 
+    PHX::KokkosDeviceSession session;
+
     bool parameter_on = true;
     bool distr_param_on = true;
     AssemblyPieces ap;
