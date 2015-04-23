@@ -140,6 +140,12 @@ namespace ConstantExpansionUnitTest {
     success = Stokhos::comparePCEs(setup.cu, "cu", setup.cu2, "cu2", 
 				   setup.crtol, setup.catol, out);
   }
+  TEUCHOS_UNIT_TEST( Stokhos_ConstantExpansion, CbrtConst ) {
+    setup.exp->cbrt(setup.cu, setup.cx);
+    setup.cu2[0] = std::cbrt(setup.cx[0]);
+    success = Stokhos::comparePCEs(setup.cu, "cu", setup.cu2, "cu2", 
+				   setup.crtol, setup.catol, out);
+  }
   TEUCHOS_UNIT_TEST( Stokhos_ConstantExpansion, SinConst ) {
     setup.exp->sin(setup.cu, setup.cx);
     setup.cu2[0] = std::sin(setup.cx[0]);

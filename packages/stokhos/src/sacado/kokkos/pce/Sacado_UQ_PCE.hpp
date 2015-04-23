@@ -858,6 +858,11 @@ namespace Sacado {
     template <typename Storage>
     KOKKOS_INLINE_FUNCTION
     PCE<Storage>
+    cbrt(const PCE<Storage>& a);
+
+    template <typename Storage>
+    KOKKOS_INLINE_FUNCTION
+    PCE<Storage>
     pow(const PCE<Storage>& a, const PCE<Storage>& b);
 
     template <typename Storage>

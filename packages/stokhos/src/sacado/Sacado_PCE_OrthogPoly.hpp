@@ -404,6 +404,9 @@ namespace Sacado {
     sqrt(const OrthogPoly<T,Storage>& a);
 
     template <typename T, typename Storage> OrthogPoly<T,Storage> 
+    cbrt(const OrthogPoly<T,Storage>& a);
+
+    template <typename T, typename Storage> OrthogPoly<T,Storage> 
     pow(const OrthogPoly<T,Storage>& a, const OrthogPoly<T,Storage>& b);
 
     template <typename T, typename Storage> OrthogPoly<T,Storage> 
