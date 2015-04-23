@@ -67,9 +67,9 @@
 
 \cbb{aggregation: preserve Dirichlet points}{bool}{false}{Turn on/off Dirichlet points preservation}
 
-\cbb{aggregation: export visualization data}{bool}{false}{Export data for visualization post-processing.}
+\cbb{aggregation: allow user-specified singletons}{bool}{false}{Allow special nodes to be marked for one-to-one transfer to the coarsest level. (default = off)}
 
-\cbb{aggregation: mode}{string}{"old"}{old = Tobias, new = ML}
+\cbb{aggregation: export visualization data}{bool}{false}{Export data for visualization post-processing.}
 
 \cba{export data}{\parameterlist}{Exporting a subset of the hierarchy data in a file. Currently, the list can contain any of three parameter names ("A", ``P'', ``R'') of type \texttt{string} and value ``\{levels separated by commas\}''. A matrix with a name ``X'' is saved in three MatrixMarket files: a) data is saved in \textit{X\_level.mm}; b) its row map is saved in \textit{rowmap\_X\_level.mm}; c) its column map is saved in \textit{colmap\_X\_level.mm}.}
 

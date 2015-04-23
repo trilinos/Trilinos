@@ -219,21 +219,18 @@ namespace MueLu {
     // Create MueLu factories
     RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
 
-    RCP<FactoryBase> CoupledAggFact = Teuchos::null;
+    RCP<FactoryBase> AggFact = Teuchos::null;
     if(agg_type == "Uncoupled") {
       // Uncoupled aggregation
-      RCP<UncoupledAggregationFactory> CoupledAggFact2 = rcp(new UncoupledAggregationFactory());
-      /*CoupledAggFact2->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
-      CoupledAggFact2->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
-      CoupledAggFact2->SetOrdering("natural");*/
-      CoupledAggFact2->SetFactory("Graph", dropFact);
-      CoupledAggFact2->SetFactory("DofsPerNode", dropFact);
-      CoupledAggFact2->SetParameter("UsePreserveDirichletAggregationAlgorithm", Teuchos::ParameterEntry(bKeepDirichletBcs));
-      CoupledAggFact2->SetParameter("aggregation: ordering",                Teuchos::ParameterEntry(std::string("natural")));
-      CoupledAggFact2->SetParameter("aggregation: max selected neighbors",  Teuchos::ParameterEntry(maxNbrAlreadySelected));
-      CoupledAggFact2->SetParameter("aggregation: min agg size",            Teuchos::ParameterEntry(minPerAgg));
+      RCP<UncoupledAggregationFactory> MyUncoupledAggFact = rcp(new UncoupledAggregationFactory());
+      MyUncoupledAggFact->SetFactory("Graph", dropFact);
+      MyUncoupledAggFact->SetFactory("DofsPerNode", dropFact);
+      MyUncoupledAggFact->SetParameter("aggregation: preserve Dirichlet points", Teuchos::ParameterEntry(bKeepDirichletBcs));
+      MyUncoupledAggFact->SetParameter("aggregation: ordering",                  Teuchos::ParameterEntry(std::string("natural")));
+      MyUncoupledAggFact->SetParameter("aggregation: max selected neighbors",    Teuchos::ParameterEntry(maxNbrAlreadySelected));
+      MyUncoupledAggFact->SetParameter("aggregation: min agg size",              Teuchos::ParameterEntry(minPerAgg));
 
-      CoupledAggFact = CoupledAggFact2;
+      AggFact = MyUncoupledAggFact;
     } else {
       // Coupled Aggregation (default)
       RCP<CoupledAggregationFactory> CoupledAggFact2 = rcp(new CoupledAggregationFactory());
@@ -243,7 +240,7 @@ namespace MueLu {
       CoupledAggFact2->SetPhase3AggCreation(0.5);
       CoupledAggFact2->SetFactory("Graph", dropFact);
       CoupledAggFact2->SetFactory("DofsPerNode", dropFact);
-      CoupledAggFact = CoupledAggFact2;
+      AggFact = CoupledAggFact2;
     }
     if (verbosityLevel > 3) { // TODO fix me: Setup is a static function: we cannot use GetOStream without an object...
       *out << "========================= Aggregate option summary  =========================" << std::endl;
@@ -425,7 +422,7 @@ namespace MueLu {
 
       manager->SetFactory("CoarseSolver", coarseFact); // TODO: should not be done in the loop
       manager->SetFactory("Graph", dropFact);
-      manager->SetFactory("Aggregates", CoupledAggFact);
+      manager->SetFactory("Aggregates", AggFact);
       manager->SetFactory("DofsPerNode", dropFact);
       manager->SetFactory("Ptent", PtentFact);
 

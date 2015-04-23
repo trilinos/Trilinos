@@ -173,8 +173,8 @@ namespace MueLu {
   "<Parameter name=\"aggregation: enable phase 2b\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: enable phase 3\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: preserve Dirichlet points\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: allow user-specified singletons\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: export visualization data\" type=\"bool\" value=\"false\"/>"
-  "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"old\"/>"
   "<ParameterList name=\"export data\"/>"
   "<Parameter name=\"print initial parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"print unused parameters\" type=\"bool\" value=\"true\"/>"
@@ -216,8 +216,6 @@ namespace MueLu {
 
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
 
-            "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"new\"/>"
-
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
 
     "</ParameterList>"
@@ -229,8 +227,6 @@ namespace MueLu {
             "<Parameter name=\"number of equations\" type=\"int\" value=\"1\"/>"
 
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
-
-            "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"new\"/>"
 
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
 
@@ -244,8 +240,6 @@ namespace MueLu {
 
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
 
-            "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"new\"/>"
-
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
 
     "</ParameterList>"
@@ -257,8 +251,6 @@ namespace MueLu {
             "<Parameter name=\"number of equations\" type=\"int\" value=\"3\"/>"
 
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
-
-            "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"new\"/>"
 
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
 
@@ -294,8 +286,6 @@ namespace MueLu {
 
     "</ParameterList>"
 
-            "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"new\"/>"
-
             "<Parameter name=\"transpose: use implicit\" type=\"bool\" value=\"true\"/>"
 
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"unsmoothed\"/>"
@@ -315,8 +305,6 @@ namespace MueLu {
         "<Parameter name=\"relaxation: type\" type=\"string\" value=\"Gauss-Seidel\"/>"
 
     "</ParameterList>"
-
-            "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"new\"/>"
 
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"pg\"/>"
 
@@ -395,9 +383,9 @@ namespace MueLu {
 
          ("aggregation: preserve Dirichlet points","aggregation: preserve Dirichlet points")
 
-         ("aggregation: export visualization data","aggregation: export visualization data")
+         ("aggregation: allow user-specified singletons","aggregation: allow user-specified singletons")
 
-         ("aggregation: mode","aggregation: mode")
+         ("aggregation: export visualization data","aggregation: export visualization data")
 
          ("export data","export data")
 

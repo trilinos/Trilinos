@@ -77,7 +77,6 @@ namespace MueLuTests {
     // Setup aggregation factory (use default factory for graph)
     RCP<UncoupledAggregationFactory> aggFact = rcp(new UncoupledAggregationFactory());
     aggFact->SetFactory("Graph", dropFact);
-    aggFact->SetParameter("aggregation: mode",Teuchos::ParameterEntry(std::string("new")));
     aggFact->SetParameter("aggregation: max agg size",Teuchos::ParameterEntry(3));
     aggFact->SetParameter("aggregation: min agg size",Teuchos::ParameterEntry(3));
     aggFact->SetParameter("aggregation: max selected neighbors",Teuchos::ParameterEntry(0));
