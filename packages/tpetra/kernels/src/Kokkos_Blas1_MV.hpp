@@ -128,9 +128,14 @@ private:
 /// \param dots [out] Output 1-D View to which to write results.
 /// \param x [in] Input 2-D View.
 /// \param y [in] Input 2-D View.
+///
+/// \note To implementers: We use enable_if here so that the compiler
+///   doesn't confuse this version of dot() with the three-argument
+///   version of dot() in Kokkos_Blas1.hpp.
 template<class RV, class XMV, class YMV>
 void
-dot (const RV& R, const XMV& X, const YMV& Y)
+dot (const RV& R, const XMV& X, const YMV& Y,
+     typename std::enable_if<Kokkos::Impl::is_view<RV>::value, int>::type = 0)
 {
   static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::dot: "
                  "R is not a Kokkos::View.");
