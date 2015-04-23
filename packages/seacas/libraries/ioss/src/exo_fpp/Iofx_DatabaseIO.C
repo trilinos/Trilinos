@@ -1057,12 +1057,6 @@ namespace Iofx {
         // If we have no idea what the topology type for an empty
         // X block is, call it "unknown"
         type = "unknown";
-
-        // If there are no Xs on any processor for this block and
-        // we have no idea what the topology type is, skip it...
-        if (global_X_count[iblk] == 0) {
-          continue;
-        }
       }
 
       Ioss::EntityBlock *block = NULL;
