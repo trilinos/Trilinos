@@ -45,7 +45,7 @@
 #ifdef DOXYGEN_USE_ONLY
 #  include "Tpetra_KokkosRefactor_CrsMatrix_decl.hpp"
 #endif
-#include <Kokkos_Sequential_SparseKernels.hpp>
+#include <Kokkos_Sparse_impl_trsm.hpp>
 
 namespace Tpetra {
 
@@ -5207,14 +5207,14 @@ namespace Tpetra {
     const LO* const indRaw = ind.ptr_on_device ();
     const impl_scalar_type* const valRaw = val.ptr_on_device ();
 
-    Kokkos::Sequential::gaussSeidel (static_cast<LO> (lclNumRows),
-                                     static_cast<LO> (numVecs),
-                                     ptrRaw, indRaw, valRaw,
-                                     B_lcl.ptr_on_device (), B_stride[1],
-                                     X_lcl.ptr_on_device (), X_stride[1],
-                                     D_lcl.ptr_on_device (),
-                                     static_cast<impl_scalar_type> (dampingFactor),
-                                     direction);
+    KokkosSparse::Impl::Sequential::gaussSeidel (static_cast<LO> (lclNumRows),
+                                                 static_cast<LO> (numVecs),
+                                                 ptrRaw, indRaw, valRaw,
+                                                 B_lcl.ptr_on_device (), B_stride[1],
+                                                 X_lcl.ptr_on_device (), X_stride[1],
+                                                 D_lcl.ptr_on_device (),
+                                                 static_cast<impl_scalar_type> (dampingFactor),
+                                                 direction);
   }
 
 
@@ -5282,18 +5282,18 @@ namespace Tpetra {
     const LO* const indRaw = ind.ptr_on_device ();
     const impl_scalar_type* const valRaw = val.ptr_on_device ();
 
-    Kokkos::Sequential::reorderedGaussSeidel (static_cast<LO> (lclNumRows),
-                                              static_cast<LO> (numVecs),
-                                              ptrRaw, indRaw, valRaw,
-                                              B_lcl.ptr_on_device (),
-                                              B_stride[1],
-                                              X_lcl.ptr_on_device (),
-                                              X_stride[1],
-                                              D_lcl.ptr_on_device (),
-                                              rowIndices.getRawPtr (),
-                                              static_cast<LO> (lclNumRows),
-                                              static_cast<impl_scalar_type> (dampingFactor),
-                                              direction);
+    KokkosSparse::Impl::Sequential::reorderedGaussSeidel (static_cast<LO> (lclNumRows),
+                                                          static_cast<LO> (numVecs),
+                                                          ptrRaw, indRaw, valRaw,
+                                                          B_lcl.ptr_on_device (),
+                                                          B_stride[1],
+                                                          X_lcl.ptr_on_device (),
+                                                          X_stride[1],
+                                                          D_lcl.ptr_on_device (),
+                                                          rowIndices.getRawPtr (),
+                                                          static_cast<LO> (lclNumRows),
+                                                          static_cast<impl_scalar_type> (dampingFactor),
+                                                          direction);
   }
 
 
@@ -5311,7 +5311,7 @@ namespace Tpetra {
               MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,node_type>& X,
               Teuchos::ETransp mode) const
   {
-    using Kokkos::Sequential::triSolveKokkos;
+    using KokkosSparse::Impl::Sequential::triSolveKokkos;
     using Teuchos::CONJ_TRANS;
     using Teuchos::NO_TRANS;
     using Teuchos::TRANS;

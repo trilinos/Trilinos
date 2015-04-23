@@ -39,13 +39,16 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef KOKKOS_SEQUENTIAL_ADDSPARSEMATRICES_HPP
-#define KOKKOS_SEQUENTIAL_ADDSPARSEMATRICES_HPP
+#ifndef KOKKOSSPARSE_IMPL_ADD_HPP
+#define KOKKOSSPARSE_IMPL_ADD_HPP
 
-#include <Kokkos_ConfigDefs.hpp>
+#include <TpetraKernels_config.h>
+#include <Kokkos_ArithTraits.hpp>
 #include <functional> // std::plus
+#include <ssstream>
 
-namespace Kokkos {
+namespace KokkosSparse {
+namespace Impl {
 namespace Sequential {
 
 /// \fn countMergedRowEntries
@@ -227,7 +230,8 @@ mergeRows (const OffsetType ptrOut[],
   const OffsetType end1 = ptr1[i+1];
   const OffsetType start2 = ptr2[i];
   const OffsetType end2 = ptr2[i+1];
-  const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero ();
+  const ScalarType zero = Kokkos::Details::ArithTraits<ScalarType>::zero ();
+  const char prefix[] = "KokkosSparse::Impl::Sequential::mergeRows: ";
 
   OffsetType mark1 = start1, mark2 = start2, markOut = startOut;
   while (mark1 < end1 && mark2 < end2 && markOut < endOut) {
@@ -264,14 +268,15 @@ mergeRows (const OffsetType ptrOut[],
     ++mark2;
     ++markOut;
   }
-  // This is a logic error, because it means either that
-  // countMergedRowEntries didn't work, or that it was called
-  // incorrectly for this row.
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    markOut >= endOut && (mark1 < end1 || mark2 < end2),
-    std::logic_error,
-    "Kokkos::Sequential::mergeRows: Row " << i << " of the output array has "
-    << (end1 - mark1) << " + " << (end2 - mark2) << " too few entries.");
+  // This should actually throw std::logic_error, because it means
+  // either that countMergedRowEntries didn't work, or that it was
+  // called incorrectly for this row.
+  if (markOut >= endOut && (mark1 < end1 || mark2 < end2)) {
+    std::ostringstream os;
+    os << prefix << "Row " << i << " of the output array has "
+       << (end1 - mark1) << " + " << (end2 - mark2) << " too few entries.";
+    Kokkos::Impl::throw_runtime_exception (os.str ());
+  }
   return markOut;
 }
 
@@ -290,7 +295,7 @@ addSparseMatrices (OffsetType*& ptrResult,
                    const ScalarType val2[],
                    const OrdinalType numRows)
 {
-  typedef Teuchos::ScalarTraits<ScalarType> STS;
+  typedef Kokkos::Details::ArithTraits<ScalarType> STS;
 
   // We don't allocate using ArrayRCP's constructor (that takes the
   // array size), because it initializes the arrays itself.  We want
@@ -316,7 +321,7 @@ addSparseMatrices (OffsetType*& ptrResult,
       if (beta == STS::zero ()) {
         // Special case: alpha == 0, beta == 0.
         // The resulting sum has zero entries.
-        std::fill (ptrOut, ptrOut + numRows + 1, Teuchos::as<OffsetType> (0));
+        std::fill (ptrOut, ptrOut + numRows + 1, static_cast<OffsetType> (0));
         ptrResult = ptrOut;
         indResult = NULL;
         valResult = NULL;
@@ -433,7 +438,8 @@ addSparseMatrices (OffsetType*& ptrResult,
 }
 
 } // namespace Sequential
-} // namespace Kokkos
+} // namespace Impl
+} // namespace KokkosSparse
 
-#endif // KOKKOS_SEQUENTIAL_ADDSPARSEMATRICES_HPP
+#endif // KOKKOSSPARSE_IMPL_ADD_HPP
 

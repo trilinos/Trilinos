@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_SEQUENTIAL_SPARSEKERNELS_HPP
-#define KOKKOS_SEQUENTIAL_SPARSEKERNELS_HPP
+#ifndef KOKKOSSPARSE_IMPL_TRSM_HPP
+#define KOKKOSSPARSE_IMPL_TRSM_HPP
 
 /// \file Kokkos_Sequential_SparseKernels.hpp
 /// \brief Sequential implementations of (local) sparse kernels.
@@ -64,8 +64,11 @@
 
 #include <TpetraKernels_config.h>
 #include <Kokkos_ArithTraits.hpp>
+#include <Teuchos_BLAS_types.hpp> // for enums; will go away soon
+#include <vector> // temporarily
 
-namespace Kokkos {
+namespace KokkosSparse {
+namespace Impl {
 namespace Sequential {
 
 /// \brief Implementation of local Gauss-Seidel.
@@ -182,8 +185,8 @@ gaussSeidel (const LocalOrdinal numRows,
     // It may also be reasonable to parallelize over right-hand
     // sides, if there are enough of them, especially if the matrix
     // fits in cache.
-    Teuchos::Array<RangeScalar> temp (numCols);
-    RangeScalar* const x_temp = temp.getRawPtr ();
+    std::vector<RangeScalar> temp (numCols);
+    RangeScalar* const x_temp = numCols == 0 ? NULL : &temp[0];
 
     if (direction == KokkosClassic::Forward) {
       for (LO i = 0; i < numRows; ++i) {
@@ -367,8 +370,8 @@ reorderedGaussSeidel (const LocalOrdinal numRows,
     // It may also be reasonable to parallelize over right-hand
     // sides, if there are enough of them, especially if the matrix
     // fits in cache.
-    Teuchos::Array<RangeScalar> temp (numCols);
-    RangeScalar* const x_temp = temp.getRawPtr ();
+    std::vector<RangeScalar> temp (numCols);
+    RangeScalar* const x_temp = numCols == 0 ? NULL : &temp[0];
 
     if (direction == KokkosClassic::Forward) {
       for (LO ii = 0; ii < numRowInds; ++ii) {
@@ -1146,7 +1149,7 @@ triSolveKokkos (RangeMultiVectorType X,
                 const Teuchos::ETransp trans)
 {
   typedef typename CrsMatrixType::index_type::non_const_value_type LO;
-  const char prefix[] = "Kokkos::Sequential::triSolveKokkos: ";
+  const char prefix[] = "KokkosSparse::Impl::Sequential::triSolveKokkos: ";
   const LO numRows = A.numRows ();
   const LO numCols = A.numCols ();
   const LO numVecs = X.dimension_1 ();
@@ -1248,8 +1251,8 @@ triSolveKokkos (RangeMultiVectorType X,
   }
 }
 
-
 } // namespace Sequential
-} // namespace Kokkos
+} // namespace Impl
+} // namespace KokkosSparse
 
-#endif // KOKKOS_SEQUENTIAL_SPARSEKERNELS_HPP
+#endif // KOKKOSSPARSE_IMPL_TRSM_HPP
