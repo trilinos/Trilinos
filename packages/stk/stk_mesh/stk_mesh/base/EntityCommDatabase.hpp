@@ -42,8 +42,7 @@
 #include <stk_mesh/base/Types.hpp>      // for PairIterEntityComm, etc
 #include <utility>                      // for pair
 #include <vector>                       // for vector
-#include "boost/functional/hash/extensions.hpp"  // for hash
-#include "boost/unordered/unordered_map.hpp"  // for unordered_map
+#include <unordered_map>
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, hash_value
 #include "stk_util/util/NamedPair.hpp"
 namespace stk { class CommBuffer; }
@@ -71,11 +70,10 @@ struct EntityComm
 class EntityCommDatabase
 {
   typedef std::pair<EntityKey const, EntityComm> map_value;
-  typedef boost::hash<EntityKey> map_hash;
   typedef std::equal_to<EntityKey> map_predicate;
-  typedef boost::unordered_map<  EntityKey
+  typedef std::unordered_map<  EntityKey
                                , EntityComm
-                               , map_hash
+                               , stk::mesh::HashValueForEntityKey
                                , map_predicate
                               > map_type;
 

@@ -39,7 +39,6 @@
 #include <stk_mesh/base/Bucket.hpp>     // for Bucket, raw_part_equal
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/baseImpl/Partition.hpp>  // for Partition, lower_bound
-#include "boost/array.hpp"              // for array
 #include "stk_mesh/base/BucketConnectivity.hpp"  // for BucketConnectivity
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldBase
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData

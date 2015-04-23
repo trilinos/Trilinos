@@ -55,8 +55,7 @@
 #include <string>                       // for char_traits, string
 #include <utility>                      // for pair
 #include <vector>                       // for vector
-#include "boost/functional/hash/extensions.hpp"  // for hash
-#include "boost/tuple/detail/tuple_basic.hpp"  // for get
+#include <unordered_map>
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, Bucket::size_type, etc
 #include "stk_mesh/base/BucketConnectivity.hpp"  // for BucketConnectivity
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, hash_value
@@ -86,6 +85,8 @@ namespace mesh {
 class BulkData;
 void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
 void communicate_field_data(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
+
+typedef std::unordered_map<EntityKey, size_t, stk::mesh::HashValueForEntityKey> GhostReuseMap;
 
 class BulkData {
 

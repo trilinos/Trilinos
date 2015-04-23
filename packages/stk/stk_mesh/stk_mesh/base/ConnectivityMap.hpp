@@ -35,8 +35,7 @@
 #define STK_STK_CONNECTIVITY_MAP_HPP
 
 #include <stk_mesh/base/Types.hpp>
-
-#include <boost/array.hpp>
+#include <array>
 
 namespace stk  {
 namespace mesh {
@@ -45,7 +44,7 @@ namespace mesh {
 
 struct ConnectivityMap
 {
-  typedef boost::array<boost::array<ConnectivityType, 4>, 4> map_type;
+  typedef std::array<std::array<ConnectivityType, 4>, 4> map_type;
 
   static ConnectivityMap const& classic_stk_mesh()
   {

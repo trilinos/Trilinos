@@ -41,8 +41,7 @@
 #include <stk_mesh/base/Selector.hpp>   // for Selector, operator&
 #include <utility>                      // for pair, make_pair
 #include <vector>                       // for vector
-#include <boost/tuple/tuple.hpp>
-#include "boost/tuple/detail/tuple_basic.hpp"  // for tie, etc
+#include <tuple>
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, get_cell_topology
@@ -166,7 +165,7 @@ size_t skin_mesh_find_elements_with_external_sides(BulkData & mesh,
             bool equivalent = false;
             unsigned permutation_id = 0;
 
-            boost::tie(equivalent,permutation_id) = side_topology.equivalent(side_nodes, potential_side_nodes);
+            std::tie(equivalent,permutation_id) = side_topology.equivalent(side_nodes, potential_side_nodes);
 
             // the sides are not a match
             if (equivalent == false) continue;
@@ -256,7 +255,7 @@ void skin_mesh_attach_new_sides_to_connected_entities(BulkData & mesh,
     Entity elem;
     unsigned side_ordinal=0;
 
-    boost::tie(elem,side_ordinal) = *itr;
+    std::tie(elem,side_ordinal) = *itr;
 
     stk::topology element_topology = mesh.bucket(elem).topology();
     stk::topology side_topology = element_topology.side_topology(side_ordinal);

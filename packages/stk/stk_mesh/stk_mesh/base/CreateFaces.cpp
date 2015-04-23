@@ -38,10 +38,7 @@
 #include <functional>                   // for equal_to
 #include <iterator>                     // for back_insert_iterator, etc
 #include <vector>                       // for vector, etc
-
-#include <boost/array.hpp>              // for array
-#include "boost/unordered/unordered_map.hpp"
-#include "boost/utility/enable_if.hpp"  // for enable_if_c
+#include <unordered_map>
 
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, EntityLess, etc
 #include <stk_mesh/base/Entity.hpp>     // for Entity, hash_value
@@ -105,7 +102,7 @@ struct shared_face_type
   }
 };
 
-typedef boost::unordered_map<EntityVector,Entity> face_map_type;
+typedef std::unordered_map<EntityVector, Entity, stk::mesh::impl::HashValueForEntityVector> face_map_type;
 typedef std::vector< shared_face_type > shared_face_map_type;
 
 struct create_face_impl
@@ -126,8 +123,7 @@ struct create_face_impl
   {}
 
   template <typename Topology>
-  typename boost::enable_if_c< (Topology::num_faces > 0u), void>::type
-  operator()(Topology t)
+  void operator()(Topology t)
   {
     typedef topology::topology_type< Topology::value> ElemTopology;
 
@@ -135,7 +131,7 @@ struct create_face_impl
 
     BulkData & mesh = m_bucket.mesh();
 
-    boost::array<EntityId,Topology::num_nodes> elem_node_ids;
+    std::array<EntityId,Topology::num_nodes> elem_node_ids;
 
     for (size_t ielem=0, eelem=m_bucket.size(); ielem<eelem; ++ielem) {
       Entity const *elem_nodes = m_bucket.begin_nodes(ielem);
@@ -211,12 +207,6 @@ struct create_face_impl
       }
     }
   }
-
-  template <typename Topology>
-  typename boost::enable_if_c< (Topology::num_faces == 0u), void>::type
-  operator()(Topology t)
-  {}
-
 
   //members
   size_t                                          & m_count_faces;

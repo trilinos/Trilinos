@@ -48,8 +48,6 @@
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc
 #include <set>
-#include "boost/range/iterator_range_core.hpp"  // for iterator_range
-#include "boost/unordered/unordered_map.hpp"  // for unordered_map
 
 namespace stk { namespace mesh { class Bucket; } }
 namespace stk { namespace mesh { class Part; } }
@@ -140,7 +138,6 @@ struct FastMeshIndex
 typedef std::vector<std::vector<FastMeshIndex> > VolatileFastSharedCommMapOneRank;
 typedef stk::topology::rank_t EntityRank ;
 
-typedef boost::unordered_map<EntityKey, size_t> GhostReuseMap;
 typedef std::map<std::pair<EntityRank, Selector>, std::pair<size_t, size_t> > SelectorCountMap;
 typedef std::map<std::pair<EntityRank, Selector>, BucketVector> SelectorBucketMap;
 typedef std::vector<VolatileFastSharedCommMapOneRank> VolatileFastSharedCommMap;
@@ -258,7 +255,6 @@ typedef PairIter< RelationVector::const_iterator > PairIterRelation ;
 
 #ifdef SIERRA_MIGRATION
 typedef RelationVector::const_iterator   RelationIterator;
-typedef boost::iterator_range<RelationIterator> RelationRange;
 #endif // SIERRA_MIGRATION
 
 enum ConnectivityType
