@@ -64,7 +64,6 @@
 
 #include <TpetraKernels_config.h>
 #include <Kokkos_ArithTraits.hpp>
-#include <Teuchos_BLAS_types.hpp> // for enums; will go away soon
 #include <vector> // temporarily
 
 namespace KokkosSparse {
@@ -95,8 +94,8 @@ namespace Sequential {
 ///   These may differ from the matrix's actual diagonal entries, as
 ///   in L1 Gauss-Seidel for example.
 /// \param omega [in] Damping parameter.
-/// \param direction [in] Sweep direction.
-///
+/// \param direction [in] Sweep direction: "F" for forward, "B" for
+///   backward.
 template<class LocalOrdinal,
          class OffsetType,
          class MatrixScalar,
@@ -114,7 +113,7 @@ gaussSeidel (const LocalOrdinal numRows,
              const OffsetType x_stride,
              const MatrixScalar* const D,
              const MatrixScalar omega,
-             const KokkosClassic::ESweepDirection direction)
+             const char direction[])
 {
   using Kokkos::Details::ArithTraits;
   typedef LocalOrdinal LO;
@@ -143,7 +142,7 @@ gaussSeidel (const LocalOrdinal numRows,
   }
 
   if (numCols == 1) {
-    if (direction == KokkosClassic::Forward) {
+    if (direction[0] == 'F' || direction[0] == 'f') {
       for (LO i = 0; i < numRows; ++i) {
         RangeScalar x_temp = ArithTraits<RangeScalar>::zero ();
         for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
@@ -153,7 +152,7 @@ gaussSeidel (const LocalOrdinal numRows,
         }
         X[i] += omega * D[i] * (B[i] - x_temp);
       }
-    } else if (direction == KokkosClassic::Backward) {
+    } else if (direction[0] == 'B' || direction[0] == 'b') {
       // Split the loop so that it is correct even if LO is unsigned.
       // It's a bad idea for LO to be unsigned, but we want this to
       // work nevertheless.
@@ -188,7 +187,7 @@ gaussSeidel (const LocalOrdinal numRows,
     std::vector<RangeScalar> temp (numCols);
     RangeScalar* const x_temp = numCols == 0 ? NULL : &temp[0];
 
-    if (direction == KokkosClassic::Forward) {
+    if (direction[0] == 'F' || direction[0] == 'f') {
       for (LO i = 0; i < numRows; ++i) {
         for (OffsetType c = 0; c < theNumCols; ++c) {
           x_temp[c] = ArithTraits<RangeScalar>::zero ();
@@ -204,7 +203,7 @@ gaussSeidel (const LocalOrdinal numRows,
           X[i + x_stride*c] += omega * D[i] * (B[i + b_stride*c] - x_temp[c]);
         }
       }
-    } else if (direction == KokkosClassic::Backward) { // backward mode
+    } else if (direction[0] == 'B' || direction[0] == 'b') { // backward mode
       // Split the loop so that it is correct even if LO is unsigned.
       // It's a bad idea for LO to be unsigned, but we want this to
       // work nevertheless.
@@ -275,8 +274,8 @@ gaussSeidel (const LocalOrdinal numRows,
 ///   rows to process.  This may be less than or equal to numRows (the
 ///   number of rows in the matrix).
 /// \param omega [in] Damping parameter.
-/// \param direction [in] Sweep direction.
-///
+/// \param direction [in] Sweep direction: "F" for forward, "B" for
+///   backward.
 template<class LocalOrdinal,
          class OffsetType,
          class MatrixScalar,
@@ -296,7 +295,7 @@ reorderedGaussSeidel (const LocalOrdinal numRows,
                       const LocalOrdinal* const rowInd,
                       const LocalOrdinal numRowInds, // length of rowInd
                       const MatrixScalar omega,
-                      const KokkosClassic::ESweepDirection direction)
+                      const char direction[])
 {
   using Kokkos::Details::ArithTraits;
   typedef LocalOrdinal LO;
@@ -325,7 +324,7 @@ reorderedGaussSeidel (const LocalOrdinal numRows,
   }
 
   if (numCols == 1) {
-    if (direction == KokkosClassic::Forward) {
+    if (direction[0] == 'F' || direction[0] == 'f') {
       for (LO ii = 0; ii < numRowInds; ++ii) {
         LO i = rowInd[ii];
         RangeScalar x_temp = ArithTraits<RangeScalar>::zero ();
@@ -336,7 +335,7 @@ reorderedGaussSeidel (const LocalOrdinal numRows,
         }
         X[i] += omega * D[i] * (B[i] - x_temp);
       }
-    } else if (direction == KokkosClassic::Backward) {
+    } else if (direction[0] == 'B' || direction[0] == 'b') {
       // Split the loop so that it is correct even if LO is unsigned.
       // It's a bad idea for LO to be unsigned, but we want this to
       // work nevertheless.
@@ -373,7 +372,7 @@ reorderedGaussSeidel (const LocalOrdinal numRows,
     std::vector<RangeScalar> temp (numCols);
     RangeScalar* const x_temp = numCols == 0 ? NULL : &temp[0];
 
-    if (direction == KokkosClassic::Forward) {
+    if (direction[0] == 'F' || direction[0] == 'f') {
       for (LO ii = 0; ii < numRowInds; ++ii) {
         LO i = rowInd[ii];
         for (OffsetType c = 0; c < theNumCols; ++c) {
@@ -390,7 +389,7 @@ reorderedGaussSeidel (const LocalOrdinal numRows,
           X[i + x_stride*c] += omega * D[i] * (B[i + b_stride*c] - x_temp[c]);
         }
       }
-    } else if (direction == KokkosClassic::Backward) { // backward mode
+    } else if (direction[0] == 'B' || direction[0] == 'b') { // backward mode
       // Split the loop so that it is correct even if LO is unsigned.
       // It's a bad idea for LO to be unsigned, but we want this to
       // work nevertheless.
@@ -1140,116 +1139,68 @@ lowerTriSolveCscConj (RangeMultiVectorType X,
 template<class CrsMatrixType,
          class DomainMultiVectorType,
          class RangeMultiVectorType>
-void
-triSolveKokkos (RangeMultiVectorType X,
-                const CrsMatrixType& A,
-                DomainMultiVectorType Y,
-                const Teuchos::EUplo triUplo,
-                const Teuchos::EDiag unitDiag,
-                const Teuchos::ETransp trans)
-{
-  typedef typename CrsMatrixType::index_type::non_const_value_type LO;
-  const char prefix[] = "KokkosSparse::Impl::Sequential::triSolveKokkos: ";
-  const LO numRows = A.numRows ();
-  const LO numCols = A.numCols ();
-  const LO numVecs = X.dimension_1 ();
-  typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    triUplo != Teuchos::LOWER_TRI && triUplo != Teuchos::UPPER_TRI &&
-    triUplo != Teuchos::UNDEF_TRI,
-    std::invalid_argument, prefix << "triUplo has an invalid value " << triUplo
-    << ".  Valid values are Teuchos::LOWER_TRI=" << Teuchos::LOWER_TRI <<
-    ", Teuchos::UPPER_TRI=" << Teuchos::UPPER_TRI << ", and Teuchos::UNDEF_TRI="
-    << Teuchos::UNDEF_TRI << ".");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    triUplo == Teuchos::UNDEF_TRI, std::invalid_argument, prefix <<
-    "The matrix is neither lower nor upper triangular (triUplo="
-    "Teuchos::UNDEF_TRI), so you may not call this method.");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    unitDiag != Teuchos::UNIT_DIAG && unitDiag != Teuchos::NON_UNIT_DIAG,
-    std::invalid_argument, prefix << "unitDiag has an invalid value "
-    << unitDiag << ".  Valid values are Teuchos::UNIT_DIAG="
-    << Teuchos::UNIT_DIAG << " and Teuchos::NON_UNIT_DIAG="
-    << Teuchos::NON_UNIT_DIAG << ".");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    unitDiag != Teuchos::UNIT_DIAG && numRows > 0 && ptr(numRows) == 0,
-    std::invalid_argument, prefix << "Triangular solve with an empty matrix "
-    "is only valid if the matrix has an implicit unit diagonal.  This matrix "
-    "does not.");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    trans != Teuchos::NO_TRANS && trans != Teuchos::TRANS &&
-    trans != Teuchos::CONJ_TRANS,
-    std::invalid_argument, prefix << "trans has an invalid value " << trans
-    << ".  Valid values are Teuchos::NO_TRANS=" << Teuchos::NO_TRANS << ", "
-    << "Teuchos::TRANS=" << Teuchos::TRANS << ", and Teuchos::CONJ_TRANS="
-    << Teuchos::CONJ_TRANS << ".");
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    numRows != static_cast<LO> (X.dimension_0 ()), std::invalid_argument,
-    prefix << "numRows = " << numRows << " != X.dimension_0() = " <<
-    X.dimension_0 () << ".");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    numCols != static_cast<LO> (Y.dimension_0 ()), std::invalid_argument,
-    prefix << "numCols = " << numCols << " != Y.dimension_0() = " <<
-    Y.dimension_0 () << ".");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    numVecs != static_cast<LO> (Y.dimension_1 ()), std::invalid_argument,
-    prefix << "X.dimension_1 () = " << numVecs << " != Y.dimension_1 () = "
-    << Y.dimension_1 () << ".");
-
-  if (trans == Teuchos::NO_TRANS) {          // no transpose
-    if (triUplo == Teuchos::LOWER_TRI) { // lower triangular
-      if (unitDiag == Teuchos::UNIT_DIAG) { // unit diagonal
-        lowerTriSolveCsrUnitDiag (X, A, Y);
-      } else {                          // non unit diagonal
-        lowerTriSolveCsr (X, A, Y);
+struct Trsv {
+  static void
+  trsv (const char uplo[],
+        const char trans[],
+        const char diag[],
+        const CrsMatrixType& A,
+        DomainMultiVectorType B,
+        RangeMultiVectorType X) // X is the output MV
+  {
+    if (trans[0] == 'N' || trans[0] == 'n') {       // no transpose
+      if (uplo[0] == 'L' || uplo[0] == 'l') {   // lower triangular
+        if (diag[0] == 'U' || diag[0] == 'u') {    // unit diagonal
+          lowerTriSolveCsrUnitDiag (X, A, B);
+        } else {                               // non unit diagonal
+          lowerTriSolveCsr (X, A, B);
+        }
+      } else {                                  // upper triangular
+        if (diag[0] == 'U' || diag[0] == 'u') {    // unit diagonal
+          upperTriSolveCsrUnitDiag (X, A, B);
+        } else {                               // non unit diagonal
+          upperTriSolveCsr (X, A, B);
+        }
       }
-    } else {                             // upper triangular
-      if (unitDiag == Teuchos::UNIT_DIAG) { // unit diagonal
-        upperTriSolveCsrUnitDiag (X, A, Y);
-      } else {                          // non unit diagonal
-        upperTriSolveCsr (X, A, Y);
+    }
+    else if (trans[0] == 'T' || trans[0] == 't') {     // transpose
+      if (uplo[0] == 'L' || uplo[0] == 'l') {   // lower triangular
+        // Transposed lower tri CSR => upper tri CSC.
+        if (diag[0] == 'U' || diag[0] == 'u') {    // unit diagonal
+          upperTriSolveCscUnitDiag (X, A, B);
+        } else {                               // non unit diagonal
+          upperTriSolveCsc (X, A, B);
+        }
+      }
+      else {                                    // upper triangular
+        // Transposed upper tri CSR => lower tri CSC.
+        if (diag[0] == 'U' || diag[0] == 'u') {    // unit diagonal
+          lowerTriSolveCscUnitDiag (X, A, B);
+        } else {                               // non unit diagonal
+          lowerTriSolveCsc (X, A, B);
+        }
+      }
+    }
+    else if (trans[0] == 'C' || trans[0] == 'c') { // conj transpose
+      if (uplo[0] == 'L' || uplo[0] == 'l') {    // lower triangular
+        // Transposed lower tri CSR => upper tri CSC.
+        if (diag[0] == 'U' || diag[0] == 'u') {     // unit diagonal
+          upperTriSolveCscUnitDiagConj (X, A, B);
+        } else {                                // non unit diagonal
+          upperTriSolveCscConj (X, A, B);
+        }
+      }
+      else {                                     // upper triangular
+        // Transposed upper tri CSR => lower tri CSC.
+        if (diag[0] == 'U' || diag[0] == 'u') {     // unit diagonal
+          lowerTriSolveCscUnitDiagConj (X, A, B);
+        } else {                                // non unit diagonal
+          lowerTriSolveCscConj (X, A, B);
+        }
       }
     }
   }
-  else if (trans == Teuchos::TRANS) {           // transpose
-    if (triUplo == Teuchos::LOWER_TRI) { // lower triangular
-      // Transposed lower tri CSR => upper tri CSC.
-      if (unitDiag == Teuchos::UNIT_DIAG) { // unit diagonal
-        upperTriSolveCscUnitDiag (X, A, Y);
-      } else {                          // non unit diagonal
-        upperTriSolveCsc (X, A, Y);
-      }
-    }
-    else {                               // upper triangular
-      // Transposed upper tri CSR => lower tri CSC.
-      if (unitDiag == Teuchos::UNIT_DIAG) { // unit diagonal
-        lowerTriSolveCscUnitDiag (X, A, Y);
-      } else {                          // non unit diagonal
-        lowerTriSolveCsc (X, A, Y);
-      }
-    }
-  }
-  else if (trans == Teuchos::CONJ_TRANS) { // conj transpose
-    if (triUplo == Teuchos::LOWER_TRI) { // lower triangular
-      // Transposed lower tri CSR => upper tri CSC.
-      if (unitDiag == Teuchos::UNIT_DIAG) { // unit diagonal
-        upperTriSolveCscUnitDiagConj (X, A, Y);
-      } else {                          // non unit diagonal
-        upperTriSolveCscConj (X, A, Y);
-      }
-    }
-    else {                               // upper triangular
-      // Transposed upper tri CSR => lower tri CSC.
-      if (unitDiag == Teuchos::UNIT_DIAG) { // unit diagonal
-        lowerTriSolveCscUnitDiagConj (X, A, Y);
-      } else {                          // non unit diagonal
-        lowerTriSolveCscConj (X, A, Y);
-      }
-    }
-  }
-}
+};
 
 } // namespace Sequential
 } // namespace Impl

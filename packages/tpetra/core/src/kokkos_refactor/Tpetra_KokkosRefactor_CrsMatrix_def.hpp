@@ -45,7 +45,7 @@
 #ifdef DOXYGEN_USE_ONLY
 #  include "Tpetra_KokkosRefactor_CrsMatrix_decl.hpp"
 #endif
-#include <Kokkos_Sparse_impl_trsm.hpp>
+#include <Kokkos_Sparse.hpp>
 
 namespace Tpetra {
 
@@ -5207,6 +5207,7 @@ namespace Tpetra {
     const LO* const indRaw = ind.ptr_on_device ();
     const impl_scalar_type* const valRaw = val.ptr_on_device ();
 
+    const std::string dir ((direction == KokkosClassic::Forward) ? "F" : "B");
     KokkosSparse::Impl::Sequential::gaussSeidel (static_cast<LO> (lclNumRows),
                                                  static_cast<LO> (numVecs),
                                                  ptrRaw, indRaw, valRaw,
@@ -5214,7 +5215,7 @@ namespace Tpetra {
                                                  X_lcl.ptr_on_device (), X_stride[1],
                                                  D_lcl.ptr_on_device (),
                                                  static_cast<impl_scalar_type> (dampingFactor),
-                                                 direction);
+                                                 dir.c_str ());
   }
 
 
@@ -5282,6 +5283,7 @@ namespace Tpetra {
     const LO* const indRaw = ind.ptr_on_device ();
     const impl_scalar_type* const valRaw = val.ptr_on_device ();
 
+    const std::string dir = (direction == KokkosClassic::Forward) ? "F" : "B";
     KokkosSparse::Impl::Sequential::reorderedGaussSeidel (static_cast<LO> (lclNumRows),
                                                           static_cast<LO> (numVecs),
                                                           ptrRaw, indRaw, valRaw,
@@ -5293,7 +5295,7 @@ namespace Tpetra {
                                                           rowIndices.getRawPtr (),
                                                           static_cast<LO> (lclNumRows),
                                                           static_cast<impl_scalar_type> (dampingFactor),
-                                                          direction);
+                                                          dir.c_str ());
   }
 
 
@@ -5311,7 +5313,6 @@ namespace Tpetra {
               MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,node_type>& X,
               Teuchos::ETransp mode) const
   {
-    using KokkosSparse::Impl::Sequential::triSolveKokkos;
     using Teuchos::CONJ_TRANS;
     using Teuchos::NO_TRANS;
     using Teuchos::TRANS;
@@ -5352,19 +5353,18 @@ namespace Tpetra {
     // triangular solve with an incomplete diagonal.  Furthermore,
     // this code should only assume an implicitly stored unit diagonal
     // if the matrix has _no_ explicitly stored diagonal entries.
-    const Teuchos::EDiag diag = getNodeNumDiags () < getNodeNumRows () ?
-      Teuchos::UNIT_DIAG : Teuchos::NON_UNIT_DIAG;
-    Teuchos::EUplo uplo = Teuchos::UNDEF_TRI;
-    if (isUpperTriangular ()) {
-      uplo = Teuchos::UPPER_TRI;
-    } else if (isLowerTriangular ()) {
-      uplo = Teuchos::LOWER_TRI;
-    }
+
+    const std::string uplo = isUpperTriangular () ? "U" :
+      (isLowerTriangular () ? "L" : "N");
+    const std::string trans = (mode == Teuchos::CONJ_TRANS) ? "C" :
+      (mode == Teuchos::TRANS ? "T" : "N");
+    const std::string diag =
+      (getNodeNumDiags () < getNodeNumRows ()) ? "U" : "N";
 
     local_matrix_type A_lcl = this->getLocalMatrix ();
     typename DMV::dual_view_type::t_host X_lcl = X.template getLocalView<HMDT> ();
     typename RMV::dual_view_type::t_host Y_lcl = Y.template getLocalView<HMDT> ();
-    triSolveKokkos (X_lcl, A_lcl, Y_lcl, uplo, diag, mode);
+    KokkosSparse::trsv (uplo.c_str (), trans.c_str (), diag.c_str (), A_lcl, Y_lcl, X_lcl);
   }
 
 

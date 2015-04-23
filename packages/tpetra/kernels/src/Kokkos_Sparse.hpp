@@ -50,6 +50,7 @@
 
 #include <Kokkos_Sparse_CrsMatrix.hpp>
 #include <Kokkos_Sparse_impl_spmv.hpp>
+#include <Kokkos_Sparse_trsv.hpp>
 
 namespace KokkosSparse {
 
