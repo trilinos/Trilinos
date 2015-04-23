@@ -1226,6 +1226,20 @@ namespace stk {
 #endif
     }
 
+    void StkMeshIoBroker::replace_bulk_data( Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data )
+    {
+      ThrowErrorMsgIf( Teuchos::is_null(m_bulk_data),
+                       "There is  no bulk data to replace." );
+      ThrowErrorMsgIf( Teuchos::is_null(m_meta_data),
+                       "Meta data must be non-null when calling StkMeshIoBroker::replace_bulk_data." );
+
+      stk::mesh::MetaData &new_meta_data = arg_bulk_data->mesh_meta_data();
+      ThrowErrorMsgIf( &(*m_meta_data) != &new_meta_data, 
+                       "Meta data for both new and old bulk data must be the same." );
+
+      m_bulk_data = arg_bulk_data;
+    }
+
     size_t StkMeshIoBroker::add_mesh_database(std::string filename, DatabasePurpose purpose)
     {
       std::string type = "exodus";
