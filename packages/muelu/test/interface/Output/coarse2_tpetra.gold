@@ -30,7 +30,6 @@ Level 1
 
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
-   aggregation: mode = old   [default]
    aggregation: max agg size = -1   [default]
    aggregation: min agg size = 2   [default]
    aggregation: max selected neighbors = 0   [default]
@@ -40,12 +39,7 @@ Level 1
    aggregation: enable phase 2b = 1   [default]
    aggregation: enable phase 3 = 1   [default]
    aggregation: preserve Dirichlet points = 0   [default]
-   UseOnePtAggregationAlgorithm = 0   [default]
-   UsePreserveDirichletAggregationAlgorithm = 0   [default]
-   UseUncoupledAggregationAlgorithm = 1   [default]
-   UseMaxLinkAggregationAlgorithm = 1   [default]
-   UseIsolatedNodeAggregationAlgorithm = 1   [default]
-   UseEmergencyAggregationAlgorithm = 1   [default]
+   aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
 
    Nullspace factory (MueLu::NullspaceFactory)
@@ -103,7 +97,6 @@ Level 2
 
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
-   aggregation: mode = old   [default]
    aggregation: max agg size = -1   [default]
    aggregation: min agg size = 2   [default]
    aggregation: max selected neighbors = 0   [default]
@@ -113,12 +106,7 @@ Level 2
    aggregation: enable phase 2b = 1   [default]
    aggregation: enable phase 3 = 1   [default]
    aggregation: preserve Dirichlet points = 0   [default]
-   UseOnePtAggregationAlgorithm = 0   [default]
-   UsePreserveDirichletAggregationAlgorithm = 0   [default]
-   UseUncoupledAggregationAlgorithm = 1   [default]
-   UseMaxLinkAggregationAlgorithm = 1   [default]
-   UseIsolatedNodeAggregationAlgorithm = 1   [default]
-   UseEmergencyAggregationAlgorithm = 1   [default]
+   aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
 
    Nullspace factory (MueLu::NullspaceFactory)
@@ -176,7 +164,6 @@ Level 3
 
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
-   aggregation: mode = old   [default]
    aggregation: max agg size = -1   [default]
    aggregation: min agg size = 2   [default]
    aggregation: max selected neighbors = 0   [default]
@@ -186,12 +173,7 @@ Level 3
    aggregation: enable phase 2b = 1   [default]
    aggregation: enable phase 3 = 1   [default]
    aggregation: preserve Dirichlet points = 0   [default]
-   UseOnePtAggregationAlgorithm = 0   [default]
-   UsePreserveDirichletAggregationAlgorithm = 0   [default]
-   UseUncoupledAggregationAlgorithm = 1   [default]
-   UseMaxLinkAggregationAlgorithm = 1   [default]
-   UseIsolatedNodeAggregationAlgorithm = 1   [default]
-   UseEmergencyAggregationAlgorithm = 1   [default]
+   aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
 
    Nullspace factory (MueLu::NullspaceFactory)
@@ -249,7 +231,6 @@ Level 4
 
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
-   aggregation: mode = old   [default]
    aggregation: max agg size = -1   [default]
    aggregation: min agg size = 2   [default]
    aggregation: max selected neighbors = 0   [default]
@@ -259,12 +240,7 @@ Level 4
    aggregation: enable phase 2b = 1   [default]
    aggregation: enable phase 3 = 1   [default]
    aggregation: preserve Dirichlet points = 0   [default]
-   UseOnePtAggregationAlgorithm = 0   [default]
-   UsePreserveDirichletAggregationAlgorithm = 0   [default]
-   UseUncoupledAggregationAlgorithm = 1   [default]
-   UseMaxLinkAggregationAlgorithm = 1   [default]
-   UseIsolatedNodeAggregationAlgorithm = 1   [default]
-   UseEmergencyAggregationAlgorithm = 1   [default]
+   aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
 
    Nullspace factory (MueLu::NullspaceFactory)
@@ -322,7 +298,6 @@ Level 5
 
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
-   aggregation: mode = old   [default]
    aggregation: max agg size = -1   [default]
    aggregation: min agg size = 2   [default]
    aggregation: max selected neighbors = 0   [default]
@@ -332,12 +307,7 @@ Level 5
    aggregation: enable phase 2b = 1   [default]
    aggregation: enable phase 3 = 1   [default]
    aggregation: preserve Dirichlet points = 0   [default]
-   UseOnePtAggregationAlgorithm = 0   [default]
-   UsePreserveDirichletAggregationAlgorithm = 0   [default]
-   UseUncoupledAggregationAlgorithm = 1   [default]
-   UseMaxLinkAggregationAlgorithm = 1   [default]
-   UseIsolatedNodeAggregationAlgorithm = 1   [default]
-   UseEmergencyAggregationAlgorithm = 1   [default]
+   aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
 
    Nullspace factory (MueLu::NullspaceFactory)
@@ -391,3 +361,4 @@ Smoother (level 4) both : "Ifpack2::Relaxation": {Initialized: true, Computed: t
 
 Smoother (level 5) pre  : no smoother
 Smoother (level 5) post : no smoother
+

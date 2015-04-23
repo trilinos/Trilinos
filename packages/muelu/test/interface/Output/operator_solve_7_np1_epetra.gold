@@ -31,3 +31,4 @@ Smoother (level 0) both : MueLu::IfpackSmoother{type = point relaxation stand-al
 
 Smoother (level 1) pre  : MueLu::AmesosSmoother{type = Superlu}
 Smoother (level 1) post : no smoother
+
