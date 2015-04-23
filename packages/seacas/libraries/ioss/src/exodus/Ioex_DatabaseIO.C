@@ -1072,8 +1072,7 @@ namespace Ioex {
 
       globalValues.resize(m_variables[EX_GLOBAL].size());
       output_results_names(EX_GLOBAL, m_variables[EX_GLOBAL]);
-      if (nodeCount > 0)
-	output_results_names(EX_NODE_BLOCK, m_variables[EX_NODE_BLOCK]);
+      output_results_names(EX_NODE_BLOCK, m_variables[EX_NODE_BLOCK]);
       output_results_names(EX_EDGE_BLOCK, m_variables[EX_EDGE_BLOCK]);
       output_results_names(EX_FACE_BLOCK, m_variables[EX_FACE_BLOCK]);
       output_results_names(EX_ELEM_BLOCK, m_variables[EX_ELEM_BLOCK]);
