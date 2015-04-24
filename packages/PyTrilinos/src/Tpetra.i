@@ -422,7 +422,6 @@ Import = Import_default
 // parse, and so I provide a simplified prototype of the class here
 namespace Tpetra
 {
-// Templated, empty class
 template < class Packet,
            class LocalOrdinal = Details::DefaultTypes::local_ordinal_type,
            class GlobalOrdinal = Details::DefaultTypes::global_ordinal_type,
@@ -509,7 +508,7 @@ class MultiVector :
     public DistObject< Scalar,
                        LocalOrdinal,
                        GlobalOrdinal,
-                       Kokkos::Compat::KokkosDeviceWrapperNode<Node> >
+                       Node >
 {
 public:
   typedef Scalar scalar_type;
@@ -764,7 +763,7 @@ class Vector :
     public MultiVector< Scalar,
                         LocalOrdinal,
                         GlobalOrdinal,
-                        Kokkos::Compat::KokkosDeviceWrapperNode<Node> >
+                        Node >
 {
 public:
   typedef Scalar scalar_type;
@@ -810,7 +809,7 @@ public:
                      const size_t offset);
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>::dot;
   dot_type dot(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<Node>, false>& y) const;
-  using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type
+  using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>::norm1;
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>::norm2;
   mag_type norm2() const;
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>::normInf;
