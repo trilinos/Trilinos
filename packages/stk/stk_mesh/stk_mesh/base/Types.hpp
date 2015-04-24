@@ -48,6 +48,7 @@
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc
 #include <set>
+#include <map>
 
 namespace stk { namespace mesh { class Bucket; } }
 namespace stk { namespace mesh { class Part; } }
