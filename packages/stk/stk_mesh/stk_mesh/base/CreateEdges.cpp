@@ -479,7 +479,7 @@ void create_edges( BulkData & mesh, const Selector & element_selector, Part * pa
                   stk::mesh::impl::find_element_edge_ordinal_and_equivalent_nodes(mesh, localElem, numNodesPerEdge, edgeNodes, localElemEdgeOrdinal, localElemEdgeNodes);
                   create_single_edge_impl functor( count_edges, ids_requested, edge_map, mesh, localElem, localElemEdgeOrdinal, numNodesPerEdge, localElemEdgeNodes, part_to_insert_new_edges);
                   stk::topology::apply_functor< create_single_edge_impl > apply(functor);
-                  apply( b.topology() );
+                  apply( mesh.bucket(localElem).topology() );
                 }
                 elements.clear();
               }
