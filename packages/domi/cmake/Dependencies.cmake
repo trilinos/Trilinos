@@ -40,11 +40,17 @@
 # ***********************************************************************
 # @HEADER
 
-SET(LIB_REQUIRED_DEP_PACKAGES Teuchos)
-SET(LIB_OPTIONAL_DEP_PACKAGES Epetra TpetraClassic TpetraCore)
-SET(TEST_REQUIRED_DEP_PACKAGES)
-SET(TEST_OPTIONAL_DEP_PACKAGES)
-SET(LIB_REQUIRED_DEP_TPLS)
-SET(LIB_OPTIONAL_DEP_TPLS MPI)
-SET(TEST_REQUIRED_DEP_TPLS)
-SET(TEST_OPTIONAL_DEP_TPLS)
+# Note: the LIB_REQUIRED_PACKAGES should include KokkosClassic, but
+# TriBITS doesn't like it:
+#
+# CMake Error at cmake/tribits/core/package_arch/TribitsAdjustPackageEnables.cmake:141 (MESSAGE):
+#   Error, the package 'KokkosClassic' is listed as a dependency of the package
+#   'Domi' is in the list 'Trilinos_SE_PACKAGES' but the package
+#   'KokkosClassic' is either not defined or is listed later in the package
+#   order.  Check the spelling of 'KokkosClassic' or see how it is listed in
+#   Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS in relationship to 'Domi'.
+
+TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
+  LIB_REQUIRED_PACKAGES Teuchos Kokkos
+  LIB_OPTIONAL_PACKAGES Epetra TpetraClassic TpetraCore
+)
