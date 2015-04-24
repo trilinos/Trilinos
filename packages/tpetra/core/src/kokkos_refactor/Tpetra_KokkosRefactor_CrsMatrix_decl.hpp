@@ -47,7 +47,7 @@
 // subsumed into Tpetra_CrsMatrix_decl.hpp.
 
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
-#include <Kokkos_Sparse.hpp>
+#include <Kokkos_CrsMatrix.hpp>
 
 namespace Tpetra {
 

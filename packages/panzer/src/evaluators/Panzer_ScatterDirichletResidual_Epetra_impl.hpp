@@ -663,7 +663,7 @@ evaluateFields(typename TRAITS::EvalData workset)
             if(r!=Teuchos::null) 
               (*r)[row] = scatterField.val();
             if(dirichletCounter_!=Teuchos::null) {
-              std::cout << "Writing " << row << " " << dirichletCounter_->MyLength() << std::endl;
+              // std::cout << "Writing " << row << " " << dirichletCounter_->MyLength() << std::endl;
               (*dirichletCounter_)[row] = 1.0; // mark row as dirichlet
             }
 

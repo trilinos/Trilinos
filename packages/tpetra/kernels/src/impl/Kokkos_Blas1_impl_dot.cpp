@@ -48,157 +48,34 @@ namespace KokkosBlas {
 namespace Impl {
 
 #ifdef KOKKOS_HAVE_SERIAL
-#define IMPL_EXEC_BLAS Kokkos::Serial
-#define IMPL_MEM_BLAS Kokkos::HostSpace
-double
-Dot<const double*,Kokkos::LayoutLeft,Kokkos::Device<IMPL_EXEC_BLAS,IMPL_MEM_BLAS>,
-           Kokkos::MemoryTraits<Kokkos::Unmanaged>,Kokkos::Impl::ViewDefault,
-           const double*,Kokkos::LayoutLeft,Kokkos::Device<IMPL_EXEC_BLAS,IMPL_MEM_BLAS>,
-           Kokkos::MemoryTraits<Kokkos::Unmanaged>,Kokkos::Impl::ViewDefault>::
-  dot (const XVector& x, const XVector& y) {
-    double result;
 
-    // With Intel 15 in a serial test with 100000 elements for 1000 trials
-    // using int instead of size_t is 2x faster
-    if(x.dimension_0() < XVector::size_type(INT_MAX)) {
-      Kokkos::RangePolicy<XVector::execution_space, int> policy(0,x.dimension_0());
-      Kokkos::parallel_reduce(policy,
-        DotFunctor<XVector,XVector,int>(x,y),
-        result);
-      return result;
-    } else {
-      Kokkos::RangePolicy<XVector::execution_space> policy(0,x.dimension_0());
-      Kokkos::parallel_reduce(policy,
-        DotFunctor<XVector,XVector>(x,y),
-        result);
-      return result;
-    }
-  }
-#undef IMPL_EXEC_BLAS
-#undef IMPL_MEM_BLAS
-#endif
+  KOKKOSBLAS_IMPL_V_DOT_DEF( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
+
+#endif // KOKKOS_HAVE_SERIAL
 
 #ifdef KOKKOS_HAVE_OPENMP
-#define IMPL_EXEC_BLAS Kokkos::OpenMP
-#define IMPL_MEM_BLAS Kokkos::HostSpace
-double
-Dot<const double*,Kokkos::LayoutLeft,Kokkos::Device<IMPL_EXEC_BLAS,IMPL_MEM_BLAS>,
-           Kokkos::MemoryTraits<Kokkos::Unmanaged>,Kokkos::Impl::ViewDefault,
-           const double*,Kokkos::LayoutLeft,Kokkos::Device<IMPL_EXEC_BLAS,IMPL_MEM_BLAS>,
-           Kokkos::MemoryTraits<Kokkos::Unmanaged>,Kokkos::Impl::ViewDefault>::
-  dot (const XVector& x, const XVector& y) {
-    double result;
 
-    // With Intel 15 in a serial test with 100000 elements for 1000 trials
-    // using int instead of size_t is 2x faster
-    if(x.dimension_0() < XVector::size_type(INT_MAX)) {
-      Kokkos::RangePolicy<XVector::execution_space, int> policy(0,x.dimension_0());
-      Kokkos::parallel_reduce(policy,
-        DotFunctor<XVector,XVector,int>(x,y),
-        result);
-      return result;
-    } else {
-      Kokkos::RangePolicy<XVector::execution_space> policy(0,x.dimension_0());
-      Kokkos::parallel_reduce(policy,
-        DotFunctor<XVector,XVector>(x,y),
-        result);
-      return result;
-    }
-  }
-#undef IMPL_EXEC_BLAS
-#undef IMPL_MEM_BLAS
-#endif
+  KOKKOSBLAS_IMPL_V_DOT_DEF( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
+
+#endif // KOKKOS_HAVE_OPENMP
 
 #ifdef KOKKOS_HAVE_PTHREAD
-#define IMPL_EXEC_BLAS Kokkos::Threads
-#define IMPL_MEM_BLAS Kokkos::HostSpace
-double
-Dot<const double*,Kokkos::LayoutLeft,Kokkos::Device<IMPL_EXEC_BLAS,IMPL_MEM_BLAS>,
-           Kokkos::MemoryTraits<Kokkos::Unmanaged>,Kokkos::Impl::ViewDefault,
-           const double*,Kokkos::LayoutLeft,Kokkos::Device<IMPL_EXEC_BLAS,IMPL_MEM_BLAS>,
-           Kokkos::MemoryTraits<Kokkos::Unmanaged>,Kokkos::Impl::ViewDefault>::
-  dot (const XVector& x, const XVector& y) {
-    double result;
 
-    // With Intel 15 in a serial test with 100000 elements for 1000 trials
-    // using int instead of size_t is 2x faster
-    if(x.dimension_0() < XVector::size_type(INT_MAX)) {
-      Kokkos::RangePolicy<XVector::execution_space, int> policy(0,x.dimension_0());
-      Kokkos::parallel_reduce(policy,
-        DotFunctor<XVector,XVector,int>(x,y),
-        result);
-      return result;
-    } else {
-      Kokkos::RangePolicy<XVector::execution_space> policy(0,x.dimension_0());
-      Kokkos::parallel_reduce(policy,
-        DotFunctor<XVector,XVector>(x,y),
-        result);
-      return result;
-    }
-  }
-#undef IMPL_EXEC_BLAS
-#undef IMPL_MEM_BLAS
-#endif
+  KOKKOSBLAS_IMPL_V_DOT_DEF( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
+
+#endif // KOKKOS_HAVE_PTHREAD
 
 #ifdef KOKKOS_HAVE_CUDA
-#define IMPL_EXEC_BLAS Kokkos::Cuda
-#define IMPL_MEM_BLAS Kokkos::CudaSpace
-double
-Dot<const double*,Kokkos::LayoutLeft,Kokkos::Device<IMPL_EXEC_BLAS,IMPL_MEM_BLAS>,
-           Kokkos::MemoryTraits<Kokkos::Unmanaged>,Kokkos::Impl::ViewDefault,
-           const double*,Kokkos::LayoutLeft,Kokkos::Device<IMPL_EXEC_BLAS,IMPL_MEM_BLAS>,
-           Kokkos::MemoryTraits<Kokkos::Unmanaged>,Kokkos::Impl::ViewDefault>::
-  dot (const XVector& x, const XVector& y) {
-    double result;
 
-    // With Intel 15 in a serial test with 100000 elements for 1000 trials
-    // using int instead of size_t is 2x faster
-    if(x.dimension_0() < XVector::size_type(INT_MAX)) {
-      Kokkos::RangePolicy<XVector::execution_space, int> policy(0,x.dimension_0());
-      Kokkos::parallel_reduce(policy,
-        DotFunctor<XVector,XVector,int>(x,y),
-        result);
-      return result;
-    } else {
-      Kokkos::RangePolicy<XVector::execution_space> policy(0,x.dimension_0());
-      Kokkos::parallel_reduce(policy,
-        DotFunctor<XVector,XVector>(x,y),
-        result);
-      return result;
-    }
-  }
-#undef IMPL_EXEC_BLAS
-#undef IMPL_MEM_BLAS
+  KOKKOSBLAS_IMPL_V_DOT_DEF( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
 
-#define IMPL_EXEC_BLAS Kokkos::Cuda
-#define IMPL_MEM_BLAS Kokkos::CudaUVMSpace
-double
-Dot<const double*,Kokkos::LayoutLeft,Kokkos::Device<IMPL_EXEC_BLAS,IMPL_MEM_BLAS>,
-           Kokkos::MemoryTraits<Kokkos::Unmanaged>,Kokkos::Impl::ViewDefault,
-           const double*,Kokkos::LayoutLeft,Kokkos::Device<IMPL_EXEC_BLAS,IMPL_MEM_BLAS>,
-           Kokkos::MemoryTraits<Kokkos::Unmanaged>,Kokkos::Impl::ViewDefault>::
-  dot (const XVector& x, const XVector& y) {
-    double result;
+#endif // KOKKOS_HAVE_CUDA
 
-    // With Intel 15 in a serial test with 100000 elements for 1000 trials
-    // using int instead of size_t is 2x faster
-    if(x.dimension_0() < XVector::size_type(INT_MAX)) {
-      Kokkos::RangePolicy<XVector::execution_space, int> policy(0,x.dimension_0());
-      Kokkos::parallel_reduce(policy,
-        DotFunctor<XVector,XVector,int>(x,y),
-        result);
-      return result;
-    } else {
-      Kokkos::RangePolicy<XVector::execution_space> policy(0,x.dimension_0());
-      Kokkos::parallel_reduce(policy,
-        DotFunctor<XVector,XVector>(x,y),
-        result);
-      return result;
-    }
-  }
-#undef IMPL_EXEC_BLAS
-#undef IMPL_MEM_BLAS
-#endif
+#ifdef KOKKOS_HAVE_CUDA
 
-}
-}
+  KOKKOSBLAS_IMPL_V_DOT_DEF( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
+
+#endif // KOKKOS_HAVE_CUDA
+
+} // namespace Impl
+} // namespace KokkosBlas

@@ -47,7 +47,7 @@
 */
 
 
-#include "ROL_TestObjectives.hpp"
+#include "ROL_Zakharov.hpp"
 #include "ROL_BelosKrylov.hpp"
 #include "ROL_LineSearchStep.hpp"
 #include "ROL_Algorithm.hpp"
@@ -79,25 +79,31 @@ int main(int argc, char *argv[]) {
   // *** Example body.
 
   try {
+    
+      int dim = 10;
 
       Teuchos::RCP<ROL::Step<RealT>> step;
-      Teuchos::RCP<ROL::Objective<RealT>> obj;
  
+
       Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp(new Teuchos::ParameterList());
       std::string paramfile = "parameters.xml";
       Teuchos::updateParametersFromXmlFile(paramfile,Teuchos::Ptr<Teuchos::ParameterList>(&*parlist));
 
-      // Get example number to use
-      auto objNumber = static_cast<ROL::ETestObjectives>(parlist->get("Zoo Example Number",0));
- 
-      auto x0_rcp  = Teuchos::rcp(new std::vector<RealT>());
-      auto x_rcp  = Teuchos::rcp(new std::vector<RealT>());
- 
-      ROL::StdVector<RealT> x(x_rcp);
-      ROL::StdVector<RealT> x0(x0_rcp);
-      
-      ROL::getTestObjectives(obj,x0,x,objNumber);
-      x.set(x0);
+      // Iteration Vector 
+      Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+
+      // Vector of natural numbers
+      Teuchos::RCP<std::vector<RealT> > k_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+
+      for (int i=0; i<dim; i++) {
+          (*x_rcp)[i]   = 4;
+          (*k_rcp)[i]   = i+1.0;
+       }
+
+       Teuchos::RCP<ROL::Vector<RealT> > k = Teuchos::rcp(new ROL::StdVector<RealT> (k_rcp) );
+       ROL::StdVector<RealT> x(x_rcp);
+
+       ROL::ZOO::Objective_Zakharov<RealT> obj(k);
 
       // Make a Belos-Krylov solver if specified
       if(parlist->get("Use Belos",false)) { 
@@ -118,20 +124,22 @@ int main(int argc, char *argv[]) {
       ROL::DefaultAlgorithm<RealT> algo(*step,status,false);
 
       // Run Algorithm
-      std::vector<std::string> output = algo.run(x, *obj, false);
+      std::vector<std::string> output = algo.run(x, obj, false);
       for ( unsigned i = 0; i < output.size(); i++ ) {
           std::cout << output[i];
       }
 
-      // Check that the gradient norm is sufficiently small
-      auto dim = x_rcp->size();
-      auto g_rcp = Teuchos::rcp(new std::vector<RealT>(dim,0.0));  
-      ROL::StdVector<RealT> g(g_rcp);
-      RealT tol=0;
-      obj->gradient(g,x,tol);
-
-      if(g.norm()>gtol) {
-          errorFlag = 1;
+      // Get True Solution
+      Teuchos::RCP<std::vector<RealT> > xtrue_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+      ROL::StdVector<RealT> xtrue(xtrue_rcp);
+ 
+        
+      // Compute Error
+      x.axpy(-1.0, xtrue);
+      RealT abserr = x.norm();
+      *outStream << std::scientific << "\n   Absolute Error: " << abserr;
+      if ( abserr > sqrt(ROL::ROL_EPSILON) ) {
+          errorFlag += 1;
       }
 
   }

@@ -92,25 +92,25 @@ struct MV_Update_Functor
     beta_ (beta), Y_ (Y),
     gamma_ (gamma), Z_ (Z)
   {
-#ifdef KOKKOS_HAVE_CXX11
-    // XMV, YMV, and ZMV must be Kokkos::View specializations.
     static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
                    "MV_Update_Functor: X is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::Impl::"
                    "MV_Update_Functor: Y is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<ZMV>::value, "KokkosBlas::Impl::"
                    "MV_Update_Functor: Z is not a Kokkos::View.");
-    // ZMV must be nonconst (else it can't be an output argument).
     static_assert (Kokkos::Impl::is_same<typename ZMV::value_type,
                    typename ZMV::non_const_value_type>::value,
                    "KokkosBlas::Impl::MV_Update_Functor: Z is const.  "
                    "It must be nonconst, because it is an output argument "
                    "(we have to be able to write to its entries).");
-    static_assert ((int) ZMV::rank == (int) XMV::rank && (int) ZMV::rank == (int) YMV::rank,
-                   "KokkosBlas::Impl::MV_Update_Functor: X, Y, and Z must have the same rank.");
+    // Casting enum values to int avoids compiler warnings about
+    // comparing different kinds of enum values.
+    static_assert ((int) ZMV::rank == (int) XMV::rank &&
+                   (int) ZMV::rank == (int) YMV::rank,
+                   "KokkosBlas::Impl::MV_Update_Functor: "
+                   "X, Y, and Z must have the same rank.");
     static_assert (ZMV::rank == 2, "KokkosBlas::Impl::MV_Update_Functor: "
                    "XMV, YMV, and ZMV must have rank 2.");
-#endif // KOKKOS_HAVE_CXX11
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -262,25 +262,25 @@ struct V_Update_Functor
     beta_ (beta), Y_ (Y),
     gamma_ (gamma), Z_ (Z)
   {
-#ifdef KOKKOS_HAVE_CXX11
-    // XV, YV, and ZV must be Kokkos::View specializations.
     static_assert (Kokkos::Impl::is_view<XV>::value, "KokkosBlas::Impl::"
                    "V_Update_Functor: X is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<YV>::value, "KokkosBlas::Impl::"
                    "V_Update_Functor: Y is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<ZV>::value, "KokkosBlas::Impl::"
                    "V_Update_Functor: Z is not a Kokkos::View.");
-    // ZV must be nonconst (else it can't be an output argument).
     static_assert (Kokkos::Impl::is_same<typename ZV::value_type,
                    typename ZV::non_const_value_type>::value,
                    "KokkosBlas::Impl::V_Update_Functor: Z is const.  "
                    "It must be nonconst, because it is an output argument "
                    "(we have to be able to write to its entries).");
-    static_assert ((int) ZV::rank == (int) XV::rank && (int) ZV::rank == (int) YV::rank,
-                   "KokkosBlas::Impl::V_Update_Functor: X, Y, and Z must have the same rank.");
+    // Casting to int avoids compiler warnings about comparing
+    // different kinds of enum values.
+    static_assert ((int) ZV::rank == (int) XV::rank &&
+                   (int) ZV::rank == (int) YV::rank,
+                   "KokkosBlas::Impl::V_Update_Functor: "
+                   "X, Y, and Z must have the same rank.");
     static_assert (ZV::rank == 1, "KokkosBlas::Impl::V_Update_Functor: "
                    "XV, YV, and ZV must have rank 1.");
-#endif // KOKKOS_HAVE_CXX11
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -353,25 +353,25 @@ MV_Update_Generic (const typename XMV::non_const_value_type& alpha, const XMV& X
                    const typename ZMV::non_const_value_type& gamma, const ZMV& Z,
                    int a = 2, int b = 2, int c = 2)
 {
-#ifdef KOKKOS_HAVE_CXX11
-    // XMV, YMV, and ZMV must be Kokkos::View specializations.
-    static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
-                   "MV_Update_Generic: X is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::Impl::"
-                   "MV_Update_Generic: Y is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<ZMV>::value, "KokkosBlas::Impl::"
-                   "MV_Update_Generic: Z is not a Kokkos::View.");
-    // ZMV must be nonconst (else it can't be an output argument).
-    static_assert (Kokkos::Impl::is_same<typename ZMV::value_type,
-                   typename ZMV::non_const_value_type>::value,
-                   "KokkosBlas::Impl::MV_Update_Generic: Z is const.  "
-                   "It must be nonconst, because it is an output argument "
-                   "(we have to be able to write to its entries).");
-    static_assert ((int) ZMV::rank == (int) XMV::rank && (int) ZMV::rank == (int) YMV::rank,
-                   "KokkosBlas::Impl::MV_Update_Generic: X, Y, and Z must have the same rank.");
-    static_assert (ZMV::rank == 2, "KokkosBlas::Impl::MV_Update_Generic: "
-                   "XMV, YMV, and ZMV must have rank 2.");
-#endif // KOKKOS_HAVE_CXX11
+  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
+                 "MV_Update_Generic: X is not a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::Impl::"
+                 "MV_Update_Generic: Y is not a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<ZMV>::value, "KokkosBlas::Impl::"
+                 "MV_Update_Generic: Z is not a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_same<typename ZMV::value_type,
+                 typename ZMV::non_const_value_type>::value,
+                 "KokkosBlas::Impl::MV_Update_Generic: Z is const.  "
+                 "It must be nonconst, because it is an output argument "
+                 "(we have to be able to write to its entries).");
+  // Casting to int avoids compiler warnings about comparing different
+  // kinds of enum values.
+  static_assert ((int) ZMV::rank == (int) XMV::rank &&
+                 (int) ZMV::rank == (int) YMV::rank,
+                 "KokkosBlas::Impl::MV_Update_Generic: "
+                 "X, Y, and Z must have the same rank.");
+  static_assert (ZMV::rank == 2, "KokkosBlas::Impl::MV_Update_Generic: "
+                 "XMV, YMV, and ZMV must have rank 2.");
 
   typedef typename XMV::execution_space execution_space;
   const SizeType numRows = X.dimension_0 ();
@@ -449,25 +449,25 @@ V_Update_Generic (const typename XV::non_const_value_type& alpha, const XV& X,
                   const typename ZV::non_const_value_type& gamma, const ZV& Z,
                   int a = 2, int b = 2, int c = 2)
 {
-#ifdef KOKKOS_HAVE_CXX11
-    // XV, YV, and ZV must be Kokkos::View specializations.
     static_assert (Kokkos::Impl::is_view<XV>::value, "KokkosBlas::Impl::"
                    "V_Update_Generic: X is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<YV>::value, "KokkosBlas::Impl::"
                    "V_Update_Generic: Y is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<ZV>::value, "KokkosBlas::Impl::"
                    "V_Update_Generic: Z is not a Kokkos::View.");
-    // ZV must be nonconst (else it can't be an output argument).
     static_assert (Kokkos::Impl::is_same<typename ZV::value_type,
                    typename ZV::non_const_value_type>::value,
                    "KokkosBlas::Impl::V_Update_Generic: Z is const.  "
                    "It must be nonconst, because it is an output argument "
                    "(we have to be able to write to its entries).");
-    static_assert ((int) ZV::rank == (int) XV::rank && (int) ZV::rank == (int) YV::rank,
-                   "KokkosBlas::Impl::V_Update_Generic: X, Y, and Z must have the same rank.");
+    // Casting to int avoids compiler warnings about comparing
+    // different kinds of enum values.
+    static_assert ((int) ZV::rank == (int) XV::rank &&
+                   (int) ZV::rank == (int) YV::rank,
+                   "KokkosBlas::Impl::V_Update_Generic: "
+                   "X, Y, and Z must have the same rank.");
     static_assert (ZV::rank == 1, "KokkosBlas::Impl::V_Update_Generic: "
                    "XV, YV, and ZV must have rank 1.");
-#endif // KOKKOS_HAVE_CXX11
 
   typedef typename XV::execution_space execution_space;
   const SizeType numRows = X.dimension_0 ();
@@ -547,26 +547,25 @@ struct Update<XMV, YMV, ZMV, 2>
           const typename YMV::non_const_value_type& beta, const YMV& Y,
           const typename ZMV::non_const_value_type& gamma, const ZMV& Z)
   {
-#ifdef KOKKOS_HAVE_CXX11
-    // XMV, YMV, and ZMV must be Kokkos::View specializations.
     static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
                    "Update<rank 2>::update: X is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<YMV>::value, "KokkosBlas::Impl::"
                    "Update<rank 2>::update: Y is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<ZMV>::value, "KokkosBlas::Impl::"
                    "Update<rank 2>::update: Z is not a Kokkos::View.");
-    // ZMV must be nonconst (else it can't be an output argument).
     static_assert (Kokkos::Impl::is_same<typename ZMV::value_type,
                      typename ZMV::non_const_value_type>::value,
                    "KokkosBlas::Impl::Update<rank 2>::update: Z is const.  "
                    "It must be nonconst, because it is an output argument "
                    "(we have to be able to write to its entries).");
-    static_assert ((int) ZMV::rank == (int) XMV::rank && (int) ZMV::rank == (int) YMV::rank,
+    // Casting to int avoids compiler warnings about comparing
+    // different kinds of enum values.
+    static_assert ((int) ZMV::rank == (int) XMV::rank &&
+                   (int) ZMV::rank == (int) YMV::rank,
                    "KokkosBlas::Impl::Update<rank 2>::update: "
                    "X, Y, and Z must have the same rank.");
     static_assert (ZMV::rank == 2, "KokkosBlas::Impl::Update<rank 2>::update: "
                    "XMV, YMV, and ZMV must have rank 2.");
-#endif // KOKKOS_HAVE_CXX11
 
     const size_type numRows = X.dimension_0 ();
     const size_type numCols = X.dimension_1 ();
@@ -603,282 +602,6 @@ struct Update<XMV, YMV, ZMV, 2>
   }
 };
 
-//
-// Specializations for different Kokkos devices.
-//
-
-#ifdef KOKKOS_HAVE_SERIAL
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Serial
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
-
-template<>
-struct Update<Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              2>
-{
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> XMV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> YMV;
-  typedef Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> ZMV;
-  typedef XMV::size_type size_type;
-  typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA;
-  typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB;
-  typedef Kokkos::Details::ArithTraits<ZMV::non_const_value_type> ATC;
-
-  static void
-  update (const XMV::non_const_value_type& alpha, const XMV& X,
-          const YMV::non_const_value_type& beta, const YMV& Y,
-          const ZMV::non_const_value_type& gamma, const ZMV& Z);
-};
-
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#endif // KOKKOS_HAVE_SERIAL
-
-#ifdef KOKKOS_HAVE_OPENMP
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::OpenMP
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
-
-template<>
-struct Update<Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              2>
-{
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> XMV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> YMV;
-  typedef Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> ZMV;
-  typedef XMV::size_type size_type;
-  typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA;
-  typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB;
-  typedef Kokkos::Details::ArithTraits<ZMV::non_const_value_type> ATC;
-
-  static void
-  update (const XMV::non_const_value_type& alpha, const XMV& X,
-          const YMV::non_const_value_type& beta, const YMV& Y,
-          const ZMV::non_const_value_type& gamma, const ZMV& Z);
-};
-
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#endif // KOKKOS_HAVE_OPENMP
-
-#ifdef KOKKOS_HAVE_PTHREAD
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Threads
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
-
-template<>
-struct Update<Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              2>
-{
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> XMV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> YMV;
-  typedef Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> ZMV;
-  typedef XMV::size_type size_type;
-  typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA;
-  typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB;
-  typedef Kokkos::Details::ArithTraits<ZMV::non_const_value_type> ATC;
-
-  static void
-  update (const XMV::non_const_value_type& alpha, const XMV& X,
-          const YMV::non_const_value_type& beta, const YMV& Y,
-          const ZMV::non_const_value_type& gamma, const ZMV& Z);
-};
-
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#endif // KOKKOS_HAVE_PTHREAD
-
-#ifdef KOKKOS_HAVE_CUDA
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Cuda
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
-
-template<>
-struct Update<Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              2>
-{
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> XMV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> YMV;
-  typedef Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> ZMV;
-  typedef XMV::size_type size_type;
-  typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA;
-  typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB;
-  typedef Kokkos::Details::ArithTraits<ZMV::non_const_value_type> ATC;
-
-  static void
-  update (const XMV::non_const_value_type& alpha, const XMV& X,
-          const YMV::non_const_value_type& beta, const YMV& Y,
-          const ZMV::non_const_value_type& gamma, const ZMV& Z);
-};
-
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#endif // KOKKOS_HAVE_CUDA
-
-#ifdef KOKKOS_HAVE_CUDA
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Cuda
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaUVMSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
-
-template<>
-struct Update<Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                           Kokkos::LayoutLeft,
-                           Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                           Kokkos::Impl::ViewDefault>,
-              2>
-{
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> XMV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> YMV;
-  typedef Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> ZMV;
-  typedef XMV::size_type size_type;
-  typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA;
-  typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB;
-  typedef Kokkos::Details::ArithTraits<ZMV::non_const_value_type> ATC;
-
-  static void
-  update (const XMV::non_const_value_type& alpha, const XMV& X,
-          const YMV::non_const_value_type& beta, const YMV& Y,
-          const ZMV::non_const_value_type& gamma, const ZMV& Z);
-};
-
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#endif // KOKKOS_HAVE_CUDA
-
-
-
 // Partial specialization for XV, YV, and ZV rank-1 Views.
 template<class XV, class YV, class ZV>
 struct Update<XV, YV, ZV, 1>
@@ -893,7 +616,6 @@ struct Update<XV, YV, ZV, 1>
           const typename YV::non_const_value_type& beta, const YV& Y,
           const typename ZV::non_const_value_type& gamma, const ZV& Z)
   {
-#ifdef KOKKOS_HAVE_CXX11
     // XV, YV, and ZV must be Kokkos::View specializations.
     static_assert (Kokkos::Impl::is_view<XV>::value, "KokkosBlas::Impl::"
                    "Update<rank 1>::update: X is not a Kokkos::View.");
@@ -912,7 +634,6 @@ struct Update<XV, YV, ZV, 1>
                    "X, Y, and Z must have the same rank.");
     static_assert (ZV::rank == 1, "KokkosBlas::Impl::Update<rank 1>::update: "
                    "XV, YV, and ZV must have rank 1.");
-#endif // KOKKOS_HAVE_CXX11
 
     const size_type numRows = X.dimension_0 ();
     const size_type numCols = X.dimension_1 ();
@@ -948,6 +669,321 @@ struct Update<XV, YV, ZV, 1>
     }
   }
 };
+
+//
+// Macro for declaration of full specialization of
+// KokkosBlas::Impl::Update for rank == 2.  This is NOT for users!!!
+// All the declarations of full specializations go in this header
+// file.  We may spread out definitions (see _DEF macro below) across
+// one or more .cpp files.
+//
+
+#define KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+template<> \
+struct Update<Kokkos::View<const SCALAR**, \
+                           LAYOUT, \
+                           Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                           Kokkos::Impl::ViewDefault>, \
+              Kokkos::View<const SCALAR**, \
+                           LAYOUT, \
+                           Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                           Kokkos::Impl::ViewDefault>, \
+              Kokkos::View<SCALAR**, \
+                           LAYOUT, \
+                           Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                           Kokkos::Impl::ViewDefault>, \
+              2> \
+{ \
+  typedef Kokkos::View<const SCALAR**, \
+                       LAYOUT, \
+                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                       Kokkos::Impl::ViewDefault> XMV; \
+  typedef Kokkos::View<const SCALAR**, \
+                       LAYOUT, \
+                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                       Kokkos::Impl::ViewDefault> YMV; \
+  typedef Kokkos::View<SCALAR**, \
+                       LAYOUT, \
+                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                       Kokkos::Impl::ViewDefault> ZMV; \
+  typedef XMV::size_type size_type; \
+  typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA; \
+  typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB; \
+  typedef Kokkos::Details::ArithTraits<ZMV::non_const_value_type> ATC; \
+ \
+  static void \
+  update (const XMV::non_const_value_type& alpha, const XMV& X, \
+          const YMV::non_const_value_type& beta, const YMV& Y, \
+          const ZMV::non_const_value_type& gamma, const ZMV& Z); \
+};
+
+//
+// Declarations of full specializations of Impl::Update for rank == 2.
+// Their definitions go in .cpp file(s) in this source directory.
+//
+
+#ifdef KOKKOS_HAVE_SERIAL
+
+KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
+
+#endif // KOKKOS_HAVE_SERIAL
+
+#ifdef KOKKOS_HAVE_OPENMP
+
+KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
+
+#endif // KOKKOS_HAVE_OPENMP
+
+#ifdef KOKKOS_HAVE_PTHREAD
+
+KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
+
+#endif // KOKKOS_HAVE_PTHREAD
+
+#ifdef KOKKOS_HAVE_CUDA
+
+KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
+
+#endif // KOKKOS_HAVE_CUDA
+
+#ifdef KOKKOS_HAVE_CUDA
+
+KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
+
+#endif // KOKKOS_HAVE_CUDA
+
+//
+// Macro for definition of full specialization of
+// KokkosBlas::Impl::Update for rank == 2.  This is NOT for users!!!
+//
+
+#define KOKKOSBLAS_IMPL_MV_UPDATE_RANK2_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+void \
+Update<Kokkos::View<const SCALAR**, \
+                    LAYOUT, \
+                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                    Kokkos::Impl::ViewDefault>, \
+      Kokkos::View<const SCALAR**, \
+                   LAYOUT, \
+                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                   Kokkos::Impl::ViewDefault>, \
+      Kokkos::View<SCALAR**, \
+                   LAYOUT, \
+                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                   Kokkos::Impl::ViewDefault>, \
+      2>:: \
+update (const XMV::non_const_value_type& alpha, const XMV& X, \
+        const YMV::non_const_value_type& beta, const YMV& Y, \
+        const ZMV::non_const_value_type& gamma, const ZMV& Z) \
+{ \
+  const size_type numRows = X.dimension_0 (); \
+  const size_type numCols = X.dimension_1 (); \
+  int a = 2, b = 2, c = 2; \
+ \
+  if (alpha == ATA::zero ()) { \
+    a = 0; \
+  } \
+  else { \
+    a = 2; \
+  } \
+  if (beta == ATB::zero ()) { \
+    b = 0; \
+  } \
+  else { \
+    b = 2; \
+  } \
+  if (gamma == ATC::zero ()) { \
+    c = 0; \
+  } \
+  else { \
+    c = 2; \
+  } \
+ \
+  if (numRows < static_cast<size_type> (INT_MAX) && \
+      numRows * numCols < static_cast<size_type> (INT_MAX)) { \
+    typedef int index_type; \
+    MV_Update_Generic<XMV, YMV, ZMV, index_type> (alpha, X, beta, Y, gamma, Z, a, b, c); \
+  } \
+  else { \
+    typedef XMV::size_type index_type; \
+    MV_Update_Generic<XMV, YMV, ZMV, index_type> (alpha, X, beta, Y, gamma, Z, a, b, c); \
+  } \
+}
+
+//
+// Macro for declaration of full specialization of
+// KokkosBlas::Impl::Update for rank == 1.  This is NOT for users!!!
+// All the declarations of full specializations go in this header
+// file.  We may spread out definitions (see _DEF macro below) across
+// one or more .cpp files.
+//
+
+#define KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+template<> \
+struct Update<Kokkos::View<const SCALAR*, \
+                           LAYOUT, \
+                           Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                           Kokkos::Impl::ViewDefault>, \
+              Kokkos::View<const SCALAR*, \
+                           LAYOUT, \
+                           Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                           Kokkos::Impl::ViewDefault>, \
+              Kokkos::View<SCALAR*, \
+                           LAYOUT, \
+                           Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                           Kokkos::Impl::ViewDefault>, \
+              1> \
+{ \
+  typedef Kokkos::View<const SCALAR*, \
+                       LAYOUT, \
+                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                       Kokkos::Impl::ViewDefault> XV; \
+  typedef Kokkos::View<const SCALAR*, \
+                       LAYOUT, \
+                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                       Kokkos::Impl::ViewDefault> YV; \
+  typedef Kokkos::View<SCALAR*, \
+                       LAYOUT, \
+                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                       Kokkos::Impl::ViewDefault> ZV; \
+  typedef XV::size_type size_type; \
+  typedef Kokkos::Details::ArithTraits<XV::non_const_value_type> ATA; \
+  typedef Kokkos::Details::ArithTraits<YV::non_const_value_type> ATB; \
+  typedef Kokkos::Details::ArithTraits<ZV::non_const_value_type> ATC; \
+ \
+  static void \
+  update (const XV::non_const_value_type& alpha, const XV& X, \
+          const YV::non_const_value_type& beta, const YV& Y, \
+          const ZV::non_const_value_type& gamma, const ZV& Z); \
+};
+
+//
+// Declarations of full specializations of Impl::Update for rank == 1.
+// Their definitions go in .cpp file(s) in this source directory.
+//
+
+#ifdef KOKKOS_HAVE_SERIAL
+
+KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
+
+#endif // KOKKOS_HAVE_SERIAL
+
+#ifdef KOKKOS_HAVE_OPENMP
+
+KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
+
+#endif // KOKKOS_HAVE_OPENMP
+
+#ifdef KOKKOS_HAVE_PTHREAD
+
+KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
+
+#endif // KOKKOS_HAVE_PTHREAD
+
+#ifdef KOKKOS_HAVE_CUDA
+
+KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
+
+#endif // KOKKOS_HAVE_CUDA
+
+#ifdef KOKKOS_HAVE_CUDA
+
+KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
+
+#endif // KOKKOS_HAVE_CUDA
+
+//
+// Macro for definition of full specialization of
+// KokkosBlas::Impl::Update for rank == 1.  This is NOT for users!!!
+//
+
+#define KOKKOSBLAS_IMPL_MV_UPDATE_RANK1_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+void \
+Update<Kokkos::View<const SCALAR*, \
+                    LAYOUT, \
+                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                    Kokkos::Impl::ViewDefault>, \
+      Kokkos::View<const SCALAR*, \
+                   LAYOUT, \
+                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                   Kokkos::Impl::ViewDefault>, \
+      Kokkos::View<SCALAR*, \
+                   LAYOUT, \
+                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                   Kokkos::Impl::ViewDefault>, \
+      1>:: \
+update (const XV::non_const_value_type& alpha, const XV& X, \
+        const YV::non_const_value_type& beta, const YV& Y, \
+        const ZV::non_const_value_type& gamma, const ZV& Z) \
+{ \
+  static_assert (Kokkos::Impl::is_view<XV>::value, "KokkosBlas::Impl::" \
+                 "Update<rank 1>::update: X is not a Kokkos::View."); \
+  static_assert (Kokkos::Impl::is_view<YV>::value, "KokkosBlas::Impl::" \
+                 "Update<rank 1>::update: Y is not a Kokkos::View."); \
+  static_assert (Kokkos::Impl::is_view<ZV>::value, "KokkosBlas::Impl::" \
+                 "Update<rank 1>::update: Z is not a Kokkos::View."); \
+  static_assert (Kokkos::Impl::is_same<ZV::value_type, \
+                 ZV::non_const_value_type>::value, \
+                 "KokkosBlas::Impl::Update<rank 1>::update: Z is const.  " \
+                 "It must be nonconst, because it is an output argument " \
+                 "(we have to be able to write to its entries)."); \
+  static_assert ((int) ZV::rank == (int) XV::rank && (int) ZV::rank == (int) YV::rank, \
+                 "KokkosBlas::Impl::Update<rank 1>::update: " \
+                 "X, Y, and Z must have the same rank."); \
+  static_assert (ZV::rank == 1, "KokkosBlas::Impl::Update<rank 1>::update: " \
+                 "XV, YV, and ZV must have rank 1."); \
+ \
+  const size_type numRows = X.dimension_0 (); \
+  const size_type numCols = X.dimension_1 (); \
+  int a = 2, b = 2, c = 2; \
+ \
+  if (alpha == ATA::zero ()) { \
+    a = 0; \
+  } \
+  else { \
+    a = 2; \
+  } \
+  if (beta == ATB::zero ()) { \
+    b = 0; \
+  } \
+  else { \
+    b = 2; \
+  } \
+  if (gamma == ATC::zero ()) { \
+    c = 0; \
+  } \
+  else { \
+    c = 2; \
+  } \
+ \
+  if (numRows < static_cast<size_type> (INT_MAX) && \
+      numRows * numCols < static_cast<size_type> (INT_MAX)) { \
+    typedef int index_type; \
+    V_Update_Generic<XV, YV, ZV, index_type> (alpha, X, beta, Y, gamma, Z, a, b, c); \
+  } \
+  else { \
+    typedef XV::size_type index_type; \
+    V_Update_Generic<XV, YV, ZV, index_type> (alpha, X, beta, Y, gamma, Z, a, b, c); \
+  } \
+}
 
 } // namespace Impl
 } // namespace KokkosBlas

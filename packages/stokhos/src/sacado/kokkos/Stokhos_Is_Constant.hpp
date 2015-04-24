@@ -1,12 +1,11 @@
 // @HEADER
-//
 // ***********************************************************************
 //
-//        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
+//                           Stokhos Package
+//                 Copyright (2009) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -35,29 +34,26 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
+// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
 //
 // ***********************************************************************
-//
 // @HEADER
-#ifndef MUELU_MAXLINKAGGREGATIONALGORITHM_FWD_HPP
-#define MUELU_MAXLINKAGGREGATIONALGORITHM_FWD_HPP
 
+#ifndef STOKHOS_IS_CONSTANT_HPP
+#define STOKHOS_IS_CONSTANT_HPP
 
+#include "Kokkos_Macros.hpp"
 
+namespace Sacado {
 
-namespace MueLu {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  class MaxLinkAggregationAlgorithm;
+  // Simple function to determine whether a UQ type (Ensemble, PCE) is
+  // constant.  Defaults to true for all types.
+  template <typename T>
+  KOKKOS_INLINE_FUNCTION
+  bool is_constant(const T& x) {
+    return true;
+  }
+
 }
 
-#ifndef MUELU_MAXLINKAGGREGATIONALGORITHM_SHORT
-#define MUELU_MAXLINKAGGREGATIONALGORITHM_SHORT
-#endif
-
-
-
-#endif // MUELU_MAXLINKAGGREGATIONALGORITHM_FWD_HPP
+#endif // STOKHOS_IS_CONSTANT_HPP

@@ -569,7 +569,7 @@ class Normalization_Constraint : public EqualityConstraint<Real> {
             (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(psi))).getVector();
 
         mass_->apply(psip,ajvp);
-        for(int i=0;i<psip->size();++i) {
+        for(unsigned i=0;i<psip->size();++i) {
             (*ajvp)[i] *= 2.0*(*vp)[0];
         }
 
@@ -592,7 +592,7 @@ class Normalization_Constraint : public EqualityConstraint<Real> {
             (Teuchos::dyn_cast<XPrim>(const_cast<Vector<Real> &>(psi))).getVector();
 
         mass_->apply(vp,ahuvp);
-        for(int i=0;i<psip->size();++i) {
+        for(unsigned i=0;i<psip->size();++i) {
             (*ahuvp)[i] *= 2.0*(*up)[0];
         }
     }

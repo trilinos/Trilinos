@@ -90,13 +90,13 @@ namespace ROL {
 
                 auto solverParams = Teuchos::rcp(new Teuchos::ParameterList());
 
-                // Options likely to be of interest include CG, MINRES, GMRES, GCRODR, and RCG
+                // Options likely to be of interest include CG, MINRES, GMRES, and RCG
                 auto blockSize          = 1; // Only support single solution & single RHS for now 
-                auto solverName         = parlist.get("Belos Krylov Method","MINRES");  
+                auto solverName         = parlist.get("Krylov Method","MINRES");  
                 auto maxit              = parlist.get("Maximum Number of Krylov Iterations",50);
                 auto abstol             = parlist.get("Absolute Krylov Tolerance",1.e-4);
                 auto numVectors         = parlist.get("Number of Stored Vectors",3);
-                
+ 
                 solverParams->setName("Belos input parameters"); 
                 solverParams->set("Block Size",blockSize);
                 solverParams->set("Maximum Iterations",maxit);
@@ -126,8 +126,8 @@ namespace ROL {
                 RCP<MV> xmvp = rcp(new MultiVectorDefault<Real>(xp));
                 RCP<MV> bmvp = rcp(new MultiVectorDefault<Real>(bp));
 
-                RCP<OP>       Ap = Teuchos::rcpFromRef(A);
-                RCP<OP>       Mp = Teuchos::rcpFromRef(M);
+                RCP<OP> Ap = Teuchos::rcpFromRef(A);
+                RCP<OP> Mp = Teuchos::rcpFromRef(M);
 
                 // Wrap x and b in ROL::MultiVector objects 
                 MVD xmv(xp);

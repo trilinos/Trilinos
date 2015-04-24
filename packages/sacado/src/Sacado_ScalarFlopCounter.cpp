@@ -59,6 +59,9 @@ Sacado::FlopCounterPack::FlopCounts::flopCountsNames[] =
   ,"log"
   ,"log10"
   ,"sqrt"
+#ifdef HAVE_SACADO_CXX11
+  ,"cbrt"
+#endif
   ,"cos"
   ,"sin"
   ,"tan"
@@ -163,6 +166,9 @@ Sacado::FlopCounterPack::FlopCounts::getSummaryType(Sacado::FlopCounterPack::Flo
     case LOG:
     case LOG10:
     case SQRT:
+#ifdef HAVE_SACADO_CXX11
+    case CBRT:
+#endif
     case COS:
     case SIN:
     case TAN:

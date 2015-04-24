@@ -22,7 +22,6 @@ Level 1
     aggregation: drop scheme = classical   [default]
     lightweight wrap = 1   [default]
 
-   aggregation: mode = old   [default]
    aggregation: max agg size = -1   [default]
    aggregation: min agg size = 1   [unused]
    aggregation: max selected neighbors = 0   [unused]
@@ -31,13 +30,8 @@ Level 1
    aggregation: enable phase 2a = 1   [default]
    aggregation: enable phase 2b = 1   [default]
    aggregation: enable phase 3 = 1   [default]
-   aggregation: preserve Dirichlet points = 0   [default]
-   UseOnePtAggregationAlgorithm = 0   [default]
-   UsePreserveDirichletAggregationAlgorithm = 0   [unused]
-   UseUncoupledAggregationAlgorithm = 1   [default]
-   UseMaxLinkAggregationAlgorithm = 1   [default]
-   UseIsolatedNodeAggregationAlgorithm = 1   [default]
-   UseEmergencyAggregationAlgorithm = 1   [default]
+   aggregation: preserve Dirichlet points = 0   [unused]
+   aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
 
    Build (MueLu::CoarseMapFactory)
@@ -79,7 +73,6 @@ Level 2
     aggregation: drop scheme = classical   [default]
     lightweight wrap = 1   [default]
 
-   aggregation: mode = old   [default]
    aggregation: max agg size = -1   [default]
    aggregation: min agg size = 1   [unused]
    aggregation: max selected neighbors = 0   [unused]
@@ -88,13 +81,8 @@ Level 2
    aggregation: enable phase 2a = 1   [default]
    aggregation: enable phase 2b = 1   [default]
    aggregation: enable phase 3 = 1   [default]
-   aggregation: preserve Dirichlet points = 0   [default]
-   UseOnePtAggregationAlgorithm = 0   [default]
-   UsePreserveDirichletAggregationAlgorithm = 0   [unused]
-   UseUncoupledAggregationAlgorithm = 1   [default]
-   UseMaxLinkAggregationAlgorithm = 1   [default]
-   UseIsolatedNodeAggregationAlgorithm = 1   [default]
-   UseEmergencyAggregationAlgorithm = 1   [default]
+   aggregation: preserve Dirichlet points = 0   [unused]
+   aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
 
    Nullspace factory (MueLu::NullspaceFactory)
@@ -139,7 +127,6 @@ Level 3
     aggregation: drop scheme = classical   [default]
     lightweight wrap = 1   [default]
 
-   aggregation: mode = old   [default]
    aggregation: max agg size = -1   [default]
    aggregation: min agg size = 1   [unused]
    aggregation: max selected neighbors = 0   [unused]
@@ -148,13 +135,8 @@ Level 3
    aggregation: enable phase 2a = 1   [default]
    aggregation: enable phase 2b = 1   [default]
    aggregation: enable phase 3 = 1   [default]
-   aggregation: preserve Dirichlet points = 0   [default]
-   UseOnePtAggregationAlgorithm = 0   [default]
-   UsePreserveDirichletAggregationAlgorithm = 0   [unused]
-   UseUncoupledAggregationAlgorithm = 1   [default]
-   UseMaxLinkAggregationAlgorithm = 1   [default]
-   UseIsolatedNodeAggregationAlgorithm = 1   [default]
-   UseEmergencyAggregationAlgorithm = 1   [default]
+   aggregation: preserve Dirichlet points = 0   [unused]
+   aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
 
    Nullspace factory (MueLu::NullspaceFactory)
@@ -205,3 +187,4 @@ Smoother (level 2) both : MueLu::IfpackSmoother{type = point relaxation stand-al
 
 Smoother (level 3) pre  : MueLu::AmesosSmoother{type = Klu}
 Smoother (level 3) post : no smoother
+

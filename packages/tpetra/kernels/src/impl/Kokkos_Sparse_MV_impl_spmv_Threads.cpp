@@ -1,9 +1,9 @@
-// @HEADER
+/*
+//@HEADER
+// ************************************************************************
 //
-// ***********************************************************************
-//
-//        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
+//          Kokkos: Node API and Parallel Node Kernels
+//              Copyright (2008) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,27 +35,23 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
-// ***********************************************************************
-//
-// @HEADER
+// ************************************************************************
+//@HEADER
+*/
 
+#include <Kokkos_Sparse.hpp>
 
-#include "MueLu_ExplicitInstantiation.hpp"
+namespace KokkosSparse {
+namespace Impl {
 
-#include "MueLu_EmergencyAggregationAlgorithm_def.hpp"
+#ifdef KOKKOS_HAVE_PTHREAD
 
-#include "TpetraCore_ETIHelperMacros.h"
+KOKKOSSPARSE_IMPL_SPMV_MV_DEF( double, int, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
 
-#define MUELU_LOCAL_INSTANT(LO,GO,N) \
-        template class MueLu::EmergencyAggregationAlgorithm<LO,GO,N>;
+#endif // KOKKOS_HAVE_PTHREAD
 
-TPETRA_ETI_MANGLING_TYPEDEFS()
-
-TPETRA_INSTANTIATE_LGN(MUELU_LOCAL_INSTANT)
-
+} // namespace Impl
+} // namespace KokkosSparse
 

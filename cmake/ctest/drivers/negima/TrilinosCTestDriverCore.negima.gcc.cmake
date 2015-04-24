@@ -89,7 +89,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DSuperLU_LIBRARY_NAMES=superlu_4.3"
     )
 
-  SET_DEFAULT(COMPILER_VERSION "GCC-4.9.2")
+  SET_DEFAULT(COMPILER_VERSION "GCC-5.1.0")
 
   #Ensuring that MPI is on for all parallel builds that might be run.
   IF(COMM_TYPE STREQUAL MPI)
@@ -106,8 +106,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/home/aprokop/local/opt/gcc-4.9.2/bin/g++"
-      "-DCMAKE_C_COMPILER:FILEPATH=/home/aprokop/local/opt/gcc-4.9.2/bin/gcc"
+      "-DCMAKE_CXX_COMPILER:FILEPATH=/home/aprokop/local/opt/gcc-5.1.0/bin/g++"
+      "-DCMAKE_C_COMPILER:FILEPATH=/home/aprokop/local/opt/gcc-5.1.0/bin/gcc"
       )
 
   ENDIF()

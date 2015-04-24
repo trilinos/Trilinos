@@ -759,6 +759,9 @@ class RealFadOpsUnitTest2 : public FadOpsUnitTest2<FadType,ScalarType> {
   CPPUNIT_TEST(testATanh);
   CPPUNIT_TEST(testAbs);
   CPPUNIT_TEST(testFAbs);
+#ifdef HAVE_SACADO_CXX11
+  CPPUNIT_TEST(testCbrt);
+#endif
 
   CPPUNIT_TEST(testPlusEquals);
   CPPUNIT_TEST(testMinusEquals);
@@ -800,6 +803,9 @@ public:
   void testATanh();
   void testAbs();
   void testFAbs();
+#ifdef HAVE_SACADO_CXX11
+  void testCbrt();
+#endif
 
   void testATan2();
   void testMax();
@@ -976,6 +982,20 @@ testFAbs() {
   }
   COMPARE_FADS(this->c_fad, t1);
 }
+
+#ifdef HAVE_SACADO_CXX11
+template <class FadType, class ScalarType>
+void
+RealFadOpsUnitTest2<FadType,ScalarType>::
+testCbrt() {
+  this->c_fad = std::cbrt(this->a_fad);
+  FadType t1(this->n, std::cbrt(this->a_fad.val()));
+  for (int i=0; i<this->n; i++)
+    t1.fastAccessDx(i) =
+      this->a_fad.dx(i)/(3.*std::cbrt(this->a_fad.val()*this->a_fad.val()));
+  COMPARE_FADS(this->c_fad, t1);
+}
+#endif
 
 template <class FadType, class ScalarType>
 void

@@ -1,9 +1,9 @@
-// @HEADER
+/*
+//@HEADER
+// ************************************************************************
 //
-// ***********************************************************************
-//
-//        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
+//          Kokkos: Node API and Parallel Node Kernels
+//              Copyright (2008) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,29 +35,23 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
-// ***********************************************************************
-//
-// @HEADER
-#ifndef MUELU_EMERGENCYAGGREGATIONALGORITHM_FWD_HPP
-#define MUELU_EMERGENCYAGGREGATIONALGORITHM_FWD_HPP
+// ************************************************************************
+//@HEADER
+*/
 
+#include <Kokkos_Sparse.hpp>
 
+namespace KokkosSparse {
+namespace Impl {
 
+#ifdef KOKKOS_HAVE_PTHREAD
 
-namespace MueLu {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  class EmergencyAggregationAlgorithm;
-}
+KOKKOSSPARSE_IMPL_SPMV_DEF( double, int, size_t, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
 
-#ifndef MUELU_EMERGENCYAGGREGATIONALGORITHM_SHORT
-#define MUELU_EMERGENCYAGGREGATIONALGORITHM_SHORT
-#endif
+#endif // KOKKOS_HAVE_PTHREAD
 
+} // namespace Impl
+} // namespace KokkosSparse
 
-
-#endif // MUELU_EMERGENCYAGGREGATIONALGORITHM_FWD_HPP

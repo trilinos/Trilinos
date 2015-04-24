@@ -41,393 +41,19 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_SEQUENTIAL_SPARSEKERNELS_HPP
-#define KOKKOS_SEQUENTIAL_SPARSEKERNELS_HPP
+#ifndef KOKKOSSPARSE_IMPL_TRSM_HPP
+#define KOKKOSSPARSE_IMPL_TRSM_HPP
 
-/// \file Kokkos_Sequential_SparseKernels.hpp
-/// \brief Sequential implementations of (local) sparse kernels.
-///
-/// This file exists mainly as a temporary porting aid.  Until we can
-/// set up thread-parallel versions of these kernels, we have
-/// sequential versions here.  They are not terribly well optimized.
-/// The point is to have reasonable sequential defaults, not
-/// super-fast kernels.  If you want super-fast kernels, reimplement
-/// them in Kokkos and try to make them parallel.
-///
-/// The exception to this might be Gauss-Seidel.  Gauss-Seidel is
-/// harder to parallelize without changing the semantics, unless we
-/// implement it with triangular solves and do the latter in parallel.
-/// There is a set-up cost for thread-parallel sparse triangular
-/// solves, and speed-up isn't even close to perfect, so it might pay
-/// for smaller thread counts to have an optimized sequential kernel.
-/// We have <i>not</i> done this here.
+/// \file Kokkos_Sparse_impl_trsm.hpp
+/// \brief Implementation(s) of sparse triangular solve.
 
 #include <TpetraKernels_config.h>
 #include <Kokkos_ArithTraits.hpp>
+#include <vector> // temporarily
 
-namespace Kokkos {
+namespace KokkosSparse {
+namespace Impl {
 namespace Sequential {
-
-/// \brief Implementation of local Gauss-Seidel.
-///
-/// "Local" means local to the MPI process.
-///
-/// \tparam LocalOrdinal The type of each column index.
-/// \tparam OffsetType The type of the entries of the row offsets array.
-/// \tparam MatrixScalar The type of the entries (values of the matrix.
-/// \tparam DomainScalar The type of the entries of the input multivector.
-/// \tparam RangeScalar The type of the entries of the output multivector.
-///
-/// \param numRows [in] Number of rows in the (local) matrix.
-/// \param numCols [in] Number of columns in the input multivector B.
-///   <i>NOT</i> the number of columns in the matrix!
-/// \param ptr [in] The matrix's row offsets.
-/// \param ind [in] The matrix's column indices.
-/// \param val [in] The matrix's values.
-/// \param B [in] The input multivector.
-/// \param b_stride [in] Column stride of the input multivector B.
-/// \param X [in] The output multivector.
-/// \param x_stride [in] Column stride of the output multivector X.
-/// \param D [in] Array of the "diagonal entries" of the matrix.
-///   These may differ from the matrix's actual diagonal entries, as
-///   in L1 Gauss-Seidel for example.
-/// \param omega [in] Damping parameter.
-/// \param direction [in] Sweep direction.
-///
-template<class LocalOrdinal,
-         class OffsetType,
-         class MatrixScalar,
-         class DomainScalar,
-         class RangeScalar>
-void
-gaussSeidel (const LocalOrdinal numRows,
-             const LocalOrdinal numCols,
-             const OffsetType* const ptr,
-             const LocalOrdinal* const ind,
-             const MatrixScalar* const val,
-             const DomainScalar* const B,
-             const OffsetType b_stride,
-             RangeScalar* const X,
-             const OffsetType x_stride,
-             const MatrixScalar* const D,
-             const MatrixScalar omega,
-             const KokkosClassic::ESweepDirection direction)
-{
-  using Kokkos::Details::ArithTraits;
-  typedef LocalOrdinal LO;
-  const OffsetType theNumRows = static_cast<OffsetType> (numRows);
-  const OffsetType theNumCols = static_cast<OffsetType> (numCols);
-
-  if (numRows == 0 || numCols == 0) {
-    return; // Nothing to do.
-  }
-  else if (numRows > 0 && ptr[numRows] == 0) {
-    // All the off-diagonal entries of A are zero, and all the
-    // diagonal entries are (implicitly) 1.  Therefore compute: X :=
-    // (1 - omega) X + omega B.  There's no need to care about the
-    // direction, since there are no cross-row data dependencies in
-    // this case.
-    const MatrixScalar oneMinusOmega =
-      ArithTraits<MatrixScalar>::one () - omega;
-    for (OffsetType j = 0; j < theNumCols; ++j) {
-      RangeScalar* const x_j = X + j*x_stride;
-      const DomainScalar* const b_j = B + j*b_stride;
-      for (OffsetType i = 0; i < theNumRows; ++i) {
-        x_j[i] = oneMinusOmega * x_j[i] + omega * b_j[i];
-      }
-    }
-    return;
-  }
-
-  if (numCols == 1) {
-    if (direction == KokkosClassic::Forward) {
-      for (LO i = 0; i < numRows; ++i) {
-        RangeScalar x_temp = ArithTraits<RangeScalar>::zero ();
-        for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
-          const LO j = ind[k];
-          const MatrixScalar A_ij = val[k];
-          x_temp += A_ij * X[j];
-        }
-        X[i] += omega * D[i] * (B[i] - x_temp);
-      }
-    } else if (direction == KokkosClassic::Backward) {
-      // Split the loop so that it is correct even if LO is unsigned.
-      // It's a bad idea for LO to be unsigned, but we want this to
-      // work nevertheless.
-      for (LO i = numRows - 1; i != 0; --i) {
-        RangeScalar x_temp = ArithTraits<RangeScalar>::zero ();
-        for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
-          const LO j = ind[k];
-          const MatrixScalar A_ij = val[k];
-          x_temp += A_ij * X[j];
-        }
-        X[i] += omega * D[i] * (B[i] - x_temp);
-      }
-      { // last loop iteration
-        const LO i = 0;
-        RangeScalar x_temp = ArithTraits<RangeScalar>::zero ();
-        for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
-          const LO j = ind[k];
-          const MatrixScalar A_ij = val[k];
-          x_temp += A_ij * X[j];
-        }
-        X[i] += omega * D[i] * (B[i] - x_temp);
-      }
-    }
-  }
-  else { // numCols > 1
-    // mfh 20 Dec 2012: If Gauss-Seidel for multivectors with
-    // multiple columns becomes important, we can add unrolled
-    // implementations.  The implementation below is not unrolled.
-    // It may also be reasonable to parallelize over right-hand
-    // sides, if there are enough of them, especially if the matrix
-    // fits in cache.
-    Teuchos::Array<RangeScalar> temp (numCols);
-    RangeScalar* const x_temp = temp.getRawPtr ();
-
-    if (direction == KokkosClassic::Forward) {
-      for (LO i = 0; i < numRows; ++i) {
-        for (OffsetType c = 0; c < theNumCols; ++c) {
-          x_temp[c] = ArithTraits<RangeScalar>::zero ();
-        }
-        for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
-          const LO j = ind[k];
-          const MatrixScalar A_ij = val[k];
-          for (OffsetType c = 0; c < theNumCols; ++c) {
-            x_temp[c] += A_ij * X[j + x_stride*c];
-          }
-        }
-        for (OffsetType c = 0; c < theNumCols; ++c) {
-          X[i + x_stride*c] += omega * D[i] * (B[i + b_stride*c] - x_temp[c]);
-        }
-      }
-    } else if (direction == KokkosClassic::Backward) { // backward mode
-      // Split the loop so that it is correct even if LO is unsigned.
-      // It's a bad idea for LO to be unsigned, but we want this to
-      // work nevertheless.
-      for (LO i = numRows - 1; i != 0; --i) {
-        for (OffsetType c = 0; c < theNumCols; ++c) {
-          x_temp[c] = ArithTraits<RangeScalar>::zero ();
-        }
-        for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
-          const LO j = ind[k];
-          const MatrixScalar A_ij = val[k];
-          for (OffsetType c = 0; c < theNumCols; ++c) {
-            x_temp[c] += A_ij * X[j + x_stride*c];
-          }
-        }
-        for (OffsetType c = 0; c < theNumCols; ++c) {
-          X[i + x_stride*c] += omega * D[i] * (B[i + b_stride*c] - x_temp[c]);
-        }
-      }
-      { // last loop iteration
-        const LO i = 0;
-        for (OffsetType c = 0; c < theNumCols; ++c) {
-          x_temp[c] = ArithTraits<RangeScalar>::zero ();
-        }
-        for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
-          const LO j = ind[k];
-          const MatrixScalar A_ij = val[k];
-          for (OffsetType c = 0; c < theNumCols; ++c) {
-            x_temp[c] += A_ij * X[j + x_stride*c];
-          }
-        }
-        for (OffsetType c = 0; c < theNumCols; ++c) {
-          X[i + x_stride*c] += omega * D[i] * (B[i + b_stride*c] - x_temp[c]);
-        }
-      }
-    }
-  }
-}
-
-
-/// \brief Implementation of reordered local Gauss-Seidel.
-///
-/// "Local" means local to the MPI process.
-///
-/// \tparam LocalOrdinal The type of each column index.
-/// \tparam OffsetType The type of the entries of the row offsets array.
-/// \tparam MatrixScalar The type of the entries (values of the matrix.
-/// \tparam DomainScalar The type of the entries of the input multivector.
-/// \tparam RangeScalar The type of the entries of the output multivector.
-///
-/// \param numRows [in] Number of rows in the (local) matrix.
-/// \param numCols [in] Number of columns in the input multivector B.
-///   <i>NOT</i> the number of columns in the matrix!
-/// \param ptr [in] The matrix's row offsets.
-/// \param ind [in] The matrix's column indices.
-/// \param val [in] The matrix's values.
-/// \param B [in] The input multivector.
-/// \param b_stride [in] Column stride of the input multivector B.
-/// \param X [in] The output multivector.
-/// \param x_stride [in] Column stride of the output multivector X.
-/// \param D [in] Array of the "diagonal entries" of the matrix.
-///   These may differ from the matrix's actual diagonal entries, as
-///   in L1 Gauss-Seidel for example.
-/// \param rowInd [in] Array of row indices to process.  It has
-///   numRowInds entries.  This array determines the order in which
-///   the rows are accessed.  It is legal for this to contain fewer
-///   entries than the number of rows in the matrix.
-/// \param numRowInds [in] Number of entries in rowInd; the number of
-///   rows to process.  This may be less than or equal to numRows (the
-///   number of rows in the matrix).
-/// \param omega [in] Damping parameter.
-/// \param direction [in] Sweep direction.
-///
-template<class LocalOrdinal,
-         class OffsetType,
-         class MatrixScalar,
-         class DomainScalar,
-         class RangeScalar>
-void
-reorderedGaussSeidel (const LocalOrdinal numRows,
-                      const LocalOrdinal numCols,
-                      const OffsetType* const ptr,
-                      const LocalOrdinal* const ind,
-                      const MatrixScalar* const val,
-                      const DomainScalar* const B,
-                      const OffsetType b_stride,
-                      RangeScalar* const X,
-                      const OffsetType x_stride,
-                      const MatrixScalar* const D,
-                      const LocalOrdinal* const rowInd,
-                      const LocalOrdinal numRowInds, // length of rowInd
-                      const MatrixScalar omega,
-                      const KokkosClassic::ESweepDirection direction)
-{
-  using Kokkos::Details::ArithTraits;
-  typedef LocalOrdinal LO;
-  const OffsetType theNumRows = static_cast<OffsetType> (numRows);
-  const OffsetType theNumCols = static_cast<OffsetType> (numCols);
-
-  if (numRows == 0 || numCols == 0) {
-    return; // Nothing to do.
-  }
-  else if (numRows > 0 && ptr[numRows] == 0) {
-    // All the off-diagonal entries of A are zero, and all the
-    // diagonal entries are (implicitly) 1.  Therefore compute: X :=
-    // (1 - omega) X + omega B.  There's no need to care about the
-    // direction or row ordering, since there are no cross-row data
-    // dependencies in this case.
-    const MatrixScalar oneMinusOmega =
-      ArithTraits<MatrixScalar>::one () - omega;
-    for (OffsetType j = 0; j < theNumCols; ++j) {
-      RangeScalar* const x_j = X + j*x_stride;
-      const DomainScalar* const b_j = B + j*b_stride;
-      for (OffsetType i = 0; i < theNumRows; ++i) {
-        x_j[i] = oneMinusOmega * x_j[i] + omega * b_j[i];
-      }
-    }
-    return;
-  }
-
-  if (numCols == 1) {
-    if (direction == KokkosClassic::Forward) {
-      for (LO ii = 0; ii < numRowInds; ++ii) {
-        LO i = rowInd[ii];
-        RangeScalar x_temp = ArithTraits<RangeScalar>::zero ();
-        for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
-          const LO j = ind[k];
-          const MatrixScalar A_ij = val[k];
-          x_temp += A_ij * X[j];
-        }
-        X[i] += omega * D[i] * (B[i] - x_temp);
-      }
-    } else if (direction == KokkosClassic::Backward) {
-      // Split the loop so that it is correct even if LO is unsigned.
-      // It's a bad idea for LO to be unsigned, but we want this to
-      // work nevertheless.
-      for (LO ii = numRowInds - 1; ii != 0; --ii) {
-        LO i = rowInd[ii];
-        RangeScalar x_temp = ArithTraits<RangeScalar>::zero ();
-        for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
-          const LO j = ind[k];
-          const MatrixScalar A_ij = val[k];
-          x_temp += A_ij * X[j];
-        }
-        X[i] += omega * D[i] * (B[i] - x_temp);
-      }
-      { // last loop iteration
-        const LO ii = 0;
-        LO i = rowInd[ii];
-        RangeScalar x_temp = ArithTraits<RangeScalar>::zero ();
-        for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
-          const LO j = ind[k];
-          const MatrixScalar A_ij = val[k];
-          x_temp += A_ij * X[j];
-        }
-        X[i] += omega * D[i] * (B[i] - x_temp);
-      }
-    }
-  }
-  else { // numCols > 1
-    // mfh 20 Dec 2012: If Gauss-Seidel for multivectors with
-    // multiple columns becomes important, we can add unrolled
-    // implementations.  The implementation below is not unrolled.
-    // It may also be reasonable to parallelize over right-hand
-    // sides, if there are enough of them, especially if the matrix
-    // fits in cache.
-    Teuchos::Array<RangeScalar> temp (numCols);
-    RangeScalar* const x_temp = temp.getRawPtr ();
-
-    if (direction == KokkosClassic::Forward) {
-      for (LO ii = 0; ii < numRowInds; ++ii) {
-        LO i = rowInd[ii];
-        for (OffsetType c = 0; c < theNumCols; ++c) {
-          x_temp[c] = Kokkos::Details::ArithTraits<RangeScalar>::zero ();
-        }
-        for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
-          const LO j = ind[k];
-          const MatrixScalar A_ij = val[k];
-          for (OffsetType c = 0; c < theNumCols; ++c) {
-            x_temp[c] += A_ij * X[j + x_stride*c];
-          }
-        }
-        for (OffsetType c = 0; c < theNumCols; ++c) {
-          X[i + x_stride*c] += omega * D[i] * (B[i + b_stride*c] - x_temp[c]);
-        }
-      }
-    } else if (direction == KokkosClassic::Backward) { // backward mode
-      // Split the loop so that it is correct even if LO is unsigned.
-      // It's a bad idea for LO to be unsigned, but we want this to
-      // work nevertheless.
-      for (LO ii = numRowInds - 1; ii != 0; --ii) {
-        LO i = rowInd[ii];
-        for (OffsetType c = 0; c < theNumCols; ++c) {
-          x_temp[c] = Kokkos::Details::ArithTraits<RangeScalar>::zero ();
-        }
-        for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
-          const LO j = ind[k];
-          const MatrixScalar A_ij = val[k];
-          for (OffsetType c = 0; c < theNumCols; ++c) {
-            x_temp[c] += A_ij * X[j + x_stride*c];
-          }
-        }
-        for (OffsetType c = 0; c < theNumCols; ++c) {
-          X[i + x_stride*c] += omega * D[i] * (B[i + b_stride*c] - x_temp[c]);
-        }
-      }
-      { // last loop iteration
-        const LO ii = 0;
-        LO i = rowInd[ii];
-        for (OffsetType c = 0; c < theNumCols; ++c) {
-          x_temp[c] = Kokkos::Details::ArithTraits<RangeScalar>::zero ();
-        }
-        for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
-          const LO j = ind[k];
-          const MatrixScalar A_ij = val[k];
-          for (OffsetType c = 0; c < theNumCols; ++c) {
-            x_temp[c] += A_ij * X[j + x_stride*c];
-          }
-        }
-        for (OffsetType c = 0; c < theNumCols; ++c) {
-          X[i + x_stride*c] += omega * D[i] * (B[i + b_stride*c] - x_temp[c]);
-        }
-      }
-    }
-  }
-}
-
 
 template<class CrsMatrixType,
          class DomainMultiVectorType,
@@ -1137,119 +763,71 @@ lowerTriSolveCscConj (RangeMultiVectorType X,
 template<class CrsMatrixType,
          class DomainMultiVectorType,
          class RangeMultiVectorType>
-void
-triSolveKokkos (RangeMultiVectorType X,
-                const CrsMatrixType& A,
-                DomainMultiVectorType Y,
-                const Teuchos::EUplo triUplo,
-                const Teuchos::EDiag unitDiag,
-                const Teuchos::ETransp trans)
-{
-  typedef typename CrsMatrixType::index_type::non_const_value_type LO;
-  const char prefix[] = "Kokkos::Sequential::triSolveKokkos: ";
-  const LO numRows = A.numRows ();
-  const LO numCols = A.numCols ();
-  const LO numVecs = X.dimension_1 ();
-  typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    triUplo != Teuchos::LOWER_TRI && triUplo != Teuchos::UPPER_TRI &&
-    triUplo != Teuchos::UNDEF_TRI,
-    std::invalid_argument, prefix << "triUplo has an invalid value " << triUplo
-    << ".  Valid values are Teuchos::LOWER_TRI=" << Teuchos::LOWER_TRI <<
-    ", Teuchos::UPPER_TRI=" << Teuchos::UPPER_TRI << ", and Teuchos::UNDEF_TRI="
-    << Teuchos::UNDEF_TRI << ".");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    triUplo == Teuchos::UNDEF_TRI, std::invalid_argument, prefix <<
-    "The matrix is neither lower nor upper triangular (triUplo="
-    "Teuchos::UNDEF_TRI), so you may not call this method.");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    unitDiag != Teuchos::UNIT_DIAG && unitDiag != Teuchos::NON_UNIT_DIAG,
-    std::invalid_argument, prefix << "unitDiag has an invalid value "
-    << unitDiag << ".  Valid values are Teuchos::UNIT_DIAG="
-    << Teuchos::UNIT_DIAG << " and Teuchos::NON_UNIT_DIAG="
-    << Teuchos::NON_UNIT_DIAG << ".");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    unitDiag != Teuchos::UNIT_DIAG && numRows > 0 && ptr(numRows) == 0,
-    std::invalid_argument, prefix << "Triangular solve with an empty matrix "
-    "is only valid if the matrix has an implicit unit diagonal.  This matrix "
-    "does not.");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    trans != Teuchos::NO_TRANS && trans != Teuchos::TRANS &&
-    trans != Teuchos::CONJ_TRANS,
-    std::invalid_argument, prefix << "trans has an invalid value " << trans
-    << ".  Valid values are Teuchos::NO_TRANS=" << Teuchos::NO_TRANS << ", "
-    << "Teuchos::TRANS=" << Teuchos::TRANS << ", and Teuchos::CONJ_TRANS="
-    << Teuchos::CONJ_TRANS << ".");
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    numRows != static_cast<LO> (X.dimension_0 ()), std::invalid_argument,
-    prefix << "numRows = " << numRows << " != X.dimension_0() = " <<
-    X.dimension_0 () << ".");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    numCols != static_cast<LO> (Y.dimension_0 ()), std::invalid_argument,
-    prefix << "numCols = " << numCols << " != Y.dimension_0() = " <<
-    Y.dimension_0 () << ".");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    numVecs != static_cast<LO> (Y.dimension_1 ()), std::invalid_argument,
-    prefix << "X.dimension_1 () = " << numVecs << " != Y.dimension_1 () = "
-    << Y.dimension_1 () << ".");
-
-  if (trans == Teuchos::NO_TRANS) {          // no transpose
-    if (triUplo == Teuchos::LOWER_TRI) { // lower triangular
-      if (unitDiag == Teuchos::UNIT_DIAG) { // unit diagonal
-        lowerTriSolveCsrUnitDiag (X, A, Y);
-      } else {                          // non unit diagonal
-        lowerTriSolveCsr (X, A, Y);
+struct Trsv {
+  static void
+  trsv (const char uplo[],
+        const char trans[],
+        const char diag[],
+        const CrsMatrixType& A,
+        DomainMultiVectorType B,
+        RangeMultiVectorType X) // X is the output MV
+  {
+    if (trans[0] == 'N' || trans[0] == 'n') {       // no transpose
+      if (uplo[0] == 'L' || uplo[0] == 'l') {   // lower triangular
+        if (diag[0] == 'U' || diag[0] == 'u') {    // unit diagonal
+          lowerTriSolveCsrUnitDiag (X, A, B);
+        } else {                               // non unit diagonal
+          lowerTriSolveCsr (X, A, B);
+        }
+      } else {                                  // upper triangular
+        if (diag[0] == 'U' || diag[0] == 'u') {    // unit diagonal
+          upperTriSolveCsrUnitDiag (X, A, B);
+        } else {                               // non unit diagonal
+          upperTriSolveCsr (X, A, B);
+        }
       }
-    } else {                             // upper triangular
-      if (unitDiag == Teuchos::UNIT_DIAG) { // unit diagonal
-        upperTriSolveCsrUnitDiag (X, A, Y);
-      } else {                          // non unit diagonal
-        upperTriSolveCsr (X, A, Y);
+    }
+    else if (trans[0] == 'T' || trans[0] == 't') {     // transpose
+      if (uplo[0] == 'L' || uplo[0] == 'l') {   // lower triangular
+        // Transposed lower tri CSR => upper tri CSC.
+        if (diag[0] == 'U' || diag[0] == 'u') {    // unit diagonal
+          upperTriSolveCscUnitDiag (X, A, B);
+        } else {                               // non unit diagonal
+          upperTriSolveCsc (X, A, B);
+        }
+      }
+      else {                                    // upper triangular
+        // Transposed upper tri CSR => lower tri CSC.
+        if (diag[0] == 'U' || diag[0] == 'u') {    // unit diagonal
+          lowerTriSolveCscUnitDiag (X, A, B);
+        } else {                               // non unit diagonal
+          lowerTriSolveCsc (X, A, B);
+        }
+      }
+    }
+    else if (trans[0] == 'C' || trans[0] == 'c') { // conj transpose
+      if (uplo[0] == 'L' || uplo[0] == 'l') {    // lower triangular
+        // Transposed lower tri CSR => upper tri CSC.
+        if (diag[0] == 'U' || diag[0] == 'u') {     // unit diagonal
+          upperTriSolveCscUnitDiagConj (X, A, B);
+        } else {                                // non unit diagonal
+          upperTriSolveCscConj (X, A, B);
+        }
+      }
+      else {                                     // upper triangular
+        // Transposed upper tri CSR => lower tri CSC.
+        if (diag[0] == 'U' || diag[0] == 'u') {     // unit diagonal
+          lowerTriSolveCscUnitDiagConj (X, A, B);
+        } else {                                // non unit diagonal
+          lowerTriSolveCscConj (X, A, B);
+        }
       }
     }
   }
-  else if (trans == Teuchos::TRANS) {           // transpose
-    if (triUplo == Teuchos::LOWER_TRI) { // lower triangular
-      // Transposed lower tri CSR => upper tri CSC.
-      if (unitDiag == Teuchos::UNIT_DIAG) { // unit diagonal
-        upperTriSolveCscUnitDiag (X, A, Y);
-      } else {                          // non unit diagonal
-        upperTriSolveCsc (X, A, Y);
-      }
-    }
-    else {                               // upper triangular
-      // Transposed upper tri CSR => lower tri CSC.
-      if (unitDiag == Teuchos::UNIT_DIAG) { // unit diagonal
-        lowerTriSolveCscUnitDiag (X, A, Y);
-      } else {                          // non unit diagonal
-        lowerTriSolveCsc (X, A, Y);
-      }
-    }
-  }
-  else if (trans == Teuchos::CONJ_TRANS) { // conj transpose
-    if (triUplo == Teuchos::LOWER_TRI) { // lower triangular
-      // Transposed lower tri CSR => upper tri CSC.
-      if (unitDiag == Teuchos::UNIT_DIAG) { // unit diagonal
-        upperTriSolveCscUnitDiagConj (X, A, Y);
-      } else {                          // non unit diagonal
-        upperTriSolveCscConj (X, A, Y);
-      }
-    }
-    else {                               // upper triangular
-      // Transposed upper tri CSR => lower tri CSC.
-      if (unitDiag == Teuchos::UNIT_DIAG) { // unit diagonal
-        lowerTriSolveCscUnitDiagConj (X, A, Y);
-      } else {                          // non unit diagonal
-        lowerTriSolveCscConj (X, A, Y);
-      }
-    }
-  }
-}
-
+};
 
 } // namespace Sequential
-} // namespace Kokkos
+} // namespace Impl
+} // namespace KokkosSparse
 
-#endif // KOKKOS_SEQUENTIAL_SPARSEKERNELS_HPP
+#endif // KOKKOSSPARSE_IMPL_TRSM_HPP

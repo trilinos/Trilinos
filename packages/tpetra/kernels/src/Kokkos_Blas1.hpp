@@ -45,9 +45,7 @@
 #define KOKKOS_BLAS1_HPP_
 
 #include <Kokkos_Blas1_impl.hpp>
-#ifdef KOKKOS_HAVE_CXX11
-#  include <type_traits>
-#endif // KOKKOS_HAVE_CXX11
+#include <type_traits> // requires C++11
 
 namespace KokkosBlas {
 
@@ -64,22 +62,14 @@ template<class XVector,class YVector>
 typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type
 dot (const XVector& x, const YVector& y)
 {
-#ifdef KOKKOS_HAVE_CXX11
-  // Make sure that both x and y have the same rank.
-  static_assert (XVector::rank == YVector::rank, "KokkosBlas::dot: Vector ranks do not match.");
-  // Make sure that x (and therefore y) is rank 1.
-  static_assert (XVector::rank == 1, "KokkosBlas::dot: Both Vector inputs must have rank 1.");
-#else
-  // We prefer to use C++11 static_assert, because it doesn't give
-  // "unused typedef" warnings, like the constructs below do.
-  //
-  // Make sure that both x and y have the same rank.
-  typedef typename
-    Kokkos::Impl::StaticAssert<XVector::rank == YVector::rank>::type Blas1_dot_vector_ranks_do_not_match;
-  // Make sure that x (and therefore y) is rank 1.
-  typedef typename
-    Kokkos::Impl::StaticAssert<XVector::rank == 1 >::type Blas1_dot_vector_rank_not_one;
-#endif // KOKKOS_HAVE_CXX11
+  static_assert (Kokkos::Impl::is_view<XVector>::value,
+                 "KokkosBlas::dot: XVector must be a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<YVector>::value,
+                 "KokkosBlas::dot: YVector must be a Kokkos::View.");
+  static_assert ((int) XVector::rank == (int) YVector::rank,
+                 "KokkosBlas::dot: Vector ranks do not match.");
+  static_assert (XVector::rank == 1, "KokkosBlas::dot: "
+                 "Both Vector inputs must have rank 1.");
 
   // Check compatibility of dimensions at run time.
   if (x.dimension_0 () != y.dimension_0 ()) {
@@ -115,6 +105,105 @@ dot (const XVector& x, const YVector& y)
                    typename YVector_Internal::specialize
                    >::dot (x_i, y_i);
 }
+
+namespace { // (anonymous)
+  //
+  // This is an implementation detail.  DO NOT USE.
+  //
+  // Using this function will ensure that code templated on Handle
+  // will only get enabled if the following expression compiles, where
+  // 'h' is an instance of Handle:
+  //
+  // std::label s (h.label);
+  //
+  // Thus, this function checks whether 'label' is a public instance
+  // variable in the Handle struct or class.
+  template<class Handle>
+  auto getLabelIfItExists (Handle& handle) -> decltype (handle.label) {
+    return std::string (handle.label);
+  }
+
+} // namespace (anonymous)
+
+
+/// \brief Return the dot product of the two vectors x and y.
+///
+/// \tparam Handle Type of the first argument, containing any handles
+///   to third-party libraries that you might to use, autotuning
+///   state, or other information.
+/// \tparam XVector Type of the first vector x; a 1-D Kokkos::View.
+/// \tparam YVector Type of the second vector y; a 1-D Kokkos::View.
+///
+/// \param handle [in/out] Opaque handle to third-party library or
+///   autotuning state.  This function may read and/or modify this
+///   state.
+/// \param x [in] Input 1-D View.
+/// \param y [in] Input 1-D View.
+///
+/// \return The dot product result; a single value.
+///
+/// \note To implementers: The reason for the enable_if last argument
+///   is so that the compiler doesn't confuse this version of dot()
+///   with the three-argument version of dot() that takes a 0-D or 1-D
+///   Kokkos::View as the first argument (see Kokkos_Blas1_MV.hpp).
+///   This version of dot() -- the version you see below -- only
+///   builds if the first template parameter Handle is NOT a
+///   Kokkos::View.  Thus, if you are implementing your own KokkosBlas
+///   interface function and want to add an overload that takes a
+///   Handle, you don't usually need the enable_if argument.  You ONLY
+///   need it if the compiler might confuse that version with some
+///   other overload.
+template<class Handle, class XVector, class YVector>
+typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type
+dot (Handle& handle, const XVector& x, const YVector& y,
+     typename std::enable_if<! Kokkos::Impl::is_view<Handle>::value, int>::type = 0)
+{
+  static_assert (Kokkos::Impl::is_view<XVector>::value,
+                 "KokkosBlas::dot: XVector must be a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<YVector>::value,
+                 "KokkosBlas::dot: YVector must be a Kokkos::View.");
+  static_assert ((int) XVector::rank == (int) YVector::rank,
+                 "KokkosBlas::dot: Vector ranks do not match.");
+  static_assert (XVector::rank == 1, "KokkosBlas::dot: "
+                 "Both Vector inputs must have rank 1.");
+
+  // Check compatibility of dimensions at run time.
+  if (x.dimension_0 () != y.dimension_0 ()) {
+    std::ostringstream os;
+    os << "KokkosBlas::dot: Dimensions do not match: "
+       << ", x: " << x.dimension_0 () << " x 1"
+       << ", y: " << y.dimension_0 () << " x 1";
+    Kokkos::Impl::throw_runtime_exception (os.str ());
+  }
+
+  typedef Kokkos::View<typename XVector::const_value_type*,
+    typename XVector::array_layout,
+    typename XVector::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    typename XVector::specialize> XVector_Internal;
+  typedef Kokkos::View<typename YVector::const_value_type*,
+    typename YVector::array_layout,
+    typename YVector::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+    typename YVector::specialize> YVector_Internal;
+  XVector_Internal x_i = x;
+  YVector_Internal y_i = y;
+
+  const std::string label = getLabelIfItExists (handle);
+
+  return Impl::Dot<typename XVector_Internal::value_type*,
+                   typename XVector_Internal::array_layout,
+                   typename XVector_Internal::device_type,
+                   typename XVector_Internal::memory_traits,
+                   typename XVector_Internal::specialize,
+                   typename YVector_Internal::value_type*,
+                   typename YVector_Internal::array_layout,
+                   typename YVector_Internal::device_type,
+                   typename YVector_Internal::memory_traits,
+                   typename YVector_Internal::specialize
+                   >::dot (x_i, y_i);
+}
+
 
 } // namespace KokkosBlas
 
