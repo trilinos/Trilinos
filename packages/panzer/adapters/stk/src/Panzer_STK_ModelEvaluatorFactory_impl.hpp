@@ -330,6 +330,8 @@ namespace panzer_stk_classic {
 
     // add fields automatically written through the closure model
     ////////////////////////////////////////////////////////////////////////////////////////
+    addUserFieldsToMesh(*mesh,output_list);
+/*
     {
       // register cell averaged scalar fields
       Teuchos::ParameterList & cellAvgQuants = output_list.sublist("Cell Average Quantities");
@@ -410,6 +412,7 @@ namespace panzer_stk_classic {
             mesh->addSolutionField(tokens[i],blockId);
       }
     } 
+*/
 
     // finish building mesh, set required field variables and mesh bulk data
     ////////////////////////////////////////////////////////////////////////////////////////
@@ -756,6 +759,90 @@ namespace panzer_stk_classic {
 
   template<typename ScalarT>
   void ModelEvaluatorFactory<ScalarT>::
+  addUserFieldsToMesh(panzer_stk_classic::STK_Interface & mesh,const Teuchos::ParameterList & output_list) const
+  {
+    // register cell averaged scalar fields
+    const Teuchos::ParameterList & cellAvgQuants = output_list.sublist("Cell Average Quantities");
+    for(Teuchos::ParameterList::ConstIterator itr=cellAvgQuants.begin();
+        itr!=cellAvgQuants.end();++itr) {
+       const std::string & blockId = itr->first;
+       const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
+       std::vector<std::string> tokens;
+
+       // break up comma seperated fields
+       panzer::StringTokenizer(tokens,fields,",",true);
+
+       for(std::size_t i=0;i<tokens.size();i++)
+          mesh.addCellField(tokens[i],blockId);
+    }
+
+    // register cell averaged components of vector fields 
+    // just allocate space for the fields here. The actual calculation and writing 
+    // are done by panzer_stk_classic::ScatterCellAvgVector.
+    const Teuchos::ParameterList & cellAvgVectors = output_list.sublist("Cell Average Vectors");
+    for(Teuchos::ParameterList::ConstIterator itr = cellAvgVectors.begin();
+        itr != cellAvgVectors.end(); ++itr) {
+       const std::string & blockId = itr->first;
+       const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
+       std::vector<std::string> tokens;
+
+       // break up comma seperated fields
+       panzer::StringTokenizer(tokens,fields,",",true);
+
+       for(std::size_t i = 0; i < tokens.size(); i++) {
+          std::string d_mod[3] = {"X","Y","Z"};
+          for(std::size_t d = 0; d < mesh.getDimension(); d++) 
+              mesh.addCellField(tokens[i]+d_mod[d],blockId);  
+       }   
+    }
+
+    // register cell quantities
+    const Teuchos::ParameterList & cellQuants = output_list.sublist("Cell Quantities");
+    for(Teuchos::ParameterList::ConstIterator itr=cellQuants.begin();
+        itr!=cellQuants.end();++itr) {
+       const std::string & blockId = itr->first;
+       const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
+       std::vector<std::string> tokens;
+
+       // break up comma seperated fields
+       panzer::StringTokenizer(tokens,fields,",",true);
+
+       for(std::size_t i=0;i<tokens.size();i++)
+          mesh.addCellField(tokens[i],blockId);
+    }
+
+    // register ndoal quantities
+    const Teuchos::ParameterList & nodalQuants = output_list.sublist("Nodal Quantities");
+    for(Teuchos::ParameterList::ConstIterator itr=nodalQuants.begin();
+        itr!=nodalQuants.end();++itr) {
+       const std::string & blockId = itr->first;
+       const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
+       std::vector<std::string> tokens;
+
+       // break up comma seperated fields
+       panzer::StringTokenizer(tokens,fields,",",true);
+
+       for(std::size_t i=0;i<tokens.size();i++)
+          mesh.addSolutionField(tokens[i],blockId);
+    }
+
+    const Teuchos::ParameterList & allocNodalQuants = output_list.sublist("Allocate Nodal Quantities");
+    for(Teuchos::ParameterList::ConstIterator itr=allocNodalQuants.begin();
+        itr!=allocNodalQuants.end();++itr) {
+       const std::string & blockId = itr->first;
+       const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
+       std::vector<std::string> tokens;
+
+       // break up comma seperated fields
+       panzer::StringTokenizer(tokens,fields,",",true);
+
+       for(std::size_t i=0;i<tokens.size();i++)
+          mesh.addSolutionField(tokens[i],blockId);
+    }
+  }
+
+  template<typename ScalarT>
+  void ModelEvaluatorFactory<ScalarT>::
   setupInitialConditions(Thyra::ModelEvaluator<ScalarT> & model,
                          panzer::WorksetContainer & wkstContainer,
                          const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
@@ -815,8 +902,8 @@ namespace panzer_stk_classic {
   writeInitialConditions(const Thyra::ModelEvaluator<ScalarT> & model,
                          const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
                          const Teuchos::RCP<panzer::WorksetContainer> & wc,
-                         const Teuchos::RCP<panzer::UniqueGlobalIndexerBase> & ugi,
-                         const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof,
+                         const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ugi,
+                         const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof,
                          const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
                          const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
                          const Teuchos::ParameterList & closure_model_pl,
@@ -1507,8 +1594,8 @@ namespace panzer_stk_classic {
   template<typename ScalarT>
   Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > ModelEvaluatorFactory<ScalarT>::
   initializeSolnWriterResponseLibrary(const Teuchos::RCP<panzer::WorksetContainer> & wc,
-                                      const Teuchos::RCP<panzer::UniqueGlobalIndexerBase> & ugi,
-                                      const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof,
+                                      const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ugi,
+                                      const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof,
                                       const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh) const
   {
      Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary

@@ -213,8 +213,8 @@ namespace panzer_stk_classic {
     void writeInitialConditions(const Thyra::ModelEvaluator<ScalarT> & model,
                                 const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
                                 const Teuchos::RCP<panzer::WorksetContainer> & wc,
-                                const Teuchos::RCP<panzer::UniqueGlobalIndexerBase> & ugi,
-                                const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof,
+                                const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ugi,
+                                const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof,
                                 const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
                                 const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
                                 const Teuchos::ParameterList & closure_model_pl,
@@ -272,6 +272,17 @@ namespace panzer_stk_classic {
     Teuchos::RCP<panzer::WorksetContainer> getWorksetContainer() const 
     { return m_wkstContainer; }
 
+    //! Add the user fields specified by output_list to the mesh
+    void addUserFieldsToMesh(panzer_stk_classic::STK_Interface & mesh,const Teuchos::ParameterList & output_list) const;
+
+    //! build STK mesh factory from a mesh parameter list
+    Teuchos::RCP<STK_MeshFactory> buildSTKMeshFactory(const Teuchos::ParameterList & mesh_params) const;
+
+    void finalizeMeshConstruction(const STK_MeshFactory & mesh_factory,
+                                  const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
+                                  const Teuchos::MpiComm<int> mpi_comm, 
+                                  STK_Interface & mesh) const;
+
   protected:
  
     Teuchos::RCP<panzer::FieldManagerBuilder> 
@@ -286,14 +297,6 @@ namespace panzer_stk_classic {
                              const panzer::LinearObjFactory<panzer::Traits> & lo_factory,
                              const Teuchos::ParameterList& user_data,
                              bool writeGraph,const std::string & graphPrefix) const;
-
-    //! build STK mesh factory from a mesh parameter list
-    Teuchos::RCP<STK_MeshFactory> buildSTKMeshFactory(const Teuchos::ParameterList & mesh_params) const;
-
-    void finalizeMeshConstruction(const STK_MeshFactory & mesh_factory,
-                                  const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
-                                  const Teuchos::MpiComm<int> mpi_comm, 
-                                  STK_Interface & mesh) const;
 
     /** This method determines a coordinate field from the DOF manager.
       * The algorithm is to loop over all the element blocks to find a field
@@ -338,8 +341,8 @@ namespace panzer_stk_classic {
       */
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > initializeSolnWriterResponseLibrary(
                                                                 const Teuchos::RCP<panzer::WorksetContainer> & wc,
-                                                                const Teuchos::RCP<panzer::UniqueGlobalIndexerBase> & ugi,
-                                                                const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof,
+                                                                const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ugi,
+                                                                const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof,
                                                                 const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh) const;
 
     /**
