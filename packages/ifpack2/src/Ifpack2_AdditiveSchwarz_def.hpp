@@ -564,24 +564,22 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       // }
       if (!ZeroStartingSolution_ || ni > 0) {
 #ifdef HAVE_IFPACK2_DEBUG
-        std::cerr << "OMG HERE I AM: ni = " << ni << std::endl;
-
         {
           typedef typename STS::magnitudeType magnitude_type;
           typedef Teuchos::ScalarTraits<magnitude_type> STM;
           Teuchos::Array<magnitude_type> norms (Y.getNumVectors ());
           Y.norm2 (norms ());
           bool good = true;
-          bool anyZero = false;
+          //bool anyZero = false;
           for (typename Teuchos::Array<magnitude_type>::size_type j = 0; j < Y.getNumVectors (); ++j) {
             if (STM::isnaninf (norms[j])) {
               good = false;
               break;
             }
-            if (norms[j] == STM::zero ()) {
-              anyZero = true;
-              break;
-            }
+            // if (norms[j] == STM::zero ()) {
+            //   anyZero = true;
+            //   break;
+            // }
           }
           TEUCHOS_TEST_FOR_EXCEPTION( ! good, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: At iteration " << ni << ", the 2-norm of the input Y of applying the matrix is NaN or Inf.");
         }
@@ -597,16 +595,16 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
           Teuchos::Array<magnitude_type> norms (R->getNumVectors ());
           R->norm2 (norms ());
           bool good = true;
-          bool anyZero = false;
+          // bool anyZero = false;
           for (typename Teuchos::Array<magnitude_type>::size_type j = 0; j < R->getNumVectors (); ++j) {
             if (STM::isnaninf (norms[j])) {
               good = false;
               break;
             }
-            if (norms[j] == STM::zero ()) {
-              anyZero = true;
-              break;
-            }
+            // if (norms[j] == STM::zero ()) {
+            //   anyZero = true;
+            //   break;
+            // }
           }
           TEUCHOS_TEST_FOR_EXCEPTION( ! good, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: At iteration " << ni << ", the 2-norm of the output R of applying the matrix is NaN or Inf.");
         }
@@ -641,18 +639,18 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         Teuchos::Array<magnitude_type> norms (OverlappingB->getNumVectors ());
         OverlappingB->norm2 (norms ());
         bool good = true;
-        bool anyZero = false;
+        // bool anyZero = false;
         for (typename Teuchos::Array<magnitude_type>::size_type j = 0; j < OverlappingB->getNumVectors (); ++j) {
           if (STM::isnaninf (norms[j])) {
             good = false;
             break;
           }
-          if (norms[j] == STM::zero ()) {
-            anyZero = true;
-            break;
-          }
+          // if (norms[j] == STM::zero ()) {
+          //   anyZero = true;
+          //   break;
+          // }
         }
-        TEUCHOS_TEST_FOR_EXCEPTION( ! good, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: At iteration " << ni << ", the 2-norm of OverlappingB is NaN or Inf.");
+        TEUCHOS_TEST_FOR_EXCEPTION( ! good, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: At iteration " << ni << ", right before localApply, the 2-norm of OverlappingB is NaN or Inf.");
       }
 #endif // HAVE_IFPACK2_DEBUG
 
@@ -666,16 +664,38 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         Teuchos::Array<magnitude_type> norms (OverlappingY->getNumVectors ());
         OverlappingY->norm2 (norms ());
         bool good = true;
-        bool anyZero = false;
+        // bool anyZero = false;
         for (typename Teuchos::Array<magnitude_type>::size_type j = 0; j < OverlappingY->getNumVectors (); ++j) {
           if (STM::isnaninf (norms[j])) {
             good = false;
             break;
           }
-          if (norms[j] == STM::zero ()) {
-            anyZero = true;
+          // if (norms[j] == STM::zero ()) {
+          //   anyZero = true;
+          //   break;
+          // }
+        }
+        TEUCHOS_TEST_FOR_EXCEPTION( ! good, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: At iteration " << ni << ", right after localApply, the 2-norm of OverlappingY is NaN or Inf.");
+      }
+#endif // HAVE_IFPACK2_DEBUG
+
+#ifdef HAVE_IFPACK2_DEBUG
+      {
+        typedef typename STS::magnitudeType magnitude_type;
+        typedef Teuchos::ScalarTraits<magnitude_type> STM;
+        Teuchos::Array<magnitude_type> norms (OverlappingY->getNumVectors ());
+        OverlappingY->norm2 (norms ());
+        bool good = true;
+        // bool anyZero = false;
+        for (typename Teuchos::Array<magnitude_type>::size_type j = 0; j < OverlappingY->getNumVectors (); ++j) {
+          if (STM::isnaninf (norms[j])) {
+            good = false;
             break;
           }
+          // if (norms[j] == STM::zero ()) {
+          //   anyZero = true;
+          //   break;
+          // }
         }
         TEUCHOS_TEST_FOR_EXCEPTION( ! good, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: At iteration " << ni << ", the 2-norm of OverlappingY is NaN or Inf.");
       }
@@ -703,16 +723,16 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         Teuchos::Array<magnitude_type> norms (C->getNumVectors ());
         C->norm2 (norms ());
         bool good = true;
-        bool anyZero = false;
+        // bool anyZero = false;
         for (typename Teuchos::Array<magnitude_type>::size_type j = 0; j < C->getNumVectors (); ++j) {
           if (STM::isnaninf (norms[j])) {
             good = false;
             break;
           }
-          if (norms[j] == STM::zero ()) {
-            anyZero = true;
-            break;
-          }
+          // if (norms[j] == STM::zero ()) {
+          //   anyZero = true;
+          //   break;
+          // }
         }
         TEUCHOS_TEST_FOR_EXCEPTION( ! good, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: At iteration " << ni << ", the 2-norm of C is NaN or Inf.");
       }
@@ -725,16 +745,16 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         Teuchos::Array<magnitude_type> norms (Y.getNumVectors ());
         Y.norm2 (norms ());
         bool good = true;
-        bool anyZero = false;
+        // bool anyZero = false;
         for (typename Teuchos::Array<magnitude_type>::size_type j = 0; j < Y.getNumVectors (); ++j) {
           if (STM::isnaninf (norms[j])) {
             good = false;
             break;
           }
-          if (norms[j] == STM::zero ()) {
-            anyZero = true;
-            break;
-          }
+          // if (norms[j] == STM::zero ()) {
+          //   anyZero = true;
+          //   break;
+          // }
         }
         TEUCHOS_TEST_FOR_EXCEPTION( ! good, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: Before Y := C + Y, at iteration " << ni << ", the 2-norm of Y is NaN or Inf.");
       }
@@ -749,16 +769,16 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         Teuchos::Array<magnitude_type> norms (Y.getNumVectors ());
         Y.norm2 (norms ());
         bool good = true;
-        bool anyZero = false;
+        // bool anyZero = false;
         for (typename Teuchos::Array<magnitude_type>::size_type j = 0; j < Y.getNumVectors (); ++j) {
           if (STM::isnaninf (norms[j])) {
             good = false;
             break;
           }
-          if (norms[j] == STM::zero ()) {
-            anyZero = true;
-            break;
-          }
+          // if (norms[j] == STM::zero ()) {
+          //   anyZero = true;
+          //   break;
+          // }
         }
         TEUCHOS_TEST_FOR_EXCEPTION( ! good, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: After iteration " << ni << ", the 2-norm of Y is NaN or Inf.");
       }
@@ -774,16 +794,16 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     Teuchos::Array<magnitude_type> norms (Y.getNumVectors ());
     Y.norm2 (norms ());
     bool good = true;
-    bool anyZero = false;
+    // bool anyZero = false;
     for (typename Teuchos::Array<magnitude_type>::size_type j = 0; j < Y.getNumVectors (); ++j) {
       if (STM::isnaninf (norms[j])) {
         good = false;
         break;
       }
-      if (norms[j] == STM::zero ()) {
-        anyZero = true;
-        break;
-      }
+      // if (norms[j] == STM::zero ()) {
+      //   anyZero = true;
+      //   break;
+      // }
     }
     TEUCHOS_TEST_FOR_EXCEPTION( ! good, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: The 2-norm of the output Y is NaN or Inf.");
   }
@@ -838,7 +858,7 @@ localApply(MV &OverlappingB, MV &OverlappingY) const
       ReorderedLocalizedMatrix_->permuteReorderedToOriginal (ReorderedY, OverlappingY);
     }
   }
-} //localApply method
+}
 
 
 template<class MatrixType,class LocalInverseType>
