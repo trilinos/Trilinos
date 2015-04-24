@@ -5364,6 +5364,13 @@ namespace Tpetra {
 
     local_matrix_type A_lcl = this->getLocalMatrix ();
 
+    // FIXME (mfh 23 Apr 2015) We currently only have a host,
+    // sequential kernel for local sparse triangular solve.
+
+    Y.getDualView ().template sync<HMDT> (); // Y is read-only
+    X.getDualView ().template sync<HMDT> ();
+    X.getDualView ().template modify<HMDT> (); // we will write to X
+
     if (X.isConstantStride () && Y.isConstantStride ()) {
       typename DMV::dual_view_type::t_host X_lcl = X.template getLocalView<HMDT> ();
       typename RMV::dual_view_type::t_host Y_lcl = Y.template getLocalView<HMDT> ();
