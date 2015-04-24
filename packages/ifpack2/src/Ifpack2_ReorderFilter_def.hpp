@@ -458,6 +458,11 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 {
   typedef Teuchos::ScalarTraits<scalar_type> STS;
 
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    alpha != STS::one () || beta != STS::zero (), std::logic_error,
+    "Ifpack2::ReorderFilter::apply is only implemented for alpha = 1 and "
+    "beta = 0.  You set alpha = " << alpha << " and beta = " << beta << ".");
+
   // Note: This isn't AztecOO compliant.  But neither was Ifpack's version.
   // Note: The localized maps mean the matvec is trivial (and has no import)
   TEUCHOS_TEST_FOR_EXCEPTION(
