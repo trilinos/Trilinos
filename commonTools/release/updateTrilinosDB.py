@@ -392,7 +392,7 @@ if (__name__ == "__main__"):
     parser.add_option("-o", "--csvoutput", action="store", dest="csv_output",
                       default=None, help="CSV output file name")
     parser.add_option("-v", "--verbosity", type="int", dest="verbosity",
-                      default=1, help="set the verbosity level [default 2]")
+                      default=1, help="set the verbosity level [default 1]")
     options,args = parser.parse_args()
 
     # Get the Trilinos source directory
