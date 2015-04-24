@@ -6772,7 +6772,7 @@ namespace Tpetra {
       }
 
       /*! @brief Write Tpetra::Operator to specified file.
-      
+
         This method allows the user to pass in options to the writer.  The currently supported options
         are:
 
@@ -6837,7 +6837,6 @@ namespace Tpetra {
         typedef scalar_type                        Scalar;
         typedef Teuchos::OrdinalTraits<LO>         TLOT;
         typedef Teuchos::OrdinalTraits<GO>         TGOT;
-        typedef Teuchos::ScalarTraits<Scalar>      STS;
         typedef Tpetra::Import<LO, GO, node_type>  import_type;
         typedef Tpetra::MultiVector<GO, LO, GO, node_type> mv_type_go;
 
