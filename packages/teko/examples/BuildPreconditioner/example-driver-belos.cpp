@@ -120,11 +120,21 @@ int main(int argc,char * argv[])
    RCP<Stratimikos::DefaultLinearSolverBuilder> linearSolverBuilder = Teuchos::rcp(new Stratimikos::DefaultLinearSolverBuilder);
    linearSolverBuilder->setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
 
+   // Build the Tpetra matrices and vectors
+   /////////////////////////////////////////////////////////
+
    // read in the CRS matrix
    RCP<NT> node = Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
-   RCP<TP_Op> Mat = Tpetra::MatrixMarket::Reader<TP_Crs>::readSparseFile("../data/nsjac_test.mm",
+   RCP<TP_Crs> crsMat = Tpetra::MatrixMarket::Reader<TP_Crs>::readSparseFile("../data/nsjac_test.mm",
                                                                          Teuchos::DefaultComm<int>::getComm(),
                                                                          node);
+   RCP<TP_Crs> zeroCrsMat = crsMat->clone(node);
+   zeroCrsMat->resumeFill();
+   zeroCrsMat->setAllToScalar(0.0);
+   zeroCrsMat->fillComplete();
+
+   RCP<TP_Op> Mat = crsMat;
+   RCP<TP_Op> zeroMat = zeroCrsMat;
 
    // Allocate some right handside vectors
    RCP<TP_Vec> x0_tp = rcp(new TP_Vec(Mat->getDomainMap()));
@@ -136,6 +146,9 @@ int main(int argc,char * argv[])
 
    RCP<const Thyra::TpetraVectorSpace<ST,int,int,NT> > domain = Thyra::tpetraVectorSpace<ST>(Mat->getDomainMap());
    RCP<const Thyra::TpetraVectorSpace<ST,int,int,NT> > range = Thyra::tpetraVectorSpace<ST>(Mat->getRangeMap());
+
+   // Build Teko compatible matrices and vectors
+   /////////////////////////////////////////////////////////
 
    // convert them to teko compatible sub vectors
    Teko::MultiVector x0_th = Thyra::tpetraVector(domain, x0_tp);
@@ -150,10 +163,9 @@ int main(int argc,char * argv[])
 
    // Build the Teko compatible linear system
    Teko::LinearOp thMat = Thyra::tpetraLinearOp<double>(range,domain,Mat);
-   Teko::LinearOp thZero;
-   Teko::LinearOp A = Thyra::block2x2(thMat,thMat,thZero,thMat); // build an upper triangular 2x2
+   Teko::LinearOp thZero = Thyra::tpetraLinearOp<double>(range,domain,zeroMat);
+   Teko::LinearOp A = Thyra::block2x2(thMat,thZero,thZero,thMat); // build an upper triangular 2x2
   
-
    // Build the preconditioner 
    /////////////////////////////////////////////////////////
 
@@ -161,7 +173,7 @@ int main(int argc,char * argv[])
    RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromParameterList(*buildLibPL(),linearSolverBuilder);
    
    // build the inverse factory needed by the example preconditioner
-   RCP<Teko::InverseFactory> inverse  = invLib->getInverseFactory("Jacobi");
+   RCP<Teko::InverseFactory> inverse  = invLib->getInverseFactory("Gauss-Seidel");
 
    // build the preconditioner from the jacobian
    Teko::LinearOp prec = Teko::buildInverse(*inverse,A);
@@ -204,9 +216,14 @@ RCP<Teuchos::ParameterList> buildLibPL()
    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList());
 
    {
-      Teuchos::ParameterList & sub = pl->sublist("Jacobi");
-      sub.set("Type","Block Jacobi");
-      sub.set("Inverse Type","Ifpack2");
+      Teuchos::ParameterList & sub_jac = pl->sublist("Jacobi");
+      sub_jac.set("Type","Block Jacobi");
+      sub_jac.set("Inverse Type","Ifpack2");
+
+      Teuchos::ParameterList & sub_gs = pl->sublist("Gauss-Seidel");
+      sub_gs.set("Type","Block Gauss-Seidel");
+      sub_gs.set("Use Upper Triangle",true);
+      sub_gs.set("Inverse Type","Ifpack2");
    }
    return pl;
 }
