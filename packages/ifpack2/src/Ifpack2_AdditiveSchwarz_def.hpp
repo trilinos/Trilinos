@@ -498,7 +498,9 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         break;
       }
     }
-    TEUCHOS_TEST_FOR_EXCEPTION( ! good, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: The 2-norm of the input B is NaN or Inf.");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (! good, std::runtime_error, "Ifpack2::AdditiveSchwarz::apply: "
+       "The 2-norm of the input B is NaN or Inf.");
   }
 #endif // HAVE_IFPACK2_DEBUG
 
@@ -535,10 +537,15 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     const scalar_type ONE = Teuchos::ScalarTraits<scalar_type>::one ();
     const size_t numVectors = B.getNumVectors ();
 
-    RCP<MV> OverlappingB,OverlappingY;
-    RCP<MV> globalOverlappingB;
+    // mfh 25 Apr 2015: Fix for currently failing
+    // Ifpack2_AdditiveSchwarz_RILUK test.
+    if (ZeroStartingSolution_) {
+      Y.putScalar (ZERO);
+    }
 
     // set up for overlap communication
+    RCP<MV> OverlappingB,OverlappingY;
+    RCP<MV> globalOverlappingB;
     if (IsOverlapping_) {
       // MV's constructor fills with zeros.
       OverlappingB = rcp (new MV (OverlappingMatrix_->getRowMap (), numVectors));
@@ -580,7 +587,8 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         Teuchos::Array<magnitude_type> norms (Y.getNumVectors ());
         Y.norm2 (norms ());
         bool good = true;
-        for (typename Teuchos::Array<magnitude_type>::size_type j = 0; j < Y.getNumVectors (); ++j) {
+        for (typename Teuchos::Array<magnitude_type>::size_type j = 0;
+             j < Y.getNumVectors (); ++j) {
           if (STM::isnaninf (norms[j])) {
             good = false;
             break;
