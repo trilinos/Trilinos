@@ -617,6 +617,12 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
         tmpPL->set("Maximum Iterations", Teuchos::get<int>(*solveCriteria->extraParameters,"Maximum Iterations"));
       }
     }
+    // If a preconditioner is on the left, then the implicit residual test
+    // scaling should be the preconditioned initial residual.
+    if (Teuchos::nonnull(lp_->getLeftPrec()) &&
+        validPL->isParameter ("Implicit Residual Scaling"))
+      tmpPL->set("Implicit Residual Scaling",
+                 "Norm of Preconditioned Initial Residual");
   }
   else {
     // No solveCriteria was even passed in!
