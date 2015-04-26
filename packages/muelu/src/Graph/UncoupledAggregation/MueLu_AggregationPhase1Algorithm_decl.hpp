@@ -56,8 +56,27 @@
 
 namespace MueLu {
   /*!
-    @class UncoupledAggregationAggregationPhase1 class.
+    @class AggregationPhase1Algorithm class.
     @brief Algorithm for coarsening a graph with uncoupled aggregation.
+
+    @ingroup Aggregation
+
+    ### Idea ###
+    Phase 1 tries to build new aggregates which fulfill the user chosen aggregation
+    criteria (i.e. minimum and maximum size of aggregates). Especially the chosen
+    ordering for the input nodes may have some influence on the final aggregates.
+    Phase 1 is the most important aggregation routine for building new aggregates.
+
+    ### Parameters ###
+    Parameter | Meaning
+    ----------|--------
+    aggregation: ordering | Ordering of graph nodes in which the nodes are processed for aggregation. The options are natural, random and graph.
+    aggregation: max selected neighbors | Maximum number of neighbor nodes which have already been added to aggregates.
+    aggregation: min agg size | minimum number of nodes which have to be in an aggregate.
+    aggregation: max agg size | maximum allowed number of nodes in an aggregate
+
+    ### Comments ###
+    Only nodes with state READY are changed to AGGREGATED. Nodes with other states are not touched.
   */
 
   template <class LocalOrdinal = int,
