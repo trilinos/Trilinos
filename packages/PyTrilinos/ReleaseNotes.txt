@@ -1,3 +1,39 @@
+Release Notes for PyTrilinos for Trilinos 12.0
+==============================================
+
+General
+  * Changed to BSD license
+  * Mpi4Py support has been made optional.  Previously, if Mpi4Py was
+    found, it was automatically enabled within PyTrilinos.  Now that
+    behavior can be turned off.
+
+LOCA
+  * The LOCA module has been refactored and now has been demonstrated
+    to work for the Chan problem.  We have not yet gotten
+    preconditioning to work, but are getting close.
+
+Tpetra
+  * Package is still experimental.  The recent refactor has broken
+    MultiVectors and Vectors.
+  * Map support has been improved
+
+Anasazi
+  * Fixed a bug where return eigenvalues are converted to a NumPy
+    array, but the dimension used the wrong type.
+
+Kokkos
+  * Fixed a macro issue
+
+NOX
+  * Started PETSc compatibility.  This is still experimental, and
+    includes compatibility with petsc4py.
+
+STK
+  * Removed PyPercept, as it is currently not a part of the new STK.
+
+Domi
+  * Added package
+
 Release Notes for PyTrilinos 4.12 (Trilinos 11.12)
 ==================================================
 
