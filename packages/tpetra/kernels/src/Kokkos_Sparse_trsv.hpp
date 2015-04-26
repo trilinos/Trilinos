@@ -112,7 +112,7 @@ trsv (const char uplo[],
   const size_type numRows = static_cast<size_type> (A.numRows ());
   const size_type numCols = static_cast<size_type> (A.numCols ());
 
-  const bool transpose = ! trans[0] == 'N' && ! trans[0] == 'n';
+  const bool transpose = trans[0] != 'N' && trans[0] != 'n';
   if (! transpose && (numCols != x.dimension_0 () || numRows != b.dimension_0 ())) {
     std::ostringstream os;
     os << "Dimensions do not match (non-transpose case).  "
