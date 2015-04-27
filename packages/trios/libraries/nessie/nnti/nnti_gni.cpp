@@ -398,6 +398,8 @@ typedef struct {
 } nnti_gni_request_queue_handle_t;
 
 typedef struct {
+    NNTI_peer_t      me;
+
     uint16_t         delivery_mode;
 
     gni_cdm_handle_t cdm_hdl;
@@ -510,6 +512,7 @@ static void create_peer(NNTI_peer_t *peer,
         uint32_t ptag,
         uint32_t cookie,
         NNTI_instance_id instance);
+static void copy_peer(NNTI_peer_t *dst_peer, NNTI_peer_t *src_peer);
 static int init_server_listen_socket(void);
 static int check_listen_socket_for_new_connections(void);
 static uint32_t get_cpunum(void);
@@ -1061,16 +1064,17 @@ NNTI_result_t NNTI_gni_init (
                     ntohs(transport_global_data.listen_port));
         }
 
-        trios_start_timer(call_time);
         create_peer(
-                &trans_hdl->me,
+                &transport_global_data.me,
                 transport_global_data.listen_name,
                 transport_global_data.listen_addr,
                 transport_global_data.listen_port,
                 transport_global_data.alps_info.ptag,
                 transport_global_data.alps_info.cookie,
                 transport_global_data.instance);
-        trios_stop_timer("create_peer", call_time);
+        copy_peer(
+                &trans_hdl->me,
+                &transport_global_data.me);
 
         gni_initialized = true;
     }
@@ -4679,39 +4683,23 @@ static void create_status(
             case GNI_OP_GET_TARGET:
             case GNI_OP_SEND_REQUEST:
             case GNI_OP_SEND_BUFFER:
-                create_peer(&status->src,
-                        transport_global_data.listen_name,
-                        transport_global_data.listen_addr,
-                        transport_global_data.listen_port,
-                        transport_global_data.alps_info.ptag,
-                        transport_global_data.alps_info.cookie,
-                        transport_global_data.instance);
-                create_peer(&status->dest,
-                        conn->peer_name,
-                        conn->peer_addr,
-                        conn->peer_port,
-                        conn->peer_ptag,
-                        conn->peer_cookie,
-                        conn->peer_instance);
+                copy_peer(
+                        &status->src,
+                        &transport_global_data.me);
+                copy_peer(
+                        &status->dest,
+                        &conn->peer);
                 break;
             case GNI_OP_GET_INITIATOR:
             case GNI_OP_PUT_TARGET:
             case GNI_OP_NEW_REQUEST:
             case GNI_OP_RECEIVE:
-                create_peer(&status->src,
-                        conn->peer_name,
-                        conn->peer_addr,
-                        conn->peer_port,
-                        conn->peer_ptag,
-                        conn->peer_cookie,
-                        conn->peer_instance);
-                create_peer(&status->dest,
-                        transport_global_data.listen_name,
-                        transport_global_data.listen_addr,
-                        transport_global_data.listen_port,
-                        transport_global_data.alps_info.ptag,
-                        transport_global_data.alps_info.cookie,
-                        transport_global_data.instance);
+                copy_peer(
+                        &status->src,
+                        &conn->peer);
+                copy_peer(
+                        &status->dest,
+                        &transport_global_data.me);
                 break;
             }
     }
@@ -4727,6 +4715,20 @@ static void create_peer(NNTI_peer_t *peer, char *name, NNTI_ip_addr addr, NNTI_t
     peer->peer.NNTI_remote_process_t_u.gni.addr   =addr;
     peer->peer.NNTI_remote_process_t_u.gni.port   =port;
     peer->peer.NNTI_remote_process_t_u.gni.inst_id=instance;
+
+    log_debug(nnti_ee_debug_level, "exit");
+}
+
+static void copy_peer(NNTI_peer_t *dst_peer, NNTI_peer_t *src_peer)
+{
+    log_debug(nnti_ee_debug_level, "enter");
+
+    strcpy(dst_peer->url, src_peer->url);
+
+    dst_peer->peer.transport_id                       =src_peer->peer.transport_id;
+    dst_peer->peer.NNTI_remote_process_t_u.gni.addr   =src_peer->peer.NNTI_remote_process_t_u.gni.addr;
+    dst_peer->peer.NNTI_remote_process_t_u.gni.port   =src_peer->peer.NNTI_remote_process_t_u.gni.port;
+    dst_peer->peer.NNTI_remote_process_t_u.gni.inst_id=src_peer->peer.NNTI_remote_process_t_u.gni.inst_id;
 
     log_debug(nnti_ee_debug_level, "exit");
 }
