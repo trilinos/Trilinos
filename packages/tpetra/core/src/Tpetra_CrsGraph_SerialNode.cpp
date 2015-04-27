@@ -41,20 +41,37 @@
 // @HEADER
 */
 
+// Including this is the easy way to get access to all the Node types.
+#include "Kokkos_DefaultNode.hpp"
+#include "Tpetra_ConfigDefs.hpp"
+
+// Don't bother compiling anything, or even including anything else,
+// unless SerialNode is enabled.
+#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_KOKKOSCLASSIC_SERIAL)
+
 #include "Tpetra_CrsGraph_decl.hpp"
-
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
-
-#include "Tpetra_CrsGraph_def.hpp"
 #include "TpetraCore_ETIHelperMacros.h"
+#include "Tpetra_CrsGraph_def.hpp"
+
+// The first macro instantiates just the graph stuff.  The second
+// instantiates CrsGraph methods templated on Scalar type that
+// CrsMatrix needs.  The two must be handled separately, to avoid link
+// errors resulting from redundant instantiations.
+
+#define TPETRA_CRSGRAPH_GRAPH_INSTANT_SERIALNODE( LO, GO ) \
+  TPETRA_CRSGRAPH_GRAPH_INSTANT( LO, GO, KokkosClassic::DoNotUse::SerialNode )
+
+#define TPETRA_CRSGRAPH_INSTANT_SERIALNODE( SCALAR, LO, GO ) \
+  TPETRA_CRSGRAPH_INSTANT( SCALAR, LO, GO, KokkosClassic::DoNotUse::SerialNode )
 
 namespace Tpetra {
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  TPETRA_INSTANTIATE_LGN(TPETRA_CRSGRAPH_GRAPH_INSTANT)
-  TPETRA_INSTANTIATE_SLGN(TPETRA_CRSGRAPH_INSTANT)
+  TPETRA_INSTANTIATE_LG(TPETRA_CRSGRAPH_GRAPH_INSTANT_SERIALNODE)
+
+  TPETRA_INSTANTIATE_SLG(TPETRA_CRSGRAPH_INSTANT_SERIALNODE)
 
 } // namespace Tpetra
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#endif // defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_KOKKOSCLASSIC_SERIAL)
