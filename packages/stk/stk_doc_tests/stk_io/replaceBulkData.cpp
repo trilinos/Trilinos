@@ -153,7 +153,11 @@ namespace {
       Ioss::NodeBlock *nb = results.get_node_blocks()[0];
       EXPECT_EQ(1u, nb->field_count(Ioss::Field::TRANSIENT));
       EXPECT_TRUE(nb->field_exists("disp"));
-      EXPECT_EQ(4u, results.get_element_blocks().size());
+      // Empty element blocks are not written, so even though
+      // input mesh had 4 blocks, the output mesh will have 0.
+      // Allowing the output of empty element blocks causes more
+      // problems than it solves
+      EXPECT_EQ(0u, results.get_element_blocks().size());
       EXPECT_EQ(3u, results.get_nodesets().size());
     }
 
