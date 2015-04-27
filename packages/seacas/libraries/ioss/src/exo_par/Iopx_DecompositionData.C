@@ -503,10 +503,10 @@ namespace Iopx {
     }
 
     if (method != "LINEAR"
+#if !defined(NO_ZOLTAN_SUPPORT)
         && method != "BLOCK"
         && method != "CYCLIC"
         && method != "RANDOM"
-#if !defined(NO_ZOLTAN_SUPPORT)
         && method != "RCB"
         && method != "RIB"
         && method != "HSFC"
