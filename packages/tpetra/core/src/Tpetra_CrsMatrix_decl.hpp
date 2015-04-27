@@ -1751,7 +1751,46 @@ namespace Tpetra {
     void
     localSolve (const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,node_type>& Y,
                 MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,node_type>& X,
-                Teuchos::ETransp trans) const;
+                Teuchos::ETransp mode) const
+    {
+      using Teuchos::NO_TRANS;
+#ifdef HAVE_TPETRA_DEBUG
+      const char tfecfFuncName[] = "localSolve()";
+#endif // HAVE_TPETRA_DEBUG
+
+      KokkosClassic::MultiVector<RangeScalar,Node> Y_lcl = Y.getLocalMV ();
+      const KokkosClassic::MultiVector<RangeScalar,Node>* lclY = &Y_lcl;
+
+      KokkosClassic::MultiVector<DomainScalar,Node> X_lcl = X.getLocalMV ();
+      KokkosClassic::MultiVector<DomainScalar,Node>* lclX = &X_lcl;
+
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! isFillComplete (), std::runtime_error, " until fillComplete() has been called.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (X.getNumVectors () != Y.getNumVectors (), std::runtime_error,
+         ": X and Y must have the same number of vectors.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (X.isConstantStride () == false || Y.isConstantStride() == false,
+         std::runtime_error, ": X and Y must be constant stride.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (isUpperTriangular () == false && isLowerTriangular () == false,
+         std::runtime_error, ": can only solve() triangular matrices.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (STS::isComplex && mode == Teuchos::TRANS, std::logic_error,
+         " does not currently support transposed solve for complex scalar "
+         "types.");
+#endif // HAVE_TPETRA_DEBUG
+      //
+      // Call the solve
+      if (mode == Teuchos::NO_TRANS) {
+        lclMatOps_->template solve<DomainScalar,RangeScalar>(Teuchos::NO_TRANS, *lclY, *lclX);
+      }
+      else {
+        lclMatOps_->template solve<DomainScalar,RangeScalar>(Teuchos::CONJ_TRANS, *lclY, *lclX);
+      }
+    }
+
 
     //! Returns another CrsMatrix with the same entries, but represented as a different scalar type.
     template <class T>

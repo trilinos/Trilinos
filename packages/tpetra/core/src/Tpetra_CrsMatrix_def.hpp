@@ -4186,42 +4186,6 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  template <class DomainScalar, class RangeScalar>
-  void
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, true>::
-  localSolve (const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>  &Y,
-              MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-              Teuchos::ETransp mode) const
-  {
-    using Teuchos::NO_TRANS;
-#ifdef HAVE_TPETRA_DEBUG
-    const char tfecfFuncName[] = "localSolve()";
-#endif // HAVE_TPETRA_DEBUG
-
-    KokkosClassic::MultiVector<RangeScalar,Node> Y_lcl = Y.getLocalMV ();
-    const KokkosClassic::MultiVector<RangeScalar,Node>* lclY = &Y_lcl;
-
-    KokkosClassic::MultiVector<DomainScalar,Node> X_lcl = X.getLocalMV ();
-    KokkosClassic::MultiVector<DomainScalar,Node>* lclX = &X_lcl;
-
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!isFillComplete(),                                              std::runtime_error, " until fillComplete() has been called.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(X.getNumVectors() != Y.getNumVectors(),                         std::runtime_error, ": X and Y must have the same number of vectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(X.isConstantStride() == false || Y.isConstantStride() == false, std::runtime_error, ": X and Y must be constant stride.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isUpperTriangular() == false && isLowerTriangular() == false,   std::runtime_error, ": can only solve() triangular matrices.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(STS::isComplex && mode == Teuchos::TRANS,      std::logic_error, " does not currently support transposed solve for complex scalar types.");
-#endif
-    //
-    // Call the solve
-    if (mode == Teuchos::NO_TRANS) {
-      lclMatOps_->template solve<DomainScalar,RangeScalar>(Teuchos::NO_TRANS, *lclY, *lclX);
-    }
-    else {
-      lclMatOps_->template solve<DomainScalar,RangeScalar>(Teuchos::CONJ_TRANS, *lclY, *lclX);
-    }
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   template <class T>
   Teuchos::RCP<CrsMatrix<T,LocalOrdinal,GlobalOrdinal,Node> >
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, true>::

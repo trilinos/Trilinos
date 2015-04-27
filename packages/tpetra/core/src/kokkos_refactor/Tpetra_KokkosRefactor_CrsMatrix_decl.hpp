@@ -1893,7 +1893,6 @@ namespace Tpetra {
                                                             dir.c_str ());
     }
 
-
     /// \brief Solves a linear system when the underlying matrix is triangular.
     ///
     /// X is required to be post-imported, i.e., described by the
@@ -1914,10 +1913,84 @@ namespace Tpetra {
     void
     localSolve (const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,node_type>& Y,
                 MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,node_type>& X,
-                Teuchos::ETransp trans) const;
+                Teuchos::ETransp mode) const
+    {
+      using Teuchos::CONJ_TRANS;
+      using Teuchos::NO_TRANS;
+      using Teuchos::TRANS;
+      typedef LocalOrdinal LO;
+      typedef GlobalOrdinal GO;
+      typedef Tpetra::MultiVector<DomainScalar, LO, GO, node_type> DMV;
+      typedef Tpetra::MultiVector<RangeScalar, LO, GO, node_type> RMV;
+      typedef typename DMV::dual_view_type::host_mirror_space HMDT ;
 
-    /// \return Return another CrsMatrix with the same entries, but
-    ///   converted into a different Scalar type \c T.
+      const char tfecfFuncName[] = "localSolve: ";
+
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! isFillComplete (), std::runtime_error,
+         "The matrix is not fill complete.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! X.isConstantStride () || ! Y.isConstantStride (), std::invalid_argument,
+         "X and Y must be constant stride.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! isUpperTriangular () && ! isLowerTriangular (), std::runtime_error,
+         "The matrix is neither upper triangular or lower triangular.  "
+         "You may only call this method if the matrix is triangular.  "
+         "Remember that this is a local (per MPI process) property, and that "
+         "Tpetra only knows how to do a local (per process) triangular solve.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (STS::isComplex && mode == TRANS, std::logic_error, "This method does "
+         "not currently support non-conjugated transposed solve (mode == "
+         "Teuchos::TRANS) for complex scalar types.");
+
+      // FIXME (mfh 27 Aug 2014) Tpetra has always made the odd decision
+      // that if _some_ diagonal entries are missing locally, then it
+      // assumes that the matrix has an implicitly stored unit diagonal.
+      // Whether the matrix has an implicit unit diagonal or not should
+      // be up to the user to decide.  What if the graph has no diagonal
+      // entries, and the user wants it that way?  The only reason this
+      // matters, though, is for the triangular solve, and in that case,
+      // missing diagonal entries will cause trouble anyway.  However,
+      // it would make sense to warn the user if they ask for a
+      // triangular solve with an incomplete diagonal.  Furthermore,
+      // this code should only assume an implicitly stored unit diagonal
+      // if the matrix has _no_ explicitly stored diagonal entries.
+
+      const std::string uplo = isUpperTriangular () ? "U" :
+        (isLowerTriangular () ? "L" : "N");
+      const std::string trans = (mode == Teuchos::CONJ_TRANS) ? "C" :
+        (mode == Teuchos::TRANS ? "T" : "N");
+      const std::string diag =
+        (getNodeNumDiags () < getNodeNumRows ()) ? "U" : "N";
+
+      local_matrix_type A_lcl = this->getLocalMatrix ();
+
+      // FIXME (mfh 23 Apr 2015) We currently only have a host,
+      // sequential kernel for local sparse triangular solve.
+
+      Y.getDualView ().template sync<HMDT> (); // Y is read-only
+      X.getDualView ().template sync<HMDT> ();
+      X.getDualView ().template modify<HMDT> (); // we will write to X
+
+      if (X.isConstantStride () && Y.isConstantStride ()) {
+        typename DMV::dual_view_type::t_host X_lcl = X.template getLocalView<HMDT> ();
+        typename RMV::dual_view_type::t_host Y_lcl = Y.template getLocalView<HMDT> ();
+        KokkosSparse::trsv (uplo.c_str (), trans.c_str (), diag.c_str (), A_lcl, Y_lcl, X_lcl);
+      }
+      else {
+        const size_t numVecs = std::min (X.getNumVectors (), Y.getNumVectors ());
+        for (size_t j = 0; j < numVecs; ++j) {
+          auto X_j = X.getVector (j);
+          auto Y_j = X.getVector (j);
+          auto X_lcl = X_j->template getLocalView<HMDT> ();
+          auto Y_lcl = Y_j->template getLocalView<HMDT> ();
+          KokkosSparse::trsv (uplo.c_str (), trans.c_str (), diag.c_str (), A_lcl, Y_lcl, X_lcl);
+        }
+      }
+    }
+
+    /// \brief Return another CrsMatrix with the same entries, but
+    ///   converted to a different Scalar type \c T.
     template <class T>
     Teuchos::RCP<CrsMatrix<T, LocalOrdinal, GlobalOrdinal, node_type> >
     convert () const;
