@@ -57,8 +57,6 @@
 #include "MueLu_TpetraOperator.hpp"
 #include "MueLu_CreateEpetraPreconditioner.hpp"
 #include "MueLu_CreateTpetraPreconditioner.hpp"
-
-/*Epetra headers*/
 #include "Epetra_SerialComm.h"
 #include "Epetra_Map.h"
 #include "Epetra_MultiVector.h"
@@ -102,12 +100,12 @@ typedef enum
 typedef std::complex<double> complex_t;
 
 //Default Tpetra node type for CrsMatrix (could replace here with custom types)
-typedef Tpetra::Vector<>::node_type node_t;
-typedef Tpetra::Vector<>::local_ordinal_type LocalOrd;
-typedef Tpetra::Vector<>::global_ordinal_type GlobalOrd;
+typedef Tpetra::Vector<>::node_type mm_node_t;
+typedef Tpetra::Vector<>::local_ordinal_type mm_LocalOrd;
+typedef Tpetra::Vector<>::global_ordinal_type mm_GlobalOrd;
 typedef Tpetra::Map<> muemex_map_type;
-typedef Tpetra::CrsMatrix<double, LocalOrd, GlobalOrd, node_t> Tpetra_CrsMatrix_double;
-typedef Tpetra::CrsMatrix<complex_t, LocalOrd, GlobalOrd, node_t> Tpetra_CrsMatrix_complex;
+typedef Tpetra::CrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_CrsMatrix_double;
+typedef Tpetra::CrsMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_CrsMatrix_complex;
 
 //Scalar could be double or std::complex, and Matrix could be the CrsMatrix from [E|T]petra
 //(therefore the muelu_epetra_data_pack has the default template arguments)
@@ -161,6 +159,10 @@ class muelu_epetra_data_pack : public muelu_data_pack
         {
             return A;
         }
+        Teuchos::RCP<Epetra_Operator> GetPrec()
+        {
+            return prec;
+        }
         int NumMyRows()
         {
             return A->NumMyRows();
@@ -169,9 +171,10 @@ class muelu_epetra_data_pack : public muelu_data_pack
         {
             return A->NumMyCols();
         }
+        double operatorComplexity;
     private:
         Teuchos::RCP<Epetra_CrsMatrix> A;
-        //Muelu smoother/whatever objects here.
+        Teuchos::RCP<Epetra_Operator> prec;
 };
 
 //Scalar can be double or std::complex<double> (complex_t)
@@ -184,10 +187,14 @@ class muelu_tpetra_double_data_pack : public muelu_data_pack
         int setup(const mxArray* mxa, bool rewrap_ints);
         int status();
         int solve(Teuchos::RCP<Teuchos::ParameterList> TPL, Teuchos::RCP<Tpetra_CrsMatrix_double> Amat, double* b, double* x, int &iters);
-        //note: I typedef'd node_t at the top of this file as the Kokkos default type
+        //note: I typedef'd mm_node_t at the top of this file as the Kokkos default type
         Teuchos::RCP<Tpetra_CrsMatrix_double> GetMatrix()
         {
             return A;
+        }
+        Teuchos::RCP<Tpetra::Operator<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> GetPrec()
+        {
+            return prec;
         }
         int NumMyRows()
         {
@@ -203,8 +210,10 @@ class muelu_tpetra_double_data_pack : public muelu_data_pack
             else
                 return A->getNodeNumCols();
         }
+        double operatorComplexity;
     private:
         Teuchos::RCP<Tpetra_CrsMatrix_double> A;
+        Teuchos::RCP<Tpetra::Operator<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> prec;
 };
 
 class muelu_tpetra_complex_data_pack : public muelu_data_pack
@@ -215,10 +224,14 @@ class muelu_tpetra_complex_data_pack : public muelu_data_pack
         int setup(const mxArray* mxa, bool rewrap_ints);
         int status();
         int solve(Teuchos::RCP<Teuchos::ParameterList> TPL, Teuchos::RCP<Tpetra_CrsMatrix_complex> Amat, complex_t* b, complex_t* x, int &iters);
-        //note: I typedef'd node_t at the top of this file as the Kokkos default type
+        //note: I typedef'd mm_node_t at the top of this file as the Kokkos default type
         Teuchos::RCP<Tpetra_CrsMatrix_complex> GetMatrix()
         {
             return A;
+        }
+        Teuchos::RCP<Tpetra::Operator<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> GetPrec()
+        {
+            return prec;
         }
         int NumMyRows()
         {
@@ -234,8 +247,10 @@ class muelu_tpetra_complex_data_pack : public muelu_data_pack
             else
                 return A->getNodeNumCols();
         }
+        double operatorComplexity;
     private:
         Teuchos::RCP<Tpetra_CrsMatrix_complex> A;
+        Teuchos::RCP<Tpetra::Operator<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> prec;
 };
 
 namespace muelu_data_pack_list
