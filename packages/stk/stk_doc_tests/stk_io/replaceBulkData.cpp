@@ -139,6 +139,7 @@ namespace {
 	stkIo.write_defined_output_fields(fh);
         stkIo.end_output_step(fh);
       }
+      delete bd;
       //-END      
     }
     // ============================================================
