@@ -86,12 +86,6 @@ long_long init_usec, init_cycles;
 #define USING_MACH_ABSOLUTE_TIME
 #include <mach/mach_time.h>
 
-#elif defined(HAVE_TRIOS_GETTIMEOFDAY)
-#define USING_GETTIMEOFDAY
-#include <sys/time.h>
-static struct timeval tv_init;
-
-
 #elif defined(HAVE_TRIOS_CLOCK_GETTIME)
 #define USING_CLOCK_GETTIME
 #include <time.h>   /* values for various timers */
@@ -105,6 +99,12 @@ static struct timeval tv_init;
 static const clockid_t clockid = CLOCK_REALTIME;
 static struct timespec ts_init;
 static struct timespec ts_res;
+
+#elif defined(HAVE_TRIOS_GETTIMEOFDAY)
+#define USING_GETTIMEOFDAY
+#include <sys/time.h>
+static struct timeval tv_init;
+
 
 #else
 #error No supported timers.
