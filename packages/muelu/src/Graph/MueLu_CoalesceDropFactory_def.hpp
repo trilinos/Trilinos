@@ -111,10 +111,7 @@ namespace MueLu {
       if (pL.get<std::string>("aggregation: drop scheme") == "distance laplacian")
         Input(currentLevel, "Coordinates");
 
-    } /*else {
-      Input(currentLevel, "UnAmalgamationInfo");
-    }*/
-
+    }
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>

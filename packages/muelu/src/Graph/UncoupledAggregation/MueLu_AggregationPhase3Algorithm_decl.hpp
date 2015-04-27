@@ -58,6 +58,7 @@ namespace MueLu {
   /*!
     @class AggregationPhase3Algorithm class.
     @brief Handle leftover nodes. Try to avoid singleton nodes
+    @ingroup Aggregation
 
     ### Idea ###
     In phase 3 we try to stick unaggregated nodes into a neighboring aggregate.
