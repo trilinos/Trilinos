@@ -1590,9 +1590,58 @@ namespace Tpetra {
     void
     localMultiply (const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,node_type>& X,
                    MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,node_type>& Y,
-                   Teuchos::ETransp trans,
+                   Teuchos::ETransp mode,
                    RangeScalar alpha,
-                   RangeScalar beta) const;
+                   RangeScalar beta) const
+    {
+      using Teuchos::NO_TRANS;
+#ifdef HAVE_TPETRA_DEBUG
+      const char tfecfFuncName[] = "localMultiply: ";
+#endif // HAVE_TPETRA_DEBUG
+      typedef Teuchos::ScalarTraits<RangeScalar> RST;
+      KokkosClassic::MultiVector<DomainScalar,Node> X_lcl = X.getLocalMV ();
+      const KokkosClassic::MultiVector<DomainScalar,Node>* lclX = &X_lcl;
+
+      KokkosClassic::MultiVector<RangeScalar,Node> Y_lcl = Y.getLocalMV ();
+      KokkosClassic::MultiVector<RangeScalar,Node>* lclY = &Y_lcl;
+
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (mode == NO_TRANS && X.getMap() != getColMap() && *X.getMap() != *getColMap(),
+         std::runtime_error, "X is not distributed according to the appropriate map.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (mode != NO_TRANS && X.getMap() != getRowMap() && *X.getMap() != *getRowMap(),
+         std::runtime_error, "X is not distributed according to the appropriate map.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (mode == NO_TRANS && Y.getMap() != getRowMap() && *Y.getMap() != *getRowMap(),
+         std::runtime_error, "Y is not distributed according to the appropriate map.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (mode != NO_TRANS && Y.getMap() != getColMap() && *Y.getMap() != *getColMap(),
+         std::runtime_error, "Y is not distributed according to the appropriate map.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! isFillComplete (), std::runtime_error, "It is incorrect to call this "
+         "method unless the matrix is fill complete.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
+         "X and Y must have the same number of vectors.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (X.isConstantStride() == false || Y.isConstantStride() == false,
+         std::runtime_error, "X and Y must be constant stride.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (lclX==lclY, std::runtime_error, "X and Y may not alias one another.");
+#endif // HAVE_TPETRA_DEBUG
+      //
+      // Call the matvec
+      if (beta == RST::zero()) {
+        // Y = alpha*op(M)*X with overwrite semantics
+        lclMatOps_->template multiply<DomainScalar,RangeScalar>(mode, alpha, *lclX, *lclY);
+      }
+      else {
+        // Y = alpha*op(M) + beta*Y
+        lclMatOps_->template multiply<DomainScalar,RangeScalar>(mode, alpha, *lclX, beta, *lclY);
+      }
+    }
+
 
     /// \brief Gauss-Seidel or SOR on \f$B = A X\f$.
     ///
@@ -1624,7 +1673,17 @@ namespace Tpetra {
                       MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,node_type> &X,
                       const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> &D,
                       const RangeScalar& dampingFactor,
-                      const KokkosClassic::ESweepDirection direction) const;
+                      const KokkosClassic::ESweepDirection direction) const
+    {
+      KokkosClassic::MultiVector<DomainScalar,Node> x = X.getLocalMV ();
+      KokkosClassic::MultiVector<RangeScalar,Node> b = B.getLocalMV ();
+      KokkosClassic::MultiVector<RangeScalar,Node> d = D.getLocalMV ();
+
+      lclMatOps_->template gaussSeidel<DomainScalar, RangeScalar> (b, x, d,
+                                                                   dampingFactor,
+                                                                   direction);
+    }
+
 
     /// \brief Reordered Gauss-Seidel or SOR on \f$B = A X\f$.
     ///
@@ -1659,7 +1718,18 @@ namespace Tpetra {
                                const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& D,
                                const ArrayView<LocalOrdinal>& rowIndices,
                                const RangeScalar& dampingFactor,
-                               const KokkosClassic::ESweepDirection direction) const;
+                               const KokkosClassic::ESweepDirection direction) const
+    {
+      KokkosClassic::MultiVector<DomainScalar,Node> x = X.getLocalMV ();
+      KokkosClassic::MultiVector<RangeScalar,Node> b = B.getLocalMV ();
+      KokkosClassic::MultiVector<RangeScalar,Node> d = D.getLocalMV ();
+
+      lclMatOps_->template reorderedGaussSeidel<DomainScalar, RangeScalar> (b, x, d,
+                                                                            rowIndices,
+                                                                            dampingFactor,
+                                                                            direction);
+    }
+
 
     /// \brief Solves a linear system when the underlying matrix is triangular.
     ///
