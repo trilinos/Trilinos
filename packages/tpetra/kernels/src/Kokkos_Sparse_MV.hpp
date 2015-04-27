@@ -201,6 +201,24 @@ spmv(const char mode[],
   }
 }
 
+/// \brief Public interface to local sparse matrix-vector multiply.
+///
+/// Compute y = beta*y + alpha*Op(A)*x, where x and y are either both
+/// rank 1 (single vectors) or rank 2 (multivectors) Kokkos::View
+/// instances, A is a KokkosSparse::CrsMatrix, and Op(A) is determined
+/// by \c mode.  If beta == 0, ignore and overwrite the initial
+/// entries of y; if alpha == 0, ignore the entries of A and x.
+///
+/// \param mode [in] "N" for no transpose, "T" for transpose, or "C"
+///   for conjugate transpose.
+/// \param alpha [in] Scalar multiplier for the matrix A.
+/// \param A [in] The sparse matrix; KokkosSparse::CrsMatrix instance.
+/// \param x [in] Either a single vector (rank-1 Kokkos::View) or
+///   multivector (rank-2 Kokkos::View).
+/// \param beta [in] Scalar multiplier for the (multi)vector y.
+/// \param y [in/out] Either a single vector (rank-1 Kokkos::View) or
+///   multivector (rank-2 Kokkos::View).  It must have the same number
+///   of columns as x.
 template <class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
 void
 spmv(const char mode[],

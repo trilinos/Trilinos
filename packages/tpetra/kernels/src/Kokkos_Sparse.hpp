@@ -41,6 +41,21 @@
 //@HEADER
 */
 
+/// \file Kokkos_Sparse.hpp
+/// \brief Public interface to local computational kernels on sparse
+///   matrices.
+///
+/// KokkosSparse::spmv implements local sparse matrix-vector multiply.
+/// It computes y = beta*y + alpha*Op(A)*x, where x and y are either
+/// both rank 1 (single vectors) or rank 2 (multivectors) Kokkos::View
+/// instances, A is a KokkosSparse::CrsMatrix, and Op(A) is determined
+/// by the \c mode input (either no transpose, transpose, or conjugate
+/// transpose).  If beta == 0, ignore and overwrite the initial
+/// entries of y; if alpha == 0, ignore the entries of A and x.
+///
+/// KokkosSparse::trsv implements local sparse triangular solve.
+/// It solves Ax=b, where A is either upper or lower triangular.
+
 #ifndef KOKKOS_SPARSE_HPP_
 #define KOKKOS_SPARSE_HPP_
 

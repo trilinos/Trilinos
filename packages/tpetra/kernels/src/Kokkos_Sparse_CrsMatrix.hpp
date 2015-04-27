@@ -41,6 +41,13 @@
 //@HEADER
 */
 
+/// \file Kokkos_Sparse_CrsMatrix.hpp
+/// \brief Local sparse matrix interface
+///
+/// This file provides KokkosSparse::CrsMatrix.  This implements a
+/// local (no MPI) sparse matrix stored in compressed row sparse
+/// ("Crs") format.
+
 #ifndef KOKKOS_SPARSE_CRSMATRIX_HPP_
 #define KOKKOS_SPARSE_CRSMATRIX_HPP_
 #include <stdexcept>

@@ -41,6 +41,13 @@
 //@HEADER
 */
 
+/// \file Kokkos_Sparse_trsv.hpp
+/// \brief Local sparse triangular solve
+///
+/// This file provides KokkosSparse::trsv.  This function performs a
+/// local (no MPI) sparse triangular solve on matrices stored in
+/// compressed row sparse ("Crs") format.
+
 #ifndef KOKKOS_SPARSE_TRSV_HPP_
 #define KOKKOS_SPARSE_TRSV_HPP_
 
