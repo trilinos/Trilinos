@@ -3858,6 +3858,19 @@ all-local:
 
 include $(top_builddir)/Makefile.export.zoltan
 
+# ------------------------------------------------------------------------
+# Explicit FORTRAN dependencies to allow parallel builds (make -j)
+# ------------------------------------------------------------------------
+
+@BUILD_ZOLTAN_F90_INTERFACE_TRUE@@F90_MODULE_LOWERCASE_TRUE@zoltan.mod:  zoltan_types.mod zoltan_user_data.mod $(srcdir)/fort/fwrap.f90 \
+@BUILD_ZOLTAN_F90_INTERFACE_TRUE@@F90_MODULE_LOWERCASE_TRUE@             $(EXTRA_FORTRAN_H)
+@BUILD_ZOLTAN_F90_INTERFACE_TRUE@@F90_MODULE_LOWERCASE_TRUE@zoltan_user_data.mod:  $(srcdir)/fort/zoltan_user_data.f90 zoltan_types.mod
+@BUILD_ZOLTAN_F90_INTERFACE_TRUE@@F90_MODULE_LOWERCASE_TRUE@zoltan_types.mod:  $(srcdir)/fort/ztypes.f90
+@BUILD_ZOLTAN_F90_INTERFACE_TRUE@@F90_MODULE_LOWERCASE_FALSE@ZOLTAN.mod:  ZOLTAN_TYPES.mod ZOLTAN_USER_DATA.mod $(srcdir)/fort/fwrap.f90 \
+@BUILD_ZOLTAN_F90_INTERFACE_TRUE@@F90_MODULE_LOWERCASE_FALSE@             $(EXTRA_FORTRAN_H)
+@BUILD_ZOLTAN_F90_INTERFACE_TRUE@@F90_MODULE_LOWERCASE_FALSE@ZOLTAN_USER_DATA.mod:  $(srcdir)/fort/zoltan_user_data.f90 ZOLTAN_TYPES.mod
+@BUILD_ZOLTAN_F90_INTERFACE_TRUE@@F90_MODULE_LOWERCASE_FALSE@ZOLTAN_TYPES.mod:  $(srcdir)/fort/ztypes.f90
+
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
