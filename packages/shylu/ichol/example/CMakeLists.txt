@@ -38,6 +38,12 @@ TRIBITS_ADD_EXECUTABLE(
   COMM serial mpi
   )
 
+TRIBITS_ADD_EXECUTABLE(
+  dense_matrix_view
+  SOURCES dense_matrix_view.cpp
+  COMM serial mpi
+  )
+
 # TPL library interface examples
 # ==============================
 
