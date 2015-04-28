@@ -6691,22 +6691,6 @@ static int credits_available(
     gni_post_descriptor_t fetch_post_desc;
     gni_post_descriptor_t cas_post_desc;
 
-    memset(&fetch_post_desc, 0, sizeof(gni_post_descriptor_t));
-    fetch_post_desc.type           =GNI_POST_AMO;
-    fetch_post_desc.cq_mode        =GNI_CQMODE_GLOBAL_EVENT;
-
-    set_dlvr_mode(&fetch_post_desc);
-    set_rdma_mode(&fetch_post_desc);
-
-    fetch_post_desc.local_addr     =conn->send_mbox->amo_result_addr;
-    fetch_post_desc.local_mem_hndl =conn->send_mbox->amo_result_mem_hdl;
-    fetch_post_desc.remote_addr    =conn->send_mbox->credits_addr;
-    fetch_post_desc.remote_mem_hndl=conn->send_mbox->credits_mem_hdl;
-    fetch_post_desc.length         =sizeof(uint64_t);
-    fetch_post_desc.amo_cmd        =GNI_FMA_ATOMIC_FADD;
-    fetch_post_desc.first_operand  =0;
-    fetch_post_desc.second_operand =0;
-
     memset(&cas_post_desc, 0, sizeof(gni_post_descriptor_t));
     cas_post_desc.type           =GNI_POST_AMO;
     cas_post_desc.cq_mode        =GNI_CQMODE_GLOBAL_EVENT;
@@ -6725,23 +6709,14 @@ static int credits_available(
 
 
 retry:
-    conn->send_mbox->amo_result=-1;
-
-    nthread_lock(&nnti_gni_lock);
-    rc=GNI_PostFma(conn->send_mbox->amo_ep_hdl, &fetch_post_desc);
-    nthread_unlock(&nnti_gni_lock);
-    if (rc!=GNI_RC_SUCCESS) log_error(nnti_debug_level, "PostFma(credits_available fetch-add) failed: %d", rc);
-
-    post_wait(conn->send_mbox->amo_cq_hdl, -1);
-
-    credits_available = conn->send_mbox->amo_result;
+    credits_available = conn->send_mbox->credits;
 
     log_debug(nnti_debug_level, "credits_available=%lld", credits_available);
 
-    if (conn->send_mbox->amo_result > 0) {
+    if (credits_available > 0) {
 
-        cas_post_desc.first_operand  =conn->send_mbox->amo_result;
-        cas_post_desc.second_operand =conn->send_mbox->amo_result - 1;
+        cas_post_desc.first_operand  =credits_available;
+        cas_post_desc.second_operand =credits_available - 1;
 
         conn->send_mbox->amo_result=-1;
 
@@ -6771,6 +6746,7 @@ static int execute_send_wr(
         nnti_gni_work_request_t *gni_wr)
 {
     int rc=GNI_RC_NOT_DONE;
+    int credits=0;
 
     trios_declare_timer(call_time);
 
@@ -6782,7 +6758,8 @@ static int execute_send_wr(
     nnti_gni_connection_t *conn=get_conn_instance(gni_wr->peer_instance);
     assert(conn);
 
-    if (credits_available(conn)) {
+    credits=credits_available(conn);
+    if (credits) {
         int64_t mbox_index =nthread_counter_increment(&conn->send_mbox->mbox_index);
         mbox_index %= conn->send_mbox->max_credits;
         int64_t mbox_offset=conn->send_mbox->msg_maxsize*mbox_index;
