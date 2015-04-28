@@ -166,7 +166,7 @@ IF (${PACKAGE_NAME}_ENABLE_LAPACK)
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_KLU2)
-  
+
   APPEND_SET(HEADERS
     Amesos2_KLU2.hpp
     Amesos2_KLU2_decl.hpp
@@ -188,11 +188,11 @@ IF (${PACKAGE_NAME}_ENABLE_KLU2)
         SuiteSparse/KLU2/Source/klu2_analyze_given.hpp
         SuiteSparse/KLU2/Source/klu2_analyze.hpp
         SuiteSparse/KLU2/Source/klu2_defaults.hpp
-        SuiteSparse/KLU2/Source/klu2_diagnostics.hpp 
+        SuiteSparse/KLU2/Source/klu2_diagnostics.hpp
         SuiteSparse/KLU2/Source/klu2_dump.hpp
         SuiteSparse/KLU2/Source/klu2_extract.hpp
         SuiteSparse/KLU2/Source/klu2_factor.hpp
-        SuiteSparse/KLU2/Source/klu2_free_numeric.hpp 
+        SuiteSparse/KLU2/Source/klu2_free_numeric.hpp
         SuiteSparse/KLU2/Source/klu2_free_symbolic.hpp
         SuiteSparse/KLU2/Source/klu2_refactor.hpp
         SuiteSparse/KLU2/Source/klu2.hpp
@@ -221,11 +221,11 @@ IF (${PACKAGE_NAME}_ENABLE_KLU2)
         SuiteSparse/KLU2/Source/klu2_analyze_given.hpp
         SuiteSparse/KLU2/Source/klu2_analyze.hpp
         SuiteSparse/KLU2/Source/klu2_defaults.hpp
-        SuiteSparse/KLU2/Source/klu2_diagnostics.hpp 
+        SuiteSparse/KLU2/Source/klu2_diagnostics.hpp
         SuiteSparse/KLU2/Source/klu2_dump.hpp
         SuiteSparse/KLU2/Source/klu2_extract.hpp
         SuiteSparse/KLU2/Source/klu2_factor.hpp
-        SuiteSparse/KLU2/Source/klu2_free_numeric.hpp 
+        SuiteSparse/KLU2/Source/klu2_free_numeric.hpp
         SuiteSparse/KLU2/Source/klu2_free_symbolic.hpp
         SuiteSparse/KLU2/Source/klu2_refactor.hpp
         SuiteSparse/KLU2/Source/klu2.hpp
@@ -267,43 +267,26 @@ IF (${PACKAGE_NAME}_ENABLE_Basker)
         basker/basker.hpp
         basker/basker_decl.hpp
         basker/basker_def.hpp
-        basker/basker_scalartraits.hpp 
+        basker/basker_scalartraits.hpp
         basker/basker_types.hpp
-       
      )
 
 ENDIF()
 
+IF (${PACKAGE_NAME}_ENABLE_SuperLU)
 
+  APPEND_SET(HEADERS
+    Amesos2_Superlu.hpp
+    Amesos2_Superlu_decl.hpp
+    Amesos2_Superlu_def.hpp
+    Amesos2_Superlu_FunctionMap.hpp
+    Amesos2_Superlu_TypeMap.hpp
+    )
 
-
-
-
-
-    IF (${PACKAGE_NAME}_ENABLE_SuperLU)
-      APPEND_SET(HEADERS
-        Amesos2_Superlu.hpp
-        Amesos2_Superlu_decl.hpp
-        Amesos2_Superlu_def.hpp
-        Amesos2_Superlu_FunctionMap.hpp
-        Amesos2_Superlu_TypeMap.hpp
-        )
-
-       APPEND_SET(SOURCES
-         Amesos2_Superlu_TypeMap.cpp
-     )
-
-  IF(TpetraCore_ENABLE_TeuchosKokkosCompat AND Kokkos_ENABLE_Cuda)
-    APPEND_SET(AMESOS2_CU_SOURCES
-      Amesos2_Superlu.cu
-      )
-  ELSE()
-    APPEND_SET(SOURCES
-      Amesos2_Superlu.cpp
-      )
-  ENDIF()
-
-
+  APPEND_SET(SOURCES
+    Amesos2_Superlu_TypeMap.cpp
+    Amesos2_Superlu.cpp
+    )
 
 ENDIF()
 
@@ -382,19 +365,19 @@ IF (Trilinos_ENABLE_Amesos)
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
-   IF (${PACKAGE_NAME}_ENABLE_Cholmod)	
+   IF (${PACKAGE_NAME}_ENABLE_Cholmod)
       APPEND_SET(HEADERS
-	Amesos2_Cholmod.hpp
-      	Amesos2_Cholmod_decl.hpp
-      	Amesos2_Cholmod_def.hpp
-      	Amesos2_Cholmod_FunctionMap.hpp
-    	Amesos2_Cholmod_TypeMap.hpp
-    	)
+        Amesos2_Cholmod.hpp
+        Amesos2_Cholmod_decl.hpp
+        Amesos2_Cholmod_def.hpp
+        Amesos2_Cholmod_FunctionMap.hpp
+        Amesos2_Cholmod_TypeMap.hpp
+        )
 
       APPEND_SET(SOURCES
-	Amesos2_Cholmod.cpp
-	)   
-ENDIF()	    	
+        Amesos2_Cholmod.cpp
+        )
+ENDIF()
 ENDIF()
 
 
@@ -408,14 +391,3 @@ TRIBITS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
-
-IF(TpetraCore_ENABLE_TeuchosKokkosCompat AND Kokkos_ENABLE_Cuda)
-  IF( TPL_ENABLE_MPI )
-    CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
-  ENDIF()
-  TRIBITS_ADD_LIBRARY(
-    amesos2_cuda
-    SOURCES ${AMESOS2_CU_SOURCES}
-    CUDALIBRARY
-    )
-ENDIF()

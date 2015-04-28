@@ -29,6 +29,21 @@ TRIBITS_ADD_EXECUTABLE(
   COMM serial mpi
   )
 
+# DenseMatrix data structure examples
+# ===================================
+
+TRIBITS_ADD_EXECUTABLE(
+  dense_matrix_base
+  SOURCES dense_matrix_base.cpp
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE(
+  dense_matrix_view
+  SOURCES dense_matrix_view.cpp
+  COMM serial mpi
+  )
+
 # TPL library interface examples
 # ==============================
 
@@ -57,8 +72,14 @@ TRIBITS_ADD_EXECUTABLE(
 # ===================
 
 TRIBITS_ADD_EXECUTABLE(
-  partition
-  SOURCES partition.cpp
+  crs_matrix_partition
+  SOURCES crs_matrix_partition.cpp
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE(
+  dense_matrix_partition
+  SOURCES dense_matrix_partition.cpp
   COMM serial mpi
   )
 

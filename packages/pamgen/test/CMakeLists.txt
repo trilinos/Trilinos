@@ -165,6 +165,7 @@ PAMGEN_ADD_TEST( 65 ARGS -f dgeom_warp2d.txt -r 0 -n 1 -d 2)
 PAMGEN_ADD_TEST( 66 ARGS -f dgeom_warp2d.txt -r 0 -n 3 -d 2)
 PAMGEN_ADD_TEST( 67 ARGS -f dgeom_warp2d.txt -r 1 -n 3 -d 2)
 PAMGEN_ADD_TEST( 68 ARGS -f dgeom_warp2d.txt -r 2 -n 3 -d 2)
+PAMGEN_ADD_TEST( 69 ARGS -f 1tri_elem.txt -r 0 -n 1 -d 2)
 
 #PAMGEN_ADD_TEST( 69 ARGS -f sdbrick.txt -r 0 -n 1 -d 3)
 #PAMGEN_ADD_TEST( 70 ARGS -f ssdbrick.txt -r 0 -n 1 -d 3)
@@ -185,6 +186,7 @@ report5.txt report3.txt report2.txt report1.txt geom_warp.txt ui2d.txt ui.txt
 mesh.txt lbrick.txt brick.txt tri.txt tri_proc.txt 2dtri.txt 2dtribis.txt
 hbrick.txt 3dbj.txt trisect_multi_theta.txt trisect_multi_theta_2d.txt
 double_ss_ns.txt 360tri.txt dual_tube.txt d2brick2d.txt  d2dtri.txt
-d360tri.txt  dbrick.txt sdbrick.txt ssdbrick.txt  dgeom_warp2d.txt ${RES_FILES}
+d360tri.txt  dbrick.txt sdbrick.txt ssdbrick.txt  dgeom_warp2d.txt
+1tri_elem.txt ${RES_FILES}
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test_files
   )

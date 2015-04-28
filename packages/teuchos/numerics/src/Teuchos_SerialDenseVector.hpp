@@ -89,6 +89,11 @@ namespace Teuchos {
     //! Copy Constructor
     SerialDenseVector(const SerialDenseVector<OrdinalType,ScalarType>& Source);
 
+    //! Copy Constructor
+    /*! \note Allow explicit control of whether a deep copy or view of \c Source is made with this copy constructor.
+    */
+    SerialDenseVector(DataAccess CV, const SerialDenseVector<OrdinalType, ScalarType> &Source);
+    
     //! Destructor
     virtual ~SerialDenseVector ();
   //@}
@@ -222,6 +227,10 @@ namespace Teuchos {
   template<typename OrdinalType, typename ScalarType>
   SerialDenseVector<OrdinalType, ScalarType>::SerialDenseVector(const SerialDenseVector<OrdinalType, ScalarType> &Source) :
     SerialDenseMatrix<OrdinalType,ScalarType>( Source ) {}
+
+  template<typename OrdinalType, typename ScalarType>
+  SerialDenseVector<OrdinalType, ScalarType>::SerialDenseVector(DataAccess CV, const SerialDenseVector<OrdinalType, ScalarType> &Source) :
+    SerialDenseMatrix<OrdinalType,ScalarType>( CV, Source ) {}
 
   template<typename OrdinalType, typename ScalarType>
   SerialDenseVector<OrdinalType, ScalarType>::~SerialDenseVector() {}
