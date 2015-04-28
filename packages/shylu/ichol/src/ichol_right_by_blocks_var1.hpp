@@ -63,7 +63,7 @@ namespace Example {
 
       future_type f = task_factory_type
         ::create(policy, 
-                 Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,AlgoTrsm::ForRightBlocked>
+                 Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,AlgoTrsm::ForFactorRightBlocked>
                  ::TaskFunctor<ParallelForType,double,value_type>(Diag::NonUnit, 1.0, aa, bb));
       
       // trsm dependence
@@ -119,7 +119,7 @@ namespace Example {
             value_type &cc = c.Value(idx);
             future_type f = task_factory_type
               ::create(policy, 
-                       Herk<Uplo::Upper,Trans::ConjTranspose,AlgoHerk::ForRightBlocked>
+                       Herk<Uplo::Upper,Trans::ConjTranspose,AlgoHerk::ForFactorRightBlocked>
                        ::TaskFunctor<ParallelForType,double,value_type>(-1.0, val_at_i, 1.0, cc));
             
             // dependence
@@ -140,8 +140,9 @@ namespace Example {
             value_type &cc = c.Value(idx);
             future_type f = task_factory_type
               ::create(policy, 
-                       Gemm<Trans::ConjTranspose,Trans::NoTranspose,AlgoGemm::ForRightBlocked>
-                       ::TaskFunctor<ParallelForType,double,value_type>(-1.0, val_at_i, val_at_j, 1.0, cc));
+                       Gemm<Trans::ConjTranspose,Trans::NoTranspose,AlgoGemm::ForFactorRightBlocked>
+                       ::TaskFunctor<ParallelForType,double,
+                       value_type,value_type,value_type>(-1.0, val_at_i, val_at_j, 1.0, cc));
             
             // dependence
             task_factory_type::addDependence(policy, f, val_at_i.Future());

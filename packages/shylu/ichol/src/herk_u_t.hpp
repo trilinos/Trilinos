@@ -17,7 +17,7 @@ namespace Example {
   KOKKOS_INLINE_FUNCTION
   int
   Herk<Uplo::Upper,Trans::ConjTranspose,
-       AlgoHerk::ForRightBlocked>
+       AlgoHerk::ForFactorRightBlocked>
   ::invoke(const typename CrsExecViewType::policy_type::member_type &member,
            const ScalarType alpha,
            const CrsExecViewType &A,
@@ -28,7 +28,7 @@ namespace Example {
     typedef typename CrsExecViewType::row_view_type     row_view_type;
     typedef typename CrsExecViewType::team_factory_type team_factory_type;
 
-    scale<ParallelForType,ScalarType,CrsExecViewType>(member, beta, C);
+    scaleCrsMatrix<ParallelForType,ScalarType,CrsExecViewType>(member, beta, C);
 
     // row_view_type a, c;
     for (ordinal_type k=0;k<A.NumRows();++k) {
