@@ -267,6 +267,7 @@ SystemInterface::SystemInterface()
     doNorms              (false),
     pedantic             (false),
     interpolating        (false),
+    by_name              (false),
     coord_tol            ( ABSOLUTE, 1.0e-6, 0.0 ),
     time_tol             ( RELATIVE, 1.0e-6, 1.0e-15 ),
     final_time_tol       ( RELATIVE, 0.0,    0.0 ),
@@ -379,6 +380,8 @@ void SystemInterface::enroll_options()
   options_.enroll("match_file_order", GetLongOption::NoValue,
 		  "Invokes a matching algorithm using the node and element position\n"
 		  "\t\torder in the two files.", 0);
+  options_.enroll("match_by_name", GetLongOption::NoValue,
+		  "Match element blocks, nodesets, and sidesets by name instead of by id.", 0);
   options_.enroll("show_unmatched", GetLongOption::NoValue,
 		  "If the -partial switch is given, this prints out the elements that did not match.", 0);
   options_.enroll("dumpmap", GetLongOption::NoValue,
@@ -710,6 +713,10 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("match_file_order")) {
     map_flag = FILE_ORDER;
+  }
+
+  if (options_.retrieve( "match_by_name")) {
+    by_name = true;
   }
 
   if (options_.retrieve("map") || options_.retrieve("m")) {

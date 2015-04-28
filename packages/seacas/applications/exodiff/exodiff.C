@@ -1398,8 +1398,11 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	Exo_Block<INT>* eblock2 = NULL;
 	int b2 = b;
 	if (elmt_map == 0 && !interface.summary_flag) {
-	  size_t id = eblock1->Id();
-	  eblock2 = file2.Get_Elmt_Block_by_Id(id);
+	  if (interface.by_name)
+	    eblock2 = file2.Get_Elmt_Block_by_Name(eblock1->Name());
+	  else
+	    eblock2 = file2.Get_Elmt_Block_by_Id(eblock1->Id());
+	    
 	  SMART_ASSERT(eblock2 != NULL);
 	  if (!eblock2->is_valid_var(vidx2)) {
 	    continue;
@@ -1424,7 +1427,10 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	if (elmt_map == 0 && !interface.summary_flag) {
 	  // Without mapping, get result for this block.
 	  size_t id = eblock1->Id();
-	  eblock2 = file2.Get_Elmt_Block_by_Id(id);
+	  if (interface.by_name)
+	    eblock2 = file2.Get_Elmt_Block_by_Name(eblock1->Name());
+	  else
+	    eblock2 = file2.Get_Elmt_Block_by_Id(id);
 	  eblock2->Load_Results(t2.step1, t2.step2, t2.proportion, vidx2);
 	  vals2 = eblock2->Get_Results(vidx2);
 
@@ -1573,9 +1579,11 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	Node_Set<INT>* nset2 = NULL;
 	if (!interface.summary_flag) {
 	  size_t id = nset1->Id();
-	  nset2 = file2.Get_Node_Set_by_Id(id);
+	  if (interface.by_name)
+	    nset2 = file2.Get_Node_Set_by_Name(nset1->Name());
+	  else
+	    nset2 = file2.Get_Node_Set_by_Id(id);
 	  SMART_ASSERT(nset2 != NULL);
-	  SMART_ASSERT(nset2->Id() == nset1->Id());
 	  if (!nset2->is_valid_var(vidx2)) continue;
 	}
         
@@ -1736,8 +1744,10 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 
 	Side_Set<INT>* sset2 = NULL;
 	if (!interface.summary_flag) {
-	  size_t id = sset1->Id();
-	  sset2 = file2.Get_Side_Set_by_Id(id);
+	  if (interface.by_name)
+	    sset2 = file2.Get_Side_Set_by_Name(sset1->Name());
+	  else
+	    sset2 = file2.Get_Side_Set_by_Id(sset1->Id());
 	  if (sset2 == NULL || !sset2->is_valid_var(vidx2)) continue;
 	}
         
@@ -1877,7 +1887,12 @@ bool diff_element_attributes(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2,
 	
     size_t block_id = eblock1->Id();
     
-    Exo_Block<INT> *eblock2 = file2.Get_Elmt_Block_by_Id(block_id);
+    Exo_Block<INT>* eblock2 = NULL;
+    if (interface.by_name)
+      eblock2 = file2.Get_Elmt_Block_by_Name(eblock1->Name());
+    else
+      eblock2 = file2.Get_Elmt_Block_by_Id(block_id);
+
     SMART_ASSERT(eblock2 != NULL);
 
     if (!diff_was_output && (eblock1->attr_count() > 0 || eblock2->attr_count() > 0)) {

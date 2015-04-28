@@ -84,10 +84,12 @@ class Exo_Entity {
   void          Free_Attributes();
 
   const std::string& Get_Attribute_Name(int attr_index) const;
+  const std::string& Name() const {return name_;}
   const std::vector<std::string>& Attribute_Names() const {return attributeNames;}
   int Find_Attribute_Index(const std::string &name) const;
 
  protected:
+  std::string name_;
   int fileId;
   ex_entity_id id_;
   size_t index_;          // 0-offset index into Exodus nodeset list.
@@ -103,6 +105,9 @@ class Exo_Entity {
 
   // Return "Element Block", "Nodeset", "Sideset, depending on underlying type.
   virtual const char* label() const = 0;
+
+  // Return "block", "nodelist", "surface", depending on underlying type.
+  virtual const char* short_label() const = 0;
 
   // Return EX_ELEM_BLOCK, EX_NODE_SET, ... of underlying type
   virtual EXOTYPE exodus_type() const = 0;

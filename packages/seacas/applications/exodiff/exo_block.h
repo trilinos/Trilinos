@@ -88,6 +88,7 @@ private:
 
   EXOTYPE exodus_type() const;
   const char* label() const {return "Element Block";}
+  const char* short_label() const {return "block";}
 
   std::string elmt_type;
   int         num_nodes_per_elmt;
