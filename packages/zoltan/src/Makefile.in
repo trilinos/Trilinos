@@ -87,6 +87,7 @@ target_triplet = @target@
 # List of all Fortran Module files to install in $(includedir)
 # ------------------------------------------------------------------------
 @BUILD_ZOLTAN_F90_INTERFACE_TRUE@am__append_1 = $(FORTRAN_MODULES)
+@BUILD_TESTS_TRUE@@BUILD_ZOLTAN_F90_INTERFACE_TRUE@@HAVE_MPI_TRUE@am__append_2 = fdriver
 subdir = src
 DIST_COMMON = $(am__include_HEADERS_DIST) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
@@ -1171,15 +1172,14 @@ nodist_execinclude_HEADERS = include/Zoltan_config.h
 # the files included in fwrap.f90.  
 AM_FCFLAGS = -I@abs_top_srcdir@/src/fort 
 AM_FFLAGS = -I@abs_top_srcdir@/src/fort 
-@BUILD_ZOLTAN_F90_INTERFACE_FALSE@FDRIVER_SUBDIR = 
-@BUILD_ZOLTAN_F90_INTERFACE_TRUE@@HAVE_MPI_FALSE@FDRIVER_SUBDIR = 
 # Build zfdrive only if HAVE_MPI; I haven't figured out a proper build of
 # siMPI's Fortran interface yet (and serial zfdrive is not an important
 # use case).
-@BUILD_ZOLTAN_F90_INTERFACE_TRUE@@HAVE_MPI_TRUE@FDRIVER_SUBDIR = fdriver
+FDRIVER_SUBDIR = $(am__append_2)
+@BUILD_TESTS_FALSE@SUBDIRS = .
 
 #SUBDIRS = . 
-SUBDIRS = . driver $(FDRIVER_SUBDIR)
+@BUILD_TESTS_TRUE@SUBDIRS = . driver $(FDRIVER_SUBDIR)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
@@ -3860,16 +3860,27 @@ include $(top_builddir)/Makefile.export.zoltan
 
 # ------------------------------------------------------------------------
 # Explicit FORTRAN dependencies to allow parallel builds (make -j)
+# KDD:  4/28/15  Specifying the dependencies does not seem to help 
+# KDD:           the parallel F90 builds (although articles online 
+# KDD:           indicate it should).  I'll comment them out
+# KDD:           and use .NOTPARALLEL: instead.
 # ------------------------------------------------------------------------
 
-@BUILD_ZOLTAN_F90_INTERFACE_TRUE@@F90_MODULE_LOWERCASE_TRUE@zoltan.mod:  zoltan_types.mod zoltan_user_data.mod $(srcdir)/fort/fwrap.f90 \
-@BUILD_ZOLTAN_F90_INTERFACE_TRUE@@F90_MODULE_LOWERCASE_TRUE@             $(EXTRA_FORTRAN_H)
-@BUILD_ZOLTAN_F90_INTERFACE_TRUE@@F90_MODULE_LOWERCASE_TRUE@zoltan_user_data.mod:  $(srcdir)/fort/zoltan_user_data.f90 zoltan_types.mod
-@BUILD_ZOLTAN_F90_INTERFACE_TRUE@@F90_MODULE_LOWERCASE_TRUE@zoltan_types.mod:  $(srcdir)/fort/ztypes.f90
-@BUILD_ZOLTAN_F90_INTERFACE_TRUE@@F90_MODULE_LOWERCASE_FALSE@ZOLTAN.mod:  ZOLTAN_TYPES.mod ZOLTAN_USER_DATA.mod $(srcdir)/fort/fwrap.f90 \
-@BUILD_ZOLTAN_F90_INTERFACE_TRUE@@F90_MODULE_LOWERCASE_FALSE@             $(EXTRA_FORTRAN_H)
-@BUILD_ZOLTAN_F90_INTERFACE_TRUE@@F90_MODULE_LOWERCASE_FALSE@ZOLTAN_USER_DATA.mod:  $(srcdir)/fort/zoltan_user_data.f90 ZOLTAN_TYPES.mod
-@BUILD_ZOLTAN_F90_INTERFACE_TRUE@@F90_MODULE_LOWERCASE_FALSE@ZOLTAN_TYPES.mod:  $(srcdir)/fort/ztypes.f90
+#if BUILD_ZOLTAN_F90_INTERFACE
+#if F90_MODULE_LOWERCASE
+#zoltan.mod:  zoltan_types.mod zoltan_user_data.mod $(srcdir)/fort/fwrap.f90 \
+#             $(EXTRA_FORTRAN_H)
+#zoltan_user_data.mod:  $(srcdir)/fort/zoltan_user_data.f90 zoltan_types.mod
+#zoltan_types.mod:  $(srcdir)/fort/ztypes.f90
+#else
+#ZOLTAN.mod:  ZOLTAN_TYPES.mod ZOLTAN_USER_DATA.mod $(srcdir)/fort/fwrap.f90 \
+#             $(EXTRA_FORTRAN_H)
+#ZOLTAN_USER_DATA.mod:  $(srcdir)/fort/zoltan_user_data.f90 ZOLTAN_TYPES.mod
+#ZOLTAN_TYPES.mod:  $(srcdir)/fort/ztypes.f90
+#endif
+#endif
+
+@BUILD_ZOLTAN_F90_INTERFACE_TRUE@.NOTPARALLEL:
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
