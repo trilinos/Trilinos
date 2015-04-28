@@ -295,7 +295,7 @@ bool Selector::is_empty(EntityRank entity_rank) const
     BulkData * mesh = this->find_mesh();
     ThrowRequireMsg(mesh != NULL,
                     "ERROR, Selector::empty not available if selector expression does not involve any mesh Parts.");
-    if (mesh->synchronized_state() == BulkData::MODIFIABLE) {
+    if (mesh->in_modifiable_state()) {
       BucketVector const& buckets = this->get_buckets(entity_rank);
       for(size_t i=0; i<buckets.size(); ++i) {
           if (buckets[i]->size() >0) {

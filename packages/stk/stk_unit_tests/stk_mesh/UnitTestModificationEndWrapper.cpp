@@ -40,7 +40,7 @@ namespace mesh {
 
 bool UnitTestModificationEndWrapper::wrap(stk::mesh::BulkData& mesh)
 {
-  return mesh.internal_modification_end(BulkData::MOD_END_COMPRESS_AND_SORT );
+  return mesh.modification_end(BulkData::MOD_END_COMPRESS_AND_SORT );
 }
 
 } // namespace mesh

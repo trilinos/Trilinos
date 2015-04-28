@@ -53,8 +53,7 @@ BoxFixture::BoxFixture( stk::ParallelMachine pm ,
     m_comm_rank( stk::parallel_machine_rank( pm ) ),
     m_comm_size( stk::parallel_machine_size( pm ) ),
     m_elem_part( m_fem_meta.declare_part_with_topology("elem_part", stk::topology::HEX_8) ),
-    m_elem_topology( stk::topology::HEX_8 ),
-    m_previous_state ( stk::mesh::BulkData::MODIFIABLE )
+    m_elem_topology( stk::topology::HEX_8 )
 {}
 
 Entity BoxFixture::get_new_entity ( EntityRank rank , EntityId parallel_dependent_id )

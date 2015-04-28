@@ -668,7 +668,7 @@ inline bool BulkData::element_side_polarity( const Entity elem ,
 
 inline VolatileFastSharedCommMapOneRank const& BulkData::volatile_fast_shared_comm_map(EntityRank rank) const
 {
-  ThrowAssert(synchronized_state() == SYNCHRONIZED);
+  ThrowAssert(this->in_synchronized_state());
   ThrowAssertMsg(rank < stk::topology::ELEMENT_RANK, "Cannot shared entities of rank: " << rank);
   return m_volatile_fast_shared_comm_map[rank];
 }
@@ -681,12 +681,12 @@ inline Part& BulkData::ghosting_part(const Ghosting& ghosting) const
 
 inline bool BulkData::in_index_range(Entity entity) const
 {
-  return entity.local_offset() < m_entity_states.size();
+  return entity.local_offset() < m_entity_keys.size();
 }
 
 inline bool BulkData::is_valid(Entity entity) const
 {
-  return (entity.local_offset() < m_entity_states.size()) && (m_entity_states[entity.local_offset()] != Deleted);
+  return (this->in_index_range(entity) && !m_meshModification.is_entity_deleted(entity.local_offset()) );
 }
 
 inline const MeshIndex& BulkData::mesh_index(Entity entity) const
@@ -731,8 +731,7 @@ inline EntityKey BulkData::entity_key(Entity entity) const
 inline EntityState BulkData::state(Entity entity) const
 {
   entity_getter_debug_check(entity);
-
-  return static_cast<EntityState>(m_entity_states[entity.local_offset()]);
+  return m_meshModification.get_entity_state(entity.local_offset());
 }
 
 inline void BulkData::internal_mark_entity(Entity entity, entitySharing sharedType)
@@ -877,7 +876,7 @@ inline void BulkData::set_state(Entity entity, EntityState entity_state)
 {
   entity_setter_debug_check(entity);
 
-  m_entity_states[entity.local_offset()] = static_cast<uint16_t>(entity_state);
+  m_meshModification.set_entity_state(entity.local_offset(), entity_state);
   m_mark_entity[entity.local_offset()] = NOT_MARKED;
 }
 

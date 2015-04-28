@@ -426,7 +426,7 @@ void BucketRepository::sync_bucket_ids(EntityRank entity_rank)
 
 std::vector<Partition *> BucketRepository::get_partitions(EntityRank rank) const
 {
-  if (m_mesh.synchronized_state() != BulkData::SYNCHRONIZED)
+  if (!m_mesh.in_synchronized_state())
   {
     std::vector<Partition *>();
   }
