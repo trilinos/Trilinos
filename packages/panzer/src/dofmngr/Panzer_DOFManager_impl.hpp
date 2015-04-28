@@ -475,7 +475,14 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
 
  /* 11. Create a map using local sums to generate final GIDs.
    */
-  RCP<const Map> gid_map = Tpetra::createContigMap<LO,GO>(-1,localsum, comm);
+  RCP<const Map> gid_map = 
+    rcp (new Map (Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid (), 
+		  static_cast<size_t> (localsum), static_cast<GO> (0), comm));
+  // mfh 28 Apr 2015: This doesn't work because createContigMap
+  // assumes the default Node type, but Panzer might use a different
+  // Node type.  Just call the Map constructor; don't call those
+  // nonmember "constructors."
+  //RCP<const Map> gid_map = Tpetra::createContigMap<LO,GO>(-1,localsum, comm);
 
  /* 12. Iterate through the non-overlapping MV and assign GIDs to 
    *     the necessary points. (Assign a -1 elsewhere.)
