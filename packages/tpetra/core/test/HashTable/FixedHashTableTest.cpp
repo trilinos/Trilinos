@@ -96,7 +96,11 @@ namespace { // (anonymous)
 
   // Test contiguous keys, with the constructor that takes a
   // Teuchos::ArrayView of keys and a single starting value.
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_ArrayView, ContigKeysStartingValue, KeyType, ValueType, DeviceType)
+  //
+  // ValueType and KeyType are "backwards" because they correspond to
+  // LO resp. GO.  (LO, GO) is the natural order for Tpetra's test
+  // macros.
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_ArrayView, ContigKeysStartingValue, ValueType, KeyType, DeviceType)
   {
     using std::endl;
     typedef Tpetra::Details::FixedHashTable<KeyType, ValueType> table_type;
@@ -150,6 +154,66 @@ namespace { // (anonymous)
     }
   }
 
+  // Test noncontiguous keys, with the constructor that takes a
+  // Teuchos::ArrayView of keys and a single starting value.
+  //
+  // ValueType and KeyType are "backwards" because they correspond to
+  // LO resp. GO.  (LO, GO) is the natural order for Tpetra's test
+  // macros.
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_ArrayView, NoncontigKeysStartingValue, ValueType, KeyType, DeviceType)
+  {
+    using std::endl;
+    typedef Tpetra::Details::FixedHashTable<KeyType, ValueType> table_type;
+    typedef typename Kokkos::View<const KeyType*, DeviceType>::size_type size_type;
+    typedef typename DeviceType::execution_space execution_space;
+
+    out << "Test noncontiguous keys, with constructor that takes a single "
+      "starting value and produces contiguous values" << endl;
+    Teuchos::OSTab tab0 (out);
+
+    bool mustFinalize = false;
+    if (! execution_space::is_initialized ()) {
+      execution_space::initialize ();
+      mustFinalize = true;
+    }
+
+    const size_type numKeys = 5;
+    Kokkos::View<KeyType*, DeviceType> keys ("keys", numKeys);
+    auto keys_h = Kokkos::create_mirror_view (keys);
+    keys_h(0) = static_cast<KeyType> (10);
+    keys_h(1) = static_cast<KeyType> (8);
+    keys_h(2) = static_cast<KeyType> (12);
+    keys_h(3) = static_cast<KeyType> (17);
+    keys_h(4) = static_cast<KeyType> (7);
+    Kokkos::deep_copy (keys, keys_h);
+
+    // Pick something other than 0, just to make sure that it works.
+    const ValueType startingValue = 1;
+
+    // The hash table doesn't need this; we use it only for testing.
+    Kokkos::View<ValueType*, DeviceType> vals ("vals", numKeys);
+    auto vals_h = Kokkos::create_mirror_view (vals);
+    for (size_type i = 0; i < numKeys; ++i) {
+      vals_h(i) = static_cast<ValueType> (i) + startingValue;
+    }
+    Kokkos::deep_copy (vals, vals_h);
+
+    Teuchos::ArrayView<const KeyType> keys_av (keys_h.ptr_on_device (), numKeys);
+    out << " Create table" << endl;
+
+    Teuchos::RCP<table_type> table;
+    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue)) );
+    {
+      Teuchos::OSTab tab1 (out);
+      success = TestFixedHashTable<KeyType, ValueType, DeviceType>::testKeys (out, *table, keys, vals);
+      TEST_EQUALITY_CONST( success, true );
+    }
+
+    if (mustFinalize) {
+      execution_space::finalize ();
+    }
+  }
+
   //
   // Instantiations of the templated unit test(s) above.
   //
@@ -159,6 +223,11 @@ namespace { // (anonymous)
   // them.  It defines some typedefs to avoid this.)
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
+  // Set of all unit tests, templated on all three template parameters.
+#define UNIT_TEST_GROUP_3( LO, GO, DEVICE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, ContigKeysStartingValue, LO, GO, DEVICE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, NoncontigKeysStartingValue, LO, GO, DEVICE )
+
   // The typedefs below are there because macros don't like arguments
   // with commas in them.
 
@@ -166,7 +235,9 @@ namespace { // (anonymous)
   typedef Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace> serial_device_type;
 
 #define UNIT_TEST_GROUP_SERIAL( LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, ContigKeysStartingValue, LO, GO, serial_device_type )
+  UNIT_TEST_GROUP_3( LO, GO, serial_device_type )
+
+  TPETRA_INSTANTIATE_LG( UNIT_TEST_GROUP_SERIAL )
 
 #else
 #  define UNIT_TEST_GROUP_SERIAL( LO, GO )
@@ -177,7 +248,9 @@ namespace { // (anonymous)
   typedef Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace> openmp_device_type;
 
 #define UNIT_TEST_GROUP_OPENMP( LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, ContigKeysStartingValue, LO, GO, openmp_device_type )
+  UNIT_TEST_GROUP_3( LO, GO, openmp_device_type )
+
+  TPETRA_INSTANTIATE_LG( UNIT_TEST_GROUP_OPENMP )
 
 #else
 #  define UNIT_TEST_GROUP_OPENMP( LO, GO )
@@ -188,7 +261,9 @@ namespace { // (anonymous)
   typedef Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace> threads_device_type;
 
 #define UNIT_TEST_GROUP_PTHREAD( LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, ContigKeysStartingValue, LO, GO, threads_device_type )
+  UNIT_TEST_GROUP_3( LO, GO, threads_device_type )
+
+  TPETRA_INSTANTIATE_LG( UNIT_TEST_GROUP_PTHREAD )
 
 #else
 #  define UNIT_TEST_GROUP_PTHREAD( LO, GO )
@@ -199,7 +274,9 @@ namespace { // (anonymous)
   typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> cuda_device_type;
 
 #define UNIT_TEST_GROUP_CUDA( LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, ContigKeysStartingValue, LO, GO, cuda_device_type )
+  UNIT_TEST_GROUP_3( LO, GO, cuda_device_type )
+
+  TPETRA_INSTANTIATE_LG( UNIT_TEST_GROUP_CUDA )
 
 #else
 #  define UNIT_TEST_GROUP_CUDA( LO, GO )
@@ -210,25 +287,12 @@ namespace { // (anonymous)
   typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace> cuda_uvm_device_type;
 
 #define UNIT_TEST_GROUP_CUDA_UVM( LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, ContigKeysStartingValue, LO, GO, cuda_uvm_device_type )
+  UNIT_TEST_GROUP_3( LO, GO, cuda_uvm_device_type )
+
+  TPETRA_INSTANTIATE_LG( UNIT_TEST_GROUP_CUDA_UVM )
 
 #else
 #  define UNIT_TEST_GROUP_CUDA_UVM( LO, GO )
 #endif // KOKKOS_HAVE_CUDA
-
-
-#define UNIT_TEST_GROUP( LO, GO ) \
-  UNIT_TEST_GROUP_SERIAL( LO, GO ) \
-  UNIT_TEST_GROUP_OPENMP( LO, GO ) \
-  UNIT_TEST_GROUP_THREADS( LO, GO ) \
-  UNIT_TEST_GROUP_CUDA( LO, GO ) \
-  UNIT_TEST_GROUP_CUDA_UVM( LO, GO )
-
-
-  // This is the line that actually instantiates the unit tests.  It
-  // does so for KeyType = LO (local ordinal type) and ValueType = GO
-  // (global ordinal type), over all (LO,GO) type combinations over
-  // which Tpetra tests.
-  TPETRA_INSTANTIATE_LG( UNIT_TEST_GROUP )
 
 } // namespace (anonymous)

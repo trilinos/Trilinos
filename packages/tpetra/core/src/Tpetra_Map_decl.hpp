@@ -49,6 +49,7 @@
 #include <Tpetra_ConfigDefs.hpp>
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_Describable.hpp>
+#include <Tpetra_Details_FixedHashTable_decl.hpp>
 
 // mfh 27 Apr 2013: If HAVE_TPETRA_FIXED_HASH_TABLE is defined (which
 // it is by default), then Map will used the fixed-structure hash
@@ -76,9 +77,6 @@ namespace Tpetra {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
     // Forward declaration of TieBreak
     template <class LO, class GO> class TieBreak;
-
-    template<class GlobalOrdinal, class LocalOrdinal>
-    class FixedHashTable;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
     /// \class MapCloner

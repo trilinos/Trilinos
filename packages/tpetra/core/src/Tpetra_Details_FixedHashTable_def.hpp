@@ -53,8 +53,8 @@
 namespace Tpetra {
 namespace Details {
 
-template<typename KeyType, typename ValueType>
-int FixedHashTable<KeyType, ValueType>::hashFunc (const KeyType key) const {
+template<class KeyType, class ValueType, class DeviceType>
+int FixedHashTable<KeyType, ValueType, DeviceType>::hashFunc (const KeyType key) const {
 #ifdef TPETRA_USE_MURMUR_HASH
   uint32_t k;
   MurmurHash3_x86_32 ((void *) &key, sizeof (KeyType), 1, (void *) &k);
@@ -79,9 +79,9 @@ int FixedHashTable<KeyType, ValueType>::hashFunc (const KeyType key) const {
 #endif
 }
 
-template<typename KeyType, typename ValueType>
+template<class KeyType, class ValueType, class DeviceType>
 int
-FixedHashTable<KeyType, ValueType>::getRecommendedSize (const int size)
+FixedHashTable<KeyType, ValueType, DeviceType>::getRecommendedSize (const int size)
 {
   // A large list of prime numbers.
   // Based on a recommendation by Andres Valloud in hash forums.
@@ -139,8 +139,8 @@ FixedHashTable<KeyType, ValueType>::getRecommendedSize (const int size)
   return hsize;
 }
 
-template<typename KeyType, typename ValueType>
-FixedHashTable<KeyType, ValueType>::
+template<class KeyType, class ValueType, class DeviceType>
+FixedHashTable<KeyType, ValueType, DeviceType>::
 FixedHashTable (const ArrayView<const KeyType>& keys) :
   size_ (0),
   rawPtr_ (NULL),
@@ -150,8 +150,8 @@ FixedHashTable (const ArrayView<const KeyType>& keys) :
   init (keys, Teuchos::as<ValueType> (0));
 }
 
-template<typename KeyType, typename ValueType>
-FixedHashTable<KeyType, ValueType>::
+template<class KeyType, class ValueType, class DeviceType>
+FixedHashTable<KeyType, ValueType, DeviceType>::
 FixedHashTable (const ArrayView<const KeyType>& keys,
                 const ValueType startingValue) :
   size_ (0),
@@ -162,8 +162,8 @@ FixedHashTable (const ArrayView<const KeyType>& keys,
   init (keys, startingValue);
 }
 
-template<typename KeyType, typename ValueType>
-FixedHashTable<KeyType, ValueType>::
+template<class KeyType, class ValueType, class DeviceType>
+FixedHashTable<KeyType, ValueType, DeviceType>::
 FixedHashTable (const ArrayView<const KeyType>& keys,
                 const ArrayView<const ValueType>& vals) :
   size_ (0),
@@ -174,9 +174,9 @@ FixedHashTable (const ArrayView<const KeyType>& keys,
   init (keys, vals);
 }
 
-template<typename KeyType, typename ValueType>
+template<class KeyType, class ValueType, class DeviceType>
 void
-FixedHashTable<KeyType, ValueType>::
+FixedHashTable<KeyType, ValueType, DeviceType>::
 init (const ArrayView<const KeyType>& keys,
       const ValueType startingValue)
 {
@@ -278,9 +278,9 @@ init (const ArrayView<const KeyType>& keys,
 }
 
 
-template<typename KeyType, typename ValueType>
+template<class KeyType, class ValueType, class DeviceType>
 void
-FixedHashTable<KeyType, ValueType>::
+FixedHashTable<KeyType, ValueType, DeviceType>::
 init (const ArrayView<const KeyType>& keys,
       const ArrayView<const ValueType>& vals)
 {
@@ -382,8 +382,8 @@ init (const ArrayView<const KeyType>& keys,
 }
 
 
-template<typename KeyType, typename ValueType>
-FixedHashTable<KeyType, ValueType>::
+template<class KeyType, class ValueType, class DeviceType>
+FixedHashTable<KeyType, ValueType, DeviceType>::
 FixedHashTable (const FixedHashTable & obj) :
   size_ (obj.size_),
   ptr_ (obj.ptr_),
@@ -393,9 +393,9 @@ FixedHashTable (const FixedHashTable & obj) :
   hasDuplicateKeys_ (obj.hasDuplicateKeys_)
 {}
 
-template<typename KeyType, typename ValueType>
+template<class KeyType, class ValueType, class DeviceType>
 ValueType
-FixedHashTable<KeyType, ValueType>::
+FixedHashTable<KeyType, ValueType, DeviceType>::
 get (const KeyType key) const
 {
   const int hashVal = hashFunc (key);
@@ -420,8 +420,8 @@ get (const KeyType key) const
   return Teuchos::OrdinalTraits<ValueType>::invalid ();
 }
 
-template <typename KeyType, typename ValueType>
-std::string FixedHashTable<KeyType, ValueType>::description() const {
+template <class KeyType, class ValueType, class DeviceType>
+std::string FixedHashTable<KeyType, ValueType, DeviceType>::description() const {
   std::ostringstream oss;
   oss << "FixedHashTable<"
       << Teuchos::TypeNameTraits<KeyType>::name () << ","
@@ -431,9 +431,9 @@ std::string FixedHashTable<KeyType, ValueType>::description() const {
   return oss.str();
 }
 
-template <typename KeyType, typename ValueType>
+template <class KeyType, class ValueType, class DeviceType>
 void
-FixedHashTable<KeyType, ValueType>::
+FixedHashTable<KeyType, ValueType, DeviceType>::
 describe (Teuchos::FancyOStream &out,
           const Teuchos::EVerbosityLevel verbLevel) const
 {

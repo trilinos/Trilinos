@@ -44,9 +44,10 @@
 #ifndef TPETRA_DETAILS_FIXEDHASHTABLE_DECL_HPP
 #define TPETRA_DETAILS_FIXEDHASHTABLE_DECL_HPP
 
-#include <Teuchos_Describable.hpp>
 #include <Tpetra_ConfigDefs.hpp>
 #include <Teuchos_ArrayRCP.hpp>
+#include <Teuchos_Describable.hpp>
+#include <Kokkos_Core.hpp>
 
 namespace Tpetra {
 namespace Details {
@@ -75,7 +76,9 @@ namespace Details {
 /// only \f$O(1)\f$ memory allocation calls, rather than one for each
 /// (key,value) pair or hash bucket.  The compressed sparse row
 /// strategy may also improve locality for hash table lookups.
-template<typename KeyType, typename ValueType>
+template<class KeyType,
+         class ValueType,
+         class DeviceType = Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace> >
 class FixedHashTable : public Teuchos::Describable {
 public:
   /// \brief Constructor for arbitrary keys and contiguous values
