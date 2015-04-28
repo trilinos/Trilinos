@@ -766,3 +766,21 @@ MAINTAINERCLEANFILES = Makefile.in
 
 MOSTLYCLEANFILES = *.mod
 
+# ------------------------------------------------------------------------
+# Explicit FORTRAN dependencies to allow parallel builds (make -j)
+# ------------------------------------------------------------------------
+
+if BUILD_ZOLTAN_F90_INTERFACE
+if F90_MODULE_LOWERCASE
+zoltan.mod:  zoltan_types.mod zoltan_user_data.mod $(srcdir)/fort/fwrap.f90 \
+             $(EXTRA_FORTRAN_H)
+zoltan_user_data.mod:  $(srcdir)/fort/zoltan_user_data.f90 zoltan_types.mod
+zoltan_types.mod:  $(srcdir)/fort/ztypes.f90
+else
+ZOLTAN.mod:  ZOLTAN_TYPES.mod ZOLTAN_USER_DATA.mod $(srcdir)/fort/fwrap.f90 \
+             $(EXTRA_FORTRAN_H)
+ZOLTAN_USER_DATA.mod:  $(srcdir)/fort/zoltan_user_data.f90 ZOLTAN_TYPES.mod
+ZOLTAN_TYPES.mod:  $(srcdir)/fort/ztypes.f90
+endif
+endif
+
