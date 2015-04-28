@@ -72,8 +72,14 @@ TRIBITS_ADD_EXECUTABLE(
 # ===================
 
 TRIBITS_ADD_EXECUTABLE(
-  partition
-  SOURCES partition.cpp
+  crs_matrix_partition
+  SOURCES crs_matrix_partition.cpp
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE(
+  dense_matrix_partition
+  SOURCES dense_matrix_partition.cpp
   COMM serial mpi
   )
 
