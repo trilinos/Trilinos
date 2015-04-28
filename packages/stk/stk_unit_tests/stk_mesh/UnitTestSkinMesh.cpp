@@ -46,30 +46,28 @@
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_mesh/base/CreateEdges.hpp"
+#include "stk_unit_test_utils/ioUtils.hpp"
 
-TEST( SkinMesh, SimpleHex)
+void test_skin_mesh_with_hexes(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
 {
-  const unsigned X = 5, Y = 5, Z = 5;
-  stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, X, Y, Z);
+  const int spatialDim = 3;
+  stk::mesh::MetaData meta(spatialDim);
 
-  stk::mesh::EntityRank side_rank = fixture.m_meta.side_rank();
+  stk::mesh::EntityRank side_rank = meta.side_rank();
 
-  stk::mesh::Part & skin_part = fixture.m_meta.declare_part("SkinPart", side_rank);
-  stk::mesh::Part & skin_part_2 = fixture.m_meta.declare_part("SkinPart_2", side_rank);
-  stk::mesh::Part & locally_owned = fixture.m_meta.locally_owned_part();
+  stk::mesh::Part & skin_part = meta.declare_part("SkinPart", side_rank);
+  stk::mesh::Part & skin_part_2 = meta.declare_part("SkinPart_2", side_rank);
+  stk::mesh::Part & locally_owned = meta.locally_owned_part();
 
-  fixture.m_meta.commit();
-
-  fixture.generate_mesh();
-
-  stk::mesh::BulkData & mesh = fixture.m_bulk_data;
+  stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD, autoAuraOption);
+  stk::unit_test_util::fill_mesh_using_stk_io("generated:5x5x5", mesh, MPI_COMM_WORLD);
 
   ASSERT_EQ( 0u, stk::mesh::count_selected_entities( skin_part, mesh.buckets(stk::topology::NODE_RANK)) );
   ASSERT_EQ( 0u, stk::mesh::count_selected_entities( skin_part, mesh.buckets(side_rank)) );
 
-  stk::mesh::create_edges(mesh, fixture.m_meta.universal_part());
+  stk::mesh::create_edges(mesh, meta.universal_part());
 
-  std::cout<<"created "<<stk::mesh::count_selected_entities(fixture.m_meta.universal_part(), mesh.buckets(stk::topology::EDGE_RANK)) << " edges."<<std::endl;
+  std::cout<<"created "<<stk::mesh::count_selected_entities(meta.universal_part(), mesh.buckets(stk::topology::EDGE_RANK)) << " edges."<<std::endl;
 
   // skin the mesh
   {
@@ -106,6 +104,16 @@ TEST( SkinMesh, SimpleHex)
     EXPECT_EQ( 150u, global_counts[1] );
   }
 
+}
+
+TEST( SkinMesh, SimpleHexWithAura)
+{
+    test_skin_mesh_with_hexes(stk::mesh::BulkData::AUTO_AURA);
+}
+
+TEST( SkinMesh, SimpleHexWithoutAura)
+{
+//    test_skin_mesh_with_hexes(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
 TEST( SkinMesh, SimpleQuad)

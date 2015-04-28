@@ -837,6 +837,7 @@ protected: //functions
    *  - a collective parallel operation.
    */
   void internal_regenerate_aura();
+  void fill_list_of_entities_to_send_for_aura_ghosting(std::vector<EntityProc> &send);
 
   void require_ok_to_modify() const ;
   void internal_update_fast_comm_maps();

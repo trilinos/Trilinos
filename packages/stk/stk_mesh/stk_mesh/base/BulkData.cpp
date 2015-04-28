@@ -3193,54 +3193,56 @@ void BulkData::internal_change_ghosting(
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
+void BulkData::fill_list_of_entities_to_send_for_aura_ghosting(std::vector<EntityProc> &send)
+{
+    const EntityRank end_rank = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
+
+    // Iterate over all entities with communication info, get the sharing
+    // comm info for each entity, and ensure that upwardly related
+    // entities to the shared entity are ghosted on the sharing proc.
+    EntityVector temp_entities;
+    Entity const* rels = NULL;
+    int num_rels = 0;
+    for ( EntityCommListInfoVector::const_iterator
+        i = internal_comm_list().begin() ; i != internal_comm_list().end() ; ++i )
+    {
+      const EntityRank erank = static_cast<EntityRank>(i->key.rank());
+
+      const PairIterEntityComm aura = internal_entity_comm_map_shared(i->key);
+
+      for ( size_t j = 0 ; j < aura.size() ; ++j ) {
+
+        const int share_proc = aura[j].proc ;
+
+        for (EntityRank k_rank = static_cast<EntityRank>(erank + 1); k_rank < end_rank; ++k_rank)
+        {
+          if (connectivity_map().valid(erank, k_rank)) {
+            num_rels = num_connectivity(i->entity, k_rank);
+            rels     = begin(i->entity, k_rank);
+          }
+          else {
+            num_rels = get_connectivity(*this, i->entity, k_rank, temp_entities);
+            rels     = &*temp_entities.begin();
+          }
+
+          for (int r = 0; r < num_rels; ++r)
+          {
+            if (is_valid(rels[r])) {
+              stk::mesh::impl::insert_upward_relations(*this, rels[r], erank, parallel_rank(), share_proc, send);
+            }
+          }
+        }
+      }
+    }
+}
+
 void BulkData::internal_regenerate_aura()
 {
   require_ok_to_modify();
 
   std::vector<EntityProc> send ;
+  fill_list_of_entities_to_send_for_aura_ghosting(send);
 
-  const EntityRank end_rank = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
-
-  // Iterate over all entities with communication info, get the sharing
-  // comm info for each entity, and ensure that upwardly related
-  // entities to the shared entity are ghosted on the sharing proc.
-  EntityVector temp_entities;
-  Entity const* rels = NULL;
-  int num_rels = 0;
-  for ( EntityCommListInfoVector::const_iterator
-      i = internal_comm_list().begin() ; i != internal_comm_list().end() ; ++i )
-  {
-    const EntityRank erank = static_cast<EntityRank>(i->key.rank());
-
-    const PairIterEntityComm aura = internal_entity_comm_map_shared(i->key);
-
-    for ( size_t j = 0 ; j < aura.size() ; ++j ) {
-
-      const int share_proc = aura[j].proc ;
-
-      for (EntityRank k_rank = static_cast<EntityRank>(erank + 1); k_rank < end_rank; ++k_rank)
-      {
-        if (connectivity_map().valid(erank, k_rank)) {
-          num_rels = num_connectivity(i->entity, k_rank);
-          rels     = begin(i->entity, k_rank);
-        }
-        else {
-          num_rels = get_connectivity(*this, i->entity, k_rank, temp_entities);
-          rels     = &*temp_entities.begin();
-        }
-
-        for (int r = 0; r < num_rels; ++r)
-        {
-          if (is_valid(rels[r])) {
-            stk::mesh::impl::insert_upward_relations(*this, rels[r], erank, parallel_rank(), share_proc, send);
-          }
-        }
-      }
-    }
-  }
-
-  // Add new aura, remove all of the old aura.
-  // The change_ghosting figures out what to actually delete and add.
   internal_change_ghosting( aura_ghosting() , send , std::vector<EntityKey>(), true /*full regen*/ );
 }
 
