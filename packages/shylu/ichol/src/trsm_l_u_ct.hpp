@@ -19,7 +19,7 @@ namespace Example {
   KOKKOS_INLINE_FUNCTION
   int
   Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
-       AlgoTrsm::ForFactorRightBlocked>
+       AlgoTrsm::ForFactorBlocked>
   ::invoke(const typename CrsExecViewTypeA::policy_type::member_type &member,
            const int diag,
            const ScalarType alpha,

@@ -18,7 +18,7 @@ namespace Example {
   KOKKOS_INLINE_FUNCTION
   int
   Herk<Uplo::Upper,Trans::ConjTranspose,
-       AlgoHerk::ForFactorRightBlocked>
+       AlgoHerk::ForFactorBlocked>
   ::invoke(const typename CrsExecViewTypeA::policy_type::member_type &member,
            const ScalarType alpha,
            const CrsExecViewTypeA &A,

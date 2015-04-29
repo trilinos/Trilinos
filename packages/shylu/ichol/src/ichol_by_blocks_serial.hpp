@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __ICHOL_RIGHT_BY_BLOCKS_SERIAL_HPP__
-#define __ICHOL_RIGHT_BY_BLOCKS_SERIAL_HPP__
+#ifndef __ICHOL_BY_BLOCKS_SERIAL_HPP__
+#define __ICHOL_BY_BLOCKS_SERIAL_HPP__
 
 /// \file ichol_right_by_blocks_serial.hpp
 /// \brief Sparse incomplete Cholesky factorization by blocks.
@@ -14,9 +14,9 @@ namespace Example {
   
   template<typename CrsTaskViewType>
   KOKKOS_INLINE_FUNCTION
-  int genScalarTask_UpperRightByBlocks(typename CrsTaskViewType::policy_type &policy,
-                                       typename CrsTaskViewType::policy_type::member_type &member,
-                                       const CrsTaskViewType A) {
+  int genScalarTask_UpperByBlocks(typename CrsTaskViewType::policy_type &policy,
+                                  typename CrsTaskViewType::policy_type::member_type &member,
+                                  const CrsTaskViewType A) {
     typedef typename CrsTaskViewType::value_type        value_type;
     typedef typename CrsTaskViewType::row_view_type     row_view_type;
 
@@ -24,7 +24,7 @@ namespace Example {
     value_type &aa = a.Value(0);
 
     int r_val = 0;
-    IChol<Uplo::Upper,AlgoIChol::RightUnblockedOpt1>
+    IChol<Uplo::Upper,AlgoIChol::UnblockedOpt1>
       ::TaskFunctor<value_type>(aa).apply(r_val);
 
     return 0;
@@ -32,7 +32,7 @@ namespace Example {
 
   template<typename CrsTaskViewType>
   KOKKOS_INLINE_FUNCTION
-  int genTrsmTasks_UpperRightByBlocks(typename CrsTaskViewType::policy_type &policy,
+  int genTrsmTasks_UpperByBlocks(typename CrsTaskViewType::policy_type &policy,
                                       typename CrsTaskViewType::policy_type::member_type &member,
                                       const CrsTaskViewType A,
                                       const CrsTaskViewType B) {
@@ -47,7 +47,7 @@ namespace Example {
     for (ordinal_type j=0;j<b.NumNonZeros();++j) {
       value_type &bb = b.Value(j);
 
-      Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,AlgoTrsm::ForRightBlocked>
+      Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,AlgoTrsm::ForBlocked>
         ::TaskFunctor<double,value_type>(Diag::NonUnit, 1.0, aa, bb).apply(r_val);
     }
 
@@ -56,7 +56,7 @@ namespace Example {
 
   template<typename CrsTaskViewType>
   KOKKOS_INLINE_FUNCTION
-  int genHerkTasks_UpperRightByBlocks(typename CrsTaskViewType::policy_type &policy,
+  int genHerkTasks_UpperByBlocks(typename CrsTaskViewType::policy_type &policy,
                                       typename CrsTaskViewType::policy_type::member_type &member,
                                       const CrsTaskViewType A,
                                       const CrsTaskViewType C) {
@@ -82,7 +82,7 @@ namespace Example {
       ordinal_type idx = c.Index(row_at_i, 0);
       if (idx >= 0) {
         value_type &cc = c.Value(idx);
-        Herk<Uplo::Upper,Trans::ConjTranspose,AlgoHerk::ForRightBlocked>
+        Herk<Uplo::Upper,Trans::ConjTranspose,AlgoHerk::ForBlocked>
           ::TaskFunctor<double,value_type>(-1.0, val_at_i, 1.0, cc).apply(r_val);
       }
     }
@@ -103,7 +103,7 @@ namespace Example {
           idx = c.Index(col_at_j, idx);
           if (idx >= 0) {
             value_type &cc = c.Value(idx);
-            Gemm<Trans::ConjTranspose,Trans::NoTranspose,AlgoGemm::ForRightBlocked>
+            Gemm<Trans::ConjTranspose,Trans::NoTranspose,AlgoGemm::ForBlocked>
               ::TaskFunctor<double,value_type>(-1.0, val_at_i, val_at_j, 1.0, cc).apply(r_val);
           }
         }

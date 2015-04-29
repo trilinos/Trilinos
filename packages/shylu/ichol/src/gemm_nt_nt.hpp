@@ -20,7 +20,7 @@ namespace Example {
   KOKKOS_INLINE_FUNCTION
   int
   Gemm<Trans::NoTranspose,Trans::NoTranspose,
-       AlgoGemm::ForSolveDenseMatrix>
+       AlgoGemm::ForTriSolveBlocked>
   ::invoke(const typename CrsExecViewTypeA::policy_type::member_type &member,
            const ScalarType alpha,
            const CrsExecViewTypeA &A,

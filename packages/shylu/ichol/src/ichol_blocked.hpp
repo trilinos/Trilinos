@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __ICHOL_RIGHT_BLOCKED_HPP__
-#define __ICHOL_RIGHT_BLOCKED_HPP__
+#ifndef __ICHOL_BLOCKED_HPP__
+#define __ICHOL_BLOCKED_HPP__
 
 /// \file ichol_right_blocked.hpp
 /// \brief Blocked incomplete Chloesky factorization.
@@ -20,7 +20,7 @@ namespace Example {
            typename CrsExecViewType>
   KOKKOS_INLINE_FUNCTION
   int
-  IChol<Uplo::Upper,AlgoIChol::RightBlocked>
+  IChol<Uplo::Upper,AlgoIChol::Blocked>
   ::invoke(const typename CrsExecViewType::policy_type::member_type &member,
            const CrsExecViewType &A) {
 
@@ -47,16 +47,16 @@ namespace Example {
       A12.fillRowViewArray();      
       A22.fillRowViewArray();      
 
-      int r_val = IChol<Uplo::Upper,AlgoIChol::RightUnblockedOpt1>
+      int r_val = IChol<Uplo::Upper,AlgoIChol::UnblockedOpt1>
         ::invoke<ParallelForType,CrsExecViewType>(member, A11);
 
       if (r_val)
         return A00.NumRows() + r_val;
 
-      Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,AlgoTrsm::ForFactorRightBlocked>
+      Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,AlgoTrsm::ForFactorBlocked>
         ::invoke<ParallelForType,value_type,CrsExecViewType>(member, Diag::NonUnit, 1.0, A11, A12);
 
-      Herk<Uplo::Upper,Trans::ConjTranspose,AlgoHerk::ForFactorRightBlocked>
+      Herk<Uplo::Upper,Trans::ConjTranspose,AlgoHerk::ForFactorBlocked>
         ::invoke<ParallelForType,value_type,CrsExecViewType>(member, -1.0, A12, 1.0, A22);
 
       // -----------------------------------------------------

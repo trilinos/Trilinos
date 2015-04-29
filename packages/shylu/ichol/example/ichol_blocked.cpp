@@ -8,15 +8,13 @@
 
 #include <Kokkos_Threads.hpp>
 #include <Threads/Kokkos_Threads_TaskPolicy.hpp>
-                                                           
+
 #include "util.hpp"
 #include "graph_helper_scotch.hpp"
 
 #include "crs_matrix_base.hpp"
 #include "crs_matrix_view.hpp"
 #include "crs_row_view.hpp"
-
-#include "crs_matrix_helper.hpp"
 
 #include "crs_team_view.hpp"
 #include "crs_task_view.hpp"
@@ -25,8 +23,8 @@
 #include "parallel_for.hpp"
 
 #include "task_policy_graphviz.hpp"
-#include "task_factory.hpp"
 #include "team_factory.hpp"
+#include "task_factory.hpp"
 #include "task_team_factory.hpp"
 
 #include "ichol.hpp"
@@ -37,27 +35,21 @@ typedef double value_type;
 typedef int    ordinal_type;
 typedef int    size_type;
 
-// space 
-//#define USE_SEQUENTIAL_FOR
-//typedef Kokkos::Serial space_type;
+#define USE_SEQUENTIAL_FOR
+typedef Kokkos::Serial space_type;
 
-typedef Kokkos::Threads space_type;
+//typedef Kokkos::Threads space_type;
 //typedef Kokkos::Qthread space_type;
 
 using namespace Example;
 
-// exec space
 typedef space_type ExecSpace;
 
-// flat matrix 
 typedef CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBaseType;
 typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
 
-// scotch reordering
-typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType;
-
 #ifdef USE_SEQUENTIAL_FOR
-typedef TaskTeamFactory<TaskPolicy,Future,TeamThreadLoopRegion> TaskFactoryType;
+typedef TaskTeamFactory<TeamPolicy,Future,TeamThreadLoopRegion> TaskFactoryType;
 typedef SequentialFor ForType;
 #else
 typedef TaskTeamFactory<Kokkos::Experimental::TaskPolicy<space_type>,
@@ -66,27 +58,20 @@ typedef TaskTeamFactory<Kokkos::Experimental::TaskPolicy<space_type>,
 typedef ParallelFor ForType;
 #endif
 
-// block representation for CrsMatrix
 typedef CrsTaskView<CrsMatrixBaseType,TaskFactoryType> CrsTaskViewType;
-
-// hier matrix
-typedef CrsMatrixBase<CrsTaskViewType,ordinal_type,size_type,space_type> CrsHierBaseType;
-typedef CrsTaskView<CrsHierBaseType,TaskFactoryType> CrsHierViewType;
+typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType;
 
 int main (int argc, char *argv[]) {
-  if (argc < 3) {
-    cout << "Usage: " << argv[0] << " filename nthreads" << endl;
+  if (argc < 4) {
+    cout << "Usage: " << argv[0] << " filename blksize nthreads" << endl;
     return -1;
   }
 
-  const int nthreads = atoi(argv[2]);
+  const int blocksize = atoi(argv[2]);
+  IChol<Uplo::Upper,AlgoIChol::Blocked>::blocksize = blocksize;
+
+  const int nthreads = atoi(argv[3]);
   ExecSpace::initialize(nthreads);
-
-#ifdef USE_SEQUENTIAL_FOR
-#else
-  ExecSpace::print_configuration(std::cout, true);
-#endif
-
   cout << "Default execution space initialized = "
        << typeid(Kokkos::DefaultExecutionSpace).name()
        << endl;
@@ -100,62 +85,42 @@ int main (int argc, char *argv[]) {
     return -1;
   }
   AA.importMatrixMarket(in);
+  cout << AA << endl;
 
   GraphHelperType S(AA);
   S.computeOrdering();
 
   CrsMatrixBaseType PA("Permuted AA");
   PA.copy(S.PermVector(), S.InvPermVector(), AA);
-  
-  CrsMatrixBaseType UU("UU");
+
+  CrsMatrixBaseType UU("Upper Triangular of AA");
   UU.copy(Uplo::Upper, PA);
 
-  cout << UU << endl;
-
-  CrsHierBaseType HH("HH");
-
-  CrsMatrixHelper::flat2hier(Uplo::Upper, UU, HH,
-                             S.NumBlocks(),
-                             S.RangeVector(),
-                             S.TreeVector());
-
-  for (ordinal_type k=0;k<HH.NumNonZeros();++k)                                                                      
-    HH.Value(k).fillRowViewArray();  
-
-  cout << HH << endl;
-
-  CrsHierViewType H(HH);
+  CrsTaskViewType U(UU);
 
   {
     int r_val = 0;
     typedef typename CrsTaskViewType::policy_type policy_type;
 
-    IChol<Uplo::Upper,AlgoIChol::RightByBlocks>::
-      TaskFunctor<ForType,CrsHierViewType>(H).apply(policy_type::member_null(), r_val);
-    
 #ifdef USE_SEQUENTIAL_FOR
-    // do nothing
+    IChol<Uplo::Upper,AlgoIChol::Blocked>
+      ::TaskFunctor<ForType,CrsTaskViewType>(U).apply(policy_type::member_null(), r_val);
 #else
     policy_type policy;
+    auto future = policy.create_team(IChol<Uplo::Upper,AlgoIChol::Blocked>
+                                     ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
+    policy.spawn(future);
     Kokkos::Experimental::wait(policy);
 #endif
-    
-    cout << UU << endl;
-    
-#ifdef USE_SEQUENTIAL_FOR
-    ofstream out;
-    out.open("graph_right.gv");
-    if (!out.good()) {
-      cout << "Error in open the file: task_graph.gv" << endl;
-      return -1;
+
+    if (r_val != 0) {
+      cout << " Error = " << r_val << endl;
+      return r_val;
     }
-    
-    policy_type policy;
-    policy.graphviz(out);
-#endif
+    cout << UU << endl;
   }
-  
+
   ExecSpace::finalize();
-  
+
   return 0;
 }

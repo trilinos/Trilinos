@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __ICHOL_RIGHT_BY_BLOCKS_VAR1_HPP__
-#define __ICHOL_RIGHT_BY_BLOCKS_VAR1_HPP__
+#ifndef __ICHOL_BY_BLOCKS_VAR1_HPP__
+#define __ICHOL_BY_BLOCKS_VAR1_HPP__
 
 /// \file ichol_right_by_blocks_var1.hpp
 /// \brief Sparse incomplete Cholesky factorization by blocks.
@@ -15,8 +15,8 @@ namespace Example {
   template<typename ParallelForType,
            typename CrsTaskViewType>
   KOKKOS_INLINE_FUNCTION
-  int genScalarTask_UpperRightByBlocks(typename CrsTaskViewType::policy_type &policy,
-                                       const CrsTaskViewType &A) {
+  int genScalarTask_UpperByBlocks(typename CrsTaskViewType::policy_type &policy,
+                                  const CrsTaskViewType &A) {
     typedef typename CrsTaskViewType::value_type        value_type;
     typedef typename CrsTaskViewType::row_view_type     row_view_type;
 
@@ -28,7 +28,7 @@ namespace Example {
 
     // construct a task
     future_type f = task_factory_type::create(policy,
-                                              IChol<Uplo::Upper,AlgoIChol::RightUnblockedOpt1>
+                                              IChol<Uplo::Upper,AlgoIChol::UnblockedOpt1>
                                               ::TaskFunctor<ParallelForType,value_type>(aa));
 
     // manage dependence
@@ -44,9 +44,9 @@ namespace Example {
   template<typename ParallelForType,
            typename CrsTaskViewType>
   KOKKOS_INLINE_FUNCTION
-  int genTrsmTasks_UpperRightByBlocks(typename CrsTaskViewType::policy_type &policy,
-                                      const CrsTaskViewType &A,
-                                      const CrsTaskViewType &B) {
+  int genTrsmTasks_UpperByBlocks(typename CrsTaskViewType::policy_type &policy,
+                                 const CrsTaskViewType &A,
+                                 const CrsTaskViewType &B) {
     typedef typename CrsTaskViewType::ordinal_type      ordinal_type;
     typedef typename CrsTaskViewType::value_type        value_type;
     typedef typename CrsTaskViewType::row_view_type     row_view_type;
@@ -63,7 +63,7 @@ namespace Example {
 
       future_type f = task_factory_type
         ::create(policy, 
-                 Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,AlgoTrsm::ForFactorRightBlocked>
+                 Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,AlgoTrsm::ForFactorBlocked>
                  ::TaskFunctor<ParallelForType,double,
                  value_type,value_type>(Diag::NonUnit, 1.0, aa, bb));
       
@@ -86,9 +86,9 @@ namespace Example {
   template<typename ParallelForType,
            typename CrsTaskViewType>
   KOKKOS_INLINE_FUNCTION
-  int genHerkTasks_UpperRightByBlocks(typename CrsTaskViewType::policy_type &policy,
-                                      const CrsTaskViewType &A,
-                                      const CrsTaskViewType &C) {
+  int genHerkTasks_UpperByBlocks(typename CrsTaskViewType::policy_type &policy,
+                                 const CrsTaskViewType &A,
+                                 const CrsTaskViewType &C) {
     typedef typename CrsTaskViewType::ordinal_type      ordinal_type;
     typedef typename CrsTaskViewType::value_type        value_type;
     typedef typename CrsTaskViewType::row_view_type     row_view_type;
@@ -120,7 +120,7 @@ namespace Example {
             value_type &cc = c.Value(idx);
             future_type f = task_factory_type
               ::create(policy, 
-                       Herk<Uplo::Upper,Trans::ConjTranspose,AlgoHerk::ForFactorRightBlocked>
+                       Herk<Uplo::Upper,Trans::ConjTranspose,AlgoHerk::ForFactorBlocked>
                        ::TaskFunctor<ParallelForType,double,
                        value_type,value_type>(-1.0, val_at_i, 1.0, cc));
             
@@ -142,7 +142,7 @@ namespace Example {
             value_type &cc = c.Value(idx);
             future_type f = task_factory_type
               ::create(policy, 
-                       Gemm<Trans::ConjTranspose,Trans::NoTranspose,AlgoGemm::ForFactorRightBlocked>
+                       Gemm<Trans::ConjTranspose,Trans::NoTranspose,AlgoGemm::ForFactorBlocked>
                        ::TaskFunctor<ParallelForType,double,
                        value_type,value_type,value_type>(-1.0, val_at_i, val_at_j, 1.0, cc));
             

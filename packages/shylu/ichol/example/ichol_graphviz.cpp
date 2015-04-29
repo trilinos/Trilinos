@@ -112,7 +112,7 @@ int main (int argc, char *argv[]) {
     int r_val = 0;                                                                                            
     typedef typename CrsTaskViewType::policy_type policy_type;                                                
                                                                                                               
-    IChol<Uplo::Upper,AlgoIChol::RightByBlocks>::                                                             
+    IChol<Uplo::Upper,AlgoIChol::ByBlocks>::                                                             
       TaskFunctor<ForType,CrsHierViewType>(H).apply(policy_type::member_null(), r_val);   
     
     ofstream out;

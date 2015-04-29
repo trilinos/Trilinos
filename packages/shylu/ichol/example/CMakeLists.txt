@@ -138,20 +138,20 @@ TRIBITS_ADD_EXECUTABLE(
 # ============
 
 TRIBITS_ADD_EXECUTABLE(
-  ichol_right_unblocked
-  SOURCES ichol_right_unblocked.cpp
+  ichol_unblocked
+  SOURCES ichol_unblocked.cpp
   COMM serial mpi
   )
 
 TRIBITS_ADD_EXECUTABLE(
-  ichol_right_blocked
-  SOURCES ichol_right_blocked.cpp
+  ichol_blocked
+  SOURCES ichol_blocked.cpp
   COMM serial mpi
   )
 
 TRIBITS_ADD_EXECUTABLE(
-  ichol_right_by_blocks
-  SOURCES ichol_right_by_blocks.cpp
+  ichol_by_blocks
+  SOURCES ichol_by_blocks.cpp
   COMM serial mpi
   )
 

@@ -35,11 +35,11 @@ typedef double value_type;
 typedef int    ordinal_type;
 typedef int    size_type;
 
-#define USE_SEQUENTIAL_FOR
-typedef Kokkos::Serial space_type;
+//#define USE_SEQUENTIAL_FOR
+//typedef Kokkos::Serial space_type; 
 
-//typedef Kokkos::Threads space_type;
-//typedef Kokkos::Qthread space_type;
+typedef Kokkos::Threads space_type; 
+//typedef Kokkos::Qthread space_type; 
 
 using namespace Example;
 
@@ -62,15 +62,12 @@ typedef CrsTaskView<CrsMatrixBaseType,TaskFactoryType> CrsTaskViewType;
 typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType;
 
 int main (int argc, char *argv[]) {
-  if (argc < 4) {
-    cout << "Usage: " << argv[0] << " filename blksize nthreads" << endl;
+  if (argc < 3) {
+    cout << "Usage: " << argv[0] << " filename nthreads" << endl;
     return -1;
   }
 
-  const int blocksize = atoi(argv[2]);
-  IChol<Uplo::Upper,AlgoIChol::RightBlocked>::blocksize = blocksize;
-
-  const int nthreads = atoi(argv[3]);
+  const int nthreads = atoi(argv[2]);
   ExecSpace::initialize(nthreads);
   cout << "Default execution space initialized = "
        << typeid(Kokkos::DefaultExecutionSpace).name()
@@ -89,31 +86,34 @@ int main (int argc, char *argv[]) {
 
   GraphHelperType S(AA);
   S.computeOrdering();
-
+  
   CrsMatrixBaseType PA("Permuted AA");
   PA.copy(S.PermVector(), S.InvPermVector(), AA);
-
-  CrsMatrixBaseType UU("Upper Triangular of AA");
+  
+  CrsMatrixBaseType UU("UU");
   UU.copy(Uplo::Upper, PA);
-
+  
+  cout << UU << endl;
+  
   CrsTaskViewType U(UU);
+  U.fillRowViewArray();
 
   {
     int r_val = 0;
     typedef typename CrsTaskViewType::policy_type policy_type;
 
 #ifdef USE_SEQUENTIAL_FOR
-    IChol<Uplo::Upper,AlgoIChol::RightBlocked>
+    IChol<Uplo::Upper,AlgoIChol::UnblockedOpt1>
       ::TaskFunctor<ForType,CrsTaskViewType>(U).apply(policy_type::member_null(), r_val);
 #else
     policy_type policy;
-    auto future = policy.create_team(IChol<Uplo::Upper,AlgoIChol::RightBlocked>
+    auto future = policy.create_team(IChol<Uplo::Upper,AlgoIChol::UnblockedOpt1>
                                      ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
     policy.spawn(future);
     Kokkos::Experimental::wait(policy);
 #endif
 
-    if (r_val != 0) {
+    if (r_val != 0)  {
       cout << " Error = " << r_val << endl;
       return r_val;
     }

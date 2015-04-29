@@ -78,11 +78,11 @@ namespace Example {
 //#include "ichol_left_by_blocks.hpp"
 
 // right looking: performance with CRS
-//#include "ichol_right_unblocked.hpp"
-#include "ichol_right_unblocked_opt1.hpp"
-#include "ichol_right_blocked.hpp"
+//#include "ichol_unblocked.hpp"
+#include "ichol_unblocked_opt1.hpp"
+#include "ichol_blocked.hpp"
 
 // task / task-data parallel
-#include "ichol_right_by_blocks.hpp"
+#include "ichol_by_blocks.hpp"
 
 #endif
