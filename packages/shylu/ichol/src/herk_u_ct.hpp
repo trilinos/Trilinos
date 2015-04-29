@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __HERK_U_T_HPP__
-#define __HERK_U_T_HPP__
+#ifndef __HERK_U_CT_HPP__
+#define __HERK_U_CT_HPP__
 
 /// \file herk_u_t.hpp
 /// \brief Sparse hermitian rank one update on given sparse patterns.
@@ -13,22 +13,23 @@ namespace Example {
   template<>
   template<typename ParallelForType,
            typename ScalarType,
-           typename CrsExecViewType>
+           typename CrsExecViewTypeA,
+           typename CrsExecViewTypeC>
   KOKKOS_INLINE_FUNCTION
   int
   Herk<Uplo::Upper,Trans::ConjTranspose,
        AlgoHerk::ForFactorRightBlocked>
-  ::invoke(const typename CrsExecViewType::policy_type::member_type &member,
+  ::invoke(const typename CrsExecViewTypeA::policy_type::member_type &member,
            const ScalarType alpha,
-           const CrsExecViewType &A,
+           const CrsExecViewTypeA &A,
            const ScalarType beta,
-           const CrsExecViewType &C) {
-    typedef typename CrsExecViewType::ordinal_type      ordinal_type;
-    typedef typename CrsExecViewType::value_type        value_type;
-    typedef typename CrsExecViewType::row_view_type     row_view_type;
-    typedef typename CrsExecViewType::team_factory_type team_factory_type;
+           const CrsExecViewTypeC &C) {
+    typedef typename CrsExecViewTypeA::ordinal_type      ordinal_type;
+    typedef typename CrsExecViewTypeA::value_type        value_type;
+    typedef typename CrsExecViewTypeA::row_view_type     row_view_type;
+    typedef typename CrsExecViewTypeA::team_factory_type team_factory_type;
 
-    scaleCrsMatrix<ParallelForType,ScalarType,CrsExecViewType>(member, beta, C);
+    scaleCrsMatrix<ParallelForType,ScalarType,CrsExecViewTypeC>(member, beta, C);
 
     // row_view_type a, c;
     for (ordinal_type k=0;k<A.NumRows();++k) {

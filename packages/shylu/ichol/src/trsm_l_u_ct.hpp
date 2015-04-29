@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __TRSM_L_U_T_HPP__
-#define __TRSM_L_U_T_HPP__
+#ifndef __TRSM_L_U_CT_HPP__
+#define __TRSM_L_U_CT_HPP__
 
 /// \file trsm_l_u_t.hpp
 /// \brief Sparse triangular solve on given sparse patterns and multiple rhs.
@@ -14,31 +14,30 @@ namespace Example {
   template<>
   template<typename ParallelForType,
            typename ScalarType,
-           typename CrsExecViewType>
+           typename CrsExecViewTypeA,
+           typename CrsExecViewTypeB>
   KOKKOS_INLINE_FUNCTION
   int
   Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
        AlgoTrsm::ForFactorRightBlocked>
-  ::invoke(const typename CrsExecViewType::policy_type::member_type &member,
+  ::invoke(const typename CrsExecViewTypeA::policy_type::member_type &member,
            const int diag,
            const ScalarType alpha,
-           const CrsExecViewType &A,
-           const CrsExecViewType &B) {
-    typedef typename CrsExecViewType::ordinal_type      ordinal_type;
-    typedef typename CrsExecViewType::value_type        value_type;
-    typedef typename CrsExecViewType::row_view_type     row_view_type;
-    typedef typename CrsExecViewType::team_factory_type team_factory_type;
+           const CrsExecViewTypeA &A,
+           const CrsExecViewTypeB &B) {
+    typedef typename CrsExecViewTypeA::ordinal_type      ordinal_type;
+    typedef typename CrsExecViewTypeA::value_type        value_type;
+    typedef typename CrsExecViewTypeA::row_view_type     row_view_type;
+    typedef typename CrsExecViewTypeA::team_factory_type team_factory_type;
 
-    //row_view_type a, b1, b2;
+    scaleCrsMatrix<ParallelForType,ScalarType,CrsExecViewTypeB>(member, alpha, B);
 
     for (ordinal_type k=0;k<A.NumRows();++k) {
       // pick a diag
-      //a.setView(A, k);
       row_view_type &a = A.RowView(k);
       const value_type diag = a.Value(0);
 
       // invert
-      //b1.setView(B, k);
       row_view_type &b1 = B.RowView(k);
 
       const ordinal_type nnz_b1 = b1.NumNonZeros();
@@ -56,7 +55,6 @@ namespace Example {
                         const ordinal_type row_at_i = a.Col(i);
                         const value_type   val_at_i = conj(a.Value(i));
                         
-                        //b2.setView(B, row_at_i);
                         row_view_type &b2 = B.RowView(row_at_i);
                         
                         ordinal_type idx = 0;
@@ -66,7 +64,7 @@ namespace Example {
                           
                           idx = b2.Index(col_at_j, idx);
                           if (idx >= 0)
-                            b2.Value(idx) += alpha*val_at_i*val_at_j;
+                            b2.Value(idx) -= val_at_i*val_at_j;
                         }
                       });
     }
