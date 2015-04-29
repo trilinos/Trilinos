@@ -99,4 +99,18 @@ Adapters</a> take <tt>Thyra::LinearOpBase</tt> objects and turn them into
 <tt>Thyra::LinearOpWithSolveBase</tt> objects which can then be used to solve
 linear systems using %Belos linear solvers implementations.
 
+\section belos_faq Frequently Asked Questions
+
+If you are an AztecOO user and would like to have similar style output in
+Belos, here is an example of how to do it.
+
+@code
+  typedef PseudoBlockGmresSolMgr<scalar_type, MV, OP> solver_type;
+  params->set("Verbosity",Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
+  int frequency=10;
+  params->set("Output Frequency",frequency);
+  params->set("Output Style",Belos::Brief);
+  solver_type solver (problem, params); 
+@endcode
+
 */
