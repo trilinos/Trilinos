@@ -73,7 +73,7 @@ namespace Intrepid {
     TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, inputFields, getrank(inputFields)-1, 2,3), 
 				std::invalid_argument, errmsg);
     // (3) outputFields is (C,F,P,D) in 3D and (C,F,P) in 2D => rank = inputData.dimension(2) + 1
-    TEUCHOS_TEST_FOR_EXCEPTION( !requireRankRange(errmsg, outputFields, inputData.dimension(2)+1, inputData.dimension(2)+1), 
+    TEUCHOS_TEST_FOR_EXCEPTION( !requireRankRange(errmsg, outputFields, static_cast<int>(inputData.dimension(2))+1, static_cast<int>(inputData.dimension(2))+1), 
 				std::invalid_argument, errmsg); 
     /*
      *   Dimension cross-checks:
@@ -96,7 +96,7 @@ namespace Intrepid {
     /* 
      *  Cross-check (2): 
      */
-    if(inputData.dimension(2) == 2) {
+    if(static_cast<int>(inputData.dimension(2)) == 2) {
       //  in 2D: outputFields(C,F,P) vs. inputData(C,P,D): dimensions C,P must match
       TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, outputFields, 0,2,  inputData, 0,1),
 				  std::invalid_argument, errmsg);
@@ -109,7 +109,7 @@ namespace Intrepid {
     /* 
      *  Cross-check (3): 
      */
-    if(inputData.dimension(2) == 2) {
+    if(static_cast<int>(inputData.dimension(2)) == 2) {
       // In 2D:
       if(getrank(inputFields) == 4){
         //  and rank-4 inputFields: outputFields(C,F,P) vs. inputFields(C,F,P,D): dimensions C,F,P must match
@@ -141,7 +141,7 @@ ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>inputDataWrap(i
 ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value, true>inputFieldsWrap(inputFields);    
 
     // 3D cross product
-    if(inputData.dimension(2) == 3) {
+    if(static_cast<int>(inputData.dimension(2)) == 3) {
       
       // inputFields is (C,F,P,D)
       if(getrank(inputFields) == 4){
@@ -193,7 +193,7 @@ ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value, true>inputFields
 	  }    
     }
     // 2D cross product
-    else if(inputData.dimension(2) == 2){
+    else if(static_cast<int>(inputData.dimension(2)) == 2){
       
       // inputFields is (C,F,P,D)
       if(getrank(inputFields) == 4){
@@ -259,7 +259,7 @@ ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value, true>inputFields
     TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, inputDataRight, getrank(inputDataRight)-1,  2,3), 
 				std::invalid_argument, errmsg);
     // (3) outputData is (C,P,D) in 3D and (C,P) in 2D => rank = inputDataLeft.dimension(2)
-    TEUCHOS_TEST_FOR_EXCEPTION( !requireRankRange(errmsg, outputData, inputDataLeft.dimension(2), inputDataLeft.dimension(2)), 
+    TEUCHOS_TEST_FOR_EXCEPTION( !requireRankRange(errmsg, outputData, static_cast<int>(inputDataLeft.dimension(2)), static_cast<int>(inputDataLeft.dimension(2))), 
 				std::invalid_argument, errmsg); 
     /*
      *   Dimension cross-checks:
@@ -282,7 +282,7 @@ ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value, true>inputFields
     /* 
      *  Cross-check (2): 
      */
-    if(inputDataLeft.dimension(2) == 2){
+    if(static_cast<int>(inputDataLeft.dimension(2)) == 2){
       // in 2D: outputData(C,P) vs. inputDataLeft(C,P,D): dimensions C, P must match
       TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, inputDataLeft, 0,1,  outputData, 0,1),
 				  std::invalid_argument, errmsg);
@@ -295,7 +295,7 @@ ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value, true>inputFields
     /* 
      *  Cross-check (3): 
      */
-    if(inputDataLeft.dimension(2) == 2) {
+    if(static_cast<int>(inputDataLeft.dimension(2)) == 2) {
       // In 2D:
       if(getrank(inputDataRight) == 3){
         //  and rank-3 inputDataRight: outputData(C,P) vs. inputDataRight(C,P,D): dimensions C,P must match
@@ -328,13 +328,13 @@ ArrayWrapper<Scalar,ArrayOutData, Rank<ArrayOutData >::value, false>outputDataWr
 ArrayWrapper<Scalar,ArrayInDataLeft, Rank<ArrayInDataLeft >::value, true>inputDataLeftWrap(inputDataLeft);    
 ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>inputDataRightWrap(inputDataRight); 
     // 3D cross product
-    if(inputDataLeft.dimension(2) == 3) {
+    if(static_cast<int>(inputDataLeft.dimension(2)) == 3) {
       
       // inputDataRight is (C,P,D)
       if(getrank(inputDataRight) == 3){
         
-        for(int cell = 0; cell < inputDataLeft.dimension(0); cell++){
-          for(int point = 0; point < inputDataLeft.dimension(1); point++){
+        for(int cell = 0; cell < static_cast<int>(inputDataLeft.dimension(0)); cell++){
+          for(int point = 0; point < static_cast<int>(inputDataLeft.dimension(1)); point++){
             // 
             outputDataWrap(cell, point, 0) = \
 	      inputDataLeftWrap(cell, point, 1)*inputDataRightWrap(cell, point, 2) - 
@@ -353,8 +353,8 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
        // inputDataRight is (P,D)
       else if(getrank(inputDataRight) == 2){
         
-        for(int cell = 0; cell < inputDataLeft.dimension(0); cell++){
-          for(int point = 0; point < inputDataLeft.dimension(1); point++){
+        for(int cell = 0; cell < static_cast<int>(inputDataLeft.dimension(0)); cell++){
+          for(int point = 0; point < static_cast<int>(inputDataLeft.dimension(1)); point++){
             // 
             outputDataWrap(cell, point, 0) = \
 	      inputDataLeftWrap(cell, point, 1)*inputDataRightWrap(point, 2) - 
@@ -376,13 +376,13 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
 	  }    
     }
     // 2D cross product
-    else if(inputDataLeft.dimension(2) == 2){
+    else if(static_cast<int>(inputDataLeft.dimension(2)) == 2){
       
       // inputDataRight is (C,P,D)
       if(getrank(inputDataRight) == 3){
         
-        for(int cell = 0; cell < inputDataLeft.dimension(0); cell++){
-	  for(int point = 0; point < inputDataLeft.dimension(1); point++){
+        for(int cell = 0; cell < static_cast<int>(inputDataLeft.dimension(0)); cell++){
+	  for(int point = 0; point < static_cast<int>(inputDataLeft.dimension(1)); point++){
 	    outputDataWrap(cell, point) = \
 	      inputDataLeftWrap(cell, point, 0)*inputDataRightWrap(cell, point, 1) - 
 	      inputDataLeftWrap(cell, point, 1)*inputDataRightWrap(cell, point, 0); 
@@ -392,8 +392,8 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
        // inputDataRight is (P,D)
       else if(getrank(inputDataRight) == 2) {
         
-        for(int cell = 0; cell < inputDataLeft.dimension(0); cell++){
-	  for(int point = 0; point < inputDataLeft.dimension(1); point++){
+        for(int cell = 0; cell < static_cast<int>(inputDataLeft.dimension(0)); cell++){
+	  for(int point = 0; point < static_cast<int>(inputDataLeft.dimension(1)); point++){
 	    outputDataWrap(cell, point) = \
 	      inputDataLeftWrap(cell, point, 0)*inputDataRightWrap(point, 1) - 
 	      inputDataLeftWrap(cell, point, 1)*inputDataRightWrap(point, 0); 
@@ -488,11 +488,11 @@ ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value, true>inputFields
     // inputFields is (C,F,P,D)
  if(getrank(inputFields) == 4){
       
-      for(int cell = 0; cell < outputFields.dimension(0); cell++){
-        for(int field = 0; field < outputFields.dimension(1); field++){
-          for(int point = 0; point < outputFields.dimension(2); point++){
-            for(int row = 0; row < outputFields.dimension(3); row++){
-              for(int col = 0; col < outputFields.dimension(4); col++){
+      for(int cell = 0; cell < static_cast<int>(outputFields.dimension(0)); cell++){
+        for(int field = 0; field < static_cast<int>(outputFields.dimension(1)); field++){
+          for(int point = 0; point < static_cast<int>(outputFields.dimension(2)); point++){
+            for(int row = 0; row < static_cast<int>(outputFields.dimension(3)); row++){
+              for(int col = 0; col < static_cast<int>(outputFields.dimension(4)); col++){
                 outputFieldsWrap(cell, field, point, row, col) = \
                   inputDataWrap(cell, point, row)*inputFieldsWrap(cell, field, point, col);
               }// col
@@ -504,11 +504,11 @@ ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value, true>inputFields
      // inputFields is (F,P,D)
  else if(getrank(inputFields) == 3){
       
-      for(int cell = 0; cell < outputFields.dimension(0); cell++){
-        for(int field = 0; field < outputFields.dimension(1); field++){
-          for(int point = 0; point < outputFields.dimension(2); point++){
-            for(int row = 0; row < outputFields.dimension(3); row++){
-              for(int col = 0; col < outputFields.dimension(4); col++){
+      for(int cell = 0; cell < static_cast<int>(outputFields.dimension(0)); cell++){
+        for(int field = 0; field < static_cast<int>(outputFields.dimension(1)); field++){
+          for(int point = 0; point < static_cast<int>(outputFields.dimension(2)); point++){
+            for(int row = 0; row < static_cast<int>(outputFields.dimension(3)); row++){
+              for(int col = 0; col < static_cast<int>(outputFields.dimension(4)); col++){
                 outputFieldsWrap(cell, field, point, row, col) = \
                   inputDataWrap(cell, point, row)*inputFieldsWrap(field, point, col);
               }// col
@@ -603,10 +603,10 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
     // inputDataRight is (C,P,D)
  if(getrank(inputDataRight) == 3){
       
-      for(int cell = 0; cell < inputDataLeft.dimension(0); cell++){
-        for(int point = 0; point < inputDataLeft.dimension(1); point++){
-          for(int row = 0; row < inputDataLeft.dimension(2); row++){
-            for(int col = 0; col < inputDataLeft.dimension(2); col++){
+      for(int cell = 0; cell < static_cast<int>(inputDataLeft.dimension(0)); cell++){
+        for(int point = 0; point < static_cast<int>(inputDataLeft.dimension(1)); point++){
+          for(int row = 0; row < static_cast<int>(inputDataLeft.dimension(2)); row++){
+            for(int col = 0; col < static_cast<int>(inputDataLeft.dimension(2)); col++){
               
               outputDataWrap(cell, point, row, col) = \
                 inputDataLeftWrap(cell, point, row)*inputDataRightWrap(cell, point, col); 
@@ -618,10 +618,10 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
      // inputDataRight is (P,D)
  else if(getrank(inputDataRight) == 2){
       
-      for(int cell = 0; cell < inputDataLeft.dimension(0); cell++){
-        for(int point = 0; point < inputDataLeft.dimension(1); point++){
-          for(int row = 0; row < inputDataLeft.dimension(2); row++){
-            for(int col = 0; col < inputDataLeft.dimension(2); col++){
+      for(int cell = 0; cell < static_cast<int>(inputDataLeft.dimension(0)); cell++){
+        for(int point = 0; point < static_cast<int>(inputDataLeft.dimension(1)); point++){
+          for(int row = 0; row < static_cast<int>(inputDataLeft.dimension(2)); row++){
+            for(int col = 0; col < static_cast<int>(inputDataLeft.dimension(2)); col++){
               // 
               outputDataWrap(cell, point, row, col) = \
 		inputDataLeftWrap(cell, point, row)*inputDataRightWrap(point, col); 
@@ -682,7 +682,7 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
      *   data is specified (P>1). Do not check P dimensions with constant data, i.e., when P=1 in
      *   inputData(C,1,...)
      */
-    if(inputData.dimension(1) > 1){ // check P dimension if P>1 in inputData
+    if(static_cast<int>(inputData.dimension(1)) > 1){ // check P dimension if P>1 in inputData
       TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
 							 outputFields, 2,
 							 inputData,    1),
@@ -712,7 +712,7 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
      */
     if(getrank(inputFields) == 4) {      
       // Cross-check (1): inputData(C,P), (C,P,D) or (C,P,D,D) vs. inputFields(C,F,P,D):  dimensions  C, P, D must match      
-      if(inputData.dimension(1) > 1){ // check P dimension if P>1 in inputData
+      if(static_cast<int>(inputData.dimension(1)) > 1){ // check P dimension if P>1 in inputData
         TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
 							   inputFields,  2,
 							   inputData,    1),
@@ -742,7 +742,7 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
     }
     else{
       // Cross-check (1): inputData(C,P), (C,P,D) or (C,P,D,D) vs. inputFields(F,P,D): dimensions  P, D must match
-      if(inputData.dimension(1) > 1){ // check P if P>1 in inputData 
+      if(static_cast<int>(inputData.dimension(1)) > 1){ // check P if P>1 in inputData 
         TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, 
 							   inputData,    1, 
 							   inputFields,  1),
@@ -772,12 +772,12 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
    ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>inputDataWrap(inputData);
    ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>inputFieldsWrap(inputFields);	
     int dataRank   = getrank(inputData);
-    int numDataPts = inputData.dimension(1);
-    int inRank     = getrank(inputFields);    
-    int numCells   = outputFields.dimension(0);
-    int numFields  = outputFields.dimension(1);
-    int numPoints  = outputFields.dimension(2);
-    int matDim     = outputFields.dimension(3);
+    int numDataPts = static_cast<int>(inputData.dimension(1));
+    int inRank     = static_cast<int>(getrank(inputFields));    
+    int numCells   = static_cast<int>(outputFields.dimension(0));
+    int numFields  = static_cast<int>(outputFields.dimension(1));
+    int numPoints  = static_cast<int>(outputFields.dimension(2));
+    int matDim     = static_cast<int>(outputFields.dimension(3));
     /*********************************************************************************************
      *                              inputFields is (C,F,P,D)                                     *
      *********************************************************************************************/
@@ -1126,7 +1126,7 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
       *   data is specified (P>1). Do not check P dimensions with constant left data, i.e., when P=1 in
       *   inputDataLeft(C,1,...)
       */
-     if(inputDataLeft.dimension(1) > 1){ // check P dimension if P>1 in inputDataLeft
+     if(static_cast<int>(inputDataLeft.dimension(1)) > 1){ // check P dimension if P>1 in inputDataLeft
        TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
 							  outputData,     1,
 							  inputDataLeft,  1),
@@ -1155,7 +1155,7 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
       */
      if( getrank(inputDataRight) == 3) {
        // Cross-check (1): inputDataLeft(C,P), (C,P,D), or (C,P,D,D) vs. inputDataRight(C,P,D):  dimensions  C, P, D must match
-       if(inputDataLeft.dimension(1) > 1){ // check P dimension if P>1 in inputDataLeft
+       if(static_cast<int>(inputDataLeft.dimension(1)) > 1){ // check P dimension if P>1 in inputDataLeft
 	 TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
 							    inputDataLeft,  1,
 							    inputDataRight, 1),
@@ -1186,7 +1186,7 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
      }
      else{
        // Cross-check (1): inputDataLeft(C,P), (C,P,D), or (C,P,D,D) vs. inputDataRight(P,D): dimensions  P, D must match
-       if(inputDataLeft.dimension(1) > 1){ // check P if P>1 in inputData 
+       if(static_cast<int>(inputDataLeft.dimension(1)) > 1){ // check P if P>1 in inputData 
 	 TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
 							    inputDataLeft,  1,
 							    inputDataRight, 0),
@@ -1215,12 +1215,12 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
  ArrayWrapper<Scalar,ArrayOutData, Rank<ArrayOutData >::value, false>outputDataWrap(outputData);
  ArrayWrapper<Scalar,ArrayInDataLeft, Rank<ArrayInDataLeft >::value, true>inputDataLeftWrap(inputDataLeft);
  ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>inputDataRightWrap(inputDataRight);
-    int dataLeftRank   = getrank(inputDataLeft);
-    int numDataLeftPts = inputDataLeft.dimension(1);
-    int dataRightRank  = getrank(inputDataRight);    
-    int numCells       = outputData.dimension(0);
-    int numPoints      = outputData.dimension(1);
-    int matDim         = outputData.dimension(2);
+    int dataLeftRank   = static_cast<int>(getrank(inputDataLeft));
+    int numDataLeftPts = static_cast<int>(inputDataLeft.dimension(1));
+    int dataRightRank  = static_cast<int>(getrank(inputDataRight));    
+    int numCells       = static_cast<int>(outputData.dimension(0));
+    int numPoints      = static_cast<int>(outputData.dimension(1));
+    int matDim         = static_cast<int>(outputData.dimension(2));
     
     /*********************************************************************************************
      *                              inputDataRight is (C,P,D)                                   *
@@ -1540,7 +1540,7 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
      *   data is specified (P>1). Do not check P dimensions with constant data, i.e., when P=1 in
      *   inputData(C,1,...)
      */
-    if(inputData.dimension(1) > 1){ // check P dimension if P>1 in inputData
+    if(static_cast<int>(inputData.dimension(1)) > 1){ // check P dimension if P>1 in inputData
       TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
 							 outputFields, 2,
 							 inputData,    1),
@@ -1570,7 +1570,7 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
      */
     if( getrank(inputFields) == 5) {
       // Cross-check (1): inputData(C,P), (C,P,D) or (C,P,D,D) vs. inputFields(C,F,P,D,D):  dimensions  C, P, D must match
-      if(inputData.dimension(1) > 1){ // check P dimension if P>1 in inputData
+      if(static_cast<int>(inputData.dimension(1)) > 1){ // check P dimension if P>1 in inputData
         TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
 							   inputData,    1,
 							   inputFields,  2),
@@ -1600,7 +1600,7 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
     }
     else{
       // Cross-check (1): inputData(C,P), (C,P,D) or (C,P,D,D) vs. inputFields(F,P,D,D): dimensions  P, D must match
-      if(inputData.dimension(1) > 1){ // check P if P>1 in inputData 
+      if(static_cast<int>(inputData.dimension(1)) > 1){ // check P if P>1 in inputData 
         TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, 
 							   inputData,    1, 
 							   inputFields,  1),
@@ -1630,13 +1630,13 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
     ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value, true>inputFieldsWrap(inputFields);
 
 
-    int dataRank   = getrank(inputData);
-    int numDataPts = inputData.dimension(1);
-    int inRank     = getrank(inputFields);    
-    int numCells   = outputFields.dimension(0);
-    int numFields  = outputFields.dimension(1);
-    int numPoints  = outputFields.dimension(2);
-    int matDim     = outputFields.dimension(3);
+    int dataRank   = static_cast<int>(getrank(inputData));
+    int numDataPts = static_cast<int>(inputData.dimension(1));
+    int inRank     = static_cast<int>(getrank(inputFields));    
+    int numCells   = static_cast<int>(outputFields.dimension(0));
+    int numFields  = static_cast<int>(outputFields.dimension(1));
+    int numPoints  = static_cast<int>(outputFields.dimension(2));
+    int matDim     = static_cast<int>(outputFields.dimension(3));
     
     /*********************************************************************************************
      *                              inputFields is (C,F,P,D,D)                                     *
@@ -2021,7 +2021,7 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
       *   data is specified (P>1). Do not check P dimensions with constant left data, i.e., when P=1 in
       *   inputDataLeft(C,1,...)
       */
-     if(inputDataLeft.dimension(1) > 1){ // check P dimension if P>1 in inputDataLeft
+     if(static_cast<int>(inputDataLeft.dimension(1)) > 1){ // check P dimension if P>1 in inputDataLeft
        TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
 							  outputData,     1,
 							  inputDataLeft,  1),
@@ -2050,7 +2050,7 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
       */
      if( getrank(inputDataRight) == 4) {
        // Cross-check (1): inputDataLeft(C,P), (C,P,D), or (C,P,D,D) vs. inputDataRight(C,P,D,D):  dimensions  C, P, D must match
-       if(inputDataLeft.dimension(1) > 1){ // check P dimension if P>1 in inputDataLeft
+       if(static_cast<int>(inputDataLeft.dimension(1)) > 1){ // check P dimension if P>1 in inputDataLeft
 	 TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
 							    inputDataLeft,  1,
 							    inputDataRight, 1),
@@ -2080,7 +2080,7 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
      }
      else{
        // Cross-check (1): inputDataLeft(C,P), (C,P,D), or (C,P,D,D) vs. inputDataRight(P,D,D): dimensions  P, D must match
-       if(inputDataLeft.dimension(1) > 1){ // check P if P>1 in inputData 
+       if(static_cast<int>(inputDataLeft.dimension(1)) > 1){ // check P if P>1 in inputData 
 	 TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg,
 							    inputDataLeft,  1,
 							    inputDataRight, 0),
@@ -2111,11 +2111,11 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
  ArrayWrapper<Scalar,ArrayInDataLeft, Rank<ArrayInDataLeft >::value, true>inputDataLeftWrap(inputDataLeft);
  ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>inputDataRightWrap(inputDataRight);
 
-    int dataLeftRank   = getrank(inputDataLeft);
-    int numDataLeftPts = inputDataLeft.dimension(1);
-    int dataRightRank  = getrank(inputDataRight);    
-    int numCells       = outputData.dimension(0);
-    int numPoints      = outputData.dimension(1);
+    int dataLeftRank   = static_cast<int>(getrank(inputDataLeft));
+    int numDataLeftPts = static_cast<int>(inputDataLeft.dimension(1));
+    int dataRightRank  = static_cast<int>(getrank(inputDataRight));    
+    int numCells       = static_cast<int>(outputData.dimension(0));
+    int numPoints      = static_cast<int>(outputData.dimension(1));
     int matDim         = outputData.dimension(2);
     
     /*********************************************************************************************

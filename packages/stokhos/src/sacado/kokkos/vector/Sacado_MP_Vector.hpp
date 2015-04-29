@@ -57,6 +57,7 @@
 #include "Sacado_mpl_range_c.hpp"
 #include "Stokhos_mpl_for_each.hpp"
 #include "Stokhos_MemoryTraits.hpp"
+#include "Stokhos_Is_Constant.hpp"
 
 #include "Kokkos_View_Utils.hpp"
 

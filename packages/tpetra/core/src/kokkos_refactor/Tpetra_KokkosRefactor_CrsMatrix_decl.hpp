@@ -47,7 +47,15 @@
 // subsumed into Tpetra_CrsMatrix_decl.hpp.
 
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+// localMultiply is templated on DomainScalar and RangeScalar, so we
+// have to include this header file here, rather than in the _def
+// header file, so that we can get KokkosSparse::spmv.
 #include <Kokkos_Sparse.hpp>
+// localGaussSeidel and reorderedLocalGaussSeidel are templated on
+// DomainScalar and RangeScalar, so we have to include this header
+// file here, rather than in the _def header file, so that we can get
+// the interfaces to the corresponding local computational kernels.
+#include <Kokkos_Sparse_impl_sor.hpp>
 
 namespace Tpetra {
 
@@ -1622,9 +1630,86 @@ namespace Tpetra {
     void
     localMultiply (const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,node_type>& X,
                    MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,node_type>& Y,
-                   Teuchos::ETransp trans,
+                   Teuchos::ETransp mode,
                    RangeScalar alpha,
-                   RangeScalar beta) const;
+                   RangeScalar beta) const
+    {
+      using Teuchos::NO_TRANS;
+      // Just like Scalar and impl_scalar_type may differ in CrsMatrix,
+      // RangeScalar and its corresponding impl_scalar_type may differ in
+      // MultiVector.
+      typedef typename MultiVector<RangeScalar, LocalOrdinal, GlobalOrdinal,
+        node_type>::impl_scalar_type range_impl_scalar_type;
+#ifdef HAVE_TPETRA_DEBUG
+      const char tfecfFuncName[] = "localMultiply: ";
+#endif // HAVE_TPETRA_DEBUG
+
+      const range_impl_scalar_type theAlpha = static_cast<range_impl_scalar_type> (alpha);
+      const range_impl_scalar_type theBeta = static_cast<range_impl_scalar_type> (beta);
+      const bool conjugate = (mode == Teuchos::CONJ_TRANS);
+      const bool transpose = (mode != Teuchos::NO_TRANS);
+
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (X.getNumVectors () != Y.getNumVectors (), std::runtime_error,
+         "X.getNumVectors() = " << X.getNumVectors () << " != Y.getNumVectors() = "
+         << Y.getNumVectors () << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! transpose && X.getLocalLength () != getColMap ()->getNodeNumElements (),
+         std::runtime_error, "NO_TRANS case: X has the wrong number of local rows.  "
+         "X.getLocalLength() = " << X.getLocalLength () << " != getColMap()->"
+         "getNodeNumElements() = " << getColMap ()->getNodeNumElements () << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! transpose && Y.getLocalLength () != getRowMap ()->getNodeNumElements (),
+         std::runtime_error, "NO_TRANS case: Y has the wrong number of local rows.  "
+         "Y.getLocalLength() = " << Y.getLocalLength () << " != getRowMap()->"
+         "getNodeNumElements() = " << getRowMap ()->getNodeNumElements () << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (transpose && X.getLocalLength () != getRowMap ()->getNodeNumElements (),
+         std::runtime_error, "TRANS or CONJ_TRANS case: X has the wrong number of "
+         "local rows.  X.getLocalLength() = " << X.getLocalLength () << " != "
+         "getRowMap()->getNodeNumElements() = "
+         << getRowMap ()->getNodeNumElements () << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (transpose && Y.getLocalLength () != getColMap ()->getNodeNumElements (),
+         std::runtime_error, "TRANS or CONJ_TRANS case: X has the wrong number of "
+         "local rows.  Y.getLocalLength() = " << Y.getLocalLength () << " != "
+         "getColMap()->getNodeNumElements() = "
+         << getColMap ()->getNodeNumElements () << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! isFillComplete (), std::runtime_error, "The matrix is not fill "
+         "complete.  You must call fillComplete() (possibly with domain and range "
+         "Map arguments) without an intervening resumeFill() call before you may "
+         "call this method.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! X.isConstantStride () || ! Y.isConstantStride (), std::runtime_error,
+         "X and Y must be constant stride.");
+      // If the two pointers are NULL, then they don't alias one
+      // another, even though they are equal.
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        X.getDualView ().d_view.ptr_on_device () == Y.getDualView ().d_view.ptr_on_device () &&
+        X.getDualView ().d_view.ptr_on_device () != NULL,
+        std::runtime_error, "X and Y may not alias one another.");
+#endif // HAVE_TPETRA_DEBUG
+
+      // Y = alpha*op(M) + beta*Y
+      if (transpose) {
+        KokkosSparse::spmv (conjugate ? KokkosSparse::ConjugateTranspose : KokkosSparse::Transpose,
+                            theAlpha,
+                            lclMatrix_,
+                            X.template getLocalView<DeviceType> (),
+                            theBeta,
+                            Y.template getLocalView<DeviceType> ());
+      }
+      else {
+        KokkosSparse::spmv (KokkosSparse::NoTranspose,
+                            theAlpha,
+                            lclMatrix_,
+                            X.template getLocalView<DeviceType> (),
+                            theBeta,
+                            Y.template getLocalView<DeviceType> ());
+      }
+    }
 
     /// \brief Gauss-Seidel or SOR on \f$B = A X\f$.
     ///
@@ -1656,7 +1741,60 @@ namespace Tpetra {
                       MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,node_type> &X,
                       const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> &D,
                       const RangeScalar& dampingFactor,
-                      const KokkosClassic::ESweepDirection direction) const;
+                      const KokkosClassic::ESweepDirection direction) const
+    {
+      typedef LocalOrdinal LO;
+      typedef GlobalOrdinal GO;
+      typedef Tpetra::MultiVector<DomainScalar, LO, GO, node_type> DMV;
+      typedef Tpetra::MultiVector<RangeScalar, LO, GO, node_type> RMV;
+      typedef Tpetra::MultiVector<Scalar, LO, GO, node_type> MMV;
+      typedef typename DMV::dual_view_type::host_mirror_space HMDT ;
+      typedef typename Graph::local_graph_type k_local_graph_type;
+      typedef typename k_local_graph_type::size_type offset_type;
+      const char prefix[] = "Tpetra::CrsMatrix::localGaussSeidel: ";
+
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! this->isFillComplete (), std::runtime_error,
+         prefix << "The matrix is not fill complete.");
+      const size_t lclNumRows = this->getNodeNumRows ();
+      const size_t numVecs = B.getNumVectors ();
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (X.getNumVectors () != numVecs, std::invalid_argument,
+         prefix << "B.getNumVectors() = " << numVecs << " != "
+         "X.getNumVectors() = " << X.getNumVectors () << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (B.getLocalLength () != lclNumRows, std::invalid_argument,
+         prefix << "B.getLocalLength() = " << B.getLocalLength ()
+         << " != this->getNodeNumRows() = " << lclNumRows << ".");
+
+      typename DMV::dual_view_type::t_host B_lcl = B.template getLocalView<HMDT> ();
+      typename RMV::dual_view_type::t_host X_lcl = X.template getLocalView<HMDT> ();
+      typename MMV::dual_view_type::t_host D_lcl = D.template getLocalView<HMDT> ();
+
+      offset_type B_stride[8], X_stride[8], D_stride[8];
+      B_lcl.stride (B_stride);
+      X_lcl.stride (X_stride);
+      D_lcl.stride (D_stride);
+
+      local_matrix_type lclMatrix = this->getLocalMatrix ();
+      k_local_graph_type lclGraph = lclMatrix.graph;
+      typename local_matrix_type::row_map_type ptr = lclGraph.row_map;
+      typename local_matrix_type::index_type ind = lclGraph.entries;
+      typename local_matrix_type::values_type val = lclMatrix.values;
+      const offset_type* const ptrRaw = ptr.ptr_on_device ();
+      const LO* const indRaw = ind.ptr_on_device ();
+      const impl_scalar_type* const valRaw = val.ptr_on_device ();
+
+      const std::string dir ((direction == KokkosClassic::Forward) ? "F" : "B");
+      KokkosSparse::Impl::Sequential::gaussSeidel (static_cast<LO> (lclNumRows),
+                                                   static_cast<LO> (numVecs),
+                                                   ptrRaw, indRaw, valRaw,
+                                                   B_lcl.ptr_on_device (), B_stride[1],
+                                                   X_lcl.ptr_on_device (), X_stride[1],
+                                                   D_lcl.ptr_on_device (),
+                                                   static_cast<impl_scalar_type> (dampingFactor),
+                                                   dir.c_str ());
+    }
 
     /// \brief Reordered Gauss-Seidel or SOR on \f$B = A X\f$.
     ///
@@ -1691,7 +1829,69 @@ namespace Tpetra {
                                const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& D,
                                const Teuchos::ArrayView<LocalOrdinal>& rowIndices,
                                const RangeScalar& dampingFactor,
-                               const KokkosClassic::ESweepDirection direction) const;
+                               const KokkosClassic::ESweepDirection direction) const
+    {
+      typedef LocalOrdinal LO;
+      typedef GlobalOrdinal GO;
+      typedef Tpetra::MultiVector<DomainScalar, LO, GO, node_type> DMV;
+      typedef Tpetra::MultiVector<RangeScalar, LO, GO, node_type> RMV;
+      typedef Tpetra::MultiVector<Scalar, LO, GO, node_type> MMV;
+      typedef typename DMV::dual_view_type::host_mirror_space HMDT ;
+      typedef typename Graph::local_graph_type k_local_graph_type;
+      typedef typename k_local_graph_type::size_type offset_type;
+      const char prefix[] = "Tpetra::CrsMatrix::reorderedLocalGaussSeidel: ";
+
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! this->isFillComplete (), std::runtime_error,
+         prefix << "The matrix is not fill complete.");
+      const size_t lclNumRows = this->getNodeNumRows ();
+      const size_t numVecs = B.getNumVectors ();
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (X.getNumVectors () != numVecs, std::invalid_argument,
+         prefix << "B.getNumVectors() = " << numVecs << " != "
+         "X.getNumVectors() = " << X.getNumVectors () << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (B.getLocalLength () != lclNumRows, std::invalid_argument,
+         prefix << "B.getLocalLength() = " << B.getLocalLength ()
+         << " != this->getNodeNumRows() = " << lclNumRows << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (static_cast<size_t> (rowIndices.size ()) < lclNumRows,
+         std::invalid_argument, prefix << "rowIndices.size() = "
+         << rowIndices.size () << " < this->getNodeNumRows() = "
+         << lclNumRows << ".");
+
+      typename DMV::dual_view_type::t_host B_lcl = B.template getLocalView<HMDT> ();
+      typename RMV::dual_view_type::t_host X_lcl = X.template getLocalView<HMDT> ();
+      typename MMV::dual_view_type::t_host D_lcl = D.template getLocalView<HMDT> ();
+
+      offset_type B_stride[8], X_stride[8], D_stride[8];
+      B_lcl.stride (B_stride);
+      X_lcl.stride (X_stride);
+      D_lcl.stride (D_stride);
+
+      local_matrix_type lclMatrix = this->getLocalMatrix ();
+      typename Graph::local_graph_type lclGraph = lclMatrix.graph;
+      typename local_matrix_type::index_type ind = lclGraph.entries;
+      typename local_matrix_type::row_map_type ptr = lclGraph.row_map;
+      typename local_matrix_type::values_type val = lclMatrix.values;
+      const offset_type* const ptrRaw = ptr.ptr_on_device ();
+      const LO* const indRaw = ind.ptr_on_device ();
+      const impl_scalar_type* const valRaw = val.ptr_on_device ();
+
+      const std::string dir = (direction == KokkosClassic::Forward) ? "F" : "B";
+      KokkosSparse::Impl::Sequential::reorderedGaussSeidel (static_cast<LO> (lclNumRows),
+                                                            static_cast<LO> (numVecs),
+                                                            ptrRaw, indRaw, valRaw,
+                                                            B_lcl.ptr_on_device (),
+                                                            B_stride[1],
+                                                            X_lcl.ptr_on_device (),
+                                                            X_stride[1],
+                                                            D_lcl.ptr_on_device (),
+                                                            rowIndices.getRawPtr (),
+                                                            static_cast<LO> (lclNumRows),
+                                                            static_cast<impl_scalar_type> (dampingFactor),
+                                                            dir.c_str ());
+    }
 
     /// \brief Solves a linear system when the underlying matrix is triangular.
     ///
@@ -1713,10 +1913,84 @@ namespace Tpetra {
     void
     localSolve (const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,node_type>& Y,
                 MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,node_type>& X,
-                Teuchos::ETransp trans) const;
+                Teuchos::ETransp mode) const
+    {
+      using Teuchos::CONJ_TRANS;
+      using Teuchos::NO_TRANS;
+      using Teuchos::TRANS;
+      typedef LocalOrdinal LO;
+      typedef GlobalOrdinal GO;
+      typedef Tpetra::MultiVector<DomainScalar, LO, GO, node_type> DMV;
+      typedef Tpetra::MultiVector<RangeScalar, LO, GO, node_type> RMV;
+      typedef typename DMV::dual_view_type::host_mirror_space HMDT ;
 
-    /// \return Return another CrsMatrix with the same entries, but
-    ///   converted into a different Scalar type \c T.
+      const char tfecfFuncName[] = "localSolve: ";
+
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! isFillComplete (), std::runtime_error,
+         "The matrix is not fill complete.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! X.isConstantStride () || ! Y.isConstantStride (), std::invalid_argument,
+         "X and Y must be constant stride.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! isUpperTriangular () && ! isLowerTriangular (), std::runtime_error,
+         "The matrix is neither upper triangular or lower triangular.  "
+         "You may only call this method if the matrix is triangular.  "
+         "Remember that this is a local (per MPI process) property, and that "
+         "Tpetra only knows how to do a local (per process) triangular solve.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (STS::isComplex && mode == TRANS, std::logic_error, "This method does "
+         "not currently support non-conjugated transposed solve (mode == "
+         "Teuchos::TRANS) for complex scalar types.");
+
+      // FIXME (mfh 27 Aug 2014) Tpetra has always made the odd decision
+      // that if _some_ diagonal entries are missing locally, then it
+      // assumes that the matrix has an implicitly stored unit diagonal.
+      // Whether the matrix has an implicit unit diagonal or not should
+      // be up to the user to decide.  What if the graph has no diagonal
+      // entries, and the user wants it that way?  The only reason this
+      // matters, though, is for the triangular solve, and in that case,
+      // missing diagonal entries will cause trouble anyway.  However,
+      // it would make sense to warn the user if they ask for a
+      // triangular solve with an incomplete diagonal.  Furthermore,
+      // this code should only assume an implicitly stored unit diagonal
+      // if the matrix has _no_ explicitly stored diagonal entries.
+
+      const std::string uplo = isUpperTriangular () ? "U" :
+        (isLowerTriangular () ? "L" : "N");
+      const std::string trans = (mode == Teuchos::CONJ_TRANS) ? "C" :
+        (mode == Teuchos::TRANS ? "T" : "N");
+      const std::string diag =
+        (getNodeNumDiags () < getNodeNumRows ()) ? "U" : "N";
+
+      local_matrix_type A_lcl = this->getLocalMatrix ();
+
+      // FIXME (mfh 23 Apr 2015) We currently only have a host,
+      // sequential kernel for local sparse triangular solve.
+
+      Y.getDualView ().template sync<HMDT> (); // Y is read-only
+      X.getDualView ().template sync<HMDT> ();
+      X.getDualView ().template modify<HMDT> (); // we will write to X
+
+      if (X.isConstantStride () && Y.isConstantStride ()) {
+        typename DMV::dual_view_type::t_host X_lcl = X.template getLocalView<HMDT> ();
+        typename RMV::dual_view_type::t_host Y_lcl = Y.template getLocalView<HMDT> ();
+        KokkosSparse::trsv (uplo.c_str (), trans.c_str (), diag.c_str (), A_lcl, Y_lcl, X_lcl);
+      }
+      else {
+        const size_t numVecs = std::min (X.getNumVectors (), Y.getNumVectors ());
+        for (size_t j = 0; j < numVecs; ++j) {
+          auto X_j = X.getVector (j);
+          auto Y_j = X.getVector (j);
+          auto X_lcl = X_j->template getLocalView<HMDT> ();
+          auto Y_lcl = Y_j->template getLocalView<HMDT> ();
+          KokkosSparse::trsv (uplo.c_str (), trans.c_str (), diag.c_str (), A_lcl, Y_lcl, X_lcl);
+        }
+      }
+    }
+
+    /// \brief Return another CrsMatrix with the same entries, but
+    ///   converted to a different Scalar type \c T.
     template <class T>
     Teuchos::RCP<CrsMatrix<T, LocalOrdinal, GlobalOrdinal, node_type> >
     convert () const;

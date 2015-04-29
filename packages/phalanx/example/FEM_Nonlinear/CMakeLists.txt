@@ -1,14 +1,11 @@
-
-
-
-  TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING 
+                            ${CMAKE_CURRENT_SOURCE_DIR})
   
-  INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/evaluators)
+INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING 
+                    ${CMAKE_CURRENT_SOURCE_DIR}/evaluators)
 
- 
-  SET(example_fem_nonlinear_SOURCES
+SET(example_fem_nonlinear_SOURCES
     Traits.hpp
-    Traits.cpp
     FactoryTraits.hpp
     Element_Linear2D.hpp
     Element_Linear2D.cpp
@@ -37,23 +34,25 @@
     evaluators/Evaluator_ScatterResidual.cpp
     )
   
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    example_fem_nonlinear
-    SOURCES Example_FEM_Nonlinear.cpp ${example_fem_nonlinear_SOURCES}
-    COMM serial mpi
-    PASS_REGULAR_EXPRESSION "Run has completed successfully!"
-    )
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    example_fem_nonlinear_Jv_timings
-    SOURCES Example_FEM_Nonlinear_Jv_Timings.cpp 
-            ${example_fem_nonlinear_SOURCES}
-    COMM serial mpi
-    PASS_REGULAR_EXPRESSION "Run has completed successfully!"
-    )
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  example_fem_nonlinear
+  SOURCES Example_FEM_Nonlinear.cpp ${example_fem_nonlinear_SOURCES}
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "Run has completed successfully!"
+  )
 
-  TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/auxiliary_tests)
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  example_fem_nonlinear_Jv_timings
+  SOURCES Example_FEM_Nonlinear_Jv_Timings.cpp 
+          ${example_fem_nonlinear_SOURCES}
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "Run has completed successfully!"
+  )
+
+TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING 
+                            ${CMAKE_CURRENT_SOURCE_DIR}/auxiliary_tests)
   
-  SET(example_element_linear_2D_SOURCES
+SET(example_element_linear_2D_SOURCES
     auxiliary_tests/Example_Element_Linear_2D.cpp
     Dimension.hpp
     Dimension.cpp
@@ -63,10 +62,10 @@
 #    MeshBuilder.cpp
     )
   
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    example_element_linear_2D
-    SOURCES ${example_element_linear_2D_SOURCES}
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    PASS_REGULAR_EXPRESSION "Run has completed successfully!"
-    )
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  example_element_linear_2D
+  SOURCES ${example_element_linear_2D_SOURCES}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  PASS_REGULAR_EXPRESSION "Run has completed successfully!"
+  )

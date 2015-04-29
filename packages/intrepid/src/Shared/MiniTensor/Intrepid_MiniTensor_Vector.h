@@ -46,7 +46,7 @@
 #include <cassert>
 #include <iostream>
 #include <vector>
-#ifdef HAVE_INTREPID_KOKKOSCORE
+#if defined(HAVE_INTREPID_KOKKOSCORE)
 #include<Kokkos_Core.hpp>
 #endif
 #include "Intrepid_MiniTensor_TensorBase.h"
@@ -123,7 +123,7 @@ public:
   /// \param dimension the space dimension
   /// \param data_ptr pointer into the array
   ///
-#ifdef HAVE_INTREPID_KOKKOSCORE
+#if defined(HAVE_INTREPID_KOKKOSCORE)
   template<class ArrayT, typename iType>
   Vector(
       typename apply_diff<ArrayT, Index>::type & data,

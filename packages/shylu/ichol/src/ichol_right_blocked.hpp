@@ -53,10 +53,10 @@ namespace Example {
       if (r_val)
         return A00.NumRows() + r_val;
 
-      Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,AlgoTrsm::ForRightBlocked>
+      Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,AlgoTrsm::ForFactorRightBlocked>
         ::invoke<ParallelForType,value_type,CrsExecViewType>(member, Diag::NonUnit, 1.0, A11, A12);
 
-      Herk<Uplo::Upper,Trans::ConjTranspose,AlgoHerk::ForRightBlocked>
+      Herk<Uplo::Upper,Trans::ConjTranspose,AlgoHerk::ForFactorRightBlocked>
         ::invoke<ParallelForType,value_type,CrsExecViewType>(member, -1.0, A12, 1.0, A22);
 
       // -----------------------------------------------------

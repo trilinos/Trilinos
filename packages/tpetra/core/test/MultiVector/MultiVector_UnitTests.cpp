@@ -3502,7 +3502,7 @@ namespace {
     // for variety, we do this on the device, not on the host.
     typename dual_view_type::t_dev X_lcl_d = X_lcl.template view<DMS> ();
     X_lcl.template modify<DMS> ();
-    Kokkos::Impl::ViewFill<typename dual_view_type::t_dev> (X_lcl_h, TWO);
+    Kokkos::Impl::ViewFill<typename dual_view_type::t_dev> (X_lcl_d, TWO);
     X_lcl.template sync<HMS> ();
 
     // Make sure that the DualView actually sync'd.

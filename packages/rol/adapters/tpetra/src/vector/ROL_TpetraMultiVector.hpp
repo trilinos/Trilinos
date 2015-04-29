@@ -50,7 +50,7 @@
 */
 
 #include "ROL_Vector.hpp"
-#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_MultiVector_def.hpp"
 
 namespace ROL {
 
@@ -71,6 +71,13 @@ class TpetraMultiVector : public Vector<Real> {
         virtual ~TpetraMultiVector() {}
 
         TpetraMultiVector(const MVP &tpetra_vec) : tpetra_vec_(tpetra_vec) {}
+       
+        /** \brief Assign \f$y \leftarrow x \f$ where \f$y = \mbox{*this}\f$.
+        */
+        void set(const Vector<Real> &x) {
+            const TMV &ex = Teuchos::dyn_cast<const TMV>(x);
+            tpetra_vec_->assign(*ex.getVector()); 
+        }
        
         /** \brief Compute \f$y \leftarrow x + y\f$ where \f$y = \mbox{*this}\f$.
         */
@@ -113,24 +120,10 @@ class TpetraMultiVector : public Vector<Real> {
             return rcp( new TMV(rcp( new MV(tpetra_vec_->getMap(),n,false)) ));
         }
 
-        /** \brief Compute \f$y \leftarrow \alpha x + y\f$ where \f$y = \mbox{*this}\f$.
-        */
-        virtual void axpy( const Real alpha, const Vector<Real> &x ) {
-            const TMV &ex = Teuchos::dyn_cast<const TMV>(x);
-            tpetra_vec_->update( alpha, *ex.getVector(), 1.0 );
-        }
-
         /**  \brief Set to zero vector.
         */
         virtual void zero() {
             tpetra_vec_->putScalar(0.0);
-        }
-
-        /**  \brief Set \f$y \leftarrow x\f$ where \f$y = \mbox{*this}\f$.
-        */
-        virtual void set( const Vector<Real> &x ) {
-            const TMV &ex = Teuchos::dyn_cast<const TMV>(x);
-            tpetra_vec_->scale(1.0,*ex.getVector());
         }
 
         CMVP getVector() const {

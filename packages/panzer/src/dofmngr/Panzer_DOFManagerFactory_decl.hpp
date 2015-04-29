@@ -106,6 +106,8 @@ public:
    bool getUseTieBreak()
    { return useTieBreak_; }
 
+   static void buildFieldOrder(const std::string & fieldOrderStr,std::vector<std::string> & fieldOrder);
+
 protected:
    template <typename DOFManagerT>
    Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > 

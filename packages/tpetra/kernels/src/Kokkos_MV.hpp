@@ -1,3 +1,13 @@
+
+//
+// WARNING: DO NOT INCLUDE THIS HEADER FILE.  DO NOT USE ANYTHING IN
+// IT.  DO NOT RELY ON IT EXISTING.  IT WILL GO AWAY VERY SOON.
+//
+// If you want vector and multivector computational kernels, look in
+// Kokkos_Blas1.hpp (for single-vector kernels) or Kokkos_Blas1_MV.hpp
+// (for single-vector and multiple-vector kernels).
+//
+
 #ifndef KOKKOS_MULTIVECTOR_H_
 #define KOKKOS_MULTIVECTOR_H_
 

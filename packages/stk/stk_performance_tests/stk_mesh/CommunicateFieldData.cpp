@@ -112,7 +112,7 @@ void createMetaAndBulkData(stk::io::StkMeshIoBroker &exodusFileReader, std::stri
     stk::mesh::MetaData &stkMeshMetaData = exodusFileReader.meta_data();
     createNodalVectorFields(stkMeshMetaData);
 
-    Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data(new stk::mesh::BulkData(stkMeshMetaData, MPI_COMM_WORLD, false, NULL));
+    Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data(new stk::mesh::BulkData(stkMeshMetaData, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA, false, NULL));
     exodusFileReader.set_bulk_data(arg_bulk_data);
     stk::mesh::BulkData& stkMeshBulkData = *arg_bulk_data;
 

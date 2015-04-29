@@ -15,12 +15,13 @@
 
   <ParameterList name="Aggregates2">
     <Parameter name="factory"    type="string" value="UncoupledAggregationFactory"/>
-    <Parameter name="UseOnePtAggregationAlgorithm" type="bool" value="false"/>
-    <Parameter name="UsePreserveDirichletAggregationAlgorithm" type="bool" value="false"/>
-    <Parameter name="UseUncoupledAggregationAlgorithm" type="bool" value="false"/>
-    <Parameter name="UseMaxLinkAggregationAlgorithm" type="bool" value="false"/>
-    <Parameter name="UseIsolatedNodeAggregationAlgorithm" type="bool" value="false"/>
-    <Parameter name="UseEmergencyAggregationAlgorithm" type="bool" value="false"/>
+
+    <Parameter name="aggregation: allow user-specified singletons" type="bool" value="false"/>
+    <Parameter name="aggregation: enable phase 1" type="bool" value="false"/>
+    <Parameter name="aggregation: enable phase 2a" type="bool" value="false"/>
+    <Parameter name="aggregation: enable phase 2b" type="bool" value="false"/>
+    <Parameter name="aggregation: enable phase 3" type="bool" value="false"/>
+    <Parameter name="aggregation: preserve Dirichlet points" type="bool" value="false"/>
 
     <Parameter name="OnePt aggregate map name" type="string" value=""/>
   </ParameterList>

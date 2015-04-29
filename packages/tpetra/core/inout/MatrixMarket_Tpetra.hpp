@@ -55,6 +55,7 @@
 ///
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_Operator.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_ComputeGatherMap.hpp"
 #include "Teuchos_MatrixMarket_Raw_Adder.hpp"
@@ -4834,6 +4835,9 @@ namespace Tpetra {
       //! Specialization of Tpetra::Map that matches SparseMatrixType.
       typedef Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
 
+      typedef Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type, node_type>            operator_type;
+      typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>         mv_type;
+
       /// \brief Print the sparse matrix in Matrix Market format, with
       ///   comments.
       ///
@@ -6759,6 +6763,277 @@ namespace Tpetra {
           }
         }
       }
+
+    public:
+      static void
+      writeOperator(const std::string& fileName, operator_type const &A) {
+        Teuchos::ParameterList pl;
+        writeOperator(fileName, A, pl);
+      }
+
+      /*! @brief Write Tpetra::Operator to specified file.
+
+        This method allows the user to pass in options to the writer.  The currently supported options
+        are:
+
+          - probing size               integer [10]           number of columns to use in probing MultiVector
+          - precision                  integer [C++ default]  controls amount of precision in matrix file data
+          - print MatrixMarket header  boolean [true]         whether to print the MatrixMarket header
+          - zero-based indexing        boolean [false]        print matrix using zero-based indexing
+      */
+      static void
+      writeOperator(const std::string& fileName, operator_type const &A, Teuchos::ParameterList const &params) {
+        std::ofstream out;
+        std::string tmpFile = "__TMP__" + fileName;
+        const int myRank = A.getDomainMap()->getComm()->getRank();
+        bool precisionChanged=false;
+        int  oldPrecision;
+        // The #nonzeros in a Tpetra::Operator is unknown until probing is completed.
+        // In order to write a MatrixMarket header, we write the matrix to a temporary file.
+        if (myRank==0) {
+          if (std::ifstream(tmpFile))
+            TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+                                       "writeOperator: temporary file " << tmpFile << " already exists");
+          out.open(tmpFile.c_str());
+          if (params.isParameter("precision")) {
+            oldPrecision = out.precision(params.get<int>("precision"));
+            precisionChanged=true;
+          }
+        }
+
+        std::string header = writeOperator(out, A, params);
+
+        if (myRank==0) {
+          if (precisionChanged)
+            out.precision(oldPrecision);
+          out.close();
+          out.open(fileName.c_str(), std::ios::binary);
+          bool printMatrixMarketHeader = true;
+          if (params.isParameter("print MatrixMarket header"))
+            printMatrixMarketHeader = params.get<bool>("print MatrixMarket header");
+          if (printMatrixMarketHeader && myRank == 0) {
+            // Write header to final file.
+            out << header;
+          }
+          // Append matrix from temporary to final file.
+          std::ifstream src(tmpFile, std::ios_base::binary);
+          out << src.rdbuf();
+          src.close();
+          // Delete the temporary file.
+          remove(tmpFile.c_str());
+        }
+      }
+
+      static std::string
+      writeOperator(std::ostream &os, operator_type const &A, Teuchos::ParameterList const &params) {
+
+        using Teuchos::RCP;
+        using Teuchos::rcp;
+        using Teuchos::ArrayRCP;
+        using Teuchos::Array;
+
+        typedef local_ordinal_type                 LO;
+        typedef global_ordinal_type                GO;
+        typedef scalar_type                        Scalar;
+        typedef Teuchos::OrdinalTraits<LO>         TLOT;
+        typedef Teuchos::OrdinalTraits<GO>         TGOT;
+        typedef Tpetra::Import<LO, GO, node_type>  import_type;
+        typedef Tpetra::MultiVector<GO, LO, GO, node_type> mv_type_go;
+
+        const map_type&                domainMap = *(A.getDomainMap());
+        RCP<const map_type>            rangeMap = A.getRangeMap();
+        RCP<const Teuchos::Comm<int> > comm = rangeMap->getComm();
+        const int                      myRank = comm->getRank();
+        const size_t                   numProcs = comm->getSize();
+
+        size_t numMVs = 10;
+        if (params.isParameter("probing size"))
+          numMVs = params.get<int>("probing size");
+
+        GO globalNnz = 0;
+        GO minColGid = domainMap.getMinAllGlobalIndex();
+        GO maxColGid = domainMap.getMaxAllGlobalIndex();
+        // Rather than replicating the domainMap on all processors, we instead
+        // iterate from the min GID to the max GID.  If the map is gappy,
+        // there will be invalid GIDs, i.e., GIDs no one has.  This will require
+        // unnecessary matvecs  against potentially zero vectors.
+        GO numGlobElts = maxColGid - minColGid + TGOT::one();
+        GO numChunks = numGlobElts / numMVs;
+        GO rem = numGlobElts % numMVs;
+        GO indexBase = rangeMap->getIndexBase();
+
+        int offsetToUseInPrinting = 1 - indexBase; // default is 1-based indexing
+        if (params.isParameter("zero-based indexing")) {
+          if (params.get<bool>("zero-based indexing") == true)
+            offsetToUseInPrinting = -indexBase; // If 0-based, use as-is. If 1-based, subtract 1.
+        }
+
+        // Create map that replicates the range map on pid 0 and is empty for all other pids
+        size_t numLocalRangeEntries = rangeMap->getNodeNumElements();
+
+        // Create contiguous source map
+        RCP<const map_type> allGidsMap = rcp(new map_type(TGOT::invalid(), numLocalRangeEntries,
+                                                              indexBase, comm));
+        // Create vector based on above map.  Populate it with GIDs corresponding to this pid's GIDs in rangeMap.
+        mv_type_go allGids(allGidsMap,1);
+        Teuchos::ArrayRCP<GO> allGidsData = allGids.getDataNonConst(0);
+
+        for (size_t i=0; i<numLocalRangeEntries; i++)
+          allGidsData[i] = rangeMap->getGlobalElement(i);
+        allGidsData = Teuchos::null;
+
+        // Create target map that is nontrivial only on pid 0
+        GO numTargetMapEntries=TGOT::zero();
+        Teuchos::Array<GO> importGidList;
+        if (myRank==0) {
+          numTargetMapEntries = rangeMap->getGlobalNumElements();
+          importGidList.reserve(numTargetMapEntries);
+          for (GO j=0; j<numTargetMapEntries; ++j) importGidList.push_back(j + indexBase);
+        } else {
+          importGidList.reserve(numTargetMapEntries);
+        }
+        RCP<map_type> importGidMap = rcp(new map_type(TGOT::invalid(), importGidList(), indexBase, comm));
+
+        // Import all rangeMap GIDs to pid 0
+        import_type gidImporter(allGidsMap, importGidMap);
+        mv_type_go importedGids(importGidMap, 1);
+        importedGids.doImport(allGids, gidImporter, INSERT);
+
+        // The following import map will be non-trivial only on pid 0.
+        ArrayRCP<const GO> importedGidsData = importedGids.getData(0);
+        RCP<const map_type> importMap = rcp(new map_type(TGOT::invalid(), importedGidsData(), indexBase, comm) );
+
+        // Importer from original range map to pid 0
+        import_type importer(rangeMap, importMap);
+        // Target vector on pid 0
+        RCP<mv_type> colsOnPid0 = rcp(new mv_type(importMap,numMVs));
+
+        RCP<mv_type> ei = rcp(new mv_type(A.getDomainMap(),numMVs));    //probing vector
+        RCP<mv_type> colsA = rcp(new mv_type(A.getRangeMap(),numMVs));  //columns of A revealed by probing
+
+        Array<GO> globalColsArray, localColsArray;
+        globalColsArray.reserve(numMVs);
+        localColsArray.reserve(numMVs);
+
+        ArrayRCP<ArrayRCP<Scalar> > eiData(numMVs);
+        for (size_t i=0; i<numMVs; ++i)
+          eiData[i] = ei->getDataNonConst(i);
+
+        // //////////////////////////////////////
+        // Discover A by chunks
+        // //////////////////////////////////////
+        for (GO k=0; k<numChunks; ++k) {
+          for (size_t j=0; j<numMVs; ++j ) {
+            //GO curGlobalCol = maxColGid - numMVs + j + TGOT::one();
+            GO curGlobalCol = minColGid + k*numMVs + j;
+            globalColsArray.push_back(curGlobalCol);
+            //TODO  extract the g2l map outside of this loop loop
+            LO curLocalCol = domainMap.getLocalElement(curGlobalCol);
+            if (curLocalCol != TLOT::invalid()) {
+              eiData[j][curLocalCol] = TGOT::one();
+              localColsArray.push_back(curLocalCol);
+            }
+          }
+          //TODO Do the views eiData need to be released prior to the matvec?
+
+          // probe
+          A.apply(*ei,*colsA);
+
+          colsOnPid0->doImport(*colsA,importer,INSERT);
+
+          if (myRank==0)
+            globalNnz += writeColumns(os,*colsOnPid0, numMVs, importedGidsData(),
+                                      globalColsArray, offsetToUseInPrinting);
+
+          //zero out the ei's
+          for (size_t j=0; j<numMVs; ++j ) {
+            for (int i=0; i<localColsArray.size(); ++i)
+              eiData[j][localColsArray[i]] = TGOT::zero();
+          }
+          globalColsArray.clear();
+          localColsArray.clear();
+
+        }
+
+        // //////////////////////////////////////
+        // Handle leftover part of A
+        // //////////////////////////////////////
+        if (rem > 0) {
+          for (int j=0; j<rem; ++j ) {
+            GO curGlobalCol = maxColGid - rem + j + TGOT::one();
+            globalColsArray.push_back(curGlobalCol);
+            //TODO  extract the g2l map outside of this loop loop
+            LO curLocalCol = domainMap.getLocalElement(curGlobalCol);
+            if (curLocalCol != TLOT::invalid()) {
+              eiData[j][curLocalCol] = TGOT::one();
+              localColsArray.push_back(curLocalCol);
+            }
+          }
+          //TODO Do the views eiData need to be released prior to the matvec?
+
+          // probe
+          A.apply(*ei,*colsA);
+
+          colsOnPid0->doImport(*colsA,importer,INSERT);
+          if (myRank==0)
+            globalNnz += writeColumns(os,*colsOnPid0, rem, importedGidsData(),
+                                      globalColsArray, offsetToUseInPrinting);
+
+          //zero out the ei's
+          for (int j=0; j<rem; ++j ) {
+            for (int i=0; i<localColsArray.size(); ++i)
+              eiData[j][localColsArray[i]] = TGOT::zero();
+          }
+          globalColsArray.clear();
+          localColsArray.clear();
+
+        }
+
+        std::ostringstream oss;
+        if (myRank==0) {
+          oss << "%%MatrixMarket matrix coordinate real general" << std::endl;
+          oss << "% Tpetra::Operator" << std::endl;
+          std::time_t now = std::time(NULL);
+          oss << "% time stamp: " << ctime(&now);
+          oss << "% written from " << numProcs << " processes" << std::endl;
+          size_t numRows = rangeMap->getGlobalNumElements();
+          size_t numCols = domainMap.getGlobalNumElements();
+          oss << numRows << " " << numCols << " " << globalNnz << std::endl;
+        }
+
+        return oss.str();
+
+      }
+
+      static global_ordinal_type
+      writeColumns(std::ostream& os, mv_type const &colsA, size_t const &numCols,
+                   Teuchos::ArrayView<const global_ordinal_type> const &rowGids,
+                   Teuchos::Array<global_ordinal_type> const &colsArray,
+                   global_ordinal_type const & indexBase) {
+
+      typedef global_ordinal_type           GO;
+      typedef scalar_type                   Scalar;
+      typedef Teuchos::ScalarTraits<Scalar> STS;
+
+        GO nnz=0;
+        const Scalar zero = STS::zero();
+        const size_t numRows = colsA.getGlobalLength();
+        for (size_t j=0; j<numCols; ++j) {
+          ArrayRCP<const Scalar> const curCol = colsA.getData(j);
+          const GO J = colsArray[j];
+          for (size_t i=0; i<numRows; ++i) {
+            const Scalar val = curCol[i];
+            if (val!=zero) {
+              os << rowGids[i]+indexBase << " " << J+indexBase << " " << val << std::endl;
+              ++nnz;
+            }
+          }
+        }
+
+        return nnz;
+
+      }
+
     }; // class Writer
 
   } // namespace MatrixMarket

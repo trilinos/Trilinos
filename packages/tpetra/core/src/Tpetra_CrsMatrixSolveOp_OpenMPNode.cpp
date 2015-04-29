@@ -53,10 +53,6 @@
 #include "TpetraCore_ETIHelperMacros.h"
 #include "Tpetra_CrsMatrixSolveOp_def.hpp"
 
-// FIXME (mfh 09 Jan 2015) This is unfortunately needed for
-// CrsMatrix::localSolve().
-#include "Tpetra_CrsMatrix_def.hpp"
-
 #define TPETRA_CRSMATRIX_SOLVEOP_OPENMPNODE_INSTANT( T, SCALAR, LO, GO ) \
   TPETRA_CRSMATRIX_SOLVEOP_INSTANT( T, SCALAR, LO, GO, KokkosClassic::DoNotUse::OpenMPNode )
 

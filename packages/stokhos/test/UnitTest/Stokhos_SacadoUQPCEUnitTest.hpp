@@ -223,6 +223,7 @@ namespace SacadoPCEUnitTest {
   UNARY_UNIT_TEST(log)
   UNARY_UNIT_TEST(log10)
   UNARY_UNIT_TEST(sqrt)
+  UNARY_UNIT_TEST(cbrt)
   UNARY_UNIT_TEST(sin)
   UNARY_UNIT_TEST(cos)
   UNARY_UNIT_TEST(tan)

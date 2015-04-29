@@ -799,7 +799,7 @@ int main(int argc, char *argv[]) {
                              hexGValsTransformed, hexGValsTransformedWeighted, COMP_CPP);
 
       // assemble into global matrix
-      int err = 0;
+     //int err = 0;
       for (int row = 0; row < numFieldsG; row++){
         for (int col = 0; col < numFieldsG; col++){
             int rowIndex = elemToNode(k,row);
@@ -830,7 +830,7 @@ int main(int argc, char *argv[]) {
 
 
      // assemble into global matrix
-      err = 0;
+      //err = 0;
       for (int row = 0; row < numFieldsC; row++){
         for (int col = 0; col < numFieldsC; col++){
             int rowIndex = elemToEdge(k,row);
@@ -867,7 +867,7 @@ int main(int argc, char *argv[]) {
      fst::applyRightFieldSigns<double>(stiffMatrixC, hexEdgeSigns);
 
      // assemble into global matrix
-      err = 0;
+      //err = 0;
       for (int row = 0; row < numFieldsC; row++){
         for (int col = 0; col < numFieldsC; col++){
             int rowIndex = elemToEdge(k,row);

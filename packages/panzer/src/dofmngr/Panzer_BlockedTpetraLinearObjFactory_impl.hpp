@@ -204,14 +204,14 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
    const BTLOC & b_globalBCRows = Teuchos::dyn_cast<const BTLOC>(globalBCRows); 
    BTLOC & b_ghosted = Teuchos::dyn_cast<BTLOC>(ghostedObjs); 
 
-   TEUCHOS_ASSERT(b_localBCRows.get_x()!=Teuchos::null);
-   TEUCHOS_ASSERT(b_globalBCRows.get_x()!=Teuchos::null);
+   TEUCHOS_ASSERT(b_localBCRows.get_f()!=Teuchos::null);
+   TEUCHOS_ASSERT(b_globalBCRows.get_f()!=Teuchos::null);
 
    // cast each component as needed to their product form
    RCP<PhysicallyBlockedLinearOpBase<ScalarT> > A = rcp_dynamic_cast<PhysicallyBlockedLinearOpBase<ScalarT> >(b_ghosted.get_A());
    RCP<ProductVectorBase<ScalarT> > f = rcp_dynamic_cast<ProductVectorBase<ScalarT> >(b_ghosted.get_f());
-   RCP<ProductVectorBase<ScalarT> > local_bcs  = rcp_dynamic_cast<ProductVectorBase<ScalarT> >(b_localBCRows.get_x(),true);
-   RCP<ProductVectorBase<ScalarT> > global_bcs = rcp_dynamic_cast<ProductVectorBase<ScalarT> >(b_globalBCRows.get_x(),true);
+   RCP<ProductVectorBase<ScalarT> > local_bcs  = rcp_dynamic_cast<ProductVectorBase<ScalarT> >(b_localBCRows.get_f(),true);
+   RCP<ProductVectorBase<ScalarT> > global_bcs = rcp_dynamic_cast<ProductVectorBase<ScalarT> >(b_globalBCRows.get_f(),true);
 
    if(adjustX) f = rcp_dynamic_cast<ProductVectorBase<ScalarT> >(b_ghosted.get_x());
 

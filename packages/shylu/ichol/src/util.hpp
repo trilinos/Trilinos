@@ -125,8 +125,11 @@ namespace Example {
   class AlgoGemm {
   public:
     // One side factorization on flat matrices
-    static const int ForLeftBlocked  = 2001;
-    static const int ForRightBlocked = 2002;
+    static const int ForFactorLeftBlocked      = 2001;
+    static const int ForFactorRightBlocked     = 2002;
+
+    // B and C are dense matrix and used for solve phase
+    static const int ForSolveDenseMatrix = 2003;
   };
 
   typedef AlgoGemm AlgoHerk;

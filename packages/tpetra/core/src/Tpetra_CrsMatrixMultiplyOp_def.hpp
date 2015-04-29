@@ -46,10 +46,11 @@
 ///
 /// Definition of Tpetra::CrsMatrixMultiplyOp and its nonmember constructor.
 
-#include <Tpetra_Util.hpp>
-
 #include "Tpetra_CrsMatrixMultiplyOp_decl.hpp"
-#include "Tpetra_CrsMatrix_def.hpp"
+#include <Tpetra_Util.hpp>
+#if ! defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
+#  include "Tpetra_CrsMatrix.hpp"
+#endif // ! defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
 
 #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
 #  include "Teuchos_VerboseObject.hpp"

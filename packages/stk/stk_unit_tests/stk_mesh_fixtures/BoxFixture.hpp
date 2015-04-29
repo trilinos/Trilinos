@@ -55,6 +55,7 @@ static const size_t spatial_dimension = 3;
 class  BoxFixture {
 public:
   BoxFixture(stk::ParallelMachine pm = MPI_COMM_WORLD,
+             stk::mesh::BulkData::AutomaticAuraOption autoAuraOption = stk::mesh::BulkData::AUTO_AURA,
              unsigned block_size = 1000,
              const std::vector<std::string>& entity_names = stk::mesh::entity_rank_names());
 

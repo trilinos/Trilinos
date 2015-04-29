@@ -83,6 +83,10 @@ namespace MueLu {
 
     // We do this cycle twice.
     // I don't know why, but ML does it too
+    // taw: by running the aggregation routine more than once there is a chance that also
+    // non-aggregated nodes with a node distance of two are added to existing aggregates.
+    // Assuming that the aggregate size is 3 in each direction running the algorithm only twice
+    // should be sufficient.
     for (int k = 0; k < 2; k++) {
       for (LO i = 0; i < numRows; i++) {
         if (aggStat[i] != READY)

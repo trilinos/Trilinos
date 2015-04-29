@@ -73,17 +73,26 @@
                                  /* invoked to arbitrate.                   */
 
 /*****************************************************************************
-   Structure holding aggregate information. Right now, nAggregates, IsRoot,
-   Vertex2AggId, procWinner are populated.  This allows us to look at a node
-   and determine the aggregate to which it has been assigned and the id of the
-   processor that owns this aggregate. It is not so easy to determine vertices
-   within the kth aggregate or the size of the kth aggregate. Thus, it might be
-   useful to have a secondary structure which would be a rectangular CrsGraph
-   where rows (or vertices) correspond to aggregates and colunmns (or edges)
-   correspond to nodes. While not strictly necessary, it might be convenient.
+
 ****************************************************************************/
 
 namespace MueLu {
+
+/*!
+    @class Aggregates
+    @brief Container class for aggregation information.
+
+    @ingroup Aggregation
+
+    Structure holding aggregate information. Right now, nAggregates, IsRoot,
+    Vertex2AggId, procWinner are populated.  This allows us to look at a node
+    and determine the aggregate to which it has been assigned and the id of the
+    processor that owns this aggregate. It is not so easy to determine vertices
+    within the kth aggregate or the size of the kth aggregate. Thus, it might be
+    useful to have a secondary structure which would be a rectangular CrsGraph
+    where rows (or vertices) correspond to aggregates and colunmns (or edges)
+    correspond to nodes. While not strictly necessary, it might be convenient.
+*/
 
   template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class Aggregates : public BaseClass {
@@ -190,19 +199,21 @@ namespace MueLu {
     void print(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = verbLevel_default) const;
 
   private:
-    LO   nAggregates_;              /* Number of aggregates on this processor  */
+    LO   nAggregates_;              ///< Number of aggregates on this processor
 
-    RCP<LOVector> vertex2AggId_;    /* vertex2AggId[k] gives a local id        */
-                                    /* corresponding to the aggregate to which */
-                                    /* local id k has been assigned.  While k  */
-    RCP<LOVector> procWinner_;      /* is the local id on my processor (MyPID),*/
-                                    /* vertex2AggId[k] is the local id on the  */
-                                    /* processor which actually owns the       */
-                                    /* aggregate. This owning processor has id */
-                                    /* given by procWinner[k].                 */
+    /*! vertex2AggId[k] gives a local id corresponding to the aggregate to which
+     * local id k has been assigned. While k is the local id on my processor (MyPID),
+     * vertex2AggId[k] is the local id on the processor which actually owns the aggregate.
+     */
+    RCP<LOVector> vertex2AggId_;
 
-    Teuchos::ArrayRCP<bool> isRoot_;/* IsRoot[i] indicates whether vertex i  */
-                                    /* is a root node.                       */
+    /*!
+     * If k is the local id on my processor (MyPID), the owning processor has the
+     * id given by procWinner[k]
+     */
+    RCP<LOVector> procWinner_;
+
+    Teuchos::ArrayRCP<bool> isRoot_;//< IsRoot[i] indicates whether vertex i is a root node.
 
     //! Set to false iff aggregates do not include any DOFs belong to other processes.
     bool aggregatesIncludeGhosts_;

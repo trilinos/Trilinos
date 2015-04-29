@@ -39,7 +39,7 @@
 /* Define if we want Ifpack Internal FlopCounters enabled */
 #cmakedefine IFPACK_FLOPCOUNTERS
 
-/* Define if we want Ifpack support graph preconditioner */
+/* Define to enable Ifpack_SupportGraph (support graph preconditioner) */
 #cmakedefine HAVE_IFPACK_SUPPORTGRAPH
 
 /* Define if MPI parallel subdomain solvers are enabled */

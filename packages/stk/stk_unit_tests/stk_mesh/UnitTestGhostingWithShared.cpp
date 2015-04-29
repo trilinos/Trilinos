@@ -61,6 +61,157 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/util/PairIter.hpp"   // for PairIter
 #include "stk_io/StkMeshIoBroker.hpp"
+#include "stk_unit_test_utils/ioUtils.hpp"
+#include "BulkDataTester.hpp"
+
+
+TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
+{
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+
+    int numProcs = stk::parallel_machine_size(communicator);
+    if (numProcs != 3) {
+      return;
+    }
+
+    int procId = stk::parallel_machine_rank(communicator);
+
+    unsigned spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::unit_test::BulkDataTester bulk(meta, communicator);
+    const std::string generatedMeshSpecification = "generated:1x1x3";
+    stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpecification, bulk, communicator);
+    bulk.modification_begin();
+    stk::mesh::Ghosting& custom_shared_ghosting = bulk.create_ghosting("custom_shared");
+    bulk.modification_end();
+
+    stk::mesh::EntityProcVec ownedEntitiesToGhost;
+
+    if (procId == 1)
+    {
+        stk::mesh::Entity elem2 = bulk.get_entity(stk::topology::ELEM_RANK, 2);
+        int destProc = 2;
+        ownedEntitiesToGhost.push_back(stk::mesh::EntityProc(elem2, destProc));
+    }
+
+
+    stk::mesh::EntityLess my_less(bulk);
+    std::set<stk::mesh::EntityProc,stk::mesh::EntityLess> entitiesWithClosure(my_less);
+    bulk.my_add_closure_entities(custom_shared_ghosting, ownedEntitiesToGhost, entitiesWithClosure);
+
+    if (procId == 1)
+    {
+        std::vector<stk::mesh::EntityKey> gold_keys;
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 5));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 6));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 7));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 8));
+
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK, 2));
+
+        ASSERT_EQ(gold_keys.size(), entitiesWithClosure.size());
+
+        unsigned i=0;
+        int otherProc = 2;
+
+        for(std::set<stk::mesh::EntityProc , stk::mesh::EntityLess>::const_iterator iter = entitiesWithClosure.begin();
+                iter != entitiesWithClosure.end(); ++iter)
+        {
+            EXPECT_EQ(gold_keys[i], bulk.entity_key(iter->first));
+            EXPECT_EQ(otherProc, iter->second);
+            ++i;
+        }
+    }
+    else
+    {
+        ASSERT_TRUE(entitiesWithClosure.empty());
+    }
+
+    stk::mesh::impl::move_unowned_entities_for_owner_to_ghost(bulk, entitiesWithClosure);
+
+    if (procId==0)
+    {
+        std::vector<stk::mesh::EntityKey> gold_keys;
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 5));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 6));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 7));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 8));
+
+        ASSERT_EQ(gold_keys.size(), entitiesWithClosure.size());
+
+        unsigned i=0;
+        int otherProc = 2;
+
+        for(std::set<stk::mesh::EntityProc , stk::mesh::EntityLess>::const_iterator iter = entitiesWithClosure.begin();
+                iter != entitiesWithClosure.end(); ++iter)
+        {
+            EXPECT_EQ(gold_keys[i], bulk.entity_key(iter->first));
+            EXPECT_EQ(otherProc, iter->second);
+            ++i;
+        }
+    }
+    else if (procId==1)
+    {
+        std::vector<stk::mesh::EntityKey> gold_keys;
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK, 2));
+
+        ASSERT_EQ(gold_keys.size(), entitiesWithClosure.size());
+
+        unsigned i=0;
+        int otherProc = 2;
+
+        for(std::set<stk::mesh::EntityProc , stk::mesh::EntityLess>::const_iterator iter = entitiesWithClosure.begin();
+                iter != entitiesWithClosure.end(); ++iter)
+        {
+            EXPECT_EQ(gold_keys[i], bulk.entity_key(iter->first));
+            EXPECT_EQ(otherProc, iter->second);
+            ++i;
+        }
+    }
+    else
+    {
+        ASSERT_TRUE(entitiesWithClosure.empty());
+    }
+
+    bulk.modification_begin();
+
+    stk::mesh::Ghosting &ghosting = bulk.create_ghosting("custom ghost unit test");
+    bulk.my_ghost_entities_and_fields(ghosting, entitiesWithClosure);
+    bulk.my_internal_modification_end_for_change_ghosting();
+
+    if (procId == 0)
+    {
+        EXPECT_TRUE(bulk.my_in_send_ghost(ghosting, stk::mesh::EntityKey(stk::topology::NODE_RANK, 5), 2));
+        EXPECT_TRUE(bulk.my_in_send_ghost(ghosting, stk::mesh::EntityKey(stk::topology::NODE_RANK, 6), 2));
+        EXPECT_TRUE(bulk.my_in_send_ghost(ghosting, stk::mesh::EntityKey(stk::topology::NODE_RANK, 7), 2));
+        EXPECT_TRUE(bulk.my_in_send_ghost(ghosting, stk::mesh::EntityKey(stk::topology::NODE_RANK, 8), 2));
+        EXPECT_FALSE(bulk.my_in_send_ghost(ghosting, stk::mesh::EntityKey(stk::topology::ELEM_RANK, 2), 2));
+    }
+    else if (procId == 1)
+    {
+        EXPECT_FALSE(bulk.my_in_send_ghost(ghosting, stk::mesh::EntityKey(stk::topology::NODE_RANK, 5), 2));
+        EXPECT_FALSE(bulk.my_in_send_ghost(ghosting, stk::mesh::EntityKey(stk::topology::NODE_RANK, 6), 2));
+        EXPECT_FALSE(bulk.my_in_send_ghost(ghosting, stk::mesh::EntityKey(stk::topology::NODE_RANK, 7), 2));
+        EXPECT_FALSE(bulk.my_in_send_ghost(ghosting, stk::mesh::EntityKey(stk::topology::NODE_RANK, 8), 2));
+        EXPECT_TRUE(bulk.my_in_send_ghost(ghosting, stk::mesh::EntityKey(stk::topology::ELEM_RANK, 2), 2));
+    }
+    else if (procId == 2)
+    {
+        std::vector<stk::mesh::EntityKey> gold_keys;
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 5));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 6));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 7));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 8));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK, 2));
+
+        for (size_t i=0;i<gold_keys.size();++i)
+        {
+            stk::mesh::Entity entity = bulk.get_entity(gold_keys[i]);
+            ASSERT_TRUE(bulk.is_valid(entity));
+            ASSERT_TRUE(bulk.in_receive_ghost(ghosting, gold_keys[i]));
+        }
+    }
+}
 
 TEST(UnitTestGhosting, WithSharedFiltered)
 {

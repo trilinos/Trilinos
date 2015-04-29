@@ -40,10 +40,12 @@ template < >
 void Response_Functional<panzer::Traits::Jacobian>::
 scatterResponse() 
 {
+  using Teuchos::rcp_dynamic_cast;
+
   Teuchos::RCP<Thyra::MultiVectorBase<double> > dgdx_unique = getDerivative();
-   
-  Teuchos::rcp_dynamic_cast<ThyraObjContainer<double> >(uniqueContainer_)->set_f_th(dgdx_unique->col(0));
-  linObjFactory_->ghostToGlobalContainer(*ghostedContainer_,*uniqueContainer_,LinearObjContainer::F);
+  Teuchos::rcp_dynamic_cast<ThyraObjContainer<double> >(uniqueContainer_)->set_x_th(dgdx_unique->col(0));
+
+  linObjFactory_->ghostToGlobalContainer(*ghostedContainer_,*uniqueContainer_,LinearObjContainer::X);
 }
 
 // Do nothing unless derivatives are actually required
@@ -71,7 +73,7 @@ adjustForDirichletConditions(const GlobalEvaluationData & localBCRows,const Glob
 { 
   linObjFactory_->adjustForDirichletConditions(Teuchos::dyn_cast<const LinearObjContainer>(localBCRows),
                                                Teuchos::dyn_cast<const LinearObjContainer>(globalBCRows),
-                                               *ghostedContainer_,true);
+                                               *ghostedContainer_,true,true);
 }
 
 }

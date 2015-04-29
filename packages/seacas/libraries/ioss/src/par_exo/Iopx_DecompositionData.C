@@ -828,7 +828,6 @@ namespace Iopx {
     Zoltan zz(comm_);
 
     // Register Zoltan Callback functions...
-
     zz.Set_Num_Obj_Fn(zoltan_num_obj, this);
     zz.Set_Obj_List_Fn(zoltan_obj_list, this);
     zz.Set_Num_Geom_Fn(zoltan_num_dim, this);
@@ -836,6 +835,7 @@ namespace Iopx {
 
     // Set Zoltan parameters
     std::string num_proc = Ioss::Utils::to_string(processorCount);
+    zz.Set_Param("DEBUG_LEVEL", "0");
     zz.Set_Param("NUM_GLOBAL_PARTS", num_proc);
 
     int num_global = sizeof(INT)/sizeof(int);
@@ -844,7 +844,6 @@ namespace Iopx {
     zz.Set_Param("LB_METHOD", method);
     zz.Set_Param("REMAP", "0");
     zz.Set_Param("RETURN_LISTS", "ALL");
-    zz.Set_Param("DEBUG_LEVEL", "0");
 
     int changes = 0;
     int num_local  = 0;

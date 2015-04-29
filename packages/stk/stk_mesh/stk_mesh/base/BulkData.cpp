@@ -35,7 +35,6 @@
 #include <stddef.h>                     // for size_t, NULL
 #include <string.h>                     // for memcpy, strcmp
 #include <algorithm>                    // fom_deleted_entities_current_modification_cycler sort, lower_bound, unique, etc
-#include <boost/foreach.hpp>            // for auto_any_base, etc
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <sstream>
 #include <fstream>
@@ -112,7 +111,8 @@ void BulkData::fillEntityCommInfoForEntity(stk::mesh::Ghosting &ghost_id, stk::m
   }
 }
 
-void BulkData::fillSharedEntities(stk::mesh::Ghosting& ghost_id, stk::mesh::BulkData &mesh, std::vector<shared_entity_type> & shared_entity_map, std::vector<std::vector<shared_entity_type> > &shared_entities )
+void BulkData::fillSharedEntities(stk::mesh::Ghosting& ghost_id, stk::mesh::BulkData &mesh, std::vector<shared_entity_type> & shared_entity_map,
+        std::vector<std::vector<shared_entity_type> > &shared_entities )
 {
     for(std::vector<shared_entity_type>::const_iterator itr = shared_entity_map.begin(),
             end = shared_entity_map.end(); itr != end; ++itr)
@@ -142,7 +142,6 @@ void communicateSharedEntityInfo(stk::mesh::BulkData &mesh, stk::CommSparse &com
                     shared_entity_type const & sentity = shared_entities[proc][e];
                     size_t num_nodes_on_entity = sentity.nodes.size();
                     comm.send_buffer(proc).pack<stk::topology::topology_t>(sentity.topology);
-                    //comm.send_buffer(proc).pack<size_t>(num_nodes_on_entity);  // TEMPORARY HACK: DO NOT PUSH
                     for (size_t i = 0; i < num_nodes_on_entity; ++i )
                     {
                         comm.send_buffer(proc).pack(sentity.nodes[i]);
@@ -160,6 +159,34 @@ void communicateSharedEntityInfo(stk::mesh::BulkData &mesh, stk::CommSparse &com
     comm.communicate();
 }
 
+void BulkData::is_entity_shared(std::vector<shared_entity_type>& shared_entity_map, int proc_id, shared_entity_type &sentity)
+{
+    std::vector<shared_entity_type>::iterator shared_itr = std::lower_bound(shared_entity_map.begin(), shared_entity_map.end(), sentity);
+
+    bool entitiesHaveSameNodes = shared_itr != shared_entity_map.end() && *shared_itr == sentity;
+    bool entitiesAreTheSame = false;
+
+    if ( this->use_entity_ids_for_resolving_sharing() )
+    {
+        entitiesAreTheSame = entitiesHaveSameNodes && shared_itr->local_key == sentity.local_key;
+    }
+    else
+    {
+        entitiesAreTheSame = entitiesHaveSameNodes;
+    }
+
+    if( entitiesAreTheSame )
+    {
+        Entity entity = this->get_entity(shared_itr->local_key);
+        shared_itr->sharing_procs.push_back(proc_id);
+        if(proc_id < this->parallel_rank())
+        {
+            shared_itr->global_key = sentity.global_key;
+        }
+        this->internal_mark_entity(entity, BulkData::IS_SHARED);
+    }
+}
+
 void BulkData::unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatNeedAlsoHaveEntity(stk::CommSparse &comm, std::vector<shared_entity_type> & shared_entity_map)
 {
     for(int ip = this->parallel_size() - 1; ip >= 0; --ip)
@@ -174,8 +201,6 @@ void BulkData::unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackPr
                 buf.unpack<stk::topology::topology_t>(sentity.topology);
                 stk::topology entity_topology(sentity.topology);
                 size_t num_nodes_on_entity = entity_topology.num_nodes();
-                //size_t num_nodes_on_entity = 0;            // TEMPORARY HACK:
-                //buf.unpack<size_t>(num_nodes_on_entity);   // DO NOT PUSH
                 sentity.nodes.resize(num_nodes_on_entity);
                 for (size_t i = 0; i < num_nodes_on_entity; ++i )
                 {
@@ -183,30 +208,7 @@ void BulkData::unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackPr
                 }
                 buf.unpack<EntityKey>(sentity.global_key);
 
-                std::vector<shared_entity_type>::iterator shared_itr = std::lower_bound(shared_entity_map.begin(), shared_entity_map.end(), sentity);
-
-                //update the global global_key
-                bool entitiesHaveSameNodes = shared_itr != shared_entity_map.end() && *shared_itr == sentity;
-                bool entitiesAreTheSame = false;
-                if ( this->use_entity_ids_for_resolving_sharing() )
-                {
-                    entitiesAreTheSame = entitiesHaveSameNodes && shared_itr->local_key == sentity.local_key;
-                }
-                else
-                {
-                    entitiesAreTheSame = entitiesHaveSameNodes;
-                }
-
-                if( entitiesAreTheSame )
-                {
-                    Entity entity = this->get_entity(shared_itr->local_key);
-                    shared_itr->sharing_procs.push_back(ip);
-                    if(ip < this->parallel_rank())
-                    {
-                        shared_itr->global_key = sentity.global_key;
-                   }
-                    this->internal_mark_entity(entity, BulkData::IS_SHARED);
-                }
+                this->is_entity_shared(shared_entity_map, ip, sentity);
             }
         }
     }
@@ -241,30 +243,25 @@ void BulkData::update_shared_entities_global_ids(std::vector<shared_entity_type>
     unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatNeedAlsoHaveEntity(comm, shared_entity_map);
     resolveUniqueIdForSharedEntityAndCreateCommMapInfoForSharingProcs(shared_entity_map);
 }
-void BulkData::resolve_entity_sharing(stk::mesh::EntityRank entityRank, std::vector<EntityKey> &entity_keys)
+
+void BulkData::resolve_entity_sharing(stk::mesh::EntityRank entityRank, std::vector<Entity> &entities)
 {
     std::vector<shared_entity_type> shared_entities;
     this->markEntitiesForResolvingSharingInfoUsingNodes(entityRank, shared_entities);
     update_shared_entities_global_ids( shared_entities );
 
-    for (size_t i=0; i<shared_entities.size();i++)
-    {
-        Entity entity = get_entity(shared_entities[i].global_key);
-        if ( internal_is_entity_marked(entity) == BulkData::IS_SHARED )
-        {
-            entity_keys.push_back(shared_entities[i].global_key);
-        }
-        internal_mark_entity(entity, BulkData::NOT_MARKED);
-    }
-    std::sort(entity_keys.begin(), entity_keys.end());
+    this->extract_entity_from_shared_entity_type(shared_entities, entities);
+
+    std::sort(entities.begin(), entities.end(), EntityLess(*this));
 }
 
 /////////////////////////////////////// End functions for create edges
 
 //----------------------------------------------------------------------
 
-BulkData::BulkData( MetaData & mesh_meta_data ,
-                    ParallelMachine parallel
+BulkData::BulkData( MetaData & mesh_meta_data
+                    , ParallelMachine parallel
+                    , enum AutomaticAuraOption auto_aura_option
 #ifdef SIERRA_MIGRATION
                     , bool add_fmwk_data
 #endif
@@ -296,6 +293,7 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_fmwk_global_ids(),
     m_fmwk_aux_relations(),
 #endif
+    m_autoAuraOption(auto_aura_option),
     m_parallel( parallel ),
     m_volatile_fast_shared_comm_map(),
     m_ghost_parts(),
@@ -1016,6 +1014,25 @@ bool BulkData::in_ghost( const Ghosting & ghost , EntityKey key , int proc ) con
   return i != ec.end() && tmp == *i ;
 }
 
+bool BulkData::in_send_ghost( const Ghosting & ghost , EntityKey key , int proc ) const
+{
+  bool ret_val = false;
+  const int owner_rank = internal_entity_comm_map_owner(key);
+
+  if (owner_rank == parallel_rank())
+  {
+      EntityCommInfo tmp( ghost.ordinal() , proc );
+
+      PairIterEntityComm ec = internal_entity_comm_map(key);
+      EntityCommInfoVector::const_iterator i =
+        std::lower_bound( ec.begin(), ec.end() , tmp );
+
+      ret_val = i != ec.end() && tmp == *i ;
+  }
+
+  return ret_val;
+}
+
 void BulkData::comm_procs( EntityKey key, std::vector<int> & procs ) const
 {
   procs.clear();
@@ -1372,11 +1389,11 @@ void BulkData::dump_all_mesh_info(std::ostream& out) const
     out << "  All " << rank_names[i] << " entities:" << std::endl;
 
     const BucketVector& buckets = this->buckets(rank);
-    BOOST_FOREACH(Bucket* bucket, buckets) {
+    for(Bucket* bucket : buckets) {
       out << "    Found bucket " << bucket->bucket_id() << " with superset parts: { ";
       PartVector supersets;
       bucket->supersets(supersets);
-      BOOST_FOREACH(Part* part, supersets) {
+      for(Part* part : supersets) {
         out << part->name() << " ";
       }
       out << "}" << std::endl;
@@ -1410,7 +1427,7 @@ void BulkData::dump_all_mesh_info(std::ostream& out) const
 
         // Print field data
         if (m_num_fields > 0) {
-          BOOST_FOREACH(FieldBase* field, all_fields) {
+          for(FieldBase* field : all_fields) {
 
             if(static_cast<unsigned>(field->entity_rank()) != bucket->entity_rank()) continue;
 
@@ -1899,7 +1916,7 @@ void BulkData::internal_declare_relation( Entity entity ,
   for ( i = rel.begin() ; i != rel.end() ; ++i ) {
     Entity e = i->entity();
     const unsigned n = i->relation_ordinal();
-    const Permutation permut = static_cast<Permutation>(i->getOrientation());
+    const Permutation permut = i->getPermutation();
     if ( entity_rank(e) < erank ) {
       internal_declare_relation( entity , e , n, permut, ordinal_scratch, part_scratch );
     }
@@ -2311,19 +2328,17 @@ void BulkData::update_sharing_after_change_entity_owner()
 }
 
 void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change,
-                                    bool regenerate_aura,
                                     modification_optimization mod_optimization )
 {
     const bool modStatus = modification_begin("change_entity_owner");
     ThrowRequireMsg(modStatus, "BulkData::change_entity_owner() must not be called from within a modification cycle.");
-    this->internal_change_entity_owner(arg_change, regenerate_aura, mod_optimization);
+    this->internal_change_entity_owner(arg_change, mod_optimization);
     update_sharing_after_change_entity_owner();
-    internal_modification_end_for_change_entity_owner(regenerate_aura, mod_optimization);
+    internal_modification_end_for_change_entity_owner(mod_optimization);
 }
 
 
 void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg_change,
-                                             bool regenerate_aura,
                                              modification_optimization mod_optimization )
 {
   require_ok_to_modify();
@@ -2649,20 +2664,6 @@ Ghosting & BulkData::internal_create_ghosting( const std::string & name )
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
-namespace {
-
-void comm_recv_to_send(
-  BulkData & mesh ,
-  const std::set< EntityKey > & entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs ,
-        std::set< EntityProc , EntityLess > & entitiesToGhostOntoOtherProcessors );
-
-void comm_sync_send_recv(
-  BulkData & mesh ,
-  std::set< EntityProc , EntityLess > & new_send ,
-  std::set< EntityKey > & new_recv );
-
-} // namespace <>
-
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
@@ -2725,17 +2726,119 @@ void BulkData::change_ghosting(
     internal_verify_inputs_and_change_ghosting(ghosts, add_send, remove_receive);
 }
 
-void BulkData::batch_change_ghosting(
-    Ghosting & ghosts ,
-    const std::vector<EntityProc> & add_send ,
-    const std::vector<EntityKey> & remove_receive )
+void BulkData::verify_and_filter_add_send(Ghosting & ghosts, const std::vector<EntityProc> & add_send, bool &need_to_change_ghosting,
+                          bool &add_send_is_owned, std::vector <EntityProc> &filtered_add_send )
+{
+    filtered_add_send.reserve(add_send.size());
+
+    for ( size_t i = 0; add_send_is_owned && i < add_send.size() ; ++i ) {
+      add_send_is_owned = parallel_owner_rank(add_send[i].first) == parallel_rank();
+      const bool ghosting_to_myself = parallel_rank() == add_send[i].second;
+      const bool already_ghosted_to_proc = in_send_ghost(ghosts, entity_key(add_send[i].first), add_send[i].second);
+      const bool already_shared_to_proc = in_shared(entity_key(add_send[i].first), add_send[i].second);
+      const bool need_to_send_ghost = !ghosting_to_myself && !already_ghosted_to_proc && !already_shared_to_proc;
+      if (need_to_send_ghost)
+      {
+          filtered_add_send.push_back(add_send[i]);
+          need_to_change_ghosting = true;
+      }
+    }
+}
+
+void BulkData::verify_remove_receive(Ghosting & ghosts, const std::vector<EntityKey> & remove_receive, bool &need_to_change_ghosting, bool &remove_receive_are_part_of_this_ghosting)
+{
+    for ( size_t i = 0; remove_receive_are_part_of_this_ghosting && i < remove_receive.size() ; ++i ) {
+      remove_receive_are_part_of_this_ghosting = in_receive_ghost( ghosts , remove_receive[i] );
+      need_to_change_ghosting = true;
+    }
+}
+
+bool BulkData::check_errors_and_determine_if_ghosting_needed_in_parallel(const stk::mesh::Ghosting &ghosts,
+                                        bool add_send_is_owned,
+                                        bool remove_receive_are_part_of_this_ghosting,
+                                        bool need_to_change_ghosting,
+                                        const std::vector<EntityProc> & add_send,
+                                        const std::vector<EntityKey> & remove_receive)
+{
+    const bool ok_mesh  = &ghosts.bulk_data() == this;
+    const bool is_custom_ghost = BulkData::AURA < ghosts.ordinal();
+    int ok = ok_mesh && is_custom_ghost && add_send_is_owned && remove_receive_are_part_of_this_ghosting;
+    int statuses[2];
+    statuses[0] = ok;
+    statuses[1] = need_to_change_ghosting ? 0 : 1;
+
+    all_reduce( parallel() , ReduceMin<2>( statuses ) );
+
+    ok = statuses[0];
+    bool something_wrong_on_any_proc = (0 == ok);
+    if ( something_wrong_on_any_proc ) {
+      std::ostringstream msg ;
+      msg << "For ghosts " << ghosts.name() << ", " ;
+      if ( ! ok_mesh )  { msg << " : Mesh does not own this ghosting" ; }
+      if ( ! is_custom_ghost ) { msg << " : Cannot modify this ghosting" ; }
+      if ( ! add_send_is_owned ) {
+        msg << " : Not owned add {" ;
+        for ( std::vector<EntityProc>::const_iterator
+              i = add_send.begin() ; i != add_send.end() ; ++i ) {
+          if ( parallel_owner_rank(i->first) != parallel_rank() ) {
+            msg << " " << identifier(i->first);
+          }
+        }
+        msg << " }" ;
+      }
+      if ( ! remove_receive_are_part_of_this_ghosting ) {
+        msg << " : Not in ghost receive {" ;
+        for ( std::vector<EntityKey>::const_iterator
+              i = remove_receive.begin() ; i != remove_receive.end() ; ++i ) {
+          if ( ! in_receive_ghost( ghosts , *i ) ) {
+            msg << " " << i->id();
+          }
+        }
+      }
+
+      ThrowErrorMsg( msg.str() );
+    }
+
+    bool anyProcsHaveNewGhosts = statuses[1] == 0;
+    return anyProcsHaveNewGhosts;
+}
+
+bool BulkData::inputs_ok_and_need_ghosting(Ghosting & ghosts ,
+                             const std::vector<EntityProc> & add_send ,
+                             const std::vector<EntityKey> & remove_receive,
+                             std::vector<EntityProc> &filtered_add_send)
+{
+    bool add_send_is_owned    = true ;
+    bool need_to_change_ghosting = false;
+
+    verify_and_filter_add_send(ghosts, add_send, need_to_change_ghosting, add_send_is_owned, filtered_add_send );
+
+    bool remove_receive_are_part_of_this_ghosting = true;
+    verify_remove_receive(ghosts, remove_receive, need_to_change_ghosting, remove_receive_are_part_of_this_ghosting);
+
+    bool anyProcsHaveNewGhosts = check_errors_and_determine_if_ghosting_needed_in_parallel(ghosts, add_send_is_owned,
+        remove_receive_are_part_of_this_ghosting, need_to_change_ghosting, add_send, remove_receive);
+
+    return anyProcsHaveNewGhosts;
+}
+
+void BulkData::batch_add_to_ghosting(Ghosting &ghosting, const EntityProcVec &entitiesAndDestinationProcs)
+{
+    std::vector<stk::mesh::EntityProc> filtered_add_send;
+    std::vector<stk::mesh::EntityKey> empty_vector;
+
+    if (inputs_ok_and_need_ghosting(ghosting , entitiesAndDestinationProcs , empty_vector, filtered_add_send))
+    {
+        internal_batch_add_to_ghosting(ghosting, filtered_add_send);
+    }
+}
+
+void BulkData::internal_batch_add_to_ghosting(Ghosting &ghosting, const EntityProcVec &entitiesAndDestinationProcs)
 {
     bool starting_modification = modification_begin();
     ThrowRequireMsg(starting_modification, "ERROR: BulkData already being modified,\n"
-                    <<"BulkData::batch_change_ghosting(...) can not be called within an outer modification scope.");
-
-    internal_verify_inputs_and_change_ghosting(ghosts, add_send, remove_receive);
-
+                    <<"BulkData::batch_add_to_ghosting(...) can not be called within an outer modification scope.");
+    internal_add_to_ghosting( ghosting , entitiesAndDestinationProcs );
     internal_modification_end_for_change_ghosting();
 }
 
@@ -2744,66 +2847,15 @@ void BulkData::internal_verify_inputs_and_change_ghosting(
   const std::vector<EntityProc> & add_send ,
   const std::vector<EntityKey> & remove_receive )
 {
-  //----------------------------------------
-  // Verify inputs:
-
   require_ok_to_modify();
 
-  const bool ok_mesh  = & BulkData::get(ghosts) == this ;
-  const bool ok_ghost = 1 < ghosts.ordinal();
-  bool ok_add    = true ;
-  bool ok_remove = true ;
+  std::vector<EntityProc> filtered_add_send;
+  bool needToDoGhosting = inputs_ok_and_need_ghosting(ghosts, add_send , remove_receive, filtered_add_send);
 
-  // Verify all 'add' are locally owned.
-
-  for ( std::vector<EntityProc>::const_iterator
-        i = add_send.begin() ; ok_add && i != add_send.end() ; ++i ) {
-    ok_add = parallel_owner_rank(i->first) == parallel_rank();
+  if(needToDoGhosting)
+  {
+    internal_change_ghosting( ghosts , filtered_add_send , remove_receive );
   }
-
-  // Verify all 'remove' are members of the ghosting.
-
-  for ( std::vector<EntityKey>::const_iterator
-        i = remove_receive.begin() ;
-        ok_remove && i != remove_receive.end() ; ++i ) {
-    ok_remove = in_receive_ghost( ghosts , *i );
-  }
-
-  int ok = ok_mesh && ok_ghost && ok_add && ok_remove ;
-
-  all_reduce( parallel() , ReduceMin<1>( & ok ) );
-
-  if ( 0 == ok ) {
-    std::ostringstream msg ;
-    msg << "For ghosts " << ghosts.name() << ", " ;
-    if ( ! ok_mesh )  { msg << " : Mesh does not own this ghosting" ; }
-    if ( ! ok_ghost ) { msg << " : Cannot modify this ghosting" ; }
-    if ( ! ok_add ) {
-      msg << " : Not owned add {" ;
-      for ( std::vector<EntityProc>::const_iterator
-            i = add_send.begin() ; i != add_send.end() ; ++i ) {
-        if ( parallel_owner_rank(i->first) != parallel_rank() ) {
-          msg << " " << identifier(i->first);
-        }
-      }
-      msg << " }" ;
-    }
-    if ( ! ok_remove ) {
-      msg << " : Not in ghost receive {" ;
-      for ( std::vector<EntityKey>::const_iterator
-            i = remove_receive.begin() ; i != remove_receive.end() ; ++i ) {
-        if ( ! in_receive_ghost( ghosts , *i ) ) {
-          msg << " " << i->id();
-        }
-      }
-    }
-
-    ThrowErrorMsg( msg.str() );
-  }
-  //----------------------------------------
-  // Change the ghosting:
-
-  internal_change_ghosting( ghosts , add_send , remove_receive );
 }
 
 //----------------------------------------------------------------------
@@ -2879,19 +2931,6 @@ void BulkData::ghost_entities_and_fields(Ghosting & ghosting, const std::set<Ent
 
           unpack_entity_info( buf, *this, key, owner, parts, relations );
 
-          // Must not have the locally_owned_part or globally_shared_part
-
-          remove( parts , meta.locally_owned_part() );
-          remove( parts , meta.globally_shared_part() );
-          PartVector tempParts;
-          tempParts.reserve(parts.size());
-          for (size_t i = 0; i < parts.size(); ++i) {
-            if (parts[i]->entity_membership_is_parallel_consistent()) {
-              tempParts.push_back(parts[i]);
-            }
-          }
-          parts.swap(tempParts);
-
           if (owner != this->parallel_rank()) {
             // We will also add the entity to the part corresponding to the 'ghosts' ghosting.
             stk::mesh::Part& ghost_part = *m_ghost_parts[ghosting.ordinal()];
@@ -2935,11 +2974,12 @@ void BulkData::ghost_entities_and_fields(Ghosting & ghosting, const std::set<Ent
       }
     }
 
+#ifndef NDEBUG
     if (parallel_size() > 1) {
       all_reduce( parallel() , ReduceSum<1>( & error_count ) );
     }
-
     ThrowErrorMsgIf( error_count, error_msg.str() );
+#endif
 
     if ( record_entity_comm_size_before_changing_it < m_entity_comm_list.size() ) {
       // Added new ghosting entities to the list,
@@ -2958,60 +2998,64 @@ void BulkData::ghost_entities_and_fields(Ghosting & ghosting, const std::set<Ent
     ghosting.m_sync_count = m_sync_count ;
 }
 
-namespace impl {
-
-struct StoreInEntityProcSet {
-    StoreInEntityProcSet(
-            BulkData & mesh_in,
-            std::set<stk::mesh::EntityProc, stk::mesh::EntityLess> & set_in)
-    :mesh(mesh_in)
-    ,myset(set_in) { }
-
-    void operator()(Entity entity) {
-      myset.insert(stk::mesh::EntityProc(entity,proc));
-    }
-
-    BulkData & mesh;
-    std::set<stk::mesh::EntityProc , stk::mesh::EntityLess> & myset;
-    int proc;
-};
-
-struct OnlyGhosts  {
-    OnlyGhosts(BulkData & mesh_in) : mesh(mesh_in) {}
-    bool operator()(Entity entity) {
-        const bool isValid = mesh.is_valid(entity);
-        const bool iDoNotOwnEntity = proc != mesh.parallel_owner_rank(entity);
-        const bool entityIsShared = mesh.in_shared( mesh.entity_key(entity) , proc );
-        return (isValid && iDoNotOwnEntity && !entityIsShared);
-    }
-    BulkData & mesh;
-    int proc;
-};
-} // namespace impl
-
-void BulkData::internal_change_ghosting(
-  Ghosting & ghosting ,
-  const std::vector<EntityProc> & add_send ,
-  const std::vector<EntityKey> & remove_receive,
-  bool is_full_regen)
+void BulkData::conditionally_add_entity_to_ghosting_set(const stk::mesh::Ghosting &ghosting, stk::mesh::Entity entity, int toProc, std::set <stk::mesh::EntityProc , stk::mesh::EntityLess > &entitiesWithClosure)
 {
-  m_modSummary.track_change_ghosting(ghosting, add_send, remove_receive);
+    const bool notOwnedByRecvGhostProc = toProc != parallel_owner_rank(entity);
+    const bool entityIsShared = in_shared( entity_key(entity) , toProc );
+    const bool alreadyGhostedToProc = in_send_ghost(ghosting, entity_key(entity), toProc);
+    if (notOwnedByRecvGhostProc && !entityIsShared && !alreadyGhostedToProc)
+    {
+        entitiesWithClosure.insert(EntityProc(entity , toProc));
+    }
+}
 
-  //------------------------------------
-  // Copy ghosting lists into more efficiently edited container.
-  // The send and receive lists must be in entity rank-order.
+void BulkData::add_closure_entities(const stk::mesh::Ghosting &ghosting, const stk::mesh::EntityProcVec& entities, std::set <stk::mesh::EntityProc , stk::mesh::EntityLess > &entitiesWithClosure)
+{
+    for ( std::vector< EntityProc >::const_iterator
+          i = entities.begin() ; i != entities.end() ; ++i )
+    {
+        if(is_valid(i->first))
+        {
+            conditionally_add_entity_to_ghosting_set(ghosting, i->first, i->second, entitiesWithClosure);
 
-  std::set<EntityProc , EntityLess> entitiesToGhostOntoOtherProcessors(EntityLess(*this));
-  std::set<EntityKey>               entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs;
+            stk::mesh::EntityRank entityRank = entity_rank(i->first);
+            for(stk::mesh::EntityRank irank = stk::topology::NODE_RANK; irank < entityRank; ++irank)
+            {
+                unsigned numEntities = num_connectivity(i->first, irank);
+                const stk::mesh::Entity* connectedEntities = begin(i->first, irank);
+                for(unsigned entityIndex = 0; entityIndex < numEntities; ++entityIndex)
+                {
+                    if(is_valid(connectedEntities[entityIndex]))
+                    {
+                        conditionally_add_entity_to_ghosting_set(ghosting, connectedEntities[entityIndex], i->second, entitiesWithClosure);
+                    }
+                }
+            }
+        }
+    }
+}
 
-  //------------------------------------
-  // Insert the current ghost receives and then remove from that list.
+void BulkData::internal_add_to_ghosting(
+        Ghosting &ghosting,
+        const std::vector<EntityProc> &add_send)
+{
+    m_modSummary.track_add_to_ghosting(ghosting, add_send);
 
-  // This if-check is an optimization; if doing a full regen
-  // then we are removing all ghosting information and new_recv should
-  // be left empty.
-  if ( !is_full_regen ) {
+    //------------------------------------
+    // Copy ghosting lists into more efficiently edited container.
+    // The send and receive lists must be in entity rank-order.
+    std::set<EntityProc , EntityLess> entitiesToGhostOntoOtherProcessors(EntityLess(*this));
 
+    add_closure_entities(ghosting, add_send, entitiesToGhostOntoOtherProcessors);
+
+    stk::mesh::impl::move_unowned_entities_for_owner_to_ghost(*this, entitiesToGhostOntoOtherProcessors);
+
+    ghost_entities_and_fields(ghosting, entitiesToGhostOntoOtherProcessors);
+}
+
+void BulkData::generate_ghosting_receive_list(const stk::mesh::Ghosting &ghosting, const std::vector <EntityKey> &remove_receive,
+    std::set<EntityKey> &entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs)
+{
     // Iterate over all entities with communication information, adding
     // the entity if it's a ghost on this process. new_recv will contain
     // all ghosts on this process by the end of the loop.
@@ -3054,10 +3098,35 @@ void BulkData::internal_change_ghosting(
         }
       }
     }
+}
+
+void BulkData::internal_change_ghosting(
+  Ghosting & ghosting ,
+  const std::vector<EntityProc> & add_send ,
+  const std::vector<EntityKey> & remove_receive,
+  bool is_full_regen)
+{
+  m_modSummary.track_change_ghosting(ghosting, add_send, remove_receive);
+
+  //------------------------------------
+  // Copy ghosting lists into more efficiently edited container.
+  // The send and receive lists must be in entity rank-order.
+
+  std::set<EntityProc , EntityLess> entitiesToGhostOntoOtherProcessors(EntityLess(*this));
+  std::set<EntityKey>               entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs;
+
+  //------------------------------------
+  // Insert the current ghost receives and then remove from that list.
+
+  // This if-check is an optimization; if doing a full regen
+  // then we are removing all ghosting information and new_recv should
+  // be left empty.
+  if ( !is_full_regen ) {
+    generate_ghosting_receive_list(ghosting, remove_receive, entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs);
   }
 
   //  Initialize the new_send from the new_recv
-  comm_recv_to_send( *this , entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs , entitiesToGhostOntoOtherProcessors );
+  stk::mesh::impl::send_entity_keys_to_owners( *this , entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs , entitiesToGhostOntoOtherProcessors );
 
   //------------------------------------
   // Add the specified entities and their closure to the send ghosting
@@ -3076,7 +3145,7 @@ void BulkData::internal_change_ghosting(
   // inform the owner and receiver to add that entity
   // to their ghost send and receive lists.
 
-  comm_sync_send_recv( *this , entitiesToGhostOntoOtherProcessors , entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs );
+  stk::mesh::impl::comm_sync_send_recv( *this , entitiesToGhostOntoOtherProcessors , entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs );
 
   // The new_send list is now parallel complete and parallel accurate
   // The new_recv has those ghost entities that are to be kept.
@@ -3148,194 +3217,7 @@ void BulkData::internal_change_ghosting(
 //----------------------------------------------------------------------
 
 
-namespace {
 
-// Fill a new send list from the receive list.
-void comm_recv_to_send(
-  BulkData & mesh ,
-  const std::set< EntityKey > & entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs,
-        std::set< EntityProc , EntityLess > & entitiesToGhostOntoOtherProcessors )
-{
-  const int parallel_size = mesh.parallel_size();
-
-  stk::CommSparse sparse( mesh.parallel() );
-
-  // For all entity keys in new recv, send the entity key to the owning proc
-  for ( int phase = 0; phase < 2; ++phase) {
-    for ( std::set<EntityKey>::const_iterator
-            i = entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs.begin() ; i != entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs.end() ; ++i ) {
-      Entity e = mesh.get_entity(*i); // Performance issue? Not if you're just doing full regens
-      const int owner = mesh.parallel_owner_rank(e);
-      const EntityKey key = mesh.entity_key(e);
-      sparse.send_buffer( owner ).pack<EntityKey>( key );
-    }
-    if (phase == 0) { //allocation phase
-      sparse.allocate_buffers();
-    }
-    else { //communication phase
-      sparse.communicate();
-    }
-  }
-
-  // Insert into entitiesToGhostOntoOtherProcessors that there is an entity on another proc
-  for ( int proc_rank = 0 ; proc_rank < parallel_size ; ++proc_rank ) {
-    stk::CommBuffer & buf = sparse.recv_buffer(proc_rank);
-    while ( buf.remaining() ) {
-      EntityKey key ;
-      buf.unpack<EntityKey>( key );
-      EntityProc tmp( mesh.get_entity( key ) , proc_rank );
-      entitiesToGhostOntoOtherProcessors.insert( tmp );
-    }
-  }
-}
-
-// Synchronize the send list to the receive list.
-
-void comm_sync_send_recv(
-  BulkData & mesh ,
-  std::set< EntityProc , EntityLess > & entitiesToGhostOntoOtherProcessors ,
-  std::set< EntityKey > & entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs )
-{
-  const int parallel_rank = mesh.parallel_rank();
-  const int parallel_size = mesh.parallel_size();
-
-  stk::CommSparse all( mesh.parallel() );
-
-  // Communication sizing:
-
-  for ( std::set< EntityProc , EntityLess >::iterator
-        i = entitiesToGhostOntoOtherProcessors.begin() ; i != entitiesToGhostOntoOtherProcessors.end() ; ++i ) {
-    const int owner = mesh.parallel_owner_rank(i->first);
-    all.send_buffer( i->second ).skip<EntityKey>(1).skip<int>(1);
-    if ( owner != parallel_rank ) {
-      all.send_buffer( owner ).skip<EntityKey>(1).skip<int>(1);
-    }
-  }
-
-  all.allocate_buffers();
-
-  // Loop thru all entities in entitiesToGhostOntoOtherProcessors, send the entity key to the sharing/ghosting proc
-  // Also, if the owner of the entity is NOT me, also send the entity key to the owing proc
-
-  // Communication packing (with message content comments):
-  for ( std::set< EntityProc , EntityLess >::iterator
-        i = entitiesToGhostOntoOtherProcessors.begin() ; i != entitiesToGhostOntoOtherProcessors.end() ; ) {
-    const int owner = mesh.parallel_owner_rank(i->first);
-
-    // Inform receiver of ghosting, the receiver does not own
-    // and does not share this entity.
-    // The ghost either already exists or is a to-be-done new ghost.
-    // This status will be resolved on the final communication pass
-    // when new ghosts are packed and sent.
-
-    const EntityKey entity_key = mesh.entity_key(i->first);
-    const int proc = i->second;
-
-    all.send_buffer( i->second ).pack(entity_key).pack(proc);
-
-    if ( owner != parallel_rank ) {
-      // I am not the owner of this entity.
-      // Inform the owner of this ghosting need.
-      all.send_buffer( owner ).pack(entity_key).pack(proc);
-
-      // Erase it from my processor's ghosting responsibility:
-      // The iterator passed to the erase method will be invalidated.
-      std::set< EntityProc , EntityLess >::iterator jrem = i ; ++i ;
-      entitiesToGhostOntoOtherProcessors.erase( jrem );
-    }
-    else {
-      ++i ;
-    }
-  }
-
-  all.communicate();
-
-  // Loop thru all the buffers, and insert ghosting request for entity e to other proc
-  // if the proc sending me the data is me, then insert into new_recv.
-  // Communication unpacking:
-  for ( int p = 0 ; p < parallel_size ; ++p ) {
-    CommBuffer & buf = all.recv_buffer(p);
-    while ( buf.remaining() ) {
-
-      EntityKey entity_key;
-      int proc = 0;
-
-      buf.unpack(entity_key).unpack(proc);
-
-      Entity const e = mesh.get_entity( entity_key );
-
-      if ( parallel_rank != proc ) {
-        //  Receiving a ghosting need for an entity I own.
-        //  Add it to my send list.
-        ThrowRequireMsg(mesh.is_valid(e),
-            "Unknown entity key: " <<
-            MetaData::get(mesh).entity_rank_name(entity_key.rank()) <<
-            "[" << entity_key.id() << "]");
-        EntityProc tmp( e , proc );
-// Manoj: the following helps make tests pass for Aria, but the error is up stream related
-// to grabbing the wrong entities.
-//        if ( !mesh.in_shared(entity_key,proc) )
-//        {
-//            entitiesToGhostOntoOtherProcessors.insert( tmp );
-//        }
-        entitiesToGhostOntoOtherProcessors.insert( tmp );
-      }
-      else if ( mesh.is_valid(e) ) {
-        //  I am the receiver for this ghost.
-        //  If I already have it add it to the receive list,
-        //  otherwise don't worry about it - I will receive
-        //  it in the final new-ghosting communication.
-        entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs.insert( mesh.entity_key(e) );
-      }
-    }
-  }
-}
-
-void insert_upward_relations(const BulkData& bulk_data, Entity rel_entity,
-                             const EntityRank rank_of_orig_entity,
-                             const int my_rank,
-                             const int share_proc,
-                             std::vector<EntityProc>& send)
-{
-  EntityRank rel_entity_rank = bulk_data.entity_rank(rel_entity);
-  ThrowAssert(rel_entity_rank > rank_of_orig_entity);
-
-  // If related entity is higher rank, I own it, and it is not
-  // already shared by proc, ghost it to the sharing processor.
-  if ( bulk_data.parallel_owner_rank(rel_entity) == my_rank &&
-       ! bulk_data.in_shared( bulk_data.entity_key(rel_entity) , share_proc ) ) {
-
-    EntityProc entry( rel_entity , share_proc );
-    send.push_back( entry );
-
-    // There may be even higher-ranking entities that need to be ghosted, so we must recurse
-    const EntityRank end_rank = static_cast<EntityRank>(bulk_data.mesh_meta_data().entity_rank_count());
-    EntityVector temp_entities;
-    Entity const* rels = NULL;
-    int num_rels = 0;
-    for (EntityRank irank = static_cast<EntityRank>(rel_entity_rank + 1); irank < end_rank; ++irank)
-    {
-      if (bulk_data.connectivity_map().valid(rel_entity_rank, irank)) {
-        num_rels = bulk_data.num_connectivity(rel_entity, irank);
-        rels     = bulk_data.begin(rel_entity, irank);
-      }
-      else {
-        num_rels = get_connectivity(bulk_data, rel_entity, irank, temp_entities);
-        rels     = &*temp_entities.begin();
-      }
-
-      for (int r = 0; r < num_rels; ++r)
-      {
-        Entity const rel_of_rel_entity = rels[r];
-        if (bulk_data.is_valid(rel_of_rel_entity)) {
-          insert_upward_relations(bulk_data, rel_of_rel_entity, rel_entity_rank, my_rank, share_proc, send);
-        }
-      }
-    }
-  }
-}
-
-} // namespace <>
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
@@ -3379,7 +3261,7 @@ void BulkData::internal_regenerate_aura()
         for (int r = 0; r < num_rels; ++r)
         {
           if (is_valid(rels[r])) {
-            insert_upward_relations(*this, rels[r], erank, parallel_rank(), share_proc, send);
+            stk::mesh::impl::insert_upward_relations(*this, rels[r], erank, parallel_rank(), share_proc, send);
           }
         }
       }
@@ -3531,67 +3413,47 @@ void BulkData::communicate_entity_modification( const BulkData & mesh ,
 void BulkData::internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank(
         stk::mesh::EntityRank entityRank, std::vector<Entity> & shared_new )
 {
-  std::vector<EntityKey> entity_keys;
-  //resolve_edge_sharing(*this, entity_keys);
-  resolve_entity_sharing(entityRank, entity_keys);
+  resolve_entity_sharing(entityRank, shared_new);
+}
 
-  shared_new.clear();
-  shared_new.resize(entity_keys.size());
-  for (size_t i=0;i<entity_keys.size();i++)
-  {
-      shared_new[i] = get_entity(entity_keys[i]);
-  }
+void BulkData::extract_entity_from_shared_entity_type(const std::vector<shared_entity_type>& shared_entities, std::vector<Entity>& shared_new)
+{
+    for (size_t i=0; i<shared_entities.size(); ++i)
+    {
+        Entity entity = this->get_entity(shared_entities[i].global_key);
+        if ( internal_is_entity_marked(entity) == BulkData::IS_SHARED )
+        {
+            shared_new.push_back(entity);
+        }
+    }
+}
+
+void BulkData::fill_shared_entities_of_rank(stk::mesh::EntityRank rank, std::vector<Entity> &shared_new)
+{
+    std::vector<shared_entity_type> shared_entities;
+    // Possibly shared entities
+    this->markEntitiesForResolvingSharingInfoUsingNodes(rank, shared_entities);
+
+    update_shared_entities_global_ids( shared_entities );
+
+    // Extract truly shared entities
+    this->extract_entity_from_shared_entity_type(shared_entities, shared_new);
 }
 
 void BulkData::internal_update_sharing_comm_map_and_fill_list_modified_shared_entities(
         std::vector<Entity> & shared_new )
 {
-    std::vector<EntityKey> shared_nodes;
+    std::vector<Entity> shared_nodes;
     this->gather_shared_nodes(shared_nodes);
 
-    std::vector<shared_entity_type> shared_edges;
-    this->markEntitiesForResolvingSharingInfoUsingNodes(stk::topology::EDGE_RANK, shared_edges);
-
-    std::vector<shared_entity_type> shared_faces;
-    this->markEntitiesForResolvingSharingInfoUsingNodes(stk::topology::FACE_RANK, shared_faces);
-
-    update_shared_entities_global_ids( shared_edges );
-    update_shared_entities_global_ids( shared_faces );
-
-    std::vector<EntityKey> entity_keys;
-
-    entity_keys.reserve(entity_keys.size() + shared_nodes.size());
-    entity_keys.insert(entity_keys.end(), shared_nodes.begin(), shared_nodes.end());
-
-    for (size_t i=0; i<shared_edges.size(); ++i)
-    {
-        Entity entity = get_entity(shared_edges[i].global_key);
-        if ( internal_is_entity_marked(entity) == BulkData::IS_SHARED )
-        {
-            entity_keys.push_back(shared_edges[i].global_key);
-        }
-    }
-
-    for (size_t i=0; i<shared_faces.size(); ++i)
-    {
-        Entity entity = get_entity(shared_faces[i].global_key);
-        if ( internal_is_entity_marked(entity) == BulkData::IS_SHARED )
-        {
-            entity_keys.push_back(shared_faces[i].global_key);
-        }
-    }
-
-    // Reset our marking array for all entities now that all sharing information
-    // has been properly resolved.
-    //
-    std::fill(m_mark_entity.begin(), m_mark_entity.end(), static_cast<int>(BulkData::NOT_MARKED));
-
     shared_new.clear();
-    shared_new.resize(entity_keys.size());
-    for (size_t i=0; i<entity_keys.size(); ++i)
-    {
-        shared_new[i] = get_entity(entity_keys[i]);
-    }
+    shared_new.reserve(shared_nodes.size()*2);
+    shared_new.insert(shared_new.end(), shared_nodes.begin(), shared_nodes.end());
+
+    this->fill_shared_entities_of_rank(stk::topology::EDGE_RANK, shared_new);
+    this->fill_shared_entities_of_rank(stk::topology::FACE_RANK, shared_new);
+
+    std::fill(m_mark_entity.begin(), m_mark_entity.end(), static_cast<int>(BulkData::NOT_MARKED));
 }
 
 
@@ -4100,8 +3962,7 @@ void print_bucket_data(const stk::mesh::BulkData& mesh)
 
 bool BulkData::modification_end( modification_optimization opt)
 {
-  const bool aura_always_on = true;
-  const bool return_value = internal_modification_end( aura_always_on, opt );
+  const bool return_value = internal_modification_end( opt );
 
 #ifdef STK_VERBOSE_OUTPUT
   print_bucket_data(*this);
@@ -4112,8 +3973,7 @@ bool BulkData::modification_end( modification_optimization opt)
 
 bool BulkData::modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt)
 {
-  //  NKC, false here for aura off
-  bool return_value = internal_modification_end_for_entity_creation( entity_rank, true, opt );
+  bool return_value = internal_modification_end_for_entity_creation( entity_rank, opt );
 
 #ifdef STK_VERBOSE_OUTPUT
   print_bucket_data(*this);
@@ -4181,7 +4041,7 @@ bool BulkData::internal_modification_end_for_change_parts()
     return true;
 }
 
-bool BulkData::internal_modification_end_for_change_entity_owner( bool regenerate_aura, modification_optimization opt )
+bool BulkData::internal_modification_end_for_change_entity_owner( modification_optimization opt )
 {
   // The two states are MODIFIABLE and SYNCHRONiZED
   if ( m_sync_state == SYNCHRONIZED ) { return false ; }
@@ -4192,7 +4052,7 @@ bool BulkData::internal_modification_end_for_change_entity_owner( bool regenerat
 
   if (parallel_size() > 1)
   {
-    if ( regenerate_aura )
+    if ( m_autoAuraOption == AUTO_AURA )
     {
       internal_regenerate_aura();
     }
@@ -4253,7 +4113,7 @@ void BulkData::check_mesh_consistency()
 #endif
 }
 
-bool BulkData::internal_modification_end( bool regenerate_aura, modification_optimization opt)
+bool BulkData::internal_modification_end( modification_optimization opt)
 {
   //require_ok_to_modify();
 
@@ -4285,7 +4145,7 @@ bool BulkData::internal_modification_end( bool regenerate_aura, modification_opt
     internal_resolve_shared_membership();
 
     // Regenerate the ghosting aura around all shared mesh entities.
-    if ( regenerate_aura ) { internal_regenerate_aura(); }
+    if ( m_autoAuraOption == AUTO_AURA ) { internal_regenerate_aura(); }
 
     internal_resolve_send_ghost_membership();
 
@@ -4570,7 +4430,7 @@ void BulkData::find_upward_connected_entities_to_ghost_onto_other_processors(stk
     }
 
     std::set< EntityKey > entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs;
-    comm_sync_send_recv(mesh, entitiesToGhostOntoOtherProcessors, entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs);
+    stk::mesh::impl::comm_sync_send_recv(mesh, entitiesToGhostOntoOtherProcessors, entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs);
 }
 
 void connect_ghosted_entities_received_to_ghosted_upwardly_connected_entities(stk::mesh::BulkData &mesh, EntityRank entity_rank)
@@ -4626,7 +4486,7 @@ void connect_ghosted_entities_received_to_ghosted_upwardly_connected_entities(st
     }
 }
 
-bool BulkData::internal_modification_end_for_entity_creation( EntityRank entity_rank, bool regenerate_aura, modification_optimization opt )
+bool BulkData::internal_modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt )
 {
   // The two states are MODIFIABLE and SYNCHRONiZED
   if ( m_sync_state == SYNCHRONIZED ) { return false ; }
@@ -5616,6 +5476,11 @@ void BulkData::internal_verify_change_parts( const MetaData   & meta ,
   ThrowErrorMsgIf( !ok, msg.str() << "}" );
 }
 
+void BulkData::sortNodesIfNeeded(std::vector<stk::mesh::EntityKey>& nodes)
+{
+    std::sort(nodes.begin(),nodes.end());
+}
+
 //----------------------------------------------------------------------
 void BulkData::markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::EntityRank entityRank, std::vector<shared_entity_type>& shared_entities)
 {
@@ -5657,13 +5522,16 @@ void BulkData::markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::EntityRa
                     if(shared_entity)
                     {
                         shared_entity_type sentity;
+                        sentity.entity = entity;
                         sentity.topology = topology;
                         sentity.nodes.resize(num_nodes_on_entity);
+                        sentity.need_update_nodes = false;
                         for(size_t n = 0; n < num_nodes_on_entity; ++n)
                         {
                             sentity.nodes[n]=this->entity_key(nodes[n]);
                         }
-                        std::sort(sentity.nodes.begin(),sentity.nodes.end());
+                        //Sort will have to go away
+                        this->sortNodesIfNeeded(sentity.nodes);
                         const EntityKey &entity_key = this->entity_key(entity);
                         sentity.local_key = entity_key;
                         sentity.global_key = entity_key;
@@ -5676,7 +5544,7 @@ void BulkData::markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::EntityRa
     }
 }
 
-void BulkData::gather_shared_nodes(std::vector<EntityKey> & shared_nodes)
+void BulkData::gather_shared_nodes(std::vector<Entity> & shared_nodes)
 {
     const stk::mesh::BucketVector & node_buckets = this->buckets(stk::topology::NODE_RANK);
 
@@ -5688,7 +5556,7 @@ void BulkData::gather_shared_nodes(std::vector<EntityKey> & shared_nodes)
             Entity node = bucket[entityIndex];
             if (this->internal_is_entity_marked(node) == BulkData::IS_SHARED)
             {
-                shared_nodes.push_back(this->entity_key(node));
+                shared_nodes.push_back(node);
             }
         }
     }

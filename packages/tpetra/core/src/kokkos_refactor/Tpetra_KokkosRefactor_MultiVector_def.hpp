@@ -77,10 +77,10 @@ namespace { // (anonymous)
     typedef typename Tpetra::MultiVector<ST, LO, GO, NT, false>::dual_view_type dual_view_type;
     const char* label = "MV::DualView";
 
+#if 0
     (void) zeroOut;
     return dual_view_type (label, lclNumRows, numCols);
-
-#if 0
+#else
     if (zeroOut) {
       return dual_view_type (label, lclNumRows, numCols);
     }
@@ -1026,7 +1026,6 @@ namespace Tpetra {
       const char prefix[] = "Tpetra::MultiVector::lclDotImpl: ";
 #endif // HAVE_TPETRA_DEBUG
 
-#ifdef KOKKOS_HAVE_CXX11
       static_assert (Kokkos::Impl::is_view<RV>::value,
                      "Tpetra::MultiVector::lclDotImpl: "
                      "The first argument dotsOut is not a Kokkos::View.");
@@ -1037,7 +1036,6 @@ namespace Tpetra {
                      "3rd arguments (X_lcl and Y_lcl) is not a Kokkos::View.");
       static_assert (XMV::rank == 2, "Tpetra::MultiVector::lclDotImpl: "
                      "X_lcl and Y_lcl must have rank 2.");
-#endif // KOKKOS_HAVE_CXX11
 
       // In case the input dimensions don't match, make sure that we
       // don't overwrite memory that doesn't belong to us, by using
@@ -1071,7 +1069,13 @@ namespace Tpetra {
       }
       else { // lclNumRows != 0
         if (constantStrideX && constantStrideY) {
-          KokkosBlas::dot (theDots, X, Y);
+          if(X.dimension_1() == 1) {
+            typename RV::non_const_value_type result =
+                KokkosBlas::dot (Kokkos::subview(X,Kokkos::ALL(),0),
+                                 Kokkos::subview(Y,Kokkos::ALL(),0));
+            Kokkos::deep_copy(theDots,result);
+          } else
+            KokkosBlas::dot (theDots, X, Y);
         }
         else { // not constant stride
           // NOTE (mfh 15 Jul 2014) This does a kernel launch for
@@ -1444,7 +1448,6 @@ namespace Tpetra {
       using Kokkos::subview;
       typedef typename RV::non_const_value_type mag_type;
 
-#ifdef KOKKOS_HAVE_CXX11
       static_assert (Kokkos::Impl::is_view<RV>::value,
                      "Tpetra::MultiVector::lclNormImpl: "
                      "The first argument RV is not a Kokkos::View.");
@@ -1455,7 +1458,6 @@ namespace Tpetra {
                      "The second argument X_lcl is not a Kokkos::View.");
       static_assert (XMV::rank == 2, "Tpetra::MultiVector::lclNormImpl: "
                      "The second argument X_lcl must have rank 2.");
-#endif // KOKKOS_HAVE_CXX11
 
       // In case the input dimensions don't match, make sure that we
       // don't overwrite memory that doesn't belong to us, by using
@@ -2032,24 +2034,6 @@ namespace Tpetra {
 
     typedef typename dual_view_type::t_dev dev_view_type;
     typedef typename dual_view_type::t_host host_view_type;
-    // NOTE (mfh 08 Apr 2015) We prefer to let the compiler deduce the
-    // type of the return value of subview.  This is because if we
-    // switch the array layout from LayoutLeft to LayoutRight
-    // (preferred for performance of block operations), the types
-    // below won't be valid.  (A view of a column of a LayoutRight
-    // multivector has LayoutStride, not LayoutLeft.)
-#ifndef KOKKOS_HAVE_CXX11
-    typedef Kokkos::View<impl_scalar_type*,
-      typename dev_view_type::array_layout,
-      typename dev_view_type::device_type,
-      typename dev_view_type::memory_traits,
-      typename dev_view_type::specialize> col_dev_view_type;
-    typedef Kokkos::View<impl_scalar_type*,
-      typename host_view_type::array_layout,
-      typename host_view_type::device_type,
-      typename host_view_type::memory_traits,
-      typename host_view_type::specialize> col_host_view_type;
-#endif // NOT KOKKOS_HAVE_CXX11
 
     // We can't substitute putScalar(0.0) for scale(0.0), because the
     // former will overwrite NaNs present in the MultiVector.  The
@@ -2062,11 +2046,7 @@ namespace Tpetra {
       Kokkos::Impl::is_same<typename dev_view_type::memory_space,
                             typename host_view_type::memory_space>::value;
     if (! oneMemorySpace && view_.modified_host >= view_.modified_device) {
-#ifdef KOKKOS_HAVE_CXX11
       auto Y_lcl = subview (this->view_.h_view, rowRng, colRng);
-#else
-      host_view_type Y_lcl = subview (this->view_.h_view, rowRng, colRng);
-#endif // KOKKOS_HAVE_CXX11
 
       if (isConstantStride ()) {
         KokkosBlas::scal (Y_lcl, theAlpha, Y_lcl);
@@ -2074,21 +2054,13 @@ namespace Tpetra {
       else {
         for (size_t k = 0; k < numVecs; ++k) {
           const size_t Y_col = this->isConstantStride () ? k : this->whichVectors_[k];
-#ifdef KOKKOS_HAVE_CXX11
           auto Y_k = subview (Y_lcl, ALL (), Y_col);
-#else
-          col_host_view_type Y_k = subview (Y_lcl, ALL (), Y_col);
-#endif // KOKKOS_HAVE_CXX11
           KokkosBlas::scal (Y_k, theAlpha, Y_k);
         }
       }
     }
     else { // work on device
-#ifdef KOKKOS_HAVE_CXX11
       auto Y_lcl = subview (this->view_.d_view, rowRng, colRng);
-#else
-      dev_view_type Y_lcl = subview (this->view_.d_view, rowRng, colRng);
-#endif // KOKKOS_HAVE_CXX11
 
       if (isConstantStride ()) {
         KokkosBlas::scal (Y_lcl, theAlpha, Y_lcl);
@@ -2096,11 +2068,7 @@ namespace Tpetra {
       else {
         for (size_t k = 0; k < numVecs; ++k) {
           const size_t Y_col = this->isConstantStride () ? k : this->whichVectors_[k];
-#ifdef KOKKOS_HAVE_CXX11
           auto Y_k = subview (Y_lcl, ALL (), Y_col);
-#else
-          col_dev_view_type Y_k = subview (Y_lcl, ALL (), Y_col);
-#endif // KOKKOS_HAVE_CXX11
           KokkosBlas::scal (Y_k, theAlpha, Y_k);
         }
       }
@@ -2160,18 +2128,6 @@ namespace Tpetra {
     // (preferred for performance of block operations), the types
     // below won't be valid.  (A view of a column of a LayoutRight
     // multivector has LayoutStride, not LayoutLeft.)
-#ifndef KOKKOS_HAVE_CXX11
-    typedef Kokkos::View<impl_scalar_type*,
-      typename dev_view_type::array_layout,
-      typename dev_view_type::device_type,
-      typename dev_view_type::memory_traits,
-      typename dev_view_type::specialize> col_dev_view_type;
-    typedef Kokkos::View<impl_scalar_type*,
-      typename host_view_type::array_layout,
-      typename host_view_type::device_type,
-      typename host_view_type::memory_traits,
-      typename host_view_type::specialize> col_host_view_type;
-#endif // NOT KOKKOS_HAVE_CXX11
 
     const bool oneMemorySpace =
       Kokkos::Impl::is_same<typename dev_view_type::memory_space,
@@ -2186,11 +2142,7 @@ namespace Tpetra {
         Kokkos::create_mirror_view (alphas);
       Kokkos::deep_copy (alphas_h, alphas);
 
-#ifdef KOKKOS_HAVE_CXX11
       auto Y_lcl = subview (this->view_.h_view, rowRng, colRng);
-#else
-      host_view_type Y_lcl = subview (this->view_.h_view, rowRng, colRng);
-#endif // KOKKOS_HAVE_CXX11
 
       if (isConstantStride ()) {
         KokkosBlas::scal (Y_lcl, alphas_h, Y_lcl);
@@ -2198,11 +2150,7 @@ namespace Tpetra {
       else {
         for (size_t k = 0; k < numVecs; ++k) {
           const size_t Y_col = this->isConstantStride () ? k : this->whichVectors_[k];
-#ifdef KOKKOS_HAVE_CXX11
           auto Y_k = subview (Y_lcl, ALL (), Y_col);
-#else
-          col_host_view_type Y_k = subview (Y_lcl, ALL (), Y_col);
-#endif // KOKKOS_HAVE_CXX11
           // We don't have to use the entire 1-D View here; we can use
           // the version that takes a scalar coefficient.
           KokkosBlas::scal (Y_k, alphas_h(k), Y_k);
@@ -2210,11 +2158,7 @@ namespace Tpetra {
       }
     }
     else { // Work in device memory, using the input View 'alphas' directly.
-#ifdef KOKKOS_HAVE_CXX11
       auto Y_lcl = subview (this->view_.d_view, rowRng, colRng);
-#else
-      dev_view_type Y_lcl = subview (this->view_.d_view, rowRng, colRng);
-#endif // KOKKOS_HAVE_CXX11
 
       if (isConstantStride ()) {
         KokkosBlas::scal (Y_lcl, alphas, Y_lcl);
@@ -2222,11 +2166,7 @@ namespace Tpetra {
       else {
         for (size_t k = 0; k < numVecs; ++k) {
           const size_t Y_col = this->isConstantStride () ? k : this->whichVectors_[k];
-#ifdef KOKKOS_HAVE_CXX11
           auto Y_k = subview (Y_lcl, ALL (), Y_col);
-#else
-          col_dev_view_type Y_k = subview (Y_lcl, ALL (), Y_col);
-#endif // KOKKOS_HAVE_CXX11
           //
           // FIXME (mfh 08 Apr 2015) This assumes UVM.  It would be
           // better to fix scal() so that it takes a 0-D View as the
@@ -2268,18 +2208,6 @@ namespace Tpetra {
 
     typedef typename dual_view_type::t_dev dev_view_type;
     typedef typename dual_view_type::t_host host_view_type;
-#ifndef KOKKOS_HAVE_CXX11
-    typedef Kokkos::View<impl_scalar_type*,
-      typename dev_view_type::array_layout,
-      typename dev_view_type::device_type,
-      typename dev_view_type::memory_traits,
-      typename dev_view_type::specialize> col_dev_view_type;
-    typedef Kokkos::View<impl_scalar_type*,
-      typename host_view_type::array_layout,
-      typename host_view_type::device_type,
-      typename host_view_type::memory_traits,
-      typename host_view_type::specialize> col_host_view_type;
-#endif // NOT KOKKOS_HAVE_CXX11
 
     // FIXME (mfh 05 Mar 2015) DualView flags are not indicative when
     // the two memory spaces are the same, so we check the latter.
@@ -2292,13 +2220,8 @@ namespace Tpetra {
       // *this, than to sync A.
       this->view_.template sync<typename host_view_type::memory_space> ();
       this->view_.template modify<typename host_view_type::memory_space> ();
-#ifdef KOKKOS_HAVE_CXX11
       auto Y_lcl = subview (this->view_.h_view, rowRng, colRng);
       auto X_lcl = subview (A.view_.h_view, rowRng, colRng);
-#else
-      host_view_type Y_lcl = subview (this->view_.h_view, rowRng, colRng);
-      host_view_type X_lcl = subview (A.view_.h_view, rowRng, colRng);
-#endif // KOKKOS_HAVE_CXX11
 
       if (isConstantStride () && A.isConstantStride ()) {
         KokkosBlas::scal (Y_lcl, theAlpha, X_lcl);
@@ -2308,13 +2231,9 @@ namespace Tpetra {
         for (size_t k = 0; k < numVecs; ++k) {
           const size_t Y_col = this->isConstantStride () ? k : this->whichVectors_[k];
           const size_t X_col = A.isConstantStride () ? k : A.whichVectors_[k];
-#ifdef KOKKOS_HAVE_CXX11
           auto Y_k = subview (Y_lcl, ALL (), Y_col);
           auto X_k = subview (X_lcl, ALL (), X_col);
-#else
-          col_host_view_type Y_k = subview (Y_lcl, ALL (), Y_col);
-          col_host_view_type X_k = subview (X_lcl, ALL (), X_col);
-#endif // KOKKOS_HAVE_CXX11
+
           KokkosBlas::scal (Y_k, theAlpha, X_k);
         }
       }
@@ -2324,13 +2243,8 @@ namespace Tpetra {
       // *this, than to sync A.
       this->view_.template sync<typename dev_view_type::memory_space> ();
       this->view_.template modify<typename dev_view_type::memory_space> ();
-#ifdef KOKKOS_HAVE_CXX11
       auto Y_lcl = subview (this->view_.d_view, rowRng, colRng);
       auto X_lcl = subview (A.view_.d_view, rowRng, colRng);
-#else
-      dev_view_type Y_lcl = subview (this->view_.d_view, rowRng, colRng);
-      dev_view_type X_lcl = subview (A.view_.d_view, rowRng, colRng);
-#endif // KOKKOS_HAVE_CXX11
 
       if (isConstantStride () && A.isConstantStride ()) {
         KokkosBlas::scal (Y_lcl, theAlpha, X_lcl);
@@ -2340,13 +2254,9 @@ namespace Tpetra {
         for (size_t k = 0; k < numVecs; ++k) {
           const size_t Y_col = this->isConstantStride () ? k : this->whichVectors_[k];
           const size_t X_col = A.isConstantStride () ? k : A.whichVectors_[k];
-#ifdef KOKKOS_HAVE_CXX11
           auto Y_k = subview (Y_lcl, ALL (), Y_col);
           auto X_k = subview (X_lcl, ALL (), X_col);
-#else
-          col_dev_view_type Y_k = subview (Y_lcl, ALL (), Y_col);
-          col_dev_view_type X_k = subview (X_lcl, ALL (), X_col);
-#endif // KOKKOS_HAVE_CXX11
+
           KokkosBlas::scal (Y_k, theAlpha, X_k);
         }
       }
@@ -2486,18 +2396,6 @@ namespace Tpetra {
 
     typedef typename dual_view_type::t_dev dev_view_type;
     typedef typename dual_view_type::t_host host_view_type;
-#ifndef KOKKOS_HAVE_CXX11
-    typedef Kokkos::View<impl_scalar_type*,
-      typename dev_view_type::array_layout,
-      typename dev_view_type::device_type,
-      typename dev_view_type::memory_traits,
-      typename dev_view_type::specialize> col_dev_view_type;
-    typedef Kokkos::View<impl_scalar_type*,
-      typename host_view_type::array_layout,
-      typename host_view_type::device_type,
-      typename host_view_type::memory_traits,
-      typename host_view_type::specialize> col_host_view_type;
-#endif // NOT KOKKOS_HAVE_CXX11
 
     // FIXME (mfh 05 Mar 2015) DualView flags are not indicative when
     // the two memory spaces are the same, so we check the latter.
@@ -2510,13 +2408,8 @@ namespace Tpetra {
       // *this, than to sync A.
       this->view_.template sync<typename host_view_type::memory_space> ();
       this->view_.template modify<typename host_view_type::memory_space> ();
-#ifdef KOKKOS_HAVE_CXX11
       auto Y_lcl = subview (this->view_.h_view, rowRng, colRng);
       auto X_lcl = subview (A.view_.h_view, rowRng, colRng);
-#else
-      host_view_type Y_lcl = subview (this->view_.h_view, rowRng, colRng);
-      host_view_type X_lcl = subview (A.view_.h_view, rowRng, colRng);
-#endif // KOKKOS_HAVE_CXX11
 
       if (isConstantStride () && A.isConstantStride ()) {
         KokkosBlas::axpby (theAlpha, X_lcl, theBeta, Y_lcl);
@@ -2526,13 +2419,9 @@ namespace Tpetra {
         for (size_t k = 0; k < numVecs; ++k) {
           const size_t Y_col = this->isConstantStride () ? k : this->whichVectors_[k];
           const size_t X_col = A.isConstantStride () ? k : A.whichVectors_[k];
-#ifdef KOKKOS_HAVE_CXX11
           auto Y_k = subview (Y_lcl, ALL (), Y_col);
           auto X_k = subview (X_lcl, ALL (), X_col);
-#else
-          col_host_view_type Y_k = subview (Y_lcl, ALL (), Y_col);
-          col_host_view_type X_k = subview (X_lcl, ALL (), X_col);
-#endif // KOKKOS_HAVE_CXX11
+
           KokkosBlas::axpby (theAlpha, X_k, theBeta, Y_k);
         }
       }
@@ -2542,13 +2431,8 @@ namespace Tpetra {
       // *this, than to sync A.
       this->view_.template sync<typename dev_view_type::memory_space> ();
       this->view_.template modify<typename dev_view_type::memory_space> ();
-#ifdef KOKKOS_HAVE_CXX11
       auto Y_lcl = subview (this->view_.d_view, rowRng, colRng);
       auto X_lcl = subview (A.view_.d_view, rowRng, colRng);
-#else
-      dev_view_type Y_lcl = subview (this->view_.d_view, rowRng, colRng);
-      dev_view_type X_lcl = subview (A.view_.d_view, rowRng, colRng);
-#endif // KOKKOS_HAVE_CXX11
 
       if (isConstantStride () && A.isConstantStride ()) {
         KokkosBlas::axpby (theAlpha, X_lcl, theBeta, Y_lcl);
@@ -2558,13 +2442,9 @@ namespace Tpetra {
         for (size_t k = 0; k < numVecs; ++k) {
           const size_t Y_col = this->isConstantStride () ? k : this->whichVectors_[k];
           const size_t X_col = A.isConstantStride () ? k : A.whichVectors_[k];
-#ifdef KOKKOS_HAVE_CXX11
           auto Y_k = subview (Y_lcl, ALL (), Y_col);
           auto X_k = subview (X_lcl, ALL (), X_col);
-#else
-          col_dev_view_type Y_k = subview (Y_lcl, ALL (), Y_col);
-          col_dev_view_type X_k = subview (X_lcl, ALL (), X_col);
-#endif // KOKKOS_HAVE_CXX11
+
           KokkosBlas::axpby (theAlpha, X_k, theBeta, Y_k);
         }
       }
@@ -2626,18 +2506,9 @@ namespace Tpetra {
     // Prefer 'auto' over specifying the type explicitly.  This avoids
     // issues with a subview possibly having a different type than the
     // original view.
-#ifdef KOKKOS_HAVE_CXX11
     auto C_lcl = subview (this->view_.d_view, rowRng, colRng);
     auto A_lcl = subview (A.view_.d_view, rowRng, colRng);
     auto B_lcl = subview (B.view_.d_view, rowRng, colRng);
-#else
-    typename dual_view_type::t_dev C_lcl =
-      subview (this->view_.d_view, rowRng, colRng);
-    typename dual_view_type::t_dev A_lcl =
-      subview (A.view_.d_view, rowRng, colRng);
-    typename dual_view_type::t_dev B_lcl =
-      subview (B.view_.d_view, rowRng, colRng);
-#endif // KOKKOS_HAVE_CXX11
 
     if (isConstantStride () && A.isConstantStride () && B.isConstantStride ()) {
       KokkosBlas::update (theAlpha, A_lcl, theBeta, B_lcl, theGamma, C_lcl);

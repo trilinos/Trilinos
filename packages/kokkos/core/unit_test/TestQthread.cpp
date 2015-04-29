@@ -173,7 +173,7 @@ TEST_F( qthread , atomics )
   ASSERT_TRUE( ( TestAtomic::Loop<float,Kokkos::Qthread>(100,2) ) );
   ASSERT_TRUE( ( TestAtomic::Loop<float,Kokkos::Qthread>(100,3) ) );
 
-#if defined( KOKKOS_HAVE_CXX11 )
+#if defined( KOKKOS_ENABLE_ASM )
   ASSERT_TRUE( ( TestAtomic::Loop<Kokkos::complex<double> ,Kokkos::Qthread>(100,1) ) );
   ASSERT_TRUE( ( TestAtomic::Loop<Kokkos::complex<double> ,Kokkos::Qthread>(100,2) ) );
   ASSERT_TRUE( ( TestAtomic::Loop<Kokkos::complex<double> ,Kokkos::Qthread>(100,3) ) );
@@ -270,10 +270,11 @@ TEST_F( qthread , task_policy )
 }
 
 #if defined( KOKKOS_HAVE_CXX11 )
-// TEST_F( qthread , task_team )
-// {
-//   TestTaskPolicy::test_task_team< Kokkos::Qthread >(1000);
-// }
+TEST_F( qthread , task_team )
+{
+  std::cout << "qthread.task_team test disabled due to unresolved error causing the test to hang." << std::endl ;
+  // TestTaskPolicy::test_task_team< Kokkos::Qthread >(1000);
+}
 #endif
 
 //----------------------------------------------------------------------------

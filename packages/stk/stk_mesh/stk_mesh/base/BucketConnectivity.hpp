@@ -866,7 +866,7 @@ public:
   { ThrowAssert(false); }
 
   bool has_permutation() const
-  { return TargetRank != stk::topology::NODE_RANK && m_from_rank != stk::topology::NODE_RANK; }
+  { return does_rank_have_valid_permutations(TargetRank) && does_rank_have_valid_permutations(m_from_rank); }
 
   void debug_dump(std::ostream& out) const
   {
@@ -903,6 +903,11 @@ public:
   }
 
 private:
+
+  bool does_rank_have_valid_permutations(stk::mesh::EntityRank rank) const
+  {
+      return rank > stk::topology::NODE_RANK && rank < stk::topology::CONSTRAINT_RANK;
+  }
 
   void copy_connectivity(unsigned from_ordinal, SelfType& to, unsigned to_ordinal)
   {

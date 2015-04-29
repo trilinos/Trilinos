@@ -168,7 +168,7 @@ preEvaluate(typename TRAITS::PreEvalData d)
     Teuchos::RCP<EpetraLinearObjContainer> epetraContainer 
        = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.gedc.getDataObject("Dirichlet Counter"),true);
 
-    dirichletCounter_ = epetraContainer->get_x();
+    dirichletCounter_ = epetraContainer->get_f();
     TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
   }
 }
@@ -357,7 +357,7 @@ preEvaluate(typename TRAITS::PreEvalData d)
     Teuchos::RCP<EpetraLinearObjContainer> epetraContainer 
        = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.gedc.getDataObject("Dirichlet Counter"),true);
 
-    dirichletCounter_ = epetraContainer->get_x();
+    dirichletCounter_ = epetraContainer->get_f();
     TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
   }
 
@@ -577,10 +577,10 @@ preEvaluate(typename TRAITS::PreEvalData d)
   }
   else {
     // extract dirichlet counter from container
-    Teuchos::RCP<EpetraLinearObjContainer> epetraContainer 
-       = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.gedc.getDataObject("Dirichlet Counter"),true);
+    Teuchos::RCP<GlobalEvaluationData> dataContainer = d.gedc.getDataObject("Dirichlet Counter");
+    Teuchos::RCP<EpetraLinearObjContainer> epetraContainer = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(dataContainer,true);
 
-    dirichletCounter_ = epetraContainer->get_x();
+    dirichletCounter_ = epetraContainer->get_f();
     TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
   }
 }
@@ -662,8 +662,10 @@ evaluateFields(typename TRAITS::EvalData workset)
 
             if(r!=Teuchos::null) 
               (*r)[row] = scatterField.val();
-            if(dirichletCounter_!=Teuchos::null)
+            if(dirichletCounter_!=Teuchos::null) {
+              // std::cout << "Writing " << row << " " << dirichletCounter_->MyLength() << std::endl;
               (*dirichletCounter_)[row] = 1.0; // mark row as dirichlet
+            }
 
             // loop over the sensitivity indices: all DOFs on a cell
             std::vector<double> jacRow(scatterField.size(),0.0);

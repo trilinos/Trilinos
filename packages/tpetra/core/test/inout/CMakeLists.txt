@@ -15,6 +15,16 @@ IF(Tpetra_INST_INT_LONG)
     )
 ENDIF()
 
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    MatrixMarket_Operator_Test
+    SOURCES
+      MatrixMarket_Tpetra_OperatorTest.cpp
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ARGS ""
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    )
+
 # This test should work for any number of MPI processes, as long as
 # the dense matrix to be read in has enough rows that it may be
 # distributed over all of them, and as long as Proc 0 has enough

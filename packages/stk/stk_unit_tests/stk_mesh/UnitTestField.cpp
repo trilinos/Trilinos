@@ -31,7 +31,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <boost/foreach.hpp>            // for auto_any_base, etc
 #include <iostream>                     // for ostream, operator<<, etc
 #include <stdexcept>                    // for runtime_error
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
@@ -49,11 +48,8 @@
 #include "stk_mesh/base/Selector.hpp"   // for operator<<, Selector, etc
 #include "stk_mesh/base/Types.hpp"      // for PartVector, BucketVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
+
 namespace stk { namespace mesh { class Bucket; } }
-
-
-
-
 
 
 using stk::mesh::MetaData;
@@ -286,7 +282,7 @@ TEST(UnitTestField, testFieldWithSelector)
   unsigned num_buckets = f0_buckets.size();
   ASSERT_EQ(1u, num_buckets);
 
-  BOOST_FOREACH(stk::mesh::Bucket* b, f0_buckets) {
+  for(stk::mesh::Bucket* b : f0_buckets) {
     unsigned f0_size = field_bytes_per_entity(f0, *b);
     ASSERT_EQ(8u, f0_size);
   }
@@ -348,7 +344,7 @@ TEST(UnitTestField, testFieldWithSelectorAnd)
   {
     stk::mesh::BucketVector const& f0_buckets = bulk_data.get_buckets(elem_rank, elem_hex_selector);
 
-    BOOST_FOREACH(stk::mesh::Bucket* b, f0_buckets) {
+    for(stk::mesh::Bucket* b : f0_buckets) {
       unsigned f0_size = field_bytes_per_entity(f0, *b);
       ASSERT_EQ(64u, f0_size);
     }
@@ -357,7 +353,7 @@ TEST(UnitTestField, testFieldWithSelectorAnd)
   {
     stk::mesh::BucketVector const& f0_buckets = bulk_data.get_buckets(elem_rank, elem_tet_selector);
 
-    BOOST_FOREACH(stk::mesh::Bucket* b, f0_buckets) {
+    for(stk::mesh::Bucket* b : f0_buckets) {
       unsigned f0_size = field_bytes_per_entity(f0, *b);
       ASSERT_EQ(32u, f0_size);
     }

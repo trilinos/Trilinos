@@ -467,10 +467,8 @@ evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const
   //
   // Deterministic calculation
   //
-  bool do_deterministic = false;
   Teuchos::RCP<const Epetra_Vector> x = inArgs.get_x();
   if (x != Teuchos::null) {
-    do_deterministic = true;
 
     // p
     x_overlap->Import(*x, *x_importer, Insert);
@@ -538,12 +536,10 @@ evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const
   //
   // Stochastic calculation
   //
-  bool do_stochastic = false;
   InArgs::sg_const_vector_t x_sg;
   if (supports_x_sg)
     x_sg = inArgs.get_x_sg();
   if (x_sg != Teuchos::null) {
-    do_stochastic = true;
 
     // SG data
     Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = 

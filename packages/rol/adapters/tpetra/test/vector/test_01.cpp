@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
         x_rcp->randomize(); 
 
         // Set all values to 2
-        y_rcp->putScalar(2.0);
+        y_rcp->putScalar(-2.0);
            
         /*---[ Begin Test of ROL::TpetraMultiVector methods ] ---*/
 
@@ -127,11 +127,10 @@ int main(int argc, char *argv[]) {
         }
 
         // clone z from x, deep copy x into z, norm of z
-        RCP<ROL::Vector<RealT> > z = x.clone();
+        Teuchos::RCP<ROL::Vector<RealT> > z = x.clone();
         z->set(x);
         RealT znorm = z->norm();
-            outStream << "\nNorm of ROL::Vector z (clone of x): " << znorm << "\n";
-
+        outStream << "\nNorm of ROL::Vector z (clone of x): " << znorm << "\n";
         if ( std::abs(xnorm2 - znorm) > errtol ) {
             outStream << "---> POSSIBLE ERROR ABOVE!\n";
             errorFlag++;
@@ -166,7 +165,7 @@ int main(int argc, char *argv[]) {
         if ( std::abs(znorm-1.0) > errtol ) {
             outStream << "---> POSSIBLE ERROR ABOVE!\n";
             errorFlag++;
-        }
+        } 
 
         // set x to last basis vector
         z = x.basis(dim-1);
@@ -174,13 +173,11 @@ int main(int argc, char *argv[]) {
         outStream << "\nNorm of ROL::Vector z (last basis vector): " << znorm << "\n";
         if ( std::abs(znorm-1.0) > errtol ) {
             outStream << "---> POSSIBLE ERROR ABOVE!\n";
-             errorFlag++;
+            errorFlag++;
         }
-        
         /*---[ End Test of ROL::TpetraMultiVector methods ] ---*/
  
         /*---[ Begin Test of optimization using ROL::TpetraMultiVector ]---*/
-
         // Set to initial guess
         x_rcp->putScalar(4.0);
 
@@ -268,7 +265,6 @@ int main(int argc, char *argv[]) {
         if ( abserr > sqrt(ROL::ROL_EPSILON) ) {
             errorFlag += 1;
         }
-
         /*---[ End Test of optimization using ROL::TpetraMultiVector ]---*/
 
     }

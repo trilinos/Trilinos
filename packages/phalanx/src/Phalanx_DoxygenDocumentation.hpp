@@ -51,7 +51,6 @@
 
 \section main_index Index
 
-- \ref elevator_speech
 - \ref overview
 - \ref news
 - \ref user_guide
@@ -62,29 +61,34 @@
 - \ref copyright
 - \ref questions
 
-\section elevator_speech The Elevator Speech
-
-Phalanx is a local field evaluation kernel specifically designed for
-general partial differential equation solvers. The main goal of
-Phalanx is to decompose a complex problem into a number of simpler
-problems with managed dependencies to support rapid development and
-extensibility of the PDE code. Through the use of template
-metaprogramming concepts, Phalanx supports arbitrary user defined data
-types and evaluation types. This allows for unprecedented flexibility
-for direct integration with user applications and provides extensive
-support for embedded technology such as automatic differentiation for
-sensitivity analysis, optimization, and uncertainty quantification.
-
 \section overview Overview
 
-Phalanx is a local field evaluation kernel specifically designed for
-general partial differential equation (PDE) solvers.  It can be used
-with any cell-based discretization techniques including finite element
-and finite volume.  The main goal of Phalanx is to decompose a complex
-problem into a number of simpler problems with managed dependencies to
-support rapid development and extensibility of the PDE code.  This
-approach, coupled with the template capabilities of C++ offers a
-number of unique and powerful capabilities:
+Phalanx is a local node field evaluation kernel.  While the intended
+use case is for solving general partial differential equation (PDE)
+discretizations, there is NO specific code implemented for PDEs in
+Phalanx.  It can be applied to any system that requires function
+evaluation. In terms of PDE discretization schemes it can be used for
+finite element, finite difference and finite volume.  
+
+Phalanx is a local node evaluation tool. Phalanx relies on the Kokkos
+package for performance portability and provides a simple performant
+interface to multicore and manycore architectures.  While its main use
+is for large scale parallel high performance computing, the MPI
+communication (possibly required for ghosting) must be handled by
+other packages in the toolchain (separation of concerns).  Users can
+handle this manually as Phalanx places no requirements on this but we
+recomend the Tpetra package.
+
+The main goal of Phalanx is to decompose a complex problem into a
+number of simpler problems with managed dependencies to support rapid
+development and extensibility.  Through the use of template
+metaprogramming concepts, Phalanx supports arbitrary user defined data
+types and evaluation types. This allows for extreme flexibility in
+integration with user applications and provides extensive support for
+embedded technology such as automatic differentiation for sensitivity
+analysis, optimization, and uncertainty quantification. This approach,
+coupled with the template capabilities of C++ offers a number of
+unique and powerful capabilities:
 
 <ul>
 <li> Fast Integration with Flexible and Extensible Models:
@@ -154,29 +158,38 @@ Model A does not even require them.  This is a simple example, but the
 dependency chain can become quite complex when solving thousands of
 coupled PDE equations.
 
-<li> Efficient evaluation of field data: Phalanx was designed on the
-idea of worksets.  A workset is an arbitrarily sized block of cells to
-be evaluated on the local processor.  Phalanx evaluates all fields of
-interest at once for each block of cells.  By using the contiguous
-allocator and correctly sizing the workset to fit in processor cache
-(if possible), one can arrange all fields to exist in a contiguous
-block of memory, independent of the data type objects used to store
-the data (one must still be careful of data alignement issues).  By
-keeping all fields in cache, the code should run much faster.  This
-workset idea will also, in the future, allow for multi-core
-distrubution of the cell evaluations.
+<li> Efficient evaluation of field data: Phalanx was designed to
+support the concept of worksets, although this is not required.  A
+workset is an arbitrarily sized block of cells to be evaluated on the
+local processor.  Phalanx evaluates all fields of interest at once for
+each block of cells.  By using the contiguous allocator and correctly
+sizing the workset to fit in processor cache (if possible), one can
+arrange all fields to exist in a contiguous block of memory,
+independent of the data type objects used to store the data (one must
+still be careful of data alignement issues).  By keeping all fields in
+cache, the code should run much faster.  This workset idea will also,
+in the future, allow for multi-core distrubution of the cell
+evaluations.  NOTE: with the transition to the Kokkos::View as the
+underlying data type, the contiguous memory allocation is no longer
+supported as Kokkos will control data placement to maximize hardware
+locality (NUMA).
 
 </ul>
 
 Phalanx is a hammer.  It's use should be carefully considered.  We
 recommend its use when writing a general PDE framework where one needs
-support for flexibility in equation sets.  It should not be used for
-simple sets of PDEs where the equations rarely change.  There are some
+support for flexibility in equation sets and discretizations.  It
+should not be used for a fixed set of equations and a single
+discretization that never changes (Although the template
+metaprogramming support could still be leveraged).  There are some
 drawbacks to using Phalanx that should be considered:
 
 - A potential performance loss due to fragmentation of the over-all
-algorithm (e.g., several small loops instead of one large loop).  A
-judicous choice of field variables can alleviate this problem.
+algorithm (e.g., several small loops instead of one large loop).
+Since the granularity of the directed acyclic graph is controlled by
+the user, a poor choice in functional decomposition is possible.  This
+could result in inefficient use of memory and costly kernel launches
+if there is little work in the evaluator.
 
 - A potential loss of visibility of the original, composite problem
  (since the code is scattered into multiple places).  
@@ -186,7 +199,12 @@ performs well and supports rapid development and extensibility.
 
 \section news News
 
-Phalanx has just completed the transition from shards::Array to the Kokkos::View.  Leveraging Kokkos, Phalanx is now performance portable to GPUs.
+Phalanx has just completed the transition from shards::Array to the
+Kokkos::View.  Leveraging Kokkos, Phalanx is now performance portable
+to GPUs.  The examples and user guide, however, have not been updated
+to reflect the transition.  Please look at the MultiDimensionalArray
+example and the unit tests for examples on how to use Phalanx.  We
+will update the user guide and other examples asap.
 
 \section bugs Reporting Bugs and Making Enhancement Requests
 
@@ -200,15 +218,16 @@ Phalanx has just completed the transition from shards::Array to the Kokkos::View
 
 \section history History
 
-Phalanx grew out of the Variable Manger in the Charon code and the Expression Manager in the Aria code.  It is an attempt at merging the two capabilities and is slated to provide nonlinear function evaluation to the Intrepid discretiztion package.
+Phalanx grew out of the Variable Manger in the Charon code and the Expression Manager in the Aria code at Sandia National Laboratires.  It is an attempt at merging the two capabilities.
 
 \section authors Authors and Contributors
 
 The following have contributed to the design through ideas, discussions, and/or code development of Phalanx:
 
-  - Roger Pawlowski (Lead Developer), SNL 01414
-  - Eric Phipps, SNL 01411
-  - Pat Notz, SNL 01541 
+  - Roger Pawlowski (Lead Developer), SNL
+  - Irina Demeshko, SNL
+  - Eric Phipps, SNL
+  - Pat Notz, SNL
 
 \section copyright Copyright
 
@@ -255,10 +274,10 @@ Once Phalanx is integrated into a code by a template savvy developer,
 the only operation application users should perform is to extend the
 evaluation routines to new equations and new models by adding new
 Evaluators.  We realize that application developers and application
-users have two distictly different skill sets. Therefore much design
-work has been invested in making the Evaluator implementation very
-clean and as template free as possible.  Therefore, users of the code
-who only write new Evaluators DO NOT need to know templates.
+users typically have distictly different skill sets. Much design work
+has been invested in making the Evaluator implementation very clean
+and as template free as possible.  Therefore, users of the code who
+only write new Evaluators DO NOT need to know templates.
 
 \subsection ug_dummy_2 B. Learn the Phalanx Nomenclature
 Users should then learn the nomeclature used in the package defined in
@@ -266,11 +285,11 @@ the \ref user_guide_domain_model.
 
 \subsection ug_dummy_3 C. Tutorial
 
-The main concept of Phalanx is to evaluate fields for solving PDEs
-(although it is not limited to this).  We demonstrate the integration
-process using the simple example found in phalanx/example/EnergyFlux.
-Suppose that we want to solve the heat equation over the physical
-space \f$ \Omega \f$:
+The main concept of Phalanx is to evaluate fields typically for
+solving PDEs (although it is not limited to this).  We demonstrate the
+integration process using the simple example found in
+phalanx/example/MultiDimensionalArray.  Suppose that we want to solve
+the heat equation over the physical space \f$ \Omega \f$:
 
 \f[
   \nabla \cdot (-k \nabla T) + s = 0
@@ -297,8 +316,8 @@ points of the cells and pass them off to the integrator such as <a
 href="http://trilinos.sandia.gov/packages/intrepid">Intrepid</a>.
 
 This is a trivial example, but the dependency chains can grow quite
-complex if performing something such as a reacting flow calculation
-coupled to Navier-Stokes.
+complex if performing something such as a chemically reacting flow
+calculation coupled to Navier-Stokes and energy conservation.
 
 Follow the steps below to integrate Phalanx into your application. The example code shown in the steps comes from the energy flux example in the directory "phalanx/example/EnergyFlux".  Note that many classes are named with the word "My" such as MyWorkset, MyTraits, and MyFactory traits.  Any object that starts with the word "My" denotes that this is a user defined class.  The user must implement this class specific to their application.  All Evaluator derived objects are additionally implemented by the user even though they do not follow the convention of starting with the word "My".
 
@@ -339,17 +358,23 @@ implementations.
 
 <li><b>%Workset</b>
 
-For efficiency, the evaluation of fields on a set of cells can be
-divided into worksets.  The goal of using worksets is to fit all the
-required fields into the processor cache so that an evaluation is not
-slowed down by paging memory.  Suppose we have 2020 cells to evaluate
-on a 4 processor machine.  We might distribute the load so that 505
-cells are on each processor.  Now the user must figure out the workset
-size.  This is the number of cells to per evaluation call so that the
-field memory will fit into cache.  If we have 505 cells on a
-processor, suppose we find that only 50 cells at a time will fit into
-cache.  Then we will create a FieldManager with a size of 50 cells.
-This number is specified in the construction of data layouts.  During the call to postRegistrationSetup(), the FieldManager will allocate workspace storage for all fields relevant to the evaluation.
+For performance and memory limitations, the evaluation of fields can
+be divided into worksets.  While Phalanx does not require the use of
+worksets, we recomend their use for controlling the memory footprint (this
+can be important when offloading the kernels onto an accelerator and
+even for host node memory). The goal of using worksets is to fit all
+the required fields into the processor cache so that an evaluation is
+not slowed down by paging memory.  Suppose we have a cell-based
+discretization with 2020 cells to evaluate on a 4 node machine.  We
+might distribute the load so that 505 cells are on each MPI processor.
+Now the user must figure out the workset size.  This is the number of
+cells to per evaluation call so that the field memory will fit into
+cache.  If we have 505 cells on a processor, suppose we find that only
+50 cells at a time will fit into cache.  Then we will create a
+FieldManager with a size of 50 cells.  This number is specified in the
+construction of data layouts.  During the call to
+postRegistrationSetup(), the FieldManager will allocate workspace
+storage for all fields relevant to the evaluation.
 
 For our example, there will be 11 worksets.  The first 10 worksets
 will have the 50 cell maximum and the final workset will have the 5
@@ -373,18 +398,23 @@ where workset information can be passed in through the evaluate call:
     }
 \endcode
 
-Note that you do not have to use the workset idea.  You could just
-pass in workset size equal to the number of local cells on the
-processor or you could use a workset size of one cell and wrap the
-evaluate call in a loop over the number of cells.  Be aware that this
-can result in a possibly large performance hit.
+Note that the call to evaluateFields() takes a workset data object in
+this example.  The field_manager is templated on a traits class that
+allows the user to define the actual object passed into the
+evaluatFields call.  This does not have to be a workset_data object
+but can be any class or struct the user defines (even void).
+
+Note that you do not have to use the workset idea.  In this cell-based
+discretization example, one could just evaluate all local elements in
+one loop (equivalent to a single workset).  Be aware that this can
+result in a possibly large performance hit.
 
 Phalanx, in fact, does not restrict you to cell based iteration.  You
 can iterate over any entity type such as edge or face structures.
 
 <li><b>Consistent Evaluation</b>
 
-Phalanx was written to perform consistent evaluations.  By consistent,
+Phalanx was imtended to perform consistent evaluations.  By consistent,
 we mean that all dependencies of a field evaluation are current with
 respect to the current degree of freedom values.  For example, suppose
 we need to evaluate the the energy flux.  This has dependencies on the
@@ -397,18 +427,24 @@ evaluation that updates fields in order to maintain consistency of the
 dependency chain.  Without this, one might end up with lagged values
 being used from a previous evaluate call.
 
+This does not rule out the use of semi-implicit or operator split
+schemes.  In fact these have been demonstrated in Phalanx.  It just
+rquires that users store any lagged history and provide a field
+evaluator to pull that history in.
+
 <li><b>Scalar Type</b>
 
 A scalar type, typically the template argument ScalarT in Phalanx
 code, is the type of scalar used in an evaluation.  It is typically a
-double or float, but can be special object types for embedded methods such as
-sensitivity analysis.  For example, for sensitivity analysis, a double
-scalar type is replaced with a foward automatic differentiation object
-(FAD) or a reverse automatic differentaion object (RAD) to produce
-sensitivity information.  Whatever type is used, the standard
-mathematical operators are overloaded for the particular embedded
-technology.  For an example of this, see the <a
-href="http://trilinos.sandia.gov/packages/sacado">Sacado Automatic
+double or float, but can be special object types for extended
+precision, complex values, and special embedded methods data types
+such as sensitivity analysis.  For example, for sensitivity analysis,
+a double scalar type is replaced with a foward automatic
+differentiation object (FAD) or a reverse automatic differentaion
+object (RAD) to produce sensitivity information.  Whatever type is
+used, the standard mathematical operators are overloaded for the
+particular embedded technology.  For an example of this, see the 
+<a href="http://trilinos.sandia.gov/packages/sacado">Sacado Automatic
 Differentiation Library</a>. Some sample scalar types include:
 
 <ul>
@@ -417,66 +453,69 @@ Differentiation Library</a>. Some sample scalar types include:
 <li> Sacado::Fad::DFad<double> (for sensitivity analysis)
 </ul>
 
-<li><b>Algebraic Type</b>
-
-An algebraic type is the type of objects that hold data.  It is usually a rank n tensor.  Simple examples include a scalar (rank-0 tensor), a vector (rank-1 tensor) or a matrix (rank-2 tensor).  It is not actually restircted to tensors, but can be any struct/class/data type that a user implements.  The algebraic type is a description of how data is stored but does NOT have a corresponding type in the Phalanx code.  It is a notion or idea we use to describe a data type without specifying the actual scalar type (See "Data Type" for more information).  These types are defined by the user.  In the example in the directory "phalanx/example/EnergyFlux", the user selects three algebraic types to represent scalars, vectors and tensors.  The scalar algebraic type is equivalent to the scalar type used in the evaluation.  The vector and tensor objects are objects templated on the scalar type:
-
-<ul>
-<li> template<typename ScalarT> class MyVector { ... };
-<li> template<typename ScalarT> class MyTensor { ... };
-</ul>
-
-In in a function evaluation routine templated on the scalar type, the code would look something like:
-\code
-template<typename ScalarT>
-void myFunction() {
-
-  ScalarT scalar_value;
-  MyVector<ScalarT> vector_value;
-  MyTensor<ScalarT> matrix_value;
-    .
-    .
-    .
-}
-\endcode
-
-Note that instead of using an algebraic type, most users can use a multidimensional array to meet their needs.
 
 <li><b>Data Type</b>
 
-A data type, typically the template argument DataT in Phalanx code, is an actual type used for storing fields.  It is the combination of a scalar type and an algebraic type.  Some examples include:
-
-<ul>
-<li> double
-<li> MyVector<double>
-<li> MyTensor<double>
-<li> Sacado::Fad::DFad<double>
-<li> MyVector< Sacado::Fad::DFad<double> >
-<li> MyTensor< Sacado::Fad::DFad<double> >
-</ul>
-
+The data type is a deprecated concept used in the original Phalanx
+implementation.  It is now equivalent to the scalar type.  You might
+see use older code specifying a DataT template parameter, but this is
+now equivalent the ScalarT template parameter.
 
 <li><b>Evaluation Type</b>
 
-The evaluation type, typically the template argument EvalT in Phalanx code, defines a unique type of evaluation to perform.  The user is free to choose the evaluation types and actually creates their own evaluation types.  An EvaluationContainer is allocated for each evaluation type specified in the users traits class.  Examples include:
+The evaluation type, typically the template argument EvalT in Phalanx code, defines a unique type of evaluation to perform.  The user is free to choose/create the evaluation types - they implement their own class or struct for their own evaluation types.  An EvaluationContainer is allocated for each evaluation type specified in the users traits class.  Examples that we usually use include:
 
 <ul>
-<li> Residual
-<li> Jacobian
-<li> ParameterSensitivity
+<li> Residual (simple function evaluation)
+<li> Jacobian (function sensitivities with respect to state variables)
+<li> Tangent (parameter sensitivity)
 </ul>
 
-The evaluation type must be associated with one default scalar type and can optionally additional scalar types.  The scalar type usually determines what is being evaluated. For example, to evaluate the equation residuals, the scalar type is usually a double or float.  To evaluate a Jacobian, the scalar type could be a forward automatic differentiation object, Sacado::Fad::DFAD<double>.  By introducing the evaluation type in Phalanx, the same scalar type can be used for different evaluation types and can be specialized accordingly.  For example computing the Jacobian and computing parameter sensitivities both could use the Sacado::Fad::DFAD<double> scalar type.
+The evaluation type must be associated with one default scalar type
+and can optionally support additional scalar types.  The scalar type
+usually determines what is being evaluated. For example, to evaluate
+the equation residuals, the scalar type is usually a double, a float
+or an extended precision type.  To evaluate a Jacobian, the scalar
+type could be a forward automatic differentiation object,
+Sacado::Fad::DFAD<double>.  By introducing the evaluation type in
+Phalanx, the same scalar type can be used for different evaluation
+types and can be specialized accordingly.  For example computing the
+Jacobian and computing parameter sensitivities both could use the
+Sacado::Fad::DFAD<double> scalar type.
 
 <li><b>Storage</b>
 
-A DataContainer object stores all fields of a particular data type.  Each EvaluationContainer holds a vector of DataContainers, one DataContainer for each vaid data type that is associated with that particular evaluation type.  One EvaluationContainer is constructed for each evaluation type.
+A DataContainer object stores all fields of a particular data type.
+Each EvaluationContainer holds a vector of DataContainers, one
+DataContainer for each vaid data type that is associated with that
+particular evaluation type.  One EvaluationContainer is constructed
+for each evaluation type.
+
+NOTE: this concept was needed for memory allocation in the first
+generation Phalanx library when all fields for an evaluation type were
+stored contiguously in memory.  Since the Kokkos transition, memory in
+now controlled by the Kokkos::View.  We could remove this concept and
+corresponding code in the future.  This object is not used by the user
+and is an underlying implementatino detail.  It's removal will NOT
+result in changes to user code.
 
 <li><b>Data Layout</b>
 
-The DataLayout object is used to distinguish fields with the same name, but exist at different locations in the discretization structure (i.e. cell or face).  For example, supposed we have written an evaluator the computes the "Density" field for a set of points in the cell.  Now we want to evaluate the density at a different set of points in the cell.  We might have a "Density" field in a cell associated with a set of integration points (quadrature points in finite elements) and another field associated with the nodes (nodal basis points in finite elements).  We use the same field name (so we can reuse the same Evaluator), "Density", but use two different DataLayouts, one for integration points and one for nodal point.  Now a FieldTag comparison will differentiate the fields due to the different DataLayout.  
-
-Additionally, the DataLayout contains the number of DataT objects associated with the field in the discretized structure.  This size() parameter is not needed to distinguish uniqueness, since the number of objects can be the same for different fields.  It is stored here for convenience when figuring out the size of field arrays.
+The DataLayout object is used to define layout of the multidimensional
+array used to store Phalanx Fields.  It provides the size of each rank
+in the multidimensional array and provides a unique string name to
+distinguish fields with the same name that might exist on different
+layouts.  For example, supposed we have written an evaluator the
+computes the "Density" field for a set of points in the cell.  Now we
+want to evaluate the density at a different set of points in the cell.
+We might have a "Density" field in a cell associated with a set of
+integration points (quadrature/integration points in finite elements)
+and another field associated with the nodes (nodal basis degree of
+freedom points in finite elements).  We use the same field name (so we
+can reuse the same Evaluator), "Density", but use two different
+DataLayouts, one for integration points and one for nodal point.  Now
+a FieldTag comparison will differentiate the fields due to the
+different DataLayout.
 
 <li><b>Field Tag</b>
 

@@ -150,6 +150,8 @@ namespace Stokhos {
                const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
     void sqrt(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
               const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
+    void cbrt(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+              const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
     void pow(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
              const OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
              const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);

@@ -197,7 +197,7 @@ result_struct cg_solve(Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teucho
   LocalOrdinalType k;
   for(k=1; k <= max_iter && normr > tolerance; ++k) {
     if (k == 1) {
-      p->update(1.0,*r,0.0,*r,0.0);
+      p->update(1.0,*r,0.0);
       addtime += timer.seconds(); timer.reset();
     }
     else {
@@ -205,7 +205,7 @@ result_struct cg_solve(Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teucho
       rtrans = r->dot(*r);
       dottime += timer.seconds(); timer.reset();
       magnitude_type beta = rtrans/oldrtrans;
-      p->update(beta,*p,1.0,*r,0.0);
+      p->update(1.0,*r,beta);
       addtime += timer.seconds(); timer.reset();
     }
     normr = std::sqrt(rtrans);
@@ -230,8 +230,8 @@ result_struct cg_solve(Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teucho
     alpha = rtrans/p_ap_dot;
 
 
-    x->update(1.0,*x,alpha,*p,0.0);
-    r->update(1.0,*r,-alpha,*Ap,0.0);
+    x->update(alpha,*p,1.0);
+    r->update(-alpha,*Ap,1.0);
     addtime += timer.seconds(); timer.reset();
 
   }

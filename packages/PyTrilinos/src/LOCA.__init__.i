@@ -202,22 +202,22 @@ __all__ = ['Extended',
            'StepSize',
            'MultiPredictor'
            ]
-import Extended
-import MultiContinuation
-import TimeDependent
-import TurningPoint
-import Hopf
-import Pitchfork
-import Homotopy
-import PhaseTransition
-import Abstract
-import Parameter
-import BorderedSolver
-import BorderedSystem
-import Bifurcation
-import StatusTest
-import StepSize
-import MultiPredictor
+from . import Extended
+from . import MultiContinuation
+from . import TimeDependent
+from . import TurningPoint
+from . import Hopf
+from . import Pitchfork
+from . import Homotopy
+from . import PhaseTransition
+from . import Abstract
+from . import Parameter
+from . import BorderedSolver
+from . import BorderedSystem
+from . import Bifurcation
+from . import StatusTest
+from . import StepSize
+from . import MultiPredictor
 %}
 
 // Techos::RCP handling
@@ -226,6 +226,7 @@ import MultiPredictor
 %teuchos_rcp(LOCA::Factory)
 %teuchos_rcp(LOCA::Stepper)
 %teuchos_rcp(LOCA::DerivUtils)
+%teuchos_rcp(LOCA::MultiContinuation::AbstractGroup)
 
 // LOCA GlobalData class
 %include "LOCA_GlobalData.H"
@@ -247,6 +248,11 @@ import MultiPredictor
 // LOCA Stepper class
 %teuchos_rcp(LOCA::Stepper)
 %feature("director") LOCA::Stepper;
+// Ignore the deprecated constructor
+// %ignore LOCA::Stepper::Stepper(const Teuchos::RCP< LOCA::GlobalData >&,
+//                                const Teuchos::RCP< LOCA::MultiContinuation::AbstractGroup >&,
+//                                const Teuchos::RCP< NOX::StatusTest::Generic >&,
+//                                const Teuchos::RCP< Teuchos::ParameterList >&);
 %include "LOCA_Stepper.H"
 
 // LOCA ParameterVector class
@@ -260,5 +266,9 @@ import MultiPredictor
 # Epetra namespace
 __all__.append("Epetra")
 from . import Epetra
+
+# Fix ___init__ ambiguity
+del ___init__
+from . import ___init__
 %}
 #endif
