@@ -5905,8 +5905,8 @@ bool BulkData::verify_parallel_attributes_for_bucket( Bucket const& bucket, std:
 
     if (   has_owns_part && p_owner != p_rank ) {
       error_log << __FILE__ << ":" << __LINE__ << ": ";
-      error_log << "problem is owner-consistency check 1: "
-                << "has_owns_part: " << has_owns_part << ", "
+      error_log << "problem is owner-consistency (check 1): "
+                << "has_owns_part: " << (has_owns_part?"true":"false") << ", "
                 << "p_owner: " << p_owner << ", "
                 << "p_rank: " << p_rank << std::endl;
       this_result = false ;
@@ -5914,8 +5914,8 @@ bool BulkData::verify_parallel_attributes_for_bucket( Bucket const& bucket, std:
 
     if ( ! has_owns_part && p_owner == p_rank ) {
       error_log << __FILE__ << ":" << __LINE__ << ": ";
-      error_log << "problem is owner-consistency check 2: "
-                << "has_owns_part: " << has_owns_part << ", "
+      error_log << "problem is owner-consistency (check 2): "
+                << "has_owns_part: " << (has_owns_part?"true":"false") << ", "
                 << "p_owner: " << p_owner << ", "
                 << "p_rank: " << p_rank << std::endl;
       this_result = false ;
@@ -5923,9 +5923,9 @@ bool BulkData::verify_parallel_attributes_for_bucket( Bucket const& bucket, std:
 
     if ( has_shares_part != shares ) {
       error_log << __FILE__ << ":" << __LINE__ << ": ";
-      error_log << "problem is owner-consistency check 3: "
-                << "has_shares_part: " << has_shares_part << ", "
-                << "shares: " << shares << " has entity key " << entity_key(entity).m_value << std::endl;
+      error_log << "problem is owner-consistency (check 3): "
+                << "has_shares_part: " << (has_shares_part?"true":"false") << ", "
+                << "shares: " << shares << " has entity key " << entity_key(entity) << std::endl;
       this_result = false ;
     }
 
@@ -5934,9 +5934,9 @@ bool BulkData::verify_parallel_attributes_for_bucket( Bucket const& bucket, std:
     if ( ( has_owns_part || has_shares_part ) != ownedClosure ) {
       error_log << __FILE__ << ":" << __LINE__ << ": ";
       error_log << "problem is closure check: "
-                << "has_owns_part: " << has_owns_part << ", "
-                << "has_shares_part: " << has_shares_part << ", "
-                << "owned_closure: " << ownedClosure << std::endl;
+                << "has_owns_part: " << (has_owns_part?"true":"false") << ", "
+                << "has_shares_part: " << (has_shares_part?"true":"false") << ", "
+                << "owned_closure: " << (ownedClosure?"true":"false") << std::endl;
       this_result = false ;
     }
 

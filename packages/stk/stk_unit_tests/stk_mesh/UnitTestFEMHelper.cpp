@@ -360,11 +360,16 @@ TEST(FEMHelper, test_permutations_for_key_topologies)
   stk::topology topo;
 
   const unsigned num_test_topologies = 10;
-  stk::topology test_topologies[num_test_topologies] = {stk::topology::TRI_3_2D, stk::topology::QUAD_4_2D,
-                                                        stk::topology::SHELL_TRI_3, stk::topology::SHELL_QUAD_4,
-                                                        stk::topology::TET_4, stk::topology::PYRAMID_5,
-                                                        stk::topology::WEDGE_6, stk::topology::HEX_8,
-                                                        stk::topology::TRI_6_2D, stk::topology::TET_10};
+  stk::topology test_topologies[num_test_topologies] = {stk::topology::TRI_3_2D,
+                                                        stk::topology::QUAD_4_2D,
+                                                        stk::topology::SHELL_TRI_3,
+                                                        stk::topology::SHELL_QUAD_4,
+                                                        stk::topology::TET_4,
+                                                        stk::topology::PYRAMID_5,
+                                                        stk::topology::WEDGE_6,
+                                                        stk::topology::HEX_8,
+                                                        stk::topology::TRI_6_2D,
+                                                        stk::topology::TET_10};
 
   // check that the permutations define the same sides
   for (size_t index = 0; index < num_test_topologies; ++index)
