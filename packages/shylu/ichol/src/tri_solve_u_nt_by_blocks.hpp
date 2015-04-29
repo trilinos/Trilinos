@@ -20,16 +20,16 @@ namespace Example {
   TriSolve<Uplo::Upper,Trans::NoTranspose,
            AlgoTriSolve::ByBlocks>
   ::invoke(const typename CrsExecViewType::policy_type::member_type &member,
-           const int diag,
+           const int diagA,
            const CrsExecViewType &A,
            const DenseExecViewType &B) {
     if (member.team_rank() == 0) {
       typename CrsTaskViewType::policy_type policy;
-      
+
       CrsTaskViewType ATL, ATR,      A00, A01, A02,
         /**/          ABL, ABR,      A10, A11, A12,
         /**/                         A20, A21, A22;
-      
+
       DenseTaskViewType BT,      B0,
         /**/            BB,      B1,
         /**/                     B2;
@@ -61,14 +61,14 @@ namespace Example {
 
         // B1 = inv(triu(A11))*B1
         genTrsmTasks_UpperByBlocks
-          <ParallelForType,CrsTaskViewType,DenseTaskViewType>(policy, A11, B1);
+          <ParallelForType,CrsTaskViewType,DenseTaskViewType>(policy, diagA, A11, B1);
 
         // -----------------------------------------------------
         Merge_3x3_to_2x2(A00, A01, A02, /**/ ATL, ATR,
                          A10, A11, A12, /**/ /******/
                          A20, A21, A22, /**/ ABL, ABR,
                          Partition::BottomRight);
-        
+
         Merge_3x1_to_2x1(B0, /**/   BT,
                          B1, /**/  /**/
                          B2, /**/   BB,

@@ -120,13 +120,25 @@ namespace Example {
   class AlgoGemm {
   public:
     // One side factorization on flat matrices
-    static const int ForFactorBlocked   = 2001;
+    static const int ForFactorBlocked = 2001;
 
     // B and C are dense matrices and used for solve phase
-    static const int ForTriSolveBlocked = 2002;
+    static const int ForTriSolveBlocked = 2011;
   };
 
-  typedef AlgoGemm AlgoTrsm;
+  class AlgoTrsm : public AlgoGemm {
+  public:
+    // data parallel for b1t
+    static const int ForFactorBlockedVar1 = 2002;
+    // data parallel for a1t -- default
+    static const int ForFactorBlockedVar2 = AlgoGemm::ForFactorBlocked;
+
+    // data parallel for multiple rhs -- default
+    static const int ForTriSolveBlockedVar1 = AlgoGemm::ForTriSolveBlocked;  
+    // data parallel for single rhs
+    static const int ForTriSolveBlockedVar2 = 2012;
+  };
+
   typedef AlgoGemm AlgoHerk;
 
   /// \brief Interface for overloaded stream operators.

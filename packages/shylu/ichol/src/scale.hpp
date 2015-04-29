@@ -26,7 +26,7 @@ namespace Example {
   KOKKOS_INLINE_FUNCTION
   int
   scaleCrsMatrix(const typename CrsExecViewType::policy_type::member_type &member,
-                 const ScalarType &alpha, 
+                 const ScalarType &alpha,
                  const CrsExecViewType &A) {
     typedef typename CrsExecViewType::ordinal_type  ordinal_type;
     typedef typename CrsExecViewType::value_type    value_type;
@@ -36,12 +36,16 @@ namespace Example {
     if (alpha == ScaleTraits<value_type>::one) {
       // do nothing
     } else {
-      ParallelForType(team_factory_type::createThreadLoopRegion(member, 0, A.NumRows()),
-                      [&](const ordinal_type i) {
-                        row_view_type row(A, i);
-                        for (ordinal_type j=0;j<row.NumNonZeros();++j)
-                          row.Value(j) *= alpha;
-                      });
+      const ordinal_type mA = A.NumRows();
+      if (mA > 0) {
+        ParallelForType(team_factory_type::createThreadLoopRegion(member, 0, mA),
+                        [&](const ordinal_type i) {
+                          row_view_type row(A, i);
+                          for (ordinal_type j=0;j<row.NumNonZeros();++j)
+                            row.Value(j) *= alpha;
+                        });
+        member.team_barrier();
+      }
     }
 
     return 0;
@@ -53,7 +57,7 @@ namespace Example {
   KOKKOS_INLINE_FUNCTION
   int
   scaleDenseMatrix(const typename DenseExecViewType::policy_type::member_type &member,
-                   const ScalarType &alpha, 
+                   const ScalarType &alpha,
                    const DenseExecViewType &A) {
     typedef typename DenseExecViewType::ordinal_type  ordinal_type;
     typedef typename DenseExecViewType::value_type    value_type;
@@ -62,18 +66,27 @@ namespace Example {
     if (alpha == ScaleTraits<value_type>::one) {
       // do nothing
     } else {
-      if (A.Base->ColStride() > A.Base->RowStride()) 
-        ParallelForType(team_factory_type::createThreadLoopRegion(member, 0, A.NumCols()),
-                        [&](const ordinal_type j) {
-                          for (ordinal_type i=0;i<A.NumRows();++i)
-                            A.Value(i, j) *= alpha;
-                        });
-      else
-        ParallelForType(team_factory_type::createThreadLoopRegion(member, 0, A.NumRows()),
-                        [&](const ordinal_type i) {
-                          for (ordinal_type j=0;j<A.NumCols();++j)
-                            A.Value(i, j) *= alpha;
-                        });
+      if (A.Base->ColStride() > A.Base->RowStride()) {
+        const ordinal_type nA = A.NumCols();
+        if (nA > 0) {
+          ParallelForType(team_factory_type::createThreadLoopRegion(member, 0, nA),
+                          [&](const ordinal_type j) {
+                            for (ordinal_type i=0;i<A.NumRows();++i)
+                              A.Value(i, j) *= alpha;
+                          });
+          member.team_barrier();
+        }
+      } else {
+        const ordinal_type mA = A.NumRows();
+        if (mA > 0) {
+          ParallelForType(team_factory_type::createThreadLoopRegion(member, 0, mA),
+                          [&](const ordinal_type i) {
+                            for (ordinal_type j=0;j<A.NumCols();++j)
+                              A.Value(i, j) *= alpha;
+                          });
+          member.team_barrier();
+        }
+      }
     }
 
     return 0;

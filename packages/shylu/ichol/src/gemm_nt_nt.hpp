@@ -10,7 +10,8 @@ namespace Example {
 
   using namespace std;
 
-  // B and C are dense matrices
+  // Gemm used in the tri-solve phase
+  // ================================
   template<>
   template<typename ParallelForType,
            typename ScalarType,
@@ -32,23 +33,29 @@ namespace Example {
     typedef typename CrsExecViewTypeA::row_view_type     row_view_type;
     typedef typename CrsExecViewTypeA::team_factory_type team_factory_type;
 
+    // scale the matrix C with beta
     scaleDenseMatrix<ParallelForType,ScalarType,DenseExecViewTypeC>(member, beta, C);
-    
-    for (ordinal_type i=0;i<A.NumRows();++i) {
-      row_view_type &a = A.RowView(i);
-      const ordinal_type nnz_a = a.NumNonZeros();
 
-      ParallelForType(team_factory_type::createThreadLoopRegion(member, 0, nnz_a),
-                      [&](const ordinal_type k) {
-                        const ordinal_type col_at_k = a.Col(k);
-                        const value_type   val_at_k = a.Value(k);
-                        
-                        for (ordinal_type j=0;j<B.NumCols();++j) {
-                          const value_type val_at_j = B.Value(k, j);
-                          
-                          C.Value(i, j) += alpha*val_at_k*val_at_j;
+    // C(i,j) += alpha*A(i,k)*B(k,j)
+    const ordinal_type mA = A.NumRows();
+    const ordinal_type nB = B.NumCols();
+    if (mA > 0 && nB > 0) {
+      ParallelForType(team_factory_type::createThreadLoopRegion(member, 0, mA),
+                      [&](const ordinal_type i) {
+                        row_view_type &a = A.RowView(i);
+                        const ordinal_type nnz_a = a.NumNonZeros();
+
+                        for (ordinal_type k=0;k<nnz_a;++k) {
+                          for (ordinal_type j=0;j<nB;++j) {
+                            const ordinal_type col_at_ik = a.Col(k);
+                            const value_type   val_at_ik = a.Value(k);
+                            const value_type   val_at_kj = B.Value(col_at_ik, j);
+
+                            C.Value(i, j) += alpha*val_at_ik*val_at_kj;
+                          }
                         }
                       });
+      member.team_barrier();
     }
 
     return 0;

@@ -20,7 +20,7 @@ namespace Example {
              typename ExecViewTypeB>
     KOKKOS_INLINE_FUNCTION
     static int invoke(const typename ExecViewTypeA::policy_type::member_type &member,
-                      const int diag,
+                      const int diagA,
                       const ExecViewTypeA &A,
                       const ExecViewTypeB &B);
 
@@ -31,7 +31,7 @@ namespace Example {
              typename ExecViewTypeB>
     class TaskFunctor {
     private:
-      int _diag;
+      int _diagA;
       ExecViewTypeA _A;
       ExecViewTypeB _B;
 
@@ -40,10 +40,10 @@ namespace Example {
       typedef typename policy_type::member_type member_type;
       typedef int value_type;
 
-      TaskFunctor(const int diag,
+      TaskFunctor(const int diagA,
                   const ExecViewTypeA A,
                   const ExecViewTypeB B)
-        : _diag(diag),
+        : _diagA(diagA),
           _A(A),
           _B(B)
       { }
@@ -53,13 +53,13 @@ namespace Example {
       // task execution
       void apply(value_type &r_val) {
         r_val = TriSolve::invoke<ParallelForType,ScalarType,
-          ExecViewTypeA,ExecViewTypeB>(policy_type::member_null(), _diag, _A, _B);
+          ExecViewTypeA,ExecViewTypeB>(policy_type::member_null(), _diagA, _A, _B);
       }
 
       // task-data execution
       void apply(const member_type &member, value_type &r_val) const {
         r_val = TriSolve::invoke<ParallelForType,ScalarType,
-          ExecViewTypeA,ExecViewTypeB>(member, _diag,_A, _B);
+          ExecViewTypeA,ExecViewTypeB>(member, _diagA,_A, _B);
       }
 
     };
@@ -68,12 +68,12 @@ namespace Example {
 }
 
 
-//#include "tri_solve_u_ct_unblocked.hpp"
-//#include "tri_solve_u_ct_blocked.hpp"
+#include "tri_solve_u_ct_unblocked.hpp"
+#include "tri_solve_u_ct_blocked.hpp"
 #include "tri_solve_u_ct_by_blocks.hpp"
 
-//#include "tri_solve_u_nt_unblocked.hpp"
-//#include "tri_solve_u_ct_blocked.hpp"
+#include "tri_solve_u_nt_unblocked.hpp"
+#include "tri_solve_u_ct_blocked.hpp"
 #include "tri_solve_u_ct_by_blocks.hpp"
 
 #endif

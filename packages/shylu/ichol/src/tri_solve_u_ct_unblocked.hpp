@@ -20,12 +20,12 @@ namespace Example {
   TriSolve<Uplo::Upper,Trans::ConjTranspose,
            AlgoTriSolve::Unblocked>
   ::invoke(const typename CrsExecViewType::policy_type::member_type &member,
-           const int diag,
+           const int diagA,
            const CrsExecViewType &A,
            const DenseExecViewType &B) {
-    
+
     Trsm::<Side::Left,Uplo::Upper,Trans::ConjTranspose,AlgoTrsm::ForTriSolveBlocked>
-      ::invoke<ParallelForType,CrsExecViewType,DenseExecViewType>(member, diag, A, B);
+      ::invoke<ParallelForType,CrsExecViewType,DenseExecViewType>(member, diagA, A, B);
 
     return 0;
   }

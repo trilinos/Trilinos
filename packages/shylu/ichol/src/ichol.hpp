@@ -72,12 +72,7 @@ namespace Example {
 #include "trsm.hpp"
 #include "herk.hpp"
 
-// left looking: only for testing 
-//#include "ichol_left_unblocked.hpp"
-//#include "ichol_left_blocked.hpp"
-//#include "ichol_left_by_blocks.hpp"
-
-// right looking: performance with CRS
+// right looking algorithm with upper triangular
 //#include "ichol_unblocked.hpp"
 #include "ichol_unblocked_opt1.hpp"
 #include "ichol_blocked.hpp"

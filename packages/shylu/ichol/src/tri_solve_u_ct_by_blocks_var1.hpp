@@ -8,7 +8,7 @@
 ///
 /// This naively generates tasks without any merging of task blocks.
 
-namespace Example { 
+namespace Example {
 
   using namespace std;
 
@@ -17,6 +17,7 @@ namespace Example {
            typename DenseTaskViewTypeB>
   KOKKOS_INLINE_FUNCTION
   int genTrsmTasks_UpperByBlocks(typename CrsTaskViewType::policy_type &policy,
+                                 const int diagA,
                                  const CrsTaskViewType &A,
                                  const DenseTaskViewType &B) {
     typedef typename CrsTaskViewType::ordinal_type      ordinal_type;
@@ -30,16 +31,16 @@ namespace Example {
 
     row_view_type a(A,0);
     crs_value_type &aa = a.Value(0);
-    
+
     for (ordinal_type j=0;j<B.NumCols();++j) {
       dense_value_type &bb = b.Value(0, j);
 
       future_type f = task_factory_type
-        ::create(policy, 
+        ::create(policy,
                  Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,AlgoTrsm::ForTriSolveBlocked>
                  ::TaskFunctor<ParallelForType,double,
-                 crs_value_type,dense_value_type>(Diag::NonUnit, 1.0, aa, bb));
-      
+                 crs_value_type,dense_value_type>(diagA, 1.0, aa, bb));
+
       // trsm dependence
       task_factory_type::addDependence(policy, f, aa.Future());
 
@@ -48,9 +49,9 @@ namespace Example {
 
       // place task signature on b
       bb.setFuture(f);
-      
+
       // spawn a task
-      task_factory_type::spawn(policy, f);              
+      task_factory_type::spawn(policy, f);
     }
 
     return 0;
@@ -75,7 +76,7 @@ namespace Example {
 
     // A ct, B nt, C
 
-    row_view_type a(A,0); 
+    row_view_type a(A,0);
 
     const ordinal_type nnz = a.NumNonZeros();
 
@@ -90,30 +91,30 @@ namespace Example {
         dense_value_type &cc = C.Value(0, col_at_j);
 
         future_type f = task_factory_type
-          ::create(policy, 
+          ::create(policy,
                    Gemm<Trans::ConjTranspose,Trans::NoTranspose,AlgoGemm::ForTriSolveBlocked>
                      ::TaskFunctor<ParallelForType,double,
                      crs_value_type,dense_value_type,dense_value_type>(-1.0, val_at_i, val_at_j, 1.0, cc));
-          
+
           // dependence
           task_factory_type::addDependence(policy, f, val_at_i.Future());
           task_factory_type::addDependence(policy, f, val_at_j.Future());
-          
+
           // self
           task_factory_type::addDependence(policy, f, cc.Future());
-          
+
           // place task signature on y
           cc.setFuture(f);
-          
+
           // spawn a task
           task_factory_type::spawn(policy, f);
         }
       }
     }
-    
+
     return 0;
   }
-  
+
 
 
 
