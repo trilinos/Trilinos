@@ -46,11 +46,14 @@
 #ifndef MUEMEX_H
 #define MUEMEX_H
 
-#include <stdio.h>
+#include <cstdio>
+#include <cstring>
 #include <string>
 #include <vector>
 #include <complex>
+#include <stdexcept>
 
+#include "Teuchos_ParameterList.hpp"
 #include "MueLu_config.hpp"
 #include "MueLu.hpp"
 #include "MueLu_EpetraOperator.hpp"
@@ -63,7 +66,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
 #include "Tpetra_CrsMatrix_decl.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "Xpetra_EpetraCrsMatrix.hpp"
 #include "BelosSolverFactory.hpp"
 #include "BelosEpetraAdapter.hpp"
 #include "BelosTpetraAdapter.hpp"
@@ -72,10 +75,16 @@
 #ifdef HAVE_MUELU_MATLAB
 #include "mex.h"
 
-//Does this pretty much sum up what people might use MueMex for?
-//Sensible defaults for everything but scalar types with tpetra
-//Unpreconditioned mode can still exist but no need to be Tpetra, correct?
-//Default would then be "Tpetra" with double as scalar type
+//Chris, put the complex scalar support def here (I don't know what it's called)
+//I will test HAVE_COMPLEX_SCALARS in my code to control what gets defined/allowed
+
+//For now, always allow them
+#define HAVE_TRILINOS_COMPLEX_SUPPORT
+
+#ifdef HAVE_TRILINOS_COMPLEX_SUPPORT
+#define HAVE_COMPLEX_SCALARS
+#endif
+
 typedef enum
 {
     EPETRA_UNPREC,
@@ -96,16 +105,12 @@ typedef enum
     MODE_ERROR
 } MODE_TYPE;
 
-//Complex scalar type
-typedef std::complex<double> complex_t;
-
 //Default Tpetra node type for CrsMatrix (could replace here with custom types)
 typedef Tpetra::Vector<>::node_type mm_node_t;
 typedef Tpetra::Vector<>::local_ordinal_type mm_LocalOrd;
 typedef Tpetra::Vector<>::global_ordinal_type mm_GlobalOrd;
 typedef Tpetra::Map<> muemex_map_type;
 typedef Tpetra::CrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_CrsMatrix_double;
-typedef Tpetra::CrsMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_CrsMatrix_complex;
 
 //Scalar could be double or std::complex, and Matrix could be the CrsMatrix from [E|T]petra
 //(therefore the muelu_epetra_data_pack has the default template arguments)
@@ -115,7 +120,7 @@ class muelu_data_pack
         muelu_data_pack(DataPackType type);
         virtual ~muelu_data_pack();
         virtual int status() = 0;
-        virtual int setup(const mxArray* mxa, bool rewrap_ints) = 0;
+        virtual int setup(const mxArray* mxa) = 0;
         virtual int NumMyRows() = 0;
         virtual int NumMyCols() = 0;
         int id;
@@ -128,9 +133,9 @@ class muelu_epetra_unprec_data_pack : public muelu_data_pack
     public:
         muelu_epetra_unprec_data_pack();
         ~muelu_epetra_unprec_data_pack();
-        int setup(const mxArray* mxa, bool rewrap_ints);
+        int setup(const mxArray* mxa);
         int status();
-        int solve(Teuchos::RCP<Teuchos::ParameterList> TPL, Teuchos::RCP<Epetra_CrsMatrix> Amat, double* b, double* x, int &iters);
+        int solve(Teuchos::RCP<Teuchos::ParameterList> TPL, Teuchos::RCP<Epetra_CrsMatrix> Amat, double* b, double* x, int numVecs, int &iters);
         Teuchos::RCP<Epetra_CrsMatrix> GetMatrix()
         {
             return A;
@@ -152,9 +157,9 @@ class muelu_epetra_data_pack : public muelu_data_pack
     public:
         muelu_epetra_data_pack();
         ~muelu_epetra_data_pack();
-        int setup(const mxArray* mxa, bool rewrap_ints);
+        int setup(const mxArray* mxa);
         int status();
-        int solve(Teuchos::RCP<Teuchos::ParameterList> TPL, Teuchos::RCP<Epetra_CrsMatrix> Amat, double* b, double* x, int &iters);
+        int solve(Teuchos::RCP<Teuchos::ParameterList> TPL, Teuchos::RCP<Epetra_CrsMatrix> Amat, double* b, double* x, int numVecs, int &iters);
         Teuchos::RCP<Epetra_CrsMatrix> GetMatrix()
         {
             return A;
@@ -184,9 +189,9 @@ class muelu_tpetra_double_data_pack : public muelu_data_pack
     public:
         muelu_tpetra_double_data_pack();
         ~muelu_tpetra_double_data_pack();
-        int setup(const mxArray* mxa, bool rewrap_ints);
+        int setup(const mxArray* mxa);
         int status();
-        int solve(Teuchos::RCP<Teuchos::ParameterList> TPL, Teuchos::RCP<Tpetra_CrsMatrix_double> Amat, double* b, double* x, int &iters);
+        int solve(Teuchos::RCP<Teuchos::ParameterList> TPL, Teuchos::RCP<Tpetra_CrsMatrix_double> Amat, double* b, double* x, int numVecs, int &iters);
         //note: I typedef'd mm_node_t at the top of this file as the Kokkos default type
         Teuchos::RCP<Tpetra_CrsMatrix_double> GetMatrix()
         {
@@ -216,14 +221,19 @@ class muelu_tpetra_double_data_pack : public muelu_data_pack
         Teuchos::RCP<Tpetra::Operator<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> prec;
 };
 
+//Only define this datapack type if complex scalars are supported
+#ifdef HAVE_COMPLEX_SCALARS
+typedef std::complex<double> complex_t;
+typedef Tpetra::CrsMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_CrsMatrix_complex;
+
 class muelu_tpetra_complex_data_pack : public muelu_data_pack
 {
     public:
         muelu_tpetra_complex_data_pack();
         ~muelu_tpetra_complex_data_pack();
-        int setup(const mxArray* mxa, bool rewrap_ints);
+        int setup(const mxArray* mxa);
         int status();
-        int solve(Teuchos::RCP<Teuchos::ParameterList> TPL, Teuchos::RCP<Tpetra_CrsMatrix_complex> Amat, complex_t* b, complex_t* x, int &iters);
+        int solve(Teuchos::RCP<Teuchos::ParameterList> TPL, Teuchos::RCP<Tpetra_CrsMatrix_complex> Amat, complex_t* b, complex_t* x, int numVecs, int &iters);
         //note: I typedef'd mm_node_t at the top of this file as the Kokkos default type
         Teuchos::RCP<Tpetra_CrsMatrix_complex> GetMatrix()
         {
@@ -252,6 +262,7 @@ class muelu_tpetra_complex_data_pack : public muelu_data_pack
         Teuchos::RCP<Tpetra_CrsMatrix_complex> A;
         Teuchos::RCP<Tpetra::Operator<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> prec;
 };
+#endif
 
 namespace muelu_data_pack_list
 {

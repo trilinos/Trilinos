@@ -56,7 +56,7 @@ using namespace Teuchos;
 extern void _main();
 
 /* MUEMEX Teuchos Parameters*/
-#define MUEMEX_INTERFACE "Problem Type"
+#define MUEMEX_INTERFACE "Linear Algebra"
 
 /* Default values */
 #define MUEMEX_DEFAULT_LEVELS 10
@@ -67,7 +67,7 @@ extern void _main();
 #define MMISINT(x) ((x)==0?(((x-(int)(x))<1e-15)?true:false):(((x-(int)(x))<1e-15*MMABS(x))?true:false))
 
 /* Debugging */
-//#define VERBOSE_OUTPUT
+#define VERBOSE_OUTPUT
 
 /* Stuff for MATLAB R2006b vs. previous versions */
 #if(defined(MX_API_VER) && MX_API_VER >= 0x07030000)
@@ -78,6 +78,9 @@ typedef int mwIndex;
 //Declare and call default constructor for data_pack_list vector (starts empty)
 vector<RCP<muelu_data_pack>> muelu_data_pack_list::list;
 int muelu_data_pack_list::nextID = 0;
+
+//Need a global flag to keep track of Epetra vs. Tpetra for constructing multivectors for param lists
+bool rewrap_ints = false;
 
 /**************************************************************/
 /**************************************************************/
@@ -95,381 +98,563 @@ int muelu_data_pack_list::nextID = 0;
 
 int* mwIndex_to_int(int N, mwIndex* mwi_array)
 {
-	int i, *rv = new int[N];
-	for(i = 0; i < N; i++)
+	int* rv;
+	rv = new int[N];
+	for(int i = 0; i < N; i++)
 		rv[i] = (int) mwi_array[i];
+	return rv;
+}
+
+//Parse a string to get each bit of Belos verbosity
+int strToMsgType(const char* str)
+{
+	if(str == NULL)
+		return Belos::Errors;
+	else if(strstr(str, "Warnings") != NULL)
+		return Belos::Warnings;
+	else if(strstr(str, "IterationDetails") != NULL)
+		return Belos::IterationDetails;
+	else if(strstr(str, "OrthoDetails") != NULL)
+		return Belos::OrthoDetails;
+	else if(strstr(str, "FinalSummary") != NULL)
+		return Belos::FinalSummary;
+	else if(strstr(str, "TimingDetails") != NULL)
+		return Belos::TimingDetails;
+	else if(strstr(str, "StatusTestDetails") != NULL)
+		return Belos::StatusTestDetails;
+	else if(strstr(str, "Debug") != NULL)
+		return Belos::Debug;
+	//This has no effect when added/OR'd with flags
+	return Belos::Errors;
+}
+
+//Parse a string to get Belos output style (Brief is default)
+int strToOutputStyle(const char* str)
+{
+	if(strstr("General", str) != NULL)
+		return Belos::General;
+	else
+		return Belos::Brief;
+}
+
+//Get Belos "Verbosity" setting for its ParameterList
+int getBelosVerbosity(const char* input)
+{
+	int result = 0;
+	char* str = (char*) input;
+	char* pch;
+	pch = strtok(str, " +,");
+	if(pch == NULL)
+		return result;
+	result |= strToMsgType(pch);
+	while(pch != NULL)
+	{
+		pch = strtok(NULL, " +,");
+		if(pch == NULL)
+			return result;
+		result |= strToMsgType(pch);
+	}
+	return result;
+}
+
+int parseInt(const mxArray* mxa)
+{
+	mxClassID probIDtype = mxGetClassID(mxa);
+	int rv;
+	if(probIDtype == mxINT32_CLASS)
+	{
+		rv = *((int*) mxGetData(mxa));
+	}
+	else if(probIDtype == mxDOUBLE_CLASS)
+	{
+		rv = (int) *((double*) mxGetData(mxa));
+	}
+	else if(probIDtype == mxUINT32_CLASS)
+	{
+		rv = (int) *((unsigned int*) mxGetData(mxa));
+	}
+	else
+	{
+		rv = -1;
+		throw runtime_error("Error: Unrecognized numerical type.");
+	}
 	return rv;
 }
 
 RCP<Epetra_CrsMatrix> epetra_setup(int Nrows, int Ncols, int* rowind, int* colptr, double* vals)
 {
-	Epetra_SerialComm Comm;
-	Epetra_Map RangeMap(Nrows, 0, Comm);
-	Epetra_Map DomainMap(Ncols, 0, Comm);
-	RCP<Epetra_CrsMatrix> A = rcp(new Epetra_CrsMatrix(Epetra_DataAccess::Copy, RangeMap, DomainMap, 0));
-	/* Do the matrix assembly */
-	for(int i = 0; i < Ncols; i++)
+	RCP<Epetra_CrsMatrix> A;
+	try
 	{
-		for(int j = colptr[i]; j < colptr[i + 1]; j++)
+		Epetra_SerialComm Comm;
+		Epetra_Map RangeMap(Nrows, 0, Comm);
+		Epetra_Map DomainMap(Ncols, 0, Comm);
+		A = rcp(new Epetra_CrsMatrix(Epetra_DataAccess::Copy, RangeMap, DomainMap, 0));
+		/* Do the matrix assembly */
+		for(int i = 0; i < Ncols; i++)
 		{
-			//		global row, # of entries, value array, column indices array
-			A->InsertGlobalValues(rowind[j], 1, &vals[j], &i);
+			for(int j = colptr[i]; j < colptr[i + 1]; j++)
+			{
+				//		global row, # of entries, value array, column indices array
+				A->InsertGlobalValues(rowind[j], 1, &vals[j], &i);
+			}
 		}
+		A->FillComplete(DomainMap, RangeMap);
 	}
-	A->FillComplete(DomainMap, RangeMap);
+	catch(exception& e)
+	{
+		mexPrintf("An error occurred while constructing Epetra matrix:\n");
+		cout << e.what() << endl;
+	}
 	return A;
 }
 
-RCP<Epetra_CrsMatrix> epetra_setup_from_prhs(const mxArray* mxa, bool rewrap_ints)
+RCP<Epetra_CrsMatrix> epetra_setup_from_prhs(const mxArray* mxa)
 {
-	int* colptr, *rowind;
-	double* vals = mxGetPr(mxa);
+	RCP<Epetra_CrsMatrix> A;
+	try
+	{
+		int* colptr, *rowind;
+		double* vals = mxGetPr(mxa);
+		int nr = mxGetM(mxa);
+		int nc = mxGetN(mxa);
+		if(rewrap_ints)
+		{
+			colptr = mwIndex_to_int(nc + 1, mxGetJc(mxa));
+			rowind = mwIndex_to_int(colptr[nc], mxGetIr(mxa));
+		}
+		else
+		{
+			rowind = (int*) mxGetIr(mxa);
+			colptr = (int*) mxGetJc(mxa);
+		}
+		A = epetra_setup(nr, nc, rowind, colptr, vals);
+		if(rewrap_ints)
+		{
+			delete [] rowind;
+			delete [] colptr;
+		}
+	}
+	catch(exception& e)
+	{
+		mexPrintf("An error occurred while setting up an Epetra matrix:\n");
+		cout << e.what() << endl;
+	}
+	return A;
+}
+
+//Construct an RCP<Epetra_MultiVector> from a MATLAB array
+RCP<Epetra_MultiVector> epetra_setup_multivector(const mxArray* mxa)
+{
+	RCP<Epetra_MultiVector> mv;
+	try
+	{
+		int nr = mxGetM(mxa);
+		int nc = mxGetN(mxa);
+		Epetra_SerialComm comm;
+		Epetra_Map map(nr, 0, comm);
+		mv = rcp(new Epetra_MultiVector(Epetra_DataAccess::Copy, map, mxGetPr(mxa), nr, nc));
+	}
+	catch(exception& e)
+	{
+		mexPrintf("Error while constructing Epetra_MultiVector.\n");
+		cout << e.what() << endl;
+	}
+	return mv;
+}
+
+RCP<Tpetra_CrsMatrix_double> tpetra_setup_real_prhs(const mxArray* mxa)
+{
+	bool success = false;
+	RCP<Tpetra_CrsMatrix_double> A;
+	try
+	{
+		RCP<const Teuchos::Comm<int>> comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+		//numGlobalIndices is just the number of rows in the matrix	
+		const Tpetra::global_size_t numGlobalIndices = mxGetM(mxa);
+		const mm_GlobalOrd indexBase = 0;
+		RCP<const muemex_map_type> map = rcp(new muemex_map_type(numGlobalIndices, indexBase, comm));
+		A = Tpetra::createCrsMatrix<double, mm_GlobalOrd, mm_LocalOrd, mm_node_t>(map);
+		double* valueArray = mxGetPr(mxa);
+		int* colptr;
+		int* rowind;
+		//int nr = mxGetM(mxa);
+		int nc = mxGetN(mxa);
+		if(rewrap_ints)
+		{
+			//mwIndex_to_int allocates memory so must delete[] later
+			colptr = mwIndex_to_int(nc + 1, mxGetJc(mxa));
+			rowind = mwIndex_to_int(colptr[nc], mxGetIr(mxa));
+		}
+		else
+		{
+			rowind = (int*) mxGetIr(mxa);
+			colptr = (int*) mxGetJc(mxa);
+		}
+		for(int i = 0; i < nc; i++)
+		{
+			for(int j = colptr[i]; j < colptr[i + 1]; j++)
+			{
+				//'array' of 1 element, containing column (in global matrix).
+				ArrayView<mm_GlobalOrd> cols = ArrayView<mm_GlobalOrd>(&i, 1);
+				//'array' of 1 element, containing value
+				ArrayView<double> vals = ArrayView<double>(&valueArray[j], 1);
+				A->insertGlobalValues(rowind[j], cols, vals);
+			}
+		}
+		A->fillComplete();
+		if(rewrap_ints)
+		{
+			delete[] rowind;
+			delete[] colptr;
+		}
+		success = true;
+	}
+	catch(exception& e)
+	{
+		mexPrintf("Error while constructing Tpetra matrix:\n");
+		cout << e.what() << endl;
+	}
+	if(!success)
+		mexErrMsgTxt("An error occurred while setting up a Tpetra matrix.\n");
+	return A;
+}
+
+RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> xpetra_setup_real(const mxArray* mxa)
+{
 	int nr = mxGetM(mxa);
 	int nc = mxGetN(mxa);
-	if(rewrap_ints)
+	RCP<const Teuchos::Comm<int>> comm;
+	typedef Xpetra::Map<mm_LocalOrd, mm_GlobalOrd, mm_node_t> XMap;
+	typedef Xpetra::CrsMatrixWrap<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_CrsMatrixWrap;
+	RCP<XMap> map = rcp_implicit_cast<XMap>(rcp(new Xpetra::TpetraMap<mm_LocalOrd, mm_GlobalOrd, mm_node_t>(nr, (mm_GlobalOrd) 0, comm)));
+	RCP<Xpetra_CrsMatrixWrap> wrapMat = rcp(new Xpetra_CrsMatrixWrap(map,
+}
+
+RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> tpetra_setup_real_multivector(const mxArray* mxa)
+{
+	RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mv;
+	try
 	{
-		colptr = mwIndex_to_int(nc + 1, mxGetJc(mxa));
-		rowind = mwIndex_to_int(colptr[nc], mxGetIr(mxa));
+		int nr = mxGetM(mxa);
+		int nc = mxGetN(mxa);
+		RCP<const Teuchos::Comm<int>> comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+		//numGlobalIndices for map constructor is the number of rows in matrix/vectors, right?
+		RCP<const muemex_map_type> map = rcp(new muemex_map_type(nr, (mm_GlobalOrd) 0, comm));
+		ArrayView<double> arrView(mxGetPr(mxa), nr * nc);
+		mv = rcp(new Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(map, arrView, nr, nc));
 	}
-	else
+	catch(exception& e)
 	{
-		rowind = (int*) mxGetIr(mxa);
-		colptr = (int*) mxGetJc(mxa);
+		mexPrintf("Error constructing Tpetra MultiVector.\n");
+		cout << e.what() << endl;
 	}
-	RCP<Epetra_CrsMatrix> A = epetra_setup(nr, nc, rowind, colptr, vals);
-	if(rewrap_ints)
+	return mv;
+}
+
+#ifdef HAVE_COMPLEX_SCALARS
+RCP<Tpetra_CrsMatrix_complex> tpetra_setup_complex_prhs(const mxArray* mxa)
+{
+	RCP<Tpetra_CrsMatrix_complex> A;
+	//Create a map in order to create the matrix (taken from muelu basic example - complex)
+	try
 	{
-		delete [] rowind;
-		delete [] colptr;
+		RCP<const Teuchos::Comm<int>> comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+		const Tpetra::global_size_t numGlobalIndices = mxGetM(mxa);
+		const mm_GlobalOrd indexBase = 0;
+		RCP<const muemex_map_type> map = rcp(new muemex_map_type(numGlobalIndices, indexBase, comm));
+		A = rcp(new Tpetra_CrsMatrix_complex(map, 0));
+		double* realArray = mxGetPr(mxa);
+		double* imagArray = mxGetPi(mxa);
+		int* colptr;
+		int* rowind;
+		int nc = mxGetN(mxa);
+		if(rewrap_ints)
+		{
+			//mwIndex_to_int allocates memory so must delete[] later
+			colptr = mwIndex_to_int(nc + 1, mxGetJc(mxa));
+			rowind = mwIndex_to_int(colptr[nc], mxGetIr(mxa));
+		}
+		else
+		{
+			rowind = (int*) mxGetIr(mxa);
+			colptr = (int*) mxGetJc(mxa);
+		}
+		for(int i = 0; i < nc; i++)
+		{
+			for(int j = colptr[i]; j < colptr[i + 1]; j++)
+			{
+				//here assuming that complex_t will always be defined as std::complex<double>
+				//use 'value' over and over again with ArrayViews to insert into matrix
+				complex_t value = std::complex<double>(realArray[j], imagArray[j]);
+				ArrayView<mm_GlobalOrd> cols = ArrayView<mm_GlobalOrd>(&i, 1);
+				ArrayView<complex_t> vals = ArrayView<complex_t>(&value, 1);
+				A->insertGlobalValues(rowind[j], cols, vals);
+			}
+		}
+		A->fillComplete();
+		if(rewrap_ints)
+		{
+			delete[] rowind;
+			delete[] colptr;
+		}
+	}
+	catch(exception& e)
+	{
+		mexPrintf("Error while constructing tpetra matrix:\n");
+		cout << e.what() << endl;
 	}
 	return A;
 }
 
-RCP<Tpetra_CrsMatrix_double> tpetra_setup_real_prhs(const mxArray* mxa, bool rewrap_ints)
+RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> tpetra_setup_complex_multivector(const mxArray* mxa)
 {
-	//Create a map in order to create the matrix (taken from muelu basic example - complex)
-	RCP<const Teuchos::Comm<int>> comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-	//numGlobalIndices is just the number of rows in the matrix	
-	const Tpetra::global_size_t numGlobalIndices = mxGetM(mxa);
-	const mm_GlobalOrd indexBase = 0;
-	RCP<const muemex_map_type> map = rcp(new muemex_map_type(numGlobalIndices, indexBase, comm));
-	RCP<Tpetra_CrsMatrix_double> A = Tpetra::createCrsMatrix<double, mm_GlobalOrd, mm_LocalOrd, mm_node_t>(map);
-	double* valueArray = mxGetPr(mxa);
-	int* colptr;
-	int* rowind;
-	//int nr = mxGetM(mxa);
-	int nc = mxGetN(mxa);
-	if(rewrap_ints)
+	RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mv;
+	try
 	{
-		//mwIndex_to_int allocates memory so must delete[] later
-		colptr = mwIndex_to_int(nc + 1, mxGetJc(mxa));
-		rowind = mwIndex_to_int(colptr[nc], mxGetIr(mxa));
-	}
-	else
-	{
-		rowind = (int*) mxGetIr(mxa);
-		colptr = (int*) mxGetJc(mxa);
-	}
-	for(int i = 0; i < nc; i++)
-	{
-		for(int j = colptr[i]; j < colptr[i + 1]; j++)
+		int nr = mxGetM(mxa);
+		int nc = mxGetN(mxa);
+		double* pr = mxGetPr(mxa);
+		double* pi = mxGetPi(mxa);
+		RCP<const Teuchos::Comm<int>> comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+		//numGlobalIndices for map constructor is the number of rows in matrix/vectors, right?
+		RCP<const muemex_map_type> map = rcp(new muemex_map_type(nr, (mm_GlobalOrd) 0, comm));
+		//Allocate a new array of complex values to use with the multivector
+		complex_t* myArr = new complex_t[nr * nc];
+		for(int n = 0; n < nc; n++)
 		{
-			//'array' of 1 element, containing column (in global matrix).
-			ArrayView<mm_GlobalOrd> cols = ArrayView<mm_GlobalOrd>(&i, 1);
-			//'array' of 1 element, containing value
-			ArrayView<double> vals = ArrayView<double>(&valueArray[j], 1);
-			A->insertGlobalValues(rowind[j], cols, vals);
+			for(int m = 0; m < nr; m++)
+			{
+				myArr[n * nr + m] = complex_t(pr[n * nr + m], pi[n * nr + m]);
+			}
 		}
+		ArrayView<complex_t> arrView(myArr, nr * nc);
+		mv = rcp(new Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(map, arrView, nr, nc));
 	}
-	A->fillComplete();
-	if(rewrap_ints)
+	catch(exception& e)
 	{
-		delete[] rowind;
-		delete[] colptr;
+		mexPrintf("Error constructing Tpetra MultiVector.\n");
+		cout << e.what() << endl;
 	}
-	return A;
+	return mv;
 }
-
-RCP<Tpetra_CrsMatrix_complex> tpetra_setup_complex_prhs(const mxArray* mxa, bool rewrap_ints)
-{
-	//Create a map in order to create the matrix (taken from muelu basic example - complex)
-	RCP<const Teuchos::Comm<int>> comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-	const Tpetra::global_size_t numGlobalIndices = mxGetM(mxa);
-	const mm_GlobalOrd indexBase = 0;
-	RCP<const muemex_map_type> map = rcp(new muemex_map_type(numGlobalIndices, indexBase, comm));
-	RCP<Tpetra_CrsMatrix_complex> A = rcp(new Tpetra_CrsMatrix_complex(map, 0));
-	double* realArray = mxGetPr(mxa);
-	double* imagArray = mxGetPi(mxa);
-	int* colptr;
-	int* rowind;
-	int nc = mxGetN(mxa);
-	if(rewrap_ints)
-	{
-		//mwIndex_to_int allocates memory so must delete[] later
-		colptr = mwIndex_to_int(nc + 1, mxGetJc(mxa));
-		rowind = mwIndex_to_int(colptr[nc], mxGetIr(mxa));
-	}
-	else
-	{
-		rowind = (int*) mxGetIr(mxa);
-		colptr = (int*) mxGetJc(mxa);
-	}
-	for(int i = 0; i < nc; i++)
-	{
-		for(int j = colptr[i]; j < colptr[i + 1]; j++)
-		{
-			//here assuming that complex_t will always be defined as std::complex<double>
-			//use 'value' over and over again with ArrayViews to insert into matrix
-			complex_t value = std::complex<double>(realArray[j], imagArray[j]);
-			ArrayView<mm_GlobalOrd> cols = ArrayView<mm_GlobalOrd>(&i, 1);
-			ArrayView<complex_t> vals = ArrayView<complex_t>(&value, 1);
-			A->insertGlobalValues(rowind[j], cols, vals);
-		}
-	}
-	A->fillComplete();
-	if(rewrap_ints)
-	{
-		delete[] rowind;
-		delete[] colptr;
-	}
-	return A;
-}
+#endif	//HAVE_COMPLEX_SCALARS
 
 /*******************************/
 //Use Belos (unpreconditioned) to solve matrix
-int epetra_unprec_solve(RCP<ParameterList> SetupList, RCP<ParameterList> TPL, RCP<Epetra_CrsMatrix> A, double* b, double* x, int &iters)
+int epetra_unprec_solve(RCP<ParameterList> SetupList, RCP<ParameterList> TPL, RCP<Epetra_CrsMatrix> A, double* b, double* x, int numVecs, int &iters)
 {
-	//Set up X and B
-	Epetra_Map map = A->DomainMap();
-	RCP<Epetra_Vector> xVec = rcp(new Epetra_Vector(map));
-	RCP<Epetra_Vector> bVec = rcp(new Epetra_Vector(Epetra_DataAccess::Copy, map, b));
-	RCP<Epetra_MultiVector> lhs = rcp_implicit_cast<Epetra_MultiVector>(xVec);
-	RCP<Epetra_MultiVector> rhs = rcp_implicit_cast<Epetra_MultiVector>(bVec);
-	#ifdef VERBOSE_OUTPUT
-	int matSize = A->NumGlobalRows();
-	mexPrintf("lhs vec:\n");
-	for(int i = 0; i < matSize; i++)
+	int rv = IS_FALSE;
+	try
 	{
-		if(i % 10 == 0)
-			mexPrintf("\n");
-		mexPrintf("%f ", (*lhs)[0][i]);
+		int matSize = A->NumGlobalRows();
+		Epetra_Map map = A->DomainMap();
+		RCP<Epetra_MultiVector> lhs = rcp(new Epetra_MultiVector(map, numVecs, true));
+		//Matlab 2-d array is column-by-column, which is perfect for pulling out multiple vectors into MultiVector
+		RCP<Epetra_MultiVector> rhs = rcp(new Epetra_MultiVector(Epetra_DataAccess::Copy, map, b, matSize, numVecs));
+		RCP<Belos::LinearProblem<double, Epetra_MultiVector, Epetra_Operator>> problem = rcp(new Belos::LinearProblem<double, Epetra_MultiVector, Epetra_Operator>(A, lhs, rhs));
+		bool set = problem->setProblem();
+		TEUCHOS_TEST_FOR_EXCEPTION(!set, std::runtime_error, "Linear Problem failed to set up correctly!");
+		#ifdef VERBOSE_OUTPUT
+		TPL->get("Verbosity", Belos::Errors | Belos::Warnings | Belos::Debug | Belos::FinalSummary | Belos::IterationDetails | Belos::OrthoDetails | Belos::TimingDetails | Belos::StatusTestDetails);
+		TPL->get("Output Frequency", 1);
+		TPL->get("Output Style", Belos::Brief);
+		#else
+		TPL->get("Verbosity", Belos::Errors | Belos::Warnings);
+		#endif
+		string solverName = TPL->get("solver", "GMRES");
+		Belos::SolverFactory<double, Epetra_MultiVector, Epetra_Operator> factory;
+		RCP<Belos::SolverManager<double, Epetra_MultiVector, Epetra_Operator>> solver = factory.create(solverName, TPL);
+		solver->setProblem(problem);
+		Belos::ReturnType ret = solver->solve();
+		if(ret == Belos::Converged)
+		{
+			mexPrintf("Success, Belos converged!\n");
+			iters = solver->getNumIters();
+			rv = IS_TRUE;
+		}
+		else
+		{
+			mexPrintf("Belos failed to converge.\n");
+			iters = 0;
+		}
+		lhs->ExtractCopy(x, matSize);
 	}
-	mexPrintf("\n\nrhs vec:\n");
-	for(int i = 0; i < matSize; i++)
+	catch(exception& e)
 	{
-		if(i % 10 == 0)
-			mexPrintf("\n");
-		mexPrintf("%f ", (*rhs)[0][i]);
+		mexPrintf("An error occurred while setting up/running Belos solver:\n");
+		cout << e.what() << endl;
 	}
-	mexPrintf("\n\n");
-	#endif
-	RCP<Belos::LinearProblem<double, Epetra_MultiVector, Epetra_Operator>> problem = rcp(new Belos::LinearProblem<double, Epetra_MultiVector, Epetra_Operator>(A, lhs, rhs));
-	bool set = problem->setProblem();
-	TEUCHOS_TEST_FOR_EXCEPTION(!set, std::runtime_error, "Linear Problem failed to set up correctly!");
-	#ifdef VERBOSE_OUTPUT
-	TPL->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::Debug + Belos::FinalSummary + Belos::IterationDetails + Belos::OrthoDetails + Belos::TimingDetails + Belos::StatusTestDetails);
-	TPL->set("Output Frequency", 1);
-	TPL->set("Output Style", Belos::Brief);
-	#else
-	TPL->set("Verbosity", Belos::Errors + Belos::Warnings);
-	#endif
-	string solverName = TPL->get("solver", "GMRES");
-	Belos::SolverFactory<double, Epetra_MultiVector, Epetra_Operator> factory;
-	RCP<Belos::SolverManager<double, Epetra_MultiVector, Epetra_Operator>> solver = factory.create(solverName, TPL);
-	solver->setProblem(problem);
-	Belos::ReturnType ret = solver->solve();
-	int rv;
-	if(ret == Belos::Converged)
-	{
-		mexPrintf("Success, Belos converged!\n");
-		iters = solver->getNumIters();		 
-		rv = IS_TRUE;
-	}
-	else
-	{
-		mexPrintf("Belos failed to converge.\n");
-		iters = 0;
-		rv = IS_FALSE;	  
-	}
-	xVec->ExtractCopy(x);
 	return rv;
-}	/*end solve*/
+}
 
 //same as above, but with MueLu-generated preconditioner used on right
-int epetra_solve(RCP<ParameterList> SetupList, RCP<ParameterList> TPL, RCP<Epetra_CrsMatrix> A, RCP<Epetra_Operator> prec, double* b, double* x, int &iters)
+int epetra_solve(RCP<ParameterList> SetupList, RCP<ParameterList> TPL, RCP<Epetra_CrsMatrix> A, RCP<Epetra_Operator> prec, double* b, double* x, int numVecs, int &iters)
 {
-	//Set up X and B
-	Epetra_Map map = A->DomainMap();
-	RCP<Epetra_Vector> xVec = rcp(new Epetra_Vector(map));
-	RCP<Epetra_Vector> bVec = rcp(new Epetra_Vector(Epetra_DataAccess::Copy, map, b));
-	RCP<Epetra_MultiVector> lhs = rcp_implicit_cast<Epetra_MultiVector>(xVec);
-	RCP<Epetra_MultiVector> rhs = rcp_implicit_cast<Epetra_MultiVector>(bVec);
-	#ifdef VERBOSE_OUTPUT
-	TPL->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::Debug + Belos::FinalSummary + Belos::IterationDetails + Belos::OrthoDetails + Belos::TimingDetails + Belos::StatusTestDetails);
-	TPL->set("Output Frequency", 1);
-	TPL->set("Output Style", Belos::Brief);
-	#else
-	TPL->set("Verbosity", Belos::Errors + Belos::Warnings);
-	#endif
-	RCP<Belos::LinearProblem<double, Epetra_MultiVector, Epetra_Operator>> problem = rcp(new    Belos::LinearProblem<double, Epetra_MultiVector, Epetra_Operator>(A, lhs, rhs));
-	RCP<Belos::EpetraPrecOp> epo = rcp(new Belos::EpetraPrecOp(prec));
-	problem->setRightPrec(epo);
-	bool set = problem->setProblem();
-	TEUCHOS_TEST_FOR_EXCEPTION(!set, std::runtime_error, "Linear Problem failed to set up correctly!");
-	Belos::SolverFactory<double, Epetra_MultiVector, Epetra_Operator> factory;
-	//Get the solver name from the parameter list, default to PseudoBlockGmres if none specified by user
-	string solverName = TPL->get("solver", "GMRES");
-	RCP<Belos::SolverManager<double, Epetra_MultiVector, Epetra_Operator>> solver = factory.create(solverName, TPL);
-	solver->setProblem(problem);
-	Belos::ReturnType ret = solver->solve();
-	int rv;
-	if(ret == Belos::Converged)
+	int rv = IS_FALSE;
+	try
 	{
-		mexPrintf("Success, Belos converged!\n");
-		iters = solver->getNumIters();
-		rv = IS_TRUE;
-	}
-	else
-	{
-		mexPrintf("Belos failed to converge.\n");
-		iters = 0;
-		rv = IS_FALSE;
-	}
-	xVec->ExtractCopy(x);
-	return rv;
-}
-
-int tpetra_double_solve(RCP<ParameterList> SetupList, RCP<ParameterList> TPL, RCP<Tpetra_CrsMatrix_double> A, RCP<Tpetra::Operator<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> prec, double* b, double* x, int& iters)
-{
-	int matSize = A->getGlobalNumRows();
-	//Define Tpetra vector/multivector types for convenience
-	typedef Tpetra::Vector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_Vector;
-	typedef Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_MultiVector;
-	typedef Tpetra::Operator<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_Operator;
-	RCP<const Teuchos::Comm<int>> comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-	//numGlobalIndices for map constructor is the number of rows in matrix/vectors, right?	
-	RCP<const muemex_map_type> map = rcp(new muemex_map_type(matSize, (mm_GlobalOrd) 0, comm));
-	//Populate x with all 0z initially
-	for(int i = 0; i < matSize; i++)
-	{
-		x[i] = 0;
-	}
-	ArrayView<double> xArrView(x, matSize);
-	RCP<Tpetra_Vector> xVec = rcp(new Tpetra_Vector(map));
-	xVec->putScalar(0);
-	ArrayView<double> bArrView(b, matSize);
-	RCP<Tpetra_Vector> bVec = rcp(new Tpetra_Vector(map, bArrView));
-	//cast up to MV for use with Belos
-	RCP<Tpetra_MultiVector> lhs = rcp_implicit_cast<Tpetra_MultiVector>(xVec);
-	RCP<Tpetra_MultiVector> rhs = rcp_implicit_cast<Tpetra_MultiVector>(bVec);
-	//Set iters to 0 in case an error prevents it from being set later
-	iters = 0;
-	#ifdef VERBOSE_OUTPUT
-	TPL->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::Debug + Belos::FinalSummary + Belos::IterationDetails + Belos::OrthoDetails + Belos::TimingDetails + Belos::StatusTestDetails);
-	TPL->set("Output Frequency", 1);
-	TPL->set("Output Style", Belos::Brief);
-	#else
-	TPL->set("Verbosity", Belos::Errors + Belos::Warnings);
-	#endif
-	RCP<Belos::LinearProblem<double, Tpetra_MultiVector, Tpetra_Operator>> problem = rcp(new Belos::LinearProblem<double, Tpetra_MultiVector, Tpetra_Operator>(A, lhs, rhs));
-//	RCP<MueLu::TpetraOperator<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> prec = MueLu::CreateTpetraPreconditioner<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(A, *SetupList);
-	problem->setRightPrec(prec);
-	bool set = problem->setProblem();
-	TEUCHOS_TEST_FOR_EXCEPTION(!set, std::runtime_error, "Linear Problem failed to set up correctly!");
-	Belos::SolverFactory<double, Tpetra_MultiVector, Tpetra_Operator> factory;
-	string solverName = TPL->get("solver", "GMRES");
-	RCP<Belos::SolverManager<double, Tpetra_MultiVector, Tpetra_Operator>> solver = factory.create(solverName, TPL);
-	solver->setProblem(problem);
-	Belos::ReturnType ret = solver->solve();
-	int rv;
-	if(ret == Belos::Converged)
-	{
-		mexPrintf("Success, Belos converged!\n");
-		iters = solver->getNumIters();		 
-		//Access a raw pointer to the array of doubles in the lhs multivector
-		ArrayRCP<const double> solnView = lhs->getData(0);
-		for(int i = 0; i < matSize; i++)
+		int matSize = A->NumGlobalRows();
+		//Set up X and B
+		Epetra_Map map = A->DomainMap();
+		RCP<Epetra_MultiVector> lhs = rcp(new Epetra_MultiVector(map, numVecs, true));
+		RCP<Epetra_MultiVector> rhs = rcp(new Epetra_MultiVector(Epetra_DataAccess::Copy, map, b, matSize, numVecs));
+		#ifdef VERBOSE_OUTPUT
+		TPL->get("Verbosity", Belos::Errors | Belos::Warnings | Belos::Debug | Belos::FinalSummary | Belos::IterationDetails | Belos::OrthoDetails | Belos::TimingDetails | Belos::StatusTestDetails);
+		TPL->get("Output Frequency", 1);
+		TPL->get("Output Style", Belos::Brief);
+		#else
+		TPL->get("Verbosity", Belos::Errors | Belos::Warnings);
+		#endif
+		RCP<Belos::LinearProblem<double, Epetra_MultiVector, Epetra_Operator>> problem = rcp(new    Belos::LinearProblem<double, Epetra_MultiVector, Epetra_Operator>(A, lhs, rhs));
+		RCP<Belos::EpetraPrecOp> epo = rcp(new Belos::EpetraPrecOp(prec));
+		problem->setRightPrec(epo);
+		bool set = problem->setProblem();
+		TEUCHOS_TEST_FOR_EXCEPTION(!set, std::runtime_error, "Linear Problem failed to set up correctly!");
+		Belos::SolverFactory<double, Epetra_MultiVector, Epetra_Operator> factory;
+		//Get the solver name from the parameter list, default to PseudoBlockGmres if none specified by user
+		string solverName = TPL->get("solver", "GMRES");
+		RCP<Belos::SolverManager<double, Epetra_MultiVector, Epetra_Operator>> solver = factory.create(solverName, TPL);
+		solver->setProblem(problem);
+		Belos::ReturnType ret = solver->solve();
+		if(ret == Belos::Converged)
 		{
-			x[i] = solnView[i];
+			mexPrintf("Success, Belos converged!\n");
+			iters = solver->getNumIters();
+			rv = IS_TRUE;
 		}
-		rv = IS_TRUE;
+		else
+		{
+			mexPrintf("Belos failed to converge.\n");
+			iters = 0;
+		}
+		lhs->ExtractCopy(x, matSize);
 	}
-	else
+	catch(exception& e)
 	{
-		mexPrintf("Belos failed to converge.\n");
-		iters = 0;
-		//x array still has all 0s
-		rv = IS_FALSE;
+		mexPrintf("Error occurred during Belos solve:\n");
+		cout << e.what() << endl;
 	}
 	return rv;
 }
 
-//Note: b and x are contiguous arrays of std::complex<double>,
-//so they must be allocated & populated when using data from Matlab
+int tpetra_double_solve(RCP<ParameterList> SetupList, RCP<ParameterList> TPL, RCP<Tpetra_CrsMatrix_double> A, RCP<Tpetra::Operator<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> prec, double* b, double* x, int numVecs, int& iters)
+{
+	int rv = IS_FALSE;
+	try
+	{
+		int matSize = A->getGlobalNumRows();
+		//Define Tpetra vector/multivector types for convenience
+		typedef Tpetra::Vector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_Vector;
+		typedef Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_MultiVector;
+		typedef Tpetra::Operator<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_Operator;
+		RCP<const Teuchos::Comm<int>> comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+		//numGlobalIndices for map constructor is the number of rows in matrix/vectors, right?
+		RCP<const muemex_map_type> map = rcp(new muemex_map_type(matSize, (mm_GlobalOrd) 0, comm));
+		ArrayView<double> xArrView(x, matSize * numVecs);
+		ArrayView<double> bArrView(b, matSize * numVecs);
+		//initially zero-out lhs
+		RCP<Tpetra_MultiVector> lhs = rcp(new Tpetra_MultiVector(map, numVecs, true));
+		//...and copy *b 2d array into rhs
+		RCP<Tpetra_MultiVector> rhs = rcp(new Tpetra_MultiVector(map, bArrView, matSize, numVecs));
+		//Set iters to 0 in case an error prevents it from being set later
+		iters = 0;
+		#ifdef VERBOSE_OUTPUT
+		TPL->get("Verbosity", Belos::Errors | Belos::Warnings | Belos::Debug | Belos::FinalSummary | Belos::IterationDetails | Belos::OrthoDetails | Belos::TimingDetails | Belos::StatusTestDetails);
+		TPL->get("Output Frequency", 1);
+		TPL->get("Output Style", Belos::Brief);
+		#else
+		TPL->get("Verbosity", Belos::Errors + Belos::Warnings);
+		#endif
+		RCP<Belos::LinearProblem<double, Tpetra_MultiVector, Tpetra_Operator>> problem = rcp(new Belos::LinearProblem<double, Tpetra_MultiVector, Tpetra_Operator>(A, lhs, rhs));
+		problem->setRightPrec(prec);
+		bool set = problem->setProblem();
+		TEUCHOS_TEST_FOR_EXCEPTION(!set, std::runtime_error, "Linear Problem failed to set up correctly!");
+		Belos::SolverFactory<double, Tpetra_MultiVector, Tpetra_Operator> factory;
+		string solverName = TPL->get("solver", "GMRES");
+		RCP<Belos::SolverManager<double, Tpetra_MultiVector, Tpetra_Operator>> solver = factory.create(solverName, TPL);
+		solver->setProblem(problem);
+		Belos::ReturnType ret = solver->solve();
+		if(ret == Belos::Converged)
+		{
+			mexPrintf("Success, Belos converged!\n");
+			iters = solver->getNumIters();
+			rv = IS_TRUE;
+		}
+		else
+		{
+			mexPrintf("Belos failed to converge.\n");
+			iters = 0;
+		}
+		//Copy lhs to *x
+		lhs->get1dCopy(xArrView, matSize);
+	}
+	catch(exception& e)
+	{
+		mexPrintf("Error occurred while running Belos solver:\n");
+		cout << e.what() << endl;
+	}
+	return rv;
+}
+
+#ifdef HAVE_COMPLEX_SCALARS
 int tpetra_complex_solve(RCP<ParameterList> SetupList, RCP<ParameterList> TPL,
-RCP<Tpetra_CrsMatrix_complex> A, RCP<Tpetra::Operator<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> prec, complex_t* b, complex_t* x, int& iters)
+RCP<Tpetra_CrsMatrix_complex> A, RCP<Tpetra::Operator<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> prec, complex_t* b, complex_t* x, int numVecs, int& iters)
 {
-	int matSize = A->getGlobalNumRows();
-	//Define Tpetra vector/multivector types for convenience
-	typedef Tpetra::Vector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_Vector;
-	typedef Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_MultiVector;
-	typedef Tpetra::Operator<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_Operator;
-	RCP<const Teuchos::Comm<int>> comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-	//numGlobalIndices for map constructor is the number of rows in matrix/vectors, right?
-	RCP<const muemex_map_type> map = rcp(new muemex_map_type(matSize, (mm_GlobalOrd) 0, comm));
-	//Fill x with (0 + 0i) initially
-	for(int i = 0; i < matSize; i++)
+	int rv = IS_FALSE;
+	try
 	{
-		x[i] = complex_t(0, 0);
-	}
-	ArrayView<complex_t> xArrView(x, matSize);
-	RCP<Tpetra_Vector> xVec = rcp(new Tpetra_Vector(map));
-	xVec->putScalar(0);
-	ArrayView<complex_t> bArrView(b, matSize);
-	RCP<Tpetra_Vector> bVec = rcp(new Tpetra_Vector(map, bArrView));
-	//cast up to MV for use with Belos
-	RCP<Tpetra_MultiVector> lhs = rcp_implicit_cast<Tpetra_MultiVector>(xVec);
-	RCP<Tpetra_MultiVector> rhs = rcp_implicit_cast<Tpetra_MultiVector>(bVec);
-	//Set iters to 0 in case an error prevents it from being set later
-	iters = 0;
-	#ifdef VERBOSE_OUTPUT
-	TPL->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::Debug + Belos::FinalSummary + Belos::IterationDetails + Belos::OrthoDetails + Belos::TimingDetails + Belos::StatusTestDetails);
-	TPL->set("Output Frequency", 1);
-	TPL->set("Output Style", Belos::Brief);
-	#else
-	TPL->set("Verbosity", Belos::Errors + Belos::Warnings);
-	#endif
-	RCP<Belos::LinearProblem<complex_t, Tpetra_MultiVector, Tpetra_Operator>> problem = rcp(new Belos::LinearProblem<complex_t, Tpetra_MultiVector, Tpetra_Operator>(A, lhs, rhs));
-	problem->setRightPrec(prec);
-	bool set = problem->setProblem();
-	TEUCHOS_TEST_FOR_EXCEPTION(!set, std::runtime_error, "Linear Problem failed to set up correctly!");
-	string solverName = TPL->get("solver", "GMRES");
-	Belos::SolverFactory<complex_t, Tpetra_MultiVector, Tpetra_Operator> factory;
-	RCP<Belos::SolverManager<complex_t, Tpetra_MultiVector, Tpetra_Operator>> solver = factory.create(solverName, TPL);
-	solver->setProblem(problem);
-	Belos::ReturnType ret = solver->solve();
-	int rv;
-	if(ret == Belos::Converged)
-	{
-		mexPrintf("Success, Belos converged!\n");
-		iters = solver->getNumIters();		 
-		//Access a raw pointer to the array of doubles in the lhs multivector
-		ArrayRCP<const complex_t> solnView = lhs->getData(0);
-		for(int i = 0; i < matSize; i++)
-		{
-			x[i] = solnView[i];
-		}
-		rv = IS_TRUE;
-	}
-	else
-	{
-		mexPrintf("Belos failed to converge.\n");
+		int matSize = A->getGlobalNumRows();
+		//Define Tpetra vector/multivector types for convenience
+		typedef Tpetra::Vector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_Vector;
+		typedef Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_MultiVector;
+		typedef Tpetra::Operator<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_Operator;
+		RCP<const Teuchos::Comm<int>> comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+		//numGlobalIndices for map constructor is the number of rows in matrix/vectors, right?
+		RCP<const muemex_map_type> map = rcp(new muemex_map_type(matSize, (mm_GlobalOrd) 0, comm));
+		ArrayView<complex_t> xArrView(x, matSize * numVecs);
+		ArrayView<complex_t> bArrView(b, matSize * numVecs);
+		RCP<Tpetra_MultiVector> lhs = rcp(new Tpetra_MultiVector(map, numVecs, true));
+		RCP<Tpetra_MultiVector> rhs = rcp(new Tpetra_MultiVector(map, bArrView, matSize, numVecs));
+		//Set iters to 0 in case an error prevents it from being set later
 		iters = 0;
-		//x array still has all 0s
-		rv = IS_FALSE;
+		#ifdef VERBOSE_OUTPUT
+		TPL->get("Verbosity", Belos::Errors | Belos::Warnings | Belos::Debug | Belos::FinalSummary | Belos::IterationDetails | Belos::OrthoDetails | Belos::TimingDetails | Belos::StatusTestDetails);
+		TPL->get("Output Frequency", 1);
+		TPL->get("Output Style", Belos::General);
+		#else
+		TPL->get("Verbosity", Belos::Errors | Belos::Warnings);
+		#endif
+		RCP<Belos::LinearProblem<complex_t, Tpetra_MultiVector, Tpetra_Operator>> problem = rcp(new Belos::LinearProblem<complex_t, Tpetra_MultiVector, Tpetra_Operator>(A, lhs, rhs));
+		problem->setRightPrec(prec);
+		bool set = problem->setProblem();
+		TEUCHOS_TEST_FOR_EXCEPTION(!set, std::runtime_error, "Linear Problem failed to set up correctly!");
+		string solverName = TPL->get("solver", "GMRES");
+		Belos::SolverFactory<complex_t, Tpetra_MultiVector, Tpetra_Operator> factory;
+		RCP<Belos::SolverManager<complex_t, Tpetra_MultiVector, Tpetra_Operator>> solver = factory.create(solverName, TPL);
+		solver->setProblem(problem);
+		Belos::ReturnType ret = solver->solve();
+		if(ret == Belos::Converged)
+		{
+			mexPrintf("Success, Belos converged!\n");
+			iters = solver->getNumIters();
+			rv = IS_TRUE;
+		}
+		else
+		{
+			mexPrintf("Belos failed to converge.\n");
+			iters = 0;
+		}
+		lhs->get1dCopy(xArrView, matSize);
+	}
+	catch(exception& e)
+	{
+		mexPrintf("An error occurred while running Belos solver:\n");
+		cout << e.what() << endl;
 	}
 	return rv;
 }
+#endif //HAVE_COMPLEX_SCALARS
 
 //data pack base class implementation
 
@@ -495,16 +680,16 @@ int muelu_epetra_unprec_data_pack::status()
 	return IS_TRUE;
 }
 
-int muelu_epetra_unprec_data_pack::setup(const mxArray* mxa, bool rewrap_ints)
+int muelu_epetra_unprec_data_pack::setup(const mxArray* mxa)
 {
 	//Just set up matrix, no prec
-	A = epetra_setup_from_prhs(mxa, rewrap_ints);
+	A = epetra_setup_from_prhs(mxa);
 	return IS_TRUE;
 }
 
-int muelu_epetra_unprec_data_pack::solve(RCP<ParameterList> TPL, RCP<Epetra_CrsMatrix> Amat, double* b, double* x, int &iters)
+int muelu_epetra_unprec_data_pack::solve(RCP<ParameterList> TPL, RCP<Epetra_CrsMatrix> Amat, double* b, double* x, int numVecs, int &iters)
 {
-	return epetra_unprec_solve(List, TPL, Amat, b, x, iters);
+	return epetra_unprec_solve(List, TPL, Amat, b, x, numVecs, iters);
 }
 
 //muelu_epetra_prec implementation
@@ -527,15 +712,25 @@ int muelu_epetra_data_pack::status()
 	return IS_TRUE;
 }/*end status*/
 
-int muelu_epetra_data_pack::setup(const mxArray* mxa, bool rewrap_ints)
+int muelu_epetra_data_pack::setup(const mxArray* mxa)
 {
-	/* Matrix Fill */
-	A = epetra_setup_from_prhs(mxa, rewrap_ints);
-	prec = MueLu::CreateEpetraPreconditioner(A, *List);
-	//underlying the Epetra_Opreator prec is a MueLu::EpetraOperator
-	RCP<MueLu::EpetraOperator> meo = rcp_static_cast<MueLu::EpetraOperator>(prec);
-	operatorComplexity = meo->GetHierarchy()->GetOperatorComplexity();
-	return IS_TRUE;
+	bool success = false;
+	try
+	{
+		/* Matrix Fill */
+		A = epetra_setup_from_prhs(mxa);
+		prec = MueLu::CreateEpetraPreconditioner(A, *List);
+		//underlying the Epetra_Opreator prec is a MueLu::EpetraOperator
+		RCP<MueLu::EpetraOperator> meo = rcp_static_cast<MueLu::EpetraOperator>(prec);
+		operatorComplexity = meo->GetHierarchy()->GetOperatorComplexity();
+		success = true;
+	}
+	catch(exception& e)
+	{
+		mexPrintf("Error occurred while setting up epetra problem:\n");
+		cout << e.what() << endl;
+	}
+	return success ? IS_TRUE : IS_FALSE;
 }/*end setup*/
 
 /* muelu_epetra_data_pack::solve - Given two Teuchos lists, one in the muelu_epetra_data_pack, and one of
@@ -547,9 +742,9 @@ int muelu_epetra_data_pack::setup(const mxArray* mxa, bool rewrap_ints)
    iters   - number of iterations taken [O]
    Returns: IS_TRUE if solve was succesful, IS_FALSE otherwise
 */
-int muelu_epetra_data_pack::solve(RCP<ParameterList> TPL, RCP<Epetra_CrsMatrix> Amat, double* b, double* x, int &iters)
+int muelu_epetra_data_pack::solve(RCP<ParameterList> TPL, RCP<Epetra_CrsMatrix> Amat, double* b, double* x, int numVecs, int& iters)
 {
-	return epetra_solve(List, TPL, Amat, prec, b, x, iters);
+	return epetra_solve(List, TPL, Amat, prec, b, x, numVecs, iters);
 }
 
 //tpetra_double_data_pack implementation
@@ -557,13 +752,23 @@ int muelu_epetra_data_pack::solve(RCP<ParameterList> TPL, RCP<Epetra_CrsMatrix> 
 muelu_tpetra_double_data_pack::muelu_tpetra_double_data_pack() : muelu_data_pack(TPETRA) {}
 muelu_tpetra_double_data_pack::~muelu_tpetra_double_data_pack() {}
 
-int muelu_tpetra_double_data_pack::setup(const mxArray* mxa, bool rewrap_ints)
+int muelu_tpetra_double_data_pack::setup(const mxArray* mxa)
 {
-	A = tpetra_setup_real_prhs(mxa, rewrap_ints);
-	RCP<MueLu::TpetraOperator<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mop = MueLu::CreateTpetraPreconditioner<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(A, *List);
-	prec = rcp_implicit_cast<Tpetra::Operator<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>(mop);
-	operatorComplexity = mop->GetHierarchy()->GetOperatorComplexity();
-	return IS_TRUE;
+	bool success = false;
+	try
+	{
+		A = tpetra_setup_real_prhs(mxa);
+		RCP<MueLu::TpetraOperator<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mop = MueLu::CreateTpetraPreconditioner<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(A, *List);
+		prec = rcp_implicit_cast<Tpetra::Operator<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>(mop);
+		operatorComplexity = mop->GetHierarchy()->GetOperatorComplexity();
+		success = true;
+	}
+	catch(exception& e)
+	{
+		mexPrintf("An error occurred while setting up tpetra problem:\n");
+		cout << e.what() << endl;
+	}
+	return success ? IS_TRUE : IS_FALSE;
 }
 
 int muelu_tpetra_double_data_pack::status()
@@ -581,23 +786,34 @@ int muelu_tpetra_double_data_pack::status()
 	return IS_TRUE;
 }
 
-int muelu_tpetra_double_data_pack::solve(Teuchos::RCP<Teuchos::ParameterList> TPL, Teuchos::RCP<Tpetra_CrsMatrix_double> Amat, double* b, double* x, int &iters)
+int muelu_tpetra_double_data_pack::solve(Teuchos::RCP<Teuchos::ParameterList> TPL, Teuchos::RCP<Tpetra_CrsMatrix_double> Amat, double* b, double* x, int numVecs, int &iters)
 {
-	return tpetra_double_solve(List, TPL, Amat, prec, b, x, iters);
+	return tpetra_double_solve(List, TPL, Amat, prec, b, x, numVecs, iters);
 }
 
 //tpetra_complex_data_pack implementation
 
+#ifdef HAVE_COMPLEX_SCALARS
 muelu_tpetra_complex_data_pack::muelu_tpetra_complex_data_pack() : muelu_data_pack(TPETRA_COMPLEX) {}
 muelu_tpetra_complex_data_pack::~muelu_tpetra_complex_data_pack() {}
 
-int muelu_tpetra_complex_data_pack::setup(const mxArray* mxa, bool rewrap_ints)
+int muelu_tpetra_complex_data_pack::setup(const mxArray* mxa)
 {
-	A = tpetra_setup_complex_prhs(mxa, rewrap_ints);
-	RCP<MueLu::TpetraOperator<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mop = MueLu::CreateTpetraPreconditioner<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(A, *List);
-	prec = rcp_implicit_cast<Tpetra::Operator<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>(mop);
-	operatorComplexity = mop->GetHierarchy()->GetOperatorComplexity();
-	return IS_TRUE;
+	bool success = false;
+	try
+	{
+		A = tpetra_setup_complex_prhs(mxa);
+		RCP<MueLu::TpetraOperator<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mop = MueLu::CreateTpetraPreconditioner<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(A, *List);
+		prec = rcp_implicit_cast<Tpetra::Operator<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>(mop);
+		operatorComplexity = mop->GetHierarchy()->GetOperatorComplexity();
+		success = true;
+	}
+	catch(exception& e)
+	{
+		mexPrintf("An error occurred while setting up a Tpetra problem:\n");
+		cout << e.what() << endl;
+	}
+	return success ? IS_TRUE : IS_FALSE;
 }
 
 int muelu_tpetra_complex_data_pack::status()
@@ -615,10 +831,11 @@ int muelu_tpetra_complex_data_pack::status()
 	return IS_TRUE;
 }
 
-int muelu_tpetra_complex_data_pack::solve(Teuchos::RCP<Teuchos::ParameterList> TPL, Teuchos::RCP<Tpetra_CrsMatrix_complex> Amat, complex_t* b, complex_t* x, int &iters)
+int muelu_tpetra_complex_data_pack::solve(Teuchos::RCP<Teuchos::ParameterList> TPL, Teuchos::RCP<Tpetra_CrsMatrix_complex> Amat, complex_t* b, complex_t* x, int numVecs, int &iters)
 {
-	return tpetra_complex_solve(List, TPL, Amat, prec, b, x, iters);
+	return tpetra_complex_solve(List, TPL, Amat, prec, b, x, numVecs, iters);
 }
+#endif	//HAVE_COMPLEX_SCALARS
 
 //muelu_data_pack_list namespace implementation
 
@@ -635,6 +852,7 @@ void muelu_data_pack_list::clearAll()
 */
 int muelu_data_pack_list::add(RCP<muelu_data_pack> D)
 {
+	TEUCHOS_ASSERT(!D.is_null());
 	D->id = nextID;
 	nextID++;
 	list.push_back(D);
@@ -837,25 +1055,54 @@ void parse_list_item(RCP<ParameterList> List, char *option_name, const mxArray *
 			break;
 		case mxDOUBLE_CLASS:
 		case mxSINGLE_CLASS:
-			// Single or double
-			//NTS: Does not deal with complex args
-			opt_float = mxGetPr(prhs);
-			if(M == 1 && N == 1 && MMISINT(opt_float[0]))
+			// Single or double, real or complex
+			if(mxIsComplex(prhs))
 			{
-				List->set(option_name, (int) opt_float[0]);
-			} /*end if*/
-			else if(M == 1 && N == 1)
-			{
-				List->set(option_name, opt_float[0]);
-			}/*end if*/
-			else if(M == 0 || N == 0)
-			{
-				List->set(option_name, (double*) NULL);
+				opt_float = mxGetPr(prhs);
+				double* opt_float_imag = mxGetPi(prhs);
+				//assuming user wants std::complex<double> here...
+				if(M == 1 && N == 1)
+				{
+					List->set(option_name, complex_t(*opt_float, *opt_float_imag));
+				}
+				else if(M == 0 || N == 0)
+				{
+					List->set(option_name, (complex_t*) NULL);
+				}
+				else
+				{
+					RCP<Tpetra::CrsMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> tmat = tpetra_setup_complex_prhs(prhs);
+					List->set(option_name, tmat);
+				}
 			}
 			else
 			{
-				List->set(option_name, opt_float);
-			}/*end else*/
+				opt_float = mxGetPr(prhs);
+				if(M == 1 && N == 1 && MMISINT(opt_float[0]))
+				{
+					List->set(option_name, (int) opt_float[0]);
+				}
+				else if(M == 1 && N == 1)
+				{
+					List->set(option_name, opt_float[0]);
+				}
+				else if(M == 0 || N == 0)
+				{
+					List->set(option_name, (double*) NULL);
+				}
+				else
+				{
+					#ifdef VERBOSE_OUTPUT
+					mexPrintf("Creating a Epetra_CrsMatrix in TPL from MATLAB parameters.\n");
+					#endif
+					RCP<Tpetra_CrsMatrix_double> tcmat = tpetra_setup_real_prhs(prhs);
+					typedef Xpetra::TpetraCrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_Tpetra_CrsMatrix;
+					typedef Xpetra::CrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_CrsMatrix;
+					typedef Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_Matrix;
+					RCP<Xpetra_CrsMatrix> xcmat = rcp_implicit_cast<Xpetra_CrsMatrix>(rcp(new Xpetra_Tpetra_CrsMatrix(tcmat)));
+					List->set(option_name, Xpetra::CrsMatrixWrap<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(xcmat));
+				}
+			}
 			break;
 		case mxLOGICAL_CLASS:
 		// Bool
@@ -911,7 +1158,7 @@ void parse_list_item(RCP<ParameterList> List, char *option_name, const mxArray *
 /**************************************************************/
 /**************************************************************/
 /* build_teuchos_list - takes the inputs (barring the solver mode and
-  matrix/rhs) and turns them into a Teuchos list for use by MLAPI.
+  matrix/rhs) and turns them into a Teuchos list.
    Parameters:
    nrhs	   - Number of program inputs [I]
    prhs	   - The problem inputs [I]
@@ -932,12 +1179,15 @@ RCP<ParameterList> build_teuchos_list(int nrhs, const mxArray *prhs[])
 		/* Free memory */
 		mxFree(option_name);
 	}
+	TPL->print(std::cout);
 	return TPL;
 }
 /*end build_teuchos_list*/
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
+	if(sizeof(int) != sizeof(mwIndex))
+		rewrap_ints = true;
 	double* id;
 	int rv;
 	//Arrays representing vectors
@@ -946,394 +1196,547 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	string intf;
 	RCP<ParameterList> List;
 	MODE_TYPE mode;
-	bool rewrap_ints = false;
 	RCP<muelu_data_pack> D;
 	/* Sanity Check Input */
 	mode = sanity_check(nrhs, prhs);
-	/* Set flag if mwIndex and int are not the same size */
-	/* NTS: This can be an issue on 64 bit architectures */
-	if(sizeof(int) != sizeof(mwIndex))
-		rewrap_ints = true;
 	int res;
 	switch(mode)
 	{
 		case MODE_SETUP:
 		{
-			bool hasOC = false;
-			double oc = 0;
-			nr = mxGetM(prhs[1]);
-			if(nrhs > 2)
-				List = build_teuchos_list(nrhs - 2, &(prhs[2]));
-			else
-				List = rcp(new ParameterList);
-			//have epetra (prec) be the default mode for now			
-			intf = List->get(MUEMEX_INTERFACE, "epetra");
-			//intf holds the problem type, now remove from TPL
-			List->remove(MUEMEX_INTERFACE);
-			if(intf == "epetra unprec")
+			try
 			{
-				RCP<muelu_epetra_unprec_data_pack> dp = rcp(new muelu_epetra_unprec_data_pack());
-				dp->List = List;
-				dp->setup(prhs[1], rewrap_ints);
-				D = rcp_implicit_cast<muelu_data_pack>(dp);
-			}
-			else if(intf == "epetra")
-			{
-				RCP<muelu_epetra_data_pack> dp = rcp(new muelu_epetra_data_pack());
-				dp->List = List;
-				dp->setup(prhs[1], rewrap_ints);
-				hasOC = true;
-				oc = dp->operatorComplexity;
-				D = rcp_implicit_cast<muelu_data_pack>(dp);
-			}
-			else if(intf == "tpetra")
-			{
-				//infer scalar type from prhs (can be double or std::complex<double>)
+				bool hasOC = false;
+				double oc = 0;
+				nr = mxGetM(prhs[1]);
+				if(nrhs > 2)
+					List = build_teuchos_list(nrhs - 2, &(prhs[2]));
+				else
+					List = rcp(new ParameterList);
 				if(mxIsComplex(prhs[1]))
 				{
-					RCP<muelu_tpetra_complex_data_pack> dp = rcp(new muelu_tpetra_complex_data_pack());
-					dp->List = List;
-					dp->setup(prhs[1], rewrap_ints);
-					hasOC = true;
-					oc = dp->operatorComplexity;
-					D = rcp_implicit_cast<muelu_data_pack>(dp);
+					//Abort if input is complex but complex isn't supported
+					#ifndef HAVE_COMPLEX_SCALARS
+					mexPrintf("Error: Complex scalars unsupported by this build of Trilinos.\n");
+					throw runtime_error("Complex scalars not supported.");
+					#endif
+					intf = List->get(MUEMEX_INTERFACE, "tpetra");
 				}
 				else
 				{
-					RCP<muelu_tpetra_double_data_pack> dp = rcp(new muelu_tpetra_double_data_pack());
+					intf = List->get(MUEMEX_INTERFACE, "epetra");
+				}
+				List->remove(MUEMEX_INTERFACE);
+				if(intf == "epetra unprec")
+				{
+					if(mxIsComplex(prhs[1]))
+					{
+						throw runtime_error("Tried to use complex matrix with Epetra");
+					}
+					RCP<muelu_epetra_unprec_data_pack> dp = rcp(new muelu_epetra_unprec_data_pack());
 					dp->List = List;
-					dp->setup(prhs[1], rewrap_ints);
+					dp->setup(prhs[1]);
+					D = rcp_implicit_cast<muelu_data_pack>(dp);
+				}
+				else if(intf == "epetra")
+				{
+					if(mxIsComplex(prhs[1]))
+					{
+						mexPrintf("Error: Attempting to use complex-valued matrix with Epetra, which is unsupported.\n");
+						mexPrintf("Use Tpetra with complex matrices instead.\n");
+						throw runtime_error("Tried to use complex matrix with Epetra");
+					}
+					RCP<muelu_epetra_data_pack> dp = rcp(new muelu_epetra_data_pack());
+					dp->List = List;
+					dp->setup(prhs[1]);
 					hasOC = true;
 					oc = dp->operatorComplexity;
 					D = rcp_implicit_cast<muelu_data_pack>(dp);
 				}
-			}
-			rv = muelu_data_pack_list::add(D);
-			mexPrintf("Set up problem #%d\n", rv);
-			plhs[0] = mxCreateNumericMatrix(1, 1, mxINT32_CLASS, mxREAL);
-			*((int*) mxGetData(plhs[0])) = rv;
-			//output OC as well, if applicable
-			if(nlhs > 1)
-			{
-				plhs[1] = mxCreateNumericMatrix(1, 1, mxDOUBLE_CLASS, mxREAL);
-				*((double*) mxGetData(plhs[1])) = oc;
-				if(!hasOC)
+				else if(intf == "tpetra")
 				{
-					mexPrintf("Operator complexity not applicable for unpreconditioned problem.\n");
+					//infer scalar type from prhs (can be double or std::complex<double>)
+					if(mxIsComplex(prhs[1]))
+					{
+						#ifdef HAVE_COMPLEX_SCALARS
+						RCP<muelu_tpetra_complex_data_pack> dp = rcp(new muelu_tpetra_complex_data_pack());
+						dp->List = List;
+						dp->setup(prhs[1]);
+						hasOC = true;
+						oc = dp->operatorComplexity;
+						D = rcp_implicit_cast<muelu_data_pack>(dp);
+						#else
+						throw runtime_error("Complex scalars not supported.");
+						#endif
+					}
+					else
+					{
+						RCP<muelu_tpetra_double_data_pack> dp = rcp(new muelu_tpetra_double_data_pack());
+						dp->List = List;
+						dp->setup(prhs[1]);
+						hasOC = true;
+						oc = dp->operatorComplexity;
+						D = rcp_implicit_cast<muelu_data_pack>(dp);
+					}
+				}
+				rv = muelu_data_pack_list::add(D);
+				mexPrintf("Set up problem #%d\n", rv);
+				if(nlhs > 0)
+				{
+					plhs[0] = mxCreateNumericMatrix(1, 1, mxINT32_CLASS, mxREAL);
+					*((int*) mxGetData(plhs[0])) = rv;
+					//output OC as well, if applicable
+					if(nlhs > 1)
+					{
+						plhs[1] = mxCreateDoubleScalar(oc);
+						if(!hasOC)
+						{
+							mexPrintf("Warning: Operator complexity not applicable for unpreconditioned problem.\n");
+						}
+					}
+				}
+				mexLock();
+			}
+			catch(exception& e)
+			{
+				mexPrintf("An error occurred during setup routine:\n");
+				cout << e.what() << endl;
+				if(nlhs > 0)
+				{
+					plhs[0] = mxCreateNumericMatrix(1, 1, mxINT32_CLASS, mxREAL);
+					*((int*) mxGetData(plhs[0])) = -1;
+				}
+				if(nlhs > 1)
+				{
+					plhs[0] = mxCreateDoubleScalar(0);
 				}
 			}
-			mexLock();
 			break;
 		}
 		case MODE_SOLVE_NEWMATRIX:
 		{
-			//Left hand is (x[, iters])
-			//Right hand is (id, A, b[, params])
-			/* Are there problems set up? */
-			if(muelu_data_pack_list::size() == 0)
+			try
 			{
-				mexErrMsgTxt("Error: No problems set up, cannot perform a solve.\n");
-				break;
-			}
-			/* Get the Problem Handle */
-			id = (double*) mxGetData(prhs[1]);
-			D = muelu_data_pack_list::find(int(*id));
-			if(D.is_null())
-			{
-				mexErrMsgTxt("Error: Problem handle not allocated.\n");
-				break;
-			}
-			/* Pull Problem Size (from b vector) */
-			nr = mxGetM(prhs[3]);
-			//Sanity check: make sure A is square and b is the right size
-			if(nr != int(mxGetM(prhs[2])) || mxGetM(prhs[2]) != mxGetN(prhs[2]))
-			{
-				mexErrMsgTxt("Error: Size Mismatch in Input\n");
-				break;
-			}
-			/* Teuchos List*/
-			if(nrhs > 5)
-				List = build_teuchos_list(nrhs - 4, &(prhs[4]));
-			else
-				List = rcp(new ParameterList);
-			switch(D->type)
-			{
-				//Different matrix/vector types, must static_cast datapack
-				//to access type-specific functionality
-				case EPETRA_UNPREC:
+				//Left hand is (x[, iters])
+				//Right hand is (id, A, b[, params])
+				/* Are there problems set up? */
+				if(muelu_data_pack_list::size() == 0)
 				{
-					RCP<muelu_epetra_unprec_data_pack> dp = rcp_static_cast<muelu_epetra_unprec_data_pack>(D);
-					RCP<Epetra_CrsMatrix> A = epetra_setup_from_prhs(prhs[2], rewrap_ints);
-					double* b = mxGetPr(prhs[3]);
-					//output solution vector (just single, contiguous array for now)
-					plhs[0] = mxCreateDoubleMatrix(nr, 1, mxREAL);
-					double* x = mxGetPr(plhs[0]);
-					res = dp->solve(List, A, b, x, iters);
-					break;
+					throw runtime_error("No problems set up, cannot perform a solve.");
 				}
-				case EPETRA:
+				/* Get the Problem Handle */
+				int probID = parseInt(prhs[1]);
+				D = muelu_data_pack_list::find(probID);
+				if(D.is_null())
 				{
-					RCP<muelu_epetra_data_pack> dp = rcp_static_cast<muelu_epetra_data_pack>(D);
-					RCP<Epetra_CrsMatrix> A = epetra_setup_from_prhs(prhs[2], rewrap_ints);
-					double* b = mxGetPr(prhs[3]);
-					plhs[0] = mxCreateDoubleMatrix(nr, 1, mxREAL);
-					double* x = mxGetPr(plhs[0]);
-					res = dp->solve(List, A, b, x, iters);
-					break;
+					throw runtime_error("Problem handle not allocated.");
 				}
-				case TPETRA:
+				/* Pull Problem Size (from b vector) */
+				nr = mxGetM(prhs[3]);
+				//Sanity check: make sure A is square and b is the right size
+				if(nr != int(mxGetM(prhs[2])) || mxGetM(prhs[2]) != mxGetN(prhs[2]))
 				{
-					RCP<muelu_tpetra_double_data_pack> dp = rcp_static_cast<muelu_tpetra_double_data_pack>(D);
-					RCP<Tpetra_CrsMatrix_double> A = tpetra_setup_real_prhs(prhs[2], rewrap_ints);
-					double* b = mxGetPr(prhs[3]);
-					plhs[0] = mxCreateDoubleMatrix(nr, 1, mxREAL);
-					double* x = mxGetPr(plhs[0]);
-					res = dp->solve(List, A, b, x, iters);
-					break;
+					mexPrintf("Error: Size Mismatch in Input\n");
+					plhs[0] = mxCreateDoubleScalar(0);
+					if(nlhs == 2)
+						plhs[1] = mxCreateDoubleScalar(0);
+					throw runtime_error("Size mismatch in input.");
 				}
-				case TPETRA_COMPLEX:
+				/* Teuchos List*/
+				if(nrhs > 5)
+					List = build_teuchos_list(nrhs - 4, &(prhs[4]));
+				else
+					List = rcp(new ParameterList);
+				if(List->isType<string>("Output Style"))
 				{
-					RCP<muelu_tpetra_complex_data_pack> dp = rcp_static_cast<muelu_tpetra_complex_data_pack>(D);
-					RCP<Tpetra_CrsMatrix_complex> A = tpetra_setup_complex_prhs(prhs[2], rewrap_ints);
-					bool complexB = true;
-					if(!mxIsComplex(prhs[3]))
+					int type = strToOutputStyle(List->get("Output Style", "Belos::Brief").c_str());
+					List->remove("Output Style");
+					//Reset the ParameterList entry to be of type int instead of string
+					List->set("Output Style", type);
+				}
+				//Convert Belos msg type string to int in List
+				if(List->isType<string>("Verbosity"))
+				{
+					//Errors + Warnings is already the default Belos verbosity setting
+					int verb = getBelosVerbosity(List->get("Verbosity", "Belos::Errors + Belos::Warnings").c_str());
+					List->remove("Verbosity");
+					List->set("Verbosity", verb);
+				}
+				switch(D->type)
+				{
+					//Different matrix/vector types, must static_cast datapack
+					//to access type-specific functionality
+					case EPETRA_UNPREC:
 					{
-						mexPrintf("Warning: Trying to use real vector with complex matrix.\n");
-						mexPrintf("Will treat imaginary part of vector as 0.\n");
-						complexB = false;
+						RCP<muelu_epetra_unprec_data_pack> dp = rcp_static_cast<muelu_epetra_unprec_data_pack>(D);
+						RCP<Epetra_CrsMatrix> A = epetra_setup_from_prhs(prhs[2]);
+						int numVecs = mxGetN(prhs[2]);
+						double* b = mxGetPr(prhs[3]);
+						//output solution vector (just single, contiguous array for now)
+						plhs[0] = mxCreateDoubleMatrix(nr, numVecs, mxREAL);
+						double* x = mxGetPr(plhs[0]);
+						//Should copy sol'n multivec directly to plhs[0]
+						res = dp->solve(List, A, b, x, numVecs, iters);
+						break;
 					}
-					//Allocate contiguous arrays of complex to pass to tpetra_solve()
-					//Will delete within this function
-					complex_t* bArr = new complex_t[nr];
-					complex_t* xArr = new complex_t[nr];
-					//Allocate solution space in Matlab
-					plhs[0] = mxCreateDoubleMatrix(nr, 1, mxCOMPLEX);
-					double* br = mxGetPr(prhs[3]);
-					if(complexB)
+					case EPETRA:
 					{
-						double* bi = mxGetPi(prhs[3]);
-						for(int i = 0; i < nr; i++)
+						RCP<muelu_epetra_data_pack> dp = rcp_static_cast<muelu_epetra_data_pack>(D);
+						RCP<Epetra_CrsMatrix> A = epetra_setup_from_prhs(prhs[2]);
+						int numVecs = mxGetN(prhs[2]);
+						double* b = mxGetPr(prhs[3]);
+						plhs[0] = mxCreateDoubleMatrix(nr, numVecs, mxREAL);
+						double* x = mxGetPr(plhs[0]);
+						res = dp->solve(List, A, b, x, numVecs, iters);
+						break;
+					}
+					case TPETRA:
+					{
+						RCP<muelu_tpetra_double_data_pack> dp = rcp_static_cast<muelu_tpetra_double_data_pack>(D);
+						RCP<Tpetra_CrsMatrix_double> A = tpetra_setup_real_prhs(prhs[2]);
+						int numVecs = mxGetN(prhs[2]);					
+						double* b = mxGetPr(prhs[3]);
+						plhs[0] = mxCreateDoubleMatrix(nr, numVecs, mxREAL);
+						double* x = mxGetPr(plhs[0]);
+						res = dp->solve(List, A, b, x, numVecs, iters);
+						break;
+					}
+					case TPETRA_COMPLEX:
+					{
+						#ifdef HAVE_COMPLEX_SCALARS
+						RCP<muelu_tpetra_complex_data_pack> dp = rcp_static_cast<muelu_tpetra_complex_data_pack>(D);
+						RCP<Tpetra_CrsMatrix_complex> A = tpetra_setup_complex_prhs(prhs[2]);
+						int numVecs = mxGetN(prhs[3]);
+						bool complexB = true;
+						if(!mxIsComplex(prhs[3]))
 						{
-							bArr[i] = complex_t(br[i], bi[i]);
+							mexPrintf("Warning: Trying to use real vector with complex matrix.\n");
+							mexPrintf("Will treat imaginary part of vector as 0.\n");
+							complexB = false;
 						}
-					}
-					else
-					{
-						for(int i = 0; i < nr; i++)
+						//Allocate contiguous arrays of complex to pass to tpetra_solve()
+						//Will delete within this function
+						complex_t* bArr = new complex_t[nr * numVecs];
+						complex_t* xArr = new complex_t[nr * numVecs];
+						//Allocate solution space in Matlab
+						plhs[0] = mxCreateDoubleMatrix(nr, numVecs, mxCOMPLEX);
+						double* br = mxGetPr(prhs[3]);
+						if(complexB)
 						{
-							bArr[i] = complex_t(br[i], 0);
+							double* bi = mxGetPi(prhs[3]);
+							for(int n = 0; n < numVecs; n++)
+							{
+								for(int m = 0; m < nr; m++)
+								{
+									bArr[n * nr + m] = complex_t(br[n * nr + m], bi[n * nr + m]);
+								}
+							}
 						}
+						else
+						{
+							for(int n = 0; n < numVecs; n++)
+							{
+								for(int m = 0; m < nr; m++)
+								{
+									bArr[n * nr + m] = complex_t(br[n * nr + m], 0);
+								}
+							}
+						}
+						res = dp->solve(List, A, bArr, xArr, numVecs, iters);
+						//Copy the solution into plhs[0]
+						double* solR = mxGetPr(plhs[0]);
+						double* solI = mxGetPi(plhs[0]);
+						for(int n = 0; n < numVecs; n++)
+						{
+							for(int m = 0; m < nr; m++)
+							{
+								solR[n * nr + m] = real<double>(xArr[n * nr + m]);
+								solI[n * nr + m] = imag<double>(xArr[n * nr + m]);
+							}
+						}
+						delete[] bArr;
+						delete[] xArr;
+						break;
+						#else
+						throw runtime_error("Complex scalars not supported.");
+						#endif
 					}
-					res = dp->solve(List, A, bArr, xArr, iters);
-					//Copy the solution into plhs[0]
-					double* solR = mxGetPr(plhs[0]);
-					double* solI = mxGetPi(plhs[0]);
-					for(int i = 0; i < nr; i++)
-					{
-						//std::complex methods for getting real, imag parts
-						solR[i] = real<double>(xArr[i]);
-						solI[i] = imag<double>(xArr[i]);
-					}
-					delete[] bArr;
-					delete[] xArr;
-					break;
 				}
+				if(nlhs == 2)
+					plhs[1] = mxCreateDoubleScalar(iters);
+				mexPrintf("Belos solver returned %d\n", res);
 			}
-			if(nlhs == 2)
-				plhs[1] = mxCreateDoubleScalar(iters);
-			mexPrintf("Belos solver returned %d\n", res);
+			catch(exception& e)
+			{
+				mexPrintf("An error occurred during the solve routine (newmatrix):\n");
+				cout << e.what() << endl;
+				if(nlhs > 0)
+					plhs[0] = mxCreateDoubleScalar(0);
+				if(nlhs == 2)
+					plhs[1] = mxCreateDoubleScalar(0);
+			}
 			break;
 		}
 		case MODE_SOLVE:
 		{
-			//Left hand is (x[, iters])
-			//Right hand is (id, b[, params])
-			/* Are there problems set up? */
-			if(muelu_data_pack_list::size() == 0)
+			try
 			{
-				mexErrMsgTxt("Error: No problems set up, cannot perform a solve.\n");
-				break;
-			}
-			/* Get the Problem Handle */
-			id = (double*) mxGetData(prhs[1]);
-			D = muelu_data_pack_list::find(int(*id));
-			if(D.is_null())
-			{
-				mexErrMsgTxt("Error: Problem handle not allocated.\n");
-				break;
-			}
-			/* Pull Problem Size */
-			nr = mxGetM(prhs[2]);
-			/* Teuchos List*/
-			if(nrhs > 4)
-				List = build_teuchos_list(nrhs - 3, &(prhs[3]));
-			else
-				List = rcp(new ParameterList);
-			switch(D->type)
-			{
-				//Different matrix/vector types, must static_cast datapack
-				//to access type-specific functionality
-				case EPETRA_UNPREC:
+				//Left hand is (x[, iters])
+				//Right hand is (id, b[, params])
+				/* Are there problems set up? */
+				if(muelu_data_pack_list::size() == 0)
 				{
-					RCP<muelu_epetra_unprec_data_pack> dp = rcp_static_cast<muelu_epetra_unprec_data_pack>(D);
-					RCP<Epetra_CrsMatrix> A = dp->GetMatrix();
-					//Sanity check: make sure A is square and b is the right size
-					if(nr != A->NumMyRows() || A->NumMyRows() != A->NumMyCols())
-					{
-						mexErrMsgTxt("Error: Size Mismatch in Input\n");
-						break;
-					}
-					double* b = mxGetPr(prhs[2]);
-					plhs[0] = mxCreateDoubleMatrix(nr, 1, mxREAL);
-					double* x = mxGetPr(plhs[0]);
-					res = dp->solve(List, A, b, x, iters);
-					break;
+					throw runtime_error("No problems set up, can't solve.");
 				}
-				case EPETRA:
+				/* Get the Problem Handle */
+				int probID = parseInt(prhs[1]);
+				mexPrintf("Solving problem #%d", probID);
+				D = muelu_data_pack_list::find(probID);
+				if(D.is_null())
 				{
-					RCP<muelu_epetra_data_pack> dp = rcp_static_cast<muelu_epetra_data_pack>(D);
-					RCP<Epetra_CrsMatrix> A = dp->GetMatrix();
-					//Sanity check: make sure A is square and b is the right size
-					if(nr != A->NumMyRows() || A->NumMyRows() != A->NumMyCols())
-					{
-						mexErrMsgTxt("Error: Size Mismatch in Input\n");
-						break;
-					}
-					double* b = mxGetPr(prhs[2]);
-					plhs[0] = mxCreateDoubleMatrix(nr, 1, mxREAL);
-					double* x = mxGetPr(plhs[0]);
-					res = dp->solve(List, A, b, x, iters);
-					break;
+					throw runtime_error("Problem handle not allocated.");
 				}
-				case TPETRA:
+				/* Pull Problem Size (number of rows in rhs multivec) */
+				nr = mxGetM(prhs[2]);
+				/* Teuchos List*/
+				if(nrhs > 4)
+					List = build_teuchos_list(nrhs - 3, &(prhs[3]));
+				else
+					List = rcp(new ParameterList);
+				if(List->isType<string>("Output Style"))
 				{
-					RCP<muelu_tpetra_double_data_pack> dp = rcp_static_cast<muelu_tpetra_double_data_pack>(D);
-					RCP<Tpetra_CrsMatrix_double> A = dp->GetMatrix();
-					//Sanity check: make sure A is square and b is the right size
-					if(nr != int(A->getGlobalNumRows()) || A->getGlobalNumRows() != A->getGlobalNumCols())
-					{
-						mexErrMsgTxt("Error: Size Mismatch in Input\n");
-						break;
-					}
-					double* b = mxGetPr(prhs[2]);
-					plhs[0] = mxCreateDoubleMatrix(nr, 1, mxREAL);
-					double* x = mxGetPr(plhs[0]);
-					res = dp->solve(List, A, b, x, iters);
-					break;
+					int type = strToOutputStyle(List->get("Output Style", "Belos::Brief").c_str());
+					List->remove("Output Style");
+					//Reset the ParameterList entry to be of type int instead of string
+					List->set("Output Style", type);
 				}
-				case TPETRA_COMPLEX:
+				//Convert Belos msg type string to int in List
+				if(List->isType<string>("Verbosity"))
 				{
-					RCP<muelu_tpetra_complex_data_pack> dp = rcp_static_cast<muelu_tpetra_complex_data_pack>(D);
-					RCP<Tpetra_CrsMatrix_complex> A = dp->GetMatrix();
-					//Sanity check: make sure A is square and b is the right size
-					if(nr != int(A->getGlobalNumRows()) || A->getGlobalNumRows() != A->getGlobalNumCols())
+					int verb = getBelosVerbosity(List->get("Verbosity", "Belos::Errors + Belos::Warnings").c_str());
+					List->remove("Verbosity");
+					List->set("Verbosity", verb);
+				}
+				switch(D->type)
+				{
+					//Different matrix/vector types, must static_cast datapack
+					//to access type-specific functionality
+					case EPETRA_UNPREC:
 					{
-						mexErrMsgTxt("Error: Size Mismatch in Input\n");
-						break;
-					}
-					bool complexB = true;
-					if(!mxIsComplex(prhs[2]))
-					{
-						mexPrintf("Warning: Trying to use real vector with complex matrix.\n");
-						mexPrintf("Will treat imaginary part of vector as 0.\n");
-						complexB = false;
-					}
-					//Allocate contiguous arrays of complex to pass to tpetra_solve()
-					//Will delete within this function
-					complex_t* bArr = new complex_t[nr];
-					complex_t* xArr = new complex_t[nr];
-					//Allocate solution space in Matlab
-					plhs[0] = mxCreateDoubleMatrix(nr, 1, mxCOMPLEX);
-					double* br = mxGetPr(prhs[2]);
-					if(complexB)
-					{
-						double* bi = mxGetPi(prhs[2]);
-						for(int i = 0; i < nr; i++)
+						RCP<muelu_epetra_unprec_data_pack> dp = rcp_static_cast<muelu_epetra_unprec_data_pack>(D);
+						RCP<Epetra_CrsMatrix> A = dp->GetMatrix();
+						//grab # of rhs (b) vectors to construct multivector
+						int numVecs = mxGetN(prhs[2]);					
+						//Sanity check: make sure A is square and b is the right size
+						if(nr != A->NumMyRows() || A->NumMyRows() != A->NumMyCols())
 						{
-							bArr[i] = complex_t(br[i], bi[i]);
+							plhs[0] = mxCreateDoubleScalar(0);
+							if(nlhs == 2)
+								plhs[1] = mxCreateDoubleScalar(0);
+							throw runtime_error("Size mismatch in input to solve routine.");
 						}
+						double* b = mxGetPr(prhs[2]);
+						plhs[0] = mxCreateDoubleMatrix(nr, numVecs, mxREAL);
+						double* x = mxGetPr(plhs[0]);
+						res = dp->solve(List, A, b, x, numVecs, iters);
+						break;
 					}
-					else
+					case EPETRA:
 					{
-						for(int i = 0; i < nr; i++)
+						RCP<muelu_epetra_data_pack> dp = rcp_static_cast<muelu_epetra_data_pack>(D);
+						RCP<Epetra_CrsMatrix> A = dp->GetMatrix();
+						int numVecs = mxGetN(prhs[2]);
+						//Sanity check: make sure A is square and b is the right size
+						if(nr != A->NumMyRows() || A->NumMyRows() != A->NumMyCols())
 						{
-							bArr[i] = complex_t(br[i], 0);
+							plhs[0] = mxCreateDoubleScalar(0);
+							if(nlhs == 2)
+								plhs[1] = mxCreateDoubleScalar(0);
+							throw runtime_error("Size mismatch in input to solve routine.");
 						}
+						double* b = mxGetPr(prhs[2]);
+						plhs[0] = mxCreateDoubleMatrix(nr, numVecs, mxREAL);
+						double* x = mxGetPr(plhs[0]);
+						res = dp->solve(List, A, b, x, numVecs, iters);
+						break;
 					}
-					res = dp->solve(List, A, bArr, xArr, iters);
-					//Copy the solution into plhs[0]
-					double* solR = mxGetPr(plhs[0]);
-					double* solI = mxGetPi(plhs[0]);
-					for(int i = 0; i < nr; i++)
+					case TPETRA:
 					{
-						//std::complex methods for getting real, imag parts
-						solR[i] = real<double>(xArr[i]);
-						solI[i] = imag<double>(xArr[i]);
+						RCP<muelu_tpetra_double_data_pack> dp = rcp_static_cast<muelu_tpetra_double_data_pack>(D);
+						RCP<Tpetra_CrsMatrix_double> A = dp->GetMatrix();
+						int numVecs = mxGetN(prhs[2]);
+						//Sanity check: make sure A is square and b i T & 	get (const std::string &name, T def_value)s the right size
+						if(nr != int(A->getGlobalNumRows()) || A->getGlobalNumRows() != A->getGlobalNumCols())
+						{
+							mexPrintf("Error: Size Mismatch in Input\n");
+							plhs[0] = mxCreateDoubleScalar(0);
+							if(nlhs == 2)
+								plhs[1] = mxCreateDoubleScalar(0);
+							throw runtime_error("Size mismatch in input to solve routine.");
+						}
+						double* b = mxGetPr(prhs[2]);
+						plhs[0] = mxCreateDoubleMatrix(nr, numVecs, mxREAL);
+						double* x = mxGetPr(plhs[0]);
+						res = dp->solve(List, A, b, x, numVecs, iters);
+						break;
 					}
-					delete[] bArr;
-					delete[] xArr;
-					break;
+					case TPETRA_COMPLEX:
+					{
+						#ifdef HAVE_COMPLEX_SCALARS
+						RCP<muelu_tpetra_complex_data_pack> dp = rcp_static_cast<muelu_tpetra_complex_data_pack>(D);
+						RCP<Tpetra_CrsMatrix_complex> A = dp->GetMatrix();
+						int numVecs = mxGetN(prhs[2]);
+						if(nr != int(A->getGlobalNumRows()) || A->getGlobalNumRows() != A->getGlobalNumCols())
+						{
+							mexPrintf("Error: Size Mismatch in Input\n");
+							plhs[0] = mxCreateDoubleScalar(0);
+							if(nlhs == 2)
+								plhs[1] = mxCreateDoubleScalar(0);
+							throw runtime_error("Size mismatch in input to solve routine.");
+						}
+						bool complexB = true;
+						if(!mxIsComplex(prhs[2]))
+						{
+							mexPrintf("Warning: Trying to use real vector with complex matrix.\n");
+							mexPrintf("Will treat imaginary part of vector as 0.\n");
+							complexB = false;
+						}
+						//Allocate contiguous arrays of complex to pass to tpetra_solve()
+						//Will delete within this function
+						complex_t* bArr = new complex_t[nr * numVecs];
+						complex_t* xArr = new complex_t[nr * numVecs];
+						//Allocate solution space in Matlab
+						plhs[0] = mxCreateDoubleMatrix(nr, numVecs, mxCOMPLEX);
+						double* br = mxGetPr(prhs[2]);
+						if(complexB)
+						{
+							double* bi = mxGetPi(prhs[2]);
+							for(int n = 0; n < numVecs; n++)
+							{
+								for(int m = 0; m < nr; m++)
+								{
+									bArr[n * nr + m] = complex_t(br[n * nr + m], bi[n * nr + m]);
+								}
+							}
+						}
+						else
+						{
+							for(int n = 0; n < numVecs; n++)
+							{
+								for(int m = 0; m < nr; m++)
+								{
+									bArr[n * nr + m] = complex_t(br[n * nr + m], 0);
+								}
+							}
+						}
+						res = dp->solve(List, A, bArr, xArr, numVecs, iters);
+						//Copy the solution into plhs[0]
+						double* solR = mxGetPr(plhs[0]);
+						double* solI = mxGetPi(plhs[0]);
+						for(int n = 0; n < numVecs; n++)
+						{
+							for(int m = 0; m < nr; m++)
+							{
+								solR[n * nr + m] = real<double>(xArr[n * nr + m]);
+								solI[n * nr + m] = imag<double>(xArr[n * nr + m]);
+							}
+						}
+						delete[] bArr;
+						delete[] xArr;
+						#else
+						throw runtime_error("Complex scalars are not supported.");
+						#endif
+						break;
+					}
 				}
+				if(nlhs == 2)
+					plhs[1] = mxCreateDoubleScalar(iters);
+				mexPrintf("Belos solver returned %d\n", res);
 			}
-			if(nlhs == 2)
-				plhs[1] = mxCreateDoubleScalar(iters);
-			mexPrintf("Belos solver returned %d\n", res);
+			catch(exception& e)
+			{
+				mexPrintf("An error occurred during the solve routine:\n");
+				cout << e.what() << endl;
+			}
 			break;
 		}
 		case MODE_CLEANUP:
 		{
-			mexPrintf("MueMex in cleanup mode.\n");
-			if(muelu_data_pack_list::size() > 0 && nrhs == 1)
+			try
 			{
-				/* Cleanup all problems */
-				for(int i = 0; i < muelu_data_pack_list::size(); i++)
-					mexUnlock();
-				muelu_data_pack_list::clearAll();
-				rv = 1;
+				mexPrintf("MueMex in cleanup mode.\n");
+				if(muelu_data_pack_list::size() > 0 && nrhs == 1)
+				{
+					/* Cleanup all problems */
+					for(int i = 0; i < muelu_data_pack_list::size(); i++)
+						mexUnlock();
+					muelu_data_pack_list::clearAll();
+					rv = 1;
+				}
+				else if(muelu_data_pack_list::size() > 0 && nrhs == 2)
+				{
+					/* Cleanup one problem */
+					int probID = (int) *((double*) mxGetData(prhs[1]));
+					mexPrintf("Cleaning up problem #%d\n", probID);
+					rv = muelu_data_pack_list::remove(probID);
+					if(rv)
+						mexUnlock();
+				}	/*end elseif*/
+				else
+				{
+					rv = 0;
+				}
+				/* Set return value */
+				plhs[0] = mxCreateNumericMatrix(1, 1, mxINT32_CLASS, mxREAL);
+				id = (double*) mxGetData(plhs[0]);
+				*id = double(rv);
 			}
-			else if(muelu_data_pack_list::size() > 0 && nrhs == 2)
+			catch(exception& e)
 			{
-				/* Cleanup one problem */
-				int probID = (int) *((double*) mxGetData(prhs[1]));
-				mexPrintf("Cleaning up problem #%d\n", probID);
-				rv = muelu_data_pack_list::remove(probID);
-				if(rv)
-					mexUnlock();
-			}	/*end elseif*/
-			else
-			{
-				rv = 0;
+				mexPrintf("An error occurred during the cleanup routine:\n");
+				cout << e.what() << endl;
+				if(nlhs > 0)
+				{
+					plhs[0] = mxCreateNumericMatrix(1,1, mxINT32_CLASS, mxREAL);
+					*(int*) mxGetData(plhs[0]) = 0;
+				}
 			}
-			/* Set return value */
-			plhs[0] = mxCreateNumericMatrix(1, 1, mxINT32_CLASS, mxREAL);
-			id = (double*) mxGetData(plhs[0]);
-			*id = double(rv);
 			break;
 		}
 		case MODE_STATUS:
 		{
-			//mexPrintf("MueMex in status checking mode.\n");
-			if(muelu_data_pack_list::size() > 0 && nrhs == 1)
+			try
 			{
-			  /* Status check on all problems */
-				rv = muelu_data_pack_list::status_all();
-			}/*end if*/
-			else if(muelu_data_pack_list::size() > 0 && nrhs == 2)
+				//mexPrintf("MueMex in status checking mode.\n");
+				if(muelu_data_pack_list::size() > 0 && nrhs == 1)
+				{
+				  /* Status check on all problems */
+					rv = muelu_data_pack_list::status_all();
+				}/*end if*/
+				else if(muelu_data_pack_list::size() > 0 && nrhs == 2)
+				{
+					/* Status check one problem */
+					int probID = parseInt(prhs[1]);
+					D = muelu_data_pack_list::find(probID);
+					if(D.is_null())
+						throw runtime_error("Error: Problem handle not allocated.\n");
+					rv = D->status();
+				}/*end elseif*/
+				else
+					mexPrintf("No problems set up.\n");
+					rv = 0;
+				/* Set return value */
+				plhs[0] = mxCreateNumericMatrix(1, 1, mxINT32_CLASS, mxREAL);
+				id = (double*) mxGetData(plhs[0]);
+				*id = double(rv);
+			}
+			catch(exception& e)
 			{
-				/* Status check one problem */
-				int probID = *((double*) mxGetData(prhs[1]));
-				D = muelu_data_pack_list::find(probID);
-				if(D.is_null())
-					mexErrMsgTxt("Error: Problem handle not allocated.\n");
-				rv = D->status();
-			}/*end elseif*/
-			else
-				mexPrintf("No problems set up.\n");
-				rv = 0;
-			/* Set return value */
-			plhs[0] = mxCreateNumericMatrix(1, 1, mxINT32_CLASS, mxREAL);
-			id = (double*) mxGetData(plhs[0]);
-			*id = double(rv);
+				mexPrintf("An error occurred during the status routine:\n");
+				cout << e.what() << endl;
+				if(nlhs > 0)
+					plhs[0] = mxCreateDoubleScalar(0);
+			}
 			break;
 		}
 		case MODE_ERROR:
@@ -1350,3 +1753,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 #else
 #error "Do not have MATLAB"
 #endif
+/*
+
+1-D problem (laplacianfun([x])   x = 3000
+Matrix P which is 3 1s in the first column, then shifted down 3 othre cols
+
+muelu(A,'level1',{'P',myP})
+Make sure setup doesn't build P (we're providing this)
+
+*/
