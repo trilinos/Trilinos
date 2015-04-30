@@ -106,6 +106,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
       "-DCMAKE_C_COMPILER=/home/aprokop/local/opt/llvm-3.6.0/bin/clang"
       "-DCMAKE_CXX_COMPILER=/home/aprokop/local/opt/llvm-3.6.0/bin/clang++"
+        "-DCMAKE_CXX_FLAGS=-I/home/aprokop/local/opt/llvm/3.6.0/include/c++/v1"
       )
 
   ENDIF()
