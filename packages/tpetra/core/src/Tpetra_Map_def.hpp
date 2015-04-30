@@ -526,7 +526,7 @@ namespace Tpetra {
       // initial sequence of contiguous GIDs.
       ArrayView<const GO> nonContigEntries =
         entryList (as<size_type> (i), entryList.size () - as<size_type> (i));
-      glMap_ = rcp (new global_to_local_table_type (nonContigEntries, as<LO> (i)));
+      glMap_ = global_to_local_table_type (nonContigEntries, as<LO> (i));
 
       for ( ; i < numLocalElements_; ++i) {
         const GO curGid = entryList[i];
@@ -549,7 +549,7 @@ namespace Tpetra {
       // with no local elements.
       firstContiguousGID_ = indexBase_+1;
       lastContiguousGID_ = indexBase_;
-      glMap_ = rcp (new global_to_local_table_type (entryList)); // is empty
+      // glMap_ was default constructed, so it's already empty.
     }
 
     // Compute the min and max of all processes' GIDs.  If
@@ -652,7 +652,7 @@ namespace Tpetra {
     else {
       // This returns Teuchos::OrdinalTraits<LocalOrdinal>::invalid()
       // if the given global index is not in the table.
-      return glMap_->get (globalIndex);
+      return glMap_.get (globalIndex);
     }
   }
 

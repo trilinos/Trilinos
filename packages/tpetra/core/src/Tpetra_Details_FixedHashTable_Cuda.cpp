@@ -41,9 +41,9 @@
 // @HEADER
 */
 
-#include "Tpetra_Details_FixedHashTable.hpp"
+#include "Tpetra_Details_FixedHashTable_decl.hpp"
 
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(KOKKOS_HAVE_CUDA)
 
 #include "TpetraCore_ETIHelperMacros.h"
 #include "Tpetra_Details_FixedHashTable_def.hpp"
@@ -53,9 +53,21 @@ namespace Details {
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  TPETRA_INSTANTIATE_LG(TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT_DEFAULTNODE)
+  typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> cuda_device_type;
+
+  typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace> cuda_uvm_device_type;
+
+#define TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT_CUDA( LO, GO ) \
+  TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT( LO, GO, cuda_device_type )
+
+  TPETRA_INSTANTIATE_LG( TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT_CUDA )
+
+#define TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT_CUDA_UVM( LO, GO ) \
+  TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT( LO, GO, cuda_uvm_device_type )
+
+  TPETRA_INSTANTIATE_LG( TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT_CUDA_UVM )
 
 } // namespace Details
 } // namespace Tpetra
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#endif // defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(KOKKOS_HAVE_CUDA)

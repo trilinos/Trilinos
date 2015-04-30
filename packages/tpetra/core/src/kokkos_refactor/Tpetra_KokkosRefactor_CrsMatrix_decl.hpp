@@ -567,11 +567,9 @@ namespace Tpetra {
       }
 
       if (fillCompleteClone) {
-        RCP<ParameterList> fillparams =
-          params.is_null () ? Teuchos::null : sublist (params, "fillComplete");
+        RCP<const Map2> clonedRangeMap;
+        RCP<const Map2> clonedDomainMap;
         try {
-          RCP<const Map2> clonedRangeMap;
-          RCP<const Map2> clonedDomainMap;
           if (! this->getRangeMap ().is_null () &&
               this->getRangeMap () != clonedRowMap) {
             clonedRangeMap  = this->getRangeMap ()->template clone<Node2> (node2);
@@ -586,6 +584,19 @@ namespace Tpetra {
           else {
             clonedDomainMap = clonedRowMap;
           }
+        }
+        catch (std::exception &e) {
+          const bool caughtExceptionOnClone = true;
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (caughtExceptionOnClone, std::runtime_error,
+             Teuchos::typeName (*this) << "::clone: Caught the following "
+             "exception while cloning range and domain Maps on a clone of "
+             "type " << Teuchos::typeName (*clonedMatrix) << ": " << e.what ());
+        }
+
+        RCP<ParameterList> fillparams =
+          params.is_null () ? Teuchos::null : sublist (params, "fillComplete");
+        try {
           clonedMatrix->fillComplete (clonedDomainMap, clonedRangeMap,
                                       fillparams);
         }
@@ -593,10 +604,9 @@ namespace Tpetra {
           const bool caughtExceptionOnClone = true;
           TEUCHOS_TEST_FOR_EXCEPTION(
             caughtExceptionOnClone, std::runtime_error,
-            Teuchos::typeName (*this) << std::endl << "clone: " << std::endl <<
-            "Caught the following exception while calling fillComplete() on a "
-            "clone of type" << std::endl << Teuchos::typeName (*clonedMatrix)
-            << ": " << std::endl << e.what () << std::endl);
+            Teuchos::typeName (*this) << "::clone: Caught the following "
+            "exception while calling fillComplete() on a clone of type "
+            << Teuchos::typeName (*clonedMatrix) << ": " << e.what ());
         }
       }
       return clonedMatrix;

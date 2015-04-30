@@ -80,6 +80,9 @@ template<class KeyType,
          class DeviceType = Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace> >
 class FixedHashTable : public Teuchos::Describable {
 public:
+  //! Default constructor; makes an empty table.
+  FixedHashTable ();
+
   /// \brief Constructor for arbitrary keys and contiguous values
   ///   starting with zero.
   ///
@@ -104,9 +107,6 @@ public:
   /// other than Map's GID-to-LID lookup table.
   FixedHashTable (const ArrayView<const KeyType>& keys,
                   const ArrayView<const ValueType>& vals);
-
-  //! Copy constructor: Make a shallow copy of the data.
-  FixedHashTable (const FixedHashTable& obj);
 
   //! Get the value corresponding to the given key.
   ValueType get (const KeyType key) const;
@@ -151,6 +151,9 @@ private:
 
   //! Whether the table noticed any duplicate keys on construction.
   bool hasDuplicateKeys_;
+
+  //! Check correctness; throw std::logic_error if not.
+  void check () const;
 
   /// \brief Allocate storage and initialize the table.
   ///

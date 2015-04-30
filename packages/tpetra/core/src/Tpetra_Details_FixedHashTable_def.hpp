@@ -55,6 +55,21 @@ namespace Details {
 
 template<class KeyType, class ValueType, class DeviceType>
 int FixedHashTable<KeyType, ValueType, DeviceType>::hashFunc (const KeyType key) const {
+#ifdef HAVE_TPETRA_DEBUG
+  const char prefix[] = "Tpetra::Details::FixedHashTable::hashFunc: ";
+  const char suffix[] = "  Please report this bug to the Tpetra developers.";
+  try {
+    check ();
+  } catch (std::exception& e) {
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (true, std::logic_error, prefix << "check() threw the following "
+       "exception: " << e.what () << suffix);
+  }
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (size_ == 0, std::logic_error, prefix << "size_ == 0.  This function "
+     "should never be called if that is the case." << suffix);
+#endif // HAVE_TPETRA_DEBUG
+
 #ifdef TPETRA_USE_MURMUR_HASH
   uint32_t k;
   MurmurHash3_x86_32 ((void *) &key, sizeof (KeyType), 1, (void *) &k);
@@ -66,13 +81,6 @@ int FixedHashTable<KeyType, ValueType, DeviceType>::hashFunc (const KeyType key)
   // sets of keys.  For our typical use case, this is good.  Use
   // Murmur hash if the maps are sparse.
   const unsigned int seed = (2654435761U);
-
-#ifdef HAVE_TPETRA_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    size_ == 0, std::logic_error, "Tpetra::Details::FixedHashTable::hashFunc: "
-    "size_ == 0.  Please report this bug to the Tpetra developers.");
-#endif // HAVE_TPETRA_DEBUG
-
   const int intkey = (int) ((key & 0x000000007fffffffLL) +
                             ((key & 0x7fffffff80000000LL) >> 31));
   return (int) ((seed ^ intkey) % size_);
@@ -140,6 +148,38 @@ FixedHashTable<KeyType, ValueType, DeviceType>::getRecommendedSize (const int si
 }
 
 template<class KeyType, class ValueType, class DeviceType>
+void
+FixedHashTable<KeyType, ValueType, DeviceType>::
+check () const
+{
+  const char prefix[] = "Tpetra::Details::FixedHashTable: ";
+  const char suffix[] = "  Please report this bug to the Tpetra developers.";
+
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (size_ == 0 && ptr_.dimension_0 () != 0, std::logic_error,
+     prefix << "size_ == 0 && ptr_.dimension_0() = " << ptr_.dimension_0 ()
+     << " != 0." << suffix);
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (ptr_.dimension_0 () != 0 && size_ + 1 != ptr_.dimension_0 (),
+     std::logic_error, prefix << "ptr_.dimension_0() = " << ptr_.dimension_0 ()
+     << " != 0 and size_ + 1 = " << (size_ + 1) << " != ptr_.dimension_0()."
+     << suffix);
+}
+
+template<class KeyType, class ValueType, class DeviceType>
+FixedHashTable<KeyType, ValueType, DeviceType>::
+FixedHashTable () :
+  size_ (0),
+  rawPtr_ (NULL),
+  rawVal_ (NULL),
+  hasDuplicateKeys_ (false) // trivially true
+{
+#ifdef HAVE_TPETRA_DEBUG
+  check ();
+#endif // HAVE_TPETRA_DEBUG
+}
+
+template<class KeyType, class ValueType, class DeviceType>
 FixedHashTable<KeyType, ValueType, DeviceType>::
 FixedHashTable (const ArrayView<const KeyType>& keys) :
   size_ (0),
@@ -148,6 +188,10 @@ FixedHashTable (const ArrayView<const KeyType>& keys) :
   hasDuplicateKeys_ (false) // to revise in init()
 {
   init (keys, static_cast<ValueType> (0));
+
+#ifdef HAVE_TPETRA_DEBUG
+  check ();
+#endif // HAVE_TPETRA_DEBUG
 }
 
 template<class KeyType, class ValueType, class DeviceType>
@@ -160,6 +204,10 @@ FixedHashTable (const ArrayView<const KeyType>& keys,
   hasDuplicateKeys_ (false) // to revise in init()
 {
   init (keys, startingValue);
+
+#ifdef HAVE_TPETRA_DEBUG
+  check ();
+#endif // HAVE_TPETRA_DEBUG
 }
 
 template<class KeyType, class ValueType, class DeviceType>
@@ -172,6 +220,10 @@ FixedHashTable (const ArrayView<const KeyType>& keys,
   hasDuplicateKeys_ (false) // to revise in init()
 {
   init (keys, vals);
+
+#ifdef HAVE_TPETRA_DEBUG
+  check ();
+#endif // HAVE_TPETRA_DEBUG
 }
 
 template<class KeyType, class ValueType, class DeviceType>
@@ -325,43 +377,35 @@ init (const ArrayView<const KeyType>& keys,
   rawVal_ = val.ptr_on_device ();
 }
 
-
-template<class KeyType, class ValueType, class DeviceType>
-FixedHashTable<KeyType, ValueType, DeviceType>::
-FixedHashTable (const FixedHashTable & obj) :
-  size_ (obj.size_),
-  ptr_ (obj.ptr_),
-  val_ (obj.val_),
-  rawPtr_ (obj.rawPtr_),
-  rawVal_ (obj.rawVal_),
-  hasDuplicateKeys_ (obj.hasDuplicateKeys_)
-{}
-
 template<class KeyType, class ValueType, class DeviceType>
 ValueType
 FixedHashTable<KeyType, ValueType, DeviceType>::
 get (const KeyType key) const
 {
-  const int hashVal = hashFunc (key);
+  if (size_ == 0) {
+    return Teuchos::OrdinalTraits<ValueType>::invalid ();
+  }
+  else {
+    const int hashVal = hashFunc (key);
 #ifdef HAVE_TPETRA_DEBUG
-
-  const size_type start = ptr_[hashVal];
-  const size_type end = ptr_[hashVal+1];
-  for (size_type k = start; k < end; ++k) {
-    if (val_[k].first == key) {
-      return val_[k].second;
+    const size_type start = ptr_[hashVal];
+    const size_type end = ptr_[hashVal+1];
+    for (size_type k = start; k < end; ++k) {
+      if (val_[k].first == key) {
+        return val_[k].second;
+      }
     }
-  }
 #else
-  const size_type start = rawPtr_[hashVal];
-  const size_type end = rawPtr_[hashVal+1];
-  for (size_type k = start; k < end; ++k) {
-    if (rawVal_[k].first == key) {
-      return rawVal_[k].second;
+    const size_type start = rawPtr_[hashVal];
+    const size_type end = rawPtr_[hashVal+1];
+    for (size_type k = start; k < end; ++k) {
+      if (rawVal_[k].first == key) {
+        return rawVal_[k].second;
+      }
     }
-  }
 #endif // HAVE_TPETRA_DEBUG
-  return Teuchos::OrdinalTraits<ValueType>::invalid ();
+    return Teuchos::OrdinalTraits<ValueType>::invalid ();
+  }
 }
 
 template <class KeyType, class ValueType, class DeviceType>
@@ -466,6 +510,18 @@ describe (Teuchos::FancyOStream &out,
 //
 // This macro must be explanded within the Tpetra::Details namespace.
 #define TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT_DEFAULTNODE(LO,GO) \
-  template class FixedHashTable< GO , LO >;                      \
+  template class FixedHashTable< GO , LO >;
+
+// Macro that explicitly instantiates FixedHashTable for the given
+// local ordinal (LO), global ordinal (GO), and Kokkos device (DEVICE)
+// types.  Note that FixedHashTable's first two template parameters
+// occur in the opposite order of most Tpetra classes.  This is
+// because FixedHashTable performs global-to-local lookup, and the
+// convention in templated C++ lookup tables (such as std::map) is
+// <KeyType, ValueType>.
+//
+// This macro must be explanded within the Tpetra::Details namespace.
+#define TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT(LO, GO, DEVICE) \
+  template class FixedHashTable< GO , LO , DEVICE >;
 
 #endif // TPETRA_DETAILS_FIXEDHASHTABLE_DEF_HPP
