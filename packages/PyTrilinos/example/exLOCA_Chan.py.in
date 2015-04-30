@@ -161,12 +161,11 @@ class ChanProblemInterface(NOX.Epetra.Interface.Jacobian,
     return 1. + (x + 0.5*x*x)/(1. + 0.01*x*x)
 
   def setParams(self, p):
-    self.sigma = p.getValue("sigma")
-    self.lambda_ = p.getValue("lambda")
+    self.sigma   = p.getValue("sigma"  )
+    self.lambda_ = p.getValue("lambda_")
     
   def setParameters(self, p):
-    self.sigma = p.getValue("sigma")
-    self.problem.lambda_ = p.getValue("lambda_")
+    self.lambda_ = p.getValue("lambda_")
 
 ######################################################################
 
@@ -200,9 +199,16 @@ def main():
                                                         verbosity=options.verbosity)
   printParams = paramList["NOX"]["Printing"]
   lsParams    = paramList["NOX"]["Direction"]["Newton"]["Linear Solver"]
+  paramList["LOCA"]["Stepper"]["Continuation Parameter"] = "lambda_"
+  paramList["LOCA"]["Stepper"]["Initial Value"] = 1.09
+  paramList["LOCA"]["Stepper"]["Max Value"] = 2.8
+  paramList["LOCA"]["Stepper"]["Max Steps"] = 400
+  paramList["LOCA"]["Step Size"]["Initial Step Size"] = -0.001
+  paramList["LOCA"]["Step Size"]["Max Step Size"] = 0.001
+  lsParams["Size of Krylov Subspace"] = 200
 
   p = LOCA.ParameterVector()
-  p.addParameter("lambda", lambda0)
+  p.addParameter("lambda_", lambda0)
 
   interface = ChanProblemInterface(comm, N)
   soln      = interface.InitialGuess()
