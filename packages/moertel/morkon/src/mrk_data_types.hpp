@@ -63,6 +63,10 @@
 
 namespace morkon_exp {
 
+enum MorkonFaceType { MRK_LINE2=0,
+		      MRK_TRI3,
+		      MRK_QUAD4 };
+
 template <typename DeviceType, int DIM, int ORDER = 1>
 struct FaceType
 {
