@@ -131,28 +131,33 @@ public:
 private:
   typedef typename Kokkos::View<const KeyType*, DeviceType>::size_type size_type;
 
-  /// \brief <tt>ptr_.dimension_0() == size_ + 1</tt>.
-  ///
-  /// This is redundant, but we keep it around to avoid the function
-  /// call (for <tt>ptr_.dimenesion_0()</tt>) in the hash table.
-  KeyType size_;
   //! Array of "row" offsets.
   typename Kokkos::View<const size_type*, DeviceType>::HostMirror ptr_;
   //! Array of hash table entries.
   typename Kokkos::View<const Kokkos::pair<KeyType, ValueType>*, DeviceType>::HostMirror val_;
+
+#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   /// \brief <tt>rawPtr_ == ptr_.ptr_on_device()</tt>.
   ///
-  /// This is redundant, but we keep it around to speed up get().
+  /// This is redundant, but we keep it around as a fair performance
+  /// comparison against the "classic" version of Tpetra.
   const size_type* rawPtr_;
   /// \brief <tt>rawVal_ == val_.ptr_on_device()</tt>.
   ///
-  /// This is redundant, but we keep it around to speed up get().
+  /// This is redundant, but we keep it around as a fair performance
+  /// comparison against the "classic" version of Tpetra.
   const Kokkos::pair<KeyType, ValueType>* rawVal_;
+#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 
   //! Whether the table noticed any duplicate keys on construction.
   bool hasDuplicateKeys_;
 
-  //! Check correctness; throw std::logic_error if not.
+  //! The number of "buckets" in the bucket array.
+  size_type getSize () const {
+    return ptr_.dimension_0 () == 0 ? size_type (0) : ptr_.dimension_0 () - 1;
+  }
+
+  //! Sanity checks; throw std::logic_error if any of them fail.
   void check () const;
 
   /// \brief Allocate storage and initialize the table.
@@ -173,8 +178,9 @@ private:
         const ArrayView<const ValueType>& vals);
 
   //! The hash function; it returns \c int no matter the value type.
-  int hashFunc (const KeyType key) const;
+  int hashFunc (const KeyType key, const size_type size) const;
 
+  //! Number of "buckets" that the constructor should allocate.
   int getRecommendedSize (const int size);
 };
 
