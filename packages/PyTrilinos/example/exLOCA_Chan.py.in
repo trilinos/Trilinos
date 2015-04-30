@@ -160,27 +160,13 @@ class ChanProblemInterface(NOX.Epetra.Interface.Jacobian,
   def source_term(self, x):
     return 1. + (x + 0.5*x*x)/(1. + 0.01*x*x)
 
-  def source_deriv(self, x):
-    y = 1.0 + 0.01*x*x
-    return (1.0 + x - 0.01*x*x)/(y*y)
-
   def setParams(self, p):
-    self.alpha = p["alpha"]
-    self.beta = p["beta"]
-    self.scale = p["scale"]
-
-  def createGraph(self):
-    self.__graph = Epetra.CrsGraph(Epetra.Copy, self.__stdMap,
-				   self.__overlapMap, 3)
-    for gid in self.__stdMap.MyGlobalElements():
-      lid = self.__stdMap.LID(gid)
-      if gid in (0,self.__numGlobalElements-1):  # Boundaries
-	self.__graph.InsertGlobalIndices(lid,[gid])
-      else:                                      # Interior
-	self.__graph.InsertGlobalIndices(lid,[gid-1,gid,gid+1])
-    self.__graph.FillComplete()
-    return True
-
+    self.sigma = p.getValue("sigma")
+    self.lambda_ = p.getValue("lambda")
+    
+  def setParameters(self, p):
+    self.sigma = p.getValue("sigma")
+    self.problem.lambda_ = p.getValue("lambda_")
 
 ######################################################################
 
@@ -210,38 +196,18 @@ def main():
   maxNewtonIters = options.maxNewtonIters
   N = options.N
 
-  locaParams = {"Stepper" : {"Continuation Parameter": "alpha",
-			     "Initial Value": alpha,
-			     "Max Value": 5.0/scale,
-			     "Min Value": 0.0/scale,
-			     "Max Steps": 50,
-			     "Max Nonlinear Iterations": maxNewtonIters,
-			     "Compute Eigenvalues": False},  # Default
-		"Step Size" : {"Method": "Adaptive",   # Default
-		               "Initial Step Size": 0.1/scale,
-			       "Min Step Size": 1.0e-3/scale,
-			       "Max Step Size": 10.0/scale},
-	        "Bifurcation" : {"Type": "None"},   # Default
-		"Predictor" : {"Method": "Secant"}}   # Default
+  paramList = LOCA.Epetra.defaultContinuationParameters(comm=comm,
+                                                        verbosity=options.verbosity)
+  printParams = paramList["NOX"]["Printing"]
+  lsParams    = paramList["NOX"]["Direction"]["Newton"]["Linear Solver"]
 
-  outputInfo = NOX.Utils.Error + \
-	       NOX.Utils.TestDetails
-  if options.verbosity: outputInfo += NOX.Utils.Debug      + \
-				      NOX.Utils.Warning    + \
-				      NOX.Utils.Details    + \
-				      NOX.Utils.Parameters + \
-				      NOX.Utils.LinearSolverDetails
-  if options.verbosity > 1: outputInfo += NOX.Utils.InnerIteration           + \
-					  NOX.Utils.OuterIterationStatusTest + \
-					  NOX.Utils.OuterIteration
+  p = LOCA.ParameterVector()
+  p.addParameter("lambda", lambda0)
 
-  printParams = {"MyPID": myPID,
-                 "Output Precision": 3,
-		 "Output Processor": 0,
-		 "Output Information": outputInfo}
-
-  noxParams = {"Printing" : {"Output Information": outputInfo}}
-
+  interface = ChanProblemInterface(comm, N)
+  soln      = interface.InitialGuess()
+  noxSoln   = NOX.Epetra.Vector(soln, NOX.Epetra.Vector.CreateView)
+  
   paramList = {"NOX":  noxParams,
 	       "LOCA": locaParams}
 
