@@ -47,16 +47,6 @@
 #include "Kokkos_DefaultSparseOps.hpp"
 #include "Kokkos_DefaultRelaxation.hpp"
 
-namespace Kokkos {
-  namespace Compat {
-    // Forward declaration (to avoid circular subpackage dependencies).
-    template<class DeviceType>
-    class KokkosDeviceWrapperNode;
-  } // namespace Compat
-  // Forward declaration (to avoid circular subpackage dependencies).
-  class Cuda;
-} // namespace Kokkos
-
 namespace KokkosClassic {
 
   /// \brief Traits class providing default kernel types for CRS,
