@@ -82,14 +82,13 @@ class ChanProblemInterface(NOX.Epetra.Interface.Jacobian,
     raise
     return False
 
-
   def setParams(self, p):
-    # self.lambda_ = p["lambda"]
+    self.sigma = p.getValue("sigma")
     self.lambda_ = p.getValue("lambda")
     
   def setParameters(self, p):
-    # self.lambda_ = p["lambda"]
-    self.lambda_ = p.getValue("lambda")
+    self.sigma = p.getValue("sigma")
+    self.problem.lambda_ = p.getValue("lambda_")
 
 ######################################################################
 
@@ -117,72 +116,18 @@ def main():
   scale = options.scale
   maxNewtonIters = options.maxNewtonIters
   N = options.N
-  
-  outputInfo = NOX.Utils.Error + NOX.Utils.TestDetails
-  
-  if options.verbosity: outputInfo += NOX.Utils.Debug      + \
-				      NOX.Utils.Warning    + \
-				      NOX.Utils.Details    + \
-				      NOX.Utils.Parameters + \
-				      NOX.Utils.LinearSolverDetails
-  if options.verbosity > 1: outputInfo += NOX.Utils.InnerIteration           + \
-					  NOX.Utils.OuterIterationStatusTest + \
-					  NOX.Utils.OuterIteration
-  
-  #####################################################################
-  #####################################################################
-  locaParams = {"Stepper" : {
-                    "Continuation Parameter": "lambda",
-                    "Initial Value": lambda0,
-                    "Max Value": 5.0,
-                    "Min Value": 0.0,
-                    "Max Steps": 50,
-                    "Max Nonlinear Iterations": maxNewtonIters,
-                    "Compute Eigenvalues": False
-                },  
-                "Step Size" : {
-                    "Method": "Adaptive",  
-                    "Initial Step Size": 0.1,
-                    "Min Step Size": 1.0e-3,
-                    "Max Step Size": 10.0
-                },
-                "Bifurcation" : {"Type": "None"}, 
-                "Predictor" : {"Method": "Secant"}}
-                
-  nlParams = NOX.Epetra.defaultNonlinearParameters(comm)
-  nlParams["Linear Solver"] =    {"Preconditioner": "None",
-                 "Aztec Solver"    : "GMRES",
-                 "Size of Krylov Subspace" : 300,
-                 "Max Iterations"  : 300,
-                 "Tolerance"       : 1e-8,
-                 "Output Frequency": 1,
-                 "Preconditioner Operator"  : "Use Jacobian",
-                 # "Preconditioner" : "Ifpack",
-                 "Max Age Of Prec" : 1 }
-  nlParams["Printing"] = {"MyPID": myPID,
-                 "Output Precision": 3,
-        		 "Output Processor": 0,
-        		 "Output Information": outputInfo} 
-  
-  paramList = {"NOX":  nlParams,
-	           "LOCA": locaParams}
-          
-  # import json
-  # print  json.dumps(paramList, indent = 2)
-  # raise       
-  lsParams    = nlParams["Linear Solver"]
-  printParams = nlParams["Printing"]
-  
-  from options_trilinos import paramList
-  # lsParams    = paramList["NOX"]["Direction"]["Newton"]["Linear Solver" ]
-  # printParams = paramList["NOX"]["Printing"]
-  
+
+  paramList = LOCA.Epetra.defaultContinuationParameters(comm=comm,
+                                                        verbosity=options.verbosity)
+  printParams = paramList["NOX"]["Printing"]
+  lsParams    = paramList["NOX"]["Direction"]["Newton"]["Linear Solver"]
+
   p = LOCA.ParameterVector()
   p.addParameter("lambda", lambda0)
 
   interface = ChanProblemInterface(comm, N)
-  soln    = interface.InitialGuess()
-  noxSoln = NOX.Epetra.Vector(soln, NOX.Epetra.Vector.CreateView)
+  soln      = interface.InitialGuess()
+  noxSoln   = NOX.Epetra.Vector(soln, NOX.Epetra.Vector.CreateView)
   
 
   print '--> initial guess, done!'
