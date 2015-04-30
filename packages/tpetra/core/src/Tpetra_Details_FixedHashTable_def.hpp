@@ -147,7 +147,7 @@ FixedHashTable (const ArrayView<const KeyType>& keys) :
   rawVal_ (NULL),
   hasDuplicateKeys_ (false) // to revise in init()
 {
-  init (keys, Teuchos::as<ValueType> (0));
+  init (keys, static_cast<ValueType> (0));
 }
 
 template<class KeyType, class ValueType, class DeviceType>
@@ -180,13 +180,8 @@ FixedHashTable<KeyType, ValueType, DeviceType>::
 init (const ArrayView<const KeyType>& keys,
       const ValueType startingValue)
 {
-  using Teuchos::arcp;
-  using Teuchos::arcp_const_cast;
-  using Teuchos::ArrayRCP;
-  using Teuchos::as;
-
   const size_type numKeys = keys.size ();
-  const size_type size = getRecommendedSize (as<int> (numKeys));
+  const size_type size = getRecommendedSize (Teuchos::as<int> (numKeys));
 #ifdef HAVE_TPETRA_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
     size == 0 && numKeys != 0, std::logic_error,
@@ -198,26 +193,15 @@ init (const ArrayView<const KeyType>& keys,
 
   // We have to set the size_ internal state before calling the hash
   // function, since the hash function uses it.
-  size_ = as<KeyType> (size);
+  size_ = Teuchos::as<KeyType> (size);
 
-  ArrayRCP<size_type> ptr (size + 1, 0);
-  // The constructor that takes just a size argument automatically
-  // fills the data.  We don't need to waste time filling it here
-  // because we will do so below.  The try/catch block isn't strictly
-  // necessary; we could just give "new std::pair<...> [numKeys]" to
-  // the ArrayRCP constructor, since no other arguments of the
-  // constructor might throw before entering the constructor.
-  ArrayRCP<std::pair<KeyType, ValueType> > val;
-  std::pair<KeyType, ValueType>* rawVal = NULL;
-  try {
-    rawVal = new std::pair<KeyType, ValueType> [numKeys];
-    val = arcp<std::pair<KeyType, ValueType> > (rawVal, 0, numKeys, true);
-  } catch (...) {
-    if (rawVal != NULL) {
-      delete [] rawVal;
-    }
-    throw;
-  }
+  // Kokkos::View fills with zeros by default.
+  typename Kokkos::View<size_type*, DeviceType>::HostMirror ptr ("ptr", size + 1);
+
+  // Allocate the array of key,value pairs.  Don't waste time filling
+  // it with zeros, because we will fill it with actual data below.
+  typename Kokkos::View<Kokkos::pair<KeyType, ValueType>*, DeviceType>::HostMirror val
+    (Kokkos::ViewAllocateWithoutInitializing ("val"), numKeys);
 
   // Compute number of entries in each hash table position.
   for (size_type k = 0; k < numKeys; ++k) {
@@ -243,12 +227,12 @@ init (const ArrayView<const KeyType>& keys,
   //ptr[0] = 0; // We've already done this when initializing ptr above.
 
   // curRowStart[i] is the offset of the next element in row i.
-  ArrayRCP<size_type> curRowStart (size, 0);
+  typename Kokkos::View<size_type*, DeviceType>::HostMirror curRowStart ("curRowStart", size);
 
   // Fill in the hash table.
   for (size_type k = 0; k < numKeys; ++k) {
     const KeyType key = keys[k];
-    const ValueType theVal = startingValue + as<ValueType> (k);
+    const ValueType theVal = startingValue + static_cast<ValueType> (k);
     const int hashVal = hashFunc (key);
 
     const size_type offset = curRowStart[hashVal];
@@ -260,21 +244,10 @@ init (const ArrayView<const KeyType>& keys,
   }
 
   // "Commit" the computed arrays.
-  ptr_ = arcp_const_cast<const size_type> (ptr);
-
-  // FIXME (mfh 25 Apr 2013) arcp_const_cast on val_ and
-  // val_.getRawPtr() both cause a hang with MPI for some reason.  Not
-  // sure what's going on.  Anyway, calling val.release(), recreating
-  // val_ by hand, and using the released raw pointer as rawVal_,
-  // seems to fix the problem.
-
-  //val_ = arcp_const_cast<const std::pair<KeyType, ValueType> > (val);
-  const std::pair<KeyType, ValueType>* valRaw = val.release ();
-  val_ = ArrayRCP<const std::pair<KeyType, ValueType> > (valRaw, 0, numKeys, true);
-  //val_ = arcp<const std::pair<KeyType, ValueType> > (valRaw, 0, numKeys, true);
-  rawPtr_ = ptr_.getRawPtr ();
-  //  rawVal_ = val_.getRawPtr ();
-  rawVal_ = valRaw;
+  ptr_ = ptr;
+  val_ = val;
+  rawPtr_ = ptr.ptr_on_device ();
+  rawVal_ = val.ptr_on_device ();
 }
 
 
@@ -284,13 +257,8 @@ FixedHashTable<KeyType, ValueType, DeviceType>::
 init (const ArrayView<const KeyType>& keys,
       const ArrayView<const ValueType>& vals)
 {
-  using Teuchos::arcp;
-  using Teuchos::arcp_const_cast;
-  using Teuchos::ArrayRCP;
-  using Teuchos::as;
-
   const size_type numKeys = keys.size ();
-  const size_type size = getRecommendedSize (as<int> (numKeys));
+  const size_type size = getRecommendedSize (Teuchos::as<int> (numKeys));
 #ifdef HAVE_TPETRA_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
     size == 0 && numKeys != 0, std::logic_error,
@@ -302,26 +270,13 @@ init (const ArrayView<const KeyType>& keys,
 
   // We have to set the size_ internal state before calling the hash
   // function, since the hash function uses it.
-  size_ = as<KeyType> (size);
+  size_ = Teuchos::as<KeyType> (size);
 
-  ArrayRCP<size_type> ptr (size + 1, 0);
-  // The constructor that takes just a size argument automatically
-  // fills the data.  We don't need to waste time filling it here
-  // because we will do so below.  The try/catch block isn't strictly
-  // necessary; we could just give "new std::pair<...> [numKeys]" to
-  // the ArrayRCP constructor, since no other arguments of the
-  // constructor might throw before entering the constructor.
-  ArrayRCP<std::pair<KeyType, ValueType> > val;
-  std::pair<KeyType, ValueType>* rawVal = NULL;
-  try {
-    rawVal = new std::pair<KeyType, ValueType> [numKeys];
-    val = arcp<std::pair<KeyType, ValueType> > (rawVal, 0, numKeys, true);
-  } catch (...) {
-    if (rawVal != NULL) {
-      delete [] rawVal;
-    }
-    throw;
-  }
+  typename Kokkos::View<size_type*, DeviceType>::HostMirror ptr ("ptr", size + 1);
+
+  // Don't fill 'val' here; we will fill it below.
+  typename Kokkos::View<Kokkos::pair<KeyType, ValueType>*, DeviceType>::HostMirror val
+    (Kokkos::ViewAllocateWithoutInitializing ("val"), numKeys);
 
   // Compute number of entries in each hash table position.
   for (size_type k = 0; k < numKeys; ++k) {
@@ -347,7 +302,7 @@ init (const ArrayView<const KeyType>& keys,
   //ptr[0] = 0; // We've already done this when initializing ptr above.
 
   // curRowStart[i] is the offset of the next element in row i.
-  ArrayRCP<size_type> curRowStart (size, 0);
+  typename Kokkos::View<size_type*, DeviceType>::HostMirror curRowStart ("curRowStart", size);
 
   // Fill in the hash table.
   for (size_type k = 0; k < numKeys; ++k) {
@@ -364,21 +319,10 @@ init (const ArrayView<const KeyType>& keys,
   }
 
   // "Commit" the computed arrays.
-  ptr_ = arcp_const_cast<const size_type> (ptr);
-
-  // FIXME (mfh 25 Apr 2013) arcp_const_cast on val_ and
-  // val_.getRawPtr() both cause a hang with MPI for some reason.  Not
-  // sure what's going on.  Anyway, calling val.release(), recreating
-  // val_ by hand, and using the released raw pointer as rawVal_,
-  // seems to fix the problem.
-
-  //val_ = arcp_const_cast<const std::pair<KeyType, ValueType> > (val);
-  const std::pair<KeyType, ValueType>* valRaw = val.release ();
-  val_ = ArrayRCP<const std::pair<KeyType, ValueType> > (valRaw, 0, numKeys, true);
-  //val_ = arcp<const std::pair<KeyType, ValueType> > (valRaw, 0, numKeys, true);
-  rawPtr_ = ptr_.getRawPtr ();
-  //  rawVal_ = val_.getRawPtr ();
-  rawVal_ = valRaw;
+  ptr_ = ptr;
+  val_ = val;
+  rawPtr_ = ptr.ptr_on_device ();
+  rawVal_ = val.ptr_on_device ();
 }
 
 
@@ -426,8 +370,8 @@ std::string FixedHashTable<KeyType, ValueType, DeviceType>::description() const 
   oss << "FixedHashTable<"
       << Teuchos::TypeNameTraits<KeyType>::name () << ","
       << Teuchos::TypeNameTraits<ValueType>::name () << ">: "
-      << "{ numKeys: " << val_.size ()
-      << ", tableSize: " << ptr_.size () << " }";
+      << "{ numKeys: " << val_.dimension_0 ()
+      << ", tableSize: " << ptr_.dimension_0 () << " }";
   return oss.str();
 }
 
@@ -473,7 +417,7 @@ describe (Teuchos::FancyOStream &out,
       }
 
       const size_type tableSize = size_;
-      const size_type numKeys = val_.size ();
+      const size_type numKeys = val_.dimension_0 ();
 
       out << "Table parameters:" << endl;
       {

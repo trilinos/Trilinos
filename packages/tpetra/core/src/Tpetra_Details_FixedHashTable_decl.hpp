@@ -45,7 +45,6 @@
 #define TPETRA_DETAILS_FIXEDHASHTABLE_DECL_HPP
 
 #include <Tpetra_ConfigDefs.hpp>
-#include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_Describable.hpp>
 #include <Kokkos_Core.hpp>
 
@@ -130,25 +129,25 @@ public:
   //@}
 
 private:
-  typedef Array<int>::size_type size_type;
+  typedef typename Kokkos::View<const KeyType*, DeviceType>::size_type size_type;
 
-  /// \brief <tt>ptr_.size() == size_ + 1</tt>.
+  /// \brief <tt>ptr_.dimension_0() == size_ + 1</tt>.
   ///
   /// This is redundant, but we keep it around to avoid the function
-  /// call (for <tt>ptr_.size()</tt>) in the hash table.
+  /// call (for <tt>ptr_.dimenesion_0()</tt>) in the hash table.
   KeyType size_;
   //! Array of "row" offsets.
-  ArrayRCP<const size_type> ptr_;
+  typename Kokkos::View<const size_type*, DeviceType>::HostMirror ptr_;
   //! Array of hash table entries.
-  ArrayRCP<const std::pair<KeyType, ValueType> > val_;
-  /// \brief <tt>rawPtr_ == ptr_.getRawPtr()</tt>.
+  typename Kokkos::View<const Kokkos::pair<KeyType, ValueType>*, DeviceType>::HostMirror val_;
+  /// \brief <tt>rawPtr_ == ptr_.ptr_on_device()</tt>.
   ///
   /// This is redundant, but we keep it around to speed up get().
   const size_type* rawPtr_;
-  /// \brief <tt>rawVal_ == val_.getRawPtr()</tt>.
+  /// \brief <tt>rawVal_ == val_.ptr_on_device()</tt>.
   ///
   /// This is redundant, but we keep it around to speed up get().
-  const std::pair<KeyType, ValueType>* rawVal_;
+  const Kokkos::pair<KeyType, ValueType>* rawVal_;
 
   //! Whether the table noticed any duplicate keys on construction.
   bool hasDuplicateKeys_;
