@@ -94,6 +94,66 @@ namespace { // (anonymous)
     }
   };
 
+  // Test that an empty table really is empty.
+  //
+  // ValueType and KeyType are "backwards" because they correspond to
+  // LO resp. GO.  (LO, GO) is the natural order for Tpetra's test
+  // macros.
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_ArrayView, Empty, ValueType, KeyType, DeviceType)
+  {
+    using std::endl;
+    typedef Tpetra::Details::FixedHashTable<KeyType, ValueType> table_type;
+    typedef typename Kokkos::View<const KeyType*, DeviceType>::size_type size_type;
+    typedef typename DeviceType::execution_space execution_space;
+
+    out << "Test empty table" << endl;
+    Teuchos::OSTab tab0 (out);
+
+    bool mustFinalize = false;
+    if (! execution_space::is_initialized ()) {
+      execution_space::initialize ();
+      mustFinalize = true;
+    }
+
+    const size_type numKeys = 0;
+    Kokkos::View<KeyType*, DeviceType> keys ("keys", numKeys);
+    auto keys_h = Kokkos::create_mirror_view (keys);
+    Kokkos::deep_copy (keys, keys_h);
+
+    // Pick something other than 0, just to make sure that it works.
+    const ValueType startingValue = 1;
+
+    Teuchos::ArrayView<const KeyType> keys_av (keys_h.ptr_on_device (), numKeys);
+    out << "Create table" << endl;
+
+    Teuchos::RCP<table_type> table;
+    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue)) );
+    if (table.is_null ()) {
+      return; // above constructor must have thrown
+    }
+
+    KeyType key = 0;
+    ValueType val = 0;
+    TEST_NOTHROW( val = table->get (key) );
+    TEST_EQUALITY( val, Teuchos::OrdinalTraits<ValueType>::invalid () );
+
+    key = 1;
+    TEST_NOTHROW( val = table->get (key) );
+    TEST_EQUALITY( val, Teuchos::OrdinalTraits<ValueType>::invalid () );
+
+    key = -1;
+    TEST_NOTHROW( val = table->get (key) );
+    TEST_EQUALITY( val, Teuchos::OrdinalTraits<ValueType>::invalid () );
+
+    key = 42;
+    TEST_NOTHROW( val = table->get (key) );
+    TEST_EQUALITY( val, Teuchos::OrdinalTraits<ValueType>::invalid () );
+
+    if (mustFinalize) {
+      execution_space::finalize ();
+    }
+  }
+
   // Test contiguous keys, with the constructor that takes a
   // Teuchos::ArrayView of keys and a single starting value.
   //
@@ -226,7 +286,8 @@ namespace { // (anonymous)
   // Set of all unit tests, templated on all three template parameters.
 #define UNIT_TEST_GROUP_3( LO, GO, DEVICE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, ContigKeysStartingValue, LO, GO, DEVICE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, NoncontigKeysStartingValue, LO, GO, DEVICE )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, NoncontigKeysStartingValue, LO, GO, DEVICE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, Empty, LO, GO, DEVICE )
 
   // The typedefs below are there because macros don't like arguments
   // with commas in them.
