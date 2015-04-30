@@ -22,9 +22,9 @@ namespace Example {
     KOKKOS_INLINE_FUNCTION
     static int invoke(const typename ExecViewTypeA::policy_type::member_type &member,
                       const ScalarType alpha,
-                      const ExecViewTypeA &A,
+                      ExecViewTypeA &A,
                       const ScalarType beta,
-                      const ExecViewTypeC &C);
+                      ExecViewTypeC &C);
 
     // task-data parallel interface
     // ============================
@@ -62,7 +62,7 @@ namespace Example {
       }
 
       // task-data execution
-      void apply(const member_type &member, value_type &r_val) const {
+      void apply(const member_type &member, value_type &r_val) {
         r_val = Herk::invoke<ParallelForType,ScalarType,
           ExecViewTypeA,ExecViewTypeC>(member, _alpha, _A, _beta, _C);
       }

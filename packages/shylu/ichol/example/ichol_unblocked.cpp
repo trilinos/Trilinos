@@ -16,8 +16,8 @@
 #include "crs_matrix_view.hpp"
 #include "crs_row_view.hpp"
 
-#include "crs_team_view.hpp"
-#include "crs_task_view.hpp"
+#include "team_view.hpp"
+#include "task_view.hpp"
 
 #include "sequential_for.hpp"
 #include "parallel_for.hpp"
@@ -58,7 +58,7 @@ typedef TaskTeamFactory<Kokkos::Experimental::TaskPolicy<space_type>,
 typedef ParallelFor ForType;
 #endif
 
-typedef CrsTaskView<CrsMatrixBaseType,TaskFactoryType> CrsTaskViewType;
+typedef TaskView<CrsMatrixViewType,TaskFactoryType> CrsTaskViewType;
 typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType;
 
 int main (int argc, char *argv[]) {
@@ -95,7 +95,7 @@ int main (int argc, char *argv[]) {
   
   cout << UU << endl;
   
-  CrsTaskViewType U(UU);
+  CrsTaskViewType U(&UU);
   U.fillRowViewArray();
 
   {

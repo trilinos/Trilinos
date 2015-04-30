@@ -17,9 +17,9 @@ namespace Example {
            typename DenseTaskViewType>
   KOKKOS_INLINE_FUNCTION
   int genGemmTasks_UpperByBlocks(typename CrsTaskViewType::policy_type &policy,
-                                 const CrsTaskViewType &A,
-                                 const DenseTaskViewType &B,
-                                 const DenseTaskViewType &C) {
+                                 CrsTaskViewType &A,
+                                 DenseTaskViewType &B,
+                                 DenseTaskViewType &C) {
     typedef typename CrsTaskViewType::ordinal_type      ordinal_type;
     typedef typename CrsTaskViewType::value_type        crs_value_type;
     typedef typename CrsTaskViewType::row_view_type     row_view_type;
@@ -77,8 +77,8 @@ namespace Example {
   KOKKOS_INLINE_FUNCTION
   int genTrsmTasks_UpperByBlocks(typename CrsTaskViewType::policy_type &policy,
                                  const int diagA,
-                                 const CrsTaskViewType &A,
-                                 const DenseTaskViewType &B) {
+                                 CrsTaskViewType &A,
+                                 DenseTaskViewType &B) {
     typedef typename CrsTaskViewType::ordinal_type      ordinal_type;
     typedef typename CrsTaskViewType::value_type        crs_value_type;
     typedef typename CrsTaskViewType::row_view_type     row_view_type;

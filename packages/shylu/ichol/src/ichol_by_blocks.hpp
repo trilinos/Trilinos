@@ -14,21 +14,21 @@ namespace Example {
            typename CrsTaskViewType>
   KOKKOS_INLINE_FUNCTION
   static int genScalarTask_UpperByBlocks(typename CrsTaskViewType::policy_type &policy,
-                                         const CrsTaskViewType &A);
+                                         CrsTaskViewType &A);
 
   template<typename ParallelForType,
            typename CrsTaskViewType>
   KOKKOS_INLINE_FUNCTION
   static int genTrsmTasks_UpperByBlocks(typename CrsTaskViewType::policy_type &policy,
-                                        const CrsTaskViewType &A,
-                                        const CrsTaskViewType &B);
+                                        CrsTaskViewType &A,
+                                        CrsTaskViewType &B);
 
   template<typename ParallelForType,
            typename CrsTaskViewType>
   KOKKOS_INLINE_FUNCTION
   static int genHerkTasks_UpperByBlocks(typename CrsTaskViewType::policy_type &policy,
-                                        const CrsTaskViewType &A,
-                                        const CrsTaskViewType &C);
+                                        CrsTaskViewType &A,
+                                        CrsTaskViewType &C);
 
   template<>
   template<typename ParallelForType,
@@ -37,7 +37,7 @@ namespace Example {
   int
   IChol<Uplo::Upper,AlgoIChol::ByBlocks>
   ::invoke(const typename CrsTaskViewType::policy_type::member_type &member,
-           const CrsTaskViewType &A) {
+           CrsTaskViewType &A) {
     // this task generation should be done by a root
     // ---------------------------------------------
     if (member.team_rank() == 0) {

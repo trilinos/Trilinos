@@ -21,8 +21,8 @@ namespace Example {
            AlgoTriSolve::ByBlocks>
   ::invoke(const typename CrsExecViewType::policy_type::member_type &member,
            const int diagA,
-           const CrsExecViewType &A,
-           const DenseExecViewType &B) {
+           CrsExecViewType &A,
+           DenseExecViewType &B) {
     if (member.team_rank() == 0) {
       typename CrsTaskViewType::policy_type policy;
 

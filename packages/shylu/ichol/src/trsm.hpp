@@ -23,8 +23,8 @@ namespace Example {
     static int invoke(const typename ExecViewTypeA::policy_type::member_type &member,
                       const int diagA,
                       const ScalarType alpha,
-                      const ExecViewTypeA &A,
-                      const ExecViewTypeB &B);
+                      ExecViewTypeA &A,
+                      ExecViewTypeB &B);
 
     // task-data parallel interface
     // ============================
@@ -63,7 +63,7 @@ namespace Example {
       }
 
       // task-data execution
-      void apply(const member_type &member, value_type &r_val) const {
+      void apply(const member_type &member, value_type &r_val) {
         r_val = Trsm::invoke<ParallelForType,ScalarType,
           ExecViewTypeA,ExecViewTypeB>(member, _diagA, _alpha, _A, _B);
       }

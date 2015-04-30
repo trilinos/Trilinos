@@ -11,7 +11,7 @@ namespace Example {
   using namespace std;
 
   template<int ArgUplo, int ArgTrans, int ArgAlgo>
-  struct Trsm {
+  struct TriSolve {
 
     // data-parallel interface
     // =======================
@@ -21,8 +21,8 @@ namespace Example {
     KOKKOS_INLINE_FUNCTION
     static int invoke(const typename ExecViewTypeA::policy_type::member_type &member,
                       const int diagA,
-                      const ExecViewTypeA &A,
-                      const ExecViewTypeB &B);
+                      ExecViewTypeA &A,
+                      ExecViewTypeB &B);
 
     // task-data parallel interface
     // ============================
@@ -52,14 +52,14 @@ namespace Example {
 
       // task execution
       void apply(value_type &r_val) {
-        r_val = TriSolve::invoke<ParallelForType,ScalarType,
+        r_val = TriSolve::invoke<ParallelForType,
           ExecViewTypeA,ExecViewTypeB>(policy_type::member_null(), _diagA, _A, _B);
       }
 
       // task-data execution
-      void apply(const member_type &member, value_type &r_val) const {
-        r_val = TriSolve::invoke<ParallelForType,ScalarType,
-          ExecViewTypeA,ExecViewTypeB>(member, _diagA,_A, _B);
+      void apply(const member_type &member, value_type &r_val) {
+        r_val = TriSolve::invoke<ParallelForType,
+          ExecViewTypeA,ExecViewTypeB>(member, _diagA, _A, _B);
       }
 
     };
@@ -67,13 +67,25 @@ namespace Example {
 
 }
 
+// basic utils
+#include "util.hpp"
+#include "partition.hpp"
 
+// unblocked version blas operations
+#include "scale.hpp"
+
+// blocked version blas operations
+#include "gemm.hpp"
+#include "trsm.hpp"
+#include "herk.hpp"
+
+// triangular solve
 #include "tri_solve_u_ct_unblocked.hpp"
-#include "tri_solve_u_ct_blocked.hpp"
-#include "tri_solve_u_ct_by_blocks.hpp"
+//#include "tri_solve_u_ct_blocked.hpp"
+//#include "tri_solve_u_ct_by_blocks.hpp"
 
-#include "tri_solve_u_nt_unblocked.hpp"
-#include "tri_solve_u_ct_blocked.hpp"
-#include "tri_solve_u_ct_by_blocks.hpp"
+//#include "tri_solve_u_nt_unblocked.hpp"
+//#include "tri_solve_u_ct_blocked.hpp"
+//#include "tri_solve_u_ct_by_blocks.hpp"
 
 #endif

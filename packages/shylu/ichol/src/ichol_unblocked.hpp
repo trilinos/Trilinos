@@ -16,9 +16,9 @@ namespace Example {
   KOKKOS_INLINE_FUNCTION
   int
   her_r(const typename CrsExecViewType::policy_type::member_type &member,
-        const ScalarType &alpha,
-        const CrsExecViewType &x,
-        const CrsExecViewType &A);
+        const ScalarType alpha,
+        CrsExecViewType &x,
+        CrsExecViewType &A);
 
   template<>
   template<typename ParallelForType,
@@ -27,7 +27,7 @@ namespace Example {
   int
   IChol<Uplo::Upper,AlgoIChol::Unblocked>
   ::invoke(const typename CrsExecViewType::policy_type::member_type &member,
-           const CrsExecViewType &A) {
+           CrsExecViewType &A) {
     typedef typename CrsExecViewType::value_type        value_type;
     typedef typename CrsExecViewType::ordinal_type      ordinal_type;
     typedef typename CrsExecViewType::row_view_type     row_view_type;
@@ -86,9 +86,9 @@ namespace Example {
   KOKKOS_INLINE_FUNCTION
   int
   her_r(const typename CrsExecViewType::policy_type::member_type &member,
-        const ScalarType &alpha,
-        const CrsExecViewType &x,
-        const CrsExecViewType &A) {
+        const ScalarType alpha,
+        CrsExecViewType &x,
+        CrsExecViewType &A) {
     typedef typename CrsExecViewType::ordinal_type      ordinal_type;
     typedef typename CrsExecViewType::value_type        value_type;
     typedef typename CrsExecViewType::row_view_type     row_view_type;

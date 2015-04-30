@@ -21,8 +21,8 @@ namespace Example {
            AlgoTriSolve::Blocked>
   ::invoke(const typename CrsExecViewType::policy_type::member_type &member,
            const int diagA,
-           const CrsExecViewType &A,
-           const DenseExecViewType &B) {
+           CrsExecViewType &A,
+           DenseExecViewType &B) {
     const ordinal_type mb = blocksize;
 
     CrsTaskViewType ATL, ATR,      A00, A01, A02,

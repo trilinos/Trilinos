@@ -21,8 +21,8 @@ namespace Example {
            AlgoTriSolve::ByBlocks>
   ::invoke(const typename CrsExecViewType::policy_type::member_type &member,
            const int diagA,
-           const CrsExecViewType &A,
-           const DenseExecViewType &B) {
+           CrsExecViewType &A,
+           DenseExecViewType &B) {
     CrsTaskViewType ATL, ATR,      A00, A01, A02,
       /**/          ABL, ABR,      A10, A11, A12,
       /**/                         A20, A21, A22;

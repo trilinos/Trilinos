@@ -24,9 +24,9 @@ namespace Example {
        AlgoHerk::ForFactorBlocked>
   ::invoke(const typename CrsExecViewTypeA::policy_type::member_type &member,
            const ScalarType alpha,
-           const CrsExecViewTypeA &A,
+           CrsExecViewTypeA &A,
            const ScalarType beta,
-           const CrsExecViewTypeC &C) {
+           CrsExecViewTypeC &C) {
     typedef typename CrsExecViewTypeA::ordinal_type      ordinal_type;
     typedef typename CrsExecViewTypeA::value_type        value_type;
     typedef typename CrsExecViewTypeA::row_view_type     row_view_type;

@@ -26,8 +26,8 @@ namespace Example {
   KOKKOS_INLINE_FUNCTION
   int
   scaleCrsMatrix(const typename CrsExecViewType::policy_type::member_type &member,
-                 const ScalarType &alpha,
-                 const CrsExecViewType &A) {
+                 const ScalarType alpha,
+                 CrsExecViewType &A) {
     typedef typename CrsExecViewType::ordinal_type  ordinal_type;
     typedef typename CrsExecViewType::value_type    value_type;
     typedef typename CrsExecViewType::row_view_type row_view_type;
@@ -40,7 +40,7 @@ namespace Example {
       if (mA > 0) {
         ParallelForType(team_factory_type::createThreadLoopRegion(member, 0, mA),
                         [&](const ordinal_type i) {
-                          row_view_type row(A, i);
+                          row_view_type &row = A.RowView(i);
                           for (ordinal_type j=0;j<row.NumNonZeros();++j)
                             row.Value(j) *= alpha;
                         });
@@ -57,8 +57,8 @@ namespace Example {
   KOKKOS_INLINE_FUNCTION
   int
   scaleDenseMatrix(const typename DenseExecViewType::policy_type::member_type &member,
-                   const ScalarType &alpha,
-                   const DenseExecViewType &A) {
+                   const ScalarType alpha,
+                   DenseExecViewType &A) {
     typedef typename DenseExecViewType::ordinal_type  ordinal_type;
     typedef typename DenseExecViewType::value_type    value_type;
     typedef typename DenseExecViewType::team_factory_type team_factory_type;
@@ -66,7 +66,7 @@ namespace Example {
     if (alpha == ScaleTraits<value_type>::one) {
       // do nothing
     } else {
-      if (A.Base->ColStride() > A.Base->RowStride()) {
+      if (A.BaseObject()->ColStride() > A.BaseObject()->RowStride()) {
         const ordinal_type nA = A.NumCols();
         if (nA > 0) {
           ParallelForType(team_factory_type::createThreadLoopRegion(member, 0, nA),

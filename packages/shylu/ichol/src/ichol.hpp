@@ -21,7 +21,7 @@ namespace Example {
              typename CrsExecViewType>
     KOKKOS_INLINE_FUNCTION
     static int invoke(const typename CrsExecViewType::policy_type::member_type &member, 
-                      const CrsExecViewType &A);
+                      CrsExecViewType &A);
 
     // task-data parallel interface
     // ============================
@@ -48,7 +48,7 @@ namespace Example {
       }
 
       // task-data execution
-      void apply(const member_type &member, value_type &r_val) const {
+      void apply(const member_type &member, value_type &r_val) {
         r_val = IChol::invoke<ParallelForType,CrsExecViewType>(member, _A);
       }
 
@@ -64,7 +64,6 @@ namespace Example {
 #include "partition.hpp"
 
 // unblocked version blas operations
-//#include "dot.hpp"
 #include "scale.hpp"
 
 // blocked version blas operations
@@ -76,8 +75,6 @@ namespace Example {
 //#include "ichol_unblocked.hpp"
 #include "ichol_unblocked_opt1.hpp"
 #include "ichol_blocked.hpp"
-
-// task / task-data parallel
 #include "ichol_by_blocks.hpp"
 
 #endif

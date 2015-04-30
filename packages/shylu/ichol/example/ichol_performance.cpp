@@ -19,8 +19,8 @@
 
 #include "crs_matrix_helper.hpp"
 
-#include "crs_team_view.hpp"
-#include "crs_task_view.hpp"
+#include "team_view.hpp"
+#include "task_view.hpp"
 
 #include "sequential_for.hpp"
 #include "parallel_for.hpp"
@@ -61,11 +61,13 @@ typedef TaskTeamFactory<Kokkos::Experimental::TaskPolicy<space_type>,
 typedef ParallelFor ForType;
 
 // block representation for CrsMatrix
-typedef CrsTaskView<CrsMatrixBaseType,TaskFactoryType> CrsTaskViewType;
+typedef TaskView<CrsMatrixViewType,TaskFactoryType> CrsTaskViewType;
 
 // hier matrix
 typedef CrsMatrixBase<CrsTaskViewType,ordinal_type,size_type,space_type> CrsHierBaseType;
-typedef CrsTaskView<CrsHierBaseType,TaskFactoryType> CrsHierViewType;
+typedef CrsMatrixView<CrsHierBaseType> CrsHierViewType;
+
+typedef TaskView<CrsHierViewType,TaskFactoryType> CrsHierTaskType;
 
 #define DOTLINE "====================================="
 
@@ -173,13 +175,13 @@ int main (int argc, char *argv[]) {
       
       timer.reset();
       
-      CrsHierViewType H(HH);
+      CrsHierTaskType H(&HH);
       
       int r_val = 0;
       typedef typename CrsTaskViewType::policy_type policy_type;
       
       IChol<Uplo::Upper,AlgoIChol::ByBlocks>::
-        TaskFunctor<ForType,CrsHierViewType>(H).apply(policy_type::member_null(), r_val);
+        TaskFunctor<ForType,CrsHierTaskType>(H).apply(policy_type::member_null(), r_val);
 
       t[++cnt] = timer.seconds();
       
@@ -208,7 +210,7 @@ int main (int argc, char *argv[]) {
     // --------------------------------------
     RR.copy(Uplo::Upper, PA);
     {
-      CrsTaskViewType R(RR);
+      CrsTaskViewType R(&RR);
       R.fillRowViewArray();
       
       timer.reset();

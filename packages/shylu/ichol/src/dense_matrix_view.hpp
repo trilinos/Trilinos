@@ -86,12 +86,12 @@ namespace Example {
         _n(b._n)
     { } 
 
-    DenseMatrixView(DenseMatBaseType &b)
-      : _base(&b),
+    DenseMatrixView(DenseMatBaseType *b)
+      : _base(b),
         _offm(0),
         _offn(0),
-        _m(b.NumRows()),
-        _n(b.NumCols())
+        _m(b->NumRows()),
+        _n(b->NumCols())
     { } 
 
     DenseMatrixView(DenseMatBaseType *b,

@@ -105,12 +105,12 @@ namespace Example {
         _rows(b._rows)
     { } 
 
-    CrsMatrixView(CrsMatBaseType &b)
-      : _base(&b),
+    CrsMatrixView(CrsMatBaseType *b)
+      : _base(b),
         _offm(0),
         _offn(0),
-        _m(b.NumRows()),
-        _n(b.NumCols())
+        _m(b->NumRows()),
+        _n(b->NumCols())
     { } 
 
     CrsMatrixView(CrsMatBaseType *b,

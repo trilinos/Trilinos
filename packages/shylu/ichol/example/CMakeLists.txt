@@ -155,6 +155,15 @@ TRIBITS_ADD_EXECUTABLE(
   COMM serial mpi
   )
 
+# Triangular solve
+# ================
+
+TRIBITS_ADD_EXECUTABLE(
+  tri_solve_unblocked
+  SOURCES tri_solve_unblocked.cpp
+  COMM serial mpi
+  )
+
 # Benchmark
 # ==========
 

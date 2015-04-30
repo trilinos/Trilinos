@@ -16,6 +16,9 @@
 #include "crs_matrix_view.hpp"
 #include "crs_row_view.hpp"
 
+#include "dense_matrix_base.hpp"
+#include "dense_matrix_view.hpp"
+
 #include "team_view.hpp"
 #include "task_view.hpp"
 
@@ -27,7 +30,8 @@
 #include "task_factory.hpp"
 #include "task_team_factory.hpp"
 
-#include "ichol.hpp"
+#include "scale.hpp"
+#include "tri_solve.hpp"
 
 using namespace std;
 
@@ -36,10 +40,10 @@ typedef int    ordinal_type;
 typedef int    size_type;
 
 #define USE_SEQUENTIAL_FOR
-typedef Kokkos::Serial space_type;
+typedef Kokkos::Serial space_type; 
 
-//typedef Kokkos::Threads space_type;
-//typedef Kokkos::Qthread space_type;
+//typedef Kokkos::Threads space_type; 
+//typedef Kokkos::Qthread space_type; 
 
 using namespace Example;
 
@@ -47,6 +51,9 @@ typedef space_type ExecSpace;
 
 typedef CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBaseType;
 typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
+
+typedef DenseMatrixBase<value_type,ordinal_type,size_type,space_type> DenseMatrixBaseType;
+typedef DenseMatrixView<DenseMatrixBaseType> DenseMatrixViewType;
 
 #ifdef USE_SEQUENTIAL_FOR
 typedef TaskTeamFactory<TeamPolicy,Future,TeamThreadLoopRegion> TaskFactoryType;
@@ -59,18 +66,17 @@ typedef ParallelFor ForType;
 #endif
 
 typedef TaskView<CrsMatrixViewType,TaskFactoryType> CrsTaskViewType;
+typedef TaskView<DenseMatrixViewType,TaskFactoryType> DenseTaskViewType;
+
 typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType;
 
 int main (int argc, char *argv[]) {
-  if (argc < 4) {
-    cout << "Usage: " << argv[0] << " filename blksize nthreads" << endl;
+  if (argc < 3) {
+    cout << "Usage: " << argv[0] << " filename nthreads" << endl;
     return -1;
   }
 
-  const int blocksize = atoi(argv[2]);
-  IChol<Uplo::Upper,AlgoIChol::Blocked>::blocksize = blocksize;
-
-  const int nthreads = atoi(argv[3]);
+  const int nthreads = atoi(argv[2]);
   ExecSpace::initialize(nthreads);
   cout << "Default execution space initialized = "
        << typeid(Kokkos::DefaultExecutionSpace).name()
@@ -89,35 +95,48 @@ int main (int argc, char *argv[]) {
 
   GraphHelperType S(AA);
   S.computeOrdering();
-
+  
   CrsMatrixBaseType PA("Permuted AA");
   PA.copy(S.PermVector(), S.InvPermVector(), AA);
-
-  CrsMatrixBaseType UU("Upper Triangular of AA");
+  
+  CrsMatrixBaseType UU("UU");
   UU.copy(Uplo::Upper, PA);
-
+  
+  cout << UU << endl;
+  
   CrsTaskViewType U(&UU);
+  U.fillRowViewArray();
+
+  DenseMatrixBaseType BB("BB", UU.NumRows(), 1);
+  for (ordinal_type i=0;i<BB.NumRows();++i)
+    BB.Value(i, 0) = 1.0;
+
+  DenseTaskViewType B(&BB);
 
   {
     int r_val = 0;
     typedef typename CrsTaskViewType::policy_type policy_type;
 
 #ifdef USE_SEQUENTIAL_FOR
-    IChol<Uplo::Upper,AlgoIChol::Blocked>
-      ::TaskFunctor<ForType,CrsTaskViewType>(U).apply(policy_type::member_null(), r_val);
+    TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::Unblocked>
+      ::TaskFunctor<ForType,CrsTaskViewType,DenseTaskViewType>
+      (Diag::NonUnit, U, B).apply(policy_type::member_null(), r_val);
 #else
     policy_type policy;
-    auto future = policy.create_team(IChol<Uplo::Upper,AlgoIChol::Blocked>
-                                     ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
+    auto future = policy.create_team(TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::Unblocked>
+                                     ::TaskFunctor<ForType,CrsTaskViewType,DenseTaskViewType>
+                                     (Diag::NonUnit, U, B), 0);
+    
     policy.spawn(future);
     Kokkos::Experimental::wait(policy);
 #endif
 
-    if (r_val != 0) {
+    if (r_val != 0)  {
       cout << " Error = " << r_val << endl;
       return r_val;
     }
-    cout << UU << endl;
+
+    cout << BB << endl;
   }
 
   ExecSpace::finalize();

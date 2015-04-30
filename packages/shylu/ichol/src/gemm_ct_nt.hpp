@@ -24,10 +24,10 @@ namespace Example {
        AlgoGemm::ForFactorBlocked>
   ::invoke(const typename CrsExecViewTypeA::policy_type::member_type &member,
            const ScalarType alpha,
-           const CrsExecViewTypeA &A,
-           const CrsExecViewTypeB &B,
+           CrsExecViewTypeA &A,
+           CrsExecViewTypeB &B,
            const ScalarType beta,
-           const CrsExecViewTypeC &C) {
+           CrsExecViewTypeC &C) {
     typedef typename CrsExecViewTypeA::ordinal_type      ordinal_type;
     typedef typename CrsExecViewTypeA::value_type        value_type;
     typedef typename CrsExecViewTypeA::row_view_type     row_view_type;
@@ -84,10 +84,10 @@ namespace Example {
        AlgoGemm::ForTriSolveBlocked>
   ::invoke(const typename CrsExecViewTypeA::policy_type::member_type &member,
            const ScalarType alpha,
-           const CrsExecViewTypeA &A,
-           const DenseExecViewTypeB &B,
+           CrsExecViewTypeA &A,
+           DenseExecViewTypeB &B,
            const ScalarType beta,
-           const DenseExecViewTypeC &C) {
+           DenseExecViewTypeC &C) {
     typedef typename CrsExecViewTypeA::ordinal_type      ordinal_type;
     typedef typename CrsExecViewTypeA::value_type        value_type;
     typedef typename CrsExecViewTypeA::row_view_type     row_view_type;

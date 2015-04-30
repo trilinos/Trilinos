@@ -16,7 +16,7 @@ namespace Example {
            typename CrsTaskViewType>
   KOKKOS_INLINE_FUNCTION
   int genScalarTask_UpperByBlocks(typename CrsTaskViewType::policy_type &policy,
-                                  const CrsTaskViewType &A) {
+                                  CrsTaskViewType &A) {
     typedef typename CrsTaskViewType::value_type        value_type;
     typedef typename CrsTaskViewType::row_view_type     row_view_type;
 
@@ -45,8 +45,8 @@ namespace Example {
            typename CrsTaskViewType>
   KOKKOS_INLINE_FUNCTION
   int genTrsmTasks_UpperByBlocks(typename CrsTaskViewType::policy_type &policy,
-                                 const CrsTaskViewType &A,
-                                 const CrsTaskViewType &B) {
+                                 CrsTaskViewType &A,
+                                 CrsTaskViewType &B) {
     typedef typename CrsTaskViewType::ordinal_type      ordinal_type;
     typedef typename CrsTaskViewType::value_type        value_type;
     typedef typename CrsTaskViewType::row_view_type     row_view_type;
@@ -87,8 +87,8 @@ namespace Example {
            typename CrsTaskViewType>
   KOKKOS_INLINE_FUNCTION
   int genHerkTasks_UpperByBlocks(typename CrsTaskViewType::policy_type &policy,
-                                 const CrsTaskViewType &A,
-                                 const CrsTaskViewType &C) {
+                                 CrsTaskViewType &A,
+                                 CrsTaskViewType &C) {
     typedef typename CrsTaskViewType::ordinal_type      ordinal_type;
     typedef typename CrsTaskViewType::value_type        value_type;
     typedef typename CrsTaskViewType::row_view_type     row_view_type;

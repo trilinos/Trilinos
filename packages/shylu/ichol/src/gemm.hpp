@@ -23,10 +23,10 @@ namespace Example {
     KOKKOS_INLINE_FUNCTION
     static int invoke(const typename ExecViewTypeA::policy_type::member_type &member,
                       const ScalarType alpha,
-                      const ExecViewTypeA &A,
-                      const ExecViewTypeB &B,
+                      ExecViewTypeA &A,
+                      ExecViewTypeB &B,
                       const ScalarType beta,
-                      const ExecViewTypeC &C);
+                      ExecViewTypeC &C);
 
     // task-data parallel interface
     // ============================

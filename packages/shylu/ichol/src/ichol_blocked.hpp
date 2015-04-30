@@ -22,7 +22,7 @@ namespace Example {
   int
   IChol<Uplo::Upper,AlgoIChol::Blocked>
   ::invoke(const typename CrsExecViewType::policy_type::member_type &member,
-           const CrsExecViewType &A) {
+           CrsExecViewType &A) {
 
     typedef typename CrsExecViewType::value_type   value_type;
     typedef typename CrsExecViewType::ordinal_type ordinal_type;

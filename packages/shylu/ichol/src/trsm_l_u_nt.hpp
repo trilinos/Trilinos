@@ -25,8 +25,8 @@ namespace Example {
   ::invoke(const typename CrsExecViewTypeA::policy_type::member_type &member,
            const int diagA,
            const ScalarType alpha,
-           const CrsExecViewTypeA &A,
-           const DenseExecViewTypeB &B) {
+           CrsExecViewTypeA &A,
+           DenseExecViewTypeB &B) {
     typedef typename CrsExecViewTypeA::ordinal_type      ordinal_type;
     typedef typename CrsExecViewTypeA::value_type        value_type;
     typedef typename CrsExecViewTypeA::row_view_type     row_view_type;
