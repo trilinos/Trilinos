@@ -126,18 +126,21 @@ public:
 #if defined(HAVE_INTREPID_KOKKOSCORE)
   template<class ArrayT, typename iType>
   Vector(
-      typename apply_diff<ArrayT, Index>::type & data,
+      typename Kokkos::Impl::enable_if<
+      !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
       iType index1);
 
   template<class ArrayT, typename iType>
   Vector(
-      typename apply_diff<ArrayT, Index>::type & data,
+      typename Kokkos::Impl::enable_if<
+      !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
       iType index1,
       iType index2);
 
   template<class ArrayT, typename iType>
   Vector(
-      typename apply_diff<ArrayT, Index>::type & data,
+      typename Kokkos::Impl::enable_if<
+      !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
       iType index1,
       iType index2,
       iType index3);
@@ -172,13 +175,15 @@ public:
   template<class ArrayT, typename iType>
   Vector(
       Index const dimension,
-      typename apply_diff<ArrayT, Index>::type & data,
+      typename Kokkos::Impl::enable_if<
+      !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
       iType index1);
 
   template<class ArrayT, typename iType>
   Vector(
       Index const dimension,
-      typename apply_diff<ArrayT, Index>::type & data,
+      typename Kokkos::Impl::enable_if<
+      !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
       iType index1,
       iType index2);
 
