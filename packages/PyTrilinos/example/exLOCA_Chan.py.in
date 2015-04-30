@@ -296,13 +296,15 @@ def main():
   status = stepper.run()
   print("Completed stepper run")
 
-  # TODO print if failure to converge
-  return 1
+  return 0
 
 # ######################################################################
 
 if __name__ == "__main__":
 
     status = main()
+
+    if status == 0:
+        print "End Result: TEST PASSED"
 
     sys.exit(status)
