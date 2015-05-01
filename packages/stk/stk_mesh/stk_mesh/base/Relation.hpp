@@ -40,8 +40,6 @@
 #include <stk_mesh/base/Types.hpp>      // for RelationType, EntityRank, etc
 #include <stk_util/environment/ReportHandler.hpp>  // for ThrowAssertMsg
 #include <vector>                       // for vector
-#include "boost/range/begin.hpp"        // for const_begin
-#include "boost/range/end.hpp"          // for const_end
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class Part; } }
 
@@ -443,13 +441,6 @@ verify_relation_ordering(Iterator begin, Iterator end)
     }
   }
   return true ;
-}
-
-template <class Range>
-bool
-verify_relation_ordering(Range range)
-{
-  return verify_relation_ordering(boost::const_begin(range), boost::const_end(range));
 }
 
 namespace impl {

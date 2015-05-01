@@ -42,7 +42,7 @@ int main (int argc, char *argv[]) {
   AA.importMatrixMarket(in);
 
   {
-    CrsMatrixViewType A(AA);
+    CrsMatrixViewType A(&AA);
     
     CrsMatrixViewType ATL, ATR,     A00,  a01,     A02,
       /**/            ABL, ABR,     a10t, alpha11, a12t,

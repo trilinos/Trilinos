@@ -1548,7 +1548,8 @@ namespace stk {
               const mesh::Entity elem = side_elements[j];
               const stk::mesh::Bucket &elemBucket = bulk_data.bucket(elem);
               const bool isSelectingEverything = subset_selector == NULL;
-              const bool isElementBeingOutput = isSelectingEverything || (*subset_selector)(elemBucket);
+              const bool isElementBeingOutput = (isSelectingEverything || (*subset_selector)(elemBucket))
+                  && elemBucket.member(meta_data.locally_owned_part());
               if(isElementBeingOutput)
               {
                 const mesh::Entity * elem_sides =  bulk_data.begin(elem, type);

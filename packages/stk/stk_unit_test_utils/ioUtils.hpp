@@ -12,6 +12,7 @@ namespace unit_test_util
 {
 
 void fill_mesh_using_stk_io(const std::string &meshSpec, stk::mesh::BulkData &bulkData, MPI_Comm communicator);
+void fill_mesh_using_stk_io_with_auto_decomp(const std::string &meshSpec, stk::mesh::BulkData &bulkData, MPI_Comm communicator);
 
 } // namespace unit_test_util
 } // namespace stk

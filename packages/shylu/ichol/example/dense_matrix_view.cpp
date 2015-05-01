@@ -4,6 +4,8 @@
 #include "dense_matrix_base.hpp"
 #include "dense_matrix_view.hpp"
 
+#include "norm.hpp"
+
 using namespace std;
 
 typedef double value_type;
@@ -33,7 +35,9 @@ int main (int argc, char *argv[]) {
 
   DenseMatrixViewType A(&AA,   2, 6, 
                        /**/    3, 5);
-  cout << A << endl;
+  A.showMeDetail(cout) << endl;
+
+  cout << "One Norm of A = " << normOneDenseMatrix(A) << endl;
 
   Kokkos::finalize();
 

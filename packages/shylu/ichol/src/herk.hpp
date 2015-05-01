@@ -17,33 +17,36 @@ namespace Example {
     // =======================
     template<typename ParallelForType,
              typename ScalarType,
-             typename CrsExecViewType>
+             typename ExecViewTypeA,
+             typename ExecViewTypeC>
     KOKKOS_INLINE_FUNCTION
-    static int invoke(const typename CrsExecViewType::policy_type::member_type &member,
+    static int invoke(const typename ExecViewTypeA::policy_type::member_type &member,
                       const ScalarType alpha,
-                      const CrsExecViewType &A,
+                      ExecViewTypeA &A,
                       const ScalarType beta,
-                      const CrsExecViewType &C);
+                      ExecViewTypeC &C);
 
     // task-data parallel interface
     // ============================
     template<typename ParallelForType,
              typename ScalarType,
-             typename CrsExecViewType>
+             typename ExecViewTypeA,
+             typename ExecViewTypeC>
     class TaskFunctor {
     private:
       ScalarType _alpha, _beta;
-      CrsExecViewType _A, _C;
+      ExecViewTypeA _A;
+      ExecViewTypeC _C;
 
     public:
-      typedef typename CrsExecViewType::policy_type policy_type;
+      typedef typename ExecViewTypeA::policy_type policy_type;
       typedef typename policy_type::member_type member_type;
       typedef int value_type;
 
       TaskFunctor(const ScalarType alpha,
-                  const CrsExecViewType A,
+                  const ExecViewTypeA A,
                   const ScalarType beta,
-                  const CrsExecViewType C)
+                  const ExecViewTypeC C)
         : _alpha(alpha),
           _beta(beta),
           _A(A),
@@ -54,14 +57,12 @@ namespace Example {
 
       // task execution
       void apply(value_type &r_val) {
-        r_val = Herk::invoke<ParallelForType,ScalarType,CrsExecViewType>(policy_type::member_null(),
-                                                                         _alpha, _A, _beta, _C);
+        r_val = Herk::invoke<ParallelForType>(policy_type::member_null(), _alpha, _A, _beta, _C);
       }
 
       // task-data execution
-      void apply(const member_type &member, value_type &r_val) const {
-        r_val = Herk::invoke<ParallelForType,ScalarType,CrsExecViewType>(member,
-                                                                         _alpha, _A, _beta, _C);
+      void apply(const member_type &member, value_type &r_val) {
+        r_val = Herk::invoke<ParallelForType>(member, _alpha, _A, _beta, _C);
       }
 
     };
@@ -70,6 +71,6 @@ namespace Example {
 
 }
 
-#include "herk_u_t.hpp"
+#include "herk_u_ct.hpp"
 
 #endif

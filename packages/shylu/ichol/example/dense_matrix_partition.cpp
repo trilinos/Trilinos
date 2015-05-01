@@ -27,7 +27,7 @@ int main (int argc, char *argv[]) {
 
   DenseMatrixBaseType AA("AA", 10, 10);
   {
-    DenseMatrixViewType A(AA);
+    DenseMatrixViewType A(&AA);
     
     DenseMatrixViewType ATL, ATR,     A00,  a01,     A02,
       /**/              ABL, ABR,     a10t, alpha11, a12t,

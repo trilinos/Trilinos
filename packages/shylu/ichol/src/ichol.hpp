@@ -21,7 +21,7 @@ namespace Example {
              typename CrsExecViewType>
     KOKKOS_INLINE_FUNCTION
     static int invoke(const typename CrsExecViewType::policy_type::member_type &member, 
-                      const CrsExecViewType &A);
+                      CrsExecViewType &A);
 
     // task-data parallel interface
     // ============================
@@ -44,12 +44,12 @@ namespace Example {
       
       // task execution
       void apply(value_type &r_val) {
-        r_val = IChol::invoke<ParallelForType,CrsExecViewType>(policy_type::member_null(), _A);
+        r_val = IChol::invoke<ParallelForType>(policy_type::member_null(), _A);
       }
 
       // task-data execution
-      void apply(const member_type &member, value_type &r_val) const {
-        r_val = IChol::invoke<ParallelForType,CrsExecViewType>(member, _A);
+      void apply(const member_type &member, value_type &r_val) {
+        r_val = IChol::invoke<ParallelForType>(member, _A);
       }
 
     };
@@ -64,7 +64,6 @@ namespace Example {
 #include "partition.hpp"
 
 // unblocked version blas operations
-//#include "dot.hpp"
 #include "scale.hpp"
 
 // blocked version blas operations
@@ -72,17 +71,10 @@ namespace Example {
 #include "trsm.hpp"
 #include "herk.hpp"
 
-// left looking: only for testing 
-//#include "ichol_left_unblocked.hpp"
-//#include "ichol_left_blocked.hpp"
-//#include "ichol_left_by_blocks.hpp"
-
-// right looking: performance with CRS
-//#include "ichol_right_unblocked.hpp"
-#include "ichol_right_unblocked_opt1.hpp"
-#include "ichol_right_blocked.hpp"
-
-// task / task-data parallel
-#include "ichol_right_by_blocks.hpp"
+// right looking algorithm with upper triangular
+//#include "ichol_unblocked.hpp"
+#include "ichol_unblocked_opt1.hpp"
+#include "ichol_blocked.hpp"
+#include "ichol_by_blocks.hpp"
 
 #endif

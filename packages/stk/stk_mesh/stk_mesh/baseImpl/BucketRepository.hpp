@@ -37,7 +37,6 @@
 #include <stddef.h>                     // for size_t
 #include <stk_mesh/base/Bucket.hpp>     // for Bucket
 #include <stk_mesh/base/Types.hpp>      // for EntityRank, OrdinalVector, etc
-#include <stk_util/util/TrackingAllocator.hpp>  // for tracking_allocator
 #include <vector>                       // for vector
 #include "stk_mesh/base/ConnectivityMap.hpp"  // for ConnectivityMap
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
@@ -57,9 +56,6 @@ namespace impl {
 
 class BucketRepository
 {
-
-  typedef tracking_allocator<Bucket, BucketTag> bucket_allocator;
-
 public:
   //------------------------------------
   /** \brief  Query the upper bound on the number of mesh entities

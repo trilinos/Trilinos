@@ -53,12 +53,23 @@
 namespace Tpetra {
 namespace Details {
 
-template<typename KeyType, typename ValueType>
-int FixedHashTable<KeyType, ValueType>::hashFunc (const KeyType key) const {
+template<class KeyType, class ValueType, class DeviceType>
+int
+FixedHashTable<KeyType, ValueType, DeviceType>::
+hashFunc (const KeyType key, const size_type size) const
+{
+#ifdef HAVE_TPETRA_DEBUG
+  const char prefix[] = "Tpetra::Details::FixedHashTable::hashFunc: ";
+  const char suffix[] = "  Please report this bug to the Tpetra developers.";
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (size == 0, std::logic_error, prefix << "size == 0.  This function "
+     "should never be called if that is the case." << suffix);
+#endif // HAVE_TPETRA_DEBUG
+
 #ifdef TPETRA_USE_MURMUR_HASH
   uint32_t k;
   MurmurHash3_x86_32 ((void *) &key, sizeof (KeyType), 1, (void *) &k);
-  return (int) (k % size_);
+  return static_cast<int> (k % static_cast<int> (size));
 #else
   // We are using Epetra's hash function by default, as we have
   // observed that it is much faster than the Murmur hash
@@ -66,22 +77,15 @@ int FixedHashTable<KeyType, ValueType>::hashFunc (const KeyType key) const {
   // sets of keys.  For our typical use case, this is good.  Use
   // Murmur hash if the maps are sparse.
   const unsigned int seed = (2654435761U);
-
-#ifdef HAVE_TPETRA_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    size_ == 0, std::logic_error, "Tpetra::Details::FixedHashTable::hashFunc: "
-    "size_ == 0.  Please report this bug to the Tpetra developers.");
-#endif // HAVE_TPETRA_DEBUG
-
   const int intkey = (int) ((key & 0x000000007fffffffLL) +
                             ((key & 0x7fffffff80000000LL) >> 31));
-  return (int) ((seed ^ intkey) % size_);
+  return static_cast<int> ((seed ^ intkey) % static_cast<int> (size));
 #endif
 }
 
-template<typename KeyType, typename ValueType>
+template<class KeyType, class ValueType, class DeviceType>
 int
-FixedHashTable<KeyType, ValueType>::getRecommendedSize (const int size)
+FixedHashTable<KeyType, ValueType, DeviceType>::getRecommendedSize (const int size)
 {
   // A large list of prime numbers.
   // Based on a recommendation by Andres Valloud in hash forums.
@@ -139,54 +143,96 @@ FixedHashTable<KeyType, ValueType>::getRecommendedSize (const int size)
   return hsize;
 }
 
-template<typename KeyType, typename ValueType>
-FixedHashTable<KeyType, ValueType>::
-FixedHashTable (const ArrayView<const KeyType>& keys) :
-  size_ (0),
-  rawPtr_ (NULL),
-  rawVal_ (NULL),
-  hasDuplicateKeys_ (false) // to revise in init()
+template<class KeyType, class ValueType, class DeviceType>
+void
+FixedHashTable<KeyType, ValueType, DeviceType>::
+check () const
 {
-  init (keys, Teuchos::as<ValueType> (0));
+#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  const char prefix[] = "Tpetra::Details::FixedHashTable: ";
+  const char suffix[] = "  Please report this bug to the Tpetra developers.";
+
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (ptr_.ptr_on_device () != rawPtr_, std::logic_error,
+     prefix << "ptr_.ptr_on_device () != rawPtr_." << suffix);
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (val_.ptr_on_device () != rawVal_, std::logic_error,
+     prefix << "val_.ptr_on_device () != rawVal_." << suffix);
+#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 }
 
-template<typename KeyType, typename ValueType>
-FixedHashTable<KeyType, ValueType>::
-FixedHashTable (const ArrayView<const KeyType>& keys,
-                const ValueType startingValue) :
-  size_ (0),
+template<class KeyType, class ValueType, class DeviceType>
+FixedHashTable<KeyType, ValueType, DeviceType>::
+FixedHashTable () :
+#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   rawPtr_ (NULL),
   rawVal_ (NULL),
+#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  hasDuplicateKeys_ (false) // trivially true
+{
+#ifdef HAVE_TPETRA_DEBUG
+  check ();
+#endif // HAVE_TPETRA_DEBUG
+}
+
+template<class KeyType, class ValueType, class DeviceType>
+FixedHashTable<KeyType, ValueType, DeviceType>::
+FixedHashTable (const ArrayView<const KeyType>& keys) :
+#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  rawPtr_ (NULL),
+  rawVal_ (NULL),
+#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  hasDuplicateKeys_ (false) // to revise in init()
+{
+  init (keys, static_cast<ValueType> (0));
+
+#ifdef HAVE_TPETRA_DEBUG
+  check ();
+#endif // HAVE_TPETRA_DEBUG
+}
+
+template<class KeyType, class ValueType, class DeviceType>
+FixedHashTable<KeyType, ValueType, DeviceType>::
+FixedHashTable (const ArrayView<const KeyType>& keys,
+                const ValueType startingValue) :
+#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  rawPtr_ (NULL),
+  rawVal_ (NULL),
+#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   hasDuplicateKeys_ (false) // to revise in init()
 {
   init (keys, startingValue);
+
+#ifdef HAVE_TPETRA_DEBUG
+  check ();
+#endif // HAVE_TPETRA_DEBUG
 }
 
-template<typename KeyType, typename ValueType>
-FixedHashTable<KeyType, ValueType>::
+template<class KeyType, class ValueType, class DeviceType>
+FixedHashTable<KeyType, ValueType, DeviceType>::
 FixedHashTable (const ArrayView<const KeyType>& keys,
                 const ArrayView<const ValueType>& vals) :
-  size_ (0),
+#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   rawPtr_ (NULL),
   rawVal_ (NULL),
+#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   hasDuplicateKeys_ (false) // to revise in init()
 {
   init (keys, vals);
+
+#ifdef HAVE_TPETRA_DEBUG
+  check ();
+#endif // HAVE_TPETRA_DEBUG
 }
 
-template<typename KeyType, typename ValueType>
+template<class KeyType, class ValueType, class DeviceType>
 void
-FixedHashTable<KeyType, ValueType>::
+FixedHashTable<KeyType, ValueType, DeviceType>::
 init (const ArrayView<const KeyType>& keys,
       const ValueType startingValue)
 {
-  using Teuchos::arcp;
-  using Teuchos::arcp_const_cast;
-  using Teuchos::ArrayRCP;
-  using Teuchos::as;
-
   const size_type numKeys = keys.size ();
-  const size_type size = getRecommendedSize (as<int> (numKeys));
+  const size_type size = getRecommendedSize (Teuchos::as<int> (numKeys));
 #ifdef HAVE_TPETRA_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
     size == 0 && numKeys != 0, std::logic_error,
@@ -196,32 +242,17 @@ init (const ArrayView<const KeyType>& keys,
     "Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
 
-  // We have to set the size_ internal state before calling the hash
-  // function, since the hash function uses it.
-  size_ = as<KeyType> (size);
+  // Kokkos::View fills with zeros by default.
+  typename Kokkos::View<size_type*, DeviceType>::HostMirror ptr ("ptr", size + 1);
 
-  ArrayRCP<size_type> ptr (size + 1, 0);
-  // The constructor that takes just a size argument automatically
-  // fills the data.  We don't need to waste time filling it here
-  // because we will do so below.  The try/catch block isn't strictly
-  // necessary; we could just give "new std::pair<...> [numKeys]" to
-  // the ArrayRCP constructor, since no other arguments of the
-  // constructor might throw before entering the constructor.
-  ArrayRCP<std::pair<KeyType, ValueType> > val;
-  std::pair<KeyType, ValueType>* rawVal = NULL;
-  try {
-    rawVal = new std::pair<KeyType, ValueType> [numKeys];
-    val = arcp<std::pair<KeyType, ValueType> > (rawVal, 0, numKeys, true);
-  } catch (...) {
-    if (rawVal != NULL) {
-      delete [] rawVal;
-    }
-    throw;
-  }
+  // Allocate the array of key,value pairs.  Don't waste time filling
+  // it with zeros, because we will fill it with actual data below.
+  typename Kokkos::View<Kokkos::pair<KeyType, ValueType>*, DeviceType>::HostMirror val
+    (Kokkos::ViewAllocateWithoutInitializing ("val"), numKeys);
 
   // Compute number of entries in each hash table position.
   for (size_type k = 0; k < numKeys; ++k) {
-    const int hashVal = hashFunc (keys[k]);
+    const int hashVal = hashFunc (keys[k], size);
     // Shift over one, so that counts[j] = ptr[j+1].  See below.
     ++ptr[hashVal+1];
 
@@ -243,13 +274,13 @@ init (const ArrayView<const KeyType>& keys,
   //ptr[0] = 0; // We've already done this when initializing ptr above.
 
   // curRowStart[i] is the offset of the next element in row i.
-  ArrayRCP<size_type> curRowStart (size, 0);
+  typename Kokkos::View<size_type*, DeviceType>::HostMirror curRowStart ("curRowStart", size);
 
   // Fill in the hash table.
   for (size_type k = 0; k < numKeys; ++k) {
     const KeyType key = keys[k];
-    const ValueType theVal = startingValue + as<ValueType> (k);
-    const int hashVal = hashFunc (key);
+    const ValueType theVal = startingValue + static_cast<ValueType> (k);
+    const int hashVal = hashFunc (key, size);
 
     const size_type offset = curRowStart[hashVal];
     const size_type curPos = ptr[hashVal] + offset;
@@ -260,37 +291,23 @@ init (const ArrayView<const KeyType>& keys,
   }
 
   // "Commit" the computed arrays.
-  ptr_ = arcp_const_cast<const size_type> (ptr);
-
-  // FIXME (mfh 25 Apr 2013) arcp_const_cast on val_ and
-  // val_.getRawPtr() both cause a hang with MPI for some reason.  Not
-  // sure what's going on.  Anyway, calling val.release(), recreating
-  // val_ by hand, and using the released raw pointer as rawVal_,
-  // seems to fix the problem.
-
-  //val_ = arcp_const_cast<const std::pair<KeyType, ValueType> > (val);
-  const std::pair<KeyType, ValueType>* valRaw = val.release ();
-  val_ = ArrayRCP<const std::pair<KeyType, ValueType> > (valRaw, 0, numKeys, true);
-  //val_ = arcp<const std::pair<KeyType, ValueType> > (valRaw, 0, numKeys, true);
-  rawPtr_ = ptr_.getRawPtr ();
-  //  rawVal_ = val_.getRawPtr ();
-  rawVal_ = valRaw;
+  ptr_ = ptr;
+  val_ = val;
+#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  rawPtr_ = ptr.ptr_on_device ();
+  rawVal_ = val.ptr_on_device ();
+#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 }
 
 
-template<typename KeyType, typename ValueType>
+template<class KeyType, class ValueType, class DeviceType>
 void
-FixedHashTable<KeyType, ValueType>::
+FixedHashTable<KeyType, ValueType, DeviceType>::
 init (const ArrayView<const KeyType>& keys,
       const ArrayView<const ValueType>& vals)
 {
-  using Teuchos::arcp;
-  using Teuchos::arcp_const_cast;
-  using Teuchos::ArrayRCP;
-  using Teuchos::as;
-
   const size_type numKeys = keys.size ();
-  const size_type size = getRecommendedSize (as<int> (numKeys));
+  const size_type size = getRecommendedSize (Teuchos::as<int> (numKeys));
 #ifdef HAVE_TPETRA_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
     size == 0 && numKeys != 0, std::logic_error,
@@ -300,32 +317,15 @@ init (const ArrayView<const KeyType>& keys,
     "Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
 
-  // We have to set the size_ internal state before calling the hash
-  // function, since the hash function uses it.
-  size_ = as<KeyType> (size);
+  typename Kokkos::View<size_type*, DeviceType>::HostMirror ptr ("ptr", size + 1);
 
-  ArrayRCP<size_type> ptr (size + 1, 0);
-  // The constructor that takes just a size argument automatically
-  // fills the data.  We don't need to waste time filling it here
-  // because we will do so below.  The try/catch block isn't strictly
-  // necessary; we could just give "new std::pair<...> [numKeys]" to
-  // the ArrayRCP constructor, since no other arguments of the
-  // constructor might throw before entering the constructor.
-  ArrayRCP<std::pair<KeyType, ValueType> > val;
-  std::pair<KeyType, ValueType>* rawVal = NULL;
-  try {
-    rawVal = new std::pair<KeyType, ValueType> [numKeys];
-    val = arcp<std::pair<KeyType, ValueType> > (rawVal, 0, numKeys, true);
-  } catch (...) {
-    if (rawVal != NULL) {
-      delete [] rawVal;
-    }
-    throw;
-  }
+  // Don't fill 'val' here; we will fill it below.
+  typename Kokkos::View<Kokkos::pair<KeyType, ValueType>*, DeviceType>::HostMirror val
+    (Kokkos::ViewAllocateWithoutInitializing ("val"), numKeys);
 
   // Compute number of entries in each hash table position.
   for (size_type k = 0; k < numKeys; ++k) {
-    const int hashVal = hashFunc (keys[k]);
+    const int hashVal = hashFunc (keys[k], size);
     // Shift over one, so that counts[j] = ptr[j+1].  See below.
     ++ptr[hashVal+1];
 
@@ -347,13 +347,13 @@ init (const ArrayView<const KeyType>& keys,
   //ptr[0] = 0; // We've already done this when initializing ptr above.
 
   // curRowStart[i] is the offset of the next element in row i.
-  ArrayRCP<size_type> curRowStart (size, 0);
+  typename Kokkos::View<size_type*, DeviceType>::HostMirror curRowStart ("curRowStart", size);
 
   // Fill in the hash table.
   for (size_type k = 0; k < numKeys; ++k) {
     const KeyType key = keys[k];
     const ValueType theVal = vals[k];
-    const int hashVal = hashFunc (key);
+    const int hashVal = hashFunc (key, size);
 
     const size_type offset = curRowStart[hashVal];
     const size_type curPos = ptr[hashVal] + offset;
@@ -364,76 +364,61 @@ init (const ArrayView<const KeyType>& keys,
   }
 
   // "Commit" the computed arrays.
-  ptr_ = arcp_const_cast<const size_type> (ptr);
-
-  // FIXME (mfh 25 Apr 2013) arcp_const_cast on val_ and
-  // val_.getRawPtr() both cause a hang with MPI for some reason.  Not
-  // sure what's going on.  Anyway, calling val.release(), recreating
-  // val_ by hand, and using the released raw pointer as rawVal_,
-  // seems to fix the problem.
-
-  //val_ = arcp_const_cast<const std::pair<KeyType, ValueType> > (val);
-  const std::pair<KeyType, ValueType>* valRaw = val.release ();
-  val_ = ArrayRCP<const std::pair<KeyType, ValueType> > (valRaw, 0, numKeys, true);
-  //val_ = arcp<const std::pair<KeyType, ValueType> > (valRaw, 0, numKeys, true);
-  rawPtr_ = ptr_.getRawPtr ();
-  //  rawVal_ = val_.getRawPtr ();
-  rawVal_ = valRaw;
+  ptr_ = ptr;
+  val_ = val;
+#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  rawPtr_ = ptr.ptr_on_device ();
+  rawVal_ = val.ptr_on_device ();
+#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 }
 
-
-template<typename KeyType, typename ValueType>
-FixedHashTable<KeyType, ValueType>::
-FixedHashTable (const FixedHashTable & obj) :
-  size_ (obj.size_),
-  ptr_ (obj.ptr_),
-  val_ (obj.val_),
-  rawPtr_ (obj.rawPtr_),
-  rawVal_ (obj.rawVal_),
-  hasDuplicateKeys_ (obj.hasDuplicateKeys_)
-{}
-
-template<typename KeyType, typename ValueType>
+template<class KeyType, class ValueType, class DeviceType>
 ValueType
-FixedHashTable<KeyType, ValueType>::
+FixedHashTable<KeyType, ValueType, DeviceType>::
 get (const KeyType key) const
 {
-  const int hashVal = hashFunc (key);
-#ifdef HAVE_TPETRA_DEBUG
+  const size_type size = this->getSize ();
 
-  const size_type start = ptr_[hashVal];
-  const size_type end = ptr_[hashVal+1];
-  for (size_type k = start; k < end; ++k) {
-    if (val_[k].first == key) {
-      return val_[k].second;
-    }
+  if (size == 0) {
+    return Teuchos::OrdinalTraits<ValueType>::invalid ();
   }
+  else {
+    const int hashVal = hashFunc (key, size);
+#if defined(TPETRA_HAVE_KOKKOS_REFACTOR) || defined(HAVE_TPETRA_DEBUG)
+    const size_type start = ptr_[hashVal];
+    const size_type end = ptr_[hashVal+1];
+    for (size_type k = start; k < end; ++k) {
+      if (val_[k].first == key) {
+        return val_[k].second;
+      }
+    }
 #else
-  const size_type start = rawPtr_[hashVal];
-  const size_type end = rawPtr_[hashVal+1];
-  for (size_type k = start; k < end; ++k) {
-    if (rawVal_[k].first == key) {
-      return rawVal_[k].second;
+    const size_type start = rawPtr_[hashVal];
+    const size_type end = rawPtr_[hashVal+1];
+    for (size_type k = start; k < end; ++k) {
+      if (rawVal_[k].first == key) {
+        return rawVal_[k].second;
+      }
     }
-  }
 #endif // HAVE_TPETRA_DEBUG
-  return Teuchos::OrdinalTraits<ValueType>::invalid ();
+    return Teuchos::OrdinalTraits<ValueType>::invalid ();
+  }
 }
 
-template <typename KeyType, typename ValueType>
-std::string FixedHashTable<KeyType, ValueType>::description() const {
+template <class KeyType, class ValueType, class DeviceType>
+std::string FixedHashTable<KeyType, ValueType, DeviceType>::description() const {
   std::ostringstream oss;
   oss << "FixedHashTable<"
       << Teuchos::TypeNameTraits<KeyType>::name () << ","
       << Teuchos::TypeNameTraits<ValueType>::name () << ">: "
-      << "{ numKeys: " << val_.size ()
-      << ", tableSize: " << ptr_.size () << " }";
+      << "{ numKeys: " << val_.dimension_0 ()
+      << ", tableSize: " << ptr_.dimension_0 () << " }";
   return oss.str();
 }
 
-template <typename KeyType, typename ValueType>
+template <class KeyType, class ValueType, class DeviceType>
 void
-FixedHashTable<KeyType, ValueType>::
+FixedHashTable<KeyType, ValueType, DeviceType>::
 describe (Teuchos::FancyOStream &out,
           const Teuchos::EVerbosityLevel verbLevel) const
 {
@@ -472,8 +457,8 @@ describe (Teuchos::FancyOStream &out,
             << "ValueType: " << TypeNameTraits<ValueType>::name () << endl;
       }
 
-      const size_type tableSize = size_;
-      const size_type numKeys = val_.size ();
+      const size_type tableSize = this->getSize ();
+      const size_type numKeys = val_.dimension_0 ();
 
       out << "Table parameters:" << endl;
       {
@@ -522,6 +507,18 @@ describe (Teuchos::FancyOStream &out,
 //
 // This macro must be explanded within the Tpetra::Details namespace.
 #define TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT_DEFAULTNODE(LO,GO) \
-  template class FixedHashTable< GO , LO >;                      \
+  template class FixedHashTable< GO , LO >;
+
+// Macro that explicitly instantiates FixedHashTable for the given
+// local ordinal (LO), global ordinal (GO), and Kokkos device (DEVICE)
+// types.  Note that FixedHashTable's first two template parameters
+// occur in the opposite order of most Tpetra classes.  This is
+// because FixedHashTable performs global-to-local lookup, and the
+// convention in templated C++ lookup tables (such as std::map) is
+// <KeyType, ValueType>.
+//
+// This macro must be explanded within the Tpetra::Details namespace.
+#define TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT(LO, GO, DEVICE) \
+  template class FixedHashTable< GO , LO , DEVICE >;
 
 #endif // TPETRA_DETAILS_FIXEDHASHTABLE_DEF_HPP

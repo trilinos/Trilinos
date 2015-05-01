@@ -94,6 +94,7 @@ class SystemInterface
   bool pedantic;             // Be most picky on what is different (not fully picky yet)
   
   bool interpolating;        // Interpolate times on file2 to match times on file1;
+  bool by_name;               // Match entities by name instead of by id.
   
   // These should correspond to the values specified during parsing of
   // coordinate tolerance.

@@ -100,8 +100,6 @@ protected:
   Part &m_elem_part;
   stk::topology m_elem_topology;
 
-  BulkData::BulkDataSyncState m_previous_state;
-
   /**
    * Recursively split a box into ( up - ip ) sub-boxes
    */

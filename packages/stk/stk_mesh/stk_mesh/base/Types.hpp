@@ -38,18 +38,17 @@
 
 #include <stddef.h>                     // for size_t
 #include <stdint.h>                     // for uint64_t
+#include <ostream>
 #include <iosfwd>                       // for ostream
 #include <limits>                       // for numeric_limits
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/util/NamedPair.hpp>  // for NAMED_PAIR
 #include <stk_util/util/PairIter.hpp>   // for PairIter
-#include <stk_util/util/TrackingAllocator.hpp>  // for tracking_allocator
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc
 #include <set>
-#include "boost/range/iterator_range_core.hpp"  // for iterator_range
-#include "boost/unordered/unordered_map.hpp"  // for unordered_map
+#include <map>
 
 namespace stk { namespace mesh { class Bucket; } }
 namespace stk { namespace mesh { class Part; } }
@@ -64,25 +63,6 @@ namespace stk { namespace mesh { template <typename DataType = void> class Prope
 namespace stk {
 namespace mesh {
 
-// Tags used by tracking allocator
-struct FieldDataTag {};
-struct SelectorMapTag {};
-struct PartitionTag {};
-struct BucketTag {};
-struct EntityCommTag {};
-struct BucketRelationTag {};
-struct DynamicBucketRelationTag {};
-struct DynamicBucketNodeRelationTag {};
-struct DynamicBucketEdgeRelationTag {};
-struct DynamicBucketFaceRelationTag {};
-struct DynamicBucketElementRelationTag {};
-struct DynamicBucketOtherRelationTag {};
-struct AuxRelationTag {};
-struct DeletedEntityTag {};
-struct VolatileFastSharedCommMapTag {};
-
-void print_max_stk_memory_usage( ParallelMachine parallel, int parallel_rank, std::ostream & out);
-
 //----------------------------------------------------------------------
 /** \addtogroup stk_mesh_module
  *  \{
@@ -94,13 +74,13 @@ class FieldBase;
 /** \brief  Collections of \ref stk::mesh::Part "parts" are frequently
  *          maintained as a vector of Part pointers.
  */
-typedef std::vector< Part * > PartVector;
-typedef std::vector< Bucket * > BucketVector;
+typedef std::vector< Part * >       PartVector;
+typedef std::vector< Bucket * >     BucketVector;
 typedef std::vector< const Part * > ConstPartVector;
-typedef std::vector< FieldBase * > FieldVector;
-typedef std::vector< unsigned > OrdinalVector;
-typedef std::vector< unsigned > PermutationIndexVector;
-typedef std::vector<Entity> EntityVector;
+typedef std::vector< FieldBase * >  FieldVector;
+typedef std::vector< unsigned >     OrdinalVector;
+typedef std::vector< unsigned >     PermutationIndexVector;
+typedef std::vector<Entity>         EntityVector;
 
 
 template< typename Scalar = void ,
@@ -156,31 +136,13 @@ struct FastMeshIndex
   unsigned bucket_ord;
 };
 
-#ifdef __IBMCPP__
 typedef std::vector<std::vector<FastMeshIndex> > VolatileFastSharedCommMapOneRank;
-#else
-typedef TrackedVectorMetaFunc<
-  TrackedVectorMetaFunc<FastMeshIndex, VolatileFastSharedCommMapTag>::type,
-  VolatileFastSharedCommMapTag>::type VolatileFastSharedCommMapOneRank;
-#endif
-
 typedef stk::topology::rank_t EntityRank ;
 
-typedef boost::unordered_map<EntityKey, size_t> GhostReuseMap;
 typedef std::map<std::pair<EntityRank, Selector>, std::pair<size_t, size_t> > SelectorCountMap;
-#ifdef __IBMCPP__
-// The IBM compiler is easily confused by complex template types...
-typedef BucketVector                                                   TrackedBucketVector;
-typedef std::map<std::pair<EntityRank, Selector>, TrackedBucketVector> SelectorBucketMap;
-typedef std::vector<VolatileFastSharedCommMapOneRank>                  VolatileFastSharedCommMap;
-#else
-typedef TrackedVectorMetaFunc<Bucket*, SelectorMapTag>::type  TrackedBucketVector;
-typedef std::map<std::pair<EntityRank, Selector>, TrackedBucketVector,
-                 std::less<std::pair<EntityRank, Selector> >,
-                 tracking_allocator<std::pair<std::pair<EntityRank, Selector>, TrackedBucketVector>, SelectorMapTag> > SelectorBucketMap;
-typedef TrackedVectorMetaFunc<VolatileFastSharedCommMapOneRank, VolatileFastSharedCommMapTag>::type VolatileFastSharedCommMap;
+typedef std::map<std::pair<EntityRank, Selector>, BucketVector> SelectorBucketMap;
+typedef std::vector<VolatileFastSharedCommMapOneRank> VolatileFastSharedCommMap;
 
-#endif
 typedef std::map<EntityKey,std::set<int> > EntityToDependentProcessorsMap;
 typedef std::map<EntityKey,int> NewOwnerMap;
 
@@ -255,7 +217,7 @@ NAMED_PAIR( EntityCommInfo , unsigned , ghost_id , int , proc )
 /** \brief  Span of ( communication-subset-ordinal , process-rank ) pairs
  *          for the communication of an entity.
  */
-typedef std::vector<EntityCommInfo, tracking_allocator<EntityCommInfo,EntityCommTag > > EntityCommInfoVector;
+typedef std::vector<EntityCommInfo> EntityCommInfoVector;
 typedef PairIter<  EntityCommInfoVector::const_iterator >  PairIterEntityComm ;
 
 #endif
@@ -288,13 +250,12 @@ typedef int ( * relation_stencil_ptr )( EntityRank  from_type ,
  *  -# relation identifier, and
  *  -# range entity global identifier.
  */
-typedef std::vector<Relation, tracking_allocator<Relation,AuxRelationTag> > RelationVector;
+typedef std::vector<Relation> RelationVector;
 
 typedef PairIter< RelationVector::const_iterator > PairIterRelation ;
 
 #ifdef SIERRA_MIGRATION
 typedef RelationVector::const_iterator   RelationIterator;
-typedef boost::iterator_range<RelationIterator> RelationRange;
 #endif // SIERRA_MIGRATION
 
 enum ConnectivityType
@@ -303,6 +264,25 @@ enum ConnectivityType
   DYNAMIC_CONNECTIVITY,
   INVALID_CONNECTIVITY_TYPE
 };
+
+inline std::ostream & operator<<(std::ostream &out, ConnectivityType type)
+{
+  switch (type)
+  {
+      case ConnectivityType::FIXED_CONNECTIVITY:
+          out << "Fixed  ";
+          break;
+      case ConnectivityType::DYNAMIC_CONNECTIVITY:
+          out << "Dynamic";
+          break;
+      case ConnectivityType::INVALID_CONNECTIVITY_TYPE:
+          out << "Invalid";
+          break;
+      default:
+          out << "Unknown";
+  }
+  return out;
+}
 
 #define EXTRACT_BUCKET_ID(idx) ((idx) >> NUM_BUCKET_ORDINAL_BITS)
 
@@ -329,38 +309,6 @@ enum Permutation
 enum ConnectivityId
 {
   INVALID_CONNECTIVITY_ID = ~0U
-};
-
-//////////////////////////////////////////////////////////////////////////////
-
-template <EntityRank TargetRank>
-struct DynamicConnectivityTagSelector
-{
-  typedef DynamicBucketOtherRelationTag type;
-};
-
-template <>
-struct DynamicConnectivityTagSelector<stk::topology::NODE_RANK>
-{
-  typedef DynamicBucketNodeRelationTag type;
-};
-
-template <>
-struct DynamicConnectivityTagSelector<stk::topology::EDGE_RANK>
-{
-  typedef DynamicBucketEdgeRelationTag type;
-};
-
-template <>
-struct DynamicConnectivityTagSelector<stk::topology::FACE_RANK>
-{
-  typedef DynamicBucketFaceRelationTag type;
-};
-
-template <>
-struct DynamicConnectivityTagSelector<stk::topology::ELEMENT_RANK>
-{
-  typedef DynamicBucketElementRelationTag type;
 };
 
 //----------------------------------------------------------------------

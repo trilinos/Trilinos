@@ -54,6 +54,40 @@ namespace Ifpack2 {
 
 namespace Experimental {
 
+template <class scalar_type, class impl_scalar_type>
+struct BlockMatrixOperations
+{
+
+  typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
+
+  typedef Teuchos::ScalarTraits<magnitude_type> STM;
+
+  void square_matrix_matrix_multiply(const impl_scalar_type * a, const impl_scalar_type * b, impl_scalar_type * c,
+      const int nrows, const impl_scalar_type alpha = STM::one(), const impl_scalar_type beta = STM::zero() ) const
+  {
+    for (int i = 0; i < nrows*nrows; ++i)
+      c[i] = beta*c[i];
+
+    for (int i = 0; i < nrows; ++i)
+    {
+
+      const int ioffset = i*nrows;
+      for (int k = 0; k < nrows; ++k)
+      {
+        const int koffset = k*nrows;
+        const impl_scalar_type val = alpha*a[ioffset+k];
+        for (int j = 0; j < nrows; ++j)
+        {
+          c[ioffset+j] += val*b[koffset+j];
+        }
+      }
+    }
+
+  }
+
+
+};
+
 /** \class RBILUK
 \brief ILU(k) factorization of a given Tpetra::Experimental::BlockCrsMatrix.
 \tparam MatrixType A specialization of Tpetra::RowMatrix.
@@ -270,32 +304,6 @@ class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename Matrix
          scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero ()) const;
   //@}
 
-private:
-  /// \brief Apply the incomplete factorization (as a product) to X, resulting in Y.
-  ///
-  /// Given an incomplete factorization is \f$A \approx LDU\f$, this
-  /// method computes the following, depending on the value of \c mode:
-  ///
-  ///   - If mode = Teuchos::NO_TRANS, it computes
-  ///     <tt>Y = beta*Y + alpha*(L \ (D \ (U \ X)))</tt>
-  ///   - If mode = Teuchos::TRANS, it computes
-  ///     <tt>Y = beta*Y + alpha*(U^T \ (D^T \ (L^T \ X)))</tt>
-  ///   - If mode = Teuchos::CONJ_TRANS, it computes
-  ///     <tt>Y = beta*Y + alpha*(U^* \ (D^* \ (L^* \ X)))</tt>,
-  ///     where the asterisk indicates the conjugate transpose.
-  ///
-  /// \param X [in] The input multivector.
-  ///
-  /// \param Y [in/out] The output multivector.
-  ///
-  /// \param mode [in] If Teuchos::TRANS resp. Teuchos::CONJ_TRANS,
-  ///   apply the transpose resp. conjugate transpose of the
-  ///   incomplete factorization.  Otherwise, don't apply the
-  ///   transpose.
-  void
-  multiply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-            const Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 public:
 
   //! Get the input matrix.
@@ -344,8 +352,10 @@ private:
   //! The inverse of the diagonal
   Teuchos::RCP<block_crs_matrix_type> D_block_inverse_;
 
+  BlockMatrixOperations<scalar_type,impl_scalar_type> blockMatOpts;
+
   void square_matrix_matrix_multiply(const impl_scalar_type * a, const impl_scalar_type * b, impl_scalar_type * c,
-      const int nrows, const impl_scalar_type alpha = STM::one(), const impl_scalar_type beta = STM::zero() )
+      const int nrows, const impl_scalar_type alpha = STM::one(), const impl_scalar_type beta = STM::zero() ) const
   {
     for (int i = 0; i < nrows*nrows; ++i)
       c[i] = beta*c[i];
@@ -364,9 +374,11 @@ private:
         }
       }
     }
+
   }
 
 };
+
 
 } // namepsace Experimental
 

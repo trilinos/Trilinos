@@ -86,12 +86,12 @@ namespace Example {
         _n(b._n)
     { } 
 
-    DenseMatrixView(DenseMatBaseType &b)
-      : _base(&b),
+    DenseMatrixView(DenseMatBaseType *b)
+      : _base(b),
         _offm(0),
         _offn(0),
-        _m(b.NumRows()),
-        _n(b.NumCols())
+        _m(b->NumRows()),
+        _n(b->NumCols())
     { } 
 
     DenseMatrixView(DenseMatBaseType *b,
@@ -113,6 +113,30 @@ namespace Example {
       else 
         os << "-- Base object is null --";
 
+      return os;
+    }
+    
+    ostream& showMeDetail(ostream &os) const {
+      showMe(os) << endl;
+      
+      streamsize prec = os.precision();
+      os.precision(8);
+      os << scientific;
+      
+      const int w = 10;
+      if (_base != NULL) {
+        for (ordinal_type i=0;i<NumRows();++i) {
+          for (ordinal_type j=0;j<NumCols();++j) {
+            const value_type val = this->Value(i,j);
+            os << setw(w) << val << "  ";
+          }
+          os << endl;
+        }
+      }
+
+      os.unsetf(ios::scientific);
+      os.precision(prec);
+      
       return os;
     }
 

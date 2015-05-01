@@ -151,6 +151,10 @@ and classes:
   }
 }
 
+// NOX interface file imports.
+%import "NOX.Abstract.i"
+%import "NOX.StatusTest.i"
+
 // General exception handling
 %exception
 {
@@ -174,10 +178,6 @@ and classes:
     SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
   }
 }
-
-// NOX interface file imports.
-%import "NOX.Abstract.i"
-%import "NOX.StatusTest.i"
 
 // Import NOX and LOCA sub-modules
 %pythoncode

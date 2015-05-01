@@ -18,7 +18,7 @@
 #include "crs_matrix_helper.hpp"
 
 #include "team_factory.hpp"
-#include "crs_team_view.hpp"
+#include "team_view.hpp"
 
 using namespace std;
 
@@ -39,10 +39,12 @@ typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
 
 typedef TeamFactory<Kokkos::TeamPolicy<space_type>, 
                     Kokkos::Impl::TeamThreadRangeBoundariesStruct> TeamFactoryType;
-typedef CrsTeamView<CrsMatrixBaseType,TeamFactoryType> CrsTeamViewType;
+typedef TeamView<CrsMatrixViewType,TeamFactoryType> CrsTeamViewType;
 
 typedef CrsMatrixBase<CrsTeamViewType,ordinal_type,size_type,space_type> CrsHierBaseType;
-typedef CrsTeamView<CrsHierBaseType,TeamFactoryType> CrsHierViewType;
+typedef CrsMatrixView<CrsHierBaseType> CrsHierViewType;
+
+typedef TeamView<CrsHierViewType,TeamFactoryType> CrsHierTaskType;
 
 int main (int argc, char *argv[]) {
   if (argc < 2) {
@@ -75,7 +77,7 @@ int main (int argc, char *argv[]) {
   cout << "Hier Matrix HH = " << endl
        << HH << endl;
 
-  CrsHierViewType H;
+  CrsHierTaskType H;
   H.setView(&HH, 2, 3, 2, 3);
 
   cout << "Block Partitioned Matrix H = " << endl

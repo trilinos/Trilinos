@@ -399,7 +399,12 @@ namespace {
       
       for (size_t b = 0; b < num_entity; ++b) {
 	Exo_Entity *set1 = file1.Get_Entity_by_Index(type, b);
-	Exo_Entity *set2 = file2.Get_Entity_by_Id(type, set1->Id());
+	Exo_Entity *set2 = NULL;
+	if (interface.by_name)
+	  set2 = file2.Get_Entity_by_Name(type, set1->Name());
+	else
+	  set2 = file2.Get_Entity_by_Id(type, set1->Id());
+
 	if (set2 == NULL) {
 	  *diff_found = true;
 	  std::cout << "exodiff: WARNING " << label << " id " << set1->Id()

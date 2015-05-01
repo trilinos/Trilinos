@@ -296,3 +296,117 @@ from .  import ___init__
 
 %teuchos_rcp(LOCA::Epetra::Group)
 %include "LOCA_Epetra_Group.H"
+
+%pythoncode
+%{
+def defaultContinuationParameters(comm=None,
+                                  verbosity=0,
+                                  outputPrec=3,
+                                  maxIterations=800,
+                                  tolerance=1.0e-4):
+    """
+    defaultContinuationParameters(comm=None,
+                                  verbosity=0,
+                                  outputPrec=3,
+                                  maxIterations=800,
+                                  tolerance=1.0e-4) -> dict
+
+    Return a dictionary that can serve as a default list of parameters for LOCA
+    constructors.  Entries can be altered before passing to a LOCA constructor.
+
+    comm          - Epetra communicator object.  If not provided, the function
+                    uses an Epetra.SerialComm communicator.
+
+    verbosity     - A simple indication of verbosity level.  0: errors and test
+                    details.  1: debugging, warnings, details, parameters and
+                    linear solver details.  2: inner iteration, outer iteration
+                    status test and outer iteration.  Default 0.
+
+    outputPrec    - Number of significant digits to output.  Default 3.
+
+    maxIterations - Maximum allowable linear (inner) iterations.  Default 800.
+
+    tolerance     - Linear solver tolerance level.  Default 1.0e-4.
+    """
+    nlParams = PyTrilinos.NOX.Epetra.defaultNonlinearParameters(comm,
+                                                                verbosity,
+                                                                outputPrec,
+                                                                maxIterations,
+                                                                tolerance)
+    direction    = nlParams["Direction"]
+    newton       = nlParams["Newton"]
+    linearSolver = nlParams["Linear Solver"]
+    linearSolver["Output Frequency"           ] = 1
+    linearSolver["Preconditioner"             ] = "None"
+    linearSolver["Preconditioner Operator"    ] = "Use Jacobian"
+    linearSolver["Size of Krylov Subspace"    ] = 100
+    linearSolver["Tolerance"                  ] = 1e-08
+    linearSolver["Zero Initial Guess"         ] = False
+    linearSolver["Compute Scaling Manually"   ] = True
+    linearSolver["Throw Error on Prec Failure"] = True
+    linearSolver["RCM Reordering"             ] = "Disabled"
+    linearSolver["Orthogonalization"          ] = "Classical"
+    linearSolver["Convergence Test"           ] = "r0"
+    linearSolver["Preconditioner Reuse Policy"] = "Rebuild"
+    newton["Linear Solver"] = linearSolver
+    direction["Newton"] = newton
+    noxParams = {"Tolerance"        : tolerance,
+                 "Printing"         : nlParams["Printing"],
+                 "Nonlinear Solver" : nlParams["Nonlinear Solver"],
+                 "Direction"        : direction
+                 }
+
+    predictor   = {"Method" : "Secant"}
+    bifurcation = {"Type"   : "None"  }
+    stepSize    = {"Method"            : "Adaptive",  
+                   "Initial Step Size" : 0.01,
+                   "Min Step Size"     : 1.0e-3,
+                   "Max Step Size"     : .02
+                   }
+    eigensolver = {"Method"                : "Anasazi",
+                   "Sorting Order"         : "LM",
+                   "Block Size"            : 4,
+                   "Num Blocks"            : 100,
+                   "Num Eigenvalues"       : 15,
+                   "Convergence Tolerance" : 1e-11,
+                   "Step Size"             : 20,
+                   "Maximum Restarts"      : 20,
+                   "Maximum Iterations"    : 500,
+                   "Operator"              : "Jacobian Inverse",
+                   "Operator"              : "Shift-Invert",
+                   "Shift"                 : 0.03,
+                   "Cayley Pole"           : 0.001,
+                   "Cayley Zero"           : 0.02,
+                   "Symmetric"             : False
+                   }
+    stepper = {"Continuation Method"      : "Arc Length",
+               "Continuation Parameter"   : "sigma",
+               "Initial Value"            : 0.0,
+               "Max Value"                : 10.0,
+               "Min Value"                : 0.0,
+               "Max Nonlinear Iterations" : 100,
+               "Max Steps"                : 100,
+               "Compute Eigenvalues"      : False,
+               "Eigensolver"              : eigensolver
+               }
+
+    locaParams = {"Enable Arc Length Scaling"               : False,
+                  "Goal Arc Length Parameter Contribution"  : 0.8,
+                  "Max Arc Length Parameter Contribution"   : 0.8,
+                  "Initial Scale Factor"                    : 1.0,
+                  "Min Scale Factor"                        : 1e-7,
+                  "Enable Tangent Factor Step Size Scaling" : True,
+                  "Min Tangent Factor"                      : 0.8,
+                  "Tangent Factor Exponent"                 : 1.5,
+                  "Predictor"                               : predictor,
+                  "Bifurcation"                             : bifurcation, 
+                  "Step Size"                               : stepSize,
+                  "Stepper"                                 : stepper
+                  }
+
+    result = {"NOX"  : noxParams,
+              "LOCA" : locaParams
+              }
+
+    return result
+%}

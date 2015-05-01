@@ -51,5 +51,6 @@ SET_PROPERTY(
 
 #
 # Make a trivial change to this comment if you add a file either to
-# this directory, or to the impl/ subdirectory.
+# this directory, or to the impl/ subdirectory.  Here is another such
+# change.
 #

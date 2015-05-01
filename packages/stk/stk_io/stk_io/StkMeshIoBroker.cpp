@@ -700,10 +700,11 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, stk::Pa
 		    "ERROR: Invalid communication/node sharing information found in file '"
 		     << region.get_database()->get_filename() << "'\n"
 		     << "       There is no node sharing information and the "
-		     << "lobal node count is  " << global_node_count
+		     << "global node count is  " << global_node_count
 		     << " which is less than the node count on processor "
 		     << stk::parallel_machine_rank(bulk.parallel())
-		     << " which is " << ids.size());
+		     << " which is " << ids.size() << ".  "
+                     << "A possible work-around is to join and re-spread the mesh files.");
 
     std::vector<INT> entity_proc;
     io_cs->get_field_data("entity_processor", entity_proc);
@@ -1223,6 +1224,20 @@ namespace stk {
 #ifdef STK_BUILT_IN_SIERRA
       m_communicator = m_bulk_data->parallel();
 #endif
+    }
+
+    void StkMeshIoBroker::replace_bulk_data( Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data )
+    {
+      ThrowErrorMsgIf( Teuchos::is_null(m_bulk_data),
+                       "There is  no bulk data to replace." );
+      ThrowErrorMsgIf( Teuchos::is_null(m_meta_data),
+                       "Meta data must be non-null when calling StkMeshIoBroker::replace_bulk_data." );
+
+      stk::mesh::MetaData &new_meta_data = arg_bulk_data->mesh_meta_data();
+      ThrowErrorMsgIf( &(*m_meta_data) != &new_meta_data, 
+                       "Meta data for both new and old bulk data must be the same." );
+
+      m_bulk_data = arg_bulk_data;
     }
 
     size_t StkMeshIoBroker::add_mesh_database(std::string filename, DatabasePurpose purpose)

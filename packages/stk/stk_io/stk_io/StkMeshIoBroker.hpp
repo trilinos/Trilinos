@@ -266,6 +266,17 @@ namespace impl
       void set_bulk_data(Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data);
       void set_bulk_data(stk::mesh::BulkData &arg_bulk_data);
 
+      // Replace the current bulk data directly with your own bulk data.
+      // There must be a current bulk data and the current meta data
+      // must match the meta data associated with the new bulk data.
+      // This is a potentially dangerous call depending on what
+      // point of the usage it is made.  Typical use would be to call
+      // this, only if needed, after you are completely done accessing
+      // the input mesh and before any access to the output mesh and only
+      // if the output mesh needs a different bulk data than the input mesh.
+      void replace_bulk_data(Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data);
+      void replace_bulk_data(stk::mesh::BulkData &arg_bulk_data);
+
       enum SideSetFaceCreationBehavior {
           STK_IO_SIDESET_FACE_CREATION_CLASSIC = 42,
           STK_IO_SIDESET_FACE_CREATION_CURRENT = 73
@@ -674,6 +685,9 @@ namespace impl
 
     inline void StkMeshIoBroker::set_bulk_data(stk::mesh::BulkData &arg_bulk_data)
     { set_bulk_data(Teuchos::rcpFromRef(arg_bulk_data));}
+
+    inline void StkMeshIoBroker::replace_bulk_data(stk::mesh::BulkData &arg_bulk_data)
+    { replace_bulk_data(Teuchos::rcpFromRef(arg_bulk_data));}
 
     inline void StkMeshIoBroker::add_heartbeat_global(size_t index,
 						      const std::string &name,

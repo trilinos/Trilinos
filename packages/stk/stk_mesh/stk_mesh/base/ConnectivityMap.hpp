@@ -35,8 +35,7 @@
 #define STK_STK_CONNECTIVITY_MAP_HPP
 
 #include <stk_mesh/base/Types.hpp>
-
-#include <boost/array.hpp>
+#include <array>
 
 namespace stk  {
 namespace mesh {
@@ -45,7 +44,7 @@ namespace mesh {
 
 struct ConnectivityMap
 {
-  typedef boost::array<boost::array<ConnectivityType, 4>, 4> map_type;
+  typedef std::array<std::array<ConnectivityType, 4>, 4> map_type;
 
   static ConnectivityMap const& classic_stk_mesh()
   {
@@ -232,6 +231,16 @@ struct ConnectivityMap
 
   map_type m_map;
 };
+
+inline std::ostream & operator<<(std::ostream &out, const ConnectivityMap & map)
+{
+   out << "From\\To:  NODE     EDGE     FACE     ELEM\n";
+   out << "NODE   :  "; for (int i=0 ; i<4 ; ++i) { out << map.m_map[0][i] << "  "; } out << "\n";
+   out << "EDGE   :  "; for (int i=0 ; i<4 ; ++i) { out << map.m_map[1][i] << "  "; } out << "\n";
+   out << "FACE   :  "; for (int i=0 ; i<4 ; ++i) { out << map.m_map[2][i] << "  "; } out << "\n";
+   out << "ELEM   :  "; for (int i=0 ; i<4 ; ++i) { out << map.m_map[3][i] << "  "; } out << "\n";
+   return out;
+}
 
 } //namespace mesh
 } //namespace stk
