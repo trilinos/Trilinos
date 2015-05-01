@@ -108,6 +108,45 @@ public:
   FixedHashTable (const ArrayView<const KeyType>& keys,
                   const ArrayView<const ValueType>& vals);
 
+  template<class K, class V, class D>
+  friend struct FixedHashTable;
+
+  /// \brief "Copy" constructor that takes a FixedHashTable with the
+  ///   same KeyType and ValueType, but a different DeviceType.
+  ///
+  /// This constructor makes a deep copy of the input's data if
+  /// necessary.  Anything that it doesn't need to deep copy, it
+  /// shallow copies.
+  template<class InDeviceType>
+  FixedHashTable (const FixedHashTable<KeyType, ValueType, InDeviceType>& src,
+                  typename std::enable_if<! std::is_same<DeviceType, InDeviceType>::value, int>::type* = NULL)
+  {
+    typedef typename Kokkos::View<size_type*, DeviceType>::HostMirror ptr_type;
+    typedef typename Kokkos::View<Kokkos::pair<KeyType, ValueType>*, DeviceType>::HostMirror val_type;
+
+    ptr_type ptr (Kokkos::ViewAllocateWithoutInitializing ("ptr"), src.ptr_.dimension_0 ());
+    // FIXME (mfh 01 May 2015) deep_copy won't work once we switch
+    // from using host mirrors to storing the data in device memory.
+    // In that case, we'll either need to fix the layout, or use a
+    // copy kernel.  Fixing the layout would probably be easier, and
+    // it doesn't matter since all Views here are 1-D.
+    Kokkos::deep_copy (ptr, src.ptr_);
+    val_type val (Kokkos::ViewAllocateWithoutInitializing ("val"), src.val_.dimension_0 ());
+    Kokkos::deep_copy (val, src.val_);
+
+    this->ptr_ = ptr;
+    this->val_ = val;
+#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+    this->rawPtr_ = ptr.ptr_on_device ();
+    this->rawVal_ = val.ptr_on_device ();
+#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+    this->hasDuplicateKeys_ = src.hasDuplicateKeys_;
+
+#if defined(HAVE_TPETRA_DEBUG)
+    this->check ();
+#endif // defined(HAVE_TPETRA_DEBUG)
+  }
+
   //! Get the value corresponding to the given key.
   ValueType get (const KeyType key) const;
 

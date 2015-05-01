@@ -1127,12 +1127,13 @@ namespace Tpetra {
       typedef ::Tpetra::Directory<typename OutMapType::local_ordinal_type,
                                   typename OutMapType::global_ordinal_type,
                                   typename OutMapType::node_type> out_dir_type;
+      typedef typename OutMapType::global_to_local_table_type out_table_type;
 
       OutMapType mapOut; // Make an empty Map.
 
-      // Fill the new Map with shallow copies of all of the original
-      // Map's data.  This is safe because Map is immutable, so
-      // users can't change the original Map.
+      // Fill the new Map with (possibly) shallow copies of all of the
+      // original Map's data.  This is safe because Map is immutable,
+      // so users can't change the original Map.
       mapOut.comm_              = mapIn.comm_;
       mapOut.indexBase_         = mapIn.indexBase_;
       mapOut.numGlobalElements_ = mapIn.numGlobalElements_;
@@ -1147,7 +1148,11 @@ namespace Tpetra {
       mapOut.contiguous_        = mapIn.contiguous_;
       mapOut.distributed_       = mapIn.distributed_;
       mapOut.lgMap_             = mapIn.lgMap_;
-      mapOut.glMap_             = mapIn.glMap_;
+      // This makes a deep copy only if necessary.  We could have
+      // defined operator= to do this, but that would violate
+      // expectations.  (Kokkos::View::operator= only does a shallow
+      // copy, EVER.)
+      mapOut.glMap_             = out_table_type (mapIn.glMap_);
       // New Map gets the new Node instance.
       mapOut.node_              = nodeOut;
 
