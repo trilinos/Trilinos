@@ -2,7 +2,6 @@
 rm -rf CMakeCache.txt CMakeFiles
 cmake \
 -D CMAKE_INSTALL_PREFIX="/home/rppawlo/install/gnu4.8.2/pike" \
--D Trilinos_EXTRA_REPOSITORIES="pike" \
 -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
 -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
 -D Trilinos_ENABLE_TESTS:BOOL=OFF \
@@ -19,17 +18,12 @@ cmake \
 -D TPL_LAPACK_LIBRARIES:PATH="/home/rppawlo/install/gnu4.8.2/lapack/liblapack.a" \
 -D TPL_ENABLE_MPI:BOOL=ON \
 -D MPI_BASE_DIR:PATH="/home/rppawlo/install/gnu4.8.2/mpich" \
-      -D TPL_ENABLE_Boost:BOOL=ON \
-      -D Boost_INCLUDE_DIRS:FILEPATH="/home/rppawlo/install/gnu4.8.2/boost/include" \
-      -D TPL_ENABLE_BoostLib:BOOL=ON \
-      -D BoostLib_INCLUDE_DIRS:FILEPATH="/home/rppawlo/install/gnu4.8.2/boost/include" \
-      -D BoostLib_LIBRARY_DIRS:FILEPATH="/home/rppawlo/install/gnu4.8.2/boost/lib/" \
 -D MPI_EXEC_MAX_NUMPROCS:STRING=6 \
 -D CMAKE_CXX_COMPILER:FILEPATH="/home/rppawlo/install/gnu4.8.2/mpich/bin/mpicxx" \
 -D CMAKE_C_COMPILER:FILEPATH="/home/rppawlo/install/gnu4.8.2/mpich/bin/mpicc" \
 -D CMAKE_Fortran_COMPILER:FILEPATH="/home/rppawlo/install/gnu4.8.2/mpich/bin/mpif90" \
 -D Trilinos_ENABLE_Fortran:BOOL=ON \
--D CMAKE_CXX_FLAGS:STRING="-g -Wall -DGLIBCXX_FORCE_NEW" \
+-D CMAKE_CXX_FLAGS:STRING="-g -Wall" \
 -D CMAKE_C_FLAGS:STRING="" \
 -D CMAKE_VERBOSE_MAKEFILE:BOOL=OFF \
 -D Trilinos_VERBOSE_CONFIGURE:BOOL=OFF \
