@@ -155,13 +155,15 @@ namespace MueLu {
       } catch (Exceptions::DependencyError& e) {
         std::ostringstream msg;
         msg << requestedBy->ShortClassName() << "::DeclareInput: (" << e.what() << ") unable to find or generate requested data \""
-            << ename << "\" with generating factory \"" << ((factory != NULL) ? factory->ShortClassName() : "null") << "\"";
-        msg << "\n    during request for data \"" << std::setw(15) << ename << "\" on level " << GetLevelID() << " by factory " << requestedBy->ShortClassName();
+            << ename << "\" with generating factory \"" << ((factory != NULL) ? factory->ShortClassName() : "null") << "\" [" << factory << "]";
+        msg << "\n    during request for data \"" << std::setw(15) << ename << "\" on level " << GetLevelID()
+            << " by factory " << std::setw(25) << requestedBy->ShortClassName() << " [" << requestedBy << "]";
         throw Exceptions::RuntimeError(msg.str());
 
       } catch (Exceptions::RuntimeError &e) {
         std::ostringstream msg;
-        msg << e.what() << "\n    during request for data \"" << std::setw(15) << ename << "\" on level " << GetLevelID() << " by factory " << requestedBy->ShortClassName();
+        msg << e.what() << "\n    during request for data \"" << std::setw(15) << ename << "\" on level " << GetLevelID()
+            << " by factory " << std::setw(25) << requestedBy->ShortClassName() << " [" << requestedBy << "]";
         throw Exceptions::RuntimeError(msg.str());
       }
 
