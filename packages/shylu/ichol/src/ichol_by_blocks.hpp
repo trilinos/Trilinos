@@ -2,7 +2,7 @@
 #ifndef __ICHOL_BY_BLOCKS_HPP__
 #define __ICHOL_BY_BLOCKS_HPP__
 
-/// \file ichol_right_by_blocks.hpp
+/// \file ichol_by_blocks.hpp
 /// \brief Sparse incomplete Cholesky factorization by blocks.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 

@@ -2,7 +2,7 @@
 #ifndef __TRI_SOLVE_U_NT_BY_BLOCKS_HPP__
 #define __TRI_SOLVE_U_NT_BY_BLOCKS_HPP__
 
-/// \file trsm_l_u_nt.hpp
+/// \file tri_solve_u_nt_by_blocks.hpp
 /// \brief Sparse triangular solve on given sparse patterns and multiple rhs.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 ///
@@ -11,28 +11,48 @@ namespace Example {
 
   using namespace std;
 
+  template<typename ParallelForType,
+           typename CrsTaskViewTypeA,
+           typename DenseTaskViewTypeB,
+           typename DenseTaskViewTypeC>
+  KOKKOS_INLINE_FUNCTION
+  static int genGemmTasks_UpperByBlocks(typename CrsTaskViewTypeA::policy_type &policy,
+                                        CrsTaskViewTypeA &A,
+                                        DenseTaskViewTypeB &B,
+                                        DenseTaskViewTypeC &C);
+
+  template<typename ParallelForType,
+           typename CrsTaskViewTypeA,
+           typename DenseTaskViewTypeB>
+  KOKKOS_INLINE_FUNCTION
+  static int genTrsmTasks_UpperByBlocks(typename CrsTaskViewTypeA::policy_type &policy,
+                                        const int diagA,
+                                        CrsTaskViewTypeA &A,
+                                        DenseTaskViewTypeB &B);
+
   template<>
   template<typename ParallelForType,
-           typename CrsExecViewType,
-           typename DenseExecViewType>
+           typename CrsTaskViewTypeA,
+           typename DenseTaskViewTypeB>
   KOKKOS_INLINE_FUNCTION
   int
-  TriSolve<Uplo::Upper,Trans::NoTranspose,
-           AlgoTriSolve::ByBlocks>
-  ::invoke(const typename CrsExecViewType::policy_type::member_type &member,
+  TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::ByBlocks>
+  ::invoke(const typename CrsTaskViewTypeA::policy_type::member_type &member,
            const int diagA,
-           CrsExecViewType &A,
-           DenseExecViewType &B) {
+           CrsTaskViewTypeA &A,
+           DenseTaskViewTypeB &B) {
+    // this task generation should be done by a root
+    // ---------------------------------------------
     if (member.team_rank() == 0) {
-      typename CrsTaskViewType::policy_type policy;
+      typename CrsTaskViewTypeA::policy_type policy;
+      
+      CrsTaskViewTypeA ATL, ATR,      A00, A01, A02,
+        /**/           ABL, ABR,      A10, A11, A12,
+        /**/                          A20, A21, A22;
 
-      CrsTaskViewType ATL, ATR,      A00, A01, A02,
-        /**/          ABL, ABR,      A10, A11, A12,
-        /**/                         A20, A21, A22;
-
-      DenseTaskViewType BT,      B0,
-        /**/            BB,      B1,
-        /**/                     B2;
+      DenseTaskViewTypeB BT,      B0,
+        /**/             BB,      B1,
+        /**/                      B2;
 
       Part_2x2(A,  ATL, ATR,
                /**/ABL, ABR,
@@ -56,12 +76,10 @@ namespace Example {
         // -----------------------------------------------------
 
         // B1 = B1 - A12*B2;
-        genGemmTasks_UpperByBlocks
-          <ParallelForType,CrsTaskViewType,DenseTaskViewType>(policy, A12, B2, B1);
+        genGemmTasks_UpperByBlocks<ParallelForType>(policy, A12, B2, B1);
 
         // B1 = inv(triu(A11))*B1
-        genTrsmTasks_UpperByBlocks
-          <ParallelForType,CrsTaskViewType,DenseTaskViewType>(policy, diagA, A11, B1);
+        genTrsmTasks_UpperByBlocks<ParallelForType>(policy, diagA, A11, B1);
 
         // -----------------------------------------------------
         Merge_3x3_to_2x2(A00, A01, A02, /**/ ATL, ATR,

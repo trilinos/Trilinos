@@ -2,7 +2,7 @@
 #ifndef __ICHOL_BLOCKED_HPP__
 #define __ICHOL_BLOCKED_HPP__
 
-/// \file ichol_right_blocked.hpp
+/// \file ichol_blocked.hpp
 /// \brief Blocked incomplete Chloesky factorization.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 ///

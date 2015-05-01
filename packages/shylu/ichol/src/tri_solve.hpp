@@ -2,7 +2,7 @@
 #ifndef __TRI_SOLVE_HPP__
 #define __TRI_SOLVE_HPP__
 
-/// \file trsm.hpp
+/// \file tri_solve.hpp
 /// \brief Sparse triangular solve on given sparse patterns and multiple rhs.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -82,10 +82,10 @@ namespace Example {
 // triangular solve
 #include "tri_solve_u_ct_unblocked.hpp"
 #include "tri_solve_u_ct_blocked.hpp"
-//#include "tri_solve_u_ct_by_blocks.hpp"
+#include "tri_solve_u_ct_by_blocks.hpp"
 
 #include "tri_solve_u_nt_unblocked.hpp"
 #include "tri_solve_u_ct_blocked.hpp"
-//#include "tri_solve_u_ct_by_blocks.hpp"
+#include "tri_solve_u_ct_by_blocks.hpp"
 
 #endif

@@ -2,7 +2,7 @@
 #ifndef __TRI_SOLVE_U_CT_BLOCKED_HPP__
 #define __TRI_SOLVE_U_CT_BLOCKED_HPP__
 
-/// \file trsm_l_u_nt.hpp
+/// \file tri_solve_u_ct_blocked.hpp
 /// \brief Sparse triangular solve on given sparse patterns and multiple rhs.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 ///

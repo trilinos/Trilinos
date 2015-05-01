@@ -2,7 +2,7 @@
 #ifndef __ICHOL_BY_BLOCKS_VAR1_HPP__
 #define __ICHOL_BY_BLOCKS_VAR1_HPP__
 
-/// \file ichol_right_by_blocks_var1.hpp
+/// \file ichol_by_blocks_var1.hpp
 /// \brief Sparse incomplete Cholesky factorization by blocks.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 ///
@@ -105,14 +105,14 @@ namespace Example {
     // update herk
     for (ordinal_type i=0;i<nnz;++i) {
       const ordinal_type row_at_i = a.Col(i);
-      value_type &val_at_i = a.Value(i);
+      value_type &aa = a.Value(i);
 
       c.setView(C, row_at_i);
 
       ordinal_type idx = 0;
       for (ordinal_type j=i;j<nnz && (idx > -2);++j) {
         const ordinal_type col_at_j = a.Col(j);
-        value_type &val_at_j = a.Value(j);
+        value_type &bb = a.Value(j);
 
         if (row_at_i == col_at_j) {
           idx = c.Index(row_at_i, idx);
@@ -122,10 +122,10 @@ namespace Example {
               ::create(policy, 
                        Herk<Uplo::Upper,Trans::ConjTranspose,AlgoHerk::ForFactorBlocked>
                        ::TaskFunctor<ParallelForType,double,
-                       value_type,value_type>(-1.0, val_at_i, 1.0, cc));
+                       value_type,value_type>(-1.0, aa, 1.0, cc));
             
             // dependence
-            task_factory_type::addDependence(policy, f, val_at_i.Future());              
+            task_factory_type::addDependence(policy, f, aa.Future());              
             
             // self
             task_factory_type::addDependence(policy, f, cc.Future());
@@ -144,11 +144,11 @@ namespace Example {
               ::create(policy, 
                        Gemm<Trans::ConjTranspose,Trans::NoTranspose,AlgoGemm::ForFactorBlocked>
                        ::TaskFunctor<ParallelForType,double,
-                       value_type,value_type,value_type>(-1.0, val_at_i, val_at_j, 1.0, cc));
+                       value_type,value_type,value_type>(-1.0, aa, bb, 1.0, cc));
             
             // dependence
-            task_factory_type::addDependence(policy, f, val_at_i.Future());
-            task_factory_type::addDependence(policy, f, val_at_j.Future());
+            task_factory_type::addDependence(policy, f, aa.Future());
+            task_factory_type::addDependence(policy, f, bb.Future());
             
             // self
             task_factory_type::addDependence(policy, f, cc.Future());

@@ -115,6 +115,30 @@ namespace Example {
 
       return os;
     }
+    
+    ostream& showMeDetail(ostream &os) const {
+      showMe(os) << endl;
+      
+      streamsize prec = os.precision();
+      os.precision(8);
+      os << scientific;
+      
+      const int w = 10;
+      if (_base != NULL) {
+        for (ordinal_type i=0;i<NumRows();++i) {
+          for (ordinal_type j=0;j<NumCols();++j) {
+            const value_type val = this->Value(i,j);
+            os << setw(w) << val << "  ";
+          }
+          os << endl;
+        }
+      }
+
+      os.unsetf(ios::scientific);
+      os.precision(prec);
+      
+      return os;
+    }
 
   };
 }
