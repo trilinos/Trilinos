@@ -725,4 +725,17 @@
 
   </reuse>
 
+  <debug>
+
+    <parameter>
+      <name>debug: graph level</name>
+      <type>int</type>
+      <default>-1</default>
+      <description>Output dependency graph.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+  </debug>
+
 </masterlist>

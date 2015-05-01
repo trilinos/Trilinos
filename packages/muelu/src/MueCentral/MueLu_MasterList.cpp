@@ -208,6 +208,7 @@ namespace MueLu {
   "<Parameter name=\"repartition: rebalance P and R\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: use subcommunicators\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"reuse: type\" type=\"string\" value=\"none\"/>"
+  "<Parameter name=\"debug: graph level\" type=\"int\" value=\"-1\"/>"
 "</ParameterList>"
 ;
   std::map<std::string,std::string> MasterList::DefaultProblemTypeLists_ = DefaultProblemStrings<std::string,std::string>
@@ -455,6 +456,8 @@ namespace MueLu {
          ("repartition: use subcommunicators","repartition: use subcommunicators")
 
          ("reuse: type","reuse: type")
+
+         ("debug: graph level","debug: graph level")
       ;
 
 }
