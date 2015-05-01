@@ -177,7 +177,7 @@ FixedHashTable () :
 
 template<class KeyType, class ValueType, class DeviceType>
 FixedHashTable<KeyType, ValueType, DeviceType>::
-FixedHashTable (const ArrayView<const KeyType>& keys) :
+FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys) :
 #if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   rawPtr_ (NULL),
   rawVal_ (NULL),
@@ -193,7 +193,7 @@ FixedHashTable (const ArrayView<const KeyType>& keys) :
 
 template<class KeyType, class ValueType, class DeviceType>
 FixedHashTable<KeyType, ValueType, DeviceType>::
-FixedHashTable (const ArrayView<const KeyType>& keys,
+FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
                 const ValueType startingValue) :
 #if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   rawPtr_ (NULL),
@@ -210,8 +210,8 @@ FixedHashTable (const ArrayView<const KeyType>& keys,
 
 template<class KeyType, class ValueType, class DeviceType>
 FixedHashTable<KeyType, ValueType, DeviceType>::
-FixedHashTable (const ArrayView<const KeyType>& keys,
-                const ArrayView<const ValueType>& vals) :
+FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
+                const Teuchos::ArrayView<const ValueType>& vals) :
 #if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   rawPtr_ (NULL),
   rawVal_ (NULL),
@@ -228,7 +228,7 @@ FixedHashTable (const ArrayView<const KeyType>& keys,
 template<class KeyType, class ValueType, class DeviceType>
 void
 FixedHashTable<KeyType, ValueType, DeviceType>::
-init (const ArrayView<const KeyType>& keys,
+init (const Teuchos::ArrayView<const KeyType>& keys,
       const ValueType startingValue)
 {
   const size_type numKeys = keys.size ();
@@ -243,12 +243,11 @@ init (const ArrayView<const KeyType>& keys,
 #endif // HAVE_TPETRA_DEBUG
 
   // Kokkos::View fills with zeros by default.
-  typename Kokkos::View<size_type*, DeviceType>::HostMirror ptr ("ptr", size + 1);
+  typename ptr_type::non_const_type::HostMirror ptr ("ptr", size + 1);
 
   // Allocate the array of key,value pairs.  Don't waste time filling
   // it with zeros, because we will fill it with actual data below.
-  typename Kokkos::View<Kokkos::pair<KeyType, ValueType>*, DeviceType>::HostMirror val
-    (Kokkos::ViewAllocateWithoutInitializing ("val"), numKeys);
+  typename val_type::non_const_type::HostMirror val (Kokkos::ViewAllocateWithoutInitializing ("val"), numKeys);
 
   // Compute number of entries in each hash table position.
   for (size_type k = 0; k < numKeys; ++k) {
@@ -274,7 +273,7 @@ init (const ArrayView<const KeyType>& keys,
   //ptr[0] = 0; // We've already done this when initializing ptr above.
 
   // curRowStart[i] is the offset of the next element in row i.
-  typename Kokkos::View<size_type*, DeviceType>::HostMirror curRowStart ("curRowStart", size);
+  typename ptr_type::non_const_type::HostMirror curRowStart ("curRowStart", size);
 
   // Fill in the hash table.
   for (size_type k = 0; k < numKeys; ++k) {
@@ -303,8 +302,8 @@ init (const ArrayView<const KeyType>& keys,
 template<class KeyType, class ValueType, class DeviceType>
 void
 FixedHashTable<KeyType, ValueType, DeviceType>::
-init (const ArrayView<const KeyType>& keys,
-      const ArrayView<const ValueType>& vals)
+init (const Teuchos::ArrayView<const KeyType>& keys,
+      const Teuchos::ArrayView<const ValueType>& vals)
 {
   const size_type numKeys = keys.size ();
   const size_type size = getRecommendedSize (Teuchos::as<int> (numKeys));
@@ -317,10 +316,10 @@ init (const ArrayView<const KeyType>& keys,
     "Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
 
-  typename Kokkos::View<size_type*, DeviceType>::HostMirror ptr ("ptr", size + 1);
+  typename ptr_type::non_const_type::HostMirror ptr ("ptr", size + 1);
 
   // Don't fill 'val' here; we will fill it below.
-  typename Kokkos::View<Kokkos::pair<KeyType, ValueType>*, DeviceType>::HostMirror val
+  typename val_type::non_const_type::HostMirror val
     (Kokkos::ViewAllocateWithoutInitializing ("val"), numKeys);
 
   // Compute number of entries in each hash table position.
@@ -347,7 +346,7 @@ init (const ArrayView<const KeyType>& keys,
   //ptr[0] = 0; // We've already done this when initializing ptr above.
 
   // curRowStart[i] is the offset of the next element in row i.
-  typename Kokkos::View<size_type*, DeviceType>::HostMirror curRowStart ("curRowStart", size);
+  typename ptr_type::non_const_type::HostMirror curRowStart ("curRowStart", size);
 
   // Fill in the hash table.
   for (size_type k = 0; k < numKeys; ++k) {

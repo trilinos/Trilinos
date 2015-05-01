@@ -79,6 +79,24 @@ template<class KeyType,
          class ValueType,
          class DeviceType = Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace> >
 class FixedHashTable : public Teuchos::Describable {
+private:
+  typedef typename Kokkos::View<KeyType*, DeviceType>::size_type size_type;
+
+  /// \brief Type of the array of hash table "buckets" (a.k.a. "row" offsets).
+  ///
+  /// We specify LayoutLeft explicitly so that the layout is the same
+  /// on all Kokkos devices.  It's a 1-D View so LayoutLeft and
+  /// LayoutRight mean the same thing, but specifying the layout
+  /// explicitly makes Kokkos::deep_copy work.
+  typedef typename Kokkos::View<const size_type*, Kokkos::LayoutLeft, DeviceType>::HostMirror ptr_type;
+  /// \brief Type of the array of (key, value) pairs in the hash table.
+  ///
+  /// We specify LayoutLeft explicitly so that the layout is the same
+  /// on all Kokkos devices.  It's a 1-D View so LayoutLeft and
+  /// LayoutRight mean the same thing, but specifying the layout
+  /// explicitly makes Kokkos::deep_copy work.
+  typedef typename Kokkos::View<const Kokkos::pair<KeyType, ValueType>*, Kokkos::LayoutLeft, DeviceType>::HostMirror val_type;
+
 public:
   //! Default constructor; makes an empty table.
   FixedHashTable ();
@@ -88,7 +106,7 @@ public:
   ///
   /// Add <tt>(keys[i], i)</tt> to the table,
   /// for i = 0, 1, ..., <tt>keys.size()</tt>.
-  FixedHashTable (const ArrayView<const KeyType>& keys);
+  FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys);
 
   /// \brief Constructor for arbitrary keys and contiguous values
   ///   starting with \c startingValue.
@@ -97,7 +115,7 @@ public:
   /// 0, 1, ..., <tt>keys.size()</tt>.  This version is useful if Map
   /// wants to exclude an initial sequence of contiguous GIDs from the
   /// table, and start with a given LID.
-  FixedHashTable (const ArrayView<const KeyType>& keys,
+  FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
                   const ValueType startingValue);
 
   /// \brief Constructor for arbitrary keys and arbitrary values.
@@ -105,8 +123,8 @@ public:
   /// Add <tt>(keys[i], vals[i])</tt> to the table, for i = 0, 1, ...,
   /// <tt>keys.size()</tt>.  This version is useful for applications
   /// other than Map's GID-to-LID lookup table.
-  FixedHashTable (const ArrayView<const KeyType>& keys,
-                  const ArrayView<const ValueType>& vals);
+  FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
+                  const Teuchos::ArrayView<const ValueType>& vals);
 
   template<class K, class V, class D>
   friend class FixedHashTable;
@@ -121,17 +139,14 @@ public:
   FixedHashTable (const FixedHashTable<KeyType, ValueType, InDeviceType>& src,
                   typename std::enable_if<! std::is_same<DeviceType, InDeviceType>::value, int>::type* = NULL)
   {
-    typedef typename Kokkos::View<size_type*, DeviceType>::HostMirror ptr_type;
-    typedef typename Kokkos::View<Kokkos::pair<KeyType, ValueType>*, DeviceType>::HostMirror val_type;
-
-    ptr_type ptr (Kokkos::ViewAllocateWithoutInitializing ("ptr"), src.ptr_.dimension_0 ());
+    typename ptr_type::non_const_type ptr (Kokkos::ViewAllocateWithoutInitializing ("ptr"), src.ptr_.dimension_0 ());
     // FIXME (mfh 01 May 2015) deep_copy won't work once we switch
     // from using host mirrors to storing the data in device memory.
     // In that case, we'll either need to fix the layout, or use a
     // copy kernel.  Fixing the layout would probably be easier, and
     // it doesn't matter since all Views here are 1-D.
     Kokkos::deep_copy (ptr, src.ptr_);
-    val_type val (Kokkos::ViewAllocateWithoutInitializing ("val"), src.val_.dimension_0 ());
+    typename val_type::non_const_type val (Kokkos::ViewAllocateWithoutInitializing ("val"), src.val_.dimension_0 ());
     Kokkos::deep_copy (val, src.val_);
 
     this->ptr_ = ptr;
@@ -168,12 +183,10 @@ public:
   //@}
 
 private:
-  typedef typename Kokkos::View<const KeyType*, DeviceType>::size_type size_type;
-
   //! Array of "row" offsets.
-  typename Kokkos::View<const size_type*, DeviceType>::HostMirror ptr_;
+  ptr_type ptr_;
   //! Array of hash table entries.
-  typename Kokkos::View<const Kokkos::pair<KeyType, ValueType>*, DeviceType>::HostMirror val_;
+  val_type val_;
 
 #if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   /// \brief <tt>rawPtr_ == ptr_.ptr_on_device()</tt>.
@@ -204,7 +217,7 @@ private:
   /// Add <tt>(keys[i], startingValue + i)</tt> to the table,
   /// for i = 0, 1, ..., <tt>keys.size()</tt>.
   void
-  init (const ArrayView<const KeyType>& keys,
+  init (const Teuchos::ArrayView<const KeyType>& keys,
         const ValueType startingValue);
 
   /// \brief Allocate storage and initialize the table.
@@ -213,8 +226,8 @@ private:
   /// <tt>keys.size()</tt>.  This is called by the version of the
   /// constructor that takes the same arguments.
   void
-  init (const ArrayView<const KeyType>& keys,
-        const ArrayView<const ValueType>& vals);
+  init (const Teuchos::ArrayView<const KeyType>& keys,
+        const Teuchos::ArrayView<const ValueType>& vals);
 
   //! The hash function; it returns \c int no matter the value type.
   int hashFunc (const KeyType key, const size_type size) const;
