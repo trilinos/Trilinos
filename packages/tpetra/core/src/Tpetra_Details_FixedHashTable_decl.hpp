@@ -212,12 +212,22 @@ private:
   //! Sanity checks; throw std::logic_error if any of them fail.
   void check () const;
 
+  typedef Kokkos::View<const KeyType*,
+                       typename ptr_type::HostMirror::array_layout,
+                       typename ptr_type::HostMirror::execution_space,
+                       Kokkos::MemoryUnmanaged> host_input_keys_type;
+
+  typedef Kokkos::View<const ValueType*,
+                       typename ptr_type::HostMirror::array_layout,
+                       typename ptr_type::HostMirror::execution_space,
+                       Kokkos::MemoryUnmanaged> host_input_vals_type;
+
   /// \brief Allocate storage and initialize the table.
   ///
   /// Add <tt>(keys[i], startingValue + i)</tt> to the table,
   /// for i = 0, 1, ..., <tt>keys.size()</tt>.
   void
-  init (const Teuchos::ArrayView<const KeyType>& keys,
+  init (const host_input_keys_type& keys,
         const ValueType startingValue);
 
   /// \brief Allocate storage and initialize the table.
@@ -226,8 +236,8 @@ private:
   /// <tt>keys.size()</tt>.  This is called by the version of the
   /// constructor that takes the same arguments.
   void
-  init (const Teuchos::ArrayView<const KeyType>& keys,
-        const Teuchos::ArrayView<const ValueType>& vals);
+  init (const host_input_keys_type& keys,
+        const host_input_vals_type& vals);
 
   //! The hash function; it returns \c int no matter the value type.
   int hashFunc (const KeyType key, const size_type size) const;

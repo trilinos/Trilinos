@@ -183,7 +183,13 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys) :
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   hasDuplicateKeys_ (false) // to revise in init()
 {
-  init (keys, static_cast<ValueType> (0));
+  // mfh 01 May 2015: I don't trust that
+  // Teuchos::ArrayView::getRawPtr() returns NULL when the size is 0,
+  // so I ensure this manually.
+  const ValueType startingValue = static_cast<ValueType> (0);
+  host_input_keys_type keys_k (keys.size () == 0 ? NULL : keys.getRawPtr (),
+                               keys.size ());
+  init (keys_k, startingValue);
 
 #ifdef HAVE_TPETRA_DEBUG
   check ();
@@ -200,7 +206,12 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   hasDuplicateKeys_ (false) // to revise in init()
 {
-  init (keys, startingValue);
+  // mfh 01 May 2015: I don't trust that
+  // Teuchos::ArrayView::getRawPtr() returns NULL when the size is 0,
+  // so I ensure this manually.
+  host_input_keys_type keys_k (keys.size () == 0 ? NULL : keys.getRawPtr (),
+                               keys.size ());
+  init (keys_k, startingValue);
 
 #ifdef HAVE_TPETRA_DEBUG
   check ();
@@ -217,7 +228,14 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   hasDuplicateKeys_ (false) // to revise in init()
 {
-  init (keys, vals);
+  // mfh 01 May 2015: I don't trust that
+  // Teuchos::ArrayView::getRawPtr() returns NULL when the size is 0,
+  // so I ensure this manually.
+  host_input_keys_type keys_k (keys.size () == 0 ? NULL : keys.getRawPtr (),
+                               keys.size ());
+  host_input_vals_type vals_k (vals.size () == 0 ? NULL : vals.getRawPtr (),
+                               vals.size ());
+  init (keys_k, vals_k);
 
 #ifdef HAVE_TPETRA_DEBUG
   check ();
@@ -227,10 +245,10 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
 template<class KeyType, class ValueType, class DeviceType>
 void
 FixedHashTable<KeyType, ValueType, DeviceType>::
-init (const Teuchos::ArrayView<const KeyType>& keys,
+init (const host_input_keys_type& keys,
       const ValueType startingValue)
 {
-  const size_type numKeys = keys.size ();
+  const size_type numKeys = keys.dimension_0 ();
   TEUCHOS_TEST_FOR_EXCEPTION
     (numKeys > static_cast<size_type> (INT_MAX), std::logic_error, "Tpetra::"
      "Details::FixedHashTable: This class currently only works when the number "
@@ -307,10 +325,10 @@ init (const Teuchos::ArrayView<const KeyType>& keys,
 template<class KeyType, class ValueType, class DeviceType>
 void
 FixedHashTable<KeyType, ValueType, DeviceType>::
-init (const Teuchos::ArrayView<const KeyType>& keys,
-      const Teuchos::ArrayView<const ValueType>& vals)
+init (const host_input_keys_type& keys,
+      const host_input_vals_type& vals)
 {
-  const size_type numKeys = keys.size ();
+  const size_type numKeys = keys.dimension_0 ();
   TEUCHOS_TEST_FOR_EXCEPTION
     (numKeys > static_cast<size_type> (INT_MAX), std::logic_error, "Tpetra::"
      "Details::FixedHashTable: This class currently only works when the number "
