@@ -45,10 +45,9 @@
 #define TPETRA_DETAILS_FIXEDHASHTABLE_DEF_HPP
 
 #include "Tpetra_Details_FixedHashTable_decl.hpp"
-
-#include <Teuchos_as.hpp>
-#include "MurmurHash3.hpp"
-
+#ifdef TPETRA_USE_MURMUR_HASH
+#  include "MurmurHash3.hpp"
+#endif // TPETRA_USE_MURMUR_HASH
 
 namespace Tpetra {
 namespace Details {
@@ -232,7 +231,13 @@ init (const Teuchos::ArrayView<const KeyType>& keys,
       const ValueType startingValue)
 {
   const size_type numKeys = keys.size ();
-  const size_type size = getRecommendedSize (Teuchos::as<int> (numKeys));
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (numKeys > static_cast<size_type> (INT_MAX), std::logic_error, "Tpetra::"
+     "Details::FixedHashTable: This class currently only works when the number "
+     "of keys is <= INT_MAX = " << INT_MAX << ".  If this is a problem for you"
+     ", please talk to the Tpetra developers.");
+
+  const size_type size = getRecommendedSize (static_cast<int> (numKeys));
 #ifdef HAVE_TPETRA_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
     size == 0 && numKeys != 0, std::logic_error,
@@ -306,7 +311,13 @@ init (const Teuchos::ArrayView<const KeyType>& keys,
       const Teuchos::ArrayView<const ValueType>& vals)
 {
   const size_type numKeys = keys.size ();
-  const size_type size = getRecommendedSize (Teuchos::as<int> (numKeys));
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (numKeys > static_cast<size_type> (INT_MAX), std::logic_error, "Tpetra::"
+     "Details::FixedHashTable: This class currently only works when the number "
+     "of keys is <= INT_MAX = " << INT_MAX << ".  If this is a problem for you"
+     ", please talk to the Tpetra developers.");
+
+  const size_type size = getRecommendedSize (static_cast<int> (numKeys));
 #ifdef HAVE_TPETRA_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
     size == 0 && numKeys != 0, std::logic_error,
