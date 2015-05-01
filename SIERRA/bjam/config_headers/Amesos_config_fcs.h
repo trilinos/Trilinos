@@ -87,3 +87,9 @@
 
 /* Define to 1 if you have the <valgrind/valgrind.h> header file. */
 /* #undef HAVE_VALGRIND_VALGRIND_H */
+
+/* Define to 1 if SuperLU_DIST uses a SLU_ prefix on a few of its enums. */
+/* #undef HAVE_SUPERLUDIST_ENUM_NAMESPACE */
+
+/* Define to 1 if SuperLU_DIST's LUstructInit is declared with 2 arguments. */
+/* #undef HAVE_SUPERLUDIST_LUSTRUCTINIT_2ARG */

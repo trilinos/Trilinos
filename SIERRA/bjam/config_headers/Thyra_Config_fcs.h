@@ -27,3 +27,5 @@
 
 
 #define THYRA_DEPRECATED
+#define THYRA_DEPRECATED_MSG(MSG)
+

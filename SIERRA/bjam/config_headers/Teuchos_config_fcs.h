@@ -1,4 +1,6 @@
 
+/* #undef TEUCHOS_STANDALONE_PACKAGE */
+
 /* #undef BUILD_SHARED_LIBS */
 
 #define HAVE_TEUCHOS_PARAMETERLIST
@@ -47,12 +49,8 @@
 
 /* #undef HAVE_TEUCHOS_LAPACKLARND */
 
-/* #undef HAVE_TEUCHOSCORE_BOOST */
-
 /* Deprecated */
 /* #undef HAVE_TEUCHOS_BOOST */
-
-/* #undef HAVE_TEUCHOSCORE_QT */
 
 /* Deprecated */
 /* #undef HAVE_TEUCHOS_QT */
@@ -61,15 +59,9 @@
 
 /* #undef HAVE_TEUCHOSNUMERICS_EIGEN */
 
-/* Deprecated */
-/* #undef HAVE_TEUCHOSCORE_QD */
-
 /* #undef HAVE_TEUCHOS_DOUBLE_TO_QD */
 
 /* #undef HAVE_TEUCHOS_ARPREC */
-
-/* Deprecated */
-/* #undef HAVE_TEUCHOSCORE_ARPREC */
 
 /* #undef HAVE_TEUCHOS_DOUBLE_TO_ARPREC */
 
@@ -86,8 +78,6 @@
 /* #undef HAVE_TEUCHOS_DEBUG */
 
 /* #undef HAVE_TEUCHOS_DEBUG_RCP_NODE_TRACING */
-
-/* #undef HAS_TEUCHOS_BOOST_IS_POLYMORPHIC */
 
 #define HAVE_TEUCHOS_DEMANGLE
 
@@ -116,3 +106,5 @@
 #define INVALID_TEMPLATE_QUALIFIER 
 
 #define TEUCHOS_DEPRECATED
+#define TEUCHOS_DEPRECATED_MSG(MSG)
+

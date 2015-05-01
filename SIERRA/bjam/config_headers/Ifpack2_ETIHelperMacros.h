@@ -6,19 +6,22 @@
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_CrsGraph.hpp>
 
-#define IFPACK2_INSTANTIATE_SLG(INSTMACRO)\
-	INSTMACRO( double , int , int )\
-	INSTMACRO( double , int , long )
+#define IFPACK2_INSTANTIATE_SLG(INSTMACRO)
 
 
-#define IFPACK2_INSTANTIATE_SLG_REAL(INSTMACRO)\
-	INSTMACRO( double , int , int )\
-	INSTMACRO( double , int , long )
+#define IFPACK2_INSTANTIATE_SLG_REAL(INSTMACRO)
 
 
-#define IFPACK2_INSTANTIATE_LG(INSTMACRO)\
-	INSTMACRO( int , int )\
-	INSTMACRO( int , long )
+#define IFPACK2_INSTANTIATE_LG(INSTMACRO)
+
+
+#define IFPACK2_INSTANTIATE_SLGN(INSTMACRO)
+
+
+#define IFPACK2_INSTANTIATE_SLGN_REAL(INSTMACRO)
+
+
+#define IFPACK2_INSTANTIATE_LGN(INSTMACRO)
 
 
 #define IFPACK2_ETI_MANGLING_TYPEDEFS() 
