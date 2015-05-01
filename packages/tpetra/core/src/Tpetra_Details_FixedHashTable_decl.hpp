@@ -140,11 +140,10 @@ public:
                   typename std::enable_if<! std::is_same<DeviceType, InDeviceType>::value, int>::type* = NULL)
   {
     typename ptr_type::non_const_type ptr (Kokkos::ViewAllocateWithoutInitializing ("ptr"), src.ptr_.dimension_0 ());
-    // FIXME (mfh 01 May 2015) deep_copy won't work once we switch
-    // from using host mirrors to storing the data in device memory.
-    // In that case, we'll either need to fix the layout, or use a
-    // copy kernel.  Fixing the layout would probably be easier, and
-    // it doesn't matter since all Views here are 1-D.
+
+    // NOTE (mfh 01 May 2015) deep_copy works here, because regardless
+    // of the DeviceType, all FixedHashTable types use the same array
+    // layout for their internal 1-D Views.
     Kokkos::deep_copy (ptr, src.ptr_);
     typename val_type::non_const_type val (Kokkos::ViewAllocateWithoutInitializing ("val"), src.val_.dimension_0 ());
     Kokkos::deep_copy (val, src.val_);
