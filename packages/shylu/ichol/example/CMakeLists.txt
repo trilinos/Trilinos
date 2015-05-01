@@ -164,6 +164,12 @@ TRIBITS_ADD_EXECUTABLE(
   COMM serial mpi
   )
 
+TRIBITS_ADD_EXECUTABLE(
+  tri_solve_blocked
+  SOURCES tri_solve_blocked.cpp
+  COMM serial mpi
+  )
+
 # Benchmark
 # ==========
 

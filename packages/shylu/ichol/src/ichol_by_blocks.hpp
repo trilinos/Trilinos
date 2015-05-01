@@ -59,13 +59,13 @@ namespace Example {
         // -----------------------------------------------------
 
         // A11 = chol(A11)
-        genScalarTask_UpperByBlocks<ParallelForType,CrsTaskViewType>(policy, A11);
+        genScalarTask_UpperByBlocks<ParallelForType>(policy, A11);
 
         // A12 = inv(triu(A11)') * A12
-        genTrsmTasks_UpperByBlocks<ParallelForType,CrsTaskViewType>(policy, A11, A12);
+        genTrsmTasks_UpperByBlocks<ParallelForType>(policy, A11, A12);
 
         // A22 = A22 - A12' * A12
-        genHerkTasks_UpperByBlocks<ParallelForType,CrsTaskViewType>(policy, A12, A22);
+        genHerkTasks_UpperByBlocks<ParallelForType>(policy, A12, A22);
 
         // -----------------------------------------------------
         Merge_3x3_to_2x2(A00, A01, A02, /**/ ATL, ATR,

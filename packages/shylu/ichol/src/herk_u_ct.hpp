@@ -33,7 +33,7 @@ namespace Example {
     typedef typename CrsExecViewTypeA::team_factory_type team_factory_type;
 
     // scale the matrix C with beta
-    scaleCrsMatrix<ParallelForType,ScalarType,CrsExecViewTypeC>(member, beta, C);
+    scaleCrsMatrix<ParallelForType>(member, beta, C);
 
     // C(i,j) += alpha*A'(i,k)*A(k,j)
     for (ordinal_type k=0;k<A.NumRows();++k) {

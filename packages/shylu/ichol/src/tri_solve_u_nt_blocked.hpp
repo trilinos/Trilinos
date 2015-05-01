@@ -13,42 +13,44 @@ namespace Example {
 
   template<>
   template<typename ParallelForType,
-           typename CrsExecViewType,
-           typename DenseExecViewType>
+           typename CrsExecViewTypeA,
+           typename DenseExecViewTypeB>
   KOKKOS_INLINE_FUNCTION
   int
-  TriSolve<Uplo::Upper,Trans::NoTranspose,
-           AlgoTriSolve::ByBlocks>
-  ::invoke(const typename CrsExecViewType::policy_type::member_type &member,
+  TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::Blocked>
+  ::invoke(const typename CrsExecViewTypeA::policy_type::member_type &member,
            const int diagA,
            CrsExecViewType &A,
            DenseExecViewType &B) {
-    CrsTaskViewType ATL, ATR,      A00, A01, A02,
-      /**/          ABL, ABR,      A10, A11, A12,
-      /**/                         A20, A21, A22;
+    typedef typename CrsExecViewTypeA::ordinal_type ordinal_type;
+    const ordinal_type mb = blocksize;
 
-    DenseTaskViewType BT,      B0,
-      /**/            BB,      B1,
-      /**/                     B2;
-
+    CrsExecViewTypeA ATL, ATR,      A00, A01, A02,
+      /**/           ABL, ABR,      A10, A11, A12,
+      /**/                          A20, A21, A22;
+    
+    DenseExecViewTypeB BT,      B0,
+      /**/             BB,      B1,
+      /**/                      B2;
+    
     Part_2x2(A,  ATL, ATR,
              /**/ABL, ABR,
              0, 0, Partition::BottomRight);
-
+    
     Part_2x1(B,  BT,
              /**/BB,
              0, Partition::Bottom);
-
+    
     while (ABR.NumRows() < A.NumRows()) {
       Part_2x2_to_3x3(ATL, ATR, /**/  A00, A01, A02,
                       /*******/ /**/  A10, A11, A12,
                       ABL, ABR, /**/  A20, A21, A22,
-                      1, 1, Partition::TopLeft);
+                      mb, mb, Partition::TopLeft);
 
       Part_2x1_to_3x1(BT,  /**/  B0,
                       /**/ /**/  B1,
                       BB,  /**/  B2,
-                      1, Partition::Top);
+                      mb, Partition::Top);
 
       // -----------------------------------------------------
       A11.fillRowArrays();
@@ -56,13 +58,11 @@ namespace Example {
 
       // B1 = B1 - A12*B2;
       Gemm<Trans::NoTranspose,Trans::NoTranspose,AlgoGemm::ForTriSolveBlocked>
-        ::TaskFunctor<ParallelForType,double,
-        CrsExecViewType,DenseExecViewType,DenseExecViewType>(member, -1.0, A12, B2, 1.0, B1);
+        ::TaskFunctor<ParallelForType>(member, -1.0, A12, B2, 1.0, B1);
 
       // B1 = inv(triu(A11))*B1
       Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,AlgoTrsm::ForTriSolveBlocked>
-        ::TaskFunctor<ParallelForType,double,
-        CrsExecViewType,DenseExecViewType>(member, diagA, 1.0, A11, B1);
+        ::TaskFunctor<ParallelForType>(member, diagA, 1.0, A11, B1);
 
       // -----------------------------------------------------
       Merge_3x3_to_2x2(A00, A01, A02, /**/ ATL, ATR,
@@ -75,6 +75,7 @@ namespace Example {
                        B2, /**/   BB,
                        Partition::Bottom);
     }
+
     return 0;
   }
 

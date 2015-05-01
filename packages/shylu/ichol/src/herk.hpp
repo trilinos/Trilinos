@@ -57,14 +57,12 @@ namespace Example {
 
       // task execution
       void apply(value_type &r_val) {
-        r_val = Herk::invoke<ParallelForType,ScalarType,
-          ExecViewTypeA,ExecViewTypeC>(policy_type::member_null(), _alpha, _A, _beta, _C);
+        r_val = Herk::invoke<ParallelForType>(policy_type::member_null(), _alpha, _A, _beta, _C);
       }
 
       // task-data execution
       void apply(const member_type &member, value_type &r_val) {
-        r_val = Herk::invoke<ParallelForType,ScalarType,
-          ExecViewTypeA,ExecViewTypeC>(member, _alpha, _A, _beta, _C);
+        r_val = Herk::invoke<ParallelForType>(member, _alpha, _A, _beta, _C);
       }
 
     };

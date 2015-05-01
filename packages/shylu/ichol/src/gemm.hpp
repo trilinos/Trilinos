@@ -63,14 +63,12 @@ namespace Example {
 
       // task execution
       void apply(value_type &r_val) {
-        r_val = Gemm::invoke<ParallelForType,ScalarType,
-          ExecViewTypeA, ExecViewTypeB, ExecViewTypeC>(policy_type::member_null(), _alpha, _A, _B, _beta, _C);
+        r_val = Gemm::invoke<ParallelForType>(policy_type::member_null(), _alpha, _A, _B, _beta, _C);
       }
 
       // task-data execution
       void apply(const member_type &member, value_type &r_val) {
-        r_val = Gemm::invoke<ParallelForType,ScalarType,
-          ExecViewTypeA, ExecViewTypeB, ExecViewTypeC>(member, _alpha, _A, _B, _beta, _C);
+        r_val = Gemm::invoke<ParallelForType>(member, _alpha, _A, _B, _beta, _C);
       }
 
     };

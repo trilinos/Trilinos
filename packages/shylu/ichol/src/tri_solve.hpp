@@ -12,6 +12,7 @@ namespace Example {
 
   template<int ArgUplo, int ArgTrans, int ArgAlgo>
   struct TriSolve {
+    static int blocksize;
 
     // data-parallel interface
     // =======================
@@ -52,19 +53,18 @@ namespace Example {
 
       // task execution
       void apply(value_type &r_val) {
-        r_val = TriSolve::invoke<ParallelForType,
-          ExecViewTypeA,ExecViewTypeB>(policy_type::member_null(), _diagA, _A, _B);
+        r_val = TriSolve::invoke<ParallelForType>(policy_type::member_null(), _diagA, _A, _B);
       }
 
       // task-data execution
       void apply(const member_type &member, value_type &r_val) {
-        r_val = TriSolve::invoke<ParallelForType,
-          ExecViewTypeA,ExecViewTypeB>(member, _diagA, _A, _B);
+        r_val = TriSolve::invoke<ParallelForType>(member, _diagA, _A, _B);
       }
 
     };
   };
 
+  template<int ArgUplo, int ArgTrans, int ArgAlgo> int TriSolve<ArgUplo,ArgTrans,ArgAlgo>::blocksize = 32;
 }
 
 // basic utils
@@ -81,11 +81,11 @@ namespace Example {
 
 // triangular solve
 #include "tri_solve_u_ct_unblocked.hpp"
-//#include "tri_solve_u_ct_blocked.hpp"
+#include "tri_solve_u_ct_blocked.hpp"
 //#include "tri_solve_u_ct_by_blocks.hpp"
 
-//#include "tri_solve_u_nt_unblocked.hpp"
-//#include "tri_solve_u_ct_blocked.hpp"
+#include "tri_solve_u_nt_unblocked.hpp"
+#include "tri_solve_u_ct_blocked.hpp"
 //#include "tri_solve_u_ct_by_blocks.hpp"
 
 #endif

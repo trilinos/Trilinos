@@ -44,12 +44,12 @@ namespace Example {
       
       // task execution
       void apply(value_type &r_val) {
-        r_val = IChol::invoke<ParallelForType,CrsExecViewType>(policy_type::member_null(), _A);
+        r_val = IChol::invoke<ParallelForType>(policy_type::member_null(), _A);
       }
 
       // task-data execution
       void apply(const member_type &member, value_type &r_val) {
-        r_val = IChol::invoke<ParallelForType,CrsExecViewType>(member, _A);
+        r_val = IChol::invoke<ParallelForType>(member, _A);
       }
 
     };

@@ -23,10 +23,7 @@ namespace Example {
   IChol<Uplo::Upper,AlgoIChol::Blocked>
   ::invoke(const typename CrsExecViewType::policy_type::member_type &member,
            CrsExecViewType &A) {
-
-    typedef typename CrsExecViewType::value_type   value_type;
     typedef typename CrsExecViewType::ordinal_type ordinal_type;
-
     const ordinal_type mb = blocksize;
 
     CrsExecViewType ATL, ATR,      A00, A01, A02,
@@ -54,10 +51,10 @@ namespace Example {
         return A00.NumRows() + r_val;
 
       Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,AlgoTrsm::ForFactorBlocked>
-        ::invoke<ParallelForType,value_type,CrsExecViewType>(member, Diag::NonUnit, 1.0, A11, A12);
+        ::invoke<ParallelForType>(member, Diag::NonUnit, 1.0, A11, A12);
 
       Herk<Uplo::Upper,Trans::ConjTranspose,AlgoHerk::ForFactorBlocked>
-        ::invoke<ParallelForType,value_type,CrsExecViewType>(member, -1.0, A12, 1.0, A22);
+        ::invoke<ParallelForType>(member, -1.0, A12, 1.0, A22);
 
       // -----------------------------------------------------
       Merge_3x3_to_2x2(A00, A01, A02, /**/ ATL, ATR,

@@ -24,10 +24,8 @@ namespace Example {
            CrsExecViewTypeA &A,
            DenseExecViewTypeB &B) {
 
-    Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,AlgoTrsm::ForTriSolveBlocked>
-      ::invoke<ParallelForType,double,CrsExecViewTypeA,DenseExecViewTypeB>(member, diagA, 1.0, A, B);
-
-    return 0;
+    return Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,AlgoTrsm::ForTriSolveBlocked>
+      ::invoke<ParallelForType>(member, diagA, 1.0, A, B);
   }
 
 }

@@ -71,12 +71,16 @@ typedef TaskView<DenseMatrixViewType,TaskFactoryType> DenseTaskViewType;
 typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType;
 
 int main (int argc, char *argv[]) {
-  if (argc < 3) {
-    cout << "Usage: " << argv[0] << " filename nthreads" << endl;
+  if (argc < 4) {
+    cout << "Usage: " << argv[0] << " filename blksize nthreads" << endl;
     return -1;
   }
 
-  const int nthreads = atoi(argv[2]);
+  const int blocksize = atoi(argv[2]);
+  TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoIChol::Blocked>::blocksize = blocksize;
+  TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoIChol::Blocked>::blocksize = blocksize;
+
+  const int nthreads = atoi(argv[3]);
   ExecSpace::initialize(nthreads);
   cout << "Default execution space initialized = "
        << typeid(Kokkos::DefaultExecutionSpace).name()
@@ -118,12 +122,12 @@ int main (int argc, char *argv[]) {
     typedef typename CrsTaskViewType::policy_type policy_type;
 
 #ifdef USE_SEQUENTIAL_FOR
-    TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::Unblocked>
+    TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::Blocked>
       ::TaskFunctor<ForType,CrsTaskViewType,DenseTaskViewType>
       (Diag::NonUnit, U, B).apply(policy_type::member_null(), r_val);
 #else
     policy_type policy;
-    auto future = policy.create_team(TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::Unblocked>
+    auto future = policy.create_team(TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::Blocked>
                                      ::TaskFunctor<ForType,CrsTaskViewType,DenseTaskViewType>
                                      (Diag::NonUnit, U, B), 0);
     

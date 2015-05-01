@@ -13,25 +13,25 @@ namespace Example {
 
   template<>
   template<typename ParallelForType,
-           typename CrsExecViewType,
-           typename DenseExecViewType>
+           typename CrsExecViewTypeA,
+           typename DenseExecViewTypeB>
   KOKKOS_INLINE_FUNCTION
   int
-  TriSolve<Uplo::Upper,Trans::ConjTranspose,
-           AlgoTriSolve::Blocked>
-  ::invoke(const typename CrsExecViewType::policy_type::member_type &member,
+  TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::Blocked>
+  ::invoke(const typename CrsExecViewTypeA::policy_type::member_type &member,
            const int diagA,
-           CrsExecViewType &A,
-           DenseExecViewType &B) {
+           CrsExecViewTypeA &A,
+           DenseExecViewTypeB &B) {
+    typedef typename CrsExecViewTypeA::ordinal_type ordinal_type;
     const ordinal_type mb = blocksize;
 
-    CrsTaskViewType ATL, ATR,      A00, A01, A02,
-      /**/          ABL, ABR,      A10, A11, A12,
-      /**/                         A20, A21, A22;
+    CrsExecViewTypeA ATL, ATR,      A00, A01, A02,
+      /**/           ABL, ABR,      A10, A11, A12,
+      /**/                          A20, A21, A22;
 
-    DenseTaskViewType BT,      B0,
-      /**/            BB,      B1,
-      /**/                     B2;
+    DenseExecViewTypeB BT,      B0,
+      /**/             BB,      B1,
+      /**/                      B2;
 
     Part_2x2(A,  ATL, ATR,
              /**/ABL, ABR,
@@ -58,13 +58,11 @@ namespace Example {
 
       // B1 = inv(triu(A11))*B1
       Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,AlgoTrsm::ForTriSolveBlocked>
-        ::invoke<ParallelForType,double,
-        CrsExecViewType,DenseExecViewType>(member, diagA, 1.0, A11, B1);
+        ::invoke<ParallelForType>(member, diagA, 1.0, A11, B1);
 
       // B2 = B2 - A12'*B1
       Gemm<Trans::ConjTranspose,Trans::NoTranspose,AlgoGemm::ForTriSolveBlocked>
-        ::invoke<ParallelForType,double,
-        CrsExecViewType,DenseExecViewType,DenseExecViewType>(member, -1.0, A12, B1, 1.0, B2);
+        ::invoke<ParallelForType>(member, -1.0, A12, B1, 1.0, B2);
 
       // -----------------------------------------------------
       Merge_3x3_to_2x2(A00, A01, A02, /**/ ATL, ATR,

@@ -33,7 +33,7 @@ namespace Example {
     typedef typename CrsExecViewTypeA::team_factory_type team_factory_type;
 
     // scale the matrix B with alpha
-    scaleDenseMatrix<ParallelForType,ScalarType,DenseExecViewTypeB>(member, alpha, B);
+    scaleDenseMatrix<ParallelForType>(member, alpha, B);
 
     // Solve a system: AX = B -> B := inv(A) B
     const ordinal_type mA = A.NumRows();

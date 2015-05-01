@@ -224,14 +224,18 @@ namespace Example {
     }
 
     ostream& showMe(ostream &os) const {
+      streamsize prec = os.precision();
+      os.precision(8);
+      os << scientific;
+
       os << " -- " << _label << " -- " << endl
          << "    # of Rows              = " << _m << endl
          << "    # of Cols              = " << _n << endl
          << endl
-         << "    ValuesArray dimensions = " << _a.dimension_0() << ", " << _a.dimension_1() << endl
+         << "    ValueArray dimensions  = " << _a.dimension_0() << ", " << _a.dimension_1() << endl
          << endl;
       
-      const int w = 6;
+      const int w = 10;
       if (_a.size()) {
         for (ordinal_type i=0;i<_m;++i) {
           for (ordinal_type j=0;j<_n;++j) {
@@ -241,6 +245,9 @@ namespace Example {
           os << endl;
         }
       }
+
+      os.unsetf(ios::scientific);
+      os.precision(prec);
 
       return os;
     }

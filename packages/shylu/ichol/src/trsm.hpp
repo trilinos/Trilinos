@@ -58,14 +58,12 @@ namespace Example {
 
       // task execution
       void apply(value_type &r_val) {
-        r_val = Trsm::invoke<ParallelForType,ScalarType,
-          ExecViewTypeA,ExecViewTypeB>(policy_type::member_null(), _diagA, _alpha, _A, _B);
+        r_val = Trsm::invoke<ParallelForType>(policy_type::member_null(), _diagA, _alpha, _A, _B);
       }
 
       // task-data execution
       void apply(const member_type &member, value_type &r_val) {
-        r_val = Trsm::invoke<ParallelForType,ScalarType,
-          ExecViewTypeA,ExecViewTypeB>(member, _diagA, _alpha, _A, _B);
+        r_val = Trsm::invoke<ParallelForType>(member, _diagA, _alpha, _A, _B);
       }
 
     };

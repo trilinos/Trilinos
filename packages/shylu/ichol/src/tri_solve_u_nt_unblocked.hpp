@@ -13,21 +13,19 @@ namespace Example {
 
   template<>
   template<typename ParallelForType,
-           typename CrsExecViewType,
-           typename DenseExecViewType>
+           typename CrsExecViewTypeA,
+           typename DenseExecViewTypeB>
   KOKKOS_INLINE_FUNCTION
   int
   TriSolve<Uplo::Upper,Trans::NoTranspose,
            AlgoTriSolve::Unblocked>
-  ::invoke(const typename CrsExecViewType::policy_type::member_type &member,
+  ::invoke(const typename CrsExecViewTypeA::policy_type::member_type &member,
            const int diagA,
-           CrsExecViewType &A,
-           DenseExecViewType &B) {
+           CrsExecViewTypeA &A,
+           DenseExecViewTypeB &B) {
 
-    Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,AlgoTrsm::ForTriSolveBlocked>
-      ::invoke<ParallelForType,CrsExecViewType,DenseExecViewType>(member, diagA, 1.0, A, B);
-
-    return 0;
+    return Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,AlgoTrsm::ForTriSolveBlocked>
+      ::invoke<ParallelForType>(member, diagA, 1.0, A, B);
   }
 
 }

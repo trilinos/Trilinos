@@ -65,10 +65,10 @@ namespace Example {
       }
 
       // sparse inverse scale
-      scale<ParallelForType,ScalarType,CrsExecViewType>(member, 1.0/real(alpha_val), a12t);
+      scaleCrsMatrix<ParallelForType>(member, 1.0/real(alpha_val), a12t);
 
       // hermitian rank update
-      her_r<ParallelForType,ScalarType,CrsExecViewType>(member, -1.0, a12t, A22);
+      her_r<ParallelForType>(member, -1.0, a12t, A22);
 
       // -----------------------------------------------------
       Merge_3x3_to_2x2(A00,  a01,     A02,  /**/ ATL, ATR,
