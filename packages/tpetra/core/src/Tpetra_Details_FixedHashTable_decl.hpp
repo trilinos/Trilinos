@@ -239,7 +239,8 @@ private:
         const host_input_vals_type& vals);
 
   //! The hash function; it returns \c int no matter the value type.
-  int hashFunc (const KeyType key, const size_type size) const;
+  static KOKKOS_INLINE_FUNCTION int
+  hashFunc (const KeyType& key, const size_type& size);
 
   //! Number of "buckets" that the constructor should allocate.
   int getRecommendedSize (const int size);

@@ -45,29 +45,22 @@
 #define TPETRA_DETAILS_FIXEDHASHTABLE_DEF_HPP
 
 #include "Tpetra_Details_FixedHashTable_decl.hpp"
+
 #ifdef TPETRA_USE_MURMUR_HASH
-#  include "MurmurHash3.hpp"
+#  include <Kokkos_Functional.hpp> // hash function used by Kokkos::UnorderedMap
 #endif // TPETRA_USE_MURMUR_HASH
 
 namespace Tpetra {
 namespace Details {
 
 template<class KeyType, class ValueType, class DeviceType>
-int
+KOKKOS_INLINE_FUNCTION int
 FixedHashTable<KeyType, ValueType, DeviceType>::
-hashFunc (const KeyType key, const size_type size) const
+hashFunc (const KeyType& key, const size_type& size)
 {
-#ifdef HAVE_TPETRA_DEBUG
-  const char prefix[] = "Tpetra::Details::FixedHashTable::hashFunc: ";
-  const char suffix[] = "  Please report this bug to the Tpetra developers.";
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (size == 0, std::logic_error, prefix << "size == 0.  This function "
-     "should never be called if that is the case." << suffix);
-#endif // HAVE_TPETRA_DEBUG
-
 #ifdef TPETRA_USE_MURMUR_HASH
-  uint32_t k;
-  MurmurHash3_x86_32 ((void *) &key, sizeof (KeyType), 1, (void *) &k);
+  Kokkos::pod_hash<KeyType> hash;
+  const uint32_t k = hash (key);
   return static_cast<int> (k % static_cast<int> (size));
 #else
   // We are using Epetra's hash function by default, as we have
