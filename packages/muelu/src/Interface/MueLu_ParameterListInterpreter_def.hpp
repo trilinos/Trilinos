@@ -60,6 +60,7 @@
 #include "MueLu_FactoryManager.hpp"
 
 #include "MueLu_AggregationExportFactory.hpp"
+#include "MueLu_BrickAggregationFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
@@ -224,11 +225,13 @@ namespace MueLu {
     // Detect if we need to transfer coordinates to coarse levels. We do that iff
     //  - we use "distance laplacian" dropping on some level, or
     //  - we use repartitioning on some level
+    //  - we use brick aggregation
     // This is not ideal, as we may have "repartition: enable" turned on by default
     // and not present in the list, but it is better than nothing.
     useCoordinates_ = false;
-    if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "repartition: enable", bool, true) ||
-        MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "distance laplacian")) {
+    if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "repartition: enable",      bool,        true) ||
+        MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "distance laplacian") ||
+        MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: type",        std::string, "brick")) {
       useCoordinates_ = true;
 
     } else {
@@ -238,8 +241,9 @@ namespace MueLu {
         if (paramList.isSublist(levelStr)) {
           const ParameterList& levelList = paramList.sublist(levelStr);
 
-          if (MUELU_TEST_PARAM_2LIST(levelList, paramList, "repartition: enable", bool, true) ||
-              MUELU_TEST_PARAM_2LIST(levelList, paramList, "aggregation: drop scheme", std::string, "distance laplacian")) {
+          if (MUELU_TEST_PARAM_2LIST(levelList, paramList, "repartition: enable",      bool,        true) ||
+              MUELU_TEST_PARAM_2LIST(levelList, paramList, "aggregation: drop scheme", std::string, "distance laplacian") ||
+              MUELU_TEST_PARAM_2LIST(levelList, paramList, "aggregation: type",        std::string, "brick")) {
             useCoordinates_ = true;
             break;
           }
@@ -260,8 +264,9 @@ namespace MueLu {
     RCP<FactoryManager> defaultManager = rcp(new FactoryManager());
     defaultManager->SetVerbLevel(this->verbosity_);
 
+    // We will ignore keeps0
     std::vector<keep_pair> keeps0;
-    UpdateFactoryManager(paramList, ParameterList(), *defaultManager, 0, keeps0);
+    UpdateFactoryManager(paramList, ParameterList(), *defaultManager, 0/*levelID*/, keeps0);
 
     // Create level specific factory managers
     for (int levelID = 0; levelID < this->numDesiredLevel_; levelID++) {
@@ -276,8 +281,9 @@ namespace MueLu {
       std::vector<keep_pair> keeps;
       if (paramList.isSublist("level " + toString(levelID))) {
         // We do this so the parameters on the level get flagged correctly as "used"
-        ParameterList & levelList = paramList.sublist("level " + toString(levelID), true/*mustAlreadyExist*/);
+        ParameterList& levelList = paramList.sublist("level " + toString(levelID), true/*mustAlreadyExist*/);
         UpdateFactoryManager(levelList, paramList, *levelManager, levelID, keeps);
+
       }	else {
         ParameterList levelList;
         UpdateFactoryManager(levelList, paramList, *levelManager, levelID, keeps);
@@ -540,10 +546,10 @@ namespace MueLu {
 
     // Aggregation sheme
     MUELU_SET_VAR_2LIST(paramList, defaultList, "aggregation: type", std::string, aggType);
-    TEUCHOS_TEST_FOR_EXCEPTION(aggType != "uncoupled" && aggType != "coupled", Exceptions::RuntimeError,
+    TEUCHOS_TEST_FOR_EXCEPTION(aggType != "uncoupled" && aggType != "coupled" && aggType != "brick", Exceptions::RuntimeError,
                                "Unknown aggregation algorithm: \"" << aggType << "\". Please consult User's Guide.");
     RCP<Factory> aggFactory;
-    if      (aggType == "uncoupled") {
+    if (aggType == "uncoupled") {
       aggFactory = rcp(new UncoupledAggregationFactory());
       ParameterList aggParams;
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: mode",               std::string, aggParams);
@@ -565,11 +571,26 @@ namespace MueLu {
       //     UncoupledAggregationFactory
       //       CoalesceDropFactory
       aggFactory->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
+      aggFactory->SetFactory("Graph", manager.GetFactory("Graph"));
 
     } else if (aggType == "coupled") {
       aggFactory = rcp(new CoupledAggregationFactory());
+      aggFactory->SetFactory("Graph", manager.GetFactory("Graph"));
+
+    } else if (aggType == "brick") {
+      aggFactory = rcp(new BrickAggregationFactory());
+      ParameterList aggParams;
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick x size", int, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick y size", int, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick z size", int, aggParams);
+      aggFactory->SetParameterList(aggParams);
+      if (levelID > 1) {
+        // We check for levelID > 0, as in the interpreter aggFactory for
+        // levelID really corresponds to level 0. Managers are clunky, as they
+        // contain factories for two different levels
+        aggFactory->SetFactory("Coordinates", this->GetFactoryManager(levelID-1)->GetFactory("Coordinates"));
+      }
     }
-    aggFactory->SetFactory("Graph", manager.GetFactory("Graph"));
     manager.SetFactory("Aggregates", aggFactory);
 
     // Coarse map
@@ -700,6 +721,7 @@ namespace MueLu {
     RCP<RAPFactory> RAP;
     if (have_userA) {
       manager.SetFactory("A", NoFactory::getRCP());
+
     } else  {
       RAP = rcp(new RAPFactory());
       ParameterList RAPparams;
@@ -724,11 +746,11 @@ namespace MueLu {
       manager.SetFactory("A", RAP);
     }
 
-
     // === Coordinates ===
     if (useCoordinates_) {
       if (have_userCO) {
         manager.SetFactory("Coordinates", NoFactory::getRCP());
+
       } else {
         RCP<CoordinatesTransferFactory> coords = rcp(new CoordinatesTransferFactory());
         coords->SetFactory("Aggregates", manager.GetFactory("Aggregates"));

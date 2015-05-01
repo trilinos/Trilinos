@@ -53,6 +53,12 @@
 
 \cbb{aggregation: max agg size}{int}{-1}{Maximum size of an aggregate (-1 means unlimited).}
 
+\cbb{aggregation: brick x size}{int}{2}{Number of points for x axis in "brick" aggregation (limited to 3).}
+
+\cbb{aggregation: brick y size}{int}{2}{Number of points for y axis in "brick" aggregation (limited to 3).}
+
+\cbb{aggregation: brick z size}{int}{2}{Number of points for z axis in "brick" aggregation (limited to 3).}
+
 \cbb{aggregation: max selected neighbors}{int}{0}{Maximum number of neighbour nodes that are already aggregated. If a new aggregate has some neighbours that are already aggregated, this node probably can be added to one of these aggregates. We don't need a new one.}
 
 \cbb{aggregation: Dirichlet threshold}{double}{0.0}{Threshold for determining whether entries are zero during Dirichlet row detection.}

@@ -327,6 +327,30 @@
     </parameter>
 
     <parameter>
+      <name>aggregation: brick x size</name>
+      <type>int</type>
+      <default>2</default>
+      <description>Number of points for x axis in "brick" aggregation (limited to 3).</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: brick y size</name>
+      <type>int</type>
+      <default>2</default>
+      <description>Number of points for y axis in "brick" aggregation (limited to 3).</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: brick z size</name>
+      <type>int</type>
+      <default>2</default>
+      <description>Number of points for z axis in "brick" aggregation (limited to 3).</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>aggregation: max selected neighbors</name>
       <type>int</type>
       <default>0</default>
