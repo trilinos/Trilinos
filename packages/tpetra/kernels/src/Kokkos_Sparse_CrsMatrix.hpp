@@ -50,9 +50,11 @@
 
 #ifndef KOKKOS_SPARSE_CRSMATRIX_HPP_
 #define KOKKOS_SPARSE_CRSMATRIX_HPP_
-#include <stdexcept>
+
 #include <Kokkos_Core.hpp>
 #include <Kokkos_StaticCrsGraph.hpp>
+#include <sstream>
+#include <stdexcept>
 
 #ifdef KOKKOS_HAVE_CXX11
 #include <type_traits>
