@@ -63,12 +63,12 @@
 
 \section overview Overview
 
-Phalanx is a local node field evaluation kernel.  While the intended
-use case is for solving general partial differential equation (PDE)
-discretizations, there is NO specific code implemented for PDEs in
+Phalanx is a local graph-based field evaluation toolkit.  While the
+intended use case is for solving general partial differential
+equations (PDEs), there is NO specific code implemented for PDEs in
 Phalanx.  It can be applied to any system that requires function
 evaluation. In terms of PDE discretization schemes it can be used for
-finite element, finite difference and finite volume.  
+finite element, finite difference and finite volume.
 
 Phalanx is a local node evaluation tool. Phalanx relies on the Kokkos
 package for performance portability and provides a simple performant
@@ -77,7 +77,7 @@ is for large scale parallel high performance computing, the MPI
 communication (possibly required for ghosting) must be handled by
 other packages in the toolchain (separation of concerns).  Users can
 handle this manually as Phalanx places no requirements on this but we
-recomend the Tpetra package.
+recomend the Tpetra package in Trilinos be leveraged.
 
 The main goal of Phalanx is to decompose a complex problem into a
 number of simpler problems with managed dependencies to support rapid
@@ -159,28 +159,30 @@ dependency chain can become quite complex when solving thousands of
 coupled PDE equations.
 
 <li> Efficient evaluation of field data: Phalanx was designed to
-support the concept of worksets, although this is not required.  A
-workset is an arbitrarily sized block of cells to be evaluated on the
-local processor.  Phalanx evaluates all fields of interest at once for
-each block of cells.  By using the contiguous allocator and correctly
-sizing the workset to fit in processor cache (if possible), one can
-arrange all fields to exist in a contiguous block of memory,
-independent of the data type objects used to store the data (one must
-still be careful of data alignement issues).  By keeping all fields in
-cache, the code should run much faster.  This workset idea will also,
-in the future, allow for multi-core distrubution of the cell
-evaluations.  NOTE: with the transition to the Kokkos::View as the
-underlying data type, the contiguous memory allocation is no longer
-supported as Kokkos will control data placement to maximize hardware
-locality (NUMA).
+support the concept of worksets, although this is NOT REQUIRED.  A
+workset is an arbitrarily sized block of cells (or egdesor faces or
+nodes) to be evaluated on the local processor.  Phalanx evaluates all
+fields of interest at once for each block of cells.  By using the
+contiguous allocator and correctly sizing the workset to fit in
+processor cache (if possible), one can arrange all fields to exist in
+a contiguous block of memory, independent of the data type objects
+used to store the data (one must still be careful of data alignement
+issues).  By keeping all fields in cache, the code should run much
+faster.  This workset idea will also, in the future, allow for
+multi-core distrubution of the cell evaluations.  
+
+NOTE: with the transition to the Kokkos::View as the underlying data
+type, the contiguous memory allocation is no longer supported as
+Kokkos will control data placement to maximize hardware locality
+(NUMA).
 
 </ul>
 
 Phalanx is a hammer.  It's use should be carefully considered.  We
 recommend its use when writing a general PDE framework where one needs
-support for flexibility in equation sets and discretizations.  It
-should not be used for a fixed set of equations and a single
-discretization that never changes (Although the template
+support for flexibility in equation sets, discretizations, and
+material models.  It should not be used for a fixed set of equations
+and a single discretization that never changes (Although the template
 metaprogramming support could still be leveraged).  There are some
 drawbacks to using Phalanx that should be considered:
 
