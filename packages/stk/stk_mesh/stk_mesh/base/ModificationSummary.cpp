@@ -110,7 +110,7 @@ void ModificationSummary::track_change_entity_id(stk::mesh::EntityId newId, stk:
     if(isValid(entity))
     {
         std::ostringstream os;
-        os << "Changing id of entity key " << getEntityKey(entity) << std::endl;
+        os << "Changing id of entity key " << getEntityKey(entity) << " to " << newId << std::endl;
         addEntityKeyAndStringToTracker(getEntityKey(entity), os.str());
     }
 }
