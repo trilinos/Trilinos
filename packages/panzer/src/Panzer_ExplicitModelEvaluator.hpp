@@ -83,6 +83,9 @@ public:
   //! Build the out args, modifies the underlying models in args slightly
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const;
 
+  //! Get the underlying panzer::ModelEvaluator
+  Teuchos::RCP<panzer::ModelEvaluator<Scalar> > getPanzerUnderlyingModel();
+
 private: // data members
 
   /** Apply the dirichlet boundary conditions to the vector "f" using the 
@@ -149,7 +152,5 @@ private: // data members
 };
 
 } // end namespace panzer
-
-#include "Panzer_ExplicitModelEvaluator_impl.hpp"
 
 #endif 
