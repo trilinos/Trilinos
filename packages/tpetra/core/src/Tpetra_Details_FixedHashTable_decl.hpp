@@ -109,7 +109,7 @@ public:
                   const ArrayView<const ValueType>& vals);
 
   template<class K, class V, class D>
-  friend struct FixedHashTable;
+  friend class FixedHashTable;
 
   /// \brief "Copy" constructor that takes a FixedHashTable with the
   ///   same KeyType and ValueType, but a different DeviceType.
