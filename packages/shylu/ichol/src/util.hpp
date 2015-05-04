@@ -18,6 +18,8 @@
 #include <cmath>
 #include <complex>
 
+#include <limits>
+
 /// \file util.hpp
 /// \brief Utility functions and constant integer class like an enum class.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
@@ -164,6 +166,29 @@ namespace Example {
   ostream& operator<<(ostream &os, const Disp &disp) {
     return disp.showMe(os);
   }  
+
+  template<typename T> struct NumericTraits {};
+
+  template<>
+  struct NumericTraits<float> {
+    typedef float real_type;
+    static real_type epsilon() { return numeric_limits<float>::epsilon(); }
+  };
+  template<>
+  struct NumericTraits<double> {
+    typedef double real_type;
+    static real_type epsilon() { return numeric_limits<double>::epsilon(); }
+  };
+  template<>
+  struct NumericTraits<complex<float> > {
+    typedef float real_type;
+    static real_type epsilon() { return numeric_limits<float>::epsilon(); }
+  };
+  template<>
+  struct NumericTraits<complex<double> > {
+    typedef double real_type;
+    static real_type epsilon() { return numeric_limits<double>::epsilon(); }
+  };
 
 }
 
