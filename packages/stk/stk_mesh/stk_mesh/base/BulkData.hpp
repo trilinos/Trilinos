@@ -1046,6 +1046,7 @@ private: //functions
 
   bool internal_modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt );
   bool internal_modification_end_for_skin_mesh( EntityRank entity_rank, modification_optimization opt );
+  void internal_finish_modification_end(modification_optimization opt);
 
   void internal_establish_new_owner(stk::mesh::Entity entity);
   void internal_update_parts_for_shared_entity(stk::mesh::Entity entity, const bool is_entity_shared, const bool did_i_just_become_owner);

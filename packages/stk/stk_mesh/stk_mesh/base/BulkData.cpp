@@ -277,66 +277,7 @@ void BulkData::find_and_delete_internal_faces(stk::mesh::EntityRank entityRank)
         }
     }
 
-    for (size_t i = 0; i < entities.size(); ++i)
-    {
-        const stk::mesh::Entity entity = entities[i];
-
-        EntityVector temp_entities;
-        std::vector<stk::mesh::ConnectivityOrdinal> temp_ordinals;
-        stk::mesh::Entity const * rel_entities = NULL;
-        int num_conn = 0;
-        stk::mesh::ConnectivityOrdinal const * rel_ordinals;
-        const stk::mesh::EntityRank end_rank = static_cast<stk::mesh::EntityRank>(mesh_meta_data().entity_rank_count() - 1);
-        const stk::mesh::EntityRank begin_rank = static_cast<stk::mesh::EntityRank>(entityRank);
-
-        for(stk::mesh::EntityRank irank = end_rank; irank != begin_rank; --irank)
-        {
-            if(connectivity_map().valid(entityRank, irank))
-            {
-                num_conn = num_connectivity(entity, irank);
-                rel_entities = begin(entity, irank);
-                rel_ordinals = begin_ordinals(entity, irank);
-            }
-            else
-            {
-                num_conn = get_connectivity(*this, entity, irank, temp_entities, temp_ordinals);
-                rel_entities = &*temp_entities.begin();
-                rel_ordinals = &*temp_ordinals.begin();
-            }
-
-            for(int j = num_conn - 1; j >= 0; --j)
-            {
-                if(is_valid(rel_entities[j]) && state(rel_entities[j]) != Deleted)
-                {
-                    bool relationDestoryed = destroy_relation(rel_entities[j], entity, rel_ordinals[j]);
-                    ThrowRequireMsg(relationDestoryed==true, "Program error. Contact sierra-help@sandia.gov for support.");
-                }
-            }
-        }
-        bool successfully_destroyed = destroy_entity(entity);
-        ThrowRequireMsg(successfully_destroyed==true, "Program error. Contact sierra-help@sandia.gov for support.");
-    }
-
-    // destroy entities and their relations
-//    for (size_t i=0;i<entities.size();++i)
-//    {
-//        if ( is_valid(entities[i]) && state(entities[i]) != Deleted )
-//        {
-//            stk::mesh::EntityRank start_rank = static_cast<stk::mesh::EntityRank>(entityRank+1);
-//            for (stk::mesh::EntityRank rank=start_rank;rank<mesh_meta_data().entity_rank_count();++i)
-//            {
-//                unsigned num_connected = this->num_connectivity(entities[i], rank);
-//                const stk::mesh::Entity *connected_entity = this->begin(entities[i], rank);
-//                for(size_t j=0;j<num_connected;++j)
-//                {
-//                    bool relation_destroyed = this->destroy_relation(connected_entity[j], entities[i], j);
-//                    ThrowRequireMsg(relation_destroyed==true, "Program error. Contact sierra-help@sandia.gov for support.");
-//                }
-//            }
-//            bool entity_destroyed = this->destroy_entity(entities[i]);
-//            ThrowRequireMsg(entity_destroyed==true, "Program error. Contact sierra-help@sandia.gov for support.");
-//        }
-//    }
+    stk::mesh::impl::delete_entities_and_upward_relations(*this, entities);
 }
 
 /////////////////////////////////////// End functions for create edges
@@ -4018,33 +3959,7 @@ bool BulkData::internal_modification_end_for_change_entity_owner( modification_o
       internal_update_sharing_comm_map_and_fill_list_modified_shared_entities( shared_modified );
   }
 
-  // ------------------------------
-  // Now sort the bucket entities.
-  // This does not change the entities, relations, or field data.
-  // However, it insures that the ordering of entities and buckets
-  // is independent of the order in which a set of changes were
-  // performed.
-  //
-  //optimize_buckets combines multiple buckets in a bucket-family into
-  //a single larger bucket, and also does a sort.
-  //If optimize_buckets has not been requested, still do the sort.
-
-  stk::mesh::impl::BucketRepository &bucket_repo = bucket_repository();
-  if ( opt == MOD_END_COMPRESS_AND_SORT ) {
-      bucket_repo.optimize_buckets();
-  }
-  else {
-      bucket_repo.internal_sort_bucket_entities();
-  }
-
-  bucket_repo.internal_modification_end();
-
-  internal_update_fast_comm_maps();
-
-  m_meshModification.set_sync_state_synchronized();
-  m_add_node_sharing_called = false;
-
-  update_deleted_entities_container();
+  this->internal_finish_modification_end(opt);
 
   return true ;
 }
@@ -4081,22 +3996,23 @@ void fillElementsConnectedToNodes(stk::mesh::BulkData &stkMeshBulkData, const st
     std::vector<stk::mesh::Entity>::iterator intersectionEnd = elementsConnectedToNodes.end();
     std::vector<stk::mesh::Entity> elems;
     std::vector<stk::mesh::Entity> elementsConnectedToNodesTemp;
-    for (size_t i = 1; i < numNodes; ++i)
+    for(size_t i = 1; i < numNodes; ++i)
     {
-      elementsConnectedToNodesTemp.clear();
-      elementsConnectedToNodesTemp.assign(elementsConnectedToNodes.begin(), intersectionEnd);
-      elemStartNode = stkMeshBulkData.begin_elements(nodes[i]);
-      elemEndNode = stkMeshBulkData.end_elements(nodes[i]);
-      elems.assign(elemStartNode, elemEndNode);
-      std::sort(elems.begin(), elems.end());
+        elementsConnectedToNodesTemp.clear();
+        elementsConnectedToNodesTemp.assign(elementsConnectedToNodes.begin(), intersectionEnd);
+        elemStartNode = stkMeshBulkData.begin_elements(nodes[i]);
+        elemEndNode = stkMeshBulkData.end_elements(nodes[i]);
+        elems.assign(elemStartNode, elemEndNode);
+        std::sort(elems.begin(), elems.end());
 
-      intersectionEnd = std::set_intersection( elems.begin(), elems.end(),
-                                               elementsConnectedToNodesTemp.begin(), elementsConnectedToNodesTemp.end(),
-                                               elementsConnectedToNodes.begin() );
-      if (intersectionEnd == elementsConnectedToNodes.begin()) break;  // Empty set
+        intersectionEnd = std::set_intersection(elems.begin(), elems.end(),
+                elementsConnectedToNodesTemp.begin(), elementsConnectedToNodesTemp.end(),
+                elementsConnectedToNodes.begin());
+        if(intersectionEnd == elementsConnectedToNodes.begin())
+            break; // Empty set
     }
 
-    elementsConnectedToNodes.resize(intersectionEnd-elementsConnectedToNodes.begin());
+    elementsConnectedToNodes.resize(intersectionEnd - elementsConnectedToNodes.begin());
 }
 
 void fillFacesConnectedToNodes(stk::mesh::BulkData &stkMeshBulkData, const stk::mesh::Entity* nodes, size_t numNodes,
@@ -4163,54 +4079,6 @@ bool doesEdgeNeedGhostingCommunication(stk::mesh::BulkData &stkMeshBulkData, std
     return communicate_edge_for_ghosting;
 }
 
-
-void connectUpwardEntityToEntity(stk::mesh::BulkData& mesh, stk::mesh::Entity upward_entity,
-        stk::mesh::Entity entity, const stk::mesh::Entity* nodes)
-{
-    uint num_nodes = mesh.num_nodes(entity);
-    EntityRank entity_rank = mesh.entity_rank(entity);
-
-    // scratch space
-    stk::mesh::OrdinalVector ordinal_scratch;
-    ordinal_scratch.reserve(64);
-    stk::mesh::PartVector part_scratch;
-    part_scratch.reserve(64);
-    stk::mesh::Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
-
-    stk::topology upward_entity_topology = mesh.bucket(upward_entity).topology();
-    std::vector<stk::mesh::Entity> nodes_of_this_side(num_nodes);
-    unsigned entity_ordinal = 100000;
-    stk::mesh::Entity const * upward_entity_nodes = mesh.begin_nodes(upward_entity);
-
-    stk::topology entity_top;
-    for (size_t k=0;k<upward_entity_topology.num_sub_topology(entity_rank);k++)
-    {
-        if(entity_rank == stk::topology::EDGE_RANK)
-        {
-          upward_entity_topology.edge_nodes(upward_entity_nodes, k, nodes_of_this_side.begin());
-          entity_top = upward_entity_topology.edge_topology();
-        }
-        else
-        {
-          entity_top = upward_entity_topology.face_topology(k);
-          nodes_of_this_side.resize(entity_top.num_nodes());
-          upward_entity_topology.face_nodes(upward_entity_nodes, k, nodes_of_this_side.begin());
-        }
-        if ( entity_top.equivalent(nodes, nodes_of_this_side).first )
-        {
-            entity_ordinal = k;
-            break;
-        }
-    }
-    ThrowRequireMsg(entity_ordinal !=100000, "Program error. Contact sierra-help for support.");
-    if ((entity_rank > stk::topology::NODE_RANK) && (mesh.entity_rank(upward_entity) > entity_rank))
-    {
-        perm = mesh.find_permutation(upward_entity_topology, upward_entity_nodes, entity_top, nodes, entity_ordinal);
-        ThrowRequireMsg(perm != INVALID_PERMUTATION, "find_permutation could not find permutation that produces a match");
-    }
-    mesh.declare_relation(upward_entity, entity, entity_ordinal, perm, ordinal_scratch, part_scratch);
-}
-
 void connectGhostedEntitiesToEntity(stk::mesh::BulkData &stkMeshBulkData, std::vector<stk::mesh::Entity> &entitiesConnectedToNodes, stk::mesh::Entity entity, const stk::mesh::Entity* nodes)
 {
     for (size_t j=0; j<entitiesConnectedToNodes.size();j++)
@@ -4219,7 +4087,7 @@ void connectGhostedEntitiesToEntity(stk::mesh::BulkData &stkMeshBulkData, std::v
 
         if ( isEntityGhostedOntoThisProc )
         {
-            connectUpwardEntityToEntity(stkMeshBulkData, entitiesConnectedToNodes[j], entity, nodes);
+            stk::mesh::impl::connectUpwardEntityToEntity(stkMeshBulkData, entitiesConnectedToNodes[j], entity, nodes);
         }
     }
 }
@@ -4318,7 +4186,6 @@ void connect_ghosted_entities_received_to_ghosted_upwardly_connected_entities(st
                     stk::mesh::Entity const *  nodes = mesh.begin_nodes(entity);
 
                     fillFacesConnectedToNodes(mesh, nodes, bucket.topology().num_nodes(), facesConnectedToNodes);
-                    //connectGhostedEntitiesToEdge(mesh, facesConnectedToNodes, entity, nodes, bucket.topology().num_nodes());
                     connectGhostedEntitiesToEntity(mesh, facesConnectedToNodes, entity, nodes);
                 }
             }
@@ -4327,9 +4194,6 @@ void connect_ghosted_entities_received_to_ghosted_upwardly_connected_entities(st
 
     if (!mesh.connectivity_map().valid(entity_rank, stk::topology::ELEMENT_RANK) )
     {
-//        ThrowRequireMsg(entity_rank == stk::topology::EDGE_RANK,
-//                       "connect_ghosted_entities_to_ghosted_upwardly_connected_entities seems broken");
-
         std::vector<stk::mesh::Entity> elementsConnectedToNodes;
         const stk::mesh::BucketVector& entity_buckets = mesh.buckets(entity_rank);
         for(size_t bucketIndex = 0; bucketIndex < entity_buckets.size(); bucketIndex++)
@@ -4337,7 +4201,6 @@ void connect_ghosted_entities_received_to_ghosted_upwardly_connected_entities(st
             const stk::mesh::Bucket& bucket = *entity_buckets[bucketIndex];
             if ( bucket.in_aura() )
             {
-
                 for(size_t entityIndex = 0; entityIndex < bucket.size(); entityIndex++)
                 {
                     Entity entity = bucket[entityIndex];
@@ -4346,16 +4209,35 @@ void connect_ghosted_entities_received_to_ghosted_upwardly_connected_entities(st
                     const stk::mesh::Entity* nodes = bucket.begin_nodes(entityIndex);
 
                     fillElementsConnectedToNodes(mesh, nodes, bucket.num_nodes(entityIndex), elementsConnectedToNodes);
-                    //connectGhostedEntitiesToEdge(mesh, elementsConnectedToNodes, entity, nodes, bucket.topology().num_nodes());
                     connectGhostedEntitiesToEntity(mesh, elementsConnectedToNodes, entity, nodes);
-
                 }
             }
         }
     }
 }
 
-bool BulkData::internal_modification_end_for_skin_mesh( EntityRank entity_rank, modification_optimization opt )
+void BulkData::internal_finish_modification_end(modification_optimization opt)
+{
+    if(opt == MOD_END_COMPRESS_AND_SORT)
+    {
+        m_bucket_repository.optimize_buckets();
+    }
+    else
+    {
+        m_bucket_repository.internal_sort_bucket_entities();
+    }
+
+    m_bucket_repository.internal_modification_end();
+
+    internal_update_fast_comm_maps();
+
+    m_meshModification.set_sync_state_synchronized();
+    m_add_node_sharing_called = false;
+
+    update_deleted_entities_container();
+}
+
+bool BulkData::internal_modification_end_for_skin_mesh( EntityRank entity_rank, modification_optimization opt)
 {
   // The two states are MODIFIABLE and SYNCHRONiZED
   if ( this->in_synchronized_state() ) { return false ; }
@@ -4373,34 +4255,7 @@ bool BulkData::internal_modification_end_for_skin_mesh( EntityRank entity_rank, 
       check_mesh_consistency();
   }
 
-  // ------------------------------
-  // Now sort the bucket entities.
-  // This does not change the entities, relations, or field data.
-  // However, it insures that the ordering of entities and buckets
-  // is independent of the order in which a set of changes were
-  // performed.
-  //
-  //optimize_buckets combines multiple buckets in a bucket-family into
-  //a single larger bucket, and also does a sort.
-  //If optimize_buckets has not been requested, still do the sort.
-
-  if ( opt == MOD_END_COMPRESS_AND_SORT ) {
-    m_bucket_repository.optimize_buckets();
-  }
-  else {
-    m_bucket_repository.internal_sort_bucket_entities();
-  }
-
-  // ------------------------------
-
-  m_bucket_repository.internal_modification_end();
-
-  internal_update_fast_comm_maps();
-
-  m_meshModification.set_sync_state_synchronized();
-  m_add_node_sharing_called = false;
-
-  update_deleted_entities_container();
+  this->internal_finish_modification_end(opt);
 
   return true ;
 }
@@ -4460,34 +4315,7 @@ bool BulkData::internal_modification_end_for_entity_creation( EntityRank entity_
       internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank( entity_rank, shared_modified );
   }
 
-  // ------------------------------
-  // Now sort the bucket entities.
-  // This does not change the entities, relations, or field data.
-  // However, it insures that the ordering of entities and buckets
-  // is independent of the order in which a set of changes were
-  // performed.
-  //
-  //optimize_buckets combines multiple buckets in a bucket-family into
-  //a single larger bucket, and also does a sort.
-  //If optimize_buckets has not been requested, still do the sort.
-
-  if ( opt == MOD_END_COMPRESS_AND_SORT ) {
-    m_bucket_repository.optimize_buckets();
-  }
-  else {
-    m_bucket_repository.internal_sort_bucket_entities();
-  }
-
-  // ------------------------------
-
-  m_bucket_repository.internal_modification_end();
-
-  internal_update_fast_comm_maps();
-
-  m_meshModification.set_sync_state_synchronized();
-  m_add_node_sharing_called = false;
-
-  update_deleted_entities_container();
+  this->internal_finish_modification_end(opt);
 
   return true ;
 }

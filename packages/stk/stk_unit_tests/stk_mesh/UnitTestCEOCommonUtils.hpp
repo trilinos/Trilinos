@@ -7864,7 +7864,7 @@ inline void fillMeshfor3Elem4Proc1Edge3DAndTest(stk::mesh::unit_test::BulkDataTe
         std::vector<stk::mesh::Entity> nodes;
         nodes.push_back(mesh.get_entity(NODE_RANK, 5));
         nodes.push_back(mesh.get_entity(NODE_RANK, 13 ));
-        stk::mesh::impl::connectEntityToEdge(mesh, elem, edge, &nodes[0], nodes.size());
+        stk::mesh::impl::connectUpwardEntityToEntity(mesh, elem, edge, &nodes[0]);
         mesh.declare_relation(edge, nodes[0], 0);
         mesh.declare_relation(edge, nodes[1], 1);
     }
