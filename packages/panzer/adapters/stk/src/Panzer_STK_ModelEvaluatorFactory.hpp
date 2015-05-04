@@ -256,17 +256,19 @@ namespace panzer_stk_classic {
                      #endif 
                      ) const;
 
-    Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
+    static Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
     buildLOWSFactory(bool blockedAssembly,
                      const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
                      const Teuchos::RCP<panzer::ConnManagerBase<int> > & conn_manager,
                      const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
                      const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
-                     const Teuchos::RCP<Teuchos::ParameterList> & strat_params
+                     const Teuchos::RCP<Teuchos::ParameterList> & strat_params,
                      #ifdef HAVE_TEKO 
-                     , const Teuchos::RCP<Teko::RequestHandler> & req_handler=Teuchos::null
+                     const Teuchos::RCP<Teko::RequestHandler> & req_handler=Teuchos::null,
                      #endif 
-                     ) const;
+                     bool writeCoordinates=false,
+                     bool writeTopo=false
+                     );
 
     //! Get the workset container associated with the mesh database.
     Teuchos::RCP<panzer::WorksetContainer> getWorksetContainer() const 
@@ -304,7 +306,7 @@ namespace panzer_stk_classic {
       *
       * \returns False if no unique field is found. Otherwise True is returned.
       */
-    bool determineCoordinateField(const panzer::UniqueGlobalIndexerBase & globalIndexer,std::string & fieldName) const;
+    static bool determineCoordinateField(const panzer::UniqueGlobalIndexerBase & globalIndexer,std::string & fieldName);
 
     /** Fill a STL map with the the block ids associated with the pattern for a specific field.
       *
@@ -312,8 +314,8 @@ namespace panzer_stk_classic {
       * \param[out] fieldPatterns A map from element block IDs to field patterns associated with the fieldName
       *                           argument
       */
-    void fillFieldPatternMap(const panzer::UniqueGlobalIndexerBase & globalIndexer, const std::string & fieldName, 
-                             std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const;
+    static void fillFieldPatternMap(const panzer::UniqueGlobalIndexerBase & globalIndexer, const std::string & fieldName, 
+                             std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns);
 
 #ifdef PANZER_HAVE_FEI
     /** Fill a STL map with the the block ids associated with the pattern for a specific field.
@@ -322,9 +324,9 @@ namespace panzer_stk_classic {
       * \param[out] fieldPatterns A map from element block IDs to field patterns associated with the fieldName
       *                           argument
       */
-    template <typename GO>
+    template <typename GO> static
     void fillFieldPatternMap(const panzer::DOFManagerFEI<int,GO> & globalIndexer, const std::string & fieldName, 
-                             std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const;
+                             std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns);
 #endif
 
     /** Fill a STL map with the the block ids associated with the pattern for a specific field.
@@ -333,9 +335,9 @@ namespace panzer_stk_classic {
       * \param[out] fieldPatterns A map from element block IDs to field patterns associated with the fieldName
       *                           argument
       */
-    template <typename GO>
+    template <typename GO> static
     void fillFieldPatternMap(const panzer::DOFManager<int,GO> & globalIndexer, const std::string & fieldName, 
-                             std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const;
+                             std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns);
 
     /**
       */
@@ -355,25 +357,27 @@ namespace panzer_stk_classic {
 
     /** Build LOWS factory.
       */
-    template <typename GO>
+    template <typename GO> static
     Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > 
     buildLOWSFactory(bool blockedAssembly,
                      const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
                      const Teuchos::RCP<panzer_stk_classic::STKConnManager<GO> > & stkConn_manager,
                      const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
                      const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
-                     const Teuchos::RCP<Teuchos::ParameterList> & strat_params
+                     const Teuchos::RCP<Teuchos::ParameterList> & strat_params,
                      #ifdef HAVE_TEKO 
-                     , const Teuchos::RCP<Teko::RequestHandler> & req_handler
+                     const Teuchos::RCP<Teko::RequestHandler> & req_handler,
                      #endif 
-                     ) const;
+                     bool writeCoordinates=false,
+                     bool writeTopo=false
+                     );
 
-    template <typename GO>
-    void writeTopology(const panzer::BlockedDOFManager<int,GO> & blkDofs) const;
+    template <typename GO> static
+    void writeTopology(const panzer::BlockedDOFManager<int,GO> & blkDofs);
 
 #ifdef PANZER_HAVE_FEI
-    template <typename GO>
-    void writeTopology(const panzer::DOFManagerFEI<int,GO> & dofs,const std::string & block,std::ostream & os) const;
+    template <typename GO> static
+    void writeTopology(const panzer::DOFManagerFEI<int,GO> & dofs,const std::string & block,std::ostream & os);
 #endif
 
   private:
