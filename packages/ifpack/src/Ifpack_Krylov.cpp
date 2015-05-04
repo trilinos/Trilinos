@@ -85,14 +85,14 @@ Ifpack_Krylov(Epetra_Operator* Operator) :
   DampingParameter_(1.0),
   UseTranspose_(false),
   Condest_(-1.0),
-  ComputeCondest_(false),
+  /* ComputeCondest_(false), (unused; commented out to avoid build warnings) */
   Label_(),
   NumMyRows_(0),
   NumMyNonzeros_(0),
   NumGlobalRows_(0),
   NumGlobalNonzeros_(0),
   Operator_(Teuchos::rcp(Operator,false)),
-  IsRowMatrix_(false), 
+  IsRowMatrix_(false),
   ZeroStartingSolution_(true)
 {
 }
@@ -127,7 +127,7 @@ Ifpack_Krylov(Epetra_RowMatrix* Operator) :
   DampingParameter_(1.0),
   UseTranspose_(false),
   Condest_(-1.0),
-  ComputeCondest_(false),
+  /* ComputeCondest_(false), (unused; commented out to avoid build warnings) */
   Label_(),
   NumMyRows_(0),
   NumMyNonzeros_(0),
@@ -135,7 +135,7 @@ Ifpack_Krylov(Epetra_RowMatrix* Operator) :
   NumGlobalNonzeros_(0),
   Operator_(Teuchos::rcp(Operator,false)),
   Matrix_(Teuchos::rcp(Operator,false)),
-  IsRowMatrix_(true), 
+  IsRowMatrix_(true),
   ZeroStartingSolution_(true)
 {
 }
@@ -218,11 +218,11 @@ int Ifpack_Krylov::Initialize()
   }
   else
   {
-    if (Operator_->OperatorDomainMap().NumGlobalElements64() !=       
+    if (Operator_->OperatorDomainMap().NumGlobalElements64() !=
         Operator_->OperatorRangeMap().NumGlobalElements64())
       IFPACK_CHK_ERR(-2); // only square operators
   }
-  
+
   ++NumInitialize_;
   InitializeTime_ += Time_->ElapsedTime();
   IsInitialized_ = true;
@@ -318,24 +318,24 @@ ostream& Ifpack_Krylov::Print(ostream & os) const
     os << "(0 for none, 1 for Jacobi, 2 for GS, 3 for SGS )" << endl;
     os << "Condition number estimate            = " << Condest() << endl;
     os << "Global number of rows                = " << Operator_->OperatorRangeMap().NumGlobalElements64() << endl;
-    if (ZeroStartingSolution_) 
+    if (ZeroStartingSolution_)
       os << "Using zero starting solution" << endl;
     else
       os << "Using input starting solution" << endl;
     os << endl;
     os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;
     os << "-----           -------   --------------       ------------     --------" << endl;
-    os << "Initialize()    "   << std::setw(5) << NumInitialize_ 
-       << "  " << std::setw(15) << InitializeTime_ 
+    os << "Initialize()    "   << std::setw(5) << NumInitialize_
+       << "  " << std::setw(15) << InitializeTime_
        << "              0.0              0.0" << endl;
-    os << "Compute()       "   << std::setw(5) << NumCompute_ 
+    os << "Compute()       "   << std::setw(5) << NumCompute_
        << "  " << std::setw(15) << ComputeTime_
        << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_;
     if (ComputeTime_ != 0.0)
       os << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_ / ComputeTime_ << endl;
     else
       os << "  " << std::setw(15) << 0.0 << endl;
-    os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse_ 
+    os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse_
        << "  " << std::setw(15) << ApplyInverseTime_
        << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops_;
     if (ApplyInverseTime_ != 0.0)
@@ -351,9 +351,9 @@ ostream& Ifpack_Krylov::Print(ostream & os) const
 
 //==============================================================================
 double Ifpack_Krylov::
-Condest(const Ifpack_CondestType CT, 
+Condest(const Ifpack_CondestType CT,
         const int MaxIters, const double Tol,
-	Epetra_RowMatrix* Matrix_in)
+        Epetra_RowMatrix* Matrix_in)
 {
   if (!IsComputed()) // cannot compute right now
     return(-1.0);
@@ -375,7 +375,7 @@ void Ifpack_Krylov::SetLabel()
 int Ifpack_Krylov::
 ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
-  
+
   if (!IsComputed())
     IFPACK_CHK_ERR(-3);
 
@@ -406,7 +406,7 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   IFPACK_CHK_ERR(-1);
 #endif
 
-  // Flops are updated in each of the following. 
+  // Flops are updated in each of the following.
   ++NumApplyInverse_;
   ApplyInverseTime_ += Time_->ElapsedTime();
   return(0);
