@@ -111,6 +111,9 @@ import numpy
 %import "Teuchos.i"
 %include "Teuchos_Array.i"
 
+// Include Tpetra documentation
+%include "Tpetra_dox.i"
+
 // Include the standard exception handlers
 %include "exception.i"
 
@@ -138,9 +141,6 @@ import numpy
 %ignore *::operator[];
 %ignore *::operator++;
 %ignore *::operator--;
-
-// Include Tpetra documentation
-%include "Tpetra_dox.i"
 
 // Define a shortcut for the default Kokkos node
 %inline
