@@ -86,6 +86,7 @@ namespace mesh {
 class BulkData;
 void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
 void communicate_field_data(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
+void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector const& skin_parts, const Selector * secondary_selector);
 
 typedef std::unordered_map<EntityKey, size_t, stk::mesh::HashValueForEntityKey> GhostReuseMap;
 
@@ -782,6 +783,7 @@ protected: //functions
 
   void update_shared_entities_global_ids(std::vector<shared_entity_type> & shared_entity_map);
   void resolve_entity_sharing(stk::mesh::EntityRank entityRank, std::vector<Entity> &entity_keys);
+  void find_and_delete_internal_faces(stk::mesh::EntityRank entityRank);
 
   void internal_resolve_shared_modify_delete()
   {
@@ -1040,7 +1042,11 @@ private: //functions
                                     const std::vector<EntityProc> & add_send ,
                                     const std::vector<EntityKey> & remove_receive );
 
+  void resolve_incremental_ghosting_for_entity_creation(EntityRank entity_rank);
+
   bool internal_modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt );
+  bool internal_modification_end_for_skin_mesh( EntityRank entity_rank, modification_optimization opt );
+
   void internal_establish_new_owner(stk::mesh::Entity entity);
   void internal_update_parts_for_shared_entity(stk::mesh::Entity entity, const bool is_entity_shared, const bool did_i_just_become_owner);
 
@@ -1092,6 +1098,7 @@ private: //functions
   // friends until it is decided what we're doing with Fields and Parallel and BulkData
   friend void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
   friend void communicate_field_data(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
+  friend void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector const& skin_parts, const Selector * secondary_selector);
 
   bool ordered_comm( const Entity entity );
   void pack_owned_verify(CommAll & all);

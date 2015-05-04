@@ -252,6 +252,93 @@ void BulkData::resolve_entity_sharing(stk::mesh::EntityRank entityRank, std::vec
     std::sort(entities.begin(), entities.end(), EntityLess(*this));
 }
 
+void BulkData::find_and_delete_internal_faces(stk::mesh::EntityRank entityRank)
+{
+    std::vector<shared_entity_type> shared_entities;
+    this->markEntitiesForResolvingSharingInfoUsingNodes(entityRank, shared_entities);
+    std::sort(shared_entities.begin(), shared_entities.end());
+
+    // shared_edges[0] will contain all the edges this processor shares with processor 0
+    std::vector<std::vector<shared_entity_type> > shared_entities_to_each_proc(parallel_size());
+    fillSharedEntities(shared_ghosting(), *this, shared_entities, shared_entities_to_each_proc);
+
+    stk::CommSparse comm(parallel());
+    communicateSharedEntityInfo(*this, comm, shared_entities_to_each_proc);
+    unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatNeedAlsoHaveEntity(comm, shared_entities);
+
+    std::vector<Entity> entities;
+
+    for (size_t i=0; i<shared_entities.size(); ++i)
+    {
+        Entity entity = shared_entities[i].entity;
+        if ( internal_is_entity_marked(entity) == BulkData::IS_SHARED )
+        {
+            entities.push_back(entity);
+        }
+    }
+
+    for (size_t i = 0; i < entities.size(); ++i)
+    {
+        const stk::mesh::Entity entity = entities[i];
+
+        EntityVector temp_entities;
+        std::vector<stk::mesh::ConnectivityOrdinal> temp_ordinals;
+        stk::mesh::Entity const * rel_entities = NULL;
+        int num_conn = 0;
+        stk::mesh::ConnectivityOrdinal const * rel_ordinals;
+        const stk::mesh::EntityRank end_rank = static_cast<stk::mesh::EntityRank>(mesh_meta_data().entity_rank_count() - 1);
+        const stk::mesh::EntityRank begin_rank = static_cast<stk::mesh::EntityRank>(entityRank);
+
+        for(stk::mesh::EntityRank irank = end_rank; irank != begin_rank; --irank)
+        {
+            if(connectivity_map().valid(entityRank, irank))
+            {
+                num_conn = num_connectivity(entity, irank);
+                rel_entities = begin(entity, irank);
+                rel_ordinals = begin_ordinals(entity, irank);
+            }
+            else
+            {
+                num_conn = get_connectivity(*this, entity, irank, temp_entities, temp_ordinals);
+                rel_entities = &*temp_entities.begin();
+                rel_ordinals = &*temp_ordinals.begin();
+            }
+
+            for(int j = num_conn - 1; j >= 0; --j)
+            {
+                if(is_valid(rel_entities[j]) && state(rel_entities[j]) != Deleted)
+                {
+                    bool relationDestoryed = destroy_relation(rel_entities[j], entity, rel_ordinals[j]);
+                    ThrowRequireMsg(relationDestoryed==true, "Program error. Contact sierra-help@sandia.gov for support.");
+                }
+            }
+        }
+        bool successfully_destroyed = destroy_entity(entity);
+        ThrowRequireMsg(successfully_destroyed==true, "Program error. Contact sierra-help@sandia.gov for support.");
+    }
+
+    // destroy entities and their relations
+//    for (size_t i=0;i<entities.size();++i)
+//    {
+//        if ( is_valid(entities[i]) && state(entities[i]) != Deleted )
+//        {
+//            stk::mesh::EntityRank start_rank = static_cast<stk::mesh::EntityRank>(entityRank+1);
+//            for (stk::mesh::EntityRank rank=start_rank;rank<mesh_meta_data().entity_rank_count();++i)
+//            {
+//                unsigned num_connected = this->num_connectivity(entities[i], rank);
+//                const stk::mesh::Entity *connected_entity = this->begin(entities[i], rank);
+//                for(size_t j=0;j<num_connected;++j)
+//                {
+//                    bool relation_destroyed = this->destroy_relation(connected_entity[j], entities[i], j);
+//                    ThrowRequireMsg(relation_destroyed==true, "Program error. Contact sierra-help@sandia.gov for support.");
+//                }
+//            }
+//            bool entity_destroyed = this->destroy_entity(entities[i]);
+//            ThrowRequireMsg(entity_destroyed==true, "Program error. Contact sierra-help@sandia.gov for support.");
+//        }
+//    }
+}
+
 /////////////////////////////////////// End functions for create edges
 
 //----------------------------------------------------------------------
@@ -4105,8 +4192,9 @@ void connectUpwardEntityToEntity(stk::mesh::BulkData& mesh, stk::mesh::Entity up
         }
         else
         {
+          entity_top = upward_entity_topology.face_topology(k);
+          nodes_of_this_side.resize(entity_top.num_nodes());
           upward_entity_topology.face_nodes(upward_entity_nodes, k, nodes_of_this_side.begin());
-          entity_top = upward_entity_topology.face_topology();
         }
         if ( entity_top.equivalent(nodes, nodes_of_this_side).first )
         {
@@ -4121,19 +4209,6 @@ void connectUpwardEntityToEntity(stk::mesh::BulkData& mesh, stk::mesh::Entity up
         ThrowRequireMsg(perm != INVALID_PERMUTATION, "find_permutation could not find permutation that produces a match");
     }
     mesh.declare_relation(upward_entity, entity, entity_ordinal, perm, ordinal_scratch, part_scratch);
-}
-
-void connectGhostedEntitiesToEdge(stk::mesh::BulkData &stkMeshBulkData, std::vector<stk::mesh::Entity> &entitiesConnectedToNodes, stk::mesh::Entity edge, const stk::mesh::Entity* nodes, size_t numNodes)
-{
-    for (size_t j=0; j<entitiesConnectedToNodes.size();j++)
-    {
-        bool isEntityGhostedOntoThisProc = stkMeshBulkData.in_receive_ghost(stkMeshBulkData.aura_ghosting(), stkMeshBulkData.entity_key(entitiesConnectedToNodes[j]));
-
-        if ( isEntityGhostedOntoThisProc )
-        {
-            impl::connectEntityToEdge(stkMeshBulkData, entitiesConnectedToNodes[j], edge, nodes, numNodes);
-        }
-    }
 }
 
 void connectGhostedEntitiesToEntity(stk::mesh::BulkData &stkMeshBulkData, std::vector<stk::mesh::Entity> &entitiesConnectedToNodes, stk::mesh::Entity entity, const stk::mesh::Entity* nodes)
@@ -4243,7 +4318,8 @@ void connect_ghosted_entities_received_to_ghosted_upwardly_connected_entities(st
                     stk::mesh::Entity const *  nodes = mesh.begin_nodes(entity);
 
                     fillFacesConnectedToNodes(mesh, nodes, bucket.topology().num_nodes(), facesConnectedToNodes);
-                    connectGhostedEntitiesToEdge(mesh, facesConnectedToNodes, entity, nodes, bucket.topology().num_nodes());
+                    //connectGhostedEntitiesToEdge(mesh, facesConnectedToNodes, entity, nodes, bucket.topology().num_nodes());
+                    connectGhostedEntitiesToEntity(mesh, facesConnectedToNodes, entity, nodes);
                 }
             }
         }
@@ -4270,11 +4346,74 @@ void connect_ghosted_entities_received_to_ghosted_upwardly_connected_entities(st
                     const stk::mesh::Entity* nodes = bucket.begin_nodes(entityIndex);
 
                     fillElementsConnectedToNodes(mesh, nodes, bucket.num_nodes(entityIndex), elementsConnectedToNodes);
-                    connectGhostedEntitiesToEdge(mesh, elementsConnectedToNodes, entity, nodes, bucket.topology().num_nodes());
+                    //connectGhostedEntitiesToEdge(mesh, elementsConnectedToNodes, entity, nodes, bucket.topology().num_nodes());
+                    connectGhostedEntitiesToEntity(mesh, elementsConnectedToNodes, entity, nodes);
+
                 }
             }
         }
     }
+}
+
+bool BulkData::internal_modification_end_for_skin_mesh( EntityRank entity_rank, modification_optimization opt )
+{
+  // The two states are MODIFIABLE and SYNCHRONiZED
+  if ( this->in_synchronized_state() ) { return false ; }
+
+  ThrowAssertMsg(impl::check_for_connected_nodes(*this)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
+
+  if (parallel_size() > 1)
+  {
+      if ( this->get_automatic_aura_option() == NO_AUTO_AURA)
+      {
+          find_and_delete_internal_faces(entity_rank);
+      }
+      this->internal_resolve_shared_membership();
+      this->resolve_incremental_ghosting_for_entity_creation(entity_rank);
+      check_mesh_consistency();
+  }
+
+  // ------------------------------
+  // Now sort the bucket entities.
+  // This does not change the entities, relations, or field data.
+  // However, it insures that the ordering of entities and buckets
+  // is independent of the order in which a set of changes were
+  // performed.
+  //
+  //optimize_buckets combines multiple buckets in a bucket-family into
+  //a single larger bucket, and also does a sort.
+  //If optimize_buckets has not been requested, still do the sort.
+
+  if ( opt == MOD_END_COMPRESS_AND_SORT ) {
+    m_bucket_repository.optimize_buckets();
+  }
+  else {
+    m_bucket_repository.internal_sort_bucket_entities();
+  }
+
+  // ------------------------------
+
+  m_bucket_repository.internal_modification_end();
+
+  internal_update_fast_comm_maps();
+
+  m_meshModification.set_sync_state_synchronized();
+  m_add_node_sharing_called = false;
+
+  update_deleted_entities_container();
+
+  return true ;
+}
+
+void BulkData::resolve_incremental_ghosting_for_entity_creation(EntityRank entity_rank)
+{
+    std::set<EntityProc, EntityLess> entitiesToGhostOntoOtherProcessors(EntityLess(*this));
+
+    find_upward_connected_entities_to_ghost_onto_other_processors(*this, entitiesToGhostOntoOtherProcessors, entity_rank);
+
+    ghost_entities_and_fields(aura_ghosting(), entitiesToGhostOntoOtherProcessors);
+
+    connect_ghosted_entities_received_to_ghosted_upwardly_connected_entities(*this, entity_rank);
 }
 
 bool BulkData::internal_modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt )
@@ -4312,13 +4451,7 @@ bool BulkData::internal_modification_end_for_entity_creation( EntityRank entity_
 
     internal_resolve_shared_membership();
 
-    std::set<EntityProc, EntityLess> entitiesToGhostOntoOtherProcessors(EntityLess(*this));
-
-    find_upward_connected_entities_to_ghost_onto_other_processors(*this, entitiesToGhostOntoOtherProcessors, entity_rank);
-
-    ghost_entities_and_fields(aura_ghosting(), entitiesToGhostOntoOtherProcessors);
-
-    connect_ghosted_entities_received_to_ghosted_upwardly_connected_entities(*this, entity_rank);
+    this->resolve_incremental_ghosting_for_entity_creation(entity_rank);
 
     check_mesh_consistency();
   }

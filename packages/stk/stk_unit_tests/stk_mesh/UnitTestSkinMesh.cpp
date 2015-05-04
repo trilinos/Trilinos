@@ -113,7 +113,7 @@ TEST( SkinMesh, SimpleHexWithAura)
 
 TEST( SkinMesh, SimpleHexWithoutAura)
 {
-//    test_skin_mesh_with_hexes(stk::mesh::BulkData::NO_AUTO_AURA);
+    test_skin_mesh_with_hexes(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
 TEST( SkinMesh, SimpleQuad)
