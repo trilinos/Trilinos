@@ -68,9 +68,9 @@ public :: Test_Drops
 public :: Test_Gen_Files
 public :: Driver_Action
 
-!/*****************************************************************************
+!****************************************************************************
 ! *  Definitions for the Zoltan library driver program.
-! *****************************************************************************/
+! ****************************************************************************
 
 character(len=7), parameter :: DRIVER_NAME = "zfdrive"
 character(len=3), parameter :: VER_STR = "1.0"
@@ -85,7 +85,7 @@ integer(Zoltan_INT) :: Test_Drops = 0
 integer(Zoltan_INT) :: Test_Gen_Files = 0
 integer(Zoltan_INT) :: Driver_Action = 1
 
-!/* If it doesn't get defined in stdio.h then use this as a default */
+! If it doesn't get defined in stdio.h then use this as a default 
 integer(Zoltan_INT), parameter :: FILENAME_MAX = 1024
 
 integer(Zoltan_INT), parameter :: MAX_NP_ELEM = 27    ! max nodes per element
@@ -95,11 +95,11 @@ integer(Zoltan_INT), parameter :: MAX_PARAMETER_LEN = 128 ! chars in parameter
 
 integer(Zoltan_INT), parameter :: MAX_EB_NAME_LEN = 32 ! chars for element block
 
-!/*
+!
 ! * Structure used to describe an element. Each processor will
 ! * allocate an array of these structures.
 !   Moved here from dr_consts.f90 so that User_Data can use it
-! */
+! 
 type ELEM_INFO
   integer(Zoltan_INT) :: border   ! set to 1 if this element is a border element
   integer(Zoltan_INT) :: globalID ! Global ID of this element; local ID is the
@@ -133,10 +133,10 @@ type ELEM_INFO
                                  ! arrays
 end type
 
-!/*
+!
 ! * structure for general mesh information
-! */
-!/* Structure used to store information about the mesh */
+! 
+! Structure used to store information about the mesh 
 type MESH_INFO
   integer(Zoltan_INT) :: num_nodes     ! number of nodes on this processor
   integer(Zoltan_INT) :: num_elems     ! number of elements on this processor
@@ -186,22 +186,22 @@ end type
 type(MESH_INFO),pointer :: Mesh
 
 
-!/* typedef for parameter strings. 
+! typedef for parameter strings. 
 !   Parameters are specified as pairs
 !   of strings:
-!   param_str = value_str              */
+!   param_str = value_str              
 
 type Parameter_Pair
    character(len=MAX_PARAMETER_LEN) :: str(0:1)
 end type Parameter_Pair
 
-!/* Structure for the problem description. */
+! Structure for the problem description. 
 
 type PROB_INFO
   character(len=32) :: method      ! this is the method string that will
                                    ! be passed unchanged to Zoltan
   integer(Zoltan_INT) :: num_params     ! number of parameters read.
-  type(Parameter_Pair), pointer :: params(:) !/* parameter array to be passed to
+  type(Parameter_Pair), pointer :: params(:) ! parameter array to be passed to
                                              ! Zoltan.  Parameters are specified
                                              ! as pairs of strings:
                                              ! param_str = value_str

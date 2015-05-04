@@ -61,9 +61,9 @@ public :: read_mm_file
 
 contains
 
-!/****************************************************************************/
-!/****************************************************************************/
-!/****************************************************************************/
+!**************************************************************************
+!**************************************************************************
+!**************************************************************************
 
 ! Function to read MatrixMarket input; for now, reads only standard 
 ! MatrixMarket, not MatrixMarket+.
@@ -73,7 +73,7 @@ integer(Zoltan_INT) :: Proc, Num_Proc
 type(PROB_INFO) :: prob
 type(PARIO_INFO) :: pio_info
 
-!  /* Local declarations. */
+!   Local declarations. 
   character(len=FILENAME_MAX+8) :: mm_fname
   character(len=10) :: mm_rep
   character(len=7) :: mm_field
@@ -102,7 +102,7 @@ type(PARIO_INFO) :: pio_info
   integer :: prev_i, prev_j, temp
   logical :: sorted
 
-!/***************************** BEGIN EXECUTION ******************************/
+!**************************** BEGIN EXECUTION *****************************
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
