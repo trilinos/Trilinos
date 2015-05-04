@@ -53,19 +53,19 @@ private
 public :: read_cmd_file, check_inp, brdcst_cmd_info, gen_par_filename, &
           PARIO_INFO, NEMESIS_FILE, CHACO_FILE, MM_FILE
 
-!/*--------------------------------------------------------------------------*/
-!/* Purpose: Determine file types for command files and read in the parallel */
-!/*          ExodusII command file.                                          */
-!/*          Taken from nemesis utilites nem_spread and nem_join.            */
-!/*--------------------------------------------------------------------------*/
-!/* Author(s):  Matthew M. St.John (9226)                                    */
+!--------------------------------------------------------------------------
+! Purpose: Determine file types for command files and read in the parallel 
+!          ExodusII command file.                                          
+!          Taken from nemesis utilites nem_spread and nem_join.            
+!--------------------------------------------------------------------------
+! Author(s):  Matthew M. St.John (9226)                                    
 !   Translated to Fortran by William F. Mitchell
-!/*--------------------------------------------------------------------------*/
-!/*--------------------------------------------------------------------------*/
-!/* Revision History:                                                        */
-!/*    14 April 1999:       Date of creation.                                */
+!--------------------------------------------------------------------------
+!--------------------------------------------------------------------------
+! Revision History:                                                        
+!    14 April 1999:       Date of creation.                                
 !      02 September 1999:   Fortran translation
-!/*--------------------------------------------------------------------------*/
+!--------------------------------------------------------------------------
 
 
 integer(Zoltan_INT), parameter :: NEMESIS_FILE = 0, &
@@ -75,7 +75,7 @@ integer(Zoltan_INT), parameter :: NEMESIS_FILE = 0, &
 integer(Zoltan_INT), parameter :: MAX_INPUT_STR_LN = 4096 ! maximum string length
                                                      ! for read_string()
 
-!/* Structure used to store the information necessary for parallel I/O. */
+! Structure used to store the information necessary for parallel I/O. 
 
 type PARIO_INFO
    
@@ -83,25 +83,25 @@ type PARIO_INFO
   integer(Zoltan_INT) :: dsk_list_cnt
   integer(Zoltan_INT), pointer :: dsk_list(:)
   integer(Zoltan_INT) :: rdisk
-  integer(Zoltan_INT) :: num_dsk_ctrlrs   !/* The number of disk controllers.     */
-  integer(Zoltan_INT) :: pdsk_add_fact    !/* The offset from zero used by the    */
-                                     !/* the target machine.                 */
+  integer(Zoltan_INT) :: num_dsk_ctrlrs   ! The number of disk controllers.     
+  integer(Zoltan_INT) :: pdsk_add_fact    ! The offset from zero used by the    
+                                     ! the target machine.                 
   integer(Zoltan_INT) :: zeros
-                       !/* 1 - if the target machine uses leading zeros when */
-                       !/*     designating the disk number (eg - the paragon */
-                       !/*     uses /pfs/io_01)                              */
-                       !/* 0 - if it does not (eg - the tflop uses           */
-                       !/*     /pfs/tmp_1)                                   */
+                       ! 1 - if the target machine uses leading zeros when 
+                       !     designating the disk number (eg - the paragon 
+                       !     uses /pfs/io_01)                              
+                       ! 0 - if it does not (eg - the tflop uses           
+                       !     /pfs/tmp_1)                                   
 
-  integer(Zoltan_INT) :: file_type        !/* input file type */
+  integer(Zoltan_INT) :: file_type        ! input file type 
 
-  !/* The root location of the parallel disks */
+  ! The root location of the parallel disks 
   character(len=FILENAME_MAX+1) :: pdsk_root
 
-  !/* The subdirectory to write files to */
+  ! The subdirectory to write files to 
   character(len=FILENAME_MAX+1) :: pdsk_subdir
 
-  !/* The base name of the input file. */
+  ! The base name of the input file. 
   character(len=FILENAME_MAX+1) :: pexo_fname
 
 end type PARIO_INFO
@@ -130,21 +130,21 @@ end do
 
 end function lowercase
 
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
 logical function read_cmd_file(filename, prob, pio_info)
 character(len=*) :: filename
 type(PROB_INFO) :: prob
 type(PARIO_INFO) :: pio_info
 
-!/*
+!
 ! *          This function reads the ASCII parallel-exodus command file.
 ! *
 ! *   Input
 ! *   -----
 ! *   filename - The name of the command file.
 ! *   pio_info - parallel I/O information.
-! */
+! 
 
 ! I'm really coping out here.  This was written for debugging and initial
 ! testing of the Fortran interface, and doesn't need the full capability
@@ -152,15 +152,15 @@ type(PARIO_INFO) :: pio_info
 ! looks like the Chaco test files that existed at the time it was written.
 ! WFM 9/1/99
 
-!/* local declarations */
+! local declarations 
   integer, parameter :: file_cmd = 11
   character(len=MAX_INPUT_STR_LN + 1) :: inp_line, command, temp_string
   integer :: iostat
   logical :: more_params
 
-!/***************************** BEGIN EXECUTION ******************************/
+!**************************** BEGIN EXECUTION *****************************
 
-!  /* Open the file */
+!   Open the file 
   open(unit=file_cmd,file=filename,action='read',iostat=iostat)
   if (iostat /= 0) then
     read_cmd_file = .false.
@@ -173,12 +173,12 @@ type(PARIO_INFO) :: pio_info
   prob%params(0)%str(0) = "DEBUG_MEMORY"
   prob%params(0)%str(1) = "1"
 
-!  /* Begin parsing the input file */
+!   Begin parsing the input file 
   do ! while not end of data
     read(unit=file_cmd,fmt="(a)",iostat=iostat) inp_line
     if (iostat /= 0) exit ! end of data
 
-!    /* skip any line that is a comment */
+!     skip any line that is a comment 
     if (inp_line == '') cycle
     if (inp_line(1:1) == '#') cycle
 
@@ -306,23 +306,23 @@ type(PARIO_INFO) :: pio_info
 
   pio_info%num_dsk_ctrlrs = 0
 
-!  /* Close the command file */
+!   Close the command file 
   close(file_cmd)
 
   read_cmd_file = .true.
 
 end function read_cmd_file
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
 logical function check_inp(prob, pio_info)
 type(PROB_INFO) :: prob
 type(PARIO_INFO) :: pio_info
 
-!/***************************** BEGIN EXECUTION ******************************/
+!**************************** BEGIN EXECUTION *****************************
 
-!  /* check for the parallel Nemesis file for proc 0 */
+!   check for the parallel Nemesis file for proc 0 
   if (len_trim(pio_info%pexo_fname) <= 0) then
     print *, "fatal: must specify file base name"
     check_inp = .false.
@@ -330,40 +330,40 @@ type(PARIO_INFO) :: pio_info
   endif
 
 ! Not supporting NEMESIS
-!  /* default file type is nemesis */
+!   default file type is nemesis 
 !  if (pio_info->file_type < 0) pio_info->file_type = NEMESIS_FILE;
 !
 !#ifndef ZOLTAN_NEMESIS
-!  /* 
+!   
 !   * if compiling without the ZOLTAN_NEMESIS flag (i.e., not linking with 
 !   * Nemesis library), can't use NEMESIS_FILE file type.
-!   */
+!   
 !
 !  if (pio_info->file_type == NEMESIS_FILE) {
 !    Gen_Error(0, "fatal: must link with Nemesis libraries for Nemesis "
 !                 "file types");
 !    return 0;
 !  }
-!#endif /* !ZOLTAN_NEMESIS */
+!#endif  !ZOLTAN_NEMESIS 
 
-!/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-!/*                 Check the parallel IO specifications                      */
-!/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-!  /* check that there is a list of disks, or a number of raids */
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+!                 Check the parallel IO specifications                      
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+!   check that there is a list of disks, or a number of raids 
   if ((pio_info%dsk_list_cnt <= 0) .and. (pio_info%num_dsk_ctrlrs < 0)) then
-    pio_info%num_dsk_ctrlrs = 0 ! /* default to single directory */
+    pio_info%num_dsk_ctrlrs = 0 !  default to single directory 
   endif
 
-!  /* default is not to have preceeding 0's in the disk names */
+!   default is not to have preceeding 0's in the disk names 
   if (pio_info%zeros < 0) pio_info%zeros = 0
 
-!  /* most systems that we deal with start their files systems with 1 not 0 */
+!   most systems that we deal with start their files systems with 1 not 0 
   if (pio_info%pdsk_add_fact < 0) pio_info%pdsk_add_fact = 1
 
-!  /*
+!  
 !   * if there are parallel disks, then the root and subdir locations must
 !   * be specified
-!   */
+!   
   if (pio_info%num_dsk_ctrlrs > 0 .or. pio_info%dsk_list_cnt > 0) then
     if (len_trim(pio_info%pdsk_root) == 0) then
       print *, "fatal: must specify parallel disk root name"
@@ -377,16 +377,16 @@ type(PARIO_INFO) :: pio_info
     endif
   else
     if (len_trim(pio_info%pdsk_root) == 0) then
-      pio_info%pdsk_root = "." ! /* default is execution directory */
+      pio_info%pdsk_root = "." !  default is execution directory 
     endif
   endif
 
-!/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-!/*                 Check the Zoltan specifications                           */
-!/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-!  /*
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+!                 Check the Zoltan specifications                           
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+!  
 !   * Make sure a load-balancing method was provided.
-!   */
+!   
   if (len_trim(prob%method) == 0) then
     print *, "fatal: load balance method must be specified"
     check_inp = .false.
@@ -396,19 +396,19 @@ type(PARIO_INFO) :: pio_info
   check_inp = .true.
 end function check_inp
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
 subroutine brdcst_cmd_info(Proc, prob, pio_info)
 integer(Zoltan_INT) :: Proc
 type(PROB_INFO) :: prob
 type(PARIO_INFO) :: pio_info
 
-!/* local declarations */
+! local declarations 
   integer(Zoltan_INT) :: ctrl_id
   integer(Zoltan_INT) :: size
   integer(Zoltan_INT) :: ierr, i
-!/***************************** BEGIN EXECUTION ******************************/
+!**************************** BEGIN EXECUTION *****************************
 
   call MPI_Bcast(Test_Multi_Callbacks, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
   call MPI_Bcast(Test_Local_Partitions, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
@@ -437,11 +437,11 @@ type(PARIO_INFO) :: pio_info
                    0, MPI_COMM_WORLD, ierr)
   endif
 
-!  /* broadcast the param file name */
+!   broadcast the param file name 
   call MPI_Bcast(prob%ztnPrm_file, len(prob%ztnPrm_file), MPI_CHARACTER, &
        0, MPI_COMM_WORLD, ierr)
 
-!  /* and broadcast the problem specifications */
+!   and broadcast the problem specifications 
   call MPI_Bcast(prob%method, len(prob%method), MPI_CHARACTER, 0,MPI_COMM_WORLD,ierr)
   call MPI_Bcast(prob%num_params, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
   if (prob%num_params > 0) then
@@ -457,7 +457,7 @@ type(PARIO_INFO) :: pio_info
     end do
   endif
 
-!  /* now calculate where the file for this processor is */
+!   now calculate where the file for this processor is 
   if(pio_info%dsk_list_cnt <= 0) then
     if (pio_info%num_dsk_ctrlrs > 0) then
       ctrl_id = mod(Proc,pio_info%num_dsk_ctrlrs)
@@ -470,15 +470,15 @@ type(PARIO_INFO) :: pio_info
 
 end subroutine brdcst_cmd_info
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
 subroutine gen_par_filename(scalar_fname, par_fname, pio_info, proc_for, nprocs)
 character(len=*) :: scalar_fname, par_fname
 type(PARIO_INFO) :: pio_info
 integer(Zoltan_INT) :: proc_for, nprocs
 
-!/*----------------------------------------------------------------------------
+!----------------------------------------------------------------------------
 ! *
 ! *      Author(s):     Gary Hennigan (1421)
 !        Translated to Fortran by William F. Mitchell
@@ -508,10 +508,10 @@ integer(Zoltan_INT) :: proc_for, nprocs
 ! *              05 November 1993:    Date of Creation
 !                02 September 1999:   Fortran translation
 ! *---------------------------------------------------------------------------
-! */
+! 
 
 
-!  /*      Local variables      */
+!        Local variables      
 
   integer(Zoltan_INT) :: iTemp1
   integer(Zoltan_INT) :: iMaxDigit, iMyDigit
@@ -520,13 +520,13 @@ integer(Zoltan_INT) :: proc_for, nprocs
   character(len=32) :: nproc_str, myproc_str
   character(len=2) :: rdisk_str
 
-!/************************* EXECUTION BEGINS *******************************/
+!************************ EXECUTION BEGINS ******************************
 
-!  /*
+!  
 !   * Find out the number of digits needed to specify the processor ID.
 !   * This allows numbers like 01-99, i.e., prepending zeros to the
 !   * name to preserve proper alphabetic sorting of the files.
-!   */
+!   
 
   iMaxDigit = 0
   iTemp1 = nprocs
@@ -555,10 +555,10 @@ integer(Zoltan_INT) :: proc_for, nprocs
 
   cTemp = trim(scalar_fname)//"."//trim(nproc_str)//"."//trim(myproc_str)
 
-!  /*
+!  
 !   * Finally, generate the complete file specification for the parallel
 !   * file used by this processor.
-!   */
+!   
   if (pio_info%num_dsk_ctrlrs > 0) then
     if(pio_info%zeros /= 0) then
       write(rdisk_str,"(I2.2)") pio_info%rdisk
