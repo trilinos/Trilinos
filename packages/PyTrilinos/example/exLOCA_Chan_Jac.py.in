@@ -1,0 +1,256 @@
+#! ${PYTHON_EXECUTABLE}
+# -*- python -*-
+
+# ************************************************************************
+# @HEADER
+
+import sys
+
+# System imports
+from   numpy    import *
+from   optparse import *
+import sys
+
+#
+# Parse the command-line arguments
+parser = OptionParser()
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+parser.add_option("-n", "--numelem", type="int", dest="numelem", default=20,
+                  help="set the number of elements [default 100]")
+parser.add_option("--sigma", type="float", dest="sigma", default=0.0,
+                  help="set alpha")
+parser.add_option("--scale", type="float", dest="scale", default=1.0,
+                  help="set scale")
+parser.add_option("--iters", type="int", dest="maxNewtonIters", default=100,
+                  help="set maxNewtonIters")
+parser.add_option("-N", type="int", dest="N", default=10,   # TODO: what is correct default?
+                  help="set N")
+options,args = parser.parse_args()
+
+
+#
+# Under normal usage, simply use 'from PyTrilinos import Epetra'.  For testing,
+# we want to be able to control whether we import from the build directory or
+# from a system-installed version of PyTrilinos.
+from testutil import fromPyTrilinosImport
+Teuchos   = fromPyTrilinosImport('Teuchos'  , options.testharness)
+Epetra    = fromPyTrilinosImport('Epetra'   , options.testharness)
+EpetraExt = fromPyTrilinosImport('EpetraExt', options.testharness)
+NOX       = fromPyTrilinosImport('NOX'      , options.testharness)
+LOCA      = fromPyTrilinosImport('LOCA'     , options.testharness)
+
+# ######################################################################
+# class for the Jacobian operator
+class ChanJac(Epetra.Operator):
+    tranpose_ = False
+    # these are used for shiftedmatrix
+    alpha_ = 1.0
+    beta_ = 0.0
+    x_jac = []
+
+    def __init__(self, comm):
+        Epetra.Operator.__init__(self)
+        self.__comm  = comm
+        self.__label = "Chan_Linear_Operator"
+
+    def Comm(self):
+        return self.__comm
+
+    def setUseTranspose(self,trans):
+        transpose_ = trans
+    
+    def Label(self):
+        return self.__label    
+    
+    def Apply(self, x, y):
+        try:
+            print x.ExtractCopy().size
+            y = (x.Dot(self.x_jac)).Scale(2.0)
+            y.Update(alpha_,y,-alpha_+beta_,x,0.0)
+            return 0
+        except Exception, e:
+            print "A python exception was raised in MyOperator.Apply:"
+            print e
+            return -1  
+            
+    def setShMat(self, alpha, beta):
+        alpha_ = alpha
+        beta_  = beta
+
+# ######################################################################
+
+class ChanProblemInterface(LOCA.Epetra.Interface.TimeDependent,
+                           NOX.Epetra.Interface.Jacobian,
+                           LOCA.Epetra.Interface.Required):
+  history = []
+  Jaco_ = []
+  def __init__(self, comm, N, Jacob_ = None):
+    # Initialize base class first
+    print '--> ChanProblemInterface.__init__, N = ',N
+    LOCA.Epetra.Interface.TimeDependent.__init__(self)
+    NOX.Epetra.Interface.Jacobian.__init__(self)
+
+    self.__comm = comm
+    self.n = N
+    self.sigma = 0.0
+
+    vec = zeros(N)
+    for i in range(0,self.n):
+      vec[i] = i*(self.n-1-i)/((self.n-1.)*(self.n-1.)) + 0.001
+    
+    map_ = Epetra.Map(N,0,comm)
+    self.initGuess = Epetra.Vector(map_,vec) 
+    
+    self.Jaco_ = Jacob_ 
+
+  def printSolution(self,x,conParam):
+      self.history.append([conParam,x[0]])
+      print 'x = ',x,type(x)
+    
+  def computeF(self, x, F, fillFlag):
+      # we ignore the fillFlag argument and always perform all computation
+      try:
+          n = self.n
+          for i in range(0,n):
+              F[i] = x[i]**2 - self.sigma * float(1)
+              return True
+      except Exception, e:
+          print "Proc", self.__myPID, \
+                "MyInterface.computeF() has thrown an exception:"
+          print str(type(e))[18:-2] + ":", e
+          return False
+
+  def InitialGuess(self):
+      return self.initGuess
+
+  def computeJacobian(self, x, Jac):
+    self.Jaco_.x_jac = x.copy()
+    self.Jaco_.setShMat(1.0,0.0);
+    return True
+
+  def setParams(self, p):
+    self.sigma = p.getValue("sigma")
+    
+  def setParameters(self, p):
+    self.sigma = p.getValue("sigma")
+    
+  def computeShiftedMatrix(self, alpha, beta, x, A):
+      pass
+    
+  def applyShiftedMatrix(self, alpha, beta, input, result):
+      self.Jaco_.Apply(input,result)
+      result.update(alpha,result,beta,input,0.0);
+
+  def setJacobianOperator(self, Jaco):
+      self.Jaco_ = Jaco          
+
+  # def setXdot(self, xdot, t):
+  #     pass
+  #
+  # def postProcessContinuationStep(self):
+  #     pass
+  #
+  # def preProcessContinuationStep(self):
+  #     pass      
+
+######################################################################
+
+# Main routine
+def main():
+    
+  sigma = options.sigma
+
+  # Communicator
+  comm    = Epetra.PyComm()
+  myPID   = comm.MyPID()
+  numProc = comm.NumProc()
+
+  # Suppress 'Aztec status AZ_loss: loss of precision' messages
+  comm.SetTracebackMode(0)
+
+  # Get parameters
+  scale = options.scale
+  maxNewtonIters = options.maxNewtonIters
+  N = options.N
+
+  ##################################################################### 
+  paramList = \
+    LOCA.Epetra.defaultContinuationParameters(comm=comm,
+                                              verbosity=options.verbosity)
+  
+  lsParams    = paramList["NOX"]["Direction"]["Newton"]["Linear Solver" ]
+  printParams = paramList["NOX"]["Printing"]
+  stepper     = paramList["LOCA"]["Stepper"]
+  printParams["Output Information"] = NOX.Utils.StepperIteration + \
+                                      NOX.Utils.StepperDetails
+  stepper["Max Steps"] = 1
+  
+  p = LOCA.ParameterVector()
+  p.addParameter("sigma", 0.0)
+  
+  # create Jacobian Operator
+  Jaco = ChanJac(comm)
+
+  interface = ChanProblemInterface(comm, N, Jacob_ = Jaco)
+  interface.setParameters(p)
+  
+  soln    = interface.InitialGuess()
+  noxSoln = NOX.Epetra.Vector(soln, NOX.Epetra.Vector.CreateView)
+  
+
+  print '--> initial guess, done!'
+  iReq = interface
+  iJac = interface
+  
+  linSys = NOX.Epetra.LinearSystemAztecOO(printParams,
+                                          lsParams,
+                                          iReq,
+                                          iJac,
+                                          Jaco,
+                                          soln) 
+  shiftedLinSys = NOX.Epetra.LinearSystemAztecOO(printParams,
+                                                 lsParams,
+                                                 iReq,
+                                                 iJac,
+                                                 Jaco,
+                                                 soln) 
+  # Create the Group
+  locaSoln = NOX.Epetra.Vector(soln, NOX.Epetra.Vector.CreateView)
+
+  globalData = LOCA.createGlobalData(paramList)
+  print '--> group',
+  group = LOCA.Epetra.Group(globalData, printParams, iReq, locaSoln, linSys, p)
+
+  print 'done!'
+
+  # Create the convergence tests
+  normF = NOX.StatusTest.NormF(1.0e-8)
+  maxIters = NOX.StatusTest.MaxIters(maxNewtonIters)
+  converged = NOX.StatusTest.Combo(NOX.StatusTest.Combo.OR, normF, maxIters)
+  
+  # Create the stepper
+  print("Making stepper")
+  stepper = LOCA.Stepper(globalData, group, converged, paramList)
+
+  # Perform continuation run
+  print("About to run stepper")
+
+  status = stepper.run()
+  print("Completed stepper run")
+
+  return 0
+
+# ######################################################################
+
+if __name__ == "__main__":
+
+    status = main()
+
+    if status == 0:
+        print "End Result: TEST PASSED"
+
+    sys.exit(status)
