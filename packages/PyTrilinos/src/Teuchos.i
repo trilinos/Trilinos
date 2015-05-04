@@ -149,31 +149,6 @@ using std::string;
 %include "numpy.i"
 %fragment("NumPy_Fragments");
 
-// General ignore directives
-%ignore *::operator=;
-%ignore *::print;
-
-// Teuchos::RCP support.  If a class is ever passed to or from a
-// function or method wrapped by a Teuchos::RCP<>, then it should be
-// stored internally as a Teuchos::RCP<> as well.  This is
-// accomplished by %include-ing Teuchos_RCP.i and calling the provided
-// macro %teuchos_rcp() on the class.
-%include "Teuchos_RCP.i"
-%teuchos_rcp(std::basic_ostream)
-%teuchos_rcp(std::ostream)
-%teuchos_rcp(std::vector< int, std::allocator< int > >)
-%teuchos_rcp(Teuchos::SerialDenseMatrix< int, double >)
-
-// Teuchos imports
-%import "Teuchos_TypeNameTraits.hpp"
-%import "Teuchos_NullIteratorTraits.hpp"
-
-// Teuchos includes
-%include "Teuchos_Traits.i"
-%include "Teuchos_Comm.i"
-%include "Teuchos_ParameterList.i"
-%include "Teuchos_XML.i"
-
 // General exception handling
 %feature("director:except")
 {
@@ -207,6 +182,31 @@ using std::string;
     SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
   }
 }
+
+// General ignore directives
+%ignore *::operator=;
+%ignore *::print;
+
+// Teuchos::RCP support.  If a class is ever passed to or from a
+// function or method wrapped by a Teuchos::RCP<>, then it should be
+// stored internally as a Teuchos::RCP<> as well.  This is
+// accomplished by %include-ing Teuchos_RCP.i and calling the provided
+// macro %teuchos_rcp() on the class.
+%include "Teuchos_RCP.i"
+%teuchos_rcp(std::basic_ostream)
+%teuchos_rcp(std::ostream)
+%teuchos_rcp(std::vector< int, std::allocator< int > >)
+%teuchos_rcp(Teuchos::SerialDenseMatrix< int, double >)
+
+// Teuchos imports
+%import "Teuchos_TypeNameTraits.hpp"
+%import "Teuchos_NullIteratorTraits.hpp"
+
+// Teuchos includes
+%include "Teuchos_Traits.i"
+%include "Teuchos_Comm.i"
+%include "Teuchos_ParameterList.i"
+%include "Teuchos_XML.i"
 
 //////////////////////////////////////
 // Teuchos::Teuchos_Version support //
