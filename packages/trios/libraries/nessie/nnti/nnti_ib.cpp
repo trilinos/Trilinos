@@ -262,6 +262,8 @@ typedef struct {
 } ib_request_queue_handle;
 
 typedef struct {
+    NNTI_peer_t              me;
+
     struct ibv_device       *dev;
     struct ibv_context      *ctx;
     struct ibv_pd           *pd;
@@ -373,9 +375,9 @@ static void create_peer(
         char *name,
         NNTI_ip_addr addr,
         NNTI_tcp_port port);
-//static void copy_peer(
-//        NNTI_peer_t *src,
-//        NNTI_peer_t *dest);
+static void copy_peer(
+        NNTI_peer_t *dest,
+        NNTI_peer_t *src);
 static int init_server_listen_socket(void);
 static NNTI_result_t check_listen_socket_for_new_connections();
 static struct ibv_device *get_ib_device(void);
@@ -1057,10 +1059,13 @@ NNTI_result_t NNTI_ib_init (
         }
 
         create_peer(
-                &trans_hdl->me,
+                &transport_global_data.me,
                 transport_global_data.listen_name,
                 transport_global_data.listen_addr,
                 transport_global_data.listen_port);
+        copy_peer(
+                &trans_hdl->me,
+                &transport_global_data.me);
 
         ib_initialized = true;
     }
@@ -5104,25 +5109,41 @@ static void create_status(
             case IB_OP_PUT_INITIATOR:
             case IB_OP_SEND_REQUEST:
             case IB_OP_SEND_BUFFER:
-                create_peer(&status->src, transport_global_data.listen_name, transport_global_data.listen_addr, transport_global_data.listen_port);
-                create_peer(&status->dest, conn->peer_name, conn->peer_addr, conn->peer_port);
+                copy_peer(
+                        &status->src,
+                        &transport_global_data.me);
+                copy_peer(
+                        &status->dest,
+                        &conn->peer);
                 break;
             case IB_OP_GET_TARGET:
                 if (config.use_rdma_target_ack) {
-                    create_peer(&status->src, transport_global_data.listen_name, transport_global_data.listen_addr, transport_global_data.listen_port);
-                    create_peer(&status->dest, conn->peer_name, conn->peer_addr, conn->peer_port);
+                    copy_peer(
+                            &status->src,
+                            &transport_global_data.me);
+                    copy_peer(
+                            &status->dest,
+                            &conn->peer);
                 }
                 break;
             case IB_OP_GET_INITIATOR:
             case IB_OP_NEW_REQUEST:
             case IB_OP_RECEIVE:
-                create_peer(&status->src, conn->peer_name, conn->peer_addr, conn->peer_port);
-                create_peer(&status->dest, transport_global_data.listen_name, transport_global_data.listen_addr, transport_global_data.listen_port);
+                copy_peer(
+                        &status->src,
+                        &conn->peer);
+                copy_peer(
+                        &status->dest,
+                        &transport_global_data.me);
                 break;
             case IB_OP_PUT_TARGET:
                 if (config.use_rdma_target_ack) {
-                    create_peer(&status->src, conn->peer_name, conn->peer_addr, conn->peer_port);
-                    create_peer(&status->dest, transport_global_data.listen_name, transport_global_data.listen_addr, transport_global_data.listen_port);
+                    copy_peer(
+                            &status->src,
+                            &conn->peer);
+                    copy_peer(
+                            &status->dest,
+                            &transport_global_data.me);
                 }
                 break;
         }
@@ -5168,19 +5189,18 @@ static void create_peer(NNTI_peer_t *peer, char *name, NNTI_ip_addr addr, NNTI_t
     log_debug(nnti_debug_level, "exit");
 }
 
-//static void copy_peer(NNTI_peer_t *src, NNTI_peer_t *dest)
-//{
-//    log_debug(nnti_debug_level, "enter");
-//
-//    strncpy(dest->url, src->url, NNTI_URL_LEN);
-//    dest->url[NNTI_URL_LEN-1]='\0';
-//
-//    src->peer.transport_id                    =NNTI_TRANSPORT_IB;
-//    dest->peer.NNTI_remote_process_t_u.ib.addr=src->peer.NNTI_remote_process_t_u.ib.addr;
-//    dest->peer.NNTI_remote_process_t_u.ib.port=src->peer.NNTI_remote_process_t_u.ib.port;
-//
-//    log_debug(nnti_debug_level, "exit");
-//}
+static void copy_peer(NNTI_peer_t *dest, NNTI_peer_t *src)
+{
+    log_debug(nnti_debug_level, "enter");
+
+    strcpy(dest->url, src->url);
+
+    dest->peer.transport_id                   =NNTI_TRANSPORT_IB;
+    dest->peer.NNTI_remote_process_t_u.ib.addr=src->peer.NNTI_remote_process_t_u.ib.addr;
+    dest->peer.NNTI_remote_process_t_u.ib.port=src->peer.NNTI_remote_process_t_u.ib.port;
+
+    log_debug(nnti_debug_level, "exit");
+}
 
 static int init_server_listen_socket()
 {
