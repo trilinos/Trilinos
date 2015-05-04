@@ -1,0 +1,20 @@
+    mesh, radial trisection
+$      enforce periodicity
+      trisection blocks, 1
+      zmin 0.0
+        numz 1
+          zblock 1 0.001 interval 1
+        numr 2
+          rblock 1 0.002 first size 0.0005176380902 
+	  rblock 2 0.003 first size 0.00103527618 last size 0.002588190451
+	numa 1
+	  ablock 1 90. interval 2
+      end
+
+      set assign
+        nodeset, ilo, 1  $ center of the mesh
+        sideset, ihi, 2  $ outer radius of mesh
+        block sideset, ihi, 3, 1  $ outer radius of wire
+      end
+    end
+
