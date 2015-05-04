@@ -43,8 +43,6 @@
 #ifndef __Panzer_LinearObjFactory_hpp__
 #define __Panzer_LinearObjFactory_hpp__
 
-#include <map>
-
 #include "Phalanx_TemplateManager.hpp"
 #include "Phalanx_Evaluator.hpp"
 #include "Phalanx_Evaluator_Derived.hpp"
@@ -54,8 +52,8 @@
 
 #include "Teuchos_DefaultMpiComm.hpp"
 
-#include "boost/mpl/placeholders.hpp"
-using namespace boost::mpl::placeholders;
+// #include "boost/mpl/placeholders.hpp"
+// using namespace boost::mpl::placeholders;
 
 namespace panzer {
 
