@@ -405,7 +405,7 @@ int read_hypergraph_file(
 
     if (!chaco_dist_graph(MPI_COMM_WORLD, pio_info, 0, &gnvtxs, &nvtxs,
 	     &ch_start, &ch_adj, &vwgt_dim, &vwgts, &ch_ewgt_dim, &ch_ewgts,
-	     &ch_ndim, &ch_x, &ch_y, &ch_z, &ch_assignments) != 0) {
+	     &ch_ndim, &ch_x, &ch_y, &ch_z, &ch_assignments)) {
       Gen_Error(0, "fatal: Error returned from chaco_dist_graph");
       return 0;
     }
