@@ -31,8 +31,15 @@ case $key in
     --with-serial)
     KOKKOS_DEVICES="${KOKKOS_DEVICES},Serial"    
     ;;
+    --with-devices*)
+    DEVICES="${key#*=}"
+    KOKKOS_DEVICES="${KOKKOS_DEVICES},${DEVICES}"
+    ;;
     --with-gtest*)
     GTEST_PATH="${key#*=}"
+    ;;
+    --with-hwloc*)
+    HWLOC_PATH="${key#*=}"
     ;;
     --arch*)
     KOKKOS_ARCH="${key#*=}"
@@ -57,6 +64,7 @@ case $key in
     echo "--with-openmp:               enable OpenMP backend"
     echo "--with-pthread:              enable Pthreads backend"
     echo "--with-serial:               enable Serial backend"
+    echo "--with-devices:              explicitly add a set of backends"
     echo ""
     echo "--arch=[OPTIONS]:            set target architectures. Options are:"
     echo "                               SNB = Intel Sandy/Ivy Bridge CPUs"
@@ -77,6 +85,7 @@ case $key in
     echo "                               This will still set certain required flags via"
     echo "                               KOKKOS_LDFLAGS (such as -fopenmp, -lpthread, etc.)"
     echo "--with-gtest=/Path/To/Gtest: set path to gtest (used in unit and performance tests"  
+    echo "--with-hwloc=/Path/To/Hwloc: set path to hwloc"  
     ;;      
     *)
             # unknown option
@@ -86,8 +95,6 @@ shift
 done
 
 KOKKOS_OPTIONS="KOKKOS_PATH=${KOKKOS_PATH}"
-
-
 
 if [ ${#COMPILER} -gt 0 ]; then
 KOKKOS_OPTIONS="${KOKKOS_OPTIONS} CXX=${COMPILER}"
@@ -119,7 +126,9 @@ else
 GTEST_PATH=${KOKKOS_PATH}/tpls/gtest
 KOKKOS_OPTIONS="${KOKKOS_OPTIONS} GTEST_PATH=${GTEST_PATH}"
 fi
-
+if [ ${#HWLOC_PATH} -gt 0 ]; then
+KOKKOS_OPTIONS="${KOKKOS_OPTIONS} HWLOC_PATH=${HWLOC_PATH} KOKKOS_USE_TPLS=hwloc"
+fi
 mkdir core
 mkdir core/unit_test
 mkdir core/perf_test
@@ -131,7 +140,7 @@ mkdir algorithms/unit_tests
 mkdir algorithms/performance_tests
 
  
-
+echo "Generating Makefile with options " ${KOKKOS_OPTIONS}
 echo "KOKKOS_OPTIONS=${KOKKOS_OPTIONS}" > Makefile
 echo "" >> Makefile
 echo "lib:" >> Makefile

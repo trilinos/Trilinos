@@ -461,14 +461,14 @@ struct InitExecSpace {
 
 #ifdef KOKKOS_HAVE_CUDA
     {
-      if (! std::is_same<DeviceType::memory_space, Kokkos::CudaSpace>::value) {
+      if (! std::is_same<typename DeviceType::memory_space, Kokkos::CudaSpace>::value) {
         TestCopyCtor<KeyType, ValueType, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
           DeviceType>::test (out, success, *table, keys, vals,
                              "Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>",
                              typeid(DeviceType).name ());
         testedAtLeastOnce = true;
       }
-      if (! std::is_same<DeviceType::memory_space, Kokkos::CudaUVMSpace>::value) {
+      if (! std::is_same<typename DeviceType::memory_space, Kokkos::CudaUVMSpace>::value) {
         TestCopyCtor<KeyType, ValueType, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
           DeviceType>::test (out, success, *table, keys, vals,
                              "Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>",

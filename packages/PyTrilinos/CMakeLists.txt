@@ -88,9 +88,9 @@ IF(PyTrilinos_ENABLE_EpetraExt)
 ENDIF(PyTrilinos_ENABLE_EpetraExt)
 
 IF(PyTrilinos_ENABLE_Isorropia)
-  APPEND_SET(PyTrilinos_PACKAGES Isorropia)
-  APPEND_SET(PyTrilinos_MODULES  Isorropia.__init__    )
-  Append_SET(PyTrilinos_MODULES  Isorropia.Epetra)
+  APPEND_SET(PyTrilinos_PACKAGES Isorropia         )
+  APPEND_SET(PyTrilinos_MODULES  Isorropia.__init__)
+  Append_SET(PyTrilinos_MODULES  Isorropia.Epetra  )
 ENDIF(PyTrilinos_ENABLE_Isorropia)
 
 IF(PyTrilinos_ENABLE_Pliris)

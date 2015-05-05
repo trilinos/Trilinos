@@ -77,10 +77,11 @@ namespace Details {
 /// strategy may also improve locality for hash table lookups.
 template<class KeyType,
          class ValueType,
-         class DeviceType = Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace> >
+         class DeviceType = Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace> >
 class FixedHashTable : public Teuchos::Describable {
 private:
-  typedef typename Kokkos::View<KeyType*, DeviceType>::size_type size_type;
+  //typedef typename Kokkos::View<KeyType*, DeviceType>::size_type size_type;
+  typedef size_t size_type;
 
   /// \brief Type of the array of hash table "buckets" (a.k.a. "row" offsets).
   ///
