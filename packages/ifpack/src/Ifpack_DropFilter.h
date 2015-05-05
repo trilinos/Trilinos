@@ -45,7 +45,7 @@
 
 #include "Ifpack_ConfigDefs.h"
 #include "Epetra_RowMatrix.h"
-#include "Teuchos_RefCountPtr.hpp"	
+#include "Teuchos_RefCountPtr.hpp"
 
 class Epetra_Comm;
 class Epetra_Map;
@@ -83,7 +83,7 @@ class Ifpack_DropFilter : public virtual Epetra_RowMatrix {
 public:
   //! Constructor.
   Ifpack_DropFilter(const Teuchos::RefCountPtr<Epetra_RowMatrix>& Matrix,
-		    double DropTol);
+                    double DropTol);
 
   //! Destructor.
   virtual ~Ifpack_DropFilter() {};
@@ -105,18 +105,18 @@ public:
 
   virtual int ExtractDiagonalCopy(Epetra_Vector & Diagonal) const;
 
-  virtual int Multiply(bool TransA, const Epetra_MultiVector& X, 
-		       Epetra_MultiVector& Y) const;
+  virtual int Multiply(bool TransA, const Epetra_MultiVector& X,
+                       Epetra_MultiVector& Y) const;
 
-  virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal, 
-		    const Epetra_MultiVector& X,
-		    Epetra_MultiVector& Y) const;
+  virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal,
+                    const Epetra_MultiVector& X,
+                    Epetra_MultiVector& Y) const;
 
   virtual int Apply(const Epetra_MultiVector& X,
-		    Epetra_MultiVector& Y) const;
+                    Epetra_MultiVector& Y) const;
 
   virtual int ApplyInverse(const Epetra_MultiVector& X,
-			   Epetra_MultiVector& Y) const;
+                           Epetra_MultiVector& Y) const;
 
   virtual int InvRowSums(Epetra_Vector& x) const;
 
@@ -127,7 +127,7 @@ public:
 
   virtual int InvColSums(Epetra_Vector& x) const;
 
-  virtual int RightScale(const Epetra_Vector& x) 
+  virtual int RightScale(const Epetra_Vector& x)
   {
     return(A_->RightScale(x));
   }
@@ -234,12 +234,12 @@ public:
     return(A_->RowMatrixImporter());
   }
 
-  int SetUseTranspose(bool UseTranspose)
+  int SetUseTranspose(bool useTranspose)
   {
-    return(A_->SetUseTranspose(UseTranspose));
+    return(A_->SetUseTranspose(useTranspose));
   }
 
-  bool UseTranspose() const 
+  bool UseTranspose() const
   {
     return(A_->UseTranspose());
   }
@@ -254,17 +254,17 @@ public:
     return(A_->Comm());
   }
 
-  const Epetra_Map & OperatorDomainMap() const 
+  const Epetra_Map & OperatorDomainMap() const
   {
     return(A_->OperatorDomainMap());
   }
 
-  const Epetra_Map & OperatorRangeMap() const 
+  const Epetra_Map & OperatorRangeMap() const
   {
     return(A_->OperatorRangeMap());
   }
 
-  const Epetra_BlockMap& Map() const 
+  const Epetra_BlockMap& Map() const
   {
     return(A_->Map());
   }
@@ -283,7 +283,7 @@ private:
   int MaxNumEntries_;
   int MaxNumEntriesA_;
   int NumRows_;
-  
+
   //! Number of nonzeros for the dropped matrix.
   int NumNonzeros_;
 
