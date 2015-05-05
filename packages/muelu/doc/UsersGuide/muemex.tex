@@ -7,7 +7,7 @@ solver routines from MATLAB and does little else. \muemex allows users to
 setup and solve arbitrarily many problems, so long as memory suffices.
 More than one problem can be set up simultaneously.
 
-\subsection{Cmake Configure and Make}\label{sec:muemex:cmake}
+\section{Cmake Configure and Make}\label{sec:muemex:cmake}
 To use \muemex, Trilinos must be configured with (at least) the
 following options:
 
@@ -22,10 +22,13 @@ cmake \
 -D Trilinos_ENABLE_Fortran:BOOL=OFF \
 -D Trilinos_ENABLE_Ifpack:BOOL=ON \
 -D Trilinos_ENABLE_Ifpack:BOOL=ON \
--D Trilinos_ENABLE_\muelu2:BOOL=ON \
+-D Trilinos_ENABLE_MueLu:BOOL=ON \
 -D Trilinos_ENABLE_Teuchos:BOOL=ON \
 -D Trilinos_ENABLE_Tpetra:BOOL=ON \
 -D TPL_ENABLE_MPI:BOOL=OFF \
+-D TPL_ENABLE_MATLAB:BOOL=ON \
+-D MATLAB_ROOT:STRING="<my matlab root>" \
+-D MATLAB_ARCH:STRING="<my matlab os string>" \
 ../Trilinos
 \end{verbatim}
 
@@ -59,7 +62,7 @@ must be compiled with the \texttt{-fPIC} option.  This necessitates adding:
 \end{verbatim}
 to the cmake configure line.  
 
-\subsubsection{BLAS \& LAPACK Option \#1: Static Builds}
+\subsection{BLAS \& LAPACK Option \#1: Static Builds}
 Trilinos does not play nicely with MATLAB's default LAPACK and BLAS on
 64-bit machines.  
 If \muemex randomly crashes when you run with any Krylov method that
@@ -74,7 +77,7 @@ and then specify them as follows:
 \end{verbatim}
 Using static linking for LAPACK and BLAS prevents MATLAB's default libraries to take precedence.
 
-\subsubsection{BLAS \& LAPACK Option \#2: LD$\_$PRELOAD}
+\subsection{BLAS \& LAPACK Option \#2: LD$\_$PRELOAD}
 The second option is to use \textsf{LD\_PRELOAD} to tell MATLAB exactly
 which libraries to use.  For this option, you can use the dynamic
 libraries installed on your system.
@@ -92,7 +95,7 @@ For csh / tcsh, do this
 setenv LD_PRELOAD <path>/libstdc++.so:<path>/libblas.so:<path>/liblapack.so
 \end{verbatim}
 
-\subsection{Using \muemex}\label{sec:muemex:usage}
+\section{Using \muemex}\label{sec:muemex:usage}
 \muemex is designed to be interfaced with via the MATLAB script
 \texttt{muelu.m}.  There are five modes in which \muemex can be run:
 \begin{enumerate}
@@ -123,7 +126,7 @@ option lists which will be directly converted into
 Options passed during setup will apply to the \muelu preconditioner, and
 options passed during a solve will apply to Belos.
 
-\subsubsection{Setup Mode}
+\subsection{Setup Mode}
 Setup mode is called as follows:
 \begin{verbatim}
 >> [h, oc] = muelu('setup', A[, 'parameter', value,...]) 
@@ -139,7 +142,7 @@ options, setup mode has one unique option of its own:
   'epetra unprec', 'epetra', or 'tpetra'. Default is 'epetra' for
   real matrix and 'tpetra' for complex matrix.}
 
-\subsubsection{Solve Mode}
+\subsection{Solve Mode}
 Solve mode is called as follows:
 \begin{verbatim}
 >> [x, its] = muelu(h[, A], b[, 'parameter', value,...])
@@ -163,7 +166,7 @@ are implemented as enums, but can be set as strings in \muemex. For example:
 Verbosity settings can be separated by spaces, '+' or ','. Belos::Brief
 is the default output style.
 
-\subsubsection{Cleanup Mode}
+\subsection{Cleanup Mode}
 Cleanup mode is called as follows:
 \begin{verbatim}
 >>  muelu('cleanup'[, h])
@@ -173,7 +176,7 @@ setup mode call and is optional.  If \texttt{h} is provided, that
 problem is cleaned up.  If the option is not provided all currently
 set up problems are cleaned up.
 
-\subsubsection{Status Mode}
+\subsection{Status Mode}
 Status mode is called as follows:
 \begin{verbatim}
 >>  muelu('status'[, h])
