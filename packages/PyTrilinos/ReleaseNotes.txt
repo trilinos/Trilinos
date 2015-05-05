@@ -9,8 +9,8 @@ General
 
 LOCA
   * The LOCA module has been refactored and now has been demonstrated
-    to work for the Chan problem.  We have not yet gotten
-    preconditioning to work, but are getting close.
+    to work for the Chan problem.  We have two example problems
+    working, one without preconditioning, and one with.
 
 Tpetra
   * Package is still experimental.  The recent refactor has broken

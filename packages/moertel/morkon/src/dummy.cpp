@@ -55,7 +55,7 @@
 
 namespace morkon_exp {
 
-typedef Morkon_Manager<default_kokkos_device_t, 3>    default_manager_3d_t;
+typedef Morkon_Manager<default_kokkos_device_t, 3, MRK_QUAD4>    default_manager_3d_t;
 typedef Teuchos::RCP< default_manager_3d_t >        default_manager_3d_ptr;
 
 typedef Interface<default_kokkos_device_t, 3>     default_interface_3d_t;

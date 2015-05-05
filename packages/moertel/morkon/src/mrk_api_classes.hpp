@@ -58,20 +58,20 @@
 
 namespace morkon_exp {
 
-template <typename DeviceType, unsigned int DIM = 3 >
+template <typename DeviceType, unsigned int DIM = 3, MorkonFaceType = MRK_QUAD4 >
 class Interface;
 
-template <typename DeviceType, unsigned int DIM = 3 >
+template <typename DeviceType, unsigned int DIM = 3, MorkonFaceType = MRK_QUAD4 >
 class Morkon_Manager;
 
 template <unsigned int DIM = 3 >
 struct Interface_HostSideAdapter;
 
 
-template <typename DeviceType, unsigned int DIM >
+template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 class Interface : public InterfaceBase
 {
-  friend  class Morkon_Manager<DeviceType, DIM> ;
+  friend  class Morkon_Manager<DeviceType, DIM, FACE_TYPE> ;
 
   typedef typename DeviceType::execution_space  execution_space;
   typedef Kokkos::View<local_idx_t *, execution_space>     faces_ids_t;
@@ -94,9 +94,9 @@ public:
 
 private:
 
-  Interface(Morkon_Manager<DeviceType, DIM> *manager);
+  Interface(Morkon_Manager<DeviceType, DIM, FACE_TYPE> *manager);
 
-  Morkon_Manager<DeviceType, DIM>   *m_manager;
+  Morkon_Manager<DeviceType, DIM, FACE_TYPE>   *m_manager;
   bool                             m_committed;
   bool                           m_distributed;
   std::vector<faces_ids_t>             m_sides;
@@ -106,11 +106,11 @@ private:
 };
 
 
-template <typename DeviceType, unsigned int DIM >
+template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 class Morkon_Manager
 {
   typedef typename DeviceType::execution_space  execution_space;
-  typedef Interface<DeviceType, DIM>                interface_t;
+  typedef Interface<DeviceType, DIM, FACE_TYPE>   interface_t;
   typedef Teuchos::RCP<interface_t>               interface_ptr;
   typedef std::map<int, interface_ptr>         interfaces_map_t;
 
@@ -131,7 +131,7 @@ class Morkon_Manager
 
 public:
 
-  static Teuchos::RCP< Morkon_Manager<DeviceType, DIM> > MakeInstance(MPI_Comm mpi_comm, int printlevel);
+  static Teuchos::RCP< Morkon_Manager<DeviceType, DIM, FACE_TYPE> > MakeInstance(MPI_Comm mpi_comm, int printlevel);
 
   bool set_problem_map(Tpetra::Map<> *gp_map);
 
