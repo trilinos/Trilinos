@@ -190,6 +190,7 @@ namespace panzer_stk_classic {
         p.set<bool>("Use Tpetra",false);
         p.set<bool>("Use Epetra ME",true);
         p.set<bool>("Lump Explicit Mass",false);
+        p.set<bool>("Constant Mass Matrix",true);
         p.set<Teuchos::RCP<const panzer::EquationSetFactory> >("Equation Set Factory", Teuchos::null);
         p.set<Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >("Closure Model Factory", Teuchos::null);
         p.set<Teuchos::RCP<const panzer::BCStrategyFactory> >("BC Factory",Teuchos::null);
