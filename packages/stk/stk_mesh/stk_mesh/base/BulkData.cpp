@@ -191,8 +191,25 @@ void BulkData::is_entity_shared(std::vector<shared_entity_type>& shared_entity_m
     }
 }
 
+void removeEntitiesNotSelected(stk::mesh::BulkData &mesh, stk::mesh::Selector selected, stk::mesh::EntityVector &entities)
+{
+    if(selected != stk::mesh::Selector(mesh.mesh_meta_data().universal_part()))
+    {
+        stk::mesh::EntityVector filteredEntities;
+        filteredEntities.reserve(entities.size());
+        for(size_t i=0; i<entities.size(); i++)
+        {
+            if(selected(mesh.bucket(entities[i])))
+            {
+                filteredEntities.push_back(entities[i]);
+            }
+        }
+        entities.swap(filteredEntities);
+    }
+}
+
 void BulkData::mark_shared_sides_and_fill_list_of_sides_not_on_boundary(std::vector<shared_entity_type>& shared_entity_map, int proc_id, shared_entity_type &sentity,
-        std::vector<stk::mesh::EntityKeyProc> &entities_to_send_data)
+        std::vector<stk::mesh::EntityKeyProc> &entities_to_send_data, const stk::mesh::Selector *only_consider_second_element_from_this_selector)
 {
     std::vector<shared_entity_type>::iterator shared_itr = std::lower_bound(shared_entity_map.begin(), shared_entity_map.end(), sentity);
     bool entitiesAreTheSame = is_received_entity_in_local_shared_entity_list(this->use_entity_ids_for_resolving_sharing(),
@@ -213,6 +230,11 @@ void BulkData::mark_shared_sides_and_fill_list_of_sides_not_on_boundary(std::vec
         }
 
         stk::mesh::impl::find_locally_owned_elements_these_nodes_have_in_common(*this, nodes.size(), nodes.data(), common_elements);
+
+        if (only_consider_second_element_from_this_selector != NULL)
+        {
+            removeEntitiesNotSelected(*this, *only_consider_second_element_from_this_selector, common_elements);
+        }
 
         if ( common_elements.size() > 0 )
         {
@@ -328,7 +350,7 @@ void unpack_entity_keys_from_procs(stk::CommSparse &comm, std::vector<stk::mesh:
     }
 }
 
-void BulkData::find_and_delete_internal_faces(stk::mesh::EntityRank entityRank)
+void BulkData::find_and_delete_internal_faces(stk::mesh::EntityRank entityRank, const stk::mesh::Selector *only_consider_second_element_from_this_selector)
 {
     std::vector<shared_entity_type> shared_entities;
     this->markEntitiesForResolvingSharingInfoUsingNodes(entityRank, shared_entities);
@@ -347,7 +369,8 @@ void BulkData::find_and_delete_internal_faces(stk::mesh::EntityRank entityRank)
     std::vector<stk::mesh::EntityKeyProc> entities_to_send_data;
     for(size_t i=0;i<shared_entities_and_proc.size();++i)
     {
-        this->mark_shared_sides_and_fill_list_of_sides_not_on_boundary(shared_entities, shared_entities_and_proc[i].first, shared_entities_and_proc[i].second, entities_to_send_data);
+        this->mark_shared_sides_and_fill_list_of_sides_not_on_boundary(shared_entities, shared_entities_and_proc[i].first, shared_entities_and_proc[i].second,
+                entities_to_send_data, only_consider_second_element_from_this_selector);
     }
 
     std::vector<Entity> entities;
@@ -757,7 +780,6 @@ Entity BulkData::internal_declare_entity( EntityRank ent_rank , EntityId ent_id 
     m_check_invalid_rels = false;
 
   require_ok_to_modify();
-  m_modSummary.track_declare_entity(ent_rank, ent_id, parts);
 
   require_good_rank_and_id(ent_rank, ent_id);
 
@@ -1008,6 +1030,7 @@ void BulkData::generate_new_entities(const std::vector<size_t>& requests,
 
 std::pair<Entity, bool> BulkData::internal_create_entity(EntityKey key, size_t preferred_offset)
 {
+    m_modSummary.track_declare_entity(key.rank(), key.id(), stk::mesh::PartVector());
     return m_entity_repo.internal_create_entity(key, preferred_offset);
 }
 
@@ -2517,7 +2540,6 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
     {
         modified_ghosts.erase(keysThatAreBothSharedAndCustomGhosted[i]);
         entity_comm_map_clear_ghosting(keysThatAreBothSharedAndCustomGhosted[i]);
-        std::cerr << "proc " << parallel_rank() << " is clearing all ghosting for key " << keysThatAreBothSharedAndCustomGhosted[i] << std::endl;
     }
 
     // The ghosted change list will become invalid
@@ -4024,6 +4046,8 @@ bool BulkData::internal_modification_end_for_change_parts()
 
     if (this->parallel_size() > 1 && global_shared_modified > 0 /*stk::mesh::impl::shared_entities_modified_on_any_proc(*this, this->parallel())*/) {
       internal_resolve_shared_membership();
+
+      check_mesh_consistency();
     }
 
     m_bucket_repository.internal_sort_bucket_entities();
@@ -4220,7 +4244,8 @@ void BulkData::determineEntitiesThatNeedGhosting(stk::mesh::BulkData &stkMeshBul
     }
 }
 
-void BulkData::find_upward_connected_entities_to_ghost_onto_other_processors(stk::mesh::BulkData &mesh, std::set<EntityProc, EntityLess> &entitiesToGhostOntoOtherProcessors, EntityRank entity_rank)
+void BulkData::find_upward_connected_entities_to_ghost_onto_other_processors(stk::mesh::BulkData &mesh, std::set<EntityProc, EntityLess> &entitiesToGhostOntoOtherProcessors,
+        EntityRank entity_rank, stk::mesh::Selector selected)
 {
     const stk::mesh::BucketVector& entity_buckets = mesh.buckets(entity_rank);
     bool isedge = (entity_rank == stk::topology::EDGE_RANK);
@@ -4242,10 +4267,12 @@ void BulkData::find_upward_connected_entities_to_ghost_onto_other_processors(stk
             if(isedge)
             {
               fillFacesConnectedToNodes(mesh, nodes, numNodes, facesConnectedToNodes);
+              removeEntitiesNotSelected(mesh, selected, facesConnectedToNodes);
               connectGhostedEntitiesToEntity(mesh, facesConnectedToNodes, entity, nodes);
             }
 
             fillElementsConnectedToNodes(mesh, nodes, numNodes, elementsConnectedToNodes);
+            removeEntitiesNotSelected(mesh, selected, elementsConnectedToNodes);
             connectGhostedEntitiesToEntity(mesh, elementsConnectedToNodes, entity, nodes);
 
             if ( bucket.owned() || bucket.shared() )
@@ -4263,7 +4290,7 @@ void BulkData::find_upward_connected_entities_to_ghost_onto_other_processors(stk
     stk::mesh::impl::comm_sync_send_recv(mesh, entitiesToGhostOntoOtherProcessors, entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs);
 }
 
-void connect_ghosted_entities_received_to_ghosted_upwardly_connected_entities(stk::mesh::BulkData &mesh, EntityRank entity_rank)
+void connect_ghosted_entities_received_to_ghosted_upwardly_connected_entities(stk::mesh::BulkData &mesh, EntityRank entity_rank, stk::mesh::Selector selectedToSkin)
 {
     if (entity_rank == stk::topology::EDGE_RANK && !mesh.connectivity_map().valid(stk::topology::EDGE_RANK, stk::topology::FACE_RANK) )
     {
@@ -4282,6 +4309,7 @@ void connect_ghosted_entities_received_to_ghosted_upwardly_connected_entities(st
                     stk::mesh::Entity const *  nodes = mesh.begin_nodes(entity);
 
                     fillFacesConnectedToNodes(mesh, nodes, bucket.topology().num_nodes(), facesConnectedToNodes);
+                    removeEntitiesNotSelected(mesh, selectedToSkin, facesConnectedToNodes);
                     connectGhostedEntitiesToEntity(mesh, facesConnectedToNodes, entity, nodes);
                 }
             }
@@ -4305,6 +4333,7 @@ void connect_ghosted_entities_received_to_ghosted_upwardly_connected_entities(st
                     const stk::mesh::Entity* nodes = bucket.begin_nodes(entityIndex);
 
                     fillElementsConnectedToNodes(mesh, nodes, bucket.num_nodes(entityIndex), elementsConnectedToNodes);
+                    removeEntitiesNotSelected(mesh, selectedToSkin, elementsConnectedToNodes);
                     connectGhostedEntitiesToEntity(mesh, elementsConnectedToNodes, entity, nodes);
                 }
             }
@@ -4333,7 +4362,8 @@ void BulkData::internal_finish_modification_end(modification_optimization opt)
     update_deleted_entities_container();
 }
 
-bool BulkData::internal_modification_end_for_skin_mesh( EntityRank entity_rank, modification_optimization opt)
+bool BulkData::internal_modification_end_for_skin_mesh( EntityRank entity_rank, modification_optimization opt, stk::mesh::Selector selectedToSkin,
+        const Selector * only_consider_second_element_from_this_selector)
 {
   // The two states are MODIFIABLE and SYNCHRONiZED
   if ( this->in_synchronized_state() ) { return false ; }
@@ -4344,10 +4374,10 @@ bool BulkData::internal_modification_end_for_skin_mesh( EntityRank entity_rank, 
   {
       if ( this->get_automatic_aura_option() == NO_AUTO_AURA)
       {
-          find_and_delete_internal_faces(entity_rank);
+          find_and_delete_internal_faces(entity_rank, only_consider_second_element_from_this_selector);
       }
       this->internal_resolve_shared_membership();
-      this->resolve_incremental_ghosting_for_entity_creation(entity_rank);
+      this->resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(entity_rank, selectedToSkin);
       check_mesh_consistency();
   }
 
@@ -4356,15 +4386,16 @@ bool BulkData::internal_modification_end_for_skin_mesh( EntityRank entity_rank, 
   return true ;
 }
 
-void BulkData::resolve_incremental_ghosting_for_entity_creation(EntityRank entity_rank)
+
+void BulkData::resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(EntityRank entity_rank, stk::mesh::Selector selectedToSkin)
 {
     std::set<EntityProc, EntityLess> entitiesToGhostOntoOtherProcessors(EntityLess(*this));
 
-    find_upward_connected_entities_to_ghost_onto_other_processors(*this, entitiesToGhostOntoOtherProcessors, entity_rank);
+    find_upward_connected_entities_to_ghost_onto_other_processors(*this, entitiesToGhostOntoOtherProcessors, entity_rank, selectedToSkin);
 
     ghost_entities_and_fields(aura_ghosting(), entitiesToGhostOntoOtherProcessors);
 
-    connect_ghosted_entities_received_to_ghosted_upwardly_connected_entities(*this, entity_rank);
+    connect_ghosted_entities_received_to_ghosted_upwardly_connected_entities(*this, entity_rank, selectedToSkin);
 }
 
 bool BulkData::internal_modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt )
@@ -4402,7 +4433,7 @@ bool BulkData::internal_modification_end_for_entity_creation( EntityRank entity_
 
     internal_resolve_shared_membership();
 
-    this->resolve_incremental_ghosting_for_entity_creation(entity_rank);
+    this->resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(entity_rank, mesh_meta_data().universal_part());
 
     check_mesh_consistency();
   }

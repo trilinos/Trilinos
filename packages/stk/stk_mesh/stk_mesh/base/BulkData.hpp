@@ -783,7 +783,7 @@ protected: //functions
 
   void update_shared_entities_global_ids(std::vector<shared_entity_type> & shared_entity_map);
   void resolve_entity_sharing(stk::mesh::EntityRank entityRank, std::vector<Entity> &entity_keys);
-  void find_and_delete_internal_faces(stk::mesh::EntityRank entityRank);
+  void find_and_delete_internal_faces(stk::mesh::EntityRank entityRank, const stk::mesh::Selector *only_consider_second_element_from_this_selector);
 
   void internal_resolve_shared_modify_delete()
   {
@@ -900,7 +900,8 @@ protected: //functions
   void write_modification_counts();
   virtual void is_entity_shared(std::vector<shared_entity_type>& shared_entity_map, int proc_id, shared_entity_type &sentity);
   void mark_shared_sides_and_fill_list_of_sides_not_on_boundary(std::vector<shared_entity_type>& shared_entity_map,
-          int proc_id, shared_entity_type &sentity, std::vector<stk::mesh::EntityKeyProc> &entities_to_send_data);
+          int proc_id, shared_entity_type &sentity, std::vector<stk::mesh::EntityKeyProc> &entities_to_send_data,
+          const stk::mesh::Selector *only_consider_second_element_from_this_selector);
 
   void fillSharedEntities(stk::mesh::Ghosting& ghost_id,
                           stk::mesh::BulkData &mesh,
@@ -1046,10 +1047,12 @@ private: //functions
                                     const std::vector<EntityProc> & add_send ,
                                     const std::vector<EntityKey> & remove_receive );
 
-  void resolve_incremental_ghosting_for_entity_creation(EntityRank entity_rank);
+  void resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(EntityRank entity_rank, stk::mesh::Selector selectedToSkin);
 
   bool internal_modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt );
-  bool internal_modification_end_for_skin_mesh( EntityRank entity_rank, modification_optimization opt );
+  bool internal_modification_end_for_skin_mesh( EntityRank entity_rank, modification_optimization opt, stk::mesh::Selector selectedToSkin,
+          const stk::mesh::Selector * only_consider_second_element_from_this_selector);
+
   void internal_finish_modification_end(modification_optimization opt);
 
   void internal_establish_new_owner(stk::mesh::Entity entity);
@@ -1153,7 +1156,7 @@ private: //functions
                                          std::set<EntityProc, EntityLess> &addGhostedEntities);
   void find_upward_connected_entities_to_ghost_onto_other_processors(stk::mesh::BulkData &mesh,
                                                                      std::set<EntityProc, EntityLess> &entitiesToGhostOntoOtherProcessors,
-                                                                     EntityRank entity_rank);
+                                                                     EntityRank entity_rank, stk::mesh::Selector selected);
 
   void reset_add_node_sharing() { m_add_node_sharing_called = false; }
 
@@ -1201,7 +1204,7 @@ private: // data
   bool m_use_identifiers_for_resolving_sharing;
   stk::EmptyModificationSummary m_modSummary;
   // If needing debug info for modifications, comment out above line and uncomment line below
-  //stk::ModificationSummary m_modSummary;
+  // stk::ModificationSummary m_modSummary;
 };
 
 
