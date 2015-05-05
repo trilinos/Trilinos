@@ -51,6 +51,10 @@ namespace stk{
 
       uint64_t m_value;
 
+      Entity() : m_value(InvalidEntity) {}
+
+      Entity(uint64_t value) : m_value(value) {}
+
       Entity operator=(Entity_t val) { m_value = val; return *this;}
 
       /** \brief local_offset is this entity's offset into all local entities of the same rank.
