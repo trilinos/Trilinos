@@ -109,7 +109,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   MOOCHO                packages/moocho                   PS
   Aristos               packages/aristos                  EX
   Stokhos               packages/stokhos                  SS
-  ROL                   packages/rol                      EX
+  ROL                   packages/rol                      SS
   Piro                  packages/piro                     SS
   Panzer                packages/panzer                   SS
   Sundance              packages/Sundance                 SS # Could be PS based on deps (BUG: 4669)
