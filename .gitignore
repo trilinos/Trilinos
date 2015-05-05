@@ -35,6 +35,9 @@ doxygen_objdb_*.tmp
 /DataTransferKit/
 /TeuchosWrappersExt
 
+# Allow github Kokkos to be cloned under Trilinos
+/kokkos/
+
 # RPI SCOREC extra repos
 /SCOREC
 
