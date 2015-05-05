@@ -342,7 +342,7 @@ void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector co
   // attach new sides to connected entities
   skin_mesh_attach_new_sides_to_connected_entities(mesh, boundary, sides, skin_parts);
 
-  mesh.internal_modification_end_for_skin_mesh(stk::topology::FACE_RANK, BulkData::MOD_END_SORT);
+  mesh.internal_modification_end_for_skin_mesh(mesh.mesh_meta_data().side_rank(), BulkData::MOD_END_SORT);
 }
 
 }} // namespace stk::mesh
