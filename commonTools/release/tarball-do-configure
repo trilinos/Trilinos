@@ -46,6 +46,7 @@ cmake \
 -DTrilinos_ENABLE_Belos=ON \
 -DTrilinos_ENABLE_CTrilinos=ON \
 -DTrilinos_ENABLE_Didasko=ON \
+-DTrilinos_ENABLE_Domi=ON \
 -DTrilinos_ENABLE_Epetra=ON \
 -DTrilinos_ENABLE_EpetraExt=ON \
 -DTrilinos_ENABLE_FEI=ON \
@@ -67,10 +68,12 @@ cmake \
 -DTrilinos_ENABLE_OptiPack=ON \
 -DTrilinos_ENABLE_Pamgen=ON \
 -DTrilinos_ENABLE_Phalanx=ON \
+-DTrilinos_ENABLE_Pike=ON \
 -DTrilinos_ENABLE_Piro=ON \
 -DTrilinos_ENABLE_Pliris=ON \
 -DTrilinos_ENABLE_PyTrilinos=ON \
   -DPyTrilinos_DOCSTRINGS=OFF \
+-DTrilinos_ENABLE_ROL=ON \
 -DTrilinos_ENABLE_RTOp=ON \
 -DTrilinos_ENABLE_Rythmos=ON \
 -DTrilinos_ENABLE_Sacado=ON \
