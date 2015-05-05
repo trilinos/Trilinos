@@ -116,6 +116,81 @@ TEST( SkinMesh, SimpleHexWithoutAura)
     test_skin_mesh_with_hexes(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
+void move_element2_into_part(stk::mesh::BulkData& mesh, stk::mesh::EntityId element_id, stk::mesh::Part& part)
+{
+    stk::mesh::EntityVector entities;
+    std::vector<stk::mesh::PartVector> add_parts_per_entity;
+    std::vector<stk::mesh::PartVector> remove_parts_per_entity;
+
+    stk::mesh::Entity element = mesh.get_entity(stk::topology::ELEM_RANK, element_id);
+    if ( mesh.is_valid(element) && mesh.bucket(element).owned() )
+    {
+        entities.push_back(element);
+        stk::mesh::PartVector add_parts;
+        stk::mesh::PartVector rm_parts;
+        add_parts.push_back(&part);
+        add_parts_per_entity.push_back(add_parts);
+        remove_parts_per_entity.push_back(rm_parts);
+    }
+
+    mesh.batch_change_entity_parts(entities, add_parts_per_entity, remove_parts_per_entity);
+}
+
+void test_2_hex_2_block(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
+{
+    if (stk::parallel_machine_size(MPI_COMM_WORLD) <= 2)
+    {
+        const int spatialDim = 3;
+        stk::mesh::MetaData meta(spatialDim);
+
+        stk::mesh::EntityRank side_rank = meta.side_rank();
+
+        stk::mesh::Part & skin_part = meta.declare_part("SkinPart", side_rank);
+        stk::mesh::Part & block_2 = meta.declare_part("block_2", stk::topology::FACE_RANK);
+
+        stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD, autoAuraOption);
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x2", mesh, MPI_COMM_WORLD);
+
+        ASSERT_EQ( 0u, stk::mesh::count_selected_entities( skin_part, mesh.buckets(stk::topology::NODE_RANK)) );
+        ASSERT_EQ( 0u, stk::mesh::count_selected_entities( skin_part, mesh.buckets(side_rank)) );
+
+        stk::mesh::EntityId element_id = 2;
+        move_element2_into_part(mesh, element_id, block_2);
+
+        stk::mesh::PartVector skin_parts;
+        skin_parts.push_back(&skin_part);
+
+        stk::mesh::skin_mesh(mesh, block_2, skin_parts);
+
+        stk::mesh::Entity element2 = mesh.get_entity(stk::topology::ELEM_RANK, element_id);
+
+        if (mesh.is_valid(element2))
+        {
+            unsigned num_faces = mesh.num_faces(element2);
+            EXPECT_EQ(5u, num_faces);
+        }
+
+        stk::mesh::Entity element1 = mesh.get_entity(stk::topology::ELEM_RANK, 1);
+
+        // with correct face connection behavior, shouldn't this be 1 for num_faces?
+        if (mesh.is_valid(element1))
+        {
+            unsigned num_faces = mesh.num_faces(element1);
+            EXPECT_EQ(0u, num_faces);
+        }
+    }
+}
+
+TEST( SkinMesh, test_2_hex_2_block_with_aura)
+{
+    test_2_hex_2_block(stk::mesh::BulkData::AUTO_AURA);
+}
+
+TEST( SkinMesh, test_2_hex_2_block_without_aura)
+{
+    test_2_hex_2_block(stk::mesh::BulkData::NO_AUTO_AURA);
+}
+
 TEST( SkinMesh, SimpleQuad)
 {
   const unsigned X = 5, Y = 5;

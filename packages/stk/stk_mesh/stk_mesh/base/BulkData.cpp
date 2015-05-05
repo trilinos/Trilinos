@@ -156,14 +156,12 @@ void communicateSharedEntityInfo(stk::mesh::BulkData &mesh, stk::CommSparse &com
     comm.communicate();
 }
 
-void BulkData::is_entity_shared(std::vector<shared_entity_type>& shared_entity_map, int proc_id, shared_entity_type &sentity)
+bool is_received_entity_in_local_shared_entity_list(bool use_entity_ids_for_resolving_sharing, std::vector<shared_entity_type>::iterator &shared_itr, std::vector<shared_entity_type>& shared_entity_map, shared_entity_type &sentity)
 {
-    std::vector<shared_entity_type>::iterator shared_itr = std::lower_bound(shared_entity_map.begin(), shared_entity_map.end(), sentity);
-
     bool entitiesHaveSameNodes = shared_itr != shared_entity_map.end() && *shared_itr == sentity;
     bool entitiesAreTheSame = false;
 
-    if ( this->use_entity_ids_for_resolving_sharing() )
+    if ( use_entity_ids_for_resolving_sharing )
     {
         entitiesAreTheSame = entitiesHaveSameNodes && shared_itr->local_key == sentity.local_key;
     }
@@ -171,6 +169,15 @@ void BulkData::is_entity_shared(std::vector<shared_entity_type>& shared_entity_m
     {
         entitiesAreTheSame = entitiesHaveSameNodes;
     }
+
+    return entitiesAreTheSame;
+}
+
+void BulkData::is_entity_shared(std::vector<shared_entity_type>& shared_entity_map, int proc_id, shared_entity_type &sentity)
+{
+    std::vector<shared_entity_type>::iterator shared_itr = std::lower_bound(shared_entity_map.begin(), shared_entity_map.end(), sentity);
+    bool entitiesAreTheSame = is_received_entity_in_local_shared_entity_list(this->use_entity_ids_for_resolving_sharing(),
+           shared_itr, shared_entity_map, sentity);
 
     if( entitiesAreTheSame )
     {
@@ -184,7 +191,37 @@ void BulkData::is_entity_shared(std::vector<shared_entity_type>& shared_entity_m
     }
 }
 
-void BulkData::unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatNeedAlsoHaveEntity(stk::CommSparse &comm, std::vector<shared_entity_type> & shared_entity_map)
+void BulkData::mark_shared_sides_and_fill_list_of_sides_not_on_boundary(std::vector<shared_entity_type>& shared_entity_map, int proc_id, shared_entity_type &sentity,
+        std::vector<stk::mesh::EntityKeyProc> &entities_to_send_data)
+{
+    std::vector<shared_entity_type>::iterator shared_itr = std::lower_bound(shared_entity_map.begin(), shared_entity_map.end(), sentity);
+    bool entitiesAreTheSame = is_received_entity_in_local_shared_entity_list(this->use_entity_ids_for_resolving_sharing(),
+           shared_itr, shared_entity_map, sentity);
+
+    if( entitiesAreTheSame )
+    {
+        Entity entity = this->get_entity(shared_itr->local_key);
+        this->internal_mark_entity(entity, BulkData::IS_SHARED);
+    }
+    else
+    {
+        stk::mesh::EntityVector common_elements;
+        stk::mesh::EntityVector nodes(sentity.nodes.size());
+        for (size_t i=0;i<sentity.nodes.size();++i)
+        {
+            nodes[i] = this->get_entity(sentity.nodes[i]);
+        }
+
+        stk::mesh::impl::find_locally_owned_elements_these_nodes_have_in_common(*this, nodes.size(), nodes.data(), common_elements);
+
+        if ( common_elements.size() > 0 )
+        {
+            entities_to_send_data.push_back(EntityKeyProc(sentity.global_key, proc_id));
+        }
+    }
+}
+
+void BulkData::unpack_shared_entities(stk::CommSparse &comm, std::vector< std::pair<int, shared_entity_type> > &shared_entities_and_proc)
 {
     for(int ip = this->parallel_size() - 1; ip >= 0; --ip)
     {
@@ -205,9 +242,21 @@ void BulkData::unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackPr
                 }
                 buf.unpack<EntityKey>(sentity.global_key);
 
-                this->is_entity_shared(shared_entity_map, ip, sentity);
+                shared_entities_and_proc.push_back(std::make_pair(ip, sentity));
             }
         }
+    }
+}
+
+void BulkData::unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatAlsoHaveEntity(stk::CommSparse &comm, std::vector<shared_entity_type> & shared_entity_map)
+{
+    std::vector< std::pair<int, shared_entity_type> > shared_entities_and_proc;
+
+    this->unpack_shared_entities(comm, shared_entities_and_proc);
+
+    for(size_t i=0;i<shared_entities_and_proc.size();++i)
+    {
+        this->is_entity_shared(shared_entity_map, shared_entities_and_proc[i].first, shared_entities_and_proc[i].second);
     }
 }
 
@@ -237,7 +286,7 @@ void BulkData::update_shared_entities_global_ids(std::vector<shared_entity_type>
 
     stk::CommSparse comm(parallel());
     communicateSharedEntityInfo(*this, comm, shared_entities);
-    unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatNeedAlsoHaveEntity(comm, shared_entity_map);
+    unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatAlsoHaveEntity(comm, shared_entity_map);
     resolveUniqueIdForSharedEntityAndCreateCommMapInfoForSharingProcs(shared_entity_map);
 }
 
@@ -252,6 +301,33 @@ void BulkData::resolve_entity_sharing(stk::mesh::EntityRank entityRank, std::vec
     std::sort(entities.begin(), entities.end(), EntityLess(*this));
 }
 
+void pack_entity_keys_to_send(stk::CommSparse &comm, const std::vector<stk::mesh::EntityKeyProc> &entities_to_send_data)
+{
+    for(size_t i=0;i<entities_to_send_data.size();++i)
+    {
+        stk::mesh::EntityKey entityKeyToSend = entities_to_send_data[i].first;
+        int destinationProc = entities_to_send_data[i].second;
+        comm.send_buffer(destinationProc).pack(entityKeyToSend);
+    }
+}
+
+void unpack_entity_keys_from_procs(stk::CommSparse &comm, std::vector<stk::mesh::EntityKey> &receivedEntityKeys)
+{
+    for(int procId = comm.parallel_size() - 1; procId >= 0; --procId)
+    {
+        if(procId != comm.parallel_rank())
+        {
+            CommBuffer & buf = comm.recv_buffer(procId);
+            while(buf.remaining())
+            {
+                stk::mesh::EntityKey entityKey;
+                buf.unpack<stk::mesh::EntityKey>(entityKey);
+                receivedEntityKeys.push_back(entityKey);
+            }
+        }
+    }
+}
+
 void BulkData::find_and_delete_internal_faces(stk::mesh::EntityRank entityRank)
 {
     std::vector<shared_entity_type> shared_entities;
@@ -264,10 +340,17 @@ void BulkData::find_and_delete_internal_faces(stk::mesh::EntityRank entityRank)
 
     stk::CommSparse comm(parallel());
     communicateSharedEntityInfo(*this, comm, shared_entities_to_each_proc);
-    unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatNeedAlsoHaveEntity(comm, shared_entities);
+
+    std::vector< std::pair<int, shared_entity_type> > shared_entities_and_proc;
+    this->unpack_shared_entities(comm, shared_entities_and_proc);
+
+    std::vector<stk::mesh::EntityKeyProc> entities_to_send_data;
+    for(size_t i=0;i<shared_entities_and_proc.size();++i)
+    {
+        this->mark_shared_sides_and_fill_list_of_sides_not_on_boundary(shared_entities, shared_entities_and_proc[i].first, shared_entities_and_proc[i].second, entities_to_send_data);
+    }
 
     std::vector<Entity> entities;
-
     for (size_t i=0; i<shared_entities.size(); ++i)
     {
         Entity entity = shared_entities[i].entity;
@@ -275,6 +358,19 @@ void BulkData::find_and_delete_internal_faces(stk::mesh::EntityRank entityRank)
         {
             entities.push_back(entity);
         }
+    }
+
+    stk::CommSparse commForInternalSides(parallel());
+    pack_entity_keys_to_send(commForInternalSides, entities_to_send_data);
+    commForInternalSides.allocate_buffers();
+    pack_entity_keys_to_send(commForInternalSides, entities_to_send_data);
+    commForInternalSides.communicate();
+
+    std::vector<stk::mesh::EntityKey> receivedEntityKeys;
+    unpack_entity_keys_from_procs(commForInternalSides, receivedEntityKeys);
+    for (size_t i=0; i<receivedEntityKeys.size(); ++i)
+    {
+        entities.push_back(this->get_entity(receivedEntityKeys[i]));
     }
 
     stk::mesh::impl::delete_entities_and_upward_relations(*this, entities);
