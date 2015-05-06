@@ -43,6 +43,7 @@
 // ***********************************************************************
 //
 // @HEADER
+
 #ifndef MUEMEX_H
 #define MUEMEX_H
 
@@ -58,6 +59,7 @@
 #include "MueLu.hpp"
 #include "MueLu_EpetraOperator.hpp"
 #include "MueLu_TpetraOperator.hpp"
+#include "MueLu_Hierarchy_decl.hpp"
 #include "MueLu_CreateEpetraPreconditioner.hpp"
 #include "MueLu_CreateTpetraPreconditioner.hpp"
 #include "Epetra_SerialComm.h"
@@ -71,8 +73,6 @@
 #include "BelosEpetraAdapter.hpp"
 #include "BelosTpetraAdapter.hpp"
 #include "BelosMueLuAdapter.hpp"
-
-#ifdef HAVE_MUELU_MATLAB
 #include "mex.h"
 
 //Chris, put the complex scalar support def here (I don't know what it's called)
@@ -87,69 +87,60 @@
 
 typedef enum
 {
-    EPETRA_UNPREC,
     EPETRA,
     TPETRA,
     TPETRA_COMPLEX
 } DataPackType;
 
+//Mode value passed to MATLAB muemex function as 1st arg
 typedef enum
 {
-    MODE_SETUP,
-    MODE_SOLVE,
-    MODE_CLEANUP,
-    MODE_STATUS,
-    MODE_AGGREGATE,
-    MODE_SETUP_MAXWELL,
-    MODE_SOLVE_NEWMATRIX,
-    MODE_ERROR
+    MODE_SETUP,	//0
+    MODE_SOLVE, //1
+    MODE_CLEANUP, //2
+    MODE_STATUS, //3
+    MODE_AGGREGATE, //4
+    MODE_SETUP_MAXWELL, //5
+    MODE_SOLVE_NEWMATRIX, //6
+    MODE_ERROR, //7
+	MODE_GET //8
 } MODE_TYPE;
 
-//Default Tpetra node type for CrsMatrix (could replace here with custom types)
+typedef enum
+{
+	MATRIX,
+	MULTIVECTOR,
+	LOVECTOR,
+	SCALAR,
+	UNKNOWN
+} HierAttribType;
+
 typedef Tpetra::Vector<>::node_type mm_node_t;
 typedef Tpetra::Vector<>::local_ordinal_type mm_LocalOrd;
 typedef Tpetra::Vector<>::global_ordinal_type mm_GlobalOrd;
 typedef Tpetra::Map<> muemex_map_type;
 typedef Tpetra::CrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_CrsMatrix_double;
+typedef std::complex<double> complex_t;
+typedef Tpetra::CrsMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_CrsMatrix_complex;
+typedef Xpetra::Vector<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_ordinal_vector;
+typedef Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_Matrix_double;
+typedef Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_Matrix_complex;
+typedef Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_MultiVector_double;
+typedef Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_MultiVector_complex;
+typedef MueLu::Hierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Hierarchy_double;
+typedef MueLu::Hierarchy<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Hierarchy_complex;
 
-//Scalar could be double or std::complex, and Matrix could be the CrsMatrix from [E|T]petra
-//(therefore the muelu_epetra_data_pack has the default template arguments)
 class muelu_data_pack
 {
     public:
-        muelu_data_pack(DataPackType type);
-        virtual ~muelu_data_pack();
-        virtual int status() = 0;
+        muelu_data_pack(DataPackType type);	//type is one of EPETRA, TPETRA or TPETRA_COMPLEX
+        virtual ~muelu_data_pack() = 0;
+		virtual int status() = 0;
         virtual int setup(const mxArray* mxa) = 0;
-        virtual int NumMyRows() = 0;
-        virtual int NumMyCols() = 0;
         int id;
         Teuchos::RCP<Teuchos::ParameterList> List;
-        DataPackType type;
-};
-
-class muelu_epetra_unprec_data_pack : public muelu_data_pack
-{
-    public:
-        muelu_epetra_unprec_data_pack();
-        ~muelu_epetra_unprec_data_pack();
-        int setup(const mxArray* mxa);
-        int status();
-        int solve(Teuchos::RCP<Teuchos::ParameterList> TPL, Teuchos::RCP<Epetra_CrsMatrix> Amat, double* b, double* x, int numVecs, int &iters);
-        Teuchos::RCP<Epetra_CrsMatrix> GetMatrix()
-        {
-            return A;
-        }
-        int NumMyRows()
-        {
-            return A->NumMyRows();
-        }
-        int NumMyCols()
-        {
-            return A->NumMyCols();
-        }
-    private:
-        Teuchos::RCP<Epetra_CrsMatrix> A;
+		DataPackType type;
+		mxArray* getHierarchyData(std::string dataName, HierAttribType dataType, int levelID); //Works for all dp types
 };
 
 class muelu_epetra_data_pack : public muelu_data_pack
@@ -168,15 +159,16 @@ class muelu_epetra_data_pack : public muelu_data_pack
         {
             return prec;
         }
-        int NumMyRows()
+        int NumGlobalRows()
         {
-            return A->NumMyRows();
+            return A->NumGlobalRows();
         }
         int NumMyCols()
         {
-            return A->NumMyCols();
+            return A->NumGlobalCols();
         }
         double operatorComplexity;
+		Teuchos::RCP<Hierarchy_double> getHierarchy();
     private:
         Teuchos::RCP<Epetra_CrsMatrix> A;
         Teuchos::RCP<Epetra_Operator> prec;
@@ -216,6 +208,7 @@ class muelu_tpetra_double_data_pack : public muelu_data_pack
                 return A->getNodeNumCols();
         }
         double operatorComplexity;
+        Teuchos::RCP<Hierarchy_double> getHierarchy();
     private:
         Teuchos::RCP<Tpetra_CrsMatrix_double> A;
         Teuchos::RCP<Tpetra::Operator<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> prec;
@@ -223,8 +216,6 @@ class muelu_tpetra_double_data_pack : public muelu_data_pack
 
 //Only define this datapack type if complex scalars are supported
 #ifdef HAVE_COMPLEX_SCALARS
-typedef std::complex<double> complex_t;
-typedef Tpetra::CrsMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_CrsMatrix_complex;
 
 class muelu_tpetra_complex_data_pack : public muelu_data_pack
 {
@@ -258,11 +249,69 @@ class muelu_tpetra_complex_data_pack : public muelu_data_pack
                 return A->getNodeNumCols();
         }
         double operatorComplexity;
+       	Teuchos::RCP<Hierarchy_complex> getHierarchy();
     private:
         Teuchos::RCP<Tpetra_CrsMatrix_complex> A;
         Teuchos::RCP<Tpetra::Operator<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> prec;
 };
-#endif
+#endif	//complex scalars
+
+/* nonmember utility functions */
+
+//create an array of ints from an array of MATLAB array indices 
+int* mwIndex_to_int(int N, mwIndex* mwi_array);
+//Convert individual Belos verbosity setting name to its enum value
+int strToMsgType(const char* str);
+//attempt to get hierarchy data type from the name of the field (A, P, Nullspace, etc)
+HierAttribType strToHierAttribType(const char* str);
+//Parse belos output style (Brief or General)
+int strToOutputStyle(const char* str);
+//Parse belos verbosity settings (returns enum values | together)
+int getBelosVerbosity(const char* input);
+//Get an int from a MATLAB double or int input
+int parseInt(const mxArray* mxa);
+//create a sparse array in Matlab
+template<typename Scalar = double>
+mxArray* createMatlabSparse(int numRows, int numCols, int nnz);
+//create an int32 dense vector in Matlab
+mxArray* createMatlabLOVector(Teuchos::RCP<Xpetra_ordinal_vector> vec);
+//copy a sparse Xpetra matrix (double or complex) to Matlab
+template<typename Scalar = double>
+mxArray* saveMatrixToMatlab(Teuchos::RCP<Xpetra::Matrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mat);
+template<typename Scalar = double>
+mxArray* createMatlabMultiVector(int numRows, int numCols);
+template<typename Scalar = double>
+mxArray* saveMultiVectorToMatlab(Teuchos::RCP<Xpetra::MultiVector<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mv);
+template<typename Scalar = double>
+void fillMatlabArray(Scalar* array, const mxArray* mxa, int n);
+//Set up an Epetra matrix from CSC arrays
+Teuchos::RCP<Epetra_CrsMatrix> epetra_setup(int Nrows, int Ncols, int* rowind, int* colptr, double* vals);
+//Set up an Epetra matrix from a MATLAB array
+Teuchos::RCP<Epetra_CrsMatrix> epetra_setup_from_prhs(const mxArray* mxa);
+//Set up an Epetra_MultiVector from MATLAB array
+Teuchos::RCP<Epetra_MultiVector> epetra_setup_multivector(const mxArray* mxa);
+//Set up Tpetra real matrix from MATLAB array
+Teuchos::RCP<Tpetra_CrsMatrix_double> tpetra_setup_real_prhs(const mxArray* mxa);
+//Set up Xpetra real matrix from MATLAB array
+Teuchos::RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> xpetra_setup_real(const mxArray* mxa);
+//Set up Tpetra real multivector from MATLAB array
+Teuchos::RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> tpetra_setup_real_multivector(const mxArray* mxa);
+//Set up tpetra complex matrix from MATLAB
+Teuchos::RCP<Tpetra_CrsMatrix_complex> tpetra_setup_complex_prhs(const mxArray* mxa);
+//Set up Tpetra complex multivector from MATLAB
+Teuchos::RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> tpetra_setup_complex_multivector(const mxArray* mxa);
+//Set up xpetra complex matrix from MATLAB
+Teuchos::RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> xpetra_setup_complex(const mxArray* mxa);
+//Solve an Epetra system
+int epetra_solve(Teuchos::RCP<Teuchos::ParameterList> SetupList, Teuchos::RCP<Teuchos::ParameterList> TPL, Teuchos::RCP<Epetra_CrsMatrix> A, Teuchos::RCP<Epetra_Operator> prec, double* b, double* x, int numVecs, int &iters);
+//Solve a real-valued Tpetra system
+int tpetra_double_solve(Teuchos::RCP<Teuchos::ParameterList> SetupList, Teuchos::RCP<Teuchos::ParameterList> TPL, Teuchos::RCP<Tpetra_CrsMatrix_double> A, Teuchos::RCP<Tpetra::Operator<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> prec, double* b, double* x, int numVecs, int& iters);
+//Solve a complex-valued Tpetra system
+int tpetra_complex_solve(Teuchos::RCP<Teuchos::ParameterList> SetupList, Teuchos::RCP<Teuchos::ParameterList> TPL,
+Teuchos::RCP<Tpetra_CrsMatrix_complex> A, Teuchos::RCP<Tpetra::Operator<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> prec, complex_t* b, complex_t* x, int numVecs, int& iters);
+//Get a hierarchy from a muelu_data_pack
+template<typename Scalar = double>
+Teuchos::RCP<MueLu::Hierarchy<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> getDatapackHierarchy(muelu_data_pack* dp);
 
 namespace muelu_data_pack_list
 {
@@ -277,5 +326,4 @@ namespace muelu_data_pack_list
 	void clearAll();
 }
 
-#endif
-#endif
+#endif //MUEMEX_H

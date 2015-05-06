@@ -45,10 +45,14 @@
 // @HEADER
 
 #include "muemex.h"
-#ifdef HAVE_MUELU_MATLAB
 #define IS_FALSE 0
 #define IS_TRUE 1
 #define MUEMEX_ERROR -1
+
+//Do not compile MueMex if any of these aren't available
+#if !defined HAVE_MUELU_EPETRA || !defined HAVE_MUELU_TPETRA || !defined HAVE_MUELU_MATLAB
+#error "MueMex requires Epetra, Tpetra and MATLAB."
+#endif
 
 using namespace std;
 using namespace Teuchos;
@@ -67,7 +71,7 @@ extern void _main();
 #define MMISINT(x) ((x)==0?(((x-(int)(x))<1e-15)?true:false):(((x-(int)(x))<1e-15*MMABS(x))?true:false))
 
 /* Debugging */
-#define VERBOSE_OUTPUT
+//#define VERBOSE_OUTPUT
 
 /* Stuff for MATLAB R2006b vs. previous versions */
 #if(defined(MX_API_VER) && MX_API_VER >= 0x07030000)
@@ -80,6 +84,8 @@ vector<RCP<muelu_data_pack>> muelu_data_pack_list::list;
 int muelu_data_pack_list::nextID = 0;
 
 //Need a global flag to keep track of Epetra vs. Tpetra for constructing multivectors for param lists
+bool useEpetra = false;
+//Flag set to true if MATLAB's CSC matrix index type is not int (usually false)
 bool rewrap_ints = false;
 
 /**************************************************************/
@@ -126,6 +132,24 @@ int strToMsgType(const char* str)
 		return Belos::Debug;
 	//This has no effect when added/OR'd with flags
 	return Belos::Errors;
+}
+
+HierAttribType strToHierAttribType(const char* str)
+{
+	if(strcmp(str, "A") == 0)
+		return MATRIX;
+	if(strcmp(str, "P") == 0)
+		return MATRIX;
+	if(strcmp(str, "R") == 0)
+		return MATRIX;
+	if(strcmp(str, "Nullspace") == 0)
+		return MULTIVECTOR;
+	if(strcmp(str, "Coordinates") == 0)
+		return MULTIVECTOR;
+	//TODO: Add eigenvalue scalar type here - what's it called?
+	if(strcmp(str, "Aggregates") == 0)
+		return LOVECTOR;
+	return UNKNOWN;
 }
 
 //Parse a string to get Belos output style (Brief is default)
@@ -179,6 +203,143 @@ int parseInt(const mxArray* mxa)
 		throw runtime_error("Error: Unrecognized numerical type.");
 	}
 	return rv;
+}
+
+template<typename Scalar = double>
+mxArray* saveMatrixToMatlab(RCP<Xpetra::Matrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mat)
+{
+	int nr = mat->getGlobalNumRows();
+	int nc = mat->getGlobalNumCols();
+	int nnz = mat->getGlobalNumEntries();
+	#ifdef VERBOSE_OUTPUT
+	RCP<Teuchos::FancyOStream> fancyStream = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+	mat->describe(*fancyStream, Teuchos::VERB_EXTREME);
+	#endif
+	mxArray* mxa = createMatlabSparse<Scalar>(nr, nc, nnz);
+	mwIndex* ir = mxGetIr(mxa);
+	mwIndex* jc = mxGetJc(mxa);
+	for(int i = 0; i < nc + 1; i++)
+	{
+		jc[i] = 0;
+	}
+	size_t maxEntriesPerRow = mat->getGlobalMaxNumRowEntries();
+	int* rowProgress = new int[nc];
+	//The array that will be copied to Pr and (if complex) Pi later
+	Scalar* sparseVals = new Scalar[nnz];
+	size_t numEntries;
+	if(mat->isLocallyIndexed())
+	{
+		Scalar* rowValArray = new Scalar[maxEntriesPerRow];
+		ArrayView<Scalar> rowVals(rowValArray, maxEntriesPerRow);
+		mm_LocalOrd* rowIndicesArray = new mm_LocalOrd[maxEntriesPerRow];
+		ArrayView<mm_LocalOrd> rowIndices(rowIndicesArray, maxEntriesPerRow);
+		for(mm_LocalOrd m = 0; m < nr; m++)	//All rows in the Xpetra matrix
+		{
+			mat->getLocalRowCopy(m, rowIndices, rowVals, numEntries);	//Get the row
+			for(mm_LocalOrd entry = 0; entry < int(numEntries); entry++)	//All entries in row
+			{
+				jc[rowIndices[entry] + 1]++; //for each entry, increase jc for the entry's column
+			}
+		}
+		//now jc holds the number of elements in each column, but needs cumulative sum over all previous columns also
+		int entriesAccum = 0;
+		for(int n = 0; n <= nc; n++)
+		{
+			int temp = entriesAccum;
+			entriesAccum += jc[n];
+			jc[n] += temp;
+		}
+		//Jc now populated with colptrs
+		for(int i = 0; i < nc; i++)
+		{
+			rowProgress[i] = 0;
+		}
+		//Row progress values like jc but keep track as the MATLAB matrix is being filled in
+		for(mm_LocalOrd m = 0; m < nr; m++)	//rows
+		{
+			mat->getLocalRowCopy(m, rowIndices, rowVals, numEntries);
+			for(mm_LocalOrd i = 0; i < int(numEntries); i++)	//entries in row m (NOT columns)
+			{
+				//row is m, col is rowIndices[i], val is rowVals[i]
+				mm_LocalOrd col = rowIndices[i];
+				sparseVals[jc[col] + rowProgress[col]] = rowVals[i];	//Set value
+				ir[jc[col] + rowProgress[col]] = m;						//Set row at which value occurs
+				rowProgress[col]++;
+			}
+		}
+		delete[] rowIndicesArray;
+	}
+	else
+	{
+		ArrayView<const mm_GlobalOrd> rowIndices;
+		ArrayView<const Scalar> rowVals;
+		for(mm_GlobalOrd m = 0; m < nr; m++)
+		{
+			mat->getGlobalRowView(m, rowIndices, rowVals);
+			for(mm_GlobalOrd n = 0; n < rowIndices.size(); n++)
+			{
+				jc[rowIndices[n] + 1]++;
+			}
+		}
+		//Last element of jc is just nnz
+		jc[nc] = nnz;
+		//Jc now populated with colptrs
+		for(int i = 0; i < nc; i++)
+		{
+			rowProgress[i] = 0;
+		}
+		int entriesAccum = 0;
+		for(int n = 0; n <= nc; n++)
+		{
+			int temp = entriesAccum;
+			entriesAccum += jc[n];
+			jc[n] += temp;
+		}
+		//Row progress values like jc but keep track as the MATLAB matrix is being filled in
+		for(mm_GlobalOrd m = 0; m < nr; m++)	//rows
+		{
+			mat->getGlobalRowView(m, rowIndices, rowVals);
+			for(mm_LocalOrd i = 0; i < rowIndices.size(); i++)	//entries in row m (NOT == columns)
+			{
+				//row is m, col is rowIndices[i], val is rowVals[i]
+				mm_GlobalOrd col = rowIndices[i];
+				sparseVals[jc[col] + rowProgress[col]] = rowVals[i];	//Set value
+				ir[jc[col] + rowProgress[col]] = m;						//Set row at which value occurs
+				rowProgress[col]++;
+			}
+		}
+	}
+	//finally, copy sparseVals into pr (and pi, if complex)
+	fillMatlabArray<Scalar>(sparseVals, mxa, nnz);
+	delete[] sparseVals;
+	delete[] rowProgress;
+	return mxa;
+}
+
+template<> mxArray* createMatlabSparse<double>(int numRows, int numCols, int nnz)
+{
+	return mxCreateSparse(numRows, numCols, nnz, mxREAL);
+}
+
+template<> mxArray* createMatlabSparse<complex_t>(int numRows, int numCols, int nnz)
+{
+	return mxCreateSparse(numRows, numCols, nnz, mxCOMPLEX);
+}
+
+template<> void fillMatlabArray<double>(double* array, const mxArray* mxa, int n)
+{
+	memcpy(mxGetPr(mxa), array, n * sizeof(double));
+}
+
+template<> void fillMatlabArray<complex_t>(complex_t* array, const mxArray* mxa, int n)
+{
+	double* pr = mxGetPr(mxa);
+	double* pi = mxGetPi(mxa);
+	for(int i = 0; i < n; i++)
+	{
+		pr[i] = real<double>(array[i]);
+		pi[i] = imag<double>(array[i]);
+	}
 }
 
 RCP<Epetra_CrsMatrix> epetra_setup(int Nrows, int Ncols, int* rowind, int* colptr, double* vals)
@@ -269,12 +430,13 @@ RCP<Tpetra_CrsMatrix_double> tpetra_setup_real_prhs(const mxArray* mxa)
 	RCP<Tpetra_CrsMatrix_double> A;
 	try
 	{
-		RCP<const Teuchos::Comm<int>> comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+		RCP<const Teuchos::Comm<int>> comm = rcp(new Teuchos::SerialComm<int>());
 		//numGlobalIndices is just the number of rows in the matrix	
 		const Tpetra::global_size_t numGlobalIndices = mxGetM(mxa);
 		const mm_GlobalOrd indexBase = 0;
-		RCP<const muemex_map_type> map = rcp(new muemex_map_type(numGlobalIndices, indexBase, comm));
-		A = Tpetra::createCrsMatrix<double, mm_GlobalOrd, mm_LocalOrd, mm_node_t>(map);
+		RCP<const muemex_map_type> rowMap = rcp(new muemex_map_type(numGlobalIndices, indexBase, comm));
+		RCP<const muemex_map_type> domainMap = rcp(new muemex_map_type(mxGetN(mxa), indexBase, comm));
+		A = Tpetra::createCrsMatrix<double, mm_GlobalOrd, mm_LocalOrd, mm_node_t>(rowMap);
 		double* valueArray = mxGetPr(mxa);
 		int* colptr;
 		int* rowind;
@@ -302,7 +464,7 @@ RCP<Tpetra_CrsMatrix_double> tpetra_setup_real_prhs(const mxArray* mxa)
 				A->insertGlobalValues(rowind[j], cols, vals);
 			}
 		}
-		A->fillComplete();
+		A->fillComplete(domainMap, rowMap);
 		if(rewrap_ints)
 		{
 			delete[] rowind;
@@ -324,11 +486,56 @@ RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> xpetra_setup_r
 {
 	int nr = mxGetM(mxa);
 	int nc = mxGetN(mxa);
-	RCP<const Teuchos::Comm<int>> comm;
-	typedef Xpetra::Map<mm_LocalOrd, mm_GlobalOrd, mm_node_t> XMap;
-	typedef Xpetra::CrsMatrixWrap<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_CrsMatrixWrap;
-	RCP<XMap> map = rcp_implicit_cast<XMap>(rcp(new Xpetra::TpetraMap<mm_LocalOrd, mm_GlobalOrd, mm_node_t>(nr, (mm_GlobalOrd) 0, comm)));
-	RCP<Xpetra_CrsMatrixWrap> wrapMat = rcp(new Xpetra_CrsMatrixWrap(map,
+	int* ir;
+	int* jc;
+	double* values = mxGetPr(mxa);
+	int totalNNZ = mxGetNzmax(mxa);
+	if(rewrap_ints)
+	{
+		mwIndex* temp = mxGetIr(mxa);
+		ir = mwIndex_to_int(totalNNZ, temp);
+		temp = mxGetJc(mxa);
+		jc = mwIndex_to_int(totalNNZ, temp);
+	}
+	else
+	{
+		ir = (int*) mxGetIr(mxa);
+		jc = (int*) mxGetJc(mxa);
+	}
+	size_t* nnzPerRow = new size_t[nr]();		//Create an array of nnz counts for each row, use to create matrix
+	for(int i = 0; i < totalNNZ; i++)
+	{
+		nnzPerRow[ir[i]]++;
+	}
+	ArrayRCP<size_t> arrRCP(nnzPerRow, 0, nr, false);	//Need an arrayRCP to pass nnz counts
+	RCP<const Teuchos::Comm<int>> comm = DefaultComm<int>::getComm();
+	mm_GlobalOrd numRows = (mm_GlobalOrd) nr;
+	Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
+	RCP<const Xpetra::Map<mm_LocalOrd, mm_GlobalOrd, mm_node_t>> map = Xpetra::MapFactory<mm_LocalOrd, mm_GlobalOrd, mm_node_t>::Build(lib, numRows, (mm_GlobalOrd) 0, comm);
+	RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> A = rcp(new Xpetra::CrsMatrixWrap<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(map, arrRCP, Xpetra::StaticProfile));
+	//Iterate through values of MATLAB CSC sparse matrix & populate Xpetra::Matrix object	
+	for(int i = 0; i < nc; i++)
+	{
+		for(int j = jc[i]; j < jc[i + 1]; j++)
+		{
+			//'array' of 1 element, containing column (in global matrix).
+			ArrayView<mm_GlobalOrd> cols = ArrayView<mm_GlobalOrd>(&i, 1);
+			//'array' of 1 element, containing value
+			ArrayView<double> vals = ArrayView<double>(&values[j], 1);
+			A->insertGlobalValues(ir[j], cols, vals);
+		}
+	}
+	A->fillComplete();
+	if(rewrap_ints)
+	{
+		delete[] ir;
+		delete[] jc;
+	}
+	delete[] nnzPerRow;
+	mexPrintf("\n\n\nHere comes extreme verbosity description of A:\n\n\n");
+	RCP<Teuchos::FancyOStream> fancyStream = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+	A->describe(*fancyStream, Teuchos::VERB_EXTREME);
+	return A;
 }
 
 RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> tpetra_setup_real_multivector(const mxArray* mxa)
@@ -350,6 +557,15 @@ RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> tpetra_se
 		cout << e.what() << endl;
 	}
 	return mv;
+}
+
+mxArray* createMatlabLOVector(RCP<Xpetra_ordinal_vector> vec)
+{
+	//this value might be a 64 bit int but it should never overflow a 32
+	mwSize len = vec->getGlobalLength();
+	//create a single column vector
+	mwSize dimensions[] = {len, 1};
+	return mxCreateNumericArray(2, dimensions, mxINT32_CLASS, mxREAL);
 }
 
 #ifdef HAVE_COMPLEX_SCALARS
@@ -438,57 +654,68 @@ RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> tpetra
 	}
 	return mv;
 }
+
+RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> xpetra_setup_complex(const mxArray* mxa)
+{
+	int nr = mxGetM(mxa);
+	int nc = mxGetN(mxa);
+	int* ir;
+	int* jc;
+	double* realVals = mxGetPr(mxa);
+	double* imagVals = mxGetPi(mxa);
+	int totalNNZ = mxGetNzmax(mxa);
+	if(rewrap_ints)
+	{
+		mwIndex* temp = mxGetIr(mxa);
+		ir = mwIndex_to_int(totalNNZ, temp);
+		temp = mxGetJc(mxa);
+		jc = mwIndex_to_int(totalNNZ, temp);
+	}
+	else
+	{
+		ir = (int*) mxGetIr(mxa);
+		jc = (int*) mxGetJc(mxa);
+	}
+	size_t* nnzPerRow = new size_t[nr]();		//Create an array of nnz counts for each row, use to create matrix
+	complex_t* values = new complex_t[totalNNZ];
+	//Setup array of complex values and array of NNZ/row
+	for(int i = 0; i < totalNNZ; i++)
+	{
+		values[i] = complex_t(realVals[i], imagVals[i]);
+		nnzPerRow[ir[i]]++;
+	}
+	ArrayRCP<size_t> arrRCP(nnzPerRow, 0, nr, false);	//Need an arrayRCP to pass nnz counts
+	RCP<const Teuchos::Comm<int>> comm = DefaultComm<int>::getComm();
+	mm_GlobalOrd numRows = (mm_GlobalOrd) nr;
+	Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
+	RCP<const Xpetra::Map<mm_LocalOrd, mm_GlobalOrd, mm_node_t>> map = Xpetra::MapFactory<mm_LocalOrd, mm_GlobalOrd, mm_node_t>::Build(lib, numRows, (mm_GlobalOrd) 0, comm);
+	RCP<Xpetra::CrsMatrixWrap<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> wrapMat = rcp(new Xpetra::CrsMatrixWrap<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(map, arrRCP, Xpetra::DynamicProfile));
+	//Iterate through values of MATLAB CSC sparse matrix & populate Xpetra::CrsMatrixWrap	
+	for(int i = 0; i < nc; i++)
+	{
+		for(int j = jc[i]; j < jc[i + 1]; j++)
+		{
+			//'array' of 1 element, containing column (in global matrix).
+			ArrayView<mm_GlobalOrd> cols = ArrayView<mm_GlobalOrd>(&i, 1);
+			//'array' of 1 element, containing value
+			ArrayView<complex_t> vals = ArrayView<complex_t>(&values[j], 1);
+			wrapMat->insertGlobalValues(ir[j], cols, vals);
+		}
+	}
+	wrapMat->fillComplete();
+	RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> A = rcp_implicit_cast<Xpetra::CrsMatrixWrap<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>(wrapMat);
+	if(rewrap_ints)
+
+	{
+		delete[] ir;
+		delete[] jc;
+	}
+	delete[] nnzPerRow;
+	delete[] values;	//complex value array was allocated in this function
+	return A;
+}
 #endif	//HAVE_COMPLEX_SCALARS
 
-/*******************************/
-//Use Belos (unpreconditioned) to solve matrix
-int epetra_unprec_solve(RCP<ParameterList> SetupList, RCP<ParameterList> TPL, RCP<Epetra_CrsMatrix> A, double* b, double* x, int numVecs, int &iters)
-{
-	int rv = IS_FALSE;
-	try
-	{
-		int matSize = A->NumGlobalRows();
-		Epetra_Map map = A->DomainMap();
-		RCP<Epetra_MultiVector> lhs = rcp(new Epetra_MultiVector(map, numVecs, true));
-		//Matlab 2-d array is column-by-column, which is perfect for pulling out multiple vectors into MultiVector
-		RCP<Epetra_MultiVector> rhs = rcp(new Epetra_MultiVector(Epetra_DataAccess::Copy, map, b, matSize, numVecs));
-		RCP<Belos::LinearProblem<double, Epetra_MultiVector, Epetra_Operator>> problem = rcp(new Belos::LinearProblem<double, Epetra_MultiVector, Epetra_Operator>(A, lhs, rhs));
-		bool set = problem->setProblem();
-		TEUCHOS_TEST_FOR_EXCEPTION(!set, std::runtime_error, "Linear Problem failed to set up correctly!");
-		#ifdef VERBOSE_OUTPUT
-		TPL->get("Verbosity", Belos::Errors | Belos::Warnings | Belos::Debug | Belos::FinalSummary | Belos::IterationDetails | Belos::OrthoDetails | Belos::TimingDetails | Belos::StatusTestDetails);
-		TPL->get("Output Frequency", 1);
-		TPL->get("Output Style", Belos::Brief);
-		#else
-		TPL->get("Verbosity", Belos::Errors | Belos::Warnings);
-		#endif
-		string solverName = TPL->get("solver", "GMRES");
-		Belos::SolverFactory<double, Epetra_MultiVector, Epetra_Operator> factory;
-		RCP<Belos::SolverManager<double, Epetra_MultiVector, Epetra_Operator>> solver = factory.create(solverName, TPL);
-		solver->setProblem(problem);
-		Belos::ReturnType ret = solver->solve();
-		if(ret == Belos::Converged)
-		{
-			mexPrintf("Success, Belos converged!\n");
-			iters = solver->getNumIters();
-			rv = IS_TRUE;
-		}
-		else
-		{
-			mexPrintf("Belos failed to converge.\n");
-			iters = 0;
-		}
-		lhs->ExtractCopy(x, matSize);
-	}
-	catch(exception& e)
-	{
-		mexPrintf("An error occurred while setting up/running Belos solver:\n");
-		cout << e.what() << endl;
-	}
-	return rv;
-}
-
-//same as above, but with MueLu-generated preconditioner used on right
 int epetra_solve(RCP<ParameterList> SetupList, RCP<ParameterList> TPL, RCP<Epetra_CrsMatrix> A, RCP<Epetra_Operator> prec, double* b, double* x, int numVecs, int &iters)
 {
 	int rv = IS_FALSE;
@@ -597,6 +824,66 @@ int tpetra_double_solve(RCP<ParameterList> SetupList, RCP<ParameterList> TPL, RC
 	return rv;
 }
 
+template<> mxArray* createMatlabMultiVector<double>(int numRows, int numCols)
+{
+	return mxCreateDoubleMatrix(numRows, numCols, mxREAL);
+}
+
+template<> mxArray* createMatlabMultiVector<complex_t>(int numRows, int numCols)
+{
+	return mxCreateDoubleMatrix(numRows, numCols, mxCOMPLEX);
+}
+
+template<typename Scalar = double>
+mxArray* saveMultiVectorToMatlab(RCP<Xpetra::MultiVector<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mv)
+{
+	//Precondition: Memory has already been allocated by MATLAB for the array.
+	int nr = mv->getGlobalLength();
+	int nc = mv->getNumVectors();
+	mxArray* output = createMatlabMultiVector<Scalar>(nr, nc);
+	Scalar* data = new Scalar[nr * nc];
+	for(int col = 0; col < nc; col++)
+	{
+		ArrayRCP<const Scalar> colData = mv->getData(col);
+		for(int row = 0; row < nr; row++)
+		{
+			data[col * nr + row] = colData[row];
+		}
+	}
+	fillMatlabArray<Scalar>(data, output, nc * nr);
+	return output;
+}
+
+template<> RCP<Hierarchy_double> getDatapackHierarchy<double>(muelu_data_pack* dp)
+{
+	RCP<MueLu::Hierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> hier;
+	switch(dp->type)
+	{
+		case EPETRA:
+		{
+			muelu_epetra_data_pack* pack = (muelu_epetra_data_pack*) dp;
+			hier = pack->getHierarchy();
+			break;
+		}
+		case TPETRA:
+		{
+			muelu_tpetra_double_data_pack* pack = (muelu_tpetra_double_data_pack*) dp;
+			hier = pack->getHierarchy();
+			break;
+		}
+		default:
+		{
+			throw runtime_error("Got unexpected linear system type for real-valued functions.");
+		}
+	}
+	return hier;
+}
+
+template<> RCP<Hierarchy_complex> getDatapackHierarchy<complex_t>(muelu_data_pack* dp)
+{
+	return ((muelu_tpetra_complex_data_pack*) dp)->getHierarchy();
+}
+
 #ifdef HAVE_COMPLEX_SCALARS
 int tpetra_complex_solve(RCP<ParameterList> SetupList, RCP<ParameterList> TPL,
 RCP<Tpetra_CrsMatrix_complex> A, RCP<Tpetra::Operator<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> prec, complex_t* b, complex_t* x, int numVecs, int& iters)
@@ -661,38 +948,139 @@ RCP<Tpetra_CrsMatrix_complex> A, RCP<Tpetra::Operator<complex_t, mm_LocalOrd, mm
 muelu_data_pack::muelu_data_pack(DataPackType probType) : id(MUEMEX_ERROR), type(probType) {}
 muelu_data_pack::~muelu_data_pack() {}
 
-//muelu_epetra_unprec implementation
-
-muelu_epetra_unprec_data_pack::muelu_epetra_unprec_data_pack() : muelu_data_pack(EPETRA_UNPREC) {}
-muelu_epetra_unprec_data_pack::~muelu_epetra_unprec_data_pack() {}
-
-int muelu_epetra_unprec_data_pack::status()
+mxArray* muelu_data_pack::getHierarchyData(string dataName, HierAttribType dataType, int levelID)
 {
-	mexPrintf("**** Problem ID %d [Epetra (Unpreconditioned)] ****\n", id);
-	if(!A.is_null())
-		mexPrintf("Matrix: %dx%d w/ %d nnz\n", A->NumGlobalRows(), A->NumGlobalCols(), A->NumMyNonzeros());
-	if(!List.is_null())
+	mxArray* output = NULL;
+	try
 	{
-		mexPrintf("Parameter List:\n");
-		List->print();
+		switch(dataType)
+		{
+			case MATRIX:
+			{
+				switch(this->type)	//datapack type (EPETRA TPETRA or TPETRA_COMPLEX)
+				{
+					//get real matrix, put into output
+					case EPETRA:
+					case TPETRA:
+					{
+						RCP<Hierarchy_double> hier = getDatapackHierarchy<double>(this);
+						RCP<MueLu::Level> level = hier->GetLevel(levelID);
+						RCP<Xpetra_Matrix_double> mat;
+						level->Get(dataName, mat);
+						output = saveMatrixToMatlab<double>(mat);
+						break;
+					}
+					case TPETRA_COMPLEX:
+					{
+						RCP<Hierarchy_complex> hier = getDatapackHierarchy<complex_t>(this);
+						RCP<MueLu::Level> level = hier->GetLevel(levelID);
+						RCP<Xpetra_Matrix_complex> mat;
+						level->Get(dataName, mat);
+						output = saveMatrixToMatlab<complex_t>(mat);
+						break;
+					}
+				}
+				break;
+			}
+			case MULTIVECTOR:
+			{
+				switch(this->type)
+				{
+					case EPETRA:
+					case TPETRA:
+					{
+						RCP<Hierarchy_double> hier = getDatapackHierarchy<double>(this);
+						RCP<MueLu::Level> level = hier->GetLevel(levelID);
+						RCP<Xpetra_MultiVector_double> mv;
+						level->Get(dataName, mv);
+						output = saveMultiVectorToMatlab<double>(mv);
+						break;
+					}
+					case TPETRA_COMPLEX:
+					{
+						RCP<Hierarchy_complex> hier = getDatapackHierarchy<complex_t>(this);
+						RCP<MueLu::Level> level = hier->GetLevel(levelID);
+						RCP<Xpetra_MultiVector_complex> mv;
+						level->Get(dataName, mv);
+						output = saveMultiVectorToMatlab<complex_t>(mv);
+						break;
+					}
+				}
+				break;
+			}
+			case LOVECTOR:
+			{
+				RCP<Xpetra_ordinal_vector> loVec;
+				switch(this->type)
+				{
+					case EPETRA:
+					case TPETRA:
+					{
+						RCP<Hierarchy_double> hier = getDatapackHierarchy<double>(this);
+						RCP<MueLu::Level> level = hier->GetLevel(levelID);
+						level->Get(dataName, loVec);
+						break;
+					}
+					case TPETRA_COMPLEX:
+					{
+						RCP<Hierarchy_complex> hier = getDatapackHierarchy<complex_t>(this);
+						RCP<MueLu::Level> level = hier->GetLevel(levelID);
+						level->Get(dataName, loVec);
+						break;
+					}
+				}
+				output = createMatlabLOVector(loVec);
+				break;
+			}
+			case SCALAR:
+			{
+				switch(this->type)
+				{
+					case EPETRA:
+					case TPETRA:
+					{
+						double value;
+						RCP<Hierarchy_double> hier = getDatapackHierarchy<double>(this);
+						RCP<MueLu::Level> level = hier->GetLevel(levelID);
+						level->Get(dataName, value);
+						output = mxCreateDoubleScalar(value);
+						break;
+					}
+					case TPETRA_COMPLEX:
+					{
+						complex_t value;
+						RCP<Hierarchy_complex> hier = getDatapackHierarchy<complex_t>(this);
+						RCP<MueLu::Level> level = hier->GetLevel(levelID);
+						level->Get(dataName, value);
+						output = mxCreateDoubleMatrix(1, 1, mxCOMPLEX);
+						double* realPart = mxGetPr(output);
+						*realPart = real<double>(value);
+						double* imagPart = mxGetPi(output);
+						*imagPart = imag<double>(value);
+						break;
+					}
+				}
+				break;
+			}
+			default:
+			{
+				throw runtime_error("getHierarchyData can't determine the type of the data requested.");
+			}
+		}
+		if(output == NULL)
+		{
+			throw runtime_error("mxArray pointer was never initialized. Check data type and name.");
+		}
 	}
-	mexPrintf("\n");
-	return IS_TRUE;
+	catch(exception& e)
+	{
+		mexPrintf("Error occurred while getting hierarchy data.\n");
+		cout << e.what() << endl;
+	}
+	return output;
 }
 
-int muelu_epetra_unprec_data_pack::setup(const mxArray* mxa)
-{
-	//Just set up matrix, no prec
-	A = epetra_setup_from_prhs(mxa);
-	return IS_TRUE;
-}
-
-int muelu_epetra_unprec_data_pack::solve(RCP<ParameterList> TPL, RCP<Epetra_CrsMatrix> Amat, double* b, double* x, int numVecs, int &iters)
-{
-	return epetra_unprec_solve(List, TPL, Amat, b, x, numVecs, iters);
-}
-
-//muelu_epetra_prec implementation
+//muelu_epetra_data_pack impl
 
 muelu_epetra_data_pack::muelu_epetra_data_pack() : muelu_data_pack(EPETRA) {}
 muelu_epetra_data_pack::~muelu_epetra_data_pack() {}
@@ -720,8 +1108,8 @@ int muelu_epetra_data_pack::setup(const mxArray* mxa)
 		/* Matrix Fill */
 		A = epetra_setup_from_prhs(mxa);
 		prec = MueLu::CreateEpetraPreconditioner(A, *List);
-		//underlying the Epetra_Opreator prec is a MueLu::EpetraOperator
-		RCP<MueLu::EpetraOperator> meo = rcp_static_cast<MueLu::EpetraOperator>(prec);
+		//underlying the Epetra_Operator prec is a MueLu::EpetraOperator
+		RCP<MueLu::EpetraOperator> meo = rcp_static_cast<MueLu::EpetraOperator, Epetra_Operator>(prec);
 		operatorComplexity = meo->GetHierarchy()->GetOperatorComplexity();
 		success = true;
 	}
@@ -745,6 +1133,12 @@ int muelu_epetra_data_pack::setup(const mxArray* mxa)
 int muelu_epetra_data_pack::solve(RCP<ParameterList> TPL, RCP<Epetra_CrsMatrix> Amat, double* b, double* x, int numVecs, int& iters)
 {
 	return epetra_solve(List, TPL, Amat, prec, b, x, numVecs, iters);
+}
+
+RCP<Hierarchy_double> muelu_epetra_data_pack::getHierarchy()
+{
+	RCP<MueLu::EpetraOperator> meo = rcp_static_cast<MueLu::EpetraOperator, Epetra_Operator>(prec);
+	return meo->GetHierarchy();
 }
 
 //tpetra_double_data_pack implementation
@@ -786,9 +1180,15 @@ int muelu_tpetra_double_data_pack::status()
 	return IS_TRUE;
 }
 
-int muelu_tpetra_double_data_pack::solve(Teuchos::RCP<Teuchos::ParameterList> TPL, Teuchos::RCP<Tpetra_CrsMatrix_double> Amat, double* b, double* x, int numVecs, int &iters)
+int muelu_tpetra_double_data_pack::solve(Teuchos::RCP<Teuchos::ParameterList> TPL, RCP<Tpetra_CrsMatrix_double> Amat, double* b, double* x, int numVecs, int &iters)
 {
 	return tpetra_double_solve(List, TPL, Amat, prec, b, x, numVecs, iters);
+}
+
+RCP<Hierarchy_double> muelu_tpetra_double_data_pack::getHierarchy()
+{
+	RCP<MueLu::TpetraOperator<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mueluOp = rcp_static_cast<MueLu::TpetraOperator<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>, Tpetra::Operator<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>(prec);
+	return mueluOp->GetHierarchy();
 }
 
 //tpetra_complex_data_pack implementation
@@ -834,6 +1234,12 @@ int muelu_tpetra_complex_data_pack::status()
 int muelu_tpetra_complex_data_pack::solve(Teuchos::RCP<Teuchos::ParameterList> TPL, Teuchos::RCP<Tpetra_CrsMatrix_complex> Amat, complex_t* b, complex_t* x, int numVecs, int &iters)
 {
 	return tpetra_complex_solve(List, TPL, Amat, prec, b, x, numVecs, iters);
+}
+
+RCP<Hierarchy_complex> muelu_tpetra_complex_data_pack::getHierarchy()
+{
+	RCP<MueLu::TpetraOperator<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mueluOp = rcp_static_cast<MueLu::TpetraOperator<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>, Tpetra::Operator<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>(prec);
+	return mueluOp->GetHierarchy();
 }
 #endif	//HAVE_COMPLEX_SCALARS
 
@@ -1009,6 +1415,12 @@ MODE_TYPE sanity_check(int nrhs, const mxArray *prhs[])
 			else
 				mexErrMsgTxt("Error: Invalid input for aggregate\n");
 			break;
+		case MODE_GET:
+			if(nrhs < 4 || nrhs > 5)
+				mexErrMsgTxt("Error: Wrong number of args for get\n");
+			else
+				rv = MODE_GET;
+			break;
 		default:
 			  printf("Mode number = %d\n", (int) modes[0]);
 			  mexErrMsgTxt("Error: Invalid input mode\n");
@@ -1021,8 +1433,12 @@ void csc_print(int n, int* rowind, int* colptr, double* vals)
 {
 	int i, j;
 	for(i = 0; i < n; i++)
+	{
 		for(j = colptr[i]; j < colptr[i + 1]; j++)
+		{
 			mexPrintf("%d %d %20.16e\n", rowind[j], i, vals[j]);
+		}
+	}
 }
 
 void parse_list_item(RCP<ParameterList> List, char *option_name, const mxArray *prhs)
@@ -1051,6 +1467,13 @@ void parse_list_item(RCP<ParameterList> List, char *option_name, const mxArray *
 			opt_char = mxArrayToString(prhs);
 			opt_str = opt_char;
 			List->set(option_name, opt_str);
+			if(strcmp(option_name, MUEMEX_INTERFACE) == 0)
+			{
+				if(strcmp(opt_str.c_str(), "epetra") == 0)
+					useEpetra = true;
+				else if(strcmp(opt_str.c_str(), "tpetra") == 0)
+					useEpetra = false;
+			}
 			mxFree(opt_char);
 			break;
 		case mxDOUBLE_CLASS:
@@ -1071,8 +1494,9 @@ void parse_list_item(RCP<ParameterList> List, char *option_name, const mxArray *
 				}
 				else
 				{
-					RCP<Tpetra::CrsMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> tmat = tpetra_setup_complex_prhs(prhs);
-					List->set(option_name, tmat);
+					RCP<Tpetra_CrsMatrix_complex> tpetraMat = tpetra_setup_complex_prhs(prhs);
+					RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> xMat = MueLu::TpetraCrs_To_XpetraMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tpetraMat);
+					List->set(option_name, xMat);
 				}
 			}
 			else
@@ -1093,14 +1517,27 @@ void parse_list_item(RCP<ParameterList> List, char *option_name, const mxArray *
 				else
 				{
 					#ifdef VERBOSE_OUTPUT
-					mexPrintf("Creating a Epetra_CrsMatrix in TPL from MATLAB parameters.\n");
+					mexPrintf("Creating an Xpetra::Matrix in TPL from MATLAB parameters ");
+					if(useEpetra)
+						mexPrintf("with Epetra.\n");
+					else
+						mexPrintf("with Tpetra.\n");
 					#endif
-					RCP<Tpetra_CrsMatrix_double> tcmat = tpetra_setup_real_prhs(prhs);
-					typedef Xpetra::TpetraCrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_Tpetra_CrsMatrix;
-					typedef Xpetra::CrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_CrsMatrix;
-					typedef Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_Matrix;
-					RCP<Xpetra_CrsMatrix> xcmat = rcp_implicit_cast<Xpetra_CrsMatrix>(rcp(new Xpetra_Tpetra_CrsMatrix(tcmat)));
-					List->set(option_name, Xpetra::CrsMatrixWrap<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(xcmat));
+					if(useEpetra)
+					{
+						RCP<Epetra_CrsMatrix> epetraMat = epetra_setup_from_prhs(prhs);
+						//Use func from CreateEpetraPrec.hpp to create Xpetra::Matrix out of Epetra_CrsMatrix
+						RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> xMat = MueLu::EpetraCrs_To_XpetraMatrix<double, int, int, mm_node_t>(epetraMat);
+						//Now have an Xpetra::Matrix to put in parameter list, e.g. for MueLu prolongator
+						List->set(option_name, xMat);
+					}
+					else
+					{
+						//Same thing with Tpetra, from CreateTpetraPrec.hpp
+						RCP<Tpetra_CrsMatrix_double> tpetraMat = tpetra_setup_real_prhs(prhs);
+						RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> xMat = MueLu::TpetraCrs_To_XpetraMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tpetraMat);
+						List->set(option_name, xMat);
+					}
 				}
 			}
 			break;
@@ -1206,7 +1643,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 		{
 			try
 			{
-				bool hasOC = false;
 				double oc = 0;
 				nr = mxGetM(prhs[1]);
 				if(nrhs > 2)
@@ -1220,25 +1656,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 					mexPrintf("Error: Complex scalars unsupported by this build of Trilinos.\n");
 					throw runtime_error("Complex scalars not supported.");
 					#endif
-					intf = List->get(MUEMEX_INTERFACE, "tpetra");
 				}
-				else
-				{
-					intf = List->get(MUEMEX_INTERFACE, "epetra");
-				}
-				List->remove(MUEMEX_INTERFACE);
-				if(intf == "epetra unprec")
-				{
-					if(mxIsComplex(prhs[1]))
-					{
-						throw runtime_error("Tried to use complex matrix with Epetra");
-					}
-					RCP<muelu_epetra_unprec_data_pack> dp = rcp(new muelu_epetra_unprec_data_pack());
-					dp->List = List;
-					dp->setup(prhs[1]);
-					D = rcp_implicit_cast<muelu_data_pack>(dp);
-				}
-				else if(intf == "epetra")
+				intf = List->get(MUEMEX_INTERFACE, "tpetra");
+				List->remove(MUEMEX_INTERFACE);		//no longer need this parameter
+				if(intf == "epetra")
 				{
 					if(mxIsComplex(prhs[1]))
 					{
@@ -1249,7 +1670,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 					RCP<muelu_epetra_data_pack> dp = rcp(new muelu_epetra_data_pack());
 					dp->List = List;
 					dp->setup(prhs[1]);
-					hasOC = true;
 					oc = dp->operatorComplexity;
 					D = rcp_implicit_cast<muelu_data_pack>(dp);
 				}
@@ -1262,7 +1682,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 						RCP<muelu_tpetra_complex_data_pack> dp = rcp(new muelu_tpetra_complex_data_pack());
 						dp->List = List;
 						dp->setup(prhs[1]);
-						hasOC = true;
 						oc = dp->operatorComplexity;
 						D = rcp_implicit_cast<muelu_data_pack>(dp);
 						#else
@@ -1274,7 +1693,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 						RCP<muelu_tpetra_double_data_pack> dp = rcp(new muelu_tpetra_double_data_pack());
 						dp->List = List;
 						dp->setup(prhs[1]);
-						hasOC = true;
 						oc = dp->operatorComplexity;
 						D = rcp_implicit_cast<muelu_data_pack>(dp);
 					}
@@ -1285,14 +1703,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 				{
 					plhs[0] = mxCreateNumericMatrix(1, 1, mxINT32_CLASS, mxREAL);
 					*((int*) mxGetData(plhs[0])) = rv;
-					//output OC as well, if applicable
+					//output OC also
 					if(nlhs > 1)
 					{
 						plhs[1] = mxCreateDoubleScalar(oc);
-						if(!hasOC)
-						{
-							mexPrintf("Warning: Operator complexity not applicable for unpreconditioned problem.\n");
-						}
 					}
 				}
 				mexLock();
@@ -1304,11 +1718,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 				if(nlhs > 0)
 				{
 					plhs[0] = mxCreateNumericMatrix(1, 1, mxINT32_CLASS, mxREAL);
-					*((int*) mxGetData(plhs[0])) = -1;
+					*((int*) mxGetData(plhs[0])) = -1;	//output something that is obviously an error value
 				}
 				if(nlhs > 1)
 				{
-					plhs[0] = mxCreateDoubleScalar(0);
+					plhs[1] = mxCreateDoubleScalar(0);
 				}
 			}
 			break;
@@ -1366,19 +1780,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 				{
 					//Different matrix/vector types, must static_cast datapack
 					//to access type-specific functionality
-					case EPETRA_UNPREC:
-					{
-						RCP<muelu_epetra_unprec_data_pack> dp = rcp_static_cast<muelu_epetra_unprec_data_pack>(D);
-						RCP<Epetra_CrsMatrix> A = epetra_setup_from_prhs(prhs[2]);
-						int numVecs = mxGetN(prhs[2]);
-						double* b = mxGetPr(prhs[3]);
-						//output solution vector (just single, contiguous array for now)
-						plhs[0] = mxCreateDoubleMatrix(nr, numVecs, mxREAL);
-						double* x = mxGetPr(plhs[0]);
-						//Should copy sol'n multivec directly to plhs[0]
-						res = dp->solve(List, A, b, x, numVecs, iters);
-						break;
-					}
 					case EPETRA:
 					{
 						RCP<muelu_epetra_data_pack> dp = rcp_static_cast<muelu_epetra_data_pack>(D);
@@ -1521,26 +1922,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 				{
 					//Different matrix/vector types, must static_cast datapack
 					//to access type-specific functionality
-					case EPETRA_UNPREC:
-					{
-						RCP<muelu_epetra_unprec_data_pack> dp = rcp_static_cast<muelu_epetra_unprec_data_pack>(D);
-						RCP<Epetra_CrsMatrix> A = dp->GetMatrix();
-						//grab # of rhs (b) vectors to construct multivector
-						int numVecs = mxGetN(prhs[2]);					
-						//Sanity check: make sure A is square and b is the right size
-						if(nr != A->NumMyRows() || A->NumMyRows() != A->NumMyCols())
-						{
-							plhs[0] = mxCreateDoubleScalar(0);
-							if(nlhs == 2)
-								plhs[1] = mxCreateDoubleScalar(0);
-							throw runtime_error("Size mismatch in input to solve routine.");
-						}
-						double* b = mxGetPr(prhs[2]);
-						plhs[0] = mxCreateDoubleMatrix(nr, numVecs, mxREAL);
-						double* x = mxGetPr(plhs[0]);
-						res = dp->solve(List, A, b, x, numVecs, iters);
-						break;
-					}
 					case EPETRA:
 					{
 						RCP<muelu_epetra_data_pack> dp = rcp_static_cast<muelu_epetra_data_pack>(D);
@@ -1739,6 +2120,60 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 			}
 			break;
 		}
+		case MODE_GET:
+		{
+			try
+			{
+				int probID = parseInt(prhs[1]);
+				int levelID = parseInt(prhs[2]);
+				char* dataName = mxArrayToString(prhs[3]);
+				HierAttribType outputType;
+				RCP<muelu_data_pack> dp = muelu_data_pack_list::find(probID);
+				if(dp.is_null())
+				{
+					throw runtime_error("Problem handle not allocated.");
+				}
+				//See if typeHint was given
+				//Note: nrhs is 4 or 5; already been sanity checked
+				if(nrhs == 4)
+				{
+					outputType = strToHierAttribType(dataName);
+					if(outputType == UNKNOWN)
+						throw runtime_error("Unknown data type for hierarchy attribute. \
+											Try passing type name manually to muemex.");
+				}
+				else if(nrhs == 5)
+				{
+					//Case insensitive compare with type names
+					char* typeName = mxArrayToString(prhs[4]);
+					char* iter = typeName;
+					while(*iter != '\0')
+					{
+						*iter = (char) tolower((int) *iter);
+						iter++;
+					}
+					if(strcmp(typeName, "matrix") == 0)
+						outputType = MATRIX;
+					else if(strcmp(typeName, "multivector") == 0)
+						outputType = MULTIVECTOR;
+					else if(strcmp(typeName, "lovector") == 0)
+						outputType = LOVECTOR;
+					else if(strcmp(typeName, "scalar") == 0)
+						outputType = SCALAR;
+					else
+						throw runtime_error("Unknown data type for hierarchy attribute. \
+											Must be one of 'matrix', 'multivector', 'lovector' or 'scalar'.");
+				}
+				plhs[0] = dp->getHierarchyData(string(dataName), outputType, levelID);
+			}
+			catch(exception& e)
+			{
+				mexPrintf("An error occurred during the get routine:\n");
+				cout << e.what() << endl;
+				plhs[0] = mxCreateDoubleScalar(0);
+			}
+			break;
+		}
 		case MODE_ERROR:
 			mexPrintf("MueMex error.");
 			break;
@@ -1749,16 +2184,3 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 			mexPrintf("Mode not supported yet.");
 	}
 }
-
-#else
-#error "Do not have MATLAB"
-#endif
-/*
-
-1-D problem (laplacianfun([x])   x = 3000
-Matrix P which is 3 1s in the first column, then shifted down 3 othre cols
-
-muelu(A,'level1',{'P',myP})
-Make sure setup doesn't build P (we're providing this)
-
-*/
