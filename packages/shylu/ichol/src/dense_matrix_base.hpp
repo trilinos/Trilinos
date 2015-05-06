@@ -231,8 +231,10 @@ namespace Example {
       os << " -- " << _label << " -- " << endl
          << "    # of Rows              = " << _m << endl
          << "    # of Cols              = " << _n << endl
+         << "    Col Stride             = " << _cs << endl
+         << "    Row Stride             = " << _rs << endl
          << endl
-         << "    ValueArray dimensions  = " << _a.dimension_0() << ", " << _a.dimension_1() << endl
+         << "    ValueArray dimensions  = " << _a.dimension_0() << endl
          << endl;
       
       const int w = 10;

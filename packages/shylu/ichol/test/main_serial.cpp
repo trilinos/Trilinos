@@ -1,5 +1,8 @@
 #include <Kokkos_Core.hpp>
 
+#include <Kokkos_TaskPolicy.hpp>
+#include <impl/Kokkos_Serial_TaskPolicy.hpp>
+
 #include "test_macrodef.hpp"
 #include "test_suite.hpp"
 

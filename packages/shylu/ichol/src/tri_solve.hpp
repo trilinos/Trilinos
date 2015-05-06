@@ -82,10 +82,10 @@ namespace Example {
 // triangular solve
 #include "tri_solve_u_ct_unblocked.hpp"
 #include "tri_solve_u_ct_blocked.hpp"
-#include "tri_solve_u_ct_by_blocks.hpp"
+//#include "tri_solve_u_ct_by_blocks.hpp"
 
 #include "tri_solve_u_nt_unblocked.hpp"
-#include "tri_solve_u_ct_blocked.hpp"
-#include "tri_solve_u_ct_by_blocks.hpp"
+#include "tri_solve_u_nt_blocked.hpp"
+//#include "tri_solve_u_nt_by_blocks.hpp"
 
 #endif

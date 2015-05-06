@@ -148,12 +148,12 @@ int main (int argc, char *argv[]) {
     typedef typename CrsTaskViewType::policy_type policy_type;
 
 #ifdef USE_SEQUENTIAL_FOR
-    TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::Unblocked>
+    TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::Blocked>
       ::TaskFunctor<ForType,CrsTaskViewType,DenseTaskViewType>
       (Diag::NonUnit, U, B).apply(policy_type::member_null(), r_val);
 #else
     policy_type policy;
-    auto future = policy.create_team(TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::Unblocked>
+    auto future = policy.create_team(TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::Blocked>
                                      ::TaskFunctor<ForType,CrsTaskViewType,DenseTaskViewType>
                                      (Diag::NonUnit, U, B), 0);
     

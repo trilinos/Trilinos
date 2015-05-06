@@ -25,7 +25,6 @@ namespace Example {
     typedef SizeType    size_type;
 
     typedef CrsMatrixBase<value_type,ordinal_type,size_type,SpaceType,MemoryTraits> CrsMatrixBaseType;
-    typedef Tmg_CrsMatrixBase_Simple<CrsMatrixBaseType> TmgType;
 
     __DOT_LINE__;
     cout << "testCrsMatrixBaseIO:: filename = " << filename << endl;

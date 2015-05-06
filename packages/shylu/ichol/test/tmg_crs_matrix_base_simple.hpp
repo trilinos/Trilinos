@@ -2,6 +2,8 @@
 #ifndef __TMG_CRS_MATRIX_BASE_SIMPLE__
 #define __TMG_CRS_MATRIX_BASE_SIMPLE__
 
+#include "crs_matrix_base.hpp"
+
 /// \file tmg_crs_matrix_base.hpp
 /// \brief Simple test matrix generation.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
@@ -27,6 +29,11 @@ namespace Example {
 
     size_type NumNonZeros() const { return _m*_n; }
 
+    value_type Value(const ordinal_type i, 
+                     const ordinal_type j) {
+      return value_type(i*_n + j);
+    }
+
     int fill(CrsMatrixBaseType &A) {
       int r_val = 0;
 
@@ -46,7 +53,7 @@ namespace Example {
 
         for (ordinal_type j=0;j<_n;++j,++cnt) {
           col[j] = j;
-          val[j] = cnt;
+          val[j] = Value(i, j);
         }
       }
       return r_val;
@@ -54,7 +61,7 @@ namespace Example {
 
     int check(CrsMatrixBaseType &A) {
       int r_val = 0;
-      const auto epsilon = NumericTraits<value_type>::epsilon();    
+      const auto epsilon = sqrt(NumericTraits<value_type>::epsilon());
       for (ordinal_type i=0;i<_m;++i) {
         const ordinal_type j_nnz = A.NumNonZerosInRow(i);
         
@@ -62,7 +69,7 @@ namespace Example {
         typename CrsMatrixBaseType::value_type_array_ptr val = A.ValuesInRow(i);
 
         for (ordinal_type j=0;j<j_nnz;++j) {
-          auto tmp = abs(val[j] - value_type(i*_n+col[j]));
+          const auto tmp = abs(val[j] - Value(i, col[j]));
           __ASSERT_TRUE__(tmp < epsilon);          
         }
       }
