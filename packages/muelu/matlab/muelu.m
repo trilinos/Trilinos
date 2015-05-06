@@ -52,6 +52,18 @@ function varargout = muelu(varargin)
 %                   Calling 'status' with no handle prints status
 %                   for all the systems.
 %
+% (6) data = muelu('get', h, levelID, dataName[, typeHint])
+% - get hierarchy data
+% Input:
+% h				   - MueMex handle for problem with the hierarchy
+% levelID		   - ID of level to get data from (0, 1, etc.)
+% dataName		   - Name of data field to fetch ('Nullspace', 'P', etc.)
+% typeHint		   - (Optional) Type of data expected ('matrix', 'scalar',
+%													   'lovector', etc).
+%						If not given, will attempt to infer from dataName.
+% Output:
+% data			   - The data from the hierarchy.
+%
 % by: Brian Kelley <bmkelle@sandia.gov>
 
 if(nargin >= 2 && strcmp(varargin{1},'setup')),
@@ -89,7 +101,10 @@ elseif(nargin >= 2 && isnumeric(varargin{1}) && isnumeric(varargin{2}) && (nargi
 	varargout{1} = muemex(2, varargin{2:nargin});
 elseif(nargin>=1 && strcmp(varargin{1}, 'status')),
 	% Status mode = 3
-	varargout{1} = muemex(3, varargin{2:nargin});  
+	varargout{1} = muemex(3, varargin{2:nargin});
+elseif(strcmp(varargin{1}, 'get')),
+	% Get mode = 8
+	varargout{1} = muemex(8, varargin{2:nargin});
 else
 	fprintf('\nUsage:\n');
 	fprintf('[h, oc] = muelu(''setup'', A) to setup a problem\n');
