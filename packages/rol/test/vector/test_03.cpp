@@ -89,18 +89,21 @@ int main(int argc, char *argv[]) {
        
 	// Test norm
 	if(static_cast<int>(norm_sum(*A)) != 6) {
+            *outStream << "Norm test failed!\n";
 	    ++errorFlag;
 	}
 
 	// Test clone
 	RCP<MultiVector<RealT> > C = A->clone();    
 	if(norm_sum(*C) != 0) {
+            *outStream << "Clone test failed!\n";
 	    ++errorFlag;
 	}
 
 	// Test deep copy
         RCP<MultiVector<RealT> > D = A->deepCopy();
 	if(static_cast<int>(norm_sum(*D)) != 6) {
+            *outStream << "Deep copy test failed!\n";
 	    ++errorFlag;
 	}
         
@@ -110,6 +113,7 @@ int main(int argc, char *argv[]) {
 
         RCP<MultiVector<RealT> > S = A->shallowCopy(index);
 	if(static_cast<int>(norm_sum(*S)) != 1) {
+            *outStream << "Shallow copy test failed!\n";
 	    ++errorFlag;
 	}
 
@@ -119,18 +123,21 @@ int main(int argc, char *argv[]) {
 	alpha[1] = 9.0;
 	A->scale(alpha);
 	if(static_cast<int>(norm_sum(*A)) != 49) {
+            *outStream << "Scaling test failed!\n";
 	    ++errorFlag;
 	}
 
 	// Test matrix multiplication 
 	A->gemm(2.0,*B,M,1.0);
-	if(static_cast<int>(norm_sum(*A)) != 49) {
+	if(static_cast<int>(norm_sum(*A)) != 53) {
+            *outStream << "Matmat multiply test failed!  The norm_sum is " << static_cast<int>(norm_sum(*A)) << ", not equal to 49.\n";
 	    ++errorFlag;
 	}
 
 	// Test set
         A->set(*B);
 	if(static_cast<int>(norm_sum(*A)) != 2) {
+            *outStream << "Set test failed!\n";
 	    ++errorFlag;
 	}
 
@@ -143,6 +150,7 @@ int main(int argc, char *argv[]) {
         Check(1,0) = 1.0;   
         Check(1,1) = 2.0;   
         if( P != Check ) {
+            *outStream << "Inner product test failed!\n";
 	    ++errorFlag;
         }
 
@@ -151,6 +159,7 @@ int main(int argc, char *argv[]) {
         D->dots(*D,dots);
         if(static_cast<int>(dots[0]) != 1 || 
            static_cast<int>(dots[1]) != 25 ) {
+            *outStream << "Dot product test failed!\n";
             ++errorFlag;
         }
 
@@ -167,10 +176,13 @@ int main(int argc, char *argv[]) {
         *outStream << err.what() << "\n";
         errorFlag = -1000;
     }; // end try
-    if (errorFlag != 0)
+
+    if (errorFlag != 0) {
         std::cout << "End Result: TEST FAILED\n";
-    else
+    }
+    else {
         std::cout << "End Result: TEST PASSED\n";
+    }
 
     return 0;
 }
