@@ -7,6 +7,7 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "test_crs_matrix_base.hpp"
+#include "test_crs_matrix_base_io.hpp"
 
 namespace Example { 
   
@@ -25,8 +26,12 @@ namespace Example {
       int r_val = 0;
 
       cout << label << "::doUnitTests::Begin" << endl;
+
       r_val += testCrsMatrixBase<ValueType,OrdinalType,SizeType,SpaceType,MemoryTraits>(0,0);
       r_val += testCrsMatrixBase<ValueType,OrdinalType,SizeType,SpaceType,MemoryTraits>(3,3);
+
+      r_val += testCrsMatrixBaseIO<ValueType,OrdinalType,SizeType,SpaceType,MemoryTraits>("test_crs_input.mtx");
+
       cout << label << "::doUnitTests::End" << endl;
 
       string eval;
