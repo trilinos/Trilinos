@@ -75,8 +75,8 @@ int main(int argc, char *argv[]) {
 	RCP<Vector<RealT> > y = rcp(new StdVector<RealT>(y_rcp)); 
 	RCP<Vector<RealT> > z = rcp(new StdVector<RealT>(z_rcp)); 
 
-	ArrayRCP<RCP<Vector<RealT>>> A_rcp(2);
-	ArrayRCP<RCP<Vector<RealT>>> B_rcp(2);
+	ArrayRCP<RCP<Vector<RealT> > > A_rcp(2);
+	ArrayRCP<RCP<Vector<RealT> > > B_rcp(2);
 
 	A_rcp[0] = x;     
 	A_rcp[1] = y;     
@@ -84,8 +84,8 @@ int main(int argc, char *argv[]) {
 	B_rcp[0] = w;     
 	B_rcp[1] = z;     
 
-	RCP<MultiVector<RealT>> A = rcp(new MultiVectorDefault<RealT>(A_rcp));
-	RCP<MultiVector<RealT>> B = rcp(new MultiVectorDefault<RealT>(B_rcp));
+	RCP<MultiVector<RealT> > A = rcp(new MultiVectorDefault<RealT>(A_rcp));
+	RCP<MultiVector<RealT> > B = rcp(new MultiVectorDefault<RealT>(B_rcp));
        
 	// Test norm
 	if(static_cast<int>(norm_sum(*A)) != 6) {
@@ -93,13 +93,13 @@ int main(int argc, char *argv[]) {
 	}
 
 	// Test clone
-	RCP<MultiVector<RealT>> C = A->clone();    
+	RCP<MultiVector<RealT> > C = A->clone();    
 	if(norm_sum(*C) != 0) {
 	    ++errorFlag;
 	}
 
 	// Test deep copy
-        RCP<MultiVector<RealT>> D = A->deepCopy();
+        RCP<MultiVector<RealT> > D = A->deepCopy();
 	if(static_cast<int>(norm_sum(*D)) != 6) {
 	    ++errorFlag;
 	}
@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
 	std::vector<int> index(1);
 	index[0] = 0;
 
-        RCP<MultiVector<RealT>> S = A->shallowCopy(index);
+        RCP<MultiVector<RealT> > S = A->shallowCopy(index);
 	if(static_cast<int>(norm_sum(*S)) != 1) {
 	    ++errorFlag;
 	}
