@@ -1087,17 +1087,19 @@ operator<<(std::ostream & os, Tensor4<T, N> const & A)
     return os;
   }
 
+  os << std::scientific << std::setw(24) << std::setprecision(16);
+
   for (Index i = 0; i < dimension; ++i) {
 
     for (Index j = 0; j < dimension; ++j) {
 
       for (Index k = 0; k < dimension; ++k) {
 
-        os << std::scientific << std::setprecision(16) << A(i,j,k,0);
+        os << A(i,j,k,0);
 
         for (Index l = 1; l < dimension; ++l) {
 
-          os << "," << std::scientific  << std::setprecision(16) << A(i,j,k,l);
+          os << "," << std::setw(24) << A(i,j,k,l);
         }
 
         os << std::endl;
