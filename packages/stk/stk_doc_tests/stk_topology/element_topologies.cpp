@@ -52,13 +52,14 @@ TEST(stk_topology_understanding, zero_dim_element)
     EXPECT_TRUE(sphere.rank() != stk::topology::CONSTRAINT_RANK);
     EXPECT_TRUE(sphere.rank() == stk::topology::ELEMENT_RANK);
 
-    EXPECT_EQ(sphere.side_rank(), stk::topology::NODE_RANK);
+    EXPECT_EQ(sphere.side_rank(), stk::topology::INVALID_RANK);
 
     EXPECT_EQ(sphere.dimension(),1u);
     EXPECT_EQ(sphere.num_nodes(),1u);
     EXPECT_EQ(sphere.num_vertices(),1u);
     EXPECT_EQ(sphere.num_edges(),0u);
     EXPECT_EQ(sphere.num_faces(),0u);
+    EXPECT_EQ(sphere.num_sides(),0u);
     EXPECT_EQ(sphere.num_permutations(),1u);
     EXPECT_EQ(sphere.num_positive_permutations(),1u);
 
