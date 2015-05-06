@@ -34,6 +34,7 @@
 #include <gtest/gtest.h>
 #include <stk_topology/topology.hpp>
 
+#include <array>
 #include <vector>
 #include <string>
 #include <sstream>
@@ -146,25 +147,20 @@ TEST( stk_topology, arrayMesh )
 
 TEST( stk_topology, positive_polarity)
 {
-    size_t numTopologiesToTest = 2;
+    std::array<stk::topology, 2> topologiesToTest = {{stk::topology::QUAD_4, stk::topology::HEX_8}};
 
-    stk::topology topologiesToTest[] = {stk::topology::QUAD_4, stk::topology::HEX_8};
-
-    for (size_t i = 0; i < numTopologiesToTest; ++i)
+    for (size_t i = 0; i < topologiesToTest.size(); ++i)
     {
-        unsigned numPerms = topologiesToTest[i].num_permutations();
-        unsigned numPositivePerms = topologiesToTest[i].num_positive_permutations();
+        unsigned numNodePermutations = topologiesToTest[i].num_permutations();
+        unsigned numPositiveNodePermutations = topologiesToTest[i].num_positive_permutations();
 
-        for (unsigned perm = 0; perm < numPerms; ++perm)
+        for (unsigned permIndex = 0; permIndex < numPositiveNodePermutations; ++permIndex)
         {
-            if (perm < numPositivePerms)
-            {
-                EXPECT_TRUE(topologiesToTest[i].is_positive_polarity(perm));
-            }
-            else
-            {
-                EXPECT_FALSE(topologiesToTest[i].is_positive_polarity(perm));
-            }
+            EXPECT_TRUE(topologiesToTest[i].is_positive_polarity(permIndex));
+        }
+        for (unsigned permIndex = numPositiveNodePermutations; permIndex < numNodePermutations; ++permIndex)
+        {
+            EXPECT_TRUE(!topologiesToTest[i].is_positive_polarity(permIndex));
         }
     }
 }
