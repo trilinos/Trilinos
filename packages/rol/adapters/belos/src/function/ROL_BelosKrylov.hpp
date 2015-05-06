@@ -65,7 +65,6 @@ namespace ROL {
 
     template<class Real>
     class BelosKrylov : public Krylov<Real> {
- 
         typedef Real                      ST;
         typedef LinearOperator<ST>        OP;
         typedef Vector<Real>              V; 
@@ -88,14 +87,14 @@ namespace ROL {
             BelosKrylov(Teuchos::ParameterList &parlist) : 
                 problem_(Teuchos::rcp(new Belos::LinearProblem<ST,MV,OP>)) {
 
-                auto solverParams = Teuchos::rcp(new Teuchos::ParameterList());
+                Teuchos::RCP<Teuchos::ParameterList> solverParams = Teuchos::rcp(new Teuchos::ParameterList());
 
                 // Options likely to be of interest include CG, MINRES, GMRES, and RCG
-                auto blockSize          = 1; // Only support single solution & single RHS for now 
-                auto solverName         = parlist.get("Krylov Method","MINRES");  
-                auto maxit              = parlist.get("Maximum Number of Krylov Iterations",50);
-                auto abstol             = parlist.get("Absolute Krylov Tolerance",1.e-4);
-                auto numVectors         = parlist.get("Number of Stored Vectors",3);
+                int blockSize          = 1; // Only support single solution & single RHS for now 
+                std::string solverName = parlist.get("Krylov Method","MINRES");  
+                int maxit              = parlist.get("Maximum Number of Krylov Iterations",50);
+                Real abstol            = parlist.get("Absolute Krylov Tolerance",1.e-4);
+                int numVectors         = parlist.get("Number of Stored Vectors",3);
  
                 solverParams->setName("Belos input parameters"); 
                 solverParams->set("Block Size",blockSize);
