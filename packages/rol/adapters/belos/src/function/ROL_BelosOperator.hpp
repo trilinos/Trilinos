@@ -63,7 +63,7 @@
 namespace Belos {
 
     template<class Scalar>
-    class OperatorTraits<Scalar,ROL::MultiVector<Scalar>,ROL::LinearOperator<Scalar>> {
+    class OperatorTraits<Scalar,ROL::MultiVector<Scalar>,ROL::LinearOperator<Scalar> > {
         public:
             static void
             /// Note that ROL and Belos use reverse orderings

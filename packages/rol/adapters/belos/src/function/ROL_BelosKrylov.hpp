@@ -79,8 +79,8 @@ namespace ROL {
         private:
 
             Belos::SolverFactory<ST,MV,OP> factory_;
-            Teuchos::RCP<Belos::SolverManager<ST,MV,OP>> solver_;
-            Teuchos::RCP<Belos::LinearProblem<ST,MV,OP>> problem_;  
+            Teuchos::RCP<Belos::SolverManager<ST,MV,OP> > solver_;
+            Teuchos::RCP<Belos::LinearProblem<ST,MV,OP> > problem_;  
 
         public:
            
