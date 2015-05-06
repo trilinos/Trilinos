@@ -27,10 +27,13 @@ Type combination macros
 Tpetra does explicit instantiation over different "type combinations"
 -- that is, over different combinations of template parameters.
 Tpetra's CMake logic decides at configure time (i.e., when running
-CMake) which combinations to use.  CMake logic in _this_ file creates
-macros which iterate over subsets ("slices") of these type
-combinations.  You can find the CMake code that generates these macros
-in tpetra/core/cmake/ExplicitInstantiationSupport.cmake.
+CMake) which combinations to use.  CMake logic in _this_ directory
+creates macros which iterate over subsets ("slices") of these type
+combinations.  As a result, I call these macros "type combination
+macros."
+
+You can find the CMake code that generates type combination macros in
+tpetra/core/cmake/ExplicitInstantiationSupport.cmake.
 TpetraCore_ETIHelperMacros.h.in (in that directory) gets turned into
 TpetraCore_ETIHelperMacros.h, which contains the generated macros.
 
@@ -51,11 +54,14 @@ Tpetra::MultiVector and Tpetra::Vector get instantiated for S = GO as
 well as the usual set of GO types.  (S == GO is useful for certain
 communication patterns.)
 
-The *_NOGPU macros are a relic of old ThrustGPUNode instantiations.
-Tpetra's old GPU support (KokkosClassic::ThrustGPUNode) did not work
-for certain Scalar types, which the *_NOGPU macros excluded.  We still
-have the option to use this idea latter if users require ETI for types
-that CUDA just can't build.
+The *_NOGPU macros are a relic of the old ("classic") version of
+Tpetra.  Tpetra's old GPU support (KokkosClassic::ThrustGPUNode) did
+not work for certain Scalar types, which the *_NOGPU macros excluded.
+We still have the option to use this idea later if users require ETI
+for types that CUDA (or other future programming models that Tpetra
+might support) just can't build.  This scenario is unlikely, however,
+given that Tpetra depends on Kokkos, and that Kokkos now has support
+for atomic updates of arbitrary-length types.
 
 The *_CONVERT_* macros only instantiate Tpetra::CrsMatrix::convert.
 This is a templated instance method on CrsMatrix<SIN, ...> which
