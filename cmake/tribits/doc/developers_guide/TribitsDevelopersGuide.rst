@@ -2083,11 +2083,11 @@ packages that depend on that TPL will be automatically disabled as well (see
 For each TPL referenced in a `<repoDir>/TPLsList.cmake`_ file using the macro
 `TRIBITS_REPOSITORY_DEFINE_TPLS()`_, there must exist a file, typically called
 ``FindTPL${TPL_NAME}.cmake``, that once processed, produces the variables
-``${TPL_NAME}_LIBRARIES`` and ``${TPL_NAME}_INCLUDE_DIRS``.  Most
+``TPL_${TPL_NAME}_LIBRARIES`` and ``TPL_${TPL_NAME}_INCLUDE_DIRS``.  Most
 ``FindTPL${TPL_NAME}.cmake`` files just use the function
-`TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_ the define the TriBITS TPL.  A simple
-example of such a file is the common TriBITS ``FindTPLPETSC.cmake`` module
-which is currently:
+`TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_ the define the TriBITS TPL.
+A simple example of such a file is the common TriBITS ``FindTPLPETSC.cmake``
+module which is currently:
 
 .. include:: ../../common_tpls/FindTPLPETSC.cmake
    :literal:
@@ -2097,6 +2097,9 @@ Some concrete ``FindTPL${TPL_NAME}.cmake`` files actually do use
 guts of finding at TPL which is perfectly fine.  In this case, the purpose for
 the wrapping ``FindTPL${TPL_NAME}.cmake`` is to standardize the output
 variables ``TPL_${TPL_NAME}_INCLUDE_DIRS`` and ``TPL_${TPL_NAME}_LIBRARIES``.
+For more details on properly using ``FIND_PACKAGE()`` to define a
+``FindTPL${TPL_NAME}.cmake`` file, see `How to Add use FIND_PACKAGE() for a
+TriBITS TPL`_.
 
 Once the `<repoDir>/TPLsList.cmake`_ files are all processed, then each
 defined TPL ``TPL_NAME`` is assigned the following global non-cache variables:
@@ -5244,9 +5247,11 @@ To add a new TriBITS TPL, do the following:
    dependency.
 
 2) Create the TPL find module, e.g. ``<repoDir>/tpls/FindTPL<tplName>.cmake``
-   (see `TriBITS TPL`_ and `TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_ for details).
-   List the default required header files and/or libraries that must be
-   provided by the TPL.
+   (see `TriBITS TPL`_ and `TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_
+   for details).  List the default required header files and/or libraries that
+   must be provided by the TPL.  NOTE: This find module can also (optionally)
+   use ``FIND_PACKAGE(<tplName> ...)`` for the default find operation.  For
+   details, see `How to Add use FIND_PACKAGE() for a TriBITS TPL`_.
 
 3) Add a row for the new TPL to the `<repoDir>/TPLsList.cmake`_ file after any
    TPLs that this new TPL may depend on.
@@ -5275,6 +5280,63 @@ To add a new TriBITS TPL, do the following:
 .. ToDo: Add an example of an optional TPL to some TribitsExampleProject
 .. package and refer to it here.
 
+
+How to Add use FIND_PACKAGE() for a TriBITS TPL
+-----------------------------------------------
+
+When defining a ``FindTPL<tplName>.cmake`` file, it is possible (and
+encouraged) to utilize ``FIND_PACKAGE(<tplName> ...)`` to provide the default
+find operation.  In order for the resulting ``FindTPL<tplName>.cmake`` to
+behave consistently between all the various TriBITS TPLs (and allow the
+standard TriBITS TPL find overrides) one must use the TriBITS function
+`TRIBITS_TPL_ALLOW_PRE_FIND_PACKAGE()`_ in combination with the function
+`TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_.  The basic form of the
+resulting ``FindTPL<tplName>.cmake`` looks like::
+
+  TRIBITS_TPL_ALLOW_PRE_FIND_PACKAGE( <tplName>  <tplName>_ALLOW_PREFIND )
+  IF (<tplName>_ALLOW_PREFIND)
+    FIND_PACKAGE(<tplName> ...)
+    IF(<tplName>_FOUND)
+      SET(TPL_<tplName>_INCLUDE_DIRS ${<tplName>_INCLUDE_DIRS} CACHE PATH "...")
+      SET(TPL_<tplName>_LIBRARIES ${<tplName>_LIBRARIES} CACHE FILEPATH "...")
+      SET(TPL_<tplName>_LIBRARY_DIRS ${<tplName>_LIBRARY_DIRS} CACHE PATH "...")
+      ENDIF()
+  ENDIF()
+
+  TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( <tplName>
+    REQUIRED_HEADERS ...
+    REQUIRED_LIBS_NAMES ...
+    )
+
+With this approach, we the ``FindTPL<tplName>.cmake`` module preserves all of
+the user behavior described in `Enabling support for an optional Third-Party
+Library (TPL)`_.
+
+If one wants to skip the overrides ``<tplName>_INCLUDE_DIRS``,
+``<tplName>_LIBRARY_NAMES``, or ``<tplName>_LIBRARY_DIRS``, then one can
+set::
+
+  SET(<tplName>_FORCE_PRE_FIND_PACKAGE TRUE CACHE BOOL
+    "Always first call FIND_PACKAGE(<tplName> ...) unless explicit override")
+
+This avoid name classes with the variables ``<tplName>_INCLUDE_DIRS`` and
+``<tplName>_LIBRARY_DIRS`` which are often used in concrete
+``Find<tplName>.cmake`` modules.
+
+For a slightly more complex example, see ``FindTPLHDF5.cmake``:
+
+.. include:: ../../common_tpls/FindTPLHDF5.cmake
+   :literal:
+
+Note that some specialized ``Find<tplName>.cmake`` modules do more than just
+return a list of include directories and libraries.  Some, like
+``FindQt4.cmake`` also return other variables that are used in downstream
+packages and therefore ``FIND_PACKAGE(Qt4 ...)`` must be called on every
+configure.  In specialized cases such as this, one must write a more
+specialized ``FindTPL<tplName>.cmake`` file and can't use the
+`TRIBITS_TPL_ALLOW_PRE_FIND_PACKAGE()`_ function as shown above.  Such find
+modules cannot completely adhere to the standard behavior described in
+`Enabling support for an optional Third-Party Library (TPL)`_.
 
 How to Add a new TriBITS Repository
 -----------------------------------

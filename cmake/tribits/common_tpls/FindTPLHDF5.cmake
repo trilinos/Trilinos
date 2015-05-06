@@ -53,19 +53,54 @@
 # ************************************************************************
 # @HEADER
 
+#
+# First search for HDF5 components using standard FIND_PACKAGE(HDF5 ...)
+#
+TRIBITS_TPL_ALLOW_PRE_FIND_PACKAGE(HDF5  HDF5_ALLOW_PREFIND)
+IF (HDF5_ALLOW_PREFIND)
+
+  MESSAGE("-- Using FIND_PACKAGE(HDF5 ...) ...") 
+
+  SET(HDF5_COMPNENTS C)
+  IF (HDF5_REQUIRE_FORTRAN)
+    LIST(APPEND HDF5_COMPNENTS Fortran)
+  ENDIF()
+
+  FIND_PACKAGE(HDF5 COMPONENTS ${HDF5_COMPNENTS})
+
+  IF(HDF5_FOUND)
+    SET(TPL_HDF5_INCLUDE_DIRS ${HDF5_INCLUDE_DIRS} CACHE PATH
+      "HDF5 include dirs")
+    SET(TPL_HDF5_LIBRARIES ${HDF5_LIBRARIES} CACHE FILEPATH
+      "HDF5 libraries")
+    SET(TPL_HDF5_LIBRARY_DIRS ${HDF5_LIBRARY_DIRS} CACHE PATH
+      "HDF5 library dirs")
+  ENDIF()
+
+ENDIF()
+
+#
+# Second, set up default find operation using TriBITS system in case the
+# default FIND_PACKAGE(HDF5 command was not used).
+#
 
 SET(REQUIRED_HEADERS hdf5.h)
 SET(REQUIRED_LIBS_NAMES hdf5)
 
 IF (HDF5_REQUIRE_FORTRAN)
- SET(REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES} hdf5_fortran)
+  SET(REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES} hdf5_fortran)
 ENDIF()
 
 IF (TPL_ENABLE_MPI)
- SET(REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES} z)
+  SET(REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES} z)
 ENDIF()
 
 TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( HDF5
   REQUIRED_HEADERS ${REQUIRED_HEADERS}
   REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES}
   )
+
+# NOTE: If FIND_PACKAGE(HDF5 ...) was called and was successful, then
+# TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES() will just use the already set
+# variables TPL_HDF5_INCLUDE_DIRS and TPL_HDF5_LIBRARIES and just print them
+# out (and set some other standard varaibles).
