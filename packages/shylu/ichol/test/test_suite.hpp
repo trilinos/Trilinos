@@ -20,6 +20,8 @@
 #include "test_tri_solve_unblocked.hpp"
 #include "test_tri_solve_blocked.hpp"
 
+#include "test_crs_hier_base.hpp"
+
 namespace Example { 
   
   using namespace std;
@@ -81,6 +83,9 @@ namespace Example {
             r_val += testTriSolveBlocked<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx",
                                                            blks[j], nrhs[i]);
         // ============================================================ 
+        // This is problematic
+        // r_val += testCrsHierBase<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx");
+        // ============================================================         
       }
       cout << label << "::doUnitTests::End" << endl;
 
