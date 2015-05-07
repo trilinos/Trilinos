@@ -519,19 +519,18 @@ namespace Thyra {
     RCP<SmootherFactory>   smootherFact = rcp(new SmootherFactory(smootherPrototype));
     M.SetFactory("Smoother", smootherFact);
 
-#if 1
-#if 0
-    // Use direct coarse solver
-    RCP<SmootherPrototype> coarsePrototype = rcp(new BlockedDirectSolver());
-#else
-    // Use Vanka coarse solver
-    RCP<SmootherPrototype> coarsePrototype = smootherPrototype;
-#endif
-    RCP<SmootherFactory>   coarseFact = rcp(new SmootherFactory(coarsePrototype, Teuchos::null));
-    M.SetFactory("CoarseSolver", coarseFact);
-#else
-    M.SetFactory("CoarseSolver", Teuchos::null);
-#endif
+    std::string coarseType = MUELU_GPD("coarse: type", std::string, "direct");
+    if (coarseType == "direct" || coarseType == "vanka") {
+      RCP<SmootherPrototype> coarsePrototype;
+      if (coarseType == "direct")   coarsePrototype = rcp(new BlockedDirectSolver());
+      else                          coarsePrototype = smootherPrototype;
+
+      RCP<SmootherFactory> coarseFact = rcp(new SmootherFactory(coarsePrototype, Teuchos::null));
+      M.SetFactory("CoarseSolver", coarseFact);
+
+    } else if (coarseType == "none") {
+      M.SetFactory("CoarseSolver", Teuchos::null);
+    }
 
 #ifdef HAVE_MUELU_DEBUG
     M.ResetDebugData();
