@@ -926,8 +926,6 @@ RCP<ParameterList> build_teuchos_list(int nrhs, const mxArray *prhs[])
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
-	if(sizeof(int) != sizeof(mwIndex))
-		rewrap_ints = true;
 	double* id;
 	int rv;
 	//Arrays representing vectors
@@ -1214,7 +1212,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 				int probID = parseInt(prhs[1]);
 				int levelID = parseInt(prhs[2]);
 				char* dataName = mxArrayToString(prhs[3]);
-				HierAttribType outputType;
+				HierAttribType outputType= UNKNOWN;
 				RCP<MuemexSystem> dp = MuemexSystemList::find(probID);
 				if(dp.is_null())
 				{
