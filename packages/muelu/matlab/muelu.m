@@ -73,24 +73,8 @@ if(nargin >= 2 && strcmp(varargin{1},'setup')),
 	if(nargout == 2),
 		varargout{2} = oc;
 	end
-elseif(nargin >= 3 && isnumeric(varargin{1}) && issparse(varargin{2})),
-	% Solve mode (newmatrix)
-	if(size(varargin{2}, 1) ~= length(varargin{3})), 
-		fprintf('MueLu: Error size mismatch between A & b\n');
-		fprintf('Make sure b has same number of rows as A.\n');
-		varargout{1} = 0;
-		if(nargout == 2),
-			varargout{2} = 0;
-		end
-	else
-		[sol, its] = muemex(6, varargin{:});
-		varargout{1} = sol;
-		if(nargout == 2),
-			varargout{2} = its;
-  		end
-	end
-elseif(nargin >= 2 && isnumeric(varargin{1}) && isnumeric(varargin{2}) && (nargin == 2 || ~isnumeric(varargin{3}))),
-	% Solve mode (reuse) = 1
+elseif(nargin >= 2 && isnumeric(varargin{1}) && isnumeric(varargin{2})),
+	% Solve mode = 1
 	[sol, its] = muemex(1, varargin{:});
 	varargout{1} = sol;
 	if(nargout == 2),
@@ -103,8 +87,8 @@ elseif(nargin>=1 && strcmp(varargin{1}, 'status')),
 	% Status mode = 3
 	varargout{1} = muemex(3, varargin{2:nargin});
 elseif(strcmp(varargin{1}, 'get')),
-	% Get mode = 8
-	varargout{1} = muemex(8, varargin{2:nargin});
+	% Get mode = 5
+	varargout{1} = muemex(5, varargin{2:nargin});
 else
 	fprintf('\nUsage:\n');
 	fprintf('[h, oc] = muelu(''setup'', A) to setup a problem\n');

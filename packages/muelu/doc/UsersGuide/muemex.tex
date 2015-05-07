@@ -104,8 +104,8 @@ For csh / tcsh, do this
   Depending on whether or not the \texttt{Linear Algebra} option is
   used, \muemex creates either an unpreconditioned Epetra problem,
   an Epetra problem with \muelu, or a Tpetra problem with \muelu.
-  The default is \texttt{epetra} for real matrices and \texttt{tpetra}
-  for complex matrices. The \texttt{tpetra} option
+  The default is \texttt{tpetra}. The \texttt{epetra} mode only supports
+  real-valued matrices, while \texttt{tpetra} 
   supports both real and complex and will infer the scalar type
   from the matrix passed during setup.  This call returns a problem
   handle used to reference the problem in the future, and (optionally)
@@ -120,6 +120,9 @@ For csh / tcsh, do this
 \item Status Mode --- Prints out status information on problems which
   have been set up.  Like cleanup, it can be called with or without a
   particular problem handle.
+\item Get Mode --- Get information from a MueLu hierarchy that has been
+  generated. Given the problem handle, a level number and the name of the
+  field, returns the appropriate array or scalar as a MATLAB object.
 \end{enumerate}
 All of these modes, with the exception of status and cleanup take
 option lists which will be directly converted into
@@ -187,6 +190,20 @@ The parameter \texttt{h} is a problem handle returned by the
 setup mode call and is optional.  If \texttt{h} is provided, status
 information for that problem is printed.  If the option is not provided all currently
 set up problems have status information printed.
+
+\subsection{Get Mode}
+Get mode is called as follows:
+\begin{lstlisting}[language=Matlab]]
+  >> muelu('get', h, level, fieldName[, typeHint])
+\end{lstlisting}
+The parameter \texttt{h} is the problem handle, and \texttt{level}
+is an integer that identifies the level within the hierarchy containing
+the desired data. \texttt{fieldName} is a string that identifies the
+field within the level, e.g. 'Nullspace'. \texttt{typeHint} is an optional
+parameter that tells MueMex what data type to expect from the level. This
+is a string, with possible values 'matrix', 'multivector', 'lovector' (ordinal
+vector), or 'scalar'. MueMex will attempt to guess the type from \texttt{fieldName}
+but \texttt{typeHint} may be required.
 
 \subsection{Tips and Tricks }\label{sec:muemex:tips}
 
