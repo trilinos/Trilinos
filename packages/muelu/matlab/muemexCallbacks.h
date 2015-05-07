@@ -4,25 +4,24 @@
 #ifndef MUEMEX_CALLBACKS_H
 #define MUEMEX_CALLBACKS_H
 
-#include "stdexcept"
+#include "Teuchos_ParameterList.hpp"
+#include <string>
+#include <complex>
+#include <stdexcept>
+#include <vector>
+#include "muemexTypes.h"
 #include "mex.h"
 
-#if !defined(HAVE_MUELU_MATLAB)
-#error "Muemex callbacks require MATLAB."
+#if !defined(HAVE_MUELU_MATLAB) || !defined(HAVE_MUELU_EPETRA) || !defined(HAVE_MUELU_TPETRA)
+#error "Muemex callbacks require MATLAB, Epetra and Tpetra."
 #else
 
-enum DATA_TYPES
+namespace MuemexCallback
 {
-	REAL_MATRIX,
-	COMPLEX_MATRIX,
-	REAL_SCALAR,
-	COMPLEX_SCALAR,
-	STRING,
-	REAL_MULTIVECTOR,
-	COMPLEX_MULTIVECTOR
-};
-
-typedef void (*MuemexCallback) ();
+	//The two callback functions that MueLu can call to run anything in MATLAB
+	void callMatlabNoArgs(std::string function);
+	std::vector<Teuchos::RCP<MuemexArg>> callMatlab(std::string function, int numOutputs, std::vector<Teuchos::RCP<MuemexArg>> args);
+}
 
 #endif //HAVE_MUELU_MATLAB
 #endif //MUEMEX_CALLBACKS_H guard

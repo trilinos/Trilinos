@@ -20,10 +20,9 @@ if(TPL_ENABLE_MATLAB)
     MESSAGE("MATLAB_MEX_DIR   = " ${MATLAB_MEX_DIR})
   ENDIF()
 
-  APPEND_SET(HEADERS muemex.h)
-  APPEND_SET(SOURCES muemex.cpp)
-
-
+  APPEND_SET(HEADERS muemex.h muemexCallbacks.h muemexTypes.h)
+  APPEND_SET(SOURCES muemex.cpp muemexCallbacks.cpp muemexTypes.cpp)
+  
   # First, grab the package's own libraries
   SET(LINK_LIBS)
   APPEND_SET(LINK_LIBS ${${PACKAGE_NAME}_LIBRARIES})
@@ -60,7 +59,8 @@ if(TPL_ENABLE_MATLAB)
   # This is because Cmake will not allow me to *just call the mex linker*, and so I have to do this the hard way.
   #
   LINK_DIRECTORIES(${MATLAB_LIBRARY_DIRS})
-  TRIBITS_ADD_EXECUTABLE(muemex.${MEX_EXTENSION} SOURCES muemex.cpp NOEXEPREFIX NOEXESUFFIX)
+  TRIBITS_ADD_EXECUTABLE(muemex.${MEX_EXTENSION} SOURCES muemex.cpp
+muemexCallbacks.cpp muemexTypes.cpp NOEXEPREFIX NOEXESUFFIX)
   SET_TARGET_PROPERTIES(muemex.${MEX_EXTENSION} PROPERTIES SUFFIX "") # remove .exe extension
   TARGET_LINK_LIBRARIES(muemex.${MEX_EXTENSION} ${MLMEX_OPTS1} ${LINK_LIBS} ${MLMEX_OPTS2})
 

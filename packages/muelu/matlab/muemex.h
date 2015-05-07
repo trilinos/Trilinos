@@ -74,16 +74,10 @@
 #include "BelosTpetraAdapter.hpp"
 #include "BelosMueLuAdapter.hpp"
 #include "mex.h"
+#include "muemexCallbacks.h"
+#include "muemexTypes.h"
 
-//Chris, put the complex scalar support def here (I don't know what it's called)
-//I will test HAVE_COMPLEX_SCALARS in my code to control what gets defined/allowed
-
-//For now, always allow them
-#define HAVE_TRILINOS_COMPLEX_SUPPORT
-
-#ifdef HAVE_TRILINOS_COMPLEX_SUPPORT
 #define HAVE_COMPLEX_SCALARS
-#endif
 
 typedef enum
 {
@@ -112,23 +106,6 @@ typedef enum
 	SCALAR,
 	UNKNOWN
 } HierAttribType;
-
-typedef Tpetra::Vector<>::node_type mm_node_t;
-typedef Tpetra::Vector<>::local_ordinal_type mm_LocalOrd;
-typedef Tpetra::Vector<>::global_ordinal_type mm_GlobalOrd;
-typedef Tpetra::Map<> muemex_map_type;
-typedef Tpetra::CrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_CrsMatrix_double;
-typedef std::complex<double> complex_t;
-typedef Tpetra::CrsMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_CrsMatrix_complex;
-typedef MueLu::TpetraOperator<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_operator_real;
-typedef MueLu::TpetraOperator<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_operator_complex;
-typedef Xpetra::Vector<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_ordinal_vector;
-typedef Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_Matrix_double;
-typedef Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_Matrix_complex;
-typedef Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_MultiVector_double;
-typedef Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_MultiVector_complex;
-typedef MueLu::Hierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Hierarchy_double;
-typedef MueLu::Hierarchy<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Hierarchy_complex;
 
 class MuemexSystem
 {
@@ -230,8 +207,6 @@ HierAttribType strToHierAttribType(const char* str);
 int strToOutputStyle(const char* str);
 //Parse belos verbosity settings (returns enum values | together)
 int getBelosVerbosity(const char* input);
-//Get an int from a MATLAB double or int input
-int parseInt(const mxArray* mxa);
 //Load a multivector from a MATLAB array
 template<typename Scalar>
 Teuchos::RCP<Tpetra::MultiVector<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> loadTpetraMV(const mxArray* mxa);
