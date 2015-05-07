@@ -107,7 +107,7 @@ namespace { // (anonymous)
 
   template<class KeyType, class ValueType, class DeviceType>
   struct TestFixedHashTable {
-    typedef Tpetra::Details::FixedHashTable<KeyType, ValueType> table_type;
+    typedef Tpetra::Details::FixedHashTable<KeyType, ValueType, DeviceType> table_type;
     // Fix the layout, so that it's the same on all devices.  This
     // makes testing FixedHashTable's templated copy constructor
     // easier.
@@ -164,7 +164,7 @@ namespace { // (anonymous)
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_ArrayView, Empty, ValueType, KeyType, DeviceType)
   {
     using std::endl;
-    typedef Tpetra::Details::FixedHashTable<KeyType, ValueType> table_type;
+    typedef Tpetra::Details::FixedHashTable<KeyType, ValueType, DeviceType> table_type;
     typedef typename Kokkos::View<const KeyType*, Kokkos::LayoutLeft, DeviceType>::size_type size_type;
     typedef typename DeviceType::execution_space execution_space;
 
@@ -222,7 +222,7 @@ namespace { // (anonymous)
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_ArrayView, ContigKeysStartingValue, ValueType, KeyType, DeviceType)
   {
     using std::endl;
-    typedef Tpetra::Details::FixedHashTable<KeyType, ValueType> table_type;
+    typedef Tpetra::Details::FixedHashTable<KeyType, ValueType, DeviceType> table_type;
     typedef typename Kokkos::View<const KeyType*, Kokkos::LayoutLeft, DeviceType>::size_type size_type;
     typedef typename DeviceType::execution_space execution_space;
 
@@ -279,7 +279,7 @@ namespace { // (anonymous)
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_ArrayView, NoncontigKeysStartingValue, ValueType, KeyType, DeviceType)
   {
     using std::endl;
-    typedef Tpetra::Details::FixedHashTable<KeyType, ValueType> table_type;
+    typedef Tpetra::Details::FixedHashTable<KeyType, ValueType, DeviceType> table_type;
     typedef typename Kokkos::View<const KeyType*, Kokkos::LayoutLeft, DeviceType>::size_type size_type;
     typedef typename DeviceType::execution_space execution_space;
 
@@ -389,7 +389,7 @@ namespace { // (anonymous)
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_ArrayView, CopyCtor, ValueType, KeyType, DeviceType)
   {
     using std::endl;
-    typedef Tpetra::Details::FixedHashTable<KeyType, ValueType> table_type;
+    typedef Tpetra::Details::FixedHashTable<KeyType, ValueType, DeviceType> table_type;
     typedef typename Kokkos::View<const KeyType*, DeviceType>::size_type size_type;
     typedef typename DeviceType::execution_space execution_space;
 
