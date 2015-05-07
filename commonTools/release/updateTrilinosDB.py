@@ -66,6 +66,7 @@ def parse_xml_file(filepath, version):
     package_dict = {"name"         : trilinos,
                     "version"      : version,
                     "parent"       : "",
+                    "maturity"     : "",
                     "sub_packages" : [],
                     "required_dep" : [],
                     "optional_dep" : []
@@ -105,6 +106,7 @@ def parse_xml_file(filepath, version):
         package_dict = {"name"         : "",
                         "version"      : version,
                         "parent"       : trilinosID,
+                        "maturity"     : "",
                         "sub_packages" : [],
                         "required_dep" : [],
                         "optional_dep" : []
@@ -252,6 +254,7 @@ def process_dependencies(package_db):
         tpl_dict = {"name"         : tpl_name,
                     "version"      : tpl_version,
                     "parent"       : "",
+                    "maturity"     : "",
                     "sub_packages" : [],
                     "required_dep" : [],
                     "optional_dep" : []
@@ -271,6 +274,36 @@ def process_xml_file(filepath, version):
     return package_db
 
 ###############################################################################
+def add_maturity_levels(package_db, trilinos_packages):
+    """
+    Add maturity levels to the Trilinos packages database. These maturity levels
+    are listed in the trilinos_packages file.  The package_db is expected to be
+    generated from a fully processed dependencies XML file, and the new maturity
+    information is simply added as a new 'maturity' key for each package_dict.
+    """
+    maturity_map = {"EX" : "Experimental",
+                    "PS" : "Primary Stable",
+                    "SS" : "Secondary Stable"}
+    version = get_trilinos_version(package_db)
+    data = open(trilinos_packages, 'r').readlines()
+    # Locate the desired information block
+    start = data.index("TRIBITS_REPOSITORY_DEFINE_PACKAGES(\n")
+    stop  = data.index("  )\n")
+    # Process the package information
+    for line in data[start+1:stop]:
+        columns      = line.split()
+        package      = columns[0]
+        maturity     = maturity_map[columns[2]]
+        packageID    = package_id(package, version)
+        try:
+            package_dict = package_db[packageID]
+        except KeyError:
+            print "Package", package, "is in the packages list,", \
+                  "but not in the dependencies list"
+            next
+        package_dict["maturity"] = maturity
+
+###############################################################################
 def default_csv_output_file(version):
     return "Trilinos-" + version + ".csv"
 
@@ -282,9 +315,10 @@ def stringify_package_dict(package_dict):
     list of (possibly Unicode) strings has been converted to a single, simple,
     comma-separated string.
     """
-    new_dict = {"name"         : str(package_dict["name"   ]),
-                "version"      : str(package_dict["version"]),
-                "parent"       : str(package_dict["parent" ]),
+    new_dict = {"name"         : str(package_dict["name"    ]),
+                "version"      : str(package_dict["version" ]),
+                "parent"       : str(package_dict["parent"  ]),
+                "maturity"     : str(package_dict["maturity"]),
                 "sub_packages" : str(",".join(package_dict["sub_packages"])),
                 "required_dep" : str(",".join(package_dict["required_dep"])),
                 "optional_dep" : str(",".join(package_dict["optional_dep"]))
@@ -331,6 +365,7 @@ def write_to_csv(filepath, package_db):
                      "name",
                      "version",
                      "parent",
+                     "maturity",
                      "sub_packages",
                      "required_dep",
                      "optional_dep"
@@ -346,7 +381,8 @@ def write_to_csv(filepath, package_db):
             writer.writerow(row)
 
 ###############################################################################
-def main(trilinos_dependencies,
+def main(trilinos_packages,
+         trilinos_dependencies,
          trilinos_version_file,
          csv_input_file,
          csv_output_file,
@@ -354,6 +390,7 @@ def main(trilinos_dependencies,
 
     # Print info
     if verbose:
+        print "Trilinos packages file    :", trilinos_packages
         print "Trilinos dependencies file:", trilinos_dependencies
         print "Trilinos version file     :", trilinos_version_file
 
@@ -363,6 +400,9 @@ def main(trilinos_dependencies,
 
     # Process the XML file to generate a package database
     package_db = process_xml_file(trilinos_dependencies, version)
+
+    # Add the maturity levels from the packages file
+    add_maturity_levels(package_db, trilinos_packages)
 
     # Report the statistics
     if verbose > 1:
@@ -402,6 +442,10 @@ if (__name__ == "__main__"):
         print "usage:", sys.argv[0], "trilinos_src"
         sys.exit(-1)
 
+    # Construct the packages file name
+    trilinos_packages = os.path.join(trilinos_src,
+                                     "PackagesList.cmake")
+
     # Construct the dependencies file name
     trilinos_dependencies = os.path.join(trilinos_src,
                                          "cmake",
@@ -417,7 +461,9 @@ if (__name__ == "__main__"):
     csv_output_file = options.csv_output
 
     # Check for file existence
-    files_to_check = [trilinos_dependencies, trilinos_version_file]
+    files_to_check = [trilinos_packages,
+                      trilinos_dependencies,
+                      trilinos_version_file]
     if csv_input_file:
         files_to_check.append(csv_input_file)
     for file in files_to_check:
@@ -426,7 +472,8 @@ if (__name__ == "__main__"):
             sys.exit(-2)
 
     # Call the main routine
-    main(trilinos_dependencies,
+    main(trilinos_packages,
+         trilinos_dependencies,
          trilinos_version_file,
          csv_input_file,
          csv_output_file,
