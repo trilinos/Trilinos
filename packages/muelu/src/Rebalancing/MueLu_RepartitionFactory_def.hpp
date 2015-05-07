@@ -133,8 +133,8 @@ namespace MueLu {
     // Test1: skip repartitioning if current level is less than the specified minimum level for repartitioning
     if (currentLevel.GetLevelID() < startLevel) {
       GetOStream(Statistics0) << "Repartitioning?  NO:" <<
-	"\n  current level = " << Teuchos::toString(currentLevel.GetLevelID()) <<
-	", first level where repartitioning can happen is " + Teuchos::toString(startLevel) << std::endl;
+          "\n  current level = " << Teuchos::toString(currentLevel.GetLevelID()) <<
+          ", first level where repartitioning can happen is " + Teuchos::toString(startLevel) << std::endl;
 
       Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
       return;
@@ -157,7 +157,7 @@ namespace MueLu {
 
       if (numActiveProcesses == 1) {
         GetOStream(Statistics0) << "Repartitioning?  NO:" <<
-	  "\n  # processes with rows = " << Teuchos::toString(numActiveProcesses) << std::endl;
+            "\n  # processes with rows = " << Teuchos::toString(numActiveProcesses) << std::endl;
 
         Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
         return;
