@@ -4047,7 +4047,7 @@ bool BulkData::internal_modification_end_for_change_parts()
     if (this->parallel_size() > 1 && global_shared_modified > 0 /*stk::mesh::impl::shared_entities_modified_on_any_proc(*this, this->parallel())*/) {
       internal_resolve_shared_membership();
 
-      check_mesh_consistency();
+      // check_mesh_consistency();
     }
 
     m_bucket_repository.internal_sort_bucket_entities();
@@ -4376,8 +4376,14 @@ bool BulkData::internal_modification_end_for_skin_mesh( EntityRank entity_rank, 
       {
           find_and_delete_internal_faces(entity_rank, only_consider_second_element_from_this_selector);
       }
+
       this->internal_resolve_shared_membership();
-      this->resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(entity_rank, selectedToSkin);
+
+      if ( this->get_automatic_aura_option() == AUTO_AURA)
+      {
+          this->resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(entity_rank, selectedToSkin);
+      }
+
       check_mesh_consistency();
   }
 
@@ -4433,7 +4439,10 @@ bool BulkData::internal_modification_end_for_entity_creation( EntityRank entity_
 
     internal_resolve_shared_membership();
 
-    this->resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(entity_rank, mesh_meta_data().universal_part());
+    if ( this->get_automatic_aura_option() == AUTO_AURA)
+    {
+        this->resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(entity_rank, mesh_meta_data().universal_part());
+    }
 
     check_mesh_consistency();
   }
