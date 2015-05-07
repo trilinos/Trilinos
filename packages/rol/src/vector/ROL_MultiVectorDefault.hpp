@@ -202,7 +202,7 @@ class MultiVectorDefault : public MultiVector<Real> {
         // \f$\text{this}[i]\leftarrow\alpha[i]\text{this}[i]\f$
         void scale(const std::vector<Real> &alpha) {
 
-            TEUCHOS_TEST_FOR_EXCEPTION( alpha.size() != numVectors_,
+            TEUCHOS_TEST_FOR_EXCEPTION( static_cast<int>(alpha.size()) != numVectors_,
                 std::invalid_argument,
                 "Error: alpha must have the same length as the number of vectors.");  
  
@@ -275,7 +275,7 @@ class MultiVectorDefault : public MultiVector<Real> {
         // Compute the norm of each vector in the MultiVector
         void norms(std::vector<Real> &normvec) const {
 
-            int min = numVectors_ < normvec.size() ? numVectors_ : normvec.size();
+            int min = numVectors_ < static_cast<int>(normvec.size()) ? numVectors_ : normvec.size();
 
             for(int i=0;i<min;++i) {
                 normvec[i] = mvec_[i]->norm(); 

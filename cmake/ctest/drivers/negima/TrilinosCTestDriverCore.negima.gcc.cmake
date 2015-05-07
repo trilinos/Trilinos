@@ -96,7 +96,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
          ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
          "-DTPL_ENABLE_MPI:BOOL=ON"
-         "-DMPI_BASE_DIR:PATH=/home/aprokop/local/opt/openmpi-1.8.4"
+         "-DMPI_BASE_DIR:PATH=/home/aprokop/local/opt/openmpi-1.8.5"
        )
 
     SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS

@@ -52,14 +52,14 @@
 
 namespace morkon_exp {
 
-template <typename DeviceType, unsigned int DIM >
+template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE>
 struct compute_face_normals
 {
 
 };
 
 template <typename DeviceType>
-struct compute_face_normals<DeviceType, 2>
+struct compute_face_normals<DeviceType, 2,MRK_LINE2>
 {
   typedef typename DeviceType::execution_space        execution_space;
 
@@ -115,7 +115,7 @@ struct compute_face_normals<DeviceType, 2>
 
 
 template <typename DeviceType>
-struct compute_face_normals<DeviceType, 3>
+struct compute_face_normals<DeviceType, 3,MRK_TRI3>
 {
   typedef typename DeviceType::execution_space             execution_space;
 
@@ -147,20 +147,14 @@ struct compute_face_normals<DeviceType, 3>
   KOKKOS_INLINE_FUNCTION
   void operator() (unsigned face_i) const
   {
+    //this function is hard-wired for three-node triangles
     const unsigned int DIM(3); 
     const int NUM_NODES_PER_ELEMENT(3);
     
-    /*
-      how does one handle multiple faces types? 
-      for example, four-node faces.
-    */
-
-    //is this hard-wired for three-node triangles?
     local_idx_t node[NUM_NODES_PER_ELEMENT];
     for (unsigned j = 0; j < NUM_NODES_PER_ELEMENT; ++j)
       node[j] = m_face_nodes(face_i, j);
 
-    //is this hard-wired for three-node triangles?
     //a vector has three components in three dimensions.
     double pts[NUM_NODES_PER_ELEMENT][DIM];
     for (unsigned j = 0; j < NUM_NODES_PER_ELEMENT; ++j) {
@@ -168,13 +162,84 @@ struct compute_face_normals<DeviceType, 3>
         pts[j][k] = m_node_coords(node[j], k);
     }//end for for (unsigned j = 0; j < NUM_NODES_PER_ELEMENT; ++j) {
 
-    //is this hard-wired for three-node triangles?
     //a vector has three components in three dimensions.
     double vecs[2][DIM];
     for (unsigned j = 0; j < 2; ++j) {
       for (unsigned k = 0; k < DIM; ++k)
         vecs[j][k] = pts[j+1][k] - pts[j][k];
     }//end for (unsigned j = 0; j < 2; ++j) {
+
+    // WE NEED A 3D MATVEC & GEOMETRY HEADER LIBRARY THAT VECTORIZES, ETC.,
+
+    // Cross product
+    //a vector has three components in three dimensions.
+    double ext[DIM];
+    ext[0] = vecs[0][1] * vecs[1][2] - vecs[0][2] * vecs[1][1];
+    ext[1] = vecs[0][2] * vecs[1][0] - vecs[0][0] * vecs[1][2];
+    ext[2] = vecs[0][0] * vecs[1][1] - vecs[0][1] * vecs[1][0];
+
+    // Normalize
+    double len = sqrt(ext[0] * ext[0] + ext[1] * ext[1] + ext[2] * ext[2]);
+    m_face_normals(face_i, 0) = ext[0] / len;
+    m_face_normals(face_i, 1) = ext[1] / len;
+    m_face_normals(face_i, 2) = ext[2] / len;
+  }
+};
+
+template <typename DeviceType>
+struct compute_face_normals<DeviceType, 3,MRK_QUAD4>
+{
+  typedef typename DeviceType::execution_space             execution_space;
+
+  typedef Mrk_SkinOnlyMesh<DeviceType, 3>                           mesh_t;
+  typedef typename mesh_t::face_connectivity_data_t          face_data_t;
+  typedef typename face_data_t::face_to_num_nodes_t   face_to_num_nodes_t;
+  typedef typename face_data_t::face_to_nodes_t           face_to_nodes_t;
+
+  typedef Mrk_Fields<DeviceType, 3>          fields_t;
+  typedef typename fields_t::points_mrat  points_mrat;
+  typedef typename fields_t::normals_t      normals_t;
+
+  face_to_num_nodes_t m_face_num_nodes;   // In case we want to generalize or do robust direction.
+  face_to_nodes_t         m_face_nodes;
+  points_mrat          m_node_coords;
+  normals_t            m_face_normals;
+
+  compute_face_normals(mesh_t mesh, fields_t fields)
+    : m_face_num_nodes(mesh.m_face_data.m_face_to_num_nodes)
+    , m_face_nodes(mesh.m_face_data.m_face_to_nodes)
+    , m_node_coords(fields.m_node_coords)
+    , m_face_normals(fields.m_face_normals)
+  {
+    assert(m_face_nodes.dimension_0() == m_face_normals.dimension_0());
+
+    Kokkos::parallel_for(m_face_nodes.dimension_0(), *this);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (unsigned face_i) const
+  {
+    //this function is hard-wired for four-node quads
+    const unsigned int DIM(3); 
+    const int NUM_NODES_PER_ELEMENT(4);
+    
+    local_idx_t node[NUM_NODES_PER_ELEMENT];
+    for (unsigned j = 0; j < NUM_NODES_PER_ELEMENT; ++j)
+      node[j] = m_face_nodes(face_i, j);
+
+    //a vector has three components in three dimensions.
+    double pts[NUM_NODES_PER_ELEMENT][DIM];
+    for (unsigned j = 0; j < NUM_NODES_PER_ELEMENT; ++j) {
+      for (unsigned k = 0; k < DIM; ++k)
+        pts[j][k] = m_node_coords(node[j], k);
+    }//end for for (unsigned j = 0; j < NUM_NODES_PER_ELEMENT; ++j) {
+
+    //a vector has three components in three dimensions.
+    double vecs[2][DIM];
+    for (unsigned k = 0; k < DIM; ++k) {
+      vecs[0][k] = pts[2][k] - pts[0][k];
+      vecs[1][k] = pts[3][k] - pts[1][k];
+    }
 
     // WE NEED A 3D MATVEC & GEOMETRY HEADER LIBRARY THAT VECTORIZES, ETC.,
 

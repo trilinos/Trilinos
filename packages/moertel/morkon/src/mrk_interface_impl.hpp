@@ -50,8 +50,8 @@
 
 namespace morkon_exp {
 
-template <typename DeviceType, unsigned int DIM>
-Interface<DeviceType, DIM>::Interface(Morkon_Manager<DeviceType, DIM> * manager)
+template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
+Interface<DeviceType, DIM,  FACE_TYPE >::Interface(Morkon_Manager<DeviceType, DIM> * manager)
   : m_manager(manager)
   , m_commited(false)
   , m_distributed(false)
@@ -61,8 +61,8 @@ Interface<DeviceType, DIM>::Interface(Morkon_Manager<DeviceType, DIM> * manager)
 }
 
 
-template <typename DeviceType, unsigned int DIM>
-bool Interface<DeviceType, DIM>::define_side(SideEnum which_side, faces_ids_t faces_on_side)
+template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
+bool Interface<DeviceType, DIM,  FACE_TYPE >::define_side(SideEnum which_side, faces_ids_t faces_on_side)
 {
   if (m_commited || (m_sides[which_side].dimension_0() > 0) || (m_hs_adapters[which_side] != 0))
   {
@@ -71,8 +71,8 @@ bool Interface<DeviceType, DIM>::define_side(SideEnum which_side, faces_ids_t fa
   m_sides[which_side] = faces_on_side;
 }
 
-template <typename DeviceType, unsigned int DIM>
-bool Interface<DeviceType, DIM>::hsa_add_node(SideEnum which_side, global_idx_t gbl_node_id, const double coords[])
+template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
+bool Interface<DeviceType, DIM,  FACE_TYPE >::hsa_add_node(SideEnum which_side, global_idx_t gbl_node_id, const double coords[])
 {
   if (m_commited || (m_sides[which_side].dimension_0() > 0))
   {
@@ -103,8 +103,8 @@ bool Interface<DeviceType, DIM>::hsa_add_node(SideEnum which_side, global_idx_t 
 }
 
 
-template <typename DeviceType, unsigned int DIM>
-bool Interface<DeviceType, DIM>::hsa_add_face(SideEnum which_side, global_idx_t gbl_face_id, int num_nodes, const global_idx_t gbl_nids[])
+template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
+bool Interface<DeviceType, DIM, FACE_TYPE>::hsa_add_face(SideEnum which_side, global_idx_t gbl_face_id, int num_nodes, const global_idx_t gbl_nids[])
 {
   if (m_commited || (m_sides[which_side].dimension_0() > 0))
   {

@@ -26,6 +26,8 @@ namespace Example {
   public:
     typedef PolicyType policy_type;
     typedef FutureType future_type;
+
+    static PolicyType policy;
     
     template<typename TaskFunctorType>
     static 
@@ -46,6 +48,8 @@ namespace Example {
 
   };
 
+  template<typename PolicyType, typename FutureType> 
+  PolicyType TaskFactory<PolicyType,FutureType>::policy;
 }
 
 #endif

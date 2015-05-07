@@ -103,7 +103,7 @@ private: // data members
   /** This method builds the inverse mass matrix from the underlying model evaluator.
     * Not that this is constant method that modifies a mutable member.
     */
-  void buildInverseMassMatrix() const;
+  void buildInverseMassMatrix(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs) const;
 
   //! Build prototype in/out args
   void buildArgsPrototypes();
