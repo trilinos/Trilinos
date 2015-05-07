@@ -64,8 +64,7 @@ namespace { // (anonymous)
   // file.  Kokkos requires this, just like MPI does for MPI_Init and
   // MPI_Finalize.
   template<class ExecSpace>
-  class InitExecSpace {
-  public:
+  struct InitExecSpace {
     InitExecSpace () {
       if (! ExecSpace::is_initialized ()) {
         ExecSpace::initialize ();
@@ -76,13 +75,35 @@ namespace { // (anonymous)
       // out a message in that case.  Thus, we don't have to do
       // anything here.  It's not Kokkos' fault if atexit() ran out of
       // space for all the hooks.
-      (void) atexit (finalizeExecSpace<ExecSpace>);
+      if (! registeredExitHook_) {
+        (void) atexit (finalizeExecSpace<ExecSpace>);
+        registeredExitHook_ = true;
+      }
     }
 
     bool isInitialized () {
       return ExecSpace::is_initialized ();
     }
+
+    static bool registeredExitHook_;
   };
+
+#ifdef KOKKOS_HAVE_SERIAL
+  template<> bool InitExecSpace<Kokkos::Serial>::registeredExitHook_ = false;
+#endif // KOKKOS_HAVE_SERIAL
+
+#ifdef KOKKOS_HAVE_OPENMP
+  template<> bool InitExecSpace<Kokkos::OpenMP>::registeredExitHook_ = false;
+#endif // KOKKOS_HAVE_OPENMP
+
+#ifdef KOKKOS_HAVE_PTHREAD
+  template<> bool InitExecSpace<Kokkos::Threads>::registeredExitHook_ = false;
+#endif // KOKKOS_HAVE_PTHREAD
+
+#ifdef KOKKOS_HAVE_CUDA
+  template<> bool InitExecSpace<Kokkos::Cuda>::registeredExitHook_ = false;
+#endif // KOKKOS_HAVE_CUDA
+
 
   template<class KeyType, class ValueType, class DeviceType>
   struct TestFixedHashTable {
@@ -323,10 +344,18 @@ namespace { // (anonymous)
           const std::string& inDeviceName)
     {
       using std::endl;
+      typedef typename InDeviceType::execution_space execution_space;
 
       out << "Test FixedHashTable copy constructor from " << inDeviceName
            << " to " << outDeviceName << endl;
       Teuchos::OSTab tab1 (out);
+
+      // Make sure that the input device's execution space has been
+      // initialized.
+      TEST_EQUALITY_CONST( execution_space::is_initialized (), true );
+      if (! execution_space::is_initialized ()) {
+        return; // avoid crashes if initialization failed
+      }
 
       // Initialize the output device's execution space, if necessary.
       InitExecSpace<typename OutDeviceType::execution_space> init;
