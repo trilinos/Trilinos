@@ -56,6 +56,7 @@ namespace Details {
 ///   built-in signed or unsinged integer type.
 /// \tparam ValueType The type of the hash table's values.  This must
 ///   be a built-in signed or unsigned integer type.
+/// \tparam DeviceType Specialization of Kokkos::Device.
 ///
 /// This class implements a hash table from signed integer keys to
 /// signed integer values, where all the (key,value) pairs must be
@@ -77,26 +78,33 @@ namespace Details {
 /// strategy may also improve locality for hash table lookups.
 template<class KeyType,
          class ValueType,
-         class DeviceType = Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace> >
+         class DeviceType>
 class FixedHashTable : public Teuchos::Describable {
 private:
-  //typedef typename Kokkos::View<KeyType*, DeviceType>::size_type size_type;
+  typedef typename DeviceType::execution_space execution_space;
+  typedef typename DeviceType::memory_space memory_space;
+  typedef Kokkos::Device<execution_space, memory_space> device_type;
+
+  //typedef typename Kokkos::View<KeyType*, device_type>::size_type size_type;
   typedef size_t size_type;
 
-  /// \brief Type of the array of hash table "buckets" (a.k.a. "row" offsets).
+  /// \brief Type of the array of hash table "buckets" (a.k.a. "row"
+  ///   offsets).
   ///
   /// We specify LayoutLeft explicitly so that the layout is the same
   /// on all Kokkos devices.  It's a 1-D View so LayoutLeft and
   /// LayoutRight mean the same thing, but specifying the layout
   /// explicitly makes Kokkos::deep_copy work.
-  typedef typename Kokkos::View<const size_type*, Kokkos::LayoutLeft, DeviceType>::HostMirror ptr_type;
+  typedef typename Kokkos::View<const size_type*, Kokkos::LayoutLeft,
+                                device_type>::HostMirror ptr_type;
   /// \brief Type of the array of (key, value) pairs in the hash table.
   ///
   /// We specify LayoutLeft explicitly so that the layout is the same
   /// on all Kokkos devices.  It's a 1-D View so LayoutLeft and
   /// LayoutRight mean the same thing, but specifying the layout
   /// explicitly makes Kokkos::deep_copy work.
-  typedef typename Kokkos::View<const Kokkos::pair<KeyType, ValueType>*, Kokkos::LayoutLeft, DeviceType>::HostMirror val_type;
+  typedef typename Kokkos::View<const Kokkos::pair<KeyType, ValueType>*,
+                                Kokkos::LayoutLeft, device_type>::HostMirror val_type;
 
 public:
   //! Default constructor; makes an empty table.
