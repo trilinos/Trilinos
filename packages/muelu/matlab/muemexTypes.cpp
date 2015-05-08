@@ -1,4 +1,6 @@
 #include "muemexTypes.h"
+#include "MueLu_CreateEpetraPreconditioner.hpp"
+#include "mex.h"
 
 //Debug this file
 //#define VERBOSE_OUTPUT
@@ -23,6 +25,187 @@ int* mwIndex_to_int(int N, mwIndex* mwi_array)
 		rv[i] = (int) mwi_array[i];
 	return rv;
 }
+
+
+
+/* ******************************* */
+/* Specializations                 */
+/* ******************************* */
+
+template<>
+RCP<Tpetra_CrsMatrix_double> tpetraLoadMatrix<double>(const mxArray* mxa)
+{
+	bool success = false;
+	RCP<Tpetra_CrsMatrix_double> A;
+	try
+	{
+		RCP<const Teuchos::Comm<int>> comm = rcp(new Teuchos::SerialComm<int>());
+		//numGlobalIndices is just the number of rows in the matrix	
+		const Tpetra::global_size_t numGlobalIndices = mxGetM(mxa);
+		const mm_GlobalOrd indexBase = 0;
+		RCP<const muemex_map_type> rowMap = rcp(new muemex_map_type(numGlobalIndices, indexBase, comm));
+		RCP<const muemex_map_type> domainMap = rcp(new muemex_map_type(mxGetN(mxa), indexBase, comm));
+		A = Tpetra::createCrsMatrix<double, mm_GlobalOrd, mm_LocalOrd, mm_node_t>(rowMap);
+		double* valueArray = mxGetPr(mxa);
+		int* colptr;
+		int* rowind;
+		//int nr = mxGetM(mxa);
+		int nc = mxGetN(mxa);
+		if(rewrap_ints)
+		{
+			//mwIndex_to_int allocates memory so must delete[] later
+			colptr = mwIndex_to_int(nc + 1, mxGetJc(mxa));
+			rowind = mwIndex_to_int(colptr[nc], mxGetIr(mxa));
+		}
+		else
+		{
+			rowind = (int*) mxGetIr(mxa);
+			colptr = (int*) mxGetJc(mxa);
+		}
+		for(int i = 0; i < nc; i++)
+		{
+			for(int j = colptr[i]; j < colptr[i + 1]; j++)
+			{
+				//'array' of 1 element, containing column (in global matrix).
+				ArrayView<mm_GlobalOrd> cols = ArrayView<mm_GlobalOrd>(&i, 1);
+				//'array' of 1 element, containing value
+				ArrayView<double> vals = ArrayView<double>(&valueArray[j], 1);
+				A->insertGlobalValues(rowind[j], cols, vals);
+			}
+		}
+		A->fillComplete(domainMap, rowMap);
+		if(rewrap_ints)
+		{
+			delete[] rowind;
+			delete[] colptr;
+		}
+		success = true;
+	}
+	catch(exception& e)
+	{
+		mexPrintf("Error while constructing Tpetra matrix:\n");
+		cout << e.what() << endl;
+	}
+	if(!success)
+		mexErrMsgTxt("An error occurred while setting up a Tpetra matrix.\n");
+	return A;
+}
+
+template<>
+RCP<Tpetra_CrsMatrix_complex> tpetraLoadMatrix<complex_t>(const mxArray* mxa)
+{
+	RCP<Tpetra_CrsMatrix_complex> A;
+	//Create a map in order to create the matrix (taken from muelu basic example - complex)
+	try
+	{
+		RCP<const Teuchos::Comm<int>> comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+		const Tpetra::global_size_t numGlobalIndices = mxGetM(mxa);
+		const mm_GlobalOrd indexBase = 0;
+		RCP<const muemex_map_type> map = rcp(new muemex_map_type(numGlobalIndices, indexBase, comm));
+		A = rcp(new Tpetra_CrsMatrix_complex(map, 0));
+		double* realArray = mxGetPr(mxa);
+		double* imagArray = mxGetPi(mxa);
+		int* colptr;
+		int* rowind;
+		int nc = mxGetN(mxa);
+		if(rewrap_ints)
+		{
+			//mwIndex_to_int allocates memory so must delete[] later
+			colptr = mwIndex_to_int(nc + 1, mxGetJc(mxa));
+			rowind = mwIndex_to_int(colptr[nc], mxGetIr(mxa));
+		}
+		else
+		{
+			rowind = (int*) mxGetIr(mxa);
+			colptr = (int*) mxGetJc(mxa);
+		}
+		for(int i = 0; i < nc; i++)
+		{
+			for(int j = colptr[i]; j < colptr[i + 1]; j++)
+			{
+				//here assuming that complex_t will always be defined as std::complex<double>
+				//use 'value' over and over again with ArrayViews to insert into matrix
+				complex_t value = std::complex<double>(realArray[j], imagArray[j]);
+				ArrayView<mm_GlobalOrd> cols = ArrayView<mm_GlobalOrd>(&i, 1);
+				ArrayView<complex_t> vals = ArrayView<complex_t>(&value, 1);
+				A->insertGlobalValues(rowind[j], cols, vals);
+			}
+		}
+		A->fillComplete();
+		if(rewrap_ints)
+		{
+			delete[] rowind;
+			delete[] colptr;
+		}
+	}
+	catch(exception& e)
+	{
+		mexPrintf("Error while constructing tpetra matrix:\n");
+		cout << e.what() << endl;
+	}
+	return A;
+}
+
+
+template<>
+RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> loadTpetraMV<double>(const mxArray* mxa)
+{
+	RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mv;
+	try
+	{
+		int nr = mxGetM(mxa);
+		int nc = mxGetN(mxa);
+		double* pr = mxGetPr(mxa);
+		RCP<const Teuchos::Comm<int>> comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+		//numGlobalIndices for map constructor is the number of rows in matrix/vectors, right?
+		RCP<const muemex_map_type> map = rcp(new muemex_map_type(nr, (mm_GlobalOrd) 0, comm));
+		//Allocate a new array of complex values to use with the multivector
+		ArrayView<const double> arrView(pr, nr * nc);
+		mv = rcp(new Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(map, arrView, size_t(nr), size_t(nc)));
+	}
+	catch(exception& e)
+	{
+		mexPrintf("Error constructing Tpetra MultiVector.\n");
+		cout << e.what() << endl;
+	}
+	return mv;
+}
+
+template<>
+RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> loadTpetraMV<complex_t>(const mxArray* mxa)
+{
+	RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mv;
+	try
+	{
+		int nr = mxGetM(mxa);
+		int nc = mxGetN(mxa);
+		double* pr = mxGetPr(mxa);
+		double* pi = mxGetPi(mxa);
+		RCP<const Teuchos::Comm<int>> comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+		//numGlobalIndices for map constructor is the number of rows in matrix/vectors, right?
+		RCP<const muemex_map_type> map = rcp(new muemex_map_type(nr, (mm_GlobalOrd) 0, comm));
+		//Allocate a new array of complex values to use with the multivector
+		complex_t* myArr = new complex_t[nr * nc];
+		for(int n = 0; n < nc; n++)
+		{
+			for(int m = 0; m < nr; m++)
+			{
+				myArr[n * nr + m] = complex_t(pr[n * nr + m], pi[n * nr + m]);
+			}
+		}
+		ArrayView<complex_t> arrView(myArr, nr * nc);
+		mv = rcp(new Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(map, arrView, nr, nc));
+	}
+	catch(exception& e)
+	{
+		mexPrintf("Error constructing Tpetra MultiVector.\n");
+		cout << e.what() << endl;
+	}
+	return mv;
+}
+
+
+
 
 /* ******************************* */
 /* Begin MuemexData implementation */
@@ -454,119 +637,7 @@ RCP<Epetra_CrsMatrix> epetraLoadMatrix(const mxArray* mxa)
 	return matrix;
 }
 
-template<>
-RCP<Tpetra_CrsMatrix_double> tpetraLoadMatrix<double>(const mxArray* mxa)
-{
-	bool success = false;
-	RCP<Tpetra_CrsMatrix_double> A;
-	try
-	{
-		RCP<const Teuchos::Comm<int>> comm = rcp(new Teuchos::SerialComm<int>());
-		//numGlobalIndices is just the number of rows in the matrix	
-		const Tpetra::global_size_t numGlobalIndices = mxGetM(mxa);
-		const mm_GlobalOrd indexBase = 0;
-		RCP<const muemex_map_type> rowMap = rcp(new muemex_map_type(numGlobalIndices, indexBase, comm));
-		RCP<const muemex_map_type> domainMap = rcp(new muemex_map_type(mxGetN(mxa), indexBase, comm));
-		A = Tpetra::createCrsMatrix<double, mm_GlobalOrd, mm_LocalOrd, mm_node_t>(rowMap);
-		double* valueArray = mxGetPr(mxa);
-		int* colptr;
-		int* rowind;
-		//int nr = mxGetM(mxa);
-		int nc = mxGetN(mxa);
-		if(rewrap_ints)
-		{
-			//mwIndex_to_int allocates memory so must delete[] later
-			colptr = mwIndex_to_int(nc + 1, mxGetJc(mxa));
-			rowind = mwIndex_to_int(colptr[nc], mxGetIr(mxa));
-		}
-		else
-		{
-			rowind = (int*) mxGetIr(mxa);
-			colptr = (int*) mxGetJc(mxa);
-		}
-		for(int i = 0; i < nc; i++)
-		{
-			for(int j = colptr[i]; j < colptr[i + 1]; j++)
-			{
-				//'array' of 1 element, containing column (in global matrix).
-				ArrayView<mm_GlobalOrd> cols = ArrayView<mm_GlobalOrd>(&i, 1);
-				//'array' of 1 element, containing value
-				ArrayView<double> vals = ArrayView<double>(&valueArray[j], 1);
-				A->insertGlobalValues(rowind[j], cols, vals);
-			}
-		}
-		A->fillComplete(domainMap, rowMap);
-		if(rewrap_ints)
-		{
-			delete[] rowind;
-			delete[] colptr;
-		}
-		success = true;
-	}
-	catch(exception& e)
-	{
-		mexPrintf("Error while constructing Tpetra matrix:\n");
-		cout << e.what() << endl;
-	}
-	if(!success)
-		mexErrMsgTxt("An error occurred while setting up a Tpetra matrix.\n");
-	return A;
-}
 
-template<>
-RCP<Tpetra_CrsMatrix_complex> tpetraLoadMatrix<complex_t>(const mxArray* mxa)
-{
-	RCP<Tpetra_CrsMatrix_complex> A;
-	//Create a map in order to create the matrix (taken from muelu basic example - complex)
-	try
-	{
-		RCP<const Teuchos::Comm<int>> comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-		const Tpetra::global_size_t numGlobalIndices = mxGetM(mxa);
-		const mm_GlobalOrd indexBase = 0;
-		RCP<const muemex_map_type> map = rcp(new muemex_map_type(numGlobalIndices, indexBase, comm));
-		A = rcp(new Tpetra_CrsMatrix_complex(map, 0));
-		double* realArray = mxGetPr(mxa);
-		double* imagArray = mxGetPi(mxa);
-		int* colptr;
-		int* rowind;
-		int nc = mxGetN(mxa);
-		if(rewrap_ints)
-		{
-			//mwIndex_to_int allocates memory so must delete[] later
-			colptr = mwIndex_to_int(nc + 1, mxGetJc(mxa));
-			rowind = mwIndex_to_int(colptr[nc], mxGetIr(mxa));
-		}
-		else
-		{
-			rowind = (int*) mxGetIr(mxa);
-			colptr = (int*) mxGetJc(mxa);
-		}
-		for(int i = 0; i < nc; i++)
-		{
-			for(int j = colptr[i]; j < colptr[i + 1]; j++)
-			{
-				//here assuming that complex_t will always be defined as std::complex<double>
-				//use 'value' over and over again with ArrayViews to insert into matrix
-				complex_t value = std::complex<double>(realArray[j], imagArray[j]);
-				ArrayView<mm_GlobalOrd> cols = ArrayView<mm_GlobalOrd>(&i, 1);
-				ArrayView<complex_t> vals = ArrayView<complex_t>(&value, 1);
-				A->insertGlobalValues(rowind[j], cols, vals);
-			}
-		}
-		A->fillComplete();
-		if(rewrap_ints)
-		{
-			delete[] rowind;
-			delete[] colptr;
-		}
-	}
-	catch(exception& e)
-	{
-		mexPrintf("Error while constructing tpetra matrix:\n");
-		cout << e.what() << endl;
-	}
-	return A;
-}
 
 mxArray* createMatlabLOVector(RCP<Xpetra_ordinal_vector> vec)
 {
@@ -577,62 +648,6 @@ mxArray* createMatlabLOVector(RCP<Xpetra_ordinal_vector> vec)
 	return mxCreateNumericArray(2, dimensions, mxINT32_CLASS, mxREAL);
 }
 
-template<>
-RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> loadTpetraMV<double>(const mxArray* mxa)
-{
-	RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mv;
-	try
-	{
-		int nr = mxGetM(mxa);
-		int nc = mxGetN(mxa);
-		double* pr = mxGetPr(mxa);
-		RCP<const Teuchos::Comm<int>> comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-		//numGlobalIndices for map constructor is the number of rows in matrix/vectors, right?
-		RCP<const muemex_map_type> map = rcp(new muemex_map_type(nr, (mm_GlobalOrd) 0, comm));
-		//Allocate a new array of complex values to use with the multivector
-		ArrayView<const double> arrView(pr, nr * nc);
-		mv = rcp(new Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(map, arrView, size_t(nr), size_t(nc)));
-	}
-	catch(exception& e)
-	{
-		mexPrintf("Error constructing Tpetra MultiVector.\n");
-		cout << e.what() << endl;
-	}
-	return mv;
-}
-
-template<>
-RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> loadTpetraMV<complex_t>(const mxArray* mxa)
-{
-	RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mv;
-	try
-	{
-		int nr = mxGetM(mxa);
-		int nc = mxGetN(mxa);
-		double* pr = mxGetPr(mxa);
-		double* pi = mxGetPi(mxa);
-		RCP<const Teuchos::Comm<int>> comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-		//numGlobalIndices for map constructor is the number of rows in matrix/vectors, right?
-		RCP<const muemex_map_type> map = rcp(new muemex_map_type(nr, (mm_GlobalOrd) 0, comm));
-		//Allocate a new array of complex values to use with the multivector
-		complex_t* myArr = new complex_t[nr * nc];
-		for(int n = 0; n < nc; n++)
-		{
-			for(int m = 0; m < nr; m++)
-			{
-				myArr[n * nr + m] = complex_t(pr[n * nr + m], pi[n * nr + m]);
-			}
-		}
-		ArrayView<complex_t> arrView(myArr, nr * nc);
-		mv = rcp(new Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(map, arrView, nr, nc));
-	}
-	catch(exception& e)
-	{
-		mexPrintf("Error constructing Tpetra MultiVector.\n");
-		cout << e.what() << endl;
-	}
-	return mv;
-}
 
 RCP<Epetra_MultiVector> loadEpetraMV(const mxArray* mxa)
 {
@@ -734,12 +749,12 @@ int parseInt(const mxArray* mxa)
 
 mxArray* saveEpetraMatrix(RCP<Epetra_CrsMatrix> mat)
 {
-	return saveMatrixToMatlab<double>(MueLu::EpetraCrs_To_XpetraMatrix(mat));
+  return saveMatrixToMatlab<double>(MueLu::EpetraCrs_To_XpetraMatrix<double, mm_LocalOrd, mm_GlobalOrd,mm_node_t>(mat));
 }
 
 RCP<Xpetra_ordinal_vector> loadLOVector(const mxArray* mxa)
 {
-	RCP<const Teuchos::Comm<int>> comm = rcp(new Teuchos::SerialComm<int>());
+	RCP<const Teuchos::Comm<int> > comm = rcp(new Teuchos::SerialComm<int>());
 	const Tpetra::global_size_t numGlobalIndices = mxGetM(mxa);
 	RCP<const muemex_map_type> rowMap = rcp(new muemex_map_type(numGlobalIndices, (mm_GlobalOrd) 0, comm));
 	if(mxGetClassID(mxa) != mxINT32_CLASS || mxGetN(mxa) != 1)
@@ -751,8 +766,8 @@ RCP<Xpetra_ordinal_vector> loadLOVector(const mxArray* mxa)
 }
 
 template<typename Scalar>
-RCP<Xpetra::MultiVector<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> loadXpetraMV(const mxArray* mxa);
+RCP<Xpetra::MultiVector<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> loadXpetraMV(const mxArray* mxa)
 {
-	RCP<Tpetra::MultiVector<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> tmv = loadTpetraMV<Scalar>(mxa);
+	RCP<Tpetra::MultiVector<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > tmv = loadTpetraMV<Scalar>(mxa);
 	return MueLu::TpetraMultiVector_To_XpetraMultiVector<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tmv);
 }
