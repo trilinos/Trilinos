@@ -21,31 +21,6 @@
 
 namespace MueLu {
 
-  /*! \fn EpetraCrs_To_XpetraMatrix
-    @brief Helper function to convert a Epetra::CrsMatrix to an Xpetra::Matrix
-    TODO move this function to an Xpetra utility file
-    */
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-  EpetraCrs_To_XpetraMatrix(const Teuchos::RCP<Epetra_CrsMatrix>& A) {
-    typedef Xpetra::EpetraCrsMatrix                                            XECrsMatrix;
-    typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>       XCrsMatrix;
-    typedef Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>   XCrsMatrixWrap;
-
-    RCP<XCrsMatrix> Atmp = rcp(new XECrsMatrix(A));
-    return rcp(new XCrsMatrixWrap(Atmp));
-  }
-
-  /*! \fn EpetraMultiVector_To_XpetraMultiVector
-    @brief Helper function to convert a Epetra::MultiVector to an Xpetra::MultiVector
-    TODO move this function to an Xpetra utility file
-    */
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-  EpetraMultiVector_To_XpetraMultiVector(const Teuchos::RCP<Epetra_MultiVector>& V) {
-    return rcp(new Xpetra::EpetraMultiVector(V));
-  }
-
   /*! \fn CreateEpetraPreconditioner
     @brief Helper function to create a MueLu preconditioner that can be used by Epetra.
 
