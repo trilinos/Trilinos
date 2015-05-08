@@ -581,7 +581,7 @@ permuteReorderedToOriginalTempl (const Tpetra::MultiVector<DomainScalar,local_or
     Teuchos::Array<magnitude_type> norms (reorderedX.getNumVectors ());
     reorderedX.norm2 (norms ());
     bool good = true;
-    for (typename Teuchos::Array<magnitude_type>::size_type j = 0;
+    for (size_t j = 0;
          j < reorderedX.getNumVectors (); ++j) {
       if (STM::isnaninf (norms[j])) {
         good = false;
@@ -612,7 +612,7 @@ permuteReorderedToOriginalTempl (const Tpetra::MultiVector<DomainScalar,local_or
     Teuchos::Array<magnitude_type> norms (originalY.getNumVectors ());
     originalY.norm2 (norms ());
     bool good = true;
-    for (typename Teuchos::Array<magnitude_type>::size_type j = 0;
+    for (size_t j = 0;
          j < originalY.getNumVectors (); ++j) {
       if (STM::isnaninf (norms[j])) {
         good = false;
