@@ -5,21 +5,26 @@ Quick configure, build and install hints for Trilinos
 :Author: Brent Perschbacher
 :Contact: bmpersc@sandia.gov
 
-:Abstract: This document is intended to be a very concise set of examples of how
-to configure, build and install Trilinos. The intended audience is those who
-need a quick refresher on Trilinos CMake build system or those wanting a quick
-install without worrying about all the features and options that are available.
-For a more indepth document on what features and options are available and how
-to use them see TrilinosBuildQuickRef.rst
+:Abstract: This document is intended to be a very concise set of examples of
+how to configure, build and install Trilinos. The intended audience is those
+who need a quick refresher on Trilinos CMake build system or those wanting a
+quick install without worrying about all the features and options that are
+available.  For a more indepth document on what features and options are
+available and how to use them, see the document:
+
+    doc/build_ref/TrilinosBuildReference.html
+
+(or the *.rst or *.pdf forms).
 
 .. sectnum::
 
 .. contents::
 
+
 Requirements
 ============
 
-CMake 2.8.0 or newer
+CMake 2.8.11 or newer
 A C and C++ compiler
 Optionally a Fortran compiler
 Optionally an installation of MPI

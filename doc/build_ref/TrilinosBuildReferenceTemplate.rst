@@ -1,11 +1,11 @@
-==================================================================
-Trilinos Configure, Build, Test, and Install Quick Reference Guide
-==================================================================
+============================================================
+Trilinos Configure, Build, Test, and Install Reference Guide
+============================================================
 
 :Author: Roscoe A. Bartlett (bartlettra@orn.gov)
 :Contact: trilinos-framework@software.sandia.gov
 
-:Abstract: This document contains quick reference information on how to configure, build, test, and install Trilinos using the TriBITS CMake build system.  The primary audience are users of Trilinos that need to configure and build the software.  The secondary audience are actual developers of Trilinos.
+:Abstract: This document contains reference information on how to configure, build, test, and install Trilinos using the TriBITS CMake build system.  The primary audience are users of Trilinos that need to configure and build the software.  The secondary audience are actual developers of Trilinos.
 
 .. sectnum::
 
@@ -16,9 +16,9 @@ Introduction
 
 Trilinos contains a large number of packages that can be enabled and there is a fairly complex dependency tree of required and optional package enables.  The following sections contain fairly generic information on how to configure, build, test, and install Trilinos that addresses a wide range of issues.
 
-This is not the first document that a user should read when trying to set up to install Trilinos.  For that, see the INSTALL.* file.  There is a lot of information and activities mentioned in this quickref that most users (and even some Trilinos developers) will never need to know about.
+This is not the first document that a user should read when trying to set up to install Trilinos.  For that, see the INSTALL.* file in the base Trilinos source directory.  There is a lot of information and activities mentioned in this reference that most users (and even some Trilinos developers) will never need to know about.
 
-Also, this particular quick reference has no information at all on what is actually in Trilinos.  For that, go to:
+Also, this particular reference has no information at all on what is actually in Trilinos.  For that, go to:
 
   http://trilinos.org
 
