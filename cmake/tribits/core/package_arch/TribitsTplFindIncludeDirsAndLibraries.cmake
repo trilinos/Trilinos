@@ -95,8 +95,8 @@ INCLUDE(SetNotFound)
 # value ``FALSE`` to maintain backward compatibility with existing
 # ``FindTPL<tplName>.cmake`` modules.
 #
-# See `How to Add use FIND_PACKAGE() for a TriBITS TPL`_ for details in how to
-# use this function to create a ``FindTPL<tplName>.cmake`` module file.
+# See `How to use FIND_PACKAGE() for a TriBITS TPL`_ for details in how to use
+# this function to create a ``FindTPL<tplName>.cmake`` module file.
 #
 FUNCTION(TRIBITS_TPL_ALLOW_PRE_FIND_PACKAGE  TPL_NAME  ALLOW_PACAKGE_PREFIND_OUT)
 

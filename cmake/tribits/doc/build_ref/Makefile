@@ -6,11 +6,11 @@ EXTRA_ARGS=
 
 .PHONY: clean realclean all
 
-BASE_NAME = TribitsBuildQuickRef
+BASE_NAME = TribitsBuildReference
 EXTRA_FILES = \
   Makefile \
-  TribitsBuildQuickRefBody.rst \
-  TribitsBuildQuickRefTemplate.rst
+  TribitsBuildReferenceBody.rst \
+  TribitsBuildReferenceTemplate.rst
 
 # NOTE: We *don't* want to rebuild the file if only the version has changed we
 # don't add a dependency on TribitsGitVersion.txt!
@@ -22,10 +22,10 @@ $(BASE_NAME).pdf: $(BASE_NAME).html
 $(BASE_NAME).html: $(BASE_NAME).rst
 
 $(BASE_NAME).rst: $(EXTRA_FILES)
-	./create-project-build-quickref.py \
+	./create-project-build-ref.py \
 	--project-name="<Project>" \
-	--project-template-file=TribitsBuildQuickRefTemplate.rst \
-	--file-base=TribitsBuildQuickRef \
+	--project-template-file=TribitsBuildReferenceTemplate.rst \
+	--file-base=TribitsBuildReference \
 	$(EXTRA_ARGS)
 
 clean:

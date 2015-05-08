@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-#  Build a generic version of <Project>BuildQuickRef for general
+#  Build a generic version of <Project>BuildReference for general
 #  documentation.
 
 source ../utils/gen_doc_utils.sh

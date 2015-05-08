@@ -107,7 +107,7 @@ A person acting in this role needs to know little about CMake other than
 basics about how to run the ``cmake`` and ``ctest`` executables, how to set
 CMake cache variables, and the basics of building software by typing ``make``
 and running tests with ``ctest``.  The proper reference for a TriBITS Project
-User is the `Project-Specific Build Quick Reference`_.  The `TriBITS
+User is the `Project-Specific Build Reference`_.  The `TriBITS
 Overview`_ document may also be of some help.  A TriBITS project user does not
 need to know anything about the CMake language itself or any of the TriBITS
 macros or functions described in `TriBITS Macros and Functions`_ or really
@@ -125,8 +125,8 @@ tests and therefore this role includes all of the necessary knowledge and
 functions of a TriBITS Project User.  A casual TriBITS Project Developer
 typically does not need to know a lot about CMake and really only needs to
 know a subset of the `TriBITS Macros and Functions`_ defined in this document
-in addition to the genetic `TriBITS Build Quick Reference
-<../build_quick_ref/TribitsBuildQuickRef.html>`_ document.  A slightly more
+in addition to the genetic `TriBITS Build Reference
+<TribitsBuildReference.html>`_ document.  A slightly more
 sophisticated TriBITS Project Developer will also add new packages, add new
 package dependencies, and define new TPLs.  This current TriBITS Developers
 Guide and Reference document should supply everything such a developer needs
@@ -181,7 +181,7 @@ TriBITS matures and its requirements further stabilize, the need for a
 
 So depending on the particular role that a reader falls into, this document
 may or may not be necessary but instead the `TriBITS Overview`_ or the
-`<Project>BuildQuickRef`_ documents may be more appropriate.  Hopefully the
+`<Project>BuildReference`_ documents may be more appropriate.  Hopefully the
 above roles and discussion will help the reader select the right document to
 start with.
 
@@ -2098,7 +2098,7 @@ guts of finding at TPL which is perfectly fine.  In this case, the purpose for
 the wrapping ``FindTPL${TPL_NAME}.cmake`` is to standardize the output
 variables ``TPL_${TPL_NAME}_INCLUDE_DIRS`` and ``TPL_${TPL_NAME}_LIBRARIES``.
 For more details on properly using ``FIND_PACKAGE()`` to define a
-``FindTPL${TPL_NAME}.cmake`` file, see `How to Add use FIND_PACKAGE() for a
+``FindTPL${TPL_NAME}.cmake`` file, see `How to use FIND_PACKAGE() for a
 TriBITS TPL`_.
 
 Once the `<repoDir>/TPLsList.cmake`_ files are all processed, then each
@@ -5083,8 +5083,7 @@ then pushes updates.  The major difference is that a well constructed
 development process will use the `checkin-test.py`_ script to test and push
 all changes that affect the build or the tests.  The basic steps in
 configuring, building, running tests, etc., are given in the project's
-`<Project>BuildQuickRef`_. file (see `Project-Specific Build Quick
-Reference`_).
+`<Project>BuildReference`_. file (see `Project-Specific Build Reference`_).
 
 Multi-Repository Development Workflow
 -------------------------------------
@@ -5108,7 +5107,7 @@ This section provides short, succinct lists of the steps to accomplish a few
 common tasks.  Extra details are referenced.
 
 
-How to Add a new TriBITS Package
+How to add a new TriBITS Package
 --------------------------------
 
 To add a new TriBITS package, it is recommended to take the template from one
@@ -5149,11 +5148,11 @@ dependencies on this new package.
 .. ToDo: Expand on the above bullets a lot!
 
 
-How to Add a new TriBITS Package with Subpackages
+How to add a new TriBITS Package with Subpackages
 -------------------------------------------------
 
 Adding a new package with subpackages is similar to adding a new regular
-package described in `How to Add a new TriBITS Package`_.  Again, it is
+package described in `How to add a new TriBITS Package`_.  Again, it is
 recommended that one copies an example package from `TribitsExampleProject`_.
 For example, one could copy files and directories from the example package
 ``WithSubpackages``.
@@ -5178,18 +5177,18 @@ To add a new TriBITS package with packages, do the following:
 4) Configure the TriBITS project enabling the new empty package
    ``<packageName>``.
 
-5) Incrementally add the subpackages as described in `How to Add a new TriBITS
+5) Incrementally add the subpackages as described in `How to add a new TriBITS
    Subpackage`_, filling out the various ``CMakeLists.txt`` files defining
    libraries, executables, tests and examples.
 
 Once the new SE packages are defined, downstream SE packages can define
 dependencies on these.
 
-How to Add a new TriBITS Subpackage
+How to add a new TriBITS Subpackage
 -----------------------------------
 
 Given an existing top-level TriBITS package that is already broken down into
-subpackages (see `How to Add a new TriBITS Package with Subpackages`_), adding
+subpackages (see `How to add a new TriBITS Package with Subpackages`_), adding
 a new subpackage does not require changing any project-level or
 repository-level files.  One only needs to add the declaration for the new
 subpackages in its parent's `<packageDir>/cmake/Dependencies.cmake`_ file then
@@ -5230,7 +5229,7 @@ subpackages, do the following:
    and tests run as new pieces are added.
 
 
-How to Add a new TriBITS TPL
+How to add a new TriBITS TPL
 ----------------------------
 
 In order for an SE package to define a dependency on a new TPL (i.e. one that
@@ -5251,7 +5250,7 @@ To add a new TriBITS TPL, do the following:
    for details).  List the default required header files and/or libraries that
    must be provided by the TPL.  NOTE: This find module can also (optionally)
    use ``FIND_PACKAGE(<tplName> ...)`` for the default find operation.  For
-   details, see `How to Add use FIND_PACKAGE() for a TriBITS TPL`_.
+   details, see `How to use FIND_PACKAGE() for a TriBITS TPL`_.
 
 3) Add a row for the new TPL to the `<repoDir>/TPLsList.cmake`_ file after any
    TPLs that this new TPL may depend on.
@@ -5281,8 +5280,8 @@ To add a new TriBITS TPL, do the following:
 .. package and refer to it here.
 
 
-How to Add use FIND_PACKAGE() for a TriBITS TPL
------------------------------------------------
+How to use FIND_PACKAGE() for a TriBITS TPL
+-------------------------------------------
 
 When defining a ``FindTPL<tplName>.cmake`` file, it is possible (and
 encouraged) to utilize ``FIND_PACKAGE(<tplName> ...)`` to provide the default
@@ -5338,7 +5337,7 @@ specialized ``FindTPL<tplName>.cmake`` file and can't use the
 modules cannot completely adhere to the standard behavior described in
 `Enabling support for an optional Third-Party Library (TPL)`_.
 
-How to Add a new TriBITS Repository
+How to add a new TriBITS Repository
 -----------------------------------
 
 To add a new TriBITS and/ git VC repository to a TriBITS project that already
@@ -5567,7 +5566,7 @@ one would perform the following steps:
    under the repository directory.)
 
 4) Insert the package into the `<repoDir>/PackagesList.cmake`_ file as
-   described in `How to Add a new TriBITS Package`_ except one must also call
+   described in `How to add a new TriBITS Package`_ except one must also call
    ``TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(<insertedPackageName>)`` as
    described above.
 
@@ -5683,48 +5682,47 @@ behavior such as:
    such a system typically requires this version or higher.
 
 
-Project-Specific Build Quick Reference
---------------------------------------
+Project-Specific Build Reference
+--------------------------------
 
 If a project that uses TriBITS is going to have a significant user base that
 will configure, build, and test the project, then having some documentation
 that explains how to do this would be useful.  For this purpose, TriBITS
-provides a mechanism to quickly create a project-specific build quick
-reference document in restructured text (RST) format and with HTML and
-LaTeX/PDF outputs.  This document are generally created in the base project
-source tree and given then name ``<Project>BuildQuickRef.[rst,html,pdf]``.
-This document consists of two parts.  One part is a generic template
-document::
+provides a mechanism to quickly create a project-specific build reference
+document in restructured text (RST) format and with HTML and LaTeX/PDF
+outputs.  This document are generally created in the base project source tree
+and given then name ``<Project>BuildReference.[rst,html,pdf]``.  This document
+consists of two parts.  One part is a generic template document::
 
-  tribits/doc/build_quick_ref/TribitsBuildQuickRefBody.rst
+  tribits/doc/TribitsBuildReferenceBody.rst
 
 provided in the TriBITS source tree that uses the place-holder ``<Project>``
 for the for the real project name.  The second part is a project-specific
 template file::
 
-  <projectDir>/cmake/<Project>BuildQuickRefTemplate.rst
+  <projectDir>/cmake/<Project>BuildReferenceTemplate.rst
 
 which provides the outer RST document (with title, authors, abstract,
 introduction, other introductory sections).  From these two files, the
 script::
 
-  tribits/doc/build_quick_ref/create-project-build-quickref.py
+  tribits/doc/build_ref/create-project-build-quickref.py
 
-is used to replace ``<Project>`` in the ``TribitsBuildQuickRefBody.rst`` file
+is used to replace ``<Project>`` in the ``TribitsBuildReferenceBody.rst`` file
 with the real project name (read from the project's ``ProjectName.cmake`` file
 by default) and then generates the read-only files::
 
   <projectDir>/
-    <Project>BuildQuickRef.rst
-    <Project>BuildQuickRef.html
-    <Project>BuildQuickRef.pdf
+    <Project>BuildReference.rst
+    <Project>BuildReference.html
+    <Project>BuildReference.pdf
 
 For a simple example of this, see::
 
   tribits/doc/examples/TribitsExampleProject/cmake/create-build-quickref.sh
 
 A project-independent version of this file is provided in the
-`TribitsBuildQuickRef`_.[rst,html,pdf] which is referred to many times in this
+`TribitsBuildReference`_.[rst,html,pdf] which is referred to many times in this
 developers guide.
 
 
@@ -7007,10 +7005,10 @@ be overridden by the user when calling ``cmake`` in a number of ways.
 
 Most of these global options that can be overridden externally by setting the
 cache variable ``${PROJECT_NAME}_<SOME_OPTION>`` should be documented in the
-`Project-Specific Build Quick Reference`_ document.  A generic version of this
-document is found in `TribitsBuildQuickRef`_.  Some of the more unusual
+`Project-Specific Build Reference`_ document.  A generic version of this
+document is found in `TribitsBuildReference`_.  Some of the more unusual
 options that might only be of interest to developers mentioned below may not
-be documented in `TribitsBuildQuickRef`_.
+be documented in `TribitsBuildReference`_.
 
 The global project-level TriBITS options for which defaults can be provided by
 a given TriBITS project are:
@@ -7069,7 +7067,7 @@ These options are described below.
   `upstream`_ required packages or TPLs will be disabled.  If
   `${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=OFF`_, then an
   configure error will occur.  For more details also see
-  `TribitsBuildQuickRef`_ and `Disables trump enables where there is a
+  `TribitsBuildReference`_ and `Disables trump enables where there is a
   conflict`_.  A project can define a different default value by setting::
   
     SET(${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES_DEFAULT FALSE)
@@ -7170,7 +7168,7 @@ These options are described below.
   
   If ``${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES`` is ``ON``, then
   ``Makefile.export.<PackageName>`` will get created at configure time in the
-  build tree and installed into the install tree.  See `TribitsBuildQuickRef`_
+  build tree and installed into the install tree.  See `TribitsBuildReference`_
   for details.  The TriBITS default is ``ON`` but a project can decide to turn
   this off by default by setting::
   
@@ -7264,7 +7262,7 @@ These options are described below.
   installs).  If set to ``OFF``, then headers and libraries will *not* be
   installed by default and only ``INSTALLABLE`` executables added with
   `TRIBITS_ADD_EXECUTABLE()`_ will be installed.  However, as described in
-  `TribitsBuildQuickRef`_, shared libraries will always be installed if
+  `TribitsBuildReference`_, shared libraries will always be installed if
   enabled since they are needed by the installed executables.
   
   For a TriBITS project that is primarily delivering libraries
@@ -7649,41 +7647,44 @@ Below is a snapshot of the output from ``install_devtools.py --help``.
 .. *** Common references
 .. **
 
-.. Common references to TribitsBuildQuickRef document
+.. Common references to TribitsBuildReference document
 
-.. _<Project>BuildQuickRef: ../build_quick_ref/TribitsBuildQuickRef.html
+.. NOTE: These references
+.. are for when published in the same directory using public_docs.sh
 
-.. _TribitsBuildQuickRef: `<Project>BuildQuickRef`_
+.. _<Project>BuildReference: TribitsBuildReference.html
 
-.. _Selecting the list of packages to enable: ../build_quick_ref/TribitsBuildQuickRef.html#selecting-the-list-of-packages-to-enable
+.. _TribitsBuildReference: `<Project>BuildReference`_
 
-.. _Enabling extra repositories with add-on packages: ../build_quick_ref/TribitsBuildQuickRef.html#enabling-extra-repositories-with-add-on-packages
+.. _Selecting the list of packages to enable: TribitsBuildReference.html#selecting-the-list-of-packages-to-enable
 
-.. _Getting set up to use CMake: ../build_quick_ref/TribitsBuildQuickRef.html#getting-set-up-to-use-cmake
+.. _Enabling extra repositories with add-on packages: TribitsBuildReference.html#enabling-extra-repositories-with-add-on-packages
 
-.. _Dashboard Submissions: ../build_quick_ref/TribitsBuildQuickRef.html#dashboard-submissions
+.. _Getting set up to use CMake: TribitsBuildReference.html#getting-set-up-to-use-cmake
 
-.. _<Project>_EXTRAREPOS_FILE: ../build_quick_ref/TribitsBuildQuickRef.html#project-extrarepos-file
+.. _Dashboard Submissions: TribitsBuildReference.html#dashboard-submissions
+
+.. _<Project>_EXTRAREPOS_FILE: TribitsBuildReference.html#project-extrarepos-file
 
 .. _${PROJECT_NAME}_EXTRAREPOS_FILE: `<Project>_EXTRAREPOS_FILE`_
 
-.. _${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE: ../build_quick_ref/TribitsBuildQuickRef.html#generating-a-project-repo-version-file
+.. _${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE: TribitsBuildReference.html#generating-a-project-repo-version-file
 
-.. _Creating a tarball of the source tree: ../build_quick_ref/TribitsBuildQuickRef.html#creating-a-tarball-of-the-source-tree
+.. _Creating a tarball of the source tree: TribitsBuildReference.html#creating-a-tarball-of-the-source-tree
 
-.. _Enabling support for an optional Third-Party Library (TPL): ../build_quick_ref/TribitsBuildQuickRef.html#enabling-support-for-an-optional-third-party-library-tpl
+.. _Enabling support for an optional Third-Party Library (TPL): TribitsBuildReference.html#enabling-support-for-an-optional-third-party-library-tpl
 
-.. _${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE: ../build_quick_ref/TribitsBuildQuickRef.html#project-configure-options-file
+.. _${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE: TribitsBuildReference.html#project-configure-options-file
 
-.. _${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE: ../build_quick_ref/TribitsBuildQuickRef.html#outputting-package-dependency-information
+.. _${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE: TribitsBuildReference.html#outputting-package-dependency-information
 
-.. _${PROJECT_NAME}_TRACE_FILE_PROCESSING: ../build_quick_ref/TribitsBuildQuickRef.html#project-trace-file-processing
+.. _${PROJECT_NAME}_TRACE_FILE_PROCESSING: TribitsBuildReference.html#project-trace-file-processing
 
-.. _${PROJECT_NAME}_SCALE_TEST_TIMEOUT: ../build_quick_ref/TribitsBuildQuickRef.html#project-scale-test-timeout-testing-timeout
+.. _${PROJECT_NAME}_SCALE_TEST_TIMEOUT: TribitsBuildReference.html#project-scale-test-timeout-testing-timeout
 
-.. _make dashboard: ../build_quick_ref/TribitsBuildQuickRef.html#dashboard-submissions
+.. _make dashboard: TribitsBuildReference.html#dashboard-submissions
 
-.. _Setting the install prefix at configure time: ../build_quick_ref/TribitsBuildQuickRef.html#setting-the-install-prefix-at-configure-time
+.. _Setting the install prefix at configure time: TribitsBuildReference.html#setting-the-install-prefix-at-configure-time
 
 .. Common references to the TribitsOverview document
 

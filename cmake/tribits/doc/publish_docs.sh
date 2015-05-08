@@ -16,8 +16,9 @@ _ABS_FILE_PATH=`readlink -f $0`
 #echo "_ABS_FILE_PATH = '$_ABS_FILE_PATH'"
 _SCRIPT_DIR=`dirname $_ABS_FILE_PATH`
 #echo "_SCRIPT_DIR = '$_SCRIPT_DIR'"
-_TRIBITS_BASE_DIR=$_SCRIPT_DIR/..
-echo "Copy from: $_TRIBITS_BASE_DIR"
+
+cd $_SCRIPT_DIR
+echo "Copy from: $PWD"
 
 function copy_over_readonly {
   from_dir=$1
@@ -34,5 +35,5 @@ _DEST_BASE_DIR=$1
 echo "Copy to: $_DEST_BASE_DIR" 
 copy_over_readonly  developers_guide  TribitsDevelopersGuide.html  $_DEST_BASE_DIR
 copy_over_readonly  developers_guide  TribitsDevelopersGuide.pdf  $_DEST_BASE_DIR
-copy_over_readonly  build_quick_ref  TribitsBuildQuickRef.html  $_DEST_BASE_DIR
-copy_over_readonly  build_quick_ref  TribitsBuildQuickRef.pdf  $_DEST_BASE_DIR
+copy_over_readonly  build_ref  TribitsBuildReference.html  $_DEST_BASE_DIR
+copy_over_readonly  build_ref  TribitsBuildReference.pdf  $_DEST_BASE_DIR

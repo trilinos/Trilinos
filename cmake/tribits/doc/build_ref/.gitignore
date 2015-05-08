@@ -1,0 +1,6 @@
+# Ignore generated files
+/TribitsBuildReference.html
+/TribitsBuildReference.pdf
+/TribitsBuildReference.rst
+/TribitsGitVersion.txt
+/TribitsGitVersion.txt.tmp

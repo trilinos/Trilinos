@@ -26,16 +26,16 @@ ls $_BASE_DIR/developers_guide/TribitsDevelopersGuide.*
 
 echo
 echo "***"
-echo "*** Generating TribitsBuildQuickRef.[rst,html,pdf] ..."
+echo "*** Generating TribitsBuildReference.[rst,html,pdf] ..."
 echo "***"
 echo
 
-cd $_BASE_DIR/build_quick_ref
-./create-build-quickref.sh  
+cd $_BASE_DIR/build_ref
+./create-build-ref.sh  
 echo
 echo "See generated files:"
 echo
-ls $_BASE_DIR/build_quick_ref/TribitsBuildQuickRef.*
+ls $_BASE_DIR/build_ref/TribitsBuildReference.*
 
 #echo
 #echo "***"

@@ -1,36 +1,36 @@
 #!/usr/bin/env python
 
-usageHelp = r"""create-project-build-quickref.py [options]
+usageHelp = r"""create-project-build-ref.py [options]
 
 Generate a TriBITS project-specific build quick reference guide, typically
-named <projectName>BuildQuickRef.rst and output formats *.html and *.pdf (by
+named <projectName>BuildReference.rst and output formats *.html and *.pdf (by
 default).  For the average TriBITS project-specific build quick reference
 file, you just run this as::
 
   $ cd <projectBaseDir>
-  $ ./cmake/tribits/doc/create-project-build-quickref.py
+  $ ./cmake/tribits/doc/create-project-build-ref.py
 
-(or run create-project-build-quickref.py from where TriBITS is).  This will
-read the project's name from the file <projectBaseDir>/ProjectName.cmake and
-will take the template file:
+(or run create-project-build-ref.py from where TriBITS is located for the
+project).  This will read the project's name from the file
+<projectBaseDir>/ProjectName.cmake and will take the template file:
 
-   <projectBaseDir>/cmake/<projectName>BuildQuickRefTemplate.rst
+   <projectBaseDir>/cmake/<projectName>BuildReferenceTemplate.rst
 
-and the general TribitsBuildQuickRefBody.rst input file and generate the
+and the general TribitsBuildReferenceBody.rst input file and generate the
 files:
 
    <projectBaseDir>/
-     <projectName>BuildQuickRef.rst
-     <projectName>BuildQuickRef.html
-     <projectName>BuildQuickRef.pdf
+     <projectName>BuildReference.rst
+     <projectName>BuildReference.html
+     <projectName>BuildReference.pdf
 
 However, this script can be run to take any input template *.rst file
 <projectTemplateFile> and any arbitrary project name and use it to generate
 the specified output files.  For an example of this, see the script:
 
-  tribits/doc/build_quick_ref/create-build-quick-ref.sh
+  tribits/doc/build_quick_ref/create-build-ref.sh
 
-that creates a the files TribitsBuildQuickRef.[rst,html,pdf]
+that creates a the files TribitsBuildReference.[rst,html,pdf]
 
 """
 
@@ -89,7 +89,7 @@ clp.add_option(
   "--project-template-file", dest="projectTemplateFile", type="string",
   default="",
   help="The project-specific template file used to generate the overall *.rst file."+\
-    "   If not specified, then <projectBaseDir>/cmake/<projectName>BuildQuickRefTemplate.rst"+\
+    "   If not specified, then <projectBaseDir>/cmake/<projectName>BuildReferenceTemplate.rst"+\
     " will be used instead."
   )
    
@@ -119,49 +119,49 @@ if not options.projectName:
 if not options.projectTemplateFile:
   options.projectTemplateFile = \
     os.path.join(options.projectBaseDir, "cmake", \
-      options.projectName+"BuildQuickRefTemplate.rst")
-#print "projectBuildQuickRefTemplateFile =", projectBuildQuickRefTemplateFile
+      options.projectName+"BuildReferenceTemplate.rst")
+#print "projectBuildReferenceTemplateFile =", projectBuildReferenceTemplateFile
 
 if not options.fileBase:
   options.fileBase = os.path.join(options.projectBaseDir,
-    options.projectName+"BuildQuickRef")
+    options.projectName+"BuildReference")
 #print "options.fileBase =", options.fileBase
 
 #
 # D) Read in standard body and make substitution
 #
 
-tribitsBuildQuickRefBodyFile = \
-  os.path.join(thisFileRealAbsBasePath, "TribitsBuildQuickRefBody.rst")
-#print "tribitsBuildQuickRefBodyFile =", tribitsBuildQuickRefBodyFile
+tribitsBuildReferenceBodyFile = \
+  os.path.join(thisFileRealAbsBasePath, "TribitsBuildReferenceBody.rst")
+#print "tribitsBuildReferenceBodyFile =", tribitsBuildReferenceBodyFile
 
-tribitsBuildQuickRefBodyStr = \
-  readStrFromFile(tribitsBuildQuickRefBodyFile)
+tribitsBuildReferenceBodyStr = \
+  readStrFromFile(tribitsBuildReferenceBodyFile)
 
-substitutedTribitsBuildQuickRefBodyStr = tribitsBuildQuickRefBodyStr
-substitutedTribitsBuildQuickRefBodyStr = \
-    substitutedTribitsBuildQuickRefBodyStr.replace("<Project>",
+substitutedTribitsBuildReferenceBodyStr = tribitsBuildReferenceBodyStr
+substitutedTribitsBuildReferenceBodyStr = \
+    substitutedTribitsBuildReferenceBodyStr.replace("<Project>",
       options.projectName)
-substitutedTribitsBuildQuickRefBodyStr = \
-    substitutedTribitsBuildQuickRefBodyStr.replace("<MinCMakeVer>",
+substitutedTribitsBuildReferenceBodyStr = \
+    substitutedTribitsBuildReferenceBodyStr.replace("<MinCMakeVer>",
       options.minCMakeVersion)
 
 #
 # E) Generate the output files
 #
 
-projectBuildQuickRefTemplateStr = \
+projectBuildReferenceTemplateStr = \
   readStrFromFile(options.projectTemplateFile)
 
-projectBuildQuickRefStr = \
-  projectBuildQuickRefTemplateStr \
+projectBuildReferenceStr = \
+  projectBuildReferenceTemplateStr \
   + "\n\n" \
-  + substitutedTribitsBuildQuickRefBodyStr
+  + substitutedTribitsBuildReferenceBodyStr
 
 outputRstFile = options.fileBase+".rst"
 print "Writing rst file ..."
 GenerateDocUtilsOutput.openWriteFilePermissions(outputRstFile)
-writeStrToFile(outputRstFile, projectBuildQuickRefStr)
+writeStrToFile(outputRstFile, projectBuildReferenceStr)
 GenerateDocUtilsOutput.setGeneratedFilePermissions(outputRstFile)
 
 GenerateDocUtilsOutput.generateDocutilsOuputFiles(options)
