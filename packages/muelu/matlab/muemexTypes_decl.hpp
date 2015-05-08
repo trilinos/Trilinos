@@ -44,14 +44,21 @@
 //
 // @HEADER
 
-#ifndef MUEMEX_TYPES_H
-#define MUEMEX_TYPES_H
+#ifndef MUEMEX_TYPES_DECL_HPP
+#define MUEMEX_TYPES_DECL_HPP
 
 #include <string>
 #include <complex>
 #include <stdexcept>
-#include "Teuchos_ParameterList.hpp"
+#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_RCP.hpp>
 #include "MueLu.hpp"
+
+
+#if !defined(HAVE_MUELU_MATLAB) || !defined(HAVE_MUELU_EPETRA) || !defined(HAVE_MUELU_TPETRA)
+#error "Muemex types require MATLAB, Epetra and Tpetra."
+#else
+#include "mex.h"
 #include "MueLu_EpetraOperator.hpp"
 #include "MueLu_TpetraOperator.hpp"
 #include "MueLu_Hierarchy_decl.hpp"
@@ -59,11 +66,6 @@
 #include "Epetra_CrsMatrix.h"
 #include "Tpetra_CrsMatrix_decl.hpp"
 #include "Xpetra_EpetraCrsMatrix.hpp"
-
-#if !defined(HAVE_MUELU_MATLAB) || !defined(HAVE_MUELU_EPETRA) || !defined(HAVE_MUELU_TPETRA)
-#error "Muemex types require MATLAB, Epetra and Tpetra."
-#else
-#include "mex.h"
 
 //Useful global typedefs for MueMex
 
@@ -164,5 +166,7 @@ class MuemexData : public MuemexArg
   T data;
 };
 
+
+
 #endif //HAVE_MUELU_MATLAB error handler
-#endif //MUEMEX_TYPES_H guard
+#endif //MUEMEX_TYPES_DECL_HPP guard

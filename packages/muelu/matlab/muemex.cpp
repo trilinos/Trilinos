@@ -45,6 +45,7 @@
 // @HEADER
 
 #include "muemex.h"
+
 #define IS_FALSE 0
 #define IS_TRUE 1
 #define MUEMEX_ERROR -1
@@ -55,6 +56,9 @@
 #endif
 
 #include <Tpetra_DefaultPlatform.hpp>
+#include "muemexTypes_decl.hpp"
+#include "muemexTypes_def.hpp"
+
 
 using namespace std;
 using namespace Teuchos;

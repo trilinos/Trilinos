@@ -44,7 +44,8 @@
 //
 // @HEADER
 #include "muemexCallbacks.h"
-#include "MueLu_CreateTpetraPreconditioner.hpp"
+#include "muemexTypes_def.hpp"
+#include "MueLu_Utilities.hpp"
 
 using namespace std;
 using namespace Teuchos;

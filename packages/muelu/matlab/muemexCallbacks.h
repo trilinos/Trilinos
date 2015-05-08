@@ -49,15 +49,13 @@
 
 #include "Teuchos_ParameterList.hpp"
 #include <string>
-#include <complex>
-#include <stdexcept>
-#include <vector>
-#include "muemexTypes.h"
-#include "mex.h"
+#include "muemexTypes_decl.hpp"
 
 #if !defined(HAVE_MUELU_MATLAB) || !defined(HAVE_MUELU_EPETRA) || !defined(HAVE_MUELU_TPETRA)
 #error "Muemex callbacks require MATLAB, Epetra and Tpetra."
 #else
+#include "mex.h"
+
 
 namespace MuemexCallback
 {

@@ -55,6 +55,7 @@
 #include <stdexcept>
 
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RCP.hpp"
 #include "MueLu_config.hpp"
 #include "MueLu.hpp"
 #include "MueLu_EpetraOperator.hpp"
@@ -75,7 +76,6 @@
 #include "BelosMueLuAdapter.hpp"
 #include "mex.h"
 #include "muemexCallbacks.h"
-#include "muemexTypes.h"
 
 #define HAVE_COMPLEX_SCALARS
 
@@ -254,5 +254,15 @@ namespace MuemexSystemList
   bool isInList(int id);
   void clearAll();
 }
+
+
+// Template function implementations
+template<typename Scalar>
+Teuchos::RCP<Xpetra::Matrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> xpetraLoadMatrix(const mxArray* mxa)
+{
+  Teuchos::RCP<Tpetra::CrsMatrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> tpetraMat = tpetraLoadMatrix<Scalar>(mxa);
+  return MueLu::TpetraCrs_To_XpetraMatrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tpetraMat);
+}
+
 
 #endif //MUEMEX_H
