@@ -50,6 +50,7 @@
 #include <map>                          // for map
 #include <numeric>                      // for accumulate
 #include <utility>                      // for pair, make_pair
+#include <cstring>
 
 #if !defined(NO_PARMETIS_SUPPORT)
 #include <parmetis.h>                   // for ParMETIS_V3_Mesh2Dual, etc
@@ -1306,7 +1307,7 @@ namespace Iopx {
       }
       fileBlockIndex[b+1] = fileBlockIndex[b] + ebs[b].num_entry;
       el_blocks[b].topologyType = ebs[b].topology;
-      if (ebs[b].num_entry == 0 && (strcmp(ebs[b].topology, "NULL") == 0))
+      if (ebs[b].num_entry == 0 && (std::strcmp(ebs[b].topology, "NULL") == 0))
 	el_blocks[b].topologyType = "sphere";
 	
       el_blocks[b].nodesPerEntity = ebs[b].num_nodes_per_entry;
