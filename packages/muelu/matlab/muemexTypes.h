@@ -1,16 +1,60 @@
+// @HEADER
+//
+// ***********************************************************************
+//
+//                MueLu: A package for multigrid based preconditioning
+//                                      Copyright 2012 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact
+//                                        Jonathan Hu           (jhu@sandia.gov)
+//                                        Andrey Prokopenko (aprokop@sandia.gov)
+//                                        Ray Tuminaro          (rstumin@sandia.gov)
+//
+// ***********************************************************************
+//
+// @HEADER
+
 #ifndef MUEMEX_TYPES_H
 #define MUEMEX_TYPES_H
 
-#include "Teuchos_ParameterList.hpp"
 #include <string>
 #include <complex>
 #include <stdexcept>
+#include "Teuchos_ParameterList.hpp"
 #include "MueLu.hpp"
 #include "MueLu_EpetraOperator.hpp"
 #include "MueLu_TpetraOperator.hpp"
 #include "MueLu_Hierarchy_decl.hpp"
-#include "MueLu_CreateEpetraPreconditioner.hpp"
-#include "MueLu_CreateTpetraPreconditioner.hpp"
 #include "Epetra_MultiVector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Tpetra_CrsMatrix_decl.hpp"
@@ -24,23 +68,23 @@
 //Useful global typedefs for MueMex
 
 enum MUEMEX_TYPE
-{
-	INT,
-	DOUBLE,
-	STRING,
-	COMPLEX,
-	XPETRA_ORDINAL_VECTOR,
-	TPETRA_MULTIVECTOR_DOUBLE,
-	TPETRA_MULTIVECTOR_COMPLEX,
-	TPETRA_MATRIX_DOUBLE,
-	TPETRA_MATRIX_COMPLEX,
-	XPETRA_MATRIX_DOUBLE,
-	XPETRA_MATRIX_COMPLEX,
-	XPETRA_MULTIVECTOR_DOUBLE,
-	XPETRA_MULTIVECTOR_COMPLEX,
-	EPETRA_CRSMATRIX,
-	EPETRA_MULTIVECTOR
-};
+  {
+    INT,
+    DOUBLE,
+    STRING,
+    COMPLEX,
+    XPETRA_ORDINAL_VECTOR,
+    TPETRA_MULTIVECTOR_DOUBLE,
+    TPETRA_MULTIVECTOR_COMPLEX,
+    TPETRA_MATRIX_DOUBLE,
+    TPETRA_MATRIX_COMPLEX,
+    XPETRA_MATRIX_DOUBLE,
+    XPETRA_MATRIX_COMPLEX,
+    XPETRA_MULTIVECTOR_DOUBLE,
+    XPETRA_MULTIVECTOR_COMPLEX,
+    EPETRA_CRSMATRIX,
+    EPETRA_MULTIVECTOR
+  };
 
 typedef Tpetra::Vector<>::node_type mm_node_t;
 typedef Tpetra::Vector<>::local_ordinal_type mm_LocalOrd;
@@ -101,23 +145,23 @@ Teuchos::RCP<Xpetra_ordinal_vector> loadLOVector(const mxArray* mxa);
 
 class MuemexArg
 {
-	public:
-		MuemexArg(MUEMEX_TYPE type);
-		MUEMEX_TYPE type;
+ public:
+  MuemexArg(MUEMEX_TYPE type);
+  MUEMEX_TYPE type;
 };
 
 template<typename T>
 class MuemexData : public MuemexArg
 {
-	public:
-		MuemexData(T& data, MUEMEX_TYPE type);	//Construct from pre-existing data, to pass to MATLAB.
-		MuemexData(const mxArray* mxa); //Construct from MATLAB array, to get from MATLAB.
-		~MuemexData();
-		mxArray* convertToMatlab(); //Create a MATLAB object and copy this data to it
-		T& getData();				//Set and get methods
-		void setData(T& data);
-	private:
-		T data;
+ public:
+  MuemexData(T& data, MUEMEX_TYPE type);        //Construct from pre-existing data, to pass to MATLAB.
+  MuemexData(const mxArray* mxa); //Construct from MATLAB array, to get from MATLAB.
+  ~MuemexData();
+  mxArray* convertToMatlab(); //Create a MATLAB object and copy this data to it
+  T& getData();                         //Set and get methods
+  void setData(T& data);
+ private:
+  T data;
 };
 
 #endif //HAVE_MUELU_MATLAB error handler
