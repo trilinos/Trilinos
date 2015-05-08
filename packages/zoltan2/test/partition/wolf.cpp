@@ -67,14 +67,14 @@ using namespace std;
 
 typedef zlno_t z2TestLO;
 typedef zgno_t z2TestGO;
-typedef zscalar_t Scalar;
+typedef zscalar_t z2TestScalar;
 
-typedef Tpetra::CrsMatrix<Scalar, z2TestLO, z2TestGO> SparseMatrix_t;
-typedef Tpetra::Vector<Scalar, z2TestLO, z2TestGO> Vector;
+typedef Tpetra::CrsMatrix<z2TestScalar, z2TestLO, z2TestGO> SparseMatrix_t;
+typedef Tpetra::Vector<z2TestScalar, z2TestLO, z2TestGO> Vector;
 typedef Vector::node_type Node;
 
-//typedef Tpetra::MultiVector<Scalar, z2TestLO, z2TestGO, znode_t> tMVector_t;
-typedef Tpetra::MultiVector<Scalar, z2TestLO, z2TestGO,znode_t> tMVector_t;
+//typedef Tpetra::MultiVector<z2TestScalar, z2TestLO, z2TestGO, znode_t> tMVector_t;
+typedef Tpetra::MultiVector<z2TestScalar, z2TestLO, z2TestGO,znode_t> tMVector_t;
 
 
 //typedef Zoltan2::XpetraCrsMatrixAdapter<SparseMatrix_t> SparseMatrixAdapter;

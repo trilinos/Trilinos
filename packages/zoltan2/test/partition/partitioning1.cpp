@@ -77,11 +77,11 @@ using namespace std;
 
 typedef zlno_t z2TestLO;
 typedef zgno_t z2TestGO;
-typedef zscalar_t Scalar;
+typedef zscalar_t z2TestScalar;
 
-typedef Tpetra::CrsMatrix<Scalar, z2TestLO, z2TestGO> SparseMatrix;
+typedef Tpetra::CrsMatrix<z2TestScalar, z2TestLO, z2TestGO> SparseMatrix;
 typedef Tpetra::CrsGraph<z2TestLO, z2TestGO> SparseGraph;
-typedef Tpetra::Vector<Scalar, z2TestLO, z2TestGO> Vector;
+typedef Tpetra::Vector<z2TestScalar, z2TestLO, z2TestGO> Vector;
 typedef Vector::node_type Node;
 
 typedef Zoltan2::XpetraCrsMatrixAdapter<SparseMatrix> SparseMatrixAdapter;
@@ -196,9 +196,9 @@ int main(int narg, char** arg)
 
   ////// Create a vector to use with the matrix.
   RCP<Vector> origVector, origProd;
-  origProd   = Tpetra::createVector<Scalar,z2TestLO,z2TestGO>(
+  origProd   = Tpetra::createVector<z2TestScalar,z2TestLO,z2TestGO>(
                                     origMatrix->getRangeMap());
-  origVector = Tpetra::createVector<Scalar,z2TestLO,z2TestGO>(
+  origVector = Tpetra::createVector<z2TestScalar,z2TestLO,z2TestGO>(
                                     origMatrix->getDomainMap());
   origVector->randomize();
 
@@ -413,7 +413,7 @@ int main(int narg, char** arg)
                                           problem.getSolution());
 
   RCP<Vector> redistribProd;
-  redistribProd = Tpetra::createVector<Scalar,z2TestLO,z2TestGO>(
+  redistribProd = Tpetra::createVector<z2TestScalar,z2TestLO,z2TestGO>(
                                        redistribMatrix->getRangeMap());
 
   // Test redistributing an integer vector with the same solution.
@@ -444,13 +444,13 @@ int main(int narg, char** arg)
 
   if (me == 0) cout << "Matvec original..." << endl;
   origMatrix->apply(*origVector, *origProd);
-  Scalar origNorm = origProd->norm2();
+  z2TestScalar origNorm = origProd->norm2();
   if (me == 0)
     cout << "Norm of Original matvec prod:       " << origNorm << endl;
 
   if (me == 0) cout << "Matvec redistributed..." << endl;
   redistribMatrix->apply(*redistribVector, *redistribProd);
-  Scalar redistribNorm = redistribProd->norm2();
+  z2TestScalar redistribNorm = redistribProd->norm2();
   if (me == 0)
     cout << "Norm of Redistributed matvec prod:  " << redistribNorm << endl;
 
