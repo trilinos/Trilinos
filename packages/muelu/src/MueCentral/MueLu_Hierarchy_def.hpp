@@ -855,12 +855,9 @@ namespace MueLu {
     int root = comm->getRank();
 
 #ifdef HAVE_MPI
-    RCP<const Teuchos::MpiComm<int> > mpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
-    MPI_Comm rawComm = (*mpiComm->getRawMpiComm())();
-
-    std::vector<int> numGlobalLevels(comm->getSize());
-    MPI_Allgather(&numLevels, 1, MPI_INT, &numGlobalLevels[0], 1, MPI_INT, rawComm);
-    root = std::max_element(numGlobalLevels.begin(), numGlobalLevels.end()) - numGlobalLevels.begin();
+    int smartData = numLevels*comm->getSize() + comm->getRank(), maxSmartData;
+    reduceAll(*comm, Teuchos::REDUCE_MAX, smartData, Teuchos::ptr(&maxSmartData));
+    root = maxSmartData % comm->getSize();
 #endif
 
     std::string outstr;
@@ -940,6 +937,9 @@ namespace MueLu {
     }
 
 #ifdef HAVE_MPI
+    RCP<const Teuchos::MpiComm<int> > mpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
+    MPI_Comm rawComm = (*mpiComm->getRawMpiComm())();
+
     int strLength = outstr.size();
     MPI_Bcast(&strLength, 1, MPI_INT, root, rawComm);
     if (comm->getRank() != root)
