@@ -36,7 +36,6 @@ int main(int argc, char *argv[]) {
 
   Kokkos::finalize();
 
-
   string eval;
   __EVAL_STRING__(r_val, eval);
   cout << "Testing Kokkos::Serial::" << eval << endl;

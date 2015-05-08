@@ -6,8 +6,6 @@
 /// \brief CRS matrix base object interfaces to user provided input matrices.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include <Kokkos_Core.hpp>
-
 #include "util.hpp"
 #include "coo.hpp"
 
@@ -70,9 +68,10 @@ namespace Example {
       
       if (_aj.dimension_0() < nnz)
         _aj = ordinal_type_array(_label+"::ColsArray", nnz);
-      
+
       if (_ax.dimension_0() < nnz)
         _ax = value_type_array(_label+"::ValuesArray", nnz);
+      //_ax = value_type_array(Kokkos::ViewAllocateWithoutInitializing(_label+"::ValuesArray"), nnz);
     }
 
   public:

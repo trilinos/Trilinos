@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __TEST_CRS_HIER_BASE_HPP__
-#define __TEST_CRS_HIER_BASE_HPP__
+#ifndef __TEST_CRS_TASK_VIEW_HPP__
+#define __TEST_CRS_TASK_VIEW_HPP__
 
 #include "crs_matrix_base.hpp"
 #include "crs_matrix_view.hpp"
@@ -19,19 +19,28 @@ namespace Example {
            typename SpaceType = void,
            typename MemoryTraits = void>
   KOKKOS_INLINE_FUNCTION
-  int testCrsHierBase(const string filename) {
+  int testCrsTaskView(const string filename) {
     typedef double value_type;
     typedef int    ordinal_type;
     typedef int    size_type;
+
+    typedef TaskFactory<Kokkos::Experimental::TaskPolicy<SpaceType>,
+      Kokkos::Experimental::Future<int,SpaceType> > TaskFactoryType;
     
     typedef CrsMatrixBase<value_type,ordinal_type,size_type,SpaceType,MemoryTraits> CrsMatrixBaseType;
+
     typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
-    
-    typedef CrsMatrixBase<CrsMatrixViewType,ordinal_type,size_type,SpaceType,MemoryTraits> CrsHierBaseType;
+    typedef TaskView<CrsMatrixViewType,TaskFactoryType> CrsTaskViewType;
+     
+    typedef CrsMatrixBase<CrsTaskViewType,ordinal_type,size_type,SpaceType,MemoryTraits> CrsHierTaskBaseType;
+
+    typedef CrsMatrixView<CrsHierTaskBaseType> CrsHierViewType;
+    typedef TaskView<CrsHierViewType,TaskFactoryType> CrsHierTaskViewType;
+
     typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType;    
 
     __DOT_LINE__;
-    cout << "testCrsHierBase:: filename = " << filename << endl;
+    cout << "testCrsTaskView:: filename = " << filename << endl;
     __DOT_LINE__;
 
     int r_val = 0; //, r_val_prev = 0;
@@ -60,32 +69,38 @@ namespace Example {
     }
 
     {
-      CrsHierBaseType HU("HU");
+      CrsHierTaskBaseType HU("HU");
       CrsMatrixHelper::flat2hier(Uplo::Upper, UU, HU,
                                  S.NumBlocks(), 
                                  S.RangeVector(),
                                  S.TreeVector());
       cout << HU << endl;
+
+      CrsHierTaskViewType H(&HU);
     }
 
     {
-      CrsHierBaseType HL("HL");
+      CrsHierTaskBaseType HL("HL");
       CrsMatrixHelper::flat2hier(Uplo::Lower, LL, HL, 
                                  S.NumBlocks(), 
                                  S.RangeVector(),
                                  S.TreeVector());
       cout << HL << endl;
+
+      CrsHierTaskViewType H(&HL);
     }
 
     {
-      CrsHierBaseType HH("HH");
+      CrsHierTaskBaseType HH("HH");
       CrsMatrixHelper::flat2hier(AA, HH);
       cout << HH << endl;
+
+      CrsHierTaskViewType H(&HH);
     }
 
     string eval;
     __EVAL_STRING__(r_val, eval);
-    cout << "testCrsHierBase::Eval - " << eval << endl;
+    cout << "testCrsTaskView::Eval - " << eval << endl;
 
     __DOT_LINE__;
    

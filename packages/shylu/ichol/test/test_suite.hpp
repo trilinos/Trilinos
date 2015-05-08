@@ -21,6 +21,11 @@
 #include "test_tri_solve_blocked.hpp"
 
 #include "test_crs_hier_base.hpp"
+#include "test_crs_task_view.hpp"
+
+#include "test_ichol_by_blocks.hpp"
+
+#include "test_dense_hier_base.hpp"
 
 namespace Example { 
   
@@ -84,8 +89,15 @@ namespace Example {
                                                            blks[j], nrhs[i]);
         // ============================================================ 
         // This is problematic
-        // r_val += testCrsHierBase<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx");
-        // ============================================================         
+        r_val += testCrsHierBase<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx");
+        r_val += testCrsTaskView<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx");
+        // ============================================================ 
+        r_val += testICholByBlocks<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx");
+        // ============================================================ 
+        for (OT j=0;j<blk_cnt;++j) 
+          for (OT i=0;i<nrhs_cnt;++i) 
+            r_val += testDenseHierBase<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx",
+                                                         blks[j], nrhs[i]);
       }
       cout << label << "::doUnitTests::End" << endl;
 

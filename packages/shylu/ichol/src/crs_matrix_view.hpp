@@ -6,8 +6,6 @@
 /// \brief CRS matrix view object creates 2D view to setup a computing region.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include <Kokkos_Core.hpp>
-
 #include "util.hpp"
 
 namespace Example { 

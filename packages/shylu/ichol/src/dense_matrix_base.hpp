@@ -6,8 +6,6 @@
 /// \brief dense matrix base object interfaces 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include <Kokkos_Core.hpp>
-
 #include "util.hpp"
 
 namespace Example { 
@@ -37,6 +35,8 @@ namespace Example {
     typedef typename size_type_array::value_type*    size_type_array_ptr;
     typedef typename ordinal_type_array::value_type* ordinal_type_array_ptr;
     typedef typename value_type_array::value_type*   value_type_array_ptr;
+
+    friend class DenseMatrixHelper;
 
   private:
     string             _label;   //!< object label
