@@ -72,7 +72,14 @@ FUNCTION(TRIBITS_FIND_CXX11_FLAGS)
        "-std=c++0x"    # Older gcc
        "-std=gnu++11"  # gcc
        "/Qstd=c++11"   # intel windows
+       " "             # MSVC++ 2012 (C++11 is on by default!)
        )
+       # NOTE: For the last item, the single space " " is used so as to
+       # satisfy logic that compares to "" (with no space).  Note that the
+       # last " " entry will work for every C++ compiler that has C++11 turned
+       # on in the future.  Therefore, at some point in the future, we will
+       # likely move " " to the top of the list once it becomes the most
+       # common case.
 
      ##
      ## Same CXX11 source
