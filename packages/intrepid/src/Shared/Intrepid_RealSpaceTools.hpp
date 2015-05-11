@@ -116,7 +116,7 @@ class RealSpaceTools {
         \param dim         [in]  - vector dimension
         \param normType    [in]  - norm type
     */
-    static Scalar vectorNorm(const Scalar* inVec, const int dim, const ENorm normType);
+    static Scalar vectorNorm(const Scalar* inVec, const size_t dim, const ENorm normType);
 
 
     /** \brief Computes norm (1, 2, infinity) of a single vector stored in
@@ -158,10 +158,10 @@ class RealSpaceTools {
         \param inMat          [in] - matrix
         \param dim            [in] - matrix dimension
     */
-    static void transpose(Scalar* transposeMat, const Scalar* inMat, const int dim);
+    static void transpose(Scalar* transposeMat, const Scalar* inMat, const size_t dim);
     
   /*  template<class ArrayTranspose, class ArrayIn>
-	static void transpose(ArrayTranspose transposeMat, const ArrayIn inMat, const int dim);*/
+	static void transpose(ArrayTranspose transposeMat, const ArrayIn inMat, const size_t dim);*/
     /** \brief Computes transposes of square matrices stored in
                an array of total rank 2 (single matrix), indexed by (D, D),
                3 (array of matrices), indexed by (i0, D, D),
@@ -188,7 +188,7 @@ class RealSpaceTools {
         \param inMat        [in] - matrix
         \param dim          [in] - matrix dimension
     */
-    static void inverse(Scalar* inverseMat, const Scalar* inMat, const int dim);
+    static void inverse(Scalar* inverseMat, const Scalar* inMat, const size_t dim);
 
 
     /** \brief Computes inverses of nonsingular matrices stored in
@@ -210,7 +210,7 @@ class RealSpaceTools {
     static void inverse(ArrayInverse & inverseMats, const ArrayIn & inMats);
     
 
-    static Scalar det(const Scalar* inMat, const int dim);
+    static Scalar det(const Scalar* inMat, const size_t dim);
 
 
     /** \brief Computes determinant of a single square matrix stored in
@@ -456,7 +456,7 @@ class RealSpaceTools {
         \param inVec    [in]  - the vector argument
         \param dim      [in]  - matrix/vector dimension
     */
-    static void matvec(Scalar* matVec, const Scalar* inMat, const Scalar* inVec, const int dim);
+    static void matvec(Scalar* matVec, const Scalar* inMat, const Scalar* inVec, const size_t dim);
 
 
     /** \brief Matrix-vector left multiply using multidimensional arrays:\n

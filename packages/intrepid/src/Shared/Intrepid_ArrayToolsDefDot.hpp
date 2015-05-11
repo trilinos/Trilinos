@@ -64,7 +64,7 @@ void ArrayTools::dotMultiplyDataField(ArrayOutFields &       outputFields,
 				">>> ERROR (ArrayTools::dotMultiplyDataField): Zeroth dimensions (number of integration domains) of the fields and data input containers must agree!");
     TEUCHOS_TEST_FOR_EXCEPTION( ( (inputFields.dimension(2) != inputData.dimension(1)) && (inputData.dimension(1) != 1) ), std::invalid_argument,
 				">>> ERROR (ArrayTools::dotMultiplyDataField): Second dimension of the fields input container and first dimension of data input container (number of integration points) must agree or first data dimension must be 1!");
-    for (int i=2; i<getrank(inputData); i++) {
+    for (size_t i=2; i<getrank(inputData); i++) {
       std::string errmsg  = ">>> ERROR (ArrayTools::dotMultiplyDataField): Dimensions ";
       errmsg += (char)(48+i);
       errmsg += " and ";
@@ -72,7 +72,7 @@ void ArrayTools::dotMultiplyDataField(ArrayOutFields &       outputFields,
       errmsg += " of the input data and fields containers must agree!";
       TEUCHOS_TEST_FOR_EXCEPTION( (inputData.dimension(i) != inputFields.dimension(i+1)), std::invalid_argument, errmsg );
     }
-    for (int i=0; i<getrank(outputFields); i++) {
+    for (size_t i=0; i<getrank(outputFields); i++) {
       std::string errmsg  = ">>> ERROR (ArrayTools::dotMultiplyDataField): Dimensions ";
       errmsg += (char)(48+i);
       errmsg += " of the input and output fields containers must agree!";
@@ -93,7 +93,7 @@ void ArrayTools::dotMultiplyDataField(ArrayOutFields &       outputFields,
 				">>> ERROR (ArrayTools::dotMultiplyDataField): First dimension of the fields input container and second dimension of the fields output container (number of integration points) must agree!");
     TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.dimension(0) != inputData.dimension(0)), std::invalid_argument,
 				">>> ERROR (ArrayTools::dotMultiplyDataField): Zeroth dimensions of the fields output and data input containers (number of integration domains) must agree!");
-    for (int i=2; i<getrank(inputData); i++) {
+    for (size_t i=2; i<getrank(inputData); i++) {
       std::string errmsg  = ">>> ERROR (ArrayTools::dotMultiplyDataField): Dimensions ";
       errmsg += (char)(48+i);
       errmsg += " of the input data and fields containers must agree!";
@@ -361,7 +361,7 @@ void ArrayTools::dotMultiplyDataData(ArrayOutData &            outputData,
 				">>> ERROR (ArrayTools::dotMultiplyDataData): Data output container must have rank 2.");
     TEUCHOS_TEST_FOR_EXCEPTION( ( (inputDataRight.dimension(1) != inputDataLeft.dimension(1)) && (inputDataLeft.dimension(1) != 1) ), std::invalid_argument,
 				">>> ERROR (ArrayTools::dotMultiplyDataField): First dimensions of the left and right data input containers (number of integration points) must agree or first left data dimension must be 1!");
-    for (int i=0; i<getrank(inputDataLeft); i++) {
+    for (size_t i=0; i<getrank(inputDataLeft); i++) {
       if (i != 1) {
 	std::string errmsg  = ">>> ERROR (ArrayTools::dotMultiplyDataData): Dimensions ";
         errmsg += (char)(48+i);
@@ -369,7 +369,7 @@ void ArrayTools::dotMultiplyDataData(ArrayOutData &            outputData,
         TEUCHOS_TEST_FOR_EXCEPTION( (inputDataLeft.dimension(i) != inputDataRight.dimension(i)), std::invalid_argument, errmsg );
       }
     }
-    for (int i=0; i<getrank(outputData); i++) {
+    for (size_t i=0; i<getrank(outputData); i++) {
       std::string errmsg  = ">>> ERROR (ArrayTools::dotMultiplyDataData): Dimensions ";
       errmsg += (char)(48+i);
       errmsg += " of the output and right input data containers must agree!";
@@ -389,7 +389,7 @@ void ArrayTools::dotMultiplyDataData(ArrayOutData &            outputData,
 				">>> ERROR (ArrayTools::dotMultiplyDataField): Zeroth dimension of the right data input container and first dimension of output data container (number of integration points) must agree!");
     TEUCHOS_TEST_FOR_EXCEPTION( (inputDataLeft.dimension(0) != outputData.dimension(0)), std::invalid_argument,
 				">>> ERROR (ArrayTools::dotMultiplyDataField): Zeroth dimensions of the left data input and data output containers (number of integration domains) must agree!");
-    for (int i=1; i<getrank(inputDataRight); i++) {
+    for (size_t i=1; i<getrank(inputDataRight); i++) {
       std::string errmsg  = ">>> ERROR (ArrayTools::dotMultiplyDataData): Dimensions ";
       errmsg += (char)(48+i+1);
       errmsg += " and ";
@@ -408,8 +408,8 @@ void ArrayTools::dotMultiplyDataData(ArrayOutData &            outputData,
 
 
   // get sizes
-  int rightDataRank  = getrank(inputDataRight);
-  int leftDataRank   = getrank(inputDataLeft);
+  size_t rightDataRank  = getrank(inputDataRight);
+  size_t leftDataRank   = getrank(inputDataLeft);
   int numCells       = outputData.dimension(0);
   int numPoints      = outputData.dimension(1);
   int numDataPoints  = inputDataLeft.dimension(1);

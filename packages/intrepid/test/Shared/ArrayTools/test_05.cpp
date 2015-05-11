@@ -53,7 +53,6 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include <Kokkos_Core.hpp>
 
 using namespace std;
 using namespace Intrepid;

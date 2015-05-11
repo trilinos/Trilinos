@@ -136,7 +136,7 @@ public:
 }
 };
 template<class DataT>
-inline int getrank(DataT& leftvalue){
+inline size_t getrank(DataT& leftvalue){
     return RankSpec<DataT,Rank<DataT>::value>::returnvalue(leftvalue);
     
 }
