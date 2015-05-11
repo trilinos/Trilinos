@@ -95,6 +95,8 @@
 
 #include <string>
 
+// #define IMPLICIT_TRANSPOSE
+
 namespace Thyra {
 
 #define MUELU_GPD(name, type, defaultValue) \
@@ -470,6 +472,12 @@ namespace Thyra {
     finestLevel->Set("AForPat",               A_11_9Pt);
     H->SetMaxCoarseSize(MUELU_GPD("coarse: max size", int, 1));
 
+#ifdef IMPLICIT_TRANSPOSE
+    out << "Using implicit transpose" << std::endl;
+
+    H->SetImplicitTranspose(true);
+#endif
+
     // The first invocation of Setup() builds the hierarchy using the filtered
     // matrix. This build includes the grid transfers but not the creation of the
     // smoothers.
@@ -671,13 +679,21 @@ namespace Thyra {
     PFact->AddFactoryManager(M22);
     M.SetFactory("P", PFact);
 
+    RCP<MueLu::Factory > AcFact = rcp(new BlockedRAPFactory());
+#ifdef IMPLICIT_TRANSPOSE
+    M.SetFactory("R", Teuchos::null);
+
+    ParameterList RAPparams;
+    RAPparams.set("transpose: use implicit", true);
+    AcFact->SetParameterList(RAPparams);
+#else
     RCP<GenericRFactory> RFact = rcp(new GenericRFactory());
     RFact->SetFactory("P", PFact);
     M.SetFactory("R", RFact);
 
-    RCP<MueLu::Factory > AcFact = rcp(new BlockedRAPFactory());
-    AcFact->SetFactory("P", PFact);
     AcFact->SetFactory("R", RFact);
+#endif
+    AcFact->SetFactory("P", PFact);
     M.SetFactory("A", AcFact);
 
     // Smoothers will be set later
