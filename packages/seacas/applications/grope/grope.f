@@ -154,7 +154,7 @@ C .. Get filename from command line.  If not specified, emit error message
       if (narg .eq. 0) then
         CALL PRTERR ('FATAL', 'Filename not specified.')
         CALL PRTERR ('FATAL',
-     *    'Syntax is: "grope [-nomap node|element|all] filename"')
+     *    'Syntax is: "grope [-[no]map node|element|all] filename"')
         GOTO 120
       end if
       
@@ -166,9 +166,10 @@ C .. Get filename from command line.  If not specified, emit error message
          GOTO 120
       END IF
 
-C ... By default, map both nodes and elements
-      mapel = .true.
-      mapnd = .true.
+C ... By default, ultimately map both nodes and elements
+C     HOWEVER, in the transition time do not map either unless requested...
+      mapel = .false.
+      mapnd = .false.
 
       if (narg .gt. 1) then
         do i=1, narg-1, 2
@@ -184,20 +185,32 @@ C ... By default, map both nodes and elements
               mapnd = .false.
               mapel = .false.
             end if
+          else if (option(:lo) .eq. '-map' .or.
+     *      option(:lo) .eq. '--map') then
+            if (value(1:1) .eq. 'n' .or. value(1:1) .eq. 'N')
+     *        mapnd = .true.
+            if (value(1:1) .eq. 'e' .or. value(1:1) .eq. 'E')
+     *        mapel = .true.
+            if (value(1:1) .eq. 'a' .or. value(1:1) .eq. 'A') then
+              mapnd = .true.
+              mapel = .true.
+            end if
           end if
         end do
       end if
       
         write (*,9999)
  9999   FORMAT(/,
-     *    1x,'NOTE: This version of grope uses global ids for both',
-     *    ' node and element ids by default.',/,
+     *    1x,'NOTE: This version of grope has the option to use global',
+     *    ' ids for both node and element ids.',/,
      *    1x,'      To see the mapping from local to global, use',
      *    ' the commands:',/,
      *    1x,'          "LIST MAP" (element map), or ',
      *    '"LIST NODEMAP" (node map)',/,
      *    1x,'      To disable the maps and use local ids, restart',
      *    ' grope with "-nomap node|element|all"',//,
+     *    1x,'      To enable the maps and use global ids, restart',
+     *    ' grope with "-map node|element|all"',//,
      *    1x,'      Notify gdsjaar@sandia.gov if bugs found')
         
         if (mapel .and. mapnd) then
