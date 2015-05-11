@@ -173,13 +173,17 @@ mxArray* TpetraSystem<Scalar>::solve(RCP<ParameterList> params, RCP<Tpetra::CrsM
       RCP<Tpetra_MultiVector> lhs = rcp(new Tpetra_MultiVector(map, rhs->getNumVectors()));
       //rhs is initialized, lhs is not
       iters = 0;
-#ifdef VERBOSE_OUTPUT
-      params->get("Verbosity", Belos::Errors | Belos::Warnings | Belos::Debug | Belos::FinalSummary | Belos::IterationDetails | Belos::OrthoDetails | Belos::TimingDetails | Belos::StatusTestDetails);
+
+      // Default params
       params->get("Output Frequency", 1);
       params->get("Output Style", Belos::Brief);
+
+#ifdef VERBOSE_OUTPUT
+      params->get("Verbosity", Belos::Errors | Belos::Warnings | Belos::Debug | Belos::FinalSummary | Belos::IterationDetails | Belos::OrthoDetails | Belos::TimingDetails | Belos::StatusTestDetails);
 #else
-      params->get("Verbosity", Belos::Errors + Belos::Warnings);
+      params->get("Verbosity", Belos::Errors + Belos::Warnings + Belos::IterationDetails + Belos::Warnings + Belos::StatusTestDetails);
 #endif
+
       RCP<Belos::LinearProblem<Scalar, Tpetra_MultiVector, Tpetra_Operator>> problem = rcp(new Belos::LinearProblem<Scalar, Tpetra_MultiVector, Tpetra_Operator>(matrix, lhs, rhs));
       problem->setRightPrec(prec);
       bool set = problem->setProblem();
@@ -440,12 +444,15 @@ mxArray* EpetraSystem::solve(RCP<ParameterList> TPL, RCP<Epetra_CrsMatrix> matri
       Epetra_Map map = matrix->DomainMap();
       RCP<Epetra_MultiVector> rhs = loadEpetraMV(b);
       RCP<Epetra_MultiVector> lhs = rcp(new Epetra_MultiVector(map, rhs->NumVectors(), true));
-#ifdef VERBOSE_OUTPUT
-      TPL->get("Verbosity", Belos::Errors | Belos::Warnings | Belos::Debug | Belos::FinalSummary | Belos::IterationDetails | Belos::OrthoDetails | Belos::TimingDetails | Belos::StatusTestDetails);
+
+      // Default params
       TPL->get("Output Frequency", 1);
       TPL->get("Output Style", Belos::Brief);
+
+#ifdef VERBOSE_OUTPUT
+      TPL->get("Verbosity", Belos::Errors | Belos::Warnings | Belos::Debug | Belos::FinalSummary | Belos::IterationDetails | Belos::OrthoDetails | Belos::TimingDetails | Belos::StatusTestDetails);
 #else
-      TPL->get("Verbosity", Belos::Errors | Belos::Warnings);
+      TPL->get("Verbosity", Belos::Errors + Belos::Warnings + Belos::IterationDetails + Belos::Warnings + Belos::StatusTestDetails);
 #endif
       RCP<Belos::LinearProblem<double, Epetra_MultiVector, Epetra_Operator>> problem = rcp(new    Belos::LinearProblem<double, Epetra_MultiVector, Epetra_Operator>(matrix, lhs, rhs));
       RCP<Belos::EpetraPrecOp> epo = rcp(new Belos::EpetraPrecOp(prec));
