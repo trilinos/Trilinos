@@ -46,6 +46,7 @@
 #include <map>
 
 #include "Panzer_GeometricAggFieldPattern.hpp"
+#include "Panzer_NodalFieldPattern.hpp"
 
 #include "Teuchos_DefaultMpiComm.hpp"
 
@@ -1057,10 +1058,15 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns()
 
    // build the pattern for the ID layout on the mesh
    std::vector<RCP<const FieldPattern> > patVector;
-   RCP<GeometricAggFieldPattern> aggFieldPattern = Teuchos::rcp(new GeometricAggFieldPattern);;
    std::map<std::pair<std::string,std::string>,Teuchos::RCP<const FieldPattern> >::iterator f2p_itr;
    for(f2p_itr=fieldStringToPattern_.begin();f2p_itr!=fieldStringToPattern_.end();f2p_itr++)
       patVector.push_back(f2p_itr->second);
+
+   // if orientations are required, add the nodal field pattern to make it possible to compute them
+   if(requireOrientations_) 
+     patVector.push_back(Teuchos::rcp(new NodalFieldPattern(patVector[0]->getCellTopology())));
+
+   RCP<GeometricAggFieldPattern> aggFieldPattern = Teuchos::rcp(new GeometricAggFieldPattern);;
    aggFieldPattern->buildPattern(patVector);
 
    // setup connectivity mesh

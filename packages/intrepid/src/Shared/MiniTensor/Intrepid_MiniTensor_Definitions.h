@@ -204,27 +204,6 @@ struct dimension_string<4> {
   static string eval() {return string("4");}
 };
 
-// Needed to avoid type confusion when using Kokkos
-#ifdef HAVE_INTREPID_KOKKOSCORE
-
-#include<Kokkos_Core.hpp>
-
-template <typename A, typename B>
-struct apply_diff
-{
-  typedef typename Kokkos::Impl::enable_if<
-      !Kokkos::Impl::is_same<A, B>::value, A>::type type;
-};
-
-template <typename A, typename B, typename C>
-struct if_diff
-{
-  typedef typename Kokkos::Impl::enable_if<
-      !Kokkos::Impl::is_same<A, B>::value, C>::type type;
-};
-
-#endif // HAVE_INTREPID_KOKKOSCORE
-
 } // namespace Intrepid
 
 namespace Sacado {

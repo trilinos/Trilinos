@@ -1,0 +1,17 @@
+<ParameterList name="Inputs">
+    <Parameter name="Descent Type"                           type="string" value="Newton Krylov"       />
+    <Parameter name="Use Belos"                              type="bool"   value="true"                />
+    <Parameter name="Krylov Method"                          type="string" value="MINRES"              />
+    <Parameter name="Number of Stored Vectors"               type="int"    value="5"                   />
+    <Parameter name="Absolute Krylov Tolerance"              type="double" value="1.e-4"               />
+    <Parameter name="Relative Krylov Tolerance"              type="double" value="1.e-2"               />
+    <Parameter name="Maximum Number of Krylov Iterations"    type="int"    value="10"                  />
+    <Parameter name="Linesearch Type"                        type="string" value="Cubic Interpolation" />
+    <Parameter name="Linesearch Curvature Condition"         type="string" value="Wolfe"               />
+    <Parameter name="Maximum Number of Function Evaluations" type="int"    value="20"                  />
+    <Parameter name="Sufficient Decrease Parameter"          type="double" value="1.e-4"               />
+    <Parameter name="Curvature Conditions Parameter"         type="double" value="0.9"                 />
+    <Parameter name="Backtracking Rate"                      type="double" value="0.5"                 />
+    <Parameter name="Initial Linesearch Parameter"           type="double" value="1.0"                 />
+    <Parameter name="User Defined Linesearch Parameter"      type="bool"   value="false"               />
+</ParameterList>

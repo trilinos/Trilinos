@@ -70,6 +70,7 @@ class Side_Set: public Exo_Entity {
 
   EXOTYPE exodus_type() const;
   const char* label() const {return "Sideset";}
+  const char* short_label() const {return "sideset";}
 
   size_t num_dist_factors;
   

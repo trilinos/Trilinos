@@ -160,13 +160,13 @@ void updateSharingAndPrintStats(stk::mesh::unit_test::BulkDataTester &bulk)
     double startTime = stk::wall_time();
 
     bulk.my_update_sharing_after_change_entity_owner();
-    bulk.my_internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
+    bulk.my_internal_modification_end_for_change_entity_owner(stk::mesh::BulkData::MOD_END_SORT);
 
     double elapsedTime = stk::wall_time() - startTime;
     printPeformanceStats(elapsedTime, bulk.parallel());
 
     bulk.modification_begin();
-    bulk.my_internal_modification_end_for_change_entity_owner(true, stk::mesh::BulkData::MOD_END_SORT);
+    bulk.my_internal_modification_end_for_change_entity_owner(stk::mesh::BulkData::MOD_END_SORT);
 }
 
 TEST(CEOME, change_entity_owner_2Elem2ProcMove)

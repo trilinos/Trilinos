@@ -34,7 +34,6 @@
 
 #include <gtest/gtest.h>
 #include <stk_util/util/random_access_iterator_wrapper.hpp>
-#include "boost/iterator/iterator_facade.hpp"  // for iterator_facade, etc
 
 TEST( random_access_iterator_wrapper, basic )
 {
@@ -57,7 +56,5 @@ TEST( random_access_iterator_wrapper, basic )
       EXPECT_EQ(i[n],a[n]);
     }
   }
-
-
 
 }

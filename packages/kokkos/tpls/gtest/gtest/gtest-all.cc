@@ -3744,22 +3744,24 @@ namespace {
 // namespace.
 //
 // TestNameIs is copyable.
-class TestNameIs {
- public:
-  // Constructor.
-  //
-  // TestNameIs has NO default constructor.
-  explicit TestNameIs(const char* name)
-      : name_(name) {}
 
-  // Returns true iff the test name of test_info matches name_.
-  bool operator()(const TestInfo * test_info) const {
-    return test_info && test_info->name() == name_;
-  }
-
- private:
-  std::string name_;
-};
+//Commenting out this class since its not used and wherefor produces warnings
+// class TestNameIs {
+// public:
+//  // Constructor.
+//  //
+//  // TestNameIs has NO default constructor.
+//  explicit TestNameIs(const char* name)
+//      : name_(name) {}
+//
+//  // Returns true iff the test name of test_info matches name_.
+//  bool operator()(const TestInfo * test_info) const {
+//    return test_info && test_info->name() == name_;
+//  }
+//
+// private:
+//  std::string name_;
+//};
 
 }  // namespace
 
@@ -7904,7 +7906,7 @@ namespace internal {
 // of them.
 const char kPathSeparator = '\\';
 const char kAlternatePathSeparator = '/';
-const char kPathSeparatorString[] = "\\";
+//const char kPathSeparatorString[] = "\\";
 const char kAlternatePathSeparatorString[] = "/";
 # if GTEST_OS_WINDOWS_MOBILE
 // Windows CE doesn't have a current directory. You should not use
@@ -7918,7 +7920,7 @@ const char kCurrentDirectoryString[] = ".\\";
 # endif  // GTEST_OS_WINDOWS_MOBILE
 #else
 const char kPathSeparator = '/';
-const char kPathSeparatorString[] = "/";
+//const char kPathSeparatorString[] = "/";
 const char kCurrentDirectoryString[] = "./";
 #endif  // GTEST_OS_WINDOWS
 

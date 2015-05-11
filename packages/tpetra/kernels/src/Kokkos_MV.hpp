@@ -1,3 +1,13 @@
+
+//
+// WARNING: DO NOT INCLUDE THIS HEADER FILE.  DO NOT USE ANYTHING IN
+// IT.  DO NOT RELY ON IT EXISTING.  IT WILL GO AWAY VERY SOON.
+//
+// If you want vector and multivector computational kernels, look in
+// Kokkos_Blas1.hpp (for single-vector kernels) or Kokkos_Blas1_MV.hpp
+// (for single-vector and multiple-vector kernels).
+//
+
 #ifndef KOKKOS_MULTIVECTOR_H_
 #define KOKKOS_MULTIVECTOR_H_
 
@@ -38,7 +48,57 @@ struct MultiVectorStatic{
   MultiVectorStatic() {}
   ~MultiVectorStatic() {}
 };
-/*
+
+//------------------------------------------------------------------------------------------
+//------------------- Reciprocal element wise with threshold: x[i] = 1/x[i] ----------------
+//------------------------------------------------------------------------------------------
+
+template<class XVector>
+struct MV_ReciprocalThresholdSelfFunctor
+{
+  typedef typename XVector::execution_space           execution_space;
+  typedef typename XVector::size_type               size_type;
+  typedef typename XVector::non_const_value_type   value_type;
+  typedef Kokkos::Details::ArithTraits<value_type>        KAT;
+  typedef typename KAT::mag_type                     mag_type;
+
+  const XVector    m_x;
+  const value_type m_min_val;
+  const mag_type   m_min_val_mag;
+  const size_type  m_n;
+
+  MV_ReciprocalThresholdSelfFunctor(const XVector& x, const value_type& min_val, const size_type n) :
+    m_x(x), m_min_val(min_val), m_min_val_mag(KAT::abs(min_val)), m_n(n) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i) const
+  {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+    for(size_type k=0;k<m_n;k++) {
+      if (KAT::abs(m_x(i,k)) < m_min_val_mag)
+        m_x(i,k) = m_min_val;
+      else
+        m_x(i,k) = KAT::one() / m_x(i,k);
+    }
+  }
+};
+
+template<class XVector>
+XVector MV_ReciprocalThreshold( const XVector & x, const typename XVector::non_const_value_type& min_val )
+{
+  MV_ReciprocalThresholdSelfFunctor<XVector> op(x,min_val,x.dimension_1()) ;
+  Kokkos::parallel_for( x.dimension_0() , op );
+  return x;
+}
+
+//
+// USE NOTHING BELOW THIS LINE IN THIS FILE
+//
+
+#if 0
+
 /// \brief Functor for R.scale(array of alphas, MV X).
 ///
 /// R(i,j) = alphas[j] * X(i,j), subject to the usual BLAS rules if
@@ -219,10 +279,11 @@ MV_MulScalar (const RVector& r,
   return r;
 }
 
-/*------------------------------------------------------------------------------------------
- *-------------------------- Reciprocal element wise: y[i] = 1/x[i] ------------------------
- *------------------------------------------------------------------------------------------*/
-/*template<class RVector, class XVector>
+//------------------------------------------------------------------------------------------
+//-------------------------- Reciprocal element wise: y[i] = 1/x[i] ------------------------
+//------------------------------------------------------------------------------------------
+
+template<class RVector, class XVector>
 struct MV_ReciprocalFunctor
 {
   typedef typename XVector::execution_space        execution_space;
@@ -272,22 +333,7 @@ struct MV_ReciprocalSelfFunctor
 template<class RVector, class XVector>
 RVector MV_Reciprocal( const RVector & r, const XVector & x)
 {
-  // TODO: Add error check (didn't link for some reason?)
-  /*if(r.dimension_0() != x.dimension_0())
-    Kokkos::Impl::throw_runtime_exception("Kokkos::MV_Reciprocal -- dimension(0) of r and x don't match");
-  if(r.dimension_1() != x.dimension_1())
-    Kokkos::Impl::throw_runtime_exception("Kokkos::MV_Reciprocal -- dimension(1) of r and x don't match");*/
-
-  //TODO: Get 1D version done
-  /*if(r.dimension_1()==1) {
-    typedef View<typename RVector::value_type*,typename RVector::execution_space> RVector1D;
-    typedef View<typename XVector::const_value_type*,typename XVector::execution_space> XVector1D;
-
-    RVector1D r_1d = Kokkos::subview( r , ALL(),0 );
-    XVector1D x_1d = Kokkos::subview( x , ALL(),0 );
-    return V_MulScalar(r_1d,a,x_1d);
-  }*/
-/*  if(r==x) {
+  if(r==x) {
     MV_ReciprocalSelfFunctor<XVector> op(x,x.dimension_1()) ;
     Kokkos::parallel_for( x.dimension_0() , op );
     return r;
@@ -298,54 +344,11 @@ RVector MV_Reciprocal( const RVector & r, const XVector & x)
   return r;
 }
 
-/*------------------------------------------------------------------------------------------
- *------------------- Reciprocal element wise with threshold: x[i] = 1/x[i] ----------------
- *------------------------------------------------------------------------------------------*/
-template<class XVector>
-struct MV_ReciprocalThresholdSelfFunctor
-{
-  typedef typename XVector::execution_space           execution_space;
-  typedef typename XVector::size_type               size_type;
-  typedef typename XVector::non_const_value_type   value_type;
-  typedef Kokkos::Details::ArithTraits<value_type>        KAT;
-  typedef typename KAT::mag_type                     mag_type;
+//------------------------------------------------------------------------------------------
+//-------------------------- Abs element wise: y[i] = abs(x[i]) ------------------------
+//------------------------------------------------------------------------------------------
 
-  const XVector    m_x;
-  const value_type m_min_val;
-  const mag_type   m_min_val_mag;
-  const size_type  m_n;
-
-  MV_ReciprocalThresholdSelfFunctor(const XVector& x, const value_type& min_val, const size_type n) :
-    m_x(x), m_min_val(min_val), m_min_val_mag(KAT::abs(min_val)), m_n(n) {}
-  //--------------------------------------------------------------------------
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()( const size_type i) const
-  {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-    for(size_type k=0;k<m_n;k++) {
-      if (KAT::abs(m_x(i,k)) < m_min_val_mag)
-        m_x(i,k) = m_min_val;
-      else
-        m_x(i,k) = KAT::one() / m_x(i,k);
-    }
-  }
-};
-
-template<class XVector>
-XVector MV_ReciprocalThreshold( const XVector & x, const typename XVector::non_const_value_type& min_val )
-{
-  MV_ReciprocalThresholdSelfFunctor<XVector> op(x,min_val,x.dimension_1()) ;
-  Kokkos::parallel_for( x.dimension_0() , op );
-  return x;
-}
-
-/*------------------------------------------------------------------------------------------
- *-------------------------- Abs element wise: y[i] = abs(x[i]) ------------------------
- *------------------------------------------------------------------------------------------*/
-/*template<class RVector, class XVector>
+template<class RVector, class XVector>
 struct MV_AbsFunctor
 {
   typedef typename XVector::execution_space        execution_space;
@@ -395,22 +398,7 @@ struct MV_AbsSelfFunctor
 template<class RVector, class XVector>
 RVector MV_Abs( const RVector & r, const XVector & x)
 {
-  // TODO: Add error check (didn't link for some reason?)
-  /*if(r.dimension_0() != x.dimension_0())
-    Kokkos::Impl::throw_runtime_exception("Kokkos::MV_Abs -- dimension(0) of r and x don't match");
-  if(r.dimension_1() != x.dimension_1())
-    Kokkos::Impl::throw_runtime_exception("Kokkos::MV_Abs -- dimension(1) of r and x don't match");*/
-
-  //TODO: Get 1D version done
-  /*if(r.dimension_1()==1) {
-    typedef View<typename RVector::value_type*,typename RVector::execution_space> RVector1D;
-    typedef View<typename XVector::const_value_type*,typename XVector::execution_space> XVector1D;
-
-    RVector1D r_1d = Kokkos::subview( r , ALL(),0 );
-    XVector1D x_1d = Kokkos::subview( x , ALL(),0 );
-    return V_Abs(r_1d,x_1d);
-  }*/
-  /*if(r==x) {
+  if(r==x) {
     MV_AbsSelfFunctor<XVector> op(x,x.dimension_1()) ;
     Kokkos::parallel_for( x.dimension_0() , op );
     return r;
@@ -503,35 +491,19 @@ CVector MV_ElementWiseMultiply(
       BVector B
     )
 {
-  // TODO: Add error check (didn't link for some reason?)
-  /*if(r.dimension_0() != x.dimension_0())
-    Kokkos::Impl::throw_runtime_exception("Kokkos::MV_ElementWiseMultiply -- dimension(0) of r and x don't match");
-  if(r.dimension_1() != x.dimension_1())
-    Kokkos::Impl::throw_runtime_exception("Kokkos::MV_ElementWiseMultiply -- dimension(1) of r and x don't match");*/
-
-  //TODO: Get 1D version done
-  /*if(r.dimension_1()==1) {
-    typedef View<typename RVector::value_type*,typename RVector::execution_space> RVector1D;
-    typedef View<typename XVector::const_value_type*,typename XVector::execution_space> XVector1D;
-
-    RVector1D r_1d = Kokkos::subview( r , ALL(),0 );
-    XVector1D x_1d = Kokkos::subview( x , ALL(),0 );
-    return V_ElementWiseMultiply(r_1d,x_1d);
-  }*/
-
- /* MV_ElementWiseMultiplyFunctor<CVector,AVector,BVector> op(c,C,ab,A,B,C.dimension_1()) ;
+  MV_ElementWiseMultiplyFunctor<CVector,AVector,BVector> op(c,C,ab,A,B,C.dimension_1()) ;
   Kokkos::parallel_for( C.dimension_0() , op );
   return C;
 }
 
-/*------------------------------------------------------------------------------------------
- *-------------------------- Vector Add: r = a*x + b*y -------------------------------------
- *------------------------------------------------------------------------------------------*/
+//------------------------------------------------------------------------------------------
+//-------------------------- Vector Add: r = a*x + b*y -------------------------------------
+//------------------------------------------------------------------------------------------
 
-/* Variants of Functors with a and b being vectors. */
+// Variants of Functors with a and b being vectors.
 
 //Unroll for n<=16
-/*template<class RVector,class aVector, class XVector, class bVector, class YVector, int scalar_x, int scalar_y,int UNROLL>
+template<class RVector,class aVector, class XVector, class bVector, class YVector, int scalar_x, int scalar_y,int UNROLL>
 struct MV_AddUnrollFunctor
 {
   typedef typename RVector::execution_space        execution_space;
@@ -721,9 +693,9 @@ struct MV_AddVectorFunctor
   }
 };
 
-/* Variants of Functors with a and b being scalars. */
+// Variants of Functors with a and b being scalars.
 
-/*template<class RVector, class XVector, class YVector, int scalar_x, int scalar_y,int UNROLL>
+template<class RVector, class XVector, class YVector, int scalar_x, int scalar_y,int UNROLL>
 struct MV_AddUnrollFunctor<RVector,typename XVector::non_const_value_type, XVector, typename YVector::non_const_value_type,YVector,scalar_x,scalar_y,UNROLL>
 {
   typedef typename RVector::execution_space        execution_space;
@@ -823,7 +795,6 @@ struct MV_AddVectorFunctor<RVector,typename XVector::non_const_value_type, XVect
   size_type n;
 
   MV_AddVectorFunctor() {n=1;}
-  //--------------------------------------------------------------------------
 
   KOKKOS_INLINE_FUNCTION
   void operator()( const size_type i ) const
@@ -1298,8 +1269,6 @@ struct MV_DotProduct_Right_FunctorVector
   typedef typename YVector::const_type        y_const_type;
   x_const_type  m_x ;
   y_const_type  m_y ;
-
-  //--------------------------------------------------------------------------
 
   KOKKOS_INLINE_FUNCTION
   void operator()( const size_type i, value_type sum ) const
@@ -2248,10 +2217,11 @@ MV_Dot (const rVector& r,
   return r;
 }
 
-/*------------------------------------------------------------------------------------------
- *-------------------------- Compute Sum -------------------------------------------------
- *------------------------------------------------------------------------------------------*/
-/*template<class XVector>
+//------------------------------------------------------------------------------------------
+//-------------------------- Compute Sum -------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+template<class XVector>
 struct MV_Sum_Functor
 {
   typedef typename XVector::execution_space        execution_space;
@@ -2263,7 +2233,6 @@ struct MV_Sum_Functor
   size_type value_count;
 
   MV_Sum_Functor(XVector x):m_x(x),value_count(x.dimension_1()) {}
-  //--------------------------------------------------------------------------
 
   KOKKOS_INLINE_FUNCTION
   void operator()( const size_type i, value_type sum ) const
@@ -2320,10 +2289,11 @@ normVector MV_Sum(const normVector &r, const VectorType & x, int n = -1)
   return r;
 }
 
-/*------------------------------------------------------------------------------------------
- *-------------------------- Compute Norm1--------------------------------------------------
- *------------------------------------------------------------------------------------------*/
-/*template<class XVector>
+//------------------------------------------------------------------------------------------
+//-------------------------- Compute Norm1--------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+template<class XVector>
 struct MV_Norm1_Functor
 {
   typedef typename XVector::execution_space        execution_space;
@@ -2392,10 +2362,11 @@ normVector MV_Norm1(const normVector &r, const VectorType & x, int n = -1)
   return r;
 }
 
-/*------------------------------------------------------------------------------------------
- *-------------------------- Compute NormInf--------------------------------------------------
- *------------------------------------------------------------------------------------------*/
-/*template<class XVector>
+//------------------------------------------------------------------------------------------
+//-------------------------- Compute NormInf--------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+template<class XVector>
 struct MV_NormInf_Functor
 {
   typedef typename XVector::execution_space             execution_space;
@@ -2471,10 +2442,11 @@ normVector MV_NormInf(const normVector &r, const VectorType & x, int n = -1)
   return r;
 }
 
-/*------------------------------------------------------------------------------------------
- *-------------------------- Compute Weighted Dot-product (sum(x_i/w_i)^2)----------------------------------
- *------------------------------------------------------------------------------------------*/
-/*template<class WeightVector, class XVector,int WeightsRanks>
+//------------------------------------------------------------------------------------------
+//------------------------- Compute Weighted Dot-product (sum(x_i/w_i)^2)----------------------------------
+//------------------------------------------------------------------------------------------
+
+template<class WeightVector, class XVector,int WeightsRanks>
 struct MV_DotWeighted_Functor{};
 
 template<class WeightVector, class XVector>
@@ -2493,7 +2465,7 @@ struct MV_DotWeighted_Functor<WeightVector,XVector,1>
   size_type value_count;
 
   MV_DotWeighted_Functor(WeightVector w, XVector x):m_w(w),m_x(x),value_count(x.dimension_1()) {}
-  //--------------------------------------------------------------------------
+
   KOKKOS_INLINE_FUNCTION
   void operator()( const size_type i, value_type sum ) const
   {
@@ -2607,10 +2579,11 @@ MV_DotWeighted (const rVector &r,
   return r;
 }
 
-/*------------------------------------------------------------------------------------------
- *-------------------------- Multiply with scalar: y = a * x -------------------------------
- *------------------------------------------------------------------------------------------*/
-/*template<class RVector, class aVector, class XVector>
+//------------------------------------------------------------------------------------------
+//-------------------------- Multiply with scalar: y = a * x -------------------------------
+//------------------------------------------------------------------------------------------
+
+template<class RVector, class aVector, class XVector>
 struct V_MulScalarFunctor
 {
   typedef typename XVector::execution_space        execution_space;
@@ -2619,7 +2592,6 @@ struct V_MulScalarFunctor
   RVector m_r;
   typename XVector::const_type m_x ;
   typename aVector::const_type m_a ;
-  //--------------------------------------------------------------------------
 
   KOKKOS_INLINE_FUNCTION
   void operator()( const size_type i) const
@@ -2640,7 +2612,6 @@ struct V_MulScalarFunctorSelf
 
   XVector m_x;
   typename aVector::const_type m_a;
-  //--------------------------------------------------------------------------
 
   KOKKOS_INLINE_FUNCTION
   void operator()( const size_type i) const
@@ -2685,7 +2656,6 @@ struct V_MulScalarFunctor<RVector,typename XVector::non_const_value_type,XVector
   RVector m_r;
   typename XVector::const_type m_x;
   typename XVector::value_type m_a;
-  //--------------------------------------------------------------------------
 
   KOKKOS_INLINE_FUNCTION
   void operator() (const size_type i) const
@@ -2718,7 +2688,6 @@ struct V_MulScalarFunctorSelf<typename XVector::non_const_value_type,XVector>
   }
 };
 
-
 template<class RVector, class XVector>
 RVector V_MulScalar( const RVector & r, const typename XVector::non_const_value_type &a, const XVector & x)
 {
@@ -2750,7 +2719,6 @@ struct V_AddVectorFunctor
   const value_type m_a;
   const value_type m_b;
 
-  //--------------------------------------------------------------------------
   V_AddVectorFunctor(const RVector& r, const value_type& a,const XVector& x,const value_type& b,const YVector& y):
           m_r(r),m_x(x),m_y(y),m_a(a),m_b(b)
   { }
@@ -2804,6 +2772,7 @@ struct V_AddVectorSelfFunctor
       m_r(i) += m_a*m_x(i);
   }
 };
+
 template<class RVector, class XVector, class YVector, int doalpha, int dobeta>
 RVector V_AddVector( const RVector & r,const typename XVector::non_const_value_type &av,const XVector & x,
                 const typename XVector::non_const_value_type &bv, const YVector & y,int n=-1)
@@ -2909,7 +2878,6 @@ struct V_DotFunctor
   XVector  m_x ;
   YVector  m_y ;
 
-  //--------------------------------------------------------------------------
   V_DotFunctor(const XVector& x,const YVector& y):
     m_x(x),m_y(y)
   { }
@@ -3018,10 +2986,11 @@ V_DotWeighted (const WeightVector& w,
   return ret_val;
 }
 
-/*------------------------------------------------------------------------------------------
- *-------------------------- Compute Sum -------------------------------------------------
- *------------------------------------------------------------------------------------------*/
-/*template<class XVector>
+//------------------------------------------------------------------------------------------
+//-------------------------- Compute Sum -------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+template<class XVector>
 struct V_Sum_Functor
 {
   typedef typename XVector::execution_space        execution_space;
@@ -3069,10 +3038,11 @@ V_Sum (const VectorType& x, int n = -1)
   return ret_val;
 }
 
-/*------------------------------------------------------------------------------------------
- *-------------------------- Compute Norm1--------------------------------------------------
- *------------------------------------------------------------------------------------------*/
-/*template<class XVector>
+//------------------------------------------------------------------------------------------
+//-------------------------- Compute Norm1--------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+template<class XVector>
 struct V_Norm1_Functor
 {
   typedef typename XVector::execution_space        execution_space;
@@ -3084,7 +3054,7 @@ struct V_Norm1_Functor
   typename XVector::const_type m_x ;
 
   V_Norm1_Functor(XVector x):m_x(x) {}
-  //--------------------------------------------------------------------------
+
   KOKKOS_INLINE_FUNCTION
   void operator()( const size_type i, value_type& sum ) const
   {
@@ -3115,10 +3085,12 @@ V_Norm1( const VectorType & x, int n = -1)
   Kokkos::parallel_reduce (n, V_Norm1_Functor<VectorType> (x), ret_val);
   return ret_val;
 }
-/*------------------------------------------------------------------------------------------
- *-------------------------- Compute NormInf--------------------------------------------------
- *------------------------------------------------------------------------------------------*/
-/*template<class XVector>
+
+//------------------------------------------------------------------------------------------
+//-------------------------- Compute NormInf--------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+template<class XVector>
 struct V_NormInf_Functor
 {
   typedef typename XVector::execution_space             execution_space;
@@ -3170,10 +3142,11 @@ V_NormInf (const VectorType& x, int n = -1)
   return ret_val;
 }
 
-/*------------------------------------------------------------------------------------------
- *-------------------------- Reciprocal element wise: y[i] = 1/x[i] ------------------------
- *------------------------------------------------------------------------------------------*/
-/*template<class RVector, class XVector>
+//------------------------------------------------------------------------------------------
+//-------------------------- Reciprocal element wise: y[i] = 1/x[i] ------------------------
+//------------------------------------------------------------------------------------------
+
+template<class RVector, class XVector>
 struct V_ReciprocalFunctor
 {
   typedef typename XVector::execution_space        execution_space;
@@ -3213,13 +3186,7 @@ struct V_ReciprocalSelfFunctor
 template<class RVector, class XVector>
 RVector V_Reciprocal( const RVector & r, const XVector & x)
 {
-  // TODO: Add error check (didn't link for some reason?)
-  /*if(r.dimension_0() != x.dimension_0())
-    Kokkos::Impl::throw_runtime_exception("Kokkos::MV_Reciprocal -- dimension(0) of r and x don't match");
-  */
-
-
-/*  if(r==x) {
+  if(r==x) {
     V_ReciprocalSelfFunctor<XVector> op(x) ;
     Kokkos::parallel_for( x.dimension_0() , op );
     return r;
@@ -3230,9 +3197,10 @@ RVector V_Reciprocal( const RVector & r, const XVector & x)
   return r;
 }
 
-/*------------------------------------------------------------------------------------------
- *------------------- Reciprocal element wise with threshold: x[i] = 1/x[i] ----------------
- *------------------------------------------------------------------------------------------*/
+//------------------------------------------------------------------------------------------
+//------------------- Reciprocal element wise with threshold: x[i] = 1/x[i] ----------------
+//------------------------------------------------------------------------------------------
+
 template<class XVector>
 struct V_ReciprocalThresholdSelfFunctor
 {
@@ -3248,7 +3216,6 @@ struct V_ReciprocalThresholdSelfFunctor
 
   V_ReciprocalThresholdSelfFunctor(const XVector& x, const value_type& min_val) :
     m_x(x), m_min_val(min_val), m_min_val_mag(KAT::abs(min_val)) {}
-  //--------------------------------------------------------------------------
 
   KOKKOS_INLINE_FUNCTION
   void operator()( const size_type i) const
@@ -3267,7 +3234,7 @@ XVector V_ReciprocalThreshold( const XVector & x, const typename XVector::non_co
   Kokkos::parallel_for( x.dimension_0() , op );
   return x;
 }
-/*
+
 //! Functor for element-wise absolute value: r(i) = abs(x(i))
 template<class RVector, class XVector>
 struct V_AbsFunctor
@@ -3400,7 +3367,10 @@ V_ElementWiseMultiply (const typename CVector::const_value_type& c,
     Kokkos::parallel_for (C.dimension_0 (), op);
   }
   return C;
-}*/
+}
+
+#endif // 0
 
 } // namespace Kokkos
-#endif /* KOKKOS_MULTIVECTOR_H_ */
+
+#endif // KOKKOS_MULTIVECTOR_H_

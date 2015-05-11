@@ -41,11 +41,20 @@
 //@HEADER
 */
 
+/// \file Kokkos_Sparse_CrsMatrix.hpp
+/// \brief Local sparse matrix interface
+///
+/// This file provides KokkosSparse::CrsMatrix.  This implements a
+/// local (no MPI) sparse matrix stored in compressed row sparse
+/// ("Crs") format.
+
 #ifndef KOKKOS_SPARSE_CRSMATRIX_HPP_
 #define KOKKOS_SPARSE_CRSMATRIX_HPP_
-#include <stdexcept>
+
 #include <Kokkos_Core.hpp>
 #include <Kokkos_StaticCrsGraph.hpp>
+#include <sstream>
+#include <stdexcept>
 
 #ifdef KOKKOS_HAVE_CXX11
 #include <type_traits>
@@ -54,11 +63,33 @@
 
 namespace KokkosSparse {
 
-// Blas like Transpose / Conjugate attributes for sparse kernels
-static char Transpose[] = "T";
-static char Conjugate[] = "C";
-static char ConjugateTranspose[] = "H";
-static char NoTranspose[] = "N";
+// Macro that tells GCC not to worry if a variable isn't being used.
+// Generalized attributes were not implemented in GCC until 4.8:
+//
+// https://gcc.gnu.org/gcc-4.7/cxx0x_status.html
+// https://gcc.gnu.org/gcc-4.8/cxx0x_status.html
+//
+// Thus, we can't use [[unused]]; we have to use the older GCC syntax
+// for variable attributes.  Be careful also of compilers that define
+// the __GNUC__ macro but might not necessarily actually be GCC
+// compliant.
+#if defined(__GNUC__) && ! defined(TPETRAKERNELS_UNUSED_ATTRIBUTE)
+#  define TPETRAKERNELS_UNUSED_ATTRIBUTE __attribute__((unused))
+#else
+#  define TPETRAKERNELS_UNUSED_ATTRIBUTE
+#endif // __GNUC__
+
+//! String that tells sparse kernels to use the transpose of the matrix.
+static char TPETRAKERNELS_UNUSED_ATTRIBUTE Transpose[] = "T";
+/// \brief String that tells sparse kernels to use the conjugate (NOT
+///   transpose) of the matrix.
+static char TPETRAKERNELS_UNUSED_ATTRIBUTE Conjugate[] = "C";
+/// \brief String that tells sparse kernels to use the conjugate
+///   transpose of the matrix.
+static char TPETRAKERNELS_UNUSED_ATTRIBUTE ConjugateTranspose[] = "H";
+/// \brief String that tells sparse kernels not to use the transpose
+///   or conjugate of the matrix.
+static char TPETRAKERNELS_UNUSED_ATTRIBUTE NoTranspose[] = "N";
 
 template<class DeviceType>
 inline int RowsPerThread(const int NNZPerRow) {

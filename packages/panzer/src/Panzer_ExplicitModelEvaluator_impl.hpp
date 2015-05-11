@@ -104,6 +104,13 @@ createOutArgs() const
 }
 
 template<typename Scalar>
+Teuchos::RCP<panzer::ModelEvaluator<Scalar> > ExplicitModelEvaluator<Scalar>::
+getPanzerUnderlyingModel()
+{
+  return Teuchos::rcp_dynamic_cast<panzer::ModelEvaluator<Scalar> >(this->getNonconstUnderlyingModel());
+}
+
+template<typename Scalar>
 void ExplicitModelEvaluator<Scalar>::
 evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
               const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
@@ -142,7 +149,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
   if(f!=Teuchos::null) {
     if(invMassMatrix_==Teuchos::null || constantMassMatrix_==false)
-      buildInverseMassMatrix();
+      buildInverseMassMatrix(inArgs);
 
     // invert the mass matrix
     Thyra::apply(*invMassMatrix_,Thyra::NOTRANS,*scrap_f_,f.ptr()); 
@@ -151,7 +158,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
 template<typename Scalar>
 void ExplicitModelEvaluator<Scalar>::
-buildInverseMassMatrix() const
+buildInverseMassMatrix(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs) const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
   using Teuchos::RCP;
@@ -170,11 +177,11 @@ buildInverseMassMatrix() const
   
   // request only the mass matrix from the physics
   // Model evaluator builds: alpha*u_dot + beta*F(u) = 0
-  MEB::InArgs<Scalar>  inArgs  = me->createInArgs();
-  inArgs.set_x(zero_);
-  inArgs.set_x_dot(zero_);
-  inArgs.set_alpha(-1.0);
-  inArgs.set_beta(0.0);
+  MEB::InArgs<Scalar>  inArgs_new  = me->createInArgs();
+  inArgs_new.setArgs(inArgs);
+  inArgs_new.set_x_dot(zero_);
+  inArgs_new.set_alpha(-1.0);
+  inArgs_new.set_beta(0.0);
 
   // set the one time beta to ensure dirichlet conditions
   // are correctly included in the mass matrix: do it for
@@ -195,7 +202,7 @@ buildInverseMassMatrix() const
   outArgs.set_W_op(mass);
 
   // this will fill the mass matrix operator 
-  me->evalModel(inArgs,outArgs);
+  me->evalModel(inArgs_new,outArgs);
 
   // Teuchos::RCP<const Epetra_CrsMatrix> crsMat = Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*mass));
   // EpetraExt::RowMatrixToMatrixMarketFile("expmat.mm",*crsMat);

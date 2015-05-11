@@ -276,7 +276,8 @@ int main(int argc, char *argv[]) {
           for(int i4 =0; i4 < dim4; i4++) { 
             multiIndex[4] = i4;
             
-  //          aValue = myTensorContainer.getValue(multiIndex);
+            //aValue = myTensorContainer.getValue(multiIndex);
+            myTensorContainer.getValue(multiIndex); 
             myTensorContainer.setValue(999.999,multiIndex);
             
           }

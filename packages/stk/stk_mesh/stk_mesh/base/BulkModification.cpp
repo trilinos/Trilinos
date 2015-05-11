@@ -147,7 +147,7 @@ void find_closure( const BulkData & bulk,
   EntityLess entless(bulk);
   std::set<Entity,EntityLess>     temp_entities_closure(entless);
 
-  const bool bulk_in_modifiable_state = bulk.synchronized_state() != BulkData::SYNCHRONIZED;
+  const bool bulk_in_modifiable_state = !bulk.in_synchronized_state();
   const size_t num_ghost_entities = bulk_in_modifiable_state ? 0 : count_ghost_entities(bulk, entities);
 
   const bool local_bad_input = bulk_in_modifiable_state || (0 < num_ghost_entities);

@@ -57,11 +57,11 @@ implicit none
 
 integer(Zoltan_INT), parameter :: MAX_EB_NAME_LEN = 32 ! chars for element block
 
-!/*
-! * Structure used to describe an element. Each processor will
-! * allocate an array of these structures.
+!
+!  Structure used to describe an element. Each processor will
+!  allocate an array of these structures.
 !   Moved here from dr_consts.f90 so that User_Data can use it
-! */
+! 
 type ELEM_INFO
   integer(Zoltan_INT) :: border   ! set to 1 if this element is a border element
   integer(Zoltan_INT) :: globalID ! Global ID of this element; local ID is the
@@ -94,10 +94,8 @@ type ELEM_INFO
   integer(Zoltan_INT) :: adj_len ! allocated length of adj/adj_proc/edge_wgt arrays
 end type
 
-!/*
-! * structure for general mesh information
-! */
-!/* Structure used to store information about the mesh */
+!
+! Structure used to store information about the mesh
 type MESH_INFO
   integer(Zoltan_INT) :: num_nodes     ! number of nodes on this processor
   integer(Zoltan_INT) :: num_elems     ! number of elements on this processor

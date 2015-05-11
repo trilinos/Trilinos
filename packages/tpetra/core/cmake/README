@@ -1,0 +1,78 @@
+Explicit template instantiation
+===============================
+
+ETI stands for "explicit template instantiation."  Trilinos has the
+option to enable ETI.  If ETI is enabled, Tpetra instantiates its
+classes using macros.  Tpetra has both "class macros," and "type
+combination macros."  This directory has CMake logic to generate the
+latter macros.
+
+Class macros
+------------
+
+Each class for which Tpetra does ETI defines its own macro(s).  These
+macros take as arguments all the template parameters (possibly not
+counting template parameters whose default values are always used).
+For an example, see TPETRA_MULTIVECTOR_INSTANT at the bottom of
+../src/Tpetra_MultiVector_def.hpp.
+
+I call these macros "class macros," because most of them instantiate
+templated classes.  Some of them instead instantiate templated
+_methods_ of templated classes, but I still call all of these macros
+"class macros."
+
+Type combination macros
+-----------------------
+
+Tpetra does explicit instantiation over different "type combinations"
+-- that is, over different combinations of template parameters.
+Tpetra's CMake logic decides at configure time (i.e., when running
+CMake) which combinations to use.  CMake logic in _this_ directory
+creates macros which iterate over subsets ("slices") of these type
+combinations.  As a result, I call these macros "type combination
+macros."
+
+You can find the CMake code that generates type combination macros in
+tpetra/core/cmake/ExplicitInstantiationSupport.cmake.
+TpetraCore_ETIHelperMacros.h.in (in that directory) gets turned into
+TpetraCore_ETIHelperMacros.h, which contains the generated macros.
+
+Macros of the form TPETRA_INSTANTIATE_SLGN, where SLGN is some
+permutation of the letters S, L, G, N, P, and T, instantiate over all
+enabled combinations of the following:
+
+  S: Scalar type
+  L: Local ordinal type
+  G: Global ordinal type
+  N: Node type
+  P: Packet type (in Tpetra::DistObject)
+  T: Special case for some templated methods of templated classes
+
+The *_NO_ORDINAL_SCALAR macros iterate over all Scalar (S) types that
+are NOT also global ordinal (GO) types.  This is useful because
+Tpetra::MultiVector and Tpetra::Vector get instantiated for S = GO as
+well as the usual set of GO types.  (S == GO is useful for certain
+communication patterns.)
+
+The *_NOGPU macros are a relic of the old ("classic") version of
+Tpetra.  Tpetra's old GPU support (KokkosClassic::ThrustGPUNode) did
+not work for certain Scalar types, which the *_NOGPU macros excluded.
+We still have the option to use this idea later if users require ETI
+for types that CUDA (or other future programming models that Tpetra
+might support) just can't build.  This scenario is unlikely, however,
+given that Tpetra depends on Kokkos, and that Kokkos now has support
+for atomic updates of arbitrary-length types.
+
+The *_CONVERT_* macros only instantiate Tpetra::CrsMatrix::convert.
+This is a templated instance method on CrsMatrix<SIN, ...> which
+returns a new CrsMatrix<SOUT, ...>.  "SSL" stands for "SOUT, SIN, LO".
+
+The use case for ETI macros which do not cover all template parameters
+of a Tpetra class, is first to define a helper macro which fixes the
+not-covered macros, then invoke that helper macro in the ETI macro.
+For example:
+
+#define INSTMACRO_INT_LONG_CUDA(S) \
+  TPETRA_CRSMATRIX_INSTANT( S, int, long, Kokkos::Compat::Kokkos::CudaWrapperNode )
+
+TPETRA_INSTANTIATE_S( INSTMACRO_INT_LONG_CUDA )

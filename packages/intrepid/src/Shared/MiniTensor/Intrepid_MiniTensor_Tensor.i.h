@@ -86,7 +86,7 @@ Tensor<T, N>::Tensor(Index const dimension, ComponentValue const value) :
 //  Create tensor from array
 //
 //
-#ifdef HAVE_INTREPID_KOKKOSCORE
+#if defined(HAVE_INTREPID_KOKKOSCORE)
 template<typename T, Index N>
 template<class ArrayT, typename iType>
 inline
@@ -100,7 +100,8 @@ template<typename T, Index N>
 template<class ArrayT, typename iType>
 inline
 Tensor<T, N>::Tensor(
-    typename apply_diff<ArrayT, Index>::type & data,
+    typename Kokkos::Impl::enable_if<
+    !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
     iType index1,
     iType index2) :
     TensorBase<T, Store>::TensorBase(N, ORDER, data, index1, index2)
@@ -112,7 +113,8 @@ template<typename T, Index N>
 template<class ArrayT, typename iType>
 inline
 Tensor<T, N>::Tensor(
-    typename apply_diff<ArrayT, Index>::type & data,
+    typename Kokkos::Impl::enable_if<
+    !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
     iType index1,
     iType index2,
     iType index3) :
@@ -204,7 +206,8 @@ template<class ArrayT, typename iType>
 inline
 Tensor<T, N>::Tensor(
     Index const dimension,
-    typename apply_diff<ArrayT, Index>::type & data,
+    typename Kokkos::Impl::enable_if<
+    !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
     iType index1,
     iType index2) :
     TensorBase<T, Store>::TensorBase(dimension, ORDER, data, index1, index2)
@@ -545,10 +548,12 @@ Tensor<T, N>::fill(T const & s)
 //
 // Fill components from array defined by pointer.
 //
+#if defined(HAVE_INTREPID_KOKKOSCORE)
 template<typename T, Index N>
 template<class ArrayT, typename iType>
 inline
-typename if_diff<ArrayT, T*, void>::type
+typename Kokkos::Impl::enable_if<
+!Kokkos::Impl::is_same<ArrayT, T*>::value, void>::type
 Tensor<T, N>::fill(ArrayT & data, 
             iType index1)
 {
@@ -630,7 +635,7 @@ Tensor<T, N>::fill(
       index6);
   return;
 }
-
+#endif
 template<typename T, Index N>
 inline
 void

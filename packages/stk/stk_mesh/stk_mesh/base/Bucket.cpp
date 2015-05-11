@@ -314,6 +314,80 @@ Bucket::~Bucket()
   m_mesh.destroy_bucket_callback(m_entity_rank, *this, m_capacity);
 }
 
+
+void Bucket::change_existing_connectivity(unsigned bucket_ordinal, stk::mesh::Entity* new_nodes)
+{
+    unsigned num_nodes = this->num_nodes(bucket_ordinal);
+    Entity *nodes=0;
+    if (m_node_kind == FIXED_CONNECTIVITY)
+    {
+        nodes = m_fixed_node_connectivity.begin(bucket_ordinal);
+    }
+    else
+    {
+        nodes = m_dynamic_node_connectivity.begin(bucket_ordinal);
+    }
+
+    for(unsigned i=0;i<num_nodes;++i)
+    {
+        nodes[i] = new_nodes[i];
+    }
+}
+
+void Bucket::change_existing_permutation_for_connected_element(unsigned bucket_ordinal_of_lower_ranked_entity, unsigned elem_connectivity_ordinal, stk::mesh::Permutation permut)
+{
+    stk::mesh::Permutation *perms=0;
+    if (m_element_kind == FIXED_CONNECTIVITY)
+    {
+        perms = m_fixed_element_connectivity.begin_permutations(bucket_ordinal_of_lower_ranked_entity);
+    }
+    else
+    {
+        perms = m_dynamic_element_connectivity.begin_permutations(bucket_ordinal_of_lower_ranked_entity);
+    }
+
+    if (perms)
+    {
+        perms[elem_connectivity_ordinal] = permut;
+    }
+}
+
+void Bucket::change_existing_permutation_for_connected_face(unsigned bucket_ordinal_of_higher_ranked_entity, unsigned face_connectivity_ordinal, stk::mesh::Permutation permut)
+{
+    stk::mesh::Permutation *perms=0;
+    if (m_face_kind == FIXED_CONNECTIVITY)
+    {
+        perms = m_fixed_face_connectivity.begin_permutations(bucket_ordinal_of_higher_ranked_entity);
+    }
+    else
+    {
+        perms = m_dynamic_face_connectivity.begin_permutations(bucket_ordinal_of_higher_ranked_entity);
+    }
+
+    if (perms)
+    {
+        perms[face_connectivity_ordinal] = permut;
+    }
+}
+
+void Bucket::change_existing_permutation_for_connected_edge(unsigned bucket_ordinal_of_higher_ranked_entity, unsigned edge_connectivity_ordinal, stk::mesh::Permutation permut)
+{
+    stk::mesh::Permutation *perms=0;
+    if (m_edge_kind == FIXED_CONNECTIVITY)
+    {
+        perms = m_fixed_edge_connectivity.begin_permutations(bucket_ordinal_of_higher_ranked_entity);
+    }
+    else
+    {
+        perms = m_dynamic_edge_connectivity.begin_permutations(bucket_ordinal_of_higher_ranked_entity);
+    }
+
+    if (perms)
+    {
+        perms[edge_connectivity_ordinal] = permut;
+    }
+}
+
 bool Bucket::member( const Part & part ) const
 {
   const unsigned * const i_beg = key() + 1 ;

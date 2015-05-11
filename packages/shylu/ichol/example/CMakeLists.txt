@@ -29,6 +29,21 @@ TRIBITS_ADD_EXECUTABLE(
   COMM serial mpi
   )
 
+# DenseMatrix data structure examples
+# ===================================
+
+TRIBITS_ADD_EXECUTABLE(
+  dense_matrix_base
+  SOURCES dense_matrix_base.cpp
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE(
+  dense_matrix_view
+  SOURCES dense_matrix_view.cpp
+  COMM serial mpi
+  )
+
 # TPL library interface examples
 # ==============================
 
@@ -57,8 +72,14 @@ TRIBITS_ADD_EXECUTABLE(
 # ===================
 
 TRIBITS_ADD_EXECUTABLE(
-  partition
-  SOURCES partition.cpp
+  crs_matrix_partition
+  SOURCES crs_matrix_partition.cpp
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE(
+  dense_matrix_partition
+  SOURCES dense_matrix_partition.cpp
   COMM serial mpi
   )
 
@@ -117,20 +138,35 @@ TRIBITS_ADD_EXECUTABLE(
 # ============
 
 TRIBITS_ADD_EXECUTABLE(
-  ichol_right_unblocked
-  SOURCES ichol_right_unblocked.cpp
+  ichol_unblocked
+  SOURCES ichol_unblocked.cpp
   COMM serial mpi
   )
 
 TRIBITS_ADD_EXECUTABLE(
-  ichol_right_blocked
-  SOURCES ichol_right_blocked.cpp
+  ichol_blocked
+  SOURCES ichol_blocked.cpp
   COMM serial mpi
   )
 
 TRIBITS_ADD_EXECUTABLE(
-  ichol_right_by_blocks
-  SOURCES ichol_right_by_blocks.cpp
+  ichol_by_blocks
+  SOURCES ichol_by_blocks.cpp
+  COMM serial mpi
+  )
+
+# Triangular solve
+# ================
+
+TRIBITS_ADD_EXECUTABLE(
+  tri_solve_unblocked
+  SOURCES tri_solve_unblocked.cpp
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE(
+  tri_solve_blocked
+  SOURCES tri_solve_blocked.cpp
   COMM serial mpi
   )
 

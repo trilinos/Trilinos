@@ -69,7 +69,6 @@ struct MV_Abs_Functor
   MV_Abs_Functor (const RMV& R, const XMV& X) :
     numCols (X.dimension_1 ()), R_ (R), X_ (X)
   {
-#ifdef KOKKOS_HAVE_CXX11
     static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::Impl::"
                    "MV_Abs_Functor: RMV is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
@@ -78,7 +77,6 @@ struct MV_Abs_Functor
                    "MV_Abs_Functor: RMV is not rank 2");
     static_assert (XMV::rank == 2, "KokkosBlas::Impl::"
                    "MV_Abs_Functor: XMV is not rank 2");
-#endif // KOKKOS_HAVE_CXX11
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -107,12 +105,10 @@ struct MV_AbsSelf_Functor
   MV_AbsSelf_Functor (const RMV& R) :
     numCols (R.dimension_1 ()), R_ (R)
   {
-#ifdef KOKKOS_HAVE_CXX11
     static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::Impl::"
                    "MV_Abs_Functor: RMV is not a Kokkos::View.");
     static_assert (RMV::rank == 2, "KokkosBlas::Impl::"
                    "MV_Abs_Functor: RMV is not rank 2");
-#endif // KOKKOS_HAVE_CXX11
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -140,7 +136,6 @@ struct V_Abs_Functor
 
   V_Abs_Functor (const RV& R, const XV& X) : R_ (R), X_ (X)
   {
-#ifdef KOKKOS_HAVE_CXX11
     static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::Impl::"
                    "V_Abs_Functor: RV is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<XV>::value, "KokkosBlas::Impl::"
@@ -149,7 +144,6 @@ struct V_Abs_Functor
                    "V_Abs_Functor: RV is not rank 1");
     static_assert (XV::rank == 1, "KokkosBlas::Impl::"
                    "V_Abs_Functor: XV is not rank 1");
-#endif // KOKKOS_HAVE_CXX11
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -171,12 +165,10 @@ struct V_AbsSelf_Functor
 
   V_AbsSelf_Functor (const RV& R) : R_ (R)
   {
-#ifdef KOKKOS_HAVE_CXX11
     static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::Impl::"
                    "V_Abs_Functor: RV is not a Kokkos::View.");
     static_assert (RV::rank == 1, "KokkosBlas::Impl::"
                    "V_Abs_Functor: RV is not rank 1");
-#endif // KOKKOS_HAVE_CXX11
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -192,7 +184,6 @@ template<class RMV, class XMV, class SizeType>
 void
 MV_Abs_Generic (const RMV& R, const XMV& X)
 {
-#ifdef KOKKOS_HAVE_CXX11
   static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::Impl::"
                  "MV_Abs_Generic: RMV is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
@@ -201,7 +192,7 @@ MV_Abs_Generic (const RMV& R, const XMV& X)
                  "MV_Abs_Generic: RMV is not rank 2");
   static_assert (XMV::rank == 2, "KokkosBlas::Impl::"
                  "MV_Abs_Generic: XMV is not rank 2");
-#endif // KOKKOS_HAVE_CXX11
+
   typedef typename XMV::execution_space execution_space;
   const SizeType numRows = X.dimension_0 ();
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
@@ -221,7 +212,6 @@ template<class RV, class XV, class SizeType>
 void
 V_Abs_Generic (const RV& R, const XV& X)
 {
-#ifdef KOKKOS_HAVE_CXX11
   static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::Impl::"
                  "V_Abs_Generic: RV is not a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<XV>::value, "KokkosBlas::Impl::"
@@ -230,7 +220,7 @@ V_Abs_Generic (const RV& R, const XV& X)
                  "V_Abs_Generic: RV is not rank 1");
   static_assert (XV::rank == 1, "KokkosBlas::Impl::"
                  "V_Abs_Generic: XV is not rank 1");
-#endif // KOKKOS_HAVE_CXX11
+
   typedef typename XV::execution_space execution_space;
   const SizeType numRows = X.dimension_0 ();
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
@@ -255,7 +245,6 @@ struct Abs<RMV, XMV, 2> {
 
   static void abs (const RMV& R, const XMV& X)
   {
-#ifdef KOKKOS_HAVE_CXX11
     static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::Impl::"
                    "Abs<2-D>: RMV is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
@@ -264,7 +253,7 @@ struct Abs<RMV, XMV, 2> {
                    "RMV is not rank 2.");
     static_assert (XMV::rank == 2, "KokkosBlas::Impl::Abs<2-D>: "
                    "XMV is not rank 2.");
-#endif // KOKKOS_HAVE_CXX11
+
     const size_type numRows = X.dimension_0 ();
     const size_type numCols = X.dimension_1 ();
     if (numRows < static_cast<size_type> (INT_MAX) &&
@@ -287,7 +276,6 @@ struct Abs<RMV, XMV, 1>
 
   static void abs (const RMV& R, const XMV& X)
   {
-#ifdef KOKKOS_HAVE_CXX11
     static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::Impl::"
                    "Abs<1-D>: RMV is not a Kokkos::View.");
     static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
@@ -296,7 +284,6 @@ struct Abs<RMV, XMV, 1>
                    "RMV is not rank 1.");
     static_assert (XMV::rank == 1, "KokkosBlas::Impl::Abs<1-D>: "
                    "XMV is not rank 1.");
-#endif // KOKKOS_HAVE_CXX11
 
     const size_type numRows = X.dimension_0 ();
 
@@ -311,166 +298,119 @@ struct Abs<RMV, XMV, 1>
   }
 };
 
+//
+// Macro for declaration of full specialization of
+// KokkosBlas::Impl::Abs for rank == 2.  This is NOT for users!!!  All
+// the declarations of full specializations go in this header file.
+// We may spread out definitions (see _DEF macro below) across one or
+// more .cpp files.
+//
+#define KOKKOSBLAS_IMPL_MV_ABS_RANK2_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+template<> \
+struct Abs<Kokkos::View<SCALAR**, \
+                        LAYOUT, \
+                        Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                        Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                        Kokkos::Impl::ViewDefault>, \
+           Kokkos::View<const SCALAR**, \
+                        LAYOUT, \
+                        Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                        Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                        Kokkos::Impl::ViewDefault>, \
+            2> \
+{ \
+  typedef Kokkos::View<SCALAR**, \
+                       LAYOUT, \
+                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                       Kokkos::Impl::ViewDefault> RMV; \
+  typedef Kokkos::View<const SCALAR**, \
+                       LAYOUT, \
+                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                       Kokkos::Impl::ViewDefault> XMV; \
+  typedef XMV::size_type size_type; \
+  \
+  static void abs (const RMV& R, const XMV& X); \
+};
+
+//
+// Declarations of full specializations of Impl::Abs for rank == 2.
+// Their definitions go in .cpp file(s) in this source directory.
+//
 
 #ifdef KOKKOS_HAVE_SERIAL
 
-template<>
-struct Abs<Kokkos::View<double**,
-                         Kokkos::LayoutLeft,
-                         Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                         Kokkos::Impl::ViewDefault>,
-            Kokkos::View<const double**,
-                         Kokkos::LayoutLeft,
-                         Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                         Kokkos::Impl::ViewDefault>,
-            2>
-{
-  typedef Kokkos::View<double**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> RMV;
-  typedef Kokkos::View<double**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> XMV;
-  typedef XMV::size_type size_type;
-
-  static void abs (const RMV& R, const XMV& X);
-};
+KOKKOSBLAS_IMPL_MV_ABS_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
 
 #endif // KOKKOS_HAVE_SERIAL
 
 #ifdef KOKKOS_HAVE_OPENMP
 
-template<>
-struct Abs<Kokkos::View<double**,
-                         Kokkos::LayoutLeft,
-                         Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                         Kokkos::Impl::ViewDefault>,
-            Kokkos::View<const double**,
-                         Kokkos::LayoutLeft,
-                         Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                         Kokkos::Impl::ViewDefault>,
-           2>
-{
-  typedef Kokkos::View<double**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> RMV;
-  typedef Kokkos::View<double**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> XMV;
-  typedef XMV::size_type size_type;
-
-  static void abs (const RMV& R, const XMV& X);
-};
+KOKKOSBLAS_IMPL_MV_ABS_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
 
 #endif // KOKKOS_HAVE_OPENMP
 
 #ifdef KOKKOS_HAVE_PTHREAD
 
-template<>
-struct Abs<Kokkos::View<double**,
-                         Kokkos::LayoutLeft,
-                         Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                         Kokkos::Impl::ViewDefault>,
-            Kokkos::View<const double**,
-                         Kokkos::LayoutLeft,
-                         Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                         Kokkos::Impl::ViewDefault>,
-           2>
-{
-  typedef Kokkos::View<double**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> RMV;
-  typedef Kokkos::View<double**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> XMV;
-  typedef XMV::size_type size_type;
-
-  static void abs (const RMV& R, const XMV& X);
-};
+KOKKOSBLAS_IMPL_MV_ABS_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
 
 #endif // KOKKOS_HAVE_PTHREAD
 
 #ifdef KOKKOS_HAVE_CUDA
 
-template<>
-struct Abs<Kokkos::View<double**,
-                         Kokkos::LayoutLeft,
-                         Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                         Kokkos::Impl::ViewDefault>,
-            Kokkos::View<const double**,
-                         Kokkos::LayoutLeft,
-                         Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                         Kokkos::Impl::ViewDefault>,
-           2>
-{
-  typedef Kokkos::View<double**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> RMV;
-  typedef Kokkos::View<double**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> XMV;
-  typedef XMV::size_type size_type;
-
-  static void abs (const RMV& R, const XMV& X);
-};
+KOKKOSBLAS_IMPL_MV_ABS_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
 
 #endif // KOKKOS_HAVE_CUDA
 
 #ifdef KOKKOS_HAVE_CUDA
 
-template<>
-struct Abs<Kokkos::View<double**,
-                        Kokkos::LayoutLeft,
-                        Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
-                        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                        Kokkos::Impl::ViewDefault>,
-           Kokkos::View<const double**,
-                        Kokkos::LayoutLeft,
-                        Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
-                        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                        Kokkos::Impl::ViewDefault>,
-           2>
-{
-  typedef Kokkos::View<double**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> RMV;
-  typedef Kokkos::View<double**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> XMV;
-  typedef XMV::size_type size_type;
-
-  static void abs (const RMV& R, const XMV& X);
-};
+KOKKOSBLAS_IMPL_MV_ABS_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 
 #endif // KOKKOS_HAVE_CUDA
+
+//
+// Macro for definition of full specialization of
+// KokkosBlas::Impl::Abs for rank == 2.  This is NOT for users!!!  We
+// use this macro in one or more .cpp files in this directory.
+//
+#define KOKKOSBLAS_IMPL_MV_ABS_RANK2_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+void \
+Abs<Kokkos::View<SCALAR**, \
+                 LAYOUT, \
+                 Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                 Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                 Kokkos::Impl::ViewDefault>, \
+    Kokkos::View<const SCALAR**, \
+                 LAYOUT, \
+                 Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                 Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                 Kokkos::Impl::ViewDefault>, \
+    2>:: \
+abs (const RMV& R, const XMV& X) \
+{ \
+  static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::Impl::" \
+                 "Abs<2-D>: RMV is not a Kokkos::View."); \
+  static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::" \
+                 "Abs<2-D>: XMV is not a Kokkos::View."); \
+  static_assert (RMV::rank == 2, "KokkosBlas::Impl::Abs<2-D>: " \
+                 "RMV is not rank 2."); \
+  static_assert (XMV::rank == 2, "KokkosBlas::Impl::Abs<2-D>: " \
+                 "XMV is not rank 2."); \
+  \
+  const size_type numRows = X.dimension_0 (); \
+  const size_type numCols = X.dimension_1 (); \
+  if (numRows < static_cast<size_type> (INT_MAX) && \
+      numRows * numCols < static_cast<size_type> (INT_MAX)) { \
+    typedef int index_type; \
+    MV_Abs_Generic<RMV, XMV, index_type> (R, X); \
+  } \
+  else { \
+    typedef XMV::size_type index_type; \
+    MV_Abs_Generic<RMV, XMV, index_type> (R, X); \
+  } \
+}
+
 
 } // namespace Impl
 } // namespace KokkosBlas

@@ -481,6 +481,10 @@ void CudaInternal::initialize( int cuda_device_id , int stream_count )
     }
     Kokkos::Impl::throw_runtime_exception( msg.str() );
   }
+
+  // Init the array for used for arbitrarily sized atomics
+  Impl::init_lock_array_cuda_space();
+
 }
 
 //----------------------------------------------------------------------------
@@ -542,6 +546,7 @@ void CudaInternal::finalize()
 {
   if ( 0 != m_scratchSpace || 0 != m_scratchFlags ) {
 
+    lock_array_cuda_space_ptr(true);
     if ( m_stream ) {
       for ( size_type i = 1 ; i < m_streamCount ; ++i ) {
         cudaStreamDestroy( m_stream[i] );

@@ -41,6 +41,21 @@
 //@HEADER
 */
 
+/// \file Kokkos_Sparse.hpp
+/// \brief Public interface to local computational kernels on sparse
+///   matrices.
+///
+/// KokkosSparse::spmv implements local sparse matrix-vector multiply.
+/// It computes y = beta*y + alpha*Op(A)*x, where x and y are either
+/// both rank 1 (single vectors) or rank 2 (multivectors) Kokkos::View
+/// instances, A is a KokkosSparse::CrsMatrix, and Op(A) is determined
+/// by the \c mode input (either no transpose, transpose, or conjugate
+/// transpose).  If beta == 0, ignore and overwrite the initial
+/// entries of y; if alpha == 0, ignore the entries of A and x.
+///
+/// KokkosSparse::trsv implements local sparse triangular solve.
+/// It solves Ax=b, where A is either upper or lower triangular.
+
 #ifndef KOKKOS_SPARSE_HPP_
 #define KOKKOS_SPARSE_HPP_
 
@@ -50,6 +65,7 @@
 
 #include <Kokkos_Sparse_CrsMatrix.hpp>
 #include <Kokkos_Sparse_impl_spmv.hpp>
+#include <Kokkos_Sparse_trsv.hpp>
 
 namespace KokkosSparse {
 
@@ -98,8 +114,8 @@ spmv(const char mode[],
   // Check compatibility of dimensions at run time.
   if((mode[0]==NoTranspose[0])||(mode[0]==Conjugate[0])) {
     if ((x.dimension_1 () != y.dimension_1 ()) ||
-        (A.numCols() > x.dimension_0()) ||
-        (A.numRows() > y.dimension_0()) ){
+        (static_cast<size_t> (A.numCols ()) > static_cast<size_t> (x.dimension_0 ())) ||
+        (static_cast<size_t> (A.numRows ()) > static_cast<size_t> (y.dimension_0 ()))) {
       std::ostringstream os;
       os << "KokkosBlas::spmv: Dimensions do not match: "
          << ", A: " << A.numRows () << " x " << A.numCols()
@@ -111,8 +127,8 @@ spmv(const char mode[],
     }
   } else {
     if ((x.dimension_1 () != y.dimension_1 ()) ||
-        (A.numCols() > y.dimension_0()) ||
-        (A.numRows() > x.dimension_0()) ){
+        (static_cast<size_t> (A.numCols ()) > static_cast<size_t> (y.dimension_0 ())) ||
+        (static_cast<size_t> (A.numRows ()) > static_cast<size_t> (x.dimension_0()))) {
       std::ostringstream os;
       os << "KokkosBlas::spmv: Dimensions do not match (transpose): "
          << ", A: " << A.numRows () << " x " << A.numCols()
@@ -125,9 +141,9 @@ spmv(const char mode[],
   }
 
   typedef KokkosSparse::CrsMatrix<typename AMatrix::const_value_type,
-    typename AMatrix::const_ordinal_type,
+    typename AMatrix::non_const_ordinal_type,
     typename AMatrix::device_type,
-    typename AMatrix::memory_traits,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>,
     typename AMatrix::const_size_type> AMatrix_Internal;
   typedef Kokkos::View<typename XVector::const_value_type*,
     typename XVector::array_layout,
@@ -142,7 +158,6 @@ spmv(const char mode[],
   AMatrix_Internal A_i = A;
   XVector_Internal x_i = x;
   YVector_Internal y_i = y;
-
 
   return Impl::SPMV<typename AMatrix_Internal::value_type,
              typename AMatrix_Internal::ordinal_type,

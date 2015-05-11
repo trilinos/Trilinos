@@ -101,7 +101,7 @@ Ifpack_Polynomial(const Epetra_Operator* Operator) :
   LSPointsImag_(10),
   UseTranspose_(false),
   Condest_(-1.0),
-  ComputeCondest_(false),
+  /* ComputeCondest_(false), (unused; commented out to avoid build warnings) */
   RealEigRatio_(10.0),
   ImagEigRatio_(10.0),
   Label_(),
@@ -150,7 +150,7 @@ Ifpack_Polynomial(const Epetra_RowMatrix* Operator) :
   LSPointsImag_(10),
   UseTranspose_(false),
   Condest_(-1.0),
-  ComputeCondest_(false),
+  /* ComputeCondest_(false), (unused; commented out to avoid build warnings) */
   RealEigRatio_(10.0),
   ImagEigRatio_(10.0),
   EigMaxIters_(10),

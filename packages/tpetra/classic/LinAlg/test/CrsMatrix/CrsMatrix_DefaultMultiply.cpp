@@ -363,7 +363,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( DefaultSparseOps, ResubmitMatrix, ORDINAL, SCALAR, NODE )
 
 #ifdef HAVE_TPETRACLASSIC_SERIAL
-  typedef KokkosClassic::SerialNode KokkosClassic_SerialNode;
+  typedef KokkosClassic::DoNotUse::SerialNode KokkosClassic_SerialNode;
 #define UNIT_TEST_SERIALNODE(ORDINAL, SCALAR) \
   ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, KokkosClassic_SerialNode )
 #else
@@ -371,7 +371,7 @@ namespace {
 #endif // HAVE_TPETRACLASSIC_SERIAL
 
 #ifdef HAVE_TPETRACLASSIC_TBB
-  typedef KokkosClassic::TBBNode KokkosClassic_TBBNode;
+  typedef KokkosClassic::DoNotUse::TBBNode KokkosClassic_TBBNode;
 #define UNIT_TEST_TBBNODE(ORDINAL, SCALAR) \
   ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, KokkosClassic_TBBNode )
 #else
@@ -379,7 +379,7 @@ namespace {
 #endif
 
 #ifdef HAVE_TPETRACLASSIC_OPENMP
-  typedef KokkosClassic::OpenMPNode KokkosClassic_OpenMPNode;
+  typedef KokkosClassic::DoNotUse::OpenMPNode KokkosClassic_OpenMPNode;
 #define UNIT_TEST_OPENMPNODE(ORDINAL, SCALAR) \
   ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, KokkosClassic_OpenMPNode )
 #else
@@ -387,7 +387,7 @@ namespace {
 #endif
 
 #ifdef HAVE_TPETRACLASSIC_THREADPOOL
-  typedef KokkosClassic::TPINode KokkosClassic_TPINode;
+  typedef KokkosClassic::DoNotUse::TPINode KokkosClassic_TPINode;
 #define UNIT_TEST_TPINODE(ORDINAL, SCALAR) \
   ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, KokkosClassic_TPINode )
 #else

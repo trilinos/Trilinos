@@ -41,7 +41,6 @@
 #include <exodusMeshInterface.h>
 
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
-#include <stk_util/unit_test_support/perf_unit_util.hpp>
 #include <stk_unit_test_utils/getOption.h>
 
 namespace
@@ -199,14 +198,6 @@ void runStkSearchTestUsingStkAABoxes(stk::search::SearchMethod searchMethod)
 
 void testGtkSearch(MPI_Comm comm, std::vector<GtkBox>&domainBoxes, SearchResults& searchResults)
 {
-  // This is an unusual situation where these tests are both performance unit tests
-  // and normal tests; therefore, they need to work regardless of whether we have
-  // callgrind available or not.
-#if __VALGRIND_MAJOR__
-    stk::check_valgrind_version();
-    CALLGRIND_START_INSTRUMENTATION;
-#endif
-
     int proc_id = stk::parallel_machine_rank(comm);
     std::vector<int> procThatOwnsBox;
 
@@ -216,10 +207,6 @@ void testGtkSearch(MPI_Comm comm, std::vector<GtkBox>&domainBoxes, SearchResults
     }
 
     std::vector<GtkBox> rangeBoxes(domainBoxes);
-
-#if __VALGRIND_MAJOR__
-    CALLGRIND_TOGGLE_COLLECT;
-#endif
 
     double startTime = stk::wall_time();
 
@@ -267,14 +254,7 @@ void testGtkSearch(MPI_Comm comm, std::vector<GtkBox>&domainBoxes, SearchResults
     double elapsedTime = stk::wall_time() - startTime;
 
 
-
-#if __VALGRIND_MAJOR__
-    CALLGRIND_TOGGLE_COLLECT;
-    CALLGRIND_STOP_INSTRUMENTATION;
-#endif
-
     printPeformanceStats(elapsedTime, comm);
-    stk::print_debug_skip(comm);
 
     EXPECT_EQ(domainBoxes.size(), first_interaction.size());
     EXPECT_EQ(domainBoxes.size(), last_interaction.size());
@@ -323,11 +303,6 @@ void testGtkSearch(MPI_Comm comm, std::vector<GtkBox>&domainBoxes, SearchResults
 void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxes,
         stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults)
 {
-#if __VALGRIND_MAJOR__
-    stk::check_valgrind_version();
-    CALLGRIND_START_INSTRUMENTATION;
-#endif
-
     int procId = stk::parallel_machine_rank(comm);
 
     StkBoxVector stkBoxes(domainBoxes.size());
@@ -336,21 +311,11 @@ void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxe
     std::string rangeBoxComm = unitTestUtils::getOption("-rangeBoxComm", "yes");
     bool rangeResultsCommunicated = ( rangeBoxComm == "yes" );
 
-#if __VALGRIND_MAJOR__
-    CALLGRIND_TOGGLE_COLLECT;
-#endif
-
     double startTime = stk::wall_time();
     stk::search::coarse_search(stkBoxes, stkBoxes, searchMethod, comm, boxIdPairResults, rangeResultsCommunicated);
     double elapsedTime = stk::wall_time() - startTime;
 
-#if __VALGRIND_MAJOR__
-    CALLGRIND_TOGGLE_COLLECT;
-    CALLGRIND_STOP_INSTRUMENTATION;
-#endif
-
     printPeformanceStats(elapsedTime, comm);
-    stk::print_debug_skip(comm);
 
     gatherResultstoProcZero(comm, boxIdPairResults);
     size_t goldValueNumber=getGoldValueForTest();
@@ -370,11 +335,6 @@ void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxe
 void testStkSearchUsingGtkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxes,
         stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults)
 {
-#if __VALGRIND_MAJOR__
-    stk::check_valgrind_version();
-    CALLGRIND_START_INSTRUMENTATION;
-#endif
-
     int procId = stk::parallel_machine_rank(comm);
 
     GtkBoxVector searchBoxPairs(domainBoxes.size());
@@ -387,21 +347,11 @@ void testStkSearchUsingGtkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxe
     std::string rangeBoxComm = unitTestUtils::getOption("-rangeBoxComm", "yes");
     bool rangeResultsCommunicated = ( rangeBoxComm == "yes" );
 
-#if __VALGRIND_MAJOR__
-    CALLGRIND_TOGGLE_COLLECT;
-#endif
-
     double startTime = stk::wall_time();
     stk::search::coarse_search(searchBoxPairs, searchBoxPairs, searchMethod, comm, boxIdPairResults, rangeResultsCommunicated);
     double elapsedTime = stk::wall_time() - startTime;
 
-#if __VALGRIND_MAJOR__
-    CALLGRIND_TOGGLE_COLLECT;
-    CALLGRIND_STOP_INSTRUMENTATION;
-#endif
-
     printPeformanceStats(elapsedTime, comm);
-    stk::print_debug_skip(comm);
 
     gatherResultstoProcZero(comm, boxIdPairResults);
     size_t goldValueNumber=getGoldValueForTest();

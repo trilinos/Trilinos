@@ -21,31 +21,6 @@
 
 namespace MueLu {
 
-  /*! \fn TpetraCrs_To_XpetraMatrix
-    @brief Helper function to convert a Tpetra::CrsMatrix to an Xpetra::Matrix
-    TODO move this function to an Xpetra utility file
-    */
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-  TpetraCrs_To_XpetraMatrix(const Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Atpetra) {
-    typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> XTCrsMatrix;
-    typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>       XCrsMatrix;
-    typedef Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>   XCrsMatrixWrap;
-
-    RCP<XCrsMatrix> Atmp = rcp(new XTCrsMatrix(Atpetra));
-    return rcp(new XCrsMatrixWrap(Atmp));
-  }
-
-  /*! \fn TpetraMultiVector_To_XpetraMultiVector
-    @brief Helper function to convert a Tpetra::MultiVector to an Xpetra::MultiVector
-    TODO move this function to an Xpetra utility file
-    */
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-  TpetraMultiVector_To_XpetraMultiVector(const Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Vtpetra) {
-    return rcp(new Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Vtpetra));
-  }
-
   /*! \fn CreateTpetraPreconditioner
     @brief Helper function to create a MueLu preconditioner that can be used by Tpetra.
 

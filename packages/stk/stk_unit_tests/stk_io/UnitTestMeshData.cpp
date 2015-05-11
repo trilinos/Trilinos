@@ -1,23 +1,23 @@
 // Copyright (c) 2013, Sandia Corporation.
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #include <stddef.h>                     // for size_t
 #include <stdlib.h>                     // for rand, srand, RAND_MAX
@@ -51,6 +51,8 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
+#include "stk_mesh/base/FEMHelpers.hpp"
+#include "stk_mesh/base/Field.hpp"
 
 namespace {
 
@@ -104,7 +106,7 @@ TEST( StkMeshIoBroker, iofixture )
     fixture.add_mesh_database(input_base_filename, stk::io::READ_MESH);
     fixture.create_input_mesh();
     ok = true;
-    
+
     stk::mesh::MetaData & meta_data = fixture.meta_data();
 
     // Commit meta_data
@@ -126,6 +128,55 @@ TEST( StkMeshIoBroker, iofixture )
   }
   // Since correctness can only be established by running SEACAS tools, correctness
   // checking is left to the test XML.
+}
+
+TEST( StkMeshIoBroker, testModifyTopology )
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+    if (stk::parallel_machine_size(comm) == 1)
+    {
+        stk::io::StkMeshIoBroker fixture(comm);
+        std::string generated_mesh_spec = "generated:1x1x2";
+        fixture.add_mesh_database(generated_mesh_spec, stk::io::READ_MESH);
+        fixture.create_input_mesh();
+
+        stk::mesh::MetaData & meta_data = fixture.meta_data();
+        stk::mesh::Part & side_set_part = meta_data.declare_part_with_topology("Side Set Part",stk::topology::QUAD_4);
+        stk::io::put_io_part_attribute(side_set_part);
+
+        stk::mesh::Part & inactive_part = meta_data.declare_part("Inactive Part");
+
+        fixture.populate_bulk_data();
+
+        {
+            stk::mesh::BulkData & mesh = fixture.bulk_data();
+            mesh.modification_begin();
+            stk::mesh::Entity element1 = mesh.get_entity(stk::topology::ELEMENT_RANK, 1);
+            stk::mesh::Entity element2 = mesh.get_entity(stk::topology::ELEMENT_RANK, 2);
+
+            stk::mesh::PartVector add_parts;
+            add_parts.push_back(&inactive_part);
+            mesh.change_entity_parts(element2, add_parts);
+
+            stk::mesh::Entity side = mesh.declare_entity(stk::topology::FACE_RANK, 1, side_set_part);
+            const int elem1_side_ordinal = 5;
+            stk::mesh::declare_element_side(mesh, element1, side, elem1_side_ordinal);
+
+            const int elem2_side_ordinal = 4;
+            stk::mesh::declare_element_side(mesh, element2, side, elem2_side_ordinal);
+            mesh.modification_end();
+        }
+
+        const std::string output_base_filename = "StkMeshIoBroker.testModifyTopology.e";
+        size_t output_index = 0;
+        ASSERT_NO_THROW(output_index = fixture.create_output_mesh(output_base_filename, stk::io::WRITE_RESULTS));
+        stk::mesh::Selector active_selector = !inactive_part;
+        fixture.set_subset_selector(output_index,active_selector);
+        const double time_step = 0.1;
+        ASSERT_NO_THROW(fixture.process_output_request(output_index, time_step));
+
+        unlink(output_base_filename.c_str());
+    }
 }
 
 TEST( StkMeshIoBroker, active_only )
@@ -260,7 +311,7 @@ TEST( StkMeshIoBroker, large_mesh_test )
     fixture.add_mesh_database(input_base_filename, stk::io::READ_MESH);
     fixture.create_input_mesh();
     ok = true;
-    
+
     stk::mesh::MetaData & meta_data = fixture.meta_data();
 
     // Commit

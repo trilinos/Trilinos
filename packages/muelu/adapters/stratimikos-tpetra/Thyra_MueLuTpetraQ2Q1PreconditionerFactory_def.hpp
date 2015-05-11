@@ -70,11 +70,12 @@
 
 #include "MueLu.hpp"
 
+#include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_BaseClass.hpp"
 #include "MueLu_BlockedDirectSolver.hpp"
 #include "MueLu_BlockedPFactory.hpp"
 #include "MueLu_BlockedRAPFactory.hpp"
-#include "MueLu_CoalesceDropFactory_decl.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
 #include "MueLu_CreateTpetraPreconditioner.hpp"
 #include "MueLu_DirectSolver.hpp"
@@ -529,10 +530,11 @@ namespace Thyra {
   MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   FilterMatrix(Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Pattern, Scalar dropTol) const {
     typedef Xpetra::Matrix<SC,LO,GO,NO>             Matrix;
-    typedef MueLu::GraphBase<LO,GO,NO>              GraphBase;
-    typedef MueLu::FilteredAFactory<SC,LO,GO,NO>    FilteredAFactory;
+    typedef MueLu::AmalgamationFactory<SC,LO,GO,NO> AmalgamationFactory;
     typedef MueLu::CoalesceDropFactory<SC,LO,GO,NO> CoalesceDropFactory;
     typedef MueLu::FactoryManager<SC,LO,GO,NO>      FactoryManager;
+    typedef MueLu::FilteredAFactory<SC,LO,GO,NO>    FilteredAFactory;
+    typedef MueLu::GraphBase<LO,GO,NO>              GraphBase;
 
     RCP<GraphBase> filteredGraph;
     {

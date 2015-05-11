@@ -10,10 +10,6 @@ TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 # B) Define the header and source files (and directories)
 #
 
-#
-# src
-#
-
 SET(HEADERS "")
 SET(SOURCES "")
 
@@ -52,3 +48,9 @@ SET_PROPERTY(
   TARGET ${TPETRA_LIBNAME}
   APPEND PROPERTY LINKER_LANGUAGE CXX
   )
+
+#
+# Make a trivial change to this comment if you add a file either to
+# this directory, or to the impl/ subdirectory.  Here is another such
+# change.
+#

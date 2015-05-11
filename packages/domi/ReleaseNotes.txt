@@ -1,0 +1,49 @@
+Release Notes for Domi for Trilinos 12.0
+========================================
+
+Domi provides distributed data structures for multi-dimensional data.
+The inspirational use case is parallel domain decomposition for finite
+difference applications.  To that end, Domi provides the following
+classes:
+
+MDArray, MDArrayView, MDArrayRCP
+    These classes define multi-dimensional arrays, with arbitrary
+    runtime-defined dimensions, built on top of the Teuchos Array,
+    ArrayView, and ArrayRCP classes, respectively.  These are serial
+    in nature and provide the mechanism for data manipulation on each
+    processor of distributed MDVectors.
+
+Slice
+    The Slice class is inspired by the Python slice object, which
+    stores a start, stop, and step index, and can be constructed to
+    utilize a variety of logical default values.  Slices can be used
+    on all multi-dimensional objects to return views into subsets of
+    those objects.
+
+MDComm
+    Multi-dimensional communicator.  This communicator provides a map
+    between a multi-dimensional array of processors and their ranks,
+    and can be queried for neighbor ranks.  MDComms can be sliced,
+    which returns a sub-sommunicator.
+
+MDMap
+    An MDMap describes the decomposition of an MDVector on an MDComm.
+    It stores the start and stop indexes along each dimension,
+    including boundary padding for algorithms that require extra
+    indexes along boundaries, and communication padding used to
+    update values from neighboring processors.  MDMaps can be sliced,
+    and the resulting MDMap may reside on a sub-communicator.  An
+    MDMap can be converted to an equivalent Epetra or Tpetra Map.
+
+MDVector
+    An MDVector is a multi-dimensional array, distrubuted in a
+    structured manner across multiple processors.  This distribution
+    is described by an MDVector's MDMap.  The MDVector's data is
+    stored locally on each processor with an MDArrayRCP.  An MDVector
+    can update its communication padding from neighboring processors
+    automatically.  An MDVector can be sliced, and the resulting
+    MDVector may reside on a sub-communicator.  An MDVector can be
+    converted to equivalent Epetra or Tpetra Vectors or MultiVectors.
+    If there are no stride gaps in the data due to slicing, these
+    converted Epetra and Tpetra objects may be views of the original
+    data.

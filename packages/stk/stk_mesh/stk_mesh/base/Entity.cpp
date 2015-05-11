@@ -47,11 +47,5 @@ std::ostream & operator << ( std::ostream &os , const Entity &entity )
   return os;
 }
 
-// TODO - Activate once we move to intel-12.1
-//BOOST_MPL_ASSERT(( boost::is_pod<Entity> ));
-
-//----------------------------------------------------------------------
-
-
 } // namespace mesh
 } // namespace stk

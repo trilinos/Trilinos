@@ -195,6 +195,14 @@ void Piro::RythmosSolver<Scalar>::initialize(
 
       // build the stepper using the factory
       fwdStateStepper = stepFactItr->second->buildStepper(model,fwdTimeStepSolver,stepperParams);
+
+      // the user decided to override the model being used (let them)
+      if(fwdStateStepper->getModel()!=model && fwdStateStepper->getModel()!=Teuchos::null) {
+        model = Teuchos::rcp_const_cast<Thyra::ModelEvaluator<Scalar> >(fwdStateStepper->getModel());
+
+        num_p = in_model->Np();
+        num_g = in_model->Ng();
+      }
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(

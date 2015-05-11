@@ -188,6 +188,9 @@ namespace PseudoSpectralExpansionUnitTest {
   struct SqrtFunc { 
     double operator() (double a) const { return std::sqrt(a); } 
   };
+  struct CbrtFunc { 
+    double operator() (double a) const { return std::cbrt(a); } 
+  };
   struct SinFunc { 
     double operator() (double a) const { return std::sin(a); } 
   };
@@ -328,6 +331,25 @@ namespace PseudoSpectralExpansionUnitTest {
     Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
     setup.exp->sqrt(ru, setup.x);
     computePCE1<SqrtFunc>(setup.u2, setup.x, *setup.quad);
+    success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
+				   setup.rtol, setup.atol, out);
+  }
+  TEUCHOS_UNIT_TEST( Stokhos_PSExpansion, Cbrt ) {
+    setup.exp->cbrt(setup.u, setup.x);
+    computePCE1<CbrtFunc>(setup.u2, setup.x, *setup.quad);
+    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
+				   setup.rtol, setup.atol, out);
+  }
+  TEUCHOS_UNIT_TEST( Stokhos_PSExpansion, CbrtConst ) {
+    setup.exp->cbrt(setup.cu, setup.cx);
+    setup.cu2[0] = std::cbrt(setup.cx[0]);
+    success = Stokhos::comparePCEs(setup.cu, "cu", setup.cu2, "cu2", 
+				   setup.crtol, setup.catol, out);
+  }
+  TEUCHOS_UNIT_TEST( Stokhos_PSExpansion, CbrtResize ) {
+    Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
+    setup.exp->cbrt(ru, setup.x);
+    computePCE1<CbrtFunc>(setup.u2, setup.x, *setup.quad);
     success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }

@@ -510,8 +510,10 @@ namespace panzer {
     bool build_transient_support = true;
 
     user_app::BCFactory bc_factory;
-    RCP<PME> me = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,Teuchos::null,ap.gd,build_transient_support,0.0));
-    pIndex = me->addDistributedParameter("DENSITY",th_param_lof->getThyraDomainSpace(),ap.param_ged,param_density,ap.param_dofManager);
+    RCP<PME> me 
+        = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,Teuchos::null,ap.gd,build_transient_support,0.0));
+    pIndex = me->addDistributedParameter("DENSITY",th_param_lof->getThyraDomainSpace(),
+                                         ap.param_ged,param_density,ap.param_dofManager);
     me->setupModel(ap.wkstContainer,ap.physicsBlocks,ap.bcs,
                    *ap.eqset_factory,
                    bc_factory,
@@ -804,7 +806,6 @@ namespace panzer {
       ap.dofManager = dofManager;
 
       Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
-          // = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64>(Comm.getConst(),dofManager));
           = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(mpiComm,dofManager));
       ap.lof = linObjFactory;
     }
@@ -863,8 +864,9 @@ namespace panzer {
     ap.user_data = Teuchos::ParameterList("User Data");
 
     ap.fmb->setWorksetContainer(wkstContainer);
-    ap.fmb->setupVolumeFieldManagers(ap.physicsBlocks,ap.cm_factory,closure_models,*ap.lof,ap.user_data);
-    ap.fmb->setupBCFieldManagers(bcs,ap.physicsBlocks,*ap.eqset_factory,ap.cm_factory,bc_factory,closure_models,*ap.lof,ap.user_data);
+    ap.fmb->setupVolumeFieldManagers(ap.physicsBlocks,ap.cm_factory,ap.closure_models,*ap.lof,ap.user_data);
+    ap.fmb->setupBCFieldManagers(bcs,ap.physicsBlocks,*ap.eqset_factory,ap.cm_factory,bc_factory,ap.closure_models,
+                                 *ap.lof,ap.user_data);
   }
 
 

@@ -67,7 +67,8 @@ class RingFixture {
 
   RingFixture( stk::ParallelMachine pm ,
                unsigned num_element_per_proc = 10 ,
-               bool use_element_parts = false );
+               bool use_element_parts = false,
+               enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option = stk::mesh::BulkData::AUTO_AURA);
 
   ~RingFixture() {}
 
@@ -80,8 +81,7 @@ class RingFixture {
   /**
    * Make sure that element->owner_rank() == element->node[1]->owner_rank()
    */
-  void fixup_node_ownership(bool regenerate_aura = true,
-                            BulkData::modification_optimization mod_optimize = BulkData::MOD_END_SORT);
+  void fixup_node_ownership(BulkData::modification_optimization mod_optimize = BulkData::MOD_END_SORT);
 
  protected:
 

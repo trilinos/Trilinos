@@ -53,6 +53,12 @@
 
 \cbb{aggregation: max agg size}{int}{-1}{Maximum size of an aggregate (-1 means unlimited).}
 
+\cbb{aggregation: brick x size}{int}{2}{Number of points for x axis in "brick" aggregation (limited to 3).}
+
+\cbb{aggregation: brick y size}{int}{2}{Number of points for y axis in "brick" aggregation (limited to 3).}
+
+\cbb{aggregation: brick z size}{int}{2}{Number of points for z axis in "brick" aggregation (limited to 3).}
+
 \cbb{aggregation: max selected neighbors}{int}{0}{Maximum number of neighbour nodes that are already aggregated. If a new aggregate has some neighbours that are already aggregated, this node probably can be added to one of these aggregates. We don't need a new one.}
 
 \cbb{aggregation: Dirichlet threshold}{double}{0.0}{Threshold for determining whether entries are zero during Dirichlet row detection.}
@@ -67,9 +73,9 @@
 
 \cbb{aggregation: preserve Dirichlet points}{bool}{false}{Turn on/off Dirichlet points preservation}
 
-\cbb{aggregation: export visualization data}{bool}{false}{Export data for visualization post-processing.}
+\cbb{aggregation: allow user-specified singletons}{bool}{false}{Allow special nodes to be marked for one-to-one transfer to the coarsest level. (default = off)}
 
-\cbb{aggregation: mode}{string}{"old"}{old = Tobias, new = ML}
+\cbb{aggregation: export visualization data}{bool}{false}{Export data for visualization post-processing.}
 
 \cba{export data}{\parameterlist}{Exporting a subset of the hierarchy data in a file. Currently, the list can contain any of three parameter names ("A", ``P'', ``R'') of type \texttt{string} and value ``\{levels separated by commas\}''. A matrix with a name ``X'' is saved in three MatrixMarket files: a) data is saved in \textit{X\_level.mm}; b) its row map is saved in \textit{rowmap\_X\_level.mm}; c) its column map is saved in \textit{colmap\_X\_level.mm}.}
 
@@ -130,3 +136,5 @@
 \cbb{repartition: use subcommunicators}{bool}{true}{Use subcommunicators on coarser levels.}
 
 \cbb{reuse: type}{string}{"none"}{Reuse options for consecutive hierarchy construction. This speeds up the setup phase, but may lead to poorer convergence. Possible values: see Table~\ref{t:reuse_types}.}
+
+\cbb{debug: graph level}{int}{-1}{Output dependency graph.}

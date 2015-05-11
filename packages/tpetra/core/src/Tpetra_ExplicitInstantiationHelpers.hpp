@@ -60,29 +60,29 @@
 // only used once in the entire mostly empty file.
 //
 
-/** \brief Instantiate a macro template for the KokkosClassic::TBBNode */
+/** \brief Instantiate a macro template for the KokkosClassic::DoNotUse::TBBNode */
 #ifdef HAVE_KOKKOSCLASSIC_TBB
 #  include <Kokkos_TBBNode.hpp>
 #  define TPETRA_MACRO_TEMPLATE_INSTANT_TBBNODE(SCALAR,LO,GO,INSTANT_MACRO)\
-     INSTANT_MACRO(SCALAR,LO,GO,KokkosClassic::TBBNode)
+    INSTANT_MACRO(SCALAR,LO,GO,KokkosClassic::DoNotUse::TBBNode)
 #else
 #  define TPETRA_MACRO_TEMPLATE_INSTANT_TBBNODE(SCALAR,LO,GO,INSTANT_MACRO)
 #endif
 
-/** \brief Instantiate a macro template for the KokkosClassic::TPINode */
+/** \brief Instantiate a macro template for the KokkosClassic::DoNotUse::TPINode */
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
 #  include <Kokkos_TPINode.hpp>
 #  define TPETRA_MACRO_TEMPLATE_INSTANT_TPINODE(SCALAR,LO,GO,INSTANT_MACRO)\
-     INSTANT_MACRO(SCALAR,LO,GO,KokkosClassic::TPINode)
+  INSTANT_MACRO(SCALAR,LO,GO,KokkosClassic::DoNotUse::TPINode)
 #else
 #  define TPETRA_MACRO_TEMPLATE_INSTANT_TPINODE(SCALAR,LO,GO,INSTANT_MACRO)
 #endif
 
-/** \brief Instantiate a macro template for the KokkosClassic::SerialNode */
+/** \brief Instantiate a macro template for the KokkosClassic::DoNotUse::SerialNode */
 #ifdef HAVE_KOKKOSCLASSIC_SERIAL
 #  include <Kokkos_SerialNode.hpp>
 #  define TPETRA_MACRO_TEMPLATE_INSTANT_SERIALNODE(SCALAR,LO,GO,INSTANT_MACRO)\
-   INSTANT_MACRO(SCALAR,LO,GO,KokkosClassic::SerialNode)
+  INSTANT_MACRO(SCALAR,LO,GO,KokkosClassic::DoNotUse::SerialNode)
 #else
 #  define TPETRA_MACRO_TEMPLATE_INSTANT_SERIALNODE(SCALAR,LO,GO,INSTANT_MACRO)
 #endif // HAVE_KOKKOSCLASSIC_SERIAL

@@ -9131,7 +9131,7 @@ inline void fillMeshfor2Elem2ProcFlipAndTest_no_ghost(stk::mesh::unit_test::Bulk
         mesh.add_node_sharing(mesh.get_entity(EntityKey(NODE_RANK, 4)), 0);
     }
 
-    mesh.my_internal_modification_end(false);  //call IME through the tester to pass regenerate_aura = false
+    mesh.modification_end();  //call IME through the tester to pass regenerate_aura = false
 
     Part * universal_part = &meta.universal_part();
     Part * owned_part     = &meta.locally_owned_part();

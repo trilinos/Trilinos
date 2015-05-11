@@ -168,6 +168,11 @@ FAD_UNARYOP_MACRO(abs,
 FAD_UNARYOP_MACRO(fabs,
                   FAbsOp,
                   std::fabs(expr.val()))
+#ifdef HAVE_SACADO_CXX11
+FAD_UNARYOP_MACRO(cbrt,
+                  CbrtOp,
+                  std::cbrt(expr.val()))
+#endif
 
 #undef FAD_UNARYOP_MACRO
 

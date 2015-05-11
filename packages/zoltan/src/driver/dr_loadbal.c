@@ -683,7 +683,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
  * the ranks was INITIAL_LINEAR; if it isn't, one can't infer
  * the GID associated with a part in the output.
  */
-char filename[33];
+char filename[FILENAME_MAX+24];
 FILE *fp;
 if (!Export_Lists_Special) {
   printf("ERROR:  To output partition without migration, need "

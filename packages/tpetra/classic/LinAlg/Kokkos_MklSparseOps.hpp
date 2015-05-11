@@ -359,9 +359,7 @@ namespace KokkosClassic {
   /// parallelize its sparse kernels.  However, depending on the
   /// Allocator template parameter, we may use the Kokkos Node API to
   /// do first-touch allocation in parallel of the sparse graph and
-  /// matrix data structures.  It would be best in that case to use
-  /// Node=OpenMPNode, so that the first-touch allocation most closely
-  /// matches the parallelization scheme.
+  /// matrix data structures.
   ///
   /// We cannot and should not control MKL's parallelization scheme.
   /// We cannot, because this depends on the specific MKL libraries
@@ -752,11 +750,11 @@ namespace KokkosClassic {
     template <class DomainScalar, class RangeScalar>
     void
     reorderedGaussSeidel (const MultiVector<DomainScalar,Node> &B,
-			  MultiVector< RangeScalar,Node> &X,
-			  const MultiVector<Scalar,Node> &D,
-			  const ArrayView<Ordinal> & rowIndices,
-			  const RangeScalar& dampingFactor,
-			  const ESweepDirection direction) const
+                          MultiVector< RangeScalar,Node> &X,
+                          const MultiVector<Scalar,Node> &D,
+                          const ArrayView<Ordinal> & rowIndices,
+                          const RangeScalar& dampingFactor,
+                          const ESweepDirection direction) const
     {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
                                  "MklSparseOps: reorderedGaussSeidel not implemented");

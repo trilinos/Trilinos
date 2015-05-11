@@ -66,28 +66,17 @@ namespace Kokkos {
 namespace Example {
 namespace FENL {
 
-template <typename T, typename L, typename M>
-struct LocalViewTraits< Kokkos::View<T,L,Kokkos::Cuda,M,Kokkos::Impl::ViewMPVectorContiguous> > {
-  typedef Kokkos::Impl::ViewMPVectorContiguous Specialize;
-  typedef Kokkos::View<T,L,Kokkos::Cuda,M,Specialize> view_type;
-  typedef typename Kokkos::LocalMPVectorView<view_type,1>::type local_view_type;
-  typedef typename local_view_type::value_type local_value_type;
-  static const bool use_team = true;
-
-  KOKKOS_INLINE_FUNCTION
-  static local_view_type create_local_view(const view_type& v,
-                                           const unsigned local_rank)
-  {
-    local_view_type local_v =
-      Kokkos::partition<local_view_type>(v, local_rank, local_rank+1);
-    return local_v;
-  }
-};
-
-template <typename T, typename M, typename V>
-struct LocalViewTraits< Kokkos::View<T,Kokkos::Cuda,M,V,Kokkos::Impl::ViewMPVectorContiguous> > {
-  typedef Kokkos::Impl::ViewMPVectorContiguous Specialize;
-  typedef Kokkos::View<T,Kokkos::Cuda,M,V,Specialize> view_type;
+#if defined( KOKKOS_HAVE_CUDA )
+template <typename ViewType>
+struct LocalViewTraits<
+  ViewType,
+  typename Kokkos::Impl::enable_if<
+    Kokkos::Impl::is_same< typename ViewType::execution_space,
+                           Kokkos::Cuda >::value &&
+    Kokkos::Impl::is_same< typename ViewType::specialize,
+                           Kokkos::Impl::ViewMPVectorContiguous >::value >::type
+  > {
+  typedef ViewType view_type;
   typedef typename Kokkos::LocalMPVectorView<view_type,1>::type local_view_type;
   typedef typename local_view_type::value_type local_value_type;
   static const bool use_team = true;
@@ -122,6 +111,7 @@ struct CreateDeviceConfigs< Sacado::MP::Vector<StorageType> > {
     }
   }
 };
+#endif
 
 } /* namespace FENL */
 } /* namespace Example */

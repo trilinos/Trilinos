@@ -43,8 +43,7 @@ namespace mesh {
 
 void create_adjacent_entities( BulkData & mesh, PartVector & /*arg_add_parts*/)
 {
-  ThrowErrorMsgIf(mesh.synchronized_state() == BulkData::MODIFIABLE,
-                  "Mesh is not SYNCHRONIZED");
+  ThrowErrorMsgIf( mesh.in_modifiable_state(), "Mesh is not SYNCHRONIZED");
 
   create_faces(mesh);
   create_edges(mesh);

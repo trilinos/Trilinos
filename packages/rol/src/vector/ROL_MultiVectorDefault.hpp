@@ -87,6 +87,8 @@ class MultiVectorDefault : public MultiVector<Real> {
                                      numVectors_(1),
                                      length_(vec->dimension()) {} 
 
+        // Create a MultiVector from a pointer to a constant vector
+
         ~MultiVectorDefault() {}
 
         // Make a new MultiVector of the same dimensions 
@@ -101,8 +103,9 @@ class MultiVectorDefault : public MultiVector<Real> {
        // Make a new MultiVector of specified dimension
         PMV clone( const int numvecs ) const {
             APV x(numvecs);
+
             for(int i=0;i<numvecs;++i) {
-                x[i] = mvec_[i]->clone();
+                x[i] = mvec_[0]->clone();
             }    
             return Teuchos::rcp(new MultiVectorDefault<Real>(x));
         } 
@@ -177,16 +180,12 @@ class MultiVectorDefault : public MultiVector<Real> {
                   const Teuchos::SerialDenseMatrix<int,Real> &B,
                   const Real beta) {
 
-            TEUCHOS_TEST_FOR_EXCEPTION( this->dimensionMismatch(A),
-                std::invalid_argument,
-                "Error: MultiVectors must have the same dimensions.");
-
-            // Scale this by beta
+           // Scale this by beta
             this->scale(beta);
 
-            for(int i=0;i<numVectors_;++i) {
-                for(int j=0;j<numVectors_;++j) {
-                    mvec_[i]->axpy(alpha*B(i,j),*A.getVector(j));  
+            for(int i=0;i<B.numRows();++i) {
+                for(int j=0;j<B.numCols();++j) {
+                    mvec_[j]->axpy(alpha*B(i,j),*A.getVector(i));  
                 }
             }
         } 
@@ -203,7 +202,7 @@ class MultiVectorDefault : public MultiVector<Real> {
         // \f$\text{this}[i]\leftarrow\alpha[i]\text{this}[i]\f$
         void scale(const std::vector<Real> &alpha) {
 
-            TEUCHOS_TEST_FOR_EXCEPTION( alpha.size() != numVectors_,
+            TEUCHOS_TEST_FOR_EXCEPTION( static_cast<int>(alpha.size()) != numVectors_,
                 std::invalid_argument,
                 "Error: alpha must have the same length as the number of vectors.");  
  
@@ -215,12 +214,12 @@ class MultiVectorDefault : public MultiVector<Real> {
         // Set the MultiVector equal to another MultiVector
         void set(const MV &A) {
 
-            TEUCHOS_TEST_FOR_EXCEPTION( this->dimensionMismatch(A),
-                std::invalid_argument,
-                "Error: MultiVectors must have the same dimensions.");
+//            TEUCHOS_TEST_FOR_EXCEPTION( this->dimensionMismatch(A),
+//                std::invalid_argument,
+//                "Error: MultiVectors must have the same dimensions.");
 
             for(int i=0;i<numVectors_;++i) {
-                mvec_[i]->set(*A.getVector(i));
+                mvec_[i]->set(*(A.getVector(i)));
             }
         }
 
@@ -229,15 +228,18 @@ class MultiVectorDefault : public MultiVector<Real> {
         // vectors in another MultiVector
         void set(const MV &A, const std::vector<int> &index) {
 
-            TEUCHOS_TEST_FOR_EXCEPTION( this->dimensionMismatch(A),
-                std::invalid_argument,
-                "Error: MultiVectors must have the same dimensions.");
+//            TEUCHOS_TEST_FOR_EXCEPTION( this->dimensionMismatch(A),
+//                std::invalid_argument,
+//                "Error: MultiVectors must have the same dimensions.");
 
             int n = index.size();
-             
+            
             for(int i=0;i<n;++i) {
                 int k = index[i];
-                mvec_[k]->set(*A.getVector(k));
+                if(k<numVectors_ && i<A.getNumberOfVectors()) { 
+                    mvec_[k]->set(*A.getVector(i));
+                }
+                
             }
         }
 
@@ -246,11 +248,11 @@ class MultiVectorDefault : public MultiVector<Real> {
                            const MV &A,
                            Teuchos::SerialDenseMatrix<int,Real> &B) const {
 
-            TEUCHOS_TEST_FOR_EXCEPTION( this->dimensionMismatch(A),
-                std::invalid_argument,
-                "Error: MultiVectors must have the same dimensions.");
+//            TEUCHOS_TEST_FOR_EXCEPTION( this->dimensionMismatch(A),
+//                std::invalid_argument,
+//                "Error: MultiVectors must have the same dimensions.");
 
-            for(int i=0;i<numVectors_;++i) {
+            for(int i=0;i<A.getNumberOfVectors();++i) {
                 for(int j=0;j<numVectors_;++j) {
                     B(i,j) = alpha*mvec_[j]->dot(*A.getVector(i));
                 }  
@@ -273,11 +275,9 @@ class MultiVectorDefault : public MultiVector<Real> {
         // Compute the norm of each vector in the MultiVector
         void norms(std::vector<Real> &normvec) const {
 
-            TEUCHOS_TEST_FOR_EXCEPTION( normvec.size()!=numVectors_,
-                std::invalid_argument,
-                "Error: normvec must have the same length as number of vectors.");
+            int min = numVectors_ < static_cast<int>(normvec.size()) ? numVectors_ : normvec.size();
 
-            for(int i=0;i<numVectors_;++i) {
+            for(int i=0;i<min;++i) {
                 normvec[i] = mvec_[i]->norm(); 
             }    
         }
@@ -298,7 +298,6 @@ class MultiVectorDefault : public MultiVector<Real> {
 
             return mvec_[i]; 
         } 
-
 
 };
 }

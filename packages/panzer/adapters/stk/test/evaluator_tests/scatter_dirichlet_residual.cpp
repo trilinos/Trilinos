@@ -155,7 +155,7 @@ namespace panzer {
     Teuchos::RCP<LinearObjFactory<panzer::Traits> > lof = be_lof;
     Teuchos::RCP<LinearObjContainer> dd_loc = be_lof->buildGhostedLinearObjContainer();
     Teuchos::RCP<LinearObjContainer> loc = be_lof->buildGhostedLinearObjContainer();
-    be_lof->initializeGhostedContainer(LinearObjContainer::X,*dd_loc);
+    be_lof->initializeGhostedContainer(LinearObjContainer::F,*dd_loc);
     dd_loc->initialize();
 
     be_lof->initializeGhostedContainer(LinearObjContainer::X | LinearObjContainer::F,*loc);
@@ -292,7 +292,7 @@ namespace panzer {
     std::size_t dd_count = 0;
     Teuchos::ArrayRCP<const double> data, dd_data;
     Teuchos::RCP<const Thyra::ProductVectorBase<double> > f_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(b_loc->get_f());
-    Teuchos::RCP<const Thyra::ProductVectorBase<double> > dd_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(b_dd_loc->get_x());
+    Teuchos::RCP<const Thyra::ProductVectorBase<double> > dd_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(b_dd_loc->get_f());
 
     // check all the residual values. This is kind of crappy test since it simply checks twice the target
     // value and the target. Its this way because you add two entries across elements.
@@ -406,7 +406,7 @@ namespace panzer {
     Teuchos::RCP<LinearObjFactory<panzer::Traits> > lof = be_lof;
     Teuchos::RCP<LinearObjContainer> dd_loc = be_lof->buildGhostedLinearObjContainer();
     Teuchos::RCP<LinearObjContainer> loc = be_lof->buildGhostedLinearObjContainer();
-    be_lof->initializeGhostedContainer(LinearObjContainer::X,*dd_loc);
+    be_lof->initializeGhostedContainer(LinearObjContainer::F,*dd_loc);
     dd_loc->initialize();
 
     be_lof->initializeGhostedContainer(LinearObjContainer::X | LinearObjContainer::F | LinearObjContainer::Mat,*loc);
@@ -549,7 +549,7 @@ namespace panzer {
     std::size_t dd_count = 0;
     Teuchos::ArrayRCP<const double> data, dd_data;
     Teuchos::RCP<const Thyra::ProductVectorBase<double> > f_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(b_loc->get_f());
-    Teuchos::RCP<const Thyra::ProductVectorBase<double> > dd_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(b_dd_loc->get_x());
+    Teuchos::RCP<const Thyra::ProductVectorBase<double> > dd_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(b_dd_loc->get_f());
 
     // check all the residual values. This is kind of crappy test since it simply checks twice the target
     // value and the target. Its this way because you add two entries across elements.

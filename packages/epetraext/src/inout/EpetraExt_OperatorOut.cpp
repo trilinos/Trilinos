@@ -61,9 +61,9 @@ int OperatorToMatlabFile( const char *filename, const Epetra_Operator & A) {
 }
 
 int OperatorToMatrixMarketFile( const char *filename, const Epetra_Operator & A, 
-				 const char * matrixName,
-				 const char *matrixDescription, 
-				 bool writeHeader) {
+                                 const char * matrixName,
+                                 const char *matrixDescription, 
+                                 bool writeHeader) {
 
   const Epetra_Map & domainMap = A.OperatorDomainMap();
   const Epetra_Map & rangeMap = A.OperatorRangeMap();
@@ -132,8 +132,8 @@ int OperatorToHandle(FILE * handle, const Epetra_Operator & A) {
     for (int j=0; j<rem; j++) {
       long long curGlobalCol = rootDomainMap.GID64(j); // Should return same value on all processors
       if (domainMap.MyGID(curGlobalCol)) {
-	int curCol = domainMap.LID(curGlobalCol);
-	xrem[j][curCol] = 1.0;
+        int curCol = domainMap.LID(curGlobalCol);
+        xrem[j][curCol] = 1.0;
       }
     }
     EPETRA_CHK_ERR(A.Apply(xrem, yrem));
@@ -149,22 +149,22 @@ int OperatorToHandle(FILE * handle, const Epetra_Operator & A) {
       long long startCol = ichunk*chunksize+rem;
       // Put 1's in slots
       for (int j=0; j<chunksize; j++) {
-	long long curGlobalCol = rootDomainMap.GID64(startCol+j); // Should return same value on all processors
-	if (domainMap.MyGID(curGlobalCol)){
-	  int curCol = domainMap.LID(curGlobalCol);
-	  x[j][curCol] = 1.0;
-	}
+        long long curGlobalCol = rootDomainMap.GID64(startCol+j); // Should return same value on all processors
+        if (domainMap.MyGID(curGlobalCol)){
+          int curCol = domainMap.LID(curGlobalCol);
+          x[j][curCol] = 1.0;
+        }
       }
       EPETRA_CHK_ERR(A.Apply(x, y));
       EPETRA_CHK_ERR(y1.Import(y, importer, Insert));
       EPETRA_CHK_ERR(writeOperatorStrip(handle, y1, rootDomainMap, rootRangeMap, startCol));
       // Put 0's in slots
       for (int j=0; j<chunksize; j++) {
-	long long curGlobalCol = rootDomainMap.GID64(startCol+j); // Should return same value on all processors
-	if (domainMap.MyGID(curGlobalCol)){
-	  int curCol = domainMap.LID(curGlobalCol);
-	  x[j][curCol] = 0.0;
-	}
+        long long curGlobalCol = rootDomainMap.GID64(startCol+j); // Should return same value on all processors
+        if (domainMap.MyGID(curGlobalCol)){
+          int curCol = domainMap.LID(curGlobalCol);
+          x[j][curCol] = 0.0;
+        }
       }
     }
   }
@@ -185,11 +185,11 @@ int writeOperatorStrip(FILE * handle, const Epetra_MultiVector & y, const Epetra
     for (int j=0; j<numCols; j++) {
       long long J = rootDomainMap.GID64(j + startColumn) + joffset;
       for (long long i=0; i<numRows; i++) {
-	double val = y[j][i];
-	if (val!=0.0) {
-	  long long I = rootRangeMap.GID64(i) + ioffset;
-	  fprintf(handle, "%lld %lld %22.16e\n", I, J, val);
-	}
+        double val = y[j][i];
+        if (val!=0.0) {
+          long long I = rootRangeMap.GID64(i) + ioffset;
+          fprintf(handle, "%lld %lld %22.16e\n", I, J, val);
+        }
       }
     }
   }
@@ -222,7 +222,7 @@ int get_nz(const Epetra_Operator & A, long long & nz) {
     for (int j=0; j<rem; j++) {
       int mylength = yrem.MyLength();
       for (int i=0; i<mylength; i++) 
-	if (yrem[j][i]!=0.0) lnz++;
+        if (yrem[j][i]!=0.0) lnz++;
     }
   }
 
@@ -233,19 +233,19 @@ int get_nz(const Epetra_Operator & A, long long & nz) {
       long long startCol = ichunk*chunksize+rem;
       // Put 1's in slots
       for (int j=0; j<chunksize; j++) {
-	long long curGlobalCol = rootDomainMap.GID64(startCol+j);
-	if (domainMap.MyGID(curGlobalCol)) x[j][domainMap.LID(curGlobalCol)] = 1.0;
+        long long curGlobalCol = rootDomainMap.GID64(startCol+j);
+        if (domainMap.MyGID(curGlobalCol)) x[j][domainMap.LID(curGlobalCol)] = 1.0;
       }
       EPETRA_CHK_ERR(A.Apply(x, y));
       for (int j=0; j<chunksize; j++) {
-	int mylength = y.MyLength();
-	for (int i=0; i<mylength; i++) 
-	  if (y[j][i]!=0.0) lnz++;
+        int mylength = y.MyLength();
+        for (int i=0; i<mylength; i++) 
+          if (y[j][i]!=0.0) lnz++;
       }
       // Put 0's in slots
       for (int j=0; j<chunksize; j++) {
-	long long curGlobalCol = rootDomainMap.GID64(startCol+j);
-	if (domainMap.MyGID(curGlobalCol)) x[j][domainMap.LID(curGlobalCol)] = 0.0;
+        long long curGlobalCol = rootDomainMap.GID64(startCol+j);
+        if (domainMap.MyGID(curGlobalCol)) x[j][domainMap.LID(curGlobalCol)] = 0.0;
       }
     }
   }

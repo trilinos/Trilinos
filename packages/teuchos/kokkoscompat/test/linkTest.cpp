@@ -348,11 +348,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, KMV_of_2DView ) {
   TestDevice::initialize();
 
   typedef Kokkos::View<double**, Kokkos::LayoutLeft, TestDevice> ka_view_type;
-#ifdef HAVE_KOKKOSCLASSIC_SERIAL
-  typedef KokkosClassic::MultiVector<double, KokkosClassic::SerialNode> KMV;
-#else
   typedef KokkosClassic::MultiVector<double, KokkosClassic::DefaultNode::DefaultNodeType> KMV;
-#endif // HAVE_KOKKOSCLASSIC_SERIAL
 
   const size_t numRows = 75;
   const size_t numCols = 5;
@@ -402,18 +398,10 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, KMV_of_2DView ) {
 
   // Create a Kokkos Classic Node instance.  The
   // KokkosClassic::MultiVector will want this.
-#ifdef HAVE_KOKKOSCLASSIC_SERIAL
-  Teuchos::RCP<KokkosClassic::SerialNode> node;
-#else
   Teuchos::RCP<KokkosClassic::DefaultNodeType> node;
-#endif HAVE_KOKKOSCLASSIC_SERIAL
   {
     Teuchos::ParameterList pl;
-#ifdef HAVE_KOKKOSCLASSIC_SERIAL
-    node = Teuchos::rcp (new KokkosClassic::SerialNode (pl));
-#else
     node = Teuchos::rcp (new KokkosClassic::DefaultNode::DefaultNodeType (pl));
-#endif HAVE_KOKKOSCLASSIC_SERIAL
   }
   // Create the KokkosClassic::MultiVector.  Initialization takes two steps.
   KMV Y (node);

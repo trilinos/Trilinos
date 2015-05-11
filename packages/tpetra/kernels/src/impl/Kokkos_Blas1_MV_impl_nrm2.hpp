@@ -75,7 +75,6 @@ struct V_Nrm2Squared_Functor
   V_Nrm2Squared_Functor (const RV& r, const XV& x) :
     m_r (r), m_x (x)
   {
-#ifdef KOKKOS_HAVE_CXX11
     static_assert (Kokkos::Impl::is_view<RV>::value,
                    "KokkosBlas::Impl::V_Nrm2Squared_Functor: "
                    "R is not a Kokkos::View.");
@@ -90,7 +89,6 @@ struct V_Nrm2Squared_Functor
     static_assert (RV::rank == 0 && XV::rank == 1,
                    "KokkosBlas::Impl::V_Nrm2Squared_Functor: "
                    "RV must have rank 0 and XV must have rank 1.");
-#endif // KOKKOS_HAVE_CXX11
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -143,7 +141,6 @@ struct MV_Nrm2Squared_Right_FunctorVector
   MV_Nrm2Squared_Right_FunctorVector (const RV& r, const XMV& x) :
     value_count (x.dimension_1 ()), m_r (r), m_x (x)
   {
-#ifdef KOKKOS_HAVE_CXX11
     static_assert (Kokkos::Impl::is_view<RV>::value,
                    "KokkosBlas::Impl::MV_Nrm2Squared_Right_FunctorVector: "
                    "R is not a Kokkos::View.");
@@ -158,7 +155,6 @@ struct MV_Nrm2Squared_Right_FunctorVector
     static_assert (RV::rank == 1 && XMV::rank == 2,
                    "KokkosBlas::Impl::MV_Nrm2Squared_Right_FunctorVector: "
                    "RV must have rank 1 and XMV must have rank 2.");
-#endif // KOKKOS_HAVE_CXX11
   }
 
   KOKKOS_INLINE_FUNCTION void
@@ -252,23 +248,20 @@ MV_Nrm2Squared_Invoke (const RV& r, const XMV& X)
   const SizeType numRows = static_cast<SizeType> (X.dimension_0 ());
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
 
-#ifdef KOKKOS_HAVE_CXX11
-  // We only give you a single-vector special case if you build with
-  // C++11 enabled, since we need 'decltype' to ensure that we have
-  // the right layouts for RV0D and XV1D.
+  // If the input multivector (2-D View) has only one column, invoke
+  // the single-vector version of the kernel.
   if (X.dimension_1 () == 1) {
     auto r_0 = Kokkos::subview (r, 0);
     auto X_0 = Kokkos::subview (X, Kokkos::ALL (), 0);
     typedef decltype (r_0) RV0D;
     typedef decltype (X_0) XV1D;
     V_Nrm2Squared_Invoke<RV0D, XV1D, SizeType> (r_0, X_0);
-    return;
   }
-#endif // KOKKOS_HAVE_CXX11
-
-  typedef MV_Nrm2Squared_Right_FunctorVector<RV, XMV, SizeType> functor_type;
-  functor_type op (r, X);
-  Kokkos::parallel_reduce (policy, op);
+  else {
+    typedef MV_Nrm2Squared_Right_FunctorVector<RV, XMV, SizeType> functor_type;
+    functor_type op (r, X);
+    Kokkos::parallel_reduce (policy, op);
+  }
 }
 
 
@@ -323,186 +316,108 @@ struct Nrm2_MV<RV, XV, 1> {
   }
 };
 
-
-// Full specializations for cases of interest for Tpetra::MultiVector.
 //
-// Currently, we include specializations for Scalar = double,
-// LayoutLeft (which is what Tpetra::MultiVector uses at the moment),
-// and all execution spaces.  This may change in the future.  The
-// output View _always_ uses the execution space's default array
-// layout, which is what Tpetra::MultiVector wants for the output
-// argument of norm1().
+// Macro for declaration of full specialization of
+// KokkosBlas::Impl::Nrm2_MV for rank == 2.  This is NOT for users!!!
+// All the declarations of full specializations go in this header
+// file.  We may spread out definitions (see _DEF macro below) across
+// one or more .cpp files.
+//
+
+#define KOKKOSBLAS_IMPL_MV_NRM2_RANK2_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+template<> \
+struct Nrm2_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, \
+                            EXEC_SPACE::array_layout, \
+                            Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                            Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                            Kokkos::Impl::ViewDefault>, \
+               Kokkos::View<const SCALAR**, \
+                            LAYOUT, \
+                            Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                            Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                            Kokkos::Impl::ViewDefault>, \
+               2> \
+{ \
+  typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, \
+                       EXEC_SPACE::array_layout, \
+                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                       Kokkos::Impl::ViewDefault> RV; \
+  typedef Kokkos::View<const SCALAR**, \
+                       LAYOUT, \
+                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                       Kokkos::Impl::ViewDefault> XMV; \
+  static void nrm2_squared (const RV& r, const XMV& X); \
+};
+
+//
+// Declarations of full specializations of Impl::Nrm2_MV for rank == 2.
+// Their definitions go in .cpp file(s) in this source directory.
+//
 
 #ifdef KOKKOS_HAVE_SERIAL
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Serial
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
-template<>
-struct Nrm2_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::mag_type*,
-                            KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-                            Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                            Kokkos::Impl::ViewDefault>,
-               Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                            Kokkos::LayoutLeft,
-                            Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                            Kokkos::Impl::ViewDefault>,
-               2>
-{
-  typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::mag_type*,
-                       KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> RV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> XMV;
-  static void nrm2_squared (const RV& r, const XMV& X);
-};
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
+
+KOKKOSBLAS_IMPL_MV_NRM2_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
+
 #endif // KOKKOS_HAVE_SERIAL
 
 #ifdef KOKKOS_HAVE_OPENMP
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::OpenMP
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
-template<>
-struct Nrm2_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::mag_type*,
-                            KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-                            Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                            Kokkos::Impl::ViewDefault>,
-               Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                            Kokkos::LayoutLeft,
-                            Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                            Kokkos::Impl::ViewDefault>,
-               2>
-{
-  typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::mag_type*,
-                       KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> RV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> XMV;
-  static void nrm2_squared (const RV& r, const XMV& X);
-};
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
+
+KOKKOSBLAS_IMPL_MV_NRM2_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
+
 #endif // KOKKOS_HAVE_OPENMP
 
 #ifdef KOKKOS_HAVE_PTHREAD
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Threads
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::HostSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
-template<>
-struct Nrm2_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::mag_type*,
-                            KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-                            Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                            Kokkos::Impl::ViewDefault>,
-               Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                            Kokkos::LayoutLeft,
-                            Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                            Kokkos::Impl::ViewDefault>,
-               2>
-{
-  typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::mag_type*,
-                       KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> RV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> XMV;
-  static void nrm2_squared (const RV& r, const XMV& X);
-};
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
+
+KOKKOSBLAS_IMPL_MV_NRM2_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
+
 #endif // KOKKOS_HAVE_PTHREAD
 
 #ifdef KOKKOS_HAVE_CUDA
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Cuda
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
-template<>
-struct Nrm2_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::mag_type*,
-                            KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-                            Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                            Kokkos::Impl::ViewDefault>,
-               Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                            Kokkos::LayoutLeft,
-                            Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                            Kokkos::Impl::ViewDefault>,
-               2>
-{
-  typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::mag_type*,
-                       KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> RV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> XMV;
-  static void nrm2_squared (const RV& r, const XMV& X);
-};
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
+
+KOKKOSBLAS_IMPL_MV_NRM2_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
+
 #endif // KOKKOS_HAVE_CUDA
 
 #ifdef KOKKOS_HAVE_CUDA
-#define KOKKOSBLAS_IMPL_MV_EXEC_SPACE Kokkos::Cuda
-#define KOKKOSBLAS_IMPL_MV_MEM_SPACE Kokkos::CudaUVMSpace
-#define KOKKOSBLAS_IMPL_MV_SCALAR double
-template<>
-struct Nrm2_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::mag_type*,
-                            KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-                            Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                            Kokkos::Impl::ViewDefault>,
-               Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                            Kokkos::LayoutLeft,
-                            Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                            Kokkos::Impl::ViewDefault>,
-               2>
-{
-  typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<KOKKOSBLAS_IMPL_MV_SCALAR>::mag_type*,
-                       KOKKOSBLAS_IMPL_MV_EXEC_SPACE::array_layout,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> RV;
-  typedef Kokkos::View<const KOKKOSBLAS_IMPL_MV_SCALAR**,
-                       Kokkos::LayoutLeft,
-                       Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                       Kokkos::Impl::ViewDefault> XMV;
-  static void nrm2_squared (const RV& r, const XMV& X);
-};
-#undef KOKKOSBLAS_IMPL_MV_EXEC_SPACE
-#undef KOKKOSBLAS_IMPL_MV_MEM_SPACE
-#undef KOKKOSBLAS_IMPL_MV_SCALAR
+
+KOKKOSBLAS_IMPL_MV_NRM2_RANK2_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
+
 #endif // KOKKOS_HAVE_CUDA
 
+//
+// Macro for declaration of full specialization of
+// KokkosBlas::Impl::Nrm2_MV for rank == 2.  This is NOT for users!!!
+//
+
+#define KOKKOSBLAS_IMPL_MV_NRM2_RANK2_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+void \
+Nrm2_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, \
+                     EXEC_SPACE::array_layout, \
+                     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                     Kokkos::Impl::ViewDefault>, \
+        Kokkos::View<const SCALAR**, \
+                     Kokkos::LayoutLeft, \
+                     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                     Kokkos::Impl::ViewDefault>, \
+        2>:: \
+nrm2_squared (const RV& r, const XMV& X) \
+{ \
+  typedef XMV::size_type size_type; \
+  const size_type numRows = X.dimension_0 (); \
+  const size_type numCols = X.dimension_1 (); \
+ \
+  if (numRows < static_cast<size_type> (INT_MAX) && \
+      numRows * numCols < static_cast<size_type> (INT_MAX)) { \
+    MV_Nrm2Squared_Invoke<RV, XMV, int> (r, X); \
+  } \
+  else { \
+    MV_Nrm2Squared_Invoke<RV, XMV, size_type> (r, X); \
+  } \
+}
 
 } // namespace Impl
 } // namespace KokkosBlas

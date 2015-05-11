@@ -75,8 +75,8 @@ private:
   PHX::MDField<const ScalarT,Cell,QuadPoint> dc;
   PHX::MDField<const ScalarT,Cell,QuadPoint,Dim> grad_temp;
   
-  std::size_t num_qp;
-  std::size_t num_dim;
+  PHX::index_size_type num_qp;
+  PHX::index_size_type num_dim;
 
 };
 

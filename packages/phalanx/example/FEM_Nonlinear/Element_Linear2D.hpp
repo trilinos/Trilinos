@@ -101,6 +101,9 @@ public:
 
   typedef int size_type;
 
+  static const size_type m_num_nodes = 4;
+  static const size_type m_num_qp = 4;
+
   Element_Linear2D() {}
   
   Element_Linear2D(std::vector<size_type> global_node_ids,

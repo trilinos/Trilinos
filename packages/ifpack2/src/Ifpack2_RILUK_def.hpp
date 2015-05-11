@@ -861,7 +861,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     Teuchos::Array<magnitude_type> norms (X.getNumVectors ());
     X.norm1 (norms ());
     bool good = true;
-    for (typename Teuchos::Array<magnitude_type>::size_type j = 0; j < X.getNumVectors (); ++j) {
+    for (size_t j = 0; j < X.getNumVectors (); ++j) {
       if (STM::isnaninf (norms[j])) {
         good = false;
         break;
@@ -938,7 +938,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     Teuchos::Array<magnitude_type> norms (Y.getNumVectors ());
     Y.norm1 (norms ());
     bool good = true;
-    for (typename Teuchos::Array<magnitude_type>::size_type j = 0; j < Y.getNumVectors (); ++j) {
+    for (size_t j = 0; j < Y.getNumVectors (); ++j) {
       if (STM::isnaninf (norms[j])) {
         good = false;
         break;

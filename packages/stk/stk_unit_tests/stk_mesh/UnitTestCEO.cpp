@@ -136,7 +136,7 @@ TEST(CEO, change_entity_owner_2Elem2ProcMove)
     CEOUtils::checkStatesAfterCEO_2Elem2ProcMove(bulk);
 }
 
-TEST(CEO, change_entity_owner_3Elem3Proc_WithCustomGhosts)
+void test_change_entity_owner_3Elem3Proc_WithCustomGhosts(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
     int psize = stk::parallel_machine_size(communicator);
@@ -155,7 +155,7 @@ TEST(CEO, change_entity_owner_3Elem3Proc_WithCustomGhosts)
         stk::mesh::MetaData stkMeshMetaData(spatialDim, rankNames);
         //stk::mesh::Part &part = stkMeshMetaData.declare_part("constraints", stk::topology::CONSTRAINT_RANK);
 
-        stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, communicator);
+        stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, communicator, autoAuraOption);
         const std::string generatedMeshSpecification = "generated:1x1x6";
 
         // STK IO module will be described in separate chapter.
@@ -243,6 +243,16 @@ TEST(CEO, change_entity_owner_3Elem3Proc_WithCustomGhosts)
             EXPECT_TRUE(stkMeshBulkData.parallel_owner_rank(elem1) == 2);
         }
     }
+}
+
+TEST(CEO, change_entity_owner_3Elem3Proc_WithCustomGhosts_WithAura)
+{
+    test_change_entity_owner_3Elem3Proc_WithCustomGhosts(stk::mesh::BulkData::AUTO_AURA);
+}
+
+TEST(CEO, change_entity_owner_3Elem3Proc_WithCustomGhosts_WithoutAura)
+{
+    test_change_entity_owner_3Elem3Proc_WithCustomGhosts(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
 }

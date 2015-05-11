@@ -172,22 +172,26 @@ public:
 
   Exo_Entity* Get_Entity_by_Index(EXOTYPE type, size_t index) const;
   Exo_Entity* Get_Entity_by_Id   (EXOTYPE type, size_t id)    const;
+  Exo_Entity* Get_Entity_by_Name (EXOTYPE type, const std::string &name)    const;
   
   int        Block_Index            (size_t block_id) const;  // Returns associated block index.
   size_t        Block_Id               (size_t block_index) const;  // Returns associated block id.
   Exo_Block<INT>* Get_Elmt_Block_by_Id   (size_t block_id)    const;
   Exo_Block<INT>* Get_Elmt_Block_by_Index(size_t block_index) const;
+  Exo_Block<INT>* Get_Elmt_Block_by_Name (const std::string &name)    const;
   
 
   int       Side_Set_Index       (size_t set_id)         const;  // Returns associated sideset index.
   size_t       Side_Set_Id          (size_t set_index)      const;
   Side_Set<INT>* Get_Side_Set_by_Id   (size_t set_id)         const;
   Side_Set<INT>* Get_Side_Set_by_Index(size_t side_set_index) const;
+  Side_Set<INT>* Get_Side_Set_by_Name (const std::string &name)    const;
 
   int       Node_Set_Index       (size_t set_id)         const;  // Returns associated sideset index.
   size_t       Node_Set_Id          (size_t set_index)      const;
   Node_Set<INT>* Get_Node_Set_by_Id   (size_t set_id)         const;
   Node_Set<INT>* Get_Node_Set_by_Index(size_t side_set_index) const;
+  Node_Set<INT>* Get_Node_Set_by_Name (const std::string &name)    const;
   
   // Misc functions:
   

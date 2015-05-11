@@ -82,8 +82,8 @@ namespace Example {
       A.convertGraph(_nnz, _rptr, _cidx);
 
       int ierr = 0;
-      ordinal_type *rptr = _rptr.ptr_on_device();
-      ordinal_type *cidx = _cidx.ptr_on_device();
+      ordinal_type *rptr = reinterpret_cast<ordinal_type*>(_rptr.ptr_on_device());
+      ordinal_type *cidx = reinterpret_cast<ordinal_type*>(_cidx.ptr_on_device());
       
       ierr = SCOTCH_graphInit(&_graph);CHKERR(ierr);
       ierr = SCOTCH_graphBuild(&_graph,             // scotch graph

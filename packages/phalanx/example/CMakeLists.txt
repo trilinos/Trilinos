@@ -1,5 +1,2 @@
-
-#ADD_SUBDIRECTORY(EnergyFlux)
 ADD_SUBDIRECTORY(MultiDimensionalArray)
 #ADD_SUBDIRECTORY(FEM_Nonlinear)
-#ADD_SUBDIRECTORY(FEM_Nonlinear_VBR)

@@ -375,6 +375,7 @@ struct UnitTestSetup {
   UNARY_UNIT_TEST(VEC, std::log, Log)                           \
   UNARY_UNIT_TEST(VEC, std::log10, Log10)                       \
   UNARY_UNIT_TEST(VEC, std::sqrt, Sqrt)                         \
+  UNARY_UNIT_TEST(VEC, std::cbrt, Cbrt)                         \
   UNARY_UNIT_TEST(VEC, std::sin, Sin)                           \
   UNARY_UNIT_TEST(VEC, std::cos, Cos)                           \
   UNARY_UNIT_TEST(VEC, std::tan, Tan)                           \

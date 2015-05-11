@@ -18,6 +18,8 @@
 #include <cmath>
 #include <complex>
 
+#include <limits>
+
 /// \file util.hpp
 /// \brief Utility functions and constant integer class like an enum class.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
@@ -106,31 +108,40 @@ namespace Example {
   class AlgoChol {
   public:
     // One side factorization on flat matrices
-    static const int LeftUnblocked      = 1001;
-    static const int LeftUnblockedOpt1  = 1002;
-    static const int LeftBlocked        = 1101;
+    static const int Unblocked     = 1001;
+    static const int UnblockedOpt1 = 1002;
+    static const int Blocked       = 1101; // testing only
 
-    static const int RightUnblocked     = 1201;
-    static const int RightUnblockedOpt1 = 1202;
-    static const int RightBlocked       = 1301;
-
-    // One side factorization on hier matrices
-    static const int LeftByBlocks       = 1401;
-    static const int RightByBlocks      = 1501;
+    static const int ByBlocks      = 1201;
   };
 
   // aliasing name space
   typedef AlgoChol AlgoIChol;
+  typedef AlgoChol AlgoTriSolve;
 
   class AlgoGemm {
   public:
     // One side factorization on flat matrices
-    static const int ForLeftBlocked  = 2001;
-    static const int ForRightBlocked = 2002;
+    static const int ForFactorBlocked = 2001;
+
+    // B and C are dense matrices and used for solve phase
+    static const int ForTriSolveBlocked = 2011;
+  };
+
+  class AlgoTrsm : public AlgoGemm {
+  public:
+    // data parallel for b1t
+    static const int ForFactorBlockedVar1 = 2002;
+    // data parallel for a1t -- default
+    static const int ForFactorBlockedVar2 = AlgoGemm::ForFactorBlocked;
+
+    // data parallel for multiple rhs -- default
+    static const int ForTriSolveBlockedVar1 = AlgoGemm::ForTriSolveBlocked;  
+    // data parallel for single rhs
+    static const int ForTriSolveBlockedVar2 = 2012;
   };
 
   typedef AlgoGemm AlgoHerk;
-  typedef AlgoGemm AlgoTrsm;
 
   /// \brief Interface for overloaded stream operators.
   template<typename T> 
@@ -155,6 +166,29 @@ namespace Example {
   ostream& operator<<(ostream &os, const Disp &disp) {
     return disp.showMe(os);
   }  
+
+  template<typename T> struct NumericTraits {};
+
+  template<>
+  struct NumericTraits<float> {
+    typedef float real_type;
+    static real_type epsilon() { return numeric_limits<float>::epsilon(); }
+  };
+  template<>
+  struct NumericTraits<double> {
+    typedef double real_type;
+    static real_type epsilon() { return numeric_limits<double>::epsilon(); }
+  };
+  template<>
+  struct NumericTraits<complex<float> > {
+    typedef float real_type;
+    static real_type epsilon() { return numeric_limits<float>::epsilon(); }
+  };
+  template<>
+  struct NumericTraits<complex<double> > {
+    typedef double real_type;
+    static real_type epsilon() { return numeric_limits<double>::epsilon(); }
+  };
 
 }
 

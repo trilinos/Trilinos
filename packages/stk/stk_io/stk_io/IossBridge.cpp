@@ -1546,14 +1546,21 @@ namespace stk {
           for ( size_t j = 0 ; j < num_side_elem ; ++j )
             {
               const mesh::Entity elem = side_elements[j];
-              const mesh::Entity * elem_sides =  bulk_data.begin(elem, type);
-              mesh::ConnectivityOrdinal const * side_ordinal = bulk_data.begin_ordinals(elem, type);
-              const size_t num_elem_sides = bulk_data.num_connectivity(elem, type);
-              for(size_t k = 0; k < num_elem_sides; ++k){
-                if(elem_sides[k] == side[0]){
-                  suitable_elem = elem;
-                  suitable_ordinal = side_ordinal[k];
-                  break;
+              const stk::mesh::Bucket &elemBucket = bulk_data.bucket(elem);
+              const bool isSelectingEverything = subset_selector == NULL;
+              const bool isElementBeingOutput = (isSelectingEverything || (*subset_selector)(elemBucket))
+                  && elemBucket.member(meta_data.locally_owned_part());
+              if(isElementBeingOutput)
+              {
+                const mesh::Entity * elem_sides =  bulk_data.begin(elem, type);
+                mesh::ConnectivityOrdinal const * side_ordinal = bulk_data.begin_ordinals(elem, type);
+                const size_t num_elem_sides = bulk_data.num_connectivity(elem, type);
+                for(size_t k = 0; k < num_elem_sides; ++k){
+                  if(elem_sides[k] == side[0]){
+                    suitable_elem = elem;
+                    suitable_ordinal = side_ordinal[k];
+                    break;
+                  }
                 }
               }
             }

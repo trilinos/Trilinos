@@ -131,6 +131,11 @@ public:
   */
   SerialDenseMatrix(const SerialDenseMatrix<OrdinalType, ScalarType> &Source, ETransp trans = Teuchos::NO_TRANS);
 
+  //! Copy Constructor
+  /*! \note Only a non-transposed deep copy or view of \c Source is made with this copy constructor.
+  */
+  SerialDenseMatrix(DataAccess CV, const SerialDenseMatrix<OrdinalType, ScalarType> &Source);
+
   //! Submatrix Copy Constructor
   /*!
     \param CV - Enumerated type set to Teuchos::Copy or Teuchos::View.
@@ -453,9 +458,26 @@ SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(const SerialDenseM
   {
     numRows_ = Source.numRows_;
     numCols_ = Source.numCols_;
-    stride_ = numRows_;
-    values_ = new ScalarType[stride_*numCols_];
-    copyMat(Source.values_, Source.stride_, numRows_, numCols_, values_, stride_, 0, 0);
+
+    if (!Source.valuesCopied_)
+    {
+      stride_ = Source.stride_;
+      values_ = Source.values_;
+      valuesCopied_ = false;
+    }
+    else
+    {
+      stride_ = numRows_;
+      const OrdinalType newsize = stride_ * numCols_;
+      if(newsize > 0) {
+        values_ = new ScalarType[newsize];
+        copyMat(Source.values_, Source.stride_, numRows_, numCols_, values_, stride_, 0, 0);
+      }
+      else {
+        numRows_ = 0; numCols_ = 0; stride_ = 0;
+        valuesCopied_ = false;
+      }
+    }
   }
   else if ( trans == Teuchos::CONJ_TRANS && ScalarTraits<ScalarType>::isComplex )
   {
@@ -482,6 +504,24 @@ SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(const SerialDenseM
     }
   }
 }
+
+
+template<typename OrdinalType, typename ScalarType>
+SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(
+  DataAccess CV, const SerialDenseMatrix<OrdinalType, ScalarType> &Source
+  )
+  : CompObject(), numRows_(Source.numRows_), numCols_(Source.numCols_), stride_(Source.stride_),
+    valuesCopied_(false), values_(Source.values_)
+{
+  if(CV == Copy)
+  {
+    stride_ = numRows_;
+    values_ = new ScalarType[stride_ * numCols_];
+    copyMat(Source.values_, Source.stride_, numRows_, numCols_, values_, stride_, 0, 0);
+    valuesCopied_ = true;
+  }
+}
+
 
 template<typename OrdinalType, typename ScalarType>
 SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(

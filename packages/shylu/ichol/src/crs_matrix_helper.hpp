@@ -6,8 +6,6 @@
 /// \brief This file includes utility functions to convert between flat and hierarchical matrices.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)  
 
-#include <Kokkos_Core.hpp> 
-
 #include "util.hpp"
 
 namespace Example { 

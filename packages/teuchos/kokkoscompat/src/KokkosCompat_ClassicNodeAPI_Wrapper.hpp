@@ -22,11 +22,15 @@ namespace Compat {
 
 /// \brief Node that wraps a new Kokkos execution space.
 /// \tparam ExecutionSpace The type of the Kokkos execution space to wrap.
+/// \tparam MemorySpace The Kokkos memory space in which to work.
+///   Defaults to the default memory space of ExecutionSpace.
 /// \ingroup kokkos_node_api
-template<class ExecutionSpace>
+template<class ExecutionSpace,
+         class MemorySpace = typename ExecutionSpace::memory_space>
 class KokkosDeviceWrapperNode {
 public:
   typedef ExecutionSpace execution_space;
+  typedef MemorySpace memory_space;
 
   /// \brief This is NOT a "classic" Node type.
   ///

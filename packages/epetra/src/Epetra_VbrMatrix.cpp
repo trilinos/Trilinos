@@ -73,8 +73,15 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& 
 {
   InitializeDefaults();
   Graph_ = new Epetra_CrsGraph(CV, rowMap, NumBlockEntriesPerRow);
+
+#ifdef NDEBUG
+  (void) Allocate();
+#else
+  // Don't declare 'err' unless we actually use it (in the assert(),
+  // which gets defined away in a release build).
   int err = Allocate();
   assert( err == 0 );
+#endif // NDEBUG
 }
 
 //==============================================================================
@@ -93,8 +100,15 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& 
 {
   InitializeDefaults();
   Graph_ = new Epetra_CrsGraph(CV, rowMap, NumBlockEntriesPerRow);
+
+#ifdef NDEBUG
+  (void) Allocate();
+#else
+  // Don't declare 'err' unless we actually use it (in the assert(),
+  // which gets defined away in a release build).
   int err = Allocate();
   assert( err == 0 );
+#endif // NDEBUG
 }
 //==============================================================================
 Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& rowMap,
@@ -113,8 +127,15 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& 
 {
   InitializeDefaults();
   Graph_ = new Epetra_CrsGraph(CV, rowMap, colMap, NumBlockEntriesPerRow);
+
+#ifdef NDEBUG
+  (void) Allocate();
+#else
+  // Don't declare 'err' unless we actually use it (in the assert(),
+  // which gets defined away in a release build).
   int err = Allocate();
   assert( err == 0 );
+#endif // NDEBUG
 }
 
 //==============================================================================
@@ -134,9 +155,17 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& 
 {
   InitializeDefaults();
   Graph_ = new Epetra_CrsGraph(CV, rowMap, colMap, NumBlockEntriesPerRow);
+
+#ifdef NDEBUG
+  (void) Allocate();
+#else
+  // Don't declare 'err' unless we actually use it (in the assert(),
+  // which gets defined away in a release build).
   int err = Allocate();
   assert( err == 0 );
+#endif // NDEBUG
 }
+
 //==============================================================================
 Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_CrsGraph & graph)
   : Epetra_DistObject(graph.RowMap(), "Epetra::VbrMatrix"),
@@ -153,8 +182,15 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_CrsGraph &
 {
   constructedWithFilledGraph_ = graph.Filled();
   InitializeDefaults();
+
+#ifdef NDEBUG
+  (void) Allocate();
+#else
+  // Don't declare 'err' unless we actually use it (in the assert(),
+  // which gets defined away in a release build).
   int err = Allocate();
-  assert(err==0);
+  assert( err == 0 );
+#endif // NDEBUG
 }
 
 //==============================================================================
@@ -199,8 +235,14 @@ Epetra_VbrMatrix& Epetra_VbrMatrix::operator=(const Epetra_VbrMatrix& src)
   //delete it now before re-creating it.
   Graph_ = new Epetra_CrsGraph(src.Graph());
 
+#ifdef NDEBUG
+  (void) Allocate();
+#else
+  // Don't declare 'err' unless we actually use it (in the assert(),
+  // which gets defined away in a release build).
   int err = Allocate();
   assert( err == 0 );
+#endif // NDEBUG
 
   int i, j;
 

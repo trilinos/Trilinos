@@ -129,7 +129,7 @@ public:
 
   //--------------------------------------------------------------------------
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   void operator()( const size_type iRow ) const
   {
     const size_type iEntryBegin = m_A.graph.row_map[iRow];
@@ -195,7 +195,7 @@ public:
 
   //--------------------------------------------------------------------------
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   void operator()( const size_type iRow ) const
   {
     const size_type iEntryBegin = m_A.graph.row_map[iRow];
@@ -287,7 +287,7 @@ public:
 
   //--------------------------------------------------------------------------
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   void operator()( const size_type iBlockRow ) const
   {
     // Number of rows in this block
@@ -377,7 +377,7 @@ public:
 
   //--------------------------------------------------------------------------
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   void operator()( const size_type iRow ) const
   {
     const size_type iEntryBegin = m_A.graph.row_map[iRow];
@@ -467,7 +467,7 @@ public:
 
   //--------------------------------------------------------------------------
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   void operator()( const size_type iBlockRow ) const
   {
     // Number of rows in this block
@@ -558,7 +558,7 @@ public:
 
   //--------------------------------------------------------------------------
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   void operator()( const size_type iRow ) const
   {
     const size_type iEntryBegin = m_A.graph.row_map[iRow];

@@ -138,6 +138,21 @@ TEST_F( threads, view_api) {
   TestViewAPI< double , Kokkos::Threads >();
 }
 
+TEST_F( threads, view_subview_auto_1d_left ) {
+  TestViewSubview::test_auto_1d< Kokkos::LayoutLeft,Kokkos::Threads >();
+}
+
+TEST_F( threads, view_subview_auto_1d_right ) {
+  TestViewSubview::test_auto_1d< Kokkos::LayoutRight,Kokkos::Threads >();
+}
+
+TEST_F( threads, view_subview_auto_1d_stride ) {
+  TestViewSubview::test_auto_1d< Kokkos::LayoutStride,Kokkos::Threads >();
+}
+
+TEST_F( threads, view_subview_assign_strided ) {
+  TestViewSubview::test_1d_strided_assignment< Kokkos::Threads >();
+}
 
 TEST_F( threads, view_subview_left_0 ) {
   TestViewSubview::test_left_0< Kokkos::Threads >();
@@ -293,12 +308,14 @@ TEST_F( threads , atomics )
   ASSERT_TRUE( ( TestAtomic::Loop<float,Kokkos::Threads>(100,2) ) );
   ASSERT_TRUE( ( TestAtomic::Loop<float,Kokkos::Threads>(100,3) ) );
 
-#if defined( KOKKOS_HAVE_CXX11 )
+#if defined( KOKKOS_ENABLE_ASM )
   ASSERT_TRUE( ( TestAtomic::Loop<Kokkos::complex<double> ,Kokkos::Threads>(100,1) ) );
   ASSERT_TRUE( ( TestAtomic::Loop<Kokkos::complex<double> ,Kokkos::Threads>(100,2) ) );
   ASSERT_TRUE( ( TestAtomic::Loop<Kokkos::complex<double> ,Kokkos::Threads>(100,3) ) );
 #endif
 
+  ASSERT_TRUE( ( TestAtomic::Loop<TestAtomic::SuperScalar<3>, Kokkos::Threads>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<TestAtomic::SuperScalar<3>, Kokkos::Threads>(loop_count,2) ) );
 }
 
 //----------------------------------------------------------------------------

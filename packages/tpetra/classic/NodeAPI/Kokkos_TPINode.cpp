@@ -54,6 +54,7 @@
 #endif
 
 namespace KokkosClassic {
+namespace DoNotUse {
 
   TPINode::TPINode () {
     ParameterList params = getDefaultParameters();
@@ -121,6 +122,8 @@ namespace KokkosClassic {
   std::string TPINode::name () {
     return "TPI";
   }
-}
+
+} // namespace DoNotUse
+} // namespace KokkosClassic
 
 #endif // HAVE_TPETRACLASSIC_THREADPOOL

@@ -81,22 +81,17 @@ postRegistrationSetup(typename Traits::SetupData d,
 template<typename EvalT, typename Traits>
 KOKKOS_INLINE_FUNCTION
 void NonlinearSource<EvalT, Traits>::operator () (const int i) const
- {
-    for (int ip = 0; ip < density.dimension(1); ++ip)
-      source(i,ip) =  density(i,ip) * temp(i,ip) * temp(i,ip);
-  }
+{
+  for (PHX::index_size_type ip = 0; ip < Teuchos::as<PHX::index_size_type>(density.dimension_1()); ++ip)
+    source(i,ip) =  density(i,ip) * temp(i,ip) * temp(i,ip);
+}
 
 //**********************************************************************
 template<typename EvalT, typename Traits>
 void NonlinearSource<EvalT, Traits>::
 evaluateFields(typename Traits::EvalData d)
 { 
-/*  for (std::size_t cell = 0; cell < d.num_cells; ++cell)
-    for (std::size_t ip = 0; ip < density.dimension(1); ++ip)
-      source(cell,ip) =  density(cell,ip) * temp(cell,ip) * temp(cell,ip);
-*/
-  
- Kokkos::parallel_for (d.num_cells, *this);
+ Kokkos::parallel_for(d.num_cells, *this);
 }
 
 //**********************************************************************

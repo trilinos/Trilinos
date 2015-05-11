@@ -14,8 +14,8 @@ TRIBITS_ADD_DEBUG_OPTION()
 ASSERT_DEFINED(Tpetra_ENABLE_Kokkos_Refactor)
 
 #
-# Decide whether to enable KokkosClassic::OpenMPNode (which is
-# DEPRECATED and must be enabled explicitly).  This requires that
+# Decide whether to enable KokkosClassic::DoNotUse::OpenMPNode (which
+# is DEPRECATED and must be enabled explicitly).  This requires that
 # OpenMP be enabled in Trilinos.
 #
 ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_OpenMP)
@@ -23,7 +23,7 @@ GLOBAL_SET(${PACKAGE_NAME}_ENABLE_OpenMPNode_DEFAULT OFF)
 TRIBITS_ADD_OPTION_AND_DEFINE( 
   ${PACKAGE_NAME}_ENABLE_OpenMPNode
   HAVE_TPETRACLASSIC_OPENMP
-  "Enable the KokkosClassic::OpenMPNode Node type in ${PACKAGE_NAME} (only works if ${PROJECT_NAME}_ENABLE_OpenMP is enabled).  This Node type is DEPRECATED and OFF by default."
+  "Enable the KokkosClassic::DoNotUse::OpenMPNode Node type in ${PACKAGE_NAME} (only works if ${PROJECT_NAME}_ENABLE_OpenMP is enabled).  This Node type is DEPRECATED and OFF by default."
   ${${PACKAGE_NAME}_ENABLE_OpenMPNode_DEFAULT}
   )
 IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_OpenMPNode)
@@ -34,9 +34,9 @@ IF (${PACKAGE_NAME}_ENABLE_OpenMPNode AND NOT ${PROJECT_NAME}_ENABLE_OpenMP)
 ENDIF ()
 
 #
-# Decide whether to enable KokkosClassic::SerialNode.  It will be
-# DEPRECATED in the next Trilinos release.  It will also be disabled
-# by default if the Kokkos refactor version of Tpetra is enabled.
+# Decide whether to enable KokkosClassic::DoNotUseSerialNode.  It is
+# DEPRECATED and will go away ANY TIME.  It will also be disabled by
+# default if the Kokkos refactor version of Tpetra is enabled.
 #
 IF(NOT Tpetra_ENABLE_Kokkos_Refactor)
   GLOBAL_SET(${PACKAGE_NAME}_ENABLE_SerialNode_DEFAULT ON)
@@ -46,7 +46,7 @@ ENDIF()
 TRIBITS_ADD_OPTION_AND_DEFINE( 
   ${PACKAGE_NAME}_ENABLE_SerialNode
   HAVE_TPETRACLASSIC_SERIAL
-  "Add KokkosClassic::SerialNode to the list of enabled Node types."
+  "Add KokkosClassic::DoNotUse::SerialNode to the list of enabled Node types.  (DO NOT USE THIS!)"
   ${${PACKAGE_NAME}_ENABLE_SerialNode_DEFAULT}
   )
 IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_SerialNode)
@@ -55,9 +55,8 @@ ENDIF ()
 
 #
 # Users may specify TpetraClassic_ENABLE_TPINode to enable
-# KokkosClassic::TPINode explicitly.  It will be DEPRECATED in the
-# next Trilinos release.  This Node will also be disabled by default
-# if the Kokkos refactor version of Tpetra is enabled.
+# KokkosClassic::DoNotUse::TPINode explicitly.  It is DEPRECATED and
+# and is disabled by default.
 #
 ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_ThreadPool)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ThreadPool)
@@ -73,7 +72,7 @@ ENDIF ()
 TRIBITS_ADD_OPTION_AND_DEFINE( 
   ${PACKAGE_NAME}_ENABLE_TPINode
   HAVE_TPETRACLASSIC_THREADPOOL
-  "Enable KokkosClassic::TPINode in ${PACKAGE_NAME}.  This Node type and this CMake option will be DEPRECATED in the next Trilinos release.  Please use Kokkos::Compat::KokkosThreadsWrapperNode instead."  
+  "Enable KokkosClassic::DoNotUse::TPINode in ${PACKAGE_NAME}.  This Node type and this CMake option has been DEPRECATED.  Please use Kokkos::Compat::KokkosThreadsWrapperNode instead."  
   ${${PACKAGE_NAME}_ENABLE_TPINode_DEFAULT}
   )
 IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_TPINode)
@@ -83,9 +82,8 @@ ENDIF ()
 
 #
 # Users may specify TpetraClassic_ENABLE_TBBNode to enable
-# KokkosClassic::TBBNode explicitly.  It will be DEPRECATED in the
-# next Trilinos release.  This Node will also be disabled by default
-# if the Kokkos refactor version of Tpetra is enabled.
+# KokkosClassic::DoNotUse::TBBNode explicitly.  It has been DEPRECATED
+# and is disabled by default.
 #
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_TBB)
 IF(${PACKAGE_NAME}_ENABLE_TBB AND NOT Tpetra_ENABLE_Kokkos_Refactor)
@@ -100,7 +98,7 @@ ENDIF ()
 TRIBITS_ADD_OPTION_AND_DEFINE( 
   ${PACKAGE_NAME}_ENABLE_TBBNode
   HAVE_TPETRACLASSIC_TBB
-  "Enable KokkosClassic::TBBNode in ${PACKAGE_NAME}.  This Node type and this CMake option will be DEPRECATED in the next Trilinos release."
+  "Enable KokkosClassic::DoNotUse::TBBNode in ${PACKAGE_NAME}.  This Node type and this CMake option has been DEPRECATED."
   ${${PACKAGE_NAME}_ENABLE_TBBNode_DEFAULT}
   )
 IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_TBBNode)
@@ -111,7 +109,7 @@ ENDIF ()
 TRIBITS_ADD_OPTION_AND_DEFINE(
   KokkosClassic_TREAT_SERIALNODE_AS_DEVICE
   HAVE_KOKKOSCLASSIC_TREAT_SERIALNODE_AS_DEVICE
-  "Treat KokkosClassic::SerialNode as a device node instead of a host node, for kernels where there is a difference."
+  "Treat KokkosClassic::DoNotUse::SerialNode as a device node instead of a host node, for kernels where there is a difference."
   ${${PACKAGE_NAME}_ENABLE_DEBUG}
   )
 

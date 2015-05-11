@@ -44,18 +44,15 @@
 #define KOKKOS_CRSMATRIX_H_
 
 /// \file Kokkos_CrsMatrix.hpp
-/// \brief Kokkos' sparse matrix interface
+/// \brief Local sparse matrix interface
+/// \warning Do NOT include this file.  This file is DEPRECATED!!!
+///   Include Kokkos_Sparse_CrsMatrix.hpp instead.
 
-// FIXME (mfh 29 Sep 2013) There should never be a reason for using
-// assert() in these routines.  Routines that _could_ fail should
-// either return an error code (if they are device functions) or throw
-// an exception (if they are not device functions).
-#include <assert.h>
 #include <algorithm>
 
 #include <Kokkos_Core.hpp>
+#include <Kokkos_ArithTraits.hpp>
 #include <Kokkos_StaticCrsGraph.hpp>
-#include <Kokkos_MV.hpp>
 
 #ifdef KOKKOS_USE_CUSPARSE
 #  include <cusparse.h>

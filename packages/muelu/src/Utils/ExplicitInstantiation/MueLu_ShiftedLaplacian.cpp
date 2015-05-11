@@ -43,8 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
-
-
+#include "MueLu_ConfigDefs.hpp"
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 #include "MueLu_ExplicitInstantiation.hpp"
 
 #include "MueLu_ShiftedLaplacian_def.hpp"
@@ -58,4 +58,4 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(MUELU_LOCAL_INSTANT)
 
-
+#endif

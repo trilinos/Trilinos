@@ -21,6 +21,12 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION}
   )
 
+ASSERT_DEFINED(Kokkos_ENABLE_Cuda)
+ASSERT_DEFINED(Kokkos_ENABLE_Cuda_UVM)
+IF (Kokkos_ENABLE_Cuda AND NOT Kokkos_ENABLE_Cuda_UVM)
+  MESSAGE (FATAL_ERROR "If CUDA is enabled in Kokkos, Tpetra requires that Kokkos' UVM support be enabled.  You may do this by setting the CMake option Kokkos_ENABLE_CUDA_UVM:BOOL=ON and running CMake again.\n\nDetails for developers: UVM stands for \"Unified Virtual Memory\".  It lets code running on the host processor access GPU memory.  There is a difference between CUDA's support for UVM, and Kokkos' support for UVM.  Versions of CUDA >= 6 have UVM support built in by default.  Kokkos always supports this.  In particular, Kokkos always has a memory space for UVM allocations, called Kokkos::CudaUVMSpace.  \"Turning on UVM support in Kokkos\" means two things:\n\n1. Kokkos::Cuda::memory_space (the CUDA execution space's default memory space) is Kokkos::CudaUVMSpace, rather than Kokkos::CudaSpace.\n\n2. Kokkos::DualView<T, Kokkos::Cuda> only uses a single allocation, in the Kokkos::CudaUVMSpace memory space.")
+ENDIF ()
+
 SET(Tpetra_MACHINE_XML_FILE_DIR 
     ${CMAKE_CURRENT_SOURCE_DIR}/machine_files
     CACHE INTERNAL "")
@@ -173,7 +179,7 @@ IF (Tpetra_ENABLE_Kokkos_Refactor)
     TRIBITS_ADD_OPTION_AND_DEFINE(
       Tpetra_INST_SERIALCLASSIC
       HAVE_TPETRA_INST_SERIALCLASSIC
-      "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over Node = KokkosClassic::SerialNode.  This option is OFF by default."
+      "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over Node = KokkosClassic::DoNotUse::SerialNode.  This option is OFF by default."
       OFF
       )
 
@@ -185,7 +191,7 @@ IF (Tpetra_ENABLE_Kokkos_Refactor)
     ELSE()
       GLOBAL_SET(HAVE_TPETRA_SERIALCLASSIC OFF)
       IF (HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALNODE) 
-        MESSAGE(FATAL_ERROR "Tpetra: set KokkosClassic SerialNode as default node type but its not enabled.")   
+        MESSAGE(FATAL_ERROR "Tpetra: set KokkosClassic::DoNotUse::SerialNode as default node type but its not enabled.")   
       ENDIF()
     ENDIF()
     IF(Tpetra_INST_SERIAL)
@@ -224,8 +230,8 @@ IF (Tpetra_ENABLE_Kokkos_Refactor)
     # Append the instantiation list
 
     IF(Tpetra_INST_SERIALCLASSIC) 
-      LIST(APPEND TpetraCore_ETI_NODES "KokkosClassic::SerialNode")
-      MESSAGE(STATUS "Enabling Node: KokkosClassic::SerialNode")
+      LIST(APPEND TpetraCore_ETI_NODES "KokkosClassic::DoNotUse::SerialNode")
+      MESSAGE(STATUS "Enabling Node: KokkosClassic::DoNotUse::SerialNode")
     ENDIF()
     IF(Tpetra_INST_SERIAL) 
       LIST(APPEND TpetraCore_ETI_NODES "Kokkos::Compat::KokkosSerialWrapperNode")
@@ -304,11 +310,11 @@ ENDIF() # Tpetra_ENABLE_Kokkos_Refactor
 
 
 MESSAGE(STATUS "Tpetra Node availability: ")
-MESSAGE(STATUS "   SerialNode (Kokkos::Classic): ${HAVE_TPETRA_SERIALCLASSIC}")
 MESSAGE(STATUS "   KokkosSerialWrapperNode:      ${HAVE_TPETRA_SERIAL}")
 MESSAGE(STATUS "   KokkosThreadsWrapperNode:     ${HAVE_TPETRA_PTHREAD}")
 MESSAGE(STATUS "   KokkosOpenMPWrapperNode:      ${HAVE_TPETRA_OPENMP}")
 MESSAGE(STATUS "   KokkosCudaWrapperNode:        ${HAVE_TPETRA_CUDA}")
+MESSAGE(STATUS "   SerialNode (classic):         ${HAVE_TPETRA_SERIALCLASSIC}")
 
 
 #-----------------------------------------------------------------------

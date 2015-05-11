@@ -191,7 +191,7 @@ TEST( UnitTestNoUpwardConnectivity, simpleTri )
 
 #ifdef SIERRA_MIGRATION
    bool add_fmwk_data = false;
-   stk::mesh::BulkData mesh(metaData, MPI_COMM_WORLD, add_fmwk_data, &custom_connectivity);
+   stk::mesh::BulkData mesh(metaData, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA, add_fmwk_data, &custom_connectivity);
 #else
    stk::mesh::BulkData mesh(metaData, MPI_COMM_WORLD, &custom_connectivity);
 #endif

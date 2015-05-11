@@ -12,8 +12,8 @@
 
 #include "crs_matrix_helper.hpp"
 
-#include "crs_team_view.hpp"
-#include "crs_task_view.hpp"
+#include "team_view.hpp"
+#include "task_view.hpp"
 
 #include "sequential_for.hpp"
 #include "parallel_for.hpp"
@@ -50,11 +50,13 @@ typedef TaskTeamFactory<TaskPolicy,Future,TeamThreadLoopRegion> TaskFactoryType;
 typedef SequentialFor ForType;                                                                                
 
 // block representation for CrsMatrix                                                                         
-typedef CrsTaskView<CrsMatrixBaseType,TaskFactoryType> CrsTaskViewType;                                       
+typedef TaskView<CrsMatrixViewType,TaskFactoryType> CrsTaskViewType;                                       
                                                                                                               
 // hier matrix                                                                                                
 typedef CrsMatrixBase<CrsTaskViewType,ordinal_type,size_type,space_type> CrsHierBaseType;                     
-typedef CrsTaskView<CrsHierBaseType,TaskFactoryType> CrsHierViewType;   
+typedef CrsMatrixView<CrsHierBaseType> CrsHierViewType;                     
+
+typedef TaskView<CrsHierViewType,TaskFactoryType> CrsHierTaskType;   
 
 // ---------------------------------------------------------------------------------
 int main (int argc, char *argv[]) {
@@ -107,13 +109,13 @@ int main (int argc, char *argv[]) {
                                S.RangeVector(),
                                S.TreeVector());    
 
-    CrsHierViewType H(HH);  
+    CrsHierTaskType H(&HH);  
     
     int r_val = 0;                                                                                            
     typedef typename CrsTaskViewType::policy_type policy_type;                                                
                                                                                                               
-    IChol<Uplo::Upper,AlgoIChol::RightByBlocks>::                                                             
-      TaskFunctor<ForType,CrsHierViewType>(H).apply(policy_type::member_null(), r_val);   
+    IChol<Uplo::Upper,AlgoIChol::ByBlocks>::                                                             
+      TaskFunctor<ForType,CrsHierTaskType>(H).apply(policy_type::member_null(), r_val);   
     
     ofstream out;
     out.open("graph.gv");

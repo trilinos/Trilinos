@@ -56,7 +56,7 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   typedef ViewDefault Specialize ;
 
   //------------------------------------
-  /** \brief  Compatible value and shape */
+  /** \brief  Compatible value and shape and LayoutLeft/Right to LayoutStride*/
 
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM >
@@ -73,10 +73,53 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
                       ShapeCompatible< typename ViewTraits<DT,DL,DD,DM>::shape_type ,
                                        typename ViewTraits<ST,SL,SD,SM>::shape_type >::value
                       &&
-                      is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout,LayoutStride>::value )
+                      is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout,LayoutStride>::value
+                      && (is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout,LayoutLeft>::value ||
+                          is_same< typename ViewTraits<ST,SL,SD,SM>::array_layout,LayoutRight>::value))
                   )>::type * = 0 )
   {
     dst.m_offset_map.assign( src.m_offset_map );
+
+    dst.m_management = src.m_management ;
+
+    dst.m_ptr_on_device = ViewDataManagement< ViewTraits<DT,DL,DD,DM> >::create_handle( src.m_ptr_on_device, src.m_tracker );
+
+    dst.m_tracker = src.m_tracker ;
+
+  }
+
+
+  /** \brief  Assign 1D Strided View to LayoutLeft or LayoutRight if stride[0]==1 */
+
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SD , class SM >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,LayoutStride,SD,SM,Specialize> & src ,
+                  const typename enable_if<(
+                    (
+                      ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
+                                    ViewTraits<ST,LayoutStride,SD,SM> >::value
+                      ||
+                      ( ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
+                                      ViewTraits<ST,LayoutStride,SD,SM> >::assignable_value
+                        &&
+                        ShapeCompatible< typename ViewTraits<DT,DL,DD,DM>::shape_type ,
+                                       typename ViewTraits<ST,LayoutStride,SD,SM>::shape_type >::value
+                      )
+                     )
+                     &&
+                      (View<DT,DL,DD,DM,Specialize>::rank==1)
+                     && (is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout,LayoutLeft>::value ||
+                          is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout,LayoutRight>::value)
+                  )>::type * = 0 )
+  {
+    size_t strides[8];
+    src.stride(strides);
+    if(strides[0]!=1) {
+      abort("Trying to assign strided 1D View to LayoutRight or LayoutLeft which is not stride-1");
+    }
+    dst.m_offset_map.assign( src.dimension_0(), 0, 0, 0, 0, 0, 0, 0, 0 );
 
     dst.m_management = src.m_management ;
 
@@ -422,7 +465,7 @@ View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::
                                         , R4::begin( arg4 )
                                         , R5::begin( arg5 )
                                         , R6::begin( arg6 )
-                                        , 0 );
+                                        );
       m_tracker = src.m_tracker ;
     }
   }
@@ -500,8 +543,7 @@ View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::
                                         , R3::begin( arg3 )
                                         , R4::begin( arg4 )
                                         , R5::begin( arg5 )
-                                        , 0
-                                        , 0 );
+                                        );
       m_tracker = src.m_tracker ;
     }
   }
@@ -576,9 +618,7 @@ View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::
                                         , R2::begin( arg2 )
                                         , R3::begin( arg3 )
                                         , R4::begin( arg4 )
-                                        , 0
-                                        , 0
-                                        , 0 );
+                                        );
       m_tracker = src.m_tracker ;
     }
   }
@@ -649,10 +689,7 @@ View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::
                                         , R1::begin( arg1 )
                                         , R2::begin( arg2 )
                                         , R3::begin( arg3 )
-                                        , 0
-                                        , 0
-                                        , 0
-                                        , 0 );
+                                        );
       m_tracker = src.m_tracker ;
     }
   }
@@ -714,7 +751,7 @@ View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::
                         src.m_offset_map( R0::begin( arg0 )
                                         , R1::begin( arg1 )
                                         , R2::begin( arg2 )
-                                        , 0 , 0 , 0 , 0 , 0 );
+                                        );
       m_tracker = src.m_tracker ;
     }
   }
@@ -772,7 +809,7 @@ View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::
       m_ptr_on_device = src.m_ptr_on_device +
                         src.m_offset_map( R0::begin( arg0 )
                                         , R1::begin( arg1 )
-                                        , 0 , 0 , 0 , 0 , 0 , 0 );
+                                        );
       m_tracker = src.m_tracker ;
     }
   }
@@ -826,7 +863,7 @@ View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::
 
       m_ptr_on_device = src.m_ptr_on_device +
                         src.m_offset_map( R0::begin( arg0 )
-                                        , 0 , 0 , 0 , 0 , 0 , 0 , 0 );
+                                        );
       m_tracker = src.m_tracker ;
     }
   }

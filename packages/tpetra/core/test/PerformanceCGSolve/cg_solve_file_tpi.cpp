@@ -45,8 +45,8 @@
 
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
 int run_tpi(int& argc, char* argv[]) {
-  typedef KokkosClassic::TPINode                Node;
-  std::cout << "Running: KokkosClassic::TPINode" << std::endl;
+  typedef KokkosClassic::DoNotUse::TPINode                Node;
+  std::cout << "Running: KokkosClassic::DoNotUse::TPINode" << std::endl;
   return run<Node>(argc,argv);
 }
 #endif

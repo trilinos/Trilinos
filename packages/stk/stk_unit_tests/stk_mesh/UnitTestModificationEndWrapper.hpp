@@ -44,14 +44,14 @@ namespace mesh {
 class UnitTestModificationEndWrapper
 {
  public:
-  static bool wrap(stk::mesh::BulkData& mesh, bool generate_aura);
+  static bool wrap(stk::mesh::BulkData& mesh);
 };
 
 } // namespace mesh
 
 namespace unit_test {
 
-bool modification_end_wrapper(stk::mesh::BulkData& mesh, bool generate_aura);
+bool modification_end_wrapper(stk::mesh::BulkData& mesh);
 
 } // namespace unit_test
 

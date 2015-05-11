@@ -46,22 +46,18 @@
 #include "Tpetra_ConfigDefs.hpp"
 
 // Don't bother compiling anything, or even including anything else,
-// unless OpenMPNode is enabled.
+// unless DoNotUse::OpenMPNode is enabled.
 #if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_KOKKOSCLASSIC_OPENMP)
 
 #include "Tpetra_CrsMatrixSolveOp_decl.hpp"
 #include "TpetraCore_ETIHelperMacros.h"
 #include "Tpetra_CrsMatrixSolveOp_def.hpp"
 
-// FIXME (mfh 09 Jan 2015) This is unfortunately needed for
-// CrsMatrix::localSolve().
-#include "Tpetra_CrsMatrix_def.hpp"
-
 #define TPETRA_CRSMATRIX_SOLVEOP_OPENMPNODE_INSTANT( T, SCALAR, LO, GO ) \
-  TPETRA_CRSMATRIX_SOLVEOP_INSTANT( T, SCALAR, LO, GO, KokkosClassic::OpenMPNode )
+  TPETRA_CRSMATRIX_SOLVEOP_INSTANT( T, SCALAR, LO, GO, KokkosClassic::DoNotUse::OpenMPNode )
 
 #define TPETRA_CRSMATRIX_SOLVEOP_OPENMPNODE_INSTANT_SINGLE( SCALAR, LO, GO ) \
-  TPETRA_CRSMATRIX_SOLVEOP_INSTANT_SINGLE( SCALAR, LO, GO, KokkosClassic::OpenMPNode )
+  TPETRA_CRSMATRIX_SOLVEOP_INSTANT_SINGLE( SCALAR, LO, GO, KokkosClassic::DoNotUse::OpenMPNode )
 
 
 namespace Tpetra {

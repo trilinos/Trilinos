@@ -22,3 +22,10 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
   )
 
+#
+# Make a trivial change here if you add a file either to this
+# directory, or to the impl/ subdirectory.  Keep making changes
+# whenever you add or remove a .cpp or .hpp file, and everything will
+# be OK.
+#
+

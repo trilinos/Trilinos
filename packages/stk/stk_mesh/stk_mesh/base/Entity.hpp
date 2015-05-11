@@ -37,9 +37,6 @@
 #include <stddef.h>                     // for size_t
 #include <stdint.h>                     // for uint64_t
 #include <iosfwd>                       // for ostream
-#include "boost/functional/hash/hash.hpp"  // for hash_value
-
-//----------------------------------------------------------------------
 
 namespace stk{
   namespace mesh{
@@ -104,19 +101,11 @@ namespace stk {
       }
     };
 
-    //
-    // Entity
-    //
-
     inline
     size_t hash_value( Entity entity) {
-      return boost::hash_value(entity.local_offset());
+//        try to use std::hash
+      return entity.local_offset();
     }
-
-
-
-    /** \} */
-
   } // namespace mesh
 } // namespace stk
 

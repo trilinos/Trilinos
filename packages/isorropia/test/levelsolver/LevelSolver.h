@@ -93,7 +93,7 @@ class Epetra_LevelSolver : public virtual Epetra_Operator, public virtual Epetra
 
 
   //Epetra_LevelSolver(const Epetra_Map &Map, Node &node);
-  Epetra_LevelSolver(const Epetra_Map &Map, Teuchos::RCP<KokkosClassic::TPINode>& node);
+  Epetra_LevelSolver(const Epetra_Map &Map, Teuchos::RCP<KokkosClassic::DoNotUse::SerialNode>& node);
 
   virtual ~Epetra_LevelSolver();
     int Analyze(const Epetra_CrsGraph &G);
@@ -125,7 +125,7 @@ class Epetra_LevelSolver : public virtual Epetra_Operator, public virtual Epetra
 
     const Teuchos::RCP<const tpetraMap > &getTpetraMap() const {return tmap_RCP_;}
 
-    Teuchos::RCP<KokkosClassic::TPINode> & getNode() const {return node_;}
+    Teuchos::RCP<KokkosClassic::DoNotUse::SerialNode> & getNode() const {return node_;}
 
   protected:
     //typedef typename Node::template buffer<double>::buffer_t  dbuf;
@@ -133,7 +133,7 @@ class Epetra_LevelSolver : public virtual Epetra_Operator, public virtual Epetra
     //    typedef typename Node::template buffer<KokkosClassic::size_type>::buffer_t stbuf;
 
     // constant elements of identity
-    Teuchos::RCP<KokkosClassic::TPINode> &node_;
+    Teuchos::RCP<KokkosClassic::DoNotUse::SerialNode> &node_;
       //Node &node_;
     const Epetra_Map &map_;
     Teuchos::RCP< const tpetraMap > tmap_RCP_;
@@ -168,7 +168,7 @@ class Epetra_LevelSolver : public virtual Epetra_Operator, public virtual Epetra
 
 template <class Node>
 //Epetra_LevelSolver<Node>::Epetra_LevelSolver(const Epetra_Map &Map, Node &node)
-Epetra_LevelSolver<Node>::Epetra_LevelSolver(const Epetra_Map &Map, Teuchos::RCP<KokkosClassic::TPINode> &node)
+Epetra_LevelSolver<Node>::Epetra_LevelSolver(const Epetra_Map &Map, Teuchos::RCP<KokkosClassic::DoNotUse::SerialNode> &node)
 : node_(node), map_(Map),setupCalled_(false), unitDiag_(false), ignorePerm_(false), numRows_(Map.NumMyPoints()), numLevels_(0), //buf_alloc_len_(0),
   dBuffOrig(Teuchos::null), dInvBuffOrig(Teuchos::null), meanLsize_(-1), stddevLsize_(-1), meanLnnz_(-1), stddevLnnz_(-1)
 {
@@ -693,7 +693,7 @@ int Epetra_LevelSolver<Node>::Apply(const Tpetra::MultiVector<double,int,int,Nod
 /* /\*   using KokkosClassic::CrsGraph; *\/ */
 /* /\*   using KokkosClassic::DefaultArithmetic; *\/ */
 /* /\*   using KokkosClassic::DefaultSparseMultiply; *\/ */
-/* /\*   using KokkosClassic::SerialNode; *\/ */
+/* /\*   using KokkosClassic::DoNotUse::SerialNode; *\/ */
 /* /\*   using Teuchos::RCP; *\/ */
 /* /\*   using Teuchos::rcp; *\/ */
 /* /\*   using Teuchos::null; *\/ */

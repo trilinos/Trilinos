@@ -266,6 +266,18 @@ Exo_Block<INT>* ExoII_Read<INT>::Get_Elmt_Block_by_Id(size_t id) const
 }
 
 template <typename INT>
+Exo_Block<INT>* ExoII_Read<INT>::Get_Elmt_Block_by_Name(const std::string &name) const
+{
+  SMART_ASSERT(Check_State());
+  for (size_t i=0; i < num_elmt_blocks; i++) {
+    if (eblocks[i].Name() == name) {
+      return &eblocks[i];
+    }
+  }
+  return NULL;
+}
+
+template <typename INT>
 Exo_Entity* ExoII_Read<INT>::Get_Entity_by_Index(EXOTYPE type, size_t block_index) const
 {
   SMART_ASSERT(Check_State());
@@ -318,6 +330,38 @@ Exo_Entity* ExoII_Read<INT>::Get_Entity_by_Id(EXOTYPE type, size_t id) const
 }
 
 template <typename INT>
+Exo_Entity* ExoII_Read<INT>::Get_Entity_by_Name(EXOTYPE type, const std::string &name) const
+{
+  SMART_ASSERT(Check_State());
+  switch (type) {
+  case EX_ELEM_BLOCK:
+    for (size_t i=0; i < num_elmt_blocks; i++) {
+      if (eblocks[i].Name() == name) {
+	return &eblocks[i];
+      }
+    }
+    break;
+  case EX_NODE_SET:
+    for (size_t i=0; i < num_node_sets; i++) {
+      if (nsets[i].Name() == name) {
+	return &nsets[i];
+      }
+    }
+    break;
+  case EX_SIDE_SET:
+    for (size_t i=0; i < num_side_sets; i++) {
+      if (ssets[i].Name() == name) {
+	return &ssets[i];
+      }
+    }
+    break;
+  default:
+    return NULL;
+  }
+  return NULL;
+}
+
+template <typename INT>
 Node_Set<INT>* ExoII_Read<INT>::Get_Node_Set_by_Id(size_t set_id) const
 {
   SMART_ASSERT(Check_State());
@@ -330,11 +374,35 @@ Node_Set<INT>* ExoII_Read<INT>::Get_Node_Set_by_Id(size_t set_id) const
 }
 
 template <typename INT>
+Node_Set<INT>* ExoII_Read<INT>::Get_Node_Set_by_Name(const std::string &name) const
+{
+  SMART_ASSERT(Check_State());
+  for (size_t i=0; i < num_node_sets; i++) {
+    if (nsets[i].Name() == name) {
+      return &nsets[i];
+    }
+  }
+  return NULL;
+}
+
+template <typename INT>
 Side_Set<INT>* ExoII_Read<INT>::Get_Side_Set_by_Id(size_t set_id) const
 {
   SMART_ASSERT(Check_State());
   for (size_t i=0; i < num_side_sets; i++) {
     if (ssets[i].Id() == set_id) {
+      return &ssets[i];
+    }
+  }
+  return NULL;
+}
+
+template <typename INT>
+Side_Set<INT>* ExoII_Read<INT>::Get_Side_Set_by_Name(const std::string &name) const
+{
+  SMART_ASSERT(Check_State());
+  for (size_t i=0; i < num_side_sets; i++) {
+    if (ssets[i].Name() == name) {
       return &ssets[i];
     }
   }

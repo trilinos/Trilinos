@@ -18,7 +18,7 @@
 #include "crs_matrix_helper.hpp"
 
 #include "task_factory.hpp"
-#include "crs_task_view.hpp"
+#include "task_view.hpp"
 
 using namespace std;
 
@@ -39,10 +39,12 @@ typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
 
 typedef TaskFactory<Kokkos::Experimental::TaskPolicy<space_type>,
                     Kokkos::Experimental::Future<int,space_type> > TaskFactoryType;
-typedef CrsTaskView<CrsMatrixBaseType,TaskFactoryType> CrsTaskViewType;
+typedef TaskView<CrsMatrixViewType,TaskFactoryType> CrsTaskViewType;
 
 typedef CrsMatrixBase<CrsTaskViewType,ordinal_type,size_type,space_type> CrsHierBaseType;
-typedef CrsTaskView<CrsHierBaseType,TaskFactoryType> CrsHierViewType;
+typedef CrsMatrixView<CrsHierBaseType> CrsHierViewType;
+
+typedef TaskView<CrsHierViewType,TaskFactoryType> CrsHierTaskType;
 
 int main (int argc, char *argv[]) {
   if (argc < 2) {
@@ -75,7 +77,7 @@ int main (int argc, char *argv[]) {
   cout << "Hier Matrix HH = " << endl
        << HH << endl;
 
-  CrsHierViewType H;
+  CrsHierTaskType H;
   H.setView(&HH, 2, 3, 2, 3);
 
   cout << "Block Partitioned Matrix H = " << endl

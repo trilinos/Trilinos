@@ -576,8 +576,13 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   using Teuchos::as;
   typedef scalar_type RangeScalar;
   typedef scalar_type DomainScalar;
-
   typedef Teuchos::ScalarTraits<RangeScalar> STRS;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    alpha != Teuchos::ScalarTraits<scalar_type>::one () ||
+    beta != Teuchos::ScalarTraits<scalar_type>::zero (), std::logic_error,
+    "Ifpack2::ReorderFilter::apply is only implemented for alpha = 1 and "
+    "beta = 0.  You set alpha = " << alpha << " and beta = " << beta << ".");
   TEUCHOS_TEST_FOR_EXCEPTION(
     X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
     "Ifpack2::OverlappingRowMatrix::apply: The input X and the output Y must "

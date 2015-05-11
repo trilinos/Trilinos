@@ -67,7 +67,7 @@ int main(){
         } // P-loop
     }// C-loop	
     Kokkos::fence();
-    double timestructviews = structviewstimer.seconds();
+    //double timestructviews = structviewstimer.seconds();
 //    std::cout <<std::setprecision(9)<<"Time for structviews"<<timestructviews<<std::endl;
     
 
@@ -87,7 +87,7 @@ int main(){
     }// C-loop
 	 	
  	Kokkos::fence();	
-    double timerawviews = rawviewstimer.seconds();
+  //  double timerawviews = rawviewstimer.seconds();
  //   std::cout <<"Time for rawviews"<<timerawviews<<std::endl;
 
 
@@ -121,7 +121,7 @@ int main(){
   
 
     Kokkos::fence();
-double timerfieldcontainermultiply=fieldcontainertimer.seconds();
+//double timerfieldcontainermultiply=fieldcontainertimer.seconds();
 
 //std::cout <<"FieldContainerTimer: "<<timerfieldcontainermultiply <<std::endl;
 

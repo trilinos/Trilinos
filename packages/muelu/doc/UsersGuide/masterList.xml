@@ -327,6 +327,30 @@
     </parameter>
 
     <parameter>
+      <name>aggregation: brick x size</name>
+      <type>int</type>
+      <default>2</default>
+      <description>Number of points for x axis in "brick" aggregation (limited to 3).</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: brick y size</name>
+      <type>int</type>
+      <default>2</default>
+      <description>Number of points for y axis in "brick" aggregation (limited to 3).</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: brick z size</name>
+      <type>int</type>
+      <default>2</default>
+      <description>Number of points for z axis in "brick" aggregation (limited to 3).</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>aggregation: max selected neighbors</name>
       <type>int</type>
       <default>0</default>
@@ -389,25 +413,19 @@
     </parameter>
 
     <parameter>
-      <name>aggregation: export visualization data</name>
+      <name>aggregation: allow user-specified singletons</name>
       <type>bool</type>
       <default>false</default>
-      <description>Export data for visualization post-processing.</description>
+      <description>Allow special nodes to be marked for one-to-one transfer to the coarsest level. (default = off)</description>
+      <visible>false</visible>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
     <parameter>
-      <name>aggregation: mode</name>
-      <type>string</type>
-      <default>"old"</default>
-      <MHD>"new"</MHD>
-      <Poisson-2D>"new"</Poisson-2D>
-      <Poisson-3D>"new"</Poisson-3D>
-      <Elasticity-2D>"new"</Elasticity-2D>
-      <Elasticity-3D>"new"</Elasticity-3D>
-      <ConvectionDiffusion>"new"</ConvectionDiffusion>
-      <description>old = Tobias, new = ML</description>
-      <visible>false</visible>
+      <name>aggregation: export visualization data</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Export data for visualization post-processing.</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
@@ -706,5 +724,18 @@
     </parameter>
 
   </reuse>
+
+  <debug>
+
+    <parameter>
+      <name>debug: graph level</name>
+      <type>int</type>
+      <default>-1</default>
+      <description>Output dependency graph.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+  </debug>
 
 </masterlist>

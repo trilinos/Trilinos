@@ -48,7 +48,7 @@
 #include <vector>
 
 #include <boost/tuple/tuple.hpp>
-#ifdef HAVE_INTREPID_KOKKOSCORE
+#if defined(HAVE_INTREPID_KOKKOSCORE)
 #include<Kokkos_Core.hpp>
 #endif
 #include "Intrepid_MiniTensor_Vector.h"
@@ -131,19 +131,21 @@ public:
   /// \param dimension the space dimension
   /// \param data_ptr pointer into the array
   ///
-#ifdef HAVE_INTREPID_KOKKOSCORE
+#if defined(HAVE_INTREPID_KOKKOSCORE)
   template<class ArrayT, typename iType>
   Tensor(ArrayT & data, iType index1);
 
   template<class ArrayT, typename iType>
   Tensor(
-      typename apply_diff<ArrayT, Index>::type & data,
+      typename Kokkos::Impl::enable_if<
+      !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
       iType index1,
       iType index2);
 
   template<class ArrayT, typename iType>
   Tensor(
-      typename apply_diff<ArrayT, Index>::type & data,
+      typename Kokkos::Impl::enable_if<
+      !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
       iType index1,
       iType index2,
       iType index3);
@@ -176,7 +178,8 @@ public:
   template<class ArrayT, typename iType>
   Tensor(
       Index const dimension,
-      typename apply_diff<ArrayT, Index>::type & data,
+      typename Kokkos::Impl::enable_if<
+      !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
       iType index1,
       iType index2);
 
@@ -311,8 +314,10 @@ public:
   /// Fill components from array defined by pointer.
   /// \param data_ptr pointer into array for filling components
   ///
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
   template<class ArrayT, typename iType>
-  typename if_diff<ArrayT, T*, void>::type
+  typename Kokkos::Impl::enable_if<
+  !Kokkos::Impl::is_same<ArrayT, T*>::value, void>::type
   fill(ArrayT & data, iType index1);
 
   template<class ArrayT, typename iType>
@@ -347,7 +352,7 @@ public:
       iType index4,
       iType index5,
       iType index6);
-
+#endif
   void
   fill(T const * data_ptr);
 

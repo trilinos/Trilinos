@@ -190,6 +190,7 @@ namespace panzer_stk_classic {
         p.set<bool>("Use Tpetra",false);
         p.set<bool>("Use Epetra ME",true);
         p.set<bool>("Lump Explicit Mass",false);
+        p.set<bool>("Constant Mass Matrix",true);
         p.set<Teuchos::RCP<const panzer::EquationSetFactory> >("Equation Set Factory", Teuchos::null);
         p.set<Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >("Closure Model Factory", Teuchos::null);
         p.set<Teuchos::RCP<const panzer::BCStrategyFactory> >("BC Factory",Teuchos::null);
@@ -330,6 +331,8 @@ namespace panzer_stk_classic {
 
     // add fields automatically written through the closure model
     ////////////////////////////////////////////////////////////////////////////////////////
+    addUserFieldsToMesh(*mesh,output_list);
+/*
     {
       // register cell averaged scalar fields
       Teuchos::ParameterList & cellAvgQuants = output_list.sublist("Cell Average Quantities");
@@ -410,6 +413,7 @@ namespace panzer_stk_classic {
             mesh->addSolutionField(tokens[i],blockId);
       }
     } 
+*/
 
     // finish building mesh, set required field variables and mesh bulk data
     ////////////////////////////////////////////////////////////////////////////////////////
@@ -756,6 +760,90 @@ namespace panzer_stk_classic {
 
   template<typename ScalarT>
   void ModelEvaluatorFactory<ScalarT>::
+  addUserFieldsToMesh(panzer_stk_classic::STK_Interface & mesh,const Teuchos::ParameterList & output_list) const
+  {
+    // register cell averaged scalar fields
+    const Teuchos::ParameterList & cellAvgQuants = output_list.sublist("Cell Average Quantities");
+    for(Teuchos::ParameterList::ConstIterator itr=cellAvgQuants.begin();
+        itr!=cellAvgQuants.end();++itr) {
+       const std::string & blockId = itr->first;
+       const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
+       std::vector<std::string> tokens;
+
+       // break up comma seperated fields
+       panzer::StringTokenizer(tokens,fields,",",true);
+
+       for(std::size_t i=0;i<tokens.size();i++)
+          mesh.addCellField(tokens[i],blockId);
+    }
+
+    // register cell averaged components of vector fields 
+    // just allocate space for the fields here. The actual calculation and writing 
+    // are done by panzer_stk_classic::ScatterCellAvgVector.
+    const Teuchos::ParameterList & cellAvgVectors = output_list.sublist("Cell Average Vectors");
+    for(Teuchos::ParameterList::ConstIterator itr = cellAvgVectors.begin();
+        itr != cellAvgVectors.end(); ++itr) {
+       const std::string & blockId = itr->first;
+       const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
+       std::vector<std::string> tokens;
+
+       // break up comma seperated fields
+       panzer::StringTokenizer(tokens,fields,",",true);
+
+       for(std::size_t i = 0; i < tokens.size(); i++) {
+          std::string d_mod[3] = {"X","Y","Z"};
+          for(std::size_t d = 0; d < mesh.getDimension(); d++) 
+              mesh.addCellField(tokens[i]+d_mod[d],blockId);  
+       }   
+    }
+
+    // register cell quantities
+    const Teuchos::ParameterList & cellQuants = output_list.sublist("Cell Quantities");
+    for(Teuchos::ParameterList::ConstIterator itr=cellQuants.begin();
+        itr!=cellQuants.end();++itr) {
+       const std::string & blockId = itr->first;
+       const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
+       std::vector<std::string> tokens;
+
+       // break up comma seperated fields
+       panzer::StringTokenizer(tokens,fields,",",true);
+
+       for(std::size_t i=0;i<tokens.size();i++)
+          mesh.addCellField(tokens[i],blockId);
+    }
+
+    // register ndoal quantities
+    const Teuchos::ParameterList & nodalQuants = output_list.sublist("Nodal Quantities");
+    for(Teuchos::ParameterList::ConstIterator itr=nodalQuants.begin();
+        itr!=nodalQuants.end();++itr) {
+       const std::string & blockId = itr->first;
+       const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
+       std::vector<std::string> tokens;
+
+       // break up comma seperated fields
+       panzer::StringTokenizer(tokens,fields,",",true);
+
+       for(std::size_t i=0;i<tokens.size();i++)
+          mesh.addSolutionField(tokens[i],blockId);
+    }
+
+    const Teuchos::ParameterList & allocNodalQuants = output_list.sublist("Allocate Nodal Quantities");
+    for(Teuchos::ParameterList::ConstIterator itr=allocNodalQuants.begin();
+        itr!=allocNodalQuants.end();++itr) {
+       const std::string & blockId = itr->first;
+       const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
+       std::vector<std::string> tokens;
+
+       // break up comma seperated fields
+       panzer::StringTokenizer(tokens,fields,",",true);
+
+       for(std::size_t i=0;i<tokens.size();i++)
+          mesh.addSolutionField(tokens[i],blockId);
+    }
+  }
+
+  template<typename ScalarT>
+  void ModelEvaluatorFactory<ScalarT>::
   setupInitialConditions(Thyra::ModelEvaluator<ScalarT> & model,
                          panzer::WorksetContainer & wkstContainer,
                          const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
@@ -815,8 +903,8 @@ namespace panzer_stk_classic {
   writeInitialConditions(const Thyra::ModelEvaluator<ScalarT> & model,
                          const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
                          const Teuchos::RCP<panzer::WorksetContainer> & wc,
-                         const Teuchos::RCP<panzer::UniqueGlobalIndexerBase> & ugi,
-                         const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof,
+                         const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ugi,
+                         const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof,
                          const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
                          const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
                          const Teuchos::ParameterList & closure_model_pl,
@@ -1350,7 +1438,7 @@ namespace panzer_stk_classic {
   }
 
   template<typename ScalarT>
-  bool ModelEvaluatorFactory<ScalarT>::determineCoordinateField(const panzer::UniqueGlobalIndexerBase & globalIndexer,std::string & fieldName) const
+  bool ModelEvaluatorFactory<ScalarT>::determineCoordinateField(const panzer::UniqueGlobalIndexerBase & globalIndexer,std::string & fieldName)
   {
     std::vector<std::string> elementBlocks;
     globalIndexer.getElementBlockIds(elementBlocks);
@@ -1383,7 +1471,7 @@ namespace panzer_stk_classic {
   template<typename ScalarT>
   void ModelEvaluatorFactory<ScalarT>::fillFieldPatternMap(const panzer::UniqueGlobalIndexerBase & globalIndexer,
                                                                   const std::string & fieldName,
-                                                                  std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const
+                                                                  std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns)
   {
     using Teuchos::Ptr;
     using Teuchos::ptrFromRef;
@@ -1437,7 +1525,7 @@ namespace panzer_stk_classic {
   template<typename GO>
   void ModelEvaluatorFactory<ScalarT>::fillFieldPatternMap(const panzer::DOFManagerFEI<int,GO> & globalIndexer,
                                                                   const std::string & fieldName,
-                                                                  std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const
+                                                                  std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns)
   {
      std::vector<std::string> elementBlocks;
      globalIndexer.getElementBlockIds(elementBlocks);
@@ -1456,7 +1544,7 @@ namespace panzer_stk_classic {
   template<typename GO>
   void ModelEvaluatorFactory<ScalarT>::fillFieldPatternMap(const panzer::DOFManager<int,GO> & globalIndexer,
                                                                   const std::string & fieldName,
-                                                                  std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const
+                                                                  std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns)
   {
      std::vector<std::string> elementBlocks;
      globalIndexer.getElementBlockIds(elementBlocks);
@@ -1507,8 +1595,8 @@ namespace panzer_stk_classic {
   template<typename ScalarT>
   Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > ModelEvaluatorFactory<ScalarT>::
   initializeSolnWriterResponseLibrary(const Teuchos::RCP<panzer::WorksetContainer> & wc,
-                                      const Teuchos::RCP<panzer::UniqueGlobalIndexerBase> & ugi,
-                                      const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof,
+                                      const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ugi,
+                                      const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof,
                                       const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh) const
   {
      Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary
@@ -1542,15 +1630,78 @@ namespace panzer_stk_classic {
                    const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
                    const Teuchos::RCP<panzer::ConnManagerBase<int> > & conn_manager,
                    const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
-                   const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm)
+                   const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm
+                   #ifdef HAVE_TEKO 
+                   , const Teuchos::RCP<Teko::RequestHandler> & reqHandler
+                   #endif 
+                   ) const
   {
+    const Teuchos::ParameterList & p = *this->getParameterList();
+    const Teuchos::ParameterList & solncntl_params = p.sublist("Solution Control");
+
+    // Build stratimikos solver (note that this is a hard coded path to linear solver options in nox list!)
+    Teuchos::RCP<Teuchos::ParameterList> strat_params 
+       = Teuchos::rcp(new Teuchos::ParameterList(solncntl_params.sublist("NOX").sublist("Direction").
+                      sublist("Newton").sublist("Stratimikos Linear Solver").sublist("Stratimikos")));
+
+    bool writeCoordinates = false;
+    if(p.sublist("Options").isType<bool>("Write Coordinates"))
+      writeCoordinates = p.sublist("Options").get<bool>("Write Coordinates");
+
+    bool writeTopo = false;
+    if(p.sublist("Options").isType<bool>("Write Topology"))
+      writeTopo = p.sublist("Options").get<bool>("Write Topology");
+
+
+    return buildLOWSFactory(blockedAssembly,globalIndexer,conn_manager,mesh,mpi_comm,strat_params,
+                            #ifdef HAVE_TEKO 
+                            reqHandler,
+                            #endif 
+                            writeCoordinates,
+                            writeTopo
+                            );
+  }
+
+  template<typename ScalarT>
+  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > ModelEvaluatorFactory<ScalarT>::
+  buildLOWSFactory(bool blockedAssembly,
+                   const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
+                   const Teuchos::RCP<panzer::ConnManagerBase<int> > & conn_manager,
+                   const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
+                   const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
+                   const Teuchos::RCP<Teuchos::ParameterList> & strat_params,
+                   #ifdef HAVE_TEKO 
+                   const Teuchos::RCP<Teko::RequestHandler> & reqHandler,
+                   #endif 
+                   bool writeCoordinates,
+                   bool writeTopo
+                   )
+  {
+    #ifdef HAVE_TEKO 
+    Teuchos::RCP<Teko::RequestHandler> reqHandler_local = reqHandler;
+    if(reqHandler_local==Teuchos::null)
+      reqHandler_local = Teuchos::rcp(new Teko::RequestHandler);
+    #endif
+
     RCP<panzer_stk_classic::STKConnManager<panzer::Ordinal64> > long_conn = Teuchos::rcp_dynamic_cast<panzer_stk_classic::STKConnManager<panzer::Ordinal64> >(conn_manager);
     if(long_conn!=Teuchos::null)
-      return buildLOWSFactory(blockedAssembly,globalIndexer,long_conn,mesh,mpi_comm);
+      return buildLOWSFactory(blockedAssembly,globalIndexer,long_conn,mesh,mpi_comm,strat_params,
+                              #ifdef HAVE_TEKO 
+                              reqHandler_local,
+                              #endif 
+                              writeCoordinates,
+                              writeTopo
+                              );
 
     RCP<panzer_stk_classic::STKConnManager<int> > int_conn = Teuchos::rcp_dynamic_cast<panzer_stk_classic::STKConnManager<int> >(conn_manager);
     if(int_conn!=Teuchos::null)
-      return buildLOWSFactory(blockedAssembly,globalIndexer,int_conn,mesh,mpi_comm);
+      return buildLOWSFactory(blockedAssembly,globalIndexer,int_conn,mesh,mpi_comm,strat_params,
+                              #ifdef HAVE_TEKO 
+                              reqHandler_local,
+                              #endif 
+                              writeCoordinates,
+                              writeTopo
+                              );
 
     // should never reach this
     TEUCHOS_ASSERT(false);
@@ -1564,18 +1715,15 @@ namespace panzer_stk_classic {
                    const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
                    const Teuchos::RCP<panzer_stk_classic::STKConnManager<GO> > & stkConn_manager,
                    const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
-                   const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm)
+                   const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
+                   const Teuchos::RCP<Teuchos::ParameterList> & strat_params,
+                   #ifdef HAVE_TEKO 
+                   const Teuchos::RCP<Teko::RequestHandler> & reqHandler,
+                   #endif 
+                   bool writeCoordinates,
+                   bool writeTopo
+                   )
   {
-    Teuchos::ParameterList& p = *this->getNonconstParameterList();
-    Teuchos::ParameterList & solncntl_params = p.sublist("Solution Control");
-
-    // Build stratimikos solver (note that this is a hard coded path to linear solver options in nox list!)
-    Teuchos::RCP<Teuchos::ParameterList> strat_params = Teuchos::rcp(new Teuchos::ParameterList);
-    {
-      *strat_params = solncntl_params.sublist("NOX").sublist("Direction").
-        sublist("Newton").sublist("Stratimikos Linear Solver").sublist("Stratimikos");
-    }
-
     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
 
     // Note if you want to use new solvers within Teko they have to be added to the solver builer
@@ -1597,17 +1745,17 @@ namespace panzer_stk_classic {
     }
     #endif // MUELU
 
+
     #ifdef HAVE_TEKO
+    Teuchos::RCP<Teko::RequestHandler> reqHandler_local = reqHandler;
+
     if(!blockedAssembly) {
 
        std::string fieldName;
 
        // try to set request handler from member variable
-       Teuchos::RCP<Teko::RequestHandler> reqHandler = m_req_handler;
-       if(m_req_handler==Teuchos::null) {
-          reqHandler = Teuchos::rcp(new Teko::RequestHandler);
-          m_req_handler = reqHandler;
-       }
+       if(reqHandler_local==Teuchos::null)
+          reqHandler_local = Teuchos::rcp(new Teko::RequestHandler);
 
        // add in the coordinate parameter list callback handler
        if(determineCoordinateField(*globalIndexer,fieldName)) {
@@ -1617,9 +1765,8 @@ namespace panzer_stk_classic {
           Teuchos::RCP<panzer_stk_classic::ParameterListCallback<int,GO> > callback = Teuchos::rcp(new
                 panzer_stk_classic::ParameterListCallback<int,GO>(fieldName,fieldPatterns,stkConn_manager,
                 Teuchos::rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<int,GO> >(globalIndexer)));
-          reqHandler->addRequestCallback(callback);
+          reqHandler_local->addRequestCallback(callback);
 
-          bool writeCoordinates = p.sublist("Options").get("Write Coordinates",false);
           if(writeCoordinates) {
              // force parameterlistcallback to build coordinates
              callback->preRequest(Teko::RequestMesg(Teuchos::rcp(new Teuchos::ParameterList())));
@@ -1698,15 +1845,12 @@ namespace panzer_stk_classic {
        }
        // else write_out_the_mesg("Warning: No unique field determines the coordinates, coordinates unavailable!")
 
-       Teko::addTekoToStratimikosBuilder(linearSolverBuilder,reqHandler);
+       Teko::addTekoToStratimikosBuilder(linearSolverBuilder,reqHandler_local);
     }
     else {
        // try to set request handler from member variable
-       Teuchos::RCP<Teko::RequestHandler> reqHandler = m_req_handler;
-       if(m_req_handler==Teuchos::null) {
-          reqHandler = Teuchos::rcp(new Teko::RequestHandler);
-          m_req_handler = reqHandler;
-       }
+       if(reqHandler_local==Teuchos::null) 
+          reqHandler_local = Teuchos::rcp(new Teko::RequestHandler);
 
        std::string fieldName;
        if(determineCoordinateField(*globalIndexer,fieldName)) {
@@ -1714,12 +1858,11 @@ namespace panzer_stk_classic {
              Teuchos::rcp_dynamic_cast<const panzer::BlockedDOFManager<int,GO> >(globalIndexer);
           Teuchos::RCP<panzer_stk_classic::ParameterListCallbackBlocked<int,GO> > callback =
                 Teuchos::rcp(new panzer_stk_classic::ParameterListCallbackBlocked<int,GO>(stkConn_manager,blkDofs));
-          reqHandler->addRequestCallback(callback);
+          reqHandler_local->addRequestCallback(callback);
        }
 
-       Teko::addTekoToStratimikosBuilder(linearSolverBuilder,reqHandler);
+       Teko::addTekoToStratimikosBuilder(linearSolverBuilder,reqHandler_local);
 
-       bool writeCoordinates = p.sublist("Options").get("Write Coordinates",false);
        if(writeCoordinates) {
           Teuchos::RCP<const panzer::BlockedDOFManager<int,GO> > blkDofs =
              Teuchos::rcp_dynamic_cast<const panzer::BlockedDOFManager<int,GO> >(globalIndexer);
@@ -1767,7 +1910,6 @@ namespace panzer_stk_classic {
           }
        }
 
-       bool writeTopo = p.sublist("Options").get("Write Topology",false);
        if(writeTopo) {
           Teuchos::RCP<const panzer::BlockedDOFManager<int,GO> > blkDofs =
              Teuchos::rcp_dynamic_cast<const panzer::BlockedDOFManager<int,GO> >(globalIndexer);
@@ -1786,7 +1928,7 @@ namespace panzer_stk_classic {
   template<typename ScalarT>
   template<typename GO>
   void ModelEvaluatorFactory<ScalarT>::
-  writeTopology(const panzer::BlockedDOFManager<int,GO> & blkDofs) const
+  writeTopology(const panzer::BlockedDOFManager<int,GO> & blkDofs)
   {
     using Teuchos::RCP;
 
@@ -1817,7 +1959,7 @@ namespace panzer_stk_classic {
   template<typename ScalarT>
   template <typename GO>
   void ModelEvaluatorFactory<ScalarT>::
-  writeTopology(const panzer::DOFManagerFEI<int,GO> & dofs,const std::string & block,std::ostream & os) const
+  writeTopology(const panzer::DOFManagerFEI<int,GO> & dofs,const std::string & block,std::ostream & os)
   {
     std::vector<std::string> fields(dofs.getElementBlockGIDCount(block));
 

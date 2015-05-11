@@ -191,7 +191,28 @@ SumStatic(const Teuchos::ParameterList& p)
     p.get<Teuchos::RCP<std::vector<std::string> > >("Values Names");
   Teuchos::RCP<PHX::DataLayout> data_layout = 
     p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout");
-  
+
+  // check if the user wants to scale each term independently
+  if(p.isType<Teuchos::RCP<const std::vector<double> > >("Scalars")) {
+    Teuchos::RCP<const std::vector<double> > scalar_values
+        = p.get<Teuchos::RCP<const std::vector<double> > >("Scalars");
+
+    // safety/sanity check
+    TEUCHOS_ASSERT(scalar_values->size()==value_names->size());
+    useScalars = true;
+
+    Kokkos::View<double*,PHX::Device> scalars_nc
+        = Kokkos::View<double*,PHX::Device>("scalars",scalar_values->size());
+
+    for(std::size_t i=0;i<scalar_values->size();i++)
+      scalars_nc(i) = (*scalar_values)[i];
+
+    scalars = scalars_nc;
+  }
+  else {
+    useScalars = false;
+  }
+
   // sanity check
   TEUCHOS_ASSERT(data_layout->rank()==2);
   
@@ -233,7 +254,11 @@ evaluateFields(typename TRAITS::EvalData d)
 {
   sum.deep_copy(ScalarT(0.0));
 
-  Kokkos::parallel_for(sum.dimension_0(), *this);
+  // Kokkos::parallel_for(sum.dimension_0(), *this);
+  if(useScalars) 
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device,ScalarsTag>(0,sum.dimension_0()), *this);
+  else
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device,NoScalarsTag>(0,sum.dimension_0()), *this);
 }
 
 //**********************************************************************
@@ -241,7 +266,20 @@ evaluateFields(typename TRAITS::EvalData d)
 template<typename EvalT, typename TRAITS,typename Tag0,typename Tag1>
 KOKKOS_INLINE_FUNCTION
 void SumStatic<EvalT,TRAITS,Tag0,Tag1,void>::
-operator()( const unsigned c ) const
+operator()(const ScalarsTag, const unsigned c ) const
+{
+  for (int i=0;i<numValues;i++) {
+    for (int j = 0; j < sum.dimension_1(); ++j)
+      sum(c,j) += scalars(i)*value_views[i](c,j);
+  }
+}
+
+//**********************************************************************
+
+template<typename EvalT, typename TRAITS,typename Tag0,typename Tag1>
+KOKKOS_INLINE_FUNCTION
+void SumStatic<EvalT,TRAITS,Tag0,Tag1,void>::
+operator()(const NoScalarsTag, const unsigned c ) const
 {
   for (int i=0;i<numValues;i++) {
     for (int j = 0; j < sum.dimension_1(); ++j)

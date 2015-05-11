@@ -107,20 +107,30 @@ public:
   void postRegistrationSetup(typename TRAITS::SetupData d,
                              PHX::FieldManager<TRAITS>& fm);
   void evaluateFields(typename TRAITS::EvalData d);
+
+  struct ScalarsTag {};
   KOKKOS_INLINE_FUNCTION
-  void operator()(const unsigned c) const;
+  void operator()(const ScalarsTag,const unsigned c) const;
+
+  struct NoScalarsTag {};
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const NoScalarsTag,const unsigned c) const;
+
 private:
   typedef typename EvalT::ScalarT ScalarT;
 
   PHX::MDField<ScalarT,Tag0,Tag1> sum;
   std::vector< PHX::MDField<const ScalarT,Tag0,Tag1> > values;
+  bool useScalars;
 
   // Functor members
   //////////////////////////////////////////////
   enum {MAX_VALUES=20};
   PHX::MDField<const ScalarT,Tag0,Tag1> current_value;
   Kokkos::View<const ScalarT**,PHX::Device> value_views[MAX_VALUES];
+  Kokkos::View<const double*,PHX::Device> scalars;
   int numValues;
+
      // this is used in the parallel kernel
 };
 
@@ -149,7 +159,6 @@ Teuchos::RCP<PHX::Evaluator<TRAITS> >
 buildStaticSumEvaluator(const std::string & sum_name,
                         const std::vector<std::string> & value_names,
                         const Teuchos::RCP<PHX::DataLayout> & data_layout);
-
 
 }
 

@@ -9,7 +9,7 @@ TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 
 SET(CURRENT_PACKAGE ShyLU)
-CONFIGURE_FILE("${${PROJECT_NAME}_SOURCE_DIR}/packages/Trilinos_DLLExportMacro.h.in"
+CONFIGURE_FILE("${Trilinos_SOURCE_DIR}/packages/Trilinos_DLLExportMacro.h.in"
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_DLLExportMacro.h)
 
 

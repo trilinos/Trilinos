@@ -387,6 +387,9 @@ T1(sqrt)
 T1(tan)
 T1(tanh)
 T1(fabs)
+#ifdef HAVE_SACADO_CXX11
+T1(cbrt)
+#endif
 
 T F copy(AI);
 T F copy(Ai);
@@ -522,6 +525,9 @@ F r f <>(D,Ai);
         T1(R,tanh)
         T1(R,fabs)
         T1(R,copy)
+#ifdef HAVE_SACADO_CXX11
+        T1(R,cbrt)
+#endif
         T2(int,operator<)
         T2(int,operator<=)
         T2(int,operator==)
@@ -832,6 +838,9 @@ T1(tan)
 T1(tanh)
 T1(fabs)
 T1(copy)
+#ifdef HAVE_SACADO_CXX11
+T1(cbrt)
+#endif
 
 #undef D
 #undef F
@@ -2546,6 +2555,16 @@ fabs(const Base< ADvari<Double> > &vv) {
    return *(new ADvar1s<Double>(t, p, &v));
  }
 
+#ifdef HAVE_SACADO_CXX11
+template<typename Double>
+ ADvari<Double>&
+cbrt(const Base< ADvari<Double> > &vv) {
+   const ADvari<Double>& v = vv.derived();
+   Double t = std::cbrt(v.Val);
+   return *(new ADvar1s<Double>(t, 1.0/(3.0*t*t), &v));
+ }
+#endif
+
  template<typename Double>
  ADvari<Double>&
 ADf1(Double f, Double g, const ADvari<Double> &x) {
@@ -2674,6 +2693,9 @@ T1(sqrt)
 T1(tan)
 T1(tanh)
 T1(fabs)
+#ifdef HAVE_SACADO_CXX11
+T1(cbrt)
+#endif
 
 T F copy(AI xx)
 {

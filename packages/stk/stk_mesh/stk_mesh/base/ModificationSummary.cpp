@@ -44,6 +44,18 @@ void ModificationSummary::track_change_ghosting(const stk::mesh::Ghosting & ghos
     }
 }
 
+void ModificationSummary::track_add_to_ghosting(const stk::mesh::Ghosting & ghosts, const std::vector<stk::mesh::EntityProc> & add_send )
+{
+    std::ostringstream os;
+
+    for(size_t i=0;i<add_send.size();++i)
+    {
+        os << "Sending ghost key " << getEntityKey(add_send[i].first) << " to processor " << add_send[i].second << " for ghosting " << ghosts.name() << std::endl;
+        addEntityKeyAndStringToTracker(getEntityKey(add_send[i].first), os.str());
+        os.str("");
+    }
+}
+
 void ModificationSummary::track_destroy_relation(stk::mesh::Entity e_from, stk::mesh::Entity e_to, stk::mesh::RelationIdentifier rel)
 {
     if(isValid(e_from) && isValid(e_to))
@@ -98,7 +110,7 @@ void ModificationSummary::track_change_entity_id(stk::mesh::EntityId newId, stk:
     if(isValid(entity))
     {
         std::ostringstream os;
-        os << "Changing id of entity key " << getEntityKey(entity) << std::endl;
+        os << "Changing id of entity key " << getEntityKey(entity) << " to " << newId << std::endl;
         addEntityKeyAndStringToTracker(getEntityKey(entity), os.str());
     }
 }

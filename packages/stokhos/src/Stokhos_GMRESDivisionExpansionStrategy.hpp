@@ -342,7 +342,7 @@ GMRES(const Teuchos::SerialDenseMatrix<ordinal_type, value_type> & A,
   Teuchos::SerialDenseMatrix<ordinal_type, value_type> P(n,n);
   Teuchos::SerialDenseMatrix<ordinal_type, value_type> Ax(n,1);
   Ax.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,1.0, A, X, 0.0);
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type> r0(B);
+  Teuchos::SerialDenseMatrix<ordinal_type, value_type> r0(Teuchos::Copy,B);
   r0-=Ax;
   resid=r0.normFrobenius();
   //define vector v=r/norm(r) where r=b-Ax

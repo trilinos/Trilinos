@@ -88,6 +88,11 @@ namespace Ioss {
     static void fixup_name(std::string &name);
     
     /*!
+     * Returns true if the property "omitted" exists on "block"
+     */
+    static bool block_is_omitted(Ioss::GroupingEntity *block);
+
+    /*!
      * Process the base element type 'base' which has
      * 'nodes_per_element' nodes and a spatial dimension of 'spatial'
      * into a form that the IO system can (hopefully) recognize.

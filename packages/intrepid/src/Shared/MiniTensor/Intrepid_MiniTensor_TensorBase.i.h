@@ -367,13 +367,13 @@ TensorBase<T, ST>::fill(ComponentValue const value)
 
   case ZEROS:
     for (Index i = 0; i < number_components; ++i) {
-      (*this)[i] = 0;
+      (*this)[i] = Teuchos::ScalarTraits<T>::zero();
     }
     break;
 
   case ONES:
     for (Index i = 0; i < number_components; ++i) {
-      (*this)[i] = 1;
+      (*this)[i] = Teuchos::ScalarTraits<T>::one();
     }
     break;
 

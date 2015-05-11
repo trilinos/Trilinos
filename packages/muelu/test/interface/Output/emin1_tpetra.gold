@@ -25,7 +25,6 @@ Level 1
     aggregation: drop scheme = classical   [default]
     lightweight wrap = 1
 
-   aggregation: mode = old   [default]
    aggregation: max agg size = -1   [default]
    aggregation: min agg size = 2   [default]
    aggregation: max selected neighbors = 0   [default]
@@ -35,12 +34,7 @@ Level 1
    aggregation: enable phase 2b = 1   [default]
    aggregation: enable phase 3 = 1   [default]
    aggregation: preserve Dirichlet points = 0   [default]
-   UseOnePtAggregationAlgorithm = 0   [default]
-   UsePreserveDirichletAggregationAlgorithm = 0   [default]
-   UseUncoupledAggregationAlgorithm = 1   [default]
-   UseMaxLinkAggregationAlgorithm = 1   [default]
-   UseIsolatedNodeAggregationAlgorithm = 1   [default]
-   UseEmergencyAggregationAlgorithm = 1   [default]
+   aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
 
    Nullspace factory (MueLu::NullspaceFactory)
@@ -62,9 +56,9 @@ Level 1
  emin: num iterations = 2   [default]
  emin: num reuse iterations = 1   [default]
  emin: iterative method = cg   [default]
- P0 = Teuchos::RCP<Xpetra::Matrix<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ P0 = Teuchos::RCP<Xpetra::Matrix<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  Keep P0 = 0   [default]
- Constraint0 = Teuchos::RCP<MueLu::Constraint<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ Constraint0 = Teuchos::RCP<MueLu::Constraint<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  Keep Constraint0 = 0   [default]
 
  Transpose P (MueLu::TransPFactory)
@@ -103,7 +97,6 @@ Level 2
     aggregation: drop scheme = classical   [default]
     lightweight wrap = 1
 
-   aggregation: mode = old   [default]
    aggregation: max agg size = -1   [default]
    aggregation: min agg size = 2   [default]
    aggregation: max selected neighbors = 0   [default]
@@ -113,12 +106,7 @@ Level 2
    aggregation: enable phase 2b = 1   [default]
    aggregation: enable phase 3 = 1   [default]
    aggregation: preserve Dirichlet points = 0   [default]
-   UseOnePtAggregationAlgorithm = 0   [default]
-   UsePreserveDirichletAggregationAlgorithm = 0   [default]
-   UseUncoupledAggregationAlgorithm = 1   [default]
-   UseMaxLinkAggregationAlgorithm = 1   [default]
-   UseIsolatedNodeAggregationAlgorithm = 1   [default]
-   UseEmergencyAggregationAlgorithm = 1   [default]
+   aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
 
    Nullspace factory (MueLu::NullspaceFactory)
@@ -140,9 +128,9 @@ Level 2
  emin: num iterations = 2   [default]
  emin: num reuse iterations = 1   [default]
  emin: iterative method = cg   [default]
- P0 = Teuchos::RCP<Xpetra::Matrix<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ P0 = Teuchos::RCP<Xpetra::Matrix<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  Keep P0 = 0   [default]
- Constraint0 = Teuchos::RCP<MueLu::Constraint<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ Constraint0 = Teuchos::RCP<MueLu::Constraint<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  Keep Constraint0 = 0   [default]
 
  Transpose P (MueLu::TransPFactory)
@@ -177,3 +165,4 @@ Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: t
 
 Smoother (level 2) pre  : SuperLU solver interface, direct solve
 Smoother (level 2) post : no smoother
+

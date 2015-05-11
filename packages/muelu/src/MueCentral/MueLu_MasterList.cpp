@@ -166,6 +166,9 @@ namespace MueLu {
   "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=\"0.0\"/>"
   "<Parameter name=\"aggregation: min agg size\" type=\"int\" value=\"2\"/>"
   "<Parameter name=\"aggregation: max agg size\" type=\"int\" value=\"-1\"/>"
+  "<Parameter name=\"aggregation: brick x size\" type=\"int\" value=\"2\"/>"
+  "<Parameter name=\"aggregation: brick y size\" type=\"int\" value=\"2\"/>"
+  "<Parameter name=\"aggregation: brick z size\" type=\"int\" value=\"2\"/>"
   "<Parameter name=\"aggregation: max selected neighbors\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"aggregation: Dirichlet threshold\" type=\"double\" value=\"0.0\"/>"
   "<Parameter name=\"aggregation: enable phase 1\" type=\"bool\" value=\"true\"/>"
@@ -173,8 +176,8 @@ namespace MueLu {
   "<Parameter name=\"aggregation: enable phase 2b\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: enable phase 3\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: preserve Dirichlet points\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: allow user-specified singletons\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: export visualization data\" type=\"bool\" value=\"false\"/>"
-  "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"old\"/>"
   "<ParameterList name=\"export data\"/>"
   "<Parameter name=\"print initial parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"print unused parameters\" type=\"bool\" value=\"true\"/>"
@@ -205,6 +208,7 @@ namespace MueLu {
   "<Parameter name=\"repartition: rebalance P and R\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: use subcommunicators\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"reuse: type\" type=\"string\" value=\"none\"/>"
+  "<Parameter name=\"debug: graph level\" type=\"int\" value=\"-1\"/>"
 "</ParameterList>"
 ;
   std::map<std::string,std::string> MasterList::DefaultProblemTypeLists_ = DefaultProblemStrings<std::string,std::string>
@@ -215,8 +219,6 @@ namespace MueLu {
             "<Parameter name=\"number of equations\" type=\"int\" value=\"1\"/>"
 
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
-
-            "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"new\"/>"
 
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
 
@@ -230,8 +232,6 @@ namespace MueLu {
 
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
 
-            "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"new\"/>"
-
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
 
     "</ParameterList>"
@@ -244,8 +244,6 @@ namespace MueLu {
 
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
 
-            "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"new\"/>"
-
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
 
     "</ParameterList>"
@@ -257,8 +255,6 @@ namespace MueLu {
             "<Parameter name=\"number of equations\" type=\"int\" value=\"3\"/>"
 
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
-
-            "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"new\"/>"
 
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
 
@@ -294,8 +290,6 @@ namespace MueLu {
 
     "</ParameterList>"
 
-            "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"new\"/>"
-
             "<Parameter name=\"transpose: use implicit\" type=\"bool\" value=\"true\"/>"
 
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"unsmoothed\"/>"
@@ -315,8 +309,6 @@ namespace MueLu {
         "<Parameter name=\"relaxation: type\" type=\"string\" value=\"Gauss-Seidel\"/>"
 
     "</ParameterList>"
-
-            "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"new\"/>"
 
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"pg\"/>"
 
@@ -381,6 +373,12 @@ namespace MueLu {
 
          ("aggregation: max agg size","aggregation: max agg size")
 
+         ("aggregation: brick x size","aggregation: brick x size")
+
+         ("aggregation: brick y size","aggregation: brick y size")
+
+         ("aggregation: brick z size","aggregation: brick z size")
+
          ("aggregation: max selected neighbors","aggregation: max selected neighbors")
 
          ("aggregation: Dirichlet threshold","aggregation: Dirichlet threshold")
@@ -395,9 +393,9 @@ namespace MueLu {
 
          ("aggregation: preserve Dirichlet points","aggregation: preserve Dirichlet points")
 
-         ("aggregation: export visualization data","aggregation: export visualization data")
+         ("aggregation: allow user-specified singletons","aggregation: allow user-specified singletons")
 
-         ("aggregation: mode","aggregation: mode")
+         ("aggregation: export visualization data","aggregation: export visualization data")
 
          ("export data","export data")
 
@@ -458,6 +456,8 @@ namespace MueLu {
          ("repartition: use subcommunicators","repartition: use subcommunicators")
 
          ("reuse: type","reuse: type")
+
+         ("debug: graph level","debug: graph level")
       ;
 
 }

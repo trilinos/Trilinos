@@ -189,33 +189,6 @@ void get_entities_through_relations(
 
 //----------------------------------------------------------------------
 
-// DEPRECATED 2015-03-18
-void induced_part_membership( const Part & part ,
-                              EntityRank entity_rank_from ,
-                              EntityRank entity_rank_to ,
-                              OrdinalVector & induced_parts)
-{
-  if ( entity_rank_to < entity_rank_from && part.should_induce(entity_rank_from) ) {
-    // Direct relationship:
-    insert_ordinal( induced_parts , part.mesh_meta_data_ordinal() );
-  }
-}
-
-//----------------------------------------------------------------------
-//  What are this entity's part memberships that can be deduced from
-//  this entity's relationship.  Can only trust 'entity_from' to be
-//  accurate if it is owned by the local process.
-
-// DEPRECATED 2015-03-18
-void induced_part_membership(const BulkData& mesh,
-                             const PartVector& all_parts,
-                             const Entity entity_from ,
-                             const OrdinalVector       & omit ,
-                                   EntityRank            entity_rank_to ,
-                                   OrdinalVector       & induced_parts)
-{
-    impl::get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(mesh, entity_from, omit, entity_rank_to, induced_parts);
-}
 
 void get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(const BulkData       & mesh,
                              const Entity           entity_from,

@@ -49,9 +49,10 @@
 #include <Teuchos_ParameterList.hpp>
 #include <iostream>
 
-// tbb::task_scheduler_init KokkosClassic::TBBNode::tsi_(tbb::task_scheduler_init::deferred);
+// tbb::task_scheduler_init KokkosClassic::DoNotUse::TBBNode::tsi_(tbb::task_scheduler_init::deferred);
 
 namespace KokkosClassic {
+namespace DoNotUse {
 
   TBBNode::TBBNode () :
     tsi_ (tbb::task_scheduler_init::deferred),
@@ -149,6 +150,7 @@ namespace KokkosClassic {
     return "TBB";
   }
 
+} // namespace DoNotUse
 } // namespace KokkosClassic
 
 #endif // HAVE_TPETRACLASSIC_TBB

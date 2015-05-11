@@ -477,5 +477,123 @@ TEST( UnitTestCreateEdges , hex1x1x4 )
     }
 }
 
+TEST( UnitTestCreateEdges, hybrid_HexPyrTet )
+{
+    //  ID.proc
+    //
+    //          3.0------------7.0-----------11.1
+    //          /|             /|             /|
+    //         / |            / |            / |
+    //        /  |           /  |           /  |
+    //      4.0------------8.0-----------12.1  |
+    //       |   |          |   |          |   | <-- (Undrawable transition pyramid between node (5,6,7,8,9)
+    //       |   |   1.0    |   |          |   |      and 4 tets contained in volume on the right)
+    //       |   |          |   |          |   |
+    //       |  2.0---------|--6.0---------|-10.1
+    //       |  /           |  /           |  /
+    //       | /            | /            | /
+    //       |/             |/             |/
+    //      1.0------------5.0------------9.1
+
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    int p_size = stk::parallel_machine_size(pm);
+
+    if(p_size != 2)
+    {
+        return;
+    }
+
+    const unsigned spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta, pm);
+    const int p_rank = mesh.parallel_rank();
+
+    stk::mesh::Part * hexPart = &meta.declare_part_with_topology("hex_part", stk::topology::HEX_8);
+    stk::mesh::Part * pyrPart = &meta.declare_part_with_topology("pyr_part", stk::topology::PYRAMID_5);
+    stk::mesh::Part * tetPart = &meta.declare_part_with_topology("tet_part", stk::topology::TET_4);
+    meta.commit();
+
+    const size_t numHex = 1;
+    const size_t nodesPerHex = 8;
+    stk::mesh::EntityId hexNodeIDs[][nodesPerHex] =
+    {
+        { 1, 2, 3, 4, 5, 6, 7, 8 }
+    };
+    stk::mesh::EntityId hexElemIDs[] = { 1 };
+
+    const size_t numPyr = 1;
+    const size_t nodesPerPyr = 5;
+    stk::mesh::EntityId pyrNodeIDs[][nodesPerPyr] =
+    {
+        { 5, 6, 7, 8, 9 }
+    };
+    stk::mesh::EntityId pyrElemIDs[] = { 2 };
+
+    const size_t numTet = 4;
+    const size_t nodesPerTet = 4;
+    stk::mesh::EntityId tetNodeIDs[][nodesPerTet] =
+    {
+        { 7, 8, 9, 12 },
+        { 6, 9, 10, 7 },
+        { 7, 9, 10, 12 },
+        { 7, 12, 10, 11 }
+    };
+    stk::mesh::EntityId tetElemIDs[] = { 3, 4, 5, 6 };
+
+    // list of triplets: (owner-proc, shared-nodeID, sharing-proc)
+    int shared_nodeIDs_and_procs[][3] =
+    {
+        { 0, 5, 1 },  // proc 0
+        { 0, 6, 1 },
+        { 0, 7, 1 },
+        { 0, 8, 1 },
+        { 1, 5, 0 },  // proc 1
+        { 1, 6, 0 },
+        { 1, 7, 0 },
+        { 1, 8, 0 }
+    };
+    int numSharedNodeTriples = 8;
+
+    mesh.modification_begin();
+
+    if (p_rank == 0) {
+        for (size_t i = 0; i < numHex; ++i) {
+          stk::mesh::declare_element(mesh, *hexPart, hexElemIDs[i], hexNodeIDs[i]);
+        }
+    }
+    else {
+        for (size_t i = 0; i < numPyr; ++i) {
+          stk::mesh::declare_element(mesh, *pyrPart, pyrElemIDs[i], pyrNodeIDs[i]);
+        }
+        for (size_t i = 0; i < numTet; ++i) {
+          stk::mesh::declare_element(mesh, *tetPart, tetElemIDs[i], tetNodeIDs[i]);
+        }
+    }
+
+    for (int nodeIdx = 0; nodeIdx < numSharedNodeTriples; ++nodeIdx) {
+        if (p_rank == shared_nodeIDs_and_procs[nodeIdx][0]) {
+            stk::mesh::EntityId nodeID = shared_nodeIDs_and_procs[nodeIdx][1];
+            int sharingProc = shared_nodeIDs_and_procs[nodeIdx][2];
+            stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, nodeID);
+            mesh.add_node_sharing(node, sharingProc);
+        }
+    }
+
+    mesh.modification_end();
+
+    stk::mesh::create_edges(mesh, *meta.get_part("pyr_part"));
+
+    {
+      std::vector<size_t> counts;
+      stk::mesh::comm_mesh_counts(mesh, counts);
+
+      EXPECT_EQ( counts[stk::topology::NODE_RANK], 12u ); // nodes
+      EXPECT_EQ( counts[stk::topology::EDGE_RANK], 8u );  // edges
+      EXPECT_EQ( counts[stk::topology::ELEM_RANK], 6u );  // elements
+    }
+
+
+}
+
 
 
