@@ -498,7 +498,7 @@ def getGitRepoUrl(gitDir):
 def getLastCommitMsg(gitDir):
   return getCmndOutput(
     "git log " \
-    +" --pretty=format:'%h \'%s\'%nAuthor: %an <%ae>%nDate: %ad%n'" \
+    +" --pretty=format:'commit %H%nAuthor:  %an <%ae>%nDate:    %ad%nSummary: %s%n'" \
     +" -1 -- .",
     workingDir=gitDir
     )
