@@ -108,7 +108,8 @@ namespace Example {
         _offm(0),
         _offn(0),
         _m(b->NumRows()),
-        _n(b->NumCols())
+        _n(b->NumCols()),
+        _rows()
     { } 
 
     CrsMatrixView(CrsMatBaseType *b,
@@ -118,7 +119,8 @@ namespace Example {
         _offm(offm),
         _offn(offn),
         _m(m),
-        _n(n) 
+        _n(n),
+        _rows()
     { } 
 
     ostream& showMe(ostream &os) const {
@@ -135,5 +137,65 @@ namespace Example {
 
   };
 }
+
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+  namespace Impl {
+    
+    //  The Kokkos::View allocation will by default assign each allocated datum to zero.
+    //  This is not the required initialization behavior when
+    //  Example::CrsRowView and Example::CrsMatrixView
+    //  are used within a Kokkos::View.
+    //  Create a partial specialization of the Kokkos::Impl::AViewDefaultConstruct
+    //  to replace the assignment initialization with placement new initialization.
+    //
+    //  This work-around is necessary until a TBD design refactorization of Kokkos::View.
+    
+    template< class ExecSpace , typename T >
+    struct ViewDefaultConstruct< ExecSpace , Example::CrsRowView<T> , true >
+    {
+      typedef Example::CrsRowView<T> type ;
+      type * const m_ptr ;
+      
+      KOKKOS_FORCEINLINE_FUNCTION
+      void operator()( const typename ExecSpace::size_type& i ) const
+      { new(m_ptr+i) type(); }
+      
+      ViewDefaultConstruct( type * pointer , size_t capacity )
+        : m_ptr( pointer )
+      {
+        Kokkos::RangePolicy< ExecSpace > range( 0 , capacity );
+        parallel_for( range , *this );
+        ExecSpace::fence();
+      }
+    };
+    
+    template< class ExecSpace , typename T >
+    struct ViewDefaultConstruct< ExecSpace , Example::CrsMatrixView<T> , true >
+    {
+      typedef Example::CrsMatrixView<T> type ;
+      type * const m_ptr ;
+      
+      KOKKOS_FORCEINLINE_FUNCTION
+      void operator()( const typename ExecSpace::size_type& i ) const
+      { new(m_ptr+i) type(); }
+      
+      ViewDefaultConstruct( type * pointer , size_t capacity )
+        : m_ptr( pointer )
+      {
+        Kokkos::RangePolicy< ExecSpace > range( 0 , capacity );
+        parallel_for( range , *this );
+        ExecSpace::fence();
+      }
+    };
+
+  } // namespace Impl
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 #endif

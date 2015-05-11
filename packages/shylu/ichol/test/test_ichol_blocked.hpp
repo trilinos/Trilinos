@@ -82,7 +82,6 @@ namespace Example {
     
       cout << UU << endl;
     }
-    cout << "testICholBlocked::End - " << r_val << endl;    
 
     CrsMatrixBaseType FF("FF");    
     {
@@ -103,6 +102,7 @@ namespace Example {
         __ASSERT_TRUE__(tmp < epsilon);
       }
     }
+    cout << "testICholBlocked::End - " << r_val << endl;    
 
     string eval;
     __EVAL_STRING__(r_val, eval);

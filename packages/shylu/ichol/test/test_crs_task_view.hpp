@@ -9,6 +9,13 @@
 #include "crs_matrix_helper.hpp"
 #include "graph_helper_scotch.hpp" 
 
+#include "team_view.hpp"
+#include "task_view.hpp"
+
+#include "team_factory.hpp"
+#include "task_factory.hpp"
+#include "task_team_factory.hpp"
+
 namespace Example {
 
   using namespace std;
@@ -28,6 +35,7 @@ namespace Example {
       Kokkos::Experimental::Future<int,SpaceType> > TaskFactoryType;
     
     typedef CrsMatrixBase<value_type,ordinal_type,size_type,SpaceType,MemoryTraits> CrsMatrixBaseType;
+    typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType;    
 
     typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
     typedef TaskView<CrsMatrixViewType,TaskFactoryType> CrsTaskViewType;
@@ -36,8 +44,6 @@ namespace Example {
 
     typedef CrsMatrixView<CrsHierTaskBaseType> CrsHierViewType;
     typedef TaskView<CrsHierViewType,TaskFactoryType> CrsHierTaskViewType;
-
-    typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType;    
 
     __DOT_LINE__;
     cout << "testCrsTaskView:: filename = " << filename << endl;

@@ -50,7 +50,7 @@ namespace Example {
     const ordinal_type hm = fm/mbb + (fm%mbb > 0);
     const ordinal_type hn = fn/nbb + (fn%nbb > 0);
 
-    ordinal_type_array offm("DenseMatrixHelper::flat2hier::offm", hm);
+    ordinal_type_array offm("DenseMatrixHelper::flat2hier::offm", hm+1);
     {
       ordinal_type offs = 0;
       for (ordinal_type i=0;i<hm;++i) {
@@ -60,7 +60,7 @@ namespace Example {
       offm[hm] = fm;
     }
 
-    ordinal_type_array offn("DenseMatrixHelper::flat2hier::offn", hn);
+    ordinal_type_array offn("DenseMatrixHelper::flat2hier::offn", hn+1);
     {
       ordinal_type offs = 0;
       for (ordinal_type i=0;i<hn;++i) {
@@ -92,7 +92,7 @@ namespace Example {
     const ordinal_type nbb = (nb == 0 ? fn : nb);
     const ordinal_type hn = fn/nbb + (fn%nbb > 0);
 
-    ordinal_type_array offn("DenseMatrixHelper::flat2hier::offn", hn);
+    ordinal_type_array offn("DenseMatrixHelper::flat2hier::offn", hn+1);
     {
       ordinal_type offs = 0;
       for (ordinal_type i=0;i<hn;++i) {

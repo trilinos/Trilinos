@@ -62,7 +62,7 @@ namespace Example {
 
     __DOT_LINE__;
     cout << "testTriSolveBlocked:: input = " << file_input 
-         << ", blocksize = " << blocksize << endl
+         << ", blocksize = " << blocksize
          << ", nrhs = " << nrhs << endl;        
     __DOT_LINE__;
 
@@ -79,11 +79,11 @@ namespace Example {
       UU.copy(Uplo::Upper, AA);
     }
 
-    TmgType tmg(UU.NumRows(), nrhs);
+    TmgType tmg(AA.NumRows(), nrhs);
 
     DenseMatrixBaseType 
-      BB("BB", UU.NumRows(), nrhs), 
-      CC("CC", UU.NumRows(), nrhs);
+      BB("BB", AA.NumRows(), nrhs), 
+      CC("CC", AA.NumRows(), nrhs);
 
     cout << "testTriSolveBlocked::Begin - " << r_val << endl;
     CrsTaskViewType U(&UU);

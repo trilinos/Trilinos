@@ -116,8 +116,7 @@ namespace Example {
       Kokkos::Experimental::wait(policy);
 
       cout << UU_ByBlocks << endl;
-    }
-    cout << "testICholByBlocks::End - " << r_val << endl;    
+    }  
     
     {
       const auto epsilon = sqrt(NumericTraits<value_type>::epsilon());
@@ -126,6 +125,7 @@ namespace Example {
         __ASSERT_TRUE__(tmp < epsilon);
       }
     }
+    cout << "testICholByBlocks::End - " << r_val << endl;  
 
     string eval;
     __EVAL_STRING__(r_val, eval);
