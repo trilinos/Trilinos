@@ -47,7 +47,6 @@
 #include "muemexTypes_def.hpp"
 #include "MueLu_Utilities.hpp"
 
-using namespace std;
 using namespace Teuchos;
 
 void MuemexCallback::callMatlabNoArgs(std::string function)
@@ -57,11 +56,11 @@ void MuemexCallback::callMatlabNoArgs(std::string function)
     mexPrintf("An error occurred while running a MATLAB command.");\
 }
 
-vector<RCP<MuemexArg>> MuemexCallback::callMatlab(std::string function, int numOutputs, vector<RCP<MuemexArg>> args)
+std::vector<RCP<MuemexArg>> MuemexCallback::callMatlab(std::string function, int numOutputs, std::vector<RCP<MuemexArg>> args)
 {
   mxArray** matlabArgs = new mxArray*[args.size()];
   mxArray** matlabOutput = new mxArray*[numOutputs];
-  vector<RCP<MuemexArg>> output;
+  std::vector<RCP<MuemexArg>> output;
   for(int i = 0; i < int(args.size()); i++)
     {
       try
@@ -115,10 +114,10 @@ vector<RCP<MuemexArg>> MuemexCallback::callMatlab(std::string function, int numO
               break;
             }
         }
-      catch (exception& e)
+      catch (std::exception& e)
         {
           mexPrintf("An error occurred while converting arg #%d to MATLAB:\n", i);
-          cout << e.what() << endl;
+	  std::cout << e.what() << std::endl;
           mexPrintf("Passing 0 instead.\n");
           matlabArgs[i] = mxCreateDoubleScalar(0);
         }
@@ -148,7 +147,7 @@ vector<RCP<MuemexArg>> MuemexCallback::callMatlab(std::string function, int numO
                 //ordinal vector
                 output.push_back(rcp(new MuemexData<RCP<Xpetra_ordinal_vector>>(item)));
               else
-                throw runtime_error("Error: Don't know what to do with integer array.\n");
+                throw std::runtime_error("Error: Don't know what to do with integer array.\n");
               break;
             case mxDOUBLE_CLASS:
               if(mxGetM(item) == 1 && mxGetN(item) == 1)
@@ -180,13 +179,13 @@ vector<RCP<MuemexArg>> MuemexCallback::callMatlab(std::string function, int numO
                 }
               break;
             default:
-              throw runtime_error("MATLAB returned an unsupported type as a function output.\n");
+	        throw std::runtime_error("MATLAB returned an unsupported type as a function output.\n");
             }
         }
-      catch(exception& e)
+	      catch(std::exception& e)
         {
           mexPrintf("An error occurred while converting output #%d from MATLAB:\n", i);
-          cout << e.what() << endl;
+	  std::cout << e.what() << std::endl;
         }
     }
   return output;

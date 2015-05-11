@@ -144,11 +144,13 @@ int parseInt(const mxArray* mxa);
 mxArray* saveEpetraMatrix(Teuchos::RCP<Epetra_CrsMatrix> mat);
 //Load an ordinal vector
 Teuchos::RCP<Xpetra_ordinal_vector> loadLOVector(const mxArray* mxa);
+//Int conversion routine
+int* mwIndex_to_int(int N, mwIndex* mwi_array);
 
 class MuemexArg
 {
  public:
-  MuemexArg(MUEMEX_TYPE type);
+  MuemexArg(MUEMEX_TYPE dataType) {type = dataType;}
   MUEMEX_TYPE type;
 };
 

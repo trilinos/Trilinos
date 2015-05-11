@@ -60,6 +60,8 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
+extern bool rewrap_ints;
+
 /* ******************************* */
 /* Specializations                 */
 /* ******************************* */
@@ -240,12 +242,6 @@ RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> loadTp
 /* ******************************* */
 /* Begin MuemexData implementation */
 /* ******************************* */
-
-MuemexArg::MuemexArg(MUEMEX_TYPE dataType)
-{
-  type = dataType;
-}
-
 //Fully generic methods
 template<typename T>
 MuemexData<T>::MuemexData(T& dataToCopy, MUEMEX_TYPE dataType) : MuemexArg(dataType)
@@ -482,7 +478,189 @@ mxArray* MuemexData<RCP<Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd
 /* End MuemexData implementation */
 /* ***************************** */
 
+template<typename Scalar = double>
+mxArray* saveMatrixToMatlab(RCP<Xpetra::Matrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mat)
+{
+  int nr = mat->getGlobalNumRows();
+  int nc = mat->getGlobalNumCols();
+  int nnz = mat->getGlobalNumEntries();
+#ifdef VERBOSE_OUTPUT
+  RCP<Teuchos::FancyOStream> fancyStream = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  mat->describe(*fancyStream, Teuchos::VERB_EXTREME);
+#endif
+  mxArray* mxa = createMatlabSparse<Scalar>(nr, nc, nnz);
+  mwIndex* ir = mxGetIr(mxa);
+  mwIndex* jc = mxGetJc(mxa);
+  for(int i = 0; i < nc + 1; i++)
+    {
+      jc[i] = 0;
+    }
+  size_t maxEntriesPerRow = mat->getGlobalMaxNumRowEntries();
+  int* rowProgress = new int[nc];
+  //The array that will be copied to Pr and (if complex) Pi later
+  Scalar* sparseVals = new Scalar[nnz];
+  size_t numEntries;
+  if(mat->isLocallyIndexed())
+    {
+      Scalar* rowValArray = new Scalar[maxEntriesPerRow];
+      Teuchos::ArrayView<Scalar> rowVals(rowValArray, maxEntriesPerRow);
+      mm_LocalOrd* rowIndicesArray = new mm_LocalOrd[maxEntriesPerRow];
+      Teuchos::ArrayView<mm_LocalOrd> rowIndices(rowIndicesArray, maxEntriesPerRow);
+      for(mm_LocalOrd m = 0; m < nr; m++)       //All rows in the Xpetra matrix
+        {
+          mat->getLocalRowCopy(m, rowIndices, rowVals, numEntries);     //Get the row
+          for(mm_LocalOrd entry = 0; entry < int(numEntries); entry++)  //All entries in row
+            {
+              jc[rowIndices[entry] + 1]++; //for each entry, increase jc for the entry's column
+            }
+        }
+      //now jc holds the number of elements in each column, but needs cumulative sum over all previous columns also
+      int entriesAccum = 0;
+      for(int n = 0; n <= nc; n++)
+        {
+          int temp = entriesAccum;
+          entriesAccum += jc[n];
+          jc[n] += temp;
+        }
+      //Jc now populated with colptrs
+      for(int i = 0; i < nc; i++)
+        {
+          rowProgress[i] = 0;
+        }
+      //Row progress values like jc but keep track as the MATLAB matrix is being filled in
+      for(mm_LocalOrd m = 0; m < nr; m++)       //rows
+        {
+          mat->getLocalRowCopy(m, rowIndices, rowVals, numEntries);
+          for(mm_LocalOrd i = 0; i < int(numEntries); i++)      //entries in row m (NOT columns)
+            {
+              //row is m, col is rowIndices[i], val is rowVals[i]
+              mm_LocalOrd col = rowIndices[i];
+              sparseVals[jc[col] + rowProgress[col]] = rowVals[i];      //Set value
+              ir[jc[col] + rowProgress[col]] = m;                                               //Set row at which value occurs
+              rowProgress[col]++;
+            }
+        }
+      delete[] rowIndicesArray;
+    }
+  else
+    {
+      Teuchos::ArrayView<const mm_GlobalOrd> rowIndices;
+      Teuchos::ArrayView<const Scalar> rowVals;
+      for(mm_GlobalOrd m = 0; m < nr; m++)
+        {
+          mat->getGlobalRowView(m, rowIndices, rowVals);
+          for(mm_GlobalOrd n = 0; n < rowIndices.size(); n++)
+            {
+              jc[rowIndices[n] + 1]++;
+            }
+        }
+      //Last element of jc is just nnz
+      jc[nc] = nnz;
+      //Jc now populated with colptrs
+      for(int i = 0; i < nc; i++)
+        {
+          rowProgress[i] = 0;
+        }
+      int entriesAccum = 0;
+      for(int n = 0; n <= nc; n++)
+        {
+          int temp = entriesAccum;
+          entriesAccum += jc[n];
+          jc[n] += temp;
+        }
+      //Row progress values like jc but keep track as the MATLAB matrix is being filled in
+      for(mm_GlobalOrd m = 0; m < nr; m++)      //rows
+        {
+          mat->getGlobalRowView(m, rowIndices, rowVals);
+          for(mm_LocalOrd i = 0; i < rowIndices.size(); i++)    //entries in row m (NOT == columns)
+            {
+              //row is m, col is rowIndices[i], val is rowVals[i]
+              mm_GlobalOrd col = rowIndices[i];
+              sparseVals[jc[col] + rowProgress[col]] = rowVals[i];      //Set value
+              ir[jc[col] + rowProgress[col]] = m;                                               //Set row at which value occurs
+              rowProgress[col]++;
+            }
+        }
+    }
+  //finally, copy sparseVals into pr (and pi, if complex)
+  fillMatlabArray<Scalar>(sparseVals, mxa, nnz);
+  delete[] sparseVals;
+  delete[] rowProgress;
+  return mxa;
+}
 
+template<> mxArray* createMatlabSparse<double>(int numRows, int numCols, int nnz)
+{
+  return mxCreateSparse(numRows, numCols, nnz, mxREAL);
+}
+
+template<> mxArray* createMatlabSparse<complex_t>(int numRows, int numCols, int nnz)
+{
+  return mxCreateSparse(numRows, numCols, nnz, mxCOMPLEX);
+}
+
+template<> void fillMatlabArray<double>(double* array, const mxArray* mxa, int n)
+{
+  memcpy(mxGetPr(mxa), array, n * sizeof(double));
+}
+
+template<> void fillMatlabArray<complex_t>(complex_t* array, const mxArray* mxa, int n)
+{
+  double* pr = mxGetPr(mxa);
+  double* pi = mxGetPi(mxa);
+  for(int i = 0; i < n; i++)
+    {
+      pr[i] = std::real<double>(array[i]);
+      pi[i] = std::imag<double>(array[i]);
+    }
+}
+
+template<typename Scalar>
+mxArray* saveMultiVectorToMatlab(RCP<Xpetra::MultiVector<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mv)
+{
+  //Precondition: Memory has already been allocated by MATLAB for the array.
+  int nr = mv->getGlobalLength();
+  int nc = mv->getNumVectors();
+  mxArray* output = createMatlabMultiVector<Scalar>(nr, nc);
+  Scalar* data = new Scalar[nr * nc];
+  for(int col = 0; col < nc; col++)
+    {
+      Teuchos::ArrayRCP<const Scalar> colData = mv->getData(col);
+      for(int row = 0; row < nr; row++)
+        {
+          data[col * nr + row] = colData[row];
+        }
+    }
+  fillMatlabArray<Scalar>(data, output, nc * nr);
+  return output;
+}
+
+template<typename Scalar>
+mxArray* saveTpetraMV(RCP<Tpetra::MultiVector<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mv)
+{
+  //Precondition: Memory has already been allocated by MATLAB for the array.
+  int nr = mv->getGlobalLength();
+  int nc = mv->getNumVectors();
+  mxArray* output = createMatlabMultiVector<Scalar>(nr, nc);
+  Scalar* data = new Scalar[nr * nc];
+  for(int col = 0; col < nc; col++)
+    {
+      Teuchos::ArrayRCP<const Scalar> colData = mv->getData(col);
+      for(int row = 0; row < nr; row++)
+        {
+          data[col * nr + row] = colData[row];
+        }
+    }
+  fillMatlabArray<Scalar>(data, output, nc * nr);
+  return output;
+}
+
+template<typename Scalar>
+RCP<Xpetra::MultiVector<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> loadXpetraMV(const mxArray* mxa)
+{
+  RCP<Tpetra::MultiVector<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > tmv = loadTpetraMV<Scalar>(mxa);
+  return MueLu::TpetraMultiVector_To_XpetraMultiVector<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tmv);
+}
 
 #endif //HAVE_MUELU_MATLAB error handler
 #endif //MUEMEX_TYPES_DEF_HPP guard

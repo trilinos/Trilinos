@@ -57,7 +57,6 @@
 
 #include <Tpetra_DefaultPlatform.hpp>
 #include "muemexTypes_decl.hpp"
-#include "muemexTypes_def.hpp"
 
 
 using namespace std;
@@ -941,6 +940,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   RCP<MuemexSystem> D;
   /* Sanity Check Input */
   mode = sanity_check(nrhs, prhs);
+
   switch(mode)
     {
     case MODE_SETUP:
