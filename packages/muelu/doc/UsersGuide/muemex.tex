@@ -14,6 +14,7 @@ following options:
 \begin{lstlisting}
   export TRILINOS_HOME=/path/to/your/Trilinos/source/directory
   cmake \
+      -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON  \
       -D Trilinos_ENABLE_Amesos:BOOL=ON \
       -D Trilinos_ENABLE_Amesos2:BOOL=ON \
       -D Amesos2_ENABLE_KLU2:BOOL=ON \
