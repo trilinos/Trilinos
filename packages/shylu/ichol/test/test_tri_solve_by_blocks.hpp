@@ -13,6 +13,7 @@
 
 #include "graph_helper_scotch.hpp"
 #include "crs_matrix_helper.hpp"
+#include "dense_matrix_helper.hpp"
 
 #include "team_view.hpp"
 #include "task_view.hpp"
