@@ -121,9 +121,9 @@ bool check_if_one_owned_face_with_these_nodes_exists(const std::array <uint64_t,
   return face_vector.size() == 1;
 }
 
-TEST( SkinMesh, SkinHex )
+void test_skin_mesh_with_hexes(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
 {
-    //  ID.proc
+     //  ID.proc
     //
     //          4.0------------8.0-----------12.1
     //          /|             /|             /|
@@ -154,7 +154,7 @@ TEST( SkinMesh, SkinHex )
   stk::mesh::Part & skin_part = meta.declare_part("SkinPart", side_rank);
   stk::mesh::Part & locally_owned = meta.locally_owned_part();
 
-  stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD);
+  stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD, autoAuraOption);
   // node ordering for generated mesh is different than hand-crafted meshes for other unit tests below
   stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x2", mesh, MPI_COMM_WORLD);
   const int p_rank = mesh.parallel_rank();
@@ -207,7 +207,17 @@ TEST( SkinMesh, SkinHex )
   }
 }
 
-TEST( SkinMesh, SkinTet )
+TEST( SkinMesh, SkinHexWithAura )
+{
+  test_skin_mesh_with_hexes(stk::mesh::BulkData::AUTO_AURA);
+}
+
+TEST( SkinMesh, SkinHexWithoutAura )
+{
+  test_skin_mesh_with_hexes(stk::mesh::BulkData::NO_AUTO_AURA);
+}
+
+void test_skin_mesh_with_tets(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   int p_size = stk::parallel_machine_size(pm);
@@ -221,7 +231,7 @@ TEST( SkinMesh, SkinTet )
   const size_t NZ = 2;
 
   // fixture generates six tets from NXxNYxNZ hex
-  stk::mesh::fixtures::TetFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
+  stk::mesh::fixtures::TetFixture fixture( MPI_COMM_WORLD, NX, NY, NZ, autoAuraOption);
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
@@ -287,9 +297,19 @@ TEST( SkinMesh, SkinTet )
   }
 }
 
-TEST( SkinMesh, SkinWedge )
+TEST( SkinMesh, SkinTetWithAura )
 {
-    //  ID.proc
+  test_skin_mesh_with_tets(stk::mesh::BulkData::AUTO_AURA);
+}
+
+TEST( SkinMesh, SkinTetWithoutAura )
+{
+  test_skin_mesh_with_tets(stk::mesh::BulkData::NO_AUTO_AURA);
+}
+
+void test_skin_mesh_with_wedge(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
+{
+     //  ID.proc
     //
     //          3.0------------7.0-----------11.1
     //          /|             /|             /|
@@ -315,7 +335,7 @@ TEST( SkinMesh, SkinWedge )
 
     const unsigned spatialDim = 3;
     stk::mesh::MetaData meta(spatialDim);
-    stk::mesh::BulkData mesh(meta, pm);
+    stk::mesh::BulkData mesh(meta, pm, autoAuraOption);
     const int p_rank = mesh.parallel_rank();
 
     stk::mesh::EntityRank side_rank = meta.side_rank();
@@ -426,7 +446,17 @@ TEST( SkinMesh, SkinWedge )
     }
 }
 
-TEST( SkinMesh, SkinPyramid )
+TEST( SkinMesh, SkinWedgeWithAura )
+{
+  test_skin_mesh_with_wedge(stk::mesh::BulkData::AUTO_AURA);
+}
+
+TEST( SkinMesh, SkinWedgeWithoutAura )
+{
+  test_skin_mesh_with_wedge(stk::mesh::BulkData::NO_AUTO_AURA);
+}
+
+void test_skin_mesh_with_pyramid(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
 {
     //  ID.proc
     //
@@ -454,7 +484,7 @@ TEST( SkinMesh, SkinPyramid )
 
     const unsigned spatialDim = 3;
     stk::mesh::MetaData meta(spatialDim);
-    stk::mesh::BulkData mesh(meta, pm);
+    stk::mesh::BulkData mesh(meta, pm, autoAuraOption);
     const int p_rank = mesh.parallel_rank();
 
     stk::mesh::EntityRank side_rank = meta.side_rank();
@@ -572,7 +602,17 @@ TEST( SkinMesh, SkinPyramid )
     }
 }
 
-TEST( SkinMesh, SkinHybridMesh )
+TEST( SkinMesh, SkinPyramidWithAura )
+{
+  test_skin_mesh_with_pyramid(stk::mesh::BulkData::AUTO_AURA);
+}
+
+TEST( SkinMesh, SkinPyramidWithoutAura )
+{
+  test_skin_mesh_with_pyramid(stk::mesh::BulkData::NO_AUTO_AURA);
+}
+
+void test_skin_hybrid_mesh(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
 {
     //  ID.proc
     //
@@ -600,7 +640,7 @@ TEST( SkinMesh, SkinHybridMesh )
 
     const unsigned spatialDim = 3;
     stk::mesh::MetaData meta(spatialDim);
-    stk::mesh::BulkData mesh(meta, pm);
+    stk::mesh::BulkData mesh(meta, pm, autoAuraOption);
     const int p_rank = mesh.parallel_rank();
 
     stk::mesh::EntityRank side_rank = meta.side_rank();
@@ -730,72 +770,14 @@ TEST( SkinMesh, SkinHybridMesh )
     }
 }
 
-void test_skin_mesh_with_hexes(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
+TEST( SkinMesh, SkinHybridMeshWithAura )
 {
-  const int spatialDim = 3;
-  stk::mesh::MetaData meta(spatialDim);
-
-  stk::mesh::EntityRank side_rank = meta.side_rank();
-
-  stk::mesh::Part & skin_part = meta.declare_part("SkinPart", side_rank);
-  stk::mesh::Part & skin_part_2 = meta.declare_part("SkinPart_2", side_rank);
-  stk::mesh::Part & locally_owned = meta.locally_owned_part();
-
-  stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD, autoAuraOption);
-  stk::unit_test_util::fill_mesh_using_stk_io("generated:5x5x5", mesh, MPI_COMM_WORLD);
-
-  ASSERT_EQ( 0u, stk::mesh::count_selected_entities( skin_part, mesh.buckets(stk::topology::NODE_RANK)) );
-  ASSERT_EQ( 0u, stk::mesh::count_selected_entities( skin_part, mesh.buckets(side_rank)) );
-
-  stk::mesh::create_edges(mesh, meta.universal_part());
-
-  std::cout<<"created "<<stk::mesh::count_selected_entities(meta.universal_part(), mesh.buckets(stk::topology::EDGE_RANK)) << " edges."<<std::endl;
-
-  // skin the mesh
-  {
-    stk::mesh::PartVector add_parts(1,&skin_part);
-    stk::mesh::skin_mesh(mesh, add_parts);
-  }
-
-  {
-    size_t local_counts[2] = {}, global_counts[2] = {};
-    local_counts[0] = stk::mesh::count_selected_entities( skin_part & locally_owned, mesh.buckets(stk::topology::NODE_RANK));
-    local_counts[1] = stk::mesh::count_selected_entities( skin_part & locally_owned, mesh.buckets(side_rank));
-
-    stk::all_reduce_sum( mesh.parallel(), local_counts, global_counts, 2);
-
-    EXPECT_EQ( 152u, global_counts[0] );
-    EXPECT_EQ( 150u, global_counts[1] );
-  }
-
-  // trying skinning the mesh again but put skin into part 2
-  // skin the mesh
-  {
-    stk::mesh::PartVector add_parts(1,&skin_part_2);
-    stk::mesh::skin_mesh(mesh, add_parts);
-  }
-
-  {
-    size_t local_counts[2] = {}, global_counts[2] = {};
-    local_counts[0] = stk::mesh::count_selected_entities( skin_part_2 & locally_owned, mesh.buckets(stk::topology::NODE_RANK));
-    local_counts[1] = stk::mesh::count_selected_entities( skin_part_2 & locally_owned, mesh.buckets(side_rank));
-
-    stk::all_reduce_sum( mesh.parallel(), local_counts, global_counts, 2);
-
-    EXPECT_EQ( 152u, global_counts[0] );
-    EXPECT_EQ( 150u, global_counts[1] );
-  }
-
+  test_skin_hybrid_mesh(stk::mesh::BulkData::AUTO_AURA);
 }
 
-TEST( SkinMesh, SimpleHexWithAura)
+TEST( SkinMesh, SkinHybridMeshWithoutAura )
 {
-    test_skin_mesh_with_hexes(stk::mesh::BulkData::AUTO_AURA);
-}
-
-TEST( SkinMesh, SimpleHexWithoutAura)
-{
-    test_skin_mesh_with_hexes(stk::mesh::BulkData::NO_AUTO_AURA);
+  test_skin_hybrid_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
 void move_element2_into_part(stk::mesh::BulkData& mesh, stk::mesh::EntityId element_id, stk::mesh::Part& part)
