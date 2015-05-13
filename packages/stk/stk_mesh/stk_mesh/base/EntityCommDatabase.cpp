@@ -112,6 +112,8 @@ void pack_entity_info(const BulkData& mesh, CommBuffer & buf , const Entity enti
       Entity const *rel_entities = bucket.begin(ebo, irank);
       ConnectivityOrdinal const *rel_ordinals = bucket.begin_ordinals(ebo, irank);
       Permutation const *rel_permutations = bucket.begin_permutations(ebo, irank);
+      ThrowAssert(rel_ordinals);
+      ThrowAssert(rel_permutations);
 
       for ( unsigned i = 0 ; i < nrel ; ++i ) {
         if (mesh.is_valid(rel_entities[i])) {
