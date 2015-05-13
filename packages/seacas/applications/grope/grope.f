@@ -436,7 +436,7 @@ C   --Process commands
      &     C(KVNAMO+NAMLEN*(IXGV-1)), C(KVNAMO+NAMLEN*(IXNV-1)),
      &     C(KVNAMO+NAMLEN*(IXEV-1)), C(KVNAMO+NAMLEN*(IXNS-1)),
      $     C(KVNAMO+NAMLEN*(IXSS-1)),
-     &     A(KCORD), A(KMAPEL), A(KMAPNO),
+     &     A(KCORD), A(KMAPEL), A(KMAPNO), mapnd, mapel,
      &     A(KIDELB), A(KNELB), A(KLENE), A(KNLNK), A(KNATR),
      &     A(KLINK), A(KATRIB),
      &     A(KIDNS), A(KNNNS), A(KNDNPS), A(KIXNNS), A(KIXDNS),

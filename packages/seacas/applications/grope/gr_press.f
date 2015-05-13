@@ -33,7 +33,7 @@ C
 C=======================================================================
       SUBROUTINE PRESS (OPTION, NOUT, NUMESS, LISESS, LESSEL, LESSNL,
      &  IDESS, NEESS, NNESS, IXEESS, IXNESS, LTEESS, LTSESS, FACESS,
-     *  NAME,  nvar, namvar, isvok, lisvar, MAPEL, DOMAPE)
+     *  NAME,  nvar, namvar, isvok, lisvar, NDFSID, MAPEL, DOMAPE)
 C=======================================================================
 
 C     --*** PRESS *** (GROPE) Display database element side set
@@ -61,11 +61,14 @@ C     --   LTSESS - IN - the element sides for all sets
 C     --   FACESS - IN - the distribution factors for all sets
 C     --   NVAR - IN - the number of variables
 C     --   NAMVAR - IN - the names of the variables
+C     --   NDFSID - IN - the number of df per face
 C     --   ISVOK  - IN - the variable truth table;
 C     --      variable i of set j exists iff ISVOK(i,j) is NOT 0
 C     --   LISVAR  - SCRATCH - size = NVAR (if 'V' in OPTION)
 
       include 'exodusII.inc'
+      INCLUDE 'gr_dbase.blk'
+
       CHARACTER*(*) OPTION
       INTEGER LISESS(0:*)
       INTEGER IDESS(*)
@@ -75,6 +78,7 @@ C     --   LISVAR  - SCRATCH - size = NVAR (if 'V' in OPTION)
       INTEGER IXNESS(*)
       INTEGER LTEESS(*)
       INTEGER LTSESS(*)
+      INTEGER NDFSID(*)
       REAL FACESS(*)
       CHARACTER*(*) NAME(*)
       CHARACTER*(*) NAMVAR(*)
@@ -253,39 +257,31 @@ C     ... See if all values are the same
                 WRITE (*, 10055, IOSTAT=IDUM) VAL
               END IF
             else
+C ... Get the number of df/nodes per face...
+              call exgssc(ndb, idess(iess), ndfsid, ierr)
 C ... If it looks like the sideset elements are homogenous, then print
 C     element/face/df information; otherwise, just print df...
-              numdf = nness(iess)
-              numel = neess(iess)
-              ndfpe = numdf/numel
-              if (ndfpe*numel .eq. numdf .and. numdf .gt. 0) then
-                ISE = IXEESS(IESS)
-                IEE = ISE + NEESS(IESS) - 1
-                IDS = IS
-                do i=ise, iee
-                  if (domape) then
-                    iel = mapel(lteess(i))
-                  else
-                    iel = lteess(i)
-                  end if
-                  if (nout .gt. 0) then
-                    write (nout, 10100) iel, ltsess(i),
-     *                (facess(j),j=ids,ids+ndfpe-1)
-                  else
-                    write (*, 10100) iel, ltsess(i),
-     *                (facess(j),j=ids,ids+ndfpe-1)
-                  end if
-                  ids = ids + ndfpe
-                end do
-              else
-                IF (NOUT .GT. 0) THEN
-                  WRITE (NOUT, 10050, IOSTAT=IDUM)
-     &              (FACESS(I), I=IS,IE)
-                ELSE
-                  WRITE (*, 10050, IOSTAT=IDUM)
-     &              (FACESS(I), I=IS,IE)
-                END IF
-              end if
+              ISE = IXEESS(IESS)
+              IEE = ISE + NEESS(IESS) - 1
+              IDS = IS
+              idf = 1
+              do i=ise, iee
+                NDFPE = ndfsid(idf)
+                idf=idf+1
+                if (domape) then
+                  iel = mapel(lteess(i))
+                else
+                  iel = lteess(i)
+                end if
+                if (nout .gt. 0) then
+                  write (nout, 10100) iel, ltsess(i),
+     *              (facess(j),j=ids,ids+ndfpe-1)
+                else
+                  write (*, 10100) iel, ltsess(i),
+     *              (facess(j),j=ids,ids+ndfpe-1)
+                end if
+                ids = ids + ndfpe
+              end do
             end if
           else
             IF (NOUT .GT. 0) THEN
