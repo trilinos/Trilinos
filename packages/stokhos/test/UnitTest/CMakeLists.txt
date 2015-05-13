@@ -752,7 +752,7 @@ IF (Stokhos_ENABLE_EpetraExt)
       )
   ENDIF()
 
-  IF (Kokkos_ENABLE_Cuda)
+  IF (Kokkos_ENABLE_Cuda AND Stokhos_ENABLE_CUSPARSE)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       KokkosArrayKernelsUnitTest_Cuda
       SOURCES Stokhos_KokkosArrayKernelsUnitTest.hpp
