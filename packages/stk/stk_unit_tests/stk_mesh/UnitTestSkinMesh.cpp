@@ -141,7 +141,7 @@ void test_skin_mesh_with_hexes(stk::mesh::BulkData::AutomaticAuraOption autoAura
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   int p_size = stk::parallel_machine_size(pm);
-  if(p_size != 2)
+  if(p_size > 2)
   {
     return;
   }
@@ -180,21 +180,30 @@ void test_skin_mesh_with_hexes(stk::mesh::BulkData::AutomaticAuraOption autoAura
   if (p_rank == 0)
   {
     // check number of entities in skin part
-    EXPECT_EQ( 8u, counts[stk::topology::NODE_RANK] ); // nodes
-    EXPECT_EQ( 0u, counts[stk::topology::EDGE_RANK] );  // edges
-    EXPECT_EQ( 5u, counts[stk::topology::FACE_RANK] );  // face
-    EXPECT_EQ( 0u, counts[stk::topology::ELEM_RANK] );  // elements
+    EXPECT_EQ( p_size == 2 ? 8u : 12u, counts[stk::topology::NODE_RANK] );  // nodes
+    EXPECT_EQ(                     0u, counts[stk::topology::EDGE_RANK] );  // edges
+    EXPECT_EQ( p_size == 2 ? 5u : 10u, counts[stk::topology::FACE_RANK] );  // face
+    EXPECT_EQ(                     0u, counts[stk::topology::ELEM_RANK] );  // elements
     // check boundary faces are created
     EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 4 > {{ 1, 2, 4, 3 }}, mesh));
     EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 4 > {{ 1, 5, 7, 3 }}, mesh));
     EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 4 > {{ 3, 7, 8, 4 }}, mesh));
     EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 4 > {{ 1, 5, 6, 2 }}, mesh));
     EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 4 > {{ 2, 6, 8, 4 }}, mesh));
+
+    if (p_size == 1)
+    {
+        EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 4 > {{ 5, 9, 11, 7 }},   mesh));
+        EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 4 > {{ 7, 11, 12, 8 }},  mesh));
+        EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 4 > {{ 9, 10, 12, 11 }}, mesh));
+        EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 4 > {{ 5, 9, 10, 6 }},   mesh));
+        EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 4 > {{ 6, 10, 12, 8 }},  mesh));
+    }
   }
   else if (p_rank == 1)
   {
     // check number of entities in skin part
-    EXPECT_EQ( 4u, counts[stk::topology::NODE_RANK] ); // nodes
+    EXPECT_EQ( 4u, counts[stk::topology::NODE_RANK] );  // nodes
     EXPECT_EQ( 0u, counts[stk::topology::EDGE_RANK] );  // edges
     EXPECT_EQ( 5u, counts[stk::topology::FACE_RANK] );  // face
     EXPECT_EQ( 0u, counts[stk::topology::ELEM_RANK] );  // elements
@@ -221,7 +230,7 @@ void test_skin_mesh_with_tets(stk::mesh::BulkData::AutomaticAuraOption autoAuraO
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   int p_size = stk::parallel_machine_size(pm);
-  if(p_size != 2)
+  if(p_size > 2)
   {
     return;
   }
@@ -257,13 +266,13 @@ void test_skin_mesh_with_tets(stk::mesh::BulkData::AutomaticAuraOption autoAuraO
   counts[2] = stk::mesh::count_selected_entities( skin, fixture.m_bulk_data.buckets(stk::topology::FACE_RANK));
   counts[3] = stk::mesh::count_selected_entities( skin, fixture.m_bulk_data.buckets(stk::topology::ELEM_RANK));
 
-  if (p_rank == 0)
+  if (0 == p_rank)
   {
     // check number of entities in skin part
-    EXPECT_EQ( 8u, counts[stk::topology::NODE_RANK] ); // nodes
-    EXPECT_EQ( 0u, counts[stk::topology::EDGE_RANK] );  // edges
-    EXPECT_EQ( 10u, counts[stk::topology::FACE_RANK] );  // face
-    EXPECT_EQ( 0u, counts[stk::topology::ELEM_RANK] );  // elements
+    EXPECT_EQ( 1 == p_size ? 12u :  8u, counts[stk::topology::NODE_RANK] ); // nodes
+    EXPECT_EQ(                      0u, counts[stk::topology::EDGE_RANK] );  // edges
+    EXPECT_EQ( 1 == p_size ? 20u : 10u, counts[stk::topology::FACE_RANK] );  // face
+    EXPECT_EQ(                      0u, counts[stk::topology::ELEM_RANK] );  // elements
     // check boundary faces are created
     EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 3, 4, 8 }}, fixture.m_bulk_data));
     EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 3, 7, 8 }}, fixture.m_bulk_data));
@@ -275,8 +284,21 @@ void test_skin_mesh_with_tets(stk::mesh::BulkData::AutomaticAuraOption autoAuraO
     EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 1, 2, 4 }}, fixture.m_bulk_data));
     EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 2, 6, 8 }}, fixture.m_bulk_data));
     EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 2, 4, 8 }}, fixture.m_bulk_data));
+
+    if (1 == p_size) {
+        EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 8, 7, 12 }}, fixture.m_bulk_data));
+        EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 5, 7, 11 }}, fixture.m_bulk_data));
+        EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 7, 11, 12 }}, fixture.m_bulk_data));
+        EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 5, 11, 9 }}, fixture.m_bulk_data));
+        EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 9, 11, 12 }}, fixture.m_bulk_data));
+        EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 9, 10, 12 }}, fixture.m_bulk_data));
+        EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 5, 9, 10 }}, fixture.m_bulk_data));
+        EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 5, 6, 10 }}, fixture.m_bulk_data));
+        EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 6, 10, 12 }}, fixture.m_bulk_data));
+        EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 6, 8, 12 }}, fixture.m_bulk_data));
+    }
   }
-  else if (p_rank == 1)
+  else if (1 == p_rank)
   {
     // check number of entities in skin part
     EXPECT_EQ( 4u, counts[stk::topology::NODE_RANK] ); // nodes
@@ -328,7 +350,7 @@ void test_skin_mesh_with_wedge(stk::mesh::BulkData::AutomaticAuraOption autoAura
     stk::ParallelMachine pm = MPI_COMM_WORLD;
     int p_size = stk::parallel_machine_size(pm);
 
-    if(p_size != 2)
+    if(p_size > 2)
     {
         return;
     }
@@ -349,18 +371,18 @@ void test_skin_mesh_with_wedge(stk::mesh::BulkData::AutomaticAuraOption autoAura
     const size_t numWedges = 4;
     stk::mesh::EntityId elementIDsToProc[][2] =
     {
-        { 1, 0 }, // proc 0
+        { 1, 0 },  // proc 0
         { 2, 0 },  // proc 0
         { 3, 1 },  // proc 1
-        { 4, 1 }  // proc 1
+        { 4, 1 }   // proc 1
     };
 
     const size_t nodesPerWedge = 6;
     stk::mesh::EntityId wedgeNodeIDs[][nodesPerWedge] =
     {
-        { 1, 5, 2, 4, 8, 3 },
-        { 2, 5, 6, 3, 8, 7 },
-        { 5, 9, 6, 8, 12, 7 },
+        { 1, 5,  2, 4,  8,  3 },
+        { 2, 5,  6, 3,  8,  7 },
+        { 5, 9,  6, 8, 12,  7 },
         { 6, 9, 10, 7, 12, 11 }
     };
 
@@ -381,19 +403,22 @@ void test_skin_mesh_with_wedge(stk::mesh::BulkData::AutomaticAuraOption autoAura
     mesh.modification_begin();
 
     for (size_t i = 0; i < numWedges; ++i) {
-      if (elementIDsToProc[i][1] == static_cast<unsigned>(p_rank) )
+      if ( (1 == p_size) || (elementIDsToProc[i][1] == static_cast<unsigned>(p_rank)) )
       {
         stk::mesh::declare_element(mesh, *wedgePart, elementIDsToProc[i][0], wedgeNodeIDs[i]);
       }
     }
 
-    for (int nodeIdx = 0; nodeIdx < numSharedNodeTriples; ++nodeIdx) {
-        if (p_rank == shared_nodeIDs_and_procs[nodeIdx][0]) {
-            stk::mesh::EntityId nodeID = shared_nodeIDs_and_procs[nodeIdx][1];
-            int sharingProc = shared_nodeIDs_and_procs[nodeIdx][2];
-            stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, nodeID);
-            mesh.add_node_sharing(node, sharingProc);
-        }
+    if (p_size > 1)
+    {
+      for (int nodeIdx = 0; nodeIdx < numSharedNodeTriples; ++nodeIdx) {
+          if (p_rank == shared_nodeIDs_and_procs[nodeIdx][0]) {
+              stk::mesh::EntityId nodeID = shared_nodeIDs_and_procs[nodeIdx][1];
+              int sharingProc = shared_nodeIDs_and_procs[nodeIdx][2];
+              stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, nodeID);
+              mesh.add_node_sharing(node, sharingProc);
+          }
+      }
     }
 
     mesh.modification_end();
@@ -415,10 +440,10 @@ void test_skin_mesh_with_wedge(stk::mesh::BulkData::AutomaticAuraOption autoAura
     if (p_rank == 0)
     {
       // check number of entities
-      EXPECT_EQ( 8u, counts[stk::topology::NODE_RANK] ); // nodes
-      EXPECT_EQ( 0u, counts[stk::topology::EDGE_RANK] );  // edges
-      EXPECT_EQ( 7u, counts[stk::topology::FACE_RANK] );  // face
-      EXPECT_EQ( 0u, counts[stk::topology::ELEM_RANK] );  // elements
+      EXPECT_EQ( 1 == p_size ? 12u : 8u, counts[stk::topology::NODE_RANK] ); // nodes
+      EXPECT_EQ(                     0u, counts[stk::topology::EDGE_RANK] );  // edges
+      EXPECT_EQ( 1 == p_size ? 14u : 7u, counts[stk::topology::FACE_RANK] );  // face
+      EXPECT_EQ(                     0u, counts[stk::topology::ELEM_RANK] );  // elements
       // check boundary faces are created
       EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 4 > {{ 1, 5, 8, 4 }}, mesh));
       EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 4 > {{ 1, 2, 3, 4 }}, mesh));
@@ -427,6 +452,16 @@ void test_skin_mesh_with_wedge(stk::mesh::BulkData::AutomaticAuraOption autoAura
       EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 5, 6, 2 }}, mesh));
       EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 4, 8, 3 }}, mesh));
       EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 8, 7, 3 }}, mesh));
+
+      if (1 == p_size) {
+        EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 4 > {{ 5, 9, 12, 8 }}, mesh));
+        EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 4 > {{ 9, 10, 11, 12 }}, mesh));
+        EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 4 > {{ 6, 10, 11, 7 }}, mesh));
+        EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 8, 12, 7 }}, mesh));
+        EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 11, 7, 12 }}, mesh));
+        EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 5, 9, 6 }}, mesh));
+        EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 10, 6, 9 }}, mesh));
+      }
     }
     else if (p_rank == 1)
     {
@@ -477,7 +512,7 @@ void test_skin_mesh_with_pyramid(stk::mesh::BulkData::AutomaticAuraOption autoAu
     stk::ParallelMachine pm = MPI_COMM_WORLD;
     int p_size = stk::parallel_machine_size(pm);
 
-    if(p_size != 2)
+    if(p_size > 2)
     {
         return;
     }
@@ -498,23 +533,23 @@ void test_skin_mesh_with_pyramid(stk::mesh::BulkData::AutomaticAuraOption autoAu
     const size_t numPyramids = 6;
     stk::mesh::EntityId elementIDsToProc[][2] =
     {
-        { 1, 0 }, // proc 0
+        { 1, 0 },  // proc 0
         { 2, 0 },  // proc 0
         { 3, 0 },  // proc 0
         { 4, 1 },  // proc 1
         { 5, 1 },  // proc 1
-        { 6, 1 }  // proc 1
+        { 6, 1 }   // proc 1
     };
 
     const size_t nodesPerPyramid = 5;
     stk::mesh::EntityId pyramidNodeIDs[][nodesPerPyramid] =
     {
-        { 1, 4, 8, 5, 2 },
-        { 5, 8, 7, 6, 2 },
-        { 3, 7, 8, 4, 2 },
-        { 5, 8, 12, 9, 10 },
+        { 1, 4,  8,  5,  2 },
+        { 5, 8,  7,  6,  2 },
+        { 3, 7,  8,  4,  2 },
+        { 5, 8, 12,  9, 10 },
         { 8, 7, 11, 12, 10 },
-        { 5, 6, 7, 8, 10 }
+        { 5, 6,  7,  8, 10 }
     };
 
     // list of triplets: (owner-proc, shared-nodeID, sharing-proc)
@@ -534,20 +569,23 @@ void test_skin_mesh_with_pyramid(stk::mesh::BulkData::AutomaticAuraOption autoAu
     mesh.modification_begin();
 
     for (size_t i = 0; i < numPyramids; ++i) {
-      if (elementIDsToProc[i][1] == static_cast<unsigned>(p_rank) )
+      if ( (1 == p_size) || (elementIDsToProc[i][1] == static_cast<unsigned>(p_rank)) )
       {
         stk::mesh::Entity element = stk::mesh::declare_element(mesh, *pyramidPart, elementIDsToProc[i][0], pyramidNodeIDs[i]);
         ASSERT_TRUE(mesh.is_valid(element));
       }
     }
 
-    for (int nodeIdx = 0; nodeIdx < numSharedNodeTriples; ++nodeIdx) {
-        if (p_rank == shared_nodeIDs_and_procs[nodeIdx][0]) {
-            stk::mesh::EntityId nodeID = shared_nodeIDs_and_procs[nodeIdx][1];
-            int sharingProc = shared_nodeIDs_and_procs[nodeIdx][2];
-            stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, nodeID);
-            mesh.add_node_sharing(node, sharingProc);
-        }
+    if (p_size > 1)
+    {
+      for (int nodeIdx = 0; nodeIdx < numSharedNodeTriples; ++nodeIdx) {
+          if (p_rank == shared_nodeIDs_and_procs[nodeIdx][0]) {
+              stk::mesh::EntityId nodeID = shared_nodeIDs_and_procs[nodeIdx][1];
+              int sharingProc = shared_nodeIDs_and_procs[nodeIdx][2];
+              stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, nodeID);
+              mesh.add_node_sharing(node, sharingProc);
+          }
+      }
     }
 
     mesh.modification_end();
@@ -569,10 +607,10 @@ void test_skin_mesh_with_pyramid(stk::mesh::BulkData::AutomaticAuraOption autoAu
     if (p_rank == 0)
     {
       // check number of entities
-      EXPECT_EQ( 8u, counts[stk::topology::NODE_RANK] ); // nodes
-      EXPECT_EQ( 0u, counts[stk::topology::EDGE_RANK] );  // edges
-      EXPECT_EQ( 8u, counts[stk::topology::FACE_RANK] );  // face
-      EXPECT_EQ( 0u, counts[stk::topology::ELEM_RANK] );  // elements
+      EXPECT_EQ( 1 == p_size ? 12u : 8u, counts[stk::topology::NODE_RANK] ); // nodes
+      EXPECT_EQ(                     0u, counts[stk::topology::EDGE_RANK] );  // edges
+      EXPECT_EQ( 1 == p_size ? 16u : 8u, counts[stk::topology::FACE_RANK] );  // face
+      EXPECT_EQ(                     0u, counts[stk::topology::ELEM_RANK] );  // elements
       // check boundary faces are created
       EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 4 > {{ 1, 5, 8, 4 }}, mesh));
       EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 4 > {{ 4, 8, 7, 3 }}, mesh));
@@ -582,6 +620,17 @@ void test_skin_mesh_with_pyramid(stk::mesh::BulkData::AutomaticAuraOption autoAu
       EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 2, 5, 6 }}, mesh));
       EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 1, 2, 4 }}, mesh));
       EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 2, 3, 4 }}, mesh));
+
+      if (1 == p_size) {
+          EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 4 > {{ 5, 9, 12, 8 }}, mesh));
+          EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 4 > {{ 8, 12, 11, 7 }}, mesh));
+          EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 6, 10, 7 }}, mesh));
+          EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 10, 7, 11 }}, mesh));
+          EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 5, 9, 10 }}, mesh));
+          EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 5, 10, 6 }}, mesh));
+          EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 9, 10, 12 }}, mesh));
+          EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 10, 11, 12 }}, mesh));
+      }
     }
     else if (p_rank == 1)
     {
@@ -633,7 +682,7 @@ void test_skin_hybrid_mesh(stk::mesh::BulkData::AutomaticAuraOption autoAuraOpti
     stk::ParallelMachine pm = MPI_COMM_WORLD;
     int p_size = stk::parallel_machine_size(pm);
 
-    if(p_size != 2)
+    if(p_size > 2)
     {
         return;
     }
@@ -696,12 +745,12 @@ void test_skin_hybrid_mesh(stk::mesh::BulkData::AutomaticAuraOption autoAuraOpti
 
     mesh.modification_begin();
 
-    if (p_rank == 0) {
+    if (0 == p_rank) {
         for (size_t i = 0; i < numHex; ++i) {
           stk::mesh::declare_element(mesh, *hexPart, hexElemIDs[i], hexNodeIDs[i]);
         }
     }
-    else {
+    if ( (1 == p_rank) || (1 == p_size) )  { // setup the pyramids/tets for either np 2 or serial
         for (size_t i = 0; i < numPyr; ++i) {
           stk::mesh::declare_element(mesh, *pyrPart, pyrElemIDs[i], pyrNodeIDs[i]);
         }
@@ -710,13 +759,16 @@ void test_skin_hybrid_mesh(stk::mesh::BulkData::AutomaticAuraOption autoAuraOpti
         }
     }
 
-    for (int nodeIdx = 0; nodeIdx < numSharedNodeTriples; ++nodeIdx) {
-        if (p_rank == shared_nodeIDs_and_procs[nodeIdx][0]) {
-            stk::mesh::EntityId nodeID = shared_nodeIDs_and_procs[nodeIdx][1];
-            int sharingProc = shared_nodeIDs_and_procs[nodeIdx][2];
-            stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, nodeID);
-            mesh.add_node_sharing(node, sharingProc);
-        }
+    if (p_size > 1)
+    {
+      for (int nodeIdx = 0; nodeIdx < numSharedNodeTriples; ++nodeIdx) {
+          if (p_rank == shared_nodeIDs_and_procs[nodeIdx][0]) {
+              stk::mesh::EntityId nodeID = shared_nodeIDs_and_procs[nodeIdx][1];
+              int sharingProc = shared_nodeIDs_and_procs[nodeIdx][2];
+              stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, nodeID);
+              mesh.add_node_sharing(node, sharingProc);
+          }
+      }
     }
 
     mesh.modification_end();
@@ -738,24 +790,38 @@ void test_skin_hybrid_mesh(stk::mesh::BulkData::AutomaticAuraOption autoAuraOpti
     if (p_rank == 0)
     {
       // check number of entities
-      EXPECT_EQ( 8u, counts[stk::topology::NODE_RANK] ); // nodes
-      EXPECT_EQ( 0u, counts[stk::topology::EDGE_RANK] );  // edges
-      EXPECT_EQ( 5u, counts[stk::topology::FACE_RANK] );  // face
-      EXPECT_EQ( 0u, counts[stk::topology::ELEM_RANK] );  // elements
+      EXPECT_EQ( 1 == p_size ? 12u : 8u, counts[stk::topology::NODE_RANK] ); // nodes
+      EXPECT_EQ(                     0u, counts[stk::topology::EDGE_RANK] );  // edges
+      EXPECT_EQ( 1 == p_size ? 15u : 5u, counts[stk::topology::FACE_RANK] );  // face
+      EXPECT_EQ(                     0u, counts[stk::topology::ELEM_RANK] );  // elements
       // check boundary faces are created
       EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 4 > {{ 1, 2, 3, 4 }}, mesh));
       EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 4 > {{ 1, 5, 8, 4 }}, mesh));
       EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 4 > {{ 4, 8, 7, 3 }}, mesh));
       EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 4 > {{ 1, 5, 6, 2 }}, mesh));
       EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 4 > {{ 2, 6, 7, 3 }}, mesh));
+
+      if (1 == p_size)
+      {
+          EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 5, 9, 8 }}, mesh));
+          EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 9, 8, 12 }}, mesh));
+          EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 8, 7, 12 }}, mesh));
+          EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 7, 12, 11 }}, mesh));
+          EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 9, 12, 10 }}, mesh));
+          EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 10, 12, 11 }}, mesh));
+          EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 5, 9, 6 }}, mesh));
+          EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 6, 9, 10 }}, mesh));
+          EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 6, 10, 7 }}, mesh));
+          EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 7, 10, 11 }}, mesh));
+      }
     }
     else if (p_rank == 1)
     {
       // check number of entities in skin part
-      EXPECT_EQ( 4u, counts[stk::topology::NODE_RANK] ); // nodes
-      EXPECT_EQ( 0u, counts[stk::topology::EDGE_RANK] );  // edges
+      EXPECT_EQ(  4u, counts[stk::topology::NODE_RANK] ); // nodes
+      EXPECT_EQ(  0u, counts[stk::topology::EDGE_RANK] );  // edges
       EXPECT_EQ( 10u, counts[stk::topology::FACE_RANK] );  // face
-      EXPECT_EQ( 0u, counts[stk::topology::ELEM_RANK] );  // elements
+      EXPECT_EQ(  0u, counts[stk::topology::ELEM_RANK] );  // elements
       // check boundary faces are created
       EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 5, 9, 8 }}, mesh));
       EXPECT_TRUE(check_if_one_owned_face_with_these_nodes_exists(std::array< uint64_t, 3 > {{ 9, 8, 12 }}, mesh));
