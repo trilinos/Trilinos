@@ -44,7 +44,7 @@
 #ifndef TPETRA_DETAILS_FIXEDHASHTABLE_DECL_HPP
 #define TPETRA_DETAILS_FIXEDHASHTABLE_DECL_HPP
 
-#include <Tpetra_ConfigDefs.hpp>
+#include <Tpetra_Details_Hash.hpp>
 #include <Teuchos_Describable.hpp>
 #include <Kokkos_Core.hpp>
 
@@ -85,8 +85,8 @@ private:
   typedef typename DeviceType::memory_space memory_space;
   typedef Kokkos::Device<execution_space, memory_space> device_type;
 
-  //typedef typename Kokkos::View<KeyType*, device_type>::size_type size_type;
-  typedef size_t size_type;
+  typedef Hash<KeyType, device_type> hash_type;
+  typedef typename hash_type::offset_type offset_type;
 
   /// \brief Type of the array of hash table "buckets" (a.k.a. "row"
   ///   offsets).
@@ -95,8 +95,8 @@ private:
   /// on all Kokkos devices.  It's a 1-D View so LayoutLeft and
   /// LayoutRight mean the same thing, but specifying the layout
   /// explicitly makes Kokkos::deep_copy work.
-  typedef typename Kokkos::View<const size_type*, Kokkos::LayoutLeft,
-                                device_type>::HostMirror ptr_type;
+  typedef typename Kokkos::View<const offset_type*, Kokkos::LayoutLeft,
+                                device_type> ptr_type;
   /// \brief Type of the array of (key, value) pairs in the hash table.
   ///
   /// We specify LayoutLeft explicitly so that the layout is the same
@@ -104,7 +104,7 @@ private:
   /// LayoutRight mean the same thing, but specifying the layout
   /// explicitly makes Kokkos::deep_copy work.
   typedef typename Kokkos::View<const Kokkos::pair<KeyType, ValueType>*,
-                                Kokkos::LayoutLeft, device_type>::HostMirror val_type;
+                                Kokkos::LayoutLeft, device_type> val_type;
 
 public:
   //! Default constructor; makes an empty table.
@@ -163,6 +163,7 @@ public:
     this->rawPtr_ = ptr.ptr_on_device ();
     this->rawVal_ = val.ptr_on_device ();
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+    this->invalidValue_ = src.invalidValue_;
     this->hasDuplicateKeys_ = src.hasDuplicateKeys_;
 
 #if defined(HAVE_TPETRA_DEBUG)
@@ -171,7 +172,34 @@ public:
   }
 
   //! Get the value corresponding to the given key.
-  ValueType get (const KeyType key) const;
+  KOKKOS_INLINE_FUNCTION ValueType get (const KeyType& key) const {
+    const offset_type size = this->getSize ();
+    if (size == 0) {
+      return invalidValue_;
+    }
+    else {
+      const typename hash_type::result_type hashVal =
+        hash_type::hashFunc (key, size);
+#if defined(TPETRA_HAVE_KOKKOS_REFACTOR) || defined(HAVE_TPETRA_DEBUG)
+      const offset_type start = ptr_[hashVal];
+      const offset_type end = ptr_[hashVal+1];
+      for (offset_type k = start; k < end; ++k) {
+        if (val_[k].first == key) {
+          return val_[k].second;
+        }
+      }
+#else
+      const offset_type start = rawPtr_[hashVal];
+      const offset_type end = rawPtr_[hashVal+1];
+      for (offset_type k = start; k < end; ++k) {
+        if (rawVal_[k].first == key) {
+          return rawVal_[k].second;
+        }
+      }
+#endif // HAVE_TPETRA_DEBUG
+      return invalidValue_;
+    }
+  }
 
   //! Whether the table noticed any duplicate keys on construction.
   bool hasDuplicateKeys () const {
@@ -201,7 +229,7 @@ private:
   ///
   /// This is redundant, but we keep it around as a fair performance
   /// comparison against the "classic" version of Tpetra.
-  const size_type* rawPtr_;
+  const offset_type* rawPtr_;
   /// \brief <tt>rawVal_ == val_.ptr_on_device()</tt>.
   ///
   /// This is redundant, but we keep it around as a fair performance
@@ -209,12 +237,22 @@ private:
   const Kokkos::pair<KeyType, ValueType>* rawVal_;
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 
+  /// \brief "Invalid" value of ValueType, used as a flag.
+  ///
+  /// We store this here because
+  /// Teuchos::OrdinalTraits<ValueType>::invalid() is not a CUDA
+  /// device function.  This is nonconst because otherwise the
+  /// compiler deletes the implicit copy constructor.
+  ValueType invalidValue_;
+
   //! Whether the table noticed any duplicate keys on construction.
   bool hasDuplicateKeys_;
 
   //! The number of "buckets" in the bucket array.
-  size_type getSize () const {
-    return ptr_.dimension_0 () == 0 ? size_type (0) : ptr_.dimension_0 () - 1;
+  KOKKOS_INLINE_FUNCTION offset_type getSize () const {
+    return ptr_.dimension_0 () == 0 ?
+      static_cast<offset_type> (0) :
+      static_cast<offset_type> (ptr_.dimension_0 () - 1);
   }
 
   //! Sanity checks; throw std::logic_error if any of them fail.
@@ -246,17 +284,9 @@ private:
   void
   init (const host_input_keys_type& keys,
         const host_input_vals_type& vals);
-
-  //! The hash function; it returns \c int no matter the value type.
-  static KOKKOS_INLINE_FUNCTION int
-  hashFunc (const KeyType& key, const size_type& size);
-
-  //! Number of "buckets" that the constructor should allocate.
-  int getRecommendedSize (const int size);
 };
 
 } // Details namespace
-
 } // Tpetra namespace
 
 #endif // TPETRA_DETAILS_FIXEDHASHTABLE_DECL_HPP
