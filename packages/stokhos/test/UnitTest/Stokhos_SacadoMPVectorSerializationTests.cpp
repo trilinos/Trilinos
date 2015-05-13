@@ -358,7 +358,7 @@ bool testNestedSerialization(Teuchos::Array<VecType>& x,
 
 namespace DynamicVecTest {
   Sacado::Random<double> rnd;
-  typedef Kokkos::Threads execution_space;
+  typedef Kokkos::DefaultExecutionSpace execution_space;
   typedef Stokhos::DynamicStorage<int,double,execution_space> storage_type;
   typedef Sacado::Fad::DFad<double> fad_type;
   typedef Sacado::MP::Vector<storage_type> vec_type;
@@ -368,7 +368,7 @@ namespace DynamicVecTest {
 
 namespace DynamicStridedVecTest {
   Sacado::Random<double> rnd;
-  typedef Kokkos::Threads execution_space;
+  typedef Kokkos::DefaultExecutionSpace execution_space;
   typedef Stokhos::DynamicStridedStorage<int,double,execution_space> storage_type;
   typedef Sacado::Fad::DFad<double> fad_type;
   typedef Sacado::MP::Vector<storage_type> vec_type;
@@ -378,7 +378,7 @@ namespace DynamicStridedVecTest {
 
 namespace StaticVecTest {
   Sacado::Random<double> rnd;
-  typedef Kokkos::Threads execution_space;
+  typedef Kokkos::DefaultExecutionSpace execution_space;
   typedef Stokhos::StaticStorage<int,double,8,execution_space> storage_type;
   typedef Sacado::Fad::DFad<double> fad_type;
   typedef Sacado::MP::Vector<storage_type> vec_type;
@@ -388,7 +388,7 @@ namespace StaticVecTest {
 
 namespace StaticFixedVecTest {
   Sacado::Random<double> rnd;
-  typedef Kokkos::Threads execution_space;
+  typedef Kokkos::DefaultExecutionSpace execution_space;
   typedef Stokhos::StaticFixedStorage<int,double,8,execution_space> storage_type;
   typedef Sacado::Fad::DFad<double> fad_type;
   typedef Sacado::MP::Vector<storage_type> vec_type;

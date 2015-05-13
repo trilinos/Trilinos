@@ -401,33 +401,33 @@ IF(Stokhos_ENABLE_Sacado)
       )
   ENDIF()
 
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SacadoMPVectorUnitTest
+    SOURCES Stokhos_SacadoMPVectorUnitTest.cpp
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SacadoMPVectorSerializationTests
+    SOURCES Stokhos_SacadoMPVectorSerializationTests.cpp ${UTILS_SOURCES}
+    ARGS
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SacadoMPVectorCommTests
+    SOURCES Stokhos_SacadoMPVectorCommTests.cpp ${UTILS_SOURCES}
+    ARGS
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    )
+
   IF (Kokkos_ENABLE_Pthread)
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      SacadoMPVectorUnitTest
-      SOURCES Stokhos_SacadoMPVectorUnitTest.cpp
-      COMM serial mpi
-      STANDARD_PASS_OUTPUT
-      NUM_MPI_PROCS 1
-      )
-
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      SacadoMPVectorSerializationTests
-      SOURCES Stokhos_SacadoMPVectorSerializationTests.cpp ${UTILS_SOURCES}
-      ARGS
-      COMM serial mpi
-      NUM_MPI_PROCS 1
-      STANDARD_PASS_OUTPUT
-      )
-
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      SacadoMPVectorCommTests
-      SOURCES Stokhos_SacadoMPVectorCommTests.cpp ${UTILS_SOURCES}
-      ARGS
-      COMM serial mpi
-      NUM_MPI_PROCS 1
-      STANDARD_PASS_OUTPUT
-      )
-
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       KokkosViewMPVectorUnitTest_Threads
       SOURCES Stokhos_KokkosViewMPVectorUnitTest.hpp
