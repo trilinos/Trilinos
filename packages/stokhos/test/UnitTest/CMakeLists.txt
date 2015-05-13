@@ -388,18 +388,16 @@ IF(Stokhos_ENABLE_Sacado)
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
-  )
+    )
 
-  IF (Stokhos_ENABLE_CXX11)
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      SacadoPromoteUnitTest
-      SOURCES Stokhos_SacadoPromoteUnitTest.cpp
-      ARGS
-      COMM serial mpi
-      NUM_MPI_PROCS 1
-      STANDARD_PASS_OUTPUT
-      )
-  ENDIF()
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SacadoPromoteUnitTest
+    SOURCES Stokhos_SacadoPromoteUnitTest.cpp
+    ARGS
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     SacadoMPVectorUnitTest
