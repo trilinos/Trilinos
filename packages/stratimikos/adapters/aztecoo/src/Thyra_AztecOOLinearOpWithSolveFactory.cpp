@@ -674,9 +674,9 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   this->supportsPreconditionerInputType(PRECONDITIONER_INPUT_TYPE_AS_MATRIX);
   enum ELocalPrecType {
     PT_NONE, PT_AZTEC_FROM_OP, PT_AZTEC_FROM_APPROX_FWD_MATRIX,
-    PT_FROM_PREC_OP
+    PT_FROM_PREC_OP, PT_UPPER_BOUND
   };
-  ELocalPrecType localPrecType;
+  ELocalPrecType localPrecType = PT_UPPER_BOUND;
   if( precUsed.get()==NULL && approxFwdOp.get()==NULL && !useAztecPrec_ ) {
     // No preconditioning at all!
     localPrecType = PT_NONE;
@@ -696,6 +696,12 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
     // such
     localPrecType = PT_FROM_PREC_OP;
   }
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (localPrecType == PT_UPPER_BOUND, std::logic_error,
+     "AztecOOLinearOpWithSolveFactory::initializeOp_impl(...): "
+     "localPrecType == PT_UPPER_BOUND.  This means that previously, "
+     "this value might have been used uninitialized.  "
+     "Please report this bug to the Stratimikos developers.");
 
   //
   // Determine if aztecOp already contains solvers and if we need to

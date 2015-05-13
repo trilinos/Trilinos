@@ -51,7 +51,8 @@
 
 namespace {
 
-
+#if 0
+// unused implementation detail internal to this file
 inline
 Teuchos::ETransp convert( Thyra::EOpTransp trans_in )
 {
@@ -68,6 +69,7 @@ Teuchos::ETransp convert( Thyra::EOpTransp trans_in )
   }
   return trans_out;
 }
+#endif // 0
 
 
 // This class sets some solve instance specific state and then sets it back to
@@ -803,4 +805,4 @@ AztecOOLinearOpWithSolve::solveImpl(
 }
 
 
-}	// end namespace Thyra
+}       // end namespace Thyra
