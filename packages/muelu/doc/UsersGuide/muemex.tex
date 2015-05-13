@@ -31,11 +31,16 @@ following options:
       -D TPL_ENABLE_MATLAB:BOOL=ON \
       -D MATLAB_ROOT:STRING="<my matlab root>" \
       -D MATLAB_ARCH:STRING="<my matlab os string>" \
+      -D Trilinos_EXTRA_LINK_FLAGS="-lrt -lm -lgfortran" \
   ${TRILINOS_HOME}
 \end{lstlisting}
 
 Since \muemex supports both the Epetra and Tpetra linear algebra
 libraries, you have to have both enabled in order to build \muemex.
+\begin{mycomment}
+If you turn off either Epetra or Tpetra then you will run into an error message: \textit{MueMex requires Epetra, Tpetra and MATLAB}.
+\end{mycomment}
+
 Most additional options can be specified as well.  It is important to
 note that \muemex does not work properly with MPI, hence MPI must be
 disabled in order to compile \muemex.  The MATLAB\_ARCH option is new to
@@ -64,6 +69,9 @@ must be compiled with the \texttt{-fPIC} option.  This necessitates adding:
 \end{lstlisting}
 to the cmake configure line.
 
+The additional linker flags specified in \texttt{Trilinos\_EXTRA\_LINK\_FLAGS} may slightly vary depending on the system and the exact configuration. But the given parameters may work for most Linux based systems.
+If you encounter an error message like \textit{Target "muemex.mexa64" links to item "-Wl,-rpath-link,/opt/matlab/bin/glnxa64 " which has leading or trailing whitespace.} you have to add some options to the \texttt{Trilinos\_EXTRA\_LINK\_FLAGS} variable. At least adding \texttt{-lm} should be safe and fix the error message.
+
 \subsection{BLAS \& LAPACK Option \#1: Static Builds}
 Trilinos does not play nicely with MATLAB's default LAPACK and BLAS on
 64-bit machines.
@@ -80,11 +88,12 @@ and then specify them as follows:
 Using static linking for LAPACK and BLAS prevents MATLAB's default libraries to take precedence.
 
 \subsection{BLAS \& LAPACK Option \#2: LD$\_$PRELOAD}
-The second option is to use \textsf{LD\_PRELOAD} to tell MATLAB exactly
+\label{sec:preload}
+The second option is to use \texttt{LD\_PRELOAD} to tell MATLAB exactly
 which libraries to use.  For this option, you can use the dynamic
 libraries installed on your system.
 Before starting MATLAB, set
-LD\_PRELOAD to the paths of libstdc++.so corresponding to the version of GCC used
+\texttt{LD\_PRELOAD} to the paths of libstdc++.so corresponding to the version of GCC used
 to build Trilinos, and the paths of libblas.so and liblapack.so on your local system.
 
 For example, if you use bash, you'd do something like this
@@ -97,6 +106,25 @@ For csh / tcsh, do this
   setenv LD_PRELOAD <path>/libstdc++.so:<path>/libblas.so:<path>/liblapack.so
 \end{lstlisting}
 
+\subsection{Running MATLAB}
+
+Before you run MATLAB you have to make sure that MATLAB is using the same libraries that have been used for compiling \muemex.
+This includes the \texttt{libstdc++.so} and depending whether you turned on/off fortran also \texttt{libgfortran.so}. Please make sure that the correct libraries and paths are declared in the \texttt{LD\_PRELOAD} variable. You can refer to section \ref{sec:preload} to see how the \texttt{LD\_PRELOAD} variable is set.
+
+For a 64 bit Linux system using the bash the command should look like
+
+\begin{lstlisting}
+export LD_PRELOAD=/usr/lib64/libstdc++.so.6:/usr/lib64/libgfortran.so.3:$LD_PRELOAD
+\end{lstlisting}
+
+to add the \texttt{libstdc++.so} and \texttt{libgfortran.so} to the existing \texttt{LD\_PRELOAD} variable. Then run the MATLAB executable in the same shell window.
+
+\begin{mycomment}
+Note, that this step is necessary even if you statically linked BLAS and LAPACK.
+\end{mycomment}
+
+If you are unsure which libraries have to be set in the \texttt{LD\_PRELOAD} variable you will find out latest if you start MATLAB and try to run \muemex. It will throw some error messages with the missing library names. For a 64 bit Linux system the standard libraries usually can be found in \texttt{/usr/lib64} or \texttt{/usr/lib} (for a 32 bit system).
+
 \section{Using \muemex}\label{sec:muemex:usage}
 \muemex is designed to be interfaced with via the MATLAB script
 \texttt{muelu.m}.  There are five modes in which \muemex can be run:
@@ -106,7 +134,7 @@ For csh / tcsh, do this
   used, \muemex creates either an unpreconditioned Epetra problem,
   an Epetra problem with \muelu, or a Tpetra problem with \muelu.
   The default is \texttt{tpetra}. The \texttt{epetra} mode only supports
-  real-valued matrices, while \texttt{tpetra} 
+  real-valued matrices, while \texttt{tpetra}
   supports both real and complex and will infer the scalar type
   from the matrix passed during setup.  This call returns a problem
   handle used to reference the problem in the future, and (optionally)
@@ -221,3 +249,5 @@ parameters (it uses \muelu's internal checks), it has no way of detecting
 this conflict.  From the user's perspective, avoiding this is as
 simple as adding a small perturbation (greater than a relative 1e-15)
 to the parameter that makes it non-integer valued.
+
+
