@@ -76,19 +76,25 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE}
   )
 
-#-----------------------------------------------------------------------
-#---------------Explicit Template Instantiation Logic-------------------
-#-----------------------------------------------------------------------
+######################################################################
+# Explicit template instantiation (ETI) and test instantiation logic
+######################################################################
 #
-# For Ordinal Types, Scalars and Nodes macros are defined which say 
-# (i) whether the type gets instantiated and 
-# (ii) whether the type is available. 
-# If ETI is on both are identical, if not the settings of the latter
-# depend on the Kokkos and global trilinos settings respecitivly. 
+#
+#
+# For Scalar types, Node types, and (LocalOrdinal, GlobalOrdinal) type
+# pairs, Tpetra defines macros which say
+#
+#   1. whether Tpetra instantiates (if ETI is enabled) and/or tests
+#      its objects for that type (or type pair), and
+#   2. whether the type (or type pair) is available.
+#
+# If ETI is enabled, both are identical.  If not, the settings of the
+# latter depend on both Kokkos settings and Trilinos' settings.
 #
 # The availability macros have the following pattern: HAVE_TPETRA_[TYPE]
 # The instantiation macros have the pattern:          HAVE_TPETRA_INST_[TYPE]
-# The cmake options have the pattern:                 Tpetra_INST_[TYPE]
+# The CMake options have the pattern:                 Tpetra_INST_[TYPE]
 #
 # The ordinal types are: INT_INT, INT_UNSIGNED, INT_LONG, INT_LONG_LONG
 # The node types are:    SERIALCLASSIC, SERIAL, OPENMP, PTHREAD, CUDA
@@ -97,9 +103,11 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 # A downstream package or application should use the availability macros to check
 # whether something can be used/instantiated. 
 #
-# Note (i): that the ordinal types are internally also added to the scalar types
-# for instantiation of MultiVector.
-# Note (ii): some of the types can only be enabled if certain requirements are fullfilled.
+# Note on (1) above: Tpetra also adds enabled GlobalOrdinal types
+# internally to the Scalar types for instantiation of MultiVector.
+#
+# Note on (2) above: some of the types can only be enabled if certain
+# requirements are fulfilled.
 
 SET(TpetraCore_ETI_SCALARS "")
 SET(TpetraCore_ETI_GORDS   "")
@@ -460,12 +468,13 @@ ELSE() # ETI is OF
   GLOBAL_SET(HAVE_TPETRA_GLOBALORDINAL ON)
 ENDIF()
 
-#-----------------------------------------------------------------------
-#---------------------Scalars-------------------------------------------
-#-----------------------------------------------------------------------
-# The user gets what he asks for, and if nothing is asked for enable "double"
-# Double is always enabled since tests explicitly depend on it.
-
+######################################################################
+# Scalars
+######################################################################
+#
+# Users always get what they ask for.  If they don't ask for anything,
+# they get Scalar = double by default.  Scalar = dobule is always
+# enabled, since tests explicitly depend on it.
 
 # The warning makes sense whether or not ETI is enabled.
 IF (${PACKAGE_NAME}_ENABLE_quadmath AND ${PACKAGE_NAME}_ENABLE_CUDA)
