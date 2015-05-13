@@ -329,7 +329,7 @@ TEST( SkinMesh, SkinTetWithoutAura )
   test_skin_mesh_with_tets(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
-void test_skin_mesh_with_wedge(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
+void test_skin_mesh_with_wedge(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption, bool addShells)
 {
      //  ID.proc
     //
@@ -366,6 +366,7 @@ void test_skin_mesh_with_wedge(stk::mesh::BulkData::AutomaticAuraOption autoAura
     stk::mesh::Part & locally_owned = meta.locally_owned_part();
 
     stk::mesh::Part * wedgePart = &meta.declare_part_with_topology("wedge_part", stk::topology::WEDGE_6);
+    stk::mesh::Part * shellPart = &meta.declare_part_with_topology("shell_part", stk::topology::SHELL_QUADRILATERAL_4);
     meta.commit();
 
     const size_t numWedges = 4;
@@ -384,6 +385,18 @@ void test_skin_mesh_with_wedge(stk::mesh::BulkData::AutomaticAuraOption autoAura
         { 2, 5,  6, 3,  8,  7 },
         { 5, 9,  6, 8, 12,  7 },
         { 6, 9, 10, 7, 12, 11 }
+    };
+
+    const size_t numShells = 1;
+    stk::mesh::EntityId shellIDsToProc[][2] =
+    {
+        { 5, 0 }  // proc 0
+    };
+
+    const size_t nodesPerShell = 4;
+    stk::mesh::EntityId shellNodeIDs[][nodesPerShell] =
+    {
+        { 1, 2, 3, 4 }
     };
 
     // list of triplets: (owner-proc, shared-nodeID, sharing-proc)
@@ -406,6 +419,16 @@ void test_skin_mesh_with_wedge(stk::mesh::BulkData::AutomaticAuraOption autoAura
       if ( (1 == p_size) || (elementIDsToProc[i][1] == static_cast<unsigned>(p_rank)) )
       {
         stk::mesh::declare_element(mesh, *wedgePart, elementIDsToProc[i][0], wedgeNodeIDs[i]);
+      }
+    }
+
+    if (addShells)
+    {
+      for (size_t i = 0; i < numShells; ++i) {
+        if ( (1 == p_size) || (shellIDsToProc[i][1] == static_cast<unsigned>(p_rank)) )
+        {
+          stk::mesh::declare_element(mesh, *shellPart, shellIDsToProc[i][0], shellNodeIDs[i]);
+        }
       }
     }
 
@@ -483,12 +506,22 @@ void test_skin_mesh_with_wedge(stk::mesh::BulkData::AutomaticAuraOption autoAura
 
 TEST( SkinMesh, SkinWedgeWithAura )
 {
-  test_skin_mesh_with_wedge(stk::mesh::BulkData::AUTO_AURA);
+  test_skin_mesh_with_wedge(stk::mesh::BulkData::AUTO_AURA, false);
 }
 
 TEST( SkinMesh, SkinWedgeWithoutAura )
 {
-  test_skin_mesh_with_wedge(stk::mesh::BulkData::NO_AUTO_AURA);
+  test_skin_mesh_with_wedge(stk::mesh::BulkData::NO_AUTO_AURA, false);
+}
+
+TEST( SkinMesh, SkinWedgeWithAuraWithShell )
+{
+  test_skin_mesh_with_wedge(stk::mesh::BulkData::AUTO_AURA, true);
+}
+
+TEST( SkinMesh, SkinWedgeWithoutAuraWithShell )
+{
+  test_skin_mesh_with_wedge(stk::mesh::BulkData::NO_AUTO_AURA, true);
 }
 
 void test_skin_mesh_with_pyramid(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
