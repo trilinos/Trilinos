@@ -98,8 +98,13 @@ Solve(const Epetra_RowMatrix* Matrix, const Epetra_MultiVector* LHS,
   for (int j = 0 ; j < Matrix->NumMyRows() ; ++j)
   {
     int NumEntries;
-    int ierr = Matrix->ExtractMyRowCopy(j, Length, NumEntries,
-                                        &Values[0], &Indices[0]);
+    // Prevent build warning for unused variable 'ierr'.
+    //
+    // int ierr = Matrix->ExtractMyRowCopy(j, Length, NumEntries,
+    //                                     &Values[0], &Indices[0]);
+    (void) Matrix->ExtractMyRowCopy(j, Length, NumEntries,
+                                    &Values[0], &Indices[0]);
+
 
     for (int k = 0 ; k < NumEntries ; ++k)
       DenseMatrix(j,Indices[k]) = Values[k];
@@ -473,8 +478,8 @@ PrintStencil2D(const Epetra_CrsMatrix* Matrix,
     // look for known positions
     for (int ix = 0 ; ix < size ; ++ix)
       for (int iy = 0 ; iy < size ; ++iy)
-	if (SI(ix, iy) == LocalColID)
-	  SV(ix,iy) = Values[i];
+        if (SI(ix, iy) == LocalColID)
+          SV(ix,iy) = Values[i];
   }
 
   cout << "2D computational stencil at GID " << GID
