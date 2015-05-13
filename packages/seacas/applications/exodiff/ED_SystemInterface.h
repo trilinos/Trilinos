@@ -81,6 +81,7 @@ class SystemInterface
                           // case, just return first match instead of aborting.
 
   bool ignore_attributes; // Don't compare attributes...
+  bool ignore_sideset_df; // Don't compare sideset df
 
   bool ints_64_bits;
 
@@ -143,6 +144,8 @@ class SystemInterface
   bool                      ss_var_do_all_flag;
   Tolerance                 ss_var_default;
   std::vector<Tolerance>    ss_var;
+  
+  Tolerance                 ss_df_tol;
   
   // time step exclusion data
   std::vector<int> exclude_steps;
