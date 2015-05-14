@@ -23,7 +23,12 @@
 #include "stk_mesh/base/Field.hpp"
 
 #include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/environment/memory_util.hpp>
+
 #include <stk_unit_test_utils/ioUtils.hpp>
+#include <stk_unit_test_utils/getOption.h>
+
+#include <stk_io/StkMeshIoBroker.hpp>
 
 #include <iostream>
 #include <unistd.h>                     // for unlink
@@ -166,8 +171,8 @@ TEST(StkIo, write_stk_mesh_to_file)
                 {
                     //
                     stk::mesh::EntityVector entities;
-                    const stk::mesh::BucketVector &input_buckets = bulkData.buckets(stk::topology::ELEMENT_RANK);
-                    stk::mesh::get_selected_entities(*part, input_buckets, entities);
+                    const stk::mesh::BucketVector &input_bucketsA = bulkData.buckets(stk::topology::ELEMENT_RANK);
+                    stk::mesh::get_selected_entities(*part, input_bucketsA, entities);
                     Ioss::ElementBlock *output_element_block = output_region.get_element_block(part->id());
 
                     std::vector<int64_t> elem_ids(entities.size());
@@ -178,9 +183,9 @@ TEST(StkIo, write_stk_mesh_to_file)
                     for(size_t j=0;j<entities.size();++j)
                     {
                         elem_ids[j] = bulkData.identifier(entities[j]);
-                        unsigned num_nodes = bulkData.num_nodes(entities[j]);
+                        unsigned num_nodes_per = bulkData.num_nodes(entities[j]);
                         const stk::mesh::Entity *nodes = bulkData.begin_nodes(entities[j]);
-                        for(unsigned k=0;k<num_nodes;++k)
+                        for(unsigned k=0;k<num_nodes_per;++k)
                         {
                             connectivity[conn_counter] = bulkData.identifier(nodes[k]);
                             conn_counter++;
@@ -194,23 +199,70 @@ TEST(StkIo, write_stk_mesh_to_file)
         }
 
         output_region.end_mode(Ioss::STATE_MODEL);
-
-        if(stk::parallel_machine_size(comm) == 1)
-        {
-            stk::mesh::MetaData meta;
-            stk::mesh::BulkData bulkData(meta, comm);
-            stk::unit_test_util::fill_mesh_using_stk_io(file_written, bulkData, comm);
-
-            std::vector<size_t> entity_counts;
-            stk::mesh::comm_mesh_counts(bulkData, entity_counts);
-            EXPECT_EQ(27u, entity_counts[stk::topology::NODE_RANK]);
-        }
-
-        unlink(file_written.c_str());
-
         ////////////////////////////////////////////////////////////
     }
+
+    if(stk::parallel_machine_size(comm) == 1)
+    {
+        stk::mesh::MetaData meta;
+        stk::mesh::BulkData bulkData(meta, comm);
+        stk::unit_test_util::fill_mesh_using_stk_io(file_written, bulkData, comm);
+
+        std::vector<size_t> entity_counts;
+        stk::mesh::comm_mesh_counts(bulkData, entity_counts);
+        EXPECT_EQ(27u, entity_counts[stk::topology::NODE_RANK]);
+    }
+
+    unlink(file_written.c_str());
+
 }
 
+void print_memory(size_t &current, size_t &hwm)
+{
+    static int counter = 1;
+    std::cerr << "Current(" << counter << ") : " << current << "\thwm: " << hwm << std::endl;
+    ++counter;
+}
+
+TEST(StkIo, check_memory)
+{
+    MPI_Comm comm = MPI_COMM_WORLD;
+    size_t current_usage = 0, hwm_usage = 0;
+    current_usage = stk::get_memory_usage_now();
+    print_memory(current_usage, hwm_usage);
+
+    if(stk::parallel_machine_size(comm) == 1)
+    {
+        std::string dimension = unitTestUtils::getOption("--dim", "10");
+        const int dim = std::atoi(dimension.c_str());
+
+        stk::mesh::MetaData meta;
+        stk::mesh::BulkData bulkData(meta, comm);
+        std::ostringstream os;
+        os << "generated:" << dim << "x" << dim << "x" << dim;
+        std::string filename = os.str();
+
+        size_t current_usage2 = 0, hwm_usage2 = 0;
+        {
+            size_t current_usage1 = 0, hwm_usage1 = 0;
+            current_usage1 = stk::get_memory_usage_now();
+            print_memory(current_usage1, hwm_usage1);
+
+            stk::io::StkMeshIoBroker exodusFileReader(comm);
+            exodusFileReader.set_bulk_data(bulkData);
+            exodusFileReader.add_mesh_database(filename, stk::io::READ_MESH);
+            exodusFileReader.create_input_mesh();
+            exodusFileReader.populate_bulk_data();
+
+            current_usage2 = stk::get_memory_usage_now();
+            print_memory(current_usage2, hwm_usage2);
+        }
+
+        size_t current_usage3 = 0, hwm_usage3 = 0;
+        current_usage3 = stk::get_memory_usage_now();
+        print_memory(current_usage3, hwm_usage3);
+        EXPECT_LE(current_usage2, current_usage3);
+    }
+}
 
 }
