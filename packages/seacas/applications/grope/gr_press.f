@@ -91,6 +91,15 @@ C     --   LISVAR  - SCRATCH - size = NVAR (if 'V' in OPTION)
       LOGICAL DOELE, DONOD, DOFAC, DOVTBL
       CHARACTER*20 STRA, STRB, STRC
 
+      INTEGER GETPRC, PRTLEN
+      CHARACTER*128 FMT1, FMTE, FMTM
+
+      PRTLEN = GETPRC() + 7
+      WRITE(FMT1,20) PRTLEN, PRTLEN-7
+      CALL SQZSTR(FMT1, LFMT)
+      WRITE(FMTE, 10055) FMT1(:LFMT)
+      WRITE(FMTM, 10100) FMT1(:LFMT)
+
       DOELE  = ((OPTION .EQ. '*') .OR. (INDEX (OPTION, 'E') .GT. 0))
       DONOD  = ((OPTION .EQ. '*') .OR. (INDEX (OPTION, 'N') .GT. 0))
       DOFAC  = ((OPTION .EQ. '*') .OR. (INDEX (OPTION, 'F') .GT. 0))
@@ -252,15 +261,13 @@ C     ... See if all values are the same
  90         continue
             if (allsam) then
               IF (NOUT .GT. 0) THEN
-                WRITE (NOUT, 10055, IOSTAT=IDUM) VAL
+                WRITE (NOUT, FMTE, IOSTAT=IDUM) VAL
               ELSE
-                WRITE (*, 10055, IOSTAT=IDUM) VAL
+                WRITE (*, FMTE, IOSTAT=IDUM) VAL
               END IF
             else
 C ... Get the number of df/nodes per face...
               call exgssc(ndb, idess(iess), ndfsid, ierr)
-C ... If it looks like the sideset elements are homogenous, then print
-C     element/face/df information; otherwise, just print df...
               ISE = IXEESS(IESS)
               IEE = ISE + NEESS(IESS) - 1
               IDS = IS
@@ -274,10 +281,10 @@ C     element/face/df information; otherwise, just print df...
                   iel = lteess(i)
                 end if
                 if (nout .gt. 0) then
-                  write (nout, 10100) iel, ltsess(i),
+                  write (nout, FMTM) iel, ltsess(i),
      *              (facess(j),j=ids,ids+ndfpe-1)
                 else
-                  write (*, 10100) iel, ltsess(i),
+                  write (*, FMTM) iel, ltsess(i),
      *              (facess(j),j=ids,ids+ndfpe-1)
                 end if
                 ids = ids + ndfpe
@@ -295,6 +302,7 @@ C     element/face/df information; otherwise, just print df...
       
       RETURN
 
+ 20   FORMAT('1PE',I2.2,'.',I2.2)
 10020 FORMAT (/, 1X, 'ELEMENT SIDE SETS', :, ' - ', A)
 10025 FORMAT (1x, 'Element Ids are Global')
 10030 FORMAT (1X, 'Set', I10, 1X, A, ':',
@@ -303,10 +311,10 @@ C     element/face/df information; otherwise, just print df...
 10040 FORMAT ((1X, 8I10))
 10045 FORMAT ((1X, 8(I10,'.',I1)))
 10050 FORMAT ((1X, 6 (1X, 1pE11.4)))
-10055 FORMAT (10x, 'All distribution factors are equal to ', 1pe11.4)
+10055 FORMAT ('(10x, ''All distribution factors are equal to ''', A,')')
 10060 FORMAT (10x, 'Distribution factors not stored in file.')
 10070 FORMAT ((2x,4(2X, A)))
 10090 FORMAT ((2x,3(2X, A)))
 10080 FORMAT (1X)
-10100 FORMAT ((1X, I10,'.',I1,8x,(8(1x,1pe11.4))))
+10100 FORMAT ('((1X, I10,''.'',I1,8x,(8(1x,',A,')))))')
       END
