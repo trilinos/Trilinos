@@ -33,7 +33,8 @@ C
 C=======================================================================
       SUBROUTINE PRESS (OPTION, NOUT, NUMESS, LISESS, LESSEL, LESSNL,
      &  IDESS, NEESS, NNESS, IXEESS, IXNESS, LTEESS, LTSESS, FACESS,
-     *  NAME,  nvar, namvar, isvok, lisvar, NDFSID, MAPEL, DOMAPE)
+     *  NAME,  nvar, namvar, isvok, lisvar, NDFSID, NODSID,
+     *  MAPEL, MAPND, DOMAPE, DOMAPN)
 C=======================================================================
 
 C     --*** PRESS *** (GROPE) Display database element side set
@@ -79,13 +80,15 @@ C     --   LISVAR  - SCRATCH - size = NVAR (if 'V' in OPTION)
       INTEGER LTEESS(*)
       INTEGER LTSESS(*)
       INTEGER NDFSID(*)
+      INTEGER NODSID(*)
       REAL FACESS(*)
       CHARACTER*(*) NAME(*)
       CHARACTER*(*) NAMVAR(*)
       INTEGER ISVOK(NVAR,*)
       INTEGER LISVAR(*)
       INTEGER MAPEL(*)
-      LOGICAL DOMAPE
+      INTEGER MAPND(*)
+      LOGICAL DOMAPE, DOMAPN
 
       LOGICAL ALLSAM
       LOGICAL DOELE, DONOD, DOFAC, DOVTBL
@@ -94,6 +97,9 @@ C     --   LISVAR  - SCRATCH - size = NVAR (if 'V' in OPTION)
       INTEGER GETPRC, PRTLEN
       CHARACTER*128 FMT1, FMTE, FMTM
 
+      INTEGER NODES(27)
+      REAL    FACTORS(27)
+      
       PRTLEN = GETPRC() + 7
       WRITE(FMT1,20) PRTLEN, PRTLEN-7
       CALL SQZSTR(FMT1, LFMT)
@@ -267,11 +273,14 @@ C     ... See if all values are the same
               END IF
             else
 C ... Get the number of df/nodes per face...
-              call exgssc(ndb, idess(iess), ndfsid, ierr)
+C ... NOTE: facess is contiguous over all sidesets, 
+C           nodsid is only for the current sideset.              
+              call exgssn(ndb, idess(iess), ndfsid, nodsid, ierr)
               ISE = IXEESS(IESS)
               IEE = ISE + NEESS(IESS) - 1
               IDS = IS
               idf = 1
+              idn = 1
               do i=ise, iee
                 NDFPE = ndfsid(idf)
                 idf=idf+1
@@ -280,14 +289,26 @@ C ... Get the number of df/nodes per face...
                 else
                   iel = lteess(i)
                 end if
+                do j=1,ndfpe
+                  factors(j) = facess(j+ids-1)
+                  nodes(j) = nodsid(j+idn-1)
+                end do
+                
+                if (domapn) then
+                  do j=1,ndfpe
+                    nodes(j) = mapnd(nodes(j))
+                  end do
+                end if
+                
                 if (nout .gt. 0) then
                   write (nout, FMTM) iel, ltsess(i),
-     *              (facess(j),j=ids,ids+ndfpe-1)
+     *              (nodes(j), factors(j),j=1,ndfpe)
                 else
                   write (*, FMTM) iel, ltsess(i),
-     *              (facess(j),j=ids,ids+ndfpe-1)
+     *              (nodes(j), factors(j),j=1,ndfpe)
                 end if
                 ids = ids + ndfpe
+                idn = idn + ndfpe
               end do
             end if
           else
@@ -307,7 +328,7 @@ C ... Get the number of df/nodes per face...
 10025 FORMAT (1x, 'Element Ids are Global')
 10030 FORMAT (1X, 'Set', I10, 1X, A, ':',
      &  I10, ' elements', 1X, A,
-     &  I10, ' nodes', 1X, A, ' name = "',A,'"')
+     &  I10, ' nodes/df', 1X, A, ' name = "',A,'"')
 10040 FORMAT ((1X, 8I10))
 10045 FORMAT ((1X, 8(I10,'.',I1)))
 10050 FORMAT ((1X, 6 (1X, 1pE11.4)))
@@ -316,5 +337,5 @@ C ... Get the number of df/nodes per face...
 10070 FORMAT ((2x,4(2X, A)))
 10090 FORMAT ((2x,3(2X, A)))
 10080 FORMAT (1X)
-10100 FORMAT ('((1X, I10,''.'',I1,8x,(8(1x,',A,')))))')
+10100 FORMAT ('((1X, I10,''.'',I1,8x,(8(1x,I10,1x,',A,')))))')
       END

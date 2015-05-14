@@ -244,7 +244,8 @@ C   --Read the initial variables
          lnpsdf = 0
       end if
       if (numess .gt. 0) then
-         lessnl = 0
+         call exinq(ndb, EXSSNL, lessnl, rdum, cdum, ierr)
+         IF (IERR .NE. 0) GOTO 110
          call exinq(ndb, EXSSEL, lessel, rdum, cdum, ierr)
          IF (IERR .NE. 0) GOTO 110
          call exinq(ndb, EXSSDF, lessdf, rdum, cdum, ierr)

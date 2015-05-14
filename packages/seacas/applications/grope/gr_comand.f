@@ -745,6 +745,7 @@ C *** EXODUS Print Commands ***
           END IF
           IF (INDEX (OPT, 'F') .GT. 0) then
             CALL MDRSRV ('NDFSID', KNDFSID, LESSEL)
+            CALL MDRSRV ('NODSID', KNODSID, LESSNL)
             CALL MDSTAT (NERR, MEM)
             IF (NERR .GT. 0) GOTO 280
           END IF
@@ -753,12 +754,13 @@ C *** EXODUS Print Commands ***
      &         IDESS, NEESS, NNESS, IXEESS, IXNESS,
      &         LTEESS, LTSESS, FACESS, SSNAME,
      $         nvarss, namiss, isssvok, a(kxlssv),
-     &         a(kndfsid), MAPEL, DOMAPE)
+     &         a(kndfsid), a(knodsid),MAPEL, MAPND, DOMAPE, DOMAPN)
           IF (INDEX (OPT, 'V') .GT. 0) THEN
             CALL MDDEL ('XLISSV')
           END IF
           IF (INDEX (OPT, 'F') .GT. 0) THEN
             CALL MDDEL ('NDFSID')
+            CALL MDDEL ('NODSID')
           END IF
 
         ELSE IF (LISTYP .EQ. 'INVCON') THEN
