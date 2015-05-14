@@ -638,12 +638,12 @@ public:
 
   size_t getGlobalNumObjects() const { return numGlobalVertices_; }
 
-private:
   void get2ndAdjsViewFromAdjs(const Adapter *ia,
 			      Zoltan2::MeshEntityType sourcetarget,
 			      Zoltan2::MeshEntityType through,
 			      const lno_t *&offsets,
 			      const zgid_t *&adjacencyIds);
+private:
   void shared_constructor(const Adapter *ia, modelFlag_t &modelFlags);
 
   template <typename AdapterWithCoords>
