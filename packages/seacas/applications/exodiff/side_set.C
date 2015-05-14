@@ -88,6 +88,7 @@ Side_Set<INT>::~Side_Set()
   delete [] elmts;
   delete [] sides;
   delete [] sideIndex;
+  delete [] dfIndex;
   delete [] dist_factors;
 }
 
@@ -184,10 +185,20 @@ void Side_Set<INT>::load_df() const
   
   dfIndex = new INT[numEntity+1]; SMART_ASSERT(dfIndex != 0);
   std::vector<int> count(numEntity);
-  int err = ex_get_side_set_node_count(fileId, id_, count.data()); if (err < 0) {
-    std::cout << "Side_Set::load_df(): ERROR: Failed to read side set node count for sideset "
-	      << id_ << "!  Aborting..." << std::endl;
-    exit(1);
+
+  // Handle the sierra "universal side set" which only has a single df per face...
+  if (num_dist_factors == numEntity) {
+    for (size_t i=0; i < numEntity; i++) {
+      count[i] = 1;
+    }
+  }
+  else {
+    int err = ex_get_side_set_node_count(fileId, id_, count.data());
+    if (err < 0) {
+      std::cout << "Side_Set::load_df(): ERROR: Failed to read side set node count for sideset "
+		<< id_ << "!  Aborting..." << std::endl;
+      exit(1);
+    }
   }
 
   // Convert raw counts to index...
@@ -201,7 +212,7 @@ void Side_Set<INT>::load_df() const
   // index value should now equal df count for this sideset...
   SMART_ASSERT(index == num_dist_factors);
   dist_factors = new double[index];
-  err = ex_get_set_dist_fact(fileId, EX_SIDE_SET, id_, dist_factors);
+  int err = ex_get_set_dist_fact(fileId, EX_SIDE_SET, id_, dist_factors);
   if (err < 0) {
     std::cout << "Side_Set::load_df(): ERROR: Failed to read side set distribution factors for sideset "
 	      << id_ << "!  Aborting..." << std::endl;
