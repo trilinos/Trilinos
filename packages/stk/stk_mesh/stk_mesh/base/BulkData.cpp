@@ -5577,17 +5577,17 @@ void unpack_not_owned_verify_compare_closure_relations( const BulkData &        
         Entity const *rels_itr = bucket.begin(bucket_ordinal, irank);
         Entity const *rels_end = bucket.end(bucket_ordinal, irank);
         ConnectivityOrdinal const *ords_itr = bucket.begin_ordinals(bucket_ordinal, irank);
-        ThrowAssert(ords_itr);
+
+        if (!ords_itr) break;
 
         for(;rels_itr!=rels_end;++rels_itr,++ords_itr)
         {
-            bool is_this_relation_the_same = jr->entity() == *rels_itr;
-            bool is_this_ordinal_the_same  = static_cast<ConnectivityOrdinal>(jr->getOrdinal()) == *ords_itr;
-            bad_rel = !is_this_relation_the_same || !is_this_ordinal_the_same;
-            ++jr;
-            if (bad_rel) break;
+          bool is_this_relation_the_same = jr->entity() == *rels_itr;
+          bool is_this_ordinal_the_same  = static_cast<ConnectivityOrdinal>(jr->getOrdinal()) == *ords_itr;
+          bad_rel = !is_this_relation_the_same || !is_this_ordinal_the_same;
+          ++jr;
+          if (bad_rel) break;
         }
-
         bool recv_relation_still_has_entity_of_irank = jr != recv_relations.end() && jr->entity_rank() == irank;
         bad_rel = bad_rel || recv_relation_still_has_entity_of_irank;
     }
