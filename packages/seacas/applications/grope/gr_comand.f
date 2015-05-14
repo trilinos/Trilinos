@@ -757,7 +757,7 @@ C *** EXODUS Print Commands ***
           IF (INDEX (OPT, 'V') .GT. 0) THEN
             CALL MDDEL ('XLISSV')
           END IF
-          IF (INDEX (OPT, 'V') .GT. 0) THEN
+          IF (INDEX (OPT, 'F') .GT. 0) THEN
             CALL MDDEL ('NDFSID')
           END IF
 
