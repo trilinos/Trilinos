@@ -65,7 +65,7 @@ PartImpl::PartImpl( MetaData          * arg_meta_data,
                     size_t              arg_ordinal,
                     bool                arg_force_no_induce)
   : m_name( arg_name ),
-    m_id( -1 ),
+    m_id( stk::mesh::Part::INVALID_ID ),
     m_attribute(),
     m_subsets() ,
     m_supersets() ,
