@@ -5578,7 +5578,8 @@ void unpack_not_owned_verify_compare_closure_relations( const BulkData &        
         Entity const *rels_end = bucket.end(bucket_ordinal, irank);
         ConnectivityOrdinal const *ords_itr = bucket.begin_ordinals(bucket_ordinal, irank);
 
-        if (!ords_itr) break;
+        ThrowAssertMsg((rels_itr != rels_end && ords_itr == nullptr) == false, "Relations found without ordinals");
+
 
         for(;rels_itr!=rels_end;++rels_itr,++ords_itr)
         {
