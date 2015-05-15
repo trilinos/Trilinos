@@ -706,6 +706,11 @@ int  ex_leavedef(int neid, 		/* NemesisI file ID         */
 		 const char *func_name	/* Name of calling function */
 		 );
 
+int ex_int_get_block_param(int exoid,
+			   ex_entity_id id,
+			   int ndim, 
+			   struct elem_blk_parm *elem_blk_parm);
+
 int ex_get_file_type(int neid,	/* NetCDF/Exodus file ID */
 		     char *ftype	/* Nemesis file type */
 		     );

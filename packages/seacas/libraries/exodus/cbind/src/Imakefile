@@ -179,6 +179,7 @@ SRCS =	ex_close.c \
 	ex_get_side_set_node_count.c \
 	ex_get_side_set_node_list.c \
 	ex_get_side_set_node_list_len.c \
+	ex_int_get_block_param.c \
 	ex_get_side_set_param.c \
 	ex_get_sset_var.c \
 	ex_get_sset_var_tab.c \

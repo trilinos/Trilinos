@@ -84,6 +84,8 @@ int ex_get_side_set_node_list_len(int exoid,
   void_int *side_set_elem_list;
   void_int *side_set_side_list;
   int elem_ctr; 
+
+  int err_stat = EX_NOERR;
   int status;
   
   struct elem_blk_parm  *elem_blk_parms;
@@ -190,24 +192,23 @@ int ex_get_side_set_node_list_len(int exoid,
 
     /* Allocate space for the side set side list */
     if (!(side_set_side_list=malloc(tot_num_ss_elem*int_size))) {
-      ex_safe_free(side_set_elem_list);
       exerrval = EX_MEMFAIL;
       sprintf(errmsg,
 	      "Error: failed to allocate space for side set side list for file id %d",
 	      exoid);
       ex_err("ex_get_side_set_node_list_len",errmsg,exerrval);
-      return (EX_FATAL);
+      err_stat = EX_FATAL;
+      goto cleanup;
     }
 
     if (ex_get_side_set(exoid, side_set_id, 
 			side_set_elem_list, side_set_side_list) != NC_NOERR) {
-      ex_safe_free(side_set_elem_list);
-      ex_safe_free(side_set_side_list);
       sprintf(errmsg,
 	      "Error: failed to get side set %"PRId64" in file id %d",
 	      side_set_id, exoid);
       ex_err("ex_get_side_set_node_list_len",errmsg,exerrval);
-      return (EX_FATAL);
+      err_stat = EX_FATAL;
+      goto cleanup;
     }
     
     /* Allocate space for the ss element index array */
@@ -218,14 +219,13 @@ int ex_get_side_set_node_list_len(int exoid,
     }
 
     if (ss_elem_ndx_64==NULL && ss_elem_ndx == NULL) {
-      ex_safe_free(side_set_elem_list);
-      ex_safe_free(side_set_side_list);
       exerrval = EX_MEMFAIL;
       sprintf(errmsg,
 	      "Error: failed to allocate space for side set elem sort array for file id %d",
 	      exoid);
       ex_err("ex_get_side_set_node_list_len",errmsg,exerrval);
-      return (EX_FATAL);
+      err_stat = EX_FATAL;
+      goto cleanup;
     }
   }
 
@@ -250,210 +250,47 @@ int ex_get_side_set_node_list_len(int exoid,
 
     if (!(elem_blk_ids=malloc(num_elem_blks*int_size))) {
       exerrval = EX_MEMFAIL;
-      ex_safe_free(ss_elem_ndx);
-      ex_safe_free(ss_elem_ndx_64);
-      ex_safe_free(side_set_side_list);
-      ex_safe_free(side_set_elem_list);
       sprintf(errmsg,
 	      "Error: failed to allocate space for element block ids for file id %d",
 	      exoid);
       ex_err("ex_get_side_set_node_list_len",errmsg,exerrval);
-      return (EX_FATAL);
+      err_stat = EX_FATAL;
+      goto cleanup;
     }
   }
   
   if (ex_get_elem_blk_ids(exoid, elem_blk_ids)) {
-    ex_safe_free(elem_blk_ids);
-    ex_safe_free(ss_elem_ndx);
-    ex_safe_free(ss_elem_ndx_64);
-    ex_safe_free(side_set_side_list);
-    ex_safe_free(side_set_elem_list);
     sprintf(errmsg,
 	    "Error: failed to get element block ids in file id %d",
             exoid);
     ex_err("ex_get_side_set_node_list_len",errmsg,EX_MSG);
-    return(EX_FATAL);
+    err_stat = EX_FATAL;
+    goto cleanup;
   } 
 
   /* Allocate space for the element block params */
   if (!(elem_blk_parms=malloc(num_elem_blks*sizeof(struct elem_blk_parm)))) {
-    ex_safe_free(elem_blk_ids);
-    ex_safe_free(ss_elem_ndx);
-    ex_safe_free(ss_elem_ndx_64);
-    ex_safe_free(side_set_side_list);
-    ex_safe_free(side_set_elem_list);
     exerrval = EX_MEMFAIL;
     sprintf(errmsg,
       "Error: failed to allocate space for element block params for file id %d",
             exoid);
     ex_err("ex_get_side_set_node_list_len",errmsg,exerrval);
-    return (EX_FATAL);
+    err_stat = EX_FATAL;
+    goto cleanup;
   }
 
   elem_ctr = 0;
   for (i=0; i<num_elem_blks; i++) {
-    ex_block block;
-    block.type = EX_ELEM_BLOCK;
-    
+    ex_entity_id id;
     if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
-      block.id = ((int64_t*)elem_blk_ids)[i];
+      id = ((int64_t*)elem_blk_ids)[i];
     } else {
-      block.id = ((int*)elem_blk_ids)[i];
+      id = ((int*)elem_blk_ids)[i];
     }
 
-    /* read in an element block parameter */
-    if ((ex_get_block_param (exoid, &block)) != NC_NOERR) {
-      ex_safe_free(elem_blk_parms);
-      ex_safe_free(elem_blk_ids);
-      ex_safe_free(ss_elem_ndx);
-      ex_safe_free(ss_elem_ndx_64);
-      ex_safe_free(side_set_side_list);
-      ex_safe_free(side_set_elem_list);
-      sprintf(errmsg,
-             "Error: failed to get element block %"PRId64" parameters in file id %d",
-              block.id, exoid);
-      ex_err("ex_get_side_set_node_list_len",errmsg,EX_MSG);
-      return(EX_FATAL);
-    }
-
-    elem_blk_parms[i].num_elem_in_blk = block.num_entry;
-    elem_blk_parms[i].num_nodes_per_elem = block.num_nodes_per_entry;
-    elem_blk_parms[i].num_attr = block.num_attribute;
-    elem_blk_parms[i].elem_blk_id = block.id;
-
-    for (m=0; m < strlen(block.topology); m++) {
-      elem_blk_parms[i].elem_type[m] = toupper(block.topology[m]);
-    }
-    elem_blk_parms[i].elem_type[m] = '\0';
-
-    if (strncmp(elem_blk_parms[i].elem_type,"CIRCLE",3) == 0)
-    {
-      elem_blk_parms[i].elem_type_val = EX_EL_CIRCLE;
-      /* set side set node stride */
-        elem_blk_parms[i].num_nodes_per_side[0] = 1;
-    }
-    else if (strncmp(elem_blk_parms[i].elem_type,"SPHERE",3) == 0)
-    {
-      elem_blk_parms[i].elem_type_val = EX_EL_SPHERE;
-      /* set side set node stride */
-        elem_blk_parms[i].num_nodes_per_side[0] = 1;
-    }
-    else if (strncmp(elem_blk_parms[i].elem_type,"QUAD",3) == 0)
-    {
-      elem_blk_parms[i].elem_type_val = EX_EL_QUAD;
-      /* determine side set node stride */
-      if (elem_blk_parms[i].num_nodes_per_elem == 4)
-        elem_blk_parms[i].num_nodes_per_side[0] = 2;
-      else if (elem_blk_parms[i].num_nodes_per_elem == 5)
-        elem_blk_parms[i].num_nodes_per_side[0] = 2;
-      else 
-        elem_blk_parms[i].num_nodes_per_side[0] = 3;
-    }
-    else if (strncmp(elem_blk_parms[i].elem_type,"TRIANGLE",3) == 0)
-    {
-      elem_blk_parms[i].elem_type_val = EX_EL_TRIANGLE;
-      /* determine side set node stride */
-      if (ndim == 2) /* 2d TRIs */
-      {
-        if (elem_blk_parms[i].num_nodes_per_elem == 3)
-          elem_blk_parms[i].num_nodes_per_side[0] = 2;
-        else 
-          elem_blk_parms[i].num_nodes_per_side[0] = 3;
-      }
-      else if (ndim == 3)  /* 3d TRIs */
-      {   /* set the default number of nodes per side; catch exceptions later */
-        if (elem_blk_parms[i].num_nodes_per_elem == 3)
-          elem_blk_parms[i].num_nodes_per_side[0] = 3;
-        else 
-          elem_blk_parms[i].num_nodes_per_side[0] = 6;
-      }
-    }
-    else if (strncmp(elem_blk_parms[i].elem_type,"SHELL",3) == 0)
-    {
-      elem_blk_parms[i].elem_type_val = EX_EL_SHELL;
-      /* determine side set node stride */
-      if (elem_blk_parms[i].num_nodes_per_elem == 2) /* KLUDGE for 2D Shells*/
-        elem_blk_parms[i].num_nodes_per_side[0] = 2;
-      else if (elem_blk_parms[i].num_nodes_per_elem == 4)
-        elem_blk_parms[i].num_nodes_per_side[0] = 4;
-      else
-        elem_blk_parms[i].num_nodes_per_side[0] = 8;
-    }
-    else if (strncmp(elem_blk_parms[i].elem_type,"HEX",3) == 0)
-    {
-      elem_blk_parms[i].elem_type_val = EX_EL_HEX;
-      /* determine side set node stride */
-      if (elem_blk_parms[i].num_nodes_per_elem == 8)
-        elem_blk_parms[i].num_nodes_per_side[0] = 4;
-      else if (elem_blk_parms[i].num_nodes_per_elem == 9)
-        elem_blk_parms[i].num_nodes_per_side[0] = 4;
-      else if (elem_blk_parms[i].num_nodes_per_elem == 12) /* HEXSHELL */
-        elem_blk_parms[i].num_nodes_per_side[0] = 4;
-      else if (elem_blk_parms[i].num_nodes_per_elem == 27)
-        elem_blk_parms[i].num_nodes_per_side[0] = 9;
-      else
-        elem_blk_parms[i].num_nodes_per_side[0] = 8;
-    }
-    else if (strncmp(elem_blk_parms[i].elem_type,"TETRA",3) == 0)
-    {
-      elem_blk_parms[i].elem_type_val = EX_EL_TETRA;
-      /* determine side set node stride */
-      if (elem_blk_parms[i].num_nodes_per_elem == 4)
-        elem_blk_parms[i].num_nodes_per_side[0] = 3;
-      else if (elem_blk_parms[i].num_nodes_per_elem == 8)
-        elem_blk_parms[i].num_nodes_per_side[0] = 4;
-      else
-        elem_blk_parms[i].num_nodes_per_side[0] = 6;
-    }
-    else if (strncmp(elem_blk_parms[i].elem_type,"WEDGE",3) == 0)
-    {
-      elem_blk_parms[i].elem_type_val = EX_EL_WEDGE;
-      /* determine side set node stride */
-      if (elem_blk_parms[i].num_nodes_per_elem == 6)
-        elem_blk_parms[i].num_nodes_per_side[0] = 4;
-      else
-        elem_blk_parms[i].num_nodes_per_side[0] = 8;
-    }
-    else if (strncmp(elem_blk_parms[i].elem_type,"PYRAMID",3) == 0)
-    {
-      elem_blk_parms[i].elem_type_val = EX_EL_PYRAMID;
-      /* determine side set node stride */
-      if (elem_blk_parms[i].num_nodes_per_elem == 5)
-        elem_blk_parms[i].num_nodes_per_side[0] = 4;
-      else
-        elem_blk_parms[i].num_nodes_per_side[0] = 8;
-    }
-    else if (strncmp(elem_blk_parms[i].elem_type,"BEAM",3) == 0)
-    {
-      elem_blk_parms[i].elem_type_val = EX_EL_BEAM;
-      /* determine side set node stride */
-      if (elem_blk_parms[i].num_nodes_per_elem == 2)
-        elem_blk_parms[i].num_nodes_per_side[0] = 2;
-      else 
-        elem_blk_parms[i].num_nodes_per_side[0] = 3;
-    }
-    else if ( (strncmp(elem_blk_parms[i].elem_type,"TRUSS",3) == 0) ||
-              (strncmp(elem_blk_parms[i].elem_type,"BAR",3) == 0)  ||
-              (strncmp(elem_blk_parms[i].elem_type,"EDGE",3) == 0))
-    {
-      elem_blk_parms[i].elem_type_val = EX_EL_TRUSS;
-      /* determine side set node stride */
-      if (elem_blk_parms[i].num_nodes_per_elem == 2)
-        elem_blk_parms[i].num_nodes_per_side[0] = 2;
-      else 
-        elem_blk_parms[i].num_nodes_per_side[0] = 3;
-    }
-    else if (strncmp(elem_blk_parms[i].elem_type,"NULL",3) == 0)
-    {
-      elem_blk_parms[i].elem_type_val = EX_EL_NULL_ELEMENT;
-      elem_blk_parms[i].num_nodes_per_side[0] = 0;
-      elem_blk_parms[i].num_elem_in_blk = 0;
-    }
-    else
-    { /* unsupported element type; no problem if no sides specified for
-         this element block */
-      elem_blk_parms[i].elem_type_val = EX_EL_UNK;
-      elem_blk_parms[i].num_nodes_per_side[0] = 0;
+    err_stat = ex_int_get_block_param(exoid, id, ndim, &elem_blk_parms[i]);
+    if (err_stat != EX_NOERR) {
+      goto cleanup;
     }
 
     elem_ctr += elem_blk_parms[i].num_elem_in_blk;
@@ -487,71 +324,11 @@ int ex_get_side_set_node_list_len(int exoid,
       sprintf(errmsg,
              "Error: Invalid element number %"ST_ZU" found in side set %"PRId64" in file %d",
               elem, side_set_id, exoid);
-      ex_safe_free(elem_blk_parms);
-      ex_safe_free(elem_blk_ids);
-      ex_safe_free(ss_elem_ndx);
-      ex_safe_free(ss_elem_ndx_64);
-      ex_safe_free(side_set_side_list);
-      ex_safe_free(side_set_elem_list);
       ex_err("ex_get_side_set_node_list_len",errmsg,EX_MSG);
-      return (EX_FATAL);
+      err_stat = EX_FATAL;
+      goto cleanup;
     }
-
-    /* Update *side_set_node_list_len (which points to next node in chain */
-
-    /* WEDGEs with 3 node sides (side 4 or 5) are special cases */
-    if (elem_blk_parms[j].elem_type_val == EX_EL_WEDGE &&
-        (side == 4 || side == 5))
-    {
-      if (elem_blk_parms[j].num_nodes_per_elem == 6)
-        list_len += 3;  /* 3 node side */
-      else
-        list_len += 6;  /* 6 node side */
-    }
-    /* PYRAMIDSs with 3 node sides (sides 1,2,3,4) are also special */
-    else if (elem_blk_parms[j].elem_type_val == EX_EL_PYRAMID &&
-             (side < 5))
-    {
-      if (elem_blk_parms[j].num_nodes_per_elem == 5)
-        list_len += 3;  /* 3 node side */
-      else
-        list_len += 6;  /* 6 node side */
-    }
-    /* side numbers 3,4,5,6 for SHELLs are also special */
-    else if (elem_blk_parms[j].elem_type_val == EX_EL_SHELL &&
-        (side > 2 ))
-    {
-      if (elem_blk_parms[j].num_nodes_per_elem == 4)
-        list_len += 2;  /* 2 node side */
-      else
-        list_len += 3;  /* 3 node side */
-    }
-    /* sides 3, 4, and 5 of 3d TRIs are special cases */
-    else if (elem_blk_parms[j].elem_type_val == EX_EL_TRIANGLE &&
-             ndim == 3 && side > 2 )
-    {
-      if (elem_blk_parms[j].num_nodes_per_elem == 3)  /* 3-node TRI */
-        list_len += 2;  /* 2 node side */
-      else  /* 6-node TRI */
-        list_len += 3;  /* 3 node side */
-    }
-    else if (elem_blk_parms[j].elem_type_val == EX_EL_UNK)
-    {
-      exerrval = EX_BADPARAM;
-      sprintf(errmsg,
-             "Error: %s in elem block %"PRId64" is an unsupported element type",
-              elem_blk_parms[i].elem_type, elem_blk_parms[i].elem_blk_id);
-      ex_safe_free(elem_blk_parms);
-      ex_safe_free(elem_blk_ids);
-      ex_safe_free(ss_elem_ndx);
-      ex_safe_free(ss_elem_ndx_64);
-      ex_safe_free(side_set_side_list);
-      ex_safe_free(side_set_elem_list);
-      ex_err("ex_get_side_set_node_list_len",errmsg,EX_MSG);
-      return (EX_FATAL);
-    }
-    else /* all other element types */
-      list_len += elem_blk_parms[j].num_nodes_per_side[0];
+    list_len += elem_blk_parms[j].num_nodes_per_side[side-1];
   }
 
   if (ex_int64_status(exoid) & EX_BULK_INT64_API)
@@ -561,6 +338,7 @@ int ex_get_side_set_node_list_len(int exoid,
 
   /* All done: release element block ids array,
      element block parameters array, and side set element index array */
+ cleanup:
   ex_safe_free(elem_blk_ids);
   ex_safe_free(elem_blk_parms);
   ex_safe_free(ss_elem_ndx);
@@ -568,6 +346,6 @@ int ex_get_side_set_node_list_len(int exoid,
   ex_safe_free(side_set_side_list);
   ex_safe_free(side_set_elem_list);
 
-  return(EX_NOERR);
+  return(err_stat);
 }
 
