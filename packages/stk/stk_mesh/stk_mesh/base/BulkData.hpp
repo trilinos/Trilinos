@@ -1168,15 +1168,15 @@ protected: //data
   EntityCommDatabase m_entity_comm_map;
   std::vector<Ghosting*> m_ghosting;
   MetaData &m_mesh_meta_data;
-  std::vector<int> m_mark_entity;
+  std::vector<int> m_mark_entity; //indexed by Entity
   bool m_add_node_sharing_called;
-  std::vector<uint16_t> m_closure_count;
-  std::vector<MeshIndex> m_mesh_indexes;
+  std::vector<uint16_t> m_closure_count; //indexed by Entity
+  std::vector<MeshIndex> m_mesh_indexes; //indexed by Entity
   impl::EntityRepository m_entity_repo;
   EntityCommListInfoVector m_entity_comm_list;
   std::list<size_t> m_deleted_entities_current_modification_cycle;
   GhostReuseMap m_ghost_reuse_map;
-  std::vector<EntityKey> m_entity_keys;
+  std::vector<EntityKey> m_entity_keys; //indexed by Entity
 
 #ifdef SIERRA_MIGRATION
   bool m_add_fmwk_data; // flag that will add extra data to buckets to support fmwk
@@ -1194,7 +1194,7 @@ private: // data
   std::list<size_t> m_deleted_entities;
   int m_num_fields;
   bool m_keep_fields_updated;
-  std::vector<unsigned> m_local_ids;
+  std::vector<unsigned> m_local_ids; //indexed by Entity
 
   //  ContiguousFieldDataManager m_default_field_data_manager;
   DefaultFieldDataManager m_default_field_data_manager;
