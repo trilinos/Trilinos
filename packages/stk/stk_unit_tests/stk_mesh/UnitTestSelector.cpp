@@ -37,6 +37,7 @@
 #include <stk_mesh/base/Types.hpp>      // for PartVector
 #include <stk_mesh/fixtures/SelectorFixture.hpp>  // for SelectorFixture
 #include <gtest/gtest.h>
+#include <array>
 #include <string>                       // for basic_string, operator==, etc
 #include "gtest/gtest.h"                // for AssertHelper, EXPECT_EQ, etc
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
@@ -695,6 +696,98 @@ void testSelectorWithBuckets(const SelectorFixture &selectorFixture, const stk::
     bool result = selector(bucket);
     EXPECT_EQ(gold_shouldEntityBeInSelector[4], result);
   }
+}
+
+TEST( UnitTestTopologyPart, getPartsDoesNotFindAutoCreatedRootParts )
+{
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    int p_size = stk::parallel_machine_size(pm);
+
+    if(p_size > 1)
+    {
+        return;
+    }
+
+    const unsigned spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta, pm);
+
+    stk::mesh::Part * hexPart = &meta.declare_part_with_topology("hex_part", stk::topology::HEX_8);
+    stk::mesh::Part * pyrPart = &meta.declare_part_with_topology("pyr_part", stk::topology::PYRAMID_5);
+    meta.commit();
+
+    stk::mesh::Selector hexSelector(*hexPart);
+    stk::mesh::Selector pyrSelector(*pyrPart);
+
+    stk::mesh::PartVector hexSelectorParts;
+    stk::mesh::PartVector pyrSelectorParts;
+
+    hexSelector.get_parts(hexSelectorParts);
+    pyrSelector.get_parts(pyrSelectorParts);
+
+    stk::mesh::Part &hexRootPart= meta.get_topology_root_part(stk::topology::HEX_8);
+    stk::mesh::Part &pyrRootPart= meta.get_topology_root_part(stk::topology::PYRAMID_5);
+
+    auto hexIterator = std::find(hexSelectorParts.begin(), hexSelectorParts.end(), &hexRootPart );
+    auto pyrIterator = std::find(pyrSelectorParts.begin(), pyrSelectorParts.end(), &pyrRootPart );
+
+    EXPECT_EQ(1u, hexSelectorParts.size());
+    EXPECT_EQ(1u, pyrSelectorParts.size());
+
+    EXPECT_TRUE(hexSelectorParts.end() == hexIterator);
+    EXPECT_TRUE(pyrSelectorParts.end() == pyrIterator);
+
+    hexIterator = std::find(hexSelectorParts.begin(), hexSelectorParts.end(), hexPart );
+    pyrIterator = std::find(pyrSelectorParts.begin(), pyrSelectorParts.end(), pyrPart );
+
+    EXPECT_TRUE(hexSelectorParts.end() != hexIterator);
+    EXPECT_TRUE(pyrSelectorParts.end() != pyrIterator);
+}
+
+TEST( UnitTestTopologyPart, bucketAlsoHasAutoCreatedRootParts )
+{
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    int p_size = stk::parallel_machine_size(pm);
+
+    if(p_size > 1)
+    {
+        return;
+    }
+
+    const unsigned spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta, pm);
+
+    stk::mesh::Part * triPart = &meta.declare_part_with_topology("tri_part", stk::topology::TRI_3);
+    meta.commit();
+
+    mesh.modification_begin();
+
+    std::array<int, 3> node_ids = {{1,2,3}};
+    stk::mesh::PartVector empty;
+    stk::mesh::Entity tri3 = mesh.declare_entity(stk::topology::FACE_RANK, 1u, *triPart);
+    for(unsigned i = 0; i<node_ids.size(); ++i) {
+        stk::mesh::Entity node = mesh.declare_entity(stk::topology::NODE_RANK, node_ids[i], empty);
+        mesh.declare_relation(tri3, node, i);
+    }
+
+    mesh.modification_end();
+
+    stk::mesh::Selector triSelector(*triPart);
+
+    const stk::mesh::BucketVector & buckets = mesh.get_buckets(stk::topology::FACE_RANK, triSelector);
+
+    EXPECT_EQ(1u, buckets.size());
+
+    stk::mesh::PartVector triBucketParts = buckets[0]->supersets();
+
+    stk::mesh::Part &triRootPart= meta.get_topology_root_part(stk::topology::TRI_3);
+
+    auto triIterator = std::find(triBucketParts.begin(), triBucketParts.end(), &triRootPart );
+
+    EXPECT_TRUE(triBucketParts.end() != triIterator);
+
+    EXPECT_TRUE(triRootPart.contains(*triPart));
 }
 
 } // namespace
