@@ -123,14 +123,9 @@ public:
       // Should never get here!
 #ifdef TEUCHOS_DEBUG
       TEUCHOS_TEST_FOR_EXCEPT(true);
-#endif
+#else
       return "";
-      // 2009/06/30: rabartl: The above logic avoid a warning from the Intel
-      // 10.1 compiler (remark #111) about the statement being unreachable.
-      //
-      // mfh (06 Mar 2013) This triggers a warning in Clang 3.2 with
-      // "-Weverything", because it's an unreachable statement.  Alas,
-      // we can't please _all_ the compilers equally...
+#endif
     }
 };
 
