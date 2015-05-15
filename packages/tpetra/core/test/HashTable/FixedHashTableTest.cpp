@@ -88,6 +88,39 @@ namespace { // (anonymous)
     static bool registeredExitHook_;
   };
 
+#ifdef KOKKOS_HAVE_CUDA
+  template<>
+  struct InitExecSpace<Kokkos::Cuda> {
+    typedef Kokkos::Cuda ExecSpace;
+
+    InitExecSpace () {
+      // Make sure that HostSpace's execution space is initialized
+      // first.  Otherwise, Cuda::initialize() throws an exception.
+      InitExecSpace<Kokkos::HostSpace::execution_space> init2;
+
+      if (! ExecSpace::is_initialized ()) {
+        ExecSpace::initialize ();
+      }
+      // How should we respond if atexit() fails to register our hook?
+      // That means that the Kokkos execution space won't get
+      // finalized at the end of the program.  Kokkos already prints
+      // out a message in that case.  Thus, we don't have to do
+      // anything here.  It's not Kokkos' fault if atexit() ran out of
+      // space for all the hooks.
+      if (! registeredExitHook_) {
+        (void) atexit (finalizeExecSpace<ExecSpace>);
+        registeredExitHook_ = true;
+      }
+    }
+
+    bool isInitialized () {
+      return ExecSpace::is_initialized ();
+    }
+
+    static bool registeredExitHook_;
+  };
+#endif // KOKKOS_HAVE_CUDA
+
 #ifdef KOKKOS_HAVE_SERIAL
   template<> bool InitExecSpace<Kokkos::Serial>::registeredExitHook_ = false;
 #endif // KOKKOS_HAVE_SERIAL
@@ -101,7 +134,7 @@ namespace { // (anonymous)
 #endif // KOKKOS_HAVE_PTHREAD
 
 #ifdef KOKKOS_HAVE_CUDA
-  template<> bool InitExecSpace<Kokkos::Cuda>::registeredExitHook_ = false;
+  bool InitExecSpace<Kokkos::Cuda>::registeredExitHook_ = false;
 #endif // KOKKOS_HAVE_CUDA
 
 
