@@ -44,21 +44,22 @@ int ML_Epetra::SetDefaultsLevelWrap(Teuchos::ParameterList & inList,bool OverWri
 
 // Constructs a Level Wrap (using R=P^T)
 ML_Epetra::LevelWrap::LevelWrap(Teuchos::RCP<Epetra_CrsMatrix> A0,
-				Teuchos::RCP<Epetra_CrsMatrix> P0,
-				const Teuchos::ParameterList& List,
-				const bool ComputePrec):
+                                Teuchos::RCP<Epetra_CrsMatrix> P0,
+                                const Teuchos::ParameterList& List,
+                                const bool ComputePrec):
   use_pt_(true),
   user_A1_(false),
-  use_mlsmoother_(false),   // ML smoothing is experimental 
+  use_mlsmoother_(false),   // ML smoothing is experimental
   ml_subproblem_(NULL),
   pre_or_post(ML_BOTH),
-  verbose_(false),
+  verbose_(false) /* (unused) ,
   NumApplications_(0),
   ApplicationTime_(0.0),
   FirstApplication_(true),
   FirstApplicationTime_(0.0),
   NumConstructions_(0),
   ConstructionTime_(0.0)
+                  */
 {
   A0_=A0;
   P0_=P0;
@@ -69,22 +70,23 @@ ML_Epetra::LevelWrap::LevelWrap(Teuchos::RCP<Epetra_CrsMatrix> A0,
 
 // Constructs a Level Wrap (using different R)
 ML_Epetra::LevelWrap::LevelWrap(Teuchos::RCP<Epetra_CrsMatrix> A0,
-				Teuchos::RCP<Epetra_CrsMatrix> P0,
-				Teuchos::RCP<Epetra_CrsMatrix> R0,
-				const Teuchos::ParameterList& List,
-				const bool ComputePrec):
+                                Teuchos::RCP<Epetra_CrsMatrix> P0,
+                                Teuchos::RCP<Epetra_CrsMatrix> R0,
+                                const Teuchos::ParameterList& List,
+                                const bool ComputePrec):
   use_pt_(false),
   user_A1_(false),
-  use_mlsmoother_(false),   // ML smoothing is experimental 
+  use_mlsmoother_(false),   // ML smoothing is experimental
   ml_subproblem_(NULL),
   pre_or_post(ML_BOTH),
-  verbose_(false),
+  verbose_(false) /* (unused) ,
   NumApplications_(0),
   ApplicationTime_(0.0),
   FirstApplication_(true),
   FirstApplicationTime_(0.0),
   NumConstructions_(0),
   ConstructionTime_(0.0)
+                  */
 {
   A0_=A0;
   P0_=P0;
@@ -120,7 +122,7 @@ int ML_Epetra::LevelWrap::ComputePreconditioner(const bool CheckFiltering){
   else if(PreOrPostSmoother == "pre")  pre_or_post = ML_PRESMOOTHER;
   else if(PreOrPostSmoother == "both") pre_or_post = ML_BOTH;
 
-  if (use_mlsmoother_) {   // ML smoothing is experimental 
+  if (use_mlsmoother_) {   // ML smoothing is experimental
     ML_Create(&ml_subproblem_,1);
 #ifdef HAVE_MPI
     const Epetra_MpiComm *epcomm = dynamic_cast<const Epetra_MpiComm*>(&(A0_->Comm()));
@@ -226,7 +228,7 @@ int ML_Epetra::LevelWrap::ApplyInverse(const Epetra_MultiVector& B, Epetra_Multi
 
   // Pre Smoother
   if(pre_or_post==ML_BOTH || pre_or_post==ML_PRESMOOTHER){
-    if (use_mlsmoother_) {   // ML smoothing is experimental 
+    if (use_mlsmoother_) {   // ML smoothing is experimental
       B.ExtractView(&Bptr,&BLDA);
       X.ExtractView(&Xptr,&XLDA);
       ML_Smoother_Apply(&(ml_subproblem_->pre_smoother[0]),
@@ -253,7 +255,7 @@ int ML_Epetra::LevelWrap::ApplyInverse(const Epetra_MultiVector& B, Epetra_Multi
 
   // Post Smoother
   if(pre_or_post==ML_BOTH || pre_or_post==ML_POSTSMOOTHER){
-    if (use_mlsmoother_) {   // ML smoothing is experimental 
+    if (use_mlsmoother_) {   // ML smoothing is experimental
       Epetra_MultiVector tmp3(X_.Map(),X_.NumVectors(),true);
 
       A0_->Apply(X,tmp0);
