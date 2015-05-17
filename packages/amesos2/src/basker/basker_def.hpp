@@ -50,7 +50,7 @@ namespace Basker{
 
     //A = (basker_matrix<Int,Entry> *) malloc(sizeof(basker_matrix<Int,Entry>));
     A = new basker_matrix<Int,Entry>;
-    
+
     //L = (basker_matrix<Int,Entry> *) malloc(sizeof(basker_matrix<Int,Entry>));
     L = new basker_matrix<Int, Entry>;
     L->nnz = 0;
@@ -101,7 +101,7 @@ namespace Basker{
     delete L;
     //FREE(U);
     delete U;
-    
+
 
   }
 
@@ -410,7 +410,7 @@ namespace Basker{
             cout << "Out of memory -- Reallocating.  Old Size: " << L->nnz << " New Size: " << newsize << endl;
 #endif
             //L->row_idx = (Int *) REALLOC(L->row_idx, newsize*sizeof(Int));
-            L->row_idx = int_realloc(L->row_idx , L->nnz, newsize);              
+            L->row_idx = int_realloc(L->row_idx , L->nnz, newsize);
             if(!(L->row_idx))
               {
                 cout << "WARNING: Cannot Realloc Memory" << endl;
@@ -468,7 +468,7 @@ namespace Basker{
             t = pinv[j];
 
             /* check for numerical cancellations */
-            
+
 
             if(X[j] != ((Entry)0))
               {
@@ -490,9 +490,9 @@ namespace Basker{
                       }
                     else
                       {
-                        
+
                         last_v_temp = X[j];
-                        //cout << "Called.  t: " << t << "Val: " << last_v_temp << endl; 
+                        //cout << "Called.  t: " << t << "Val: " << last_v_temp << endl;
                       }
 
                   }
@@ -513,13 +513,13 @@ namespace Basker{
                   }
 
               }
-            
-            
+
+
             X[j] = 0;
 
           }
         //cout << "Value added at end: " << last_v_temp << endl;
-        U->row_idx[unnz] = k; 
+        U->row_idx[unnz] = k;
         U->val[unnz] = last_v_temp;
         unnz++;
 
@@ -554,7 +554,7 @@ namespace Basker{
       }
     cout << endl;
     cout << endl;
-    
+
     for(k = 0; k < ncol; k++)
       {
         printf("Up[%d]=%d", k, U->col_ptr[k]);
@@ -571,7 +571,7 @@ namespace Basker{
         printf("Ui[%d]=%d", k, U->row_idx[k]);
       }
     cout << endl;
-    
+
 
 #endif
     /*  Repermute   */
@@ -673,7 +673,7 @@ namespace Basker{
     Int i;
     //*p = (Int *) CALLOC(A->nrow, sizeof(Int));
     *p = new Int[A->nrow];
-    
+
     if( (*p == NULL ) )
       {
         return -1;
@@ -836,8 +836,8 @@ namespace Basker{
         return -1;
       }
 
-    int resultcol = permute_column(col_perm, B);
-    int resultrow = permute_row(row_perm, B);
+    /* int resultcol = (unused) */ (void) permute_column(col_perm, B);
+    /* int resultrow = (unused) */ (void) permute_row(row_perm, B);
 
     /*Note: the csc matrices of A are the problem of the user
       therefore we will not free them*/
@@ -953,15 +953,15 @@ namespace Basker{
   template <class Int, class Entry>
   Entry*  Basker <Int, Entry>::entry_realloc(Entry *old , Int old_size, Int new_size)
   {
-    Entry *new_entry = new Entry[new_size];    
+    Entry *new_entry = new Entry[new_size];
     for(Int i = 0; i < old_size; i++)
-      { 
+      {
         /*Assumption that Entry was own defined copy constructor*/
         new_entry[i] = old[i];
       }
     delete[] old;
     return new_entry;
-    
+
 
   }
   template <class Int, class Entry>
@@ -975,7 +975,7 @@ namespace Basker{
       }
     delete[] old;
     return new_int;
-    
+
   }
 
 
