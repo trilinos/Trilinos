@@ -397,8 +397,8 @@ TEST(ForEntityFunction, test_for_each_node_run_using_templates_and_lambdas)
         stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData, communicator);
 
         unsigned numNodes = 0;
-        bulkData.for_each_node_run(
-            [&numNodes](const stk::mesh::BulkData &mesh, ...)
+        bulkData.for_each_node_run_and_sum(numNodes,
+            [](unsigned &numNodes, const stk::mesh::BulkData &mesh, ...)
             {
                 ++numNodes;
             }
