@@ -86,8 +86,8 @@ void setup2Block2HexMesh(stk::mesh::BulkData& bulk)
 
   bulk.modification_begin();
 
-  stk::mesh::EntityId elem1_nodes[] = {1, 2, 3, 4, 5, 6, 7, 8};
-  stk::mesh::EntityId elem2_nodes[] = {2, 9, 10, 3, 6, 11, 12, 7};
+  stk::mesh::EntityIdVector elem1_nodes {1, 2, 3, 4, 5, 6, 7, 8};
+  stk::mesh::EntityIdVector elem2_nodes {2, 9, 10, 3, 6, 11, 12, 7};
 
   stk::mesh::EntityId elemId = 1;
   if (bulk.parallel_rank() == 0) {

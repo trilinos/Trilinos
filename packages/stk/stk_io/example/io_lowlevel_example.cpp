@@ -630,20 +630,20 @@ namespace stk_example_io {
 
         std::vector<int> elem_ids ;
         std::vector<int> connectivity ;
-        std::vector<stk::mesh::EntityId> connectivity2 ;
 
         entity->get_field_data("ids", elem_ids);
         entity->get_field_data("connectivity", connectivity);
-        connectivity2.reserve(connectivity.size());
-        std::copy(connectivity.begin(), connectivity.end(), std::back_inserter(connectivity2));
 
         size_t element_count = elem_ids.size();
         int nodes_per_elem = topo.num_nodes();
 
+        stk::mesh::EntityIdVector connectivity2(nodes_per_elem);
+
+        std::vector<int>::const_iterator connBegin = connectivity.begin();
         std::vector<stk::mesh::Entity> elements(element_count);
-        for(size_t i=0; i<element_count; ++i) {
-          stk::mesh::EntityId *conn = &connectivity2[i*nodes_per_elem];
-          elements[i] = stk::mesh::declare_element(bulk, *part, elem_ids[i], conn);
+        for(size_t i=0; i<element_count; ++i, connBegin += nodes_per_elem) {
+          std::copy(connBegin, connBegin + nodes_per_elem, connectivity2.begin());
+          elements[i] = stk::mesh::declare_element(bulk, *part, elem_ids[i], connectivity2);
         }
 
         // For this example, we are just taking all attribute fields

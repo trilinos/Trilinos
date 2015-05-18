@@ -152,7 +152,7 @@ bool skinning_use_case_2(stk::ParallelMachine pm)
       // Verifies when all three elements on different processes, for p_size > 2
       //add shell between the two elements
 
-      stk::mesh::EntityId elem_node[4] ;
+      stk::mesh::EntityIdVector elem_node(4) ;
 
       // Query nodes from this simple grid fixture via the (i,j,k) indices.
       elem_node[0] = fixture.node_id( 1, 0, 0 );

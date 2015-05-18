@@ -60,7 +60,7 @@ namespace use_cases {
 // Functions to generate the use case mesh information:
 namespace {
 void usecase_2_elem_node_ids( stk::mesh::EntityId elem_id ,
-                              stk::mesh::EntityId node_ids[] );
+                              stk::mesh::EntityIdVector & node_ids );
 void usecase_2_node_coordinates( stk::mesh::EntityId node_id ,
                                  double coord[] );
 
@@ -128,7 +128,7 @@ void UseCase_2_Mesh::populate( unsigned nleft , unsigned nright )
     m_bulkData.modification_begin(); // Begin modifying the mesh
 
     stk::mesh::EntityId curr_elem_id = 1 ;
-    stk::mesh::EntityId node_ids[ shards::Hexahedron<8> ::node_count ];
+    stk::mesh::EntityIdVector node_ids( shards::Hexahedron<8> ::node_count );
 
     // Note declare_element expects a cell topology
     // to have been attached to m_partLeft.
@@ -364,7 +364,7 @@ bool verifyRelations( const UseCase_2_Mesh & mesh,
         stk::mesh::Entity elem = elem_bucket[i] ;
 
         // Query the node ids for this element.
-        stk::mesh::EntityId node_ids[ shards::Hexahedron<8> ::node_count ];
+        stk::mesh::EntityIdVector node_ids( shards::Hexahedron<8> ::node_count );
         usecase_2_elem_node_ids( bulkData.identifier(elem) , node_ids );
 
         // Pair of iterators for all of the element's relations.
@@ -581,7 +581,7 @@ namespace {
 
 //Given an element id compute the ids of the associated nodes.
 void usecase_2_elem_node_ids( stk::mesh::EntityId elem_id ,
-                              stk::mesh::EntityId node_ids[] )
+                              stk::mesh::EntityIdVector & node_ids )
 {
   ThrowRequireMsg( elem_id != 0,
                    "usecase_2_elem_node_ids: ERROR, elem_id ("

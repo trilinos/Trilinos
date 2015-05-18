@@ -97,7 +97,7 @@ TEST( UnitTestSkin, SkinPocket)
   if (p_rank == 0)
   {
     EntityId element_id = 1;
-    EntityId node_ids[8] = { 1, 2, 3, 4, 5, 6, 7, 8};
+    stk::mesh::EntityIdVector node_ids { 1, 2, 3, 4, 5, 6, 7, 8};
 
     stk::mesh::declare_element( bulk_data, hex_part, element_id, node_ids);
 
@@ -107,7 +107,7 @@ TEST( UnitTestSkin, SkinPocket)
   if (p_rank == p_size -1)
   {
     EntityId element_id = 2;
-    EntityId node_ids[8] = { 2, 9, 10, 3, 13, 11, 12, 7};
+    stk::mesh::EntityIdVector node_ids { 2, 9, 10, 3, 13, 11, 12, 7};
 
     stk::mesh::declare_element( bulk_data, hex_part, element_id, node_ids);
   }

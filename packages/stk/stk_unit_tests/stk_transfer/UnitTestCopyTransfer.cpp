@@ -62,13 +62,13 @@ void build_mesh(stk::mesh::MetaData & meta,
                 stk::mesh::BulkData & mesh,
                 const size_t num_elements,
                 const size_t num_nodes,
-                stk::mesh::EntityId element_ids[],
+                const stk::mesh::EntityIdVector & element_ids,
                 int element_owner[],
-                stk::mesh::EntityId elem_node_ids[][8],
+                const stk::mesh::EntityIdVector * elem_node_ids,
                 int node_sharing[],
                 double coordinates[][3],
-                stk::mesh::EntityId face_node_ids[][4]=NULL,
-                stk::mesh::EntityId elem_face_ids[][6]=NULL)
+                stk::mesh::EntityIdVector * face_node_ids = NULL,
+                stk::mesh::EntityIdVector * elem_face_ids = NULL )
 {
   const int p_rank = mesh.parallel_rank();
   double init_vals[] = {std::numeric_limits<double>::max(),
@@ -159,9 +159,9 @@ void build_mesh(stk::mesh::MetaData & meta,
 void add_shells_to_mesh(stk::mesh::MetaData & meta,
                         stk::mesh::BulkData & mesh,
                         const size_t num_elements,
-                        stk::mesh::EntityId element_ids[],
-                        stk::mesh::EntityId shell_node_ids[][4],
-                        stk::mesh::EntityId elem_shell_ids[][6],
+                        const stk::mesh::EntityIdVector & element_ids,
+                        const stk::mesh::EntityIdVector shell_node_ids[],
+                        const stk::mesh::EntityIdVector elem_shell_ids[],
                         int shell_owner_by_elem_side[][6],
                         const size_t num_shells)
 {
@@ -296,9 +296,9 @@ TEST(Transfer, copy0T0)
     const size_t spatial_dimension = 3;
     const size_t num_elements = 1;
     const size_t num_nodes = 8;
-    stk::mesh::EntityId element_ids[] = {1};
+    stk::mesh::EntityIdVector element_ids {1};
     int element_owner[] = {0};
-    stk::mesh::EntityId elem_node_ids[][8] = { {1, 2, 3, 4, 5, 6, 7, 8} };
+    stk::mesh::EntityIdVector elem_node_ids[] { {1, 2, 3, 4, 5, 6, 7, 8} };
     int node_sharing[] = { -1, -1, -1, -1, -1, -1, -1, -1,
       -1, -1, -1, -1, -1, -1, -1, -1 };
     double coordinates[][3] = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {1.0, 1.0, 0.0}, {0.0, 1.0, 0.0},
@@ -425,10 +425,10 @@ TEST(Transfer, copy0T1)
     const size_t spatial_dimension = 3;
     const size_t num_elements = 1;
     const size_t num_nodes = 8;
-    stk::mesh::EntityId element_ids[] = {1};
+    stk::mesh::EntityIdVector element_ids {1};
     int element_ownerA[] = {0};
     int element_ownerB[] = {1};
-    stk::mesh::EntityId elem_node_ids[][8] = { {1, 2, 3, 4, 5, 6, 7, 8} };
+    stk::mesh::EntityIdVector elem_node_ids[] { {1, 2, 3, 4, 5, 6, 7, 8} };
     int node_sharing[] = { -1, -1, -1, -1, -1, -1, -1, -1,
       -1, -1, -1, -1, -1, -1, -1, -1 };
     double coordinates[][3] = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {1.0, 1.0, 0.0}, {0.0, 1.0, 0.0},
@@ -556,10 +556,10 @@ TEST(Transfer, copy1T0)
     const size_t spatial_dimension = 3;
     const size_t num_elements = 1;
     const size_t num_nodes = 8;
-    stk::mesh::EntityId element_ids[] = {1};
+    stk::mesh::EntityIdVector element_ids {1};
     int element_ownerA[] = {1};
     int element_ownerB[] = {0};
-    stk::mesh::EntityId elem_node_ids[][8] = { {1, 2, 3, 4, 5, 6, 7, 8} };
+    stk::mesh::EntityIdVector elem_node_ids[] { {1, 2, 3, 4, 5, 6, 7, 8} };
     int node_sharing[] = { -1, -1, -1, -1, -1, -1, -1, -1,
       -1, -1, -1, -1, -1, -1, -1, -1 };
     double coordinates[][3] = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {1.0, 1.0, 0.0}, {0.0, 1.0, 0.0},
@@ -688,11 +688,13 @@ TEST(Transfer, copy01T10)
     const size_t spatial_dimension = 3;
     const size_t num_elements = 2;
     const size_t num_nodes = 12;
-    stk::mesh::EntityId element_ids[] = {1, 2};
+    stk::mesh::EntityIdVector element_ids {1, 2};
     int element_ownerA[] = {0, 1};
     int element_ownerB[] = {1, 0};
-    stk::mesh::EntityId elem_node_ids[][8] = { {1, 2, 5, 4, 7, 8, 11, 10},
-      {2, 3, 6, 5, 8, 9, 12, 11} };
+    stk::mesh::EntityIdVector elem_node_ids[] {
+        {1, 2, 5, 4, 7, 8, 11, 10},
+        {2, 3, 6, 5, 8, 9, 12, 11}
+    };
     int node_sharingA[] = { -1, 1, -1, -1, 1, -1, -1, 1, -1, -1, 1, -1,
       -1, 0, -1, -1, 0, -1, -1, 0, -1, -1, 0, -1 };
     int node_sharingB[] = { -1, 1, -1, -1, 1, -1, -1, 1, -1, -1, 1, -1,
@@ -851,10 +853,11 @@ TEST(Transfer, copy001T011)
     const size_t spatial_dimension = 3;
     const size_t num_elements = 3;
     const size_t num_nodes = 16;
-    stk::mesh::EntityId element_ids[] = {1, 2, 3};
+    stk::mesh::EntityIdVector element_ids {1, 2, 3};
     int element_ownerA[] = {0, 0, 1};
     int element_ownerB[] = {0, 1, 1};
-    stk::mesh::EntityId elem_node_ids[][8] = { {1, 2, 6, 5, 9, 10, 14, 13},
+    stk::mesh::EntityIdVector elem_node_ids[] {
+      {1, 2, 6, 5, 9, 10, 14, 13},
       {2, 3, 7, 6, 10, 11, 15, 14},
       {3, 4, 8, 7, 11, 12, 16, 15} };
     int node_sharingA[] = { -1, -1, 1, -1, -1, -1, 1, -1, -1, -1, 1, -1, -1, -1, 1, -1,
@@ -1015,12 +1018,13 @@ TEST(Transfer, copy001T011Element)
     const size_t spatial_dimension = 3;
     const size_t num_elements = 3;
     const size_t num_nodes = 16;
-    stk::mesh::EntityId element_ids[] = {1, 2, 3};
+    stk::mesh::EntityIdVector element_ids {1, 2, 3};
     int element_ownerA[] = {0, 0, 1};
     int element_ownerB[] = {0, 1, 1};
-    stk::mesh::EntityId elem_node_ids[][8] = { {1, 2, 6, 5,  9, 10, 14, 13},
-                                               {2, 3, 7, 6, 10, 11, 15, 14},
-                                               {3, 4, 8, 7, 11, 12, 16, 15} };
+    stk::mesh::EntityIdVector elem_node_ids[] {
+        {1, 2, 6, 5,  9, 10, 14, 13},
+        {2, 3, 7, 6, 10, 11, 15, 14},
+        {3, 4, 8, 7, 11, 12, 16, 15} };
     int node_sharingA[] = { -1, -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1,
                             -1, -1,  0, -1, -1, -1,  0, -1, -1, -1,  0, -1, -1, -1,  0, -1 };
     int node_sharingB[] = { -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1, -1,
@@ -1154,12 +1158,13 @@ TEST(Transfer, copy001T011Face)
     const size_t spatial_dimension = 3;
     const size_t num_elements = 3;
     const size_t num_nodes = 16;
-    stk::mesh::EntityId element_ids[] = {1, 2, 3};
+    stk::mesh::EntityIdVector element_ids {1, 2, 3};
     int element_ownerA[] = {0, 0, 1};
     int element_ownerB[] = {0, 1, 1};
-    stk::mesh::EntityId elem_node_ids[][8] = { { 9,10,2,1,13,14,6,5},
-                                               {10,11,3,2,14,15,7,6},
-                                               {11,12,4,3,15,16,8,7} };
+    stk::mesh::EntityIdVector elem_node_ids[] {
+        { 9,10,2,1,13,14,6,5},
+        {10,11,3,2,14,15,7,6},
+        {11,12,4,3,15,16,8,7} };
     int node_sharingA[] = { -1, -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1,
                             -1, -1,  0, -1, -1, -1,  0, -1, -1, -1,  0, -1, -1, -1,  0, -1 };
     int node_sharingB[] = { -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1, -1,
@@ -1168,14 +1173,16 @@ TEST(Transfer, copy001T011Face)
                                 {0.0, 1.0, 0.0}, {1.0, 1.0, 0.0}, {2.0, 1.0, 0.0}, {3.0, 1.0, 0.0},
                                 {0.0, 0.0, 1.0}, {1.0, 0.0, 1.0}, {2.0, 0.0, 1.0}, {3.0, 0.0, 1.0},
                                 {0.0, 1.0, 1.0}, {1.0, 1.0, 1.0}, {2.0, 1.0, 1.0}, {3.0, 1.0, 1.0} };
-    stk::mesh::EntityId face_node_ids[][4] =
-    { { 9,10,14,13}, {10,2,6,14}, {2,1,5,6}, { 9,13,5, 1}, { 9,1,2,10}, {13,14,6,5},
-      {10,11,15,14}, {11,3,7,15}, {3,2,6,7}, {10, 2,6,14}, {10,2,3,11}, {14,15,7,6},
-      {11,12,16,15}, {12,4,8,16}, {4,3,7,8}, {11, 3,7,15}, {11,3,4,12}, {15,16,8,7} };
-    stk::mesh::EntityId elem_face_ids[][6] = { { 1,  2,  3,  4,  5,  6},
-                                               { 7,  8,  9,  2, 10, 11},
-                                               {12, 13, 14,  8, 15, 16} };
-
+    stk::mesh::EntityIdVector face_node_ids[] {
+        { 9,10,14,13}, {10,2,6,14}, {2,1,5,6}, { 9,13,5, 1}, { 9,1,2,10}, {13,14,6,5},
+        {10,11,15,14}, {11,3,7,15}, {3,2,6,7}, {10, 2,6,14}, {10,2,3,11}, {14,15,7,6},
+        {11,12,16,15}, {12,4,8,16}, {4,3,7,8}, {11, 3,7,15}, {11,3,4,12}, {15,16,8,7}
+    };
+    stk::mesh::EntityIdVector elem_face_ids[] {
+        { 1,  2,  3,  4,  5,  6},
+        { 7,  8,  9,  2, 10, 11},
+        {12, 13, 14,  8, 15, 16}
+    };
 
     // Set up the "source" mesh for the transfer
     //
@@ -1342,12 +1349,13 @@ TEST(Transfer, copy001T011Shell)
     const size_t spatial_dimension = 3;
     const size_t num_elements = 3;
     const size_t num_nodes = 16;
-    stk::mesh::EntityId element_ids[] = {1, 2, 3};
+    stk::mesh::EntityIdVector element_ids {1, 2, 3};
     int element_ownerA[] = {0, 0, 1};
     int element_ownerB[] = {0, 1, 1};
-    stk::mesh::EntityId elem_node_ids[][8] = { { 9,10,2,1,13,14,6,5},
-                                               {10,11,3,2,14,15,7,6},
-                                               {11,12,4,3,15,16,8,7} };
+    stk::mesh::EntityIdVector elem_node_ids[] {
+        { 9,10,2,1,13,14,6,5},
+        {10,11,3,2,14,15,7,6},
+        {11,12,4,3,15,16,8,7} };
     int node_sharingA[] = { -1, -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1,
                             -1, -1,  0, -1, -1, -1,  0, -1, -1, -1,  0, -1, -1, -1,  0, -1 };
     int node_sharingB[] = { -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1, -1,
@@ -1387,13 +1395,14 @@ TEST(Transfer, copy001T011Shell)
                coordinates);
 
 
-    stk::mesh::EntityId shell_node_ids[][4] =
-    { { 9,10,14,13}, {10,2,6,14}, {2,1,5,6}, { 9,13,5, 1}, { 9,1,2,10}, {13,14,6,5},
-      {10,11,15,14}, {11,3,7,15}, {3,2,6,7}, {10, 2,6,14}, {10,2,3,11}, {14,15,7,6},
-      {11,12,16,15}, {12,4,8,16}, {4,3,7,8}, {11, 3,7,15}, {11,3,4,12}, {15,16,8,7} };
-    stk::mesh::EntityId elem_shell_ids[][6] = { {10, 11, 12, 13, 14, 15},
-                                                {16, 17, 18, 11, 19, 20},
-                                                {21, 22, 23, 17, 24, 25} };
+    stk::mesh::EntityIdVector shell_node_ids[] {
+        { 9,10,14,13}, {10,2,6,14}, {2,1,5,6}, { 9,13,5, 1}, { 9,1,2,10}, {13,14,6,5},
+        {10,11,15,14}, {11,3,7,15}, {3,2,6,7}, {10, 2,6,14}, {10,2,3,11}, {14,15,7,6},
+        {11,12,16,15}, {12,4,8,16}, {4,3,7,8}, {11, 3,7,15}, {11,3,4,12}, {15,16,8,7} };
+    stk::mesh::EntityIdVector elem_shell_ids[] {
+        {10, 11, 12, 13, 14, 15},
+        {16, 17, 18, 11, 19, 20},
+        {21, 22, 23, 17, 24, 25} };
     int shell_owner_by_elem_sideA[][6] = { {0, 0, 0, 0, 0, 0},
                                            {0, 0, 0, 0, 0, 0},
                                            {1, 1, 1, 0, 1, 1} };
@@ -1559,12 +1568,13 @@ TEST(Transfer, copy012T000)
     const size_t spatial_dimension = 3;
     const size_t num_elements = 3;
     const size_t num_nodes = 16;
-    stk::mesh::EntityId element_ids[] = {1, 2, 3};
+    stk::mesh::EntityIdVector element_ids {1, 2, 3};
     int element_ownerA[] = {0, 1, 2};
     int element_ownerB[] = {0, 0, 0};
-    stk::mesh::EntityId elem_node_ids[][8] = { {1, 2, 6, 5, 9, 10, 14, 13},
-      {2, 3, 7, 6, 10, 11, 15, 14},
-      {3, 4, 8, 7, 11, 12, 16, 15} };
+    stk::mesh::EntityIdVector elem_node_ids[] {
+        {1, 2, 6, 5, 9, 10, 14, 13},
+        {2, 3, 7, 6, 10, 11, 15, 14},
+        {3, 4, 8, 7, 11, 12, 16, 15} };
     int node_sharingA[] = { -1, 1, -1, -1, -1, 1, -1, -1, -1, 1, -1, -1, -1, 1, -1, -1,
       -1, 0, 2, -1, -1, 0, 2, -1, -1, 0, 2, -1, -1, 0, 2, -1,
       -1, -1, 1, -1, -1, -1, 1, -1, -1, -1, 1, -1, -1, -1, 1, -1 };
@@ -1729,12 +1739,13 @@ TEST(Transfer, copy000T012)
     const size_t spatial_dimension = 3;
     const size_t num_elements = 3;
     const size_t num_nodes = 16;
-    stk::mesh::EntityId element_ids[] = {1, 2, 3};
+    stk::mesh::EntityIdVector element_ids {1, 2, 3};
     int element_ownerA[] = {0, 0, 0};
     int element_ownerB[] = {0, 1, 2};
-    stk::mesh::EntityId elem_node_ids[][8] = { {1, 2, 6, 5, 9, 10, 14, 13},
-      {2, 3, 7, 6, 10, 11, 15, 14},
-      {3, 4, 8, 7, 11, 12, 16, 15} };
+    stk::mesh::EntityIdVector elem_node_ids[] {
+        {1, 2, 6, 5, 9, 10, 14, 13},
+        {2, 3, 7, 6, 10, 11, 15, 14},
+        {3, 4, 8, 7, 11, 12, 16, 15} };
     int node_sharingA[] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
       -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
       -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
@@ -1902,13 +1913,14 @@ TEST(Transfer, copy0011T1010)
     const size_t spatial_dimension = 3;
     const size_t num_elements = 4;
     const size_t num_nodes = 20;
-    stk::mesh::EntityId element_ids[] = {1, 2, 3, 4};
+    stk::mesh::EntityIdVector element_ids {1, 2, 3, 4};
     int element_ownerA[] = {0, 0, 1, 1};
     int element_ownerB[] = {1, 0, 1, 0};
-    stk::mesh::EntityId elem_node_ids[][8] = { {1, 2, 7, 6, 11, 12, 17, 16},
-      {2, 3, 8, 7, 12, 13, 18, 17},
-      {3, 4, 9, 8, 13, 14, 19, 18},
-      {4, 5, 10, 9, 14, 15, 20, 19} };
+    stk::mesh::EntityIdVector elem_node_ids[] {
+        {1, 2, 7, 6, 11, 12, 17, 16},
+        {2, 3, 8, 7, 12, 13, 18, 17},
+        {3, 4, 9, 8, 13, 14, 19, 18},
+        {4, 5, 10, 9, 14, 15, 20, 19} };
     int node_sharingA[] = { -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1,
       -1, -1, 0, -1, -1, -1, -1, 0, -1, -1, -1, -1, 0, -1, -1, -1, -1, 0, -1, -1 };
     int node_sharingB[] = { -1, 1, 1, 1, -1, -1, 1, 1, 1, -1, -1, 1, 1, 1, -1, -1, 1, 1, 1, -1,
@@ -2083,9 +2095,9 @@ TEST(Transfer, copy0T_)
     const size_t spatial_dimension = 3;
     const size_t num_elements = 1;
     const size_t num_nodes = 8;
-    stk::mesh::EntityId element_ids[] = {1};
+    stk::mesh::EntityIdVector element_ids {1};
     int element_owner[] = {0};
-    stk::mesh::EntityId elem_node_ids[][8] = { {1, 2, 3, 4, 5, 6, 7, 8} };
+    stk::mesh::EntityIdVector elem_node_ids[] { {1, 2, 3, 4, 5, 6, 7, 8} };
     int node_sharing[] = { -1, -1, -1, -1, -1, -1, -1, -1,
       -1, -1, -1, -1, -1, -1, -1, -1 };
     double coordinates[][3] = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {1.0, 1.0, 0.0}, {0.0, 1.0, 0.0},
@@ -2203,9 +2215,9 @@ TEST(Transfer, copy_T0)
     const size_t spatial_dimension = 3;
     const size_t num_elements = 1;
     const size_t num_nodes = 8;
-    stk::mesh::EntityId element_ids[] = {1};
+    stk::mesh::EntityIdVector element_ids {1};
     int element_owner[] = {0};
-    stk::mesh::EntityId elem_node_ids[][8] = { {1, 2, 3, 4, 5, 6, 7, 8} };
+    stk::mesh::EntityIdVector elem_node_ids[] { {1, 2, 3, 4, 5, 6, 7, 8} };
     int node_sharing[] = { -1, -1, -1, -1, -1, -1, -1, -1,
       -1, -1, -1, -1, -1, -1, -1, -1 };
     double coordinates[][3] = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {1.0, 1.0, 0.0}, {0.0, 1.0, 0.0},
@@ -2311,12 +2323,13 @@ TEST(Transfer, copy00_T_11)
     const size_t spatial_dimension = 3;
     const size_t num_elements = 3;
     const size_t num_nodes = 16;
-    stk::mesh::EntityId element_ids[] = {1, 2, 3};
+    stk::mesh::EntityIdVector element_ids {1, 2, 3};
     int element_ownerA[] = {0, 0, -1};
     int element_ownerB[] = {-1, 1, 1};
-    stk::mesh::EntityId elem_node_ids[][8] = { {1, 2, 6, 5, 9, 10, 14, 13},
-      {2, 3, 7, 6, 10, 11, 15, 14},
-      {3, 4, 8, 7, 11, 12, 16, 15} };
+    stk::mesh::EntityIdVector elem_node_ids[] {
+        {1, 2, 6, 5, 9, 10, 14, 13},
+        {2, 3, 7, 6, 10, 11, 15, 14},
+        {3, 4, 8, 7, 11, 12, 16, 15} };
     int node_sharingA[] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
       -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
     int node_sharingB[] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -2460,14 +2473,15 @@ TEST(Transfer, copy00___T___11)
     const size_t spatial_dimension = 3;
     const size_t num_elements = 5;
     const size_t num_nodes = 24;
-    stk::mesh::EntityId element_ids[] = {1, 2, 3, 4, 5};
+    stk::mesh::EntityIdVector element_ids {1, 2, 3, 4, 5};
     int element_ownerA[] = {0, 0, -1, -1, -1};
     int element_ownerB[] = {-1, -1, -1, 1, 1};
-    stk::mesh::EntityId elem_node_ids[][8] = { {1, 2, 8, 7, 13, 14, 20, 19},
-      {2, 3, 9, 8, 14, 15, 21, 20},
-      {3, 4, 10, 9, 15, 16, 22, 21},
-      {4, 5, 11, 10, 16, 17, 23, 22},
-      {5, 6, 12, 11, 17, 18, 24, 23} };
+    stk::mesh::EntityIdVector elem_node_ids[] {
+        {1, 2, 8, 7, 13, 14, 20, 19},
+        {2, 3, 9, 8, 14, 15, 21, 20},
+        {3, 4, 10, 9, 15, 16, 22, 21},
+        {4, 5, 11, 10, 16, 17, 23, 22},
+        {5, 6, 12, 11, 17, 18, 24, 23} };
     int node_sharingA[] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
       -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
     int node_sharingB[] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,

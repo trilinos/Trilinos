@@ -378,9 +378,7 @@ void test_skin_mesh_with_wedge(stk::mesh::BulkData::AutomaticAuraOption autoAura
         { 4, 1 }   // proc 1
     };
 
-    const size_t nodesPerWedge = 6;
-    stk::mesh::EntityId wedgeNodeIDs[][nodesPerWedge] =
-    {
+    stk::mesh::EntityIdVector wedgeNodeIDs[] {
         { 1, 5,  2, 4,  8,  3 },
         { 2, 5,  6, 3,  8,  7 },
         { 5, 9,  6, 8, 12,  7 },
@@ -393,9 +391,7 @@ void test_skin_mesh_with_wedge(stk::mesh::BulkData::AutomaticAuraOption autoAura
         { 5, 0 }  // proc 0
     };
 
-    const size_t nodesPerShell = 4;
-    stk::mesh::EntityId shellNodeIDs[][nodesPerShell] =
-    {
+    stk::mesh::EntityIdVector shellNodeIDs[] {
         { 1, 2, 3, 4 }
     };
 
@@ -574,9 +570,7 @@ void test_skin_mesh_with_pyramid(stk::mesh::BulkData::AutomaticAuraOption autoAu
         { 6, 1 }   // proc 1
     };
 
-    const size_t nodesPerPyramid = 5;
-    stk::mesh::EntityId pyramidNodeIDs[][nodesPerPyramid] =
-    {
+    stk::mesh::EntityIdVector pyramidNodeIDs[] {
         { 1, 4,  8,  5,  2 },
         { 5, 8,  7,  6,  2 },
         { 3, 7,  8,  4,  2 },
@@ -736,25 +730,19 @@ void test_skin_hybrid_mesh(stk::mesh::BulkData::AutomaticAuraOption autoAuraOpti
     meta.commit();
 
     const size_t numHex = 1;
-    const size_t nodesPerHex = 8;
-    stk::mesh::EntityId hexNodeIDs[][nodesPerHex] =
-    {
+    stk::mesh::EntityIdVector hexNodeIDs[] {
         { 1, 2, 3, 4, 5, 6, 7, 8 }
     };
     stk::mesh::EntityId hexElemIDs[] = { 1 };
 
     const size_t numPyr = 1;
-    const size_t nodesPerPyr = 5;
-    stk::mesh::EntityId pyrNodeIDs[][nodesPerPyr] =
-    {
+    stk::mesh::EntityIdVector pyrNodeIDs[] {
         { 5, 6, 7, 8, 9 }
     };
     stk::mesh::EntityId pyrElemIDs[] = { 2 };
 
     const size_t numTet = 4;
-    const size_t nodesPerTet = 4;
-    stk::mesh::EntityId tetNodeIDs[][nodesPerTet] =
-    {
+    stk::mesh::EntityIdVector tetNodeIDs[] {
         { 7, 8, 9, 12 },
         { 6, 9, 10, 7 },
         { 7, 9, 10, 12 },

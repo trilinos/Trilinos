@@ -130,12 +130,12 @@ void QuadFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proc
 
     std::vector<EntityId>::const_iterator ib = element_ids_on_this_processor.begin();
     const std::vector<EntityId>::const_iterator ie = element_ids_on_this_processor.end();
+    stk::mesh::EntityIdVector elem_nodes(4) ;
+
     for (; ib != ie; ++ib) {
       EntityId entity_id = *ib;
       unsigned ix = 0, iy = 0;
       elem_x_y(entity_id, ix, iy);
-
-      stk::mesh::EntityId elem_nodes[4] ;
 
       elem_nodes[0] = node_id( ix   , iy );
       elem_nodes[1] = node_id( ix+1 , iy );

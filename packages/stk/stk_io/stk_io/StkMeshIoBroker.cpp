@@ -816,13 +816,13 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, INT 
       size_t element_count = elem_ids.size();
       int nodes_per_elem = topo.num_nodes();
 
-      std::vector<stk::mesh::EntityId> id_vec(nodes_per_elem);
+      stk::mesh::EntityIdVector id_vec(nodes_per_elem);
 
       size_t offset = entity->get_offset();
       for(size_t i=0; i<element_count; ++i) {
         INT *conn = &connectivity[i*nodes_per_elem];
         std::copy(&conn[0], &conn[0+nodes_per_elem], id_vec.begin());
-        stk::mesh::Entity element = stk::mesh::declare_element(bulk, *part, elem_ids[i], &id_vec[0]);
+        stk::mesh::Entity element = stk::mesh::declare_element(bulk, *part, elem_ids[i], id_vec);
 
         bulk.set_local_id(element, offset + i);
       }

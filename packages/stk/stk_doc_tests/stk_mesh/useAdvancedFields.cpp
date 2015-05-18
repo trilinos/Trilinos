@@ -73,10 +73,10 @@ TEST(stkMeshHowTo, useAdvancedFields)
     stk::mesh::BulkData mesh(metaData, MPI_COMM_WORLD);
     mesh.modification_begin();
     stk::mesh::EntityId tetId = 1;
-    stk::mesh::EntityId tetNodes[] = {1, 2, 3, 4};
+    stk::mesh::EntityIdVector tetNodes {1, 2, 3, 4};
     stk::mesh::Entity tetElem=stk::mesh::declare_element(mesh, tetPart, tetId, tetNodes);
     stk::mesh::EntityId hexId = 2;
-    stk::mesh::EntityId hexNodes[] = {5, 6, 7, 8, 9, 10, 11, 12};
+    stk::mesh::EntityIdVector hexNodes {5, 6, 7, 8, 9, 10, 11, 12};
     stk::mesh::Entity hexElem=stk::mesh::declare_element(mesh, hexPart, hexId, hexNodes);
     mesh.modification_end();
 

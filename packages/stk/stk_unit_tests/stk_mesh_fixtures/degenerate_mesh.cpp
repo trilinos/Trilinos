@@ -122,8 +122,8 @@ namespace stk {
 	  { 0 , 0 ,-1 } , { 1 , 0 ,-1 } , { 2, 0,-1} , {0, 1,-1}, {2, 1,-1}};
 
 	typedef stk::topology::topology_type<stk::topology::HEX_8> Hex8;
-	static const stk::mesh::EntityId hex_node_ids[number_hex][ Hex8::num_nodes ] = {
-	  { 1, 2, 7, 6, 4, 2,  7, 9}, 
+	static const stk::mesh::EntityIdVector hex_node_ids[number_hex] {
+	  { 1, 2, 7, 6, 4, 2,  7, 9},
 	  { 2, 3, 8, 7, 2, 5, 10, 7}};
 
       }

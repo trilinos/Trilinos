@@ -1440,7 +1440,10 @@ TEST(BulkData, test_internal_generate_parallel_change_lists_2EltsChown1ChownItsN
   //   2/0---3/0---6/0      2/0---3/1---6/1
 
   stk::mesh::EntityId element_ids [2] = {1, 2};
-  stk::mesh::EntityId elem_node_ids [][4] = {{1, 2, 3, 4}, {4, 3, 6, 5}};
+  stk::mesh::EntityIdVector elem_node_ids[] {
+      {1, 2, 3, 4},
+      {4, 3, 6, 5}
+  };
 
   stk::mesh::Part &elem_part = meta.declare_part_with_topology("elem_part",stk::topology::QUAD_4_2D);
   meta.commit();
@@ -1494,7 +1497,10 @@ TEST(BulkData, test_internal_generate_parallel_change_lists_2EltsFlip)
   //   2/0---3/0---6/1      2/1---3/0---6/0
 
   stk::mesh::EntityId element_ids [2] = {1, 2};
-  stk::mesh::EntityId elem_node_ids [][4] = {{1, 2, 3, 4}, {4, 3, 6, 5}};
+  stk::mesh::EntityIdVector elem_node_ids [] = {
+      {1, 2, 3, 4},
+      {4, 3, 6, 5}
+  };
 
   stk::mesh::Part &elem_part = meta.declare_part_with_topology("elem_part",stk::topology::QUAD_4_2D);
   meta.commit();
@@ -5229,20 +5235,14 @@ TEST(BulkData, show_API_for_batch_create_child_nodes)
     {
       bulk.declare_entity(stk::topology::NODE_RANK, 3);
 
-      stk::mesh::EntityId connected_nodes[3];
-      connected_nodes[0] = 1;
-      connected_nodes[1] = 2;
-      connected_nodes[2] = 3;
+      stk::mesh::EntityIdVector connected_nodes {1, 2, 3 };
       stk::mesh::declare_element(bulk, elem_part, 1, connected_nodes);
     }
     else
     {
       bulk.declare_entity(stk::topology::NODE_RANK, 4);
 
-      stk::mesh::EntityId connected_nodes[3];
-      connected_nodes[0] = 2;
-      connected_nodes[1] = 1;
-      connected_nodes[2] = 4;
+      stk::mesh::EntityIdVector connected_nodes {2, 1, 4 };
       stk::mesh::declare_element(bulk, elem_part, 2, connected_nodes);
     }
 
@@ -5288,7 +5288,7 @@ TEST(BulkData, show_API_for_batch_create_child_nodes)
 
     if ( bulk.parallel_rank() == 0 )
     {
-      stk::mesh::EntityId connected_nodes[3];
+      stk::mesh::EntityIdVector connected_nodes(3);
       connected_nodes[0] = 1;
       connected_nodes[1] = bulk.identifier(node6);
       connected_nodes[2] = 3;
@@ -5306,7 +5306,7 @@ TEST(BulkData, show_API_for_batch_create_child_nodes)
     }
     else
     {
-      stk::mesh::EntityId connected_nodes[3];
+      stk::mesh::EntityIdVector connected_nodes(3);
       connected_nodes[0] = bulk.identifier(node6);
       connected_nodes[1] = 1;
       connected_nodes[2] = 4;
@@ -5384,7 +5384,7 @@ void Test_STK_ParallelPartConsistency_ChangeBlock(stk::mesh::BulkData::Automatic
   int * elem_nodes[] = { elem_nodes0, elem_nodes1 };
 
   //Next create nodes and set up connectivity to use later for creating the element.
-  stk::mesh::EntityId connected_nodes[nodesPerElem];
+  stk::mesh::EntityIdVector connected_nodes(nodesPerElem);
   for(size_t n=0; n<nodesPerElem; ++n) {
     size_t e = parallel_rank;
     stk::mesh::EntityId nodeGlobalId = elem_nodes[e][n]+1;
@@ -5526,9 +5526,10 @@ TEST(BulkData, STK_Deimprint)
 
   const size_t nodesPerElem = 4;
 
-  stk::mesh::EntityId elem_nodes0[] = {1, 2, 5, 6};
-  stk::mesh::EntityId elem_nodes1[] = {2, 3, 4, 5};
-  stk::mesh::EntityId * elem_nodes[] = { elem_nodes0, elem_nodes1 };
+  stk::mesh::EntityIdVector elem_nodes[] {
+      {1, 2, 5, 6},
+      {2, 3, 4, 5}
+  };
 
   const size_t numElem = 2;
 
@@ -5652,12 +5653,12 @@ TEST(BulkData, ChangeAuraElementPart)
 
   const size_t nodesPerElem = 4;
 
-  stk::mesh::EntityId elem_nodes1[] = {1, 2, 5, 4};
-  stk::mesh::EntityId elem_nodes2[] = {2, 3, 6, 5};
-  stk::mesh::EntityId elem_nodes3[] = {4, 5, 8, 7};
-  stk::mesh::EntityId elem_nodes4[] = {5, 6, 9, 8};
-
-  stk::mesh::EntityId * elem_nodes[] = { elem_nodes1, elem_nodes2, elem_nodes3, elem_nodes4 };
+  stk::mesh::EntityIdVector elem_nodes[] {
+      {1, 2, 5, 4},
+      {2, 3, 6, 5},
+      {4, 5, 8, 7},
+      {5, 6, 9, 8}
+  };
 
   int node_sharing[9][4] = { {0}, {0,1}, {1}, {0,2}, {0,1,2,3}, {1,3}, {2}, {2,3}, {3} };
   int num_node_sharing[] = {1, 2, 1, 2, 4, 2, 1, 2, 1};
@@ -6056,7 +6057,7 @@ TEST(BulkData, makeElementWithConflictingTopologies)
   stk::mesh::BulkData mesh(meta, pm);
 
   stk::mesh::EntityId element_ids[1] = {1};
-  stk::mesh::EntityId elem_node_ids[][4] = { {1, 2, 3, 4} };
+  stk::mesh::EntityIdVector elem_node_ids[] { {1, 2, 3, 4} };
 
   stk::mesh::Part * quad_part = &meta.declare_part_with_topology("quad_part", stk::topology::QUAD_4_2D);
   stk::mesh::Part * tri_part  = &meta.declare_part_with_topology( "tri_part", stk::topology::TRI_3_2D);
