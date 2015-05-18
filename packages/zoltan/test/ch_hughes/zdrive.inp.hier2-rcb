@@ -1,0 +1,12 @@
+Decomposition Method 	= hier
+Zoltan Parameters	= obj_weight_dim=2
+Zoltan Parameters	= num_global_parts=8
+Zoltan Parameters	= hier_assist=1
+Zoltan Parameters	= topology=2
+Zoltan Parameters	= obj_weights_comparable=0
+Zoltan Parameters	= rcb_multicriteria_norm=3
+Zoltan Parameters	= check_geom=0
+File Type		= Chaco
+File Name		= hughes
+Parallel Disk Info	= number=0
+test graph callbacks    = 0
