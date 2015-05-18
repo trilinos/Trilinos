@@ -398,7 +398,7 @@ TEST(ForEntityFunction, test_for_each_node_run_using_templates_and_lambdas)
 
         unsigned numNodes = 0;
         bulkData.for_each_node_run_and_sum(numNodes,
-            [](unsigned &numNodes, const stk::mesh::BulkData &mesh, ...)
+            [](unsigned &numNodes, const stk::mesh::BulkData &mesh, stk::mesh::Entity node, ...)
             {
                 ++numNodes;
             }
@@ -855,7 +855,7 @@ unsigned count_num_nodes_using_raw_bucket_loops_access_bucket_inside(stk::mesh::
                 stk::mesh::Entity entity = bucket[iEntity];
                 if(bulkData.is_valid(entity) && topology == stk::topology::HEX_8)
                 {
-                    for(unsigned i=0; i<topology.num_nodes(); i++)
+                    for(unsigned j=0; j<topology.num_nodes(); j++)
                     {
                         numNodes++;
                     }
@@ -884,7 +884,7 @@ unsigned count_num_nodes_using_raw_bucket_loops_access_bucket_outside(stk::mesh:
                 stk::mesh::Entity entity = bucket[iEntity];
                 if(bulkData.is_valid(entity) && topology == stk::topology::HEX_8)
                 {
-                    for(unsigned i=0; i<topology.num_nodes(); i++)
+                    for(unsigned j=0; j<topology.num_nodes(); j++)
                     {
                         numNodes++;
                     }
@@ -959,7 +959,7 @@ unsigned count_num_nodes_using_lamda_for_entity_loops_with_new_mesh_index(BulkDa
                 stk::mesh::Entity entity = bucket[iEntity];
                 if(bulkData.is_valid(entity) && topology == stk::topology::HEX_8)
                 {
-                    for(unsigned i=0; i<topology.num_nodes(); i++)
+                    for(unsigned j=0; j<topology.num_nodes(); j++)
                     {
                         numNodes++;
                     }
@@ -1041,9 +1041,9 @@ double access_field_data_using_raw_bucket_loops_access_bucket_outside(stk::mesh:
         for(stk::mesh::Bucket *bucket : buckets)
         {
             double *nodeData = stk::mesh::field_data(nodeField, *bucket);
-            for(size_t i=0; i<bucket->size(); i++)
+            for(size_t j=0; j<bucket->size(); j++)
             {
-                sum += nodeData[i];
+                sum += nodeData[j];
             }
         }
     }
@@ -1059,9 +1059,9 @@ double access_field_data_using_raw_bucket_loops_access_bucket_inside_with_offset
         const stk::mesh::BucketVector & buckets = bulkData.get_buckets(stk::topology::NODE_RANK, bulkData.mesh_meta_data().universal_part());
         for(stk::mesh::Bucket *bucket : buckets)
         {
-            for(size_t i=0; i<bucket->size(); i++)
+            for(size_t j=0; j<bucket->size(); j++)
             {
-                double *nodeData = stk::mesh::field_data(nodeField, *bucket, i);
+                double *nodeData = stk::mesh::field_data(nodeField, *bucket, j);
                 sum += *nodeData;
             }
         }
@@ -1169,9 +1169,9 @@ void calculate_acceleration_using_raw_bucket_loops(unsigned numIterations,
     for(unsigned i=0; i<numIterations; i++)
     {
         const stk::mesh::BucketVector &buckets = bulkData.buckets(stk::topology::NODE_RANK);
-        for(size_t j=0; j<buckets.size(); j++)
+        for(size_t iBucket=0; iBucket<buckets.size(); iBucket++)
         {
-            stk::mesh::Bucket &b = *buckets[j];
+            stk::mesh::Bucket &b = *buckets[iBucket];
 
             const int N = b.size();
             double * f_con = stk::mesh::field_data(forceField, b);
@@ -1303,11 +1303,11 @@ void calculate_center_of_mass_using_bulk_data_api(BulkDataForEntityTemplatedTest
                 if(bulkData.is_valid(element))
                 {
                     double *centroid = stk::mesh::field_data(centroidField, bucket.bucket_id(), iEntity);
-                    for(unsigned i=0; i<numNodesThisEntity; i++)
+                    for(unsigned j=0; j<numNodesThisEntity; j++)
                     {
-                        if (bulkData.is_valid(nodes[i]))
+                        if (bulkData.is_valid(nodes[j]))
                         {
-                            double *coordDataForNode = static_cast<double*>(stk::mesh::field_data(coordField,nodes[i]));
+                            double *coordDataForNode = static_cast<double*>(stk::mesh::field_data(coordField,nodes[j]));
                             centroid[0] += coordDataForNode[0];
                             centroid[1] += coordDataForNode[1];
                             centroid[2] += coordDataForNode[2];
@@ -1343,11 +1343,11 @@ void calculate_center_of_mass_using_bucket_api(BulkDataForEntityTemplatedTester 
                 if(bulkData.is_valid(element))
                 {
                     double *centroid = stk::mesh::field_data(centroidField, bucket.bucket_id(), iEntity);
-                    for(unsigned i=0; i<numNodesThisEntity; i++)
+                    for(unsigned j=0; j<numNodesThisEntity; j++)
                     {
-                        if (bulkData.is_valid(nodes[i]))
+                        if (bulkData.is_valid(nodes[j]))
                         {
-                            double *coordDataForNode = static_cast<double*>(stk::mesh::field_data(coordField,nodes[i]));
+                            double *coordDataForNode = static_cast<double*>(stk::mesh::field_data(coordField,nodes[j]));
                             centroid[0] += coordDataForNode[0];
                             centroid[1] += coordDataForNode[1];
                             centroid[2] += coordDataForNode[2];
@@ -1781,7 +1781,7 @@ TEST(ForEntityFunction, test_free_function_versions_of_for_each_entity_abstracti
         unsigned numNodes = 0;
 
         for_each_node_run(bulkData,
-            [&numNodes](stk::mesh::BulkData &mesh, ...)
+            [&numNodes](stk::mesh::BulkData &mesh, stk::mesh::Entity node, ...)
             {
                 numNodes++;
             }
