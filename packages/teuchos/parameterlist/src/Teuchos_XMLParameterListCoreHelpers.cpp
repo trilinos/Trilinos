@@ -84,14 +84,16 @@ Teuchos::getParametersFromXmlFile(
 
 void Teuchos::updateParametersFromXmlString(
   const std::string &xmlStr,
-  const Ptr<ParameterList> &paramList
+  const Ptr<ParameterList> &paramList,
+  bool overwrite
   )
 {
   XMLParameterListReader xmlPLReader;
   xmlPLReader.setAllowsDuplicateSublists( false );
   StringInputSource xmlStrSrc(xmlStr);
   XMLObject xmlParams = xmlStrSrc.getObject();
-  paramList->setParameters(xmlPLReader.toParameterList(xmlParams));
+  if(overwrite) paramList->setParameters(xmlPLReader.toParameterList(xmlParams));
+  else paramList->setParametersNotAlreadySet(xmlPLReader.toParameterList(xmlParams));
 }
 
 
