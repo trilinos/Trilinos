@@ -97,5 +97,18 @@ TEST(UnitTestRootTopology, TestRootTopologyPartGetters)
     EXPECT_TRUE(subsets.empty());
     EXPECT_EQ(1u, supersets.size());
     EXPECT_EQ(&meta.universal_part(), supersets[0]);
+
+    stk::mesh::Part &root_part3 = meta.get_part(root_part1.mesh_meta_data_ordinal());
+    EXPECT_TRUE(root_part1 == root_part3);
+
+    stk::mesh::Part *root_part4 = meta.get_part(root_part1.name());
+    EXPECT_TRUE(root_part1 == *root_part4);
+
+    const stk::mesh::PartVector &all_parts = meta.get_parts();
+    const stk::mesh::PartVector non_internal_parts = meta.get_mesh_parts();
+
+    EXPECT_TRUE(std::find(all_parts.begin(), all_parts.end(), &root_part1) != all_parts.end());
+    EXPECT_TRUE(std::find(non_internal_parts.begin(), non_internal_parts.end(), &root_part1)
+                == non_internal_parts.end());
   }
 }
