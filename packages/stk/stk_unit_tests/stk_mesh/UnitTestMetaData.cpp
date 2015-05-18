@@ -73,7 +73,7 @@ using std::endl;
 
 namespace {
 
-TEST( UnitTestTopologyPart, noNewPartsWithTopologyAfterCommit )
+TEST( UnitTestRootTopology, noNewPartsWithTopologyAfterCommit )
 {
   //Test functions in MetaData.cpp
   const int spatial_dimension = 3;

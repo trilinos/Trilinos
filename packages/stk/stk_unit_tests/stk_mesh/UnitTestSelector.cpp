@@ -726,7 +726,7 @@ void check_selector_does_not_return_root_topology_parts(stk::ParallelMachine pm,
   EXPECT_TRUE(selectorParts.end() != iterator);
 }
 
-TEST( UnitTestTopologyPart, getPartsDoesNotFindAutoCreatedRootParts )
+TEST( UnitTestRootTopology, getPartsDoesNotFindAutoCreatedRootParts )
 {
     stk::ParallelMachine pm = MPI_COMM_WORLD;
     int p_size = stk::parallel_machine_size(pm);
@@ -779,7 +779,7 @@ TEST( UnitTestTopologyPart, getPartsDoesNotFindAutoCreatedRootParts )
     }
 }
 
-TEST( UnitTestTopologyPart, bucketAlsoHasAutoCreatedRootParts )
+TEST( UnitTestRootTopology, bucketAlsoHasAutoCreatedRootParts )
 {
     stk::ParallelMachine pm = MPI_COMM_WORLD;
     int p_size = stk::parallel_machine_size(pm);

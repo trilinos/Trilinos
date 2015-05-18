@@ -112,3 +112,77 @@ TEST(UnitTestRootTopology, TestRootTopologyPartGetters)
                 == non_internal_parts.end());
   }
 }
+
+TEST(UnitTestRootTopology, TestRootTopologySubsets)
+{
+  const int spatial_dim = 3;
+  stk::mesh::MetaData meta(spatial_dim);
+
+  const unsigned num_test_topologies = 30;
+  stk::topology test_topologies[num_test_topologies] = { stk::topology::NODE
+                                                       //EDGE_RANK
+                                                       , stk::topology::LINE_2
+                                                       , stk::topology::LINE_3
+                                                       //FACE_RANK
+                                                       , stk::topology::TRI_3
+                                                       , stk::topology::TRI_4
+                                                       , stk::topology::TRI_6
+                                                       , stk::topology::QUAD_4
+                                                       , stk::topology::QUAD_8
+                                                       , stk::topology::QUAD_9
+                                                       //ELEMENT_RANK
+                                                       , stk::topology::PARTICLE
+                                                       , stk::topology::BEAM_2
+                                                       , stk::topology::BEAM_3
+                                                       , stk::topology::SHELL_TRI_3
+                                                       // Cannot create SHELL_TRI_4 entities because Shards does not support!
+                                                       // , stk::topology::SHELL_TRI_4
+                                                       , stk::topology::SHELL_TRI_6
+                                                       , stk::topology::SHELL_QUAD_4
+                                                       , stk::topology::SHELL_QUAD_8
+                                                       , stk::topology::SHELL_QUAD_9
+                                                       , stk::topology::TET_4
+                                                       , stk::topology::TET_8
+                                                       , stk::topology::TET_10
+                                                       , stk::topology::TET_11
+                                                       , stk::topology::PYRAMID_5
+                                                       , stk::topology::PYRAMID_13
+                                                       , stk::topology::PYRAMID_14
+                                                       , stk::topology::WEDGE_6
+                                                       , stk::topology::WEDGE_15
+                                                       , stk::topology::WEDGE_18
+                                                       , stk::topology::HEX_8
+                                                       , stk::topology::HEX_20
+                                                       , stk::topology::HEX_27};
+
+  for (unsigned i = 0; i < num_test_topologies; ++i)
+  {
+    stk::mesh::Part &root_part1 = meta.get_topology_root_part(test_topologies[i]);
+    stk::topology root_topo = root_part1.topology();
+
+    // The root_topology_part has the same topology information as the original topology.
+    EXPECT_TRUE(test_topologies[i] == root_topo);
+
+    const stk::mesh::PartVector &rootTopoPartSubsets = root_part1.subsets();
+    const stk::mesh::PartVector &rootTopoPartSupersets = root_part1.supersets();
+
+    EXPECT_TRUE(rootTopoPartSubsets.empty());
+    EXPECT_EQ(1u, rootTopoPartSupersets.size());
+    EXPECT_EQ(&meta.universal_part(), rootTopoPartSupersets[0]);
+
+    stk::mesh::Part & newPart = meta.declare_part_with_topology( std::string("topo_part") + root_part1.name(), root_topo );
+
+    EXPECT_EQ(1u, rootTopoPartSubsets.size());
+    EXPECT_EQ(&newPart, rootTopoPartSubsets[0]);
+
+    const stk::mesh::PartVector & newPartSupersets = newPart.supersets();
+
+    EXPECT_EQ(2u, newPartSupersets.size());
+    EXPECT_EQ(&meta.universal_part(), newPartSupersets[0]);
+    EXPECT_EQ(&root_part1, newPartSupersets[1]);
+  }
+
+
+  meta.commit();
+
+}
