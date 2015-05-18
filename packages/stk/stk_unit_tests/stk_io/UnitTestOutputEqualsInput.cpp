@@ -134,7 +134,7 @@ TEST(StkMeshIoBroker, outputEqualsInput)
     }
     else
     {
-        std::cerr << "test StkMeshIoBroker.outputEqualsInput, no mesh specified" << std::endl;
+        std::cout << "test StkMeshIoBroker.outputEqualsInput, no mesh specified" << std::endl;
     }
 }
 
