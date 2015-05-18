@@ -135,7 +135,7 @@ int main(int argc, char** argv)
     bool success = true;
     string pass = "End Result: TEST PASSED";
     string fail = "End Result: TEST FAILED";
-    
+
     int nProcs = Comm.NumProc();
     int myPID = Comm.MyPID();
     bool verbose = (myPID == 0);
@@ -235,8 +235,7 @@ int main(int argc, char** argv)
     }
 
     bool mapAvail = false;
-    Epetra_Map *vecMap;
-    Epetra_BlockMap *vecMap2;
+    Epetra_BlockMap *vecMap2 = NULL;
     if (mapFileName != "")
     {
         mapAvail = true;
@@ -253,7 +252,7 @@ int main(int argc, char** argv)
             return -3;
         }
     }
-    vecMap = static_cast<Epetra_Map *>( vecMap2 );
+    Epetra_Map* vecMap = static_cast<Epetra_Map *>( vecMap2 );
 
 
     if (maxFiles > 1) {
