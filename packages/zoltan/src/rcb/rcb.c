@@ -931,7 +931,8 @@ static int rcb_fn(
       }
       else { 
         if (Zoltan_RB_find_bisector(
-               zz, zz->Tflops_Special, pts, dotpt->Weight, dotpt->uniformWeight, dotmark, dotnum, 
+               zz, zz->Tflops_Special, pts, dotpt->Weight, dotpt->uniformWeight,
+               dotmark, dotnum, 
                wgtflag, mcnorm, fraclo, local_comm, 
                &valuehalf, first_guess,
                old_nprocs, proclower, old_nparts, 
@@ -939,7 +940,8 @@ static int rcb_fn(
                weight, weightlo, weighthi, &norm_max,
                dotlist, rectilinear_blocks, average_cuts)
           != ZOLTAN_OK) {
-          ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_bisector.");
+          ZOLTAN_PRINT_ERROR(proc, yo,
+                             "Error returned from Zoltan_RB_find_bisector.");
           ierr = ZOLTAN_FATAL;
           goto End;
         }
@@ -947,7 +949,7 @@ static int rcb_fn(
         /* test for better balance */
         if ((!one_cut_dir) && 
             ((norm_best<0.) ||
-              (!tfs_disregard_results && (norm_max < norm_best)))) {
+             (!tfs_disregard_results && (norm_max < norm_best)))) {
           norm_best = norm_max; 
           dim_best = dim;
           for (j=0; j<wgtdim; j++){
@@ -959,11 +961,12 @@ static int rcb_fn(
           valuehalf_best = valuehalf;
         }
         if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL){
-          printf("[%1d] Debug: cut dim=%1d, norm_max=%f, dim_best=%1d, norm_best=%f, cut value=%f\n", 
-            proc, dim, norm_max, dim_best, norm_best, valuehalf);
+          printf("[%1d] Debug: cut dim=%1d, norm_max=%f, dim_best=%1d, "
+                 "norm_best=%f, cut value=%f\n", 
+                 proc, dim, norm_max, dim_best, norm_best, valuehalf);
           if (wgtflag>1)
             printf("[%1d] Debug: weightlo=(%f,%f), weighthi=(%f,%f)\n",
-              proc, weightlo[0], weightlo[1],  weighthi[0], weighthi[1]);
+                   proc, weightlo[0], weightlo[1],  weighthi[0], weighthi[1]);
         }
       }
       if (breakflag) break; /* if one_cut_dir is true */
