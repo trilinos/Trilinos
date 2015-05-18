@@ -83,20 +83,23 @@ std::vector<std::pair<int64_t, int64_t> > skin_mesh(const std::vector<std::vecto
         const std::vector<int64_t>& internal_sides = via_side[i];
         size_t num_sides = element_topologies[i].num_sides();
 
-        elem_sides.assign(num_sides, -1);
-        for(size_t j=0; j<internal_sides.size(); ++j)
+        if (internal_sides.size() < num_sides)
         {
-            int64_t zeroBasedSideId = internal_sides[j];
-            elem_sides[zeroBasedSideId] = internal_sides[j];
-        }
-
-        int64_t elementId = i;
-        for(size_t j=0; j<num_sides; ++j)
-        {
-            if (elem_sides[j] == -1)
+            elem_sides.assign(num_sides, -1);
+            for(size_t j=0; j<internal_sides.size(); ++j)
             {
-                int64_t sideId = j;
-                element_side_pairs.push_back(std::make_pair(elementId, sideId));
+                int64_t zeroBasedSideId = internal_sides[j];
+                elem_sides[zeroBasedSideId] = internal_sides[j];
+            }
+
+            int64_t elementId = i;
+            for(size_t j=0; j<num_sides; ++j)
+            {
+                if (elem_sides[j] == -1)
+                {
+                    int64_t sideId = j;
+                    element_side_pairs.push_back(std::make_pair(elementId, sideId));
+                }
             }
         }
     }
@@ -177,17 +180,20 @@ void fill_graph(stk::mesh::BulkData& bulkData, std::vector<std::vector<int64_t> 
         const stk::mesh::Bucket& bucket = *elemBuckets[i];
         stk::topology topology = bucket.topology();
         unsigned num_sides = topology.num_sides();
+        std::vector<std::pair<int64_t,int64_t> > elem_side_pairs;
+        stk::mesh::EntityVector side_nodes;
+        stk::mesh::EntityVector connected_elements;
         for(size_t j=0; j<bucket.size(); ++j)
         {
             size_t local_elem_id = bulkData.local_id(bucket[j]);
             const stk::mesh::Entity* elem_nodes = bucket.begin_nodes(j);
-            std::vector<std::pair<int64_t,int64_t> > elem_side_pairs;
+            elem_side_pairs.clear();
             for(unsigned side_index=0; side_index<num_sides; ++side_index)
             {
                 unsigned num_side_nodes = topology.side_topology(side_index).num_nodes();
-                stk::mesh::EntityVector side_nodes(num_side_nodes);
+                side_nodes.resize(num_side_nodes);
                 topology.side_nodes(elem_nodes, side_index, side_nodes.begin());
-                stk::mesh::EntityVector connected_elements;
+                connected_elements.clear();
                 stk::mesh::impl::find_locally_owned_elements_these_nodes_have_in_common(bulkData, num_side_nodes, side_nodes.data(), connected_elements);
                 for(size_t elem_index=0; elem_index<connected_elements.size(); ++elem_index)
                 {
@@ -215,10 +221,13 @@ TEST(ElementGraph, test_graph_creation_using_stk_mesh)
     MPI_Comm comm = MPI_COMM_WORLD;
     std::vector<double> wall_times;
     wall_times.reserve(10);
+    std::vector<std::string> msgs;
+    msgs.reserve(10);
 
     std::vector<size_t> mem_usage;
 
     wall_times.push_back(stk::wall_time());
+    msgs.push_back("program-start");
     mem_usage.push_back(stk::get_memory_usage_now());
 
     if(stk::parallel_machine_size(comm) == 1)
@@ -237,6 +246,7 @@ TEST(ElementGraph, test_graph_creation_using_stk_mesh)
         stk::unit_test_util::fill_mesh_using_stk_io(filename, bulkData, comm);
 
         wall_times.push_back(stk::wall_time());
+        msgs.push_back("after mesh-read");
         mem_usage.push_back(stk::get_memory_usage_now());
 
         std::vector<unsigned> counts;
@@ -267,6 +277,7 @@ TEST(ElementGraph, test_graph_creation_using_stk_mesh)
         fill_graph(bulkData, elem_graph, via_sides);
 
         wall_times.push_back(stk::wall_time());
+        msgs.push_back("after fill-graph");
         mem_usage.push_back(stk::get_memory_usage_now());
 
         if ( check_results )
@@ -306,12 +317,12 @@ TEST(ElementGraph, test_graph_creation_using_stk_mesh)
 
     for(size_t i=0;i<wall_times.size();++i)
     {
-        std::cerr << "Wall time: " << i << "\t" << wall_times[i] - wall_times[0] << std::endl;
+        std::cerr << "Wall time " << msgs[i] << ":\t" << wall_times[i] - wall_times[0] << std::endl;
     }
 
     for(size_t i=0;i<mem_usage.size();++i)
      {
-         std::cerr << "Memory usage: " << i << "\t" << mem_usage[i] - mem_usage[0] << std::endl;
+         std::cerr << "Memory usage " << msgs[i] << ":\t" << mem_usage[i] - mem_usage[0] << std::endl;
      }
 }
 
@@ -320,10 +331,13 @@ TEST(ElementGraph, test_create_skin_for_stk_mesh)
     MPI_Comm comm = MPI_COMM_WORLD;
     std::vector<double> wall_times;
     wall_times.reserve(10);
+    std::vector<std::string> msgs;
+    msgs.reserve(10);
 
     std::vector<size_t> mem_usage;
 
     wall_times.push_back(stk::wall_time());
+    msgs.push_back("program-start");
     mem_usage.push_back(stk::get_memory_usage_now());
 
     if(stk::parallel_machine_size(comm) == 1)
@@ -345,6 +359,7 @@ TEST(ElementGraph, test_create_skin_for_stk_mesh)
         stk::unit_test_util::fill_mesh_using_stk_io(filename, bulkData, comm);
 
         wall_times.push_back(stk::wall_time());
+        msgs.push_back("after mesh-read");
         mem_usage.push_back(stk::get_memory_usage_now());
 
         std::vector<unsigned> counts;
@@ -378,6 +393,7 @@ TEST(ElementGraph, test_create_skin_for_stk_mesh)
         fill_graph(bulkData, elem_graph, via_sides);
 
         wall_times.push_back(stk::wall_time());
+        msgs.push_back("after fill-graph");
         mem_usage.push_back(stk::get_memory_usage_now());
 
         std::vector<std::pair<int64_t, int64_t> > elem_side_pairs = skin_mesh(elem_graph, via_sides, element_topologies);
@@ -394,6 +410,7 @@ TEST(ElementGraph, test_create_skin_for_stk_mesh)
         bulkData.modification_end_for_entity_creation(stk::topology::FACE_RANK);
 
         wall_times.push_back(stk::wall_time());
+        msgs.push_back("after create-faces");
         mem_usage.push_back(stk::get_memory_usage_now());
 
         stk::unit_test_util::write_mesh_using_stk_io("out.exo", bulkData, bulkData.parallel());
@@ -435,12 +452,12 @@ TEST(ElementGraph, test_create_skin_for_stk_mesh)
 
     for(size_t i=0;i<wall_times.size();++i)
     {
-        std::cerr << "Wall time: " << i << "\t" << wall_times[i] - wall_times[0] << std::endl;
+        std::cerr << "Wall time " << msgs[i] << ":\t" << wall_times[i] - wall_times[0] << std::endl;
     }
 
     for(size_t i=0;i<mem_usage.size();++i)
      {
-         std::cerr << "Memory usage: " << i << "\t" << mem_usage[i] - mem_usage[0] << std::endl;
+         std::cerr << "Memory usage " << msgs[i] << ":\t" << mem_usage[i] - mem_usage[0] << std::endl;
      }
 }
 
@@ -449,10 +466,13 @@ TEST(ElementGraph, test_skin_mesh)
     MPI_Comm comm = MPI_COMM_WORLD;
     std::vector<double> wall_times;
     wall_times.reserve(10);
+    std::vector<std::string> msgs;
+    msgs.reserve(10);
 
     std::vector<size_t> mem_usage;
 
     wall_times.push_back(stk::wall_time());
+    msgs.push_back("program-start");
     mem_usage.push_back(stk::get_memory_usage_now());
 
     if(stk::parallel_machine_size(comm) == 1)
@@ -473,23 +493,25 @@ TEST(ElementGraph, test_skin_mesh)
         stk::unit_test_util::fill_mesh_using_stk_io(filename, bulkData, comm);
 
         wall_times.push_back(stk::wall_time());
+        msgs.push_back("after mesh-read");
         mem_usage.push_back(stk::get_memory_usage_now());
 
         stk::mesh::PartVector parts(1, &skin_part);
         stk::mesh::skin_mesh(bulkData, parts);
 
         wall_times.push_back(stk::wall_time());
+        msgs.push_back("after stk::skin_mesh");
         mem_usage.push_back(stk::get_memory_usage_now());
     }
 
     for(size_t i = 0; i < wall_times.size(); ++i)
     {
-        std::cerr << "Wall time: " << i << "\t" << wall_times[i] - wall_times[0] << std::endl;
+        std::cerr << "Wall time " << msgs[i] << ":\t" << wall_times[i] - wall_times[0] << std::endl;
     }
 
     for(size_t i = 0; i < mem_usage.size(); ++i)
     {
-        std::cerr << "Memory usage: " << i << "\t" << mem_usage[i] - mem_usage[0] << std::endl;
+        std::cerr << "Memory usage " << msgs[i] << ":\t" << mem_usage[i] - mem_usage[0] << std::endl;
     }
 }
 
