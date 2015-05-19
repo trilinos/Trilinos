@@ -80,13 +80,19 @@ namespace stk { class CommAll; }
 #include "EntityLess.hpp"
 #include "SharedEntityType.hpp"
 
+namespace sierra { namespace Fmwk { class EntityCreationOperationList; } }
+
 namespace stk {
 namespace mesh {
 
 class BulkData;
+enum class FaceCreationBehavior;
+
 void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
 void communicate_field_data(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
 void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector const& skin_parts, const Selector * secondary_selector);
+void create_edges( BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges );
+void internal_create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges, FaceCreationBehavior faceCreationBehavior);
 
 typedef std::unordered_map<EntityKey, size_t, stk::mesh::HashValueForEntityKey> GhostReuseMap;
 
@@ -200,8 +206,6 @@ public:
               static_cast<stk::mesh::impl::MeshModification::modification_optimization>(opt);
       return m_meshModification.modification_end(input_opt);
   }
-
-  bool modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt = MOD_END_SORT); // Mod Mark Move to internal
 
   /** \brief  Give away ownership of entities to other parallel processes.
    *
@@ -690,6 +694,11 @@ public:
 
 protected: //functions
 
+  bool modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt = MOD_END_SORT); // Mod Mark Move to internal
+
+  bool internal_modification_end_for_skin_mesh( EntityRank entity_rank, modification_optimization opt, stk::mesh::Selector selectedToSkin,
+          const stk::mesh::Selector * only_consider_second_element_from_this_selector);
+
   bool inputs_ok_and_need_ghosting(Ghosting & ghosts ,
                                const std::vector<EntityProc> & add_send ,
                                const std::vector<EntityKey> & remove_receive,
@@ -1050,8 +1059,7 @@ private: //functions
   void resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(EntityRank entity_rank, stk::mesh::Selector selectedToSkin);
 
   bool internal_modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt );
-  bool internal_modification_end_for_skin_mesh( EntityRank entity_rank, modification_optimization opt, stk::mesh::Selector selectedToSkin,
-          const stk::mesh::Selector * only_consider_second_element_from_this_selector);
+
 
   void internal_finish_modification_end(modification_optimization opt);
 
@@ -1102,11 +1110,14 @@ private: //functions
   friend class stk::mesh::Bucket; // for field callback
   friend class Ghosting; // friend until Ghosting is refactored to be like Entity
   friend class ::stk::mesh::impl::MeshModification;
+  friend class ::sierra::Fmwk::EntityCreationOperationList;
 
   // friends until it is decided what we're doing with Fields and Parallel and BulkData
   friend void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
   friend void communicate_field_data(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
   friend void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector const& skin_parts, const Selector * secondary_selector);
+  friend void create_edges( BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges );
+  friend void internal_create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges, FaceCreationBehavior faceCreationBehavior);
 
   bool ordered_comm( const Entity entity );
   void pack_owned_verify(CommAll & all);

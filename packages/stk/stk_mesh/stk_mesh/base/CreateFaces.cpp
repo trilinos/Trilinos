@@ -155,7 +155,7 @@ struct create_face_impl
       for (unsigned side_ordinal=0; side_ordinal < Topology::num_faces; ++side_ordinal) {
 
           if (!face_exists[side_ordinal]) {
-              if (m_face_creation_behavior == CREATE_FACES_FACE_CREATION_CLASSIC) {
+              if (m_face_creation_behavior == FaceCreationBehavior::CREATE_FACES_FACE_CREATION_CLASSIC) {
                   topology faceTopology = elemTopology.face_topology(side_ordinal);
                   stk::mesh::Entity element = m_bucket[ielem];
                   EntityVector permuted_face_nodes(faceTopology.num_nodes());
@@ -237,7 +237,7 @@ void create_faces( BulkData & mesh, bool connect_faces_to_edges)
 
 void create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges)
 {
-    internal_create_faces(mesh, element_selector, connect_faces_to_edges, CREATE_FACES_FACE_CREATION_CLASSIC);
+    internal_create_faces(mesh, element_selector, connect_faces_to_edges, FaceCreationBehavior::CREATE_FACES_FACE_CREATION_CLASSIC);
 }
 
 void internal_create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges, FaceCreationBehavior faceCreationBehavior)

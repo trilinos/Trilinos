@@ -25,6 +25,25 @@
 namespace
 {
 
+class BulkDataElementGraphTester : public stk::mesh::BulkData
+{
+
+public:
+
+    BulkDataElementGraphTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm) :
+            stk::mesh::BulkData(mesh_meta_data, comm)
+    {
+    }
+
+    ~BulkDataElementGraphTester(){}
+
+    bool my_internal_modification_end_for_skin_mesh(stk::mesh::EntityRank entity_rank, modification_optimization opt, stk::mesh::Selector selectedToSkin,
+            const stk::mesh::Selector * only_consider_second_element_from_this_selector = 0)
+    {
+        return this->internal_modification_end_for_skin_mesh(entity_rank, opt, selectedToSkin, only_consider_second_element_from_this_selector);
+    }
+};
+
 int check_connectivity(const std::vector<std::vector<int64_t> >& elem_graph, const std::vector<std::vector<int64_t> > &via_side, int64_t element_id1, int64_t element_id2);
 
 std::vector<std::pair<int64_t, int64_t> >
@@ -335,7 +354,7 @@ TEST(ElementGraph, skin_mesh_using_element_graph_serial)
         stk::mesh::MetaData meta(spatialDim);
         stk::mesh::Part& skin_part = meta.declare_part_with_topology("surface_5", stk::topology::QUAD_4);
         stk::io::put_io_part_attribute(skin_part);
-        stk::mesh::BulkData bulkData(meta, comm);
+        BulkDataElementGraphTester bulkData(meta, comm);
         std::ostringstream os;
         os << "generated:" << zdim << "x" << zdim << "x" << zdim;
         bool check_results = false;
@@ -393,7 +412,8 @@ TEST(ElementGraph, skin_mesh_using_element_graph_serial)
             stk::mesh::declare_element_side(bulkData, face_global_id, element, elem_side_pairs[face_index].second, &skin_part);
         }
 
-        bulkData.modification_end_for_entity_creation(stk::topology::FACE_RANK);
+        stk::mesh::Selector element_selector = bulkData.mesh_meta_data().locally_owned_part();
+        bulkData.my_internal_modification_end_for_skin_mesh(stk::topology::FACE_RANK, stk::mesh::BulkData::MOD_END_SORT, element_selector, NULL);
 
         wall_times.push_back(stk::wall_time());
         msgs.push_back("after create-faces");
@@ -470,7 +490,7 @@ TEST(ElementGraph, skin_mesh_using_element_graph_parallel)
         stk::mesh::MetaData meta(spatialDim);
         stk::mesh::Part& skin_part = meta.declare_part_with_topology("surface_5", stk::topology::QUAD_4);
         stk::io::put_io_part_attribute(skin_part);
-        stk::mesh::BulkData bulkData(meta, comm);
+        BulkDataElementGraphTester bulkData(meta, comm);
 
         stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
 
@@ -510,7 +530,8 @@ TEST(ElementGraph, skin_mesh_using_element_graph_parallel)
             stk::mesh::declare_element_side(bulkData, face_global_id, element, elem_side_pairs[face_index].second, &skin_part);
         }
 
-        bulkData.modification_end_for_entity_creation(stk::topology::FACE_RANK);
+        stk::mesh::Selector element_selector = bulkData.mesh_meta_data().locally_owned_part();
+        bulkData.my_internal_modification_end_for_skin_mesh(stk::topology::FACE_RANK, stk::mesh::BulkData::MOD_END_SORT, element_selector, NULL);
 
         wall_times.push_back(stk::wall_time());
         msgs.push_back("after create-faces");
@@ -683,7 +704,7 @@ TEST(ElementGraph, compare_performance_skin_mesh)
         stk::mesh::MetaData meta(spatialDim);
         stk::mesh::Part& skin_part = meta.declare_part_with_topology("surface_5", stk::topology::QUAD_4);
         stk::io::put_io_part_attribute(skin_part);
-        stk::mesh::BulkData bulkData(meta, comm);
+        BulkDataElementGraphTester bulkData(meta, comm);
 
         stk::unit_test_util::fill_mesh_using_stk_io(filename, bulkData, comm);
 
@@ -739,7 +760,8 @@ TEST(ElementGraph, compare_performance_skin_mesh)
                 stk::mesh::declare_element_side(bulkData, face_global_id, element, elem_side_pairs[face_index].second, &skin_part);
             }
 
-            bulkData.modification_end_for_entity_creation(stk::topology::FACE_RANK);
+            stk::mesh::Selector element_selector = bulkData.mesh_meta_data().locally_owned_part();
+            bulkData.my_internal_modification_end_for_skin_mesh(stk::topology::FACE_RANK, stk::mesh::BulkData::MOD_END_SORT, element_selector, NULL);
 
             double elapsed_time = stk::wall_time() - wall_time_start;
 

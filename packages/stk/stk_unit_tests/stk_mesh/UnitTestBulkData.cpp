@@ -5984,7 +5984,7 @@ TEST(FaceCreation, test_face_creation_2Hexes_2procs)
 
         mesh.resolveUniqueIdForSharedEntityAndCreateCommMapInfoForSharingProcs(shared_entity_map);
 
-        mesh.modification_end_for_entity_creation(stk::topology::FACE_RANK);
+        mesh.my_modification_end_for_entity_creation(stk::topology::FACE_RANK);
 
         std::vector<size_t> counts;
         stk::mesh::comm_mesh_counts(mesh, counts);
