@@ -149,22 +149,36 @@ int ex_get_side_set_node_count(int exoid,
     return(EX_FATAL);
   }
 
+  int int_size = sizeof(int);
+  if (ex_int64_status(exoid) & EX_BULK_INT64_API)
+    int_size = sizeof(int64_t);
+
   /* First determine the  # of elements in the side set*/
-  if ((ex_get_side_set_param(exoid,side_set_id,&tot_num_ss_elem,&num_df)) == -1)
-    {
-      sprintf(errmsg,
-	      "Error: failed to get number of elements in side set %"PRId64" in file id %d",
-	      side_set_id, exoid);
-      ex_err("ex_get_side_set_node_count",errmsg,exerrval);
-      return(EX_FATAL);
-    }
+  int err;
+  if (int_size == sizeof(int64_t)) {
+    int64_t ss_elem = 0;
+    int64_t ss_df   = 0;
+    err = ex_get_side_set_param(exoid,side_set_id,&ss_elem,&ss_df);
+    tot_num_ss_elem = ss_elem;
+    num_df = ss_df;
+  } else {
+    int ss_elem = 0;
+    int ss_df   = 0;
+    err = ex_get_side_set_param(exoid,side_set_id,&ss_elem,&ss_df);
+    tot_num_ss_elem = ss_elem;
+    num_df = ss_df;
+  }
+
+  if (err == -1) {
+    sprintf(errmsg,
+	    "Error: failed to get number of elements in side set %"PRId64" in file id %d",
+	    side_set_id, exoid);
+    ex_err("ex_get_side_set_node_count",errmsg,exerrval);
+    return(EX_FATAL);
+  }
 
   /* Allocate space for the side set element list */
   {
-    int int_size = sizeof(int);
-    if (ex_int64_status(exoid) & EX_BULK_INT64_API)
-      int_size = sizeof(int64_t);
-
     if (!(side_set_elem_list=malloc(tot_num_ss_elem*int_size))) {
       exerrval = EX_MEMFAIL;
       sprintf(errmsg,

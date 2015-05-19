@@ -51,6 +51,7 @@ namespace stk {
    *  that was observed through invoking this function so the true high-water-mark may
    *  be larger than that reported here, depending on your timing.
    */
+  size_t get_memory_usage_now();
   void get_memory_usage(size_t & now, size_t & hwm);
   void get_memory_available(size_t & avail);
   void get_processor_count(std::vector<int> &procinfo);

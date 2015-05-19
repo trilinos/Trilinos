@@ -244,7 +244,8 @@ C   --Read the initial variables
          lnpsdf = 0
       end if
       if (numess .gt. 0) then
-         lessnl = 0
+         call exinq(ndb, EXSSNL, lessnl, rdum, cdum, ierr)
+         IF (IERR .NE. 0) GOTO 110
          call exinq(ndb, EXSSEL, lessel, rdum, cdum, ierr)
          IF (IERR .NE. 0) GOTO 110
          call exinq(ndb, EXSSDF, lessdf, rdum, cdum, ierr)
@@ -436,7 +437,7 @@ C   --Process commands
      &     C(KVNAMO+NAMLEN*(IXGV-1)), C(KVNAMO+NAMLEN*(IXNV-1)),
      &     C(KVNAMO+NAMLEN*(IXEV-1)), C(KVNAMO+NAMLEN*(IXNS-1)),
      $     C(KVNAMO+NAMLEN*(IXSS-1)),
-     &     A(KCORD), A(KMAPEL), A(KMAPNO),
+     &     A(KCORD), A(KMAPEL), A(KMAPNO), mapnd, mapel,
      &     A(KIDELB), A(KNELB), A(KLENE), A(KNLNK), A(KNATR),
      &     A(KLINK), A(KATRIB),
      &     A(KIDNS), A(KNNNS), A(KNDNPS), A(KIXNNS), A(KIXDNS),

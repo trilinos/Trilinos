@@ -57,6 +57,7 @@ namespace fixtures {
               , size_t nx
               , size_t ny
               , size_t nz
+              , stk::mesh::BulkData::AutomaticAuraOption autoAuraOption
               , ConnectivityMap const* connectivity_map
             )
   : m_spatial_dimension(3),
@@ -66,7 +67,7 @@ namespace fixtures {
     m_meta( m_spatial_dimension ),
     m_bulk_data(  m_meta
                 , pm
-                , stk::mesh::BulkData::AUTO_AURA
+                , autoAuraOption
 #ifdef SIERRA_MIGRATION
                 , false
 #endif

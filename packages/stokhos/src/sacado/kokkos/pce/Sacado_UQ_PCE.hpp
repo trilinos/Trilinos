@@ -1172,6 +1172,13 @@ namespace Sacado {
    }
 */
 
+    template <typename S>
+    void memcpy(PCE<S>* dst, const PCE<S>* src, const size_t sz) {
+      const size_t n = sz / sizeof(PCE<S>);
+      for (size_t i=0; i<n; ++i)
+        dst[i] = src[i];
+    }
+
   } // namespace PCE
 
   //! Trait class to determine if a scalar type is a PCE

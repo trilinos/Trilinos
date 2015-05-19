@@ -54,96 +54,14 @@ namespace Tpetra {
 namespace Details {
 
 template<class KeyType, class ValueType, class DeviceType>
-KOKKOS_INLINE_FUNCTION int
-FixedHashTable<KeyType, ValueType, DeviceType>::
-hashFunc (const KeyType& key, const size_type& size)
-{
-#ifdef TPETRA_USE_MURMUR_HASH
-  Kokkos::pod_hash<KeyType> hash;
-  const uint32_t k = hash (key);
-  return static_cast<int> (k % static_cast<int> (size));
-#else
-  // We are using Epetra's hash function by default, as we have
-  // observed that it is much faster than the Murmur hash
-  // function. However, this is not a good hash function for general
-  // sets of keys.  For our typical use case, this is good.  Use
-  // Murmur hash if the maps are sparse.
-  const unsigned int seed = (2654435761U);
-  const int intkey = (int) ((key & 0x000000007fffffffLL) +
-                            ((key & 0x7fffffff80000000LL) >> 31));
-  return static_cast<int> ((seed ^ intkey) % static_cast<int> (size));
-#endif
-}
-
-template<class KeyType, class ValueType, class DeviceType>
-int
-FixedHashTable<KeyType, ValueType, DeviceType>::getRecommendedSize (const int size)
-{
-  // A large list of prime numbers.
-  // Based on a recommendation by Andres Valloud in hash forums.
-  //  There are only enough primes here so that between any number N and 2*N,
-  //  there will be at least about 8 to choose from (except the first 10).
-  //  This is a balance between a small list of primes, and getting a
-  //  collection size that doesn't waste too much space.  In addition,
-  //  the primes in this table were chosen so that they do not divide
-  //  256^k +- a, for 1<=k<=8, and -32<=a<=32.  This is so that
-  //  using them as a modulo will not have a tendency to just throw away
-  //  the most significant bits of the object's hash.  The primes (except the
-  //  first ten) or not close to any power of two to avoid aliasing
-  //  between hash functions based on bit manipulation and the moduli.
-  int primes [ ] = {
-    3, 7, 13, 23, 53, 97, 193, 389, 769, 1543,
-    2237, 2423, 2617, 2797, 2999, 3167, 3359, 3539,
-    3727, 3911, 4441 , 4787 , 5119 , 5471 , 5801 , 6143 , 6521 , 6827
-    , 7177 , 7517 , 7853 , 8887 , 9587 , 10243 , 10937 , 11617 , 12289
-    , 12967 , 13649 , 14341 , 15013 , 15727
-    , 17749 , 19121 , 20479 , 21859 , 23209 , 24593 , 25939 , 27329
-    , 28669 , 30047 , 31469 , 35507 , 38231 , 40961 , 43711 , 46439
-    , 49157 , 51893 , 54617 , 57347 , 60077 , 62801 , 70583 , 75619
-    , 80669 , 85703 , 90749 , 95783 , 100823 , 105871 , 110909 , 115963
-    , 120997 , 126031 , 141157 , 151237 , 161323 , 171401 , 181499 , 191579
-    , 201653 , 211741 , 221813 , 231893 , 241979 , 252079
-    , 282311 , 302483 , 322649 , 342803 , 362969 , 383143 , 403301 , 423457
-    , 443629 , 463787 , 483953 , 504121 , 564617 , 604949 , 645313 , 685609
-    , 725939 , 766273 , 806609 , 846931 , 887261 , 927587 , 967919 , 1008239
-    , 1123477 , 1198397 , 1273289 , 1348177 , 1423067 , 1497983 , 1572869
-    , 1647761 , 1722667 , 1797581 , 1872461 , 1947359 , 2022253
-    , 2246953 , 2396759 , 2546543 , 2696363 , 2846161 , 2995973 , 3145739
-    , 3295541 , 3445357 , 3595117 , 3744941 , 3894707 , 4044503
-    , 4493921 , 4793501 , 5093089 , 5392679 , 5692279 , 5991883 , 6291469
-    , 6591059 , 6890641 , 7190243 , 7489829 , 7789447 , 8089033
-    , 8987807 , 9586981 , 10186177 , 10785371 , 11384539 , 11983729
-    , 12582917 , 13182109 , 13781291 , 14380469 , 14979667 , 15578861
-    , 16178053 , 17895707 , 19014187 , 20132683 , 21251141 , 22369661
-    , 23488103 , 24606583 , 25725083 , 26843549 , 27962027 , 29080529
-    , 30198989 , 31317469 , 32435981 , 35791397 , 38028379 , 40265327
-    , 42502283 , 44739259 , 46976221 , 49213237 , 51450131 , 53687099
-    , 55924061 , 58161041 , 60397993 , 62634959 , 64871921
-    , 71582857 , 76056727 , 80530643 , 85004567 , 89478503 , 93952427
-    , 98426347 , 102900263 , 107374217 , 111848111 , 116322053 , 120795971
-    , 125269877 , 129743807 , 143165587 , 152113427 , 161061283 , 170009141
-    , 178956983 , 187904819 , 196852693 , 205800547 , 214748383 , 223696237
-    , 232644089 , 241591943 , 250539763 , 259487603 , 268435399 };
-
-  int hsize = primes[220] ;
-  for (int i = 0; i < 221; ++i) {
-    if (size <= primes[i]) {
-      hsize = primes[i];
-      break;
-    }
-  }
-  return hsize;
-}
-
-template<class KeyType, class ValueType, class DeviceType>
 void
 FixedHashTable<KeyType, ValueType, DeviceType>::
 check () const
 {
-#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   const char prefix[] = "Tpetra::Details::FixedHashTable: ";
   const char suffix[] = "  Please report this bug to the Tpetra developers.";
 
+#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   TEUCHOS_TEST_FOR_EXCEPTION
     (ptr_.ptr_on_device () != rawPtr_, std::logic_error,
      prefix << "ptr_.ptr_on_device () != rawPtr_." << suffix);
@@ -151,6 +69,12 @@ check () const
     (val_.ptr_on_device () != rawVal_, std::logic_error,
      prefix << "val_.ptr_on_device () != rawVal_." << suffix);
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (invalidValue_ != Teuchos::OrdinalTraits<ValueType>::invalid (),
+     std::logic_error, prefix << "invalidValue_ == " << invalidValue_
+     << " != Teuchos::OrdinalTraits<ValueType>::invalid() == "
+     << Teuchos::OrdinalTraits<ValueType>::invalid () << "." << suffix);
 }
 
 template<class KeyType, class ValueType, class DeviceType>
@@ -160,6 +84,7 @@ FixedHashTable () :
   rawPtr_ (NULL),
   rawVal_ (NULL),
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  invalidValue_ (Teuchos::OrdinalTraits<ValueType>::invalid ()),
   hasDuplicateKeys_ (false) // trivially true
 {
 #ifdef HAVE_TPETRA_DEBUG
@@ -174,6 +99,7 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys) :
   rawPtr_ (NULL),
   rawVal_ (NULL),
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  invalidValue_ (Teuchos::OrdinalTraits<ValueType>::invalid ()),
   hasDuplicateKeys_ (false) // to revise in init()
 {
   // mfh 01 May 2015: I don't trust that
@@ -197,6 +123,7 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   rawPtr_ (NULL),
   rawVal_ (NULL),
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  invalidValue_ (Teuchos::OrdinalTraits<ValueType>::invalid ()),
   hasDuplicateKeys_ (false) // to revise in init()
 {
   // mfh 01 May 2015: I don't trust that
@@ -219,6 +146,7 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   rawPtr_ (NULL),
   rawVal_ (NULL),
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  invalidValue_ (Teuchos::OrdinalTraits<ValueType>::invalid ()),
   hasDuplicateKeys_ (false) // to revise in init()
 {
   // mfh 01 May 2015: I don't trust that
@@ -241,14 +169,14 @@ FixedHashTable<KeyType, ValueType, DeviceType>::
 init (const host_input_keys_type& keys,
       const ValueType startingValue)
 {
-  const size_type numKeys = keys.dimension_0 ();
+  const offset_type numKeys = static_cast<offset_type> (keys.dimension_0 ());
   TEUCHOS_TEST_FOR_EXCEPTION
-    (numKeys > static_cast<size_type> (INT_MAX), std::logic_error, "Tpetra::"
+    (numKeys > static_cast<offset_type> (INT_MAX), std::logic_error, "Tpetra::"
      "Details::FixedHashTable: This class currently only works when the number "
      "of keys is <= INT_MAX = " << INT_MAX << ".  If this is a problem for you"
      ", please talk to the Tpetra developers.");
 
-  const size_type size = getRecommendedSize (static_cast<int> (numKeys));
+  const offset_type size = hash_type::getRecommendedSize (numKeys);
 #ifdef HAVE_TPETRA_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
     size == 0 && numKeys != 0, std::logic_error,
@@ -258,16 +186,25 @@ init (const host_input_keys_type& keys,
     "Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
 
+  // NOTE (mfh 14 May 2015) This method currently assumes UVM.  We
+  // could change that by setting up ptr and val as Kokkos::DualView
+  // instances.  If we do that, since we are filling on host for now,
+  // we want to make sure that we only zero-fill ptr on host
+  // initially, and that we don't fill val at all.  Once we finish
+  // Kokkos-izing all the set-up kernels, we won't need DualView for
+  // either ptr or val.
+
   // Kokkos::View fills with zeros by default.
-  typename ptr_type::non_const_type::HostMirror ptr ("ptr", size + 1);
+  typename ptr_type::non_const_type ptr ("ptr", size + 1);
 
   // Allocate the array of key,value pairs.  Don't waste time filling
   // it with zeros, because we will fill it with actual data below.
-  typename val_type::non_const_type::HostMirror val (Kokkos::ViewAllocateWithoutInitializing ("val"), numKeys);
+  typename val_type::non_const_type val (Kokkos::ViewAllocateWithoutInitializing ("val"), numKeys);
 
   // Compute number of entries in each hash table position.
-  for (size_type k = 0; k < numKeys; ++k) {
-    const int hashVal = hashFunc (keys[k], size);
+  for (offset_type k = 0; k < numKeys; ++k) {
+    const typename hash_type::result_type hashVal =
+      hash_type::hashFunc (keys[k], size);
     // Shift over one, so that counts[j] = ptr[j+1].  See below.
     ++ptr[hashVal+1];
 
@@ -283,22 +220,23 @@ init (const host_input_keys_type& keys,
   // Thus, ptr[i+1] - ptr[i] = counts[i], so that ptr[i+1] = ptr[i] +
   // counts[i].  If we stored counts[i] in ptr[i+1] on input, then the
   // formula is ptr[i+1] += ptr[i].
-  for (size_type i = 0; i < size; ++i) {
+  for (offset_type i = 0; i < size; ++i) {
     ptr[i+1] += ptr[i];
   }
   //ptr[0] = 0; // We've already done this when initializing ptr above.
 
   // curRowStart[i] is the offset of the next element in row i.
-  typename ptr_type::non_const_type::HostMirror curRowStart ("curRowStart", size);
+  typename ptr_type::non_const_type curRowStart ("curRowStart", size);
 
   // Fill in the hash table.
-  for (size_type k = 0; k < numKeys; ++k) {
+  for (offset_type k = 0; k < numKeys; ++k) {
     const KeyType key = keys[k];
     const ValueType theVal = startingValue + static_cast<ValueType> (k);
-    const int hashVal = hashFunc (key, size);
+    const typename hash_type::result_type hashVal =
+      hash_type::hashFunc (key, size);
 
-    const size_type offset = curRowStart[hashVal];
-    const size_type curPos = ptr[hashVal] + offset;
+    const offset_type offset = curRowStart[hashVal];
+    const offset_type curPos = ptr[hashVal] + offset;
 
     val[curPos].first = key;
     val[curPos].second = theVal;
@@ -321,14 +259,14 @@ FixedHashTable<KeyType, ValueType, DeviceType>::
 init (const host_input_keys_type& keys,
       const host_input_vals_type& vals)
 {
-  const size_type numKeys = keys.dimension_0 ();
+  const offset_type numKeys = static_cast<offset_type> (keys.dimension_0 ());
   TEUCHOS_TEST_FOR_EXCEPTION
-    (numKeys > static_cast<size_type> (INT_MAX), std::logic_error, "Tpetra::"
+    (numKeys > static_cast<offset_type> (INT_MAX), std::logic_error, "Tpetra::"
      "Details::FixedHashTable: This class currently only works when the number "
      "of keys is <= INT_MAX = " << INT_MAX << ".  If this is a problem for you"
      ", please talk to the Tpetra developers.");
 
-  const size_type size = getRecommendedSize (static_cast<int> (numKeys));
+  const offset_type size = hash_type::getRecommendedSize (numKeys);
 #ifdef HAVE_TPETRA_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
     size == 0 && numKeys != 0, std::logic_error,
@@ -338,15 +276,24 @@ init (const host_input_keys_type& keys,
     "Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
 
-  typename ptr_type::non_const_type::HostMirror ptr ("ptr", size + 1);
+  // NOTE (mfh 14 May 2015) This method currently assumes UVM.  We
+  // could change that by setting up ptr and val as Kokkos::DualView
+  // instances.  If we do that, since we are filling on host for now,
+  // we want to make sure that we only zero-fill ptr on host
+  // initially, and that we don't fill val at all.  Once we finish
+  // Kokkos-izing all the set-up kernels, we won't need DualView for
+  // either ptr or val.
 
-  // Don't fill 'val' here; we will fill it below.
-  typename val_type::non_const_type::HostMirror val
-    (Kokkos::ViewAllocateWithoutInitializing ("val"), numKeys);
+  typename ptr_type::non_const_type ptr ("ptr", size + 1);
+
+  // Allocate the array of key,value pairs.  Don't waste time filling
+  // it with zeros, because we will fill it with actual data below.
+  typename val_type::non_const_type val (Kokkos::ViewAllocateWithoutInitializing ("val"), numKeys);
 
   // Compute number of entries in each hash table position.
-  for (size_type k = 0; k < numKeys; ++k) {
-    const int hashVal = hashFunc (keys[k], size);
+  for (offset_type k = 0; k < numKeys; ++k) {
+    const typename hash_type::result_type hashVal =
+      hash_type::hashFunc (keys[k], size);
     // Shift over one, so that counts[j] = ptr[j+1].  See below.
     ++ptr[hashVal+1];
 
@@ -362,22 +309,23 @@ init (const host_input_keys_type& keys,
   // Thus, ptr[i+1] - ptr[i] = counts[i], so that ptr[i+1] = ptr[i] +
   // counts[i].  If we stored counts[i] in ptr[i+1] on input, then the
   // formula is ptr[i+1] += ptr[i].
-  for (size_type i = 0; i < size; ++i) {
+  for (offset_type i = 0; i < size; ++i) {
     ptr[i+1] += ptr[i];
   }
   //ptr[0] = 0; // We've already done this when initializing ptr above.
 
   // curRowStart[i] is the offset of the next element in row i.
-  typename ptr_type::non_const_type::HostMirror curRowStart ("curRowStart", size);
+  typename ptr_type::non_const_type curRowStart ("curRowStart", size);
 
   // Fill in the hash table.
-  for (size_type k = 0; k < numKeys; ++k) {
+  for (offset_type k = 0; k < numKeys; ++k) {
     const KeyType key = keys[k];
     const ValueType theVal = vals[k];
-    const int hashVal = hashFunc (key, size);
+    const typename hash_type::result_type hashVal =
+      hash_type::hashFunc (key, size);
 
-    const size_type offset = curRowStart[hashVal];
-    const size_type curPos = ptr[hashVal] + offset;
+    const offset_type offset = curRowStart[hashVal];
+    const offset_type curPos = ptr[hashVal] + offset;
 
     val[curPos].first = key;
     val[curPos].second = theVal;
@@ -393,41 +341,11 @@ init (const host_input_keys_type& keys,
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 }
 
-template<class KeyType, class ValueType, class DeviceType>
-ValueType
-FixedHashTable<KeyType, ValueType, DeviceType>::
-get (const KeyType key) const
-{
-  const size_type size = this->getSize ();
-
-  if (size == 0) {
-    return Teuchos::OrdinalTraits<ValueType>::invalid ();
-  }
-  else {
-    const int hashVal = hashFunc (key, size);
-#if defined(TPETRA_HAVE_KOKKOS_REFACTOR) || defined(HAVE_TPETRA_DEBUG)
-    const size_type start = ptr_[hashVal];
-    const size_type end = ptr_[hashVal+1];
-    for (size_type k = start; k < end; ++k) {
-      if (val_[k].first == key) {
-        return val_[k].second;
-      }
-    }
-#else
-    const size_type start = rawPtr_[hashVal];
-    const size_type end = rawPtr_[hashVal+1];
-    for (size_type k = start; k < end; ++k) {
-      if (rawVal_[k].first == key) {
-        return rawVal_[k].second;
-      }
-    }
-#endif // HAVE_TPETRA_DEBUG
-    return Teuchos::OrdinalTraits<ValueType>::invalid ();
-  }
-}
-
 template <class KeyType, class ValueType, class DeviceType>
-std::string FixedHashTable<KeyType, ValueType, DeviceType>::description() const {
+std::string
+FixedHashTable<KeyType, ValueType, DeviceType>::
+description () const
+{
   std::ostringstream oss;
   oss << "FixedHashTable<"
       << Teuchos::TypeNameTraits<KeyType>::name () << ","
@@ -440,7 +358,7 @@ std::string FixedHashTable<KeyType, ValueType, DeviceType>::description() const 
 template <class KeyType, class ValueType, class DeviceType>
 void
 FixedHashTable<KeyType, ValueType, DeviceType>::
-describe (Teuchos::FancyOStream &out,
+describe (Teuchos::FancyOStream& out,
           const Teuchos::EVerbosityLevel verbLevel) const
 {
   using std::endl;
@@ -452,6 +370,9 @@ describe (Teuchos::FancyOStream &out,
   using Teuchos::VERB_NONE;
   using Teuchos::VERB_LOW;
   using Teuchos::VERB_EXTREME;
+
+  // NOTE (mfh 14 May 2015) This method currently assumes UVM for
+  // access to ptr_ and val_ from the host.
 
   Teuchos::EVerbosityLevel vl = verbLevel;
   if (vl == VERB_DEFAULT) vl = VERB_LOW;
@@ -478,8 +399,8 @@ describe (Teuchos::FancyOStream &out,
             << "ValueType: " << TypeNameTraits<ValueType>::name () << endl;
       }
 
-      const size_type tableSize = this->getSize ();
-      const size_type numKeys = val_.dimension_0 ();
+      const offset_type tableSize = this->getSize ();
+      const offset_type numKeys = val_.dimension_0 ();
 
       out << "Table parameters:" << endl;
       {
@@ -496,10 +417,10 @@ describe (Teuchos::FancyOStream &out,
           out << "[ " << endl;
           {
             OSTab tab2 (rcpFromRef (out));
-            for (size_type i = 0; i < tableSize; ++i) {
+            for (offset_type i = 0; i < tableSize; ++i) {
               OSTab tab3 (rcpFromRef (out));
               out << "[";
-              for (size_type k = ptr_[i]; k < ptr_[i+1]; ++k) {
+              for (offset_type k = ptr_[i]; k < ptr_[i+1]; ++k) {
                 out << "(" << val_[k].first << "," << val_[k].second << ")";
                 if (k + 1 < ptr_[i+1]) {
                   out << ", ";

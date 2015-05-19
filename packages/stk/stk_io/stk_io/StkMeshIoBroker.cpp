@@ -1188,6 +1188,15 @@ namespace stk {
     void StkMeshIoBroker::property_add(const Ioss::Property &property)
     {
       m_property_manager.add(property);
+      //In case there are already input/output files, put the property on them too.
+      if (get_input_io_region().get() != NULL)
+      {
+          get_input_io_region()->property_add(property);
+      }
+      for(size_t i=0; i<m_output_files.size(); ++i)
+      {
+          get_output_io_region(i)->property_add(property);
+      }
     }
 
     void StkMeshIoBroker::remove_property_if_exists(const std::string &property_name)
@@ -1878,10 +1887,10 @@ namespace stk {
 	      }
 
 	      // used in stk_adapt/stk_percept
-	      bool sort_stk_parts = m_region->property_exists("sort_stk_parts");
+	      bool sort_stk_parts_by_name = m_region->property_exists("sort_stk_parts");
 
 	      stk::io::define_output_db(*m_region, bulk_data, m_input_region, m_subset_selector.get(),
-					sort_stk_parts, m_use_nodeset_for_part_nodes_fields);
+					sort_stk_parts_by_name, m_use_nodeset_for_part_nodes_fields);
 
 	      stk::io::write_output_db(*m_region, bulk_data, m_subset_selector.get());
 

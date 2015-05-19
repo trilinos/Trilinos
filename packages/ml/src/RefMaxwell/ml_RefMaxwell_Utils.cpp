@@ -10,7 +10,7 @@
 int ML_Epetra::CSR_getrow_ones(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
-   register int    *bindx, j;
+   /* register (C++11 deprecates this storage class specifier) */ int    *bindx, j;
    int     *rowptr,  row, itemp;
    struct ML_CSR_MSRdata *input_matrix;
    ML_Operator *mat_in;
@@ -168,11 +168,11 @@ int RefMaxwell_SetupCoordinates(ML_Operator* A, Teuchos::ParameterList &List_, d
       int n = AAA->invec_leng, Nghost = 0;
 
       if (AAA->getrow->pre_comm)
-	{
-	  if (AAA->getrow->pre_comm->total_rcv_length <= 0)
-	    ML_CommInfoOP_Compute_TotalRcvLength(AAA->getrow->pre_comm);
-	  Nghost = AAA->getrow->pre_comm->total_rcv_length;
-	}
+        {
+          if (AAA->getrow->pre_comm->total_rcv_length <= 0)
+            ML_CommInfoOP_Compute_TotalRcvLength(AAA->getrow->pre_comm);
+          Nghost = AAA->getrow->pre_comm->total_rcv_length;
+        }
 
       std::vector<double> tmp(Nghost + n);
       for (int i = 0 ; i < Nghost + n ; ++i)
@@ -182,52 +182,52 @@ int RefMaxwell_SetupCoordinates(ML_Operator* A, Teuchos::ParameterList &List_, d
       Nghost /= NumPDEEqns_;
 
       if (in_x_coord)
-	{
-	  double* x_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n));
+        {
+          double* x_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n));
 
-	  for (int i = 0 ; i < n ; ++i)
-	    tmp[i * NumPDEEqns_] = in_x_coord[i];
+          for (int i = 0 ; i < n ; ++i)
+            tmp[i * NumPDEEqns_] = in_x_coord[i];
 
-	  ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n,
-			   AAA->comm, ML_OVERWRITE,NULL);
+          ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n,
+                           AAA->comm, ML_OVERWRITE,NULL);
 
-	  for (int i = 0 ; i < n + Nghost ; ++i)
-	    x_coord[i] = tmp[i * NumPDEEqns_];
+          for (int i = 0 ; i < n + Nghost ; ++i)
+            x_coord[i] = tmp[i * NumPDEEqns_];
 
-	  coordx = x_coord;
-	}
+          coordx = x_coord;
+        }
 
       if (in_y_coord)
-	{
-	  double* y_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n));
+        {
+          double* y_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n));
 
-	  for (int i = 0 ; i < n ; ++i)
-	    tmp[i * NumPDEEqns_] = in_y_coord[i];
+          for (int i = 0 ; i < n ; ++i)
+            tmp[i * NumPDEEqns_] = in_y_coord[i];
 
-	  ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n,
-			   AAA->comm, ML_OVERWRITE,NULL);
+          ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n,
+                           AAA->comm, ML_OVERWRITE,NULL);
 
-	  for (int i = 0 ; i < n + Nghost ; ++i)
-	    y_coord[i] = tmp[i * NumPDEEqns_];
+          for (int i = 0 ; i < n + Nghost ; ++i)
+            y_coord[i] = tmp[i * NumPDEEqns_];
 
-	  coordy = y_coord;
-	}
+          coordy = y_coord;
+        }
 
       if (in_z_coord)
-	{
-	  double* z_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n));
+        {
+          double* z_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n));
 
-	  for (int i = 0 ; i < n ; ++i)
-	    tmp[i * NumPDEEqns_] = in_z_coord[i];
+          for (int i = 0 ; i < n ; ++i)
+            tmp[i * NumPDEEqns_] = in_z_coord[i];
 
-	  ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n,
-			   AAA->comm, ML_OVERWRITE,NULL);
+          ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n,
+                           AAA->comm, ML_OVERWRITE,NULL);
 
-	  for (int i = 0 ; i < n + Nghost ; ++i)
-	    z_coord[i] = tmp[i * NumPDEEqns_];
+          for (int i = 0 ; i < n + Nghost ; ++i)
+            z_coord[i] = tmp[i * NumPDEEqns_];
 
-	  coordz = z_coord;
-	}
+          coordz = z_coord;
+        }
 
     } // if (!(in_x_coord == 0 && in_y_coord == 0 && in_z_coord == 0))
 
@@ -409,7 +409,7 @@ static void ML_Finalize_Aux(ML_Operator *A)
 
 // ================================================ ====== ==== ==== == =
 int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::ParameterList & List, ML_Comm * ml_comm, std::string PrintMsg,
-					  ML_Aggregate_Struct *& MLAggr,ML_Operator *&P, int &NumAggregates){
+                                          ML_Aggregate_Struct *& MLAggr,ML_Operator *&P, int &NumAggregates){
 
   /* Output level */
   bool verbose, very_verbose;

@@ -112,12 +112,13 @@ void pack_entity_info(const BulkData& mesh, CommBuffer & buf , const Entity enti
       Entity const *rel_entities = bucket.begin(ebo, irank);
       ConnectivityOrdinal const *rel_ordinals = bucket.begin_ordinals(ebo, irank);
       Permutation const *rel_permutations = bucket.begin_permutations(ebo, irank);
-
       for ( unsigned i = 0 ; i < nrel ; ++i ) {
         if (mesh.is_valid(rel_entities[i])) {
+          ThrowAssert(rel_ordinals);
           buf.pack<EntityKey>( mesh.entity_key(rel_entities[i]) );
           buf.pack<unsigned>( rel_ordinals[i] );
           if (bucket.has_permutation(irank)) {
+            ThrowAssert(rel_permutations);
             buf.pack<unsigned>( rel_permutations[i] );
           } else {
             buf.pack<unsigned>(0u);

@@ -210,6 +210,9 @@ void Print_Banner(const char *prefix)
 		     double *vals );
 
   template <typename INT>
+  bool diff_sideset_df(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, const INT *id_map);
+
+  template <typename INT>
   void output_summary( ExoII_Read<INT>& file1, MinMaxData &mm_time,
 		       std::vector<MinMaxData> &mm_glob, std::vector<MinMaxData> &mm_node,
 		       std::vector<MinMaxData> &mm_elmt, std::vector<MinMaxData> &mm_ns,
@@ -618,6 +621,12 @@ namespace {
     // Diff attributes...
     if (!interface.ignore_attributes && elmt_map==NULL && !interface.summary_flag) {
       if (diff_element_attributes(file1, file2, elmt_map, elem_id_map, blocks2))
+	diff_flag = true;
+    }
+
+    // Diff sideset distribution factors...
+    if (!interface.ignore_sideset_df && !interface.summary_flag) {
+      if (diff_sideset_df(file1, file2, elem_id_map))
 	diff_flag = true;
     }
 
@@ -1871,6 +1880,122 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
     }  // End of sideset variable loop.
     return diff_flag;
   }
+
+template <typename INT>
+bool diff_sideset_df(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, const INT *id_map)
+{
+  string serr;
+  bool diff_flag = false;
+  
+  std::string name = "Distribution Factors";
+  int name_length = name.length();
+      
+  if (!interface.quiet_flag)
+    std::cout << "Sideset Distribution Factors:" << std::endl;
+    
+  DiffData max_diff;
+  for (int b = 0; b < file1.Num_Side_Sets(); ++b) {
+    Side_Set<INT>* sset1 = file1.Get_Side_Set_by_Index(b);
+    SMART_ASSERT(sset1 != NULL);	
+
+    Side_Set<INT>* sset2 = NULL;
+    if (interface.by_name)
+      sset2 = file2.Get_Side_Set_by_Name(sset1->Name());
+    else
+      sset2 = file2.Get_Side_Set_by_Id(sset1->Id());
+    if (sset2 == NULL) continue;
+        
+    if (sset1->Distribution_Factor_Count() == 0 ||
+	sset2->Distribution_Factor_Count() == 0)
+      continue;
+    
+    const double* vals1 = sset1->Distribution_Factors();
+        
+    if (vals1 != NULL) {
+      if (Invalid_Values(vals1, sset1->Size())) {
+	std::cout << "\tERROR: NaN found for distribution factors in sideset "
+		  << sset1->Id() << ", file 1\n";
+	diff_flag = true;
+      }
+    }
+
+    double* vals2 = (double*)sset2->Distribution_Factors();
+
+    if (vals2 != NULL) {
+      if (Invalid_Values(vals2, sset2->Size())) {
+	std::cout << "\tERROR: NaN found for distribution factors in sideset "
+		  << sset2->Id() << ", file 2\n";
+	diff_flag = true;
+      }
+    }
+        
+    size_t ecount = sset1->Size();
+    if (sset2->Size() == ecount) {
+      for (size_t e = 0; e < ecount; ++e) {
+	std::pair<INT,INT> range1 = sset1->Distribution_Factor_Range(e);
+	std::pair<INT,INT> range2 = sset2->Distribution_Factor_Range(e);
+	SMART_ASSERT(range1.second - range1.first == range2.second - range2.first);
+
+	for (size_t i=0; i < range1.second-range1.first; i++) {
+	  double v1 = vals1[range1.first+i];
+	  double v2 = vals2[range2.first+i];
+
+	  if (interface.show_all_diffs) {
+	    double d = interface.ss_df_tol.Delta(v1, v2);
+	    if (d > interface.ss_df_tol.value) {
+	      diff_flag = true;
+	      sprintf(buf,
+		      "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (set " ST_ZU ", side " ST_ZU ".%d-%d)",
+		      name_length, name.c_str(), interface.ss_df_tol.abrstr(),
+		      v1, v2, d,
+		      (size_t)sset1->Id(),
+		      (size_t)id_map[sset1->Side_Id(e).first-1],
+		      (int)sset1->Side_Id(e).second,i+1);
+	      std::cout << buf << std::endl;
+	    }
+	  }
+	  else {
+	    double d = interface.ss_df_tol.Delta(v1, v2);
+	    max_diff.set_max(d, v1, v2, e, sset1->Id());
+	  }
+	}
+      }
+    }
+    else {
+      sprintf(buf,
+	      "   %-*s     diff: sideset side counts differ for sideset " ST_ZU,
+	      name_length, name.c_str(), 
+	      (size_t)sset1->Id());
+      std::cout << buf << std::endl;
+      diff_flag = true;
+    }
+        
+      sset1->Free_Results();
+      sset2->Free_Results();
+  }  // End of sideset loop.
+      
+  if (max_diff.diff > interface.ss_df_tol.value) {
+    diff_flag = true;
+        
+    if (!interface.quiet_flag) {
+      Side_Set<INT> *sset = file1.Get_Side_Set_by_Id(max_diff.blk);
+      sprintf(buf,
+	      "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (set " ST_ZU ", side " ST_ZU ".%d)",
+	      name_length,
+	      name.c_str(),
+	      interface.ss_df_tol.abrstr(),
+	      max_diff.val1, max_diff.val2,
+	      max_diff.diff, max_diff.blk,
+	      (size_t)id_map[sset->Side_Id(max_diff.id).first-1],
+	      (int)sset->Side_Id(max_diff.id).second);
+      std::cout << buf << std::endl;
+    }
+    else
+      Die_TS(-1);
+  }
+
+  return diff_flag;
+}
 
 template <typename INT>
 bool diff_element_attributes(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, 
