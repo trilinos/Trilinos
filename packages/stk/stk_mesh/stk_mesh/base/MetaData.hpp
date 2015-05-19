@@ -1236,6 +1236,7 @@ MetaData::declare_property( const std::string & name , unsigned size )
                     *this , m_properties.size() , name , size );
     }
     m_properties.push_back( pv );
+    ThrowRequire(prop);
   }
   return *prop ;
 }

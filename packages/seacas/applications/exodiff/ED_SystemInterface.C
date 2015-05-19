@@ -257,6 +257,7 @@ SystemInterface::SystemInterface()
     ignore_nans          (false),
     ignore_dups          (false),
     ignore_attributes    (false),
+    ignore_sideset_df    (false),
     ints_64_bits         (false),
     coord_sep            (false),
     exit_status_switch   (true),
@@ -291,7 +292,8 @@ SystemInterface::SystemInterface()
   elmt_att_default = default_tol;
   ns_var_default = default_tol;
   ss_var_default = default_tol;
-
+  ss_df_tol = default_tol;
+  
   enroll_options();
 }
 
@@ -420,6 +422,8 @@ void SystemInterface::enroll_options()
 		  "                  match case, just return first match instead of aborting.", 0);
   options_.enroll("ignore_attributes", GetLongOption::NoValue,
 		  "Don't compare element attribute values.", 0);
+  options_.enroll("ignore_sideset_df", GetLongOption::NoValue,
+		  "Don't compare sideset distribution factors.", 0);
   options_.enroll("64-bit", GetLongOption::NoValue,
 		  "True if forcing the use of 64-bit integers for the output file",
 		  NULL);
@@ -784,6 +788,9 @@ bool SystemInterface::parse_options(int argc, char **argv)
   if (options_.retrieve("ignore_attributes")) {
     ignore_attributes = true;
   }
+  if (options_.retrieve("ignore_sideset_df")) {
+    ignore_sideset_df = true;
+  }
   if (options_.retrieve("relative")) {
     output_type      = RELATIVE;  // Change type to relative.
     default_tol.type = RELATIVE;
@@ -1083,6 +1090,14 @@ void SystemInterface::Parse_Command_File()
 	    {
 	      ignore_attributes = true;
 	    }
+	  else if ( abbreviation(tok1, "ignore", 3) &&
+		    abbreviation(tok2, "sideset", 3) )
+	    {
+	      tok3 = extract_token(xline, " \t");  to_lower(tok3);
+	      if (abbreviation(tok3, "distribution", 3)) {
+		ignore_sideset_df = true;
+	      }
+	    }
 	  else if ( tok1 == "step" && tok2 == "offset" )
 	    {
 	      std::string tok = extract_token( xline, " \n\t=" );
@@ -1313,6 +1328,84 @@ void SystemInterface::Parse_Command_File()
 	      else                strcpy(line, "");
 
 	      continue;
+	    }
+	  else if ( abbreviation(tok1, "sideset", 4) &&
+		    abbreviation(tok2, "distribution", 4) )
+	    {
+	      if (default_tol_specified) {
+		ss_df_tol = default_tol;
+	      } else {
+		ss_df_tol.type  = ABSOLUTE; // These should correspond to
+		ss_df_tol.value = 1.e-6;   // the defaults at the top of
+		ss_df_tol.floor = 0.0;     // this file.
+	      }
+
+	      if (tok2 != "" && tok2[0] != '#')
+		{
+		  // If rel or abs is specified, then the tolerance must
+		  // be specified.
+		  if ( abbreviation(tok2, "relative", 3) )
+		    {
+		      ss_df_tol.type = RELATIVE;
+		      tok2 = extract_token( xline, " \n\t=" );
+		      if (tok2 == "") Parse_Die(line);
+		      ss_df_tol.value = To_Double(tok2);
+		    }
+		  else if ( abbreviation(tok2, "absolute", 3) )
+		    {
+		      ss_df_tol.type = ABSOLUTE;
+		      tok2 = extract_token( xline, " \n\t=" );
+		      if (tok2 == "") Parse_Die(line);
+		      ss_df_tol.value = To_Double(tok2);
+		    }
+		  else if ( abbreviation(tok2, "combine", 3) )
+		    {
+		      ss_df_tol.type = COMBINED;
+		      tok2 = extract_token( xline, " \n\t=" );
+		      if (tok2 == "") Parse_Die(line);
+		      ss_df_tol.value = To_Double(tok2);
+		    }
+		  else if ( abbreviation(tok2, "eigen_relative", 7) )
+		    {
+		      ss_df_tol.type = EIGEN_REL;
+		      tok2 = extract_token( xline, " \n\t=" );
+		      if (tok2 == "") Parse_Die(line);
+		      ss_df_tol.value = To_Double(tok2);
+		    }
+		  else if ( abbreviation(tok2, "eigen_absolute", 7) )
+		    {
+		      ss_df_tol.type = EIGEN_ABS;
+		      tok2 = extract_token( xline, " \n\t=" );
+		      if (tok2 == "") Parse_Die(line);
+		      ss_df_tol.value = To_Double(tok2);
+		    }
+		  else if ( abbreviation(tok2, "eigen_combine", 7) )
+		    {
+		      ss_df_tol.type = EIGEN_COM;
+		      tok2 = extract_token( xline, " \n\t=" );
+		      if (tok2 == "") Parse_Die(line);
+		      ss_df_tol.value = To_Double(tok2);
+		    }
+		  else if ( abbreviation(tok2, "ignore", 3) )
+		    {
+		      ss_df_tol.type = IGNORE;
+		      ss_df_tol.value = 0.0;
+		    }
+		  else if ( abbreviation(tok2, "floor", 3) )
+		    {
+		      tok2 = extract_token( xline, " \n\t=" );
+		      if (tok2 == "") Parse_Die(line);
+		      ss_df_tol.floor = To_Double(tok2);
+		    }
+
+		  tok2 = extract_token( xline, " \n\t=," );  to_lower(tok2);
+		  if ( abbreviation(tok2, "floor", 3) )
+		    {
+		      tok2 = extract_token( xline, " \n\t=," );
+		      if (tok2 == "") Parse_Die(line);
+		      ss_df_tol.floor = To_Double(tok2);
+		    }
+		}
 	    }
 	  else if ( abbreviation(tok1, "element", 4) &&
 		    abbreviation(tok2, "attributes", 3) )

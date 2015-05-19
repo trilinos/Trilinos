@@ -16,19 +16,19 @@ namespace Example {
            typename DenseTaskViewTypeB,
            typename DenseTaskViewTypeC>
   KOKKOS_INLINE_FUNCTION
-  static int genGemmTasks_UpperByBlocks(typename CrsTaskViewTypeA::policy_type &policy,
-                                        CrsTaskViewTypeA &A,
-                                        DenseTaskViewTypeB &B,
-                                        DenseTaskViewTypeC &C);
+  static int genGemmTasks_TriSolveUpperNoTransposeByBlocks(typename CrsTaskViewTypeA::policy_type &policy,
+                                                           CrsTaskViewTypeA &A,
+                                                           DenseTaskViewTypeB &B,
+                                                           DenseTaskViewTypeC &C);
 
   template<typename ParallelForType,
            typename CrsTaskViewTypeA,
            typename DenseTaskViewTypeB>
   KOKKOS_INLINE_FUNCTION
-  static int genTrsmTasks_UpperByBlocks(typename CrsTaskViewTypeA::policy_type &policy,
-                                        const int diagA,
-                                        CrsTaskViewTypeA &A,
-                                        DenseTaskViewTypeB &B);
+  static int genTrsmTasks_TriSolveUpperNoTransposeByBlocks(typename CrsTaskViewTypeA::policy_type &policy,
+                                                           const int diagA,
+                                                           CrsTaskViewTypeA &A,
+                                                           DenseTaskViewTypeB &B);
 
   template<>
   template<typename ParallelForType,
@@ -76,10 +76,10 @@ namespace Example {
         // -----------------------------------------------------
 
         // B1 = B1 - A12*B2;
-        genGemmTasks_UpperByBlocks<ParallelForType>(policy, A12, B2, B1);
+        genGemmTasks_TriSolveUpperNoTransposeByBlocks<ParallelForType>(policy, A12, B2, B1);
 
         // B1 = inv(triu(A11))*B1
-        genTrsmTasks_UpperByBlocks<ParallelForType>(policy, diagA, A11, B1);
+        genTrsmTasks_TriSolveUpperNoTransposeByBlocks<ParallelForType>(policy, diagA, A11, B1);
 
         // -----------------------------------------------------
         Merge_3x3_to_2x2(A00, A01, A02, /**/ ATL, ATR,

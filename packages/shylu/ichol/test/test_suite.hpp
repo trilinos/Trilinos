@@ -26,6 +26,11 @@
 #include "test_ichol_by_blocks.hpp"
 
 #include "test_dense_hier_base.hpp"
+#include "test_dense_task_view.hpp"
+
+#include "test_tri_solve_by_blocks.hpp"
+
+#include "test_ichol_tri_solve_by_blocks.hpp"
 
 namespace Example { 
   
@@ -98,6 +103,21 @@ namespace Example {
           for (OT i=0;i<nrhs_cnt;++i) 
             r_val += testDenseHierBase<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx",
                                                          blks[j], nrhs[i]);
+        for (OT j=0;j<blk_cnt;++j) 
+          for (OT i=0;i<nrhs_cnt;++i) 
+            r_val += testDenseTaskView<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx",
+                                                         blks[j], nrhs[i]);
+        // ============================================================ 
+        for (OT j=0;j<blk_cnt;++j) 
+          for (OT i=0;i<nrhs_cnt;++i) 
+            r_val += testTriSolveByBlocks<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx",
+                                                            blks[j], nrhs[i]);
+        // ============================================================ 
+        for (OT j=0;j<blk_cnt;++j) 
+          for (OT i=0;i<nrhs_cnt;++i) 
+            r_val += testICholTriSolveByBlocks<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx",
+                                                                 blks[j], nrhs[i]);
+        // ============================================================ 
       }
       cout << label << "::doUnitTests::End" << endl;
 

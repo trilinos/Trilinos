@@ -534,7 +534,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     TimeMonitor timeMon (*timer);
 
     const scalar_type ZERO = Teuchos::ScalarTraits<scalar_type>::zero ();
-    const scalar_type ONE = Teuchos::ScalarTraits<scalar_type>::one ();
+    //const scalar_type ONE = Teuchos::ScalarTraits<scalar_type>::one (); // unused
     const size_t numVectors = B.getNumVectors ();
 
     // mfh 25 Apr 2015: Fix for currently failing

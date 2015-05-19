@@ -892,44 +892,6 @@ namespace Intrepid {
 
                          
  
-#ifdef HAVE_INTREPID_KOKKOSCORE						
-	template<class Scalar,class ArrayJac>
-struct setJacobianZerosDim4 {
-  ArrayJac jacobian;
-  setJacobianZerosDim4(const ArrayJac& jacobian_):jacobian(jacobian_) {}
-
-  KOKKOS_INLINE_FUNCTION
-  void operator() (size_t i) const {
- 
-       for (size_t j=0; j< static_cast<size_t>(jacobian.dimension(1)); j++){
-         for (size_t k=0; k< static_cast<size_t>(jacobian.dimension(2)); k++){
-           for (size_t l=0; l< static_cast<size_t>(jacobian.dimension(3)); l++){
-            jacobian(i,j,k,l)=0.0;
-		}
-	  }
-    }
-  }
-};
-#endif
-
-#ifdef HAVE_INTREPID_KOKKOSCORE	
-	template<class Scalar,class ArrayJac>
-struct setJacobianZerosDim3 {
-  ArrayJac jacobian;
-  setJacobianZerosDim3(const ArrayJac& jacobian_):jacobian(jacobian_) {}
-
-  KOKKOS_INLINE_FUNCTION
-  void operator() (size_t i) const {
-
-       for (size_t j=0; j< static_cast<size_t>(jacobian.dimension(1)); j++){
-         for (size_t k=0; k< static_cast<size_t>(jacobian.dimension(2)); k++){
-            jacobian(i,j,k)=0.0;
-		
-	}
-   }
-  }
-};	
-#endif							
 						
   template<class Scalar>
   template<class ArrayJac, class ArrayPoint, class ArrayCell>
@@ -1051,17 +1013,11 @@ struct setJacobianZerosDim3 {
     
     
 if(getrank(jacobian)==4){
-	if(CheckType<ArrayJac>::value==true){
-	#ifdef HAVE_INTREPID_KOKKOSCORE 
-	  Kokkos::parallel_for (static_cast<size_t>(jacobian.dimension(0)), setJacobianZerosDim4<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false> >(jacobianWrap));
-	#endif	
-	}else{
     for (size_t i=0; i< static_cast<size_t>(jacobian.dimension(0)); i++){
        for (size_t j=0; j< static_cast<size_t>(jacobian.dimension(1)); j++){
          for (size_t k=0; k< static_cast<size_t>(jacobian.dimension(2)); k++){
            for (size_t l=0; l< static_cast<size_t>(jacobian.dimension(3)); l++){
             jacobianWrap(i,j,k,l)=0.0;
-	        }
 		  }
         } 
 	 }
@@ -1069,11 +1025,6 @@ if(getrank(jacobian)==4){
 }
 
 if(getrank(jacobian)==3){
-	if(CheckType<ArrayJac>::value==true){
-	#ifdef HAVE_INTREPID_KOKKOSCORE
-	  	 Kokkos::parallel_for (static_cast<size_t>(jacobian.dimension(0)), setJacobianZerosDim3<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false> >(jacobianWrap));
-	#endif
-    }else{
     for (size_t i=0; i< static_cast<size_t>(jacobian.dimension(0)); i++){
        for (size_t j=0; j< static_cast<size_t>(jacobian.dimension(1)); j++){
          for (size_t k=0; k< static_cast<size_t>(jacobian.dimension(2)); k++){
@@ -1081,7 +1032,6 @@ if(getrank(jacobian)==3){
 	    }
 	   }
 	 }
-   }
 }        
     // Handle separately rank-2 (P,D) and rank-3 (C,P,D) cases of points arrays.
     switch(getrank(points)) {

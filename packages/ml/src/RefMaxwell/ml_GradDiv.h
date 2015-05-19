@@ -63,12 +63,12 @@ namespace ML_Epetra
     // WARNING: All of these matrices will be shallow pointed to.  Please be
     //sure the matrices last until after RefMaxwellPreconditioner does.
     GradDivPreconditioner(const Epetra_CrsMatrix & K2_Matrix,                  // Face Grad-div + Mass
-			  const Epetra_CrsMatrix & FaceNode_Matrix,            // Face-to-node interpolation matrix
-			  const Epetra_CrsMatrix & D1_Clean_Matrix,            // Discrete curl w/o BCs
-			  const Epetra_CrsMatrix & D0_Clean_Matrix,            // Discrete gradient w/o BCs
-			  const Epetra_CrsMatrix & K0_Matrix,                  // Nodal Laplacian (for aggregation)
-			  const Teuchos::ParameterList& List,
-			  const bool ComputePrec = true);
+                          const Epetra_CrsMatrix & FaceNode_Matrix,            // Face-to-node interpolation matrix
+                          const Epetra_CrsMatrix & D1_Clean_Matrix,            // Discrete curl w/o BCs
+                          const Epetra_CrsMatrix & D0_Clean_Matrix,            // Discrete gradient w/o BCs
+                          const Epetra_CrsMatrix & K0_Matrix,                  // Nodal Laplacian (for aggregation)
+                          const Teuchos::ParameterList& List,
+                          const bool ComputePrec = true);
     //@}
 
 
@@ -214,10 +214,11 @@ namespace ML_Epetra
     int print_hierarchy;
     //@}
 
-
+#ifdef ML_TIMING
     //@{ \name Variables for Timing
     //! Number of applications
     mutable int NumApplications_;
+
     //! CPU time for all applications of the preconditioner
     mutable double ApplicationTime_;
     mutable bool FirstApplication_;
@@ -228,6 +229,7 @@ namespace ML_Epetra
     //! CPU time for construction of the preconditioner.
     double ConstructionTime_;
     //@}
+#endif // ML_TIMING
   };// end GradDivPreconditioner
 }//end namespace ML_Epetra
 

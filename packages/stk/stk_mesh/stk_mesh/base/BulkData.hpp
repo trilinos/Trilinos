@@ -86,6 +86,7 @@ namespace mesh {
 class BulkData;
 void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
 void communicate_field_data(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
+void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector const& skin_parts, const Selector * secondary_selector);
 
 typedef std::unordered_map<EntityKey, size_t, stk::mesh::HashValueForEntityKey> GhostReuseMap;
 
@@ -782,6 +783,7 @@ protected: //functions
 
   void update_shared_entities_global_ids(std::vector<shared_entity_type> & shared_entity_map);
   void resolve_entity_sharing(stk::mesh::EntityRank entityRank, std::vector<Entity> &entity_keys);
+  void find_and_delete_internal_faces(stk::mesh::EntityRank entityRank, const stk::mesh::Selector *only_consider_second_element_from_this_selector);
 
   void internal_resolve_shared_modify_delete()
   {
@@ -897,13 +899,18 @@ protected: //functions
   void delete_shared_entities_which_are_no_longer_in_owned_closure();
   void write_modification_counts();
   virtual void is_entity_shared(std::vector<shared_entity_type>& shared_entity_map, int proc_id, shared_entity_type &sentity);
+  void mark_shared_sides_and_fill_list_of_sides_not_on_boundary(std::vector<shared_entity_type>& shared_entity_map,
+          int proc_id, shared_entity_type &sentity, std::vector<stk::mesh::EntityKeyProc> &entities_to_send_data,
+          const stk::mesh::Selector *only_consider_second_element_from_this_selector);
 
   void fillSharedEntities(stk::mesh::Ghosting& ghost_id,
                           stk::mesh::BulkData &mesh,
                           std::vector<shared_entity_type> & shared_entity_map,
                           std::vector<std::vector<shared_entity_type> > &shared_entities);
 
-  void unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatNeedAlsoHaveEntity(stk::CommSparse &comm, std::vector<shared_entity_type> & shared_entity_map);
+  void unpack_shared_entities(stk::CommSparse &comm, std::vector< std::pair<int, shared_entity_type> > &shared_entities_and_proc);
+
+  void unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatAlsoHaveEntity(stk::CommSparse &comm, std::vector<shared_entity_type> & shared_entity_map);
 
   virtual void resolveUniqueIdForSharedEntityAndCreateCommMapInfoForSharingProcs(std::vector<shared_entity_type> & shared_entity_map);
 
@@ -1040,7 +1047,14 @@ private: //functions
                                     const std::vector<EntityProc> & add_send ,
                                     const std::vector<EntityKey> & remove_receive );
 
+  void resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(EntityRank entity_rank, stk::mesh::Selector selectedToSkin);
+
   bool internal_modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt );
+  bool internal_modification_end_for_skin_mesh( EntityRank entity_rank, modification_optimization opt, stk::mesh::Selector selectedToSkin,
+          const stk::mesh::Selector * only_consider_second_element_from_this_selector);
+
+  void internal_finish_modification_end(modification_optimization opt);
+
   void internal_establish_new_owner(stk::mesh::Entity entity);
   void internal_update_parts_for_shared_entity(stk::mesh::Entity entity, const bool is_entity_shared, const bool did_i_just_become_owner);
 
@@ -1092,6 +1106,7 @@ private: //functions
   // friends until it is decided what we're doing with Fields and Parallel and BulkData
   friend void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
   friend void communicate_field_data(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
+  friend void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector const& skin_parts, const Selector * secondary_selector);
 
   bool ordered_comm( const Entity entity );
   void pack_owned_verify(CommAll & all);
@@ -1141,7 +1156,7 @@ private: //functions
                                          std::set<EntityProc, EntityLess> &addGhostedEntities);
   void find_upward_connected_entities_to_ghost_onto_other_processors(stk::mesh::BulkData &mesh,
                                                                      std::set<EntityProc, EntityLess> &entitiesToGhostOntoOtherProcessors,
-                                                                     EntityRank entity_rank);
+                                                                     EntityRank entity_rank, stk::mesh::Selector selected);
 
   void reset_add_node_sharing() { m_add_node_sharing_called = false; }
 
@@ -1189,7 +1204,7 @@ private: // data
   bool m_use_identifiers_for_resolving_sharing;
   stk::EmptyModificationSummary m_modSummary;
   // If needing debug info for modifications, comment out above line and uncomment line below
-  //stk::ModificationSummary m_modSummary;
+  // stk::ModificationSummary m_modSummary;
 };
 
 

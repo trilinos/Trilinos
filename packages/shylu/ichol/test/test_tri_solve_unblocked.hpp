@@ -91,8 +91,6 @@ namespace Example {
     {
       r_val += tmg.fill(BB);
 
-      cout << BB << endl;
-
       typedef typename CrsTaskViewType::policy_type policy_type;
       policy_type policy;
       auto future = policy.create_team(TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::Unblocked>
@@ -119,8 +117,6 @@ namespace Example {
     }
     {
       r_val += tmg.fill(BB);
-
-      cout << BB << endl;
 
       typedef typename CrsTaskViewType::policy_type policy_type;
       policy_type policy;

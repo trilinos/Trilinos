@@ -627,7 +627,7 @@ inline void fillMeshfor2Elem2ProcMoveAndTest(stk::mesh::unit_test::BulkDataTeste
         EXPECT_TRUE(check_state(bulk, EntityKey(ELEM_RANK, 1), STATE_NOT_GHOSTED_TO));
         EXPECT_TRUE(check_parts(bulk, EntityKey(ELEM_RANK, 1), universal_part, owned_part, topo_part, elem_part));
         EXPECT_TRUE(check_relns(bulk, EntityKey(ELEM_RANK, 1), NODE_RANK, 1, 2, 3, 4));
- 
+
         EXPECT_TRUE(check_state(bulk, EntityKey(ELEM_RANK, 2), STATE_VALID));
         EXPECT_TRUE(check_state(bulk, EntityKey(ELEM_RANK, 2), STATE_OWNED, 0));
         EXPECT_TRUE(check_state(bulk, EntityKey(ELEM_RANK, 2), STATE_NOT_SHARED));
@@ -643,7 +643,7 @@ inline void fillMeshfor2Elem2ProcMoveAndTest(stk::mesh::unit_test::BulkDataTeste
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 1), STATE_NOT_GHOSTED_TO));
         EXPECT_TRUE(check_parts(bulk, EntityKey(NODE_RANK, 1), universal_part, owned_part, topo_part, elem_part));
         EXPECT_TRUE(check_relns(bulk, EntityKey(NODE_RANK, 1), ELEM_RANK, 1));
- 
+
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 2), STATE_VALID));
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 2), STATE_OWNED, 0));
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 2), STATE_NOT_SHARED));
@@ -659,7 +659,7 @@ inline void fillMeshfor2Elem2ProcMoveAndTest(stk::mesh::unit_test::BulkDataTeste
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 3), STATE_NOT_GHOSTED_TO));
         EXPECT_TRUE(check_parts(bulk, EntityKey(NODE_RANK, 3), universal_part, owned_part, topo_part, elem_part));
         EXPECT_TRUE(check_relns(bulk, EntityKey(NODE_RANK, 3), ELEM_RANK, 1, 2));
- 
+
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 4), STATE_VALID));
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 4), STATE_OWNED, 0));
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 4), STATE_NOT_SHARED));
@@ -667,7 +667,7 @@ inline void fillMeshfor2Elem2ProcMoveAndTest(stk::mesh::unit_test::BulkDataTeste
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 4), STATE_NOT_GHOSTED_TO));
         EXPECT_TRUE(check_parts(bulk, EntityKey(NODE_RANK, 4), universal_part, owned_part, topo_part, elem_part));
         EXPECT_TRUE(check_relns(bulk, EntityKey(NODE_RANK, 4), ELEM_RANK, 1, 2));
- 
+
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 5), STATE_VALID));
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 5), STATE_OWNED, 0));
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 5), STATE_NOT_SHARED));
@@ -675,7 +675,7 @@ inline void fillMeshfor2Elem2ProcMoveAndTest(stk::mesh::unit_test::BulkDataTeste
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 5), STATE_NOT_GHOSTED_TO));
         EXPECT_TRUE(check_parts(bulk, EntityKey(NODE_RANK, 5), universal_part, owned_part, topo_part, elem_part));
         EXPECT_TRUE(check_relns(bulk, EntityKey(NODE_RANK, 5), ELEM_RANK, 2));
- 
+
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 6), STATE_VALID));
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 6), STATE_OWNED, 0));
         EXPECT_TRUE(check_state(bulk, EntityKey(NODE_RANK, 6), STATE_NOT_SHARED));
@@ -7864,9 +7864,9 @@ inline void fillMeshfor3Elem4Proc1Edge3DAndTest(stk::mesh::unit_test::BulkDataTe
         std::vector<stk::mesh::Entity> nodes;
         nodes.push_back(mesh.get_entity(NODE_RANK, 5));
         nodes.push_back(mesh.get_entity(NODE_RANK, 13 ));
-        stk::mesh::impl::connectEntityToEdge(mesh, elem, edge, &nodes[0], nodes.size());
         mesh.declare_relation(edge, nodes[0], 0);
         mesh.declare_relation(edge, nodes[1], 1);
+        stk::mesh::impl::connectUpwardEntityToEntity(mesh, elem, edge, &nodes[0]);
     }
 
     for(int proc = 0; proc < numSharedNodeTriples; ++proc)

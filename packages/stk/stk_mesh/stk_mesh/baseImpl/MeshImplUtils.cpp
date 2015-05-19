@@ -181,16 +181,55 @@ int check_no_shared_elements_or_higher(const BulkData& mesh)
   return 0;
 }
 
-
-//// THIS NEEDS TO BE FIXED FOR HIGHER-ORDER EDGES!    Discovered by Flint & Patrick, 2015-02-24.
-void connectEntityToEdge(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity entity,
-        stk::mesh::Entity edge, const stk::mesh::Entity* nodes, size_t numNodes)
+void delete_entities_and_upward_relations(stk::mesh::BulkData &bulkData, const stk::mesh::EntityVector &entities)
 {
-    // get node entity ids
-    ThrowRequireMsg(numNodes==2,"connectEntityToEdge ERROR, numNodes must be 2 currently.");
-    std::vector<stk::mesh::EntityId> nodeIdsForEdge(numNodes);
-    nodeIdsForEdge[0] = stkMeshBulkData.identifier(nodes[0]);
-    nodeIdsForEdge[1] = stkMeshBulkData.identifier(nodes[1]);
+    for (size_t i = 0; i < entities.size(); ++i)
+    {
+        const stk::mesh::Entity entity = entities[i];
+        stk::mesh::EntityRank entity_rank = bulkData.entity_rank(entity);
+
+        EntityVector temp_entities;
+        std::vector<stk::mesh::ConnectivityOrdinal> temp_ordinals;
+        stk::mesh::Entity const * rel_entities = NULL;
+        int num_conn = 0;
+        stk::mesh::ConnectivityOrdinal const * rel_ordinals;
+        const stk::mesh::EntityRank end_rank = static_cast<stk::mesh::EntityRank>(bulkData.mesh_meta_data().entity_rank_count() - 1);
+        const stk::mesh::EntityRank begin_rank = static_cast<stk::mesh::EntityRank>(entity_rank);
+
+        for(stk::mesh::EntityRank irank = end_rank; irank != begin_rank; --irank)
+        {
+            if(bulkData.connectivity_map().valid(entity_rank, irank))
+            {
+                num_conn = bulkData.num_connectivity(entity, irank);
+                rel_entities = bulkData.begin(entity, irank);
+                rel_ordinals = bulkData.begin_ordinals(entity, irank);
+            }
+            else
+            {
+                num_conn = get_connectivity(bulkData, entity, irank, temp_entities, temp_ordinals);
+                rel_entities = &*temp_entities.begin();
+                rel_ordinals = &*temp_ordinals.begin();
+            }
+
+            for(int j = num_conn - 1; j >= 0; --j)
+            {
+                if(bulkData.is_valid(rel_entities[j]) && bulkData.state(rel_entities[j]) != Deleted)
+                {
+                    bool relationDestoryed = bulkData.destroy_relation(rel_entities[j], entity, rel_ordinals[j]);
+                    ThrowRequireMsg(relationDestoryed==true, "Program error. Contact sierra-help@sandia.gov for support.");
+                }
+            }
+        }
+        bool successfully_destroyed = bulkData.destroy_entity(entity);
+        ThrowRequireMsg(successfully_destroyed==true, "Program error. Contact sierra-help@sandia.gov for support.");
+    }
+}
+
+void connectUpwardEntityToEntity(stk::mesh::BulkData& mesh, stk::mesh::Entity upward_entity,
+        stk::mesh::Entity entity, const stk::mesh::Entity* nodes)
+{
+    uint num_nodes = mesh.num_nodes(entity);
+    EntityRank entity_rank = mesh.entity_rank(entity);
 
     // scratch space
     stk::mesh::OrdinalVector ordinal_scratch;
@@ -199,32 +238,38 @@ void connectEntityToEdge(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity
     part_scratch.reserve(64);
     stk::mesh::Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
 
-    // now what
-    stk::topology entity_topology = stkMeshBulkData.bucket(entity).topology();
-    std::vector<stk::mesh::EntityId> nodeIds(2);
-    std::vector<stk::mesh::EntityId> entityNodes(entity_topology.num_nodes());
-    unsigned edge_ordinal = 100000;
-    stk::mesh::Entity const * elem_nodes = stkMeshBulkData.begin_nodes(entity);
-    for (size_t k=0;k<entity_topology.num_nodes();k++)
-    {
-        entityNodes[k] =stkMeshBulkData.identifier(elem_nodes[k]);
-    }
+    stk::topology upward_entity_topology = mesh.bucket(upward_entity).topology();
+    std::vector<stk::mesh::Entity> nodes_of_this_side(num_nodes);
+    unsigned entity_ordinal = 100000;
+    stk::mesh::Entity const * upward_entity_nodes = mesh.begin_nodes(upward_entity);
 
-    stk::topology edge_top = entity_topology.edge_topology();
-    for (size_t k=0;k<entity_topology.num_edges();k++)
+    stk::topology entity_top;
+    for (size_t k=0;k<upward_entity_topology.num_sub_topology(entity_rank);k++)
     {
-        entity_topology.edge_nodes(entityNodes, k, nodeIds.begin());
-        if ( edge_top.equivalent(nodeIds, nodeIdsForEdge).first )
+        if(entity_rank == stk::topology::EDGE_RANK)
         {
-            edge_ordinal = k;
+          upward_entity_topology.edge_nodes(upward_entity_nodes, k, nodes_of_this_side.begin());
+          entity_top = upward_entity_topology.edge_topology();
+        }
+        else
+        {
+          entity_top = upward_entity_topology.face_topology(k);
+          nodes_of_this_side.resize(entity_top.num_nodes());
+          upward_entity_topology.face_nodes(upward_entity_nodes, k, nodes_of_this_side.begin());
+        }
+        if ( entity_top.equivalent(nodes, nodes_of_this_side).first )
+        {
+            entity_ordinal = k;
             break;
         }
     }
-    ThrowRequireMsg(edge_ordinal !=100000, "Program error. Contact sierra-help for support.");
-
-    perm = stkMeshBulkData.find_permutation(entity_topology, elem_nodes, edge_top, nodes, edge_ordinal);
-
-    stkMeshBulkData.declare_relation(entity, edge, edge_ordinal, perm, ordinal_scratch, part_scratch);
+    ThrowRequireMsg(entity_ordinal !=100000, "Program error. Contact sierra-help for support.");
+    if ((entity_rank > stk::topology::NODE_RANK) && (mesh.entity_rank(upward_entity) > entity_rank))
+    {
+        perm = mesh.find_permutation(upward_entity_topology, upward_entity_nodes, entity_top, nodes, entity_ordinal);
+        ThrowRequireMsg(perm != INVALID_PERMUTATION, "find_permutation could not find permutation that produces a match");
+    }
+    mesh.declare_relation(upward_entity, entity, entity_ordinal, perm, ordinal_scratch, part_scratch);
 }
 
 //----------------------------------------------------------------------

@@ -105,3 +105,12 @@
 
 /* Define if you want to enable experimental features */
 /* #undef HAVE_AMESOS2_EXPERIMENTAL */
+
+/*Define if you want to use amesos-Basker*/
+/* #undef HAVE_AMESOS2_BASKER */
+
+/* Define to 1 if SuperLU_DIST uses a SLU_ prefix on a few of its enums */
+/* #undef HAVE_SUPERLUDIST_ENUM_NAMESPACE */
+
+/* Define to 1 if SuperLU_DIST's LUstructInit is declared with 2 arguments. */
+/* #undef HAVE_SUPERLUDIST_LUSTRUCTINIT_2ARG */

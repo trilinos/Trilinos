@@ -83,7 +83,7 @@ void TYPE_CHAIN_A(Teuchos::FancyOStream &out) {
   typedef typename Teuchos::ScalarTraits<T>::doublePrecision double_type;
 
   T b;
-  double_type d;
+  // double_type d; // unused
   out << Teuchos::typeName (b);
   if (! is_same<T, double_type>::value) {
     out << " -> ";
@@ -97,7 +97,7 @@ void TYPE_CHAIN_D(Teuchos::FancyOStream &out) {
   typedef typename Teuchos::ScalarTraits<T>::halfPrecision half_type;
 
   T b;
-  half_type d;
+  // half_type d; // unused
   out << Teuchos::typeName (b);
 
   if (! is_same<T, half_type>::value) {

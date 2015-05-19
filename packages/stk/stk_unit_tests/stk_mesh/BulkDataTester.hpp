@@ -326,7 +326,7 @@ public:
     void my_unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatNeedAlsoHaveEntity(stk::CommSparse &comm,
             std::vector<stk::mesh::shared_entity_type> & shared_entity_map)
     {
-        unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatNeedAlsoHaveEntity(comm, shared_entity_map);
+        unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatAlsoHaveEntity(comm, shared_entity_map);
     }
 
     void my_internal_change_entity_key(EntityKey old_key, EntityKey new_key, Entity entity)

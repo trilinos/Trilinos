@@ -84,7 +84,7 @@ C   --   LISEV - SCRATCH - size = NVAREL (if 'V' in OPTION)
       LOGICAL ISABRT
       LOGICAL DONAM, DOVTBL, DOCONN, DOATR
       LOGICAL BLK1
-      CHARACTER*20 STRA, STRB
+      CHARACTER*32 STRA, STRB
 
       DONAM  = ((OPTION .EQ. '*') .OR. (INDEX (OPTION, 'N') .GT. 0))
       DOVTBL = ((OPTION .EQ. '*') .OR. (INDEX (OPTION, 'V') .GT. 0))

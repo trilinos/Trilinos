@@ -937,7 +937,7 @@ int ex_get_side_set_node_list(int exoid,
 	      get_nodes(exoid, side_set_node_list, node_pos++, connect, connect_offset+wedge_table[side_num][6]-1);
 
 	      if (wedge_table[side_num][7] == 0) /* degenerate side? */
-		set_count(exoid, side_set_node_cnt_list, elem_ndx, 7);   /* 6 node side */
+		set_count(exoid, side_set_node_cnt_list, elem_ndx, 6);   /* 6 node side */
 	      else
 		{
 		  get_nodes(exoid, side_set_node_list, node_pos++, connect, connect_offset+wedge_table[side_num][7]-1);
@@ -980,7 +980,7 @@ int ex_get_side_set_node_list(int exoid,
 	      get_nodes(exoid, side_set_node_list, node_pos++, connect, connect_offset+pyramid_table[side_num][6]-1);
 
 	      if (pyramid_table[side_num][7] == 0) /* degenerate side? */
-		set_count(exoid, side_set_node_cnt_list, elem_ndx, 7);   /* 6 node side */
+		set_count(exoid, side_set_node_cnt_list, elem_ndx, 6);   /* 6 node side */
 	      else
 		{
 		  get_nodes(exoid, side_set_node_list, node_pos++, connect, connect_offset+pyramid_table[side_num][7]-1);

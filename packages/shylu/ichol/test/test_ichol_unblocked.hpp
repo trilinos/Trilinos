@@ -68,8 +68,6 @@ namespace Example {
     cout << "testICholUnblocked::Begin - " << r_val << endl;
     CrsTaskViewType U(&UU);
     {
-      cout << UU << endl;
-
       U.fillRowViewArray();
     
       typedef typename CrsTaskViewType::policy_type policy_type;
@@ -80,8 +78,7 @@ namespace Example {
       Kokkos::Experimental::wait(policy);
     
       cout << UU << endl;
-    }
-    cout << "testICholUnblocked::End - " << r_val << endl;    
+    }   
 
     CrsMatrixBaseType FF("FF");    
     {
@@ -102,6 +99,7 @@ namespace Example {
         __ASSERT_TRUE__(tmp < epsilon);
       }
     }
+    cout << "testICholUnblocked::End - " << r_val << endl; 
 
     string eval;
     __EVAL_STRING__(r_val, eval);

@@ -1329,7 +1329,8 @@ void connectElementToEdge(stk::mesh::unit_test::BulkDataTester& stkMeshBulkData,
         stk::mesh::EntityKey nodeKey(stk::topology::NODE_RANK, nodeIdsForEdge[i]);
         nodes[i] = stkMeshBulkData.get_entity(nodeKey);
     }
-    stk::mesh::impl::connectEntityToEdge(stkMeshBulkData, element, edge, &nodes[0], nodes.size());
+
+    stk::mesh::impl::connectUpwardEntityToEntity(stkMeshBulkData, element, edge, &nodes[0]);
 }
 
 void create_edges(stk::mesh::unit_test::BulkDataTester& stkMeshBulkData, std::vector<stk::mesh::EntityId>& edgeIds,

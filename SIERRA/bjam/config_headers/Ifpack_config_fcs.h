@@ -39,7 +39,7 @@
 /* Define if we want Ifpack Internal FlopCounters enabled */
 /* #undef IFPACK_FLOPCOUNTERS */
 
-/* Define if we want Ifpack support graph preconditioner */
+/* Define to enable Ifpack_SupportGraph (support graph preconditioner) */
 /* #undef HAVE_IFPACK_SUPPORTGRAPH */
 
 /* Define if MPI parallel subdomain solvers are enabled */
@@ -50,4 +50,6 @@
 
 /* Add macros for declaring functions deprecated */
 #define IFPACK_DEPRECATED
+#define IFPACK_DEPRECATED_MSG(MSG)
+
 

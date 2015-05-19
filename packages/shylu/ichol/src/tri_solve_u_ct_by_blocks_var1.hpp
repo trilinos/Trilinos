@@ -2,8 +2,8 @@
 #ifndef __TRI_SOLVE_U_CT_BY_BLOCKS_VAR1_HPP__
 #define __TRI_SOLVE_U_CT_BY_BLOCKS_VAR1_HPP__
 
-/// \file ichol_right_by_blocks_var1.hpp
-/// \brief Sparse incomplete Cholesky factorization by blocks.
+/// \file tri_solve_u_ct_by_blocks_var1.hpp
+/// \brief  Sparse triangular solve on given sparse patterns and multiple rhs.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 ///
 /// This naively generates tasks without any merging of task blocks.
@@ -16,10 +16,10 @@ namespace Example {
            typename CrsTaskViewTypeA,
            typename DenseTaskViewTypeB>
   KOKKOS_INLINE_FUNCTION
-  int genTrsmTasks_UpperByBlocks(typename CrsTaskViewTypeA::policy_type &policy,
-                                 const int diagA,
-                                 CrsTaskViewTypeA &A,
-                                 DenseTaskViewTypeB &B) {
+  int genTrsmTasks_TriSolveUpperConjTransposeByBlocks(typename CrsTaskViewTypeA::policy_type &policy,
+                                                      const int diagA,
+                                                      CrsTaskViewTypeA &A,
+                                                      DenseTaskViewTypeB &B) {
     typedef typename CrsTaskViewTypeA::ordinal_type      ordinal_type;
     typedef typename CrsTaskViewTypeA::value_type        crs_value_type;
     typedef typename CrsTaskViewTypeA::row_view_type     row_view_type;
@@ -56,16 +56,16 @@ namespace Example {
     
     return 0;
   }
-  
+
   template<typename ParallelForType,
            typename CrsTaskViewTypeA,
            typename DenseTaskViewTypeB,
            typename DenseTaskViewTypeC>
   KOKKOS_INLINE_FUNCTION
-  int genGemmTasks_UpperByBlocks(typename CrsTaskViewTypeA::policy_type &policy,
-                                 const CrsTaskViewTypeA &A,
-                                 const DenseTaskViewTypeB &B,
-                                 const DenseTaskViewTypeC &C) {
+  int genGemmTasks_TriSolveUpperConjTransposeByBlocks(typename CrsTaskViewTypeA::policy_type &policy,
+                                                      CrsTaskViewTypeA &A,
+                                                      DenseTaskViewTypeB &B,
+                                                      DenseTaskViewTypeC &C) {
     typedef typename CrsTaskViewTypeA::ordinal_type      ordinal_type;
     typedef typename CrsTaskViewTypeA::value_type        crs_value_type;
     typedef typename CrsTaskViewTypeA::row_view_type     row_view_type;
@@ -83,8 +83,8 @@ namespace Example {
       crs_value_type &aa = a.Value(i);
 
       for (ordinal_type j=0;j<C.NumCols();++j) {
-        dense_value_type &bb = B.Value(row_at_i, j);
-        dense_value_type &cc = C.Value(0, j);
+        dense_value_type &bb = B.Value(0, j);
+        dense_value_type &cc = C.Value(row_at_i, j);
         
         future_type f = task_factory_type
           ::create(policy,

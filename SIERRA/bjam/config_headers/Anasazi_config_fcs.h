@@ -61,6 +61,11 @@
 
 #define ANASAZI_TEUCHOS_TIME_MONITOR
 
+/* Add macros for declaring functions deprecated */
+#define ANASAZI_DEPRECATED
+#define ANASAZI_DEPRECATED_MSG(MSG)
+
+
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */
 #ifndef __cplusplus

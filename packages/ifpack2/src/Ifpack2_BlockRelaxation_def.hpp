@@ -929,6 +929,9 @@ std::string BlockRelaxation<MatrixType,ContainerType>::description () const
     out << "INVALID";
   }
 
+  out  << ", " << "sweeps: " << NumSweeps_ << ", "
+      << "damping factor: " << DampingFactor_ << ", ";
+
   out << "}";
   return out.str();
 }

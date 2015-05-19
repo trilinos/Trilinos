@@ -74,7 +74,7 @@ EntityRepository::internal_create_entity( const EntityKey & key, size_t preferre
   EntityMap::iterator iter = m_entities.lower_bound(key);
 
   if (iter == m_entities.end() || iter->first != key) {
-    Entity next_entity = {Entity::InvalidEntity};
+    Entity next_entity;
     next_entity.set_local_offset(m_mesh.generate_next_local_offset(preferred_offset));
     m_mesh.set_entity_key(next_entity, key);
 
