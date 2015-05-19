@@ -42,6 +42,11 @@ public:
     {
         return this->internal_modification_end_for_skin_mesh(entity_rank, opt, selectedToSkin, only_consider_second_element_from_this_selector);
     }
+
+    bool my_modification_end_for_entity_creation(stk::mesh::EntityRank entity_rank, modification_optimization opt = MOD_END_SORT)
+    {
+        return this->modification_end_for_entity_creation(entity_rank, opt);
+    }
 };
 
 int check_connectivity(const std::vector<std::vector<int64_t> >& elem_graph, const std::vector<std::vector<int64_t> > &via_side, int64_t element_id1, int64_t element_id2);
@@ -581,7 +586,7 @@ TEST(ElementGraph, create_faces_using_element_graph_serial)
         stk::mesh::MetaData meta(spatialDim);
         stk::mesh::Part& new_faces_part = meta.declare_part_with_topology("surface_5", stk::topology::QUAD_4);
         stk::io::put_io_part_attribute(new_faces_part);
-        stk::mesh::BulkData bulkData(meta, comm);
+        BulkDataElementGraphTester bulkData(meta, comm);
 
         stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x3", bulkData, comm);
 
@@ -644,7 +649,7 @@ TEST(ElementGraph, create_faces_using_element_graph_serial)
             }
         }
 
-        bulkData.modification_end_for_entity_creation(stk::topology::FACE_RANK);
+        bulkData.my_modification_end_for_entity_creation(stk::topology::FACE_RANK);
 
         wall_times.push_back(stk::wall_time());
         msgs.push_back("after create-faces");
@@ -728,7 +733,7 @@ TEST(ElementGraph, compare_performance_skin_mesh)
         stk::mesh::MetaData meta(spatialDim);
         stk::mesh::Part& skin_part = meta.declare_part_with_topology("surface_5", stk::topology::QUAD_4);
         stk::io::put_io_part_attribute(skin_part);
-        stk::mesh::BulkData bulkData(meta, comm);
+        BulkDataElementGraphTester bulkData(meta, comm);
 
         stk::unit_test_util::fill_mesh_using_stk_io(filename, bulkData, comm);
 
