@@ -6042,6 +6042,37 @@ TEST(BulkData, test_parallel_entity_sharing)
     EXPECT_TRUE(matching_index >= 0);
 }
 
+TEST(BulkData, makeElementWithConflictingTopologies)
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  const int p_size = stk::parallel_machine_size(pm);
+
+  if(p_size != 1)
+  {
+    return;
+  }
+  const int spatial_dimension = 2;
+  stk::mesh::MetaData meta(spatial_dimension);
+  stk::mesh::BulkData mesh(meta, pm);
+
+  stk::mesh::EntityId element_ids[1] = {1};
+  stk::mesh::EntityId elem_node_ids[][4] = { {1, 2, 3, 4} };
+
+  stk::mesh::Part * quad_part = &meta.declare_part_with_topology("quad_part", stk::topology::QUAD_4_2D);
+  stk::mesh::Part * tri_part  = &meta.declare_part_with_topology( "tri_part", stk::topology::TRI_3_2D);
+  meta.commit();
+
+  stk::mesh::PartVector parts;
+  parts.push_back(quad_part);
+  parts.push_back(tri_part);
+
+  mesh.modification_begin();
+
+  EXPECT_THROW(stk::mesh::declare_element(mesh, parts, element_ids[0], elem_node_ids[0]), std::runtime_error);
+
+  mesh.modification_end();
+}
+
 }// empty namespace
 
 

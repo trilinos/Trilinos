@@ -160,6 +160,8 @@ TEST(UnitTestRootTopology, TestRootTopologySubsets)
     stk::mesh::Part &root_part1 = meta.get_topology_root_part(test_topologies[i]);
     stk::topology root_topo = root_part1.topology();
 
+    EXPECT_FALSE(root_part1.force_no_induce());
+
     // The root_topology_part has the same topology information as the original topology.
     EXPECT_TRUE(test_topologies[i] == root_topo);
 
