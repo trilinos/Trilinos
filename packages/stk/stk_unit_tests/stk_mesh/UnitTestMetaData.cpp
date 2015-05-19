@@ -73,6 +73,22 @@ using std::endl;
 
 namespace {
 
+TEST( UnitTestRootTopology, noNewPartsWithTopologyAfterCommit )
+{
+  //Test functions in MetaData.cpp
+  const int spatial_dimension = 3;
+  MetaData uncommited_metadata(spatial_dimension);
+  MetaData commited_metadata(spatial_dimension);
+
+  commited_metadata.commit();
+
+  EXPECT_THROW(commited_metadata.declare_part_with_topology( std::string("a") , stk::topology::TRI_3  ), std::logic_error);
+
+  EXPECT_NO_THROW(uncommited_metadata.declare_part_with_topology( std::string("a") , stk::topology::TRI_3 ));
+  uncommited_metadata.commit();
+}
+
+
 TEST( UnitTestMetaData, testMetaData )
 {
   //Test functions in MetaData.cpp
