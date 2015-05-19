@@ -61,7 +61,7 @@ namespace MueLu {
       mueLuFactory = rcp(new MLParameterListInterpreter<SC,LO,GO,NO>(paramList));
 
     } else {
-      mueLuFactory = rcp(new ParameterListInterpreter  <SC,LO,GO,NO>(paramList));
+      mueLuFactory = rcp(new ParameterListInterpreter  <SC,LO,GO,NO>(paramList,inA->getComm()));
     }
 
     RCP<Hierarchy> H = mueLuFactory->CreateHierarchy();

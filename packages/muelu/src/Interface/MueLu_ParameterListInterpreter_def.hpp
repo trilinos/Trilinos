@@ -95,8 +95,21 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ParameterListInterpreter(ParameterList& paramList,Teuchos::RCP<FactoryFactory> factFact) : factFact_(factFact) {
-    SetParameterList(paramList);
+  ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ParameterListInterpreter(ParameterList& paramList, Teuchos::RCP<const Teuchos::Comm<int>> comm, Teuchos::RCP<FactoryFactory> factFact) : factFact_(factFact) {
+
+    if(paramList.isParameter("xml parameter file")){
+      std::string filename = paramList.get("xml parameter file","");
+      if(filename.length()!=0) {
+	if(comm.is_null()) throw Exceptions::RuntimeError("xml parameter file requires a valid comm");
+	Teuchos::ParameterList paramList2 = paramList;
+	Teuchos::updateParametersFromXmlFileAndBroadcast(filename, Teuchos::Ptr<Teuchos::ParameterList>(&paramList2),*comm);
+	SetParameterList(paramList2);	
+      }
+      else     
+	SetParameterList(paramList);
+    }
+    else
+      SetParameterList(paramList);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
