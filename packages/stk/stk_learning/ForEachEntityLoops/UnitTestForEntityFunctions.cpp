@@ -1168,6 +1168,7 @@ void calculate_acceleration_using_raw_bucket_loops(unsigned numIterations,
 {
     for(unsigned i=0; i<numIterations; i++)
     {
+        //BEGIN_COUNT_NODES_RAW_FOR_LOOP
         const stk::mesh::BucketVector &buckets = bulkData.buckets(stk::topology::NODE_RANK);
         for(size_t iBucket=0; iBucket<buckets.size(); iBucket++)
         {
@@ -1187,6 +1188,33 @@ void calculate_acceleration_using_raw_bucket_loops(unsigned numIterations,
                 }
             }
         }
+        //END_COUNT_NODES_RAW_FOR_LOOP
+    }
+}
+void calculate_acceleration_using_lambda_access_field_using_entity(unsigned numIterations,
+                                                                   BulkDataForEntityTemplatedTester &bulkData,
+                                                                   stk::mesh::Field<double> &massField,
+                                                                   stk::mesh::Field<double, stk::mesh::Cartesian3d> &forceField,
+                                                                   stk::mesh::Field<double, stk::mesh::Cartesian3d> &accelerationField)
+{
+    for(unsigned i=0; i<numIterations; i++)
+    {
+        //BEGIN_COUNT_NODES_ENTITY_FUNCTOR_LOOP
+        bulkData.for_each_node_run(
+            [&massField, &forceField, &accelerationField](const stk::mesh::BulkData& mesh, stk::mesh::Entity node, ...)
+            {
+                double *f_con = stk::mesh::field_data(forceField, node);
+                double *mass = stk::mesh::field_data(massField, node);
+                double *a_new = stk::mesh::field_data(accelerationField, node);
+                if(*mass > 0.0)
+                {
+                    a_new[0] += f_con[0] / *mass;
+                    a_new[1] += f_con[1] / *mass;
+                    a_new[2] += f_con[2] / *mass;
+                }
+            }
+        );
+        //END_COUNT_NODES_ENTITY_FUNCTOR_LOOP
     }
 }
 void calculate_acceleration_using_lambda_for_entity_loops(unsigned numIterations,
@@ -1197,6 +1225,7 @@ void calculate_acceleration_using_lambda_for_entity_loops(unsigned numIterations
 {
     for(unsigned i=0; i<numIterations; i++)
     {
+        //BEGIN_COUNT_NODES_FUNCTOR_LOOP
         bulkData.for_each_node_run(
             [&massField, &forceField, &accelerationField](const stk::mesh::BulkData& mesh, stk::mesh::Entity node, const stk::mesh::MeshIndex &meshIndex, ...)
             {
@@ -1211,6 +1240,7 @@ void calculate_acceleration_using_lambda_for_entity_loops(unsigned numIterations
                 }
             }
         );
+        //END_COUNT_NODES_FUNCTOR_LOOP
     }
 }
 void checkAccelerationAndZeroOut(BulkDataForEntityTemplatedTester &bulkData,
@@ -1266,14 +1296,21 @@ TEST(ForEntityFunction, performance_test_calculate_acceleration)
         double timeForCallOutsideLoop = get_cpu_or_wall_time() - startTime;
         checkAccelerationAndZeroOut(bulkData, accelerationField, goldAcceleration, tolerance);
 
+        calculate_acceleration_using_lambda_access_field_using_entity(numIterations, bulkData, massField, forceField, accelerationField);
+        startTime = get_cpu_or_wall_time();
+        calculate_acceleration_using_lambda_access_field_using_entity(numIterations, bulkData, massField, forceField, accelerationField);
+        double timeForCallEntityAccessFunctorLoop = get_cpu_or_wall_time() - startTime;
+        checkAccelerationAndZeroOut(bulkData, accelerationField, goldAcceleration, tolerance);
+
         calculate_acceleration_using_lambda_for_entity_loops(numIterations, bulkData, massField, forceField, accelerationField);
         startTime = get_cpu_or_wall_time();
         calculate_acceleration_using_lambda_for_entity_loops(numIterations, bulkData, massField, forceField, accelerationField);
         double timeForCallingFunctorLoop = get_cpu_or_wall_time() - startTime;
         checkAccelerationAndZeroOut(bulkData, accelerationField, goldAcceleration, tolerance);
 
-        std::cerr << "    Time for call outside loop:             " << get_timing_data_for_print(timeForCallOutsideLoop, timeForCallOutsideLoop) << std::endl;
-        std::cerr << "    Time for call functor loop:             " << get_timing_data_for_print(timeForCallingFunctorLoop, timeForCallOutsideLoop) << std::endl;
+        std::cerr << "    Time for call bucket access raw loop:         " << get_timing_data_for_print(timeForCallOutsideLoop, timeForCallOutsideLoop) << std::endl;
+        std::cerr << "    Time for call entity access functor loop:     " << get_timing_data_for_print(timeForCallEntityAccessFunctorLoop, timeForCallOutsideLoop) << std::endl;
+        std::cerr << "    Time for call mesh index access functor loop: " << get_timing_data_for_print(timeForCallingFunctorLoop, timeForCallOutsideLoop) << std::endl;
     }
 }
 
