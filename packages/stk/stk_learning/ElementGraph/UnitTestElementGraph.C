@@ -42,6 +42,8 @@ stk::mesh::EntityVector get_elements_to_communicate(stk::mesh::BulkData& bulkDat
 
 void set_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData& bulkData, stk::mesh::EntityVector& local_id_to_element_entity, std::vector<stk::topology>& element_topologies);
 
+void add_element_side_pair_for_unused_sides(int64_t elementId, stk::topology topology, const std::vector<int64_t> &internal_sides, std::vector<std::pair<int64_t, int64_t> >& element_side_pairs);
+
 void fill_graph(stk::mesh::BulkData& bulkData, std::vector<std::vector<int64_t> >& elem_graph, std::vector<std::vector<int64_t> >& via_sides);
 
 TEST(ElementGraph, check_graph_connectivity)
@@ -538,6 +540,117 @@ TEST(ElementGraph, skin_mesh_using_element_graph_parallel)
     }
 }
 
+TEST(ElementGraph, create_faces_using_element_graph_serial)
+{
+    MPI_Comm comm = MPI_COMM_WORLD;
+    std::vector<double> wall_times;
+    wall_times.reserve(10);
+    std::vector<std::string> msgs;
+    msgs.reserve(10);
+
+    std::vector<size_t> mem_usage;
+
+    wall_times.push_back(stk::wall_time());
+    msgs.push_back("program-start");
+    mem_usage.push_back(stk::get_memory_usage_now());
+
+    if(stk::parallel_machine_size(comm) == 1)
+    {
+        unsigned spatialDim = 3;
+        stk::mesh::MetaData meta(spatialDim);
+        stk::mesh::Part& new_faces_part = meta.declare_part_with_topology("surface_5", stk::topology::QUAD_4);
+        stk::io::put_io_part_attribute(new_faces_part);
+        stk::mesh::BulkData bulkData(meta, comm);
+
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x3", bulkData, comm);
+
+        wall_times.push_back(stk::wall_time());
+        msgs.push_back("after mesh-read");
+        mem_usage.push_back(stk::get_memory_usage_now());
+
+        std::vector<unsigned> counts;
+        stk::mesh::count_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData, counts);
+        int numElems = counts[stk::topology::ELEM_RANK];
+
+        stk::mesh::EntityVector local_id_to_element_entity(numElems, 0);
+        std::vector<stk::topology> element_topologies(numElems);
+        set_local_ids_and_fill_element_entities_and_topologies(bulkData, local_id_to_element_entity, element_topologies);
+
+        std::vector<std::vector<int64_t> > elem_graph(numElems);
+        std::vector<std::vector<int64_t> > via_sides(numElems);
+
+        fill_graph(bulkData, elem_graph, via_sides);
+
+        wall_times.push_back(stk::wall_time());
+        msgs.push_back("after fill-graph");
+        mem_usage.push_back(stk::get_memory_usage_now());
+
+        bulkData.modification_begin();
+
+        stk::mesh::EntityId face_global_id = 1;
+        for(size_t i=0; i<elem_graph.size(); ++i)
+        {
+            const std::vector<int64_t>& connected_elements = elem_graph[i];
+            stk::mesh::Entity element1 = local_id_to_element_entity[i];
+
+            int64_t signed_i = i;
+
+            for(size_t j=0; j<connected_elements.size(); ++j)
+            {
+                if (signed_i > connected_elements[j])
+                {
+                    stk::mesh::Entity face = stk::mesh::declare_element_side(bulkData, face_global_id, element1, via_sides[i][j], &new_faces_part);
+
+                    const stk::mesh::Entity* side_nodes = bulkData.begin_nodes(face);
+                    unsigned num_side_nodes = bulkData.num_nodes(face);
+                    stk::mesh::EntityVector side_nodes_vec(side_nodes, side_nodes+num_side_nodes);
+
+                    stk::mesh::Entity element2 = local_id_to_element_entity[connected_elements[j]];
+                    std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ord_and_perm = stk::mesh::get_ordinal_and_permutation(bulkData, element2, stk::topology::FACE_RANK, side_nodes_vec);
+                    bulkData.declare_relation(element2, face, ord_and_perm.first, ord_and_perm.second);
+
+                    face_global_id++;
+                }
+            }
+
+            std::vector<std::pair<int64_t, int64_t> > element_side_pairs;
+            add_element_side_pair_for_unused_sides(i, element_topologies[i], via_sides[i], element_side_pairs);
+
+            for(size_t j=0;j<element_side_pairs.size();j++)
+            {
+                stk::mesh::declare_element_side(bulkData, face_global_id, element1, element_side_pairs[j].second, &new_faces_part);
+                face_global_id++;
+            }
+        }
+
+        bulkData.modification_end_for_entity_creation(stk::topology::FACE_RANK);
+
+        wall_times.push_back(stk::wall_time());
+        msgs.push_back("after create-faces");
+        mem_usage.push_back(stk::get_memory_usage_now());
+
+        unsigned num_faces = stk::mesh::count_selected_entities(new_faces_part, bulkData.buckets(stk::topology::FACE_RANK));
+
+        EXPECT_EQ(16u, num_faces);
+        EXPECT_EQ(num_faces, face_global_id-1);
+
+        stk::unit_test_util::write_mesh_using_stk_io("out.exo", bulkData, bulkData.parallel());
+
+        if (stk::parallel_machine_rank(comm) == 0)
+        {
+            for(size_t i=0;i<wall_times.size();++i)
+            {
+                std::cerr << "Wall time " << msgs[i] << ":\t" << wall_times[i] - wall_times[0] << std::endl;
+            }
+
+            for(size_t i=0;i<mem_usage.size();++i)
+            {
+                std::cerr << "Memory usage " << msgs[i] << ":\t" << mem_usage[i] - mem_usage[0] << std::endl;
+            }
+        }
+    }
+}
+
 std::string get_name_of_generated_mesh(int xdim, int ydim, int zdim)
 {
     std::ostringstream os;
@@ -545,7 +658,7 @@ std::string get_name_of_generated_mesh(int xdim, int ydim, int zdim)
     return os.str();
 }
 
-TEST(ElementGraph, compare_performance)
+TEST(ElementGraph, compare_performance_skin_mesh)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
 
@@ -663,38 +776,41 @@ int check_connectivity(const std::vector<std::vector<int64_t> >& elem_graph, con
     return side;
 }
 
+void add_element_side_pair_for_unused_sides(int64_t elementId, stk::topology topology, const std::vector<int64_t> &internal_sides, std::vector<std::pair<int64_t, int64_t> >& element_side_pairs)
+{
+    size_t num_sides = topology.num_sides();
+    std::vector<int64_t> elem_sides;
+
+    if (internal_sides.size() < num_sides)
+    {
+        elem_sides.assign(num_sides, -1);
+        for(size_t j=0; j<internal_sides.size(); ++j)
+        {
+            int64_t zeroBasedSideId = internal_sides[j];
+            elem_sides[zeroBasedSideId] = internal_sides[j];
+        }
+
+        for(size_t j=0; j<num_sides; ++j)
+        {
+            if (elem_sides[j] == -1)
+            {
+                int64_t sideId = j;
+                element_side_pairs.push_back(std::make_pair(elementId, sideId));
+            }
+        }
+    }
+}
+
 std::vector<std::pair<int64_t, int64_t> > skin_mesh(const std::vector<std::vector<int64_t> > &via_side,
    const std::vector<stk::topology> &element_topologies)
 {
     std::vector<std::pair<int64_t, int64_t> > element_side_pairs;
 
-    std::vector<int64_t> elem_sides;
-
     size_t num_elems = via_side.size();
     for(size_t i=0; i<num_elems; ++i)
     {
         const std::vector<int64_t>& internal_sides = via_side[i];
-        size_t num_sides = element_topologies[i].num_sides();
-
-        if (internal_sides.size() < num_sides)
-        {
-            elem_sides.assign(num_sides, -1);
-            for(size_t j=0; j<internal_sides.size(); ++j)
-            {
-                int64_t zeroBasedSideId = internal_sides[j];
-                elem_sides[zeroBasedSideId] = internal_sides[j];
-            }
-
-            int64_t elementId = i;
-            for(size_t j=0; j<num_sides; ++j)
-            {
-                if (elem_sides[j] == -1)
-                {
-                    int64_t sideId = j;
-                    element_side_pairs.push_back(std::make_pair(elementId, sideId));
-                }
-            }
-        }
+        add_element_side_pair_for_unused_sides(i, element_topologies[i], internal_sides, element_side_pairs);
     }
     return element_side_pairs;
 }
