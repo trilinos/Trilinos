@@ -36,13 +36,12 @@ namespace Example {
   KOKKOS_INLINE_FUNCTION
   int
   IChol<Uplo::Upper,AlgoIChol::ByBlocks>
-  ::invoke(const typename CrsTaskViewType::policy_type::member_type &member,
+  ::invoke(typename CrsTaskViewType::policy_type &policy,
+           const typename CrsTaskViewType::policy_type::member_type &member,
            CrsTaskViewType &A) {
     // this task generation should be done by a root
     // ---------------------------------------------
     if (member.team_rank() == 0) {
-      typename CrsTaskViewType::policy_type policy;
-
       CrsTaskViewType ATL, ATR,      A00, A01, A02,
         /**/          ABL, ABR,      A10, A11, A12,
         /**/                         A20, A21, A22;

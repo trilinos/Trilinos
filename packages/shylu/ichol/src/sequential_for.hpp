@@ -25,7 +25,7 @@ namespace Example {
   class TeamPolicy {
   public:
     typedef class TeamThreadMember member_type;
-    static member_type member_null() { return member_type(); }
+    static member_type member_single() { return member_type(); }
   };
 
   // Team thread loop region for sequential loop

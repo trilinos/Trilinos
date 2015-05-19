@@ -26,7 +26,8 @@ namespace Example {
   KOKKOS_INLINE_FUNCTION
   int
   IChol<Uplo::Upper,AlgoIChol::Unblocked>
-  ::invoke(const typename CrsExecViewType::policy_type::member_type &member,
+  ::invoke(typename CrsExecViewType::policy_type &policy,
+           const typename CrsExecViewType::policy_type::member_type &member,
            CrsExecViewType &A) {
     typedef typename CrsExecViewType::value_type        value_type;
     typedef typename CrsExecViewType::ordinal_type      ordinal_type;

@@ -18,38 +18,45 @@ namespace Example {
     // data-parallel interface
     // =======================
     template<typename ParallelForType,
-             typename CrsExecViewType>
+             typename ExecViewType>
     KOKKOS_INLINE_FUNCTION
-    static int invoke(const typename CrsExecViewType::policy_type::member_type &member, 
-                      CrsExecViewType &A);
+    static int invoke(typename ExecViewType::policy_type &policy, 
+                      const typename ExecViewType::policy_type::member_type &member, 
+                      ExecViewType &A);
 
     // task-data parallel interface
     // ============================
     template<typename ParallelForType,
-             typename CrsExecViewType>
+             typename ExecViewType>
     class TaskFunctor {
-    private:
-      CrsExecViewType _A;
-      
     public:
-      typedef typename CrsExecViewType::policy_type policy_type;
+      typedef typename ExecViewType::policy_type policy_type;
       typedef typename policy_type::member_type member_type;
       typedef int value_type;
 
-      TaskFunctor(const CrsExecViewType A)
-        : _A(A)
+    private:
+      ExecViewType _A;
+      
+      policy_type &_policy;
+
+    public:
+      TaskFunctor(const ExecViewType A)
+        : _A(A),
+          _policy(ExecViewType::task_factory_type::Policy())
       { } 
 
       string Label() const { return "IChol"; }
       
       // task execution
       void apply(value_type &r_val) {
-        r_val = IChol::invoke<ParallelForType>(policy_type::member_null(), _A);
+        r_val = IChol::invoke<ParallelForType>(_policy, _policy.member_single(), 
+                                               _A);
       }
 
       // task-data execution
       void apply(const member_type &member, value_type &r_val) {
-        r_val = IChol::invoke<ParallelForType>(member, _A);
+        r_val = IChol::invoke<ParallelForType>(_policy, member, 
+                                               _A);
       }
 
     };
