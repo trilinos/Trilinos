@@ -6042,18 +6042,9 @@ bool BulkData::verify_parallel_attributes_for_bucket( Bucket const& bucket, std:
 
     // Owner consistency:
 
-    if (   has_owns_part && p_owner != p_rank ) {
+    if ( has_owns_part != (p_owner == p_rank) ) {
       error_log << __FILE__ << ":" << __LINE__ << ": ";
-      error_log << "problem is owner-consistency (check 1): "
-                << "has_owns_part: " << (has_owns_part?"true":"false") << ", "
-                << "p_owner: " << p_owner << ", "
-                << "p_rank: " << p_rank << std::endl;
-      this_result = false ;
-    }
-
-    if ( ! has_owns_part && p_owner == p_rank ) {
-      error_log << __FILE__ << ":" << __LINE__ << ": ";
-      error_log << "problem is owner-consistency (check 2): "
+      error_log << "problem is owner-consistency (entity in locally-owned part iff owned by current proc): "
                 << "has_owns_part: " << (has_owns_part?"true":"false") << ", "
                 << "p_owner: " << p_owner << ", "
                 << "p_rank: " << p_rank << std::endl;
@@ -6062,9 +6053,9 @@ bool BulkData::verify_parallel_attributes_for_bucket( Bucket const& bucket, std:
 
     if ( has_shares_part != shares ) {
       error_log << __FILE__ << ":" << __LINE__ << ": ";
-      error_log << "problem is owner-consistency (check 3): "
+      error_log << "problem is sharing-consistency (entity in shared part iff it is in comm-list): "
                 << "has_shares_part: " << (has_shares_part?"true":"false") << ", "
-                << "shares: " << shares << " has entity key " << entity_key(entity) << std::endl;
+                << "in comm-list: " << (shares?"true":"false") << ", has entity key " << entity_key(entity) << std::endl;
       this_result = false ;
     }
 
