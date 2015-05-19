@@ -123,7 +123,8 @@ else
 ### Get list of input files
 if ($package eq "Zoltan") {
   ###  Zoltan native algorithms
-  @inpfiles = glob("zdrive.inp.*rcb* 
+  @inpfiles = glob("zdrive.inp.rcb* 
+                    zdrive.inp.hier2-rcb*
                     zdrive.inp.rib*
                     zdrive.inp.reftree* 
                     zdrive.inp.hsfc*
