@@ -18,4 +18,5 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../test/helpers)
 ADD_SUBDIRECTORIES(
   block
   geometric
+  graph
 )
