@@ -1461,8 +1461,8 @@ TEST(ForEntityFunction, performance_test_centroid_calculation_using_bucket_acces
         const int spatialDim = 3;
         stk::mesh::MetaData metaData(spatialDim);
         auto &centroidField = metaData.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::ELEMENT_RANK, "centroidField");
-        const double initValue = 0.0;
-        stk::mesh::put_field(centroidField, metaData.universal_part(), 3, &initValue);
+        const double initValue[3] = {0.0, 0.0, 0.0};
+        stk::mesh::put_field(centroidField, metaData.universal_part(), 3, initValue);
 
         BulkDataForEntityTemplatedTester bulkData(metaData, communicator);
 
