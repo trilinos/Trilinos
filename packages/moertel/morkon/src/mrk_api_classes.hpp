@@ -54,8 +54,6 @@
 #include <Tpetra_Map.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
-#include <mrk_data_types.hpp>
-
 namespace morkon_exp {
 
 template <typename DeviceType, unsigned int DIM = 3, MorkonFaceType = MRK_QUAD4 >
@@ -84,7 +82,7 @@ public:
 
   // For pulling data in from the host space.
   bool hsa_add_node(SideEnum which_side, global_idx_t gbl_node_id, const double coords[]);
-  bool hsa_add_face(SideEnum which_side, global_idx_t gbl_face_id, int num_nodes, const global_idx_t glb_nids[]);
+  bool hsa_add_face(SideEnum which_side, global_idx_t gbl_face_id, int num_nodes, const global_idx_t gbl_node_id[]);
 
   // No more changes via public API after this.
   bool commited() const { return m_committed; }
