@@ -1,4 +1,3 @@
-/*
 //@HEADER
 //************************************************************************
 //
@@ -37,13 +36,12 @@
 //
 //************************************************************************
 //@HEADER
-*/
 
-#include"Isorropia_EpetraMatcher.hpp"
-#include"Isorropia_EpetraRedistributor.hpp"
+#include "Isorropia_EpetraMatcher.hpp"
+#include "Isorropia_EpetraRedistributor.hpp"
 
 #ifdef HAVE_EPETRAEXT
-#include "EpetraExt_Reindex_CrsMatrix.h" 
+#include "EpetraExt_Reindex_CrsMatrix.h"
 #include "EpetraExt_CrsMatrixIn.h"
 #endif
 
@@ -53,28 +51,28 @@ using namespace std;
 int main(int argc, char** argv) {
 
 #ifdef ISORROPIA_HAVE_OMP
-	if(argc>2)
-	{	
-		int rc=0;
+        if(argc>2)
+        {
+                int rc=0;
 #ifdef HAVE_EPETRAEXT
-		  const Epetra_SerialComm Comm;
+                  const Epetra_SerialComm Comm;
 
-		  Epetra_CrsMatrix *matrixPtr;
-		  rc = EpetraExt::MatrixMarketFileToCrsMatrix(argv[1], Comm, matrixPtr);
-		  
-		  if (rc < 0){
+                  Epetra_CrsMatrix *matrixPtr;
+                  rc = EpetraExt::MatrixMarketFileToCrsMatrix(argv[1], Comm, matrixPtr);
+
+                  if (rc < 0){
             cout << "error reading input file" << std::endl;
             return 1;
-		  }
-		
-		Teuchos::ParameterList paramlist;
-		paramlist.set("Matching Algorithm",argv[2]);
+                  }
+
+                Teuchos::ParameterList paramlist;
+                paramlist.set("Matching Algorithm",argv[2]);
         Isorropia::Epetra::Matcher pm(matrixPtr,paramlist);
-		
+
         //Teuchos::RCP<const Epetra_CrsMatrix> r(Teuchos::RCP<const
         //Epetra_CrsMatrix>(matrixPtr,true));
         //Isorropia::Epetra::Matcher pm(r,paramlist);
-        
+
         pm.match();
 
         cout << endl << "Original Matrix:" << endl;
@@ -90,14 +88,14 @@ int main(int argc, char** argv) {
         cout << *perm_matrix << endl;
 
 #else
-		 fail = 0;
+                 fail = 0;
          cout << "Matching test requires EpetraExt" << std::endl;
          return 1;
 #endif
-	}
-	else
+        }
+        else
     {
-		cout<<endl<<" Usage: ./Isorropia_parallel_matching.exe <mtx file>" <<
+                cout<<endl<<" Usage: ./Isorropia_parallel_matching.exe <mtx file>" <<
              " <Algorithm>" << endl;
         cout << "\t Algorithm: PHK, PHKDW, PDFS,PPF" << endl;
         cout << "Requires Isorropia to be compiled with OpenMP, OMP_NUM_THREADS"
@@ -108,6 +106,6 @@ int main(int argc, char** argv) {
     cout << "Matching in Isorropia requires OpenMP." << endl;
     cout << "Please recompile with OpenMP enabled and try again" << endl;
 #endif
-	
-	return 0;
+
+        return 0;
 }

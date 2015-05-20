@@ -45,8 +45,8 @@
 #include "Sacado_UQ_PCE.hpp"
 #include "Kokkos_View_UQ_PCE.hpp"
 #include "Kokkos_InnerProductSpaceTraits_UQ_PCE.hpp"
-#include "Kokkos_CrsMatrix.hpp"
-#include "Kokkos_MV_UQ_PCE.hpp" // for some utilities
+#include "Kokkos_Sparse.hpp"
+#include "Kokkos_Blas1_UQ_PCE.hpp" // for some utilities
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_CrsProductTensor.hpp"
@@ -54,11 +54,11 @@
 namespace Stokhos {
 
 //----------------------------------------------------------------------------
-// Specialization of Kokkos::CrsMatrix for Sacado::UQ::PCE scalar type
+// Specialization of KokkosSparse::CrsMatrix for Sacado::UQ::PCE scalar type
 //----------------------------------------------------------------------------
 
 // Kernel implementing y = A * x where
-//   A == Kokkos::CrsMatrix< Sacado::UQ::PCE<...>,...>,
+//   A == KokkosSparse::CrsMatrix< Sacado::UQ::PCE<...>,...>,
 //   x, y == Kokkos::View< Sacado::UQ::PCE<...>*,...>,
 //   x and y are rank 1
 template <typename Device,
@@ -71,7 +71,7 @@ template <typename Device,
           typename InputMemory,
           typename OutputStorage,
           typename OutputMemory>
-class Multiply< Kokkos::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
+class Multiply< KokkosSparse::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
                                    MatrixOrdinal,
                                    Device,
                                    MatrixMemory,
@@ -97,7 +97,7 @@ public:
 
   typedef Device execution_space;
 
-  typedef Kokkos::CrsMatrix< MatrixValue,
+  typedef KokkosSparse::CrsMatrix< MatrixValue,
                              MatrixOrdinal,
                              Device,
                              MatrixMemory,
@@ -468,7 +468,7 @@ public:
 };
 
 // Kernel implementing y = A * x where
-//   A == Kokkos::CrsMatrix< Sacado::UQ::PCE<...>,...>,
+//   A == KokkosSparse::CrsMatrix< Sacado::UQ::PCE<...>,...>,
 //   x, y == Kokkos::View< Sacado::UQ::PCE<...>**,...>,
 //   x and y are rank 2
 template <typename Device,
@@ -481,7 +481,7 @@ template <typename Device,
           typename InputMemory,
           typename OutputStorage,
           typename OutputMemory>
-class Multiply< Kokkos::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
+class Multiply< KokkosSparse::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
                                    MatrixOrdinal,
                                    Device,
                                    MatrixMemory,
@@ -507,7 +507,7 @@ public:
 
   typedef Device execution_space;
 
-  typedef Kokkos::CrsMatrix< MatrixValue,
+  typedef KokkosSparse::CrsMatrix< MatrixValue,
                              MatrixOrdinal,
                              Device,
                              MatrixMemory,
@@ -906,7 +906,7 @@ template <typename MatrixType, typename InputViewType, typename OutputViewType>
 class MeanMultiply {};
 
 // Kernel implementing y = A * x where PCE size of A is 1
-//   A == Kokkos::CrsMatrix< Sacado::UQ::PCE<...>,...>, with A.values.sacado_size() == 1
+//   A == KokkosSparse::CrsMatrix< Sacado::UQ::PCE<...>,...>, with A.values.sacado_size() == 1
 //   x, y == Kokkos::View< Sacado::UQ::PCE<...>*,...>,
 //   x and y are rank 1
 template <typename Device,
@@ -919,7 +919,7 @@ template <typename Device,
           typename InputMemory,
           typename OutputStorage,
           typename OutputMemory>
-class MeanMultiply< Kokkos::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
+class MeanMultiply< KokkosSparse::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
                                        MatrixOrdinal,
                                        Device,
                                        MatrixMemory,
@@ -943,7 +943,7 @@ public:
   typedef Sacado::UQ::PCE<InputStorage> InputVectorValue;
   typedef Sacado::UQ::PCE<OutputStorage> OutputVectorValue;
 
-  typedef Kokkos::CrsMatrix< MatrixValue,
+  typedef KokkosSparse::CrsMatrix< MatrixValue,
                              MatrixOrdinal,
                              Device,
                              MatrixMemory,
@@ -1188,7 +1188,7 @@ public:
 };
 
 // Kernel implementing y = A * x where A has PCE size = 1
-//   A == Kokkos::CrsMatrix< Sacado::UQ::PCE<...>,...>,
+//   A == KokkosSparse::CrsMatrix< Sacado::UQ::PCE<...>,...>,
 //   x, y == Kokkos::View< Sacado::UQ::PCE<...>**,...>,
 //   x and y are rank 2
 template <typename Device,
@@ -1202,7 +1202,7 @@ template <typename Device,
           typename InputMemory,
           typename OutputStorage,
           typename OutputMemory>
-class MeanMultiply< Kokkos::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
+class MeanMultiply< KokkosSparse::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
                                        MatrixOrdinal,
                                        Device,
                                        MatrixMemory,
@@ -1222,7 +1222,7 @@ public:
   typedef Sacado::UQ::PCE<InputStorage> InputVectorValue;
   typedef Sacado::UQ::PCE<OutputStorage> OutputVectorValue;
 
-  typedef Kokkos::CrsMatrix< MatrixValue,
+  typedef KokkosSparse::CrsMatrix< MatrixValue,
                              MatrixOrdinal,
                              Device,
                              MatrixMemory,
@@ -1256,9 +1256,9 @@ public:
     const size_type num_col = x.dimension_1();
     for (size_type i=0; i<num_col; ++i) {
       input_vector_1d_type x_col =
-        Kokkos::subview<input_vector_1d_type>(x, Kokkos::ALL(), i);
+        Kokkos::subview(x, Kokkos::ALL(), i);
       output_vector_1d_type y_col =
-        Kokkos::subview<output_vector_1d_type>(y, Kokkos::ALL(), i);
+        Kokkos::subview(y, Kokkos::ALL(), i);
       MeanMultiply1D::apply( A, x_col, y_col, a, b );
     }
   }
@@ -1266,342 +1266,127 @@ public:
 
 } // namespace Stokhos
 
-namespace Kokkos {
+namespace KokkosSparse {
 
-// Overload of Kokkos::MV_Multiply for Sacado::UQ::PCE scalar types
-template <typename MatrixDevice,
-          typename InputViewDevice,
-          typename OutputViewDevice,
-          typename MatrixStorage,
-          typename MatrixOrdinal,
-          typename MatrixMemory,
-          typename MatrixSize,
-          typename InputStorage,
+template <typename AlphaType,
+          typename BetaType,
+          typename MatrixType,
+          typename InputType,
           typename InputLayout,
+          typename InputDevice,
           typename InputMemory,
-          typename OutputStorage,
+          typename OutputType,
           typename OutputLayout,
+          typename OutputDevice,
           typename OutputMemory>
 void
-MV_Multiply(
-  const Kokkos::View< Sacado::UQ::PCE< OutputStorage>*,
-                OutputLayout,
-                OutputViewDevice,
-                OutputMemory >& y,
-  const Kokkos::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
-                           MatrixOrdinal,
-                           MatrixDevice,
-                           MatrixMemory,
-                           MatrixSize>& A,
-  const Kokkos::View< Sacado::UQ::PCE<InputStorage>*,
+spmv(
+  const char mode[],
+  const AlphaType& a,
+  const MatrixType& A,
+  const Kokkos::View< InputType,
                       InputLayout,
-                      InputViewDevice,
-                      InputMemory >& x)
+                      InputDevice,
+                      InputMemory,
+                      Kokkos::Impl::ViewPCEContiguous >& x,
+  const BetaType& b,
+  const Kokkos::View< OutputType,
+                      OutputLayout,
+                      OutputDevice,
+                      OutputMemory,
+                      Kokkos::Impl::ViewPCEContiguous >& y,
+  const RANK_ONE)
 {
-  typedef Kokkos::View< Sacado::UQ::PCE< OutputStorage>*,
-    OutputLayout, OutputViewDevice, OutputMemory > OutputVectorType;
-  typedef Kokkos::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
-    MatrixOrdinal, MatrixDevice, MatrixMemory, MatrixSize> MatrixType;
-  typedef Kokkos::View< Sacado::UQ::PCE<InputStorage>*,
-    InputLayout, InputViewDevice, InputMemory > InputVectorType;
+  typedef Kokkos::View< OutputType, OutputLayout, OutputDevice, OutputMemory,
+                        Kokkos::Impl::ViewPCEContiguous > OutputVectorType;
+  typedef Kokkos::View< InputType, InputLayout, InputDevice, InputMemory,
+                        Kokkos::Impl::ViewPCEContiguous > InputVectorType;
   typedef Stokhos::Multiply<MatrixType,InputVectorType,
-    OutputVectorType> multiply_type;
+                            OutputVectorType> multiply_type;
   typedef Stokhos::MeanMultiply<MatrixType,InputVectorType,
-    OutputVectorType> mean_multiply_type;
+                                OutputVectorType> mean_multiply_type;
 
-  if (A.values.sacado_size() == 1 && x.sacado_size() != 1) {
-    mean_multiply_type::apply( A, x, y );
+  if(mode[0]!='N') {
+    Kokkos::Impl::raise_error(
+      "Stokhos spmv not implemented for transposed or conjugated matrix-vector multiplies");
   }
-  else
-    multiply_type::apply( A, x, y );
-}
-
-template <typename MatrixDevice,
-          typename InputViewDevice,
-          typename OutputViewDevice,
-          typename MatrixStorage,
-          typename MatrixOrdinal,
-          typename MatrixMemory,
-          typename MatrixSize,
-          typename InputStorage,
-          typename InputLayout,
-          typename InputMemory,
-          typename OutputStorage,
-          typename OutputLayout,
-          typename OutputMemory>
-void
-MV_Multiply(
-  const Kokkos::View< Sacado::UQ::PCE< OutputStorage>*,
-                OutputLayout,
-                OutputViewDevice,
-                OutputMemory >& y,
-  const Sacado::UQ::PCE<InputStorage>& a,
-  const Kokkos::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
-                           MatrixOrdinal,
-                           MatrixDevice,
-                           MatrixMemory,
-                           MatrixSize>& A,
-  const Kokkos::View< Sacado::UQ::PCE<InputStorage>*,
-                      InputLayout,
-                      InputViewDevice,
-                      InputMemory >& x)
-{
-  typedef Kokkos::View< Sacado::UQ::PCE< OutputStorage>*,
-    OutputLayout, OutputViewDevice, OutputMemory > OutputVectorType;
-  typedef Kokkos::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
-    MatrixOrdinal, MatrixDevice, MatrixMemory, MatrixSize> MatrixType;
-  typedef Kokkos::View< Sacado::UQ::PCE<InputStorage>*,
-    InputLayout, InputViewDevice, InputMemory > InputVectorType;
-  typedef Stokhos::Multiply<MatrixType,InputVectorType,
-    OutputVectorType> multiply_type;
-  typedef Stokhos::MeanMultiply<MatrixType,InputVectorType,
-    OutputVectorType> mean_multiply_type;
-
-  if (!Sacado::is_constant(a)) {
-    Impl::raise_error(
-      "MV_Multiply not implemented for non-constant a");
-  }
-  if (A.values.sacado_size() == 1 && x.sacado_size() != 1) {
-    mean_multiply_type::apply( A, x, y, a.fastAccessCoeff(0));
-  }
-  else
-    multiply_type::apply( A, x, y, a.fastAccessCoeff(0) );
-}
-
-template <typename MatrixDevice,
-          typename InputViewDevice,
-          typename OutputViewDevice,
-          typename MatrixStorage,
-          typename MatrixOrdinal,
-          typename MatrixMemory,
-          typename MatrixSize,
-          typename InputStorage,
-          typename InputLayout,
-          typename InputMemory,
-          typename OutputStorage,
-          typename OutputLayout,
-          typename OutputMemory>
-void
-MV_Multiply(
-  const Sacado::UQ::PCE<InputStorage>& b,
-  const Kokkos::View< Sacado::UQ::PCE< OutputStorage>*,
-                OutputLayout,
-                OutputViewDevice,
-                OutputMemory >& y,
-  const Sacado::UQ::PCE<InputStorage>& a,
-  const Kokkos::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
-                           MatrixOrdinal,
-                           MatrixDevice,
-                           MatrixMemory,
-                           MatrixSize>& A,
-  const Kokkos::View< Sacado::UQ::PCE<InputStorage>*,
-                      InputLayout,
-                      InputViewDevice,
-                      InputMemory >& x)
-{
-  typedef Kokkos::View< Sacado::UQ::PCE< OutputStorage>*,
-    OutputLayout, OutputViewDevice, OutputMemory > OutputVectorType;
-  typedef Kokkos::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
-    MatrixOrdinal, MatrixDevice, MatrixMemory, MatrixSize> MatrixType;
-  typedef Kokkos::View< Sacado::UQ::PCE<InputStorage>*,
-    InputLayout, InputViewDevice, InputMemory > InputVectorType;
-  typedef Stokhos::Multiply<MatrixType,InputVectorType,
-    OutputVectorType> multiply_type;
-  typedef Stokhos::MeanMultiply<MatrixType,InputVectorType,
-    OutputVectorType> mean_multiply_type;
 
   if (!Sacado::is_constant(a) || !Sacado::is_constant(b)) {
-    Impl::raise_error(
-      "MV_Multiply not implemented for non-constant a or b");
+    Kokkos::Impl::raise_error(
+      "Stokhos spmv not implemented for non-constant a or b");
   }
   if (A.values.sacado_size() == 1 && x.sacado_size() != 1) {
-    mean_multiply_type::apply( A, x, y, a.fastAccessCoeff(0), b.fastAccessCoeff(0) );
+    mean_multiply_type::apply( A, x, y,
+                               Sacado::Value<AlphaType>::eval(a),
+                               Sacado::Value<BetaType>::eval(b) );
   }
   else
-    multiply_type::apply( A, x, y, a.fastAccessCoeff(0), b.fastAccessCoeff(0) );
+    multiply_type::apply( A, x, y,
+                          Sacado::Value<AlphaType>::eval(a),
+                          Sacado::Value<BetaType>::eval(b) );
 }
 
-template <typename MatrixDevice,
-          typename InputViewDevice,
-          typename OutputViewDevice,
-          typename MatrixStorage,
-          typename MatrixOrdinal,
-          typename MatrixMemory,
-          typename MatrixSize,
-          typename InputStorage,
+template <typename AlphaType,
+          typename BetaType,
+          typename MatrixType,
+          typename InputType,
           typename InputLayout,
+          typename InputDevice,
           typename InputMemory,
-          typename OutputStorage,
+          typename OutputType,
           typename OutputLayout,
+          typename OutputDevice,
           typename OutputMemory>
 void
-MV_Multiply(
-  const Kokkos::View< Sacado::UQ::PCE< OutputStorage>**,
-                      OutputLayout,
-                      OutputViewDevice,
-                      OutputMemory >& y,
-  const Kokkos::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
-                           MatrixOrdinal,
-                           MatrixDevice,
-                           MatrixMemory,
-                           MatrixSize>& A,
-  const Kokkos::View< Sacado::UQ::PCE<InputStorage>**,
+spmv(
+  const char mode[],
+  const AlphaType& a,
+  const MatrixType& A,
+  const Kokkos::View< InputType,
                       InputLayout,
-                      InputViewDevice,
-                      InputMemory >& x)
+                      InputDevice,
+                      InputMemory,
+                      Kokkos::Impl::ViewPCEContiguous >& x,
+  const BetaType& b,
+  const Kokkos::View< OutputType,
+                      OutputLayout,
+                      OutputDevice,
+                      OutputMemory,
+                      Kokkos::Impl::ViewPCEContiguous >& y,
+  const RANK_TWO)
 {
+  if(mode[0]!='N') {
+    Kokkos::Impl::raise_error(
+      "Stokhos spmv not implemented for transposed or conjugated matrix-vector multiplies");
+  }
   if (y.dimension_1() == 1) {
-    typedef Kokkos::View< Sacado::UQ::PCE< OutputStorage>*, OutputLayout,
-        OutputViewDevice,OutputMemory > OutputView1D;
-    typedef Kokkos::View< Sacado::UQ::PCE<InputStorage>*, InputLayout,
-        InputViewDevice, InputMemory > InputView1D;
-    OutputView1D y_1D = subview<OutputView1D>(y, ALL(), 0);
-    InputView1D x_1D = subview<InputView1D>(x, ALL(), 0);
-    MV_Multiply(y_1D, A, x_1D);
+    auto y_1D = subview(y, Kokkos::ALL(), 0);
+    auto x_1D = subview(x, Kokkos::ALL(), 0);
+    spmv(mode, a, A, x_1D, b, y_1D, RANK_ONE());
   }
   else {
-    typedef Kokkos::View< Sacado::UQ::PCE< OutputStorage>**,
-      OutputLayout, OutputViewDevice, OutputMemory > OutputVectorType;
-    typedef Kokkos::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
-      MatrixOrdinal, MatrixDevice, MatrixMemory, MatrixSize> MatrixType;
-    typedef Kokkos::View< Sacado::UQ::PCE<InputStorage>**,
-      InputLayout, InputViewDevice, InputMemory > InputVectorType;
+    typedef Kokkos::View< OutputType, OutputLayout, OutputDevice, OutputMemory,
+                        Kokkos::Impl::ViewPCEContiguous > OutputVectorType;
+    typedef Kokkos::View< InputType, InputLayout, InputDevice, InputMemory,
+                          Kokkos::Impl::ViewPCEContiguous > InputVectorType;
     typedef Stokhos::Multiply<MatrixType,InputVectorType,
-      OutputVectorType> multiply_type;
+                              OutputVectorType> multiply_type;
     typedef Stokhos::MeanMultiply<MatrixType,InputVectorType,
-      OutputVectorType> mean_multiply_type;
-    if (A.values.sacado_size() == 1 && x.sacado_size() != 1) {
-      mean_multiply_type::apply( A, x, y );
-    }
-    else
-      multiply_type::apply( A, x, y );
-  }
-}
-
-template <typename MatrixDevice,
-          typename InputViewDevice,
-          typename OutputViewDevice,
-          typename MatrixStorage,
-          typename MatrixOrdinal,
-          typename MatrixMemory,
-          typename MatrixSize,
-          typename InputStorage,
-          typename InputLayout,
-          typename InputMemory,
-          typename OutputStorage,
-          typename OutputLayout,
-          typename OutputMemory>
-void
-MV_Multiply(
-  const Kokkos::View< Sacado::UQ::PCE< OutputStorage>**,
-                      OutputLayout,
-                      OutputViewDevice,
-                      OutputMemory >& y,
-  const Sacado::UQ::PCE<InputStorage>& a,
-  const Kokkos::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
-                           MatrixOrdinal,
-                           MatrixDevice,
-                           MatrixMemory,
-                           MatrixSize>& A,
-  const Kokkos::View< Sacado::UQ::PCE<InputStorage>**,
-                      InputLayout,
-                      InputViewDevice,
-                      InputMemory >& x)
-{
-  if (y.dimension_1() == 1) {
-    typedef Kokkos::View< Sacado::UQ::PCE< OutputStorage>*, OutputLayout,
-        OutputViewDevice,OutputMemory > OutputView1D;
-    typedef Kokkos::View< Sacado::UQ::PCE<InputStorage>*, InputLayout,
-        InputViewDevice, InputMemory > InputView1D;
-    OutputView1D y_1D = subview<OutputView1D>(y, ALL(), 0);
-    InputView1D x_1D = subview<InputView1D>(x, ALL(), 0);
-    MV_Multiply(y_1D, a, A, x_1D);
-  }
-  else {
-    typedef Kokkos::View< Sacado::UQ::PCE< OutputStorage>**,
-      OutputLayout, OutputViewDevice, OutputMemory > OutputVectorType;
-    typedef Kokkos::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
-      MatrixOrdinal, MatrixDevice, MatrixMemory, MatrixSize> MatrixType;
-    typedef Kokkos::View< Sacado::UQ::PCE<InputStorage>**,
-      InputLayout, InputViewDevice, InputMemory > InputVectorType;
-    typedef Stokhos::Multiply<MatrixType,InputVectorType,
-      OutputVectorType> multiply_type;
-    typedef Stokhos::MeanMultiply<MatrixType,InputVectorType,
-      OutputVectorType> mean_multiply_type;
-
-    if (!Sacado::is_constant(a)) {
-      Impl::raise_error(
-        "MV_Multiply not implemented for non-constant a");
-    }
-    if (A.values.sacado_size() == 1 && x.sacado_size() != 1) {
-      mean_multiply_type::apply( A, x, y, a.fastAccessCoeff(0) );
-    }
-    else
-      multiply_type::apply( A, x, y, a.fastAccessCoeff(0) );
-  }
-}
-
-template <typename MatrixDevice,
-          typename InputViewDevice,
-          typename OutputViewDevice,
-          typename MatrixStorage,
-          typename MatrixOrdinal,
-          typename MatrixMemory,
-          typename MatrixSize,
-          typename InputStorage,
-          typename InputLayout,
-          typename InputMemory,
-          typename OutputStorage,
-          typename OutputLayout,
-          typename OutputMemory>
-void
-MV_Multiply(
-  const Sacado::UQ::PCE<InputStorage>& b,
-  const Kokkos::View< Sacado::UQ::PCE< OutputStorage>**,
-                      OutputLayout,
-                      OutputViewDevice,
-                      OutputMemory >& y,
-  const Sacado::UQ::PCE<InputStorage>& a,
-  const Kokkos::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
-                           MatrixOrdinal,
-                           MatrixDevice,
-                           MatrixMemory,
-                           MatrixSize>& A,
-  const Kokkos::View< Sacado::UQ::PCE<InputStorage>**,
-                      InputLayout,
-                      InputViewDevice,
-                      InputMemory >& x)
-{
-  if (y.dimension_1() == 1) {
-    typedef Kokkos::View< Sacado::UQ::PCE< OutputStorage>*, OutputLayout,
-        OutputViewDevice,OutputMemory > OutputView1D;
-    typedef Kokkos::View< Sacado::UQ::PCE<InputStorage>*, InputLayout,
-        InputViewDevice, InputMemory > InputView1D;
-    OutputView1D y_1D = subview<OutputView1D>(y, ALL(), 0);
-    InputView1D x_1D = subview<InputView1D>(x, ALL(), 0);
-    MV_Multiply(b, y_1D, a, A, x_1D);
-  }
-  else {
-    typedef Kokkos::View< Sacado::UQ::PCE< OutputStorage>**,
-      OutputLayout, OutputViewDevice, OutputMemory > OutputVectorType;
-    typedef Kokkos::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
-      MatrixOrdinal, MatrixDevice, MatrixMemory, MatrixSize> MatrixType;
-    typedef Kokkos::View< Sacado::UQ::PCE<InputStorage>**,
-      InputLayout, InputViewDevice, InputMemory > InputVectorType;
-    typedef Stokhos::Multiply<MatrixType,InputVectorType,
-      OutputVectorType> multiply_type;
-    typedef Stokhos::MeanMultiply<MatrixType,InputVectorType,
-      OutputVectorType> mean_multiply_type;
+                                  OutputVectorType> mean_multiply_type;
 
     if (!Sacado::is_constant(a) || !Sacado::is_constant(b)) {
-      Impl::raise_error(
-        "MV_Multiply not implemented for non-constant a or b");
+      Kokkos::Impl::raise_error(
+        "Stokhos spmv not implemented for non-constant a or b");
     }
     if (A.values.sacado_size() == 1 && x.sacado_size() != 1) {
-      mean_multiply_type::apply( A, x, y, a.fastAccessCoeff(0), b.fastAccessCoeff(0) );
+      mean_multiply_type::apply( A, x, y,
+                                 Sacado::Value<AlphaType>::eval(a),
+                                 Sacado::Value<BetaType>::eval(b));
      }
     else
-      multiply_type::apply( A, x, y, a.fastAccessCoeff(0), b.fastAccessCoeff(0) );
+      multiply_type::apply( A, x, y,
+                            Sacado::Value<AlphaType>::eval(a),
+                            Sacado::Value<BetaType>::eval(b));
   }
 }
 

@@ -107,7 +107,7 @@ A person acting in this role needs to know little about CMake other than
 basics about how to run the ``cmake`` and ``ctest`` executables, how to set
 CMake cache variables, and the basics of building software by typing ``make``
 and running tests with ``ctest``.  The proper reference for a TriBITS Project
-User is the `Project-Specific Build Quick Reference`_.  The `TriBITS
+User is the `Project-Specific Build Reference`_.  The `TriBITS
 Overview`_ document may also be of some help.  A TriBITS project user does not
 need to know anything about the CMake language itself or any of the TriBITS
 macros or functions described in `TriBITS Macros and Functions`_ or really
@@ -125,8 +125,8 @@ tests and therefore this role includes all of the necessary knowledge and
 functions of a TriBITS Project User.  A casual TriBITS Project Developer
 typically does not need to know a lot about CMake and really only needs to
 know a subset of the `TriBITS Macros and Functions`_ defined in this document
-in addition to the genetic `TriBITS Build Quick Reference
-<../build_quick_ref/TribitsBuildQuickRef.html>`_ document.  A slightly more
+in addition to the genetic `TriBITS Build Reference
+<TribitsBuildReference.html>`_ document.  A slightly more
 sophisticated TriBITS Project Developer will also add new packages, add new
 package dependencies, and define new TPLs.  This current TriBITS Developers
 Guide and Reference document should supply everything such a developer needs
@@ -181,7 +181,7 @@ TriBITS matures and its requirements further stabilize, the need for a
 
 So depending on the particular role that a reader falls into, this document
 may or may not be necessary but instead the `TriBITS Overview`_ or the
-`<Project>BuildQuickRef`_ documents may be more appropriate.  Hopefully the
+`<Project>BuildReference`_ documents may be more appropriate.  Hopefully the
 above roles and discussion will help the reader select the right document to
 start with.
 
@@ -1320,8 +1320,8 @@ can be used in the logic in these files.  Some of the variables that should
 already be defined (in addition to all of the basic user TriBITS cache
 variables set in ``TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS()``)
 include ``CMAKE_HOST_SYSTEM_NAME``, ``${PROJECT_NAME}_HOSTNAME``, and
-``PYTHON_EXECUTABLE``.  The types of commands and logic to put in this file
-include:
+``PYTHON_EXECUTABLE`` (see `Python Support`_).  The types of commands and
+logic to put in this file include:
 
 * Setting additional user cache variable options that are used by multiple
   packages in the TriBITS Repository.  For example, Trilinos defines a
@@ -2083,11 +2083,11 @@ packages that depend on that TPL will be automatically disabled as well (see
 For each TPL referenced in a `<repoDir>/TPLsList.cmake`_ file using the macro
 `TRIBITS_REPOSITORY_DEFINE_TPLS()`_, there must exist a file, typically called
 ``FindTPL${TPL_NAME}.cmake``, that once processed, produces the variables
-``${TPL_NAME}_LIBRARIES`` and ``${TPL_NAME}_INCLUDE_DIRS``.  Most
+``TPL_${TPL_NAME}_LIBRARIES`` and ``TPL_${TPL_NAME}_INCLUDE_DIRS``.  Most
 ``FindTPL${TPL_NAME}.cmake`` files just use the function
-`TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_ the define the TriBITS TPL.  A simple
-example of such a file is the common TriBITS ``FindTPLPETSC.cmake`` module
-which is currently:
+`TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_ the define the TriBITS TPL.
+A simple example of such a file is the common TriBITS ``FindTPLPETSC.cmake``
+module which is currently:
 
 .. include:: ../../common_tpls/FindTPLPETSC.cmake
    :literal:
@@ -2097,6 +2097,9 @@ Some concrete ``FindTPL${TPL_NAME}.cmake`` files actually do use
 guts of finding at TPL which is perfectly fine.  In this case, the purpose for
 the wrapping ``FindTPL${TPL_NAME}.cmake`` is to standardize the output
 variables ``TPL_${TPL_NAME}_INCLUDE_DIRS`` and ``TPL_${TPL_NAME}_LIBRARIES``.
+For more details on properly using ``FIND_PACKAGE()`` to define a
+``FindTPL${TPL_NAME}.cmake`` file, see `How to use FIND_PACKAGE() for a
+TriBITS TPL`_.
 
 Once the `<repoDir>/TPLsList.cmake`_ files are all processed, then each
 defined TPL ``TPL_NAME`` is assigned the following global non-cache variables:
@@ -2217,7 +2220,7 @@ through the call to `TRIBITS_PROJECT()`_.
 |       * ``INCLUDE(<optFile>)``
 |   3)  Set variables ``CMAKE_HOST_SYSTEM_NAME`` and ``${PROJECT_NAME}_HOSTNAME``
 |       (both of these can be overridden in the cache by the user)
-|   4)  Find Python (sets ``PYTHON_EXECUTABLE``)
+|   4)  Find Python (sets ``PYTHON_EXECUTABLE``, see `Python Support`_)
 |   5)  ``INCLUDE(`` `<projectDir>/Version.cmake`_ ``)``
 |   6)  Define primary TriBITS options and read in the list of extra repositories
 |       (calls ``TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS()``)
@@ -4887,18 +4890,124 @@ Dependencies`_).  Every TriBITS project automatically supports tacking on
 add-on TriBITS packages and TPLs through the
 `${PROJECT_NAME}_EXTRA_REPOSITORIES`_ cmake cache variable as described in
 `Enabling extra repositories with add-on packages`_.  In addition, a TriBITS
-project can be set up from the start to pull in other TriBITS Repositories
-using the `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file.  A special
-form of this is a `TriBITS Meta-Project`_ that contains no packages or TPLs of
+project can be set up to pull in other TriBITS Repositories using the
+`<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file.  A special form of
+this is a `TriBITS Meta-Project`_ that contains no native packages or TPLs of
 its own.  The ability to create meta-projects out of individual TriBITS
-repositories allows TriBITS to be used to provide coordinated builds of large
-aggregations of software.
+repositories allows TriBITS to be used to provide coordinated builds (or
+meta-builds) of large aggregations of software.
 
 To help set up a full-featured development environment (i.e. not just the
 basic configure, build, test, and install) for TriBITS projects with multiple
 repositories, TriBITS provides some extra development tools implemented using
-Python.  The primary tools supporting multi-repository projects are the
-`checkin-test.py`_ tool and the `gitdist`_ tool.
+Python which are provided in the "extended" parts of TriBITS (see
+`TriBITS/tribits/ Directory Contents`_).  The primary tools supporting
+multi-repository projects are the Python scripts `clone_extra_repos.py`_,
+`gitdist`_, and `checkin-test.py`_.
+
+To demonstrate, consider the TriBITS meta-project with the following
+``ExtraRepositoriesList.cmake`` file::
+
+  TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES(
+    ExtraRepo1  ""  GIT  git@someurl.com:ExtraRepo1  ""  Continuous
+    ExtraRepo2  "ExtraRepo1/ExtraRepos2"  GIT  git@someurl.com:ExtraRepo2
+                                                   NOPACKAGES  Continuous
+    ExtraRepo3  ""  GIT  git@someurl.com:ExtraRepo3  ""  Nightly
+  )
+
+Once cloned, the directories would be laid out as::
+
+  MetaProject/
+    .git/
+    .gitignore
+    ExtraRepo1/
+      .git/
+      ExrraRepo2/
+        .git/
+    ExtraRepo3/
+      .git/
+
+.. _clone_extra_repos.py:
+
+The tool **clone_extra_repos.py** is used to clone the extra repositories for
+a multi-repositories TriBITS proejct.  It reads the repository URLs and
+destination directories from the file
+`<projectDir>/cmake/ExtraRepositoriesList.cmake`_ and does the clones.  For
+example, to clone all the repos for the ``MetaProject`` project, one would use
+the commands::
+
+  $ git clone git@someurl.com:MetaProject
+  $ cd MetaProject/
+  $ ./cmake/tribits/ci_support/clone_extra_repos.py 
+
+which produces the output like::
+
+  ...  
+  
+  ***
+  *** Clone the selected extra repos:
+  ***
+  
+  Cloning repo ExtraRepo1 ...
+  
+  Running: git clone git@someurl.com:ExtraRepo1 ExtraRepo1
+  
+  Cloning repo ExtraRepo2 ...
+  
+  Running: git clone git@someurl.com:ExtraRepo2 ExtraRepo1/ExtraRepo2
+  
+  Cloning repo ExtraRepo3 ...
+  
+  Running: git clone git@someurl.com:ExtraRepo3 ExtraRepo3
+
+See `clone_extra_repos.py --help`_ for more details.
+
+.. _gitdist:
+
+Once cloned, one needs to work with the multiple repositories to perform basic
+VC operations.  For this, TriBITS provides the tool **gitdist** which is a
+simple stand-alone Python script that distributes a git command across a set
+of git repos.  This tool is not specific to TriBITS but it is very useful for
+dealing with TriBITS projects with multiple repositories.  It only requires
+that a base git repo and a set of zero or more git repos cloned under it.
+
+To use ``gitdist`` with this aggregate meta-project, one would first set up
+the file ``MetaProject/.gitdist`` (or a version controlled
+``MetaProject.gitdist.default`` file) which would contain the lines::
+
+  ExtraRepo1
+  ExtraRepo1/ExtraRepo2
+  ExtraRepo3
+
+and one would set up the tracked ignore file ``MetaProject/.gitignore`` which
+contains the lines::
+
+  /ExtraRepo1/
+  /ExtraRepo1/ExtraRepo2/
+  /ExtraRepo3/
+
+To use ``gitdist``, one would put ``gitdist`` into their path and also set up
+the command-line shell aliases ``gitdist-status`` and ``gitdist-mod`` (see
+`gitdist --help`_).
+
+Some of the aggregate commands that one would typically run under the base
+``MetaProject/`` directory are::
+
+  # See status of all repos at once
+  gitdist-status
+
+  # Pull updates to all
+  gitdist pull
+
+  # Push local commits to tracking branches
+  gitdist push
+
+The script ``gitdist`` is provided under TriBITS directory::
+
+  cmake/tribits/python_utils/gitidst   
+
+and can be installed by the `install_devtools.py`_ script (see `TriBITS
+Development Toolset`_).  See `gitdist --help`_ for more details.
 
 For projects with a standard set of extra repositories defined in the
 `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file, the
@@ -4908,85 +5017,50 @@ For projects with a standard set of extra repositories defined in the
 perform all of the various actions for all of the selected repositories.  See
 `checkin-test.py`_ and `checkin-test.py --help`_ for more details.
 
-.. _gitdist:
+To keep track of compatible versions of the git repos, TriBITS provides
+support for a ``<Project>RepoVersion.txt`` file.  Any TriBITS project can
+generate this file automatically by setting the option
+`${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE`_.  For the above example
+``MetaProject``, this file looks like::
 
-The tool **gitdist** is a simple stand-alone Python script that distributes a
-git command across a set of git repos.  This tool is not specific to TriBITS
-but it is very useful for dealing with TriBITS projects with multiple
-repositories.  It only requires that a base git repo and a set of zero or more
-git repos cloned under it.  For example, consider the TriBITS meta-project
-specified in the following ExtraRepositoriesList.cmake file:
+  *** Base Git Repo: MetaProject
+  e102e27 [Mon Sep 23 11:34:59 2013 -0400] <author0@someurl.com>
+  First summary message
+  *** Git Repo: ExtraRepo1
+  b894b9c [Fri Aug 30 09:55:07 2013 -0400] <author1@someurl.com>
+  Second summary message
+  *** Git Repo: ExtraRepo1/ExtraRepo2
+  97cf1ac [Thu Dec 1 23:34:06 2012 -0500] <author2someurl.com>
+  Third summary message
+  *** Git Repo: ExtraRepo3
+  cd4a3af [Mon Mar 9 19:39:06 2013 -0400] <author3someurl.com>
+  Fourth summary message
 
-.. include:: ExtraReposList.cmake
-   :literal:
-
-This would be laid out in directories as::
-
-  BaseRepo/
-    .git/
-    .gitignore
-    ExtraRepo1/
-      .git/
-    packages/SomePackage/Blah/
-      .git/
-    ExtraRepo3/
-      .git/
-    ExtraRepo4/
-      .git/
-
-to use ``gitdist`` with this aggregate project, one would first set up the file
-``BaseRepo/.gitdist`` to contain just::
-
-  ExtraRepo1
-  packages/SomePackage/Blah
-  ExtraRepo3
-  ExtraRepo4
-
-and one would set up the tracked ignore file ``BaseRepo/.gitignore`` which
-contains the lines::
-
-  /ExtraRepo1/
-  /packages/SomePackage/Blah/
-  /ExtraRepo3/
-  /ExtraRepo4/
-
-Common aggregate commands then run under the ``BaseRepo/`` directory are::
-
-  # See status of all repos at once
-  gitdist status
-
-  # Pull updates to all
-  gitdist pull
-
-  # Push local commits to tracking branches
-  gitdist push
-
-The script ``gitdist`` is version controlled in the main TriBIT repo under::
-
-   common_tools/git/gitdist
-
-See `gitdist --help`_ for more details.
+This file gets created in the build directory, gets echoed in the configure
+output, gets installed into the install directory, and get added to the source
+distributions tarball.  It also gets pushed up to CDash for all automated
+builds.  The tool `gitdist`_ can then use this file to checkout and tag
+compatible versions, difference two versions of the meta-project, etc. (see
+`gitdist --help`_ for more details on git operations).
 
 The TriBITS approach to managing multiple VC repos described above works well
-for order-10 or so VC repos but will not scale well to order-30 or more repos.
-For larger numbers of VC repos, one should consider nested integration
-creating snapshot git repos (e.g. using the tool `snapshot-dir.py`_) that
-aggregate several related repositories into a single git repo.  Another
-approach might be to use git submodules.  However, note that the TriBITS tools
-and processes described here are **not** currently set up to support aggregate
-VC repos that use git submodules.  The design decision with TriBITS was to
-explicitly handle the different git VC repos using `gitdist`_ and the
-`<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file.  There are advantages
-and disadvantages to using git submodules verses explicitly handling the
-different git repos currently employed by the TriBITS software development
-tools.  It is possible that TriBITS will add support for aggregate git repos
-using git submodules but only if there are important projects that choose to
-use them.  The discussion of these various approaches and strategies to
-dealing with aggregate repos is beyond the scope of this document.
-
-.. ToDo: Discuss a repo clone script (once you write it).
-
-.. ToDo: Discuss how to handle missing packages in upstream repos.
+for around 20 or 30 VC repos but is likely not a good solution for many more
+git repos.  For larger numbers of VC repos, one should consider nested
+integration creating snapshot git repos (e.g. using the tool
+`snapshot-dir.py`_) that aggregate several related repositories into a single
+git repo.  Another approach might be to use git submodules.  (However, note
+that the TriBITS tools and processes described here are **not** currently set
+up to support aggregate VC repos that use git submodules.)  The design
+decision with TriBITS was to explicitly handle the different git VC repos by
+listing them in the `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file and
+then using the simple, easy to understand, tools `clone_extra_repos.py`_ and
+`gitdist`_.  There are advantages and disadvantages to explicitly handling the
+different git repos as is currently employed by the TriBITS software
+development tools verses using git submodules.  It is possible that TriBITS
+will add support for aggregate git repos using git submodules in the future
+but only if there are important projects that choose to use them.  The
+discussion of these various approaches and strategies to dealing with
+aggregate repos is beyond the scope of this document.
 
 
 Development Workflows
@@ -5009,8 +5083,7 @@ then pushes updates.  The major difference is that a well constructed
 development process will use the `checkin-test.py`_ script to test and push
 all changes that affect the build or the tests.  The basic steps in
 configuring, building, running tests, etc., are given in the project's
-`<Project>BuildQuickRef`_. file (see `Project-Specific Build Quick
-Reference`_).
+`<Project>BuildReference`_. file (see `Project-Specific Build Reference`_).
 
 Multi-Repository Development Workflow
 -------------------------------------
@@ -5034,7 +5107,7 @@ This section provides short, succinct lists of the steps to accomplish a few
 common tasks.  Extra details are referenced.
 
 
-How to Add a new TriBITS Package
+How to add a new TriBITS Package
 --------------------------------
 
 To add a new TriBITS package, it is recommended to take the template from one
@@ -5075,11 +5148,11 @@ dependencies on this new package.
 .. ToDo: Expand on the above bullets a lot!
 
 
-How to Add a new TriBITS Package with Subpackages
+How to add a new TriBITS Package with Subpackages
 -------------------------------------------------
 
 Adding a new package with subpackages is similar to adding a new regular
-package described in `How to Add a new TriBITS Package`_.  Again, it is
+package described in `How to add a new TriBITS Package`_.  Again, it is
 recommended that one copies an example package from `TribitsExampleProject`_.
 For example, one could copy files and directories from the example package
 ``WithSubpackages``.
@@ -5104,18 +5177,18 @@ To add a new TriBITS package with packages, do the following:
 4) Configure the TriBITS project enabling the new empty package
    ``<packageName>``.
 
-5) Incrementally add the subpackages as described in `How to Add a new TriBITS
+5) Incrementally add the subpackages as described in `How to add a new TriBITS
    Subpackage`_, filling out the various ``CMakeLists.txt`` files defining
    libraries, executables, tests and examples.
 
 Once the new SE packages are defined, downstream SE packages can define
 dependencies on these.
 
-How to Add a new TriBITS Subpackage
+How to add a new TriBITS Subpackage
 -----------------------------------
 
 Given an existing top-level TriBITS package that is already broken down into
-subpackages (see `How to Add a new TriBITS Package with Subpackages`_), adding
+subpackages (see `How to add a new TriBITS Package with Subpackages`_), adding
 a new subpackage does not require changing any project-level or
 repository-level files.  One only needs to add the declaration for the new
 subpackages in its parent's `<packageDir>/cmake/Dependencies.cmake`_ file then
@@ -5156,7 +5229,7 @@ subpackages, do the following:
    and tests run as new pieces are added.
 
 
-How to Add a new TriBITS TPL
+How to add a new TriBITS TPL
 ----------------------------
 
 In order for an SE package to define a dependency on a new TPL (i.e. one that
@@ -5173,9 +5246,11 @@ To add a new TriBITS TPL, do the following:
    dependency.
 
 2) Create the TPL find module, e.g. ``<repoDir>/tpls/FindTPL<tplName>.cmake``
-   (see `TriBITS TPL`_ and `TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_ for details).
-   List the default required header files and/or libraries that must be
-   provided by the TPL.
+   (see `TriBITS TPL`_ and `TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_
+   for details).  List the default required header files and/or libraries that
+   must be provided by the TPL.  NOTE: This find module can also (optionally)
+   use ``FIND_PACKAGE(<tplName> ...)`` for the default find operation.  For
+   details, see `How to use FIND_PACKAGE() for a TriBITS TPL`_.
 
 3) Add a row for the new TPL to the `<repoDir>/TPLsList.cmake`_ file after any
    TPLs that this new TPL may depend on.
@@ -5205,7 +5280,64 @@ To add a new TriBITS TPL, do the following:
 .. package and refer to it here.
 
 
-How to Add a new TriBITS Repository
+How to use FIND_PACKAGE() for a TriBITS TPL
+-------------------------------------------
+
+When defining a ``FindTPL<tplName>.cmake`` file, it is possible (and
+encouraged) to utilize ``FIND_PACKAGE(<tplName> ...)`` to provide the default
+find operation.  In order for the resulting ``FindTPL<tplName>.cmake`` to
+behave consistently between all the various TriBITS TPLs (and allow the
+standard TriBITS TPL find overrides) one must use the TriBITS function
+`TRIBITS_TPL_ALLOW_PRE_FIND_PACKAGE()`_ in combination with the function
+`TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_.  The basic form of the
+resulting ``FindTPL<tplName>.cmake`` looks like::
+
+  TRIBITS_TPL_ALLOW_PRE_FIND_PACKAGE( <tplName>  <tplName>_ALLOW_PREFIND )
+  IF (<tplName>_ALLOW_PREFIND)
+    FIND_PACKAGE(<tplName> ...)
+    IF(<tplName>_FOUND)
+      SET(TPL_<tplName>_INCLUDE_DIRS ${<tplName>_INCLUDE_DIRS} CACHE PATH "...")
+      SET(TPL_<tplName>_LIBRARIES ${<tplName>_LIBRARIES} CACHE FILEPATH "...")
+      SET(TPL_<tplName>_LIBRARY_DIRS ${<tplName>_LIBRARY_DIRS} CACHE PATH "...")
+      ENDIF()
+  ENDIF()
+
+  TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( <tplName>
+    REQUIRED_HEADERS ...
+    REQUIRED_LIBS_NAMES ...
+    )
+
+With this approach, we the ``FindTPL<tplName>.cmake`` module preserves all of
+the user behavior described in `Enabling support for an optional Third-Party
+Library (TPL)`_.
+
+If one wants to skip the overrides ``<tplName>_INCLUDE_DIRS``,
+``<tplName>_LIBRARY_NAMES``, or ``<tplName>_LIBRARY_DIRS``, then one can
+set::
+
+  SET(<tplName>_FORCE_PRE_FIND_PACKAGE TRUE CACHE BOOL
+    "Always first call FIND_PACKAGE(<tplName> ...) unless explicit override")
+
+This avoid name classes with the variables ``<tplName>_INCLUDE_DIRS`` and
+``<tplName>_LIBRARY_DIRS`` which are often used in concrete
+``Find<tplName>.cmake`` modules.
+
+For a slightly more complex example, see ``FindTPLHDF5.cmake``:
+
+.. include:: ../../common_tpls/FindTPLHDF5.cmake
+   :literal:
+
+Note that some specialized ``Find<tplName>.cmake`` modules do more than just
+return a list of include directories and libraries.  Some, like
+``FindQt4.cmake`` also return other variables that are used in downstream
+packages and therefore ``FIND_PACKAGE(Qt4 ...)`` must be called on every
+configure.  In specialized cases such as this, one must write a more
+specialized ``FindTPL<tplName>.cmake`` file and can't use the
+`TRIBITS_TPL_ALLOW_PRE_FIND_PACKAGE()`_ function as shown above.  Such find
+modules cannot completely adhere to the standard behavior described in
+`Enabling support for an optional Third-Party Library (TPL)`_.
+
+How to add a new TriBITS Repository
 -----------------------------------
 
 To add a new TriBITS and/ git VC repository to a TriBITS project that already
@@ -5434,7 +5566,7 @@ one would perform the following steps:
    under the repository directory.)
 
 4) Insert the package into the `<repoDir>/PackagesList.cmake`_ file as
-   described in `How to Add a new TriBITS Package`_ except one must also call
+   described in `How to add a new TriBITS Package`_ except one must also call
    ``TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(<insertedPackageName>)`` as
    described above.
 
@@ -5499,67 +5631,98 @@ features it wants and therefore these projects will require newer versions of
 CMake than what is required by TriBITS (see discussion of
 ``CMAKE_MINIMUM_REQUIRED()`` in `<projectDir>/CMakeLists.txt`_).  But also
 note that specific TriBITS projects and packages will also require additional
-tools like compilers, Python, Perl, or many other such dependencies.  It is
-just that TriBITS itself does not require any of these in order to perform the
-basic configure, build, test, and install of software.  The goal of TriBITS is
-not to make the portability of software that uses it any worse than it already
-is but instead to make it easier in most cases (that after all is the whole
-goal of CMake).
+tools like compilers, Python (see `Python Support`_), Perl, or many other such
+dependencies.  It is just that TriBITS itself does not require any of these in
+order to perform the basic configure, build, test, and install of software.
+The goal of TriBITS is not to make the portability of software that uses it
+any worse than it already is but instead to make it easier in most cases (that
+after all is the whole goal of CMake).
 
-While the core TriBITS functionality to configure, build, test, and install
+While the TriBITS Core functionality to configure, build, test, and install
 software is written using only raw CMake, the more sophisticated development
 tools needed to implement the full TriBITS development environment require
-Python 2.4 (or higher, but not Python 3.x).  Python is needed for tools like
-`checkin-test.py`_ and `gitdist`_.  In addition, these python tools are used in
-`TRIBITS_CTEST_DRIVER()`_ to drive automated testing and submits to CDash.
-Also not that git is the chosen version control tool for the TriBITS software
-development tools and all the VC-related functionality in TriBITS.  But none
-of this is required for doing the most basic building, testing, or
-installation of a project using TriBITS.
+Python 2.4 (or higher, but not Python 3.x) (see `Python Support`_).  Python is
+needed for tools like `checkin-test.py`_ and `gitdist`_.  In addition, these
+python tools are used in `TRIBITS_CTEST_DRIVER()`_ to drive automated testing
+and submits to CDash.  Also note that ``git`` is the chosen version control
+tool for the TriBITS software development tools and all the VC-related
+functionality in TriBITS.  But none of this is required for doing the most
+basic building, testing, or installation of a project using TriBITS Core.
 
 
-Project-Specific Build Quick Reference
---------------------------------------
+Python Support
+--------------
+
+TriBITS Core does not require anything other than raw CMake.  However, Python
+Utils, TriBITS CI Support, and other extended TriBITS components require
+Python.  These extra TriBITS tools only require Python 2.4+.  By default, when
+a TriBITS project starts to configure using CMake, it will try to find Python
+2.4+ on the system (see `Full Processing of TriBITS Project Files`_).  If
+Python is found, it will set the global cache variable ``PYTHON_EXECUTABLE``.
+If it is not found, then it will print a warning and ``PYTHON_EXECUTABLE``
+will be empty.  With this default behavior, if Python is found, then the
+TriBITS project can use it.  Otherwise, it can do without it.
+
+While the default behavior for finding Python described above is useful for
+many TriBITS project (such as Trilinos), some TriBITS projects need different
+behavior such as:
+
+1. The TriBITS project may not ever use Python so there is no need to look for
+   it at all.  In this case, the TriBITS project would set
+   `${PROJECT_NAME}_USES_PYTHON`_ to ``FALSE``.
+
+2. Some TriBITS projects require Python and should not even configure if it
+   can't be found.  In this case, the TriBITS project would set
+   `${PROJECT_NAME}_REQUIRES_PYTHON`_ to ``TRUE``.
+
+3. Some TriBITS projects may require a version of Python more recent than 2.4.
+   In this case, the TriBITS project would set `PythonInterp_FIND_VERSION`_ to
+   some value higer than ``2.4``.  For example, may newer systems have Python
+   2.6.6 or higher versions installed by default and projects developed on
+   such a system typically requires this version or higher.
+
+
+Project-Specific Build Reference
+--------------------------------
 
 If a project that uses TriBITS is going to have a significant user base that
 will configure, build, and test the project, then having some documentation
 that explains how to do this would be useful.  For this purpose, TriBITS
-provides a mechanism to quickly create a project-specific build quick
-reference document in restructured text (RST) format and with HTML and
-LaTeX/PDF outputs.  This document are generally created in the base project
-source tree and given then name ``<Project>BuildQuickRef.[rst,html,pdf]``.
-This document consists of two parts.  One part is a generic template
-document::
+provides a mechanism to quickly create a project-specific build reference
+document in restructured text (RST) format and with HTML and LaTeX/PDF
+outputs.  This document are generally created in the base project source tree
+and given then name ``<Project>BuildReference.[rst,html,pdf]``.  This document
+consists of two parts.  One part is a generic template document::
 
-  tribits/doc/build_quick_ref/TribitsBuildQuickRefBody.rst
+  tribits/doc/TribitsBuildReferenceBody.rst
 
 provided in the TriBITS source tree that uses the place-holder ``<Project>``
 for the for the real project name.  The second part is a project-specific
 template file::
 
-  <projectDir>/cmake/<Project>BuildQuickRefTemplate.rst
+  <projectDir>/cmake/<Project>BuildReferenceTemplate.rst
 
 which provides the outer RST document (with title, authors, abstract,
 introduction, other introductory sections).  From these two files, the
 script::
 
-  tribits/doc/build_quick_ref/create-project-build-quickref.py
+  tribits/doc/build_ref/create-project-build-quickref.py
 
-is used to replace ``<Project>`` in the ``TribitsBuildQuickRefBody.rst`` file
+is used to replace ``<Project>`` in the ``TribitsBuildReferenceBody.rst`` file
 with the real project name (read from the project's ``ProjectName.cmake`` file
 by default) and then generates the read-only files::
 
   <projectDir>/
-    <Project>BuildQuickRef.rst
-    <Project>BuildQuickRef.html
-    <Project>BuildQuickRef.pdf
+    <Project>BuildReference.rst
+    <Project>BuildReference.html
+    <Project>BuildReference.pdf
 
 For a simple example of this, see::
 
   tribits/doc/examples/TribitsExampleProject/cmake/create-build-quickref.sh
 
 A project-independent version of this file is provided in the
-`TribitsBuildQuickRef`_.[rst,html,pdf] which is referred to many times in this
+`TribitsBuildReference`_.[rst,html,pdf] which is referred to many times in this
 developers guide.
 
 
@@ -6729,21 +6892,41 @@ TriBITS Development Toolset
 ---------------------------
 
 Most TriBITS projects need git, a compiler (e.g. GCC), MPI, and a number of
-other standard TPLs and tools in order to develop on and test the project
-code.  To this end, TriBITS contains some helper scripts for downloading,
-configuring, building, and installing packages like git, cmake, GCC, OpenMPI,
-and others needed to set up a development environment for a typical
-computational science software project.  These tools are used to set up
-development environments on new machines for projects like Trilinos and CASL
-VERA.  Scripts with names like ``install-gcc.py`` are defined which pull
+other standard TPLs and other tools in order to develop on and test the
+project code.  To this end, TriBITS contains some helper scripts for
+downloading, configuring, building, and installing packages like git, cmake,
+GCC, MPICH, and others needed to set up a development environment for a
+typical computational science software project.  These tools are used to set
+up development environments on new machines for projects like Trilinos and
+CASL VERA.  Scripts with names like ``install-gcc.py`` are defined which pull
 sources from public git repos then configure, build, and install into
 specified installation directories.
 
-.. ToDo: Discuss the installation scripts and github repos for GCC, OpenMPI,
-.. CMake, etc.
+.. _install_devtools.py:
 
-.. ToDo: Move install scripts to tribits/dev_toolset/ and document specific
-.. scripts here and even a top-level driver install script.
+The script **install_devtools.py** is provided in the directory::
+
+  tribits/devtools_install/
+
+To use this script, one just needs to create some scratch directory like::
+
+  $ mkdir scratch
+  $ cd scratch/
+
+then install the tools using, for example::
+
+  $ install_devtools.py --install-dir=~/install/tribits_devtools \
+    --parallel=16 --do-all
+
+Then to access installed development environment, one just needs to source the
+script::
+
+  ~/install/tribits_devtools/load_dev_env.sh
+
+and then the installed versions of GCC, MPICH, CMake, and `gitdist`_ are
+placed in one's path.
+
+See `install_devtools.py --help`_ for more details.
 
 
 References
@@ -6822,10 +7005,10 @@ be overridden by the user when calling ``cmake`` in a number of ways.
 
 Most of these global options that can be overridden externally by setting the
 cache variable ``${PROJECT_NAME}_<SOME_OPTION>`` should be documented in the
-`Project-Specific Build Quick Reference`_ document.  A generic version of this
-document is found in `TribitsBuildQuickRef`_.  Some of the more unusual
+`Project-Specific Build Reference`_ document.  A generic version of this
+document is found in `TribitsBuildReference`_.  Some of the more unusual
 options that might only be of interest to developers mentioned below may not
-be documented in `TribitsBuildQuickRef`_.
+be documented in `TribitsBuildReference`_.
 
 The global project-level TriBITS options for which defaults can be provided by
 a given TriBITS project are:
@@ -6844,12 +7027,16 @@ a given TriBITS project are:
 * `${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION`_
 * `${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES`_
 * `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_
+* `${PROJECT_NAME}_REQUIRES_PYTHON`_
 * `${PROJECT_NAME}_SHOW_TEST_START_END_DATE_TIME`_
 * `${PROJECT_NAME}_TEST_CATEGORIES`_
 * `${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS`_
 * `${PROJECT_NAME}_TRACE_ADD_TEST`_
 * `${PROJECT_NAME}_USE_GNUINSTALLDIRS`_
+* `${PROJECT_NAME}_USES_PYTHON`_
 * `MPI_EXEC_MAX_NUMPROCS`_
+* `PythonInterp_FIND_VERSION`_
+
 
 These options are described below.
 
@@ -6880,7 +7067,7 @@ These options are described below.
   `upstream`_ required packages or TPLs will be disabled.  If
   `${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=OFF`_, then an
   configure error will occur.  For more details also see
-  `TribitsBuildQuickRef`_ and `Disables trump enables where there is a
+  `TribitsBuildReference`_ and `Disables trump enables where there is a
   conflict`_.  A project can define a different default value by setting::
   
     SET(${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES_DEFAULT FALSE)
@@ -6981,7 +7168,7 @@ These options are described below.
   
   If ``${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES`` is ``ON``, then
   ``Makefile.export.<PackageName>`` will get created at configure time in the
-  build tree and installed into the install tree.  See `TribitsBuildQuickRef`_
+  build tree and installed into the install tree.  See `TribitsBuildReference`_
   for details.  The TriBITS default is ``ON`` but a project can decide to turn
   this off by default by setting::
   
@@ -7070,24 +7257,35 @@ These options are described below.
 
   If ``${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`` is set to ``ON``, then
   any defined libraries or header files that are listed in calls to
-  `TRIBITS_ADD_LIBRARY()`_ will be installed (unless options are passed into
-  `TRIBITS_ADD_LIBRARY()`_ that disable installs).  If set to ``OFF``, then
-  headers and libraries will *not* be installed by default and only
-  ``INSTALLABLE`` executables added with `TRIBITS_ADD_EXECUTABLE()`_ will be
-  installed.  However, as described in `TribitsBuildQuickRef`_, shared
-  libraries will always be installed if enabled since they are needed by the
-  installed executables.
+  `TRIBITS_ADD_LIBRARY()`_ or `TRIBITS_INSTALL_HEADERS()`_ will be installed
+  (unless options are passed into `TRIBITS_ADD_LIBRARY()`_ that disable
+  installs).  If set to ``OFF``, then headers and libraries will *not* be
+  installed by default and only ``INSTALLABLE`` executables added with
+  `TRIBITS_ADD_EXECUTABLE()`_ will be installed.  However, as described in
+  `TribitsBuildReference`_, shared libraries will always be installed if
+  enabled since they are needed by the installed executables.
   
-  For a TriBITS project that primarily is delivering libraries
+  For a TriBITS project that is primarily delivering libraries
   (e.g. Trilinos), then it makes sense to leave the TriBITS default which is
   ``ON`` or explicitly set::
   
-    SET(${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT ON)
+    SET(${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT  ON)
   
   For a TriBITS project that is primarily delivering executables (e.g. VERA),
   then it makes sense to set the default to::
   
-    SET(${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT OFF)
+    SET(${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT  OFF)
+
+.. _${PROJECT_NAME}_REQUIRES_PYTHON:
+
+**${PROJECT_NAME}_REQUIRES_PYTHON**
+
+  If the TriBITS project requires Python, set::
+
+    SET(${PROJECT_NAME}_REQUIRES_PYTHON  TRUE)
+
+  in the `<projectDir>/ProjectName.cmake`_ file (See `Python Support`_).  The
+  default is implicitly ``FALSE``.
 
 .. _${PROJECT_NAME}_SHOW_TEST_START_END_DATE_TIME:
 
@@ -7183,6 +7381,20 @@ These options are described below.
   in the project's top-level `<projectDir>/CMakeLists.txt`_ file or its
   `<projectDir>/ProjectName.cmake`_ file.  The default is ``FALSE``.
 
+.. _${PROJECT_NAME}_USES_PYTHON:
+
+**${PROJECT_NAME}_USES_PYTHON**
+
+  If the TriBITS project can use Python, but does not require it, set::
+
+    SET(${PROJECT_NAME}_USES_PYTHON  TRUE)
+
+  in the `<projectDir>/ProjectName.cmake`_ file (see `Python Support`_).  The
+  default for a TriBITS project is implicitly ``TRUE``.  To explicitly state
+  that Python is never needed, set::
+
+    SET(${PROJECT_NAME}_USES_PYTHON  FALSE)
+
 .. _MPI_EXEC_MAX_NUMPROCS:
 
 **MPI_EXEC_MAX_NUMPROCS**
@@ -7201,6 +7413,22 @@ These options are described below.
   by a given machine (or class of machines).  For example if a given machine
   has 64 cores, a reasonable number for ``MPI_EXEC_MAX_NUMPROCS_DEFAULT`` is
   64.
+
+.. _PythonInterp_FIND_VERSION:
+
+**PythonInterp_FIND_VERSION**
+
+  Determines the version of Python that is looked for.  TriBITS requires at
+  least version "2.4".  A particular TriBITS project can require a higher
+  version of TriBITS and this is set using, for example:
+
+    SET(PythonInterp_FIND_VERSION_DEFAULT "2.6.6")
+
+  in the `<projectDir>/ProjectName.cmake`_ file (See `Python Support`_).  The
+  default is version "2.4".  The user can force a more recent version of
+  Python by configuring with, for example::
+
+    -D PythonInterp_FIND_VERSION="2.7.3"
 
 
 TriBITS Macros and Functions
@@ -7357,27 +7585,27 @@ Software Development, 2003`_]).
 .. dependencies!
 
 
-checkin-test.py --help
-----------------------
+clone_extra_repos.py --help
+---------------------------
 
-Below is a snapshot of the output from ``checkin-test.py --help``.  This
-``--help`` output contains a lot of information about the recommended
-development workflow (mostly related to pushing commits) and outlines a number
-of different use cases for using the script.
+Below is a snapshot of the output from ``clone_extra_repos.py --help``.  For
+more details on the usage of ``clone_extra_repos.py``, see `Multi-Repository
+Support`_ and `Multi-Repository Development Workflow`_.
 
-.. include:: checkin-test-help.txt
+.. include:: clone_extra_repos-help.txt
    :literal:
 
 
 gitdist --help
 --------------
 
-Below is a snapshot of the output from ``gitdist --help``.  For more details on
-the usage of ``gitdist``, see `Multi-Repository Support`_ and `Multi-Repository
-Development Workflow`_.
+Below is a snapshot of the output from ``gitdist --help``.  For more details
+on the usage of ``gitdist``, see `Multi-Repository Support`_ and
+`Multi-Repository Development Workflow`_.
 
 .. include:: gitdist-help.txt
    :literal:
+
 
 .. _snapshot-dir.py:
 
@@ -7392,43 +7620,71 @@ snapshotting`_.
 .. include:: snapshot-dir-help.txt
    :literal:
 
+
+checkin-test.py --help
+----------------------
+
+Below is a snapshot of the output from ``checkin-test.py --help``.  This
+``--help`` output contains a lot of information about the recommended
+development workflow (mostly related to pushing commits) and outlines a number
+of different use cases for using the script.
+
+.. include:: checkin-test-help.txt
+   :literal:
+
+
+install_devtools.py --help
+--------------------------
+
+Below is a snapshot of the output from ``install_devtools.py --help``.
+
+.. include:: install_devtools-help.txt
+   :literal:
+
+
+
 .. ***
 .. *** Common references
 .. **
 
-.. Common references to TribitsBuildQuickRef document
+.. Common references to TribitsBuildReference document
 
-.. _<Project>BuildQuickRef: ../build_quick_ref/TribitsBuildQuickRef.html
+.. NOTE: These references
+.. are for when published in the same directory using public_docs.sh
 
-.. _TribitsBuildQuickRef: `<Project>BuildQuickRef`_
+.. _<Project>BuildReference: TribitsBuildReference.html
 
-.. _Selecting the list of packages to enable: ../build_quick_ref/TribitsBuildQuickRef.html#selecting-the-list-of-packages-to-enable
+.. _TribitsBuildReference: `<Project>BuildReference`_
 
-.. _Enabling extra repositories with add-on packages: ../build_quick_ref/TribitsBuildQuickRef.html#enabling-extra-repositories-with-add-on-packages
+.. _Selecting the list of packages to enable: TribitsBuildReference.html#selecting-the-list-of-packages-to-enable
 
-.. _Getting set up to use CMake: ../build_quick_ref/TribitsBuildQuickRef.html#getting-set-up-to-use-cmake
+.. _Enabling extra repositories with add-on packages: TribitsBuildReference.html#enabling-extra-repositories-with-add-on-packages
 
-.. _Dashboard Submissions: ../build_quick_ref/TribitsBuildQuickRef.html#dashboard-submissions
+.. _Getting set up to use CMake: TribitsBuildReference.html#getting-set-up-to-use-cmake
 
-.. _<Project>_EXTRAREPOS_FILE: ../build_quick_ref/TribitsBuildQuickRef.html#project-extrarepos-file
+.. _Dashboard Submissions: TribitsBuildReference.html#dashboard-submissions
+
+.. _<Project>_EXTRAREPOS_FILE: TribitsBuildReference.html#project-extrarepos-file
 
 .. _${PROJECT_NAME}_EXTRAREPOS_FILE: `<Project>_EXTRAREPOS_FILE`_
 
-.. _Creating a tarball of the source tree: ../build_quick_ref/TribitsBuildQuickRef.html#creating-a-tarball-of-the-source-tree
+.. _${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE: TribitsBuildReference.html#generating-a-project-repo-version-file
 
-.. _Enabling support for an optional Third-Party Library (TPL): ../build_quick_ref/TribitsBuildQuickRef.html#enabling-support-for-an-optional-third-party-library-tpl
+.. _Creating a tarball of the source tree: TribitsBuildReference.html#creating-a-tarball-of-the-source-tree
 
-.. _${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE: ../build_quick_ref/TribitsBuildQuickRef.html#project-configure-options-file
+.. _Enabling support for an optional Third-Party Library (TPL): TribitsBuildReference.html#enabling-support-for-an-optional-third-party-library-tpl
 
-.. _${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE: ../build_quick_ref/TribitsBuildQuickRef.html#outputting-package-dependency-information
+.. _${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE: TribitsBuildReference.html#project-configure-options-file
 
-.. _${PROJECT_NAME}_TRACE_FILE_PROCESSING: ../build_quick_ref/TribitsBuildQuickRef.html#project-trace-file-processing
+.. _${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE: TribitsBuildReference.html#outputting-package-dependency-information
 
-.. _${PROJECT_NAME}_SCALE_TEST_TIMEOUT: ../build_quick_ref/TribitsBuildQuickRef.html#project-scale-test-timeout-testing-timeout
+.. _${PROJECT_NAME}_TRACE_FILE_PROCESSING: TribitsBuildReference.html#project-trace-file-processing
 
-.. _make dashboard: ../build_quick_ref/TribitsBuildQuickRef.html#dashboard-submissions
+.. _${PROJECT_NAME}_SCALE_TEST_TIMEOUT: TribitsBuildReference.html#project-scale-test-timeout-testing-timeout
 
-.. _Setting the install prefix at configure time: ../build_quick_ref/TribitsBuildQuickRef.html#setting-the-install-prefix-at-configure-time
+.. _make dashboard: TribitsBuildReference.html#dashboard-submissions
+
+.. _Setting the install prefix at configure time: TribitsBuildReference.html#setting-the-install-prefix-at-configure-time
 
 .. Common references to the TribitsOverview document
 

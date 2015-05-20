@@ -136,6 +136,7 @@
   <li> Roger Pawlowski, Sandia National Labs, rppawlo@sandia.gov (%NOX Project Lead)
   <li> Eric Phipps, Sandia National Labs, etphipp@sandia.gov (Primary %LOCA developer)
   <li> Andy Salinger, Sandia National Labs, agsalin@sandia.gov (%LOCA Project Lead)
+  <li> Alex Toth, NC State University
   </ul>
 
   \section questions For All Other Questions and Comments...

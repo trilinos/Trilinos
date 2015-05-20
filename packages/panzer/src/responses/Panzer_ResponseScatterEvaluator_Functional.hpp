@@ -70,7 +70,7 @@ template <typename LO,typename GO>
 class FunctionalScatter : public FunctionalScatterBase {
 public:
    FunctionalScatter(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & globalIndexer)
-     : globalIndexer_(globalIndexer) {}
+     : globalIndexer_(globalIndexer) { }
 
    void scatterDerivative(const PHX::MDField<panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellIntegral,
                          panzer::Traits::EvalData workset, 
@@ -123,24 +123,18 @@ void FunctionalScatter<LO,GO>::scatterDerivative(const PHX::MDField<panzer::Trai
   std::string blockId = workset.block_id;
   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-  // NOTE: A reordering of these loops will likely improve performance
-  //       The "getGIDFieldOffsets may be expensive.  However the
-  //       "getElementGIDs" can be cheaper. However the lookup for LIDs
-  //       may be more expensive!
-
   // scatter operation for each cell in workset
   for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
     std::size_t cellLocalId = localCellIds[worksetCellIndex];
     LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
 
     // loop over basis functions
-    for(std::size_t i=0;i<LIDs.size();i++)
+    for(std::size_t i=0;i<LIDs.size();i++) {
       dgdx[LIDs[i]] += cellIntegral(worksetCellIndex).dx(i); // its possible functional is independent of solution value!
+    }
   }
 }
 
 }
-
-// #include "Panzer_ResponseScatterEvaluator_Functional_impl.hpp"
 
 #endif

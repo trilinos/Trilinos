@@ -435,7 +435,6 @@ namespace Anasazi {
     //
     typedef SolverUtils<ScalarType,MV,OP> Utils;
     typedef MultiVecTraits<ScalarType,MV> MVT;
-    typedef MultiVecTraitsExt<ScalarType,MV> MVText;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
@@ -715,7 +714,7 @@ namespace Anasazi {
           "Anasazi::RTRBase::setBlockSize(): Eigenproblem did not specify initial vectors to clone from");
     }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(blockSize <= 0 || blockSize > MVText::GetGlobalLength(*tmp), std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION(blockSize <= 0 || blockSize > MVT::GetGlobalLength(*tmp), std::invalid_argument, 
         "Anasazi::RTRBase::setBlockSize was passed a non-positive block size");
 
     // last chance to quit before causing side-effects
@@ -1103,7 +1102,7 @@ namespace Anasazi {
 
     // set up X, AX, BX: get them from "state" if user specified them
     if (newstate.X != Teuchos::null) {
-      TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*newstate.X) != MVText::GetGlobalLength(*X),
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.X) != MVT::GetGlobalLength(*X),
                           std::invalid_argument, "Anasazi::RTRBase::initialize(newstate): vector length of newstate.X not correct." );
       // newstate.X must have blockSize_ vectors; any more will be ignored
       TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.X) < blockSize_,
@@ -1120,7 +1119,7 @@ namespace Anasazi {
         AX_ = Z_;
       }
       if (newstate.AX != Teuchos::null) {
-        TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*newstate.AX) != MVText::GetGlobalLength(*X),
+        TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.AX) != MVT::GetGlobalLength(*X),
                             std::invalid_argument, "Anasazi::RTRBase::initialize(newstate): vector length of newstate.AX not correct." );
         // newstate.AX must have blockSize_ vectors; any more will be ignored
         TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.AX) < blockSize_,
@@ -1143,7 +1142,7 @@ namespace Anasazi {
       // skinny solvers always allocate BX if hasB, so this is unconditionally appropriate
       if (hasBOp_) {
         if (newstate.BX != Teuchos::null) {
-          TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*newstate.BX) != MVText::GetGlobalLength(*X),
+          TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.BX) != MVT::GetGlobalLength(*X),
                               std::invalid_argument, "Anasazi::RTRBase::initialize(newstate): vector length of newstate.BX not correct." );
           // newstate.BX must have blockSize_ vectors; any more will be ignored
           TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.BX) < blockSize_,
@@ -1378,7 +1377,7 @@ namespace Anasazi {
     if (newstate.R != Teuchos::null) {
       TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.R) < blockSize_,
                           std::invalid_argument, "Anasazi::RTRBase::initialize(newstate): newstate.R must have blockSize number of vectors." );
-      TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*newstate.R) != MVText::GetGlobalLength(*R_),
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.R) != MVT::GetGlobalLength(*R_),
                           std::invalid_argument, "Anasazi::RTRBase::initialize(newstate): vector length of newstate.R not correct." );
       MVT::SetBlock(*newstate.R,bsind,*R_);
     }

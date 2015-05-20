@@ -35,6 +35,7 @@
 #include <limits>
 #include "gtest/gtest.h"
 #include "stk_util/parallel/Parallel.hpp"      // for ParallelMachine, etc
+#include "stk_util/parallel/DebugTool.hpp"
 #include "stk_mesh/base/BulkData.hpp"          // for BulkData, etc
 #include "stk_mesh/base/MetaData.hpp"          // for MetaData, entity_rank_names, etc
 #include "stk_mesh/base/FEMHelpers.hpp"        // for declare_element
@@ -2560,6 +2561,95 @@ TEST(Transfer, copy00___T___11)
     EXPECT_THROW(transfer.apply(), std::runtime_error);
 
   }
+}
+
+inline void expectWorldSetupCorrectly(MPI_Comm localComm, MPI_Comm globalComm)
+{
+    int numProcs = getProcSize(globalComm);
+    int localNumProcs = getProcSize(localComm);
+    ASSERT_EQ(numProcs/3, localNumProcs);
+}
+
+void runAdagioStkSerial();
+void runAdagioStkParallel();
+void runDiffingTool();
+
+TEST(ParallelDebugTool, testCommunications)
+{
+    MPI_Comm globalComm = MPI_COMM_WORLD;
+    int numProcs = -1;
+    MPI_Comm_size(globalComm, &numProcs);
+    if (numProcs%3 == 0)
+    {
+        int numProcsPerSubWorld = numProcs/3;
+        int myId = -1;
+        MPI_Comm_rank(globalComm, &myId);
+        if (myId/numProcsPerSubWorld == 0)
+        {
+            runAdagioStkSerial();
+        }
+        else if (myId/numProcsPerSubWorld == 1)
+        {
+            runAdagioStkParallel();
+        }
+        else if (myId/numProcsPerSubWorld == 2)
+        {
+            runDiffingTool();
+        }
+    }
+}
+
+void runAdagioStkSerial()
+{
+    int myColor = 0;
+    MPI_Comm globalComm = MPI_COMM_WORLD;
+    MPI_Comm localComm = splitComm(myColor, globalComm);
+
+    expectWorldSetupCorrectly(localComm, globalComm);
+
+    sendStackTrace(globalComm);
+//    sendMeshData(globalComm);
+}
+
+void runAdagioStkParallel()
+{
+    int myColor = 1;
+    MPI_Comm globalComm = MPI_COMM_WORLD;
+    MPI_Comm localComm = splitComm(myColor, globalComm);
+
+    expectWorldSetupCorrectly(localComm, globalComm);
+
+    sendStackTrace(globalComm);
+//    sendMeshData(globalComm);
+}
+
+void runDiffingTool()
+{
+    int myColor = 2;
+    MPI_Comm globalComm = MPI_COMM_WORLD;
+    MPI_Comm localComm = splitComm(myColor, globalComm);
+
+    expectWorldSetupCorrectly(localComm, globalComm);
+
+    receiveStackTrace(localComm, globalComm);
+//    receiveMeshData(localComm, globalComm);
+}
+
+TEST(ParallelDebugTool, mockDiffingTool)
+{
+    MPI_Comm globalComm = MPI_COMM_WORLD;
+    int numProcs = -1;
+    MPI_Comm_size(globalComm, &numProcs);
+
+    int myColor = 2;
+    MPI_Comm localComm = splitComm(myColor, globalComm);
+
+    int localProcs = -1;
+    MPI_Comm_size(localComm, &localProcs);
+    if ( localProcs == numProcs/3 )
+    {
+        expectWorldSetupCorrectly(localComm, globalComm);
+    }
 }
 
 } // namespace

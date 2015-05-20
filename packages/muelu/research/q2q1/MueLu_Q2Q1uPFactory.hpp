@@ -158,8 +158,8 @@ namespace MueLu {
     void CreateCrsPointers (const Matrix& A, ArrayRCP<const size_t>& ia, ArrayRCP<const LO>& ja) const;
     void CptDepends2Pattern(const Matrix& A, const MyCptList& myCpts, RCP<Matrix>& P, LO offset) const;
 
-    void DumpStatus(const std::vector<char>& status, bool pressureMode, const std::string& filename) const;
-    void DumpCoords(const MultiVector&       coords, const std::string& filename) const;
+    void DumpStatus(const std::string& filename, const std::vector<char>& status, int NDim, bool isAmalgamated = true) const;
+    void DumpCoords(const std::string& filename, const MultiVector& coords) const;
   };
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -175,7 +175,7 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("p2vMap",                  rcpThis, "Mapping of pressure coords to u-velocity coords");
 
     validParamList->set< std::string >           ("mode",                 "pressure", "Mode");
-    validParamList->set< bool >                  ("phase2",                     true, "Use extra phase to improve pattern");
+    validParamList->set< bool >                  ("phase2",                    false, "Use extra phase to improve pattern");
     validParamList->set< bool >                  ("dump status",               false, "Output status");
 
     return validParamList;
@@ -314,7 +314,7 @@ namespace MueLu {
       // On the finest level, we must map userCpts (which corresponds to
       // pressure cpts and pressure mid-points) to the velocity variables
       //
-      // Note: on coarser levels the lower numbered velocity dofs correspond
+      // NOTE: on coarser levels the lower numbered velocity dofs correspond
       // to points that are co-located with pressures and the two numberings
       // are identical so no translation is needed.
       if (fineLevelID == 0) {
@@ -362,17 +362,20 @@ namespace MueLu {
       std::string depPrefix = std::string("dep0-l") + toString(fineLevel.GetLevelID()) + (pressureMode ? "-p-" : "-v-");
 
       std::vector<char> depStatus(N);
-      for (int k = 0; k < Cptlist.size(); k++) {
+      // Graph is unamalgamted, so we need to skip some CPOINTs as they are
+      // essentially duplicated for different velocities
+      for (int k = 0; k < Cptlist.size(); k += NDim) {
 
         for (Xpetra::global_size_t i = 0; i < N; i++) {
           bool isPresent = false;
           for (int j = 0; j < numCpts[i]; j++)
             if ((*myCpts)(i)[j] == Cptlist[k])
               isPresent = true;
-          depStatus[i] = (isPresent ? CPOINT : UNASSIGNED);
+          depStatus[i] = (isPresent ? FPOINT : UNASSIGNED);
         }
+        depStatus[Cptlist[k]] = CPOINT;
 
-        DumpStatus(depStatus, pressureMode, depPrefix + toString(k));
+        DumpStatus(depPrefix + toString(k), depStatus, NDim, false);
       }
     }
 
@@ -396,10 +399,11 @@ namespace MueLu {
           for (int j = 0; j < numCpts[i]; j++)
             if ((*myCpts)(i)[j] == Cptlist[k])
               isPresent = true;
-          depStatus[i] = (isPresent ? CPOINT : UNASSIGNED);
+          depStatus[i] = (isPresent ? FPOINT : UNASSIGNED);
         }
+        depStatus[Cptlist[k]] = CPOINT;
 
-        DumpStatus(depStatus, pressureMode, depPrefix + toString(k));
+        DumpStatus(depPrefix + toString(k), depStatus, NDim, false);
       }
     }
 
@@ -408,8 +412,13 @@ namespace MueLu {
     if (pressureMode) CptDepends2Pattern(*A,       *myCpts, P, 999999);
     else              CptDepends2Pattern(*AForPat, *myCpts, P, 0);
 
-    if (pressureMode) Utils::Write("Pp.mm", *P);
-    else              Utils::Write("Pv.mm", *P);
+    if (pressureMode) {
+      Utils::Write("Ap_l"      + MueLu::toString(fineLevel.GetLevelID())   + ".mm", *A);
+      Utils::Write("Pp_tent_l" + MueLu::toString(coarseLevel.GetLevelID()) + ".mm", *P);
+    } else {
+      Utils::Write("Av_l"      + MueLu::toString(fineLevel.GetLevelID())   + ".mm", *A);
+      Utils::Write("Pv_tent_l" + MueLu::toString(coarseLevel.GetLevelID()) + ".mm", *P);
+    }
 
     // Construct coarse map
     RCP<const Map> coarseMap = P->getDomainMap();
@@ -575,8 +584,8 @@ namespace MueLu {
     std::string st = std::string("status-l") + toString(levelID) + (pressureMode ? "-p-" : "-v-");
     int dumpCount = 0;
     if (doStatusOutput) {
-      DumpCoords(coords, "coord-l" + toString(levelID) + (pressureMode ? "-p" : "-v"));
-      DumpStatus(status, pressureMode, st + i2s(dumpCount++) + "-A");
+      DumpCoords("coord-l" + toString(levelID) + (pressureMode ? "-p" : "-v"), coords);
+      DumpStatus(st + i2s(dumpCount++) + "-A", status, NDim);
     }
 
     std::vector<short>& numCpts = myCpts.getNumCpts();
@@ -608,7 +617,7 @@ namespace MueLu {
           status[newCpt] = CPOINT;
 
           if (doStatusOutput)
-            DumpStatus(status, pressureMode, st + i2s(dumpCount++) + "-B");
+            DumpStatus(st + i2s(dumpCount++) + "-B", status, NDim);
         }
         numCandidates--;
         // FIXME: Why is there no i++ here?
@@ -621,7 +630,7 @@ namespace MueLu {
           status[newCpt] = CPOINT;
 
           if (doStatusOutput)
-            DumpStatus(status, pressureMode, st + i2s(dumpCount++) + "-C");
+            DumpStatus(st + i2s(dumpCount++) + "-C", status, NDim);
         }
         i++;
       }
@@ -653,7 +662,7 @@ namespace MueLu {
           }
         }
         if (dumpStatus && doStatusOutput)
-          DumpStatus(status, pressureMode, st + i2s(dumpCount++) + "-D");
+          DumpStatus(st + i2s(dumpCount++) + "-D", status, NDim);
 
         // Update myCpts() to reflect dependence of neighbors on newCpt
         for (size_t k = 0; k < dist3.size(); k++) {
@@ -692,11 +701,13 @@ namespace MueLu {
           // is actually a bug in the code. However, if I put a '2', I don't
           // get the perfect coarsening for a uniform mesh ... so I'm leaving
           // if for now without the 2.
-          //          coordDist[j] = 2*(coordDist[j]*distance) / (coordDist[j] + distance);
+          coordDist[j] = 2*(coordDist[j]*distance) / (coordDist[j] + distance);
+#if 0
           SC kkk = 10.;
           if (coordDist[j] > distance)
             coordDist[j] = (kkk*coordDist[j]*distance)/(coordDist[j]*(kkk-1)+ distance);
           coordDist[j] = (kkk*coordDist[j]*distance)/(coordDist[j]        + distance*(kkk-1));
+#endif
         }
 
         // Mark all unassigned dist4 points as CANDIDATE and compress
@@ -723,7 +734,7 @@ namespace MueLu {
         }
         dist4.resize(numNewCandidates);
         if (dumpStatus && doStatusOutput)
-          DumpStatus(status, pressureMode, st + i2s(dumpCount++) + "-E");
+          DumpStatus(st + i2s(dumpCount++) + "-E", status, pressureMode);
 
         // Now remove all TWOTIMERs from the old candidate list
         size_t numOldCandidates = 0;
@@ -738,7 +749,7 @@ namespace MueLu {
           }
         }
         if (dumpStatus && doStatusOutput)
-          DumpStatus(status, pressureMode, st + i2s(dumpCount++) + "-F");
+          DumpStatus(st + i2s(dumpCount++) + "-F", status, NDim);
 
         // Sort the candidates based on distances (breaking ties via degrees,
         // encouraging points near boundary). First, we order new candidates
@@ -748,7 +759,12 @@ namespace MueLu {
         std::vector<double> ddtemp(numNewCandidates);
         for (size_t k = 0; k < numNewCandidates; k++) {
           LO j = dist4[k];
+#ifdef optimal
+          // This one is better, but we are trying to replicate Matlab now
           ddtemp[k] = -coordDist[j] - .01*(ia[j+1]-ia[j]) + 1e-10*(j+1);
+#else
+          ddtemp[k] = +coordDist[j] - 0.0*(ia[j+1]-ia[j]) + 1e-3*(j+1);
+#endif
         }
         Muelu_az_dsort2(ddtemp, dist4);
         MergeSort(candidateList, numOldCandidates, dist4, coordDist, ia);
@@ -756,9 +772,6 @@ namespace MueLu {
         numCandidates = numOldCandidates + numNewCandidates;
       }
     }
-
-    // Reusing the space for the candidateList to store index
-    std::vector<LO>& index = candidateList;
 
     // Add additional CPOINTs based on some score which includes the number of
     // CPOINTs that an FPOINT depends on as well as its distance (both graph
@@ -829,6 +842,7 @@ namespace MueLu {
           }
         }
 
+        std::vector<LO> index(numCandidates);
         for (size_t p = 0; p < numCandidates; p++)
           index[p] = p;
         Muelu_az_dsort2(score, index);
@@ -844,7 +858,7 @@ namespace MueLu {
             myCpts(newCpt)[0] = newCpt;
 
             if (doStatusOutput)
-              DumpStatus(status, pressureMode, st + i2s(dumpCount++) + "-G");
+              DumpStatus(st + i2s(dumpCount++) + "-G", status, NDim);
 
             std::vector<LO> dist1, dist2, dist3, dist4;
             CompDistances(A, newCpt, 3, dist1, dist2, dist3, dist4);
@@ -900,6 +914,8 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   PhaseTwoPattern(const Matrix& A, const MultiVector& coords, const std::vector<char>& status, MyCptList& myCpts) const {
+    GetOStream(Runtime0) << "Starting phase 2" << std::endl;
+
     int    NDim    = coords.getNumVectors();
     size_t numRows = A.getNodeNumRows();
 
@@ -957,7 +973,7 @@ namespace MueLu {
 
         // Reset scratch
         for (int k = 0; k < numCpts[candidates[p]]; k++)
-          scratch[cpts[k]] = 'y';
+          scratch[cpts[k]] = 'n';
         for (int k = 0; k < numNearbyCs; k++)
           scratch[nearbyCs[k]] = 'n';
 
@@ -1389,31 +1405,22 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  DumpStatus(const std::vector<char>& status, bool pressureMode, const std::string& filename) const {
+  DumpStatus(const std::string& filename, const std::vector<char>& status, int NDim, bool isAmalgamated) const {
     const std::string dirName = OUTPUT_DIR;
 
     struct stat sb;
-    if (stat(dirName.c_str(), &sb) != 0 || !S_ISDIR(sb.st_mode))
-      GetOStream(Errors) << "Please create a \"" << dirName << "\" directory" << std::endl;
+    TEUCHOS_TEST_FOR_EXCEPTION(stat(dirName.c_str(), &sb) != 0 || !S_ISDIR(sb.st_mode), Exceptions::RuntimeError,
+                               "Please create a \"" << dirName << "\" directory");
 
-    if (pressureMode) {
-      std::ofstream ofs((dirName + filename).c_str());
-      for (size_t i = 0; i < status.size(); i++)
-        ofs << status[i] << std::endl;
-
-    } else {
-      std::ofstream ofs1((dirName + filename + ".1").c_str());
-      std::ofstream ofs2((dirName + filename + ".2").c_str());
-      for (size_t i = 0; i < status.size(); i += 2) {
-        ofs1 << status[i+0] << std::endl;
-        ofs2 << status[i+1] << std::endl;
-      }
-    }
+    std::ofstream ofs((dirName + filename).c_str());
+    size_t step = (isAmalgamated ? 1 : NDim);
+    for (size_t i = 0; i < status.size(); i += step)
+      ofs << status[i] << std::endl;
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  DumpCoords(const MultiVector& coords, const std::string& filename) const {
+  DumpCoords(const std::string& filename, const MultiVector& coords) const {
     const std::string dirName = OUTPUT_DIR;
 
     struct stat sb;
@@ -1771,8 +1778,13 @@ namespace MueLu {
         // Must match code above. There is something arbitrary and
         // crappy about the current weighting.
 
+#ifdef optimal
         if (coordDist[ii] + .01*(ia[ii+1]-ia[ii]) - 1.e-10*(ii+1) <
             coordDist[jj] + .01*(ia[jj+1]-ia[jj]) - 1.e-10*(jj+1))
+#else
+        if (-coordDist[ii] + .0*(ia[ii+1]-ia[ii]) - 1.e-3*(ii+1) <
+            -coordDist[jj] + .0*(ia[jj+1]-ia[jj]) - 1.e-3*(jj+1))
+#endif
           oldCandidates[k--] = oldCandidates[i--];
 
         else
@@ -1781,6 +1793,6 @@ namespace MueLu {
     }
   }
 
-}
+} // namespace MueLu
 
 #endif // MUELU_Q2Q1UPFACTORY_DECL_HPP

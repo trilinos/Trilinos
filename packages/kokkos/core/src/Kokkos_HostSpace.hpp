@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -57,6 +57,34 @@
 #include <impl/Kokkos_BasicAllocators.hpp>
 
 /*--------------------------------------------------------------------------*/
+namespace Kokkos {
+namespace Impl {
+
+/// \brief Initialize lock array for arbitrary size atomics.
+///
+/// Arbitrary atomics are implemented using a hash table of locks
+/// where the hash value is derived from the address of the
+/// object for which an atomic operation is performed.
+/// This function initializes the locks to zero (unset).
+void init_lock_array_host_space();
+
+/// \brief Aquire a lock for the address
+///
+/// This function tries to aquire the lock for the hash value derived
+/// from the provided ptr. If the lock is successfully aquired the
+/// function returns true. Otherwise it returns false.
+bool lock_address_host_space(void* ptr);
+
+/// \brief Release lock for the address
+///
+/// This function releases the lock for the hash value derived
+/// from the provided ptr. This function should only be called
+/// after previously successfully aquiring a lock with
+/// lock_address.
+void unlock_address_host_space(void* ptr);
+
+} // namespace Impl
+} // namespace Kokkos
 
 namespace Kokkos {
 
@@ -91,6 +119,10 @@ public:
 #else
 #  error "At least one of the following host execution spaces must be defined: Kokkos::OpenMP, Kokkos::Serial, or Kokkos::Threads.  You might be seeing this message if you disabled the Kokkos::Serial device explicitly using the Kokkos_ENABLE_Serial:BOOL=OFF CMake option, but did not enable any of the other host execution space devices."
 #endif
+
+  //! This memory space preferred device_type
+  typedef Kokkos::Device<execution_space,memory_space> device_type;
+
 
 #if defined( KOKKOS_USE_PAGE_ALIGNED_HOST_MEMORY )
   typedef Impl::PageAlignedAllocator allocator ;
@@ -128,6 +160,7 @@ template<>
 struct DeepCopy<HostSpace,HostSpace> {
   DeepCopy( void * dst , const void * src , size_t n );
 };
+
 
 } // namespace Impl
 } // namespace Kokkos

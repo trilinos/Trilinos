@@ -122,7 +122,7 @@ public:
    virtual void adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                                              const LinearObjContainer & globalBCRows,
                                              LinearObjContainer & ghostedObjs,
-                                             bool zeroVectorRows=false) const;
+                                             bool zeroVectorRows=false, bool adjustX=false) const;
 
    /** Adjust a vector by replacing selected rows with the value of the evaluated
      * dirichlet conditions. This is handled through the standard container mechanism.
@@ -228,8 +228,14 @@ public:
    //! get importer for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<Epetra_Import> getGhostedImport() const;
 
+   //! get importer for converting an overalapped object to a "normal" object
+   virtual const Teuchos::RCP<Epetra_Import> getGhostedColImport() const;
+
    //! get exporter for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<Epetra_Export> getGhostedExport() const;
+
+   //! get exporter for converting an overalapped object to a "normal" object
+   virtual const Teuchos::RCP<Epetra_Export> getGhostedColExport() const;
 
    //! get exporter for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<const Epetra_Comm> getEpetraComm() const;
@@ -242,15 +248,25 @@ public:
    Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> getGlobalIndexer() const
    { return gidProvider_; }
 
+   //! Get the domain unique global indexer this factory was created with.
+   Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> getDomainGlobalIndexer() const
+   { return colGidProvider_!=Teuchos::null ? colGidProvider_ : gidProvider_; }
+
+   //! Get the range unique global indexer this factory was created with.
+   Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> getRangeGlobalIndexer() const
+   { return gidProvider_; }
+
 protected:
    Teuchos::RCP<Epetra_Vector> getGhostedEpetraVector() const;
+   Teuchos::RCP<Epetra_Vector> getGhostedEpetraColVector() const;
    Teuchos::RCP<Epetra_Vector> getEpetraVector() const;
+   Teuchos::RCP<Epetra_Vector> getEpetraColVector() const;
    Teuchos::RCP<Epetra_CrsMatrix> getEpetraMatrix() const;
    Teuchos::RCP<Epetra_CrsMatrix> getGhostedEpetraMatrix() const;
 
-   void ghostToGlobalEpetraVector(const Epetra_Vector & in,Epetra_Vector & out) const;
+   void ghostToGlobalEpetraVector(const Epetra_Vector & in,Epetra_Vector & out,bool col=false) const;
    void ghostToGlobalEpetraMatrix(const Epetra_CrsMatrix & in,Epetra_CrsMatrix & out) const;
-   void globalToGhostEpetraVector(const Epetra_Vector & in,Epetra_Vector & out) const;
+   void globalToGhostEpetraVector(const Epetra_Vector & in,Epetra_Vector & out,bool col=false) const;
 
    // get the map from the matrix
    virtual const Teuchos::RCP<Epetra_Map> buildMap() const;
@@ -272,8 +288,8 @@ protected:
    mutable Teuchos::RCP<Epetra_CrsGraph> ghostedGraph_;
 
    // import/exporter storage
-   mutable Teuchos::RCP<Epetra_Import> importer_;
-   mutable Teuchos::RCP<Epetra_Export> exporter_;
+   mutable Teuchos::RCP<Epetra_Import> importer_, colImporter_;
+   mutable Teuchos::RCP<Epetra_Export> exporter_, colExporter_;
 
    bool hasColProvider_;
    Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > gidProvider_;

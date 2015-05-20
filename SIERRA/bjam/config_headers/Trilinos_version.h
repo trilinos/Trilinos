@@ -112,7 +112,7 @@
  * The major Trilinos version number defines a window of backward
  * compatibility.
  */
-#define TRILINOS_MAJOR_VERSION 11
+#define TRILINOS_MAJOR_VERSION 12
 
 /* The major, release, and minor release version numbers (i.e. xx.yy.zz).
 *
@@ -121,7 +121,7 @@
 * version 10.2.4 is designated 100204.  This preserves the comparability of
 * these version numbers with simple comparison operators used in #ifdef tests.
 */
-#define TRILINOS_MAJOR_MINOR_VERSION 111500
+#define TRILINOS_MAJOR_MINOR_VERSION 120100
 
 /* NOTE: These macros are given long int values to allow comparisons in
  * preprocessor #if statements.  For example, you can do comparisons with ==,
@@ -136,6 +136,6 @@
  *
  * NOTE: This string is to be used for outputting, not for comparison logic.
  */
-#define TRILINOS_VERSION_STRING "11.15 (Dev)"
+#define TRILINOS_VERSION_STRING "12.1 (Dev)"
 
 #endif /* TRILINOS_VERSION_H */

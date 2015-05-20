@@ -314,13 +314,14 @@ namespace Sacado {
       //! Assignment with Expr right-hand-side
       KOKKOS_INLINE_FUNCTION
       Expr& operator=(const Expr& x) {
-        // Copy value
-        val_ = x.val_;
+        if (this != &x) {
+          // Copy value
+          val_ = x.val_;
 
-        // Copy dx_
-        for (int i=0; i<Num; i++)
-          dx_[i] = x.dx_[i];
-
+          // Copy dx_
+          for (int i=0; i<Num; i++)
+            dx_[i] = x.dx_[i];
+        }
         return *this;
       }
 

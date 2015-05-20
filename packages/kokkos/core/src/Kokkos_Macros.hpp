@@ -1,15 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//                             Kokkos
-//         Manycore Performance-Portable Multidimensional Arrays
-//
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -160,7 +158,7 @@
   #define KOKKOS_COMPILER_NVCC __NVCC__
 
   #if defined( KOKKOS_HAVE_CXX11 ) && defined (KOKKOS_HAVE_CUDA)
-    // CUDA supports (inofficially) C++11 in device code starting with 
+    // CUDA supports (inofficially) C++11 in device code starting with
     // version 6.5. This includes auto type and device code internal
     // lambdas.
     #if ( CUDA_VERSION < 6050 )
@@ -168,7 +166,7 @@
     #endif
   #endif
 #else
-  #if defined( KOKKOS_HAVE_CXX11 )
+#if defined( KOKKOS_HAVE_CXX11 ) && ! defined( KOKKOS_HAVE_CXX11_DISPATCH_LAMBDA )
     // CUDA (including version 6.5) does not support giving lambdas as
     // arguments to global functions. Thus its not currently possible
     // to dispatch lambdas from the host.
@@ -189,7 +187,7 @@
 #elif defined( __ICC )
   // Old define
   #define KOKKOS_COMPILER_INTEL __ICC
-#elif defined( __ECC ) 
+#elif defined( __ECC )
   // Very old define
   #define KOKKOS_COMPILER_INTEL __ECC
 #endif
@@ -295,7 +293,7 @@
 /*--------------------------------------------------------------------------*/
 /* GNU Compiler macros */
 
-#if defined( KOKKOS_COMPILER_GNU ) 
+#if defined( KOKKOS_COMPILER_GNU )
 
   //#define KOKKOS_HAVE_PRAGMA_UNROLL 1
   //#define KOKKOS_HAVE_PRAGMA_IVDEP 1

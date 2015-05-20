@@ -75,8 +75,8 @@
 #include "Stokhos_Sparse3TensorUtilities.hpp"
 
 #ifdef HAVE_STOKHOS_KOKKOSLINALG
-#include "Kokkos_CrsMatrix.hpp"
-#include "Kokkos_MV.hpp"
+#include "Kokkos_Sparse.hpp"
+#include "Kokkos_Blas1_MV.hpp"
 #endif
 
 namespace unit_test {
@@ -195,7 +195,7 @@ test_product_tensor_matrix(
   matrix.block =
     Stokhos::create_stochastic_product_tensor< TensorType >( *basis,
                                                              *Cijk );
-  matrix.graph = Kokkos::create_crsarray<graph_type>( std::string("test crs graph") , graph );
+  matrix.graph = Kokkos::create_staticcrsgraph<graph_type>( std::string("test crs graph") , graph );
 
   const size_t inner_length         = matrix.block.dimension();
   const size_t inner_length_aligned = matrix.block.aligned_dimension();
@@ -313,7 +313,7 @@ test_product_tensor_diagonal_matrix(
   matrix_type matrix ;
 
   matrix.block  = Stokhos::SymmetricDiagonalSpec< Device >( stoch_length );
-  matrix.graph  = Kokkos::create_crsarray<graph_type>(
+  matrix.graph  = Kokkos::create_staticcrsgraph<graph_type>(
     std::string("test product tensor graph") , fem_graph );
   matrix.values = block_vector_type(
     Kokkos::ViewAllocateWithoutInitializing("matrix"), matrix.block.matrix_size() , fem_graph_length );
@@ -468,7 +468,7 @@ test_product_flat_commuted_matrix(
 
   matrix_type matrix ;
 
-  matrix.graph = Kokkos::create_crsarray<matrix_graph_type>(
+  matrix.graph = Kokkos::create_staticcrsgraph<matrix_graph_type>(
     std::string("testing") , flat_graph );
 
   const size_t flat_graph_length = matrix.graph.entries.dimension_0();
@@ -624,7 +624,7 @@ test_product_flat_original_matrix(
 
   matrix_type matrix ;
 
-  matrix.graph = Kokkos::create_crsarray<matrix_graph_type>( std::string("testing") , flat_graph );
+  matrix.graph = Kokkos::create_staticcrsgraph<matrix_graph_type>( std::string("testing") , flat_graph );
 
   const size_t flat_graph_length = matrix.graph.entries.dimension_0();
 
@@ -717,7 +717,7 @@ test_tiled_product_tensor_matrix(
   matrix.block =
     Stokhos::create_stochastic_product_tensor< TensorType >( *basis, *Cijk,
                                                              params);
-  matrix.graph = Kokkos::create_crsarray<graph_type>( std::string("test crs graph") , graph );
+  matrix.graph = Kokkos::create_staticcrsgraph<graph_type>( std::string("test crs graph") , graph );
 
   const size_t inner_length      = matrix.block.dimension();
   const size_t inner_length_aligned = matrix.block.aligned_dimension();
@@ -827,7 +827,7 @@ test_simple_tiled_product_tensor_matrix(
   matrix.block =
     Stokhos::create_stochastic_product_tensor< TensorType >( *basis, *Cijk,
                                                              params);
-  matrix.graph = Kokkos::create_crsarray<graph_type>( std::string("test crs graph") , graph );
+  matrix.graph = Kokkos::create_staticcrsgraph<graph_type>( std::string("test crs graph") , graph );
 
   const size_t inner_length      = matrix.block.dimension();
   const size_t inner_length_aligned = matrix.block.aligned_dimension();
@@ -936,7 +936,7 @@ test_lexo_block_tensor(
   matrix.block =
     Stokhos::create_stochastic_product_tensor< TensorType >( *basis,
                                                              *Cijk );
-  matrix.graph = Kokkos::create_crsarray<graph_type>( std::string("test crs graph") , graph );
+  matrix.graph = Kokkos::create_staticcrsgraph<graph_type>( std::string("test crs graph") , graph );
 
   const size_t inner_length      = matrix.block.dimension();
 
@@ -1043,7 +1043,7 @@ test_linear_tensor(
     Stokhos::create_stochastic_product_tensor< TensorType >( *basis,
                                                              *Cijk,
                                                              params );
-  matrix.graph = Kokkos::create_crsarray<graph_type>( std::string("test crs graph") , graph );
+  matrix.graph = Kokkos::create_staticcrsgraph<graph_type>( std::string("test crs graph") , graph );
 
   const size_t inner_length         = matrix.block.tensor().dimension();
   const size_t inner_length_aligned = matrix.block.tensor().aligned_dimension();
@@ -1148,7 +1148,7 @@ test_original_matrix_free_vec(
   std::vector<vec_type> tmp( outer_length ) ;
 
   for (size_t block=0; block<outer_length; ++block) {
-    matrix[block].graph = Kokkos::create_crsarray<matrix_graph_type>( std::string("testing") , fem_graph );
+    matrix[block].graph = Kokkos::create_staticcrsgraph<matrix_graph_type>( std::string("testing") , fem_graph );
 
     matrix[block].values = matrix_values_type( Kokkos::ViewAllocateWithoutInitializing("matrix"), graph_length );
 
@@ -1292,7 +1292,7 @@ test_original_matrix_free_view(
   Kokkos::deep_copy( x , ScalarType(1.0) );
 
   for (size_t block=0; block<outer_length; ++block) {
-    matrix[block].graph = Kokkos::create_crsarray<matrix_graph_type>(
+    matrix[block].graph = Kokkos::create_staticcrsgraph<matrix_graph_type>(
       std::string("testing") , fem_graph );
 
     matrix[block].values = matrix_values_type( "matrix" , graph_length );
@@ -1325,28 +1325,28 @@ test_original_matrix_free_view(
         unsigned jdx = 0;
         for (kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
           int j = index(j_it);
-          vec_type xx = Kokkos::subview<vec_type>( x, Kokkos::ALL(), j );
-          vec_type tt = Kokkos::subview<vec_type>( tmp_x, Kokkos::ALL(), jdx++ );
+          vec_type xx = Kokkos::subview( x, Kokkos::ALL(), j );
+          vec_type tt = Kokkos::subview( tmp_x, Kokkos::ALL(), jdx++ );
           Kokkos::deep_copy(tt, xx);
         }
         multi_vec_type tmp_x_view =
-          Kokkos::subview<multi_vec_type>( tmp_x, Kokkos::ALL(),
+          Kokkos::subview( tmp_x, Kokkos::ALL(),
                                            std::make_pair(0u,nj));
         multi_vec_type tmp_y_view =
-          Kokkos::subview<multi_vec_type>( tmp_y, Kokkos::ALL(),
+          Kokkos::subview( tmp_y, Kokkos::ALL(),
                                            std::make_pair(0u,nj));
         Stokhos::multiply( matrix[k] , tmp_x_view , tmp_y_view, smo );
         n_apply += nj;
         jdx = 0;
         for (kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
           vec_type tmp_y_view =
-            Kokkos::subview<vec_type>( tmp_y, Kokkos::ALL(), jdx++ );
+            Kokkos::subview( tmp_y, Kokkos::ALL(), jdx++ );
           kji_iterator i_begin = Cijk->i_begin(j_it);
           kji_iterator i_end =  Cijk->i_end(j_it);
           for (kji_iterator i_it = i_begin; i_it != i_end; ++i_it) {
             int i = index(i_it);
             value_type c = value(i_it);
-            vec_type y_view = Kokkos::subview<vec_type>( y, Kokkos::ALL(), i );
+            vec_type y_view = Kokkos::subview( y, Kokkos::ALL(), i );
             Stokhos::update( value_type(1.0) , y_view , c , tmp_y_view );
             ++n_add;
           }
@@ -1412,7 +1412,7 @@ test_original_matrix_free_kokkos(
   //------------------------------
 
   typedef int ordinal_type;
-  typedef Kokkos::CrsMatrix<value_type,ordinal_type,Device> matrix_type;
+  typedef KokkosSparse::CrsMatrix<value_type,ordinal_type,Device> matrix_type;
   typedef typename matrix_type::values_type matrix_values_type;
   typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
 
@@ -1474,30 +1474,30 @@ test_original_matrix_free_kokkos(
         unsigned jdx = 0;
         for (kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
           int j = index(j_it);
-          vec_type xx = Kokkos::subview<vec_type>( x, Kokkos::ALL(), j );
-          vec_type tt = Kokkos::subview<vec_type>( tmp_x, Kokkos::ALL(), jdx++ );
+          vec_type xx = Kokkos::subview( x, Kokkos::ALL(), j );
+          vec_type tt = Kokkos::subview( tmp_x, Kokkos::ALL(), jdx++ );
           Kokkos::deep_copy(tt, xx);
         }
         multi_vec_type tmp_x_view =
-          Kokkos::subview<multi_vec_type>( tmp_x, Kokkos::ALL(),
+          Kokkos::subview( tmp_x, Kokkos::ALL(),
                                            std::make_pair(0u,nj));
         multi_vec_type tmp_y_view =
-          Kokkos::subview<multi_vec_type>( tmp_y, Kokkos::ALL(),
+          Kokkos::subview( tmp_y, Kokkos::ALL(),
                                            std::make_pair(0u,nj));
-        Kokkos::MV_Multiply( tmp_y_view , matrix[k] , tmp_x_view  );
+        KokkosSparse::spmv( "N" , value_type(1.0) , matrix[k] , tmp_x_view , value_type(0.0) , tmp_y_view );
         n_apply += nj;
         jdx = 0;
         for (kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
           vec_type tmp_y_view =
-            Kokkos::subview<vec_type>( tmp_y, Kokkos::ALL(), jdx++ );
+            Kokkos::subview( tmp_y, Kokkos::ALL(), jdx++ );
           kji_iterator i_begin = Cijk->i_begin(j_it);
           kji_iterator i_end =  Cijk->i_end(j_it);
           for (kji_iterator i_it = i_begin; i_it != i_end; ++i_it) {
             int i = index(i_it);
             value_type c = value(i_it);
-            vec_type y_view = Kokkos::subview<vec_type>( y, Kokkos::ALL(), i );
+            vec_type y_view = Kokkos::subview( y, Kokkos::ALL(), i );
             //Stokhos::update( value_type(1.0) , y_view , c , tmp_y_view );
-            Kokkos::V_Add(y_view, c, tmp_y_view, value_type(1.0), y_view);
+            KokkosBlas::update(value_type(1.0) , y_view, c, tmp_y_view, value_type(0.0), y_view);
             ++n_add;
           }
         }

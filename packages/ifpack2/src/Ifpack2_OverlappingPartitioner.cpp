@@ -57,10 +57,6 @@ namespace Ifpack2 {
 
   IFPACK2_INSTANTIATE_LG(LCLINST)
 
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE) && defined(HAVE_TPETRA_INST_DOUBLE)
-  template class OverlappingPartitioner<Tpetra::RowGraph<int, int, KokkosClassic::TPINode> >;
-#endif
-
 }
 
 #endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION

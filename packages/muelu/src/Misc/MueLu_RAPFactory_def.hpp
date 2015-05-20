@@ -132,7 +132,8 @@ namespace MueLu {
 
         AP = Utils::Multiply(*A, false, *P, false, AP, GetOStream(Statistics2),true,true,std::string("MueLu::A*P-")+levelstr.str());
       }
-      Set(coarseLevel, "AP Pattern", AP);
+      if (pL.get<bool>("Keep AP Pattern"))
+	Set(coarseLevel, "AP Pattern", AP);
 
       // Reuse coarse matrix memory if available (multiple solve)
       if (coarseLevel.IsAvailable("RAP Pattern", this)) {
@@ -171,7 +172,8 @@ namespace MueLu {
       }
 
       Set(coarseLevel, "A",           Ac);
-      Set(coarseLevel, "RAP Pattern", Ac);
+      if (pL.get<bool>("Keep RAP Pattern"))
+	Set(coarseLevel, "RAP Pattern", Ac);
     }
 
     if (transferFacts_.begin() != transferFacts_.end()) {

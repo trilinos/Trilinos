@@ -1,0 +1,31 @@
+PIKE: Physics Integration KErnels
+
+Pike is a blackbox multiphysics coupling tool.  It provides basic
+interfaces and implementations for building high level multiphysics
+coupling strategies.  In particular, PIKE provides utilities for
+Picard-style couplings.  For Newton-based couplings, use the NOX and
+Thyra packages to build the block phsyics systems.  In the future,
+interoperability tools between NOX, PIKE and PIRO will be added.
+
+RELEASE NOTES:
+
+****************************************
+Trilinos 12.0:
+****************************************
+Initial release!
+
+1.  Supports block Jacobi and block Gauss-Seidel coupling.
+2.  Supports global and local convergence criteria.
+3.  Supports hierarchical solves.
+4.  Supports subcycled transient solves and steady-state.
+5.  Support both Parameter and Response interfaces.
+6.  Contains a multiphysics distributor to support parallel
+    distribution of applications.
+7.  Provides abstract factories for solvers and global status tests
+8.  Supports observers for user injection of code.  Special observers
+    for logging and debugging are implemeted.
+9.  Pure virtual interfaces for applications and data transfers.
+10. Adapter for nesting a solver as a model evaluator for hierarchical
+    solves.
+
+****************************************

@@ -53,7 +53,7 @@
 #  include "Tpetra_MultiVector_def.hpp"
 
 #  define TPETRA_MULTIVECTOR_TPINODE_INSTANT( SCALAR, LO, GO ) \
-  TPETRA_MULTIVECTOR_INSTANT( SCALAR, LO, GO, KokkosClassic::TPINode )
+  TPETRA_MULTIVECTOR_INSTANT( SCALAR, LO, GO, KokkosClassic::DoNotUse::TPINode )
 
 namespace Tpetra {
 

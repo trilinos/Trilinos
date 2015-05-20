@@ -892,6 +892,23 @@ sqrt(const PCE<Storage>& a)
 template <typename Storage>
 KOKKOS_INLINE_FUNCTION
 PCE<Storage>
+cbrt(const PCE<Storage>& a)
+{
+#if !defined(__CUDA_ARCH__)
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    a.size() != 1, std::logic_error,
+    "Sacado::UQ::PCE::cbrt():  argument has size != 1");
+#endif
+
+  PCE<Storage> c(a.cijk(), 1);
+  c.fastAccessCoeff(0) = std::cbrt( a.fastAccessCoeff(0) );
+
+  return c;
+}
+
+template <typename Storage>
+KOKKOS_INLINE_FUNCTION
+PCE<Storage>
 pow(const PCE<Storage>& a, const PCE<Storage>& b)
 {
 #if !defined(__CUDA_ARCH__)

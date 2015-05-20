@@ -2135,8 +2135,8 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
       if repoIsClean and not pulledSomeChanges and \
         inOptions.abortGracefullyIfNoUpdates \
         :
-        print "\nNot perfoming any build cases because pull did not bring any commits" \
-          " and --abort-gracefully-if-no-updates!\n"
+        print "\nNot performing any build cases because pull did not bring any *new* commits" \
+          " and --abort-gracefully-if-no-updates was set!\n"
         abortGracefullyDueToNoUpdates = True
         runBuildCases = False
       elif repoIsClean and not hasChangesToPush and \
@@ -2414,7 +2414,7 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
             # Get then final commit message
             finalCommitEmailBodyStr = lastCommitMessageStr
             finalCommitEmailBodyStr += getAutomatedStatusSummaryHeaderStr()
-            finalCommitEmailBodyStr += shortCommitEmailBodyExtra
+            finalCommitEmailBodyStr += shortCommitEmailBodyExtra.encode("utf8")
             finalCommitEmailBodyStr += localCommitSHA1ListStr
             if forcedCommitPush:
               finalCommitEmailBodyStr += "WARNING: Forced the push!\n"

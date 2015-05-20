@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -45,7 +45,6 @@
 
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Qthread.hpp>
-#include <Kokkos_CrsArray.hpp>
 
 #include <Qthread/Kokkos_Qthread_TaskPolicy.hpp>
 
@@ -56,7 +55,6 @@
 
 #include <TestViewAPI.hpp>
 
-#include <TestCrsArray.hpp>
 #include <TestTeam.hpp>
 #include <TestRange.hpp>
 #include <TestReduce.hpp>
@@ -112,10 +110,6 @@ TEST_F( qthread , team_tag )
 {
   TestTeamPolicy< Kokkos::Qthread >::test_for( 1000 );
   TestTeamPolicy< Kokkos::Qthread >::test_reduce( 1000 );
-}
-
-TEST_F( qthread, crsarray) {
-  TestCrsArray< Kokkos::Qthread >();
 }
 
 TEST_F( qthread, long_reduce) {
@@ -179,7 +173,7 @@ TEST_F( qthread , atomics )
   ASSERT_TRUE( ( TestAtomic::Loop<float,Kokkos::Qthread>(100,2) ) );
   ASSERT_TRUE( ( TestAtomic::Loop<float,Kokkos::Qthread>(100,3) ) );
 
-#if defined( KOKKOS_HAVE_CXX11 )
+#if defined( KOKKOS_ENABLE_ASM )
   ASSERT_TRUE( ( TestAtomic::Loop<Kokkos::complex<double> ,Kokkos::Qthread>(100,1) ) );
   ASSERT_TRUE( ( TestAtomic::Loop<Kokkos::complex<double> ,Kokkos::Qthread>(100,2) ) );
   ASSERT_TRUE( ( TestAtomic::Loop<Kokkos::complex<double> ,Kokkos::Qthread>(100,3) ) );
@@ -271,10 +265,17 @@ TEST_F( qthread , team_vector )
 TEST_F( qthread , task_policy )
 {
   TestTaskPolicy::test_task_dep< Kokkos::Qthread >( 10 );
-  // TestTaskPolicy::test_norm2< Kokkos::Qthread >( 1000 );
-  for ( long i = 0 ; i < 30 ; ++i ) TestTaskPolicy::test_fib< Kokkos::Qthread >(i);
-  for ( long i = 0 ; i < 40 ; ++i ) TestTaskPolicy::test_fib2< Kokkos::Qthread >(i);
+  for ( long i = 0 ; i < 25 ; ++i ) TestTaskPolicy::test_fib< Kokkos::Qthread >(i);
+  for ( long i = 0 ; i < 35 ; ++i ) TestTaskPolicy::test_fib2< Kokkos::Qthread >(i);
 }
+
+#if defined( KOKKOS_HAVE_CXX11 )
+TEST_F( qthread , task_team )
+{
+  std::cout << "qthread.task_team test disabled due to unresolved error causing the test to hang." << std::endl ;
+  // TestTaskPolicy::test_task_team< Kokkos::Qthread >(1000);
+}
+#endif
 
 //----------------------------------------------------------------------------
 

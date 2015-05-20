@@ -118,6 +118,7 @@ unsigned BulkData::find_ordinal(Entity entity, EntityRank rank, ConnectivityOrdi
   const MeshIndex &mesh_idx = mesh_index(entity);
   unsigned num_rels = mesh_idx.bucket->num_connectivity(mesh_idx.bucket_ordinal, rank);
   ConnectivityOrdinal const *ords = mesh_idx.bucket->begin_ordinals(mesh_idx.bucket_ordinal, rank);
+  ThrowAssert(ords);
 
   unsigned i = 0;
   for (; i < num_rels; ++i)
@@ -407,42 +408,13 @@ bool BulkData::has_permutation(Entity entity, EntityRank rank) const
   return bucket(entity).has_permutation(rank);
 }
 
-/** \} */
-
-inline
-void BulkData::internal_basic_part_check(const Part* part,
-                                         const unsigned ent_rank,
-                                         const unsigned undef_rank,
-                                         bool& intersection_ok,
-                                         bool& rel_target_ok,
-                                         bool& rank_ok) const
-{
-  // const unsigned part_rank = part->primary_entity_rank();
-
-  intersection_ok = true;
-  rel_target_ok   = true;
-
-  // Do we allow arbitrary part changes to entities regardless of part rank? For the sake of the migration, we will for now.
-#ifdef SIERRA_MIGRATION
-  rank_ok = true;
-#else
-  const unsigned part_rank = part->primary_entity_rank();
-  rank_ok         = ( ent_rank == part_rank ||
-                      undef_rank  == part_rank );
-#endif
-}
-
-inline bool BulkData::internal_quick_verify_change_part(const Part* part,
-                                                        const unsigned ent_rank,
-                                                        const unsigned undef_rank) const
-{
-  bool intersection_ok=false, rel_target_ok=false, rank_ok=false;
-  internal_basic_part_check(part, ent_rank, undef_rank, intersection_ok, rel_target_ok, rank_ok);
-  return intersection_ok && rel_target_ok && rank_ok;
-}
-
 inline
 int BulkData::entity_comm_map_owner(const EntityKey & key) const
+{
+    return internal_entity_comm_map_owner(key);
+}
+inline
+int BulkData::internal_entity_comm_map_owner(const EntityKey & key) const
 {
   const int owner_rank = m_entity_comm_map.owner_rank(key);
   ThrowAssertMsg(owner_rank == InvalidProcessRank || owner_rank == parallel_owner_rank(get_entity(key)),
@@ -454,28 +426,35 @@ int BulkData::entity_comm_map_owner(const EntityKey & key) const
 inline
 bool BulkData::in_receive_ghost( EntityKey key ) const
 {
-  // Ghost communication with owner.
-  const int owner_rank = entity_comm_map_owner(key);
-  PairIterEntityComm ec = entity_comm_map(key);
-  return !ec.empty() && ec.front().ghost_id != 0 &&
-         ec.front().proc == owner_rank;
+  const std::vector<Ghosting*> & ghosts= ghostings();
+  for (size_t i=ghosts.size()-1;i>=AURA;--i)
+  {
+      if ( in_receive_ghost(*ghosts[i], key) )
+          return true;
+  }
+  return false;
 }
 
 inline
 bool BulkData::in_receive_ghost( const Ghosting & ghost , EntityKey key ) const
 {
-  const int owner_rank = entity_comm_map_owner(key);
+  const int owner_rank = internal_entity_comm_map_owner(key);
   return in_ghost( ghost , key , owner_rank );
 }
 
 inline
 bool BulkData::in_send_ghost( EntityKey key) const
 {
-  // Ghost communication with non-owner.
-  const int owner_rank = entity_comm_map_owner(key);
-  PairIterEntityComm ec = entity_comm_map(key);
-  return ! ec.empty() && ec.back().ghost_id != 0 &&
-    ec.back().proc != owner_rank;
+    const int owner_rank = internal_entity_comm_map_owner(key);
+    for ( PairIterEntityComm ec = internal_entity_comm_map(key); ! ec.empty() ; ++ec )
+    {
+      if ( ec->ghost_id != 0 &&
+           ec->proc     != owner_rank)
+      {
+        return true;
+      }
+    }
+    return false;
 }
 
 inline
@@ -486,7 +465,10 @@ void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank ra
     const MeshIndex &mesh_idx = mesh_index(entity);
     const Bucket &b = *mesh_idx.bucket;
     Bucket::size_type bucket_ord = mesh_idx.bucket_ordinal;
-    ThrowAssert(count_valid_connectivity(entity, rank) == b.num_connectivity(bucket_ord, rank));
+    ThrowAssertMsg(count_valid_connectivity(entity, rank) == b.num_connectivity(bucket_ord, rank),
+                   count_valid_connectivity(entity,rank) << " = count_valid_connectivity("<<entity_key(entity)<<","<<rank<<") != b.num_connectivity("<<bucket_ord<<","<<rank<<") = " << b.num_connectivity(bucket_ord,rank);
+                  );
+
   }
 #endif
 }
@@ -690,7 +672,7 @@ inline bool BulkData::element_side_polarity( const Entity elem ,
 
 inline VolatileFastSharedCommMapOneRank const& BulkData::volatile_fast_shared_comm_map(EntityRank rank) const
 {
-  ThrowAssert(synchronized_state() == SYNCHRONIZED);
+  ThrowAssert(this->in_synchronized_state());
   ThrowAssertMsg(rank < stk::topology::ELEMENT_RANK, "Cannot shared entities of rank: " << rank);
   return m_volatile_fast_shared_comm_map[rank];
 }
@@ -703,12 +685,12 @@ inline Part& BulkData::ghosting_part(const Ghosting& ghosting) const
 
 inline bool BulkData::in_index_range(Entity entity) const
 {
-  return entity.local_offset() < m_entity_states.size();
+  return entity.local_offset() < m_entity_keys.size();
 }
 
 inline bool BulkData::is_valid(Entity entity) const
 {
-  return (entity.local_offset() < m_entity_states.size()) && (m_entity_states[entity.local_offset()] != Deleted);
+  return (this->in_index_range(entity) && !m_meshModification.is_entity_deleted(entity.local_offset()) );
 }
 
 inline const MeshIndex& BulkData::mesh_index(Entity entity) const
@@ -753,26 +735,8 @@ inline EntityKey BulkData::entity_key(Entity entity) const
 inline EntityState BulkData::state(Entity entity) const
 {
   entity_getter_debug_check(entity);
-
-  return static_cast<EntityState>(m_entity_states[entity.local_offset()]);
+  return m_meshModification.get_entity_state(entity.local_offset());
 }
-
-#ifndef STK_BUILT_IN_SIERRA // DELETE ifdef BTW 2015-02-13 and 2015-03-04
-inline void BulkData::mark_entity(Entity entity, entitySharing sharedType)
-{
-    this->internal_mark_entity(entity,sharedType);
-}
-
-inline BulkData::entitySharing BulkData::is_entity_marked(Entity entity) const
-{
-    return this->internal_is_entity_marked(entity);
-}
-
-inline bool BulkData::add_node_sharing_called() const
-{
-  return this->internal_add_node_sharing_called();
-}
-#endif // STK_BUILT_IN_SIERRA
 
 inline void BulkData::internal_mark_entity(Entity entity, entitySharing sharedType)
 {
@@ -895,9 +859,6 @@ inline void BulkData::compress_relation_capacity(Entity entity)
 
 inline void BulkData::set_mesh_index(Entity entity, Bucket * in_bucket, Bucket::size_type ordinal )
 {
-  // The trace statement forces this method to be defined after Entity
-  TraceIfWatching("stk::mesh::BulkData::set_mesh_index", LOG_ENTITY, entity_key(entity));
-
   entity_setter_debug_check(entity);
 
   if (in_bucket != NULL) {
@@ -919,15 +880,8 @@ inline void BulkData::set_state(Entity entity, EntityState entity_state)
 {
   entity_setter_debug_check(entity);
 
-  m_entity_states[entity.local_offset()] = static_cast<uint16_t>(entity_state);
+  m_meshModification.set_entity_state(entity.local_offset(), entity_state);
   m_mark_entity[entity.local_offset()] = NOT_MARKED;
-}
-
-inline void BulkData::set_synchronized_count(Entity entity, size_t sync_count)
-{
-  entity_setter_debug_check(entity);
-
-  m_entity_sync_counts[entity.local_offset()] = sync_count;
 }
 
 inline void BulkData::set_local_id(Entity entity, unsigned id)
@@ -939,9 +893,6 @@ inline void BulkData::set_local_id(Entity entity, unsigned id)
 
 inline bool BulkData::internal_set_parallel_owner_rank_but_not_comm_lists(Entity entity, int in_owner_rank)
 {
-  TraceIfWatching("stk::mesh::BulkData::set_entity_owner_rank", LOG_ENTITY, entity_key(entity));
-  DiagIfWatching(LOG_ENTITY, entity_key(entity), "new owner: " << in_owner_rank);
-
   entity_setter_debug_check(entity);
 
   int & nonconst_processor_rank = bucket(entity).m_owner_ranks[bucket_ordinal(entity)];

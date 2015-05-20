@@ -148,17 +148,22 @@ namespace PHX {
     typedef typename array_type::array_layout layout_type;
     typedef typename array_type::device_type device_type;
     typedef typename PHX::Device::size_type size_type;
-
+ 
+    KOKKOS_FORCEINLINE_FUNCTION
     MDField(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& t);
     
+    KOKKOS_FORCEINLINE_FUNCTION
     MDField(const PHX::Tag<DataT>& v);
     
+    KOKKOS_FORCEINLINE_FUNCTION
     MDField();
     
+    KOKKOS_FORCEINLINE_FUNCTION
     ~MDField();
 
     static const int ArrayRank=array_type::Rank;
     
+    KOKKOS_FORCEINLINE_FUNCTION
     const PHX::FieldTag& fieldTag() const;
 
     template<typename iType0, typename iType1, typename iType2, typename iType3,
@@ -266,9 +271,11 @@ namespace PHX {
     */
     template<typename iType>
     void dimensions(std::vector<iType>& dims);
-    
+   
+    KOKKOS_FORCEINLINE_FUNCTION 
     array_type get_kokkos_view();
 
+    KOKKOS_FORCEINLINE_FUNCTION
     const array_type get_kokkos_view()const;
 
     template<typename MDFieldType>
@@ -322,12 +329,16 @@ namespace PHX {
       
     typedef typename PHX::Device::size_type size_type;
 
+    KOKKOS_FORCEINLINE_FUNCTION
     MDField(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& t);
     
+    KOKKOS_FORCEINLINE_FUNCTION
     MDField(const PHX::Tag<DataT>& v);
     
+    KOKKOS_FORCEINLINE_FUNCTION
     MDField();
     
+    KOKKOS_FORCEINLINE_FUNCTION
     ~MDField();
     
     const PHX::FieldTag& fieldTag() const;
@@ -400,6 +411,7 @@ namespace PHX {
      void dimensions(std::vector<size_type>& dims);
     */
     template<typename iType>
+    KOKKOS_FORCEINLINE_FUNCTION
     void dimensions(std::vector<iType>& dims);
 
     KOKKOS_FORCEINLINE_FUNCTION

@@ -2,6 +2,11 @@
 Release Notes for Trilinos Package Teuchos
 ------------------------------------------
 
+Trilinos 12.0
+-------------
+
+* Fixed Teuchos::Ptr::operator=() to catch dangling references (6 April 2015)
+
 Trilinos 11.8
 -------------
 

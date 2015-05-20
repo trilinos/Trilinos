@@ -41,8 +41,7 @@
 #include <stk_mesh/base/Selector.hpp>   // for Selector, operator&
 #include <utility>                      // for pair, make_pair
 #include <vector>                       // for vector
-#include <boost/tuple/tuple.hpp>
-#include "boost/tuple/detail/tuple_basic.hpp"  // for tie, etc
+#include <tuple>
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, get_cell_topology
@@ -166,7 +165,7 @@ size_t skin_mesh_find_elements_with_external_sides(BulkData & mesh,
             bool equivalent = false;
             unsigned permutation_id = 0;
 
-            boost::tie(equivalent,permutation_id) = side_topology.equivalent(side_nodes, potential_side_nodes);
+            std::tie(equivalent,permutation_id) = side_topology.equivalent(side_nodes, potential_side_nodes);
 
             // the sides are not a match
             if (equivalent == false) continue;
@@ -256,7 +255,7 @@ void skin_mesh_attach_new_sides_to_connected_entities(BulkData & mesh,
     Entity elem;
     unsigned side_ordinal=0;
 
-    boost::tie(elem,side_ordinal) = *itr;
+    std::tie(elem,side_ordinal) = *itr;
 
     stk::topology element_topology = mesh.bucket(elem).topology();
     stk::topology side_topology = element_topology.side_topology(side_ordinal);
@@ -283,10 +282,10 @@ void skin_mesh_attach_new_sides_to_connected_entities(BulkData & mesh,
       EntityVector side_nodes(side_topology.num_nodes());
       element_topology.side_nodes(elem_nodes, side_ordinal, side_nodes.begin());
 
-      unsigned perm_id = side_topology.lexicographical_smallest_permutation(side_nodes, consider_negative_permutations);
+      unsigned lexmin_perm_id = side_topology.lexicographical_smallest_permutation(side_nodes, consider_negative_permutations);
 
       EntityVector ordered_side_nodes(side_nodes.size());
-      side_topology.permutation_nodes(side_nodes, perm_id, ordered_side_nodes.begin());
+      side_topology.permutation_nodes(side_nodes, lexmin_perm_id, ordered_side_nodes.begin());
 
       // attach nodes to side
       for (size_t i=0, ie=ordered_side_nodes.size(); i<ie; ++i) {
@@ -294,7 +293,13 @@ void skin_mesh_attach_new_sides_to_connected_entities(BulkData & mesh,
       }
 
       // attach side to element
-      mesh.declare_relation( elem, side, static_cast<RelationIdentifier>(side_ordinal), static_cast<Permutation>(perm_id));
+      Permutation permut =
+              mesh.find_permutation(element_topology, elem_nodes,
+                                    side_topology, &ordered_side_nodes[0], side_ordinal);
+      ThrowRequireMsg(permut != INVALID_PERMUTATION, ":  skin_mesh_attach_new_sides_to_connected_entities could not find valid permutation to connect face to element");
+      mesh.declare_relation(elem, side, static_cast<RelationIdentifier>(side_ordinal), permut);
+      // mesh.declare_relation( elem, side, static_cast<RelationIdentifier>(side_ordinal), static_cast<Permutation>(perm_id));
+
     }
 
     PartVector add_parts(skin_parts);
@@ -314,7 +319,7 @@ void skin_mesh( BulkData & mesh, PartVector const& skin_parts)
 void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector const& skin_parts,
                 const Selector * secondary_selector)
 {
-  ThrowErrorMsgIf( mesh.synchronized_state() == BulkData::MODIFIABLE, "mesh is not SYNCHRONIZED" );
+  ThrowErrorMsgIf( mesh.in_modifiable_state(), "mesh is not SYNCHRONIZED" );
 
   const Part & locally_owned = mesh.mesh_meta_data().locally_owned_part();
   const EntityRank side_rank = mesh.mesh_meta_data().side_rank();
@@ -337,7 +342,7 @@ void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector co
   // attach new sides to connected entities
   skin_mesh_attach_new_sides_to_connected_entities(mesh, boundary, sides, skin_parts);
 
-  mesh.modification_end();
+  mesh.internal_modification_end_for_skin_mesh(mesh.mesh_meta_data().side_rank(), BulkData::MOD_END_SORT, element_selector, secondary_selector);
 }
 
 }} // namespace stk::mesh

@@ -112,7 +112,7 @@ C   --   ATRIB - IN - the attribute array for this block
 
       RETURN
 
-10000  FORMAT (1X, '          #       elem       ', A)
+10000  FORMAT (1X, '   Local ID  Global ID       ', A)
 10010  FORMAT (1X, I11, I11, 5X, 8I11, :, /,
      &   (18X, 8I11))
 10020  FORMAT (1X, I11, I11, 3X, 4 (2X, 1PE11.4), :, /,

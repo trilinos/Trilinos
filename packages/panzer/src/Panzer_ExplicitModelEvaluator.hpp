@@ -83,6 +83,9 @@ public:
   //! Build the out args, modifies the underlying models in args slightly
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const;
 
+  //! Get the underlying panzer::ModelEvaluator
+  Teuchos::RCP<panzer::ModelEvaluator<Scalar> > getPanzerUnderlyingModel();
+
 private: // data members
 
   /** Apply the dirichlet boundary conditions to the vector "f" using the 
@@ -100,7 +103,7 @@ private: // data members
   /** This method builds the inverse mass matrix from the underlying model evaluator.
     * Not that this is constant method that modifies a mutable member.
     */
-  void buildInverseMassMatrix() const;
+  void buildInverseMassMatrix(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs) const;
 
   //! Build prototype in/out args
   void buildArgsPrototypes();
@@ -149,7 +152,5 @@ private: // data members
 };
 
 } // end namespace panzer
-
-#include "Panzer_ExplicitModelEvaluator_impl.hpp"
 
 #endif 

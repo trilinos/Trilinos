@@ -109,7 +109,6 @@ namespace Sacado {
   //! Specialization of %StringName to ViewFad types
   template <typename ValueT, unsigned Size, unsigned Stride, typename Base>
   struct StringName< CacheFad::ViewFad<ValueT,Size,Stride,Base> > {
-    KOKKOS_INLINE_FUNCTION
     static std::string eval() {
       return std::string("Sacado::CacheFad::ViewFad< ") +
         StringName<ValueT>::eval() + " >"; }

@@ -1178,6 +1178,7 @@ public:
      *                                                  This is output for output permutation array.
      *  \param output_xadj: The output part xadj array, pointing beginning and end of each part on
      *          output permutation array (inital_adjList_output_adjlist).
+     *          Returned in CSR format: part i's info in output_xadj[i] : output_xadj[i+1]
      *
      *  \param rd: recursion depth
      *  \param part_no_array_: possibly null part_no_array, specifying how many parts each should be divided during partitioning.
@@ -1215,6 +1216,7 @@ public:
  *                                              This is output for output permutation array.
  *  \param output_xadj: The output part xadj array, pointing beginning and end of each part on
  *      output permutation array (inital_adjList_output_adjlist).
+ *      Returned in CSR format: part i's info in output_xadj[i] : output_xadj[i+1]
  *
  *  \param rd: recursion depth
  *  \param part_no_array_: possibly null part_no_array, specifying how many parts each should be divided during partitioning.
@@ -1611,8 +1613,10 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
         inital_adjList_output_adjlist[i] = this->coordinate_permutations[i];
     }
 
+    // Return output_xadj in CSR format
+    output_xadj[0] = 0;
     for(size_t i = 0; i < this->num_global_parts ; ++i){
-        output_xadj[i] = this->part_xadj[i];
+        output_xadj[i+1] = this->part_xadj[i];
     }
 
     delete future_num_part_in_parts;
@@ -2585,14 +2589,11 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_1D_part(
 #endif
             {
                 if(this->comm->getSize() > 1){
-                    try{
                         reduceAll<int, mj_scalar_t>( *(this->comm), *reductionOp,
                                         total_reduction_size,
                                         this->total_part_weight_left_right_closests,
                                         this->global_total_part_weight_left_right_closests);
 
-                    }
-                    Z2_THROW_OUTSIDE_ERROR(*(this->mj_env))
                 }
                 else {
                         memcpy(

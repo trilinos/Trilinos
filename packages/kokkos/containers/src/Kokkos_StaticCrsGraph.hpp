@@ -1,11 +1,9 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//                             Kokkos
-//         Manycore Performance-Portable Multidimensional Arrays
-//
-//              Copyright (2012) Sandia Corporation
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -37,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
 // 
 // ************************************************************************
 //@HEADER
@@ -132,10 +130,12 @@ public:
    */
   ~StaticCrsGraph() {}
 
-  size_t numRows() const {
-    return row_map.dimension_0()>0?row_map.dimension_0()-1:0;
+  KOKKOS_INLINE_FUNCTION
+  size_type numRows() const {
+    return (row_map.dimension_0 () != 0) ?
+      row_map.dimension_0 () - static_cast<size_type> (1) :
+      static_cast<size_type> (0);
   }
-
 };
 
 //----------------------------------------------------------------------------

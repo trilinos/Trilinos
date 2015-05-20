@@ -432,6 +432,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 	}
 
       }
+      factor = false;
 #endif
 #ifdef HAVE_AMESOS_SLUS
     } else if ( SparseSolver == SuperLU ) { 
@@ -457,6 +458,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 	}
 
       }
+      factor = false;
 #endif
 #ifdef HAVE_AMESOS_KLU
     } else if ( SparseSolver == KLU ) { 
@@ -496,7 +498,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 	    }
 	  }
       }
-
+      factor = false;
 #endif
 #ifdef HAVE_AMESOS_LAPACK
     } else if ( SparseSolver == LAPACK ) { 
@@ -525,6 +527,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 	}
 
       }
+      factor = false;
 #endif
 #ifdef HAVE_AMESOS_TAUCS
     } else if ( SparseSolver == TAUCS ) { 
@@ -671,6 +674,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 	}
 
       }
+      factor = false;
 #endif
 #ifdef HAVE_AMESOS_SUPERLUDIST
     } else if ( SparseSolver == SUPERLUDIST ) { 

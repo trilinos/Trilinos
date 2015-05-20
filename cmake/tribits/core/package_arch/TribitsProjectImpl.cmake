@@ -63,6 +63,7 @@ INCLUDE(TribitsConstants)
 CMAKE_MINIMUM_REQUIRED(VERSION ${TRIBITS_CMAKE_MINIMUM_REQUIRED} FATAL_ERROR)
 
 INCLUDE(TribitsIncludeDirectories)
+INCLUDE(TribitsFindPythonInterp)
 INCLUDE(TribitsGlobalMacros)
 INCLUDE(TribitsConfigureCTestCustom)
 

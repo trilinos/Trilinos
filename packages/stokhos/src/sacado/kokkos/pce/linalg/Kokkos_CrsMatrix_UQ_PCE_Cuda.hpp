@@ -531,8 +531,8 @@ public:
 
       multiply_type_1D::apply(
         A,
-        Kokkos::subview<input_vector_type_1D>( x, Kokkos::ALL(), col),
-        Kokkos::subview<output_vector_type_1D>(y, Kokkos::ALL(), col),
+        Kokkos::subview( x, Kokkos::ALL(), col),
+        Kokkos::subview(y, Kokkos::ALL(), col),
         a, b );
   }
 };

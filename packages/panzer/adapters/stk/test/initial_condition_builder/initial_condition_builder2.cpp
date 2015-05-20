@@ -68,6 +68,7 @@ using Teuchos::rcp;
 #include "user_app_BCStrategy_Factory.hpp"
 
 #include "Panzer_InitialCondition_Builder.hpp"
+#include "Phalanx_KokkosUtilities.hpp"
 
 #include "Epetra_Comm.h"
 #include "Epetra_MpiComm.h"
@@ -84,6 +85,8 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(initial_condition_builder2, block_structure)
   {
     using Teuchos::RCP;
+
+    PHX::InitializeKokkosDevice();
 
     panzer_stk_classic::STK_ExodusReaderFactory mesh_factory;
     Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
@@ -213,12 +216,14 @@ namespace panzer {
     Teuchos::RCP<panzer::EpetraLinearObjContainer> eloc = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
     eloc->get_x()->PutScalar(0.0);
 
-    panzer::evaluateInitialCondition(*wkstContainer, phx_ic_field_managers, loc, 0.0);
+    panzer::evaluateInitialCondition(*wkstContainer, phx_ic_field_managers, loc, *elof, 0.0);
 
     Teuchos::RCP<Epetra_Vector> x = eloc->get_x();
     out << x->GlobalLength() << " " << x->MyLength() << std::endl;
     for (int i=0; i < x->MyLength(); ++i)
       TEST_FLOATING_EQUALITY((*x)[i], 3.0, 1.0e-10);
+
+    PHX::FinalizeKokkosDevice();
   }
 
   void testInitialzation_blockStructure(const Teuchos::RCP<Teuchos::ParameterList>& ipb,

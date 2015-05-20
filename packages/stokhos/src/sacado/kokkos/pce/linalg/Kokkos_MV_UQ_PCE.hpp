@@ -45,8 +45,8 @@
 #include "Sacado_UQ_PCE.hpp"
 #include "Kokkos_View_UQ_PCE.hpp"
 #include "Kokkos_InnerProductSpaceTraits_UQ_PCE.hpp"
-#include "Kokkos_MV.hpp"
-
+#include "Kokkos_Blas1_UQ_PCE.hpp"
+/*
 //----------------------------------------------------------------------------
 // Specializations of Kokkos Vector/MultiVector math functions
 //----------------------------------------------------------------------------
@@ -185,6 +185,9 @@ MV_Dot( const rVector& r,
   MV_Dot( r, x_flat, y_flat, n );
 }
 
+template<class VT1, class VT2, class VT3>
+struct MV_ElementWiseMultiplyFunctor;
+
 template <typename CT, typename CD, typename CM,
           typename AT, typename AD, typename AM,
           typename BT, typename BD, typename BM>
@@ -240,6 +243,9 @@ struct MV_ElementWiseMultiplyFunctor<
     }
   }
 };
+
+template<class VT1, class VT2, class VT3>
+struct V_ElementWiseMultiplyFunctor;
 
 template <typename CT, typename CD, typename CM,
           typename AT, typename AD, typename AM,
@@ -460,6 +466,9 @@ MV_MulScalar( const Kokkos::View< Sacado::UQ::PCE<RS>**, RL, RD, RM >& r,
   return r;
 }
 
+template <typename T>
+struct V_ReciprocalThresholdSelfFunctor;
+
 template <typename T, typename D, typename M>
 struct V_ReciprocalThresholdSelfFunctor<
   View< T,LayoutLeft,D,M,Impl::ViewPCEContiguous > >
@@ -498,6 +507,9 @@ struct V_ReciprocalThresholdSelfFunctor<
       m_x(l,i) = KAT::zero();
   }
 };
+
+template <typename T>
+struct MV_ReciprocalThresholdSelfFunctor;
 
 template <typename T, typename D, typename M>
 struct MV_ReciprocalThresholdSelfFunctor<
@@ -544,5 +556,5 @@ struct MV_ReciprocalThresholdSelfFunctor<
 };
 
 } // namespace Kokkos
-
+*/
 #endif /* #ifndef KOKKOS_MV_UQ_PCE_HPP */

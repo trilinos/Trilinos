@@ -6,47 +6,71 @@
 /// \brief Sparse matrix-matrix multiplication on given sparse patterns.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-namespace Example { 
+namespace Example {
 
   using namespace std;
 
   template<int ArgTransA, int ArgTransB, int ArgAlgo>
   struct Gemm {
-    template<typename ScalarType, 
-             typename CrsMatViewType>
-    KOKKOS_INLINE_FUNCTION
-    static int invoke(const ScalarType alpha,
-                      const CrsMatViewType A,
-                      const CrsMatViewType B,
-                      const ScalarType beta,
-                      const CrsMatViewType C);
 
-    template<typename ScalarType, 
-             typename CrsMatViewType>
+    // data-parallel interface
+    // =======================
+    template<typename ParallelForType,
+             typename ScalarType,
+             typename ExecViewTypeA,
+             typename ExecViewTypeB,
+             typename ExecViewTypeC>
+    KOKKOS_INLINE_FUNCTION
+    static int invoke(const typename ExecViewTypeA::policy_type::member_type &member,
+                      const ScalarType alpha,
+                      ExecViewTypeA &A,
+                      ExecViewTypeB &B,
+                      const ScalarType beta,
+                      ExecViewTypeC &C);
+
+    // task-data parallel interface
+    // ============================
+    template<typename ParallelForType,
+             typename ScalarType,
+             typename ExecViewTypeA,
+             typename ExecViewTypeB,
+             typename ExecViewTypeC>
     class TaskFunctor {
     private:
       ScalarType _alpha, _beta;
-      CrsMatViewType _A, _B, _C;
-      
+      ExecViewTypeA _A;
+      ExecViewTypeB _B;
+      ExecViewTypeC _C;
+
     public:
+      typedef typename ExecViewTypeA::policy_type policy_type;
+      typedef typename policy_type::member_type member_type;
+      typedef int value_type;
+
       TaskFunctor(const ScalarType alpha,
-                  const CrsMatViewType A,
-                  const CrsMatViewType B,
+                  const ExecViewTypeA A,
+                  const ExecViewTypeB B,
                   const ScalarType beta,
-                  const CrsMatViewType C) 
+                  const ExecViewTypeC C)
         : _alpha(alpha),
           _beta(beta),
           _A(A),
           _B(B),
-          _C(C) 
+          _C(C)
       { }
 
       string Label() const { return "Gemm"; }
 
-      typedef int value_type;      
+      // task execution
       void apply(value_type &r_val) {
-        r_val = Gemm::invoke(_alpha, _A, _B, _beta, _C);
+        r_val = Gemm::invoke<ParallelForType>(policy_type::member_null(), _alpha, _A, _B, _beta, _C);
       }
+
+      // task-data execution
+      void apply(const member_type &member, value_type &r_val) {
+        r_val = Gemm::invoke<ParallelForType>(member, _alpha, _A, _B, _beta, _C);
+      }
+
     };
 
   };
@@ -54,7 +78,7 @@ namespace Example {
 }
 
 
-#include "gemm_nt_t.hpp"
-#include "gemm_t_nt.hpp"
+#include "gemm_nt_nt.hpp"
+#include "gemm_ct_nt.hpp"
 
 #endif

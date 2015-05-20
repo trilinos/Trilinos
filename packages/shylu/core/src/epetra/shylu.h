@@ -40,6 +40,12 @@
 // ************************************************************************
 //@HEADER
 
+/** \file shylu.h
+    
+    \brief Main header file of ShyLU (Include main user calls)
+
+    \author Siva Rajamanickam
+*/
 #ifndef SHYLU_H
 #define SHYLU_H
 
@@ -57,7 +63,7 @@
 #include "shylu_symbolic.h"
 #include "shylu_config.h"
 #include "shylu_probing_operator.h"
-#include "AmesosSchurOperator.h"
+#include "shylu_amesos_schur_operator.h"
 
 #include <IQRSolver.h>
 
@@ -66,6 +72,10 @@
 #define MIN(a, b) (((a) < (b)) ? a : b)
 #define MAX(a, b) (((a) > (b)) ? a : b)
 
+/** \brief Main data structure holding needed offset and temp variables
+ *
+ * This structur contains ...  
+ */
 typedef struct
 {
     int Dnr;                    // #local rows
@@ -124,9 +134,16 @@ typedef struct
                                 // or in otherwords #nonlinear iteration-1
 } shylu_data;
 
+/** \brief Main function call into ShylU
+ *
+ * How to use?
+ */
 int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
                 shylu_config *config);
 
+/** \brief Call symbolic factorization on matrix
+ *
+ */
 int shylu_symbolic_factor
 (
     Epetra_CrsMatrix *A,    // i/p: A matrix
@@ -135,8 +152,16 @@ int shylu_symbolic_factor
     shylu_config *config   // i/p: library configuration
 );
 
+/** \brief Call solve on multiple RHS
+ *
+ */
 int shylu_solve(shylu_symbolic *ssym, shylu_data *data, shylu_config *config,
     const Epetra_MultiVector& X, Epetra_MultiVector& Y);
+
+/** \brief Compute an approximate Schur Complement (Narrow Sep)
+ *
+ *  Computate an approximate Schur Complement either using ...
+ */ 
 
 Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(shylu_config *config,
     shylu_symbolic *ssym,
@@ -145,6 +170,11 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(shylu_config *config,
     Ifpack_Preconditioner *ifSolver, Epetra_CrsMatrix *C,
     Epetra_Map *localDRowMap);
 
+/** \brief Compute an approximate Shur Complete (Wide Sep)
+ *
+ * Compute an approximate Schur Complement based on a wide seperator.
+ * Options include ...
+ */
 Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(
     shylu_config *config,
     shylu_symbolic *ssym,   // symbolic structure
@@ -153,6 +183,10 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(
     Ifpack_Preconditioner *ifSolver, Epetra_CrsMatrix *C,
     Epetra_Map *localDRowMap);
 
+/** \brief Compute an approximate Schur Complement using the option of Guided Probing
+ *
+ *  Compute an approximate Schur Complement based on probing of important nonzero values.
+ */
 Teuchos::RCP<Epetra_CrsMatrix> computeSchur_GuidedProbing
 (
     shylu_config *config,

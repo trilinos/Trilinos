@@ -1,23 +1,23 @@
 // Copyright (c) 2013, Sandia Corporation.
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #include <stddef.h>                     // for size_t
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
@@ -196,6 +196,7 @@ bool check_face_elem_connectivity(stk::mesh::BulkData& mesh, int count1=-1, int 
 bool read_file_check_face_elem_connectivity(std::string filename, bool create_faces, int count1=-1, int count2=-1, int count3=-1, int count4=-1, int count5=-1, int count6=-1) {
 
     stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
+    stkMeshIoBroker.set_sideset_face_creation_behavior(stk::io::StkMeshIoBroker::STK_IO_SIDESET_FACE_CREATION_CURRENT);
     stkMeshIoBroker.add_mesh_database(filename, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
     stkMeshIoBroker.populate_bulk_data();
@@ -209,6 +210,7 @@ bool read_file_check_face_elem_connectivity(std::string filename, bool create_fa
 
 void read_file_dump_mesh(std::string filename, bool create_faces) {
     stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
+    stkMeshIoBroker.set_sideset_face_creation_behavior(stk::io::StkMeshIoBroker::STK_IO_SIDESET_FACE_CREATION_CURRENT);
     stkMeshIoBroker.add_mesh_database(filename, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
     stkMeshIoBroker.populate_bulk_data();
@@ -223,6 +225,7 @@ void read_file_dump_mesh(std::string filename, bool create_faces) {
 
 unsigned read_file_count_sides(std::string filename, bool create_faces) {
     stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
+    stkMeshIoBroker.set_sideset_face_creation_behavior(stk::io::StkMeshIoBroker::STK_IO_SIDESET_FACE_CREATION_CURRENT);
     stkMeshIoBroker.add_mesh_database(filename, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
     stkMeshIoBroker.populate_bulk_data();
@@ -239,6 +242,7 @@ unsigned read_file_count_sides(std::string filename, bool create_faces) {
 
 unsigned read_file_fully_connected(std::string filename, bool create_faces) {
     stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
+    stkMeshIoBroker.set_sideset_face_creation_behavior(stk::io::StkMeshIoBroker::STK_IO_SIDESET_FACE_CREATION_CURRENT);
     stkMeshIoBroker.add_mesh_database(filename, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
     stkMeshIoBroker.populate_bulk_data();
@@ -253,6 +257,7 @@ unsigned read_file_fully_connected(std::string filename, bool create_faces) {
 
 unsigned read_file_shared_faces_different_elements(std::string filename, bool create_faces) {
     stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
+    stkMeshIoBroker.set_sideset_face_creation_behavior(stk::io::StkMeshIoBroker::STK_IO_SIDESET_FACE_CREATION_CURRENT);
     stkMeshIoBroker.add_mesh_database(filename, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
     stkMeshIoBroker.populate_bulk_data();
@@ -266,6 +271,7 @@ unsigned read_file_shared_faces_different_elements(std::string filename, bool cr
 
 unsigned read_file_shared_faces_same_elements(std::string filename, bool create_faces) {
     stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
+    stkMeshIoBroker.set_sideset_face_creation_behavior(stk::io::StkMeshIoBroker::STK_IO_SIDESET_FACE_CREATION_CURRENT);
     stkMeshIoBroker.add_mesh_database(filename, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
     stkMeshIoBroker.populate_bulk_data();
@@ -290,6 +296,8 @@ unsigned read_file_shared_faces_same_elements(std::string filename, bool create_
 // X = sideset associated with all sides on this surface
 // S = sideset associated with the surface itself (doesn't exist, unpronounceable)
 // H = a sideset composed of sides to the right, can be placed multiply in the word
+// J = two hexes in block A connected to the same 8 nodes
+// K = two hexes in block B connected to the same 8 nodes
 //
 // .e = the language of our Patron Saint Exodus
 //
@@ -302,17 +310,17 @@ TEST(StkIo, CreateFacesCountFaces)
     if (numprocs == 1) {
         EXPECT_EQ(11u,  read_file_count_sides("AA.e", true));
         EXPECT_EQ(11u,  read_file_count_sides("AB.e", true));
-        EXPECT_EQ(12u,  read_file_count_sides("ADA.e", true));
-        EXPECT_EQ(12u,  read_file_count_sides("ADB.e", true));
-        EXPECT_EQ(12u,  read_file_count_sides("ADDA.e", true));
-        EXPECT_EQ(12u,  read_file_count_sides("ADDB.e", true));
-        EXPECT_EQ(14u,  read_file_count_sides("ADeDA.e", true));
-        EXPECT_EQ(14u,  read_file_count_sides("ADeDB.e", true));
-        EXPECT_EQ(8u,   read_file_count_sides("ADe.e", true));
-        EXPECT_EQ(13u,  read_file_count_sides("ADeLA.e", true));
-        EXPECT_EQ(13u,  read_file_count_sides("ADeLB.e", true));
-        EXPECT_EQ(13u,  read_file_count_sides("ADeRA.e", true));
-        EXPECT_EQ(13u,  read_file_count_sides("ADeRB.e", true));
+        EXPECT_EQ(11u,  read_file_count_sides("ADA.e", true));
+        EXPECT_EQ(11u,  read_file_count_sides("ADB.e", true));
+        EXPECT_EQ(11u,  read_file_count_sides("ADDA.e", true));
+        EXPECT_EQ(11u,  read_file_count_sides("ADDB.e", true));
+        EXPECT_EQ(12u,  read_file_count_sides("ADeDA.e", true));
+        EXPECT_EQ(12u,  read_file_count_sides("ADeDB.e", true));
+        EXPECT_EQ(6u,   read_file_count_sides("ADe.e", true));
+        EXPECT_EQ(12u,  read_file_count_sides("ADeLA.e", true));
+        EXPECT_EQ(12u,  read_file_count_sides("ADeLB.e", true));
+        EXPECT_EQ(12u,  read_file_count_sides("ADeRA.e", true));
+        EXPECT_EQ(12u,  read_file_count_sides("ADeRB.e", true));
         EXPECT_EQ(6u,   read_file_count_sides("A.e", true));
         EXPECT_EQ(12u,  read_file_count_sides("AeA.e", true));
         EXPECT_EQ(12u,  read_file_count_sides("AeB.e", true));
@@ -320,24 +328,24 @@ TEST(StkIo, CreateFacesCountFaces)
         EXPECT_EQ(12u,  read_file_count_sides("AefA.e", true));
         EXPECT_EQ(12u,  read_file_count_sides("AefB.e", true));
         EXPECT_EQ(7u,   read_file_count_sides("Aef.e", true));
-        EXPECT_EQ(12u,  read_file_count_sides("ALA.e", true));
-        EXPECT_EQ(12u,  read_file_count_sides("ALB.e", true));
+        EXPECT_EQ(11u,  read_file_count_sides("ALA.e", true));
+        EXPECT_EQ(11u,  read_file_count_sides("ALB.e", true));
         EXPECT_EQ(6u,   read_file_count_sides("AL.e", true));
-        EXPECT_EQ(13u,  read_file_count_sides("ALeDA.e", true));
-        EXPECT_EQ(13u,  read_file_count_sides("ALeDB.e", true));
-        EXPECT_EQ(14u,  read_file_count_sides("ALeDfRA.e", true));
-        EXPECT_EQ(14u,  read_file_count_sides("ALeDfRB.e", true));
-        EXPECT_EQ(7u,   read_file_count_sides("ALe.e", true));
+        EXPECT_EQ(12u,  read_file_count_sides("ALeDA.e", true));
+        EXPECT_EQ(12u,  read_file_count_sides("ALeDB.e", true));
+        EXPECT_EQ(12u,  read_file_count_sides("ALeDfRA.e", true));
+        EXPECT_EQ(12u,  read_file_count_sides("ALeDfRB.e", true));
+        EXPECT_EQ(6u,   read_file_count_sides("ALe.e", true));
         EXPECT_EQ(12u,  read_file_count_sides("ALeLA.e", true));
         EXPECT_EQ(12u,  read_file_count_sides("ALeLB.e", true));
         EXPECT_EQ(12u,  read_file_count_sides("ALeRA.e", true));
         EXPECT_EQ(12u,  read_file_count_sides("ALeRB.e", true));
-        EXPECT_EQ(12u,  read_file_count_sides("ALRA.e", true));
-        EXPECT_EQ(12u,  read_file_count_sides("ALRB.e", true));
+        EXPECT_EQ(11u,  read_file_count_sides("ALRA.e", true));
+        EXPECT_EQ(11u,  read_file_count_sides("ALRB.e", true));
         EXPECT_EQ(11u,  read_file_count_sides("ARA.e", true));
         EXPECT_EQ(11u,  read_file_count_sides("ARB.e", true));
-        EXPECT_EQ(13u,  read_file_count_sides("AReDA.e", true));
-        EXPECT_EQ(13u,  read_file_count_sides("AReDB.e", true));
+        EXPECT_EQ(12u,  read_file_count_sides("AReDA.e", true));
+        EXPECT_EQ(12u,  read_file_count_sides("AReDB.e", true));
         EXPECT_EQ(7u,   read_file_count_sides("ARe.e", true));
         EXPECT_EQ(12u,  read_file_count_sides("AReLA.e", true));
         EXPECT_EQ(12u,  read_file_count_sides("AReLB.e", true));
@@ -345,27 +353,19 @@ TEST(StkIo, CreateFacesCountFaces)
         EXPECT_EQ(12u,  read_file_count_sides("AReRB.e", true));
         EXPECT_EQ(2u,   read_file_count_sides("e.e", true));
         EXPECT_EQ(2u,   read_file_count_sides("eL.e", true));
-        EXPECT_EQ(12u,   read_file_count_sides("AXA.e", true));
-        EXPECT_EQ(16u,   read_file_count_sides("ALeXfRA.e", true));
-        EXPECT_EQ(11u,   read_file_count_sides("ASA.e", true));
-        EXPECT_EQ(13u,   read_file_count_sides("ALeSfRA.e", true));
-        EXPECT_EQ(13u,   read_file_count_sides("ADHeHA.e", true));
-        EXPECT_EQ(13u,   read_file_count_sides("ADHeHB.e", true));
-        EXPECT_EQ(13u,   read_file_count_sides("ADReA.e", true));
-        EXPECT_EQ(13u,   read_file_count_sides("ADReB.e", true));
-        EXPECT_EQ(13u,   read_file_count_sides("ALHeHA.e", true));
-        EXPECT_EQ(13u,   read_file_count_sides("ALHeHB.e", true));
-        EXPECT_EQ(14u,   read_file_count_sides("ALHeHfRA.e", true));
-        EXPECT_EQ(14u,   read_file_count_sides("ALHeHfRB.e", true));
-        EXPECT_EQ(12u,   read_file_count_sides("ARHeHA.e", true));
-        EXPECT_EQ(12u,   read_file_count_sides("ARHeHB.e", true));
-        EXPECT_EQ(13u,   read_file_count_sides("ALReA.e", true));
-        EXPECT_EQ(13u,   read_file_count_sides("ALReB.e", true));
+        EXPECT_EQ(12u,   read_file_count_sides("ALeXfRA.e", true));
+        EXPECT_EQ(12u,   read_file_count_sides("ADReA.e", true));
+        EXPECT_EQ(12u,   read_file_count_sides("ADReB.e", true));
+        EXPECT_EQ(12u,   read_file_count_sides("ALReA.e", true));
+        EXPECT_EQ(12u,   read_file_count_sides("ALReB.e", true));
         EXPECT_EQ(12u,   read_file_count_sides("ARReA.e", true));
         EXPECT_EQ(12u,   read_file_count_sides("ARReB.e", true));
         EXPECT_EQ(2u,   read_file_count_sides("Re.e", true));
         EXPECT_EQ(2u,   read_file_count_sides("ReL.e", true));
-        EXPECT_EQ(14u,   read_file_count_sides("AXeA.e", true));
+        EXPECT_EQ(12u,   read_file_count_sides("ALefRA.e", true));
+        EXPECT_EQ(12u,   read_file_count_sides("ARefLA.e", true));
+        EXPECT_EQ(12u,   read_file_count_sides("AeDfA.e", true));
+        EXPECT_EQ(11u,   read_file_count_sides("ALJ.e", true));
     }
 }
 
@@ -418,27 +418,19 @@ TEST(StkIo, CreateFacesFullyConnected)
         EXPECT_TRUE(read_file_fully_connected("AReRB.e", true));
         EXPECT_TRUE(read_file_fully_connected("e.e", true));
         EXPECT_TRUE(read_file_fully_connected("eL.e", true));
-        EXPECT_TRUE(read_file_fully_connected("AXA.e", true));
         EXPECT_TRUE(read_file_fully_connected("ALeXfRA.e", true));
-        EXPECT_TRUE(read_file_fully_connected("ASA.e", true));
-        EXPECT_TRUE(read_file_fully_connected("ALeSfRA.e", true));
-        EXPECT_TRUE(read_file_fully_connected("ADHeHA.e", true));
-        EXPECT_TRUE(read_file_fully_connected("ADHeHB.e", true));
         EXPECT_TRUE(read_file_fully_connected("ADReA.e", true));
         EXPECT_TRUE(read_file_fully_connected("ADReB.e", true));
-        EXPECT_TRUE(read_file_fully_connected("ALHeHA.e", true));
-        EXPECT_TRUE(read_file_fully_connected("ALHeHB.e", true));
-        EXPECT_TRUE(read_file_fully_connected("ALHeHfRA.e", true));
-        EXPECT_TRUE(read_file_fully_connected("ALHeHfRB.e", true));
-        EXPECT_TRUE(read_file_fully_connected("ARHeHA.e", true));
-        EXPECT_TRUE(read_file_fully_connected("ARHeHB.e", true));
         EXPECT_TRUE(read_file_fully_connected("ALReA.e", true));
         EXPECT_TRUE(read_file_fully_connected("ALReB.e", true));
         EXPECT_TRUE(read_file_fully_connected("ARReA.e", true));
         EXPECT_TRUE(read_file_fully_connected("ARReB.e", true));
         EXPECT_TRUE(read_file_fully_connected("Re.e", true));
         EXPECT_TRUE(read_file_fully_connected("ReL.e", true));
-        EXPECT_TRUE(read_file_fully_connected("AXeA.e", true));
+        EXPECT_TRUE(read_file_fully_connected("ALefRA.e", true));
+        EXPECT_TRUE(read_file_fully_connected("ARefLA.e", true));
+        EXPECT_TRUE(read_file_fully_connected("AeDfA.e", true));
+        EXPECT_TRUE(read_file_fully_connected("ALJ.e", true));
     }
 }
 
@@ -448,17 +440,17 @@ TEST(StkIo, CreateFacesSharedFacesDifferentElements)
     if (numprocs == 1) {
         EXPECT_EQ(1u, read_file_shared_faces_different_elements("AA.e", true));
         EXPECT_EQ(1u, read_file_shared_faces_different_elements("AB.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ADA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ADB.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ADDA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ADDB.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ADeDA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ADeDB.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ADe.e", true));
-        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ADeLA.e", true));
-        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ADeLB.e", true));
-        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ADeRA.e", true));
-        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ADeRB.e", true));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ADA.e", true));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ADB.e", true));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ADDA.e", true));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ADDB.e", true));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ADeDA.e", true));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ADeDB.e", true));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ADe.e", true));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ADeLA.e", true));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ADeLB.e", true));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ADeRA.e", true));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ADeRB.e", true));
         EXPECT_EQ(0u, read_file_shared_faces_different_elements("A.e", true));
         EXPECT_EQ(2u, read_file_shared_faces_different_elements("AeA.e", true));
         EXPECT_EQ(2u, read_file_shared_faces_different_elements("AeB.e", true));
@@ -466,11 +458,11 @@ TEST(StkIo, CreateFacesSharedFacesDifferentElements)
         EXPECT_EQ(2u, read_file_shared_faces_different_elements("AefA.e", true));
         EXPECT_EQ(2u, read_file_shared_faces_different_elements("AefB.e", true));
         EXPECT_EQ(2u, read_file_shared_faces_different_elements("Aef.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALB.e", true));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ALA.e", true));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ALB.e", true));
         EXPECT_EQ(0u, read_file_shared_faces_different_elements("AL.e", true));
-        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ALeDA.e", true));
-        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ALeDB.e", true));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ALeDA.e", true));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ALeDB.e", true));
         EXPECT_EQ(2u, read_file_shared_faces_different_elements("ALeDfRA.e", true));
         EXPECT_EQ(2u, read_file_shared_faces_different_elements("ALeDfRB.e", true));
         EXPECT_EQ(1u, read_file_shared_faces_different_elements("ALe.e", true));
@@ -478,12 +470,12 @@ TEST(StkIo, CreateFacesSharedFacesDifferentElements)
         EXPECT_EQ(2u, read_file_shared_faces_different_elements("ALeLB.e", true));
         EXPECT_EQ(2u, read_file_shared_faces_different_elements("ALeRA.e", true));
         EXPECT_EQ(2u, read_file_shared_faces_different_elements("ALeRB.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALRA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALRB.e", true));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ALRA.e", true));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ALRB.e", true));
         EXPECT_EQ(1u, read_file_shared_faces_different_elements("ARA.e", true));
         EXPECT_EQ(1u, read_file_shared_faces_different_elements("ARB.e", true));
-        EXPECT_EQ(1u, read_file_shared_faces_different_elements("AReDA.e", true));
-        EXPECT_EQ(1u, read_file_shared_faces_different_elements("AReDB.e", true));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("AReDA.e", true));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("AReDB.e", true));
         EXPECT_EQ(1u, read_file_shared_faces_different_elements("ARe.e", true));
         EXPECT_EQ(2u, read_file_shared_faces_different_elements("AReLA.e", true));
         EXPECT_EQ(2u, read_file_shared_faces_different_elements("AReLB.e", true));
@@ -491,27 +483,19 @@ TEST(StkIo, CreateFacesSharedFacesDifferentElements)
         EXPECT_EQ(2u, read_file_shared_faces_different_elements("AReRB.e", true));
         EXPECT_EQ(0u, read_file_shared_faces_different_elements("e.e", true));
         EXPECT_EQ(0u, read_file_shared_faces_different_elements("eL.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("AXA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALeXfRA.e", true));
-        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ASA.e", true));
-        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ALeSfRA.e", true));
-        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ADHeHA.e", true));
-        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ADHeHB.e", true));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ALeXfRA.e", true));
         EXPECT_EQ(1u, read_file_shared_faces_different_elements("ADReA.e", true));
         EXPECT_EQ(1u, read_file_shared_faces_different_elements("ADReB.e", true));
-        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ALHeHA.e", true));
-        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ALHeHB.e", true));
-        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ALHeHfRA.e", true));
-        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ALHeHfRB.e", true));
-        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ARHeHA.e", true));
-        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ARHeHB.e", true));
         EXPECT_EQ(1u, read_file_shared_faces_different_elements("ALReA.e", true));
         EXPECT_EQ(1u, read_file_shared_faces_different_elements("ALReB.e", true));
-        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ARReA.e", true));
-        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ARReB.e", true));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ARReA.e", true));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ARReB.e", true));
         EXPECT_EQ(0u, read_file_shared_faces_different_elements("Re.e", true));
         EXPECT_EQ(0u, read_file_shared_faces_different_elements("ReL.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("AXeA.e", true));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ALefRA.e", true));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ARefLA.e", true));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("AeDfA.e", true));
+        EXPECT_EQ(6u, read_file_shared_faces_different_elements("ALJ.e", true));
     }
 }
 
@@ -527,7 +511,7 @@ TEST(StkIo, CreateFacesSharedFacesSameElements)
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADDB.e", true));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADeDA.e", true));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADeDB.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADe.e", true));
+        EXPECT_EQ(1u, read_file_shared_faces_same_elements("ADe.e", true));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADeLA.e", true));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADeLB.e", true));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADeRA.e", true));
@@ -546,7 +530,7 @@ TEST(StkIo, CreateFacesSharedFacesSameElements)
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeDB.e", true));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeDfRA.e", true));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeDfRB.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALe.e", true));
+        EXPECT_EQ(1u, read_file_shared_faces_same_elements("ALe.e", true));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeLA.e", true));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeLB.e", true));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeRA.e", true));
@@ -564,27 +548,19 @@ TEST(StkIo, CreateFacesSharedFacesSameElements)
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("AReRB.e", true));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("e.e", true));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("eL.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AXA.e", true));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeXfRA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ASA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeSfRA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADHeHA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADHeHB.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADReA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADReB.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALHeHA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALHeHB.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALHeHfRA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALHeHfRB.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ARHeHA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ARHeHB.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALReA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALReB.e", true));
+        EXPECT_EQ(1u, read_file_shared_faces_same_elements("ADReA.e", true));
+        EXPECT_EQ(1u, read_file_shared_faces_same_elements("ADReB.e", true));
+        EXPECT_EQ(1u, read_file_shared_faces_same_elements("ALReA.e", true));
+        EXPECT_EQ(1u, read_file_shared_faces_same_elements("ALReB.e", true));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("ARReA.e", true));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("ARReB.e", true));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("Re.e", true));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("ReL.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AXeA.e", true));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALefRA.e", true));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ARefLA.e", true));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AeDfA.e", true));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALJ.e", true));
     }
 }
 
@@ -594,17 +570,17 @@ TEST(StkIo, NoCreateFaces)
     if (numprocs == 1) {
         EXPECT_EQ(0u,  read_file_count_sides("AA.e", false));
         EXPECT_EQ(0u,  read_file_count_sides("AB.e", false));
-        EXPECT_EQ(2u,  read_file_count_sides("ADA.e", false));
-        EXPECT_EQ(2u,  read_file_count_sides("ADB.e", false));
-        EXPECT_EQ(2u,  read_file_count_sides("ADDA.e", false));
-        EXPECT_EQ(2u,  read_file_count_sides("ADDB.e", false));
-        EXPECT_EQ(4u,  read_file_count_sides("ADeDA.e", false));
-        EXPECT_EQ(4u,  read_file_count_sides("ADeDB.e", false));
-        EXPECT_EQ(2u,  read_file_count_sides("ADe.e", false));
-        EXPECT_EQ(3u,  read_file_count_sides("ADeLA.e", false));
-        EXPECT_EQ(3u,  read_file_count_sides("ADeLB.e", false));
-        EXPECT_EQ(3u,  read_file_count_sides("ADeRA.e", false));
-        EXPECT_EQ(3u,  read_file_count_sides("ADeRB.e", false));
+        EXPECT_EQ(1u,  read_file_count_sides("ADA.e", false));
+        EXPECT_EQ(1u,  read_file_count_sides("ADB.e", false));
+        EXPECT_EQ(1u,  read_file_count_sides("ADDA.e", false));
+        EXPECT_EQ(1u,  read_file_count_sides("ADDB.e", false));
+        EXPECT_EQ(2u,  read_file_count_sides("ADeDA.e", false));
+        EXPECT_EQ(2u,  read_file_count_sides("ADeDB.e", false));
+        EXPECT_EQ(1u,  read_file_count_sides("ADe.e", false));
+        EXPECT_EQ(2u,  read_file_count_sides("ADeLA.e", false));
+        EXPECT_EQ(2u,  read_file_count_sides("ADeLB.e", false));
+        EXPECT_EQ(2u,  read_file_count_sides("ADeRA.e", false));
+        EXPECT_EQ(2u,  read_file_count_sides("ADeRB.e", false));
         EXPECT_EQ(0u,  read_file_count_sides("A.e", false));
         EXPECT_EQ(0u,  read_file_count_sides("AeA.e", false));
         EXPECT_EQ(0u,  read_file_count_sides("AeB.e", false));
@@ -615,21 +591,21 @@ TEST(StkIo, NoCreateFaces)
         EXPECT_EQ(1u,  read_file_count_sides("ALA.e", false));
         EXPECT_EQ(1u,  read_file_count_sides("ALB.e", false));
         EXPECT_EQ(1u,  read_file_count_sides("AL.e", false));
-        EXPECT_EQ(3u,  read_file_count_sides("ALeDA.e", false));
-        EXPECT_EQ(3u,  read_file_count_sides("ALeDB.e", false));
-        EXPECT_EQ(4u,  read_file_count_sides("ALeDfRA.e", false));
-        EXPECT_EQ(4u,  read_file_count_sides("ALeDfRB.e", false));
+        EXPECT_EQ(2u,  read_file_count_sides("ALeDA.e", false));
+        EXPECT_EQ(2u,  read_file_count_sides("ALeDB.e", false));
+        EXPECT_EQ(2u,  read_file_count_sides("ALeDfRA.e", false));
+        EXPECT_EQ(2u,  read_file_count_sides("ALeDfRB.e", false));
         EXPECT_EQ(1u,  read_file_count_sides("ALe.e", false));
         EXPECT_EQ(2u,  read_file_count_sides("ALeLA.e", false));
         EXPECT_EQ(2u,  read_file_count_sides("ALeLB.e", false));
         EXPECT_EQ(2u,  read_file_count_sides("ALeRA.e", false));
         EXPECT_EQ(2u,  read_file_count_sides("ALeRB.e", false));
-        EXPECT_EQ(2u,  read_file_count_sides("ALRA.e", false));
-        EXPECT_EQ(2u,  read_file_count_sides("ALRB.e", false));
+        EXPECT_EQ(1u,  read_file_count_sides("ALRA.e", false));
+        EXPECT_EQ(1u,  read_file_count_sides("ALRB.e", false));
         EXPECT_EQ(1u,  read_file_count_sides("ARA.e", false));
         EXPECT_EQ(1u,  read_file_count_sides("ARB.e", false));
-        EXPECT_EQ(3u,  read_file_count_sides("AReDA.e", false));
-        EXPECT_EQ(3u,  read_file_count_sides("AReDB.e", false));
+        EXPECT_EQ(2u,  read_file_count_sides("AReDA.e", false));
+        EXPECT_EQ(2u,  read_file_count_sides("AReDB.e", false));
         EXPECT_EQ(1u,  read_file_count_sides("ARe.e", false));
         EXPECT_EQ(2u,  read_file_count_sides("AReLA.e", false));
         EXPECT_EQ(2u,  read_file_count_sides("AReLB.e", false));
@@ -637,27 +613,19 @@ TEST(StkIo, NoCreateFaces)
         EXPECT_EQ(2u,  read_file_count_sides("AReRB.e", false));
         EXPECT_EQ(0u,  read_file_count_sides("e.e", false));
         EXPECT_EQ(1u,  read_file_count_sides("eL.e", false));
-        EXPECT_EQ(2u,  read_file_count_sides("AXA.e", false));
-        EXPECT_EQ(6u,  read_file_count_sides("ALeXfRA.e", false));
-        EXPECT_EQ(0u,  read_file_count_sides("ASA.e", false));
-        EXPECT_EQ(3u,  read_file_count_sides("ALeSfRA.e", false));
-        EXPECT_EQ(3u,  read_file_count_sides("ADHeHA.e", false));
-        EXPECT_EQ(3u,  read_file_count_sides("ADHeHB.e", false));
-        EXPECT_EQ(2u,  read_file_count_sides("ADReA.e", false));
-        EXPECT_EQ(2u,  read_file_count_sides("ADReB.e", false));
-        EXPECT_EQ(3u,  read_file_count_sides("ALHeHA.e", false));
-        EXPECT_EQ(3u,  read_file_count_sides("ALHeHB.e", false));
-        EXPECT_EQ(4u,  read_file_count_sides("ALHeHfRA.e", false));
-        EXPECT_EQ(4u,  read_file_count_sides("ALHeHfRB.e", false));
-        EXPECT_EQ(2u,  read_file_count_sides("ARHeHA.e", false));
-        EXPECT_EQ(2u,  read_file_count_sides("ARHeHB.e", false));
-        EXPECT_EQ(2u,  read_file_count_sides("ALReA.e", false));
-        EXPECT_EQ(2u,  read_file_count_sides("ALReB.e", false));
+        EXPECT_EQ(2u,  read_file_count_sides("ALeXfRA.e", false));
+        EXPECT_EQ(1u,  read_file_count_sides("ADReA.e", false));
+        EXPECT_EQ(1u,  read_file_count_sides("ADReB.e", false));
+        EXPECT_EQ(1u,  read_file_count_sides("ALReA.e", false));
+        EXPECT_EQ(1u,  read_file_count_sides("ALReB.e", false));
         EXPECT_EQ(1u,  read_file_count_sides("ARReA.e", false));
         EXPECT_EQ(1u,  read_file_count_sides("ARReB.e", false));
         EXPECT_EQ(1u,  read_file_count_sides("Re.e", false));
         EXPECT_EQ(2u,  read_file_count_sides("ReL.e", false));
-        EXPECT_EQ(4u,  read_file_count_sides("AXeA.e", false));
+        EXPECT_EQ(2u,  read_file_count_sides("ALefRA.e", false));
+        EXPECT_EQ(2u,  read_file_count_sides("ARefLA.e", false));
+        EXPECT_EQ(2u,  read_file_count_sides("AeDfA.e", false));
+        EXPECT_EQ(1u,  read_file_count_sides("ALJ.e", false));
     }
 }
 
@@ -710,27 +678,19 @@ TEST(StkIo, NoCreateFacesFullyConnected)
         EXPECT_FALSE(read_file_fully_connected("AReRB.e", false));
         EXPECT_FALSE(read_file_fully_connected("e.e", false));
         EXPECT_FALSE(read_file_fully_connected("eL.e", false));
-        EXPECT_FALSE(read_file_fully_connected("AXA.e", false));
         EXPECT_FALSE(read_file_fully_connected("ALeXfRA.e", false));
-        EXPECT_FALSE(read_file_fully_connected("ASA.e", false));
-        EXPECT_FALSE(read_file_fully_connected("ALeSfRA.e", false));
-        EXPECT_FALSE(read_file_fully_connected("ADHeHA.e", false));
-        EXPECT_FALSE(read_file_fully_connected("ADHeHB.e", false));
         EXPECT_FALSE(read_file_fully_connected("ADReA.e", false));
         EXPECT_FALSE(read_file_fully_connected("ADReB.e", false));
-        EXPECT_FALSE(read_file_fully_connected("ALHeHA.e", false));
-        EXPECT_FALSE(read_file_fully_connected("ALHeHB.e", false));
-        EXPECT_FALSE(read_file_fully_connected("ALHeHfRA.e", false));
-        EXPECT_FALSE(read_file_fully_connected("ALHeHfRB.e", false));
-        EXPECT_FALSE(read_file_fully_connected("ARHeHA.e", false));
-        EXPECT_FALSE(read_file_fully_connected("ARHeHB.e", false));
         EXPECT_FALSE(read_file_fully_connected("ALReA.e", false));
         EXPECT_FALSE(read_file_fully_connected("ALReB.e", false));
         EXPECT_FALSE(read_file_fully_connected("ARReA.e", false));
         EXPECT_FALSE(read_file_fully_connected("ARReB.e", false));
         EXPECT_FALSE(read_file_fully_connected("Re.e", false));
         EXPECT_TRUE(read_file_fully_connected("ReL.e", false));
-        EXPECT_FALSE(read_file_fully_connected("AXeA.e", false));
+        EXPECT_FALSE(read_file_fully_connected("ALefRA.e", false));
+        EXPECT_FALSE(read_file_fully_connected("ARefLA.e", false));
+        EXPECT_FALSE(read_file_fully_connected("AeDfA.e", false));
+        EXPECT_FALSE(read_file_fully_connected("ALJ.e", false));
     }
 }
 
@@ -740,17 +700,17 @@ TEST(StkIo, NoCreateFacesSharedFacesDifferentElements)
     if (numprocs == 1) {
         EXPECT_EQ(0u, read_file_shared_faces_different_elements("AA.e", false));
         EXPECT_EQ(0u, read_file_shared_faces_different_elements("AB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ADA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ADB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ADDA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ADDB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ADeDA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ADeDB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ADe.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ADeLA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ADeLB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ADeRA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ADeRB.e", false));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ADA.e", false));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ADB.e", false));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ADDA.e", false));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ADDB.e", false));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ADeDA.e", false));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ADeDB.e", false));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ADe.e", false));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ADeLA.e", false));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ADeLB.e", false));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ADeRA.e", false));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ADeRB.e", false));
         EXPECT_EQ(0u, read_file_shared_faces_different_elements("A.e", false));
         EXPECT_EQ(0u, read_file_shared_faces_different_elements("AeA.e", false));
         EXPECT_EQ(0u, read_file_shared_faces_different_elements("AeB.e", false));
@@ -758,52 +718,44 @@ TEST(StkIo, NoCreateFacesSharedFacesDifferentElements)
         EXPECT_EQ(0u, read_file_shared_faces_different_elements("AefA.e", false));
         EXPECT_EQ(0u, read_file_shared_faces_different_elements("AefB.e", false));
         EXPECT_EQ(0u, read_file_shared_faces_different_elements("Aef.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALB.e", false));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ALA.e", false));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ALB.e", false));
         EXPECT_EQ(0u, read_file_shared_faces_different_elements("AL.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALeDA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALeDB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALeDfRA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALeDfRB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALe.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALeLA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALeLB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALeRA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALeRB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALRA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALRB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ARA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ARB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("AReDA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("AReDB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ARe.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("AReLA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("AReLB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("AReRA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("AReRB.e", false));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ALeDA.e", false));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ALeDB.e", false));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ALeDfRA.e", false));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ALeDfRB.e", false));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ALe.e", false));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ALeLA.e", false));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ALeLB.e", false));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ALeRA.e", false));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ALeRB.e", false));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ALRA.e", false));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ALRB.e", false));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ARA.e", false));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ARB.e", false));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("AReDA.e", false));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("AReDB.e", false));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ARe.e", false));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("AReLA.e", false));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("AReLB.e", false));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("AReRA.e", false));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("AReRB.e", false));
         EXPECT_EQ(0u, read_file_shared_faces_different_elements("e.e", false));
         EXPECT_EQ(0u, read_file_shared_faces_different_elements("eL.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("AXA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALeXfRA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ASA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALeSfRA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ADHeHA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ADHeHB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ADReA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ADReB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALHeHA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALHeHB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALHeHfRA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALHeHfRB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ARHeHA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ARHeHB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALReA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALReB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ARReA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ARReB.e", false));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ALeXfRA.e", false));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ADReA.e", false));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ADReB.e", false));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ALReA.e", false));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ALReB.e", false));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ARReA.e", false));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ARReB.e", false));
         EXPECT_EQ(0u, read_file_shared_faces_different_elements("Re.e", false));
         EXPECT_EQ(0u, read_file_shared_faces_different_elements("ReL.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_different_elements("AXeA.e", false));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ALefRA.e", false));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("ARefLA.e", false));
+        EXPECT_EQ(2u, read_file_shared_faces_different_elements("AeDfA.e", false));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ALJ.e", false));
     }
 }
 
@@ -856,27 +808,19 @@ TEST(StkIo, NoCreateFacesSharedFacesSameElements)
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("AReRB.e", false));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("e.e", false));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("eL.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AXA.e", false));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeXfRA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ASA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeSfRA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADHeHA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADHeHB.e", false));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADReA.e", false));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADReB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALHeHA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALHeHB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALHeHfRA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALHeHfRB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ARHeHA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ARHeHB.e", false));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALReA.e", false));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALReB.e", false));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("ARReA.e", false));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("ARReB.e", false));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("Re.e", false));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("ReL.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AXeA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALefRA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ARefLA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AeDfA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALJ.e", false));
     }
 }
 
@@ -893,78 +837,83 @@ TEST(StkIo, CreateFacesCheckFaceElemConnectivity)
         EXPECT_TRUE(read_file_check_face_elem_connectivity("ReL.e",      true, 1, 1));
         EXPECT_TRUE(read_file_check_face_elem_connectivity("AA.e",      true, 2));
         EXPECT_TRUE(read_file_check_face_elem_connectivity("AB.e",      true, 2));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADA.e",     true, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADB.e",     true, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADe.e",     true, 1, 1, 1));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADA.e",     true, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADB.e",     true, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADe.e",     true, 3));
         EXPECT_TRUE(read_file_check_face_elem_connectivity("AeA.e",     true, 2, 2));
         EXPECT_TRUE(read_file_check_face_elem_connectivity("AeB.e",     true, 2, 2));
         EXPECT_TRUE(read_file_check_face_elem_connectivity("Aef.e",     true, 3, 2));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALA.e",     true, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALB.e",     true, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALe.e",     true, 2, 1));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALA.e",     true, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALB.e",     true, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALe.e",     true, 3));
         EXPECT_TRUE(read_file_check_face_elem_connectivity("ARA.e",     true, 2));
         EXPECT_TRUE(read_file_check_face_elem_connectivity("ARB.e",     true, 2));
         EXPECT_TRUE(read_file_check_face_elem_connectivity("ARe.e",     true, 2, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADDA.e",    true, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADDB.e",    true, 1, 1));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADDA.e",    true, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADDB.e",    true, 2));
         EXPECT_TRUE(read_file_check_face_elem_connectivity("AefA.e",    true, 3, 3));
         EXPECT_TRUE(read_file_check_face_elem_connectivity("AefB.e",    true, 3, 3));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALRA.e",    true, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALRB.e",    true, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeDA.e",   true, 1, 1, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeDB.e",   true, 1, 1, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeLA.e",   true, 2, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeLB.e",   true, 2, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeRA.e",   true, 2, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeRB.e",   true, 2, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDA.e",   true, 2, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDB.e",   true, 2, 1, 1));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALRA.e",    true, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALRB.e",    true, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeDA.e",   true, 2, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeDB.e",   true, 2, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeLA.e",   true, 2, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeLB.e",   true, 2, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeRA.e",   true, 2, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeRB.e",   true, 2, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDA.e",   true, 2, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDB.e",   true, 2, 2));
         EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeLA.e",   true, 2, 2));
         EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeLB.e",   true, 2, 2));
         EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeRA.e",   true, 2, 2));
         EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeRB.e",   true, 2, 2));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("AReDA.e",   true, 2, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("AReDB.e",   true, 2, 1, 1));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("AReDA.e",   true, 2, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("AReDB.e",   true, 2, 2));
         EXPECT_TRUE(read_file_check_face_elem_connectivity("AReLA.e",   true, 2, 2));
         EXPECT_TRUE(read_file_check_face_elem_connectivity("AReLB.e",   true, 2, 2));
         EXPECT_TRUE(read_file_check_face_elem_connectivity("AReRA.e",   true, 2, 2));
         EXPECT_TRUE(read_file_check_face_elem_connectivity("AReRB.e",   true, 2, 2));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDfRA.e", true, 2, 2, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDfRB.e", true, 2, 2, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("AXA.e",     true, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeXfRA.e", true, 1, 1, 1, 1, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ASA.e",     true, 2));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeSfRA.e", true, 3, 2, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADHeHA.e",  true, 2, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADHeHB.e",  true, 2, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADReA.e",   true, 2, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADReB.e",   true, 2, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALHeHA.e",  true, 2, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALHeHB.e",  true, 2, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALHeHfRA.e",true, 3, 1, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALHeHfRB.e",true, 3, 1, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ARHeHA.e",  true, 2, 2));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ARHeHB.e",  true, 2, 2));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALReA.e",   true, 2, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALReB.e",   true, 2, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ARReA.e",   true, 2, 2));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ARReB.e",   true, 2, 2));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("AXeA.e",      true, 1, 1, 1, 1));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDfRA.e", true, 3, 3));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDfRB.e", true, 3, 3));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeXfRA.e", true, 3, 3));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADReA.e",   true, 3, 1));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADReB.e",   true, 3, 1));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALReA.e",   true, 3, 1));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALReB.e",   true, 3, 1));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ARReA.e",   true, 1, 3));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ARReB.e",   true, 1, 3));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALefRA.e",   true, 3, 3));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ARefLA.e",   true, 3, 3));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("AeDfA.e",   true, 3, 3));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALJ.e",   true, 3));
     }
 }
 
-TEST(StkIo, DISABLED_FixSidesetIssues) {
+TEST(StkIo, FixSidesetIssues) {
+    const int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
+    if (numprocs == 1) {
+//        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeRA.e",   false, 2, 2));
+//        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDfRA.e", false, 3, 3));
+//        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALe.e",     false, 2));
+//        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADe.e",     false, 2, 1));
+//        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALReA.e",   false, 2, 2));
+//        EXPECT_TRUE(read_file_check_face_elem_connectivity("AeLRA.e",   false, 2, 2));
+//        EXPECT_TRUE(read_file_check_face_elem_connectivity("ARReA.e",   false, 2));
+//        EXPECT_TRUE(read_file_check_face_elem_connectivity("AReRA.e",   false, 2));
+//        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALefRA.e",  false, 1, 5));
+//        EXPECT_TRUE(read_file_check_face_elem_connectivity("ARefLA.e",  false, 3, 3));
+//        EXPECT_TRUE(read_file_check_face_elem_connectivity("AeDfA.e",   false, 3, 3));
+//        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALJ.e",     false, 3));
+    }
+}
+
+TEST(StkIo, FixSidesetIssuesNoShells) {
     const int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
     if (numprocs == 1) {
         EXPECT_TRUE(read_file_check_face_elem_connectivity("ALA.e",     false, 2));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeRA.e",   false, 2, 2));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDfRA.e", false, 3, 3));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALe.e",     false, 2));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADe.e",     false, 2, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALReA.e",   false, 2, 2));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("AeLRA.e",   false, 2, 2));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ARReA.e",   false, 2));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("AReRA.e",   false, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALRA.e",    false, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADA.e",     false, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALJ.e",     false, 3));
     }
 }
 
@@ -981,69 +930,62 @@ TEST(StkIo, NoCreateFacesCheckFaceElemConnectivity)
         EXPECT_TRUE(read_file_check_face_elem_connectivity("AA.e",      false));
         EXPECT_TRUE(read_file_check_face_elem_connectivity("AB.e",      false));
         EXPECT_TRUE(read_file_check_face_elem_connectivity("Ae.e",      false));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADA.e",     false, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADB.e",     false, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADe.e",     false, 1, 1));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADA.e",     false, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADB.e",     false, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADe.e",     false, 2));
         EXPECT_TRUE(read_file_check_face_elem_connectivity("AeA.e",     false));
         EXPECT_TRUE(read_file_check_face_elem_connectivity("AeB.e",     false));
         EXPECT_TRUE(read_file_check_face_elem_connectivity("Aef.e",     false));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALA.e",     false, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALB.e",     false, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALe.e",     false, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ARA.e",     false, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ARB.e",     false, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ARe.e",     false, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADDA.e",    false, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADDB.e",    false, 1, 1));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALA.e",     false, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALB.e",     false, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALe.e",     false, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ARA.e",     false, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ARB.e",     false, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ARe.e",     false, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADDA.e",    false, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADDB.e",    false, 2));
         EXPECT_TRUE(read_file_check_face_elem_connectivity("AefA.e",    false));
         EXPECT_TRUE(read_file_check_face_elem_connectivity("AefB.e",    false));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALRA.e",    false, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALRB.e",    false, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeDA.e",   false, 1, 1, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeDB.e",   false, 1, 1, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeLA.e",   false, 1, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeLB.e",   false, 1, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeRA.e",   false, 1, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeRB.e",   false, 1, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDA.e",   false, 1, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDB.e",   false, 1, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeLA.e",   false, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeLB.e",   false, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeRA.e",   false, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeRB.e",   false, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("AReDA.e",   false, 1, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("AReDB.e",   false, 1, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("AReLA.e",   false, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("AReLB.e",   false, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("AReRA.e",   false, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("AReRB.e",   false, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDfRA.e", false, 1, 1, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDfRB.e", false, 1, 1, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("AXA.e",     false, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeXfRA.e", false, 1, 1, 1, 1, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ASA.e",     false));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeSfRA.e", false, 1, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADHeHA.e", false, 1, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADHeHB.e", false, 1, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADReA.e", false, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADReB.e", false, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALHeHA.e", false, 1, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALHeHB.e", false, 1, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALHeHfRA.e", false, 1, 1, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALHeHfRB.e", false, 1, 1, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ARHeHA.e", false, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ARHeHB.e", false, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALReA.e", false, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALReB.e", false, 1, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ARReA.e", false, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("ARReB.e", false, 1));
-        EXPECT_TRUE(read_file_check_face_elem_connectivity("AXeA.e", false, 1, 1, 1, 1));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALRA.e",    false, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALRB.e",    false, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeDA.e",   false, 2, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeDB.e",   false, 2, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeLA.e",   false, 2, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeLB.e",   false, 2, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeRA.e",   false, 2, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeRB.e",   false, 2, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDA.e",   false, 2, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDB.e",   false, 2, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeLA.e",   false, 2, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeLB.e",   false, 2, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeRA.e",   false, 2, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeRB.e",   false, 2, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("AReDA.e",   false, 2, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("AReDB.e",   false, 2, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("AReLA.e",   false, 2, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("AReLB.e",   false, 2, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("AReRA.e",   false, 2, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("AReRB.e",   false, 2, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDfRA.e", false, 3, 3));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDfRB.e", false, 3, 3));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeXfRA.e", false, 3, 3));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADReA.e", false, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADReB.e", false, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALReA.e", false, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALReB.e", false, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ARReA.e", false, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ARReB.e", false, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALefRA.e", false, 3, 3));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ARefLA.e", false, 3, 3));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("AeDfA.e", false, 3, 3));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALJ.e", false, 3));
     }
 }
 
 TEST(StkIo, confirm_face_connectivity_AeA)
 {
     stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
+    stkMeshIoBroker.set_sideset_face_creation_behavior(stk::io::StkMeshIoBroker::STK_IO_SIDESET_FACE_CREATION_CURRENT);
     stkMeshIoBroker.add_mesh_database("AeA.e", stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
     stkMeshIoBroker.populate_bulk_data();
@@ -1168,7 +1110,7 @@ TEST(StkIo, DISABLED_dump_mesh)
 {
 //    read_file_dump_mesh("ALeDfRA.e", true);
 //    read_file_dump_mesh("ALeXfRA.e", true);
-    read_file_dump_mesh("AeA.e", true);
+    read_file_dump_mesh("ADe.e", false);
 }
 
 } // empty namespace

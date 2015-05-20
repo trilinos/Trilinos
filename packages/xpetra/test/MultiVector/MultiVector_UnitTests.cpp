@@ -2661,7 +2661,7 @@ typedef std::complex<double> ComplexDouble;
 
 
 #ifdef HAVE_KOKKOSCLASSIC_SERIAL && !defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  using KokkosClassic::SerialNode;
+  using KokkosClassic::DoNotUse::SerialNode;
 #define UNIT_TEST_SERIALNODE(MV, V, ORDINAL, SCALAR)                     \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MV, V, ORDINAL, SCALAR, SerialNode )
 #else
@@ -2669,7 +2669,7 @@ typedef std::complex<double> ComplexDouble;
 #endif // HAVE_KOKKOSCLASSIC_SERIAL
 
 #ifdef HAVE_KOKKOSCLASSIC_TBB
-  using KokkosClassic::TBBNode;
+  using KokkosClassic::DoNotUse::TBBNode;
 #define UNIT_TEST_TBBNODE(MV, V, ORDINAL, SCALAR) \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MV, V, ORDINAL, SCALAR, TBBNode )
 #else
@@ -2677,7 +2677,7 @@ typedef std::complex<double> ComplexDouble;
 #endif
 
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  using KokkosClassic::TPINode;
+  using KokkosClassic::DoNotUse::TPINode;
 #define UNIT_TEST_TPINODE(MV, V, ORDINAL, SCALAR) \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MV, V, ORDINAL, SCALAR, TPINode )
 #else

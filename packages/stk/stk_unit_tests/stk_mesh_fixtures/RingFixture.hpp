@@ -35,7 +35,7 @@
 #define STK_MESH_FIXTURES_RING_FIXTURE_HPP
 
 #include <stddef.h>                     // for size_t
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <unit_tests/BulkDataTester.hpp>   // for BulkData
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Types.hpp>      // for EntityId, PartVector
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
@@ -58,7 +58,7 @@ class RingFixture {
  public:
   const int             m_spatial_dimension;
   MetaData              m_meta_data;
-  BulkData              m_bulk_data;
+  stk::mesh::unit_test::BulkDataTester m_bulk_data;
   PartVector            m_element_parts ;
   Part &                m_element_part_extra ;
   const size_t          m_num_element_per_proc ;
@@ -67,7 +67,8 @@ class RingFixture {
 
   RingFixture( stk::ParallelMachine pm ,
                unsigned num_element_per_proc = 10 ,
-               bool use_element_parts = false );
+               bool use_element_parts = false,
+               enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option = stk::mesh::BulkData::AUTO_AURA);
 
   ~RingFixture() {}
 
@@ -80,8 +81,7 @@ class RingFixture {
   /**
    * Make sure that element->owner_rank() == element->node[1]->owner_rank()
    */
-  void fixup_node_ownership(bool regenerate_aura = true,
-                            BulkData::modification_optimization mod_optimize = BulkData::MOD_END_SORT);
+  void fixup_node_ownership(BulkData::modification_optimization mod_optimize = BulkData::MOD_END_SORT);
 
  protected:
 

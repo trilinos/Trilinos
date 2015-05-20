@@ -36,10 +36,8 @@
 #include <boost/shared_ptr.hpp>
 
 #include <Intrepid_FieldContainer.hpp>
-#include <Intrepid_Utils.hpp>
-#include <Intrepid_FunctionSpaceTools.hpp>
-#include <Intrepid_CellTools.hpp>
 #include <Intrepid_Basis.hpp>
+#include <Intrepid_Types.hpp>
 
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/EntityKey.hpp>

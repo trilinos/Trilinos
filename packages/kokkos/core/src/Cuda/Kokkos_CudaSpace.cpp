@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -196,6 +196,39 @@ Impl::AllocationTracker CudaHostPinnedSpace::allocate_and_track( const std::stri
 
 } // namespace Kokkos
 
+namespace Kokkos {
+namespace {
+  __global__ void init_lock_array_kernel() {
+    unsigned i = blockIdx.x*blockDim.x + threadIdx.x;
 
+    if(i<CUDA_SPACE_ATOMIC_MASK+1)
+      kokkos_impl_cuda_atomic_lock_array[i] = 0;
+  }
+}
+
+namespace Impl {
+int* lock_array_cuda_space_ptr(bool deallocate) {
+  static int* ptr = NULL;
+  if(deallocate) {
+    cudaFree(ptr);
+    ptr = NULL;
+  }
+
+  if(ptr==NULL && !deallocate)
+    cudaMalloc(&ptr,sizeof(int)*(CUDA_SPACE_ATOMIC_MASK+1));
+  return ptr;
+}
+
+void init_lock_array_cuda_space() {
+  int is_initialized = 0;
+  if(! is_initialized) {
+    int* lock_array_ptr = lock_array_cuda_space_ptr();
+    cudaMemcpyToSymbol( kokkos_impl_cuda_atomic_lock_array , & lock_array_ptr , sizeof(int*) );
+    init_lock_array_kernel<<<(CUDA_SPACE_ATOMIC_MASK+255)/256,256>>>();
+  }
+}
+
+}
+}
 #endif // KOKKOS_HAVE_CUDA
 

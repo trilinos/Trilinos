@@ -129,7 +129,7 @@ preEvaluate(typename TRAITS::PreEvalData d)
    // extract dirichlet counter from container
    sgTpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject("Dirichlet Counter"),true);
 
-   dirichletCounter_ = sgTpetraContainer_->get_x();
+   dirichletCounter_ = sgTpetraContainer_->get_f();
    TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
 */
   TEUCHOS_ASSERT(false);
@@ -178,7 +178,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
          int fieldNum = fieldIds_[fieldIndex];
    
-         // this call "should" get the right ordering accordint to the Intrepid basis
+         // this call "should" get the right ordering according to the Intrepid basis
          const std::pair<std::vector<int>,std::vector<int> > & indicePair 
                = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
          const std::vector<int> & elmtOffset = indicePair.first;
@@ -284,7 +284,7 @@ preEvaluate(typename TRAITS::PreEvalData d)
    // extract dirichlet counter from container
    sgTpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject("Dirichlet Counter"),true);
 
-   dirichletCounter_ = sgTpetraContainer_->get_x();
+   dirichletCounter_ = sgTpetraContainer_->get_f();
    TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
 */
   TEUCHOS_ASSERT(false);
@@ -333,7 +333,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
          int fieldNum = fieldIds_[fieldIndex];
    
-         // this call "should" get the right ordering accordint to the Intrepid basis
+         // this call "should" get the right ordering according to the Intrepid basis
          const std::pair<std::vector<int>,std::vector<int> > & indicePair 
                = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
          const std::vector<int> & elmtOffset = indicePair.first;

@@ -1097,6 +1097,7 @@ long long Radial_Trisection_Inline_Mesh_Desc::get_node_number_from_l_i_j_k( long
   if(l == trisection_blocks){//rainbow
     if(i == 0){
       long long soff = (j-1)/(div);// this is actually an element calculation
+      if (soff < 0)soff = 0;
       long long loff = soff/2;
       if(soff%2==0){//even
         long long iloc = div;
@@ -1258,7 +1259,7 @@ long long Radial_Trisection_Inline_Mesh_Desc::get_element_number_from_l_i_j_k( l
 
 //! A utility function to build up required bookkeeping objects.
 /****************************************************************************/
-void Radial_Trisection_Inline_Mesh_Desc::get_l_i_j_k_from_element_number(long long el,
+  void Radial_Trisection_Inline_Mesh_Desc::get_l_i_j_k_from_element_number(long long el,
                                                                      long long & l,
                                                                      long long & i,
                                                                      long long & j,

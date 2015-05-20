@@ -440,8 +440,7 @@ struct OVIS_parameters ovisParameters;
   }
 
   /* Get part sizes. */
-  Zoltan_LB_Get_Part_Sizes(zz, zz->LB.Num_Global_Parts, part_dim,
-    part_sizes);
+  Zoltan_LB_Get_Part_Sizes(zz, part_dim, part_sizes);
 
 
 #ifdef ZOLTAN_OVIS
@@ -933,59 +932,30 @@ float sum_parts, part_total;
     /* Compute the PartDist array. */
 
     if (!local_parts_set) {
-      part_sizes = zz->LB.Part_Info;
-
-      if (part_sizes != NULL){
-        /* Use ratio of part sizes to assign parts to procs */
-
-        part_total = 0.0;
-        for (i=0; i < zz->LB.Part_Info_Len; i++){
-          part_total += part_sizes[i].Size;
-        }
-
-        pdist[0] = 0;
+      if (max_global_parts > num_proc) {
+        /* NUM_LOCAL_PARTS is not set; NUM_GLOBAL_PARTS > num_proc. */
+        /* Even distribution of parts to processors. */
         zz->LB.Single_Proc_Per_Part = 1;
+        frac = max_global_parts / num_proc;
+        mod  = max_global_parts % num_proc;
 
-        sum_parts = 0.0;
-
-        for (i = 1; i < max_global_parts; i++){
-
-          sum_parts += (part_sizes[i-1].Size / part_total);
-
-          pdist[i] = sum_parts * num_proc;
-
-          if (pdist[i] > pdist[i-1] + 1){
-             zz->LB.Single_Proc_Per_Part = 0;
-          }
+        for (cnt = 0, i = 0; i < num_proc; i++) {
+          local_parts = frac + ((num_proc - i) <= mod);
+          for (j = 0; j < local_parts; j++)
+            pdist[cnt++] = i;
         }
-        pdist[max_global_parts] = num_proc;
+        pdist[cnt] = num_proc;
       }
-      else{
-        if (max_global_parts > num_proc) {
-          /* NUM_LOCAL_PARTS is not set; NUM_GLOBAL_PARTS > num_proc. */
-          /* Even distribution of parts to processors. */
-          zz->LB.Single_Proc_Per_Part = 1;
-          frac = max_global_parts / num_proc;
-          mod  = max_global_parts % num_proc;
-  
-          for (cnt = 0, i = 0; i < num_proc; i++) {
-            local_parts = frac + ((num_proc - i) <= mod);
-            for (j = 0; j < local_parts; j++)
-              pdist[cnt++] = i;
-          }
-          pdist[cnt] = num_proc;
-        }
-        else { /* num_proc < max_global_parts */
-          /* NUM_LOCAL_PARTS is not set; NUM_GLOBAL_PARTS < num_proc. */
-          /* Even distribution of processors to parts. */
-          zz->LB.Single_Proc_Per_Part = 0;  /* Parts are spread across procs */
-          pdist[0] = 0;
-          frac = num_proc / max_global_parts;
-          mod  = num_proc % max_global_parts;
-          for (i = 1; i < max_global_parts; i++)
-            pdist[i] = pdist[i-1] + frac + ((max_global_parts - i) <= mod);
-          pdist[max_global_parts] = num_proc;
-        }
+      else { /* num_proc < max_global_parts */
+        /* NUM_LOCAL_PARTS is not set; NUM_GLOBAL_PARTS < num_proc. */
+        /* Even distribution of processors to parts. */
+        zz->LB.Single_Proc_Per_Part = 0;  /* Parts are spread across procs */
+        pdist[0] = 0;
+        frac = num_proc / max_global_parts;
+        mod  = num_proc % max_global_parts;
+        for (i = 1; i < max_global_parts; i++)
+          pdist[i] = pdist[i-1] + frac + ((max_global_parts - i) <= mod);
+        pdist[max_global_parts] = num_proc;
       }
     }
     else /* local_parts_set */ {

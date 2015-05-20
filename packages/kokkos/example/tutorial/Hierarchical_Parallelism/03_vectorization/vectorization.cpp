@@ -1,15 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//                             Kokkos
-//         Manycore Performance-Portable Multidimensional Arrays
-//
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -51,12 +49,12 @@
 
 // The TeamPolicy actually supports 3D parallelism: Teams, Threads, Vector
 // Kokkos::parallel_{for/reduce/scan} calls can be completely free nested.
-// The execution policies for the nested layers are TeamThreadLoop and
-// ThreadVectorLoop.
+// The execution policies for the nested layers are TeamThreadRange and
+// ThreadVectorRange.
 // The only restriction on nesting is that a given level can only be nested in a
-// higher one. e.g. a ThreadVectorLoop can be nested inside a TeamPolicy operator
-// and inside a TeamThreadLoop, but you can not nest a ThreadVectorLoop or a
-// TeamThreadLoop inside another ThreadVectorLoop.
+// higher one. e.g. a ThreadVectorRange can be nested inside a TeamPolicy operator
+// and inside a TeamThreadRange, but you can not nest a ThreadVectorRange or a
+// TeamThreadRange inside another ThreadVectorRange.
 // As with the 2D execution of TeamPolicy the operator has to be considered as
 // a parallel region even with respect to VectorLanes. That means even outside
 // a TeamThread or VectorThread loop all threads of a team and all vector lanes
@@ -85,12 +83,12 @@ struct SomeCorrelation {
     shared_1d_int count(thread.team_shmem(),data.dimension_1());
 
     // With each team run a parallel_for with its threads
-    Kokkos::parallel_for(Kokkos::TeamThreadLoop(thread,data.dimension_1()), [=] (const int& j) {
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(thread,data.dimension_1()), [=] (const int& j) {
       int tsum;
       // Run a vector loop reduction over the inner dimension of data
       // Count how many values are multiples of 4
       // Every vector lane gets the same reduction value (tsum) back, it is broadcast to all vector lanes
-      Kokkos::parallel_reduce(Kokkos::ThreadVectorLoop(thread,data.dimension_2()), [=] (const int& k, int & vsum) {
+      Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(thread,data.dimension_2()), [=] (const int& k, int & vsum) {
         vsum+= (data(i,j,k) % 4 == 0)?1:0;
       },tsum);
 
@@ -108,7 +106,7 @@ struct SomeCorrelation {
     // data segments have the same number of values divisible by 4
     // The team reduction value is again broadcast to every team member (and every vector lane)
     int team_sum = 0;
-    Kokkos::parallel_reduce(Kokkos::TeamThreadLoop(thread, data.dimension_1()-1), [=] (const int& j, int& thread_sum) {
+    Kokkos::parallel_reduce(Kokkos::TeamThreadRange(thread, data.dimension_1()-1), [=] (const int& j, int& thread_sum) {
       // It is not valid to directly add to thread_sum
       // Use a single function with broadcast instead
       // team_sum will be used as input to the operator (i.e. it is used to initialize sum)

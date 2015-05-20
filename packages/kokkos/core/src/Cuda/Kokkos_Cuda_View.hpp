@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -53,7 +53,6 @@
 
 #include <Kokkos_HostSpace.hpp>
 #include <Kokkos_CudaSpace.hpp>
-#include <Kokkos_CudaTypes.hpp>
 #include <Kokkos_View.hpp>
 
 #include <Cuda/Kokkos_Cuda_BasicAllocators.hpp>
@@ -103,8 +102,8 @@ template< typename ValueType
         , class MemorySpace
         , class AliasType =
             typename Kokkos::Impl::if_c< ( sizeof(ValueType) ==  4 ) , int ,
-            typename Kokkos::Impl::if_c< ( sizeof(ValueType) ==  8 ) , int2 ,
-            typename Kokkos::Impl::if_c< ( sizeof(ValueType) == 16 ) , int4 , void
+            typename Kokkos::Impl::if_c< ( sizeof(ValueType) ==  8 ) , ::int2 ,
+            typename Kokkos::Impl::if_c< ( sizeof(ValueType) == 16 ) , ::int4 , void
             >::type
             >::type
             >::type

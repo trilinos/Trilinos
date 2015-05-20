@@ -116,7 +116,7 @@ int main(int argc, char **argv)
 
     // Evaluate random field in a functor on device
     typedef Kokkos::View<double*> view_type;
-    typedef typename view_type::HostMirror host_view_type;
+    typedef view_type::HostMirror host_view_type;
     view_type x_view("x", ndim);
     host_view_type host_x = Kokkos::create_mirror_view(x_view);
     for (int i=0; i<ndim; i++)

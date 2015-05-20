@@ -151,11 +151,7 @@ namespace Belos {
     /// contiguous, and is given by the indices.
     void SetBlock ( const MultiVec<double>& A, const std::vector<int>& index );
 
-    //! The (global) number of rows in the multivector.
-    BELOS_DEPRECATED int GetVecLength () const { return GlobalLength(); }
-
     //! The number of rows in the multivector.
-    //! \note This method supersedes GetVecLength, which will be deprecated.
     ptrdiff_t GetGlobalLength () const
     {
        if ( Map().GlobalIndicesLongLong() )
@@ -732,8 +728,13 @@ namespace Belos {
       return Teuchos::rcp (new Epetra_MultiVector(View, mv, index.lbound(), index.size()));
     }
 
-    static int GetVecLength( const Epetra_MultiVector& mv )
-    { return mv.GlobalLength(); }
+    static ptrdiff_t GetGlobalLength( const Epetra_MultiVector& mv )
+    {
+      if (mv.Map().GlobalIndicesLongLong())
+        return static_cast<ptrdiff_t>( mv.GlobalLength64() );
+      else
+        return static_cast<ptrdiff_t>( mv.GlobalLength() );
+    }
 
     static int GetNumberVecs( const Epetra_MultiVector& mv )
     { return mv.NumVectors(); }
@@ -1093,26 +1094,6 @@ namespace Belos {
     //! Whether Op implements applying the transpose.
     static bool
     HasApplyTranspose (const Epetra_Operator& Op);
-  };
-
-  template<>
-  class MultiVecTraitsExt<double, Epetra_MultiVector>
-  {
-  public:
-    //! @name New attribute methods
-    //@{
-
-    //! Obtain the vector length of \c mv.
-    //! \note This method supersedes GetVecLength, which will be deprecated.
-    static ptrdiff_t GetGlobalLength( const Epetra_MultiVector& mv )
-    {
-      if (mv.Map().GlobalIndicesLongLong())
-        return static_cast<ptrdiff_t>( mv.GlobalLength64() );
-      else
-        return static_cast<ptrdiff_t>( mv.GlobalLength() );
-    }
-
-    //@}
   };
 
 } // end of Belos namespace

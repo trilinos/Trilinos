@@ -116,7 +116,11 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> dirList;
     dirList.push_back("EasyParameterListInterpreter/");
     dirList.push_back("FactoryParameterListInterpreter/");
-#ifdef HAVE_AMESOS2_KLU2 // run ML parameter list tests only if KLU is available
+#if defined(HAVE_MPI) && defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_AMESOS2_KLU2)
+    // The ML interpreter have internal ifdef, which means that the resulting
+    // output would depend on configuration (reguarl interpreter does not have
+    // that). Therefore, we need to stabilize the configuration here.
+    // In addition, we run ML parameter list tests only if KLU is available
     dirList.push_back("MLParameterListInterpreter/");
     dirList.push_back("MLParameterListInterpreter2/");
 #endif
@@ -147,23 +151,15 @@ int main(int argc, char *argv[]) {
 #endif
         }
         baseFile = baseFile + (lib == Xpetra::UseEpetra ? "_epetra" : "_tpetra");
-        std::string resFile = baseFile + ".res";
-        std::ifstream f(resFile.c_str());
+        std::string goldFile = baseFile + ".gold";
+        std::ifstream f(goldFile.c_str());
         if (!f.good()) {
           if (myRank == 0)
-            std::cout << "Warning: comparison file " << resFile << " not found.  Skipping test" << std::endl;
+            std::cout << "Warning: comparison file " << goldFile << " not found.  Skipping test" << std::endl;
           continue;
         }
 
-        std::string cmd;
-        if (myRank == 0 && std::ifstream((baseFile + ".resorig").c_str()).good()) {
-          // Original .res is present, restore it by changing extension
-          // from .resorig to .res
-          cmd = "mv -f " + baseFile + ".resorig " + baseFile + ".res";
-          system(cmd.c_str());
-        }
-
-        std::filebuf buffer;
+        std::filebuf    buffer;
         std::streambuf* oldbuffer = NULL;
         if (myRank == 0) {
           // Redirect output
@@ -175,17 +171,10 @@ int main(int argc, char *argv[]) {
         // first to include "test" verbosity
         Teuchos::ParameterList paramList;
         Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFile, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
-        if (k == 0) {
-          // easy
-          paramList.set("verbosity", "test");
-        } else if (k == 1) {
-          // factory
-          ParameterList& hierList = paramList.sublist("Hierarchy");
-          hierList.set("verbosity", "Test");
-        } else if (k == 2) {
-          // ML parameter list interpreter
-          paramList.set("ML output", 42);
-        }
+        if      (dirList[k] == "EasyParameterListInterpreter/")     paramList                     .set("verbosity", "test");
+        else if (dirList[k] == "FactoryParameterListInterpreter/")  paramList.sublist("Hierarchy").set("verbosity", "Test");
+        else if (dirList[k] == "MLParameterListInterpreter/")       paramList                     .set("ML output",     42);
+        else if (dirList[k] == "MLParameterListInterpreter2/")      paramList                     .set("ML output",     10);
 
         try {
           Teuchos::RCP<HierarchyManager> mueluFactory;
@@ -194,13 +183,14 @@ int main(int argc, char *argv[]) {
           // here we have to distinguish between the general MueLu parameter list interpreter
           // and the ML parameter list interpreter. Note that the ML paramter interpreter also
           // works with Tpetra matrices.
-          if (k < 2) {
+          if (dirList[k] == "EasyParameterListInterpreter/" ||
+              dirList[k] == "FactoryParameterListInterpreter/") {
             mueluFactory = Teuchos::rcp(new ParameterListInterpreter(paramList));
 
-          } else if (k == 2) {
+          } else if (dirList[k] == "MLParameterListInterpreter/") {
             mueluFactory = Teuchos::rcp(new MLParameterListInterpreter(paramList));
 
-          } else if (k == 3) {
+          } else if (dirList[k] == "MLParameterListInterpreter2/") {
             std::cout << "ML ParameterList: " << std::endl;
             std::cout << paramList << std::endl;
             RCP<ParameterList> mueluParamList = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(paramList,"SA"));
@@ -213,7 +203,7 @@ int main(int argc, char *argv[]) {
 
           H->GetLevel(0)->Set<RCP<Matrix> >("A", A);
 
-          if (k == 2) {
+          if (dirList[k] == "MLParameterListInterpreter/") {
             // MLParameterInterpreter needs the nullspace information if rebalancing is active!
             // add default constant null space vector
             RCP<MultiVector> nullspace = MultiVectorFactory::Build(A->getRowMap(), 1);
@@ -254,6 +244,7 @@ int main(int argc, char *argv[]) {
           }
         }
 
+        std::string cmd;
         if (myRank == 0) {
           // Redirect output back
           std::cout.rdbuf(oldbuffer);
@@ -261,8 +252,8 @@ int main(int argc, char *argv[]) {
 
           // Create a copy of outputs
           cmd = "cp -f ";
-          system((cmd + baseFile + ".res " + baseFile + ".resorig").c_str());
-          system((cmd + baseFile + ".out " + baseFile + ".outorig").c_str());
+          system((cmd + baseFile + ".gold " + baseFile + ".gold_filtered").c_str());
+          system((cmd + baseFile + ".out " + baseFile + ".out_filtered").c_str());
 
           // Tpetra produces different eigenvalues in Chebyshev due to using
           // std::rand() for generating random vectors, which may be initialized
@@ -302,7 +293,7 @@ int main(int argc, char *argv[]) {
 #endif
 
           // Run comparison (ignoring whitespaces)
-          cmd = "diff -u -w -I\"^\\s*$\" " + baseFile + ".res " + baseFile + ".out";
+          cmd = "diff -u -w -I\"^\\s*$\" " + baseFile + ".gold_filtered " + baseFile + ".out_filtered";
           int ret = system(cmd.c_str());
           if (ret)
             failed = true;
@@ -331,6 +322,6 @@ void run_sed(const std::string& pattern, const std::string& baseFile) {
   sed_pref = sed_pref +  "\"\" ";
 #endif
 
-  system((sed_pref + pattern + " " + baseFile + ".res").c_str());
-  system((sed_pref + pattern + " " + baseFile + ".out").c_str());
+  system((sed_pref + pattern + " " + baseFile + ".gold_filtered").c_str());
+  system((sed_pref + pattern + " " + baseFile + ".out_filtered").c_str());
 }

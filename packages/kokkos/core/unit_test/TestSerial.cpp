@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -48,19 +48,17 @@
 #include <impl/Kokkos_ViewTileLeft.hpp>
 #include <impl/Kokkos_Serial_TaskPolicy.hpp>
 
-#include <Kokkos_CrsArray.hpp>
-
 //----------------------------------------------------------------------------
 
 #include <TestViewImpl.hpp>
 
 #include <TestViewAPI.hpp>
+#include <TestViewOfClass.hpp>
 #include <TestViewSubview.hpp>
 #include <TestAtomic.hpp>
 #include <TestTile.hpp>
 #include <TestRange.hpp>
 #include <TestTeam.hpp>
-#include <TestCrsArray.hpp>
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
 #include <TestAggregate.hpp>
@@ -87,6 +85,27 @@ TEST_F( serial, view_impl) {
 
 TEST_F( serial, view_api) {
   TestViewAPI< double , Kokkos::Serial >();
+}
+
+TEST_F( serial , view_nested_view )
+{
+  ::Test::view_nested_view< Kokkos::Serial >();
+}
+
+TEST_F( serial, view_subview_auto_1d_left ) {
+  TestViewSubview::test_auto_1d< Kokkos::LayoutLeft,Kokkos::Serial >();
+}
+
+TEST_F( serial, view_subview_auto_1d_right ) {
+  TestViewSubview::test_auto_1d< Kokkos::LayoutRight,Kokkos::Serial >();
+}
+
+TEST_F( serial, view_subview_auto_1d_stride ) {
+  TestViewSubview::test_auto_1d< Kokkos::LayoutStride,Kokkos::Serial >();
+}
+
+TEST_F( serial, view_subview_assign_strided ) {
+  TestViewSubview::test_1d_strided_assignment< Kokkos::Serial >();
 }
 
 TEST_F( serial, view_subview_left_0 ) {
@@ -128,10 +147,6 @@ TEST_F( serial , team_tag )
 {
   TestTeamPolicy< Kokkos::Serial >::test_for( 1000 );
   TestTeamPolicy< Kokkos::Serial >::test_reduce( 1000 );
-}
-
-TEST_F( serial, crsarray) {
-  TestCrsArray< Kokkos::Serial >();
 }
 
 TEST_F( serial, long_reduce) {
@@ -263,11 +278,9 @@ TEST_F( serial , atomics )
   ASSERT_TRUE( ( TestAtomic::Loop<float,Kokkos::Serial>(100,2) ) );
   ASSERT_TRUE( ( TestAtomic::Loop<float,Kokkos::Serial>(100,3) ) );
 
-#if defined( KOKKOS_HAVE_CXX11 )
   ASSERT_TRUE( ( TestAtomic::Loop<Kokkos::complex<double> ,Kokkos::Serial>(100,1) ) );
   ASSERT_TRUE( ( TestAtomic::Loop<Kokkos::complex<double> ,Kokkos::Serial>(100,2) ) );
   ASSERT_TRUE( ( TestAtomic::Loop<Kokkos::complex<double> ,Kokkos::Serial>(100,3) ) );
-#endif
 }
 
 //----------------------------------------------------------------------------
@@ -316,10 +329,19 @@ TEST_F( serial , memory_space )
 TEST_F( serial , task_policy )
 {
   TestTaskPolicy::test_task_dep< Kokkos::Serial >( 10 );
-  TestTaskPolicy::test_norm2< Kokkos::Serial >( 1000 );
-  for ( long i = 0 ; i < 30 ; ++i ) TestTaskPolicy::test_fib< Kokkos::Serial >(i);
-  for ( long i = 0 ; i < 40 ; ++i ) TestTaskPolicy::test_fib2< Kokkos::Serial >(i);
+  // TestTaskPolicy::test_norm2< Kokkos::Serial >( 1000 );
+  // for ( long i = 0 ; i < 30 ; ++i ) TestTaskPolicy::test_fib< Kokkos::Serial >(i);
+  // for ( long i = 0 ; i < 40 ; ++i ) TestTaskPolicy::test_fib2< Kokkos::Serial >(i);
+  for ( long i = 0 ; i < 20 ; ++i ) TestTaskPolicy::test_fib< Kokkos::Serial >(i);
+  for ( long i = 0 ; i < 25 ; ++i ) TestTaskPolicy::test_fib2< Kokkos::Serial >(i);
 }
+
+#if defined( KOKKOS_HAVE_CXX11 )
+TEST_F( serial , task_team )
+{
+  TestTaskPolicy::test_task_team< Kokkos::Serial >(1000);
+}
+#endif
 
 //----------------------------------------------------------------------------
 

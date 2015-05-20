@@ -115,6 +115,26 @@ void ones_in_ijkl(Tensor4<T, N> & A)
   return;
 }
 
+template<typename T, Index N>
+inline
+void fill_levi_civita(Tensor4<T, N> & A)
+{
+  Index const
+  dimension = A.get_dimension();
+
+  for (Index i = 0; i < dimension; ++i) {
+    for (Index j = 0; j < dimension; ++j) {
+      for (Index k = 0; k < dimension; ++k) {
+        for (Index l = 0; l < dimension; ++l) {
+          A(i, j, k, l) = levi_civita<T>(i, j, k, l);
+        }
+      }
+    }
+  }
+
+  return;
+}
+
 } // anonymous namespace
 
 //
@@ -122,7 +142,7 @@ void ones_in_ijkl(Tensor4<T, N> & A)
 // \return \f$ \delta_{ik} \delta_{jl} \f$ such that \f$ A = I_1 A \f$
 //
 template<typename T, Index N>
-const Tensor4<T, N>
+Tensor4<T, N> const
 identity_1()
 {
   Tensor4<T, N> I(N, ZEROS);
@@ -140,7 +160,7 @@ identity_1(Index const dimension)
 }
 
 template<typename T, Index N>
-const Tensor4<T, N>
+Tensor4<T, N> const
 identity_1(Index const dimension)
 {
   if (N != DYNAMIC) assert(dimension == N);
@@ -155,7 +175,7 @@ identity_1(Index const dimension)
 // \return \f$ \delta_{il} \delta_{jk} \f$ such that \f$ A^T = I_2 A \f$
 //
 template<typename T, Index N>
-const Tensor4<T, N>
+Tensor4<T, N> const
 identity_2()
 {
   Tensor4<T, N> I(N, ZEROS);
@@ -173,7 +193,7 @@ identity_2(Index const dimension)
 }
 
 template<typename T, Index N>
-const Tensor4<T, N>
+Tensor4<T, N> const
 identity_2(Index const dimension)
 {
   if (N != DYNAMIC) assert(dimension == N);
@@ -188,7 +208,7 @@ identity_2(Index const dimension)
 // \return \f$ \delta_{ij} \delta_{kl} \f$ such that \f$ I_A I = I_3 A \f$
 //
 template<typename T, Index N>
-const Tensor4<T, N>
+Tensor4<T, N> const
 identity_3()
 {
   Tensor4<T, N> I(N, ZEROS);
@@ -206,7 +226,7 @@ identity_3(Index const dimension)
 }
 
 template<typename T, Index N>
-const Tensor4<T, N>
+Tensor4<T, N> const
 identity_3(Index const dimension)
 {
   if (N != DYNAMIC) assert(dimension == N);
@@ -214,6 +234,99 @@ identity_3(Index const dimension)
   Tensor4<T, N> I(dimension, ZEROS);
   ones_in_ijkl(I);
   return I;
+}
+
+//
+// Levi-Civita symbol
+//
+template<typename T, Index N>
+Tensor4<T, N> const
+levi_civita_4()
+{
+  Tensor4<T, N>
+  A(N, ZEROS);
+
+  fill_levi_civita(A);
+
+  return A;
+}
+
+template<typename T>
+Tensor4<T, DYNAMIC> const
+levi_civita_4(Index const dimension)
+{
+  Tensor4<T, DYNAMIC>
+  A(dimension, ZEROS);
+
+  fill_levi_civita(A);
+
+  return A;
+}
+
+template<typename T, Index N>
+Tensor4<T, N> const
+levi_civita_4(Index const dimension)
+{
+  if (N != DYNAMIC) assert(dimension == N);
+
+  Tensor4<T, DYNAMIC>
+  A(dimension, ZEROS);
+
+  fill_levi_civita(A);
+
+  return A;
+}
+
+//
+// Permutation symbol
+//
+template<typename T, Index N>
+Tensor4<T, N> const
+permutation_4()
+{
+  return levi_civita_4<T, N>();
+}
+
+template<typename T>
+Tensor4<T, DYNAMIC> const
+permutation_4(Index const dimension)
+{
+  return levi_civita_4<T>(dimension);
+}
+
+template<typename T, Index N>
+Tensor4<T, N> const
+permutation_4(Index const dimension)
+{
+  return levi_civita_4<T, N>(dimension);
+}
+
+//
+// Alternating symbol
+//
+template<typename T, Index N>
+inline
+Tensor4<T, N> const
+alternator_4()
+{
+  return levi_civita_4<T, N>();
+}
+
+template<typename T>
+inline
+Tensor4<T, DYNAMIC> const
+alternator_4(Index const dimension)
+{
+  return levi_civita_4<T>(dimension);
+}
+
+
+template<typename T, Index N>
+inline
+Tensor4<T, N> const
+alternator_4(Index const dimension)
+{
+  return levi_civita_4<T, N>(dimension);
 }
 
 //
@@ -910,11 +1023,14 @@ kronecker(Tensor<S, N> const & A, Tensor4<T, N> const & B)
           typename Promote<S, T>::type
           s = 0.0;
 
+          // we assume A is the direction cosine matrix
+          // have s_{i}\be_{i} = s_{i'}\be_{i'}, want s_{i}
+          // s_{i} = A_{i',i}s_{i'}
           for (Index p = 0; p < dimension; ++p) {
             for (Index q = 0; q < dimension; ++q) {
               for (Index m = 0; m < dimension; ++m) {
                 for (Index n = 0; n < dimension; ++n) {
-                  s += A(i,p) * A(j,q) * A(k,m) * A(l,n) * B(p,q,m,n);
+                  s += A(p,i) * A(q,j) * A(m,k) * A(n,l) * B(p,q,m,n);
                 }
               }
             }
@@ -971,17 +1087,19 @@ operator<<(std::ostream & os, Tensor4<T, N> const & A)
     return os;
   }
 
+  os << std::scientific << std::setw(24) << std::setprecision(16);
+
   for (Index i = 0; i < dimension; ++i) {
 
     for (Index j = 0; j < dimension; ++j) {
 
       for (Index k = 0; k < dimension; ++k) {
 
-        os << std::scientific << std::setprecision(16) << A(i,j,k,0);
+        os << A(i,j,k,0);
 
         for (Index l = 1; l < dimension; ++l) {
 
-          os << "," << std::scientific  << std::setprecision(16) << A(i,j,k,l);
+          os << "," << std::setw(24) << A(i,j,k,l);
         }
 
         os << std::endl;

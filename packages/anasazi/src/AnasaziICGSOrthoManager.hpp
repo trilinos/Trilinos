@@ -61,7 +61,6 @@ namespace Anasazi {
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
     typedef Teuchos::ScalarTraits<ScalarType>  SCT;
     typedef MultiVecTraits<ScalarType,MV>      MVT;
-    typedef MultiVecTraitsExt<ScalarType,MV>   MVText;
     typedef OperatorTraits<ScalarType,MV,OP>   OPT;
 
   public:
@@ -476,7 +475,7 @@ namespace Anasazi {
     // findBasis() requires MX
 
     int xc = MVT::GetNumberVecs(X);
-    ptrdiff_t xr = MVText::GetGlobalLength(X);
+    ptrdiff_t xr = MVT::GetGlobalLength(X);
 
     // if Op==null, MX == X (via pointer)
     // Otherwise, either the user passed in MX or we will allocated and compute it
@@ -496,7 +495,7 @@ namespace Anasazi {
     }
 
     int mxc = (this->_hasOp) ? MVT::GetNumberVecs( *MX ) : xc;
-    ptrdiff_t mxr = (this->_hasOp) ? MVText::GetGlobalLength( *MX )  : xr;
+    ptrdiff_t mxr = (this->_hasOp) ? MVT::GetGlobalLength( *MX )  : xr;
 
     // check size of C, B
     TEUCHOS_TEST_FOR_EXCEPTION( xc == 0 || xr == 0, std::invalid_argument, 
@@ -572,7 +571,7 @@ namespace Anasazi {
     Teuchos::BLAS<int,ScalarType> blas;
 
     int sc = MVT::GetNumberVecs( S );
-    ptrdiff_t sr = MVText::GetGlobalLength( S );
+    ptrdiff_t sr = MVT::GetGlobalLength( S );
     int numxy = X.length();
     TEUCHOS_TEST_FOR_EXCEPTION(X.length() != Y.length(),std::invalid_argument, 
         "Anasazi::ICGSOrthoManager::projectGen(): X and Y must contain the same number of multivectors.");
@@ -600,7 +599,7 @@ namespace Anasazi {
     // check size of MS
     if (this->_hasOp == true) {
       if (MS != Teuchos::null) {
-        TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*MS) != sr, std::invalid_argument, 
+        TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*MS) != sr, std::invalid_argument, 
             "Anasazi::ICGSOrthoManager::projectGen(): MS length not consistent with S." );
         TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*MS) != sc, std::invalid_argument,
             "Anasazi::ICGSOrthoManager::projectGen(): MS width not consistent with S." );
@@ -613,9 +612,9 @@ namespace Anasazi {
     int MXmissing = 0;
     for (int i=0; i<numxy; i++) {
       if (X[i] != Teuchos::null && Y[i] != Teuchos::null) {
-        TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*X[i]) != sr, std::invalid_argument, 
+        TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*X[i]) != sr, std::invalid_argument, 
             "Anasazi::ICGSOrthoManager::projectGen(): X[" << i << "] length not consistent with S." );
-        TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*Y[i]) != sr, std::invalid_argument, 
+        TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*Y[i]) != sr, std::invalid_argument, 
             "Anasazi::ICGSOrthoManager::projectGen(): Y[" << i << "] length not consistent with S." );
         TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*X[i]) != MVT::GetNumberVecs(*Y[i]), std::invalid_argument,
             "Anasazi::ICGSOrthoManager::projectGen(): X[" << i << "] and Y[" << i << "] widths not consistent." );
@@ -636,14 +635,14 @@ namespace Anasazi {
         // check sizes of MX[i], MY[i] if present
         // if not present, count their absence
         if (MX[i] != Teuchos::null) {
-          TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*MX[i]) != sr || MVT::GetNumberVecs(*MX[i]) != xyc[i], std::invalid_argument,
+          TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*MX[i]) != sr || MVT::GetNumberVecs(*MX[i]) != xyc[i], std::invalid_argument,
               "Anasazi::ICGSOrthoManager::projectGen(): Size of MX[" << i << "] not consistent with size of X[" << i << "]." );
         }
         else {
           MXmissing += xyc[i];
         }
         if (MY[i] != Teuchos::null) {
-          TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*MY[i]) != sr || MVT::GetNumberVecs(*MY[i]) != xyc[i], std::invalid_argument,
+          TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*MY[i]) != sr || MVT::GetNumberVecs(*MY[i]) != xyc[i], std::invalid_argument,
               "Anasazi::ICGSOrthoManager::projectGen(): Size of MY[" << i << "] not consistent with size of Y[" << i << "]." );
         }
         else {
@@ -914,7 +913,7 @@ namespace Anasazi {
 
     int rank;
     int sc = MVT::GetNumberVecs( S );
-    ptrdiff_t sr = MVText::GetGlobalLength( S );
+    ptrdiff_t sr = MVT::GetGlobalLength( S );
     int numxy = X.length();
     TEUCHOS_TEST_FOR_EXCEPTION(X.length() != Y.length(),std::invalid_argument, 
         "Anasazi::ICGSOrthoManager::projectAndNormalizeGen(): X and Y must contain the same number of multivectors.");
@@ -942,7 +941,7 @@ namespace Anasazi {
     // check size of MS
     if (this->_hasOp == true) {
       if (MS != Teuchos::null) {
-        TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*MS) != sr, std::invalid_argument, 
+        TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*MS) != sr, std::invalid_argument, 
             "Anasazi::ICGSOrthoManager::projectAndNormalizeGen(): MS length not consistent with S." );
         TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*MS) != sc, std::invalid_argument,
             "Anasazi::ICGSOrthoManager::projectAndNormalizeGen(): MS width not consistent with S." );
@@ -955,9 +954,9 @@ namespace Anasazi {
     int MXmissing = 0;
     for (int i=0; i<numxy; i++) {
       if (X[i] != Teuchos::null && Y[i] != Teuchos::null) {
-        TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*X[i]) != sr, std::invalid_argument, 
+        TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*X[i]) != sr, std::invalid_argument, 
             "Anasazi::ICGSOrthoManager::projectAndNormalizeGen(): X[" << i << "] length not consistent with S." );
-        TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*Y[i]) != sr, std::invalid_argument, 
+        TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*Y[i]) != sr, std::invalid_argument, 
             "Anasazi::ICGSOrthoManager::projectAndNormalizeGen(): Y[" << i << "] length not consistent with S." );
         TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*X[i]) != MVT::GetNumberVecs(*Y[i]), std::invalid_argument,
             "Anasazi::ICGSOrthoManager::projectAndNormalizeGen(): X[" << i << "] and Y[" << i << "] widths not consistent." );
@@ -978,14 +977,14 @@ namespace Anasazi {
         // check sizes of MX[i], MY[i] if present
         // if not present, count their absence
         if (MX[i] != Teuchos::null) {
-          TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*MX[i]) != sr || MVT::GetNumberVecs(*MX[i]) != xyc[i], std::invalid_argument,
+          TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*MX[i]) != sr || MVT::GetNumberVecs(*MX[i]) != xyc[i], std::invalid_argument,
               "Anasazi::ICGSOrthoManager::projectAndNormalizeGen(): Size of MX[" << i << "] not consistent with size of X[" << i << "]." );
         }
         else {
           MXmissing += xyc[i];
         }
         if (MY[i] != Teuchos::null) {
-          TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*MY[i]) != sr || MVT::GetNumberVecs(*MY[i]) != xyc[i], std::invalid_argument,
+          TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*MY[i]) != sr || MVT::GetNumberVecs(*MY[i]) != xyc[i], std::invalid_argument,
               "Anasazi::ICGSOrthoManager::projectAndNormalizeGen(): Size of MY[" << i << "] not consistent with size of Y[" << i << "]." );
         }
         else {

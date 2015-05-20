@@ -492,11 +492,13 @@ INPUT                  = \
 ../src/algorithm \
 ../src/status \
 ../src/step \
+../src/sol \
 ../src/zoo \
 ../test/function \
 ../test/step \
 ../test/vector \
 ../example/rosenbrock \ 
+../example/json \
 ../example/sacado \
 ../example/zakharov \
 ../example/dual-spaces/rosenbrock-1 \

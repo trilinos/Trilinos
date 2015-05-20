@@ -62,7 +62,7 @@ bool test_cuda_embedded_vector(Ordinal num_blocks,
   typedef Sacado::MP::Vector<storage_type> Vector;
 
   const Ordinal nGrid = 5;
-  Kokkos::DeviceConfig dev_config(num_blocks, num_vec_threads, num_row_threads);
+  KokkosSparse::DeviceConfig dev_config(num_blocks, num_vec_threads, num_row_threads);
 
   bool success = test_embedded_vector<Vector>(
     nGrid, VectorSize, dev_config, MultiplyOp(), out);

@@ -103,6 +103,7 @@ namespace panzer {
     RCP<panzer::LinearObjFactory<panzer::Traits> > lof;
     RCP<panzer::LinearObjFactory<panzer::Traits> > param_lof;
     RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager;
+    RCP<panzer::UniqueGlobalIndexer<int,int> > param_dofManager;
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer;
     Teuchos::ParameterList user_data;
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
@@ -479,6 +480,155 @@ namespace panzer {
     }
   }
 
+  // Test that the response library can build the correct residual and jacobian
+  TEUCHOS_UNIT_TEST(response_residual, dfdp_in_model_eval)
+  {
+    typedef panzer::Traits::RealType RealType;
+    typedef Thyra::VectorBase<RealType> VectorType;
+    typedef Thyra::LinearOpBase<RealType> OperatorType;
+
+    using Teuchos::RCP;
+    using Teuchos::rcp_dynamic_cast;
+
+    typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
+    typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
+    typedef panzer::ModelEvaluator<double> PME;
+
+    bool parameter_on = true;
+    bool distr_param_on = true;
+    AssemblyPieces ap;
+    buildAssemblyPieces(parameter_on,distr_param_on,ap);
+
+    RCP<ThyraObjFactory<double> > th_param_lof = rcp_dynamic_cast<ThyraObjFactory<double> >(ap.param_lof);
+
+    RCP<VectorType> param_density = Thyra::createMember(th_param_lof->getThyraDomainSpace());
+    std::cout << Teuchos::describe(*param_density,Teuchos::VERB_MEDIUM) << std::endl;
+    Thyra::assign(param_density.ptr(),3.7);
+    int pIndex = -1;
+
+    std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+    bool build_transient_support = true;
+
+    user_app::BCFactory bc_factory;
+    RCP<PME> me 
+        = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,Teuchos::null,ap.gd,build_transient_support,0.0));
+    pIndex = me->addDistributedParameter("DENSITY",th_param_lof->getThyraDomainSpace(),
+                                         ap.param_ged,param_density,ap.param_dofManager);
+    me->setupModel(ap.wkstContainer,ap.physicsBlocks,ap.bcs,
+                   *ap.eqset_factory,
+                   bc_factory,
+                   ap.cm_factory,
+                   ap.cm_factory,
+                   ap.closure_models,
+                   ap.user_data,false,"");
+
+    RCP<Thyra::LinearOpBase<double> > DfDp = me->create_DfDp_op(pIndex);
+
+    TEST_ASSERT(DfDp!=Teuchos::null);
+    TEST_ASSERT(DfDp->range()->isCompatible(*me->get_f_space()));   
+    TEST_ASSERT(DfDp->domain()->isCompatible(*th_param_lof->getThyraDomainSpace()));   
+
+    RCP<Thyra::VectorBase<double> > x = Thyra::createMember(*me->get_x_space());
+    RCP<Thyra::VectorBase<double> > x_dot = Thyra::createMember(*me->get_x_space());
+    Thyra::randomize(-1.0,1.0,x.ptr());
+    Thyra::randomize(-1.0,1.0,x_dot.ptr());
+
+    InArgs inArgs = me->createInArgs();
+    inArgs.set_x(x);
+    inArgs.set_x_dot(x_dot);
+    inArgs.set_alpha(Teuchos::ScalarTraits<double>::nan()); // make sure these don't percolate through!
+    inArgs.set_beta(Teuchos::ScalarTraits<double>::nan());  // make sure these don't percolate through!
+
+    OutArgs outArgs = me->createOutArgs();
+    outArgs.set_DfDp(pIndex,DfDp);
+
+    me->evalModel(inArgs,outArgs);
+
+    // test the jacobian for correctness
+    {
+ 
+      // build vectors for each type of node
+      std::vector<double> corner(4);
+      corner[0] = 1./1152.; corner[1] = 1./576.;
+      corner[2] = 1./288.;  corner[3] = 1./128.;
+
+      std::vector<double> edge(6);
+      edge[0] = 1./1152.; edge[1] = 1./1152.; edge[2] = 1./576.;
+      edge[3] = 1./576.;  edge[4] = 1./288.;  edge[5] = 1./144.;
+
+      std::vector<double> volume(9); 
+      volume[0] = 1./1152.; volume[1] = 1./1152.; volume[2] = 1./1152.;
+      volume[3] = 1./1152.; volume[4] = 1./288.;  volume[5] = 1./288.;
+      volume[6] = 1./288.;  volume[7] = 1./288.;  volume[8] = 1./72.;
+      
+      RCP<const Epetra_CrsMatrix> jac = rcp_dynamic_cast<const Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*DfDp));
+
+      TEUCHOS_ASSERT(jac!=Teuchos::null);
+
+      for(int i=0;i<jac->NumMyRows();i++) {
+        int numEntries = -1;
+        int * indices = 0;
+        double * values = 0;
+
+        // get a view of the row entries
+        jac->ExtractMyRowView(i,numEntries,values,indices);
+
+        TEUCHOS_ASSERT(numEntries>0);
+
+        // sort the row entries
+        std::vector<double> sorted_values(numEntries);
+        for(int j=0;j<numEntries;j++)
+          sorted_values.push_back(values[j]);
+        std::sort(sorted_values.begin(),sorted_values.end());
+
+        if(sorted_values[0]!=sorted_values[sorted_values.size()-1]) {
+          std::vector<double>::const_iterator found_itr;
+
+          ///////////////////////////////////////////////////////////////////////
+
+          found_itr = std::find_end(sorted_values.begin(),sorted_values.end(),
+                                    corner.begin(),corner.end(),comparison);
+
+          // test passed this row corresponds to a corner
+          if(found_itr!=corner.end()) 
+            continue;
+
+          ///////////////////////////////////////////////////////////////////////
+
+          found_itr = std::find_end(sorted_values.begin(),sorted_values.end(),
+                                    edge.begin(),edge.end(),comparison);
+
+          // test passed this row corresponds to a edge
+          if(found_itr!=edge.end()) 
+            continue;
+
+          ///////////////////////////////////////////////////////////////////////
+
+          found_itr = std::find_end(sorted_values.begin(),sorted_values.end(),
+                                    volume.begin(),volume.end(),comparison);
+
+          // test passed this row corresponds to a volume
+          if(found_itr!=volume.end()) 
+            continue;
+
+          ///////////////////////////////////////////////////////////////////////
+
+          TEST_ASSERT(false); // non of the required row types were found
+
+          out << "Row didn't match expectation " << i << ": ";
+          for(std::size_t i=0;i<sorted_values.size();i++)
+            out << sorted_values[i] << " ";
+          out << std::endl;
+        }
+        else {
+          TEST_ASSERT(sorted_values[0]==0.0); 
+          TEST_ASSERT(sorted_values[sorted_values.size()-1]==0.0);
+        }
+                      
+      }
+    }
+  }
+
   bool testEqualityOfVectorValues(const Thyra::VectorBase<double> & a, 
                                   const Thyra::VectorBase<double> & b, 
                                   double tolerance, bool write_to_cout)
@@ -656,7 +806,6 @@ namespace panzer {
       ap.dofManager = dofManager;
 
       Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
-          // = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64>(Comm.getConst(),dofManager));
           = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(mpiComm,dofManager));
       ap.lof = linObjFactory;
     }
@@ -682,6 +831,7 @@ namespace panzer {
       Teuchos::RCP<Epetra_Map> ghostedMap = linObjFactory->getGhostedColMap();
       Teuchos::RCP<Epetra_Import> importer = Teuchos::rcp(new Epetra_Import(*ghostedMap,*uniqueMap));
 
+      ap.param_dofManager = dofManager;
       ap.param_ged = Teuchos::rcp(new EpetraVector_ReadOnly_GlobalEvaluationData(importer,ghostedMap,uniqueMap));
       ap.param_lof = linObjFactory;
     }
@@ -714,8 +864,9 @@ namespace panzer {
     ap.user_data = Teuchos::ParameterList("User Data");
 
     ap.fmb->setWorksetContainer(wkstContainer);
-    ap.fmb->setupVolumeFieldManagers(ap.physicsBlocks,ap.cm_factory,closure_models,*ap.lof,ap.user_data);
-    ap.fmb->setupBCFieldManagers(bcs,ap.physicsBlocks,*ap.eqset_factory,ap.cm_factory,bc_factory,closure_models,*ap.lof,ap.user_data);
+    ap.fmb->setupVolumeFieldManagers(ap.physicsBlocks,ap.cm_factory,ap.closure_models,*ap.lof,ap.user_data);
+    ap.fmb->setupBCFieldManagers(bcs,ap.physicsBlocks,*ap.eqset_factory,ap.cm_factory,bc_factory,ap.closure_models,
+                                 *ap.lof,ap.user_data);
   }
 
 

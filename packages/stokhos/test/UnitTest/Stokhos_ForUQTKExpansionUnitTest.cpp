@@ -244,6 +244,9 @@ namespace ForUQTKExpansionUnitTest {
   struct SqrtFunc { 
     double operator() (double a) const { return std::sqrt(a); } 
   };
+  struct CbrtFunc { 
+    double operator() (double a) const { return std::sqrt(a); } 
+  };
   struct SinFunc { 
     double operator() (double a) const { return std::sin(a); } 
   };
@@ -333,6 +336,12 @@ namespace ForUQTKExpansionUnitTest {
   TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, Sqrt ) {
     setup.exp->sqrt(setup.u, setup.x);
     setup.computePCE1<SqrtFunc>(setup.u2, setup.x);
+    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
+				   setup.rtol, setup.atol, out);
+  }
+  TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, Cbrt ) {
+    setup.exp->cbrt(setup.u, setup.x);
+    setup.computePCE1<CbrtFunc>(setup.u2, setup.x);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
@@ -620,6 +629,25 @@ namespace ForUQTKExpansionUnitTest {
     Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
     setup.exp->sqrt(ru, setup.x);
     setup.computePCE1<SqrtFunc>(setup.u2, setup.x);
+    success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
+				   setup.rtol, setup.atol, out);
+  }
+   TEUCHOS_UNIT_TEST( Stokhos_ForUQTKExpansion, Cbrt ) {
+    setup.exp->cbrt(setup.u, setup.x);
+    setup.computePCE1<CbrtFunc>(setup.u2, setup.x);
+    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
+				   setup.rtol, setup.atol, out);
+  }
+  TEUCHOS_UNIT_TEST( Stokhos_ForUQTKExpansion, CbrtConst ) {
+    setup.exp->cbrt(setup.cu, setup.cx);
+    setup.cu2[0] = std::cbrt(setup.cx[0]);
+    success = Stokhos::comparePCEs(setup.cu, "cu", setup.cu2, "cu2", 
+				   setup.crtol, setup.catol, out);
+  }
+  TEUCHOS_UNIT_TEST( Stokhos_ForUQTKExpansion, CbrtResize ) {
+    Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
+    setup.exp->cbrt(ru, setup.x);
+    setup.computePCE1<CbrtFunc>(setup.u2, setup.x);
     success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }

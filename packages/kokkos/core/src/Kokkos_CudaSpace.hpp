@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -70,6 +70,8 @@ public:
   //! Tag this class as a kokkos memory space
   typedef CudaSpace             memory_space ;
   typedef Kokkos::Cuda          execution_space ;
+  typedef Kokkos::Device<execution_space,memory_space> device_type;
+
   typedef unsigned int          size_type ;
 
   typedef Impl::CudaMallocAllocator allocator;
@@ -81,7 +83,6 @@ public:
    *  allocation gives it a reference count of one.
    */
   static Impl::AllocationTracker allocate_and_track( const std::string & label, const size_t size );
-
 
   /*--------------------------------*/
   /** \brief  Cuda specific function to attached texture object to an allocation.
@@ -100,6 +101,24 @@ public:
   static void access_error( const void * const );
 };
 
+namespace Impl {
+/// \brief Initialize lock array for arbitrary size atomics.
+///
+/// Arbitrary atomics are implemented using a hash table of locks
+/// where the hash value is derived from the address of the
+/// object for which an atomic operation is performed.
+/// This function initializes the locks to zero (unset).
+void init_lock_array_cuda_space();
+
+/// \brief Retrieve the pointer to the lock array for arbitrary size atomics.
+///
+/// Arbitrary atomics are implemented using a hash table of locks
+/// where the hash value is derived from the address of the
+/// object for which an atomic operation is performed.
+/// This function retrieves the lock array pointer.
+/// If the array is not yet allocated it will do so.
+int* lock_array_cuda_space_ptr(bool deallocate = false);
+}
 } // namespace Kokkos
 
 /*--------------------------------------------------------------------------*/
@@ -116,6 +135,7 @@ public:
   //! Tag this class as a kokkos memory space
   typedef CudaUVMSpace          memory_space ;
   typedef Cuda                  execution_space ;
+  typedef Kokkos::Device<execution_space,memory_space> device_type;
   typedef unsigned int          size_type ;
 
   /** \brief  If UVM capability is available */
@@ -157,11 +177,12 @@ class CudaHostPinnedSpace {
 public:
 
   //! Tag this class as a kokkos memory space
-  typedef CudaHostPinnedSpace         memory_space ;
-  typedef unsigned int                size_type ;
-
   /** \brief  Memory is in HostSpace so use the HostSpace::execution_space */
   typedef HostSpace::execution_space  execution_space ;
+  typedef CudaHostPinnedSpace         memory_space ;
+  typedef Kokkos::Device<execution_space,memory_space> device_type;
+  typedef unsigned int                size_type ;
+
 
   typedef Impl::CudaHostAllocator allocator ;
 

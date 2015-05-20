@@ -51,7 +51,7 @@ private:
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities
 #include <vector>
 #include <string>
-#include <optionParsing/getOption.h>
+#include <stk_unit_test_utils/getOption.h>
 
 #if defined(_OPENMP)
 #include <omp.h>

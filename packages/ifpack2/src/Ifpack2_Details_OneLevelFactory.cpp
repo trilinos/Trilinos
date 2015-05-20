@@ -68,13 +68,6 @@ namespace Details {
 
   IFPACK2_INSTANTIATE_SLG( LCLINST )
 
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE) && defined(HAVE_TPETRA_INST_DOUBLE)
-
-  template class OneLevelFactory<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> >;
-  template class OneLevelFactory<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode> >;
-
-#endif
-
 } // namespace Details
 } // namespace Ifpack2
 

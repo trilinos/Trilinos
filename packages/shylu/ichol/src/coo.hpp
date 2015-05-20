@@ -62,7 +62,7 @@ namespace Example {
     
     /// \brief Compare "equality" only index i and j.
     bool operator==(const Coo<CrsMatType> &y) const {
-      return !(bool)((this->_i - y._i) + (this->_j - y._j));
+      return (this->_i == y._i) && (this->_j == y._j);
     }  
  
     /// \brief Compare "in-equality" only index i and j.   

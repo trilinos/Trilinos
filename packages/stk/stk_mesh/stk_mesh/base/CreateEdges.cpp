@@ -35,7 +35,6 @@
 
 #include <stddef.h>                     // for size_t
 #include <algorithm>                    // for swap, lower_bound, max, etc
-#include <boost/array.hpp>              // for array
 #include <functional>                   // for equal_to
 #include <iterator>                     // for back_insert_iterator, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, EntityLess, etc
@@ -48,11 +47,7 @@
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>  // for CommBuffer, CommAll
 #include <vector>                       // for vector, etc
-#include "boost/functional/hash/extensions.hpp"  // for hash
-#include "boost/tuple/detail/tuple_basic.hpp"  // for get
-#include "boost/unordered/detail/buckets.hpp"  // for iterator, etc
-#include "boost/unordered/unordered_map.hpp"
-#include "boost/utility/enable_if.hpp"  // for enable_if_c
+#include <unordered_map>
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
 #include "stk_mesh/base/Part.hpp"       // for Part
@@ -67,7 +62,7 @@ namespace stk {
 namespace mesh {
 
 namespace impl {
-  typedef boost::unordered_map<EntityVector,Entity> edge_map_type;
+  typedef std::unordered_map<EntityVector,Entity,stk::mesh::impl::HashValueForEntityVector> edge_map_type;
 } //impl namespace
 
 namespace {
@@ -100,10 +95,14 @@ struct create_single_edge_impl
   {}
 
   template <typename Topology>
-  typename boost::enable_if_c< (Topology::num_edges > 0u), void>::type
-  operator()(Topology t)
+//  enable if?  check intel
+  void operator()(Topology t)
   {
     typedef topology::topology_type< Topology::edge_topology> EdgeTopology;
+
+    Topology     elem_topo;
+    EdgeTopology edge_topo;
+
 
     BulkData & mesh = m_mesh;
     PartVector add_parts;
@@ -112,7 +111,7 @@ struct create_single_edge_impl
     if (m_part_to_insert_new_edges)
       add_parts.push_back(m_part_to_insert_new_edges);
 
-    boost::array<Entity,Topology::num_nodes> elem_nodes;
+    std::array<Entity,Topology::num_nodes> elem_nodes;
     EntityVector edge_nodes(m_edge_nodes, m_edge_nodes+m_num_edge_nodes);
     OrdinalVector ordinal_scratch;
     ordinal_scratch.reserve(64);
@@ -151,7 +150,7 @@ struct create_single_edge_impl
     typename impl::edge_map_type::iterator iedge = m_edge_map.find(edge_nodes);
 
     Entity edge;
-    Permutation perm = static_cast<Permutation>(0);
+    Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
     if (iedge == m_edge_map.end()) {
       ThrowRequireMsg(m_count_edges < m_available_ids.size(), "Error: edge generation exhausted available identifier list. Report to sierra-help");
       EntityId edge_id = m_available_ids[m_count_edges];
@@ -168,14 +167,10 @@ struct create_single_edge_impl
     else {
       edge = iedge->second;
     }
+    perm = mesh.find_permutation(elem_topo, &elem_nodes[0], edge_topo, &edge_nodes[0], m_edge_ordinal);
+    ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
     mesh.declare_relation(ielem, edge, m_edge_ordinal, perm, ordinal_scratch, part_scratch);
   }
-
-  template <typename Topology>
-  typename boost::enable_if_c< (Topology::num_edges == 0u), void>::type
-  operator()(Topology t)
-  {}
-
 
   //members
   size_t                                          & m_count_edges;
@@ -207,10 +202,12 @@ struct create_edge_impl
   {}
 
   template <typename Topology>
-  typename boost::enable_if_c< (Topology::num_edges > 0u), void>::type
-  operator()(Topology t)
+  void operator()(Topology t)
   {
     typedef topology::topology_type< Topology::edge_topology> EdgeTopology;
+
+    stk::topology elem_topo = m_bucket.topology();
+    EdgeTopology edge_topo;
 
     BulkData & mesh = m_bucket.mesh();
     PartVector add_parts;
@@ -219,7 +216,7 @@ struct create_edge_impl
     if (m_part_to_insert_new_edges)
       add_parts.push_back(m_part_to_insert_new_edges);
 
-    boost::array<Entity,Topology::num_nodes> elem_nodes;
+    std::array<Entity,Topology::num_nodes> elem_nodes;
     EntityVector edge_nodes(EdgeTopology::num_nodes);
     EntityKeyVector edge_node_keys(EdgeTopology::num_nodes);
     OrdinalVector ordinal_scratch;
@@ -262,7 +259,7 @@ struct create_edge_impl
         typename impl::edge_map_type::iterator iedge = m_edge_map.find(edge_nodes);
 
         Entity edge;
-        Permutation perm = static_cast<Permutation>(0);
+        Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
         if (iedge == m_edge_map.end()) {
           ThrowRequireMsg(m_count_edges < m_available_ids.size(), "Error: edge generation exhausted available identifier list. Report to sierra-help");
           EntityId edge_id = m_available_ids[m_count_edges];
@@ -279,16 +276,12 @@ struct create_edge_impl
         else {
           edge = iedge->second;
         }
+        perm = mesh.find_permutation(elem_topo, &elem_nodes[0], edge_topo, &edge_nodes[0], e);
+        ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
         mesh.declare_relation(m_bucket[ielem], edge, e, perm, ordinal_scratch, part_scratch);
       }
     }
   }
-
-  template <typename Topology>
-  typename boost::enable_if_c< (Topology::num_edges == 0u), void>::type
-  operator()(Topology t)
-  {}
-
 
   //members
   size_t                                          & m_count_edges;
@@ -310,14 +303,16 @@ struct connect_face_impl
   {}
 
   template <typename Topology>
-  typename boost::enable_if_c< (Topology::num_edges > 0u), void>::type
-  operator()(Topology t)
+  void operator()(Topology t)
   {
     typedef topology::topology_type< Topology::edge_topology> EdgeTopology;
 
+    stk::topology face_topo = m_bucket.topology();
+    EdgeTopology edge_topo;
+
     BulkData & mesh = m_bucket.mesh();
 
-    boost::array<Entity,Topology::num_nodes> face_nodes;
+    std::array<Entity,Topology::num_nodes> face_nodes;
     EntityVector edge_nodes(EdgeTopology::num_nodes);
     OrdinalVector ordinal_scratch;
     ordinal_scratch.reserve(64);
@@ -363,17 +358,13 @@ struct connect_face_impl
         //which is fine
         if (iedge != m_edge_map.end()) {
           Entity edge = iedge->second;
-          Permutation perm = static_cast<Permutation>(0);
+          Permutation perm = mesh.find_permutation(face_topo, &face_nodes[0], edge_topo, &edge_nodes[0], e);
+          ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
           mesh.declare_relation(m_bucket[iface], edge, e, perm, ordinal_scratch, part_scratch);
         }
       }
     }
   }
-
-  template <typename Topology>
-  typename boost::enable_if_c< (Topology::num_edges == 0u), void>::type
-  operator()(Topology t)
-  {}
 
   //members
   impl::edge_map_type         & m_edge_map;
@@ -488,7 +479,7 @@ void create_edges( BulkData & mesh, const Selector & element_selector, Part * pa
                   stk::mesh::impl::find_element_edge_ordinal_and_equivalent_nodes(mesh, localElem, numNodesPerEdge, edgeNodes, localElemEdgeOrdinal, localElemEdgeNodes);
                   create_single_edge_impl functor( count_edges, ids_requested, edge_map, mesh, localElem, localElemEdgeOrdinal, numNodesPerEdge, localElemEdgeNodes, part_to_insert_new_edges);
                   stk::topology::apply_functor< create_single_edge_impl > apply(functor);
-                  apply( b.topology() );
+                  apply( mesh.bucket(localElem).topology() );
                 }
                 elements.clear();
               }

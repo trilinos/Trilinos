@@ -183,7 +183,6 @@ class TransientInterface : public Interface
       xvec.Import(*xptr, *Importer, Insert);
 
       // Declare required variables
-      int ierr = 0;
       int OverlapNumMyElements = OverlapMap->NumMyElements();
 
       int row, column;
@@ -241,7 +240,7 @@ class TransientInterface : public Interface
                       8.0/factor/factor*
                       (2.0*basis.uu-3.0*basis.uu*basis.uu)*
                       basis.phi[j]*basis.phi[i]);
-                  ierr=jacobian->SumIntoGlobalValues(row, 1, &jac, &column);
+                  jacobian->SumIntoGlobalValues(row, 1, &jac, &column);
                 }
               }
             }

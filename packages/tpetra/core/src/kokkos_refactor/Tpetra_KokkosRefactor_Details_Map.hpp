@@ -57,35 +57,39 @@ namespace Tpetra {
     template<class IntType, class DeviceType>
     class Iota {
     public:
-      typedef DeviceType execution_space;
+      typedef typename DeviceType::execution_space execution_space;
+      typedef Kokkos::View<IntType*, execution_space> view_type;
+      typedef typename view_type::size_type size_type;
 
-      Iota (const Kokkos::View<IntType*, DeviceType>& x,
-            const IntType first) : x_ (x), first_ (first) {}
+      Iota (const view_type& x, const IntType first) :
+        x_ (x), first_ (first)
+      {}
 
       KOKKOS_INLINE_FUNCTION void
-      operator () (const typename DeviceType::size_type i) const {
+      operator () (const size_type i) const {
         x_(i) = first_ + static_cast<IntType> (i);
       }
 
     private:
-      Kokkos::View<IntType*, DeviceType> x_;
+      view_type x_;
       const IntType first_;
     };
 
     //! Fill x with integers first, first + 1, ..., first + x.dimension_0() - 1.
     template<class IntType, class DeviceType>
     void
-    iota (const Kokkos::View<IntType*, DeviceType>& x,
+    iota (const Kokkos::View<IntType*, typename DeviceType::execution_space>& x,
           const IntType first)
     {
-      Kokkos::parallel_for (x.dimension_0 (), Iota<IntType, DeviceType> (x, first));
+      Iota<IntType, DeviceType> f (x, first);
+      Kokkos::parallel_for (x.dimension_0 (), f);
     }
 
     /// \struct MapData
     /// \brief Used by GlobalToLocalTableFiller.
     ///
     /// \note Structs given to functors just get copied over directly.
-    template<class LO, class GO, class DeviceType>
+    template<class LO, class GO>
     struct MapData {
       GO minMyGID; //!< My process' minimum GID
       GO maxMyGID; //!< My process' maximum GID
@@ -125,9 +129,11 @@ namespace Tpetra {
     template<class LO, class GO, class DeviceType>
     class GlobalToLocalTableFiller {
     public:
-      typedef DeviceType execution_space;
-      typedef typename DeviceType::size_type size_type;
-      typedef MapData<LO, GO, DeviceType> value_type;
+      typedef typename DeviceType::execution_space execution_space;
+      typedef Kokkos::View<const GO*, execution_space> input_view_type;
+      typedef Kokkos::UnorderedMap<GO, LO, execution_space> output_map_type;
+      typedef typename input_view_type::size_type size_type;
+      typedef MapData<LO, GO> value_type;
 
       /// \brief Constructor
       ///
@@ -139,8 +145,8 @@ namespace Tpetra {
       ///   [firstContiguousGID, lastContiguousGID].
       /// \param firstContiguousGID [in] The first contiguous GID.
       /// \param lastContiguousGID [in] The last contiguous GID.
-      GlobalToLocalTableFiller (const Kokkos::UnorderedMap<GO, LO, DeviceType>& glMap,
-                                const Kokkos::View<const GO*, DeviceType>& entries,
+      GlobalToLocalTableFiller (const output_map_type& glMap,
+                                const input_view_type& entries,
                                 const GO firstContiguousGID,
                                 const GO lastContiguousGID) :
         glMap_ (glMap),
@@ -217,9 +223,9 @@ namespace Tpetra {
 
     private:
       //! The GID->LID table to fill.
-      Kokkos::UnorderedMap<GO, LO, DeviceType> glMap_;
+      output_map_type glMap_;
       //! The input list of GIDs (not including initial contiguous GIDs).
-      Kokkos::View<const GO*, DeviceType> entries_;
+      input_view_type entries_;
       //! First contiguous GID in initial contiguous GIDs.
       const GO firstContiguousGID_;
       //! Last contiguous GID (inclusive) in initial contiguous GIDs.
@@ -249,14 +255,15 @@ namespace Tpetra {
     ///   nonzero, if the GID list on the calling process contains
     ///   duplicates.  This is generally a bad idea, however.
     template<class LO, class GO, class DeviceType>
-    MapData<LO, GO, DeviceType>
-    fillGlobalToLocalTable (Kokkos::UnorderedMap<GO, LO, DeviceType>& glMap,
-                            const Kokkos::View<const GO*, DeviceType>& entries,
+    MapData<LO, GO>
+    fillGlobalToLocalTable (Kokkos::UnorderedMap<GO, LO, typename DeviceType::execution_space>& glMap,
+                            const Kokkos::View<const GO*, typename DeviceType::execution_space>& entries,
                             const GO firstContiguousGID,
                             const GO lastContiguousGID)
     {
-      typedef typename DeviceType::size_type size_type;
-      typedef GlobalToLocalTableFiller<LO, GO, DeviceType> functor_type;
+      typedef typename DeviceType::execution_space execution_space;
+      typedef GlobalToLocalTableFiller<LO, GO, execution_space> functor_type;
+      typedef typename functor_type::size_type size_type;
 
       const size_type numEnt = entries.dimension_0 ();
       const size_type mapCap = glMap.capacity ();
@@ -271,8 +278,7 @@ namespace Tpetra {
       }
 
       functor_type filler (glMap, entries, firstContiguousGID, lastContiguousGID);
-
-      MapData<LO, GO, DeviceType> result;
+      MapData<LO, GO> result;
       Kokkos::parallel_reduce (numEnt, filler, result);
       return result;
     }
@@ -303,7 +309,7 @@ namespace Tpetra {
       //! The type of global indices.
       typedef GO global_ordinal_type;
       //! The type of the Kokkos Device.
-      typedef DeviceType execution_space;
+      typedef typename DeviceType::execution_space execution_space;
 
       //@}
       //! \name Constructors
@@ -627,7 +633,7 @@ namespace Tpetra {
 
       //! Possibly noncontiguous constructor.
       Map (const GO globalNumIndices,
-           const Kokkos::View<const GO*, DeviceType>& myGlobalIndices,
+           const Kokkos::View<const GO*, execution_space>& myGlobalIndices,
            const GO indexBase,
            const Teuchos::Comm<int>& comm) :
         invalidGlobalIndex_ (Teuchos::OrdinalTraits<GO>::invalid ()), // final
@@ -649,6 +655,9 @@ namespace Tpetra {
       {
         using Teuchos::outArg;
         using Teuchos::reduceAll;
+        typedef Kokkos::View<const GO*, execution_space> input_view_type;
+        typedef Kokkos::UnorderedMap<GO, LO, execution_space> output_table_type;
+        typedef typename input_view_type::size_type size_type;
 
         // FIXME (mfh 20 Feb 2013, 05 Feb 2014) The global reduction
         // is redundant, since the directory Map will have to do the
@@ -662,7 +671,7 @@ namespace Tpetra {
                               outArg (globalNumIndices_));
         } // now globalNumIndices_ is final.
 
-        Kokkos::View<const GO*, DeviceType> nonContigEntries;
+        input_view_type nonContigEntries;
         if (myNumIndices_ > 0) {
           // Find contiguous GID range, with the restriction that the
           // beginning of the range starts with the first entry.
@@ -703,8 +712,7 @@ namespace Tpetra {
           // table does not store this initial sequence.
 
           std::pair<size_t, size_t> offsetInfo (numContig, numContig + numNonContig);
-          nonContigEntries =
-            Kokkos::subview<Kokkos::View<const GO*, DeviceType> > (lgMap_, offsetInfo);
+          nonContigEntries = Kokkos::subview (lgMap_, offsetInfo);
 
           TEUCHOS_TEST_FOR_EXCEPTION(
             static_cast<size_t> (nonContigEntries.dimension_0 ()) != numNonContig,
@@ -728,14 +736,13 @@ namespace Tpetra {
 
           // Allocate space for GID -> LID table.  Leave extra space
           // to avoid excessive collisions.
-          typedef typename DeviceType::size_type size_type;
           const size_type tableSize =
             static_cast<size_type> (1.25 * static_cast<double> (numNonContig));
-          Kokkos::UnorderedMap<GO, LO, DeviceType> glMap (tableSize);
-          MapData<LO, GO, DeviceType> result =
-            fillGlobalToLocalTable (glMap, nonContigEntries,
-                                    firstContiguousGID_,
-                                    lastContiguousGID_);
+          output_table_type glMap (tableSize);
+          MapData<LO, GO> result =
+            fillGlobalToLocalTable<LO, GO, DeviceType> (glMap, nonContigEntries,
+                                                        firstContiguousGID_,
+                                                        lastContiguousGID_);
 
           // There should be no failed inserts, since we made the
           // UnorderedMap more than big enough to hold all the GIDs.
@@ -990,13 +997,13 @@ namespace Tpetra {
             if (map.myNumIndices_ != 0 && map.glMap_.size () != 0) {
               // The calling process owns one or more GIDs, and some of
               // these GIDs are not contiguous.
-              Kokkos::UnorderedMap<GO, LO, DeviceType> glMap;
+              typename global_to_local_table_type::insertable_map_type glMap;
               glMap.create_copy_view (map.glMap_);
               glMap_ = glMap;
             }
 
             // It's OK for this to be dimension 0; that means it hasn't been initialized yet.
-            Kokkos::View<GO*, DeviceType> lgMap ("LID->GID", map.lgMap_.dimension_0 ());
+            Kokkos::View<GO*, execution_space> lgMap ("LID->GID", map.lgMap_.dimension_0 ());
             if (map.lgMap_.dimension_0 () != 0) {
               Kokkos::deep_copy (lgMap, map.lgMap_);
             }
@@ -1438,7 +1445,7 @@ namespace Tpetra {
       /// changed.  This means that when Map builds this table, it
       /// first has to build a nonconst table, and then assign the
       /// result to this table.
-      typedef Kokkos::UnorderedMap<const GO, const LO, DeviceType> global_to_local_table_type;
+      typedef Kokkos::UnorderedMap<const GO, const LO, execution_space> global_to_local_table_type;
 
       /// \brief A mapping from global IDs to local IDs.
       ///

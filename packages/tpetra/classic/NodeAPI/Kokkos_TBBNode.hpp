@@ -44,7 +44,7 @@
 
 /// \file Kokkos_TBBNode.hpp
 /// \brief Declaration and definition of the (now DEPRECATED)
-///   KokkosClassic::TBBNode Node type.
+///   KokkosClassic::DoNotUse::TBBNode Node type.
 
 #include "Kokkos_ConfigDefs.hpp"
 
@@ -69,6 +69,7 @@ namespace Teuchos {
 #include <stdlib.h>
 
 namespace KokkosClassic {
+namespace DoNotUse {
 
   template <class WDPin>
   struct BlockedRangeWDP {
@@ -184,6 +185,8 @@ namespace KokkosClassic {
     tbb::task_scheduler_init tsi_;
     bool alreadyInit_;
   };
+
+} // namespace DoNotUse
 
 #ifdef _MSC_VER
 #pragma warning(push)

@@ -92,16 +92,22 @@ template< class ElemNodeIdView , class CrsGraphType , unsigned ElemNode >
 class NodeNodeGraph {
 public:
 
-  typedef typename ElemNodeIdView::execution_space execution_space ;
+  typedef typename ElemNodeIdView::execution_space  execution_space ;
   typedef pair<unsigned,unsigned> key_type ;
 
-  typedef Kokkos::UnorderedMap< key_type, void , execution_space > SetType ;
-  typedef typename CrsGraphType::row_map_type::non_const_type  RowMapType ;
-  typedef Kokkos::View< unsigned ,  execution_space >              UnsignedValue ;
+  typedef Kokkos::UnorderedMap< key_type, void , execution_space >  SetType ;
+  typedef typename CrsGraphType::row_map_type::non_const_type       RowMapType ;
+  typedef Kokkos::View< unsigned ,  execution_space >               UnsignedValue ;
 
   // Static dimensions of 0 generate compiler warnings or errors.
   typedef Kokkos::View< unsigned*[ElemNode][ElemNode] , execution_space >
     ElemGraphType ;
+
+  struct TagFillNodeSet {};
+  struct TagScanNodeCount {};
+  struct TagFillGraphEntries {};
+  struct TagSortGraphEntries {};
+  struct TagFillElementGraph {};
 
 private:
 
@@ -157,21 +163,23 @@ public:
       phase = FILL_NODE_SET ;
 
       // upper bound on the capacity
-      size_t set_capacity = (((28ull * node_count) / 2ull)*4ull)/3ull;
+      size_t set_capacity = (28ull * node_count) / 2;
+      unsigned failed_insert_count = 0 ;
 
-
-      // Increase capacity until the (node,node) map is successfully filled.
-      {
+      do {
         // Zero the row count to restart the fill
         Kokkos::deep_copy( row_count , 0u );
 
-        node_node_set = SetType( set_capacity );
+        node_node_set = SetType( ( set_capacity += failed_insert_count ) );
 
         // May be larger that requested:
         set_capacity = node_node_set.capacity();
 
-        Kokkos::parallel_for( elem_node_id.dimension_0() , *this );
-      }
+        Kokkos::parallel_reduce( Kokkos::RangePolicy<execution_space,TagFillNodeSet>(0,elem_node_id.dimension_0())
+                               , *this
+                               , failed_insert_count );
+
+      } while ( failed_insert_count );
 
       execution_space::fence();
       results.ratio = (double)node_node_set.size() / (double)node_node_set.capacity();
@@ -242,7 +250,7 @@ public:
   // parallel_for: create map and count row length
 
   KOKKOS_INLINE_FUNCTION
-  void fill_set( const unsigned ielem ) const
+  void operator()( const TagFillNodeSet & , unsigned ielem , unsigned & count ) const
   {
     // Loop over element's (row_local_node,col_local_node) pairs:
     for ( unsigned row_local_node = 0 ; row_local_node < elem_node_id.dimension_1() ; ++row_local_node ) {
@@ -261,9 +269,17 @@ public:
 
           const typename SetType::insert_result result = node_node_set.insert( key );
 
+          // A successfull insert: the first time this pair was added
           if ( result.success() ) {
+
+            // If row node is owned then increment count
             if ( row_node < row_count.dimension_0() ) { atomic_fetch_add( & row_count( row_node ) , 1 ); }
+
+            // If column node is owned and not equal to row node then increment count
             if ( col_node < row_count.dimension_0() && col_node != row_node ) { atomic_fetch_add( & row_count( col_node ) , 1 ); }
+          }
+          else if ( result.failed() ) {
+            ++count ;
           }
         }
       }
@@ -274,6 +290,8 @@ public:
   void fill_graph_entries( const unsigned iset ) const
   {
     if ( node_node_set.valid_at(iset) ) {
+      // Add each entry to the graph entries.
+
       const key_type key = node_node_set.key_at(iset) ;
       const unsigned row_node = key.first ;
       const unsigned col_node = key.second ;
@@ -293,12 +311,11 @@ public:
   KOKKOS_INLINE_FUNCTION
   void sort_graph_entries( const unsigned irow ) const
   {
-    typedef typename CrsGraphType::size_type size_type;
-    const size_type row_beg = graph.row_map( irow );
-    const size_type row_end = graph.row_map( irow + 1 );
-    for ( size_type i = row_beg + 1 ; i < row_end ; ++i ) {
-      const typename CrsGraphType::data_type col = graph.entries(i);
-      size_type j = i ;
+    const unsigned row_beg = graph.row_map( irow );
+    const unsigned row_end = graph.row_map( irow + 1 );
+    for ( unsigned i = row_beg + 1 ; i < row_end ; ++i ) {
+      const unsigned col = graph.entries(i);
+      unsigned j = i ;
       for ( ; row_beg < j && col < graph.entries(j-1) ; --j ) {
         graph.entries(j) = graph.entries(j-1);
       }
@@ -309,7 +326,6 @@ public:
   KOKKOS_INLINE_FUNCTION
   void fill_elem_graph_map( const unsigned ielem ) const
   {
-    typedef typename CrsGraphType::data_type entry_type;
     for ( unsigned row_local_node = 0 ; row_local_node < elem_node_id.dimension_1() ; ++row_local_node ) {
 
       const unsigned row_node = elem_node_id( ielem , row_local_node );
@@ -318,15 +334,15 @@ public:
 
         const unsigned col_node = elem_node_id( ielem , col_local_node );
 
-        entry_type entry = 0 ;
+        unsigned entry = ~0u ;
 
         if ( row_node + 1 < graph.row_map.dimension_0() ) {
 
-          const entry_type entry_end = static_cast<entry_type> (graph.row_map( row_node + 1 ));
+          const unsigned entry_end = graph.row_map( row_node + 1 );
 
           entry = graph.row_map( row_node );
 
-          for ( ; entry < entry_end && graph.entries(entry) != static_cast<entry_type> (col_node) ; ++entry );
+          for ( ; entry < entry_end && graph.entries(entry) != col_node ; ++entry );
 
           if ( entry == entry_end ) entry = ~0u ;
         }
@@ -339,10 +355,12 @@ public:
   KOKKOS_INLINE_FUNCTION
   void operator()( const unsigned iwork ) const
   {
+/*
     if ( phase == FILL_NODE_SET ) {
-      fill_set( iwork );
+      operator()( TagFillNodeSet() , iwork );
     }
-    else if ( phase == FILL_GRAPH_ENTRIES ) {
+    else */  
+    if ( phase == FILL_GRAPH_ENTRIES ) {
       fill_graph_entries( iwork );
     }
     else if ( phase == SORT_GRAPH_ENTRIES ) {
@@ -374,11 +392,22 @@ public:
     }
   }
 
+  // For the reduce phase:
+  KOKKOS_INLINE_FUNCTION
+  void init( const TagFillNodeSet & , unsigned & update ) const { update = 0 ; }
+
+  KOKKOS_INLINE_FUNCTION
+  void join( const TagFillNodeSet & 
+           , volatile       unsigned & update
+           , volatile const unsigned & input ) const { update += input ; }
+
+  // For the scan phase::
   KOKKOS_INLINE_FUNCTION
   void init( unsigned & update ) const { update = 0 ; }
 
   KOKKOS_INLINE_FUNCTION
-  void join( volatile unsigned & update , const volatile unsigned & input ) const { update += input ; }
+  void join( volatile       unsigned & update
+           , volatile const unsigned & input ) const { update += input ; }
 
   //------------------------------------
 };

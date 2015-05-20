@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
 
   Teuchos::ParameterList pl;
   pl.set("Num Threads",numThreads);
-  typedef KokkosClassic::TPINode Node;
+  typedef KokkosClassic::DoNotUse::SerialNode Node;
 
   Teuchos::RCP<Node> node = Teuchos::rcp(new Node(pl));
 

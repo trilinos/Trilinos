@@ -39,6 +39,7 @@
 
 
 INCLUDE(TribitsAddAdvancedTestHelpers)
+INCLUDE(TribitsConstants)
 
 INCLUDE(AppendStringVar)
 INCLUDE(PrintVar)
@@ -60,6 +61,7 @@ INCLUDE(PrintVar)
 #     ...
 #     [TEST_N (EXEC <execTargetN> | CMND <cmndExecN>) ...]
 #     [OVERALL_WORKING_DIRECTORY (<overallWorkingDir> | TEST_NAME)]
+#     [SKIP_CLEAN_OVERALL_WORKING_DIRECTORY]
 #     [FAIL_FAST]
 #     [RUN_SERIAL]
 #     [KEYWORDS <keyword1> <keyword2> ...]
@@ -97,6 +99,7 @@ INCLUDE(PrintVar)
 #      [ARGS <arg1> <arg2> ... <argn>]
 #      [MESSAGE "<message>"]
 #      [WORKING_DIRECTORY <workingDir>]
+#      [SKIP_CLEAN_WORKING_DIRECTORY]
 #      [NUM_MPI_PROCS <numProcs>]
 #      [NUM_TOTAL_CORES_USED <numTotalCoresUsed>]
 #      [OUTPUT_FILE <outputFile>]
@@ -142,18 +145,25 @@ INCLUDE(PrintVar)
 #
 #   ``OVERALL_WORKING_DIRECTORY <overallWorkingDir>``
 #
-#     If specified, then the working directory ``<overallWorkingDir>`` will be
-#     created and all of the test commands by default will be run from within
-#     this directory.  If the value ``<overallWorkingDir>=TEST_NAME`` is
-#     given, then the working directory will be given the name ``<testName>``.
-#     If the directory ``<overallWorkingDir>`` exists before the test runs, it
-#     will be deleted and created again.  Therefore, if one wants to preserve
-#     the contents of this directory between test runs then one needs to copy
-#     the files it contains somewhere else.  This is a good option to use if
-#     the commands create intermediate files and one wants to make sure they
-#     get deleted before the test cases are run again.  This is also a very
-#     useful option to use if multiple tests are defined in the same
-#     ``CMakeLists.txt`` file that read/write files with the same name.
+#     If specified, then the working directory ``<overallWorkingDir>``
+#     (relative or absolute path) will be created and all of the test commands
+#     by default will be run from within this directory.  If the value
+#     ``<overallWorkingDir>=TEST_NAME`` is given, then the working directory
+#     will be given the name ``<testName>``.  By default, if the directory
+#     ``<overallWorkingDir>`` exists before the test runs, it will be deleted
+#     and created again.  If one wants to preserve the contents of this
+#     directory between test runs then set
+#     ``SKIP_CLEAN_OVERALL_WORKING_DIRECTORY``.  Using a separate test
+#     directory is a good option to use if the commands create intermediate
+#     files and one wants to make sure they get deleted before the test cases
+#     are run again.  It is also important to create a separate test directory
+#     if multiple tests are defined in the same ``CMakeLists.txt`` file that
+#     read/write files with the same name.
+#
+#   ``SKIP_CLEAN_OVERALL_WORKING_DIRECTORY``
+#
+#     If specified, then ``<overallWorkingDir>`` will **not** be deleted if it
+#     already exists.
 #
 #   ``FAIL_FAST``
 #
@@ -308,17 +318,21 @@ INCLUDE(PrintVar)
 #
 #   ``WORKING_DIRECTORY <workingDir>``
 #
-#     If specified, then the working directory ``<workingDir>`` will be
-#     created and the test will be run from within this directory.  If the
-#     value ``<workingDir> = TEST_NAME`` is given, then the working directory
-#     will be given the name ``<testName>``.  If the directory
-#     ``<workingDir>`` exists before the test runs, it will be deleted and
-#     created again.  Therefore, if one wants to preserve the contents of this
-#     directory between test runs then one needs to copy the given file
-#     somewhere else.  Using a different ``WORKING_DIRECTORY`` for individual
-#     test commands allows creating independent working directories for each
-#     test case.  This would be useful if a single
-#     ``OVERALL_WORKING_DIRECTORY`` was not sufficient for some reason.
+#     If specified, then the working directory ``<workingDir>`` (relative or
+#     absolute) will be created and the test will be run from within this
+#     directory.  If the directory ``<workingDir>`` exists before the test
+#     runs, it will be deleted and created again.  If one wants to preserve
+#     the contents of this directory between test blocks, then one needs to
+#     set ``SKIP_CLEAN_WORKING_DIRECTORY``.  Using a different
+#     ``WORKING_DIRECTORY`` for individual test commands allows creating
+#     independent working directories for each test case.  This would be
+#     useful if a single ``OVERALL_WORKING_DIRECTORY`` was not sufficient for
+#     some reason.
+#
+#   ``SKIP_CLEAN_WORKING_DIRECTORY``
+#
+#     If specified, then ``<workingDir>`` will **not** be deleted if it
+#     already exists.
 #
 #   ``NUM_MPI_PROCS <numProcs>``
 #
@@ -585,7 +599,7 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
      #lists
      "${TEST_IDX_LIST};OVERALL_WORKING_DIRECTORY;KEYWORDS;COMM;OVERALL_NUM_MPI_PROCS;OVERALL_NUM_TOTAL_CORES_USED;FINAL_PASS_REGULAR_EXPRESSION;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;FINAL_FAIL_REGULAR_EXPRESSION;TIMEOUT;ENVIRONMENT;ADDED_TEST_NAME_OUT"
      #options
-     "FAIL_FAST;RUN_SERIAL"
+     "FAIL_FAST;RUN_SERIAL;SKIP_CLEAN_OVERALL_WORKING_DIRECTORY"
      ${ARGN}
      )
 
@@ -696,7 +710,7 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
        #lists
        "EXEC;CMND;ARGS;DIRECTORY;MESSAGE;WORKING_DIRECTORY;OUTPUT_FILE;NUM_MPI_PROCS;NUM_TOTAL_CORES_USED;PASS_REGULAR_EXPRESSION_ALL;FAIL_REGULAR_EXPRESSION;PASS_REGULAR_EXPRESSION"
        #options
-       "NOEXEPREFIX;NOEXESUFFIX;NO_ECHO_OUTPUT;PASS_ANY;STANDARD_PASS_OUTPUT;ADD_DIR_TO_NAME"
+       "NOEXEPREFIX;NOEXESUFFIX;NO_ECHO_OUTPUT;PASS_ANY;STANDARD_PASS_OUTPUT;ADD_DIR_TO_NAME;SKIP_CLEAN_WORKING_DIRECTORY"
        ${PARSE_TEST_${TEST_CMND_IDX}}
        )
 
@@ -840,6 +854,10 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
       APPEND_STRING_VAR( TEST_SCRIPT_STR
         "\n"
         "SET( TEST_${TEST_CMND_IDX}_WORKING_DIRECTORY \"${PARSE_WORKING_DIRECTORY}\" )\n"
+         )
+      APPEND_STRING_VAR( TEST_SCRIPT_STR
+        "\n"
+        "SET( TEST_${TEST_CMND_IDX}_SKIP_CLEAN_WORKING_DIRECTORY ${PARSE_SKIP_CLEAN_WORKING_DIRECTORY} )\n"
         )
     ENDIF()
 
@@ -971,11 +989,17 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
   
     APPEND_STRING_VAR( TEST_SCRIPT_STR
       "\n"
+      "SET(PROJECT_NAME ${PROJECT_NAME})\n"
+      "\n"
+      "SET(${PROJECT_NAME}_TRIBITS_DIR ${${PROJECT_NAME}_TRIBITS_DIR})\n"
+      "\n"
       "SET(TEST_NAME ${TEST_NAME})\n"
       "\n"
       "SET(NUM_CMNDS ${NUM_CMNDS})\n"
       "\n"
       "SET(OVERALL_WORKING_DIRECTORY \"${PARSE_OVERALL_WORKING_DIRECTORY}\")\n"
+      "\n"
+      "SET(SKIP_CLEAN_OVERALL_WORKING_DIRECTORY \"${PARSE_SKIP_CLEAN_OVERALL_WORKING_DIRECTORY}\")\n"
       "\n"
       "SET(FAIL_FAST ${PARSE_FAIL_FAST})\n"
       "\n"

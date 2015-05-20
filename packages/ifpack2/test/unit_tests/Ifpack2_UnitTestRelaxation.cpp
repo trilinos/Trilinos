@@ -478,11 +478,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, SGS_mult_sweeps, Scalar, Lo
   typedef Teuchos::ScalarTraits<Scalar> STS;
   typedef Teuchos::ScalarTraits<typename STS::magnitudeType> STM;
 
-  out << "Test multiple sweeps of Symmetric Gauss-Seidel" << endl;
+  out << "Test multiple Symmetric Gauss-Seidel sweeps with nontrivial Import"
+      << endl;
+  Teuchos::OSTab tab0 (out);
 
-  RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Comm<int> > comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
   const int myRank = comm->getRank ();
   const int numProcs = comm->getSize ();
+
   if (numProcs == 1) {
     out << "The unit test's (MPI) communicator only contains one process."
         << endl << "This test only makes sense if the communicator contains "
@@ -496,9 +500,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, SGS_mult_sweeps, Scalar, Lo
   RCP<const map_type> rowMap (new map_type (gblNumRows, indexBase, comm));
   RCP<const map_type> domainMap = rowMap;
   RCP<const map_type> rangeMap = rowMap;
-
   RCP<crs_matrix_type> A =
     rcp (new crs_matrix_type (rowMap, 6, Tpetra::StaticProfile));
+
   {
     const size_t lclNumRows = rowMap->getNodeNumElements ();
     const Scalar ONE = STS::one ();
@@ -601,6 +605,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, SGS_mult_sweeps, Scalar, Lo
       (myRank == 0) ? static_cast<size_t> (gblNumRows) : size_t (0);
     gatherRowMap = rcp (new map_type (gblNumRows, lclNumRows, indexBase, comm));
   }
+
   RCP<const map_type> gatherDomainMap = gatherRowMap;
   RCP<const map_type> gatherRangeMap = gatherRowMap;
 
@@ -639,10 +644,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, SGS_mult_sweeps, Scalar, Lo
 
   prec.apply (X, Y);
   gatherPrec.apply (X_gather, Y_gather);
-
   Y_diff.doImport (Y, import, Tpetra::REPLACE);
   Y_diff.update (STS::one (), Y_gather, -STS::one ());
-  TEST_EQUALITY(Y_diff.normInf (), STM::zero ());
+
+  typename STS::magnitudeType normInf = Y_diff.normInf ();
+  TEST_EQUALITY(normInf, STM::zero ());
+
+  out << "Repeat test without setting starting solution to zero" << endl;
 
   // Repeat the test without setting the starting solution to zero.
   params.set ("relaxation: zero starting solution", false);
@@ -665,81 +673,223 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, SGS_mult_sweeps, Scalar, Lo
 
   Y_diff.doImport (Y, import, Tpetra::REPLACE);
   Y_diff.update (STS::one (), Y_gather, -STS::one ());
-  TEST_EQUALITY(Y_diff.normInf (), STM::zero ());
+  normInf = Y_diff.normInf ();
+  TEST_EQUALITY( normInf, STM::zero () );
 }
 
-// Test apply() on a NotCrsMatrix with a partially "null" x and y. In
-// parallel, it is possible that some MPI processes have no local rows.
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, NotCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal)
+
+// Macro used inside the unit test below.  It tests for global error,
+// and if so, prints each process' error message and quits the test
+// early.
+//
+// 'out' only prints on Process 0.  It's really not OK for other
+// processes to print to stdout, but it usually works and we need to
+// do it for debugging.
+#define IFPACK2RELAXATION_REPORT_GLOBAL_ERR( WHAT_STRING ) do { \
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess)); \
+  TEST_EQUALITY_CONST( gblSuccess, 1 ); \
+  if (gblSuccess != 1) { \
+    out << WHAT_STRING << " FAILED on one or more processes!" << endl; \
+    for (int p = 0; p < numProcs; ++p) { \
+      if (myRank == p && lclSuccess != 1) { \
+        std::cout << errStrm.str () << std::flush; \
+      } \
+      comm->barrier (); \
+      comm->barrier (); \
+      comm->barrier (); \
+    } \
+    std::cerr << "TEST FAILED; RETURNING EARLY" << endl; \
+    return; \
+  } \
+} while (false)
+
+
+// Test apply() on a NotCrsMatrix, where some processes own zero rows
+// of the domain and range Map vectors.
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, NotCrsMatrix, Scalar, LO, GO)
 {
-  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
-  typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> row_matrix_type;
+  using Teuchos::outArg;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::REDUCE_MIN;
+  using Teuchos::reduceAll;
+  using std::endl;
+  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> crs_matrix_type;
+  typedef Tpetra::RowMatrix<Scalar,LO,GO,Node> row_matrix_type;
+  typedef tif_utest::NotCrsMatrix<Scalar,LO,GO,Node> not_crs_matrix_type;
+  typedef Tpetra::Map<LO,GO,Node> map_type;
+  typedef Ifpack2::Relaxation<row_matrix_type> prec_type;
+  typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+  int lclSuccess = 1;
+  int gblSuccess = 1;
+  std::ostringstream errStrm; // for error collection
 
-  std::string version = Ifpack2::Version();
-  out << "Ifpack2::Version(): " << version << std::endl;
+  out << "Ifpack2 \"NonCrsMatrix\" test" << endl;
 
-  GST num_rows_per_proc = 0;
-  Teuchos::RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  if (comm->getRank () == 0) {
-    num_rows_per_proc = 5;
+  RCP<const Teuchos::Comm<int> > comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  const int myRank = comm->getRank ();
+  const int numProcs = comm->getSize ();
+
+  const GST num_rows_per_proc = (myRank == 0) ? 5 : 0;
+  RCP<const map_type> rowmap;
+  try {
+    rowmap = tif_utest::create_tpetra_map<LO, GO, Node> (num_rows_per_proc);
+  } catch (std::exception& e) {
+    lclSuccess = 0;
+    errStrm << "Process " << myRank << ": create_tpetra_map threw exception: "
+            << e.what () << endl;
   }
+  IFPACK2RELAXATION_REPORT_GLOBAL_ERR( "create_tpetra_map" );
 
-  RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+  RCP<crs_matrix_type> crsmatrix;
+  try {
+    crsmatrix = rcp_const_cast<crs_matrix_type> (tif_utest::create_test_matrix<Scalar, LO, GO, Node> (rowmap));
+  } catch (std::exception& e) {
+    lclSuccess = 0;
+    errStrm << "Process " << myRank << ": create_test_matrix threw exception: "
+            << e.what () << endl;
+  }
+  IFPACK2RELAXATION_REPORT_GLOBAL_ERR( "create_test_matrix" );
 
-  RCP<crs_matrix_type> crsmatrix = rcp_const_cast<crs_matrix_type,const crs_matrix_type>(tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap));
+  RCP<not_crs_matrix_type> notcrsmatrix;
+  try {
+    notcrsmatrix = rcp (new not_crs_matrix_type (crsmatrix));
+  } catch (std::exception& e) {
+    lclSuccess = 0;
+    errStrm << "Process " << myRank << ": NotCrsMatrix constructor threw exception: "
+            << e.what () << endl;
+  }
+  IFPACK2RELAXATION_REPORT_GLOBAL_ERR( "NotCrsMatrix constructor" );
 
-  RCP<tif_utest::NotCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > notcrsmatrix =
-    rcp (new tif_utest::NotCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> (crsmatrix));
-
-  Ifpack2::Relaxation<row_matrix_type> prec (notcrsmatrix);
+  RCP<prec_type> prec;
+  try {
+    prec = rcp (new prec_type (notcrsmatrix));
+  } catch (std::exception& e) {
+    lclSuccess = 0;
+    errStrm << "Process " << myRank << ": Preconditioner constructor threw exception: "
+            << e.what () << endl;
+  }
+  IFPACK2RELAXATION_REPORT_GLOBAL_ERR( "Preconditioner constructor" );
 
   Teuchos::ParameterList params;
-  params.set("relaxation: type", "Jacobi");
-  prec.setParameters(params);
+  params.set ("relaxation: type", "Jacobi");
+  try {
+    prec->setParameters (params);
+  } catch (std::exception& e) {
+    lclSuccess = 0;
+    errStrm << "Process " << myRank << ": prec->setParameters() threw exception: "
+            << e.what () << endl;
+  }
+  IFPACK2RELAXATION_REPORT_GLOBAL_ERR( "prec->setParameters()" );
 
-  prec.initialize();
-  prec.compute();
+  try {
+    prec->initialize ();
+  } catch (std::exception& e) {
+    lclSuccess = 0;
+    errStrm << "Process " << myRank << ": prec->initialize() threw exception: "
+            << e.what () << endl;
+  }
+  IFPACK2RELAXATION_REPORT_GLOBAL_ERR( "prec->initialize()" );
 
-  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,2), y(rowmap,2);
+  try {
+    prec->compute ();
+  } catch (std::exception& e) {
+    lclSuccess = 0;
+    errStrm << "Process " << myRank << ": prec->compute() threw exception: "
+            << e.what () << endl;
+  }
+  IFPACK2RELAXATION_REPORT_GLOBAL_ERR( "prec->compute()" );
+
+  MV x (rowmap, 2);
+  MV y (rowmap, 2);
   x.putScalar (Teuchos::ScalarTraits<Scalar>::one ());
 
-  TEST_EQUALITY(x.getMap()->getNodeNumElements(), num_rows_per_proc);
-  TEST_EQUALITY(y.getMap()->getNodeNumElements(), num_rows_per_proc);
+  TEST_EQUALITY( x.getMap()->getNodeNumElements(), num_rows_per_proc );
+  TEST_EQUALITY( y.getMap()->getNodeNumElements(), num_rows_per_proc );
 
-  TEST_NOTHROW(prec.apply(x, y));
+  try {
+    prec->apply (x, y);
+  } catch (std::exception& e) {
+    lclSuccess = 0;
+    errStrm << "Process " << myRank << ": prec->apply(x, y) threw exception: "
+            << e.what () << endl;
+  }
+  IFPACK2RELAXATION_REPORT_GLOBAL_ERR( "prec->apply(x, y)" );
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestDiagonalBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestDiagonalBlockCrsMatrix, Scalar, LO, GO)
 {
-  typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> block_crs_matrix_type;
-  typedef Tpetra::Experimental::BlockMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> BMV;
-  typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> row_matrix_type;
-  typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> crs_graph_type;
-  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+  using Teuchos::outArg;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::REDUCE_MIN;
+  using Teuchos::reduceAll;
+  using std::endl;
+  typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LO,GO,Node> block_crs_matrix_type;
+  typedef Tpetra::Experimental::BlockMultiVector<Scalar,LO,GO,Node> BMV;
+  typedef Tpetra::RowMatrix<Scalar,LO,GO,Node> row_matrix_type;
+  typedef Tpetra::CrsGraph<LO,GO,Node> crs_graph_type;
+  typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+  typedef Ifpack2::Relaxation<row_matrix_type> prec_type;
+  int lclSuccess = 1;
+  int gblSuccess = 1;
+  std::ostringstream errStrm; // for error collection
 
-  out << "Ifpack2::Version(): " << Ifpack2::Version () << std::endl;
+  out << "Ifpack2::Relaxation diagonal block matrix test" << endl;
+
+  RCP<const Teuchos::Comm<int> > comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  const int myRank = comm->getRank ();
+  const int numProcs = comm->getSize ();
 
   const int num_rows_per_proc = 5;
   const int blockSize = 3;
-
-  RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-
   RCP<crs_graph_type> crsgraph =
-    tif_utest::create_diagonal_graph<LocalOrdinal,GlobalOrdinal,Node> (num_rows_per_proc);
+    tif_utest::create_diagonal_graph<LO,GO,Node> (num_rows_per_proc);
 
-  RCP<block_crs_matrix_type> bcrsmatrix =
-    rcp_const_cast<block_crs_matrix_type> (tif_utest::create_block_diagonal_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> (crsgraph, blockSize));
+  RCP<block_crs_matrix_type> bcrsmatrix;
+  bcrsmatrix = rcp_const_cast<block_crs_matrix_type> (tif_utest::create_block_diagonal_matrix<Scalar,LO,GO,Node> (crsgraph, blockSize));
   bcrsmatrix->computeDiagonalGraph ();
 
-  Ifpack2::Relaxation<row_matrix_type> prec (bcrsmatrix);
+  RCP<prec_type> prec;
+  try {
+    prec = rcp (new prec_type (bcrsmatrix));
+  } catch (std::exception& e) {
+    lclSuccess = 0;
+    errStrm << "Process " << myRank << ": Preconditioner constructor threw exception: "
+            << e.what () << endl;
+  }
+  IFPACK2RELAXATION_REPORT_GLOBAL_ERR( "Preconditioner constructor" );
 
   Teuchos::ParameterList params;
-  params.set("relaxation: type", "Jacobi");
-  prec.setParameters(params);
+  params.set ("relaxation: type", "Jacobi");
+  try {
+    prec->setParameters (params);
+  } catch (std::exception& e) {
+    lclSuccess = 0;
+    errStrm << "Process " << myRank << ": prec->setParameters() threw exception: "
+            << e.what () << endl;
+  }
+  IFPACK2RELAXATION_REPORT_GLOBAL_ERR( "prec->setParameters()" );
 
-  prec.initialize();
-  TEST_NOTHROW(prec.compute());
+  try {
+    prec->initialize ();
+  } catch (std::exception& e) {
+    lclSuccess = 0;
+    errStrm << "Process " << myRank << ": prec->initialize() threw exception: "
+            << e.what () << endl;
+  }
+  IFPACK2RELAXATION_REPORT_GLOBAL_ERR( "prec->initialize()" );
+
+  try {
+    prec->compute ();
+  } catch (std::exception& e) {
+    lclSuccess = 0;
+    errStrm << "Process " << myRank << ": prec->compute() threw exception: "
+            << e.what () << endl;
+  }
+  IFPACK2RELAXATION_REPORT_GLOBAL_ERR( "prec->compute()" );
 
   BMV xBlock (*crsgraph->getRowMap (), blockSize, 1);
   BMV yBlock (*crsgraph->getRowMap (), blockSize, 1);
@@ -750,7 +900,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestDiagonalBlockCrsMatrix,
   TEST_EQUALITY(x.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
   TEST_EQUALITY(y.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
 
-  TEST_NOTHROW(prec.apply(x, y));
+  try {
+    prec->apply (x, y);
+  } catch (std::exception& e) {
+    lclSuccess = 0;
+    errStrm << "Process " << myRank << ": prec->apply(x, y) threw exception: "
+            << e.what () << endl;
+  }
+  IFPACK2RELAXATION_REPORT_GLOBAL_ERR( "prec->apply(x, y)" );
 
   const Scalar exactSol = 0.2;
 
@@ -763,53 +920,126 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestDiagonalBlockCrsMatrix,
   }
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestLowerTriangularBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestLowerTriangularBlockCrsMatrix, Scalar, LO, GO)
 {
-  typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> block_crs_matrix_type;
-  typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> row_matrix_type;
-  typedef Tpetra::Experimental::BlockMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> BMV;
-  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+  using Teuchos::outArg;
+  using Teuchos::RCP;
+  using Teuchos::REDUCE_MIN;
+  using Teuchos::reduceAll;
+  using std::endl;
+  typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LO,GO,Node> block_crs_matrix_type;
+  typedef Tpetra::CrsGraph<LO,GO,Node> crs_graph_type;
+  typedef Tpetra::RowMatrix<Scalar,LO,GO,Node> row_matrix_type;
+  typedef Tpetra::Experimental::BlockMultiVector<Scalar,LO,GO,Node> BMV;
+  typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+  typedef Ifpack2::Relaxation<row_matrix_type> prec_type;
+  int lclSuccess = 1;
+  int gblSuccess = 1;
+  std::ostringstream errStrm; // for error collection
 
-  std::string version = Ifpack2::Version();
-  out << "Ifpack2::Version(): " << version << std::endl;
+  out << "Ifpack2::Relaxation lower triangular BlockCrsMatrix test" << endl;
 
-  const int num_rows_per_proc = 3;
+  RCP<const Teuchos::Comm<int> > comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  const int myRank = comm->getRank ();
+  const int numProcs = comm->getSize ();
+
+  const size_t num_rows_per_proc = 3;
+  RCP<crs_graph_type> crsgraph;
+  try {
+    crsgraph = tif_utest::create_dense_local_graph<LO, GO, Node> (num_rows_per_proc);
+  } catch (std::exception& e) {
+    lclSuccess = 0;
+    errStrm << "Process " << myRank << ": create_dense_local_graph threw exception: "
+            << e.what () << endl;
+  }
+  IFPACK2RELAXATION_REPORT_GLOBAL_ERR( "create_dense_local_graph" );
+
   const int blockSize = 5;
+  RCP<block_crs_matrix_type> bcrsmatrix;
+  try {
+    bcrsmatrix = rcp_const_cast<block_crs_matrix_type> (tif_utest::create_triangular_matrix<Scalar, LO, GO, Node, true> (crsgraph, blockSize));
+  } catch (std::exception& e) {
+    lclSuccess = 0;
+    errStrm << "Process " << myRank << ": create_triangular_matrix threw exception: "
+            << e.what () << endl;
+  }
+  IFPACK2RELAXATION_REPORT_GLOBAL_ERR( "create_triangular_matrix" );
 
-  RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  try {
+    bcrsmatrix->computeDiagonalGraph ();
+  } catch (std::exception& e) {
+    lclSuccess = 0;
+    errStrm << "Process " << myRank << ": computeDiagonalGraph() threw exception: "
+            << e.what () << endl;
+  }
+  IFPACK2RELAXATION_REPORT_GLOBAL_ERR( "computeDiagonalGraph()" );
 
-  RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph =
-    tif_utest::create_dense_local_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
-
-  RCP<block_crs_matrix_type> bcrsmatrix =
-    rcp_const_cast<block_crs_matrix_type,const block_crs_matrix_type> (tif_utest::create_triangular_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,true>(crsgraph, blockSize));
-  bcrsmatrix->computeDiagonalGraph ();
-
-  Ifpack2::Relaxation<row_matrix_type> prec (bcrsmatrix);
+  RCP<prec_type> prec;
+  try {
+    prec = rcp (new prec_type (bcrsmatrix));
+  } catch (std::exception& e) {
+    lclSuccess = 0;
+    errStrm << "Process " << myRank << ": Preconditioner constructor threw exception: "
+            << e.what () << endl;
+  }
+  IFPACK2RELAXATION_REPORT_GLOBAL_ERR( "Preconditioner constructor" );
 
   Teuchos::ParameterList params;
-  params.set("relaxation: type", "Gauss-Seidel");
-  prec.setParameters(params);
+  params.set ("relaxation: type", "Gauss-Seidel");
+  try {
+    prec->setParameters (params);
+  } catch (std::exception& e) {
+    lclSuccess = 0;
+    errStrm << "Process " << myRank << ": prec->setParameters() threw exception: "
+            << e.what () << endl;
+  }
+  IFPACK2RELAXATION_REPORT_GLOBAL_ERR( "prec->setParameters()" );
 
-  prec.initialize();
-  TEST_NOTHROW(prec.compute());
+  try {
+    prec->initialize ();
+  } catch (std::exception& e) {
+    lclSuccess = 0;
+    errStrm << "Process " << myRank << ": prec->initialize() threw exception: "
+            << e.what () << endl;
+  }
+  IFPACK2RELAXATION_REPORT_GLOBAL_ERR( "prec->initialize()" );
 
-  BMV xBlock(*crsgraph->getRowMap(),blockSize,1), yBlock(*crsgraph->getRowMap(),blockSize,1);
-  MV x = xBlock.getMultiVectorView();
-  MV y = yBlock.getMultiVectorView();
+  try {
+    prec->compute ();
+  } catch (std::exception& e) {
+    lclSuccess = 0;
+    errStrm << "Process " << myRank << ": prec->compute() threw exception: "
+            << e.what () << endl;
+  }
+  IFPACK2RELAXATION_REPORT_GLOBAL_ERR( "prec->compute()" );
+
+  BMV xBlock (* (crsgraph->getRowMap ()), blockSize, 1);
+  BMV yBlock (* (crsgraph->getRowMap ()), blockSize, 1);
+  MV x = xBlock.getMultiVectorView ();
+  MV y = yBlock.getMultiVectorView ();
   x.putScalar (Teuchos::ScalarTraits<Scalar>::one ());
 
-  TEST_EQUALITY(x.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
-  TEST_EQUALITY(y.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
-  TEST_NOTHROW(prec.apply(x, y));
+  TEST_EQUALITY( x.getMap()->getNodeNumElements (), blockSize * num_rows_per_proc );
+  TEST_EQUALITY( y.getMap ()->getNodeNumElements (), blockSize * num_rows_per_proc );
+
+  try {
+    prec->apply (x, y);
+  } catch (std::exception& e) {
+    lclSuccess = 0;
+    errStrm << "Process " << myRank << ": prec->apply(x, y) threw exception: "
+            << e.what () << endl;
+  }
+  IFPACK2RELAXATION_REPORT_GLOBAL_ERR( "prec->apply(x, y)" );
 
   Teuchos::Array<Scalar> exactSol(num_rows_per_proc);
   exactSol[0] = 0.5;
   exactSol[1] = -0.25;
   exactSol[2] = 0.625;
 
-  for (int k = 0; k < num_rows_per_proc; ++k) {
-    typename BMV::little_vec_type ylcl = yBlock.getLocalBlock(k,0);
+  for (size_t k = 0; k < num_rows_per_proc; ++k) {
+    LO lcl_row = k;
+    typename BMV::little_vec_type ylcl = yBlock.getLocalBlock(lcl_row,0);
     Scalar* yb = ylcl.getRawPtr();
     for (int j = 0; j < blockSize; ++j) {
       TEST_FLOATING_EQUALITY(yb[j],exactSol[k],1e-14);

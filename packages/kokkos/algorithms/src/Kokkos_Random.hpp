@@ -1,15 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//                             Kokkos
-//         Manycore Performance-Portable Multidimensional Arrays
-//
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,24 +35,27 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// 
 // ************************************************************************
 //@HEADER
 */
 
-
+#ifndef KOKKOS_RANDOM_HPP
+#define KOKKOS_RANDOM_HPP
 
 #include <Kokkos_Core.hpp>
+#include <Kokkos_Complex.hpp>
 #include <cstdio>
 #include <cstdlib>
 #include <cmath>
 
-#ifndef KOKKOS_RANDOM_HPP
-#define KOKKOS_RANDOM_HPP
-
-// These generators are based on Vigna, Sebastiano (2014). "An experimental exploration of Marsaglia's xorshift generators, scrambled"
-// See: http://arxiv.org/abs/1402.6246
+/// \file Kokkos_Random.hpp
+/// \brief Pseudorandom number generators
+///
+/// These generators are based on Vigna, Sebastiano (2014). "An
+/// experimental exploration of Marsaglia's xorshift generators,
+/// scrambled."  See: http://arxiv.org/abs/1402.6246
 
 namespace Kokkos {
 
@@ -472,6 +473,58 @@ namespace Kokkos {
     static double draw(Generator& gen, const double& start, const double& end)
                           {return gen.drand(start,end);}
 
+  };
+
+  template<class Generator>
+  struct rand<Generator, ::Kokkos::complex<float> > {
+    KOKKOS_INLINE_FUNCTION
+    static ::Kokkos::complex<float> max () {
+      return ::Kokkos::complex<float> (1.0, 1.0);
+    }
+    KOKKOS_INLINE_FUNCTION
+    static ::Kokkos::complex<float> draw (Generator& gen) {
+      const float re = gen.frand ();
+      const float im = gen.frand ();
+      return ::Kokkos::complex<float> (re, im);
+    }
+    KOKKOS_INLINE_FUNCTION
+    static ::Kokkos::complex<float> draw (Generator& gen, const ::Kokkos::complex<float>& range) {
+      const float re = gen.frand (real (range));
+      const float im = gen.frand (imag (range));
+      return ::Kokkos::complex<float> (re, im);
+    }
+    KOKKOS_INLINE_FUNCTION
+    static ::Kokkos::complex<float> draw (Generator& gen, const ::Kokkos::complex<float>& start, const ::Kokkos::complex<float>& end) {
+      const float re = gen.frand (real (start), real (end));
+      const float im = gen.frand (imag (start), imag (end));
+      return ::Kokkos::complex<float> (re, im);
+    }
+  };
+
+  template<class Generator>
+  struct rand<Generator, ::Kokkos::complex<double> > {
+    KOKKOS_INLINE_FUNCTION
+    static ::Kokkos::complex<double> max () {
+      return ::Kokkos::complex<double> (1.0, 1.0);
+    }
+    KOKKOS_INLINE_FUNCTION
+    static ::Kokkos::complex<double> draw (Generator& gen) {
+      const double re = gen.drand ();
+      const double im = gen.drand ();
+      return ::Kokkos::complex<double> (re, im);
+    }
+    KOKKOS_INLINE_FUNCTION
+    static ::Kokkos::complex<double> draw (Generator& gen, const ::Kokkos::complex<double>& range) {
+      const double re = gen.drand (real (range));
+      const double im = gen.drand (imag (range));
+      return ::Kokkos::complex<double> (re, im);
+    }
+    KOKKOS_INLINE_FUNCTION
+    static ::Kokkos::complex<double> draw (Generator& gen, const ::Kokkos::complex<double>& start, const ::Kokkos::complex<double>& end) {
+      const double re = gen.drand (real (start), real (end));
+      const double im = gen.drand (imag (start), imag (end));
+      return ::Kokkos::complex<double> (re, im);
+    }
   };
 
   template<class DeviceType>

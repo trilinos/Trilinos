@@ -40,6 +40,8 @@
 /* #undef HAVE_FEI_BOOST */
 
 #define FEI_DEPRECATED
+#define FEI_DEPRECATED_MSG(MSG)
+
 
 #endif
 

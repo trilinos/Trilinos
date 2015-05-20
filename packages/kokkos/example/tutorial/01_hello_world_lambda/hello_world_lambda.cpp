@@ -1,15 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//                             Kokkos
-//         Manycore Performance-Portable Multidimensional Arrays
-//
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -82,13 +80,16 @@ int main (int argc, char* argv[]) {
   // about different kinds of parallelism, you will find out that
   // there are other valid argument types as well.
   //
-  // NOTE: The lambda's argument MUST be passed by value, NOT by
-  // reference!  Passing it in by reference may cause incorrect
-  // results.  Different iterations of the parallel loop need to have
-  // their own values of the loop counter, which is why you pass it in
-  // by value and not reference.
+  // For a single level of parallelism, we prefer that you use the
+  // KOKKOS_LAMBDA macro.  If CUDA is disabled, this just turns into
+  // [=].  That captures variables from the surrounding scope by
+  // value.  Do NOT capture them by reference!  If CUDA is enabled,
+  // this macro may have a special definition that makes the lambda
+  // work correctly with CUDA.  Compare to the KOKKOS_INLINE_FUNCTION
+  // macro, which has a special meaning if CUDA is enabled.
   //
-  // The following line of code would look like this in OpenMP:
+  // The following parallel_for would look like this if we were using
+  // OpenMP by itself, instead of Kokkos:
   //
   // #pragma omp parallel for
   // for (int i = 0; i < 15; ++i) {
@@ -97,9 +98,10 @@ int main (int argc, char* argv[]) {
   //
   // You may notice that the printed numbers do not print out in
   // order.  Parallel for loops may execute in any order.
-  Kokkos::parallel_for (15, [=] (const int i) {
-    printf ("Hello from i = %i\n", i);
-  });
+  Kokkos::parallel_for (15, KOKKOS_LAMBDA (const int i) {
+      // printf works in a CUDA parallel kernel; std::ostream does not.
+      printf ("Hello from i = %i\n", i);
+    });
 
   // You must call finalize() after you are done using Kokkos.
   Kokkos::finalize ();

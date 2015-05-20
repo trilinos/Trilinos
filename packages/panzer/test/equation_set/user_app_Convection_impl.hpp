@@ -64,10 +64,10 @@ PHX_EVALUATOR_CTOR(Convection,p)
   
   conv = MDField<ScalarT,Cell,Point>(p.get<string>("Operator Name"),scalar);
 
-  a = MDField<ScalarT,Cell,Point,Dim>(p.get<string>("A Name"),vector);
+  a = MDField<const ScalarT,Cell,Point,Dim>(p.get<string>("A Name"),vector);
 
   grad_x = 
-    MDField<ScalarT,Cell,Point,Dim>(p.get<string>("Gradient Name"),vector);
+    MDField<const ScalarT,Cell,Point,Dim>(p.get<string>("Gradient Name"),vector);
 
   multiplier = p.get<double>("Multiplier");
 

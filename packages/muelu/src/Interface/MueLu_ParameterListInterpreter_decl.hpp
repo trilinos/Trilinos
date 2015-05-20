@@ -55,6 +55,7 @@
 #include "MueLu_HierarchyManager.hpp"
 
 #include "MueLu_AggregationExportFactory_fwd.hpp"
+#include "MueLu_BrickAggregationFactory_fwd.hpp"
 #include "MueLu_CoalesceDropFactory_fwd.hpp"
 #include "MueLu_CoarseMapFactory_fwd.hpp"
 #include "MueLu_ConstraintFactory_fwd.hpp"
@@ -100,16 +101,18 @@ namespace MueLu {
         @details The parameter list can be either in the easy parameter list format or in the factory driven parameter list format.
 
         @param[in] paramList (Teuchos::ParameterList): ParameterList containing the MueLu parameters
+        @param[in] comm  (RCP<Teuchos::Comm<int> >): Optional RCP of a Teuchos communicator  (default: Teuchos::null)
         @param[in] factFact  (RCP<FactoryFactory>): Optional parameter allowing to define user-specific factory interpreters for user-specific extensions of the XML interface. (default: Teuchos::null)
 
      */
-    ParameterListInterpreter(Teuchos::ParameterList& paramList, Teuchos::RCP<FactoryFactory> factFact = Teuchos::null);
+    ParameterListInterpreter(Teuchos::ParameterList& paramList, Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::null, Teuchos::RCP<FactoryFactory> factFact = Teuchos::null);
 
     /*! @brief Constructor that reads parameters from an XML file.
 
         XML options are converted to ParameterList entries by Teuchos.
 
-        @param[in] paramList (Teuchos::ParameterList): ParameterList containing the MueLu parameters
+        @param[in] xmlFileName (std::string): XML file to read
+        @param[in] comm  (Teuchos::Comm<int>): Teuchos communicator
         @param[in] factFact  (RCP<FactoryFactory>): Optional parameter allowing to define user-specific factory interpreters for user-specific extensions of the XML interface. (default: Teuchos::null)
 
     */

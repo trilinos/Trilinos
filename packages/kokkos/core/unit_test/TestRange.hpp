@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -85,7 +85,7 @@ struct TestRange {
       ASSERT_EQ( error_count , size_t(0) );
 
       Kokkos::parallel_for( Kokkos::RangePolicy<ExecSpace,ResetTag>(0,N) , functor );
-      Kokkos::parallel_for( Kokkos::RangePolicy<ExecSpace,VerifyResetTag>(0,N) , functor );
+      Kokkos::parallel_for( std::string("TestKernelFor") , Kokkos::RangePolicy<ExecSpace,VerifyResetTag>(0,N) , functor );
 
       Kokkos::deep_copy( host_flags , functor.m_flags );
 
@@ -123,7 +123,7 @@ struct TestRange {
 
       Kokkos::parallel_for(    Kokkos::RangePolicy<ExecSpace>(0,N) , functor );
 
-      Kokkos::parallel_reduce( Kokkos::RangePolicy<ExecSpace>(0,N) , functor , total );
+      Kokkos::parallel_reduce( "TestKernelReduce" , Kokkos::RangePolicy<ExecSpace>(0,N) , functor , total );
       // sum( 0 .. N-1 )
       ASSERT_EQ( size_t((N-1)*(N)/2) , size_t(total) );
 
@@ -148,7 +148,7 @@ struct TestRange {
 
       Kokkos::parallel_for( Kokkos::RangePolicy<ExecSpace>(0,N) , functor );
 
-      Kokkos::parallel_scan( Kokkos::RangePolicy<ExecSpace,OffsetTag>(0,N) , functor );
+      Kokkos::parallel_scan( "TestKernelScan" , Kokkos::RangePolicy<ExecSpace,OffsetTag>(0,N) , functor );
     }
 
   KOKKOS_INLINE_FUNCTION

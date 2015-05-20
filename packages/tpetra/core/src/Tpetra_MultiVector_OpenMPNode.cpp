@@ -46,14 +46,14 @@
 #include <Tpetra_ConfigDefs.hpp>
 
 // Don't bother compiling anything, or even including anything else,
-// unless OpenMPNode is enabled.
+// unless DoNotUse::OpenMPNode is enabled.
 #if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_KOKKOSCLASSIC_OPENMP)
 #  include "Tpetra_MultiVector_decl.hpp"
 #  include "TpetraCore_ETIHelperMacros.h"
 #  include "Tpetra_MultiVector_def.hpp"
 
 #  define TPETRA_MULTIVECTOR_OPENMPNODE_INSTANT( SCALAR, LO , GO ) \
-  TPETRA_MULTIVECTOR_INSTANT( SCALAR, LO, GO, KokkosClassic::OpenMPNode )
+  TPETRA_MULTIVECTOR_INSTANT( SCALAR, LO, GO, KokkosClassic::DoNotUse::OpenMPNode )
 
 namespace Tpetra {
 

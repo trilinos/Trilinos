@@ -3,6 +3,9 @@
 #
 TRIBITS_SUBPACKAGE(Kernels)
 
+# If building in debug mode, define the HAVE_TPETRAKERNELS_DEBUG macro.
+TRIBITS_ADD_DEBUG_OPTION()
+
 #
 # Set up subpackage-specific configuration options
 #
@@ -22,6 +25,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE( KokkosLinAlg_Opt_Level
 
 ADD_SUBDIRECTORY(src)
 
+TRIBITS_ADD_TEST_DIRECTORIES(perf_test)
 TRIBITS_ADD_TEST_DIRECTORIES(unit_test)
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 

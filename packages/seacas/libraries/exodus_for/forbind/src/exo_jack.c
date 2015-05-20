@@ -102,10 +102,6 @@
 
 #endif /* 64 vs 32 bit build */
 
-extern int      ncopts;         /* default is (NC_FATAL | NC_VERBOSE) */
-extern int      exerrval;       /* global integer that contains a
-                                 * Exodus-specific error code */
-
 /* blank fill C string to make FORTRAN string */
 static void
 ex_fcdcpy(char *fstring,        /* output string to be blank-filled */
@@ -2582,7 +2578,7 @@ F2C(excn2s,EXCN2S) (int *idexo,
 void
 F2C(exgssn,EXGSSN) (int *idexo,
              entity_id *side_set_id,
-             int *side_set_node_cnt_list,
+             void_int *side_set_node_cnt_list,
              void_int *side_set_node_list,
              int *ierr)
 {

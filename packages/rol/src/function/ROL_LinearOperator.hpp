@@ -87,7 +87,7 @@ public:
       @param[in]          v   is the input vector.
       @param[in]          tol is a tolerance for inexact linear operator application.
   */
-  virtual void apply( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) = 0;
+  virtual void apply( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const = 0;
 
   /** \brief Apply inverse of linear operator.
 
@@ -96,7 +96,7 @@ public:
       @param[in]          v   is the input vector.
       @param[in]          tol is a tolerance for inexact linear operator application.
   */
-  virtual void applyInverse( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) {
+  virtual void applyInverse( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
     Hv.set(v);
   }
 

@@ -45,10 +45,11 @@
 /// \file Tpetra_Experimental_BlockCrsMatrix_decl.hpp
 /// \brief Declaration of Tpetra::Experimental::BlockCrsMatrix
 
+#include <ctime>
+#include <Tpetra_ConfigDefs.hpp>
 #include <Tpetra_CrsGraph.hpp>
 #include <Tpetra_RowMatrix.hpp>
 #include <Tpetra_Experimental_BlockMultiVector.hpp>
-#include "Tpetra_ConfigDefs.hpp"
 
 namespace Tpetra {
 namespace Experimental {
@@ -294,7 +295,7 @@ public:
   //! Get the (mesh) graph.
   virtual Teuchos::RCP<const Tpetra::RowGraph<LO,GO,Node> > getGraph () const;
 
-  crs_graph_type getCrsGraph () const { return graph_; }
+  const crs_graph_type & getCrsGraph () const { return graph_; }
 
   /// \brief Version of apply() that takes BlockMultiVector input and output.
   ///
@@ -411,11 +412,13 @@ public:
                    Scalar*& vals,
                    LO& numInds) const;
 
+  /// \brief Not implemented.
   void
   getLocalRowView (LO LocalRow,
                    Teuchos::ArrayView<const LO> &indices,
                    Teuchos::ArrayView<const Scalar> &values) const;
 
+  /// \brief Not implemented.
   void
   getLocalRowCopy (LO LocalRow,
                    const Teuchos::ArrayView<LO> &Indices,
@@ -654,8 +657,18 @@ private:
   map_type rangePointMap_;
   //! The number of degrees of freedom per mesh point.
   LO blockSize_;
+
+#if defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP)
   //! Raw pointer to the graph's array of row offsets.
   const size_t* ptr_;
+#else
+  /// \brief The graph's array of row offsets.
+  ///
+  /// FIXME (mfh 23 Mar 2015) Once we write a Kokkos kernel for the
+  /// mat-vec, we won't need a host version of this.
+  typename crs_graph_type::local_graph_type::row_map_type::HostMirror ptr_;
+#endif
+
   //! Raw pointer to the graph's array of column indices.
   const LO* ind_;
   /// \brief Array of values in the matrix.
@@ -730,6 +743,12 @@ private:
   /// error stream, because all views have the same (nonnull at
   /// construction) outer pointer.
   Teuchos::RCP<Teuchos::RCP<std::ostringstream> > errs_;
+
+  //! Mark that a local error occurred, and get a stream for reporting it.
+  std::ostream& markLocalErrorAndGetStream ();
+
+  // //! Clear the local error state and stream.
+  // void clearLocalErrorStateAndStream ();
 
   /// \brief Global sparse matrix-vector multiply for the transpose or
   ///   conjugate transpose cases.
@@ -1006,7 +1025,236 @@ public:
   /// by stacking the columns of \f$A\f$.
   virtual typename Tpetra::RowMatrix<Scalar, LO, GO, Node>::mag_type
   getFrobeniusNorm () const;
+  //@}
 };
+
+
+  /// \brief Helper function to write a BlockCrsMatrix.  Calls the 3-argument version.
+  template<class Scalar, class LO, class GO, class Node>
+  void blockCrsMatrixWriter(BlockCrsMatrix<Scalar,LO,GO,Node> const &A, std::string const &fileName) {
+    Teuchos::ParameterList pl;
+    std::ofstream out;
+    out.open(fileName.c_str());
+    blockCrsMatrixWriter(A, out, pl);
+  }
+
+  /// \brief Helper function to write a BlockCrsMatrix.  Calls the 3-argument version.
+  template<class Scalar, class LO, class GO, class Node>
+  void blockCrsMatrixWriter(BlockCrsMatrix<Scalar,LO,GO,Node> const &A, std::string const &fileName, Teuchos::ParameterList const &params) {
+    std::ofstream out;
+    out.open(fileName.c_str());
+    blockCrsMatrixWriter(A, out, params);
+  }
+
+  /// \brief Helper function to write a BlockCrsMatrix.  Calls the 3-argument version.
+  template<class Scalar, class LO, class GO, class Node>
+  void blockCrsMatrixWriter(BlockCrsMatrix<Scalar,LO,GO,Node> const &A, std::ostream &os) {
+    Teuchos::ParameterList pl;
+    blockCrsMatrixWriter(A, os, pl);
+  }
+
+  /*! \brief Helper function to write a BlockCrsMatrix.
+
+    Writes the block matrix to the specified ostream in point form.  The following parameter list options are available:
+
+    - "always use parallel algorithm" : on one process, this forces the use of the parallel strip-mining algorithm (default=false)
+    - "print MatrixMarket header"     : if false, don't print the MatrixMarket header (default=true)
+    - "precision"                     : precision to be used in printing matrix entries (default=C++ default)
+    - "zero-based indexing"           : if true, print the matrix with 0-based indexing (default=false)
+  */
+  template<class Scalar, class LO, class GO, class Node>
+  void blockCrsMatrixWriter(BlockCrsMatrix<Scalar,LO,GO,Node> const &A, std::ostream &os, Teuchos::ParameterList const &params) {
+
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+
+    typedef Teuchos::OrdinalTraits<GO>                     TOT;
+    typedef BlockCrsMatrix<Scalar, LO, GO, Node>           block_crs_matrix_type;
+    typedef Tpetra::Import<LO, GO, Node>                   import_type;
+    typedef Tpetra::Map<LO, GO, Node>                      map_type;
+    typedef Tpetra::MultiVector<GO, LO, GO, Node>          mv_type;
+    typedef Tpetra::CrsGraph<LO, GO, Node>                 crs_graph_type;
+
+    RCP<const map_type> const rowMap = A.getRowMap(); //"mesh" map
+    RCP<const Teuchos::Comm<int> > comm = rowMap->getComm();
+    const int myRank = comm->getRank();
+    const size_t numProcs = comm->getSize();
+
+    // If true, force use of the import strip-mining infrastructure.  This is useful for debugging on one process.
+    bool alwaysUseParallelAlgorithm = false;
+    if (params.isParameter("always use parallel algorithm"))
+      alwaysUseParallelAlgorithm = params.get<bool>("always use parallel algorithm");
+    bool printMatrixMarketHeader = true;
+    if (params.isParameter("print MatrixMarket header"))
+      printMatrixMarketHeader = params.get<bool>("print MatrixMarket header");
+
+    if (printMatrixMarketHeader && myRank==0) {
+      std::time_t now = std::time(NULL);
+      os << "%%MatrixMarket matrix coordinate real general" << std::endl;
+      os << "% time stamp: " << ctime(&now);
+      os << "% written from " << numProcs << " processes" << std::endl;
+      os << "% point representation of Tpetra::Experimental::BlockCrsMatrix" << std::endl;
+      size_t numRows = A.getGlobalNumRows();
+      size_t numCols = A.getGlobalNumCols();
+      os << "% " << numRows << " block rows, " << numCols << " block columns" << std::endl;
+      const LO blockSize = A.getBlockSize();
+      os << "% block size " << blockSize << std::endl;
+      os << numRows*blockSize << " " << numCols*blockSize << " " << A.getGlobalNumEntries()*blockSize*blockSize << std::endl;
+    }
+
+    if (numProcs==1 && !alwaysUseParallelAlgorithm) {
+      writeMatrixStrip(A,os,params);
+    } else {
+      size_t numRows = rowMap->getNodeNumElements();
+
+      //Create source map
+      RCP<const map_type> allMeshGidsMap = rcp(new map_type(TOT::invalid(), numRows, A.getIndexBase(), comm));
+      //Create and populate vector of mesh GIDs corresponding to this pid's rows.
+      //This vector will be imported one pid's worth of information at a time to pid 0.
+      mv_type allMeshGids(allMeshGidsMap,1);
+      Teuchos::ArrayRCP<GO> allMeshGidsData = allMeshGids.getDataNonConst(0);
+
+      for (size_t i=0; i<numRows; i++)
+        allMeshGidsData[i] = rowMap->getGlobalElement(i);
+      allMeshGidsData = Teuchos::null;
+
+      // Now construct a RowMatrix on PE 0 by strip-mining the rows of the input matrix A.
+      size_t stripSize = allMeshGids.getGlobalLength() / numProcs;
+      size_t remainder = allMeshGids.getGlobalLength() % numProcs;
+      size_t curStart = 0;
+      size_t curStripSize = 0;
+      Teuchos::Array<GO> importMeshGidList;
+      for (size_t i=0; i<numProcs; i++) {
+        if (myRank==0) { // Only PE 0 does this part
+          curStripSize = stripSize;
+          if (i<remainder) curStripSize++; // handle leftovers
+          importMeshGidList.resize(curStripSize); // Set size of vector to max needed
+          for (size_t j=0; j<curStripSize; j++) importMeshGidList[j] = j + curStart + A.getIndexBase();
+          curStart += curStripSize;
+        }
+        // The following import map should be non-trivial only on PE 0.
+        TEUCHOS_TEST_FOR_EXCEPTION(myRank>0 && curStripSize!=0,
+          std::runtime_error, "Tpetra::Experimental::blockCrsMatrixWriter: (pid "
+          << myRank << ") map size should be zero, but is " << curStripSize);
+        RCP<map_type> importMeshGidMap = rcp(new map_type(TOT::invalid(), importMeshGidList(), A.getIndexBase(), comm));
+        import_type gidImporter(allMeshGidsMap, importMeshGidMap);
+        mv_type importMeshGids(importMeshGidMap, 1);
+        importMeshGids.doImport(allMeshGids, gidImporter, INSERT);
+
+        // importMeshGids now has a list of GIDs for the current strip of matrix rows.
+        // Use these values to build another importer that will get rows of the matrix.
+
+        // The following import map will be non-trivial only on PE 0.
+        Teuchos::ArrayRCP<const GO> importMeshGidsData = importMeshGids.getData(0);
+        Teuchos::Array<GO> importMeshGidsGO;
+        importMeshGidsGO.reserve(importMeshGidsData.size());
+        for (typename Teuchos::ArrayRCP<const GO>::size_type j=0; j<importMeshGidsData.size(); ++j)
+          importMeshGidsGO.push_back(importMeshGidsData[j]);
+        RCP<const map_type> importMap = rcp(new map_type(TOT::invalid(), importMeshGidsGO(), rowMap->getIndexBase(), comm) );
+
+        import_type importer(rowMap,importMap );
+        size_t numEntriesPerRow = A.getCrsGraph().getGlobalMaxNumRowEntries();
+        RCP<crs_graph_type> graph = createCrsGraph(importMap,numEntriesPerRow);
+        RCP<const map_type> domainMap = A.getCrsGraph().getDomainMap();
+        graph->doImport(A.getCrsGraph(), importer, INSERT);
+        graph->fillComplete(domainMap, importMap);
+
+        block_crs_matrix_type importA(*graph, A.getBlockSize());
+        importA.doImport(A, importer, INSERT);
+
+        // Finally we are ready to write this strip of the matrix
+        writeMatrixStrip(importA, os, params);
+      }
+    }
+  }
+
+  /*! @brief Helper function called by blockCrsMatrixWriter.
+
+  This function should not be called directly.
+  */
+  template<class Scalar, class LO, class GO, class Node>
+  void writeMatrixStrip(BlockCrsMatrix<Scalar,LO,GO,Node> const &A, std::ostream &os, Teuchos::ParameterList const &params) {
+
+    typedef Tpetra::Map<LO, GO, Node>                      map_type;
+
+    size_t numRows = A.getGlobalNumRows();
+    RCP<const map_type> rowMap = A.getRowMap();
+    RCP<const map_type> colMap = A.getColMap();
+    RCP<const Teuchos::Comm<int> > comm = rowMap->getComm();
+    const int myRank = comm->getRank();
+
+    const size_t meshRowOffset = rowMap->getIndexBase();
+    const size_t meshColOffset = colMap->getIndexBase();
+    TEUCHOS_TEST_FOR_EXCEPTION(meshRowOffset != meshColOffset,
+      std::runtime_error, "Tpetra::Experimental::writeMatrixStrip: "
+      "mesh row index base != mesh column index base");
+
+    if (myRank !=0) {
+
+      TEUCHOS_TEST_FOR_EXCEPTION(A.getNodeNumRows() != 0,
+        std::runtime_error, "Tpetra::Experimental::writeMatrixStrip: pid "
+        << myRank << " should have 0 rows but has " << A.getNodeNumRows());
+      TEUCHOS_TEST_FOR_EXCEPTION(A.getNodeNumCols() != 0,
+        std::runtime_error, "Tpetra::Experimental::writeMatrixStrip: pid "
+        << myRank << " should have 0 columns but has " << A.getNodeNumCols());
+
+    } else {
+
+      TEUCHOS_TEST_FOR_EXCEPTION(numRows != A.getNodeNumRows(),
+        std::runtime_error, "Tpetra::Experimental::writeMatrixStrip: "
+        "number of rows on pid 0 does not match global number of rows");
+
+
+      int err = 0;
+      const LO blockSize = A.getBlockSize();
+      const size_t numLocalRows = A.getNodeNumRows();
+      bool precisionChanged=false;
+      int oldPrecision;
+      if (params.isParameter("precision")) {
+        oldPrecision = os.precision(params.get<int>("precision"));
+        precisionChanged=true;
+      }
+      int pointOffset = 1;
+      if (params.isParameter("zero-based indexing")) {
+        if (params.get<bool>("zero-based indexing") == true)
+          pointOffset = 0;
+      }
+
+      size_t localRowInd;
+      for (localRowInd = 0; localRowInd < numLocalRows; ++localRowInd) {
+
+        // Get a view of the current row.
+        const LO*     localColInds;
+        Scalar* vals;
+        LO numEntries;
+        err = A.getLocalRowView (localRowInd, localColInds, vals, numEntries);
+        if (err != 0)
+          break;
+        GO globalMeshRowID = rowMap->getGlobalElement(localRowInd) - meshRowOffset;
+
+        for (LO k = 0; k < numEntries; ++k) {
+          GO globalMeshColID = colMap->getGlobalElement(localColInds[k]) - meshColOffset;
+          Scalar* const curBlock = vals + blockSize * blockSize * k;
+          // Blocks are stored in row-major format.
+          for (LO j = 0; j < blockSize; ++j) {
+            GO globalPointRowID = globalMeshRowID * blockSize + j + pointOffset;
+            for (LO i = 0; i < blockSize; ++i) {
+              GO globalPointColID = globalMeshColID * blockSize + i + pointOffset;
+              const Scalar curVal = curBlock[i + j * blockSize];
+              os << globalPointRowID << " " << globalPointColID << " " << curVal << std::endl;
+            }
+          }
+        }
+      }
+      if (precisionChanged)
+        os.precision(oldPrecision);
+      TEUCHOS_TEST_FOR_EXCEPTION(err != 0,
+        std::runtime_error, "Tpetra::Experimental::writeMatrixStrip: "
+        "error getting view of local row " << localRowInd);
+
+    }
+
+  }
 
 } // namespace Experimental
 } // namespace Tpetra

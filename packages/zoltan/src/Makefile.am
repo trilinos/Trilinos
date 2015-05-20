@@ -745,18 +745,22 @@ AM_FFLAGS = -I@abs_top_srcdir@/src/fort
 # siMPI's Fortran interface yet (and serial zfdrive is not an important
 # use case).
 
+FDRIVER_SUBDIR =
+if BUILD_TESTS
 if BUILD_ZOLTAN_F90_INTERFACE
 if HAVE_MPI
-FDRIVER_SUBDIR = fdriver
-else
-FDRIVER_SUBDIR =
+FDRIVER_SUBDIR += fdriver
 endif
-else
-FDRIVER_SUBDIR =
+endif
 endif
 
 #SUBDIRS = . 
+if BUILD_TESTS
 SUBDIRS = . driver $(FDRIVER_SUBDIR)
+else
+SUBDIRS = .
+endif
+
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
@@ -766,3 +770,28 @@ MAINTAINERCLEANFILES = Makefile.in
 
 MOSTLYCLEANFILES = *.mod
 
+# ------------------------------------------------------------------------
+# Explicit FORTRAN dependencies to allow parallel builds (make -j)
+# KDD:  4/28/15  Specifying the dependencies does not seem to help 
+# KDD:           the parallel F90 builds (although articles online 
+# KDD:           indicate it should).  I'll comment them out
+# KDD:           and use .NOTPARALLEL: instead.
+# ------------------------------------------------------------------------
+
+#if BUILD_ZOLTAN_F90_INTERFACE
+#if F90_MODULE_LOWERCASE
+#zoltan.mod:  zoltan_types.mod zoltan_user_data.mod $(srcdir)/fort/fwrap.f90 \
+#             $(EXTRA_FORTRAN_H)
+#zoltan_user_data.mod:  $(srcdir)/fort/zoltan_user_data.f90 zoltan_types.mod
+#zoltan_types.mod:  $(srcdir)/fort/ztypes.f90
+#else
+#ZOLTAN.mod:  ZOLTAN_TYPES.mod ZOLTAN_USER_DATA.mod $(srcdir)/fort/fwrap.f90 \
+#             $(EXTRA_FORTRAN_H)
+#ZOLTAN_USER_DATA.mod:  $(srcdir)/fort/zoltan_user_data.f90 ZOLTAN_TYPES.mod
+#ZOLTAN_TYPES.mod:  $(srcdir)/fort/ztypes.f90
+#endif
+#endif
+
+if BUILD_ZOLTAN_F90_INTERFACE
+.NOTPARALLEL:
+endif

@@ -61,10 +61,6 @@ namespace Details {
 // otherwise the macro definition includes the whole rest of the file.
 #define IFPACK2_DETAILS_CHEBYSHEV(S,LO,GO) template class Chebyshev<S, Tpetra::MultiVector<S,LO,GO> >;
 
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE) && defined(HAVE_TPETRA_INST_DOUBLE)
-  template class Chebyshev<double, Tpetra::MultiVector<double, int, int, KokkosClassic::TPINode> >;
-#endif
-
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 
   // Our Chebyshev implementation currently only makes sense for real

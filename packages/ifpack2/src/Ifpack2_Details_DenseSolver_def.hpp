@@ -43,7 +43,6 @@
 #ifndef IFPACK2_DETAILS_DENSESOLVER_DEF_HPP
 #define IFPACK2_DETAILS_DENSESOLVER_DEF_HPP
 
-#include "Ifpack2_Condest.hpp"
 #include "Ifpack2_LocalFilter.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "Ifpack2_Details_DenseSolver.hpp"
@@ -165,25 +164,6 @@ template<class MatrixType>
 double
 DenseSolver<MatrixType, false>::getApplyTime () const {
   return applyTime_;
-}
-
-
-template<class MatrixType>
-typename DenseSolver<MatrixType, false>::magnitude_type
-DenseSolver<MatrixType, false>::
-computeCondEst (CondestType type,
-                local_ordinal_type maxIters,
-                magnitude_type tol,
-                const Teuchos::Ptr<const row_matrix_type>& matrix)
-{
-  return Ifpack2::Condest (*this, type, maxIters, tol, matrix);
-}
-
-
-template<class MatrixType>
-typename DenseSolver<MatrixType, false>::magnitude_type
-DenseSolver<MatrixType, false>::getCondEst () const {
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
 }
 
 
@@ -778,25 +758,6 @@ DenseSolver<MatrixType, true>::getComputeTime () const {
 template<class MatrixType>
 double
 DenseSolver<MatrixType, true>::getApplyTime () const {
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
-}
-
-
-template<class MatrixType>
-typename DenseSolver<MatrixType, true>::magnitude_type
-DenseSolver<MatrixType, true>::
-computeCondEst (CondestType CT,
-                local_ordinal_type MaxIters,
-                magnitude_type Tol,
-                const Teuchos::Ptr<const row_matrix_type>& Matrix)
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
-}
-
-
-template<class MatrixType>
-typename DenseSolver<MatrixType, true>::magnitude_type
-DenseSolver<MatrixType, true>::getCondEst () const {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
 }
 

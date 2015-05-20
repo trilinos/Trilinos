@@ -46,7 +46,7 @@
 #include <cassert>
 #include <iostream>
 #include <vector>
-#ifdef HAVE_INTREPID_KOKKOSCORE
+#if defined(HAVE_INTREPID_KOKKOSCORE)
 #include<Kokkos_Core.hpp>
 #endif
 #include "Intrepid_MiniTensor_TensorBase.h"
@@ -123,30 +123,35 @@ public:
   /// \param dimension the space dimension
   /// \param data_ptr pointer into the array
   ///
-#ifdef HAVE_INTREPID_KOKKOSCORE
+#if defined(HAVE_INTREPID_KOKKOSCORE)
   template<class ArrayT, typename iType>
   Vector(
       typename Kokkos::Impl::enable_if<
-          !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
       iType index1);
 
   template<class ArrayT, typename iType>
   Vector(
       typename Kokkos::Impl::enable_if<
-          !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
       iType index1,
       iType index2);
 
   template<class ArrayT, typename iType>
   Vector(
       typename Kokkos::Impl::enable_if<
-          !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
       iType index1,
       iType index2,
       iType index3);
 
   template<class ArrayT, typename iType>
-  Vector(ArrayT & data, iType index1, iType index2, iType index3, iType index4);
+  Vector(
+      ArrayT & data,
+      iType index1,
+      iType index2,
+      iType index3,
+      iType index4);
 
   template<class ArrayT, typename iType>
   Vector(
@@ -171,14 +176,14 @@ public:
   Vector(
       Index const dimension,
       typename Kokkos::Impl::enable_if<
-          !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
       iType index1);
 
   template<class ArrayT, typename iType>
   Vector(
       Index const dimension,
       typename Kokkos::Impl::enable_if<
-          !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
       iType index1,
       iType index2);
 
@@ -219,7 +224,7 @@ public:
       iType index4,
       iType index5,
       iType index6);
-  #endif
+ #endif
 
   Vector(T const * data_ptr);
 

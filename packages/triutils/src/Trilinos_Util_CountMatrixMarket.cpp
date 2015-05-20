@@ -71,7 +71,7 @@ void TTrilinos_Util_CountMatrixMarket(
   const int BUFSIZE = 800 ;
   char buffer[BUFSIZE] ;
   bool first_off_diag = true ;
-  bool upper ;
+  bool upper = false ;
 
   if(comm.MyPID() == 0)  {
     /* Get information about the array stored in the file specified in the  */
@@ -92,19 +92,37 @@ void TTrilinos_Util_CountMatrixMarket(
     while ( fgets( buffer, BUFSIZE, in_file ) ) {
       int_type i, j;
       float val ;
-      if(sizeof(int) == sizeof(int_type))
-        sscanf( buffer, "%d %d %f", &i, &j, &val ) ;
-      else if(sizeof(long long) == sizeof(int_type))
-        sscanf( buffer, "%lld %lld %f", &i, &j, &val ) ;
-      else
+
+      // mfh 20 Mar 2015: We use temporaries of the type corresponding
+      // to the sscanf format specifiers, in order to avoid compiler
+      // warnings about the sscanf output arguments' types not
+      // matching their corresponding format specifiers.  This was a
+      // harmless warning, because the 'sizeof' branch prevented
+      // incorrect execution, but the warning is easy to fix.
+      if(sizeof(int) == sizeof(int_type)) {
+        int i_int, j_int;
+        sscanf( buffer, "%d %d %f", &i_int, &j_int, &val ) ;
+        i = static_cast<int_type> (i_int);
+        j = static_cast<int_type> (j_int);
+      }
+      else if(sizeof(long long) == sizeof(int_type)) {
+        long long i_ll, j_ll;
+        sscanf( buffer, "%lld %lld %f", &i_ll, &j_ll, &val ) ;
+        i = static_cast<int_type> (i_ll);
+        j = static_cast<int_type> (j_ll);
+      }
+      else {
         assert(false);
+      }
       int_type needvecsize = i;
       if (symmetric) needvecsize = EPETRA_MAX(i,j) ;
       if ( needvecsize >= vecsize ) {
         int_type oldvecsize = vecsize;
         vecsize += EPETRA_MAX((int_type) 1000,needvecsize-vecsize) ;
         non_zeros.resize(vecsize) ;
-        for ( int_type i= oldvecsize; i < vecsize ; i++ ) non_zeros[i] = 0 ;
+        for ( int_type ii = oldvecsize; ii < vecsize ; ii++ ) {
+          non_zeros[ii] = 0 ;
+        }
       }
       N_rows = EPETRA_MAX( N_rows, i ) ;
       if (symmetric) N_rows = EPETRA_MAX( N_rows, j ) ;

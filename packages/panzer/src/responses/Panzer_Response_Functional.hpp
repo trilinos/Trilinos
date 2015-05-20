@@ -34,7 +34,8 @@ class Response_Functional : public ResponseMESupport_Default<EvalT>
 public:
    typedef typename EvalT::ScalarT ScalarT;
 
-   Response_Functional(const std::string & responseName,MPI_Comm comm,const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & linObjFact=Teuchos::null)
+   Response_Functional(const std::string & responseName,MPI_Comm comm,
+                       const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & linObjFact=Teuchos::null)
      : ResponseMESupport_Default<EvalT>(responseName,comm), value(0.0), linObjFactory_(linObjFact)
    {
      if(linObjFactory_!=Teuchos::null) {
@@ -47,7 +48,9 @@ public:
        ghostedContainer_ = linObjFactory_->buildGhostedLinearObjContainer();
 
        // set ghosted container (work space for assembly)
-       linObjFactory_->initializeGhostedContainer(panzer::LinearObjContainer::F,*ghostedContainer_);
+       linObjFactory_->initializeGhostedContainer(panzer::LinearObjContainer::X,*ghostedContainer_);
+
+       using Teuchos::rcp_dynamic_cast;
      }
    }
 
@@ -70,7 +73,7 @@ public:
 
    //! Get ghosted responses (this will be filled by the evaluator)
    Teuchos::RCP<Thyra::VectorBase<double> > getGhostedVector() const
-   { return Teuchos::rcp_dynamic_cast<const ThyraObjContainer<double> >(ghostedContainer_)->get_f_th(); }
+   { return Teuchos::rcp_dynamic_cast<const ThyraObjContainer<double> >(ghostedContainer_)->get_x_th(); }
 
    void adjustForDirichletConditions(const GlobalEvaluationData & localBCRows,const GlobalEvaluationData & globalBCRows);
     

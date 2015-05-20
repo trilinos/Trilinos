@@ -115,17 +115,18 @@ namespace panzer_stk_classic {
 
     /** \brief Builds the model evaluators for a panzer assembly
         
-	\param[in] comm (Required) Teuchos communicator.  Must be non-null.
-	\param[in] global_data (Required) A fully constructed (all members allocated) global data object used to control parameter library and output support. Must be non-null.
-	\param[in] eqset_factory (Required) Equation set factory to provide user defined equation sets.
-	\param[in] bc_factory (Required) Boundary condition factory to provide user defined boundary conditions.
-	\param[in] cm_factory (Required) Closure model factory to provide user defined closure models.
+        \param[in] comm (Required) Teuchos communicator.  Must be non-null.
+        \param[in] global_data (Required) A fully constructed (all members allocated) global data object used to control parameter library and output support. Must be non-null.
+        \param[in] eqset_factory (Required) Equation set factory to provide user defined equation sets.
+        \param[in] bc_factory (Required) Boundary condition factory to provide user defined boundary conditions.
+        \param[in] cm_factory (Required) Closure model factory to provide user defined closure models.
     */
     void buildObjects(const Teuchos::RCP<const Teuchos::Comm<int> >& comm, 
-		      const Teuchos::RCP<panzer::GlobalData>& global_data,
+                      const Teuchos::RCP<panzer::GlobalData>& global_data,
                       const Teuchos::RCP<const panzer::EquationSetFactory>& eqset_factory,
                       const panzer::BCStrategyFactory & bc_factory,
-		      const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory);
+                      const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
+                      bool meConstructionOn=true);
 
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > getPhysicsModelEvaluator();
     
@@ -147,8 +148,8 @@ namespace panzer_stk_classic {
 
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > 
     buildResponseOnlyModelEvaluator(const Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > & thyra_me,
-				    const Teuchos::RCP<panzer::GlobalData>& global_data,
-				    const Teuchos::RCP<Piro::RythmosSolver<ScalarT> > rythmosSolver = Teuchos::null,
+                                    const Teuchos::RCP<panzer::GlobalData>& global_data,
+                                    const Teuchos::RCP<Piro::RythmosSolver<ScalarT> > rythmosSolver = Teuchos::null,
                     const Teuchos::Ptr<const panzer_stk_classic::NOXObserverFactory> & in_nox_observer_factory=Teuchos::null,
                     const Teuchos::Ptr<const panzer_stk_classic::RythmosObserverFactory> & in_rythmos_observer_factory=Teuchos::null);
 
@@ -166,14 +167,17 @@ namespace panzer_stk_classic {
     Teuchos::RCP<panzer::UniqueGlobalIndexerBase> getGlobalIndexer() const 
     { return m_global_indexer; }
 
+    //! Get connection manager
+    Teuchos::RCP<panzer::ConnManagerBase<int> > getConnManager() const 
+    { return m_conn_manager; }
+
+    //! Is blocked assembly?
+    bool isBlockedAssembly() const 
+    { return m_blockedAssembly; }
+
     //! Get linear object factory used to build model evaluator
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > getLinearObjFactory() const
     { return m_lin_obj_factory; }
-
-    #ifdef HAVE_TEKO 
-    void setTekoRequestHandler(Teuchos::RCP<Teko::RequestHandler> & reqHandler)
-    { m_req_handler = reqHandler; }
-    #endif     
 
     bool isTransient() const  
     { return m_is_transient; }
@@ -188,25 +192,101 @@ namespace panzer_stk_classic {
                               const panzer::BCStrategyFactory & bc_factory,
                               const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & user_cm_factory,
                               bool is_transient,bool is_explicit,
-                              const Teuchos::Ptr<const Teuchos::ParameterList> & bc_list=Teuchos::null) const;
+                              const Teuchos::Ptr<const Teuchos::ParameterList> & bc_list=Teuchos::null,
+                              const Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > & physics_me=Teuchos::null) const;
 
-    bool useDynamicCoordinates() const
-    { return useDynamicCoordinates_; }
+    /** \brief Setup the initial conditions in a model evaluator. Note that this
+      *        is entirely self contained.
+      */
+    void setupInitialConditions(Thyra::ModelEvaluator<ScalarT> & model,
+                                panzer::WorksetContainer & wkstContainer,
+                                const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+                                const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
+                                const panzer::LinearObjFactory<panzer::Traits> & lof,
+                                const Teuchos::ParameterList & initial_cond_pl,
+                                const Teuchos::ParameterList & user_data_pl,
+                                bool write_dot_files,const std::string & dot_file_prefix) const;
 
-  protected:
- 
-    /** This method is to assist with construction of the model evaluators  internally.
+    /** \brief Write the initial conditions to exodus. Note that this
+      *        is entirely self contained.
+      */
+    void writeInitialConditions(const Thyra::ModelEvaluator<ScalarT> & model,
+                                const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+                                const Teuchos::RCP<panzer::WorksetContainer> & wc,
+                                const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ugi,
+                                const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof,
+                                const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
+                                const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
+                                const Teuchos::ParameterList & closure_model_pl,
+                                const Teuchos::ParameterList & user_data_pl,
+                                int workset_size) const;
+
+    /** This method is to assist with construction of the model evaluators.
       */ 
     Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > 
     buildPhysicsModelEvaluator(bool buildThyraME,
                         const Teuchos::RCP<panzer::FieldManagerBuilder> & fmb,
                         const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & rLibrary,
-       	 	        const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof,
-		        const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > & p_names,
+                                const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof,
+                        const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > & p_names,
                         const Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<ScalarT> > & solverFactory,
-		        const Teuchos::RCP<panzer::GlobalData> & global_data,
-		        bool is_transient,double t_init) const;
+                        const Teuchos::RCP<panzer::GlobalData> & global_data,
+                        bool is_transient,double t_init) const;
 
+
+    bool useDynamicCoordinates() const
+    { return useDynamicCoordinates_; }
+
+    /** \brief Gets the initial time from either the input parameter list or an exodus file
+     *      
+     * \param [in] transient_ic_params ParameterList that determines where to get the initial time value.
+     * \param [in] mesh STK Mesh database used if the time value should come from the exodus file
+    */
+    double getInitialTime(Teuchos::ParameterList& transient_ic_params,
+                          const panzer_stk_classic::STK_Interface& mesh) const;
+
+    Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
+    buildLOWSFactory(bool blockedAssembly,
+                     const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
+                     const Teuchos::RCP<panzer::ConnManagerBase<int> > & conn_manager,
+                     const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
+                     const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm
+                     #ifdef HAVE_TEKO 
+                     , const Teuchos::RCP<Teko::RequestHandler> & req_handler=Teuchos::null
+                     #endif 
+                     ) const;
+
+    static Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
+    buildLOWSFactory(bool blockedAssembly,
+                     const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
+                     const Teuchos::RCP<panzer::ConnManagerBase<int> > & conn_manager,
+                     const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
+                     const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
+                     const Teuchos::RCP<Teuchos::ParameterList> & strat_params,
+                     #ifdef HAVE_TEKO 
+                     const Teuchos::RCP<Teko::RequestHandler> & req_handler=Teuchos::null,
+                     #endif 
+                     bool writeCoordinates=false,
+                     bool writeTopo=false
+                     );
+
+    //! Get the workset container associated with the mesh database.
+    Teuchos::RCP<panzer::WorksetContainer> getWorksetContainer() const 
+    { return m_wkstContainer; }
+
+    //! Add the user fields specified by output_list to the mesh
+    void addUserFieldsToMesh(panzer_stk_classic::STK_Interface & mesh,const Teuchos::ParameterList & output_list) const;
+
+    //! build STK mesh factory from a mesh parameter list
+    Teuchos::RCP<STK_MeshFactory> buildSTKMeshFactory(const Teuchos::ParameterList & mesh_params) const;
+
+    void finalizeMeshConstruction(const STK_MeshFactory & mesh_factory,
+                                  const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
+                                  const Teuchos::MpiComm<int> mpi_comm, 
+                                  STK_Interface & mesh) const;
+
+  protected:
+ 
     Teuchos::RCP<panzer::FieldManagerBuilder> 
     buildFieldManagerBuilder(const Teuchos::RCP<panzer::WorksetContainer> & wc,
                              const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
@@ -220,21 +300,13 @@ namespace panzer_stk_classic {
                              const Teuchos::ParameterList& user_data,
                              bool writeGraph,const std::string & graphPrefix) const;
 
-    //! build STK mesh factory from a mesh parameter list
-    Teuchos::RCP<STK_MeshFactory> buildSTKMeshFactory(const Teuchos::ParameterList & mesh_params) const;
-
-    void finalizeMeshConstruction(const STK_MeshFactory & mesh_factory,
-                                  const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
-                                  const Teuchos::MpiComm<int> mpi_comm, 
-                                  STK_Interface & mesh) const;
-
     /** This method determines a coordinate field from the DOF manager.
       * The algorithm is to loop over all the element blocks to find a field
       * that is defined for each. 
       *
       * \returns False if no unique field is found. Otherwise True is returned.
       */
-    bool determineCoordinateField(const panzer::UniqueGlobalIndexerBase & globalIndexer,std::string & fieldName) const;
+    static bool determineCoordinateField(const panzer::UniqueGlobalIndexerBase & globalIndexer,std::string & fieldName);
 
     /** Fill a STL map with the the block ids associated with the pattern for a specific field.
       *
@@ -242,8 +314,8 @@ namespace panzer_stk_classic {
       * \param[out] fieldPatterns A map from element block IDs to field patterns associated with the fieldName
       *                           argument
       */
-    void fillFieldPatternMap(const panzer::UniqueGlobalIndexerBase & globalIndexer, const std::string & fieldName, 
-                             std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const;
+    static void fillFieldPatternMap(const panzer::UniqueGlobalIndexerBase & globalIndexer, const std::string & fieldName, 
+                             std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns);
 
 #ifdef PANZER_HAVE_FEI
     /** Fill a STL map with the the block ids associated with the pattern for a specific field.
@@ -252,9 +324,9 @@ namespace panzer_stk_classic {
       * \param[out] fieldPatterns A map from element block IDs to field patterns associated with the fieldName
       *                           argument
       */
-    template <typename GO>
+    template <typename GO> static
     void fillFieldPatternMap(const panzer::DOFManagerFEI<int,GO> & globalIndexer, const std::string & fieldName, 
-                             std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const;
+                             std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns);
 #endif
 
     /** Fill a STL map with the the block ids associated with the pattern for a specific field.
@@ -263,24 +335,16 @@ namespace panzer_stk_classic {
       * \param[out] fieldPatterns A map from element block IDs to field patterns associated with the fieldName
       *                           argument
       */
-    template <typename GO>
+    template <typename GO> static
     void fillFieldPatternMap(const panzer::DOFManager<int,GO> & globalIndexer, const std::string & fieldName, 
-                             std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const;
-
-    /** \brief Gets the initial time from either the input parameter list or an exodus file
-     *      
-     * \param [in] transient_ic_params ParameterList that determines where to get the initial time value.
-     * \param [in] mesh STK Mesh database used if the time value should come from the exodus file
-    */
-    double getInitialTime(Teuchos::ParameterList& transient_ic_params,
-			  const panzer_stk_classic::STK_Interface& mesh) const;
+                             std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns);
 
     /**
       */
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > initializeSolnWriterResponseLibrary(
                                                                 const Teuchos::RCP<panzer::WorksetContainer> & wc,
-                                                                const Teuchos::RCP<panzer::UniqueGlobalIndexerBase> & ugi,
-                                                                const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof,
+                                                                const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ugi,
+                                                                const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof,
                                                                 const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh) const;
 
     /**
@@ -291,28 +355,29 @@ namespace panzer_stk_classic {
                                            const Teuchos::ParameterList & closure_models,
                                            int workset_size, Teuchos::ParameterList & user_data) const;
 
-    Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
-    buildLOWSFactory(bool blockedAssembly,
-                     const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
-                     const Teuchos::RCP<panzer::ConnManagerBase<int> > & conn_manager,
-                     const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
-                     const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm);
-
     /** Build LOWS factory.
       */
-    template <typename GO>
-    Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > buildLOWSFactory(bool blockedAssembly,
-                                                                                const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
-                                                                                const Teuchos::RCP<panzer_stk_classic::STKConnManager<GO> > & stkConn_manager,
-                                                                                const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
-                                                                                const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm);
+    template <typename GO> static
+    Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > 
+    buildLOWSFactory(bool blockedAssembly,
+                     const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
+                     const Teuchos::RCP<panzer_stk_classic::STKConnManager<GO> > & stkConn_manager,
+                     const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
+                     const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
+                     const Teuchos::RCP<Teuchos::ParameterList> & strat_params,
+                     #ifdef HAVE_TEKO 
+                     const Teuchos::RCP<Teko::RequestHandler> & req_handler,
+                     #endif 
+                     bool writeCoordinates=false,
+                     bool writeTopo=false
+                     );
 
-    template <typename GO>
-    void writeTopology(const panzer::BlockedDOFManager<int,GO> & blkDofs) const;
+    template <typename GO> static
+    void writeTopology(const panzer::BlockedDOFManager<int,GO> & blkDofs);
 
 #ifdef PANZER_HAVE_FEI
-    template <typename GO>
-    void writeTopology(const panzer::DOFManagerFEI<int,GO> & dofs,const std::string & block,std::ostream & os) const;
+    template <typename GO> static
+    void writeTopology(const panzer::DOFManagerFEI<int,GO> & dofs,const std::string & block,std::ostream & os);
 #endif
 
   private:
@@ -325,17 +390,17 @@ namespace panzer_stk_classic {
 
     Teuchos::RCP<panzer_stk_classic::STK_Interface> m_mesh;
     Teuchos::RCP<panzer::UniqueGlobalIndexerBase> m_global_indexer;
+    Teuchos::RCP<panzer::ConnManagerBase<int> > m_conn_manager;
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > m_lin_obj_factory;
     Teuchos::RCP<panzer::GlobalData> m_global_data;
-    #ifdef HAVE_TEKO 
-    Teuchos::RCP<Teko::RequestHandler> m_req_handler;
-    #endif
     bool useDiscreteAdjoint;
     bool m_is_transient;
+    bool m_blockedAssembly;
     Teuchos::RCP<const panzer::EquationSetFactory> m_eqset_factory;
 
     Teuchos::RCP<const panzer_stk_classic::NOXObserverFactory> m_nox_observer_factory;
     Teuchos::RCP<const panzer_stk_classic::RythmosObserverFactory> m_rythmos_observer_factory;
+    Teuchos::RCP<panzer::WorksetContainer> m_wkstContainer;
  
     bool useDynamicCoordinates_;
   };

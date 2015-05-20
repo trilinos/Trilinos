@@ -579,7 +579,16 @@ buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm
     name->push_back(itr->first);
     p.set("Dependent Names", name);
 
-    Teuchos::RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildScatterInitialCondition<EvalT>(p);
+    // Create an identity map
+    Teuchos::RCP<std::map<std::string,std::string> > names_map = Teuchos::rcp(new std::map<std::string,std::string>);
+    names_map->insert(std::make_pair(itr->first,itr->first));
+    p.set("Dependent Map", names_map);
+
+    // Set flag for ScatterDirichlet evaluators
+    p.set("Scatter Initial Condition", true);
+
+    // Use ScatterDirichlet to scatter the initial condition
+    Teuchos::RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildScatterDirichlet<EvalT>(p);
     
     fm.template registerEvaluator<EvalT>(op);
 
@@ -961,6 +970,42 @@ buildAndRegisterResidualSummationEvalautor(PHX::FieldManager<panzer::Traits>& fm
   *rcp_residual_contributions = residual_contributions;
 
   p.set("Values Names", rcp_residual_contributions);
+  
+  DescriptorIterator desc_it = m_provided_dofs_desc.find(dof_name);
+  TEUCHOS_ASSERT(desc_it != m_provided_dofs_desc.end());
+  
+  p.set("Data Layout", desc_it->second.basis->functional);
+
+  RCP< PHX::Evaluator<panzer::Traits> > op = rcp(new panzer::SumStatic<EvalT,panzer::Traits,panzer::Cell,panzer::BASIS>(p));
+  
+  fm.template registerEvaluator<EvalT>(op);
+}
+
+// ***********************************************************************
+template <typename EvalT>
+void panzer::EquationSet_DefaultImpl<EvalT>::
+buildAndRegisterResidualSummationEvalautor(PHX::FieldManager<panzer::Traits>& fm,
+                                           const std::string dof_name,
+                                           const std::vector<std::string>& residual_contributions,
+                                           const std::vector<double>& scale_contributions,
+                                           const std::string residual_field_name) const
+{
+  using Teuchos::rcp;
+  using Teuchos::RCP;
+
+  Teuchos::ParameterList p;
+
+  if (residual_field_name != "")
+    p.set("Sum Name", residual_field_name);
+  else
+    p.set("Sum Name", "RESIDUAL_" + dof_name);
+  
+  RCP<std::vector<std::string> > rcp_residual_contributions = rcp(new std::vector<std::string>);
+  *rcp_residual_contributions = residual_contributions;
+  p.set("Values Names", rcp_residual_contributions);
+
+  RCP<const std::vector<double> > rcp_scale_contributions = rcp(new std::vector<double>(scale_contributions));
+  p.set("Scalars", rcp_scale_contributions);
   
   DescriptorIterator desc_it = m_provided_dofs_desc.find(dof_name);
   TEUCHOS_ASSERT(desc_it != m_provided_dofs_desc.end());

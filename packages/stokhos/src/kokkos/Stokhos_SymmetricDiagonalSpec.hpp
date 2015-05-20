@@ -42,7 +42,7 @@
 #ifndef STOKHOS_SYMMETRIC_DIAGONAL_SPEC_HPP
 #define STOKHOS_SYMMETRIC_DIAGONAL_SPEC_HPP
 
-#include "Kokkos_CrsArray.hpp"
+#include "Kokkos_StaticCrsGraph.hpp"
 
 namespace Stokhos {
 

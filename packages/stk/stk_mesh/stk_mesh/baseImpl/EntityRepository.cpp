@@ -37,7 +37,6 @@
 #include <stk_mesh/base/Bucket.hpp>     // for Bucket
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include "stk_mesh/base/Entity.hpp"     // for Entity, etc
-#include "stk_mesh/base/Trace.hpp"      // for TraceIfWatching, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
 
 
@@ -71,21 +70,17 @@ void EntityRepository::internal_expunge_entity( EntityMap::iterator i )
 std::pair<Entity ,bool>
 EntityRepository::internal_create_entity( const EntityKey & key, size_t preferred_offset )
 {
-  TraceIfWatching("stk::mesh::impl::EntityRepository::internal_create_entity", LOG_ENTITY, key);
-
   bool inserted_new_entity = false;
   EntityMap::iterator iter = m_entities.lower_bound(key);
 
   if (iter == m_entities.end() || iter->first != key) {
-    Entity next_entity = {Entity::InvalidEntity};
+    Entity next_entity;
     next_entity.set_local_offset(m_mesh.generate_next_local_offset(preferred_offset));
     m_mesh.set_entity_key(next_entity, key);
 
     iter = m_entities.insert(iter, std::make_pair(key, next_entity));
     inserted_new_entity = true;
   }
-
-  DiagIfWatching(LOG_ENTITY, key, "Entity will be at offset: " << iter->second.local_offset());
 
   return std::make_pair(iter->second, inserted_new_entity);
 }

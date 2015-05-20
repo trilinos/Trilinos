@@ -70,11 +70,12 @@
 
 #include "MueLu.hpp"
 
+#include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_BaseClass.hpp"
 #include "MueLu_BlockedDirectSolver.hpp"
 #include "MueLu_BlockedPFactory.hpp"
 #include "MueLu_BlockedRAPFactory.hpp"
-#include "MueLu_CoalesceDropFactory_decl.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
 #include "MueLu_CreateTpetraPreconditioner.hpp"
 #include "MueLu_DirectSolver.hpp"
@@ -97,7 +98,7 @@
 namespace Thyra {
 
 #define MUELU_GPD(name, type, defaultValue) \
-  (paramList.isParameter(#name) ? paramList.get<type>(#name) : defaultValue)
+  (paramList.isParameter(name) ? paramList.get<type>(name) : defaultValue)
 
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -344,14 +345,17 @@ namespace Thyra {
 
     RCP<Matrix>    A_12         = MatrixFactory::Build(tmp_A_12->getRangeMap(), newDomainMap2,            tmp_A_12->getNodeMaxNumRowEntries());
     RCP<Matrix>    A_21         = MatrixFactory::Build(newRangeMap2,            tmp_A_21->getDomainMap(), tmp_A_21->getNodeMaxNumRowEntries());
-    RCP<Matrix>    A_22         = MatrixFactory::Build(newRangeMap2,            newDomainMap2,            1);
 
     RCP<CrsMatrix> A_11_crs     = rcp_dynamic_cast<CrsMatrixWrap>(A_11)    ->getCrsMatrix();
     RCP<CrsMatrix> A_12_crs     = rcp_dynamic_cast<CrsMatrixWrap>(A_12)    ->getCrsMatrix();
     RCP<CrsMatrix> A_21_crs     = rcp_dynamic_cast<CrsMatrixWrap>(A_21)    ->getCrsMatrix();
-    RCP<CrsMatrix> A_22_crs     = rcp_dynamic_cast<CrsMatrixWrap>(A_22)    ->getCrsMatrix();
     RCP<CrsMatrix> A_11_crs_9Pt = rcp_dynamic_cast<CrsMatrixWrap>(A_11_9Pt)->getCrsMatrix();
 
+#if 0
+    RCP<Matrix>    A_22         = MatrixFactory::Build(newRangeMap2,            newDomainMap2,            1);
+    RCP<CrsMatrix> A_22_crs     = rcp_dynamic_cast<CrsMatrixWrap>(A_22)    ->getCrsMatrix();
+
+    // FIXME: why do we need to perturb A_22?
     Array<SC> smallVal(1, 1.0e-9);
 
     // FIXME: could this be sped up using expertStaticFillComplete?
@@ -370,8 +374,23 @@ namespace Thyra {
       A_21_crs->insertGlobalValues(newRowElem2[row], newInds,                        vals);
       A_22_crs->insertGlobalValues(newRowElem2[row], Array<LO>(1, newRowElem2[row]), smallVal);
     }
-    A_21_crs->fillComplete(tmp_A_21->getDomainMap(), newRangeMap2);
     A_22_crs->fillComplete(newDomainMap2,            newRangeMap2);
+#else
+    ArrayView<const LO> inds;
+    ArrayView<const SC> vals;
+    for (LO row = 0; row < as<LO>(numRows2); ++row) {
+      tmp_A_21->getLocalRowView(row, inds, vals);
+
+      size_t nnz = inds.size();
+      Array<GO> newInds(nnz, 0);
+      for (LO colID = 0; colID < as<LO>(nnz); colID++)
+        newInds[colID] = colElem1[inds[colID]];
+
+      A_21_crs->insertGlobalValues(newRowElem2[row], newInds, vals);
+    }
+    A_21_crs->fillComplete(tmp_A_21->getDomainMap(), newRangeMap2);
+    RCP<CrsMatrix> A_22_crs = Teuchos::null;
+#endif
 
     // Create new A12 with map so that the global indices of the ColMap starts
     // from numVel+1 (where numVel is the number of rows in the A11 block)
@@ -387,18 +406,22 @@ namespace Thyra {
     }
     A_12_crs->fillComplete(newDomainMap2, tmp_A_12->getRangeMap());
 
+    RCP<Matrix> A_12_abs = Absolute(*A_12);
+    RCP<Matrix> A_21_abs = Absolute(*A_21);
+
     // =========================================================================
     // Preconditioner construction - I (block)
     // =========================================================================
     RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     Teuchos::FancyOStream& out = *fancy;
     out.setOutputToRootOnly(0);
-    RCP<Matrix> BBt = Utils::Multiply(*A_21, false, *A_12, false, out);
+    RCP<Matrix> BBt     = Utils::Multiply(*A_21,     false, *A_12,     false, out);
+    RCP<Matrix> BBt_abs = Utils::Multiply(*A_21_abs, false, *A_12_abs, false, out);
 
     // FIXME: why do we have a magic number here?
     SC dropTol = 0.06;
-    RCP<Matrix> filteredA = FilterMatrix(*A_11, dropTol);
-    RCP<Matrix> filteredB = FilterMatrix(*BBt,  dropTol);
+    RCP<Matrix> filteredA = FilterMatrix(*A_11, *A_11,    dropTol);
+    RCP<Matrix> filteredB = FilterMatrix(*BBt,  *BBt_abs, dropTol);
 
     RCP<CrsMatrix> fA_11_crs = rcp_dynamic_cast<CrsMatrixWrap>(filteredA)->getCrsMatrix();
     RCP<CrsMatrix> fA_12_crs = Teuchos::null;
@@ -505,44 +528,94 @@ namespace Thyra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-  FilterMatrix(Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, Scalar dropTol) const {
+  FilterMatrix(Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Pattern, Scalar dropTol) const {
     typedef Xpetra::Matrix<SC,LO,GO,NO>             Matrix;
-    typedef MueLu::FilteredAFactory<SC,LO,GO,NO>    FilteredAFactory;
+    typedef MueLu::AmalgamationFactory<SC,LO,GO,NO> AmalgamationFactory;
     typedef MueLu::CoalesceDropFactory<SC,LO,GO,NO> CoalesceDropFactory;
     typedef MueLu::FactoryManager<SC,LO,GO,NO>      FactoryManager;
+    typedef MueLu::FilteredAFactory<SC,LO,GO,NO>    FilteredAFactory;
+    typedef MueLu::GraphBase<LO,GO,NO>              GraphBase;
 
-    MueLu::Level level;
-    level.SetLevelID(1);
-    level.Set<RCP<Matrix> >("A", rcpFromRef(A));
+    RCP<GraphBase> filteredGraph;
+    {
+      // Get graph pattern for the pattern matrix
+      MueLu::Level level;
+      level.SetLevelID(1);
 
-    FactoryManager M;
-    level.SetFactoryManager(rcpFromRef(M));
+      level.Set<RCP<Matrix> >("A", rcpFromRef(Pattern));
 
-    RCP<CoalesceDropFactory> dropFactory = rcp(new CoalesceDropFactory());
-    ParameterList dropParams = *(dropFactory->GetValidParameterList());
-    dropParams.set("lightweight wrap",          true);
-    dropParams.set("aggregation: drop scheme",  "classical");
-    dropParams.set("aggregation: drop tol",     dropTol);
-    // dropParams.set("Dirichlet detection threshold", <>);
+      RCP<AmalgamationFactory> amalgFactory = rcp(new AmalgamationFactory());
 
-    dropFactory->SetParameterList(dropParams);
-    M.SetFactory("Graph",     dropFactory);
-    M.SetFactory("Filtering", dropFactory);
+      RCP<CoalesceDropFactory> dropFactory = rcp(new CoalesceDropFactory());
+      ParameterList dropParams = *(dropFactory->GetValidParameterList());
+      dropParams.set("lightweight wrap",          true);
+      dropParams.set("aggregation: drop scheme",  "classical");
+      dropParams.set("aggregation: drop tol",     dropTol);
+      // dropParams.set("Dirichlet detection threshold", <>);
+      dropFactory->SetParameterList(dropParams);
+      dropFactory->SetFactory("UnAmalgamationInfo", amalgFactory);
 
-    RCP<FilteredAFactory> filterFactory = rcp(new FilteredAFactory());
-    ParameterList filterParams = *(filterFactory->GetValidParameterList());
-    // We need a graph that has proper structure in it. Therefore, we need to
-    // drop older pattern, i.e. not to reuse it
-    filterParams.set("filtered matrix: reuse graph", false);
-    filterFactory->SetParameterList(filterParams);
-    filterFactory->SetFactory("Graph", dropFactory);
+      // Build
+      level.Request("Graph", dropFactory.get());
+      dropFactory->Build(level);
 
-    // Build
-    level.Request("A", filterFactory.get());
-    filterFactory->Build(level);
+      level.Get("Graph", filteredGraph, dropFactory.get());
+    }
 
     RCP<Matrix> filteredA;
-    level.Get("A", filteredA, filterFactory.get());
+    {
+      // Filter the original matrix, not the pattern one
+      MueLu::Level level;
+      level.SetLevelID(1);
+
+      level.Set("A",         rcpFromRef(A));
+      level.Set("Graph",     filteredGraph);
+      level.Set("Filtering", true);
+
+      RCP<FilteredAFactory> filterFactory = rcp(new FilteredAFactory());
+      ParameterList filterParams = *(filterFactory->GetValidParameterList());
+      // We need a graph that has proper structure in it. Therefore, we need to
+      // drop older pattern, i.e. not to reuse it
+      filterParams.set("filtered matrix: reuse graph", false);
+      filterParams.set("filtered matrix: use lumping", false);
+      filterFactory->SetParameterList(filterParams);
+
+      // Build
+      level.Request("A", filterFactory.get());
+      filterFactory->Build(level);
+
+      level.Get("A", filteredA, filterFactory.get());
+    }
+
+    // Zero out row sums by fixing the diagonal
+    filteredA->resumeFill();
+    size_t numRows = filteredA->getRowMap()->getNodeNumElements();
+    for (size_t i = 0; i < numRows; i++) {
+      ArrayView<const LO> inds;
+      ArrayView<const SC> vals;
+      filteredA->getLocalRowView(i, inds, vals);
+
+      size_t nnz = inds.size();
+
+      Array<SC> valsNew = vals;
+
+      LO diagIndex = -1;
+      SC diag = Teuchos::ScalarTraits<SC>::zero();
+      for (size_t j = 0; j < inds.size(); j++) {
+        diag += vals[j];
+        if (inds[j] == i)
+          diagIndex = j;
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(diagIndex == -1, MueLu::Exceptions::RuntimeError,
+                                 "No diagonal found");
+      if (nnz <= 1)
+        continue;
+
+      valsNew[diagIndex] -= diag;
+
+      filteredA->replaceLocalValues(i, inds, valsNew);
+    }
+    filteredA->fillComplete();
 
     return filteredA;
   }
@@ -631,7 +704,7 @@ namespace Thyra {
     ParameterList patternParams = *(patternFact->GetValidParameterList());
     // Our prolongator constructs the exact pattern we are going to use,
     // therefore we do not expand it
-    patternParams.set("emin: pattern order", MUELU_GPD("emin: pattern order", int, 0));
+    patternParams.set("emin: pattern order", 0);
     patternFact->SetParameterList(patternParams);
     patternFact->SetFactory("A", AFact);
     patternFact->SetFactory("P", Q2Q1Fact);
@@ -642,10 +715,43 @@ namespace Thyra {
     M.SetFactory("Constraint", CFact);
 
     RCP<EminPFactory> EminPFact = rcp(new EminPFactory());
+    ParameterList eminParams = *(EminPFact->GetValidParameterList());
+    if (paramList.isParameter("emin: num iterations"))
+      eminParams.set("emin: num iterations", paramList.get<int>("emin: num iterations"));
+    EminPFact->SetParameterList(eminParams);
     EminPFact->SetFactory("A",          AFact);
     EminPFact->SetFactory("Constraint", CFact);
     EminPFact->SetFactory("P",          Q2Q1Fact);
     M.SetFactory("P", EminPFact);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Absolute(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A) const {
+    typedef Xpetra::CrsMatrix    <SC,LO,GO,NO> CrsMatrix;
+    typedef Xpetra::CrsMatrixWrap<SC,LO,GO,NO> CrsMatrixWrap;
+    typedef Xpetra::Matrix       <SC,LO,GO,NO> Matrix;
+
+    const CrsMatrixWrap& Awrap = dynamic_cast<const CrsMatrixWrap&>(A);
+
+    ArrayRCP<const size_t> iaA;
+    ArrayRCP<const LO>     jaA;
+    ArrayRCP<const SC>     valA;
+    Awrap.getCrsMatrix()->getAllValues(iaA, jaA, valA);
+
+    ArrayRCP<size_t> iaB (iaA .size());
+    ArrayRCP<LO>     jaB (jaA .size());
+    ArrayRCP<SC>     valB(valA.size());
+    for (size_t i = 0; i < iaA .size(); i++) iaB [i] = iaA[i];
+    for (size_t i = 0; i < jaA .size(); i++) jaB [i] = jaA[i];
+    for (size_t i = 0; i < valA.size(); i++) valB[i] = Teuchos::ScalarTraits<SC>::magnitude(valA[i]);
+
+    RCP<Matrix> B = rcp(new CrsMatrixWrap(A.getRowMap(), A.getColMap(), 0, Xpetra::StaticProfile));
+    RCP<CrsMatrix> Bcrs = rcp_dynamic_cast<CrsMatrixWrap>(B)->getCrsMatrix();
+    Bcrs->setAllValues(iaB, jaB, valB);
+    Bcrs->expertStaticFillComplete(A.getDomainMap(), A.getRangeMap());
+
+    return B;
   }
 
   // Public functions overridden from Teuchos::Describable
@@ -653,8 +759,6 @@ namespace Thyra {
   std::string MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::description() const {
     return "Thyra::MueLuTpetraQ2Q1PreconditionerFactory";
   }
-
-#undef MUELU_GPD
 
 } // namespace Thyra
 

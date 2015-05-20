@@ -135,12 +135,27 @@ int Trilinos_Util_ReadTriples2Epetra_internal(
     while ( fgets( buffer, BUFSIZE, in_file ) ) {
       int_type i, j;
       double val ;
-      if(sizeof(int) == sizeof(int_type))
-        sscanf( buffer, "%d %d %lg", &i, &j, &val ) ;
-      else if(sizeof(long long) == sizeof(int_type))
-        sscanf( buffer, "%lld %lld %lg", &i, &j, &val ) ;
-      else
+      if(sizeof(int) == sizeof(int_type)) {
+        // mfh 24 Mar 2015: Avoid build warnings ("%d" doesn't match
+        // long long) when int != int_type, because this code will
+        // compile in that case, even though it won't execute.
+        int i_int, j_int;
+        sscanf( buffer, "%d %d %lg", &i_int, &j_int, &val ) ;
+        i = static_cast<int_type> (i_int);
+        j = static_cast<int_type> (j_int);
+      }
+      else if(sizeof(long long) == sizeof(int_type)) {
+        // mfh 24 Mar 2015: Avoid build warnings ("%lld" doesn't match
+        // int) when int == int_type, because this code will compile
+        // in that case, even though it won't execute.
+        long long i_ll, j_ll;
+        sscanf( buffer, "%lld %lld %lg", &i_ll, &j_ll, &val ) ;
+        i = static_cast<int_type> (i_ll);
+        j = static_cast<int_type> (j_ll);
+      }
+      else {
         assert(false);
+      }
       const int_type i_index = ( ZeroBased?i:i-1 );
       const int_type j_index = ( ZeroBased?j:j-1 );
 

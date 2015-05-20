@@ -1,3 +1,16 @@
+/// \example LOBPCGEpetraExGen.cpp
+/// \brief Use LOBPCG with Epetra, for a generalized eigenvalue problem.
+///
+/// This example computes the eigenvalues of largest magnitude of an
+/// generalized eigenvalue problem, using Anasazi's implementation of
+/// the LOBPCG method, with Epetra linear algebra.
+///
+/// The test problem claims to come from research described in the
+/// following report: " A comparison of algorithms for modal analysis
+/// in the absence of a sparse direct method", P. Arbenz, R. Lehoucq,
+/// and U. Hetmaniuk, Sandia National Laboratories, Technical report
+/// SAND2003-1028J.
+
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziLOBPCGSolMgr.hpp"

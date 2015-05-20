@@ -59,7 +59,6 @@ Krylov (const Teuchos::RCP<const row_matrix_type>& A) :
   ZeroStartingSolution_ (true),
   PreconditionerType_ (1),
   // General
-  Condest_ (-STM::one ()),
   IsInitialized_ (false),
   IsComputed_ (false),
   NumInitialize_ (0),
@@ -93,7 +92,6 @@ void Krylov<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A
   // factorization.
   IsInitialized_ = false;
   IsComputed_ = false;
-  Condest_ = -STM::one ();
 
   A_ = A;
 }
@@ -301,25 +299,6 @@ double Krylov<MatrixType>::getComputeTime () const {
 template <class MatrixType>
 double Krylov<MatrixType>::getApplyTime () const {
   return ApplyTime_;
-}
-
-
-template <class MatrixType>
-typename Krylov<MatrixType>::magnitude_type
-Krylov<MatrixType>::
-computeCondEst (CondestType CT,
-                local_ordinal_type MaxIters,
-                magnitude_type Tol,
-                const Teuchos::Ptr<const row_matrix_type>& matrix)
-{
-  if (! isComputed ()) { // cannot compute right now
-    return -STM::one ();
-  }
-  // NOTE: this is computing the *local* condest
-  if (Condest_ == -STM::one ()) {
-    Condest_ = Ifpack2::Condest (*this, CT, MaxIters, Tol, matrix);
-  }
-  return Condest_;
 }
 
 

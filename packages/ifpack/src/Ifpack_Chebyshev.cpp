@@ -94,7 +94,7 @@ Ifpack_Chebyshev(const Epetra_Operator* Operator) :
   PolyDegree_(1),
   UseTranspose_(false),
   Condest_(-1.0),
-  ComputeCondest_(false),
+  /* ComputeCondest_(false), (Unused; commented out to avoid build warnings) */
   EigRatio_(30.0),
   Label_(),
   LambdaMin_(0.0),
@@ -136,7 +136,7 @@ Ifpack_Chebyshev(const Epetra_RowMatrix* Operator) :
   PolyDegree_(1),
   UseTranspose_(false),
   Condest_(-1.0),
-  ComputeCondest_(false),
+  /* ComputeCondest_(false), (Unused; commented out to avoid build warnings) */
   EigRatio_(30.0),
   EigMaxIters_(10),
   Label_(),
@@ -432,7 +432,7 @@ ostream& Ifpack_Chebyshev::Print(ostream & os) const
 double Ifpack_Chebyshev::
 Condest(const Ifpack_CondestType CT,
         const int MaxIters, const double Tol,
-	Epetra_RowMatrix* Matrix_in)
+        Epetra_RowMatrix* Matrix_in)
 {
   if (!IsComputed()) // cannot compute right now
     return(-1.0);

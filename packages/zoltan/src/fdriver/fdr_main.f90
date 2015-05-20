@@ -44,23 +44,23 @@
 !! @HEADER
  !!
 
-!/*--------------------------------------------------------------------------*/
-!/* Purpose: Driver for dynamic load-balance library, ZOLTAN.                */
-!/*                                                                          */
-!/*--------------------------------------------------------------------------*/
-!/* Author(s):  Matthew M. St.John (9226)                                    */
+!--------------------------------------------------------------------------
+! Purpose: Driver for dynamic load-balance library, ZOLTAN.                
+!                                                                          
+!--------------------------------------------------------------------------
+! Author(s):  Matthew M. St.John (9226)                                    
 !   Translated to Fortran by William F. Mitchell
-!/*--------------------------------------------------------------------------*/
-!/*--------------------------------------------------------------------------*/
-!/* Revision History:                                                        */
-!/*                                                                          */
-!/*    30 March 1999:    Date of creation                                    */
+!--------------------------------------------------------------------------
+!--------------------------------------------------------------------------
+! Revision History:                                                        
+!                                                                          
+!    30 March 1999:    Date of creation                                    
 !       1 September 1999: Fortran translation
-!/*--------------------------------------------------------------------------*/
+!--------------------------------------------------------------------------
 
-!/****************************************************************************/
-!/****************************************************************************/
-!/****************************************************************************/
+!**************************************************************************
+!**************************************************************************
+!**************************************************************************
 
 
 program fdriver
@@ -75,7 +75,7 @@ use dr_mm_io
 use dr_sort
 implicit none
 
-!/* Local declarations. */
+! Local declarations. 
   character(len=64)  :: cmd_file
 
   real(Zoltan_FLOAT) :: version
@@ -134,12 +134,12 @@ interface
 
 end interface
 
-!/***************************** BEGIN EXECUTION ******************************/
+!**************************** BEGIN EXECUTION *****************************
 
-!  /* initialize MPI */
+!   initialize MPI 
   call MPI_Init(error)
 
-!  /* get some machine information */
+!   get some machine information 
   call MPI_Comm_rank(MPI_COMM_WORLD, Proc, error)
   call MPI_Comm_size(MPI_COMM_WORLD, Num_Proc, error)
   namelen = MAX_PROCNAME_LEN
@@ -158,14 +158,14 @@ end interface
 
   cmd_file = "zdrive.inp"
 
-!  /* initialize Zoltan */
+!   initialize Zoltan 
   error = Zoltan_Initialize(version)
   if (error /= ZOLTAN_OK) then
     print *, "fatal: Zoltan_Initialize returned error code, ", error
     goto 9999
   endif
 
-!  /* initialize some variables */
+!   initialize some variables 
 
   allocate(Mesh, stat=alloc_stat)
   if (alloc_stat /= 0) then
@@ -195,7 +195,7 @@ end interface
   prob%ztnPrm_file        = ''
   nullify(prob%params)
 
-!  /* Read in the ascii input file */
+!   Read in the ascii input file 
   if(Proc == 0) then
     print *
     print *
@@ -213,14 +213,14 @@ end interface
     call print_input_info(6, Num_Proc, prob)
   endif
 
-!  /* broadcast the command info to all of the processor */
+!   broadcast the command info to all of the processor 
   call brdcst_cmd_info(Proc, prob, pio_info)
 
-!  /*
+!  
 !   * now read in the mesh and element information.
 !   * This is the only function call to do this. Upon return,
 !   * the mesh struct and the elements array should be filled.
-!   */
+!   
   if (.not. read_mesh(Proc, Num_Proc, prob, pio_info)) then
       print *, "fatal: Error returned from read_mesh"
       goto 9999
@@ -242,18 +242,18 @@ end interface
 ! endif
 ! KDDKDD  END TEMPORARY OUTPUT
 
-!  /*
+!  
 !   * now run zoltan to get a new load balance and perform
 !   * the migration
-!   */
+!   
   if (.not. run_zoltan(Proc, prob, pio_info)) then
       print *, "fatal: Error returned from run_zoltan"
       goto 9999
   endif
 
-!  /*
+!  
 !   * output the results
-!   */
+!   
   if (.not. output_results(cmd_file, Proc, Num_Proc, prob, pio_info, Mesh%elements)) then
       print *, "fatal: Error returned from output_results"
       goto 9999
@@ -276,14 +276,14 @@ end interface
 
 end program fdriver
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/* This function determines which input file type is being used,
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
+! This function determines which input file type is being used,
 ! * and calls the appropriate read function. If a new type of input
 ! * file is added to the driver, then a section needs to be added for
 ! * it here.
-! *---------------------------------------------------------------------------*/
+! *---------------------------------------------------------------------------
 logical function read_mesh(Proc, Num_Proc, prob, pio_info)
 use zoltan
 use zoltan_user_data
@@ -297,8 +297,8 @@ implicit none
   type(PROB_INFO) :: prob
   type(PARIO_INFO) :: pio_info
 
-!/* local declarations */
-!/*-----------------------------Execution Begins------------------------------*/
+! local declarations 
+!-----------------------------Execution Begins------------------------------
   if (pio_info%file_type == CHACO_FILE) then
     if (.not. read_chaco_mesh(Proc, Num_Proc, prob, pio_info, Mesh%elements)) then
         print *, "fatal: Error returned from read_chaco_mesh"
@@ -327,8 +327,8 @@ implicit none
   return
 end function read_mesh
 
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
 subroutine print_input_info(fp, Num_Proc, prob)
 use zoltan
 use dr_const
@@ -369,13 +369,13 @@ type(PROB_INFO) :: prob
 type(PARIO_INFO) :: pio_info
 type(ELEM_INFO), pointer :: elements(:)
 
-!/*
+!
 ! * For the first swipe at this, don't try to create a new
 ! * exodus/nemesis file or anything. Just get the global ids,
 ! * sort them, and print them to a new ascii file.
-! */
+! 
 
-!  /* Local declarations. */
+!   Local declarations. 
   character(len=FILENAME_MAX+1) :: par_out_fname, ctemp
 
   integer(Zoltan_INT), allocatable :: global_ids(:), parts(:), index(:)
@@ -392,7 +392,7 @@ type(ELEM_INFO), pointer :: elements(:)
 
   end interface
 
-!/***************************** BEGIN EXECUTION ******************************/
+!**************************** BEGIN EXECUTION *****************************
 
   allocate(global_ids(0:Mesh%num_elems),stat=alloc_stat)
   if (alloc_stat /= 0) then
@@ -439,7 +439,7 @@ type(ELEM_INFO), pointer :: elements(:)
 
   call dr_sort_index(0, Mesh%num_elems-1, global_ids, index)
 
-!  /* generate the parallel filename for this processor */
+!   generate the parallel filename for this processor 
   ctemp = pio_info%pexo_fname(1:len_trim(pio_info%pexo_fname))//".out"
   call gen_par_filename(ctemp, par_out_fname, pio_info, Proc, Num_Proc)
 
@@ -476,7 +476,7 @@ character(len=4096+1) :: inp_line
 ! we know what conditions were used to produce a given result).
 
 
-!  /* Open the file */
+!   Open the file 
   open(unit=file_cmd,file=cmd_file,action='read',iostat=iostat)
   if (iostat /= 0) then
     print *, "Error:  Could not find command file ", cmd_file

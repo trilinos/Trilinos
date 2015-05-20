@@ -186,7 +186,7 @@ void BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,N
 adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                              const LinearObjContainer & globalBCRows,
                              LinearObjContainer & ghostedObjs,
-                             bool zeroVectorRows) const
+                             bool zeroVectorRows, bool adjustX) const
 {
    typedef Teuchos::ArrayRCP<const double>::Ordinal Ordinal;
 
@@ -204,14 +204,16 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
    const BTLOC & b_globalBCRows = Teuchos::dyn_cast<const BTLOC>(globalBCRows); 
    BTLOC & b_ghosted = Teuchos::dyn_cast<BTLOC>(ghostedObjs); 
 
-   TEUCHOS_ASSERT(b_localBCRows.get_x()!=Teuchos::null);
-   TEUCHOS_ASSERT(b_globalBCRows.get_x()!=Teuchos::null);
+   TEUCHOS_ASSERT(b_localBCRows.get_f()!=Teuchos::null);
+   TEUCHOS_ASSERT(b_globalBCRows.get_f()!=Teuchos::null);
 
    // cast each component as needed to their product form
    RCP<PhysicallyBlockedLinearOpBase<ScalarT> > A = rcp_dynamic_cast<PhysicallyBlockedLinearOpBase<ScalarT> >(b_ghosted.get_A());
    RCP<ProductVectorBase<ScalarT> > f = rcp_dynamic_cast<ProductVectorBase<ScalarT> >(b_ghosted.get_f());
-   RCP<ProductVectorBase<ScalarT> > local_bcs  = rcp_dynamic_cast<ProductVectorBase<ScalarT> >(b_localBCRows.get_x(),true);
-   RCP<ProductVectorBase<ScalarT> > global_bcs = rcp_dynamic_cast<ProductVectorBase<ScalarT> >(b_globalBCRows.get_x(),true);
+   RCP<ProductVectorBase<ScalarT> > local_bcs  = rcp_dynamic_cast<ProductVectorBase<ScalarT> >(b_localBCRows.get_f(),true);
+   RCP<ProductVectorBase<ScalarT> > global_bcs = rcp_dynamic_cast<ProductVectorBase<ScalarT> >(b_globalBCRows.get_f(),true);
+
+   if(adjustX) f = rcp_dynamic_cast<ProductVectorBase<ScalarT> >(b_ghosted.get_x());
 
    // sanity check!
    if(A!=Teuchos::null) TEUCHOS_ASSERT(A->productRange()->numBlocks()==(int) blockDim);
@@ -286,11 +288,6 @@ adjustForDirichletConditions(const VectorType & local_bcs,
       if(global_bcs_array[i]==0.0)
          continue;
 
-      std::size_t numEntries = 0;
-      std::size_t sz = A->getNumEntriesInLocalRow(i);
-      Teuchos::Array<LocalOrdinalT> indices(sz);
-      Teuchos::Array<ScalarT> values(sz);
-
       if(local_bcs_array[i]==0.0 || zeroVectorRows) { 
          // this boundary condition was NOT set by this processor
 
@@ -298,6 +295,11 @@ adjustForDirichletConditions(const VectorType & local_bcs,
          if(!Teuchos::is_null(f))
             f_array[i] = 0.0;
          if(!Teuchos::is_null(A)) {
+            std::size_t numEntries = 0;
+            std::size_t sz = A->getNumEntriesInLocalRow(i);
+            Teuchos::Array<LocalOrdinalT> indices(sz);
+            Teuchos::Array<ScalarT> values(sz);
+
             A->getLocalRowCopy(i,indices,values,numEntries);
 
             for(std::size_t c=0;c<numEntries;c++) 
@@ -315,6 +317,11 @@ adjustForDirichletConditions(const VectorType & local_bcs,
          if(!Teuchos::is_null(f))
             f_array[i] /= scaleFactor;
          if(!Teuchos::is_null(A)) {
+            std::size_t numEntries = 0;
+            std::size_t sz = A->getNumEntriesInLocalRow(i);
+            Teuchos::Array<LocalOrdinalT> indices(sz);
+            Teuchos::Array<ScalarT> values(sz);
+ 
             A->getLocalRowCopy(i,indices,values,numEntries);
 
             for(std::size_t c=0;c<numEntries;c++) 

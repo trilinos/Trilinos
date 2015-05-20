@@ -54,23 +54,53 @@ namespace mesh {
 
 //----------------------------------------------------------------------------
 
+namespace {
+
+unsigned count_parallel_consistent_parts(const MetaData & meta, const unsigned* first, const unsigned* last) {
+    unsigned count = 0;
+    for (unsigned part_index=0; part_index < last-first; ++part_index) {
+        const unsigned part_ordinal = first[part_index];
+        if ( (part_ordinal != meta.locally_owned_part().mesh_meta_data_ordinal()) &&
+                (part_ordinal != meta.globally_shared_part().mesh_meta_data_ordinal()) &&
+                (meta.get_parts()[part_ordinal]->entity_membership_is_parallel_consistent() )) {
+            ++count;
+        }
+    }
+    return count;
+}
+
+void pack_bucket_part_list(const Bucket & bucket, CommBuffer & buf ) {
+    const MetaData & meta = bucket.mesh().mesh_meta_data();
+    const std::pair<const unsigned *, const unsigned *>
+      part_ordinals = bucket.superset_part_ordinals();
+    buf.pack<unsigned>( count_parallel_consistent_parts(meta, part_ordinals.first, part_ordinals.second) );
+    unsigned nparts = part_ordinals.second - part_ordinals.first;
+    for (unsigned part_index=0; part_index < nparts; ++part_index) {
+        const unsigned part_ordinal = part_ordinals.first[part_index];
+        if ( (part_ordinal != meta.locally_owned_part().mesh_meta_data_ordinal()) &&
+             (part_ordinal != meta.globally_shared_part().mesh_meta_data_ordinal()) &&
+             (meta.get_parts()[part_ordinal]->entity_membership_is_parallel_consistent() )) {
+            buf.pack<unsigned>(part_ordinal);
+        }
+    }
+}
+
+}
+
 void pack_entity_info(const BulkData& mesh, CommBuffer & buf , const Entity entity )
 {
   const EntityKey & key   = mesh.entity_key(entity);
   const unsigned    owner = mesh.parallel_owner_rank(entity);
-  const std::pair<const unsigned *, const unsigned *>
-    part_ordinals = mesh.bucket(entity).superset_part_ordinals();
-
-  const unsigned nparts = part_ordinals.second - part_ordinals.first ;
-  const unsigned tot_rel = mesh.count_relations(entity);
-  Bucket& bucket = mesh.bucket(entity);
-  unsigned ebo   = mesh.bucket_ordinal(entity);
 
   buf.pack<EntityKey>( key );
   buf.pack<unsigned>( owner );
-  buf.pack<unsigned>( nparts );
-  buf.pack<unsigned>( part_ordinals.first , nparts );
+  pack_bucket_part_list(mesh.bucket(entity), buf);
+
+  const unsigned tot_rel = mesh.count_relations(entity);
   buf.pack<unsigned>( tot_rel );
+
+  Bucket& bucket = mesh.bucket(entity);
+  unsigned ebo   = mesh.bucket_ordinal(entity);
 
   ThrowAssertMsg(mesh.is_valid(entity), "BulkData at " << &mesh << " does not know Entity " << entity.local_offset());
   const EntityRank end_rank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
@@ -82,21 +112,17 @@ void pack_entity_info(const BulkData& mesh, CommBuffer & buf , const Entity enti
       Entity const *rel_entities = bucket.begin(ebo, irank);
       ConnectivityOrdinal const *rel_ordinals = bucket.begin_ordinals(ebo, irank);
       Permutation const *rel_permutations = bucket.begin_permutations(ebo, irank);
-
       for ( unsigned i = 0 ; i < nrel ; ++i ) {
         if (mesh.is_valid(rel_entities[i])) {
+          ThrowAssert(rel_ordinals);
           buf.pack<EntityKey>( mesh.entity_key(rel_entities[i]) );
           buf.pack<unsigned>( rel_ordinals[i] );
           if (bucket.has_permutation(irank)) {
+            ThrowAssert(rel_permutations);
             buf.pack<unsigned>( rel_permutations[i] );
           } else {
             buf.pack<unsigned>(0u);
           }
-        } else { // relation to invalid entity (FIXED CONNECTIVITY CASE)
-          // TODO:  Consider not communicating relations to invalid entities...
-          buf.pack<EntityKey>( EntityKey() ); // invalid EntityKey
-          buf.pack<unsigned>( rel_ordinals[i] );
-          buf.pack<unsigned>(0u); // permutation
         }
       }
     }
@@ -138,9 +164,6 @@ void unpack_entity_info(
     buf.unpack<EntityKey>( rel_key );
     buf.unpack<unsigned>( rel_id );
     buf.unpack<unsigned>( rel_attr );
-    if (rel_key == EntityKey()) {
-      continue;
-    }
     Entity const entity =
       mesh.get_entity( rel_key.rank(), rel_key.id() );
     if ( mesh.is_valid(entity) ) {
@@ -156,88 +179,69 @@ void unpack_entity_info(
 
 void pack_field_values(const BulkData& mesh, CommBuffer & buf , Entity entity )
 {
-  if (!mesh.is_field_updating_active()) {
-    return;
-  }
-
-  const Bucket   & bucket = mesh.bucket(entity);
-  const MetaData & mesh_meta_data = MetaData::get(mesh);
-
-  const std::vector< FieldBase * > & fields = mesh_meta_data.get_fields();
-
-  for ( std::vector< FieldBase * >::const_iterator
-        i = fields.begin() ; i != fields.end() ; ++i ) {
-
-    const FieldBase & f = **i ;
-
-    if(is_matching_rank(f, bucket)) {
-
-      if ( f.data_traits().is_pod ) {
-        const unsigned size = field_bytes_per_entity( f, bucket );
-
-	buf.pack<unsigned>( size );
-
-	if ( size ) {
-	  unsigned char * const ptr =
-	    reinterpret_cast<unsigned char *>( stk::mesh::field_data( f , entity ) );
-	  buf.pack<unsigned char>( ptr , size );
-	}
-      }
+    if (!mesh.is_field_updating_active()) {
+        return;
     }
-  }
+    const Bucket   & bucket = mesh.bucket(entity);
+    const MetaData & mesh_meta_data = MetaData::get(mesh);
+    const std::vector< FieldBase * > & fields = mesh_meta_data.get_fields(bucket.entity_rank());
+    for ( std::vector< FieldBase * >::const_iterator
+            i = fields.begin() ; i != fields.end() ; ++i ) {
+        const FieldBase & f = **i ;
+        if ( f.data_traits().is_pod ) {
+            const unsigned size = field_bytes_per_entity( f, bucket );
+#ifndef NDEBUG
+            buf.pack<unsigned>( size );
+#endif
+            if ( size ) {
+                unsigned char * const ptr =
+                        reinterpret_cast<unsigned char *>( stk::mesh::field_data( f , entity ) );
+                buf.pack<unsigned char>( ptr , size );
+            }
+        }
+    }
 }
 
 bool unpack_field_values(const BulkData& mesh,
-  CommBuffer & buf , Entity entity , std::ostream & error_msg )
+                         CommBuffer & buf , Entity entity , std::ostream & error_msg )
 {
-  if (!mesh.is_field_updating_active()) {
-    return true;
-  }
-
-  const Bucket   & bucket = mesh.bucket(entity);
-  const MetaData & mesh_meta_data = MetaData::get(mesh);
-
-  const std::vector< FieldBase * > & fields = mesh_meta_data.get_fields();
-
-  const std::vector< FieldBase * >::const_iterator i_end = fields.end();
-  const std::vector< FieldBase * >::const_iterator i_beg = fields.begin();
-
-  std::vector< FieldBase * >::const_iterator i ;
-
-  bool ok = true ;
-
-  for ( i = i_beg ; i_end != i ; ) {
-    const FieldBase & f = **i ; ++i ;
-
-    if(is_matching_rank(f, bucket)) {
-
-      if ( f.data_traits().is_pod ) {
-
-	const unsigned size = field_bytes_per_entity( f, bucket );
-	unsigned recv_data_size = 0 ;
-	buf.unpack<unsigned>( recv_data_size );
-
-	if ( size != recv_data_size ) {
-	  if ( ok ) {
-	    ok = false ;
-	    error_msg << mesh.identifier(entity);
-	  }
-	  error_msg << " " << f.name();
-	  error_msg << " " << size ;
-	  error_msg << " != " << recv_data_size ;
-	  buf.skip<unsigned char>( recv_data_size );
-	}
-	else if ( size ) { // Non-zero and equal
-	  unsigned char * ptr =
-	    reinterpret_cast<unsigned char *>( stk::mesh::field_data( f , entity ) );
-	  buf.unpack<unsigned char>( ptr , size );
-	}
-
-      }
+    if (!mesh.is_field_updating_active()) {
+        return true;
     }
-  }
-
-  return ok ;
+    const Bucket   & bucket = mesh.bucket(entity);
+    const MetaData & mesh_meta_data = MetaData::get(mesh);
+    const std::vector< FieldBase * > & fields = mesh_meta_data.get_fields(bucket.entity_rank());
+    const std::vector< FieldBase * >::const_iterator i_end = fields.end();
+    const std::vector< FieldBase * >::const_iterator i_beg = fields.begin();
+    std::vector< FieldBase * >::const_iterator i ;
+    bool ok = true ;
+    for ( i = i_beg ; i_end != i ; ) {
+        const FieldBase & f = **i ; ++i ;
+        if ( f.data_traits().is_pod ) {
+            const unsigned size = field_bytes_per_entity( f, bucket );
+#ifndef NDEBUG
+            unsigned recv_data_size = 0 ;
+            buf.unpack<unsigned>( recv_data_size );
+            if ( size != recv_data_size ) {
+                if ( ok ) {
+                    ok = false ;
+                    error_msg << mesh.identifier(entity);
+                }
+                error_msg << " " << f.name();
+                error_msg << " " << size ;
+                error_msg << " != " << recv_data_size ;
+                buf.skip<unsigned char>( recv_data_size );
+            }
+#endif
+            if ( size )
+            { // Non-zero and equal
+                unsigned char * ptr =
+                        reinterpret_cast<unsigned char *>( stk::mesh::field_data( f , entity ) );
+                buf.unpack<unsigned char>( ptr , size );
+            }
+        }
+    }
+    return ok ;
 }
 
 //----------------------------------------------------------------------
@@ -322,9 +326,6 @@ PairIterEntityComm EntityCommDatabase::comm( const EntityKey & key, const Ghosti
 
 bool EntityCommDatabase::insert( const EntityKey & key, const EntityCommInfo & val, int owner )
 {
-  TraceIfWatching("stk::mesh::EntityComm::insert", LOG_ENTITY, key);
-  DiagIfWatching(LOG_ENTITY, key, "owner " << owner);
-
   insert(key);
   EntityCommInfoVector & comm_map = m_last_lookup->second.comm_map;
   m_last_lookup->second.owner_rank = owner;
@@ -344,8 +345,6 @@ bool EntityCommDatabase::insert( const EntityKey & key, const EntityCommInfo & v
 
 bool EntityCommDatabase::erase( const EntityKey & key, const EntityCommInfo & val )
 {
-  TraceIfWatching("stk::mesh::EntityComm::erase(comm)", LOG_ENTITY, key);
-
   if (!cached_find(key)) return false;
 
   EntityCommInfoVector & comm_map = m_last_lookup->second.comm_map;
@@ -368,8 +367,6 @@ bool EntityCommDatabase::erase( const EntityKey & key, const EntityCommInfo & va
 
 bool EntityCommDatabase::erase( const EntityKey & key, const Ghosting & ghost )
 {
-  TraceIfWatching("stk::mesh::EntityComm::erase(ghost)", LOG_ENTITY, key);
-
   if (!cached_find(key)) return false;
 
   EntityCommInfoVector & comm_map = m_last_lookup->second.comm_map;
@@ -400,8 +397,6 @@ bool EntityCommDatabase::erase( const EntityKey & key, const Ghosting & ghost )
 
 void EntityCommDatabase::comm_clear_ghosting(const EntityKey & key)
 {
-  TraceIfWatching("stk::mesh::EntityComm::comm_clear_ghosting", LOG_ENTITY, key);
-
   if (!cached_find(key)) return;
 
   EntityCommInfoVector & comm_map = m_last_lookup->second.comm_map;
@@ -418,8 +413,6 @@ void EntityCommDatabase::comm_clear_ghosting(const EntityKey & key)
 
 void EntityCommDatabase::comm_clear(const EntityKey & key)
 {
-  TraceIfWatching("stk::mesh::EntityComm::comm_clear", LOG_ENTITY, key);
-
   if (!cached_find(key)) return;
 
   m_last_lookup = m_comm_map.erase(m_last_lookup);
@@ -430,9 +423,6 @@ bool EntityCommDatabase::change_owner_rank(const EntityKey& key, int owner)
 {
   // Do not add key to map, only update rank if it was already in the map
   if (cached_find(key)) {
-    TraceIfWatching("stk::mesh::EntityComm::change_owner_rank", LOG_ENTITY, key);
-    DiagIfWatching(LOG_ENTITY, key, "new owner " << owner);
-
     const int orig_owner = m_last_lookup->second.owner_rank;
     m_last_lookup->second.owner_rank = owner;
     return orig_owner != owner;

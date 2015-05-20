@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -307,7 +307,7 @@ public:
                                       : (nw/2) * ( nw + 1 );
 
     for ( unsigned i = 0 ; i < Repeat ; ++i ) {
-      Kokkos::parallel_reduce( nwork , functor_type(nwork,Count) , result[i] );
+      Kokkos::parallel_reduce( "TestKernelReduce" , nwork , functor_type(nwork,Count) , result[i] );
     }
 
     for ( unsigned i = 0 ; i < Repeat ; ++i ) {
@@ -353,7 +353,8 @@ public:
 
       // Test result to host pointer:
 
-      Kokkos::parallel_reduce( nw , functor_type(nw,count) , host_result.ptr_on_device() );
+      std::string str("TestKernelReduce");
+      Kokkos::parallel_reduce( str , nw , functor_type(nw,count) , host_result.ptr_on_device() );
 
       for ( unsigned j = 0 ; j < count ; ++j ) {
         const unsigned long correct = 0 == j % 3 ? nw : nsum ;

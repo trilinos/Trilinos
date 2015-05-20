@@ -59,12 +59,12 @@ MOERTEL::Mortar_ML_Preconditioner::Mortar_ML_Preconditioner(
                                     bool constructnow) :
 iscomputed_(false),
 mlparams_(mlparams),
+maxlevels_(0),
 Atilde_(Atilde),
 A_(A),
 WT_(WT),
 B_(B),
-Annmap_(Annmap),
-maxlevels_(0)
+Annmap_(Annmap)
 {
   label_  = "MOERTEL::Mortar_ML_Preconditioner";
 

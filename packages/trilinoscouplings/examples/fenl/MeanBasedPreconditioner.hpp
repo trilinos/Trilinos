@@ -183,7 +183,7 @@ namespace Example {
       typedef Tpetra::Map<LO,GO,N> Map;
       typedef MueLu::TpetraOperator<Scalar,LO,GO,N> PreconditionerType;
 
-      typedef Kokkos::CrsMatrix<Scalar, LO, typename N::execution_space, void, size_t> KokkosMatrixType;
+      typedef typename MatrixType::local_matrix_type KokkosMatrixType;
 
       typedef typename KokkosMatrixType::StaticCrsGraphType KokkosGraphType;
       typedef typename KokkosMatrixType::values_type KokkosMatrixValuesType;

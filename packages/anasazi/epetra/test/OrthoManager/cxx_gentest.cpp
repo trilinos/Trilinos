@@ -71,10 +71,10 @@ int testProjectGen(RCP<GenOrthoManager<ST,MV,OP> > OM, RCP<const MV> S, RCP<cons
 
 double MVDiff(const MV &X, const MV &Y);
 
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
   typedef MultiVecTraits<double,MV>    MVT;
-  typedef OperatorTraits<double,MV,OP> OPT;
+  //typedef OperatorTraits<double,MV,OP> OPT;
   typedef ScalarTraits<double>         SCT;
   typedef SCT::magnitudeType           MT;
 
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
     //
     // want a set so that <X1b,Y1> = I = <X2b,Y2>... do this via modifications of X1,X2
     //
-    // need <Y1,X1> s.p.d., so let X1 = M*Y1, so that 
+    // need <Y1,X1> s.p.d., so let X1 = M*Y1, so that
     // <Y1,X1> = Y1'*M*M*Y1, which is a non-trivial s.p.d. matrix
     // same for <X2,Y2>
     //
@@ -196,8 +196,8 @@ int main(int argc, char *argv[])
       // Y1
       MVT::MvRandom(*Y1);
       rank = OM_basic->normalize(*Y1);
-      TEUCHOS_TEST_FOR_EXCEPTION(rank != sizeX1, std::runtime_error, 
-          "normalize(Y1) returned rank " << rank << " from " 
+      TEUCHOS_TEST_FOR_EXCEPTION(rank != sizeX1, std::runtime_error,
+          "normalize(Y1) returned rank " << rank << " from "
           << sizeX1 << " vectors. Cannot continue.");
       err = OM_basic->orthonormError(*Y1);
       TEUCHOS_TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
@@ -207,8 +207,8 @@ int main(int argc, char *argv[])
       // Y2
       MVT::MvRandom(*Y2);
       rank = OM_basic->normalize(*Y2);
-      TEUCHOS_TEST_FOR_EXCEPTION(rank != sizeX2, std::runtime_error, 
-          "normalize(Y1) returned rank " << rank << " from " 
+      TEUCHOS_TEST_FOR_EXCEPTION(rank != sizeX2, std::runtime_error,
+          "normalize(Y1) returned rank " << rank << " from "
           << sizeX2 << " vectors. Cannot continue.");
       err = OM_basic->orthonormError(*Y2);
       TEUCHOS_TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
@@ -341,7 +341,7 @@ int main(int argc, char *argv[])
     {
       // just a random multivector
       MVT::MvRandom(*S);
-      
+
       MyOM->stream(Errors) << " projectGen(): testing on random multivector " << endl;
       numFailed += testProjectGen(OM,S,X1,Y1,X2,Y2,false);
       MyOM->stream(Errors) << " projectGen(biOrtho): testing on random multivector " << endl;
@@ -351,19 +351,19 @@ int main(int argc, char *argv[])
 
     {
       // run a X1,Y2 range multivector against P_{X1,X1} P_{Y2,Y2}
-      // note, this is allowed under the restrictions on projectGen, 
+      // note, this is allowed under the restrictions on projectGen,
       // because <X1,Y2> = 0
       // also, <Y2,Y2> = I, but <X1,X1> != I, so biOrtho must be set to false
       // it should destory the data, as:
       // P_{X1,X1} P_{Y2,Y2} (X1*C1 + Y2*C2) = P_{X1,X1} X1*C1 = 0
-      // and 
+      // and
       // P_{Y2,Y2} P_{X1,X1} (X1*C1 + Y2*C2) = P_{Y2,Y2} Y2*C2 = 0
       SerialDenseMatrix<int,ST> C1(sizeX1,sizeS), C2(sizeX2,sizeS);
       C1.random();
       C2.random();
       MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
       MVT::MvTimesMatAddMv(ONE,*Y2,C2,ONE,*S);
-      
+
       MyOM->stream(Errors) << " projectGen(): testing [X1 Y2]-range multivector against P_{X1,X1} P_{Y2,Y2} " << endl;
       numFailed += testProjectGen(OM,S,X1,X1,Y2,Y2,false);
     }
@@ -373,19 +373,19 @@ int main(int argc, char *argv[])
       // similar to above
       //
       // run a X2,Y1 range multivector against P_{X2,X2} P_{Y1,Y1}
-      // note, this is allowed under the restrictions on projectGen, 
+      // note, this is allowed under the restrictions on projectGen,
       // because <X2,Y1> = 0
       // also, <Y1,Y1> = I, but <X2,X2> != I, so biOrtho must be set to false
       // it should destory the data, as:
       // P_{X2,X2} P_{Y1,Y1} (X2*C2 + Y1*C1) = P_{X2,X2} X2*C2 = 0
-      // and 
+      // and
       // P_{Y1,Y1} P_{X2,X2} (X2*C2 + Y1*C1) = P_{Y1,Y1} Y1*C1 = 0
       SerialDenseMatrix<int,ST> C1(sizeX1,sizeS), C2(sizeX2,sizeS);
       C1.random();
       C2.random();
       MVT::MvTimesMatAddMv(ONE,*X2,C2,ZERO,*S);
       MVT::MvTimesMatAddMv(ONE,*Y1,C1,ONE,*S);
-      
+
       MyOM->stream(Errors) << " projectGen(): testing [X2 Y1]-range multivector against P_{X2,X2} P_{Y1,Y1} " << endl;
       numFailed += testProjectGen(OM,S,X2,X2,Y1,Y1,false);
     }
@@ -394,7 +394,7 @@ int main(int argc, char *argv[])
     {
       // just a random multivector
       MVT::MvRandom(*S);
-      
+
       MyOM->stream(Errors) << " projectAndNormalizeGen(): testing on random multivector " << endl;
       numFailed += testProjectAndNormalizeGen(OM,S,X1,Y1,X2,Y2,false);
       MyOM->stream(Errors) << " projectAndNormalizeGen(biOrtho): testing on random multivector " << endl;
@@ -404,10 +404,10 @@ int main(int argc, char *argv[])
 
     {
       // run a X1,Y2 range multivector against P_{X1,X1} P_{Y2,Y2}
-      // note, this is allowed under the restrictions on projectAndNormalizeGen, 
+      // note, this is allowed under the restrictions on projectAndNormalizeGen,
       // because <X1,Y2> = 0
       // also, <Y2,Y2> = I, but <X1,X1> != I, so biOrtho must be set to false
-      // it should require randomization, as 
+      // it should require randomization, as
       // P_{X1,X1} P_{Y2,Y2} (X1*C1 + Y2*C2) = P_{X1,X1} X1*C1 = 0
       // and
       // P_{Y2,Y2} P_{X1,X1} (X1*C1 + Y2*C2) = P_{Y2,Y2} Y2*C2 = 0
@@ -416,7 +416,7 @@ int main(int argc, char *argv[])
       C2.random();
       MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
       MVT::MvTimesMatAddMv(ONE,*Y2,C2,ONE,*S);
-      
+
       MyOM->stream(Errors) << " projectAndNormalizeGen(): testing [X1 Y2]-range multivector against P_{X1,X1} P_{Y2,Y2} " << endl;
       numFailed += testProjectAndNormalizeGen(OM,S,X1,X1,Y2,Y2,false);
     }
@@ -426,19 +426,19 @@ int main(int argc, char *argv[])
       // similar to above
       //
       // run a X2,Y1 range multivector against P_{X2,X2} P_{Y1,Y1}
-      // note, this is allowed under the restrictions on projectGen, 
+      // note, this is allowed under the restrictions on projectGen,
       // because <X2,Y1> = 0
       // also, <Y1,Y1> = I, but <X2,X2> != I, so biOrtho must be set to false
-      // it should require randomization, as 
+      // it should require randomization, as
       // P_{X2,X2} P_{Y1,Y1} (X2*C2 + Y1*C1) = P_{X2,X2} X2*C2 = 0
-      // and 
+      // and
       // P_{Y1,Y1} P_{X2,X2} (X2*C2 + Y1*C1) = P_{Y1,Y1} Y1*C1 = 0
       SerialDenseMatrix<int,ST> C1(sizeX1,sizeS), C2(sizeX2,sizeS);
       C1.random();
       C2.random();
       MVT::MvTimesMatAddMv(ONE,*X2,C2,ZERO,*S);
       MVT::MvTimesMatAddMv(ONE,*Y1,C1,ONE,*S);
-      
+
       MyOM->stream(Errors) << " projectGen(): testing [X2 Y1]-range multivector against P_{X2,X2} P_{Y1,Y1} " << endl;
       numFailed += testProjectGen(OM,S,X2,X2,Y1,Y1,false);
     }
@@ -450,10 +450,10 @@ int main(int argc, char *argv[])
       RCP<MV> mid = MVT::Clone(*S,1);
       SerialDenseMatrix<int,ST> c(sizeS,1);
       MVT::MvTimesMatAddMv(ONE,*S,c,ZERO,*mid);
-      std::vector<int> ind(1); 
+      std::vector<int> ind(1);
       ind[0] = sizeS-1;
       MVT::SetBlock(*mid,ind,*S);
-      
+
       MyOM->stream(Errors) << " projectAndNormalizeGen(): testing on rank-deficient multivector " << endl;
       numFailed += testProjectAndNormalizeGen(OM,S,X1,Y1,X2,Y2,false);
       MyOM->stream(Errors) << " projectAndNormalizeGen(biOrtho): testing on rank-deficient multivector " << endl;
@@ -467,12 +467,12 @@ int main(int argc, char *argv[])
       MVT::MvRandom(*one);
       // put multiple of column 0 in columns 0:sizeS-1
       for (int i=0; i<sizeS; i++) {
-        std::vector<int> ind(1); 
+        std::vector<int> ind(1);
         ind[0] = i;
         RCP<MV> Si = MVT::CloneViewNonConst(*S,ind);
         MVT::MvAddMv(SCT::random(),*one,ZERO,*one,*Si);
       }
-      
+
       MyOM->stream(Errors) << " projectAndNormalizeGen(): testing on rank-1 multivector " << endl;
       numFailed += testProjectAndNormalizeGen(OM,S,X1,Y1,X2,Y2,false);
       MyOM->stream(Errors) << " projectAndNormalizeGen(biOrtho): testing on rank-1 multivector " << endl;
@@ -505,10 +505,10 @@ int main(int argc, char *argv[])
 
 
 ////////////////////////////////////////////////////////////////////////////
-int testProjectAndNormalizeGen(RCP<GenOrthoManager<ST,MV,OP> > OM, 
-                               RCP<const MV> S, 
+int testProjectAndNormalizeGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
+                               RCP<const MV> S,
                                RCP<const MV> X1, RCP<const MV> Y1,
-                               RCP<const MV> X2, RCP<const MV> Y2, bool isBiortho) 
+                               RCP<const MV> X2, RCP<const MV> Y2, bool isBiortho)
 {
   typedef MultiVecTraits<double,MV>    MVT;
   typedef OperatorTraits<double,MV,OP> OPT;
@@ -530,7 +530,7 @@ int testProjectAndNormalizeGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
   //   <S_out,Y1> = 0
   //   <S_out,Y2> = 0
   //   S_in = S_out B + X1 C1 + X2 C2
-  // 
+  //
   // we will loop over an integer specifying the test combinations
   // the bit pattern for the different tests is listed in parenthesis
   //
@@ -543,21 +543,21 @@ int testProjectAndNormalizeGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
   // the latter two should be tested to give the same answer
   // this relies on <X1,Y2> = 0 = <X2,Y1>, ensured in the main() routine
   //
-  // for each of these, we should test 
+  // for each of these, we should test
   // with C1, C2 and B
   // with and without isBiortho (if isBiortho==true)  (1--)
   //
   // if hasM:
-  // with and without MX1,MY1   (1---) 
-  // with and without MX2,MY2  (1----) 
-  // with and without MS      (1-----) 
+  // with and without MX1,MY1   (1---)
+  // with and without MX2,MY2  (1----)
+  // with and without MS      (1-----)
   //
   // as hasM controls the upper level bits, we need only run test cases 0-7 if hasM==false
   // otherwise, we run test cases 0-63
   //
 
   int numtests;
-  RCP<const MV> MX1, MX2, MY1, MY2; 
+  RCP<const MV> MX1, MX2, MY1, MY2;
   RCP<MV> MS;
   if (hasM) {
     MX1 = MVT::Clone(*S,sizeX1);
@@ -635,7 +635,7 @@ int testProjectAndNormalizeGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
       theY = tuple(Y1,Y2);
       theMX = tuple(MX1,MX2);
       theMY = tuple(MY1,MY2);
-      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)), 
+      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)),
                  rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
     }
 
@@ -682,7 +682,7 @@ int testProjectAndNormalizeGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
         break;
       }
       ret_out.push_back(ret);
-      // projectAndNormalizeGen() is only required to return a 
+      // projectAndNormalizeGen() is only required to return a
       // basis of rank "ret"
       // this is what we will test:
       //   the first "ret" columns in Scopy, MScopy
@@ -744,7 +744,7 @@ int testProjectAndNormalizeGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
           break;
         }
         ret_out.push_back(ret);
-        // projectAndNormalizeGen() is only required to return a 
+        // projectAndNormalizeGen() is only required to return a
         // basis of rank "ret"
         // this is what we will test:
         //   the first "ret" columns in Scopy, MScopy
@@ -865,10 +865,10 @@ int testProjectAndNormalizeGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
 
 
 ////////////////////////////////////////////////////////////////////////////
-int testProjectGen(RCP<GenOrthoManager<ST,MV,OP> > OM, 
-                   RCP<const MV> S, 
+int testProjectGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
+                   RCP<const MV> S,
                    RCP<const MV> X1, RCP<const MV> Y1,
-                   RCP<const MV> X2, RCP<const MV> Y2, bool isBiortho) 
+                   RCP<const MV> X2, RCP<const MV> Y2, bool isBiortho)
 {
   typedef MultiVecTraits<double,MV>    MVT;
   typedef OperatorTraits<double,MV,OP> OPT;
@@ -888,7 +888,7 @@ int testProjectGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
   //   <S_out,Y1> = 0
   //   <S_out,Y2> = 0
   //   S_in = S_out + X1 C1 + X2 C2
-  // 
+  //
   // we will loop over an integer specifying the test combinations
   // the bit pattern for the different tests is listed in parenthesis
   //
@@ -901,21 +901,21 @@ int testProjectGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
   // the latter two should be tested to give the same answer
   // this relies on <X1,Y2> = 0 = <X2,Y1>, ensured in the main() routine
   //
-  // for each of these, we should test 
+  // for each of these, we should test
   // with C1 and C2
   // with and without isBiortho (if isBiortho==true)  (1--)
   //
   // if hasM:
-  // with and without MX1,MY1   (1---) 
-  // with and without MX2,MY2  (1----) 
-  // with and without MS      (1-----) 
+  // with and without MX1,MY1   (1---)
+  // with and without MX2,MY2  (1----)
+  // with and without MS      (1-----)
   //
   // as hasM controls the upper level bits, we need only run test cases 0-7 if hasM==false
   // otherwise, we run test cases 0-63
   //
 
   int numtests;
-  RCP<const MV> MX1, MX2, MY1, MY2; 
+  RCP<const MV> MX1, MX2, MY1, MY2;
   RCP<MV> MS;
   if (hasM) {
     MX1 = MVT::Clone(*S,sizeX1);
@@ -992,7 +992,7 @@ int testProjectGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
       theY = tuple(Y1,Y2);
       theMX = tuple(MX1,MX2);
       theMY = tuple(MY1,MY2);
-      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)), 
+      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)),
                  rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
     }
 
@@ -1062,7 +1062,7 @@ int testProjectGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
         // however, save copies of the C
         S_outs.push_back( Scopy );
         MS_outs.push_back( MScopy );
-        // we are in a special case: P_{X1,Y1} and P_{X2,Y2}, so we know we applied 
+        // we are in a special case: P_{X1,Y1} and P_{X2,Y2}, so we know we applied
         // two projectors, and therefore have to C[i]
         C_outs.push_back( Array<RCP<SerialDenseMatrix<int,ST> > >() );
         // reverse the Cs to compensate for the reverse projectors
@@ -1131,10 +1131,10 @@ int testProjectGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
       //    output 1 == output 2
       for (unsigned int o1=0; o1<S_outs.size(); o1++) {
         for (unsigned int o2=o1+1; o2<S_outs.size(); o2++) {
-          // don't need to check MS_outs because we check 
+          // don't need to check MS_outs because we check
           //   S_outs and MS_outs = M*S_outs
           // don't need to check C_outs either
-          //   
+          //
           // check that S_outs[o1] == S_outs[o2]
           MT err = MVDiff(*S_outs[o1],*S_outs[o2]);
           if (err > TOL) {
@@ -1163,10 +1163,10 @@ int testProjectGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
 
 
 
-double MVDiff(const MV &X, const MV &Y) 
+double MVDiff(const MV &X, const MV &Y)
 {
   typedef MultiVecTraits<double,MV>    MVT;
-  typedef OperatorTraits<double,MV,OP> OPT;
+  //typedef OperatorTraits<double,MV,OP> OPT; // unused
   typedef ScalarTraits<double>         SCT;
   typedef SCT::magnitudeType           MT;
 

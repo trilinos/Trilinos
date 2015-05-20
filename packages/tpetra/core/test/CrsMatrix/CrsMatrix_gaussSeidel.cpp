@@ -460,11 +460,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
   // error and do the right thing.
   //
   // FIXME (mfh 15 Oct 2014) This is a revision of the above comment.
-  // KokkosClassic::TBBNode doesn't have deterministic reductions;
-  // they might produce slightly different results when called twice
-  // for the same vector.  Thus, we really need some kind of tolerance
-  // for these tests.  For the prefactor, square root of N (the usual
-  // heuristic) was not enough; we had to use N instead.
+  // KokkosClassic::DoNotUse::TBBNode doesn't have deterministic
+  // reductions; they might produce slightly different results when
+  // called twice for the same vector.  Thus, we really need some kind
+  // of tolerance for these tests.  For the prefactor, square root of
+  // N (the usual heuristic) was not enough; we had to use N instead.
   const magnitude_type testTolPrefactor =
     static_cast<magnitude_type> (B->getGlobalLength ());
   const magnitude_type testTol =
@@ -863,11 +863,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, reorderedGaussSeidelSerial, LocalO
   // error and do the right thing.
   //
   // FIXME (mfh 15 Oct 2014) This is a revision of the above comment.
-  // KokkosClassic::TBBNode doesn't have deterministic reductions;
-  // they might produce slightly different results when called twice
-  // for the same vector.  Thus, we really need some kind of tolerance
-  // for these tests.  For the prefactor, square root of N (the usual
-  // heuristic) was not enough; we had to use N instead.
+  // KokkosClassic::DoNotUse::TBBNode doesn't have deterministic
+  // reductions; they might produce slightly different results when
+  // called twice for the same vector.  Thus, we really need some kind
+  // of tolerance for these tests.  For the prefactor, square root of
+  // N (the usual heuristic) was not enough; we had to use N instead.
   const magnitude_type testTolPrefactor =
     static_cast<magnitude_type> (B->getGlobalLength ());
   const magnitude_type testTol =

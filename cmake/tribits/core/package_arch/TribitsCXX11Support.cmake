@@ -43,13 +43,14 @@ INCLUDE(CheckCXXSourceCompiles)
 #
 # Sets up C++11 flags if not already set.
 #
-# On input, if ${PROJECT_NAME}_CXX11_FLAGS is already set, then this
-# function does nothing.  If not already set on input, then a set of
-# try-compile (but not try-run) commands are performed to try common C++11
-# compiler flags testing against known flags.  If a set of flags is found that
-# enables C++11, then those flags are used.  The first set of flags that
-# passes the try-compile test is set into the cache variable
-# ${PROJECT_NAME}_CXX11_FLAGS on output.
+# On input, if ${PROJECT_NAME}_CXX11_FLAGS is already set, then this function
+# does nothing.  If not already set on input, then a set of try-compile (but
+# not try-run) commands are performed to try common C++11 compiler flags
+# testing against known flags.  If a set of flags is found that enables C++11,
+# then those flags are used.  The first set of flags that passes the
+# try-compile test is set into the cache variable ${PROJECT_NAME}_CXX11_FLAGS
+# on output.  If no flags can be found that passes the compile-time tests,
+# then this function calls MESSAGE(FATAL_ERROR ...) and aborts ...
 #
 FUNCTION(TRIBITS_FIND_CXX11_FLAGS)
 
@@ -58,7 +59,7 @@ FUNCTION(TRIBITS_FIND_CXX11_FLAGS)
   ## or if the user has not overridden then
   ##
 
-  IF(NOT ${PROJECT_NAME}_CXX11_FLAGS)
+  IF ("${${PROJECT_NAME}_CXX11_FLAGS}" STREQUAL "")
 
      MESSAGE("-- " "Search for C++11 compiler flag ...")
      INCLUDE(CheckCXXSourceCompiles)
@@ -71,7 +72,14 @@ FUNCTION(TRIBITS_FIND_CXX11_FLAGS)
        "-std=c++0x"    # Older gcc
        "-std=gnu++11"  # gcc
        "/Qstd=c++11"   # intel windows
+       " "             # MSVC++ 2012 (C++11 is on by default!)
        )
+       # NOTE: For the last item, the single space " " is used so as to
+       # satisfy logic that compares to "" (with no space).  Note that the
+       # last " " entry will work for every C++ compiler that has C++11 turned
+       # on in the future.  Therefore, at some point in the future, we will
+       # likely move " " to the top of the list once it becomes the most
+       # common case.
 
      ##
      ## Same CXX11 source
@@ -143,6 +151,19 @@ FUNCTION(TRIBITS_FIND_CXX11_FLAGS)
 
      ENDFOREACH()
 
+     IF ("${${PROJECT_NAME}_CXX11_FLAGS}" STREQUAL "")
+      MESSAGE(FATAL_ERROR
+        "Error, a set of standard compiler flags cannot be found"
+        " such that this C++ compiler is able to compile basic C++11"
+        " features!  Please select a C++ compiler (and compatible compilers"
+        " for other languages) that supports C++11.  Or, if this C++ compiler does"
+        " support C++11 but a special set of compiler options is needed,"
+        " then set these flags using"
+        " -D${PROJECT_NAME}_CXX11_FLAGS=\"<c++11-flags>\".  Or, if C++11"
+        " support in this project is not needed or desired, then set"
+        " -D${PROJECT_NAME}_ENABLE_CXX11=OFF.")
+     ENDIF()
+
   ELSE()
 
      ##
@@ -156,7 +177,7 @@ ENDFUNCTION()
 
 
 #
-# Assert of C++11 support is working and otherwise disable support.
+# Check if C++11 support is working or not!
 #
 
 FUNCTION(TRIBITS_CHECK_CXX11_SUPPORT VARNAME)

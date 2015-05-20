@@ -81,20 +81,44 @@ void Trilinos_Util_ReadHpc2Epetra_internal(
   }
   int_type numGlobalEquations, total_nnz;
   int cnt;
+  // mfh 24 Mar 2015: We use temporaries of the type corresponding to
+  // the sscanf format specifiers, in order to avoid compiler warnings
+  // about the sscanf output arguments' types not matching their
+  // corresponding format specifiers.  This was a harmless warning,
+  // because the 'sizeof' branch prevented incorrect execution, but
+  // the warning is easy to fix.
   if(sizeof(int) == sizeof(int_type)) {
-    cnt = fscanf(in_file,"%d",&numGlobalEquations);
+    int numGlobalEquations_int, total_nnz_int;
+
+    cnt = fscanf(in_file,"%d",&numGlobalEquations_int);
     assert(cnt > 0);
-    cnt = fscanf(in_file,"%d",&total_nnz);
+    cnt = fscanf(in_file,"%d",&total_nnz_int);
     assert(cnt > 0);
+
+    numGlobalEquations = static_cast<int_type> (numGlobalEquations_int);
+    total_nnz = static_cast<int_type> (total_nnz_int);
   }
   else if(sizeof(long long) == sizeof(int_type)) {
-    cnt = fscanf(in_file,"%lld",&numGlobalEquations);
+    long long numGlobalEquations_ll, total_nnz_ll;
+
+    cnt = fscanf(in_file,"%lld",&numGlobalEquations_ll);
     assert(cnt > 0);
-    cnt = fscanf(in_file,"%lld",&total_nnz);
+    cnt = fscanf(in_file,"%lld",&total_nnz_ll);
     assert(cnt > 0);
+
+    numGlobalEquations = static_cast<int_type> (numGlobalEquations_ll);
+    total_nnz = static_cast<int_type> (total_nnz_ll);
   }
-  else
+  else {
     assert(false);
+  }
+
+  // mfh 24 Mar 2015: This function doesn't actually use total_nnz.
+  // However, if I delete the fscanf that reads it from the input
+  // file, that will mess up the file pointer for future reads.  Thus,
+  // I use the "cast to void" trick and hope that the compiler accepts
+  // this.
+  (void) total_nnz;
 
   map = new Epetra_Map(numGlobalEquations, (int_type) 0, comm); // Create map with uniform distribution
 

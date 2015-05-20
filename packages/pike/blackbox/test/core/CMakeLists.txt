@@ -1,0 +1,52 @@
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../models)
+
+SET(UNIT_TEST_DRIVER ${TEUCHOS_STD_UNIT_TEST_MAIN})
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  multiphysics_distributor
+  SOURCES multiphysics_distributor.cpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 6  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  solvers
+  SOURCES solvers.cpp ${UNIT_TEST_DRIVER}
+  TESTONLYLIBS pike-test-apps
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  status_test
+  SOURCES status_test.cpp ${UNIT_TEST_DRIVER}
+  TESTONLYLIBS pike-test-apps
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  observers
+  SOURCES observers.cpp ${UNIT_TEST_DRIVER}
+  TESTONLYLIBS pike-test-apps
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  loggers
+  SOURCES loggers.cpp ${UNIT_TEST_DRIVER}
+  TESTONLYLIBS pike-test-apps
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  transient_stepper
+  SOURCES transient_stepper.cpp ${UNIT_TEST_DRIVER}
+  TESTONLYLIBS pike-test-apps
+  NUM_MPI_PROCS 2
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(core_tests
+  SOURCE_FILES solver_factory_test_params.xml
+  EXEDEPS solvers
+  )

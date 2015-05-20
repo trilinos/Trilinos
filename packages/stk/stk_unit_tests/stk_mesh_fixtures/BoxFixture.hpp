@@ -35,7 +35,7 @@
 #define Stk_Mesh_Fixtures_BoxFixture_hpp
 
 #include <stddef.h>                     // for size_t
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
+#include <unit_tests/BulkDataTester.hpp>   // for BulkData
 #include <stk_mesh/base/MetaData.hpp>   // for entity_rank_names, MetaData
 #include <stk_mesh/base/Types.hpp>      // for EntityId, EntityRank
 #include <string>                       // for string
@@ -55,13 +55,14 @@ static const size_t spatial_dimension = 3;
 class  BoxFixture {
 public:
   BoxFixture(stk::ParallelMachine pm = MPI_COMM_WORLD,
+             stk::mesh::BulkData::AutomaticAuraOption autoAuraOption = stk::mesh::BulkData::AUTO_AURA,
              unsigned block_size = 1000,
              const std::vector<std::string>& entity_names = stk::mesh::entity_rank_names());
 
   ~BoxFixture () {}
 
   MetaData & fem_meta () { return m_fem_meta; }
-  BulkData & bulk_data () { return m_bulk_data; }
+  stk::mesh::unit_test::BulkDataTester & bulk_data () { return m_bulk_data; }
 
   int  comm_size() const { return m_comm_size; }
   int  comm_rank() const { return m_comm_rank; }
@@ -89,7 +90,7 @@ public:
 
 protected:
   MetaData m_fem_meta;
-  BulkData m_bulk_data;
+  stk::mesh::unit_test::BulkDataTester m_bulk_data;
 
   int m_comm_rank;
   int m_comm_size;
@@ -98,8 +99,6 @@ protected:
 
   Part &m_elem_part;
   stk::topology m_elem_topology;
-
-  BulkData::BulkDataSyncState m_previous_state;
 
   /**
    * Recursively split a box into ( up - ip ) sub-boxes

@@ -1,15 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//                             Kokkos
-//         Manycore Performance-Portable Multidimensional Arrays
-//
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -120,6 +118,34 @@ __device__ __constant__
 Kokkos::Impl::CudaTraits::ConstantGlobalBufferType
 kokkos_impl_cuda_constant_memory_buffer ;
 
+__device__ __constant__
+int* kokkos_impl_cuda_atomic_lock_array ;
+#define CUDA_SPACE_ATOMIC_MASK 0x1FFFF
+#define CUDA_SPACE_ATOMIC_XOR_MASK 0x15A39
+
+namespace Kokkos {
+namespace Impl {
+__device__ inline
+bool lock_address_cuda_space(void* ptr) {
+  size_t offset = size_t(ptr);
+  offset = offset >> 2;
+  offset = offset & CUDA_SPACE_ATOMIC_MASK;
+  //offset = offset xor CUDA_SPACE_ATOMIC_XOR_MASK;
+  return (0 == atomicCAS(&kokkos_impl_cuda_atomic_lock_array[offset],0,1));
+}
+
+__device__ inline
+void unlock_address_cuda_space(void* ptr) {
+  size_t offset = size_t(ptr);
+  offset = offset >> 2;
+  offset = offset & CUDA_SPACE_ATOMIC_MASK;
+  //offset = offset xor CUDA_SPACE_ATOMIC_XOR_MASK;
+  atomicExch( &kokkos_impl_cuda_atomic_lock_array[ offset ], 0);
+}
+
+}
+}
+
 template< typename T >
 inline
 __device__
@@ -190,6 +216,9 @@ struct CudaParallelLaunch< DriverType , true > {
       // Copy functor to constant memory on the device
       cudaMemcpyToSymbol( kokkos_impl_cuda_constant_memory_buffer , & driver , sizeof(DriverType) );
 
+      int* lock_array_ptr = lock_array_cuda_space_ptr();
+      cudaMemcpyToSymbol( kokkos_impl_cuda_atomic_lock_array , & lock_array_ptr , sizeof(int*) );
+
       // Invoke the driver function on the device
       cuda_parallel_launch_constant_memory< DriverType ><<< grid , block , shmem , stream >>>();
 
@@ -221,6 +250,9 @@ struct CudaParallelLaunch< DriverType , false > {
       } else {
         cudaFuncSetCacheConfig( cuda_parallel_launch_constant_memory< DriverType > , cudaFuncCachePreferL1 );
       }
+
+      int* lock_array_ptr = lock_array_cuda_space_ptr();
+      cudaMemcpyToSymbol( kokkos_impl_cuda_atomic_lock_array , & lock_array_ptr , sizeof(int*) );
 
       cuda_parallel_launch_local_memory< DriverType ><<< grid , block , shmem , stream >>>( driver );
 

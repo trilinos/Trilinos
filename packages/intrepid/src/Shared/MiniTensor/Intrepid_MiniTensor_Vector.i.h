@@ -89,13 +89,13 @@ Vector<T, N>::Vector(ComponentValue const value) :
 //
 // Create vector from array
 //
-#ifdef HAVE_INTREPID_KOKKOSCORE
+#if defined(HAVE_INTREPID_KOKKOSCORE)
 template<typename T, Index N>
 template<class ArrayT, typename iType>
 inline
 Vector<T, N>::Vector(
     typename Kokkos::Impl::enable_if<
-        !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+    !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
     iType index1) :
     TensorBase<T, Store>::TensorBase(N, ORDER, data, index1)
 {
@@ -107,7 +107,7 @@ template<class ArrayT, typename iType>
 inline
 Vector<T, N>::Vector(
     typename Kokkos::Impl::enable_if<
-        !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type &data,
+    !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
     iType index1,
     iType index2) :
     TensorBase<T, Store>::TensorBase(N, ORDER, data, index1, index2)
@@ -120,7 +120,7 @@ template<class ArrayT, typename iType>
 inline
 Vector<T, N>::Vector(
     typename Kokkos::Impl::enable_if<
-        !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type &data,
+    !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
     iType index1,
     iType index2,
     iType index3) :
@@ -133,7 +133,7 @@ template<typename T, Index N>
 template<class ArrayT, typename iType>
 inline
 Vector<T, N>::Vector(
-    ArrayT &data,
+    ArrayT & data,
     iType index1,
     iType index2,
     iType index3,
@@ -154,7 +154,7 @@ template<typename T, Index N>
 template<class ArrayT, typename iType>
 inline
 Vector<T, N>::Vector(
-    ArrayT &data,
+    ArrayT & data,
     iType index1,
     iType index2,
     iType index3,
@@ -177,7 +177,7 @@ template<typename T, Index N>
 template<class ArrayT, typename iType>
 inline
 Vector<T, N>::Vector(
-    ArrayT &data,
+    ArrayT & data,
     iType index1,
     iType index2,
     iType index3,
@@ -204,7 +204,7 @@ inline
 Vector<T, N>::Vector(
     Index const dimension,
     typename Kokkos::Impl::enable_if<
-        !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type &data,
+    !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
     iType index1) :
     TensorBase<T, Store>::TensorBase(dimension, ORDER, data, index1)
 {
@@ -217,7 +217,7 @@ inline
 Vector<T, N>::Vector(
     Index const dimension,
     typename Kokkos::Impl::enable_if<
-        !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type &data,
+    !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
     iType index1,
     iType index2) :
     TensorBase<T, Store>::TensorBase(dimension, ORDER, data, index1, index2)
@@ -230,7 +230,7 @@ template<class ArrayT, typename iType>
 inline
 Vector<T, N>::Vector(
     Index const dimension,
-    ArrayT &data,
+    ArrayT & data,
     iType index1,
     iType index2,
     iType index3) :
@@ -250,7 +250,7 @@ template<class ArrayT, typename iType>
 inline
 Vector<T, N>::Vector(
     Index const dimension,
-    ArrayT &data,
+    ArrayT & data,
     iType index1,
     iType index2,
     iType index3,
@@ -272,7 +272,7 @@ template<class ArrayT, typename iType>
 inline
 Vector<T, N>::Vector(
     Index const dimension,
-    ArrayT &data,
+    ArrayT & data,
     iType index1,
     iType index2,
     iType index3,
@@ -296,7 +296,7 @@ template<class ArrayT, typename iType>
 inline
 Vector<T, N>::Vector(
     Index const dimension,
-    ArrayT &data,
+    ArrayT & data,
     iType index1,
     iType index2,
     iType index3,

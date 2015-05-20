@@ -103,11 +103,6 @@ typedef int entity_id;
 #endif
 #endif
 
-
-
-extern int ncopts;   /* default is (NC_FATAL | NC_VERBOSE) */
-extern int exerrval; /* global int that contains a Exodus-specific error code */
-
 /* blank fill C string to make FORTRAN string */
 static void
 ex_fcdcpy (char *fstring, size_t fslen, char *sstring)

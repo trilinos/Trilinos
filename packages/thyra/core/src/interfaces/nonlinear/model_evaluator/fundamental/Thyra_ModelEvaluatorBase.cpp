@@ -47,6 +47,10 @@
 namespace Thyra {
 
 
+ModelEvaluatorBase::ModelEvaluatorBase()
+{}
+
+
 std::string
 ModelEvaluatorBase::DerivativeSupport::description() const
 {

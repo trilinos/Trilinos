@@ -66,6 +66,7 @@ namespace fixtures {
     m_meta( m_spatial_dimension ),
     m_bulk_data(  m_meta
                 , pm
+                , stk::mesh::BulkData::AUTO_AURA
 #ifdef SIERRA_MIGRATION
                 , false
 #endif

@@ -45,7 +45,7 @@
 #include "Stokhos_Sacado_Kokkos_UQ_PCE.hpp"
 
 // Kokkos CrsMatrix
-#include "Kokkos_CrsMatrix.hpp"
+#include "Kokkos_Sparse_CrsMatrix.hpp"
 #include "Kokkos_CrsMatrix_UQ_PCE.hpp"
 #include "Kokkos_CrsMatrix_UQ_PCE_Cuda.hpp"
 
@@ -125,8 +125,8 @@ test_mean_multiply(const OrdinalType order,
   typedef Kokkos::View< pce_type*, Kokkos::LayoutLeft, execution_space > pce_vector_type;
   typedef Kokkos::View< pce_type**, Kokkos::LayoutLeft, execution_space > pce_multi_vector_type;
 
-  typedef Kokkos::CrsMatrix< value_type, ordinal_type, execution_space > scalar_matrix_type;
-  typedef Kokkos::CrsMatrix< pce_type, ordinal_type, execution_space > pce_matrix_type;
+  typedef KokkosSparse::CrsMatrix< value_type, ordinal_type, execution_space > scalar_matrix_type;
+  typedef KokkosSparse::CrsMatrix< pce_type, ordinal_type, execution_space > pce_matrix_type;
   typedef typename scalar_matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef typename scalar_matrix_type::values_type scalar_matrix_values_type;
   typedef typename pce_matrix_type::values_type pce_matrix_values_type;
@@ -220,11 +220,11 @@ test_mean_multiply(const OrdinalType order,
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
       for (ordinal_type col=0; col<pce_size; ++col) {
         // scalar_vector_type xc =
-        //   Kokkos::subview<scalar_vector_type>(x, Kokkos::ALL(), col);
+        //   Kokkos::subview(x, Kokkos::ALL(), col);
         // scalar_vector_type yc =
-        //   Kokkos::subview<scalar_vector_type>(y, Kokkos::ALL(), col);
+        //   Kokkos::subview(y, Kokkos::ALL(), col);
         // Kokkos::MV_Multiply( yc, scalar_matrix, xc );
-        Kokkos::MV_Multiply( y_col[col], scalar_matrix, x_col[col] );
+        KokkosSparse::spmv(  "N" , value_type(1.0) , scalar_matrix, x_col[col] , value_type(0.0) ,y_col[col]);
       }
     }
 
@@ -233,11 +233,11 @@ test_mean_multiply(const OrdinalType order,
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
       for (ordinal_type col=0; col<pce_size; ++col) {
         // scalar_vector_type xc =
-        //   Kokkos::subview<scalar_vector_type>(x, Kokkos::ALL(), col);
+        //   Kokkos::subview(x, Kokkos::ALL(), col);
         // scalar_vector_type yc =
-        //   Kokkos::subview<scalar_vector_type>(y, Kokkos::ALL(), col);
+        //   Kokkos::subview(y, Kokkos::ALL(), col);
         // Kokkos::MV_Multiply( yc, scalar_matrix, xc );
-        Kokkos::MV_Multiply( y_col[col], scalar_matrix, x_col[col] );
+        KokkosSparse::spmv(  "N" , value_type(1.0) , scalar_matrix, x_col[col] , value_type(0.0) ,y_col[col]);
       }
     }
     execution_space::fence();
@@ -259,13 +259,13 @@ test_mean_multiply(const OrdinalType order,
   {
     // warm up
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
-      Kokkos::MV_Multiply( yl, scalar_matrix, xl );
+      KokkosSparse::spmv(  "N" , value_type(1.0) , scalar_matrix, xl , value_type(0.0) ,yl);
     }
 
     execution_space::fence();
     Kokkos::Impl::Timer clock ;
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
-      Kokkos::MV_Multiply( yl, scalar_matrix, xl );
+      KokkosSparse::spmv(  "N" , value_type(1.0) , scalar_matrix, xl , value_type(0.0) ,yl);
     }
     execution_space::fence();
 
@@ -286,13 +286,13 @@ test_mean_multiply(const OrdinalType order,
   {
     // warm up
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
-      Kokkos::MV_Multiply( yr, scalar_matrix, xr );
+      KokkosSparse::spmv(  "N" , value_type(1.0) , scalar_matrix, xr , value_type(0.0) ,yr);
     }
 
     execution_space::fence();
     Kokkos::Impl::Timer clock ;
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
-      Kokkos::MV_Multiply( yr, scalar_matrix, xr );
+      KokkosSparse::spmv(  "N" , value_type(1.0) , scalar_matrix, xr , value_type(0.0) ,yr);
     }
     execution_space::fence();
 
@@ -313,13 +313,13 @@ test_mean_multiply(const OrdinalType order,
   {
     // warm up
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
-      Kokkos::MV_Multiply( y_pce, pce_matrix, x_pce );
+      KokkosSparse::spmv(  "N" , value_type(1.0) , pce_matrix, x_pce , value_type(0.0) ,y_pce);
     }
 
     execution_space::fence();
     Kokkos::Impl::Timer clock ;
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
-      Kokkos::MV_Multiply( y_pce, pce_matrix, x_pce );
+      KokkosSparse::spmv(  "N" , value_type(1.0) , pce_matrix, x_pce , value_type(0.0) ,y_pce);
     }
     execution_space::fence();
 
@@ -340,13 +340,13 @@ test_mean_multiply(const OrdinalType order,
   {
     // warm up
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
-      Kokkos::MV_Multiply( y_multi_pce, pce_matrix, x_multi_pce );
+      KokkosSparse::spmv(  "N" , value_type(1.0) , pce_matrix, x_multi_pce , value_type(0.0) ,y_multi_pce);
     }
 
     execution_space::fence();
     Kokkos::Impl::Timer clock ;
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
-      Kokkos::MV_Multiply( y_multi_pce, pce_matrix, x_multi_pce );
+      KokkosSparse::spmv(  "N" , value_type(1.0) , pce_matrix, x_multi_pce , value_type(0.0) ,y_multi_pce);
     }
     execution_space::fence();
 

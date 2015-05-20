@@ -1017,8 +1017,8 @@ namespace Tpetra {
     /// offset may equal the number of local entries in
     /// <tt>*this</tt>.
     Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> >
-    offsetView (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& subMap,
-                size_t offset) const;
+    offsetView (const Teuchos::RCP<const map_type>& subMap,
+                const size_t offset) const;
 
     /// \brief Return a nonconst view of a subset of rows.
     ///
@@ -1038,16 +1038,16 @@ namespace Tpetra {
     /// See the documentation of offsetView() for a code example and
     /// an explanation of edge cases.
     Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> >
-    offsetViewNonConst (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> > &subMap,
-                        size_t offset);
+    offsetViewNonConst (const Teuchos::RCP<const map_type>& subMap,
+                        const size_t offset);
 
     //! Return a Vector which is a const view of column j.
     Teuchos::RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type, false> >
-    getVector (size_t j) const;
+    getVector (const size_t j) const;
 
     //! Return a Vector which is a nonconst view of column j.
     Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type, false> >
-    getVectorNonConst (size_t j);
+    getVectorNonConst (const size_t j);
 
     //! Const view of the local values in a particular vector of this multivector.
     Teuchos::ArrayRCP<const Scalar> getData (size_t j) const;
@@ -1104,19 +1104,6 @@ namespace Tpetra {
     ///   and not impl_scalar_type, precisely because it supports a
     ///   backwards compatibility use case.
     KokkosClassic::MultiVector<Scalar, node_type> getLocalMV () const;
-
-    /// \brief A nonconst reference to a view of the underlying
-    ///   KokkosClassic::MultiVector object.
-    ///
-    /// \brief This method is for expert users only.
-    ///   It may change or be removed at any time.
-    ///
-    /// \warning This method is DEPRECATED.  It may disappear at any
-    ///   time.  Please call getLocalMV() instead.  There was never
-    ///   actually a need for a getLocalMVNonConst() method, as far as
-    ///   I can tell.
-    TEUCHOS_DEPRECATED KokkosClassic::MultiVector<Scalar, node_type>
-    getLocalMVNonConst ();
 
     /// \brief Get the Kokkos::DualView which implements local storage.
     ///
@@ -1341,7 +1328,7 @@ namespace Tpetra {
     /// the entries of alpha are zero.  That means, for example, that
     /// if \c *this contains NaN entries before calling this method,
     /// the NaN entries will remain after this method finishes.
-    void scale (Teuchos::ArrayView<const Scalar> alpha);
+    void scale (const Teuchos::ArrayView<const Scalar>& alpha);
 
     /// \brief Scale each column in place: <tt>this[j] = alpha[j]*this[j]</tt>.
     ///
@@ -1351,7 +1338,7 @@ namespace Tpetra {
     /// the entries of alpha are zero.  That means, for example, that
     /// if \c *this contains NaN entries before calling this method,
     /// the NaN entries will remain after this method finishes.
-    void scale (const Kokkos::View<const impl_scalar_type*, execution_space> alpha);
+    void scale (const Kokkos::View<const impl_scalar_type*, execution_space>& alpha);
 
     /// \brief Scale in place: <tt>this = alpha * A</tt>.
     ///
@@ -1919,16 +1906,11 @@ namespace Tpetra {
               const EWhichNorm whichNorm) const;
 
     //@}
-    //! @name View constructors, used only by nonmember constructors.
+    //! @name Misc. implementation details
     //@{
 
-    template <class S,class LO,class GO,class N>
-    friend Teuchos::RCP<MultiVector<S,LO,GO,N> >
-    createMultiVectorFromView (const Teuchos::RCP<const Map<LO, GO, N> >&,
-                               const Teuchos::ArrayRCP<S>&,
-                               const size_t, const size_t);
-
-    bool vectorIndexOutOfRange (size_t VectorIndex) const;
+    // Return true if and only if VectorIndex is a valid column index.
+    bool vectorIndexOutOfRange (const size_t VectorIndex) const;
 
     /// \brief Persisting view of j-th column in the given ArrayRCP.
     ///
@@ -1958,7 +1940,7 @@ namespace Tpetra {
     //! Number of packets to send per LID
     virtual size_t constantNumberOfPackets () const;
 
-    /// \brief Whether lass implements old or new interface
+    //! Whether this class implements the old or new interface of DistObject.
     virtual bool useNewInterface () { return true; }
 
     virtual void
@@ -2048,31 +2030,6 @@ namespace Tpetra {
       }
     };
 
-    // Partial specialization for the Kokkos refactor specialization
-    // of Tpetra::MultiVector.
-    template<class S, class LO, class GO, class DeviceType>
-    struct CreateMultiVectorFromView<MultiVector<S, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > {
-      typedef S scalar_type;
-      typedef LO local_ordinal_type;
-      typedef GO global_ordinal_type;
-      typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
-      typedef ::Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
-      typedef MultiVector<S, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > MultiVectorType;
-
-      static Teuchos::RCP<MultiVectorType>
-      create (const Teuchos::RCP<const map_type>& map,
-              const Teuchos::ArrayRCP<scalar_type>& view,
-              const size_t LDA,
-              const size_t numVectors)
-      {
-        (void) map;
-        (void) view;
-        (void) LDA;
-        (void) numVectors;
-
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
-      }
-    };
   } // namespace Details
 
   template <class ST, class LO, class GO, class DT>
@@ -2118,27 +2075,29 @@ namespace Tpetra {
       << " and dst has " << dst.getLocalLength () << " row(s).");
 
     if (src.isConstantStride () && dst.isConstantStride ()) {
-      typedef typename MultiVector<DS, DL, DG, Kokkos::Compat::KokkosDeviceWrapperNode<DD> >::dual_view_type::host_mirror_space HD;
+      typedef typename MultiVector<DS, DL, DG, Kokkos::Compat::KokkosDeviceWrapperNode<DD> >::dual_view_type::t_host::execution_space HES;
+      typedef typename MultiVector<DS, DL, DG, Kokkos::Compat::KokkosDeviceWrapperNode<DD> >::dual_view_type::t_dev::execution_space DES;
 
       if (src.getDualView ().modified_device >= src.getDualView ().modified_host) {
         // Device memory has the most recent version of src.
-        dst.template modify<DD> (); // We are about to modify dst on device.
+        dst.template modify<DES> (); // We are about to modify dst on device.
         // Copy from src to dst on device.
-        Details::localDeepCopyConstStride (dst.getDualView ().template view<DD> (),
-                                  src.getDualView ().template view<DD> ());
-        dst.template sync<HD> (); // Sync dst from device to host.
+        Details::localDeepCopyConstStride (dst.getDualView ().d_view,
+                                           src.getDualView ().d_view);
+        dst.template sync<HES> (); // Sync dst from device to host.
       }
       else { // Host memory has the most recent version of src.
-        dst.template modify<HD> (); // We are about to modify dst on host.
+        dst.template modify<HES> (); // We are about to modify dst on host.
         // Copy from src to dst on host.
-        Details::localDeepCopyConstStride (dst.getDualView ().template view<HD> (),
-                                  src.getDualView ().template view<HD> ());
-        dst.template sync<DD> (); // Sync dst from host to device.
+        Details::localDeepCopyConstStride (dst.getDualView ().h_view,
+                                           src.getDualView ().h_view);
+        dst.template sync<DES> (); // Sync dst from host to device.
       }
     }
     else {
       typedef Kokkos::DualView<SL*, DD> whichvecs_type;
-      typedef typename whichvecs_type::host_mirror_space host_mirror_space;
+      typedef typename whichvecs_type::t_dev::execution_space DES;
+      typedef typename whichvecs_type::t_host::execution_space HES;
 
       if (dst.isConstantStride ()) {
         const SL numWhichVecs = static_cast<SL> (src.whichVectors_.size ());
@@ -2153,31 +2112,32 @@ namespace Tpetra {
           // whichVecs tells the kernel which vectors (columns) of src
           // to copy.  Fill whichVecs on the host, and sync to device.
           whichvecs_type whichVecs (whichVecsLabel, numWhichVecs);
-          whichVecs.template modify<host_mirror_space> ();
+          whichVecs.template modify<HES> ();
           for (SL i = 0; i < numWhichVecs; ++i) {
             whichVecs.h_view(i) = static_cast<SL> (src.whichVectors_[i]);
           }
           // Sync the host version of whichVecs to the device.
-          whichVecs.template sync<DD> ();
+          whichVecs.template sync<DES> ();
 
           // Mark the device version of dst's DualView as modified.
-          dst.template modify<DD> ();
+          dst.template modify<DES> ();
           // Copy from the selected vectors of src to dst, on the device.
-          Details::localDeepCopy (dst.getDualView ().template view<DD> (),
-                         src.getDualView ().template view<DD> (),
-                         dst.isConstantStride (), src.isConstantStride (),
-                         whichVecs.d_view, whichVecs.d_view);
+          Details::localDeepCopy (dst.getDualView ().d_view,
+                                  src.getDualView ().d_view,
+                                  dst.isConstantStride (),
+                                  src.isConstantStride (),
+                                  whichVecs.d_view,
+                                  whichVecs.d_view);
           // Sync dst's DualView to the host.  This is cheaper than
           // repeating the above copy from src to dst on the host.
-          dst.template sync<host_mirror_space> ();
+          dst.template sync<HES> ();
         }
         else { // host version of src was the most recently modified
           // Copy from the host version of src.
           //
           // whichVecs tells the kernel which vectors (columns) of src
           // to copy.  Fill whichVecs on the host, and use it there.
-          typedef Kokkos::View<SL*, typename host_mirror_space::execution_space>
-            the_whichvecs_type;
+          typedef Kokkos::View<SL*, HES> the_whichvecs_type;
           the_whichvecs_type whichVecs (whichVecsLabel, numWhichVecs);
           for (SL i = 0; i < numWhichVecs; ++i) {
             whichVecs(i) = static_cast<SL> (src.whichVectors_[i]);
@@ -2185,68 +2145,69 @@ namespace Tpetra {
           // Copy from the selected vectors of src to dst, on the
           // host.  The function ignores the first instance of
           // 'whichVecs' in this case.
-          Details::localDeepCopy (dst.getDualView ().template view<host_mirror_space> (),
-                         src.getDualView ().template view<host_mirror_space> (),
-                         dst.isConstantStride (), src.isConstantStride (),
-                         whichVecs, whichVecs);
+          Details::localDeepCopy (dst.getDualView ().h_view,
+                                  src.getDualView ().h_view,
+                                  dst.isConstantStride (),
+                                  src.isConstantStride (),
+                                  whichVecs, whichVecs);
           // Sync dst back to the device, since we only copied on the host.
-          dst.template sync<DD> ();
+          dst.template sync<DES> ();
         }
       }
       else { // dst is NOT constant stride
-        typedef typename Kokkos::ViewTraits<DL*,DD,void,void>::host_mirror_space
-          host_mirror_space_type;
-
         if (src.isConstantStride ()) {
           if (src.getDualView ().modified_device >= src.getDualView ().modified_host) {
             // Copy from the device version of src.
             //
             // whichVecs tells the kernel which vectors (columns) of dst
             // to copy.  Fill whichVecs on the host, and sync to device.
-            typedef Kokkos::DualView<DL*, DD> the_whichvecs_type;
+            typedef Kokkos::DualView<DL*, DES> the_whichvecs_type;
             const std::string whichVecsLabel ("MV::deep_copy::whichVecs");
             const DL numWhichVecs = static_cast<DL> (dst.whichVectors_.size ());
             the_whichvecs_type whichVecs (whichVecsLabel, numWhichVecs);
-            whichVecs.template modify<host_mirror_space_type> ();
+            whichVecs.template modify<HES> ();
             for (DL i = 0; i < numWhichVecs; ++i) {
               whichVecs.h_view(i) = dst.whichVectors_[i];
             }
             // Sync the host version of whichVecs to the device.
-            whichVecs.template sync<DD> ();
+            whichVecs.template sync<DES> ();
 
             // Copy src to the selected vectors of dst, on the device.
-            Details::localDeepCopy (dst.getDualView ().template view<DD> (),
-                           src.getDualView ().template view<DD> (),
-                           dst.isConstantStride (), src.isConstantStride (),
-                           whichVecs.d_view, whichVecs.d_view);
+            Details::localDeepCopy (dst.getDualView ().d_view,
+                                    src.getDualView ().d_view,
+                                    dst.isConstantStride (),
+                                    src.isConstantStride (),
+                                    whichVecs.d_view,
+                                    whichVecs.d_view);
             // We can't sync src and repeat the above copy on the
             // host, so sync dst back to the host.
             //
             // FIXME (mfh 29 Jul 2014) This may overwrite columns that
             // don't actually belong to dst's view.
-            dst.template sync<host_mirror_space_type> ();
+            dst.template sync<HES> ();
           }
           else { // host version of src was the most recently modified
             // Copy from the host version of src.
             //
             // whichVecs tells the kernel which vectors (columns) of src
             // to copy.  Fill whichVecs on the host, and use it there.
-            typedef Kokkos::View<DL*, host_mirror_space_type> the_whichvecs_type;
+            typedef Kokkos::View<DL*, HES> the_whichvecs_type;
             const DL numWhichVecs = static_cast<DL> (dst.whichVectors_.size ());
             the_whichvecs_type whichVecs ("MV::deep_copy::whichVecs", numWhichVecs);
             for (DL i = 0; i < numWhichVecs; ++i) {
               whichVecs(i) = static_cast<DL> (dst.whichVectors_[i]);
             }
             // Copy from src to the selected vectors of dst, on the host.
-            Details::localDeepCopy (dst.getDualView ().template view<host_mirror_space_type> (),
-                           src.getDualView ().template view<host_mirror_space_type> (),
-                           dst.isConstantStride (), src.isConstantStride (),
-                           whichVecs, whichVecs);
+            Details::localDeepCopy (dst.getDualView ().h_view,
+                                    src.getDualView ().h_view,
+                                    dst.isConstantStride (),
+                                    src.isConstantStride (),
+                                    whichVecs, whichVecs);
             // Sync dst back to the device, since we only copied on the host.
             //
             // FIXME (mfh 29 Jul 2014) This may overwrite columns that
             // don't actually belong to dst's view.
-            dst.template sync<DD> ();
+            dst.template sync<DES> ();
           }
         }
         else { // neither src nor dst have constant stride
@@ -2257,62 +2218,65 @@ namespace Tpetra {
             // (columns) of dst to copy.  Fill it on the host, and
             // sync to device.
             const DL dstNumWhichVecs = static_cast<DL> (dst.whichVectors_.size ());
-            Kokkos::DualView<DL*, DD> whichVecsDst ("MV::deep_copy::whichVecsDst",
-                                                    dstNumWhichVecs);
-            whichVecsDst.template modify<host_mirror_space> ();
+            Kokkos::DualView<DL*, DES> whichVecsDst ("MV::deep_copy::whichVecsDst",
+                                                     dstNumWhichVecs);
+            whichVecsDst.template modify<HES> ();
             for (DL i = 0; i < dstNumWhichVecs; ++i) {
               whichVecsDst.h_view(i) = static_cast<DL> (dst.whichVectors_[i]);
             }
             // Sync the host version of whichVecsDst to the device.
-            whichVecsDst.template sync<DD> ();
+            whichVecsDst.template sync<DES> ();
 
             // whichVectorsSrc tells the kernel which vectors
             // (columns) of src to copy.  Fill it on the host, and
             // sync to device.  Use the destination MultiVector's
             // LocalOrdinal type here.
             const DL srcNumWhichVecs = static_cast<DL> (src.whichVectors_.size ());
-            Kokkos::DualView<DL*, DD> whichVecsSrc ("MV::deep_copy::whichVecsSrc",
-                                                    srcNumWhichVecs);
-            whichVecsSrc.template modify<host_mirror_space> ();
+            Kokkos::DualView<DL*, DES> whichVecsSrc ("MV::deep_copy::whichVecsSrc",
+                                                     srcNumWhichVecs);
+            whichVecsSrc.template modify<HES> ();
             for (DL i = 0; i < srcNumWhichVecs; ++i) {
               whichVecsSrc.h_view(i) = static_cast<DL> (src.whichVectors_[i]);
             }
             // Sync the host version of whichVecsSrc to the device.
-            whichVecsSrc.template sync<DD> ();
+            whichVecsSrc.template sync<DES> ();
 
             // Copy from the selected vectors of src to the selected
             // vectors of dst, on the device.
-            Details::localDeepCopy (dst.getDualView ().template view<DD> (),
-                           src.getDualView ().template view<DD> (),
-                           dst.isConstantStride (), src.isConstantStride (),
-                           whichVecsDst.d_view, whichVecsSrc.d_view);
+            Details::localDeepCopy (dst.getDualView ().d_view,
+                                    src.getDualView ().d_view,
+                                    dst.isConstantStride (),
+                                    src.isConstantStride (),
+                                    whichVecsDst.d_view,
+                                    whichVecsSrc.d_view);
           }
           else {
             const DL dstNumWhichVecs = static_cast<DL> (dst.whichVectors_.size ());
-            Kokkos::View<DL*, host_mirror_space> whichVectorsDst ("dstWhichVecs", dstNumWhichVecs);
+            Kokkos::View<DL*, HES> whichVectorsDst ("dstWhichVecs", dstNumWhichVecs);
             for (DL i = 0; i < dstNumWhichVecs; ++i) {
               whichVectorsDst(i) = dst.whichVectors_[i];
             }
 
             // Use the destination MultiVector's LocalOrdinal type here.
             const DL srcNumWhichVecs = static_cast<DL> (src.whichVectors_.size ());
-            Kokkos::View<DL*, host_mirror_space> whichVectorsSrc ("srcWhichVecs", srcNumWhichVecs);
+            Kokkos::View<DL*, HES> whichVectorsSrc ("srcWhichVecs", srcNumWhichVecs);
             for (DL i = 0; i < srcNumWhichVecs; ++i) {
               whichVectorsSrc(i) = src.whichVectors_[i];
             }
 
             // Copy from the selected vectors of src to the selected
             // vectors of dst, on the host.
-            Details::localDeepCopy (dst.getDualView ().template view<host_mirror_space> (),
-                           src.getDualView ().template view<host_mirror_space> (),
-                           dst.isConstantStride (), src.isConstantStride (),
-                           whichVectorsDst, whichVectorsSrc);
+            Details::localDeepCopy (dst.getDualView ().h_view,
+                                    src.getDualView ().h_view,
+                                    dst.isConstantStride (),
+                                    src.isConstantStride (),
+                                    whichVectorsDst, whichVectorsSrc);
             // We can't sync src and repeat the above copy on the
             // host, so sync dst back to the host.
             //
             // FIXME (mfh 29 Jul 2014) This may overwrite columns that
             // don't actually belong to dst's view.
-            dst.template sync<host_mirror_space> ();
+            dst.template sync<HES> ();
           }
         }
       }

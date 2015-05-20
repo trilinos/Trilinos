@@ -38,9 +38,11 @@
 
 /* #undef HAVE_MUELU_ISORROPIA */
 
-#define HAVE_MUELU_KOKKOSCLASSIC
+/* #undef HAVE_MUELU_KOKKOSCLASSIC */
 
 #define HAVE_MUELU_ML
+
+/* #undef HAVE_MUELU_TEKO */
 
 #define HAVE_MUELU_TPETRA
 
@@ -55,3 +57,5 @@
 /* #undef HAVE_MUELU_BOOST */
 
 /* #undef HAVE_MUELU_TIMER_SYNCHRONIZATION */
+
+/* #undef HAVE_MUELU_MATLAB */

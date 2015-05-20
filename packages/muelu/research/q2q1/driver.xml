@@ -3,5 +3,5 @@
   <Parameter name="max levels"              type="int"      value="2"/>
   <Parameter name="multigrid algorithm"     type="string"   value="emin"/>
 
-  <Parameter name="dump status"             type="bool"     value="true"/>
+  <Parameter name="dump status"             type="bool"     value="false"/>
 </ParameterList>

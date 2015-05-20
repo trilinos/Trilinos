@@ -10,6 +10,7 @@ ADD_SUBDIRECTORIES(
   CrsMatrix
   Directory
   Distributor
+  HashTable
   ImportExport
   ImportExport2
   inout

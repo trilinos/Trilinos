@@ -49,6 +49,7 @@ INCLUDE(TribitsGeneralMacros)
 INCLUDE(TribitsAddTestHelpers)
 INCLUDE(TribitsVerbosePrintVar)
 INCLUDE(TribitsProcessEnabledTpl)
+INCLUDE(TribitsInstallHeaders)
 
 # Standard TriBITS utilities includes
 INCLUDE(TribitsAddOptionAndDefine)
@@ -139,16 +140,6 @@ MACRO(TRIBITS_SETUP_BASIC_SYSTEM_VARS)
 
 ENDMACRO()
 
-
-#
-# Find Python
-#
-
-MACRO(TRIBITS_FIND_PYTHON_INTERP)
-  INCLUDE(TribitsFindPythonInterp)
-  TRIBITS_FIND_PYTHON()
-  PRINT_VAR(PYTHON_EXECUTABLE)
-ENDMACRO()
 
 #
 # Define and option to include a file that reads in a bunch of options
@@ -1502,6 +1493,10 @@ MACRO(TRIBITS_SETUP_ENV)
     TIMER_GET_RAW_SECONDS(SETUP_ENV_TIME_START_SECONDS)
   ENDIF()
 
+  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    SET(TRIBITS_SETUP_ENV_DEBUG  TRUE)
+  ENDIF()
+
   # Set to release build by default
 
   IF (NOT CMAKE_BUILD_TYPE)
@@ -1532,7 +1527,7 @@ MACRO(TRIBITS_SETUP_ENV)
   ELSE()
     SET(CMAKE_CONFIGURATION_TYPE "")
   ENDIF()
-  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+  IF (TRIBITS_SETUP_ENV_DEBUG)
     PRINT_VAR(CMAKE_CONFIGURATION_TYPE)
   ENDIF()
 
@@ -1580,8 +1575,13 @@ MACRO(TRIBITS_SETUP_ENV)
   IF (MSVC)
     ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE
       -D_CRT_NONSTDC_NO_DEPRECATE  -D_SCL_SECURE_NO_WARNINGS)
-    INCLUDE_DIRECTORIES(
-      ${${PROJECT_NAME}_TRIBITS_DIR}/common_tools/win_interface/include)
+    SET(WIN_INTERFACE_INCL  ${${PROJECT_NAME}_TRIBITS_DIR}/win_interface/include)
+    IF (EXISTS "${WIN_INTERFACE_INCL}")
+      INCLUDE_DIRECTORIES("${WIN_INTERFACE_INCL}")
+      IF (TRIBITS_SETUP_ENV_DEBUG)
+        MESSAGE("-- Adding win_interface/include ...")
+      ENDIF()
+    ENDIF()
   ENDIF()
 
   IF (WIN32 AND NOT CYGWIN)
@@ -1653,14 +1653,28 @@ MACRO(TRIBITS_SETUP_ENV)
 
   IF (${PROJECT_NAME}_ENABLE_CXX AND ${PROJECT_NAME}_ENABLE_CXX11)
     INCLUDE(TribitsCXX11Support)
-    TRIBITS_FIND_CXX11_FLAGS()
-    TRIBITS_CHECK_CXX11_SUPPORT(${PROJECT_NAME}_ENABLE_CXX11)
-    IF (${PROJECT_NAME}_ENABLE_CXX11)
+    TRIBITS_FIND_CXX11_FLAGS() # Aborts if can't find C++11 flags!
+    TRIBITS_CHECK_CXX11_SUPPORT(CXX11_WORKS)  # Double check that C++11 flags!
+    IF (CXX11_WORKS)
       MESSAGE("-- ${PROJECT_NAME}_ENABLE_CXX11=${${PROJECT_NAME}_ENABLE_CXX11}")
       SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${${PROJECT_NAME}_CXX11_FLAGS}")
-        IF(${PROJECT_NAME}_VERBOSE_CONFIGURE OR TRIBITS_ENABLE_CXX11_DEBUG_DUMP)
+        IF (TRIBITS_SETUP_ENV_DEBUG OR TRIBITS_ENABLE_CXX11_DEBUG_DUMP)
           PRINT_VAR(CMAKE_CXX_FLAGS)
         ENDIF()
+    ELSE()
+      MESSAGE(FATAL_ERROR
+        "Error, C++11 support does not appear to be supported"
+        " with this C++ compiler and/or with the C++11 flags"
+        " ${PROJECT_NAME}_CXX11_FLAGS='${${PROJECT_NAME}_CXX11_FLAGS}'!"
+        " If the flags ${PROJECT_NAME}_CXX11_FLAGS='${${PROJECT_NAME}_CXX11_FLAGS}'"
+        " where set manually, then try clearing the CMake cache and configure"
+        " without setting "
+        " ${PROJECT_NAME}_CXX11_FLAGS and let the configure process try to"
+        " find flags that work automatically.  However, if these compile-time"
+        " tests still fail, consider selecting a different C++ compiler"
+        " (and compatible compilers for other languages) that supports C++11."
+        " Or, if C++11 support in this project is not needed or desired, then set"
+        " -D${PROJECT_NAME}_ENABLE_CXX11=OFF.")
     ENDIF()
   ENDIF()
 
@@ -1702,7 +1716,7 @@ MACRO(TRIBITS_SETUP_ENV)
   # Set the hack library to get link options on
 
   IF (${PROJECT_NAME}_EXTRA_LINK_FLAGS)
-    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    IF (TRIBITS_SETUP_ENV_DEBUG)
       MESSAGE(STATUS "Creating dummy last_lib for appending the link flags: "
         "${${PROJECT_NAME}_EXTRA_LINK_FLAGS}")
     ENDIF()
@@ -1820,10 +1834,9 @@ ENDMACRO()
 #
 # NOTE: This is done as a function so that the read-in version variables don't
 # bleed into the outer scope.
-
-
+#
 FUNCTION(TRIBITS_REPOSITORY_CONFIGURE_VERSION_HEADER_FILE
-  REPOSITORY_NAME  REPOSITORY_DIR
+  REPOSITORY_NAME  REPOSITORY_DIR  ADD_INSTALL_TARGET
   OUTPUT_VERSION_HEADER_FILE
   )
 
@@ -1857,24 +1870,9 @@ FUNCTION(TRIBITS_REPOSITORY_CONFIGURE_VERSION_HEADER_FILE
       ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_PACKAGE_ARCH_DIR}/Tribits_version.h.in
       ${OUTPUT_VERSION_HEADER_FILE})
 
-    SET(INSTALL_HEADERS ON)
-    IF (NOT ${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS)
-      IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-        MESSAGE(STATUS "Skipping installation if ${OUTPUT_VERSION_HEADER_FILE}"
-          " because '${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS' was set to true ...")
-      ENDIF()
-      SET(INSTALL_HEADERS OFF)
-    ENDIF()
-
-    IF (INSTALL_HEADERS AND NOT ${REPOSITORY_NAME}_INSTALLED_REPO_VERSION_HEADER_FILE)
+    IF (ADD_INSTALL_TARGET)
       # Install version header file
-      INSTALL(
-        FILES ${OUTPUT_VERSION_HEADER_FILE}
-        DESTINATION "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}"
-        COMPONENT ${PROJECT_NAME}
-        )
-      SET(${REPOSITORY_NAME}_INSTALLED_REPO_VERSION_HEADER_FILE TRUE
-        CACHE INTERNAL "" FORCE )
+      TRIBITS_INSTALL_HEADERS(HEADERS  ${OUTPUT_VERSION_HEADER_FILE})
     ENDIF()
 
   ENDIF()
@@ -1893,9 +1891,7 @@ FUNCTION(TRIBITS_REPOSITORY_CONFIGURE_ALL_VERSION_HEADER_FILES)
     IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
       MESSAGE("Considering configuring version file for '${REPO_NAME}'")
     ENDIF()
-    SET(${REPOSITORY_NAME}_INSTALLED_REPO_VERSION_HEADER_FILE FALSE
-      CACHE INTERNAL "" FORCE )
-    TRIBITS_REPOSITORY_CONFIGURE_VERSION_HEADER_FILE( ${REPO_NAME} ${REPO_DIR}
+    TRIBITS_REPOSITORY_CONFIGURE_VERSION_HEADER_FILE( ${REPO_NAME}  ${REPO_DIR}  TRUE
       "${${PROJECT_NAME}_BINARY_DIR}/${REPO_DIR}/${REPO_NAME}_version.h")
   ENDFOREACH()
 

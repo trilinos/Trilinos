@@ -237,26 +237,6 @@ public:
   //! True if the preconditioner has been successfully computed, else false.
   bool isComputed () const;
 
-  /// \brief Compute the condition number estimate and return its value.
-  ///
-  /// \warning This method is DEPRECATED.  It was inherited from
-  ///   Ifpack, and Ifpack never clearly stated what this method
-  ///   computes.  Furthermore, Ifpack's method just estimates the
-  ///   condition number of the matrix A, and ignores the
-  ///   preconditioner -- which is probably not what users thought it
-  ///   did.  If there is sufficient interest, we might reintroduce
-  ///   this method with a different meaning and a better algorithm.
-  virtual magnitude_type TEUCHOS_DEPRECATED
-  computeCondEst (CondestType CT = Ifpack2::Cheap,
-                  local_ordinal_type MaxIters = 1550,
-                  magnitude_type Tol = 1e-9,
-                  const Teuchos::Ptr<const row_matrix_type>& Matrix = Teuchos::null);
-
-  /// \brief Return the computed condition number estimate, or -1 if not computed.
-  ///
-  /// \warning This method is DEPRECATED.  See warning for computeCondEst().
-  virtual magnitude_type TEUCHOS_DEPRECATED getCondEst() const;
-
   //! The input matrix given to the constructor.
   Teuchos::RCP<const row_matrix_type> getMatrix () const;
 
@@ -511,16 +491,6 @@ public:
 
   //! True if the preconditioner has been successfully computed, else false.
   bool isComputed () const;
-
-  //! Compute the condition number estimate and return its value.
-  magnitude_type TEUCHOS_DEPRECATED
-  computeCondEst (CondestType CT = Ifpack2::Cheap,
-                  local_ordinal_type MaxIters = 1550,
-                  magnitude_type Tol = 1e-9,
-                  const Teuchos::Ptr<const row_matrix_type>& Matrix = Teuchos::null);
-
-  //! Return the computed condition number estimate, or -0 if not computed.
-  magnitude_type TEUCHOS_DEPRECATED getCondEst () const;
 
   //! The input matrix given to the constructor.
   Teuchos::RCP<const row_matrix_type> getMatrix () const;

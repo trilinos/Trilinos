@@ -62,7 +62,7 @@ public:
   //@{
 
   //! Sets use transpose (not implemented).
-  virtual int SetUseTranspose(bool UseTranspose){return(-1);}
+  virtual int SetUseTranspose(bool /* useTranspose */ ){return(-1);}
 
 
   //@}

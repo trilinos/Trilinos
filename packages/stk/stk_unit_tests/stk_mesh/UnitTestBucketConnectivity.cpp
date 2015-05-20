@@ -70,7 +70,7 @@ void check_even_conn_removed(fixed_conn& conn, unsigned num_conn, unsigned ordin
 
   Entity const* targets = conn.begin(ordinal);
   for (unsigned i = 0; i < num_conn; ++i) {
-    Entity e_to = {ordinal * num_conn + i + 1};
+    Entity e_to(ordinal * num_conn + i + 1);
     if ( (i % 2) == 0 ) {
       EXPECT_EQ(targets[i], Entity());
     }
@@ -87,7 +87,7 @@ void check_even_conn_removed(dynamic_conn& conn, unsigned num_conn, unsigned ord
   Entity const* targets = conn.begin(ordinal);
   ConnectivityOrdinal const* ordinals = conn.begin_ordinals(ordinal);
   for (unsigned i = 0; i < num_conn / 2; ++i) {
-    Entity e_to = {ordinal * num_conn + ((2*i) + 1) + 1};
+    Entity e_to(ordinal * num_conn + ((2*i) + 1) + 1);
     EXPECT_EQ(targets[i], e_to);
     EXPECT_EQ(ordinals[i], static_cast<ConnectivityOrdinal>((2*i) + 1));
   }
@@ -107,7 +107,7 @@ void test_simple_add(Connectivity& connectivity, unsigned num_entities_to_add, u
     check_uninit_conn_size(connectivity, num_to_add, ord);
 
     for (uint64_t i = 0; i < num_to_add; ++i) {
-      Entity e_to = {ord * num_to_add + i + 1};
+      Entity e_to(ord * num_to_add + i + 1);
       connectivity.add_connectivity(ord, e_to, static_cast<ConnectivityOrdinal>(i));
     }
 
@@ -122,7 +122,7 @@ void test_simple_add(Connectivity& connectivity, unsigned num_entities_to_add, u
     EXPECT_EQ(end_ord - begin_ord, num_to_add);
 
     for (uint64_t i = 0; i < num_to_add; ++i) {
-      Entity expected_to = {ord * num_to_add + i + 1};
+      Entity expected_to(ord * num_to_add + i + 1);
       EXPECT_EQ(expected_to, begin[i]);
       EXPECT_EQ(static_cast<ConnectivityOrdinal>(i), begin_ord[i]);
     }
@@ -149,7 +149,7 @@ void test_complex_add(Connectivity& connectivity, unsigned num_entities_to_add, 
         EXPECT_EQ(connectivity.size(), num_entities_to_add);
       }
 
-      Entity e_to = {ord * num_to_add + i + 1};
+      Entity e_to(ord * num_to_add + i + 1);
       connectivity.add_connectivity(ord, e_to, static_cast<ConnectivityOrdinal>(i));
     }
   }
@@ -166,7 +166,7 @@ void test_complex_add(Connectivity& connectivity, unsigned num_entities_to_add, 
     EXPECT_EQ(end_ord - begin_ord, num_to_add);
 
     for (uint64_t i = 0; i < num_to_add; ++i) {
-      Entity expected_to = {ord * num_to_add + i + 1};
+      Entity expected_to(ord * num_to_add + i + 1);
       EXPECT_EQ(expected_to, begin[i]);
       EXPECT_EQ(static_cast<ConnectivityOrdinal>(i), begin_ord[i]);
     }
@@ -181,7 +181,7 @@ void test_remove(Connectivity& connectivity, unsigned num_entities, unsigned num
   unsigned ord_to_remove_from = num_entities / 2;
 
   for (uint64_t i = 0; i < num_to_add; ++i) {
-    Entity e_to = {ord_to_remove_from * num_to_add + i + 1};
+    Entity e_to(ord_to_remove_from * num_to_add + i + 1);
     if ( (i % 2) == 0 ) {
       bool rv = connectivity.remove_connectivity(ord_to_remove_from, e_to, static_cast<ConnectivityOrdinal>(i));
       EXPECT_TRUE(rv);

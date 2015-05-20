@@ -203,8 +203,7 @@ namespace Kokkos {
                    const Ordinal begin,
                    const Ordinal end)
     {
-      typedef Kokkos::View<T*,L,D,M> view_type;
-      return Kokkos::subview<view_type> (view, std::make_pair (begin, end));
+      return Kokkos::subview (view, std::make_pair (begin, end));
     }
 
     template <typename T, typename L, typename D, typename M, typename Ordinal>
@@ -213,8 +212,7 @@ namespace Kokkos {
                     const Ordinal offset,
                     const Ordinal size)
     {
-      typedef Kokkos::View<T*,L,D,M> view_type;
-      return Kokkos::subview<view_type> (view, std::make_pair (offset, offset+size));
+      return Kokkos::subview (view, std::make_pair (offset, offset+size));
     }
 
     template <typename DT, typename DL, typename DD, typename DM,
@@ -231,9 +229,9 @@ namespace Kokkos {
       typedef Kokkos::View<ST*,SL,SD,SM> src_view_type;
       const Ordinal size = src_end - src_begin;
       const Ordinal dst_end = dst_begin + size;
-      dst_view_type dst_sub = Kokkos::subview<dst_view_type>(
+      dst_view_type dst_sub = Kokkos::subview(
         dst, std::make_pair (dst_begin, dst_end));
-      src_view_type src_sub = Kokkos::subview<src_view_type>(
+      src_view_type src_sub = Kokkos::subview(
         src, std::make_pair (src_begin, src_end));
       Kokkos::deep_copy(dst_sub, src_sub);
     }
@@ -252,9 +250,9 @@ namespace Kokkos {
       typedef Kokkos::View<ST*,SL,SD,SM> src_view_type;
       const Ordinal dst_end = dst_offset + size;
       const Ordinal src_end = src_offset + size;
-      dst_view_type dst_sub = Kokkos::subview<dst_view_type>(
+      dst_view_type dst_sub = Kokkos::subview(
         dst, std::make_pair (dst_offset, dst_end));
-      src_view_type src_sub = Kokkos::subview<src_view_type>(
+      src_view_type src_sub = Kokkos::subview(
         src, std::make_pair (src_offset, src_end));
       Kokkos::deep_copy(dst_sub, src_sub);
     }

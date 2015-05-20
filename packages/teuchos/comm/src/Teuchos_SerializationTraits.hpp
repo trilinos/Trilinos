@@ -49,6 +49,10 @@
 #include "Teuchos_TestForException.hpp"
 #include <climits> // SIZE_MAX, ULONG_MAX, etc.
 
+#ifdef HAVE_TEUCHOSCORE_QUADMATH
+#include <quadmath.h>
+#endif // HAVE_TEUCHOSCORE_QUADMATH
+
 #ifdef HAVE_TEUCHOS_QD
 #include <qd/dd_real.h>
 #include <qd/qd_real.h>
@@ -189,7 +193,7 @@ public:
 
   /** \brief Return the number of bytes for <tt>count</tt> objects. */
   static Ordinal fromCountToIndirectBytes(const Ordinal count,
-					  const T buffer[]) {
+                                          const T buffer[]) {
     (void)count; (void)buffer;
     UndefinedSerializationTraits<T>::notDefined();
     return 0;
@@ -211,9 +215,9 @@ public:
    * </ul>
    */
   static void serialize (const Ordinal count,
-			 const T buffer[],
-			 const Ordinal bytes,
-			 char charBuffer[])
+                         const T buffer[],
+                         const Ordinal bytes,
+                         char charBuffer[])
   {
     (void)count; (void)buffer; (void)bytes; (void)charBuffer;
     UndefinedSerializationTraits<T>::notDefined();
@@ -221,7 +225,7 @@ public:
 
   /** \brief Return the number of objects for <tt>bytes</tt> of storage. */
   static Ordinal fromIndirectBytesToCount(const Ordinal bytes,
-					  const char charBuffer[]) {
+                                          const char charBuffer[]) {
     (void)bytes; (void)charBuffer;
     UndefinedSerializationTraits<T>::notDefined();
     return 0;
@@ -243,9 +247,9 @@ public:
    * </ul>
    */
   static void deserialize (const Ordinal bytes,
-			   const char charBuffer[],
-			   const Ordinal count,
-			   T buffer[])
+                           const char charBuffer[],
+                           const Ordinal count,
+                           T buffer[])
   {
     (void)bytes; (void)charBuffer; (void)count; (void)buffer;
     UndefinedSerializationTraits<T>::notDefined();
@@ -334,7 +338,7 @@ public:
       std::copy(_buffer,_buffer+bytes,charBuffer);
     }
   static Ordinal fromIndirectBytesToCount(const Ordinal bytes,
-					  const char charBuffer[])
+                                          const char charBuffer[])
     { return fromDirectBytesToCount(bytes); }
   static void deserialize(
     const Ordinal bytes, const char charBuffer[], const Ordinal count, T buffer[]
@@ -413,6 +417,13 @@ template<typename Ordinal, typename P1, typename P2>
 class SerializationTraits<Ordinal,std::pair<P1,P2> >
   : public DirectSerializationTraits<Ordinal,std::pair<P1,P2> >
 {};
+
+#ifdef HAVE_TEUCHOSCORE_QUADMATH
+template<typename Ordinal>
+class SerializationTraits<Ordinal,__float128>
+  : public DirectSerializationTraits<Ordinal,__float128>
+{};
+#endif // HAVE_TEUCHOSCORE_QUADMATH
 
 #ifdef HAVE_TEUCHOS_QD
 template<typename Ordinal>

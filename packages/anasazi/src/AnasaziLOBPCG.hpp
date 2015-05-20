@@ -490,7 +490,6 @@ namespace Anasazi {
     //
     typedef SolverUtils<ScalarType,MV,OP> Utils;
     typedef MultiVecTraits<ScalarType,MV> MVT;
-    typedef MultiVecTraitsExt<ScalarType,MV> MVText;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
@@ -712,7 +711,7 @@ namespace Anasazi {
                          "Anasazi::LOBPCG::setBlockSize(): eigenproblem did not specify initial vectors to clone from.");
     }
     
-    TEUCHOS_TEST_FOR_EXCEPTION(newBS <= 0 || static_cast<ptrdiff_t>(newBS) > MVText::GetGlobalLength(*tmp), 
+    TEUCHOS_TEST_FOR_EXCEPTION(newBS <= 0 || static_cast<ptrdiff_t>(newBS) > MVT::GetGlobalLength(*tmp), 
                          std::invalid_argument, "Anasazi::LOBPCG::setBlockSize(): block size must be strictly positive.");
     if (newBS == blockSize_) {
       // do nothing
@@ -994,7 +993,7 @@ namespace Anasazi {
     // set up X, MX, KX
     //----------------------------------------
     if (newstate.X != Teuchos::null) {
-      TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*newstate.X) != MVText::GetGlobalLength(*X_),
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.X) != MVT::GetGlobalLength(*X_),
                           std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): vector length of newstate.X not correct." );
       // newstate.X must have blockSize_ vectors; any more will be ignored
       TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.X) < blockSize_,
@@ -1006,7 +1005,7 @@ namespace Anasazi {
       // put MX data in MX_
       if (hasM_) {
         if (newstate.MX != Teuchos::null) {
-          TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*newstate.MX) != MVText::GetGlobalLength(*MX_),
+          TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.MX) != MVT::GetGlobalLength(*MX_),
                               std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): vector length of newstate.MX not correct." );
           // newstate.MX must have blockSize_ vectors; any more will be ignored
           TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.MX) < blockSize_,
@@ -1029,7 +1028,7 @@ namespace Anasazi {
   
       // put data in KX
       if (newstate.KX != Teuchos::null) {
-        TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*newstate.KX) != MVText::GetGlobalLength(*KX_),
+        TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.KX) != MVT::GetGlobalLength(*KX_),
                             std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): vector length of newstate.KX not correct." );
         // newstate.KX must have blockSize_ vectors; any more will be ignored
         TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.KX) < blockSize_,
@@ -1205,7 +1204,7 @@ namespace Anasazi {
     // compute R
     //----------------------------------------
     if (newstate.R != Teuchos::null) {
-      TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*newstate.R) != MVText::GetGlobalLength(*R_),
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.R) != MVT::GetGlobalLength(*R_),
                           std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): vector length of newstate.R not correct." );
       TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.R) < blockSize_,
                           std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): newstate.R must have blockSize number of vectors." );
@@ -1230,7 +1229,7 @@ namespace Anasazi {
     if (newstate.P != Teuchos::null) {
       TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.P) < blockSize_ ,
                           std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): newstate.P must have blockSize number of vectors." );
-      TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*newstate.P) != MVText::GetGlobalLength(*P_),
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.P) != MVT::GetGlobalLength(*P_),
                           std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): vector length of newstate.P not correct." );
       hasP_ = true;
 
@@ -1241,7 +1240,7 @@ namespace Anasazi {
       if (newstate.KP != Teuchos::null) {
         TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.KP) < blockSize_,
                             std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): newstate.KP must have blockSize number of vectors." );
-        TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*newstate.KP) != MVText::GetGlobalLength(*KP_),
+        TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.KP) != MVT::GetGlobalLength(*KP_),
                             std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): vector length of newstate.KP not correct." );
         MVT::SetBlock(*newstate.KP,bsind,*KP_);
       }
@@ -1258,7 +1257,7 @@ namespace Anasazi {
         if (newstate.MP != Teuchos::null) {
           TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.MP) < blockSize_,
                               std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): newstate.MP must have blockSize number of vectors." );
-          TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*newstate.MP) != MVText::GetGlobalLength(*MP_),
+          TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.MP) != MVT::GetGlobalLength(*MP_),
                               std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): vector length of newstate.MP not correct." );
           MVT::SetBlock(*newstate.MP,bsind,*MP_);
         }

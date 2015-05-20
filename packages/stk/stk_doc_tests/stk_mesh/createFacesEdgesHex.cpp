@@ -197,7 +197,7 @@ namespace
     stk::mesh::EntityId globalIdsHex[8] = { 1, 2, 3, 4, 5, 6, 7, 8 };
     Iogn::ExodusData exoData = createExodusData(oneHex, globalIdsHex);
     Iogn::ExodusMesh* exoMesh = new Iogn::ExodusMesh(exoData);
-    std::string exodusFileName = "twoElem.exo";
+    std::string exodusFileName = "oneElem.exo";
     // No Need To Delete ExoMesh When Using 'writeExodusFile'
     writeExodusFile(exoMesh, exodusFileName);
 

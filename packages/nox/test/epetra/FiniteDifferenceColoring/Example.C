@@ -131,7 +131,7 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-  int ierr = 0, i;
+  int i = 0;
 
   // Initialize MPI
 #ifdef HAVE_MPI

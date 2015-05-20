@@ -175,10 +175,10 @@ TEST( UnitTestBoxFixture, verifyRingFixture )
 namespace stk {
 namespace unit_test {
 
-void test_shift_ring( RingFixture& ring, bool generate_aura=true )
+void test_shift_ring( RingFixture& ring )
 {
   MetaData& meta = ring.m_meta_data;
-  BulkData& bulk = ring.m_bulk_data;
+  stk::mesh::unit_test::BulkDataTester& bulk = ring.m_bulk_data;
 
   const int p_rank     = bulk.parallel_rank();
   const int p_size     = bulk.parallel_size();
@@ -237,7 +237,7 @@ void test_shift_ring( RingFixture& ring, bool generate_aura=true )
   recv_element_1 = Entity();
   recv_element_2 = Entity();
 
-  bulk.change_entity_owner( change, generate_aura, BulkData::MOD_END_COMPRESS_AND_SORT );
+  bulk.change_entity_owner( change, BulkData::MOD_END_COMPRESS_AND_SORT );
 
   send_element_1 = bulk.get_entity( stk::topology::ELEMENT_RANK , ring.m_element_ids[ id_send ] );
   send_element_2 = bulk.get_entity( stk::topology::ELEMENT_RANK , ring.m_element_ids[ id_send + 1 ] );
@@ -255,8 +255,8 @@ void test_shift_ring( RingFixture& ring, bool generate_aura=true )
 
   unsigned count_shared = 0 ;
   for ( stk::mesh::EntityCommListInfoVector::const_iterator
-        i = bulk.comm_list().begin() ;
-        i != bulk.comm_list().end() ; ++i )
+        i = bulk.my_internal_comm_list().begin() ;
+        i != bulk.my_internal_comm_list().end() ; ++i )
   {
     if ( bulk.in_shared( i->key ) ) { ++count_shared ; }
   }

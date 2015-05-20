@@ -757,6 +757,7 @@ namespace ROL {
     TESTOBJECTIVES_LEASTSQUARES,
     TESTOBJECTIVES_POISSONCONTROL,
     TESTOBJECTIVES_POISSONINVERSION,
+    TESTOBJECTIVES_ZAKHAROV,
     TESTOBJECTIVES_LAST
   };
 
@@ -976,6 +977,27 @@ namespace ROL {
     return CONSTRAINT_EQUALITY;
   }
 
+  // For use in gradient and Hessian checks
+  namespace Finite_Difference_Arrays {
+
+    // Finite difference steps in axpy form    
+    const int shifts[4][4] = { {  1,  0,  0, 0 },  // First order
+                               { -1,  2,  0, 0 },  // Second order
+                               { -1,  2,  1, 0 },  // Third order
+                               { -1, -1,  3, 1 }   // Fourth order
+                             };
+
+      // Finite difference weights     
+     const double weights[4][5] = { { -1.0,          1.0, 0.0,      0.0,      0.0      },  // First order
+                                    {  0.0,     -1.0/2.0, 1.0/2.0,  0.0,      0.0      },  // Second order
+                                    { -1.0/2.0, -1.0/3.0, 1.0,     -1.0/6.0,  0.0      },  // Third order
+                                    {  0.0,     -2.0/3.0, 1.0/12.0, 2.0/3.0, -1.0/12.0 }   // Fourth order
+                                  };
+
+  }
+
+
+
 } // namespace ROL
 
 
@@ -1173,6 +1195,10 @@ namespace ROL {
  *  <li>\link rol/example/burgers-control/example_01.cpp Burgers control\endlink</li>
  *  <li>\link rol/example/gross-pitaevskii/example_01.hpp Minimizing the Gross-Pitaevskii functional \endlink</li>
  *  <li>\link rol/example/gross-pitaevskii/example_02.hpp Gross-Pitaevskii functional with \f$H^1\f$ gradient \endlink</li>
+ *  </ol>
+ *  <li><b>Examples using Third Party Libraries</b></li> 
+ *  <ol>
+ *  <li>\link rol/example/json/example_01.cpp Using a JSON file to provide ROL with parameters\endlink</li> 
  *  </ol>
  *  </ul> 
 */  

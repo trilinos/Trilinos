@@ -53,58 +53,106 @@
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-
-/** \example LOBPCG/LOBPCGEpetraEx.cpp
-    This is an example of how to use the Anasazi::LOBPCGSolMgr solver manager to solve a standard eigenvalue problem, using Epetra data structures.
-*/
-
-/** \example LOBPCG/LOBPCGEpetraExGen.cpp
-    This is an example of how to use the Anasazi::LOBPCGSolMgr solver manager to solve a generalized eigenvalue problem, using Epetra data stuctures.
-*/
-
-/** \example LOBPCG/LOBPCGEpetraExGenPrecIfpack.cpp
-    This is an example of how to use the Anasazi::LOBPCGSolMgr solver manager to solve a generalized eigenvalue problem, using Epetra data structures and exploiting a incomplete Cholesky preconditioner from IFPACK.
-*/
-
+/// \example LOBPCGEpetra.cpp
+/// \brief Use LOBPCG with Epetra test problem from Galeri.
+///
+/// This example computes the eigenvalues of largest magnitude of an
+/// eigenvalue problem $A x = \lambda x$, using Anasazi's
+/// implementation of the LOBPCG method, with Epetra linear algebra.
+/// It uses the Galeri package to construct the test problem.
+///
+/// \example LOBPCGEpetraEx.cpp
+/// \brief Use LOBPCG with Epetra test problem (computed here).
+///
+/// This example computes the eigenvalues of largest magnitude of an
+/// eigenvalue problem $A x = \lambda x$, using Anasazi's
+/// implementation of the LOBPCG method, with Epetra linear algebra.
+/// It constructs the test problem within the example itself.
+///
+/// \example LOBPCGEpetraFile.cpp
+/// \brief Use LOBPCG with Epetra test problem loaded from file.
+///
+/// This example computes the eigenvalues of largest magnitude of an
+/// eigenvalue problem $A x = \lambda x$, using Anasazi's
+/// implementation of the LOBPCG method, with Epetra linear algebra.
+/// The example loads the matrix from a file whose name is specified
+/// at the command line.
+///
+/// \example LOBPCGEpetraExGen.cpp
+/// \brief Use LOBPCG with Epetra, for a generalized eigenvalue problem.
+///
+/// This example computes the eigenvalues of largest magnitude of an
+/// generalized eigenvalue problem, using Anasazi's implementation of
+/// the LOBPCG method, with Epetra linear algebra.
+///
+/// \example LOBPCGEpetraExGenPrecIfpack.cpp
+/// \brief Use LOBPCG with Epetra and Ifpack preconditioner.
+///
+/// This example computes the eigenvalues of largest magnitude of an
+/// generalized eigenvalue problem, using Anasazi's implementation of
+/// the LOBPCG method, with Epetra linear algebra.  It preconditions
+/// LOBPCG with an Ifpack incomplete Cholesky preconditioner.
+///
+/// \example LOBPCGEpetraExGenShifted.cpp
+/// \brief Use LOBPCG with Epetra, with shifted eigenvalue problem
+///
+/// This example computes the eigenvalues of largest magnitude of the
+/// discretized 2-D Laplacian operator, using Anasazi's implementation
+/// of the LOBPCG method.  This problem constructs a shifted
+/// eigenproblem that targets the smallest eigenvalues around a
+/// certain value (sigma).  This operator is discretized using linear
+/// finite elements and constructed as an Epetra matrix, then passed
+/// shifted using EpetraExt utilities.
 
 namespace Anasazi {
 
-
 /*! \class LOBPCGSolMgr
  *
- *  \brief The LOBPCGSolMgr provides a powerful solver manager over the LOBPCG eigensolver.
+ * \brief User interface for the LOBPCG eigensolver.
  *
- * This solver manager exists to provide a flexible manager over the LOBPCG eigensolver intended for general use. Features 
- * provided by this solver manager include:
- *   - locking of converged eigenpairs
- *   - global convergence on only the significant eigenpairs (instead of any eigenpairs with low residual)
- *   - recovery from LOBPCGRitzFailure when full orthogonalization is disabled
+ * This class provides a user interface for the LOBPCG (Locally
+ * Optimal Block Preconditioned Conjugate Gradient) eigensolver.  It
+ * provides the following features:
  *
- * The solver manager provides to the solver a StatusTestCombo object constructed as follows:<br>
- *    &nbsp;&nbsp;&nbsp;<tt>combo = maxiterstest OR globaltest OR lockingtest OR debugtest</tt><br>
- * where
- *    - \c maxiters terminates computation when a maximum number of iterations have been performed<br>
- *      \c maxiters is a StatusTestMaxIters object
- *    - \c globaltest terminates computation when global convergence has been detected.<br>
- *      It is encapsulated in a StatusTestWithOrdering object, to ensure that computation is terminated
- *      only after the most significant eigenvalues/eigenvectors have met the convergence criteria.<br>
- *      If not specified via setGlobalStatusTest(), \c globaltest is a StatusTestResNorm object which tests the
- *      M-norms of the direct residuals relative to the Ritz values.
- *    - \c lockingtest halts LOBPCG::iterate() in order to deflate converged eigenpairs for locking.<br>
- *      It will query the underlying LOBPCG eigensolver to determine when eigenvectors should be locked.<br>
- *      If not specified via setLockingStatusTest(), \c lockingtest is a StatusTestResNorm object.
- *    - \c debugtest allows a user to specify additional monitoring of the iteration, encapsulated in a StatusTest object<br>
- *      If not specified via setDebugStatusTest(), \c debugtest is ignored.<br> 
- *      In most cases, it should return ::Failed; if it returns ::Passed, solve() will throw an AnasaziError exception.
+ * <ul>
+ * <li> Locking of converged eigenpairs </li>
+ * <li> Global convergence on only the significant eigenpairs (instead
+ *      of any eigenpairs with low residual) </li>
+ * <li> recovery from orthogonalization failures (LOBPCGRitzFailure)
+ *      when full orthogonalization is disabled </li>
+ * </ol>
  *
- * Much of this behavior is controlled via parameters and options passed to the
- * solver manager. For more information, see LOBPCGSolMgr().
-
- \ingroup anasazi_solver_framework
-
- \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, Heidi Thornquist
+ * Much of this behavior is controlled via parameters and options
+ * passed to the solver manager. For more information, see the default
+ * (zero-argument) constructor of this class.
+ *
+ * For an example that defines a custom StatusTest so that Anasazi's
+ * solver LOBPCG converges correctly with spectrum folding, see the
+ * LOBPCGCustomStatusTest.cpp example (associated with StatusTest).
+ *
+ * LOBPCG stops iterating if it has reached the maximum number of
+ * iterations, or ig lobal convergence is detected (uses
+ * StatusTestWithOrdering to ensure that only the most significant
+ * eigenvalues/eigenvectors have converged).  If not specified via
+ * setGlobalStatusTest(), the convergence test is a StatusTestResNorm
+ * instance which tests the M-norms of the direct residuals relative
+ * to the Ritz values.
+ *
+ * LOBPCG also includes a "locking test" which deflates converged
+ * eigenpairs for locking.  It will query the underlying LOBPCG
+ * eigensolver to determine when eigenvectors should be locked.  If
+ * not specified via setLockingStatusTest(), the locking test is a
+ * StatusTestResNorm object.
+ *
+ * Users may specify an optional "debug test."  This lets users
+ * specify additional monitoring of the iteration.  If not specified
+ * via setDebugStatusTest(), this is ignored.  In most cases, the
+ * user's debug test should return ::Failed; if it returns ::Passed,
+ * solve() will throw an AnasaziError exception.
+ *
+ * \ingroup anasazi_solver_framework
+ * \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, Heidi Thornquist
  */
-
 template<class ScalarType, class MV, class OP>
 class LOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
 
@@ -114,11 +162,11 @@ class LOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
     typedef Teuchos::ScalarTraits<MagnitudeType> MT;
-    
+
   public:
 
   //! @name Constructors/Destructor
-  //@{ 
+  //@{
 
   /*! \brief Basic constructor for LOBPCGSolMgr.
    *
@@ -135,14 +183,14 @@ class LOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
    *      - \c "Maximum Iterations" - a \c int specifying the maximum number of iterations the underlying solver is allowed to perform. Default: 100
    *      - \c "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: machine precision.
    *      - \c "Relative Convergence Tolerance" - a \c bool specifying whether residuals norms should be scaled by their eigenvalues for the purposing of deciding convergence. Default: true
-   *      - \c "Convergence Norm" - a \c string specifying the norm for convergence testing: "2" or "M" 
+   *      - \c "Convergence Norm" - a \c string specifying the norm for convergence testing: "2" or "M"
    *   - Locking parameters (if using default locking test; see setLockingStatusTest())
    *      - \c "Use Locking" - a \c bool specifying whether the algorithm should employ locking of converged eigenpairs. Default: false
    *      - \c "Max Locked" - a \c int specifying the maximum number of eigenpairs to be locked. Default: problem->getNEV()
    *      - \c "Locking Quorum" - a \c int specifying the number of eigenpairs that must meet the locking criteria before locking actually occurs. Default: 1
    *      - \c "Locking Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide locking. Default: 0.1*convergence tolerance
    *      - \c "Relative Locking Tolerance" - a \c bool specifying whether residuals norms should be scaled by their eigenvalues for the purposing of deciding locking. Default: true
-   *      - \c "Locking Norm" - a \c string specifying the norm for locking testing: "2" or "M" 
+   *      - \c "Locking Norm" - a \c string specifying the norm for locking testing: "2" or "M"
    */
   LOBPCGSolMgr( const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem,
                              Teuchos::ParameterList &pl );
@@ -150,9 +198,9 @@ class LOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
   //! Destructor.
   virtual ~LOBPCGSolMgr() {};
   //@}
-  
+
   //! @name Accessor methods
-  //@{ 
+  //@{
 
   //! Return the eigenvalue problem.
   const Eigenproblem<ScalarType,MV,OP>& getProblem() const {
@@ -160,11 +208,11 @@ class LOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
   }
 
   //! Get the iteration count for the most recent call to \c solve().
-  int getNumIters() const { 
-    return numIters_; 
+  int getNumIters() const {
+    return numIters_;
   }
 
-  /*! \brief Return the timers for this object. 
+  /*! \brief Return the timers for this object.
    *
    * The timers are ordered as follows:
    *   - time spent in solve() routine
@@ -178,10 +226,10 @@ class LOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
   //@}
 
   //! @name Solver application methods
-  //@{ 
-    
+  //@{
+
   /*! \brief This method performs possibly repeated calls to the underlying eigensolver's iterate() routine
-   * until the problem has been solved (as decided by the solver manager) or the solver manager decides to 
+   * until the problem has been solved (as decided by the solver manager) or the solver manager decides to
    * quit.
    *
    * This method calls LOBPCG::iterate(), which will return either because a specially constructed status test evaluates to ::Passed
@@ -249,16 +297,16 @@ class LOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
   Teuchos::RCP<Teuchos::Time> _timerSolve, _timerLocking;
 
   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > globalTest_;
-  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > lockingTest_; 
+  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > lockingTest_;
   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > debugTest_;
 };
 
 
 // Constructor
 template<class ScalarType, class MV, class OP>
-LOBPCGSolMgr<ScalarType,MV,OP>::LOBPCGSolMgr( 
+LOBPCGSolMgr<ScalarType,MV,OP>::LOBPCGSolMgr(
         const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem,
-        Teuchos::ParameterList &pl ) : 
+        Teuchos::ParameterList &pl ) :
   problem_(problem),
   whch_("SR"),
   ortho_("SVQB"),
@@ -309,11 +357,11 @@ LOBPCGSolMgr<ScalarType,MV,OP>::LOBPCGSolMgr(
     convNorm_ = RES_ORTH;
   }
   else {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
         "Anasazi::LOBPCGSolMgr: Invalid Convergence Norm.");
   }
 
-  
+
   // locking tolerance
   useLocking_ = pl.get("Use Locking",useLocking_);
   rellocktol_ = pl.get("Relative Locking Tolerance",rellocktol_);
@@ -328,7 +376,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::LOBPCGSolMgr(
     lockNorm_ = RES_ORTH;
   }
   else {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
         "Anasazi::LOBPCGSolMgr: Invalid Locking Norm.");
   }
 
@@ -352,7 +400,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::LOBPCGSolMgr(
   }
   TEUCHOS_TEST_FOR_EXCEPTION(maxLocked_ < 0, std::invalid_argument,
                      "Anasazi::LOBPCGSolMgr: \"Max Locked\" must be positive.");
-  TEUCHOS_TEST_FOR_EXCEPTION(maxLocked_ + blockSize_ < problem_->getNEV(), 
+  TEUCHOS_TEST_FOR_EXCEPTION(maxLocked_ + blockSize_ < problem_->getNEV(),
                      std::invalid_argument,
                      "Anasazi::LOBPCGSolMgr: Not enough storage space for requested number of eigenpairs.");
 
@@ -387,7 +435,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::LOBPCGSolMgr(
 
 // solve()
 template<class ScalarType, class MV, class OP>
-ReturnType 
+ReturnType
 LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
   typedef SolverUtils<ScalarType,MV,OP> msutils;
@@ -420,7 +468,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   else {
     convtest = globalTest_;
   }
-  Teuchos::RCP<StatusTestWithOrdering<ScalarType,MV,OP> > ordertest 
+  Teuchos::RCP<StatusTestWithOrdering<ScalarType,MV,OP> > ordertest
     = Teuchos::rcp( new StatusTestWithOrdering<ScalarType,MV,OP>(convtest,sorter,nev) );
   // locking
   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > locktest;
@@ -451,7 +499,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Orthomanager
-  Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho; 
+  Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho;
   if (ortho_=="SVQB") {
     ortho = Teuchos::rcp( new SVQBOrthoManager<ScalarType,MV,OP>(problem_->getM()) );
   } else if (ortho_=="DGKS") {
@@ -468,7 +516,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
   //////////////////////////////////////////////////////////////////////////////////////
   // LOBPCG solver
-  Teuchos::RCP<LOBPCG<ScalarType,MV,OP> > lobpcg_solver 
+  Teuchos::RCP<LOBPCG<ScalarType,MV,OP> > lobpcg_solver
     = Teuchos::rcp( new LOBPCG<ScalarType,MV,OP>(problem_,sorter,printer,outputtest,ortho,plist) );
   // set any auxiliary vectors defined in the problem
   Teuchos::RCP< const MV > probauxvecs = problem_->getAuxVecs();
@@ -478,7 +526,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Storage
-  // 
+  //
   // lockvecs will contain eigenvectors that have been determined "locked" by the status test
   int curNumLocked = 0;
   Teuchos::RCP<MV> lockvecs;
@@ -626,10 +674,10 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
             LOBPCGState<ScalarType,MV> state = lobpcg_solver->getState();
             Teuchos::RCP<MV> newstateX, newstateMX, newstateP, newstateMP;
             //
-            // workMV will be partitioned as follows: workMV = [X P MX MP], 
+            // workMV will be partitioned as follows: workMV = [X P MX MP],
             //
             // make a copy of the current X,MX state
-            std::vector<int> bsind(blockSize_); 
+            std::vector<int> bsind(blockSize_);
             for (int i=0; i<blockSize_; i++) bsind[i] = i;
             newstateX = MVT::CloneViewNonConst(*workMV,bsind);
             MVT::SetBlock(*state.X,bsind,*newstateX);
@@ -707,8 +755,8 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       ////////////////////////////////////////////////////////////////////////////////////
       catch (const LOBPCGRitzFailure &re) {
         if (fullOrtho_==true || recover_==false) {
-          // if we are already using full orthogonalization, there isn't much we can do here. 
-          // the most recent information in the status tests is still valid, and can be used to extract/return the 
+          // if we are already using full orthogonalization, there isn't much we can do here.
+          // the most recent information in the status tests is still valid, and can be used to extract/return the
           // eigenpairs that have converged.
           printer->stream(Warnings) << "Error! Caught LOBPCGRitzFailure at iteration " << lobpcg_solver->getNumIters() << std::endl
             << "Will not try to recover." << std::endl;
@@ -819,7 +867,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         //
         // MM = restart^H M restart
         MVT::MvTransMv(1.0,*restart,*Mrestart,MM);
-        // 
+        //
         // compute Krestart = K*restart
         OPT::Apply(*problem_->getOperator(),*restart,*Krestart);
         //
@@ -850,7 +898,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         //
         // compute the ritz vectors: store them in Krestart
         LOBPCGState<ScalarType,MV> newstate;
-        Teuchos::RCP<MV> newX; 
+        Teuchos::RCP<MV> newX;
         {
           std::vector<int> bsind(blockSize_);
           for (int i=0; i<blockSize_; i++) bsind[i] = i;
@@ -865,7 +913,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         lobpcg_solver->initialize(newstate);
       }
       catch (const AnasaziError &err) {
-        printer->stream(Errors) 
+        printer->stream(Errors)
           << "Anasazi::LOBPCGSolMgr::solve() caught unexpected exception from Anasazi::LOBPCG::iterate() at iteration " << lobpcg_solver->getNumIters() << std::endl
           << err.what() << std::endl
           << "Anasazi::LOBPCGSolMgr::solve() returning Unconverged with no solutions." << std::endl;
@@ -966,29 +1014,29 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   numIters_ = lobpcg_solver->getNumIters();
 
   if (sol.numVecs < nev) {
-    return Unconverged; // return from LOBPCGSolMgr::solve() 
+    return Unconverged; // return from LOBPCGSolMgr::solve()
   }
-  return Converged; // return from LOBPCGSolMgr::solve() 
+  return Converged; // return from LOBPCGSolMgr::solve()
 }
 
 
 template <class ScalarType, class MV, class OP>
-void 
+void
 LOBPCGSolMgr<ScalarType,MV,OP>::setGlobalStatusTest(
-    const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > &global) 
+    const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > &global)
 {
   globalTest_ = global;
 }
 
 template <class ScalarType, class MV, class OP>
-const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > & 
-LOBPCGSolMgr<ScalarType,MV,OP>::getGlobalStatusTest() const 
+const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > &
+LOBPCGSolMgr<ScalarType,MV,OP>::getGlobalStatusTest() const
 {
   return globalTest_;
 }
 
 template <class ScalarType, class MV, class OP>
-void 
+void
 LOBPCGSolMgr<ScalarType,MV,OP>::setDebugStatusTest(
     const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > &debug)
 {
@@ -996,23 +1044,23 @@ LOBPCGSolMgr<ScalarType,MV,OP>::setDebugStatusTest(
 }
 
 template <class ScalarType, class MV, class OP>
-const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > & 
+const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > &
 LOBPCGSolMgr<ScalarType,MV,OP>::getDebugStatusTest() const
 {
   return debugTest_;
 }
 
 template <class ScalarType, class MV, class OP>
-void 
+void
 LOBPCGSolMgr<ScalarType,MV,OP>::setLockingStatusTest(
-    const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > &locking) 
+    const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > &locking)
 {
   lockingTest_ = locking;
 }
 
 template <class ScalarType, class MV, class OP>
-const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > & 
-LOBPCGSolMgr<ScalarType,MV,OP>::getLockingStatusTest() const 
+const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > &
+LOBPCGSolMgr<ScalarType,MV,OP>::getLockingStatusTest() const
 {
   return lockingTest_;
 }

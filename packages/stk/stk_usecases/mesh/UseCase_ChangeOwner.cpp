@@ -64,7 +64,7 @@ const unsigned spatial_dimension = 2;
 Grid2D_Fixture::Grid2D_Fixture( stk::ParallelMachine comm )
   : m_spatial_dimension(spatial_dimension),
     m_fem_meta_data( m_spatial_dimension ),
-    m_bulk_data( m_fem_meta_data , comm , 100 ),
+    m_bulk_data( m_fem_meta_data , comm , stk::mesh::BulkData::AUTO_AURA ),
     m_quad_part( m_fem_meta_data.declare_part_with_topology( "quad", stk::topology::QUAD_4)),
     m_coord_field( m_fem_meta_data.declare_field< VectorField >(stk::topology::NODE_RANK, "coordinates" ) ),
     m_elem_rank( stk::topology::ELEMENT_RANK ),
@@ -256,7 +256,7 @@ bool test_change_owner_with_constraint( stk::ParallelMachine pm )
 
   fem_meta_data.commit();
 
-  stk::mesh::BulkData bulk_data( fem_meta_data, pm, 100 );
+  stk::mesh::BulkData bulk_data( fem_meta_data, pm, stk::mesh::BulkData::AUTO_AURA );
   bulk_data.modification_begin();
 
   unsigned nx = 3;
@@ -395,7 +395,7 @@ bool test_change_owner_2( stk::ParallelMachine pm )
 
   fem_meta_data.commit();
 
-  stk::mesh::BulkData bulk_data( fem_meta_data, pm, 100 );
+  stk::mesh::BulkData bulk_data( fem_meta_data, pm, stk::mesh::BulkData::AUTO_AURA );
   bulk_data.modification_begin();
 
   unsigned nx = 3;
@@ -515,7 +515,7 @@ bool test_change_owner_3( stk::ParallelMachine pm )
 
   fem_meta_data.commit();
 
-  stk::mesh::BulkData bulk_data( fem_meta_data, pm, 100 );
+  stk::mesh::BulkData bulk_data( fem_meta_data, pm, stk::mesh::BulkData::AUTO_AURA );
   bulk_data.modification_begin();
 
   unsigned nx = 3;

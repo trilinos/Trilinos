@@ -46,8 +46,8 @@
 #ifndef MUELU_SHIFTEDLAPLACIAN_FWD_HPP
 #define MUELU_SHIFTEDLAPLACIAN_FWD_HPP
 
-
-
+#include "MueLu_ConfigDefs.hpp"
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 
 namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -58,6 +58,6 @@ namespace MueLu {
 #define MUELU_SHIFTEDLAPLACIAN_SHORT
 #endif
 
-
+#endif
 
 #endif // MUELU_SHIFTEDLAPLACIAN_FWD_HPP

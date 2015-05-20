@@ -57,6 +57,8 @@
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_Traits.hpp"
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
 
 #ifdef HAVE_MPI
@@ -101,6 +103,8 @@ RCP<const panzer::FieldPattern> buildFieldPattern()
 // quad tests
 TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad_fei)
 {
+   PHX::InitializeKokkosDevice();
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
@@ -202,12 +206,16 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad_fei)
       TEST_EQUALITY(graph->NumMyRows(),(int) owned.size());
       TEST_EQUALITY(graph->MaxNumIndices(),myRank==0 ? 9 : 6);
    }
+   
+   PHX::FinalizeKokkosDevice();
 }
 #endif
 
 // quad tests
 TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
 {
+   PHX::InitializeKokkosDevice();
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
@@ -309,6 +317,8 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
       TEST_EQUALITY(graph->NumMyRows(),(int) owned.size());
       TEST_EQUALITY(graph->MaxNumIndices(),myRank==0 ? 6 : 9);
    }
+
+   PHX::FinalizeKokkosDevice();
 }
 
 }

@@ -203,7 +203,6 @@ namespace Belos {
     typedef Teuchos::ScalarTraits<Scalar> SCT;
     typedef Teuchos::ScalarTraits<magnitude_type> SCTM;
     typedef MultiVecTraits<Scalar, MV> MVT;
-    typedef MultiVecTraitsExt<Scalar, MV> MVText;
     typedef typename MVT::tsqr_adaptor_type tsqr_adaptor_type;
 
   public:
@@ -991,7 +990,7 @@ namespace Belos {
     // troubles, you may consider modifying the code below to
     // reallocate Q_ for every X that comes in.
     if (Q_.is_null() ||
-        MVText::GetGlobalLength(*Q_) != MVText::GetGlobalLength(X) ||
+        MVT::GetGlobalLength(*Q_) != MVT::GetGlobalLength(X) ||
         numCols > MVT::GetNumberVecs (*Q_)) {
       Q_ = MVT::Clone (X, numCols);
     }

@@ -69,8 +69,8 @@ postRegistrationSetup(typename Traits::SetupData d,
 template<typename EvalT, typename Traits>
 KOKKOS_INLINE_FUNCTION
 void Density<EvalT, Traits>:: operator () (const int i) const
- {
-    for (int ip=0; ip< density.dimension(1); ip++)
+{
+  for (PHX::index_size_type ip=0; ip< Teuchos::as<PHX::index_size_type>(density.dimension_1()); ip++)
     density(i,ip) =  temp(i,ip) * temp(i,ip);  
 }
 
@@ -78,7 +78,7 @@ void Density<EvalT, Traits>:: operator () (const int i) const
 template<typename EvalT, typename Traits>
 void Density<EvalT, Traits>::evaluateFields(typename Traits::EvalData d)
 {
-   Kokkos::parallel_for (d.num_cells, *this);
+  Kokkos::parallel_for(d.num_cells, *this);
 }
 
 //**********************************************************************

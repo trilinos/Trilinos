@@ -89,6 +89,7 @@ ENDIF(PyTrilinos_ENABLE_Triutils)
 
 IF(PyTrilinos_ENABLE_Tpetra)
   PyTrilinos_MAKE_TEST(testTpetra_Map)
+  PyTrilinos_MAKE_TEST(testTpetra_Vector)
 ENDIF(PyTrilinos_ENABLE_Tpetra)
 
 IF(PyTrilinos_ENABLE_EpetraExt)

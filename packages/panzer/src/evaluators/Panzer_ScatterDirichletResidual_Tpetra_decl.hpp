@@ -142,6 +142,9 @@ private:
   //! If set to true, allows runtime disabling of dirichlet BCs on node-by-node basis
   bool checkApplyBC_;
 
+  // If set to true, scattering an initial condition
+  bool scatterIC_;
+
   // Allows runtime disabling of dirichlet BCs on node-by-node basis
   std::vector< PHX::MDField<const bool,Cell,NODE> > applyBC_;
 };
@@ -207,6 +210,9 @@ private:
 
   //! If set to true, allows runtime disabling of dirichlet BCs on node-by-node basis
   bool checkApplyBC_;
+
+  // If set to true, scattering an initial condition
+  bool scatterIC_;
 
   // Allows runtime disabling of dirichlet BCs on node-by-node basis
   std::vector< PHX::MDField<const bool,Cell,NODE> > applyBC_;

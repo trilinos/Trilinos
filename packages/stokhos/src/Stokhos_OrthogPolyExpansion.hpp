@@ -171,6 +171,9 @@ namespace Stokhos {
     virtual void sqrt(
       OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
       const OrthogPolyApprox<ordinal_type, value_type, node_type>& a) = 0;
+    virtual void cbrt(
+      OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+      const OrthogPolyApprox<ordinal_type, value_type, node_type>& a) = 0;
     virtual void pow(
       OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
       const OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 

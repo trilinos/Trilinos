@@ -41,6 +41,8 @@
 #include <string>                       // for string
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, PartVector
+#include "stk_unit_test_utils/ioUtils.hpp"
+
 namespace stk { namespace mesh { class Part; } }
 
 namespace
@@ -92,6 +94,43 @@ TEST(StkMeshHowTo, customGhostElem)
     node1 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, id);
     EXPECT_TRUE(stkMeshBulkData.is_valid(elem1));
     EXPECT_TRUE(stkMeshBulkData.is_valid(node1));
+}
+
+TEST(StkMeshHowTo, add_element_to_ghosting_using_specialized_modification_for_performance)
+{
+    MPI_Comm communicator = MPI_COMM_WORLD;
+    if(stk::parallel_machine_size(communicator) == 2)
+    {
+        stk::mesh::MetaData meta;
+        stk::mesh::BulkData bulk(meta, communicator);
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:2x2x4", bulk, communicator);
+
+        stk::mesh::EntityId elementId = 1;
+        stk::mesh::Entity elem1 = bulk.get_entity(stk::topology::ELEM_RANK, elementId);
+        if(bulk.parallel_rank() == 0)
+        {
+            EXPECT_TRUE(bulk.is_valid(elem1));
+        }
+        else
+        {
+            EXPECT_TRUE(!bulk.is_valid(elem1));
+        }
+
+        bulk.modification_begin();
+        stk::mesh::Ghosting& ghosting = bulk.create_ghosting("my ghosting");
+        bulk.modification_end();
+
+        stk::mesh::EntityProcVec entityProcPairs;
+        if(bulk.parallel_rank() == 0)
+        {
+            entityProcPairs.push_back(stk::mesh::EntityProc(elem1, 1));
+        }
+
+        bulk.batch_add_to_ghosting(ghosting, entityProcPairs);
+
+        elem1 = bulk.get_entity(stk::topology::ELEM_RANK, elementId);
+        EXPECT_TRUE(bulk.is_valid(elem1));
+    }
 }
 //END_GHOST_ELEM
 }

@@ -1323,7 +1323,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 }
 
-#if defined(HAVE_STOKHOS_MUELU)
+#if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_STOKHOS_AMESOS2) && defined(HAVE_STOKHOS_IFPACK2)
 
 //
 // Test simple CG solve with MueLu preconditioning for a 1-D Laplacian matrix
@@ -1796,8 +1796,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef BaseScalar BelosScalar;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
   typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> OP;
-  typedef Belos::OperatorTraits<BelosScalar,MV,OP> BOPT;
-  typedef Belos::MultiVecTraits<BelosScalar,MV> BMVT;
   typedef Belos::LinearProblem<BelosScalar,MV,OP> BLinProb;
   RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
   RCP< BLinProb > problem = rcp(new BLinProb(matrix, x, b));
@@ -1836,8 +1834,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     Stokhos::create_flat_vector_view(*b, flat_b_map);
   typedef Tpetra::MultiVector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FMV;
   typedef Tpetra::Operator<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FOP;
-  typedef Belos::OperatorTraits<BelosScalar,FMV,FOP> FBOPT;
-  typedef Belos::MultiVecTraits<BelosScalar,FMV> FBMVT;
   typedef Belos::LinearProblem<BelosScalar,FMV,FOP> FBLinProb;
   RCP< FBLinProb > flat_problem =
     rcp(new FBLinProb(flat_matrix, flat_x, flat_b));
@@ -1881,7 +1877,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 #endif
 
-#if defined(HAVE_STOKHOS_BELOS) && defined(HAVE_STOKHOS_IFPACK2) && defined(HAVE_STOKHOS_MUELU)
+#if defined(HAVE_STOKHOS_BELOS) && defined(HAVE_STOKHOS_IFPACK2) && defined(HAVE_STOKHOS_MUELU) && defined(HAVE_STOKHOS_AMESOS2)
 
 //
 // Test Belos CG solve with MueLu preconditioning for a 1-D Laplacian matrix
@@ -2310,5 +2306,5 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 #define CRSMATRIX_UQ_PCE_TESTS_N(N)                                     \
   typedef Stokhos::DeviceForNode2<N>::type Device;                      \
-  typedef Stokhos::DynamicStorage<int,double,typename Device::execution_space> DS;                \
+  typedef Stokhos::DynamicStorage<int,double,Device::execution_space> DS; \
   CRSMATRIX_UQ_PCE_TESTS_SLGN(DS, int, int, N)

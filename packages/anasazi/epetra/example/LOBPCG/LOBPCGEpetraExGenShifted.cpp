@@ -1,9 +1,13 @@
-//  This example computes the eigenvalues of smallest magnitude of the
-//  discretized 2D Laplacian operator using the LOBPCG method.
-//  This problem shows the construction of a shifted eigenproblem that
-//  targets the smallest eigenvalues around a certain value (sigma).
-//  This operator is discretized using linear finite elements and constructed
-//  as an Epetra matrix, then passed shifted using EpetraExt utilities.
+/// \example LOBPCGEpetraExGenShifted.cpp
+/// \brief Use LOBPCG with Epetra, with shifted eigenvalue problem
+///
+/// This example computes the eigenvalues of largest magnitude of the
+/// discretized 2-D Laplacian operator, using Anasazi's implementation
+/// of the LOBPCG method.  This problem constructs a shifted
+/// eigenproblem that targets the smallest eigenvalues around a
+/// certain value (sigma).  This operator is discretized using linear
+/// finite elements and constructed as an Epetra matrix, then passed
+/// shifted using EpetraExt utilities.
 
 // Include autoconfigured header
 #include "AnasaziConfigDefs.hpp"
@@ -43,11 +47,10 @@
 
 #include "Teuchos_StandardCatchMacros.hpp"
 
-// ****************************************************************************
-// BEGIN MAIN ROUTINE
-// ****************************************************************************
 
-int main(int argc, char *argv[]) {
+int
+main (int argc, char *argv[])
+{
 #ifdef EPETRA_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);

@@ -318,11 +318,13 @@ int main(int argc, char *argv[])
 
     Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys =
       coloring_using_fdc(printParams,lsParams,interface,noxSoln,Problem,colorMap);
-    ierr=solve_system("fdc",Comm,printParams,nlParamsPtr,iReq,noxSoln,Problem,linSys,verbose);
+    char name_fdc[] = "fdc";
+    ierr=solve_system(name_fdc,Comm,printParams,nlParamsPtr,iReq,noxSoln,Problem,linSys,verbose);
 
     Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys2 =
       coloring_using_fdcwu(printParams,lsParams,interface,noxSoln2,Problem,colorMap,updateColorMap);
-    ierr=solve_system("fdcwu",Comm,printParams,nlParamsPtr,iReq,noxSoln2,Problem,linSys2,verbose);
+    char name_fdcwu[] = "fdcwu"; 
+    ierr=solve_system(name_fdcwu,Comm,printParams,nlParamsPtr,iReq,noxSoln2,Problem,linSys2,verbose);
 
     success = ierr==0;
   }

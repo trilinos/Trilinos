@@ -48,7 +48,7 @@
 #include <vector>
 
 #include <boost/tuple/tuple.hpp>
-#ifdef HAVE_INTREPID_KOKKOSCORE
+#if defined(HAVE_INTREPID_KOKKOSCORE)
 #include<Kokkos_Core.hpp>
 #endif
 #include "Intrepid_MiniTensor_Vector.h"
@@ -131,21 +131,21 @@ public:
   /// \param dimension the space dimension
   /// \param data_ptr pointer into the array
   ///
-#ifdef HAVE_INTREPID_KOKKOSCORE
+#if defined(HAVE_INTREPID_KOKKOSCORE)
   template<class ArrayT, typename iType>
   Tensor(ArrayT & data, iType index1);
 
   template<class ArrayT, typename iType>
   Tensor(
       typename Kokkos::Impl::enable_if<
-          !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
       iType index1,
       iType index2);
 
   template<class ArrayT, typename iType>
   Tensor(
       typename Kokkos::Impl::enable_if<
-          !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
       iType index1,
       iType index2,
       iType index3);
@@ -179,7 +179,7 @@ public:
   Tensor(
       Index const dimension,
       typename Kokkos::Impl::enable_if<
-          !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
       iType index1,
       iType index2);
 
@@ -314,8 +314,10 @@ public:
   /// Fill components from array defined by pointer.
   /// \param data_ptr pointer into array for filling components
   ///
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
   template<class ArrayT, typename iType>
-  void
+  typename Kokkos::Impl::enable_if<
+  !Kokkos::Impl::is_same<ArrayT, T*>::value, void>::type
   fill(ArrayT & data, iType index1);
 
   template<class ArrayT, typename iType>
@@ -350,7 +352,7 @@ public:
       iType index4,
       iType index5,
       iType index6);
-
+#endif
   void
   fill(T const * data_ptr);
 
@@ -637,46 +639,91 @@ diag(Tensor<T, N> const & A);
 /// All components are zero
 ///
 template<typename T, Index N>
-const Tensor<T, N>
+Tensor<T, N> const
 zero();
 
 template<typename T>
-const Tensor<T, DYNAMIC>
+Tensor<T, DYNAMIC> const
 zero(Index const dimension);
 
 template<typename T, Index N>
-const Tensor<T, N>
+Tensor<T, N> const
 zero(Index const dimension);
 
 ///
 /// 2nd-order identity tensor
 ///
 template<typename T, Index N>
-const Tensor<T, N>
+Tensor<T, N> const
 identity();
 
 template<typename T>
-const Tensor<T, DYNAMIC>
+Tensor<T, DYNAMIC> const
 identity(Index const dimension);
 
 template<typename T, Index N>
-const Tensor<T, N>
+Tensor<T, N> const
 identity(Index const dimension);
 
 ///
 /// 2nd-order identity tensor, à la Matlab
 ///
 template<typename T, Index N>
-const Tensor<T, N>
+Tensor<T, N> const
 eye();
 
 template<typename T>
-const Tensor<T, DYNAMIC>
+Tensor<T, DYNAMIC> const
 eye(Index const dimension);
 
 template<typename T, Index N>
-const Tensor<T, N>
+Tensor<T, N> const
 eye(Index const dimension);
+
+///
+/// Levi-Civita symbol
+///
+template<typename T, Index N>
+Tensor<T, N> const
+levi_civita_2();
+
+template<typename T>
+Tensor<T, DYNAMIC> const
+levi_civita_2(Index const dimension);
+
+template<typename T, Index N>
+Tensor<T, N> const
+levi_civita_2(Index const dimension);
+
+///
+/// Permutation symbol
+///
+template<typename T, Index N>
+Tensor<T, N> const
+permutation_2();
+
+template<typename T>
+Tensor<T, DYNAMIC> const
+permutation_2(Index const dimension);
+
+template<typename T, Index N>
+Tensor<T, N> const
+permutation_2(Index const dimension);
+
+///
+/// Alternating symbol
+///
+template<typename T, Index N>
+Tensor<T, N> const
+alternator_2();
+
+template<typename T>
+Tensor<T, DYNAMIC> const
+alternator_2(Index const dimension);
+
+template<typename T, Index N>
+Tensor<T, N> const
+alternator_2(Index const dimension);
 
 ///
 /// R^N 2nd-order tensor transpose

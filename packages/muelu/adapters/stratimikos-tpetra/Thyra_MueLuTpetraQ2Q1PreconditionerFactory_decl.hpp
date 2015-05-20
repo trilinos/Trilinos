@@ -125,7 +125,8 @@ namespace Thyra {
                   const Teuchos::ArrayRCP<LO>& p2vMap,
                   const Teko::LinearOp& thA11, const Teko::LinearOp& thA12, const Teko::LinearOp& thA21, const Teko::LinearOp& thA11_9Pt) const;
 
-    Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > FilterMatrix(Xpetra::Matrix<SC,LO,GO,NO>& A, SC dropTol) const;
+    Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > Absolute    (const Xpetra::Matrix<SC,LO,GO,NO>& A) const;
+    Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > FilterMatrix(Xpetra::Matrix<SC,LO,GO,NO>& A, Xpetra::Matrix<SC,LO,GO,NO>& Pattern, SC dropTol) const;
 
     void SetDependencyTree     (MueLu::FactoryManager<SC,LO,GO,NO>& M, const ParameterList& paramList) const;
     void SetBlockDependencyTree(MueLu::FactoryManager<SC,LO,GO,NO>& M, LO row, LO col, const std::string& mode, const ParameterList& paramList)  const;

@@ -9,7 +9,9 @@
 
 #include <Kokkos_Core.hpp>
 #include <Kokkos_MV.hpp>
+#include <Kokkos_Sparse.hpp>
 #include <Kokkos_CrsMatrix.hpp>
+#include <impl/Kokkos_Timer.hpp>
 
 typedef Kokkos::DefaultExecutionSpace execution_space;
 
@@ -268,7 +270,11 @@ int test_crs_matrix_test(LocalOrdinalType numRows, LocalOrdinalType numCols, Loc
         Kokkos::deep_copy(A.graph.entries,h_graph.entries);
         Kokkos::deep_copy(A.values,h_values);
 
-        Kokkos::MV_Multiply(0.0,y,1.0,A,x);
+#ifdef NEWKERNEL
+          KokkosSparse::spmv("N",1.0,A,x,0.0,y);
+#else
+          Kokkos::MV_Multiply(y,A,x);
+#endif
         execution_space::fence();
         Kokkos::deep_copy(h_y,y);
         Scalar error[numVecs];
@@ -295,14 +301,15 @@ int test_crs_matrix_test(LocalOrdinalType numRows, LocalOrdinalType numCols, Loc
         }
 
     LocalOrdinalType loop = 10;
-        timespec starttime,endtime;
-    clock_gettime(CLOCK_REALTIME,&starttime);
-
+    Kokkos::Impl::Timer timer;
         for(LocalOrdinalType i=0;i<loop;i++)
-                Kokkos::MV_Multiply(y,A,x);
+#ifdef NEWKERNEL
+          KokkosSparse::spmv("N",1.0,A,x,0.0,y);
+#else
+          Kokkos::MV_Multiply(y,A,x);
+#endif
         execution_space::fence();
-        clock_gettime(CLOCK_REALTIME,&endtime);
-        double time = endtime.tv_sec - starttime.tv_sec + 1.0 * (endtime.tv_nsec - starttime.tv_nsec) / 1000000000;
+        double time = timer.seconds();
         double matrix_size = 1.0*((nnz*(sizeof(Scalar)+sizeof(LocalOrdinalType)) + numRows*sizeof(LocalOrdinalType)))/1024/1024;
         double vector_size = 2.0*numRows*numVecs*sizeof(Scalar)/1024/1024;
         double vector_readwrite = (nnz+numCols)*numVecs*sizeof(Scalar)/1024/1024;
@@ -374,9 +381,17 @@ int test_crs_matrix_test_singlevec(int numRows, int numCols, int nnz, int test, 
                 }*/
     typename Kokkos::CrsMatrix<Scalar,int,execution_space,void,int>::values_type x1("X1",numCols);
     typename Kokkos::CrsMatrix<Scalar,int,execution_space,void,int>::values_type y1("Y1",numRows);
-    Kokkos::MV_Multiply(y1,A,x1);
+#ifdef NEWKERNEL
+          KokkosSparse::spmv("N",1.0,A,x1,0.0,y1);
+#else
+          Kokkos::MV_Multiply(y1,A,x1);
+#endif
 
-        Kokkos::MV_Multiply(y,A,x);
+#ifdef NEWKERNEL
+          KokkosSparse::spmv("N",1.0,A,x,0.0,y);
+#else
+          Kokkos::MV_Multiply(y,A,x);
+#endif
         execution_space::fence();
         Kokkos::deep_copy(h_y,y);
         Scalar error = 0;
@@ -396,14 +411,16 @@ int test_crs_matrix_test_singlevec(int numRows, int numCols, int nnz, int test, 
                 total_sum += sum;
 
     int loop = 100;
-        timespec starttime,endtime;
-    clock_gettime(CLOCK_REALTIME,&starttime);
+    Kokkos::Impl::Timer timer;
 
         for(int i=0;i<loop;i++)
-                Kokkos::MV_Multiply(y,A,x);
+#ifdef NEWKERNEL
+          KokkosSparse::spmv("N",1.0,A,x,0.0,y);
+#else
+        Kokkos::MV_Multiply(y,A,x);
+#endif
         execution_space::fence();
-        clock_gettime(CLOCK_REALTIME,&endtime);
-        double time = endtime.tv_sec - starttime.tv_sec + 1.0 * (endtime.tv_nsec - starttime.tv_nsec) / 1000000000;
+        double time = timer.seconds();
         double matrix_size = 1.0*((nnz*(sizeof(Scalar)+sizeof(int)) + numRows*sizeof(int)))/1024/1024;
         double vector_size = 2.0*numRows*sizeof(Scalar)/1024/1024;
         double vector_readwrite = (nnz+numCols)*sizeof(Scalar)/1024/1024;

@@ -103,7 +103,6 @@ class TraceMinBaseSolMgr : public SolverManager<ScalarType,MV,OP> {
 
   private:
     typedef MultiVecTraits<ScalarType,MV> MVT;
-    typedef MultiVecTraitsExt<ScalarType,MV> MVText;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -858,7 +857,7 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::solve()
 
           // Copy eigenvalues we want to lock into lockvals
           std::vector<Value<ScalarType> > allvals = tm_solver->getRitzValues();
-          for(int i=0; i<allvals.size(); i++)
+          for(unsigned int i=0; i<allvals.size(); i++)
             printer_->stream(Debug) << "Ritz value[" << i << "] = " << allvals[i].realpart << std::endl;
           for (int i=0; i<numNewLocked; i++) {
             lockvals.push_back(allvals[lockind[i]].realpart);
@@ -884,7 +883,7 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::solve()
           // If this set of lines is removed, the code does not terminate correctly
           if(noSort_)
           {
-            for(int aliciaInd=0; aliciaInd<lockvals.size(); aliciaInd++)
+            for(unsigned int aliciaInd=0; aliciaInd<lockvals.size(); aliciaInd++)
             {
               lockvals[aliciaInd] = 0.0;
             }

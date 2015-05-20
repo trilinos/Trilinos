@@ -1,0 +1,28 @@
+/*!
+\mainpage Trilinos/ShyLU:  Scalable/Sparse Hybrid LU
+
+\section Contact Information
+
+Shylu-users@software.sandia.gov
+
+
+\section ShyLU Introduction
+
+ShyLU is a package for solving sparse linear systems.  It can be used either as a preconditioner or a full solver.  Currently, we recommand using it as an Ifpack preconditioner.
+
+
+ShyLU uses a hybrid direct/iterative approach based on Schur complements.  The goal is to provide robustness similar to sparse direct solvers, but memory usage more similar to preconditioned iterative solvers.
+
+ShyLU was designed as a node-level solver.  It can use both MPI and threads in several ways.  ShyLU was designed to: (a) solve difficult but medium-size problems; and (b) be used as a subdomain solver or smoother for very large problems with an iterative scheme.  It is a purely algebraic method so can be used as a black-box solver. ShyLU has been particularly successful in electrical circuit simulation (Xyce).
+
+ShyLU is highly configurable and supports a number of parameters to control how Schur complement is approximated (dropping and probing) and how the inner-outer iteratiion works. These features are not fully documented yet.
+
+\section Current State
+
+ShyLU is currently build on top of the older Trilinos, i.e.,  Epetra/Ifpack/Zoltan/Amesos Stack.  Adoption of the newer stack, i.e., Tpetra/Ifpack2/Zoltan2/Amesos2, is slowly being added.
+
+\section Subpackages
+
+Currently, ShyLU has two subpackage: core and ichol.
+Core contains the current secondary-stable ShyLU source code and test, and ichol contain and experimental task-based scheduled incomplete Cholesky that uses Qthreads/Kokkos.
+*/ 

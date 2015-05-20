@@ -190,7 +190,11 @@ int main(int narg, char *arg[]) {
   typedef Zoltan2::PamgenMeshAdapter<tMVector_t> inputAdapter_t;
 
   inputAdapter_t ia(*CommT);
+  inputAdapter_t::zgid_t const *adjacencyIds=NULL;
+  inputAdapter_t::lno_t const *offsets=NULL;
   ia.print(me);
+  Zoltan2::MeshEntityType primaryEType = ia.getPrimaryEntityType();
+  Zoltan2::MeshEntityType secondAdjEType = ia.getSecondAdjacencyEntityType();
 
   // Set parameters for partitioning
   if (me == 0) cout << "Creating parameter list ... \n\n";
@@ -231,6 +235,13 @@ int main(int narg, char *arg[]) {
     if (me == 0) cout << "Calling the partitioner ... \n\n";
 
     problem.solve();
+
+    if (ia.avail2ndAdjs(primaryEType, secondAdjEType)) {
+      ia.get2ndAdjsView(primaryEType, secondAdjEType, offsets, adjacencyIds);
+    }
+    else {
+      ;
+    }
 
     if (me) problem.printMetrics(cout);
   }

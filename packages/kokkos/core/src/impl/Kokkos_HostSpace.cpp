@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -51,6 +51,7 @@
 #include <Kokkos_HostSpace.hpp>
 #include <impl/Kokkos_BasicAllocators.hpp>
 #include <impl/Kokkos_Error.hpp>
+#include <Kokkos_Atomic.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -137,3 +138,32 @@ Impl::AllocationTracker HostSpace::allocate_and_track( const std::string & label
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
 
+namespace Kokkos {
+namespace {
+  const unsigned HOST_SPACE_ATOMIC_MASK = 0xFFFF;
+  const unsigned HOST_SPACE_ATOMIC_XOR_MASK = 0x5A39;
+  static int HOST_SPACE_ATOMIC_LOCKS[HOST_SPACE_ATOMIC_MASK+1];
+}
+
+namespace Impl {
+void init_lock_array_host_space() {
+  static int is_initialized = 0;
+  if(! is_initialized)
+    for(int i = 0; i < static_cast<int> (HOST_SPACE_ATOMIC_MASK+1); i++)
+      HOST_SPACE_ATOMIC_LOCKS[i] = 0;
+}
+
+bool lock_address_host_space(void* ptr) {
+  return 0 == atomic_compare_exchange( &HOST_SPACE_ATOMIC_LOCKS[
+      (( size_t(ptr) >> 2 ) & HOST_SPACE_ATOMIC_MASK) ^ HOST_SPACE_ATOMIC_XOR_MASK] ,
+                                  0 , 1);
+}
+
+void unlock_address_host_space(void* ptr) {
+   atomic_exchange( &HOST_SPACE_ATOMIC_LOCKS[
+      (( size_t(ptr) >> 2 ) & HOST_SPACE_ATOMIC_MASK) ^ HOST_SPACE_ATOMIC_XOR_MASK] ,
+                    0);
+}
+
+}
+}

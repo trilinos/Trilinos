@@ -149,7 +149,7 @@ namespace Anasazi {
     //@{ \name Attribute methods
 
     //! Obtain the vector length of \c mv.
-    static int GetVecLength( const MV& mv )
+    static ptrdiff_t GetGlobalLength( const MV& mv )
     {
       return mv.length();
     }

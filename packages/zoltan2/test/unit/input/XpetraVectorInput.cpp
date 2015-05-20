@@ -68,7 +68,6 @@ using Teuchos::rcp_const_cast;
 using Teuchos::Comm;
 using Teuchos::DefaultComm;
 
-typedef UserInputForTests uinput_t;
 typedef Tpetra::Vector<zscalar_t, zlno_t, zgno_t, znode_t> tvector_t;
 typedef Xpetra::Vector<zscalar_t, zlno_t, zgno_t, znode_t> xvector_t;
 typedef Epetra_Vector evector_t;
@@ -165,11 +164,11 @@ int main(int argc, char *argv[])
   // Create object that can give us test Tpetra, Xpetra
   // and Epetra vectors for testing.
 
-  RCP<uinput_t> uinput;
+  RCP<UserInputForTests> uinput;
 
   try{
     uinput = 
-      rcp(new uinput_t(testDataFilePath,std::string("simple"), comm, true));
+      rcp(new UserInputForTests(testDataFilePath,std::string("simple"), comm, true));
   }
   catch(std::exception &e){
     TEST_FAIL_AND_EXIT(*comm, 0, string("input ")+e.what(), 1);

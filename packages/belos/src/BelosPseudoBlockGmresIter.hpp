@@ -160,7 +160,6 @@ namespace Belos {
     // Convenience typedefs
     //
     typedef MultiVecTraits<ScalarType,MV> MVT;
-    typedef MultiVecTraitsExt<ScalarType,MV> MVText;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
@@ -594,7 +593,7 @@ namespace Belos {
       }
       // Check that the newstate vector newstate.V[i] has dimensions
       // consistent with those of V_[i].
-      TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*newstate.V[i]) != MVText::GetGlobalLength(*V_[i]),
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.V[i]) != MVT::GetGlobalLength(*V_[i]),
                           std::invalid_argument, errstr );
       TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V[i]) < newstate.curDim,
                           std::invalid_argument, errstr );

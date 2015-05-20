@@ -164,6 +164,12 @@ struct Loc
   IdType m_loc;
 };
 
+template <typename T, typename IdType>
+inline std::ostream & operator<<(std::ostream & os, const Loc<T, IdType> & loc)
+{
+  return os << loc.m_value << " @" << loc.m_loc;
+}
+
 template <typename T>
 Loc<T> create_Loc(const T &value, int64_t loc){
     Loc<T> mpi_loc;
@@ -190,6 +196,16 @@ struct TempLoc
   double        m_other;
   int64_t	m_loc;
 };
+
+inline bool operator!= (const TempLoc & lhs, const TempLoc & rhs)
+{
+  return (lhs.m_value != rhs.m_value) || (lhs.m_other != rhs.m_other) || (lhs.m_loc != rhs.m_loc);
+}
+
+inline std::ostream & operator<<(std::ostream & os, const TempLoc & loc)
+{
+  return os << loc.m_value << " " << loc.m_other << "@" << loc.m_loc;
+}
 
 template<class T, class CompareOp, class IdType>
 inline

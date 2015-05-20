@@ -5,8 +5,8 @@ distRepoStatusLegend = r"""Legend:
 * ID: Repository ID, zero based (order git commands are run)
 * Repo Dir: Relative to base repo (base repo shown first with '(Base)')
 * Branch: Current branch (or detached HEAD)
-* Tracking Branch: Tracking branch (or empty if no tracking branch)
-* C: Number local commits w.r.t. tracking branch (empty if zero)
+* Tracking Branch: Tracking branch (or empty if no tracking branch exists)
+* C: Number local commits w.r.t. tracking branch (empty if zero or no TB)
 * M: Number of tracked modified (uncommitted) files (empty if zero)
 * ?: Number of untracked, non-ignored files (empty if zero)
 """
@@ -14,8 +14,9 @@ distRepoStatusLegend = r"""Legend:
 usageHelp = r"""gitdist [gitdist arguments] [git arguments]
        gitdist [gitdist arguments] dist-repo-status
 
-Run git recursively over extra repos and some extra tools for multi-repository
-git projects.
+Run git recursively over extra repos multi-repository git projects.  Also
+includes other tools like printing a repo status table and tracking versions
+through RepoVersion.txt files.
 
 Instead of typing:
 
@@ -25,10 +26,10 @@ type:
 
   $ gitdist [gitdist options] [git arguments]
 
-This will distribute git commands across all git repos listed, including the
-base git repo.  The options in [gitdist options] are prefixed with '--dist-'
-and are pulled out before passing the remaining arguments in [git arguments]
-to all the git repos.  See --help to see the [gitdist options].
+This will distribute git commands across all the listed git repos, including
+the base git repo.  The options in [gitdist options] are prefixed with
+'--dist-' and are pulled out before passing the remaining arguments in [git
+arguments] to all the git repos.  See --help to see the [gitdist options].
 
 For example, consider the following git repos with other git repos cloned
 under it:
@@ -61,25 +62,25 @@ to the base git repo so that gitdist is ready to use right away after the
 extra repos are cloned (see the tool clone_extra_repos.py).
 
 If an extra repository directory listed in the .gitdist file (or specified
-using --dist-extra-repos does) not exist, then it will be ignored by the
+using --dist-extra-repos) does not exist, then it will be ignored by the
 script.  Therefore, be careful to manually verify that the script recognizes
 the repositories that you list.  The best way to do that is to run 'gitdist
 dist-repo-status' and see which repos are listed.
 
-This script has no dependencies other than standard python 2.4 packages so it
-can be copied to anywhere and used.
+This script is self-contained and has no dependencies other than standard
+python 2.4 packages so it can be copied to anywhere and used.
 
 TIPS:
 
- - To see the status of all repos in a compact way, use the speical
+ - To see the status of all repos in a compact way, use the special
    'dist-repo-status' command (see below).
 
  - To process only repos that are changed w.r.t. their tracking branch, run
    'gitdist --dist-mod-only [git arguments]'.  For example, to see the status
    of only changed repos use 'gitdist --dist-mod-only status'.
 
- - 'gitdist --help' will run gitdist help, not git help.  If you want git
-   help, run raw 'git --help'.
+ - 'gitdist --help' will run gitdist help, not git help.  If you want raw git
+   help, run 'git --help'.
 
  - By default, gitdist will use 'git' in the environment.  If it can't find
    'git' in the environment, it will require that the user specify the git

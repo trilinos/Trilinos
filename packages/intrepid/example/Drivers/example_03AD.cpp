@@ -110,11 +110,7 @@
 #include "EpetraExt_MatrixMatrix.h"
 
 // Sacado includes
-#ifdef HAVE_INTREPID_KOKKOSCORE
 #include "Sacado.hpp"
-#else
-#include "Sacado_No_Kokkos.hpp"
-#endif
 #include "Sacado_Fad_DVFad.hpp"
 #include "Sacado_Fad_SimpleFad.hpp"
 #include "Sacado_CacheFad_DFad.hpp"

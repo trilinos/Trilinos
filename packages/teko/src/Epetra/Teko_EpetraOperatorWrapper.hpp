@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -92,7 +92,7 @@ namespace Epetra {
                                       // const EpetraOperatorWrapper & eow) const = 0;
 
      /** \brief Domain map for this strategy */
-     virtual const RCP<const Epetra_Map> domainMap() const = 0; 
+     virtual const RCP<const Epetra_Map> domainMap() const = 0;
 
      /** \brief Range map for this strategy */
      virtual const RCP<const Epetra_Map> rangeMap() const = 0;
@@ -128,7 +128,7 @@ namespace Epetra {
      { return forwardStrategy_->rangeMap(); }
 
      /** \brief Range map for this strategy */
-     virtual const RCP<const Epetra_Map> rangeMap() const 
+     virtual const RCP<const Epetra_Map> rangeMap() const
      { return forwardStrategy_->domainMap(); }
 
      /** \brief Identifier string */
@@ -183,7 +183,7 @@ namespace Epetra {
 
      /** \brief Identifier string */
      virtual std::string toString() const
-     { return std::string("DefaultMappingStrategy"); } 
+     { return std::string("DefaultMappingStrategy"); }
 
   protected:
      RCP<const Thyra::VectorSpaceBase<double> > domainSpace_; ///< Domain space object
@@ -193,9 +193,9 @@ namespace Epetra {
      RCP<const Epetra_Map> rangeMap_; ///< Pointer to the constructed range map
   };
 
-  /** \brief 
+  /** \brief
    * Implements the Epetra_Operator interface with a Thyra LinearOperator. This
-   * enables the use of absrtact Thyra operators in AztecOO as preconditioners and 
+   * enables the use of absrtact Thyra operators in AztecOO as preconditioners and
    * operators, without being rendered into concrete Epetra matrices. This is my own
    * modified version that was originally in Thyra.
    */
@@ -207,12 +207,15 @@ namespace Epetra {
     EpetraOperatorWrapper(const RCP<const Thyra::LinearOpBase<double> > & thyraOp,
                           const RCP<const MappingStrategy> & mapStrategy);
     EpetraOperatorWrapper(const RCP<const MappingStrategy> & mapStrategy);
-    
+
     /** */
     virtual ~EpetraOperatorWrapper() {;}
 
     /** */
-    int SetUseTranspose(bool UseTranspose) {useTranspose_ = UseTranspose; return 0;}
+    int SetUseTranspose(bool useTranspose) {
+      useTranspose_ = useTranspose;
+      return 0;
+    }
 
     /** */
     int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const ;
@@ -231,7 +234,7 @@ namespace Epetra {
 
     /** */
     bool HasNormInf() const {return false;}
-    
+
     /** */
     const Epetra_Comm & Comm() const {return *comm_;}
 
@@ -242,16 +245,16 @@ namespace Epetra {
     const Epetra_Map& OperatorRangeMap() const {return *mapStrategy_->rangeMap();}
 
     //! Return the thyra operator associated with this wrapper
-    const RCP<const Thyra::LinearOpBase<double> > getThyraOp() const 
+    const RCP<const Thyra::LinearOpBase<double> > getThyraOp() const
     { return thyraOp_; }
 
     //! Get the mapping strategy for this wrapper (translate between Thyra and Epetra)
-    const RCP<const MappingStrategy> getMapStrategy() const 
+    const RCP<const MappingStrategy> getMapStrategy() const
     { return mapStrategy_; }
 
     //! Get the number of block rows in this operator
     virtual int GetBlockRowCount();
-  
+
     //! Get the number of block columns in this operator
     virtual int GetBlockColCount();
 
@@ -287,7 +290,7 @@ namespace Epetra {
     /** */
     std::string label_;
   };
-} // end namespace Epetra 
+} // end namespace Epetra
 } // end namespace Teko
 
-#endif 
+#endif

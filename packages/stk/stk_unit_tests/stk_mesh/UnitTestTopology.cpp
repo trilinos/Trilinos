@@ -44,8 +44,27 @@
 #include "stk_mesh/base/CellTopology.hpp"  // for CellTopology
 #include "stk_mesh/base/Types.hpp"      // for EntityId, PartVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
+#include <stk_mesh/base/CreateFaces.hpp>  // for create_faces
+#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
+#include <stk_mesh/base/Comm.hpp>
+#include <stk_mesh/baseImpl/MeshImplUtils.hpp>
+#include <stk_unit_test_utils/ioUtils.hpp>
+
+#include "BulkDataTester.hpp"
+
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { struct EntitySideComponent; } }
+
+namespace stk {
+namespace mesh {
+void unpack_not_owned_verify_compare_closure_relations( const BulkData &             mesh,
+                                                        Entity                       entity,
+                                                        std::vector<stk::mesh::Relation> const& recv_relations,
+                                                        bool&                        bad_rel);
+
+}
+}
 
 using stk::ParallelMachine;
 using stk::mesh::MetaData;
@@ -98,7 +117,7 @@ class TopologyHelpersTestingFixture
 TopologyHelpersTestingFixture::TopologyHelpersTestingFixture(ParallelMachine pm)
   : spatial_dimension( 3 )
   , meta( spatial_dimension )
-  , bulk( meta, pm, 100 )
+  , bulk( meta, pm, stk::mesh::BulkData::AUTO_AURA )
   , element_rank( stk::topology::ELEMENT_RANK )
   , side_rank( meta.side_rank())
   , generic_element_part( meta.declare_part("another part", element_rank ) )
@@ -456,7 +475,466 @@ TEST(stk_topology_permutations, quad_lexicographical_smallest_permutation_preser
         }
     }
 }
-//----------------------------------------------------------------------
-//----------------------------------------------------------------------
+
+int check_permutation_given(stk::mesh::BulkData& mesh, stk::mesh::Entity elem, unsigned face_ord, stk::mesh::Permutation elem_perm, stk::mesh::Entity elem_face)
+{
+    stk::mesh::Entity face_nodes_buff[100], mapped_face_nodes_buff[100];
+
+    stk::topology elem_topo = mesh.bucket(elem).topology();
+    const stk::mesh::Entity* elem_nodes = mesh.begin_nodes(elem);
+
+    elem_topo.face_nodes(elem_nodes, face_ord, face_nodes_buff);
+    stk::topology face_topo = elem_topo.face_topology(face_ord);
+    face_topo.permutation_nodes(face_nodes_buff, elem_perm, mapped_face_nodes_buff);
+
+    // Another way to get to face's nodes.
+    stk::mesh::Entity const *face_nodes = mesh.begin_nodes(elem_face);
+
+    int innermost_hits = 0;
+    for (unsigned ni = 0; ni < face_topo.num_nodes(); ++ni)
+    {
+        ++innermost_hits;
+        EXPECT_EQ(face_nodes[ni], mapped_face_nodes_buff[ni]);
+    }
+
+    // Indeed, find_permutation computes what was stored!
+    stk::mesh::Permutation perm = mesh.find_permutation(elem_topo, elem_nodes, face_topo, face_nodes, face_ord);
+    EXPECT_EQ(perm, elem_perm);
+    return innermost_hits;
+}
+
+TEST (stkTopologyFunctions, use_permutations_Hex_2x1x1)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
+  {
+    const size_t NX = 2;
+    const size_t NY = 1;
+    const size_t NZ = 1;
+
+    stk::mesh::fixtures::HexFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
+
+    fixture.m_meta.commit();
+    fixture.generate_mesh();
+
+    stk::mesh::BulkData &mesh = fixture.m_bulk_data;
+    stk::mesh::create_faces(mesh);
+
+    const std::vector<stk::mesh::Bucket *> &elem_buckets =
+            mesh.get_buckets(stk::topology::ELEMENT_RANK, fixture.m_meta.universal_part());
+
+    int innermost_hits = 0;
+    int num_elems      = 0;
+
+    for (unsigned bkt_idx = 0; bkt_idx < elem_buckets.size(); ++bkt_idx)
+    {
+        const stk::mesh::Bucket &elem_bkt = *elem_buckets[bkt_idx];
+        stk::topology elem_topo           = elem_bkt.topology();
+
+        unsigned num_faces = elem_topo.num_faces();
+
+        for (unsigned elem_idx = 0; elem_idx < elem_bkt.size(); ++elem_idx)
+        {
+            ++num_elems;
+
+            stk::mesh::Permutation const *elem_face_perms = elem_bkt.begin_face_permutations(elem_idx);
+            stk::mesh::Entity const *elem_faces           = elem_bkt.begin_faces(elem_idx);
+
+            for (unsigned face_ord = 0; face_ord < num_faces; ++face_ord)
+            {
+                innermost_hits += check_permutation_given(mesh, elem_bkt[elem_idx], face_ord, elem_face_perms[face_ord], elem_faces[face_ord]);
+            }
+        }
+    }
+    std::ostringstream msg_buff;
+    msg_buff << "P" << mesh.parallel_rank() << ": knows " << num_elems << " elements" << std::endl;
+    std::cout << msg_buff.str();
+    EXPECT_EQ(innermost_hits, num_elems * 24);
+
+    if (num_elems > 0)
+    {
+        EXPECT_EQ(num_elems, 2);
+    }
+  }
+}
+
+void test_side_creation(unsigned *gold_side_ids,unsigned local_side_id)
+{
+    unsigned global_side_id = 1;
+    stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
+    std::string name = "generated:1x1x1";
+    stkMeshIoBroker.add_mesh_database(name, stk::io::READ_MESH);
+    stkMeshIoBroker.create_input_mesh();
+    stkMeshIoBroker.populate_bulk_data();
+
+    stk::mesh::BulkData &mesh = stkMeshIoBroker.bulk_data();
+
+    stk::mesh::Entity elem = mesh.get_entity(stk::topology::ELEM_RANK, 1);
+
+    mesh.modification_begin();
+    stk::mesh::Part &quad4_part = mesh.mesh_meta_data().get_topology_root_part(stk::topology::QUAD_4);
+    stk::mesh::Entity side = stk::mesh::declare_element_side(mesh, global_side_id, elem, local_side_id, &quad4_part);
+    mesh.modification_end();
+
+    stk::mesh::Permutation elem_perm = static_cast<stk::mesh::Permutation>(0);
+    check_permutation_given(mesh, elem, local_side_id, elem_perm, side);
+
+//    std::string out_filename = "testStk.exo";
+//    size_t resultFileIndex = stkMeshIoBroker.create_output_mesh(out_filename, stk::io::WRITE_RESULTS);
+//    stkMeshIoBroker.write_output_mesh(resultFileIndex);
+
+    const stk::mesh::Entity *side_nodes = mesh.begin_nodes(side);
+    unsigned num_nodes = mesh.num_nodes(side);
+    ASSERT_EQ(4u, num_nodes);
+
+    for(unsigned i = 0; i < num_nodes; ++i)
+    {
+        EXPECT_EQ(gold_side_ids[i], mesh.identifier(side_nodes[i]));
+    }
+}
+
+void test_side_creation_with_permutation(unsigned *gold_side_ids,unsigned local_side_id, stk::mesh::Permutation perm)
+{
+    unsigned global_side_id = 1;
+
+    stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
+    std::string name = "generated:1x1x1";
+    stkMeshIoBroker.add_mesh_database(name, stk::io::READ_MESH);
+    stkMeshIoBroker.create_input_mesh();
+    stkMeshIoBroker.populate_bulk_data();
+
+    stk::mesh::BulkData &mesh = stkMeshIoBroker.bulk_data();
+
+    stk::mesh::Entity elem = mesh.get_entity(stk::topology::ELEM_RANK, 1);
+
+    stk::mesh::PartVector parts;
+    parts.push_back(&mesh.mesh_meta_data().get_topology_root_part(stk::topology::QUAD_4));
+    unsigned gold_num_nodes = 4;
+    stk::mesh::EntityVector nodes(gold_num_nodes);
+    for(unsigned i = 0; i < gold_num_nodes; ++i) {
+        stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, gold_side_ids[i]);
+        nodes[i] = node;
+    }
+
+    mesh.modification_begin();
+    stk::mesh::Entity side = mesh.declare_entity(stk::topology::FACE_RANK, global_side_id, parts);
+    for(unsigned i = 0; i < nodes.size(); ++i) {
+        unsigned ordinal = nodes.size() - i - 1;
+        mesh.declare_relation(side, nodes[i], ordinal);
+    }
+    mesh.declare_relation(elem, side, local_side_id, perm);
+    mesh.modification_end();
+
+    check_permutation_given(mesh, elem, local_side_id, perm, side);
+
+    const stk::mesh::Entity *side_nodes = mesh.begin_nodes(side);
+    unsigned num_nodes = mesh.num_nodes(side);
+    ASSERT_EQ(gold_num_nodes, num_nodes);
+
+    for(unsigned i = 0; i < num_nodes; ++i)
+    {
+        unsigned ordinal = nodes.size() - i - 1;
+        EXPECT_EQ(gold_side_ids[ordinal], mesh.identifier(side_nodes[i]));
+    }
+}
+
+TEST(stkTopologyFunctions, check_permutation_with_FEM_Helper)
+{
+    if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
+    {
+        unsigned gold_side_ids[6][4] = {
+                                        {1,2,6,5},
+                                        {2,4,8,6},
+                                        {4,3,7,8},
+                                        {1,5,7,3},
+                                        {1,3,4,2},
+                                        {5,6,8,7}
+                                      };
+
+        for(unsigned local_side_id = 0; local_side_id < 6; ++local_side_id)
+        {
+            test_side_creation(gold_side_ids[local_side_id],local_side_id);
+        }
+    }
+}
+
+TEST(stkTopologyFunctions, check_permutation_without_FEM_Helper)
+{
+    if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
+    {
+        unsigned gold_side_ids[6][4] = {
+                                        {1,2,6,5},
+                                        {2,4,8,6},
+                                        {4,3,7,8},
+                                        {1,5,7,3},
+                                        {1,3,4,2},
+                                        {5,6,8,7}
+                                      };
+        stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation>(5);
+        unsigned local_side_id = 0;
+        test_side_creation_with_permutation(gold_side_ids[local_side_id],local_side_id, perm);
+    }
+}
+
+TEST(stkTopologyFunctions, check_permutations_for_Hex_1x1x1)
+{
+    if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
+    {
+        unsigned global_side_id = 1;
+        unsigned gold_side_ids[4] = {5,6,8,7};
+        unsigned local_side_id = 5; // nodes 2,4,8,5 are nodes of face 'local_side_id' of a 1x1x1 hex element (generated)
+
+        stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation>(0);
+        unsigned gold_permutations[8][4] = {
+                {5,6,8,7},
+                {7,5,6,8},
+                {8,7,5,6},
+                {6,8,7,5},
+                {5,7,8,6},
+                {7,8,6,5},
+                {8,6,5,7},
+                {6,5,7,8}
+        };
+
+        stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
+        std::string name = "generated:1x1x1";
+        stkMeshIoBroker.add_mesh_database(name, stk::io::READ_MESH);
+        stkMeshIoBroker.create_input_mesh();
+        stkMeshIoBroker.populate_bulk_data();
+
+        stk::mesh::BulkData &mesh = stkMeshIoBroker.bulk_data();
+
+        stk::mesh::Entity elem = mesh.get_entity(stk::topology::ELEM_RANK, 1);
+
+        stk::mesh::PartVector parts;
+        parts.push_back(&mesh.mesh_meta_data().get_topology_root_part(stk::topology::QUAD_4));
+        unsigned gold_num_nodes = 4;
+        stk::mesh::EntityVector nodes(gold_num_nodes);
+        for(unsigned i = 0; i < gold_num_nodes; ++i) {
+            stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, gold_side_ids[i]);
+            nodes[i] = node;
+        }
+
+        mesh.modification_begin();
+        stk::mesh::Entity side = mesh.declare_entity(stk::topology::FACE_RANK, global_side_id, parts);
+        for(unsigned i = 0; i < nodes.size(); ++i) {
+            //unsigned ordinal = nodes.size() - i - 1;
+            mesh.declare_relation(side, nodes[i], i);
+        }
+        mesh.declare_relation(elem, side, local_side_id, perm);
+        mesh.modification_end();
+
+        stk::mesh::EntityVector mapped_face_nodes(gold_num_nodes);
+
+        stk::topology elem_topo = mesh.bucket(elem).topology();
+        const stk::mesh::Entity* face_nodes = mesh.begin_nodes(side);
+
+        stk::topology face_topo = elem_topo.face_topology(local_side_id);
+        unsigned num_permutations = face_topo.num_permutations();
+        for(unsigned i = 0; i < num_permutations; ++i) {
+            stk::mesh::Permutation local_perm = static_cast<stk::mesh::Permutation>(i);
+            face_topo.permutation_nodes(face_nodes, local_perm, &mapped_face_nodes[0]);
+
+            for (unsigned j = 0; j < gold_num_nodes; ++j) {
+                EXPECT_EQ(gold_permutations[i][j], mesh.identifier(mapped_face_nodes[j])) << " for permutation " << i;
+            }
+        }
+    }
+}
+
+void pack_downward_relations_for_entity(stk::mesh::BulkData& mesh, stk::mesh::Entity some_entity, std::vector<stk::mesh::Relation>& recv_relations1)
+{
+    unsigned bucket_ordinal = mesh.bucket_ordinal(some_entity);
+    const stk::mesh::Bucket& bucket = mesh.bucket(some_entity);
+    for(EntityRank irank=stk::topology::BEGIN_RANK; irank<mesh.entity_rank(some_entity);++irank)
+    {
+        Entity const *rels_itr = bucket.begin(bucket_ordinal, irank);
+        Entity const *rels_end = bucket.end(bucket_ordinal, irank);
+        stk::mesh::ConnectivityOrdinal const *ords_itr = bucket.begin_ordinals(bucket_ordinal, irank);
+
+        for(;rels_itr!=rels_end;++rels_itr,++ords_itr)
+        {
+            recv_relations1.push_back(stk::mesh::Relation(*rels_itr, mesh.entity_rank(*rels_itr), *ords_itr));
+        }
+
+    }
+}
+
+TEST(stkTopologyFunctions, permutation_consistency_check_3d)
+{
+    if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
+    {
+        unsigned global_side_id = 1;
+        unsigned gold_side_ids[4] = {2,4,8,6};
+        unsigned local_side_id = 1; // nodes 2,4,8,5 are nodes of face 'local_side_id' of a 1x1x1 hex element (generated)
+
+        unsigned perm_value = 0;
+        stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation>(perm_value);
+
+        stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
+        std::string name = "generated:1x1x1";
+        stkMeshIoBroker.add_mesh_database(name, stk::io::READ_MESH);
+        stkMeshIoBroker.create_input_mesh();
+        stkMeshIoBroker.populate_bulk_data();
+
+        stk::mesh::BulkData &mesh = stkMeshIoBroker.bulk_data();
+
+        stk::mesh::Entity elem = mesh.get_entity(stk::topology::ELEM_RANK, 1);
+
+        stk::mesh::PartVector parts;
+        parts.push_back(&mesh.mesh_meta_data().get_topology_root_part(stk::topology::QUAD_4));
+        unsigned gold_num_nodes = 4;
+        stk::mesh::EntityVector nodes(gold_num_nodes);
+        for(unsigned i = 0; i < gold_num_nodes; ++i) {
+            stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, gold_side_ids[i]);
+            nodes[i] = node;
+        }
+
+        mesh.modification_begin();
+        stk::mesh::Entity side = mesh.declare_entity(stk::topology::FACE_RANK, global_side_id, parts);
+        for(unsigned i = 0; i < nodes.size(); ++i) {
+            //unsigned ordinal = nodes.size() - i - 1;
+            mesh.declare_relation(side, nodes[i], i);
+        }
+        mesh.declare_relation(elem, side, local_side_id, perm);
+        mesh.modification_end();
+
+        bool rel_bad = false;
+
+        std::vector<stk::mesh::Relation> recv_relations;
+        pack_downward_relations_for_entity(mesh, side, recv_relations);
+        unpack_not_owned_verify_compare_closure_relations(mesh, side, recv_relations, rel_bad);
+        EXPECT_FALSE(rel_bad);
+
+        std::vector<stk::mesh::Relation> relations;
+        pack_downward_relations_for_entity(mesh, elem, relations);
+        unpack_not_owned_verify_compare_closure_relations(mesh, elem, relations, rel_bad);
+        EXPECT_FALSE(rel_bad);
+    }
+}
+
+TEST(stkTopologyFunctions, check_permutation_consistency_parallel)
+{
+    if (stk::parallel_machine_size(MPI_COMM_WORLD) == 2)
+    {
+        unsigned global_side_id = 1;
+        unsigned gold_side_ids[4] = {5,6,8,7};
+
+        stk::mesh::MetaData meta(3);
+        stk::mesh::unit_test::BulkDataFaceSharingTester mesh(meta, MPI_COMM_WORLD);
+
+        const std::string generatedMeshSpec = "generated:1x1x2";
+        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, mesh, MPI_COMM_WORLD);
+
+        unsigned elem_id = 0;
+        unsigned local_side_id = 0;
+        unsigned perm_value = 0;
+
+        if (mesh.parallel_rank()==0)
+        {
+            local_side_id=5;
+            elem_id = 1;
+            perm_value = 0;
+        }
+        else
+        {
+            local_side_id=4;
+            elem_id = 2;
+            perm_value = 4;
+        }
+
+        stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation>(perm_value);
+
+        stk::mesh::Entity elem = mesh.get_entity(stk::topology::ELEM_RANK, elem_id);
+        EXPECT_TRUE(mesh.bucket(elem).owned());
+
+        stk::mesh::PartVector parts;
+        parts.push_back(&mesh.mesh_meta_data().get_topology_root_part(stk::topology::QUAD_4));
+        unsigned gold_num_nodes = 4;
+        stk::mesh::EntityVector nodes(gold_num_nodes);
+        for(unsigned i = 0; i < gold_num_nodes; ++i) {
+            stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, gold_side_ids[i]);
+            nodes[i] = node;
+        }
+
+        unsigned face_ords[2][4] = {
+                {0, 1, 2, 3},
+                {3, 2, 1, 0}
+        };
+
+        mesh.modification_begin();
+        stk::mesh::Entity side = mesh.declare_entity(stk::topology::FACE_RANK, global_side_id, parts);
+        for(unsigned i = 0; i < nodes.size(); ++i)
+        {
+            mesh.declare_relation(side, nodes[i], face_ords[mesh.parallel_rank()][i]);
+        }
+        mesh.declare_relation(elem, side, local_side_id, perm);
+
+        mesh.modification_end();
+
+        std::vector<size_t> mesh_counts;
+        stk::mesh::comm_mesh_counts(mesh, mesh_counts);
+        size_t numFacesGlobal = 1u;
+        EXPECT_EQ(numFacesGlobal, mesh_counts[stk::topology::FACE_RANK]);
+    }
+}
+
+TEST(stkTopologyFunctions, permutation_consistency_check_2d)
+{
+    if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
+    {
+        stk::mesh::MetaData meta(2);
+        stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD);
+
+        mesh.modification_begin();
+        stk::mesh::Entity Quad9 = mesh.declare_entity(stk::topology::ELEM_RANK, 1, meta.get_topology_root_part(stk::topology::QUAD_9_2D));
+        unsigned node_ids[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+        stk::mesh::EntityVector nodes(9);
+        for(unsigned i=0;i<9;++i)
+        {
+            nodes[i] = mesh.declare_entity(stk::topology::NODE_RANK, node_ids[i]);
+        }
+
+        for(size_t i=0;i<nodes.size();++i)
+        {
+            mesh.declare_relation(Quad9, nodes[i], i);
+        }
+
+        mesh.modification_end();
+
+        unsigned gold_side_node_ids[4][3] = {
+                {1, 2, 5},
+                {2, 3, 6},
+                {3, 4, 7},
+                {4, 1, 8}
+        };
+
+        mesh.modification_begin();
+
+        unsigned global_side_id[] = {1, 2, 3, 4};
+        stk::mesh::EntityVector sides(4);
+        stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation>(1);
+        for(size_t i=0;i<sides.size();++i)
+        {
+            sides[i] = mesh.declare_entity(stk::topology::EDGE_RANK, global_side_id[i], meta.get_topology_root_part(stk::topology::LINE_3));
+            mesh.declare_relation(Quad9, sides[i], i, perm);
+            mesh.declare_relation(sides[i], nodes[gold_side_node_ids[i][0]-1], 1);
+            mesh.declare_relation(sides[i], nodes[gold_side_node_ids[i][1]-1], 0);
+            mesh.declare_relation(sides[i], nodes[gold_side_node_ids[i][2]-1], 2);
+        }
+
+        EXPECT_NO_THROW(mesh.modification_end());
+
+        EXPECT_TRUE(mesh.check_permutation(Quad9, sides[0], 0, perm)) << "for side 0";
+        EXPECT_TRUE(mesh.check_permutation(Quad9, sides[1], 1, perm)) << "for side 1";
+        EXPECT_TRUE(mesh.check_permutation(Quad9, sides[2], 2, perm)) << "for side 2";
+        EXPECT_TRUE(mesh.check_permutation(Quad9, sides[3], 3, perm)) << "for side 3";
+
+        EXPECT_TRUE(stk::mesh::impl::check_permutations_on_all(mesh));
+    }
+}
+
+
 
 }
+

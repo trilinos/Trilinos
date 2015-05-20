@@ -57,6 +57,7 @@
 #include <complex>
 #endif
 
+#include "Amesos2_config.h"
 #include "Amesos2_FunctionMap.hpp"
 #include "Amesos2_MatrixAdapter.hpp"
 #include "Amesos2_Superludist_TypeMap.hpp"
@@ -371,7 +372,11 @@ namespace Amesos2 {
     static void LUstructInit(SLUD::int_t m, SLUD::int_t n,
 			     type_map::LUstruct_t* lu)
     {
+#ifdef HAVE_SUPERLUDIST_LUSTRUCTINIT_2ARG
+      SLUD::D::LUstructInit(n, lu);
+#else
       SLUD::D::LUstructInit(m, n, lu);
+#endif
     }
 
     static void Destroy_LU(SLUD::int_t m, SLUD::gridinfo_t* grid,
@@ -536,7 +541,11 @@ namespace Amesos2 {
 
     static void LUstructInit(SLUD::int_t m, SLUD::int_t n, type_map::LUstruct_t* lu)
     {
+#ifdef HAVE_SUPERLUDIST_LUSTRUCTINIT_2ARG
+      SLUD::Z::LUstructInit(n, lu);
+#else
       SLUD::Z::LUstructInit(m, n, lu);
+#endif
     }
 
     static void Destroy_LU(SLUD::int_t m, SLUD::gridinfo_t* grid, type_map::LUstruct_t* lu)

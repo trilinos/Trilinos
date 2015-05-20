@@ -98,11 +98,7 @@ namespace Thyra {
     typedef Thyra::MultiVectorBase<Scalar> MV;
     typedef Scalar scalar_type;
     typedef int ordinal_type; // MultiVectorBase really does use int for this
-#ifdef HAVE_KOKKOSCLASSIC_SERIAL
-    typedef KokkosClassic::SerialNode node_type; // FIXME (mfh 18 Jun 2013) Would be better to defer to the MV subclass
-#else
     typedef KokkosClassic::DefaultNode::DefaultNodeType node_type; // FIXME (mfh 18 Jun 2013) Would be better to defer to the MV subclass
-#endif // HAVE_KOKKOSCLASSIC_SERIAL
     typedef Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> dense_matrix_type;
     typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 

@@ -56,10 +56,11 @@ namespace fixtures {
 
 RingFixture::RingFixture( stk::ParallelMachine pm ,
                           unsigned num_element_per_proc ,
-                          bool use_element_parts )
+                          bool use_element_parts,
+                          enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option)
   : m_spatial_dimension(2),
     m_meta_data( m_spatial_dimension ),
-    m_bulk_data( m_meta_data, pm, 100 ),
+    m_bulk_data( m_meta_data, pm, auto_aura_option ),
     m_element_parts(),
     m_element_part_extra( m_meta_data.declare_part("element_extra" , stk::topology::ELEMENT_RANK ) ),
     m_num_element_per_proc( num_element_per_proc ),
@@ -158,7 +159,7 @@ void RingFixture::fill_node_map(int p_rank)
   }
 }
 
-void RingFixture::fixup_node_ownership(bool regenerate_aura, BulkData::modification_optimization mod_optimize)
+void RingFixture::fixup_node_ownership(BulkData::modification_optimization mod_optimize)
 {
   const int p_rank          = m_bulk_data.parallel_rank();
   const int p_size          = m_bulk_data.parallel_size();
@@ -176,7 +177,7 @@ void RingFixture::fixup_node_ownership(bool regenerate_aura, BulkData::modificat
       entry.second = ( p_rank + p_size - 1 ) % p_size ;
       change.push_back( entry );
     }
-    m_bulk_data.change_entity_owner( change, regenerate_aura, mod_optimize );
+    m_bulk_data.change_entity_owner( change, mod_optimize );
   }
 }
 

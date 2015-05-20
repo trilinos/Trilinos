@@ -1,0 +1,21 @@
+Test problem added to address bug 6339.
+
+With OBJ_WEIGHT_DIM=2, Tom Hughes reported different results using RCB
+than using HIER with RCB on sixteen 16-core nodes.  
+In truth, the partitions should be nearly identical.
+
+This test problem replicates the main features of Tom's problem.
+It has a uniform 20x20x20 mesh.  Particles are distributed in the mesh
+such that they are injected at one end in a small radius.  The number of
+particles per cell within the radius decreases for cells further from the
+injection point, and is zero within some distance opposite the injection point.
+See hughes.20x20x20.stats for details.
+
+The Chaco files were generated with gen2.py.  The calling sequence is in
+hughes.20x20x20.stats.
+
+This test exercises the HIER and RCB methods with two weights; the answers
+should be nearly identical.  It also exercises "test local partitions = 9"
+which replicates the conditions that caused the error in Tom's tests.
+
+

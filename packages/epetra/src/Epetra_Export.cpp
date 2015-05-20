@@ -377,8 +377,8 @@ Epetra_Export::Epetra_Export(const Epetra_Import& Importer):
 
     // Now, for each remote ID, record who actually owns it.  This loop follows the operation order in the
     // MpiDistributor so it ought to duplicate that effect.
-    int j;
-    for (int i = 0, j = 0; i < NumReceives; ++i) {
+    int i =0, j = 0;
+    for (i = 0, j = 0; i < NumReceives; ++i) {
       const int pid = ProcsFrom[i];
       for (int k = 0; k < LengthsFrom[i]; ++k) {
         ExportPIDs_[j] = pid;

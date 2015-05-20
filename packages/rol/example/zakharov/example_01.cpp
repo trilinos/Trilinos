@@ -76,7 +76,6 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    ROL::ZOO::Objective_Zakharov<RealT> obj;
     int dim = 10; // Set problem dimension. 
 
     Teuchos::ParameterList parlist;
@@ -107,14 +106,53 @@ int main(int argc, char *argv[]) {
     // Define Algorithm
     ROL::DefaultAlgorithm<RealT> algo(step,status,false);
 
-    // Iteration Vector
+    // Iteration Vector 
     Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    // Set Initial Guess
+
+    // Vector of natural numbers
+    Teuchos::RCP<std::vector<RealT> > k_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+
+    // For gradient and Hessian checks 
+    Teuchos::RCP<std::vector<RealT> > xtest_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+    Teuchos::RCP<std::vector<RealT> > d_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+    Teuchos::RCP<std::vector<RealT> > v_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+    Teuchos::RCP<std::vector<RealT> > hv_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+    Teuchos::RCP<std::vector<RealT> > ihhv_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+  
+    RealT left = -1e0, right = 1e0; 
     for (int i=0; i<dim; i++) {
       (*x_rcp)[i]   = 4;
+      (*k_rcp)[i]   = i+1.0;
+
+      (*xtest_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*d_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*v_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
     }
 
+    Teuchos::RCP<ROL::Vector<RealT> > k = Teuchos::rcp(new ROL::StdVector<RealT> (k_rcp) );
     ROL::StdVector<RealT> x(x_rcp);
+
+    // Check gradient and Hessian
+    ROL::StdVector<RealT> xtest(xtest_rcp);
+    ROL::StdVector<RealT> d(d_rcp);
+    ROL::StdVector<RealT> v(v_rcp);
+    ROL::StdVector<RealT> hv(hv_rcp);
+    ROL::StdVector<RealT> ihhv(ihhv_rcp);
+
+    ROL::ZOO::Objective_Zakharov<RealT> obj(k);
+
+    obj.checkGradient(xtest, d, true, *outStream);                             *outStream << "\n"; 
+    obj.checkHessVec(xtest, v, true, *outStream);                              *outStream << "\n";
+    obj.checkHessSym(xtest, d, v, true, *outStream);                           *outStream << "\n";
+   
+    // Check inverse Hessian 
+    RealT tol=0;
+    obj.hessVec(hv,v,xtest,tol);
+    obj.invHessVec(ihhv,hv,xtest,tol);
+    ihhv.axpy(-1,v);
+    std::cout << "Checking inverse Hessian" << std::endl;
+    std::cout << "||H^{-1}Hv-v|| = " << ihhv.norm() << std::endl;
+     
 
     // Run Algorithm
     std::vector<std::string> output = algo.run(x, obj, false);

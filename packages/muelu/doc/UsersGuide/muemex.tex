@@ -1,0 +1,253 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\muemex is \muelu's interface to the MATLAB environment. It allows access
+to a limited set of routines either \muelu as a preconditioner,
+Belos as a solver and Epetra or Tpetra for data structures.
+It is designed to provide access to \muelu's aggregation and
+solver routines from MATLAB and does little else. \muemex allows users to
+setup and solve arbitrarily many problems, so long as memory suffices.
+More than one problem can be set up simultaneously.
+
+\section{Cmake Configure and Make}\label{sec:muemex:cmake}
+To use \muemex, Trilinos must be configured with (at least) the
+following options:
+
+\begin{lstlisting}
+  export TRILINOS_HOME=/path/to/your/Trilinos/source/directory
+  cmake \
+      -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON  \
+      -D Trilinos_ENABLE_Amesos:BOOL=ON \
+      -D Trilinos_ENABLE_Amesos2:BOOL=ON \
+      -D Amesos2_ENABLE_KLU2:BOOL=ON \
+      -D Trilinos_ENABLE_AztecOO:BOOL=ON \
+      -D Trilinos_ENABLE_Epetra:BOOL=ON \
+      -D Trilinos_ENABLE_EpetraExt:BOOL=ON \
+      -D Trilinos_ENABLE_Fortran:BOOL=OFF \
+      -D Trilinos_ENABLE_Ifpack:BOOL=ON \
+      -D Trilinos_ENABLE_Ifpack2:BOOL=ON \
+      -D Trilinos_ENABLE_MueLu:BOOL=ON \
+      -D Trilinos_ENABLE_Teuchos:BOOL=ON \
+      -D Trilinos_ENABLE_Tpetra:BOOL=ON \
+      -D TPL_ENABLE_MPI:BOOL=OFF \
+      -D TPL_ENABLE_MATLAB:BOOL=ON \
+      -D MATLAB_ROOT:STRING="<my matlab root>" \
+      -D MATLAB_ARCH:STRING="<my matlab os string>" \
+      -D Trilinos_EXTRA_LINK_FLAGS="-lrt -lm -lgfortran" \
+  ${TRILINOS_HOME}
+\end{lstlisting}
+
+Since \muemex supports both the Epetra and Tpetra linear algebra
+libraries, you have to have both enabled in order to build \muemex.
+\begin{mycomment}
+If you turn off either Epetra or Tpetra then you will run into an error message: \textit{MueMex requires Epetra, Tpetra and MATLAB}.
+\end{mycomment}
+
+Most additional options can be specified as well.  It is important to
+note that \muemex does not work properly with MPI, hence MPI must be
+disabled in order to compile \muemex.  The MATLAB\_ARCH option is new to
+the cmake build system, and involves the MATLAB-specific architecture
+code for your system.  There is currently no automatic way to extract
+this, so it must be user-specified.  As of MATLAB 7.9 (R2009b), common
+arch codes are:
+\begin{center}
+\begin{tabular}{l|l}
+Code& OS\\
+\hline
+glnx86& 32-bit Linux (intel/amd)\\
+glnxa64& 64-bit Linux (intel/amd)\\
+maci64& 64-bit MacOS\\
+maci& 32-bit MacOS\\
+\end{tabular}
+\end{center}
+
+On 64-bit Intel/AMD architectures, Trilinos and all relevant TPLs
+(note: this includes BLAS and LAPACK)
+must be compiled with the \texttt{-fPIC} option.  This necessitates adding:
+\begin{lstlisting}
+    -D CMAKE_CXX_FLAGS:STRING="-fPIC" \
+    -D CMAKE_C_FLAGS:STRING="-fPIC" \
+    -D CMAKE_Fortran_FLAGS:STRING="-fPIC" \
+\end{lstlisting}
+to the cmake configure line.
+
+The additional linker flags specified in \texttt{Trilinos\_EXTRA\_LINK\_FLAGS} may slightly vary depending on the system and the exact configuration. But the given parameters may work for most Linux based systems.
+If you encounter an error message like \textit{Target "muemex.mexa64" links to item "-Wl,-rpath-link,/opt/matlab/bin/glnxa64 " which has leading or trailing whitespace.} you have to add some options to the \texttt{Trilinos\_EXTRA\_LINK\_FLAGS} variable. At least adding \texttt{-lm} should be safe and fix the error message.
+
+\subsection{BLAS \& LAPACK Option \#1: Static Builds}
+Trilinos does not play nicely with MATLAB's default LAPACK and BLAS on
+64-bit machines.
+If \muemex randomly crashes when you run with any Krylov method that
+has orthogonalization, chances are \muemex is finding the wrong
+BLAS/LAPACK libraries.
+This leaves you
+with one of two options.  The first is to build them both \textit{statically}
+and then specify them as follows:
+\begin{lstlisting}
+    -D LAPACK_LIBRARY_DIRS:STRING="<path to my lapack.a>" \
+    -D BLAS_LIBRARY_DIRS:STRING="<path to my blas.a>" \
+\end{lstlisting}
+Using static linking for LAPACK and BLAS prevents MATLAB's default libraries to take precedence.
+
+\subsection{BLAS \& LAPACK Option \#2: LD$\_$PRELOAD}
+\label{sec:preload}
+The second option is to use \texttt{LD\_PRELOAD} to tell MATLAB exactly
+which libraries to use.  For this option, you can use the dynamic
+libraries installed on your system.
+Before starting MATLAB, set
+\texttt{LD\_PRELOAD} to the paths of libstdc++.so corresponding to the version of GCC used
+to build Trilinos, and the paths of libblas.so and liblapack.so on your local system.
+
+For example, if you use bash, you'd do something like this
+\begin{lstlisting}
+  export LD_PRELOAD=<path>/libstdc++.so:<path>/libblas.so:<path>/liblapack.so
+  \end{lstlisting}
+
+For csh / tcsh, do this
+\begin{lstlisting}
+  setenv LD_PRELOAD <path>/libstdc++.so:<path>/libblas.so:<path>/liblapack.so
+\end{lstlisting}
+
+\subsection{Running MATLAB}
+
+Before you run MATLAB you have to make sure that MATLAB is using the same libraries that have been used for compiling \muemex.
+This includes the \texttt{libstdc++.so} and depending whether you turned on/off fortran also \texttt{libgfortran.so}. Please make sure that the correct libraries and paths are declared in the \texttt{LD\_PRELOAD} variable. You can refer to section \ref{sec:preload} to see how the \texttt{LD\_PRELOAD} variable is set.
+
+For a 64 bit Linux system using the bash the command should look like
+
+\begin{lstlisting}
+export LD_PRELOAD=/usr/lib64/libstdc++.so.6:/usr/lib64/libgfortran.so.3:$LD_PRELOAD
+\end{lstlisting}
+
+to add the \texttt{libstdc++.so} and \texttt{libgfortran.so} to the existing \texttt{LD\_PRELOAD} variable. Then run the MATLAB executable in the same shell window.
+
+\begin{mycomment}
+Note, that this step is necessary even if you statically linked BLAS and LAPACK.
+\end{mycomment}
+
+If you are unsure which libraries have to be set in the \texttt{LD\_PRELOAD} variable you will find out latest if you start MATLAB and try to run \muemex. It will throw some error messages with the missing library names. For a 64 bit Linux system the standard libraries usually can be found in \texttt{/usr/lib64} or \texttt{/usr/lib} (for a 32 bit system).
+
+\section{Using \muemex}\label{sec:muemex:usage}
+\muemex is designed to be interfaced with via the MATLAB script
+\texttt{muelu.m}.  There are five modes in which \muemex can be run:
+\begin{enumerate}
+\item Setup Mode --- Performs the problem setup for \muelu.
+  Depending on whether or not the \texttt{Linear Algebra} option is
+  used, \muemex creates either an unpreconditioned Epetra problem,
+  an Epetra problem with \muelu, or a Tpetra problem with \muelu.
+  The default is \texttt{tpetra}. The \texttt{epetra} mode only supports
+  real-valued matrices, while \texttt{tpetra}
+  supports both real and complex and will infer the scalar type
+  from the matrix passed during setup.  This call returns a problem
+  handle used to reference the problem in the future, and (optionally)
+  the operator complexity, if a preconditioner is being used.
+\item Solve Mode --- Given a problem handle and a right-hand side, \muemex
+  solves the problem specified.  Setup mode must be called before
+  solve mode.
+\item Cleanup Mode --- Frees the memory allocated to internal \muelu,
+  Epetra and Tpetra objects.  This can be called with a particular
+  problem handle, in which case it frees that problem, or without one,
+  in which case all \muemex memory is freed.
+\item Status Mode --- Prints out status information on problems which
+  have been set up.  Like cleanup, it can be called with or without a
+  particular problem handle.
+\item Get Mode --- Get information from a MueLu hierarchy that has been
+  generated. Given the problem handle, a level number and the name of the
+  field, returns the appropriate array or scalar as a MATLAB object.
+\end{enumerate}
+All of these modes, with the exception of status and cleanup take
+option lists which will be directly converted into
+\texttt{Teuchos::ParameterList} objects by \muemex, as key-value pairs.
+Options passed during setup will apply to the \muelu preconditioner, and
+options passed during a solve will apply to Belos.
+
+\subsection{Setup Mode}
+Setup mode is called as follows:
+\begin{lstlisting}[language=Matlab]
+  >> [h, oc] = muelu('setup', A[, 'parameter', value,...])
+\end{lstlisting}
+The parameter \texttt{A} represents the sparse matrix to perform aggregation on
+and the parameter/value pairs represent standard \muelu options.
+
+The routine returns a problem handle, \texttt{h}, and the operator
+complexity \texttt{oc} for the operator.  In addition to the standard
+options, setup mode has one unique option of its own:
+
+\choicebox{\tt Linear Algebra}{[{\tt string}] Whether to use
+  'epetra unprec', 'epetra', or 'tpetra'. Default is 'epetra' for
+  real matrix and 'tpetra' for complex matrix.}
+
+\subsection{Solve Mode}
+Solve mode is called as follows:
+\begin{lstlisting}[language=Matlab]
+  >> [x, its] = muelu(h[, A], b[, 'parameter', value,...])
+\end{lstlisting}
+The parameter \texttt{h} is a problem handle returned by the
+setup mode call, \texttt{A} is the sparse matrix with which to
+solve and \texttt{b} is the right-hand side.  Parameter/value pairs
+to configure the Belos solver are listed as above. If A is not supplied,
+the matrix provided when setting up the problem will be used. \texttt{x} is
+the solution multivector with the same dimensions as \texttt{b}, and \texttt{its}
+is the number of iterations Belos needed to solve the problem.
+
+All of these options are taken directly from Belos, so consult its
+manual for more information. Belos output style and verbosity settings
+are implemented as enums, but can be set as strings in \muemex. For example:
+
+\begin{lstlisting}[language=Matlab]
+  >> x = muelu(0, b, 'Verbosity', 'Warnings + IterationDetails', ...
+                       'Output Style', 'Brief');
+\end{lstlisting}
+
+Verbosity settings can be separated by spaces, '+' or ','. Belos::Brief
+is the default output style.
+
+\subsection{Cleanup Mode}
+Cleanup mode is called as follows:
+\begin{lstlisting}[language=Matlab]
+  >> muelu('cleanup'[, h])
+\end{lstlisting}
+The parameter \texttt{h} is a problem handle returned by the
+setup mode call and is optional.  If \texttt{h} is provided, that
+problem is cleaned up.  If the option is not provided all currently
+set up problems are cleaned up.
+
+\subsection{Status Mode}
+Status mode is called as follows:
+\begin{lstlisting}[language=Matlab]
+  >> muelu('status'[, h])
+\end{lstlisting}
+The parameter \texttt{h} is a problem handle returned by the
+setup mode call and is optional.  If \texttt{h} is provided, status
+information for that problem is printed.  If the option is not provided all currently
+set up problems have status information printed.
+
+\subsection{Get Mode}
+Get mode is called as follows:
+\begin{lstlisting}[language=Matlab]]
+  >> muelu('get', h, level, fieldName[, typeHint])
+\end{lstlisting}
+The parameter \texttt{h} is the problem handle, and \texttt{level}
+is an integer that identifies the level within the hierarchy containing
+the desired data. \texttt{fieldName} is a string that identifies the
+field within the level, e.g. 'Nullspace'. \texttt{typeHint} is an optional
+parameter that tells MueMex what data type to expect from the level. This
+is a string, with possible values 'matrix', 'multivector', 'lovector' (ordinal
+vector), or 'scalar'. MueMex will attempt to guess the type from \texttt{fieldName}
+but \texttt{typeHint} may be required.
+
+\subsection{Tips and Tricks }\label{sec:muemex:tips}
+
+Internally, MATLAB represents all data as doubles unless you go
+through efforts to do otherwise.  \muemex detects integer parameters by
+a relative error test, seeing if the relative difference between the
+value from MATLAB and the value of the \texttt{int}-typecast value are
+less than 1e-15.  Unfortunately, this means that \muemex will choose the
+incorrect type for parameters which are doubles that happen to have an
+integer value (a good example of where this might happen would be the parameter
+`smoother Chebyshev: alpha', which defaults to 30.0).  Since \muemex does no
+internal typechecking of
+parameters (it uses \muelu's internal checks), it has no way of detecting
+this conflict.  From the user's perspective, avoiding this is as
+simple as adding a small perturbation (greater than a relative 1e-15)
+to the parameter that makes it non-integer valued.
+
+

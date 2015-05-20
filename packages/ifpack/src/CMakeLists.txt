@@ -254,15 +254,12 @@ IF (${PACKAGE_NAME}_ENABLE_Euclid)
 
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Boost)
-
+IF (${PACKAGE_NAME}_ENABLE_SUPPORTGRAPH)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/supportgraph)
-
-  SET(HEADERS ${HEADERS}
-  supportgraph/Ifpack_SupportGraph.h
+  SET (HEADERS
+    ${HEADERS} 
+    supportgraph/Ifpack_SupportGraph.h
   )
-
-
 ENDIF()
 
 # Experimental code:

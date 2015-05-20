@@ -146,11 +146,11 @@ public:
   typedef Kokkos::View<     Scalar * , Kokkos::LayoutLeft, Device >  LocalVectorType ;
   typedef Kokkos::DualView< Scalar** , Kokkos::LayoutLeft, Device >  LocalDualVectorType;
 
-  typedef Tpetra::Map<int, int, NodeType>                 MapType;
-  typedef Tpetra::Vector<Scalar,int,int,NodeType>         GlobalVectorType;
-  typedef Tpetra::CrsMatrix<Scalar,int,int,NodeType>      GlobalMatrixType;
-  typedef typename GlobalMatrixType::k_local_matrix_type  LocalMatrixType ;
-  typedef typename LocalMatrixType::StaticCrsGraphType    LocalGraphType ;
+  typedef Tpetra::Map<int, int, NodeType>              MapType;
+  typedef Tpetra::Vector<Scalar,int,int,NodeType>      GlobalVectorType;
+  typedef Tpetra::CrsMatrix<Scalar,int,int,NodeType>   GlobalMatrixType;
+  typedef typename GlobalMatrixType::local_matrix_type LocalMatrixType;
+  typedef typename LocalMatrixType::StaticCrsGraphType LocalGraphType;
 
 
   typedef NodeNodeGraph< typename FixtureType::elem_node_type
@@ -266,7 +266,7 @@ public:
     , g_nodal_delta(    RowMap, 1 )
     , g_nodal_solution_no_overlap(
         RowMap ,
-        Kokkos::subview<LocalDualVectorType>( g_nodal_solution.getDualView()
+        Kokkos::subview( g_nodal_solution.getDualView()
                                             , std::pair<unsigned,unsigned>(0,fixture.node_count_owned())
                                             , Kokkos::ALL()
                                             ) )
@@ -372,14 +372,14 @@ public:
       const LocalDualVectorType k_nodal_delta    = g_nodal_delta   .getDualView();
 
       const LocalVectorType nodal_solution =
-        Kokkos::subview<LocalVectorType>(k_nodal_solution.d_view,Kokkos::ALL(),0);
+        Kokkos::subview(k_nodal_solution.d_view,Kokkos::ALL(),0);
       const LocalVectorType nodal_residual =
-        Kokkos::subview<LocalVectorType>(k_nodal_residual.d_view,Kokkos::ALL(),0);
+        Kokkos::subview(k_nodal_residual.d_view,Kokkos::ALL(),0);
       const LocalVectorType nodal_delta =
-        Kokkos::subview<LocalVectorType>(k_nodal_delta.d_view,Kokkos::ALL(),0);
+        Kokkos::subview(k_nodal_delta.d_view,Kokkos::ALL(),0);
 
       LocalVectorType nodal_solution_no_overlap =
-        Kokkos::subview<LocalVectorType>(nodal_solution,std::pair<unsigned,unsigned>(0,fixture.node_count_owned()));
+        Kokkos::subview(nodal_solution,std::pair<unsigned,unsigned>(0,fixture.node_count_owned()));
 
       // Get DeviceConfig structs used by some functors
       Kokkos::DeviceConfig dev_config_elem, dev_config_gath, dev_config_bc;
@@ -497,7 +497,8 @@ public:
                              rcpFromRef(g_nodal_residual),
                              rcpFromRef(g_nodal_delta),
                              cg_iteration_limit,
-                             cg_iteration_tolerance);
+                             cg_iteration_tolerance,
+                             print_flag);
           perf.mat_vec_time    += cgsolve.matvec_time ;
           perf.cg_iter_time    += cgsolve.iter_time ;
           perf.prec_setup_time += cgsolve.prec_setup_time ;
@@ -592,7 +593,7 @@ Perf fenl(
 
   typedef Problem< Scalar, Device , ElemOrder, CoeffFunctionType > ProblemType ;
 
-  const int print_flag = use_print && Kokkos::Impl::is_same< Kokkos::HostSpace , typename Device::memory_space >::value ;
+  const int print_flag = use_print && Kokkos::Impl::VerifyExecutionCanAccessMemorySpace< Kokkos::HostSpace::execution_space , typename Device::memory_space >::value ;
 
   // Read in any params from xml file
   Teuchos::RCP<Teuchos::ParameterList> fenlParams = Teuchos::parameterList();

@@ -69,7 +69,7 @@ namespace Stokhos {
       Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Result, 
       ordinal_type m) const {
       ordinal_type n=Input.numRows();
-      Teuchos::SerialDenseMatrix<ordinal_type, value_type> G(A);
+      Teuchos::SerialDenseMatrix<ordinal_type, value_type> G(Teuchos::Copy,A);
       Teuchos::SerialDenseMatrix<ordinal_type, value_type> z(n,1);
       for (ordinal_type j=0; j<m; j++){
 	if (j==0){  // Compute z=D-1r

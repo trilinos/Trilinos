@@ -225,7 +225,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdMultiVector, invalidSubviews,
   Scalar )
 {
   using Teuchos::tuple;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
+  // typedef Teuchos::ScalarTraits<Scalar> ST; // unused
   RCP<const VectorSpaceBase<Scalar> > vs = createSpmdVectorSpace<Scalar>(g_localDim);
   RCP<const MultiVectorBase<Scalar> > mv = createMembers(*vs, 1);
   TEST_THROW(mv->subView(tuple<int>(0, 1)), std::invalid_argument);

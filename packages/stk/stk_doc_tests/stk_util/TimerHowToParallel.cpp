@@ -36,7 +36,6 @@
 #include <stk_util/diag/PrintTimer.hpp>
 #include <stk_util/diag/Timer.hpp>
 #include <comparison/stringAndNumberComparisons.h>
-#include <stk_util/unit_test_support/valgrind/valgrind.h>
 
 namespace
 {
@@ -88,15 +87,7 @@ totalTestRuntime  2            SKIP  SKIP          SKIP  SKIP          SKIP  SKI
                                                                                             \
 Took SKIP seconds to generate the table above.                                            \
                     ";
-            bool isThisAValgrindRun = RUNNING_ON_VALGRIND >= 1;
-            if ( !isThisAValgrindRun )
-            {
-                EXPECT_TRUE(unitTestUtils::areStringsEqualWithToleranceForNumbers(expectedOutput, outputStream.str(), tolerance));
-            }
-            else
-            {
-                std::cerr << "Skipping test comparisons for valgrind runs." << std::endl;
-            }
+            EXPECT_TRUE(unitTestUtils::areStringsEqualWithToleranceForNumbers(expectedOutput, outputStream.str(), tolerance));
         }
 
         stk::diag::deleteRootTimer(rootTimer);

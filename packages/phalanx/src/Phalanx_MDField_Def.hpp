@@ -87,6 +87,7 @@ const std::string PHX::MDField<DataT>::m_field_data_error_msg =
 template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
+KOKKOS_FORCEINLINE_FUNCTION
 PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 MDField(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& t) :
   m_tag(name,t)
@@ -100,6 +101,7 @@ MDField(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& t) :
 template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
+KOKKOS_FORCEINLINE_FUNCTION
 PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 MDField(const PHX::Tag<DataT>& v) :
   m_tag(v)
@@ -113,6 +115,7 @@ MDField(const PHX::Tag<DataT>& v) :
 template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
+KOKKOS_FORCEINLINE_FUNCTION
 PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 MDField() :
   m_tag("???", Teuchos::null)
@@ -126,6 +129,7 @@ MDField() :
 template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
+KOKKOS_FORCEINLINE_FUNCTION
 PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 ~MDField()
 { }
@@ -134,7 +138,7 @@ PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
-inline
+KOKKOS_FORCEINLINE_FUNCTION
 const PHX::FieldTag& 
 PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 fieldTag() const
@@ -323,7 +327,7 @@ template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 template<typename iType>
-inline
+KOKKOS_FORCEINLINE_FUNCTION
 void PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 dimensions(std::vector<iType>& dims)
 { 
@@ -399,7 +403,6 @@ setFieldData(const boost::any& a)
 	      << Teuchos::demangleName(a.type().name()) << "\"." << std::endl;
     throw;
   }
-
 }
 
 //**********************************************************************
@@ -453,6 +456,7 @@ print(std::ostream& os,	bool printValues) const
 template<typename DataT,
          typename Tag0,typename Tag1, typename Tag2, typename Tag3,
          typename Tag4,typename Tag5, typename Tag6, typename Tag7>
+KOKKOS_FORCEINLINE_FUNCTION
 typename PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::array_type 
 PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 get_kokkos_view() 
@@ -463,6 +467,7 @@ get_kokkos_view()
 template<typename DataT,
          typename Tag0,typename Tag1, typename Tag2, typename Tag3,
          typename Tag4,typename Tag5, typename Tag6, typename Tag7>
+KOKKOS_FORCEINLINE_FUNCTION
 const typename PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::array_type
 PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 get_kokkos_view() const
@@ -530,6 +535,7 @@ std::ostream& PHX::operator<<(std::ostream& os,
 
 //**********************************************************************
 template<typename DataT>
+KOKKOS_FORCEINLINE_FUNCTION
 PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
 MDField(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& t) :
   m_tag(name,t)
@@ -541,6 +547,7 @@ MDField(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& t) :
 
 //**********************************************************************
 template<typename DataT>
+KOKKOS_FORCEINLINE_FUNCTION
 PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
 MDField(const PHX::Tag<DataT>& v) :
   m_tag(v)
@@ -552,6 +559,7 @@ MDField(const PHX::Tag<DataT>& v) :
 
 //**********************************************************************
 template<typename DataT>
+KOKKOS_FORCEINLINE_FUNCTION
 PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
 MDField() :
   m_tag("???", Teuchos::null)
@@ -563,6 +571,7 @@ MDField() :
 
 //**********************************************************************
 template<typename DataT>
+KOKKOS_FORCEINLINE_FUNCTION
 PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
 ~MDField()
 { }
@@ -759,7 +768,7 @@ dimension(const iType& ord) const
 //**********************************************************************
 template<typename DataT>
 template<typename iType>
-inline
+KOKKOS_FORCEINLINE_FUNCTION
 void PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
 dimensions(std::vector<iType>& dims)
 { 

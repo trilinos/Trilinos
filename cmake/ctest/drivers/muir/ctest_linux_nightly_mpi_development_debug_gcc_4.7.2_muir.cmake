@@ -64,12 +64,12 @@ SET(COMM_TYPE MPI)
 SET(BUILD_TYPE DEBUG)
 SET(BUILD_DIR_NAME MPI_DEBUG_Werror_DEV)
 SET(ENV{LD_LIBRARY_PATH} "/home/trilinos/compilers/gcc/support_libs/mpc-1.0.1/lib:/home/trilinos/compilers/gcc/support_libs/mpfr-3.1.2/lib:/home/trilinos/compilers/gcc/support_libs/gmp-5.1.1/lib:/home/trilinos/compilers/gcc/4.7.2/lib64:$ENV{LD_LIBRARY_PATH}")
-SET(CTEST_TEST_TYPE Experimental)
+SET(CTEST_TEST_TYPE Nightly)
 #SET(CTEST_TEST_TIMEOUT 900)
 
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 
-SET(EXTRA_EXCLUDE_PACKAGES PyTrilinos)
+SET(EXTRA_EXCLUDE_PACKAGES MOOCHO Optika PyTrilinos)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
@@ -86,6 +86,8 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_SuperLU:BOOL=ON"
   "-DTrilinos_SHOW_DEPRECATED_WARNINGS=OFF"
   "-DCMAKE_CXX_FLAGS:STRING=-Wall -ansi -pedantic -Werror -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-delete-non-virtual-dtor"
+  "-DTrilinos_ENABLE_MOOCHO=OFF"
+  "-DTrilinos_ENABLE_Optika=OFF"
   )
 
 #

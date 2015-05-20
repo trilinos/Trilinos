@@ -65,9 +65,9 @@ namespace SEAMS {
   int   echo = true;
   
   Aprepro::Aprepro()
-    : lexer(NULL), sym_table(HASHSIZE),
+    : lexer(NULL), infoStream(&std::cout), sym_table(HASHSIZE),
       stringInteractive(false), stringScanner(NULL),
-      errorStream(&std::cerr), warningStream(&std::cerr), infoStream(&std::cout),
+      errorStream(&std::cerr), warningStream(&std::cerr), 
       stateImmutable(false), doLoopSubstitution(true), doIncludeSubstitution(true),
       isCollectingLoop(false)
   {

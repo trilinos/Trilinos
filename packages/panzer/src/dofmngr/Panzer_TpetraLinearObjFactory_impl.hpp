@@ -199,7 +199,7 @@ TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                              const LinearObjContainer & globalBCRows,
                              LinearObjContainer & ghostedObjs,
-                             bool zeroVectorRows) const
+                             bool zeroVectorRows, bool adjustX) const
 {
    typedef Teuchos::ArrayRCP<const double>::Ordinal Ordinal;
 
@@ -207,16 +207,17 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
    const ContainerType & t_globalBCRows = Teuchos::dyn_cast<const ContainerType>(globalBCRows); 
    ContainerType & t_ghosted = Teuchos::dyn_cast<ContainerType>(ghostedObjs); 
 
-   TEUCHOS_ASSERT(!Teuchos::is_null(t_localBCRows.get_x()));
-   TEUCHOS_ASSERT(!Teuchos::is_null(t_globalBCRows.get_x()));
+   TEUCHOS_ASSERT(!Teuchos::is_null(t_localBCRows.get_f()));
+   TEUCHOS_ASSERT(!Teuchos::is_null(t_globalBCRows.get_f()));
    
    // pull out jacobian and vector
    Teuchos::RCP<CrsMatrixType> A = t_ghosted.get_A();
    Teuchos::RCP<VectorType> f = t_ghosted.get_f();
+   if(adjustX) f = t_ghosted.get_x();
    Teuchos::ArrayRCP<double> f_array = f!=Teuchos::null ? f->get1dViewNonConst() : Teuchos::null;
 
-   const VectorType & local_bcs  = *(t_localBCRows.get_x());
-   const VectorType & global_bcs = *(t_globalBCRows.get_x());
+   const VectorType & local_bcs  = *(t_localBCRows.get_f());
+   const VectorType & global_bcs = *(t_globalBCRows.get_f());
    Teuchos::ArrayRCP<const double> local_bcs_array = local_bcs.get1dView();
    Teuchos::ArrayRCP<const double> global_bcs_array = global_bcs.get1dView();
 
@@ -225,11 +226,6 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
       if(global_bcs_array[i]==0.0)
          continue;
 
-      std::size_t numEntries = 0;
-      std::size_t sz = A->getNumEntriesInLocalRow(i);
-      Teuchos::Array<LocalOrdinalT> indices(sz);
-      Teuchos::Array<double> values(sz);
-
       if(local_bcs_array[i]==0.0 || zeroVectorRows) { 
          // this boundary condition was NOT set by this processor
 
@@ -237,6 +233,11 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
          if(!Teuchos::is_null(f))
             f_array[i] = 0.0;
          if(!Teuchos::is_null(A)) {
+            std::size_t numEntries = 0;
+            std::size_t sz = A->getNumEntriesInLocalRow(i);
+            Teuchos::Array<LocalOrdinalT> indices(sz);
+            Teuchos::Array<double> values(sz);
+
             A->getLocalRowCopy(i,indices,values,numEntries);
 
             for(std::size_t c=0;c<numEntries;c++) 
@@ -254,6 +255,11 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
          if(!Teuchos::is_null(f))
             f_array[i] /= scaleFactor;
          if(!Teuchos::is_null(A)) {
+            std::size_t numEntries = 0;
+            std::size_t sz = A->getNumEntriesInLocalRow(i);
+            Teuchos::Array<LocalOrdinalT> indices(sz);
+            Teuchos::Array<double> values(sz);
+
             A->getLocalRowCopy(i,indices,values,numEntries);
 
             for(std::size_t c=0;c<numEntries;c++) 

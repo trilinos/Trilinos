@@ -114,9 +114,11 @@ C      --A - the dynamic numeric memory base array
       CHARACTER*2048 DBNAME
       CHARACTER*2048 SCRATCH
 C      --DBNAME - the database name, needed because the database may be closed
+      character*256  option, value
 
       LOGICAL EXODUS
 C      --EXODUS - true iff EXODUS file versus GENESIS file
+      LOGICAL MAPND, MAPEL
 
       LOGICAL ISEOF
       CHARACTER*1 cdum
@@ -151,15 +153,12 @@ C .. Get filename from command line.  If not specified, emit error message
       NARG = argument_count()
       if (narg .eq. 0) then
         CALL PRTERR ('FATAL', 'Filename not specified.')
-        CALL PRTERR ('FATAL', 'Syntax is: "grope filename"')
-        GOTO 120
-      else if (narg .gt. 1) then
-        CALL PRTERR ('FATAL', 'Too many arguments specified.')
-        CALL PRTERR ('FATAL', 'Syntax is: "grope filename"')
+        CALL PRTERR ('FATAL',
+     *    'Syntax is: "grope [-[no]map node|element|all] filename"')
         GOTO 120
       end if
-
-      CALL get_argument(1,DBNAME, LNAM)
+      
+      CALL get_argument(narg,DBNAME, LNAM)
       NDB = exopen(dbname(:lnam), EXREAD, CMPSIZ, IOWS, vers, IERR)
       IF (IERR .NE. 0) THEN
         SCRATCH = 'Database "'//DBNAME(:LNAM)//'" does not exist.'
@@ -167,6 +166,64 @@ C .. Get filename from command line.  If not specified, emit error message
          GOTO 120
       END IF
 
+C ... By default, ultimately map both nodes and elements
+C     HOWEVER, in the transition time do not map either unless requested...
+      mapel = .false.
+      mapnd = .false.
+
+      if (narg .gt. 1) then
+        do i=1, narg-1, 2
+          CALL get_argument(i+0,option, lo)
+          CALL get_argument(i+1,value,  lv)
+          if (option(:lo) .eq. '-nomap' .or.
+     *      option(:lo) .eq. '--nomap') then
+            if (value(1:1) .eq. 'n' .or. value(1:1) .eq. 'N')
+     *        mapnd = .false.
+            if (value(1:1) .eq. 'e' .or. value(1:1) .eq. 'E')
+     *        mapel = .false.
+            if (value(1:1) .eq. 'a' .or. value(1:1) .eq. 'A') then
+              mapnd = .false.
+              mapel = .false.
+            end if
+          else if (option(:lo) .eq. '-map' .or.
+     *      option(:lo) .eq. '--map') then
+            if (value(1:1) .eq. 'n' .or. value(1:1) .eq. 'N')
+     *        mapnd = .true.
+            if (value(1:1) .eq. 'e' .or. value(1:1) .eq. 'E')
+     *        mapel = .true.
+            if (value(1:1) .eq. 'a' .or. value(1:1) .eq. 'A') then
+              mapnd = .true.
+              mapel = .true.
+            end if
+          end if
+        end do
+      end if
+      
+        write (*,9999)
+ 9999   FORMAT(/,
+     *    1x,'NOTE: This version of grope has the option to use global',
+     *    ' ids for both node and element ids.',/,
+     *    1x,'      To see the mapping from local to global, use',
+     *    ' the commands:',/,
+     *    1x,'          "LIST MAP" (element map), or ',
+     *    '"LIST NODEMAP" (node map)',/,
+     *    1x,'      To disable the maps and use local ids, restart',
+     *    ' grope with "-nomap node|element|all"',//,
+     *    1x,'      To enable the maps and use global ids, restart',
+     *    ' grope with "-map node|element|all"',//,
+     *    1x,'      Notify gdsjaar@sandia.gov if bugs found')
+        
+        if (mapel .and. mapnd) then
+          WRITE (*, 10010) 'Nodes and Elements using Global Ids'
+        else if (mapel) then
+          WRITE (*, 10010) 'Elements use Global Ids, Node Ids are Local'
+        else if (mapnd) then
+          WRITE (*, 10010) 'Element use Local Ids, Node Ids are Global'
+        else
+          WRITE (*, 10010) 'Nodes and Elements using Local Ids'
+        end if        
+10010   FORMAT (/, 1X, 5A)
+        
 C   --Initialize dynamic memory
       CALL MDINIT (A)
       CALL MCINIT (C)
@@ -187,7 +244,8 @@ C   --Read the initial variables
          lnpsdf = 0
       end if
       if (numess .gt. 0) then
-         lessnl = 0
+         call exinq(ndb, EXSSNL, lessnl, rdum, cdum, ierr)
+         IF (IERR .NE. 0) GOTO 110
          call exinq(ndb, EXSSEL, lessel, rdum, cdum, ierr)
          IF (IERR .NE. 0) GOTO 110
          call exinq(ndb, EXSSDF, lessdf, rdum, cdum, ierr)
@@ -243,13 +301,21 @@ C ... Read element map
       CALL MDRSRV ('MAPEL', KMAPEL, NUMEL)
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 100
-      CALL RDMAP (NDB, NUMEL, A(KMAPEL), ISEOF)
+      if (mapel) then
+        CALL RDMAP (NDB, NUMEL, A(KMAPEL), ISEOF)
+      else
+        call iniseq(numel, ia(kmapel))
+      end if
 
 C ... Read node map
       CALL MDRSRV ('MAPNO', KMAPNO, NUMNP)
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 100
-      CALL RDNMAP (NDB, NUMNP, A(KMAPNO), ISEOF)
+      if (mapnd) then
+        CALL RDNMAP (NDB, NUMNP, A(KMAPNO), ISEOF)
+      else
+        call iniseq(numnp, ia(kmapno))
+      end if
 
 C ... Read element blocks
       CALL MDRSRV ('IDELB', KIDELB, NELBLK)
@@ -371,7 +437,7 @@ C   --Process commands
      &     C(KVNAMO+NAMLEN*(IXGV-1)), C(KVNAMO+NAMLEN*(IXNV-1)),
      &     C(KVNAMO+NAMLEN*(IXEV-1)), C(KVNAMO+NAMLEN*(IXNS-1)),
      $     C(KVNAMO+NAMLEN*(IXSS-1)),
-     &     A(KCORD), A(KMAPEL), A(KMAPNO),
+     &     A(KCORD), A(KMAPEL), A(KMAPNO), mapnd, mapel,
      &     A(KIDELB), A(KNELB), A(KLENE), A(KNLNK), A(KNATR),
      &     A(KLINK), A(KATRIB),
      &     A(KIDNS), A(KNNNS), A(KNDNPS), A(KIXNNS), A(KIXDNS),
@@ -402,3 +468,20 @@ C   --Process commands
       CALL WRAPUP (QAINFO(1))
       
       END
+
+      subroutine iniseq(icnt, map)
+      integer map(*)
+      do i=1, icnt
+        map(i) = i
+      end do
+      return
+      end
+
+
+
+
+
+
+
+
+

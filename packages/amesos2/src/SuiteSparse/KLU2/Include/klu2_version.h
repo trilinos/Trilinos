@@ -46,10 +46,10 @@
 
 #define NPRINT  
 
-#define BYTES(type,n) (sizeof (type) * (n))
-#define CEILING(b,u)  (((b)+(u)-1) / (u))
-#define UNITS(type,n) (CEILING (BYTES (type,n), sizeof (Unit)))
-#define DUNITS(type,n) (ceil (BYTES (type, (double) n) / sizeof (Unit)))
+#define KLU2_BYTES(type,n) (sizeof (type) * (n))
+#define KLU2_CEILING(b,u)  (((b)+(u)-1) / (u))
+#define UNITS(type,n) (KLU2_CEILING (KLU2_BYTES (type,n), sizeof (Unit)))
+#define DUNITS(type,n) (ceil (KLU2_BYTES (type, (double) n) / sizeof (Unit)))
 
 #define GET_I_POINTER(LU, Xip, Xi, k) \
 { \

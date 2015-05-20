@@ -98,7 +98,7 @@ typedef panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::
 
 namespace panzer {
 
-Teuchos::RCP<CrsMatrixType> getSubBlock(int i,int j,Thyra::LinearOpBase<double> & lo)
+Teuchos::RCP<CrsMatrixType> getSubBlock_tp(int i,int j,Thyra::LinearOpBase<double> & lo)
 {
    Thyra::BlockedLinearOpBase<double> & blo = Teuchos::dyn_cast<Thyra::BlockedLinearOpBase<double> >(lo);
    Teuchos::RCP<OperatorType> t_blo = 
@@ -107,7 +107,7 @@ Teuchos::RCP<CrsMatrixType> getSubBlock(int i,int j,Thyra::LinearOpBase<double> 
    return rcp_dynamic_cast<CrsMatrixType>(t_blo);
 }
 
-Teuchos::RCP<const CrsMatrixType> getSubBlock(int i,int j,const Thyra::LinearOpBase<double> & lo)
+Teuchos::RCP<const CrsMatrixType> getSubBlock_tp(int i,int j,const Thyra::LinearOpBase<double> & lo)
 {
    const Thyra::BlockedLinearOpBase<double> & blo = Teuchos::dyn_cast<const Thyra::BlockedLinearOpBase<double> >(lo);
    Teuchos::RCP<const OperatorType> t_blo = 
@@ -418,7 +418,7 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, graph_constr)
    A_11->print(out);
 }
 
-TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, adjustDirichlet)
+TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, adjustDirichlet)
 {
    PHX::KokkosDeviceSession session;
 
@@ -461,27 +461,27 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, adjustDirichlet)
    RCP<LinearObjContainer> ghosted_1   = la_factory->buildGhostedLinearObjContainer();
    RCP<LinearObjContainer> ghosted_sys = la_factory->buildGhostedLinearObjContainer();
 
-   la_factory->initializeGhostedContainer(LinearObjContainer::X,*ghosted_0);
-   la_factory->initializeGhostedContainer(LinearObjContainer::X,*ghosted_1);
+   la_factory->initializeGhostedContainer(LinearObjContainer::F,*ghosted_0);
+   la_factory->initializeGhostedContainer(LinearObjContainer::F,*ghosted_1);
    la_factory->initializeGhostedContainer(LinearObjContainer::F | LinearObjContainer::Mat,*ghosted_sys);
 
    RCP<BLOC> b_0   = rcp_dynamic_cast<BLOC>(ghosted_0);
    RCP<BLOC> b_1   = rcp_dynamic_cast<BLOC>(ghosted_1);
    RCP<BLOC> b_sys = rcp_dynamic_cast<BLOC>(ghosted_sys);
 
-   TEST_ASSERT(!Teuchos::is_null(b_0->get_x()));
-   TEST_ASSERT(!Teuchos::is_null(b_1->get_x()));
+   TEST_ASSERT(!Teuchos::is_null(b_0->get_f()));
+   TEST_ASSERT(!Teuchos::is_null(b_1->get_f()));
    TEST_ASSERT(!Teuchos::is_null(b_sys->get_f()));
    TEST_ASSERT(!Teuchos::is_null(b_sys->get_A()));
 
-   Thyra::assign(b_0->get_x().ptr(),0.0); // put some garbage in the systems
-   Thyra::assign(b_1->get_x().ptr(),0.0); // put some garbage in the systems
+   Thyra::assign(b_0->get_f().ptr(),0.0); // put some garbage in the systems
+   Thyra::assign(b_1->get_f().ptr(),0.0); // put some garbage in the systems
    Thyra::assign(b_sys->get_f().ptr(),-3.0); // put some garbage in the systems
 
    // b_sys->get_A()->PutScalar(-3.0);
    for(int i=0;i<numBlocks;i++) {
       for(int j=0;j<numBlocks;j++) {
-         RCP<CrsMatrixType> M = getSubBlock(i,j,*b_sys->get_A());
+         RCP<CrsMatrixType> M = getSubBlock_tp(i,j,*b_sys->get_A());
          M->resumeFill();
          M->setAllToScalar(-3.0);
          M->fillComplete(M->getDomainMap(),M->getRangeMap());
@@ -495,8 +495,8 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, adjustDirichlet)
 
    if(myRank==0) {   
       for(int i=0;i<numBlocks;i++) {
-         RCP<Thyra::VectorBase<double> > x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_x())->getNonconstVectorBlock(i);
-         RCP<Thyra::VectorBase<double> > x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_x())->getNonconstVectorBlock(i);
+         RCP<Thyra::VectorBase<double> > x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_f())->getNonconstVectorBlock(i);
+         RCP<Thyra::VectorBase<double> > x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_f())->getNonconstVectorBlock(i);
 
          Teuchos::ArrayRCP<double> data_0,data_1;
          rcp_dynamic_cast<SpmdVectorBase<double> >(x_0)->getNonconstLocalData(Teuchos::ptrFromRef(data_0)); 
@@ -516,8 +516,8 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, adjustDirichlet)
    }
    else if(myRank==1) {
       for(int i=0;i<numBlocks;i++) {
-         RCP<Thyra::VectorBase<double> > x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_x())->getNonconstVectorBlock(i);
-         RCP<Thyra::VectorBase<double> > x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_x())->getNonconstVectorBlock(i);
+         RCP<Thyra::VectorBase<double> > x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_f())->getNonconstVectorBlock(i);
+         RCP<Thyra::VectorBase<double> > x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_f())->getNonconstVectorBlock(i);
 
          Teuchos::ArrayRCP<double> data_0,data_1;
          rcp_dynamic_cast<SpmdVectorBase<double> >(x_0)->getNonconstLocalData(Teuchos::ptrFromRef(data_0)); 
@@ -539,10 +539,10 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, adjustDirichlet)
       TEUCHOS_ASSERT(false);
 
    out << "LOCAL " << std::endl;
-   b_0->get_x()->describe(out,Teuchos::VERB_HIGH);
+   b_0->get_f()->describe(out,Teuchos::VERB_HIGH);
    out << std::endl;
    out << "GLOBAL " << std::endl;
-   b_1->get_x()->describe(out,Teuchos::VERB_HIGH);
+   b_1->get_f()->describe(out,Teuchos::VERB_HIGH);
    out << std::endl;
 
    // run test for conditions
@@ -566,7 +566,7 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, adjustDirichlet)
          TEST_EQUALITY(data[5],0.0);      // case 2
 
          for(int j=0;j<numBlocks;j++) {
-            RCP<const CrsMatrixType> subA = getSubBlock(i,j,*A);
+            RCP<const CrsMatrixType> subA = getSubBlock_tp(i,j,*A);
 
             subA->getLocalRowCopy(0,indices,values,numEntries);
             for(std::size_t k=0;k<numEntries;k++) TEST_EQUALITY(values[k],-3.0);
@@ -592,7 +592,7 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, adjustDirichlet)
          TEST_EQUALITY(data[6],0.0);     // case 2
 
          for(int j=0;j<numBlocks;j++) {
-            RCP<const CrsMatrixType> subA = getSubBlock(i,j,*A);
+            RCP<const CrsMatrixType> subA = getSubBlock_tp(i,j,*A);
 
             subA->getLocalRowCopy(3,indices,values,numEntries);
             for(std::size_t k=0;k<numEntries;k++) TEST_EQUALITY(values[k],-3.0);
@@ -649,26 +649,26 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, node_cell)
    RCP<LinearObjContainer> ghosted_1   = la_factory->buildGhostedLinearObjContainer();
    RCP<LinearObjContainer> ghosted_sys = la_factory->buildGhostedLinearObjContainer();
 
-   la_factory->initializeGhostedContainer(LinearObjContainer::X,*ghosted_0);
-   la_factory->initializeGhostedContainer(LinearObjContainer::X,*ghosted_1);
+   la_factory->initializeGhostedContainer(LinearObjContainer::F,*ghosted_0);
+   la_factory->initializeGhostedContainer(LinearObjContainer::F,*ghosted_1);
    la_factory->initializeGhostedContainer(LinearObjContainer::F | LinearObjContainer::Mat,*ghosted_sys);
 
    RCP<BLOC> b_0   = rcp_dynamic_cast<BLOC>(ghosted_0);
    RCP<BLOC> b_1   = rcp_dynamic_cast<BLOC>(ghosted_1);
    RCP<BLOC> b_sys = rcp_dynamic_cast<BLOC>(ghosted_sys);
 
-   TEST_ASSERT(!Teuchos::is_null(b_0->get_x()));
-   TEST_ASSERT(!Teuchos::is_null(b_1->get_x()));
+   TEST_ASSERT(!Teuchos::is_null(b_0->get_f()));
+   TEST_ASSERT(!Teuchos::is_null(b_1->get_f()));
    TEST_ASSERT(!Teuchos::is_null(b_sys->get_f()));
    TEST_ASSERT(!Teuchos::is_null(b_sys->get_A()));
 
-   Thyra::assign(b_0->get_x().ptr(),0.0); // put some garbage in the systems
-   Thyra::assign(b_1->get_x().ptr(),0.0); // put some garbage in the systems
+   Thyra::assign(b_0->get_f().ptr(),0.0); // put some garbage in the systems
+   Thyra::assign(b_1->get_f().ptr(),0.0); // put some garbage in the systems
    Thyra::assign(b_sys->get_f().ptr(),-3.0); // put some garbage in the systems
 
    for(int i=0;i<numBlocks;i++)
       for(int j=0;j<numBlocks;j++)
-         putScalar(-3.0,*getSubBlock(i,j,*b_sys->get_A()));
+         putScalar(-3.0,*getSubBlock_tp(i,j,*b_sys->get_A()));
 
    // there are 3 cases for adjustDirichlet
    //   1. Local set only for GID
@@ -676,8 +676,8 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, node_cell)
    //   3. Set remotely
 
    if(myRank==0) {   
-      RCP<Thyra::VectorBase<double> > x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_x())->getNonconstVectorBlock(0);
-      RCP<Thyra::VectorBase<double> > x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_x())->getNonconstVectorBlock(0);
+      RCP<Thyra::VectorBase<double> > x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_f())->getNonconstVectorBlock(0);
+      RCP<Thyra::VectorBase<double> > x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_f())->getNonconstVectorBlock(0);
 
       Teuchos::ArrayRCP<double> data_0,data_1;
       rcp_dynamic_cast<SpmdVectorBase<double> >(x_0)->getNonconstLocalData(Teuchos::ptrFromRef(data_0)); 
@@ -695,8 +695,8 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, node_cell)
       data_1[5] = 2.0; // GID = 5
 
       {
-         x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_x())->getNonconstVectorBlock(1);
-         x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_x())->getNonconstVectorBlock(1);
+         x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_f())->getNonconstVectorBlock(1);
+         x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_f())->getNonconstVectorBlock(1);
 
          rcp_dynamic_cast<SpmdVectorBase<double> >(x_0)->getNonconstLocalData(Teuchos::ptrFromRef(data_0)); 
          rcp_dynamic_cast<SpmdVectorBase<double> >(x_1)->getNonconstLocalData(Teuchos::ptrFromRef(data_1)); 
@@ -705,8 +705,8 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, node_cell)
       }
    }
    else if(myRank==1) {
-      RCP<Thyra::VectorBase<double> > x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_x())->getNonconstVectorBlock(0);
-      RCP<Thyra::VectorBase<double> > x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_x())->getNonconstVectorBlock(0);
+      RCP<Thyra::VectorBase<double> > x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_f())->getNonconstVectorBlock(0);
+      RCP<Thyra::VectorBase<double> > x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_f())->getNonconstVectorBlock(0);
 
       Teuchos::ArrayRCP<double> data_0,data_1;
       rcp_dynamic_cast<SpmdVectorBase<double> >(x_0)->getNonconstLocalData(Teuchos::ptrFromRef(data_0)); 
@@ -727,10 +727,10 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, node_cell)
       TEUCHOS_ASSERT(false);
 
    out << "LOCAL " << std::endl;
-   b_0->get_x()->describe(out,Teuchos::VERB_HIGH);
+   b_0->get_f()->describe(out,Teuchos::VERB_HIGH);
    out << std::endl;
    out << "GLOBAL " << std::endl;
-   b_1->get_x()->describe(out,Teuchos::VERB_HIGH);
+   b_1->get_f()->describe(out,Teuchos::VERB_HIGH);
    out << std::endl;
 
    // run test for conditions
@@ -755,7 +755,7 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, node_cell)
          TEST_EQUALITY(data[5],0.0);     // case 2
 
          for(int j=0;j<numBlocks;j++) {
-            RCP<const CrsMatrixType> subA = getSubBlock(i,j,*A);
+            RCP<const CrsMatrixType> subA = getSubBlock_tp(i,j,*A);
 
             subA->getLocalRowCopy(0,indices,values,numEntries);
             for(std::size_t k=0;k<numEntries;k++) TEST_EQUALITY(values[k],-3.0);
@@ -777,7 +777,7 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, node_cell)
          TEST_EQUALITY(data[0],0.0);
 
          for(int j=0;j<numBlocks;j++) {
-            RCP<const CrsMatrixType> subA = getSubBlock(i,j,*A);
+            RCP<const CrsMatrixType> subA = getSubBlock_tp(i,j,*A);
 
             subA->getLocalRowCopy(0,indices,values,numEntries);
             for(std::size_t k=0;k<numEntries;k++) TEST_EQUALITY(values[k],0.0);
@@ -798,7 +798,7 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, node_cell)
          TEST_EQUALITY(data[6],0.0);     // case 2
 
          for(int j=0;j<numBlocks;j++) {
-            RCP<const CrsMatrixType> subA = getSubBlock(i,j,*A);
+            RCP<const CrsMatrixType> subA = getSubBlock_tp(i,j,*A);
 
             subA->getLocalRowCopy(3,indices,values,numEntries);
             for(std::size_t k=0;k<numEntries;k++) TEST_EQUALITY(values[k],-3.0);
@@ -820,7 +820,7 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, node_cell)
          TEST_EQUALITY(data[0],-3.0);
 
          for(int j=0;j<numBlocks;j++) {
-            RCP<const CrsMatrixType> subA = getSubBlock(i,j,*A);
+            RCP<const CrsMatrixType> subA = getSubBlock_tp(i,j,*A);
 
             subA->getLocalRowCopy(0,indices,values,numEntries);
             for(std::size_t k=0;k<numEntries;k++) TEST_EQUALITY(values[k],-3.0);

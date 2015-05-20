@@ -180,7 +180,6 @@ Relaxation (const Teuchos::RCP<const row_matrix_type>& A)
   MinDiagonalValue_ (STS::zero ()),
   fixTinyDiagEntries_ (false),
   checkDiagEntries_ (false),
-  Condest_ (-STM::one ()),
   isInitialized_ (false),
   IsComputed_ (false),
   NumInitialize_ (0),
@@ -427,32 +426,6 @@ double Relaxation<MatrixType>::getApplyFlops() const {
 
 
 template<class MatrixType>
-typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
-Relaxation<MatrixType>::getCondEst () const
-{
-  return Condest_;
-}
-
-
-template<class MatrixType>
-typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
-Relaxation<MatrixType>::
-computeCondEst (CondestType CT,
-                typename MatrixType::local_ordinal_type MaxIters,
-                magnitude_type Tol,
-                const Teuchos::Ptr<const row_matrix_type>& matrix)
-{
-  if (! isComputed ()) { // cannot compute right now
-    return -Teuchos::ScalarTraits<magnitude_type>::one ();
-  }
-  // always compute it. Call Condest() with no parameters to get
-  // the previous estimate.
-  Condest_ = Ifpack2::Condest (*this, CT, MaxIters, Tol, matrix);
-  return Condest_;
-}
-
-
-template<class MatrixType>
 void
 Relaxation<MatrixType>::
 apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
@@ -633,7 +606,6 @@ void Relaxation<MatrixType>::computeBlockCrs ()
 
     // Reset state.
     IsComputed_ = false;
-    Condest_ = -STM::one ();
 
     const local_ordinal_type blockSize = blockCrsA->getBlockSize ();
 
@@ -733,7 +705,6 @@ void Relaxation<MatrixType>::compute ()
 
     // Reset state.
     IsComputed_ = false;
-    Condest_ = -STM::one ();
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       NumSweeps_ < 0, std::logic_error,
@@ -1965,8 +1936,7 @@ describe (Teuchos::FancyOStream &out,
     out << "Computed quantities:" << endl;
     {
       OSTab tab3 (out);
-      out << "Condition number estimate: " << Condest_ << endl
-          << "Global number of rows: " << A_->getGlobalNumRows () << endl
+      out << "Global number of rows: " << A_->getGlobalNumRows () << endl
           << "Global number of columns: " << A_->getGlobalNumCols () << endl;
     }
     if (checkDiagEntries_ && isComputed ()) {

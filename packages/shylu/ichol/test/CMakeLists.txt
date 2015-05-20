@@ -1,0 +1,22 @@
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    test_serial
+    SOURCES main_serial.cpp 
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    FAIL_REGULAR_EXPRESSION "FAILED"
+)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    test_graphviz
+    SOURCES main_graphviz.cpp 
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    FAIL_REGULAR_EXPRESSION "FAILED"
+)
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(${PACKAGE_NAME}_Test_Files
+        SOURCE_FILES mm_crs_input.mtx mm_crs_ichol.mtx
+        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+        DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+)

@@ -28,8 +28,11 @@ export http_proxy="http://sonproxy.sandia.gov:80"
 
 . ~/.bashrc
 
-module load openmpi/1.8.4
-module load gcc/4.9.2
+# If you update the list of modules, go to ~/code/trilinos-test/trilinos/ and
+# do "git pull". Otherwise, the tests could fail on the first night, as we
+# would first run old cron_driver.sh and only then pull
+module load openmpi/1.8.5
+module load gcc/5.1.0
 module load valgrind/3.10.1
 
 env

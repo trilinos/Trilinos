@@ -90,7 +90,7 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
 				">>> ERROR (ArrayTools::scalarMultiplyDataField): Zeroth dimensions (number of integration domains) of the fields and data input containers must agree!");
     TEUCHOS_TEST_FOR_EXCEPTION( ( (inputFields.dimension(2) != inputData.dimension(1)) && (inputData.dimension(1) != 1) ), std::invalid_argument,
 				">>> ERROR (ArrayTools::scalarMultiplyDataField): Second dimension of the fields input container and first dimension of data input container (number of integration points) must agree or first data dimension must be 1!");
-    for (int i=0; i<getrank(inputFields); i++) {
+    for (size_t i=0; i<getrank(inputFields); i++) {
       std::string errmsg  = ">>> ERROR (ArrayTools::scalarMultiplyDataField): Dimension ";
       errmsg += (char)(48+i);
       errmsg += " of the input and output fields containers must agree!";
@@ -106,7 +106,7 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
 				">>> ERROR (ArrayTools::scalarMultiplyDataField): First dimensions of fields input container and data input container (number of integration points) must agree or first data dimension must be 1!");
     TEUCHOS_TEST_FOR_EXCEPTION( ( inputData.dimension(0) != outputFields.dimension(0) ), std::invalid_argument,
 				">>> ERROR (ArrayTools::scalarMultiplyDataField): Zeroth dimensions of fields output container and data input containers (number of integration domains) must agree!");
-    for (int i=0; i<getrank(inputFields); i++) {
+    for (size_t i=0; i<getrank(inputFields); i++) {
       std::string errmsg  = ">>> ERROR (ArrayTools::scalarMultiplyDataField): Dimensions ";
       errmsg += (char)(48+i);
       errmsg += " and ";
@@ -121,8 +121,8 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
    ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>inputFieldsWrap(inputFields);
 
   // get sizes
-  int invalRank      = getrank(inputFields);
-  int outvalRank     = getrank(outputFields);
+  size_t invalRank      = getrank(inputFields);
+  size_t outvalRank     = getrank(outputFields);
   int numCells       = outputFields.dimension(0);
   int numFields      = outputFields.dimension(1);
   int numPoints      = outputFields.dimension(2);
@@ -515,7 +515,7 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
 				">>> ERROR (ArrayTools::scalarMultiplyDataData): Zeroth dimensions (number of integration domains) of the left and right data input containers must agree!");
     TEUCHOS_TEST_FOR_EXCEPTION( ( (inputDataRight.dimension(1) != inputDataLeft.dimension(1)) && (inputDataLeft.dimension(1) != 1) ), std::invalid_argument,
 				">>> ERROR (ArrayTools::scalarMultiplyDataData): First dimensions of the left and right data input containers (number of integration points) must agree or first dimension of the left data input container must be 1!");
-    for (int i=0; i<getrank(inputDataRight); i++) {
+    for (size_t i=0; i<getrank(inputDataRight); i++) {
       std::string errmsg  = ">>> ERROR (ArrayTools::scalarMultiplyDataData): Dimension ";
       errmsg += (char)(48+i);
       errmsg += " of the right input and output data containers must agree!";
@@ -531,7 +531,7 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
 				">>> ERROR (ArrayTools::scalarMultiplyDataData): Zeroth dimension of the right input data container and first dimension of the left data input container (number of integration points) must agree or first dimension of the left data input container must be 1!");
     TEUCHOS_TEST_FOR_EXCEPTION( ( inputDataLeft.dimension(0) != outputData.dimension(0) ), std::invalid_argument,
 				">>> ERROR (ArrayTools::scalarMultiplyDataData): Zeroth dimensions of data output and left data input containers (number of integration domains) must agree!");
-    for (int i=0; i<getrank(inputDataRight); i++) {
+    for (size_t i=0; i<getrank(inputDataRight); i++) {
       std::string errmsg  = ">>> ERROR (ArrayTools::scalarMultiplyDataData): Dimensions ";
       errmsg += (char)(48+i);
       errmsg += " and ";
@@ -549,9 +549,9 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
 
 
   // get sizes
-  int invalRank      = getrank(inputDataRight);
-  int outvalRank     = getrank(outputData);
-  int numCells      = outputData.dimension(0);
+  size_t invalRank      = getrank(inputDataRight);
+  size_t outvalRank     = getrank(outputData);
+  int numCells       = outputData.dimension(0);
   int numPoints      = outputData.dimension(1);
   int numDataPoints  = inputDataLeft.dimension(1);
   int dim1Tens       = 0;

@@ -43,7 +43,7 @@
 #include "Stokhos_UnitTestHelpers.hpp"
 
 #include "Stokhos_Sacado_Kokkos_UQ_PCE.hpp"
-#include "Kokkos_CrsMatrix.hpp"
+#include "Kokkos_Sparse.hpp"
 #include "Kokkos_CrsMatrix_UQ_PCE.hpp"
 #include "Kokkos_CrsMatrix_UQ_PCE_Cuda.hpp"
 #include "Stokhos_LegendreBasis.hpp"
@@ -468,7 +468,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   typedef typename MatrixScalar::ordinal_type Ordinal;
   typedef typename MatrixScalar::execution_space Device;
   typedef typename MatrixScalar::cijk_type Cijk;
-  typedef Kokkos::CrsMatrix<MatrixScalar,Ordinal,Device> Matrix;
+  typedef KokkosSparse::CrsMatrix<MatrixScalar,Ordinal,Device> Matrix;
 
   // Build Cijk tensor
   const Ordinal stoch_dim = 2;
@@ -494,7 +494,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   typedef typename MatrixScalar::ordinal_type Ordinal;
   typedef typename MatrixScalar::execution_space Device;
   typedef typename MatrixScalar::cijk_type Cijk;
-  typedef Kokkos::CrsMatrix<MatrixScalar,Ordinal,Device> Matrix;
+  typedef KokkosSparse::CrsMatrix<MatrixScalar,Ordinal,Device> Matrix;
 
   // Build Cijk tensor
   const Ordinal stoch_dim = 2;
@@ -520,7 +520,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   typedef typename MatrixScalar::ordinal_type Ordinal;
   typedef typename MatrixScalar::execution_space Device;
   typedef typename MatrixScalar::cijk_type Cijk;
-  typedef Kokkos::CrsMatrix<MatrixScalar,Ordinal,Device> Matrix;
+  typedef KokkosSparse::CrsMatrix<MatrixScalar,Ordinal,Device> Matrix;
 
   // Build Cijk tensor
   const Ordinal stoch_dim = 2;
@@ -555,7 +555,7 @@ bool test_embedded_pce(const typename PCEType::ordinal_type nGrid,
   typedef typename storage_type::execution_space execution_space;
   typedef Kokkos::LayoutLeft Layout;
   typedef Kokkos::View< PCEType*, Layout, execution_space > block_vector_type;
-  typedef Kokkos::CrsMatrix< PCEType, ordinal_type, execution_space > block_matrix_type;
+  typedef KokkosSparse::CrsMatrix< PCEType, ordinal_type, execution_space > block_matrix_type;
   typedef typename block_matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef typename block_matrix_type::values_type matrix_values_type;
 
@@ -718,7 +718,7 @@ struct Kokkos_MV_Multiply_Op {
   void operator() (const Matrix& A,
                    const InputVector& x,
                    OutputVector& y) const {
-    Kokkos::MV_Multiply(y, A, x);
+    KokkosSparse::spmv("N", typename Matrix::value_type(1.0) , A, x, typename Matrix::value_type(0.0), y);
   }
 };
 
@@ -752,7 +752,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   typedef typename storage_type::execution_space execution_space;
   typedef Kokkos::LayoutLeft Layout;
   typedef Kokkos::View< Scalar*, Layout, execution_space > block_vector_type;
-  typedef Kokkos::CrsMatrix< Scalar, ordinal_type, execution_space > block_matrix_type;
+  typedef KokkosSparse::CrsMatrix< Scalar, ordinal_type, execution_space > block_matrix_type;
   typedef typename block_matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef typename block_matrix_type::values_type matrix_values_type;
 
@@ -869,7 +869,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   //------------------------------
   // multiply
 
-  Kokkos::MV_Multiply( y, matrix, x );
+  KokkosSparse::spmv("N", Scalar(1.0) , matrix, x, Scalar(0.0), y);
 
   //------------------------------
   // multiply with same matrix but with sacado_size = x.sacado_size
@@ -894,7 +894,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   typedef typename storage_type::execution_space execution_space;
   typedef Kokkos::LayoutLeft Layout;
   typedef Kokkos::View< Scalar**, Layout, execution_space > block_vector_type;
-  typedef Kokkos::CrsMatrix< Scalar, ordinal_type, execution_space > block_matrix_type;
+  typedef KokkosSparse::CrsMatrix< Scalar, ordinal_type, execution_space > block_matrix_type;
   typedef typename block_matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef typename block_matrix_type::values_type matrix_values_type;
 
@@ -1018,7 +1018,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   //------------------------------
   // multiply
 
-  Kokkos::MV_Multiply( y, matrix, x );
+  KokkosSparse::spmv("N", Scalar(1.0) , matrix, x, Scalar(0.0), y);
 
   //------------------------------
   // multiply with full matrix

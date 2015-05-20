@@ -32,6 +32,10 @@ public:
     {
     }
 
+    void track_add_to_ghosting(const stk::mesh::Ghosting & ghosts, const std::vector<stk::mesh::EntityProc> & add_send )
+    {
+    }
+
     void track_destroy_relation(stk::mesh::Entity e_from, stk::mesh::Entity e_to, stk::mesh::RelationIdentifier rel)
     {
     }
@@ -60,6 +64,31 @@ public:
     {
     }
 
+    void track_comm_map_insert(stk::mesh::Entity entity, const stk::mesh::EntityCommInfo & val)
+    {
+
+    }
+
+    void track_comm_map_erase(stk::mesh::EntityKey key, const stk::mesh::EntityCommInfo & val)
+    {
+
+    }
+
+    void track_comm_map_erase(stk::mesh::EntityKey key, const stk::mesh::Ghosting & val)
+    {
+
+    }
+
+    void track_comm_map_clear_ghosting(stk::mesh::EntityKey key)
+    {
+
+    }
+
+    void track_comm_map_clear(stk::mesh::EntityKey key)
+    {
+
+    }
+
     void write_summary(int mod_cycle_count, bool sort=true)
     {
     }
@@ -77,6 +106,8 @@ public:
 
     void track_change_ghosting(const stk::mesh::Ghosting & ghosts, const std::vector<stk::mesh::EntityProc> & add_send , const std::vector<stk::mesh::EntityKey> & remove_receive );
 
+    void track_add_to_ghosting(const stk::mesh::Ghosting & ghosts, const std::vector<stk::mesh::EntityProc> & add_send );
+
     void track_destroy_relation(stk::mesh::Entity e_from, stk::mesh::Entity e_to, stk::mesh::RelationIdentifier rel);
 
     void track_declare_relation(stk::mesh::Entity e_from, stk::mesh::Entity e_to, stk::mesh::RelationIdentifier rel, stk::mesh::Permutation permut);
@@ -90,6 +121,16 @@ public:
     void track_destroy_entity(stk::mesh::Entity entity);
 
     void track_change_entity_parts(stk::mesh::Entity entity, const stk::mesh::PartVector& addParts, const stk::mesh::PartVector& rmParts);
+
+    void track_comm_map_insert(stk::mesh::Entity entity, const stk::mesh::EntityCommInfo & val);
+
+    void track_comm_map_erase(stk::mesh::EntityKey key, const stk::mesh::EntityCommInfo & val);
+
+    void track_comm_map_erase(stk::mesh::EntityKey key, const stk::mesh::Ghosting & val);
+
+    void track_comm_map_clear_ghosting(stk::mesh::EntityKey key);
+
+    void track_comm_map_clear(stk::mesh::EntityKey key);
 
     void write_summary(int mod_cycle_count, bool sort=true);
 

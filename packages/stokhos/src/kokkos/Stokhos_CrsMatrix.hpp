@@ -46,7 +46,7 @@
 #include <iomanip>
 
 #include "Kokkos_Core.hpp"
-#include "Kokkos_CrsArray.hpp"
+#include "Kokkos_StaticCrsGraph.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_MatrixMarket.hpp"
@@ -82,7 +82,7 @@ public:
   typedef Device execution_space;
   typedef ValueType value_type;
   typedef Kokkos::View< value_type[], Layout, execution_space > values_type;
-  typedef Kokkos::CrsArray< int , Layout, execution_space , int > graph_type;
+  typedef Kokkos::StaticCrsGraph< int , Layout, execution_space , int > graph_type;
 
   typedef CrsMatrix< ValueType, typename values_type::host_mirror_space, Layout> HostMirror;
 
@@ -129,7 +129,7 @@ public:
 
   //--------------------------------------------------------------------------
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   void operator()( const size_type iRow ) const
   {
     const size_type iEntryBegin = m_A.graph.row_map[iRow];
@@ -195,7 +195,7 @@ public:
 
   //--------------------------------------------------------------------------
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   void operator()( const size_type iRow ) const
   {
     const size_type iEntryBegin = m_A.graph.row_map[iRow];
@@ -287,7 +287,7 @@ public:
 
   //--------------------------------------------------------------------------
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   void operator()( const size_type iBlockRow ) const
   {
     // Number of rows in this block
@@ -377,7 +377,7 @@ public:
 
   //--------------------------------------------------------------------------
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   void operator()( const size_type iRow ) const
   {
     const size_type iEntryBegin = m_A.graph.row_map[iRow];
@@ -467,7 +467,7 @@ public:
 
   //--------------------------------------------------------------------------
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   void operator()( const size_type iBlockRow ) const
   {
     // Number of rows in this block
@@ -558,7 +558,7 @@ public:
 
   //--------------------------------------------------------------------------
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   void operator()( const size_type iRow ) const
   {
     const size_type iEntryBegin = m_A.graph.row_map[iRow];
@@ -627,9 +627,9 @@ void multiply(const CrsMatrix<MatrixValue,Device,Layout>& A,
   typedef Multiply<MatrixType,InputVectorType,OutputVectorType> multiply_type;
   for (size_t i=0; i<col_indices.size(); ++i) {
     InputVectorType x_view =
-      Kokkos::subview<InputVectorType>( x , Kokkos::ALL() , col_indices[i] );
+      Kokkos::subview( x , Kokkos::ALL() , col_indices[i] );
     OutputVectorType y_view =
-      Kokkos::subview<OutputVectorType>( y , Kokkos::ALL() , col_indices[i] );
+      Kokkos::subview( y , Kokkos::ALL() , col_indices[i] );
     multiply_type::apply( A , x_view , y_view );
   }
 }

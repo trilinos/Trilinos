@@ -177,7 +177,7 @@ bool MOERTEL::Interface::Complete()
   // this intra-communicator will be used to handle most stuff on this 
   // interface so the interface will not block all other procs
   {
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
 	std::vector<int> lin(gcomm_.NumProc());
 	std::vector<int> gin(gcomm_.NumProc());
     for (int i=0; i<gcomm_.NumProc(); ++i) lin[i] = 0;

@@ -35,12 +35,7 @@
 #include <sstream>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 
-// macro for short term solution to not break builds for Trilinos.
-// Dependency on unitTestUtils here is the main worry.
-
-#if defined(STK_BUILT_IN_SIERRA)
-
-#include <exampleMeshes/StkMeshFromGeneratedMesh.h>
+#include <stk_unit_test_utils/StkMeshFromGeneratedMesh.h>
 #include <stk_mesh/base/Comm.hpp>
 
 namespace
@@ -111,4 +106,3 @@ TEST( CommMeshCountsWithStats, Parallel )
 }
 //EndDocTest
 }
-#endif

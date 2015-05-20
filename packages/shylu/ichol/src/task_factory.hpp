@@ -26,12 +26,13 @@ namespace Example {
   public:
     typedef PolicyType policy_type;
     typedef FutureType future_type;
+
+    static PolicyType policy;
     
-  public:
     template<typename TaskFunctorType>
     static 
     future_type create(policy_type &policy, const TaskFunctorType &func) {
-      return policy.create(func, 20); 
+      return policy.create_team(func, 20); 
     }
     
     static
@@ -45,14 +46,10 @@ namespace Example {
       policy.add_dependence(after, before);
     }
 
-    static
-    void wait(policy_type &policy,
-              const future_type &obj) {
-      // policy.wait(obj);
-    }
-
   };
 
+  template<typename PolicyType, typename FutureType> 
+  PolicyType TaskFactory<PolicyType,FutureType>::policy;
 }
 
 #endif

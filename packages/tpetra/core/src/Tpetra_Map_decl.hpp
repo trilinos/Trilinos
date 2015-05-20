@@ -49,6 +49,7 @@
 #include <Tpetra_ConfigDefs.hpp>
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_Describable.hpp>
+#include <Tpetra_Details_FixedHashTable_decl.hpp>
 
 // mfh 27 Apr 2013: If HAVE_TPETRA_FIXED_HASH_TABLE is defined (which
 // it is by default), then Map will used the fixed-structure hash
@@ -76,9 +77,6 @@ namespace Tpetra {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
     // Forward declaration of TieBreak
     template <class LO, class GO> class TieBreak;
-
-    template<class GlobalOrdinal, class LocalOrdinal>
-    class FixedHashTable;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
     /// \class MapCloner
@@ -900,8 +898,13 @@ namespace Tpetra {
     /// describe(), may invoke getNodeElementList().
     mutable Teuchos::ArrayRCP<GlobalOrdinal> lgMap_;
 
+    //! The Kokkos device type over which to allocate Views and perform work.
+    typedef typename Kokkos::Device<typename Node::execution_space,
+                                    typename Node::memory_space> device_type;
+
     //! Type of the table that maps global IDs to local IDs.
-    typedef Details::FixedHashTable<GlobalOrdinal, LocalOrdinal> global_to_local_table_type;
+    typedef Details::FixedHashTable<GlobalOrdinal, LocalOrdinal,
+                                    device_type> global_to_local_table_type;
 
     /// \brief A mapping from global IDs to local IDs.
     ///
@@ -915,7 +918,7 @@ namespace Tpetra {
     /// noncontiguous map constructor.  For noncontiguous maps, the
     /// getLocalElement() and isNodeGlobalElement() methods use
     /// this mapping.
-    RCP<global_to_local_table_type> glMap_;
+    global_to_local_table_type glMap_;
 
     /// \brief Object that can find the process rank and local index
     ///   for any given global index.
@@ -1124,12 +1127,13 @@ namespace Tpetra {
       typedef ::Tpetra::Directory<typename OutMapType::local_ordinal_type,
                                   typename OutMapType::global_ordinal_type,
                                   typename OutMapType::node_type> out_dir_type;
+      typedef typename OutMapType::global_to_local_table_type out_table_type;
 
       OutMapType mapOut; // Make an empty Map.
 
-      // Fill the new Map with shallow copies of all of the original
-      // Map's data.  This is safe because Map is immutable, so
-      // users can't change the original Map.
+      // Fill the new Map with (possibly) shallow copies of all of the
+      // original Map's data.  This is safe because Map is immutable,
+      // so users can't change the original Map.
       mapOut.comm_              = mapIn.comm_;
       mapOut.indexBase_         = mapIn.indexBase_;
       mapOut.numGlobalElements_ = mapIn.numGlobalElements_;
@@ -1144,7 +1148,11 @@ namespace Tpetra {
       mapOut.contiguous_        = mapIn.contiguous_;
       mapOut.distributed_       = mapIn.distributed_;
       mapOut.lgMap_             = mapIn.lgMap_;
-      mapOut.glMap_             = mapIn.glMap_;
+      // This makes a deep copy only if necessary.  We could have
+      // defined operator= to do this, but that would violate
+      // expectations.  (Kokkos::View::operator= only does a shallow
+      // copy, EVER.)
+      mapOut.glMap_             = out_table_type (mapIn.glMap_);
       // New Map gets the new Node instance.
       mapOut.node_              = nodeOut;
 

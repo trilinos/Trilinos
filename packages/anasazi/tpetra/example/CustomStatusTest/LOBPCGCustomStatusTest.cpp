@@ -20,9 +20,9 @@ using std::endl;
 // These define convenient aliases
 typedef double                                   Scalar;
 
-typedef Tpetra::MultiVector<Scalar>              MV;
+typedef Tpetra::MultiVector<Scalar>              TMV;
 typedef Tpetra::Vector<Scalar>                   Vector;
-typedef Tpetra::Operator<Scalar>                 OP;
+typedef Tpetra::Operator<Scalar>                 TOP;
 
 namespace { // (anonymous)
 
@@ -30,16 +30,16 @@ namespace { // (anonymous)
 // explicitly form the matrix A^2; we just implement its action on a
 // vector.  We can do this because Anasazi is templated on operators
 // rather than matrices.
-class FoldOp : public OP {
+class FoldOp : public TOP {
 public:
   typedef Tpetra::Map<> map_type;
 
-  FoldOp (const RCP<const OP> A) { A_ = A; };
+  FoldOp (const RCP<const TOP> A) { A_ = A; };
 
   int SetUseTranspose (bool UseTranspose) { return -1; };
 
   void
-  apply (const MV& X, MV& Y, Teuchos::ETransp mode = Teuchos::NO_TRANS,
+  apply (const TMV& X, TMV& Y, Teuchos::ETransp mode = Teuchos::NO_TRANS,
          Scalar alpha = Teuchos::ScalarTraits<Scalar>::one (),
          Scalar beta = Teuchos::ScalarTraits<Scalar>::zero ()) const;
 
@@ -47,14 +47,14 @@ public:
   RCP<const map_type> getRangeMap () const { return A_->getRangeMap (); };
 
 private:
-  RCP<const OP> A_;
+  RCP<const TOP> A_;
 }; // end of class
 
 void
-FoldOp::apply (const MV &X, MV &Y, Teuchos::ETransp mode,
+FoldOp::apply (const TMV &X, TMV &Y, Teuchos::ETransp mode,
                Scalar alpha, Scalar beta) const
 {
-  MV Y1 (X.getMap (), X.getNumVectors (), false);
+  TMV Y1 (X.getMap (), X.getNumVectors (), false);
   A_->apply (X, Y1, mode, alpha, beta);
   A_->apply (Y1, Y, mode, alpha, beta);
 }
@@ -64,19 +64,19 @@ FoldOp::apply (const MV &X, MV &Y, Teuchos::ETransp mode,
 // Since our operator is defined as A^2, the Anasazi eigensolvers will
 // compute the residual as R = A^2 X - X \Sigma^2.  We want to monitor
 // the residual R = A X - X \Sigma instead.
-class StatusTestFolding : public Anasazi::StatusTest<Scalar,MV,OP> {
+class StatusTestFolding : public Anasazi::StatusTest<Scalar,TMV,TOP> {
 public:
   // Constructor
   StatusTestFolding (Scalar tol, int quorum = -1,
                      bool scaled = true,
                      bool throwExceptionOnNan = true,
-                     const RCP<const OP>& A = Teuchos::null);
+                     const RCP<const TOP>& A = Teuchos::null);
 
   // Destructor
   virtual ~StatusTestFolding() {};
 
   // Check whether the test passed or failed
-  Anasazi::TestStatus checkStatus (Anasazi::Eigensolver<Scalar,MV,OP>* solver);
+  Anasazi::TestStatus checkStatus (Anasazi::Eigensolver<Scalar,TMV,TOP>* solver);
 
   // Return the result of the most recent checkStatus call
   Anasazi::TestStatus getStatus () const { return state_; }
@@ -105,8 +105,8 @@ private:
   std::vector<int> ind_;
   int quorum_;
   bool scaled_;
-  bool throwExceptionOnNaN_;
-  RCP<const OP> A_;
+  // bool throwExceptionOnNaN_; (unused)
+  RCP<const TOP> A_;
 
   const Scalar ONE;
 };
@@ -114,32 +114,33 @@ private:
 // Constructor for our custom status test
 StatusTestFolding::
 StatusTestFolding (Scalar tol, int quorum, bool scaled,
-                   bool throwExceptionOnNaN, const RCP<const OP>& A)
+                   bool /* throwExceptionOnNaN (unused) */,
+                   const RCP<const TOP>& A)
   : state_ (Anasazi::Undefined),
     tol_ (tol),
     quorum_ (quorum),
     scaled_ (scaled),
-    throwExceptionOnNaN_ (throwExceptionOnNaN),
+    /* throwExceptionOnNaN_ (throwExceptionOnNaN), (unused) */
     A_ (A),
     ONE (Teuchos::ScalarTraits<Scalar>::one ())
 {}
 
 // Check whether the test passed or failed
 Anasazi::TestStatus
-StatusTestFolding::checkStatus (Anasazi::Eigensolver<Scalar,MV,OP>* solver)
+StatusTestFolding::checkStatus (Anasazi::Eigensolver<Scalar,TMV,TOP>* solver)
 {
-  typedef Anasazi::MultiVecTraits<Scalar, MV> MVT;
+  typedef Anasazi::MultiVecTraits<Scalar, TMV> TMVT;
 
-  RCP<const MV> X = solver->getRitzVectors ();
+  RCP<const TMV> X = solver->getRitzVectors ();
   const int numev = X->getNumVectors ();
   std::vector<Scalar> res (numev);
-  MV AX (X->getMap (), numev, false);
+  TMV AX (X->getMap (), numev, false);
   Teuchos::SerialDenseMatrix<int, Scalar> T (numev, numev);
 
   A_->apply (*X, AX);
-  MVT::MvTransMv (1.0, AX, *X, T);
-  MVT::MvTimesMatAddMv (-1.0, *X, T, 1.0, AX);
-  MVT::MvNorm (AX, res);
+  TMVT::MvTransMv (1.0, AX, *X, T);
+  TMVT::MvTimesMatAddMv (-1.0, *X, T, 1.0, AX);
+  TMVT::MvNorm (AX, res);
 
   // if appropriate, scale the norms by the magnitude of the eigenvalue estimate
   if (scaled_) {
@@ -206,9 +207,9 @@ StatusTestFolding::print (std::ostream& os, int indent) const
 int
 main (int argc, char* argv[])
 {
-  typedef Anasazi::BasicEigenproblem<Scalar,MV,OP> Problem;
-  typedef Anasazi::MultiVecTraits<Scalar, MV> MVT;
-  typedef Anasazi::OperatorTraits<Scalar, MV, OP> OPT;
+  typedef Anasazi::BasicEigenproblem<Scalar,TMV,TOP> Problem;
+  typedef Anasazi::MultiVecTraits<Scalar, TMV> TMVT;
+  typedef Anasazi::OperatorTraits<Scalar, TMV, TOP> TOPT;
   typedef Tpetra::Map<>::node_type Node;
   typedef Tpetra::CrsMatrix<> CrsMatrix;
   typedef Tpetra::MatrixMarket::Reader<CrsMatrix>  Reader;
@@ -257,8 +258,8 @@ main (int argc, char* argv[])
   MyPL.set ("Verbosity", Anasazi::TimingDetails);
 
   // Create a MultiVector for an initial subspace to start the solver.
-  RCP<MV> ivec = rcp (new MV (A->getRowMap (), blockSize));
-  MVT::MvRandom (*ivec);
+  RCP<TMV> ivec = rcp (new TMV (A->getRowMap (), blockSize));
+  TMVT::MvRandom (*ivec);
 
   // Create the eigenproblem
   RCP<Problem> MyProblem = rcp (new Problem (K, ivec));
@@ -273,7 +274,7 @@ main (int argc, char* argv[])
   MyProblem->setProblem ();
 
   // Create the eigensolver and give it your problem and parameters.
-  Anasazi::LOBPCGSolMgr<Scalar,MV,OP> solver (MyProblem, MyPL);
+  Anasazi::LOBPCGSolMgr<Scalar,TMV,TOP> solver (MyProblem, MyPL);
 
   // Give the eigensolver a status test consistent with the spectral transformation.
   RCP<StatusTestFolding> convTest =
@@ -292,22 +293,22 @@ main (int argc, char* argv[])
   }
 
   // Get the eigenvalues and eigenvectors from the eigenproblem
-  Anasazi::Eigensolution<Scalar,MV> sol = MyProblem->getSolution ();
+  Anasazi::Eigensolution<Scalar,TMV> sol = MyProblem->getSolution ();
   std::vector<Anasazi::Value<Scalar> > evals = sol.Evals;
-  RCP<MV> evecs = sol.Evecs;
+  RCP<TMV> evecs = sol.Evecs;
   int numev = sol.numVecs;
 
   // Compute the residual, just as a precaution
   if (numev > 0) {
     std::vector<Scalar> normR (sol.numVecs);
 
-    MV Avec (A->getRowMap (), MVT::GetNumberVecs (*evecs));
-    OPT::Apply (*A, *evecs, Avec);
+    TMV Avec (A->getRowMap (), TMVT::GetNumberVecs (*evecs));
+    TOPT::Apply (*A, *evecs, Avec);
     Teuchos::SerialDenseMatrix<int,Scalar> T (numev, numev);
-    MVT::MvTransMv (1.0, Avec, *evecs, T);
+    TMVT::MvTransMv (1.0, Avec, *evecs, T);
 
-    MVT::MvTimesMatAddMv (-1.0, *evecs, T, 1.0, Avec);
-    MVT::MvNorm (Avec, normR);
+    TMVT::MvTimesMatAddMv (-1.0, *evecs, T, 1.0, Avec);
+    TMVT::MvNorm (Avec, normR);
 
     if (myRank == 0) {
       cout.setf(std::ios_base::right, std::ios_base::adjustfield);

@@ -21,19 +21,11 @@ doxygen_objdb_*.tmp
 /DrekarResearch/
 /LIMEExt/
 /TerminalApplication/
-
-# CASL-related extra repos
-/CASLBOA/
-/CASLRAVE/
-/DeCARTExt/
-/Nemesis/
-/Denovo/
-/PSSDriversExt/
-/RELAP5Ext/
-/StarCCMExt/
-/Coupler/
 /DataTransferKit/
 /TeuchosWrappersExt
+
+# Allow github Kokkos to be cloned under Trilinos
+/kokkos/
 
 # RPI SCOREC extra repos
 /SCOREC

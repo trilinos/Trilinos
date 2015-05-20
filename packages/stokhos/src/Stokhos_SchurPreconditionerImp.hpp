@@ -108,7 +108,7 @@ ApplyInverse(const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Input,
 	     const ordinal_type n) const
 {
   //p: polynomial order; m: number of random variables; n: level to stop and form actual Schur Complement; diag=0: Use only diagonal of block D
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type> Resid(Input);
+  Teuchos::SerialDenseMatrix<ordinal_type, value_type> Resid(Teuchos::Copy, Input);
   ordinal_type ret;
   ordinal_type lmin;
   if (n<=1)
@@ -139,7 +139,7 @@ ApplyInverse(const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Input,
     else{
       //For full D block
       Teuchos::RCP< Teuchos::SerialDenseMatrix<ordinal_type, value_type> > DD, RR;
-      DD = Teuchos::rcp(new Teuchos::SerialDenseMatrix<ordinal_type, value_type> (D));
+      DD = Teuchos::rcp(new Teuchos::SerialDenseMatrix<ordinal_type, value_type> (Teuchos::Copy, D));
       
       RR = Teuchos::rcp(new Teuchos::SerialDenseMatrix<ordinal_type, value_type> (r));
       
@@ -161,7 +161,7 @@ ApplyInverse(const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Input,
       
     }
     
-    Teuchos::SerialDenseMatrix<ordinal_type, value_type> rm(rminus);  
+    Teuchos::SerialDenseMatrix<ordinal_type, value_type> rm(Teuchos::Copy, rminus);  
     ret = rm.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS, -1.0, B, r, 1.0);
     TEUCHOS_ASSERT(ret == 0);
     
@@ -190,7 +190,7 @@ ApplyInverse(const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Input,
 	Teuchos::SerialDenseMatrix<ordinal_type, value_type> Ul(Teuchos::View, U, s, 1);
 	Teuchos::RCP< Teuchos::SerialDenseMatrix<ordinal_type, value_type> > SS, UU, RR; 
 	SS = Teuchos::rcp(new Teuchos::SerialDenseMatrix<ordinal_type, value_type> (S));
-	UU = Teuchos::rcp(new Teuchos::SerialDenseMatrix<ordinal_type, value_type> (Ul));
+	UU = Teuchos::rcp(new Teuchos::SerialDenseMatrix<ordinal_type, value_type> (Teuchos::Copy, Ul));
 	RR = Teuchos::rcp(new Teuchos::SerialDenseMatrix<ordinal_type, value_type> (rm));
 	//Setup solver
 	Teuchos::SerialDenseSolver<ordinal_type, value_type> solver2;

@@ -47,6 +47,7 @@
 #ifdef HAVE_TPETRACLASSIC_SERIAL
 
 namespace KokkosClassic {
+namespace DoNotUse {
 
   SerialNode::SerialNode () {}
 
@@ -62,6 +63,8 @@ namespace KokkosClassic {
   std::string SerialNode::name () {
     return "Serial";
   }
+
+} // namespace DoNotUse
 } // namespace KokkosClassic
 
 #endif // HAVE_TPETRACLASSIC_SERIAL

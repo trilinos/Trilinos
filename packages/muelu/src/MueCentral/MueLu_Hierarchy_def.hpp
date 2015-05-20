@@ -295,13 +295,16 @@ namespace MueLu {
     PrintMonitor m0(*this, "Level " +  Teuchos::Utils::toString(coarseLevelID), static_cast<MsgType>(GetVerbLevel()));
 
     // Build coarse level hierarchy
+    RCP<Operator> Ac = Teuchos::null;
     TopRAPFactory coarseRAPFactory(fineLevelManager, coarseLevelManager);
-    if (!isFinestLevel) {
+
+    if (level.IsAvailable("A")) {
+      Ac = level.Get<RCP<Operator> >("A");
+    } else if (!isFinestLevel) {
       // We only build here, the release is done later
       coarseRAPFactory.Build(*level.GetPreviousLevel(), level);
     }
 
-    RCP<Operator> Ac = Teuchos::null;
     if (level.IsAvailable("A"))
       Ac = level.Get<RCP<Operator> >("A");
     RCP<Matrix> Acm = rcp_dynamic_cast<Matrix>(Ac);
@@ -852,12 +855,9 @@ namespace MueLu {
     int root = comm->getRank();
 
 #ifdef HAVE_MPI
-    RCP<const Teuchos::MpiComm<int> > mpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
-    MPI_Comm rawComm = (*mpiComm->getRawMpiComm())();
-
-    std::vector<int> numGlobalLevels(comm->getSize());
-    MPI_Allgather(&numLevels, 1, MPI_INT, &numGlobalLevels[0], 1, MPI_INT, rawComm);
-    root = std::max_element(numGlobalLevels.begin(), numGlobalLevels.end()) - numGlobalLevels.begin();
+    int smartData = numLevels*comm->getSize() + comm->getRank(), maxSmartData;
+    reduceAll(*comm, Teuchos::REDUCE_MAX, smartData, Teuchos::ptr(&maxSmartData));
+    root = maxSmartData % comm->getSize();
 #endif
 
     std::string outstr;
@@ -888,15 +888,13 @@ namespace MueLu {
       }
 
       if (!aborted) {
-        double operatorComplexity = as<double>(std::accumulate(nnzPerLevel.begin(), nnzPerLevel.end(), 0)) / nnzPerLevel[0];
-
         std::ostringstream oss;
         oss << "\n--------------------------------------------------------------------------------\n" <<
             "---                            Multigrid Summary                             ---\n"
             "--------------------------------------------------------------------------------" << std::endl;
         oss << "Number of levels    = " << numLevels << std::endl;
         oss << "Operator complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
-            << operatorComplexity << std::endl;
+            << GetOperatorComplexity() << std::endl;
         oss << std::endl;
 
         Xpetra::global_size_t tt = rowsPerLevel[0];
@@ -939,6 +937,9 @@ namespace MueLu {
     }
 
 #ifdef HAVE_MPI
+    RCP<const Teuchos::MpiComm<int> > mpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
+    MPI_Comm rawComm = (*mpiComm->getRawMpiComm())();
+
     int strLength = outstr.size();
     MPI_Bcast(&strLength, 1, MPI_INT, root, rawComm);
     if (comm->getRank() != root)

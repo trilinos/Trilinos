@@ -61,8 +61,9 @@
 #include <Xpetra_MultiVectorFactory.hpp>
 
 
-#include "MueLu_Level.hpp"
 #include "MueLu_Aggregates.hpp"
+#include "MueLu_Level.hpp"
+#include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Utilities.hpp"
 
@@ -72,11 +73,14 @@ namespace MueLu {
   RCP<const ParameterList> BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< RCP<const FactoryBase> >("Coordinates",        Teuchos::null, "Generating factory for coordinates");
-    validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory for matrix");
-    validParamList->set< int >                   ("bx",                             2, "Number of brick points for x axis");
-    validParamList->set< int >                   ("by",                             2, "Number of brick points for x axis");
-    validParamList->set< int >                   ("bz",                             2, "Number of brick points for x axis");
+#define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
+    SET_VALID_ENTRY("aggregation: brick x size");
+    SET_VALID_ENTRY("aggregation: brick y size");
+    SET_VALID_ENTRY("aggregation: brick z size");
+#undef  SET_VALID_ENTRY
+
+    validParamList->set< RCP<const FactoryBase> >("A",           Teuchos::null, "Generating factory for matrix");
+    validParamList->set< RCP<const FactoryBase> >("Coordinates", Teuchos::null, "Generating factory for coordinates");
 
     return validParamList;
   }
@@ -132,17 +136,17 @@ namespace MueLu {
   //   - Allow Aggregates to construct their own maps, if necessary, OR
   //   - construct aggregates based on row map
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &currentLevel) const {
+  void BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& currentLevel) const {
     FactoryMonitor m(*this, "Build", currentLevel);
 
-    typedef Xpetra::MultiVector<double,LO,GO,NO> xdMV;
+    typedef Xpetra::MultiVector<double,LO,GO,NO> MultiVector_d;
 
     const ParameterList& pL = GetParameterList();
 
-    RCP<xdMV> coords = Get< RCP<xdMV> >(currentLevel, "Coordinates");
-    RCP<Matrix>      A      = Get< RCP<Matrix> >     (currentLevel, "A");
-    RCP<const Map>   rowMap = A->getRowMap();
-    RCP<const Map>   colMap = A->getColMap();
+    RCP<MultiVector_d> coords = Get<RCP<MultiVector_d> >(currentLevel, "Coordinates");
+    RCP<Matrix>        A      = Get< RCP<Matrix> >      (currentLevel, "A");
+    RCP<const Map>     rowMap = A->getRowMap();
+    RCP<const Map>     colMap = A->getColMap();
 
     RCP<const Teuchos::Comm<int> > comm = rowMap->getComm();
     int numProcs = comm->getSize();
@@ -150,16 +154,16 @@ namespace MueLu {
 
     int numPoints = colMap->getNodeNumElements();
 
-    bx_ = pL.get<int>("bx");
-    by_ = pL.get<int>("by");
-    bz_ = pL.get<int>("bz");
+    bx_ = pL.get<int>("aggregation: brick x size");
+    by_ = pL.get<int>("aggregation: brick y size");
+    bz_ = pL.get<int>("aggregation: brick z size");
 
     if (numProcs > 1) {
       // TODO: deal with block size > 1  (see comments above)
       TEUCHOS_TEST_FOR_EXCEPTION(bx_ > 3 || by_ > 3 || bz_ > 3, Exceptions::RuntimeError, "Currently cannot deal with brick size > 3");
     }
 
-    RCP<xdMV> overlappedCoords = coords;
+    RCP<MultiVector_d> overlappedCoords = coords;
     RCP<const Import> importer = ImportFactory::Build(coords->getMap(), colMap);
     if (!importer.is_null()) {
       overlappedCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(colMap, coords->getNumVectors());
@@ -170,7 +174,9 @@ namespace MueLu {
     // Logically, we construct enough data to query topological information of a rectangular grid
     Setup(comm, overlappedCoords, colMap);
 
-    GetOStream(Runtime0) << "Using brick size: " << bx_ << " x " << by_ << (nDim_ == 3 ? "x " + toString(bz_) : "") << std::endl;
+    GetOStream(Runtime0) << "Using brick size: " << bx_
+                                                 << (nDim_ > 1 ? "x " + toString(by_) : "")
+                                                 << (nDim_ > 2 ? "x " + toString(bz_) : "") << std::endl;
 
     // Construct aggregates
     RCP<Aggregates> aggregates = rcp(new Aggregates(colMap));
@@ -259,29 +265,33 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(const RCP<const Teuchos::Comm<int> >& comm, const RCP<Xpetra::MultiVector<double,LO,GO,NO> >& coords, const RCP<const Map>& map) const {
+  void BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  Setup(const RCP<const Teuchos::Comm<int> >& comm, const RCP<Xpetra::MultiVector<double,LO,GO,NO> >& coords, const RCP<const Map>& map) const {
     nDim_ = coords->getNumVectors();
 
     x_    = coords->getData(0);
     xMap_ = Construct1DMap(comm, x_);
     nx_   = xMap_->size();
 
-    y_    = coords->getData(1);
-    yMap_ = Construct1DMap(comm, y_);
-    ny_   = yMap_->size();
+    ny_   = 1;
+    if (nDim_ > 1) {
+      y_    = coords->getData(1);
+      yMap_ = Construct1DMap(comm, y_);
+      ny_   = yMap_->size();
+    }
 
     nz_   = 1;
-    if (nDim_ == 3) {
+    if (nDim_ > 2) {
       z_    = coords->getData(2);
       zMap_ = Construct1DMap(comm, z_);
       nz_   = zMap_->size();
     }
 
     for (size_t ind = 0; ind < coords->getLocalLength(); ind++) {
-      GO i = (*xMap_)[(coords->getData(0))[ind]];
-      GO j = (*yMap_)[(coords->getData(1))[ind]];
-      GO k = 0;
-      if (nDim_ == 3)
+      GO i = (*xMap_)[(coords->getData(0))[ind]], j = 0, k = 0;
+      if (nDim_ > 1)
+        j = (*yMap_)[(coords->getData(1))[ind]];
+      if (nDim_ > 2)
         k = (*zMap_)[(coords->getData(2))[ind]];
 
       revMap_[k*ny_*nx_ + j*nx_ + i] = ind;
@@ -341,10 +351,10 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::isRoot(LocalOrdinal LID) const {
-    int i = (*xMap_)[x_[LID]];
-    int j = (*yMap_)[y_[LID]];
-    int k = 0;
-    if (nDim_ == 3)
+    int i = (*xMap_)[x_[LID]], j = 0, k = 0;
+    if (nDim_ > 1)
+      j = (*yMap_)[y_[LID]];
+    if (nDim_ > 2)
       k = (*zMap_)[z_[LID]];
 
     return (k*ny_*nx_ + j*nx_ + i) == getRoot(LID);
@@ -352,10 +362,10 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   GlobalOrdinal BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getRoot(LocalOrdinal LID) const {
-    int i = ((*xMap_)[x_[LID]]/bx_)*bx_ + (bx_-1)/2;
-    int j = ((*yMap_)[y_[LID]]/by_)*by_ + (by_-1)/2;
-    int k = 0;
-    if (nDim_ == 3)
+    int i = ((*xMap_)[x_[LID]]/bx_)*bx_ + (bx_-1)/2, j = 0, k = 0;
+    if (nDim_ > 1)
+      j = ((*yMap_)[y_[LID]]/by_)*by_ + (by_-1)/2;
+    if (nDim_ > 2)
       k = ((*zMap_)[z_[LID]]/bz_)*bz_ + (bz_-1)/2;
 
     // Check if the actual root is outside of the domain. If it is, project the root to the domain
@@ -368,9 +378,12 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   GlobalOrdinal BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getAggGID(LocalOrdinal LID) const {
-    int naggx = nx_/bx_ + (nx_ % bx_ ? 1 : 0), i = (*xMap_)[x_[LID]]/bx_;
-    int naggy = ny_/by_ + (ny_ % by_ ? 1 : 0), j = (*yMap_)[y_[LID]]/by_;
-    int                                        k = 0;
+    int naggx = nx_/bx_ + (nx_ % bx_ ? 1 : 0), naggy = 1;
+    int i = (*xMap_)[x_[LID]]/bx_, j = 0, k = 0;
+    if (nDim_ > 1) {
+      naggy = ny_/by_ + (ny_ % by_ ? 1 : 0);
+      j = (*yMap_)[y_[LID]]/by_;
+    }
     if (nDim_ == 3)
       k = (*zMap_)[z_[LID]]/bz_;
 

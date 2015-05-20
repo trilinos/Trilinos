@@ -59,7 +59,7 @@ RepartitionFactory - #ifdef HAVE_MPI
 RigidBodyModeFactory
 SaPFactory
 SchurComplementFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
-ShiftedLaplacian
+ShiftedLaplacian - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 ShiftedLaplacianOperator
 SimpleSmoother - #ifdef HAVE_MUELU_EXPERIMENTAL
 Smoother

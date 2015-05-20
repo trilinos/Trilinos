@@ -447,193 +447,6 @@ namespace KokkosClassic {
       }
     };
 
-
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-    // Partial speicalization of AltSparseOpsFirstTouchAllocator for
-    // Node=KokkosClassic::OpenMPNode.  This just uses OpenMP pragmas
-    // directly, avoiding any possible overhead of going through the
-    // Kokkos Node instance.
-    template <class Ordinal>
-    class AltSparseOpsFirstTouchAllocator<Ordinal, OpenMPNode> {
-    public:
-      static Teuchos::ArrayRCP<size_t>
-      allocRowPtrs (const Teuchos::RCP<OpenMPNode>& node,
-                    const Teuchos::ArrayView<const size_t>& numEntriesPerRow)
-      {
-        (void) node;
-
-        using Teuchos::ArrayRCP;
-        using Teuchos::arcp;
-        const Ordinal numRows = numEntriesPerRow.size ();
-
-        // Allocate raw, since arcp() might initialize in debug mode.
-        size_t* const rawPtr = new size_t [numRows + 1];
-
-        // Initialize the row pointers in parallel.  If the operating
-        // system respects first-touch initialization, this should set
-        // the proper NUMA affinity, at least at page boundaries.  We
-        // don't rely on the Kokkos Node for parallelization; instead,
-        // we use OpenMP, since that's what our kernels use.  If
-        // you're building without OpenMP support, the compiler will
-        // simply ignore this pragma.
-        #pragma omp parallel for
-        for (Ordinal i = 0; i < numRows+1; ++i) {
-          rawPtr[i] = 0;
-        }
-        // Encapsulate the raw pointer in an (owning) ArrayRCP.
-        ArrayRCP<size_t> ptr = arcp<size_t> (rawPtr, 0, numRows+1, true);
-
-        if (numRows > 0) {
-          // Fill in ptr sequentially for now.  We might parallelize
-          // this later, though it's still only O(numRows) work.
-          // Parallel prefix is only likely to pay off for a large
-          // number of threads.
-          std::partial_sum (numEntriesPerRow.getRawPtr (),
-                            numEntriesPerRow.getRawPtr () + numRows,
-                            ptr.getRawPtr () + 1);
-        }
-        return ptr;
-      }
-
-      static Teuchos::ArrayRCP<size_t>
-      copyRowPtrs (const Teuchos::RCP<OpenMPNode>& node,
-                   const Teuchos::ArrayView<const size_t>& rowPtrs)
-      {
-        (void) node;
-
-        using Teuchos::arcp;
-        const Ordinal numRows = rowPtrs.size () - 1;
-
-        // Don't force the compiler to inline ArrayView::operator[] in
-        // the loop below.
-        const size_t* const rawRowPtrs = rowPtrs.getRawPtr ();
-
-        // Allocate raw, since arcp() might initialize in debug mode.
-        size_t* const rawPtr = new size_t [numRows + 1];
-
-        // Copy the row pointers in parallel.  If first touch works,
-        // this should set the proper affinity at page boundaries.  We
-        // don't rely on the Kokkos Node for this; instead, we use
-        // OpenMP, since that's what our kernels use.  If you're
-        // building without OpenMP support, the compiler will simply
-        // ignore this pragma.
-        #pragma omp parallel for
-        for (Ordinal i = 0; i < numRows+1; ++i) {
-          rawPtr[i] = rawRowPtrs[i];
-        }
-
-        // Encapsulate the raw pointer in an (owning) ArrayRCP.
-        return arcp<size_t> (rawPtr, 0, numRows+1, true);
-      }
-
-      template<class T>
-      static Teuchos::ArrayRCP<T>
-      allocStorage (const Teuchos::RCP<OpenMPNode>& node,
-                    const Teuchos::ArrayView<const size_t>& rowPtrs)
-      {
-        (void) node;
-
-        using Teuchos::ArrayRCP;
-        using Teuchos::arcp;
-
-        TEUCHOS_TEST_FOR_EXCEPTION(rowPtrs.size() == 0, std::invalid_argument,
-          "AltSparseOpsFirstTouchAllocator::allocStorage: The input rowPtrs array "
-          "must have length at least one, but rowPtrs.size() = 0.  (Remember that "
-          "rowPtrs must have exactly one more entry than the number of rows in "
-          "the matrix.)");
-
-        const Ordinal numRows = rowPtrs.size() - 1;
-        const size_t totalNumEntries = rowPtrs[numRows];
-        const T zero = Teuchos::ScalarTraits<T>::zero ();
-
-        // Allocate raw, since arcp() might initialize in debug mode.
-        T* const rawVal = new T [totalNumEntries];
-
-        // Get the row pointer so that the compiler doesn't have to
-        // optimize the ArrayView.
-        const size_t* const rawRowPtrs = rowPtrs.getRawPtr ();
-
-        // Initialize the values in parallel.  If first touch works,
-        // this should set the proper affinity at page boundaries.  We
-        // don't rely on the Kokkos Node for this; instead, we use
-        // OpenMP, since that's what our kernels use.  We also iterate
-        // over the values using the row pointers, so that if OpenMP
-        // parallelizes in a reproducible way, it will initialize the
-        // values using the same affinity with which the row pointers
-        // were initialized.
-        //
-        // If you're building without OpenMP support, the compiler will
-        // simply ignore this pragma.
-#pragma omp parallel for
-        for (Ordinal i = 0; i < numRows; ++i) {
-          for (size_t k = rawRowPtrs[i]; k < rawRowPtrs[i+1]; ++k) {
-            rawVal[k] = zero;
-          }
-        }
-
-        // Encapsulate the raw pointer in an (owning) ArrayRCP.
-        return arcp<T> (rawVal, 0, totalNumEntries, true);
-      }
-
-
-      template<class T>
-      static Teuchos::ArrayRCP<T>
-      copyStorage (const Teuchos::RCP<KokkosClassic::OpenMPNode>& node,
-                   const Teuchos::ArrayView<const size_t>& rowPtrs,
-                   const Teuchos::ArrayView<const T>& inputVals)
-      {
-        (void) node;
-
-        using Teuchos::ArrayRCP;
-        using Teuchos::arcp;
-
-        TEUCHOS_TEST_FOR_EXCEPTION(rowPtrs.size() == 0, std::invalid_argument,
-          "AltSparseOpsFirstTouchAllocator::copyStorage: The input rowPtrs array "
-          "must have length at least one, but rowPtrs.size() = 0.  (Remember that "
-          "rowPtrs must have exactly one more entry than the number of rows in "
-          "the matrix.)");
-
-        const Ordinal numRows = rowPtrs.size() - 1;
-        const size_t totalNumEntries = rowPtrs[numRows];
-
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          inputVals.size() != totalNumEntries, std::invalid_argument,
-          "AltSparseOpsFirstTouchAllocator::copyStorage: The inputVals array "
-          "must have as many entries as the number of entries in the local "
-          "sparse matrix, namely " << totalNumEntries << ".");
-
-        // Allocate raw, since arcp() might initialize in debug mode.
-        T* const rawOutputVals = new T [totalNumEntries];
-
-        // Get the raw pointers so that the compiler doesn't have to
-        // optimize across the ArrayView inlining.
-        const size_t* const rawRowPtrs = rowPtrs.getRawPtr ();
-        const T* const rawInputVals = inputVals.getRawPtr ();
-
-        // Copy the values in parallel.  If first touch works, this
-        // should set the proper affinity at page boundaries.  We
-        // don't rely on the Kokkos Node for this; instead, we use
-        // OpenMP, since that's what our kernels use.  We also iterate
-        // over the values using the row pointers, so that if OpenMP
-        // parallelizes in a reproducible way, it will initialize the
-        // values using the same affinity with which the row pointers
-        // were initialized.
-        //
-        // If you're building without OpenMP support, the compiler will
-        // simply ignore this pragma.
-#pragma omp parallel for
-        for (Ordinal i = 0; i < numRows; ++i) {
-          for (size_t k = rawRowPtrs[i]; k < rawRowPtrs[i+1]; ++k) {
-            rawOutputVals[k] = rawInputVals[k];
-          }
-        }
-
-        // Encapsulate the raw pointer in an (owning) ArrayRCP.
-        return arcp<T> (rawOutputVals, 0, totalNumEntries, true);
-      }
-    };
-#endif // HAVE_KOKKOSCLASSIC_OPENMP
-
   } // namespace details
 
   /// \class AltCrsGraph
@@ -931,16 +744,16 @@ namespace KokkosClassic {
   /// always use AltSparseOps to get good performance.
   ///
   /// \warning AltSparseOps will parallelize its kernels with OpenMP
-  ///   if you specify Node=OpenMPNode; otherwise, it will use
+  ///   if you specify Node=DoNotUse::OpenMPNode; otherwise, it will use
   ///   sequential kernels.  This means that even if Node refers to a
   ///   parallel Kokkos Node type, AltSparseOps will _not_ use it to
-  ///   parallelize sparse kernels, unless Node=OpenMPNode.
+  ///   parallelize sparse kernels, unless Node=DoNotUse::OpenMPNode.
   ///
   /// \note Depending on the Allocator template parameter,
   ///   AltSparseOps may use the Kokkos Node API to do first-touch
   ///   allocation in parallel of the sparse graph and matrix data
   ///   structures.  It would be best in that case to use
-  ///   Node=OpenMPNode, so that the first-touch allocation most
+  ///   Node=DoNotUse::OpenMPNode, so that the first-touch allocation most
   ///   closely matches the parallelization scheme.  You may control
   ///   OpenMP's parallelization scheme at run time by using
   ///   environment variables; AltSparseOps will respect this.

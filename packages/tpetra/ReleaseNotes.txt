@@ -2,8 +2,82 @@
 Release Notes for Trilinos Package Tpetra
 -----------------------------------------
 
-Development version (11.15):
-----------------------------
+Trilinos 12.0
+-------------
+
+* Tpetra now requires C++11
+
+This requirement comes in part from Tpetra itself, and in part from
+the Kokkos package, on which Tpetra depends.
+
+* "Kokkos refactor" (new) version of Tpetra is the only version
+
+We no longer enable or support the old ("classic") version of Tpetra.
+The new ("Kokkos refactor") implementation of Tpetra is now the only
+supported version.
+
+Do not use any of the Node types in the KokkosClassic namespace.  We
+do not support any of those Node types anymore.  Instead, use any of
+the following Node types:
+
+  - Kokkos::Compat::KokkosOpenMPWrapperNode (OpenMP)
+  - Kokkos::Compat::KokkosCudaWrapperNode (NVIDIA CUDA)
+  - Kokkos::Compat::KokkosSerialWrapperNode (no threads)
+  - Kokkos::Compat::KokkosThreadsWrapperNode (Pthreads)
+
+Each of these is a typedef for
+Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace>, for the
+corresponding Kokkos execution space.
+
+* Set / rely on the default Node type as much as possible
+
+Tpetra classes have a template parameter, "Node", which determines
+what thread-level parallel programming model Tpetra will use.  This
+corresponds directly to the "execution space" concept in Kokkos.
+
+Tpetra classes have a default Node type.  Users do NOT need to specify
+this explicitly.  I cannot emphasize this enough:
+
+IF YOU ONLY EVER USE THE DEFAULT VALUES OF TEMPLATE PARAMETERS, DO NOT
+SPECIFY THEM EXPLICITLY.
+
+If you need to refer to the default values of template parameters, ask
+Tpetra classes.  For example, 'Tpetra::Map<>::node_type' is the
+default Node type.
+
+Tpetra pays attention to Kokkos' build configuration when determining
+the default Node type.  For example, it will not use a disabled
+execution space.  If you do not like the default Node type, but you
+only ever use one Node type in your application, you should change the
+default Node type at Trilinos configure time.  You may do this by
+setting the 'KokkosClassic_DefaultNode' CMake option.  Here is a list
+of reasonable values:
+
+  "Kokkos::Compat::KokkosSerialWrapperNode": use Kokkos::Serial
+  execution space (execute in a single thread on the CPU)
+
+  "Kokkos::Compat::KokkosOpenMPWrapperNode": use Kokkos::OpenMP
+  execution space (use OpenMP for thread-level parallelism on the CPU)
+
+  "Kokkos::Compat::KokkosThreadsWrapperNode": use Kokkos::Threads
+  execution space (use Pthreads (the POSIX Threads library) for
+  thread-level parallelism on the CPU)
+
+  "Kokkos::Compat::KokkosCudaWrapperNode": use Kokkos::Cuda execution
+  space (use NVIDIA's CUDA programming model for thread-level
+  parallelism on the CPU)
+
+You must use the above strings with the 'KokkosClassic_DefaultNode'
+CMake option.  If you choose (unwisely, in many cases) to specify the
+Node template parameter directly in your code, you may use those
+names.  Alternately, you may let the Kokkos execution space determine
+the Node type, by using the templated class
+Kokkos::Compat::KokkosDeviceWrapperNode.  This class is templated on
+the Kokkos execution space.  The above four types are typedefs to
+their corresponding specializations of KokkosDeviceWrapperNode.  For
+example, KokkosSerialWrapperNode is a typedef of
+KokkosDeviceWrapperNode<Kokkos::Serial>.  This may be useful if your
+code already makes use of Kokkos execution spaces.
 
 * Removed (deprecated classes) Tpetra::VbrMatrix, Tpetra::BlockMap,
   Tpetra::BlockCrsGraph, and Tpetra::BlockMultiVector.
@@ -13,8 +87,6 @@ matrix) functionality.  We may reimplement that at some point, but for
 now it's going away.
 
 * Removed (deprecated class) Tpetra::HybridPlatform
-
-* Removed downstream support for KokkosClassic::ThrustGPUNode
 
 Trilinos 11.14:
 ---------------

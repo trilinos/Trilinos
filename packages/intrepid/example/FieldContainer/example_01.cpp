@@ -261,7 +261,7 @@ int main(int argc, char *argv[]) {
   
   FieldContainer<double> myTensorContainer(dim0, dim1, dim2, dim3, dim4);
   multiIndex.resize(myTensorContainer.rank());
-  double aValue;
+//  double aValue;
   
   Teuchos::Time timerGetValue("Reading and writing from rank-5 container using getValue");
   timerGetValue.start();
@@ -276,7 +276,8 @@ int main(int argc, char *argv[]) {
           for(int i4 =0; i4 < dim4; i4++) { 
             multiIndex[4] = i4;
             
-            aValue = myTensorContainer.getValue(multiIndex);
+            //aValue = myTensorContainer.getValue(multiIndex);
+            myTensorContainer.getValue(multiIndex); 
             myTensorContainer.setValue(999.999,multiIndex);
             
           }
@@ -295,7 +296,7 @@ int main(int argc, char *argv[]) {
         for(int i3 = 0; i3 < dim3; i3++) {
           for(int i4 =0; i4 < dim4; i4++) { 
             
-            aValue = myTensorContainer(i0,i1,i2,i3,i4);
+         //   aValue = myTensorContainer(i0,i1,i2,i3,i4);
             myTensorContainer(i0,i1,i2,i3,i4) = 999.999;
             
           }

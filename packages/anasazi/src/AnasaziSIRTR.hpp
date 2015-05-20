@@ -95,7 +95,6 @@ namespace Anasazi {
     //
     typedef SolverUtils<ScalarType,MV,OP> Utils;
     typedef MultiVecTraits<ScalarType,MV> MVT;
-    typedef MultiVecTraitsExt<ScalarType,MV> MVText;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
@@ -198,7 +197,7 @@ namespace Anasazi {
 
     innerStop_ = MAXIMUM_ITERATIONS;
 
-    const int n = MVText::GetGlobalLength(*this->eta_);
+    const int n = MVT::GetGlobalLength(*this->eta_);
     const int p = this->blockSize_;
     const int d = n*p - (p*p+p)/2;
 

@@ -282,7 +282,16 @@ namespace MueLu {
       SetPrecParameters(paramList);
       supportInitialGuess = true;
 
+    } else if (type_ == "SCHWARZ") {
+      paramList.set("schwarz: zero starting solution", InitialGuessIsZero);
+      //Because additive Schwarz has "delta" semantics, it's sufficient to
+      //toggle only the zero initial guess flag, and not pass in already
+      //set parameters.  If we call SetPrecParameters, the subdomain solver
+      //will be destroyed.
+      prec_->setParameters(paramList);
+      supportInitialGuess = true;
     }
+
     //TODO JJH 30Apr2014  Calling SetPrecParameters(paramList) when the smoother
     //is Ifpack2::AdditiveSchwarz::setParameterList() will destroy the subdomain
     //(aka inner) solver.  This behavior is documented but a departure from what

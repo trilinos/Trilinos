@@ -6,8 +6,6 @@
 /// \brief CRS matrix base object interfaces to user provided input matrices.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include <Kokkos_Core.hpp>
-
 #include "util.hpp"
 #include "coo.hpp"
 
@@ -70,9 +68,10 @@ namespace Example {
       
       if (_aj.dimension_0() < nnz)
         _aj = ordinal_type_array(_label+"::ColsArray", nnz);
-      
+
       if (_ax.dimension_0() < nnz)
         _ax = value_type_array(_label+"::ValuesArray", nnz);
+      //_ax = value_type_array(Kokkos::ViewAllocateWithoutInitializing(_label+"::ValuesArray"), nnz);
     }
 
   public:
@@ -296,17 +295,21 @@ namespace Example {
     }
 
     ostream& showMe(ostream &os) const {
+      streamsize prec = os.precision();
+      os.precision(8);
+      os << scientific;
+
       os << " -- " << _label << " -- " << endl
          << "    # of Rows          = " << _m << endl
          << "    # of Cols          = " << _n << endl
          << "    # of NonZeros      = " << _nnz << endl
          << endl
          << "    RowPtrArray length = " << _ap.dimension_0() << endl
-         << "    ColsArray   length = " << _aj.dimension_0() << endl 
-         << "    ValuesArray length = " << _ax.dimension_0() << endl
+         << "    ColArray    length = " << _aj.dimension_0() << endl 
+         << "    ValueArray  length = " << _ax.dimension_0() << endl
          << endl;
       
-      const int w = 15;
+      const int w = 10;
       if (_ap.size() && _aj.size() && _ax.size()) {
         os << setw(w) <<  "Row" << "  " 
            << setw(w) <<  "Col" << "  " 
@@ -321,6 +324,9 @@ namespace Example {
           }
         }
       }
+
+      os.unsetf(ios::scientific);
+      os.precision(prec);
 
       return os;
     }

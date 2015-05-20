@@ -7072,7 +7072,11 @@ int ML_Get_LevelID(ML *ml, int logical_level)
 
 #include <iostream>
 #include <stdio.h>
+#ifndef ICL
+#ifndef _WIN32
 #include <unistd.h>
+#endif
+#endif
 
 int ML_Solve_MGV( ML *ml , const Epetra_MultiVector &in, Epetra_MultiVector &out)
 {

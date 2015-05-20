@@ -4,7 +4,7 @@
 //
 // This software is a result of the research described in the report
 //
-// " A comparison of algorithms for modal analysis in the absence 
+// " A comparison of algorithms for modal analysis in the absence
 //   of a sparse direct method", P. Arbenz, R. Lehoucq, and U. Hetmaniuk,
 //  Sandia National Laboratories, Technical report SAND2003-1028J.
 //
@@ -51,7 +51,7 @@ BlockPCGSolver::BlockPCGSolver(const Epetra_Comm &_Comm, const Epetra_Operator *
 
 
 BlockPCGSolver::BlockPCGSolver(const Epetra_Comm &_Comm, const Epetra_Operator *KK,
-                               Epetra_Operator *PP, 
+                               Epetra_Operator *PP,
                                double _tol, int _iMax, int _verb)
                : MyComm(_Comm),
                  callBLAS(),
@@ -179,7 +179,7 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y) co
     MyComm.SumAll(&tmp, &alpha, 1);
     alpha = newRZ/alpha;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(alpha <= 0.0, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(alpha <= 0.0, std::runtime_error,
                          " !!! Non-positive value for p^TKp (" << alpha << ") !!!");
 
     callBLAS.AXPY(xr, alpha, p.Values(), 1, Y.Values(), 1);
@@ -235,16 +235,9 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y, in
 
   int info = 0;
   int localVerbose = verbose*(MyComm.MyPID() == 0);
-
-  // Machine epsilon to check singularities
-  double eps = 0.0;
-  eps = callLAPACK.LAMCH('E');
-
   double *valX = X.Values();
-
   int NB = 3 + callLAPACK.ILAENV(1, "hetrd", "u", blkSize);
-  int lworkD = (blkSize > NB) ? blkSize*blkSize : NB*blkSize; 
-
+  int lworkD = (blkSize > NB) ? blkSize*blkSize : NB*blkSize;
   int wSize = 4*blkSize*xrow + 3*blkSize + 2*blkSize*blkSize + lworkD;
 
   bool useY = true;
@@ -276,7 +269,7 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y, in
 
   // Workspace array
   double *workD = pointer;
-  pointer = pointer + lworkD; 
+  pointer = pointer + lworkD;
 
   // Array to store the eigenvalues of P^t K P
   double *da = pointer;
@@ -289,7 +282,7 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y, in
   // Array to store the norms of residuals
   double *resNorm = pointer;
   pointer = pointer + blkSize;
-  
+
   // Array to store the residuals
   double *valR = pointer;
   pointer = pointer + xrow*blkSize;
@@ -374,7 +367,7 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y, in
         callBLAS.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, blkSize, blkSize, blkSize, 1.0, PtKP, blkSize, workD, blkSize,
                       0.0, coeff, blkSize);
 
-        // Update the search directions 
+        // Update the search directions
         // Note: Use KP as a workspace
         memcpy(KP.Values(), P.Values(), xrow*blkSize*sizeof(double));
         callBLAS.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, xrow, blkSize, blkSize, 1.0, KP.Values(), xrow, coeff, blkSize,
@@ -400,10 +393,10 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y, in
 
       // Compute the pseudo-inverse of the eigenvalues
       for (ii = 0; ii < blkSize; ++ii) {
-	TEUCHOS_TEST_FOR_EXCEPTION(da[ii] < 0.0, std::runtime_error, "Negative "
-			   "eigenvalue for P^T K P: da[" << ii << "] = " 
-			   << da[ii] << ".");
-	da[ii] = (da[ii] == 0.0) ? 0.0 : 1.0/da[ii];
+        TEUCHOS_TEST_FOR_EXCEPTION(da[ii] < 0.0, std::runtime_error, "Negative "
+                           "eigenvalue for P^T K P: da[" << ii << "] = "
+                           << da[ii] << ".");
+        da[ii] = (da[ii] == 0.0) ? 0.0 : 1.0/da[ii];
       } // for (ii = 0; ii < blkSize; ++ii)
 
       // Compute P^t R
@@ -427,7 +420,7 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y, in
       callBLAS.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, xrow, blkSize, blkSize, -1.0, KP.Values(), xrow, coeff, blkSize,
                     1.0, R.Values(), xrow);
 
-      // Check convergence 
+      // Check convergence
       R.Norm2(resNorm);
       nFound = 0;
       for (ii = 0; ii < numVec; ++ii) {
@@ -437,7 +430,7 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y, in
 
       if (localVerbose > 1) {
         std::cout << " Vectors " << iRHS << " to " << iRHS + numVec - 1;
-        std::cout << " -- Iteration " << iter << " -- " << nFound << " converged vectors\n"; 
+        std::cout << " -- Iteration " << iter << " -- " << nFound << " converged vectors\n";
         if (localVerbose > 2) {
           std::cout << std::endl;
           for (ii = 0; ii < numVec; ++ii) {

@@ -59,12 +59,12 @@ int ML_Epetra::MultiLevelPreconditioner::
 CreateAuxiliaryMatrixCrs(Epetra_FECrsMatrix* &FakeMatrix)
 {
 
-  int NumMyRows = RowMatrix_->NumMyRows();
+  int numMyRows = RowMatrix_->NumMyRows();
 
   const Epetra_Map& RowMap = RowMatrix_->RowMatrixRowMap();
   const Epetra_Map& ColMap = RowMatrix_->RowMatrixColMap();
   FakeMatrix = new Epetra_FECrsMatrix(Copy,RowMap,
-				      2*RowMatrix_->MaxNumEntries());
+                                      2*RowMatrix_->MaxNumEntries());
 
   if (FakeMatrix == 0)
     ML_CHK_ERR(-1); // something went wrong
@@ -125,7 +125,7 @@ CreateAuxiliaryMatrixCrs(Epetra_FECrsMatrix* &FakeMatrix)
   Epetra_Vector RowY(RowMap); RowY.PutScalar(0.0);
   Epetra_Vector RowZ(RowMap); RowZ.PutScalar(0.0);
 
-  for (int i = 0 ; i < NumMyRows ; i += NumPDEEqns_) {
+  for (int i = 0 ; i < numMyRows ; i += NumPDEEqns_) {
     RowX[i] = x_coord[i / NumPDEEqns_];
     if (NumDimensions > 1) RowY[i] = y_coord[i / NumPDEEqns_];
     if (NumDimensions > 2) RowZ[i] = z_coord[i / NumPDEEqns_];
@@ -158,18 +158,18 @@ CreateAuxiliaryMatrixCrs(Epetra_FECrsMatrix* &FakeMatrix)
   // cycle over all rows //
   // =================== //
 
-  for (int i = 0; i < NumMyRows ; i += NumPDEEqns_) {
+  for (int i = 0; i < numMyRows ; i += NumPDEEqns_) {
 
     int GlobalRow = MyGlobalRowElements[i];
 
     if( i%NumPDEEqns_ == 0 ) { // do it just once for each block row
       switch( NumDimensions ) {
       case 3:
-	coord_i[2] = RowZ[i];
+        coord_i[2] = RowZ[i];
       case 2:
-	coord_i[1] = RowY[i];
+        coord_i[1] = RowY[i];
       case 1:
-	coord_i[0] = RowX[i];
+        coord_i[0] = RowX[i];
 
       }
 
@@ -182,10 +182,10 @@ CreateAuxiliaryMatrixCrs(Epetra_FECrsMatrix* &FakeMatrix)
       // equations. For each block, I replace values with the sum of
       // the std::abs of each block entry.
       for (int j = 0 ; j < NumEntries ; j += NumPDEEqns_) {
-	colVal[j] = std::fabs(colVal[j]);
-	for (int k = 1 ; k < NumPDEEqns_ ; ++k) {
-	  colVal[j] += std::fabs(colVal[j+k]);
-	}
+        colVal[j] = std::fabs(colVal[j]);
+        for (int k = 1 ; k < NumPDEEqns_ ; ++k) {
+          colVal[j] += std::fabs(colVal[j+k]);
+        }
       }
 
       // work only on the first equations. Theta will blend the
@@ -195,89 +195,89 @@ CreateAuxiliaryMatrixCrs(Epetra_FECrsMatrix* &FakeMatrix)
 
       for (int j = 0 ; j < NumEntries ; j += NumPDEEqns_) {
 
-        if (colInd[j] >= NumMyRows)
+        if (colInd[j] >= numMyRows)
           continue;
 
-	if (colInd[j]%NumPDEEqns_ == 0) {
+        if (colInd[j]%NumPDEEqns_ == 0) {
 
-	  // insert diagonal later
-	  if (colInd[j] != i) {
+          // insert diagonal later
+          if (colInd[j] != i) {
 
-	    // get coordinates of this node
-	    switch (NumDimensions) {
-	    case 3:
-	      coord_j[2] = ColZ[colInd[j]];
-	    case 2:
-	      coord_j[1] = ColY[colInd[j]];
-	    case 1:
-	      coord_j[0] = ColX[colInd[j]];
-	    }
+            // get coordinates of this node
+            switch (NumDimensions) {
+            case 3:
+              coord_j[2] = ColZ[colInd[j]];
+            case 2:
+              coord_j[1] = ColY[colInd[j]];
+            case 1:
+              coord_j[0] = ColX[colInd[j]];
+            }
 
-	    // d2 is the square of the distance between node `i' and
-	    // node `j'
-	    double d2 = (coord_i[0] - coord_j[0]) * (coord_i[0] - coord_j[0]) +
-	      (coord_i[1] - coord_j[1]) * (coord_i[1] - coord_j[1]) +
-	      (coord_i[2] - coord_j[2]) * (coord_i[2] - coord_j[2]);
+            // d2 is the square of the distance between node `i' and
+            // node `j'
+            double d2 = (coord_i[0] - coord_j[0]) * (coord_i[0] - coord_j[0]) +
+              (coord_i[1] - coord_j[1]) * (coord_i[1] - coord_j[1]) +
+              (coord_i[2] - coord_j[2]) * (coord_i[2] - coord_j[2]);
 
-	    if (d2 == 0.0) {
-	      std::cerr << std::endl;
-	      std::cerr << ErrorMsg_ << "distance between node " << i/NumPDEEqns_ << " and node "
+            if (d2 == 0.0) {
+              std::cerr << std::endl;
+              std::cerr << ErrorMsg_ << "distance between node " << i/NumPDEEqns_ << " and node "
                    << colInd[j]/NumPDEEqns_ << std::endl
                    << ErrorMsg_ << "is zero. Coordinates of these nodes are" << std::endl
-	           << ErrorMsg_ << "x_i = " << coord_i[0] << ", x_j = " << coord_j[0] << std::endl
-		   << ErrorMsg_ << "y_i = " << coord_i[1] << ", y_j = " << coord_j[1] << std::endl
-		   << ErrorMsg_ << "z_i = " << coord_i[2] << ", z_j = " << coord_j[2] << std::endl
-		   << ErrorMsg_ << "Now proceeding with distance = 1.0" << std::endl;
-	      std::cerr << std::endl;
-	      d2 = 1.0;
-	    }
+                   << ErrorMsg_ << "x_i = " << coord_i[0] << ", x_j = " << coord_j[0] << std::endl
+                   << ErrorMsg_ << "y_i = " << coord_i[1] << ", y_j = " << coord_j[1] << std::endl
+                   << ErrorMsg_ << "z_i = " << coord_i[2] << ", z_j = " << coord_j[2] << std::endl
+                   << ErrorMsg_ << "Now proceeding with distance = 1.0" << std::endl;
+              std::cerr << std::endl;
+              d2 = 1.0;
+            }
 
-	    // blend d2 with the actual values of the matrix
-	    // FIXME: am I useful?
-	    double val = -(1.0 - theta) * (1.0 / d2) + theta * (colVal[j]);
+            // blend d2 with the actual values of the matrix
+            // FIXME: am I useful?
+            double val = -(1.0 - theta) * (1.0 / d2) + theta * (colVal[j]);
 
-	    GlobalCol = MyGlobalColElements[colInd[j]];
+            GlobalCol = MyGlobalColElements[colInd[j]];
 
-	    // insert this value on all rows
-	    for (int k = 0 ; k < NumPDEEqns_ ; ++k) {
-	      int row = GlobalRow + k;
-	      int col = GlobalCol + k;
+            // insert this value on all rows
+            for (int k = 0 ; k < NumPDEEqns_ ; ++k) {
+              int row = GlobalRow + k;
+              int col = GlobalCol + k;
 
-	      if (FakeMatrix->SumIntoGlobalValues(1,&row,1,&col,&val) != 0) {
-		ML_CHK_ERR(FakeMatrix->InsertGlobalValues(1,&row,1,&col,&val));
-	      }
+              if (FakeMatrix->SumIntoGlobalValues(1,&row,1,&col,&val) != 0) {
+                ML_CHK_ERR(FakeMatrix->InsertGlobalValues(1,&row,1,&col,&val));
+              }
 
-	    }
+            }
 
-	    total -= val;
+            total -= val;
 
-	    // put (j,i) element as well, only for in-process stuff.
-	    // I have some problems with off-processor elements.
+            // put (j,i) element as well, only for in-process stuff.
+            // I have some problems with off-processor elements.
             // It is here that I need the FE matrix.
-	    if (SymmetricPattern == true && colInd[j] < NumMyRows ) {
+            if (SymmetricPattern == true && colInd[j] < numMyRows ) {
 
-	      for( int k=0 ; k<NumPDEEqns_ ; ++k ) {
-		int row = GlobalCol+k;
-		int col = GlobalRow+k;
+              for( int k=0 ; k<NumPDEEqns_ ; ++k ) {
+                int row = GlobalCol+k;
+                int col = GlobalRow+k;
 
-		if( FakeMatrix->SumIntoGlobalValues(1,&row,1,&col,&val) != 0 ) {
-		  ML_CHK_ERR(FakeMatrix->InsertGlobalValues(1,&row,1,&col,&val));
-		}
+                if( FakeMatrix->SumIntoGlobalValues(1,&row,1,&col,&val) != 0 ) {
+                  ML_CHK_ERR(FakeMatrix->InsertGlobalValues(1,&row,1,&col,&val));
+                }
 
-	      }
-	      total -= val;
-	    }
-	  }
-	}
+              }
+              total -= val;
+            }
+          }
+        }
       }
 
       // create lines with zero-row sum
       for (int k = 0 ; k < NumPDEEqns_ ; ++k) {
-	int row = GlobalRow + k;
-	if (FakeMatrix->SumIntoGlobalValues(1,&row,1,&row,&total) != 0) {
-	  if (FakeMatrix->InsertGlobalValues(1,&row,1,&row,&total) != 0)
-	    ML_CHK_ERR(-9); // something went wrong
-	}
+        int row = GlobalRow + k;
+        if (FakeMatrix->SumIntoGlobalValues(1,&row,1,&row,&total) != 0) {
+          if (FakeMatrix->InsertGlobalValues(1,&row,1,&row,&total) != 0)
+            ML_CHK_ERR(-9); // something went wrong
+        }
 
       }
     }

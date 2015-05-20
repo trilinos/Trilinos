@@ -15,28 +15,43 @@ namespace Example {
   public:
     static int blocksize;
 
-    // flat matrix interface
-    // -------------------------------------------------------------------
-    template<typename CrsMatViewType>
+    // data-parallel interface
+    // =======================
+    template<typename ParallelForType,
+             typename CrsExecViewType>
     KOKKOS_INLINE_FUNCTION
-    static int invoke(const CrsMatViewType A);
+    static int invoke(const typename CrsExecViewType::policy_type::member_type &member, 
+                      CrsExecViewType &A);
 
-    template<typename CrsMatViewType>
+    // task-data parallel interface
+    // ============================
+    template<typename ParallelForType,
+             typename CrsExecViewType>
     class TaskFunctor {
     private:
-      CrsMatViewType _A;
+      CrsExecViewType _A;
       
     public:
-      TaskFunctor(const CrsMatViewType A)
+      typedef typename CrsExecViewType::policy_type policy_type;
+      typedef typename policy_type::member_type member_type;
+      typedef int value_type;
+
+      TaskFunctor(const CrsExecViewType A)
         : _A(A)
-        { } 
+      { } 
 
       string Label() const { return "IChol"; }
       
-      typedef int value_type;
+      // task execution
       void apply(value_type &r_val) {
-        r_val = IChol::invoke(_A);
+        r_val = IChol::invoke<ParallelForType>(policy_type::member_null(), _A);
       }
+
+      // task-data execution
+      void apply(const member_type &member, value_type &r_val) {
+        r_val = IChol::invoke<ParallelForType>(member, _A);
+      }
+
     };
 
   };
@@ -49,7 +64,6 @@ namespace Example {
 #include "partition.hpp"
 
 // unblocked version blas operations
-#include "dot.hpp"
 #include "scale.hpp"
 
 // blocked version blas operations
@@ -57,15 +71,10 @@ namespace Example {
 #include "trsm.hpp"
 #include "herk.hpp"
 
-// left looking: only for testing 
-#include "ichol_left_unblocked.hpp"
-#include "ichol_left_blocked.hpp"
-#include "ichol_left_by_blocks.hpp"
-
-// right looking: better performance with CRS
-#include "ichol_right_unblocked.hpp"
-#include "ichol_right_unblocked_opt1.hpp"
-#include "ichol_right_blocked.hpp"
-#include "ichol_right_by_blocks.hpp"
+// right looking algorithm with upper triangular
+//#include "ichol_unblocked.hpp"
+#include "ichol_unblocked_opt1.hpp"
+#include "ichol_blocked.hpp"
+#include "ichol_by_blocks.hpp"
 
 #endif

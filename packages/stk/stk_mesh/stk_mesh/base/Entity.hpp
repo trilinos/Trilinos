@@ -37,9 +37,6 @@
 #include <stddef.h>                     // for size_t
 #include <stdint.h>                     // for uint64_t
 #include <iosfwd>                       // for ostream
-#include "boost/functional/hash/hash.hpp"  // for hash_value
-
-//----------------------------------------------------------------------
 
 namespace stk{
   namespace mesh{
@@ -53,6 +50,10 @@ namespace stk{
       };
 
       uint64_t m_value;
+
+      Entity() : m_value(InvalidEntity) {}
+
+      Entity(uint64_t value) : m_value(value) {}
 
       Entity operator=(Entity_t val) { m_value = val; return *this;}
 
@@ -83,7 +84,6 @@ namespace stk{
       bool operator<(Entity entity) const { return m_value < entity.m_value; }
 
     };
-
   }
 }
 
@@ -105,19 +105,11 @@ namespace stk {
       }
     };
 
-    //
-    // Entity
-    //
-
     inline
     size_t hash_value( Entity entity) {
-      return boost::hash_value(entity.local_offset());
+//        try to use std::hash
+      return entity.local_offset();
     }
-
-
-
-    /** \} */
-
   } // namespace mesh
 } // namespace stk
 

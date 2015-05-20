@@ -11,6 +11,11 @@
           
 \cbb{problem: symmetric}{bool}{true}{Symmetry of a problem. This setting affects the construction of a restrictor. If set to true, the restrictor is set to be the transpose of a prolongator. If set to false, underlying multigrid algorithm makes the decision.}
           
+\cbb{xml parameter file}{string}{""}{An XML file from which to read additional
+      parameters.  In case of a conflict, parameters manually set on
+      the list will override parameters in the file. If the string is
+      empty a file will not be read.}
+          
 \cbb{smoother: pre or post}{string}{"both"}{Pre- and post-smoother combination. Possible values: "pre" (only pre-smoother), "post" (only post-smoother), "both" (both pre-and post-smoothers), "none" (no smoothing).}
           
 \cbb{smoother: type}{string}{"RELAXATION"}{Smoother type. Possible values: see Table~\ref{tab:smoothers}.}
@@ -50,6 +55,12 @@
 \cbb{aggregation: min agg size}{int}{2}{Minimum size of an aggregate.}
           
 \cbb{aggregation: max agg size}{int}{-1}{Maximum size of an aggregate (-1 means unlimited).}
+          
+\cbb{aggregation: brick x size}{int}{2}{Number of points for x axis in "brick" aggregation (limited to 3).}
+          
+\cbb{aggregation: brick y size}{int}{2}{Number of points for y axis in "brick" aggregation (limited to 3).}
+          
+\cbb{aggregation: brick z size}{int}{2}{Number of points for z axis in "brick" aggregation (limited to 3).}
           
 \cbb{aggregation: Dirichlet threshold}{double}{0.0}{Threshold for determining whether entries are zero during Dirichlet row detection.}
           

@@ -45,7 +45,7 @@
 #undef NDEBUG
 #include <assert.h>
 #include <Ioss_ConcreteVariableType.h>
-#include <exodusII/Ioex_SuperElement.h>
+#include <exodus/Ioex_SuperElement.h>
 
 int main(int argc, char *argv[])
 {

@@ -396,8 +396,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Kokkos_View_PCE, DeepCopy_Subview_Range, Stor
 
   for (size_type j=0; j<num_cols; ++j) {
     std::pair<size_type,size_type> rows( 0, num_rows1 );
-    ViewType v1s = Kokkos::subview<ViewType>( v1, rows, j );
-    ViewType v2s = Kokkos::subview<ViewType>( v2, rows, j );
+    ViewType v1s = Kokkos::subview( v1, rows, std::pair<size_t,size_t> (j,j+1) );
+    ViewType v2s = Kokkos::subview( v2, rows, std::pair<size_t,size_t> (j,j+1) );
     Kokkos::deep_copy( v1s, Scalar(j+1) );
     Kokkos::deep_copy( v2s, v1s );
   }

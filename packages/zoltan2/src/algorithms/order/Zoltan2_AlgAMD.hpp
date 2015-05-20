@@ -125,31 +125,19 @@ class AlgAMD : public Algorithm<Adapter>
         "Please set CMake flag Zoltan2_ENABLE_AMD:BOOL=ON.");
 #else
       typedef typename Adapter::lno_t lno_t;
-      typedef typename Adapter::gno_t gno_t;
-      typedef typename Adapter::zgid_t zgid_t;
       typedef typename Adapter::scalar_t scalar_t;
 
       int ierr= 0;
 
-      if (comm->getSize() != 1)
-      {
-          throw std::runtime_error(
-            "ERROR: AMD requested with distributed matrix.\n"
-            "This feature is not supported yet. Please use a local matrix.");
-      }
-
       const size_t nVtx = model->getLocalNumVertices();
 
       //cout << "Local num vertices" << nVtx << endl;
-      ArrayView<const gno_t> edgeIds;
-      ArrayView<const int> procIds;
+      ArrayView<const lno_t> edgeIds;
       ArrayView<const lno_t> offsets;
       ArrayView<StridedData<lno_t, scalar_t> > wgts;
 
-      //const size_t nEdgs = model->getEdgeList( edgeIds,
-      //                      procIds, offsets, wgts);
-      // TODO: Should use the local graph
-      model->getEdgeList( edgeIds, procIds, offsets, wgts);
+      // wgts are ignored in AMD
+      model->getLocalEdgeList( edgeIds, offsets, wgts);
 
       AMDTraits<lno_t> AMDobj;
       double Control[AMD_CONTROL];
@@ -165,7 +153,7 @@ class AlgAMD : public Algorithm<Adapter>
                              edgeIds.getRawPtr(), perm, Control, Info);
 
       if (result != AMD_OK && result != AMD_OK_BUT_JUMBLED)
-          ierr = -1; // TODO: Change return value to lno_t
+          ierr = -1;
 
       solution->setHavePerm(true);
       return ierr;

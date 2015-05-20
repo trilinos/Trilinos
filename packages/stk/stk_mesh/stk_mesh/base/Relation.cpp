@@ -42,6 +42,7 @@
 #include "stk_mesh/base/ConnectivityMap.hpp"  // for ConnectivityMap
 #include "stk_mesh/base/Part.hpp"       // for Part, insert_ordinal, etc
 #include "stk_mesh/base/Types.hpp"      // for EntityRank, OrdinalVector, etc
+#include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssertMsg, etc
 
@@ -188,60 +189,16 @@ void get_entities_through_relations(
 
 //----------------------------------------------------------------------
 
-void induced_part_membership( const Part & part ,
-                              EntityRank entity_rank_from ,
-                              EntityRank entity_rank_to ,
-                              OrdinalVector & induced_parts)
+
+void get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(const BulkData       & mesh,
+                             const Entity           entity_from,
+                             const OrdinalVector  & omit,
+                                   EntityRank       entity_rank_to,
+                                   OrdinalVector  & induced_parts)
 {
-  if ( entity_rank_to < entity_rank_from && part.should_induce(entity_rank_from) ) {
-    // Direct relationship:
-    insert_ordinal( induced_parts , part.mesh_meta_data_ordinal() );
-  }
+    impl::get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(mesh,entity_from,omit,entity_rank_to,induced_parts);
 }
 
-//----------------------------------------------------------------------
-//  What are this entity's part memberships that can be deduced from
-//  this entity's relationship.  Can only trust 'entity_from' to be
-//  accurate if it is owned by the local process.
-
-void induced_part_membership(const BulkData& mesh,
-                             const PartVector& all_parts,
-                             const Entity entity_from ,
-                             const OrdinalVector       & omit ,
-                                   EntityRank            entity_rank_to ,
-                                   OrdinalVector       & induced_parts)
-{
-  const Bucket   & bucket_from    = mesh.bucket(entity_from);
-  const int      local_proc_rank  = mesh.parallel_rank();
-  const EntityRank entity_rank_from = bucket_from.entity_rank();
-  const bool dont_check_owner     = mesh.parallel_size() == 1; // critical for fmwk
-  ThrowAssert(entity_rank_from > entity_rank_to);
-
-  // Only induce parts for normal (not back) relations. Can only trust
-  // 'entity_from' to be accurate if it is owned by the local process.
-  if ( dont_check_owner || local_proc_rank == mesh.parallel_owner_rank(entity_from) ) {
-
-    const std::pair<const unsigned *, const unsigned *>
-      bucket_superset_ordinals = bucket_from.superset_part_ordinals();
-
-    OrdinalVector::const_iterator omit_begin = omit.begin(),
-                                  omit_end   = omit.end();
-
-    // Contributions of the 'from' entity:
-    for ( const unsigned * i = bucket_superset_ordinals.first ;
-                           i != bucket_superset_ordinals.second ; ++i ) {
-      ThrowAssertMsg( *i < all_parts.size(), "Index " << *i << " out of bounds" );
-      Part & part = * all_parts[*i] ;
-
-      if ( part.should_induce(entity_rank_from) && ! contains_ordinal( omit_begin, omit_end , *i )) {
-        induced_part_membership( part,
-                                 entity_rank_from ,
-                                 entity_rank_to ,
-                                 induced_parts);
-      }
-    }
-  }
-}
 
 //----------------------------------------------------------------------
 
@@ -254,7 +211,6 @@ void induced_part_membership(const BulkData& mesh,
 
   const EntityRank e_rank = mesh.entity_rank(entity);
   const EntityRank end_rank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
-  const PartVector& all_parts = mesh.mesh_meta_data().get_parts();
 
   EntityVector temp_entities;
   Entity const* rels = NULL;
@@ -272,7 +228,7 @@ void induced_part_membership(const BulkData& mesh,
 
     for (int j = 0; j < num_rels; ++j)
     {
-      induced_part_membership(mesh, all_parts, rels[j], omit, e_rank, induced_parts);
+      impl::get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(mesh, rels[j], omit, e_rank, induced_parts);
     }
   }
 }

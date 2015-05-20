@@ -60,7 +60,8 @@ namespace sierra {
       EXEC_TYPE_WORLD = 0,            ///< Generic application using entire communicator (MPI_COMM_WORLD)
       EXEC_TYPE_FLUID = 1,            ///< Gemini Euler application
       EXEC_TYPE_LAG   = 2,            ///< Sierra Lagrangian application
-      EXEC_TYPE_PEER  = 3             ///< Split communicator application; non-Gemini
+      EXEC_TYPE_PEER  = 3,            ///< Split communicator application; non-Gemini
+      DIFFING_TOOL    = 4             ///< For use in running diffing tool>
     };
 
     struct ExecInfo
@@ -68,6 +69,7 @@ namespace sierra {
       MPI_Comm              m_groupComm;
       int                   m_master;
       MPI_Comm              m_worldComm;
+      MPI_Comm              m_interComm;
     };
   }
 }
@@ -106,10 +108,13 @@ struct EnvData
   bool                  m_checkSubCycle;
   bool                  m_checkSmRegion;
   bool                  m_isZapotec;
+  bool                  m_usingDiffingTool;
 
   MPI_Comm		m_worldComm;
 
   MPI_Comm		m_parallelComm;
+  MPI_Comm      m_interComm;
+
   int			m_parallelSize;
   int			m_parallelRank;
 

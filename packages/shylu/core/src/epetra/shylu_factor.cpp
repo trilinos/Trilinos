@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //               ShyLU: Hybrid preconditioner package
 //                 Copyright 2012 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -63,7 +63,11 @@
 
 #include "shylu.h"
 #include "shylu_util.h"
+#ifdef HAVE_SHYLUCORE_MPI
 #include <Epetra_MpiComm.h>
+#else
+#include <Epetra_SerialComm.h>
+#endif
 #include <EpetraExt_Reindex_LinearProblem2.h>
 
 #include "Ifpack_config.h"
@@ -74,8 +78,8 @@
 #include "Ifpack.h"
 #endif
 
-#include "gmres.h"
-#include "gmres_tools.h"
+#include "shylu_internal_gmres.h"
+#include "shylu_internal_gmres_tools.h"
 
 int create_matrices
 (
@@ -98,9 +102,13 @@ int create_matrices
 
     /* --------------- Create the maps for the DBBD form ------------------- */
     // Create the local and distributed row map
+#ifdef HAVE_SHYLUCORE_MPI
     Epetra_MpiComm LComm(MPI_COMM_SELF);
+#else
+    Epetra_SerialComm LComm;
+#endif // HAVE_SHYLUCORE_MPI
 
-	// Use Serial Comm for the local blocks.
+    // Use Serial Comm for the local blocks.
     Epetra_Map LocalDRowMap(-1, Dnr, DRowElems, 0, LComm);
     Epetra_Map DRowMap(-1, Dnr, DRowElems, 0, A->Comm());
     Epetra_Map SRowMap(-1, Snr, SRowElems, 0, A->Comm());
@@ -145,13 +153,13 @@ int create_matrices
         dcol = 0 ; ccol = 0; rcol = 0; scol = 0;
         // Three things to worry about here, Num entries in each row of S,
         // size of C and R and the corresponding cols/rows.
-        for (int i = 0; i < nrows; i++) 
+        for (int i = 0; i < nrows; i++)
         {
             dcnt = 0; scnt = 0; ccnt = 0; rcnt = 0;
-            // Need to pass local id i to this function 
+            // Need to pass local id i to this function
             int err = A->ExtractMyRowView(i, NumEntries, Ax, Ai);
             if (err != 0)
-            { 
+            {
                 assert (err == 0);
                 //config->dm.error("create_matrices: extract_my_row failed");
             }
@@ -168,7 +176,7 @@ int create_matrices
                         dcnt++;
                     }
                     else
-                    { 
+                    {
                         ccnt++;
                     }
                 }
@@ -183,7 +191,7 @@ int create_matrices
                 //cout << " has Cols = " ;
                 for (int j = 0 ; j < NumEntries ; j++)
                 { // O(nnz) ! Careful what you do inside
-                    gcid = A->GCID(Ai[j]); 
+                    gcid = A->GCID(Ai[j]);
                     //if (A->LRID(gcid) != -1 && gvals[gcid] == 1) // TBD : Need to change here
                     // No need to check for local rows as above.
                     // All cols with gvals[cols] == 1 belong to R.
@@ -204,24 +212,24 @@ int create_matrices
                 RNumEntriesPerRow[rcol++] = rcnt;
             }
             Dmaxnnz = max(Dmaxnnz, dcnt);
-            Smaxnnz = max(Smaxnnz, scnt); 
-            Rmaxnnz = max(Rmaxnnz, rcnt); 
-            Cmaxnnz = max(Cmaxnnz, ccnt); 
+            Smaxnnz = max(Smaxnnz, scnt);
+            Rmaxnnz = max(Rmaxnnz, rcnt);
+            Cmaxnnz = max(Cmaxnnz, ccnt);
         }
         assert( dcol == Dnr);
         assert( scol == Snr);
         assert( ccol == Dnr);
         assert( rcol == Snr);
         int sbarcol = 0;
-        for (int i = 0; i < nrows; i++) 
+        for (int i = 0; i < nrows; i++)
         {
             gid = rows[i];
             if (gvals[gid] != 1)
             { // S row
-                // Add the number of required diagonals in approximate Schur 
+                // Add the number of required diagonals in approximate Schur
                 // complement , +1 below for the main diagonal
                 assert(sbarcol < Snr);
-                SBarNumEntriesPerRow[sbarcol] = GNumEntriesPerRow[sbarcol] 
+                SBarNumEntriesPerRow[sbarcol] = GNumEntriesPerRow[sbarcol]
                                                 + Sdiag*2 + 1;
                 sbarcol++;
                 //SBarNumEntriesPerRow[i] = GNumEntriesPerRow[i] ;
@@ -335,10 +343,10 @@ int extract_matrices
         int lcid;
         for (int j = 0 ; j < NumEntries ; j++)
         { // O(nnz) ! Careful what you do inside
-            // Row permutation does not matter here 
+            // Row permutation does not matter here
             gcid = A->GCID(Ai[j]);
             assert(gcid != -1);
-            //Either in D or R 
+            //Either in D or R
             if ((gvals[gid] != 1 && gvals[gcid] == 1)
                || (gvals[gid] == 1 && A->LRID(gcid) != -1 && gvals[gcid] == 1))
             {
@@ -488,31 +496,6 @@ int extract_matrices
         delete DColMap;
     }
 
-#if 0
-    if (insertValues)
-    {
-#ifdef TIMING_OUTPUT
-    Teuchos::Time ttime("transpose time");
-    ttime.start();
-#endif
-        bool MakeDataContiguous = true;
-        ssym->transposer = Teuchos::RCP<EpetraExt::RowMatrix_Transpose>(new EpetraExt::RowMatrix_Transpose(MakeDataContiguous));
-        ssym->DT = Teuchos::rcp( dynamic_cast<Epetra_CrsMatrix *>(&(*ssym->transposer)(*D)), false);
-
-#ifdef TIMING_OUTPUT
-    ttime.stop();
-    cout << "Transpose Time" << ttime.totalElapsedTime() << endl;
-    ttime.reset();
-#endif
-
-    }
-    else
-    {
-        ssym->transposer->fwd();
-        //ssym->ReIdx_LP->fwd(); // TODO: Needed ?
-    }
-#endif
-
     // A is no longer needed
     delete[] LeftIndex;
     delete[] LeftValues;
@@ -611,7 +594,7 @@ int shylu_symbolic_factor
         else
             Snc++;
     }
-    // Find #rows in each block 
+    // Find #rows in each block
     Dnr = Dnc;          // #rows in square diagonal block
     Snr = nrows - Dnr;  // #rows in the row separator*/
 
@@ -668,7 +651,7 @@ int shylu_symbolic_factor
     data->SRowElems = SRowElems;
 
     // Create a column map for the D and S blocks [
-    int *DColElems = new int[Dnc]; // Elems in column map of D 
+    int *DColElems = new int[Dnc]; // Elems in column map of D
     int *SColElems = new int[Snc]; // Elems in column map of C TODO: Unused
     // Assemble column ids in two arrays (for D and C blocks)
     findBlockElems(A, ncols, cols, gvals, Dnc, DColElems, Snc, SColElems,
@@ -693,7 +676,7 @@ int shylu_symbolic_factor
 
     delete[] SColElems;
 
-    Teuchos::RCP<Epetra_LinearProblem> LP = Teuchos::RCP<Epetra_LinearProblem> 
+    Teuchos::RCP<Epetra_LinearProblem> LP = Teuchos::RCP<Epetra_LinearProblem>
                                         (new Epetra_LinearProblem());
     LP->SetOperator((ssym->D).getRawPtr());
     //LP->SetOperator((ssym->DT).getRawPtr()); // for transpose
@@ -780,7 +763,7 @@ int shylu_symbolic_factor
     if (config->schurApproxMethod == 1)
     {
         Teuchos::ParameterList pList;
-        Teuchos::RCP<Isorropia::Epetra::Prober> prober = 
+        Teuchos::RCP<Isorropia::Epetra::Prober> prober =
                          Teuchos::RCP<Isorropia::Epetra::Prober> (new
                           Isorropia::Epetra::Prober((ssym->Sg).getRawPtr(),
                                                      pList, false));
@@ -799,7 +782,11 @@ int shylu_symbolic_factor
     }
 
     // Set the maps, importers and multivectors to be used in the solve once.
+#ifdef HAVE_SHYLUCORE_MPI
     Epetra_MpiComm LComm(MPI_COMM_SELF);
+#else
+    Epetra_SerialComm LComm;
+#endif // HAVE_SHYLUCORE_MPI
     data->LDRowMap = Teuchos::rcp(new Epetra_Map(-1, data->Dnr,
                                  data->DRowElems, 0, LComm));
     data->LGRowMap = Teuchos::rcp(new Epetra_Map(-1, data->Snr,
@@ -818,7 +805,7 @@ int shylu_symbolic_factor
     data->XsImporter = Teuchos::rcp(new Epetra_Import(*(data->LGRowMap),
                          *(data->GMap)));
     // Assuming Y and A will have the same rowmap. Should it be range map ?
-    data->XdExporter = Teuchos::rcp(new Epetra_Export(*(data->LDRowMap), 
+    data->XdExporter = Teuchos::rcp(new Epetra_Export(*(data->LDRowMap),
                  A->RowMap()));
     data->XsExporter = Teuchos::rcp(new Epetra_Export(*(data->LGRowMap),
              A->RowMap()));
@@ -885,7 +872,11 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
 #endif
 
     // Create the local and distributed row map
+#ifdef HAVE_SHYLUCORE_MPI
     Epetra_MpiComm LComm(MPI_COMM_SELF);
+#else
+    Epetra_SerialComm LComm;
+#endif // HAVE_SHYLUCORE_MPI
     Epetra_Map LocalDRowMap(-1, data->Dnr, data->DRowElems, 0, LComm);
     Teuchos::RCP<Epetra_CrsMatrix> Sbar;
 
@@ -973,18 +964,18 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
                         (new Epetra_MultiVector(data->Sbar->RowMap(), 16));
 
         Teuchos::RCP<Epetra_LinearProblem> LP2 =
-        		Teuchos::rcp(new Epetra_LinearProblem);
+                        Teuchos::rcp(new Epetra_LinearProblem);
 
         LP2->SetOperator(data->Sbar.get());
         LP2->SetRHS(data->Sbarrhs.getRawPtr());
         LP2->SetLHS(data->Sbarlhs.getRawPtr());
 
         data->ReIdx_LP2 = Teuchos::RCP
-        		<EpetraExt::ViewTransform<Epetra_LinearProblem> >
-				(new EpetraExt::LinearProblem_Reindex2(0));
+                        <EpetraExt::ViewTransform<Epetra_LinearProblem> >
+                                (new EpetraExt::LinearProblem_Reindex2(0));
         data->LP2 =
-        		Teuchos::RCP<Epetra_LinearProblem>
-        		(&((*(data->ReIdx_LP2))(*LP2)), false);
+                        Teuchos::RCP<Epetra_LinearProblem>
+                        (&((*(data->ReIdx_LP2))(*LP2)), false);
 
         data->OrigLP2 = LP2;
 
@@ -992,7 +983,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
         bool IsAvailable = Factory.Query(config->schurAmesosSolver);
         assert(IsAvailable == true);
         data->dsolver = Factory.Create(
-        		config->schurAmesosSolver, *(data->LP2));
+                        config->schurAmesosSolver, *(data->LP2));
 
         data->dsolver->SetParameters(aList);
         //cout << "Created the direct Schur  Solver" << endl;
@@ -1007,10 +998,10 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
     }
     else if (config->schurSolver == "AztecOO-Exact")
     {
-    	if (config->libName == "AztecOO") {
-    		data->innersolver = new AztecOO();
-    	}
-    	std::string schurPrec = config->schurPreconditioner;
+        if (config->libName == "AztecOO") {
+                data->innersolver = new AztecOO();
+        }
+        std::string schurPrec = config->schurPreconditioner;
 
         int err = data->innersolver->SetUserOperator
                     (data->schur_op.get());
@@ -1021,9 +1012,9 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
 #else
     Ifpack IfpackFactory;
 #endif
-    	data->schur_prec = Teuchos::rcp<Ifpack_Preconditioner>
-    				(IfpackFactory.Create(schurPrec,
-					 Sbar.getRawPtr(), config->overlap, false));
+        data->schur_prec = Teuchos::rcp<Ifpack_Preconditioner>
+                                (IfpackFactory.Create(schurPrec,
+                                         Sbar.getRawPtr(), config->overlap, false));
 
         data->schur_prec->Initialize();
         data->schur_prec->Compute();
@@ -1035,7 +1026,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
         data->innersolver->SetAztecOption(AZ_solver, AZ_gmres);
 
         if (config->silent_subiter) {
-        	data->innersolver->SetAztecOption(AZ_output, AZ_none);
+                data->innersolver->SetAztecOption(AZ_output, AZ_none);
         }
 
         data->innersolver->SetMatrixName(999);
@@ -1078,7 +1069,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
     }
     else if ((config->schurSolver == "IQR") || (config->schurSolver == "G"))
     {
-    	// DO NOTHING
+        // DO NOTHING
     } else
     {
         assert (0 == 1);

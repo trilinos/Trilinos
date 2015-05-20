@@ -42,7 +42,7 @@
 
 // MP::Vector and Matrix
 #include "Stokhos_Sacado_Kokkos.hpp"
-#include "Kokkos_CrsMatrix.hpp"
+#include "Kokkos_Sparse_CrsMatrix.hpp"
 #include "Kokkos_CrsMatrix_MP_Vector.hpp"
 
 // Compile-time loops
@@ -234,7 +234,7 @@ test_scalar_spmv(const int ensemble_length,
   // One iteration to warm up
   for (int iter = 0; iter < iterCount; ++iter) {
     for (int e=0; e<ensemble_length; ++e) {
-      Kokkos::MV_Multiply( y[e], matrix[e], x[e] );
+      KokkosSparse::spmv( "N" , value_type(1.0), matrix[e], x[e] , value_type(0.0), y[e]);
     }
   }
 
@@ -242,7 +242,7 @@ test_scalar_spmv(const int ensemble_length,
   Kokkos::Impl::Timer clock ;
   for (int iter = 0; iter < iterCount; ++iter) {
     for (int e=0; e<ensemble_length; ++e) {
-      Kokkos::MV_Multiply( y[e], matrix[e], x[e] );
+      KokkosSparse::spmv( "N" , value_type(1.0), matrix[e], x[e] , value_type(0.0), y[e]);
     }
   }
   execution_space::fence();

@@ -590,8 +590,7 @@ public:
 
   static SelfType * container( const Derived_Type & n )
     {
-      MapvBase * const c = MapvBase::container(&n);
-      return c ? static_cast<SelfType*>( c ) : 0 ;
+      return static_cast<SelfType*>( MapvBase::container(&n) );
     }
 
   static SelfType * container( const Derived_Type * n )

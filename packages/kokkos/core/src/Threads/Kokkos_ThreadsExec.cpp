@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -552,6 +552,14 @@ void ThreadsExec::initialize( unsigned thread_count ,
 
     const bool hwloc_avail = hwloc::available();
 
+    if ( thread_count == 0 ) {
+      thread_count = hwloc_avail
+      ? Kokkos::hwloc::get_available_numa_count() *
+        Kokkos::hwloc::get_available_cores_per_numa() *
+        Kokkos::hwloc::get_available_threads_per_core()
+      : 1 ;
+    }
+
     const unsigned thread_spawn_begin =
       hwloc::thread_mapping( "Kokkos::Threads::initialize" ,
                              allow_asynchronous_threadpool ,
@@ -657,6 +665,10 @@ void ThreadsExec::initialize( unsigned thread_count ,
 
     Kokkos::Impl::throw_runtime_exception( msg.str() );
   }
+
+  // Init the array for used for arbitrarily sized atomics
+  Impl::init_lock_array_host_space();
+
 }
 
 //----------------------------------------------------------------------------

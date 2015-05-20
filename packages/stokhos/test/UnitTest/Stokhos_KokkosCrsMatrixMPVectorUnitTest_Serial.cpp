@@ -65,7 +65,7 @@ bool test_host_embedded_vector(Ordinal num_hyper_threads,
   bool success = true;
   if (num_hyper_threads >= ThreadsPerVector) {
     int row_threads = num_hyper_threads / ThreadsPerVector;
-    Kokkos::DeviceConfig dev_config(num_cores, ThreadsPerVector, row_threads);
+    KokkosSparse::DeviceConfig dev_config(num_cores, ThreadsPerVector, row_threads);
 
     success = test_embedded_vector<Vector>(
       nGrid, VectorSize, dev_config, MultiplyOp(), out);

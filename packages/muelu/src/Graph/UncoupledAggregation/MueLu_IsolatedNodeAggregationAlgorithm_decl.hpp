@@ -60,6 +60,20 @@ namespace MueLu {
   /*!
     @class IsolatedNodeAggregationAlgorithm class.
     @brief Ignores isolated nodes during aggregation. Marks the node to be "aggregated" without adding real aggregates for them.
+
+    @ingroup Aggregation
+
+    ### Idea ###
+    The isolated node aggregation algorithm loops over all non-aggregated nodes
+    (with a state different than aggregated or ignored) which have only themselves
+    as neighbor node. The state of these "isolated" nodes is then set to ignored such
+    that they are not considered in the aggregation. This aggregation algorithm should
+    run as one of the last aggregation algorithms in the aggregation method.
+
+    ### Comments ###
+    Only nodes with state different than READY or AGGREGATED are changed to IGNORED.
+    After that, all nodes should have the state AGGREGATED or IGNORED.
+
   */
 
   template <class LocalOrdinal = int,

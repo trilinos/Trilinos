@@ -37,7 +37,6 @@
 #include "stk_mesh/base/Types.hpp"      // for ConnectivityOrdinal, etc
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include "stk_util/environment/ReportHandler.hpp"
-#include <stk_util/util/TrackingAllocator.hpp>
 
 namespace stk {
 namespace mesh {
@@ -105,9 +104,9 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
   static const EntityRank target_rank = TargetRank;
   static const ConnectivityType connectivity_type = FIXED_CONNECTIVITY;
 
-  typedef TrackedVectorMetaFunc<Entity, BucketRelationTag>::type              EntityVector;
-  typedef TrackedVectorMetaFunc<ConnectivityOrdinal, BucketRelationTag>::type ConnectivityOrdinalVector;
-  typedef TrackedVectorMetaFunc<Permutation, BucketRelationTag>::type         PermutationVector;
+  typedef std::vector<Entity> EntityVector;
+  typedef std::vector<ConnectivityOrdinal> ConnectivityOrdinalVector;
+  typedef std::vector<Permutation> PermutationVector;
 
   BucketConnectivity() //default constructed BucketConnectivity implies connectivity is not used
     : m_num_connectivity(0u)
@@ -481,10 +480,6 @@ struct Counter
   static int counter;
 };
 
-// Uncomment to enable profiling
-//#define STK_MESH_ANALYZE_DYN_CONN
-
-
 // Profiling data for an individual dynamic connectivity object
 struct DynConnData
 {
@@ -544,11 +539,6 @@ struct DynConnData
   {}
 };
 
-struct DynConnMetrics
-{
-  static std::vector<DynConnData> m_data;
-};
-
 template<EntityRank TargetRank >
 class BucketConnectivity<TargetRank, DYNAMIC_CONNECTIVITY>
 {
@@ -561,13 +551,11 @@ public:
   static const EntityRank target_rank = TargetRank;
   static const ConnectivityType connectivity_type = DYNAMIC_CONNECTIVITY;
 
-  typedef typename DynamicConnectivityTagSelector<TargetRank>::type TagType;
-
-  typedef typename TrackedVectorMetaFunc<Entity,              TagType>::type              EntityVector;
-  typedef typename TrackedVectorMetaFunc<ConnectivityOrdinal, TagType>::type ConnectivityOrdinalVector;
-  typedef typename TrackedVectorMetaFunc<Permutation,         TagType>::type         PermutationVector;
-  typedef typename TrackedVectorMetaFunc<uint32_t,            TagType>::type              UInt32Vector;
-  typedef typename TrackedVectorMetaFunc<uint16_t,            TagType>::type              UInt16Vector;
+  typedef std::vector<Entity>              EntityVector;
+  typedef std::vector<ConnectivityOrdinal> ConnectivityOrdinalVector;
+  typedef std::vector<Permutation>         PermutationVector;
+  typedef std::vector<uint32_t>            UInt32Vector;
+  typedef std::vector<uint16_t>            UInt16Vector;
 
   static const unsigned chunk_size = 1u;
 
@@ -589,10 +577,6 @@ public:
     , m_rank_sensitive_lower_connectivity_cmp(*m_bulk_data)
     , m_last_capacity(0)
   {
-#ifdef STK_MESH_ANALYZE_DYN_CONN
-    DynConnMetrics::m_data.push_back(DynConnData(from_rank, target_rank));
-    m_data_idx = DynConnMetrics::m_data.size() - 1;
-#endif
   }
 
   // Entity iterator
@@ -879,7 +863,7 @@ public:
   { ThrowAssert(false); }
 
   bool has_permutation() const
-  { return TargetRank != stk::topology::NODE_RANK && m_from_rank != stk::topology::NODE_RANK; }
+  { return does_rank_have_valid_permutations(TargetRank) && does_rank_have_valid_permutations(m_from_rank); }
 
   void debug_dump(std::ostream& out) const
   {
@@ -917,9 +901,9 @@ public:
 
 private:
 
-  DynConnData& profile_data() const
+  bool does_rank_have_valid_permutations(stk::mesh::EntityRank rank) const
   {
-    return DynConnMetrics::m_data[m_data_idx];
+      return rank > stk::topology::NODE_RANK && rank < stk::topology::CONSTRAINT_RANK;
   }
 
   void copy_connectivity(unsigned from_ordinal, SelfType& to, unsigned to_ordinal)
@@ -990,26 +974,6 @@ private:
 
   void resize_and_order_by_index(unsigned capacity = 0u)
   {
-#ifdef STK_MESH_ANALYZE_DYN_CONN
-    if (capacity != 0u) {
-      ++profile_data().m_num_growths;
-    }
-
-    if (m_targets.capacity() > profile_data().m_max_capacity) {
-      profile_data().m_max_capacity = m_targets.capacity();
-      profile_data().m_total_unused_memory = m_targets.capacity() - m_total_connectivities;
-      profile_data().m_unused_capacity = m_targets.capacity() - m_targets.size();
-      profile_data().m_total_num_conn = m_total_connectivities;
-      const size_t total_unused_active = m_targets.size() - m_total_connectivities;
-      size_t total_unused_chunk_capacity = 0;
-      for (size_t i = 0, e = m_num_connectivities.size(); i < e; ++i) {
-        total_unused_chunk_capacity += num_chunks(m_num_connectivities[i]) * chunk_size - m_num_connectivities[i];
-      }
-      profile_data().m_abandoned_space = total_unused_active - total_unused_chunk_capacity;
-      profile_data().m_unused_chunk_capacity = total_unused_chunk_capacity;
-    }
-#endif
-
     //compute needed capacity
     if (capacity == 0u) {
       for( size_t i=0, e=m_indices.size(); i<e; ++i) {
@@ -1086,12 +1050,6 @@ private:
     //copy to end
     if (!last_entity_by_index)
     {
-#ifdef STK_MESH_ANALYZE_DYN_CONN
-      if (chunks_used_by_entity > 0) {
-        ++profile_data().m_num_entity_relocations;
-      }
-#endif
-
       uint32_t new_index = static_cast<uint32_t>(m_targets.size());
 
       m_targets.insert(m_targets.end(), chunks_needed_by_entity*chunk_size, invalid);
@@ -1176,7 +1134,6 @@ private:
         m_targets[i] = to;
         m_ordinals[i] = ordinal;
         if (has_permutation()) {
-          ThrowAssert(permutation == m_permutations[i-1u]);
           m_permutations[i] = permutation;
         }
         remove_connectivity(bucket_ordinal, to, ordinal);

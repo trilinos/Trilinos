@@ -85,10 +85,16 @@ namespace MueLu {
 
   public:
 
-    AmalgamationInfo(RCP<std::vector<GlobalOrdinal> > nodegids,
+    AmalgamationInfo(RCP<Array<LO> > rowTranslation,
+                     RCP<Array<LO> > colTranslation,
+                     RCP<const Map> nodeRowMap,
+                     RCP<const Map> nodeColMap,
                      RCP< const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > const &columnMap,
                      LO fullblocksize, GO offset, LO blockid, LO nStridedOffset, LO stridedblocksize) :
-                     gNodeIds_(nodegids),
+                     rowTranslation_(rowTranslation),
+                     colTranslation_(colTranslation),
+                     nodeRowMap_(nodeRowMap),
+                     nodeColMap_(nodeColMap),
                      columnMap_(columnMap),
                      fullblocksize_(fullblocksize),
                      offset_(offset),
@@ -108,8 +114,19 @@ namespace MueLu {
     //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;;
     void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
 
-    RCP<std::vector<GlobalOrdinal> >                          GetNodeGIDVector() const              { return gNodeIds_; }
-    GlobalOrdinal                                             GetNumberOfNodes() const              { return gNodeIds_.is_null() ? 0 : gNodeIds_->size(); }
+    RCP<const Map> getNodeRowMap() const { return nodeRowMap_; } //! < returns the node row map for the graph
+    RCP<const Map> getNodeColMap() const { return nodeColMap_; } //! < returns the node column map for the graph
+
+    /* @brief Translation arrays
+     *
+     * Returns translation arrays providing local node ids given local dof ids built from either
+     * the non-overlapping (unique) row map or the overlapping (non-unique) column map.
+     * The getColTranslation routine, e.g., is used for the MergeRows routine in CoalesceDropFactory.
+     */
+    //@{
+    RCP<Array<LO> > getRowTranslation() const { return rowTranslation_; }
+    RCP<Array<LO> > getColTranslation() const { return colTranslation_; }
+    //@}
 
     /*! @brief UnamalgamateAggregates
 
@@ -123,7 +140,14 @@ namespace MueLu {
      */
     Teuchos::RCP< Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > ComputeUnamalgamatedImportDofMap(const Aggregates& aggregates) const;
 
-    GO ComputeGlobalDOF(GO const &gNodeID, LO const &step=0) const;
+    /*! @brief ComputeGlobalDOF
+     * return global dof id associated with global node id gNodeID and dof index k
+     *
+     * @param (GO): global node id
+     * @param (LO): local dof index within node
+     * @return (GO): global dof id
+     */
+    GO ComputeGlobalDOF(GO const &gNodeID, LO const &k=0) const;
 
     /*! Access routines */
     
@@ -135,8 +159,13 @@ namespace MueLu {
     //! @name amalgamation information variables
     //@{
 
-    // contains global node ids on current proc (used by CoalesceDropFactory to build nodeMap)
-    RCP<std::vector<GlobalOrdinal> > gNodeIds_;
+    // arrays containing local node ids given local dof ids
+    RCP<Array<LO> > rowTranslation_;
+    RCP<Array<LO> > colTranslation_;
+
+    // node row and column map of graph (built from row and column map of A)
+    RCP<const Map> nodeRowMap_;
+    RCP<const Map> nodeColMap_;
 
     //! @brief DOF map (really column map of A)
     // keep an RCP on the column map to make sure that the map is still valid when it is used

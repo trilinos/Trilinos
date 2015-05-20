@@ -142,8 +142,8 @@ namespace Tpetra {
     typedef LocalOrdinal local_ordinal_type;
     //! This class' second template parameter; the type of global indices.
     typedef GlobalOrdinal global_ordinal_type;
-    //! This class' third template parameter; the Kokkos device type.
-    typedef DeviceType execution_space;
+    //! This class' Kokkos execution space.
+    typedef typename DeviceType::execution_space execution_space;
     /// \brief The Kokkos Node type used by this class.
     ///
     /// This type depends on the DeviceType template parameter.  In
@@ -151,12 +151,19 @@ namespace Tpetra {
     /// for backwards compatibility.
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
 
+    //! The type of the part of the sparse graph on each MPI process.
     typedef Kokkos::StaticCrsGraph<LocalOrdinal,
                                    Kokkos::LayoutLeft,
-                                   execution_space, size_t> LocalStaticCrsGraphType;
-    typedef Kokkos::View<const size_t*, execution_space> t_RowPtrs;
-    typedef Kokkos::View<      size_t*, execution_space> t_RowPtrsNC;
-    typedef Kokkos::View<LocalOrdinal*, execution_space> t_LocalOrdinal_1D;
+                                   execution_space> local_graph_type;
+    //! DEPRECATED; use local_graph_type (above) instead.
+    typedef local_graph_type LocalStaticCrsGraphType TPETRA_DEPRECATED;
+
+    //! DEPRECATED; use <tt>local_graph_type::row_map_type</tt> instead.
+    typedef typename local_graph_type::row_map_type t_RowPtrs TPETRA_DEPRECATED;
+    //! DEPRECATED; use <tt>local_graph_type::row_map_type::non_const_type</tt> instead.
+    typedef typename local_graph_type::row_map_type::non_const_type t_RowPtrsNC TPETRA_DEPRECATED;
+    //! DEPRECATED; use <tt>local_graph_type::entries_type::non_const_type</tt> instead.
+    typedef typename local_graph_type::entries_type::non_const_type t_LocalOrdinal_1D TPETRA_DEPRECATED;
 
     //! The Map specialization used by this class.
     typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, node_type> map_type;
@@ -333,8 +340,8 @@ namespace Tpetra {
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
-              const t_RowPtrs & rowPointers,
-              const t_LocalOrdinal_1D & columnIndices,
+              const typename local_graph_type::row_map_type& rowPointers,
+              const typename local_graph_type::entries_type::non_const_type& columnIndices,
               const Teuchos::RCP<Teuchos::ParameterList>& params = null);
 
     /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
@@ -382,7 +389,7 @@ namespace Tpetra {
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
-              const LocalStaticCrsGraphType& lclGraph,
+              const local_graph_type& lclGraph,
               const Teuchos::RCP<Teuchos::ParameterList>& params);
 
     /// \brief Create a cloned CrsGraph for a different Node type.
@@ -884,8 +891,8 @@ namespace Tpetra {
     /// \warning This method is intended for expert developer use
     ///   only, and should never be called by user code.
     void
-    setAllIndices (const t_RowPtrs & rowPointers,
-                   const t_LocalOrdinal_1D & columnIndices);
+    setAllIndices (const typename local_graph_type::row_map_type& rowPointers,
+                   const typename local_graph_type::entries_type::non_const_type& columnIndices);
 
     /// \brief Set the graph's data directly, using 1-D storage.
     ///
@@ -899,11 +906,14 @@ namespace Tpetra {
     setAllIndices (const Teuchos::ArrayRCP<size_t> & rowPointers,
                    const Teuchos::ArrayRCP<LocalOrdinal> & columnIndices);
 
-    //! Get an Teuchos::ArrayRCP of the row-offsets.
-    /*!  The returned buffer exists in host-memory. This method may return Teuchos::null
-      if "Delete Row Pointers" was \c true on fillComplete().
-    */
-    Teuchos::ArrayRCP<const size_t> getNodeRowPtrs() const;
+    /// \brief Get a host view of the row offsets.
+    ///
+    /// \note Please prefer getLocalGraph() to get the row offsets.
+    ///
+    /// This may return either a copy or a view of the row offsets.
+    /// In either case, it will <i>always</i> live in host memory,
+    /// never in (CUDA) device memory.
+    Teuchos::ArrayRCP<const size_t> getNodeRowPtrs () const;
 
     //! Get an Teuchos::ArrayRCP of the packed column-indices.
     /*!  The returned buffer exists in host-memory.
@@ -1555,13 +1565,13 @@ namespace Tpetra {
     ///   greater than or equal to the number of entries in the
     ///   given row).
     ///
-    /// The hint optimizes for the case of calling this method
-    /// several times with the same row (as it would be in
+    /// The hint optimizes for the case of calling this method several
+    /// times with the same row (as it would be in
     /// transformLocalValues) when several index inputs occur in
-    /// consecutive sequence.  This may occur (for example) when
-    /// there are multiple degrees of freedom per mesh point, and
-    /// users are handling the assignment of degrees of freedom to
-    /// global indices manually (rather than letting BlockMap take
+    /// consecutive sequence.  This may occur (for example) when there
+    /// are multiple degrees of freedom per mesh point, and users are
+    /// handling the assignment of degrees of freedom to global
+    /// indices manually (rather than letting some other class take
     /// care of it).  In that case, users might choose to assign the
     /// degrees of freedom for a mesh point to consecutive global
     /// indices.  Epetra implements the hint for this reason.
@@ -1623,7 +1633,10 @@ namespace Tpetra {
     ///
     /// This is only a valid representation of the local graph if the
     /// (global) graph is fill complete.
-    LocalStaticCrsGraphType getLocalGraph_Kokkos () const;
+    local_graph_type getLocalGraph () const;
+
+    //! Get the local graph (DEPRECATED: call getLocalGraph() instead).
+    TPETRA_DEPRECATED local_graph_type getLocalGraph_Kokkos () const;
 
     void fillLocalGraph (const Teuchos::RCP<Teuchos::ParameterList>& params);
 
@@ -1658,7 +1671,7 @@ namespace Tpetra {
     Teuchos::RCP<const export_type> exporter_;
 
     //! Local graph; only initialized after first fillComplete() call.
-    LocalStaticCrsGraphType k_lclGraph_;
+    local_graph_type lclGraph_;
 
     // Local and Global Counts
     // nodeNumEntries_ and nodeNumAllocated_ are required to be always consistent
@@ -1709,7 +1722,7 @@ namespace Tpetra {
     ///   - The calling process has a nonzero number of entries
     ///   - The graph has StaticProfile (1-D storage)
     ///   - The graph is locally indexed
-    t_LocalOrdinal_1D k_lclInds1D_;
+    typename local_graph_type::entries_type::non_const_type k_lclInds1D_;
 
     //! Type of the k_gblInds1D_ array of global column indices.
     typedef Kokkos::View<GlobalOrdinal*, execution_space> t_GlobalOrdinal_1D;
@@ -1757,7 +1770,7 @@ namespace Tpetra {
     ///
     /// [we may delete this to save memory on fillComplete, if "Delete
     /// Row Pointers" is specified.]
-    t_RowPtrs k_rowPtrs_;
+    typename local_graph_type::row_map_type::const_type k_rowPtrs_;
 
     //@}
     /// \name 2-D storage (DynamicProfile) data structures

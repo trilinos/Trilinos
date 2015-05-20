@@ -272,11 +272,11 @@ template parameters, but they work similiarly.  One difference is that
 Tpetra maps tend to be handled by Teuchos::RCP (reference-counted
 smart pointer) rather than copied or passed by const reference.
 Another difference is that Epetra_Map inherits from Epetra_BlockMap,
-whereas in Tpetra, Map and BlockMap do not have an inheritance
-relationship.  Epetra_Map only has a \c SameAs() predicate, whereas
-Tpetra's Map class distinguishes between "compatibility" and
-"sameness" (see above).  Finally, Epetra_Map's \c SameAs() means about
-the same thing as Tpetra's \c isSameAs().
+whereas Tpetra's Map does not inherit from a corresponding block map
+class.  Epetra_Map only has a \c SameAs() predicate, whereas Tpetra's
+Map class distinguishes between "compatibility" and "sameness" (see
+above).  Finally, Epetra_Map's \c SameAs() means about the same thing
+as Tpetra's \c isSameAs().
 
 \section Tpetra_Lesson02_Vector Tpetra::Vector
 

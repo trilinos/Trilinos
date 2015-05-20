@@ -3,5 +3,19 @@
 
 #cmakedefine HAVE_TEUCHOSCORE_CXX11
 
+#cmakedefine HAVE_TEUCHOSCORE_BOOST
+
+#cmakedefine HAVE_TEUCHOSCORE_BOOST_IS_POLYMORPHIC
+
+#cmakedefine HAVE_TEUCHOSCORE_QT
+
+/* Deprecated */
+#cmakedefine HAVE_TEUCHOSCORE_QD
+
+#cmakedefine HAVE_TEUCHOSCORE_QUADMATH
+
+/* Deprecated */
+#cmakedefine HAVE_TEUCHOSCORE_ARPREC
+
 /* ToDo: Move the TeuchosCore parts from Teuchos_config.h.in to here and git
  * rid of Teuchos_config.h.in */

@@ -170,12 +170,10 @@ void
 LOCA::AnasaziOperator::Cayley2Matrix::beginPostProcessing()
 {
   // Make sure mass matrix is up-to-date
-  NOX::Abstract::Group::ReturnType status;
-  status = grp->computeShiftedMatrix(0.0, 1.0);
+  grp->computeShiftedMatrix(0.0, 1.0);
 
   // Make sure Jacobian is up-to-date
-  status = grp->computeJacobian();
-
+  grp->computeJacobian();
 }
 
 void

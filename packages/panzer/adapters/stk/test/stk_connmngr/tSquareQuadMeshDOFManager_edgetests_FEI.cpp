@@ -54,6 +54,8 @@
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STKConnManager.hpp"
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
 #include "Intrepid_HCURL_QUAD_I1_FEM.hpp"
@@ -100,6 +102,8 @@ RCP<const panzer::IntrepidFieldPattern> buildFieldPattern()
 // quad tests
 TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager_edgetests, buildTest_quad_edge_orientations_fail)
 {
+   PHX::InitializeKokkosDevice();
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
@@ -158,6 +162,8 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager_edgetests, buildTest_quad_edge_orien
    TEST_EQUALITY(total.size(),12);
 
    dofManager->printFieldInformation(out);
+
+   PHX::FinalizeKokkosDevice();
 }
 
 }

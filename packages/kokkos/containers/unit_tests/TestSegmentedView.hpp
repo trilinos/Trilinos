@@ -1,15 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//                             Kokkos
-//         Manycore Performance-Portable Multidimensional Arrays
-//
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -583,35 +581,35 @@ namespace Impl {
       //const int dim_7 = 3;
 
       if(rank==1) {
-        typedef Kokkos::SegmentedView<Scalar*,Kokkos::LayoutLeft,ExecutionSpace> rank1_view;
+        typedef Kokkos::Experimental::SegmentedView<Scalar*,Kokkos::LayoutLeft,ExecutionSpace> rank1_view;
         run_me< rank1_view >(rank1_view("Rank1",128,size), size);
       }
       if(rank==2) {
-        typedef Kokkos::SegmentedView<Scalar**,Kokkos::LayoutLeft,ExecutionSpace> rank2_view;
+        typedef Kokkos::Experimental::SegmentedView<Scalar**,Kokkos::LayoutLeft,ExecutionSpace> rank2_view;
         run_me< rank2_view >(rank2_view("Rank2",128,size,dim_1), size);
       }
       if(rank==3) {
-        typedef Kokkos::SegmentedView<Scalar*[7][3][2],Kokkos::LayoutRight,ExecutionSpace> rank3_view;
+        typedef Kokkos::Experimental::SegmentedView<Scalar*[7][3][2],Kokkos::LayoutRight,ExecutionSpace> rank3_view;
         run_me< rank3_view >(rank3_view("Rank3",128,size), size);
       }
       if(rank==4) {
-        typedef Kokkos::SegmentedView<Scalar****,Kokkos::LayoutRight,ExecutionSpace> rank4_view;
+        typedef Kokkos::Experimental::SegmentedView<Scalar****,Kokkos::LayoutRight,ExecutionSpace> rank4_view;
         run_me< rank4_view >(rank4_view("Rank4",128,size,dim_1,dim_2,dim_3), size);
       }
       if(rank==5) {
-        typedef Kokkos::SegmentedView<Scalar*[7][3][2][3],Kokkos::LayoutLeft,ExecutionSpace> rank5_view;
+        typedef Kokkos::Experimental::SegmentedView<Scalar*[7][3][2][3],Kokkos::LayoutLeft,ExecutionSpace> rank5_view;
         run_me< rank5_view >(rank5_view("Rank5",128,size), size);
       }
       if(rank==6) {
-        typedef Kokkos::SegmentedView<Scalar*****[2],Kokkos::LayoutRight,ExecutionSpace> rank6_view;
+        typedef Kokkos::Experimental::SegmentedView<Scalar*****[2],Kokkos::LayoutRight,ExecutionSpace> rank6_view;
         run_me< rank6_view >(rank6_view("Rank6",128,size,dim_1,dim_2,dim_3,dim_4), size);
       }
       if(rank==7) {
-        typedef Kokkos::SegmentedView<Scalar*******,Kokkos::LayoutLeft,ExecutionSpace> rank7_view;
+        typedef Kokkos::Experimental::SegmentedView<Scalar*******,Kokkos::LayoutLeft,ExecutionSpace> rank7_view;
         run_me< rank7_view >(rank7_view("Rank7",128,size,dim_1,dim_2,dim_3,dim_4,dim_5,dim_6), size);
       }
       if(rank==8) {
-        typedef Kokkos::SegmentedView<Scalar*****[2][4][3],Kokkos::LayoutLeft,ExecutionSpace> rank8_view;
+        typedef Kokkos::Experimental::SegmentedView<Scalar*****[2][4][3],Kokkos::LayoutLeft,ExecutionSpace> rank8_view;
         run_me< rank8_view >(rank8_view("Rank8",128,size,dim_1,dim_2,dim_3,dim_4), size);
       }
     }
@@ -627,7 +625,7 @@ template <typename Scalar, class ExecutionSpace>
 void test_segmented_view(unsigned int size)
 {
   {
-    typedef Kokkos::SegmentedView<Scalar*****[2][4][3],Kokkos::LayoutLeft,ExecutionSpace> view_type;
+    typedef Kokkos::Experimental::SegmentedView<Scalar*****[2][4][3],Kokkos::LayoutLeft,ExecutionSpace> view_type;
     view_type a("A",128,size,7,3,2,3);
     double reference;
 

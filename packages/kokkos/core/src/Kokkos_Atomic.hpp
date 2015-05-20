@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -68,6 +68,7 @@
 #define KOKKOS_ATOMIC_HPP
 
 #include <Kokkos_Macros.hpp>
+#include <Kokkos_HostSpace.hpp>
 #include <impl/Kokkos_Traits.hpp>
 
 //----------------------------------------------------------------------------
@@ -113,6 +114,33 @@
 #endif
 
 //----------------------------------------------------------------------------
+
+// Forward decalaration of functions supporting arbitrary sized atomics
+// This is necessary since Kokkos_Atomic.hpp is internally included very early
+// through Kokkos_HostSpace.hpp as well as the allocation tracker.
+#ifdef KOKKOS_HAVE_CUDA
+namespace Kokkos {
+namespace Impl {
+/// \brief Aquire a lock for the address
+///
+/// This function tries to aquire the lock for the hash value derived
+/// from the provided ptr. If the lock is successfully aquired the
+/// function returns true. Otherwise it returns false.
+__device__ inline
+bool lock_address_cuda_space(void* ptr);
+
+/// \brief Release lock for the address
+///
+/// This function releases the lock for the hash value derived
+/// from the provided ptr. This function should only be called
+/// after previously successfully aquiring a lock with
+/// lock_address.
+__device__ inline
+void unlock_address_cuda_space(void* ptr);
+}
+}
+#endif
+
 
 namespace Kokkos {
 template <typename T>

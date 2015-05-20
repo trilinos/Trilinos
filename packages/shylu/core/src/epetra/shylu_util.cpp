@@ -51,9 +51,13 @@
 #include <assert.h>
 #include <fstream>
 
-#include "Isorropia_config.h" // Just for HAVE_MPI
+#include "shylu_util.h"
 
+#ifdef HAVE_SHYLUCORE_MPI
 #include "Epetra_MpiComm.h"
+#else
+#include "Epetra_SerialComm.h"
+#endif
 #include "Epetra_CrsMatrix.h"
 
 // EpetraExt includes
@@ -67,7 +71,6 @@
 #include "Isorropia_EpetraRedistributor.hpp"
 #include "Isorropia_EpetraPartitioner.hpp"
 
-#include "shylu_util.h"
 
 
 using namespace std;

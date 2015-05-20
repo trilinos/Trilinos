@@ -51,7 +51,7 @@
 
 #include <stk_util/parallel/ParallelComm.hpp>
 
-#include <optionParsing/getOption.h>
+#include <stk_unit_test_utils/getOption.h>
 
 typedef stk::search::IdentProc<int,int> Ident;
 typedef stk::search::Point<double> Point;

@@ -44,9 +44,9 @@
 #ifndef TPETRA_DETAILS_FIXEDHASHTABLE_DECL_HPP
 #define TPETRA_DETAILS_FIXEDHASHTABLE_DECL_HPP
 
+#include <Tpetra_Details_Hash.hpp>
 #include <Teuchos_Describable.hpp>
-#include <Tpetra_ConfigDefs.hpp>
-#include <Teuchos_ArrayRCP.hpp>
+#include <Kokkos_Core.hpp>
 
 namespace Tpetra {
 namespace Details {
@@ -56,6 +56,7 @@ namespace Details {
 ///   built-in signed or unsinged integer type.
 /// \tparam ValueType The type of the hash table's values.  This must
 ///   be a built-in signed or unsigned integer type.
+/// \tparam DeviceType Specialization of Kokkos::Device.
 ///
 /// This class implements a hash table from signed integer keys to
 /// signed integer values, where all the (key,value) pairs must be
@@ -75,15 +76,46 @@ namespace Details {
 /// only \f$O(1)\f$ memory allocation calls, rather than one for each
 /// (key,value) pair or hash bucket.  The compressed sparse row
 /// strategy may also improve locality for hash table lookups.
-template<typename KeyType, typename ValueType>
+template<class KeyType,
+         class ValueType,
+         class DeviceType>
 class FixedHashTable : public Teuchos::Describable {
+private:
+  typedef typename DeviceType::execution_space execution_space;
+  typedef typename DeviceType::memory_space memory_space;
+  typedef Kokkos::Device<execution_space, memory_space> device_type;
+
+  typedef Hash<KeyType, device_type> hash_type;
+  typedef typename hash_type::offset_type offset_type;
+
+  /// \brief Type of the array of hash table "buckets" (a.k.a. "row"
+  ///   offsets).
+  ///
+  /// We specify LayoutLeft explicitly so that the layout is the same
+  /// on all Kokkos devices.  It's a 1-D View so LayoutLeft and
+  /// LayoutRight mean the same thing, but specifying the layout
+  /// explicitly makes Kokkos::deep_copy work.
+  typedef typename Kokkos::View<const offset_type*, Kokkos::LayoutLeft,
+                                device_type> ptr_type;
+  /// \brief Type of the array of (key, value) pairs in the hash table.
+  ///
+  /// We specify LayoutLeft explicitly so that the layout is the same
+  /// on all Kokkos devices.  It's a 1-D View so LayoutLeft and
+  /// LayoutRight mean the same thing, but specifying the layout
+  /// explicitly makes Kokkos::deep_copy work.
+  typedef typename Kokkos::View<const Kokkos::pair<KeyType, ValueType>*,
+                                Kokkos::LayoutLeft, device_type> val_type;
+
 public:
+  //! Default constructor; makes an empty table.
+  FixedHashTable ();
+
   /// \brief Constructor for arbitrary keys and contiguous values
   ///   starting with zero.
   ///
   /// Add <tt>(keys[i], i)</tt> to the table,
   /// for i = 0, 1, ..., <tt>keys.size()</tt>.
-  FixedHashTable (const ArrayView<const KeyType>& keys);
+  FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys);
 
   /// \brief Constructor for arbitrary keys and contiguous values
   ///   starting with \c startingValue.
@@ -92,7 +124,7 @@ public:
   /// 0, 1, ..., <tt>keys.size()</tt>.  This version is useful if Map
   /// wants to exclude an initial sequence of contiguous GIDs from the
   /// table, and start with a given LID.
-  FixedHashTable (const ArrayView<const KeyType>& keys,
+  FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
                   const ValueType startingValue);
 
   /// \brief Constructor for arbitrary keys and arbitrary values.
@@ -100,14 +132,74 @@ public:
   /// Add <tt>(keys[i], vals[i])</tt> to the table, for i = 0, 1, ...,
   /// <tt>keys.size()</tt>.  This version is useful for applications
   /// other than Map's GID-to-LID lookup table.
-  FixedHashTable (const ArrayView<const KeyType>& keys,
-                  const ArrayView<const ValueType>& vals);
+  FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
+                  const Teuchos::ArrayView<const ValueType>& vals);
 
-  //! Copy constructor: Make a shallow copy of the data.
-  FixedHashTable (const FixedHashTable& obj);
+  template<class K, class V, class D>
+  friend class FixedHashTable;
+
+  /// \brief "Copy" constructor that takes a FixedHashTable with the
+  ///   same KeyType and ValueType, but a different DeviceType.
+  ///
+  /// This constructor makes a deep copy of the input's data if
+  /// necessary.  Anything that it doesn't need to deep copy, it
+  /// shallow copies.
+  template<class InDeviceType>
+  FixedHashTable (const FixedHashTable<KeyType, ValueType, InDeviceType>& src,
+                  typename std::enable_if<! std::is_same<DeviceType, InDeviceType>::value, int>::type* = NULL)
+  {
+    typename ptr_type::non_const_type ptr (Kokkos::ViewAllocateWithoutInitializing ("ptr"), src.ptr_.dimension_0 ());
+
+    // NOTE (mfh 01 May 2015) deep_copy works here, because regardless
+    // of the DeviceType, all FixedHashTable types use the same array
+    // layout for their internal 1-D Views.
+    Kokkos::deep_copy (ptr, src.ptr_);
+    typename val_type::non_const_type val (Kokkos::ViewAllocateWithoutInitializing ("val"), src.val_.dimension_0 ());
+    Kokkos::deep_copy (val, src.val_);
+
+    this->ptr_ = ptr;
+    this->val_ = val;
+#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+    this->rawPtr_ = ptr.ptr_on_device ();
+    this->rawVal_ = val.ptr_on_device ();
+#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+    this->invalidValue_ = src.invalidValue_;
+    this->hasDuplicateKeys_ = src.hasDuplicateKeys_;
+
+#if defined(HAVE_TPETRA_DEBUG)
+    this->check ();
+#endif // defined(HAVE_TPETRA_DEBUG)
+  }
 
   //! Get the value corresponding to the given key.
-  ValueType get (const KeyType key) const;
+  KOKKOS_INLINE_FUNCTION ValueType get (const KeyType& key) const {
+    const offset_type size = this->getSize ();
+    if (size == 0) {
+      return invalidValue_;
+    }
+    else {
+      const typename hash_type::result_type hashVal =
+        hash_type::hashFunc (key, size);
+#if defined(TPETRA_HAVE_KOKKOS_REFACTOR) || defined(HAVE_TPETRA_DEBUG)
+      const offset_type start = ptr_[hashVal];
+      const offset_type end = ptr_[hashVal+1];
+      for (offset_type k = start; k < end; ++k) {
+        if (val_[k].first == key) {
+          return val_[k].second;
+        }
+      }
+#else
+      const offset_type start = rawPtr_[hashVal];
+      const offset_type end = rawPtr_[hashVal+1];
+      for (offset_type k = start; k < end; ++k) {
+        if (rawVal_[k].first == key) {
+          return rawVal_[k].second;
+        }
+      }
+#endif // HAVE_TPETRA_DEBUG
+      return invalidValue_;
+    }
+  }
 
   //! Whether the table noticed any duplicate keys on construction.
   bool hasDuplicateKeys () const {
@@ -127,35 +219,61 @@ public:
   //@}
 
 private:
-  typedef Array<int>::size_type size_type;
-
-  /// \brief <tt>ptr_.size() == size_ + 1</tt>.
-  ///
-  /// This is redundant, but we keep it around to avoid the function
-  /// call (for <tt>ptr_.size()</tt>) in the hash table.
-  KeyType size_;
   //! Array of "row" offsets.
-  ArrayRCP<const size_type> ptr_;
+  ptr_type ptr_;
   //! Array of hash table entries.
-  ArrayRCP<const std::pair<KeyType, ValueType> > val_;
-  /// \brief <tt>rawPtr_ == ptr_.getRawPtr()</tt>.
+  val_type val_;
+
+#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  /// \brief <tt>rawPtr_ == ptr_.ptr_on_device()</tt>.
   ///
-  /// This is redundant, but we keep it around to speed up get().
-  const size_type* rawPtr_;
-  /// \brief <tt>rawVal_ == val_.getRawPtr()</tt>.
+  /// This is redundant, but we keep it around as a fair performance
+  /// comparison against the "classic" version of Tpetra.
+  const offset_type* rawPtr_;
+  /// \brief <tt>rawVal_ == val_.ptr_on_device()</tt>.
   ///
-  /// This is redundant, but we keep it around to speed up get().
-  const std::pair<KeyType, ValueType>* rawVal_;
+  /// This is redundant, but we keep it around as a fair performance
+  /// comparison against the "classic" version of Tpetra.
+  const Kokkos::pair<KeyType, ValueType>* rawVal_;
+#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+
+  /// \brief "Invalid" value of ValueType, used as a flag.
+  ///
+  /// We store this here because
+  /// Teuchos::OrdinalTraits<ValueType>::invalid() is not a CUDA
+  /// device function.  This is nonconst because otherwise the
+  /// compiler deletes the implicit copy constructor.
+  ValueType invalidValue_;
 
   //! Whether the table noticed any duplicate keys on construction.
   bool hasDuplicateKeys_;
+
+  //! The number of "buckets" in the bucket array.
+  KOKKOS_INLINE_FUNCTION offset_type getSize () const {
+    return ptr_.dimension_0 () == 0 ?
+      static_cast<offset_type> (0) :
+      static_cast<offset_type> (ptr_.dimension_0 () - 1);
+  }
+
+  //! Sanity checks; throw std::logic_error if any of them fail.
+  void check () const;
+
+  typedef Kokkos::View<const KeyType*,
+                       typename ptr_type::HostMirror::array_layout,
+                       typename ptr_type::HostMirror::execution_space,
+                       Kokkos::MemoryUnmanaged> host_input_keys_type;
+
+  typedef Kokkos::View<const ValueType*,
+                       typename ptr_type::HostMirror::array_layout,
+                       typename ptr_type::HostMirror::execution_space,
+                       Kokkos::MemoryUnmanaged> host_input_vals_type;
 
   /// \brief Allocate storage and initialize the table.
   ///
   /// Add <tt>(keys[i], startingValue + i)</tt> to the table,
   /// for i = 0, 1, ..., <tt>keys.size()</tt>.
   void
-  init (const ArrayView<const KeyType>& keys,
+  init (const host_input_keys_type& keys,
         const ValueType startingValue);
 
   /// \brief Allocate storage and initialize the table.
@@ -164,17 +282,11 @@ private:
   /// <tt>keys.size()</tt>.  This is called by the version of the
   /// constructor that takes the same arguments.
   void
-  init (const ArrayView<const KeyType>& keys,
-        const ArrayView<const ValueType>& vals);
-
-  //! The hash function; it returns \c int no matter the value type.
-  int hashFunc (const KeyType key) const;
-
-  int getRecommendedSize (const int size);
+  init (const host_input_keys_type& keys,
+        const host_input_vals_type& vals);
 };
 
 } // Details namespace
-
 } // Tpetra namespace
 
 #endif // TPETRA_DETAILS_FIXEDHASHTABLE_DECL_HPP

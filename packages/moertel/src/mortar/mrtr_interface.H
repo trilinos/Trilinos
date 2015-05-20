@@ -64,7 +64,7 @@
 
 // Trilinos includes
 #include <Epetra_CrsMatrix.h>
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
 #else
 #include <Epetra_SerialComm.h>

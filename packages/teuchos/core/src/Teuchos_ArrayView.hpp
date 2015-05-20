@@ -423,8 +423,9 @@ ArrayView<const T> ArrayView<T>::getConst() const
   debug_assert_valid_ptr();
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   return arcp_.getConst()();
-#endif
+#else
   return ArrayView<const T>(ptr_, size_);
+#endif
 }
 
 template<class T> inline

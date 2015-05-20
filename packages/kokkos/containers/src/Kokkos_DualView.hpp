@@ -1,15 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//                             Kokkos
-//         Manycore Performance-Portable Multidimensional Arrays
-//
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -474,103 +472,263 @@ public:
   //@}
 };
 
+} // namespace Kokkos
 //
 // Partial specializations of Kokkos::subview() for DualView objects.
 //
 
-template< class DstViewType ,
-          class T , class L , class D , class M ,
+namespace Kokkos {
+namespace Impl {
+
+template< class SrcDataType , class SrcArg1Type , class SrcArg2Type , class SrcArg3Type
+        , class SubArg0_type , class SubArg1_type , class SubArg2_type , class SubArg3_type
+        , class SubArg4_type , class SubArg5_type , class SubArg6_type , class SubArg7_type
+        >
+struct ViewSubview< DualView< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type  >
+                  , SubArg0_type , SubArg1_type , SubArg2_type , SubArg3_type
+                  , SubArg4_type , SubArg5_type , SubArg6_type , SubArg7_type >
+{
+private:
+
+  typedef DualView< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type >  SrcViewType ;
+
+  enum { V0 = Impl::is_same< SubArg0_type , void >::value ? 1 : 0 };
+  enum { V1 = Impl::is_same< SubArg1_type , void >::value ? 1 : 0 };
+  enum { V2 = Impl::is_same< SubArg2_type , void >::value ? 1 : 0 };
+  enum { V3 = Impl::is_same< SubArg3_type , void >::value ? 1 : 0 };
+  enum { V4 = Impl::is_same< SubArg4_type , void >::value ? 1 : 0 };
+  enum { V5 = Impl::is_same< SubArg5_type , void >::value ? 1 : 0 };
+  enum { V6 = Impl::is_same< SubArg6_type , void >::value ? 1 : 0 };
+  enum { V7 = Impl::is_same< SubArg7_type , void >::value ? 1 : 0 };
+
+  // The source view rank must be equal to the input argument rank
+  // Once a void argument is encountered all subsequent arguments must be void.
+  enum { InputRank =
+    Impl::StaticAssert<( SrcViewType::rank ==
+                         ( V0 ? 0 : (
+                           V1 ? 1 : (
+                           V2 ? 2 : (
+                           V3 ? 3 : (
+                           V4 ? 4 : (
+                           V5 ? 5 : (
+                           V6 ? 6 : (
+                           V7 ? 7 : 8 ))))))) ))
+                       &&
+                       ( SrcViewType::rank ==
+                         ( 8 - ( V0 + V1 + V2 + V3 + V4 + V5 + V6 + V7 ) ) )
+    >::value ? SrcViewType::rank : 0 };
+
+  enum { R0 = Impl::ViewOffsetRange< SubArg0_type >::is_range ? 1 : 0 };
+  enum { R1 = Impl::ViewOffsetRange< SubArg1_type >::is_range ? 1 : 0 };
+  enum { R2 = Impl::ViewOffsetRange< SubArg2_type >::is_range ? 1 : 0 };
+  enum { R3 = Impl::ViewOffsetRange< SubArg3_type >::is_range ? 1 : 0 };
+  enum { R4 = Impl::ViewOffsetRange< SubArg4_type >::is_range ? 1 : 0 };
+  enum { R5 = Impl::ViewOffsetRange< SubArg5_type >::is_range ? 1 : 0 };
+  enum { R6 = Impl::ViewOffsetRange< SubArg6_type >::is_range ? 1 : 0 };
+  enum { R7 = Impl::ViewOffsetRange< SubArg7_type >::is_range ? 1 : 0 };
+
+  enum { OutputRank = unsigned(R0) + unsigned(R1) + unsigned(R2) + unsigned(R3)
+                    + unsigned(R4) + unsigned(R5) + unsigned(R6) + unsigned(R7) };
+
+  // Reverse
+  enum { R0_rev = 0 == InputRank ? 0u : (
+                  1 == InputRank ? unsigned(R0) : (
+                  2 == InputRank ? unsigned(R1) : (
+                  3 == InputRank ? unsigned(R2) : (
+                  4 == InputRank ? unsigned(R3) : (
+                  5 == InputRank ? unsigned(R4) : (
+                  6 == InputRank ? unsigned(R5) : (
+                  7 == InputRank ? unsigned(R6) : unsigned(R7) ))))))) };
+
+  typedef typename SrcViewType::array_layout  SrcViewLayout ;
+
+  // Choose array layout, attempting to preserve original layout if at all possible.
+  typedef typename Impl::if_c<
+     ( // Same Layout IF
+       // OutputRank 0
+       ( OutputRank == 0 )
+       ||
+       // OutputRank 1 or 2, InputLayout Left, Interval 0
+       // because single stride one or second index has a stride.
+       ( OutputRank <= 2 && R0 && Impl::is_same<SrcViewLayout,LayoutLeft>::value )
+       ||
+       // OutputRank 1 or 2, InputLayout Right, Interval [InputRank-1]
+       // because single stride one or second index has a stride.
+       ( OutputRank <= 2 && R0_rev && Impl::is_same<SrcViewLayout,LayoutRight>::value )
+     ), SrcViewLayout , Kokkos::LayoutStride >::type OutputViewLayout ;
+
+  // Choose data type as a purely dynamic rank array to accomodate a runtime range.
+  typedef typename Impl::if_c< OutputRank == 0 , typename SrcViewType::value_type ,
+          typename Impl::if_c< OutputRank == 1 , typename SrcViewType::value_type *,
+          typename Impl::if_c< OutputRank == 2 , typename SrcViewType::value_type **,
+          typename Impl::if_c< OutputRank == 3 , typename SrcViewType::value_type ***,
+          typename Impl::if_c< OutputRank == 4 , typename SrcViewType::value_type ****,
+          typename Impl::if_c< OutputRank == 5 , typename SrcViewType::value_type *****,
+          typename Impl::if_c< OutputRank == 6 , typename SrcViewType::value_type ******,
+          typename Impl::if_c< OutputRank == 7 , typename SrcViewType::value_type *******,
+                                                 typename SrcViewType::value_type ********
+  >::type >::type >::type >::type >::type >::type >::type >::type  OutputData ;
+
+  // Choose space.
+  // If the source view's template arg1 or arg2 is a space then use it,
+  // otherwise use the source view's execution space.
+
+  typedef typename Impl::if_c< Impl::is_space< SrcArg1Type >::value , SrcArg1Type ,
+          typename Impl::if_c< Impl::is_space< SrcArg2Type >::value , SrcArg2Type , typename SrcViewType::execution_space
+  >::type >::type OutputSpace ;
+
+public:
+
+  // If keeping the layout then match non-data type arguments
+  // else keep execution space and memory traits.
+  typedef typename
+    Impl::if_c< Impl::is_same< SrcViewLayout , OutputViewLayout >::value
+              , Kokkos::DualView< OutputData , SrcArg1Type , SrcArg2Type , SrcArg3Type >
+              , Kokkos::DualView< OutputData , OutputViewLayout , OutputSpace
+                            , typename SrcViewType::memory_traits >
+              >::type  type ;
+};
+
+} /* namespace Impl */
+} /* namespace Kokkos */
+
+namespace Kokkos {
+
+template< class D , class A1 , class A2 , class A3 ,
           class ArgType0 >
-DstViewType
-subview( const DualView<T,L,D,M> & src ,
+typename Impl::ViewSubview< DualView<D,A1,A2,A3>
+                          , ArgType0 , void , void , void
+                          , void , void , void , void
+                          >::type
+subview( const DualView<D,A1,A2,A3> & src ,
          const ArgType0 & arg0 )
 {
+  typedef typename
+    Impl::ViewSubview< DualView<D,A1,A2,A3>
+                 , ArgType0 , void , void , void
+                 , void , void , void , void
+                 >::type
+      DstViewType ;
   DstViewType sub_view;
-  sub_view.d_view = subview<typename DstViewType::t_dev>(src.d_view,arg0);
-  sub_view.h_view = subview<typename DstViewType::t_host>(src.h_view,arg0);
+  sub_view.d_view = subview(src.d_view,arg0);
+  sub_view.h_view = subview(src.h_view,arg0);
   sub_view.modified_device = src.modified_device;
   sub_view.modified_host = src.modified_host;
   return sub_view;
 }
 
 
-template< class DstViewType ,
-          class T , class L , class D , class M ,
+template< class D , class A1 , class A2 , class A3 ,
           class ArgType0 , class ArgType1 >
-DstViewType
-subview( const DualView<T,L,D,M> & src ,
+typename Impl::ViewSubview< DualView<D,A1,A2,A3>
+                          , ArgType0 , ArgType1 , void , void
+                          , void , void , void , void
+                          >::type
+subview( const DualView<D,A1,A2,A3> & src ,
          const ArgType0 & arg0 ,
          const ArgType1 & arg1 )
 {
+  typedef typename
+    Impl::ViewSubview< DualView<D,A1,A2,A3>
+                 , ArgType0 , ArgType1 , void , void
+                 , void , void , void , void
+                 >::type
+      DstViewType ;
   DstViewType sub_view;
-  sub_view.d_view = subview<typename DstViewType::t_dev>(src.d_view,arg0,arg1);
-  sub_view.h_view = subview<typename DstViewType::t_host>(src.h_view,arg0,arg1);
+  sub_view.d_view = subview(src.d_view,arg0,arg1);
+  sub_view.h_view = subview(src.h_view,arg0,arg1);
   sub_view.modified_device = src.modified_device;
   sub_view.modified_host = src.modified_host;
   return sub_view;
 }
 
-template< class DstViewType ,
-          class T , class L , class D , class M ,
+template< class D , class A1 , class A2 , class A3 ,
           class ArgType0 , class ArgType1 , class ArgType2 >
-DstViewType
-subview( const DualView<T,L,D,M> & src ,
+typename Impl::ViewSubview< DualView<D,A1,A2,A3>
+                          , ArgType0 , ArgType1 , ArgType2 , void
+                          , void , void , void , void
+                          >::type
+subview( const DualView<D,A1,A2,A3> & src ,
          const ArgType0 & arg0 ,
          const ArgType1 & arg1 ,
          const ArgType2 & arg2 )
 {
+  typedef typename
+    Impl::ViewSubview< DualView<D,A1,A2,A3>
+                 , ArgType0 , ArgType1 , ArgType2 , void
+                 , void , void , void , void
+                 >::type
+      DstViewType ;
   DstViewType sub_view;
-  sub_view.d_view = subview<typename DstViewType::t_dev>(src.d_view,arg0,arg1,arg2);
-  sub_view.h_view = subview<typename DstViewType::t_host>(src.h_view,arg0,arg1,arg2);
+  sub_view.d_view = subview(src.d_view,arg0,arg1,arg2);
+  sub_view.h_view = subview(src.h_view,arg0,arg1,arg2);
   sub_view.modified_device = src.modified_device;
   sub_view.modified_host = src.modified_host;
   return sub_view;
 }
 
-template< class DstViewType ,
-          class T , class L , class D , class M ,
+template< class D , class A1 , class A2 , class A3 ,
           class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 >
-DstViewType
-subview( const DualView<T,L,D,M> & src ,
+typename Impl::ViewSubview< DualView<D,A1,A2,A3>
+                          , ArgType0 , ArgType1 , ArgType2 , ArgType3
+                          , void , void , void , void
+                          >::type
+subview( const DualView<D,A1,A2,A3> & src ,
          const ArgType0 & arg0 ,
          const ArgType1 & arg1 ,
          const ArgType2 & arg2 ,
          const ArgType3 & arg3 )
 {
+  typedef typename
+    Impl::ViewSubview< DualView<D,A1,A2,A3>
+                 , ArgType0 , ArgType1 , ArgType2 , ArgType3
+                 , void , void , void , void
+                 >::type
+      DstViewType ;
   DstViewType sub_view;
-  sub_view.d_view = subview<typename DstViewType::t_dev>(src.d_view,arg0,arg1,arg2,arg3);
-  sub_view.h_view = subview<typename DstViewType::t_host>(src.h_view,arg0,arg1,arg2,arg3);
+  sub_view.d_view = subview(src.d_view,arg0,arg1,arg2,arg3);
+  sub_view.h_view = subview(src.h_view,arg0,arg1,arg2,arg3);
   sub_view.modified_device = src.modified_device;
   sub_view.modified_host = src.modified_host;
   return sub_view;
 }
 
-template< class DstViewType ,
-          class T , class L , class D , class M ,
+template< class D , class A1 , class A2 , class A3 ,
           class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
           class ArgType4 >
-DstViewType
-subview( const DualView<T,L,D,M> & src ,
+typename Impl::ViewSubview< DualView<D,A1,A2,A3>
+                          , ArgType0 , ArgType1 , ArgType2 , ArgType3
+                          , ArgType4 , void , void , void
+                          >::type
+subview( const DualView<D,A1,A2,A3> & src ,
          const ArgType0 & arg0 ,
          const ArgType1 & arg1 ,
          const ArgType2 & arg2 ,
          const ArgType3 & arg3 ,
          const ArgType4 & arg4 )
 {
+  typedef typename
+    Impl::ViewSubview< DualView<D,A1,A2,A3>
+                 , ArgType0 , ArgType1 , ArgType2 , ArgType3
+                 , ArgType4 , void , void ,void
+                 >::type
+      DstViewType ;
   DstViewType sub_view;
-  sub_view.d_view = subview<typename DstViewType::t_dev>(src.d_view,arg0,arg1,arg2,arg3,arg4);
-  sub_view.h_view = subview<typename DstViewType::t_host>(src.h_view,arg0,arg1,arg2,arg3,arg4);
+  sub_view.d_view = subview(src.d_view,arg0,arg1,arg2,arg3,arg4);
+  sub_view.h_view = subview(src.h_view,arg0,arg1,arg2,arg3,arg4);
   sub_view.modified_device = src.modified_device;
   sub_view.modified_host = src.modified_host;
   return sub_view;
 }
 
-template< class DstViewType ,
-          class T , class L , class D , class M ,
+template< class D , class A1 , class A2 , class A3 ,
           class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
           class ArgType4 , class ArgType5 >
-DstViewType
-subview( const DualView<T,L,D,M> & src ,
+typename Impl::ViewSubview< DualView<D,A1,A2,A3>
+                          , ArgType0 , ArgType1 , ArgType2 , ArgType3
+                          , ArgType4 , ArgType5 , void , void
+                          >::type
+subview( const DualView<D,A1,A2,A3> & src ,
          const ArgType0 & arg0 ,
          const ArgType1 & arg1 ,
          const ArgType2 & arg2 ,
@@ -578,20 +736,28 @@ subview( const DualView<T,L,D,M> & src ,
          const ArgType4 & arg4 ,
          const ArgType5 & arg5 )
 {
+  typedef typename
+    Impl::ViewSubview< DualView<D,A1,A2,A3>
+                 , ArgType0 , ArgType1 , ArgType2 , ArgType3
+                 , ArgType4 , ArgType5 , void , void
+                 >::type
+      DstViewType ;
   DstViewType sub_view;
-  sub_view.d_view = subview<typename DstViewType::t_dev>(src.d_view,arg0,arg1,arg2,arg3,arg4,arg5);
-  sub_view.h_view = subview<typename DstViewType::t_host>(src.h_view,arg0,arg1,arg2,arg3,arg4,arg5);
+  sub_view.d_view = subview(src.d_view,arg0,arg1,arg2,arg3,arg4,arg5);
+  sub_view.h_view = subview(src.h_view,arg0,arg1,arg2,arg3,arg4,arg5);
   sub_view.modified_device = src.modified_device;
   sub_view.modified_host = src.modified_host;
   return sub_view;
 }
 
-template< class DstViewType ,
-          class T , class L , class D , class M ,
+template< class D , class A1 , class A2 , class A3 ,
           class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
           class ArgType4 , class ArgType5 , class ArgType6 >
-DstViewType
-subview( const DualView<T,L,D,M> & src ,
+typename Impl::ViewSubview< DualView<D,A1,A2,A3>
+                          , ArgType0 , ArgType1 , ArgType2 , ArgType3
+                          , ArgType4 , ArgType5 , ArgType6 , void
+                          >::type
+subview( const DualView<D,A1,A2,A3> & src ,
          const ArgType0 & arg0 ,
          const ArgType1 & arg1 ,
          const ArgType2 & arg2 ,
@@ -600,20 +766,28 @@ subview( const DualView<T,L,D,M> & src ,
          const ArgType5 & arg5 ,
          const ArgType6 & arg6 )
 {
+  typedef typename
+    Impl::ViewSubview< DualView<D,A1,A2,A3>
+                 , ArgType0 , ArgType1 , ArgType2 , ArgType3
+                 , ArgType4 , ArgType5 , ArgType6 , void
+                 >::type
+      DstViewType ;
   DstViewType sub_view;
-  sub_view.d_view = subview<typename DstViewType::t_dev>(src.d_view,arg0,arg1,arg2,arg3,arg4,arg5,arg6);
-  sub_view.h_view = subview<typename DstViewType::t_host>(src.h_view,arg0,arg1,arg2,arg3,arg4,arg5,arg6);
+  sub_view.d_view = subview(src.d_view,arg0,arg1,arg2,arg3,arg4,arg5,arg6);
+  sub_view.h_view = subview(src.h_view,arg0,arg1,arg2,arg3,arg4,arg5,arg6);
   sub_view.modified_device = src.modified_device;
   sub_view.modified_host = src.modified_host;
   return sub_view;
 }
 
-template< class DstViewType ,
-          class T , class L , class D , class M ,
+template< class D , class A1 , class A2 , class A3 ,
           class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
           class ArgType4 , class ArgType5 , class ArgType6 , class ArgType7 >
-DstViewType
-subview( const DualView<T,L,D,M> & src ,
+typename Impl::ViewSubview< DualView<D,A1,A2,A3>
+                          , ArgType0 , ArgType1 , ArgType2 , ArgType3
+                          , ArgType4 , ArgType5 , ArgType6 , ArgType7
+                          >::type
+subview( const DualView<D,A1,A2,A3> & src ,
          const ArgType0 & arg0 ,
          const ArgType1 & arg1 ,
          const ArgType2 & arg2 ,
@@ -623,9 +797,15 @@ subview( const DualView<T,L,D,M> & src ,
          const ArgType6 & arg6 ,
          const ArgType7 & arg7 )
 {
+  typedef typename
+    Impl::ViewSubview< DualView<D,A1,A2,A3>
+                 , ArgType0 , ArgType1 , ArgType2 , ArgType3
+                 , ArgType4 , ArgType5 , ArgType6 , ArgType7
+                 >::type
+      DstViewType ;
   DstViewType sub_view;
-  sub_view.d_view = subview<typename DstViewType::t_dev>(src.d_view,arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7);
-  sub_view.h_view = subview<typename DstViewType::t_host>(src.h_view,arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7);
+  sub_view.d_view = subview(src.d_view,arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7);
+  sub_view.h_view = subview(src.h_view,arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7);
   sub_view.modified_device = src.modified_device;
   sub_view.modified_host = src.modified_host;
   return sub_view;

@@ -47,7 +47,9 @@
     \author Created by P. Bochev, H. Carter Edwards and D. Ridzal
 */
 #include "Teuchos_Time.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Shards_CellTopology.hpp"
+#include <limits>
 
 
 using namespace std;
@@ -123,10 +125,10 @@ int main(int argc, char *argv[]) {
   }
   
   // Define variables used in tests
-  unsigned vertexOrd;
-  unsigned subcNode;
-  unsigned subcCount;
-  unsigned cellDim;
+  unsigned vertexOrd = std::numeric_limits<unsigned>::max();
+  unsigned subcNode = std::numeric_limits<unsigned>::max();
+  unsigned subcCount = std::numeric_limits<unsigned>::max();
+  unsigned cellDim = std::numeric_limits<unsigned>::max();
   
   /*************************************************************************************************
     *                                                                                              *
@@ -338,6 +340,12 @@ int main(int argc, char *argv[]) {
     timer.stop();
     timerResults[3][2] = timer.totalElapsedTime();
   }
+
+  // fix compiler warnings: set but unused
+  TEUCHOS_ASSERT(vertexOrd < std::numeric_limits<unsigned>::max());
+  TEUCHOS_ASSERT(subcNode < std::numeric_limits<unsigned>::max());
+  TEUCHOS_ASSERT(subcCount < std::numeric_limits<unsigned>::max());
+  TEUCHOS_ASSERT(cellDim < std::numeric_limits<unsigned>::max());
 
   std::cout \
     << "===============================================================================\n"      

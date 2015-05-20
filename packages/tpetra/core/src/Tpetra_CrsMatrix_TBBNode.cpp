@@ -54,7 +54,7 @@
 #include "Tpetra_CrsMatrix_def.hpp"
 
 #define TPETRA_CRSMATRIX_TBBNODE_INSTANT( SCALAR, LO, GO ) \
-  TPETRA_CRSMATRIX_INSTANT( SCALAR, LO, GO, KokkosClassic::TBBNode )
+  TPETRA_CRSMATRIX_INSTANT( SCALAR, LO, GO, KokkosClassic::DoNotUse::TBBNode )
 
 namespace Tpetra {
 

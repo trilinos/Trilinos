@@ -322,28 +322,6 @@ public:
                             node_type> row_matrix_type;
 
   //@}
-  // \name Deprecated typedefs
-  //@{
-
-  //! Preserved only for backwards compatibility.  Please use "scalar_type".
-  TEUCHOS_DEPRECATED typedef typename MatrixType::scalar_type         Scalar;
-
-  //! Preserved only for backwards compatibility.  Please use "local_ordinal_type".
-  TEUCHOS_DEPRECATED typedef typename MatrixType::local_ordinal_type  LocalOrdinal;
-
-  //! Preserved only for backwards compatibility.  Please use "global_ordinal_type".
-  TEUCHOS_DEPRECATED typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
-
-  //! Preserved only for backwards compatibility.  Please use "node_type".
-  TEUCHOS_DEPRECATED typedef typename MatrixType::node_type           Node;
-
-  //! Preserved only for backwards compatibility.  Please use "magnitude_type".
-  TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitudeType;
-
-  //! Preserved only for backwards compatibility.  Please use "row_matrix_type".
-  TEUCHOS_DEPRECATED typedef typename Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type>  LocalMatrixType;
-
-  //@}
   // \name Constructors and destructor
   //@{
 
@@ -490,9 +468,6 @@ public:
   ///     parameters for the subdomain solver.  If not provided, the
   ///     subdomain solver will use its specific default parameters.
   ///     See discussion below.
-  ///   - "schwarz: compute condest" (\c bool): If true, estimate the
-  ///     condition number each time compute() is called.  Default is
-  ///     false.
   ///   - "schwarz: combine mode" (\c std::string): The rule for
   ///     combining incoming data with existing data in overlap
   ///     regions.  Valid values include "ADD", "INSERT", "REPLACE",
@@ -553,7 +528,7 @@ public:
   /// this parameter, the following procedure specifies the default:
   /// <ol>
   /// <li> If <tt>LocalInverseType</tt> is just Preconditioner, then
-  ///      this class uses a default, which is currently "ILUT". </il>
+  ///      this class uses a default, which is currently "ILUT". </li>
   /// <li> If <tt>LocalInverseType</tt> is a concrete Preconditioner
   ///      subclass, and if that subclass is in the above supported
   ///      list of subdomain solver types, then this class uses that
@@ -682,26 +657,6 @@ public:
   //! Returns true if the  preconditioner has been successfully computed, false otherwise.
   virtual bool isComputed() const;
 
-  /// \brief Compute the condition number estimate and return its value.
-  ///
-  /// \warning This method is DEPRECATED.  It was inherited from
-  ///   Ifpack, and Ifpack never clearly stated what this method
-  ///   computes.  Furthermore, Ifpack's method just estimates the
-  ///   condition number of the matrix A, and ignores the
-  ///   preconditioner -- which is probably not what users thought it
-  ///   did.  If there is sufficient interest, we might reintroduce
-  ///   this method with a different meaning and a better algorithm.
-  virtual magnitude_type TEUCHOS_DEPRECATED
-  computeCondEst (CondestType CT = Ifpack2::Cheap,
-                  local_ordinal_type MaxIters = 1550,
-                  magnitude_type Tol = 1e-9,
-                  const Teuchos::Ptr<const row_matrix_type> &Matrix = Teuchos::null);
-
-  /// \brief Return the computed condition number estimate, or -1 if not computed.
-  ///
-  /// \warning This method is DEPRECATED.  See warning for computeCondEst().
-  virtual magnitude_type TEUCHOS_DEPRECATED getCondEst() const;
-
   //! Returns the number of calls to initialize().
   virtual int getNumInitialize() const;
 
@@ -763,6 +718,9 @@ private:
 
   //! Set up the localized matrix and the singleton filter.
   void setup ();
+
+  //! Local portion of the apply.
+  void localApply(MV &OverlappingX, MV &OverlappingY) const;
 
   /// \brief Whether the current ParameterList has a parameter for the
   ///   inner preconditioner's name.
@@ -860,10 +818,6 @@ private:
 
   //! Combine mode for off-process elements (only if overlap is used)
   Tpetra::CombineMode CombineMode_;
-  //! Contains the estimated condition number.
-  magnitude_type Condest_;
-  //! If \c true, compute the condition number estimate each time Compute() is called.
-  bool ComputeCondest_;
   //! If \c true, reorder the local matrix.
   bool UseReordering_;
   //! Record reordering for output purposes.
@@ -874,6 +828,10 @@ private:
   bool FilterSingletons_;
   //! Matrix from which singleton rows have been filtered.
   Teuchos::RCP<SingletonFilter<row_matrix_type> > SingletonMatrix_;
+  //! The number of iterations to be done.
+  int NumIterations_;
+  //! True if and only if the initial guess is zero.
+  bool ZeroStartingSolution_;
 
   //! The total number of successful calls to initialize().
   int NumInitialize_;

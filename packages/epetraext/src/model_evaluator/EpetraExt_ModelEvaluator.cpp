@@ -83,25 +83,25 @@ bool ModelEvaluator::InArgs::supports(EInArgs_p_mp arg, int l) const
   return supports_p_mp_[l];
 }
 
-void ModelEvaluator::InArgs::_setSupports( EInArgsMembers arg, bool supports )
+void ModelEvaluator::InArgs::_setSupports( EInArgsMembers arg, bool supportsIt )
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     int(arg)>=NUM_E_IN_ARGS_MEMBERS || int(arg) < 0,std::logic_error
     ,"model = \'"<<modelEvalDescription_<<"\':Error, arg="<<toString(arg)<<" is invalid!"
     );
-  supports_[arg] = supports;
+  supports_[arg] = supportsIt;
 }
 
-void ModelEvaluator::InArgs::_setSupports(EInArgs_p_sg arg, int l, bool supports)
+void ModelEvaluator::InArgs::_setSupports(EInArgs_p_sg arg, int l, bool supportsIt)
 {
   assert_l(l);
-  supports_p_sg_[l] = supports;
+  supports_p_sg_[l] = supportsIt;
 }
 
-void ModelEvaluator::InArgs::_setSupports(EInArgs_p_mp arg, int l, bool supports)
+void ModelEvaluator::InArgs::_setSupports(EInArgs_p_mp arg, int l, bool supportsIt)
 {
   assert_l(l);
-  supports_p_mp_[l] = supports;
+  supports_p_mp_[l] = supportsIt;
 }
 
 
@@ -333,89 +333,89 @@ bool ModelEvaluator::OutArgs::isFailed() const
 }
 
 
-void ModelEvaluator::OutArgs::_setModelEvalDescription( const std::string &modelEvalDescription )
+void ModelEvaluator::OutArgs::_setModelEvalDescription( const std::string &theModelEvalDescription )
 {
-  modelEvalDescription_ = modelEvalDescription;
+  modelEvalDescription_ = theModelEvalDescription;
 }
 
 
-void ModelEvaluator::OutArgs::_set_Np_Ng(int Np, int Ng)
+void ModelEvaluator::OutArgs::_set_Np_Ng(int Np_in, int Ng_in)
 {
-  if(Np) {
-    supports_DfDp_.resize(Np);
-    DfDp_.resize(Np);
-    std::fill_n(DfDp_.begin(),Np,Derivative());
-    DfDp_properties_.resize(Np);
-    std::fill_n(DfDp_properties_.begin(),Np,DerivativeProperties());
+  if(Np_in) {
+    supports_DfDp_.resize(Np_in);
+    DfDp_.resize(Np_in);
+    std::fill_n(DfDp_.begin(),Np_in,Derivative());
+    DfDp_properties_.resize(Np_in);
+    std::fill_n(DfDp_properties_.begin(),Np_in,DerivativeProperties());
 
-    supports_DfDp_sg_.resize(Np);
-    DfDp_sg_.resize(Np);
-    std::fill_n(DfDp_sg_.begin(),Np,SGDerivative());
-    DfDp_sg_properties_.resize(Np);
-    std::fill_n(DfDp_sg_properties_.begin(),Np,DerivativeProperties());
+    supports_DfDp_sg_.resize(Np_in);
+    DfDp_sg_.resize(Np_in);
+    std::fill_n(DfDp_sg_.begin(),Np_in,SGDerivative());
+    DfDp_sg_properties_.resize(Np_in);
+    std::fill_n(DfDp_sg_properties_.begin(),Np_in,DerivativeProperties());
 
-    supports_DfDp_mp_.resize(Np);
-    DfDp_mp_.resize(Np);
-    std::fill_n(DfDp_mp_.begin(),Np,MPDerivative());
-    DfDp_mp_properties_.resize(Np);
-    std::fill_n(DfDp_mp_properties_.begin(),Np,DerivativeProperties());
+    supports_DfDp_mp_.resize(Np_in);
+    DfDp_mp_.resize(Np_in);
+    std::fill_n(DfDp_mp_.begin(),Np_in,MPDerivative());
+    DfDp_mp_properties_.resize(Np_in);
+    std::fill_n(DfDp_mp_properties_.begin(),Np_in,DerivativeProperties());
   }
-  if(Ng) {
-    g_.resize(Ng);
-    supports_DgDx_dot_.resize(Ng);
-    DgDx_dot_.resize(Ng);
-    std::fill_n(DgDx_dot_.begin(),Ng,Derivative());
-    DgDx_dot_properties_.resize(Ng);
-    std::fill_n(DgDx_dot_properties_.begin(),Ng,DerivativeProperties());
-    supports_DgDx_dotdot_.resize(Ng);
-    DgDx_dotdot_.resize(Ng);
-    std::fill_n(DgDx_dotdot_.begin(),Ng,Derivative());
-    DgDx_dotdot_properties_.resize(Ng);
-    std::fill_n(DgDx_dotdot_properties_.begin(),Ng,DerivativeProperties());
-    supports_DgDx_.resize(Ng);
-    DgDx_.resize(Ng);
-    std::fill_n(DgDx_.begin(),Ng,Derivative());
-    DgDx_properties_.resize(Ng);
-    std::fill_n(DgDx_properties_.begin(),Ng,DerivativeProperties());
+  if(Ng_in) {
+    g_.resize(Ng_in);
+    supports_DgDx_dot_.resize(Ng_in);
+    DgDx_dot_.resize(Ng_in);
+    std::fill_n(DgDx_dot_.begin(),Ng_in,Derivative());
+    DgDx_dot_properties_.resize(Ng_in);
+    std::fill_n(DgDx_dot_properties_.begin(),Ng_in,DerivativeProperties());
+    supports_DgDx_dotdot_.resize(Ng_in);
+    DgDx_dotdot_.resize(Ng_in);
+    std::fill_n(DgDx_dotdot_.begin(),Ng_in,Derivative());
+    DgDx_dotdot_properties_.resize(Ng_in);
+    std::fill_n(DgDx_dotdot_properties_.begin(),Ng_in,DerivativeProperties());
+    supports_DgDx_.resize(Ng_in);
+    DgDx_.resize(Ng_in);
+    std::fill_n(DgDx_.begin(),Ng_in,Derivative());
+    DgDx_properties_.resize(Ng_in);
+    std::fill_n(DgDx_properties_.begin(),Ng_in,DerivativeProperties());
 
-    g_sg_.resize(Ng);
-    supports_g_sg_.resize(Ng);
-    supports_DgDx_dot_sg_.resize(Ng);
-    DgDx_dot_sg_.resize(Ng);
-    std::fill_n(DgDx_dot_sg_.begin(),Ng,SGDerivative());
-    DgDx_dot_sg_properties_.resize(Ng);
-    std::fill_n(DgDx_dot_sg_properties_.begin(),Ng,DerivativeProperties());
-    supports_DgDx_dotdot_sg_.resize(Ng);
-    DgDx_dotdot_sg_.resize(Ng);
-    std::fill_n(DgDx_dotdot_sg_.begin(),Ng,SGDerivative());
-    DgDx_dotdot_sg_properties_.resize(Ng);
-    std::fill_n(DgDx_dotdot_sg_properties_.begin(),Ng,DerivativeProperties());
-    supports_DgDx_sg_.resize(Ng);
-    DgDx_sg_.resize(Ng);
-    std::fill_n(DgDx_sg_.begin(),Ng,SGDerivative());
-    DgDx_sg_properties_.resize(Ng);
-    std::fill_n(DgDx_sg_properties_.begin(),Ng,DerivativeProperties());
+    g_sg_.resize(Ng_in);
+    supports_g_sg_.resize(Ng_in);
+    supports_DgDx_dot_sg_.resize(Ng_in);
+    DgDx_dot_sg_.resize(Ng_in);
+    std::fill_n(DgDx_dot_sg_.begin(),Ng_in,SGDerivative());
+    DgDx_dot_sg_properties_.resize(Ng_in);
+    std::fill_n(DgDx_dot_sg_properties_.begin(),Ng_in,DerivativeProperties());
+    supports_DgDx_dotdot_sg_.resize(Ng_in);
+    DgDx_dotdot_sg_.resize(Ng_in);
+    std::fill_n(DgDx_dotdot_sg_.begin(),Ng_in,SGDerivative());
+    DgDx_dotdot_sg_properties_.resize(Ng_in);
+    std::fill_n(DgDx_dotdot_sg_properties_.begin(),Ng_in,DerivativeProperties());
+    supports_DgDx_sg_.resize(Ng_in);
+    DgDx_sg_.resize(Ng_in);
+    std::fill_n(DgDx_sg_.begin(),Ng_in,SGDerivative());
+    DgDx_sg_properties_.resize(Ng_in);
+    std::fill_n(DgDx_sg_properties_.begin(),Ng_in,DerivativeProperties());
 
-    g_mp_.resize(Ng);
-    supports_g_mp_.resize(Ng);
-    supports_DgDx_dot_mp_.resize(Ng);
-    DgDx_dot_mp_.resize(Ng);
-    std::fill_n(DgDx_dot_mp_.begin(),Ng,MPDerivative());
-    DgDx_dot_mp_properties_.resize(Ng);
-    std::fill_n(DgDx_dot_mp_properties_.begin(),Ng,DerivativeProperties());
-    supports_DgDx_dotdot_mp_.resize(Ng);
-    DgDx_dotdot_mp_.resize(Ng);
-    std::fill_n(DgDx_dotdot_mp_.begin(),Ng,MPDerivative());
-    DgDx_dotdot_mp_properties_.resize(Ng);
-    std::fill_n(DgDx_dotdot_mp_properties_.begin(),Ng,DerivativeProperties());
-    supports_DgDx_mp_.resize(Ng);
-    DgDx_mp_.resize(Ng);
-    std::fill_n(DgDx_mp_.begin(),Ng,MPDerivative());
-    DgDx_mp_properties_.resize(Ng);
-    std::fill_n(DgDx_mp_properties_.begin(),Ng,DerivativeProperties());
+    g_mp_.resize(Ng_in);
+    supports_g_mp_.resize(Ng_in);
+    supports_DgDx_dot_mp_.resize(Ng_in);
+    DgDx_dot_mp_.resize(Ng_in);
+    std::fill_n(DgDx_dot_mp_.begin(),Ng_in,MPDerivative());
+    DgDx_dot_mp_properties_.resize(Ng_in);
+    std::fill_n(DgDx_dot_mp_properties_.begin(),Ng_in,DerivativeProperties());
+    supports_DgDx_dotdot_mp_.resize(Ng_in);
+    DgDx_dotdot_mp_.resize(Ng_in);
+    std::fill_n(DgDx_dotdot_mp_.begin(),Ng_in,MPDerivative());
+    DgDx_dotdot_mp_properties_.resize(Ng_in);
+    std::fill_n(DgDx_dotdot_mp_properties_.begin(),Ng_in,DerivativeProperties());
+    supports_DgDx_mp_.resize(Ng_in);
+    DgDx_mp_.resize(Ng_in);
+    std::fill_n(DgDx_mp_.begin(),Ng_in,MPDerivative());
+    DgDx_mp_properties_.resize(Ng_in);
+    std::fill_n(DgDx_mp_properties_.begin(),Ng_in,DerivativeProperties());
   }
-  if(Np && Ng) {
-    const int NpNg = Np*Ng;
+  if(Np_in && Ng_in) {
+    const int NpNg = Np_in*Ng_in;
     supports_DgDp_.resize(NpNg);
     DgDp_.resize(NpNg);
     std::fill_n(DgDp_.begin(),NpNg,Derivative());
@@ -436,127 +436,127 @@ void ModelEvaluator::OutArgs::_set_Np_Ng(int Np, int Ng)
   }
 }
 
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsMembers arg, bool supports )
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsMembers arg, bool supportsIt )
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     int(arg)>=NUM_E_OUT_ARGS_MEMBERS || int(arg) < 0,std::logic_error
     ,"model = \'"<<modelEvalDescription_<<"\': Error, arg="<<toString(arg)<<" is invalid!"
     );
-  supports_[arg] = supports;
+  supports_[arg] = supportsIt;
 }
 
 
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsDfDp arg, int l, const DerivativeSupport& supports )
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDfDp arg, int l, const DerivativeSupport& theSupports )
 {
   assert_l(l);
-  supports_DfDp_[l] = supports;
+  supports_DfDp_[l] = theSupports;
 }
 
 
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_dot arg, int j, const DerivativeSupport& supports )
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_dot arg, int j, const DerivativeSupport& theSupports )
 {
   assert_j(j);
-  supports_DgDx_dot_[j] = supports;
+  supports_DgDx_dot_[j] = theSupports;
 }
 
 
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_dotdot arg, int j, const DerivativeSupport& supports )
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_dotdot arg, int j, const DerivativeSupport& theSupports )
 {
   assert_j(j);
-  supports_DgDx_dotdot_[j] = supports;
+  supports_DgDx_dotdot_[j] = theSupports;
 }
 
 
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx arg, int j, const DerivativeSupport& supports )
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx arg, int j, const DerivativeSupport& theSupports )
 {
   assert_j(j);
-  supports_DgDx_[j] = supports;
+  supports_DgDx_[j] = theSupports;
 }
 
 
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDp arg, int j, int l, const DerivativeSupport& supports )
-{
-  assert_j(j);
-  assert_l(l);
-  supports_DgDp_[ j*Np() + l ] = supports;
-}
-
-void ModelEvaluator::OutArgs::_setSupports( EOutArgs_g_sg arg, int j, bool supports )
-{
-  assert_j(j);
-  supports_g_sg_[j] = supports;
-}
-
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsDfDp_sg arg, int l, const DerivativeSupport& supports )
-{
-  assert_l(l);
-  supports_DfDp_sg_[l] = supports;
-}
-
-
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_dot_sg arg, int j, const DerivativeSupport& supports )
-{
-  assert_j(j);
-  supports_DgDx_dot_sg_[j] = supports;
-}
-
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_dotdot_sg arg, int j, const DerivativeSupport& supports )
-{
-  assert_j(j);
-  supports_DgDx_dotdot_sg_[j] = supports;
-}
-
-
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_sg arg, int j, const DerivativeSupport& supports )
-{
-  assert_j(j);
-  supports_DgDx_sg_[j] = supports;
-}
-
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDp_sg arg, int j, int l, const DerivativeSupport& supports )
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDp arg, int j, int l, const DerivativeSupport& theSupports )
 {
   assert_j(j);
   assert_l(l);
-  supports_DgDp_sg_[ j*Np() + l ] = supports;
+  supports_DgDp_[ j*Np() + l ] = theSupports;
 }
 
-void ModelEvaluator::OutArgs::_setSupports( EOutArgs_g_mp arg, int j, bool supports )
+void ModelEvaluator::OutArgs::_setSupports( EOutArgs_g_sg arg, int j, bool supportsIt )
 {
   assert_j(j);
-  supports_g_mp_[j] = supports;
+  supports_g_sg_[j] = supportsIt;
 }
 
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsDfDp_mp arg, int l, const DerivativeSupport& supports )
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDfDp_sg arg, int l, const DerivativeSupport& theSupports )
 {
   assert_l(l);
-  supports_DfDp_mp_[l] = supports;
+  supports_DfDp_sg_[l] = theSupports;
 }
 
 
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_dot_mp arg, int j, const DerivativeSupport& supports )
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_dot_sg arg, int j, const DerivativeSupport& theSupports )
 {
   assert_j(j);
-  supports_DgDx_dot_mp_[j] = supports;
+  supports_DgDx_dot_sg_[j] = theSupports;
 }
 
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_dotdot_mp arg, int j, const DerivativeSupport& supports )
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_dotdot_sg arg, int j, const DerivativeSupport& theSupports )
 {
   assert_j(j);
-  supports_DgDx_dotdot_mp_[j] = supports;
+  supports_DgDx_dotdot_sg_[j] = theSupports;
 }
 
 
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_mp arg, int j, const DerivativeSupport& supports )
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_sg arg, int j, const DerivativeSupport& theSupports )
 {
   assert_j(j);
-  supports_DgDx_mp_[j] = supports;
+  supports_DgDx_sg_[j] = theSupports;
 }
 
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDp_mp arg, int j, int l, const DerivativeSupport& supports )
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDp_sg arg, int j, int l, const DerivativeSupport& theSupports )
 {
   assert_j(j);
   assert_l(l);
-  supports_DgDp_mp_[ j*Np() + l ] = supports;
+  supports_DgDp_sg_[ j*Np() + l ] = theSupports;
+}
+
+void ModelEvaluator::OutArgs::_setSupports( EOutArgs_g_mp arg, int j, bool supportsIt )
+{
+  assert_j(j);
+  supports_g_mp_[j] = supportsIt;
+}
+
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDfDp_mp arg, int l, const DerivativeSupport& theSupports )
+{
+  assert_l(l);
+  supports_DfDp_mp_[l] = theSupports;
+}
+
+
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_dot_mp arg, int j, const DerivativeSupport& theSupports )
+{
+  assert_j(j);
+  supports_DgDx_dot_mp_[j] = theSupports;
+}
+
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_dotdot_mp arg, int j, const DerivativeSupport& theSupports )
+{
+  assert_j(j);
+  supports_DgDx_dotdot_mp_[j] = theSupports;
+}
+
+
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_mp arg, int j, const DerivativeSupport& theSupports )
+{
+  assert_j(j);
+  supports_DgDx_mp_[j] = theSupports;
+}
+
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDp_mp arg, int j, int l, const DerivativeSupport& theSupports )
+{
+  assert_j(j);
+  assert_l(l);
+  supports_DgDp_mp_[ j*Np() + l ] = theSupports;
 }
 
 
@@ -925,17 +925,17 @@ ModelEvaluator::~ModelEvaluator()
 
 
 // Vector maps
- 
- 
-Teuchos::RefCountPtr<const Epetra_Map>
+
+
+Teuchos::RCP<const Epetra_Map>
 ModelEvaluator::get_p_map(int l) const
 { return Teuchos::null; }
 
-Teuchos::RefCountPtr<const Teuchos::Array<std::string> >
+Teuchos::RCP<const Teuchos::Array<std::string> >
 ModelEvaluator::get_p_names(int l) const
 { return Teuchos::null; }
 
-Teuchos::RefCountPtr<const Epetra_Map>
+Teuchos::RCP<const Epetra_Map>
 ModelEvaluator::get_g_map(int j) const
 { return Teuchos::null; }
 
@@ -943,19 +943,19 @@ ModelEvaluator::get_g_map(int j) const
 // Initial guesses for variables/parameters
 
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 ModelEvaluator::get_x_init() const
 { return Teuchos::null; }
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 ModelEvaluator::get_x_dot_init() const
 { return Teuchos::null; }
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 ModelEvaluator::get_x_dotdot_init() const
 { return Teuchos::null; }
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 ModelEvaluator::get_p_init(int l) const
 { return Teuchos::null; }
 
@@ -972,22 +972,22 @@ double ModelEvaluator::getInfBound() const
 }
 
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 ModelEvaluator::get_x_lower_bounds() const
 { return Teuchos::null; }
 
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 ModelEvaluator::get_x_upper_bounds() const
 { return Teuchos::null; }
 
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 ModelEvaluator::get_p_lower_bounds(int l) const
 { return Teuchos::null; }
 
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 ModelEvaluator::get_p_upper_bounds(int l) const
 { return Teuchos::null; }
 
@@ -1003,31 +1003,31 @@ double ModelEvaluator::get_t_upper_bound() const
 // Factory functions for creating derivative objects
 
 
-Teuchos::RefCountPtr<Epetra_Operator>
+Teuchos::RCP<Epetra_Operator>
 ModelEvaluator::create_W() const
 { return Teuchos::null; }
 
-Teuchos::RefCountPtr<EpetraExt::ModelEvaluator::Preconditioner>
+Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
 ModelEvaluator::create_WPrec() const
 { return Teuchos::null; }
 
-Teuchos::RefCountPtr<Epetra_Operator>
+Teuchos::RCP<Epetra_Operator>
 ModelEvaluator::create_DfDp_op(int l) const
 { return Teuchos::null; }
 
-Teuchos::RefCountPtr<Epetra_Operator>
+Teuchos::RCP<Epetra_Operator>
 ModelEvaluator::create_DgDx_dot_op(int j) const
 { return Teuchos::null; }
 
-Teuchos::RefCountPtr<Epetra_Operator>
+Teuchos::RCP<Epetra_Operator>
 ModelEvaluator::create_DgDx_dotdot_op(int j) const
 { return Teuchos::null; }
 
-Teuchos::RefCountPtr<Epetra_Operator>
+Teuchos::RCP<Epetra_Operator>
 ModelEvaluator::create_DgDx_op(int j) const
 { return Teuchos::null; }
 
-Teuchos::RefCountPtr<Epetra_Operator>
+Teuchos::RCP<Epetra_Operator>
 ModelEvaluator::create_DgDp_op( int j, int l ) const
 { return Teuchos::null; }
 
@@ -1123,7 +1123,7 @@ std::string EpetraExt::toString( ModelEvaluator::EOutArgsMembers outArg )
 }
 
 
-Teuchos::RefCountPtr<Epetra_Operator>
+Teuchos::RCP<Epetra_Operator>
 EpetraExt::getLinearOp(
   const std::string &modelEvalDescription,
   const ModelEvaluator::Derivative &deriv,
@@ -1139,7 +1139,7 @@ EpetraExt::getLinearOp(
 }
 
 
-Teuchos::RefCountPtr<Epetra_MultiVector>
+Teuchos::RCP<Epetra_MultiVector>
 EpetraExt::getMultiVector(
   const std::string &modelEvalDescription,
   const ModelEvaluator::Derivative &deriv,
@@ -1152,7 +1152,7 @@ EpetraExt::getMultiVector(
     ,"For model \'" << modelEvalDescription << "\' the derivative \'"
     << derivName << "\' is of type Epetra_Operator and not of type Epetra_MultiVector!"
     );
-  Teuchos::RefCountPtr<Epetra_MultiVector>
+  Teuchos::RCP<Epetra_MultiVector>
     mv = deriv.getMultiVector();
   if(mv.get()) {
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1166,7 +1166,7 @@ EpetraExt::getMultiVector(
 }
 
 
-Teuchos::RefCountPtr<Epetra_Operator>
+Teuchos::RCP<Epetra_Operator>
 EpetraExt::get_DfDp_op(
   const int l,
   const ModelEvaluator::OutArgs &outArgs
@@ -1181,7 +1181,7 @@ EpetraExt::get_DfDp_op(
 }
 
 
-Teuchos::RefCountPtr<Epetra_MultiVector>
+Teuchos::RCP<Epetra_MultiVector>
 EpetraExt::get_DfDp_mv(
   const int l,
   const ModelEvaluator::OutArgs &outArgs
@@ -1197,7 +1197,7 @@ EpetraExt::get_DfDp_mv(
 }
 
 
-Teuchos::RefCountPtr<Epetra_MultiVector>
+Teuchos::RCP<Epetra_MultiVector>
 EpetraExt::get_DgDx_dot_mv(
   const int j,
   const ModelEvaluator::OutArgs &outArgs,
@@ -1214,7 +1214,7 @@ EpetraExt::get_DgDx_dot_mv(
 }
 
 
-Teuchos::RefCountPtr<Epetra_MultiVector>
+Teuchos::RCP<Epetra_MultiVector>
 EpetraExt::get_DgDx_dotdot_mv(
   const int j,
   const ModelEvaluator::OutArgs &outArgs,
@@ -1231,7 +1231,7 @@ EpetraExt::get_DgDx_dotdot_mv(
 }
 
 
-Teuchos::RefCountPtr<Epetra_MultiVector>
+Teuchos::RCP<Epetra_MultiVector>
 EpetraExt::get_DgDx_mv(
   const int j,
   const ModelEvaluator::OutArgs &outArgs,
@@ -1248,7 +1248,7 @@ EpetraExt::get_DgDx_mv(
 }
 
 
-Teuchos::RefCountPtr<Epetra_MultiVector>
+Teuchos::RCP<Epetra_MultiVector>
 EpetraExt::get_DgDp_mv(
   const int j,
   const int l,

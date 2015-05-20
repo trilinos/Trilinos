@@ -213,7 +213,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP1D_of_2DView ) {
   const size_t ZERO = static_cast<size_t> (0);
 
   ka_view_type X ("X", stride, numCols);
-  ka_view_type X_view = Kokkos::subview<ka_view_type> (X, std::make_pair (ZERO, numRows), std::make_pair (ZERO, numCols));
+  ka_view_type X_view = Kokkos::subview (X, std::make_pair (ZERO, numRows), std::make_pair (ZERO, numCols));
   TEST_EQUALITY(X_view.dimension_0(), numRows);
   TEST_EQUALITY(X_view.dimension_1(), numCols);
 
@@ -276,7 +276,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP2D_of_2DView ) {
   const size_t ZERO = static_cast<size_t> (0);
 
   ka_view_type X ("X", stride, numCols);
-  ka_view_type X_view = Kokkos::subview<ka_view_type> (X, std::make_pair (ZERO, numRows), std::make_pair (ZERO, numCols));
+  ka_view_type X_view = Kokkos::subview (X, std::make_pair (ZERO, numRows), std::make_pair (ZERO, numCols));
   TEST_EQUALITY( & X(0,0) , & X_view(0,0) );
   TEST_EQUALITY(X_view.dimension_0(), numRows);
   TEST_EQUALITY(X_view.dimension_1(), numCols);
@@ -297,7 +297,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP2D_of_2DView ) {
   // will implement Tpetra::MultiVector methods like get2dView.
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > Y_2D (X_view.dimension_1 ());
   for (size_t j = 0; j < static_cast<size_t> (X_view.dimension_1 ()); ++j) {
-    ka_view_type X_j = Kokkos::subview<ka_view_type> (X_view, std::make_pair (ZERO, numRows), std::make_pair (j, j+1));
+    ka_view_type X_j = Kokkos::subview (X_view, std::make_pair (ZERO, numRows), std::make_pair (j, j+1));
     TEST_EQUALITY( & X_view(0,j) , & X_j(0,0) );
     TEST_EQUALITY(static_cast<size_t>(X_j.dimension_0()), numRows);
     TEST_EQUALITY_CONST(X_j.dimension_1(), 1);
@@ -337,7 +337,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP2D_of_2DView ) {
 // of the Tpetra::MultiVector (which created the View).
 //
 // We will use this example to implement the Tpetra::MultiVector
-// methods getLocalMV() and getLocalMVNonConst().
+// method getLocalMV().
 //
 // Preserving Tpetra's current interface will not require a way to
 // return a View that is an owning (i.e., persisting) view of a
@@ -348,11 +348,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, KMV_of_2DView ) {
   TestDevice::initialize();
 
   typedef Kokkos::View<double**, Kokkos::LayoutLeft, TestDevice> ka_view_type;
-#ifdef HAVE_KOKKOSCLASSIC_SERIAL
-  typedef KokkosClassic::MultiVector<double, KokkosClassic::SerialNode> KMV;
-#else
   typedef KokkosClassic::MultiVector<double, KokkosClassic::DefaultNode::DefaultNodeType> KMV;
-#endif // HAVE_KOKKOSCLASSIC_SERIAL
 
   const size_t numRows = 75;
   const size_t numCols = 5;
@@ -360,7 +356,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, KMV_of_2DView ) {
   const size_t ZERO = static_cast<size_t> (0);
 
   ka_view_type X ("X", stride, numCols);
-  ka_view_type X_view = Kokkos::subview<ka_view_type> (X, std::make_pair (ZERO, numRows), std::make_pair (ZERO, numCols));
+  ka_view_type X_view = Kokkos::subview (X, std::make_pair (ZERO, numRows), std::make_pair (ZERO, numCols));
   TEST_EQUALITY(X_view.dimension_0(), numRows);
   TEST_EQUALITY(X_view.dimension_1(), numCols);
 
@@ -402,18 +398,10 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, KMV_of_2DView ) {
 
   // Create a Kokkos Classic Node instance.  The
   // KokkosClassic::MultiVector will want this.
-#ifdef HAVE_KOKKOSCLASSIC_SERIAL
-  Teuchos::RCP<KokkosClassic::SerialNode> node;
-#else
   Teuchos::RCP<KokkosClassic::DefaultNodeType> node;
-#endif HAVE_KOKKOSCLASSIC_SERIAL
   {
     Teuchos::ParameterList pl;
-#ifdef HAVE_KOKKOSCLASSIC_SERIAL
-    node = Teuchos::rcp (new KokkosClassic::SerialNode (pl));
-#else
     node = Teuchos::rcp (new KokkosClassic::DefaultNode::DefaultNodeType (pl));
-#endif HAVE_KOKKOSCLASSIC_SERIAL
   }
   // Create the KokkosClassic::MultiVector.  Initialization takes two steps.
   KMV Y (node);

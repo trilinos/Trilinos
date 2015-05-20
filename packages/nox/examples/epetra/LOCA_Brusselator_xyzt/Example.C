@@ -516,13 +516,6 @@ int main(int argc, char *argv[])
     else
        globalData->locaUtils->out() << "Stepper failed to converge!" << std::endl;
 
-
-    // Get the Epetra_Vector with the final solution from the solver
-    const LOCA::Epetra::Group& finalGroup =
-      dynamic_cast<const LOCA::Epetra::Group&>(*(stepper.getSolutionGroup()));
-    const Epetra_Vector& finalSolution =
-      (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
-
     // End Nonlinear Solver **************************************
 
 #ifndef DO_XYZT

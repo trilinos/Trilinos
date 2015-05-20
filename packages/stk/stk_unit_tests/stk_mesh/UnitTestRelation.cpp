@@ -112,18 +112,16 @@ TEST(UnitTestingOfRelation, testRelationNoGhosting)
 
   const unsigned nPerProc = 10;
 
-  const bool aura_flag = false;
-  RingFixture mesh( pm , nPerProc , false /* No element parts */ );
+  RingFixture mesh( pm , nPerProc , false /* No element parts */, stk::mesh::BulkData::NO_AUTO_AURA );
   mesh.m_meta_data.commit();
 
   BulkData& ring_bulk = mesh.m_bulk_data;
 
   ring_bulk.modification_begin();
   mesh.generate_mesh( );
-  ASSERT_TRUE(stk::unit_test::modification_end_wrapper(ring_bulk,
-                                                          aura_flag));
+  ASSERT_TRUE(stk::unit_test::modification_end_wrapper(ring_bulk));
 
-  mesh.fixup_node_ownership(aura_flag, BulkData::MOD_END_COMPRESS_AND_SORT);
+  mesh.fixup_node_ownership(BulkData::MOD_END_COMPRESS_AND_SORT);
 
   // This process' first element in the loop
   // if a parallel mesh has a shared node
@@ -486,7 +484,19 @@ TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
     edge = mesh.declare_entity(edge_rank, 1 /*id*/, sides_parts);
 
     // Set up relation from elem to edge
-    mesh.declare_relation( elem, edge, 0 /*rel-id*/ );
+    unsigned local_side_id = 2;
+    if (p_rank == 1)
+    {
+        local_side_id = 0;
+    }
+    stk::topology elem_top = mesh.bucket(elem).topology();
+    stk::mesh::EntityVector side_nodes(2);
+    side_nodes[0] = mesh.get_entity(stk::topology::NODE_RANK, 3);
+    side_nodes[1] = mesh.get_entity(stk::topology::NODE_RANK, 4);
+
+    stk::mesh::Permutation perm1 = mesh.find_permutation(elem_top, &nodes[0], elem_top.side_topology(local_side_id), &side_nodes[0], local_side_id);
+    ASSERT_TRUE(perm1 != stk::mesh::Permutation::INVALID_PERMUTATION);
+    mesh.declare_relation(elem, edge, local_side_id, perm1);
   }
 
   if (p_rank < 2) {

@@ -49,9 +49,9 @@ namespace Piro {
   MLRigidBodyModes::MLRigidBodyModes(int numPDEs_)
     : numPDEs(numPDEs_),
     numElasticityDim(0),
+    numScalar(0),
     nullSpaceDim(0),
     numSpaceDim(0),
-    numScalar(0),
     mlUsed(false),
     mueLuUsed(false)
   {

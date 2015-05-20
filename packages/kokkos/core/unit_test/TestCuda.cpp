@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -51,8 +51,6 @@
 
 #include <impl/Kokkos_ViewTileLeft.hpp>
 
-#include <Kokkos_CrsArray.hpp>
-
 //----------------------------------------------------------------------------
 
 #include <TestViewImpl.hpp>
@@ -60,7 +58,6 @@
 
 #include <TestViewAPI.hpp>
 #include <TestViewSubview.hpp>
-#include <TestCrsArray.hpp>
 #include <TestTile.hpp>
 
 #include <TestReduce.hpp>
@@ -165,6 +162,21 @@ TEST_F( cuda, view_api )
 #endif
 }
 
+TEST_F( cuda, view_subview_auto_1d_left ) {
+  TestViewSubview::test_auto_1d< Kokkos::LayoutLeft,Kokkos::Cuda >();
+}
+
+TEST_F( cuda, view_subview_auto_1d_right ) {
+  TestViewSubview::test_auto_1d< Kokkos::LayoutRight,Kokkos::Cuda >();
+}
+
+TEST_F( cuda, view_subview_auto_1d_stride ) {
+  TestViewSubview::test_auto_1d< Kokkos::LayoutStride,Kokkos::Cuda >();
+}
+
+TEST_F( cuda, view_subview_assign_strided ) {
+  TestViewSubview::test_1d_strided_assignment< Kokkos::Cuda >();
+}
 
 TEST_F( cuda, view_subview_left_0 ) {
   TestViewSubview::test_left_0< Kokkos::CudaUVMSpace >();
@@ -208,11 +220,6 @@ TEST_F( cuda, team_tag )
 {
   TestTeamPolicy< Kokkos::Cuda >::test_for(1000);
   TestTeamPolicy< Kokkos::Cuda >::test_reduce(1000);
-}
-
-TEST_F( cuda, crsarray )
-{
-  TestCrsArray< Kokkos::Cuda >();
 }
 
 TEST_F( cuda, reduce )
