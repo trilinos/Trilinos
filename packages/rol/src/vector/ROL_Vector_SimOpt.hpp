@@ -58,10 +58,16 @@ class Vector_SimOpt : public Vector<Real> {
 private:
   Teuchos::RCP<Vector<Real> > vec1_;
   Teuchos::RCP<Vector<Real> > vec2_;
+  mutable Teuchos::RCP<Vector<Real> > dual_vec1_;
+  mutable Teuchos::RCP<Vector<Real> > dual_vec2_;
+  mutable Teuchos::RCP<Vector_SimOpt<Real> > dual_vec_;
 
 public:
   Vector_SimOpt( const Teuchos::RCP<Vector<Real> > &vec1, const Teuchos::RCP<Vector<Real> > &vec2 ) 
-    : vec1_(vec1), vec2_(vec2) {}
+    : vec1_(vec1), vec2_(vec2) {
+    dual_vec1_ = (vec1_->dual()).clone();
+    dual_vec2_ = (vec2_->dual()).clone();
+  }
   
   void plus( const Vector<Real> &x ) {
     const Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(
@@ -96,6 +102,13 @@ public:
 
   Teuchos::RCP<Vector<Real> > clone() const {
     return Teuchos::rcp( new Vector_SimOpt(vec1_->clone(),vec2_->clone()) );  
+  }
+
+  const Vector<Real> & dual(void) const {
+    dual_vec1_->set(vec1_->dual());
+    dual_vec2_->set(vec2_->dual());
+    dual_vec_ = Teuchos::rcp( new Vector_SimOpt<Real>(dual_vec1_,dual_vec2_) ); 
+    return *dual_vec_;
   }
 
   Teuchos::RCP<Vector<Real> > basis( const int i )  const {
