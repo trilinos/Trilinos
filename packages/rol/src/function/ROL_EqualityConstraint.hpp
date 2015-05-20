@@ -229,6 +229,7 @@ public:
              @param[out]      pv  is the result of applying the constraint preconditioner to @b v at @b x; a dual constraint-space vector
              @param[in]       v   is a constraint-space vector
              @param[in]       x   is the preconditioner argument; an optimization-space vector
+             @param[in]       g   is the preconditioner argument; a dual optimization-space vector, unused
              @param[in,out]   tol is a tolerance for inexact evaluations
 
              On return, \f$\mathsf{pv} = P(x)v\f$, where
@@ -240,6 +241,7 @@ public:
   virtual void applyPreconditioner(Vector<Real> &pv,
                                    const Vector<Real> &v,
                                    const Vector<Real> &x,
+                                   const Vector<Real> &g,
                                    Real &tol) {
     pv.set(v.dual());
   }
