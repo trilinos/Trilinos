@@ -240,7 +240,15 @@ int main(int narg, char *arg[]) {
       ia.get2ndAdjsView(primaryEType, secondAdjEType, offsets, adjacencyIds);
     }
     else {
-      ;
+      //RCP<Environment> env;
+
+      /*try {
+	env=rcp(new Environment(&params,Teuchos::DefaultComm<int>::getComm()));
+      }
+      Z2_FORWARD_EXCEPTIONS*/
+
+      //RCP<const Environment> envConst=rcp_const_cast<const Environment>(env);
+      //Zoltan2::GraphModel<inputAdapter_t> graphModel(ia, envConst, CommT, );
     }
 
     if (me) problem.printMetrics(cout);
