@@ -213,6 +213,10 @@ public:
     void applyPartitioningSolution(const User &in, User *&out,
          const PartitioningSolution<Adapter> &solution) const;
 
+  template <typename Adapter>
+    void applyPartitioningSolution(const User &in, RCP<User> &out,
+         const PartitioningSolution<Adapter> &solution) const;
+
 private:
 
   RCP<Environment> env_;    // for error messages, etc.
@@ -247,7 +251,8 @@ template <typename User, typename UserCoord>
       mayHaveDiagonalEntries(true)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
-  matrix_ = XpetraTraits<User>::convertToXpetra(inmatrix);
+  matrix_ = rcp_const_cast<const xmatrix_t>(
+           XpetraTraits<User>::convertToXpetra(rcp_const_cast<User>(inmatrix)));
   rowMap_ = matrix_->getRowMap();
   colMap_ = matrix_->getColMap();
   base_ = rowMap_->getIndexBase();
@@ -363,12 +368,32 @@ template <typename User, typename UserCoord>
   Z2_FORWARD_EXCEPTIONS;
 
   // Move the rows, creating a new matrix.
-       RCP<const User> inPtr = rcp(&in, false);
-  RCP<const User> outPtr =
-                  XpetraTraits<User>::doMigration(inPtr, numNewRows,
-                                                  importList.getRawPtr());
+  RCP<User> outPtr = XpetraTraits<User>::doMigration(in, numNewRows,
+                                                     importList.getRawPtr());
   out = const_cast<User *>(outPtr.get());
   outPtr.release();
+}
+
+////////////////////////////////////////////////////////////////////////////
+template <typename User, typename UserCoord>
+  template <typename Adapter>
+    void XpetraCrsMatrixAdapter<User,UserCoord>::applyPartitioningSolution(
+      const User &in, RCP<User> &out, 
+      const PartitioningSolution<Adapter> &solution) const
+{ 
+  // Get an import list (rows to be received)
+  size_t numNewRows;
+  ArrayRCP<zgid_t> importList;
+  try{
+    numNewRows = Zoltan2::getImportList<Adapter,
+                                        XpetraCrsMatrixAdapter<User,UserCoord> >
+                                       (solution, this, importList);
+  }
+  Z2_FORWARD_EXCEPTIONS;
+
+  // Move the rows, creating a new matrix.
+  out = XpetraTraits<User>::doMigration(in, numNewRows,
+                                        importList.getRawPtr());
 }
 
 }  //namespace Zoltan2

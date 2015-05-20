@@ -67,7 +67,7 @@ namespace Zoltan2 {
     \li \c Tpetra::MultiVector
     \li \c Xpetra::MultiVector
 
-    The \c scalar_t type, representing use data such as matrix values, is
+    The \c scalar_t type, representing use data such as vector values, is
     used by Zoltan2 for weights, coordinates, part sizes and
     quality metrics.
     Some User types (like Tpetra::CrsMatrix) have an inherent scalar type,
@@ -161,6 +161,10 @@ public:
     void applyPartitioningSolution(const User &in, User *&out,
          const PartitioningSolution<Adapter> &solution) const;
 
+  template <typename Adapter>
+    void applyPartitioningSolution(const User &in, RCP<User> &out,
+         const PartitioningSolution<Adapter> &solution) const;
+
 private:
 
   RCP<const User> invector_;
@@ -173,9 +177,9 @@ private:
   ArrayRCP<StridedData<lno_t, scalar_t> > weights_;
 };
 
-//////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
 // Definitions
-//////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
 
 template <typename User>
   XpetraMultiVectorAdapter<User>::XpetraMultiVectorAdapter(
@@ -187,7 +191,9 @@ template <typename User>
 {
   typedef StridedData<lno_t, scalar_t> input_t;
 
-  vector_ = XpetraTraits<User>::convertToXpetra(invector);
+  RCP<x_mvector_t> tmp = 
+           XpetraTraits<User>::convertToXpetra(rcp_const_cast<User>(invector));
+  vector_ = rcp_const_cast<const x_mvector_t>(tmp);
   map_ = vector_->getMap();
   base_ = map_->getIndexBase();
 
@@ -205,6 +211,7 @@ template <typename User>
 }
 
 
+////////////////////////////////////////////////////////////////////////////
 template <typename User>
   XpetraMultiVectorAdapter<User>::XpetraMultiVectorAdapter(
     const RCP<const User> &invector):
@@ -212,11 +219,14 @@ template <typename User>
       env_(rcp(new Environment)), base_(),
       numWeights_(0), weights_()
 {
-  vector_ = XpetraTraits<User>::convertToXpetra(invector);
+  RCP<x_mvector_t> tmp = 
+           XpetraTraits<User>::convertToXpetra(rcp_const_cast<User>(invector));
+  vector_ = rcp_const_cast<const x_mvector_t>(tmp);
   map_ = vector_->getMap();
   base_ = map_->getIndexBase();
 }
 
+////////////////////////////////////////////////////////////////////////////
 template <typename User>
   void XpetraMultiVectorAdapter<User>::getEntriesView(
     const scalar_t *&elements, int &stride, int idx) const
@@ -252,6 +262,7 @@ template <typename User>
   }
 }
 
+////////////////////////////////////////////////////////////////////////////
 template <typename User>
   template <typename Adapter>
     void XpetraMultiVectorAdapter<User>::applyPartitioningSolution(
@@ -268,16 +279,35 @@ template <typename User>
   }
   Z2_FORWARD_EXCEPTIONS;
 
-  // Move the rows, creating a new matrix.
-       RCP<const User> inPtr = rcp(&in, false);
-  RCP<const User> outPtr =
-                  XpetraTraits<User>::doMigration(inPtr, numNewRows,
-                                                  importList.getRawPtr());
-  out = const_cast<User *>(outPtr.get());
+  // Move the rows, creating a new vector.
+  RCP<User> outPtr = XpetraTraits<User>::doMigration(in, numNewRows,
+                                                     importList.getRawPtr());
+  out = outPtr.get();
   outPtr.release();
-
 }
   
+////////////////////////////////////////////////////////////////////////////
+template <typename User>
+  template <typename Adapter>
+    void XpetraMultiVectorAdapter<User>::applyPartitioningSolution(
+      const User &in, RCP<User> &out, 
+      const PartitioningSolution<Adapter> &solution) const
+{
+  // Get an import list (rows to be received)
+  size_t numNewRows;
+  ArrayRCP<zgid_t> importList;
+  try{
+    numNewRows = Zoltan2::getImportList<Adapter,
+                                        XpetraMultiVectorAdapter<User> >
+                                       (solution, this, importList);
+  }
+  Z2_FORWARD_EXCEPTIONS;
+
+  // Move the rows, creating a new vector.
+  out = XpetraTraits<User>::doMigration(in, numNewRows,
+                                        importList.getRawPtr());
+}
+
 }  //namespace Zoltan2
   
 #endif

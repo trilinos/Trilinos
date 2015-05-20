@@ -628,9 +628,9 @@ void testGraphModel(string fname, zgno_t xdim, zgno_t ydim, zgno_t zdim,
   for (size_t i=rank; i < Mconsec->getGlobalNumRows(); i+=nprocs)
     myNewRows.push_back(i);
 
-  RCP<const tcrsMatrix_t> Mnonconsec = 
+  RCP<const tcrsMatrix_t> Mnonconsec = rcp_const_cast<const tcrsMatrix_t>(
     Zoltan2::XpetraTraits<tcrsMatrix_t>::doMigration(
-      Mconsec, myNewRows.size(), myNewRows.getRawPtr());
+      *Mconsec, myNewRows.size(), myNewRows.getRawPtr()));
 
   graph = Mnonconsec->getCrsGraph();
 

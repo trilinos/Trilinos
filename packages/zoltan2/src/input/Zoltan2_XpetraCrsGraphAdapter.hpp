@@ -246,6 +246,10 @@ public:
     void applyPartitioningSolution(const User &in, User *&out,
       const PartitioningSolution<Adapter> &solution) const;
 
+  template <typename Adapter>
+    void applyPartitioningSolution(const User &in, RCP<User> &out,
+      const PartitioningSolution<Adapter> &solution) const;
+
 private:
 
   RCP<const User > ingraph_;
@@ -286,7 +290,8 @@ template <typename User, typename UserCoord>
 {
   typedef StridedData<lno_t,scalar_t> input_t;
 
-  graph_ = XpetraTraits<User>::convertToXpetra(ingraph_);
+  graph_ = rcp_const_cast<const xgraph_t>(
+           XpetraTraits<User>::convertToXpetra(rcp_const_cast<User>(ingraph)));
   comm_ = graph_->getComm();
   size_t nvtx = graph_->getNodeNumRows();
   size_t nedges = graph_->getNodeNumEntries();
@@ -410,15 +415,35 @@ template <typename User, typename UserCoord>
   }
   Z2_FORWARD_EXCEPTIONS;
 
-  // Move the rows, creating a new matrix.
-  RCP<const User> inPtr = rcp(&in, false);
-  RCP<const User> outPtr = 
-                  XpetraTraits<User>::doMigration(inPtr, numNewVtx,
-                                                  importList.getRawPtr());
-  out = const_cast<User *>(outPtr.get());
+  // Move the rows, creating a new graph.
+  RCP<User> outPtr = XpetraTraits<User>::doMigration(in, numNewVtx,
+                                                     importList.getRawPtr());
+  out = outPtr.get();
   outPtr.release();
 }
   
+////////////////////////////////////////////////////////////////////////////
+template <typename User, typename UserCoord>
+  template<typename Adapter>
+    void XpetraCrsGraphAdapter<User,UserCoord>::applyPartitioningSolution(
+      const User &in, RCP<User> &out, 
+      const PartitioningSolution<Adapter> &solution) const
+{
+  // Get an import list (rows to be received)
+  size_t numNewVtx;
+  ArrayRCP<zgid_t> importList;
+  try{
+    numNewVtx = Zoltan2::getImportList<Adapter,
+                                       XpetraCrsGraphAdapter<User,UserCoord> > 
+                                      (solution, this, importList);
+  }
+  Z2_FORWARD_EXCEPTIONS;
+
+  // Move the rows, creating a new graph.
+  out = XpetraTraits<User>::doMigration(in, numNewVtx,
+                                        importList.getRawPtr());
+}
+
 }  //namespace Zoltan2
   
 #endif

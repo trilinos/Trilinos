@@ -12,18 +12,21 @@ namespace Zoltan2{
 template <typename pcoord_t>
 class MachineRepresentation{
 
-public:
+private:
     int networkDim;
     int numProcs;
 
     pcoord_t **procCoords;
     RCP<const Comm<int> > comm;
 
+public:
     /*! \brief Constructor MachineRepresentation Class
      *  \param comm_ Communication object.
      */
     MachineRepresentation(RCP<const Comm<int> > comm_):
-        networkDim(0), numProcs(comm_->getSize()), procCoords(0), comm(Teuchos::rcp_const_cast<const Comm<int> >(comm_)){
+        networkDim(0), numProcs(comm_->getSize()), procCoords(0), 
+        comm(comm_)
+    {
         // WIll need this constructor to be specific to RAAMP (MD).
         // Will need a default constructor using, e.g., GeometricGenerator
         // or nothing at all, for when RAAMP is not available as TPL.
