@@ -1816,7 +1816,6 @@ void BulkData::require_valid_relation( const char action[] ,
 //----------------------------------------------------------------------
 bool BulkData::internal_declare_relation(Entity e_from, Entity e_to,
                                          RelationIdentifier local_id,
-                                         unsigned sync_count, bool is_back_relation,
                                          Permutation permut)
 {
   m_modSummary.track_declare_relation(e_from, e_to, local_id, permut);
@@ -1964,52 +1963,52 @@ void BulkData::internal_declare_relation( Entity e_from ,
                                  OrdinalVector& ordinal_scratch,
                                  PartVector& part_scratch)
 {
-  require_ok_to_modify();
+    require_ok_to_modify();
 
-  require_valid_relation( "declare" , *this , e_from , e_to );
+    require_valid_relation("declare", *this, e_from, e_to);
 
-  // TODO: Don't throw if exact relation already exists, that should be a no-op.
-  // Should be an exact match if relation of local_id already exists (e_to should be the same).
-  bool is_converse = false;
-  bool caused_change_fwd = internal_declare_relation(e_from, e_to, local_id, m_meshModification.synchronized_count(),
-                                                     is_converse, permut);
+    // TODO: Don't throw if exact relation already exists, that should be a no-op.
+    // Should be an exact match if relation of local_id already exists (e_to should be the same).
+    bool is_new_relation = internal_declare_relation(e_from, e_to, local_id, permut);
 
-  //TODO: check connectivity map
-  // Relationships should always be symmetrical
-  if ( caused_change_fwd ) {
-
-    const bool higher_order_relation = stk::topology::ELEMENT_RANK < entity_rank(e_from);
-    if (    higher_order_relation
-         || m_bucket_repository.connectivity_map()(entity_rank(e_to), entity_rank(e_from)) != stk::mesh::INVALID_CONNECTIVITY_TYPE
-       )
+    //TODO: check connectivity map
+    // Relationships should always be symmetrical
+    if(is_new_relation)
     {
-      // the setup for the converse relationship works slightly differently
-      is_converse = true;
-      internal_declare_relation(e_to, e_from, local_id, m_meshModification.synchronized_count(), is_converse, permut );
+
+        const bool higher_order_relation = stk::topology::ELEMENT_RANK < entity_rank(e_from);
+        if(higher_order_relation
+                || m_bucket_repository.connectivity_map()(entity_rank(e_to), entity_rank(e_from)) != stk::mesh::INVALID_CONNECTIVITY_TYPE
+                )
+        {
+            // the setup for the converse relationship works slightly differently
+            internal_declare_relation(e_to, e_from, local_id, permut);
+        }
     }
-  }
 
-  // It is critical that the modification be done AFTER the relations are
-  // added so that the propagation can happen correctly.
-  if ( caused_change_fwd ) {
-    this->mark_entity_and_upward_related_entities_as_modified(e_to);
-    this->mark_entity_and_upward_related_entities_as_modified(e_from);
-  }
+    // It is critical that the modification be done AFTER the relations are
+    // added so that the propagation can happen correctly.
+    if(is_new_relation)
+    {
+        this->mark_entity_and_upward_related_entities_as_modified(e_to);
+        this->mark_entity_and_upward_related_entities_as_modified(e_from);
+    }
 
-  OrdinalVector empty ;
+    OrdinalVector empty;
 
-  // Deduce and set new part memberships:
-  ordinal_scratch.clear();
+    // Deduce and set new part memberships:
+    ordinal_scratch.clear();
 
-  impl::get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(*this, e_from, empty, entity_rank(e_to), ordinal_scratch );
+    impl::get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(*this, e_from, empty, entity_rank(e_to), ordinal_scratch);
 
-  PartVector emptyParts;
-  part_scratch.clear();
-  for(unsigned ipart=0; ipart<ordinal_scratch.size(); ++ipart) {
-    part_scratch.push_back(&m_mesh_meta_data.get_part(ordinal_scratch[ipart]));
-  }
+    PartVector emptyParts;
+    part_scratch.clear();
+    for(unsigned ipart = 0; ipart < ordinal_scratch.size(); ++ipart)
+    {
+        part_scratch.push_back(&m_mesh_meta_data.get_part(ordinal_scratch[ipart]));
+    }
 
-  internal_change_entity_parts( e_to , part_scratch , emptyParts );
+    internal_change_entity_parts(e_to, part_scratch, emptyParts);
 }
 
 //----------------------------------------------------------------------

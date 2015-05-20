@@ -732,9 +732,8 @@ protected: //functions
                          OrdinalVector& ordinal_scratch, PartVector& part_scratch);
 
   bool internal_declare_relation(Entity e_from, Entity e_to,
-                                 RelationIdentifier local_id,
-                                 unsigned sync_count, bool is_back_relation,
-                                 Permutation permut);
+                                 RelationIdentifier local_id, Permutation permut);
+
   /** methods for managing arrays of entity member-data */
 
   inline void log_created_parallel_copy(Entity entity);
@@ -919,6 +918,12 @@ protected: //functions
 
   AutomaticAuraOption get_automatic_aura_option() const { return m_autoAuraOption; }
 
+  void resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(EntityRank entity_rank, stk::mesh::Selector selectedToSkin);
+
+  void internal_finish_modification_end(modification_optimization opt);
+
+  void internal_change_owner_in_comm_data(const EntityKey& key, int new_owner);
+
 private: //functions
 
   void internal_dump_all_mesh_info(std::ostream& out = std::cout) const;
@@ -981,7 +986,6 @@ private: //functions
 
   inline bool internal_add_node_sharing_called() const;
 
-  void internal_change_owner_in_comm_data(const EntityKey& key, int new_owner);
   void internal_sync_comm_list_owners();
 
   void addMeshEntities(stk::topology::rank_t rank, const std::vector<stk::mesh::EntityId> new_ids,
@@ -1046,12 +1050,9 @@ private: //functions
                                     const std::vector<EntityProc> & add_send ,
                                     const std::vector<EntityKey> & remove_receive );
 
-  void resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(EntityRank entity_rank, stk::mesh::Selector selectedToSkin);
 
   bool internal_modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt );
 
-
-  void internal_finish_modification_end(modification_optimization opt);
 
   void internal_establish_new_owner(stk::mesh::Entity entity);
   void internal_update_parts_for_shared_entity(stk::mesh::Entity entity, const bool is_entity_shared, const bool did_i_just_become_owner);
