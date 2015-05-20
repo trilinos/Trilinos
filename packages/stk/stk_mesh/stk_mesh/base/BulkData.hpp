@@ -452,9 +452,6 @@ public:
   inline bool element_side_polarity( const Entity elem ,
       const Entity side , unsigned local_side_id ) const;
 
-  /** \brief  All entities with communication information. */
-  STK_DEPRECATED(const EntityCommListInfoVector & comm_list() const) { return internal_comm_list(); } //deprecated on March 6, 2015
-
   inline VolatileFastSharedCommMapOneRank const& volatile_fast_shared_comm_map(EntityRank rank) const;  // CLEANUP: only used by FieldParallel.cpp
 
   /** \brief  Query the shared-entity aura.
@@ -507,13 +504,6 @@ public:
   const std::vector<Ghosting*> & ghostings() const { return m_ghosting ; }
 
   size_t get_num_communicated_entities() const { return m_entity_comm_list.size(); }
-
-  /** \brief  Entity Comm functions that are now moved to BulkData
-   */
-  STK_DEPRECATED(PairIterEntityComm entity_comm_map(const EntityKey & key) const) { return internal_entity_comm_map(key); } //deprecated on March 2, 2015
-  STK_DEPRECATED(PairIterEntityComm entity_comm_map(const EntityKey & key, const Ghosting & sub ) const) { return internal_entity_comm_map(key,sub); }   //deprecated on March 2, 2015
-
-  STK_DEPRECATED(int entity_comm_map_owner(const EntityKey & key) const); //deprecated on March 2, 2015
 
   bool in_shared(EntityKey key) const { return !internal_entity_comm_map_shared(key).empty(); }         // CLEANUP: only used for testing
   bool in_shared(EntityKey key, int proc) const;         // CLEANUP: only used for testing
