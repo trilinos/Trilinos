@@ -55,6 +55,7 @@
 #include "Rythmos_ImplicitBDFStepperRampingStepControl.hpp"
 #include "Rythmos_StepperAsModelEvaluator.hpp"
 #include "Rythmos_CompositeIntegrationObserver.hpp"
+#include "Rythmos_IntegratorBuilder.hpp"
 
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_Array.hpp"
@@ -66,6 +67,20 @@
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
 #include "Thyra_DefaultZeroLinearOp.hpp"
 #include "Thyra_VectorStdOps.hpp"
+#include "Thyra_DefaultModelEvaluatorWithSolveFactory.hpp"
+
+#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
+
+#include "Piro_InvertMassMatrixDecorator.hpp"
+
+#ifdef Piro_ENABLE_Ifpack2
+#include "Thyra_Ifpack2PreconditionerFactory.hpp"
+#endif
+
+#ifdef Piro_ENABLE_MueLu
+#include <Thyra_MueLuPreconditionerFactory.hpp>
+#include "Stratimikos_MueluTpetraHelpers.hpp"
+#endif
 
 #ifdef Piro_ENABLE_NOX
 #  include "Thyra_NonlinearSolver_NOX.hpp"
@@ -100,6 +115,7 @@ void Piro::RythmosSolver<Scalar>::initialize(
     const Teuchos::RCP< Thyra::ModelEvaluator<Scalar> > &in_model,
     const Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > &observer)
 {
+
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
   using Teuchos::RCP;
@@ -114,6 +130,8 @@ void Piro::RythmosSolver<Scalar>::initialize(
   *out << "\nA) Get the base parameter list ...\n";
   //
 
+
+  if (appParams->isSublist("Rythmos")) {
   RCP<Teuchos::ParameterList> rythmosPL = sublist(appParams, "Rythmos", true);
   rythmosPL->validateParameters(*getValidRythmosParameters(),0);
 
@@ -207,7 +225,7 @@ void Piro::RythmosSolver<Scalar>::initialize(
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(
           true, Teuchos::Exceptions::InvalidParameter,
-          std::endl << "Error! Piro::Epetra::RythmosSolver: Invalid Steper Type: "
+          std::endl << "Error! Piro::RythmosSolver: Invalid Steper Type: "
           << stepperType << std::endl);
     }
   }
@@ -235,7 +253,7 @@ void Piro::RythmosSolver<Scalar>::initialize(
       } else {
         TEUCHOS_TEST_FOR_EXCEPTION(
             true, std::logic_error,
-            "Error! Piro::Epetra::RythmosSolver: Invalid step control strategy type: "
+            "Error! Piro::RythmosSolver: Invalid step control strategy type: "
             << step_control_strategy << std::endl);
       }
     }
@@ -259,6 +277,101 @@ void Piro::RythmosSolver<Scalar>::initialize(
 
   if (Teuchos::nonnull(observer)) {
     fwdStateIntegrator->setIntegrationObserver(observer);
+  }
+ }
+ 
+  else if (appParams->isSublist("Rythmos Solver")) {
+    /** New parameter list format **/
+     RCP<Teuchos::ParameterList> rythmosSolverPL = sublist(appParams, "Rythmos Solver", true);
+    RCP<Teuchos::ParameterList> rythmosPL = sublist(rythmosSolverPL, "Rythmos", true);
+
+    {
+      const std::string verbosity = rythmosSolverPL->get("Verbosity Level", "VERB_DEFAULT");
+      if      (verbosity == "VERB_NONE")    solnVerbLevel = Teuchos::VERB_NONE;
+      else if (verbosity == "VERB_DEFAULT") solnVerbLevel = Teuchos::VERB_DEFAULT;
+      else if (verbosity == "VERB_LOW")     solnVerbLevel = Teuchos::VERB_LOW;
+      else if (verbosity == "VERB_MEDIUM")  solnVerbLevel = Teuchos::VERB_MEDIUM;
+      else if (verbosity == "VERB_HIGH")    solnVerbLevel = Teuchos::VERB_HIGH;
+      else if (verbosity == "VERB_EXTREME") solnVerbLevel = Teuchos::VERB_EXTREME;
+      else TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+         "Unknown verbosity option specified in Piro_RythmosSolver.");
+    }
+
+    t_initial = rythmosPL->sublist("Integrator Settings").get("Initial Time", 0.0);
+    t_final = rythmosPL->sublist("Integrator Settings").get("Final Time", 0.1);
+
+    const std::string stepperType = rythmosPL->sublist("Stepper Settings")
+      .sublist("Stepper Selection").get("Stepper Type", "Backward Euler");
+     //
+     //    *out << "\nB) Create the Stratimikos linear solver factory ...\n";
+     //
+     // This is the linear solve strategy that will be used to solve for the
+     // linear system with the W.
+     //
+     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
+
+#ifdef Piro_ENABLE_Ifpack2
+     typedef Thyra::PreconditionerFactoryBase<double> Base;
+     typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double> > Impl;
+     linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
+#endif  
+#ifdef Piro_ENABLE_MueLu
+     Stratimikos::enableMueLuTpetra(linearSolverBuilder);
+#endif
+  
+     linearSolverBuilder.setParameterList(sublist(rythmosSolverPL, "Stratimikos", true));
+     rythmosSolverPL->validateParameters(*getValidRythmosSolverParameters(),0);
+     RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory =
+                                  createLinearSolveStrategy(linearSolverBuilder);
+     //
+     *out << "\nC) Create and initalize the forward model ...\n";
+     //
+     // C.1) Create the underlying EpetraExt::ModelEvaluator
+     // already constructed as "model". Decorate if needed.
+     // TODO: Generelize to any explicit method, option to invert mass matrix
+     if (stepperType == "Explicit RK") {
+      if (rythmosSolverPL->get("Invert Mass Matrix", false)) {
+        Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model;
+        rythmosSolverPL->get("Lump Mass Matrix", false);
+        model = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
+              sublist(rythmosSolverPL,"Stratimikos", true), origModel));
+      }
+     }
+     // C.2) Create the Thyra-wrapped ModelEvaluator
+    
+      thyraModel = rcp(new Thyra::DefaultModelEvaluatorWithSolveFactory<Scalar>(model, lowsFactory)); 
+
+    const RCP<const Thyra::VectorSpaceBase<double> > x_space =
+      thyraModel->get_x_space();
+
+    //
+    *out << "\nD) Create the stepper and integrator for the forward problem ...\n";
+    //
+    fwdTimeStepSolver = Rythmos::timeStepNonlinearSolver<double>();
+    
+    if (rythmosSolverPL->getEntryPtr("NonLinear Solver")) {
+      const RCP<Teuchos::ParameterList> nonlinePL =
+                                 sublist(rythmosSolverPL, "NonLinear Solver", true);
+      fwdTimeStepSolver->setParameterList(nonlinePL);
+    }
+    // Force Default Integrator since this is needed for Observers
+        rythmosPL->sublist("Integrator Settings").sublist("Integrator Selection").
+      set("Integrator Type","Default Integrator");
+
+    RCP<Rythmos::IntegratorBuilder<double> > ib = Rythmos::integratorBuilder<double>();
+    ib->setParameterList(rythmosPL);
+    Thyra::ModelEvaluatorBase::InArgs<double> ic = thyraModel->getNominalValues();
+    RCP<Rythmos::IntegratorBase<double> > integrator = ib->create(thyraModel,ic,fwdTimeStepSolver);
+    fwdStateIntegrator = Teuchos::rcp_dynamic_cast<Rythmos::DefaultIntegrator<double> >(integrator,true);
+
+    fwdStateStepper = fwdStateIntegrator->getNonconstStepper();
+  } 
+else {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        appParams->isSublist("Rythmos") || appParams->isSublist("Rythmos Solver"),
+        Teuchos::Exceptions::InvalidParameter, std::endl <<
+        "Error! Piro::RythmosSolver: must have either Rythmos or Rythmos Solver sublist ");
+
   }
 
   isInitialized = true;
@@ -811,6 +924,21 @@ Piro::RythmosSolver<Scalar>::getValidRythmosParameters() const
 }
 
 template <typename Scalar>
+Teuchos::RCP<const Teuchos::ParameterList>
+Piro::RythmosSolver<Scalar>::getValidRythmosSolverParameters() const
+{
+  Teuchos::RCP<Teuchos::ParameterList> validPL =
+    Teuchos::rcp(new Teuchos::ParameterList("ValidRythmosSolverParams"));;
+  validPL->sublist("Rythmos", false, "");
+  validPL->sublist("Stratimikos", false, "");
+  validPL->sublist("NonLinear Solver", false, "");
+  validPL->set<std::string>("Verbosity Level", "", "");
+  validPL->set<bool>("Invert Mass Matrix", false, "");
+  validPL->set<bool>("Lump Mass Matrix", false, "");
+  return validPL;
+}
+
+template <typename Scalar>
 void Piro::RythmosSolver<Scalar>::
 addStepperFactory(const std::string & stepperName,const Teuchos::RCP<RythmosStepperFactory<Scalar> > & factory)
 {
@@ -833,3 +961,4 @@ Piro::rythmosSolver(
 
   return Teuchos::rcp(new RythmosSolver<Scalar>(appParams, in_model, observer));
 }
+

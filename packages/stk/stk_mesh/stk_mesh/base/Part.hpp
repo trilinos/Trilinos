@@ -75,6 +75,7 @@ namespace impl {
  */
 class Part {
 public:
+    enum { INVALID_ID = -1 };
 
   /** \brief  The \ref stk::mesh::MetaData "meta data manager"
    *          that owns the PartRepository which created this part.
