@@ -124,14 +124,8 @@ int main(int argc, char *argv[])
   ///////////////////////////////////////////////////////////////////////
   // Create a Zoltan2 partitioning problem
 
-#ifdef HAVE_ZOLTAN2_MPI
-  Zoltan2::PartitioningProblem<inputAdapter_t> *problem = 
-           new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia, &params, 
-                                                            MPI_COMM_WORLD);
-#else
   Zoltan2::PartitioningProblem<inputAdapter_t> *problem = 
            new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia, &params);
-#endif
    
   ///////////////////////////////////////////////////////////////////////
   // Solve the problem
