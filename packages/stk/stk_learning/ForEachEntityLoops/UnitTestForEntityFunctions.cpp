@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-#include <omp.h>
 #include <string>
 #include <functional>
 #include <stk_unit_test_utils/ioUtils.hpp>
@@ -12,6 +11,9 @@
 #include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include "stk_io/StkMeshIoBroker.hpp"
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 namespace
 {
