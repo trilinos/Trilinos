@@ -63,6 +63,10 @@ public:
 
         if (parallel_size() > 1)
         {
+            stk::mesh::PartVector shared_part, owned_part, empty;
+            shared_part.push_back(&m_mesh_meta_data.globally_shared_part());
+            owned_part.push_back(&m_mesh_meta_data.locally_owned_part());
+
             stk::mesh::EntityVector modified_entities(shared_modified.size());
             for(size_t i = 0; i < shared_modified.size(); ++i)
             {
@@ -70,11 +74,16 @@ public:
                 int sharing_proc = shared_modified[i].m_sharing_proc;
                 entity_comm_map_insert(entity, stk::mesh::EntityCommInfo(stk::mesh::BulkData::SHARED, sharing_proc));
                 int owning_proc = shared_modified[i].m_owner;
-                const bool changed = this->internal_set_parallel_owner_rank_but_not_comm_lists(entity, owning_proc);
-                if (changed)
+                const bool am_not_owner = this->internal_set_parallel_owner_rank_but_not_comm_lists(entity, owning_proc);
+                if (am_not_owner)
                 {
                     stk::mesh::EntityKey key = this->entity_key(entity);
                     internal_change_owner_in_comm_data(key, owning_proc);
+                    internal_change_entity_parts(entity, shared_part /*add*/, owned_part /*remove*/);
+                }
+                else
+                {
+                    internal_change_entity_parts(entity, shared_part /*add*/, empty /*remove*/);
                 }
                 modified_entities[i] = entity;
             }
@@ -82,8 +91,6 @@ public:
             std::sort(modified_entities.begin(), modified_entities.end(), stk::mesh::EntityLess(*this));
             stk::mesh::EntityVector::iterator iter = std::unique(modified_entities.begin(), modified_entities.end());
             modified_entities.resize(iter-modified_entities.begin());
-
-            move_entities_to_proper_part_ownership( modified_entities );
 
             add_comm_list_entries_for_entities( modified_entities );
 
@@ -1224,9 +1231,12 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
             if(this_element < connected_elements[j] && connected_elements[j] > 0)
             {
                 stk::mesh::EntityId face_global_id = get_element_face_multiplier() * bulkData.identifier(element1) + via_sides[i][j];
-                stk::mesh::Entity face = stk::mesh::impl::get_or_create_face_at_element_side(bulkData, element1, via_sides[i][j], face_global_id,
-                        part);
-//                stk::mesh::Entity face = stk::mesh::declare_element_side(bulkData, face_global_id, element1, via_sides[i][j], &part);
+                if ( is_id_already_in_use_locally(bulkData, side_rank, face_global_id) )
+                {
+
+                }
+                stk::mesh::Entity face = stk::mesh::impl::get_or_create_face_at_element_side(bulkData, element1, via_sides[i][j],
+                        face_global_id, part);
 
                 const stk::mesh::Entity* side_nodes = bulkData.begin_nodes(face);
                 unsigned num_side_nodes = bulkData.num_nodes(face);
