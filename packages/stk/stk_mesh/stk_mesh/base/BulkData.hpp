@@ -684,7 +684,7 @@ public:
 
 protected: //functions
 
-  bool modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt = MOD_END_SORT); // Mod Mark Move to internal
+  bool modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector, modification_optimization opt = MOD_END_SORT);
 
   bool internal_modification_end_for_skin_mesh( EntityRank entity_rank, modification_optimization opt, stk::mesh::Selector selectedToSkin,
           const stk::mesh::Selector * only_consider_second_element_from_this_selector);
@@ -1056,7 +1056,7 @@ private:
                                     const std::vector<EntityKey> & remove_receive );
 
 
-  bool internal_modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt );
+  bool internal_modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector, modification_optimization opt );
 
 
   void internal_establish_new_owner(stk::mesh::Entity entity);
