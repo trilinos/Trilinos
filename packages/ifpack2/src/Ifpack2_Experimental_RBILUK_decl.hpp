@@ -206,6 +206,11 @@ class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename Matrix
 
   //! @name Constructors/Destructors.
   //@{
+  /// \brief Constructor that takes a Tpetra::RowMatrix
+  ///
+  /// \param A_in [in] The input matrix.
+  RBILUK (const Teuchos::RCP<const row_matrix_type>& A_in);
+
   /// \brief Constructor that takes a Tpetra::Experimental::BlockCrsMatrix
   ///
   /// \param A_in [in] The input matrix.
