@@ -196,6 +196,10 @@ int main(int narg, char *arg[]) {
   Zoltan2::MeshEntityType primaryEType = ia.getPrimaryEntityType();
   Zoltan2::MeshEntityType secondAdjEType = ia.getSecondAdjacencyEntityType();
 
+  if (ia.avail2ndAdjs(primaryEType, secondAdjEType)) {
+    ia.get2ndAdjsView(primaryEType, secondAdjEType, offsets, adjacencyIds);
+  }
+
   // Set parameters for partitioning
   if (me == 0) cout << "Creating parameter list ... \n\n";
 
@@ -236,20 +240,9 @@ int main(int narg, char *arg[]) {
 
     problem.solve();
 
-    if (ia.avail2ndAdjs(primaryEType, secondAdjEType)) {
-      ia.get2ndAdjsView(primaryEType, secondAdjEType, offsets, adjacencyIds);
-    }
-    else {
-      //RCP<Environment> env;
-
-      /*try {
-	env=rcp(new Environment(&params,Teuchos::DefaultComm<int>::getComm()));
-      }
-      Z2_FORWARD_EXCEPTIONS*/
-
-      //RCP<const Environment> envConst=rcp_const_cast<const Environment>(env);
-      //Zoltan2::GraphModel<inputAdapter_t> graphModel(ia, envConst, CommT, );
-    }
+    /*problem.getGraphModel->get2ndAdjsViewFromAdjs(&ia, primaryEType,
+						secondAdjEType, offsets,
+						adjacencyIds);*/
 
     if (me) problem.printMetrics(cout);
   }
