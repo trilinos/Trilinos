@@ -35,7 +35,7 @@
 #include <functional>                   // for less
 #include <list>                         // for list, _List_iterator, etc
 #include <map>                          // for multimap, map, etc
-#include <memory>                       // for auto_ptr
+#include <memory>                       // for
 #include <set>                          // for multiset, set, etc
 #include <sstream>                      // for ostringstream, ostream, etc
 #include <stk_util/diag/WriterExt.hpp>  // for operator<<

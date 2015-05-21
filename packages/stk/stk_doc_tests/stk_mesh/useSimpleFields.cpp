@@ -69,10 +69,10 @@ TEST(stkMeshHowTo, useSimpleFields)
     stk::mesh::BulkData mesh(metaData, MPI_COMM_WORLD);
     mesh.modification_begin();
     stk::mesh::EntityId elem1Id = 1;
-    stk::mesh::EntityId elem1Nodes[] = {1, 2, 3, 4};
+    stk::mesh::EntityIdVector elem1Nodes {1, 2, 3, 4};
     stk::mesh::Entity elem1=stk::mesh::declare_element(mesh, tetPart, elem1Id, elem1Nodes);
     stk::mesh::EntityId elem2Id = 2;
-    stk::mesh::EntityId elem2Nodes[] = {2, 3, 4, 5};
+    stk::mesh::EntityIdVector elem2Nodes {2, 3, 4, 5};
     stk::mesh::Entity elem2=stk::mesh::declare_element(mesh, tetPart, elem2Id, elem2Nodes);
     mesh.modification_end();
 

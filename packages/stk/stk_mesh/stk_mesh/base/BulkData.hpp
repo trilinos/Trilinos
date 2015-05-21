@@ -80,13 +80,19 @@ namespace stk { class CommAll; }
 #include "EntityLess.hpp"
 #include "SharedEntityType.hpp"
 
+namespace sierra { namespace Fmwk { class EntityCreationOperationList; } }
+
 namespace stk {
 namespace mesh {
 
 class BulkData;
+enum class FaceCreationBehavior;
+
 void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
 void communicate_field_data(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
 void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector const& skin_parts, const Selector * secondary_selector);
+void create_edges( BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges );
+void internal_create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges, FaceCreationBehavior faceCreationBehavior);
 
 typedef std::unordered_map<EntityKey, size_t, stk::mesh::HashValueForEntityKey> GhostReuseMap;
 
@@ -200,8 +206,6 @@ public:
               static_cast<stk::mesh::impl::MeshModification::modification_optimization>(opt);
       return m_meshModification.modification_end(input_opt);
   }
-
-  bool modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt = MOD_END_SORT); // Mod Mark Move to internal
 
   /** \brief  Give away ownership of entities to other parallel processes.
    *
@@ -448,9 +452,6 @@ public:
   inline bool element_side_polarity( const Entity elem ,
       const Entity side , unsigned local_side_id ) const;
 
-  /** \brief  All entities with communication information. */
-  STK_DEPRECATED(const EntityCommListInfoVector & comm_list() const) { return internal_comm_list(); } //deprecated on March 6, 2015
-
   inline VolatileFastSharedCommMapOneRank const& volatile_fast_shared_comm_map(EntityRank rank) const;  // CLEANUP: only used by FieldParallel.cpp
 
   /** \brief  Query the shared-entity aura.
@@ -503,13 +504,6 @@ public:
   const std::vector<Ghosting*> & ghostings() const { return m_ghosting ; }
 
   size_t get_num_communicated_entities() const { return m_entity_comm_list.size(); }
-
-  /** \brief  Entity Comm functions that are now moved to BulkData
-   */
-  STK_DEPRECATED(PairIterEntityComm entity_comm_map(const EntityKey & key) const) { return internal_entity_comm_map(key); } //deprecated on March 2, 2015
-  STK_DEPRECATED(PairIterEntityComm entity_comm_map(const EntityKey & key, const Ghosting & sub ) const) { return internal_entity_comm_map(key,sub); }   //deprecated on March 2, 2015
-
-  STK_DEPRECATED(int entity_comm_map_owner(const EntityKey & key) const); //deprecated on March 2, 2015
 
   bool in_shared(EntityKey key) const { return !internal_entity_comm_map_shared(key).empty(); }         // CLEANUP: only used for testing
   bool in_shared(EntityKey key, int proc) const;         // CLEANUP: only used for testing
@@ -690,6 +684,11 @@ public:
 
 protected: //functions
 
+  bool modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt = MOD_END_SORT); // Mod Mark Move to internal
+
+  bool internal_modification_end_for_skin_mesh( EntityRank entity_rank, modification_optimization opt, stk::mesh::Selector selectedToSkin,
+          const stk::mesh::Selector * only_consider_second_element_from_this_selector);
+
   bool inputs_ok_and_need_ghosting(Ghosting & ghosts ,
                                const std::vector<EntityProc> & add_send ,
                                const std::vector<EntityKey> & remove_receive,
@@ -733,9 +732,8 @@ protected: //functions
                          OrdinalVector& ordinal_scratch, PartVector& part_scratch);
 
   bool internal_declare_relation(Entity e_from, Entity e_to,
-                                 RelationIdentifier local_id,
-                                 unsigned sync_count, bool is_back_relation,
-                                 Permutation permut);
+                                 RelationIdentifier local_id, Permutation permut);
+
   /** methods for managing arrays of entity member-data */
 
   inline void log_created_parallel_copy(Entity entity);
@@ -920,6 +918,12 @@ protected: //functions
 
   AutomaticAuraOption get_automatic_aura_option() const { return m_autoAuraOption; }
 
+  void resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(EntityRank entity_rank, stk::mesh::Selector selectedToSkin);
+
+  void internal_finish_modification_end(modification_optimization opt);
+
+  void internal_change_owner_in_comm_data(const EntityKey& key, int new_owner);
+
 private: //functions
 
   void internal_dump_all_mesh_info(std::ostream& out = std::cout) const;
@@ -982,7 +986,6 @@ private: //functions
 
   inline bool internal_add_node_sharing_called() const;
 
-  void internal_change_owner_in_comm_data(const EntityKey& key, int new_owner);
   void internal_sync_comm_list_owners();
 
   void addMeshEntities(stk::topology::rank_t rank, const std::vector<stk::mesh::EntityId> new_ids,
@@ -1047,13 +1050,9 @@ private: //functions
                                     const std::vector<EntityProc> & add_send ,
                                     const std::vector<EntityKey> & remove_receive );
 
-  void resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(EntityRank entity_rank, stk::mesh::Selector selectedToSkin);
 
   bool internal_modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt );
-  bool internal_modification_end_for_skin_mesh( EntityRank entity_rank, modification_optimization opt, stk::mesh::Selector selectedToSkin,
-          const stk::mesh::Selector * only_consider_second_element_from_this_selector);
 
-  void internal_finish_modification_end(modification_optimization opt);
 
   void internal_establish_new_owner(stk::mesh::Entity entity);
   void internal_update_parts_for_shared_entity(stk::mesh::Entity entity, const bool is_entity_shared, const bool did_i_just_become_owner);
@@ -1102,11 +1101,14 @@ private: //functions
   friend class stk::mesh::Bucket; // for field callback
   friend class Ghosting; // friend until Ghosting is refactored to be like Entity
   friend class ::stk::mesh::impl::MeshModification;
+  friend class ::sierra::Fmwk::EntityCreationOperationList;
 
   // friends until it is decided what we're doing with Fields and Parallel and BulkData
   friend void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
   friend void communicate_field_data(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
   friend void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector const& skin_parts, const Selector * secondary_selector);
+  friend void create_edges( BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges );
+  friend void internal_create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges, FaceCreationBehavior faceCreationBehavior);
 
   bool ordered_comm( const Entity entity );
   void pack_owned_verify(CommAll & all);

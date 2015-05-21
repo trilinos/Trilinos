@@ -46,28 +46,31 @@ namespace stk { namespace mesh { class Part; } }
 namespace stk {
 namespace mesh {
 
-/** \addtogroup stk_mesh_bulk_data_element
- *  \{
- */
-
-//----------------------------------------------------------------------
-/** \brief  Declare an element member of a Part with a topology
- *          and nodes conformal to that topology.
- */
 Entity declare_element( BulkData & mesh ,
                         PartVector & parts , // parts[0] expected to have topology
                         const EntityId elem_id ,
-                        const EntityId node_id[] );
+                        const EntityIdVector & node_ids );
 
 inline
 Entity declare_element( BulkData & mesh ,
                         Part & part ,
                         const EntityId elem_id ,
-                        const EntityId node_id[] )
+                        const EntityIdVector & node_ids )
 {
   PartVector vec(1, &part);
-  return declare_element(mesh, vec, elem_id, node_id);
+  return declare_element(mesh, vec, elem_id, node_ids);
 }
+
+STK_DEPRECATED(Entity declare_element( BulkData & mesh ,
+                                       PartVector & parts , // parts[0] expected to have topology
+                                       const EntityId elem_id ,
+                                       const EntityId node_id[] ));  // Delete on 2015-07-09
+
+STK_DEPRECATED(Entity declare_element( BulkData & mesh ,
+                                       Part & part ,
+                                       const EntityId elem_id ,
+                                       const EntityId node_id[] ));  // Delete on 2015-07-09
+
 
 /** \brief  Create (or find) an element side.
  *

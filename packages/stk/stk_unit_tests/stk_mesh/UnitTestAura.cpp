@@ -97,11 +97,10 @@ stk::mesh::Part& setupDavidNobleTestCase(stk::mesh::BulkData& bulk)
 
     bulk.modification_begin();
 
-    const int nodesPerElem = 3;
-    stk::mesh::EntityId elem1_nodes[nodesPerElem] = {1, 2, 3}; // 1
-    stk::mesh::EntityId elem2_nodes[nodesPerElem] = {1, 4, 2}; // 2
-    stk::mesh::EntityId elem3_nodes[nodesPerElem] = {6, 1, 5}; // 3
-    stk::mesh::EntityId elem4_nodes[nodesPerElem] = {6, 4, 1}; // 4
+    stk::mesh::EntityIdVector elem1_nodes {1, 2, 3}; // 1
+    stk::mesh::EntityIdVector elem2_nodes {1, 4, 2}; // 2
+    stk::mesh::EntityIdVector elem3_nodes {6, 1, 5}; // 3
+    stk::mesh::EntityIdVector elem4_nodes {6, 4, 1}; // 4
 
     stk::mesh::EntityId elemId1 = 1; // p0
     stk::mesh::EntityId elemId2 = 2; // p1

@@ -91,7 +91,8 @@ namespace Stokhos {
 
     //! Constructor to satisfy Sacado::MP::Vector, disabled via error type.
     KOKKOS_INLINE_FUNCTION
-    ViewStorage( const error_storage_type_is_not_allocateable & ,
+    ViewStorage( const error_storage_type_is_not_allocateable & z =
+                   error_storage_type_is_not_allocateable(),
                  const value_type& x = value_type(0) );
 
     //! Constructor
@@ -100,6 +101,10 @@ namespace Stokhos {
                  const ordinal_type & arg_size = 0 ,
                  const ordinal_type & arg_stride = 0 ) :
       coeff_(v), size_(arg_size), stride_(arg_stride) {}
+
+    //! Constructor from array
+    KOKKOS_INLINE_FUNCTION
+    ViewStorage(const ordinal_type& sz, const value_type* x) {}
 
     //! Constructor for creating a view
     KOKKOS_INLINE_FUNCTION

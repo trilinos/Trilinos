@@ -170,6 +170,11 @@ public:
         return this->internal_modification_end_for_change_entity_owner(opt);
     }
 
+    bool my_modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt = MOD_END_SORT)
+    {
+        return this->modification_end_for_entity_creation(entity_rank, opt);
+    }
+
     bool my_is_entity_in_sharing_comm_map(stk::mesh::Entity entity)
     {
         return this->is_entity_in_sharing_comm_map(entity);

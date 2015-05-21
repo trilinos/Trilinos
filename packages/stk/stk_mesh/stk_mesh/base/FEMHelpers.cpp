@@ -102,6 +102,7 @@ void verify_declare_element_edge(
 
 } // unnamed namespace
 
+// Deprecated function
 Entity declare_element(BulkData & mesh,
         PartVector & parts,
         const EntityId elem_id,
@@ -134,6 +135,65 @@ Entity declare_element(BulkData & mesh,
         if(!mesh.is_valid(node))
         {
             node = mesh.declare_entity(node_rank, node_id[i], empty);
+        }
+
+        mesh.declare_relation(elem, node, i, perm, ordinal_scratch, part_scratch);
+    }
+    return elem;
+}
+
+// Deprecated function
+Entity declare_element( BulkData & mesh ,
+                        Part & part ,
+                        const EntityId elem_id ,
+                        const EntityId node_id[] )
+{
+  PartVector vec(1, &part);
+  MetaData & fem_meta = MetaData::get(mesh);
+  stk::topology top = fem_meta.get_topology(part);
+  EntityIdVector tempNodeIds(top.num_nodes());
+
+  for(unsigned i = 0; i < top.num_nodes(); ++i) {
+    tempNodeIds[i] = node_id[i];
+  }
+
+  return declare_element(mesh, vec, elem_id, tempNodeIds);
+}
+
+
+Entity declare_element(BulkData & mesh,
+        PartVector & parts,
+        const EntityId elem_id,
+        const EntityIdVector & node_ids)
+{
+    MetaData & fem_meta = MetaData::get(mesh);
+    stk::topology top = fem_meta.get_topology(*parts[0]);
+    ThrowAssert(node_ids.size() >= top.num_nodes());
+
+    ThrowErrorMsgIf(top == stk::topology::INVALID_TOPOLOGY,
+            "Part " << parts[0]->name() << " does not have a local topology");
+
+    PartVector empty;
+
+    const EntityRank entity_rank = stk::topology::ELEMENT_RANK;
+
+    Entity elem = mesh.declare_entity(entity_rank, elem_id, parts);
+
+    const EntityRank node_rank = stk::topology::NODE_RANK;
+
+    Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
+    OrdinalVector ordinal_scratch;
+    ordinal_scratch.reserve(64);
+    PartVector part_scratch;
+    part_scratch.reserve(64);
+
+    for(unsigned i = 0; i < top.num_nodes(); ++i)
+    {
+        //declare node if it doesn't already exist
+        Entity node = mesh.get_entity(node_rank, node_ids[i]);
+        if(!mesh.is_valid(node))
+        {
+            node = mesh.declare_entity(node_rank, node_ids[i], empty);
         }
 
         mesh.declare_relation(elem, node, i, perm, ordinal_scratch, part_scratch);

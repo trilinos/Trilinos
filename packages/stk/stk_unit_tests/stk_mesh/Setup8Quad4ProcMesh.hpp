@@ -82,16 +82,15 @@ void setup8Quad4ProcMesh2D(stk::mesh::BulkData& bulk)
   stk::mesh::EntityId proc_elemIDs[][2] = {{1, 5}, {2, 6}, {3, 7}, {4, 8}};
 
   //list of node-ids for each element
-  const int nodesPerElem = 4;
-  stk::mesh::EntityId elem_nodeIDs[][nodesPerElem] = {
-  {1, 2, 7, 6},
-  {2, 3, 8, 7},
-  {3, 4, 9, 8},
-  {4, 5, 10, 9},
-  {6, 7, 12, 11},
-  {7, 8, 13, 12},
-  {8, 9, 14, 13},
-  {9, 10, 15, 14}
+  stk::mesh::EntityIdVector elem_nodeIDs[] {
+    {1, 2, 7, 6},
+    {2, 3, 8, 7},
+    {3, 4, 9, 8},
+    {4, 5, 10, 9},
+    {6, 7, 12, 11},
+    {7, 8, 13, 12},
+    {8, 9, 14, 13},
+    {9, 10, 15, 14}
   };
 
   //list of triples: (owner-proc, shared-nodeID, sharing-proc)

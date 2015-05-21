@@ -74,7 +74,7 @@ TEST( UnitTestDeclareElement , inject_shell )
   // Whoever owns the 0,0,0 element create the shell and insert it between
   // the two elements.
   if ( fixture.m_bulk_data.is_valid(elem) && p_rank == fixture.m_bulk_data.parallel_owner_rank(elem) ) {
-    stk::mesh::EntityId elem_node[4];
+    stk::mesh::EntityIdVector elem_node(4);
     elem_node[0] = fixture.node_id( 1, 0, 0 );
     elem_node[1] = fixture.node_id( 1, 1, 0 );
     elem_node[2] = fixture.node_id( 1, 1, 1 );

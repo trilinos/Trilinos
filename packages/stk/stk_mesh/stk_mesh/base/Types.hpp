@@ -157,6 +157,8 @@ typedef Ordinal FieldArrayRank;
 
 typedef uint64_t EntityId ;
 
+typedef std::vector<EntityId> EntityIdVector;
+
 // Base Entity Rank
 // Note:  This BaseEntityRank can be considered the leaf of a tree and it
 // represents the furthest out you can go in downward relations.
