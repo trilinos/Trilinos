@@ -18,7 +18,8 @@ namespace Example {
   KOKKOS_INLINE_FUNCTION
   int
   TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::Blocked>
-  ::invoke(const typename CrsExecViewTypeA::policy_type::member_type &member,
+  ::invoke(typename CrsExecViewTypeA::policy_type &policy,
+           const typename CrsExecViewTypeA::policy_type::member_type &member,
            const int diagA,
            CrsExecViewTypeA &A,
            DenseExecViewTypeB &B) {
@@ -58,11 +59,13 @@ namespace Example {
 
       // B1 = inv(triu(A11))*B1
       Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,AlgoTrsm::ForTriSolveBlocked>
-        ::invoke<ParallelForType>(member, diagA, 1.0, A11, B1);
+        ::invoke<ParallelForType>(policy, member, 
+                                  diagA, 1.0, A11, B1);
 
       // B2 = B2 - A12'*B1
       Gemm<Trans::ConjTranspose,Trans::NoTranspose,AlgoGemm::ForTriSolveBlocked>
-        ::invoke<ParallelForType>(member, -1.0, A12, B1, 1.0, B2);
+        ::invoke<ParallelForType>(policy, member, 
+                                  -1.0, A12, B1, 1.0, B2);
 
       // -----------------------------------------------------
       Merge_3x3_to_2x2(A00, A01, A02, /**/ ATL, ATR,

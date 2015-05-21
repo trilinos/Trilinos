@@ -58,8 +58,6 @@ ENDIF ()
 # KokkosClassic::DoNotUse::TPINode explicitly.  It is DEPRECATED and
 # and is disabled by default.
 #
-ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_ThreadPool)
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ThreadPool)
 IF(${PROJECT_NAME}_ENABLE_ThreadPool AND ${PACKAGE_NAME}_ENABLE_ThreadPool AND NOT Tpetra_ENABLE_Kokkos_Refactor)
   GLOBAL_SET(${PACKAGE_NAME}_ENABLE_TPINode_DEFAULT ON)
 ELSE()

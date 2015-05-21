@@ -356,7 +356,7 @@ public:
     algo_state.ngrad = 0;
 
     Real htol = std::sqrt(ROL_EPSILON);
-    Real ftol = ROL_OVERFLOW; 
+    Real ftol = 0.1*ROL_OVERFLOW; 
 
     step_state->descentVec  = s.clone();
     step_state->gradientVec = g.clone();

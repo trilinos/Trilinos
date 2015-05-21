@@ -122,6 +122,9 @@ namespace Example {
     const auto epsilon = sqrt(NumericTraits<value_type>::epsilon());
 
     cout << "testTriSolveByBlocks::Begin - " << r_val << endl;
+    typename TaskFactoryType::policy_type policy;
+    TaskFactoryType::setPolicy(&policy);
+
     CrsHierTaskViewType TU(&HU);
     for (ordinal_type k=0;k<HU.NumNonZeros();++k)
       HU.Value(k).fillRowViewArray();
@@ -133,13 +136,13 @@ namespace Example {
 
       DenseHierTaskViewType TB(&HB);
 
-      typedef typename CrsTaskViewType::policy_type policy_type;
-      policy_type policy;
-      auto future = policy.create_team(TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::ByBlocks>
-                                       ::TaskFunctor<ForType,CrsHierTaskViewType,DenseHierTaskViewType>
-                                       (Diag::NonUnit, TU, TB), 0);
-      policy.spawn(future);
-      Kokkos::Experimental::wait(policy);
+      auto future = TaskFactoryType::Policy().create_team
+        (TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::ByBlocks>
+         ::TaskFunctor<ForType,CrsHierTaskViewType,DenseHierTaskViewType>
+         (Diag::NonUnit, TU, TB), 0);
+
+      TaskFactoryType::Policy().spawn(future);
+      Kokkos::Experimental::wait(TaskFactoryType::Policy());
 
       cout << BB_ByBlocks << endl;
     }
@@ -148,13 +151,13 @@ namespace Example {
 
       DenseTaskViewType B(&BB_Unblocked);
 
-      typedef typename CrsTaskViewType::policy_type policy_type;
-      policy_type policy;
-      auto future = policy.create_team(TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::Unblocked>
-                                       ::TaskFunctor<ForType,CrsTaskViewType,DenseTaskViewType>
-                                       (Diag::NonUnit, U, B), 0);
-      policy.spawn(future);
-      Kokkos::Experimental::wait(policy);
+      auto future = TaskFactoryType::Policy().create_team
+        (TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::Unblocked>
+         ::TaskFunctor<ForType,CrsTaskViewType,DenseTaskViewType>
+         (Diag::NonUnit, U, B), 0);
+
+      TaskFactoryType::Policy().spawn(future);
+      Kokkos::Experimental::wait(TaskFactoryType::Policy());
 
       cout << BB_Unblocked << endl;
     }
@@ -171,28 +174,26 @@ namespace Example {
 
       DenseHierTaskViewType TB(&HB);
 
-      typedef typename CrsTaskViewType::policy_type policy_type;
-      policy_type policy;
-      auto future = policy.create_team(TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::ByBlocks>
-                                       ::TaskFunctor<ForType,CrsHierTaskViewType,DenseHierTaskViewType>
-                                       (Diag::NonUnit, TU, TB), 0);
+      auto future = TaskFactoryType::Policy().create_team
+        (TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::ByBlocks>
+         ::TaskFunctor<ForType,CrsHierTaskViewType,DenseHierTaskViewType>
+         (Diag::NonUnit, TU, TB), 0);
 
-      policy.spawn(future);
-      Kokkos::Experimental::wait(policy);
+      TaskFactoryType::Policy().spawn(future);
+      Kokkos::Experimental::wait(TaskFactoryType::Policy());
     }
     {
       r_val += tmg.fill(BB_Unblocked);
 
       DenseTaskViewType B(&BB_Unblocked);
 
-      typedef typename CrsTaskViewType::policy_type policy_type;
-      policy_type policy;
-      auto future = policy.create_team(TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::Unblocked>
-                                       ::TaskFunctor<ForType,CrsTaskViewType,DenseTaskViewType>
-                                       (Diag::NonUnit, U, B), 0);
+      auto future = TaskFactoryType::Policy().create_team
+        (TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::Unblocked>
+         ::TaskFunctor<ForType,CrsTaskViewType,DenseTaskViewType>
+         (Diag::NonUnit, U, B), 0);
 
-      policy.spawn(future);
-      Kokkos::Experimental::wait(policy);
+      TaskFactoryType::Policy().spawn(future);
+      Kokkos::Experimental::wait(TaskFactoryType::Policy());
 
       cout << BB_Unblocked << endl;
     }

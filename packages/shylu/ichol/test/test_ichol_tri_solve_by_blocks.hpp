@@ -122,6 +122,9 @@ namespace Example {
     TmgType tmg(AA.NumRows(), nrhs);
 
     cout << "testICholTriSolveByBlocks::Begin - " << r_val << endl;
+    typename TaskFactoryType::policy_type policy;
+    TaskFactoryType::setPolicy(&policy);
+
     {
       CrsHierTaskViewType TU(&HU);
       for (ordinal_type k=0;k<HU.NumNonZeros();++k)
@@ -130,28 +133,29 @@ namespace Example {
       DenseHierTaskViewType TB(&HB);
       r_val += tmg.fill(BB_ByBlocks);
       
-      typedef typename CrsTaskViewType::policy_type policy_type;
-      policy_type policy;
-
       auto future_factor 
-        = policy.create_team(IChol<Uplo::Upper,AlgoIChol::ByBlocks>::
+        = TaskFactoryType::Policy().create_team(IChol<Uplo::Upper,AlgoIChol::ByBlocks>::
                              TaskFunctor<ForType,CrsHierTaskViewType>(TU), 0);
-      policy.spawn(future_factor);
+      TaskFactoryType::Policy().spawn(future_factor);
       
       auto future_forward_solve 
-        = policy.create_team(TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::ByBlocks>
+        = TaskFactoryType::Policy().create_team(TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::ByBlocks>
                              ::TaskFunctor<ForType,CrsHierTaskViewType,DenseHierTaskViewType>
-                             (Diag::NonUnit, TU, TB), 0);
-      policy.spawn(future_forward_solve);
+                             (Diag::NonUnit, TU, TB), 1);
+
+      TaskFactoryType::Policy().add_dependence(future_forward_solve, future_factor);      
+      TaskFactoryType::Policy().spawn(future_forward_solve);
       
       auto future_backward_solve 
-        = policy.create_team(TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::ByBlocks>
+        = TaskFactoryType::Policy().create_team(TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::ByBlocks>
                              ::TaskFunctor<ForType,CrsHierTaskViewType,DenseHierTaskViewType>
-                             (Diag::NonUnit, TU, TB), 0);
-      
-      policy.spawn(future_backward_solve);
+                             (Diag::NonUnit, TU, TB), 1);
 
-      Kokkos::Experimental::wait(policy);
+      TaskFactoryType::Policy().add_dependence(future_backward_solve, future_forward_solve);            
+      TaskFactoryType::Policy().spawn(future_backward_solve);
+
+      Kokkos::Experimental::wait(TaskFactoryType::Policy());
+      cout << BB_ByBlocks << endl;
     }
     {
       CrsTaskViewType U(&UU_Unblocked);
@@ -160,29 +164,29 @@ namespace Example {
       DenseTaskViewType B(&BB_Unblocked);
       r_val += tmg.fill(BB_Unblocked);
       
-      typedef typename CrsTaskViewType::policy_type policy_type;
-      policy_type policy;
       {
-        auto future = policy.create_team(IChol<Uplo::Upper,AlgoIChol::UnblockedOpt1>::
+        auto future = TaskFactoryType::Policy().create_team(IChol<Uplo::Upper,AlgoIChol::UnblockedOpt1>::
                                          TaskFunctor<ForType,CrsTaskViewType>(U), 0);
-        policy.spawn(future);
-        Kokkos::Experimental::wait(policy);
+        TaskFactoryType::Policy().spawn(future);
+        Kokkos::Experimental::wait(TaskFactoryType::Policy());
       }
       {
-        auto future = policy.create_team(TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::Unblocked>
+        auto future = TaskFactoryType::Policy().create_team(TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::Unblocked>
                                          ::TaskFunctor<ForType,CrsTaskViewType,DenseTaskViewType>
                                          (Diag::NonUnit, U, B), 0);
-        policy.spawn(future);
-        Kokkos::Experimental::wait(policy);
+        TaskFactoryType::Policy().spawn(future);
+        Kokkos::Experimental::wait(TaskFactoryType::Policy());
       }
       {
-        auto future = policy.create_team(TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::Unblocked>
+        auto future = TaskFactoryType::Policy().create_team(TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::Unblocked>
                                          ::TaskFunctor<ForType,CrsTaskViewType,DenseTaskViewType>
                                          (Diag::NonUnit, U, B), 0);
         
-        policy.spawn(future);
-        Kokkos::Experimental::wait(policy);
+        TaskFactoryType::Policy().spawn(future);
+        Kokkos::Experimental::wait(TaskFactoryType::Policy());
       }
+
+      cout << BB_Unblocked << endl;
     }
 
     {

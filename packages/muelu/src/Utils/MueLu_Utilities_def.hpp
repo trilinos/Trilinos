@@ -1619,8 +1619,8 @@ namespace MueLu {
         const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpetraOp = Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2TpetraCrs(Op);
 
         RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A;
-	Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(rcpFromRef(tpetraOp),label); //more than meets the eye
-	A = transposer.createTranspose();
+        Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(rcpFromRef(tpetraOp),label); //more than meets the eye
+        A = transposer.createTranspose();
 
         RCP<TpetraCrsMatrix> AA = rcp(new TpetraCrsMatrix(A) );
         RCP<CrsMatrix> AAA = rcp_implicit_cast<CrsMatrix>(AA);
