@@ -87,7 +87,7 @@ namespace Stokhos {
 
     //! Constructor
     KOKKOS_INLINE_FUNCTION
-    DynamicStorage(const ordinal_type& sz,
+    DynamicStorage(const ordinal_type& sz = 1,
                    const value_type& x = value_type(0.0)) :
       sz_(sz), is_view_(false) {
       if (sz_ > 1) {
@@ -96,6 +96,21 @@ namespace Stokhos {
       }
       else {
         coeff_0_ = x;
+        coeff_ = &coeff_0_;
+        is_constant_ = true;
+      }
+    }
+
+    //! Constructor from array
+    KOKKOS_INLINE_FUNCTION
+    DynamicStorage(const ordinal_type& sz, const value_type* x) :
+      sz_(sz), is_view_(false) {
+      if (sz_ > 1) {
+        coeff_ = ds::get_and_fill(x, sz_);
+        is_constant_ = false;
+      }
+      else {
+        coeff_0_ = *x;
         coeff_ = &coeff_0_;
         is_constant_ = true;
       }

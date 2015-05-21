@@ -91,9 +91,19 @@ namespace Stokhos {
 
     //! Constructor
     KOKKOS_INLINE_FUNCTION
+    StaticFixedStorage() = default;
+
+    //! Constructor
+    KOKKOS_INLINE_FUNCTION
     StaticFixedStorage(const ordinal_type& sz,
                        const value_type& x = value_type(0.0)) {
       ss::fill(coeff_, Num, x);
+    }
+
+    //! Constructor from array
+    KOKKOS_INLINE_FUNCTION
+    StaticFixedStorage(const ordinal_type& sz, const value_type* x) {
+      ss::copy(x, coeff_, sz);
     }
 
     //! Constructor for creating a view (not allowed)
@@ -102,9 +112,7 @@ namespace Stokhos {
 
     //! Copy constructor
     KOKKOS_INLINE_FUNCTION
-    StaticFixedStorage(const StaticFixedStorage& s) {
-      ss::copy(s.coeff_, coeff_, Num);
-    }
+    StaticFixedStorage(const StaticFixedStorage& s) = default;
 
     //! Copy constructor
     KOKKOS_INLINE_FUNCTION
@@ -114,14 +122,11 @@ namespace Stokhos {
 
     //! Destructor
     KOKKOS_INLINE_FUNCTION
-    ~StaticFixedStorage() {}
+    ~StaticFixedStorage() = default;
 
     //! Assignment operator
     KOKKOS_INLINE_FUNCTION
-    StaticFixedStorage& operator=(const StaticFixedStorage& s) {
-      ss::copy(s.coeff_, coeff_, Num);
-      return *this;
-    }
+    StaticFixedStorage& operator=(const StaticFixedStorage& s) = default;
 
     //! Assignment operator
     KOKKOS_INLINE_FUNCTION
@@ -318,9 +323,19 @@ namespace Stokhos {
 
     //! Constructor
     KOKKOS_INLINE_FUNCTION
+    StaticFixedStorage() = default;
+
+    //! Constructor
+    KOKKOS_INLINE_FUNCTION
     StaticFixedStorage(const ordinal_type& sz,
                        const value_type& x = value_type(0.0)) {
       ss::fill(coeff_, Num, x);
+    }
+
+    //! Constructor from array
+    KOKKOS_INLINE_FUNCTION
+    StaticFixedStorage(const ordinal_type& sz, const value_type* x) {
+      ss::copy(x, coeff_, sz);
     }
 
     //! Constructor for creating a view (not allowed)
@@ -329,9 +344,7 @@ namespace Stokhos {
 
     //! Copy constructor
     KOKKOS_INLINE_FUNCTION
-    StaticFixedStorage(const StaticFixedStorage& s) {
-      ss::copy(s.coeff_, coeff_, Num);
-    }
+    StaticFixedStorage(const StaticFixedStorage& s) = default;
 
     //! Copy constructor
     KOKKOS_INLINE_FUNCTION
@@ -341,14 +354,11 @@ namespace Stokhos {
 
     //! Destructor
     KOKKOS_INLINE_FUNCTION
-    ~StaticFixedStorage() {}
+    ~StaticFixedStorage() = default;
 
     //! Assignment operator
     KOKKOS_INLINE_FUNCTION
-    StaticFixedStorage& operator=(const StaticFixedStorage& s) {
-      ss::copy(s.coeff_, coeff_, Num);
-      return *this;
-    }
+    StaticFixedStorage& operator=(const StaticFixedStorage& s) = default;
 
     //! Assignment operator
     KOKKOS_INLINE_FUNCTION

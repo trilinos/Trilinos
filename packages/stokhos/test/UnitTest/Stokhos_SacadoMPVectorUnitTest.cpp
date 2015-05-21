@@ -90,6 +90,7 @@ struct UnitTestSetup {
 
 #define UNARY_UNIT_TEST(VEC, OP, OPNAME)                                \
   TEUCHOS_UNIT_TEST( VEC, OPNAME) {                                     \
+    UTS setup;                                                          \
     UTS::vec_type u = OP(setup.x);                                      \
     UTS::vec_type v(setup.sz, 0.0);                                     \
     for (int i=0; i<setup.sz; i++)                                      \
@@ -98,6 +99,7 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC, OPNAME##_const) {                             \
+    UTS setup;                                                          \
     UTS::vec_type u = OP(setup.cx);                                     \
     UTS::vec_type v(1, 0.0);                                            \
     for (int i=0; i<v.size(); i++)                                      \
@@ -106,6 +108,7 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC, OPNAME##_resize) {                            \
+    UTS setup;                                                          \
     UTS::vec_type u;                                                    \
     u = OP(setup.x);                                                    \
     UTS::vec_type v(setup.sz, 0.0);                                     \
@@ -117,6 +120,7 @@ struct UnitTestSetup {
 
 #define BINARY_UNIT_TEST(VEC, OP, OPNAME)                               \
   TEUCHOS_UNIT_TEST( VEC, OPNAME) {                                     \
+    UTS setup;                                                          \
     UTS::vec_type u = setup.x OP setup.y;                               \
     UTS::vec_type v(setup.sz, 0.0);                                     \
     for (int i=0; i<setup.sz; i++)                                      \
@@ -126,6 +130,7 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC, OPNAME##_left_const) {                        \
+    UTS setup;                                                          \
     UTS::vec_type u = setup.a OP setup.y;                               \
     UTS::vec_type v(setup.sz, 0.0);                                     \
     for (int i=0; i<setup.sz; i++)                                      \
@@ -134,6 +139,7 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC, OPNAME##_right_const) {                       \
+    UTS setup;                                                          \
     UTS::vec_type u = setup.x OP setup.a ;                              \
     UTS::vec_type v(setup.sz, 0.0);                                     \
     for (int i=0; i<setup.sz; i++)                                      \
@@ -143,6 +149,7 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC, OPNAME##_both_const) {                        \
+    UTS setup;                                                          \
     UTS::vec_type u = setup.cx OP setup.cx;                             \
     UTS::vec_type v(1, 0.0);                                            \
     for (int i=0; i<v.size(); i++)                                      \
@@ -152,6 +159,7 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC, OPNAME##_left_const2) {                       \
+    UTS setup;                                                          \
     UTS::vec_type u = setup.cx OP setup.x;                              \
     UTS::vec_type v(setup.sz, 0.0);                                     \
     for (int i=0; i<setup.sz; i++)                                      \
@@ -161,6 +169,7 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC, OPNAME##_right_const2) {                      \
+    UTS setup;                                                          \
     UTS::vec_type u = setup.x OP setup.cx;                              \
     UTS::vec_type v(setup.sz, 0.0);                                     \
     for (int i=0; i<setup.sz; i++)                                      \
@@ -170,6 +179,7 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC, OPNAME##_resize) {                            \
+    UTS setup;                                                          \
     UTS::vec_type u;                                                    \
     u = setup.x OP setup.y;                                             \
     UTS::vec_type v(setup.sz, 0.0);                                     \
@@ -180,6 +190,7 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC, OPNAME##_left_const_resize) {                 \
+    UTS setup;                                                          \
     UTS::vec_type u;                                                    \
     u = setup.a OP setup.y;                                             \
     UTS::vec_type v(setup.sz, 0.0);                                     \
@@ -190,6 +201,7 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC, OPNAME##_right_const_resize) {                \
+    UTS setup;                                                          \
     UTS::vec_type u;                                                    \
     u = setup.x OP setup.a;                                             \
     UTS::vec_type v(setup.sz, 0.0);                                     \
@@ -202,6 +214,7 @@ struct UnitTestSetup {
 
 #define BINARYFUNC_UNIT_TEST(VEC, OP, SOP, OPNAME)                      \
   TEUCHOS_UNIT_TEST( VEC, OPNAME) {                                     \
+    UTS setup;                                                          \
     UTS::vec_type u = OP(setup.x,setup.y);                              \
     UTS::vec_type v(setup.sz, 0.0);                                     \
     for (int i=0; i<setup.sz; i++)                                      \
@@ -211,6 +224,7 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC, OPNAME##_left_const) {                        \
+    UTS setup;                                                          \
     UTS::vec_type u = OP(setup.a,setup.y);                              \
     UTS::vec_type v(setup.sz, 0.0);                                     \
     for (int i=0; i<setup.sz; i++)                                      \
@@ -220,6 +234,7 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC, OPNAME##_right_const) {                       \
+    UTS setup;                                                          \
     UTS::vec_type u = OP(setup.x,setup.a);                              \
     UTS::vec_type v(setup.sz, 0.0);                                     \
     for (int i=0; i<setup.sz; i++)                                      \
@@ -229,6 +244,7 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC, OPNAME##_both_const) {                        \
+    UTS setup;                                                          \
     UTS::vec_type u = OP(setup.cx,setup.cx);                            \
     UTS::vec_type v(1, 0.0);                                            \
     for (int i=0; i<v.size(); i++)                                      \
@@ -238,6 +254,7 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC, OPNAME##_left_const2) {                       \
+    UTS setup;                                                          \
     UTS::vec_type u = OP(setup.cx,setup.x);                             \
     UTS::vec_type v(setup.sz, 0.0);                                     \
     for (int i=0; i<setup.sz; i++)                                      \
@@ -247,6 +264,7 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC, OPNAME##_right_const2) {                      \
+    UTS setup;                                                          \
     UTS::vec_type u = OP(setup.x,setup.cx);                             \
     UTS::vec_type v(setup.sz, 0.0);                                     \
     for (int i=0; i<setup.sz; i++)                                      \
@@ -256,6 +274,7 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC, OPNAME##_resize) {                            \
+    UTS setup;                                                          \
     UTS::vec_type u;                                                    \
     u = OP(setup.x,setup.y);                                            \
     UTS::vec_type v(setup.sz, 0.0);                                     \
@@ -266,6 +285,7 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC, OPNAME##_left_const_resize) {                 \
+    UTS setup;                                                          \
     UTS::vec_type u;                                                    \
     u = OP(setup.a,setup.y);                                            \
     UTS::vec_type v(setup.sz, 0.0);                                     \
@@ -276,6 +296,7 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC, OPNAME##_right_const_resize) {                \
+    UTS setup;                                                          \
     UTS::vec_type u;                                                    \
     u = OP(setup.x,setup.a);                                            \
     UTS::vec_type v(setup.sz, 0.0);                                     \
@@ -288,6 +309,7 @@ struct UnitTestSetup {
 
 #define OPASSIGN_UNIT_TEST(VEC, OP, OPNAME)                             \
   TEUCHOS_UNIT_TEST( VEC, OPNAME) {                                     \
+    UTS setup;                                                          \
     UTS::vec_type u = std::sin(setup.x);                                \
     UTS::vec_type v = std::sin(setup.x);                                \
     u OP setup.x;                                                       \
@@ -297,6 +319,7 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC, OPNAME##_const) {                             \
+    UTS setup;                                                          \
     UTS::vec_type u = std::sin(setup.x);                                \
     UTS::vec_type v = std::sin(setup.x);                                \
     u OP setup.a;                                                       \
@@ -306,6 +329,7 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC, OPNAME##_const2) {                            \
+    UTS setup;                                                          \
     UTS::vec_type u = std::sin(setup.x);                                \
     UTS::vec_type v = std::sin(setup.x);                                \
     u OP setup.cx;                                                      \
@@ -315,6 +339,7 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC, OPNAME##_resize) {                            \
+    UTS setup;                                                          \
     UTS::vec_type u = setup.a;                                          \
     UTS::vec_type v(setup.sz, 0.0);                                     \
     u OP setup.x;                                                       \
@@ -328,6 +353,7 @@ struct UnitTestSetup {
 
 #define SAXPY_UNIT_TEST(VEC)                                            \
   TEUCHOS_UNIT_TEST( VEC, saxpy) {                                      \
+    UTS setup;                                                          \
     UTS::vec_type u = std::sin(setup.x);                                \
     UTS::vec_type v = std::sin(setup.x);                                \
     u += setup.x*setup.y;                                               \
@@ -338,6 +364,7 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC, saxpy_resize) {                               \
+    UTS setup;                                                          \
     UTS::vec_type u = setup.cx;                                         \
     UTS::vec_type v(setup.sz, 0.0);                                     \
     u += setup.x*setup.y;                                               \
@@ -348,6 +375,7 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC, saxpy_const) {                                \
+    UTS setup;                                                          \
     UTS::vec_type u = std::sin(setup.x);                                \
     UTS::vec_type v = std::sin(setup.x);                                \
     u += setup.a*setup.y;                                               \
@@ -358,6 +386,7 @@ struct UnitTestSetup {
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC, saxpy_const2) {                               \
+    UTS setup;                                                          \
     UTS::vec_type u = std::sin(setup.x);                                \
     UTS::vec_type v = std::sin(setup.x);                                \
     u += setup.cx*setup.y;                                              \
@@ -404,14 +433,41 @@ struct UnitTestSetup {
   OPASSIGN_UNIT_TEST(VEC, *=, TimesEqual)                       \
   OPASSIGN_UNIT_TEST(VEC, /=, DivideEqual)                      \
                                                                 \
-  SAXPY_UNIT_TEST(VEC)
+  SAXPY_UNIT_TEST(VEC)                                          \
+                                                                \
+  TEUCHOS_UNIT_TEST( VEC, initializer_list_copy ) {                     \
+    UTS setup;                                                          \
+    UTS::vec_type u = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0 };       \
+    UTS::vec_type v(setup.sz, 0.0);                                     \
+    for (int i=0; i<setup.sz; i++)                                      \
+      v.fastAccessCoeff(i) = i+1;                                       \
+    success = compareVecs(u, "u", v, "v",                               \
+                          setup.rtol, setup.atol, out);                 \
+  }                                                                     \
+  TEUCHOS_UNIT_TEST( VEC, initializer_list_assign ) {                   \
+    UTS setup;                                                          \
+    UTS::vec_type u;                                                    \
+    u = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0 };                     \
+    UTS::vec_type v(setup.sz, 0.0);                                     \
+    for (int i=0; i<setup.sz; i++)                                      \
+      v.fastAccessCoeff(i) = i+1;                                       \
+    success = compareVecs(u, "u", v, "v",                               \
+                          setup.rtol, setup.atol, out);                 \
+  }                                                                     \
+  TEUCHOS_UNIT_TEST( VEC, range_based_for ) {                           \
+    UTS setup;                                                          \
+    UTS::vec_type u(setup.sz, 0.0);                                     \
+    for (auto& z : u) { z = 3.0; }                                      \
+    UTS::vec_type v(setup.sz, 3.0);                                     \
+    success = compareVecs(u, "u", v, "v",                               \
+                          setup.rtol, setup.atol, out);                 \
+  }
 
 namespace DynamicVecTest {
   typedef Kokkos::DefaultExecutionSpace execution_space;
   typedef Stokhos::DynamicStorage<int,double,execution_space> storage_type;
   typedef Sacado::MP::Vector<storage_type> vec_type;
   typedef UnitTestSetup<vec_type> UTS;
-  UTS setup;
   VECTOR_UNIT_TESTS(DynamicVector)
 }
 
@@ -420,7 +476,6 @@ namespace DynamicStridedVecTest {
   typedef Stokhos::DynamicStridedStorage<int,double,execution_space> storage_type;
   typedef Sacado::MP::Vector<storage_type> vec_type;
   typedef UnitTestSetup<vec_type> UTS;
-  UTS setup;
   VECTOR_UNIT_TESTS(DynamicStridedVector)
 }
 
@@ -429,7 +484,6 @@ namespace StaticVecTest {
   typedef Stokhos::StaticStorage<int,double,8,execution_space> storage_type;
   typedef Sacado::MP::Vector<storage_type> vec_type;
   typedef UnitTestSetup<vec_type> UTS;
-  UTS setup;
   VECTOR_UNIT_TESTS(StaticVector)
 }
 
@@ -438,11 +492,21 @@ namespace StaticFixedVecTest {
   typedef Stokhos::StaticFixedStorage<int,double,8,execution_space> storage_type;
   typedef Sacado::MP::Vector<storage_type> vec_type;
   typedef UnitTestSetup<vec_type> UTS;
-  UTS setup;
   VECTOR_UNIT_TESTS(StaticFixedVector)
 }
 
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+
+  Kokkos::HostSpace::execution_space::initialize();
+  if (!Kokkos::DefaultExecutionSpace::is_initialized())
+    Kokkos::DefaultExecutionSpace::initialize();
+
+  int res = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+
+  Kokkos::HostSpace::execution_space::finalize();
+  if (Kokkos::DefaultExecutionSpace::is_initialized())
+    Kokkos::DefaultExecutionSpace::finalize();
+
+  return res;
 }

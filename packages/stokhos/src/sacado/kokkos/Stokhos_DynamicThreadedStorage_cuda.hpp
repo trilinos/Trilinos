@@ -72,14 +72,21 @@ namespace Stokhos {
 
     //! Constructor
     __device__
-    DynamicThreadedStorage(const ordinal_type& sz,
+    DynamicThreadedStorage(const ordinal_type& sz = 1,
                            const value_type& x = value_type(0.0)) :
       sz_(sz), stride_(num_threads()), total_sz_(sz_*stride_) {
       allocate_coeff_array(coeff_, is_owned_, total_sz_, x);
     }
 
+    //! Constructor from array
+    __device__
+    DynamicThreadedStorage(const ordinal_type& sz, const value_type* x) :
+      sz_(sz), stride_(num_threads()), total_sz_(sz_*stride_) {
+      allocate_coeff_array(coeff_, is_owned_, total_sz_, x);
+    }
+
     //! Constructor for creating a view
-    KOKKOS_INLINE_FUNCTION
+    __device__
     DynamicThreadedStorage(const ordinal_type& sz, pointer v, bool owned) :
       coeff_(v), sz_(sz), stride_(num_threads()), total_sz_(sz_*stride_),
       is_owned_(owned) {}
@@ -431,6 +438,27 @@ namespace Stokhos {
       ordinal_type tidx = thread_index();
       if (tidx == 0) {
         ptr = ds::get_and_fill(total_size,x);
+        owned = true;
+      }
+      else
+        owned = false;
+      __syncthreads();
+
+      // Give each thread its portion of the array
+      c = ptr + tidx;
+    }
+
+    //! Allocate coefficient array
+    __device__
+    void allocate_coeff_array(pointer& c, bool& owned,
+                              ordinal_type total_size,
+                              const value_type* x) {
+
+      // Allocate coefficient array on thread 0
+      __shared__ pointer ptr;
+      ordinal_type tidx = thread_index();
+      if (tidx == 0) {
+        ptr = ds::get_and_fill(x, total_size);
         owned = true;
       }
       else
