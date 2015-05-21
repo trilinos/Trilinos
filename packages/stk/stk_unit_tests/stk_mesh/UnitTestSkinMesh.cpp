@@ -121,6 +121,20 @@ bool check_if_one_owned_face_with_these_nodes_exists(const std::array <uint64_t,
   return face_vector.size() == 1;
 }
 
+void setup_node_sharing(stk::mesh::BulkData &mesh, const std::vector< std::vector<unsigned> > & shared_nodeIDs_and_procs )
+{
+    const unsigned p_rank = mesh.parallel_rank();
+
+    for (size_t nodeIdx = 0, end = shared_nodeIDs_and_procs.size(); nodeIdx < end; ++nodeIdx) {
+        if (p_rank == shared_nodeIDs_and_procs[nodeIdx][0]) {
+            stk::mesh::EntityId nodeID = shared_nodeIDs_and_procs[nodeIdx][1];
+            int sharingProc = shared_nodeIDs_and_procs[nodeIdx][2];
+            stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, nodeID);
+            mesh.add_node_sharing(node, sharingProc);
+        }
+    }
+}
+
 void test_skin_mesh_with_hexes(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
 {
      //  ID.proc
@@ -396,7 +410,7 @@ void test_skin_mesh_with_wedge(stk::mesh::BulkData::AutomaticAuraOption autoAura
     };
 
     // list of triplets: (owner-proc, shared-nodeID, sharing-proc)
-    int shared_nodeIDs_and_procs[][3] =
+    std::vector< std::vector<unsigned> > shared_nodeIDs_and_procs
     {
         { 0, 5, 1 },  // proc 0
         { 0, 6, 1 },
@@ -407,7 +421,6 @@ void test_skin_mesh_with_wedge(stk::mesh::BulkData::AutomaticAuraOption autoAura
         { 1, 7, 0 },
         { 1, 8, 0 }
     };
-    int numSharedNodeTriples = 8;
 
     mesh.modification_begin();
 
@@ -430,14 +443,7 @@ void test_skin_mesh_with_wedge(stk::mesh::BulkData::AutomaticAuraOption autoAura
 
     if (p_size > 1)
     {
-      for (int nodeIdx = 0; nodeIdx < numSharedNodeTriples; ++nodeIdx) {
-          if (p_rank == shared_nodeIDs_and_procs[nodeIdx][0]) {
-              stk::mesh::EntityId nodeID = shared_nodeIDs_and_procs[nodeIdx][1];
-              int sharingProc = shared_nodeIDs_and_procs[nodeIdx][2];
-              stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, nodeID);
-              mesh.add_node_sharing(node, sharingProc);
-          }
-      }
+      setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     }
 
     mesh.modification_end();
@@ -580,7 +586,7 @@ void test_skin_mesh_with_pyramid(stk::mesh::BulkData::AutomaticAuraOption autoAu
     };
 
     // list of triplets: (owner-proc, shared-nodeID, sharing-proc)
-    int shared_nodeIDs_and_procs[][3] =
+    std::vector< std::vector<unsigned> > shared_nodeIDs_and_procs
     {
         { 0, 5, 1 },  // proc 0
         { 0, 6, 1 },
@@ -591,7 +597,6 @@ void test_skin_mesh_with_pyramid(stk::mesh::BulkData::AutomaticAuraOption autoAu
         { 1, 7, 0 },
         { 1, 8, 0 }
     };
-    int numSharedNodeTriples = 8;
 
     mesh.modification_begin();
 
@@ -605,14 +610,7 @@ void test_skin_mesh_with_pyramid(stk::mesh::BulkData::AutomaticAuraOption autoAu
 
     if (p_size > 1)
     {
-      for (int nodeIdx = 0; nodeIdx < numSharedNodeTriples; ++nodeIdx) {
-          if (p_rank == shared_nodeIDs_and_procs[nodeIdx][0]) {
-              stk::mesh::EntityId nodeID = shared_nodeIDs_and_procs[nodeIdx][1];
-              int sharingProc = shared_nodeIDs_and_procs[nodeIdx][2];
-              stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, nodeID);
-              mesh.add_node_sharing(node, sharingProc);
-          }
-      }
+      setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     }
 
     mesh.modification_end();
@@ -751,7 +749,7 @@ void test_skin_hybrid_mesh(stk::mesh::BulkData::AutomaticAuraOption autoAuraOpti
     stk::mesh::EntityId tetElemIDs[] = { 3, 4, 5, 6 };
 
     // list of triplets: (owner-proc, shared-nodeID, sharing-proc)
-    int shared_nodeIDs_and_procs[][3] =
+    std::vector< std::vector<unsigned> > shared_nodeIDs_and_procs
     {
         { 0, 5, 1 },  // proc 0
         { 0, 6, 1 },
@@ -762,7 +760,6 @@ void test_skin_hybrid_mesh(stk::mesh::BulkData::AutomaticAuraOption autoAuraOpti
         { 1, 7, 0 },
         { 1, 8, 0 }
     };
-    int numSharedNodeTriples = 8;
 
     mesh.modification_begin();
 
@@ -782,14 +779,7 @@ void test_skin_hybrid_mesh(stk::mesh::BulkData::AutomaticAuraOption autoAuraOpti
 
     if (p_size > 1)
     {
-      for (int nodeIdx = 0; nodeIdx < numSharedNodeTriples; ++nodeIdx) {
-          if (p_rank == shared_nodeIDs_and_procs[nodeIdx][0]) {
-              stk::mesh::EntityId nodeID = shared_nodeIDs_and_procs[nodeIdx][1];
-              int sharingProc = shared_nodeIDs_and_procs[nodeIdx][2];
-              stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, nodeID);
-              mesh.add_node_sharing(node, sharingProc);
-          }
-      }
+      setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     }
 
     mesh.modification_end();
