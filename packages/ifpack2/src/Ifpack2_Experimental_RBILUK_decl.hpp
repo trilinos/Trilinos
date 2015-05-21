@@ -164,10 +164,13 @@ class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename Matrix
 {
  public:
 
+  //! @name Public type definitions. 
+  //@{
   //! The type of the entries of the input MatrixType.
   typedef typename MatrixType::scalar_type scalar_type;
 
-  typedef typename MatrixType::impl_scalar_type impl_scalar_type;
+  //typedef typename MatrixType::impl_scalar_type impl_scalar_type;
+  typedef typename MatrixType::scalar_type impl_scalar_type;
 
   //! The type of local indices in the input MatrixType.
   typedef typename MatrixType::local_ordinal_type local_ordinal_type;
@@ -199,7 +202,10 @@ class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename Matrix
                             node_type> block_crs_matrix_type;
 
   template <class NewMatrixType> friend class RBILUK;
+  //@}
 
+  //! @name Constructors/Destructors.
+  //@{
   /// \brief Constructor that takes a Tpetra::Experimental::BlockCrsMatrix
   ///
   /// \param A_in [in] The input matrix.
@@ -214,6 +220,7 @@ class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename Matrix
 
   //! Destructor (declared virtual for memory safety).
   virtual ~RBILUK ();
+  //@}
 
   //! Initialize by computing the symbolic incomplete factorization.
   void initialize ();
