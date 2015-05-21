@@ -279,17 +279,18 @@ struct compute_node_normals_from_faces
   compute_node_normals_from_faces(mesh_t skin_mesh, fields_t fields)
     : m_node_to_faces(skin_mesh.m_node_data.m_node_to_faces)
     , m_face_normals(fields.m_face_normals)
+    , m_node_normals(fields.m_node_normals)
   {
-    //tev compiler error. 
-    // error: ‘morkon_exp::compute_node_normals_from_faces<Kokkos::Serial, 3u>::node_to_faces_t’ has no member named ‘row_map’
-    assert(m_node_to_faces.graph.row_map.dimension_0() == m_node_normals.dimension_0());
+    const int num_nodes = m_node_to_faces.numRows();
+    const int num_node_normals =  m_node_normals.dimension_0();
+    assert(num_nodes==num_node_normals); 
   }
 
   KOKKOS_INLINE_FUNCTION
   void operator() (unsigned node_i) const
   {
-    const int i_faces_begin = m_node_to_faces.row_map(node_i);
-    const int i_faces_end   = m_node_to_faces.row_map(node_i + 1);
+    const int i_faces_begin = m_node_to_faces.graph.row_map(node_i);
+    const int i_faces_end   = m_node_to_faces.graph.row_map(node_i + 1);
     const int num_faces = i_faces_end - i_faces_begin;
 
     double nml[DIM];
@@ -298,13 +299,13 @@ struct compute_node_normals_from_faces
 
     // Sum the face normals
     for (int j = i_faces_begin; j < i_faces_end; ++j) {
-      local_idx_t face_j = m_node_to_faces.entries(j);
+      local_idx_t face_j = m_node_to_faces.graph.entries(j);
       for (int k = 0; k < DIM; ++k)
         nml[k] += m_face_normals(face_j, k);
     }//end for (int j = i_faces_begin; j < i_faces_end; ++j)
 
     // Average.
-    for (int k; k < DIM; ++k)
+    for (int k=0; k < DIM; ++k)
       m_node_normals(node_i, k) = nml[k] /  num_faces;
   }
 

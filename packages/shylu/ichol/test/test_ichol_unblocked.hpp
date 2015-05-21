@@ -66,16 +66,17 @@ namespace Example {
     }
 
     cout << "testICholUnblocked::Begin - " << r_val << endl;
+    typename TaskFactoryType::policy_type policy;
+    TaskFactoryType::setPolicy(&policy);
+
     CrsTaskViewType U(&UU);
     {
       U.fillRowViewArray();
     
-      typedef typename CrsTaskViewType::policy_type policy_type;
-      policy_type policy;
-      auto future = policy.create_team(IChol<Uplo::Upper,AlgoIChol::UnblockedOpt1>
+      auto future = TaskFactoryType::Policy().create_team(IChol<Uplo::Upper,AlgoIChol::UnblockedOpt1>
                                        ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
-      policy.spawn(future);
-      Kokkos::Experimental::wait(policy);
+      TaskFactoryType::Policy().spawn(future);
+      Kokkos::Experimental::wait(TaskFactoryType::Policy());
     
       cout << UU << endl;
     }   

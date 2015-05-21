@@ -22,7 +22,8 @@ namespace Example {
   int
   Gemm<Trans::ConjTranspose,Trans::NoTranspose,
        AlgoGemm::ForFactorBlocked>
-  ::invoke(const typename CrsExecViewTypeA::policy_type::member_type &member,
+  ::invoke(typename CrsExecViewTypeA::policy_type &policy,
+           const typename CrsExecViewTypeA::policy_type::member_type &member,
            const ScalarType alpha,
            CrsExecViewTypeA &A,
            CrsExecViewTypeB &B,
@@ -82,7 +83,8 @@ namespace Example {
   int
   Gemm<Trans::ConjTranspose,Trans::NoTranspose,
        AlgoGemm::ForTriSolveBlocked>
-  ::invoke(const typename CrsExecViewTypeA::policy_type::member_type &member,
+  ::invoke(typename CrsExecViewTypeA::policy_type &policy,
+           const typename CrsExecViewTypeA::policy_type::member_type &member,
            const ScalarType alpha,
            CrsExecViewTypeA &A,
            DenseExecViewTypeB &B,

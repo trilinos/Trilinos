@@ -50,6 +50,7 @@
 
 #include <mrk_api_classes.hpp>
 #include <mrk_manager_functors.hpp>
+#include <mrk_interface_impl.hpp>
 
 namespace morkon_exp {
 

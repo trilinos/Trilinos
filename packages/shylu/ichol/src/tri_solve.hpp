@@ -20,7 +20,8 @@ namespace Example {
              typename ExecViewTypeA,
              typename ExecViewTypeB>
     KOKKOS_INLINE_FUNCTION
-    static int invoke(const typename ExecViewTypeA::policy_type::member_type &member,
+    static int invoke(typename ExecViewTypeA::policy_type &policy,
+                      const typename ExecViewTypeA::policy_type::member_type &member,
                       const int diagA,
                       ExecViewTypeA &A,
                       ExecViewTypeB &B);
@@ -31,34 +32,40 @@ namespace Example {
              typename ExecViewTypeA,
              typename ExecViewTypeB>
     class TaskFunctor {
-    private:
-      int _diagA;
-      ExecViewTypeA _A;
-      ExecViewTypeB _B;
-
     public:
       typedef typename ExecViewTypeA::policy_type policy_type;
       typedef typename policy_type::member_type member_type;
       typedef int value_type;
 
+    private:
+      int _diagA;
+      ExecViewTypeA _A;
+      ExecViewTypeB _B;
+
+      policy_type &_policy;
+
+    public:
       TaskFunctor(const int diagA,
                   const ExecViewTypeA A,
                   const ExecViewTypeB B)
         : _diagA(diagA),
           _A(A),
-          _B(B)
+          _B(B),
+          _policy(ExecViewTypeA::task_factory_type::Policy())
       { }
 
       string Label() const { return "TriSolve"; }
 
       // task execution
       void apply(value_type &r_val) {
-        r_val = TriSolve::invoke<ParallelForType>(policy_type::member_null(), _diagA, _A, _B);
+        r_val = TriSolve::invoke<ParallelForType>(_policy, _policy.member_single(), 
+                                                  _diagA, _A, _B);
       }
 
       // task-data execution
       void apply(const member_type &member, value_type &r_val) {
-        r_val = TriSolve::invoke<ParallelForType>(member, _diagA, _A, _B);
+        r_val = TriSolve::invoke<ParallelForType>(_policy, member, 
+                                                  _diagA, _A, _B);
       }
 
     };

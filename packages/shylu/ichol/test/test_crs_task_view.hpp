@@ -50,7 +50,10 @@ namespace Example {
     __DOT_LINE__;
 
     int r_val = 0; //, r_val_prev = 0;
-    
+
+    typename TaskFactoryType::policy_type policy;
+    TaskFactoryType::setPolicy(&policy);
+
     CrsMatrixBaseType AA("AA");
     {
       ifstream in;

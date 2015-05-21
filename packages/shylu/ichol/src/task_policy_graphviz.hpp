@@ -11,7 +11,13 @@ namespace Example {
   using namespace std;
 
   static vector<string> g_graphviz_color = {
-    "indianred2", "lightblue2", "skyblue2", "lightgoldenrod2", "orange2",  "mistyrose2" };
+    "indianred2", 
+    "lightblue2", 
+    "skyblue2",
+    "lightgoldenrod2", 
+    "orange2",  
+    "mistyrose2" 
+  };
 
   class Task : public Disp  {
   private:
@@ -68,13 +74,21 @@ namespace Example {
 
   };
 
-  static vector<Task*> _queue;
-  static int _work_phase = 0;
-
   class TaskPolicy : public Disp {
+  private:
+    vector<Task*> _queue;
+    int _work_phase;
+
   public:
+    TaskPolicy() 
+      : _queue(), 
+        _work_phase(0) 
+    { }
+
+    // Kokkos interface
+    // --------------------------------
     typedef class TeamThreadMember member_type;
-    static member_type member_null() { return member_type(); }
+    static member_type member_single() { return member_type(); }
 
     template<typename TaskFunctorType> 
     Future create(const TaskFunctorType &func, const int dep_size) {
@@ -99,6 +113,8 @@ namespace Example {
       // do nothing
     }
 
+    // Graphviz interface
+    // --------------------------------
     void clear() {
       for (auto it=_queue.begin();it!=_queue.end();++it)
         delete (*it);

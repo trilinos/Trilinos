@@ -116,10 +116,10 @@ namespace Example {
     }
 
     cout << "testTriSolveByBlocksGraphviz::Begin - " << r_val << endl;
-    typedef typename CrsTaskViewType::policy_type policy_type;
+    typename TaskFactoryType::policy_type policy;
+    TaskFactoryType::setPolicy(&policy);
+
     {
-
-
       CrsHierTaskViewType TU(&HU);
       for (ordinal_type k=0;k<HU.NumNonZeros();++k)
         HU.Value(k).fillRowViewArray();
@@ -127,17 +127,16 @@ namespace Example {
       DenseHierTaskViewType TB(&HB);
 
       int r_val_tri_solve = 0;
-      policy_type policy;
 
-      policy.set_work_phase(2);
+      TaskFactoryType::Policy().set_work_phase(2);
       TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::ByBlocks>
         ::TaskFunctor<ForType,CrsHierTaskViewType,DenseHierTaskViewType>
-        (Diag::NonUnit, TU, TB).apply(policy_type::member_null(), r_val_tri_solve);
+        (Diag::NonUnit, TU, TB).apply(r_val_tri_solve);
       
-      policy.set_work_phase(3);
+      TaskFactoryType::Policy().set_work_phase(3);
       TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::ByBlocks>
         ::TaskFunctor<ForType,CrsHierTaskViewType,DenseHierTaskViewType>
-        (Diag::NonUnit, TU, TB).apply(policy_type::member_null(), r_val_tri_solve);
+        (Diag::NonUnit, TU, TB).apply(r_val_tri_solve);
     }
 
     {
@@ -148,9 +147,8 @@ namespace Example {
         return -1;
       }
 
-      policy_type policy;
-      policy.graphviz(out);
-      policy.clear();
+      TaskFactoryType::Policy().graphviz(out);
+      TaskFactoryType::Policy().clear();
     }
     cout << "testTriSolveByBlocksGraphviz::End - " << r_val << endl;    
     

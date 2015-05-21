@@ -45,15 +45,15 @@
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
 
-#ifndef MORKON_EXP_API_CLASSES_H
-#define MORKON_EXP_API_CLASSES_H
+#ifndef MORKON_EXP_API_INTERFACE_IMPL_H
+#define MORKON_EXP_API_INTERFACE_IMPL_H
 
 namespace morkon_exp {
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
-Interface<DeviceType, DIM,  FACE_TYPE >::Interface(Morkon_Manager<DeviceType, DIM> * manager)
+Interface<DeviceType, DIM,  FACE_TYPE >::Interface(Morkon_Manager<DeviceType, DIM, FACE_TYPE> * manager)
   : m_manager(manager)
-  , m_commited(false)
+  , m_committed(false)
   , m_distributed(false)
   , m_sides(std::vector<faces_ids_t>(2))
 {
@@ -64,7 +64,7 @@ Interface<DeviceType, DIM,  FACE_TYPE >::Interface(Morkon_Manager<DeviceType, DI
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 bool Interface<DeviceType, DIM,  FACE_TYPE >::define_side(SideEnum which_side, faces_ids_t faces_on_side)
 {
-  if (m_commited || (m_sides[which_side].dimension_0() > 0) || (m_hs_adapters[which_side] != 0))
+  if (m_committed || (m_sides[which_side].dimension_0() > 0) || (m_hs_adapters[which_side] != 0))
   {
     return false;
   }
@@ -74,71 +74,71 @@ bool Interface<DeviceType, DIM,  FACE_TYPE >::define_side(SideEnum which_side, f
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 bool Interface<DeviceType, DIM,  FACE_TYPE >::hsa_add_node(SideEnum which_side, global_idx_t gbl_node_id, const double coords[])
 {
-  if (m_commited || (m_sides[which_side].dimension_0() > 0))
+  if (m_committed || (m_sides[which_side].dimension_0() > 0))
   {
     return false;
   }
 
-  Interface_HostSideAdapter *ifc_hsa = m_hs_adapters[which_side];
+  Interface_HostSideAdapter<DIM> *ifc_hsa = m_hs_adapters[which_side];
   if (!ifc_hsa)
   {
-    ifc_hsa = m_hs_adapters[which_side] = new Interface_HostSideAdapter();
+    ifc_hsa = m_hs_adapters[which_side] = new Interface_HostSideAdapter<DIM>();
   }
 
-  Interface_HostSideAdapter::node_map_type::iterator probe = ifc_hsa->m_nodes.find(gbl_node_id);
-  if (probe != m_nodes.end())
+  typename Interface_HostSideAdapter<DIM>::node_map_type::iterator probe = ifc_hsa->m_nodes.find(gbl_node_id);
+  if (probe != ifc_hsa->m_nodes.end())
   {
     return false;
   }
 
-  Interface_HostSideAdapter::NodeInfo node_info;
+  typename Interface_HostSideAdapter<DIM>::NodeInfo node_info;
   node_info.m_id        = gbl_node_id;
   node_info.m_side      = which_side;
   node_info.m_coords[0] = coords[0];
   node_info.m_coords[1] = coords[1];
   node_info.m_coords[2] = (DIM == 2 ? 0 : coords[2]);
-  ifc_hsa->m_nodes.insert(probe, std::pair(gbl_node_id, node_info));
+  ifc_hsa->m_nodes.insert(probe, std::make_pair(gbl_node_id, node_info));
 
   return true;
 }
 
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
-bool Interface<DeviceType, DIM, FACE_TYPE>::hsa_add_face(SideEnum which_side, global_idx_t gbl_face_id, int num_nodes, const global_idx_t gbl_nids[])
+bool Interface<DeviceType, DIM, FACE_TYPE>::hsa_add_face(SideEnum which_side, global_idx_t gbl_face_id, int num_nodes, const global_idx_t gbl_node_id[])
 {
-  if (m_commited || (m_sides[which_side].dimension_0() > 0))
+  if (m_committed || (m_sides[which_side].dimension_0() > 0))
   {
     return false;
   }
 
-  Interface_HostSideAdapter *ifc_hsa = m_hs_adapters[which_side];
+  Interface_HostSideAdapter<DIM> *ifc_hsa = m_hs_adapters[which_side];
   if (!ifc_hsa)
   {
-    ifc_hsa = m_hs_adapters[which_side] = new Interface_HostSideAdapter();
+    ifc_hsa = m_hs_adapters[which_side] = new Interface_HostSideAdapter<DIM>();
   }
 
-  Interface_HostSideAdapter::node_map_type::iterator probe = ifc_hsa->m_nodes.find(gbl_node_id);
-  if (probe != m_nodes.end())
+  typename Interface_HostSideAdapter<DIM>::node_map_type::iterator probe_node = ifc_hsa->m_nodes.find(gbl_node_id);
+  if (probe_node != ifc_hsa->m_nodes.end())
   {
     return false;
   }
 
-  Interface_HostSideAdapter::face_map_type::iterator probe = ifc_hsa->m_faces.find(gbl_face_id);
-  if (probe != m_faces.end())
+  typename Interface_HostSideAdapter<DIM>::face_map_type::iterator probe_face = ifc_hsa->m_faces.find(gbl_face_id);
+  if (probe_face != ifc_hsa->m_faces.end())
   {
     return false;
   }
 
-  Interface_HostSideAdapter::FaceInfo face_info;
+  typename Interface_HostSideAdapter<DIM>::FaceInfo face_info;
   face_info.m_id        = gbl_face_id;
   face_info.m_side      = which_side;
   face_info.m_nodes.resize(num_nodes);
   for (int i =  0; i < num_nodes; ++i)
   {
-    face_info.m_nodes[i] = gbl_node_ids[i];
+    face_info.m_nodes[i] = gbl_node_id[i];
   }
 
-  ifc_hsa->m_faces.insert(probe, std::pair(gbl_node_id, face_info));
+  ifc_hsa->m_faces.insert(probe_face, std::make_pair(gbl_node_id, face_info));
 
   return true;
 }

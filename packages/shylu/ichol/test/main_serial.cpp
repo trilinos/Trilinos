@@ -10,8 +10,6 @@
 /// \brief Test serial execution space
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-typedef Kokkos::Serial space_type;
-
 using namespace std;
 using namespace Example;
 
