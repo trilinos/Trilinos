@@ -941,7 +941,9 @@ private: //functions
                                         bool need_to_change_ghosting,
                                         const std::vector<EntityProc> & add_send,
                                         const std::vector<EntityKey> & remove_receive);
-
+#ifdef __CUDACC__
+public:
+#endif
   struct EntityParallelState {
     int                 from_proc;
     EntityState         state;
@@ -951,6 +953,9 @@ private: //functions
     bool operator<(const EntityParallelState& rhs) const
     { return EntityLess(*mesh)(comm_info.entity, rhs.comm_info.entity); }
   };
+#ifdef __CUDACC__
+private:
+#endif
 
   void communicate_entity_modification( const BulkData & mesh ,
                                         const bool shared ,
