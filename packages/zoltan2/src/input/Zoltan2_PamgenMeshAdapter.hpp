@@ -273,6 +273,7 @@ private:
   int dimension_, num_nodes_global_, num_elems_global_, num_nodes_, num_elem_;
   zgid_t *element_num_map_, *node_num_map_;
   int *elemToNode_, tnoct_, *elemOffsets_;
+  int *nodeToElem_, telct_, *nodeOffsets_;
   double *coords_, *Acoords_;
   lno_t *start_;
   zgid_t *adj_;
