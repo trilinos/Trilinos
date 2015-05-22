@@ -45,10 +45,230 @@
 #define TPETRA_DETAILS_FIXEDHASHTABLE_DEF_HPP
 
 #include "Tpetra_Details_FixedHashTable_decl.hpp"
-
 #ifdef TPETRA_USE_MURMUR_HASH
 #  include <Kokkos_Functional.hpp> // hash function used by Kokkos::UnorderedMap
 #endif // TPETRA_USE_MURMUR_HASH
+#include <limits> // std::numeric_limits
+#include <type_traits>
+
+namespace { // (anonymous)
+
+template<class KeyType,
+         class ArrayLayout,
+         class InputExecSpace,
+         class OutputExecSpace,
+         const bool mustDeepCopy =
+           ! std::is_same<typename InputExecSpace::memory_space,
+                          typename OutputExecSpace::memory_space>::value>
+struct DeepCopyIfNeeded {};
+
+template<class KeyType,
+         class ArrayLayout,
+         class InputExecSpace,
+         class OutputExecSpace>
+struct DeepCopyIfNeeded<KeyType, ArrayLayout, InputExecSpace, OutputExecSpace, true>
+{
+  typedef Kokkos::View<const KeyType*, ArrayLayout,
+                       InputExecSpace, Kokkos::MemoryUnmanaged> input_view_type;
+  // In this case, a deep copy IS needed.
+  typedef Kokkos::View<const KeyType*, ArrayLayout, OutputExecSpace> output_view_type;
+
+  static output_view_type copy (const input_view_type& src) {
+    typedef typename output_view_type::non_const_type NC;
+
+    NC dst (Kokkos::ViewAllocateWithoutInitializing (src.tracker ().label ()),
+            src.dimension_0 ());
+    Kokkos::deep_copy (dst, src);
+    return output_view_type (dst);
+  }
+};
+
+// Specialization if no need to deep-copy.
+template<class KeyType,
+         class ArrayLayout,
+         class InputExecSpace,
+         class OutputExecSpace>
+struct DeepCopyIfNeeded<KeyType, ArrayLayout, InputExecSpace, OutputExecSpace, false> {
+  typedef Kokkos::View<const KeyType*, ArrayLayout,
+                       InputExecSpace, Kokkos::MemoryUnmanaged> input_view_type;
+  typedef Kokkos::View<const KeyType*, ArrayLayout, OutputExecSpace,
+                       Kokkos::MemoryUnmanaged> output_view_type;
+
+  static output_view_type copy (const input_view_type& src) {
+    return output_view_type (src);
+  }
+};
+
+/// \brief Reduction result for CountBuckets functor below.
+///
+/// The reduction result finds the min and max keys.  The default
+/// values (\c minKey_ set to max \c KeyType value, and \c maxKey_ set
+/// to min \c KeyType value) ensure correct behavior even if there is
+/// only one key.
+///
+/// \tparam KeyType Type of each input of the hash function.
+///   It must be an integer type.
+template<class KeyType>
+struct CountBucketsValue {
+  CountBucketsValue () :
+    minKey_ (std::numeric_limits<KeyType>::max ()),
+    // min() for a floating-point type returns the minimum _positive_
+    // normalized value.  This is different than for integer types.
+    // lowest() is new in C++11 and returns the least value, always
+    // negative for signed finite types.
+    maxKey_ (std::numeric_limits<KeyType>::lowest ())
+  {
+    static_assert (std::is_arithmetic<KeyType>::value, "CountBucketsValue: "
+                   "KeyType must be some kind of number type.");
+  }
+
+  KeyType minKey_; //!< The current minimum key.
+  KeyType maxKey_; //!< The current maximum key.
+};
+
+template<class OffsetsViewType,
+         class KeysViewType,
+         class ExecutionSpaceType = typename OffsetsViewType::execution_space,
+         class MemorySpaceType = typename OffsetsViewType::memory_space,
+         class SizeType = typename KeysViewType::size_type>
+class CountBuckets {
+public:
+  typedef OffsetsViewType offsets_view_type;
+  typedef KeysViewType keys_view_type;
+  typedef typename OffsetsViewType::execution_space execution_space;
+  typedef typename OffsetsViewType::memory_space memory_space;
+  typedef typename KeysViewType::size_type size_type;
+
+  typedef typename keys_view_type::non_const_value_type key_type;
+  typedef CountBucketsValue<key_type> value_type;
+  // mfh 21 May 2015: Having a device_type typedef in the functor
+  // along with an execution_space typedef causes compilation issues.
+  typedef Tpetra::Details::Hash<key_type, Kokkos::Device<execution_space, memory_space> > hash_type;
+
+  CountBuckets (const offsets_view_type& ptr,
+                const keys_view_type& keys,
+                const size_type size) :
+    ptr_ (ptr),
+    keys_ (keys),
+    size_ (size),
+    initMinKey_ (std::numeric_limits<key_type>::max ()),
+    initMaxKey_ (std::numeric_limits<key_type>::lowest ())
+  {}
+
+  CountBuckets (const offsets_view_type& ptr,
+                const keys_view_type& keys,
+                const size_type size,
+                const key_type initMinKey,
+                const key_type initMaxKey) :
+    ptr_ (ptr),
+    keys_ (keys),
+    size_ (size),
+    initMinKey_ (initMinKey),
+    initMaxKey_ (initMaxKey)
+  {}
+
+  //! Set the initial value of the reduction result.
+  KOKKOS_INLINE_FUNCTION void init (value_type& dst) const
+  {
+    dst.minKey_ = initMinKey_;
+    dst.maxKey_ = initMaxKey_;
+  }
+
+  /// \brief Combine two intermediate reduction results.
+  ///
+  /// This sets both the min and max GID, if necessary.
+  KOKKOS_INLINE_FUNCTION void
+  join (volatile value_type& dst,
+        const volatile value_type& src) const
+  {
+    if (src.maxKey_ > dst.maxKey_) {
+      dst.maxKey_ = src.maxKey_;
+    }
+    if (src.minKey_ < dst.minKey_) {
+      dst.minKey_ = src.minKey_;
+    }
+  }
+
+  /// \brief Do this for every entry of \c keys_.
+  ///
+  /// Count the number of keys in \c keys_ that hash to the same
+  /// value.  Update the min and max key seen thus far in entries.
+  ///
+  /// (We can't count duplicate keys yet, because we haven't stored
+  /// keys in the hash table yet.)
+  KOKKOS_INLINE_FUNCTION void
+  operator () (const size_type& i, value_type& dst) const
+  {
+    typedef typename hash_type::result_type hash_value_type;
+
+    const key_type key = keys_[i];
+    const hash_value_type hashVal = hash_type::hashFunc (key, size_);
+    // Shift over one, so that counts[j] = ptr[j+1].  See below.
+    Kokkos::atomic_fetch_add (&ptr_[hashVal+1], 1);
+
+    if (key > dst.maxKey_) {
+      dst.maxKey_ = key;
+    }
+    if (key < dst.minKey_) {
+      dst.minKey_ = key;
+    }
+  }
+
+private:
+  //! Offsets in the FixedHashTable to construct (output argument).
+  offsets_view_type ptr_;
+  //! Keys for the FixedHashTable to construct (input argument).
+  keys_view_type keys_;
+  //! Number of buckets plus 1 (or 0, if no buckets).
+  size_type size_;
+  //! Initial minimum key.
+  key_type initMinKey_;
+  //! Initial maximum key.
+  key_type initMaxKey_;
+};
+
+// Is it worth actually using CountBuckets instead of just counting in
+// a sequential loop?
+//
+// The CountBuckets kernel uses atomic update instructions to count
+// the number of "buckets" per offsets array (ptr) entry.  Atomic
+// updates incur overhead, even in the sequential case.  The Kokkos
+// kernel is still correct in that case, but I would rather not incur
+// overhead then.  It might make sense to set the minimum number of
+// threads for invoking the parallel kernel to something greater than
+// 1, but we would need experiments to find out.
+template<class ExecSpace>
+struct WorthCountingBucketsInParallel {
+  typedef typename ExecSpace::execution_space execution_space;
+
+  static bool isWorth () {
+    // NOTE: Kokkos::Cuda does NOT have this method.  That's why we
+    // need the partial specialization below.
+    return execution_space::max_hardware_threads () > 1;
+  }
+};
+
+#ifdef KOKKOS_HAVE_CUDA
+template<>
+struct WorthCountingBucketsInParallel<Kokkos::Cuda> {
+  // There could be more complicated expressions for whether this is
+  // actually worthwhile, but for now I'll just say that with Cuda, we
+  // will ALWAYS count buckets in parallel (that is, run a Kokkos
+  // parallel kernel).
+  static bool isWorth () {
+    return true;
+  }
+};
+#endif // KOKKOS_HAVE_CUDA
+
+template<class ExecSpace>
+bool worthCountingBucketsInParallel () {
+  return WorthCountingBucketsInParallel<ExecSpace>::isWorth ();
+}
+
+} // namespace (anonymous)
+
+
 
 namespace Tpetra {
 namespace Details {
@@ -201,16 +421,44 @@ init (const host_input_keys_type& keys,
   // it with zeros, because we will fill it with actual data below.
   typename val_type::non_const_type val (Kokkos::ViewAllocateWithoutInitializing ("val"), numKeys);
 
-  // Compute number of entries in each hash table position.
-  for (offset_type k = 0; k < numKeys; ++k) {
-    const typename hash_type::result_type hashVal =
-      hash_type::hashFunc (keys[k], size);
-    // Shift over one, so that counts[j] = ptr[j+1].  See below.
-    ++ptr[hashVal+1];
+  // Only make a device copy of the input array 'keys' if the input
+  // array lives in a different memory space.  Remember that with UVM,
+  // host code can access CUDA device memory, but not the other way
+  // around.
+  typedef DeepCopyIfNeeded<KeyType, typename host_input_keys_type::array_layout,
+                           typename host_input_keys_type::execution_space,
+                           execution_space> copier_type;
+  typedef typename copier_type::output_view_type keys_type;
+  keys_type keys_d = copier_type::copy (keys);
 
-    if (ptr[hashVal+1] > 1) {
-      hasDuplicateKeys_ = true;
+  //
+  // Count the number of "buckets" per offsets array (ptr) entry.
+  //
+
+  // The Kokkos kernel uses atomic update instructions to count the
+  // number of "buckets" per offsets array (ptr) entry.  Atomic
+  // updates incur overhead, even in the sequential case.  The Kokkos
+  // kernel is still correct in that case, but I would rather not
+  // incur overhead then.
+  if (worthCountingBucketsInParallel<execution_space> ()) {
+    for (offset_type k = 0; k < numKeys; ++k) {
+      const typename hash_type::result_type hashVal =
+        hash_type::hashFunc (keys[k], size);
+      // Shift over one, so that counts[j] = ptr[j+1].  See below.
+      ++ptr[hashVal+1];
+
+      if (ptr[hashVal+1] > 1) {
+        // FIXME (mfh 19 May 2015) This is wrong!
+        // Different keys could hash to the same hash value.
+        hasDuplicateKeys_ = true;
+      }
     }
+  }
+  else {
+    CountBucketsValue<KeyType> result;
+    CountBuckets<typename ptr_type::non_const_type,
+                 keys_type> functor (ptr, keys_d, size);
+    Kokkos::parallel_reduce (numKeys, functor, result);
   }
 
   // Compute row offsets via prefix sum:
