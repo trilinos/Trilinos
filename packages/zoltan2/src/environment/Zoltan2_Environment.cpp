@@ -149,8 +149,6 @@ void Environment::commitParameters()
 {
   using std::string;
   using Teuchos::Array;
-  using Teuchos::rcp;
-  using Teuchos::RCP;
   using Teuchos::ParameterList;
 
   bool emptyList = (params_.begin() == params_.end());
