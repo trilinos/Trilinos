@@ -70,23 +70,26 @@
 
 #include "MueLu.hpp"
 
+#include "../../research/q2q1/MueLu_Q2Q1PFactory.hpp"
+#include "../../research/q2q1/MueLu_Q2Q1uPFactory.hpp"
+
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_BaseClass.hpp"
 #include "MueLu_BlockedDirectSolver.hpp"
 #include "MueLu_BlockedPFactory.hpp"
 #include "MueLu_BlockedRAPFactory.hpp"
+#include "MueLu_BraessSarazinSmoother.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
 #include "MueLu_CreateTpetraPreconditioner.hpp"
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_EminPFactory.hpp"
+#include "MueLu_FactoryManager.hpp"
 #include "MueLu_FilteredAFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_PatternFactory.hpp"
-#include "../../research/q2q1/MueLu_Q2Q1PFactory.hpp"
-#include "../../research/q2q1/MueLu_Q2Q1uPFactory.hpp"
-#include "MueLu_SmootherFactory.hpp"
+#include "MueLu_SchurComplementFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_SubBlockAFactory.hpp"
@@ -285,11 +288,7 @@ namespace Thyra {
     typedef Xpetra::MatrixFactory       <SC,LO,GO,NO> MatrixFactory;
     typedef Xpetra::StridedMapFactory   <LO,GO,NO>    StridedMapFactory;
 
-    typedef MueLu::BlockedDirectSolver  <SC,LO,GO,NO> BlockedDirectSolver;
     typedef MueLu::Hierarchy            <SC,LO,GO,NO> Hierarchy;
-    typedef MueLu::SmootherFactory      <SC,LO,GO,NO> SmootherFactory;
-    typedef MueLu::SmootherPrototype    <SC,LO,GO,NO> SmootherPrototype;
-    typedef MueLu::TrilinosSmoother     <SC,LO,GO,NO> TrilinosSmoother;
     typedef MueLu::Utils                <SC,LO,GO,NO> Utils;
 
     const RCP<const Teuchos::Comm<int> > comm = velCoords->getMap()->getComm();
@@ -506,39 +505,17 @@ namespace Thyra {
     // -------------------------------------------------------------------------
     // Preconditioner construction - I.b (Vanka smoothers for unfiltered matrix)
     // -------------------------------------------------------------------------
-    // Set up Vanka smoothing via a combination of Schwarz and block relaxation.
-    ParameterList schwarzList;
-    schwarzList.set("schwarz: overlap level",                 as<int>(0));
-    schwarzList.set("schwarz: zero starting solution",        false);
-    schwarzList.set("subdomain solver name",                  "Block_Relaxation");
+    std::string   smootherType   = MUELU_GPD("smoother: type", std::string, "vanka");
+    ParameterList smootherParams;
+    if (paramList.isSublist("smoother: params"))
+        smootherParams = paramList.sublist("smoother: params");
+    M.SetFactory("Smoother", GetSmoother(smootherType, smootherParams, false/*coarseSolver?*/));
 
-    ParameterList& innerSolverList = schwarzList.sublist("subdomain solver parameters");
-    innerSolverList.set("partitioner: type",                  "user");
-    innerSolverList.set("partitioner: overlap",               as<int>(1));
-    innerSolverList.set("relaxation: type",                   "Gauss-Seidel");
-    innerSolverList.set("relaxation: sweeps",                 as<int>(1));
-    innerSolverList.set("relaxation: damping factor",         MUELU_GPD("relaxation: damping factor", double, 0.5));
-    innerSolverList.set("relaxation: zero starting solution", false);
-    // innerSolverList.set("relaxation: backward mode",true);  NOT SUPPORTED YET
-
-    std::string ifpackType = "SCHWARZ";
-
-    RCP<SmootherPrototype> smootherPrototype = rcp(new TrilinosSmoother(ifpackType, schwarzList));
-    RCP<SmootherFactory>   smootherFact = rcp(new SmootherFactory(smootherPrototype));
-    M.SetFactory("Smoother", smootherFact);
-
-    std::string coarseType = MUELU_GPD("coarse: type", std::string, "direct");
-    if (coarseType == "direct" || coarseType == "vanka") {
-      RCP<SmootherPrototype> coarsePrototype;
-      if (coarseType == "direct")   coarsePrototype = rcp(new BlockedDirectSolver());
-      else                          coarsePrototype = smootherPrototype;
-
-      RCP<SmootherFactory> coarseFact = rcp(new SmootherFactory(coarsePrototype, Teuchos::null));
-      M.SetFactory("CoarseSolver", coarseFact);
-
-    } else if (coarseType == "none") {
-      M.SetFactory("CoarseSolver", Teuchos::null);
-    }
+    std::string   coarseType   = MUELU_GPD("coarse: type", std::string, "direct");
+    ParameterList coarseParams;
+    if (paramList.isSublist("coarse: params"))
+        coarseParams = paramList.sublist("coarse: params");
+    M.SetFactory("CoarseSolver", GetSmoother(coarseType, coarseParams, true/*coarseSolver?*/));
 
 #ifdef HAVE_MUELU_DEBUG
     M.ResetDebugData();
@@ -764,6 +741,89 @@ namespace Thyra {
     EminPFact->SetFactory("Constraint", CFact);
     EminPFact->SetFactory("P",          Q2Q1Fact);
     M.SetFactory("P", EminPFact);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<MueLu::FactoryBase>
+  MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetSmoother(const std::string& type, const ParameterList& paramList, bool coarseSolver) const {
+    typedef Teuchos::ParameterEntry                   ParameterEntry;
+
+    typedef MueLu::BlockedDirectSolver   <SC,LO,GO,NO> BlockedDirectSolver;
+    typedef MueLu::BraessSarazinSmoother <SC,LO,GO,NO> BraessSarazinSmoother;
+    typedef MueLu::DirectSolver          <SC,LO,GO,NO> DirectSolver;
+    typedef MueLu::FactoryManager        <SC,LO,GO,NO> FactoryManager;
+    typedef MueLu::SchurComplementFactory<SC,LO,GO,NO> SchurComplementFactory;
+    typedef MueLu::SmootherFactory       <SC,LO,GO,NO> SmootherFactory;
+    typedef MueLu::SmootherPrototype     <SC,LO,GO,NO> SmootherPrototype;
+    typedef MueLu::TrilinosSmoother      <SC,LO,GO,NO> TrilinosSmoother;
+
+    RCP<SmootherPrototype> smootherPrototype;
+    if (type == "none") {
+      return Teuchos::null;
+
+    } else if (type == "vanka") {
+      // Set up Vanka smoothing via a combination of Schwarz and block relaxation.
+      ParameterList schwarzList;
+      schwarzList.set("schwarz: overlap level",                 as<int>(0));
+      schwarzList.set("schwarz: zero starting solution",        false);
+      schwarzList.set("subdomain solver name",                  "Block_Relaxation");
+
+      ParameterList& innerSolverList = schwarzList.sublist("subdomain solver parameters");
+      innerSolverList.set("partitioner: type",                  "user");
+      innerSolverList.set("partitioner: overlap",               MUELU_GPD("partitioner: overlap",       int,            1));
+      innerSolverList.set("relaxation: type",                   MUELU_GPD("relaxation: type",           std::string,    "Gauss-Seidel"));
+      innerSolverList.set("relaxation: sweeps",                 MUELU_GPD("relaxation: sweeps",         int,            1));
+      innerSolverList.set("relaxation: damping factor",         MUELU_GPD("relaxation: damping factor", double,         0.5));
+      innerSolverList.set("relaxation: zero starting solution", false);
+      // innerSolverList.set("relaxation: backward mode",          MUELU_GPD("relaxation: backward mode",  bool,           true);  NOT SUPPORTED YET
+
+      std::string ifpackType = "SCHWARZ";
+
+      smootherPrototype = rcp(new TrilinosSmoother(ifpackType, schwarzList));
+
+    } else if (type == "direct") {
+      smootherPrototype = rcp(new BlockedDirectSolver());
+
+    } else if (type == "braess-sarazin") {
+      // Define smoother/solver for BraessSarazin
+      RCP<SchurComplementFactory> schurFact = rcp(new SchurComplementFactory());
+      // schurFact->SetParameter("omega", ParameterEntry(BS_omega));
+      schurFact->SetParameter("omega",  ParameterEntry(1.7));
+      schurFact->SetFactory  ("A",      MueLu::NoFactory::getRCP());
+
+      RCP<SmootherPrototype> braessPrototype = Teuchos::null;
+#if 0
+      //Smoother Factory, using SFact as a factory for A
+      std::string ifpackSCType;
+      ParameterList ifpackSCList;
+      ifpackSCList.set("relaxation: sweeps", SC_nSweeps );
+      ifpackSCList.set("relaxation: damping factor", SC_omega );
+      ifpackSCType = "RELAXATION";
+      ifpackSCList.set("relaxation: type", "Gauss-Seidel");
+      smoProtoSC     = rcp( new TrilinosSmoother(ifpackSCType, ifpackSCList, 0) );
+      smoProtoSC->SetFactory("A", SFact);
+#else
+      braessPrototype = rcp(new DirectSolver());
+      braessPrototype->SetFactory("A", schurFact);
+#endif
+
+      RCP<SmootherFactory> braessFact = rcp(new SmootherFactory(braessPrototype));
+
+      // Define temporary FactoryManager that is used as input for BraessSarazin smoother
+      RCP<FactoryManager> braessManager = rcp(new FactoryManager());
+      braessManager->SetFactory("A",            schurFact);     // SchurComplement operator for correction step (defined as "A")
+      braessManager->SetFactory("Smoother",     braessFact);    // solver/smoother for correction step
+      braessManager->SetFactory("PreSmoother",  braessFact);
+      braessManager->SetFactory("PostSmoother", braessFact);
+      braessManager->SetIgnoreUserData(true);                   // always use data from factories defined in factory manager
+
+      smootherPrototype = rcp(new BraessSarazinSmoother());
+      smootherPrototype->SetParameter("Sweeps",         ParameterEntry(MUELU_GPD("Sweeps",          int,    100)));
+      smootherPrototype->SetParameter("Damping factor", ParameterEntry(MUELU_GPD("Damping factor",  double, 1.7)));
+      rcp_dynamic_cast<BraessSarazinSmoother>(smootherPrototype)->AddFactoryManager(braessManager, 0);   // set temporary factory manager in BraessSarazin smoother
+    }
+
+    return coarseSolver ? rcp(new SmootherFactory(smootherPrototype, Teuchos::null)) : rcp(new SmootherFactory(smootherPrototype));
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
