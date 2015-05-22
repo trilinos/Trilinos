@@ -51,8 +51,77 @@
 #include <limits> // std::numeric_limits
 #include <type_traits>
 
+
+//
+// This anonymous namespace stores utility functions and Kokkos
+// functors for use in FixedHashTable construction.
+//
 namespace { // (anonymous)
 
+// Is it worth actually using building the FixedHashTable using
+// parallel threads, instead of just counting in a sequential loop?
+//
+// The parallel version of FixedHashTable construction isn't just a
+// parallelization of the sequential loops.  It incurs additional
+// overheads.  For example, the CountBuckets kernel uses atomic update
+// instructions to count the number of "buckets" per offsets array
+// (ptr) entry.  Atomic updates have overhead, even if only one thread
+// issues them.  The Kokkos kernels are still correct in that case,
+// but I would rather not incur overhead then.  It might make sense to
+// set the minimum number of threads to something greater than 1, but
+// we would need experiments to find out.
+//
+// FixedHashTable code should call the nonmember function below, that
+// has the same name but starts with a lower-case w.
+template<class ExecSpace>
+struct WorthBuildingFixedHashTableInParallel {
+  typedef typename ExecSpace::execution_space execution_space;
+
+  static bool isWorth () {
+    // NOTE: Kokkos::Cuda does NOT have this method.  That's why we
+    // need the partial specialization below.
+    return execution_space::max_hardware_threads () > 1;
+  }
+};
+
+#ifdef KOKKOS_HAVE_CUDA
+template<>
+struct WorthBuildingFixedHashTableInParallel<Kokkos::Cuda> {
+  // There could be more complicated expressions for whether this is
+  // actually worthwhile, but for now I'll just say that with Cuda, we
+  // will ALWAYS count buckets in parallel (that is, run a Kokkos
+  // parallel kernel).
+  static bool isWorth () {
+    return true;
+  }
+};
+#endif // KOKKOS_HAVE_CUDA
+
+// Is it worth actually using building the FixedHashTable using
+// parallel threads, instead of just counting in a sequential loop?
+//
+// The parallel version of FixedHashTable construction isn't just a
+// parallelization of the sequential loops.  It incurs additional
+// overheads.  For example, the CountBuckets kernel uses atomic update
+// instructions to count the number of "buckets" per offsets array
+// (ptr) entry.  Atomic updates have overhead, even if only one thread
+// issues them.  The Kokkos kernels are still correct in that case,
+// but I would rather not incur overhead then.  It might make sense to
+// set the minimum number of threads to something greater than 1, but
+// we would need experiments to find out.
+template<class ExecSpace>
+bool worthBuildingFixedHashTableInParallel () {
+  return WorthBuildingFixedHashTableInParallel<ExecSpace>::isWorth ();
+}
+
+// If the input kokkos::View<const KeyType*, ArrayLayout,
+// InputExecSpace, Kokkos::MemoryUnamanged> is NOT accessible from the
+// OutputExecSpace execution space, make and return a deep copy.
+// Otherwise, just return the original input.
+//
+// The point of this is to avoid unnecessary copies, when the input
+// array of keys comes in as a Teuchos::ArrayView (which we wrap in an
+// unmanaged Kokkos::View).
 template<class KeyType,
          class ArrayLayout,
          class InputExecSpace,
@@ -60,8 +129,12 @@ template<class KeyType,
          const bool mustDeepCopy =
            ! std::is_same<typename InputExecSpace::memory_space,
                           typename OutputExecSpace::memory_space>::value>
-struct DeepCopyIfNeeded {};
+struct DeepCopyIfNeeded {
+  // The default implementation is trivial; all the work happens in
+  // partial specializations.
+};
 
+// Specialization for when a deep copy is actually needed.
 template<class KeyType,
          class ArrayLayout,
          class InputExecSpace,
@@ -70,7 +143,11 @@ struct DeepCopyIfNeeded<KeyType, ArrayLayout, InputExecSpace, OutputExecSpace, t
 {
   typedef Kokkos::View<const KeyType*, ArrayLayout,
                        InputExecSpace, Kokkos::MemoryUnmanaged> input_view_type;
-  // In this case, a deep copy IS needed.
+  // In this case, a deep copy IS needed.  As a result, the output
+  // type is a managed Kokkos::View, which differs from the input
+  // type.  Clients must get the correct return type from this struct,
+  // either from the typedef below or from 'auto'.  Assigning an
+  // unmanaged View to a managed View is a syntax error.
   typedef Kokkos::View<const KeyType*, ArrayLayout, OutputExecSpace> output_view_type;
 
   static output_view_type copy (const input_view_type& src) {
@@ -83,7 +160,7 @@ struct DeepCopyIfNeeded<KeyType, ArrayLayout, InputExecSpace, OutputExecSpace, t
   }
 };
 
-// Specialization if no need to deep-copy.
+// Specialization if no need to make a deep copy.
 template<class KeyType,
          class ArrayLayout,
          class InputExecSpace,
@@ -98,6 +175,12 @@ struct DeepCopyIfNeeded<KeyType, ArrayLayout, InputExecSpace, OutputExecSpace, f
     return output_view_type (src);
   }
 };
+
+// NOTE (mfh 23 May 2015): Once we can use lambdas with CUDA, we
+// should consider replacing all of these functors with in-line
+// lambdas.  The only issue is that we would need to bake the
+// execution space into the policy, since the default execution space
+// might differ from the one Tpetra wants to use.
 
 /// \brief Reduction result for CountBuckets functor below.
 ///
@@ -126,41 +209,65 @@ struct CountBucketsValue {
   KeyType maxKey_; //!< The current maximum key.
 };
 
-template<class OffsetsViewType,
+/// \brief Functor for counting "buckets" in the FixedHashTable.
+///
+/// \tparam CountsViewType Type of the Kokkos::View specialization
+///   used to store the bucket counts; the output of this functor.
+/// \tparam KeysViewType Type of the Kokkos::View specialization
+///   used to store the keys; the input of this functor.
+/// \tparam SizeType The parallel loop index type; a built-in integer
+///   type.  Defaults to the type of the input View's dimension.  You
+///   may use a shorter type to improve performance.
+template<class CountsViewType,
          class KeysViewType,
-         class ExecutionSpaceType = typename OffsetsViewType::execution_space,
-         class MemorySpaceType = typename OffsetsViewType::memory_space,
          class SizeType = typename KeysViewType::size_type>
 class CountBuckets {
 public:
-  typedef OffsetsViewType offsets_view_type;
+  typedef CountsViewType counts_view_type;
   typedef KeysViewType keys_view_type;
-  typedef typename OffsetsViewType::execution_space execution_space;
-  typedef typename OffsetsViewType::memory_space memory_space;
-  typedef typename KeysViewType::size_type size_type;
+  typedef typename CountsViewType::execution_space execution_space;
+  typedef typename CountsViewType::memory_space memory_space;
+  typedef SizeType size_type;
 
   typedef typename keys_view_type::non_const_value_type key_type;
   typedef CountBucketsValue<key_type> value_type;
   // mfh 21 May 2015: Having a device_type typedef in the functor
   // along with an execution_space typedef causes compilation issues.
+  // This is because one of Kokkos' partial specializations picks up
+  // on the device_type typedef, and another picks up on the
+  // execution_space typedef.  The former is a legacy of a previous
+  // design iteration of Kokkos, which did not separate memory and
+  // execution spaces.
   typedef Tpetra::Details::Hash<key_type, Kokkos::Device<execution_space, memory_space> > hash_type;
 
-  CountBuckets (const offsets_view_type& ptr,
+  /// \brief 3-argument constructor
+  ///
+  /// \param counts [out] (Preallocated) View of bucket counts
+  /// \param keys [in] View of the keys
+  /// \param size [in] Number of buckets; length of \c counts
+  CountBuckets (const counts_view_type& counts,
                 const keys_view_type& keys,
                 const size_type size) :
-    ptr_ (ptr),
+    counts_ (counts),
     keys_ (keys),
     size_ (size),
     initMinKey_ (std::numeric_limits<key_type>::max ()),
     initMaxKey_ (std::numeric_limits<key_type>::lowest ())
   {}
 
-  CountBuckets (const offsets_view_type& ptr,
+  /// \brief 5-argument constructor
+  ///
+  /// \param counts [out] (Preallocated) View of bucket counts
+  /// \param keys [in] View of the keys
+  /// \param size [in] Number of buckets; length of \c counts
+  /// \param initMinKey [in] Initial minimum key value
+  /// \param initMaxKey [in] Initial maximum key value
+  CountBuckets (const counts_view_type& counts,
                 const keys_view_type& keys,
                 const size_type size,
                 const key_type initMinKey,
                 const key_type initMaxKey) :
-    ptr_ (ptr),
+    counts_ (counts),
     keys_ (keys),
     size_ (size),
     initMinKey_ (initMinKey),
@@ -204,7 +311,8 @@ public:
     const key_type key = keys_[i];
     const hash_value_type hashVal = hash_type::hashFunc (key, size_);
     // Shift over one, so that counts[j] = ptr[j+1].  See below.
-    Kokkos::atomic_fetch_add (&ptr_[hashVal+1], 1);
+    //Kokkos::atomic_fetch_add (&ptr_[hashVal+1], 1);
+    Kokkos::atomic_fetch_add (&counts_[hashVal], 1);
 
     if (key > dst.maxKey_) {
       dst.maxKey_ = key;
@@ -215,8 +323,8 @@ public:
   }
 
 private:
-  //! Offsets in the FixedHashTable to construct (output argument).
-  offsets_view_type ptr_;
+  //! Bucket counts (output argument).
+  counts_view_type counts_;
   //! Keys for the FixedHashTable to construct (input argument).
   keys_view_type keys_;
   //! Number of buckets plus 1 (or 0, if no buckets).
@@ -227,44 +335,73 @@ private:
   key_type initMaxKey_;
 };
 
-// Is it worth actually using CountBuckets instead of just counting in
-// a sequential loop?
-//
-// The CountBuckets kernel uses atomic update instructions to count
-// the number of "buckets" per offsets array (ptr) entry.  Atomic
-// updates incur overhead, even in the sequential case.  The Kokkos
-// kernel is still correct in that case, but I would rather not incur
-// overhead then.  It might make sense to set the minimum number of
-// threads for invoking the parallel kernel to something greater than
-// 1, but we would need experiments to find out.
-template<class ExecSpace>
-struct WorthCountingBucketsInParallel {
-  typedef typename ExecSpace::execution_space execution_space;
+/// \brief Parallel scan functor for computing "row" offsets.
+///
+/// Kokkos::parallel_scan functor for computing the row offsets array
+/// from the array of counts (which the above functor CountBuckets
+/// computes).
+///
+/// \tparam OffsetsViewType Type of the Kokkos::View specialization
+///   used to store the "row" offsets; the output of this functor.
+/// \tparam SizeType The parallel loop index type; a built-in integer
+///   type.  Defaults to the type of the input View's dimension.  You
+///   may use a shorter type to improve performance.
+template<class OffsetsViewType,
+         class SizeType = typename OffsetsViewType::size_type>
+class ComputeRowOffsets {
+public:
+  typedef OffsetsViewType offsets_view_type;
+  typedef typename OffsetsViewType::const_type counts_view_type;
+  typedef typename OffsetsViewType::execution_space execution_space;
+  typedef typename OffsetsViewType::memory_space memory_space;
+  typedef SizeType size_type;
+  typedef typename OffsetsViewType::non_const_value_type value_type;
 
-  static bool isWorth () {
-    // NOTE: Kokkos::Cuda does NOT have this method.  That's why we
-    // need the partial specialization below.
-    return execution_space::max_hardware_threads () > 1;
+  /// \brief Constructor
+  ///
+  /// \param offsets [out] (Preallocated) offsets; one entry longer
+  ///   than \c counts
+  /// \param counts [in] View of bucket counts
+  ComputeRowOffsets (const offsets_view_type& offsets,
+                     const counts_view_type& counts) :
+    offsets_ (offsets),
+    counts_ (counts),
+    size_ (counts.dimension_0 ())
+  {}
+
+  //! Set the initial value of the reduction result.
+  KOKKOS_INLINE_FUNCTION void init (value_type& dst) const
+  {
+    dst = 0;
   }
+
+  KOKKOS_INLINE_FUNCTION void
+  join (volatile value_type& dst,
+        const volatile value_type& src) const
+  {
+    dst += src;
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  operator () (const size_type& i, value_type& update, const bool final) const
+  {
+    if (final) {
+      offsets_[i] = update;
+    }
+    if (i < size_) {
+      update += counts_[i];
+    }
+  }
+
+private:
+  //! Offsets (output argument)
+  offsets_view_type offsets_;
+  //! Bucket counts (input argument).
+  counts_view_type counts_;
+  //! Number of entries in counts_.
+  size_type size_;
 };
 
-#ifdef KOKKOS_HAVE_CUDA
-template<>
-struct WorthCountingBucketsInParallel<Kokkos::Cuda> {
-  // There could be more complicated expressions for whether this is
-  // actually worthwhile, but for now I'll just say that with Cuda, we
-  // will ALWAYS count buckets in parallel (that is, run a Kokkos
-  // parallel kernel).
-  static bool isWorth () {
-    return true;
-  }
-};
-#endif // KOKKOS_HAVE_CUDA
-
-template<class ExecSpace>
-bool worthCountingBucketsInParallel () {
-  return WorthCountingBucketsInParallel<ExecSpace>::isWorth ();
-}
 
 } // namespace (anonymous)
 
@@ -406,6 +543,9 @@ init (const host_input_keys_type& keys,
     "Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
 
+  const bool buildInParallel =
+    worthBuildingFixedHashTableInParallel<execution_space> ();
+
   // NOTE (mfh 14 May 2015) This method currently assumes UVM.  We
   // could change that by setting up ptr and val as Kokkos::DualView
   // instances.  If we do that, since we are filling on host for now,
@@ -414,12 +554,10 @@ init (const host_input_keys_type& keys,
   // Kokkos-izing all the set-up kernels, we won't need DualView for
   // either ptr or val.
 
-  // Kokkos::View fills with zeros by default.
-  typename ptr_type::non_const_type ptr ("ptr", size + 1);
-
-  // Allocate the array of key,value pairs.  Don't waste time filling
-  // it with zeros, because we will fill it with actual data below.
-  typename val_type::non_const_type val (Kokkos::ViewAllocateWithoutInitializing ("val"), numKeys);
+  // The array of counts must be separate from the array of offsets,
+  // in order for parallel_scan to work correctly.
+  typedef typename ptr_type::non_const_type counts_type;
+  counts_type counts ("counts", size);
 
   // Only make a device copy of the input array 'keys' if the input
   // array lives in a different memory space.  Remember that with UVM,
@@ -440,26 +578,23 @@ init (const host_input_keys_type& keys,
   // updates incur overhead, even in the sequential case.  The Kokkos
   // kernel is still correct in that case, but I would rather not
   // incur overhead then.
-  if (worthCountingBucketsInParallel<execution_space> ()) {
+  if (buildInParallel) {
     for (offset_type k = 0; k < numKeys; ++k) {
       const typename hash_type::result_type hashVal =
         hash_type::hashFunc (keys[k], size);
       // Shift over one, so that counts[j] = ptr[j+1].  See below.
-      ++ptr[hashVal+1];
-
-      if (ptr[hashVal+1] > 1) {
-        // FIXME (mfh 19 May 2015) This is wrong!
-        // Different keys could hash to the same hash value.
-        hasDuplicateKeys_ = true;
-      }
+      //++ptr[hashVal+1];
+      ++counts[hashVal];
     }
   }
   else {
     CountBucketsValue<KeyType> result;
-    CountBuckets<typename ptr_type::non_const_type,
-                 keys_type> functor (ptr, keys_d, size);
+    CountBuckets<counts_type, keys_type> functor (counts, keys_d, size);
     Kokkos::parallel_reduce (numKeys, functor, result);
   }
+
+  // Kokkos::View fills with zeros by default.
+  typename ptr_type::non_const_type ptr ("ptr", size + 1);
 
   // Compute row offsets via prefix sum:
   //
@@ -468,27 +603,42 @@ init (const host_input_keys_type& keys,
   // Thus, ptr[i+1] - ptr[i] = counts[i], so that ptr[i+1] = ptr[i] +
   // counts[i].  If we stored counts[i] in ptr[i+1] on input, then the
   // formula is ptr[i+1] += ptr[i].
-  for (offset_type i = 0; i < size; ++i) {
-    ptr[i+1] += ptr[i];
+  //
+  // parallel_scan does not incur overhead with Kokkos::Serial, but
+  // with actual parallel execution spaces, it does require multiple
+  // passes over the data.  Thus, it still makes sense to have a
+  // sequential fall-back.
+  if (buildInParallel) {
+    typedef ComputeRowOffsets<typename ptr_type::non_const_type> functor_type;
+    functor_type functor (ptr, counts);
+    Kokkos::parallel_scan (size+1, functor);
   }
-  //ptr[0] = 0; // We've already done this when initializing ptr above.
+  else {
+    for (offset_type i = 0; i < size; ++i) {
+      //ptr[i+1] += ptr[i];
+      ptr[i+1] = ptr[i] + counts[i];
+    }
+    //ptr[0] = 0; // We've already done this when initializing ptr above.
+  }
 
-  // curRowStart[i] is the offset of the next element in row i.
-  typename ptr_type::non_const_type curRowStart ("curRowStart", size);
+  // Allocate the array of (key,value) pairs.  Don't fill it with
+  // zeros, because we will fill it with actual data below.
+  typename val_type::non_const_type val (Kokkos::ViewAllocateWithoutInitializing ("val"), numKeys);
 
-  // Fill in the hash table.
+  // Fill in the hash table's "values" (the (key,value) pairs).
   for (offset_type k = 0; k < numKeys; ++k) {
     const KeyType key = keys[k];
     const ValueType theVal = startingValue + static_cast<ValueType> (k);
     const typename hash_type::result_type hashVal =
       hash_type::hashFunc (key, size);
 
-    const offset_type offset = curRowStart[hashVal];
-    const offset_type curPos = ptr[hashVal] + offset;
+    // Return the old count; decrement afterwards.
+    //const offset_type count = Kokkos::atomic_fetch_add (&counts[hashVal], -1);
+    const offset_type count = (counts[hashVal])--;
+    const offset_type curPos = ptr[hashVal+1] - count;
 
     val[curPos].first = key;
     val[curPos].second = theVal;
-    ++curRowStart[hashVal];
   }
 
   // "Commit" the computed arrays.
