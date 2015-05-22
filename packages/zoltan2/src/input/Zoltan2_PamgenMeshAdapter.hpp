@@ -53,6 +53,7 @@
 #include <Zoltan2_MeshAdapter.hpp>
 #include <Zoltan2_StridedData.hpp>
 #include <vector>
+#include <string>
 
 #include <pamgen_im_exodusII.h>
 #include "pamgen_im_ne_nemesisI.h"
@@ -297,7 +298,15 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
 					   std::string typestr):
   dimension_(0)
 {
-  this->setEntityTypes(typestr, "vertex", "vertex");
+  if (typestr.compare("region") == 0) {
+    this->setEntityTypes(typestr, "vertex", "vertex");
+  }
+  else if (typestr.compare("vertex") == 0) {
+    this->setEntityTypes(typestr, "region", "region");
+  }
+  else {
+    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+  }
 
   int error = 0;
   char title[100];
