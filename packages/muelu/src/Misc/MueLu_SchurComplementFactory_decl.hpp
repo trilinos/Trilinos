@@ -59,23 +59,18 @@
 
 #include <Teuchos_ParameterList.hpp>
 
-
-//Xpetra
-#include <Xpetra_MapExtractor_fwd.hpp>
-#include <Xpetra_CrsMatrixWrap_fwd.hpp>
 #include <Xpetra_CrsMatrix_fwd.hpp>
-//#include <Xpetra_Matrix.hpp>
-#include "Xpetra_Map_fwd.hpp"
-#include "Xpetra_StridedMap_fwd.hpp"
+#include <Xpetra_CrsMatrixWrap_fwd.hpp>
+#include <Xpetra_MapExtractor_fwd.hpp>
+#include <Xpetra_Map_fwd.hpp>
+#include <Xpetra_StridedMap_fwd.hpp>
 
 
-#include "MueLu_SingleLevelFactoryBase.hpp"
-//#include "MueLu_SchurComplementFactory_fwd.hpp"
-
-#include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_FactoryManagerBase_fwd.hpp"
+#include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_SmootherBase_fwd.hpp"
+#include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
 
@@ -85,11 +80,12 @@ namespace MueLu {
     @class SchurComplementFactory class.
     @brief Factory for building the Schur Complement for a 2x2 block matrix.
 
-    For a blocked matrix A = (F, G; D -Z) it computes the SchurComplement
-    S = - 1/omega D \hat{F}^{-1} G + Z
-    where omega is some scaling factor and \hat{F} an approximation of F (just the diagonal of F)
+    For a blocked matrix
+        A = [F G; D -Z]
+    it computes the Schur complement
+        S = Z - 1/\omega D \hat{F}^{-1} G,
+    where \omega is some scaling factor and \hat{F} an approximation of F (just the diagonal of F)
   */
-
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class SchurComplementFactory : public SingleLevelFactoryBase {
 #undef MUELU_SCHURCOMPLEMENTFACTORY_SHORT
@@ -100,10 +96,10 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    SchurComplementFactory();
+    SchurComplementFactory() { }
 
     //! Destructor.
-    virtual ~SchurComplementFactory();
+    virtual ~SchurComplementFactory() { }
     //@}
 
     //! Input
@@ -119,7 +115,7 @@ namespace MueLu {
     //! @name Build methods.
 
     //! Build an object with this factory.
-    void Build(Level & currentLevel) const;
+    void Build(Level& currentLevel) const;
 
     //@}
 
