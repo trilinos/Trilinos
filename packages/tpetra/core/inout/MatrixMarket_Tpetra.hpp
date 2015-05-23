@@ -7174,9 +7174,20 @@ namespace Tpetra {
 
         }
 
+        // Return the Matrix Market header.  It includes the header
+        // line (that starts with "%%"), some comments, and the triple
+        // of matrix dimensions and number of nonzero entries.  We
+        // don't actually print this here, because we don't know the
+        // number of nonzero entries until after probing.
         std::ostringstream oss;
-        if (myRank==0) {
-          oss << "%%MatrixMarket matrix coordinate real general" << std::endl;
+        if (myRank == 0) {
+          oss << "%%MatrixMarket matrix coordinate ";
+          if (Teuchos::ScalarTraits<typename operator_type::scalar_type>::isComplex) {
+            oss << "complex";
+          } else {
+            oss << "real";
+          }
+          oss << " general" << std::endl;
           oss << "% Tpetra::Operator" << std::endl;
           std::time_t now = std::time(NULL);
           oss << "% time stamp: " << ctime(&now);
@@ -7186,8 +7197,7 @@ namespace Tpetra {
           oss << numRows << " " << numCols << " " << globalNnz << std::endl;
         }
 
-        return oss.str();
-
+        return oss.str ();
       }
 
       static global_ordinal_type
