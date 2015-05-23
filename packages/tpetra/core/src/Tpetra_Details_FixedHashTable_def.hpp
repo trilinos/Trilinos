@@ -199,7 +199,17 @@ struct CountBucketsValue {
     // normalized value.  This is different than for integer types.
     // lowest() is new in C++11 and returns the least value, always
     // negative for signed finite types.
-    maxKey_ (std::numeric_limits<KeyType>::lowest ())
+    //
+    // mfh 23 May 2015: I have heard reports that
+    // std::numeric_limits<int>::lowest() does not exist with the
+    // Intel compiler.  I'm not sure if the users in question actually
+    // enabled C++11.  However, it's easy enough to work around this
+    // issue.  The standard floating-point types are signed and have a
+    // sign bit, so lowest() is just -max().  For integer types, we
+    // can use min() instead.
+    maxKey_ (std::numeric_limits<KeyType>::is_integer ?
+             std::numeric_limits<KeyType>::min () :
+             -std::numeric_limits<KeyType>::max ())
   {
     static_assert (std::is_arithmetic<KeyType>::value, "CountBucketsValue: "
                    "KeyType must be some kind of number type.");
