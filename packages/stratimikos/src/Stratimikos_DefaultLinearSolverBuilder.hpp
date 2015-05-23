@@ -85,6 +85,16 @@ using Teuchos::ParameterList;
  * For an example of how to use this class see
  *  <a href="simple__stratimikos__example_8cpp-example.html">simple_stratimikos_example.cpp</a></tt>.
  *
+ * A hierarchical list of all valid parameters is given below:
+ *
+ * \htmlonly
+ * <iframe src="stratimikos.xml" width="100%" scrolling="no" frameborder="0"></iframe>
+ * <hr />
+ * \endhtmlonly
+ */
+
+/* (Old comments removed from Doxygen)
+ *
  * The parameters this class accepts are shown below in different format:
  * <ul>
  * <li> \ref HumanReadableWithDocumentation "Human readable format (with documentation) for valid parameters accepted by this class"
@@ -93,11 +103,6 @@ using Teuchos::ParameterList;
  * </ul>
  *
  * <b>\anchor HumanReadableWithDocumentation Human readable format (with documentation) for valid parameters accepted by this class</b>
- *
- * \htmlonly
- * <iframe src="stratimikos.xml" width="100%" scrolling="no" frameborder="0"></iframe>
- * <hr />
- * \endhtmlonly
  *
  * <b>\anchor HumanReadableWithoutDocumentation Human readable format (without documentation) for valid parameters accepted by this class</b>
  *
