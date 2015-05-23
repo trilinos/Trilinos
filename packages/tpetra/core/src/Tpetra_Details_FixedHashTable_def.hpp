@@ -219,7 +219,7 @@ struct CountBucketsValue {
   KeyType maxKey_; //!< The current maximum key.
 };
 
-/// \brief Functor for counting "buckets" in the FixedHashTable.
+/// \brief Parallel reduce functor for counting "buckets" in the FixedHashTable.
 ///
 /// \tparam CountsViewType Type of the Kokkos::View specialization
 ///   used to store the bucket counts; the output of this functor.
@@ -312,9 +312,6 @@ public:
   ///
   /// Count the number of keys in \c keys_ that hash to the same
   /// value.  Update the min and max key seen thus far in entries.
-  ///
-  /// (We can't count duplicate keys yet, because we haven't stored
-  /// keys in the hash table yet.)
   KOKKOS_INLINE_FUNCTION void
   operator () (const size_type& i, value_type& dst) const
   {
@@ -414,9 +411,112 @@ private:
   size_type size_;
 };
 
+/// \brief Parallel for functor for filling the FixedHashTable.
+///
+/// \tparam PairsViewType Type of the Kokkos::View specialization used
+///   to store the (key,value) pairs in the FixedHashTable; output of
+///   this functor.
+/// \tparam KeysViewType Type of the Kokkos::View specialization
+///   used to store the keys; input of this functor.
+/// \tparam CountsViewType Type of the Kokkos::View specialization
+///   used to store the bucket counts; input of this functor, used as
+///   scratch space (so it must be nonconst; offsets_view_type is the
+///   const version of this).
+/// \tparam SizeType The parallel loop index type; a built-in integer
+///   type.  Defaults to the type of the input View's dimension.  You
+///   may use a shorter type to improve performance.
+///
+/// \note This functor CANNOT also find duplicate keys.  This is
+///   because different threads might have different keys that hash to
+///   the same bucket, concurrently.  Threads resolve this by using
+///   atomic updates to "reserve" a position in the 'vals' output
+///   array.  Thus, two threads might concurrently check for existing
+///   duplicates and find none, but then concurrently insert
+///   (key,value) pairs with duplicate keys.  The only thread-scalable
+///   way to check for duplicate keys is to wait until after the table
+///   has been filled.
+template<class PairsViewType,
+         class KeysViewType,
+         class CountsViewType,
+         class SizeType = typename KeysViewType::size_type>
+class FillPairs {
+public:
+  typedef typename CountsViewType::non_const_type counts_view_type;
+  typedef typename counts_view_type::const_type offsets_view_type;
+
+  typedef PairsViewType pairs_view_type;
+  typedef typename KeysViewType::const_type keys_view_type;
+  typedef typename offsets_view_type::execution_space execution_space;
+  typedef typename offsets_view_type::memory_space memory_space;
+  typedef SizeType size_type;
+
+  typedef typename keys_view_type::non_const_value_type key_type;
+  typedef typename pairs_view_type::non_const_value_type pair_type;
+  // mfh 23 May 2015: Having a device_type typedef in the functor
+  // along with an execution_space typedef causes compilation issues.
+  // This is because one of Kokkos' partial specializations picks up
+  // on the device_type typedef, and another picks up on the
+  // execution_space typedef.  The former is a legacy of a previous
+  // design iteration of Kokkos, which did not separate memory and
+  // execution spaces.
+  typedef Tpetra::Details::Hash<key_type, Kokkos::Device<execution_space, memory_space> > hash_type;
+
+  /// \brief Constructor
+  ///
+  /// \param pairs [out] (Preallocated) View of (key,value) pairs
+  /// \param counts [in/out] View of bucket counts; overwritten as
+  ///   scratch space
+  /// \param ptr [in] View of offsets
+  /// \param keys [in] View of the keys
+  /// \param startingValue [in] Starting value.  For each key keys[i],
+  ///   the corresponding value (in the (key,value) pair) is
+  ///   startingValue + i.
+  FillPairs (const pairs_view_type& pairs,
+             const counts_view_type& counts,
+             const offsets_view_type& ptr,
+             const keys_view_type& keys,
+             const typename pair_type::second_type startingValue) :
+    pairs_ (pairs),
+    counts_ (counts),
+    ptr_ (ptr),
+    keys_ (keys),
+    size_ (counts.dimension_0 ()),
+    startingValue_ (startingValue)
+  {}
+
+  /// \brief Parallel loop body; do this for every entry of \c keys_.
+  ///
+  /// Add (key = keys_[i], value = startingValue_ + i) pair to the
+  /// hash table.
+  KOKKOS_INLINE_FUNCTION void
+  operator () (const size_type& i) const
+  {
+    typedef typename hash_type::result_type hash_value_type;
+    typedef typename offsets_view_type::non_const_value_type offset_type;
+    typedef typename pair_type::second_type val_type;
+
+    const key_type key = keys_[i];
+    const val_type theVal = startingValue_ + static_cast<val_type> (i);
+    const hash_value_type hashVal = hash_type::hashFunc (key, size_);
+
+    // Return the old count; decrement afterwards.
+    const offset_type count = Kokkos::atomic_fetch_add (&counts_[hashVal], -1);
+    const offset_type curPos = ptr_[hashVal+1] - count;
+
+    pairs_[curPos].first = key;
+    pairs_[curPos].second = theVal;
+  }
+
+private:
+  pairs_view_type pairs_;
+  counts_view_type counts_;
+  offsets_view_type ptr_;
+  keys_view_type keys_;
+  size_type size_;
+  typename pair_type::second_type startingValue_;
+};
 
 } // namespace (anonymous)
-
 
 
 namespace Tpetra {
@@ -638,19 +738,27 @@ init (const host_input_keys_type& keys,
   typename val_type::non_const_type val (Kokkos::ViewAllocateWithoutInitializing ("val"), numKeys);
 
   // Fill in the hash table's "values" (the (key,value) pairs).
-  for (offset_type k = 0; k < numKeys; ++k) {
-    const KeyType key = keys[k];
-    const ValueType theVal = startingValue + static_cast<ValueType> (k);
-    const typename hash_type::result_type hashVal =
-      hash_type::hashFunc (key, size);
+  if (buildInParallel) {
+    typedef FillPairs<typename val_type::non_const_type, keys_type,
+                      typename ptr_type::non_const_type> functor_type;
+    functor_type functor (val, counts, ptr, keys_d, startingValue);
+    Kokkos::parallel_for (numKeys, functor);
+  }
+  else {
+    for (offset_type k = 0; k < numKeys; ++k) {
+      const KeyType key = keys[k];
+      const ValueType theVal = startingValue + static_cast<ValueType> (k);
+      const typename hash_type::result_type hashVal =
+        hash_type::hashFunc (key, size);
 
-    // Return the old count; decrement afterwards.
-    //const offset_type count = Kokkos::atomic_fetch_add (&counts[hashVal], -1);
-    const offset_type count = (counts[hashVal])--;
-    const offset_type curPos = ptr[hashVal+1] - count;
+      // Return the old count; decrement afterwards.
+      //const offset_type count = Kokkos::atomic_fetch_add (&counts[hashVal], -1);
+      const offset_type count = (counts[hashVal])--;
+      const offset_type curPos = ptr[hashVal+1] - count;
 
-    val[curPos].first = key;
-    val[curPos].second = theVal;
+      val[curPos].first = key;
+      val[curPos].second = theVal;
+    }
   }
 
   // "Commit" the computed arrays.
