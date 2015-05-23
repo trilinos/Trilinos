@@ -262,7 +262,9 @@ public:
     keys_ (keys),
     size_ (size),
     initMinKey_ (std::numeric_limits<key_type>::max ()),
-    initMaxKey_ (std::numeric_limits<key_type>::lowest ())
+    initMaxKey_ (std::numeric_limits<key_type>::is_integer ?
+                 std::numeric_limits<key_type>::min () :
+                 -std::numeric_limits<key_type>::max ())
   {}
 
   /// \brief 5-argument constructor
