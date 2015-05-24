@@ -691,6 +691,20 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
       }
     }
 
+    nodeToElem_ = new int [num_nodes_ * max_nsur];
+    nodeOffsets_ = new int [num_nodes_+1];
+    telct_ = 0;
+
+    for (int ncnt = 0; ncnt < num_nodes_; ncnt++) {
+      nodeOffsets_[ncnt] = telct_;
+
+      for (size_t i = 0; i < sur_elem[ncnt].size(); i++) {
+	nodeToElem_[telct_] = sur_elem[ncnt][i];
+	++telct_;
+      }
+    }
+
+    nodeOffsets_[num_nodes_] = telct_;
     delete[] rbuf;
     //}
 
