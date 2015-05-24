@@ -516,8 +516,113 @@ private:
   typename pair_type::second_type startingValue_;
 };
 
+/// \brief Functor for checking whether a FixedHashTable has one or
+///   more duplicate entries.
+///
+/// \tparam OffsetsViewType Type of the Kokkos::View specialization
+///   used to store the "row" offsets; input of this functor.
+/// \tparam PairsViewType Type of the Kokkos::View specialization used
+///   to store the (key,value) pairs in the FixedHashTable; input of
+///   this functor.
+/// \tparam SizeType The parallel loop index type; a built-in integer
+///   type.  Defaults to the type of the input View's dimension.  You
+///   may use a shorter type to improve performance.
+///
+/// This functor works by iterating over all the hash "buckets" (the
+/// entries of \c ptr).  For each i, all the keys in the (key,value)
+/// pairs in the half-exclusive range ptr[i], ptr[i+1] must have the
+/// same hash value.  Thus, any duplicate keys must be in that range;
+/// if the hash function is actually a function, it's impossible to
+/// find duplicate keys elsewhere.
+///
+/// If the hash function isn't actually a function, the above
+/// algorithm won't work.  However, users are not (currently) allowed
+/// to supply arbitrary hash functions to Tpetra, so we don't have to
+/// worry about checking the hash function here.
+template<class OffsetsViewType,
+         class PairsViewType,
+         class SizeType = typename OffsetsViewType::size_type>
+class CheckForDuplicateKeys {
+public:
+  typedef typename OffsetsViewType::const_type offsets_view_type;
+  typedef typename PairsViewType::const_type pairs_view_type;
+  typedef typename offsets_view_type::execution_space execution_space;
+  typedef typename offsets_view_type::memory_space memory_space;
+  typedef SizeType size_type;
+
+  // The result of the check is whether the table has one or more duplicates.
+  typedef bool value_type;
+
+  /// \brief Constructor
+  ///
+  /// \param pairs [in] View of the FixedHashTable's (key,value) pairs
+  /// \param ptr [in] View of the FixedHashTable's "bucket" offsets
+  CheckForDuplicateKeys (const pairs_view_type& pairs,
+                         const offsets_view_type& ptr) :
+    pairs_ (pairs),
+    ptr_ (ptr),
+    size_ (ptr_.dimension_0 () == 0 ?
+           size_type (0) :
+           ptr_.dimension_0 () - 1)
+  {}
+
+  //! Set the initial value of the reduction result.
+  KOKKOS_INLINE_FUNCTION void init (value_type& dst) const
+  {
+    dst = false;
+  }
+
+  //! Combine two intermediate reduction results.
+  KOKKOS_INLINE_FUNCTION void
+  join (volatile value_type& dst,
+        const volatile value_type& src) const
+  {
+    dst = dst || src;
+  }
+
+  //! Parallel loop body.
+  KOKKOS_INLINE_FUNCTION void
+  operator () (const size_type& i, value_type& dst) const
+  {
+    typedef typename offsets_view_type::non_const_value_type offset_type;
+    typedef typename pairs_view_type::non_const_value_type pair_type;
+    typedef typename pair_type::first_type key_type;
+
+    if (dst) {
+      return; // we've already found duplicate keys elsewhere
+    }
+    else {
+      const offset_type beg = ptr_[i];
+      const offset_type end = ptr_[i+1];
+      bool foundDuplicateKey = false;
+      // This is an ~ n^2 algorithm in the worst case, where n is the
+      // max number of keys that hash to the same bucket.  However, if
+      // the hash function is reasonable, n should be much less than
+      // the total number of keys.
+      for (offset_type j = beg + 1; j < end; ++j) {
+        const key_type curKey = pairs_[j].first;
+        for (offset_type k = beg; k < j; ++k) {
+          if (pairs_[k].first == curKey) {
+            foundDuplicateKey = true;
+            break;
+          }
+        }
+      }
+      dst = dst || foundDuplicateKey;
+    }
+  }
+
+private:
+  pairs_view_type pairs_;
+  offsets_view_type ptr_;
+  size_type size_;
+};
+
 } // namespace (anonymous)
 
+//
+// Here begins the actual implementation of FixedHashTable.
+//
 
 namespace Tpetra {
 namespace Details {
@@ -554,7 +659,8 @@ FixedHashTable () :
   rawVal_ (NULL),
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   invalidValue_ (Teuchos::OrdinalTraits<ValueType>::invalid ()),
-  hasDuplicateKeys_ (false) // trivially true
+  checkedForDuplicateKeys_ (true), // it's an empty table; no need to check
+  hasDuplicateKeys_ (false)
 {
 #ifdef HAVE_TPETRA_DEBUG
   check ();
@@ -569,7 +675,8 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys) :
   rawVal_ (NULL),
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   invalidValue_ (Teuchos::OrdinalTraits<ValueType>::invalid ()),
-  hasDuplicateKeys_ (false) // to revise in init()
+  checkedForDuplicateKeys_ (false),
+  hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
 {
   // mfh 01 May 2015: I don't trust that
   // Teuchos::ArrayView::getRawPtr() returns NULL when the size is 0,
@@ -593,7 +700,8 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   rawVal_ (NULL),
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   invalidValue_ (Teuchos::OrdinalTraits<ValueType>::invalid ()),
-  hasDuplicateKeys_ (false) // to revise in init()
+  checkedForDuplicateKeys_ (false),
+  hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
 {
   // mfh 01 May 2015: I don't trust that
   // Teuchos::ArrayView::getRawPtr() returns NULL when the size is 0,
@@ -616,7 +724,8 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   rawVal_ (NULL),
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   invalidValue_ (Teuchos::OrdinalTraits<ValueType>::invalid ()),
-  hasDuplicateKeys_ (false) // to revise in init()
+  checkedForDuplicateKeys_ (false),
+  hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
 {
   // mfh 01 May 2015: I don't trust that
   // Teuchos::ArrayView::getRawPtr() returns NULL when the size is 0,
@@ -814,10 +923,6 @@ init (const host_input_keys_type& keys,
       hash_type::hashFunc (keys[k], size);
     // Shift over one, so that counts[j] = ptr[j+1].  See below.
     ++ptr[hashVal+1];
-
-    if (ptr[hashVal+1] > 1) {
-      hasDuplicateKeys_ = true;
-    }
   }
 
   // Compute row offsets via prefix sum:
@@ -860,6 +965,36 @@ init (const host_input_keys_type& keys,
 }
 
 template <class KeyType, class ValueType, class DeviceType>
+bool
+FixedHashTable<KeyType, ValueType, DeviceType>::
+hasDuplicateKeys ()
+{
+  if (! checkedForDuplicateKeys_) {
+    hasDuplicateKeys_ = checkForDuplicateKeys ();
+    checkedForDuplicateKeys_ = true;
+  }
+  return hasDuplicateKeys_;
+}
+
+template <class KeyType, class ValueType, class DeviceType>
+bool
+FixedHashTable<KeyType, ValueType, DeviceType>::
+checkForDuplicateKeys () const
+{
+  const offset_type size = this->getSize ();
+  if (size == 0) {
+    return false;
+  }
+  else {
+    typedef CheckForDuplicateKeys<ptr_type, val_type> functor_type;
+    functor_type functor (val_, ptr_);
+    bool hasDupKeys = false;
+    Kokkos::parallel_reduce (size, functor, hasDupKeys);
+    return hasDupKeys;
+  }
+}
+
+template <class KeyType, class ValueType, class DeviceType>
 std::string
 FixedHashTable<KeyType, ValueType, DeviceType>::
 description () const
@@ -869,7 +1004,7 @@ description () const
       << Teuchos::TypeNameTraits<KeyType>::name () << ","
       << Teuchos::TypeNameTraits<ValueType>::name () << ">: "
       << "{ numKeys: " << val_.dimension_0 ()
-      << ", tableSize: " << ptr_.dimension_0 () << " }";
+      << ", tableSize: " << this->getSize () << " }";
   return oss.str();
 }
 
