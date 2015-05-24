@@ -148,13 +148,19 @@ public:
   FixedHashTable (const FixedHashTable<KeyType, ValueType, InDeviceType>& src,
                   typename std::enable_if<! std::is_same<DeviceType, InDeviceType>::value, int>::type* = NULL)
   {
-    typename ptr_type::non_const_type ptr (Kokkos::ViewAllocateWithoutInitializing ("ptr"), src.ptr_.dimension_0 ());
+    using Kokkos::ViewAllocateWithoutInitializing;
+    typedef typename ptr_type::non_const_type nonconst_ptr_type;
+    typedef typename val_type::non_const_type nonconst_val_type;
+
+    nonconst_ptr_type ptr (ViewAllocateWithoutInitializing ("ptr"),
+                           src.ptr_.dimension_0 ());
 
     // NOTE (mfh 01 May 2015) deep_copy works here, because regardless
     // of the DeviceType, all FixedHashTable types use the same array
     // layout for their internal 1-D Views.
     Kokkos::deep_copy (ptr, src.ptr_);
-    typename val_type::non_const_type val (Kokkos::ViewAllocateWithoutInitializing ("val"), src.val_.dimension_0 ());
+    nonconst_val_type val (ViewAllocateWithoutInitializing ("val"),
+                           src.val_.dimension_0 ());
     Kokkos::deep_copy (val, src.val_);
 
     this->ptr_ = ptr;
@@ -164,6 +170,7 @@ public:
     this->rawVal_ = val.ptr_on_device ();
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
     this->invalidValue_ = src.invalidValue_;
+    this->checkedForDuplicateKeys_ = src.checkedForDuplicateKeys_;
     this->hasDuplicateKeys_ = src.hasDuplicateKeys_;
 
 #if defined(HAVE_TPETRA_DEBUG)
@@ -201,10 +208,12 @@ public:
     }
   }
 
-  //! Whether the table noticed any duplicate keys on construction.
-  bool hasDuplicateKeys () const {
-    return hasDuplicateKeys_;
-  }
+  /// \brief Whether the table has any duplicate keys.
+  ///
+  /// This is a nonconst function because it requires running a Kokkos
+  /// kernel to search the keys.  The result of the first call is
+  /// cached and reused on subsequent calls.
+  bool hasDuplicateKeys ();
 
   //! Implementation of Teuchos::Describable
   //@{
@@ -245,8 +254,23 @@ private:
   /// compiler deletes the implicit copy constructor.
   ValueType invalidValue_;
 
-  //! Whether the table noticed any duplicate keys on construction.
+  /// \brief Whether the table has checked for duplicate keys.
+  ///
+  /// This is set at the end of the first call to hasDuplicateKeys().
+  /// The results of that method are cached in hasDuplicateKeys_ (see
+  /// below).
+  bool checkedForDuplicateKeys_;
+
+  /// \brief Whether the table noticed any duplicate keys.
+  ///
+  /// This is only valid if checkedForDuplicateKeys_ (above) is true.
   bool hasDuplicateKeys_;
+
+  /// \brief Whether the table has duplicate keys.
+  ///
+  /// This method doesn't cache anything (and is therefore marked
+  /// const); hasDuplicateKeys() (which see) caches this result.
+  bool checkForDuplicateKeys () const;
 
   //! The number of "buckets" in the bucket array.
   KOKKOS_INLINE_FUNCTION offset_type getSize () const {

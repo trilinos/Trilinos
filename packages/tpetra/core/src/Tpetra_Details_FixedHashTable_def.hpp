@@ -182,44 +182,7 @@ struct DeepCopyIfNeeded<KeyType, ArrayLayout, InputExecSpace, OutputExecSpace, f
 // execution space into the policy, since the default execution space
 // might differ from the one Tpetra wants to use.
 
-/// \brief Reduction result for CountBuckets functor below.
-///
-/// The reduction result finds the min and max keys.  The default
-/// values (\c minKey_ set to max \c KeyType value, and \c maxKey_ set
-/// to min \c KeyType value) ensure correct behavior even if there is
-/// only one key.
-///
-/// \tparam KeyType Type of each input of the hash function.
-///   It must be an integer type.
-template<class KeyType>
-struct CountBucketsValue {
-  CountBucketsValue () :
-    minKey_ (std::numeric_limits<KeyType>::max ()),
-    // min() for a floating-point type returns the minimum _positive_
-    // normalized value.  This is different than for integer types.
-    // lowest() is new in C++11 and returns the least value, always
-    // negative for signed finite types.
-    //
-    // mfh 23 May 2015: I have heard reports that
-    // std::numeric_limits<int>::lowest() does not exist with the
-    // Intel compiler.  I'm not sure if the users in question actually
-    // enabled C++11.  However, it's easy enough to work around this
-    // issue.  The standard floating-point types are signed and have a
-    // sign bit, so lowest() is just -max().  For integer types, we
-    // can use min() instead.
-    maxKey_ (std::numeric_limits<KeyType>::is_integer ?
-             std::numeric_limits<KeyType>::min () :
-             -std::numeric_limits<KeyType>::max ())
-  {
-    static_assert (std::is_arithmetic<KeyType>::value, "CountBucketsValue: "
-                   "KeyType must be some kind of number type.");
-  }
-
-  KeyType minKey_; //!< The current minimum key.
-  KeyType maxKey_; //!< The current maximum key.
-};
-
-/// \brief Parallel reduce functor for counting "buckets" in the FixedHashTable.
+/// \brief Parallel for functor for counting "buckets" in the FixedHashTable.
 ///
 /// \tparam CountsViewType Type of the Kokkos::View specialization
 ///   used to store the bucket counts; the output of this functor.
@@ -238,9 +201,7 @@ public:
   typedef typename CountsViewType::execution_space execution_space;
   typedef typename CountsViewType::memory_space memory_space;
   typedef SizeType size_type;
-
   typedef typename keys_view_type::non_const_value_type key_type;
-  typedef CountBucketsValue<key_type> value_type;
   // mfh 21 May 2015: Having a device_type typedef in the functor
   // along with an execution_space typedef causes compilation issues.
   // This is because one of Kokkos' partial specializations picks up
@@ -250,9 +211,9 @@ public:
   // execution spaces.
   typedef Tpetra::Details::Hash<key_type, Kokkos::Device<execution_space, memory_space> > hash_type;
 
-  /// \brief 3-argument constructor
+  /// \brief Constructor
   ///
-  /// \param counts [out] (Preallocated) View of bucket counts
+  /// \param counts [out] (Preallocated) View of the bucket counts
   /// \param keys [in] View of the keys
   /// \param size [in] Number of buckets; length of \c counts
   CountBuckets (const counts_view_type& counts,
@@ -260,75 +221,20 @@ public:
                 const size_type size) :
     counts_ (counts),
     keys_ (keys),
-    size_ (size),
-    initMinKey_ (std::numeric_limits<key_type>::max ()),
-    initMaxKey_ (std::numeric_limits<key_type>::is_integer ?
-                 std::numeric_limits<key_type>::min () :
-                 -std::numeric_limits<key_type>::max ())
+    size_ (size)
   {}
-
-  /// \brief 5-argument constructor
-  ///
-  /// \param counts [out] (Preallocated) View of bucket counts
-  /// \param keys [in] View of the keys
-  /// \param size [in] Number of buckets; length of \c counts
-  /// \param initMinKey [in] Initial minimum key value
-  /// \param initMaxKey [in] Initial maximum key value
-  CountBuckets (const counts_view_type& counts,
-                const keys_view_type& keys,
-                const size_type size,
-                const key_type initMinKey,
-                const key_type initMaxKey) :
-    counts_ (counts),
-    keys_ (keys),
-    size_ (size),
-    initMinKey_ (initMinKey),
-    initMaxKey_ (initMaxKey)
-  {}
-
-  //! Set the initial value of the reduction result.
-  KOKKOS_INLINE_FUNCTION void init (value_type& dst) const
-  {
-    dst.minKey_ = initMinKey_;
-    dst.maxKey_ = initMaxKey_;
-  }
-
-  /// \brief Combine two intermediate reduction results.
-  ///
-  /// This sets both the min and max GID, if necessary.
-  KOKKOS_INLINE_FUNCTION void
-  join (volatile value_type& dst,
-        const volatile value_type& src) const
-  {
-    if (src.maxKey_ > dst.maxKey_) {
-      dst.maxKey_ = src.maxKey_;
-    }
-    if (src.minKey_ < dst.minKey_) {
-      dst.minKey_ = src.minKey_;
-    }
-  }
 
   /// \brief Do this for every entry of \c keys_.
   ///
   /// Count the number of keys in \c keys_ that hash to the same
-  /// value.  Update the min and max key seen thus far in entries.
+  /// value.
   KOKKOS_INLINE_FUNCTION void
-  operator () (const size_type& i, value_type& dst) const
+  operator () (const size_type& i) const
   {
     typedef typename hash_type::result_type hash_value_type;
 
-    const key_type key = keys_[i];
-    const hash_value_type hashVal = hash_type::hashFunc (key, size_);
-    // Shift over one, so that counts[j] = ptr[j+1].  See below.
-    //Kokkos::atomic_fetch_add (&ptr_[hashVal+1], 1);
+    const hash_value_type hashVal = hash_type::hashFunc (keys_[i], size_);
     Kokkos::atomic_fetch_add (&counts_[hashVal], 1);
-
-    if (key > dst.maxKey_) {
-      dst.maxKey_ = key;
-    }
-    if (key < dst.minKey_) {
-      dst.minKey_ = key;
-    }
   }
 
 private:
@@ -338,10 +244,6 @@ private:
   keys_view_type keys_;
   //! Number of buckets plus 1 (or 0, if no buckets).
   size_type size_;
-  //! Initial minimum key.
-  key_type initMinKey_;
-  //! Initial maximum key.
-  key_type initMaxKey_;
 };
 
 /// \brief Parallel scan functor for computing "row" offsets.
@@ -411,7 +313,52 @@ private:
   size_type size_;
 };
 
-/// \brief Parallel for functor for filling the FixedHashTable.
+/// \brief Reduction result for FillPairs functor below.
+///
+/// The reduction result finds the min and max keys, and reports
+/// whether FillPairs succeeded (it should always succeed, unless
+/// there a bug in earlier code manifested).  The default values
+/// (minKey_ set to max KeyType value, and maxKey_ set to min KeyType
+/// value) ensure correct behavior even if there is only one key.
+///
+/// \tparam KeyType Type of each input of the hash function.
+///   It must be an integer type.
+template<class KeyType>
+struct FillPairsResult {
+  FillPairsResult () :
+    minKey_ (std::numeric_limits<KeyType>::max ()),
+    // min() for a floating-point type returns the minimum _positive_
+    // normalized value.  This is different than for integer types.
+    // lowest() is new in C++11 and returns the least value, always
+    // negative for signed finite types.
+    //
+    // mfh 23 May 2015: I have heard reports that
+    // std::numeric_limits<int>::lowest() does not exist with the
+    // Intel compiler.  I'm not sure if the users in question actually
+    // enabled C++11.  However, it's easy enough to work around this
+    // issue.  The standard floating-point types are signed and have a
+    // sign bit, so lowest() is just -max().  For integer types, we
+    // can use min() instead.
+    maxKey_ (std::numeric_limits<KeyType>::is_integer ?
+             std::numeric_limits<KeyType>::min () :
+             -std::numeric_limits<KeyType>::max ()),
+    success_ (true)
+  {
+    static_assert (std::is_arithmetic<KeyType>::value, "FillPairsResult: "
+                   "KeyType must be some kind of number type.");
+  }
+
+  KeyType minKey_; //!< The current minimum key
+  KeyType maxKey_; //!< The current maximum key
+  bool success_;   //!< Whether fill succeeded (it can only fail on a bug)
+};
+
+/// \brief Parallel reduce functor for filling the FixedHashTable, and
+///   computing the min and max keys.
+///
+/// This is also a parallel reduce functor in order to check for
+/// failure.  Failure should only happen on a bug (in CountBuckets or
+/// ComputeRowOffsets), but checking for it is cheap and easy.
 ///
 /// \tparam PairsViewType Type of the Kokkos::View specialization used
 ///   to store the (key,value) pairs in the FixedHashTable; output of
@@ -452,6 +399,9 @@ public:
 
   typedef typename keys_view_type::non_const_value_type key_type;
   typedef typename pairs_view_type::non_const_value_type pair_type;
+
+  typedef FillPairsResult<typename pair_type::second_type> value_type;
+
   // mfh 23 May 2015: Having a device_type typedef in the functor
   // along with an execution_space typedef causes compilation issues.
   // This is because one of Kokkos' partial specializations picks up
@@ -481,30 +431,101 @@ public:
     ptr_ (ptr),
     keys_ (keys),
     size_ (counts.dimension_0 ()),
-    startingValue_ (startingValue)
+    startingValue_ (startingValue),
+    initMinKey_ (std::numeric_limits<key_type>::max ()),
+    initMaxKey_ (std::numeric_limits<key_type>::is_integer ?
+                 std::numeric_limits<key_type>::min () :
+                 -std::numeric_limits<key_type>::max ())
   {}
+
+  /// \brief Constructor that takes initial min and max key values.
+  ///
+  /// This constructor is useful for Tpetra::Map's noncontiguous
+  /// constructor.  That constructor first harvests an initial
+  /// sequence of contiguous global indices, then puts any remaining
+  /// global indices that follow into the hash table.  That initial
+  /// sequence defines initial min and max keys.
+  ///
+  /// \param pairs [out] (Preallocated) View of (key,value) pairs
+  /// \param counts [in/out] View of bucket counts; overwritten as
+  ///   scratch space
+  /// \param ptr [in] View of offsets
+  /// \param keys [in] View of the keys
+  /// \param startingValue [in] Starting value.  For each key keys[i],
+  ///   the corresponding value (in the (key,value) pair) is
+  ///   startingValue + i.
+  /// \param initMinKey [in] Initial min key value
+  /// \param initMaxKey [in] Initial max key value
+  FillPairs (const pairs_view_type& pairs,
+             const counts_view_type& counts,
+             const offsets_view_type& ptr,
+             const keys_view_type& keys,
+             const typename pair_type::second_type startingValue,
+             const key_type initMinKey,
+             const key_type initMaxKey) :
+    pairs_ (pairs),
+    counts_ (counts),
+    ptr_ (ptr),
+    keys_ (keys),
+    size_ (counts.dimension_0 ()),
+    startingValue_ (startingValue),
+    initMinKey_ (initMinKey),
+    initMaxKey_ (initMaxKey)
+  {}
+
+  //! Set the initial value of the reduction result.
+  KOKKOS_INLINE_FUNCTION void init (value_type& dst) const
+  {
+    dst.minKey_ = initMinKey_;
+    dst.maxKey_ = initMaxKey_;
+    dst.success_ = true;
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  join (volatile value_type& dst,
+        const volatile value_type& src) const
+  {
+    if (src.maxKey_ > dst.maxKey_) {
+      dst.maxKey_ = src.maxKey_;
+    }
+    if (src.minKey_ < dst.minKey_) {
+      dst.minKey_ = src.minKey_;
+    }
+    dst.success_ = dst.success_ && src.success_;
+  }
 
   /// \brief Parallel loop body; do this for every entry of \c keys_.
   ///
   /// Add (key = keys_[i], value = startingValue_ + i) pair to the
-  /// hash table.
+  /// hash table.  Compute min and max key value.
   KOKKOS_INLINE_FUNCTION void
-  operator () (const size_type& i) const
+  operator () (const size_type& i, value_type& dst) const
   {
     typedef typename hash_type::result_type hash_value_type;
     typedef typename offsets_view_type::non_const_value_type offset_type;
     typedef typename pair_type::second_type val_type;
 
     const key_type key = keys_[i];
+    if (key > dst.maxKey_) {
+      dst.maxKey_ = key;
+    }
+    if (key < dst.minKey_) {
+      dst.minKey_ = key;
+    }
     const val_type theVal = startingValue_ + static_cast<val_type> (i);
     const hash_value_type hashVal = hash_type::hashFunc (key, size_);
 
     // Return the old count; decrement afterwards.
     const offset_type count = Kokkos::atomic_fetch_add (&counts_[hashVal], -1);
-    const offset_type curPos = ptr_[hashVal+1] - count;
+    if (count == 0) {
+      dst.success_ = false; // FAILURE!
+    }
+    else {
+      const offset_type curPos = ptr_[hashVal+1] - count;
 
-    pairs_[curPos].first = key;
-    pairs_[curPos].second = theVal;
+      pairs_[curPos].first = key;
+      pairs_[curPos].second = theVal;
+    }
   }
 
 private:
@@ -514,10 +535,119 @@ private:
   keys_view_type keys_;
   size_type size_;
   typename pair_type::second_type startingValue_;
+  //! Initial minimum key.
+  key_type initMinKey_;
+  //! Initial maximum key.
+  key_type initMaxKey_;
+};
+
+/// \brief Functor for checking whether a FixedHashTable has one or
+///   more duplicate entries.
+///
+/// \tparam OffsetsViewType Type of the Kokkos::View specialization
+///   used to store the "row" offsets; input of this functor.
+/// \tparam PairsViewType Type of the Kokkos::View specialization used
+///   to store the (key,value) pairs in the FixedHashTable; input of
+///   this functor.
+/// \tparam SizeType The parallel loop index type; a built-in integer
+///   type.  Defaults to the type of the input View's dimension.  You
+///   may use a shorter type to improve performance.
+///
+/// This functor works by iterating over all the hash "buckets" (the
+/// entries of \c ptr).  For each i, all the keys in the (key,value)
+/// pairs in the half-exclusive range ptr[i], ptr[i+1] must have the
+/// same hash value.  Thus, any duplicate keys must be in that range;
+/// if the hash function is actually a function, it's impossible to
+/// find duplicate keys elsewhere.
+///
+/// If the hash function isn't actually a function, the above
+/// algorithm won't work.  However, users are not (currently) allowed
+/// to supply arbitrary hash functions to Tpetra, so we don't have to
+/// worry about checking the hash function here.
+template<class OffsetsViewType,
+         class PairsViewType,
+         class SizeType = typename OffsetsViewType::size_type>
+class CheckForDuplicateKeys {
+public:
+  typedef typename OffsetsViewType::const_type offsets_view_type;
+  typedef typename PairsViewType::const_type pairs_view_type;
+  typedef typename offsets_view_type::execution_space execution_space;
+  typedef typename offsets_view_type::memory_space memory_space;
+  typedef SizeType size_type;
+
+  // The result of the check is whether the table has one or more duplicates.
+  typedef bool value_type;
+
+  /// \brief Constructor
+  ///
+  /// \param pairs [in] View of the FixedHashTable's (key,value) pairs
+  /// \param ptr [in] View of the FixedHashTable's "bucket" offsets
+  CheckForDuplicateKeys (const pairs_view_type& pairs,
+                         const offsets_view_type& ptr) :
+    pairs_ (pairs),
+    ptr_ (ptr),
+    size_ (ptr_.dimension_0 () == 0 ?
+           size_type (0) :
+           ptr_.dimension_0 () - 1)
+  {}
+
+  //! Set the initial value of the reduction result.
+  KOKKOS_INLINE_FUNCTION void init (value_type& dst) const
+  {
+    dst = false;
+  }
+
+  //! Combine two intermediate reduction results.
+  KOKKOS_INLINE_FUNCTION void
+  join (volatile value_type& dst,
+        const volatile value_type& src) const
+  {
+    dst = dst || src;
+  }
+
+  //! Parallel loop body.
+  KOKKOS_INLINE_FUNCTION void
+  operator () (const size_type& i, value_type& dst) const
+  {
+    typedef typename offsets_view_type::non_const_value_type offset_type;
+    typedef typename pairs_view_type::non_const_value_type pair_type;
+    typedef typename pair_type::first_type key_type;
+
+    if (dst) {
+      return; // we've already found duplicate keys elsewhere
+    }
+    else {
+      const offset_type beg = ptr_[i];
+      const offset_type end = ptr_[i+1];
+      bool foundDuplicateKey = false;
+      // This is an ~ n^2 algorithm in the worst case, where n is the
+      // max number of keys that hash to the same bucket.  However, if
+      // the hash function is reasonable, n should be much less than
+      // the total number of keys.
+      for (offset_type j = beg + 1; j < end; ++j) {
+        const key_type curKey = pairs_[j].first;
+        for (offset_type k = beg; k < j; ++k) {
+          if (pairs_[k].first == curKey) {
+            foundDuplicateKey = true;
+            break;
+          }
+        }
+      }
+      dst = dst || foundDuplicateKey;
+    }
+  }
+
+private:
+  pairs_view_type pairs_;
+  offsets_view_type ptr_;
+  size_type size_;
 };
 
 } // namespace (anonymous)
 
+//
+// Here begins the actual implementation of FixedHashTable.
+//
 
 namespace Tpetra {
 namespace Details {
@@ -554,7 +684,8 @@ FixedHashTable () :
   rawVal_ (NULL),
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   invalidValue_ (Teuchos::OrdinalTraits<ValueType>::invalid ()),
-  hasDuplicateKeys_ (false) // trivially true
+  checkedForDuplicateKeys_ (true), // it's an empty table; no need to check
+  hasDuplicateKeys_ (false)
 {
 #ifdef HAVE_TPETRA_DEBUG
   check ();
@@ -569,7 +700,8 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys) :
   rawVal_ (NULL),
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   invalidValue_ (Teuchos::OrdinalTraits<ValueType>::invalid ()),
-  hasDuplicateKeys_ (false) // to revise in init()
+  checkedForDuplicateKeys_ (false),
+  hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
 {
   // mfh 01 May 2015: I don't trust that
   // Teuchos::ArrayView::getRawPtr() returns NULL when the size is 0,
@@ -593,7 +725,8 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   rawVal_ (NULL),
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   invalidValue_ (Teuchos::OrdinalTraits<ValueType>::invalid ()),
-  hasDuplicateKeys_ (false) // to revise in init()
+  checkedForDuplicateKeys_ (false),
+  hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
 {
   // mfh 01 May 2015: I don't trust that
   // Teuchos::ArrayView::getRawPtr() returns NULL when the size is 0,
@@ -616,7 +749,8 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   rawVal_ (NULL),
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   invalidValue_ (Teuchos::OrdinalTraits<ValueType>::invalid ()),
-  hasDuplicateKeys_ (false) // to revise in init()
+  checkedForDuplicateKeys_ (false),
+  hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
 {
   // mfh 01 May 2015: I don't trust that
   // Teuchos::ArrayView::getRawPtr() returns NULL when the size is 0,
@@ -692,17 +826,15 @@ init (const host_input_keys_type& keys,
   // incur overhead then.
   if (buildInParallel) {
     for (offset_type k = 0; k < numKeys; ++k) {
-      const typename hash_type::result_type hashVal =
-        hash_type::hashFunc (keys[k], size);
-      // Shift over one, so that counts[j] = ptr[j+1].  See below.
-      //++ptr[hashVal+1];
+      typedef typename hash_type::result_type hash_value_type;
+
+      const hash_value_type hashVal = hash_type::hashFunc (keys[k], size);
       ++counts[hashVal];
     }
   }
   else {
-    CountBucketsValue<KeyType> result;
     CountBuckets<counts_type, keys_type> functor (counts, keys_d, size);
-    Kokkos::parallel_reduce (numKeys, functor, result);
+    Kokkos::parallel_for (numKeys, functor);
   }
 
   // Kokkos::View fills with zeros by default.
@@ -738,28 +870,45 @@ init (const host_input_keys_type& keys,
   typename val_type::non_const_type val (Kokkos::ViewAllocateWithoutInitializing ("val"), numKeys);
 
   // Fill in the hash table's "values" (the (key,value) pairs).
+  typedef FillPairs<typename val_type::non_const_type, keys_type,
+                    typename ptr_type::non_const_type> functor_type;
+  typename functor_type::value_type result;
   if (buildInParallel) {
-    typedef FillPairs<typename val_type::non_const_type, keys_type,
-                      typename ptr_type::non_const_type> functor_type;
     functor_type functor (val, counts, ptr, keys_d, startingValue);
-    Kokkos::parallel_for (numKeys, functor);
+    Kokkos::parallel_reduce (numKeys, functor, result);
   }
   else {
     for (offset_type k = 0; k < numKeys; ++k) {
+      typedef typename hash_type::result_type hash_value_type;
       const KeyType key = keys[k];
+      if (key > result.maxKey_) {
+        result.maxKey_ = key;
+      }
+      if (key < result.minKey_) {
+        result.minKey_ = key;
+      }
       const ValueType theVal = startingValue + static_cast<ValueType> (k);
-      const typename hash_type::result_type hashVal =
-        hash_type::hashFunc (key, size);
+      const hash_value_type hashVal = hash_type::hashFunc (key, size);
 
       // Return the old count; decrement afterwards.
-      //const offset_type count = Kokkos::atomic_fetch_add (&counts[hashVal], -1);
       const offset_type count = (counts[hashVal])--;
-      const offset_type curPos = ptr[hashVal+1] - count;
+      if (count == 0) {
+        result.success_ = false; // FAILURE!
+        break;
+      }
+      else {
+        const offset_type curPos = ptr[hashVal+1] - count;
 
-      val[curPos].first = key;
-      val[curPos].second = theVal;
+        val[curPos].first = key;
+        val[curPos].second = theVal;
+      }
     }
   }
+
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (! result.success_, std::logic_error, "Tpetra::Details::FixedHashTable::"
+     "init: Filling the hash table failed!  Please report this bug to the "
+     "Tpetra developers.");
 
   // "Commit" the computed arrays.
   ptr_ = ptr;
@@ -814,10 +963,6 @@ init (const host_input_keys_type& keys,
       hash_type::hashFunc (keys[k], size);
     // Shift over one, so that counts[j] = ptr[j+1].  See below.
     ++ptr[hashVal+1];
-
-    if (ptr[hashVal+1] > 1) {
-      hasDuplicateKeys_ = true;
-    }
   }
 
   // Compute row offsets via prefix sum:
@@ -860,6 +1005,36 @@ init (const host_input_keys_type& keys,
 }
 
 template <class KeyType, class ValueType, class DeviceType>
+bool
+FixedHashTable<KeyType, ValueType, DeviceType>::
+hasDuplicateKeys ()
+{
+  if (! checkedForDuplicateKeys_) {
+    hasDuplicateKeys_ = checkForDuplicateKeys ();
+    checkedForDuplicateKeys_ = true;
+  }
+  return hasDuplicateKeys_;
+}
+
+template <class KeyType, class ValueType, class DeviceType>
+bool
+FixedHashTable<KeyType, ValueType, DeviceType>::
+checkForDuplicateKeys () const
+{
+  const offset_type size = this->getSize ();
+  if (size == 0) {
+    return false;
+  }
+  else {
+    typedef CheckForDuplicateKeys<ptr_type, val_type> functor_type;
+    functor_type functor (val_, ptr_);
+    bool hasDupKeys = false;
+    Kokkos::parallel_reduce (size, functor, hasDupKeys);
+    return hasDupKeys;
+  }
+}
+
+template <class KeyType, class ValueType, class DeviceType>
 std::string
 FixedHashTable<KeyType, ValueType, DeviceType>::
 description () const
@@ -869,7 +1044,7 @@ description () const
       << Teuchos::TypeNameTraits<KeyType>::name () << ","
       << Teuchos::TypeNameTraits<ValueType>::name () << ">: "
       << "{ numKeys: " << val_.dimension_0 ()
-      << ", tableSize: " << ptr_.dimension_0 () << " }";
+      << ", tableSize: " << this->getSize () << " }";
   return oss.str();
 }
 
