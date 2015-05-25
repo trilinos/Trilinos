@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //               ShyLU: Hybrid preconditioner package
 //                 Copyright 2012 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -109,15 +109,15 @@ void Ifpack_ShyLU::Destroy()
 
 int Ifpack_ShyLU::Initialize()
 {
-    if(Comm().NumProc() != 1) 
+    if(Comm().NumProc() != 1)
         IsParallel_ = true;
-    else 
+    else
         IsParallel_ = false;
 
     // TODO:
     // Need to enable partitioning here in Initialize once moving to Belos
 
-    // Cannot call this method , need the partitioner around TODO : Can we 
+    // Cannot call this method , need the partitioner around TODO : Can we
     // avoid this
     //A_ = balanceAndRedistribute(A_, List_);
 
@@ -201,8 +201,13 @@ int Ifpack_ShyLU::Initialize()
     slu_config_.overlap =  List_.get<int>("Schur Preconditioner Overlap", 0);
     string sep_type = Teuchos::getParameter<string>(List_,
                                                     "Separator Type");
-    int dl =  List_.get<int>("Debug Level", 0);
-    //slu_config_.dm.setDebugLevel(dl); 
+    // mfh 25 May 2015: dl is unused (don't declare it, or you'll get
+    // build warnings).  However, two-argument get() has side effects,
+    // so I don't want to comment it out.
+    //
+    //int dl =  List_.get<int>("Debug Level", 0);
+    (void) List_.get<int>("Debug Level", 0);
+    //slu_config_.dm.setDebugLevel(dl);
 
     if (sep_type == "Wide")
         slu_config_.sep_type = 1;
