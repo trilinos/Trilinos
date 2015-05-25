@@ -249,7 +249,7 @@ public:
 			    MeshEntityType through) const
   {
     if (avail2ndAdjs(sourcetarget, through)) {
-      return nadj_;
+      return nEadj_;
     }
 
     return 0;
@@ -259,8 +259,8 @@ public:
 		      const lno_t *&offsets, const zgid_t *&adjacencyIds) const
   {
     if (avail2ndAdjs(sourcetarget, through)) {
-      offsets = start_;
-      adjacencyIds = adj_;
+      offsets = eStart_;
+      adjacencyIds = eAdj_;
     } else {
       offsets = NULL;
       adjacencyIds = NULL;
@@ -275,9 +275,9 @@ private:
   int *elemToNode_, tnoct_, *elemOffsets_;
   int *nodeToElem_, telct_, *nodeOffsets_;
   double *coords_, *Acoords_;
-  lno_t *start_;
-  zgid_t *adj_;
-  size_t nadj_;
+  lno_t *eStart_, *nStart_;
+  zgid_t *eAdj_, *nAdj_;
+  size_t nEadj_, nNadj_;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -445,7 +445,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   int *mirror_nodes = new int [max_side_nodes];
 
   /* Allocate memory necessary for the adjacency */
-  start_ = new lno_t [num_elem_+1];
+  eStart_ = new lno_t [num_elem_+1];
   std::vector<int> adj;
 
   for (int i=0; i < max_side_nodes; i++) {
@@ -454,7 +454,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   }
 
   /* Find the adjacency for a nodal based decomposition */
-  nadj_ = 0;
+  nEadj_ = 0;
   for(int ncnt=0; ncnt < num_nodes_; ncnt++) {
     if(sur_elem[ncnt].empty()) {
       printf("WARNING: Node = %d has no elements\n", ncnt+1);
@@ -465,6 +465,20 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
     }
   }
 
+  nodeToElem_ = new int [num_nodes_ * max_nsur];
+  nodeOffsets_ = new int [num_nodes_+1];
+  telct_ = 0;
+
+  for (int ncnt = 0; ncnt < num_nodes_; ncnt++) {
+    nodeOffsets_[ncnt] = telct_;
+
+    for (size_t i = 0; i < sur_elem[ncnt].size(); i++) {
+      nodeToElem_[telct_] = sur_elem[ncnt][i];
+      ++telct_;
+    }
+  }
+
+  nodeOffsets_[num_nodes_] = telct_;
   int nprocs = comm.getSize();
   //if (nprocs > 1) {
     int neid=0,num_elem_blks_global,num_node_sets_global,num_side_sets_global;
@@ -691,25 +705,11 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
       }
     }
 
-    nodeToElem_ = new int [num_nodes_ * max_nsur];
-    nodeOffsets_ = new int [num_nodes_+1];
-    telct_ = 0;
-
-    for (int ncnt = 0; ncnt < num_nodes_; ncnt++) {
-      nodeOffsets_[ncnt] = telct_;
-
-      for (size_t i = 0; i < sur_elem[ncnt].size(); i++) {
-	nodeToElem_[telct_] = sur_elem[ncnt][i];
-	++telct_;
-      }
-    }
-
-    nodeOffsets_[num_nodes_] = telct_;
     delete[] rbuf;
     //}
 
   for(int ecnt=0; ecnt < num_elem_; ecnt++) {
-    start_[ecnt] = nadj_;
+    eStart_[ecnt] = nEadj_;
     int nnodes = nnodes_per_elem;
     for(int ncnt=0; ncnt < nnodes; ncnt++) {
       int node = reconnect[ecnt][ncnt]-1;
@@ -718,10 +718,10 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
 
 	if(element_num_map_[ecnt] != entry &&
 	   in_list(entry,
-		   adj.size()-start_[ecnt],
-		   &adj[start_[ecnt]]) < 0) {
+		   adj.size()-eStart_[ecnt],
+		   &adj[eStart_[ecnt]]) < 0) {
 	  adj.push_back(entry);
-	  nadj_++;
+	  nEadj_++;
 	}
       }
     }
@@ -733,12 +733,12 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
 
   delete[] reconnect;
   reconnect = NULL;
-  start_[num_elem_] = nadj_;
+  eStart_[num_elem_] = nEadj_;
 
-  adj_ = new zgid_t [nadj_];
+  eAdj_ = new zgid_t [nEadj_];
 
-  for (size_t i=0; i < nadj_; i++) {
-    adj_[i] = adj[i];
+  for (size_t i=0; i < nEadj_; i++) {
+    eAdj_[i] = adj[i];
   }
 
   delete[] side_nodes;
@@ -770,8 +770,8 @@ void PamgenMeshAdapter<User>::print(int me)
     std::cout << me << fn << i 
               << " Elem " << element_num_map_[i]
               << " Graph: ";
-    for (int j = start_[i]; j < start_[i+1]; j++)
-      std::cout << adj_[j] << " ";
+    for (int j = eStart_[i]; j < eStart_[i+1]; j++)
+      std::cout << eAdj_[j] << " ";
     std::cout << std::endl;
   }
 }
