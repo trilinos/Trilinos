@@ -122,7 +122,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, getTimeRange ) {
     TEST_NOTHROW( tr = stepper->getTimeRange() );
     TEST_EQUALITY_CONST( tr.isValid(), false );
   }
-} 
+}
 
 TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, noRKBT ) {
   RCP<SinCosModel> model = sinCosModel(false);
@@ -140,11 +140,10 @@ TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, invalidTakeStep ) {
   stepper->setModel(model);
   stepper->setInitialCondition(ic);
   stepper->setRKButcherTableau(createRKBT<double>("Explicit 4 Stage"));
-  double dt;
 #ifdef HAVE_RYTHMOS_DEBUG
-  TEST_THROW(dt = stepper->takeStep(0.1,STEP_TYPE_VARIABLE), std::logic_error);
+  TEST_THROW((void) stepper->takeStep(0.1,STEP_TYPE_VARIABLE), std::logic_error);
 #else
-  dt = stepper->takeStep(0.1,STEP_TYPE_VARIABLE);
+  double dt = stepper->takeStep(0.1,STEP_TYPE_VARIABLE);
   TEST_EQUALITY_CONST( dt, -1.0 );
 #endif // HAVE_RYTHMOS_DEBUG
 }
@@ -171,10 +170,10 @@ TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, basePoint ) {
   {
     Thyra::DetachedVectorView<double> p_ic_view( *p_ic );
     p_ic_view[0] = 2.0; // a
-    p_ic_view[1] = 3.0; // f 
+    p_ic_view[1] = 3.0; // f
     p_ic_view[2] = 4.0; // L
   }
-  ic.set_p(0,p_ic); 
+  ic.set_p(0,p_ic);
   ic.set_x(x_ic);
   ic.set_t(t_ic);
   RCP<ExplicitRKStepper<double> > stepper = explicitRKStepper<double>();
