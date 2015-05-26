@@ -201,7 +201,9 @@ public:
 
   bool availAdjs(MeshEntityType source, MeshEntityType target) const {
     if ((MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_) ||
-	(MESH_FACE == source && MESH_VERTEX == target && 2 == dimension_)) {
+	(MESH_FACE == source && MESH_VERTEX == target && 2 == dimension_) ||
+	(MESH_VERTEX == source && MESH_REGION == target && 3 == dimension_) ||
+	(MESH_VERTEX == source && MESH_FACE == target && 2 == dimension_)) {
       return TRUE;
     }
 
@@ -210,8 +212,14 @@ public:
 
   size_t getLocalNumAdjs(MeshEntityType source, MeshEntityType target) const
   {
-    if (availAdjs(source, target)) {
+    if ((MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_) ||
+	(MESH_FACE == source && MESH_VERTEX == target && 2 == dimension_)) {
       return tnoct_;
+    }
+
+    if ((MESH_VERTEX == source && MESH_REGION == target && 3 == dimension_) ||
+	(MESH_VERTEX == source && MESH_FACE == target && 2 == dimension_)) {
+      return telct_;
     }
     
     return 0;
@@ -224,6 +232,10 @@ public:
 	(MESH_FACE == source && MESH_VERTEX == target && 2 == dimension_)) {
       offsets = elemOffsets_;
       adjacencyIds = elemToNode_;
+    } else if ((MESH_REGION==target && MESH_VERTEX==source && 3==dimension_) ||
+	       (MESH_FACE==target && MESH_VERTEX==source && 2==dimension_)) {
+      offsets = nodeOffsets_;
+      adjacencyIds = nodeToElem_;
     } else if (MESH_REGION == source && 2 == dimension_) {
       offsets = NULL;
       adjacencyIds = NULL;
@@ -242,25 +254,45 @@ public:
       if (sourcetarget == MESH_REGION && dimension_ == 3) return true;
       if (sourcetarget == MESH_FACE && dimension_ == 2) return true;
     }
+    if (sourcetarget == MESH_VERTEX) {
+      if (through == MESH_REGION && dimension_ == 3) return true;
+      if (through == MESH_FACE && dimension_ == 2) return true;
+    }
     return false;
   }
 
   size_t getLocalNum2ndAdjs(MeshEntityType sourcetarget, 
 			    MeshEntityType through) const
   {
-    if (avail2ndAdjs(sourcetarget, through)) {
+    if (through == MESH_VERTEX &&
+	((sourcetarget == MESH_REGION && dimension_ == 3) ||
+	 (sourcetarget == MESH_FACE && dimension_ == 2))) {
       return nEadj_;
     }
 
+    if (sourcetarget == MESH_VERTEX &&
+	((through == MESH_REGION && dimension_ == 3) ||
+	 (through == MESH_FACE && dimension_ == 2))) {
+      return nNadj_;
+    }
+
     return 0;
+
   }
 
   void get2ndAdjsView(MeshEntityType sourcetarget, MeshEntityType through, 
 		      const lno_t *&offsets, const zgid_t *&adjacencyIds) const
   {
-    if (avail2ndAdjs(sourcetarget, through)) {
+    if (through == MESH_VERTEX &&
+	((sourcetarget == MESH_REGION && dimension_ == 3) ||
+	 (sourcetarget == MESH_FACE && dimension_ == 2))) {
       offsets = eStart_;
       adjacencyIds = eAdj_;
+    } else if (sourcetarget == MESH_VERTEX &&
+	       ((through == MESH_REGION && dimension_ == 3) ||
+		(through == MESH_FACE && dimension_ == 2))) {
+      offsets = nStart_;
+      adjacencyIds = nAdj_;
     } else {
       offsets = NULL;
       adjacencyIds = NULL;
@@ -446,7 +478,9 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
 
   /* Allocate memory necessary for the adjacency */
   eStart_ = new lno_t [num_elem_+1];
-  std::vector<int> adj;
+  nStart_ = new lno_t [num_nodes_+1];
+  std::vector<int> eAdj;
+  std::vector<int> nAdj;
 
   for (int i=0; i < max_side_nodes; i++) {
     side_nodes[i]=-999;
@@ -455,6 +489,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
 
   /* Find the adjacency for a nodal based decomposition */
   nEadj_ = 0;
+  nNadj_ = 0;
   for(int ncnt=0; ncnt < num_nodes_; ncnt++) {
     if(sur_elem[ncnt].empty()) {
       printf("WARNING: Node = %d has no elements\n", ncnt+1);
@@ -471,14 +506,39 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
 
   for (int ncnt = 0; ncnt < num_nodes_; ncnt++) {
     nodeOffsets_[ncnt] = telct_;
+    nStart_[ncnt] = nNadj_;
 
     for (size_t i = 0; i < sur_elem[ncnt].size(); i++) {
       nodeToElem_[telct_] = sur_elem[ncnt][i];
       ++telct_;
+
+      for(int ecnt = 0; ecnt < num_elem_; ecnt++) {
+	if (element_num_map_[ecnt] == sur_elem[ncnt][i]) {
+	  for (int j = 0; j < nnodes_per_elem; j++) {
+	    if (node_num_map_[ncnt] != elemToNode_[elemOffsets_[ecnt]+j] &&
+		in_list(elemToNode_[elemOffsets_[ecnt]+j],
+			nAdj.size()-nStart_[ncnt],
+			&nAdj[nStart_[ncnt]]) < 0) {
+	      nAdj.push_back(elemToNode_[elemOffsets_[ecnt]+j]);
+	      nNadj_++;
+	    }
+	  }
+
+	  break;
+	}
+      }
     }
   }
 
   nodeOffsets_[num_nodes_] = telct_;
+  nStart_[num_nodes_] = nNadj_;
+
+  nAdj_ = new zgid_t [nNadj_];
+
+  for (size_t i=0; i < nNadj_; i++) {
+    nAdj_[i] = nAdj[i];
+  }
+
   int nprocs = comm.getSize();
   //if (nprocs > 1) {
     int neid=0,num_elem_blks_global,num_node_sets_global,num_side_sets_global;
@@ -700,6 +760,8 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
 	    for (int ecnt = 0; ecnt < num_elem_this_node; ecnt++) {
 	      sur_elem[ncnt].push_back(rbuf[a++]);
 	    }
+
+	    break;
 	  }
 	}
       }
@@ -718,9 +780,9 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
 
 	if(element_num_map_[ecnt] != entry &&
 	   in_list(entry,
-		   adj.size()-eStart_[ecnt],
-		   &adj[eStart_[ecnt]]) < 0) {
-	  adj.push_back(entry);
+		   eAdj.size()-eStart_[ecnt],
+		   &eAdj[eStart_[ecnt]]) < 0) {
+	  eAdj.push_back(entry);
 	  nEadj_++;
 	}
       }
@@ -738,7 +800,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   eAdj_ = new zgid_t [nEadj_];
 
   for (size_t i=0; i < nEadj_; i++) {
-    eAdj_[i] = adj[i];
+    eAdj_[i] = eAdj[i];
   }
 
   delete[] side_nodes;
