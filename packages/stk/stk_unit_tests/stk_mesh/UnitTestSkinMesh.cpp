@@ -988,10 +988,10 @@ TEST( SkinMesh, test_2_hex_2_block_with_second_selector_without_aura)
     test_2_hex_2_block_with_second_selector(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
-TEST( SkinMesh, SimpleQuad)
+void test_quad_2D_skin_with_aura_option (bool auraOn)
 {
   const unsigned X = 5, Y = 5;
-  stk::mesh::fixtures::QuadFixture fixture(MPI_COMM_WORLD, X, Y);
+  stk::mesh::fixtures::QuadFixture fixture(MPI_COMM_WORLD, X, Y, auraOn);
 
   stk::mesh::EntityRank side_rank = fixture.m_meta.side_rank();
 
@@ -1042,5 +1042,10 @@ TEST( SkinMesh, SimpleQuad)
     EXPECT_EQ( 20u, global_counts[0] );
     EXPECT_EQ( 20u, global_counts[1] );
   }
+}
 
+TEST( SkinMesh, SimpleQuad)
+{
+    test_quad_2D_skin_with_aura_option(true);
+    test_quad_2D_skin_with_aura_option(false);
 }
