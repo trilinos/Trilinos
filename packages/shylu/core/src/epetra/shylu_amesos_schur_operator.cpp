@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //               ShyLU: Hybrid preconditioner package
 //                 Copyright 2012 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -73,16 +73,27 @@ void AmesosSchurOperator::Destroy()
 
 int AmesosSchurOperator::Initialize()
 {
-    if(Comm().NumProc() != 1) 
+    if(Comm().NumProc() != 1)
         IsParallel_ = true;
-    else 
+    else
         IsParallel_ = false;
 
     LP_ = Teuchos::RCP<Epetra_LinearProblem> (new Epetra_LinearProblem());
     Amesos Factory;
-    char* SolverType = "Amesos_Klu";
+    const char* SolverType = "Amesos_Klu";
+    // mfh 25 May 2015: Remember that in a release build (NDEBUG not
+    // defined), assert() gets defined to nothing.  This results in an
+    // unused variable warning for IsAvailable.  I've rewritten the
+    // code so that in a release build, the query result is ignored.
+    // This is still a bad idea -- inexpensive error checks in
+    // non-performance-critical code should stay in a release build --
+    // but it's not my place to rewrite this code that I didn't write.
+#ifdef NDEBUG
+    (void) Factory.Query(SolverType);
+#else
     bool IsAvailable = Factory.Query(SolverType);
     assert(IsAvailable == true);
+#endif // NDEBUG
     Solver_ = Teuchos::RCP<Amesos_BaseSolver> (Factory.Create(SolverType,
                                  *LP_));
 

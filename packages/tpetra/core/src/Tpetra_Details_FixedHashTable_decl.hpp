@@ -53,16 +53,16 @@ namespace Details {
 
 /// \class FixedHashTable
 /// \tparam KeyType The type of the hash table's keys.  This must be a
-///   built-in signed or unsinged integer type.
+///   built-in signed or unsigned integer type.
 /// \tparam ValueType The type of the hash table's values.  This must
 ///   be a built-in signed or unsigned integer type.
 /// \tparam DeviceType Specialization of Kokkos::Device.
 ///
-/// This class implements a hash table from signed integer keys to
-/// signed integer values, where all the (key,value) pairs must be
-/// added at once, and may not be changed or removed after being
-/// added.  Keys and values may have different types.  Tpetra::Map may
-/// use this to implement global-to-local index lookup.
+/// This class implements a look-up table from integer keys to integer
+/// values.  All the (key,value) pairs must be added at once, and
+/// pairs may not be changed or removed.  Keys and values may have
+/// different types.  Tpetra::Map may use this to implement
+/// global-to-local index lookup.
 ///
 /// The hash table uses a "compressed sparse row" storage strategy.
 /// The hash function maps a key to its "row" in the table, and then
@@ -148,13 +148,19 @@ public:
   FixedHashTable (const FixedHashTable<KeyType, ValueType, InDeviceType>& src,
                   typename std::enable_if<! std::is_same<DeviceType, InDeviceType>::value, int>::type* = NULL)
   {
-    typename ptr_type::non_const_type ptr (Kokkos::ViewAllocateWithoutInitializing ("ptr"), src.ptr_.dimension_0 ());
+    using Kokkos::ViewAllocateWithoutInitializing;
+    typedef typename ptr_type::non_const_type nonconst_ptr_type;
+    typedef typename val_type::non_const_type nonconst_val_type;
+
+    nonconst_ptr_type ptr (ViewAllocateWithoutInitializing ("ptr"),
+                           src.ptr_.dimension_0 ());
 
     // NOTE (mfh 01 May 2015) deep_copy works here, because regardless
     // of the DeviceType, all FixedHashTable types use the same array
     // layout for their internal 1-D Views.
     Kokkos::deep_copy (ptr, src.ptr_);
-    typename val_type::non_const_type val (Kokkos::ViewAllocateWithoutInitializing ("val"), src.val_.dimension_0 ());
+    nonconst_val_type val (ViewAllocateWithoutInitializing ("val"),
+                           src.val_.dimension_0 ());
     Kokkos::deep_copy (val, src.val_);
 
     this->ptr_ = ptr;
@@ -164,6 +170,7 @@ public:
     this->rawVal_ = val.ptr_on_device ();
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
     this->invalidValue_ = src.invalidValue_;
+    this->checkedForDuplicateKeys_ = src.checkedForDuplicateKeys_;
     this->hasDuplicateKeys_ = src.hasDuplicateKeys_;
 
 #if defined(HAVE_TPETRA_DEBUG)
@@ -201,15 +208,52 @@ public:
     }
   }
 
-  //! Whether the table noticed any duplicate keys on construction.
-  bool hasDuplicateKeys () const {
-    return hasDuplicateKeys_;
+  /// \brief Number of (key, value) pairs in the table.
+  ///
+  /// This counts duplicate keys separately.
+  KOKKOS_INLINE_FUNCTION offset_type numPairs () const {
+    // NOTE (mfh 26 May 2015) This only works because the table
+    // _stores_ pairs with duplicate keys separately.  If the table
+    // didn't do that, we would have to keep a separate numPairs_
+    // field (remembering the size of the input array of keys).
+    return val_.dimension_0 ();
   }
+
+  /// \brief The minimum key.
+  ///
+  /// This function does not throw, and always returns a value.  If
+  /// the table is empty, the value is undefined.  Furthermore, if the
+  /// table is empty, we do not promise that minKey() <= maxKey().
+  ///
+  /// This class assumes that both keys and values are numbers.
+  /// Therefore, keys are less-than comparable.
+  KOKKOS_INLINE_FUNCTION KeyType minKey () const {
+    return minKey_;
+  }
+
+  /// \brief The maximum key.
+  ///
+  /// This function does not throw, and always returns a value.  If
+  /// the table is empty, the value is undefined.  Furthermore, if the
+  /// table is empty, we do not promise that minKey() <= maxKey().
+  ///
+  /// This class assumes that both keys and values are numbers.
+  /// Therefore, keys are less-than comparable.
+  KOKKOS_INLINE_FUNCTION KeyType maxKey () const {
+    return maxKey_;
+  }
+
+  /// \brief Whether the table has any duplicate keys.
+  ///
+  /// This is a nonconst function because it requires running a Kokkos
+  /// kernel to search the keys.  The result of the first call is
+  /// cached and reused on subsequent calls.
+  bool hasDuplicateKeys ();
 
   //! Implementation of Teuchos::Describable
   //@{
   //! Return a simple one-line description of this object.
-  std::string description() const;
+  std::string description () const;
 
   //! Print this object with the given verbosity to the output stream.
   void
@@ -245,8 +289,33 @@ private:
   /// compiler deletes the implicit copy constructor.
   ValueType invalidValue_;
 
-  //! Whether the table noticed any duplicate keys on construction.
+  /// \brief Minimum key (computed in init()).
+  ///
+  /// This class assumes that keys are less-than comparable.
+  KeyType minKey_;
+
+  /// \brief Maximum key (computed in init()).
+  ///
+  /// This class assumes that keys are less-than comparable.
+  KeyType maxKey_;
+
+  /// \brief Whether the table has checked for duplicate keys.
+  ///
+  /// This is set at the end of the first call to hasDuplicateKeys().
+  /// The results of that method are cached in hasDuplicateKeys_ (see
+  /// below).
+  bool checkedForDuplicateKeys_;
+
+  /// \brief Whether the table noticed any duplicate keys.
+  ///
+  /// This is only valid if checkedForDuplicateKeys_ (above) is true.
   bool hasDuplicateKeys_;
+
+  /// \brief Whether the table has duplicate keys.
+  ///
+  /// This method doesn't cache anything (and is therefore marked
+  /// const); hasDuplicateKeys() (which see) caches this result.
+  bool checkForDuplicateKeys () const;
 
   //! The number of "buckets" in the bucket array.
   KOKKOS_INLINE_FUNCTION offset_type getSize () const {
@@ -268,22 +337,28 @@ private:
                        typename ptr_type::HostMirror::execution_space,
                        Kokkos::MemoryUnmanaged> host_input_vals_type;
 
-  /// \brief Allocate storage and initialize the table.
+  /// \brief Allocate storage and initialize the table; use given
+  ///   initial min and max keys.
   ///
   /// Add <tt>(keys[i], startingValue + i)</tt> to the table,
   /// for i = 0, 1, ..., <tt>keys.size()</tt>.
   void
   init (const host_input_keys_type& keys,
-        const ValueType startingValue);
+        const ValueType startingValue,
+        const KeyType initMinKey,
+        const KeyType initMaxKey);
 
-  /// \brief Allocate storage and initialize the table.
+  /// \brief Allocate storage and initialize the table; use given
+  ///   initial min and max keys.
   ///
   /// Add <tt>(keys[i], vals[i])</tt> to the table, for i = 0, 1, ...,
   /// <tt>keys.size()</tt>.  This is called by the version of the
   /// constructor that takes the same arguments.
   void
   init (const host_input_keys_type& keys,
-        const host_input_vals_type& vals);
+        const host_input_vals_type& vals,
+        const KeyType initMinKey,
+        const KeyType initMaxKey);
 };
 
 } // Details namespace

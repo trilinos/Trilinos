@@ -6765,31 +6765,110 @@ namespace Tpetra {
       }
 
     public:
+
+      /// \brief Write a Tpetra::Operator to a file.
+      ///
+      /// This method works by applying the Operator to columns of the
+      /// identity matrix.  As a result, it effectively turns the
+      /// Operator into a dense matrix.  However, it writes the
+      /// Operator in sparse matrix format.  As such, you may read it
+      /// back in again using Reader::readSparseFile.
+      ///
+      /// Probing calls apply() on the input Operator, using a
+      /// MultiVector with a small, fixed number of columns.  If you
+      /// want to change the number of columns used, you must invoke
+      /// the overload of this method that takes an input
+      /// Teuchos::ParameterList (see below).
+      ///
+      /// \param fileName [in] The name of the file to which to write.
+      ///   Only Process 0 in the input Operator's communicator will
+      ///   write to the file.
+      /// \param A [in] The input Tpetra::Operator to write.
       static void
       writeOperator(const std::string& fileName, operator_type const &A) {
         Teuchos::ParameterList pl;
         writeOperator(fileName, A, pl);
       }
 
-      /*! @brief Write Tpetra::Operator to specified file.
-
-        This method allows the user to pass in options to the writer.  The currently supported options
-        are:
-
-          - probing size               integer [10]           number of columns to use in probing MultiVector
-          - precision                  integer [C++ default]  controls amount of precision in matrix file data
-          - print MatrixMarket header  boolean [true]         whether to print the MatrixMarket header
-          - zero-based indexing        boolean [false]        print matrix using zero-based indexing
-      */
+      /// \brief Write a Tpetra::Operator to an output stream.
+      ///
+      /// This method works by applying the Operator to columns of the
+      /// identity matrix.  As a result, it effectively turns the
+      /// Operator into a dense matrix.  However, it writes the
+      /// Operator in sparse matrix format.  As such, you may read it
+      /// back in again using Reader::readSparseFile.
+      ///
+      /// Probing calls apply() on the input Operator, using a
+      /// MultiVector with a small, fixed number of columns.  If you
+      /// want to change the number of columns used, you must invoke
+      /// the overload of this method that takes an input
+      /// Teuchos::ParameterList (see below).
+      ///
+      /// \param out [in] Output stream to which to write.  Only
+      ///   Process 0 in the input Operator's communicator will write
+      ///   to the output stream.  Other processes will not write to
+      ///   it or call any methods on it.  Thus, the stream need only
+      ///   be valid on Process 0.
+      /// \param A [in] The input Tpetra::Operator to write.
       static void
-      writeOperator(const std::string& fileName, operator_type const &A, Teuchos::ParameterList const &params) {
+      writeOperator (std::ostream& out, const operator_type& A) {
+        Teuchos::ParameterList pl;
+        writeOperator (out, A, pl);
+      }
+
+      /// \brief Write a Tpetra::Operator to a file, with options.
+      ///
+      /// This method works by applying the Operator to columns of the
+      /// identity matrix.  As a result, it effectively turns the
+      /// Operator into a dense matrix.  However, it writes the
+      /// Operator in sparse matrix format.  As such, you may read it
+      /// back in again using Reader::readSparseFile.
+      ///
+      /// Probing calls apply() on the input Operator, using a
+      /// MultiVector with a small, fixed number of columns.  You may
+      /// set this number of columns in the input ParameterList.
+      ///
+      /// \param fileName [in] The name of the file to which to write.
+      ///   Only Process 0 in the Operator's communicator will write
+      ///   to the file.
+      /// \param A [in] The input Tpetra::Operator to write.
+      /// \param params [in] List of options.  An empty list means
+      ///   "use default values of options."
+      ///
+      /// If you always want the default options, use the overload of
+      /// this method above that takes two arguments (the filename and
+      /// the Operator).  This three-argument overload lets the user
+      /// pass in options.  The currently supported options are:
+      ///
+      /// <ul>
+      /// <li> "probing size" (integer [10]): number of columns to use
+      ///       in the probing MultiVector </li>
+      /// <li> "precision" (integer [C++ default]): precision to use
+      ///      when writing floating-point values </li>
+      /// <li> "print MatrixMarket header" (boolean [true]): whether
+      ///      to print the MatrixMarket header </li>
+      /// <li> "zero-based indexing" (boolean [false]): print matrix
+      ///      using zero-based indexing.  The Matrix Market format
+      ///      uses one-based indexing, so setting this option to true
+      ///      violates the Matrix Market format standard. </li>
+      /// </ul>
+      static void
+      writeOperator (const std::string& fileName,
+                     const operator_type& A,
+                     const Teuchos::ParameterList& params)
+      {
         std::ofstream out;
         std::string tmpFile = "__TMP__" + fileName;
         const int myRank = A.getDomainMap()->getComm()->getRank();
         bool precisionChanged=false;
         int  oldPrecision;
-        // The #nonzeros in a Tpetra::Operator is unknown until probing is completed.
-        // In order to write a MatrixMarket header, we write the matrix to a temporary file.
+        // The number of nonzero entries in a Tpetra::Operator is
+        // unknown until probing is completed.  In order to write a
+        // MatrixMarket header, we write the matrix to a temporary
+        // file.
+        //
+        // FIXME (mfh 23 May 2015) IT WASN'T MY IDEA TO WRITE TO A
+        // TEMPORARY FILE.
         if (myRank==0) {
           if (std::ifstream(tmpFile))
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
@@ -6801,7 +6880,7 @@ namespace Tpetra {
           }
         }
 
-        std::string header = writeOperator(out, A, params);
+        const std::string header = writeOperatorImpl(out, A, params);
 
         if (myRank==0) {
           if (precisionChanged)
@@ -6824,9 +6903,115 @@ namespace Tpetra {
         }
       }
 
-      static std::string
-      writeOperator(std::ostream &os, operator_type const &A, Teuchos::ParameterList const &params) {
+      /// \brief Write a Tpetra::Operator to an output stream, with options.
+      ///
+      /// This method works by applying the Operator to columns of the
+      /// identity matrix.  As a result, it effectively turns the
+      /// Operator into a dense matrix.  However, it writes the
+      /// Operator in sparse matrix format.  As such, you may read it
+      /// back in again using Reader::readSparseFile.
+      ///
+      /// Probing calls apply() on the input Operator, using a
+      /// MultiVector with a small, fixed number of columns.  You may
+      /// set this number of columns in the input ParameterList.
+      ///
+      /// \param out [in] Output stream to which to write.  Only
+      ///   Process 0 in the input Operator's communicator will write
+      ///   to the output stream.  Other processes will not write to
+      ///   it or call any methods on it.  Thus, the stream need only
+      ///   be valid on Process 0.
+      /// \param A [in] The input Tpetra::Operator to write.
+      /// \param params [in] List of options.  An empty list means
+      ///   "use default values of options."
+      ///
+      /// If you always want the default options, use the overload of
+      /// this method above that takes two arguments (the filename and
+      /// the Operator).  This three-argument overload lets the user
+      /// pass in options.  The currently supported options are:
+      ///
+      /// <ul>
+      /// <li> "probing size" (integer [10]): number of columns to use
+      ///       in the probing MultiVector </li>
+      /// <li> "precision" (integer [C++ default]): precision to use
+      ///      when writing floating-point values </li>
+      /// <li> "print MatrixMarket header" (boolean [true]): whether
+      ///      to print the MatrixMarket header </li>
+      /// <li> "zero-based indexing" (boolean [false]): print matrix
+      ///      using zero-based indexing.  The Matrix Market format
+      ///      uses one-based indexing, so setting this option to true
+      ///      violates the Matrix Market format standard. </li>
+      /// </ul>
+      static void
+      writeOperator (std::ostream& out,
+                     const operator_type& A,
+                     const Teuchos::ParameterList& params)
+      {
+        const int myRank = A.getDomainMap ()->getComm ()->getRank ();
 
+        // The number of nonzero entries in a Tpetra::Operator is
+        // unknown until probing is completed.  In order to write a
+        // MatrixMarket header, we write the matrix to a temporary
+        // output stream.
+        //
+        // NOTE (mfh 23 May 2015): Writing to a temporary output
+        // stream may double the memory usage, depending on whether
+        // 'out' is a file stream or an in-memory output stream (e.g.,
+        // std::ostringstream).  It might be wise to use a temporary
+        // file instead.  However, please look carefully at POSIX
+        // functions for safe creation of temporary files.  Don't just
+        // prepend "__TMP__" to the filename and hope for the best.
+        // Furthermore, it should be valid to call the std::ostream
+        // overload of this method even when Process 0 does not have
+        // access to a file system.
+        std::ostringstream tmpOut;
+        if (myRank == 0) {
+          if (params.isParameter ("precision") && params.isType<int> ("precision")) {
+            (void) tmpOut.precision (params.get<int> ("precision"));
+          }
+        }
+
+        const std::string header = writeOperatorImpl (tmpOut, A, params);
+
+        if (myRank == 0) {
+          bool printMatrixMarketHeader = true;
+          if (params.isParameter ("print MatrixMarket header") &&
+              params.isType<bool> ("print MatrixMarket header")) {
+            printMatrixMarketHeader = params.get<bool> ("print MatrixMarket header");
+          }
+          if (printMatrixMarketHeader && myRank == 0) {
+            out << header; // write header to final output stream
+          }
+          // Append matrix from temporary output stream to final output stream.
+          //
+          // NOTE (mfh 23 May 2015) This might use a lot of memory.
+          // However, we should not use temporary files in this
+          // method.  Since it does not access the file system (unlike
+          // the overload that takes a file name), it should not
+          // require the file system at all.
+          //
+          // If memory usage becomes a problem, one thing we could do
+          // is write the entries of the Operator one column (or a few
+          // columns) at a time.  The Matrix Market sparse format does
+          // not impose an order on its entries, so it would be OK to
+          // write them in that order.
+          out << tmpOut.str ();
+        }
+      }
+
+    private:
+
+      /// \brief Implementation detail of writeOperator overloads.
+      ///
+      /// Use column probing to discover the entries of the Operator.
+      /// Write them in Matrix Market sparse matrix format, on Process
+      /// 0 only, to the output stream \c os.  Do NOT write the Matrix
+      /// Market header line, but DO return it (unless the input
+      /// options specify otherwise).
+      static std::string
+      writeOperatorImpl (std::ostream& os,
+                         const operator_type& A,
+                         const Teuchos::ParameterList& params)
+      {
         using Teuchos::RCP;
         using Teuchos::rcp;
         using Teuchos::ArrayRCP;
@@ -6989,9 +7174,20 @@ namespace Tpetra {
 
         }
 
+        // Return the Matrix Market header.  It includes the header
+        // line (that starts with "%%"), some comments, and the triple
+        // of matrix dimensions and number of nonzero entries.  We
+        // don't actually print this here, because we don't know the
+        // number of nonzero entries until after probing.
         std::ostringstream oss;
-        if (myRank==0) {
-          oss << "%%MatrixMarket matrix coordinate real general" << std::endl;
+        if (myRank == 0) {
+          oss << "%%MatrixMarket matrix coordinate ";
+          if (Teuchos::ScalarTraits<typename operator_type::scalar_type>::isComplex) {
+            oss << "complex";
+          } else {
+            oss << "real";
+          }
+          oss << " general" << std::endl;
           oss << "% Tpetra::Operator" << std::endl;
           std::time_t now = std::time(NULL);
           oss << "% time stamp: " << ctime(&now);
@@ -7001,8 +7197,7 @@ namespace Tpetra {
           oss << numRows << " " << numCols << " " << globalNnz << std::endl;
         }
 
-        return oss.str();
-
+        return oss.str ();
       }
 
       static global_ordinal_type
@@ -7033,6 +7228,8 @@ namespace Tpetra {
         return nnz;
 
       }
+
+    public:
 
     }; // class Writer
 

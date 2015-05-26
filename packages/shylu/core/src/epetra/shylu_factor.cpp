@@ -631,7 +631,7 @@ int shylu_symbolic_factor
     // Create a row map for the D and S blocks [
     DRowElems = new int[Dnr];
     SRowElems = new int[Snr];
-    int gid;
+    // int gid; // unused
     // Assemble row ids in two arrays (for D and R blocks)
     if (sym)
     {
@@ -711,8 +711,15 @@ int shylu_symbolic_factor
     {
         Amesos Factory;
         const char* SolverType = config->diagonalBlockSolver.c_str();
+        // mfh 25 May 2015: assert() gets defined to nothing in a
+        // release build.  Thus, the return value IsAvailable won't
+        // get used, which causes a build warning.
+#ifdef NDEBUG
+        (void) Factory.Query(SolverType);
+#else
         bool IsAvailable = Factory.Query(SolverType);
         assert(IsAvailable == true);
+#endif // NDEBUG
         config->amesosForDiagonal = true;
         Solver = Teuchos::RCP<Amesos_BaseSolver>
                     (Factory.Create(SolverType, *(ssym->LP)));
@@ -828,6 +835,8 @@ int shylu_symbolic_factor
     cout << "Symbolic Time" << symtime.totalElapsedTime() << endl;
     symtime.reset();
 #endif
+
+    // FIXME (mfh 25 May 2015) Uh, shouldn't this function return an int???
 }
 
 int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
@@ -980,8 +989,16 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
         data->OrigLP2 = LP2;
 
         Amesos Factory;
+        // mfh 25 May 2015: assert() gets defined to nothing in a
+        // release build.  This causes a build warning that
+        // IsAvailable is set but not used.  That's why I protect its
+        // declaration with the NDEBUG macro.
+#ifdef NDEBUG
+        (void) Factory.Query(config->schurAmesosSolver);
+#else
         bool IsAvailable = Factory.Query(config->schurAmesosSolver);
         assert(IsAvailable == true);
+#endif // NDEBUG
         data->dsolver = Factory.Create(
                         config->schurAmesosSolver, *(data->LP2));
 

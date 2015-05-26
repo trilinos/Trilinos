@@ -82,7 +82,10 @@ buildWorksets(const panzer_stk_classic::STK_Interface & mesh,
   try {
      // grab local entities on this side
      // ...catch any failure...primarily wrong side set and element block info
-     mesh.getMySides(sideset,pb.elementBlockID(),sideEntities);
+     if(!useCascade)
+        mesh.getMySides(sideset,pb.elementBlockID(),sideEntities);
+     else
+        mesh.getAllSides(sideset,pb.elementBlockID(),sideEntities);
   } 
   catch(STK_Interface::SidesetException & e) {
      std::stringstream ss;

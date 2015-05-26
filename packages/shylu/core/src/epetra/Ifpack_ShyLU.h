@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //               ShyLU: Hybrid preconditioner package
 //                 Copyright 2012 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -70,13 +70,13 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_SerialComm.h"
-#include "Epetra_Time.h" 
-#include "Epetra_CrsMatrix.h" 
-#include "Epetra_Map.h" 
-#include "Epetra_MultiVector.h" 
+#include "Epetra_Time.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_Map.h"
+#include "Epetra_MultiVector.h"
 #include "Epetra_LinearProblem.h"
-#include "Epetra_Import.h" 
-#include "Epetra_Export.h" 
+#include "Epetra_Import.h"
+#include "Epetra_Export.h"
 
 // Teuchos includes
 #include "Teuchos_GlobalMPISession.hpp"
@@ -139,7 +139,7 @@ class Ifpack_ShyLU: public Ifpack_Preconditioner
     int Compute();
 
     //! If factor is completed, this query returns true, otherwise it returns false.
-    bool IsComputed() const 
+    bool IsComputed() const
     {
         return(IsComputed_);
     }
@@ -169,18 +169,18 @@ class Ifpack_ShyLU: public Ifpack_Preconditioner
 
     // @{ Mathematical functions.
     // Applies the matrix to X, returns the result in Y.
-    int Apply(const Epetra_MultiVector& X, 
+    int Apply(const Epetra_MultiVector& X,
            Epetra_MultiVector& Y) const
     {
     return(Multiply(false,X,Y));
     }
 
-    int Multiply(bool Trans, const Epetra_MultiVector& X, 
+    int Multiply(bool Trans, const Epetra_MultiVector& X,
            Epetra_MultiVector& Y) const{return A_->Multiply(Trans,X,Y);}
 
     //! Returns the result of a Epetra_Operator inverse applied to an Epetra_MultiVector X in Y.
     /*!
-    \param 
+    \param
        X - (In) A Epetra_MultiVector of dimension NumVectors to solve for.
     \param Out
        Y - (Out) A Epetra_MultiVector of dimension NumVectors containing result.
@@ -190,7 +190,7 @@ class Ifpack_ShyLU: public Ifpack_Preconditioner
     int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
     //! Computes the estimated condition number and returns the value.
-    double Condest(const Ifpack_CondestType CT = Ifpack_Cheap, 
+    double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
                  const int MaxIters = 1550,
                  const double Tol = 1e-9,
          Epetra_RowMatrix* Matrix_in = 0);
@@ -234,7 +234,7 @@ int JustTryIt() ;
 
     //! Returns a reference to the matrix to be preconditioned.
     const Epetra_RowMatrix& Matrix() const
-    { 
+    {
         return(*A_);
     }
 
@@ -337,8 +337,8 @@ int JustTryIt() ;
     mutable shylu_symbolic slu_sym_; // More mutable !!
 
     //fpr later use
-    Isorropia::Epetra::Partitioner *partitioner_;
-    Isorropia::Epetra::Redistributor *rd_;
+    // Isorropia::Epetra::Partitioner *partitioner_; // unused
+    // Isorropia::Epetra::Redistributor *rd_; // unused
 
     bool UseTranspose_;
 
