@@ -53,16 +53,16 @@ namespace Details {
 
 /// \class FixedHashTable
 /// \tparam KeyType The type of the hash table's keys.  This must be a
-///   built-in signed or unsinged integer type.
+///   built-in signed or unsigned integer type.
 /// \tparam ValueType The type of the hash table's values.  This must
 ///   be a built-in signed or unsigned integer type.
 /// \tparam DeviceType Specialization of Kokkos::Device.
 ///
-/// This class implements a hash table from signed integer keys to
-/// signed integer values, where all the (key,value) pairs must be
-/// added at once, and may not be changed or removed after being
-/// added.  Keys and values may have different types.  Tpetra::Map may
-/// use this to implement global-to-local index lookup.
+/// This class implements a look-up table from integer keys to integer
+/// values.  All the (key,value) pairs must be added at once, and
+/// pairs may not be changed or removed.  Keys and values may have
+/// different types.  Tpetra::Map may use this to implement
+/// global-to-local index lookup.
 ///
 /// The hash table uses a "compressed sparse row" storage strategy.
 /// The hash function maps a key to its "row" in the table, and then
@@ -208,6 +208,41 @@ public:
     }
   }
 
+  /// \brief Number of (key, value) pairs in the table.
+  ///
+  /// This counts duplicate keys separately.
+  KOKKOS_INLINE_FUNCTION offset_type numPairs () const {
+    // NOTE (mfh 26 May 2015) This only works because the table
+    // _stores_ pairs with duplicate keys separately.  If the table
+    // didn't do that, we would have to keep a separate numPairs_
+    // field (remembering the size of the input array of keys).
+    return val_.dimension_0 ();
+  }
+
+  /// \brief The minimum key.
+  ///
+  /// This function does not throw, and always returns a value.  If
+  /// the table is empty, the value is undefined.  Furthermore, if the
+  /// table is empty, we do not promise that minKey() <= maxKey().
+  ///
+  /// This class assumes that both keys and values are numbers.
+  /// Therefore, keys are less-than comparable.
+  KOKKOS_INLINE_FUNCTION KeyType minKey () const {
+    return minKey_;
+  }
+
+  /// \brief The maximum key.
+  ///
+  /// This function does not throw, and always returns a value.  If
+  /// the table is empty, the value is undefined.  Furthermore, if the
+  /// table is empty, we do not promise that minKey() <= maxKey().
+  ///
+  /// This class assumes that both keys and values are numbers.
+  /// Therefore, keys are less-than comparable.
+  KOKKOS_INLINE_FUNCTION KeyType maxKey () const {
+    return maxKey_;
+  }
+
   /// \brief Whether the table has any duplicate keys.
   ///
   /// This is a nonconst function because it requires running a Kokkos
@@ -218,7 +253,7 @@ public:
   //! Implementation of Teuchos::Describable
   //@{
   //! Return a simple one-line description of this object.
-  std::string description() const;
+  std::string description () const;
 
   //! Print this object with the given verbosity to the output stream.
   void
@@ -253,6 +288,16 @@ private:
   /// device function.  This is nonconst because otherwise the
   /// compiler deletes the implicit copy constructor.
   ValueType invalidValue_;
+
+  /// \brief Minimum key (computed in init()).
+  ///
+  /// This class assumes that keys are less-than comparable.
+  KeyType minKey_;
+
+  /// \brief Maximum key (computed in init()).
+  ///
+  /// This class assumes that keys are less-than comparable.
+  KeyType maxKey_;
 
   /// \brief Whether the table has checked for duplicate keys.
   ///
@@ -292,22 +337,28 @@ private:
                        typename ptr_type::HostMirror::execution_space,
                        Kokkos::MemoryUnmanaged> host_input_vals_type;
 
-  /// \brief Allocate storage and initialize the table.
+  /// \brief Allocate storage and initialize the table; use given
+  ///   initial min and max keys.
   ///
   /// Add <tt>(keys[i], startingValue + i)</tt> to the table,
   /// for i = 0, 1, ..., <tt>keys.size()</tt>.
   void
   init (const host_input_keys_type& keys,
-        const ValueType startingValue);
+        const ValueType startingValue,
+        const KeyType initMinKey,
+        const KeyType initMaxKey);
 
-  /// \brief Allocate storage and initialize the table.
+  /// \brief Allocate storage and initialize the table; use given
+  ///   initial min and max keys.
   ///
   /// Add <tt>(keys[i], vals[i])</tt> to the table, for i = 0, 1, ...,
   /// <tt>keys.size()</tt>.  This is called by the version of the
   /// constructor that takes the same arguments.
   void
   init (const host_input_keys_type& keys,
-        const host_input_vals_type& vals);
+        const host_input_vals_type& vals,
+        const KeyType initMinKey,
+        const KeyType initMaxKey);
 };
 
 } // Details namespace
