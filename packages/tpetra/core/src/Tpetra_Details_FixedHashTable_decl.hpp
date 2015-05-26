@@ -208,6 +208,17 @@ public:
     }
   }
 
+  /// \brief Number of (key, value) pairs in the table.
+  ///
+  /// This counts duplicate keys separately.
+  KOKKOS_INLINE_FUNCTION offset_type numPairs () const {
+    // NOTE (mfh 26 May 2015) This only works because the table
+    // _stores_ pairs with duplicate keys separately.  If the table
+    // didn't do that, we would have to keep a separate numPairs_
+    // field (remembering the size of the input array of keys).
+    return val_.dimension_0 ();
+  }
+
   /// \brief The minimum key.
   ///
   /// This function does not throw, and always returns a value.  If
