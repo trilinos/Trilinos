@@ -797,6 +797,7 @@ double test_count_nodes_lambda_functor(const unsigned numIterations)
     double startTime = get_cpu_or_wall_time();
     for(unsigned i=0; i<numIterations; i++)
     {
+        //BEGIN_LOOP_ABSTRACTION_NON_THREADSAFE
         numNodes = 0;
         bulkData.for_each_node_run_non_threadsafe(
             [&numNodes](const stk::mesh::BulkData& mesh, stk::mesh::Entity node, ...)
@@ -807,6 +808,7 @@ double test_count_nodes_lambda_functor(const unsigned numIterations)
                 }
             }
         );
+        //END_LOOP_ABSTRACTION_NON_THREADSAFE
     }
     double timeForLambdaFunctor = get_cpu_or_wall_time() - startTime;
     EXPECT_EQ(stk::mesh::count_selected_entities(metaData.universal_part(), bulkData.buckets(stk::topology::NODE_RANK)), numNodes);
@@ -819,6 +821,7 @@ TEST(ForEntityFunction, performance_test_for_each_node_run)
     MPI_Comm communicator = MPI_COMM_WORLD;
     if(stk::parallel_machine_size(communicator) == 1)
     {
+        test_count_nodes_raw_for_loops(numIterationsForCountNodes);
         double timeForRawBucketLoops = test_count_nodes_raw_for_loops(numIterationsForCountNodes);
         double timeForInheritance = test_count_nodes_inheritance_functor(numIterationsForCountNodes);
         double timeForTemplatedFunctor = test_count_nodes_templated_on_functor(numIterationsForCountNodes);
@@ -833,8 +836,10 @@ TEST(ForEntityFunction, performance_test_for_each_node_run)
             std::string generatedMeshSpec = countNodesMeshSpec;
             stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData, communicator);
 
+            //BEGIN_STD_FUNCTION_EXAMPLE
             unsigned numNodes = 0;
-            std::function<void(unsigned &numNodes, const stk::mesh::BulkData&, stk::mesh::Entity, const stk::mesh::MeshIndex&, unsigned, const stk::mesh::Entity *)> myLambda =
+            std::function<void(unsigned &numNodes, const stk::mesh::BulkData&, stk::mesh::Entity, const stk::mesh::MeshIndex&, unsigned, const stk::mesh::Entity *)>
+                    myLambda =
                     [](unsigned &numNodes, const stk::mesh::BulkData& mesh, stk::mesh::Entity node, ...)
                     {
                         if(mesh.is_valid(node))
@@ -842,6 +847,8 @@ TEST(ForEntityFunction, performance_test_for_each_node_run)
                             ++numNodes;
                         }
                     };
+            bulkData.for_each_node_run_and_sum(numNodes, myLambda);
+            //END_STD_FUNCTION_EXAMPLE
 
             double startTime = get_cpu_or_wall_time();
             for(unsigned i=0; i<numIterationsForCountNodes; i++)
@@ -1077,9 +1084,10 @@ unsigned count_num_nodes_using_lamda_for_entity_loops_with_new_mesh_index(BulkDa
             const unsigned numEntitiesInBucket = bucket.size();
             for(unsigned iEntity = 0; iEntity < numEntitiesInBucket; iEntity++)
             {
-                NewMeshIndex newMeshIndex(stk::topology::ELEMENT_RANK, bucket.bucket_id(), iEntity);
-                stk::topology topology = bulkData.buckets(newMeshIndex.get_rank())[newMeshIndex.get_bucket_id()]->topology();
-                stk::mesh::Entity entity = bucket[iEntity];
+//                NewMeshIndex newMeshIndex(stk::topology::ELEMENT_RANK, bucket.bucket_id(), iEntity);
+                const stk::mesh::Bucket & elemBucket = *bulkData.buckets(stk::topology::ELEMENT_RANK)[bucket.bucket_id()];
+                stk::topology topology = elemBucket.topology();
+                stk::mesh::Entity entity = elemBucket[iEntity];
                 if(bulkData.is_valid(entity) && topology == stk::topology::HEX_8)
                 {
                     for(unsigned j=0; j<topology.num_nodes(); j++)
@@ -1216,14 +1224,16 @@ double access_field_data_using_lambda_for_entity_loops(BulkDataForEntityTemplate
     double sum = 0.0;
     for(unsigned i=0; i<2*numTimesToRun; i++)
     {
+        //BEGIN_LOOP_ABSTRACTION_WITH_SUM
         sum = 0.0;
-        bulkData.for_each_node_run_non_threadsafe(
-            [&nodeField, &sum](const stk::mesh::BulkData& mesh, stk::mesh::Entity node, const stk::mesh::MeshIndex &meshIndex, ...)
+        bulkData.for_each_node_run_and_sum(sum,
+            [&nodeField](double &sum, const stk::mesh::BulkData& mesh, stk::mesh::Entity node, const stk::mesh::MeshIndex &meshIndex, ...)
             {
                 double *nodeData = stk::mesh::field_data(nodeField, *meshIndex.bucket, meshIndex.bucket_ordinal);
                 sum += *nodeData;
             }
         );
+        //END_LOOP_ABSTRACTION_WITH_SUM
     }
     return sum;
 }
