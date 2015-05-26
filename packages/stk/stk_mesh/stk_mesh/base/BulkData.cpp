@@ -377,7 +377,7 @@ void BulkData::find_and_delete_internal_faces(stk::mesh::EntityRank entityRank, 
     for (size_t i=0; i<shared_entities.size(); ++i)
     {
         Entity entity = shared_entities[i].entity;
-        if ( internal_is_entity_marked(entity) == BulkData::IS_SHARED )
+        if ( internal_is_entity_marked(entity) == BulkData::IS_SHARED && state(entity) == Created)
         {
             entities.push_back(entity);
         }
@@ -393,7 +393,11 @@ void BulkData::find_and_delete_internal_faces(stk::mesh::EntityRank entityRank, 
     unpack_entity_keys_from_procs(commForInternalSides, receivedEntityKeys);
     for (size_t i=0; i<receivedEntityKeys.size(); ++i)
     {
-        entities.push_back(this->get_entity(receivedEntityKeys[i]));
+        stk::mesh::Entity tempEntity = this->get_entity(receivedEntityKeys[i]);
+        if ( state(tempEntity) == Created)
+        {
+            entities.push_back(tempEntity);
+        }
     }
 
     stk::mesh::impl::delete_entities_and_upward_relations(*this, entities);

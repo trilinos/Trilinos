@@ -31,6 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
+#include <cassert>
 #include <stk_mesh/base/SkinMesh.hpp>
 #include <stddef.h>                     // for size_t
 #include <algorithm>                    // for sort, set_intersection
@@ -271,6 +272,7 @@ void skin_mesh_attach_new_sides_to_connected_entities(BulkData & mesh,
       if (existing_side_ordinals[s] == side_ordinal) {
         side_exists=true;
         side = existing_sides[s];
+
       }
     }
 
@@ -297,15 +299,25 @@ void skin_mesh_attach_new_sides_to_connected_entities(BulkData & mesh,
               mesh.find_permutation(element_topology, elem_nodes,
                                     side_topology, &ordered_side_nodes[0], side_ordinal);
       ThrowRequireMsg(permut != INVALID_PERMUTATION, ":  skin_mesh_attach_new_sides_to_connected_entities could not find valid permutation to connect face to element");
+
       mesh.declare_relation(elem, side, static_cast<RelationIdentifier>(side_ordinal), permut);
-      // mesh.declare_relation( elem, side, static_cast<RelationIdentifier>(side_ordinal), static_cast<Permutation>(perm_id));
+    // mesh.declare_relation( elem, side, static_cast<RelationIdentifier>(side_ordinal), static_cast<Permutation>(perm_id));
 
     }
 
-    PartVector add_parts(skin_parts);
-    add_parts.push_back( & mesh.mesh_meta_data().get_cell_topology_root_part( get_cell_topology( side_topology )));
+    bool need_to_add_side_to_skin_part_reason1 = side_exists && !mesh.bucket(side).shared();
+    bool need_to_add_side_to_skin_part_reason2 = !side_exists;
 
-    mesh.change_entity_parts(side,add_parts);
+    if (need_to_add_side_to_skin_part_reason1 || need_to_add_side_to_skin_part_reason2)
+    {
+        bool only_owner_can_change_parts = mesh.bucket(side).owned();
+        if (only_owner_can_change_parts)
+        {
+          PartVector add_parts(skin_parts);
+          add_parts.push_back( & mesh.mesh_meta_data().get_cell_topology_root_part( get_cell_topology( side_topology )));
+          mesh.change_entity_parts(side,add_parts);
+        }
+    }
   }
 }
 

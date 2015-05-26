@@ -1008,6 +1008,19 @@ void test_quad_2D_skin_with_aura_option (bool auraOn)
   ASSERT_EQ( 0u, stk::mesh::count_selected_entities( skin_part, mesh.buckets(stk::topology::NODE_RANK)) );
   ASSERT_EQ( 0u, stk::mesh::count_selected_entities( skin_part, mesh.buckets(side_rank)) );
 
+  stk::mesh::create_edges(mesh);
+
+  {
+    size_t local_counts[2] = {}, global_counts[2] = {};
+    local_counts[0] = stk::mesh::count_selected_entities( skin_part & locally_owned, mesh.buckets(stk::topology::NODE_RANK));
+    local_counts[1] = stk::mesh::count_selected_entities( skin_part & locally_owned, mesh.buckets(side_rank));
+
+    stk::all_reduce_sum( mesh.parallel(), local_counts, global_counts, 2);
+
+    EXPECT_EQ( 0u, global_counts[0] );
+    EXPECT_EQ( 0u, global_counts[1] );
+  }
+
   // skin the mesh
   {
     stk::mesh::PartVector add_parts(1,&skin_part);
