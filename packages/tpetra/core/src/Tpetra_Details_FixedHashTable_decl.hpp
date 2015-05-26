@@ -292,22 +292,28 @@ private:
                        typename ptr_type::HostMirror::execution_space,
                        Kokkos::MemoryUnmanaged> host_input_vals_type;
 
-  /// \brief Allocate storage and initialize the table.
+  /// \brief Allocate storage and initialize the table; use given
+  ///   initial min and max keys.
   ///
   /// Add <tt>(keys[i], startingValue + i)</tt> to the table,
   /// for i = 0, 1, ..., <tt>keys.size()</tt>.
   void
   init (const host_input_keys_type& keys,
-        const ValueType startingValue);
+        const ValueType startingValue,
+        const KeyType initMinKey,
+        const KeyType initMaxKey);
 
-  /// \brief Allocate storage and initialize the table.
+  /// \brief Allocate storage and initialize the table; use given
+  ///   initial min and max keys.
   ///
   /// Add <tt>(keys[i], vals[i])</tt> to the table, for i = 0, 1, ...,
   /// <tt>keys.size()</tt>.  This is called by the version of the
   /// constructor that takes the same arguments.
   void
   init (const host_input_keys_type& keys,
-        const host_input_vals_type& vals);
+        const host_input_vals_type& vals,
+        const KeyType initMinKey,
+        const KeyType initMaxKey);
 };
 
 } // Details namespace
