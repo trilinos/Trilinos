@@ -697,6 +697,10 @@ FixedHashTable () :
   rawVal_ (NULL),
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   invalidValue_ (Teuchos::OrdinalTraits<ValueType>::invalid ()),
+  minKey_ (std::numeric_limits<KeyType>::max ()),
+  maxKey_ (std::numeric_limits<KeyType>::is_integer ?
+           std::numeric_limits<KeyType>::min () :
+           -std::numeric_limits<KeyType>::max ()),
   checkedForDuplicateKeys_ (true), // it's an empty table; no need to check
   hasDuplicateKeys_ (false)
 {
@@ -713,6 +717,10 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys) :
   rawVal_ (NULL),
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   invalidValue_ (Teuchos::OrdinalTraits<ValueType>::invalid ()),
+  minKey_ (std::numeric_limits<KeyType>::max ()),
+  maxKey_ (std::numeric_limits<KeyType>::is_integer ?
+           std::numeric_limits<KeyType>::min () :
+           -std::numeric_limits<KeyType>::max ()),
   checkedForDuplicateKeys_ (false),
   hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
 {
@@ -754,6 +762,10 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   rawVal_ (NULL),
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   invalidValue_ (Teuchos::OrdinalTraits<ValueType>::invalid ()),
+  minKey_ (std::numeric_limits<KeyType>::max ()),
+  maxKey_ (std::numeric_limits<KeyType>::is_integer ?
+           std::numeric_limits<KeyType>::min () :
+           -std::numeric_limits<KeyType>::max ()),
   checkedForDuplicateKeys_ (false),
   hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
 {
@@ -794,6 +806,10 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   rawVal_ (NULL),
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   invalidValue_ (Teuchos::OrdinalTraits<ValueType>::invalid ()),
+  minKey_ (std::numeric_limits<KeyType>::max ()),
+  maxKey_ (std::numeric_limits<KeyType>::is_integer ?
+           std::numeric_limits<KeyType>::min () :
+           -std::numeric_limits<KeyType>::max ()),
   checkedForDuplicateKeys_ (false),
   hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
 {
@@ -974,13 +990,15 @@ init (const host_input_keys_type& keys,
      "init: Filling the hash table failed!  Please report this bug to the "
      "Tpetra developers.");
 
-  // "Commit" the computed arrays.
+  // "Commit" the computed arrays and other computed quantities.
   ptr_ = ptr;
   val_ = val;
 #if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   rawPtr_ = ptr.ptr_on_device ();
   rawVal_ = val.ptr_on_device ();
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  minKey_ = result.minKey_;
+  maxKey_ = result.maxKey_;
 }
 
 
@@ -1077,13 +1095,15 @@ init (const host_input_keys_type& keys,
      "init: Filling the hash table failed!  Please report this bug to the "
      "Tpetra developers.");
 
-  // "Commit" the computed arrays.
+  // "Commit" the computed arrays and other computed quantities.
   ptr_ = ptr;
   val_ = val;
 #if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   rawPtr_ = ptr.ptr_on_device ();
   rawVal_ = val.ptr_on_device ();
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  minKey_ = result.minKey_;
+  maxKey_ = result.maxKey_;
 }
 
 template <class KeyType, class ValueType, class DeviceType>
