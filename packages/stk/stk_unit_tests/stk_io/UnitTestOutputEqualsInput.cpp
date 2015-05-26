@@ -59,6 +59,7 @@
 
 namespace {
 
+//BeginDocTest1
 TEST(StkMeshIoBroker, outputEqualsInput)
 {
     // A simple test for reading and writing an exodus file, to make sure
@@ -137,6 +138,7 @@ TEST(StkMeshIoBroker, outputEqualsInput)
         std::cout << "test StkMeshIoBroker.outputEqualsInput, no mesh specified" << std::endl;
     }
 }
+//BeginDocTest1
 
 }
 
