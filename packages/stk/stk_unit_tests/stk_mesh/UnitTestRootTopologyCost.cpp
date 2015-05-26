@@ -36,7 +36,8 @@
 #include "MetaDataTester.hpp"
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
 
-void make_small_hybrid_mesh(stk::mesh::MetaData &meta, stk::mesh::BulkData &mesh)
+void make_small_hybrid_mesh(stk::mesh::MetaData &meta, stk::mesh::BulkData &mesh,
+                            bool user_attempt_no_induce = false)
 {
     stk::ParallelMachine pm = MPI_COMM_WORLD;
     int p_size = stk::parallel_machine_size(pm);
@@ -51,6 +52,18 @@ void make_small_hybrid_mesh(stk::mesh::MetaData &meta, stk::mesh::BulkData &mesh
     stk::mesh::Part * hexPart = &meta.get_topology_root_part(stk::topology::HEX_8);
     stk::mesh::Part * pyrPart = &meta.get_topology_root_part(stk::topology::PYRAMID_5);
     stk::mesh::Part * tetPart = &meta.get_topology_root_part(stk::topology::TET_4);
+
+    if (user_attempt_no_induce)
+    {
+        hexPart = &meta.declare_part_with_topology("my_hex_part",stk::topology::HEX_8, true);
+        pyrPart = &meta.declare_part_with_topology("my_pyr_part",stk::topology::PYRAMID_5, true);
+        tetPart = &meta.declare_part_with_topology("my_tet_part",stk::topology::TET_4, true);
+
+        EXPECT_TRUE(hexPart->force_no_induce());
+        EXPECT_TRUE(pyrPart->force_no_induce());
+        EXPECT_TRUE(tetPart->force_no_induce());
+    }
+
     meta.commit();
 
     const size_t numHex = 1;
@@ -131,6 +144,7 @@ TEST(UnitTestRootTopology, autoInduceFragmentation)
 
     const unsigned spatialDim = 3;
     {
+        // Root topology parts do not induce.  No user parts.  No bucket fragmentation.
         stk::mesh::unit_test::MetaDataTester
             meta_no_induce(spatialDim, stk::mesh::unit_test::MetaDataTester::RootTopologiesInduceOption::NO_INDUCE);
         stk::mesh::BulkData mesh(meta_no_induce, pm);
@@ -142,9 +156,33 @@ TEST(UnitTestRootTopology, autoInduceFragmentation)
     }
 
     {
+        // Root topology parts do induce.  No user parts.  Bucket fragmentation.
         stk::mesh::MetaData meta_induce(spatialDim);
         stk::mesh::BulkData mesh(meta_induce, pm);
         make_small_hybrid_mesh(meta_induce, mesh);
+
+        const stk::mesh::BucketVector &node_buckets = mesh.buckets(stk::topology::NODE_RANK);
+        unsigned num_buckets = node_buckets.size();
+        EXPECT_EQ(num_buckets, 5u);
+    }
+
+    {
+        // Root topology parts do not induce.  User parts don't induce.  No bucket fragmentation.
+        stk::mesh::unit_test::MetaDataTester
+            meta_no_induce(spatialDim, stk::mesh::unit_test::MetaDataTester::RootTopologiesInduceOption::NO_INDUCE);
+        stk::mesh::BulkData mesh(meta_no_induce, pm);
+        make_small_hybrid_mesh(meta_no_induce, mesh, true);
+
+        const stk::mesh::BucketVector &node_buckets = mesh.buckets(stk::topology::NODE_RANK);
+        unsigned num_buckets = node_buckets.size();
+        EXPECT_EQ(num_buckets, 1u);
+    }
+
+    {
+        // Root topology parts do induce.  User parts induce.  Bucket fragmentation.
+        stk::mesh::MetaData meta_induce(spatialDim);
+        stk::mesh::BulkData mesh(meta_induce, pm);
+        make_small_hybrid_mesh(meta_induce, mesh, true);
 
         const stk::mesh::BucketVector &node_buckets = mesh.buckets(stk::topology::NODE_RANK);
         unsigned num_buckets = node_buckets.size();
