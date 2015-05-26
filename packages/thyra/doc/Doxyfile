@@ -4,7 +4,7 @@
 @INCLUDE = Doxyfile.options
 @INCLUDE = rtop/doc/TagFiles # Requires @INCLUDE_PAH=$(TRILINOS_HOME)/packages
 @INCLUDE = epetra/doc/TagFiles
-@INCLUDE = tpetra/doc/TagFiles
+@INCLUDE = tpetra/core/doc/TagFiles
 #
 # Package options
 #

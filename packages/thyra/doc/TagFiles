@@ -1,4 +1,4 @@
 @INCLUDE = rtop/doc/TagFiles   # Requires @INCLUDE_PATH=$(TRILINOS_HOME)/packages
 @INCLUDE = epetra/doc/TagFiles
-@INCLUDE = tpetra/doc/TagFiles
+@INCLUDE = tpetra/core/doc/TagFiles
 TAGFILES += $(TRILINOS_HOME)/packages/common/tag_files/Thyra.tag=$(TRILINOS_HOME)/packages/thyra/doc/html
