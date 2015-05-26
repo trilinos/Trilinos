@@ -313,6 +313,13 @@ namespace { // (anonymous)
 
     Teuchos::RCP<table_type> table;
     TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue)) );
+    if (table.is_null ()) {
+      return; // stop the test now to prevent dereferencing null
+    }
+
+    TEST_EQUALITY( keys_h(0), table->minKey () );
+    TEST_EQUALITY( keys_h(numKeys-1), table->maxKey () );
+    TEST_EQUALITY( numKeys, table->numPairs () );
 
     bool duplicateKeys = false;
     TEST_NOTHROW( duplicateKeys = table->hasDuplicateKeys () );
@@ -375,6 +382,13 @@ namespace { // (anonymous)
 
     Teuchos::RCP<table_type> table;
     TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue)) );
+    if (table.is_null ()) {
+      return; // stop the test now to prevent dereferencing null
+    }
+
+    TEST_EQUALITY( keys_h(4), table->minKey () );
+    TEST_EQUALITY( keys_h(3), table->maxKey () );
+    TEST_EQUALITY( numKeys, table->numPairs () );
 
     bool duplicateKeys = false;
     TEST_NOTHROW( duplicateKeys = table->hasDuplicateKeys () );
@@ -444,8 +458,32 @@ namespace { // (anonymous)
 
     Teuchos::RCP<table_type> table;
     TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue)) );
+    if (table.is_null ()) {
+      return; // stop the test now to prevent dereferencing null
+    }
+
+    // We still require that the table correctly report the min and
+    // max keys, even if there were duplicates.
+    TEST_EQUALITY( keys_h(4), table->minKey () );
+    TEST_EQUALITY( keys_h(3), table->maxKey () );
+    // The table is supposed to count duplicate keys separately.
+    TEST_EQUALITY( numKeys, table->numPairs () );
 
     bool duplicateKeys = false;
+    TEST_NOTHROW( duplicateKeys = table->hasDuplicateKeys () );
+    // This table actually has duplicate keys.
+    TEST_EQUALITY_CONST( duplicateKeys, true );
+
+    // Testing for duplicates should not affect the min and max keys.
+    TEST_EQUALITY( keys_h(4), table->minKey () );
+    TEST_EQUALITY( keys_h(3), table->maxKey () );
+    // The table is supposed to count duplicate keys separately.
+    // Asking if the table has duplicate keys must NOT merge those
+    // keys.
+    TEST_EQUALITY( numKeys, table->numPairs () );
+
+    // Furthermore, asking for the min and max keys should not affect
+    // whether the table reports that it has duplicate keys.
     TEST_NOTHROW( duplicateKeys = table->hasDuplicateKeys () );
     // This table actually has duplicate keys.
     TEST_EQUALITY_CONST( duplicateKeys, true );
@@ -510,11 +548,21 @@ namespace { // (anonymous)
         return;
       }
 
+      TEST_EQUALITY( inTable.minKey (), outTable->minKey () );
+      TEST_EQUALITY( inTable.maxKey (), outTable->maxKey () );
+      TEST_EQUALITY( inTable.numPairs (), outTable->numPairs () );
+
       // Make sure the new table has duplicate keys if and only if the
       // original table has duplicate keys.
       const bool originalHasDuplicateKeys = inTable.hasDuplicateKeys ();
       const bool newTableHasDuplicateKeys = outTable->hasDuplicateKeys ();
       TEST_EQUALITY( originalHasDuplicateKeys, newTableHasDuplicateKeys );
+
+      // Make sure that computing whether the table has duplicate keys
+      // doesn't affect the min or max keys.
+      TEST_EQUALITY( inTable.minKey (), outTable->minKey () );
+      TEST_EQUALITY( inTable.maxKey (), outTable->maxKey () );
+      TEST_EQUALITY( inTable.numPairs (), outTable->numPairs () );
 
       Kokkos::View<KeyType*, Kokkos::LayoutLeft, OutDeviceType> keys_out ("keys", keys.dimension_0 ());
       Kokkos::deep_copy (keys_out, keys);
