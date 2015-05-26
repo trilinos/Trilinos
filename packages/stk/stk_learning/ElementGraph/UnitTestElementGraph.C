@@ -119,6 +119,7 @@ typedef int64_t LocalId;
 typedef int ProcId;
 typedef int SideId;
 
+//BeginDocExample3
 struct parallel_info
 {
     ProcId m_other_proc;
@@ -127,6 +128,7 @@ struct parallel_info
     parallel_info(ProcId proc, SideId side_ord, int perm) :
         m_other_proc(proc), m_other_side_ord(side_ord), m_permutation(perm) {}
 };
+//EndDocExample3
 
 typedef std::pair<LocalId,SideId> ElementSidePair;
 typedef std::map<std::pair<LocalId,stk::mesh::EntityId>, parallel_info > ParallelGraphInfo;
@@ -1215,6 +1217,8 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
 
     stk::mesh::EntityRank side_rank = bulkData.mesh_meta_data().side_rank();
 
+    //BeginDocExample4
+
     bulkData.modification_begin();
 
     std::vector<sharing_info> shared_modified;
@@ -1299,6 +1303,9 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
 
     double start_mod_end = stk::wall_time();
     bulkData.my_modification_end_for_entity_creation(shared_modified);
+
+    //EndDocExample4
+
     double mod_end_time = stk::wall_time() - start_mod_end;
 
     double create_faces_time = stk::wall_time() - wall_time_start;
@@ -1403,6 +1410,21 @@ int check_connectivity(const ElementGraph& elem_graph, const SidesForElementGrap
     return side;
 }
 
+//BeginDocExample1
+std::vector<ElementSidePair>
+skin_mesh(const SidesForElementGraph &via_side, const std::vector<stk::topology> &element_topologies)
+{
+    std::vector<ElementSidePair> element_side_pairs;
+
+    size_t num_elems = via_side.size();
+    for(size_t i=0; i<num_elems; ++i)
+    {
+        const std::vector<SideId>& internal_sides = via_side[i];
+        add_element_side_pairs_for_unused_sides(i, element_topologies[i], internal_sides, element_side_pairs);
+    }
+    return element_side_pairs;
+}
+
 void add_element_side_pairs_for_unused_sides(LocalId elementId, stk::topology topology, const std::vector<SideId> &internal_sides,
         std::vector<ElementSidePair>& element_side_pairs)
 {
@@ -1428,20 +1450,7 @@ void add_element_side_pairs_for_unused_sides(LocalId elementId, stk::topology to
         }
     }
 }
-
-std::vector<ElementSidePair>
-skin_mesh(const SidesForElementGraph &via_side, const std::vector<stk::topology> &element_topologies)
-{
-    std::vector<ElementSidePair> element_side_pairs;
-
-    size_t num_elems = via_side.size();
-    for(size_t i=0; i<num_elems; ++i)
-    {
-        const std::vector<SideId>& internal_sides = via_side[i];
-        add_element_side_pairs_for_unused_sides(i, element_topologies[i], internal_sides, element_side_pairs);
-    }
-    return element_side_pairs;
-}
+//EndDocExample1
 
 void set_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData& bulkData, stk::mesh::EntityVector& local_id_to_element_entity, std::vector<stk::topology>& element_topologies)
 {
@@ -1569,6 +1578,7 @@ void pack_shared_side_nodes_of_elements(stk::CommSparse& comm, stk::mesh::BulkDa
     }
 }
 
+//BeginDocExample2
 void add_possibly_connected_elements_to_graph_using_side_nodes(stk::mesh::BulkData& bulkData, ElementGraph& elem_graph,
         SidesForElementGraph& via_sides, const stk::mesh::EntityVector& side_nodes, ParallelGraphInfo& parallel_graph_info,
         LocalId other_element, SideId other_side, ProcId other_proc)
@@ -1605,6 +1615,8 @@ void add_possibly_connected_elements_to_graph_using_side_nodes(stk::mesh::BulkDa
         }
     }
 }
+//EndDocExample2
+
 
 void fill_parallel_graph(stk::mesh::BulkData& bulkData, ElementGraph& elem_graph,
         SidesForElementGraph& via_sides, ParallelGraphInfo& parallel_graph_info)
