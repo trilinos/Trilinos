@@ -171,54 +171,6 @@ int main(int narg, char** arg)
     return -1;
   }
 
-  // Basic metric checking of the partitioning solution
-  // Not ordinarily done in application code; just doing it for testing here.
-  size_t checkNparts = comm->getSize();
-
-  size_t  checkLength = origMatrix->getNodeNumRows();
-  const MatrixAdapter_t::part_t *checkParts = 
-                                       problem.getSolution().getPartListView();
-
-  // Check for load balance
-  size_t *countPerPart = new size_t[checkNparts];
-  size_t *globalCountPerPart = new size_t[checkNparts];
-
-  for (size_t i = 0; i < checkNparts; i++) countPerPart[i] = 0;
-
-  for (size_t i = 0; i < checkLength; i++) {
-    if (size_t(checkParts[i]) >= checkNparts)
-      cout << "Invalid Part " << checkParts[i] << ": FAIL" << endl;
-    countPerPart[checkParts[i]]++;
-  }
-  Teuchos::reduceAll<int, size_t>(*comm, Teuchos::REDUCE_SUM, checkNparts,
-                                  countPerPart, globalCountPerPart);
-
-  size_t min = std::numeric_limits<std::size_t>::max();
-  size_t max = 0;
-  size_t sum = 0;
-  size_t minrank = 0, maxrank = 0;
-  for (size_t i = 0; i < checkNparts; i++) {
-    if (globalCountPerPart[i] < min) {min = globalCountPerPart[i]; minrank = i;}
-    if (globalCountPerPart[i] > max) {max = globalCountPerPart[i]; maxrank = i;}
-    sum += globalCountPerPart[i];
-  }
-
-  if (me == 0) {
-    float avg = (float) sum / (float) checkNparts;
-    cout << "Minimum count:  " << min << " on rank " << minrank << endl;
-    cout << "Maximum count:  " << max << " on rank " << maxrank << endl;
-    cout << "Average count:  " << avg << endl;
-    cout << "Total count:    " << sum
-         << (sum != origMatrix->getGlobalNumRows()
-                 ? "Work was lost; FAIL"
-                 : " ")
-         << endl;
-    cout << "Imbalance:     " << max / avg << endl;
-  }
-
-  delete [] countPerPart;
-  delete [] globalCountPerPart;
-
   // Redistribute matrix and vector into new matrix and vector.
   // Can use PartitioningSolution from matrix to redistribute the vectors, too.
 
@@ -238,6 +190,11 @@ int main(int narg, char** arg)
   redistribProd = Tpetra::createVector<zscalar_t,zlno_t,zgno_t>(
                                        redistribMatrix->getRangeMap());
 
+  if (origMatrix->getGlobalNumRows() <= 50) {
+    origVector->print(std::cout);
+    redistribVector->print(std::cout);
+  }
+
   // SANITY CHECK
   // check that redistribution is "correct"; perform matvec with
   // original and redistributed matrices/vectors and compare norms.
@@ -254,11 +211,13 @@ int main(int narg, char** arg)
   if (me == 0)
     cout << "Norm of Redistributed matvec prod:  " << redistribNorm << endl;
 
-  const double epsilon = 0.00000001;
-  if (redistribNorm > origNorm+epsilon || redistribNorm < origNorm-epsilon)
-    cout << "Mat-Vec product changed; FAIL" << std::endl;
-  else
-    cout << "PASS" << endl;
-
+  if (me == 0) {
+    const double epsilon = 0.00000001;
+    if (redistribNorm > origNorm+epsilon || redistribNorm < origNorm-epsilon)
+      cout << "Mat-Vec product changed; FAIL" << std::endl;
+    else
+      cout << "PASS" << endl;
+  }
+  
   return 0;
 }
