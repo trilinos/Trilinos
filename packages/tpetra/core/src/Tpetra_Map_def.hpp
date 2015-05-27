@@ -643,11 +643,11 @@ namespace Tpetra {
       if (globalIndex < getMinGlobalIndex () || globalIndex > getMaxGlobalIndex ()) {
         return Teuchos::OrdinalTraits<LocalOrdinal>::invalid ();
       }
-      return Teuchos::as<LocalOrdinal> (globalIndex - getMinGlobalIndex ());
+      return static_cast<LocalOrdinal> (globalIndex - getMinGlobalIndex ());
     }
     else if (globalIndex >= firstContiguousGID_ &&
              globalIndex <= lastContiguousGID_) {
-      return Teuchos::as<LocalOrdinal> (globalIndex - firstContiguousGID_);
+      return static_cast<LocalOrdinal> (globalIndex - firstContiguousGID_);
     }
     else {
       // This returns Teuchos::OrdinalTraits<LocalOrdinal>::invalid()
@@ -938,7 +938,7 @@ namespace Tpetra {
 #endif // HAVE_TEUCHOS_DEBUG
 
       typedef typename Teuchos::ArrayRCP<GlobalOrdinal>::size_type size_type;
-      const size_type numElts = Teuchos::as<size_type> (getNodeNumElements ());
+      const size_type numElts = static_cast<size_type> (getNodeNumElements ());
       lgMap_ = Teuchos::arcp<GlobalOrdinal> (numElts);
 
       if (numElts != 0) {
