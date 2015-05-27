@@ -409,6 +409,77 @@ namespace { // (anonymous)
     }
   }
 
+  // Test noncontiguous keys, with the constructor that takes a
+  // Teuchos::ArrayView of keys and a Teuchos::ArrayView of values.
+  //
+  // ValueType and KeyType are "backwards" because they correspond to
+  // LO resp. GO.  (LO, GO) is the natural order for Tpetra's test
+  // macros.
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_ArrayView, NoncontigKeysAndVals, ValueType, KeyType, DeviceType)
+  {
+    using std::endl;
+    typedef Tpetra::Details::FixedHashTable<KeyType, ValueType, DeviceType> table_type;
+    typedef typename Kokkos::View<const KeyType*, Kokkos::LayoutLeft, DeviceType>::size_type size_type;
+    typedef typename DeviceType::execution_space execution_space;
+
+    out << "Test noncontiguous keys, with constructor that takes "
+      "lists of keys and values" << endl;
+    Teuchos::OSTab tab0 (out);
+
+    InitExecSpace<execution_space> init;
+    // This avoids warnings for 'init' being unused.
+    TEST_EQUALITY_CONST( init.isInitialized (), true );
+    if (! init.isInitialized ()) {
+      return; // avoid crashes if initialization failed
+    }
+
+    const size_type numKeys = 5;
+    Kokkos::View<KeyType*, Kokkos::LayoutLeft, DeviceType> keys ("keys", numKeys);
+    Kokkos::View<ValueType*, Kokkos::LayoutLeft, DeviceType> vals ("vals", numKeys);
+    auto keys_h = Kokkos::create_mirror_view (keys);
+    keys_h(0) = static_cast<KeyType> (10);
+    keys_h(1) = static_cast<KeyType> (8);
+    keys_h(2) = static_cast<KeyType> (12);
+    keys_h(3) = static_cast<KeyType> (17);
+    keys_h(4) = static_cast<KeyType> (7);
+    Kokkos::deep_copy (keys, keys_h);
+
+    // I've chosen the min and max values to occur in different
+    // positions than the min and max keys, for maximum generality.
+    auto vals_h = Kokkos::create_mirror_view (vals);
+    vals_h(0) = static_cast<ValueType> (600);
+    vals_h(0) = static_cast<ValueType> (200);
+    vals_h(0) = static_cast<ValueType> (500);
+    vals_h(0) = static_cast<ValueType> (300);
+    vals_h(0) = static_cast<ValueType> (400);
+    Kokkos::deep_copy (vals, vals_h);
+
+    Teuchos::ArrayView<const KeyType> keys_av (keys_h.ptr_on_device (), numKeys);
+    Teuchos::ArrayView<const KeyType> vals_av (vals_h.ptr_on_device (), numKeys);
+    out << " Create table" << endl;
+
+    Teuchos::RCP<table_type> table;
+    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, vals_av)) );
+    if (table.is_null ()) {
+      return; // stop the test now to prevent dereferencing null
+    }
+
+    TEST_EQUALITY( keys_h(4), table->minKey () );
+    TEST_EQUALITY( keys_h(3), table->maxKey () );
+    TEST_EQUALITY( vals_h(0), table->minVal () );
+    TEST_EQUALITY( vals_h(1), table->maxVal () );
+    TEST_EQUALITY( numKeys, table->numPairs () );
+
+    bool duplicateKeys = false;
+    TEST_NOTHROW( duplicateKeys = table->hasDuplicateKeys () );
+    TEST_EQUALITY_CONST( duplicateKeys, false );
+
+    {
+      Teuchos::OSTab tab1 (out);
+      success = TestFixedHashTable<KeyType, ValueType, DeviceType>::testKeys (out, *table, keys, vals);
+      TEST_EQUALITY_CONST( success, true );
+    }
+  }
 
   // Test whether FixedHashTable successfully detects duplicate keys.
   // Use the constructor that takes a Teuchos::ArrayView of keys and a
@@ -896,6 +967,7 @@ namespace { // (anonymous)
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, Empty, LO, GO, DEVICE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, ContigKeysStartingValue, LO, GO, DEVICE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, NoncontigKeysStartingValue, LO, GO, DEVICE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, NoncontigKeysAndVals, LO, GO, DEVICE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, DuplicateKeys, LO, GO, DEVICE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, CopyCtorNoDupKeys, LO, GO, DEVICE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, CopyCtorDupKeys, LO, GO, DEVICE )
