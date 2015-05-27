@@ -246,7 +246,7 @@ public:
     }
   }
 
-  //#define USE_MESH_ADAPTER
+#define USE_MESH_ADAPTER
 #ifndef USE_MESH_ADAPTER
   bool avail2ndAdjs(MeshEntityType sourcetarget, MeshEntityType through) const
   {
@@ -254,10 +254,10 @@ public:
       if (sourcetarget == MESH_REGION && dimension_ == 3) return true;
       if (sourcetarget == MESH_FACE && dimension_ == 2) return true;
     }
-    if (sourcetarget == MESH_VERTEX) {
-      if (through == MESH_REGION && dimension_ == 3) return true;
-      if (through == MESH_FACE && dimension_ == 2) return true;
-    }
+    //if (sourcetarget == MESH_VERTEX) {
+    //if (through == MESH_REGION && dimension_ == 3) return true;
+    //if (through == MESH_FACE && dimension_ == 2) return true;
+    //}
     return false;
   }
 
@@ -270,11 +270,11 @@ public:
       return nEadj_;
     }
 
-    if (sourcetarget == MESH_VERTEX &&
-	((through == MESH_REGION && dimension_ == 3) ||
-	 (through == MESH_FACE && dimension_ == 2))) {
-      return nNadj_;
-    }
+    //if (sourcetarget == MESH_VERTEX &&
+    //((through == MESH_REGION && dimension_ == 3) ||
+    //(through == MESH_FACE && dimension_ == 2))) {
+    //return nNadj_;
+    //}
 
     return 0;
 
@@ -288,11 +288,11 @@ public:
 	 (sourcetarget == MESH_FACE && dimension_ == 2))) {
       offsets = eStart_;
       adjacencyIds = eAdj_;
-    } else if (sourcetarget == MESH_VERTEX &&
-	       ((through == MESH_REGION && dimension_ == 3) ||
-		(through == MESH_FACE && dimension_ == 2))) {
-      offsets = nStart_;
-      adjacencyIds = nAdj_;
+      //} else if (sourcetarget == MESH_VERTEX &&
+      //((through == MESH_REGION && dimension_ == 3) ||
+      //(through == MESH_FACE && dimension_ == 2))) {
+      //offsets = nStart_;
+      //adjacencyIds = nAdj_;
     } else {
       offsets = NULL;
       adjacencyIds = NULL;

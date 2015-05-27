@@ -189,7 +189,7 @@ int main(int narg, char *arg[]) {
 
   typedef Zoltan2::PamgenMeshAdapter<tMVector_t> inputAdapter_t;
 
-  inputAdapter_t ia(*CommT);
+  inputAdapter_t ia(*CommT, "region");
   inputAdapter_t::zgid_t const *adjacencyIds=NULL;
   inputAdapter_t::lno_t const *offsets=NULL;
   ia.print(me);
