@@ -855,6 +855,11 @@ init (const host_input_keys_type& keys,
 {
   const offset_type numKeys = static_cast<offset_type> (keys.dimension_0 ());
   TEUCHOS_TEST_FOR_EXCEPTION
+    (static_cast<unsigned long long> (numKeys) > static_cast<unsigned long long> (std::numeric_limits<ValueType>::max ()),
+     std::invalid_argument, "Tpetra::Details::FixedHashTable: The number of "
+     "keys " << numKeys << " is greater than the maximum representable "
+     "ValueType value " << std::numeric_limits<ValueType>::max () << ".");
+  TEUCHOS_TEST_FOR_EXCEPTION
     (numKeys > static_cast<offset_type> (INT_MAX), std::logic_error, "Tpetra::"
      "Details::FixedHashTable: This class currently only works when the number "
      "of keys is <= INT_MAX = " << INT_MAX << ".  If this is a problem for you"
@@ -1013,6 +1018,11 @@ init (const host_input_keys_type& keys,
       const KeyType initMaxKey)
 {
   const offset_type numKeys = static_cast<offset_type> (keys.dimension_0 ());
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (static_cast<unsigned long long> (numKeys) > static_cast<unsigned long long> (std::numeric_limits<ValueType>::max ()),
+     std::invalid_argument, "Tpetra::Details::FixedHashTable: The number of "
+     "keys " << numKeys << " is greater than the maximum representable "
+     "ValueType value " << std::numeric_limits<ValueType>::max () << ".");
   TEUCHOS_TEST_FOR_EXCEPTION
     (numKeys > static_cast<offset_type> (INT_MAX), std::logic_error, "Tpetra::"
      "Details::FixedHashTable: This class currently only works when the number "
