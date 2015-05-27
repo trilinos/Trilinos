@@ -56,7 +56,6 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include <random>
 #include <cstdlib>
 
 typedef double RealT;
