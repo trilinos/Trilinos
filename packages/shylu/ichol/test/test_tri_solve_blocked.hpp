@@ -86,6 +86,9 @@ namespace Example {
       CC("CC", AA.NumRows(), nrhs);
 
     cout << "testTriSolveBlocked::Begin - " << r_val << endl;
+    typename TaskFactoryType::policy_type policy;
+    TaskFactoryType::setPolicy(&policy);
+
     CrsTaskViewType U(&UU);
     DenseTaskViewType B(&BB), C(&CC);
 
@@ -98,27 +101,18 @@ namespace Example {
 
       TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::Blocked>::blocksize = blocksize;
 
-      typedef typename CrsTaskViewType::policy_type policy_type;
-      policy_type policy;
-      auto future = policy.create_team(TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::Blocked>
-                                       ::TaskFunctor<ForType,CrsTaskViewType,DenseTaskViewType>
-                                       (Diag::NonUnit, U, B), 0);
-      
-      policy.spawn(future);
-      Kokkos::Experimental::wait(policy);
+      TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::Blocked>
+        ::invoke<ForType>(TaskFactoryType::Policy(),
+                          TaskFactoryType::Policy().member_single(),
+                          Diag::NonUnit, U, B);
 
       cout << BB << endl;
     }
     {
-      typedef typename CrsTaskViewType::policy_type policy_type;
-      policy_type policy;
-      auto future = policy.create_team(Gemm<Trans::ConjTranspose,Trans::NoTranspose,AlgoGemm::ForTriSolveBlocked>
-                                       ::TaskFunctor<ForType,double,
-                                       CrsTaskViewType,DenseTaskViewType,DenseTaskViewType>
-                                       (1.0, U, B, 0.0, C), 0);
-      
-      policy.spawn(future);
-      Kokkos::Experimental::wait(policy);
+      Gemm<Trans::ConjTranspose,Trans::NoTranspose,AlgoGemm::ForTriSolveBlocked>
+        ::invoke<ForType>(TaskFactoryType::Policy(),
+                          TaskFactoryType::Policy().member_single(),
+                          1.0, U, B, 0.0, C);
 
       r_val += tmg.check(CC);
     }
@@ -129,27 +123,18 @@ namespace Example {
 
       TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::Blocked>::blocksize = blocksize;
       
-      typedef typename CrsTaskViewType::policy_type policy_type;
-      policy_type policy;
-      auto future = policy.create_team(TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::Blocked>
-                                       ::TaskFunctor<ForType,CrsTaskViewType,DenseTaskViewType>
-                                       (Diag::NonUnit, U, B), 0);
-
-      policy.spawn(future);
-      Kokkos::Experimental::wait(policy);
+      TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::Blocked>
+        ::invoke<ForType>(TaskFactoryType::Policy(),
+                          TaskFactoryType::Policy().member_single(),
+                          Diag::NonUnit, U, B);
       
       cout << BB << endl;
     }
     {
-      typedef typename CrsTaskViewType::policy_type policy_type;
-      policy_type policy;
-      auto future = policy.create_team(Gemm<Trans::NoTranspose,Trans::NoTranspose,AlgoGemm::ForTriSolveBlocked>
-                                       ::TaskFunctor<ForType,double,
-                                       CrsTaskViewType,DenseTaskViewType,DenseTaskViewType>
-                                       (1.0, U, B, 0.0, C), 0);
-      
-      policy.spawn(future);
-      Kokkos::Experimental::wait(policy);
+      Gemm<Trans::NoTranspose,Trans::NoTranspose,AlgoGemm::ForTriSolveBlocked>
+        ::invoke<ForType>(TaskFactoryType::Policy(),
+                          TaskFactoryType::Policy().member_single(),
+                          1.0, U, B, 0.0, C);
 
       r_val += tmg.check(CC);
     }

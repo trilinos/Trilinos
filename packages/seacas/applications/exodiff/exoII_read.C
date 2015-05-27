@@ -1367,18 +1367,24 @@ void ExoII_Read<INT>::Get_Init_Data()
   int name_length = ex_inquire_int(file_id, EX_INQ_DB_MAX_USED_NAME_LENGTH);
   ex_set_max_name_length(file_id, name_length);
   
-  char title_buff[MAX_LINE_LENGTH+1];
+  ex_init_params info;
+  info.title[0] = '\0';
   
-  int err = ex_get_init(file_id, title_buff, &dimension, &num_nodes,
-                        &num_elmts, &num_elmt_blocks, &num_node_sets,
-                        &num_side_sets);
-
+  int err = ex_get_init_ext(file_id, &info);
   if (err < 0) {
     std::cout << "EXODIFF ERROR: Failed to get init data!"
 	      << " Error number = " << err << ".  Aborting..." << std::endl;
     exit(1);
   }
-  title = title_buff;
+
+  dimension = info.num_dim;
+  num_nodes = info.num_nodes;
+  num_elmts = info.num_elem;
+  num_elmt_blocks = info.num_elem_blk;
+  num_node_sets   = info.num_node_sets;
+  num_side_sets   = info.num_side_sets;
+  title = info.title;
+
   if (err > 0 && !interface.quiet_flag)
     std::cout << "EXODIFF WARNING: was issued, number = "
 	      << err << std::endl;

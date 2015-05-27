@@ -148,43 +148,43 @@ void TetFixture::generate_mesh(std::vector<size_t> & hex_range_on_this_processor
     // Declare the elements that belong on this process
     std::vector<size_t>::iterator ib = hex_range_on_this_processor.begin();
     const std::vector<size_t>::iterator ie = hex_range_on_this_processor.end();
+    stk::mesh::EntityIdVector elem_nodes(8);
+    stk::mesh::EntityIdVector tet_nodes(4);
+
     for (; ib != ie; ++ib) {
       size_t hex_id = *ib;
       size_t ix = 0, iy = 0, iz = 0;
       hex_x_y_z(hex_id, ix, iy, iz);
 
-      stk::mesh::EntityId elem_node[8] ;
-      stk::mesh::EntityId tet_node[4];
-      
-      elem_node[0] = node_id( ix   , iy   , iz   );
-      elem_node[1] = node_id( ix+1 , iy   , iz   );
-      elem_node[2] = node_id( ix+1 , iy+1 , iz   );
-      elem_node[3] = node_id( ix   , iy+1 , iz   );
-      elem_node[4] = node_id( ix   , iy   , iz+1 );
-      elem_node[5] = node_id( ix+1 , iy   , iz+1 );
-      elem_node[6] = node_id( ix+1 , iy+1 , iz+1 );
-      elem_node[7] = node_id( ix   , iy+1 , iz+1 );
+      elem_nodes[0] = node_id( ix   , iy   , iz   );
+      elem_nodes[1] = node_id( ix+1 , iy   , iz   );
+      elem_nodes[2] = node_id( ix+1 , iy+1 , iz   );
+      elem_nodes[3] = node_id( ix   , iy+1 , iz   );
+      elem_nodes[4] = node_id( ix   , iy   , iz+1 );
+      elem_nodes[5] = node_id( ix+1 , iy   , iz+1 );
+      elem_nodes[6] = node_id( ix+1 , iy+1 , iz+1 );
+      elem_nodes[7] = node_id( ix   , iy+1 , iz+1 );
 
       for (size_t tet = 0; tet < 6; tet++) {
-	tet_node[0] = elem_node[tet_vert[tet][0]];
-	tet_node[1] = elem_node[tet_vert[tet][1]];
-	tet_node[2] = elem_node[tet_vert[tet][2]];
-	tet_node[3] = elem_node[tet_vert[tet][3]];
+	tet_nodes[0] = elem_nodes[tet_vert[tet][0]];
+	tet_nodes[1] = elem_nodes[tet_vert[tet][1]];
+	tet_nodes[2] = elem_nodes[tet_vert[tet][2]];
+	tet_nodes[3] = elem_nodes[tet_vert[tet][3]];
 	EntityId tet_id = 6*hex_id + tet + 1;
-	stk::mesh::declare_element( m_bulk_data, m_elem_parts, tet_id, tet_node);
+	stk::mesh::declare_element( m_bulk_data, m_elem_parts, tet_id, tet_nodes);
 
 	for (size_t i = 0; i<4; ++i) {
-	  stk::mesh::Entity const node = m_bulk_data.get_entity( stk::topology::NODE_RANK , tet_node[i] );
+	  stk::mesh::Entity const node = m_bulk_data.get_entity( stk::topology::NODE_RANK , tet_nodes[i] );
 	  m_bulk_data.change_entity_parts(node, m_node_parts);
 
 	  ThrowRequireMsg( m_bulk_data.is_valid(node),
 			   "This process should know about the nodes that make up its element");
 
-	  DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, tet_node[i], node);
+	  DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, tet_nodes[i], node);
 
 	  // Compute and assign coordinates to the node
 	  size_t nx = 0, ny = 0, nz = 0;
-	  node_x_y_z(tet_node[i], nx, ny, nz);
+	  node_x_y_z(tet_nodes[i], nx, ny, nz);
 
 	  Scalar * data = stk::mesh::field_data( m_coord_field , node );
 

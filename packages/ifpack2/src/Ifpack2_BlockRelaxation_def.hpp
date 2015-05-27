@@ -908,12 +908,12 @@ std::string BlockRelaxation<MatrixType,ContainerType>::description () const
   out << "Computed: " << (isComputed () ? "true" : "false") << ", ";
 
   if (A_.is_null ()) {
-    out << "Matrix: null";
+    out << "Matrix: null, ";
   }
   else {
     out << "Matrix: not null"
         << ", Global matrix dimensions: ["
-        << A_->getGlobalNumRows () << ", " << A_->getGlobalNumCols () << "]";
+        << A_->getGlobalNumRows () << ", " << A_->getGlobalNumCols () << "], ";
   }
 
   // It's useful to print this instance's relaxation method.  If you

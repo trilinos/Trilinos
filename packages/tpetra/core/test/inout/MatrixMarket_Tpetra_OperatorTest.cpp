@@ -539,17 +539,22 @@ testCrsMatrix (Teuchos::FancyOStream& out, const GlobalOrdinalType indexBase)
   //pl.set("precision",12);
   //pl.set("zero-based indexing",true);
   //pl.set("print MatrixMarket header",false);
-  std::stringstream ib;
-  ib << indexBase;
-  std::string fileName = "probed-matrix-base-" + ib.str() + ".m";
-  out << "Writing out the original matrix to \"" << fileName << "\"" << endl;
-  op_writer_type::writeOperator(fileName,*A_orig,pl);
+
+  // mfh 23 May 2015: It's unwise to write to files in tests.
+  // Instead, we write to an output stream.
+
+  out << "Writing out the original Operator to an output stream" << endl;
+  std::ostringstream originalOperatorFile;
+  op_writer_type::writeOperator (originalOperatorFile, *A_orig, pl);
 
   out << "Reading it in again and comparing with original matrix" << endl;
+  std::istringstream readInMatrixFile (originalOperatorFile.str ());
+
   RCP<const map_type> colMap;
   RCP<crs_matrix_type> A_orig2 =
-    reader_type::readSparseFile (fileName, rowMap, colMap, domainMap, rangeMap,
-                                 callFillComplete, tolerant, debug);
+    reader_type::readSparse (readInMatrixFile, rowMap, colMap,
+                             domainMap, rangeMap,
+                             callFillComplete, tolerant, debug);
   result = compareCrsMatrix<crs_matrix_type> (*A_orig, *A_orig2, out);
   bool local_success = true;
   TEUCHOS_TEST_EQUALITY( result, true, out, local_success );

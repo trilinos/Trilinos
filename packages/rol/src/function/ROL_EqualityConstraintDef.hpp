@@ -226,7 +226,7 @@ std::vector<Real> EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v
 
     // Apply right preconditioner.
     V2temp->set(*(V2[i]));
-    applyPreconditioner(*Z2temp, *V2temp, x, zerotol);
+    applyPreconditioner(*Z2temp, *V2temp, x, b1, zerotol);
     Z2.push_back(v2.clone()); (Z2[i])->set(*Z2temp);
     Z1.push_back(v1.clone()); (Z1[i])->set((V1[i])->dual());
 

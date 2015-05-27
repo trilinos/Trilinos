@@ -209,7 +209,7 @@ namespace MueLu {
                                 Teuchos::FancyOStream &fos,
                                 bool callFillCompleteOnResult = true,
                                 bool doOptimizeStorage        = true,
-				const std::string & label     = std::string()){
+                                const std::string & label     = std::string()){
       return Utils<SC,LO,GO,NO>::Multiply(A, transposeA, B, transposeB, Teuchos::null, fos, callFillCompleteOnResult, doOptimizeStorage,label);
     }
 
@@ -219,7 +219,7 @@ namespace MueLu {
                               const Matrix& B,
                               RCP<Matrix> C_in,
                               Teuchos::FancyOStream &fos,
-			      const std::string & label     = std::string());
+                              const std::string & label     = std::string());
 
 
     /*! @brief Helper function to do matrix-matrix multiply
@@ -247,7 +247,7 @@ namespace MueLu {
                                 Teuchos::FancyOStream &fos,
                                 bool callFillCompleteOnResult = true,
                                 bool doOptimizeStorage        = true,
-				const std::string & label     = std::string());
+                                const std::string & label     = std::string());
 
 #ifdef HAVE_MUELU_EPETRAEXT
     // Michael Gee's MLMultiply

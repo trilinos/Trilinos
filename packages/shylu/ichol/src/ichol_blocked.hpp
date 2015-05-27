@@ -21,7 +21,8 @@ namespace Example {
   KOKKOS_INLINE_FUNCTION
   int
   IChol<Uplo::Upper,AlgoIChol::Blocked>
-  ::invoke(const typename CrsExecViewType::policy_type::member_type &member,
+  ::invoke(typename CrsExecViewType::policy_type &policy,
+           const typename CrsExecViewType::policy_type::member_type &member,
            CrsExecViewType &A) {
     typedef typename CrsExecViewType::ordinal_type ordinal_type;
     const ordinal_type mb = blocksize;
@@ -45,16 +46,16 @@ namespace Example {
       A22.fillRowViewArray();      
 
       int r_val = IChol<Uplo::Upper,AlgoIChol::UnblockedOpt1>
-        ::invoke<ParallelForType,CrsExecViewType>(member, A11);
+        ::invoke<ParallelForType,CrsExecViewType>(policy, member, A11);
 
       if (r_val)
         return A00.NumRows() + r_val;
 
       Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,AlgoTrsm::ForFactorBlocked>
-        ::invoke<ParallelForType>(member, Diag::NonUnit, 1.0, A11, A12);
+        ::invoke<ParallelForType>(policy, member, Diag::NonUnit, 1.0, A11, A12);
 
       Herk<Uplo::Upper,Trans::ConjTranspose,AlgoHerk::ForFactorBlocked>
-        ::invoke<ParallelForType>(member, -1.0, A12, 1.0, A22);
+        ::invoke<ParallelForType>(policy, member, -1.0, A12, 1.0, A22);
 
       // -----------------------------------------------------
       Merge_3x3_to_2x2(A00, A01, A02, /**/ ATL, ATR,

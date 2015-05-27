@@ -297,7 +297,7 @@ namespace MueLu {
         ParameterList& levelList = paramList.sublist("level " + toString(levelID), true/*mustAlreadyExist*/);
         UpdateFactoryManager(levelList, paramList, *levelManager, levelID, keeps);
 
-      }	else {
+      } else {
         ParameterList levelList;
         UpdateFactoryManager(levelList, paramList, *levelManager, levelID, keeps);
       }

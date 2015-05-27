@@ -21,7 +21,8 @@ namespace Example {
              typename ExecViewTypeB,
              typename ExecViewTypeC>
     KOKKOS_INLINE_FUNCTION
-    static int invoke(const typename ExecViewTypeA::policy_type::member_type &member,
+    static int invoke(typename ExecViewTypeA::policy_type &policy,
+                      const typename ExecViewTypeA::policy_type::member_type &member,
                       const ScalarType alpha,
                       ExecViewTypeA &A,
                       ExecViewTypeB &B,
@@ -36,17 +37,20 @@ namespace Example {
              typename ExecViewTypeB,
              typename ExecViewTypeC>
     class TaskFunctor {
+    public:
+      typedef typename ExecViewTypeA::policy_type policy_type;
+      typedef typename policy_type::member_type member_type;
+      typedef int value_type;
+
     private:
       ScalarType _alpha, _beta;
       ExecViewTypeA _A;
       ExecViewTypeB _B;
       ExecViewTypeC _C;
 
-    public:
-      typedef typename ExecViewTypeA::policy_type policy_type;
-      typedef typename policy_type::member_type member_type;
-      typedef int value_type;
+      policy_type &_policy;
 
+    public:
       TaskFunctor(const ScalarType alpha,
                   const ExecViewTypeA A,
                   const ExecViewTypeB B,
@@ -56,19 +60,22 @@ namespace Example {
           _beta(beta),
           _A(A),
           _B(B),
-          _C(C)
+          _C(C),
+          _policy(ExecViewTypeA::task_factory_type::Policy())
       { }
 
       string Label() const { return "Gemm"; }
 
       // task execution
       void apply(value_type &r_val) {
-        r_val = Gemm::invoke<ParallelForType>(policy_type::member_null(), _alpha, _A, _B, _beta, _C);
+        r_val = Gemm::invoke<ParallelForType>(_policy, _policy.member_single(), 
+                                              _alpha, _A, _B, _beta, _C);
       }
 
       // task-data execution
       void apply(const member_type &member, value_type &r_val) {
-        r_val = Gemm::invoke<ParallelForType>(member, _alpha, _A, _B, _beta, _C);
+        r_val = Gemm::invoke<ParallelForType>(_policy, member, 
+                                              _alpha, _A, _B, _beta, _C);
       }
 
     };

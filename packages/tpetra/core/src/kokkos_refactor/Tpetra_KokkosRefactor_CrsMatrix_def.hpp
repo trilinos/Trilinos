@@ -5360,11 +5360,21 @@ namespace Tpetra {
       return; // all done!
     }
 
-    // Describe the Map Map.
+    // Describe the row Map.
     if (myRank == 0) {
       out << endl << "Row Map:" << endl;
     }
-    getRowMap ()->describe (out, vl);
+    if (getRowMap ().is_null ()) {
+      if (myRank == 0) {
+        out << "null" << endl;
+      }
+    }
+    else {
+      if (myRank == 0) {
+        out << endl;
+      }
+      getRowMap ()->describe (out, vl);
+    }
 
     // Describe the column Map.
     if (myRank == 0) {
@@ -5405,7 +5415,7 @@ namespace Tpetra {
       if (myRank == 0) {
         out << endl;
       }
-      getColMap ()->describe (out, vl);
+      getDomainMap ()->describe (out, vl);
     }
 
     // Describe the range Map.
@@ -5428,7 +5438,7 @@ namespace Tpetra {
       if (myRank == 0) {
         out << endl;
       }
-      getColMap ()->describe (out, vl);
+      getRangeMap ()->describe (out, vl);
     }
 
     // O(P) data

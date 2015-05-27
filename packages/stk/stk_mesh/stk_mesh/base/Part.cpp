@@ -112,20 +112,6 @@ void sort_and_unique( PartVector & partVector )
   partVector.erase( new_end , end );
 }
 
-void order( PartVector & v )
-{
-  sort_and_unique(v);
-}
-
-void order( OrdinalVector & v )
-{
-  OrdinalVector::iterator ev = v.end();
-  OrdinalVector::iterator iv = v.begin();
-  std::sort( iv , ev );
-  iv = std::unique( iv , ev );
-  v.erase( iv , ev );
-}
-
 bool insert( ConstPartVector & v , const Part & part )
 {
   const ConstPartVector::iterator e = v.end();

@@ -203,8 +203,6 @@ struct PartLess {
 
 /** \brief  Order a collection of parts: invoke sort and then unique */
 void sort_and_unique( PartVector &partVector );
-STK_DEPRECATED(void order( PartVector & ));         //marked deprecated on March 2, 2015
-STK_DEPRECATED(void order( OrdinalVector & v ));    //marked deprecated on March 2, 2015
 
 /** \brief  Insert a part into a properly ordered collection of parts.
  *          Returns true if this is a new insertion.

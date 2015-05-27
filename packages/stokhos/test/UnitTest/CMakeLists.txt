@@ -425,20 +425,19 @@ IF(Stokhos_ENABLE_Sacado)
     STANDARD_PASS_OUTPUT
     )
 
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SacadoUQPCEUnitTest
+    SOURCES Stokhos_SacadoUQPCEUnitTest.cpp
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    )
+
   IF (Kokkos_ENABLE_Pthread)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       KokkosViewMPVectorUnitTest_Threads
       SOURCES Stokhos_KokkosViewMPVectorUnitTest.hpp
               Stokhos_KokkosViewMPVectorUnitTest_Threads.cpp
-      COMM serial mpi
-      STANDARD_PASS_OUTPUT
-      NUM_MPI_PROCS 1
-      )
-
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      SacadoUQPCEUnitTest_Threads
-      SOURCES Stokhos_SacadoUQPCEUnitTest.hpp
-              Stokhos_SacadoUQPCEUnitTest_Threads.cpp
       COMM serial mpi
       STANDARD_PASS_OUTPUT
       NUM_MPI_PROCS 1

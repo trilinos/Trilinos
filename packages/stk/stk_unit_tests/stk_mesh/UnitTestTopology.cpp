@@ -178,11 +178,7 @@ TEST( testTopologyHelpers, declare_element_side_no_topology )
 
 
   {
-    EntityId elem_node[4];
-    elem_node[0] = 1;
-    elem_node[1] = 2;
-    elem_node[2] = 3;
-    elem_node[3] = 4;
+    stk::mesh::EntityIdVector elem_node {1, 2, 3, 4};
     //fix.bulk.modification_begin();
     // Cannot declare an element without a topology defined
     ASSERT_THROW(
@@ -210,11 +206,7 @@ TEST( testTopologyHelpers, declare_element_side_no_topology_2 )
   TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
   fix.bulk.modification_begin();
 
-  EntityId elem_node[4];
-  elem_node[0] = 1;
-  elem_node[1] = 2;
-  elem_node[2] = 3;
-  elem_node[3] = 4;
+  stk::mesh::EntityIdVector elem_node {1, 2, 3, 4};
   Entity element  = stk::mesh::declare_element(fix.bulk, fix.element_tet_part, fix.nextEntityId(), elem_node);
   stk::topology elem_top = fix.bulk.bucket(element).topology();
   const EntityId nSideCount = elem_top.num_sides() + 10 ;
@@ -232,11 +224,7 @@ TEST( testTopologyHelpers, declare_element_side_full )
 
   fix.bulk.modification_begin();
 
-  EntityId elem_node[4];
-  elem_node[0] = 1;
-  elem_node[1] = 2;
-  elem_node[2] = 3;
-  elem_node[3] = 4;
+  stk::mesh::EntityIdVector elem_node {1, 2, 3, 4};
 
   Entity element = stk::mesh::declare_element(fix.bulk, fix.element_tet_part, fix.nextEntityId(), elem_node );
 
@@ -255,11 +243,7 @@ TEST( testTopologyHelpers, element_side_polarity_valid )
 {
   // Coverage of element_side_polarity in TopologyHelpers.cpp 168-181 and 200-215
   TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
-  EntityId elem_node[4];
-  elem_node[0] = 1;
-  elem_node[1] = 2;
-  elem_node[2] = 3;
-  elem_node[3] = 4;
+  stk::mesh::EntityIdVector elem_node {1, 2, 3, 4};
 
   fix.bulk.modification_begin();
   Entity element = stk::mesh::declare_element(fix.bulk, fix.element_tet_part, fix.nextEntityId(), elem_node );
@@ -276,11 +260,7 @@ TEST( testTopologyHelpers, element_side_polarity_valid )
 TEST( testTopologyHelpers, element_side_polarity_invalid_1 )
 {
   TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
-  EntityId elem_node[4];
-  elem_node[0] = 1;
-  elem_node[1] = 2;
-  elem_node[2] = 3;
-  elem_node[3] = 4;
+  stk::mesh::EntityIdVector elem_node {1, 2, 3, 4};
 
   // Coverage of element_side_polarity in TopologyHelpers.cpp
   {
@@ -303,11 +283,7 @@ TEST( testTopologyHelpers, element_side_polarity_invalid_1 )
 TEST( testTopologyHelpers, element_side_polarity_invalid_2 )
 {
   TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
-  EntityId elem_node[4];
-  elem_node[0] = 1;
-  elem_node[1] = 2;
-  elem_node[2] = 3;
-  elem_node[3] = 4;
+  stk::mesh::EntityIdVector elem_node { 1, 2, 3, 4 };
 
   // Coverage of element_side_polarity in TopologyHelpers.cpp
   fix.bulk.modification_begin();

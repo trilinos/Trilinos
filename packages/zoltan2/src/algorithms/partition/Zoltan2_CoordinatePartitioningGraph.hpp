@@ -507,7 +507,7 @@ template <typename scalar_t, typename part_t>
 class GridHash{
 private:
 
-    RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, part_t> > > pBoxes;
+    const RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, part_t> > > pBoxes;
 
     //minimum of the maximum box boundaries
     scalar_t *minMaxBoundaries;
@@ -531,7 +531,7 @@ public:
     /*! \brief GridHash Class,
      * Constructor
      */
-    GridHash(RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, part_t> > > pBoxes_,
+    GridHash(const RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, part_t> > > &pBoxes_,
             part_t ntasks_, int dim_):
         pBoxes(pBoxes_),
         minMaxBoundaries(0),

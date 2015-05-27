@@ -20,7 +20,7 @@ keyFingerprint = "4096 bf:65:91:4a:0a:01:e9:72:fe:73:b6:9d:15:f5:cb:f4 /home/apr
 socketCommand="/usr/sbin/ss"
 
 shell = os.environ["SHELL"]
-if shell == "/bin/bash":
+if shell == "/bin/bash" or shell == "/bin/sh":
    envCmd="export SSH_AUTH_SOCK="
 elif shell == "/bin/tcsh" or shell == "/bin/csh":
    envCmd="setenv SSH_AUTH_SOCK "
