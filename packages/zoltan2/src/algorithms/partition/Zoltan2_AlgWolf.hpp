@@ -93,10 +93,8 @@ private:
   const RCP<const Environment> mEnv;
   const RCP<Comm<int> > mProblemComm;
 
-  const RCP<const GraphModel<typename Adapter::base_adapter_t> > &mGraphModel;
+  const RCP<const GraphModel<typename Adapter::base_adapter_t> > mGraphModel;
   const RCP<const CoordinateModel<typename Adapter::base_adapter_t> > mIds;
-
-  RCP<PartitioningSolution<Adapter> > mSolution; //Not sure if this should be saved
 
 public:
   // Constructor

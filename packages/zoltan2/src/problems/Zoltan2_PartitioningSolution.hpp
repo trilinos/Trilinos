@@ -119,7 +119,7 @@ public:
  *   to be globally calculated.
  */
 
-  PartitioningSolution( RCP<const Environment> &env,
+  PartitioningSolution( const RCP<const Environment> &env,
     RCP<const Comm<int> > &comm,
     RCP<const IdentifierMap<user_t> > &idMap,
     int nUserWeights, 
@@ -155,7 +155,7 @@ public:
  *   \todo handle errors that may arise - like duplicate part numbers
  */
 
-  PartitioningSolution( RCP<const Environment> &env,
+  PartitioningSolution(const RCP<const Environment> &env,
     RCP<const Comm<int> > &comm,
     RCP<const IdentifierMap<user_t> > &idMap,
     int nUserWeights, ArrayView<ArrayRCP<part_t> > reqPartIds,
@@ -635,7 +635,7 @@ private:
 
 template <typename Adapter>
   PartitioningSolution<Adapter>::PartitioningSolution(
-    RCP<const Environment> &env,
+    const RCP<const Environment> &env,
     RCP<const Comm<int> > &comm,
     RCP<const IdentifierMap<user_t> > &idMap, int nUserWeights,
     const RCP<Algorithm<Adapter> > &algorithm)
@@ -668,7 +668,7 @@ template <typename Adapter>
 
 template <typename Adapter>
   PartitioningSolution<Adapter>::PartitioningSolution(
-    RCP<const Environment> &env,
+    const RCP<const Environment> &env,
     RCP<const Comm<int> > &comm,
     RCP<const IdentifierMap<user_t> > &idMap, int nUserWeights,
     ArrayView<ArrayRCP<part_t> > reqPartIds,

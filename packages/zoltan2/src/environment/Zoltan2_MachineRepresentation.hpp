@@ -17,16 +17,14 @@ private:
     int numProcs;
 
     pcoord_t **procCoords;
-    RCP<const Comm<int> > comm;
+    const RCP<const Comm<int> > comm;
 
 public:
     /*! \brief Constructor MachineRepresentation Class
      *  \param comm_ Communication object.
      */
-    MachineRepresentation(RCP<const Comm<int> > comm_):
-        networkDim(0), numProcs(comm_->getSize()), procCoords(0), 
-        comm(comm_)
-    {
+    MachineRepresentation(const RCP<const Comm<int> > &comm_):
+      networkDim(0), numProcs(comm_->getSize()), procCoords(0), comm(comm_){
         // WIll need this constructor to be specific to RAAMP (MD).
         // Will need a default constructor using, e.g., GeometricGenerator
         // or nothing at all, for when RAAMP is not available as TPL.
@@ -66,7 +64,7 @@ public:
     /*! \brief Constructor MachineRepresentation Class
      *  \param comm_ Communication object.
      */
-    MachineRepresentation(RCP<Comm<int> > comm_):
+    MachineRepresentation(const RCP<Comm<int> > &comm_):
         networkDim(0), numProcs(comm_->getSize()), procCoords(0), comm(comm_){
         // WIll need this constructor to be specific to RAAMP (MD).
         // Will need a default constructor using, e.g., GeometricGenerator
