@@ -701,6 +701,10 @@ FixedHashTable () :
   maxKey_ (std::numeric_limits<KeyType>::is_integer ?
            std::numeric_limits<KeyType>::min () :
            -std::numeric_limits<KeyType>::max ()),
+  minVal_ (std::numeric_limits<ValueType>::max ()),
+  maxVal_ (std::numeric_limits<ValueType>::is_integer ?
+           std::numeric_limits<ValueType>::min () :
+           -std::numeric_limits<ValueType>::max ()),
   checkedForDuplicateKeys_ (true), // it's an empty table; no need to check
   hasDuplicateKeys_ (false)
 {
@@ -717,10 +721,14 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys) :
   rawVal_ (NULL),
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   invalidValue_ (Teuchos::OrdinalTraits<ValueType>::invalid ()),
-  minKey_ (std::numeric_limits<KeyType>::max ()),
+  minKey_ (std::numeric_limits<KeyType>::max ()), // to be set in init()
   maxKey_ (std::numeric_limits<KeyType>::is_integer ?
            std::numeric_limits<KeyType>::min () :
-           -std::numeric_limits<KeyType>::max ()),
+           -std::numeric_limits<KeyType>::max ()), // to be set in init()
+  minVal_ (0),
+  maxVal_ (keys.size () == 0 ?
+           static_cast<ValueType> (0) :
+           static_cast<ValueType> (keys.size () - 1)),
   checkedForDuplicateKeys_ (false),
   hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
 {
@@ -730,22 +738,8 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys) :
   const ValueType startingValue = static_cast<ValueType> (0);
   host_input_keys_type keys_k (keys.size () == 0 ? NULL : keys.getRawPtr (),
                                keys.size ());
-  const KeyType initMinKey = std::numeric_limits<KeyType>::max ();
-  // min() for a floating-point type returns the minimum _positive_
-  // normalized value.  This is different than for integer types.
-  // lowest() is new in C++11 and returns the least value, always
-  // negative for signed finite types.
-  //
-  // mfh 23 May 2015: I have heard reports that
-  // std::numeric_limits<int>::lowest() does not exist with the Intel
-  // compiler.  I'm not sure if the users in question actually enabled
-  // C++11.  However, it's easy enough to work around this issue.  The
-  // standard floating-point types are signed and have a sign bit, so
-  // lowest() is just -max().  For integer types, we can use min()
-  // instead.
-  const KeyType initMaxKey = std::numeric_limits<KeyType>::is_integer ?
-    std::numeric_limits<KeyType>::min () :
-    -std::numeric_limits<KeyType>::max ();
+  const KeyType initMinKey = this->minKey_;
+  const KeyType initMaxKey = this->maxKey_;
   this->init (keys_k, startingValue, initMinKey, initMaxKey);
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -766,6 +760,10 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   maxKey_ (std::numeric_limits<KeyType>::is_integer ?
            std::numeric_limits<KeyType>::min () :
            -std::numeric_limits<KeyType>::max ()),
+  minVal_ (startingValue),
+  maxVal_ (keys.size () == 0 ?
+           startingValue :
+           static_cast<ValueType> (startingValue + keys.size () - 1)),
   checkedForDuplicateKeys_ (false),
   hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
 {
@@ -810,6 +808,10 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   maxKey_ (std::numeric_limits<KeyType>::is_integer ?
            std::numeric_limits<KeyType>::min () :
            -std::numeric_limits<KeyType>::max ()),
+  minVal_ (std::numeric_limits<ValueType>::max ()),
+  maxVal_ (std::numeric_limits<ValueType>::is_integer ?
+           std::numeric_limits<ValueType>::min () :
+           -std::numeric_limits<ValueType>::max ()),
   checkedForDuplicateKeys_ (false),
   hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
 {
@@ -1066,6 +1068,8 @@ init (const host_input_keys_type& keys,
 
   // Fill in the hash table.
   FillPairsResult<KeyType> result (initMinKey, initMaxKey);
+  ValueType minVal = minVal_;
+  ValueType maxVal = maxVal_;
   for (offset_type k = 0; k < numKeys; ++k) {
     typedef typename hash_type::result_type hash_value_type;
     const KeyType key = keys[k];
@@ -1076,6 +1080,12 @@ init (const host_input_keys_type& keys,
       result.minKey_ = key;
     }
     const ValueType theVal = vals[k];
+    if (theVal > maxVal) {
+      maxVal = theVal;
+    }
+    if (theVal < minVal) {
+      minVal = theVal;
+    }
     const hash_value_type hashVal = hash_type::hashFunc (key, size);
 
     const offset_type offset = curRowStart[hashVal];
@@ -1104,6 +1114,8 @@ init (const host_input_keys_type& keys,
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   minKey_ = result.minKey_;
   maxKey_ = result.maxKey_;
+  minVal_ = minVal;
+  maxVal_ = maxVal;
 }
 
 template <class KeyType, class ValueType, class DeviceType>

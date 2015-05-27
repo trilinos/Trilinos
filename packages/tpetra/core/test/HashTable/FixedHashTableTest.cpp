@@ -185,9 +185,13 @@ namespace { // (anonymous)
 
         if (actualVal == Teuchos::OrdinalTraits<ValueType>::invalid ()) {
           ++badCount;
+          out << "get(key=" << key << ") = invalid, should have been "
+              << expectedVal << endl;
         }
         else if (testValues && actualVal != expectedVal) {
           ++badCount;
+          out << "get(key=" << key << ") = " << actualVal
+              << ", should have been " << expectedVal << endl;
         }
       }
 
@@ -319,6 +323,8 @@ namespace { // (anonymous)
 
     TEST_EQUALITY( keys_h(0), table->minKey () );
     TEST_EQUALITY( keys_h(numKeys-1), table->maxKey () );
+    TEST_EQUALITY( startingValue, table->minVal () );
+    TEST_EQUALITY( static_cast<ValueType> (startingValue + numKeys - 1), table->maxVal () );
     TEST_EQUALITY( numKeys, table->numPairs () );
 
     bool duplicateKeys = false;
@@ -388,6 +394,8 @@ namespace { // (anonymous)
 
     TEST_EQUALITY( keys_h(4), table->minKey () );
     TEST_EQUALITY( keys_h(3), table->maxKey () );
+    TEST_EQUALITY( startingValue, table->minVal () );
+    TEST_EQUALITY( static_cast<ValueType> (startingValue + numKeys - 1), table->maxVal () );
     TEST_EQUALITY( numKeys, table->numPairs () );
 
     bool duplicateKeys = false;
@@ -463,9 +471,11 @@ namespace { // (anonymous)
     }
 
     // We still require that the table correctly report the min and
-    // max keys, even if there were duplicates.
+    // max keys and values, even if there were duplicate keys.
     TEST_EQUALITY( keys_h(4), table->minKey () );
     TEST_EQUALITY( keys_h(3), table->maxKey () );
+    TEST_EQUALITY( startingValue, table->minVal () );
+    TEST_EQUALITY( static_cast<ValueType> (startingValue + numKeys - 1), table->maxVal () );
     // The table is supposed to count duplicate keys separately.
     TEST_EQUALITY( numKeys, table->numPairs () );
 
@@ -474,9 +484,12 @@ namespace { // (anonymous)
     // This table actually has duplicate keys.
     TEST_EQUALITY_CONST( duplicateKeys, true );
 
-    // Testing for duplicates should not affect the min and max keys.
+    // Testing for duplicates should not affect the min and max keys
+    // or values.
     TEST_EQUALITY( keys_h(4), table->minKey () );
     TEST_EQUALITY( keys_h(3), table->maxKey () );
+    TEST_EQUALITY( startingValue, table->minVal () );
+    TEST_EQUALITY( static_cast<ValueType> (startingValue + numKeys - 1), table->maxVal () );
     // The table is supposed to count duplicate keys separately.
     // Asking if the table has duplicate keys must NOT merge those
     // keys.
@@ -518,7 +531,8 @@ namespace { // (anonymous)
           const keys_type& keys,
           const vals_type& vals,
           const std::string& outDeviceName,
-          const std::string& inDeviceName)
+          const std::string& inDeviceName,
+          const bool testValues = true)
     {
       using std::endl;
       typedef typename InDeviceType::execution_space execution_space;
@@ -550,6 +564,8 @@ namespace { // (anonymous)
 
       TEST_EQUALITY( inTable.minKey (), outTable->minKey () );
       TEST_EQUALITY( inTable.maxKey (), outTable->maxKey () );
+      TEST_EQUALITY( inTable.minVal (), outTable->minVal () );
+      TEST_EQUALITY( inTable.maxVal (), outTable->maxVal () );
       TEST_EQUALITY( inTable.numPairs (), outTable->numPairs () );
 
       // Make sure the new table has duplicate keys if and only if the
@@ -562,6 +578,8 @@ namespace { // (anonymous)
       // doesn't affect the min or max keys.
       TEST_EQUALITY( inTable.minKey (), outTable->minKey () );
       TEST_EQUALITY( inTable.maxKey (), outTable->maxKey () );
+      TEST_EQUALITY( inTable.minVal (), outTable->minVal () );
+      TEST_EQUALITY( inTable.maxVal (), outTable->maxVal () );
       TEST_EQUALITY( inTable.numPairs (), outTable->numPairs () );
 
       Kokkos::View<KeyType*, Kokkos::LayoutLeft, OutDeviceType> keys_out ("keys", keys.dimension_0 ());
@@ -569,7 +587,7 @@ namespace { // (anonymous)
       Kokkos::View<ValueType*, Kokkos::LayoutLeft, OutDeviceType> vals_out ("vals", vals.dimension_0 ());
       Kokkos::deep_copy (vals_out, vals);
 
-      success = TestFixedHashTable<KeyType, ValueType, OutDeviceType>::testKeys (out, *outTable, keys_out, vals_out);
+      success = TestFixedHashTable<KeyType, ValueType, OutDeviceType>::testKeys (out, *outTable, keys_out, vals_out, testValues);
       TEST_EQUALITY_CONST( success, true );
     }
   };
@@ -775,10 +793,17 @@ namespace { // (anonymous)
     // This table DOES have duplicate keys.
     TEST_EQUALITY_CONST( duplicateKeys, true );
 
+    // For tables with duplicate keys, we can't promise which value we
+    // actually get when we look up one of those keys.
+    const bool testValues = false;
     {
       Teuchos::OSTab tab1 (out);
-      success = TestFixedHashTable<KeyType, ValueType, DeviceType>::testKeys (out, *table, keys, vals);
-      TEST_EQUALITY_CONST( success, true );
+      const bool lclSuccess =
+        TestFixedHashTable<KeyType, ValueType, DeviceType>::testKeys (out, *table,
+                                                                      keys, vals,
+                                                                      testValues);
+      TEST_EQUALITY_CONST( lclSuccess, true );
+      success = success && lclSuccess;
     }
 
     // Print a warning if only one execution space is enabled in
@@ -793,7 +818,7 @@ namespace { // (anonymous)
       TestCopyCtor<KeyType, ValueType, Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>,
         DeviceType>::test (out, success, *table, keys, vals,
                            "Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>",
-                           typeid(DeviceType).name ());
+                           typeid (DeviceType).name (), testValues);
       testedAtLeastOnce = true;
     }
 #endif // KOKKOS_HAVE_SERIAL
@@ -804,7 +829,7 @@ namespace { // (anonymous)
       TestCopyCtor<KeyType, ValueType, Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
         DeviceType>::test (out, success, *table, keys, vals,
                            "Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>",
-                           typeid(DeviceType).name ());
+                           typeid (DeviceType).name (), testValues);
       testedAtLeastOnce = true;
     }
 #endif // KOKKOS_HAVE_OPENMP
@@ -815,7 +840,7 @@ namespace { // (anonymous)
       TestCopyCtor<KeyType, ValueType, Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
         DeviceType>::test (out, success, *table, keys, vals,
                            "Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>",
-                           typeid(DeviceType).name ());
+                           typeid (DeviceType).name (), testValues);
       testedAtLeastOnce = true;
     }
 #endif // KOKKOS_HAVE_PTHREAD
@@ -827,7 +852,7 @@ namespace { // (anonymous)
         TestCopyCtor<KeyType, ValueType, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
           DeviceType>::test (out, success, *table, keys, vals,
                              "Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>",
-                             typeid(DeviceType).name ());
+                             typeid (DeviceType).name (), testValues);
         testedAtLeastOnce = true;
       }
       if (! std::is_same<typename DeviceType::memory_space, Kokkos::CudaUVMSpace>::value) {
@@ -835,7 +860,7 @@ namespace { // (anonymous)
         TestCopyCtor<KeyType, ValueType, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
           DeviceType>::test (out, success, *table, keys, vals,
                              "Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>",
-                             typeid(DeviceType).name ());
+                             typeid(DeviceType).name (), testValues);
         testedAtLeastOnce = true;
       }
     }
@@ -872,7 +897,8 @@ namespace { // (anonymous)
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, ContigKeysStartingValue, LO, GO, DEVICE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, NoncontigKeysStartingValue, LO, GO, DEVICE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, DuplicateKeys, LO, GO, DEVICE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, CopyCtorNoDupKeys, LO, GO, DEVICE )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, CopyCtorNoDupKeys, LO, GO, DEVICE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, CopyCtorDupKeys, LO, GO, DEVICE )
 
   // The typedefs below are there because macros don't like arguments
   // with commas in them.

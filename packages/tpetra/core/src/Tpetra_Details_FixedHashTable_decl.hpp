@@ -172,6 +172,8 @@ public:
     this->invalidValue_ = src.invalidValue_;
     this->minKey_ = src.minKey_;
     this->maxKey_ = src.maxKey_;
+    this->minVal_ = src.minVal_;
+    this->maxVal_ = src.maxVal_;
     this->checkedForDuplicateKeys_ = src.checkedForDuplicateKeys_;
     this->hasDuplicateKeys_ = src.hasDuplicateKeys_;
 
@@ -221,11 +223,11 @@ public:
     return val_.dimension_0 ();
   }
 
-  /// \brief The minimum key.
+  /// \brief The minimum key in the table.
   ///
-  /// This function does not throw, and always returns a value.  If
-  /// the table is empty, the value is undefined.  Furthermore, if the
-  /// table is empty, we do not promise that minKey() <= maxKey().
+  /// This function does not throw.  If the table is empty, the return
+  /// value is undefined.  Furthermore, if the table is empty, we do
+  /// not promise that minKey() <= maxKey().
   ///
   /// This class assumes that both keys and values are numbers.
   /// Therefore, keys are less-than comparable.
@@ -233,11 +235,11 @@ public:
     return minKey_;
   }
 
-  /// \brief The maximum key.
+  /// \brief The maximum key in the table.
   ///
-  /// This function does not throw, and always returns a value.  If
-  /// the table is empty, the value is undefined.  Furthermore, if the
-  /// table is empty, we do not promise that minKey() <= maxKey().
+  /// This function does not throw.  If the table is empty, the return
+  /// value is undefined.  Furthermore, if the table is empty, we do
+  /// not promise that minKey() <= maxKey().
   ///
   /// This class assumes that both keys and values are numbers.
   /// Therefore, keys are less-than comparable.
@@ -245,11 +247,40 @@ public:
     return maxKey_;
   }
 
+  /// \brief The minimum value in the table.
+  ///
+  /// A "value" is the result of calling get() on a key.
+  ///
+  /// This function does not throw.  If the table is empty, the return
+  /// value is undefined.  Furthermore, if the table is empty, we do
+  /// not promise that minVal() <= maxVal().
+  KOKKOS_INLINE_FUNCTION ValueType minVal () const {
+    return minVal_;
+  }
+
+  /// \brief The maximum value in the table.
+  ///
+  /// A "value" is the result of calling get() on a key.
+  ///
+  /// This function does not throw.  If the table is empty, the return
+  /// value is undefined.  Furthermore, if the table is empty, we do
+  /// not promise that minVal() <= maxVal().
+  KOKKOS_INLINE_FUNCTION ValueType maxVal () const {
+    return maxVal_;
+  }
+
   /// \brief Whether the table has any duplicate keys.
   ///
   /// This is a nonconst function because it requires running a Kokkos
   /// kernel to search the keys.  The result of the first call is
   /// cached and reused on subsequent calls.
+  ///
+  /// This function is the "local" (to an MPI process) version of
+  /// Tpetra::Map::isOneToOne.  If a Tpetra::Map has duplicate keys
+  /// (global indices) on any one MPI process, then it is most
+  /// certainly not one to one.  The opposite may not necessarily be
+  /// true, because a Tpetra::Map might have duplicate global indices
+  /// that occur on different MPI processes.
   bool hasDuplicateKeys ();
 
   //! Implementation of Teuchos::Describable
@@ -293,13 +324,27 @@ private:
 
   /// \brief Minimum key (computed in init()).
   ///
-  /// This class assumes that keys are less-than comparable.
+  /// In Tpetra::Map, this corresponds to the minimum global index
+  /// (local to the MPI process).
   KeyType minKey_;
 
   /// \brief Maximum key (computed in init()).
   ///
-  /// This class assumes that keys are less-than comparable.
+  /// In Tpetra::Map, this corresponds to the maximum global index
+  /// (local to the MPI process).
   KeyType maxKey_;
+
+  /// \brief Minimum value.
+  ///
+  /// In Tpetra::Map, this corresponds to the minimum local index
+  /// (local to the MPI process).
+  ValueType minVal_;
+
+  /// \brief Maximum value.
+  ///
+  /// In Tpetra::Map, this corresponds to the maximum local index
+  /// (local to the MPI process).
+  ValueType maxVal_;
 
   /// \brief Whether the table has checked for duplicate keys.
   ///
