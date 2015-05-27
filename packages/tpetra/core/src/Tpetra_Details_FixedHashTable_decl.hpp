@@ -170,6 +170,8 @@ public:
     this->rawVal_ = val.ptr_on_device ();
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
     this->invalidValue_ = src.invalidValue_;
+    this->minKey_ = src.minKey_;
+    this->maxKey_ = src.maxKey_;
     this->checkedForDuplicateKeys_ = src.checkedForDuplicateKeys_;
     this->hasDuplicateKeys_ = src.hasDuplicateKeys_;
 
