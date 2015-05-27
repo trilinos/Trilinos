@@ -503,7 +503,7 @@ namespace Thyra {
 #endif
 
     // -------------------------------------------------------------------------
-    // Preconditioner construction - I.b (Vanka smoothers for unfiltered matrix)
+    // Preconditioner construction - I.b (smoothers for unfiltered matrix)
     // -------------------------------------------------------------------------
     std::string   smootherType   = MUELU_GPD("smoother: type", std::string, "vanka");
     ParameterList smootherParams;
@@ -786,40 +786,41 @@ namespace Thyra {
 
     } else if (type == "braess-sarazin") {
       // Define smoother/solver for BraessSarazin
+      // SC omega = 1.7;
+      SC omega = 1.0;
+
       RCP<SchurComplementFactory> schurFact = rcp(new SchurComplementFactory());
-      // schurFact->SetParameter("omega", ParameterEntry(BS_omega));
-      schurFact->SetParameter("omega",  ParameterEntry(1.7));
+      schurFact->SetParameter("omega",  ParameterEntry(omega));
       schurFact->SetFactory  ("A",      MueLu::NoFactory::getRCP());
 
-      RCP<SmootherPrototype> braessPrototype = Teuchos::null;
-#if 0
-      //Smoother Factory, using SFact as a factory for A
-      std::string ifpackSCType;
-      ParameterList ifpackSCList;
-      ifpackSCList.set("relaxation: sweeps", SC_nSweeps );
-      ifpackSCList.set("relaxation: damping factor", SC_omega );
-      ifpackSCType = "RELAXATION";
-      ifpackSCList.set("relaxation: type", "Gauss-Seidel");
-      smoProtoSC     = rcp( new TrilinosSmoother(ifpackSCType, ifpackSCList, 0) );
-      smoProtoSC->SetFactory("A", SFact);
+      // Schur complement solver
+      RCP<SmootherPrototype> schurSmootherPrototype;
+#if 1
+      std::string   schurSmootherType = "RELAXATION";
+      ParameterList schurSmootherParams;
+      schurSmootherParams.set("relaxation: type",           "Gauss-Seidel");
+      // schurSmootherParams.set("relaxation: type",           "Symmetric Gauss-Seidel");
+      schurSmootherParams.set("relaxation: sweeps",         5);
+      schurSmootherParams.set("relaxation: damping factor", omega);
+      schurSmootherPrototype = rcp(new TrilinosSmoother(schurSmootherType, schurSmootherParams));
 #else
-      braessPrototype = rcp(new DirectSolver());
-      braessPrototype->SetFactory("A", schurFact);
+      schurSmootherPrototype = rcp(new DirectSolver());
 #endif
+      schurSmootherPrototype->SetFactory("A", schurFact);
 
-      RCP<SmootherFactory> braessFact = rcp(new SmootherFactory(braessPrototype));
+      RCP<SmootherFactory> schurSmootherFact = rcp(new SmootherFactory(schurSmootherPrototype));
 
       // Define temporary FactoryManager that is used as input for BraessSarazin smoother
       RCP<FactoryManager> braessManager = rcp(new FactoryManager());
-      braessManager->SetFactory("A",            schurFact);     // SchurComplement operator for correction step (defined as "A")
-      braessManager->SetFactory("Smoother",     braessFact);    // solver/smoother for correction step
-      braessManager->SetFactory("PreSmoother",  braessFact);
-      braessManager->SetFactory("PostSmoother", braessFact);
-      braessManager->SetIgnoreUserData(true);                   // always use data from factories defined in factory manager
+      braessManager->SetFactory("A",            schurFact);             // SchurComplement operator for correction step (defined as "A")
+      braessManager->SetFactory("Smoother",     schurSmootherFact);     // solver/smoother for correction step
+      braessManager->SetFactory("PreSmoother",  schurSmootherFact);
+      braessManager->SetFactory("PostSmoother", schurSmootherFact);
+      braessManager->SetIgnoreUserData(true);                           // always use data from factories defined in factory manager
 
       smootherPrototype = rcp(new BraessSarazinSmoother());
-      smootherPrototype->SetParameter("Sweeps",         ParameterEntry(MUELU_GPD("Sweeps",          int,    100)));
-      smootherPrototype->SetParameter("Damping factor", ParameterEntry(MUELU_GPD("Damping factor",  double, 1.7)));
+      smootherPrototype->SetParameter("Sweeps",         ParameterEntry(MUELU_GPD("Sweeps",          int,    1)));
+      smootherPrototype->SetParameter("Damping factor", ParameterEntry(MUELU_GPD("Damping factor",  double, omega)));
       rcp_dynamic_cast<BraessSarazinSmoother>(smootherPrototype)->AddFactoryManager(braessManager, 0);   // set temporary factory manager in BraessSarazin smoother
     }
 
