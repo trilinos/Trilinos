@@ -174,9 +174,24 @@ public:
     /***************************************************************************************************/
     // FINISH INEXACT OBJECTIVE FUNCTION COMPUTATION
     /***************************************************************************************************/
+    // If constraints are turned on, then compute a different predicted reduction
+    if (pObj.isConActivated()) {
+      xupdate_->set(x);
+      xupdate_->axpy(-1.0,g.dual());
+      pObj.project(*xupdate_);
+      xupdate_->axpy(-1.0,x);
+      xupdate_->scale(-1.0);
+ 
+      pObj.reducedHessVec(*Hs_,s,x,xupdate_->dual(),x,tol);
+      pRed_  = -0.5*s.dot(Hs_->dual());
+
+      Hs_->set(g);
+      pObj.pruneActive(*Hs_,xupdate_->dual(),x);
+      pRed_ -= s.dot(Hs_->dual());
+    }
 
     // Compute Ratio of Actual and Predicted Reduction
-    aRed -= eps_*((1.0 < std::abs(fold1)) ? 1.0 : std::abs(fold1));
+    aRed  -= eps_*((1.0 < std::abs(fold1)) ? 1.0 : std::abs(fold1));
     pRed_ -= eps_*((1.0 < std::abs(fold1)) ? 1.0 : std::abs(fold1));
     Real rho  = 0.0; 
     if ((std::abs(aRed) < eps_) && (std::abs(pRed_) < eps_)) {
