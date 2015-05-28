@@ -300,7 +300,7 @@ public:
 
   /** \brief Finite-difference check for the application of the adjoint of constraint Jacobian.
 
-      Details here.
+      Details here. (This function should be deprecated)
 
   */
   virtual std::vector<std::vector<Real> > checkApplyAdjointJacobian(const Vector<Real> &x,
@@ -310,6 +310,35 @@ public:
                                                                     const bool printToStream = true,
                                                                     std::ostream & outStream = std::cout,
                                                                     const int numSteps = ROL_NUM_CHECKDERIV_STEPS ) ;
+
+  /* \brief Check the consistency of the Jacobian and its adjoint. Verify that the deviation 
+     \f$|\langle w^\top,Jv\rangle-\langle adj(J)w,v|\f$ is sufficiently small. 
+
+     @param[in]      w              is a dual constraint-space vector \f$w\in \mathcal{C}^\ast\f$
+     @param[in]      v              is an optimization space vector \f$v\in \mathcal{X}\f$
+     @param[in]      x              is the constraint argument \f$x\in\mathcal{X}\f$
+     @param[in]      printToStream  is is a flag that turns on/off output
+     @param[in]      outStream      is the output stream
+
+     Returns the deviation.
+ */
+
+  virtual Real checkAdjointConsistencyJacobian(const Vector<Real> &w,
+                                               const Vector<Real> &v,
+                                               const Vector<Real> &x,
+                                               const bool printToStream = true,
+                                               std::ostream & outStream = std::cout) {
+    return checkAdjointConsistencyJacobian(w, v, x, w.dual(), v.dual(), printToStream, outStream);
+  }
+
+  virtual Real checkAdjointConsistencyJacobian(const Vector<Real> &w,
+                                               const Vector<Real> &v,
+                                               const Vector<Real> &x,
+                                               const Vector<Real> &dualw, 
+                                               const Vector<Real> &dualv, 
+                                               const bool printToStream = true,
+                                               std::ostream & outStream = std::cout);
+
 
   /** \brief Finite-difference check for the application of the adjoint of constraint Hessian.
 

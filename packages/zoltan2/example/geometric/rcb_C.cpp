@@ -147,14 +147,8 @@ int main(int argc, char *argv[])
 
   // Create a Zoltan2 partitioning problem
 
-#ifdef HAVE_ZOLTAN2_MPI                   
-  Zoltan2::PartitioningProblem<inputAdapter_t> *problem1 = 
-           new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia1, &params, 
-                                                            MPI_COMM_WORLD);
-#else
   Zoltan2::PartitioningProblem<inputAdapter_t> *problem1 =
            new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia1, &params);
-#endif
    
   // Solve the problem
 
@@ -205,14 +199,8 @@ int main(int argc, char *argv[])
 
   // Create a Zoltan2 partitioning problem
 
-#ifdef HAVE_ZOLTAN2_MPI                   
-  Zoltan2::PartitioningProblem<inputAdapter_t> *problem2 = 
-           new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia2, &params,
-                                                            MPI_COMM_WORLD);
-#else
   Zoltan2::PartitioningProblem<inputAdapter_t> *problem2 =
            new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia2, &params);
-#endif
 
   // Solve the problem
 
@@ -274,14 +262,8 @@ int main(int argc, char *argv[])
 
   // Create a Zoltan2 partitioning problem.
 
-#ifdef HAVE_ZOLTAN2_MPI                   
-  Zoltan2::PartitioningProblem<inputAdapter_t> *problem3 = 
-           new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia3, &params,
-                                                            MPI_COMM_WORLD);
-#else
   Zoltan2::PartitioningProblem<inputAdapter_t> *problem3 =
            new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia3, &params);
-#endif
 
   // Solve the problem
 

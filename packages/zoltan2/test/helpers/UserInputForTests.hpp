@@ -377,18 +377,13 @@ RCP<UserInputForTests::xcrsGraph_t> UserInputForTests::getUIXpetraCrsGraph()
 
 RCP<UserInputForTests::xVector_t> UserInputForTests::getUIXpetraVector()
 {
-  RCP<const tVector_t> tV = getUITpetraVector();
-  RCP<const xVector_t> xV =
-    Zoltan2::XpetraTraits<tVector_t>::convertToXpetra(tV);
-  return rcp_const_cast<xVector_t>(xV);
+  return Zoltan2::XpetraTraits<tVector_t>::convertToXpetra(getUITpetraVector());
 }
 
 RCP<UserInputForTests::xMVector_t> UserInputForTests::getUIXpetraMultiVector(int nvec)
 {
-  RCP<const tMVector_t> tMV = getUITpetraMultiVector(nvec);
-  RCP<const xMVector_t> xMV =
-    Zoltan2::XpetraTraits<tMVector_t>::convertToXpetra(tMV);
-  return rcp_const_cast<xMVector_t>(xMV);
+  RCP<tMVector_t> tMV = getUITpetraMultiVector(nvec);
+  return Zoltan2::XpetraTraits<tMVector_t>::convertToXpetra(tMV);
 }
 
 #ifdef HAVE_EPETRA_DATA_TYPES
@@ -527,9 +522,7 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
   }
 
   if (aok){
-    RCP<const xcrsMatrix_t> xm =
-      Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
-    xM_ = rcp_const_cast<xcrsMatrix_t>(xm);
+    xM_ = Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
   }
   else{
     if (tcomm_->getRank() == 0)
@@ -733,9 +726,7 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
     TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());
   }
 
-  RCP<const xcrsMatrix_t> xm =
-    Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
-  xM_ = rcp_const_cast<xcrsMatrix_t>(xm);
+  xM_ = Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
 
   // Compute the coordinates for the matrix rows.
 
@@ -853,9 +844,7 @@ void UserInputForTests::readZoltanTestData(string path, string testData,
     }
   }
 
-  RCP<const xcrsMatrix_t> xm =
-    Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
-  xM_ = rcp_const_cast<xcrsMatrix_t>(xm);
+  xM_ = Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
 }
 
 void UserInputForTests::getUIChacoGraph(FILE *fptr, string fname,

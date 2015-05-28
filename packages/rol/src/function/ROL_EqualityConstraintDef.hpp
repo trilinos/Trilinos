@@ -540,6 +540,38 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointJacob
   return ajvCheck;
 } // checkApplyAdjointJacobian
 
+template <class Real>
+Real EqualityConstraint<Real>::checkAdjointConsistencyJacobian(const Vector<Real> &w,
+                                                               const Vector<Real> &v,
+                                                               const Vector<Real> &x,
+                                                               const Vector<Real> &dualw,
+                                                               const Vector<Real> &dualv,
+                                                               const bool printToStream,
+                                                               std::ostream & outStream) {
+  Real tol = ROL_EPSILON;
+
+  Teuchos::RCP<Vector<Real> > Jv = dualw.clone();
+  Teuchos::RCP<Vector<Real> > Jw = dualv.clone();
+  
+  applyJacobian(*Jv,v,x,tol);
+  applyAdjointJacobian(*Jw,w,x,tol);
+
+  Real vJw = v.dot(Jw->dual());
+  Real wJv = w.dot(Jv->dual());
+
+  Real diff = std::abs(wJv-vJw);
+
+  if ( printToStream ) {
+    std::stringstream hist;
+    hist << std::scientific << std::setprecision(8);
+    hist << "\nTest Consistency of Jacobian and its adjoint: \n  |<w,Jv> - <adj(J)w,v>| = " 
+         << diff << "\n";
+    hist << "  |<w,Jv>|               = " << std::abs(wJv) << "\n";
+    hist << "  Relative Error         = " << diff / (std::abs(wJv)+ROL_UNDERFLOW) << "\n";
+    outStream << hist.str();
+  }
+  return diff;
+} // checkAdjointConsistencyJacobian
 
 template <class Real>
 std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointHessian(const Vector<Real> &x,
