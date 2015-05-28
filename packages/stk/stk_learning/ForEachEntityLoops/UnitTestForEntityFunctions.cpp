@@ -1172,9 +1172,10 @@ double access_field_data_using_raw_bucket_loops_access_bucket_outside(stk::mesh:
         for(stk::mesh::Bucket *bucket : buckets)
         {
             double *nodeData = stk::mesh::field_data(nodeField, *bucket);
+            unsigned numScalarsPerEntity = stk::mesh::field_scalars_per_entity(nodeField, *bucket);
             for(size_t j=0; j<bucket->size(); j++)
             {
-                sum += nodeData[j];
+                sum += nodeData[j] * numScalarsPerEntity;
             }
         }
     }
@@ -1193,7 +1194,8 @@ double access_field_data_using_raw_bucket_loops_access_bucket_inside_with_offset
             for(size_t j=0; j<bucket->size(); j++)
             {
                 double *nodeData = stk::mesh::field_data(nodeField, *bucket, j);
-                sum += *nodeData;
+                unsigned numScalarsPerEntity = stk::mesh::field_scalars_per_entity(nodeField, *bucket);
+                sum += *nodeData * numScalarsPerEntity;
             }
         }
     }
@@ -1212,7 +1214,8 @@ double access_field_data_using_raw_bucket_loops_access_bucket_inside(stk::mesh::
             for(stk::mesh::Entity node : *bucket)
             {
                 double *nodeData = stk::mesh::field_data(nodeField, node);
-                sum += *nodeData;
+                unsigned numScalarsPerEntity = stk::mesh::field_scalars_per_entity(nodeField, node);
+                sum += *nodeData * numScalarsPerEntity;
             }
         }
     }
@@ -1230,7 +1233,8 @@ double access_field_data_using_lambda_for_entity_loops(BulkDataForEntityTemplate
             [&nodeField](double &sum, const stk::mesh::BulkData& mesh, stk::mesh::Entity node, const stk::mesh::MeshIndex &meshIndex, ...)
             {
                 double *nodeData = stk::mesh::field_data(nodeField, *meshIndex.bucket, meshIndex.bucket_ordinal);
-                sum += *nodeData;
+                unsigned numScalarsPerEntity = stk::mesh::field_scalars_per_entity(nodeField, *meshIndex.bucket);
+                sum += *nodeData * numScalarsPerEntity;
             }
         );
         //END_LOOP_ABSTRACTION_WITH_SUM
