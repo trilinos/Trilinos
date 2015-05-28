@@ -375,6 +375,7 @@ namespace Thyra {
       A_21_crs->insertGlobalValues(newRowElem2[row], newInds,                        vals);
       A_22_crs->insertGlobalValues(newRowElem2[row], Array<LO>(1, newRowElem2[row]), smallVal);
     }
+    A_21_crs->fillComplete(tmp_A_21->getDomainMap(), newRangeMap2);
     A_22_crs->fillComplete(newDomainMap2,            newRangeMap2);
 #else
     RCP<Matrix>    A_22     = Teuchos::null;
