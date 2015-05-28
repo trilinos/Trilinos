@@ -492,6 +492,14 @@ namespace Tpetra {
     minMyGID_ = indexBase_;
     maxMyGID_ = indexBase_;
 
+    // NOTE (mfh 27 May 2015): While finding the initial contiguous
+    // GID range requires looking at all the GIDs in the range,
+    // dismissing an interval of GIDs only requires looking at the
+    // first and last GIDs.  Thus, we could do binary search backwards
+    // from the end in order to catch the common case of a contiguous
+    // interval followed by noncontiguous entries.  On the other hand,
+    // we could just expose this case explicitly as yet another Map
+    // constructor, and avoid the trouble of detecting it.
     if (numLocalElements_ > 0) {
       // Find contiguous GID range, with the restriction that the
       // beginning of the range starts with the first entry.  While
