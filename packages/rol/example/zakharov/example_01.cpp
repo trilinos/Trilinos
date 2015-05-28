@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
   int errorFlag  = 0;
 
   // *** Example body.
-
+ 
   try {
 
     int dim = 10; // Set problem dimension. 
@@ -81,6 +81,7 @@ int main(int argc, char *argv[]) {
     Teuchos::ParameterList parlist;
     // Enumerations
     parlist.set("Descent Type",                           "Nonlinear-CG");
+    parlist.set("Nonlinear CG Type",                      "Oren-Luenberger");
     parlist.set("Linesearch Type",                        "Cubic Interpolation");
     parlist.set("Linesearch Curvature Condition",         "Wolfe");
     // Linesearch Parameters
