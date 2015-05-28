@@ -81,10 +81,17 @@ namespace Stokhos {
 
     //! Constructor
     KOKKOS_INLINE_FUNCTION
-    DynamicStridedStorage(const ordinal_type& sz,
+    DynamicStridedStorage(const ordinal_type& sz = 1,
                           const value_type& x = value_type(0.0)) :
       sz_(sz), stride_(1), is_owned_(true) {
       coeff_ = ds::get_and_fill(sz_, x);
+    }
+
+    //! Constructor from array
+    KOKKOS_INLINE_FUNCTION
+    DynamicStridedStorage(const ordinal_type& sz, const value_type* x) :
+      sz_(sz), stride_(1), is_owned_(true) {
+      coeff_ = ds::get_and_fill(x, sz_);
     }
 
     //! Constructor for creating a view

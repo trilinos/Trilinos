@@ -24,6 +24,8 @@ APPEND_SET(HEADERS
   Piro_Version.hpp
   Piro_Epetra_MatrixFreeDecorator.hpp
   Piro_Epetra_InvertMassMatrixDecorator.hpp
+  Piro_InvertMassMatrixDecorator.hpp
+  Piro_InvertMassMatrixDecorator_Def.hpp
   Piro_Provider.hpp
   Piro_ProviderBase.hpp
   Piro_ProviderHelpers.hpp
@@ -96,7 +98,7 @@ ENDIF()
 # Optional Rythmos Dependency
 IF (Piro_ENABLE_Rythmos)
   APPEND_SET(HEADERS
-    Piro_Epetra_RythmosSolver.hpp
+    Piro_Epetra_RythmosSolver.hpp 
     Piro_RythmosSolver.hpp
     Piro_RythmosStepperFactory.hpp
     Piro_RythmosSolver_Def.hpp

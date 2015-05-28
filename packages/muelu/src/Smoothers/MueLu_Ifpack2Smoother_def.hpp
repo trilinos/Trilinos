@@ -152,8 +152,9 @@ namespace MueLu {
 
           ArrayRCP<LocalOrdinal> blockSeeds(numRows, Teuchos::OrdinalTraits<LocalOrdinal>::invalid());
 
+          size_t numBlocks = 0;
           for (size_t rowOfB = numVels; rowOfB < numVels+numPres; ++rowOfB)
-            blockSeeds[rowOfB] = rowOfB - numVels;
+            blockSeeds[rowOfB] = numBlocks++;
 
           RCP<BlockedCrsMatrix> bA2 = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
           TEUCHOS_TEST_FOR_EXCEPTION(bA2.is_null(), Exceptions::BadCast,
@@ -165,14 +166,20 @@ namespace MueLu {
           // Add Dirichlet rows to the list of seeds
           ArrayRCP<const bool> boundaryNodes;
           boundaryNodes = Utils::DetectDirichletRows(*merged2Mat, 0.0);
+          bool haveBoundary = false;
           for (LO i = 0; i < boundaryNodes.size(); i++)
             if (boundaryNodes[i]) {
-              blockSeeds[i] = numPres;
-              numPres++;
+              // FIXME:
+              // 1. would not this [] overlap with some in the previos blockSeed loop?
+              // 2. do we need to distinguish between pressure and velocity Dirichlet b.c.
+              blockSeeds[i] = numBlocks;
+              haveBoundary = true;
             }
+          if (haveBoundary)
+            numBlocks++;
 
           subList.set("partitioner: map",         blockSeeds);
-          subList.set("partitioner: local parts", as<int>(numPres));
+          subList.set("partitioner: local parts", as<int>(numBlocks));
         }
       }
     } // if (type_ == "SCHWARZ")

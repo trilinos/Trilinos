@@ -20,7 +20,8 @@ namespace Example {
              typename ExecViewTypeA,
              typename ExecViewTypeB>
     KOKKOS_INLINE_FUNCTION
-    static int invoke(const typename ExecViewTypeA::policy_type::member_type &member,
+    static int invoke(typename ExecViewTypeA::policy_type &policy,
+                      const typename ExecViewTypeA::policy_type::member_type &member,
                       const int diagA,
                       const ScalarType alpha,
                       ExecViewTypeA &A,
@@ -33,17 +34,20 @@ namespace Example {
              typename ExecViewTypeA,
              typename ExecViewTypeB>
     class TaskFunctor {
+    public:
+      typedef typename ExecViewTypeA::policy_type policy_type;
+      typedef typename policy_type::member_type member_type;
+      typedef int value_type;
+
     private:
       int _diagA;
       ScalarType _alpha;
       ExecViewTypeA _A;
       ExecViewTypeB _B;
 
-    public:
-      typedef typename ExecViewTypeA::policy_type policy_type;
-      typedef typename policy_type::member_type member_type;
-      typedef int value_type;
+      policy_type &_policy;
 
+    public:
       TaskFunctor(const int diagA,
                   const ScalarType alpha,
                   const ExecViewTypeA A,
@@ -51,19 +55,22 @@ namespace Example {
         : _diagA(diagA),
           _alpha(alpha),
           _A(A),
-          _B(B)
+          _B(B),
+          _policy(ExecViewTypeA::task_factory_type::Policy())
       { }
 
       string Label() const { return "Trsm"; }
 
       // task execution
       void apply(value_type &r_val) {
-        r_val = Trsm::invoke<ParallelForType>(policy_type::member_null(), _diagA, _alpha, _A, _B);
+        r_val = Trsm::invoke<ParallelForType>(_policy, _policy.member_single(),
+                                              _diagA, _alpha, _A, _B);
       }
 
       // task-data execution
       void apply(const member_type &member, value_type &r_val) {
-        r_val = Trsm::invoke<ParallelForType>(member, _diagA, _alpha, _A, _B);
+        r_val = Trsm::invoke<ParallelForType>(_policy, member, 
+                                              _diagA, _alpha, _A, _B);
       }
 
     };

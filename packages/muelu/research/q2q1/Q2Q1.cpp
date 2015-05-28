@@ -163,7 +163,9 @@ int main(int argc, char *argv[]) {
     RCP<TP_Mv> Vcoords = Reader<TP_Crs>::readDenseFile ((prefix + "VelCoords.mm").c_str(),  comm, node, cmap1);
     RCP<TP_Mv> Pcoords = Reader<TP_Crs>::readDenseFile ((prefix + "PresCoords.mm").c_str(), comm, node, cmap2);
 
-    ArrayRCP<const SC> slop = Utils2::ReadMultiVector((prefix + "p2vMap.mm").c_str(), Xpetra::toXpetra(A21->getRangeMap()))->getData(0);
+    // For now, we assume that p2v maps local pressure DOF to a local x-velocity DOF
+    ArrayRCP<const SC> slop = Utils2::ReadMultiVector((prefix + "p2vMap.mm").c_str(),
+                                                      Xpetra::toXpetra(A21->getRangeMap()))->getData(0);
     ArrayRCP<LO> p2vMap(n*n);
     for (int i = 0; i < n*n; i++)
       p2vMap[i] = as<LO>(slop[i]);
@@ -192,7 +194,7 @@ int main(int argc, char *argv[]) {
     stratimikosList->set("Preconditioner Type", "MueLu-TpetraQ2Q1");
 
     ParameterList& BelosList = stratimikosList->sublist("Linear Solver Types").sublist("Belos");
-    BelosList.set("Solver Type", "Block GMRES");
+    BelosList.set("Solver Type", "Block GMRES"); // FIXME: should it be "Pseudo Block GMRES"?
     BelosList.sublist("VerboseObject").set("Verbosity Level", "low"); // this is needed, as otherwise Stratimikos ignores Belos output
 
     ParameterList& GmresDetails = BelosList.sublist("Solver Types").sublist("Block GMRES");
@@ -242,10 +244,16 @@ int main(int argc, char *argv[]) {
     Thyra::initializeOp<SC>(*lowsFactory, thA, nsA.ptr());
 
     RCP<TP_Mv> tX = Tpetra::createVector<SC>(fullMap);
+#if 1
     tX->randomize();
 
     RCP<TP_Mv> tB = Tpetra::createVector<SC>(fullMap);
     A->apply(*tX, *tB);
+#else
+    typedef Tpetra::MatrixMarket::Reader<TP_Crs> reader_type;
+    RCP<TP_Mv> tB = reader_type::readDenseFile((prefix + "rhs.mm").c_str(), fullMap->getComm(), fullMap->getNode(), fullMap);
+#endif
+
     tX->putScalar(0.0);
 
     RCP<TH_Mvb> sX = Thyra::createMultiVector(tX);

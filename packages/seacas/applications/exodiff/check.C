@@ -494,7 +494,7 @@ namespace {
     // Do the following check(s) only if there are sideset variables... (or -pedantic)
     // For each sideset, check that the order of the sideset sides is the same.
     // Eventually need to be able to map the order...
-    if (!interface.ss_var_names.empty() || interface.pedantic) {
+    if (!interface.ss_var_names.empty() || interface.pedantic || !interface.ignore_sideset_df) {
       for (int b = 0; b < file1.Num_Side_Sets(); ++b) {
 	Side_Set<INT>* set1 = file1.Get_Side_Set_by_Index(b);
 	Side_Set<INT>* set2 = NULL;

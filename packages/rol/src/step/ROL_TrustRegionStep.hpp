@@ -356,7 +356,7 @@ public:
     algo_state.ngrad = 0;
 
     Real htol = std::sqrt(ROL_EPSILON);
-    Real ftol = ROL_OVERFLOW; 
+    Real ftol = 0.1*ROL_OVERFLOW; 
 
     step_state->descentVec  = s.clone();
     step_state->gradientVec = g.clone();
@@ -459,6 +459,14 @@ public:
     CGiter_ = 0;
     trustRegion_->run(s,algo_state.snorm,step_state->searchSize,CGflag_,CGiter_,
                             x,*(step_state->gradientVec),algo_state.gnorm,pObj);
+
+    if ( con.isActivated() ) {
+      xnew_->set(x);
+      xnew_->plus(s);
+      con.project(*xnew_);
+      s.set(*xnew_);
+      s.axpy(-1.0,x);
+    }
   }
 
   /** \brief Update step, if successful.

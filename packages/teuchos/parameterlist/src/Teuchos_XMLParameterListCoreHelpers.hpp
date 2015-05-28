@@ -109,15 +109,20 @@ RCP<ParameterList> getParametersFromXmlFile(const std::string &xmlFileName,
  *
  * \param paramList [in/out] On input, <tt>*paramList</tt> may be empty or
  * contain some parameters and sublists. On output, parameters and sublist
- * from the file <tt>xmlStr</tt> will be set or overide those in
- * <tt>*paramList</tt>.
+ * from the file <tt>xmlStr</tt> will be set or override (or not) those in
+ * <tt>*paramList</tt> depending on the <tt>overwrite</tt> parameter.
+ *
+ * \param overwrite [in] If true, parameters and sublists in the <tt>xmlStr</tt> 
+ * will override those in <tt>paramList</tt>.  If false, any value set in 
+ * <tt>paramList</tt> will be kept, only values not set will be updated.
  *
  * \relates ParameterList
  */
 TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT
 void updateParametersFromXmlString(
   const std::string &xmlStr,
-  const Ptr<ParameterList> &paramList
+  const Ptr<ParameterList> &paramList, 
+  bool overwrite = true
   );
 
 

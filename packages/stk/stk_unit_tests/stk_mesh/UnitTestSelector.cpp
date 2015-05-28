@@ -37,6 +37,7 @@
 #include <stk_mesh/base/Types.hpp>      // for PartVector
 #include <stk_mesh/fixtures/SelectorFixture.hpp>  // for SelectorFixture
 #include <gtest/gtest.h>
+#include <array>
 #include <string>                       // for basic_string, operator==, etc
 #include "gtest/gtest.h"                // for AssertHelper, EXPECT_EQ, etc
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
@@ -695,6 +696,154 @@ void testSelectorWithBuckets(const SelectorFixture &selectorFixture, const stk::
     bool result = selector(bucket);
     EXPECT_EQ(gold_shouldEntityBeInSelector[4], result);
   }
+}
+
+void check_selector_does_not_return_root_topology_parts(stk::ParallelMachine pm, const std::string &part_name, stk::topology topo )
+{
+  const unsigned spatialDim = 3;
+  stk::mesh::MetaData meta(spatialDim);
+  stk::mesh::BulkData mesh(meta, pm);
+
+  stk::mesh::Part * part = &meta.declare_part_with_topology(part_name, topo);
+  meta.commit();
+
+  stk::mesh::Selector selector(*part);
+
+  stk::mesh::PartVector selectorParts;
+
+  selector.get_parts(selectorParts);
+
+  stk::mesh::Part &rootPart= meta.get_topology_root_part(topo);
+
+  auto iterator = std::find(selectorParts.begin(), selectorParts.end(), &rootPart );
+
+  EXPECT_EQ(1u, selectorParts.size());
+
+  EXPECT_TRUE(selectorParts.end() == iterator);
+
+  iterator = std::find(selectorParts.begin(), selectorParts.end(), part );
+
+  EXPECT_TRUE(selectorParts.end() != iterator);
+}
+
+TEST( UnitTestRootTopology, getPartsDoesNotFindAutoCreatedRootParts )
+{
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    int p_size = stk::parallel_machine_size(pm);
+
+    if(p_size > 1)
+    {
+        return;
+    }
+
+    std::vector < stk::topology > test_topologies {
+          stk::topology::NODE
+        //EDGE_RANK
+        , stk::topology::LINE_2
+        , stk::topology::LINE_3
+        //FACE_RANK
+        , stk::topology::TRI_3
+        , stk::topology::TRI_4
+        , stk::topology::TRI_6
+        , stk::topology::QUAD_4
+        , stk::topology::QUAD_8
+        , stk::topology::QUAD_9
+        //ELEMENT_RANK
+        , stk::topology::PARTICLE
+        , stk::topology::BEAM_2
+        , stk::topology::BEAM_3
+        , stk::topology::SHELL_TRI_3
+        // Cannot create SHELL_TRI_4 entities because Shards does not support!
+        // , stk::topology::SHELL_TRI_4
+        , stk::topology::SHELL_TRI_6
+        , stk::topology::SHELL_QUAD_4
+        , stk::topology::SHELL_QUAD_8
+        , stk::topology::SHELL_QUAD_9
+        , stk::topology::TET_4
+        , stk::topology::TET_8
+        , stk::topology::TET_10
+        , stk::topology::TET_11
+        , stk::topology::PYRAMID_5
+        , stk::topology::PYRAMID_13
+        , stk::topology::PYRAMID_14
+        , stk::topology::WEDGE_6
+        , stk::topology::WEDGE_15
+        , stk::topology::WEDGE_18
+        , stk::topology::HEX_8
+        , stk::topology::HEX_20
+        , stk::topology::HEX_27};
+
+    for (unsigned i = 0; i < test_topologies.size(); ++i)
+    {
+      check_selector_does_not_return_root_topology_parts(pm, "topo_part" , test_topologies[i]);
+    }
+}
+
+TEST( UnitTestRootTopology, bucketAlsoHasAutoCreatedRootParts )
+{
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    int p_size = stk::parallel_machine_size(pm);
+
+    if(p_size > 1)
+    {
+        return;
+    }
+
+    const unsigned spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta, pm);
+
+    stk::mesh::Part * triPart = &meta.declare_part_with_topology("tri_part", stk::topology::TRI_3);
+    meta.commit();
+
+    mesh.modification_begin();
+
+    std::array<int, 3> node_ids = {{1,2,3}};
+    stk::mesh::PartVector empty;
+    stk::mesh::Entity tri3 = mesh.declare_entity(stk::topology::FACE_RANK, 1u, *triPart);
+    for(unsigned i = 0; i<node_ids.size(); ++i) {
+        stk::mesh::Entity node = mesh.declare_entity(stk::topology::NODE_RANK, node_ids[i], empty);
+        mesh.declare_relation(tri3, node, i);
+    }
+
+    mesh.modification_end();
+
+    stk::mesh::Selector triSelector(*triPart);
+
+    const stk::mesh::BucketVector & buckets = mesh.get_buckets(stk::topology::FACE_RANK, triSelector);
+
+    EXPECT_EQ(1u, buckets.size());
+
+    {
+      const stk::mesh::PartVector &triBucketParts = buckets[0]->supersets();
+
+      stk::mesh::Part &triRootPart= meta.get_topology_root_part(stk::topology::TRI_3);
+
+      auto triIterator = std::find(triBucketParts.begin(), triBucketParts.end(), &triRootPart );
+
+      EXPECT_TRUE(triBucketParts.end() != triIterator);
+
+      EXPECT_TRUE(triRootPart.contains(*triPart));
+    }
+    {
+      stk::mesh::OrdinalVector ordinals;
+      buckets[0]->supersets(ordinals);
+
+      stk::mesh::Part &triRootPart= meta.get_topology_root_part(stk::topology::TRI_3);
+
+      auto triIterator = std::find(ordinals.begin(), ordinals.end(), triRootPart.mesh_meta_data_ordinal());
+
+      EXPECT_TRUE(ordinals.end() != triIterator);
+    }
+    {
+      std::pair<const unsigned *, const unsigned *> ords_range = buckets[0]->superset_part_ordinals();
+
+      stk::mesh::Part &triRootPart= meta.get_topology_root_part(stk::topology::TRI_3);
+
+      auto triIterator = std::find(ords_range.first, ords_range.second, triRootPart.mesh_meta_data_ordinal());
+
+      EXPECT_TRUE(ords_range.second != triIterator);
+    }
 }
 
 } // namespace

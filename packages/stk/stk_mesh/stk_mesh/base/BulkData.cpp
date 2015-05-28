@@ -1527,7 +1527,6 @@ void BulkData::internal_dump_all_mesh_info(std::ostream& out) const
             out << "        Connectivity to " << rank_names[r] << std::endl;
             Entity const* entities = bucket->begin(b_ord, r);
             ConnectivityOrdinal const* ordinals = bucket->begin_ordinals(b_ord, r);
-            Permutation const *permutations = bucket->begin_permutations(b_ord, r);
             const int num_conn         = bucket->num_connectivity(b_ord, r);
             for (int c_itr = 0; c_itr < num_conn; ++c_itr) {
               Entity target_entity = entities[c_itr];
@@ -1535,6 +1534,8 @@ void BulkData::internal_dump_all_mesh_info(std::ostream& out) const
               if (r != stk::topology::NODE_RANK) {
                 out << this->bucket(target_entity).topology();
                 if (b_rank != stk::topology::NODE_RANK) {
+                    Permutation const *permutations = bucket->begin_permutations(b_ord, r);
+                    ThrowAssert(permutations);
                     out << " permutation index " << permutations[c_itr];
                 }
               }
@@ -1815,7 +1816,6 @@ void BulkData::require_valid_relation( const char action[] ,
 //----------------------------------------------------------------------
 bool BulkData::internal_declare_relation(Entity e_from, Entity e_to,
                                          RelationIdentifier local_id,
-                                         unsigned sync_count, bool is_back_relation,
                                          Permutation permut)
 {
   m_modSummary.track_declare_relation(e_from, e_to, local_id, permut);
@@ -1963,52 +1963,52 @@ void BulkData::internal_declare_relation( Entity e_from ,
                                  OrdinalVector& ordinal_scratch,
                                  PartVector& part_scratch)
 {
-  require_ok_to_modify();
+    require_ok_to_modify();
 
-  require_valid_relation( "declare" , *this , e_from , e_to );
+    require_valid_relation("declare", *this, e_from, e_to);
 
-  // TODO: Don't throw if exact relation already exists, that should be a no-op.
-  // Should be an exact match if relation of local_id already exists (e_to should be the same).
-  bool is_converse = false;
-  bool caused_change_fwd = internal_declare_relation(e_from, e_to, local_id, m_meshModification.synchronized_count(),
-                                                     is_converse, permut);
+    // TODO: Don't throw if exact relation already exists, that should be a no-op.
+    // Should be an exact match if relation of local_id already exists (e_to should be the same).
+    bool is_new_relation = internal_declare_relation(e_from, e_to, local_id, permut);
 
-  //TODO: check connectivity map
-  // Relationships should always be symmetrical
-  if ( caused_change_fwd ) {
-
-    const bool higher_order_relation = stk::topology::ELEMENT_RANK < entity_rank(e_from);
-    if (    higher_order_relation
-         || m_bucket_repository.connectivity_map()(entity_rank(e_to), entity_rank(e_from)) != stk::mesh::INVALID_CONNECTIVITY_TYPE
-       )
+    //TODO: check connectivity map
+    // Relationships should always be symmetrical
+    if(is_new_relation)
     {
-      // the setup for the converse relationship works slightly differently
-      is_converse = true;
-      internal_declare_relation(e_to, e_from, local_id, m_meshModification.synchronized_count(), is_converse, permut );
+
+        const bool higher_order_relation = stk::topology::ELEMENT_RANK < entity_rank(e_from);
+        if(higher_order_relation
+                || m_bucket_repository.connectivity_map()(entity_rank(e_to), entity_rank(e_from)) != stk::mesh::INVALID_CONNECTIVITY_TYPE
+                )
+        {
+            // the setup for the converse relationship works slightly differently
+            internal_declare_relation(e_to, e_from, local_id, permut);
+        }
     }
-  }
 
-  // It is critical that the modification be done AFTER the relations are
-  // added so that the propagation can happen correctly.
-  if ( caused_change_fwd ) {
-    this->mark_entity_and_upward_related_entities_as_modified(e_to);
-    this->mark_entity_and_upward_related_entities_as_modified(e_from);
-  }
+    // It is critical that the modification be done AFTER the relations are
+    // added so that the propagation can happen correctly.
+    if(is_new_relation)
+    {
+        this->mark_entity_and_upward_related_entities_as_modified(e_to);
+        this->mark_entity_and_upward_related_entities_as_modified(e_from);
+    }
 
-  OrdinalVector empty ;
+    OrdinalVector empty;
 
-  // Deduce and set new part memberships:
-  ordinal_scratch.clear();
+    // Deduce and set new part memberships:
+    ordinal_scratch.clear();
 
-  impl::get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(*this, e_from, empty, entity_rank(e_to), ordinal_scratch );
+    impl::get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(*this, e_from, empty, entity_rank(e_to), ordinal_scratch);
 
-  PartVector emptyParts;
-  part_scratch.clear();
-  for(unsigned ipart=0; ipart<ordinal_scratch.size(); ++ipart) {
-    part_scratch.push_back(&m_mesh_meta_data.get_part(ordinal_scratch[ipart]));
-  }
+    PartVector emptyParts;
+    part_scratch.clear();
+    for(unsigned ipart = 0; ipart < ordinal_scratch.size(); ++ipart)
+    {
+        part_scratch.push_back(&m_mesh_meta_data.get_part(ordinal_scratch[ipart]));
+    }
 
-  internal_change_entity_parts( e_to , part_scratch , emptyParts );
+    internal_change_entity_parts(e_to, part_scratch, emptyParts);
 }
 
 //----------------------------------------------------------------------
@@ -5577,15 +5577,17 @@ void unpack_not_owned_verify_compare_closure_relations( const BulkData &        
         Entity const *rels_end = bucket.end(bucket_ordinal, irank);
         ConnectivityOrdinal const *ords_itr = bucket.begin_ordinals(bucket_ordinal, irank);
 
+        ThrowAssertMsg((rels_itr != rels_end && ords_itr == nullptr) == false, "Relations found without ordinals");
+
+
         for(;rels_itr!=rels_end;++rels_itr,++ords_itr)
         {
-            bool is_this_relation_the_same = jr->entity() == *rels_itr;
-            bool is_this_ordinal_the_same  = static_cast<ConnectivityOrdinal>(jr->getOrdinal()) == *ords_itr;
-            bad_rel = !is_this_relation_the_same || !is_this_ordinal_the_same;
-            ++jr;
-            if (bad_rel) break;
+          bool is_this_relation_the_same = jr->entity() == *rels_itr;
+          bool is_this_ordinal_the_same  = static_cast<ConnectivityOrdinal>(jr->getOrdinal()) == *ords_itr;
+          bad_rel = !is_this_relation_the_same || !is_this_ordinal_the_same;
+          ++jr;
+          if (bad_rel) break;
         }
-
         bool recv_relation_still_has_entity_of_irank = jr != recv_relations.end() && jr->entity_rank() == irank;
         bad_rel = bad_rel || recv_relation_still_has_entity_of_irank;
     }
@@ -6039,18 +6041,9 @@ bool BulkData::verify_parallel_attributes_for_bucket( Bucket const& bucket, std:
 
     // Owner consistency:
 
-    if (   has_owns_part && p_owner != p_rank ) {
+    if ( has_owns_part != (p_owner == p_rank) ) {
       error_log << __FILE__ << ":" << __LINE__ << ": ";
-      error_log << "problem is owner-consistency (check 1): "
-                << "has_owns_part: " << (has_owns_part?"true":"false") << ", "
-                << "p_owner: " << p_owner << ", "
-                << "p_rank: " << p_rank << std::endl;
-      this_result = false ;
-    }
-
-    if ( ! has_owns_part && p_owner == p_rank ) {
-      error_log << __FILE__ << ":" << __LINE__ << ": ";
-      error_log << "problem is owner-consistency (check 2): "
+      error_log << "problem is owner-consistency (entity in locally-owned part iff owned by current proc): "
                 << "has_owns_part: " << (has_owns_part?"true":"false") << ", "
                 << "p_owner: " << p_owner << ", "
                 << "p_rank: " << p_rank << std::endl;
@@ -6059,9 +6052,9 @@ bool BulkData::verify_parallel_attributes_for_bucket( Bucket const& bucket, std:
 
     if ( has_shares_part != shares ) {
       error_log << __FILE__ << ":" << __LINE__ << ": ";
-      error_log << "problem is owner-consistency (check 3): "
+      error_log << "problem is sharing-consistency (entity in shared part iff it is in comm-list): "
                 << "has_shares_part: " << (has_shares_part?"true":"false") << ", "
-                << "shares: " << shares << " has entity key " << entity_key(entity) << std::endl;
+                << "in comm-list: " << (shares?"true":"false") << ", has entity key " << entity_key(entity) << std::endl;
       this_result = false ;
     }
 

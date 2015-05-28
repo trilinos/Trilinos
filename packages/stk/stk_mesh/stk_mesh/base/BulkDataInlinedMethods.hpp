@@ -118,6 +118,7 @@ unsigned BulkData::find_ordinal(Entity entity, EntityRank rank, ConnectivityOrdi
   const MeshIndex &mesh_idx = mesh_index(entity);
   unsigned num_rels = mesh_idx.bucket->num_connectivity(mesh_idx.bucket_ordinal, rank);
   ConnectivityOrdinal const *ords = mesh_idx.bucket->begin_ordinals(mesh_idx.bucket_ordinal, rank);
+  ThrowAssert(ords);
 
   unsigned i = 0;
   for (; i < num_rels; ++i)
@@ -407,11 +408,6 @@ bool BulkData::has_permutation(Entity entity, EntityRank rank) const
   return bucket(entity).has_permutation(rank);
 }
 
-inline
-int BulkData::entity_comm_map_owner(const EntityKey & key) const
-{
-    return internal_entity_comm_map_owner(key);
-}
 inline
 int BulkData::internal_entity_comm_map_owner(const EntityKey & key) const
 {

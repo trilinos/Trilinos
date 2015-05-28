@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //               ShyLU: Hybrid preconditioner package
 //                 Copyright 2012 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -65,7 +65,7 @@ static int shylu_dist_solve(
     AztecOO *solver = 0;
     assert(X.Map().SameAs(Y.Map()));
     //assert(X.Map().SameAs(A_->RowMap()));
-    const Epetra_MultiVector *newX; 
+    const Epetra_MultiVector *newX;
     newX = &X;
     //rd_->redistribute(X, newX);
 
@@ -267,8 +267,10 @@ static int shylu_local_solve(
 )
 {
     int err;
+#ifndef NDEBUG
     int nvectors = X.NumVectors();
     assert (nvectors == data->localrhs->NumVectors());
+#endif // NDEBUG
 
     // Initialize the X vector for iterative solver
     data->Xs->PutScalar(0.0);

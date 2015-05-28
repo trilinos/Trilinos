@@ -246,6 +246,25 @@ public:
      */
    void getMySides(const std::string & sideName,std::vector<stk_classic::mesh::Entity*> & sides) const;
 
+   /** Get Entities corresponding to the locally owned part of the side set requested. This also limits
+     * the entities to be in a particular element block. The Entites in the vector should be a dimension
+     * lower then <code>getDimension()</code>.
+     *
+     * \param[in] sideName Name of side set
+     * \param[in] blockName Name of block
+     * \param[in,out] sides Vector of entities containing the requested sides.
+     */
+   void getMySides(const std::string & sideName,const std::string & blockName,std::vector<stk_classic::mesh::Entity*> & sides) const;
+
+   /** Get Entities corresponding to the locally owned part of the side set requested. 
+     * The Entites in the vector should be a dimension
+     * lower then <code>getDimension()</code>.
+     *
+     * \param[in] sideName Name of side set
+     * \param[in,out] sides Vector of entities containing the requested sides.
+     */
+   void getAllSides(const std::string & sideName,std::vector<stk_classic::mesh::Entity*> & sides) const;
+
    /** Get Entities corresponding to the side set requested. This also limits the entities
      * to be in a particular element block. The Entites in the vector should be a dimension
      * lower then <code>getDimension()</code>.
@@ -254,7 +273,8 @@ public:
      * \param[in] blockName Name of block
      * \param[in,out] sides Vector of entities containing the requested sides.
      */
-   void getMySides(const std::string & sideName,const std::string & blockName,std::vector<stk_classic::mesh::Entity*> & sides) const;
+
+   void getAllSides(const std::string & sideName,const std::string & blockName,std::vector<stk_classic::mesh::Entity*> & sides) const;
 
    /** Get Entities corresponding to the node set requested. This also limits the entities
      * to be in a particular element block. The Entites in the vector should be ofdimension
@@ -264,6 +284,7 @@ public:
      * \param[in] blockName Name of block
      * \param[in,out] sides Vector of entities containing the requested sides.
      */
+
    void getMyNodes(const std::string & sideName,const std::string & blockName,std::vector<stk_classic::mesh::Entity*> & nodes) const;
 
    // Utility functions

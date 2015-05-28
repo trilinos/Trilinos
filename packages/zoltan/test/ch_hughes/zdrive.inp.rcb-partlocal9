@@ -1,0 +1,10 @@
+Decomposition Method 	= rcb
+Zoltan Parameters	= obj_weight_dim=2
+Zoltan Parameters	= obj_weights_comparable=0
+Zoltan Parameters	= rcb_multicriteria_norm=3
+Zoltan Parameters	= num_global_parts=8
+File Type		= Chaco
+File Name		= hughes
+Parallel Disk Info	= number=0
+test graph callbacks	= 0
+test local partitions   = 9

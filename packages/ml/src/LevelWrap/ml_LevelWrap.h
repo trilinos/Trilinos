@@ -164,6 +164,8 @@ namespace ML_Epetra
     Teuchos::ParameterList List_;
     //@}
 
+#if 0
+    // Commented out to prevent compiler warnings for unused private fields
 
     //@{ \name Variables for Timing
     //! Number of applications
@@ -177,6 +179,7 @@ namespace ML_Epetra
     int NumConstructions_;
     //! CPU time for construction of the preconditioner.
     double ConstructionTime_;
+#endif // 0
     //@}
   };// end LevelWrap
 }//end namespace ML_Epetra

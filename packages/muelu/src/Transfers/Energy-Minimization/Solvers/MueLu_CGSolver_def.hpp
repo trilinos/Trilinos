@@ -67,6 +67,11 @@ namespace MueLu {
   void CGSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(const Matrix& Aref, const Constraint& C, const Matrix& P0, RCP<Matrix>& finalP) const {
     PrintMonitor m(*this, "CG iterations");
 
+    if (nIts_ == 0) {
+      finalP = MatrixFactory2::BuildCopy(rcpFromRef(P0));
+      return;
+    }
+
     // Note: this function matrix notations follow Saad's "Iterative methods", ed. 2, pg. 246
     // So, X is the unknown prolongator, P's are conjugate directions, Z's are preconditioned P's
     RCP<const Matrix> A = rcpFromRef(Aref);

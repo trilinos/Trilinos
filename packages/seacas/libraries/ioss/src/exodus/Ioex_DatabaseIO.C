@@ -124,7 +124,7 @@ namespace Ioex {
                          Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
                          const Ioss::PropertyManager &props) :
     Ioss::DatabaseIO(region, filename, db_usage, communicator, props),
-    exodusFilePtr(-1), databaseTitle(""), exodusMode(EX_CLOBBER), dbRealWordSize(8),
+    exodusFilePtr(-1), exodusMode(EX_CLOBBER), dbRealWordSize(8),
     maximumNameLength(32), spatialDimension(0),
     nodeCount(0), edgeCount(0), faceCount(0), elementCount(0),
     commsetNodeCount(0), commsetElemCount(0),

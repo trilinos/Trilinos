@@ -69,6 +69,16 @@
       <description>Symmetry of a problem. This setting affects the construction of a restrictor. If set to true, the restrictor is set to be the transpose of a prolongator. If set to false, underlying multigrid algorithm makes the decision.</description>
     </parameter>
 
+     <parameter>
+      <name>xml parameter file</name>
+      <type>string</type>
+      <default>""</default>
+      <description>An XML file from which to read additional
+      parameters.  In case of a conflict, parameters manually set on
+      the list will override parameters in the file. If the string is
+      empty a file will not be read.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
 
      <parameter>
       <name>parameterlist: syntax</name>
@@ -78,7 +88,7 @@
       <visible>false</visible>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
-
+  
   </general>
 
   <smoothing_and_coarse>

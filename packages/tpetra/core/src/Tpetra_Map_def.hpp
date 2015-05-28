@@ -492,6 +492,14 @@ namespace Tpetra {
     minMyGID_ = indexBase_;
     maxMyGID_ = indexBase_;
 
+    // NOTE (mfh 27 May 2015): While finding the initial contiguous
+    // GID range requires looking at all the GIDs in the range,
+    // dismissing an interval of GIDs only requires looking at the
+    // first and last GIDs.  Thus, we could do binary search backwards
+    // from the end in order to catch the common case of a contiguous
+    // interval followed by noncontiguous entries.  On the other hand,
+    // we could just expose this case explicitly as yet another Map
+    // constructor, and avoid the trouble of detecting it.
     if (numLocalElements_ > 0) {
       // Find contiguous GID range, with the restriction that the
       // beginning of the range starts with the first entry.  While
@@ -643,11 +651,11 @@ namespace Tpetra {
       if (globalIndex < getMinGlobalIndex () || globalIndex > getMaxGlobalIndex ()) {
         return Teuchos::OrdinalTraits<LocalOrdinal>::invalid ();
       }
-      return Teuchos::as<LocalOrdinal> (globalIndex - getMinGlobalIndex ());
+      return static_cast<LocalOrdinal> (globalIndex - getMinGlobalIndex ());
     }
     else if (globalIndex >= firstContiguousGID_ &&
              globalIndex <= lastContiguousGID_) {
-      return Teuchos::as<LocalOrdinal> (globalIndex - firstContiguousGID_);
+      return static_cast<LocalOrdinal> (globalIndex - firstContiguousGID_);
     }
     else {
       // This returns Teuchos::OrdinalTraits<LocalOrdinal>::invalid()
@@ -938,7 +946,7 @@ namespace Tpetra {
 #endif // HAVE_TEUCHOS_DEBUG
 
       typedef typename Teuchos::ArrayRCP<GlobalOrdinal>::size_type size_type;
-      const size_type numElts = Teuchos::as<size_type> (getNodeNumElements ());
+      const size_type numElts = static_cast<size_type> (getNodeNumElements ());
       lgMap_ = Teuchos::arcp<GlobalOrdinal> (numElts);
 
       if (numElts != 0) {

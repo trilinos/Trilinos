@@ -86,6 +86,19 @@ void EqualityConstraint<Real>::applyAdjointJacobian(Vector<Real> &ajv,
                                                     const Vector<Real> &v,
                                                     const Vector<Real> &x,
                                                     Real &tol) {
+  applyAdjointJacobian(ajv,v,x,v.dual(),tol);
+}
+
+
+
+
+
+template <class Real>
+void EqualityConstraint<Real>::applyAdjointJacobian(Vector<Real> &ajv,
+                                                    const Vector<Real> &v,
+                                                    const Vector<Real> &x,
+                                                    const Vector<Real> &dualv,
+                                                    Real &tol) { 
 
   // By default we compute the finite-difference approximation.
   // This requires the implementation of a vector-space basis for the optimization variables.
@@ -97,8 +110,8 @@ void EqualityConstraint<Real>::applyAdjointJacobian(Vector<Real> &ajv,
   Teuchos::RCP<Vector<Real> > xnew = x.clone();
   Teuchos::RCP<Vector<Real> > ex   = x.clone();
   Teuchos::RCP<Vector<Real> > eajv = ajv.clone();
-  Teuchos::RCP<Vector<Real> > cnew = v.clone();  // in general, should be in the constraint space
-  Teuchos::RCP<Vector<Real> > c0   = v.clone();  // in general, should be in the constraint space
+  Teuchos::RCP<Vector<Real> > cnew = dualv.clone();  // in general, should be in the constraint space
+  Teuchos::RCP<Vector<Real> > c0   = dualv.clone();  // in general, should be in the constraint space
   this->value(*c0,x,ctol);
   ajv.zero();
   for ( int i = 0; i < ajv.dimension(); i++ ) {
@@ -226,7 +239,7 @@ std::vector<Real> EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v
 
     // Apply right preconditioner.
     V2temp->set(*(V2[i]));
-    applyPreconditioner(*Z2temp, *V2temp, x, zerotol);
+    applyPreconditioner(*Z2temp, *V2temp, x, b1, zerotol);
     Z2.push_back(v2.clone()); (Z2[i])->set(*Z2temp);
     Z1.push_back(v1.clone()); (Z1[i])->set((V1[i])->dual());
 
@@ -540,6 +553,38 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointJacob
   return ajvCheck;
 } // checkApplyAdjointJacobian
 
+template <class Real>
+Real EqualityConstraint<Real>::checkAdjointConsistencyJacobian(const Vector<Real> &w,
+                                                               const Vector<Real> &v,
+                                                               const Vector<Real> &x,
+                                                               const Vector<Real> &dualw,
+                                                               const Vector<Real> &dualv,
+                                                               const bool printToStream,
+                                                               std::ostream & outStream) {
+  Real tol = ROL_EPSILON;
+
+  Teuchos::RCP<Vector<Real> > Jv = dualw.clone();
+  Teuchos::RCP<Vector<Real> > Jw = dualv.clone();
+  
+  applyJacobian(*Jv,v,x,tol);
+  applyAdjointJacobian(*Jw,w,x,tol);
+
+  Real vJw = v.dot(Jw->dual());
+  Real wJv = w.dot(Jv->dual());
+
+  Real diff = std::abs(wJv-vJw);
+
+  if ( printToStream ) {
+    std::stringstream hist;
+    hist << std::scientific << std::setprecision(8);
+    hist << "\nTest Consistency of Jacobian and its adjoint: \n  |<w,Jv> - <adj(J)w,v>| = " 
+         << diff << "\n";
+    hist << "  |<w,Jv>|               = " << std::abs(wJv) << "\n";
+    hist << "  Relative Error         = " << diff / (std::abs(wJv)+ROL_UNDERFLOW) << "\n";
+    outStream << hist.str();
+  }
+  return diff;
+} // checkAdjointConsistencyJacobian
 
 template <class Real>
 std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointHessian(const Vector<Real> &x,

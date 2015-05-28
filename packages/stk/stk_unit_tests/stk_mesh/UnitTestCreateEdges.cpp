@@ -514,25 +514,19 @@ TEST( UnitTestCreateEdges, hybrid_HexPyrTet )
     meta.commit();
 
     const size_t numHex = 1;
-    const size_t nodesPerHex = 8;
-    stk::mesh::EntityId hexNodeIDs[][nodesPerHex] =
-    {
+    stk::mesh::EntityIdVector hexNodeIDs[] {
         { 1, 2, 3, 4, 5, 6, 7, 8 }
     };
     stk::mesh::EntityId hexElemIDs[] = { 1 };
 
     const size_t numPyr = 1;
-    const size_t nodesPerPyr = 5;
-    stk::mesh::EntityId pyrNodeIDs[][nodesPerPyr] =
-    {
+    stk::mesh::EntityIdVector pyrNodeIDs[] {
         { 5, 6, 7, 8, 9 }
     };
     stk::mesh::EntityId pyrElemIDs[] = { 2 };
 
     const size_t numTet = 4;
-    const size_t nodesPerTet = 4;
-    stk::mesh::EntityId tetNodeIDs[][nodesPerTet] =
-    {
+    stk::mesh::EntityIdVector tetNodeIDs[] {
         { 7, 8, 9, 12 },
         { 6, 9, 10, 7 },
         { 7, 9, 10, 12 },

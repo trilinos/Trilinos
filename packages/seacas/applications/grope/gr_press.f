@@ -33,7 +33,8 @@ C
 C=======================================================================
       SUBROUTINE PRESS (OPTION, NOUT, NUMESS, LISESS, LESSEL, LESSNL,
      &  IDESS, NEESS, NNESS, IXEESS, IXNESS, LTEESS, LTSESS, FACESS,
-     *  NAME,  nvar, namvar, isvok, lisvar, MAPEL, DOMAPE)
+     *  NAME,  nvar, namvar, isvok, lisvar, NDFSID, NODSID,
+     *  MAPEL, MAPND, DOMAPE, DOMAPN)
 C=======================================================================
 
 C     --*** PRESS *** (GROPE) Display database element side set
@@ -61,11 +62,14 @@ C     --   LTSESS - IN - the element sides for all sets
 C     --   FACESS - IN - the distribution factors for all sets
 C     --   NVAR - IN - the number of variables
 C     --   NAMVAR - IN - the names of the variables
+C     --   NDFSID - IN - the number of df per face
 C     --   ISVOK  - IN - the variable truth table;
 C     --      variable i of set j exists iff ISVOK(i,j) is NOT 0
 C     --   LISVAR  - SCRATCH - size = NVAR (if 'V' in OPTION)
 
       include 'exodusII.inc'
+      INCLUDE 'gr_dbase.blk'
+
       CHARACTER*(*) OPTION
       INTEGER LISESS(0:*)
       INTEGER IDESS(*)
@@ -75,17 +79,32 @@ C     --   LISVAR  - SCRATCH - size = NVAR (if 'V' in OPTION)
       INTEGER IXNESS(*)
       INTEGER LTEESS(*)
       INTEGER LTSESS(*)
+      INTEGER NDFSID(*)
+      INTEGER NODSID(*)
       REAL FACESS(*)
       CHARACTER*(*) NAME(*)
       CHARACTER*(*) NAMVAR(*)
       INTEGER ISVOK(NVAR,*)
       INTEGER LISVAR(*)
       INTEGER MAPEL(*)
-      LOGICAL DOMAPE
+      INTEGER MAPND(*)
+      LOGICAL DOMAPE, DOMAPN
 
       LOGICAL ALLSAM
       LOGICAL DOELE, DONOD, DOFAC, DOVTBL
       CHARACTER*20 STRA, STRB, STRC
+
+      INTEGER GETPRC, PRTLEN
+      CHARACTER*128 FMT1, FMTE, FMTM
+
+      INTEGER NODES(27)
+      REAL    FACTORS(27)
+      
+      PRTLEN = GETPRC() + 7
+      WRITE(FMT1,20) PRTLEN, PRTLEN-7
+      CALL SQZSTR(FMT1, LFMT)
+      WRITE(FMTE, 10055) FMT1(:LFMT)
+      WRITE(FMTM, 10100) FMT1(:LFMT)
 
       DOELE  = ((OPTION .EQ. '*') .OR. (INDEX (OPTION, 'E') .GT. 0))
       DONOD  = ((OPTION .EQ. '*') .OR. (INDEX (OPTION, 'N') .GT. 0))
@@ -248,44 +267,49 @@ C     ... See if all values are the same
  90         continue
             if (allsam) then
               IF (NOUT .GT. 0) THEN
-                WRITE (NOUT, 10055, IOSTAT=IDUM) VAL
+                WRITE (NOUT, FMTE, IOSTAT=IDUM) VAL
               ELSE
-                WRITE (*, 10055, IOSTAT=IDUM) VAL
+                WRITE (*, FMTE, IOSTAT=IDUM) VAL
               END IF
             else
-C ... If it looks like the sideset elements are homogenous, then print
-C     element/face/df information; otherwise, just print df...
-              numdf = nness(iess)
-              numel = neess(iess)
-              ndfpe = numdf/numel
-              if (ndfpe*numel .eq. numdf .and. numdf .gt. 0) then
-                ISE = IXEESS(IESS)
-                IEE = ISE + NEESS(IESS) - 1
-                IDS = IS
-                do i=ise, iee
-                  if (domape) then
-                    iel = mapel(lteess(i))
-                  else
-                    iel = lteess(i)
-                  end if
-                  if (nout .gt. 0) then
-                    write (nout, 10100) iel, ltsess(i),
-     *                (facess(j),j=ids,ids+ndfpe-1)
-                  else
-                    write (*, 10100) iel, ltsess(i),
-     *                (facess(j),j=ids,ids+ndfpe-1)
-                  end if
-                  ids = ids + ndfpe
+C ... Get the number of df/nodes per face...
+C ... NOTE: facess is contiguous over all sidesets, 
+C           nodsid is only for the current sideset.              
+              call exgssn(ndb, idess(iess), ndfsid, nodsid, ierr)
+              ISE = IXEESS(IESS)
+              IEE = ISE + NEESS(IESS) - 1
+              IDS = IS
+              idf = 1
+              idn = 1
+              do i=ise, iee
+                NDFPE = ndfsid(idf)
+                idf=idf+1
+                if (domape) then
+                  iel = mapel(lteess(i))
+                else
+                  iel = lteess(i)
+                end if
+                do j=1,ndfpe
+                  factors(j) = facess(j+ids-1)
+                  nodes(j) = nodsid(j+idn-1)
                 end do
-              else
-                IF (NOUT .GT. 0) THEN
-                  WRITE (NOUT, 10050, IOSTAT=IDUM)
-     &              (FACESS(I), I=IS,IE)
-                ELSE
-                  WRITE (*, 10050, IOSTAT=IDUM)
-     &              (FACESS(I), I=IS,IE)
-                END IF
-              end if
+                
+                if (domapn) then
+                  do j=1,ndfpe
+                    nodes(j) = mapnd(nodes(j))
+                  end do
+                end if
+                
+                if (nout .gt. 0) then
+                  write (nout, FMTM) iel, ltsess(i),
+     *              (nodes(j), factors(j),j=1,ndfpe)
+                else
+                  write (*, FMTM) iel, ltsess(i),
+     *              (nodes(j), factors(j),j=1,ndfpe)
+                end if
+                ids = ids + ndfpe
+                idn = idn + ndfpe
+              end do
             end if
           else
             IF (NOUT .GT. 0) THEN
@@ -299,18 +323,19 @@ C     element/face/df information; otherwise, just print df...
       
       RETURN
 
+ 20   FORMAT('1PE',I2.2,'.',I2.2)
 10020 FORMAT (/, 1X, 'ELEMENT SIDE SETS', :, ' - ', A)
 10025 FORMAT (1x, 'Element Ids are Global')
 10030 FORMAT (1X, 'Set', I10, 1X, A, ':',
      &  I10, ' elements', 1X, A,
-     &  I10, ' nodes', 1X, A, ' name = "',A,'"')
+     &  I10, ' nodes/df', 1X, A, ' name = "',A,'"')
 10040 FORMAT ((1X, 8I10))
 10045 FORMAT ((1X, 8(I10,'.',I1)))
 10050 FORMAT ((1X, 6 (1X, 1pE11.4)))
-10055 FORMAT (10x, 'All distribution factors are equal to ', 1pe11.4)
+10055 FORMAT ('(10x, ''All distribution factors are equal to ''', A,')')
 10060 FORMAT (10x, 'Distribution factors not stored in file.')
 10070 FORMAT ((2x,4(2X, A)))
 10090 FORMAT ((2x,3(2X, A)))
 10080 FORMAT (1X)
-10100 FORMAT ((1X, I10,'.',I1,8x,(8(1x,1pe11.4))))
+10100 FORMAT ('((1X, I10,''.'',I1,8x,(8(1x,I10,1x,',A,')))))')
       END

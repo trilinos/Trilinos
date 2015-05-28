@@ -173,7 +173,23 @@ void OpenMP::initialize( unsigned thread_count ,
 {
   // Before any other call to OMP query the maximum number of threads
   // and save the value for re-initialization unit testing.
-  static int omp_max_threads = omp_get_max_threads();
+
+  //Using omp_get_max_threads(); is problematic in conjunction with
+  //Hwloc on Intel (essentially an initial call to the OpenMP runtime
+  //without a parallel region before will set a process mask for a single core
+  //The runtime will than bind threads for a parallel region to other cores on the
+  //entering the first parallel region and make the process mask the aggregate of
+  //the thread masks. The intend seems to be to make serial code run fast, if you
+  //compile with OpenMP enabled but don't actually use parallel regions or so
+  //static int omp_max_threads = omp_get_max_threads();
+  int nthreads = 0;
+  #pragma omp parallel
+  {
+    #pragma omp atomic
+    nthreads++;
+  }
+
+  static int omp_max_threads = nthreads;
 
   const bool is_initialized = 0 != Impl::OpenMPexec::m_pool[0] ;
 
@@ -275,7 +291,7 @@ void OpenMP::finalize()
   Impl::OpenMPexec::m_pool_topo[1] = 0 ;
   Impl::OpenMPexec::m_pool_topo[2] = 0 ;
 
-  omp_set_num_threads(0);
+  omp_set_num_threads(1);
 
   if ( Impl::s_using_hwloc ) {
     hwloc::unbind_this_thread();
@@ -295,11 +311,11 @@ void OpenMP::print_configuration( std::ostream & s , const bool detail )
 #endif
 #if defined( KOKKOS_HAVE_HWLOC )
 
-  const unsigned numa_count       = Kokkos::hwloc::get_available_numa_count();
+  const unsigned numa_count_       = Kokkos::hwloc::get_available_numa_count();
   const unsigned cores_per_numa   = Kokkos::hwloc::get_available_cores_per_numa();
   const unsigned threads_per_core = Kokkos::hwloc::get_available_threads_per_core();
 
-  s << " hwloc[" << numa_count << "x" << cores_per_numa << "x" << threads_per_core << "]"
+  s << " hwloc[" << numa_count_ << "x" << cores_per_numa << "x" << threads_per_core << "]"
     << " hwloc_binding_" << ( Impl::s_using_hwloc ? "enabled" : "disabled" )
     ;
 #endif

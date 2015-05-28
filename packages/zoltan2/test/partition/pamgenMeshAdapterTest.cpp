@@ -189,8 +189,16 @@ int main(int narg, char *arg[]) {
 
   typedef Zoltan2::PamgenMeshAdapter<tMVector_t> inputAdapter_t;
 
-  inputAdapter_t ia(*CommT);
+  inputAdapter_t ia(*CommT, "region");
+  inputAdapter_t::zgid_t const *adjacencyIds=NULL;
+  inputAdapter_t::lno_t const *offsets=NULL;
   ia.print(me);
+  Zoltan2::MeshEntityType primaryEType = ia.getPrimaryEntityType();
+  Zoltan2::MeshEntityType secondAdjEType = ia.getSecondAdjacencyEntityType();
+
+  if (ia.avail2ndAdjs(primaryEType, secondAdjEType)) {
+    ia.get2ndAdjsView(primaryEType, secondAdjEType, offsets, adjacencyIds);
+  }
 
   // Set parameters for partitioning
   if (me == 0) cout << "Creating parameter list ... \n\n";
@@ -231,6 +239,10 @@ int main(int narg, char *arg[]) {
     if (me == 0) cout << "Calling the partitioner ... \n\n";
 
     problem.solve();
+
+    /*problem.getGraphModel->get2ndAdjsViewFromAdjs(&ia, primaryEType,
+						secondAdjEType, offsets,
+						adjacencyIds);*/
 
     if (me) problem.printMetrics(cout);
   }

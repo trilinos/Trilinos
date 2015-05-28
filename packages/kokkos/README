@@ -14,8 +14,8 @@ GTC 2015:
   http://on-demand.gputechconf.com/gtc/2015/video/S5166.html
   http://on-demand.gputechconf.com/gtc/2015/presentation/S5166-H-Carter-Edwards.pdf
 
-A comprehensive programming guide is currently under preparation and should be 
-available within the next few weeks.
+A programming guide can be found under doc/Kokkos_PG.pdf. This is an initial version 
+and feedback is greatly appreciated.
 
 For questions please send an email to 
 kokkos-users@software.sandia.gov
@@ -27,10 +27,25 @@ hcedwar(at)sandia.gov and crtrott(at)sandia.gov
 ====Requirements============================================================
 ============================================================================
 
-Compilers (officially supported):
-  GCC 4.7.2 or higher
-  Intel 14.0 or higher
-  CUDA 6.5 or higher
+Primary tested compilers are:
+  GCC 4.7.2
+  GCC 5.1.0
+  Intel 14.0.1
+  Intel 15.0.1
+  Clang 3.7.0
+
+Secondary tested compilers are:
+  CUDA 6.5
+  CUDA 7.0
+
+Primary tested compiler are passing in release mode
+with warnings as errors. We are using the following set 
+of flags:
+GCC:   -Wall -Wshadow -pedantic -Werror -Wsign-compare -Wtype-limits 
+       -Wignored-qualifiers -Wempty-body -Wclobbered -Wuninitialized
+Intel: -Wall -Wshadow -pedantic -Werror -Wsign-compare -Wtype-limits -Wuninitialized
+Clang: -Wall -Wshadow -pedantic -Werror -Wsign-compare -Wtype-limits -Wuninitialized
+
 
 ============================================================================
 ====Getting started=========================================================

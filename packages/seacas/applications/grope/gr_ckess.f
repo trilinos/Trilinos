@@ -33,7 +33,8 @@ C
 C=======================================================================
       SUBROUTINE CKESS (NUMESS, LESSEL, LESSNL, NUMEL, NUMNP,
      &   IDESS, NEESS, NNESS, IXEESS, IXNESS,
-     &   LTEESS, LTSESS, FACESS, ICHECK, NDIM)
+     &   LTEESS, LTSESS, FACESS, NSCR, ICHECK, RCHECK, NDIM,
+     *   MAPEL, MAPND)
 C=======================================================================
 
 C   --*** CKESS *** (GROPE) Check database element side sets
@@ -55,7 +56,12 @@ C   --   IXNESS - IN - the index of the first node for each set
 C   --   LTEESS - IN - the elements for all sets
 C   --   LTSESS - IN - the element faces for all sets
 C   --   FACESS - IN - the distribution factors for all sets
+C   --   NSCR - SCRATCH - size = LESSEL (not all used)
 C   --   ICHECK - SCRATCH - size = MAX (NUMESS, LESSEL, LESSNL)
+C   --   RCHECK - SCRATCH - size = NUMNP
+
+      include 'exodusII.inc'
+      INCLUDE 'gr_dbase.blk'
 
       INTEGER IDESS(*)
       INTEGER NEESS(*)
@@ -66,7 +72,12 @@ C   --   ICHECK - SCRATCH - size = MAX (NUMESS, LESSEL, LESSNL)
       INTEGER LTSESS(*)
       REAL FACESS(*)
       INTEGER ICHECK(*)
-
+      INTEGER NSCR(*)
+      REAL RCHECK(*)
+      INTEGER MAPEL(*)
+      INTEGER MAPND(*)
+      LOGICAL DIDHEAD, ALLSAM
+      
       CHARACTER*128 STRA
 
 C   --Check for unique identifier
@@ -120,6 +131,14 @@ C ... Since we don't know (or don't want to expend the effort...) the
 C     the number of faces for each element, we assume that the maximum
 C     number of faces is 4 for 2D and 6 for 3D      
       CALL CHKRNG (LTSESS, LESSEL, 2*NDIM, NZERO, NERR)
+      IF (NERR .GT. 0) THEN
+        CALL PRTERR ('CMDSPEC',
+     &    'Element side set faces are out of range')
+      END IF
+      IF (NZERO .GT. 0) THEN
+        CALL PRTERR ('CMDSPEC',
+     &    'Element side set faces are zero')
+      END IF
       
 C ... Check for duplicate element/sides in a sideset. This causes
 C     problems with some analysis codes
@@ -142,13 +161,66 @@ C     problems with some analysis codes
         end do
       end do
 
-      IF (NERR .GT. 0) THEN
-        CALL PRTERR ('CMDSPEC',
-     &    'Element side set faces are out of range')
-      END IF
-      IF (NZERO .GT. 0) THEN
-        CALL PRTERR ('CMDSPEC',
-     &    'Element side set faces are zero')
-      END IF
+c ... Check for discontinuous sideset distribution factors on a sideset.
+C     That is, if node 42 on side 15 has a different df value than node 42 on side 11.
+C     This is allowed for in exodus, but most users want a c1 continuous field defined.
+      do iess = 1, numess
+        call inirea(numnp, 0.0, rcheck)
+        didhead = .false.
+        IF (NNESS(IESS) .GT. 0) THEN
+          IS = IXNESS(IESS)
+          IE = IS + NNESS(IESS) - 1
+C     ... See if all values are the same
+          val = facess(is)
+          allsam = .TRUE.
+          do i=is+1, ie
+            if (facess(i) .ne. val) then
+              allsam = .FALSE.
+              go to 90
+            end if
+          end do
+ 90       continue
+
+          if (.not. allsam) then
+C ... Get the number of df/nodes per face and the nodes on the face
+C ... NOTE: facess is contiguous over all sidesets, 
+C           nscr is the number of nodes/df per face 
+C           icheck is the nodes for the faces.              
+            call exgssn(ndb, idess(iess), nscr, icheck, ierr)
+            ISE = IXEESS(IESS)
+            IEE = ISE + NEESS(IESS) - 1
+            IDS = IS
+            idf = 1
+            idn = 1
+            do i=ise, iee
+              NDFPE = nscr(idf)
+              idf=idf+1
+              do j=1,ndfpe
+                node = icheck(j+idn-1)
+                if (rcheck(node) .ne. 0.0 .and.
+     *            rcheck(node) .ne. facess(j+ids-1)) then
+                  iel  = lteess(i)
+                  isid = ltsess(i)
+                  if (.not. didhead) then
+                    WRITE (*, 10040, IOSTAT=IDUM) idess(iess)
+                    didhead = .true.
+                  end if
+                  write (stra, 10050) mapel(iel), isid,
+     *              mapnd(node), rcheck(node), facess(j+ids-1)
+                  CALL PRTERR ('CMDSPEC', stra(:lenstr(stra)))
+                else
+                  rcheck(node) = facess(j+ids-1)
+                endif
+              end do
+              ids = ids + ndfpe
+              idn = idn + ndfpe
+            end do
+          end if
+        END IF
+      end do
+10040 FORMAT('SIDESET DF CONTINUITY ERRORS For Sideset ',I10)
+10050 FORMAT('Element ',I10,', Side ',I1, ', Node ',I10,
+     *  ': Previous Value = ',1PE11.4,'  Current Value = ',1PE11.4)
+      
       RETURN
       END

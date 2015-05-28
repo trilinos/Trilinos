@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
   Piro::SolverFactory solverFactory;
 
 #ifdef Piro_ENABLE_Rythmos
-  int numTests=3;
+  int numTests=4;
 #else
   int numTests=2;
 #endif
@@ -96,6 +96,7 @@ int main(int argc, char *argv[]) {
        case 0: inputFile="input_Solve_NOX_3.xml"; break;
        case 1: inputFile="input_Solve_LOCA_1.xml"; break;
        case 2: inputFile="input_Solve_Rythmos_2.xml"; break;
+       case 3: inputFile="input_Solve_RythmosSolver_2.xml"; break;
        default : std::cout << "iTest logic error " << std::endl; exit(-1);
       }
     }

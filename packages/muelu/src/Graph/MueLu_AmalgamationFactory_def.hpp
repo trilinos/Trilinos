@@ -80,7 +80,7 @@ namespace MueLu {
     LO blockid          = -1;  // block id in strided map
     LO nStridedOffset   = 0;   // DOF offset for strided block id "blockid" (default = 0)
     LO stridedblocksize = fullblocksize; // size of strided block id "blockid" (default = fullblocksize, only if blockid!=-1 stridedblocksize <= fullblocksize)
-    GO indexBase        = A->getRowMap()->getIndexBase();  // index base for maps
+    // GO indexBase        = A->getRowMap()->getIndexBase();  // index base for maps (unused)
 
     // 1) check for blocking/striding information
 
