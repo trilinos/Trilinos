@@ -81,10 +81,10 @@ namespace MueLu {
     @brief Factory for building the Schur Complement for a 2x2 block matrix.
 
     For a blocked matrix
-        A = [F G; D -Z]
+        A = [A_00  A_01; A_10  A_11]
     it computes the Schur complement
-        S = Z - 1/\omega D \hat{F}^{-1} G,
-    where \omega is some scaling factor and \hat{F} an approximation of F (just the diagonal of F)
+        S = A_11 - 1/\omega A_10 \hat{A_00}^{-1} A_01,
+    where \omega is some scaling factor and \hat{A_00} an approximation of A_00 (just the diagonal of A_00)
   */
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class SchurComplementFactory : public SingleLevelFactoryBase {
@@ -105,7 +105,7 @@ namespace MueLu {
     //! Input
     //@{
 
-    void DeclareInput(Level &currentLevel) const;
+    void DeclareInput(Level& currentLevel) const;
 
     RCP<const ParameterList> GetValidParameterList() const;
 
@@ -121,8 +121,6 @@ namespace MueLu {
 
 
   private:
-
-    // bool switchRowOrder_;          ///< TODO NOT USED YET
 
   }; // class SchurComplementFactory
 

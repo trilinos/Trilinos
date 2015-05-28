@@ -76,6 +76,7 @@ namespace MueLu {
     validParamList->set<SC>                     ("omega",                     one, "Scaling parameter in S = A(1,1) - 1/omega A(1,0) diag{A(0,0)}^{-1} A(0,1)");
     validParamList->set<bool>                   ("lumping",                 false, "Use lumping to construct diag(A(0,0), i.e. use row sum of the abs values on the diagonal "
                                                                                    "as approximation of A00 (and A00^{-1})");
+    validParamList->set<bool>                   ("fixing",                  false, "Fix diagonal by replacing small entries with 1.0");
 
     return validParamList;
   }
@@ -116,12 +117,16 @@ namespace MueLu {
     RCP<Matrix> T = MatrixFactory2::BuildCopy(A01);
 
     bool lumping = pL.get<bool>("lumping");
+    bool fixing  = pL.get<bool>("fixing");
     ArrayRCP<SC> D;
     if (!lumping) {
       D = Utils::GetMatrixDiagonal(*A00);
-      for (size_t k = 0; k < as<size_t>(D.size()); k++)
-        if (STS::magnitude(D[k]) < 1e-4)
-          D[k] = STS::one();
+
+      if (fixing) {
+        for (size_t k = 0; k < as<size_t>(D.size()); k++)
+          if (STS::magnitude(D[k]) < 1e-4)
+            D[k] = STS::one();
+      }
 
     } else {
       D = Utils::GetLumpedMatrixDiagonal(*A00);
