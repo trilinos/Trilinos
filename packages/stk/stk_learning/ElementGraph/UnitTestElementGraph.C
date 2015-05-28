@@ -1582,9 +1582,9 @@ TEST(ElementGraph, test_element_death)
                         }
                         else
                         {
-                            stk::mesh::EntityId face_global_id = get_element_face_multiplier() * bulkData.identifier(this_elem_entity) + via_sides[i][j];
+                            stk::mesh::EntityId face_global_id = get_element_face_multiplier() * bulkData.identifier(this_elem_entity) + side_ids[j];
 
-                            stk::mesh::Entity face = stk::mesh::impl::get_or_create_face_at_element_side(bulkData, this_elem_entity, via_sides[i][j],
+                            stk::mesh::Entity face = stk::mesh::impl::get_or_create_face_at_element_side(bulkData, this_elem_entity, side_ids[j],
                                     face_global_id, faces_part);
 
                             if ( bulkData.is_valid(face) )
