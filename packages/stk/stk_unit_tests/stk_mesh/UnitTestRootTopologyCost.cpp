@@ -32,6 +32,7 @@
 //
 
 #include <gtest/gtest.h>
+#include <algorithm>
 
 #include "MetaDataTester.hpp"
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
@@ -224,3 +225,59 @@ TEST(UnitTestRootTopology, autoInduceFragmentation)
         EXPECT_EQ(num_buckets, 5u);
     }
 }
+
+void check_parts_allowed(const stk::mesh::BucketVector &buckets, const stk::mesh::PartVector &parts_allowed)
+{
+    for (unsigned i = 0; i < buckets.size(); ++i)
+    {
+        const stk::mesh::Bucket &bucket = *buckets[i];
+        const stk::mesh::PartVector &parts_found = bucket.supersets();
+
+        for (unsigned j = 0; j < parts_found.size(); ++j)
+        {
+            const stk::mesh::Part *part = parts_found[j];
+            bool found = (std::find(parts_allowed.begin(), parts_allowed.end(), part) != parts_allowed.end());
+            EXPECT_TRUE(found);
+        }
+    }
+}
+
+
+TEST(UnitTestRootTopology, unusedPartsNotInBuckets)
+{
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    int p_size = stk::parallel_machine_size(pm);
+
+    if (p_size != 1)
+    {
+        return;
+    }
+
+    const unsigned spatialDim = 3;
+
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta, pm);
+    make_small_hybrid_mesh(meta, mesh);
+
+    stk::mesh::PartVector parts_allowed;
+    parts_allowed.push_back(&meta.universal_part());
+    parts_allowed.push_back(&meta.locally_owned_part());
+    parts_allowed.push_back(&meta.get_topology_root_part(stk::topology::NODE));
+    parts_allowed.push_back(&meta.get_topology_root_part(stk::topology::HEXAHEDRON_8));
+    parts_allowed.push_back(&meta.get_topology_root_part(stk::topology::TETRAHEDRON_4));
+    parts_allowed.push_back(&meta.get_topology_root_part(stk::topology::PYRAMID_5));
+
+    size_t num_entities = 0;
+    for (stk::mesh::EntityRank e_rank = stk::topology::NODE_RANK; e_rank <= stk::topology::ELEM_RANK; ++e_rank)
+    {
+        const stk::mesh::BucketVector &buckets = mesh.buckets(e_rank);
+        check_parts_allowed(buckets, parts_allowed);
+
+        for (unsigned bkt_j = 0; bkt_j < buckets.size(); ++bkt_j)
+        {
+            num_entities += buckets[bkt_j]->size();
+        }
+    }
+    EXPECT_EQ(num_entities, 18u);
+}
+
