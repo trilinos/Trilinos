@@ -82,6 +82,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  PamgenMeshInput
+  SOURCES input/PamgenMeshInput.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+)
  
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   XpetraTraits
@@ -244,6 +253,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 # Command that copies files to the executable directory.
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_unit_tests
   SOURCE_FILES
+    Poisson.xml
     simple.mtx
     simple_coord.mtx
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../data
