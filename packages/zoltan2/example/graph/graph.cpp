@@ -190,9 +190,17 @@ int main(int narg, char** arg)
   redistribProd = Tpetra::createVector<zscalar_t,zlno_t,zgno_t>(
                                        redistribMatrix->getRangeMap());
 
+  // SANITY CHECK
+  // A little output for small problems
   if (origMatrix->getGlobalNumRows() <= 50) {
-    origVector->print(std::cout);
-    redistribVector->print(std::cout);
+    cout << me << " ORIGINAL:  ";
+    for (size_t i = 0; i < origVector->getLocalLength(); i++)
+      cout << origVector->getMap()->getGlobalElement(i) << " ";
+    cout << endl;
+    cout << me << " REDISTRIB: ";
+    for (size_t i = 0; i < redistribVector->getLocalLength(); i++)
+      cout << redistribVector->getMap()->getGlobalElement(i) << " ";
+    cout << endl;
   }
 
   // SANITY CHECK

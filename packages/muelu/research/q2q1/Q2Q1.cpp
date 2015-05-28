@@ -110,6 +110,7 @@ int main(int argc, char *argv[]) {
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::null;
   using Teuchos::as;
+  using Teuchos::TimeMonitor;
   using Tpetra::MatrixMarket::Reader;
   using Thyra::tpetraVectorSpace;
 
@@ -138,6 +139,7 @@ int main(int argc, char *argv[]) {
     int         n            = 17;             clp.setOption("n",        &n,             "problem size (1D)");
     int         maxLevels    = 4;              clp.setOption("nlevels",  &maxLevels,     "max num levels");
     std::string type         = "structured";   clp.setOption("type",     &type,          "structured/unstructured");
+    bool        printTimings = false;          clp.setOption("timings", "notimings",  &printTimings,      "print timings to screen");
 
     switch (clp.parse(argc, argv)) {
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
@@ -260,6 +262,16 @@ int main(int argc, char *argv[]) {
     RCP<TH_Mvb> sB = Thyra::createMultiVector(tB);
 
     Thyra::SolveStatus<SC> solveStatus = Thyra::solve(*nsA, Thyra::NOTRANS, *sB, sX.ptr());
+
+    if (printTimings) {
+      const bool alwaysWriteLocal = false;
+      const bool writeGlobalStats = true;
+      const bool writeZeroTimers  = false;
+      const bool ignoreZeroTimers = true;
+      const std::string filter    = "";
+      TimeMonitor::summarize(comm.ptr(), std::cout, alwaysWriteLocal, writeGlobalStats,
+                             writeZeroTimers, Teuchos::Union, filter, ignoreZeroTimers);
+    }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 

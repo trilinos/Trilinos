@@ -100,7 +100,8 @@ public:
            state_->nlcg_type != NONLINEARCG_FLETCHER_CONJDESC ) {
         y_ = g.clone();
       }
-      if ( state_->nlcg_type == NONLINEARCG_HAGAR_ZHANG ) {
+      if ( state_->nlcg_type == NONLINEARCG_HAGAR_ZHANG ||
+           state_->nlcg_type == NONLINEARCG_OREN_LUENBERGER ) {
         yd_ = g.clone();
       }
     }
@@ -166,6 +167,19 @@ public:
           y_->axpy(-1.0, *(state_->grad[0]));
           yd_->set(*y_);
           Real mult = 2.0 * ( y_->dot(*y_) / (state_->pstep[0])->dot(y_->dual()) );
+          yd_->axpy(-mult, (state_->pstep[0])->dual());
+          beta = - yd_->dot(g) / (state_->pstep[0])->dot(y_->dual());
+          Real eta = -1.0 / ((state_->pstep[0])->norm()*std::min(eta_0,(state_->grad[0])->norm()));
+          beta = std::max(beta, eta);
+          break;
+          }
+
+        case NONLINEARCG_OREN_LUENBERGER: {
+          Real eta_0 = 1e-2; 
+          y_->set(g);
+          y_->axpy(-1.0, *(state_->grad[0]));
+          yd_->set(*y_);
+          Real mult = ( y_->dot(*y_) / (state_->pstep[0])->dot(y_->dual()) );
           yd_->axpy(-mult, (state_->pstep[0])->dual());
           beta = - yd_->dot(g) / (state_->pstep[0])->dot(y_->dual());
           Real eta = -1.0 / ((state_->pstep[0])->norm()*std::min(eta_0,(state_->grad[0])->norm()));
