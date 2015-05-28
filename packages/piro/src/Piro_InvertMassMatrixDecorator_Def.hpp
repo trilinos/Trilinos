@@ -54,6 +54,7 @@
 
 #ifdef Piro_ENABLE_Ifpack2
 #include "Thyra_Ifpack2PreconditionerFactory.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 #endif
 
 #ifdef Piro_ENABLE_MueLu
