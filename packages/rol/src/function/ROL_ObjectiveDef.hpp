@@ -168,6 +168,8 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
     gCheck[i][0] = eta;
     gCheck[i][1] = dtg;
 
+    this->update(x);
+
     gCheck[i][2] = weights[order-1][0] * this->value(x,tol);
 
     for(int j=0; j<order; ++j) {
