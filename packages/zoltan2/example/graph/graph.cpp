@@ -74,7 +74,7 @@ int main(int narg, char** arg)
 
   // Useful typedefs:  basic types
   typedef int zlno_t;
-  typedef long zgno_t;
+  typedef int zgno_t;
   typedef double zscalar_t;
 
   // Useful typedefs:  Tpetra types
