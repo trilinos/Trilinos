@@ -456,26 +456,26 @@ public:
    *  \todo document the model flags that might be set
    */
 
-  GraphModel(const MatrixAdapter<user_t,userCoord_t> *ia,
+  GraphModel(const RCP<const MatrixAdapter<user_t,userCoord_t> > &ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &modelFlags);
 
-  GraphModel(const GraphAdapter<user_t,userCoord_t> *ia,
+  GraphModel(const RCP<const GraphAdapter<user_t,userCoord_t> > &ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &modelFlags);
 
-  GraphModel(const MeshAdapter<user_t> *ia,
+  GraphModel(const RCP<const MeshAdapter<user_t> > &ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &modelflags);
 
-  GraphModel(const VectorAdapter<userCoord_t> *ia,
+  GraphModel(const RCP<const VectorAdapter<userCoord_t> > &ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &flags)
   {
     throw std::runtime_error("cannot build GraphModel from VectorAdapter");
   }
 
-  GraphModel(const IdentifierAdapter<user_t> *ia,
+  GraphModel(const RCP<const IdentifierAdapter<user_t> > &ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &flags)
   {
@@ -638,13 +638,13 @@ public:
 
   size_t getGlobalNumObjects() const { return numGlobalVertices_; }
 
-  void get2ndAdjsViewFromAdjs(const Adapter *ia,
+  void get2ndAdjsViewFromAdjs(const RCP<const Adapter> &ia,
 			      Zoltan2::MeshEntityType sourcetarget,
 			      Zoltan2::MeshEntityType through,
 			      const lno_t *&offsets,
 			      const zgid_t *&adjacencyIds);
 private:
-  void shared_constructor(const Adapter *ia, modelFlag_t &modelFlags);
+  void shared_constructor(const RCP<const Adapter>&ia, modelFlag_t &modelFlags);
 
   template <typename AdapterWithCoords>
   void shared_GetVertexCoords(const AdapterWithCoords *ia);
@@ -701,7 +701,7 @@ private:
 ////////////////////////////////////////////////////////////////
 template <typename Adapter>
 GraphModel<Adapter>::GraphModel(
-  const MatrixAdapter<user_t,userCoord_t> *ia,
+  const RCP<const MatrixAdapter<user_t,userCoord_t> > &ia,
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &comm,
   modelFlag_t &modelFlags):
@@ -785,7 +785,7 @@ GraphModel<Adapter>::GraphModel(
 ////////////////////////////////////////////////////////////////
 template <typename Adapter>
 GraphModel<Adapter>::GraphModel(
-  const GraphAdapter<user_t,userCoord_t> *ia,
+  const RCP<const GraphAdapter<user_t,userCoord_t> > &ia,
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &comm,
   modelFlag_t &modelFlags):
@@ -871,7 +871,7 @@ GraphModel<Adapter>::GraphModel(
 ////////////////////////////////////////////////////////////////
 template <typename Adapter>
 GraphModel<Adapter>::GraphModel(
-  const MeshAdapter<user_t> *ia,
+  const RCP<const MeshAdapter<user_t> > &ia,
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &comm,
   modelFlag_t &modelFlags):
@@ -975,7 +975,7 @@ GraphModel<Adapter>::GraphModel(
   shared_constructor(ia, modelFlags);
 
   typedef MeshAdapter<user_t> adapterWithCoords_t;
-  shared_GetVertexCoords<adapterWithCoords_t>(ia);
+  shared_GetVertexCoords<adapterWithCoords_t>(&(*ia));
 
   env_->timerStop(MACRO_TIMERS, "GraphModel constructed from MeshAdapter");
   print();
@@ -983,7 +983,7 @@ GraphModel<Adapter>::GraphModel(
 
 template <typename Adapter>
 void GraphModel<Adapter>::get2ndAdjsViewFromAdjs(
-  const Adapter *ia,
+  const RCP<const Adapter> &ia,
   Zoltan2::MeshEntityType sourcetarget, Zoltan2::MeshEntityType through,
   const lno_t *&offsets, const zgid_t *&adjacencyIds)
 {
@@ -1152,7 +1152,7 @@ void GraphModel<Adapter>::get2ndAdjsViewFromAdjs(
 //////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
 void GraphModel<Adapter>::shared_constructor(
-  const Adapter *ia,
+  const RCP<const Adapter> &ia,
   modelFlag_t &modelFlags)
 {
   // Model creation flags

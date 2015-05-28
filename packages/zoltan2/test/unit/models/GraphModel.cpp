@@ -274,7 +274,7 @@ void testAdapter(
 
   if (rank == 0) std::cout << "        Creating GraphModel" << std::endl;
   Zoltan2::GraphModel<BaseAdapter> *model = NULL;
-  const BaseAdapter *baseTmi = dynamic_cast<BaseAdapter *>(&tmi);
+  RCP<const BaseAdapter> baseTmi = rcp(dynamic_cast<BaseAdapter *>(&tmi),false);
 
   try{
     model = new Zoltan2::GraphModel<BaseAdapter>(baseTmi, env, 

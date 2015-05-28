@@ -520,7 +520,17 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
   // Create the algorithm
   try {
-    if (algName_ == std::string("scotch")) {
+    if (algName_ == std::string("multijagged")) {
+      this->algorithm_ = rcp(new Zoltan2_AlgMJ<Adapter>(this->envConst_,
+                                              problemComm_,
+                                              this->coordinateModel_));
+    }
+    else if (algName_ == std::string("zoltan")) {
+      this->algorithm_ = rcp(new AlgZoltan<Adapter>(this->envConst_,
+                                           problemComm_,
+                                           this->baseInputAdapter_));
+    }
+    else if (algName_ == std::string("scotch")) {
       this->algorithm_ = rcp(new AlgPTScotch<Adapter>(this->envConst_,
                                             problemComm_,
                                             this->graphModel_));
@@ -537,11 +547,6 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
     else if (algName_ == std::string("rcb")) {
       this->algorithm_ = rcp(new AlgRCB<Adapter>(this->envConst_, problemComm_,
                                                  this->coordinateModel_));
-    }
-    else if (algName_ == std::string("multijagged")) {
-      this->algorithm_ = rcp(new Zoltan2_AlgMJ<Adapter>(this->envConst_,
-                                              problemComm_,
-                                              this->coordinateModel_));
     }
     else if (algName_ == std::string("wolf")) {
       this->algorithm_ = rcp(new AlgWolf<Adapter>(this->envConst_,
@@ -613,11 +618,10 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
     psq_t *quality = NULL;
     RCP<const ps_t> solutionConst = rcp_const_cast<const ps_t>(solution_);
-    RCP<const Adapter> adapter = rcp(this->inputAdapter_, false);
 
     try{
-      quality = new psq_t(this->envConst_, problemCommConst_, adapter, 
-        solutionConst);
+      quality = new psq_t(this->envConst_, problemCommConst_,
+                          this->inputAdapter_, solutionConst);
     }
     Z2_FORWARD_EXCEPTIONS
 
@@ -734,6 +738,10 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
       algName_ = algorithm;
       needConsecutiveGlobalIds = true;
+    }
+    else if (algorithm == std::string("zoltan"))
+    {
+      algName_ = algorithm;
     }
     else if (algorithm == std::string("rcb") ||
              algorithm == std::string("rib") ||
@@ -1044,9 +1052,11 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       {
         this->env_->debug(DETAILED_STATUS, "    building graph model");
         this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
-          this->baseInputAdapter_, this->envConst_, problemComm_, graphFlags_));
+              this->baseInputAdapter_, this->envConst_, problemComm_,
+              graphFlags_));
 
-        this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(this->graphModel_);
+        this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
+              this->graphModel_);
       }
       if(modelAvail_[HypergraphModelType]==true)
       {
@@ -1057,18 +1067,22 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       {
       	this->env_->debug(DETAILED_STATUS, "    building coordinate model");
       	this->coordinateModel_ = rcp(new CoordinateModel<base_adapter_t>(
-      				     this->baseInputAdapter_, this->envConst_, problemComm_, coordFlags_));
+	     this->baseInputAdapter_, this->envConst_, problemComm_, 
+             coordFlags_));
 
-        this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(this->coordinateModel_);
+        this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
+              this->coordinateModel_);
       }
 
       if(modelAvail_[IdentifierModelType]==true)
       {
         this->env_->debug(DETAILED_STATUS, "    building identifier model");
         this->identifierModel_ = rcp(new IdentifierModel<base_adapter_t>(
-                                     this->baseInputAdapter_, this->envConst_, problemComm_, idFlags_));
+              this->baseInputAdapter_, this->envConst_, problemComm_,
+              idFlags_));
 
-        this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(this->identifierModel_);
+        this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
+              this->identifierModel_);
       }
   
 

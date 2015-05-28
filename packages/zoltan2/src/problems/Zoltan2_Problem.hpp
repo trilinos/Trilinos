@@ -73,9 +73,10 @@ public:
 #ifdef HAVE_ZOLTAN2_MPI
   /*! \brief Constructor for MPI builds
    */
-  Problem(Adapter *input, ParameterList *params, MPI_Comm comm):
-        inputAdapter_(input),
-        baseInputAdapter_(dynamic_cast<base_adapter_t *>(input)),
+  Problem(const Adapter *input, ParameterList *params, MPI_Comm comm):
+        inputAdapter_(rcp(input,false)),
+        baseInputAdapter_(rcp(dynamic_cast<const base_adapter_t *>(input),
+                              false)),
         graphModel_(), identifierModel_(), baseModel_(), algorithm_(),
         params_(), comm_(), env_(), envConst_(), timer_()
   {
@@ -89,9 +90,10 @@ public:
 
   /*! \brief Constructor where communicator is Teuchos default.
    */
-  Problem(Adapter *input, ParameterList *params):
-        inputAdapter_(input), 
-        baseInputAdapter_(dynamic_cast<base_adapter_t *>(input)),
+  Problem(const Adapter *input, ParameterList *params):
+        inputAdapter_(rcp(input,false)), 
+        baseInputAdapter_(rcp(dynamic_cast<const base_adapter_t *>(input),
+                              false)),
         graphModel_(), identifierModel_(), baseModel_(), algorithm_(),
         params_(), comm_(), env_(), envConst_(), timer_()
   {
@@ -102,9 +104,11 @@ public:
 
   /*! \brief Constructor where Teuchos communicator is specified
    */
-  Problem(Adapter *input, ParameterList *params, RCP<const Comm<int> > &comm):
-        inputAdapter_(input),
-        baseInputAdapter_(dynamic_cast<base_adapter_t *>(input)),
+  Problem(const Adapter *input, ParameterList *params, 
+          RCP<const Comm<int> > &comm):
+        inputAdapter_(rcp(input,false)),
+        baseInputAdapter_(rcp(dynamic_cast<const base_adapter_t *>(input),
+                              false)),
         graphModel_(), identifierModel_(), baseModel_(), algorithm_(),
         params_(), comm_(comm), env_(), envConst_(), timer_()
   {
@@ -164,8 +168,8 @@ protected:
 
   typedef typename Adapter::base_adapter_t base_adapter_t;
 
-  Adapter* inputAdapter_;
-  base_adapter_t *baseInputAdapter_;
+  RCP<const Adapter> inputAdapter_;
+  RCP<const base_adapter_t> baseInputAdapter_;
 
   RCP<GraphModel<base_adapter_t> > graphModel_;  
   RCP<IdentifierModel<base_adapter_t> > identifierModel_;  
