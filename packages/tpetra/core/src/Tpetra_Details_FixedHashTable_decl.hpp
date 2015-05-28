@@ -152,6 +152,10 @@ public:
     typedef typename ptr_type::non_const_type nonconst_ptr_type;
     typedef typename val_type::non_const_type nonconst_val_type;
 
+    // FIXME (mfh 28 May 2015) Christian pointed out that different
+    // Devices may have different offset_type, because offset_type
+    // comes from the memory space's size_type typedef.  The proper
+    // fix is to write a deep copy functor.
     nonconst_ptr_type ptr (ViewAllocateWithoutInitializing ("ptr"),
                            src.ptr_.dimension_0 ());
 
