@@ -86,6 +86,19 @@ void EqualityConstraint<Real>::applyAdjointJacobian(Vector<Real> &ajv,
                                                     const Vector<Real> &v,
                                                     const Vector<Real> &x,
                                                     Real &tol) {
+  applyAdjointJacobian(ajv,v,x,v.dual(),tol);
+}
+
+
+
+
+
+template <class Real>
+void EqualityConstraint<Real>::applyAdjointJacobian(Vector<Real> &ajv,
+                                                    const Vector<Real> &v,
+                                                    const Vector<Real> &x,
+                                                    const Vector<Real> &dualv,
+                                                    Real &tol) { 
 
   // By default we compute the finite-difference approximation.
   // This requires the implementation of a vector-space basis for the optimization variables.
@@ -97,8 +110,8 @@ void EqualityConstraint<Real>::applyAdjointJacobian(Vector<Real> &ajv,
   Teuchos::RCP<Vector<Real> > xnew = x.clone();
   Teuchos::RCP<Vector<Real> > ex   = x.clone();
   Teuchos::RCP<Vector<Real> > eajv = ajv.clone();
-  Teuchos::RCP<Vector<Real> > cnew = v.clone();  // in general, should be in the constraint space
-  Teuchos::RCP<Vector<Real> > c0   = v.clone();  // in general, should be in the constraint space
+  Teuchos::RCP<Vector<Real> > cnew = dualv.clone();  // in general, should be in the constraint space
+  Teuchos::RCP<Vector<Real> > c0   = dualv.clone();  // in general, should be in the constraint space
   this->value(*c0,x,ctol);
   ajv.zero();
   for ( int i = 0; i < ajv.dimension(); i++ ) {

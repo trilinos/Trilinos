@@ -150,6 +150,29 @@ public:
                                     Real &tol);
 
 
+  /** \brief Apply the adjoint of the the constraint Jacobian at \f$x\f$, \f$c'(x)^* \in L(\mathcal{C}^*, \mathcal{X}^*)\f$,
+             to vector \f$v\f$.
+
+             @param[out]      ajv is the result of applying the adjoint of the constraint Jacobian to @b v at @b x; a dual optimization-space vector
+             @param[in]       v   is a dual constraint-space vector
+             @param[in]       x   is the constraint argument; an optimization-space vector
+             @param[in]       dualv  is a vector used for temporary variables; a constraint-space vector
+             @param[in,out]   tol is a tolerance for inexact evaluations; currently unused
+
+             On return, \f$\mathsf{ajv} = c'(x)^*v\f$, where
+             \f$v \in \mathcal{C}^*\f$, \f$\mathsf{ajv} \in \mathcal{X}^*\f$. \n\n
+             The default implementation is a finite-difference approximation.
+
+             ---
+  */
+
+  virtual void applyAdjointJacobian(Vector<Real> &ajv,
+                                    const Vector<Real> &v,
+                                    const Vector<Real> &x,
+                                    const Vector<Real> &dualv,
+                                    Real &tol);
+
+
   /** \brief Apply the derivative of the adjoint of the constraint Jacobian at \f$x\f$
              to vector \f$u\f$ in direction \f$v\f$,
              according to \f$ v \mapsto c''(x)(v,\cdot)^*u \f$.
