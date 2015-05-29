@@ -140,7 +140,6 @@ int main(int narg, char *arg[]) {
   if (me == 0) cout << "Creating mesh adapter ... \n\n";
 
   typedef Zoltan2::PamgenMeshAdapter<tMVector_t> inputAdapter_t;
-  typedef inputAdapter_t::base_adapter_t base_adapter_t;
 
   inputAdapter_t ia(*CommT, "region");
   inputAdapter_t::zgid_t const *adjacencyIds=NULL;
@@ -163,10 +162,13 @@ int main(int narg, char *arg[]) {
 
     if (me == 0) std::cout << "        Creating GraphModel" << std::endl;
 
-    /*Zoltan2::GraphModel<base_adapter_t>
-      model(dynamic_cast<base_adapter_t *>(&ia), env, CommT, modelFlags);*/
+    typedef inputAdapter_t::base_adapter_t base_adapter_t;
 
-    
+    RCP<const base_adapter_t> baseInputAdapter;
+    baseInputAdapter = (rcp(dynamic_cast<const base_adapter_t *>(&ia), false));
+
+    Zoltan2::GraphModel<base_adapter_t> graphModel(baseInputAdapter, env,
+						   CommT, modelFlags);
   }
   else{
     std::cout << "Adjacencies not available" << std::endl;
