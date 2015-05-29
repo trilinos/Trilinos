@@ -45,6 +45,7 @@
 //
 // Basic testing of Zoltan2::PamgenMeshAdapter
 
+#include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_PamgenMeshAdapter.hpp>
 
 // Teuchos includes
@@ -77,6 +78,9 @@ int main(int narg, char *arg[]) {
 
   int me = CommT->getRank();
   int numProcs = CommT->getSize();
+  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
+
+  std::bitset<Zoltan2::NUM_MODEL_FLAGS> modelFlags;
 
   /***************************************************************************/
   /*************************** GET XML INPUTS ********************************/
@@ -136,6 +140,7 @@ int main(int narg, char *arg[]) {
   if (me == 0) cout << "Creating mesh adapter ... \n\n";
 
   typedef Zoltan2::PamgenMeshAdapter<tMVector_t> inputAdapter_t;
+  typedef inputAdapter_t::base_adapter_t base_adapter_t;
 
   inputAdapter_t ia(*CommT, "region");
   inputAdapter_t::zgid_t const *adjacencyIds=NULL;
@@ -146,9 +151,15 @@ int main(int narg, char *arg[]) {
   Zoltan2::MeshEntityType secondAdjEType = ia.getSecondAdjacencyEntityType();
 
   if (ia.availAdjs(primaryEType, adjEType)) {
+    // Create a GraphModel based on this input data.
+
+    if (me == 0) std::cout << "        Creating GraphModel" << std::endl;
+
+    Zoltan2::GraphModel<base_adapter_t>
+      model(dynamic_cast<base_adapter_t *>(&ia), env, CommT, modelFlags);
+
     if (ia.avail2ndAdjs(primaryEType, secondAdjEType)) {
       ia.get2ndAdjsView(primaryEType, secondAdjEType, offsets, adjacencyIds);
-
     }
     else{
       std::cout << "2nd adjacencies not available" << std::endl;
