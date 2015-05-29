@@ -168,6 +168,8 @@ void fill_graph(stk::mesh::BulkData& bulkData, ElementGraph& elem_graph, SidesFo
 
 void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::Part& part);
 
+SideId get_side_from_element1_to_element2(const ElementGraph& elem_graph, const SidesForElementGraph &via_side, LocalId element_id1, LocalId element_id2);
+
 TEST(ElementGraph, check_graph_connectivity)
 {
     // element0 --> element1 --> element2
@@ -1238,7 +1240,7 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
 
         for(size_t j = 0; j < connected_elements.size(); ++j)
         {
-            if(this_element < connected_elements[j] && connected_elements[j] > 0)
+            if(this_element < connected_elements[j] && connected_elements[j] >= 0)
             {
                 stk::mesh::EntityId face_global_id = get_element_face_multiplier() * bulkData.identifier(element1) + via_sides[i][j];
                 if ( is_id_already_in_use_locally(bulkData, side_rank, face_global_id) )
@@ -1436,6 +1438,29 @@ void move_killled_elements_to_part(stk::mesh::BulkData& bulkData, const stk::mes
     bulkData.batch_change_entity_parts(killedElements, add_parts, rm_parts);
 }
 
+stk::mesh::EntityId get_face_global_id(stk::mesh::BulkData& bulkData, const ElementGraph& elem_graph, const SidesForElementGraph &via_sides,
+        const stk::mesh::EntityVector local_id_to_element_entity, LocalId element1_local_id, LocalId element2_local_id)
+{
+    stk::mesh::EntityId face_global_id;
+
+    stk::mesh::Entity element1_entity = local_id_to_element_entity[element1_local_id];
+    if(element1_local_id < element2_local_id)
+    {
+        SideId side_id = get_side_from_element1_to_element2(elem_graph, via_sides, element1_local_id, element2_local_id);
+        EXPECT_TRUE(side_id != -1);
+        face_global_id = get_element_face_multiplier() * bulkData.identifier(element1_entity) + side_id;
+    }
+    else
+    {
+        SideId side_id = get_side_from_element1_to_element2(elem_graph, via_sides, element2_local_id, element1_local_id);
+        EXPECT_TRUE(side_id != -1);
+        stk::mesh::Entity element2_entity = local_id_to_element_entity[element2_local_id];
+        face_global_id = get_element_face_multiplier() * bulkData.identifier(element2_entity) + side_id;
+    }
+
+    return face_global_id;
+}
+
 TEST(ElementGraph, test_element_death)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
@@ -1465,6 +1490,7 @@ TEST(ElementGraph, test_element_death)
             stk::mesh::Part& inactive = meta.declare_part("inactive", stk::topology::ELEMENT_RANK);
 
             stk::unit_test_util::fill_mesh_using_stk_io(filename, bulkData, comm);
+            stk::unit_test_util::write_mesh_using_stk_io("orig.exo", bulkData, bulkData.parallel());
 
             ASSERT_TRUE(meta.get_part("block_1") != NULL);
 
@@ -1519,18 +1545,29 @@ TEST(ElementGraph, test_element_death)
                     {
                         stk::mesh::Entity this_elem_entity = killedElements[k];
                         LocalId this_elem_local_id = bulkData.local_id(this_elem_entity);
-                        std::vector<LocalId> &connected_elements = elem_graph[this_elem_local_id];
-                        std::vector<SideId> &side_ids = via_sides[this_elem_local_id];
+                        const std::vector<LocalId> &connected_elements = elem_graph[this_elem_local_id];
+                        const std::vector<SideId> &side_ids = via_sides[this_elem_local_id];
 
                         for(size_t j = 0; j < connected_elements.size(); ++j)
                         {
                             LocalId other_elem_local_id = connected_elements[j];
-                            stk::mesh::Entity elem_entity = local_id_to_element_entity[other_elem_local_id];
-                            if(!bulkData.bucket(elem_entity).member(inactive))
+                            if(other_elem_local_id >= 0)
                             {
-                                if(other_elem_local_id > 0)
+                                stk::mesh::Entity elem_entity = local_id_to_element_entity[other_elem_local_id]; // this will fail in parallel
+                                bool is_other_element_alive = !bulkData.bucket(elem_entity).member(inactive); // fix for parallel
+                                if(is_other_element_alive)
                                 {
-                                    stk::mesh::EntityId face_global_id = get_element_face_multiplier() * bulkData.identifier(this_elem_entity) + side_ids[j];
+                                    stk::mesh::EntityId face_global_id = 0;
+
+                                    if ( this_elem_local_id < other_elem_local_id )
+                                    {
+                                        face_global_id = get_element_face_multiplier() * bulkData.identifier(this_elem_entity) + side_ids[j];
+                                    }
+                                    else
+                                    {
+                                        face_global_id = get_face_global_id(bulkData, elem_graph, via_sides,
+                                                local_id_to_element_entity, this_elem_local_id, other_elem_local_id);
+                                    }
 
                                     stk::mesh::Entity face = stk::mesh::impl::get_or_create_face_at_element_side(bulkData, this_elem_entity, side_ids[j],
                                             face_global_id, faces_part);
@@ -1545,55 +1582,76 @@ TEST(ElementGraph, test_element_death)
                                             side_nodes_vec);
                                     bulkData.declare_relation(element2, face, ord_and_perm.first, ord_and_perm.second);
                                 }
-                                else if(other_elem_local_id < 0)
+                                else
                                 {
-                                    LocalId other_element = -1 * other_elem_local_id;
-                                    ParallelGraphInfo::const_iterator iter = parallel_graph_info.find(std::make_pair(this_elem_local_id, other_element));
-                                    ThrowRequireMsg( iter != parallel_graph_info.end(), "Program error. Contact sierra-help@sandia.gov for support.");
-                                    ProcId other_proc = iter->second.m_other_proc;
-                                    SideId other_side = iter->second.m_other_side_ord;
+//                                    stk::mesh::EntityId face_global_id = 0;
+//
+//                                    if ( this_elem_local_id < other_elem_local_id )
+//                                    {
+//                                        face_global_id = get_element_face_multiplier() * bulkData.identifier(this_elem_entity) + side_ids[j];
+//                                    }
+//                                    else
+//                                    {
+//                                        face_global_id = get_face_global_id(bulkData, elem_graph, via_sides,
+//                                                local_id_to_element_entity, this_elem_local_id, other_elem_local_id);
+//                                    }
 
-                                    ProcId this_proc = bulkData.parallel_rank();
-                                    ProcId owning_proc = this_proc < other_proc ? this_proc : other_proc;
+                                    unsigned num_faces = bulkData.num_faces(this_elem_entity);
+                                    const stk::mesh::Entity *faces = bulkData.begin_faces(this_elem_entity);
+                                    const stk::mesh::ConnectivityOrdinal *ordinals = bulkData.begin_face_ordinals(this_elem_entity);
 
-                                    stk::mesh::EntityId face_global_id = 0;
-                                    stk::mesh::Permutation perm;
-                                    if(owning_proc == this_proc)
+                                    stk::mesh::Entity face;
+
+                                    for (unsigned ii=0;ii<num_faces;++ii)
                                     {
-                                        stk::mesh::EntityId id = bulkData.identifier(this_elem_entity);
-                                        face_global_id = get_element_face_multiplier() * id + side_ids[j];
-                                        perm = static_cast<stk::mesh::Permutation>(0);
-                                    }
-                                    else
-                                    {
-                                        face_global_id = get_element_face_multiplier() * other_element + other_side;
-                                        perm = static_cast<stk::mesh::Permutation>(iter->second.m_permutation);
+                                        if (ordinals[ii] == static_cast<stk::mesh::ConnectivityOrdinal>(side_ids[j]))
+                                        {
+                                            face = faces[ii];
+                                            break;
+                                        }
                                     }
 
-                                    stk::mesh::ConnectivityOrdinal side_ord = static_cast<stk::mesh::ConnectivityOrdinal>(side_ids[j]);
-
-                                    std::string msg = "Program error. Contact sierra-help@sandia.gov for support.";
-
-                                    ThrowRequireMsg(!is_id_already_in_use_locally(bulkData, side_rank, face_global_id), msg);
-                                    ThrowRequireMsg(!does_side_exist_with_different_permutation(bulkData, this_elem_entity, side_ord, perm), msg);
-                                    ThrowRequireMsg(!does_element_side_exist(bulkData, this_elem_entity, side_ord), msg);
-
-                                    stk::mesh::Entity face = connect_face_to_element(bulkData, this_elem_entity, face_global_id, side_ord, perm, faces_part);
-
-                                    shared_modified.push_back(sharing_info(face, other_proc, owning_proc));
-                                }
-                            }
-                            else
-                            {
-                                stk::mesh::EntityId face_global_id = get_element_face_multiplier() * bulkData.identifier(this_elem_entity) + side_ids[j];
-
-                                stk::mesh::Entity face = stk::mesh::impl::get_or_create_face_at_element_side(bulkData, this_elem_entity, side_ids[j],
-                                        face_global_id, faces_part);
-
-                                if(bulkData.is_valid(face))
-                                {
+                                    EXPECT_TRUE(bulkData.is_valid(face));
                                     deletedEntities.push_back(face);
                                 }
+                            }
+                            else if(other_elem_local_id < 0)
+                            {
+                                ASSERT_TRUE(false);
+                                LocalId other_element = -1 * other_elem_local_id;
+                                ParallelGraphInfo::const_iterator iter = parallel_graph_info.find(std::make_pair(this_elem_local_id, other_element));
+                                ThrowRequireMsg( iter != parallel_graph_info.end(), "Program error. Contact sierra-help@sandia.gov for support.");
+                                ProcId other_proc = iter->second.m_other_proc;
+                                SideId other_side = iter->second.m_other_side_ord;
+
+                                ProcId this_proc = bulkData.parallel_rank();
+                                ProcId owning_proc = this_proc < other_proc ? this_proc : other_proc;
+
+                                stk::mesh::EntityId face_global_id = 0;
+                                stk::mesh::Permutation perm;
+                                if(owning_proc == this_proc)
+                                {
+                                    stk::mesh::EntityId id = bulkData.identifier(this_elem_entity);
+                                    face_global_id = get_element_face_multiplier() * id + side_ids[j];
+                                    perm = static_cast<stk::mesh::Permutation>(0);
+                                }
+                                else
+                                {
+                                    face_global_id = get_element_face_multiplier() * other_element + other_side;
+                                    perm = static_cast<stk::mesh::Permutation>(iter->second.m_permutation);
+                                }
+
+                                stk::mesh::ConnectivityOrdinal side_ord = static_cast<stk::mesh::ConnectivityOrdinal>(side_ids[j]);
+
+                                std::string msg = "Program error. Contact sierra-help@sandia.gov for support.";
+
+                                ThrowRequireMsg(!is_id_already_in_use_locally(bulkData, side_rank, face_global_id), msg);
+                                ThrowRequireMsg(!does_side_exist_with_different_permutation(bulkData, this_elem_entity, side_ord, perm), msg);
+                                ThrowRequireMsg(!does_element_side_exist(bulkData, this_elem_entity, side_ord), msg);
+
+                                stk::mesh::Entity face = connect_face_to_element(bulkData, this_elem_entity, face_global_id, side_ord, perm, faces_part);
+
+                                shared_modified.push_back(sharing_info(face, other_proc, owning_proc));
                             }
                         }
                     }
@@ -1623,31 +1681,63 @@ TEST(ElementGraph, test_element_death)
                     std::cerr << "Total time: " << elapsed_time << std::endl;
                     std::cerr << "Total # of alive elements: " << num_active << std::endl;
                     std::cerr << "Total # of faces: " << num_faces << std::endl;
+
+//                    {
+//                        const stk::mesh::BucketVector &face_buckets = bulkData.buckets(stk::topology::FACE_RANK);
+//                        for(size_t i=0;i<face_buckets.size();++i)
+//                        {
+//                            const stk::mesh::Bucket &bucket = *face_buckets[i];
+//                            for(size_t j=0;j<bucket.size();++j)
+//                            {
+//                                std::cerr << "Face " << bulkData.identifier(bucket[j]) << " exists.\n";
+//                            }
+//                        }
+//                    }
+//
+//                    {
+//                        const stk::mesh::BucketVector &buckets = bulkData.buckets(stk::topology::ELEM_RANK);
+//                        for(size_t i=0;i<buckets.size();++i)
+//                        {
+//                            const stk::mesh::Bucket &bucket = *buckets[i];
+//                            if(!bucket.member(inactive))
+//                            {
+//                                for(size_t j=0;j<bucket.size();++j)
+//                                {
+//                                    std::cerr << "Element " << bulkData.identifier(bucket[j]) << " exists.\n";
+//                                }
+//                            }
+//                        }
+//                    }
                 }
 
-                // stk::unit_test_util::write_mesh_using_stk_io("out.exo", bulkData, bulkData.parallel());
+                stk::unit_test_util::write_mesh_using_stk_io("out.exo", bulkData, bulkData.parallel());
             }
         }
     }
+}
+
+SideId get_side_from_element1_to_element2(const ElementGraph& elem_graph, const SidesForElementGraph &via_side, LocalId element_id1, LocalId element_id2)
+{
+    SideId side = -1;
+    const std::vector<LocalId>& conn_elements = elem_graph[element_id1];
+
+    std::vector<LocalId>::const_iterator iter = std::find(conn_elements.begin(), conn_elements.end(), element_id2);
+    if ( iter != conn_elements.end() )
+    {
+        int64_t index = iter - conn_elements.begin();
+        side = via_side[element_id1][index];
+    }
+    return side;
 }
 
 int check_connectivity(const ElementGraph& elem_graph, const SidesForElementGraph &via_side,
         LocalId element_id1, LocalId element_id2)
 {
     int side=-1;
-
     if(element_id1 >=0 && element_id1 <=2 && element_id2 >=0 && element_id2 <=2)
     {
-        const std::vector<LocalId>& conn_elements = elem_graph[element_id1];
-
-        std::vector<LocalId>::const_iterator iter = std::find(conn_elements.begin(), conn_elements.end(), element_id2);
-        if ( iter != conn_elements.end() )
-        {
-            int64_t index = iter - conn_elements.begin();
-            side = via_side[element_id1][index];
-        }
+        side = get_side_from_element1_to_element2(elem_graph, via_side, element_id1, element_id2);
     }
-
     return side;
 }
 

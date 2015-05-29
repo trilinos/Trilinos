@@ -292,7 +292,7 @@ TEST(ForEntityFunction, test_for_each_node_run_using_lambda)
 
         //BEGIN_LAMBDA_USAGE_EXAMPLE
         unsigned numNodes = 0;
-        bulkData.for_each_node_run(
+        bulkData.for_each_node_run_non_threadsafe(
             [&numNodes](const stk::mesh::BulkData& mesh, stk::mesh::Entity node, ...)
             {
                 if(mesh.is_valid(node))
