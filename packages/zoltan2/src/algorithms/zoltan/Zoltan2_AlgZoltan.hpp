@@ -266,7 +266,7 @@ void AlgZoltan<Adapter>::partition(
                           nExport, eGids, eLids, eProcs, eParts);
 
   env->globalInputAssertion(__FILE__, __LINE__, "Zoltan LB_Partition", 
-    (ierr!=ZOLTAN_OK), BASIC_ASSERTION, problemComm);
+    (ierr==ZOLTAN_OK || ierr==ZOLTAN_WARN), BASIC_ASSERTION, problemComm);
 
   // Load answer into the solution.
   ArrayRCP<part_t> partList(new part_t[nExport], 0, nExport, true);
