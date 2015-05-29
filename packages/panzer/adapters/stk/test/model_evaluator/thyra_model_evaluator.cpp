@@ -576,10 +576,10 @@ namespace panzer {
     // build outputs
     ////////////////////////////////////////////////////////////////////////////////////
 
-    RCP<Thyra::VectorBase<double> > f = Thyra::createMember(me->get_f_space());
-
     // Test that the distributed parameter is updated correctly
     {
+      RCP<Thyra::VectorBase<double> > f = Thyra::createMember(me->get_f_space());
+
       InArgs in_args = me->createInArgs();
       OutArgs out_args = me->createOutArgs();
       
@@ -599,6 +599,39 @@ namespace panzer {
           = Teuchos::rcp_dynamic_cast<ThyraObjContainer<double> >(dataObject->getGhostedLOC())->get_x_th();
       RCP<Thyra::VectorBase<double> > gold_standard = Thyra::createMember(ghosted_distr_p->range());
       Thyra::put_scalar(3.14,gold_standard.ptr());
+
+      double tol = 10.0 * Teuchos::ScalarTraits<double>::eps();
+
+      // note that all this tests is that the ghosted vector is correctly populated!
+      TEST_EQUALITY_CONST(testEqualityOfVectorValues(*ghosted_distr_p,*gold_standard,tol,true), true);
+    }
+
+    // Test that the distributed parameter is updated correctly
+    {
+      RCP<Thyra::VectorBase<double> > distr_p2 = Thyra::createMember(me->get_p_space(distributed_parameter_index));
+      Thyra::put_scalar(6.28,distr_p2.ptr());
+
+      RCP<Thyra::VectorBase<double> > f = Thyra::createMember(me->get_f_space());
+
+      InArgs in_args = me->createInArgs();
+      OutArgs out_args = me->createOutArgs();
+      
+      TEST_ASSERT(in_args.Np() == 2);
+
+      in_args.set_x(x);
+      in_args.set_p(0,p);
+      in_args.set_p(distributed_parameter_index,distr_p2);
+
+      out_args.set_f(f);
+
+      me->evalModel(in_args,out_args);
+    
+      // Export should have performed global to ghost, ghosted values should be 1
+      // Create a gold standard to compare against
+      RCP<const Thyra::VectorBase<double> > ghosted_distr_p 
+          = Teuchos::rcp_dynamic_cast<ThyraObjContainer<double> >(dataObject->getGhostedLOC())->get_x_th();
+      RCP<Thyra::VectorBase<double> > gold_standard = Thyra::createMember(ghosted_distr_p->range());
+      Thyra::put_scalar(6.28,gold_standard.ptr());
 
       double tol = 10.0 * Teuchos::ScalarTraits<double>::eps();
 
