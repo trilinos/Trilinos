@@ -246,7 +246,7 @@ public:
     }
   }
 
-#define USE_MESH_ADAPTER
+  //#define USE_MESH_ADAPTER
 #ifndef USE_MESH_ADAPTER
   bool avail2ndAdjs(MeshEntityType sourcetarget, MeshEntityType through) const
   {

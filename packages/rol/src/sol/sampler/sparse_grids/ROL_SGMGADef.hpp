@@ -392,7 +392,7 @@ void sgmga::sgmga_importance_to_aniso ( int dim_num,
 {
   int dim;
   int found;
-  double level_weight_norm;
+  //double level_weight_norm;
 
   for ( dim = 0; dim < dim_num; dim++ )
   {
@@ -1838,7 +1838,7 @@ void sgmga::sgmga_unique_index ( int dim_num,
   int p_index;
   int point;
   int *point_index;
-  int point_num2;
+  //int point_num2;
   int point_total_num2;
   double *points;
   double q_max;
@@ -2084,7 +2084,9 @@ void sgmga::sgmga_unique_index ( int dim_num,
 
   undx = new int[point_num];
 
-  point_num2 = webbur->point_radial_tol_unique_index ( dim_num, point_total_num, 
+  //point_num2 = webbur->point_radial_tol_unique_index ( dim_num, point_total_num, 
+  //  sparse_total_point, tol, &seed, undx, sparse_unique_index );
+  webbur->point_radial_tol_unique_index ( dim_num, point_total_num, 
     sparse_total_point, tol, &seed, undx, sparse_unique_index );
 
   for ( point = 0; point < point_total_num; point++ )
@@ -3140,7 +3142,7 @@ void sgmga::sgmga_vcn_ordered ( int dim_num,
 //    NOT the next value.
 //
 {
-  double q;
+  //double q;
   static double q_max2;
   static double q_min2;
 //
@@ -3318,7 +3320,7 @@ void sgmga::sgmga_vcn_ordered_naive ( int dim_num,
 //    NOT the next value.
 //
 {
-  double q;
+  //double q;
   static double q_max2;
   static double q_min2;
 //
@@ -3473,7 +3475,7 @@ void sgmga::sgmga_weight ( int dim_num,
   double coef;
   int dim;
   double *grid_weight;
-  int level;
+  //int level;
   int *level_1d;
   int *level_1d_max;
   double level_weight_min_pos;

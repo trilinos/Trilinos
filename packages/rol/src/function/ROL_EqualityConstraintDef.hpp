@@ -636,6 +636,7 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointHessi
   oldFormatState.copyfmt(outStream);
 
   // Apply adjoint Jacobian to u.
+  this->update(x);
   this->applyAdjointJacobian(*AJu, u, x, tol);
 
   // Apply adjoint Hessian at x, in direction v, to u.
@@ -649,7 +650,7 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointHessi
     // Apply adjoint Jacobian to u at x+eta*v.
     xnew->set(x);
 
-    AJdif->set(*AJnew);
+    AJdif->set(*AJu);
     AJdif->scale(weights[order-1][0]);     
 
     for(int j=0; j<order; ++j) {
