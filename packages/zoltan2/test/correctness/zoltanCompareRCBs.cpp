@@ -312,9 +312,21 @@ int runRCB(
 
   Zoltan2::PartitioningProblem<matrixAdapter_t> *problem;
 
+#ifdef HAVE_ZOLTAN2_MPI
+  // TPLs may want an MPI communicator
+  const Teuchos::MpiComm<int> *tmpicomm =
+                 dynamic_cast<const Teuchos::MpiComm<int> *>(comm.getRawPtr());
+  MPI_Comm mpiComm = *(tmpicomm->getRawMpiComm());
+
+  try{
+    problem = new Zoltan2::PartitioningProblem<matrixAdapter_t>(ia, &params,
+                                                                mpiComm);
+  }
+#else
   try{
     problem = new Zoltan2::PartitioningProblem<matrixAdapter_t>(ia, &params);
   }
+#endif
   catch(std::exception &e){
     if (me == 0) std::cout << "FAIL: problem " << e.what() << std::endl;
     return 1;
@@ -330,9 +342,6 @@ int runRCB(
 
   // Now run the same partitioning using Zoltan directly
 #ifdef HAVE_ZOLTAN2_MPI
-  const Teuchos::MpiComm<int> *tmpicomm =
-                 dynamic_cast<const Teuchos::MpiComm<int> *>(comm.getRawPtr());
-  MPI_Comm mpiComm = *(tmpicomm->getRawMpiComm());
   Zoltan zz(mpiComm);
 #else
   Zoltan zz;
