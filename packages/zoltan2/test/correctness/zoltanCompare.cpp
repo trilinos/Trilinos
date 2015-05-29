@@ -65,6 +65,12 @@ using Teuchos::Comm;
 //
 
 #define NUMTESTS 22
+enum testFields {
+  TESTNAMEOFFSET = 0,
+  TESTMETHODOFFSET,
+  TESTOBJWGTOFFSET,
+  TESTNUMARGS
+};
 
 static int testNumProcs[] = {
 2,2,
@@ -76,34 +82,34 @@ static int testNumProcs[] = {
 };
 
 static string testArgs[] = {
-// Filename  LB_Method   RectilinearBlocks
-"simple",       "rcb",          "no",
-"vwgt2",        "rcb",          "no",
+// Filename  LB_Method   ObjWeightDim
+"simple",       "rcb",          "0",
+"vwgt2",        "rcb",          "2",
 
-"bug",          "rcb",          "no",
-"drake",        "rcb",          "no",
-"onedbug",      "rcb",          "no",
-"simple",       "rcb",          "no",
-"vwgt",         "rcb",          "no",
-"vwgt2",        "rcb",          "no",
+"bug",          "rcb",          "1",
+"drake",        "rcb",          "0",
+"onedbug",      "rcb",          "0",
+"simple",       "rcb",          "0",
+"vwgt",         "rcb",          "1",
+"vwgt2",        "rcb",          "2",
 
-"ewgt",         "rcb",          "no", 
-"grid20x19",    "rcb",          "no", 
-"grid20x19",    "rcb",          "no",
-"grid20x19",    "rcb",          "yes",
-"nograph",      "rcb",          "no", 
-"simple",       "rcb",          "no", 
-"simple",       "rcb",          "no",
-"vwgt2",        "rcb",          "no",
+"ewgt",         "rcb",          "0", 
+"grid20x19",    "rcb",          "0", 
+"grid20x19",    "rcb",          "0",
+"grid20x19",    "rcb",          "0",
+"nograph",      "rcb",          "0", 
+"simple",       "rcb",          "0", 
+"simple",       "rcb",          "0",
+"vwgt2",        "rcb",          "2",
 
-"brack2_3",     "rcb",          "no",
+"brack2_3",     "rcb",          "2",
 
-"hammond2",     "rcb",          "no",
-"degenerateAA", "rcb",          "no",
-"degenerate",   "rcb",          "no",
-"degenerate",   "rcb",          "yes",
+"hammond2",     "rcb",          "2",
+"degenerateAA", "rcb",          "0",
+"degenerate",   "rcb",          "0",
+"degenerate",   "rcb",          "0",
 
-"hammond",      "rcb",          "no"
+"hammond",      "rcb",          "0"
 };
 
 typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> tMatrix_t;
@@ -180,7 +186,8 @@ int run(
 
   UserInputForTests *uinput;
   try{
-    uinput = new UserInputForTests(zoltanTestDirectory, testArgs[testCnt*3],
+    uinput = new UserInputForTests(zoltanTestDirectory,
+                                   testArgs[testCnt*TESTNUMARGS+TESTNAMEOFFSET],
                                    comm, true);
   }
   catch(std::exception &e){
@@ -224,11 +231,11 @@ int run(
            << e.what() << endl;
     return 1;
   }
-  int nWeights = (weights.is_null() ? 0 : weights->getNumVectors());
+  int nWeights = atoi(testArgs[testCnt*TESTNUMARGS + TESTOBJWGTOFFSET].c_str());
 
   if (me == 0) {
     cout << "Test " << testCnt << " filename            = "
-         << testArgs[testCnt*3] << endl;
+         << testArgs[testCnt*TESTNUMARGS+TESTNAMEOFFSET] << endl;
     cout << "Test " << testCnt << " num processors      = "
          << np << endl;
     cout << "Test " << testCnt << " algorithm           = zoltan"
@@ -325,7 +332,7 @@ int run(
 # endif
 
   char tmp[56];
-  zz.Set_Param("LB_METHOD", testArgs[testCnt*3+1]);
+  zz.Set_Param("LB_METHOD", testArgs[testCnt*TESTNUMARGS+TESTMETHODOFFSET]);
   
   sprintf(tmp, "%d", numGlobalParts);
   zz.Set_Param("NUM_GLOBAL_PARTS", tmp);
@@ -379,7 +386,11 @@ int run(
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &diffcnt, &gdiffcnt);
   if (gdiffcnt > 0) {
     if (me == 0) 
-      cout << "Test " << testCnt << " FAIL: comparison " << endl;
+      cout << "Test " << testCnt << " "
+           << testArgs[testCnt*TESTNUMARGS + TESTNAMEOFFSET] << " "
+           << testArgs[testCnt*TESTNUMARGS + TESTMETHODOFFSET] << " "
+           << testArgs[testCnt*TESTNUMARGS + TESTOBJWGTOFFSET] << " "
+           << " FAIL: comparison " << endl;
     return 1;
   }
 
@@ -404,9 +415,10 @@ int main(int argc, char *argv[])
     int nTestProcs = testNumProcs[i];
     if (nTestProcs > np) {
       if (me == 0) {
-        cout << "Skipping test " << i << " on " << testArgs[i*3]
-                  << "; required number of procs " << nTestProcs 
-                  << " is greater than available procs " << np << endl;
+        cout << "Skipping test " << i << " on "
+             << testArgs[i*TESTNUMARGS+TESTNAMEOFFSET]
+             << "; required number of procs " << nTestProcs 
+             << " is greater than available procs " << np << endl;
       }
       continue;
     }
