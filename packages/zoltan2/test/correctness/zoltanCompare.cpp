@@ -192,7 +192,8 @@ int runRCB(
   }
   catch(std::exception &e){
     if (me == 0)
-      std::cout << "Test " << testCnt << ":  FAIL: UserInputForTests " << e.what() << std::endl;
+      std::cout << "Test " << testCnt << ":  FAIL: UserInputForTests "
+                << e.what() << std::endl;
     return 1;
   }
 
@@ -202,7 +203,8 @@ int runRCB(
   }
   catch(std::exception &e){
     if (me == 0)
-      std::cout << "Test " << testCnt << ":  FAIL: get matrix " << e.what() << std::endl;
+      std::cout << "Test " << testCnt << ":  FAIL: get matrix "
+                << e.what() << std::endl;
     return 1;
   }
 
@@ -214,7 +216,8 @@ int runRCB(
   }
   catch(std::exception &e){
     if (me == 0)
-      std::cout << "Test " << testCnt << ":  FAIL: get coordinates " << e.what() << std::endl;
+      std::cout << "Test " << testCnt << ":  FAIL: get coordinates "
+                << e.what() << std::endl;
     return 1;
   }
 
@@ -226,7 +229,8 @@ int runRCB(
   }
   catch(std::exception &e){
     if (me == 0)
-      std::cout << "Test " << testCnt << ":  FAIL: get weights " << e.what() << std::endl;
+      std::cout << "Test " << testCnt << ":  FAIL: get weights "
+                << e.what() << std::endl;
     return 1;
   }
 
@@ -241,7 +245,8 @@ int runRCB(
   }
   catch(std::exception &e){
     if (me == 0)
-      std::cout << "Test " << testCnt << ":  FAIL: matrix adapter " << e.what() << std::endl;
+      std::cout << "Test " << testCnt << ":  FAIL: matrix adapter "
+                << e.what() << std::endl;
     return 1;
   }
 
@@ -255,7 +260,8 @@ int runRCB(
   }
   catch(std::exception &e){
     if (me == 0)
-      std::cout << "Test " << testCnt << ":  FAIL: vector adapter " << e.what() << std::endl;
+      std::cout << "Test " << testCnt << ":  FAIL: vector adapter "
+                << e.what() << std::endl;
     return 1;
   }
 
@@ -269,7 +275,8 @@ int runRCB(
   // params.set("debug_level" , "verbose_detailed_status");
 
   params.set("algorithm", "rcb");
-  params.set("partitioning_objective", objectives[(nWeights > 2 ? 2 : nWeights)]);
+  params.set("partitioning_objective",
+              objectives[(nWeights > 2 ? 2 : nWeights)]);
 
   double tolerance = 1.1;
   params.set("imbalance_tolerance", tolerance );
@@ -304,38 +311,28 @@ int runRCB(
   // Create the problem.
 
   Zoltan2::PartitioningProblem<matrixAdapter_t> *problem;
-#ifdef HAVE_ZOLTAN2_MPI
-  // TPLs may want an MPI communicator
 
-  const Teuchos::MpiComm<int> *tmpicomm =
-                 dynamic_cast<const Teuchos::MpiComm<int> *>(comm.getRawPtr());
-  MPI_Comm mpiComm = *(tmpicomm->getRawMpiComm());
-
-  try{
-    problem = new Zoltan2::PartitioningProblem<matrixAdapter_t>(ia, &params,mpiComm);
-  }
-#else
   try{
     problem = new Zoltan2::PartitioningProblem<matrixAdapter_t>(ia, &params);
   }
-#endif
   catch(std::exception &e){
-    if (me == 0)
-      std::cout << "FAIL: problem " << e.what() << std::endl;
+    if (me == 0) std::cout << "FAIL: problem " << e.what() << std::endl;
     return 1;
   }
 
-  try{
+  try {
     problem->solve();
   }
   catch(std::exception &e){
-    if (me == 0)
-      std::cout << "FAIL: solve " << e.what() << std::endl;
+    if (me == 0) std::cout << "FAIL: solve " << e.what() << std::endl;
     return 1;
   }
 
-  // Now run the same partitioning using Zoltan
+  // Now run the same partitioning using Zoltan directly
 #ifdef HAVE_ZOLTAN2_MPI
+  const Teuchos::MpiComm<int> *tmpicomm =
+                 dynamic_cast<const Teuchos::MpiComm<int> *>(comm.getRawPtr());
+  MPI_Comm mpiComm = *(tmpicomm->getRawMpiComm());
   Zoltan zz(mpiComm);
 #else
   Zoltan zz;
@@ -352,16 +349,20 @@ int runRCB(
   zz.Set_Param("RETURN_LISTS", "PART");
   zz.Set_Param("FINAL_OUTPUT", "1");
   zz.Set_Param("CHECK_GEOM", "0");
-  if (testArgs[testCnt*3+1] == "yes") zz.Set_Param("AVERAGE_CUTS", "1");
-  if (testArgs[testCnt*3+2] == "yes") zz.Set_Param("RCB_RECTILINEAR_BLOCKS", "1");
+  if (testArgs[testCnt*3+1]=="yes") zz.Set_Param("AVERAGE_CUTS", "1");
+  if (testArgs[testCnt*3+2]=="yes") zz.Set_Param("RCB_RECTILINEAR_BLOCKS", "1");
 
   zz.Set_Num_Obj_Fn(znumobj<tMVector_t>, (void *) coords.getRawPtr());
   if (nWeights)
-    zz.Set_Obj_List_Fn(zobjlist<tMVector_t,zscalar_t>, (void *) weights.getRawPtr());
+    zz.Set_Obj_List_Fn(zobjlist<tMVector_t,zscalar_t>,
+                       (void *) weights.getRawPtr());
   else
-    zz.Set_Obj_List_Fn(zobjlist<tMVector_t,zscalar_t>, (void *) coords.getRawPtr());
-  zz.Set_Num_Geom_Fn(znumgeom<tMVector_t>, (void *) coords.getRawPtr());
-  zz.Set_Geom_Multi_Fn(zgeom<tMVector_t,zscalar_t>, (void *) coords.getRawPtr());
+    zz.Set_Obj_List_Fn(zobjlist<tMVector_t,zscalar_t>,
+                       (void *) coords.getRawPtr());
+  zz.Set_Num_Geom_Fn(znumgeom<tMVector_t>,
+                     (void *) coords.getRawPtr());
+  zz.Set_Geom_Multi_Fn(zgeom<tMVector_t,zscalar_t>,
+                       (void *) coords.getRawPtr());
 
   int changes, ngid, nlid;
   int numd, nump;
