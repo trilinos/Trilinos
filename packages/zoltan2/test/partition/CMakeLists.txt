@@ -159,11 +159,11 @@ TRIBITS_ADD_TEST(
 
 TRIBITS_ADD_TEST(
   pamgenMeshAdapterTest
-  NAME pamgenMeshAdapterTest_zoltan
+  NAME pamgenMeshAdapterTest_zoltanrcb
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS
-    "--action=zoltan --nparts=6"
+    "--action=zoltan_rcb --nparts=6"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
 )
