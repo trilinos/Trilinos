@@ -10,8 +10,8 @@
 IF (${PROJECT_NAME}_ENABLE_Zoltan)
   IF (${PACKAGE_NAME}_ENABLE_Experimental)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      zoltanCompare
-      SOURCES zoltanCompare.cpp
+      zoltanCompareRCBs
+      SOURCES zoltanCompareRCBs.cpp
       NUM_MPI_PROCS 4
       COMM serial mpi
       PASS_REGULAR_EXPRESSION "PASS"
