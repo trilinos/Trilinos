@@ -143,10 +143,17 @@ int main(int narg, char *arg[]) {
   ia.print(me);
   Zoltan2::MeshEntityType primaryEType = ia.getPrimaryEntityType();
   Zoltan2::MeshEntityType adjEType = ia.getAdjacencyEntityType();
+  Zoltan2::MeshEntityType secondAdjEType = ia.getSecondAdjacencyEntityType();
 
   if (ia.availAdjs(primaryEType, adjEType)) {
-    ia.getAdjsView(primaryEType, adjEType, offsets, adjacencyIds);
+    if (ia.avail2ndAdjs(primaryEType, secondAdjEType)) {
+      ia.get2ndAdjsView(primaryEType, secondAdjEType, offsets, adjacencyIds);
 
+    }
+    else{
+      std::cout << "2nd adjacencies not available" << std::endl;
+      return 2;
+    }
   }
   else{
     std::cout << "Adjacencies not available" << std::endl;
