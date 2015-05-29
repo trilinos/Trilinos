@@ -151,13 +151,6 @@ int main(int narg, char *arg[]) {
   Zoltan2::MeshEntityType secondAdjEType = ia.getSecondAdjacencyEntityType();
 
   if (ia.availAdjs(primaryEType, adjEType)) {
-    // Create a GraphModel based on this input data.
-
-    if (me == 0) std::cout << "        Creating GraphModel" << std::endl;
-
-    Zoltan2::GraphModel<base_adapter_t>
-      model(dynamic_cast<base_adapter_t *>(&ia), env, CommT, modelFlags);
-
     if (ia.avail2ndAdjs(primaryEType, secondAdjEType)) {
       ia.get2ndAdjsView(primaryEType, secondAdjEType, offsets, adjacencyIds);
     }
@@ -165,6 +158,15 @@ int main(int narg, char *arg[]) {
       std::cout << "2nd adjacencies not available" << std::endl;
       return 2;
     }
+
+    // Create a GraphModel based on this input data.
+
+    if (me == 0) std::cout << "        Creating GraphModel" << std::endl;
+
+    Zoltan2::GraphModel<base_adapter_t>
+      model(dynamic_cast<base_adapter_t *>(&ia), env, CommT, modelFlags);
+
+    
   }
   else{
     std::cout << "Adjacencies not available" << std::endl;
