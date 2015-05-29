@@ -163,8 +163,8 @@ int main(int narg, char *arg[]) {
 
     if (me == 0) std::cout << "        Creating GraphModel" << std::endl;
 
-    Zoltan2::GraphModel<base_adapter_t>
-      model(dynamic_cast<base_adapter_t *>(&ia), env, CommT, modelFlags);
+    /*Zoltan2::GraphModel<base_adapter_t>
+      model(dynamic_cast<base_adapter_t *>(&ia), env, CommT, modelFlags);*/
 
     
   }
