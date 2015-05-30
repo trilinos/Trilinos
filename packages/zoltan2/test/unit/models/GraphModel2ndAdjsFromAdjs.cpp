@@ -175,10 +175,26 @@ int main(int narg, char *arg[]) {
     graphModel.get2ndAdjsViewFromAdjs(baseInputAdapter, primaryEType,
 				      secondAdjEType, moffsets, madjacencyIds);
 
-    for (int telct = 0; telct < ia.getLocalNumOf(primaryEType); telct++) {
+    for (size_t telct = 0; telct < ia.getLocalNumOf(primaryEType); telct++) {
       if (offsets[telct+1]-offsets[telct]!=moffsets[telct+1]-moffsets[telct]) {
 	std::cout << "Number of adjacencies do not match" << std::endl;
 	return 3;
+      }
+
+      for (int j = moffsets[telct]; j < moffsets[telct + 1]; j++) {
+	ssize_t in_list = -1;
+
+	for (inputAdapter_t::lno_t k=offsets[telct]; k<offsets[telct+1]; k++) {
+	  if (adjacencyIds[k] == adjacencyIds[j]) {
+	    in_list = k;
+	    break;
+	  }
+	}
+
+	if (in_list < 0) {
+	  std::cout << "Adjacency missing" << std::endl;
+	  return 4;
+	}
       }
     }
   }
