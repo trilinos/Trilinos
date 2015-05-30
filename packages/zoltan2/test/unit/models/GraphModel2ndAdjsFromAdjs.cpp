@@ -78,9 +78,6 @@ int main(int narg, char *arg[]) {
 
   int me = CommT->getRank();
   int numProcs = CommT->getSize();
-  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
-
-  std::bitset<Zoltan2::NUM_MODEL_FLAGS> modelFlags;
 
   /***************************************************************************/
   /*************************** GET XML INPUTS ********************************/
@@ -143,7 +140,9 @@ int main(int narg, char *arg[]) {
 
   inputAdapter_t ia(*CommT, "region");
   inputAdapter_t::zgid_t const *adjacencyIds=NULL;
+  inputAdapter_t::zgid_t const *madjacencyIds=NULL;
   inputAdapter_t::lno_t const *offsets=NULL;
+  inputAdapter_t::lno_t const *moffsets=NULL;
   ia.print(me);
   Zoltan2::MeshEntityType primaryEType = ia.getPrimaryEntityType();
   Zoltan2::MeshEntityType adjEType = ia.getAdjacencyEntityType();
@@ -166,9 +165,15 @@ int main(int narg, char *arg[]) {
 
     RCP<const base_adapter_t> baseInputAdapter;
     baseInputAdapter = (rcp(dynamic_cast<const base_adapter_t *>(&ia), false));
+    RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
+
+    std::bitset<Zoltan2::NUM_MODEL_FLAGS> modelFlags;
 
     Zoltan2::GraphModel<base_adapter_t> graphModel(baseInputAdapter, env,
 						   CommT, modelFlags);
+
+    graphModel.get2ndAdjsViewFromAdjs(baseInputAdapter, primaryEType,
+				      secondAdjEType, moffsets, madjacencyIds);
   }
   else{
     std::cout << "Adjacencies not available" << std::endl;
