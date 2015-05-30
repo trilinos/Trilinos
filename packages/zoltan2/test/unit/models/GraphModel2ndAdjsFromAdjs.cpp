@@ -181,7 +181,7 @@ int main(int narg, char *arg[]) {
 	return 3;
       }
 
-      for (int j = moffsets[telct]; j < moffsets[telct + 1]; j++) {
+      for (inputAdapter_t::lno_t j=moffsets[telct]; j<moffsets[telct+1]; j++) {
 	ssize_t in_list = -1;
 
 	for (inputAdapter_t::lno_t k=offsets[telct]; k<offsets[telct+1]; k++) {
