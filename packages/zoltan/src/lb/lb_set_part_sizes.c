@@ -144,10 +144,9 @@ End:
   return error;
 }
 
+/***************************************************************************/
 
-
-int Zoltan_LB_Get_Part_Sizes(ZZ *zz, 
-    int num_global_parts, int part_dim, float *part_sizes)
+int Zoltan_LB_Get_Part_Sizes(ZZ *zz, int part_dim, float *part_sizes)
 {
 /*
  *  Function to get the scaled part sizes.
@@ -155,8 +154,6 @@ int Zoltan_LB_Get_Part_Sizes(ZZ *zz,
  *  Input:
  *    zz            --  The Zoltan structure to which this method
  *                      applies.
- *    num_global_parts -- Number of global parts.
- *                      (This usually equals lb->Num_Global_Parts)
  *    part_dim      --  The number of object weights per part.
  *                      (This usually equals lb->Obj_Wgt_Dim.)
  *
@@ -165,6 +162,7 @@ int Zoltan_LB_Get_Part_Sizes(ZZ *zz,
  *                      sizes, scaled such that they sum to one.
  */
   int i, j, nparts, fpart;
+  int num_global_parts = zz->LB.Num_Global_Parts;
   float *temp_part_sizes=NULL, *sum=NULL;
   int error = ZOLTAN_OK;
   char msg[128];
@@ -206,7 +204,7 @@ int Zoltan_LB_Get_Part_Sizes(ZZ *zz,
 
     /* Pack LB.Part_Info into temp array */
     temp_part_sizes = (float *)ZOLTAN_MALLOC(num_global_parts*part_dim
-      *sizeof(float));
+                                             *sizeof(float));
     sum = (float *)ZOLTAN_MALLOC(part_dim*sizeof(float));
     if ((!temp_part_sizes) || (!sum)){
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");

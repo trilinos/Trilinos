@@ -207,6 +207,9 @@ struct equivalent_impl {
   const NodeArrayB & m_b;
 };
 
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
 template <typename NodeArray>
 struct lexicographical_smallest_permutation_impl {
   typedef unsigned result_type;
@@ -216,6 +219,9 @@ struct lexicographical_smallest_permutation_impl {
     : m_nodes(nodes), m_only_positive_permutations(only_positive_permutations)
   {}
 
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   template <typename Topology>
   BOOST_GPU_ENABLED
   result_type operator()(Topology) const
@@ -225,6 +231,9 @@ struct lexicographical_smallest_permutation_impl {
   bool              m_only_positive_permutations;
 };
 
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
 template <typename NodeArray>
 struct lexicographical_smallest_permutation_preserve_polarity_impl {
   typedef unsigned result_type;
@@ -234,6 +243,9 @@ struct lexicographical_smallest_permutation_preserve_polarity_impl {
     : m_nodes(nodes), m_element_nodes(element_nodes)
   {}
 
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   template <typename Topology>
   BOOST_GPU_ENABLED
   result_type operator()(Topology) const

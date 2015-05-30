@@ -1,0 +1,18 @@
+gen2.py 20 20 20 150 1 9
+
+nx,ny,nz = (20,20,20)
+dx,dy,dz = (4.0,4.0,10.0)
+minx,miny,minz = (-2.0,-2.0,0.0)
+maxx,maxy,maxz = (2.0,2.0,10.0)
+base np=150
+cutradius=1.0
+cutz=9.0
+
+
+Total: 8000 cells
+       116080 particles
+Max part/cell 600 in 80 cells
+Min part/cell 0 in 6560 cells
+Avg part/cell 14
+Num cells outside beam radius 6400
+Num cells past z cutoff       160

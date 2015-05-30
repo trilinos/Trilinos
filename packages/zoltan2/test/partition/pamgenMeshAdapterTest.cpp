@@ -138,7 +138,7 @@ int main(int narg, char *arg[]) {
   cmdp.setOption("xmlfile", &xmlMeshInFileName,
                  "XML file with PamGen specifications");
   cmdp.setOption("action", &action,
-                 "Method to use:  mj or scotch or color");
+                 "Method to use:  mj, scotch, zoltan_rcb or color");
   cmdp.setOption("nparts", &nParts,
                  "Number of parts to create");
   cmdp.parse(narg, arg);
@@ -189,7 +189,7 @@ int main(int narg, char *arg[]) {
 
   typedef Zoltan2::PamgenMeshAdapter<tMVector_t> inputAdapter_t;
 
-  inputAdapter_t ia(*CommT);
+  inputAdapter_t ia(*CommT, "region");
   ia.print(me);
 
   // Set parameters for partitioning
@@ -214,6 +214,14 @@ int main(int narg, char *arg[]) {
     params.set("num_global_parts", nParts);
     params.set("partitioning_approach", "partition");
     params.set("algorithm", "scotch");
+  }
+  else if (action == "zoltan_rcb") {
+    do_partitioning = true;
+    params.set("debug_level", "verbose_detailed_status");
+    params.set("imbalance_tolerance", 1.1);
+    params.set("num_global_parts", nParts);
+    params.set("partitioning_approach", "partition");
+    params.set("algorithm", "zoltan");
   }
   else if (action == "color") {
     params.set("debug_level", "verbose_detailed_status");

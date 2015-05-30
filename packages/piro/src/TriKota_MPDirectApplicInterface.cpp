@@ -142,7 +142,7 @@ derived_map_asynch(const Dakota::ParamResponsePair& pair)
 
 void 
 TriKota::MPDirectApplicInterface::
-derived_synch(Dakota::PRPQueue& prp_queue)
+wait_local_evaluations(Dakota::PRPQueue& prp_queue)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;

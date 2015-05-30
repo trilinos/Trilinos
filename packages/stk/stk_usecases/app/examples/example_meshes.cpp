@@ -168,31 +168,31 @@ static const double node_coord_data[ node_count ][ SpatialDim ] = {
   { 0 , 2 , -1 } , { 1 , 2 , -1 } ,
   { 1 , 1 , -2 } };
 
-static const stk::mesh::EntityId hex_node_ids[3][ shards::Hexahedron<8> ::node_count ] = {
+static const stk::mesh::EntityIdVector hex_node_ids[3] {
   { 1 , 2 , 12 , 11 , 5 , 6 , 16 , 15 } ,
   { 2 , 3 , 13 , 12 , 6 , 7 , 17 , 16 } ,
   { 3 , 4 , 14 , 13 , 7 , 8 , 18 , 17 } };
 
-static const stk::mesh::EntityId wedge_node_ids[3][ shards::Wedge<6> ::node_count ] = {
+static const stk::mesh::EntityIdVector wedge_node_ids[3] {
   { 15 , 16 , 19 ,  5 ,  6 ,  9 } ,
   { 10 ,  9 ,  6 , 20 , 19 , 16 } ,
   { 16 , 17 , 20 ,  6 ,  7 , 10 } };
 
-static const stk::mesh::EntityId tetra_node_ids[3][ shards::Tetrahedron<4> ::node_count ] = {
+static const stk::mesh::EntityIdVector tetra_node_ids[3] {
   { 15 , 19 , 16 , 21 } ,
   { 19 , 20 , 16 , 21 } ,
   { 16 , 20 , 17 , 21 } };
 
-static const stk::mesh::EntityId pyramid_node_ids[2][ shards::Pyramid<5> ::node_count ] = {
+static const stk::mesh::EntityIdVector pyramid_node_ids[2] {
   { 11 , 15 , 16 , 12 , 21 } ,
   { 12 , 16 , 17 , 13 , 21 } };
 
-static const stk::mesh::EntityId shell_quad_node_ids[3][ shards::ShellQuadrilateral<4> ::node_count ]={
+static const stk::mesh::EntityIdVector shell_quad_node_ids[3] {
   { 9 , 6 , 16 , 19 } ,
   { 6 , 7 , 17 , 16 } ,
   { 7 , 8 , 18 , 17 } };
 
-static const stk::mesh::EntityId shell_tri_node_ids[3][ shards::ShellTriangle<3> ::node_count ] ={
+static const stk::mesh::EntityIdVector shell_tri_node_ids[3] {
   { 19 , 16 , 21 } ,
   { 16 , 17 , 21 } ,
   { 17 , 13 , 21 } };

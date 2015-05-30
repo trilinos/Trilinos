@@ -58,6 +58,8 @@
 #include "ROL_CVaRBoundConstraint.hpp"
 #include "ROL_ParametrizedObjective.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
+#include "ROL_MonteCarloGenerator.hpp"
+#include "ROL_SparseGridGenerator.hpp"
 #include "ROL_AbsoluteValue.hpp"
 #include "ROL_PlusFunction.hpp"
 #include "ROL_RiskMeasure.hpp"
@@ -71,6 +73,7 @@
 #include "ROL_RiskAverseObjective.hpp"
 #include "ROL_RiskNeutralObjective.hpp"
 #include "ROL_StdEpetraBatchManager.hpp"
+
 
 template<class Real> 
 class ParametrizedObjectiveEx1 : public ROL::ParametrizedObjective<Real> {

@@ -816,13 +816,13 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, INT 
       size_t element_count = elem_ids.size();
       int nodes_per_elem = topo.num_nodes();
 
-      std::vector<stk::mesh::EntityId> id_vec(nodes_per_elem);
+      stk::mesh::EntityIdVector id_vec(nodes_per_elem);
 
       size_t offset = entity->get_offset();
       for(size_t i=0; i<element_count; ++i) {
         INT *conn = &connectivity[i*nodes_per_elem];
         std::copy(&conn[0], &conn[0+nodes_per_elem], id_vec.begin());
-        stk::mesh::Entity element = stk::mesh::declare_element(bulk, *part, elem_ids[i], &id_vec[0]);
+        stk::mesh::Entity element = stk::mesh::declare_element(bulk, *part, elem_ids[i], id_vec);
 
         bulk.set_local_id(element, offset + i);
       }
@@ -1188,6 +1188,15 @@ namespace stk {
     void StkMeshIoBroker::property_add(const Ioss::Property &property)
     {
       m_property_manager.add(property);
+      //In case there are already input/output files, put the property on them too.
+      if (get_input_io_region().get() != NULL)
+      {
+          get_input_io_region()->property_add(property);
+      }
+      for(size_t i=0; i<m_output_files.size(); ++i)
+      {
+          get_output_io_region(i)->property_add(property);
+      }
     }
 
     void StkMeshIoBroker::remove_property_if_exists(const std::string &property_name)
@@ -1878,10 +1887,10 @@ namespace stk {
 	      }
 
 	      // used in stk_adapt/stk_percept
-	      bool sort_stk_parts = m_region->property_exists("sort_stk_parts");
+	      bool sort_stk_parts_by_name = m_region->property_exists("sort_stk_parts");
 
 	      stk::io::define_output_db(*m_region, bulk_data, m_input_region, m_subset_selector.get(),
-					sort_stk_parts, m_use_nodeset_for_part_nodes_fields);
+					sort_stk_parts_by_name, m_use_nodeset_for_part_nodes_fields);
 
 	      stk::io::write_output_db(*m_region, bulk_data, m_subset_selector.get());
 

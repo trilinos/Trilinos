@@ -86,11 +86,11 @@ bool Grid2D_Fixture::test_change_owner( unsigned nx , unsigned ny )
 
   // First of all work out the node ids and declare element elem
   if ( p_rank == 0 ) {
+    stk::mesh::EntityIdVector nodes(4) ;
     const unsigned nnx = nx + 1 ;
     for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
       for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
         stk::mesh::EntityId elem = 1 + ix + iy * nx ;
-        stk::mesh::EntityId nodes[4] ;
         nodes[0] = 1 + ix + iy * nnx ;
         nodes[1] = 2 + ix + iy * nnx ;
         nodes[2] = 2 + ix + ( iy + 1 ) * nnx ;
@@ -264,11 +264,11 @@ bool test_change_owner_with_constraint( stk::ParallelMachine pm )
 
   if ( p_rank==0 )
   {
+    stk::mesh::EntityIdVector nodes(4) ;
     const unsigned nnx = nx + 1 ;
     for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
       for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
         stk::mesh::EntityId elem = 1 + ix + iy * nx ;
-        stk::mesh::EntityId nodes[4] ;
         nodes[0] = 1 + ix + iy * nnx ;
         nodes[1] = 2 + ix + iy * nnx ;
         nodes[2] = 2 + ix + ( iy + 1 ) * nnx ;
@@ -403,11 +403,11 @@ bool test_change_owner_2( stk::ParallelMachine pm )
 
   if ( p_rank==0 )
   {
+    stk::mesh::EntityIdVector nodes(4) ;
     const unsigned nnx = nx + 1 ;
     for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
       for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
         stk::mesh::EntityId elem = 1 + ix + iy * nx ;
-        stk::mesh::EntityId nodes[4] ;
         nodes[0] = 1 + ix + iy * nnx ;
         nodes[1] = 2 + ix + iy * nnx ;
         nodes[2] = 2 + ix + ( iy + 1 ) * nnx ;
@@ -523,11 +523,11 @@ bool test_change_owner_3( stk::ParallelMachine pm )
 
   if ( p_rank==0 )
   {
+    stk::mesh::EntityIdVector nodes(4) ;
     const unsigned nnx = nx + 1 ;
     for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
       for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
         stk::mesh::EntityId elem = 1 + ix + iy * nx ;
-        stk::mesh::EntityId nodes[4] ;
         nodes[0] = 1 + ix + iy * nnx ;
         nodes[1] = 2 + ix + iy * nnx ;
         nodes[2] = 2 + ix + ( iy + 1 ) * nnx ;

@@ -69,14 +69,13 @@
 #include <Teuchos_Hashtable.hpp>
 #endif // C++11 is enabled
 
-#ifdef HAVE_ZOLTAN2_ZOLTAN
+#ifdef ZOLTAN2_USEZOLTANCOMM
 #ifdef HAVE_ZOLTAN2_MPI
 #define ENABLE_ZOLTAN_MIGRATION
 #include "zoltan_comm_cpp.h"
 #include "zoltan_types.h" // for error codes
 #endif
 #endif
-
 
 #ifdef HAVE_ZOLTAN2_OMP
 #include <omp.h>

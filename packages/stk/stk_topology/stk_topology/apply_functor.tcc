@@ -50,6 +50,9 @@ namespace stk {
 // Converts a runtime topology to a compile-time topology_type<Topology>
 // and calls the given functor on the compile-time topology
 //*****************************************************************************
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
 template <typename Functor>
 struct topology::apply_functor
 {
@@ -65,6 +68,9 @@ struct topology::apply_functor
     : m_functor(f)
   {}
 
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   BOOST_GPU_ENABLED
   result_type operator()(topology_t t) const
   {
@@ -117,6 +123,9 @@ struct topology::apply_functor
     return m_functor( topology_type<INVALID_TOPOLOGY>() );
   }
 
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   BOOST_GPU_ENABLED
   result_type operator()(topology_t t)
   {

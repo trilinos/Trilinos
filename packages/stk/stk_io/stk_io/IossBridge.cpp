@@ -675,7 +675,7 @@ namespace stk {
         stk::mesh::Part * part = NULL;
         part = &meta.declare_part(entity->name(), type);
         if (entity->property_exists("id")) {
-          meta.set_part_id(*part, entity->get_property("id").get_int());
+            meta.set_part_id(*part, entity->get_property("id").get_int());
         }
         stk::io::put_io_part_attribute(*part, entity);
 
@@ -1268,6 +1268,11 @@ namespace stk {
         ns->property_add(Ioss::Property(internal_selector_name, select, false));
         ns->property_add(Ioss::Property(base_stk_part_name, part.name()));
 
+        if (part.id() != stk::mesh::Part::INVALID_ID)
+        {
+            ns->property_add(Ioss::Property("id", part.id()));
+        }
+
         // Add the attribute fields.
         ioss_add_fields(part, stk::topology::NODE_RANK, ns, Ioss::Field::ATTRIBUTE);
       }
@@ -1276,7 +1281,8 @@ namespace stk {
                                 const stk::mesh::BulkData &bulk,
                                 Ioss::Region &io_region,
                                 const stk::mesh::Selector *subset_selector,
-                                bool use_nodeset_for_nodal_fields)
+                                bool use_nodeset_for_nodal_fields,
+                                bool order_blocks_by_creation_order)
       {
         mesh::MetaData & meta = mesh::MetaData::get(part);
 
@@ -1299,6 +1305,18 @@ namespace stk {
                                                         part.name() ,
                                                         map_stk_topology_to_ioss(part.topology()),
                                                         num_elems);
+
+        if (order_blocks_by_creation_order)
+        {
+            int ordinal = part.mesh_meta_data_ordinal();
+            eb->property_add(Ioss::Property("original_block_order", ordinal));
+        }
+
+        if (part.id() != stk::mesh::Part::INVALID_ID)
+        {
+            eb->property_add(Ioss::Property("id", part.id()));
+        }
+
         io_region.add(eb);
 
         mesh::Selector *select = new mesh::Selector(selector);
@@ -1382,6 +1400,11 @@ namespace stk {
         if (create_sideset) {
           Ioss::SideSet * const ss = new Ioss::SideSet(io_region.get_database(), part.name());
 
+          if (part.id() != stk::mesh::Part::INVALID_ID)
+          {
+              ss->property_add(Ioss::Property("id",part.id()));
+          }
+
           io_region.add(ss);
           int spatial_dim = io_region.get_property("spatial_dimension").get_int();
           define_side_blocks(part, bulk, ss, si_rank, spatial_dim, subset_selector);
@@ -1406,7 +1429,7 @@ namespace stk {
 
     } // namespace <blank>
 
-    struct part_compare {
+    struct part_compare_by_name {
       bool operator() (stk::mesh::Part *i, stk::mesh::Part *j) { return (i->name() < j->name()); }
     };
 
@@ -1414,7 +1437,7 @@ namespace stk {
                           const mesh::BulkData &bulk_data,
                           const Ioss::Region *input_region,
                           const stk::mesh::Selector *subset_selector,
-                          const bool sort_stk_parts,
+                          const bool sort_stk_parts_by_name,
                           const bool use_nodeset_for_part_node_fields)
     {
       io_region.begin_mode( Ioss::STATE_DEFINE_MODEL );
@@ -1428,13 +1451,15 @@ namespace stk {
 
       const mesh::PartVector & all_parts = meta_data.get_parts();
       // sort parts so they go out the same on all processors (srk: this was induced by streaming refine)
-      if (sort_stk_parts) {
+      if (sort_stk_parts_by_name) {
         all_parts_sorted = all_parts;
-        std::sort(all_parts_sorted.begin(), all_parts_sorted.end(), part_compare());
+        std::sort(all_parts_sorted.begin(), all_parts_sorted.end(), part_compare_by_name());
         parts = &all_parts_sorted;
       } else {
         parts = &all_parts;
       }
+
+      const bool order_blocks_by_creation_order = (input_region == NULL) && !sort_stk_parts_by_name;
 
       for (mesh::PartVector::const_iterator i = parts->begin(); i != parts->end(); ++i) {
         mesh::Part * const part = *i;
@@ -1444,9 +1469,10 @@ namespace stk {
             continue;
           else if (part->primary_entity_rank() == stk::topology::NODE_RANK)
             define_node_set(*part, part->name(), bulk_data, io_region, subset_selector);
-          else if (part->primary_entity_rank() == stk::topology::ELEMENT_RANK)
+          else if (part->primary_entity_rank() == stk::topology::ELEMENT_RANK) {
             define_element_block(*part, bulk_data, io_region, subset_selector,
-                                 use_nodeset_for_part_node_fields);
+                                 use_nodeset_for_part_node_fields, order_blocks_by_creation_order);
+          }
           else if (part->primary_entity_rank() == stk::topology::FACE_RANK)
             define_side_set(*part, bulk_data, io_region, subset_selector,
                             use_nodeset_for_part_node_fields);
@@ -1464,7 +1490,7 @@ namespace stk {
       // for streaming refinement, each "pseudo-processor" doesn't know about others, so we pick a sort order
       //   and use it for all pseudo-procs - the original_block_order property is used to set the order
       //   on all procs.
-      if (sort_stk_parts) {
+      if (sort_stk_parts_by_name) {
         int offset=0;
         for (mesh::PartVector::const_iterator i = parts->begin(); i != parts->end(); ++i) {
 

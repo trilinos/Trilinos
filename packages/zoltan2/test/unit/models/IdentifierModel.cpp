@@ -109,7 +109,8 @@ void testIdentifierModel(std::string fname, zgno_t xdim, zgno_t ydim, zgno_t zdi
   RCP<const adapter_t> ia = Teuchos::rcp(new adapter_t(M));
   
   Zoltan2::IdentifierModel<base_adapter_t> *model = NULL;
-  const base_adapter_t *base_ia = ia.get();
+  RCP<const base_adapter_t> base_ia = 
+                            Teuchos::rcp_dynamic_cast<const base_adapter_t>(ia);
 
   try{
     model = new Zoltan2::IdentifierModel<base_adapter_t>(

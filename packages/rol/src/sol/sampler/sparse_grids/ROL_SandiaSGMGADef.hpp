@@ -403,7 +403,7 @@ void SandiaSGMGA::sgmga_importance_to_aniso
 {
   int dim;
   int found;
-  double level_weight_norm;
+  //double level_weight_norm;
 
   for ( dim = 0; dim < dim_num; dim++ )
   {
@@ -1544,7 +1544,7 @@ void SandiaSGMGA::sgmga_unique_index
   int *order_1d;
   int point;
   int *point_index;
-  int point_num2;
+  //int point_num2;
   int point_total_num2;
   double *points;
   double q_max;
@@ -1725,7 +1725,9 @@ void SandiaSGMGA::sgmga_unique_index
 
   undx = new int[point_num];
 
-  point_num2 = webbur->point_radial_tol_unique_index ( dim_num, point_total_num, 
+  //point_num2 = webbur->point_radial_tol_unique_index ( dim_num, point_total_num, 
+  //  sparse_total_point, tol, &seed, undx, sparse_unique_index );
+  webbur->point_radial_tol_unique_index ( dim_num, point_total_num, 
     sparse_total_point, tol, &seed, undx, sparse_unique_index );
 
   for ( point = 0; point < point_total_num; point++ )
@@ -2792,7 +2794,7 @@ void SandiaSGMGA::sgmga_vcn_ordered
 //    NOT the next value.
 //
 {
-  double q;
+  //double q;
   static double q_max2;
   static double q_min2;
 //
@@ -2974,7 +2976,7 @@ void SandiaSGMGA::sgmga_vcn_ordered_naive
 //    NOT the next value.
 //
 {
-  double q;
+  //double q;
   static double q_max2;
   static double q_min2;
 //
@@ -3109,7 +3111,7 @@ void SandiaSGMGA::sgmga_weight
   double coef;
   int dim;
   double *grid_weight;
-  int level;
+  //int level;
   int *level_1d;
   int *level_1d_max;
   double level_weight_min_pos;

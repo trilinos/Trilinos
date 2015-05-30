@@ -55,6 +55,8 @@
 #include <Teko_Utilities.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
 
+#include "MueLu_FactoryBase.hpp"
+
 namespace Thyra {
 
   /** \brief Concrete preconditioner factory subclass based on MueLu.
@@ -130,6 +132,8 @@ namespace Thyra {
 
     void SetDependencyTree     (MueLu::FactoryManager<SC,LO,GO,NO>& M, const ParameterList& paramList) const;
     void SetBlockDependencyTree(MueLu::FactoryManager<SC,LO,GO,NO>& M, LO row, LO col, const std::string& mode, const ParameterList& paramList)  const;
+
+    RCP<MueLu::FactoryBase> GetSmoother(const std::string& type, const ParameterList& paramList, bool coarseSolver) const;
 
     Teuchos::RCP<Teuchos::ParameterList> paramList_;
 

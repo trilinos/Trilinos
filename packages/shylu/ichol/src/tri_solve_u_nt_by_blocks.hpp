@@ -37,15 +37,14 @@ namespace Example {
   KOKKOS_INLINE_FUNCTION
   int
   TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::ByBlocks>
-  ::invoke(const typename CrsTaskViewTypeA::policy_type::member_type &member,
+  ::invoke(typename CrsTaskViewTypeA::policy_type &policy,
+           const typename CrsTaskViewTypeA::policy_type::member_type &member,
            const int diagA,
            CrsTaskViewTypeA &A,
            DenseTaskViewTypeB &B) {
     // this task generation should be done by a root
     // ---------------------------------------------
     if (member.team_rank() == 0) {
-      typename CrsTaskViewTypeA::policy_type policy;
-      
       CrsTaskViewTypeA ATL, ATR,      A00, A01, A02,
         /**/           ABL, ABR,      A10, A11, A12,
         /**/                          A20, A21, A22;

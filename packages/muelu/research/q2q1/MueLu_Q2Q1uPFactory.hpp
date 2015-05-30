@@ -121,6 +121,18 @@ namespace MueLu {
       CPOINT_U    = '5'
     };
 
+  std::string getStatusString(char status) const {
+    switch (status) {
+      case UNASSIGNED: return "UNASSIGNED";
+      case CANDIDATE : return "CANDIDATE";
+      case FPOINT    : return "FPOINT";
+      case TWOTIMER  : return "TWOTIMER";
+      case CPOINT    : return "CPOINT";
+      case CPOINT_U  : return "CPOINT_U";
+      default:         return "UNKNOWN";
+    }
+  }
+
   public:
     //! @name Constructors/Destructors.
     //@{
@@ -235,6 +247,11 @@ namespace MueLu {
       Array<LO> userCpts; // pressure does not reuse any CPOINTs
       FindDist4Cpts(*A, *coords, userCpts, status, *myCpts, fineLevelID);
 
+      if (pL.get<bool>("phase2")) {
+        // Beef up any limited pattern
+        PhaseTwoPattern(*A, *coords, status, *myCpts);
+      }
+
     } else {
       // Do all the coarsening/pattern stuff on amalgamated velocities.
       // We need to guarantee that all velocity dofs are treated identically
@@ -324,22 +341,30 @@ namespace MueLu {
           userCpts[k] = p2vMap[userCpts[k]]/NDim;
       }
 
+      GetOStream(Runtime1) << "Amalgamated velocity C-points: " << userCpts.size() << " " << userCpts << std::endl;
+
       // Now determine velocity CPOINTs for amalgamated system
       RCP<MyCptList>    amalgCpts  = rcp(new MyCptList(NN, 30));
       std::vector<char> amalgStatus(NN, UNASSIGNED);
 
       FindDist4Cpts(*amalgA, *amalgCoords, userCpts, amalgStatus, *amalgCpts, fineLevelID);
 
-      int p = userCpts.size();
+      if (pL.get<bool>("phase2")) {
+        // Beef up any limited pattern
+        PhaseTwoPattern(*amalgA, *amalgCoords, amalgStatus, *amalgCpts);
+      }
 
       // Unamalgamate data
       Array<LO>&          Cptlist      = myCpts   ->getCList();
+      Array<LO>&          amalgCptlist = amalgCpts->getCList();
       std::vector<short>& numCpts      = myCpts   ->getNumCpts();
       std::vector<short>& amalgNumCpts = amalgCpts->getNumCpts();
 
+      int p = amalgCptlist.size();
+
       Cptlist.resize(p*NDim);
       for (int k = 0; k < p; k++) {
-        Cptlist[k*NDim] = userCpts[k] * NDim;
+        Cptlist[k*NDim] = amalgCptlist[k] * NDim;
         for (int j = 1; j < NDim; j++)
           Cptlist[k*NDim+j] = Cptlist[k*NDim] + j;
       }
@@ -379,39 +404,12 @@ namespace MueLu {
       }
     }
 
-    // Beef up any pattern which seems pretty limited
-    if (pL.get<bool>("phase2")) {
-      if (pressureMode) PhaseTwoPattern(*A,       *coords, status, *myCpts);
-      else              PhaseTwoPattern(*AForPat, *coords, status, *myCpts);
-    }
-
-    if (doStatusOutput) {
-      const Array<LO>&    Cptlist = myCpts->getCList();
-      std::vector<short>& numCpts = myCpts->getNumCpts();
-
-      std::string depPrefix = std::string("dep1-l") + toString(fineLevel.GetLevelID()) + (pressureMode ? "-p-" : "-v-");
-
-      std::vector<char> depStatus(N);
-      for (int k = 0; k < Cptlist.size(); k++) {
-
-        for (Xpetra::global_size_t i = 0; i < N; i++) {
-          bool isPresent = false;
-          for (int j = 0; j < numCpts[i]; j++)
-            if ((*myCpts)(i)[j] == Cptlist[k])
-              isPresent = true;
-          depStatus[i] = (isPresent ? FPOINT : UNASSIGNED);
-        }
-        depStatus[Cptlist[k]] = CPOINT;
-
-        DumpStatus(depPrefix + toString(k), depStatus, NDim, false);
-      }
-    }
-
     RCP<Matrix> P;
     // FIXME :hardwired hack, pressure gids must not overlap with velocity gids
     if (pressureMode) CptDepends2Pattern(*A,       *myCpts, P, 999999);
     else              CptDepends2Pattern(*AForPat, *myCpts, P, 0);
 
+#if 0
     if (pressureMode) {
       Utils::Write("Ap_l"      + MueLu::toString(fineLevel.GetLevelID())   + ".mm", *A);
       Utils::Write("Pp_tent_l" + MueLu::toString(coarseLevel.GetLevelID()) + ".mm", *P);
@@ -419,6 +417,7 @@ namespace MueLu {
       Utils::Write("Av_l"      + MueLu::toString(fineLevel.GetLevelID())   + ".mm", *A);
       Utils::Write("Pv_tent_l" + MueLu::toString(coarseLevel.GetLevelID()) + ".mm", *P);
     }
+#endif
 
     // Construct coarse map
     RCP<const Map> coarseMap = P->getDomainMap();
@@ -463,7 +462,7 @@ namespace MueLu {
 
   void Muelu_az_sort(int list[], int N, int list2[], double list3[]);
   void Muelu_az_dsort2(std::vector<double>& dlist, std::vector<int>& list2);
-  void MergeSort(std::vector<int>& oldCandidates, size_t numOldCandidates, const std::vector<int>& newCandidates, std::vector<double>& coordDist, ArrayRCP<const size_t> ia);
+  void MergeSort(std::vector<int>& oldCandidates, size_t numOldCandidates, const std::vector<int>& newCandidates, const std::vector<double>& coordDist, ArrayRCP<const size_t> ia);
 
   template<class T>
   void PrintVector(const std::vector<T>& v, const std::string& name, int n = -1) {
@@ -555,7 +554,7 @@ namespace MueLu {
 
       big += ((dmax - dmin)*(dmax - dmin));
     }
-    // FIXME: what is this magic number 10000?
+    // MATCH_MATLAB
     std::vector<SC> coordDist(numRows, 10000*big);
 
     const ParameterList& pL = GetParameterList();
@@ -574,7 +573,8 @@ namespace MueLu {
     // through loops below to update distances and FPOINTs. Initialization is
     // done here so that these points do not end up with more than 1 nnz in the
     // associated sparsity pattern row.
-    TEUCHOS_TEST_FOR_EXCEPTION(myCpts.getCList().size(), Exceptions::RuntimeError, "myCpts in FindDist4Points must be uninitialized");
+    TEUCHOS_TEST_FOR_EXCEPTION(myCpts.getCList().size(), Exceptions::RuntimeError,
+                               "myCpts in FindDist4Points must be uninitialized");
     Array<LO>& Cptlist = myCpts.getCList();
     for (int i = 0; i < userCpts.size(); i++) {
       status[userCpts[i]] = CPOINT_U;
@@ -593,9 +593,9 @@ namespace MueLu {
     // Determine CPOINTs
     int    userCcount    = 0;
     size_t numCandidates = 0;
-    std::vector<char> distIncrement(numRows, 0);
-    std::vector<int>  cumGraphDist (numRows, 0);
-    std::vector<LO>   candidateList(numRows, 0);
+    std::vector<char>   distIncrement(numRows, 0);
+    std::vector<double> cumGraphDist (numRows, 0.);
+    std::vector<LO>     candidateList(numRows, 0);
     size_t i = 0;
     while (i < numRows) {
       LO newCpt = -1;
@@ -646,10 +646,11 @@ namespace MueLu {
         int numDist3 = 0;
         for (size_t k = 0; k < dist3.size(); k++) {
           LO j = dist3[k];
-          if ((status[j] < CPOINT) || (j == newCpt))
+          if (status[j] < CPOINT)
             dist3[numDist3++] = j;
         }
         dist3.resize(numDist3);
+        dist3.push_back(newCpt);
 
         // UNASSIGNED or CANDIDATE distance 3 and closer neighbors are put into FPOINT list
         // FIXME: why not put TWOTIMER there too?
@@ -668,7 +669,8 @@ namespace MueLu {
         for (size_t k = 0; k < dist3.size(); k++) {
           LO j = dist3[k];
 
-          TEUCHOS_TEST_FOR_EXCEPTION(numCpts[j] >= myCpts.getNnzPerRow(), Exceptions::RuntimeError, "Increase max number of C points per row");
+          TEUCHOS_TEST_FOR_EXCEPTION(numCpts[j] >= myCpts.getNnzPerRow(), Exceptions::RuntimeError,
+                                     "Increase max number of C points per row");
           myCpts(j)[numCpts[j]++] = newCpt;
         }
 
@@ -682,7 +684,8 @@ namespace MueLu {
 
         for (size_t k = 0; k < dist3.size(); k++) {
           LO j = dist3[k];
-          cumGraphDist[j] += distIncrement[j];
+          // MATCH_MATLAB: (numCpts[j]-1) is to match Matlab, where numCpts is updated after distance calculation
+          cumGraphDist[j] = (cumGraphDist[j]*(numCpts[j]-1) + distIncrement[j])/numCpts[j];
         }
         cumGraphDist[newCpt] = 0;
 
@@ -701,7 +704,8 @@ namespace MueLu {
           // is actually a bug in the code. However, if I put a '2', I don't
           // get the perfect coarsening for a uniform mesh ... so I'm leaving
           // if for now without the 2.
-          coordDist[j] = 2*(coordDist[j]*distance) / (coordDist[j] + distance);
+          // MATCH_MATLAB
+          coordDist[j] = 2.0*(coordDist[j]*distance) / (coordDist[j] + distance);
 #if 0
           SC kkk = 10.;
           if (coordDist[j] > distance)
@@ -717,6 +721,8 @@ namespace MueLu {
         for (size_t k = 0; k < dist4.size(); k++) {
           LO j = dist4[k];
 
+          // NOTE: numNewCandidates is always <= k, so we don't overwrite the
+          // dist4 before reading
           if (status[j] == CANDIDATE) {
             // Mark as already being assigned again to candidate list so that
             // entry in old 'sorted' candidate list can be removed and a new
@@ -759,6 +765,7 @@ namespace MueLu {
         std::vector<double> ddtemp(numNewCandidates);
         for (size_t k = 0; k < numNewCandidates; k++) {
           LO j = dist4[k];
+          // MATCH_MATLAB
 #ifdef optimal
           // This one is better, but we are trying to replicate Matlab now
           ddtemp[k] = -coordDist[j] - .01*(ia[j+1]-ia[j]) + 1e-10*(j+1);
@@ -767,8 +774,8 @@ namespace MueLu {
 #endif
         }
         Muelu_az_dsort2(ddtemp, dist4);
-        MergeSort(candidateList, numOldCandidates, dist4, coordDist, ia);
 
+        MergeSort(candidateList, numOldCandidates, dist4, coordDist, ia);
         numCandidates = numOldCandidates + numNewCandidates;
       }
     }
@@ -795,7 +802,7 @@ namespace MueLu {
         for (size_t p = 0; p < numCandidates; p++) {
           LO j = candidates[p];
 
-          maxGraphDist = std::max(maxGraphDist, as<double>(cumGraphDist[j])/numCpts[j]);
+          maxGraphDist = std::max(maxGraphDist, cumGraphDist[j]);
           maxCoordDist = std::max(maxCoordDist, coordDist[j]);
         }
 
@@ -804,8 +811,9 @@ namespace MueLu {
         for (size_t p = 0; p < numCandidates; p++) {
           LO j = candidates[p];
 
-          double graphScore = as<double>(cumGraphDist[j])/(maxGraphDist*numCpts[j]);
-          double coordScore =            coordDist   [j] / maxCoordDist;
+          double graphScore = cumGraphDist[j] / maxGraphDist;
+          double coordScore = coordDist   [j] / maxCoordDist;
+          // MATCH_MATLAB
           score[p] = -(graphWeight*graphScore + (1-graphWeight)*coordScore + 1e-6*(j+1));
 
           if (numCDepends == 2) {
@@ -851,7 +859,7 @@ namespace MueLu {
           int newCpt = candidates[index[p]];
 
           if (numCpts[newCpt] == numCDepends &&
-              cumGraphDist[newCpt]  >= 2.6*numCpts[newCpt] &&
+              cumGraphDist[newCpt]  >= 2.6 &&
               orientation[index[p]] > -0.2) {
             status [newCpt] = CPOINT;
             numCpts[newCpt] = 1;
@@ -863,17 +871,32 @@ namespace MueLu {
             std::vector<LO> dist1, dist2, dist3, dist4;
             CompDistances(A, newCpt, 3, dist1, dist2, dist3, dist4);
 
-            // Make sure that the only CPOINT in dist3 is newCpt. All others should be excluded.
+            // Make sure that there are no CPOINTs in dist1, dist2, dist3.
+            int numDist1 = 0;
+            for (size_t k = 0; k < dist1.size(); k++) {
+              LO j = dist1[k];
+              if (status[j] < CPOINT)
+                dist1[numDist1++] = j;
+            }
+            dist1.resize(numDist1);
+            int numDist2 = 0;
+            for (size_t k = 0; k < dist2.size(); k++) {
+              LO j = dist2[k];
+              if (status[j] < CPOINT)
+                dist2[numDist2++] = j;
+            }
+            dist2.resize(numDist2);
             int numDist3 = 0;
             for (size_t k = 0; k < dist3.size(); k++) {
               LO j = dist3[k];
-              if (status[j] < CPOINT || j == newCpt)
+              if (status[j] < CPOINT)
                 dist3[numDist3++] = j;
             }
             dist3.resize(numDist3);
 
             // Update cumGraphDist
             // NOTE: order matters as dist2 is contained within dist3, etc.
+            for (size_t k = 0; k < dist3.size(); k++) distIncrement[dist3[k]] = 3;
             for (size_t k = 0; k < dist2.size(); k++) distIncrement[dist2[k]] = 2;
             for (size_t k = 0; k < dist1.size(); k++) distIncrement[dist1[k]] = 1;
             distIncrement[newCpt] = 0;
@@ -882,13 +905,15 @@ namespace MueLu {
             for (size_t k = 0; k < dist3.size(); k++) {
               LO j = dist3[k];
 
-              TEUCHOS_TEST_FOR_EXCEPTION(numCpts[j] >= myCpts.getNnzPerRow(), Exceptions::RuntimeError, "Increase max number of C points per row");
+              TEUCHOS_TEST_FOR_EXCEPTION(numCpts[j] >= myCpts.getNnzPerRow(), Exceptions::RuntimeError,
+                                         "Increase max number of C points per row");
               myCpts(j)[numCpts[j]++] = newCpt;
             }
 
             for (size_t k = 0; k < dist3.size(); k++) {
               LO j = dist3[k];
-              cumGraphDist[j] += distIncrement[j];
+              // (numCpts[j]-1) is to match Matlab, where numCpts is updated after distance calculation
+              cumGraphDist[j] = (cumGraphDist[j]*(numCpts[j]-1) + distIncrement[j])/numCpts[j];
             }
             cumGraphDist[newCpt] = 0;
           }
@@ -900,6 +925,8 @@ namespace MueLu {
     for (i = 0; i < numRows; i++)
       if (status[i] == CPOINT)
         Cptlist.push_back(i);
+      else if (status[i] == CPOINT_U)
+        status[i] = CPOINT;
   }
 
 
@@ -938,24 +965,25 @@ namespace MueLu {
     std::vector<double> dists   (N);
 
     std::vector<char> scratch   (numRows, 'n');
-    std::vector<int>  candidates(numRows);
+    std::vector<LO>   candidates(numRows);
 
     for (int numCDepends = 1; numCDepends <= 2; numCDepends++) {
       int numCandidates = 0;
       for (size_t i = 0; i < numRows; i++)
-        if (status[i] < CPOINT && numCpts[i] == numCDepends)
-          candidates[numCandidates++] = i;
+        if (numCpts[i] == numCDepends && status[i] < CPOINT)
+            candidates[numCandidates++] = i;
 
       for (int p = 0; p < numCandidates; p++) {
         // Mark already existing CPOINT dependencies
-        LO* cpts = myCpts(candidates[p]);
-        for (int k = 0; k < numCpts[candidates[p]]; k++)
+        LO  i    = candidates[p];
+        LO* cpts = myCpts(i);
+        for (int k = 0; k < numCpts[i]; k++)
           scratch[cpts[k]] = 'y';
 
         // Make a list of my neighbors' CPOINT dependencies, excluding all
         // already existing CPOINT dependencies for candidates[p]
-        const LO* neighs = &ja[ia[candidates[p]]];
-        int numNeighbors = ia[candidates[p]+1] - ia[candidates[p]];
+        const LO* neighs = &ja[ia[i]];
+        int numNeighbors = ia[i+1] - ia[i];
         int numNearbyCs  = 0;
         for (int k = 0; k < numNeighbors; k++) {
           LO        curNeigh = neighs[k];
@@ -972,15 +1000,18 @@ namespace MueLu {
         }
 
         // Reset scratch
-        for (int k = 0; k < numCpts[candidates[p]]; k++)
+        for (int k = 0; k < numCpts[i]; k++)
           scratch[cpts[k]] = 'n';
         for (int k = 0; k < numNearbyCs; k++)
           scratch[nearbyCs[k]] = 'n';
 
+        // MATCH_MATLB
+        std::sort(nearbyCs.begin(), nearbyCs.begin() + numNearbyCs);
+
         if (numNearbyCs != 0) {
           SC norm = zero, vec1[3], vec2[3];
           for (int k = 0; k < NDim; k++) {
-            vec1[k] =  coords1D[k][candidates[p]] - coords1D[k][cpts[0]];
+            vec1[k] =  coords1D[k][i] - coords1D[k][cpts[0]];
             norm   += vec1[k]*vec1[k];
           }
           norm = sqrt(norm);
@@ -990,7 +1021,7 @@ namespace MueLu {
           if (numCDepends == 2) {
             norm = zero;
             for (int k = 0; k < NDim; k++) {
-              vec2[k] =  coords1D[k][candidates[p]] - coords1D[k][cpts[1]];
+              vec2[k] =  coords1D[k][i] - coords1D[k][cpts[1]];
               norm   += vec2[k]*vec2[k];
             }
             norm = sqrt(norm);
@@ -1010,7 +1041,7 @@ namespace MueLu {
 
             norm = 0;
             for (int k = 0; k < NDim; k++) {
-              newVec[k] = coords1D[k][nearbyCs[j]] - coords1D[k][candidates[p]];
+              newVec[k] = coords1D[k][nearbyCs[j]] - coords1D[k][i];
               norm += newVec[k]*newVec[k];
             }
             norm = sqrt(norm);
@@ -1041,7 +1072,7 @@ namespace MueLu {
           for (int j = 0; j < numNearbyCs; j++) {
             // The formula is
             //     if (score[j] - distWeight*dists[j] > maxComposite)
-            // It was modified to match Matlab
+            // MATCH_MATLAB
             double composite = score[j] - distWeight*dists[j] + 1.0e-7*(nearbyCs[j]-1);
             if (maxComposite < composite) {
               maxComposite = composite;
@@ -1050,8 +1081,9 @@ namespace MueLu {
           }
 
           if (score[maxIndex] - 0.2*numCDepends > -0.3) {
-            TEUCHOS_TEST_FOR_EXCEPTION(numCpts[candidates[p]] >= myCpts.getNnzPerRow(), Exceptions::RuntimeError, "Increase max number of C points per row");
-            myCpts(candidates[p])[numCpts[candidates[p]]++] = nearbyCs[maxIndex];
+            TEUCHOS_TEST_FOR_EXCEPTION(numCpts[i] >= myCpts.getNnzPerRow(),
+                 Exceptions::RuntimeError, "Increase max number of C points per row");
+            myCpts(i)[numCpts[i]++] = nearbyCs[maxIndex];
           }
         }
       }
@@ -1089,27 +1121,24 @@ namespace MueLu {
     // The idea is that when assigning midpoints, we want to start by looking
     // at points which have many coarse point dependencies
     std::vector<int> nnzPerRow(numRows);
+    std::vector<int> index    (numRows);
     for (size_t i = 0; i < numRows; i++) {
+      nnzPerRow[i] = (numCpts[i] ? numCpts[i] : 1);
       nnzPerRow[i] = -100000*numCpts[i] + i;
-      if (nnzPerRow[i] == 0)
-        nnzPerRow[i] = -1;
+      index    [i] = i;
     }
 
     // Sort only for the purposes of filling 'index', which determines the
     // order that we search for possible midpoints
-    // FIXME
-    std::vector<int> index(numRows);
-    for (size_t i = 0; i < numRows; i++)
-      index[i] = i;
     Muelu_az_sort(&nnzPerRow[0], numRows, &index[0], NULL);
 
     // Reset so that we have unsorted version of nnzPerRow and also mark points
     // which cannot be mid points
     std::vector<char> lookedAt(numRows, 'n');
     for (size_t i = 0; i < numRows; i++) {
-      nnzPerRow[i] = numCpts[i];
-      if (nnzPerRow[i] == 0) nnzPerRow[i] = 1;
-      if (nnzPerRow[i] == 1) lookedAt [i] = 'y';
+      nnzPerRow[i] = (numCpts[i] ? numCpts[i] : 1);
+      if (nnzPerRow[i] == 1)
+        lookedAt[i] = 'y';
     }
     for (int i = 0; i < Cptlist.size(); i++)
       lookedAt[Cptlist[i]] = 'y';
@@ -1205,10 +1234,11 @@ namespace MueLu {
       // At this point we have now constructed a group of possible mid points
       // all with the same Cpt dependencies. Now, we need to find the one in
       // this group which is closest to the target midpoint coordinates.
-      double smallest      = 1.e30;
+      double smallest      = 1e30;
       int    smallestIndex = -1;
       for (int j = 0; j < numSameGrp; j++) {
-        double dist = 1e-8*(sameCGroup[j]-1); // to match matlab
+        // MATCH_MATLAB
+        double dist = 1e-8*(sameCGroup[j]+1);
 
         for (int k = 0; k < NDim; k++) {
           double dtemp = coords1D[k][sameCGroup[j]] - targetMidCoords1D[k][curF];
@@ -1244,7 +1274,7 @@ namespace MueLu {
 
       if (flag == 1) {
         // Get an idea of the spacing between curFCs
-        double delta = 1e-30;
+        double delta = 0.0;
         for (int k = 0; k < NDim; k++) {
           double dmin = coords1D[k][curFCs[0]];
           double dmax = dmin;
@@ -1281,6 +1311,7 @@ namespace MueLu {
       }
     }
 
+    // This loop also sorts mid points
     int count = 0;
     for (size_t i = 0; i < numRows; i++)
       if (isMidPoint[i] == 'y') {
@@ -1335,6 +1366,8 @@ namespace MueLu {
 
       for (int j = 0; j < numCpts[i]; j++) {
         ja [nnzCount] = coarseCmap[cpts[j]];
+        TEUCHOS_TEST_FOR_EXCEPTION(ja[nnzCount] == -1, Exceptions::RuntimeError,
+            "Point " << cpts[j] << " is not in the global list of cpoints, but it is in the list for " << i);
         val[nnzCount] = one/((SC) numCpts[i]);
         nnzCount++;
       }
@@ -1540,9 +1573,9 @@ namespace MueLu {
     }
   }
 
-   /* ******************************************************************* */
-   /* sort an array and move along list2 and/or list to match sorted array*/
-   /* ------------------------------------------------------------------- */
+  /* ******************************************************************* */
+  /* sort an array and move along list2 and/or list to match sorted array*/
+  /* ------------------------------------------------------------------- */
   void Muelu_az_sort(int list[], int N, int list2[], double list3[]) {
     int    l, r, RR, K, j, i, flag;
     int    RR2;
@@ -1759,7 +1792,7 @@ namespace MueLu {
   // NOTE: lists are given as integer arrays. These integer arrays give
   // locations in CoordDist[] defining the list values. That the ith value
   // associated with the Candidates list is actually CoordDist[Candidates[i]].
-  void MergeSort(std::vector<int>& oldCandidates, size_t numOldCandidates, const std::vector<int>& newCandidates, std::vector<double>& coordDist, ArrayRCP<const size_t> ia) {
+  void MergeSort(std::vector<int>& oldCandidates, size_t numOldCandidates, const std::vector<int>& newCandidates, const std::vector<double>& coordDist, ArrayRCP<const size_t> ia) {
     size_t numNewCandidates = newCandidates.size();
     size_t numCandidates    = numOldCandidates + numNewCandidates;
 
@@ -1775,20 +1808,20 @@ namespace MueLu {
         int ii = oldCandidates[i];
         int jj = newCandidates[j];
 
-        // Must match code above. There is something arbitrary and
-        // crappy about the current weighting.
+        // Must match code above. There is something arbitrary
+        // and crappy about the current weighting.
 
 #ifdef optimal
-        if (coordDist[ii] + .01*(ia[ii+1]-ia[ii]) - 1.e-10*(ii+1) <
-            coordDist[jj] + .01*(ia[jj+1]-ia[jj]) - 1.e-10*(jj+1))
+        if (-coordDist[ii] - .01*(ia[ii+1]-ia[ii]) + 1.e-10*(ii+1) <
+            -coordDist[jj] - .01*(ia[jj+1]-ia[jj]) + 1.e-10*(jj+1))
 #else
-        if (-coordDist[ii] + .0*(ia[ii+1]-ia[ii]) - 1.e-3*(ii+1) <
-            -coordDist[jj] + .0*(ia[jj+1]-ia[jj]) - 1.e-3*(jj+1))
+        if (coordDist[ii] - .0*(ia[ii+1]-ia[ii]) + 1.e-3*(ii+1) <
+            coordDist[jj] - .0*(ia[jj+1]-ia[jj]) + 1.e-3*(jj+1))
+        // if (ii < jj)
 #endif
-          oldCandidates[k--] = oldCandidates[i--];
-
-        else
           oldCandidates[k--] = newCandidates[j--];
+        else
+          oldCandidates[k--] = oldCandidates[i--];
       }
     }
   }

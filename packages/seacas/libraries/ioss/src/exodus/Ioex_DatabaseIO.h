@@ -125,7 +125,6 @@ namespace Ioex {
       bool   end_state(Ioss::Region *region, int state, double time);
       virtual void get_step_times() = 0;
       
-      std::string title()               const     {return databaseTitle;}
       int    spatial_dimension()   const     {return spatialDimension;}
       int64_t    node_count()          const     {return nodeCount;}
       int64_t    side_count()          const     {return 0;}
@@ -277,7 +276,6 @@ namespace Ioex {
       
       mutable EntityIdSet ids_;
 
-      std::string databaseTitle;
       mutable int exodusMode;
       mutable int dbRealWordSize;
 

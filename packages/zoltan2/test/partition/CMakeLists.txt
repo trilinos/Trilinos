@@ -157,6 +157,17 @@ TRIBITS_ADD_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
 )
 
+TRIBITS_ADD_TEST(
+  pamgenMeshAdapterTest
+  NAME pamgenMeshAdapterTest_zoltanrcb
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+    "--action=zoltan_rcb --nparts=6"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
 IF (${PACKAGE_NAME}_ENABLE_Scotch)
   TRIBITS_ADD_TEST(
     pamgenMeshAdapterTest

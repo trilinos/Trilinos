@@ -150,11 +150,6 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
     myGids[i] = x;
   }
 
-  ArrayRCP<const zgno_t> gidArray(myGids, 0, numLocalObj, true);
-
-  RCP<const Zoltan2::IdentifierMap<user_t> > idMap = 
-    rcp(new Zoltan2::IdentifierMap<user_t>(env, comm, gidArray)); 
-
   // Part sizes.  Usually supplied by the user to the Problem.
   // Then the problem supplies them to the Solution.
 
@@ -220,11 +215,11 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   try{
     if (givePartSizes)
       solution = rcp(new Zoltan2::PartitioningSolution<idInput_t>(
-        env, comm, idMap, nWeights,
+        env, comm, nWeights,
         ids.view(0,partSizeDim), sizes.view(0,partSizeDim)));
     else
       solution = rcp(new Zoltan2::PartitioningSolution<idInput_t>(
-        env, comm, idMap, nWeights));
+        env, comm, nWeights));
   }
   catch (std::exception &e){
     fail=1;

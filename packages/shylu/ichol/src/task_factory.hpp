@@ -23,11 +23,12 @@ namespace Example {
   template<typename PolicyType,        
            typename FutureType>
   class TaskFactory {
+  private:
+    static PolicyType *_policy;
+
   public:
     typedef PolicyType policy_type;
     typedef FutureType future_type;
-
-    static PolicyType policy;
     
     template<typename TaskFunctorType>
     static 
@@ -46,10 +47,20 @@ namespace Example {
       policy.add_dependence(after, before);
     }
 
+    static
+    void setPolicy(policy_type *policy) {
+      _policy = policy;
+    }
+
+    static
+    policy_type& Policy() { 
+      return *_policy;
+    } 
+
   };
 
   template<typename PolicyType, typename FutureType> 
-  PolicyType TaskFactory<PolicyType,FutureType>::policy;
+  PolicyType* TaskFactory<PolicyType,FutureType>::_policy = NULL;
 }
 
 #endif

@@ -427,6 +427,7 @@ namespace ROL {
       \arg    LIU_STOREY         describe
       \arg    DAI_YUAN           describe
       \arg    HAGAR_ZHANG        describe
+      \arg    OREN_LUENBERGER    describe
    */
   enum ENonlinearCG{
     NONLINEARCG_HESTENES_STIEFEL = 0,
@@ -437,6 +438,7 @@ namespace ROL {
     NONLINEARCG_LIU_STOREY,
     NONLINEARCG_DAI_YUAN,
     NONLINEARCG_HAGAR_ZHANG,
+    NONLINEARCG_OREN_LUENBERGER,
     NONLINEARCG_LAST
   };
 
@@ -451,6 +453,7 @@ namespace ROL {
       case NONLINEARCG_LIU_STOREY:            retString = "Liu-Storey";                  break;
       case NONLINEARCG_DAI_YUAN:              retString = "Dai-Yuan";                    break;
       case NONLINEARCG_HAGAR_ZHANG:           retString = "Hagar-Zhang";                 break;
+      case NONLINEARCG_OREN_LUENBERGER:       retString = "Oren-Luenberger";             break;
       case NONLINEARCG_LAST:                  retString = "Last Type (Dummy)";           break;
       default:                                retString = "INVALID ENonlinearCG";
     }
@@ -470,7 +473,8 @@ namespace ROL {
             (s == NONLINEARCG_FLETCHER_CONJDESC) ||
             (s == NONLINEARCG_LIU_STOREY)        ||
             (s == NONLINEARCG_DAI_YUAN)          ||
-            (s == NONLINEARCG_HAGAR_ZHANG)
+            (s == NONLINEARCG_HAGAR_ZHANG)       ||
+            (s == NONLINEARCG_OREN_LUENBERGER)      
           );
   }
 

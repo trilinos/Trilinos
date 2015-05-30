@@ -99,7 +99,7 @@ void create_1_hex_element(stk::mesh::BulkData& mesh)
   stk::mesh::Part& hex_block = *mesh.mesh_meta_data().get_part("block_1");
 
   stk::mesh::EntityId elem_id = 1;
-  stk::mesh::EntityId node_ids[] = {1, 2, 3, 4, 5, 6, 7, 8};
+  stk::mesh::EntityIdVector node_ids {1, 2, 3, 4, 5, 6, 7, 8};
 
   mesh.modification_begin();
   stk::mesh::declare_element(mesh, hex_block, elem_id, node_ids);

@@ -231,6 +231,18 @@ class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename Matrix
   //! \name Implementation of Ifpack2::Details::CanChangeMatrix
   //@{
 
+  // Declare that we intend to overload RILUK::setMatrix, not hide it.
+  // This avoids build warnings that the method below "hides
+  // overloaded virtual function" (e.g., Clang 3.5).
+  //
+  // NOTE: If the base class of this class changes, e.g., if its
+  // template parameter changes, then be sure to change the code below
+  // to refer to the proper base class.
+  using RILUK<Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                typename MatrixType::local_ordinal_type,
+                                typename MatrixType::global_ordinal_type,
+                                typename MatrixType::node_type> >::setMatrix;
+
   /// \brief Change the matrix to be preconditioned.
   ///
   /// \param A [in] The new matrix.

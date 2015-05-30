@@ -237,26 +237,25 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
 
     std::vector<EntityId>::iterator ib = element_ids_on_this_processor.begin();
     const std::vector<EntityId>::iterator ie = element_ids_on_this_processor.end();
+    stk::mesh::EntityIdVector elem_nodes(8);
     for (; ib != ie; ++ib) {
       EntityId entity_id = *ib;
       size_t ix = 0, iy = 0, iz = 0;
       elem_x_y_z(entity_id, ix, iy, iz);
 
-      stk::mesh::EntityId elem_node[8] ;
+      elem_nodes[0] = node_id( ix   , iy   , iz   );
+      elem_nodes[1] = node_id( ix+1 , iy   , iz   );
+      elem_nodes[2] = node_id( ix+1 , iy+1 , iz   );
+      elem_nodes[3] = node_id( ix   , iy+1 , iz   );
+      elem_nodes[4] = node_id( ix   , iy   , iz+1 );
+      elem_nodes[5] = node_id( ix+1 , iy   , iz+1 );
+      elem_nodes[6] = node_id( ix+1 , iy+1 , iz+1 );
+      elem_nodes[7] = node_id( ix   , iy+1 , iz+1 );
 
-      elem_node[0] = node_id( ix   , iy   , iz   );
-      elem_node[1] = node_id( ix+1 , iy   , iz   );
-      elem_node[2] = node_id( ix+1 , iy+1 , iz   );
-      elem_node[3] = node_id( ix   , iy+1 , iz   );
-      elem_node[4] = node_id( ix   , iy   , iz+1 );
-      elem_node[5] = node_id( ix+1 , iy   , iz+1 );
-      elem_node[6] = node_id( ix+1 , iy+1 , iz+1 );
-      elem_node[7] = node_id( ix   , iy+1 , iz+1 );
-
-      stk::mesh::declare_element( m_bulk_data, m_elem_parts, elem_id( ix , iy , iz ) , elem_node);
+      stk::mesh::declare_element( m_bulk_data, m_elem_parts, elem_id( ix , iy , iz ) , elem_nodes);
 
       for (size_t i = 0; i<8; ++i) {
-        EntityId node_id = elem_node[i];
+        EntityId node_id = elem_nodes[i];
         stk::mesh::Entity const node = m_bulk_data.get_entity( stk::topology::NODE_RANK , node_id );
         m_bulk_data.change_entity_parts(node, m_node_parts);
 
@@ -267,7 +266,7 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
 
         // Compute and assign coordinates to the node
         size_t nx = 0, ny = 0, nz = 0;
-        node_x_y_z(elem_node[i], nx, ny, nz);
+        node_x_y_z(elem_nodes[i], nx, ny, nz);
 
         Scalar * data = stk::mesh::field_data( m_coord_field , node );
 
