@@ -174,6 +174,13 @@ int main(int narg, char *arg[]) {
 
     graphModel.get2ndAdjsViewFromAdjs(baseInputAdapter, primaryEType,
 				      secondAdjEType, moffsets, madjacencyIds);
+
+    for (int telct = 0; telct < ia.getLocalNumOf(primaryEType); telct++) {
+      if (offsets[telct+1]-offsets[telct]!=moffsets[telct+1]-moffsets[telct]) {
+	std::cout << "Number of adjacencies do not match" << std::endl;
+	return 3;
+      }
+    }
   }
   else{
     std::cout << "Adjacencies not available" << std::endl;
