@@ -247,7 +247,13 @@ public:
   ///
   /// Add <tt>(keys[i], i)</tt> to the table,
   /// for i = 0, 1, ..., <tt>keys.size()</tt>.
-  FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys);
+  ///
+  /// \param keys [in] The keys in the hash table.
+  /// \param keepKeys [in] Whether to keep (a deep copy of) the keys.
+  ///   Keeping a copy lets you convert from a value back to a key
+  ///   (the reverse of what get() does).
+  FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
+                  const bool keepKeys = false);
 
   /// \brief Constructor for arbitrary keys and contiguous values
   ///   starting with \c startingValue.
@@ -256,14 +262,28 @@ public:
   /// 0, 1, ..., <tt>keys.size()</tt>.  This version is useful if Map
   /// wants to exclude an initial sequence of contiguous GIDs from the
   /// table, and start with a given LID.
+  ///
+  /// \param keys [in] The keys in the hash table.
+  /// \param startingValue [in] First value in the contiguous sequence
+  ///   of values.
+  /// \param keepKeys [in] Whether to keep (a deep copy of) the keys.
+  ///   Keeping a copy lets you convert from a value back to a key
+  ///   (the reverse of what get() does).
   FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
-                  const ValueType startingValue);
+                  const ValueType startingValue,
+                  const bool keepKeys = false);
 
   /// \brief Constructor for arbitrary keys and arbitrary values.
   ///
   /// Add <tt>(keys[i], vals[i])</tt> to the table, for i = 0, 1, ...,
   /// <tt>keys.size()</tt>.  This version is useful for applications
   /// other than Map's GID-to-LID lookup table.
+  ///
+  /// The \c keepKeys option (see above constructors) does not make
+  /// sense for this constructor, so we do not provide it here.
+  ///
+  /// \param keys [in] The keys in the hash table.
+  /// \param vals [in] The values in the hash table.
   FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
                   const Teuchos::ArrayView<const ValueType>& vals);
 
@@ -433,6 +453,18 @@ public:
   //@}
 
 private:
+  typedef Kokkos::View<KeyType*, Kokkos::LayoutLeft, device_type> keys_type;
+
+  /// \brief Array of keys; only valid if keepKeys = true on construction.
+  ///
+  /// If you want the reverse mapping from values to keys, you need
+  /// this View.  The reverse mapping only works if this object was
+  /// constructed using one of the contiguous values constructors.
+  /// The reverse mapping is only useful in Tpetra::Map, which only
+  /// ever uses the contiguous values constructors.  The noncontiguous
+  /// values constructor (that takes arrays of keys <i>and</i> values)
+  /// does NOT set this field.
+  typename keys_type::const_type keys_;
   //! Array of "row" offsets.
   ptr_type ptr_;
   //! Array of hash table entries.
@@ -527,7 +559,7 @@ private:
   /// Add <tt>(keys[i], startingValue + i)</tt> to the table,
   /// for i = 0, 1, ..., <tt>keys.size()</tt>.
   void
-  init (const host_input_keys_type& keys,
+  init (const keys_type& keys,
         const ValueType startingValue,
         const KeyType initMinKey,
         const KeyType initMaxKey);

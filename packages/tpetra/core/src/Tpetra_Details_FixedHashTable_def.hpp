@@ -715,7 +715,8 @@ FixedHashTable () :
 
 template<class KeyType, class ValueType, class DeviceType>
 FixedHashTable<KeyType, ValueType, DeviceType>::
-FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys) :
+FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
+                const bool keepKeys) :
 #if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   rawPtr_ (NULL),
   rawVal_ (NULL),
@@ -738,9 +739,15 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys) :
   const ValueType startingValue = static_cast<ValueType> (0);
   host_input_keys_type keys_k (keys.size () == 0 ? NULL : keys.getRawPtr (),
                                keys.size ());
+  keys_type keys_d (Kokkos::ViewAllocateWithoutInitializing ("keys"),
+                    keys_k.dimension_0 ());
+  Kokkos::deep_copy (keys_d, keys_k);
   const KeyType initMinKey = this->minKey_;
   const KeyType initMaxKey = this->maxKey_;
-  this->init (keys_k, startingValue, initMinKey, initMaxKey);
+  this->init (keys_d, startingValue, initMinKey, initMaxKey);
+  if (keepKeys) {
+    keys_ = keys_d;
+  }
 
 #ifdef HAVE_TPETRA_DEBUG
   check ();
@@ -750,7 +757,8 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys) :
 template<class KeyType, class ValueType, class DeviceType>
 FixedHashTable<KeyType, ValueType, DeviceType>::
 FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
-                const ValueType startingValue) :
+                const ValueType startingValue,
+                const bool keepKeys) :
 #if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   rawPtr_ (NULL),
   rawVal_ (NULL),
@@ -772,6 +780,10 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   // so I ensure this manually.
   host_input_keys_type keys_k (keys.size () == 0 ? NULL : keys.getRawPtr (),
                                keys.size ());
+  keys_type keys_d (Kokkos::ViewAllocateWithoutInitializing ("keys"),
+                    keys_k.dimension_0 ());
+  Kokkos::deep_copy (keys_d, keys_k);
+
   const KeyType initMinKey = std::numeric_limits<KeyType>::max ();
   // min() for a floating-point type returns the minimum _positive_
   // normalized value.  This is different than for integer types.
@@ -788,7 +800,10 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   const KeyType initMaxKey = std::numeric_limits<KeyType>::is_integer ?
     std::numeric_limits<KeyType>::min () :
     -std::numeric_limits<KeyType>::max ();
-  this->init (keys_k, startingValue, initMinKey, initMaxKey);
+  this->init (keys_d, startingValue, initMinKey, initMaxKey);
+  if (keepKeys) {
+    keys_ = keys_d;
+  }
 
 #ifdef HAVE_TPETRA_DEBUG
   check ();
@@ -848,7 +863,7 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
 template<class KeyType, class ValueType, class DeviceType>
 void
 FixedHashTable<KeyType, ValueType, DeviceType>::
-init (const host_input_keys_type& keys,
+init (const keys_type& keys,
       const ValueType startingValue,
       const KeyType initMinKey,
       const KeyType initMaxKey)
@@ -891,16 +906,6 @@ init (const host_input_keys_type& keys,
   typedef typename ptr_type::non_const_type counts_type;
   counts_type counts ("counts", size);
 
-  // Only make a device copy of the input array 'keys' if the input
-  // array lives in a different memory space.  Remember that with UVM,
-  // host code can access CUDA device memory, but not the other way
-  // around.
-  typedef DeepCopyIfNeeded<KeyType, typename host_input_keys_type::array_layout,
-                           typename host_input_keys_type::execution_space,
-                           execution_space> copier_type;
-  typedef typename copier_type::output_view_type keys_type;
-  keys_type keys_d = copier_type::copy (keys);
-
   //
   // Count the number of "buckets" per offsets array (ptr) entry.
   //
@@ -919,7 +924,7 @@ init (const host_input_keys_type& keys,
     }
   }
   else {
-    CountBuckets<counts_type, keys_type> functor (counts, keys_d, size);
+    CountBuckets<counts_type, keys_type> functor (counts, keys, size);
     Kokkos::parallel_for (numKeys, functor);
   }
 
@@ -960,7 +965,7 @@ init (const host_input_keys_type& keys,
                     typename ptr_type::non_const_type> functor_type;
   typename functor_type::value_type result (initMinKey, initMaxKey);
   if (buildInParallel) {
-    functor_type functor (val, counts, ptr, keys_d, startingValue,
+    functor_type functor (val, counts, ptr, keys, startingValue,
                           initMinKey, initMaxKey);
     Kokkos::parallel_reduce (numKeys, functor, result);
   }
