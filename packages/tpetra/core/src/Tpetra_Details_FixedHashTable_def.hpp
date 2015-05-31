@@ -670,10 +670,10 @@ void
 FixedHashTable<KeyType, ValueType, DeviceType>::
 check () const
 {
+#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   const char prefix[] = "Tpetra::Details::FixedHashTable: ";
   const char suffix[] = "  Please report this bug to the Tpetra developers.";
 
-#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   TEUCHOS_TEST_FOR_EXCEPTION
     (ptr_.ptr_on_device () != rawPtr_, std::logic_error,
      prefix << "ptr_.ptr_on_device () != rawPtr_." << suffix);
