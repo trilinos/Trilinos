@@ -666,6 +666,19 @@ namespace Tpetra {
 namespace Details {
 
 template<class KeyType, class ValueType, class DeviceType>
+bool
+FixedHashTable<KeyType, ValueType, DeviceType>::
+hasKeys () const {
+  // This also works if FixedHashTable has no entries.  getKey()
+  // works in that case, but always returns the flag (invalid).
+  //
+  // FIXME (31 May 2015) This only works because vals_ contains no
+  // padding.  If we ever pad within a "row" of vals_, we'll have to
+  // change this.
+  return keys_.dimension_0 () == val_.dimension_0 ();
+}
+
+template<class KeyType, class ValueType, class DeviceType>
 void
 FixedHashTable<KeyType, ValueType, DeviceType>::
 check () const
@@ -739,6 +752,15 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   this->init (keys_d, startingValue, initMinKey, initMaxKey);
   if (keepKeys) {
     keys_ = keys_d;
+#ifdef HAVE_TPETRA_DEBUG
+    typedef typename keys_type::size_type size_type;
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (keys_.dimension_0 () != static_cast<size_type> (keys.size ()),
+       std::logic_error, "Tpetra::Details::FixedHashTable constructor: "
+       "keepKeys is true, but on return, keys_.dimension_0() = " <<
+       keys_.dimension_0 () << " != keys.size() = " << keys.size () <<
+       ".  Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
   }
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -794,6 +816,15 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   this->init (keys_d, startingValue, initMinKey, initMaxKey);
   if (keepKeys) {
     keys_ = keys_d;
+#ifdef HAVE_TPETRA_DEBUG
+    typedef typename keys_type::size_type size_type;
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (keys_.dimension_0 () != static_cast<size_type> (keys.size ()),
+       std::logic_error, "Tpetra::Details::FixedHashTable constructor: "
+       "keepKeys is true, but on return, keys_.dimension_0() = " <<
+       keys_.dimension_0 () << " != keys.size() = " << keys.size () <<
+       ".  Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
   }
 
 #ifdef HAVE_TPETRA_DEBUG

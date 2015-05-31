@@ -373,6 +373,32 @@ public:
     }
   }
 
+  /// \brief Whether it is safe to call getKey().
+  ///
+  /// You may ONLY call getKey() if this object was created with a
+  /// constructor that takes the keepKeys argument, and ONLY if that
+  /// argument was true when calling the constructor.
+  bool hasKeys () const;
+
+  /// \brief Get the key corresponding to the given value.
+  ///
+  /// \warning This ONLY works if this object was created with a
+  ///   constructor that takes the keepKeys argument, and ONLY if that
+  ///   argument was true when calling the constructor.  Otherwise,
+  ///   segfaults or incorrect answers may result!
+  KOKKOS_INLINE_FUNCTION KeyType getKey (const ValueType& val) const {
+    // If there are no keys in the table, then we set minVal_ to the
+    // the max possible ValueType value and maxVal_ to the min
+    // possible ValueType value.  Thus, this is always true.
+    if (val < this->minVal () || val > this->maxVal ()) {
+      return Tpetra::Details::OrdinalTraits<KeyType>::invalid ();
+    }
+    else {
+      const ValueType index = val - this->minVal ();
+      return keys_[index];
+    }
+  }
+
   /// \brief Number of (key, value) pairs in the table.
   ///
   /// This counts duplicate keys separately.
