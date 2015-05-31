@@ -45,6 +45,7 @@
 #define TPETRA_DETAILS_FIXEDHASHTABLE_DECL_HPP
 
 #include <Tpetra_Details_Hash.hpp>
+#include <Tpetra_Details_OrdinalTraits.hpp>
 #include <Teuchos_Describable.hpp>
 #include <Kokkos_Core.hpp>
 
@@ -326,7 +327,6 @@ public:
     this->rawPtr_ = ptr.ptr_on_device ();
     this->rawVal_ = val.ptr_on_device ();
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-    this->invalidValue_ = src.invalidValue_;
     this->minKey_ = src.minKey_;
     this->maxKey_ = src.maxKey_;
     this->minVal_ = src.minVal_;
@@ -343,7 +343,9 @@ public:
   KOKKOS_INLINE_FUNCTION ValueType get (const KeyType& key) const {
     const offset_type size = this->getSize ();
     if (size == 0) {
-      return invalidValue_;
+      // Don't use Teuchos::OrdinalTraits or std::numeric_limits here,
+      // because neither have the right device function markings.
+      return Tpetra::Details::OrdinalTraits<ValueType>::invalid ();
     }
     else {
       const typename hash_type::result_type hashVal =
@@ -365,7 +367,9 @@ public:
         }
       }
 #endif // HAVE_TPETRA_DEBUG
-      return invalidValue_;
+      // Don't use Teuchos::OrdinalTraits or std::numeric_limits here,
+      // because neither have the right device function markings.
+      return Tpetra::Details::OrdinalTraits<ValueType>::invalid ();
     }
   }
 
@@ -482,14 +486,6 @@ private:
   /// comparison against the "classic" version of Tpetra.
   const Kokkos::pair<KeyType, ValueType>* rawVal_;
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-
-  /// \brief "Invalid" value of ValueType, used as a flag.
-  ///
-  /// We store this here because
-  /// Teuchos::OrdinalTraits<ValueType>::invalid() is not a CUDA
-  /// device function.  This is nonconst because otherwise the
-  /// compiler deletes the implicit copy constructor.
-  ValueType invalidValue_;
 
   /// \brief Minimum key (computed in init()).
   ///

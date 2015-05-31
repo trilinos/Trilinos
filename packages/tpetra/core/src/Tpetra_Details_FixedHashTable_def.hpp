@@ -681,12 +681,6 @@ check () const
     (val_.ptr_on_device () != rawVal_, std::logic_error,
      prefix << "val_.ptr_on_device () != rawVal_." << suffix);
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (invalidValue_ != Teuchos::OrdinalTraits<ValueType>::invalid (),
-     std::logic_error, prefix << "invalidValue_ == " << invalidValue_
-     << " != Teuchos::OrdinalTraits<ValueType>::invalid() == "
-     << Teuchos::OrdinalTraits<ValueType>::invalid () << "." << suffix);
 }
 
 template<class KeyType, class ValueType, class DeviceType>
@@ -696,7 +690,6 @@ FixedHashTable () :
   rawPtr_ (NULL),
   rawVal_ (NULL),
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  invalidValue_ (Teuchos::OrdinalTraits<ValueType>::invalid ()),
   minKey_ (std::numeric_limits<KeyType>::max ()),
   maxKey_ (std::numeric_limits<KeyType>::is_integer ?
            std::numeric_limits<KeyType>::min () :
@@ -721,7 +714,6 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   rawPtr_ (NULL),
   rawVal_ (NULL),
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  invalidValue_ (Teuchos::OrdinalTraits<ValueType>::invalid ()),
   minKey_ (std::numeric_limits<KeyType>::max ()), // to be set in init()
   maxKey_ (std::numeric_limits<KeyType>::is_integer ?
            std::numeric_limits<KeyType>::min () :
@@ -763,7 +755,6 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   rawPtr_ (NULL),
   rawVal_ (NULL),
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  invalidValue_ (Teuchos::OrdinalTraits<ValueType>::invalid ()),
   minKey_ (std::numeric_limits<KeyType>::max ()),
   maxKey_ (std::numeric_limits<KeyType>::is_integer ?
            std::numeric_limits<KeyType>::min () :
@@ -818,7 +809,6 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   rawPtr_ (NULL),
   rawVal_ (NULL),
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  invalidValue_ (Teuchos::OrdinalTraits<ValueType>::invalid ()),
   minKey_ (std::numeric_limits<KeyType>::max ()),
   maxKey_ (std::numeric_limits<KeyType>::is_integer ?
            std::numeric_limits<KeyType>::min () :
