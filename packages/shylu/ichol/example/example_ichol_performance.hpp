@@ -67,7 +67,7 @@ namespace Example {
       t_import = 0.0,
       t_reorder = 0.0,
       t_factor_seq = 0.0,
-      t_factor_team = 0.0,
+      //t_factor_team = 0.0,
       t_factor_task = 0.0;
     
     cout << "ICholPerformance:: import input file = " << file_input << endl;        
@@ -118,6 +118,25 @@ namespace Example {
     }
     cout << "ICholPerformance:: reorder the matrix::time = " << t_reorder << endl;            
 
+    { // warm up
+#ifdef __USE_SERIAL_EXEC_SPACE__
+      typename TaskFactoryType::policy_type policy(max_task_dependences);
+#else
+      typename TaskFactoryType::policy_type policy(max_task_dependences, 1);
+#endif
+      TaskFactoryType::setPolicy(&policy);
+
+      CrsTaskViewType U(&UU);
+      U.fillRowViewArray();
+
+      {
+        auto future = TaskFactoryType::Policy().create(IChol<Uplo::Upper,AlgoIChol::UnblockedOpt1>
+                                                       ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
+        TaskFactoryType::Policy().spawn(future);
+        Kokkos::Experimental::wait(TaskFactoryType::Policy());
+      }
+    }
+
     {
       UU.copy(Uplo::Upper, PA);
 #ifdef __USE_SERIAL_EXEC_SPACE__
@@ -147,34 +166,34 @@ namespace Example {
       cout << "ICholPerformance:: Serial factorize the matrix::time = " << t_factor_seq << endl;
     }
 
-    {
-      UU.copy(Uplo::Upper, PA);
-#ifdef __USE_SERIAL_EXEC_SPACE__
-      typename TaskFactoryType::policy_type policy(max_task_dependences);
-#else
-      typename TaskFactoryType::policy_type policy(max_task_dependences, nthreads);
-#endif
-      TaskFactoryType::setPolicy(&policy);
+//     {
+//       UU.copy(Uplo::Upper, PA);
+// #ifdef __USE_SERIAL_EXEC_SPACE__
+//       typename TaskFactoryType::policy_type policy(max_task_dependences);
+// #else
+//       typename TaskFactoryType::policy_type policy(max_task_dependences, nthreads);
+// #endif
+//       TaskFactoryType::setPolicy(&policy);
 
-      CrsTaskViewType U(&UU);
-      U.fillRowViewArray();
+//       CrsTaskViewType U(&UU);
+//       U.fillRowViewArray();
 
-      cout << "ICholPerformance:: Team factorize the matrix:: team_size = " << nthreads << endl;
-      {
-        timer.reset();
+//       cout << "ICholPerformance:: Team factorize the matrix:: team_size = " << nthreads << endl;
+//       {
+//         timer.reset();
         
-        auto future = TaskFactoryType::Policy().create(IChol<Uplo::Upper,AlgoIChol::UnblockedOpt1>
-                                                       ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
-        TaskFactoryType::Policy().spawn(future);
-        Kokkos::Experimental::wait(TaskFactoryType::Policy());
+//         auto future = TaskFactoryType::Policy().create(IChol<Uplo::Upper,AlgoIChol::UnblockedOpt1>
+//                                                        ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
+//         TaskFactoryType::Policy().spawn(future);
+//         Kokkos::Experimental::wait(TaskFactoryType::Policy());
         
-        t_factor_team = timer.seconds();
+//         t_factor_team = timer.seconds();
         
-        if (verbose)
-          cout << UU << endl;
-      }
-      cout << "ICholPerformance:: Team factorize the matrix::time = " << t_factor_team << endl;
-    }
+//         if (verbose)
+//           cout << UU << endl;
+//       }
+//       cout << "ICholPerformance:: Team factorize the matrix::time = " << t_factor_team << endl;
+//     }
 
     {
       UU.copy(Uplo::Upper, PA);
@@ -204,7 +223,7 @@ namespace Example {
     }
 
     cout << "ICholPerformance:: task scale [seq/task] = " << t_factor_seq/t_factor_task << endl;    
-    cout << "ICholPerformance:: team scale [seq/team] = " << t_factor_seq/t_factor_team << endl;    
+    //cout << "ICholPerformance:: team scale [seq/team] = " << t_factor_seq/t_factor_team << endl;    
 
     return r_val;
   }
