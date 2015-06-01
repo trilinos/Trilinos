@@ -501,12 +501,13 @@ TEST(UnitTestField, writeFieldsWithSameName)
         size_t index = stkIo.add_mesh_database(mesh_name, stk::io::READ_MESH);
         stkIo.set_active_mesh(index);
         stkIo.create_input_mesh();
+        const double badInitialData = -1.2345;
 
         stk::mesh::Field<double> &nodeField = stkIo.meta_data().declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, fieldName, 1);
-        stk::mesh::put_field(nodeField, stkIo.meta_data().universal_part(), &nodeInitialValue);
+        stk::mesh::put_field(nodeField, stkIo.meta_data().universal_part(), &badInitialData);
 
         stk::mesh::Field<double> &elemField = stkIo.meta_data().declare_field<stk::mesh::Field<double> >(stk::topology::ELEMENT_RANK, fieldName, 1);
-        stk::mesh::put_field(elemField, stkIo.meta_data().universal_part(), &elemInitialValue);
+        stk::mesh::put_field(elemField, stkIo.meta_data().universal_part(), &badInitialData);
 
         stkIo.populate_bulk_data();
         stkIo.add_input_field(stk::io::MeshField(nodeField, fieldName));
@@ -515,7 +516,7 @@ TEST(UnitTestField, writeFieldsWithSameName)
         stk::mesh::BulkData &mesh = stkIo.bulk_data();
         stk::mesh::MetaData &metaData = stkIo.meta_data();
 
-        const stk::mesh::BucketVector &nodeBuckets = mesh.buckets(stk::topology::NODE_RANK);
+        const stk::mesh::BucketVector &nodeBuckets = mesh.get_buckets(stk::topology::NODE_RANK, metaData.locally_owned_part());
         for (size_t bucket_i=0 ; bucket_i<nodeBuckets.size() ; ++bucket_i) {
             stk::mesh::Bucket &nodeBucket = *nodeBuckets[bucket_i];
             for (size_t node_i=0 ; node_i<nodeBucket.size() ; ++node_i) {
@@ -524,7 +525,7 @@ TEST(UnitTestField, writeFieldsWithSameName)
             }
         }
 
-        const stk::mesh::BucketVector &elemBuckets = mesh.buckets(stk::topology::ELEM_RANK);
+        const stk::mesh::BucketVector &elemBuckets = mesh.get_buckets(stk::topology::ELEM_RANK, metaData.locally_owned_part());
         for (size_t bucket_i=0 ; bucket_i<elemBuckets.size() ; ++bucket_i) {
             stk::mesh::Bucket &elemBucket = *elemBuckets[bucket_i];
             for (size_t elem_i=0 ; elem_i<elemBucket.size() ; ++elem_i) {
