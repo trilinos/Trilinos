@@ -1208,6 +1208,10 @@ namespace MueLu {
           if (sum == nnzPerRow[curF]) {
             lookedAt[curNeigh] = 'y';
 
+            // Make sure we have enough space
+            if (sameCGroup.size() <= numSameGrp)
+              sameCGroup.resize(2*numSameGrp);
+
             sameCGroup[numSameGrp++] = curNeigh;
             flag = 1;
           }

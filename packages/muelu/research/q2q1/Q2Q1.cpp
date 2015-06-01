@@ -175,8 +175,8 @@ int main(int argc, char *argv[]) {
     // For now, we assume that p2v maps local pressure DOF to a local x-velocity DOF
     ArrayRCP<const SC> slop = Utils2::ReadMultiVector((prefix + "p2vMap.mm").c_str(),
                                                       Xpetra::toXpetra(A21->getRangeMap()))->getData(0);
-    ArrayRCP<LO> p2vMap(n*n);
-    for (int i = 0; i < n*n; i++)
+    ArrayRCP<LO> p2vMap(slop.size());
+    for (int i = 0; i < slop.size(); i++)
       p2vMap[i] = as<LO>(slop[i]);
 
     // Convert matrices to Teko/Thyra operators
