@@ -15,6 +15,7 @@
 #include <stk_mesh/base/CreateFaces.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/memory_util.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
@@ -115,6 +116,123 @@ public:
         this->internal_finish_modification_end(opt);
 
         return true ;
+    }
+
+    bool my_modification_end_for_face_deletion(const stk::mesh::EntityVector& deletedEntities, modification_optimization opt = MOD_END_SORT)
+    {
+        if(this->in_synchronized_state())
+        {
+            return false;
+        }
+
+        for(size_t i=0; i<deletedEntities.size(); ++i)
+        {
+            ThrowAssertMsg(this->entity_rank(deletedEntities[i]) == stk::topology::FACE_RANK, "ERROR, modification_end_for_face_deletion only handles faces");
+        }
+
+        ThrowAssertMsg(stk::mesh::impl::check_for_connected_nodes(*this)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
+
+        ThrowAssertMsg(this->add_fmwk_data() || stk::mesh::impl::check_no_shared_elements_or_higher(*this)==0, "BulkData::modification_end ERROR, Sharing of entities with rank ELEMENT_RANK or higher is not allowed.");
+
+        if(this->parallel_size() > 1)
+        {
+            stk::CommSparse comm(this->parallel());
+            for ( int phase = 0; phase < 2; ++phase ) {
+                for(size_t i=0; i<deletedEntities.size(); ++i)
+                {
+                    stk::mesh::Entity face = deletedEntities[i];
+                    stk::mesh::EntityKey key = this->entity_key(face);
+                    const bool is_comm_entity_and_locally_owned = this->m_entity_comm_map.owner_rank(key) == this->parallel_rank();
+                    if ( is_comm_entity_and_locally_owned ) {
+                        std::vector<int> procs;
+
+                        //this->comm_procs(key, procs) throws because it expects key to be from a valid entity
+                        for ( stk::mesh::PairIterEntityComm ec = internal_entity_comm_map(key); ! ec.empty() ; ++ec ) {
+                          procs.push_back( ec->proc );
+                        }
+                        std::sort( procs.begin() , procs.end() );
+                        std::vector<int>::iterator i = std::unique( procs.begin() , procs.end() );
+                        procs.erase( i , procs.end() );
+
+                        for(size_t proc_index=0; proc_index<procs.size(); ++proc_index)
+                        {
+                            const int proc = procs[proc_index];
+                            stk::CommBuffer & buf = comm.send_buffer( proc );
+                            buf.pack<stk::mesh::EntityKey>( entity_key(face) );
+                        }
+
+                        if (phase == 1) {
+                            this->entity_comm_map_clear(this->entity_key(face));
+                        }
+                    }
+                }
+
+                if (phase == 0) {
+                    comm.allocate_buffers();
+                }
+                else {
+                    comm.communicate();
+                }
+            }
+
+            stk::mesh::EntityVector recvdFacesToDelete;
+            for ( int p = 0 ; p < this->parallel_size() ; ++p ) {
+                stk::CommBuffer & buf = comm.recv_buffer(p);
+                while ( buf.remaining() ) {
+                    stk::mesh::EntityKey key;
+                    buf.unpack<stk::mesh::EntityKey>(key);
+                    this->entity_comm_map_clear(key);
+                    stk::mesh::Entity face = this->get_entity(key);
+                    if (this->is_valid(face))
+                    {
+                        recvdFacesToDelete.push_back(face);
+                    }
+                }
+            }
+
+            stk::mesh::impl::delete_entities_and_upward_relations(*this, recvdFacesToDelete);
+
+            this->update_comm_list_based_on_changes_in_comm_map();
+
+            // Resolve part membership for shared entities.
+            // This occurs after resolving deletion so shared
+            // entities are resolved along with previously existing shared entities.
+            this->internal_resolve_shared_membership();
+
+            this->check_mesh_consistency();
+        }
+
+        // ------------------------------
+        // Now sort the bucket entities.
+        // This does not change the entities, relations, or field data.
+        // However, it insures that the ordering of entities and buckets
+        // is independent of the order in which a set of changes were
+        // performed.
+        //
+        //optimize_buckets combines multiple buckets in a bucket-family into
+        //a single larger bucket, and also does a sort.
+        //If optimize_buckets has not been requested, still do the sort.
+
+        if(opt == MOD_END_COMPRESS_AND_SORT)
+        {
+            this->bucket_repository().optimize_buckets();
+        }
+        else
+        {
+            this->bucket_repository().internal_sort_bucket_entities();
+        }
+
+        // ------------------------------
+
+        this->bucket_repository().internal_modification_end();
+
+        this->internal_update_fast_comm_maps();
+
+        this->m_meshModification.set_sync_state_synchronized();
+
+        this->update_deleted_entities_container();
+
+        return true;
     }
 
     size_t num_entity_keys() const
@@ -1756,7 +1874,8 @@ TEST(ElementGraph, test_element_death)
                 double start_mod2 = stk::wall_time();
                 bulkData.modification_begin();
                 stk::mesh::impl::delete_entities_and_upward_relations(bulkData, deletedEntities);
-                bulkData.modification_end();
+                bulkData.my_modification_end_for_face_deletion(deletedEntities);
+                //bulkData.modification_end();
                 double elapsed_mod2 = stk::wall_time() - start_mod2;
                 total_mod_ed += elapsed_mod2;
             }
