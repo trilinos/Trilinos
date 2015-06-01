@@ -23,6 +23,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <ctime>
 
 /** \file
     \brief Contains definitions for the diode circuit problem.
