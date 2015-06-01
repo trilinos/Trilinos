@@ -180,8 +180,11 @@ solve(VectorBase<double> *x,
     status_test_ = this->buildStatusTests(*param_list_);
     solver_ = NOX::Solver::buildSolver(nox_group_, status_test_, param_list_);
   }
-  else
+  else {
+    nox_group_->getNonconstInArgs() = this->basePoint_;
+
     solver_->reset(initial_guess);
+  }
 
   NOX::StatusTest::StatusType solvStatus = solver_->solve();
 

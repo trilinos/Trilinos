@@ -149,6 +149,7 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
 
   // Evaluate objective value at x.
   this->update(x);
+  Real val = this->value(x,tol);
 
   // Compute gradient at x.
   Teuchos::RCP<Vector<Real> > gtmp = g.clone();
@@ -168,7 +169,7 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
     gCheck[i][0] = eta;
     gCheck[i][1] = dtg;
 
-    gCheck[i][2] = weights[order-1][0] * this->value(x,tol);
+    gCheck[i][2] = weights[order-1][0] * val;
 
     for(int j=0; j<order; ++j) {
         // Evaluate at x <- x+eta*c_i*d.

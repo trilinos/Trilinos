@@ -43,6 +43,9 @@ namespace stk { namespace topology_detail {
 template <typename OrdinalOutputIterator>
 struct fill_ordinal_container {
 
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   template <typename Ordinal>
   BOOST_GPU_ENABLED
   void operator()(Ordinal i)
@@ -76,6 +79,9 @@ struct fill_ordinal_container< std::vector<T,A> >
 template <typename NodeArray, typename NodeOutputIterator>
 struct fill_node_container {
 
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   template <typename Ordinal>
   BOOST_GPU_ENABLED
   void operator()(Ordinal i)

@@ -988,10 +988,10 @@ TEST( SkinMesh, test_2_hex_2_block_with_second_selector_without_aura)
     test_2_hex_2_block_with_second_selector(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
-TEST( SkinMesh, SimpleQuad)
+void test_quad_2D_skin_with_aura_option (bool auraOn)
 {
   const unsigned X = 5, Y = 5;
-  stk::mesh::fixtures::QuadFixture fixture(MPI_COMM_WORLD, X, Y);
+  stk::mesh::fixtures::QuadFixture fixture(MPI_COMM_WORLD, X, Y, auraOn);
 
   stk::mesh::EntityRank side_rank = fixture.m_meta.side_rank();
 
@@ -1007,6 +1007,19 @@ TEST( SkinMesh, SimpleQuad)
 
   ASSERT_EQ( 0u, stk::mesh::count_selected_entities( skin_part, mesh.buckets(stk::topology::NODE_RANK)) );
   ASSERT_EQ( 0u, stk::mesh::count_selected_entities( skin_part, mesh.buckets(side_rank)) );
+
+  stk::mesh::create_edges(mesh);
+
+  {
+    size_t local_counts[2] = {}, global_counts[2] = {};
+    local_counts[0] = stk::mesh::count_selected_entities( skin_part & locally_owned, mesh.buckets(stk::topology::NODE_RANK));
+    local_counts[1] = stk::mesh::count_selected_entities( skin_part & locally_owned, mesh.buckets(side_rank));
+
+    stk::all_reduce_sum( mesh.parallel(), local_counts, global_counts, 2);
+
+    EXPECT_EQ( 0u, global_counts[0] );
+    EXPECT_EQ( 0u, global_counts[1] );
+  }
 
   // skin the mesh
   {
@@ -1042,5 +1055,10 @@ TEST( SkinMesh, SimpleQuad)
     EXPECT_EQ( 20u, global_counts[0] );
     EXPECT_EQ( 20u, global_counts[1] );
   }
+}
 
+TEST( SkinMesh, SimpleQuad)
+{
+    test_quad_2D_skin_with_aura_option(true);
+    test_quad_2D_skin_with_aura_option(false);
 }

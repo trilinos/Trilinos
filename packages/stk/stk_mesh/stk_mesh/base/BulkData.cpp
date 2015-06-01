@@ -377,7 +377,7 @@ void BulkData::find_and_delete_internal_faces(stk::mesh::EntityRank entityRank, 
     for (size_t i=0; i<shared_entities.size(); ++i)
     {
         Entity entity = shared_entities[i].entity;
-        if ( internal_is_entity_marked(entity) == BulkData::IS_SHARED )
+        if ( internal_is_entity_marked(entity) == BulkData::IS_SHARED && state(entity) == Created)
         {
             entities.push_back(entity);
         }
@@ -393,7 +393,11 @@ void BulkData::find_and_delete_internal_faces(stk::mesh::EntityRank entityRank, 
     unpack_entity_keys_from_procs(commForInternalSides, receivedEntityKeys);
     for (size_t i=0; i<receivedEntityKeys.size(); ++i)
     {
-        entities.push_back(this->get_entity(receivedEntityKeys[i]));
+        stk::mesh::Entity tempEntity = this->get_entity(receivedEntityKeys[i]);
+        if ( state(tempEntity) == Created)
+        {
+            entities.push_back(tempEntity);
+        }
     }
 
     stk::mesh::impl::delete_entities_and_upward_relations(*this, entities);
@@ -3985,9 +3989,9 @@ void print_bucket_data(const stk::mesh::BulkData& mesh)
 }
 
 
-bool BulkData::modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt)
+bool BulkData::modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector, modification_optimization opt)
 {
-  bool return_value = internal_modification_end_for_entity_creation( entity_rank, opt );
+  bool return_value = internal_modification_end_for_entity_creation( entity_rank_vector, opt );
 
 #ifdef STK_VERBOSE_OUTPUT
   print_bucket_data(*this);
@@ -4404,51 +4408,54 @@ void BulkData::resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(Ent
     connect_ghosted_entities_received_to_ghosted_upwardly_connected_entities(*this, entity_rank, selectedToSkin);
 }
 
-bool BulkData::internal_modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt )
+bool BulkData::internal_modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector, modification_optimization opt )
 {
   // The two states are MODIFIABLE and SYNCHRONiZED
   if ( this->in_synchronized_state() ) { return false ; }
 
   ThrowAssertMsg(impl::check_for_connected_nodes(*this)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
 
-  if (parallel_size() > 1)
-  {
-    std::vector<Entity> shared_modified ;
+  for (size_t rank_idx=0 ; rank_idx < entity_rank_vector.size() ; ++rank_idx) {
+      EntityRank entity_rank = entity_rank_vector[rank_idx];
+      if (parallel_size() > 1)
+      {
+          std::vector<Entity> shared_modified ;
 
-    // Update the parallel index and
-    // output shared and modified entities.
-    internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank( entity_rank, shared_modified );
+          // Update the parallel index and
+          // output shared and modified entities.
+          internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank( entity_rank, shared_modified );
 
-    // ------------------------------------------------------------
-    // Claim ownership on all shared_modified entities that I own
-    // and which were not created in this modification cycle. All
-    // sharing procs will need to be informed of this claim.
+          // ------------------------------------------------------------
+          // Claim ownership on all shared_modified entities that I own
+          // and which were not created in this modification cycle. All
+          // sharing procs will need to be informed of this claim.
 
-    resolve_ownership_of_modified_entities( shared_modified );
+          resolve_ownership_of_modified_entities( shared_modified );
 
-    // ------------------------------------------------------------
-    // Update shared created entities.
-    // - Revise ownership to selected processor
-    // - Update sharing.
-    // - Work backward so the 'in_owned_closure' function
-    //   can evaluate related higher ranking entities.
+          // ------------------------------------------------------------
+          // Update shared created entities.
+          // - Revise ownership to selected processor
+          // - Update sharing.
+          // - Work backward so the 'in_owned_closure' function
+          //   can evaluate related higher ranking entities.
 
-    move_entities_to_proper_part_ownership( shared_modified );
+          move_entities_to_proper_part_ownership( shared_modified );
 
-    add_comm_list_entries_for_entities( shared_modified );
+          add_comm_list_entries_for_entities( shared_modified );
 
-    internal_resolve_shared_membership();
+          internal_resolve_shared_membership();
 
-    if ( this->get_automatic_aura_option() == AUTO_AURA)
-    {
-        this->resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(entity_rank, mesh_meta_data().universal_part());
-    }
+          if ( this->get_automatic_aura_option() == AUTO_AURA)
+          {
+              this->resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(entity_rank, mesh_meta_data().universal_part());
+          }
 
-    check_mesh_consistency();
-  }
-  else {
-      std::vector<Entity> shared_modified ;
-      internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank( entity_rank, shared_modified );
+          check_mesh_consistency();
+      }
+      else {
+          std::vector<Entity> shared_modified ;
+          internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank( entity_rank, shared_modified );
+      }
   }
 
   this->internal_finish_modification_end(opt);

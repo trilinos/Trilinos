@@ -180,8 +180,8 @@ public:
       \param[in] vs   Vector space that this corresponds to
       \param[in] ged  Global evaluation data object that handles ghosting
       \param[in] initial Initial value to use for this parameter (defaults in the equation set)
-      \param[in] jacLOF Jacobian linear object factory that is required for computing
-                        derivatives with respect to this parameter.
+      \param[in] ugi Unique global indexer used for this parameter. Useful in constructing
+                     derivatives.
 
       \return The index associated with this parameter for accessing it through the ModelEvaluator interface.
   */

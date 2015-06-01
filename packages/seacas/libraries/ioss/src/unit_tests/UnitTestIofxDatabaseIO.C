@@ -39,6 +39,7 @@ Iofx::DatabaseIO* create_input_db_io(const std::string &filename)
     return db_io;
 }
 
+//BeginDocTest1
 Iofx::DatabaseIO* create_output_db_io(const std::string &filename)
 {
     Ioss::Init::Initializer init_db;
@@ -54,13 +55,11 @@ Iofx::DatabaseIO* create_output_db_io(const std::string &filename)
     return db_io;
 }
 
-
 TEST(Iofx, test_constructor)
 {
     const std::string filename = "ADeDA.e";
     Iofx::DatabaseIO* db_io = create_input_db_io(filename);
     
-    // Creation of region reads meta data using db_io
     Ioss::Region region(db_io);
 
     EXPECT_TRUE(db_io->ok());
@@ -72,9 +71,6 @@ TEST(Iofx, test_constructor)
     ASSERT_EQ(2u, block_membership.size());
     EXPECT_EQ("block_1", block_membership[0]);
     EXPECT_EQ("block_2", block_membership[1]);
-
-    // title comparison did not work
-    //    std::string title()               const     {return databaseTitle;}
 
     int spatial_dim = db_io->spatial_dimension();
     EXPECT_EQ(3, spatial_dim);
@@ -247,6 +243,7 @@ TEST(Iofx, test_constructor)
         }
     }
 }
+//EndDocTest1
 
 void test_topology(const Ioss::ElementTopology* topology, const std::string &gold_top, const int parameteric_dim,
         const int num_vertices, const int num_nodes, const int num_edges, const int num_faces, const int num_boundaries)
@@ -283,6 +280,7 @@ void test_topology(const Ioss::ElementTopology* topology, const std::string &gol
     EXPECT_EQ(num_nodes, element_connectivity.size()) << gold_top;
 }
 
+//BeginDocTest2
 TEST(Iofx, test_writing_of_file)
 {
     const std::string input_filename = "ADeDA.e";
@@ -438,5 +436,7 @@ TEST(Iofx, test_writing_of_file)
 
     output_region.end_mode(Ioss::STATE_MODEL);
 }
+//EndDocTest2
+
 
 }

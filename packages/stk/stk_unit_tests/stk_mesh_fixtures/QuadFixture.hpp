@@ -70,7 +70,10 @@ class QuadFixture
    * Set up meta data to support this fixture. Meta data is left uncommitted
    * to allow additional modifications by the client.
    */
+
   QuadFixture( stk::ParallelMachine pm, unsigned nx , unsigned ny, const std::vector<std::string>& rank_names = std::vector<std::string>() );
+
+  QuadFixture( stk::ParallelMachine pm, unsigned nx , unsigned ny, bool auraOn );
 
   ~QuadFixture() {}
 

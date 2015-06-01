@@ -51,18 +51,150 @@
 namespace Tpetra {
 namespace Details {
 
+//
+// Implementation details for FixedHashTable (see below).
+// Users should skip over this anonymous namespace.
+//
+namespace { // (anonymous)
+
+  // Overflow is impossible (the output can fit the input) if the
+  // output type is bigger than the input type, or if the types have
+  // the same size and (the output type is unsigned, or both types are
+  // signed).
+  //
+  // Implicit here is the assumption that both input and output types
+  // are integers.
+  template<class T1, class T2,
+           const bool T1_is_signed = std::is_signed<T1>::value,
+           const bool T2_is_signed = std::is_signed<T2>::value>
+  struct OutputCanFitInput {
+    static const bool value = sizeof (T1) > sizeof (T2) ||
+      (sizeof (T1) == sizeof (T2) &&
+       (std::is_unsigned<T1>::value || (std::is_signed<T1>::value && std::is_signed<T2>::value)));
+  };
+
+  // Kokkos parallel_reduce functor for copying offset ("ptr") arrays.
+  // Tpetra::Details::FixedHashTable uses this in its "copy"
+  // constructor for converting between different Device types.  All
+  // the action happens in the partial specializations for different
+  // values of outputCanFitInput.
+  template<class OutputViewType, class InputViewType,
+           const bool outputCanFitInput = OutputCanFitInput<typename OutputViewType::non_const_value_type,
+                                                            typename InputViewType::non_const_value_type>::value>
+  class CopyOffsets {};
+
+  // Specialization for when overflow is possible.
+  template<class OutputViewType, class InputViewType>
+  class CopyOffsets<OutputViewType, InputViewType, false> {
+  public:
+    typedef typename OutputViewType::execution_space execution_space;
+    typedef typename OutputViewType::size_type size_type;
+    typedef bool value_type;
+
+    typedef typename InputViewType::non_const_value_type input_value_type;
+    typedef typename OutputViewType::non_const_value_type output_value_type;
+
+    CopyOffsets (const OutputViewType& dst, const InputViewType& src) :
+      dst_ (dst),
+      src_ (src),
+      // We know that output_value_type cannot fit all values of
+      // input_value_type, so an input_value_type can fit all values
+      // of output_value_type.  This means we can convert from
+      // output_value_type to input_value_type.  This is how we test
+      // whether a given input_value_type value can fit in an
+      // output_value_type.
+      minDstVal_ (static_cast<input_value_type> (std::numeric_limits<output_value_type>::min ())),
+      maxDstVal_ (static_cast<input_value_type> (std::numeric_limits<output_value_type>::max ()))
+    {}
+
+    KOKKOS_INLINE_FUNCTION void
+    operator () (const size_type& i, value_type& noOverflow) const {
+      const input_value_type src_i = src_(i);
+      if (src_i < minDstVal_ || src_i > maxDstVal_) {
+        noOverflow = false;
+      }
+      dst_(i) = static_cast<output_value_type> (src_i);
+    }
+
+    KOKKOS_INLINE_FUNCTION void init (value_type& noOverflow) const {
+      noOverflow = true; // success (no overflow)
+    }
+
+    KOKKOS_INLINE_FUNCTION void
+    join (volatile value_type& result,
+          const volatile value_type& current) const {
+      result = result && current; // was there any overflow?
+    }
+
+  private:
+    OutputViewType dst_;
+    InputViewType src_;
+    input_value_type minDstVal_;
+    input_value_type maxDstVal_;
+  };
+
+  // Specialization for when overflow is impossible.
+  template<class OutputViewType, class InputViewType>
+  class CopyOffsets<OutputViewType, InputViewType, true> {
+  public:
+    typedef typename OutputViewType::execution_space execution_space;
+    typedef typename OutputViewType::size_type size_type;
+    typedef bool value_type;
+
+    CopyOffsets (const OutputViewType& dst, const InputViewType& src) :
+      dst_ (dst),
+      src_ (src)
+    {}
+
+    KOKKOS_INLINE_FUNCTION void
+    operator () (const size_type& i, value_type& /* noOverflow */) const {
+      // Overflow is impossible in this case, so there's no need to check.
+      dst_(i) = src_(i);
+    }
+
+    KOKKOS_INLINE_FUNCTION void init (value_type& noOverflow) const {
+      noOverflow = true; // success (no overflow)
+    }
+
+    KOKKOS_INLINE_FUNCTION void
+    join (volatile value_type& result,
+          const volatile value_type& current) const {
+      result = result && current; // was there any overflow?
+    }
+
+  private:
+    OutputViewType dst_;
+    InputViewType src_;
+  };
+
+  template<class OutputViewType, class InputViewType>
+  void copyOffsets (const OutputViewType& dst, const InputViewType& src) {
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (dst.dimension_0 () != src.dimension_0 (), std::invalid_argument,
+       "copyOffsets: dst.dimension_0() = " << dst.dimension_0 ()
+       << " != src.dimension_0() = " << src.dimension_0 () << ".");
+    typedef CopyOffsets<OutputViewType, InputViewType> functor_type;
+    bool noOverflow = false;
+    Kokkos::parallel_reduce (dst.dimension_0 (), functor_type (dst, src), noOverflow);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (! noOverflow, std::runtime_error, "copyOffsets: One or more values in "
+       "src were too big (in the sense of integer overflow) to fit in dst.");
+  }
+
+} // namespace (anonymous)
+
 /// \class FixedHashTable
 /// \tparam KeyType The type of the hash table's keys.  This must be a
-///   built-in signed or unsinged integer type.
+///   built-in signed or unsigned integer type.
 /// \tparam ValueType The type of the hash table's values.  This must
 ///   be a built-in signed or unsigned integer type.
 /// \tparam DeviceType Specialization of Kokkos::Device.
 ///
-/// This class implements a hash table from signed integer keys to
-/// signed integer values, where all the (key,value) pairs must be
-/// added at once, and may not be changed or removed after being
-/// added.  Keys and values may have different types.  Tpetra::Map may
-/// use this to implement global-to-local index lookup.
+/// This class implements a look-up table from integer keys to integer
+/// values.  All the (key,value) pairs must be added at once, and
+/// pairs may not be changed or removed.  Keys and values may have
+/// different types.  Tpetra::Map may use this to implement
+/// global-to-local index lookup.
 ///
 /// The hash table uses a "compressed sparse row" storage strategy.
 /// The hash function maps a key to its "row" in the table, and then
@@ -142,8 +274,7 @@ public:
   ///   same KeyType and ValueType, but a different DeviceType.
   ///
   /// This constructor makes a deep copy of the input's data if
-  /// necessary.  Anything that it doesn't need to deep copy, it
-  /// shallow copies.
+  /// necessary.
   template<class InDeviceType>
   FixedHashTable (const FixedHashTable<KeyType, ValueType, InDeviceType>& src,
                   typename std::enable_if<! std::is_same<DeviceType, InDeviceType>::value, int>::type* = NULL)
@@ -152,15 +283,21 @@ public:
     typedef typename ptr_type::non_const_type nonconst_ptr_type;
     typedef typename val_type::non_const_type nonconst_val_type;
 
+    // FIXME (mfh 28 May 2015) The code below _always_ copies.  This
+    // shouldn't be necessary if the input and output memory spaces
+    // are the same.  However, it is always correct.
+
+    // Different Devices may have different offset_type, because
+    // offset_type comes from the memory space's size_type typedef.
+    // That's why we use a specialized deep copy function here instead
+    // of Kokkos::deep_copy.
     nonconst_ptr_type ptr (ViewAllocateWithoutInitializing ("ptr"),
                            src.ptr_.dimension_0 ());
-
-    // NOTE (mfh 01 May 2015) deep_copy works here, because regardless
-    // of the DeviceType, all FixedHashTable types use the same array
-    // layout for their internal 1-D Views.
-    Kokkos::deep_copy (ptr, src.ptr_);
+    copyOffsets (ptr, src.ptr_);
     nonconst_val_type val (ViewAllocateWithoutInitializing ("val"),
                            src.val_.dimension_0 ());
+    // val and src.val_ have the same entry types, unlike (possibly)
+    // ptr and src.ptr_.  Thus, we can use Kokkos::deep_copy here.
     Kokkos::deep_copy (val, src.val_);
 
     this->ptr_ = ptr;
@@ -170,6 +307,10 @@ public:
     this->rawVal_ = val.ptr_on_device ();
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
     this->invalidValue_ = src.invalidValue_;
+    this->minKey_ = src.minKey_;
+    this->maxKey_ = src.maxKey_;
+    this->minVal_ = src.minVal_;
+    this->maxVal_ = src.maxVal_;
     this->checkedForDuplicateKeys_ = src.checkedForDuplicateKeys_;
     this->hasDuplicateKeys_ = src.hasDuplicateKeys_;
 
@@ -208,17 +349,81 @@ public:
     }
   }
 
+  /// \brief Number of (key, value) pairs in the table.
+  ///
+  /// This counts duplicate keys separately.
+  KOKKOS_INLINE_FUNCTION offset_type numPairs () const {
+    // NOTE (mfh 26 May 2015) This only works because the table
+    // _stores_ pairs with duplicate keys separately.  If the table
+    // didn't do that, we would have to keep a separate numPairs_
+    // field (remembering the size of the input array of keys).
+    return val_.dimension_0 ();
+  }
+
+  /// \brief The minimum key in the table.
+  ///
+  /// This function does not throw.  If the table is empty, the return
+  /// value is undefined.  Furthermore, if the table is empty, we do
+  /// not promise that minKey() <= maxKey().
+  ///
+  /// This class assumes that both keys and values are numbers.
+  /// Therefore, keys are less-than comparable.
+  KOKKOS_INLINE_FUNCTION KeyType minKey () const {
+    return minKey_;
+  }
+
+  /// \brief The maximum key in the table.
+  ///
+  /// This function does not throw.  If the table is empty, the return
+  /// value is undefined.  Furthermore, if the table is empty, we do
+  /// not promise that minKey() <= maxKey().
+  ///
+  /// This class assumes that both keys and values are numbers.
+  /// Therefore, keys are less-than comparable.
+  KOKKOS_INLINE_FUNCTION KeyType maxKey () const {
+    return maxKey_;
+  }
+
+  /// \brief The minimum value in the table.
+  ///
+  /// A "value" is the result of calling get() on a key.
+  ///
+  /// This function does not throw.  If the table is empty, the return
+  /// value is undefined.  Furthermore, if the table is empty, we do
+  /// not promise that minVal() <= maxVal().
+  KOKKOS_INLINE_FUNCTION ValueType minVal () const {
+    return minVal_;
+  }
+
+  /// \brief The maximum value in the table.
+  ///
+  /// A "value" is the result of calling get() on a key.
+  ///
+  /// This function does not throw.  If the table is empty, the return
+  /// value is undefined.  Furthermore, if the table is empty, we do
+  /// not promise that minVal() <= maxVal().
+  KOKKOS_INLINE_FUNCTION ValueType maxVal () const {
+    return maxVal_;
+  }
+
   /// \brief Whether the table has any duplicate keys.
   ///
   /// This is a nonconst function because it requires running a Kokkos
   /// kernel to search the keys.  The result of the first call is
   /// cached and reused on subsequent calls.
+  ///
+  /// This function is the "local" (to an MPI process) version of
+  /// Tpetra::Map::isOneToOne.  If a Tpetra::Map has duplicate keys
+  /// (global indices) on any one MPI process, then it is most
+  /// certainly not one to one.  The opposite may not necessarily be
+  /// true, because a Tpetra::Map might have duplicate global indices
+  /// that occur on different MPI processes.
   bool hasDuplicateKeys ();
 
   //! Implementation of Teuchos::Describable
   //@{
   //! Return a simple one-line description of this object.
-  std::string description() const;
+  std::string description () const;
 
   //! Print this object with the given verbosity to the output stream.
   void
@@ -253,6 +458,30 @@ private:
   /// device function.  This is nonconst because otherwise the
   /// compiler deletes the implicit copy constructor.
   ValueType invalidValue_;
+
+  /// \brief Minimum key (computed in init()).
+  ///
+  /// In Tpetra::Map, this corresponds to the minimum global index
+  /// (local to the MPI process).
+  KeyType minKey_;
+
+  /// \brief Maximum key (computed in init()).
+  ///
+  /// In Tpetra::Map, this corresponds to the maximum global index
+  /// (local to the MPI process).
+  KeyType maxKey_;
+
+  /// \brief Minimum value.
+  ///
+  /// In Tpetra::Map, this corresponds to the minimum local index
+  /// (local to the MPI process).
+  ValueType minVal_;
+
+  /// \brief Maximum value.
+  ///
+  /// In Tpetra::Map, this corresponds to the maximum local index
+  /// (local to the MPI process).
+  ValueType maxVal_;
 
   /// \brief Whether the table has checked for duplicate keys.
   ///
@@ -292,22 +521,28 @@ private:
                        typename ptr_type::HostMirror::execution_space,
                        Kokkos::MemoryUnmanaged> host_input_vals_type;
 
-  /// \brief Allocate storage and initialize the table.
+  /// \brief Allocate storage and initialize the table; use given
+  ///   initial min and max keys.
   ///
   /// Add <tt>(keys[i], startingValue + i)</tt> to the table,
   /// for i = 0, 1, ..., <tt>keys.size()</tt>.
   void
   init (const host_input_keys_type& keys,
-        const ValueType startingValue);
+        const ValueType startingValue,
+        const KeyType initMinKey,
+        const KeyType initMaxKey);
 
-  /// \brief Allocate storage and initialize the table.
+  /// \brief Allocate storage and initialize the table; use given
+  ///   initial min and max keys.
   ///
   /// Add <tt>(keys[i], vals[i])</tt> to the table, for i = 0, 1, ...,
   /// <tt>keys.size()</tt>.  This is called by the version of the
   /// constructor that takes the same arguments.
   void
   init (const host_input_keys_type& keys,
-        const host_input_vals_type& vals);
+        const host_input_vals_type& vals,
+        const KeyType initMinKey,
+        const KeyType initMaxKey);
 };
 
 } // Details namespace

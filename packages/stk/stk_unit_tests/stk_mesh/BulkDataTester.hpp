@@ -172,7 +172,8 @@ public:
 
     bool my_modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt = MOD_END_SORT)
     {
-        return this->modification_end_for_entity_creation(entity_rank, opt);
+        std::vector<EntityRank> entity_rank_vector = {entity_rank};
+        return this->modification_end_for_entity_creation(entity_rank_vector, opt);
     }
 
     bool my_is_entity_in_sharing_comm_map(stk::mesh::Entity entity)
