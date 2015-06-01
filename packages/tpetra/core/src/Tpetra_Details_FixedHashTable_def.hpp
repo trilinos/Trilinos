@@ -721,6 +721,35 @@ FixedHashTable () :
 
 template<class KeyType, class ValueType, class DeviceType>
 FixedHashTable<KeyType, ValueType, DeviceType>::
+FixedHashTable (const keys_type& keys) :
+  keys_ (keys),
+#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  rawPtr_ (NULL),
+  rawVal_ (NULL),
+#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  minKey_ (std::numeric_limits<KeyType>::max ()), // to be set in init()
+  maxKey_ (std::numeric_limits<KeyType>::is_integer ?
+           std::numeric_limits<KeyType>::min () :
+           -std::numeric_limits<KeyType>::max ()), // to be set in init()
+  minVal_ (0),
+  maxVal_ (keys.size () == 0 ?
+           static_cast<ValueType> (0) :
+           static_cast<ValueType> (keys.size () - 1)),
+  checkedForDuplicateKeys_ (false),
+  hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
+{
+  const ValueType startingValue = static_cast<ValueType> (0);
+  const KeyType initMinKey = this->minKey_;
+  const KeyType initMaxKey = this->maxKey_;
+  this->init (keys, startingValue, initMinKey, initMaxKey);
+
+#ifdef HAVE_TPETRA_DEBUG
+  check ();
+#endif // HAVE_TPETRA_DEBUG
+}
+
+template<class KeyType, class ValueType, class DeviceType>
+FixedHashTable<KeyType, ValueType, DeviceType>::
 FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
                 const bool keepKeys) :
 #if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
@@ -738,14 +767,16 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   checkedForDuplicateKeys_ (false),
   hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
 {
+  typedef typename keys_type::non_const_type nonconst_keys_type;
+
   // mfh 01 May 2015: I don't trust that
   // Teuchos::ArrayView::getRawPtr() returns NULL when the size is 0,
   // so I ensure this manually.
   const ValueType startingValue = static_cast<ValueType> (0);
   host_input_keys_type keys_k (keys.size () == 0 ? NULL : keys.getRawPtr (),
                                keys.size ());
-  keys_type keys_d (Kokkos::ViewAllocateWithoutInitializing ("keys"),
-                    keys_k.dimension_0 ());
+  nonconst_keys_type keys_d (Kokkos::ViewAllocateWithoutInitializing ("keys"),
+                             keys_k.dimension_0 ());
   Kokkos::deep_copy (keys_d, keys_k);
   const KeyType initMinKey = this->minKey_;
   const KeyType initMaxKey = this->maxKey_;
@@ -788,13 +819,15 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   checkedForDuplicateKeys_ (false),
   hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
 {
+  typedef typename keys_type::non_const_type nonconst_keys_type;
+
   // mfh 01 May 2015: I don't trust that
   // Teuchos::ArrayView::getRawPtr() returns NULL when the size is 0,
   // so I ensure this manually.
   host_input_keys_type keys_k (keys.size () == 0 ? NULL : keys.getRawPtr (),
                                keys.size ());
-  keys_type keys_d (Kokkos::ViewAllocateWithoutInitializing ("keys"),
-                    keys_k.dimension_0 ());
+  nonconst_keys_type keys_d (Kokkos::ViewAllocateWithoutInitializing ("keys"),
+                             keys_k.dimension_0 ());
   Kokkos::deep_copy (keys_d, keys_k);
 
   const KeyType initMinKey = std::numeric_limits<KeyType>::max ();
@@ -826,6 +859,49 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
        ".  Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
   }
+
+#ifdef HAVE_TPETRA_DEBUG
+  check ();
+#endif // HAVE_TPETRA_DEBUG
+}
+
+template<class KeyType, class ValueType, class DeviceType>
+FixedHashTable<KeyType, ValueType, DeviceType>::
+FixedHashTable (const keys_type& keys,
+                const ValueType startingValue) :
+  keys_ (keys),
+#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  rawPtr_ (NULL),
+  rawVal_ (NULL),
+#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  minKey_ (std::numeric_limits<KeyType>::max ()),
+  maxKey_ (std::numeric_limits<KeyType>::is_integer ?
+           std::numeric_limits<KeyType>::min () :
+           -std::numeric_limits<KeyType>::max ()),
+  minVal_ (startingValue),
+  maxVal_ (keys.size () == 0 ?
+           startingValue :
+           static_cast<ValueType> (startingValue + keys.size () - 1)),
+  checkedForDuplicateKeys_ (false),
+  hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
+{
+  const KeyType initMinKey = std::numeric_limits<KeyType>::max ();
+  // min() for a floating-point type returns the minimum _positive_
+  // normalized value.  This is different than for integer types.
+  // lowest() is new in C++11 and returns the least value, always
+  // negative for signed finite types.
+  //
+  // mfh 23 May 2015: I have heard reports that
+  // std::numeric_limits<int>::lowest() does not exist with the Intel
+  // compiler.  I'm not sure if the users in question actually enabled
+  // C++11.  However, it's easy enough to work around this issue.  The
+  // standard floating-point types are signed and have a sign bit, so
+  // lowest() is just -max().  For integer types, we can use min()
+  // instead.
+  const KeyType initMaxKey = std::numeric_limits<KeyType>::is_integer ?
+    std::numeric_limits<KeyType>::min () :
+    -std::numeric_limits<KeyType>::max ();
+  this->init (keys, startingValue, initMinKey, initMaxKey);
 
 #ifdef HAVE_TPETRA_DEBUG
   check ();

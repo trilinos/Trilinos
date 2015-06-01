@@ -240,8 +240,24 @@ private:
                                 Kokkos::LayoutLeft, device_type> val_type;
 
 public:
+  /// \brief Type of a 1-D Kokkos::View (array) used to store keys.
+  ///
+  /// This is the type preferred by FixedHashTable's constructors.
+  typedef Kokkos::View<const KeyType*, Kokkos::LayoutLeft, device_type> keys_type;
+
   //! Default constructor; makes an empty table.
   FixedHashTable ();
+
+  /// \brief Constructor for arbitrary keys and contiguous values
+  ///   starting with zero.
+  ///
+  /// Add <tt>(keys[i], i)</tt> to the table,
+  /// for i = 0, 1, ..., <tt>keys.dimension_0()</tt>.
+  ///
+  /// \param keys [in] The keys in the hash table.  The table
+  ///   <i>always</i> keeps a (shallow) copy, and thus hasKeys() is
+  ///   true on return.
+  FixedHashTable (const keys_type& keys);
 
   /// \brief Constructor for arbitrary keys and contiguous values
   ///   starting with zero.
@@ -255,6 +271,22 @@ public:
   ///   (the reverse of what get() does).
   FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
                   const bool keepKeys = false);
+
+  /// \brief Constructor for arbitrary keys and contiguous values
+  ///   starting with \c startingValue.
+  ///
+  /// Add <tt>(keys[i], startingValue + i)</tt> to the table, for i =
+  /// 0, 1, ..., <tt>keys.dimension_0()</tt>.  This version is useful
+  /// if Map wants to exclude an initial sequence of contiguous GIDs
+  /// from the table, and start with a given LID.
+  ///
+  /// \param keys [in] The keys in the hash table.  The table
+  ///   <i>always</i> keeps a (shallow) copy, and thus hasKeys() is
+  ///   true on return.
+  /// \param startingValue [in] First value in the contiguous sequence
+  ///   of values.
+  FixedHashTable (const keys_type& keys,
+                  const ValueType startingValue);
 
   /// \brief Constructor for arbitrary keys and contiguous values
   ///   starting with \c startingValue.
@@ -483,8 +515,6 @@ public:
   //@}
 
 private:
-  typedef Kokkos::View<KeyType*, Kokkos::LayoutLeft, device_type> keys_type;
-
   /// \brief Array of keys; only valid if keepKeys = true on construction.
   ///
   /// If you want the reverse mapping from values to keys, you need
@@ -494,7 +524,7 @@ private:
   /// ever uses the contiguous values constructors.  The noncontiguous
   /// values constructor (that takes arrays of keys <i>and</i> values)
   /// does NOT set this field.
-  typename keys_type::const_type keys_;
+  keys_type keys_;
   //! Array of "row" offsets.
   ptr_type ptr_;
   //! Array of hash table entries.
