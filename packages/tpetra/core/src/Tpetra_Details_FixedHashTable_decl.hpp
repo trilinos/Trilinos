@@ -239,6 +239,16 @@ private:
   typedef typename Kokkos::View<const Kokkos::pair<KeyType, ValueType>*,
                                 Kokkos::LayoutLeft, device_type> val_type;
 
+  /// \brief Whether the table was created using one of the
+  ///   constructors that assume contiguous values.
+  ///
+  /// \return false if this object was created using the two-argument
+  ///   (keys, vals) constructor (that takes lists of both keys and
+  ///   values), else true.
+  KOKKOS_INLINE_FUNCTION bool hasContiguousValues () const {
+    return contiguousValues_;
+  }
+
 public:
   /// \brief Type of a 1-D Kokkos::View (array) used to store keys.
   ///
@@ -363,6 +373,9 @@ public:
     this->maxKey_ = src.maxKey_;
     this->minVal_ = src.minVal_;
     this->maxVal_ = src.maxVal_;
+    this->firstContigKey_ = src.firstContigKey_;
+    this->lastContigKey_ = src.lastContigKey_;
+    this->contiguousValues_ = src.contiguousValues_;
     this->checkedForDuplicateKeys_ = src.checkedForDuplicateKeys_;
     this->hasDuplicateKeys_ = src.hasDuplicateKeys_;
 
@@ -379,30 +392,36 @@ public:
       // because neither have the right device function markings.
       return Tpetra::Details::OrdinalTraits<ValueType>::invalid ();
     }
-    else {
-      const typename hash_type::result_type hashVal =
-        hash_type::hashFunc (key, size);
-#if defined(TPETRA_HAVE_KOKKOS_REFACTOR) || defined(HAVE_TPETRA_DEBUG)
-      const offset_type start = ptr_[hashVal];
-      const offset_type end = ptr_[hashVal+1];
-      for (offset_type k = start; k < end; ++k) {
-        if (val_[k].first == key) {
-          return val_[k].second;
-        }
-      }
-#else
-      const offset_type start = rawPtr_[hashVal];
-      const offset_type end = rawPtr_[hashVal+1];
-      for (offset_type k = start; k < end; ++k) {
-        if (rawVal_[k].first == key) {
-          return rawVal_[k].second;
-        }
-      }
-#endif // HAVE_TPETRA_DEBUG
-      // Don't use Teuchos::OrdinalTraits or std::numeric_limits here,
-      // because neither have the right device function markings.
-      return Tpetra::Details::OrdinalTraits<ValueType>::invalid ();
+
+    // If this object assumes contiguous values, then it doesn't store
+    // the initial sequence of >= 1 contiguous keys in the table.
+    if (this->hasContiguousValues () &&
+        key >= firstContigKey_ && key <= lastContigKey_) {
+      return static_cast<ValueType> (key - firstContigKey_) + this->minVal ();
     }
+
+    const typename hash_type::result_type hashVal =
+      hash_type::hashFunc (key, size);
+#if defined(TPETRA_HAVE_KOKKOS_REFACTOR) || defined(HAVE_TPETRA_DEBUG)
+    const offset_type start = ptr_[hashVal];
+    const offset_type end = ptr_[hashVal+1];
+    for (offset_type k = start; k < end; ++k) {
+      if (val_[k].first == key) {
+        return val_[k].second;
+      }
+    }
+#else
+    const offset_type start = rawPtr_[hashVal];
+    const offset_type end = rawPtr_[hashVal+1];
+    for (offset_type k = start; k < end; ++k) {
+      if (rawVal_[k].first == key) {
+        return rawVal_[k].second;
+      }
+    }
+#endif // HAVE_TPETRA_DEBUG
+    // Don't use Teuchos::OrdinalTraits or std::numeric_limits here,
+    // because neither have the right device function markings.
+    return Tpetra::Details::OrdinalTraits<ValueType>::invalid ();
   }
 
   /// \brief Whether it is safe to call getKey().
@@ -435,11 +454,17 @@ public:
   ///
   /// This counts duplicate keys separately.
   KOKKOS_INLINE_FUNCTION offset_type numPairs () const {
-    // NOTE (mfh 26 May 2015) This only works because the table
-    // _stores_ pairs with duplicate keys separately.  If the table
-    // didn't do that, we would have to keep a separate numPairs_
-    // field (remembering the size of the input array of keys).
-    return val_.dimension_0 ();
+    // NOTE (mfh 26 May 2015) Using val_.dimension_0() only works
+    // because the table stores pairs with duplicate keys separately.
+    // If the table didn't do that, we would have to keep a separate
+    // numPairs_ field (remembering the size of the input array of
+    // keys).
+    if (this->hasContiguousValues ()) {
+      return val_.dimension_0 () + static_cast<offset_type> (lastContigKey_ - firstContigKey_);
+    }
+    else {
+      return val_.dimension_0 ();
+    }
   }
 
   /// \brief The minimum key in the table.
@@ -567,6 +592,30 @@ private:
   /// (local to the MPI process).
   ValueType maxVal_;
 
+  /// \brief First key in any initial contiguous sequence.
+  ///
+  /// This only has a defined value if the number of keys is nonzero.
+  /// In that case, the initial contiguous sequence of keys may have
+  /// length 1 or more.  Length 1 means that the sequence is trivial
+  /// (there are no initial contiguous keys).
+  KeyType firstContigKey_;
+
+  /// \brief Last key in any initial contiguous sequence.
+  ///
+  /// This only has a defined value if the number of keys is nonzero.
+  /// In that case, the initial contiguous sequence of keys may have
+  /// length 1 or more.  Length 1 means that the sequence is trivial
+  /// (there are no initial contiguous keys).
+  KeyType lastContigKey_;
+
+  /// \brief Whether the table was created using one of the
+  ///   constructors that assume contiguous values.
+  ///
+  /// This is false if this object was created using the two-argument
+  /// (keys, vals) constructor (that takes lists of both keys and
+  /// values), else true.
+  bool contiguousValues_;
+
   /// \brief Whether the table has checked for duplicate keys.
   ///
   /// This is set at the end of the first call to hasDuplicateKeys().
@@ -613,8 +662,8 @@ private:
   void
   init (const keys_type& keys,
         const ValueType startingValue,
-        const KeyType initMinKey,
-        const KeyType initMaxKey);
+        KeyType initMinKey,
+        KeyType initMaxKey);
 
   /// \brief Allocate storage and initialize the table; use given
   ///   initial min and max keys.
@@ -625,8 +674,8 @@ private:
   void
   init (const host_input_keys_type& keys,
         const host_input_vals_type& vals,
-        const KeyType initMinKey,
-        const KeyType initMaxKey);
+        KeyType initMinKey,
+        KeyType initMaxKey);
 };
 
 } // Details namespace
