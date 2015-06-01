@@ -1,0 +1,61 @@
+#include <Kokkos_Core.hpp>
+
+#include <Kokkos_TaskPolicy.hpp>
+#include <impl/Kokkos_Serial_TaskPolicy.hpp>
+
+#include "Teuchos_CommandLineProcessor.hpp"
+
+using namespace std;
+
+typedef double value_type;
+typedef int    ordinal_type;
+typedef int    size_type;
+
+#define __USE_SERIAL_EXEC_SPACE__ 1
+typedef Kokkos::Serial exec_space;
+
+#include "example_tri_solve_unblocked.hpp"
+
+using namespace Example;
+
+int main (int argc, char *argv[]) {
+
+  Teuchos::CommandLineProcessor clp;
+  clp.setDocString("This example program demonstrates TriSolveUnblocked algorithm on Kokkos::Serial execution space.\n");
+
+  int max_task_dependences = 10;
+  clp.setOption("max-task-depedences", &max_task_dependences, "Max number of task dependences");
+
+  int team_size = 1;
+  clp.setOption("team-size", &team_size, "Team size");
+
+  bool verbose = false;
+  clp.setOption("verbose", "non-verbose", &verbose, "Flag for verbose printing");
+
+  string file_input = "test.mtx";
+  clp.setOption("file-input", &file_input, "Input file (MatrixMarket SPD matrix)");
+
+  int nrhs = 1; 
+  clp.setOption("nrhs", &nrhs, "Number of right hand side"); 
+
+  clp.recogniseAllOptions(true);
+  clp.throwExceptions(false);
+
+  Teuchos::CommandLineProcessor::EParseCommandLineReturn r_parse= clp.parse( argc, argv );
+
+  if (r_parse == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) return 0;
+  if (r_parse != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL  ) return -1;
+  
+  int r_val = 0;
+  {
+    Kokkos::initialize();
+    
+    r_val = exampleTriSolveUnblocked
+      <value_type,ordinal_type,size_type,exec_space,void>
+      (file_input, nrhs, max_task_dependences, team_size, verbose);
+    
+    Kokkos::finalize();
+  }
+
+  return r_val;
+}

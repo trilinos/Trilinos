@@ -164,10 +164,10 @@ namespace Example {
              typename MT>
     int 
     copy(const DenseMatrixBase<VT,OT,ST,SpT,MT> &b) {
-      createInternalArrays(b._m, b._n);
+      //createInternalArrays(b._m, b._n);
 
-      for (ordinal_type j=0;j<_n;++j)
-        for (ordinal_type i=0;i<_m;++i)
+      for (ordinal_type j=0;j<b._n;++j)
+        for (ordinal_type i=0;i<b._m;++i)
           this->Value(i,j) = b.Value(i,j);
 
       return 0;
@@ -182,18 +182,18 @@ namespace Example {
     int 
     copy(const int uplo, 
          const DenseMatrixBase<VT,OT,ST,SpT,MT> &b) { 
-      createInternalArrays(b._m, b._n);
+      //createInternalArrays(b._m, b._n);
 
       // assume that matrix b is sorted.
       switch (uplo) {
       case Uplo::Lower: {
-        for (ordinal_type j=0;j<_n;++j) 
-          for (ordinal_type i=j;i<_m;++i) 
+        for (ordinal_type j=0;j<b._n;++j) 
+          for (ordinal_type i=j;i<b._m;++i) 
             this->Value(i, j) = b.Value(i, j); 
         break;
       }
       case Uplo::Upper: {
-        for (ordinal_type j=0;j<_n;++j) 
+        for (ordinal_type j=0;j<b._n;++j) 
           for (ordinal_type i=0;i<(j+1);++i) 
             this->Value(i, j) = b.Value(i, j); 
         break;
@@ -212,11 +212,11 @@ namespace Example {
     int
     copy(const typename DenseMatrixBase<VT,OT,ST,SpT,MT>::ordinal_type_array &ip,
          const DenseMatrixBase<VT,OT,ST,SpT,MT> &b) {
-      createInternalArrays(b._m, b._n);
+      //createInternalArrays(b._m, b._n);
 
-      for (ordinal_type i=0;i<_m;++i) {
+      for (ordinal_type i=0;i<b._m;++i) {
         const ordinal_type ii = ip[i];
-        for (ordinal_type j=0;j<_n;++j) 
+        for (ordinal_type j=0;j<b._n;++j) 
           this->Value(i,j) = b.Value(ii, j);
       }
 
