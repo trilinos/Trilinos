@@ -422,8 +422,7 @@ namespace Thyra {
     RCP<Matrix> BBt     = Utils::Multiply(*A_21,     false, *A_12,     false, out);
     RCP<Matrix> BBt_abs = Utils::Multiply(*A_21_abs, false, *A_12_abs, false, out);
 
-    // FIXME: why do we have a magic number here?
-    SC dropTol = 0.06;
+    SC dropTol = (paramList.get<int>("useFilters") ? 0.06 : 0.00);
     RCP<Matrix> filteredA = FilterMatrix(*A_11, *A_11,    dropTol);
     RCP<Matrix> filteredB = FilterMatrix(*BBt,  *BBt_abs, dropTol);
 
