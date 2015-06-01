@@ -169,7 +169,6 @@ public:
     setCallbacksIDs();
     setCallbacksGraph();
     if (adapter->coordinatesAvailable()) {
-      typedef VectorAdapter<userCoord_t> adapterWithCoords_t;
       setCallbacksGeom(adapter->getCoordinateInput());
     }
   }
@@ -185,7 +184,6 @@ public:
     setCallbacksGraph();
     setCallbacksHypergraph();
     if (adapter->coordinatesAvailable()) {
-      typedef VectorAdapter<userCoord_t> adapterWithCoords_t;
       setCallbacksGeom(adapter->getCoordinateInput());
     }
   }
@@ -222,10 +220,10 @@ void AlgZoltan<Adapter>::partition(
   sprintf(paramstr, "%lu", numGlobalParts);
   zz->Set_Param("NUM_GLOBAL_PARTS", paramstr);
 
+  int wdim = adapter->getNumWeightsPerID();
+  sprintf(paramstr, "%d", wdim);
+  zz->Set_Param("OBJ_WEIGHT_DIM", paramstr);
 
-  // TODO  Set parameters
-  // TODO  Set weight dimensions:  if parameter found, use it
-  int wdim = 0;
   // TODO  Add a way to set Zoltan parameters directly from parameter list here
   // TODO  Exclude ones like RETURN_LISTS, AUTOMIGRATE, NUM_GLOBAL_PARTS, etc.
 

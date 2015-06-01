@@ -52,7 +52,6 @@
 
 #include <Zoltan2_TestHelpers.hpp>
 
-#define HAVE_ZOLTAN2_ZOLTAN
 #ifdef HAVE_ZOLTAN2_ZOLTAN
 #include <zoltan.h>
 #include <Teuchos_CommandLineProcessor.hpp>
@@ -717,6 +716,6 @@ int main(int argc, char *argv[])
 int main(int argc, char *argv[])
 {
   std::cout << "Test did not run due to faulty configuration." << std::endl;
-  std::cout << "PASS" << std::endl;
+  std::cout << "FAIL" << std::endl;
 }
 #endif

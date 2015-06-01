@@ -67,7 +67,7 @@ IF (NOT MUMPS_LIBRARY_NAMES AND NOT TPL_MUMPS_LIBRARIES)
   ENDIF()
 
   SET(MUMPS_LIBRARIES
-    smumps dmumps cmumps zmumps)
+    smumps dmumps cmumps zmumps mumps_common pord)
   SET(MUMPS_LIBRARIES_FOUND)
   SET(MUMPS_HEADERS)
 
@@ -121,7 +121,7 @@ ELSE()
   # Check the given library names in the standard way.
   TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( MUMPS
     REQUIRED_HEADERS dmumps_c.h
-    REQUIRED_LIBS_NAMES dmumps pord
+    REQUIRED_LIBS_NAMES dmumps libmumps_common pord
   )
 
 ENDIF()

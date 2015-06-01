@@ -53,6 +53,7 @@
 
 #include <Zoltan2_Util.hpp>
 #include <Zoltan2_TPLTraits.hpp>
+#include <zoltan_cpp.h>
 
 ////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_AlgZoltanCallbacks.hpp

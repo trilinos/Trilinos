@@ -154,14 +154,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 # Tests for src/models
 #
 #
-#TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#  GraphModel2ndAdjsFromAdjs
-#  SOURCES models/GraphModel2ndAdjsFromAdjs.cpp 
-#  NUM_MPI_PROCS 4
-#  COMM serial mpi
-#  PASS_REGULAR_EXPRESSION "PASS"
-#  FAIL_REGULAR_EXPRESSION "FAIL"
-#  )
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  GraphModel2ndAdjsFromAdjs
+  SOURCES models/GraphModel2ndAdjsFromAdjs.cpp 
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   IdentifierModel

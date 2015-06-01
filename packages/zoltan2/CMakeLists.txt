@@ -24,6 +24,13 @@ IF (${PROJECT_NAME}_ENABLE_Zoltan)
 ENDIF ()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
+   ${PACKAGE_NAME}_ENABLE_UseZoltanComm
+   ${PACKAGE_NAME_UC}_USEZOLTANCOMM
+   "For migration in MJ, use Zoltan's comm package instead of Tpetra."
+   OFF)
+
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
    ${PACKAGE_NAME}_ENABLE_Experimental
    INCLUDE_${PACKAGE_NAME_UC}_EXPERIMENTAL
    "Enable experimental code."

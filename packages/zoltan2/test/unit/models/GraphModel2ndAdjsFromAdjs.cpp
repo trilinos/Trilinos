@@ -78,9 +78,6 @@ int main(int narg, char *arg[]) {
 
   int me = CommT->getRank();
   int numProcs = CommT->getSize();
-  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
-
-  std::bitset<Zoltan2::NUM_MODEL_FLAGS> modelFlags;
 
   /***************************************************************************/
   /*************************** GET XML INPUTS ********************************/
@@ -140,11 +137,12 @@ int main(int narg, char *arg[]) {
   if (me == 0) cout << "Creating mesh adapter ... \n\n";
 
   typedef Zoltan2::PamgenMeshAdapter<tMVector_t> inputAdapter_t;
-  typedef inputAdapter_t::base_adapter_t base_adapter_t;
 
   inputAdapter_t ia(*CommT, "region");
   inputAdapter_t::zgid_t const *adjacencyIds=NULL;
+  inputAdapter_t::zgid_t const *madjacencyIds=NULL;
   inputAdapter_t::lno_t const *offsets=NULL;
+  inputAdapter_t::lno_t const *moffsets=NULL;
   ia.print(me);
   Zoltan2::MeshEntityType primaryEType = ia.getPrimaryEntityType();
   Zoltan2::MeshEntityType adjEType = ia.getAdjacencyEntityType();
@@ -163,10 +161,42 @@ int main(int narg, char *arg[]) {
 
     if (me == 0) std::cout << "        Creating GraphModel" << std::endl;
 
-    /*Zoltan2::GraphModel<base_adapter_t>
-      model(dynamic_cast<base_adapter_t *>(&ia), env, CommT, modelFlags);*/
+    typedef inputAdapter_t::base_adapter_t base_adapter_t;
 
-    
+    RCP<const base_adapter_t> baseInputAdapter;
+    baseInputAdapter = (rcp(dynamic_cast<const base_adapter_t *>(&ia), false));
+    RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
+
+    std::bitset<Zoltan2::NUM_MODEL_FLAGS> modelFlags;
+
+    Zoltan2::GraphModel<base_adapter_t> graphModel(baseInputAdapter, env,
+						   CommT, modelFlags);
+
+    graphModel.get2ndAdjsViewFromAdjs(baseInputAdapter, primaryEType,
+				      secondAdjEType, moffsets, madjacencyIds);
+
+    for (size_t telct = 0; telct < ia.getLocalNumOf(primaryEType); telct++) {
+      if (offsets[telct+1]-offsets[telct]!=moffsets[telct+1]-moffsets[telct]) {
+	std::cout << "Number of adjacencies do not match" << std::endl;
+	return 3;
+      }
+
+      for (inputAdapter_t::lno_t j=moffsets[telct]; j<moffsets[telct+1]; j++) {
+	ssize_t in_list = -1;
+
+	for (inputAdapter_t::lno_t k=offsets[telct]; k<offsets[telct+1]; k++) {
+	  if (adjacencyIds[k] == adjacencyIds[j]) {
+	    in_list = k;
+	    break;
+	  }
+	}
+
+	if (in_list < 0) {
+	  std::cout << "Adjacency missing" << std::endl;
+	  return 4;
+	}
+      }
+    }
   }
   else{
     std::cout << "Adjacencies not available" << std::endl;
