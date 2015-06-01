@@ -212,8 +212,8 @@ public:
 
     stk::mesh::EntityId get_entity_id_of_remote_element(stk::mesh::Entity local_element, size_t index_conn_elem) const
     {
+        ThrowRequireMsg(!is_connected_elem_locally_owned(local_element, index_conn_elem) , "Program error. Contact sierra-help@sandia.gov for support.");
         LocalId local_id = get_local_element_id(local_element);
-        ThrowRequireMsg(!is_connected_elem_locally_owned(local_id, index_conn_elem) , "Program error. Contact sierra-help@sandia.gov for support.");
         stk::mesh::EntityId id = -elem_graph[local_id][index_conn_elem];
         return id;
     }
@@ -264,7 +264,6 @@ public:
     parallel_info& get_parallel_edge_info(stk::mesh::Entity element, stk::mesh::EntityId remote_id)
     {
         LocalId this_elem_local_id = get_local_element_id(element);
-        remote_id = -remote_id;
 
         ParallelGraphInfo::iterator iter = parallel_graph_info.find(std::make_pair(this_elem_local_id, remote_id));
         ThrowRequireMsg( iter != parallel_graph_info.end(), "Program error. Contact sierra-help@sandia.gov for support.");
@@ -1663,59 +1662,76 @@ void communicate_killed_entities(stk::mesh::BulkData& bulkData, const std::vecto
 stk::mesh::EntityId get_face_global_id(const stk::mesh::BulkData &bulkData, const ElemElemGraph& elementGraph, stk::mesh::Entity element1, stk::mesh::Entity element2,
         SideId element1_side_id)
 {
-    unsigned element1_local_id = bulkData.local_id(element1);
-    unsigned element2_local_id = bulkData.local_id(element2);
+    stk::mesh::EntityId element1_global_id = bulkData.identifier(element1);
+    stk::mesh::EntityId element2_global_id = bulkData.identifier(element2);
     stk::mesh::EntityId face_global_id = 0;
 
-    if(element1_local_id < element2_local_id)
+    if(element1_global_id < element2_global_id)
     {
-        face_global_id = get_element_face_multiplier() * bulkData.identifier(element1) + element1_side_id;
+        face_global_id = get_element_face_multiplier() * element1_global_id + element1_side_id;
     }
     else
     {
         SideId side_id = elementGraph.get_side_from_element1_to_locally_owned_element2(element2, element1);
         EXPECT_TRUE(side_id != -1);
-        face_global_id = get_element_face_multiplier() * bulkData.identifier(element2) + side_id;
+        face_global_id = get_element_face_multiplier() * element2_global_id + side_id;
     }
 
     return face_global_id;
 }
 
-void doStuff(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_info, const ElemElemGraph& elementGraph,
-        stk::mesh::EntityId local_id, stk::mesh::EntityId remote_id, bool create_face, stk::mesh::Part& faces_part,
-        std::vector<sharing_info> &shared_modified, stk::mesh::EntityVector &deletedEntities)
+stk::mesh::EntityId get_face_id_for_remotely_connected_element(stk::mesh::EntityId local_element_id, SideId local_side_id, stk::mesh::EntityId remote_element_id, SideId remote_side_id)
 {
-    stk::mesh::Entity element = bulkData.get_entity(stk::topology::ELEM_RANK, local_id);
-    stk::mesh::EntityRank side_rank = bulkData.mesh_meta_data().side_rank();
-
-    ProcId other_proc = parallel_edge_info.m_other_proc;
-    SideId other_side = parallel_edge_info.m_other_side_ord;
-
-    ProcId this_proc = bulkData.parallel_rank();
-    ProcId owning_proc = this_proc < other_proc ? this_proc : other_proc;
-
-    stk::mesh::Permutation perm;
     stk::mesh::EntityId face_global_id = 0;
-    SideId side_id = elementGraph.get_side_from_element1_to_remote_element2(element, remote_id);
-
-    ASSERT_TRUE(side_id != -1);
-
-    if(owning_proc == this_proc)
+    if(local_element_id < remote_element_id)
     {
-        face_global_id = get_element_face_multiplier() * local_id + side_id;
+        face_global_id = get_element_face_multiplier() * local_element_id + local_side_id;
+    }
+    else
+    {
+        face_global_id = get_element_face_multiplier() * remote_element_id + remote_side_id;
+    }
+
+    return face_global_id;
+}
+
+stk::mesh::Permutation get_permutation_for_new_face(const parallel_info& parallel_edge_info, stk::mesh::EntityId local_element_id, stk::mesh::EntityId remote_element_id)
+{
+    stk::mesh::Permutation perm;
+    if(local_element_id < remote_element_id)
+    {
         perm = static_cast<stk::mesh::Permutation>(0);
     }
     else
     {
-        face_global_id = get_element_face_multiplier() * remote_id + other_side;
         perm = static_cast<stk::mesh::Permutation>(parallel_edge_info.m_permutation);
     }
+    return perm;
+}
+
+void create_or_delete_shared_face(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_info, const ElemElemGraph& elementGraph,
+        stk::mesh::EntityId local_id, stk::mesh::EntityId remote_id, bool create_face, stk::mesh::Part& faces_part,
+        std::vector<sharing_info> &shared_modified, stk::mesh::EntityVector &deletedEntities)
+{
+    stk::mesh::Entity element = bulkData.get_entity(stk::topology::ELEM_RANK, local_id);
+    SideId side_id = elementGraph.get_side_from_element1_to_remote_element2(element, remote_id);
+    ASSERT_TRUE(side_id != -1);
+
+    ProcId this_proc_id = bulkData.parallel_rank();
+    ProcId other_proc = parallel_edge_info.m_other_proc;
+    ProcId owning_proc = this_proc_id < other_proc ? this_proc_id : other_proc;
+
+    SideId remote_side_id = parallel_edge_info.m_other_side_ord;
+    stk::mesh::EntityId face_global_id = get_face_id_for_remotely_connected_element(local_id, side_id, remote_id, remote_side_id);
 
     stk::mesh::ConnectivityOrdinal side_ord = static_cast<stk::mesh::ConnectivityOrdinal>(side_id);
     std::string msg = "Program error. Contact sierra-help@sandia.gov for support.";
 
+    stk::mesh::EntityRank side_rank = bulkData.mesh_meta_data().side_rank();
     if(create_face)
     {
+        stk::mesh::Permutation perm = get_permutation_for_new_face(parallel_edge_info, local_id, remote_id);
+
         ThrowRequireMsg(!is_id_already_in_use_locally(bulkData, side_rank, face_global_id), msg);
         ThrowRequireMsg(!does_side_exist_with_different_permutation(bulkData, element, side_ord, perm), msg);
         ThrowRequireMsg(!does_element_side_exist(bulkData, element, side_ord), msg);
@@ -1729,7 +1745,7 @@ void doStuff(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_i
         ThrowRequireMsg(does_element_side_exist(bulkData, element, side_ord), msg);
 
         stk::mesh::Entity face = bulkData.get_entity(stk::topology::FACE_RANK, face_global_id);
-        ASSERT_TRUE(bulkData.is_valid(face));
+        ThrowRequireMsg(bulkData.is_valid(face), msg);
         deletedEntities.push_back(face);
     }
 }
@@ -1813,7 +1829,7 @@ TEST(ElementGraph, test_element_death)
                         }
 
                         parallel_info &parallel_edge_info = elementGraph.get_parallel_edge_info(element, remote_id);
-                        doStuff(bulkData, parallel_edge_info, elementGraph, local_id, remote_id, create_face, faces_part,
+                        create_or_delete_shared_face(bulkData, parallel_edge_info, elementGraph, local_id, remote_id, create_face, faces_part,
                                 shared_modified, deletedEntities);
                         parallel_edge_info.m_in_part = false;
                     }
@@ -1876,9 +1892,7 @@ TEST(ElementGraph, test_element_death)
                                 stk::mesh::EntityId local_id = bulkData.identifier(this_elem_entity);
                                 stk::mesh::EntityId remote_id = elementGraph.get_entity_id_of_remote_element(this_elem_entity, j);
 
-                                stk::mesh::Entity element = bulkData.get_entity(stk::topology::ELEM_RANK, local_id);
-
-                                parallel_info &parallel_edge_info = elementGraph.get_parallel_edge_info(element, remote_id);
+                                parallel_info &parallel_edge_info = elementGraph.get_parallel_edge_info(this_elem_entity, remote_id);
                                 bool other_element_active = parallel_edge_info.m_in_part;
                                 bool create_face = false;
                                 if(other_element_active)
@@ -1886,7 +1900,7 @@ TEST(ElementGraph, test_element_death)
                                     create_face = true;
                                 }
 
-                                doStuff(bulkData, parallel_edge_info, elementGraph, local_id, remote_id, create_face, faces_part,
+                                create_or_delete_shared_face(bulkData, parallel_edge_info, elementGraph, local_id, remote_id, create_face, faces_part,
                                         shared_modified, deletedEntities);
                             }
                         }
