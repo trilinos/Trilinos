@@ -99,6 +99,20 @@ IF(Kokkos_ENABLE_Pthread)
   )
 ENDIF()
 
+IF(Kokkos_ENABLE_QTHREAD)
+  TRIBITS_ADD_EXECUTABLE(
+    ichol_performance_qthread
+    SOURCES example_ichol_performance_qthread.cpp
+    COMM serial mpi
+  )
+
+  TRIBITS_ADD_EXECUTABLE(
+    tri_solve_performance_qthread
+    SOURCES example_tri_solve_performance_qthread.cpp
+    COMM serial mpi
+  )
+ENDIF()
+
 # Temporary
 # =========
 

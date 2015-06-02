@@ -25,8 +25,8 @@ int main (int argc, char *argv[]) {
   int nthreads = 1;
   clp.setOption("nthreads", &nthreads, "Number of threads");
 
-  int max_task_dependences = 10;
-  clp.setOption("max-task-depedences", &max_task_dependences, "Max number of task dependences");
+  int max_task_dependence = 10;
+  clp.setOption("max-task-depedence", &max_task_dependence, "Max number of task dependence");
 
   int team_size = 1;
   clp.setOption("team-size", &team_size, "Team size");
@@ -55,7 +55,7 @@ int main (int argc, char *argv[]) {
     
     r_val = exampleTriSolveUnblocked
       <value_type,ordinal_type,size_type,exec_space,void>
-      (file_input, nrhs, max_task_dependences, team_size, verbose);
+      (file_input, nrhs, max_task_dependence, team_size, verbose);
     
     exec_space::finalize();
   }

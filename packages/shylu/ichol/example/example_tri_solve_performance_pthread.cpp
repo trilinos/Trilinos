@@ -25,11 +25,15 @@ int main (int argc, char *argv[]) {
   int nthreads = 1;
   clp.setOption("nthreads", &nthreads, "Number of threads");
 
-  int max_task_dependences = 10;
-  clp.setOption("max-task-depedences", &max_task_dependences, "Max number of task dependences");
+  int max_task_dependence = 10;
+  clp.setOption("max-task-depedence", &max_task_dependence, "Max number of task dependence");
 
   int team_size = 1;
   clp.setOption("team-size", &team_size, "Team size");
+
+  bool use_team_interface = true;
+  clp.setOption("use-team-interface=true", "use-team-interface=false",
+                &use_team_interface, "Flag for team interface");
 
   bool verbose = false;
   clp.setOption("verbose=true", "verbose=false", &verbose, "Flag for verbose printing");
@@ -61,7 +65,7 @@ int main (int argc, char *argv[]) {
     
     r_val = exampleTriSolvePerformance
       <value_type,ordinal_type,size_type,exec_space,void>
-      (file_input, nrhs, nb, niter, nthreads, max_task_dependences, team_size, verbose);
+      (file_input, nrhs, nb, niter, nthreads, max_task_dependence, team_size, use_team_interface, verbose);
 
     exec_space::finalize();
   }

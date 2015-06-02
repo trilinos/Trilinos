@@ -51,8 +51,9 @@ namespace Example {
                                  const OrdinalType nb,
                                  const int niter,
                                  const int nthreads,
-                                 const int max_task_dependences,
+                                 const int max_task_dependence,
                                  const int team_size, 
+                                 const bool use_team_interface,
                                  const bool verbose) {
     typedef ValueType   value_type;
     typedef OrdinalType ordinal_type;
@@ -151,11 +152,13 @@ namespace Example {
 
     {
       __INIT_DENSE_MATRIX__(BB, 1.0);
-#ifdef __USE_SERIAL_EXEC_SPACE__
-      typename TaskFactoryType::policy_type policy(max_task_dependences);
+#ifdef __USE_FIXED_TEAM_SIZE__
+      typename TaskFactoryType::policy_type policy(max_task_dependence);
 #else
-      typename TaskFactoryType::policy_type policy(max_task_dependences, 1);
+      typename TaskFactoryType::policy_type policy(max_task_dependence, 1);
 #endif
+      TaskFactoryType::setUseTeamInterface(use_team_interface);
+      TaskFactoryType::setMaxTaskDependence(max_task_dependence);
       TaskFactoryType::setPolicy(&policy);
       
       CrsTaskViewType U(&UU);
@@ -209,10 +212,10 @@ namespace Example {
 
 //     {
 //       __INIT_DENSE_MATRIX__(BB, 1.0);
-// #ifdef __USE_SERIAL_EXEC_SPACE__
-//       typename TaskFactoryType::policy_type policy(max_task_dependences);
+// #ifdef __USE_FIXED_TEAM_SIZE__
+//       typename TaskFactoryType::policy_type policy(max_task_dependence);
 // #else
-//       typename TaskFactoryType::policy_type policy(max_task_dependences, nthreads);
+//       typename TaskFactoryType::policy_type policy(max_task_dependence, nthreads);
 // #endif
 //       TaskFactoryType::setPolicy(&policy);
       
@@ -250,11 +253,13 @@ namespace Example {
     
     {
       __INIT_DENSE_MATRIX__(BB, 1.0);
-#ifdef __USE_SERIAL_EXEC_SPACE__
-      typename TaskFactoryType::policy_type policy(max_task_dependences);
+#ifdef __USE_FIXED_TEAM_SIZE__
+      typename TaskFactoryType::policy_type policy(max_task_dependence);
 #else
-      typename TaskFactoryType::policy_type policy(max_task_dependences, team_size);
+      typename TaskFactoryType::policy_type policy(max_task_dependence, team_size);
 #endif
+      TaskFactoryType::setUseTeamInterface(use_team_interface);
+      TaskFactoryType::setMaxTaskDependence(max_task_dependence);
       TaskFactoryType::setPolicy(&policy);
 
       // wrap the hierarchically partitioned matrix with task handler

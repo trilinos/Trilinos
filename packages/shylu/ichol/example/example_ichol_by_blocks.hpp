@@ -36,7 +36,7 @@ namespace Example {
            typename MemoryTraits = void>
   KOKKOS_INLINE_FUNCTION
   int exampleICholByBlocks(const string file_input,
-                           const int max_task_dependences,
+                           const int max_task_dependence,
                            const int team_size,
 			   const bool verbose) {
     typedef ValueType   value_type;
@@ -114,11 +114,12 @@ namespace Example {
     }
     cout << "ICholByBlocks:: reorder the matrix::time = " << t << endl;            
 
-#ifdef __USE_SERIAL_EXEC_SPACE__
-    typename TaskFactoryType::policy_type policy(max_task_dependences);
+#ifdef __USE_FIXED_TEAM_SIZE__
+    typename TaskFactoryType::policy_type policy(max_task_dependence);
 #else
-    typename TaskFactoryType::policy_type policy(max_task_dependences, team_size);
+    typename TaskFactoryType::policy_type policy(max_task_dependence, team_size);
 #endif
+    TaskFactoryType::setMaxTaskDependence(max_task_dependence);
     TaskFactoryType::setPolicy(&policy);
 
     cout << "ICholByBlocks:: factorize the matrix" << endl;

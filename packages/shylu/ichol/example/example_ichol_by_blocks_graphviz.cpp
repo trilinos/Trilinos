@@ -149,8 +149,6 @@ int main (int argc, char *argv[]) {
     IChol<Uplo::Upper,AlgoIChol::ByBlocks>::
       TaskFunctor<ForType,CrsHierTaskType>(H).apply(r_val);
 
-
-
     ofstream out;
     out.open(file_output);
     if (!out.good()) {

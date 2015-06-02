@@ -11,7 +11,7 @@ typedef double value_type;
 typedef int    ordinal_type;
 typedef int    size_type;
 
-#define __USE_SERIAL_EXEC_SPACE__ 1
+#define __USE_FIXED_TEAM_SIZE__ 1
 typedef Kokkos::Serial exec_space;
 
 #include "example_ichol_by_blocks.hpp"
@@ -23,8 +23,8 @@ int main (int argc, char *argv[]) {
   Teuchos::CommandLineProcessor clp;
   clp.setDocString("This example program demonstrates ICholByBlocks algorithm on Kokkos::Serial execution space.\n");
 
-  int max_task_dependences = 10;
-  clp.setOption("max-task-depedences", &max_task_dependences, "Max number of task dependences");
+  int max_task_dependence = 10;
+  clp.setOption("max-task-depedence", &max_task_dependence, "Max number of task dependence");
 
   int team_size = 1;
   clp.setOption("team-size", &team_size, "Team size");
@@ -49,7 +49,7 @@ int main (int argc, char *argv[]) {
     
     r_val = exampleICholByBlocks
       <value_type,ordinal_type,size_type,exec_space,void>
-      (file_input, max_task_dependences, team_size, verbose);
+      (file_input, max_task_dependence, team_size, verbose);
     
     Kokkos::finalize();
   }
