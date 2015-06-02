@@ -118,7 +118,7 @@ public:
         return true ;
     }
 
-    bool my_modification_end_for_face_deletion(const stk::mesh::EntityVector& deletedEntities, modification_optimization opt = MOD_END_SORT)
+    bool my_modification_end_for_face_creation_and_deletion(const std::vector<sharing_info>& shared_modified, const stk::mesh::EntityVector& deletedEntities, modification_optimization opt = MOD_END_SORT)
     {
         if(this->in_synchronized_state())
         {
@@ -136,8 +136,12 @@ public:
 
         if(this->parallel_size() > 1)
         {
+
+             //now handle the deleted entities
+
             stk::CommSparse comm(this->parallel());
-            for ( int phase = 0; phase < 2; ++phase ) {
+            for ( int phase = 0; phase < 2; ++phase )
+            {
                 for(size_t i=0; i<deletedEntities.size(); ++i)
                 {
                     stk::mesh::Entity face = deletedEntities[i];
@@ -193,6 +197,44 @@ public:
             stk::mesh::impl::delete_entities_and_upward_relations(*this, recvdFacesToDelete);
 
             this->update_comm_list_based_on_changes_in_comm_map();
+
+            // now handle the created entities
+
+            stk::mesh::PartVector shared_part, owned_part, empty;
+             shared_part.push_back(&m_mesh_meta_data.globally_shared_part());
+             owned_part.push_back(&m_mesh_meta_data.locally_owned_part());
+
+             stk::mesh::EntityVector modified_entities(shared_modified.size());
+             for(size_t i = 0; i < shared_modified.size(); ++i)
+             {
+                 stk::mesh::Entity entity = shared_modified[i].m_entity;
+                 int sharing_proc = shared_modified[i].m_sharing_proc;
+                 entity_comm_map_insert(entity, stk::mesh::EntityCommInfo(stk::mesh::BulkData::SHARED, sharing_proc));
+                 int owning_proc = shared_modified[i].m_owner;
+                 const bool am_not_owner = this->internal_set_parallel_owner_rank_but_not_comm_lists(entity, owning_proc);
+                 if (am_not_owner)
+                 {
+                     stk::mesh::EntityKey key = this->entity_key(entity);
+                     internal_change_owner_in_comm_data(key, owning_proc);
+                     internal_change_entity_parts(entity, shared_part /*add*/, owned_part /*remove*/);
+                 }
+                 else
+                 {
+                     internal_change_entity_parts(entity, shared_part /*add*/, empty /*remove*/);
+                 }
+                 modified_entities[i] = entity;
+             }
+
+             std::sort(modified_entities.begin(), modified_entities.end(), stk::mesh::EntityLess(*this));
+             stk::mesh::EntityVector::iterator iter = std::unique(modified_entities.begin(), modified_entities.end());
+             modified_entities.resize(iter-modified_entities.begin());
+
+             add_comm_list_entries_for_entities( modified_entities );
+
+             if ( this->get_automatic_aura_option() == AUTO_AURA)
+             {
+               this->resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(mesh_meta_data().side_rank(), mesh_meta_data().universal_part());
+             }
 
             // Resolve part membership for shared entities.
             // This occurs after resolving deletion so shared
@@ -1839,14 +1881,14 @@ TEST(ElementGraph, test_element_death)
                 }
 
                 double start_mod1 = stk::wall_time();
-                bulkData.my_modification_end_for_entity_creation(shared_modified);
+                //bulkData.my_modification_end_for_entity_creation(shared_modified);
                 double elapsed_mod1 = stk::wall_time() - start_mod1;
                 total_mod_ec += elapsed_mod1;
 
                 double start_mod2 = stk::wall_time();
                 bulkData.modification_begin();
                 stk::mesh::impl::delete_entities_and_upward_relations(bulkData, deletedEntities);
-                bulkData.my_modification_end_for_face_deletion(deletedEntities);
+                bulkData.my_modification_end_for_face_creation_and_deletion(shared_modified, deletedEntities);
                 //bulkData.modification_end();
                 double elapsed_mod2 = stk::wall_time() - start_mod2;
                 total_mod_ed += elapsed_mod2;
