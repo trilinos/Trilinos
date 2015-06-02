@@ -53,7 +53,7 @@ namespace Example {
                                  const int nthreads,
                                  const int max_task_dependence,
                                  const int team_size, 
-                                 const bool use_team_interface,
+                                 const bool team_interface,
                                  const bool verbose) {
     typedef ValueType   value_type;
     typedef OrdinalType ordinal_type;
@@ -157,7 +157,7 @@ namespace Example {
 #else
       typename TaskFactoryType::policy_type policy(max_task_dependence, 1);
 #endif
-      TaskFactoryType::setUseTeamInterface(use_team_interface);
+      TaskFactoryType::setUseTeamInterface(team_interface);
       TaskFactoryType::setMaxTaskDependence(max_task_dependence);
       TaskFactoryType::setPolicy(&policy);
       
@@ -258,7 +258,7 @@ namespace Example {
 #else
       typename TaskFactoryType::policy_type policy(max_task_dependence, team_size);
 #endif
-      TaskFactoryType::setUseTeamInterface(use_team_interface);
+      TaskFactoryType::setUseTeamInterface(team_interface);
       TaskFactoryType::setMaxTaskDependence(max_task_dependence);
       TaskFactoryType::setPolicy(&policy);
 

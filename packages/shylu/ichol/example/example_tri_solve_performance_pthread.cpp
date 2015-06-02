@@ -31,12 +31,12 @@ int main (int argc, char *argv[]) {
   int team_size = 1;
   clp.setOption("team-size", &team_size, "Team size");
 
-  bool use_team_interface = true;
-  clp.setOption("use-team-interface=true", "use-team-interface=false",
-                &use_team_interface, "Flag for team interface");
+  bool team_interface = true;
+  clp.setOption("enable-team-interface", "disable-team-interface",
+                &team_interface, "Flag for team interface");
 
   bool verbose = false;
-  clp.setOption("verbose=true", "verbose=false", &verbose, "Flag for verbose printing");
+  clp.setOption("enable-verbose", "disable-verbose", &verbose, "Flag for verbose printing");
 
   string file_input = "test.mtx";
   clp.setOption("file-input", &file_input, "Input file (MatrixMarket SPD matrix)");
@@ -65,7 +65,7 @@ int main (int argc, char *argv[]) {
     
     r_val = exampleTriSolvePerformance
       <value_type,ordinal_type,size_type,exec_space,void>
-      (file_input, nrhs, nb, niter, nthreads, max_task_dependence, team_size, use_team_interface, verbose);
+      (file_input, nrhs, nb, niter, nthreads, max_task_dependence, team_size, team_interface, verbose);
 
     exec_space::finalize();
   }
