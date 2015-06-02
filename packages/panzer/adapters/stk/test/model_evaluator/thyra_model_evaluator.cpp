@@ -52,6 +52,8 @@ using Teuchos::rcp;
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
+#include "Thyra_VectorStdOps.hpp"
+
 #include "Phalanx_KokkosUtilities.hpp"
 
 #include "Panzer_STK_Version.hpp"
@@ -490,6 +492,7 @@ namespace panzer {
       outArgs.set_f(f1);
       outArgs.set_DfDp(0,MEB::Derivative<double>(dfdp,MEB::DERIV_MV_BY_COL));
       me->evalModel(inArgs,outArgs);
+      TEST_ASSERT(Thyra::norm_2(*dfdp)>0);
   
       Teuchos::ArrayRCP<const double> dfdp_data;
       Teuchos::ArrayRCP<const double> f1_data;
@@ -500,6 +503,10 @@ namespace panzer {
         { TEST_FLOATING_EQUALITY(f1_data[i],20.0*dfdp_data[i],1e-10); }
         out << f1_data[i] << "    " << dfdp_data[i] << std::endl;
       }
+
+      outArgs.set_DfDp(0,MEB::Derivative<double>(dfdp,MEB::DERIV_MV_BY_COL));
+      me->evalModel(inArgs,outArgs);
+      TEST_ASSERT(Thyra::norm_2(*dfdp)>0);
     }
   }
 
