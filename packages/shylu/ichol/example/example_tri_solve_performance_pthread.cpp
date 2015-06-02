@@ -43,6 +43,9 @@ int main (int argc, char *argv[]) {
   int nb = nrhs;
   clp.setOption("nb", &nb, "Blocksize of right hand side");
 
+  int niter = 100;
+  clp.setOption("niter", &niter, "Number of iterations for testing");
+
   clp.recogniseAllOptions(true);
   clp.throwExceptions(false);
 
@@ -58,7 +61,7 @@ int main (int argc, char *argv[]) {
     
     r_val = exampleTriSolvePerformance
       <value_type,ordinal_type,size_type,exec_space,void>
-      (file_input, nrhs, nb, nthreads, max_task_dependences, team_size, verbose);
+      (file_input, nrhs, nb, niter, nthreads, max_task_dependences, team_size, verbose);
 
     exec_space::finalize();
   }
