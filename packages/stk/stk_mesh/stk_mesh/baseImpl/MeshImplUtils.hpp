@@ -352,7 +352,7 @@ stk::mesh::Entity get_or_create_face_at_element_side(stk::mesh::BulkData & bulk,
                                                      stk::mesh::Entity elem,
                                                      int side_ordinal,
                                                      stk::mesh::EntityId new_face_global_id,
-                                                     stk::mesh::Part & part);
+                                                     const stk::mesh::PartVector & parts = stk::mesh::PartVector());
 
 void connect_face_to_other_elements(stk::mesh::BulkData & bulk,
                                     stk::mesh::Entity face,

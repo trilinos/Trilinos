@@ -845,11 +845,11 @@ bool is_id_already_in_use_locally(stk::mesh::BulkData& bulkData, stk::mesh::Enti
 
 stk::mesh::Entity connect_face_to_element(stk::mesh::BulkData& bulkData, stk::mesh::Entity element,
         stk::mesh::EntityId side_global_id, stk::mesh::ConnectivityOrdinal side_ordinal,
-        stk::mesh::Permutation side_permutation, stk::mesh::Part& part)
+        stk::mesh::Permutation side_permutation, const stk::mesh::PartVector& parts)
 {
     stk::mesh::EntityRank side_rank = bulkData.mesh_meta_data().side_rank();
 
-    stk::mesh::Entity side = bulkData.declare_entity(side_rank, side_global_id, part);
+    stk::mesh::Entity side = bulkData.declare_entity(side_rank, side_global_id, parts);
 
     // connect element to side
     bulkData.declare_relation(element, side, side_ordinal, side_permutation);
@@ -877,6 +877,7 @@ TEST(ElementSide, get_or_create_element_side_with_permutation)
         unsigned spatialDim = 3;
         stk::mesh::MetaData meta(spatialDim);
         stk::mesh::Part& new_faces_part = meta.declare_part_with_topology("surface_5", stk::topology::QUAD_4);
+        stk::mesh::PartVector face_parts {&new_faces_part};
         stk::io::put_io_part_attribute(new_faces_part);
         BulkDataElementGraphTester bulkData(meta, comm);
 
@@ -897,7 +898,7 @@ TEST(ElementSide, get_or_create_element_side_with_permutation)
         EXPECT_FALSE(does_side_exist_with_different_permutation(bulkData, element1, side_ordinal, side_permutation));
         EXPECT_FALSE(does_element_side_exist(bulkData, element1, side_ordinal));
 
-        connect_face_to_element(bulkData, element1, side_global_id, side_ordinal, side_permutation, new_faces_part);
+        connect_face_to_element(bulkData, element1, side_global_id, side_ordinal, side_permutation, face_parts);
 
         bulkData.modification_end();
 
@@ -1328,7 +1329,7 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
     wall_time_start = stk::wall_time();
 
     stk::mesh::EntityRank side_rank = bulkData.mesh_meta_data().side_rank();
-
+    stk::mesh::PartVector parts {&part};
     //BeginDocExample4
 
     bulkData.modification_begin();
@@ -1352,7 +1353,7 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
 
                 }
                 stk::mesh::Entity face = stk::mesh::impl::get_or_create_face_at_element_side(bulkData, element1, via_sides[i][j],
-                        face_global_id, part);
+                        face_global_id, stk::mesh::PartVector(1,&part));
 
                 const stk::mesh::Entity* side_nodes = bulkData.begin_nodes(face);
                 unsigned num_side_nodes = bulkData.num_nodes(face);
@@ -1395,7 +1396,7 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
                 ThrowRequireMsg(!does_side_exist_with_different_permutation(bulkData, element1, side_ord, perm), msg);
                 ThrowRequireMsg(!does_element_side_exist(bulkData, element1, side_ord), msg);
 
-                stk::mesh::Entity face = connect_face_to_element(bulkData, element1, face_global_id, side_ord, perm, part);
+                stk::mesh::Entity face = connect_face_to_element(bulkData, element1, face_global_id, side_ord, perm, parts);
 
                 shared_modified.push_back(sharing_info(face, other_proc, owning_proc));
             }
@@ -1408,7 +1409,7 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
         {
             stk::mesh::EntityId face_global_id = get_element_face_multiplier() * bulkData.identifier(element1) + element_side_pairs[j].second;
             stk::mesh::impl::get_or_create_face_at_element_side(bulkData, element1, element_side_pairs[j].second,
-                    face_global_id, part);
+                    face_global_id, stk::mesh::PartVector(1,&part));
 
         }
     }
@@ -1682,7 +1683,7 @@ stk::mesh::Permutation get_permutation_for_new_face(const parallel_info& paralle
 }
 
 void create_or_delete_shared_face(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_info, const ElemElemGraph& elementGraph,
-        stk::mesh::EntityId local_id, stk::mesh::EntityId remote_id, bool create_face, stk::mesh::Part& faces_part,
+        stk::mesh::EntityId local_id, stk::mesh::EntityId remote_id, bool create_face, const stk::mesh::PartVector& face_parts,
         std::vector<sharing_info> &shared_modified, stk::mesh::EntityVector &deletedEntities)
 {
     stk::mesh::Entity element = bulkData.get_entity(stk::topology::ELEM_RANK, local_id);
@@ -1708,7 +1709,7 @@ void create_or_delete_shared_face(stk::mesh::BulkData& bulkData, const parallel_
         ThrowRequireMsg(!does_side_exist_with_different_permutation(bulkData, element, side_ord, perm), msg);
         ThrowRequireMsg(!does_element_side_exist(bulkData, element, side_ord), msg);
 
-        stk::mesh::Entity face = connect_face_to_element(bulkData, element, face_global_id, side_ord, perm, faces_part);
+        stk::mesh::Entity face = connect_face_to_element(bulkData, element, face_global_id, side_ord, perm, face_parts);
         shared_modified.push_back(sharing_info(face, other_proc, owning_proc));
     }
     else
@@ -1720,6 +1721,115 @@ void create_or_delete_shared_face(stk::mesh::BulkData& bulkData, const parallel_
         ThrowRequireMsg(bulkData.is_valid(face), msg);
         deletedEntities.push_back(face);
     }
+}
+
+void perform_element_death(BulkDataElementGraphTester& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
+        const stk::mesh::PartVector& boundary_mesh_parts)
+{
+    std::vector<sharing_info> shared_modified;
+    stk::mesh::EntityVector deletedEntities;
+
+    std::vector<graphEdgeProc> elements_to_comm = get_elements_to_communicate(bulkData, killedElements, elementGraph);
+    std::vector<std::pair<stk::mesh::EntityId, stk::mesh::EntityId> > remote_edges;
+
+    communicate_killed_entities(bulkData, elements_to_comm, remote_edges);
+
+    stk::mesh::PartVector add_parts = boundary_mesh_parts;
+    add_parts.push_back(&active);
+
+    bulkData.modification_begin();
+
+    for(size_t re = 0; re < remote_edges.size(); ++re)
+    {
+        stk::mesh::EntityId local_id = remote_edges[re].first;
+        stk::mesh::EntityId remote_id = remote_edges[re].second;
+
+        stk::mesh::Entity element = bulkData.get_entity(stk::topology::ELEM_RANK, local_id);
+        bool create_face = true;
+        if(!bulkData.bucket(element).member(active))
+        {
+            create_face = false;
+        }
+
+        parallel_info &parallel_edge_info = elementGraph.get_parallel_edge_info(element, remote_id);
+        create_or_delete_shared_face(bulkData, parallel_edge_info, elementGraph, local_id, remote_id, create_face, add_parts,
+                shared_modified, deletedEntities);
+        parallel_edge_info.m_in_part = false;
+    }
+
+    std::vector<ElementSidePair> element_side_pairs;
+    element_side_pairs.reserve(get_element_face_multiplier() * killedElements.size());
+
+    for(size_t k = 0; k < killedElements.size(); ++k)
+    {
+        stk::mesh::Entity this_elem_entity = killedElements[k];
+
+        for(size_t j = 0; j < elementGraph.get_num_connected_elems(this_elem_entity); ++j)
+        {
+            if(elementGraph.is_connected_elem_locally_owned(this_elem_entity, j))
+            {
+                stk::mesh::Entity other_element = elementGraph.get_connected_element(this_elem_entity, j);
+                int side_id = elementGraph.get_side_id_to_connected_element(this_elem_entity, j);
+
+                bool is_other_element_alive = bulkData.bucket(other_element).member(active);
+                if(is_other_element_alive)
+                {
+                    stk::mesh::EntityId face_global_id = get_face_global_id(bulkData, elementGraph, this_elem_entity, other_element, side_id);
+
+                    stk::mesh::Entity face = stk::mesh::impl::get_or_create_face_at_element_side(bulkData, this_elem_entity, side_id,
+                            face_global_id, add_parts);
+
+                    const stk::mesh::Entity* side_nodes = bulkData.begin_nodes(face);
+                    unsigned num_side_nodes = bulkData.num_nodes(face);
+                    stk::mesh::EntityVector side_nodes_vec(side_nodes, side_nodes + num_side_nodes);
+
+                    std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ord_and_perm = stk::mesh::get_ordinal_and_permutation(bulkData, other_element,
+                            stk::topology::FACE_RANK,
+                            side_nodes_vec);
+                    bulkData.declare_relation(other_element, face, ord_and_perm.first, ord_and_perm.second);
+                }
+                else
+                {
+                    unsigned num_faces = bulkData.num_faces(this_elem_entity);
+                    const stk::mesh::Entity *faces = bulkData.begin_faces(this_elem_entity);
+                    const stk::mesh::ConnectivityOrdinal *ordinals = bulkData.begin_face_ordinals(this_elem_entity);
+
+                    stk::mesh::Entity face;
+
+                    for(unsigned ii = 0; ii < num_faces; ++ii)
+                    {
+                        if(ordinals[ii] == static_cast<stk::mesh::ConnectivityOrdinal>(side_id))
+                        {
+                            face = faces[ii];
+                            break;
+                        }
+                    }
+
+                    EXPECT_TRUE(bulkData.is_valid(face));
+                    deletedEntities.push_back(face);
+                }
+            }
+            else
+            {
+                stk::mesh::EntityId local_id = bulkData.identifier(this_elem_entity);
+                stk::mesh::EntityId remote_id = elementGraph.get_entity_id_of_remote_element(this_elem_entity, j);
+
+                parallel_info &parallel_edge_info = elementGraph.get_parallel_edge_info(this_elem_entity, remote_id);
+                bool other_element_active = parallel_edge_info.m_in_part;
+                bool create_face = false;
+                if(other_element_active)
+                {
+                    create_face = true;
+                }
+
+                create_or_delete_shared_face(bulkData, parallel_edge_info, elementGraph, local_id, remote_id, create_face, add_parts,
+                        shared_modified, deletedEntities);
+            }
+        }
+    }
+
+    stk::mesh::impl::delete_entities_and_upward_relations(bulkData, deletedEntities);
+    bulkData.my_modification_end_for_face_creation_and_deletion(shared_modified, deletedEntities);
 }
 
 TEST(ElementGraph, test_element_death)
@@ -1746,6 +1856,7 @@ TEST(ElementGraph, test_element_death)
             unsigned spatialDim = 3;
             stk::mesh::MetaData meta(spatialDim);
             stk::mesh::Part& faces_part = meta.declare_part_with_topology("surface_5", stk::topology::QUAD_4);
+            stk::mesh::PartVector boundary_mesh_parts { &faces_part };
             stk::io::put_io_part_attribute(faces_part);
             BulkDataElementGraphTester bulkData(meta, comm);
 
@@ -1776,7 +1887,6 @@ TEST(ElementGraph, test_element_death)
 
             std::ostringstream os;
             os << "Proc id: " << bulkData.parallel_rank() << std::endl;
-            // start
 
             ElemElemGraph elementGraph(bulkData);
 
@@ -1785,133 +1895,17 @@ TEST(ElementGraph, test_element_death)
 
             stk::mesh::EntityRank side_rank = meta.side_rank();
 
-            double total_mod_ed = 0;
-            double total_mod_ec = 0;
-
-            double wall_time_start = stk::wall_time();
-
             int num_time_steps = xdim * ydim * zdim;
+            double elapsed_death_time = 0;
 
             for(int i = 0; i < num_time_steps; ++i)
             {
                 stk::mesh::EntityVector killedElements = get_killed_elements(bulkData, i, active);
                 move_killled_elements_to_part(bulkData, killedElements, block_1, active);
-
-                std::vector<sharing_info> shared_modified;
-                stk::mesh::EntityVector deletedEntities;
-
-                std::vector<graphEdgeProc> elements_to_comm = get_elements_to_communicate(bulkData, killedElements, elementGraph);
-                std::vector<std::pair<stk::mesh::EntityId, stk::mesh::EntityId> > remote_edges;
-
-                communicate_killed_entities(bulkData, elements_to_comm, remote_edges);
-
-                bulkData.modification_begin();
-
-                for(size_t re=0;re<remote_edges.size();++re)
-                {
-                    stk::mesh::EntityId local_id = remote_edges[re].first;
-                    stk::mesh::EntityId remote_id = remote_edges[re].second;
-
-                    stk::mesh::Entity element = bulkData.get_entity(stk::topology::ELEM_RANK, local_id);
-                    bool create_face = true;
-                    if(!bulkData.bucket(element).member(active))
-                    {
-                        create_face = false;
-                    }
-
-                    parallel_info &parallel_edge_info = elementGraph.get_parallel_edge_info(element, remote_id);
-                    create_or_delete_shared_face(bulkData, parallel_edge_info, elementGraph, local_id, remote_id, create_face, faces_part,
-                            shared_modified, deletedEntities);
-                    parallel_edge_info.m_in_part = false;
-                }
-
-                std::vector<ElementSidePair> element_side_pairs;
-                element_side_pairs.reserve(get_element_face_multiplier() * killedElements.size());
-
-                for(size_t k = 0; k < killedElements.size(); ++k)
-                {
-                    stk::mesh::Entity this_elem_entity = killedElements[k];
-
-                    for(size_t j = 0; j < elementGraph.get_num_connected_elems(this_elem_entity); ++j)
-                    {
-                        if(elementGraph.is_connected_elem_locally_owned(this_elem_entity, j))
-                        {
-                            stk::mesh::Entity other_element = elementGraph.get_connected_element(this_elem_entity, j);
-                            int side_id = elementGraph.get_side_id_to_connected_element(this_elem_entity, j);
-
-                            bool is_other_element_alive = bulkData.bucket(other_element).member(active);
-                            if(is_other_element_alive)
-                            {
-                                stk::mesh::EntityId face_global_id = get_face_global_id(bulkData, elementGraph, this_elem_entity, other_element, side_id);
-
-                                stk::mesh::Entity face = stk::mesh::impl::get_or_create_face_at_element_side(bulkData, this_elem_entity, side_id,
-                                        face_global_id, faces_part);
-
-                                const stk::mesh::Entity* side_nodes = bulkData.begin_nodes(face);
-                                unsigned num_side_nodes = bulkData.num_nodes(face);
-                                stk::mesh::EntityVector side_nodes_vec(side_nodes, side_nodes + num_side_nodes);
-
-
-                                std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ord_and_perm = stk::mesh::get_ordinal_and_permutation(bulkData, other_element,
-                                        stk::topology::FACE_RANK,
-                                        side_nodes_vec);
-                                bulkData.declare_relation(other_element, face, ord_and_perm.first, ord_and_perm.second);
-                            }
-                            else
-                            {
-                                unsigned num_faces = bulkData.num_faces(this_elem_entity);
-                                const stk::mesh::Entity *faces = bulkData.begin_faces(this_elem_entity);
-                                const stk::mesh::ConnectivityOrdinal *ordinals = bulkData.begin_face_ordinals(this_elem_entity);
-
-                                stk::mesh::Entity face;
-
-                                for (unsigned ii=0;ii<num_faces;++ii)
-                                {
-                                    if (ordinals[ii] == static_cast<stk::mesh::ConnectivityOrdinal>(side_id))
-                                    {
-                                        face = faces[ii];
-                                        break;
-                                    }
-                                }
-
-                                EXPECT_TRUE(bulkData.is_valid(face));
-                                deletedEntities.push_back(face);
-                            }
-                        }
-                        else
-                        {
-                            stk::mesh::EntityId local_id = bulkData.identifier(this_elem_entity);
-                            stk::mesh::EntityId remote_id = elementGraph.get_entity_id_of_remote_element(this_elem_entity, j);
-
-                            parallel_info &parallel_edge_info = elementGraph.get_parallel_edge_info(this_elem_entity, remote_id);
-                            bool other_element_active = parallel_edge_info.m_in_part;
-                            bool create_face = false;
-                            if(other_element_active)
-                            {
-                                create_face = true;
-                            }
-
-                            create_or_delete_shared_face(bulkData, parallel_edge_info, elementGraph, local_id, remote_id, create_face, faces_part,
-                                    shared_modified, deletedEntities);
-                        }
-                    }
-                }
-
-                double start_mod1 = stk::wall_time();
-                //bulkData.my_modification_end_for_entity_creation(shared_modified);
-                double elapsed_mod1 = stk::wall_time() - start_mod1;
-                total_mod_ec += elapsed_mod1;
-
-                double start_mod2 = stk::wall_time();
-                bulkData.modification_begin();
-                stk::mesh::impl::delete_entities_and_upward_relations(bulkData, deletedEntities);
-                bulkData.my_modification_end_for_face_creation_and_deletion(shared_modified, deletedEntities);
-                //bulkData.modification_end();
-                double elapsed_mod2 = stk::wall_time() - start_mod2;
-                total_mod_ed += elapsed_mod2;
+                double start_time = stk::wall_time();
+                perform_element_death(bulkData, elementGraph, killedElements, active, boundary_mesh_parts);
+                elapsed_death_time += (stk::wall_time() - start_time);
             }
-
-            double elapsed_time = stk::wall_time() - wall_time_start;
 
             stk::mesh::Selector sel = block_1;
             std::vector<size_t> counts1;
@@ -1929,12 +1923,9 @@ TEST(ElementGraph, test_element_death)
 
             if(stk::parallel_machine_rank(comm) == 0)
             {
-                os << "Total time: " << elapsed_time << std::endl;
-                os << "\tTotal entity creation mod end time: " << total_mod_ec << std::endl;
-                os << "\tTotal entity deletion mod end time: " << total_mod_ed << std::endl;
+                os << "Total time: " << elapsed_death_time << std::endl;
                 os << "Total # of alive elements: " << num_active << std::endl;
                 os << "Total # of faces: " << num_faces << std::endl;
-
             }
 
 //                std::ostringstream os;

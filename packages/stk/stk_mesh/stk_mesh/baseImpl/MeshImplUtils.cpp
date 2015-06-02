@@ -627,7 +627,7 @@ stk::mesh::Entity get_or_create_face_at_element_side(stk::mesh::BulkData & bulk,
                                                      stk::mesh::Entity elem,
                                                      int side_ordinal,
                                                      stk::mesh::EntityId new_face_global_id,
-                                                     stk::mesh::Part & part)
+                                                     const stk::mesh::PartVector & parts)
 {
     stk::mesh::Entity new_face = stk::mesh::Entity();
     unsigned elem_num_faces = bulk.num_faces(elem);
@@ -640,10 +640,9 @@ stk::mesh::Entity get_or_create_face_at_element_side(stk::mesh::BulkData & bulk,
         }
     }
     if (!bulk.is_valid(new_face)) {
-        new_face = stk::mesh::declare_element_side(bulk, new_face_global_id, elem, side_ordinal, &part);
+        new_face = stk::mesh::declare_element_side(bulk, new_face_global_id, elem, side_ordinal, parts);
     } else {
-        stk::mesh::PartVector add_parts(1, &part);
-        bulk.change_entity_parts(new_face, add_parts );
+        bulk.change_entity_parts(new_face, parts );
     }
     return new_face;
 }
