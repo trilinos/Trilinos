@@ -49,6 +49,7 @@ namespace Example {
   int exampleTriSolvePerformance(const string file_input,
                                  const OrdinalType nrhs,
                                  const OrdinalType nb,
+                                 const int niter,
                                  const int nthreads,
                                  const int max_task_dependences,
                                  const int team_size, 
@@ -92,6 +93,7 @@ namespace Example {
       t_solve_seq = 0.0,
       //t_solve_team = 0.0,
       t_solve_task = 0.0;
+    const int start = -2;
 
     cout << "TriSolveByBlocks:: import input file = " << file_input << endl;
     CrsMatrixBaseType AA("AA");
@@ -147,39 +149,6 @@ namespace Example {
     }
     cout << "TriSolvePerformance:: reorder the matrix and partition right hand side::time = " << t_reorder << endl;
 
-    { // warm up 
-      __INIT_DENSE_MATRIX__(BB, 1.0);
-#ifdef __USE_SERIAL_EXEC_SPACE__
-      typename TaskFactoryType::policy_type policy(max_task_dependences);
-#else
-      typename TaskFactoryType::policy_type policy(max_task_dependences, 1);
-#endif
-      TaskFactoryType::setPolicy(&policy);
-      
-      CrsTaskViewType U(&UU);
-      DenseTaskViewType B(&BB);
-      U.fillRowViewArray();
-
-      {
-        {
-          auto future = TaskFactoryType::Policy().create_team(TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::Unblocked>
-                                                              ::TaskFunctor<ForType,CrsTaskViewType,DenseTaskViewType>
-                                                              (Diag::NonUnit, U, B), 0);
-
-          TaskFactoryType::Policy().spawn(future);
-          Kokkos::Experimental::wait(TaskFactoryType::Policy());
-        }
-        {
-          auto future = TaskFactoryType::Policy().create_team(TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::Unblocked>
-                                                              ::TaskFunctor<ForType,CrsTaskViewType,DenseTaskViewType>
-                                                              (Diag::NonUnit, U, B), 0);
-
-          TaskFactoryType::Policy().spawn(future);
-          Kokkos::Experimental::wait(TaskFactoryType::Policy());
-        }
-      }
-    }
-    
     {
       __INIT_DENSE_MATRIX__(BB, 1.0);
 #ifdef __USE_SERIAL_EXEC_SPACE__
@@ -195,27 +164,42 @@ namespace Example {
 
       cout << "TriSolvePerformance:: Serial forward and backward solve of the matrix" << endl;
       {
-        timer.reset();
+
+        for (int i=start;i<niter;++i) {
+          timer.reset();
+          // {
+          //   auto future = TaskFactoryType::Policy().create_team(TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::Unblocked>
+          //                                                       ::TaskFunctor<ForType,CrsTaskViewType,DenseTaskViewType>
+          //                                                       (Diag::NonUnit, U, B), 0);
+            
+          //   TaskFactoryType::Policy().spawn(future);
+          //   Kokkos::Experimental::wait(TaskFactoryType::Policy());
+          // }
+          {
+            TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::Unblocked>
+              ::invoke<ForType>(TaskFactoryType::Policy(),
+                                TaskFactoryType::Policy().member_single(),
+                                Diag::NonUnit, U, B);
+            
+          }
+          // {
+          //   auto future = TaskFactoryType::Policy().create_team(TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::Unblocked>
+          //                                                       ::TaskFunctor<ForType,CrsTaskViewType,DenseTaskViewType>
+          //                                                       (Diag::NonUnit, U, B), 0);
+            
+          //   TaskFactoryType::Policy().spawn(future);
+          //   Kokkos::Experimental::wait(TaskFactoryType::Policy());
+          // }
+          {
+            TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::Unblocked>
+              ::invoke<ForType>(TaskFactoryType::Policy(),
+                                TaskFactoryType::Policy().member_single(),
+                                Diag::NonUnit, U, B);
+          }
+          t_solve_seq += timer.seconds() * (i>=0);
+        }
+        t_solve_seq /= niter;
         
-        {
-          auto future = TaskFactoryType::Policy().create_team(TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::Unblocked>
-                                                              ::TaskFunctor<ForType,CrsTaskViewType,DenseTaskViewType>
-                                                              (Diag::NonUnit, U, B), 0);
-
-          TaskFactoryType::Policy().spawn(future);
-          Kokkos::Experimental::wait(TaskFactoryType::Policy());
-        }
-        {
-          auto future = TaskFactoryType::Policy().create_team(TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::Unblocked>
-                                                              ::TaskFunctor<ForType,CrsTaskViewType,DenseTaskViewType>
-                                                              (Diag::NonUnit, U, B), 0);
-
-          TaskFactoryType::Policy().spawn(future);
-          Kokkos::Experimental::wait(TaskFactoryType::Policy());
-        }
-
-        t_solve_seq = timer.seconds();
-
         if (verbose)
           cout << BB << endl;
       }
@@ -282,27 +266,30 @@ namespace Example {
       
       cout << "TriSolvePerformance:: ByBlocks forward and backward solve of the matrix" << endl;
       {
-        timer.reset(); 
-        
-        auto future_forward_solve = TaskFactoryType::Policy().create_team
-          (TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::ByBlocks>
-           ::TaskFunctor<ForType,CrsHierTaskViewType,DenseHierTaskViewType>
-           (Diag::NonUnit, TU, TB), 0);
-        
-        TaskFactoryType::Policy().spawn(future_forward_solve);
-        
-        auto future_backward_solve = TaskFactoryType::Policy().create_team
-          (TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::ByBlocks>
-           ::TaskFunctor<ForType,CrsHierTaskViewType,DenseHierTaskViewType>
-           (Diag::NonUnit, TU, TB), 1);
-        
-        TaskFactoryType::Policy().add_dependence(future_backward_solve, future_forward_solve);
-        TaskFactoryType::Policy().spawn(future_backward_solve);
-        
-        Kokkos::Experimental::wait(TaskFactoryType::Policy());
-        
-        t_solve_task = timer.seconds();
-        
+        for (int i=start;i<niter;++i) {
+          timer.reset(); 
+          {
+            auto future_forward_solve = TaskFactoryType::Policy().create_team
+              (TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::ByBlocks>
+               ::TaskFunctor<ForType,CrsHierTaskViewType,DenseHierTaskViewType>
+               (Diag::NonUnit, TU, TB), 0);
+            
+            TaskFactoryType::Policy().spawn(future_forward_solve);
+            
+            auto future_backward_solve = TaskFactoryType::Policy().create_team
+              (TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::ByBlocks>
+               ::TaskFunctor<ForType,CrsHierTaskViewType,DenseHierTaskViewType>
+               (Diag::NonUnit, TU, TB), 1);
+            
+            TaskFactoryType::Policy().add_dependence(future_backward_solve, future_forward_solve);
+            TaskFactoryType::Policy().spawn(future_backward_solve);
+            
+            Kokkos::Experimental::wait(TaskFactoryType::Policy());
+          }
+          t_solve_task += timer.seconds() * (i>=0);
+        }
+        t_solve_task /= niter;
+
         if (verbose)
           cout << BB << endl;
       }

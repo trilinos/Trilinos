@@ -37,6 +37,9 @@ int main (int argc, char *argv[]) {
   string file_input = "test.mtx";
   clp.setOption("file-input", &file_input, "Input file (MatrixMarket SPD matrix)");
 
+  int niter = 10;
+  clp.setOption("niter", &niter, "Number of iterations for testing");
+
   clp.recogniseAllOptions(true);
   clp.throwExceptions(false);
 
@@ -52,7 +55,7 @@ int main (int argc, char *argv[]) {
     
     r_val = exampleICholPerformance
       <value_type,ordinal_type,size_type,exec_space,void>
-      (file_input, nthreads, max_task_dependences, team_size, verbose);
+      (file_input, niter, nthreads, max_task_dependences, team_size, verbose);
 
     exec_space::finalize();
   }
