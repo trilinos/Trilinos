@@ -151,8 +151,8 @@ public:
                           procs.push_back( ec->proc );
                         }
                         std::sort( procs.begin() , procs.end() );
-                        std::vector<int>::iterator i = std::unique( procs.begin() , procs.end() );
-                        procs.erase( i , procs.end() );
+                        std::vector<int>::iterator iter = std::unique( procs.begin() , procs.end() );
+                        procs.erase( iter , procs.end() );
 
                         for(size_t proc_index=0; proc_index<procs.size(); ++proc_index)
                         {
@@ -202,36 +202,8 @@ public:
             this->check_mesh_consistency();
         }
 
-        // ------------------------------
-        // Now sort the bucket entities.
-        // This does not change the entities, relations, or field data.
-        // However, it insures that the ordering of entities and buckets
-        // is independent of the order in which a set of changes were
-        // performed.
-        //
-        //optimize_buckets combines multiple buckets in a bucket-family into
-        //a single larger bucket, and also does a sort.
-        //If optimize_buckets has not been requested, still do the sort.
-
-        if(opt == MOD_END_COMPRESS_AND_SORT)
-        {
-            this->bucket_repository().optimize_buckets();
-        }
-        else
-        {
-            this->bucket_repository().internal_sort_bucket_entities();
-        }
-
-        // ------------------------------
-
-        this->bucket_repository().internal_modification_end();
-
-        this->internal_update_fast_comm_maps();
-
-        this->m_meshModification.set_sync_state_synchronized();
-
-        this->update_deleted_entities_container();
-
+        // -----------------------
+        this->internal_finish_modification_end(opt);
         return true;
     }
 
