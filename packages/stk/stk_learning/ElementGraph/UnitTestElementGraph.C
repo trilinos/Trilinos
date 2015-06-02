@@ -1728,14 +1728,6 @@ TEST(ElementGraph, test_element_death)
 
     if(stk::parallel_machine_size(comm) <= 2)
     {
-        int num_to_kill = -1;
-        std::string numberToKill = unitTestUtils::getOption("--kill", "none");
-        if ( numberToKill != "none")
-        {
-            num_to_kill = std::atoi(numberToKill.c_str());
-            num_to_kill += 2;
-        }
-
         std::string dimension = unitTestUtils::getOption("--zdim", "none");
 
         //IO error when this is <4.  Shared face being attached to the wrong element
@@ -1798,11 +1790,7 @@ TEST(ElementGraph, test_element_death)
 
             double wall_time_start = stk::wall_time();
 
-            int num_time_steps = num_to_kill;
-            if(num_time_steps < 0) // thanks Tolu
-            {
-                num_time_steps = xdim * ydim * zdim;
-            }
+            int num_time_steps = xdim * ydim * zdim;
 
             for(int i = 0; i < num_time_steps; ++i)
             {
