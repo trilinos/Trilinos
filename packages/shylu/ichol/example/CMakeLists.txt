@@ -8,13 +8,19 @@ FILE(GLOB SOURCES *.cpp)
 
 SET(LIBRARIES shyluichol)
 
-# Sparse IChol 
+# Sparse IChol
 # ============
 
 IF(Kokkos_ENABLE_Serial)
   TRIBITS_ADD_EXECUTABLE(
     ichol_unblocked_serial
     SOURCES example_ichol_unblocked_serial.cpp
+    COMM serial mpi
+  )
+
+  TRIBITS_ADD_EXECUTABLE(
+    ichol_by_blocks_graphviz
+    SOURCES example_ichol_by_blocks_graphviz.cpp
     COMM serial mpi
   )
 
@@ -46,6 +52,12 @@ IF(Kokkos_ENABLE_Serial)
   TRIBITS_ADD_EXECUTABLE(
     tri_solve_unblocked_serial
     SOURCES example_tri_solve_unblocked_serial.cpp
+    COMM serial mpi
+  )
+
+  TRIBITS_ADD_EXECUTABLE(
+    tri_solve_by_blocks_graphviz
+    SOURCES example_tri_solve_by_blocks_graphviz.cpp
     COMM serial mpi
   )
 
@@ -96,11 +108,6 @@ ENDIF()
 #  COMM serial mpi
 #  )
 
-# TRIBITS_ADD_EXECUTABLE(
-#  ichol_graphviz
-#  SOURCES ichol_graphviz.cpp
-#  COMM serial mpi
-#  )
 
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(ShyLUICHOL_SimpleSparseTest_File

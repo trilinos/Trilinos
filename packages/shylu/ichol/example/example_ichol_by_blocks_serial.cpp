@@ -30,7 +30,7 @@ int main (int argc, char *argv[]) {
   clp.setOption("team-size", &team_size, "Team size");
 
   bool verbose = false;
-  clp.setOption("verbose", "non-verbose", &verbose, "Flag for verbose printing");
+  clp.setOption("verbose=true", "verbose=false", &verbose, "Flag for verbose printing");
 
   string file_input = "test.mtx";
   clp.setOption("file-input", &file_input, "Input file (MatrixMarket SPD matrix)");
