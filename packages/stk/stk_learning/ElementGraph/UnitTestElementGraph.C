@@ -1574,29 +1574,6 @@ std::vector<graphEdgeProc> get_elements_to_communicate(stk::mesh::BulkData& bulk
     return elements_to_comm;
 }
 
-stk::mesh::EntityId get_face_global_id(stk::mesh::BulkData& bulkData, const ElementGraph& elem_graph, const SidesForElementGraph &via_sides,
-        const stk::mesh::EntityVector local_id_to_element_entity, LocalId element1_local_id, LocalId element2_local_id)
-{
-    stk::mesh::EntityId face_global_id;
-
-    stk::mesh::Entity element1_entity = local_id_to_element_entity[element1_local_id];
-    if(element1_local_id < element2_local_id)
-    {
-        int side_id = get_side_from_element1_to_element2(elem_graph, via_sides, element1_local_id, element2_local_id);
-        EXPECT_TRUE(side_id != -1);
-        face_global_id = get_element_face_multiplier() * bulkData.identifier(element1_entity) + side_id;
-    }
-    else
-    {
-        int side_id = get_side_from_element1_to_element2(elem_graph, via_sides, element2_local_id, element1_local_id);
-        EXPECT_TRUE(side_id != -1);
-        stk::mesh::Entity element2_entity = local_id_to_element_entity[element2_local_id];
-        face_global_id = get_element_face_multiplier() * bulkData.identifier(element2_entity) + side_id;
-    }
-
-    return face_global_id;
-}
-
 void pack_elements_to_comm(stk::CommSparse &comm, const std::vector<graphEdgeProc>& elements_to_comm)
 {
     for(size_t i=0;i<elements_to_comm.size();++i)
