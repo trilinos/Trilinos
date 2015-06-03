@@ -278,7 +278,6 @@ Entity declare_element_side(
     return declare_element_to_entity(mesh, elem, side, local_side_id, parts, side_top);
 }
 
-//jvo
 Entity declare_element_side( BulkData & mesh ,
                              const stk::mesh::EntityId global_side_id ,
                              Entity elem ,
@@ -293,7 +292,6 @@ Entity declare_element_side( BulkData & mesh ,
     return declare_element_side(mesh, global_side_id, elem, local_side_id, parts);
 }
 
-// jvo
 Entity declare_element_side( BulkData & mesh ,
                                Entity elem ,
                                Entity side ,
@@ -391,7 +389,7 @@ get_ordinal_and_permutation(stk::mesh::BulkData& mesh, stk::mesh::Entity parent_
 
         if (num_nodes !=  nodes_of_sub_rank_size)
         {
-          continue;
+            continue;
         }
 
         ThrowRequireMsg(num_nodes == nodes_of_sub_rank.size(), "AHA! num_nodes != nodes_of_sub_rank.size()");
