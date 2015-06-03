@@ -116,6 +116,10 @@
 #if defined (HAVE_AMESOS2_CHOLMOD) && defined (HAVE_AMESOS2_EXPERIMENTAL)
 #include "Amesos2_Cholmod.hpp"
 #endif
+#ifdef HAVE_AMESOS2_MUMPS
+#include "Amesos2_MUMPS.hpp"
+#endif
+
 
 namespace Amesos2 {
 
@@ -564,6 +568,15 @@ if((solverName == "amesos2_klu2") || (solverName == "klu2") ||
        (solverName == "lapack")){
       return handle_solver_type_support<Lapack,Matrix,Vector>::apply(A, X, B);
     }
+#endif
+
+
+#ifdef HAVE_AMESOS2_MUMPS
+    if((solverName == "MUMPS") || (solverName == "mumps") ||
+       (solverName == "amesos2_MUMPS") || (solverName == "amesos2_mumps"))
+      {
+        return handle_solver_type_support<MUMPS,Matrix,Vector>::apply(A,X,B);
+      }
 #endif
 
 #if defined (HAVE_AMESOS2_CHOLMOD) && defined (HAVE_AMESOS2_EXPERIMENTAL)

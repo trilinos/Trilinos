@@ -169,7 +169,6 @@ public:
     setCallbacksIDs();
     setCallbacksGraph();
     if (adapter->coordinatesAvailable()) {
-      typedef VectorAdapter<userCoord_t> adapterWithCoords_t;
       setCallbacksGeom(adapter->getCoordinateInput());
     }
   }
@@ -185,7 +184,6 @@ public:
     setCallbacksGraph();
     setCallbacksHypergraph();
     if (adapter->coordinatesAvailable()) {
-      typedef VectorAdapter<userCoord_t> adapterWithCoords_t;
       setCallbacksGeom(adapter->getCoordinateInput());
     }
   }

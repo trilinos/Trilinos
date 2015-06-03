@@ -18,6 +18,13 @@ APPEND_SET(NOINSTALLHEADERS
   Pike_VanderPol_ModelEvaluator_Eq2.hpp
   Pike_VanderPol_DataTransfer_Eq1ToEq2.hpp
   Pike_VanderPol_DataTransfer_Eq2ToEq1.hpp
+  Pike_Rxn_ModelEvaluator_All.hpp
+  Pike_Rxn_ModelEvaluator_SingleEqBase.hpp
+  Pike_Rxn_ModelEvaluator_SingleEq1.hpp
+  Pike_Rxn_ModelEvaluator_SingleEq2.hpp
+  Pike_Rxn_ModelEvaluator_SingleEq3.hpp
+  Pike_Rxn_DataTransfer_Eq1ToEq2.hpp
+  Pike_Rxn_DataTransfer_Eq1ToEq3.hpp
   )
 
 APPEND_SET(SOURCES
@@ -31,6 +38,13 @@ APPEND_SET(SOURCES
   Pike_VanderPol_ModelEvaluator_Eq2.cpp
   Pike_VanderPol_DataTransfer_Eq1ToEq2.cpp
   Pike_VanderPol_DataTransfer_Eq2ToEq1.cpp
+  Pike_Rxn_ModelEvaluator_All.cpp
+  Pike_Rxn_ModelEvaluator_SingleEqBase.cpp
+  Pike_Rxn_ModelEvaluator_SingleEq1.cpp
+  Pike_Rxn_ModelEvaluator_SingleEq2.cpp
+  Pike_Rxn_ModelEvaluator_SingleEq3.cpp
+  Pike_Rxn_DataTransfer_Eq1ToEq2.cpp
+  Pike_Rxn_DataTransfer_Eq1ToEq3.cpp
   )
 
 TRIBITS_ADD_LIBRARY(

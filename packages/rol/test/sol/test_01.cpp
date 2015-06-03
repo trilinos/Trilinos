@@ -73,6 +73,7 @@
 #include "ROL_RiskAverseObjective.hpp"
 #include "ROL_RiskNeutralObjective.hpp"
 #include "ROL_StdEpetraBatchManager.hpp"
+#include "ROL_Quadrature.hpp"
 
 
 template<class Real> 

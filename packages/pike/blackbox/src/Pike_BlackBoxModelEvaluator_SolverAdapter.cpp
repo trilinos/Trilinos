@@ -1,5 +1,6 @@
 #include "Pike_BlackBoxModelEvaluator_SolverAdapter.hpp"
 #include "Pike_Solver.hpp"
+#include <limits>
 
 namespace pike {
 
@@ -24,16 +25,25 @@ namespace pike {
 	// same parameter names in the future, but this is dangerous
 	// and possibly not what the user intended.
 	std::map<std::string,int>::const_iterator check = parameterNameToIndex_.find(models[m]->getParameterName(p));
-	TEUCHOS_TEST_FOR_EXCEPTION(check != parameterNameToIndex_.end(), std::runtime_error,
-				   "Error: pike::SolverAdapterModelEvaluator::setSolver() - In the solver adapter \"" 
-				   << this->name()
-				   << "\", the parameter \"" 
-				   << models[m]->getParameterName(p) 
-				   << "\" already exists in another model evaluator.  You currently can not have the same parameter name in multiple model evaluators that are both registered to the same SolverAdapterModelEvaluator object!");
-	
-	parameterNameToIndex_[models[m]->getParameterName(p)] = parameterNames_.size();
-	parameterNames_.push_back(models[m]->getParameterName(p));
-	parameterIndexToModelIndices_.push_back(std::make_pair(m,p));
+	// TEUCHOS_TEST_FOR_EXCEPTION(check != parameterNameToIndex_.end(), std::runtime_error,
+	// 			   "Error: pike::SolverAdapterModelEvaluator::setSolver() - In the solver adapter \"" 
+	// 			   << this->name()
+	// 			   << "\", the parameter \"" 
+	// 			   << models[m]->getParameterName(p) 
+	// 			   << "\" already exists in another model evaluator.  You currently can not have the same parameter name in multiple model evaluators that are both registered to the same SolverAdapterModelEvaluator object!");
+	if (check == parameterNameToIndex_.end()) {
+	  // a new parameter
+	  parameterNameToIndex_[models[m]->getParameterName(p)] = parameterNames_.size();
+	  parameterNames_.push_back(models[m]->getParameterName(p));
+	  std::vector<std::pair<int,int>> tmp;
+	  tmp.push_back(std::make_pair(m,p));
+	  parameterIndexToModelIndices_.push_back(tmp);
+	}
+	else {
+	  // parameter already exists in separate me
+	  int index = parameterNameToIndex_[models[m]->getParameterName(p)];
+	  parameterIndexToModelIndices_[index].push_back(std::make_pair(m,p));
+	}
       }
     }
 
@@ -107,10 +117,16 @@ namespace pike {
 
   void SolverAdapterModelEvaluator::setParameter(const int l, const Teuchos::ArrayView<const double>& p)
   {
+    TEUCHOS_ASSERT(l >= 0);
+    TEUCHOS_ASSERT(l < static_cast<int>(parameterNames_.size()));
+    
+    const std::vector<std::pair<int,int>>& meToSet = parameterIndexToModelIndices_[l];
+
     // Not ideal.  const_cast or friend class with nonconst private
     // accessor or put public nonconst accessor on solver base.  None
     // are appealing.  This best protects users.
-    const_cast<pike::BlackBoxModelEvaluator&>(*(solver_->getModelEvaluators()[responseIndexToModelIndices_[l].first])).setParameter(responseIndexToModelIndices_[l].second,p);
+    for (int i=0; i < static_cast<int>(meToSet.size()); ++i)
+    const_cast<pike::BlackBoxModelEvaluator&>(*(solver_->getModelEvaluators()[parameterIndexToModelIndices_[l][i].first])).setParameter(parameterIndexToModelIndices_[l][i].second,p);
   }
 
   bool SolverAdapterModelEvaluator::supportsResponse(const std::string& rName) const
@@ -139,6 +155,107 @@ namespace pike {
   Teuchos::ArrayView<const double> SolverAdapterModelEvaluator::getResponse(const int i) const
   {
     return solver_->getModelEvaluators()[responseIndexToModelIndices_[i].first]->getResponse(responseIndexToModelIndices_[i].second);
+  }
+
+  bool SolverAdapterModelEvaluator::isTransient() const
+  {
+    auto models = solver_->getModelEvaluators();
+    bool tmpIsTransient = false;
+
+    // returns true if any me is true, false otherwise
+    for (auto me=models.cbegin(); me != models.cend(); ++me)
+      tmpIsTransient = ((*me)->isTransient() || tmpIsTransient);
+    
+    return tmpIsTransient;
+  }
+
+  double SolverAdapterModelEvaluator::getCurrentTime() const
+  {
+    auto models = solver_->getModelEvaluators();    
+    double currentTime = -1.0;
+
+    for (auto me=models.cbegin(); me != models.cend(); ++me) {
+      if ((*me)->isTransient())
+	currentTime = (*me)->getCurrentTime();
+    }
+
+    return currentTime;
+  }
+
+  double SolverAdapterModelEvaluator::getTentativeTime() const
+  {
+    auto models = solver_->getModelEvaluators();    
+    double tentativeTime = -1.0;
+
+    for (auto me=models.cbegin(); me != models.cend(); ++me) {
+      if ((*me)->isTransient())
+	tentativeTime = (*me)->getTentativeTime();
+    }
+
+    return tentativeTime;
+  }
+
+  bool SolverAdapterModelEvaluator::solvedTentativeStep() const
+  {
+    auto models = solver_->getModelEvaluators();    
+    bool tmpSolvedTentativeStep = false;
+
+    for (auto me=models.cbegin(); me != models.cend(); ++me) {
+      if ((*me)->isTransient())
+        tmpSolvedTentativeStep = (*me)->solvedTentativeStep();
+    }
+
+    return tmpSolvedTentativeStep;    
+  }
+
+  double SolverAdapterModelEvaluator::getCurrentTimeStepSize() const
+  {
+    auto models = solver_->getModelEvaluators();    
+    double currentTimeStepSize = -1.0;
+    
+    for (auto me=models.cbegin(); me != models.cend(); ++me) {
+      currentTimeStepSize = (*me)->getCurrentTimeStepSize();
+    }
+
+    return currentTimeStepSize;
+  }
+
+  double SolverAdapterModelEvaluator::getDesiredTimeStepSize() const
+  {
+    auto models = solver_->getModelEvaluators();    
+    double desiredTimeStepSize = std::numeric_limits<double>::max();
+
+    for (auto me=models.cbegin(); me != models.cend(); ++me)
+      desiredTimeStepSize = std::min( (*me)->getDesiredTimeStepSize(), desiredTimeStepSize );
+    
+    return desiredTimeStepSize;
+  }
+
+  double SolverAdapterModelEvaluator::getMaxTimeStepSize() const
+  {
+    auto models = solver_->getModelEvaluators();    
+    double maxTimeStepSize = std::numeric_limits<double>::max();
+
+    for (auto me=models.cbegin(); me != models.cend(); ++me)
+      maxTimeStepSize = std::min( (*me)->getMaxTimeStepSize(), maxTimeStepSize );
+    
+    return maxTimeStepSize; 
+  }
+  
+  void SolverAdapterModelEvaluator::setNextTimeStepSize(const double& dt)
+  {
+    auto models = solver_->getModelEvaluators();    
+    for (auto me=models.begin(); me != models.end(); ++me)
+      if ((*me)->isTransient())
+	Teuchos::rcp_const_cast<pike::BlackBoxModelEvaluator>(*me)->setNextTimeStepSize(dt);
+  }
+  
+  void SolverAdapterModelEvaluator::acceptTimeStep()
+  {
+    auto models = solver_->getModelEvaluators();    
+    for (auto me=models.begin(); me != models.end(); ++me)
+      if ((*me)->isTransient())
+	Teuchos::rcp_const_cast<pike::BlackBoxModelEvaluator>(*me)->acceptTimeStep();
   }
 
 }

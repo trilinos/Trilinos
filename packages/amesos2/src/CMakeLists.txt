@@ -334,6 +334,22 @@ IF (${PACKAGE_NAME}_ENABLE_PARDISO_MKL)
   )
 ENDIF()
 
+IF (${PACKAGE_NAME}_ENABLE_MUMPS)
+   APPEND_SET(HEADERS
+   Amesos2_MUMPS.hpp
+   Amesos2_MUMPS_FunctionMap.hpp
+   Amesos2_MUMPS_TypeMap.hpp
+   Amesos2_MUMPS_decl.hpp
+   Amesos2_MUMPS_def.hpp
+   )
+
+   APPEND_SET(SOURCES
+   Amesos2_MUMPS.cpp
+   Amesos2_MUMPS_TypeMap.cpp
+   )
+ENDIF()
+
+
 
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
   APPEND_SET(HEADERS

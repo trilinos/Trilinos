@@ -100,7 +100,7 @@ namespace Example {
       auto future = TaskFactoryType::Policy().create_team(IChol<Uplo::Upper,AlgoIChol::UnblockedOpt1>
                                                           ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
       TaskFactoryType::Policy().spawn(future);
-      Kokkos::Experimental::wait(policy);
+      Kokkos::Experimental::wait(TaskFactoryType::Policy());
     
       cout << UU_Unblocked << endl;
     }
@@ -109,12 +109,10 @@ namespace Example {
       for (ordinal_type k=0;k<HU.NumNonZeros();++k)
         HU.Value(k).fillRowViewArray();
 
-      typedef typename CrsTaskViewType::policy_type policy_type;
-      policy_type policy;
       auto future = TaskFactoryType::Policy().create_team(IChol<Uplo::Upper,AlgoIChol::ByBlocks>::
                                                           TaskFunctor<ForType,CrsHierTaskViewType>(H), 0);
       TaskFactoryType::Policy().spawn(future);
-      Kokkos::Experimental::wait(policy);
+      Kokkos::Experimental::wait(TaskFactoryType::Policy());
 
       cout << UU_ByBlocks << endl;
     }  

@@ -38,7 +38,7 @@ namespace Example {
     typedef typename value_type_array::value_type*   value_type_array_ptr;
 
     // range type
-    // template<typename T> using range_type = pair<T,T>;
+    template<typename T> using range_type = pair<T,T>;
 
     // external interface
     typedef Coo<CrsMatrixBase> ijv_type;
@@ -191,9 +191,16 @@ namespace Example {
     copy(const CrsMatrixBase<VT,OT,ST,SpT,MT> &b) {
       createInternalArrays(b._m, b._n, b._nnz);
 
-      Kokkos::deep_copy(_ap, b._ap);
-      Kokkos::deep_copy(_aj, b._aj);
-      Kokkos::deep_copy(_ax, b._ax);
+      const auto ap_range = range_type<ordinal_type>(0, min(_ap.dimension_0(), b._ap.dimension_0()));
+      const auto aj_range = range_type<size_type>   (0, min(_aj.dimension_0(), b._aj.dimension_0()));
+      const auto ax_range = range_type<size_type>   (0, min(_ax.dimension_0(), b._ax.dimension_0()));
+
+      Kokkos::deep_copy(Kokkos::subview(  _ap, ap_range), 
+                        Kokkos::subview(b._ap, ap_range));
+      Kokkos::deep_copy(Kokkos::subview(  _aj, aj_range),
+                        Kokkos::subview(b._aj, aj_range));
+      Kokkos::deep_copy(Kokkos::subview(  _ax, ax_range),
+                        Kokkos::subview(b._ax, ax_range));
 
       return 0;
     }
