@@ -58,6 +58,7 @@
 #include <Tpetra_DefaultPlatform.hpp>
 #include "muemexTypes_decl.hpp"
 
+#include "MueLu_TwoLevelMatlabFactory.hpp"
 
 using namespace std;
 using namespace Teuchos;

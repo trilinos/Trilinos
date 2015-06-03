@@ -62,6 +62,59 @@ using Teuchos::rcp;
 
 extern bool rewrap_ints;
 
+/******************************/
+/* MueMex Type Instantiations */
+/******************************/
+template<typename T>
+MUEMEX_TYPE getMueMexType(T & data) {throw std::runtime_error("Unknown Type");}
+
+template<>
+MUEMEX_TYPE getMueMexType(int & data) {return INT;}
+
+template<>
+MUEMEX_TYPE getMueMexType(double & data) {return DOUBLE;}
+
+template<>
+MUEMEX_TYPE getMueMexType(std::string & data) {return STRING;}
+
+template<>
+MUEMEX_TYPE getMueMexType(std::complex<double> & data) {return COMPLEX;}
+
+template<>
+MUEMEX_TYPE getMueMexType(Xpetra_ordinal_vector & data) {return XPETRA_ORDINAL_VECTOR;}
+
+template<>
+MUEMEX_TYPE getMueMexType(Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> & data) {return TPETRA_MULTIVECTOR_DOUBLE;}
+
+template<>
+MUEMEX_TYPE getMueMexType(Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> & data) {return TPETRA_MULTIVECTOR_COMPLEX;}
+
+template<>
+MUEMEX_TYPE getMueMexType(Tpetra_CrsMatrix_double & data) {return TPETRA_MATRIX_DOUBLE;}
+
+template<>
+MUEMEX_TYPE getMueMexType(Tpetra_CrsMatrix_complex & data) {return TPETRA_MATRIX_COMPLEX;}
+
+template<>
+MUEMEX_TYPE getMueMexType(Xpetra_MultiVector_double & data) {return XPETRA_MULTIVECTOR_DOUBLE;}
+
+template<>
+MUEMEX_TYPE getMueMexType(Xpetra_MultiVector_complex & data) {return XPETRA_MULTIVECTOR_COMPLEX;}
+
+template<>
+MUEMEX_TYPE getMueMexType(Xpetra_Matrix_double & data) {return XPETRA_MATRIX_DOUBLE;}
+
+template<>
+MUEMEX_TYPE getMueMexType(Xpetra_Matrix_complex & data) {return XPETRA_MATRIX_COMPLEX;}
+
+template<>
+MUEMEX_TYPE getMueMexType(Epetra_CrsMatrix & data) {return EPETRA_CRSMATRIX;}
+
+template<>
+MUEMEX_TYPE getMueMexType(Epetra_MultiVector & data) {return EPETRA_MULTIVECTOR;}
+
+
+
 /* ******************************* */
 /* Specializations                 */
 /* ******************************* */
@@ -247,6 +300,11 @@ template<typename T>
 MuemexData<T>::MuemexData(T& dataToCopy, MUEMEX_TYPE dataType) : MuemexArg(dataType)
 {
   data = dataToCopy;
+}
+
+template<typename T>
+MuemexData<T>::MuemexData(T& dataToCopy) : MuemexData(dataToCopy,getMuemexType(dataToCopy))
+{
 }
 
 template<typename T>
@@ -661,6 +719,8 @@ RCP<Xpetra::MultiVector<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> loadXpetr
   RCP<Tpetra::MultiVector<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > tmv = loadTpetraMV<Scalar>(mxa);
   return MueLu::TpetraMultiVector_To_XpetraMultiVector<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tmv);
 }
+
+
 
 #endif //HAVE_MUELU_MATLAB error handler
 #endif //MUEMEX_TYPES_DEF_HPP guard

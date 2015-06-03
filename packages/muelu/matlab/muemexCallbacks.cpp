@@ -56,6 +56,7 @@ void MuemexCallback::callMatlabNoArgs(std::string function)
     mexPrintf("An error occurred while running a MATLAB command.");\
 }
 
+
 std::vector<RCP<MuemexArg>> MuemexCallback::callMatlab(std::string function, int numOutputs, std::vector<RCP<MuemexArg>> args)
 {
   mxArray** matlabArgs = new mxArray*[args.size()];

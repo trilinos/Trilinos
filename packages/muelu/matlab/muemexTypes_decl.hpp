@@ -154,10 +154,15 @@ class MuemexArg
   MUEMEX_TYPE type;
 };
 
+template<typename T> 
+MUEMEX_TYPE getMuemexType(T & data);
+
+
 template<typename T>
 class MuemexData : public MuemexArg
 {
  public:
+  MuemexData(T& data); //Construct from pre-existing data, to pass to MATLAB.
   MuemexData(T& data, MUEMEX_TYPE type);        //Construct from pre-existing data, to pass to MATLAB.
   MuemexData(const mxArray* mxa); //Construct from MATLAB array, to get from MATLAB.
   ~MuemexData();
