@@ -414,5 +414,28 @@ namespace MueLu {
     return maxLevel;
   }
 
+  void TokenizeStringAndStripWhiteSpace(const std::string & stream, std::vector<std::string> & tokenList, const char* token) {
+    // Take a comma-separated list and tokenize it, stripping out leading & trailing whitespace.  Then add to tokenList
+    char * s = new char[stream.length()];
+    char * buffer = new char[stream.length()];
+    strcpy(s,stream.c_str());
+    char * p = strtok(s,token);
+    while (p) {
+      // p now points to first token
+      // strip whitespace
+      int start=0, stop=strlen(p)-1;
+      while(start<=stop && p[start]==' ') ++start;
+      while(start<=stop && p[stop]==' ')  --stop;
+      // If somebody didn't use consecutive commas...
+      if(start<=stop) {
+	strncpy(buffer,&p[start],stop-start+1);	
+	tokenList.push_back(buffer);
+      }
+      p = strtok(NULL, token);
+    }
+    delete [] s;
+    delete [] buffer;
+  }
+
 
 } // namespace MueLu
