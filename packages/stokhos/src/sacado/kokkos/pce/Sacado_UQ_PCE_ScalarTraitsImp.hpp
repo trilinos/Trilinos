@@ -381,7 +381,7 @@ namespace Sacado {
 
       PCESerializerImp(const cijk_type& cijk_,
                        const Teuchos::RCP<const ValueSerializer>& vs_) :
-        cijk(cijk_), vs(vs_), sz(cijk->dimension()) {}
+        cijk(cijk_), vs(vs_), sz(cijk.dimension()) {}
 
       //! Return specified serializer size
       cijk_type getSerializerCijk() const { return cijk; }
@@ -493,7 +493,7 @@ namespace Sacado {
           charBuffer += b1;
 
           // Create empty PCE object of given size
-          buffer[i] = PCEType(cijk);
+          buffer[i].reset(cijk);
 
           // Deserialize PCE coefficients
           Ordinal b3 = oSerT::fromCountToDirectBytes(1);
