@@ -142,10 +142,10 @@ namespace Sacado {                                                      \
     PCE<S> OP (const PCE<S>&, const PCE<S>&);                           \
     template <typename S>                                               \
     KOKKOS_INLINE_FUNCTION                                              \
-    PCE<S> OP (const typename S::value_type&, const PCE<S>&);           \
+    PCE<S> OP (const typename PCE<S>::value_type&, const PCE<S>&);      \
     template <typename S>                                               \
     KOKKOS_INLINE_FUNCTION                                              \
-    PCE<S> OP (const PCE<S>&, const typename S::value_type&);           \
+    PCE<S> OP (const PCE<S>&, const typename PCE<S>::value_type&);      \
   }                                                                     \
 }                                                                       \
                                                                         \
