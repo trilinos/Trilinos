@@ -60,7 +60,7 @@
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_PerfUtils_fwd.hpp"
-#include "MueLu_TwoLevelFactoryBase.hpp"
+#include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
 #ifdef HAVE_MUELU_MATLAB
@@ -81,9 +81,9 @@ namespace MueLu {
     //! @name Constructors/Destructors.
     //@{
 
-    TwoLevelMatlabFactory();
+    SingleLevelMatlabFactory();
 
-    virtual ~TwoLevelMatlabFactory() { }
+    virtual ~SingleLevelMatlabFactory() { }
 
     //@}
 
