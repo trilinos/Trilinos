@@ -66,52 +66,52 @@ extern bool rewrap_ints;
 /* MueMex Type Instantiations */
 /******************************/
 template<typename T>
-MUEMEX_TYPE getMueMexType(T & data) {throw std::runtime_error("Unknown Type");}
+MUEMEX_TYPE getMueMexType(const T & data) {throw std::runtime_error("Unknown Type");}
 
 template<>
-MUEMEX_TYPE getMueMexType(int & data) {return INT;}
+MUEMEX_TYPE getMueMexType(const int & data) {return INT;}
 
 template<>
-MUEMEX_TYPE getMueMexType(double & data) {return DOUBLE;}
+MUEMEX_TYPE getMueMexType(const double & data) {return DOUBLE;}
 
 template<>
-MUEMEX_TYPE getMueMexType(std::string & data) {return STRING;}
+MUEMEX_TYPE getMueMexType(const std::string & data) {return STRING;}
 
 template<>
-MUEMEX_TYPE getMueMexType(std::complex<double> & data) {return COMPLEX;}
+MUEMEX_TYPE getMueMexType(const std::complex<double> & data) {return COMPLEX;}
 
 template<>
-MUEMEX_TYPE getMueMexType(Xpetra_ordinal_vector & data) {return XPETRA_ORDINAL_VECTOR;}
+MUEMEX_TYPE getMueMexType(const RCP<Xpetra_ordinal_vector> & data) {return XPETRA_ORDINAL_VECTOR;}
 
 template<>
-MUEMEX_TYPE getMueMexType(Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> & data) {return TPETRA_MULTIVECTOR_DOUBLE;}
+MUEMEX_TYPE getMueMexType(const RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > & data) {return TPETRA_MULTIVECTOR_DOUBLE;}
 
 template<>
-MUEMEX_TYPE getMueMexType(Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> & data) {return TPETRA_MULTIVECTOR_COMPLEX;}
+MUEMEX_TYPE getMueMexType(const RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> >& data) {return TPETRA_MULTIVECTOR_COMPLEX;}
 
 template<>
-MUEMEX_TYPE getMueMexType(Tpetra_CrsMatrix_double & data) {return TPETRA_MATRIX_DOUBLE;}
+MUEMEX_TYPE getMueMexType(const RCP<Tpetra_CrsMatrix_double> & data) {return TPETRA_MATRIX_DOUBLE;}
 
 template<>
-MUEMEX_TYPE getMueMexType(Tpetra_CrsMatrix_complex & data) {return TPETRA_MATRIX_COMPLEX;}
+MUEMEX_TYPE getMueMexType(const RCP<Tpetra_CrsMatrix_complex> & data) {return TPETRA_MATRIX_COMPLEX;}
 
 template<>
-MUEMEX_TYPE getMueMexType(Xpetra_MultiVector_double & data) {return XPETRA_MULTIVECTOR_DOUBLE;}
+MUEMEX_TYPE getMueMexType(const RCP<Xpetra_MultiVector_double> & data) {return XPETRA_MULTIVECTOR_DOUBLE;}
 
 template<>
-MUEMEX_TYPE getMueMexType(Xpetra_MultiVector_complex & data) {return XPETRA_MULTIVECTOR_COMPLEX;}
+MUEMEX_TYPE getMueMexType(const RCP<Xpetra_MultiVector_complex> & data) {return XPETRA_MULTIVECTOR_COMPLEX;}
 
 template<>
-MUEMEX_TYPE getMueMexType(Xpetra_Matrix_double & data) {return XPETRA_MATRIX_DOUBLE;}
+MUEMEX_TYPE getMueMexType(const RCP<Xpetra_Matrix_double> & data) {return XPETRA_MATRIX_DOUBLE;}
 
 template<>
-MUEMEX_TYPE getMueMexType(Xpetra_Matrix_complex & data) {return XPETRA_MATRIX_COMPLEX;}
+MUEMEX_TYPE getMueMexType(const RCP<Xpetra_Matrix_complex> & data) {return XPETRA_MATRIX_COMPLEX;}
 
 template<>
-MUEMEX_TYPE getMueMexType(Epetra_CrsMatrix & data) {return EPETRA_CRSMATRIX;}
+MUEMEX_TYPE getMueMexType(const RCP<Epetra_CrsMatrix> & data) {return EPETRA_CRSMATRIX;}
 
 template<>
-MUEMEX_TYPE getMueMexType(Epetra_MultiVector & data) {return EPETRA_MULTIVECTOR;}
+MUEMEX_TYPE getMueMexType(const RCP<Epetra_MultiVector> & data) {return EPETRA_MULTIVECTOR;}
 
 
 

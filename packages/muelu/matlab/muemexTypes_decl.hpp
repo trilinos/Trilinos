@@ -155,7 +155,7 @@ class MuemexArg
 };
 
 template<typename T> 
-MUEMEX_TYPE getMuemexType(T & data);
+MUEMEX_TYPE getMuemexType(const T & data);
 
 
 template<typename T>

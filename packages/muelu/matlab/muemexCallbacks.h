@@ -65,4 +65,4 @@ namespace MuemexCallback
 }
 
 #endif //HAVE_MUELU_MATLAB
-#endif //MUEMEX_CALLBACKS_H guard
+#endif //MUEMEX_CALLBACKS_H 

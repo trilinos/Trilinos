@@ -109,17 +109,11 @@ namespace MueLu {
 
     //@{
 
-    //! MATLAB function name to call
-    std::string functionName_;
-
     //! List of arguments to the MATLAB function, in order.  These args must correspond to MueLu "Needs" objects for the fine level.  These must be listed before coarse needs.   
     mutable std::vector<std::string> needsFine_;
 
     //! List of arguments to the MATLAB function, in order.  These args must correspond to MueLu "Needs" objects for the coarse level.  These must be listed after fine needs.
     mutable std::vector<std::string> needsCoarse_;
-
-    //! MueLu object "provided" by the TwoLevelMatlabFactory
-    std::string providesObject_;
 
     //@}
 
