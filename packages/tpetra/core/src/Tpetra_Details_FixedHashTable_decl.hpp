@@ -316,6 +316,29 @@ public:
                   const ValueType startingValue,
                   const bool keepKeys = false);
 
+  /// \brief Constructor for arbitrary keys and contiguous values
+  ///   starting with \c startingValue, that takes an initial
+  ///   contiguous sequence of keys.
+  ///
+  /// Add <tt>(keys[i], startingValue + i)</tt> to the table, for i =
+  /// 0, 1, ..., <tt>keys.size()</tt>.
+  ///
+  /// \param keys [in] The keys in the hash table.
+  /// \param firstContigKey [in] First key in the initial contiguous
+  ///   sequence of keys.
+  /// \param lastContigKey [in] Last key (inclusive!) in the initial
+  ///   contiguous sequence of keys.
+  /// \param startingValue [in] First value in the contiguous sequence
+  ///   of values.
+  /// \param keepKeys [in] Whether to keep (a deep copy of) the keys.
+  ///   Keeping a copy lets you convert from a value back to a key
+  ///   (the reverse of what get() does).
+  FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
+                  const KeyType firstContigKey,
+                  const KeyType lastContigKey,
+                  const ValueType startingValue,
+                  const bool keepKeys = false);
+
   /// \brief Constructor for arbitrary keys and arbitrary values.
   ///
   /// Add <tt>(keys[i], vals[i])</tt> to the table, for i = 0, 1, ...,
@@ -657,13 +680,17 @@ private:
   /// \brief Allocate storage and initialize the table; use given
   ///   initial min and max keys.
   ///
-  /// Add <tt>(keys[i], startingValue + i)</tt> to the table,
-  /// for i = 0, 1, ..., <tt>keys.size()</tt>.
+  /// Add <tt>(keys[i], startingValue + i)</tt> to the table, for i =
+  /// 0, 1, ..., <tt>keys.size()</tt>.  Optionally, compute any
+  /// initial contiguous sequence of keys.
   void
   init (const keys_type& keys,
         const ValueType startingValue,
         KeyType initMinKey,
-        KeyType initMaxKey);
+        KeyType initMaxKey,
+        ValueType firstContigKey,
+        ValueType lastContigKey,
+        const bool computeInitContigKeys);
 
   /// \brief Allocate storage and initialize the table; use given
   ///   initial min and max keys.

@@ -751,7 +751,7 @@ FixedHashTable (const keys_type& keys) :
   const ValueType startingValue = static_cast<ValueType> (0);
   const KeyType initMinKey = this->minKey_;
   const KeyType initMaxKey = this->maxKey_;
-  this->init (keys, startingValue, initMinKey, initMaxKey);
+  this->init (keys, startingValue, initMinKey, initMaxKey, initMinKey, initMinKey, false);
 
 #ifdef HAVE_TPETRA_DEBUG
   check ();
@@ -795,7 +795,7 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   Kokkos::deep_copy (keys_d, keys_k);
   const KeyType initMinKey = this->minKey_;
   const KeyType initMaxKey = this->maxKey_;
-  this->init (keys_d, startingValue, initMinKey, initMaxKey);
+  this->init (keys_d, startingValue, initMinKey, initMaxKey, initMinKey, initMinKey, false);
   if (keepKeys) {
     keys_ = keys_d;
 #ifdef HAVE_TPETRA_DEBUG
@@ -866,7 +866,78 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   const KeyType initMaxKey = std::numeric_limits<KeyType>::is_integer ?
     std::numeric_limits<KeyType>::min () :
     -std::numeric_limits<KeyType>::max ();
-  this->init (keys_d, startingValue, initMinKey, initMaxKey);
+  this->init (keys_d, startingValue, initMinKey, initMaxKey, initMinKey, initMinKey, false);
+  if (keepKeys) {
+    keys_ = keys_d;
+#ifdef HAVE_TPETRA_DEBUG
+    typedef typename keys_type::size_type size_type;
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (keys_.dimension_0 () != static_cast<size_type> (keys.size ()),
+       std::logic_error, "Tpetra::Details::FixedHashTable constructor: "
+       "keepKeys is true, but on return, keys_.dimension_0() = " <<
+       keys_.dimension_0 () << " != keys.size() = " << keys.size () <<
+       ".  Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+  }
+
+#ifdef HAVE_TPETRA_DEBUG
+  check ();
+#endif // HAVE_TPETRA_DEBUG
+}
+
+template<class KeyType, class ValueType, class DeviceType>
+FixedHashTable<KeyType, ValueType, DeviceType>::
+FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
+                const KeyType firstContigKey,
+                const KeyType lastContigKey,
+                const ValueType startingValue,
+                const bool keepKeys) :
+#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  rawPtr_ (NULL),
+  rawVal_ (NULL),
+#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  minKey_ (std::numeric_limits<KeyType>::max ()),
+  maxKey_ (std::numeric_limits<KeyType>::is_integer ?
+           std::numeric_limits<KeyType>::min () :
+           -std::numeric_limits<KeyType>::max ()),
+  minVal_ (startingValue),
+  maxVal_ (keys.size () == 0 ?
+           startingValue :
+           static_cast<ValueType> (startingValue + keys.size () - 1)),
+  firstContigKey_ (firstContigKey),
+  lastContigKey_ (lastContigKey),
+  contiguousValues_ (true),
+  checkedForDuplicateKeys_ (false),
+  hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
+{
+  typedef typename keys_type::non_const_type nonconst_keys_type;
+
+  // mfh 01 May 2015: I don't trust that
+  // Teuchos::ArrayView::getRawPtr() returns NULL when the size is 0,
+  // so I ensure this manually.
+  host_input_keys_type keys_k (keys.size () == 0 ? NULL : keys.getRawPtr (),
+                               keys.size ());
+  nonconst_keys_type keys_d (Kokkos::ViewAllocateWithoutInitializing ("keys"),
+                             keys_k.dimension_0 ());
+  Kokkos::deep_copy (keys_d, keys_k);
+
+  const KeyType initMinKey = std::numeric_limits<KeyType>::max ();
+  // min() for a floating-point type returns the minimum _positive_
+  // normalized value.  This is different than for integer types.
+  // lowest() is new in C++11 and returns the least value, always
+  // negative for signed finite types.
+  //
+  // mfh 23 May 2015: I have heard reports that
+  // std::numeric_limits<int>::lowest() does not exist with the Intel
+  // compiler.  I'm not sure if the users in question actually enabled
+  // C++11.  However, it's easy enough to work around this issue.  The
+  // standard floating-point types are signed and have a sign bit, so
+  // lowest() is just -max().  For integer types, we can use min()
+  // instead.
+  const KeyType initMaxKey = std::numeric_limits<KeyType>::is_integer ?
+    std::numeric_limits<KeyType>::min () :
+    -std::numeric_limits<KeyType>::max ();
+  this->init (keys_d, startingValue, initMinKey, initMaxKey, firstContigKey, lastContigKey, true);
   if (keepKeys) {
     keys_ = keys_d;
 #ifdef HAVE_TPETRA_DEBUG
@@ -926,7 +997,7 @@ FixedHashTable (const keys_type& keys,
   const KeyType initMaxKey = std::numeric_limits<KeyType>::is_integer ?
     std::numeric_limits<KeyType>::min () :
     -std::numeric_limits<KeyType>::max ();
-  this->init (keys, startingValue, initMinKey, initMaxKey);
+  this->init (keys, startingValue, initMinKey, initMaxKey, initMinKey, initMinKey, false);
 
 #ifdef HAVE_TPETRA_DEBUG
   check ();
@@ -993,7 +1064,10 @@ FixedHashTable<KeyType, ValueType, DeviceType>::
 init (const keys_type& keys,
       ValueType startingValue,
       KeyType initMinKey,
-      KeyType initMaxKey)
+      KeyType initMaxKey,
+      ValueType firstContigKey,
+      ValueType lastContigKey,
+      const bool computeInitContigKeys)
 {
   using Kokkos::subview;
 
@@ -1022,37 +1096,43 @@ init (const keys_type& keys,
   // Kokkos-izing all the set-up kernels, we won't need DualView for
   // either ptr or val.
 
-  // Find the first and last initial contiguous keys.  If we find a
-  // long sequence of initial contiguous keys, we can save space by
-  // not storing them explicitly as pairs in the hash table.
-  //
-  // NOTE (mfh 01 Jun 2015) Doing this in parallel requires a scan
-  // ("min index such that the difference between the current key and
-  // the next != 1"), which takes multiple passes over the data.  We
-  // could fuse it with CountBuckets (only update counts on 'final'
-  // pass).  However, we're really just moving this sequential search
-  // out of Map's constructor here, so there is no loss in doing it
-  // sequentially for now.  Later, we can work on parallelization.
-  //
-  // FIXME (mfh 01 Jun 2015) This assumes UVM.
-  if (numKeys > 0) {
-    firstContigKey_ = keys[0];
-    // Start with one plus, then decrement at the end.  That lets us do
-    // only one addition per loop iteration, rather than two (if we test
-    // against lastContigKey + 1 and then increment lastContigKey).
-    lastContigKey_ = firstContigKey_ + 1;
+  if (computeInitContigKeys) {
+    // Find the first and last initial contiguous keys.  If we find a
+    // long sequence of initial contiguous keys, we can save space by
+    // not storing them explicitly as pairs in the hash table.
+    //
+    // NOTE (mfh 01 Jun 2015) Doing this in parallel requires a scan
+    // ("min index such that the difference between the current key and
+    // the next != 1"), which takes multiple passes over the data.  We
+    // could fuse it with CountBuckets (only update counts on 'final'
+    // pass).  However, we're really just moving this sequential search
+    // out of Map's constructor here, so there is no loss in doing it
+    // sequentially for now.  Later, we can work on parallelization.
+    //
+    // FIXME (mfh 01 Jun 2015) This assumes UVM.
+    if (numKeys > 0) {
+      firstContigKey_ = keys[0];
+      // Start with one plus, then decrement at the end.  That lets us do
+      // only one addition per loop iteration, rather than two (if we test
+      // against lastContigKey + 1 and then increment lastContigKey).
+      lastContigKey_ = firstContigKey_ + 1;
 
-    // We will only store keys in the table that are not part of the
-    // initial contiguous sequence.  It's possible for the initial
-    // contiguous sequence to be trivial, which for a nonzero number of
-    // keys means that the "sequence" has length 1.
-    for (offset_type k = 1; k < numKeys; ++k) {
-      if (lastContigKey_ != keys[k]) {
-        break;
+      // We will only store keys in the table that are not part of the
+      // initial contiguous sequence.  It's possible for the initial
+      // contiguous sequence to be trivial, which for a nonzero number of
+      // keys means that the "sequence" has length 1.
+      for (offset_type k = 1; k < numKeys; ++k) {
+        if (lastContigKey_ != keys[k]) {
+          break;
+        }
+        ++lastContigKey_;
       }
-      ++lastContigKey_;
+      --lastContigKey_;
     }
-    --lastContigKey_;
+  }
+  else {
+    firstContigKey_ = firstContigKey;
+    lastContigKey_ = lastContigKey;
   }
 
   offset_type startIndex;
