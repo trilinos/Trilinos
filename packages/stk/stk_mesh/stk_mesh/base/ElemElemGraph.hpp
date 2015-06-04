@@ -43,6 +43,10 @@ public:
 
     size_t num_parallel_edges() const { return m_num_parallel_edges; }
 
+    const std::vector<stk::mesh::EntityId>& get_suggested_face_ids() const;
+
+    void set_num_face_ids_used(size_t num_used);
+
 private:
 
     impl::LocalId get_local_element_id(stk::mesh::Entity local_element) const;
@@ -54,6 +58,7 @@ private:
     impl::ParallelGraphInfo parallel_graph_info;
     stk::mesh::EntityVector local_id_to_element_entity;
     std::vector<stk::topology> element_topologies;
+    std::vector<stk::mesh::EntityId> suggested_face_ids;
     size_t m_num_edges;
     size_t m_num_parallel_edges;
 };

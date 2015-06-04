@@ -9,7 +9,7 @@
 
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { struct sharing_info; } }
-namespace stk { namespace mesh { struct ElemElemGraph; } }
+namespace stk { namespace mesh { class ElemElemGraph; } }
 namespace stk { class CommSparse; }
 
 namespace stk { namespace mesh {
@@ -58,14 +58,15 @@ stk::mesh::EntityVector get_elements_to_communicate(const stk::mesh::BulkData& b
 ElemSideToProcAndFaceId get_elements_to_communicate1(const stk::mesh::BulkData& bulkData);
 
 void pack_shared_side_nodes_of_elements(stk::CommSparse& comm, const stk::mesh::BulkData& bulkData, ElemSideToProcAndFaceId& elements_to_communicate,
-        std::vector<stk::mesh::EntityId>& suggested_face_ids);
+        const std::vector<stk::mesh::EntityId>& suggested_face_ids);
 
 void add_possibly_connected_elements_to_graph_using_side_nodes(const stk::mesh::BulkData& bulkData, ElementGraph& elem_graph,
         SidesForElementGraph& via_sides, const stk::mesh::EntityVector& side_nodes, ParallelGraphInfo& parallel_graph_info,
         const ElemSideToProcAndFaceId& elemSideComm, LocalId other_element, int other_side, int other_proc, stk::mesh::EntityId suggested_id);
 
-size_t fill_parallel_graph(const stk::mesh::BulkData& bulkData, ElementGraph& elem_graph,
-        SidesForElementGraph& via_sides, ParallelGraphInfo& parallel_graph_info);
+void fill_parallel_graph(const stk::mesh::BulkData& bulkData, ElementGraph& elem_graph,
+        SidesForElementGraph& via_sides, ParallelGraphInfo& parallel_graph_info,
+        ElemSideToProcAndFaceId& elem_side_comm, const std::vector<stk::mesh::EntityId>& suggested_face_ids);
 
 std::vector<graphEdgeProc> get_elements_to_communicate(stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &killedElements,
         const ElemElemGraph& elem_graph);

@@ -349,8 +349,16 @@ TEST(ElementGraph, create_element_graph_parallel)
         ElementGraph elem_graph(numLocallyOwnedElems);
         SidesForElementGraph via_sides(numLocallyOwnedElems);
 
+        impl::ElemSideToProcAndFaceId elem_side_comm = impl::get_elements_to_communicate1(bulkData);
+        size_t num_face_ids_needed = elem_side_comm.size();
+        for(size_t i=0;i<via_sides.size();++i)
+        {
+            num_face_ids_needed += via_sides[i].size();
+        }
+        std::vector<stk::mesh::EntityId> suggested_face_ids;
+        bulkData.generate_new_ids(stk::topology::FACE_RANK, num_face_ids_needed, suggested_face_ids);
         ParallelGraphInfo parallel_graph_info;
-        impl::fill_parallel_graph(bulkData, elem_graph, via_sides, parallel_graph_info);
+        impl::fill_parallel_graph(bulkData, elem_graph, via_sides, parallel_graph_info, elem_side_comm, suggested_face_ids);
 
         wall_times.push_back(stk::wall_time());
         msgs.push_back("after fill-graph");
@@ -582,8 +590,16 @@ TEST(ElementGraph, skin_mesh_using_element_graph_parallel)
         impl::fill_graph(bulkData, elem_graph, via_sides);
         if (stk::parallel_machine_size(comm) > 1)
         {
+            impl::ElemSideToProcAndFaceId elem_side_comm = impl::get_elements_to_communicate1(bulkData);
+            size_t num_face_ids_needed = elem_side_comm.size();
+            for(size_t i=0;i<via_sides.size();++i)
+            {
+                num_face_ids_needed += via_sides[i].size();
+            }
+            std::vector<stk::mesh::EntityId> suggested_face_ids;
+            bulkData.generate_new_ids(stk::topology::FACE_RANK, num_face_ids_needed, suggested_face_ids);
             ParallelGraphInfo parallel_graph_info;
-            impl::fill_parallel_graph(bulkData, elem_graph, via_sides, parallel_graph_info);
+            impl::fill_parallel_graph(bulkData, elem_graph, via_sides, parallel_graph_info, elem_side_comm, suggested_face_ids);
         }
 
         wall_times.push_back(stk::wall_time());
@@ -779,8 +795,16 @@ TEST(ElementGraph, test_parallel_graph_info_with_parallel_element_graph)
         ElementGraph elem_graph(numLocallyOwnedElems);
         SidesForElementGraph via_sides(numLocallyOwnedElems);
 
+        impl::ElemSideToProcAndFaceId elem_side_comm = impl::get_elements_to_communicate1(bulkData);
+        size_t num_face_ids_needed = elem_side_comm.size();
+        for(size_t i=0;i<via_sides.size();++i)
+        {
+            num_face_ids_needed += via_sides[i].size();
+        }
+        std::vector<stk::mesh::EntityId> suggested_face_ids;
+        bulkData.generate_new_ids(stk::topology::FACE_RANK, num_face_ids_needed, suggested_face_ids);
         ParallelGraphInfo parallel_graph_info;
-        impl::fill_parallel_graph(bulkData, elem_graph, via_sides, parallel_graph_info);
+        impl::fill_parallel_graph(bulkData, elem_graph, via_sides, parallel_graph_info, elem_side_comm, suggested_face_ids);
 
         if(stk::parallel_machine_rank(comm)==0)
         {
@@ -1052,8 +1076,16 @@ TEST(ElementGraph, compare_performance_skin_mesh)
 
             impl::fill_graph(bulkData, elem_graph, via_sides);
 
+            impl::ElemSideToProcAndFaceId elem_side_comm = impl::get_elements_to_communicate1(bulkData);
+            size_t num_face_ids_needed = elem_side_comm.size();
+            for(size_t i=0;i<via_sides.size();++i)
+            {
+                num_face_ids_needed += via_sides[i].size();
+            }
+            std::vector<stk::mesh::EntityId> suggested_face_ids;
+            bulkData.generate_new_ids(stk::topology::FACE_RANK, num_face_ids_needed, suggested_face_ids);
             ParallelGraphInfo parallel_graph_info;
-            impl::fill_parallel_graph(bulkData, elem_graph, via_sides, parallel_graph_info);
+            impl::fill_parallel_graph(bulkData, elem_graph, via_sides, parallel_graph_info, elem_side_comm, suggested_face_ids);
 
             std::vector<ElementSidePair> elem_side_pairs = skin_mesh(via_sides, element_topologies);
 
@@ -1104,8 +1136,16 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
 
     impl::fill_graph(bulkData, elem_graph, via_sides);
 
+    impl::ElemSideToProcAndFaceId elem_side_comm = impl::get_elements_to_communicate1(bulkData);
+    size_t num_face_ids_needed = elem_side_comm.size();
+    for(size_t i=0;i<via_sides.size();++i)
+    {
+        num_face_ids_needed += via_sides[i].size();
+    }
+    std::vector<stk::mesh::EntityId> suggested_face_ids;
+    bulkData.generate_new_ids(stk::topology::FACE_RANK, num_face_ids_needed, suggested_face_ids);
     ParallelGraphInfo parallel_graph_info;
-    impl::fill_parallel_graph(bulkData, elem_graph, via_sides, parallel_graph_info);
+    impl::fill_parallel_graph(bulkData, elem_graph, via_sides, parallel_graph_info, elem_side_comm, suggested_face_ids);
 
     double graph_time = stk::wall_time() - wall_time_start;
     wall_time_start = stk::wall_time();

@@ -24,12 +24,32 @@ ElemElemGraph::ElemElemGraph(stk::mesh::BulkData& bulkData) : m_bulk_data(bulkDa
 
     impl::set_local_ids_and_fill_element_entities_and_topologies(m_bulk_data, local_id_to_element_entity, element_topologies);
     impl::fill_graph(m_bulk_data, elem_graph, via_sides);
-    m_num_parallel_edges = impl::fill_parallel_graph(m_bulk_data, elem_graph, via_sides, parallel_graph_info);
 
+    impl::ElemSideToProcAndFaceId elem_side_comm = impl::get_elements_to_communicate1(bulkData);
+    size_t num_face_ids_needed = elem_side_comm.size();
     for(size_t i=0;i<via_sides.size();++i)
     {
         m_num_edges += via_sides[i].size();
     }
+    num_face_ids_needed += m_num_edges;
+
+    bulkData.generate_new_ids(stk::topology::FACE_RANK, num_face_ids_needed, suggested_face_ids);
+
+    impl::fill_parallel_graph(m_bulk_data, elem_graph, via_sides, parallel_graph_info, elem_side_comm, suggested_face_ids);
+
+    m_num_parallel_edges = parallel_graph_info.size();
+    set_num_face_ids_used(m_num_parallel_edges);
+    m_num_edges += m_num_parallel_edges;
+}
+
+const std::vector<stk::mesh::EntityId>& ElemElemGraph::get_suggested_face_ids() const
+{
+    return suggested_face_ids;
+}
+
+void ElemElemGraph::set_num_face_ids_used(size_t num_used)
+{
+    suggested_face_ids.erase(suggested_face_ids.begin(), suggested_face_ids.begin()+num_used);
 }
 
 ElemElemGraph::~ElemElemGraph() {}
@@ -148,10 +168,8 @@ void ElemElemGraph::size_data_members()
 void perform_element_death(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
         const stk::mesh::PartVector& boundary_mesh_parts)
 {
-    size_t numIdsNeeded = elementGraph.num_edges();
-    std::vector<stk::mesh::EntityId> requestedIds;
-    bulkData.generate_new_ids(stk::topology::FACE_RANK, numIdsNeeded, requestedIds);
-    size_t id_counter = elementGraph.num_parallel_edges();
+    const std::vector<stk::mesh::EntityId>& requestedIds = elementGraph.get_suggested_face_ids();
+    size_t id_counter = 0;
 
     std::vector<stk::mesh::sharing_info> shared_modified;
     stk::mesh::EntityVector deletedEntities;
@@ -262,8 +280,10 @@ void perform_element_death(stk::mesh::BulkData& bulkData, ElemElemGraph& element
                 else
                 {
                     stk::mesh::Entity face = stk::mesh::impl::get_face_for_element_side(bulkData, this_elem_entity, side_id);
-                    ThrowRequireMsg(bulkData.is_valid(face), "Error: Invalid entity.");
-                    deletedEntities.push_back(face);
+                    if(bulkData.is_valid(face))
+                    {
+                        deletedEntities.push_back(face);
+                    }
                 }
             }
             else
@@ -288,6 +308,7 @@ void perform_element_death(stk::mesh::BulkData& bulkData, ElemElemGraph& element
     }
 
     ThrowRequireMsg(id_counter<requestedIds.size(), "Program error. Please contact sierra-help@sandia.gov for support.");
+    elementGraph.set_num_face_ids_used(id_counter);
     stk::mesh::impl::delete_entities_and_upward_relations(bulkData, deletedEntities);
     bulkData.modification_end_for_face_creation_and_deletion(shared_modified, deletedEntities);
 }

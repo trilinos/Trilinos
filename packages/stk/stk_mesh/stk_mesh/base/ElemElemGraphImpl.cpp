@@ -165,7 +165,7 @@ stk::mesh::EntityVector get_elements_to_communicate(const stk::mesh::BulkData& b
 
 void pack_shared_side_nodes_of_elements(stk::CommSparse& comm, const stk::mesh::BulkData& bulkData,
          ElemSideToProcAndFaceId &elements_to_communicate,
-        std::vector<stk::mesh::EntityId>& suggested_face_ids)
+        const std::vector<stk::mesh::EntityId>& suggested_face_ids)
 {
     ElemSideToProcAndFaceId::iterator iter = elements_to_communicate.begin();
     ElemSideToProcAndFaceId::const_iterator end = elements_to_communicate.end();
@@ -265,14 +265,10 @@ void add_possibly_connected_elements_to_graph_using_side_nodes(const stk::mesh::
 }
 //EndDocExample2
 
-size_t fill_parallel_graph(const stk::mesh::BulkData& bulkData, ElementGraph& elem_graph,
-        SidesForElementGraph& via_sides, ParallelGraphInfo& parallel_graph_info)
+void fill_parallel_graph(const stk::mesh::BulkData& bulkData, ElementGraph& elem_graph,
+        SidesForElementGraph& via_sides, ParallelGraphInfo& parallel_graph_info,
+        ElemSideToProcAndFaceId& elem_side_comm, const std::vector<stk::mesh::EntityId>& suggested_face_ids)
 {
-    ElemSideToProcAndFaceId elem_side_comm = get_elements_to_communicate1(bulkData);
-    size_t num_ids_needed = elem_side_comm.size();
-    std::vector<stk::mesh::EntityId> suggested_face_ids;
-    bulkData.generate_new_ids(stk::topology::FACE_RANK, num_ids_needed, suggested_face_ids);
-
     stk::CommSparse comm(bulkData.parallel());
 
     pack_shared_side_nodes_of_elements(comm, bulkData, elem_side_comm, suggested_face_ids);
@@ -309,7 +305,6 @@ size_t fill_parallel_graph(const stk::mesh::BulkData& bulkData, ElementGraph& el
             }
         }
     }
-    return num_ids_needed;
 }
 
 std::vector<graphEdgeProc> get_elements_to_communicate(stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &killedElements,
