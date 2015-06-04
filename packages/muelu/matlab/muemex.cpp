@@ -952,6 +952,15 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   /* Sanity Check Input */
   mode = sanity_check(nrhs, prhs);
 
+#ifdef FORCE_FACTORIES_TO_COMPILE
+  {
+    // debug
+    MueLu::TwoLevelMatlabFactory<double,int,int> f1;
+    MueLu::SingleLevelMatlabFactory<double,int,int> f2;
+  }
+#endif
+
+
   switch(mode)
     {
     case MODE_SETUP:
