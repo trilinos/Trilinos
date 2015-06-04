@@ -25,6 +25,12 @@ int main (int argc, char *argv[]) {
   int nthreads = 1;
   clp.setOption("nthreads", &nthreads, "Number of threads");
 
+  int core_per_numa = 1;
+  clp.setOption("core-per-numa", &nthreads, "Number of cores per numa node");
+
+  int threads_per_core = 1;
+  clp.setOption("threads-per-core", &nthreads, "Number of threads per core");
+
   int max_task_dependence = 10;
   clp.setOption("max-task-depedence", &max_task_dependence, "Max number of task dependence");
 
@@ -60,7 +66,7 @@ int main (int argc, char *argv[]) {
   
   int r_val = 0;
   {
-    exec_space::initialize(nthreads);
+    exec_space::initialize(nthreads, core_per_numa, threads_per_core);
     exec_space::print_configuration(cout, true);
     
     r_val = exampleTriSolvePerformance
