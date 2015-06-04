@@ -534,7 +534,8 @@ namespace Tpetra {
       // initial sequence of contiguous GIDs.
       ArrayView<const GO> nonContigEntries =
         entryList (as<size_type> (i), entryList.size () - as<size_type> (i));
-      glMap_ = global_to_local_table_type (nonContigEntries, as<LO> (i));
+      glMap_ = global_to_local_table_type (nonContigEntries, firstContiguousGID_,
+                                           lastContiguousGID_, as<LO> (i));
 
       for ( ; i < numLocalElements_; ++i) {
         const GO curGid = entryList[i];

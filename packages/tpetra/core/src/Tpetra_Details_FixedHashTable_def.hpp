@@ -666,14 +666,27 @@ namespace Tpetra {
 namespace Details {
 
 template<class KeyType, class ValueType, class DeviceType>
+bool
+FixedHashTable<KeyType, ValueType, DeviceType>::
+hasKeys () const {
+  // This also works if FixedHashTable has no entries.  getKey()
+  // works in that case, but always returns the flag (invalid).
+  //
+  // FIXME (31 May 2015) This only works because vals_ contains no
+  // padding.  If we ever pad within a "row" of vals_, we'll have to
+  // change this.
+  return keys_.dimension_0 () == val_.dimension_0 ();
+}
+
+template<class KeyType, class ValueType, class DeviceType>
 void
 FixedHashTable<KeyType, ValueType, DeviceType>::
 check () const
 {
+#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   const char prefix[] = "Tpetra::Details::FixedHashTable: ";
   const char suffix[] = "  Please report this bug to the Tpetra developers.";
 
-#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   TEUCHOS_TEST_FOR_EXCEPTION
     (ptr_.ptr_on_device () != rawPtr_, std::logic_error,
      prefix << "ptr_.ptr_on_device () != rawPtr_." << suffix);
@@ -681,12 +694,6 @@ check () const
     (val_.ptr_on_device () != rawVal_, std::logic_error,
      prefix << "val_.ptr_on_device () != rawVal_." << suffix);
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (invalidValue_ != Teuchos::OrdinalTraits<ValueType>::invalid (),
-     std::logic_error, prefix << "invalidValue_ == " << invalidValue_
-     << " != Teuchos::OrdinalTraits<ValueType>::invalid() == "
-     << Teuchos::OrdinalTraits<ValueType>::invalid () << "." << suffix);
 }
 
 template<class KeyType, class ValueType, class DeviceType>
@@ -696,7 +703,6 @@ FixedHashTable () :
   rawPtr_ (NULL),
   rawVal_ (NULL),
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  invalidValue_ (Teuchos::OrdinalTraits<ValueType>::invalid ()),
   minKey_ (std::numeric_limits<KeyType>::max ()),
   maxKey_ (std::numeric_limits<KeyType>::is_integer ?
            std::numeric_limits<KeyType>::min () :
@@ -705,6 +711,11 @@ FixedHashTable () :
   maxVal_ (std::numeric_limits<ValueType>::is_integer ?
            std::numeric_limits<ValueType>::min () :
            -std::numeric_limits<ValueType>::max ()),
+  firstContigKey_ (std::numeric_limits<KeyType>::max ()),
+  lastContigKey_ (std::numeric_limits<KeyType>::is_integer ?
+                  std::numeric_limits<KeyType>::min () :
+                  -std::numeric_limits<KeyType>::max ()),
+  contiguousValues_ (true), // trivially
   checkedForDuplicateKeys_ (true), // it's an empty table; no need to check
   hasDuplicateKeys_ (false)
 {
@@ -715,12 +726,12 @@ FixedHashTable () :
 
 template<class KeyType, class ValueType, class DeviceType>
 FixedHashTable<KeyType, ValueType, DeviceType>::
-FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys) :
+FixedHashTable (const keys_type& keys) :
+  keys_ (keys),
 #if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   rawPtr_ (NULL),
   rawVal_ (NULL),
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  invalidValue_ (Teuchos::OrdinalTraits<ValueType>::invalid ()),
   minKey_ (std::numeric_limits<KeyType>::max ()), // to be set in init()
   maxKey_ (std::numeric_limits<KeyType>::is_integer ?
            std::numeric_limits<KeyType>::min () :
@@ -729,18 +740,18 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys) :
   maxVal_ (keys.size () == 0 ?
            static_cast<ValueType> (0) :
            static_cast<ValueType> (keys.size () - 1)),
+  firstContigKey_ (std::numeric_limits<KeyType>::max ()),
+  lastContigKey_ (std::numeric_limits<KeyType>::is_integer ?
+                  std::numeric_limits<KeyType>::min () :
+                  -std::numeric_limits<KeyType>::max ()),
+  contiguousValues_ (true),
   checkedForDuplicateKeys_ (false),
   hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
 {
-  // mfh 01 May 2015: I don't trust that
-  // Teuchos::ArrayView::getRawPtr() returns NULL when the size is 0,
-  // so I ensure this manually.
   const ValueType startingValue = static_cast<ValueType> (0);
-  host_input_keys_type keys_k (keys.size () == 0 ? NULL : keys.getRawPtr (),
-                               keys.size ());
   const KeyType initMinKey = this->minKey_;
   const KeyType initMaxKey = this->maxKey_;
-  this->init (keys_k, startingValue, initMinKey, initMaxKey);
+  this->init (keys, startingValue, initMinKey, initMaxKey, initMinKey, initMinKey, false);
 
 #ifdef HAVE_TPETRA_DEBUG
   check ();
@@ -750,12 +761,68 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys) :
 template<class KeyType, class ValueType, class DeviceType>
 FixedHashTable<KeyType, ValueType, DeviceType>::
 FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
-                const ValueType startingValue) :
+                const bool keepKeys) :
 #if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   rawPtr_ (NULL),
   rawVal_ (NULL),
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  invalidValue_ (Teuchos::OrdinalTraits<ValueType>::invalid ()),
+  minKey_ (std::numeric_limits<KeyType>::max ()), // to be set in init()
+  maxKey_ (std::numeric_limits<KeyType>::is_integer ?
+           std::numeric_limits<KeyType>::min () :
+           -std::numeric_limits<KeyType>::max ()), // to be set in init()
+  minVal_ (0),
+  maxVal_ (keys.size () == 0 ?
+           static_cast<ValueType> (0) :
+           static_cast<ValueType> (keys.size () - 1)),
+  firstContigKey_ (std::numeric_limits<KeyType>::max ()),
+  lastContigKey_ (std::numeric_limits<KeyType>::is_integer ?
+                  std::numeric_limits<KeyType>::min () :
+                  -std::numeric_limits<KeyType>::max ()),
+  contiguousValues_ (true),
+  checkedForDuplicateKeys_ (false),
+  hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
+{
+  typedef typename keys_type::non_const_type nonconst_keys_type;
+
+  // mfh 01 May 2015: I don't trust that
+  // Teuchos::ArrayView::getRawPtr() returns NULL when the size is 0,
+  // so I ensure this manually.
+  const ValueType startingValue = static_cast<ValueType> (0);
+  host_input_keys_type keys_k (keys.size () == 0 ? NULL : keys.getRawPtr (),
+                               keys.size ());
+  nonconst_keys_type keys_d (Kokkos::ViewAllocateWithoutInitializing ("keys"),
+                             keys_k.dimension_0 ());
+  Kokkos::deep_copy (keys_d, keys_k);
+  const KeyType initMinKey = this->minKey_;
+  const KeyType initMaxKey = this->maxKey_;
+  this->init (keys_d, startingValue, initMinKey, initMaxKey, initMinKey, initMinKey, false);
+  if (keepKeys) {
+    keys_ = keys_d;
+#ifdef HAVE_TPETRA_DEBUG
+    typedef typename keys_type::size_type size_type;
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (keys_.dimension_0 () != static_cast<size_type> (keys.size ()),
+       std::logic_error, "Tpetra::Details::FixedHashTable constructor: "
+       "keepKeys is true, but on return, keys_.dimension_0() = " <<
+       keys_.dimension_0 () << " != keys.size() = " << keys.size () <<
+       ".  Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+  }
+
+#ifdef HAVE_TPETRA_DEBUG
+  check ();
+#endif // HAVE_TPETRA_DEBUG
+}
+
+template<class KeyType, class ValueType, class DeviceType>
+FixedHashTable<KeyType, ValueType, DeviceType>::
+FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
+                const ValueType startingValue,
+                const bool keepKeys) :
+#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  rawPtr_ (NULL),
+  rawVal_ (NULL),
+#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   minKey_ (std::numeric_limits<KeyType>::max ()),
   maxKey_ (std::numeric_limits<KeyType>::is_integer ?
            std::numeric_limits<KeyType>::min () :
@@ -764,14 +831,25 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   maxVal_ (keys.size () == 0 ?
            startingValue :
            static_cast<ValueType> (startingValue + keys.size () - 1)),
+  firstContigKey_ (std::numeric_limits<KeyType>::max ()),
+  lastContigKey_ (std::numeric_limits<KeyType>::is_integer ?
+                  std::numeric_limits<KeyType>::min () :
+                  -std::numeric_limits<KeyType>::max ()),
+  contiguousValues_ (true),
   checkedForDuplicateKeys_ (false),
   hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
 {
+  typedef typename keys_type::non_const_type nonconst_keys_type;
+
   // mfh 01 May 2015: I don't trust that
   // Teuchos::ArrayView::getRawPtr() returns NULL when the size is 0,
   // so I ensure this manually.
   host_input_keys_type keys_k (keys.size () == 0 ? NULL : keys.getRawPtr (),
                                keys.size ());
+  nonconst_keys_type keys_d (Kokkos::ViewAllocateWithoutInitializing ("keys"),
+                             keys_k.dimension_0 ());
+  Kokkos::deep_copy (keys_d, keys_k);
+
   const KeyType initMinKey = std::numeric_limits<KeyType>::max ();
   // min() for a floating-point type returns the minimum _positive_
   // normalized value.  This is different than for integer types.
@@ -788,7 +866,138 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   const KeyType initMaxKey = std::numeric_limits<KeyType>::is_integer ?
     std::numeric_limits<KeyType>::min () :
     -std::numeric_limits<KeyType>::max ();
-  this->init (keys_k, startingValue, initMinKey, initMaxKey);
+  this->init (keys_d, startingValue, initMinKey, initMaxKey, initMinKey, initMinKey, false);
+  if (keepKeys) {
+    keys_ = keys_d;
+#ifdef HAVE_TPETRA_DEBUG
+    typedef typename keys_type::size_type size_type;
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (keys_.dimension_0 () != static_cast<size_type> (keys.size ()),
+       std::logic_error, "Tpetra::Details::FixedHashTable constructor: "
+       "keepKeys is true, but on return, keys_.dimension_0() = " <<
+       keys_.dimension_0 () << " != keys.size() = " << keys.size () <<
+       ".  Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+  }
+
+#ifdef HAVE_TPETRA_DEBUG
+  check ();
+#endif // HAVE_TPETRA_DEBUG
+}
+
+template<class KeyType, class ValueType, class DeviceType>
+FixedHashTable<KeyType, ValueType, DeviceType>::
+FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
+                const KeyType firstContigKey,
+                const KeyType lastContigKey,
+                const ValueType startingValue,
+                const bool keepKeys) :
+#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  rawPtr_ (NULL),
+  rawVal_ (NULL),
+#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  minKey_ (std::numeric_limits<KeyType>::max ()),
+  maxKey_ (std::numeric_limits<KeyType>::is_integer ?
+           std::numeric_limits<KeyType>::min () :
+           -std::numeric_limits<KeyType>::max ()),
+  minVal_ (startingValue),
+  maxVal_ (keys.size () == 0 ?
+           startingValue :
+           static_cast<ValueType> (startingValue + keys.size () - 1)),
+  firstContigKey_ (firstContigKey),
+  lastContigKey_ (lastContigKey),
+  contiguousValues_ (true),
+  checkedForDuplicateKeys_ (false),
+  hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
+{
+  typedef typename keys_type::non_const_type nonconst_keys_type;
+
+  // mfh 01 May 2015: I don't trust that
+  // Teuchos::ArrayView::getRawPtr() returns NULL when the size is 0,
+  // so I ensure this manually.
+  host_input_keys_type keys_k (keys.size () == 0 ? NULL : keys.getRawPtr (),
+                               keys.size ());
+  nonconst_keys_type keys_d (Kokkos::ViewAllocateWithoutInitializing ("keys"),
+                             keys_k.dimension_0 ());
+  Kokkos::deep_copy (keys_d, keys_k);
+
+  const KeyType initMinKey = std::numeric_limits<KeyType>::max ();
+  // min() for a floating-point type returns the minimum _positive_
+  // normalized value.  This is different than for integer types.
+  // lowest() is new in C++11 and returns the least value, always
+  // negative for signed finite types.
+  //
+  // mfh 23 May 2015: I have heard reports that
+  // std::numeric_limits<int>::lowest() does not exist with the Intel
+  // compiler.  I'm not sure if the users in question actually enabled
+  // C++11.  However, it's easy enough to work around this issue.  The
+  // standard floating-point types are signed and have a sign bit, so
+  // lowest() is just -max().  For integer types, we can use min()
+  // instead.
+  const KeyType initMaxKey = std::numeric_limits<KeyType>::is_integer ?
+    std::numeric_limits<KeyType>::min () :
+    -std::numeric_limits<KeyType>::max ();
+  this->init (keys_d, startingValue, initMinKey, initMaxKey, firstContigKey, lastContigKey, true);
+  if (keepKeys) {
+    keys_ = keys_d;
+#ifdef HAVE_TPETRA_DEBUG
+    typedef typename keys_type::size_type size_type;
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (keys_.dimension_0 () != static_cast<size_type> (keys.size ()),
+       std::logic_error, "Tpetra::Details::FixedHashTable constructor: "
+       "keepKeys is true, but on return, keys_.dimension_0() = " <<
+       keys_.dimension_0 () << " != keys.size() = " << keys.size () <<
+       ".  Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+  }
+
+#ifdef HAVE_TPETRA_DEBUG
+  check ();
+#endif // HAVE_TPETRA_DEBUG
+}
+
+template<class KeyType, class ValueType, class DeviceType>
+FixedHashTable<KeyType, ValueType, DeviceType>::
+FixedHashTable (const keys_type& keys,
+                const ValueType startingValue) :
+  keys_ (keys),
+#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  rawPtr_ (NULL),
+  rawVal_ (NULL),
+#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  minKey_ (std::numeric_limits<KeyType>::max ()),
+  maxKey_ (std::numeric_limits<KeyType>::is_integer ?
+           std::numeric_limits<KeyType>::min () :
+           -std::numeric_limits<KeyType>::max ()),
+  minVal_ (startingValue),
+  maxVal_ (keys.size () == 0 ?
+           startingValue :
+           static_cast<ValueType> (startingValue + keys.size () - 1)),
+  firstContigKey_ (std::numeric_limits<KeyType>::max ()),
+  lastContigKey_ (std::numeric_limits<KeyType>::is_integer ?
+                  std::numeric_limits<KeyType>::min () :
+                  -std::numeric_limits<KeyType>::max ()),
+  contiguousValues_ (true),
+  checkedForDuplicateKeys_ (false),
+  hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
+{
+  const KeyType initMinKey = std::numeric_limits<KeyType>::max ();
+  // min() for a floating-point type returns the minimum _positive_
+  // normalized value.  This is different than for integer types.
+  // lowest() is new in C++11 and returns the least value, always
+  // negative for signed finite types.
+  //
+  // mfh 23 May 2015: I have heard reports that
+  // std::numeric_limits<int>::lowest() does not exist with the Intel
+  // compiler.  I'm not sure if the users in question actually enabled
+  // C++11.  However, it's easy enough to work around this issue.  The
+  // standard floating-point types are signed and have a sign bit, so
+  // lowest() is just -max().  For integer types, we can use min()
+  // instead.
+  const KeyType initMaxKey = std::numeric_limits<KeyType>::is_integer ?
+    std::numeric_limits<KeyType>::min () :
+    -std::numeric_limits<KeyType>::max ();
+  this->init (keys, startingValue, initMinKey, initMaxKey, initMinKey, initMinKey, false);
 
 #ifdef HAVE_TPETRA_DEBUG
   check ();
@@ -803,7 +1012,6 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   rawPtr_ (NULL),
   rawVal_ (NULL),
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  invalidValue_ (Teuchos::OrdinalTraits<ValueType>::invalid ()),
   minKey_ (std::numeric_limits<KeyType>::max ()),
   maxKey_ (std::numeric_limits<KeyType>::is_integer ?
            std::numeric_limits<KeyType>::min () :
@@ -812,6 +1020,11 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   maxVal_ (std::numeric_limits<ValueType>::is_integer ?
            std::numeric_limits<ValueType>::min () :
            -std::numeric_limits<ValueType>::max ()),
+  firstContigKey_ (std::numeric_limits<KeyType>::max ()),
+  lastContigKey_ (std::numeric_limits<KeyType>::is_integer ?
+                  std::numeric_limits<KeyType>::min () :
+                  -std::numeric_limits<KeyType>::max ()),
+  contiguousValues_ (false),
   checkedForDuplicateKeys_ (false),
   hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
 {
@@ -848,32 +1061,29 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
 template<class KeyType, class ValueType, class DeviceType>
 void
 FixedHashTable<KeyType, ValueType, DeviceType>::
-init (const host_input_keys_type& keys,
-      const ValueType startingValue,
-      const KeyType initMinKey,
-      const KeyType initMaxKey)
+init (const keys_type& keys,
+      ValueType startingValue,
+      KeyType initMinKey,
+      KeyType initMaxKey,
+      ValueType firstContigKey,
+      ValueType lastContigKey,
+      const bool computeInitContigKeys)
 {
+  using Kokkos::subview;
+
   const offset_type numKeys = static_cast<offset_type> (keys.dimension_0 ());
   TEUCHOS_TEST_FOR_EXCEPTION
-    (static_cast<unsigned long long> (numKeys) > static_cast<unsigned long long> (std::numeric_limits<ValueType>::max ()),
+    (static_cast<unsigned long long> (numKeys) >
+     static_cast<unsigned long long> (std::numeric_limits<ValueType>::max ()),
      std::invalid_argument, "Tpetra::Details::FixedHashTable: The number of "
      "keys " << numKeys << " is greater than the maximum representable "
-     "ValueType value " << std::numeric_limits<ValueType>::max () << ".");
+     "ValueType value " << std::numeric_limits<ValueType>::max () << ".  "
+     "This means that it is not possible to use this constructor.");
   TEUCHOS_TEST_FOR_EXCEPTION
     (numKeys > static_cast<offset_type> (INT_MAX), std::logic_error, "Tpetra::"
      "Details::FixedHashTable: This class currently only works when the number "
      "of keys is <= INT_MAX = " << INT_MAX << ".  If this is a problem for you"
      ", please talk to the Tpetra developers.");
-
-  const offset_type size = hash_type::getRecommendedSize (numKeys);
-#ifdef HAVE_TPETRA_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    size == 0 && numKeys != 0, std::logic_error,
-    "Tpetra::Details::FixedHashTable constructor: "
-    "getRecommendedSize(" << numKeys << ") returned zero, "
-    "even though the number of keys " << numKeys << " is nonzero.  "
-    "Please report this bug to the Tpetra developers.");
-#endif // HAVE_TPETRA_DEBUG
 
   const bool buildInParallel =
     worthBuildingFixedHashTableInParallel<execution_space> ();
@@ -886,20 +1096,71 @@ init (const host_input_keys_type& keys,
   // Kokkos-izing all the set-up kernels, we won't need DualView for
   // either ptr or val.
 
+  if (computeInitContigKeys) {
+    // Find the first and last initial contiguous keys.  If we find a
+    // long sequence of initial contiguous keys, we can save space by
+    // not storing them explicitly as pairs in the hash table.
+    //
+    // NOTE (mfh 01 Jun 2015) Doing this in parallel requires a scan
+    // ("min index such that the difference between the current key and
+    // the next != 1"), which takes multiple passes over the data.  We
+    // could fuse it with CountBuckets (only update counts on 'final'
+    // pass).  However, we're really just moving this sequential search
+    // out of Map's constructor here, so there is no loss in doing it
+    // sequentially for now.  Later, we can work on parallelization.
+    //
+    // FIXME (mfh 01 Jun 2015) This assumes UVM.
+    if (numKeys > 0) {
+      firstContigKey_ = keys[0];
+      // Start with one plus, then decrement at the end.  That lets us do
+      // only one addition per loop iteration, rather than two (if we test
+      // against lastContigKey + 1 and then increment lastContigKey).
+      lastContigKey_ = firstContigKey_ + 1;
+
+      // We will only store keys in the table that are not part of the
+      // initial contiguous sequence.  It's possible for the initial
+      // contiguous sequence to be trivial, which for a nonzero number of
+      // keys means that the "sequence" has length 1.
+      for (offset_type k = 1; k < numKeys; ++k) {
+        if (lastContigKey_ != keys[k]) {
+          break;
+        }
+        ++lastContigKey_;
+      }
+      --lastContigKey_;
+    }
+  }
+  else {
+    firstContigKey_ = firstContigKey;
+    lastContigKey_ = lastContigKey;
+  }
+
+  offset_type startIndex;
+  if (numKeys > 0) {
+    initMinKey = std::min (initMinKey, firstContigKey_);
+    initMaxKey = std::max (initMaxKey, lastContigKey_);
+    startIndex = static_cast<offset_type> (lastContigKey_ - firstContigKey_);
+  } else {
+    startIndex = 0;
+  }
+
+  const offset_type theNumKeys = numKeys - startIndex;
+  const offset_type size = hash_type::getRecommendedSize (theNumKeys);
+#ifdef HAVE_TPETRA_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    size == 0 && numKeys != 0, std::logic_error,
+    "Tpetra::Details::FixedHashTable constructor: "
+    "getRecommendedSize(" << numKeys << ") returned zero, "
+    "even though the number of keys " << numKeys << " is nonzero.  "
+    "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+  keys_type theKeys =
+    subview (keys, std::pair<offset_type, offset_type> (startIndex, numKeys));
+
   // The array of counts must be separate from the array of offsets,
   // in order for parallel_scan to work correctly.
   typedef typename ptr_type::non_const_type counts_type;
   counts_type counts ("counts", size);
-
-  // Only make a device copy of the input array 'keys' if the input
-  // array lives in a different memory space.  Remember that with UVM,
-  // host code can access CUDA device memory, but not the other way
-  // around.
-  typedef DeepCopyIfNeeded<KeyType, typename host_input_keys_type::array_layout,
-                           typename host_input_keys_type::execution_space,
-                           execution_space> copier_type;
-  typedef typename copier_type::output_view_type keys_type;
-  keys_type keys_d = copier_type::copy (keys);
 
   //
   // Count the number of "buckets" per offsets array (ptr) entry.
@@ -911,16 +1172,16 @@ init (const host_input_keys_type& keys,
   // kernel is still correct in that case, but I would rather not
   // incur overhead then.
   if (buildInParallel) {
-    for (offset_type k = 0; k < numKeys; ++k) {
-      typedef typename hash_type::result_type hash_value_type;
-
-      const hash_value_type hashVal = hash_type::hashFunc (keys[k], size);
-      ++counts[hashVal];
-    }
+    CountBuckets<counts_type, keys_type> functor (counts, theKeys, size);
+    Kokkos::parallel_for (theNumKeys, functor);
   }
   else {
-    CountBuckets<counts_type, keys_type> functor (counts, keys_d, size);
-    Kokkos::parallel_for (numKeys, functor);
+    for (offset_type k = 0; k < theNumKeys; ++k) {
+      typedef typename hash_type::result_type hash_value_type;
+
+      const hash_value_type hashVal = hash_type::hashFunc (theKeys[k], size);
+      ++counts[hashVal];
+    }
   }
 
   // Kokkos::View fills with zeros by default.
@@ -953,28 +1214,31 @@ init (const host_input_keys_type& keys,
 
   // Allocate the array of (key,value) pairs.  Don't fill it with
   // zeros, because we will fill it with actual data below.
-  typename val_type::non_const_type val (Kokkos::ViewAllocateWithoutInitializing ("val"), numKeys);
+  typedef typename val_type::non_const_type nonconst_val_type;
+  nonconst_val_type val (Kokkos::ViewAllocateWithoutInitializing ("val"), theNumKeys);
 
   // Fill in the hash table's "values" (the (key,value) pairs).
   typedef FillPairs<typename val_type::non_const_type, keys_type,
                     typename ptr_type::non_const_type> functor_type;
   typename functor_type::value_type result (initMinKey, initMaxKey);
+
+  const ValueType newStartingValue = startingValue + static_cast<ValueType> (startIndex);
   if (buildInParallel) {
-    functor_type functor (val, counts, ptr, keys_d, startingValue,
+    functor_type functor (val, counts, ptr, theKeys, newStartingValue,
                           initMinKey, initMaxKey);
-    Kokkos::parallel_reduce (numKeys, functor, result);
+    Kokkos::parallel_reduce (theNumKeys, functor, result);
   }
   else {
-    for (offset_type k = 0; k < numKeys; ++k) {
+    for (offset_type k = 0; k < theNumKeys; ++k) {
       typedef typename hash_type::result_type hash_value_type;
-      const KeyType key = keys[k];
+      const KeyType key = theKeys[k];
       if (key > result.maxKey_) {
         result.maxKey_ = key;
       }
       if (key < result.minKey_) {
         result.minKey_ = key;
       }
-      const ValueType theVal = startingValue + static_cast<ValueType> (k);
+      const ValueType theVal = newStartingValue + static_cast<ValueType> (k);
       const hash_value_type hashVal = hash_type::hashFunc (key, size);
 
       // Return the old count; decrement afterwards.
@@ -1011,6 +1275,7 @@ init (const host_input_keys_type& keys,
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   minKey_ = result.minKey_;
   maxKey_ = result.maxKey_;
+  // We've already set firstContigKey_ and lastContigKey_ above.
 }
 
 
@@ -1019,8 +1284,8 @@ void
 FixedHashTable<KeyType, ValueType, DeviceType>::
 init (const host_input_keys_type& keys,
       const host_input_vals_type& vals,
-      const KeyType initMinKey,
-      const KeyType initMaxKey)
+      KeyType initMinKey,
+      KeyType initMaxKey)
 {
   const offset_type numKeys = static_cast<offset_type> (keys.dimension_0 ());
   TEUCHOS_TEST_FOR_EXCEPTION
@@ -1033,6 +1298,11 @@ init (const host_input_keys_type& keys,
      "Details::FixedHashTable: This class currently only works when the number "
      "of keys is <= INT_MAX = " << INT_MAX << ".  If this is a problem for you"
      ", please talk to the Tpetra developers.");
+
+  // There's no need to find the first and last initial contiguous
+  // keys in this case, because if we reach this init() function, then
+  // hasContiguousValues() is false and so get() doesn't use the
+  // initial contiguous sequence of keys.
 
   const offset_type size = hash_type::getRecommendedSize (numKeys);
 #ifdef HAVE_TPETRA_DEBUG
@@ -1056,7 +1326,8 @@ init (const host_input_keys_type& keys,
 
   // Allocate the array of key,value pairs.  Don't waste time filling
   // it with zeros, because we will fill it with actual data below.
-  typename val_type::non_const_type val (Kokkos::ViewAllocateWithoutInitializing ("val"), numKeys);
+  typedef typename val_type::non_const_type nonconst_val_type;
+  nonconst_val_type val (Kokkos::ViewAllocateWithoutInitializing ("val"), numKeys);
 
   // Compute number of entries in each hash table position.
   for (offset_type k = 0; k < numKeys; ++k) {
@@ -1083,8 +1354,6 @@ init (const host_input_keys_type& keys,
 
   // Fill in the hash table.
   FillPairsResult<KeyType> result (initMinKey, initMaxKey);
-  ValueType minVal = minVal_;
-  ValueType maxVal = maxVal_;
   for (offset_type k = 0; k < numKeys; ++k) {
     typedef typename hash_type::result_type hash_value_type;
     const KeyType key = keys[k];
@@ -1095,11 +1364,11 @@ init (const host_input_keys_type& keys,
       result.minKey_ = key;
     }
     const ValueType theVal = vals[k];
-    if (theVal > maxVal) {
-      maxVal = theVal;
+    if (theVal > maxVal_) {
+      maxVal_ = theVal;
     }
-    if (theVal < minVal) {
-      minVal = theVal;
+    if (theVal < minVal_) {
+      minVal_ = theVal;
     }
     const hash_value_type hashVal = hash_type::hashFunc (key, size);
 
@@ -1129,8 +1398,7 @@ init (const host_input_keys_type& keys,
 #endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   minKey_ = result.minKey_;
   maxKey_ = result.maxKey_;
-  minVal_ = minVal;
-  maxVal_ = maxVal;
+  // We've already assigned to minVal_ and maxVal_ above.
 }
 
 template <class KeyType, class ValueType, class DeviceType>

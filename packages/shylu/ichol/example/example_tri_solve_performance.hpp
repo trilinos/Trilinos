@@ -96,7 +96,7 @@ namespace Example {
       t_solve_task = 0.0;
     const int start = -2;
 
-    cout << "TriSolveByBlocks:: import input file = " << file_input << endl;
+    cout << "TriSolvePerformance:: import input file = " << file_input << endl;
     CrsMatrixBaseType AA("AA");
     {
       timer.reset();
@@ -114,12 +114,12 @@ namespace Example {
       if (verbose)
         cout << AA << endl;
     }
-    cout << "TriSolveByBlocks:: import input file::time = " << t_import << endl;
+    cout << "TriSolvePerformance:: import input file::time = " << t_import << endl;
 
     CrsMatrixBaseType   UU("UU");
     DenseMatrixBaseType BB("BB",  AA.NumRows(), nrhs);
 
-    cout << "TriSolveByBlocks:: reorder the matrix and partition right hand side, nb = " << nb << endl;
+    cout << "TriSolvePerformance:: reorder the matrix and partition right hand side, nb = " << nb << endl;
     CrsHierMatrixBaseType   HU("HU");
     DenseHierMatrixBaseType HB("HB");
     {
