@@ -10,14 +10,7 @@ namespace Example {
 
   using namespace std;
 
-  static vector<string> g_graphviz_color = {
-    "indianred2", 
-    "lightblue2", 
-    "skyblue2",
-    "lightgoldenrod2", 
-    "orange2",  
-    "mistyrose2" 
-  };
+  static vector<string> g_graphviz_color;
 
   class Task : public Disp  {
   private:
@@ -47,6 +40,15 @@ namespace Example {
     }
     
     ostream& graphviz(ostream &os, const size_t cnt) const {
+      if (g_graphviz_color.size() == 0) {
+        g_graphviz_color.push_back("indianred2");
+        g_graphviz_color.push_back("lightblue2");
+        g_graphviz_color.push_back("skyblue2");
+        g_graphviz_color.push_back("lightgoldenrod2");
+        g_graphviz_color.push_back("orange2");
+        g_graphviz_color.push_back("mistyrose2");
+      }
+
       // os << (long)(this)
       //    << " [label=\"" << cnt << " "<< _label;
       os << (long)(this)
