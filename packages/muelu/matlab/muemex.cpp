@@ -56,10 +56,11 @@
 #endif
 
 #include <Tpetra_DefaultPlatform.hpp>
-#include "muemexTypes_decl.hpp"
+#include "MueLu_MatlabUtils.hpp"
 
-#include "MueLu_SingleLevelMatlabFactory.hpp"
 #include "MueLu_TwoLevelMatlabFactory.hpp"
+#include "MueLu_SingleLevelMatlabFactory.hpp"
+
 
 using namespace std;
 using namespace Teuchos;
@@ -217,7 +218,8 @@ mxArray* TpetraSystem<Scalar>::solve(RCP<ParameterList> params, RCP<Tpetra::CrsM
   return output;
 }
 
-template<> RCP<Hierarchy_double> getDatapackHierarchy<double>(MuemexSystem* dp)
+template<> 
+RCP<Hierarchy_double> getDatapackHierarchy<double>(MuemexSystem* dp)
 {
   RCP<MueLu::Hierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> hier;
   switch(dp->type)

@@ -108,24 +108,24 @@ namespace MueLu {
        We'll need to replace this wby modifying the needs list with strings that define types and adding some kind of lookup function instead */
 
     // NOTE: mexOutput[0] is the "Provides."  Might want to modify to allow for additional outputs
-    vector<RCP<MuemexArg> > InputArgs;
+    std::vector<RCP<MuemexArg> > InputArgs;
 
     // Fine needs
     for(size_t i=0; needs_.size(); i++) {
       if(needs_[i] == "A" || needs_[i] == "P" || needs_[i] == "R" || needs_[i]=="Ptent") {
-	InputArgs.push_back(rcp(new MueMexData(Get<RCP<Matrix> >(currentLevel,name))));
+	InputArgs.push_back(rcp(new MuemexData(Get<RCP<Matrix> >(currentLevel,name))));
       }
 
       if(needs_[i] == "Nullspace" || needs_[i] == "Coordinates") {
-	InputArgs.push_back(rcp(new MueMexData(Get<RCP<MultiVector> >(currentLevel,name))));
+	InputArgs.push_back(rcp(new MuemexData(Get<RCP<MultiVector> >(currentLevel,name))));
       }
 
       if(needs_[i] == "Aggregates") {
-	InputArgs.push_back(rcp(new MueMexData(Get<RCP<Aggregates> >(currentLevel,name))));
+	InputArgs.push_back(rcp(new MuemexData(Get<RCP<Aggregates> >(currentLevel,name))));
       }
 
       if(needs_[i] == "UnAmalgamationInfo") {
-	InputArgs.push_back(rcp(new MueMexData(Get<RCP<AmalgamationInfo> >(currentLevel,name))));
+	InputArgs.push_back(rcp(new MuemexData(Get<RCP<AmalgamationInfo> >(currentLevel,name))));
       }
     }
 
@@ -136,28 +136,28 @@ namespace MueLu {
 
    
     // Call mex function
-    std::string matlabFunction = pL.get<string>("Function");
+    std::string matlabFunction = pL.get<std::string>("Function");
     if(!matlabFunction.length()) throw std::runtime_error("Invalid matlab function name");
-    std::vector<Teuchos::RCP<MuemexArg> > mexOutput = Muemexcallback::callMatlab(matlabFunction,provides.length(),InputArgs);
+    std::vector<Teuchos::RCP<MuemexArg> > mexOutput = Muemexcallback::callMatlab(matlabFunction,provides.size(),InputArgs);
 
 
     // Set output
-    if(mexOutput.length()!=provides.length()) throw std::runtime_error("Invalid matlab output");
+    if(mexOutput.size()!=provides.size()) throw std::runtime_error("Invalid matlab output");
     for(size_t i=0; provides.size(); i++)  {
       if(provides[i] == "A" || provides[i] == "P" || provides[i] == "R" || provides[i]=="Ptent") {
-	currentLevel.Set(provides[i],mexOutput[i].getData<RCP<Matrix> >();
+	currentLevel.Set(provides[i],dynamic_cast<MuemexData<RCP<Matrix> > >(mexOutput[i])->getData());
       }
 
       if(provides[i] == "Nullspace" || provides[i] == "Coordinates") {
-	currentLevel.Set(provides[i],mexOutput[i].getData<RCP<MultiVector> >();
+	currentLevel.Set(provides[i],mexOutput[i]->getData());
       }
 
       if(provides[i] == "Aggregates") {
-	currentLevel.Set(provides[i],mexOutput[i].getData<RCP<Aggregates> >();
+	currentLevel.Set(provides[i],mexOutput[i]->getData());
       }
 
       if(provides[i] == "UnAmalgamationInfo") {
-	currentLevel.Set(provides[i],mexOutput[i].getData<RCP<AmalgamationInfo> >();
+	currentLevel.Set(provides[i],mexOutput[i]->getData());
       }
     }
 

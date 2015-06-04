@@ -44,16 +44,14 @@
 //
 // @HEADER
 
-#ifndef MUEMEX_TYPES_DECL_HPP
-#define MUEMEX_TYPES_DECL_HPP
+#ifndef MUELU_MATLABUTILS_DECL_HPP
+#define MUELU_MATLABUTILS_DECL_HPP
 
 #include <string>
 #include <complex>
-#include <stdexcept>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_RCP.hpp>
-#include "MueLu.hpp"
-
+#include "MueLu_ConfigDefs.hpp"
 
 #if !defined(HAVE_MUELU_MATLAB) || !defined(HAVE_MUELU_EPETRA) || !defined(HAVE_MUELU_TPETRA)
 #error "Muemex types require MATLAB, Epetra and Tpetra."
@@ -173,7 +171,12 @@ class MuemexData : public MuemexArg
   T data;
 };
 
-
+namespace MuemexCallback
+{
+  //The two callback functions that MueLu can call to run anything in MATLAB
+  void callMatlabNoArgs(std::string function);
+  std::vector<Teuchos::RCP<MuemexArg>> callMatlab(std::string function, int numOutputs, std::vector<Teuchos::RCP<MuemexArg>> args);
+}
 
 #endif //HAVE_MUELU_MATLAB error handler
-#endif //MUEMEX_TYPES_DECL_HPP guard
+#endif //MUELU_MATLABUTILS_DECL_HPP guard
