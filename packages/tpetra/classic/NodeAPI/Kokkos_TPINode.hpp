@@ -227,8 +227,8 @@ namespace KokkosClassic {
 #pragma warning(disable : 4624)
 #endif
 
-  template <> class ArrayOfViewsHelper<TPINode> :
-    public ArrayOfViewsHelperTrivialImpl<TPINode>
+  template <> class ArrayOfViewsHelper<DoNotUse::TPINode> :
+    public ArrayOfViewsHelperTrivialImpl<DoNotUse::TPINode>
   {};
 
 #ifdef _MSC_VER
