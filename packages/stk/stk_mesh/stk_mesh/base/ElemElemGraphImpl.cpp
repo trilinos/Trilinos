@@ -54,51 +54,6 @@ void fill_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData
     }
 }
 
-void fill_graph(const stk::mesh::BulkData& bulkData, ElementGraph& elem_graph, SidesForElementGraph& via_sides)
-{
-    const stk::mesh::BucketVector& elemBuckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
-    for(size_t i=0; i<elemBuckets.size(); ++i)
-    {
-        const stk::mesh::Bucket& bucket = *elemBuckets[i];
-        stk::topology topology = bucket.topology();
-        int num_sides = topology.num_sides();
-        std::vector<ElementSidePair> elem_side_pairs;
-        stk::mesh::EntityVector side_nodes;
-        stk::mesh::EntityVector connected_elements;
-        for(size_t j=0; j<bucket.size(); ++j)
-        {
-            LocalId local_elem_id = bulkData.local_id(bucket[j]);
-            const stk::mesh::Entity* elem_nodes = bucket.begin_nodes(j);
-            elem_side_pairs.clear();
-            for(int side_index=0; side_index<num_sides; ++side_index)
-            {
-                unsigned num_side_nodes = topology.side_topology(side_index).num_nodes();
-                side_nodes.resize(num_side_nodes);
-                topology.side_nodes(elem_nodes, side_index, side_nodes.begin());
-                connected_elements.clear();
-                stk::mesh::impl::find_locally_owned_elements_these_nodes_have_in_common(bulkData, num_side_nodes, side_nodes.data(), connected_elements);
-                ThrowRequireMsg(connected_elements.size() > 0 && connected_elements.size()<=2, "Program error. Please contact sierra-help@sandia.gov for help.");
-                for(size_t elem_index=0; elem_index<connected_elements.size(); ++elem_index)
-                {
-                    if (connected_elements[elem_index] != bucket[j])
-                    {
-                        elem_side_pairs.push_back(std::make_pair(bulkData.local_id(connected_elements[elem_index]),side_index));
-                    }
-                }
-            }
-
-            std::sort(elem_side_pairs.begin(), elem_side_pairs.end());
-            std::vector<ElementSidePair>::iterator new_end = std::unique(elem_side_pairs.begin(), elem_side_pairs.end());
-            elem_side_pairs.resize(new_end - elem_side_pairs.begin());
-            for(size_t index=0; index<elem_side_pairs.size(); ++index)
-            {
-                elem_graph[local_elem_id].push_back(elem_side_pairs[index].first);
-                via_sides[local_elem_id].push_back(elem_side_pairs[index].second);
-            }
-        }
-    }
-}
-
 ElemSideToProcAndFaceId get_element_side_ids_to_communicate(const stk::mesh::BulkData& bulkData)
 {
     stk::mesh::EntityVector elements_to_communicate;
@@ -144,19 +99,47 @@ ElemSideToProcAndFaceId get_element_side_ids_to_communicate(const stk::mesh::Bul
             }
             std::vector<int> sharing_procs;
             bulkData.shared_procs_intersection(keys, sharing_procs);
-            ThrowRequireMsg(sharing_procs.size() < 2, "Program error. Please report to sierra-help@sandia.gov for support.");
             if(!sharing_procs.empty())
             {
-                elem_side_comm[EntitySidePair(elem, side)].proc = sharing_procs[0];
+                for (int proc: sharing_procs) {
+                    elem_side_comm.insert(std::pair<EntitySidePair, ProcFaceIdPair>(EntitySidePair(elem, side), ProcFaceIdPair(proc,0)));
+                }
             }
         }
     }
     return elem_side_comm;
 }
 
-void pack_shared_side_nodes_of_elements(stk::CommSparse& comm, const stk::mesh::BulkData& bulkData,
-         ElemSideToProcAndFaceId &elements_to_communicate,
-        const std::vector<stk::mesh::EntityId>& suggested_face_ids)
+stk::mesh::EntityVector get_elements_to_communicate(const stk::mesh::BulkData& bulkData)
+{
+    stk::mesh::EntityVector elements_to_communicate;
+    std::set<stk::mesh::Entity> element_set;
+    const stk::mesh::BucketVector& shared_node_buckets = bulkData.get_buckets(stk::topology::NODE_RANK, bulkData.mesh_meta_data().globally_shared_part());
+    for(size_t i=0; i<shared_node_buckets.size(); ++i)
+    {
+        const stk::mesh::Bucket& bucket = *shared_node_buckets[i];
+        for(size_t node_index=0; node_index<bucket.size(); ++node_index)
+        {
+            stk::mesh::Entity node = bucket[node_index];
+            const stk::mesh::Entity* elements = bulkData.begin_elements(node);
+            unsigned num_elements = bulkData.num_elements(node);
+            for(unsigned element_index=0; element_index<num_elements; ++element_index)
+            {
+                if (bulkData.bucket(elements[element_index]).owned())
+                {
+                    element_set.insert(elements[element_index]);
+                }
+            }
+        }
+    }
+    elements_to_communicate.assign(element_set.begin(), element_set.end());
+    return elements_to_communicate;
+}
+
+void pack_shared_side_nodes_of_elements(stk::CommSparse& comm,
+                                        const stk::mesh::BulkData& bulkData,
+                                        ElemSideToProcAndFaceId &elements_to_communicate,
+                                        const std::vector<stk::mesh::EntityId>& suggested_face_ids)
 {
     ElemSideToProcAndFaceId::iterator iter = elements_to_communicate.begin();
     ElemSideToProcAndFaceId::const_iterator end = elements_to_communicate.end();
@@ -165,14 +148,16 @@ void pack_shared_side_nodes_of_elements(stk::CommSparse& comm, const stk::mesh::
     for(; iter!= end; ++iter)
     {
         stk::mesh::Entity elem = iter->first.entity;
-        stk::mesh::EntityId element_id = bulkData.identifier(elem);
+        unsigned side_index    = iter->first.side_id;
+        int sharing_proc       = iter->second.proc;
+        LocalId element_id     = bulkData.identifier(elem);
         stk::mesh::EntityId suggested_face_id = suggested_face_ids[counter];
         ++counter;
         iter->second.face_id = suggested_face_id;
 
         stk::topology topology = bulkData.bucket(elem).topology();
         const stk::mesh::Entity* elem_nodes = bulkData.begin_nodes(elem);
-        unsigned side_index = iter->first.side_id;
+
         unsigned num_nodes_this_side = topology.side_topology(side_index).num_nodes();
         stk::mesh::EntityVector side_nodes(num_nodes_this_side);
         topology.side_nodes(elem_nodes, side_index, side_nodes.begin());
@@ -183,110 +168,36 @@ void pack_shared_side_nodes_of_elements(stk::CommSparse& comm, const stk::mesh::
             side_node_entity_keys[i] = bulkData.entity_key(side_nodes[i]);
         }
 
-        int other_proc = iter->second.proc;
-        comm.send_buffer(other_proc).pack<stk::mesh::EntityId>(element_id);
-        comm.send_buffer(other_proc).pack<unsigned>(side_index);
-        comm.send_buffer(other_proc).pack<stk::mesh::EntityId>(suggested_face_id);
-        comm.send_buffer(other_proc).pack<unsigned>(num_nodes_this_side);
+        comm.send_buffer(sharing_proc).pack<LocalId>(element_id);
+        comm.send_buffer(sharing_proc).pack<stk::topology>(topology);
+        comm.send_buffer(sharing_proc).pack<unsigned>(side_index);
+        comm.send_buffer(sharing_proc).pack<stk::mesh::EntityId>(suggested_face_id);
+        comm.send_buffer(sharing_proc).pack<unsigned>(num_nodes_this_side);
         for(size_t i=0; i<num_nodes_this_side; ++i)
         {
-            comm.send_buffer(other_proc).pack<stk::mesh::EntityKey>(side_node_entity_keys[i]);
+            comm.send_buffer(sharing_proc).pack<stk::mesh::EntityKey>(side_node_entity_keys[i]);
         }
     }
 }
 
-//BeginDocExample2
-void add_possibly_connected_elements_to_graph_using_side_nodes(const stk::mesh::BulkData& bulkData, ElementGraph& elem_graph,
-        SidesForElementGraph& via_sides, const stk::mesh::EntityVector& side_nodes, ParallelGraphInfo& parallel_graph_info,
-        const ElemSideToProcAndFaceId& elemSideComm, LocalId other_element, int other_side, int other_proc, stk::mesh::EntityId suggested_id)
+void fix_conflicting_shell_connections(const std::set<EntityId> & localElementsConnectedToRemoteShell, ElementGraph & elem_graph, SidesForElementGraph & via_sides)
 {
-    stk::mesh::EntityVector elements;
-    unsigned num_side_nodes = side_nodes.size();
-    stk::mesh::impl::find_locally_owned_elements_these_nodes_have_in_common(bulkData, num_side_nodes, side_nodes.data(), elements);
-    int num_faces_found = 0;
-    for(size_t element_index=0; element_index<elements.size(); ++element_index)
-    {
-        stk::mesh::Entity elem = elements[element_index];
-        stk::topology topology = bulkData.bucket(elem).topology();
-        const stk::mesh::Entity* elem_nodes = bulkData.begin_nodes(elem);
-        int num_sides = topology.num_sides();
-        for(int side_index=0; side_index<num_sides; ++side_index)
-        {
-            unsigned num_nodes_this_side = topology.side_topology(side_index).num_nodes();
-            if (num_nodes_this_side == num_side_nodes)
-            {
-                stk::mesh::EntityVector side_nodes_this_side(num_nodes_this_side);
-                topology.side_nodes(elem_nodes, side_index, side_nodes_this_side.begin());
-
-                std::pair<bool,unsigned> result = topology.side_topology(side_index).equivalent(side_nodes_this_side, side_nodes);
-                if (result.first == true)
-                {
-                    LocalId local_elem_id = bulkData.local_id(elem);
-                    elem_graph[local_elem_id].push_back(-1*other_element);
-                    via_sides[local_elem_id].push_back(side_index);
-
-                    stk::mesh::EntityId chosen_face_id = 0;
-                    if(bulkData.identifier(elem)<static_cast<stk::mesh::EntityId>(other_element))
-                    {
-                        ElemSideToProcAndFaceId::const_iterator iter = elemSideComm.find(EntitySidePair(elem, side_index));
-                        ThrowRequireMsg(iter != elemSideComm.end(), "Program error. Please contact sierra-help@sandia.gov for support.");
-                        ThrowRequireMsg(iter->second.proc == other_proc, "Program error. Please contact sierra-help@sandia.gov for support.");
-                        chosen_face_id = iter->second.face_id;
-                    }
-                    else
-                    {
-                        chosen_face_id = suggested_id;
-                    }
-
-                    parallel_graph_info.insert(std::make_pair(std::make_pair(local_elem_id, other_element),
-                            parallel_info(other_proc, other_side, result.second, chosen_face_id)));
-                    num_faces_found++;
-                    break;
+    // Fix the case where the serial graph connected two volume elements together before
+    // it was known that there was a remote shell wedged between them (the "sandwich" conundrum).
+    //
+    if (localElementsConnectedToRemoteShell.size() > 1) {
+        for (LocalId localElemId: localElementsConnectedToRemoteShell) {
+            std::vector<LocalId>::iterator it = elem_graph[localElemId].begin();
+            while (it != elem_graph[localElemId].end()) {
+                const LocalId connectedElemId = *it;
+                if (localElementsConnectedToRemoteShell.find(connectedElemId) != localElementsConnectedToRemoteShell.end()) {
+                    const int offset = (it - elem_graph[localElemId].begin());
+                    it = elem_graph[localElemId].erase(it);
+                    via_sides[localElemId].erase(via_sides[localElemId].begin() + offset);
                 }
-            }
-        }
-    }
-    ThrowRequireMsg(num_faces_found < 2, "Program error. Please contact sierra-help@sandia.gov for support.");
-}
-//EndDocExample2
-
-void fill_parallel_graph(const stk::mesh::BulkData& bulkData, ElementGraph& elem_graph,
-        SidesForElementGraph& via_sides, ParallelGraphInfo& parallel_graph_info,
-        ElemSideToProcAndFaceId& elem_side_comm, const std::vector<stk::mesh::EntityId>& suggested_face_ids)
-{
-    stk::CommSparse comm(bulkData.parallel());
-
-    pack_shared_side_nodes_of_elements(comm, bulkData, elem_side_comm, suggested_face_ids);
-    comm.allocate_buffers();
-
-    pack_shared_side_nodes_of_elements(comm, bulkData, elem_side_comm, suggested_face_ids);
-    comm.communicate();
-
-    for(int proc_id=0; proc_id<bulkData.parallel_size(); ++proc_id)
-    {
-        if (proc_id != bulkData.parallel_rank())
-        {
-            while(comm.recv_buffer(proc_id).remaining())
-            {
-                stk::mesh::EntityId element_id;
-                comm.recv_buffer(proc_id).unpack<stk::mesh::EntityId>(element_id);
-                unsigned side_index = 0;
-                comm.recv_buffer(proc_id).unpack<unsigned>(side_index);
-                unsigned num_side_nodes = 0;
-                stk::mesh::EntityId suggested_id = 0;
-                comm.recv_buffer(proc_id).unpack<stk::mesh::EntityId>(suggested_id);
-
-                comm.recv_buffer(proc_id).unpack<unsigned>(num_side_nodes);
-                stk::mesh::EntityVector side_nodes(num_side_nodes);
-                for(unsigned i=0; i<num_side_nodes; ++i)
-                {
-                    stk::mesh::EntityKey key;
-                    comm.recv_buffer(proc_id).unpack<stk::mesh::EntityKey>(key);
-                    side_nodes[i] = bulkData.get_entity(key);
+                else {
+                    ++it;
                 }
-
-                add_possibly_connected_elements_to_graph_using_side_nodes(bulkData, elem_graph, via_sides, side_nodes,
-                        parallel_graph_info, elem_side_comm, element_id, side_index, proc_id, suggested_id);
             }
         }
     }
@@ -564,6 +475,72 @@ stk::mesh::EntityId get_face_global_id(const stk::mesh::BulkData &bulkData, cons
     }
 
     return face_global_id;
+}
+
+void filter_for_candidate_elements_to_connect(const stk::mesh::BulkData & mesh,
+                                              const stk::mesh::Entity localElement,
+                                              const unsigned sideOrdinal,
+                                              ConnectedElementDataVector & connectedElementData)
+{
+    ConnectedElementDataVector filteredConnectedElements;
+    stk::topology localElemTopology = mesh.bucket(localElement).topology();
+    stk::topology localFaceTopology = localElemTopology.face_topology(sideOrdinal);
+    bool foundEquivalent = false;
+
+    if (localElemTopology.is_shell()) {
+        // Make sure we only try to connect to volume elements on the designated
+        // side of the shell currently being processed, since elements on
+        // both sides share all of the same shell nodes.  Match with volume element
+        // sides that have opposite polarity only and ignore coincident shells.
+        //
+        for (const ConnectedElementData & connectedElem: connectedElementData) {
+            stk::mesh::OrdinalAndPermutation localElemOrdAndPerm = stk::mesh::get_ordinal_and_permutation(mesh, localElement, stk::topology::FACE_RANK, connectedElem.m_sideNodes);
+            bool localNegativeRelativeFacePolarity = (localElemOrdAndPerm.first != sideOrdinal);
+
+            if (!connectedElem.m_elementTopology.is_shell() && localNegativeRelativeFacePolarity) {
+                filteredConnectedElements.push_back(connectedElem);
+            }
+        }
+        connectedElementData.swap(filteredConnectedElements);
+    }
+    else {
+        // The element being processed is not a shell, so we need to check
+        // the list of connected elements to see if any adjacent shells
+        // exist, because they will "block" direct connections to volume
+        // elements that also share the same side nodes.
+        //
+        for (const ConnectedElementData & connectedElem: connectedElementData) {
+            const stk::mesh::Entity* localElemNodes = mesh.begin_nodes(localElement);
+            stk::mesh::EntityVector localElemSideNodes(connectedElem.m_sideNodes.size());
+            localElemTopology.side_nodes(localElemNodes, sideOrdinal, localElemSideNodes.begin());
+
+            std::pair<bool,unsigned> result = localFaceTopology.equivalent(localElemSideNodes, connectedElem.m_sideNodes);
+            const bool isEquivalentNodes = result.first;
+            foundEquivalent = foundEquivalent || isEquivalentNodes;
+
+            if (connectedElem.m_elementTopology.is_shell() && isEquivalentNodes) {
+                stk::mesh::OrdinalAndPermutation localElemOrdAndPerm = stk::mesh::get_ordinal_and_permutation(mesh, localElement, stk::topology::FACE_RANK, connectedElem.m_sideNodes);
+                bool localNegativeRelativeFacePolarity = !localFaceTopology.is_positive_polarity(localElemOrdAndPerm.second);
+
+                if (localNegativeRelativeFacePolarity) {
+                    filteredConnectedElements.push_back(connectedElem);
+                }
+            }
+        }
+
+        if (!filteredConnectedElements.empty()) {
+            // Found some shells, so ignore everything else and just connect to
+            // these shells.  Otherwise, leave the original list of connected
+            // elements intact.
+            //
+            connectedElementData.swap(filteredConnectedElements);
+        }
+
+        if (!foundEquivalent) {
+            // Nothing matches at all, so flush the list of candidate elements
+            connectedElementData.clear();
+        }
+    }
 }
 
 }}} // end namespaces stk mesh impl

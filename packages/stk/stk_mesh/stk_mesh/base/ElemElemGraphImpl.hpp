@@ -40,15 +40,27 @@ struct parallel_info
         m_chosen_face_id(chosen_face_id) {}
 };
 
+struct ConnectedElementData
+{
+    int m_procId;
+    LocalId m_elementId;
+    stk::topology m_elementTopology;
+    unsigned m_sideIndex;
+    stk::mesh::EntityId m_suggestedFaceId;
+    stk::mesh::EntityVector m_sideNodes;
+};
+
 typedef std::pair<LocalId,int> ElementSidePair;
 typedef std::map<std::pair<LocalId,stk::mesh::EntityId>, parallel_info > ParallelGraphInfo;
 typedef std::vector<std::vector<LocalId> > ElementGraph;
 typedef std::vector<std::vector<int> > SidesForElementGraph;
+typedef std::vector<ConnectedElementData> ConnectedElementDataVector;
 
-NAMED_PAIR( EntitySidePair , stk::mesh::Entity , entity , int , side_id )
+
+NAMED_PAIR( EntitySidePair , stk::mesh::Entity , entity , unsigned , side_id )
 NAMED_PAIR( ProcFaceIdPair , int , proc , stk::mesh::EntityId , face_id )
 
-typedef std::map<EntitySidePair, ProcFaceIdPair>  ElemSideToProcAndFaceId;
+typedef std::multimap<EntitySidePair, ProcFaceIdPair>  ElemSideToProcAndFaceId;
 
 void set_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData& bulkData, stk::mesh::EntityVector& local_id_to_element_entity, std::vector<stk::topology>& element_topologies);
 void fill_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData& bulkData, stk::mesh::EntityVector& local_id_to_element_entity, std::vector<unsigned>& entity_to_local_id, std::vector<stk::topology>& element_topologies);
@@ -61,8 +73,9 @@ void pack_shared_side_nodes_of_elements(stk::CommSparse& comm, const stk::mesh::
         const std::vector<stk::mesh::EntityId>& suggested_face_ids);
 
 void add_possibly_connected_elements_to_graph_using_side_nodes(const stk::mesh::BulkData& bulkData, ElementGraph& elem_graph,
-        SidesForElementGraph& via_sides, const stk::mesh::EntityVector& side_nodes, ParallelGraphInfo& parallel_graph_info,
-        const ElemSideToProcAndFaceId& elemSideComm, LocalId other_element, int other_side, int other_proc, stk::mesh::EntityId suggested_id);
+        SidesForElementGraph& via_sides, ParallelGraphInfo& parallel_graph_info,
+        const ElemSideToProcAndFaceId& elemSideComm,
+        std::vector<ConnectedElementData> & communicatedElementDataVector);
 
 void fill_parallel_graph(const stk::mesh::BulkData& bulkData, ElementGraph& elem_graph,
         SidesForElementGraph& via_sides, ParallelGraphInfo& parallel_graph_info,
@@ -99,6 +112,14 @@ stk::mesh::Entity connect_face_to_element(stk::mesh::BulkData& bulkData, stk::me
 stk::mesh::EntityId get_face_global_id(const stk::mesh::BulkData &bulkData, const ElemElemGraph& elementGraph, stk::mesh::Entity element1, stk::mesh::Entity element2,
         int element1_side_id);
 
+void filter_for_candidate_elements_to_connect(const stk::mesh::BulkData & mesh,
+                                          stk::mesh::Entity localElement,
+                                          const unsigned sideOrdinal,
+                                          ConnectedElementDataVector & connectedElementData);
+
+void fix_conflicting_shell_connections(const std::set<EntityId> & localElementsConnectedToRemoteShell,
+                                       ElementGraph & elem_graph,
+                                       SidesForElementGraph & via_sides);
 }
 }} // end namespaces stk mesh
 

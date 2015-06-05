@@ -19,7 +19,7 @@ class ElemElemGraph
 public:
     ElemElemGraph(stk::mesh::BulkData& bulkData);
 
-    ~ElemElemGraph();
+    virtual ~ElemElemGraph();
 
     size_t get_num_connected_elems(stk::mesh::Entity local_element) const;
 
@@ -47,13 +47,16 @@ public:
 
     void set_num_face_ids_used(size_t num_used);
 
-private:
+protected:
     void fill_graph();
     void fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm);
 
-    void add_possibly_connected_elements_to_graph_using_side_nodes(const stk::mesh::EntityVector& side_nodes,
-            const impl::ElemSideToProcAndFaceId& elemSideComm, impl::LocalId other_element, int other_side, int other_proc,
-            stk::mesh::EntityId suggested_id);
+    void add_possibly_connected_elements_to_graph_using_side_nodes( const stk::mesh::impl::ElemSideToProcAndFaceId& elemSideComm,
+                                                                    stk::mesh::impl::ConnectedElementDataVector & communicatedElementDataVector);
+
+    void add_local_elements_to_connected_list(const stk::mesh::EntityVector & connected_elements,
+                                              const stk::mesh::EntityVector & sideNodes,
+                                              impl::ConnectedElementDataVector & connectedElementDataVector);
 
     impl::LocalId get_local_element_id(stk::mesh::Entity local_element) const;
     void size_data_members();

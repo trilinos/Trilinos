@@ -365,9 +365,8 @@ Entity declare_element_edge(
     return edge;
 }
 
-
-std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation>
-get_ordinal_and_permutation(stk::mesh::BulkData& mesh, stk::mesh::Entity parent_entity, stk::mesh::EntityRank to_rank, stk::mesh::EntityVector &nodes_of_sub_rank)
+OrdinalAndPermutation
+get_ordinal_and_permutation(const stk::mesh::BulkData& mesh, stk::mesh::Entity parent_entity, stk::mesh::EntityRank to_rank, const stk::mesh::EntityVector &nodes_of_sub_rank)
 {
     std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation = std::make_pair(stk::mesh::INVALID_CONNECTIVITY_ORDINAL,
             stk::mesh::INVALID_PERMUTATION);
