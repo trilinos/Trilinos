@@ -101,9 +101,10 @@ Stokhos::MPModelEvaluator::MPModelEvaluator(
 
     mp_x_dot_init = Teuchos::rcp(new ProductEpetraVector(
 			       mp_block_map, x_map, mp_x_map, mp_comm));
-    for (unsigned int i=0; i<num_mp_blocks; i++)
-      (*mp_x_dot_init)[i] = *(me->get_x_dot_init());
-
+    if (me->get_x_dot_init() != Teuchos::null) {
+      for (unsigned int i=0; i<num_mp_blocks; i++)
+        (*mp_x_dot_init)[i] = *(me->get_x_dot_init());
+    }
     // Preconditioner needs an x
     my_x = Teuchos::rcp(new Epetra_Vector(*mp_x_map));
 
