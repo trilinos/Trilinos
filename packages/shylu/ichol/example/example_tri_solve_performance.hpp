@@ -146,6 +146,8 @@ namespace Example {
 
       t_reorder = timer.seconds();
 
+      cout << "TriSolvePerformance:: Hier (dof, nnz) = " << HU.NumRows() << ", " << HU.NumNonZeros() << endl;
+
       if (verbose)
         cout << UU << endl;
     }

@@ -117,6 +117,8 @@ namespace Example {
       
       t_reorder = timer.seconds();
 
+      cout << "ICholPerformance:: Hier (dof, nnz) = " << HU.NumRows() << ", " << HU.NumNonZeros() << endl;
+
       if (verbose)
         cout << UU << endl;
     }
