@@ -46,9 +46,11 @@
 #include "MueLu_MatlabUtils_def.hpp"
 #include <stdexcept>
 
+
 #if !defined(HAVE_MUELU_MATLAB) || !defined(HAVE_MUELU_EPETRA) || !defined(HAVE_MUELU_TPETRA)
 #error "Muemex types require MATLAB, Epetra and Tpetra."
 #else
+
 
 
 /* Stuff for MATLAB R2006b vs. previous versions */
@@ -56,6 +58,24 @@
 #else
 typedef int mwIndex;
 #endif
+
+namespace MueLu {
+
+
+/* Explicit instantiation of Muemexdata */
+template class MuemexData<int>;
+template class MuemexData<complex_t>;
+template class MuemexData<std::string>;
+template class MuemexData<double>;
+template class MuemexData<RCP<Tpetra::CrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
+template class MuemexData<RCP<Tpetra::CrsMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
+template class MuemexData<RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
+template class MuemexData<RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
+template class MuemexData<RCP<Epetra_MultiVector> >;
+template class MuemexData<RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
+template class MuemexData<RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
+template class MuemexData<RCP<Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
+template class MuemexData<RCP<Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
 
 //Flag set to true if MATLAB's CSC matrix index type is not int (usually false)
 bool rewrap_ints = sizeof(int) != sizeof(mwIndex);
@@ -70,267 +90,7 @@ int* mwIndex_to_int(int N, mwIndex* mwi_array)
 }
 
 
-/******************************/
-/* getMueMexType              */
-/******************************/
-template<>
-MUEMEX_TYPE getMueMexType(const int & data) {return INT;}
 
-template<>
-MUEMEX_TYPE getMueMexType(const double & data) {return DOUBLE;}
-
-template<>
-MUEMEX_TYPE getMueMexType(const std::string & data) {return STRING;}
-
-template<>
-MUEMEX_TYPE getMueMexType(const std::complex<double> & data) {return COMPLEX;}
-
-template<>
-MUEMEX_TYPE getMueMexType(const RCP<Xpetra_ordinal_vector> & data) {return XPETRA_ORDINAL_VECTOR;}
-
-template<>
-MUEMEX_TYPE getMueMexType(const RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > & data) {return TPETRA_MULTIVECTOR_DOUBLE;}
-
-template<>
-MUEMEX_TYPE getMueMexType(const RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> >& data) {return TPETRA_MULTIVECTOR_COMPLEX;}
-
-template<>
-MUEMEX_TYPE getMueMexType(const RCP<Tpetra_CrsMatrix_double> & data) {return TPETRA_MATRIX_DOUBLE;}
-
-template<>
-MUEMEX_TYPE getMueMexType(const RCP<Tpetra_CrsMatrix_complex> & data) {return TPETRA_MATRIX_COMPLEX;}
-
-template<>
-MUEMEX_TYPE getMueMexType(const RCP<Xpetra_MultiVector_double> & data) {return XPETRA_MULTIVECTOR_DOUBLE;}
-
-template<>
-MUEMEX_TYPE getMueMexType(const RCP<Xpetra_MultiVector_complex> & data) {return XPETRA_MULTIVECTOR_COMPLEX;}
-
-template<>
-MUEMEX_TYPE getMueMexType(const RCP<Xpetra_Matrix_double> & data) {return XPETRA_MATRIX_DOUBLE;}
-
-template<>
-MUEMEX_TYPE getMueMexType(const RCP<Xpetra_Matrix_complex> & data) {return XPETRA_MATRIX_COMPLEX;}
-
-template<>
-MUEMEX_TYPE getMueMexType(const RCP<Epetra_CrsMatrix> & data) {return EPETRA_CRSMATRIX;}
-
-template<>
-MUEMEX_TYPE getMueMexType(const RCP<Epetra_MultiVector> & data) {return EPETRA_MULTIVECTOR;}
-
-/******************************/
-/* MueMexData                 */
-/******************************/
-
-//string specializations
-template<>
-MuemexData<std::string>::MuemexData(const mxArray* mxa) : MuemexArg(STRING)
-{
-  data = "";
-  if(!mxGetClassID(mxa) != mxCHAR_CLASS)
-    {
-      throw std::runtime_error("Can't construct string from anything but a char array.");
-    }
-  data = std::string(mxArrayToString(mxa));
-}
-
-template<>
-mxArray* MuemexData<std::string>::convertToMatlab()
-{
-  return mxCreateString(data.c_str());
-}
-
-//int
-template<>
-MuemexData<int>::MuemexData(const mxArray* mxa) : MuemexArg(INT)
-{
-  data = parseInt(mxa);
-}
-
-template<>
-mxArray* MuemexData<int>::convertToMatlab()
-{
-  mxArray* output = mxCreateNumericMatrix(1, 1, mxINT32_CLASS, mxREAL);
-  int* ptr = (int*) mxGetData(output);
-  *ptr = data;
-  return output;
-}
-
-//double
-template<>
-MuemexData<double>::MuemexData(const mxArray* mxa) : MuemexArg(DOUBLE)
-{
-  data = *((double*) mxGetPr(mxa));
-}
-
-template<>
-mxArray* MuemexData<double>::convertToMatlab()
-{
-  return mxCreateDoubleScalar(data);
-}
-
-//complex scalar
-template<>
-MuemexData<complex_t>::MuemexData(const mxArray* mxa) : MuemexArg(COMPLEX)
-{
-  double* realPart = mxGetPr(mxa);
-  double* imagPart = mxGetPi(mxa);
-  data = complex_t(*realPart, *imagPart);
-}
-
-template<>
-mxArray* MuemexData<complex_t>::convertToMatlab()
-{
-  mxArray* output = mxCreateDoubleMatrix(1, 1, mxCOMPLEX);
-  double* realPart = mxGetPr(output);
-  double* imagPart = mxGetPi(output);
-  *realPart = std::real<double>(data);
-  *imagPart = std::imag<double>(data);
-  return output;
-}
-
-//Epetra_Crs
-template<>
-MuemexData<RCP<Epetra_CrsMatrix>>::MuemexData(const mxArray* mxa) : MuemexArg(EPETRA_CRSMATRIX)
-{
-  data = epetraLoadMatrix(mxa);
-}
-
-template<>
-mxArray* MuemexData<RCP<Epetra_CrsMatrix>>::convertToMatlab()
-{
-  return saveEpetraMatrix(data);
-}
-
-//Tpetra_Crs double
-template<>
-MuemexData<RCP<Tpetra::CrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::MuemexData(const mxArray* mxa) : MuemexArg(TPETRA_MATRIX_DOUBLE)
-{
-  data = tpetraLoadMatrix<double>(mxa);
-}
-
-template<>
-mxArray* MuemexData<RCP<Tpetra::CrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::convertToMatlab()
-{
-  return saveMatrixToMatlab<double>(MueLu::TpetraCrs_To_XpetraMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(data));
-}
-
-//Tpetra_Crs complex
-template<>
-MuemexData<RCP<Tpetra::CrsMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::MuemexData(const mxArray* mxa) : MuemexArg(TPETRA_MATRIX_COMPLEX)
-{
-  data = tpetraLoadMatrix<complex_t>(mxa);
-}
-
-template<>
-mxArray* MuemexData<RCP<Tpetra::CrsMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::convertToMatlab()
-{
-  return saveMatrixToMatlab<complex_t>(MueLu::TpetraCrs_To_XpetraMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(data));
-}
-
-//Xpetra matrix double
-template<>
-MuemexData<RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::MuemexData(const mxArray* mxa) : MuemexArg(XPETRA_MATRIX_DOUBLE)
-{
-  data = xpetraLoadMatrix<double>(mxa);
-}
-
-template<>
-mxArray* MuemexData<RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::convertToMatlab()
-{
-  return saveMatrixToMatlab<double>(data);
-}
-
-//Xpetra matrix complex
-template<>
-MuemexData<RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::MuemexData(const mxArray* mxa) : MuemexArg(XPETRA_MATRIX_COMPLEX)
-{
-  data = xpetraLoadMatrix<complex_t>(mxa);
-}
-
-template<>
-mxArray* MuemexData<RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::convertToMatlab()
-{
-  return saveMatrixToMatlab<complex_t>(data);
-}
-
-//Epetra MV
-template<>
-MuemexData<RCP<Epetra_MultiVector>>::MuemexData(const mxArray* mxa) : MuemexArg(EPETRA_MULTIVECTOR)
-{
-  data = loadEpetraMV(mxa);
-}
-
-template<>
-mxArray* MuemexData<RCP<Epetra_MultiVector>>::convertToMatlab()
-{
-  return saveEpetraMV(data);
-}
-
-//Tpetra MV double
-template<>
-MuemexData<RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::MuemexData(const mxArray* mxa) : MuemexArg(TPETRA_MULTIVECTOR_DOUBLE)
-{
-  data = loadTpetraMV<double>(mxa);
-}
-
-template<>
-mxArray* MuemexData<RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::convertToMatlab()
-{
-  return saveTpetraMV<double>(data);
-}
-
-//Tpetra MV complex
-template<>
-MuemexData<RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::MuemexData(const mxArray* mxa) : MuemexArg(TPETRA_MULTIVECTOR_COMPLEX)
-{
-  data = loadTpetraMV<complex_t>(mxa);
-}
-
-template<>
-mxArray* MuemexData<RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::convertToMatlab()
-{
-  return saveTpetraMV<complex_t>(data);
-}
-
-//Xpetra ordinal vector
-template<>
-MuemexData<RCP<Xpetra_ordinal_vector>>::MuemexData(const mxArray* mxa) : MuemexArg(XPETRA_ORDINAL_VECTOR)
-{
-  data = loadLOVector(mxa);
-}
-
-template<>
-mxArray* MuemexData<RCP<Xpetra_ordinal_vector>>::convertToMatlab()
-{
-  return createMatlabLOVector(data);
-}
-
-//Xpetra multivector double
-template<>
-MuemexData<RCP<Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::MuemexData(const mxArray* mxa) : MuemexArg(XPETRA_MULTIVECTOR_DOUBLE)
-{
-  data = loadXpetraMV<double>(mxa);
-}
-
-template<>
-mxArray* MuemexData<RCP<Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::convertToMatlab()
-{
-  return saveMultiVectorToMatlab<double>(data);
-}
-
-//Xpetra multivector complex
-template<>
-MuemexData<RCP<Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::MuemexData(const mxArray* mxa) : MuemexArg(XPETRA_MULTIVECTOR_COMPLEX)
-{
-  data = loadXpetraMV<complex_t>(mxa);
-}
-
-template<>
-mxArray* MuemexData<RCP<Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::convertToMatlab()
-{
-  return saveMultiVectorToMatlab<complex_t>(data);
-}
 
 
 /* ******************************* */
@@ -369,7 +129,7 @@ template<> void fillMatlabArray<complex_t>(complex_t* array, const mxArray* mxa,
 /******************************/
 
 
-void MuemexCallback::callMatlabNoArgs(std::string function)
+void callMatlabNoArgs(std::string function)
 {
   int result = mexEvalString(function.c_str());
   if(result != 0)
@@ -377,7 +137,7 @@ void MuemexCallback::callMatlabNoArgs(std::string function)
 }
 
 
-std::vector<RCP<MuemexArg>> MuemexCallback::callMatlab(std::string function, int numOutputs, std::vector<RCP<MuemexArg>> args)
+std::vector<RCP<MuemexArg>> callMatlab(std::string function, int numOutputs, std::vector<RCP<MuemexArg>> args)
 {
   using Teuchos::rcp_static_cast;
 
@@ -651,5 +411,5 @@ RCP<Xpetra_ordinal_vector> loadLOVector(const mxArray* mxa)
 }
 
 
-
+}//end namespace
 #endif // HAVE_MUELU_MATLAB

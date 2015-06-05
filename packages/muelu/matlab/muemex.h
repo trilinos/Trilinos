@@ -75,10 +75,13 @@
 #include "BelosEpetraAdapter.hpp"
 #include "BelosTpetraAdapter.hpp"
 #include "BelosMueLuAdapter.hpp"
+#include "MueLu_MatlabUtils.hpp"
 
 #include "mex.h"
 
 #define HAVE_COMPLEX_SCALARS
+
+namespace MueLu {
 
 typedef enum
   {
@@ -221,5 +224,7 @@ Teuchos::RCP<Xpetra::Matrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> xpetr
 // Get a hierarchy from a MuemexSystem
 template<typename Scalar>
 Teuchos::RCP<MueLu::Hierarchy<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> getDatapackHierarchy(MuemexSystem* dp);
+
+}// end namespace
 
 #endif //MUEMEX_H

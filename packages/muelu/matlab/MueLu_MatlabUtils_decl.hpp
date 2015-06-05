@@ -65,6 +65,7 @@
 #include "Tpetra_CrsMatrix_decl.hpp"
 #include "Xpetra_EpetraCrsMatrix.hpp"
 
+namespace MueLu {
 //Useful global typedefs for MueMex
 
 enum MUEMEX_TYPE
@@ -163,7 +164,6 @@ class MuemexData : public MuemexArg
   MuemexData(T& data); //Construct from pre-existing data, to pass to MATLAB.
   MuemexData(T& data, MUEMEX_TYPE type);        //Construct from pre-existing data, to pass to MATLAB.
   MuemexData(const mxArray* mxa); //Construct from MATLAB array, to get from MATLAB.
-  ~MuemexData();
   mxArray* convertToMatlab(); //Create a MATLAB object and copy this data to it
   T& getData();                         //Set and get methods
   void setData(T& data);
@@ -171,12 +171,13 @@ class MuemexData : public MuemexArg
   T data;
 };
 
-namespace MuemexCallback
-{
-  //The two callback functions that MueLu can call to run anything in MATLAB
-  void callMatlabNoArgs(std::string function);
-  std::vector<Teuchos::RCP<MuemexArg>> callMatlab(std::string function, int numOutputs, std::vector<Teuchos::RCP<MuemexArg>> args);
-}
+
+//The two callback functions that MueLu can call to run anything in MATLAB
+void callMatlabNoArgs(std::string function);
+std::vector<Teuchos::RCP<MuemexArg>> callMatlab(std::string function, int numOutputs, std::vector<Teuchos::RCP<MuemexArg>> args);
+
+
+}//end namespace
 
 #endif //HAVE_MUELU_MATLAB error handler
 #endif //MUELU_MATLABUTILS_DECL_HPP guard
