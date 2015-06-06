@@ -98,6 +98,60 @@
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_Utilities.hpp"
 
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+ReadBinary(const std::string& fileName, const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
+  typedef Scalar        SC;
+  typedef LocalOrdinal  LO;
+  typedef GlobalOrdinal GO;
+  typedef Node          NO;
+  TEUCHOS_TEST_FOR_EXCEPTION(comm->getSize() != 1, MueLu::Exceptions::RuntimeError, "Serial read only");
+
+  std::ifstream ifs(fileName.c_str(), std::ios::binary);
+  TEUCHOS_TEST_FOR_EXCEPTION(!ifs.good(), MueLu::Exceptions::RuntimeError, "Can not read \"" << fileName << "\"");
+
+  int m, n, nnz;
+  ifs.read(reinterpret_cast<char*>(&m),   sizeof(m));
+  ifs.read(reinterpret_cast<char*>(&n),   sizeof(n));
+  ifs.read(reinterpret_cast<char*>(&nnz), sizeof(nnz));
+
+  int myRank = comm->getRank();
+
+  typedef Tpetra::Map      <LO,GO,NO>       tMap;
+  typedef Tpetra::CrsMatrix<SC,LO,GO,NO>    tCrsMatrix;
+
+  GO indexBase = 0;
+  Teuchos::RCP<tMap>       rowMap = rcp(new tMap(m, indexBase, comm)), rangeMap  = rowMap;
+  Teuchos::RCP<tMap>       colMap = rcp(new tMap(n, indexBase, comm)), domainMap = colMap;;
+  Teuchos::RCP<tCrsMatrix> A      = rcp(new tCrsMatrix(rowMap, colMap, 9));
+
+  TEUCHOS_TEST_FOR_EXCEPTION(sizeof(int) != sizeof(GO), MueLu::Exceptions::RuntimeError, "Incompatible sizes");
+
+  Teuchos::Array<GO> inds;
+  Teuchos::Array<SC> vals;
+  for (int i = 0; i < m; i++) {
+    int row, rownnz;
+    ifs.read(reinterpret_cast<char*>(&row),    sizeof(row));
+    ifs.read(reinterpret_cast<char*>(&rownnz), sizeof(rownnz));
+    inds.resize(rownnz);
+    vals.resize(rownnz);
+    for (int j = 0; j < rownnz; j++) {
+      int index;
+      ifs.read(reinterpret_cast<char*>(&index), sizeof(index));
+      inds[j] = Teuchos::as<GO>(index);
+    }
+    for (int j = 0; j < rownnz; j++) {
+      double value;
+      ifs.read(reinterpret_cast<char*>(&value), sizeof(value));
+      vals[j] = Teuchos::as<SC>(value);
+    }
+    A->insertGlobalValues(row, inds, vals);
+  }
+
+  A->fillComplete(domainMap, rangeMap);
+
+  return A;
+}
 
 int main(int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
@@ -144,6 +198,8 @@ int main(int argc, char *argv[]) {
     int         use9ptPatA   = 1;            clp.setOption("use9pt",     &use9ptPatA,    "use 9-point stencil matrix for velocity prolongator construction");
     int         useFilters   = 1;            clp.setOption("usefilters", &useFilters,    "use filters on A and BB^T");
 
+    int         binary       = 0;            clp.setOption("binary",     &binary,        "read matrix in binary format");
+
     // configure misc
     int         printTimings = 0;            clp.setOption("timings",    &printTimings,  "print timings to screen");
 
@@ -162,12 +218,21 @@ int main(int argc, char *argv[]) {
     RCP<NO> node = Tpetra::DefaultPlatform::getDefaultPlatform().getNode();
 
     // Read data from files
-    RCP<tOperator> A11     = Reader<tCrsMatrix>::readSparseFile((prefix + "A.mm").c_str(),          comm, node);
-    RCP<tOperator> A21     = Reader<tCrsMatrix>::readSparseFile((prefix + "B.mm").c_str(),          comm, node);
-    RCP<tOperator> A12     = Reader<tCrsMatrix>::readSparseFile((prefix + "Bt.mm").c_str(),         comm, node);
-    RCP<tOperator> A119Pt  = A11;
-    if (use9ptPatA)
+    RCP<tOperator> A11, A119Pt;
+    if (!binary) {
+      A11     = Reader<tCrsMatrix>::readSparseFile((prefix + "A.mm").c_str(),          comm, node);
+      A119Pt  = A11;
+      if (use9ptPatA)
         A119Pt = Reader<tCrsMatrix>::readSparseFile((prefix + "AForPat.mm").c_str(), comm, node);
+    } else {
+      A11     = ReadBinary<SC,LO,GO,NO>((prefix + "A.dat").c_str(),  comm);
+      A119Pt  = A11;
+      if (use9ptPatA)
+        A119Pt = ReadBinary<SC,LO,GO,NO>((prefix + "AForPat.dat").c_str(), comm);
+    }
+    RCP<tOperator> A21 = Reader<tCrsMatrix>::readSparseFile((prefix + "B.mm").c_str(),          comm, node);
+    RCP<tOperator> A12 = Reader<tCrsMatrix>::readSparseFile((prefix + "Bt.mm").c_str(),         comm, node);
+
     RCP<const tMap> cmap1 = A11->getDomainMap(), cmap2 = A12->getDomainMap();
     RCP<tMultiVector> Vcoords = Reader<tCrsMatrix>::readDenseFile ((prefix + "VelCoords.mm").c_str(),  comm, node, cmap1);
     RCP<tMultiVector> Pcoords = Reader<tCrsMatrix>::readDenseFile ((prefix + "PresCoords.mm").c_str(), comm, node, cmap2);
@@ -248,7 +313,11 @@ int main(int argc, char *argv[]) {
     int numElem = A12->getRangeMap()->getNodeNumElements() + A21->getRangeMap()->getNodeNumElements();
     RCP<const tMap> fullMap = Utils::Map2TpetraMap(*(MapFactory::createUniformContigMap(Xpetra::UseTpetra, numElem, comm)));
 
-    RCP<tOperator> A = Tpetra::MatrixMarket::Reader<tCrsMatrix>::readSparseFile((prefix + "BigA.mm").c_str(), fullMap, fullMap, fullMap, fullMap, true, true, false);
+    RCP<tOperator> A;
+    if (!!binary)
+      A = Reader<tCrsMatrix>::readSparseFile((prefix + "BigA.mm").c_str(), fullMap, fullMap, fullMap, fullMap, true, true, false);
+    else
+      A = ReadBinary<SC,LO,GO,NO>((prefix + "BigA.dat").c_str(), comm);
 
     const RCP<Thyra::LinearOpBase<SC> > thA = Thyra::createLinearOp(A);
     Thyra::initializeOp<SC>(*lowsFactory, thA, nsA.ptr());
