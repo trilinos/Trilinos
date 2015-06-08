@@ -604,7 +604,7 @@ private:
     // Compute multiplier for equality constraint using Kahan's compensated sum
     mu = 0.0;
     Real err = 0.0, tmp = 0.0, y = 0.0;
-    for (int i = 0; i < n; i++) {
+    for (unsigned i = 0; i < n; i++) {
       tmp = mu;
       y   = r0[i] + err;
       mu  = tmp + y;
