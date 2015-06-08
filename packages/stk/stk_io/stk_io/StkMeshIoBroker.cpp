@@ -452,7 +452,6 @@ namespace {
 template <typename INT>
 void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bulk, INT /*dummy*/, stk::io::StkMeshIoBroker::SideSetFaceCreationBehavior behavior)
 {
-    typedef std::vector<stk::mesh::EntityId>  EntityIdVector;
     assert(sset->type() == Ioss::SIDESET);
 
     const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
