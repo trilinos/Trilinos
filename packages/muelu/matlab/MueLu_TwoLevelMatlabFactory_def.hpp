@@ -45,24 +45,13 @@
 // @HEADER
 #ifndef MUELU_TWOLEVELMATLABFACTORY_DEF_HPP
 #define MUELU_TWOLEVELMATLABFACTORY_DEF_HPP
-
-
-#include <sstream>
-#include <cstring>
-
 #include <Xpetra_Matrix.hpp>
-#include <Xpetra_MatrixFactory.hpp>
-#include <Xpetra_Vector.hpp>
-#include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_MultiVector.hpp>
 
-#include "MueLu_MasterList.hpp"
-#include "MueLu_Monitor.hpp"
-#include "MueLu_PerfUtils.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_TwoLevelMatlabFactory_decl.hpp"
-#include "MueLu_Utilities.hpp"
-#include "muemexTypes_decl.hpp"
+#include "MueLu_MatlabUtils_decl.hpp"
 
 #ifdef HAVE_MUELU_MATLAB
 #include "mex.h"
@@ -122,38 +111,46 @@ namespace MueLu {
     // Fine needs
     for(size_t i=0; needsFine_.size(); i++) {
       if(needsFine_[i] == "A" || needsFine_[i] == "P" || needsFine_[i] == "R" || needsFine_[i]=="Ptent") {
-	InputArgs.push_back(rcp(new MuemexData<RCP<Matrix> >(Get<RCP<Matrix> >(fineLevel,needsFine_[i]))));
+	RCP<Matrix> mydata = Get<RCP<Matrix> >(fineLevel,needsFine_[i]);
+	InputArgs.push_back(rcp(new MuemexData<RCP<Matrix> >(mydata)));
       }
 
       if(needsFine_[i] == "Nullspace" || needsFine_[i] == "Coordinates") {
-	InputArgs.push_back(rcp(new MuemexData<RCP<MultiVector> >(Get<RCP<MultiVector> >(fineLevel,needsFine_[i]))));
+	RCP<MultiVector> mydata = Get<RCP<MultiVector> >(fineLevel,needsFine_[i]);
+	InputArgs.push_back(rcp(new MuemexData<RCP<MultiVector> >(mydata)));
       }
 
       if(needsFine_[i] == "Aggregates") {
-	InputArgs.push_back(rcp(new MuemexData<RCP<MueLu::Aggregates> >(Get<RCP<MueLu::Aggregates> >(fineLevel,needsFine_[i]))));
+	//	RCP<Aggregates> mydata =Get<RCP<Aggregates> >(fineLevel,needsFine_[i]);
+	//	InputArgs.push_back(rcp(new MuemexData<RCP<Aggregates> >(mydata)));
       }
 
       if(needsFine_[i] == "UnAmalgamationInfo") {
-	InputArgs.push_back(rcp(new MuemexData<RCP<MueLu::AmalgamationInfo> >(Get<RCP<MueLu::AmalgamationInfo> >(fineLevel,needsFine_[i]))));
+	//	RCP<AmalgamationInfo> mydata=Get<RCP<AmalgamationInfo> >(fineLevel,needsFine_[i]);
+	//	InputArgs.push_back(rcp(new MuemexData<RCP<AmalgamationInfo> >(mydata)));
       }
     }
 
     // Coarser needs
     for(size_t i=0; needsCoarse_.size(); i++) {
       if(needsCoarse_[i] == "A" || needsCoarse_[i] == "P" || needsCoarse_[i] == "R" || needsCoarse_[i]=="Ptent") {
-	InputArgs.push_back(rcp(new MuemexData<RCP<Matrix> >(Get<RCP<Matrix> >(fineLevel,needsCoarse_[i]))));
+	RCP<Matrix> mydata = Get<RCP<Matrix> >(coarseLevel,needsCoarse_[i]);
+	InputArgs.push_back(rcp(new MuemexData<RCP<Matrix> >(mydata)));
       }
 
       if(needsCoarse_[i] == "Nullspace" || needsCoarse_[i] == "Coordinates") {
-	InputArgs.push_back(rcp(new MuemexData<RCP<MultiVector> >(Get<RCP<MultiVector> >(fineLevel,needsCoarse_[i]))));
+	RCP<MultiVector> mydata = Get<RCP<MultiVector> >(coarseLevel,needsCoarse_[i]);
+	InputArgs.push_back(rcp(new MuemexData<RCP<MultiVector> >(mydata)));
       }
 
       if(needsCoarse_[i] == "Aggregates") {
-	InputArgs.push_back(rcp(new MuemexData<RCP<MueLu::Aggregates> >(Get<RCP<MueLu::Aggregates> >(fineLevel,needsCoarse_[i]))));
+	//	RCP<Aggregates> mydata =Get<RCP<Aggregates> >(coarseLevel,needsCoarse_[i]);
+	//	InputArgs.push_back(rcp(new MuemexData<RCP<Aggregates> >(mydata)));
       }
 
       if(needsCoarse_[i] == "UnAmalgamationInfo") {
-	InputArgs.push_back(rcp(new MuemexData<RCP<MueLu::AmalgamationInfo> >(Get<RCP<MueLu::AmalgamationInfo> >(fineLevel,needsCoarse_[i]))));
+	//	RCP<AmalgamationInfo> mydata=Get<RCP<AmalgamationInfo> >(coarseLevel,needsCoarse_[i]);
+	//	InputArgs.push_back(rcp(new MuemexData<RCP<AmalgamationInfo> >(mydata)));
       }
     }
 
@@ -166,31 +163,32 @@ namespace MueLu {
     // Call mex function
     std::string matlabFunction = pL.get<std::string>("Function");
     if(!matlabFunction.length()) throw std::runtime_error("Invalid matlab function name");
-    std::vector<Teuchos::RCP<MuemexArg> > mexOutput = Muemexcallback::callMatlab(matlabFunction,provides.size(),InputArgs);
+    std::vector<Teuchos::RCP<MuemexArg> > mexOutput = callMatlab(matlabFunction,provides.size(),InputArgs);
 
 
     // Set output
     if(mexOutput.size()!=provides.size()) throw std::runtime_error("Invalid matlab output");
     for(size_t i=0; provides.size(); i++)  {
       if(provides[i] == "A" || provides[i] == "P" || provides[i] == "R" || provides[i]=="Ptent") {
-	coarseLevel.Set(provides[i],mexOutput[i].getData());
+	RCP<MuemexData<RCP<Matrix> > > mydata = Teuchos::rcp_static_cast<MuemexData<RCP<Matrix> > >(mexOutput[i]);
+	coarseLevel.Set(provides[i],mydata->getData());
       }
 
       if(provides[i] == "Nullspace" || provides[i] == "Coordinates") {
-	coarseLevel.Set(provides[i],mexOutput[i].getData());
+	RCP<MuemexData<RCP<MultiVector> > > mydata = Teuchos::rcp_static_cast<MuemexData<RCP<MultiVector> > >(mexOutput[i]);
+	coarseLevel.Set(provides[i],mydata->getData());
       }
 
       if(provides[i] == "Aggregates") {
-	coarseLevel.Set(provides[i],mexOutput[i].getData());
+	//	RCP<MuemexData<RCP<Aggregates> > > mydata = Teuchos::rcp_static_cast<MuemexData<RCP<Aggregates> > >(mexOutput[i]);
+	//	coarseLevel.Set(provides[i],mydata->getData());
       }
 
       if(provides[i] == "UnAmalgamationInfo") {
-	coarseLevel.Set(provides[i],mexOutput[i].getData());
+	//	RCP<MuemexData<RCP<AmalgamationInfo> > > mydata = Teuchos::rcp_static_cast<MuemexData<RCP<AmalgamationInfo> > >(mexOutput[i]);
+	//	coarseLevel.Set(provides[i],mydata->getData());
       }
     }
-
-
-
   }
 
 } //namespace MueLu

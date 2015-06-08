@@ -81,6 +81,8 @@ extern void _main();
 /* Debugging */
 //#define VERBOSE_OUTPUT
 
+namespace MueLu {
+
 //Declare and call default constructor for data_pack_list vector (starts empty)
 vector<RCP<MuemexSystem>> MuemexSystemList::list;
 int MuemexSystemList::nextID = 0;
@@ -952,6 +954,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   /* Sanity Check Input */
   mode = sanity_check(nrhs, prhs);
 
+#define FORCE_FACTORIES_TO_COMPILE
 #ifdef FORCE_FACTORIES_TO_COMPILE
   {
     // debug
@@ -1294,3 +1297,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       mexPrintf("Mode not supported yet.");
     }
 }
+
+
+}//end namespace

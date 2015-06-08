@@ -131,6 +131,10 @@ int main (int argc, char *argv[]) {
                                S.RangeVector(),
                                S.TreeVector());
 
+    cout << "ICholByBlocks::graphviz:: "
+         << "# of nnz in Hier = " << HH.NumNonZeros() 
+         << endl;
+
     t = timer.seconds();
   }
   cout << "ICholByBlocks::graphviz:: reorder the matrix::time = " << t << endl;

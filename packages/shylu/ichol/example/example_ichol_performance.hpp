@@ -41,6 +41,7 @@ namespace Example {
                               const int max_task_dependence,
                               const int team_size,
                               const bool team_interface,
+                              const bool skip_serial,
                               const bool verbose) {
     typedef ValueType   value_type;
     typedef OrdinalType ordinal_type;
@@ -116,6 +117,8 @@ namespace Example {
       
       t_reorder = timer.seconds();
 
+      cout << "ICholPerformance:: Hier (dof, nnz) = " << HU.NumRows() << ", " << HU.NumNonZeros() << endl;
+
       if (verbose)
         cout << UU << endl;
     }
@@ -125,7 +128,7 @@ namespace Example {
     CrsMatrixBaseType RR("RR");
     RR.copy(UU);
 
-    {
+    if (!skip_serial) {
 #ifdef __USE_FIXED_TEAM_SIZE__
       typename TaskFactoryType::policy_type policy(max_task_dependence);
 #else
@@ -225,8 +228,10 @@ namespace Example {
       cout << "ICholPerformance:: ByBlocks factorize the matrix::time = " << t_factor_task << endl;
     }
 
-    cout << "ICholPerformance:: task scale [seq/task] = " << t_factor_seq/t_factor_task << endl;    
-    //cout << "ICholPerformance:: team scale [seq/team] = " << t_factor_seq/t_factor_team << endl;    
+    if (!skip_serial) {
+      cout << "ICholPerformance:: task scale [seq/task] = " << t_factor_seq/t_factor_task << endl;    
+      //cout << "ICholPerformance:: team scale [seq/team] = " << t_factor_seq/t_factor_team << endl;    
+    }
 
     return r_val;
   }

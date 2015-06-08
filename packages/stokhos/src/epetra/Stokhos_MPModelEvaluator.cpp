@@ -99,6 +99,12 @@ Stokhos::MPModelEvaluator::MPModelEvaluator(
     for (unsigned int i=0; i<num_mp_blocks; i++)
       (*mp_x_init)[i] = *(me->get_x_init());
 
+    mp_x_dot_init = Teuchos::rcp(new ProductEpetraVector(
+			       mp_block_map, x_map, mp_x_map, mp_comm));
+    if (me->get_x_dot_init() != Teuchos::null) {
+      for (unsigned int i=0; i<num_mp_blocks; i++)
+        (*mp_x_dot_init)[i] = *(me->get_x_dot_init());
+    }
     // Preconditioner needs an x
     my_x = Teuchos::rcp(new Epetra_Vector(*mp_x_map));
 
@@ -232,6 +238,12 @@ Teuchos::RCP<const Epetra_Vector>
 Stokhos::MPModelEvaluator::get_x_init() const
 {
   return mp_x_init->getBlockVector();
+}
+
+Teuchos::RCP<const Epetra_Vector>
+Stokhos::MPModelEvaluator::get_x_dot_init() const
+{
+  return mp_x_dot_init->getBlockVector();
 }
 
 Teuchos::RCP<const Epetra_Vector>
@@ -903,10 +915,23 @@ Stokhos::MPModelEvaluator::set_x_mp_init(
   *mp_x_init = x_mp_in;
 }
 
+void 
+Stokhos::MPModelEvaluator::set_x_dot_mp_init(
+  const Stokhos::ProductEpetraVector& x_dot_mp_in)
+{
+  *mp_x_dot_init = x_dot_mp_in;
+}
+
 Teuchos::RCP<const Stokhos::ProductEpetraVector>
 Stokhos::MPModelEvaluator::get_x_mp_init() const
 {
   return mp_x_init;
+}
+
+Teuchos::RCP<const Stokhos::ProductEpetraVector>
+Stokhos::MPModelEvaluator::get_x_dot_mp_init() const
+{
+  return mp_x_dot_init;
 }
 
 void 
