@@ -71,7 +71,10 @@ IF (${PACKAGE_NAME}_ENABLE_Boost)
     MESSAGE (WARNING "Ifpack_SupportGraph requires Boost, but CUDA is enabled.  The parts of Boost that it uses do not currently build correctly with CUDA.  Ifpack_SupportGraph users are unlikely to depend on CUDA.  Thus, we are turning off Ifpack_SupportGraph support.")
     SET (${PACKAGE_NAME}_ENABLE_SUPPORTGRAPH_DEFAULT OFF)
   ELSE ()
-    SET (${PACKAGE_NAME}_ENABLE_SUPPORTGRAPH_DEFAULT ON)
+    # mfh 04 Jun 2015: Boost Graph Library build issues mean that it's
+    # likely Ifpack_SupportGraph won't build with newer versions of
+    # Boost.  See Bug 6343.  Thus, I'm disabling it by default.
+    SET (${PACKAGE_NAME}_ENABLE_SUPPORTGRAPH_DEFAULT OFF)
   ENDIF ()
 ELSE ()
   SET (${PACKAGE_NAME}_ENABLE_SUPPORTGRAPH_DEFAULT OFF)
@@ -80,7 +83,7 @@ ENDIF ()
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_SUPPORTGRAPH
   HAVE_IFPACK_SUPPORTGRAPH
-  "Enable Ifpack_SupportGraph support graph preconditioner.  It requires Boost to build, and it does not build correctly if CUDA is ON."
+  "Enable Ifpack_SupportGraph support graph preconditioner.  It requires Boost to build, and it does not build correctly if CUDA is ON.  It also may not build correctly with new versions of Boost (see Bug 6343).  Thus, it is disabled by default.  You must explicitly enable it by setting Ifpack_ENABLE_SUPPORTGRAPH:BOOL=ON."
   ${${PACKAGE_NAME}_ENABLE_SUPPORTGRAPH_DEFAULT}
   )
 

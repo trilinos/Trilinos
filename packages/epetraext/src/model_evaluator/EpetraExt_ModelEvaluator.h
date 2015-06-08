@@ -807,7 +807,7 @@ public:
     /** \brief Get stochastic Galerkin residual vector polynomial.  */
     sg_vector_t get_f_sg() const;
     /** \brief Set multi-point residual vector.  */
-    void set_f_mp( const mp_vector_t& f_sg );
+    void set_f_mp( const mp_vector_t& f_mp );
     /** \brief Get multi-point residual vector.  */
     mp_vector_t get_f_mp() const;
     /** \brief Set <tt>g(j)</tt> where <tt>0 <= j && j < this->Ng()</tt>.  */

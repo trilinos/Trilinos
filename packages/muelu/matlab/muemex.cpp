@@ -56,7 +56,10 @@
 #endif
 
 #include <Tpetra_DefaultPlatform.hpp>
-#include "muemexTypes_decl.hpp"
+#include "MueLu_MatlabUtils.hpp"
+
+#include "MueLu_TwoLevelMatlabFactory.hpp"
+#include "MueLu_SingleLevelMatlabFactory.hpp"
 
 
 using namespace std;
@@ -77,6 +80,8 @@ extern void _main();
 
 /* Debugging */
 //#define VERBOSE_OUTPUT
+
+namespace MueLu {
 
 //Declare and call default constructor for data_pack_list vector (starts empty)
 vector<RCP<MuemexSystem>> MuemexSystemList::list;
@@ -215,7 +220,8 @@ mxArray* TpetraSystem<Scalar>::solve(RCP<ParameterList> params, RCP<Tpetra::CrsM
   return output;
 }
 
-template<> RCP<Hierarchy_double> getDatapackHierarchy<double>(MuemexSystem* dp)
+template<> 
+RCP<Hierarchy_double> getDatapackHierarchy<double>(MuemexSystem* dp)
 {
   RCP<MueLu::Hierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> hier;
   switch(dp->type)
@@ -948,6 +954,16 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   /* Sanity Check Input */
   mode = sanity_check(nrhs, prhs);
 
+#define FORCE_FACTORIES_TO_COMPILE
+#ifdef FORCE_FACTORIES_TO_COMPILE
+  {
+    // debug
+    MueLu::TwoLevelMatlabFactory<double,int,int> f1;
+    MueLu::SingleLevelMatlabFactory<double,int,int> f2;
+  }
+#endif
+
+
   switch(mode)
     {
     case MODE_SETUP:
@@ -1281,3 +1297,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       mexPrintf("Mode not supported yet.");
     }
 }
+
+
+}//end namespace

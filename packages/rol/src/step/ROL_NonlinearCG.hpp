@@ -45,7 +45,28 @@
 #define ROL_NONLINEARCG_H
 
 /** \class ROL::NonlinearCG
-    \brief Implementats nonlinear conjugate gradient methods.
+    \brief Implements nonlinear conjugate gradient methods.
+    \detail Nonlinear CG methods have the update formulas
+            \f[ x_{k+1} = x_k + \alpha_k d_k \f]
+            \f[ d_{k+1} = -g_{k+1} + \beta_k d_k \f]
+            where \f$\alpha_k\f$ is a step length determined by a linesearch method
+            and \f$\beta_k\f$ is the parameter which distinguishes various CG methods.
+
+            The standard notation is that \f$ y_k = g_{k+1}-g_k \$f, 
+            \f$ s_k = \alpha_k d_k = x_{k+1}-x_k \f$
+
+    Method                     | \f$\beta_k\f$                                  
+    ---------------------------|------------------------------------------------------
+    Hestenes-Stiefel           | \f$ \frac{g_{k+1}^\top y_k}{d_k^\top y_k } \f$
+    Fletcher-Reeves            | \f$ \frac{\|g_{k+1}\|^2}{\|g_k\|^2} \f$
+    Daniel (uses Hessian)      | \f$ \frac{g_{k+1}^\top \nabla^2 f(x_k) d_k}{d_k^\top \nabla^2 f(x_k) d_k} \f$
+    Polak-Ribiere              | \f$ \frac{g_{k+1}^\top y_k}{\|g_k\|^2} \f$
+    Fletcher Conjugate Descent | \f$ -\frac{\|g_{k+1}\|^2}{d_k^\top g_k} \f$
+    Liu-Storey                 | \f$ -\frac{g_k^\top y_{k-1} }{d_{k-1}^\top g_{k-1} \f$
+    Dai-Yuan                   | \f$ \frac{\|g_{k+1}\|^2}{d_k^\top y_k} \f$
+    Hagar-Zhang                | \f$ \frac{g_{k+1}^\top y_k}{d_k^\top y_k} - 2 \frac{\|y_k\|^2}{d_k^\top y_k} \frac{g_{k+1}^\top d_k}{d_k^\top y_k} \f$
+    Oren-Luenberger            | \f$ \frac{g_{k+1}^\top y_k}{d_k^\top y_k} - \frac{\|y_k\|^2}{d_k^\top y_k} \frac{g_{k+1}^\top d_k}{d_k^\top y_k} \f$ 
+            
 */
 
 #include "ROL_Types.hpp"

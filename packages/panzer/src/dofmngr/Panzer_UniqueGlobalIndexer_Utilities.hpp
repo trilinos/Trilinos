@@ -214,7 +214,7 @@ void computeCellEdgeOrientations(const std::vector<std::pair<int,int> > & topEdg
   *                            containing start and end indices for each
   *                            face in a cell.
   *
-  * \note This method is only functional for 3D field patterns.
+  * \note In 2D a "Face" is defined to be the element (not the edge).
   */
 void computePatternFaceIndices(const FieldPattern & pattern,std::vector<std::vector<int> > & faceIndices);
 

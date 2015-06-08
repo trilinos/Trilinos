@@ -1511,6 +1511,7 @@ namespace {
     lb->bor_nodes.resize(machine->num_procs);
     lb->ext_nodes.resize(machine->num_procs);
     lb->int_elems.resize(machine->num_procs);
+    lb->bor_elems.resize(machine->num_procs); // Not used in nodal dist.
     lb->ext_procs.resize(machine->num_procs);
 
     time2 = get_time();
@@ -1543,8 +1544,8 @@ namespace {
 	    ** in the external node list for proc_n I need to check
 	    ** only the last element in the current list
 	    */
-	    if((!lb->ext_nodes[proc_n].empty()) ||
-	       (lb->ext_nodes[proc_n][lb->ext_nodes[proc_n].size()-1] != (int)ncnt)) {
+	    if(lb->ext_nodes[proc_n].empty() ||
+	       (lb->ext_nodes[proc_n][lb->ext_nodes[proc_n].size()-1] != (INT)ncnt)) {
 	      lb->ext_nodes[proc_n].push_back(ncnt);
 	      lb->ext_procs[proc_n].push_back(proc);
 	    }

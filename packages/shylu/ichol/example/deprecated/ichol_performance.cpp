@@ -2,7 +2,7 @@
 #include <impl/Kokkos_Timer.hpp>
 
 #include <Kokkos_TaskPolicy.hpp>
-//#include <impl/Kokkos_Serial_TaskPolicy.hpp>
+#include <impl/Kokkos_Serial_TaskPolicy.hpp>
 
 #include <Kokkos_Qthread.hpp>
 #include <Qthread/Kokkos_Qthread_TaskPolicy.hpp>
@@ -73,8 +73,8 @@ typedef TaskView<CrsHierViewType,TaskFactoryType> CrsHierTaskType;
 
 // ---------------------------------------------------------------------------------
 int main (int argc, char *argv[]) {
-  if (argc < 3) {
-    cout << "Usage: " << argv[0] << " filename nthreads" << endl;
+  if (argc < 4) {
+    cout << "Usage: " << argv[0] << " filename nthreads teamsize" << endl;
     return -1;
   }
 
@@ -84,6 +84,7 @@ int main (int argc, char *argv[]) {
   int cnt = 0;
 
   const int nthreads = stoi(argv[2]);
+  const int teamsize = stoi(argv[3]);
 
   // initialization
   // --------------------------------------
@@ -156,6 +157,9 @@ int main (int argc, char *argv[]) {
     
     RR.copy(Uplo::Upper, PA);
     {
+      typename TaskFactoryType::policy_type policy(20, teamsize);
+      TaskFactoryType::setPolicy(&policy);
+
       timer.reset();
       
       CrsHierBaseType HH("HH");
@@ -178,11 +182,10 @@ int main (int argc, char *argv[]) {
       CrsHierTaskType H(&HH);
       
       int r_val = 0;
-      typedef typename CrsTaskViewType::policy_type policy_type;
       
       IChol<Uplo::Upper,AlgoIChol::ByBlocks>::
-        TaskFunctor<ForType,CrsHierTaskType>(H).apply(policy_type::member_null(), r_val);
-
+        TaskFunctor<ForType,CrsHierTaskType>(H).apply(r_val);
+      
       t[++cnt] = timer.seconds();
       
       cout << "time for task gen in ichol_by_blocks = "
@@ -191,8 +194,7 @@ int main (int argc, char *argv[]) {
       
       timer.reset();
       
-      policy_type policy;
-      Kokkos::Experimental::wait(policy);
+      Kokkos::Experimental::wait(TaskFactoryType::Policy());
       
       t[++cnt] = timer.seconds();
       
@@ -200,7 +202,7 @@ int main (int argc, char *argv[]) {
            << t[cnt]
            << endl;
       
-      //cout << RR << endl;
+      // cout << RR << endl;
     }
     
     // numeric factorization only
@@ -210,18 +212,47 @@ int main (int argc, char *argv[]) {
     // --------------------------------------
     RR.copy(Uplo::Upper, PA);
     {
+      typename TaskFactoryType::policy_type policy(20, nthreads);
+      TaskFactoryType::setPolicy(&policy);
+
       CrsTaskViewType R(&RR);
       R.fillRowViewArray();
       
       timer.reset();
       
-      typedef typename CrsTaskViewType::policy_type policy_type;
+      auto future = TaskFactoryType::Policy().create_team(IChol<Uplo::Upper,AlgoIChol::UnblockedOpt1>
+                                                          ::TaskFunctor<ForType,CrsTaskViewType>(R), 0);
+      TaskFactoryType::Policy().spawn(future);
+      Kokkos::Experimental::wait(TaskFactoryType::Policy());
       
-      policy_type policy;
-      auto future = policy.create_team(IChol<Uplo::Upper,AlgoIChol::UnblockedOpt1>
-                                       ::TaskFunctor<ForType,CrsTaskViewType>(R), 0);
-      policy.spawn(future);
-      Kokkos::Experimental::wait(policy);
+      t[++cnt] = timer.seconds();
+      
+      cout << "time for ichol data parallel unblocked opt1 team parallel = "
+           << t[cnt]
+           << endl;
+      
+      // cout << RR << endl;
+    }
+    
+    // numeric factorization only
+    double t_team_parallel = t[cnt];
+
+    // sequential
+    // ----------
+    RR.copy(Uplo::Upper, PA);
+    {
+      typename TaskFactoryType::policy_type policy(20, 1);
+      TaskFactoryType::setPolicy(&policy);
+
+      CrsTaskViewType R(&RR);
+      R.fillRowViewArray();
+      
+      timer.reset();
+      
+      auto future = TaskFactoryType::Policy().create(IChol<Uplo::Upper,AlgoIChol::UnblockedOpt1>
+                                                     ::TaskFunctor<ForType,CrsTaskViewType>(R), 0);
+      TaskFactoryType::Policy().spawn(future);
+      Kokkos::Experimental::wait(TaskFactoryType::Policy());
       
       t[++cnt] = timer.seconds();
       
@@ -229,16 +260,19 @@ int main (int argc, char *argv[]) {
            << t[cnt]
            << endl;
       
-      //cout << RR << endl;
+      // cout << RR << endl;
     }
     
     // numeric factorization only
-    double t_team_parallel = t[cnt];
+    double t_sequential = t[cnt];
     
     // result
     // --------------------------------------
-    cout << "scale [team-parallel/task-team-by-blocks] = "
-         << t_team_parallel/t_task_team_by_blocks
+    cout << "task data scale [sequential/task-team-by-blocks] = "
+         << t_sequential/t_task_team_by_blocks
+         << endl;
+    cout << "     data scale [sequential/team-parallel] = "
+         << t_sequential/t_team_parallel
          << endl;
   }
 

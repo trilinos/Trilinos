@@ -124,6 +124,13 @@
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_Zoltan2Interface.hpp"
 
+#ifdef HAVE_MUELU_MATLAB
+#include "../matlab/MueLu_SingleLevelMatlabFactory_decl.hpp"
+#include "../matlab/MueLu_SingleLevelMatlabFactory_def.hpp"
+#include "../matlab/MueLu_TwoLevelMatlabFactory_decl.hpp"
+#include "../matlab/MueLu_TwoLevelMatlabFactory_def.hpp"
+#endif
+
 namespace MueLu {
 
   /*! class FactoryFactory
@@ -246,6 +253,13 @@ namespace MueLu {
       if (factoryName == "SchurComplementFactory")          return Build2<SchurComplementFactory> (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UzawaSmoother")                   return BuildBlockedSmoother<UzawaSmoother>(paramList, factoryMapIn, factoryManagersIn);
 #endif
+
+      // Matlab factories
+#ifdef HAVE_MUELU_MATLAB
+      if (factoryName == "TwoLevelMatlabFactory")           return Build2<TwoLevelMatlabFactory>        (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "SingleLevelMatlabFactory")        return Build2<SingleLevelMatlabFactory>     (paramList, factoryMapIn, factoryManagersIn);
+#endif
+
       // Use a user defined factories (in <Factories> node)
       if (factoryMapIn.find(factoryName) != factoryMapIn.end()) {
         TEUCHOS_TEST_FOR_EXCEPTION((param.isList() && (++paramList.begin() != paramList.end())), Exceptions::RuntimeError,

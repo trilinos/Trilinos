@@ -173,6 +173,7 @@ namespace { // (anonymous)
          << numKeys << " != vals.dimension_0() = " << vals.dimension_0 ()
          << ".");
 
+      const bool testReverse = table.hasKeys ();
       auto keys_h = Kokkos::create_mirror_view (keys);
       Kokkos::deep_copy (keys_h, keys);
       auto vals_h = Kokkos::create_mirror_view (vals);
@@ -182,16 +183,34 @@ namespace { // (anonymous)
         const KeyType key = keys_h(i);
         const ValueType expectedVal = vals_h(i);
         const ValueType actualVal = table.get (key);
+        bool curBad = false;
 
         if (actualVal == Teuchos::OrdinalTraits<ValueType>::invalid ()) {
-          ++badCount;
+          curBad = true;
           out << "get(key=" << key << ") = invalid, should have been "
               << expectedVal << endl;
         }
         else if (testValues && actualVal != expectedVal) {
-          ++badCount;
+          curBad = true;
           out << "get(key=" << key << ") = " << actualVal
               << ", should have been " << expectedVal << endl;
+        }
+
+        if (testReverse) {
+          const KeyType returnedKey = table.getKey (expectedVal);
+          if (returnedKey == Teuchos::OrdinalTraits<KeyType>::invalid ()) {
+            curBad = true;
+            out << "getKey(val=" << expectedVal << ") = invalid, should have "
+              "been " << key << endl;
+          }
+          else if (returnedKey != key) {
+            curBad = true;
+            out << "getKey(val=" << expectedVal << ") = " << returnedKey
+                << ", should have been " << key << endl;
+          }
+        }
+        if (curBad) {
+          ++badCount;
         }
       }
 
@@ -211,7 +230,7 @@ namespace { // (anonymous)
   // ValueType and KeyType are "backwards" because they correspond to
   // LO resp. GO.  (LO, GO) is the natural order for Tpetra's test
   // macros.
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_ArrayView, Empty, ValueType, KeyType, DeviceType)
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable, Empty, ValueType, KeyType, DeviceType)
   {
     using std::endl;
     typedef Tpetra::Details::FixedHashTable<KeyType, ValueType, DeviceType> table_type;
@@ -239,8 +258,9 @@ namespace { // (anonymous)
     Teuchos::ArrayView<const KeyType> keys_av (keys_h.ptr_on_device (), numKeys);
     out << "Create table" << endl;
 
+    const bool keepKeys = true;
     Teuchos::RCP<table_type> table;
-    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue)) );
+    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue, keepKeys)) );
     if (table.is_null ()) {
       return; // above constructor must have thrown
     }
@@ -268,12 +288,13 @@ namespace { // (anonymous)
   }
 
   // Test contiguous keys, with the constructor that takes a
-  // Teuchos::ArrayView of keys and a single starting value.
+  // Teuchos::ArrayView of keys (hence the "_T" in the test name) and
+  // a single starting value.
   //
   // ValueType and KeyType are "backwards" because they correspond to
   // LO resp. GO.  (LO, GO) is the natural order for Tpetra's test
   // macros.
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_ArrayView, ContigKeysStartingValue, ValueType, KeyType, DeviceType)
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_T, ContigKeysStartingValue, ValueType, KeyType, DeviceType)
   {
     using std::endl;
     typedef Tpetra::Details::FixedHashTable<KeyType, ValueType, DeviceType> table_type;
@@ -315,8 +336,81 @@ namespace { // (anonymous)
     Teuchos::ArrayView<const KeyType> keys_av (keys_h.ptr_on_device (), numKeys);
     out << " Create table" << endl;
 
+    const bool keepKeys = true;
     Teuchos::RCP<table_type> table;
-    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue)) );
+    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue, keepKeys)) );
+    if (table.is_null ()) {
+      return; // stop the test now to prevent dereferencing null
+    }
+
+    TEST_EQUALITY( keys_h(0), table->minKey () );
+    TEST_EQUALITY( keys_h(numKeys-1), table->maxKey () );
+    TEST_EQUALITY( startingValue, table->minVal () );
+    TEST_EQUALITY( static_cast<ValueType> (startingValue + numKeys - 1), table->maxVal () );
+    TEST_EQUALITY( numKeys, table->numPairs () );
+
+    bool duplicateKeys = false;
+    TEST_NOTHROW( duplicateKeys = table->hasDuplicateKeys () );
+    TEST_EQUALITY_CONST( duplicateKeys, false );
+
+    {
+      Teuchos::OSTab tab1 (out);
+      success = TestFixedHashTable<KeyType, ValueType, DeviceType>::testKeys (out, *table, keys, vals);
+      TEST_EQUALITY_CONST( success, true );
+    }
+  }
+
+  // Test contiguous keys, with the constructor that takes a
+  // Kokkos::View of keys (hence the "_K" in the test name) and a
+  // single starting value.
+  //
+  // ValueType and KeyType are "backwards" because they correspond to
+  // LO resp. GO.  (LO, GO) is the natural order for Tpetra's test
+  // macros.
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_K, ContigKeysStartingValue, ValueType, KeyType, DeviceType)
+  {
+    using std::endl;
+    typedef Tpetra::Details::FixedHashTable<KeyType, ValueType, DeviceType> table_type;
+    typedef typename table_type::keys_type keys_type;
+    typedef typename keys_type::size_type size_type;
+    typedef typename DeviceType::execution_space execution_space;
+
+    out << "Test contiguous keys (as a Kokkos::View), with constructor that "
+      "takes a single starting value and produces contiguous values" << endl;
+    Teuchos::OSTab tab0 (out);
+
+    InitExecSpace<execution_space> init;
+    // This avoids warnings for 'init' being unused.
+    TEST_EQUALITY_CONST( init.isInitialized (), true );
+    if (! init.isInitialized ()) {
+      return; // avoid crashes if initialization failed
+    }
+
+    const size_type numKeys = 10;
+    typename keys_type::non_const_type keys ("keys", numKeys);
+    auto keys_h = Kokkos::create_mirror_view (keys);
+    // Start with some number other than 0, just to make sure that
+    // it works.
+    for (size_type i = 0; i < numKeys; ++i) {
+      keys_h(i) = static_cast<KeyType> (i + 20);
+    }
+    Kokkos::deep_copy (keys, keys_h);
+
+    // Pick something other than 0, just to make sure that it works.
+    const ValueType startingValue = 1;
+
+    // The hash table doesn't need this; we use it only for testing.
+    Kokkos::View<ValueType*, Kokkos::LayoutLeft, DeviceType> vals ("vals", numKeys);
+    auto vals_h = Kokkos::create_mirror_view (vals);
+    for (size_type i = 0; i < numKeys; ++i) {
+      vals_h(i) = static_cast<ValueType> (i) + startingValue;
+    }
+    Kokkos::deep_copy (vals, vals_h);
+
+    out << " Create table" << endl;
+
+    Teuchos::RCP<table_type> table;
+    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys, startingValue)) );
     if (table.is_null ()) {
       return; // stop the test now to prevent dereferencing null
     }
@@ -339,12 +433,13 @@ namespace { // (anonymous)
   }
 
   // Test noncontiguous keys, with the constructor that takes a
-  // Teuchos::ArrayView of keys and a single starting value.
+  // Teuchos::ArrayView of keys (hence the "_T" in the test name) and
+  // a single starting value.
   //
   // ValueType and KeyType are "backwards" because they correspond to
   // LO resp. GO.  (LO, GO) is the natural order for Tpetra's test
   // macros.
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_ArrayView, NoncontigKeysStartingValue, ValueType, KeyType, DeviceType)
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_T, NoncontigKeysStartingValue, ValueType, KeyType, DeviceType)
   {
     using std::endl;
     typedef Tpetra::Details::FixedHashTable<KeyType, ValueType, DeviceType> table_type;
@@ -386,8 +481,82 @@ namespace { // (anonymous)
     Teuchos::ArrayView<const KeyType> keys_av (keys_h.ptr_on_device (), numKeys);
     out << " Create table" << endl;
 
+    const bool keepKeys = true;
     Teuchos::RCP<table_type> table;
-    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue)) );
+    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue, keepKeys)) );
+    if (table.is_null ()) {
+      return; // stop the test now to prevent dereferencing null
+    }
+
+    TEST_EQUALITY( keys_h(4), table->minKey () );
+    TEST_EQUALITY( keys_h(3), table->maxKey () );
+    TEST_EQUALITY( startingValue, table->minVal () );
+    TEST_EQUALITY( static_cast<ValueType> (startingValue + numKeys - 1), table->maxVal () );
+    TEST_EQUALITY( numKeys, table->numPairs () );
+
+    bool duplicateKeys = false;
+    TEST_NOTHROW( duplicateKeys = table->hasDuplicateKeys () );
+    TEST_EQUALITY_CONST( duplicateKeys, false );
+
+    {
+      Teuchos::OSTab tab1 (out);
+      success = TestFixedHashTable<KeyType, ValueType, DeviceType>::testKeys (out, *table, keys, vals);
+      TEST_EQUALITY_CONST( success, true );
+    }
+  }
+
+  // Test noncontiguous keys, with the constructor that takes a
+  // Kokkos::View of keys (hence the "_K" in the test name) and
+  // a single starting value.
+  //
+  // ValueType and KeyType are "backwards" because they correspond to
+  // LO resp. GO.  (LO, GO) is the natural order for Tpetra's test
+  // macros.
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_K, NoncontigKeysStartingValue, ValueType, KeyType, DeviceType)
+  {
+    using std::endl;
+    typedef Tpetra::Details::FixedHashTable<KeyType, ValueType, DeviceType> table_type;
+    typedef typename table_type::keys_type keys_type;
+    typedef typename keys_type::size_type size_type;
+    typedef typename DeviceType::execution_space execution_space;
+
+    out << "Test noncontiguous keys (given as a Kokkos::View), with "
+      "constructor that takes a single starting value and produces "
+      "contiguous values" << endl;
+    Teuchos::OSTab tab0 (out);
+
+    InitExecSpace<execution_space> init;
+    // This avoids warnings for 'init' being unused.
+    TEST_EQUALITY_CONST( init.isInitialized (), true );
+    if (! init.isInitialized ()) {
+      return; // avoid crashes if initialization failed
+    }
+
+    const size_type numKeys = 5;
+    typename keys_type::non_const_type keys ("keys", numKeys);
+    auto keys_h = Kokkos::create_mirror_view (keys);
+    keys_h(0) = static_cast<KeyType> (10);
+    keys_h(1) = static_cast<KeyType> (8);
+    keys_h(2) = static_cast<KeyType> (12);
+    keys_h(3) = static_cast<KeyType> (17);
+    keys_h(4) = static_cast<KeyType> (7);
+    Kokkos::deep_copy (keys, keys_h);
+
+    // Pick something other than 0, just to make sure that it works.
+    const ValueType startingValue = 1;
+
+    // The hash table doesn't need this; we use it only for testing.
+    Kokkos::View<ValueType*, Kokkos::LayoutLeft, DeviceType> vals ("vals", numKeys);
+    auto vals_h = Kokkos::create_mirror_view (vals);
+    for (size_type i = 0; i < numKeys; ++i) {
+      vals_h(i) = static_cast<ValueType> (i) + startingValue;
+    }
+    Kokkos::deep_copy (vals, vals_h);
+
+    out << " Create table" << endl;
+
+    Teuchos::RCP<table_type> table;
+    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys, startingValue)) );
     if (table.is_null ()) {
       return; // stop the test now to prevent dereferencing null
     }
@@ -415,7 +584,7 @@ namespace { // (anonymous)
   // ValueType and KeyType are "backwards" because they correspond to
   // LO resp. GO.  (LO, GO) is the natural order for Tpetra's test
   // macros.
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_ArrayView, NoncontigKeysAndVals, ValueType, KeyType, DeviceType)
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_T, NoncontigKeysAndVals, ValueType, KeyType, DeviceType)
   {
     using std::endl;
     typedef Tpetra::Details::FixedHashTable<KeyType, ValueType, DeviceType> table_type;
@@ -493,7 +662,7 @@ namespace { // (anonymous)
   // ValueType and KeyType are "backwards" because they correspond to
   // LO resp. GO.  (LO, GO) is the natural order for Tpetra's test
   // macros.
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_ArrayView, DuplicateKeys, ValueType, KeyType, DeviceType)
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_T, DuplicateKeys, ValueType, KeyType, DeviceType)
   {
     using std::endl;
     typedef Tpetra::Details::FixedHashTable<KeyType, ValueType, DeviceType> table_type;
@@ -535,8 +704,9 @@ namespace { // (anonymous)
     Teuchos::ArrayView<const KeyType> keys_av (keys_h.ptr_on_device (), numKeys);
     out << " Create table" << endl;
 
+    const bool keepKeys = true;
     Teuchos::RCP<table_type> table;
-    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue)) );
+    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue, keepKeys)) );
     if (table.is_null ()) {
       return; // stop the test now to prevent dereferencing null
     }
@@ -669,7 +839,7 @@ namespace { // (anonymous)
   // ValueType and KeyType are "backwards" because they correspond to
   // LO resp. GO.  (LO, GO) is the natural order for Tpetra's test
   // macros.
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_ArrayView, CopyCtorNoDupKeys, ValueType, KeyType, DeviceType)
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_T, CopyCtorNoDupKeys, ValueType, KeyType, DeviceType)
   {
     using std::endl;
     typedef Tpetra::Details::FixedHashTable<KeyType, ValueType, DeviceType> table_type;
@@ -713,8 +883,9 @@ namespace { // (anonymous)
     Teuchos::ArrayView<const KeyType> keys_av (keys_h.ptr_on_device (), numKeys);
     out << " Create table" << endl;
 
+    const bool keepKeys = true;
     Teuchos::RCP<table_type> table;
-    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue)) );
+    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue, keepKeys)) );
     if (table.is_null ()) {
       return; // fail fast to avoid dereferencing null
     }
@@ -808,7 +979,7 @@ namespace { // (anonymous)
   // ValueType and KeyType are "backwards" because they correspond to
   // LO resp. GO.  (LO, GO) is the natural order for Tpetra's test
   // macros.
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_ArrayView, CopyCtorDupKeys, ValueType, KeyType, DeviceType)
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_T, CopyCtorDupKeys, ValueType, KeyType, DeviceType)
   {
     using std::endl;
     typedef Tpetra::Details::FixedHashTable<KeyType, ValueType, DeviceType> table_type;
@@ -854,8 +1025,9 @@ namespace { // (anonymous)
     Teuchos::ArrayView<const KeyType> keys_av (keys_h.ptr_on_device (), numKeys);
     out << " Create table" << endl;
 
+    const bool keepKeys = true;
     Teuchos::RCP<table_type> table;
-    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue)) );
+    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue, keepKeys)) );
     if (table.is_null ()) {
       return; // fail fast to avoid dereferencing null
     }
@@ -964,13 +1136,15 @@ namespace { // (anonymous)
   // only the Kokkos execution spaces (DEVICE) that are actually
   // enabled.
 #define UNIT_TEST_GROUP_3( LO, GO, DEVICE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, Empty, LO, GO, DEVICE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, ContigKeysStartingValue, LO, GO, DEVICE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, NoncontigKeysStartingValue, LO, GO, DEVICE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, NoncontigKeysAndVals, LO, GO, DEVICE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, DuplicateKeys, LO, GO, DEVICE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, CopyCtorNoDupKeys, LO, GO, DEVICE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_ArrayView, CopyCtorDupKeys, LO, GO, DEVICE )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable, Empty, LO, GO, DEVICE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_T, ContigKeysStartingValue, LO, GO, DEVICE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_K, ContigKeysStartingValue, LO, GO, DEVICE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_T, NoncontigKeysStartingValue, LO, GO, DEVICE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_K, NoncontigKeysStartingValue, LO, GO, DEVICE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_T, NoncontigKeysAndVals, LO, GO, DEVICE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_T, DuplicateKeys, LO, GO, DEVICE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_T, CopyCtorNoDupKeys, LO, GO, DEVICE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_T, CopyCtorDupKeys, LO, GO, DEVICE )
 
   // The typedefs below are there because macros don't like arguments
   // with commas in them.
