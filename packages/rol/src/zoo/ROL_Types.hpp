@@ -84,6 +84,9 @@ namespace ROL {
     Real gnorm;
     Real cnorm;
     Real snorm;
+    Real bundle_znorm;
+    Real bundle_alpha;
+    bool bundle_flag;
     Teuchos::RCP<Vector<Real> > iterateVec;
     Teuchos::RCP<Vector<Real> > lagmultVec;
     Teuchos::RCP<Vector<Real> > minIterVec;
@@ -91,6 +94,9 @@ namespace ROL {
       gnorm(std::numeric_limits<Real>::max()),
       cnorm(std::numeric_limits<Real>::max()),
       snorm(std::numeric_limits<Real>::max()), 
+      bundle_znorm(std::numeric_limits<Real>::max()),
+      bundle_alpha(std::numeric_limits<Real>::max()),
+      bundle_flag(false),
       iterateVec(Teuchos::null), lagmultVec(Teuchos::null), minIterVec(Teuchos::null) {}
   };  
   
