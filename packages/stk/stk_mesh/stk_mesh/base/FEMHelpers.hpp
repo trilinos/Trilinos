@@ -80,7 +80,13 @@ Entity declare_element_side( BulkData & mesh ,
 			     const stk::mesh::EntityId global_side_id ,
 			     Entity elem ,
 			     const unsigned local_side_id ,
-			     Part * part = NULL);
+			     const stk::mesh::PartVector& parts);
+
+Entity declare_element_side( BulkData & mesh ,
+                             const stk::mesh::EntityId global_side_id ,
+                             Entity elem ,
+                             const unsigned local_side_id ,
+                             stk::mesh::Part* part = NULL);
 
 /** \brief  Create (or find) an element edge.
  *
@@ -90,7 +96,9 @@ Entity declare_element_edge( BulkData & mesh ,
 			     const stk::mesh::EntityId global_side_id ,
 			     Entity elem ,
 			     const unsigned local_side_id ,
-			     Part * part = NULL);
+			     const stk::mesh::PartVector& parts = stk::mesh::PartVector());
+
+
 
 /** \brief  Create (or find) an element side.
  *
@@ -100,8 +108,13 @@ Entity declare_element_side( BulkData & mesh ,
                                Entity elem ,
                                Entity side ,
                                const unsigned local_side_id ,
-                               Part * part = NULL );
+                               const stk::mesh::PartVector& parts);
 
+Entity declare_element_side( BulkData & mesh ,
+                               Entity elem ,
+                               Entity side ,
+                               const unsigned local_side_id ,
+                               stk::mesh::Part* part = NULL);
 
 
 /** \brief  Create (or find) an element edge.
@@ -112,7 +125,7 @@ Entity declare_element_edge( BulkData & mesh ,
                                Entity elem ,
                                Entity edge ,
                                const unsigned local_edge_id ,
-                               Part * part = NULL );
+                               const stk::mesh::PartVector& parts = stk::mesh::PartVector());
 
 /** \brief finds oridinal and permutation of an entity relative to a parent entity
  *

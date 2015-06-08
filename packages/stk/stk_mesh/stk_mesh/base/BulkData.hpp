@@ -82,6 +82,8 @@ namespace stk { class CommAll; }
 
 namespace sierra { namespace Fmwk { class EntityCreationOperationList; } }
 
+class ElemElemGraph;
+
 namespace stk {
 namespace mesh {
 
@@ -93,8 +95,19 @@ void communicate_field_data(const BulkData & mesh, const std::vector<const Field
 void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector const& skin_parts, const Selector * secondary_selector);
 void create_edges( BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges );
 void internal_create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges, FaceCreationBehavior faceCreationBehavior);
+void perform_element_death(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
+        const stk::mesh::PartVector& boundary_mesh_parts);
 
 typedef std::unordered_map<EntityKey, size_t, stk::mesh::HashValueForEntityKey> GhostReuseMap;
+
+struct sharing_info
+{
+    stk::mesh::Entity m_entity;
+    int m_sharing_proc;
+    int m_owner;
+    sharing_info(stk::mesh::Entity entity, int sharing_proc, int owner) :
+        m_entity(entity), m_sharing_proc(sharing_proc), m_owner(owner) {}
+};
 
 class BulkData {
 
@@ -370,7 +383,7 @@ public:
 
   //------------------------------------
 
-  void generate_new_ids(stk::topology::rank_t rank, size_t numIdsNeeded, std::vector<stk::mesh::EntityId>& requestedIds);
+  void generate_new_ids(stk::topology::rank_t rank, size_t numIdsNeeded, std::vector<stk::mesh::EntityId>& requestedIds) const;
 
   /** \brief Generate a set of entites with globally unique id's
    *
@@ -683,6 +696,8 @@ public:
   void allocate_field_data();
 
 protected: //functions
+
+  bool modification_end_for_face_creation_and_deletion(const std::vector<sharing_info>& shared_modified, const stk::mesh::EntityVector& deletedEntities, modification_optimization opt = MOD_END_SORT);
 
   bool modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector, modification_optimization opt = MOD_END_SORT);
 
@@ -1114,6 +1129,8 @@ private:
   friend void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector const& skin_parts, const Selector * secondary_selector);
   friend void create_edges( BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges );
   friend void internal_create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges, FaceCreationBehavior faceCreationBehavior);
+  friend void perform_element_death(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
+          const stk::mesh::PartVector& boundary_mesh_parts);
 
   bool ordered_comm( const Entity entity );
   void pack_owned_verify(CommAll & all);
