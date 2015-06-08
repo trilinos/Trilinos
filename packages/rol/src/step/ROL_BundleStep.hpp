@@ -191,22 +191,22 @@ public:
       /*************************************************************/
       QPiter_ += bundle_->solveDual(state->searchSize,QPmaxit_,QPtol_);  // Solve QP subproblem
       bundle_->aggregate(*aggSubGradNew_,aggLinErrNew_,aggDistMeasNew_); // Compute aggregate info
-      algo_state.bundle_znorm = aggSubGradNew_->norm();                  // Aggregate subgradient norm
+      algo_state.aggregateGradientNorm = aggSubGradNew_->norm();         // Aggregate subgradient norm
       /*************************************************************/
       /******** Construct Cutting Plane Solution *******************/
       /*************************************************************/
-      v = -state->searchSize*std::pow(algo_state.bundle_znorm,2.0)-aggLinErrNew_; // CP objective value
+      v = -state->searchSize*std::pow(algo_state.aggregateGradientNorm,2.0)-aggLinErrNew_; // CP objective value
       s.set(*aggSubGradNew_); s.scale(-state->searchSize);                        // CP solution
-      algo_state.snorm = state->searchSize*algo_state.bundle_znorm;               // Step norm
+      algo_state.snorm = state->searchSize*algo_state.aggregateGradientNorm;      // Step norm
       /*************************************************************/
       /******** Decide Whether Step is Serious or Null *************/
       /*************************************************************/
-      if (std::max(algo_state.bundle_znorm,aggLinErrNew_) <= tol_) {
+      if (std::max(algo_state.aggregateGradientNorm,aggLinErrNew_) <= tol_) {
         // Current iterate is already epsilon optimal!
         s.zero(); algo_state.snorm = 0.0;
         flag = false;
         step_flag_ = 1;
-        algo_state.bundle_flag = true;
+        algo_state.flag = true;
         break;
       }
       else {
@@ -303,15 +303,15 @@ public:
     /*************************************************************/
     /******** Update Algorithm State *****************************/
     /*************************************************************/
-    algo_state.bundle_alpha = aggLinErrNew_;
-    aggSubGradOldNorm_ = algo_state.bundle_znorm;
+    algo_state.aggregateModelError = aggLinErrNew_;
+    aggSubGradOldNorm_ = algo_state.aggregateGradientNorm;
     aggLinErrOld_      = aggLinErrNew_;
   } // End Compute
 
   void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, 
                BoundConstraint<Real> &con, AlgorithmState<Real> &algo_state ) {
     Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
-    if ( !algo_state.bundle_flag ) {
+    if ( !algo_state.flag ) {
       /*************************************************************/
       /******** Reset Bundle If Maximum Size Reached ***************/
       /*************************************************************/
@@ -391,8 +391,8 @@ public:
         hist << std::setw(15) << std::left << algo_state.snorm;
         hist << std::setw(10) << std::left << algo_state.nfval;
         hist << std::setw(10) << std::left << algo_state.ngrad;
-        hist << std::setw(15) << std::left << algo_state.bundle_znorm;
-        hist << std::setw(15) << std::left << algo_state.bundle_alpha;
+        hist << std::setw(15) << std::left << algo_state.aggregateGradientNorm;
+        hist << std::setw(15) << std::left << algo_state.aggregateModelError;
         hist << std::setw(15) << std::left << state->searchSize;
         hist << std::setw(10) << std::left << QPiter_;
         hist << "\n";

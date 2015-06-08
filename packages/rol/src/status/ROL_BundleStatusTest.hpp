@@ -67,9 +67,9 @@ public:
   */
   virtual bool check( AlgorithmState<Real> &state ) {
      bool stat = false;
-     if ( (std::max(state.bundle_znorm,state.bundle_alpha) > tol_)  
+     if ( (std::max(state.aggregateGradientNorm,state.aggregateModelError) > tol_)  
          && (state.iter < max_iter_) 
-         && (state.bundle_flag == false) ) {
+         && (state.flag == false) ) {
        stat = true;
      }
      return stat;
