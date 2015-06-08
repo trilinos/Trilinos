@@ -52,6 +52,7 @@ APPEND_SET(HEADERS
   function/ROL_EqualityConstraintDef.hpp
   function/ROL_EqualityConstraint_SimOpt.hpp
   function/ROL_BoundConstraint.hpp
+  function/ROL_BoundConstraint_SimOpt.hpp
   function/ROL_StdBoundConstraint.hpp
   function/ROL_LinearOperator.hpp
   function/ROL_ProjectedHessian.hpp
@@ -69,12 +70,14 @@ INCLUDE_DIRECTORIES(${DIR}
                     ${DIR}/trustregion
                     ${DIR}/secant
                     ${DIR}/krylov
+                    ${DIR}/bundle
                    )
 APPEND_GLOB(HEADERS ${DIR}/*.hpp
                     ${DIR}/linesearch/*.hpp 
                     ${DIR}/trustregion/*.hpp
                     ${DIR}/secant/*.hpp
                     ${DIR}/krylov/*.hpp
+                    ${DIR}/bundle/*.hpp
                    )
 
 #
@@ -93,6 +96,7 @@ APPEND_SET(HEADERS
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/status)
 APPEND_SET(HEADERS
   status/ROL_StatusTest.hpp
+  status/ROL_BundleStatusTest.hpp
   )
 
 #
@@ -137,6 +141,9 @@ APPEND_SET(HEADERS
   zoo/ROL_HS45.hpp
   zoo/ROL_BVP.hpp
   zoo/ROL_Zakharov.hpp
+  zoo/ROL_Minimax1.hpp
+  zoo/ROL_Minimax2.hpp
+  zoo/ROL_Minimax3.hpp
   )
 
 
