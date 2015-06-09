@@ -1172,7 +1172,7 @@ FieldBase* get_field_by_name( const std::string& name, const MetaData & metaData
 
 void MetaData::dump_all_meta_info(std::ostream& out) const
 {
-  out << "MetaData info...\n";
+  out << "MetaData info...(ptr=" << this << ")\n";
 
   out << "spatial dimension = " << m_spatial_dimension << "\n";
 

@@ -1494,7 +1494,7 @@ void BulkData::internal_dump_all_mesh_info(std::ostream& out) const
   m_mesh_meta_data.dump_all_meta_info(out);
 
   out << "BulkData "
-      << " info...\n";
+      << " info...(ptr=" << this << ")\n";
 
   out << "ConnectivityMap = " << "\n";
   out << this->connectivity_map();
@@ -1521,7 +1521,8 @@ void BulkData::internal_dump_all_mesh_info(std::ostream& out) const
 
       for (size_t b_ord = 0, b_end = bucket->size(); b_ord < b_end; ++b_ord) {
         Entity entity = (*bucket)[b_ord];
-        out << "      " << print_entity_key(m_mesh_meta_data, entity_key(entity)) << "(offset: " << entity.local_offset() << ")" << std::endl;
+        out << "      " << print_entity_key(m_mesh_meta_data, entity_key(entity)) << "(offset: " << entity.local_offset() <<
+                "), state = " << state(entity) << std::endl;
 
         // Print connectivity
         for (EntityRank r = stk::topology::NODE_RANK, re = static_cast<EntityRank>(rank_names.size()); r < re; ++r) {
@@ -1541,6 +1542,7 @@ void BulkData::internal_dump_all_mesh_info(std::ostream& out) const
                     out << " permutation index " << permutations[c_itr];
                 }
               }
+              out << ", state = " << state(target_entity);
               out << std::endl;
             }
           }
@@ -1564,7 +1566,6 @@ void BulkData::internal_dump_all_mesh_info(std::ostream& out) const
           }
         }
       }
-
     }
   }
 }
@@ -4033,6 +4034,7 @@ void BulkData::internal_modification_end_for_change_ghosting()
     }
 
     m_meshModification.set_sync_state_synchronized();
+    m_modSummary.write_summary(m_meshModification.synchronized_count());
 }
 
 bool BulkData::internal_modification_end_for_change_parts()
@@ -4055,7 +4057,7 @@ bool BulkData::internal_modification_end_for_change_parts()
     m_bucket_repository.internal_sort_bucket_entities();
 
     m_meshModification.set_sync_state_synchronized();
-
+    m_modSummary.write_summary(m_meshModification.synchronized_count());
     return true;
 }
 
@@ -4092,8 +4094,6 @@ void BulkData::check_mesh_consistency()
     // Verify parallel consistency of mesh entities.
     // Unique ownership, communication lists, sharing part membership,
     // application part membership consistency.
-
-    m_modSummary.write_summary(m_meshModification.synchronized_count());
 
 #ifndef NDEBUG
     ThrowErrorMsgIf(!stk::mesh::impl::check_permutations_on_all(*this), "Permutation checks failed.");
@@ -4362,6 +4362,8 @@ void BulkData::internal_finish_modification_end(modification_optimization opt)
     m_add_node_sharing_called = false;
 
     update_deleted_entities_container();
+
+    m_modSummary.write_summary(m_meshModification.synchronized_count());
 }
 
 bool BulkData::internal_modification_end_for_skin_mesh( EntityRank entity_rank, modification_optimization opt, stk::mesh::Selector selectedToSkin,
