@@ -37,6 +37,23 @@ void set_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData&
     }
 }
 
+void fill_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData& bulkData, stk::mesh::EntityVector& local_id_to_element_entity, std::vector<unsigned>& entity_to_local_id, std::vector<stk::topology>& element_topologies)
+{
+    const stk::mesh::BucketVector& elemBuckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
+    size_t local_id = 0;
+    for(size_t i=0; i<elemBuckets.size(); ++i)
+    {
+        const stk::mesh::Bucket& bucket = *elemBuckets[i];
+        for(size_t j=0; j<bucket.size(); ++j)
+        {
+            local_id_to_element_entity[local_id] = bucket[j];
+            element_topologies[local_id] = bucket.topology();
+            entity_to_local_id[bucket[j].local_offset()] = local_id;
+            local_id++;
+        }
+    }
+}
+
 void fill_graph(const stk::mesh::BulkData& bulkData, ElementGraph& elem_graph, SidesForElementGraph& via_sides)
 {
     const stk::mesh::BucketVector& elemBuckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());

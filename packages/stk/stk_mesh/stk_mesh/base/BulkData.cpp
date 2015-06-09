@@ -6382,8 +6382,8 @@ bool BulkData::modification_end_for_face_creation_and_deletion(const std::vector
                       procs.push_back( ec->proc );
                     }
                     std::sort( procs.begin() , procs.end() );
-                    std::vector<int>::iterator i = std::unique( procs.begin() , procs.end() );
-                    procs.erase( i , procs.end() );
+                    std::vector<int>::iterator iter = std::unique( procs.begin() , procs.end() );
+                    procs.erase( iter , procs.end() );
 
                     for(size_t proc_index = 0; proc_index < procs.size(); ++proc_index)
                     {

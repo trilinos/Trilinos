@@ -51,6 +51,7 @@ NAMED_PAIR( ProcFaceIdPair , int , proc , stk::mesh::EntityId , face_id )
 typedef std::map<EntitySidePair, ProcFaceIdPair>  ElemSideToProcAndFaceId;
 
 void set_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData& bulkData, stk::mesh::EntityVector& local_id_to_element_entity, std::vector<stk::topology>& element_topologies);
+void fill_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData& bulkData, stk::mesh::EntityVector& local_id_to_element_entity, std::vector<unsigned>& entity_to_local_id, std::vector<stk::topology>& element_topologies);
 
 void fill_graph(const stk::mesh::BulkData& bulkData, ElementGraph& elem_graph, SidesForElementGraph& via_sides);
 

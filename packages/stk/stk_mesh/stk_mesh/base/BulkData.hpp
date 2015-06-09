@@ -73,6 +73,7 @@ namespace stk { namespace mesh { namespace impl { class Partition; } } }
 namespace stk { namespace mesh { struct ConnectivityMap; } }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { namespace impl { class EntityRepository; } } }
+namespace stk { namespace mesh { class ElemElemGraph; } }
 namespace stk { class CommSparse; }
 namespace stk { class CommAll; }
 
@@ -81,8 +82,6 @@ namespace stk { class CommAll; }
 #include "SharedEntityType.hpp"
 
 namespace sierra { namespace Fmwk { class EntityCreationOperationList; } }
-
-class ElemElemGraph;
 
 namespace stk {
 namespace mesh {
@@ -1122,6 +1121,7 @@ private:
   friend class Ghosting; // friend until Ghosting is refactored to be like Entity
   friend class ::stk::mesh::impl::MeshModification;
   friend class ::sierra::Fmwk::EntityCreationOperationList;
+  friend class ::stk::mesh::ElemElemGraph;
 
   // friends until it is decided what we're doing with Fields and Parallel and BulkData
   friend void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
