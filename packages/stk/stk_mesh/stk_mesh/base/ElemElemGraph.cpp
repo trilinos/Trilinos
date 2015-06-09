@@ -179,6 +179,9 @@ void perform_element_death(stk::mesh::BulkData& bulkData, ElemElemGraph& element
 
     impl::communicate_killed_entities(bulkData, elements_to_comm, remote_edges);
 
+    stk::mesh::Part& faces_created_during_death = bulkData.mesh_meta_data().declare_part("faces_created_during_death",
+            stk::topology::FACE_RANK, true);
+
     stk::mesh::PartVector add_parts = boundary_mesh_parts;
     add_parts.push_back(&active);
 
@@ -198,7 +201,7 @@ void perform_element_death(stk::mesh::BulkData& bulkData, ElemElemGraph& element
 
         impl::parallel_info &parallel_edge_info = elementGraph.get_parallel_edge_info(element, remote_id);
         impl::create_or_delete_shared_face(bulkData, parallel_edge_info, elementGraph, element, remote_id, create_face, add_parts,
-                shared_modified, deletedEntities, id_counter, requestedIds[id_counter]);
+                shared_modified, deletedEntities, id_counter, requestedIds[id_counter], faces_created_during_death);
 
         parallel_edge_info.m_in_part = false;
     }
@@ -229,23 +232,22 @@ void perform_element_death(stk::mesh::BulkData& bulkData, ElemElemGraph& element
 
                     std::string msg = "Program error. Please contact sierra-help@sandia.gov for support.";
 
-                    ThrowRequireMsg(!impl::does_side_exist_with_different_permutation(bulkData, this_elem_entity,
-                            static_cast<stk::mesh::ConnectivityOrdinal>(side_id), static_cast<stk::mesh::Permutation>(0)), msg);
-
-                    ThrowRequireMsg(!impl::does_element_side_exist(bulkData, this_elem_entity, static_cast<stk::mesh::ConnectivityOrdinal>(side_id)), msg);
-
                     stk::mesh::Entity face = stk::mesh::impl::get_face_for_element_side(bulkData, this_elem_entity, side_id);
                     if(!bulkData.is_valid(face))
                     {
+                        parts.push_back(&faces_created_during_death);
                         stk::mesh::EntityId face_global_id = requestedIds[id_counter];
                         ++id_counter;
                         ThrowRequireMsg(!impl::is_id_already_in_use_locally(bulkData, bulkData.mesh_meta_data().side_rank(), face_global_id), msg);
-
+                        parts.push_back(&faces_created_during_death);
                         face = stk::mesh::declare_element_side(bulkData, face_global_id, this_elem_entity, side_id, parts);
                     }
                     else
                     {
-                        bulkData.change_entity_parts(face, parts, stk::mesh::PartVector());
+                        if(bulkData.bucket(face).owned())
+                        {
+                            bulkData.change_entity_parts(face, parts, stk::mesh::PartVector());
+                        }
                     }
 
                     const stk::mesh::Entity* side_nodes = bulkData.begin_nodes(face);
@@ -280,7 +282,7 @@ void perform_element_death(stk::mesh::BulkData& bulkData, ElemElemGraph& element
                 else
                 {
                     stk::mesh::Entity face = stk::mesh::impl::get_face_for_element_side(bulkData, this_elem_entity, side_id);
-                    if(bulkData.is_valid(face))
+                    if(bulkData.is_valid(face) && bulkData.bucket(face).member(faces_created_during_death))
                     {
                         deletedEntities.push_back(face);
                     }
@@ -302,7 +304,7 @@ void perform_element_death(stk::mesh::BulkData& bulkData, ElemElemGraph& element
                 }
 
                 impl::create_or_delete_shared_face(bulkData, parallel_edge_info, elementGraph, this_elem_entity, remote_id, create_face, add_parts,
-                        shared_modified, deletedEntities, id_counter, requestedIds[id_counter]);
+                        shared_modified, deletedEntities, id_counter, requestedIds[id_counter], faces_created_during_death);
             }
         }
     }

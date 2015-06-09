@@ -78,7 +78,7 @@ void pack_elements_to_comm(stk::CommSparse &comm, const std::vector<graphEdgePro
 void create_or_delete_shared_face(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_info, const ElemElemGraph& elementGraph,
         stk::mesh::Entity local_element, stk::mesh::EntityId remote_id, bool create_face, const stk::mesh::PartVector& face_parts,
         std::vector<stk::mesh::sharing_info> &shared_modified, stk::mesh::EntityVector &deletedEntities,
-        size_t &id_counter, stk::mesh::EntityId suggested_local_face_id);
+        size_t &id_counter, stk::mesh::EntityId suggested_local_face_id, stk::mesh::Part& faces_created_during_death);
 
 stk::mesh::Entity get_face_for_element_side(const stk::mesh::BulkData& bulkData, stk::mesh::Entity this_elem_entity, int side_id);
 

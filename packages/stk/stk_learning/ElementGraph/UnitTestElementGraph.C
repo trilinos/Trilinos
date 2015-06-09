@@ -29,8 +29,7 @@
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_unit_test_utils/getOption.h>
 
-
-
+#include "UnitTestElementDeathUtils.hpp"
 
 namespace
 {
@@ -1365,27 +1364,6 @@ void move_killled_elements_to_part(stk::mesh::BulkData& bulkData, const stk::mes
     bulkData.batch_change_entity_parts(killedElements, add_parts, rm_parts);
 }
 
-void put_mesh_into_part(stk::mesh::BulkData& bulkData, stk::mesh::Part& part)
-{
-    stk::mesh::EntityVector entitiesToMakeActive;
-    std::vector<stk::mesh::PartVector> add_parts;
-    std::vector<stk::mesh::PartVector> rm_parts;
-    for(stk::topology::rank_t rank=stk::topology::BEGIN_RANK; rank < bulkData.mesh_meta_data().entity_rank_count(); rank++)
-    {
-        const stk::mesh::BucketVector &buckets = bulkData.get_buckets(rank, bulkData.mesh_meta_data().locally_owned_part());
-        for(const stk::mesh::Bucket *bucket : buckets)
-        {
-            for(stk::mesh::Entity entity : *bucket)
-            {
-                entitiesToMakeActive.push_back(entity);
-                add_parts.push_back(stk::mesh::PartVector(1, &part));
-                rm_parts.push_back(stk::mesh::PartVector());
-            }
-        }
-    }
-    bulkData.batch_change_entity_parts(entitiesToMakeActive, add_parts, rm_parts);
-}
-
 TEST(ElementGraph, make_items_inactive)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
@@ -1406,7 +1384,7 @@ TEST(ElementGraph, make_items_inactive)
 
         stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
 
-        put_mesh_into_part(bulkData, active);
+        ElementDeathUtils::put_mesh_into_part(bulkData, active);
 
         stk::mesh::ElemElemGraph graph(bulkData);
 
@@ -1502,7 +1480,7 @@ TEST(ElementGraph, test_element_death)
 
             stk::mesh::Part& block_1 = *meta.get_part("block_1");
 
-            put_mesh_into_part(bulkData, active);
+            ElementDeathUtils::put_mesh_into_part(bulkData, active);
 
             std::ostringstream os;
             os << "Proc id: " << bulkData.parallel_rank() << std::endl;

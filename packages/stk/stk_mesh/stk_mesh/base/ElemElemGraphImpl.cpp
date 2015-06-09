@@ -444,7 +444,7 @@ stk::mesh::Entity get_face_for_element_side(const stk::mesh::BulkData& bulkData,
 void create_or_delete_shared_face(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_info, const ElemElemGraph& elementGraph,
         stk::mesh::Entity local_element, stk::mesh::EntityId remote_id, bool create_face, const stk::mesh::PartVector& face_parts,
         std::vector<stk::mesh::sharing_info> &shared_modified, stk::mesh::EntityVector &deletedEntities,
-        size_t &id_counter, stk::mesh::EntityId suggested_local_face_id)
+        size_t &id_counter, stk::mesh::EntityId suggested_local_face_id, stk::mesh::Part& faces_created_during_death)
 {
     stk::mesh::EntityId global_id_local_element = bulkData.identifier(local_element);
     int side_id = elementGraph.get_side_from_element1_to_remote_element2(local_element, remote_id);
@@ -478,6 +478,7 @@ void create_or_delete_shared_face(stk::mesh::BulkData& bulkData, const parallel_
         stk::mesh::Entity face = stk::mesh::impl::get_face_for_element_side(bulkData, local_element, side_id);
         if(!bulkData.is_valid(face))
         {
+            parts.push_back(&faces_created_during_death);
             ThrowRequireMsg(!impl::is_id_already_in_use_locally(bulkData, bulkData.mesh_meta_data().side_rank(), face_global_id), msg);
             //face = stk::mesh::declare_element_side(bulkData, face_global_id, local_element, side_id, parts);
             face = connect_face_to_element(bulkData, local_element, face_global_id, side_ord, perm, parts);
@@ -485,13 +486,16 @@ void create_or_delete_shared_face(stk::mesh::BulkData& bulkData, const parallel_
         }
         else
         {
-            bulkData.change_entity_parts(face, parts, stk::mesh::PartVector());
+            if(bulkData.bucket(face).owned())
+            {
+                bulkData.change_entity_parts(face, parts, stk::mesh::PartVector());
+            }
         }
     }
     else
     {
         stk::mesh::Entity face = stk::mesh::impl::get_face_for_element_side(bulkData, local_element, side_id);
-        if(bulkData.is_valid(face))
+        if(bulkData.is_valid(face) && bulkData.bucket(face).member(faces_created_during_death))
         {
             deletedEntities.push_back(face);
         }
