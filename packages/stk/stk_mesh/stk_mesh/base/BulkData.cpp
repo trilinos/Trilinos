@@ -6373,7 +6373,8 @@ bool BulkData::modification_end_for_face_creation_and_deletion(const std::vector
                 if(is_comm_entity_and_locally_owned)
                 {
                     std::vector<int> procs;
-                    //this->comm_procs(key, procs);
+                    //this->comm_procs(key, procs); // comm_procs throws on deleted entity, so use the
+                    //code below (which is basically the implementation of comm_procs)
                     for ( PairIterEntityComm ec = internal_entity_comm_map(key); ! ec.empty() ; ++ec ) {
                       procs.push_back( ec->proc );
                     }
