@@ -44,7 +44,6 @@ public:
        setSolnVectorSpace(thyraObjFactory_->getThyraDomainSpace());
 
        // build a ghosted container, with a solution vector
-       uniqueContainer_ = linObjFactory_->buildLinearObjContainer();
        ghostedContainer_ = linObjFactory_->buildGhostedLinearObjContainer();
 
        // set ghosted container (work space for assembly)

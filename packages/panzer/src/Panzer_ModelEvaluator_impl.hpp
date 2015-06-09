@@ -403,20 +403,19 @@ setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
   // Set input parameters
   for (int i=0; i<inArgs.Np(); i++) {
     
-    RCP<const Thyra::VectorBase<Scalar> > p = inArgs.get_p(i);
-
-    if ( p!=Teuchos::null && !parameters_[i]->is_distributed) {
+    RCP<const Thyra::VectorBase<Scalar> > paramVec = inArgs.get_p(i);
+    if ( paramVec!=Teuchos::null && !parameters_[i]->is_distributed) {
       // non distributed parameters
 
       Teuchos::ArrayRCP<const Scalar> p_data;
-      rcp_dynamic_cast<const Thyra::SpmdVectorBase<Scalar> >(p,true)->getLocalData(Teuchos::ptrFromRef(p_data));
+      rcp_dynamic_cast<const Thyra::SpmdVectorBase<Scalar> >(paramVec,true)->getLocalData(Teuchos::ptrFromRef(p_data));
 
       for (unsigned int j=0; j < parameters_[i]->scalar_value.size(); j++) {
         parameters_[i]->scalar_value[j].baseValue = p_data[j];
         parameters_[i]->scalar_value[j].family->setRealValueForAllTypes(parameters_[i]->scalar_value[j].baseValue);
       }
     }
-    else if ( p!=Teuchos::null && parameters_[i]->is_distributed) {
+    else if ( paramVec!=Teuchos::null && parameters_[i]->is_distributed) {
       // distributed parameters
 
       std::string key = (*parameters_[i]->names)[0];
@@ -430,11 +429,11 @@ setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
       if(loc_pair_ged!=Teuchos::null) {
         // cast to a ThyraObjContainer throwing an exception if the cast doesn't work.
         RCP<ThyraObjContainer<Scalar> > th_ged = rcp_dynamic_cast<ThyraObjContainer<Scalar> >(loc_pair_ged->getGlobalLOC(),true);
-        th_ged->set_x_th(Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(p));
+        th_ged->set_x_th(Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(paramVec));
       }
       else {
         TEUCHOS_ASSERT(ro_ged!=Teuchos::null);
-        ro_ged->setUniqueVector(p);
+        ro_ged->setUniqueVector(paramVec);
       }
     }
   }
