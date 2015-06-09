@@ -25,7 +25,7 @@ ElemElemGraph::ElemElemGraph(stk::mesh::BulkData& bulkData) : m_bulk_data(bulkDa
     impl::set_local_ids_and_fill_element_entities_and_topologies(m_bulk_data, local_id_to_element_entity, element_topologies);
     impl::fill_graph(m_bulk_data, elem_graph, via_sides);
 
-    impl::ElemSideToProcAndFaceId elem_side_comm = impl::get_elements_to_communicate1(bulkData);
+    impl::ElemSideToProcAndFaceId elem_side_comm = impl::get_element_side_ids_to_communicate(bulkData);
     size_t num_face_ids_needed = elem_side_comm.size();
     for(size_t i=0;i<via_sides.size();++i)
     {

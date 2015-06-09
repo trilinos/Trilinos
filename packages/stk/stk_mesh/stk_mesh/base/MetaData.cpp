@@ -131,7 +131,7 @@ void MetaData::assign_cell_topology(
 
   stk::topology topo = stk::mesh::get_topology(cell_topology, m_spatial_dimension);
 
-  m_part_repo.get_all_parts()[part_ordinal]->m_partImpl.set_topology(topo);
+  part.m_partImpl.set_topology(topo);
 
   ThrowRequireMsg(cell_topology.getCellTopologyData(), "bad topology in MetaData::assign_cell_topology");
 }

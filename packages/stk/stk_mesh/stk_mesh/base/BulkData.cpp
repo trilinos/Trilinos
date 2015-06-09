@@ -5293,29 +5293,29 @@ void BulkData::internal_insert_all_parts_induced_from_higher_rank_entities_to_ve
 {
     EntityRank e_to_rank = entity_rank(e_to);
 
-    Entity const* back_rel_entities = NULL;
-    int num_back_rels = 0;
+    Entity const* upward_rel_entities = NULL;
+    int num_upward_rels = 0;
     EntityRank start_rank = static_cast<EntityRank>(e_to_rank + 1);
     EntityRank end_rank = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
     for(EntityRank to_rel_rank_i = start_rank; to_rel_rank_i < end_rank; ++to_rel_rank_i)
     {
         if (connectivity_map().valid(e_to_rank, to_rel_rank_i))
         {
-            num_back_rels = num_connectivity(e_to, to_rel_rank_i);
-            back_rel_entities = begin(e_to, to_rel_rank_i);
+            num_upward_rels = num_connectivity(e_to, to_rel_rank_i);
+            upward_rel_entities = begin(e_to, to_rel_rank_i);
         }
         else
         {
-            num_back_rels = get_connectivity(*this, e_to, to_rel_rank_i, temp_entities);
-            back_rel_entities = &*temp_entities.begin();
+            num_upward_rels = get_connectivity(*this, e_to, to_rel_rank_i, temp_entities);
+            upward_rel_entities = &*temp_entities.begin();
         }
 
-        for (int k = 0; k < num_back_rels; ++k)
+        for (int k = 0; k < num_upward_rels; ++k)
         {
-            if (entity != back_rel_entities[k])  // Already did this entity
+            if (entity != upward_rel_entities[k])  // Already did this entity
             {
                 // Relation from to_rel->entity() to e_to
-                impl::get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(*this, back_rel_entities[k], empty, e_to_rank, to_add );
+                impl::get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(*this, upward_rel_entities[k], empty, e_to_rank, to_add );
             }
         }
     }
@@ -6375,6 +6375,7 @@ bool BulkData::modification_end_for_face_creation_and_deletion(const std::vector
                 if(is_comm_entity_and_locally_owned)
                 {
                     std::vector<int> procs;
+
                     //this->comm_procs(key, procs); // comm_procs throws on deleted entity, so use the
                     //code below (which is basically the implementation of comm_procs)
                     for ( PairIterEntityComm ec = internal_entity_comm_map(key); ! ec.empty() ; ++ec ) {

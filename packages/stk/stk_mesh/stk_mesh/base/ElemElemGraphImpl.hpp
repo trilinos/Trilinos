@@ -54,8 +54,7 @@ void set_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData&
 
 void fill_graph(const stk::mesh::BulkData& bulkData, ElementGraph& elem_graph, SidesForElementGraph& via_sides);
 
-stk::mesh::EntityVector get_elements_to_communicate(const stk::mesh::BulkData& bulkData);
-ElemSideToProcAndFaceId get_elements_to_communicate1(const stk::mesh::BulkData& bulkData);
+ElemSideToProcAndFaceId get_element_side_ids_to_communicate(const stk::mesh::BulkData& bulkData);
 
 void pack_shared_side_nodes_of_elements(stk::CommSparse& comm, const stk::mesh::BulkData& bulkData, ElemSideToProcAndFaceId& elements_to_communicate,
         const std::vector<stk::mesh::EntityId>& suggested_face_ids);
