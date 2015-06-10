@@ -46,13 +46,13 @@ public:
 
     ~BulkDataElementGraphTester(){}
 
-    bool my_internal_modification_end_for_skin_mesh(stk::mesh::EntityRank entity_rank, modification_optimization opt, stk::mesh::Selector selectedToSkin,
+    bool my_internal_modification_end_for_skin_mesh(stk::mesh::EntityRank entity_rank, stk::mesh::impl::MeshModification::modification_optimization opt, stk::mesh::Selector selectedToSkin,
             const stk::mesh::Selector * only_consider_second_element_from_this_selector = 0)
     {
         return this->internal_modification_end_for_skin_mesh(entity_rank, opt, selectedToSkin, only_consider_second_element_from_this_selector);
     }
 
-    bool my_modification_end_for_entity_creation(const std::vector<stk::mesh::sharing_info>& shared_modified, modification_optimization opt = MOD_END_SORT)
+    bool my_modification_end_for_entity_creation(const std::vector<stk::mesh::sharing_info>& shared_modified, stk::mesh::impl::MeshModification::modification_optimization opt = stk::mesh::impl::MeshModification::MOD_END_SORT)
     {
         if ( this->in_synchronized_state() ) { return false ; }
 
@@ -242,7 +242,7 @@ TEST(ElementGraph, create_element_graph_serial)
         int numElems = counts[stk::topology::ELEM_RANK];
         EXPECT_EQ(4, numElems);
 
-        stk::mesh::EntityVector local_id_to_element_entity(numElems, 0);
+        stk::mesh::EntityVector local_id_to_element_entity(numElems, Entity());
         std::vector<stk::topology> element_topologies(numElems);
         impl::set_local_ids_and_fill_element_entities_and_topologies(bulkData, local_id_to_element_entity, element_topologies);
         size_t expectedNumElems = counts[stk::topology::ELEM_RANK];
@@ -341,7 +341,7 @@ TEST(ElementGraph, create_element_graph_parallel)
         int numLocallyOwnedElems = counts[stk::topology::ELEM_RANK];
         EXPECT_EQ(2, numLocallyOwnedElems);
 
-        stk::mesh::EntityVector local_id_to_element_entity(numLocallyOwnedElems, 0);
+        stk::mesh::EntityVector local_id_to_element_entity(numLocallyOwnedElems, Entity());
         std::vector<stk::topology> element_topologies(numLocallyOwnedElems);
         impl::set_local_ids_and_fill_element_entities_and_topologies(bulkData, local_id_to_element_entity, element_topologies);
 
@@ -454,7 +454,7 @@ TEST(ElementGraph, skin_mesh_using_element_graph_serial)
             EXPECT_EQ(zdim, numElems);
         }
 
-        stk::mesh::EntityVector local_id_to_element_entity(numElems, 0);
+        stk::mesh::EntityVector local_id_to_element_entity(numElems, Entity());
         std::vector<stk::topology> element_topologies(numElems);
         impl::set_local_ids_and_fill_element_entities_and_topologies(bulkData, local_id_to_element_entity, element_topologies);
         size_t expectedNumElems = counts[stk::topology::ELEM_RANK];
@@ -492,7 +492,7 @@ TEST(ElementGraph, skin_mesh_using_element_graph_serial)
         }
 
         stk::mesh::Selector element_selector = bulkData.mesh_meta_data().locally_owned_part();
-        bulkData.my_internal_modification_end_for_skin_mesh(stk::topology::FACE_RANK, stk::mesh::BulkData::MOD_END_SORT, element_selector, NULL);
+        bulkData.my_internal_modification_end_for_skin_mesh(stk::topology::FACE_RANK, stk::mesh::impl::MeshModification::MOD_END_SORT, element_selector, NULL);
 
         wall_times.push_back(stk::wall_time());
         msgs.push_back("after create-faces");
@@ -579,7 +579,7 @@ TEST(ElementGraph, skin_mesh_using_element_graph_parallel)
 
         unsigned num_locally_owned_elems = stk::mesh::count_selected_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData.buckets(stk::topology::ELEM_RANK));
 
-        stk::mesh::EntityVector local_id_to_element_entity(num_locally_owned_elems, 0);
+        stk::mesh::EntityVector local_id_to_element_entity(num_locally_owned_elems, Entity());
         std::vector<stk::topology> element_topologies(num_locally_owned_elems);
         impl::set_local_ids_and_fill_element_entities_and_topologies(bulkData, local_id_to_element_entity, element_topologies);
 
@@ -619,7 +619,7 @@ TEST(ElementGraph, skin_mesh_using_element_graph_parallel)
         }
 
         stk::mesh::Selector element_selector = bulkData.mesh_meta_data().locally_owned_part();
-        bulkData.my_internal_modification_end_for_skin_mesh(stk::topology::FACE_RANK, stk::mesh::BulkData::MOD_END_SORT, element_selector, NULL);
+        bulkData.my_internal_modification_end_for_skin_mesh(stk::topology::FACE_RANK, stk::mesh::impl::MeshModification::MOD_END_SORT, element_selector, NULL);
 
         wall_times.push_back(stk::wall_time());
         msgs.push_back("after create-faces");
@@ -787,7 +787,7 @@ TEST(ElementGraph, test_parallel_graph_info_with_parallel_element_graph)
         stk::mesh::count_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData, counts);
         int numLocallyOwnedElems = counts[stk::topology::ELEM_RANK];
 
-        stk::mesh::EntityVector local_id_to_element_entity(numLocallyOwnedElems, 0);
+        stk::mesh::EntityVector local_id_to_element_entity(numLocallyOwnedElems, Entity());
         std::vector<stk::topology> element_topologies(numLocallyOwnedElems);
         impl::set_local_ids_and_fill_element_entities_and_topologies(bulkData, local_id_to_element_entity, element_topologies);
 
@@ -1066,7 +1066,7 @@ TEST(ElementGraph, compare_performance_skin_mesh)
 
             unsigned num_locally_owned_elems = stk::mesh::count_selected_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData.buckets(stk::topology::ELEM_RANK));
 
-            stk::mesh::EntityVector local_id_to_element_entity(num_locally_owned_elems, 0);
+            stk::mesh::EntityVector local_id_to_element_entity(num_locally_owned_elems, Entity());
             std::vector<stk::topology> element_topologies(num_locally_owned_elems);
             impl::set_local_ids_and_fill_element_entities_and_topologies(bulkData, local_id_to_element_entity, element_topologies);
 
@@ -1100,7 +1100,7 @@ TEST(ElementGraph, compare_performance_skin_mesh)
             }
 
             stk::mesh::Selector element_selector = bulkData.mesh_meta_data().locally_owned_part();
-            bulkData.my_internal_modification_end_for_skin_mesh(stk::topology::FACE_RANK, stk::mesh::BulkData::MOD_END_SORT, element_selector, NULL);
+            bulkData.my_internal_modification_end_for_skin_mesh(stk::topology::FACE_RANK, stk::mesh::impl::MeshModification::MOD_END_SORT, element_selector, NULL);
 
             double elapsed_time = stk::wall_time() - wall_time_start;
 
@@ -1126,7 +1126,7 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
     stk::mesh::count_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData, counts);
     int numElems = counts[stk::topology::ELEM_RANK];
 
-    stk::mesh::EntityVector local_id_to_element_entity(numElems, 0);
+    stk::mesh::EntityVector local_id_to_element_entity(numElems, Entity());
     std::vector<stk::topology> element_topologies(numElems);
     impl::set_local_ids_and_fill_element_entities_and_topologies(bulkData, local_id_to_element_entity, element_topologies);
 

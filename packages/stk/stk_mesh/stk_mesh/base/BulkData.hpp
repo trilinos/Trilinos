@@ -112,7 +112,6 @@ class BulkData {
 
 public:
   enum GHOSTING_ID { SHARED = 0, AURA = 1 };
-  enum modification_optimization {MOD_END_COMPRESS_AND_SORT , MOD_END_SORT }; // Mod Mark
   enum entitySharing { NOT_MARKED=0, POSSIBLY_SHARED=1, IS_SHARED=2 };
 
   enum AutomaticAuraOption {
@@ -214,10 +213,7 @@ public:
 
   bool modification_end()
   {
-      modification_optimization opt = MOD_END_SORT;
-      stk::mesh::impl::MeshModification::modification_optimization input_opt =
-              static_cast<stk::mesh::impl::MeshModification::modification_optimization>(opt);
-      return m_meshModification.modification_end(input_opt);
+      return m_meshModification.modification_end();
   }
 
   /** \brief  Give away ownership of entities to other parallel processes.
@@ -237,7 +233,10 @@ public:
    *  enough communication that it will be most efficient to batch up all
    *  desired changes so that it can be called only once.
    */
-  void change_entity_owner( const EntityProcVec & arg_change); // Mod Mark
+  void change_entity_owner( const EntityProcVec & arg_change)
+  {
+      m_meshModification.change_entity_owner(arg_change);
+  }
 
   /** \brief  Rotate the field data of multistate fields.
    *
@@ -696,11 +695,11 @@ public:
 
 protected: //functions
 
-  bool modification_end_for_face_creation_and_deletion(const std::vector<sharing_info>& shared_modified, const stk::mesh::EntityVector& deletedEntities, modification_optimization opt = MOD_END_SORT);
+  bool modification_end_for_face_creation_and_deletion(const std::vector<sharing_info>& shared_modified, const stk::mesh::EntityVector& deletedEntities, impl::MeshModification::modification_optimization opt = impl::MeshModification::MOD_END_SORT);
 
-  bool modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector, modification_optimization opt = MOD_END_SORT); // Mod Mark
+  bool modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector, stk::mesh::impl::MeshModification::modification_optimization opt = stk::mesh::impl::MeshModification::MOD_END_SORT); // Mod Mark
 
-  bool internal_modification_end_for_skin_mesh( EntityRank entity_rank, modification_optimization opt, stk::mesh::Selector selectedToSkin,
+  bool internal_modification_end_for_skin_mesh( EntityRank entity_rank, stk::mesh::impl::MeshModification::modification_optimization opt, stk::mesh::Selector selectedToSkin,
           const stk::mesh::Selector * only_consider_second_element_from_this_selector); // Mod Mark
 
   bool inputs_ok_and_need_ghosting(Ghosting & ghosts ,
@@ -753,7 +752,7 @@ protected: //functions
   inline void log_created_parallel_copy(Entity entity);
 
   void internal_change_entity_owner( const std::vector<EntityProc> & arg_change,
-                                     modification_optimization mod_optimization = MOD_END_SORT );  // Mod Mark
+                                     stk::mesh::impl::MeshModification::modification_optimization mod_optimization = stk::mesh::impl::MeshModification::MOD_END_SORT );  // Mod Mark
 
   /*  Entity modification consequences:
    *  1) Change entity relation => update via part relation => change parts
@@ -787,7 +786,7 @@ protected: //functions
                                                                                OrdinalVector &empty,
                                                                                OrdinalVector &to_add);
 
-  bool internal_modification_end_for_change_entity_owner( modification_optimization opt ); // Mod Mark
+  bool internal_modification_end_for_change_entity_owner( stk::mesh::impl::MeshModification::modification_optimization opt ); // Mod Mark
   bool internal_modification_end_for_change_parts(); // Mod Mark
   void internal_modification_end_for_change_ghosting(); // Mod Mark
 
@@ -934,7 +933,7 @@ protected: //functions
 
   void resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(EntityRank entity_rank, stk::mesh::Selector selectedToSkin);
 
-  void internal_finish_modification_end(modification_optimization opt); // Mod Mark
+  void internal_finish_modification_end(impl::MeshModification::modification_optimization opt); // Mod Mark
 
   void internal_change_owner_in_comm_data(const EntityKey& key, int new_owner);
 
@@ -1070,7 +1069,7 @@ private:
                                     const std::vector<EntityKey> & remove_receive );
 
 
-  bool internal_modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector, modification_optimization opt ); // Mod Mark
+  bool internal_modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector, impl::MeshModification::modification_optimization opt ); // Mod Mark
 
 
   void internal_establish_new_owner(stk::mesh::Entity entity);

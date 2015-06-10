@@ -2448,19 +2448,10 @@ void BulkData::update_sharing_after_change_entity_owner()
     resolve_entity_ownership_and_part_membership_and_comm_list(modifiedEntities);
 }
 
-void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change)
-{
-    modification_optimization mod_optimization = MOD_END_SORT;
-    const bool modStatus = modification_begin("change_entity_owner");
-    ThrowRequireMsg(modStatus, "BulkData::change_entity_owner() must not be called from within a modification cycle.");
-    this->internal_change_entity_owner(arg_change, mod_optimization);
-    update_sharing_after_change_entity_owner();
-    internal_modification_end_for_change_entity_owner(mod_optimization);
-}
 
 
 void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg_change,
-                                             modification_optimization mod_optimization )
+                                             impl::MeshModification::modification_optimization mod_optimization )
 {
   require_ok_to_modify();
   m_modSummary.track_change_entity_owner(arg_change);
@@ -3988,7 +3979,7 @@ void print_bucket_data(const stk::mesh::BulkData& mesh)
 }
 
 
-bool BulkData::modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector, modification_optimization opt)
+bool BulkData::modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector, impl::MeshModification::modification_optimization opt)
 {
   bool return_value = internal_modification_end_for_entity_creation( entity_rank_vector, opt );
 
@@ -4061,7 +4052,7 @@ bool BulkData::internal_modification_end_for_change_parts()
     return true;
 }
 
-bool BulkData::internal_modification_end_for_change_entity_owner( modification_optimization opt )
+bool BulkData::internal_modification_end_for_change_entity_owner( impl::MeshModification::modification_optimization opt )
 {
   // The two states are MODIFIABLE and SYNCHRONiZED
   if ( this->in_synchronized_state() ) { return false ; }
@@ -4343,9 +4334,9 @@ void connect_ghosted_entities_received_to_ghosted_upwardly_connected_entities(st
     }
 }
 
-void BulkData::internal_finish_modification_end(modification_optimization opt)
+void BulkData::internal_finish_modification_end(impl::MeshModification::modification_optimization opt)
 {
-    if(opt == MOD_END_COMPRESS_AND_SORT)
+    if(opt == impl::MeshModification::MOD_END_COMPRESS_AND_SORT)
     {
         m_bucket_repository.optimize_buckets();
     }
@@ -4366,7 +4357,7 @@ void BulkData::internal_finish_modification_end(modification_optimization opt)
     m_modSummary.write_summary(m_meshModification.synchronized_count());
 }
 
-bool BulkData::internal_modification_end_for_skin_mesh( EntityRank entity_rank, modification_optimization opt, stk::mesh::Selector selectedToSkin,
+bool BulkData::internal_modification_end_for_skin_mesh( EntityRank entity_rank, impl::MeshModification::modification_optimization opt, stk::mesh::Selector selectedToSkin,
         const Selector * only_consider_second_element_from_this_selector)
 {
   // The two states are MODIFIABLE and SYNCHRONiZED
@@ -4408,7 +4399,7 @@ void BulkData::resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(Ent
     connect_ghosted_entities_received_to_ghosted_upwardly_connected_entities(*this, entity_rank, selectedToSkin);
 }
 
-bool BulkData::internal_modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector, modification_optimization opt )
+bool BulkData::internal_modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector, impl::MeshModification::modification_optimization opt )
 {
   // The two states are MODIFIABLE and SYNCHRONiZED
   if ( this->in_synchronized_state() ) { return false ; }
@@ -6343,7 +6334,7 @@ void BulkData::delete_shared_entities_which_are_no_longer_in_owned_closure()
 }
 
 bool BulkData::modification_end_for_face_creation_and_deletion(const std::vector<sharing_info>& shared_modified, const stk::mesh::EntityVector& deletedEntities,
-        modification_optimization opt)
+        impl::MeshModification::modification_optimization opt)
 {
     if(this->in_synchronized_state())
     {

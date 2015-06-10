@@ -159,7 +159,7 @@ void ElemElemGraph::size_data_members()
 
     m_elem_graph.resize(numElems);
     m_via_sides.resize(numElems);
-    m_local_id_to_element_entity.resize(numElems, 0);
+    m_local_id_to_element_entity.resize(numElems, Entity());
     m_entity_to_local_id.resize(m_bulk_data.m_entity_keys.size(), std::numeric_limits<unsigned>::max());
     m_element_topologies.resize(numElems);
     m_num_edges = 0;

@@ -41,9 +41,9 @@ bool MeshModification::modification_begin(const std::string description)
     return true;
 }
 
-bool MeshModification::modification_end(modification_optimization opt)
+bool MeshModification::modification_end()
 {
-    return this->internal_modification_end( opt );
+    return this->internal_modification_end( MOD_END_SORT );
 }
 
 bool MeshModification::internal_modification_end(modification_optimization opt)
@@ -129,6 +129,16 @@ bool MeshModification::internal_modification_end(modification_optimization opt)
     m_bulkData.update_deleted_entities_container();
 
     return true;
+}
+
+void MeshModification::change_entity_owner( const EntityProcVec & arg_change)
+{
+    ThrowRequireMsg(in_synchronized_state(), "BulkData::change_entity_owner() must not be called from within a modification cycle.");
+    modification_optimization mod_optimization = MOD_END_SORT;
+    modification_begin("change_entity_owner");
+    m_bulkData.internal_change_entity_owner(arg_change, mod_optimization);
+    m_bulkData.update_sharing_after_change_entity_owner();
+    m_bulkData.internal_modification_end_for_change_entity_owner(mod_optimization);
 }
 
 // Resolve modifications for shared entities:

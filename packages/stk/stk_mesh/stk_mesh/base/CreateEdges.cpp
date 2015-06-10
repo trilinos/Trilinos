@@ -497,7 +497,7 @@ void create_edges( BulkData & mesh, const Selector & element_selector, Part * pa
     bool oldOption = mesh.use_entity_ids_for_resolving_sharing();
     mesh.set_use_entity_ids_for_resolving_sharing(false);
     std::vector<EntityRank> entity_rank_vector = {stk::topology::EDGE_RANK};
-    mesh.modification_end_for_entity_creation( entity_rank_vector, BulkData::MOD_END_COMPRESS_AND_SORT );
+    mesh.modification_end_for_entity_creation( entity_rank_vector );
     mesh.set_use_entity_ids_for_resolving_sharing(oldOption);
   }
 }
