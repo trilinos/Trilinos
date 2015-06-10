@@ -624,7 +624,7 @@ namespace { // (anonymous)
     Kokkos::deep_copy (vals, vals_h);
 
     Teuchos::ArrayView<const KeyType> keys_av (keys_h.ptr_on_device (), numKeys);
-    Teuchos::ArrayView<const KeyType> vals_av (vals_h.ptr_on_device (), numKeys);
+    Teuchos::ArrayView<const ValueType> vals_av (vals_h.ptr_on_device (), numKeys);
     out << " Create table" << endl;
 
     Teuchos::RCP<table_type> table;
