@@ -751,7 +751,8 @@ FixedHashTable (const keys_type& keys) :
   const ValueType startingValue = static_cast<ValueType> (0);
   const KeyType initMinKey = this->minKey_;
   const KeyType initMaxKey = this->maxKey_;
-  this->init (keys, startingValue, initMinKey, initMaxKey, initMinKey, initMinKey, false);
+  this->init (keys, startingValue, initMinKey, initMaxKey,
+              initMinKey, initMinKey, false);
 
 #ifdef HAVE_TPETRA_DEBUG
   check ();
@@ -795,7 +796,8 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   Kokkos::deep_copy (keys_d, keys_k);
   const KeyType initMinKey = this->minKey_;
   const KeyType initMaxKey = this->maxKey_;
-  this->init (keys_d, startingValue, initMinKey, initMaxKey, initMinKey, initMinKey, false);
+  this->init (keys_d, startingValue, initMinKey, initMaxKey,
+              initMinKey, initMinKey, false);
   if (keepKeys) {
     keys_ = keys_d;
 #ifdef HAVE_TPETRA_DEBUG
@@ -866,7 +868,8 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   const KeyType initMaxKey = std::numeric_limits<KeyType>::is_integer ?
     std::numeric_limits<KeyType>::min () :
     -std::numeric_limits<KeyType>::max ();
-  this->init (keys_d, startingValue, initMinKey, initMaxKey, initMinKey, initMinKey, false);
+  this->init (keys_d, startingValue, initMinKey, initMaxKey,
+              initMinKey, initMinKey, false);
   if (keepKeys) {
     keys_ = keys_d;
 #ifdef HAVE_TPETRA_DEBUG
@@ -937,7 +940,8 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   const KeyType initMaxKey = std::numeric_limits<KeyType>::is_integer ?
     std::numeric_limits<KeyType>::min () :
     -std::numeric_limits<KeyType>::max ();
-  this->init (keys_d, startingValue, initMinKey, initMaxKey, firstContigKey, lastContigKey, true);
+  this->init (keys_d, startingValue, initMinKey, initMaxKey,
+              firstContigKey, lastContigKey, true);
   if (keepKeys) {
     keys_ = keys_d;
 #ifdef HAVE_TPETRA_DEBUG
@@ -997,7 +1001,8 @@ FixedHashTable (const keys_type& keys,
   const KeyType initMaxKey = std::numeric_limits<KeyType>::is_integer ?
     std::numeric_limits<KeyType>::min () :
     -std::numeric_limits<KeyType>::max ();
-  this->init (keys, startingValue, initMinKey, initMaxKey, initMinKey, initMinKey, false);
+  this->init (keys, startingValue, initMinKey, initMaxKey,
+              initMinKey, initMinKey, false);
 
 #ifdef HAVE_TPETRA_DEBUG
   check ();
@@ -1065,8 +1070,8 @@ init (const keys_type& keys,
       ValueType startingValue,
       KeyType initMinKey,
       KeyType initMaxKey,
-      ValueType firstContigKey,
-      ValueType lastContigKey,
+      KeyType firstContigKey,
+      KeyType lastContigKey,
       const bool computeInitContigKeys)
 {
   using Kokkos::subview;
