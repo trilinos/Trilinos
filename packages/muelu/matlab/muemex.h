@@ -60,7 +60,8 @@
 #include "MueLu.hpp"
 #include "MueLu_EpetraOperator.hpp"
 #include "MueLu_TpetraOperator.hpp"
-#include "MueLu_Hierarchy_decl.hpp"
+#include "MueLu_Hierarchy.hpp"
+#include "MueLu_MatlabUtils.hpp"
 #include "MueLu_CreateEpetraPreconditioner.hpp"
 #include "MueLu_CreateTpetraPreconditioner.hpp"
 #include "Epetra_SerialComm.h"
@@ -68,16 +69,19 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
-#include "Tpetra_CrsMatrix_decl.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 #include "Xpetra_EpetraCrsMatrix.hpp"
 #include "BelosSolverFactory.hpp"
 #include "BelosEpetraAdapter.hpp"
 #include "BelosTpetraAdapter.hpp"
 #include "BelosMueLuAdapter.hpp"
+#include "MueLu_MatlabUtils.hpp"
+
 #include "mex.h"
-#include "muemexCallbacks.h"
 
 #define HAVE_COMPLEX_SCALARS
+
+namespace MueLu {
 
 typedef enum
   {
@@ -195,53 +199,6 @@ class TpetraSystem : public MuemexSystem
   Teuchos::RCP<TOperator> prec;
 };
 
-/* nonmember utility functions */
-
-//create an array of ints from an array of MATLAB array indices
-int* mwIndex_to_int(int N, mwIndex* mwi_array);
-//Convert individual Belos verbosity setting name to its enum value
-int strToMsgType(const char* str);
-//attempt to get hierarchy data type from the name of the field (A, P, Nullspace, etc)
-HierAttribType strToHierAttribType(const char* str);
-//Parse belos output style (Brief or General)
-int strToOutputStyle(const char* str);
-//Parse belos verbosity settings (returns enum values | together)
-int getBelosVerbosity(const char* input);
-//Load a multivector from a MATLAB array
-template<typename Scalar>
-Teuchos::RCP<Tpetra::MultiVector<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> loadTpetraMV(const mxArray* mxa);
-//create a sparse array in Matlab
-template<typename Scalar>
-mxArray* createMatlabSparse(int numRows, int numCols, int nnz);
-//create an ordinal (int32) vector in Matlab
-mxArray* createMatlabLOVector(Teuchos::RCP<Xpetra_ordinal_vector> vec);
-//copy a sparse Xpetra matrix (double or complex) to Matlab
-template<typename Scalar>
-mxArray* saveMatrixToMatlab(Teuchos::RCP<Xpetra::Matrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mat);
-template<typename Scalar>
-mxArray* createMatlabMultiVector(int numRows, int numCols);
-template<typename Scalar>
-mxArray* saveTpetraMV(Teuchos::RCP<Tpetra::MultiVector<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mv);
-template<typename Scalar>
-mxArray* saveMultiVectorToMatlab(Teuchos::RCP<Xpetra::MultiVector<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mv);
-template<typename Scalar>
-void fillMatlabArray(Scalar* array, const mxArray* mxa, int n);
-//set up Tpetra matrix from MATLAB array
-template<typename Scalar>
-Teuchos::RCP<Tpetra::CrsMatrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> tpetraLoadMatrix(const mxArray* mxa);
-//same as above but for Xpetra
-template<typename Scalar>
-Teuchos::RCP<Xpetra::Matrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> xpetraLoadMatrix(const mxArray* mxa);
-//Get a hierarchy from a MuemexSystem
-template<typename Scalar>
-Teuchos::RCP<MueLu::Hierarchy<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> getDatapackHierarchy(MuemexSystem* dp);
-//Get an Epetra_MultiVector from MATLAB array
-Teuchos::RCP<Epetra_MultiVector> loadEpetraMV(mxArray* mxa);
-//Save an Epetra MV to MATLAB array
-mxArray* saveEpetraMV(Teuchos::RCP<Epetra_MultiVector> mv);
-//Load an Epetra matrix from MATLAB array
-Teuchos::RCP<Epetra_CrsMatrix> epetraLoadMatrix(const mxArray* mxa);
-
 namespace MuemexSystemList
 {
   extern std::vector<Teuchos::RCP<MuemexSystem>> list;
@@ -264,5 +221,10 @@ Teuchos::RCP<Xpetra::Matrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> xpetr
   return MueLu::TpetraCrs_To_XpetraMatrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tpetraMat);
 }
 
+// Get a hierarchy from a MuemexSystem
+template<typename Scalar>
+Teuchos::RCP<MueLu::Hierarchy<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> getDatapackHierarchy(MuemexSystem* dp);
+
+}// end namespace
 
 #endif //MUEMEX_H

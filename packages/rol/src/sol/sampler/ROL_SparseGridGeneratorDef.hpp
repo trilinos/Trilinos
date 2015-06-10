@@ -86,7 +86,7 @@ template<class Real>
 bool SparseGridGenerator<Real>::checkMaxLevel(std::vector<int> &index) {
   int  level = 0;
   bool useMax = true;
-  for ( int l = 0; l < index.size(); l++ ) {
+  for ( unsigned l = 0; l < index.size(); l++ ) {
     if ( useMax ) {
       level = std::max(level,index[l]);
     }

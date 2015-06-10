@@ -1,12 +1,11 @@
 // @HEADER
+// ************************************************************************
 //
-// ***********************************************************************
+//               Rapid Optimization Library (ROL) Package
+//                 Copyright (2014) Sandia Corporation
 //
-//                MueLu: A package for multigrid based preconditioning
-//                                      Copyright 2012 Sandia Corporation
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -18,7 +17,7 @@
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//
+//  
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
@@ -35,34 +34,49 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact
-//                                        Jonathan Hu           (jhu@sandia.gov)
-//                                        Andrey Prokopenko (aprokop@sandia.gov)
-//                                        Ray Tuminaro          (rstumin@sandia.gov)
+// Questions? Contact lead developers:
+//              Drew Kouri   (dpkouri@sandia.gov) and
+//              Denis Ridzal (dridzal@sandia.gov)
 //
-// ***********************************************************************
-//
+// ************************************************************************
 // @HEADER
 
-#ifndef MUEMEX_CALLBACKS_H
-#define MUEMEX_CALLBACKS_H
+#ifndef ROL_BUNDLESTATUSTEST_H
+#define ROL_BUNDLESTATUSTEST_H
 
-#include "Teuchos_ParameterList.hpp"
-#include <string>
-#include "muemexTypes_decl.hpp"
+#include "ROL_StatusTest.hpp"
+#include "ROL_Types.hpp"
 
-#if !defined(HAVE_MUELU_MATLAB) || !defined(HAVE_MUELU_EPETRA) || !defined(HAVE_MUELU_TPETRA)
-#error "Muemex callbacks require MATLAB, Epetra and Tpetra."
-#else
-#include "mex.h"
+namespace ROL {
 
+template <class Real>
+class BundleStatusTest : public StatusTest<Real> {
+private:
 
-namespace MuemexCallback
-{
-  //The two callback functions that MueLu can call to run anything in MATLAB
-  void callMatlabNoArgs(std::string function);
-  std::vector<Teuchos::RCP<MuemexArg>> callMatlab(std::string function, int numOutputs, std::vector<Teuchos::RCP<MuemexArg>> args);
-}
+  Real tol_;
+  int  max_iter_;
 
-#endif //HAVE_MUELU_MATLAB
-#endif //MUEMEX_CALLBACKS_H guard
+public:
+
+  virtual ~BundleStatusTest() {}
+
+  BundleStatusTest( Real tol = 1.e-6, int max_iter = 100 ) :  
+    tol_(tol), max_iter_(max_iter) {}
+
+  /** \brief Check algorithm status.
+  */
+  virtual bool check( AlgorithmState<Real> &state ) {
+     bool stat = false;
+     if ( (std::max(state.aggregateGradientNorm,state.aggregateModelError) > tol_)  
+         && (state.iter < max_iter_) 
+         && (state.flag == false) ) {
+       stat = true;
+     }
+     return stat;
+  }
+
+}; // class BundleStatusTest
+
+} // namespace ROL
+
+#endif

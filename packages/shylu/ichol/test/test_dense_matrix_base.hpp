@@ -166,7 +166,7 @@ namespace Example {
       cout << "testDenseMatrixBase::Copy::Constructor::End - " << r_val << endl;
       // ---------------------------------------------------------------------------
       cout << "testDenseMatrixBase::Copy::DeepCopy::Begin - " << r_val << endl;
-      DenseMatrixBaseType C("C, Deep-copy of A");
+      DenseMatrixBaseType C("C, Deep-copy of A", A.NumRows(), A.NumCols());
       C.copy(A);
 
       r_val += tmg.check(C);
@@ -182,11 +182,11 @@ namespace Example {
       for (ordinal_type j=0;j<n;++j)
         p[j] = (n - j - 1);
 
-      DenseMatrixBaseType E("E, permuted A");
+      DenseMatrixBaseType E("E, permuted A", A.NumRows(), A.NumCols());
       E.copy(p, A);
       cout << E << endl;
 
-      DenseMatrixBaseType F("F, permuted E");
+      DenseMatrixBaseType F("F, permuted E", E.NumRows(), E.NumCols());
       F.copy(ip, E);
       r_val += tmg.check(F);
       cout << F << endl;

@@ -1070,7 +1070,7 @@ namespace panzer_stk_classic {
 
           // remove the already added coordinate fields
           std::set<std::string>::const_iterator rmItr;
-            for (rmItr=fields_to_remove.begin();rmItr!=fields_to_remove.end();++rmItr) 
+          for (rmItr=fields_to_remove.begin();rmItr!=fields_to_remove.end();++rmItr) 
             fieldNames.erase(fieldNames.find(panzer::StrPureBasisPair(*rmItr,Teuchos::null)));
         }
 

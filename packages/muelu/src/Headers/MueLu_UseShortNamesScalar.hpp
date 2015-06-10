@@ -326,3 +326,12 @@ typedef MueLu::Zoltan2Interface<Scalar,LocalOrdinal,GlobalOrdinal,Node> Zoltan2I
 typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils;
 typedef MueLu::Utils2<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils2;
 #endif
+
+#ifdef MUELU_TWOLEVELMATLABFACTORY_SHORT
+typedef MueLu::TwoLevelMatlabFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TwoLevelMatlabFactory;
+#endif
+
+#ifdef MUELU_SINGLELEVELMATLABFACTORY_SHORT
+typedef MueLu::SingleLevelMatlabFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SingleLevelMatlabFactory;
+#endif
+

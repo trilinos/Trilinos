@@ -452,7 +452,6 @@ namespace {
 template <typename INT>
 void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bulk, INT /*dummy*/, stk::io::StkMeshIoBroker::SideSetFaceCreationBehavior behavior)
 {
-    typedef std::vector<stk::mesh::EntityId>  EntityIdVector;
     assert(sset->type() == Ioss::SIDESET);
 
     const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
@@ -511,7 +510,7 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
                             bulk.change_entity_parts( side, add_parts );
                         }
                         else if (behavior == stk::io::StkMeshIoBroker::STK_IO_SIDESET_FACE_CREATION_CURRENT) {
-                            stk::mesh::Entity new_face = stk::mesh::impl::get_or_create_face_at_element_side(bulk,elem,side_ordinal,side_ids[is],*sb_part);
+                            stk::mesh::Entity new_face = stk::mesh::impl::get_or_create_face_at_element_side(bulk,elem,side_ordinal,side_ids[is],stk::mesh::PartVector(1,sb_part));
                             stk::mesh::impl::connect_face_to_other_elements(bulk,new_face,elem,side_ordinal);
                         }
                     }

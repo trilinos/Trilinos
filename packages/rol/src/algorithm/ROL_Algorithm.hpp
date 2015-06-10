@@ -78,6 +78,14 @@ public:
     printHeader_ = printHeader;
   }
 
+  DefaultAlgorithm(Step<Real> & step, StatusTest<Real> & status, AlgorithmState<Real> &state, 
+                   bool printHeader = false ) {
+    step_   = Teuchos::rcp(&step,   false);
+    status_ = Teuchos::rcp(&status, false);
+    state_  = Teuchos::rcp(&state,  false);
+    printHeader_ = printHeader;
+  }
+
   /** \brief Run algorithm on unconstrained problems (Type-U).
              This is the primary Type-U interface.
   */
@@ -226,6 +234,55 @@ public:
     while (status_->check(*state_)) {
       step_->compute(*s, x, l, obj, con, *state_);
       step_->update(x, l, *s, obj, con, *state_);
+      output.push_back(step_->print(*state_,printHeader_));
+      if ( print ) {
+        outStream << step_->print(*state_,printHeader_);
+      }
+    }
+    return output;
+  }
+
+  /** \brief Run algorithm on equality constrained problems (Type-E).
+             This general interface supports the use of dual optimization and
+             constraint vector spaces, where the user does not define the dual() method.
+  */
+  virtual std::vector<std::string> run( Vector<Real>             &x,
+                                        const Vector<Real>       &g, 
+                                        Vector<Real>             &l, 
+                                        const Vector<Real>       &c, 
+                                        Objective<Real>          &obj,
+                                        EqualityConstraint<Real> &con,
+                                        BoundConstraint<Real>    &bnd,
+                                        bool                     print = false,
+                                        std::ostream             &outStream = std::cout ) {
+    std::vector<std::string> output;
+
+    // Initialize Current Iterate Container 
+    if ( state_->iterateVec == Teuchos::null ) {
+      state_->iterateVec = x.clone();
+      state_->iterateVec->set(x);
+    }
+
+    // Initialize Current Lagrange Multiplier Container 
+    if ( state_->lagmultVec == Teuchos::null ) {
+      state_->lagmultVec = l.clone();
+      state_->lagmultVec->set(l);
+    }
+
+    // Initialize Step Container
+    Teuchos::RCP<Vector<Real> > s = x.clone();
+
+    // Initialize Step
+    step_->initialize(x, g, l, c, obj, con, bnd, *state_);
+    output.push_back(step_->print(*state_,true));
+    if ( print ) {
+      outStream << step_->print(*state_,true);
+    }
+
+    // Run Algorithm
+    while (status_->check(*state_)) {
+      step_->compute(*s, x, l, obj, con, bnd, *state_);
+      step_->update(x, l, *s, obj, con, bnd, *state_);
       output.push_back(step_->print(*state_,printHeader_));
       if ( print ) {
         outStream << step_->print(*state_,printHeader_);
