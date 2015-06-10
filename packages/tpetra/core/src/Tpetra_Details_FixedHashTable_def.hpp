@@ -791,7 +791,8 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   const ValueType startingValue = static_cast<ValueType> (0);
   host_input_keys_type keys_k (keys.size () == 0 ? NULL : keys.getRawPtr (),
                                keys.size ());
-  nonconst_keys_type keys_d (Kokkos::ViewAllocateWithoutInitializing ("keys"),
+  using Kokkos::ViewAllocateWithoutInitializing;
+  nonconst_keys_type keys_d (ViewAllocateWithoutInitializing ("FixedHashTable::keys"),
                              keys_k.dimension_0 ());
   Kokkos::deep_copy (keys_d, keys_k);
   const KeyType initMinKey = this->minKey_;
@@ -848,7 +849,8 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   // so I ensure this manually.
   host_input_keys_type keys_k (keys.size () == 0 ? NULL : keys.getRawPtr (),
                                keys.size ());
-  nonconst_keys_type keys_d (Kokkos::ViewAllocateWithoutInitializing ("keys"),
+  using Kokkos::ViewAllocateWithoutInitializing;
+  nonconst_keys_type keys_d (ViewAllocateWithoutInitializing ("FixedHashTable::keys"),
                              keys_k.dimension_0 ());
   Kokkos::deep_copy (keys_d, keys_k);
 
@@ -920,7 +922,8 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   // so I ensure this manually.
   host_input_keys_type keys_k (keys.size () == 0 ? NULL : keys.getRawPtr (),
                                keys.size ());
-  nonconst_keys_type keys_d (Kokkos::ViewAllocateWithoutInitializing ("keys"),
+  using Kokkos::ViewAllocateWithoutInitializing;
+  nonconst_keys_type keys_d (ViewAllocateWithoutInitializing ("FixedHashTable::keys"),
                              keys_k.dimension_0 ());
   Kokkos::deep_copy (keys_d, keys_k);
 
@@ -1165,7 +1168,7 @@ init (const keys_type& keys,
   // The array of counts must be separate from the array of offsets,
   // in order for parallel_scan to work correctly.
   typedef typename ptr_type::non_const_type counts_type;
-  counts_type counts ("counts", size);
+  counts_type counts ("FixedHashTable::counts", size);
 
   //
   // Count the number of "buckets" per offsets array (ptr) entry.
@@ -1190,7 +1193,7 @@ init (const keys_type& keys,
   }
 
   // Kokkos::View fills with zeros by default.
-  typename ptr_type::non_const_type ptr ("ptr", size + 1);
+  typename ptr_type::non_const_type ptr ("FixedHashTable::ptr", size + 1);
 
   // Compute row offsets via prefix sum:
   //
@@ -1219,8 +1222,10 @@ init (const keys_type& keys,
 
   // Allocate the array of (key,value) pairs.  Don't fill it with
   // zeros, because we will fill it with actual data below.
+  using Kokkos::ViewAllocateWithoutInitializing;
   typedef typename val_type::non_const_type nonconst_val_type;
-  nonconst_val_type val (Kokkos::ViewAllocateWithoutInitializing ("val"), theNumKeys);
+  nonconst_val_type val (ViewAllocateWithoutInitializing ("FixedHashTable::pairs"),
+                         theNumKeys);
 
   // Fill in the hash table's "values" (the (key,value) pairs).
   typedef FillPairs<typename val_type::non_const_type, keys_type,
@@ -1327,12 +1332,14 @@ init (const host_input_keys_type& keys,
   // Kokkos-izing all the set-up kernels, we won't need DualView for
   // either ptr or val.
 
-  typename ptr_type::non_const_type ptr ("ptr", size + 1);
+  typename ptr_type::non_const_type ptr ("FixedHashTable::ptr", size + 1);
 
   // Allocate the array of key,value pairs.  Don't waste time filling
   // it with zeros, because we will fill it with actual data below.
+  using Kokkos::ViewAllocateWithoutInitializing;
   typedef typename val_type::non_const_type nonconst_val_type;
-  nonconst_val_type val (Kokkos::ViewAllocateWithoutInitializing ("val"), numKeys);
+  nonconst_val_type val (ViewAllocateWithoutInitializing ("FixedHashTable::pairs"),
+                         numKeys);
 
   // Compute number of entries in each hash table position.
   for (offset_type k = 0; k < numKeys; ++k) {
@@ -1355,7 +1362,7 @@ init (const host_input_keys_type& keys,
   //ptr[0] = 0; // We've already done this when initializing ptr above.
 
   // curRowStart[i] is the offset of the next element in row i.
-  typename ptr_type::non_const_type curRowStart ("curRowStart", size);
+  typename ptr_type::non_const_type curRowStart ("FixedHashTable::curRowStart", size);
 
   // Fill in the hash table.
   FillPairsResult<KeyType> result (initMinKey, initMaxKey);
