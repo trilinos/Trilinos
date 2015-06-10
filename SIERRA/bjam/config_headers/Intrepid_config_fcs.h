@@ -20,4 +20,4 @@
 /* #undef HAVE_INTREPID_SACADO */
 
 /* *Define for Kokkos support */
-// #define HAVE_INTREPID_KOKKOSCORE
+#define HAVE_INTREPID_KOKKOSCORE
