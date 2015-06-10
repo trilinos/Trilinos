@@ -2448,9 +2448,9 @@ void BulkData::update_sharing_after_change_entity_owner()
     resolve_entity_ownership_and_part_membership_and_comm_list(modifiedEntities);
 }
 
-void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change,
-                                    modification_optimization mod_optimization )
+void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change)
 {
+    modification_optimization mod_optimization = MOD_END_SORT;
     const bool modStatus = modification_begin("change_entity_owner");
     ThrowRequireMsg(modStatus, "BulkData::change_entity_owner() must not be called from within a modification cycle.");
     this->internal_change_entity_owner(arg_change, mod_optimization);
