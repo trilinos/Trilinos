@@ -507,9 +507,9 @@ public:
    *    not in the closure of another ghosted entity which will remain
    *    in or be added to this ghosting.
    */
-  void change_ghosting( Ghosting & ghosts, // Mod Mark
+  void change_ghosting( Ghosting & ghosts,
                         const std::vector<EntityProc> & add_send ,
-                        const std::vector<EntityKey> & remove_receive = std::vector<EntityKey>());
+                        const std::vector<EntityKey> & remove_receive = std::vector<EntityKey>()); // Mod Mark
 
   void batch_add_to_ghosting(Ghosting &ghosting, const EntityProcVec &entitiesAndDestinationProcs); // Mod Mark
 
@@ -706,25 +706,38 @@ public:
 
 protected: //functions
 
-  bool modification_end_for_face_creation_and_deletion(const std::vector<sharing_info>& shared_modified, const stk::mesh::EntityVector& deletedEntities, impl::MeshModification::modification_optimization opt = impl::MeshModification::MOD_END_SORT);
+  bool modification_end_for_face_creation_and_deletion(const std::vector<sharing_info>& shared_modified,
+                                                       const stk::mesh::EntityVector& deletedEntities,
+                                                       impl::MeshModification::modification_optimization opt = impl::MeshModification::MOD_END_SORT); // Mod Mark
 
-  bool modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector, stk::mesh::impl::MeshModification::modification_optimization opt = stk::mesh::impl::MeshModification::MOD_END_SORT); // Mod Mark
+  bool modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector,
+                                             stk::mesh::impl::MeshModification::modification_optimization opt = stk::mesh::impl::MeshModification::MOD_END_SORT); // Mod Mark
 
-  bool internal_modification_end_for_skin_mesh( EntityRank entity_rank, stk::mesh::impl::MeshModification::modification_optimization opt, stk::mesh::Selector selectedToSkin,
-          const stk::mesh::Selector * only_consider_second_element_from_this_selector); // Mod Mark
+  bool internal_modification_end_for_skin_mesh( EntityRank entity_rank,
+                                                stk::mesh::impl::MeshModification::modification_optimization opt,
+                                                stk::mesh::Selector selectedToSkin,
+                                                const stk::mesh::Selector * only_consider_second_element_from_this_selector); // Mod Mark
 
   bool inputs_ok_and_need_ghosting(Ghosting & ghosts ,
                                const std::vector<EntityProc> & add_send ,
                                const std::vector<EntityKey> & remove_receive,
                                std::vector<EntityProc> &filtered_add_send);
 
-  void internal_batch_add_to_ghosting(Ghosting &ghosting, const EntityProcVec &entitiesAndDestinationProcs);
+  void internal_batch_add_to_ghosting(Ghosting &ghosting, const EntityProcVec &entitiesAndDestinationProcs); // Mod Mark
 
   bool in_send_ghost( const Ghosting & ghosting, EntityKey key, int proc) const;
   void ghost_entities_and_fields(Ghosting & ghosting, const std::set<EntityProc , EntityLess>& new_send);
 
-  void conditionally_add_entity_to_ghosting_set(const stk::mesh::Ghosting &ghosting, stk::mesh::Entity entity, int toProc, std::set <stk::mesh::EntityProc , stk::mesh::EntityLess > &entitiesWithClosure);
-  void add_closure_entities(const stk::mesh::Ghosting& ghosting, const stk::mesh::EntityProcVec& entities, std::set <stk::mesh::EntityProc , stk::mesh::EntityLess > &entitiesWithClosure);
+  void conditionally_add_entity_to_ghosting_set(const stk::mesh::Ghosting &ghosting,
+                                                stk::mesh::Entity entity,
+                                                int toProc,
+                                                std::set <stk::mesh::EntityProc,
+                                                stk::mesh::EntityLess > &entitiesWithClosure);
+
+  void add_closure_entities(const stk::mesh::Ghosting& ghosting,
+                            const stk::mesh::EntityProcVec& entities,
+                            std::set <stk::mesh::EntityProc,
+                            stk::mesh::EntityLess > &entitiesWithClosure);
 
   const EntityCommListInfoVector & internal_comm_list() const { return m_entity_comm_list; }
   PairIterEntityComm internal_entity_comm_map(const EntityKey & key) const { return m_entity_comm_map.comm(key); }
@@ -744,19 +757,19 @@ protected: //functions
 
   inline void set_state(Entity entity, EntityState entity_state);
   void update_deleted_entities_container();
-  std::pair<Entity, bool> internal_create_entity(EntityKey key, size_t preferred_offset = 0);
+  std::pair<Entity, bool> internal_create_entity(EntityKey key, size_t preferred_offset = 0); // Mod Mark
 
 
   /** \brief  Declare a collection of relations by simply iterating
    *          the input and calling declare_relation on each entry.
    */
-  void internal_declare_relation( Entity entity, const std::vector<Relation> & rel);
+  void internal_declare_relation( Entity entity, const std::vector<Relation> & rel); // Mod Mark
 
   void internal_declare_relation( Entity entity, const std::vector<Relation> & rel,
-                         OrdinalVector& ordinal_scratch, PartVector& part_scratch);
+                         OrdinalVector& ordinal_scratch, PartVector& part_scratch); // Mod Mark
 
   bool internal_declare_relation(Entity e_from, Entity e_to,
-                                 RelationIdentifier local_id, Permutation permut);
+                                 RelationIdentifier local_id, Permutation permut); // Mod Mark
 
   /** methods for managing arrays of entity member-data */
 
@@ -772,16 +785,16 @@ protected: //functions
    */
   void internal_change_entity_parts( Entity ,
                                      const std::vector<Part*> & add_parts ,
-                                     const std::vector<Part*> & remove_parts);
+                                     const std::vector<Part*> & remove_parts); // Mod Mark
 
-  virtual bool internal_destroy_entity( Entity entity, bool was_ghost = false );
+  virtual bool internal_destroy_entity( Entity entity, bool was_ghost = false ); // Mod Mark
 
   void internal_change_ghosting( Ghosting & ghosts,
                                  const std::vector<EntityProc> & add_send ,
                                  const std::vector<EntityKey> & remove_receive,
-                                 bool is_full_regen = false);
+                                 bool is_full_regen = false); // Mod Mark
 
-  void internal_add_to_ghosting( Ghosting &ghosting, const std::vector<EntityProc> &add_send);
+  void internal_add_to_ghosting( Ghosting &ghosting, const std::vector<EntityProc> &add_send); // Mod Mark
 
   //Optional parameter 'always_propagate_internal_changes' is always true except when this function
   //is being called from the sierra-framework. The fmwk redundantly does its own propagation of the
@@ -789,7 +802,7 @@ protected: //functions
   //the propagation that stk-mesh does.
   void internal_verify_and_change_entity_parts( Entity entity,
                                                 const PartVector & add_parts ,
-                                                const PartVector & remove_parts);
+                                                const PartVector & remove_parts); // Mod Mark
 
   void internal_insert_all_parts_induced_from_higher_rank_entities_to_vector(stk::mesh::Entity entity,
                                                                                stk::mesh::Entity e_to,
@@ -805,27 +818,28 @@ protected: //functions
 
   void update_shared_entities_global_ids(std::vector<shared_entity_type> & shared_entity_map);
   void resolve_entity_sharing(stk::mesh::EntityRank entityRank, std::vector<Entity> &entity_keys);
-  void find_and_delete_internal_faces(stk::mesh::EntityRank entityRank, const stk::mesh::Selector *only_consider_second_element_from_this_selector);
+  void find_and_delete_internal_faces(stk::mesh::EntityRank entityRank,
+                                      const stk::mesh::Selector *only_consider_second_element_from_this_selector); // Mod Mark
 
-  void internal_resolve_shared_modify_delete()
+  void internal_resolve_shared_modify_delete() // Mod Mark
   {
       m_meshModification.internal_resolve_shared_modify_delete();
   }
 
   void update_comm_list_based_on_changes_in_comm_map();
 
-  void internal_resolve_ghosted_modify_delete();
-  void internal_resolve_shared_membership();
-  void internal_resolve_parallel_create();
-  void internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank(stk::mesh::EntityRank entityRank, std::vector<stk::mesh::Entity> & shared_new );
+  void internal_resolve_ghosted_modify_delete(); // Mod Mark
+  void internal_resolve_shared_membership(); // Mod Mark
+  void internal_resolve_parallel_create(); // Mod Mark
+  void internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank(stk::mesh::EntityRank entityRank, std::vector<stk::mesh::Entity> & shared_new ); // Mod Mark
   virtual void internal_update_sharing_comm_map_and_fill_list_modified_shared_entities(std::vector<stk::mesh::Entity> & shared_new );
   void extract_entity_from_shared_entity_type(const std::vector<shared_entity_type>& shared_entities, std::vector<Entity>& shared_new);
   void fill_shared_entities_of_rank(stk::mesh::EntityRank rank, std::vector<Entity> &shared_new);
 
   virtual void internal_resolve_send_ghost_membership();
   virtual bool should_sort_buckets_by_first_entity_identifier() const;
-  void resolve_ownership_of_modified_entities(const std::vector<stk::mesh::Entity> &shared_new);
-  void move_entities_to_proper_part_ownership( const std::vector<stk::mesh::Entity> &shared_modified );
+  void resolve_ownership_of_modified_entities(const std::vector<stk::mesh::Entity> &shared_new); // Mod Mark
+  void move_entities_to_proper_part_ownership( const std::vector<stk::mesh::Entity> &shared_modified ); // Mod Mark
 
   void add_comm_list_entries_for_entities(const std::vector<stk::mesh::Entity>& shared_modified);
 
@@ -860,10 +874,10 @@ protected: //functions
    *
    *  - a collective parallel operation.
    */
-  void internal_regenerate_aura();
-  void fill_list_of_entities_to_send_for_aura_ghosting(std::vector<EntityProc> &send);
+  void internal_regenerate_aura(); // Mod Mark
+  void fill_list_of_entities_to_send_for_aura_ghosting(std::vector<EntityProc> &send); // Mod Mark
 
-  void require_ok_to_modify() const ;
+  void require_ok_to_modify() const ; // Mod Mark
   void internal_update_fast_comm_maps();
 
   void internal_create_new_owner_map(const std::vector<EntityProc> & local_change,
@@ -876,7 +890,7 @@ protected: //functions
   bool is_entity_in_sharing_comm_map(stk::mesh::Entity entity);
   void erase_sharing_info_using_key(stk::mesh::EntityKey key, stk::mesh::BulkData::GHOSTING_ID ghostingId);
   void add_sharing_info(stk::mesh::Entity entity, stk::mesh::BulkData::GHOSTING_ID ghostingId, int sharingProc);
-  void update_sharing_after_change_entity_owner();
+  void update_sharing_after_change_entity_owner(); // Mod Mark
   void get_entities_that_have_sharing(std::vector<stk::mesh::Entity> &entitiesThatHaveSharingInfo,
           stk::mesh::EntityToDependentProcessorsMap &entityKeySharing);
   void get_locally_modified_shared_entities(stk::mesh::EntityToDependentProcessorsMap &entityKeySharing, std::vector<std::pair<stk::mesh::EntityKey, int> >& sharedEntities);
@@ -885,7 +899,7 @@ protected: //functions
   void erase_all_sharing_for_invalid_entities_on_comm_map();
   void fill_entities_that_have_lost_sharing_info(const std::vector<std::pair<stk::mesh::EntityKey, int> > &sharedEntities,
           const std::vector<stk::mesh::Entity>& entitiesThatUsedToHaveSharingInfoBeforeCEO, std::vector<stk::mesh::Entity>& modifiedEntitiesForWhichCommMapsNeedUpdating);
-  void resolve_entity_ownership_and_part_membership_and_comm_list(std::vector<stk::mesh::Entity>& modifiedEntities);
+  void resolve_entity_ownership_and_part_membership_and_comm_list(std::vector<stk::mesh::Entity>& modifiedEntities); // Mod Mark
 
   //reserves space for a new entity, or reclaims space from a previously-deleted entity
   virtual size_t generate_next_local_offset(size_t preferred_offset = 0);
@@ -914,12 +928,11 @@ protected: //functions
 
   bool internal_destroy_relation(Entity e_from ,
                                  Entity e_to,
-                                 const RelationIdentifier local_id );
+                                 const RelationIdentifier local_id ); // Mod Mark
 
   void check_mesh_consistency();
   bool comm_mesh_verify_parallel_consistency(std::ostream & error_log);
-  void delete_shared_entities_which_are_no_longer_in_owned_closure();
-  void write_modification_counts();
+  void delete_shared_entities_which_are_no_longer_in_owned_closure(); // Mod Mark
   virtual void is_entity_shared(std::vector<shared_entity_type>& shared_entity_map, int proc_id, shared_entity_type &sentity);
   void mark_shared_sides_and_fill_list_of_sides_not_on_boundary(std::vector<shared_entity_type>& shared_entity_map,
           int proc_id, shared_entity_type &sentity, std::vector<stk::mesh::EntityKeyProc> &entities_to_send_data,
@@ -938,7 +951,7 @@ protected: //functions
 
   inline void internal_mark_entity(Entity entity, entitySharing sharedType);
 
-  void internal_change_entity_key(EntityKey old_key, EntityKey new_key, Entity entity);
+  void internal_change_entity_key(EntityKey old_key, EntityKey new_key, Entity entity); // Mod Mark
 
   AutomaticAuraOption get_automatic_aura_option() const { return m_autoAuraOption; }
 
@@ -946,7 +959,7 @@ protected: //functions
 
   void internal_finish_modification_end(impl::MeshModification::modification_optimization opt); // Mod Mark
 
-  void internal_change_owner_in_comm_data(const EntityKey& key, int new_owner);
+  void internal_change_owner_in_comm_data(const EntityKey& key, int new_owner); // Mod Mark
 
 private: //functions
 
@@ -983,7 +996,7 @@ private:
 
   void communicate_entity_modification( const BulkData & mesh ,
                                         const bool shared ,
-                                        std::vector<EntityParallelState > & data );
+                                        std::vector<EntityParallelState > & data ); // Mod Mark
   bool pack_entity_modification( const BulkData & mesh ,
                                  const bool packShared ,
                                  stk::CommSparse & comm );
@@ -1055,23 +1068,23 @@ private:
                                  const RelationIdentifier local_id ,
                                  Permutation permut,
                                  OrdinalVector& ordinal_scratch,
-                                 PartVector& part_scratch);
+                                 PartVector& part_scratch); // Mod Mark
 
   MetaData & meta_data() const { return m_mesh_meta_data ; }
 
-  int determine_new_owner( Entity ) const ;
+  int determine_new_owner( Entity ) const;  // Mod Mark
 
   Entity internal_declare_entity( EntityRank ent_rank , EntityId ent_id ,
-                                   const PartVector & parts );
+                                   const PartVector & parts ); // Mod Mark
 
   void internal_fill_parts_to_actually_remove(const PartVector & removed,
                                               OrdinalVector &scratchOrdinalVector,
                                               OrdinalVector &partsThatShouldStillBeInduced,
-                                              PartVector &delParts);
+                                              PartVector &delParts); // Mod Mark
 
   void internal_propagate_induced_part_changes_to_downward_connected_entities( Entity entity,
                                                                                const PartVector & added,
-                                                                               const PartVector & removed );
+                                                                               const PartVector & removed ); // Mod Mark
 
   Ghosting & internal_create_ghosting( const std::string & name );
   void internal_verify_inputs_and_change_ghosting(
@@ -1080,7 +1093,8 @@ private:
                                     const std::vector<EntityKey> & remove_receive );
 
 
-  bool internal_modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector, impl::MeshModification::modification_optimization opt ); // Mod Mark
+  bool internal_modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector,
+                                                      impl::MeshModification::modification_optimization opt ); // Mod Mark
 
 
   void internal_establish_new_owner(stk::mesh::Entity entity);
@@ -1092,23 +1106,25 @@ private:
   void internal_verify_add_and_remove_part_ranks_consistent_with_entity_rank(const PartVector & add_parts,
                                                                              const PartVector & remove_parts,
                                                                              stk::mesh::Entity entity);
-  void internal_throw_error_if_manipulating_internal_part_memberships(const PartVector & parts);
+  void internal_throw_error_if_manipulating_internal_part_memberships(const PartVector & parts); // Mod Mark
 
   void internal_adjust_closure_count(Entity entity,
                                        const PartVector & add_parts,
-                                       const PartVector & remove_parts);
-  void internal_adjust_entity_and_downward_connectivity_closure_count(stk::mesh::Entity entity, stk::mesh::Bucket *bucket_old, uint16_t closureCountAdjustment);
+                                       const PartVector & remove_parts); // Mod Mark
+  void internal_adjust_entity_and_downward_connectivity_closure_count(stk::mesh::Entity entity,
+                                                                      stk::mesh::Bucket *bucket_old,
+                                                                      uint16_t closureCountAdjustment); // Mod Mark
 
   void internal_fill_new_part_list_and_removed_part_list(stk::mesh::Entity entity,
                                                            const PartVector & add_parts,
                                                            const PartVector & remove_parts,
                                                            OrdinalVector &newBucketPartList,
                                                            PartVector &parts_removed);
-  void internal_move_entity_to_new_bucket(stk::mesh::Entity entity, const OrdinalVector &newBucketPartList);
+  void internal_move_entity_to_new_bucket(stk::mesh::Entity entity, const OrdinalVector &newBucketPartList); // Mod Mark
 
   void internal_verify_change_parts( const MetaData   & meta ,
                                      const Entity entity ,
-                                     const PartVector & parts ) const;
+                                     const PartVector & parts ) const; // Mod Mark
 
   void require_entity_owner( const Entity entity, int owner) const ;
 
@@ -1188,6 +1204,7 @@ private:
                                          std::vector<stk::mesh::Entity>& entitiesConnectedToNodes,
                                          const stk::mesh::Entity* nodes,
                                          std::set<EntityProc, EntityLess> &addGhostedEntities);
+
   void find_upward_connected_entities_to_ghost_onto_other_processors(stk::mesh::BulkData &mesh,
                                                                      std::set<EntityProc, EntityLess> &entitiesToGhostOntoOtherProcessors,
                                                                      EntityRank entity_rank, stk::mesh::Selector selected);
