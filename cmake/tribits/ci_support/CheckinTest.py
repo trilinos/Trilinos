@@ -345,7 +345,9 @@ class Timings:
 
 
 class GitRepo:
-  def __init__(self, repoName, repoDir='', repoType='GIT', repoHasPackages=True):
+  def __init__(self, repoName, repoDir='', repoType='GIT', repoHasPackages=True,
+    repoPrePost='POST' \
+    ):
     self.repoName = repoName
     if repoDir:
       self.repoDir = repoDir
@@ -353,6 +355,7 @@ class GitRepo:
       self.repoDir = repoName
     self.repoType = repoType
     self.repoHasPackages = repoHasPackages
+    self.repoPrePost = repoPrePost
     self.hasChanges = False
     if (self.repoName and self.repoHasPackages) and (self.repoName != self.repoDir):
       raise Exception("ERROR!  For extra repo '"+repoName+"', if repoHasPackages==True" \
@@ -365,6 +368,7 @@ class GitRepo:
       +", repoDir='"+str(self.repoDir)+"'" \
       +", repoType='"+str(self.repoType)+"'" \
       +", repoHasPackages="+str(self.repoHasPackages) \
+      +", repoPrePost="+str(self.repoPrePost) \
       +", hasChanges="+str(self.hasChanges) \
       +"}"
   def __rep__(self):
@@ -402,8 +406,9 @@ def translateExtraReposPyToDictGitRepo(extraReposPyDict):
   repoName = extraReposPyDict['NAME']
   repoDir = extraReposPyDict['DIR']
   repoType = extraReposPyDict['REPOTYPE']
-  repoHasPackages = (extraReposPyDict['PACKSTAT'] == 'HASPACKAGES')
-  return GitRepo(repoName, repoDir, repoType, repoHasPackages)
+  repoHasPackages = (extraReposPyDict['HASPKGS'] == 'HASPACKAGES')
+  repoPrePost = extraReposPyDict['PREPOST']
+  return GitRepo(repoName, repoDir, repoType, repoHasPackages, repoPrePost)
 
 
 class TribitsGitRepos:
@@ -442,22 +447,38 @@ class TribitsGitRepos:
   def gitRepoList(self):
     return self.__gitRepoList
 
+  def tribitsPreRepoNamesList(self):
+    return self.__tribitsPreRepoNamesList
+
+  def numTribitsPreRepos(self):
+    return len(self.__tribitsPreRepoNamesList)
+
   def tribitsExtraRepoNamesList(self):
     return self.__tribitsExtraRepoNamesList
 
   def numTribitsExtraRepos(self):
     return len(self.__tribitsExtraRepoNamesList)
 
+  def tribitsAllExtraRepoNamesList(self):
+    return self.__tribitsAllExtraRepoNamesList
+
+  def numTribitsAllExtraRepos(self):
+    return len(self.__tribitsAllExtraRepoNamesList)
+
   def __str__(self):
     strRep = "{\n"
     strRep += "  gitRepoList = " + self.__printReposList(self.__gitRepoList)
+    strRep += "  tribitsPreRepoNamesList = "+str(self.__tribitsPreRepoNamesList)+"\n"
     strRep += "  tribitsExtraRepoNamesList = "+str(self.__tribitsExtraRepoNamesList)+"\n"
+    strRep += "  tribitsAllExtraRepoNamesList = "+str(self.__tribitsAllExtraRepoNamesList)+"\n"
     strRep += "  }\n"
     return strRep
 
   def reset(self):
     self.__gitRepoList = []
+    self.__tribitsPreRepoNamesList = []
     self.__tribitsExtraRepoNamesList = []
+    self.__tribitsAllRepoNamesList = []
     return self
 
   # Private
@@ -474,16 +495,25 @@ class TribitsGitRepos:
     return strRep
 
   def __initFinalize(self):
+    self.__tribitsPreRepoNamesList = []
     self.__tribitsExtraRepoNamesList = []
+    self.__tribitsAllExtraRepoNamesList = []
     for gitRepo in self.__gitRepoList:
       if gitRepo.repoName and gitRepo.repoHasPackages:
-        self.__tribitsExtraRepoNamesList.append(gitRepo.repoName)
+        self.__tribitsAllExtraRepoNamesList.append(gitRepo.repoName)
+        if gitRepo.repoPrePost == 'PRE':
+          self.__tribitsPreRepoNamesList.append(gitRepo.repoName)
+        else:
+          self.__tribitsExtraRepoNamesList.append(gitRepo.repoName)
 
 
 def createAndGetProjectDependencies(inOptions, baseTestDir, tribitsGitRepos):
 
+  if tribitsGitRepos.numTribitsPreRepos() > 0:
+    print "\nPulling in packages from PRE extra repos: "+\
+       ','.join(tribitsGitRepos.tribitsPreRepoNamesList())+" ..."
   if tribitsGitRepos.numTribitsExtraRepos() > 0:
-    print "\nPulling in packages from extra repos: "+\
+    print "\nPulling in packages from POST extra repos: "+\
        ','.join(tribitsGitRepos.tribitsExtraRepoNamesList())+" ..."
   for gitRepo in tribitsGitRepos.gitRepoList():
     assertGitRepoExists(inOptions, gitRepo)        
@@ -497,6 +527,8 @@ def createAndGetProjectDependencies(inOptions, baseTestDir, tribitsGitRepos):
       "-DPROJECT_NAME=%s" % inOptions.projectName,
       cmakeScopedDefine(inOptions.projectName, "TRIBITS_DIR", inOptions.tribitsDir),
       "-DPROJECT_SOURCE_DIR="+inOptions.srcDir,
+      cmakeScopedDefine(inOptions.projectName, "PRE_REPOSITORIES", "\""+\
+        ';'.join(tribitsGitRepos.tribitsPreRepoNamesList())+"\""),
       cmakeScopedDefine(inOptions.projectName, "EXTRA_REPOSITORIES", "\""+\
         ';'.join(tribitsGitRepos.tribitsExtraRepoNamesList())+"\""),
       cmakeScopedDefine(inOptions.projectName, "DEPS_XML_OUTPUT_FILE", projectDepsXmlFile),
@@ -1209,9 +1241,12 @@ def getEnablesLists(inOptions, validPackageTypesList, isDefaultBuild,
   if verbose:
     print "\nFinal package enable list: [" + ','.join(enablePackagesList) + "]"
 
-  if tribitsGitRepos.numTribitsExtraRepos() > 0:
+  if tribitsGitRepos.numTribitsAllExtraRepos() > 0:
     cmakePkgOptions.extend(
       [
+        cmakeScopedDefine(
+          projectName, "PRE_REPOSITORIES:STRING",
+          ','.join(tribitsGitRepos.tribitsPreRepoNamesList())),
         cmakeScopedDefine(
           projectName, "EXTRA_REPOSITORIES:STRING",
           ','.join(tribitsGitRepos.tribitsExtraRepoNamesList())),

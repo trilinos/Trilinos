@@ -1,0 +1,22 @@
+#
+# TribitsExampleMetaProject Documentation
+#
+
+WARNING: WORK IN PROGRESS!  This TriBITS example project will get fleshed out
+more in the future to be more complete.
+
+The project TribitsExampleMetaProject defines a TriBITS CMake project designed
+to provide a simple example to demonstrate how to compose a TriBITS Meta
+project.
+
+To get started building you can create a directory structure like:
+
+    ~/TribitsExampleMetaProject.base/
+        TribitsExampleMetaProject/       # This directory
+          TribitsExampleProject/         # Copied in
+          TribitsExampleProjectAddons/   # Copied in
+        BUILDS/
+            GCC-<X.Y.Z>/
+                MPI_DEBUG/
+
+ToDo: Finish documentation!
