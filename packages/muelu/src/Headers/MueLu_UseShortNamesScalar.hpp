@@ -335,3 +335,7 @@ typedef MueLu::TwoLevelMatlabFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> Two
 typedef MueLu::SingleLevelMatlabFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SingleLevelMatlabFactory;
 #endif
 
+#ifdef MUELU_MATLABSMOOTHERFACTORY_SHORT
+typedef MueLu::MatlabSmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> MatlabSmootherFactory;
+#endif
+

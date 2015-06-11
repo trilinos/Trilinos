@@ -88,6 +88,11 @@
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_Zoltan2Interface.hpp"
 
+#ifdef HAVE_MUELU_MATLAB
+#include "../matlab/MueLu_MatlabSmoother_decl.hpp"
+#include "../matlab/MueLu_MatlabSmoother_def.hpp"
+#endif
+
 // These code chunks should only be enabled once Tpetra supports proper graph
 // reuse in MMM. At the moment, only Epetra does, while Tpetra throws
 // #define REUSE_MATRIX_GRAPHS
