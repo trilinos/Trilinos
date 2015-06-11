@@ -347,7 +347,7 @@ namespace { // (anonymous)
     TEST_EQUALITY( keys_h(numKeys-1), table->maxKey () );
     TEST_EQUALITY( startingValue, table->minVal () );
     TEST_EQUALITY( static_cast<ValueType> (startingValue + numKeys - 1), table->maxVal () );
-    TEST_EQUALITY( numKeys, table->numPairs () );
+    TEST_EQUALITY( static_cast<size_t> (numKeys), static_cast<size_t> (table->numPairs ()) );
 
     bool duplicateKeys = false;
     TEST_NOTHROW( duplicateKeys = table->hasDuplicateKeys () );
@@ -419,7 +419,7 @@ namespace { // (anonymous)
     TEST_EQUALITY( keys_h(numKeys-1), table->maxKey () );
     TEST_EQUALITY( startingValue, table->minVal () );
     TEST_EQUALITY( static_cast<ValueType> (startingValue + numKeys - 1), table->maxVal () );
-    TEST_EQUALITY( numKeys, table->numPairs () );
+    TEST_EQUALITY( static_cast<size_t> (numKeys), static_cast<size_t> (table->numPairs ()) );
 
     bool duplicateKeys = false;
     TEST_NOTHROW( duplicateKeys = table->hasDuplicateKeys () );
@@ -492,7 +492,7 @@ namespace { // (anonymous)
     TEST_EQUALITY( keys_h(3), table->maxKey () );
     TEST_EQUALITY( startingValue, table->minVal () );
     TEST_EQUALITY( static_cast<ValueType> (startingValue + numKeys - 1), table->maxVal () );
-    TEST_EQUALITY( numKeys, table->numPairs () );
+    TEST_EQUALITY( static_cast<size_t> (numKeys), static_cast<size_t> (table->numPairs ()) );
 
     bool duplicateKeys = false;
     TEST_NOTHROW( duplicateKeys = table->hasDuplicateKeys () );
@@ -565,7 +565,7 @@ namespace { // (anonymous)
     TEST_EQUALITY( keys_h(3), table->maxKey () );
     TEST_EQUALITY( startingValue, table->minVal () );
     TEST_EQUALITY( static_cast<ValueType> (startingValue + numKeys - 1), table->maxVal () );
-    TEST_EQUALITY( numKeys, table->numPairs () );
+    TEST_EQUALITY( static_cast<size_t> (numKeys), static_cast<size_t> (table->numPairs ()) );
 
     bool duplicateKeys = false;
     TEST_NOTHROW( duplicateKeys = table->hasDuplicateKeys () );
@@ -637,7 +637,7 @@ namespace { // (anonymous)
     TEST_EQUALITY( keys_h(3), table->maxKey () );
     TEST_EQUALITY( vals_h(0), table->minVal () );
     TEST_EQUALITY( vals_h(1), table->maxVal () );
-    TEST_EQUALITY( numKeys, table->numPairs () );
+    TEST_EQUALITY( static_cast<size_t> (numKeys), static_cast<size_t> (table->numPairs ()) );
 
     bool duplicateKeys = false;
     TEST_NOTHROW( duplicateKeys = table->hasDuplicateKeys () );
@@ -718,7 +718,7 @@ namespace { // (anonymous)
     TEST_EQUALITY( startingValue, table->minVal () );
     TEST_EQUALITY( static_cast<ValueType> (startingValue + numKeys - 1), table->maxVal () );
     // The table is supposed to count duplicate keys separately.
-    TEST_EQUALITY( numKeys, table->numPairs () );
+    TEST_EQUALITY( static_cast<size_t> (numKeys), static_cast<size_t> (table->numPairs ()) );
 
     bool duplicateKeys = false;
     TEST_NOTHROW( duplicateKeys = table->hasDuplicateKeys () );
@@ -734,7 +734,7 @@ namespace { // (anonymous)
     // The table is supposed to count duplicate keys separately.
     // Asking if the table has duplicate keys must NOT merge those
     // keys.
-    TEST_EQUALITY( numKeys, table->numPairs () );
+    TEST_EQUALITY( static_cast<size_t> (numKeys), static_cast<size_t> (table->numPairs ()) );
 
     // Furthermore, asking for the min and max keys should not affect
     // whether the table reports that it has duplicate keys.
