@@ -125,6 +125,7 @@
 #include "MueLu_Zoltan2Interface.hpp"
 
 #ifdef HAVE_MUELU_MATLAB
+// This is distasteful, but (sadly) neccesary due to peculiarities in MueLu's build system.
 #include "../matlab/MueLu_SingleLevelMatlabFactory_decl.hpp"
 #include "../matlab/MueLu_SingleLevelMatlabFactory_def.hpp"
 #include "../matlab/MueLu_TwoLevelMatlabFactory_decl.hpp"
