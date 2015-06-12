@@ -138,7 +138,7 @@ main (int argc, char* argv[])
   RCP<prec_type> M;
   if (args.usePreconditioner) {
     Teuchos::TimeMonitor precSetupTimeMon (*precSetupTime);
-    M = Ifpack2::Factory::template create<row_matrix_type> ("RELAXATION", A);
+    M = Ifpack2::Factory::create<row_matrix_type> ("RELAXATION", A);
     if (M.is_null ()) {
       if (comm->getRank () == 0) {
         cerr << "Failed to create Ifpack2 preconditioner!" << endl;
