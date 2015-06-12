@@ -45,7 +45,7 @@
 #ifndef _ZOLTAN2_ALGZOLTAN_HPP_
 #define _ZOLTAN2_ALGZOLTAN_HPP_
 
-#include <Zoltan2_GraphModel.hpp>
+#include <Zoltan2_Standards.hpp>
 #include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_Util.hpp>
@@ -226,6 +226,16 @@ void AlgZoltan<Adapter>::partition(
 
   // TODO  Add a way to set Zoltan parameters directly from parameter list here
   // TODO  Exclude ones like RETURN_LISTS, AUTOMIGRATE, NUM_GLOBAL_PARTS, etc.
+  const Teuchos::ParameterList &pl = env->getParameters();
+
+  double tolerance;
+  const Teuchos::ParameterEntry *pe = pl.getEntryPtr("imbalance_tolerance");
+  if (pe){
+    char str[30];
+    tolerance = pe->getValue<double>(&tolerance);
+    sprintf(str, "%f", tolerance);
+    zz->Set_Param("IMBALANCE_TOL", str);
+  }
 
   int ierr = 0;
 
@@ -258,7 +268,6 @@ void AlgZoltan<Adapter>::partition(
 
   zz->Set_Param("RETURN_LISTS", "PARTS");  // Best format for Zoltan2;
                                            // results in export lists
-
   ierr = zz->LB_Partition(changed, nGidEnt, nLidEnt,
                           nImport, iGids, iLids, iProcs, iParts,
                           nExport, eGids, eLids, eProcs, eParts);
