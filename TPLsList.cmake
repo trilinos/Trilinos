@@ -128,6 +128,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   Boost           "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   SS
   Scotch          "cmake/TPLs/"    SS
   OVIS            "cmake/TPLs/"    SS
+  ParMA           "cmake/TPLs/"    SS
   gpcd            "cmake/TPLs/"    SS
   METIS           "cmake/TPLs/"    TS
   ParMETIS        "cmake/TPLs/"    SS
