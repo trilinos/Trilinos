@@ -89,9 +89,10 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DCMAKE_CXX_COMPILER:FILEPATH=${MPI_BASE_DIR}/bin/mpicxx"
     "-DCMAKE_C_COMPILER:FILEPATH=${MPI_BASE_DIR}/bin/mpicc" 
     "-DCMAKE_FORTRAN_COMPILER:FILEPATH=${MPI_BASE_DIR}/bin/mpifort" 
-    "-DMPI_EXEC:FILEPATH=${MPI_PATH}/bin/mpirun"
+    "-DMPI_EXEC:FILEPATH=${MPI_BASE_DIR}/bin/mpirun"
     "-DMPI_EXEC_POST_NUMPROCS_FLAGS:STRING=-bind-to-socket"
     "-DTPL_ENABLE_MPI:BOOL=ON"
+    "-DTPL_ENABLE_SuperLU:BOOL=ON"
     "-DSuperLU_INCLUDE_DIRS=/home/tawiesn/software/SuperLU_4.3/SRC"
     "-DSuperLU_LIBRARY_DIRS=/home/tawiesn/software/SuperLU_4.3/lib"
     "-DSuperLU_LIBRARY_NAMES=superlu_4.3"
@@ -111,8 +112,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
          ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
          "-DTPL_ENABLE_MPI:BOOL=ON"
-         "-DMPI_BASE_DIR:PATH=/usr/lib64/openmpi"
      )
+  #       "-DMPI_BASE_DIR:PATH=/usr/lib64/openmpi"
   #       "-DMPI_BASE_DIR:PATH=/usr/lib64/openmpi"
   #       "-DMPI_EXEC:FILEPATH=${MPI_PATH}/bin/mpirun"
   #       "-DMPI_EXEC_POST_NUMPROCS_FLAGS:STRING=-bind-to-socket" 
