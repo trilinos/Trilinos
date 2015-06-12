@@ -68,16 +68,15 @@ SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Experimental)
 SET(CTEST_TEST_TIMEOUT 900)
 
-SET(Trilinos_PACKAGES MueLu Kokkos Tpetra Xpetra Belos Amesos2 Ifpack2 Zoltan2 Amesos Ifpack Zoltan)
+SET(Trilinos_PACKAGES Kokkos Tpetra Belos Ifpack2 MueLu Amesos Amesos2 Ifpack Epetra EpetraExt Zoltan Zoltan2 )
 
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON"
-  "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=OFF"
   "-DTPL_ENABLE_SuperLU=ON"
 )
 
 #"-DAmesos2_ENABLE_KLU2:BOOL=ON"
-
+#"-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=OFF"
 #
 # Set the rest of the system-specific options and run the dashboard build/test
 #
