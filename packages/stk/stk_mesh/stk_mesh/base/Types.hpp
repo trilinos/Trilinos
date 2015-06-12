@@ -117,6 +117,29 @@ enum EntityState { Unchanged = 0 ,
                    Modified = 2 ,
                    Deleted  = 3 };
 
+inline std::ostream & operator<<(std::ostream &out, EntityState state)
+{
+  switch (state)
+  {
+      case EntityState::Unchanged:
+          out << "Unchanged";
+          break;
+      case EntityState::Created:
+          out << "Created  ";
+          break;
+      case EntityState::Modified:
+          out << "Modified ";
+          break;
+      case EntityState::Deleted:
+          out << "Deleted  ";
+          break;
+      default:
+          out << "Unknown  ";
+  }
+  return out;
+}
+
+
 template< class FieldType > struct FieldTraits ;
 
 //MeshIndex describes an Entity's location in the mesh, specifying which bucket,

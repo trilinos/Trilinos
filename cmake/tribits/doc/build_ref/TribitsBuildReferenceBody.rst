@@ -1832,6 +1832,16 @@ be specified at configure time by setting the variable
 ``CMAKE_INSTALL_PREFIX``.  The other commands described below can all be run
 after the build and testing is complete.
 
+**WARNING:** When using shared libraries, one must be careful to avoid the
+error **"RegularExpression::compile(): Expression too big."** when using RPATH
+and when RPATH gets stripped out on install.  To avoid this error, use the
+shortest build directory you can, like::
+
+  $HOME/<Project>_BUILD/
+
+This has been shown to allow even the most complex TriBITS-based CMake
+projects to successfully install and avoid this error.
+
 
 Setting the install prefix at configure time
 --------------------------------------------
@@ -1907,6 +1917,14 @@ software first before installing with::
 
 This will ensure that everything is built correctly and all tests pass before
 installing.
+
+**NOTE:** If while installing you see errors stating
+"RegularExpression::compile(): Expression too big.", then try using a shorter
+build directory path like::
+
+  $HOME/<Project>_BUILD/
+
+See the above warning for more details.
 
 
 Packaging

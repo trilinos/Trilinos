@@ -51,11 +51,11 @@ NAMED_PAIR( ProcFaceIdPair , int , proc , stk::mesh::EntityId , face_id )
 typedef std::map<EntitySidePair, ProcFaceIdPair>  ElemSideToProcAndFaceId;
 
 void set_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData& bulkData, stk::mesh::EntityVector& local_id_to_element_entity, std::vector<stk::topology>& element_topologies);
+void fill_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData& bulkData, stk::mesh::EntityVector& local_id_to_element_entity, std::vector<unsigned>& entity_to_local_id, std::vector<stk::topology>& element_topologies);
 
 void fill_graph(const stk::mesh::BulkData& bulkData, ElementGraph& elem_graph, SidesForElementGraph& via_sides);
 
-stk::mesh::EntityVector get_elements_to_communicate(const stk::mesh::BulkData& bulkData);
-ElemSideToProcAndFaceId get_elements_to_communicate1(const stk::mesh::BulkData& bulkData);
+ElemSideToProcAndFaceId get_element_side_ids_to_communicate(const stk::mesh::BulkData& bulkData);
 
 void pack_shared_side_nodes_of_elements(stk::CommSparse& comm, const stk::mesh::BulkData& bulkData, ElemSideToProcAndFaceId& elements_to_communicate,
         const std::vector<stk::mesh::EntityId>& suggested_face_ids);
@@ -79,7 +79,7 @@ void pack_elements_to_comm(stk::CommSparse &comm, const std::vector<graphEdgePro
 void create_or_delete_shared_face(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_info, const ElemElemGraph& elementGraph,
         stk::mesh::Entity local_element, stk::mesh::EntityId remote_id, bool create_face, const stk::mesh::PartVector& face_parts,
         std::vector<stk::mesh::sharing_info> &shared_modified, stk::mesh::EntityVector &deletedEntities,
-        size_t &id_counter, stk::mesh::EntityId suggested_local_face_id);
+        size_t &id_counter, stk::mesh::EntityId suggested_local_face_id, stk::mesh::Part& faces_created_during_death);
 
 stk::mesh::Entity get_face_for_element_side(const stk::mesh::BulkData& bulkData, stk::mesh::Entity this_elem_entity, int side_id);
 

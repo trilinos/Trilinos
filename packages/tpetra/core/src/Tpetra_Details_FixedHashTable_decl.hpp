@@ -688,8 +688,8 @@ private:
         const ValueType startingValue,
         KeyType initMinKey,
         KeyType initMaxKey,
-        ValueType firstContigKey,
-        ValueType lastContigKey,
+        KeyType firstContigKey,
+        KeyType lastContigKey,
         const bool computeInitContigKeys);
 
   /// \brief Allocate storage and initialize the table; use given

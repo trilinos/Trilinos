@@ -45,24 +45,23 @@
 #include <Kokkos_DefaultNode.hpp>
 #include <Tpetra_ConfigDefs.hpp>
 
-// Don't bother compiling anything, or even including anything else,
-// unless KokkosSerialWrapperNode is enabled.
-#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_SERIAL) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_SERIAL) && defined(TPETRA_HAVE_KOKKOS_REFACTOR) && defined(HAVE_TPETRA_INST_INT_UNSIGNED)
+
 #include "Tpetra_CrsMatrix_decl.hpp"
 #include "TpetraCore_ETIHelperMacros.h"
 #include "Tpetra_CrsMatrix_def.hpp"
-
-#define TPETRA_CRSMATRIX_SERIALWRAPPERNODE_INSTANT( SCALAR, LO, GO ) \
-  TPETRA_CRSMATRIX_INSTANT( SCALAR, LO, GO, Kokkos::Compat::KokkosSerialWrapperNode )
 
 namespace Tpetra {
 
  TPETRA_ETI_MANGLING_TYPEDEFS()
 
- TPETRA_INSTANTIATE_SLG(TPETRA_CRSMATRIX_SERIALWRAPPERNODE_INSTANT)
+#define TPETRA_CRSMATRIX_UNSIGNED_SERIALWRAPPERNODE_INSTANT( SCALAR, LO ) \
+  TPETRA_CRSMATRIX_INSTANT( SCALAR, LO, unsigned, Kokkos::Compat::KokkosSerialWrapperNode )
+
+ TPETRA_INSTANTIATE_SL(TPETRA_CRSMATRIX_UNSIGNED_SERIALWRAPPERNODE_INSTANT)
 
  // convert() gets instantiated in a separate file, Tpetra_CrsMatrix_convert.cpp
 
 } // namespace Tpetra
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION && HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT && KOKKOS_HAVE_SERIAL
+#endif

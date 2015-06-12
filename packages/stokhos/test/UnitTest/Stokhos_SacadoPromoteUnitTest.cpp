@@ -77,6 +77,36 @@ bool testUQExprPromote() {
     is_same<typename Promote<expr_type,uq_type>::type, uq_type >::value,
     "Promote<expr_type,uq_type>::type != uq_type");
 
+  static_assert(
+    is_same<typename Promote<scalar_type,expr_type>::type, uq_type >::value,
+    "Promote<scalar_type,uq_type>::type != uq_type");
+
+  static_assert(
+    is_same<typename Promote<expr_type,scalar_type>::type, uq_type >::value,
+    "Promote<expr_type,scalar_type>::type != uq_type");
+
+   static_assert(
+    is_same<typename Promote<value_type,expr_type>::type, uq_type >::value,
+    "Promote<value_type,uq_type>::type != uq_type");
+
+  static_assert(
+    is_same<typename Promote<expr_type,value_type>::type, uq_type >::value,
+    "Promote<expr_type,value_type>::type != uq_type");
+
+  // These tests are all compile-time tests, so if the test compiles,
+  // it passes...
+  return true;
+}
+
+template <typename uq_type, typename expr1_type, typename expr2_type>
+bool testUQExprPromote2() {
+  using Sacado::Promote;
+  using std::is_same;
+
+  static_assert(
+    is_same<typename Promote<expr1_type,expr2_type>::type, uq_type >::value,
+    "Promote<expr1_type,expr2_type>::type != uq_type");
+
   // These tests are all compile-time tests, so if the test compiles,
   // it passes...
   return true;
@@ -97,15 +127,25 @@ bool testUQPromote() {
   typedef decltype(-std::declval<uq_type>()) un_expr_type;
   bool res2 = testUQExprPromote<uq_type,un_expr_type>();
 
-  return res1 && res2;
+  bool res3 = testUQExprPromote2<uq_type,bi_expr_type,un_expr_type>();
+
+  return res1 && res2 && res3;
 }
 
 template <typename uq_type>
 bool testPromote() {
+  using Sacado::Promote;
+  using std::is_same;
   typedef Sacado::Fad::DFad<uq_type> fad_uq_type;
 
   bool res1 = testUQPromote<uq_type>();
   bool res2 = testUQPromote<fad_uq_type>();
+
+  typedef decltype(std::declval<uq_type>()*std::declval<uq_type>()) uq_expr_type;
+  typedef decltype(-std::declval<fad_uq_type>()) fad_uq_expr_type;
+  static_assert(
+    is_same<typename Promote<uq_expr_type,fad_uq_expr_type>::type, fad_uq_type >::value,
+    "Promote<uq_expr_type,fad_uq_expr_type>::type != fad_uq_type");
 
   return res1 && res2;
 }

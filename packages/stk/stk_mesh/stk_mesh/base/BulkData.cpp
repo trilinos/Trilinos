@@ -1494,7 +1494,7 @@ void BulkData::internal_dump_all_mesh_info(std::ostream& out) const
   m_mesh_meta_data.dump_all_meta_info(out);
 
   out << "BulkData "
-      << " info...\n";
+      << " info...(ptr=" << this << ")\n";
 
   out << "ConnectivityMap = " << "\n";
   out << this->connectivity_map();
@@ -1521,7 +1521,8 @@ void BulkData::internal_dump_all_mesh_info(std::ostream& out) const
 
       for (size_t b_ord = 0, b_end = bucket->size(); b_ord < b_end; ++b_ord) {
         Entity entity = (*bucket)[b_ord];
-        out << "      " << print_entity_key(m_mesh_meta_data, entity_key(entity)) << "(offset: " << entity.local_offset() << ")" << std::endl;
+        out << "      " << print_entity_key(m_mesh_meta_data, entity_key(entity)) << "(offset: " << entity.local_offset() <<
+                "), state = " << state(entity) << std::endl;
 
         // Print connectivity
         for (EntityRank r = stk::topology::NODE_RANK, re = static_cast<EntityRank>(rank_names.size()); r < re; ++r) {
@@ -1541,6 +1542,7 @@ void BulkData::internal_dump_all_mesh_info(std::ostream& out) const
                     out << " permutation index " << permutations[c_itr];
                 }
               }
+              out << ", state = " << state(target_entity);
               out << std::endl;
             }
           }
@@ -1564,7 +1566,6 @@ void BulkData::internal_dump_all_mesh_info(std::ostream& out) const
           }
         }
       }
-
     }
   }
 }
@@ -4033,6 +4034,7 @@ void BulkData::internal_modification_end_for_change_ghosting()
     }
 
     m_meshModification.set_sync_state_synchronized();
+    m_modSummary.write_summary(m_meshModification.synchronized_count());
 }
 
 bool BulkData::internal_modification_end_for_change_parts()
@@ -4055,7 +4057,7 @@ bool BulkData::internal_modification_end_for_change_parts()
     m_bucket_repository.internal_sort_bucket_entities();
 
     m_meshModification.set_sync_state_synchronized();
-
+    m_modSummary.write_summary(m_meshModification.synchronized_count());
     return true;
 }
 
@@ -4092,8 +4094,6 @@ void BulkData::check_mesh_consistency()
     // Verify parallel consistency of mesh entities.
     // Unique ownership, communication lists, sharing part membership,
     // application part membership consistency.
-
-    m_modSummary.write_summary(m_meshModification.synchronized_count());
 
 #ifndef NDEBUG
     ThrowErrorMsgIf(!stk::mesh::impl::check_permutations_on_all(*this), "Permutation checks failed.");
@@ -4362,6 +4362,8 @@ void BulkData::internal_finish_modification_end(modification_optimization opt)
     m_add_node_sharing_called = false;
 
     update_deleted_entities_container();
+
+    m_modSummary.write_summary(m_meshModification.synchronized_count());
 }
 
 bool BulkData::internal_modification_end_for_skin_mesh( EntityRank entity_rank, modification_optimization opt, stk::mesh::Selector selectedToSkin,
@@ -5291,29 +5293,29 @@ void BulkData::internal_insert_all_parts_induced_from_higher_rank_entities_to_ve
 {
     EntityRank e_to_rank = entity_rank(e_to);
 
-    Entity const* back_rel_entities = NULL;
-    int num_back_rels = 0;
+    Entity const* upward_rel_entities = NULL;
+    int num_upward_rels = 0;
     EntityRank start_rank = static_cast<EntityRank>(e_to_rank + 1);
     EntityRank end_rank = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
     for(EntityRank to_rel_rank_i = start_rank; to_rel_rank_i < end_rank; ++to_rel_rank_i)
     {
         if (connectivity_map().valid(e_to_rank, to_rel_rank_i))
         {
-            num_back_rels = num_connectivity(e_to, to_rel_rank_i);
-            back_rel_entities = begin(e_to, to_rel_rank_i);
+            num_upward_rels = num_connectivity(e_to, to_rel_rank_i);
+            upward_rel_entities = begin(e_to, to_rel_rank_i);
         }
         else
         {
-            num_back_rels = get_connectivity(*this, e_to, to_rel_rank_i, temp_entities);
-            back_rel_entities = &*temp_entities.begin();
+            num_upward_rels = get_connectivity(*this, e_to, to_rel_rank_i, temp_entities);
+            upward_rel_entities = &*temp_entities.begin();
         }
 
-        for (int k = 0; k < num_back_rels; ++k)
+        for (int k = 0; k < num_upward_rels; ++k)
         {
-            if (entity != back_rel_entities[k])  // Already did this entity
+            if (entity != upward_rel_entities[k])  // Already did this entity
             {
                 // Relation from to_rel->entity() to e_to
-                impl::get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(*this, back_rel_entities[k], empty, e_to_rank, to_add );
+                impl::get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(*this, upward_rel_entities[k], empty, e_to_rank, to_add );
             }
         }
     }
@@ -6373,7 +6375,15 @@ bool BulkData::modification_end_for_face_creation_and_deletion(const std::vector
                 if(is_comm_entity_and_locally_owned)
                 {
                     std::vector<int> procs;
-                    this->comm_procs(key, procs);
+
+                    //this->comm_procs(key, procs); // comm_procs throws on deleted entity, so use the
+                    //code below (which is basically the implementation of comm_procs)
+                    for ( PairIterEntityComm ec = internal_entity_comm_map(key); ! ec.empty() ; ++ec ) {
+                      procs.push_back( ec->proc );
+                    }
+                    std::sort( procs.begin() , procs.end() );
+                    std::vector<int>::iterator iter = std::unique( procs.begin() , procs.end() );
+                    procs.erase( iter , procs.end() );
 
                     for(size_t proc_index = 0; proc_index < procs.size(); ++proc_index)
                     {

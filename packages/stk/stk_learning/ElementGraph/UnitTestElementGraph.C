@@ -29,8 +29,7 @@
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_unit_test_utils/getOption.h>
 
-
-
+#include "UnitTestElementDeathUtils.hpp"
 
 namespace
 {
@@ -349,7 +348,7 @@ TEST(ElementGraph, create_element_graph_parallel)
         ElementGraph elem_graph(numLocallyOwnedElems);
         SidesForElementGraph via_sides(numLocallyOwnedElems);
 
-        impl::ElemSideToProcAndFaceId elem_side_comm = impl::get_elements_to_communicate1(bulkData);
+        impl::ElemSideToProcAndFaceId elem_side_comm = impl::get_element_side_ids_to_communicate(bulkData);
         size_t num_face_ids_needed = elem_side_comm.size();
         for(size_t i=0;i<via_sides.size();++i)
         {
@@ -590,7 +589,7 @@ TEST(ElementGraph, skin_mesh_using_element_graph_parallel)
         impl::fill_graph(bulkData, elem_graph, via_sides);
         if (stk::parallel_machine_size(comm) > 1)
         {
-            impl::ElemSideToProcAndFaceId elem_side_comm = impl::get_elements_to_communicate1(bulkData);
+            impl::ElemSideToProcAndFaceId elem_side_comm = impl::get_element_side_ids_to_communicate(bulkData);
             size_t num_face_ids_needed = elem_side_comm.size();
             for(size_t i=0;i<via_sides.size();++i)
             {
@@ -795,7 +794,7 @@ TEST(ElementGraph, test_parallel_graph_info_with_parallel_element_graph)
         ElementGraph elem_graph(numLocallyOwnedElems);
         SidesForElementGraph via_sides(numLocallyOwnedElems);
 
-        impl::ElemSideToProcAndFaceId elem_side_comm = impl::get_elements_to_communicate1(bulkData);
+        impl::ElemSideToProcAndFaceId elem_side_comm = impl::get_element_side_ids_to_communicate(bulkData);
         size_t num_face_ids_needed = elem_side_comm.size();
         for(size_t i=0;i<via_sides.size();++i)
         {
@@ -1076,7 +1075,7 @@ TEST(ElementGraph, compare_performance_skin_mesh)
 
             impl::fill_graph(bulkData, elem_graph, via_sides);
 
-            impl::ElemSideToProcAndFaceId elem_side_comm = impl::get_elements_to_communicate1(bulkData);
+            impl::ElemSideToProcAndFaceId elem_side_comm = impl::get_element_side_ids_to_communicate(bulkData);
             size_t num_face_ids_needed = elem_side_comm.size();
             for(size_t i=0;i<via_sides.size();++i)
             {
@@ -1136,7 +1135,7 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
 
     impl::fill_graph(bulkData, elem_graph, via_sides);
 
-    impl::ElemSideToProcAndFaceId elem_side_comm = impl::get_elements_to_communicate1(bulkData);
+    impl::ElemSideToProcAndFaceId elem_side_comm = impl::get_element_side_ids_to_communicate(bulkData);
     size_t num_face_ids_needed = elem_side_comm.size();
     for(size_t i=0;i<via_sides.size();++i)
     {
@@ -1365,6 +1364,84 @@ void move_killled_elements_to_part(stk::mesh::BulkData& bulkData, const stk::mes
     bulkData.batch_change_entity_parts(killedElements, add_parts, rm_parts);
 }
 
+TEST(ElementGraph, make_items_inactive)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+
+    if(stk::parallel_machine_size(comm) <= 2)
+    {
+        unsigned spatialDim = 3;
+
+        stk::mesh::MetaData meta(spatialDim);
+        stk::mesh::Part& faces_part = meta.declare_part_with_topology("surface_5", stk::topology::QUAD_4);
+        stk::mesh::PartVector boundary_mesh_parts { &faces_part };
+        stk::io::put_io_part_attribute(faces_part);
+        stk::mesh::BulkData bulkData(meta, comm);
+
+        stk::mesh::Part& active = meta.declare_part("active"); // can't specify rank, because it gets checked against size of rank_names
+
+        ASSERT_TRUE(active.primary_entity_rank() == stk::topology::INVALID_RANK);
+
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
+
+        ElementDeathUtils::put_mesh_into_part(bulkData, active);
+
+        stk::mesh::ElemElemGraph graph(bulkData);
+
+        size_t num_gold_edges =  6/bulkData.parallel_size();
+        ASSERT_EQ(num_gold_edges, graph.num_edges());
+
+        stk::mesh::EntityVector deactivated_elems;
+
+        stk::mesh::Entity elem1 = bulkData.get_entity(stk::topology::ELEM_RANK, 1);
+        if (bulkData.is_valid(elem1) && bulkData.bucket(elem1).owned() )
+        {
+            deactivated_elems.push_back(elem1);
+        }
+        stk::mesh::Entity elem3 = bulkData.get_entity(stk::topology::ELEM_RANK, 3);
+        if (bulkData.is_valid(elem3) && bulkData.bucket(elem3).owned())
+        {
+            deactivated_elems.push_back(elem3);
+        }
+
+        active.set_primary_entity_rank(stk::topology::ELEM_RANK);
+
+        bulkData.modification_begin();
+
+        for(size_t i=0; i<deactivated_elems.size(); ++i)
+        {
+            bulkData.change_entity_parts(deactivated_elems[i], stk::mesh::PartVector(), stk::mesh::PartVector(1, &active));
+        }
+
+        bulkData.modification_end();
+
+        active.set_primary_entity_rank(stk::topology::INVALID_RANK);
+
+        for(size_t i=0; i<deactivated_elems.size(); ++i)
+        {
+            EXPECT_FALSE(bulkData.bucket(deactivated_elems[i]).member(active));
+        }
+
+        const stk::mesh::BucketVector& all_node_buckets = bulkData.buckets(stk::topology::NODE_RANK);
+        for(size_t i=0; i<all_node_buckets.size(); ++i)
+        {
+            const stk::mesh::Bucket& bucket = *all_node_buckets[i];
+            for(size_t node_index=0; node_index<bucket.size(); ++node_index)
+            {
+                stk::mesh::EntityId id = bulkData.identifier(bucket[node_index]);
+                if (id >=1 && id <= 4)
+                {
+                    EXPECT_FALSE(bucket.member(active));
+                }
+                else
+                {
+                    EXPECT_TRUE(bucket.member(active)) << "for node id " << id << std::endl;
+                }
+            }
+        }
+   }
+}
+
 TEST(ElementGraph, test_element_death)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
@@ -1403,20 +1480,7 @@ TEST(ElementGraph, test_element_death)
 
             stk::mesh::Part& block_1 = *meta.get_part("block_1");
 
-            stk::mesh::EntityVector elementsToMakeActive;
-            std::vector<stk::mesh::PartVector> add_parts;
-            std::vector<stk::mesh::PartVector> rm_parts;
-            const stk::mesh::BucketVector &elemBuckets = bulkData.get_buckets(stk::topology::ELEMENT_RANK, meta.locally_owned_part());
-            for(const stk::mesh::Bucket *bucket : elemBuckets)
-            {
-                for(stk::mesh::Entity element : *bucket)
-                {
-                    elementsToMakeActive.push_back(element);
-                    add_parts.push_back(stk::mesh::PartVector(1, &active));
-                    rm_parts.push_back(stk::mesh::PartVector());
-                }
-            }
-            bulkData.batch_change_entity_parts(elementsToMakeActive, add_parts, rm_parts);
+            ElementDeathUtils::put_mesh_into_part(bulkData, active);
 
             std::ostringstream os;
             os << "Proc id: " << bulkData.parallel_rank() << std::endl;

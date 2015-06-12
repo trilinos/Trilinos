@@ -817,6 +817,8 @@ inline void BulkData::set_global_id(stk::mesh::Entity entity, int id)
 {
   entity_setter_debug_check(entity);
 
+  m_modSummary.track_set_global_id(entity, id);
+
   m_fmwk_global_ids[entity.local_offset()] = id;
 }
 

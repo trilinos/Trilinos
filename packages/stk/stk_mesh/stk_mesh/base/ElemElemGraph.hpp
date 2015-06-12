@@ -48,17 +48,24 @@ public:
     void set_num_face_ids_used(size_t num_used);
 
 private:
+    void fill_graph();
+    void fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm);
+
+    void add_possibly_connected_elements_to_graph_using_side_nodes(const stk::mesh::EntityVector& side_nodes,
+            const impl::ElemSideToProcAndFaceId& elemSideComm, impl::LocalId other_element, int other_side, int other_proc,
+            stk::mesh::EntityId suggested_id);
 
     impl::LocalId get_local_element_id(stk::mesh::Entity local_element) const;
     void size_data_members();
 
     stk::mesh::BulkData &m_bulk_data;
-    impl::ElementGraph elem_graph;
-    impl::SidesForElementGraph via_sides;
-    impl::ParallelGraphInfo parallel_graph_info;
-    stk::mesh::EntityVector local_id_to_element_entity;
-    std::vector<stk::topology> element_topologies;
-    std::vector<stk::mesh::EntityId> suggested_face_ids;
+    impl::ElementGraph m_elem_graph;
+    impl::SidesForElementGraph m_via_sides;
+    impl::ParallelGraphInfo m_parallel_graph_info;
+    stk::mesh::EntityVector m_local_id_to_element_entity;
+    std::vector<unsigned> m_entity_to_local_id;
+    std::vector<stk::topology> m_element_topologies;
+    std::vector<stk::mesh::EntityId> m_suggested_face_ids;
     size_t m_num_edges;
     size_t m_num_parallel_edges;
 };
