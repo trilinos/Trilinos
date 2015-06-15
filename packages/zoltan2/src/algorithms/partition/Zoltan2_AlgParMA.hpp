@@ -82,7 +82,7 @@ public:
 
   AlgParMA(const RCP<const Environment> &env,
               const RCP<const Comm<int> > &problemComm,
-	   const RCP<const BaseAdapter<user_t> > &adapter)
+           const RCP<const BaseAdapter<user_t> > &adapter)
   {
     throw std::runtime_error(
           "BUILD ERROR:  ParMA requested but not compiled into Zoltan2.\n"
@@ -140,6 +140,26 @@ private:
 #   endif
   }
 
+  apf::Mesh::Type getElementType(int dim, int num_vert) {
+    if (dim==2) {
+      if (num_vert==3)
+        return apf::Mesh::TRIANGLE;
+      else if (num_vert==4)
+        return apf::Mesh::QUAD;
+      else
+        throw std::runtime_error("ParMA does not support this element type");
+    }
+    if (num_vert==4)
+      return apf::Mesh::TET;
+    else if (num_vert==8)
+      return apf::Mesh::HEX;
+    else if (num_vert==6)
+      return apf::Mesh::PRISM;
+    else if (num_vert==5)
+      return apf::Mesh::PYRAMID;
+    else 
+      throw std::runtime_error("ParMA does not support this element type");
+  }
 
 public:
 
@@ -152,28 +172,28 @@ public:
             const RCP<const Comm<int> > &problemComm__,
             const RCP<const IdentifierAdapter<user_t> > &adapter__)
   { 
-    throw("ParMA needs a MeshAdapter but you haven't given it one");
+    throw std::runtime_error("ParMA needs a MeshAdapter but you haven't given it one");
   }
 
   AlgParMA(const RCP<const Environment> &env__,
             const RCP<const Comm<int> > &problemComm__,
             const RCP<const VectorAdapter<user_t> > &adapter__) 
   { 
-    throw("ParMA needs a MeshAdapter but you haven't given it one");
+    throw std::runtime_error("ParMA needs a MeshAdapter but you haven't given it one");
   }
 
   AlgParMA(const RCP<const Environment> &env__,
             const RCP<const Comm<int> > &problemComm__,
             const RCP<const GraphAdapter<user_t,userCoord_t> > &adapter__) 
   { 
-    throw("ParMA needs a MeshAdapter but you haven't given it one");
+    throw std::runtime_error("ParMA needs a MeshAdapter but you haven't given it one");
   }
 
   AlgParMA(const RCP<const Environment> &env__,
             const RCP<const Comm<int> > &problemComm__,
             const RCP<const MatrixAdapter<user_t,userCoord_t> > &adapter__)
   { 
-    throw("ParMA needs a MeshAdapter but you haven't given it one");
+    throw std::runtime_error("ParMA needs a MeshAdapter but you haven't given it one");
     
   }
   
@@ -189,57 +209,73 @@ public:
     gids = apf::createNumbering(m,"global_ids",m->getShape(),1);
     origin_part_ids = apf::createNumbering(m,"origin",m->getShape(),1);
 
-    //build the mesh
+    //Create empty apf mesh
     gmi_register_null();
     gmi_model* g = gmi_load(".null");
     enum MeshEntityType primary_type = adapter->getPrimaryEntityType();
     m = apf::makeEmptyMdsMesh(g,adapter->getDimension(),false);
 
+    //Array of all vertices in order not to make duplicates
+    apf::MeshEntity** all_vertices = new apf::MeshEntity*[adapter->getLocalNumOf(MESH_VERTEX)];
+    for (size_t i=0;i<adapter->getLocalNumOf(primary_type);i++)
+      all_vertices[i] = NULL;
+
+    //Get element global ids and part ids
     const zgid_t* element_gids;
     const part_t* part_ids;
     adapter->getIDsViewOf(primary_type,element_gids);
     adapter->getPartsView(part_ids);
 
+    //get vertex global ids
     const zgid_t* vertex_gids;
     adapter->getIDsViewOf(MESH_VERTEX,vertex_gids);
-    
     for (size_t i =0;i<adapter->getLocalNumOf(MESH_VERTEX);i++)
       mapping_gids_index[vertex_gids[i]] = i;
 
+    //Get vertex coordinates
     const scalar_t ** vertex_coords = new const scalar_t*[adapter->getDimension()];
     int stride;
     for (int i=0;i<adapter->getDimension();i++)
       adapter->getCoordinatesViewOf(MESH_VERTEX,vertex_coords[i],stride,i);
 
+    //Get first adjacencies from elements to vertices
     const lno_t* offsets;
     const zgid_t* adjacent_vertex_gids;
     adapter->getAdjsView(primary_type, MESH_VERTEX,offsets,adjacent_vertex_gids);
 
+    //build the apf mesh
     for (size_t i=0;i<adapter->getLocalNumOf(primary_type);i++) {
       lno_t num_verts = offsets[i+1]-offsets[i];
       apf::MeshEntity** vertices = new apf::MeshEntity*[num_verts];
       for (lno_t j=0; j<num_verts;j++) {
-	lno_t vertex_lid = mapping_gids_index[adjacent_vertex_gids[offsets[i]+j]];
-	scalar_t temp_coords[3];
-	for (int k=0;k<adapter->getDimension();k++)
-	  temp_coords[k] = vertex_coords[k][vertex_lid];
-	for (int k=adapter->getDimension();k<3;k++)
-	  temp_coords[k] = 0;
-	    
-	apf::Vector3 point(temp_coords[0],temp_coords[1],temp_coords[2]);
-	vertices[j] = m->createVert(0);
-	m->setPoint(vertices[j],0,point);
+        lno_t vertex_lid = mapping_gids_index[adjacent_vertex_gids[offsets[i]+j]];
+        if (all_vertices[vertex_lid]==NULL) {
+	  scalar_t temp_coords[3];
+	  for (int k=0;k<adapter->getDimension();k++)
+	    temp_coords[k] = vertex_coords[k][vertex_lid];
+	  for (int k=adapter->getDimension();k<3;k++)
+	    temp_coords[k] = 0;  
+	  apf::Vector3 point(temp_coords[0],temp_coords[1],temp_coords[2]);
+	  vertices[j] = m->createVert(0);
+	  m->setPoint(vertices[j],0,point);
+	}
+	else 
+	  vertices[j] = all_vertices[vertex_lid];
       }
-      apf::MeshEntity* element = apf::buildElement(m, 0, apf::Mesh::TET, vertices);
+      apf::MeshEntity* element = apf::buildElement(m, 0, getElementType(adapter->getDimension(),num_verts), vertices);
       apf::number(gids,element,0,0,element_gids[i]);
       apf::number(origin_part_ids,element,0,0,part_ids[i]);
       
       delete [] vertices;
     }
+
+    //final setup for apf mesh
     apf::deriveMdsModel(m);
     m->acceptChanges();
     m->verify();
     
+    //cleanup
+    delete [] all_vertices;
   }
   void partition(const RCP<PartitioningSolution<Adapter> > &solution);
   
@@ -251,32 +287,34 @@ void AlgParMA<Adapter>::partition(
   const RCP<PartitioningSolution<Adapter> > &solution
 )
 {
-  //TODO See if we need to change the comm of PCU
+
+  //setup
   PCU_Comm_Init();
+  PCU_Switch_Comm(mpicomm);
   apf::Balancer* balancer;
   apf::MeshTag* weights= NULL;
+
+  //TODO::Will be checking some kind of argument to choose which ParMA algorithm
   if (true) {
     //weights = setWeights(m);
     const double step = 0.1; const int verbose = 1;
     balancer = Parma_MakeElmBalancer(m, step, verbose);
   }
 
-
+  //balance the apf mesh
   balancer->balance(weights, 1.05);
   delete balancer;
-
-  /*
-  env->globalInputAssertion(__FILE__, __LINE__, "Zoltan LB_Partition", 
-    (ierr==ZOLTAN_OK || ierr==ZOLTAN_WARN), BASIC_ASSERTION, problemComm);
-  */
 
   // Load answer into the solution.
   int num_local = adapter->getLocalNumOf(adapter->getPrimaryEntityType());
   ArrayRCP<part_t> partList(new part_t[num_local], 0, num_local, true);
 
+  //Setup for communication
   PCU_Comm_Begin();
   apf::MeshEntity* ent;
   apf::MeshIterator* itr = m->begin(m->getDimension());
+
+  //Pack information back to each elements original owner
   while ((ent=m->iterate(itr))) {
     if (m->isOwned(ent)) {
       part_t target_part_id = apf::getNumber(origin_part_ids,ent,0,0);
@@ -285,7 +323,10 @@ void AlgParMA<Adapter>::partition(
     }
   }
 
+  //Send information off
   PCU_Comm_Send();
+
+  //Unpack information and set new part ids
   while (PCU_Comm_Listen()) {
     zgid_t global_id;
     PCU_COMM_UNPACK(global_id);
@@ -294,13 +335,12 @@ void AlgParMA<Adapter>::partition(
     partList[local_id] = new_part_id;
   }
 
+  //construct partition solution
   solution->setParts(partList);
   
-
   // Clean up
   apf::removeTagFromDimension(m, weights, m->getDimension());
   m->destroyTag(weights);
-
   m->destroyNative();
   apf::destroyMesh(m);
   PCU_Comm_Free();
