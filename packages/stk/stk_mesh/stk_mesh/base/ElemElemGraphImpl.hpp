@@ -65,8 +65,6 @@ typedef std::multimap<EntitySidePair, ProcFaceIdPair>  ElemSideToProcAndFaceId;
 void set_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData& bulkData, stk::mesh::EntityVector& local_id_to_element_entity, std::vector<stk::topology>& element_topologies);
 void fill_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData& bulkData, stk::mesh::EntityVector& local_id_to_element_entity, std::vector<unsigned>& entity_to_local_id, std::vector<stk::topology>& element_topologies);
 
-void fill_graph(const stk::mesh::BulkData& bulkData, ElementGraph& elem_graph, SidesForElementGraph& via_sides);
-
 ElemSideToProcAndFaceId get_element_side_ids_to_communicate(const stk::mesh::BulkData& bulkData);
 
 void pack_shared_side_nodes_of_elements(stk::CommSparse& comm, const stk::mesh::BulkData& bulkData, ElemSideToProcAndFaceId& elements_to_communicate,

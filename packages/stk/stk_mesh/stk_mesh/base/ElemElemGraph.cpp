@@ -38,7 +38,6 @@ ElemElemGraph::ElemElemGraph(stk::mesh::BulkData& bulkData) : m_bulk_data(bulkDa
     fill_parallel_graph(elem_side_comm);
 
     m_num_parallel_edges = m_parallel_graph_info.size();
-    set_num_face_ids_used(m_num_parallel_edges);
     m_num_edges += m_num_parallel_edges;
 }
 
@@ -49,8 +48,7 @@ const std::vector<stk::mesh::EntityId>& ElemElemGraph::get_suggested_face_ids() 
 
 void ElemElemGraph::set_num_face_ids_used(size_t num_used)
 {
-// FIXME: What?
-//    m_suggested_face_ids.erase(m_suggested_face_ids.begin(), m_suggested_face_ids.begin()+num_used);
+    m_suggested_face_ids.erase(m_suggested_face_ids.begin(), m_suggested_face_ids.begin()+num_used);
 }
 
 ElemElemGraph::~ElemElemGraph() {}

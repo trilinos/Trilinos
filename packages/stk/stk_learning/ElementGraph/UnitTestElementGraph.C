@@ -1446,7 +1446,7 @@ TEST(ElementGraph, make_items_inactive)
 }
 
 // FIXME: Fails with local face ID already in use
-TEST(ElementGraph, DISABLED_test_element_death)
+TEST(ElementGraph, test_element_death)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
 
