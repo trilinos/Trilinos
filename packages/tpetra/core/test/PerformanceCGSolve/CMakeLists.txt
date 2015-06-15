@@ -17,10 +17,10 @@ TRIBITS_ADD_EXECUTABLE(
   COMM mpi
 )
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyXmlForTpetraPerfCgSolve
-  SOURCE_DIR ${Tpetra_SOURCE_DIR}/test/
-  SOURCE_FILES Tpetra_PerformanceTests.xml
-  EXEDEPS Performance-CGSolve
-)
+#TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyXmlForTpetraPerfCgSolve
+#  SOURCE_DIR ${Tpetra_SOURCE_DIR}/test/
+#  SOURCE_FILES Tpetra_PerformanceTests.xml
+#  EXEDEPS Performance-CGSolve
+#)
 
 
