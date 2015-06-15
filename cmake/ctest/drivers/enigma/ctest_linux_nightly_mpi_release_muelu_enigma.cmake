@@ -72,7 +72,7 @@ SET(Trilinos_PACKAGES Kokkos Tpetra Belos Ifpack2 MueLu Amesos Amesos2 Ifpack Ep
 
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON"
-  "-DTrilinos_ENABLE_Amesos:BOOL=ON"\
+  "-DTrilinos_ENABLE_Amesos:BOOL=ON"
   "-DTrilinos_ENABLE_Amesos2:BOOL=ON"
 )
 
