@@ -1,15 +1,18 @@
 # Default settings common options
 
 #Options: OpenMP,Serial,Pthreads,Cuda
-KOKKOS_DEVICES ?= "OpenMP"
+#KOKKOS_DEVICES ?= "OpenMP"
+KOKKOS_DEVICES ?= "Pthreads"
 #Options: KNC,SNB,HSW,Kepler,Kepler30,Kepler35,Kepler37,Maxwell,Maxwell50,ARMv8,BGQ,Power7,Power8
 KOKKOS_ARCH ?= ""
 #Options: yes,no
 KOKKOS_DEBUG ?= "no"
 #Options: hwloc,librt
 KOKKOS_USE_TPLS ?= ""
-#Options: c++98,c++11
+#Options: c++11
 KOKKOS_CXX_STANDARD ?= "c++11"
+#Options: kernel_times
+KOKKOS_PROFILING ?= ""
 
 #Default settings specific options
 #Options: force_uvm,use_ldg,rdc
@@ -18,6 +21,7 @@ KOKKOS_CUDA_OPTIONS ?= ""
 # Check for general settings
 
 KOKKOS_INTERNAL_ENABLE_DEBUG := $(strip $(shell echo $(KOKKOS_DEBUG) | grep "yes" | wc -l))
+KOKKOS_INTERNAL_ENABLE_PROFILING_COLLECT_KERNEL_DATA := $(strip $(shell echo $(KOKKOS_PROFILING) | grep "kernel_times" | wc -l))
 KOKKOS_INTERNAL_ENABLE_CXX11 := $(strip $(shell echo $(KOKKOS_CXX_STANDARD) | grep "c++11" | wc -l))
 
 # Check for external libraries
@@ -91,10 +95,11 @@ KOKKOS_INTERNAL_USE_ARCH_IBM := $(strip $(shell echo $(KOKKOS_INTERNAL_USE_ARCH_
 KOKKOS_INTERNAL_USE_ARCH_AMDAVX := $(strip $(shell echo $(KOKKOS_ARCH) | grep AMDAVX | wc -l))
 
 #Any AVX?
-KOKKOS_INTERNAL_USE_ARCH_AVX := $(strip $(shell echo $(KOKKOS_INTERNAL_USE_ARCH_SNB)+$(KOKKOS_INTERNAL_USE_ARCH_HSW)+$(KOKKOS_INTERNAL_USE_ARCH_AMDAVX) | bc ))
+KOKKOS_INTERNAL_USE_ARCH_AVX  := $(strip $(shell echo $(KOKKOS_INTERNAL_USE_ARCH_SNB)+$(KOKKOS_INTERNAL_USE_ARCH_AMDAVX) | bc ))
+KOKKOS_INTERNAL_USE_ARCH_AVX2 := $(strip $(shell echo $(KOKKOS_INTERNAL_USE_ARCH_HSW) | bc ))
 
 #Incompatible flags?
-KOKKOS_INTERNAL_USE_ARCH_MULTIHOST := $(strip $(shell echo "$(KOKKOS_INTERNAL_USE_ARCH_AVX)+$(KOKKOS_INTERNAL_USE_ARCH_KNC)+$(KOKKOS_INTERNAL_USE_ARCH_IBM)+$(KOKKOS_INTERNAL_USE_ARCH_AMDAVX)+$(KOKKOS_INTERNAL_USE_ARCH_ARMV80)>1" | bc ))
+KOKKOS_INTERNAL_USE_ARCH_MULTIHOST := $(strip $(shell echo "$(KOKKOS_INTERNAL_USE_ARCH_AVX)+$(KOKKOS_INTERNAL_USE_ARCH_AVX2)+$(KOKKOS_INTERNAL_USE_ARCH_KNC)+$(KOKKOS_INTERNAL_USE_ARCH_IBM)+$(KOKKOS_INTERNAL_USE_ARCH_AMDAVX)+$(KOKKOS_INTERNAL_USE_ARCH_ARMV80)>1" | bc ))
 KOKKOS_INTERNAL_USE_ARCH_MULTIGPU := $(strip $(shell echo "$(KOKKOS_INTERNAL_USE_ARCH_NVIDIA)>1" | bc))
 
 ifeq ($(KOKKOS_INTERNAL_USE_ARCH_MULTIHOST), 1)
@@ -110,6 +115,8 @@ KOKKOS_CPPFLAGS = -I./ -I$(KOKKOS_PATH)/core/src -I$(KOKKOS_PATH)/containers/src
 KOKKOS_CXXFLAGS =
 KOKKOS_LIBS = -lkokkos 
 KOKKOS_LDFLAGS = -L$(shell pwd)
+KOKKOS_SRC = 
+KOKKOS_HEADERS =
 
 #Generating the KokkosCore_config.h file
 
@@ -148,8 +155,14 @@ ifeq ($(KOKKOS_INTERNAL_USE_CUDA), 1)
 endif
 	KOKKOS_CXXFLAGS += -g 
 	KOKKOS_LDFLAGS += -g -ldl
-	tmp := $(shell echo "\#define KOKKOS_EXPRESSION_CHECK 1" >> KokkosCore_config.tmp )
+	tmp := $(shell echo "\#define KOKKOS_ENABLE_DEBUG_BOUNDS_CHECK 1" >> KokkosCore_config.tmp )
 	tmp := $(shell echo "\#define KOKKOS_HAVE_DEBUG 1" >> KokkosCore_config.tmp )
+endif
+ifeq ($(KOKKOS_INTERNAL_ENABLE_PROFILING_COLLECT_KERNEL_DATA), 1)
+  tmp := $(shell echo "\#define KOKKOS_ENABLE_PROFILING_COLLECT_KERNEL_DATA 1" >> KokkosCore_config.tmp )
+  KOKKOS_HEADERS += $(wildcard $(KOKKOS_PATH)/profiler/src/*.hpp)
+  KOKKOS_SRC += $(wildcard $(KOKKOS_PATH)/profiler/src/*.cpp)
+  KOKKOS_CPPFLAGS += -I$(KOKKOS_PATH)/profiler/src
 endif
 
 ifeq ($(KOKKOS_INTERNAL_USE_HWLOC), 1)
@@ -187,6 +200,12 @@ ifeq ($(KOKKOS_INTERNAL_USE_ARCH_AVX), 1)
 	KOKKOS_CXXFLAGS += -mavx
 	KOKKOS_LDFLAGS += -mavx
 endif
+
+ifeq ($(KOKKOS_INTERNAL_USE_ARCH_AVX2), 1)
+	KOKKOS_CXXFLAGS += -xcore-avx2
+	KOKKOS_LDFLAGS += -xcore-avx2
+endif
+
 ifeq ($(KOKKOS_INTERNAL_USE_ARCH_KNC), 1)
 	KOKKOS_CXXFLAGS += -mmic
 	KOKKOS_LDFLAGS += -mmic
@@ -219,13 +238,13 @@ ifneq ($(KOKKOS_INTERNAL_NEW_CONFIG), 0)
 endif
 
 
-KOKKOS_HEADERS = $(wildcard $(KOKKOS_PATH)/core/src/*.hpp)
+KOKKOS_HEADERS += $(wildcard $(KOKKOS_PATH)/core/src/*.hpp)
 KOKKOS_HEADERS += $(wildcard $(KOKKOS_PATH)/core/src/impl/*.hpp)
 KOKKOS_HEADERS += $(wildcard $(KOKKOS_PATH)/containers/src/*.hpp)
 KOKKOS_HEADERS += $(wildcard $(KOKKOS_PATH)/containers/src/impl/*.hpp)
 KOKKOS_HEADERS += $(wildcard $(KOKKOS_PATH)/algorithms/src/*.hpp)
 
-KOKKOS_SRC = $(wildcard $(KOKKOS_PATH)/core/src/impl/*.cpp)
+KOKKOS_SRC += $(wildcard $(KOKKOS_PATH)/core/src/impl/*.cpp)
 KOKKOS_SRC += $(wildcard $(KOKKOS_PATH)/containers/src/impl/*.cpp)
 
 ifeq ($(KOKKOS_INTERNAL_USE_CUDA), 1)
