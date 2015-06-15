@@ -409,7 +409,7 @@ mxArray* MuemexData<RCP<Tpetra::CrsMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, 
   return saveMatrixToMatlab<complex_t>(MueLu::TpetraCrs_To_XpetraMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(data));
 }
 
-//Xpetra matrix double
+//Xpetra matrix double scalar
 template<>
 MuemexData<RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >::MuemexData(RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > &dataToCopy, MUEMEX_TYPE dataType) : MuemexArg(dataType)
 {
@@ -417,9 +417,7 @@ MuemexData<RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >:
 }
 
 template<>
-MuemexData<RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >::MuemexData(RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> >& dataToCopy) : MuemexData(dataToCopy,getMuemexType(dataToCopy))
-{
-}
+MuemexData<RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >::MuemexData(RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> >& dataToCopy) : MuemexData(dataToCopy, getMuemexType(dataToCopy)) {}
 
 template<>
 MuemexData<RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >::MuemexData(const mxArray* mxa) : MuemexArg(XPETRA_MATRIX_DOUBLE)
@@ -433,7 +431,7 @@ mxArray* MuemexData<RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_nod
   return saveMatrixToMatlab<double>(data);
 }
 
-//Xpetra matrix complex
+//Xpetra matrix complex scalar
 template<>
 MuemexData<RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >::MuemexData(RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t > > &dataToCopy, MUEMEX_TYPE dataType) : MuemexArg(dataType)
 {
@@ -441,12 +439,10 @@ MuemexData<RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> >
 }
 
 template<>
-MuemexData<RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >::MuemexData(RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> >& dataToCopy) : MuemexData(dataToCopy,getMuemexType(dataToCopy))
-{
-}
+MuemexData<RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::MuemexData(RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> >& dataToCopy) : MuemexData(dataToCopy,getMuemexType(dataToCopy)) {}
 
 template<>
-MuemexData<RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >::MuemexData(const mxArray* mxa) : MuemexArg(XPETRA_MATRIX_COMPLEX)
+MuemexData<RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::MuemexData(const mxArray* mxa) : MuemexArg(XPETRA_MATRIX_COMPLEX)
 {
   data = xpetraLoadMatrix<complex_t>(mxa);
 }

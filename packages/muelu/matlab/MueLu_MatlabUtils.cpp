@@ -69,7 +69,7 @@ template class MuemexData<std::string>;
 template class MuemexData<double>;
 template class MuemexData<RCP<Tpetra::CrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
 template class MuemexData<RCP<Tpetra::CrsMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
-template class MuemexData<RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
+template class MuemexData<RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >; //Muelu short names "matrix" is this
 template class MuemexData<RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
 template class MuemexData<RCP<Epetra_MultiVector> >;
 template class MuemexData<RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
@@ -88,8 +88,6 @@ int* mwIndex_to_int(int N, mwIndex* mwi_array)
     rv[i] = (int) mwi_array[i];
   return rv;
 }
-
-
 
 
 
@@ -366,8 +364,6 @@ mxArray* saveEpetraMV(RCP<Epetra_MultiVector> mv)
   return output;
 }
 
-
-
 int parseInt(const mxArray* mxa)
 {
   mxClassID probIDtype = mxGetClassID(mxa);
@@ -410,6 +406,11 @@ RCP<Xpetra_ordinal_vector> loadLOVector(const mxArray* mxa)
   return Xpetra::toXpetra<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(loVec);
 }
 
+template<typename Scalar = double>
+RCP<Xpetra::Matrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> xpetraLoadMatrix(const mxArray* mxa)
+{
+  return MueLu::TpetraCrs_To_XpetraMatrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tpetraLoadMatrix<Scalar>(mxa));
+}
 
 }//end namespace
 #endif // HAVE_MUELU_MATLAB
