@@ -94,6 +94,11 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
     "-DTPL_ENABLE_MPI:BOOL=ON"
     "-DTPL_ENABLE_SuperLU:BOOL=ON"
+    "-DTPL_ENABLE_Amesos:BOOL=ON"
+    "-DTPL_ENABLE_Amesos2:BOOL=ON"
+    "-DTPL_ENABLE_Amesos:BOOL=ON"
+    "-DAmesos2_ENABLE_KLU2:BOOL=ON"
+    "-DZoltan2_ENABLE_Experimental:BOOL=ON"
     "-DSuperLU_INCLUDE_DIRS=/home/tawiesn/software/SuperLU_4.3/SRC"
     "-DSuperLU_LIBRARY_DIRS=/home/tawiesn/software/SuperLU_4.3/lib"
     "-DSuperLU_LIBRARY_NAMES=superlu_4.3"
