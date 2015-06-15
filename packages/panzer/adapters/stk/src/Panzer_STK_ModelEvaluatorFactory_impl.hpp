@@ -75,6 +75,7 @@
 #include "Panzer_String_Utilities.hpp"
 #include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
 #include "Panzer_ExplicitModelEvaluator.hpp"
+#include "Panzer_ParameterLibraryUtilities.hpp"
 
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_ExodusReaderFactory.hpp"
@@ -560,6 +561,45 @@ namespace panzer_stk_classic {
     if(!meConstructionOn)
       return;
 
+    // Setup active parameters
+    /////////////////////////////////////////////////////////////
+
+    std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+    std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
+    if (p.isSublist("Active Parameters")) {
+      Teuchos::ParameterList& active_params = p.sublist("Active Parameters");
+
+      int num_param_vecs = active_params.get<int>("Number of Parameter Vectors",0);
+      p_names.resize(num_param_vecs);
+      p_values.resize(num_param_vecs);
+      for (int i=0; i<num_param_vecs; i++) {
+        std::stringstream ss;
+        ss << "Parameter Vector " << i;
+        Teuchos::ParameterList& pList = active_params.sublist(ss.str());
+        int numParameters = pList.get<int>("Number");
+        TEUCHOS_TEST_FOR_EXCEPTION(numParameters == 0,
+                                   Teuchos::Exceptions::InvalidParameter,
+                                   std::endl << "Error!  panzer::ModelEvaluator::ModelEvaluator():  " <<
+                                   "Parameter vector " << i << " has zero parameters!" << std::endl);
+        p_names[i] =
+          Teuchos::rcp(new Teuchos::Array<std::string>(numParameters));
+        p_values[i] =
+          Teuchos::rcp(new Teuchos::Array<double>(numParameters));
+        for (int j=0; j<numParameters; j++) {
+          std::stringstream ss2;
+          ss2 << "Parameter " << j;
+          (*p_names[i])[j] = pList.get<std::string>(ss2.str());
+          ss2.str("");
+
+          ss2 << "Initial Value " << j;
+          (*p_values[i])[j] = pList.get<double>(ss2.str());
+
+          // this is a band-aid/hack to make sure parameters are registered before they are accessed
+          panzer::registerScalarParameter((*p_names[i])[j],*global_data->pl,(*p_values[i])[j]);
+        }
+      }
+    }
+
     // setup the closure model for automatic writing (during residual/jacobian update)
     ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -600,34 +640,6 @@ namespace panzer_stk_classic {
        user_data.set<int>("Workset Size",workset_size);
     }
 
-    // Setup active parameters
-    /////////////////////////////////////////////////////////////
-
-    std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
-    if (p.isSublist("Active Parameters")) {
-      Teuchos::ParameterList& active_params = p.sublist("Active Parameters");
-
-      int num_param_vecs = active_params.get<int>("Number of Parameter Vectors",0);
-      p_names.resize(num_param_vecs);
-      for (int i=0; i<num_param_vecs; i++) {
-        std::stringstream ss;
-        ss << "Parameter Vector " << i;
-        Teuchos::ParameterList& pList = active_params.sublist(ss.str());
-        int numParameters = pList.get<int>("Number");
-        TEUCHOS_TEST_FOR_EXCEPTION(numParameters == 0,
-                                   Teuchos::Exceptions::InvalidParameter,
-                                   std::endl << "Error!  panzer::ModelEvaluator::ModelEvaluator():  " <<
-                                   "Parameter vector " << i << " has zero parameters!" << std::endl);
-        p_names[i] =
-          Teuchos::rcp(new Teuchos::Array<std::string>(numParameters));
-        for (int j=0; j<numParameters; j++) {
-          std::stringstream ss2;
-          ss2 << "Parameter " << j;
-          (*p_names[i])[j] = pList.get<std::string>(ss2.str());
-        }
-      }
-    }
-
     // Setup solver factory
     /////////////////////////////////////////////////////////////
 
@@ -650,6 +662,7 @@ namespace panzer_stk_classic {
                                      m_response_library,
                                      linObjFactory,
                                      p_names,
+                                     p_values,
                                      lowsFactory,
                                      global_data,
                                      is_transient,
@@ -1297,8 +1310,11 @@ namespace panzer_stk_classic {
   
       // get parameter names
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names(physics_me->Np());
-      for(std::size_t i=0;i<p_names.size();i++) 
+      std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values(physics_me->Np());
+      for(std::size_t i=0;i<p_names.size();i++) {
         p_names[i] = Teuchos::rcp(new Teuchos::Array<std::string>(*physics_me->get_p_names(i)));
+        p_values[i] = Teuchos::rcp(new Teuchos::Array<double>(p_names[i]->size(),0.0));
+      }
   
       Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyra_me
           = buildPhysicsModelEvaluator(useThyra,
@@ -1306,6 +1322,7 @@ namespace panzer_stk_classic {
                                        response_library,
                                        m_lin_obj_factory,
                                        p_names,
+                                       p_values,
                                        solverFactory,
                                        m_global_data,
                                        is_transient,
@@ -1331,8 +1348,9 @@ namespace panzer_stk_classic {
   buildPhysicsModelEvaluator(bool buildThyraME,
                              const Teuchos::RCP<panzer::FieldManagerBuilder> & fmb,
                              const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & rLibrary,
-                                   const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof,
+                             const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof,
                              const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > & p_names,
+                             const std::vector<Teuchos::RCP<Teuchos::Array<double> > > & p_values,
                              const Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<ScalarT> > & solverFactory,
                              const Teuchos::RCP<panzer::GlobalData> & global_data,
                              bool is_transient,double t_init) const
@@ -1340,7 +1358,7 @@ namespace panzer_stk_classic {
     Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyra_me;
     if(!buildThyraME) {
       Teuchos::RCP<panzer::ModelEvaluator_Epetra> ep_me 
-          = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,lof, p_names, global_data, is_transient));
+          = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,lof, p_names,p_values, global_data, is_transient));
 
       if (is_transient)
         ep_me->set_t_init(t_init);
@@ -1350,7 +1368,7 @@ namespace panzer_stk_classic {
     }
     else {
       thyra_me = Teuchos::rcp(new panzer::ModelEvaluator<double>
-                  (fmb,rLibrary,lof,p_names,solverFactory,global_data,is_transient,t_init));
+                  (fmb,rLibrary,lof,p_names,p_values,solverFactory,global_data,is_transient,t_init));
     }
 
     return thyra_me;

@@ -237,9 +237,10 @@ namespace panzer {
       Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(linObjFactory); 
     
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+    std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
 
     RCP<panzer::ModelEvaluator_Epetra> ep_me = 
-      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof, p_names, gd, false));
+      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof, p_names,p_values, gd, false));
 
     // Get solver params from input file
     RCP<Teuchos::ParameterList> piro_params = rcp(new Teuchos::ParameterList("Piro Parameters"));
@@ -518,9 +519,10 @@ namespace panzer {
       Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(linObjFactory); 
     
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+    std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
 
     RCP<panzer::ModelEvaluator_Epetra> ep_me = 
-      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof, p_names, gd, true));
+      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof, p_names,p_values, gd, true));
 
     // Get solver params from input file
     RCP<Teuchos::ParameterList> piro_params = rcp(new Teuchos::ParameterList("Piro Parameters"));

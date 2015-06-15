@@ -154,9 +154,10 @@ namespace panzer {
       typedef panzer::ModelEvaluator<double> PME;
 
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+      std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
       bool build_transient_support = true;
 
-      RCP<PME> me = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,Teuchos::null,ap.gd,build_transient_support,0.0));
+      RCP<PME> me = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,p_values,Teuchos::null,ap.gd,build_transient_support,0.0));
       me->addDistributedParameter("DENSITY",th_param_lof->getThyraDomainSpace(),ap.param_ged,param_density);
 
       x = Thyra::createMember(*me->get_x_space());
@@ -507,11 +508,12 @@ namespace panzer {
     int pIndex = -1;
 
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+    std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
     bool build_transient_support = true;
 
     user_app::BCFactory bc_factory;
     RCP<PME> me 
-        = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,Teuchos::null,ap.gd,build_transient_support,0.0));
+        = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,p_values,Teuchos::null,ap.gd,build_transient_support,0.0));
     pIndex = me->addDistributedParameter("DENSITY",th_param_lof->getThyraDomainSpace(),
                                          ap.param_ged,param_density,ap.param_dofManager);
     me->setupModel(ap.wkstContainer,ap.physicsBlocks,ap.bcs,
@@ -849,7 +851,9 @@ namespace panzer {
     Teuchos::ParameterList closure_models("Closure Models");
     if(parameter_on)
        closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<std::string>("Type","Parameter");
-    closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<double>("Value",1.0);
+    else
+       closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<double>("Value",1.0);
+
     if(distr_parameter_on)
       closure_models.sublist("solid").sublist("DENSITY").set("Type","Distributed Parameter");
     else

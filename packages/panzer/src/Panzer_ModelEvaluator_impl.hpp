@@ -60,6 +60,7 @@
 #include "Panzer_ThyraObjFactory.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_ParameterList_GlobalEvaluationData.hpp"
+#include "Panzer_ParameterLibraryUtilities.hpp"
 #include "Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 #include "Panzer_LinearObjFactory_Utilities.hpp"
 
@@ -81,6 +82,7 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
                const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> >& lof,
                const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
+               const std::vector<Teuchos::RCP<Teuchos::Array<double> > >& p_values,
                const Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > & solverFactory,
                const Teuchos::RCP<panzer::GlobalData>& global_data,
                bool build_transient_support,
@@ -114,7 +116,7 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
   // Setup parameters
   //
   for(std::size_t i=0;i<p_names.size();i++)
-     addParameter(*(p_names[i]));
+     addParameter(*(p_names[i]),*(p_values[i]));
 
   //
   // Build x, f spaces
@@ -245,6 +247,9 @@ template<typename Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
 panzer::ModelEvaluator<Scalar>::getNominalValues() const
 {
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+
   if(require_in_args_refresh_) {
     typedef Thyra::ModelEvaluatorBase MEB;
 
@@ -259,8 +264,10 @@ panzer::ModelEvaluator<Scalar>::getNominalValues() const
 
     // setup parameter support
     nomInArgs.set_Np(parameters_.size());
-    for(std::size_t p=0;p<parameters_.size();p++) 
+    for(std::size_t p=0;p<parameters_.size();p++) {
+      // setup nominal in arguments
       nomInArgs.set_p(p,parameters_[p]->initial_value);
+    }
 
     nominalValues_ = nomInArgs;
   }
@@ -582,25 +589,31 @@ create_DfDp_op(int p) const
 
 template <typename Scalar>
 int panzer::ModelEvaluator<Scalar>::
-addParameter(const std::string & name)
+addParameter(const std::string & name,const Scalar & initialValue)
 {
   Teuchos::Array<std::string> tmp_names;
   tmp_names.push_back(name);
 
-  return addParameter(tmp_names);
+  Teuchos::Array<Scalar> tmp_values;
+  tmp_values.push_back(initialValue);
+
+  return addParameter(tmp_names,tmp_values);
 }
 
 template <typename Scalar>
 int panzer::ModelEvaluator<Scalar>::
-addParameter(const Teuchos::Array<std::string> & names)
+addParameter(const Teuchos::Array<std::string> & names,
+             const Teuchos::Array<Scalar> & initialValues)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::ptrFromRef;
 
+  TEUCHOS_ASSERT(names.size()==initialValues.size());
+
   int parameter_index = parameters_.size();
-  parameters_.push_back(createScalarParameter(names));
+  parameters_.push_back(createScalarParameter(names,initialValues));
 
   require_in_args_refresh_ = true;
   require_out_args_refresh_ = true;
@@ -1404,20 +1417,26 @@ setOneTimeDirichletBeta(const Scalar & beta) const
 template <typename Scalar>
 Teuchos::RCP<typename panzer::ModelEvaluator<Scalar>::ParameterObject> 
 panzer::ModelEvaluator<Scalar>::
-createScalarParameter(const Teuchos::Array<std::string> & in_names) const
+createScalarParameter(const Teuchos::Array<std::string> & in_names,
+                      const Teuchos::Array<Scalar> & in_values) const
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
+  using Teuchos::ptrFromRef;
+
+  TEUCHOS_ASSERT(in_names.size()==in_values.size());
 
   RCP<ParameterObject> paramObj = rcp(new ParameterObject);
 
   paramObj->names = rcp(new Teuchos::Array<std::string>(in_names));
   paramObj->is_distributed = false;
 
-  // associate vector with the ParamLib
-  paramObj->scalar_value = panzer::ParamVec();
+  // register all the scalar parameters, setting initial 
+  for(std::size_t i=0;i<in_names.size();i++)
+    registerScalarParameter(in_names[i],*global_data_->pl,in_values[i]);
 
+  paramObj->scalar_value = panzer::ParamVec();
   global_data_->pl->fillVector<panzer::Traits::Residual>(*paramObj->names, paramObj->scalar_value);
 
   // build initial condition vector
@@ -1427,13 +1446,11 @@ createScalarParameter(const Teuchos::Array<std::string> & in_names) const
   
   // fill vector with parameter values
   Teuchos::ArrayRCP<Scalar> data;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> > initial_value 
-      = Thyra::createMember(paramObj->space);
-  RCP<Thyra::SpmdVectorBase<Scalar> > vec
-      = rcp_dynamic_cast<Thyra::SpmdVectorBase<Scalar> >(initial_value);
+  RCP<Thyra::VectorBase<Scalar> > initial_value = Thyra::createMember(paramObj->space);
+  RCP<Thyra::SpmdVectorBase<Scalar> > vec = rcp_dynamic_cast<Thyra::SpmdVectorBase<Scalar> >(initial_value);
   vec->getNonconstLocalData(ptrFromRef(data));
   for (unsigned int i=0; i < paramObj->scalar_value.size(); i++)
-    data[i] = paramObj->scalar_value[i].baseValue;
+    data[i] = in_values[i];
 
   paramObj->initial_value = initial_value;
 
