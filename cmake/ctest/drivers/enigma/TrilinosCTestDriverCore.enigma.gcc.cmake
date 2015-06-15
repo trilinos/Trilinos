@@ -84,24 +84,21 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DCMAKE_AR=/usr/bin/ar"
 
     "-DMPI_BASE_DIR=/usr/lib64/openmpi"
-    "-D MPI_CXX_COMPILER:FILEPATH=${MPI_BASE_DIR}/bin/mpicxx"
-    "-D MPI_C_COMPILER:FILEPATH=${MPI_BASE_DIR}/bin/mpicc" 
-    "-D MPI_FORTRAN_COMPILER:FILEPATH=${MPI_BASE_DIR}/bin/mpifort" 
-    "-D CMAKE_CXX_COMPILER:FILEPATH=${MPI_BASE_DIR}/bin/mpicxx"
-    "-D CMAKE_C_COMPILER:FILEPATH=${MPI_BASE_DIR}/bin/mpicc" 
-    "-D CMAKE_FORTRAN_COMPILER:FILEPATH=${MPI_BASE_DIR}/bin/mpifort" 
-    "-D MPI_EXEC:FILEPATH=${MPI_PATH}/bin/mpirun"
+    "-D MPI_CXX_COMPILER:FILEPATH=/usr/lib64/openmpi/bin/mpicxx"
+    "-D MPI_C_COMPILER:FILEPATH=/usr/lib64/openmpi/bin/mpicc" 
+    "-D MPI_FORTRAN_COMPILER:FILEPATH=/usr/lib64/openmpi/bin/mpifort" 
+    "-D CMAKE_CXX_COMPILER:FILEPATH=/usr/lib64/openmpi/bin/mpicxx"
+    "-D CMAKE_C_COMPILER:FILEPATH=/usr/lib64/openmpi/bin/mpicc" 
+    "-D CMAKE_FORTRAN_COMPILER:FILEPATH=/usr/lib64/openmpi/bin/mpifort" 
+    "-D MPI_EXEC:FILEPATH=/usr/lib64/openmpi/bin/mpirun"
 
     "-DTPL_ENABLE_MPI:BOOL=ON"
-    "-DTPL_ENABLE_SuperLU:BOOL=ON"
-    "-DTPL_ENABLE_Amesos:BOOL=ON"
-    "-DTPL_ENABLE_Amesos2:BOOL=ON"
-    "-DTPL_ENABLE_Amesos:BOOL=ON"
+    "-DTPL_ENABLE_SuperLU:BOOL=OFF"
     "-DAmesos2_ENABLE_KLU2:BOOL=ON"
-    "-DZoltan2_ENABLE_Experimental:BOOL=ON"
-    "-DSuperLU_INCLUDE_DIRS=/home/tawiesn/software/SuperLU_4.3/SRC"
-    "-DSuperLU_LIBRARY_DIRS=/home/tawiesn/software/SuperLU_4.3/lib"
-    "-DSuperLU_LIBRARY_NAMES=superlu_4.3"
+
+    "-DTPL_SuperLU_INCLUDE_DIRS=/home/tawiesn/software/SuperLU_4.3/SRC"
+    "-DTPL_SuperLU_LIBRARY_DIRS=/home/tawiesn/software/SuperLU_4.3/lib"
+    "-DTPL_SuperLU_LIBRARIES=/home/tawiesn/software/SuperLU_4.3/lib/libsuperlu_4.3.a"
   )
 
   SET_DEFAULT(COMPILER_VERSION "GCC-4.8.3")
