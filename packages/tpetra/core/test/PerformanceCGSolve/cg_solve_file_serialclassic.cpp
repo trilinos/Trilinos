@@ -42,50 +42,11 @@
 */
 
 #include "cg-solve_file.hpp"
-#ifdef HAVE_TPETRA_INST_CUDA
-  int run_cudawrapper(int& argc, char* argv[]);
-#endif
-#ifdef HAVE_TPETRA_INST_OPENMP
-  int run_openmpwrapper(int& argc, char* argv[]);
-#endif
-#ifdef HAVE_TPETRA_INST_PTHREAD
-  int run_threadswrapper(int& argc, char* argv[]);
-#endif
-#ifdef HAVE_TPETRA_INST_SERIAL
-  int run_serialwrapper(int& argc, char* argv[]);
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_SERIAL
-  int run_serialclassic(int& argc, char* argv[]);
-#endif
 
-int main(int argc, char *argv[]) {
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
-
-  //
-  // Specify types used in this example
-  //
-
-#ifdef HAVE_TPETRA_INST_CUDA
-  std::cout << std::endl << "----------------------------------------------------"<< std::endl<<std::endl;
-  run_cudawrapper(argc,argv);
-#endif
-#ifdef HAVE_TPETRA_INST_OPENMP
-  std::cout << std::endl << "----------------------------------------------------"<< std::endl<<std::endl;
-  run_openmpwrapper(argc,argv);
-#endif
-#ifdef HAVE_TPETRA_INST_PTHREAD
-  std::cout << std::endl << "----------------------------------------------------"<< std::endl<<std::endl;
-  run_threadswrapper(argc,argv);
-#endif
-#ifdef HAVE_TPETRA_INST_SERIAL
-  std::cout << std::endl << "----------------------------------------------------"<< std::endl<<std::endl;
-  run_serialwrapper(argc,argv);
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_SERIAL
-  std::cout << std::endl << "----------------------------------------------------"<< std::endl<<std::endl;
-  run_serialclassic(argc,argv);
-#endif
-
-  return 0;
+#if defined(HAVE_TPETRACLASSIC_SERIAL) && !defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+int run_serialclassic(int& argc, char* argv[]) {
+  typedef KokkosClassic::DoNotUse::SerialNode                Node;
+  std::cout << "Running: SerialClassic" << std::endl;
+  return run<Node>(argc,argv);
 }
+#endif
