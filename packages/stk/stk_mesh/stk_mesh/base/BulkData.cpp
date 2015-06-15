@@ -4025,7 +4025,6 @@ void BulkData::internal_modification_end_for_change_ghosting()
     }
 
     m_meshModification.set_sync_state_synchronized();
-    m_modSummary.write_summary(m_meshModification.synchronized_count());
 }
 
 bool BulkData::internal_modification_end_for_change_parts()
@@ -4044,11 +4043,11 @@ bool BulkData::internal_modification_end_for_change_parts()
 
       // check_mesh_consistency();
     }
+    m_modSummary.write_summary(m_meshModification.synchronized_count());
 
     m_bucket_repository.internal_sort_bucket_entities();
 
     m_meshModification.set_sync_state_synchronized();
-    m_modSummary.write_summary(m_meshModification.synchronized_count());
     return true;
 }
 
@@ -4354,7 +4353,6 @@ void BulkData::internal_finish_modification_end(impl::MeshModification::modifica
 
     update_deleted_entities_container();
 
-    m_modSummary.write_summary(m_meshModification.synchronized_count());
 }
 
 bool BulkData::internal_modification_end_for_skin_mesh( EntityRank entity_rank, impl::MeshModification::modification_optimization opt, stk::mesh::Selector selectedToSkin,

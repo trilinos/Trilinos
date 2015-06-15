@@ -86,10 +86,12 @@ bool MeshModification::internal_modification_end(modification_optimization opt)
 
         m_bulkData.internal_resolve_send_ghost_membership();
 
+        m_bulkData.m_modSummary.write_summary(synchronized_count());
         m_bulkData.check_mesh_consistency();
     }
     else
     {
+        m_bulkData.m_modSummary.write_summary(synchronized_count());
         if(!m_bulkData.add_fmwk_data())
         {
             std::vector<Entity> shared_modified;

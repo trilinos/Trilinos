@@ -1255,7 +1255,7 @@ private: // data
   bool m_use_identifiers_for_resolving_sharing;
   stk::EmptyModificationSummary m_modSummary;
   // If needing debug info for modifications, comment out above line and uncomment line below
-  // stk::ModificationSummary m_modSummary;
+//   stk::ModificationSummary m_modSummary;
 };
 
 
