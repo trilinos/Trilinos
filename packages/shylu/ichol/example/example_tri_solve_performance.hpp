@@ -54,6 +54,7 @@ namespace Example {
                                  const int max_task_dependence,
                                  const int team_size, 
                                  const bool team_interface,
+                                 const bool skip_serial,
                                  const bool verbose) {
     typedef ValueType   value_type;
     typedef OrdinalType ordinal_type;
@@ -145,12 +146,14 @@ namespace Example {
 
       t_reorder = timer.seconds();
 
+      cout << "TriSolvePerformance:: Hier (dof, nnz) = " << HU.NumRows() << ", " << HU.NumNonZeros() << endl;
+
       if (verbose)
         cout << UU << endl;
     }
     cout << "TriSolvePerformance:: reorder the matrix and partition right hand side::time = " << t_reorder << endl;
 
-    {
+    if (!skip_serial) {
       __INIT_DENSE_MATRIX__(BB, 1.0);
 #ifdef __USE_FIXED_TEAM_SIZE__
       typename TaskFactoryType::policy_type policy(max_task_dependence);
@@ -167,7 +170,6 @@ namespace Example {
 
       cout << "TriSolvePerformance:: Serial forward and backward solve of the matrix" << endl;
       {
-
         for (int i=start;i<niter;++i) {
           timer.reset();
           // {
@@ -209,7 +211,7 @@ namespace Example {
       cout << "TriSolvePerformance:: Serial forward and backward solve of the matrix::time = " << t_solve_seq << endl;
     }
     
-
+    
 //     {
 //       __INIT_DENSE_MATRIX__(BB, 1.0);
 // #ifdef __USE_FIXED_TEAM_SIZE__
@@ -302,8 +304,10 @@ namespace Example {
       cout << "TriSolvePerformance:: ByBlocks forward and backward solve of the matrix::time = " << t_solve_task << endl;
     }
 
-    cout << "TriSolvePerformance:: task scale [seq/task] = " << t_solve_seq/t_solve_task << endl;
-    //cout << "TriSolvePerformance:: team scale [seq/team] = " << t_solve_seq/t_solve_team << endl;
+    if (!skip_serial) {
+      cout << "TriSolvePerformance:: task scale [seq/task] = " << t_solve_seq/t_solve_task << endl;
+      //cout << "TriSolvePerformance:: team scale [seq/team] = " << t_solve_seq/t_solve_team << endl;
+    }
 
     return r_val;
   }

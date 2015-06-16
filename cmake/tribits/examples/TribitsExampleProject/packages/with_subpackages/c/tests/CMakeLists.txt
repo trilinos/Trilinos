@@ -1,5 +1,5 @@
-IF(WithSubpackagesB_ENABLE_ExternalPkg)
-  SET(EXPECTED_EXTERNALPKG_DEPS "ExternalPkg no_deps ")
+IF(WithSubpackagesB_ENABLE_InsertedPkg)
+  SET(EXPECTED_EXTERNALPKG_DEPS "InsertedPkg no_deps ")
 ENDIF()
 
 TRIBITS_ADD_TEST( c_util

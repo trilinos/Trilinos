@@ -200,8 +200,8 @@ int write_nemesis(std::string &nemI_out_file,
     /* Sort node maps */
     gds_qsort(TOPTR(lb->int_nodes[proc]), lb->int_nodes[proc].size());
     if(problem->type == NODAL) {
-      sort2(lb->ext_nodes[proc].size(), TOPTR(lb->ext_nodes[proc]) - 1,
-	    TOPTR(lb->ext_procs[proc]) - 1);
+      sort2(lb->ext_nodes[proc].size(), TOPTR(lb->ext_nodes[proc]),
+	    TOPTR(lb->ext_procs[proc]));
     }
 
     /* Sort element maps */

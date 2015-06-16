@@ -66,7 +66,7 @@ int main (int argc, char *argv[]) {
     
     r_val = exampleTriSolvePerformance
       <value_type,ordinal_type,size_type,exec_space,void>
-      (file_input, nrhs, nb, niter, nthreads, max_task_dependence, team_size, team_interface, verbose);
+      (file_input, nrhs, nb, niter, nthreads, max_task_dependence, team_size, team_interface, (nthreads != 1), verbose);
 
     exec_space::finalize();
   }

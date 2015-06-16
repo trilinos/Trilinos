@@ -249,8 +249,11 @@ int run(int argc, char *argv[]) {
   typedef Teuchos::ScalarTraits<Scalar>::magnitudeType            Magnitude;
   typedef int                                                     Ordinal;
 
-  typedef Tpetra::MpiPlatform<Node>                            Platform;
-  typedef Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal,Node>          CrsMatrix;
+  typedef Tpetra::MpiPlatform<Node>                               Platform;
+  //typedef Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal,Node>        CrsMatrix;
+  //typedef Tpetra::Vector<Scalar,Ordinal,Ordinal,Node>           Vector;
+  typedef Tpetra::CrsMatrix<Scalar>                               CrsMatrix;
+  typedef Tpetra::Vector<Scalar>                                  Vector;
   using Teuchos::RCP;
   using Teuchos::tuple;
 
@@ -347,7 +350,6 @@ int run(int argc, char *argv[]) {
     std::cout << std::endl << A->description() << std::endl << std::endl;
   }
 
-  typedef Tpetra::Vector<Scalar,Ordinal,Ordinal,Node> Vector;
 
   if ( A->getRangeMap() != A->getDomainMap() ) {
     throw std::runtime_error("TpetraExamples::powerMethod(): operator must have domain and range maps that are equivalent.");

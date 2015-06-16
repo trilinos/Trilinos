@@ -220,10 +220,7 @@ DefaultComm<OrdinalType>::getComm ()
     // register an attribute ((key,value) pair) with MPI_COMM_SELF,
     // with a custom "destructor" to be called at MPI_Finalize.
 
-    // Key is an output argument of MPI_Comm_create_keyval.  If we
-    // ever wanted to call MPI_Comm_free_keyval, we would need to save
-    // the key.  MPI_Finalize will free the (key,value) pair
-    // automatically, so we never need to call MPI_Comm_free_keyval.
+    // 'key' is an output argument of MPI_Comm_create_keyval.
     int key = MPI_KEYVAL_INVALID;
     int err =
       MPI_Comm_create_keyval (MPI_COMM_NULL_COPY_FN,
@@ -243,6 +240,14 @@ DefaultComm<OrdinalType>::getComm ()
     // Attach the attribute to MPI_COMM_SELF.
     err = MPI_Comm_set_attr (MPI_COMM_SELF, key, &val);
     if (err != MPI_SUCCESS) {
+      // MPI (versions up to and including 3.0) doesn't promise
+      // correct behavior after any function returns something other
+      // than MPI_SUCCESS.  Thus, it's not required to try to free the
+      // new key via MPI_Comm_free_keyval.  Furthermore, if something
+      // went wrong with MPI_Comm_set_attr, it's likely that the
+      // attribute mechanism is broken.  Thus, it would be unwise to
+      // call MPI_Comm_free_keyval.  However, we can still clean up
+      // other data.
       if (comm_ != NULL) { // clean up if MPI call fails
         delete comm_;
         comm_ = NULL;
@@ -250,6 +255,36 @@ DefaultComm<OrdinalType>::getComm ()
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
         "Teuchos::DefaultComm::getComm: MPI_Comm_set_attr failed!");
     }
+
+    // It looks weird to "free" the key right away.  However, this
+    // does not actually cause the "destructor" to be called.  It only
+    // gets called at MPI_FINALIZE.  See MPI 3.0 standard, Section
+    // 6.7.2, MPI_COMM_FREE_KEYVAL:
+    //
+    // "Note that it is not erroneous to free an attribute key that is
+    // in use, because the actual free does not transpire until after
+    // all references (in other communicators on the process) to the
+    // key have been freed.  These references need to be explicitly
+    // freed by the program, either via calls to MPI_COMM_DELETE_ATTR
+    // that free one attribute instance, or by calls to MPI_COMM_FREE
+    // that free all attribute instances associated with the freed
+    // communicator."
+    //
+    // We rely here on the latter mechanism.  MPI_FINALIZE calls
+    // MPI_COMM_FREE on MPI_COMM_SELF, so we do not need to call it
+    // explicitly.
+    //
+    // It's not clear what to do if the MPI_* calls above succeeded,
+    // but this call fails (i.e., returns != MPI_SUCCESS).  We could
+    // throw; this would make sense to do, because MPI (versions up to
+    // and including 3.0) doesn't promise correct behavior after any
+    // MPI function returns something other than MPI_SUCCESS.  We
+    // could also be optimistic and just ignore the return value,
+    // hoping that if the above calls succeeded, then the communicator
+    // will get freed at MPI_FINALIZE, even though the unfreed key may
+    // leak memory (see Bug 6338).  I've chosen the latter.
+    (void) MPI_Comm_free_keyval (&key);
+
 #else // NOT HAVE_MPI
     comm_ = new SerialComm<OrdinalType> ();
     // We want comm_ to be deallocated when main exits, so register
@@ -275,6 +310,12 @@ DefaultComm<OrdinalType>::getComm ()
     }
 #endif // HAVE_MPI
   }
+
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (comm_ == NULL, std::logic_error, "Teuchos::DefaultComm::getComm: "
+     "comm_ == NULL before return.  This should never happen.  "
+     "Please report this bug to the Teuchos developers.");
+
   // Return a nonowning RCP, because we need to ensure that
   // destruction happens at MPI_Finalize (or at exit of main(), if not
   // building with MPI).
@@ -317,6 +358,8 @@ getDefaultSerialComm (const Teuchos::RCP<const Comm<OrdinalType> >& comm)
       // Attach the attribute to MPI_COMM_SELF.
       err = MPI_Comm_set_attr (MPI_COMM_SELF, key, &val);
       if (err != MPI_SUCCESS) {
+        // See comments in getComm implementation above to see why we
+        // don't call MPI_Comm_free_keyval here.
         if (defaultSerialComm_ != NULL) { // clean up if MPI call fails
           delete defaultSerialComm_;
           defaultSerialComm_ = NULL;
@@ -325,6 +368,12 @@ getDefaultSerialComm (const Teuchos::RCP<const Comm<OrdinalType> >& comm)
           true, std::runtime_error, "Teuchos::DefaultComm::getDefaultSerialComm"
           ": MPI_Comm_set_attr failed!");
       }
+
+      // See comments in getComm implementation above to see why we
+      // _do_ call MPI_Comm_free_keyval here, and why we don't check
+      // the return code.
+      (void) MPI_Comm_free_keyval (&key);
+
 #else // NOT HAVE_MPI
       defaultSerialComm_ = new SerialComm<OrdinalType> ();
       // We want defaultSerialComm_ to be deallocated when main exits,
@@ -350,6 +399,12 @@ getDefaultSerialComm (const Teuchos::RCP<const Comm<OrdinalType> >& comm)
       }
 #endif // HAVE_MPI
     }
+
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (defaultSerialComm_ == NULL, std::logic_error, "Teuchos::DefaultComm::"
+       "getDefaultSerialComm: defaultSerialComm_ == NULL before return.  This sh"
+       "ould never happen.  Please report this bug to the Teuchos developers.");
+
     // Return a nonowning RCP, because we need to ensure that
     // destruction happens at MPI_Finalize (or at exit of main(), if not
     // building with MPI).

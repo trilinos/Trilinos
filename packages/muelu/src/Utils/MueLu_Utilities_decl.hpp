@@ -435,6 +435,11 @@ namespace MueLu {
   long ExtractNonSerializableData(const Teuchos::ParameterList& inList, Teuchos::ParameterList& serialList, Teuchos::ParameterList& nonSerialList);
 
 
+  /*! Tokenizes a (comma)-separated string, removing all leading and trailing whitespace 
+    WARNING: This routine is not threadsafe on most architectures 
+  */
+  void TokenizeStringAndStripWhiteSpace(const std::string & stream, std::vector<std::string> & tokenList, const char* token = ",");
+
 
 #ifdef HAVE_MUELU_EPETRA
   //This non-member templated function exists so that the matrix-matrix multiply will compile if Epetra, Tpetra, and ML are enabled.

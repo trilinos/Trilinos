@@ -202,7 +202,7 @@ Entity declare_element(BulkData & mesh,
 }
 
 Entity declare_element_to_entity(BulkData & mesh, Entity elem, Entity entity,
-        const unsigned relationOrdinal, Part * part, stk::topology entity_top)
+        const unsigned relationOrdinal, const PartVector& parts, stk::topology entity_top)
 {
     stk::topology elem_top = mesh.bucket(elem).topology();
 
@@ -220,10 +220,9 @@ Entity declare_element_to_entity(BulkData & mesh, Entity elem, Entity entity,
     PartVector part_scratch;
     part_scratch.reserve(64);
 
-    if(part)
+    if(!parts.empty())
     {
-        PartVector add_parts(1, part);
-        mesh.change_entity_parts(entity, add_parts);
+        mesh.change_entity_parts(entity, parts);
     }
 
     const stk::mesh::ConnectivityOrdinal *side_ordinals = mesh.begin_ordinals(elem, mesh.entity_rank(entity));
@@ -264,18 +263,47 @@ Entity declare_element_to_entity(BulkData & mesh, Entity elem, Entity entity,
     return entity;
 }
 
+
 Entity declare_element_side(
         BulkData & mesh,
         Entity elem,
         Entity side,
         const unsigned local_side_id,
-        Part * part)
+        const stk::mesh::PartVector& parts)
 {
     verify_declare_element_side(mesh, elem, local_side_id);
 
     stk::topology elem_top = mesh.bucket(elem).topology();
     stk::topology side_top = elem_top.side_topology(local_side_id);
-    return declare_element_to_entity(mesh, elem, side, local_side_id, part, side_top);
+    return declare_element_to_entity(mesh, elem, side, local_side_id, parts, side_top);
+}
+
+Entity declare_element_side( BulkData & mesh ,
+                             const stk::mesh::EntityId global_side_id ,
+                             Entity elem ,
+                             const unsigned local_side_id ,
+                             stk::mesh::Part* part)
+{
+    stk::mesh::PartVector parts;
+    if(part!=NULL)
+    {
+        parts.push_back(part);
+    }
+    return declare_element_side(mesh, global_side_id, elem, local_side_id, parts);
+}
+
+Entity declare_element_side( BulkData & mesh ,
+                               Entity elem ,
+                               Entity side ,
+                               const unsigned local_side_id ,
+                               stk::mesh::Part* part)
+{
+    stk::mesh::PartVector parts;
+    if(part!=NULL)
+    {
+        parts.push_back(part);
+    }
+    return declare_element_side(mesh, elem, side, local_side_id, parts);
 }
 
 Entity declare_element_edge(
@@ -283,12 +311,12 @@ Entity declare_element_edge(
         Entity elem,
         Entity edge,
         const unsigned local_edge_id,
-        Part * part)
+        const stk::mesh::PartVector& parts)
 {
     verify_declare_element_edge(mesh, elem, local_edge_id);
     stk::topology elem_top = mesh.bucket(elem).topology();
     stk::topology edge_top = elem_top.edge_topology();
-    return declare_element_to_entity(mesh, elem, edge, local_edge_id, part, edge_top);
+    return declare_element_to_entity(mesh, elem, edge, local_edge_id, parts, edge_top);
 }
 
 Entity declare_element_side(
@@ -296,7 +324,7 @@ Entity declare_element_side(
         const stk::mesh::EntityId global_side_id,
         Entity elem,
         const unsigned local_side_id,
-        Part * part)
+        const stk::mesh::PartVector& parts)
 {
     verify_declare_element_side(mesh, elem, local_side_id);
 
@@ -309,7 +337,7 @@ Entity declare_element_side(
     {
         side = mesh.declare_entity(side_top.rank(), global_side_id, empty_parts);
 // It seem like declare_element_side should be called even if the side is valid to make sure it is attached to the element.
-        declare_element_side(mesh, elem, side, local_side_id, part);
+        declare_element_side(mesh, elem, side, local_side_id, parts);
     }
     return side;
 }
@@ -319,7 +347,7 @@ Entity declare_element_edge(
         const stk::mesh::EntityId global_edge_id,
         Entity elem,
         const unsigned local_edge_id,
-        Part * part)
+        const stk::mesh::PartVector &parts)
 {
     verify_declare_element_edge(mesh, elem, local_edge_id);
 
@@ -332,7 +360,7 @@ Entity declare_element_edge(
     {
         edge = mesh.declare_entity(edge_top.rank(), global_edge_id, empty_parts);
 // It seem like declare_element_edge should be called even if the edge is valid to make sure it is attached to the element.
-        declare_element_edge(mesh, elem, edge, local_edge_id, part);
+        declare_element_edge(mesh, elem, edge, local_edge_id, parts);
     }
     return edge;
 }
@@ -361,7 +389,7 @@ get_ordinal_and_permutation(stk::mesh::BulkData& mesh, stk::mesh::Entity parent_
 
         if (num_nodes !=  nodes_of_sub_rank_size)
         {
-          continue;
+            continue;
         }
 
         ThrowRequireMsg(num_nodes == nodes_of_sub_rank.size(), "AHA! num_nodes != nodes_of_sub_rank.size()");

@@ -126,6 +126,13 @@ public:
                            AlgorithmState<Real> &algo_state ) {
   }
 
+  /** \brief Initialize step with equality constraint.
+  */
+  virtual void initialize( Vector<Real> &x, const Vector<Real> &g, Vector<Real> &l, const Vector<Real> &c,
+                           Objective<Real> &obj, EqualityConstraint<Real> &con, BoundConstraint<Real> &bnd, 
+                           AlgorithmState<Real> &algo_state ) {
+  }
+
   /** \brief Compute step.
   */
   virtual void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, 
@@ -148,6 +155,20 @@ public:
   */
   virtual void update( Vector<Real> &x, Vector<Real> &l, const Vector<Real> &s,
                        Objective<Real> &obj, EqualityConstraint<Real> &con,
+                       AlgorithmState<Real> &algo_state ) {}
+
+  /** \brief Compute step (equality constraints).
+  */
+  virtual void compute( Vector<Real> &s, const Vector<Real> &x, const Vector<Real> &l,
+                        Objective<Real> &obj, EqualityConstraint<Real> &con, 
+                        BoundConstraint<Real> &bnd,
+                        AlgorithmState<Real> &algo_state ) {}
+
+  /** \brief Update step, if successful (equality constraints).
+  */
+  virtual void update( Vector<Real> &x, Vector<Real> &l, const Vector<Real> &s,
+                       Objective<Real> &obj, EqualityConstraint<Real> &con,
+                       BoundConstraint<Real> &bnd,
                        AlgorithmState<Real> &algo_state ) {}
 
   /** \brief Print iterate header.

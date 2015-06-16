@@ -45,6 +45,37 @@
 namespace Intrepid {
 
 //
+// \return \f$ B = A : u := B_i = A_{ijk} u_{jk} \f$
+//
+template<typename S, typename T, Index N>
+Vector<typename Promote<S, T>::type, N>
+dotdot(Tensor3<T, N> const & A, Tensor<S, N> const & u)
+{
+  Index const
+  dimension = A.get_dimension();
+
+  assert(u.get_dimension() == dimension);
+
+  Vector<typename Promote<S, T>::type, N>
+  B(dimension);
+
+  for (Index i = 0; i < dimension; ++i) {
+
+    typename Promote<S, T>::type
+    s = 0.0;
+
+    for (Index j = 0; j < dimension; ++j) {
+      for (Index k = 0; k < dimension; ++k) {
+        s += A(i,j,k) * u(j,k);
+      }
+    }
+    B(i) = s;
+  }
+
+  return B;
+}
+
+//
 // \return \f$ B = A \cdot u := B_{ij} = A_{ijp} u_p \f$
 //
 template<typename S, typename T, Index N>

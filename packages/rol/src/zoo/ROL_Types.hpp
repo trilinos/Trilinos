@@ -84,6 +84,9 @@ namespace ROL {
     Real gnorm;
     Real cnorm;
     Real snorm;
+    Real aggregateGradientNorm;
+    Real aggregateModelError;
+    bool flag;
     Teuchos::RCP<Vector<Real> > iterateVec;
     Teuchos::RCP<Vector<Real> > lagmultVec;
     Teuchos::RCP<Vector<Real> > minIterVec;
@@ -91,6 +94,9 @@ namespace ROL {
       gnorm(std::numeric_limits<Real>::max()),
       cnorm(std::numeric_limits<Real>::max()),
       snorm(std::numeric_limits<Real>::max()), 
+      aggregateGradientNorm(std::numeric_limits<Real>::max()),
+      aggregateModelError(std::numeric_limits<Real>::max()),
+      flag(false),
       iterateVec(Teuchos::null), lagmultVec(Teuchos::null), minIterVec(Teuchos::null) {}
   };  
   

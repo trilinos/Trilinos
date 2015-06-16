@@ -353,7 +353,7 @@ public:
         nc += coords[i][k];
       }
       nc /= this->heapSize;
-      moved = (ABS(center[i] - nc) > this->_EPSILON || moved );
+      moved = (ZOLTAN2_ABS(center[i] - nc) > this->_EPSILON || moved );
       center[i] = nc;
 
     }
@@ -783,7 +783,7 @@ public:
   virtual double getProcDistance(int procId1, int procId2) const{
     double distance = 0;
     for (int i = 0 ; i < this->proc_coord_dim; ++i){
-      distance += ABS(proc_coords[i][procId1] - proc_coords[i][procId2]);
+      distance += ZOLTAN2_ABS(proc_coords[i][procId1] - proc_coords[i][procId2]);
     }
     return distance;
   }
