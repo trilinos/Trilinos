@@ -413,7 +413,7 @@ public:
   typedef typename keys_view_type::non_const_value_type key_type;
   typedef typename pairs_view_type::non_const_value_type pair_type;
 
-  typedef FillPairsResult<typename pair_type::second_type> value_type;
+  typedef FillPairsResult<key_type> value_type;
 
   // mfh 23 May 2015: Having a device_type typedef in the functor
   // along with an execution_space typedef causes compilation issues.
