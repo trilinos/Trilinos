@@ -158,11 +158,15 @@ namespace {
     }
     else {
       TEST_EQUALITY(my_num_owned, 2);
-      if (my_num_owned > 0) {
-        TEST_EQUALITY(my_owned[0], 41);
-      }
-      if (my_num_owned > 1) {
-        TEST_EQUALITY(my_owned[1], 51);
+
+      if (my_num_owned == static_cast<LO> (2)) {
+        // Make a deep copy, so we can sort.  Order of the indices
+        // doesn't matter; all that matters is that Proc 1 actually
+        // got the indices it was supposed to get.
+        Array<GO> myOwnedCopy (my_owned.begin (), my_owned.end ());
+        std::sort (myOwnedCopy.begin (), myOwnedCopy.end ());
+        TEST_EQUALITY(myOwnedCopy[0], 41);
+        TEST_EQUALITY(myOwnedCopy[1], 51);
       }
     }
 
