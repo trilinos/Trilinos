@@ -92,7 +92,6 @@
             </ParameterList>
 
             <ParameterList name="SOURCE_TEMPERATURE">
-                <Parameter name="Type" type="string" value="Parameter"/>
                 <Parameter name="Value" type="double" value="1.0"/>
             </ParameterList>
             <ParameterList name="Heat Capacity">
@@ -116,7 +115,6 @@
         <ParameterList name="fluid model test">
 
             <ParameterList name="SOURCE_TEST_TEMPERATURE">
-                <Parameter name="Type" type="string" value="Parameter"/>
                 <Parameter name="Value" type="double" value="1.0"/>
             </ParameterList>
             <ParameterList name="TEST_DENSITY">
