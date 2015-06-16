@@ -2,8 +2,10 @@ INCLUDE(TrilinosCreateClientTemplateHeaders)
 
 # NTS: The funny thing is that I need to include this in order to
 # get the link/include directories correct.  Go figure.
-SET(HEADERS "")
-SET(SOURCES "")
+SET(HEADERS_EXEC "")
+SET(SOURCES_EXEC "")
+SET(HEADERS_LIB "")
+SET(SOURCES_LIB "")
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/)
@@ -14,6 +16,7 @@ if(TPL_ENABLE_MATLAB)
   # Must glob the binary dir last to get all of the auto-generated headers
   SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
 
+
   # Debugging information
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
     MESSAGE("MEX_COMPILER    = " ${MEX_COMPILER})
@@ -22,62 +25,22 @@ if(TPL_ENABLE_MATLAB)
     MESSAGE("MATLAB_MEX_DIR   = " ${MATLAB_MEX_DIR})
   ENDIF()
 
-  APPEND_SET(HEADERS muemex.h)
-  APPEND_SET(SOURCES muemex.cpp MueLu_MatlabUtils.cpp)
-  
-  # Explicit instantiation
-  IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
-    IF(Tpetra_INST_DOUBLE AND Tpetra_INST_INT_INT)
-      GLOBAL_SET(${PACKAGE_NAME}_INST_DOUBLE_INT_INT ON)
-      GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_DOUBLE_INT_INT ON)
-    ELSE()
-      GLOBAL_SET(${PACKAGE_NAME}_INST_DOUBLE_INT_INT OFF)
-      GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_DOUBLE_INT_INT OFF)
-    ENDIF()
+  APPEND_SET(HEADERS_EXEC muemex.h)
+  APPEND_SET(SOURCES_EXEC muemex.cpp)
 
-    IF(${PACKAGE_NAME}_ENABLE_EXAMPLES OR ${PACKAGE_NAME}_ENABLE_TESTS)
-      IF (NOT ${PACKAGE_NAME}_INST_DOUBLE_INT_INT)
-        MESSAGE(FATAL_ERROR "Error: MueLu examples and tests needs explicit template instantation with <double, int, int>. Turn on the options Tpetra_INST_DOUBLE and Tpetra_INST_INT_INT or disable examples and tests.")
-      ENDIF()
-    ENDIF()
-
-    IF(${PACKAGE_NAME}_ENABLE_Epetra)
-      IF (NOT ${PACKAGE_NAME}_INST_DOUBLE_INT_INT)
-        MESSAGE(FATAL_ERROR "Error: MueLu needs explicit template instantation with <double, int, int> when enabling Epetra. Turn on the options Tpetra_INST_DOUBLE and Tpetra_INST_INT_INT or disable Epetra.")
-      ENDIF()
-    ENDIF()
-
-    # <double, int, long>
-    IF(Tpetra_INST_DOUBLE AND Tpetra_INST_INT_LONG)
-      GLOBAL_SET(${PACKAGE_NAME}_INST_DOUBLE_INT_LONGINT ON)
-      GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_DOUBLE_INT_LONGINT ON)
-    ELSE()
-      GLOBAL_SET(${PACKAGE_NAME}_INST_DOUBLE_INT_LONGINT OFF)
-      GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_DOUBLE_INT_LONGINT OFF)
-    ENDIF()
-
-    # <double, int, long long int>
-    IF(Tpetra_INST_DOUBLE AND Tpetra_INST_INT_LONG_LONG)
-      GLOBAL_SET(${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT ON)
-      GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_DOUBLE_INT_LONGLONGINT ON)
-    ELSE()
-      GLOBAL_SET(${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT OFF)
-      GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_DOUBLE_INT_LONGLONGINT OFF)
-    ENDIF()
-
-    # <complex, int, int>
-    IF(Tpetra_INST_COMPLEX_DOUBLE AND Tpetra_INST_INT_INT)
-      GLOBAL_SET(${PACKAGE_NAME}_INST_COMPLEX_INT_INT ON)
-      GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_COMPLEX_INT_INT ON)
-    ELSE()
-      GLOBAL_SET(${PACKAGE_NAME}_INST_COMPLEX_INT_INT OFF)
-      GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_COMPLEX_INT_INT OFF)
-    ENDIF()
-
-  ENDIF() #ETI
+  APPEND_GLOB(HEADERS_LIB *.hpp)
+  APPEND_SET(SOURCES_LIB MueLu_SingleLevelMatlabFactory.cpp MueLu_TwoLevelMatlabFactory.cpp MueLu_MatlabUtils.cpp)
 
   TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR} NOSIERRABJAM)
   TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
+
+  # Start with the library
+  TRIBITS_ADD_LIBRARY(
+    muelu-matlab
+    HEADERS ${HEADERS_LIB}
+    SOURCES ${SOURCES_LIB}
+#    DEPLIBS muelu muelu-adapters
+  )
 
   # First, grab the package's own libraries
   SET(LINK_LIBS)
@@ -114,8 +77,9 @@ if(TPL_ENABLE_MATLAB)
   # This code is extremely fragile and probably won't work on any system but GNU/Linux with gcc.
   # This is because Cmake will not allow me to *just call the mex linker*, and so I have to do this the hard way.
   #
+
   LINK_DIRECTORIES(${MATLAB_LIBRARY_DIRS})
-  TRIBITS_ADD_EXECUTABLE(muemex.${MEX_EXTENSION} SOURCES muemex.cpp MueLu_SingleLevelMatlabFactory.cpp MueLu_TwoLevelMatlabFactory.cpp MueLu_MatlabUtils.cpp  NOEXEPREFIX NOEXESUFFIX)
+  TRIBITS_ADD_EXECUTABLE(muemex.${MEX_EXTENSION} SOURCES ${SOURCES_EXEC}   NOEXEPREFIX NOEXESUFFIX)
   SET_TARGET_PROPERTIES(muemex.${MEX_EXTENSION} PROPERTIES SUFFIX "") # remove .exe extension
   TARGET_LINK_LIBRARIES(muemex.${MEX_EXTENSION} ${MLMEX_OPTS1} ${LINK_LIBS} ${MLMEX_OPTS2})
 
