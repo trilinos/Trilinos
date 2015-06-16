@@ -85,12 +85,6 @@ APPEND_GLOB(SOURCES Transfers/Petrov-Galerkin-SA/*.cpp)
 APPEND_GLOB(SOURCES Transfers/Smoothed-Aggregation/*.cpp)
 APPEND_GLOB(SOURCES Utils/ForwardDeclaration/*.cpp)
 
-# Remove everything in the interface directory and add it to a list for muelu-interface instead
-# NOTE: Because of the funny way the glob mactros work, the use of two slashses for the APPEND_GLOB is critical
-SET(SOURCES_INTERFACE "")
-APPEND_GLOB(SOURCES_INTERFACE Interface//*.cpp)
-LIST(REMOVE_ITEM SOURCES ${SOURCES_INTERFACE})
-
 #
 # Explicit instantiation
 #
@@ -131,6 +125,19 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   APPEND_GLOB(SOURCES ${DIR}/Utils/ExplicitInstantiation/*.cpp)
 ENDIF()
 
+# Remove everything in the interface directory and add it to a list for muelu-interface instead
+# NOTE: Because of the funny way the glob mactros work, the use of two slashses for the APPEND_GLOB is critical
+SET(SOURCES_INTERFACE "")
+APPEND_GLOB(SOURCES_INTERFACE Interface//*.cpp)
+IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
+  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_ParameterListInterpreter.cpp)
+  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_MLParameterListInterpreter.cpp)
+  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_FactoryFactory.cpp)
+  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_AdaptiveSaMLParameterListInterpreter.cpp)
+ENDIF()
+LIST(REMOVE_ITEM SOURCES ${SOURCES_INTERFACE})
+
+
 if (NOT ${PACKAGE_NAME}_ENABLE_Ifpack2)
   LIST(REMOVE_ITEM HEADERS ${DIR}/Smoothers/MueLu_Ifpack2Smoother.hpp)
   LIST(REMOVE_ITEM SOURCES
@@ -153,21 +160,11 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
   )
 
-IF (${PACKAGE_NAME}_ENABLE_MATLAB)
-TRIBITS_ADD_LIBRARY(
-  muelu-interface
-  HEADERS ${HEADERS_INTERFACE}
-  SOURCES ${SOURCES_INTERFACE}
-#  DEPLIBS muelu muelu-matlab
-  )
-ELSE()
-TRIBITS_ADD_LIBRARY(
-  muelu-interface
-  HEADERS ${HEADERS_INTERFACE}
-  SOURCES ${SOURCES_INTERFACE}
-#  DEPLIBS muelu 
-  )
-ENDIF()
+#TRIBITS_ADD_LIBRARY(
+#  muelu-interface
+#  HEADERS ${HEADERS_INTERFACE}
+#  SOURCES ${SOURCES_INTERFACE}
+#  )
 
 
 # for debugging
@@ -176,17 +173,17 @@ ENDIF()
 #MESSAGE("")
 #MESSAGE("HEADERS = ${HEADERS}")
 #MESSAGE("")
-#MESSAGE("SOURCES = ${SOURCES}")
+MESSAGE("SOURCES = ${SOURCES}")
 
 #MESSAGE("INCLUDE_DIRECTORIES = ")
 #get_directory_property(output INCLUDE_DIRECTORIES)
 #message(STATUS ${output})
 
 
-#MESSAGE("")
+MESSAGE("")
 #MESSAGE("**************** in muelu src ***********")
 #MESSAGE("")
 #MESSAGE("HEADERS_INTERFACE = ${HEADERS_INTERFACE}")
 #MESSAGE("")
-#MESSAGE("SOURCES_INTERFACE = ${SOURCES_INTERFACE}")
+MESSAGE("SOURCES_INTERFACE = ${SOURCES_INTERFACE}")
 
