@@ -227,10 +227,17 @@ namespace Tpetra {
                     const Teuchos::RCP<node_type>& pNode,
                     const global_ordinal_type numRows)
       {
-        // A conventional, uniformly partitioned, contiguous map.
-        return rcp (new map_type (static_cast<global_size_t> (numRows),
-                                  static_cast<global_ordinal_type> (0),
-                                  pComm, GloballyDistributed, pNode));
+        // Return a conventional, uniformly partitioned, contiguous map.
+        if (pNode.is_null ()) {
+          return rcp (new map_type (static_cast<global_size_t> (numRows),
+                                    static_cast<global_ordinal_type> (0),
+                                    pComm, GloballyDistributed));
+        }
+        else {
+          return rcp (new map_type (static_cast<global_size_t> (numRows),
+                                    static_cast<global_ordinal_type> (0),
+                                    pComm, GloballyDistributed, pNode));
+        }
       }
 
       /// \brief Compute initial row map, or verify an existing one.
@@ -269,27 +276,32 @@ namespace Tpetra {
       {
         // If the caller didn't provide a map, return a conventional,
         // uniformly partitioned, contiguous map.
-        if (pRowMap.is_null()) {
-          return rcp (new map_type (static_cast<global_size_t> (numRows),
-                                    static_cast<global_ordinal_type> (0),
-                                    pComm, GloballyDistributed, pNode));
-        } else {
-          TEUCHOS_TEST_FOR_EXCEPTION(! pRowMap->isDistributed() && pComm->getSize() > 1,
-                             std::invalid_argument,
-                             "The specified row map is not distributed, but "
-                             "the given communicator includes more than one "
-                             "rank (in fact, there are " << pComm->getSize()
-                             << " ranks).");
-          TEUCHOS_TEST_FOR_EXCEPTION(pRowMap->getComm() != pComm,
-                             std::invalid_argument,
-                             "The specified row map's communicator (pRowMap->"
-                             "getComm()) is different than the given separately "
-                             "supplied communicator pComm.");
-          TEUCHOS_TEST_FOR_EXCEPTION(pRowMap->getNode() != pNode,
-                             std::invalid_argument,
-                             "The specified row map's node (pRowMap->getNode()) "
-                             "is different than the given separately supplied "
-                             "node pNode.");
+        if (pRowMap.is_null ()) {
+          if (pNode.is_null ()) {
+            return rcp (new map_type (static_cast<global_size_t> (numRows),
+                                      static_cast<global_ordinal_type> (0),
+                                      pComm, GloballyDistributed));
+          }
+          else {
+            return rcp (new map_type (static_cast<global_size_t> (numRows),
+                                      static_cast<global_ordinal_type> (0),
+                                      pComm, GloballyDistributed, pNode));
+          }
+        }
+        else {
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (! pRowMap->isDistributed () && pComm->getSize () > 1,
+             std::invalid_argument, "The specified row map is not distributed, "
+             "but the given communicator includes more than one process (in "
+             "fact, there are " << pComm->getSize () << " processes).");
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (pRowMap->getComm () != pComm, std::invalid_argument,
+             "The specified row Map's communicator (pRowMap->getComm()) "
+             "differs from the given separately supplied communicator pComm.");
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (pRowMap->getNode () != pNode, std::invalid_argument,
+             "The specified row Map's node (pRowMap->getNode()) differs from "
+             "the given separately supplied node pNode.");
           return pRowMap;
         }
       }
@@ -1239,7 +1251,6 @@ namespace Tpetra {
       /// \param filename [in] Name of the Matrix Market file.
       /// \param pComm [in] Communicator containing all processor(s)
       ///   over which the sparse matrix will be distributed.
-      /// \param pNode [in] Kokkos Node object.
       /// \param callFillComplete [in] Whether to call fillComplete()
       ///   on the Tpetra::CrsMatrix, after adding all the entries
       ///   read in from the input stream.
@@ -1248,6 +1259,17 @@ namespace Tpetra {
       /// \param debug [in] Whether to produce copious status output
       ///   useful for Tpetra developers, but probably not useful for
       ///   anyone else.
+      static Teuchos::RCP<sparse_matrix_type>
+      readSparseFile (const std::string& filename,
+                      const RCP<const Comm<int> >& pComm,
+                      const bool callFillComplete=true,
+                      const bool tolerant=false,
+                      const bool debug=false)
+      {
+        return readSparseFile (filename, pComm, Teuchos::null, callFillComplete, tolerant, debug);
+      }
+
+      //! Variant of readSparseFile that takes a Node object.
       static Teuchos::RCP<sparse_matrix_type>
       readSparseFile (const std::string& filename,
                       const RCP<const Comm<int> >& pComm,
@@ -1263,6 +1285,12 @@ namespace Tpetra {
         if (myRank == 0) {
           in.open (filename.c_str ());
         }
+        // FIXME (mfh 16 Jun 2015) Do a broadcast to make sure that
+        // opening the file succeeded, before continuing.  That will
+        // avoid hangs if the read doesn't work.  On the other hand,
+        // readSparse could do that too, by checking the status of the
+        // std::ostream.
+
         return readSparse (in, pComm, pNode, callFillComplete, tolerant, debug);
         // We can rely on the destructor of the input stream to close
         // the file on scope exit, even if readSparse() throws an
@@ -1288,7 +1316,6 @@ namespace Tpetra {
       /// \param filename [in] Name of the Matrix Market file.
       /// \param pComm [in] Communicator containing all process(es)
       ///   over which the sparse matrix will be distributed.
-      /// \param pNode [in] Kokkos Node object.
       /// \param constructorParams [in/out] Parameters for the
       ///   CrsMatrix constructor.
       /// \param fillCompleteParams [in/out] Parameters for
@@ -1300,10 +1327,24 @@ namespace Tpetra {
       ///   anyone else.
       static Teuchos::RCP<sparse_matrix_type>
       readSparseFile (const std::string& filename,
-                      const RCP<const Comm<int> >& pComm,
-                      const RCP<node_type>& pNode,
-                      const RCP<Teuchos::ParameterList>& constructorParams,
-                      const RCP<Teuchos::ParameterList>& fillCompleteParams,
+                      const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+                      const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
+                      const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams,
+                      const bool tolerant=false,
+                      const bool debug=false)
+      {
+        return readSparseFile (filename, pComm, Teuchos::null,
+                               constructorParams, fillCompleteParams,
+                               tolerant, debug);
+      }
+
+      //! Variant of readSparseFile above that takes a Node object.
+      static Teuchos::RCP<sparse_matrix_type>
+      readSparseFile (const std::string& filename,
+                      const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+                      const Teuchos::RCP<node_type>& pNode,
+                      const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
+                      const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams,
                       const bool tolerant=false,
                       const bool debug=false)
       {
@@ -1369,7 +1410,6 @@ namespace Tpetra {
           "Row Map must be nonnull.");
 
         RCP<const Comm<int> > comm = rowMap->getComm ();
-        RCP<node_type> node = rowMap->getNode ();
         const int myRank = comm->getRank ();
 
         // Only open the file on Process 0.  Test carefully to make
@@ -1411,7 +1451,6 @@ namespace Tpetra {
       /// \param in [in] The input stream from which to read.
       /// \param pComm [in] Communicator containing all processor(s)
       ///   over which the sparse matrix will be distributed.
-      /// \param pNode [in] Kokkos Node object.
       /// \param callFillComplete [in] Whether to call fillComplete()
       ///   on the Tpetra::CrsMatrix, after adding all the entries
       ///   read in from the input stream.  (Not calling
@@ -1422,6 +1461,17 @@ namespace Tpetra {
       /// \param debug [in] Whether to produce copious status output
       ///   useful for Tpetra developers, but probably not useful for
       ///   anyone else.
+      static Teuchos::RCP<sparse_matrix_type>
+      readSparse (std::istream& in,
+                  const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+                  const bool callFillComplete=true,
+                  const bool tolerant=false,
+                  const bool debug=false)
+      {
+        return readSparse (in, pComm, Teuchos::null, callFillComplete, tolerant, debug);
+      }
+
+      //! Variant of readSparse() above that takes a Node object.
       static Teuchos::RCP<sparse_matrix_type>
       readSparse (std::istream& in,
                   const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
@@ -1966,7 +2016,6 @@ namespace Tpetra {
       /// \param in [in] The input stream from which to read.
       /// \param pComm [in] Communicator containing all process(es)
       ///   over which the sparse matrix will be distributed.
-      /// \param pNode [in] Kokkos Node object.
       /// \param constructorParams [in/out] Parameters for the
       ///   CrsMatrix constructor.
       /// \param fillCompleteParams [in/out] Parameters for
@@ -1976,6 +2025,19 @@ namespace Tpetra {
       /// \param debug [in] Whether to produce copious status output
       ///   useful for Tpetra developers, but probably not useful for
       ///   anyone else.
+      static Teuchos::RCP<sparse_matrix_type>
+      readSparse (std::istream& in,
+                  const RCP<const Comm<int> >& pComm,
+                  const RCP<Teuchos::ParameterList>& constructorParams,
+                  const RCP<Teuchos::ParameterList>& fillCompleteParams,
+                  const bool tolerant=false,
+                  const bool debug=false)
+      {
+        return readSparse (in, pComm, Teuchos::null, constructorParams,
+                           fillCompleteParams, tolerant, debug);
+      }
+
+      //! Variant of the above readSparse() method that takes a Kokkos Node.
       static Teuchos::RCP<sparse_matrix_type>
       readSparse (std::istream& in,
                   const RCP<const Comm<int> >& pComm,
