@@ -194,6 +194,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   GLM             "cmake/TPLs/"    EX
   quadmath        "cmake/TPLs/"    EX
   RTlib           "cmake/TPLs/"    SS
+  AmgX            "cmake/TPLs/"    EX
   )
 
 # NOTES:

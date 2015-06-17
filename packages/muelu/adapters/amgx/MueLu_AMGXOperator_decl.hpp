@@ -83,14 +83,14 @@ namespace MueLu {
 
     //@}
 
-Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const{
-       /*throw error*/
-        throw Exceptions::RuntimeError("Cannot use AMGXOperator with scalar != double and/or global ordinal != int \n");
+    Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const{
+      /*throw error*/
+      throw Exceptions::RuntimeError("Cannot use AMGXOperator with scalar != double and/or global ordinal != int \n");
     }
 
     //! Returns the Tpetra::Map object associated with the range of this operator.
     Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const{
-        throw Exceptions::RuntimeError("Cannot use AMGXOperator with scalar != double and/or global ordinal != int \n");
+      throw Exceptions::RuntimeError("Cannot use AMGXOperator with scalar != double and/or global ordinal != int \n");
     }
 
     //! Returns in Y the result of a Tpetra::Operator applied to a Tpetra::MultiVector X.
@@ -103,22 +103,12 @@ Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap()
                                          Teuchos::ETransp mode = Teuchos::NO_TRANS,
                                          SC alpha = Teuchos::ScalarTraits<Scalar>::one(),
                                          SC beta  = Teuchos::ScalarTraits<Scalar>::one()) const{
-        throw Exceptions::RuntimeError("Cannot use AMGXOperator with scalar != double and/or global ordinal != int \n");
+      throw Exceptions::RuntimeError("Cannot use AMGXOperator with scalar != double and/or global ordinal != int \n");
     }
 
     bool hasTransposeApply() const{
-        throw Exceptions::RuntimeError("Cannot use AMGXOperator with scalar != double and/or global ordinal != int \n");
+      throw Exceptions::RuntimeError("Cannot use AMGXOperator with scalar != double and/or global ordinal != int \n");
     }
-
-//implement for AMGXOperator?
-    template <class NewNode>
-    Teuchos::RCP< TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, NewNode> >
-    clone(const RCP<NewNode>& new_node) const {
-        throw Exceptions::RuntimeError("Cannot use AMGXOperator with scalar != double and/or global ordinal != int \n");
-    }
-
-
-
 
   private:
     AMGX_solver_handle Solver_;
@@ -128,21 +118,76 @@ Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap()
     int N_;
   };
 
-template <>
-class AMGXOperator<double, int, int>  : public Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
+  template <class Node = typename Tpetra::Operator<double, int, int>::node_type>
+  class AMGXOperator<double, int, int, Node>  : public Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
    public:
 
-    typedef double                                     SC;
-    typedef int                                                LO;
-    typedef int                                        GO;
-    typedef Tpetra::Operator<SC, LO, GO>::node_type    NO;
+    typedef double SC;
+    typedef int LO;
+    typedef int GO;
+
+    AMGXOperator(const Teuchos::RCP<Tpetra::CrsMatrix <SC, LO, GO, Node> &InA, Teuchos::ParameterList &paramListIn){
+      AMGX_mode mode;
+      /* init */
+      AMGX_SAFE_CALL(AMGX_initialize());
+      AMGX_SAFE_CALL(AMGX_initialize_plugins());
+      /*system*/
+      AMGX_SAFE_CALL(AMGX_register_print_callback(&print_callback));
+      AMGX_SAFE_CALL(AMGX_install_signal_handler());
+
+      mode = AMGX_mode_dDDI;
+      Teuchos::ArrayRCP<size_t> row_ptr;
+      Teuchos::ArrayRCP<int> col_ind;
+      Teuchos::ArrayRCP<double> data;
+
+      domainMap = inA->getDomainMap();
+      columnMap = inA->getColumnMap();
+
+      N = inA->getGlobalNumRows();
+      int nnz = inA->getGlobalNumEntries();
+
+      inA->getAllValues(row_ptr, col_ind, data);
+
+      RCP<Teuchos::ParameterList> configs = Teuchos::ParameterList::sublist(paramListIn, "amgx:params");
+      if(configs.isParameter("json file")){
+        AMGX_SAFE_CALL(AMGX_config_create_from_file(&Config_, configs.get<std::string>("json file")));
+      }
+      else{
+        std::ostringstream oss;
+        oss << "";
+        ParameterList::ConstIterator itr;
+        for( itr = configs->begin(); itr != configs->end(); ++itr){
+          const std::string & paramName = configs->name(itr);
+          const ParameterEntry &value = configs->entry(itr);
+          oss << entryName << " = " << filterValueToString(value) << ", ";
+        }
+        std::string configString = oss.str();
+        if(configString == ""){
+        //print msg that using defaults
+         GetOStream(Warnings0) << "Warning: No configuration parameters specified, using default AMGX configuration parameters. \n";
+        }
+        AMGX_SAFE_CALL(AMGX_config_create(&Config_, configString));
+      }
+      AMGX_resources_create_simple(&Resources_, Config_);
+      AMGX_matrix_create(&A_, Resources_, mode);
+      AMGX_solver_create(&Solver_, Resources_, mode, Config_);
+      AMGX_matrix_upload_all(A_, N, nnz, 1, 1, &row_ptr[0], &col_ind[0], &data[0], NULL);
+      AMGX_solver_setup(Solver_, A_);
+      AMGX_vector_create(X_, Resources_, mode_);
+      AMGX_vector_create(Y_, Resources_, mode);
+    }
+
+     //! Destructor.
+     virtual ~AMGXOperator() { }
+
      /*Delete these functions?*/
      //! Returns the Tpetra::Map object associated with the domain of this operator.
      Teuchos::RCP<const Tpetra::Map<LO,GO,NO> > getDomainMap() const;
-     //
+     
      //! Returns the Tpetra::Map object associated with the range of this operator.
      Teuchos::RCP<const Tpetra::Map<LO,GO,NO> > getRangeMap() const;
-     //! Returns in Y the result of a Tpetra::Operator applied to a Tpetra::MultiVector X.
+     
+    //! Returns in Y the result of a Tpetra::Operator applied to a Tpetra::MultiVector X.
      /*!
         \param[in]  X - Tpetra::MultiVector of dimension NumVectors to multiply with matrix
         \param[out] Y -Tpetra::MultiVector of dimension NumVectors containing result.                                       */
@@ -151,16 +196,20 @@ class AMGXOperator<double, int, int>  : public Tpetra::Operator<Scalar, LocalOrd
                 Teuchos::ETransp mode = Teuchos::NO_TRANS,
                 SC alpha = Teuchos::ScalarTraits<SC>::one(),                                                                           SC beta  = Teuchos::ScalarTraits<SC>::one()) const;
 
-//! Indicates whether this operator supports applying the adjoint operator.
+     //! Indicates whether this operator supports applying the adjoint operator.
      bool hasTransposeApply() const;
+    
+   private:
+     AMGX_solver_handle Solver_;
+     AMGX_resources_handle Resources_;
+     AMGX_config_handle Config_;
+     AMGX_matrix_handle A_;
+     AMGX_vector_handle X_;
+     AMGX_vector_handle Y_;
+     int N;
+     Teuchos::RCP<const Tpetra::Map<LO, GO, NO> > domainMap;
+     Teuchos::RCP<const Tpetra::Map<LO, GO, NO> > rangeMap;
 
-    //implement for AMGXOperator?
-    template <class NewNode>
-    Teuchos::RCP< TpetraOperator<SC, LO, GO, NewNode> >
-    clone(const RCP<NewNode>& new_node) const {
-      // return Teuchos::rcp (new TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, NewNode> (Hierarchy_->template clone<NewNode> (new_node)));
-      return NULL;
-    }
   };
 
 } // namespace

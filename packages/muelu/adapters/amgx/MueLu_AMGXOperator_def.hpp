@@ -60,15 +60,14 @@ namespace MueLu {
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
 AMGXOperator::getDomainMap() const {
-   return null
+   return domainMap;
 }
 
 /*Ignore*/
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > AMGXOperator::getRangeMap() const {
-   return null
+   return rangeMap;
 }
-
 
 /*Need to implement this for AMGX*/
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -77,47 +76,23 @@ void AMGXOperator::apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrd
                                                                                Teuchos::ETransp mode, Scalar alpha, Scalar beta) const {
   try {
 
-    /*necessary to reinitialize AMGX?*/
-    /*
-    AMGX_SAFE_CALL(AMGX_initialize());
-    AMGX_SAFE_CALL(AMGX_initialize_plugins());
-    */
-
-
     Teuchos::ArrayRCP<double> xdata, ydata;
-
-    AMGX_vector_handle xVec;
-    AMGX_vector_create(xVec, Resources_, AMGX_mode_dDDI);
-        
-    AMGX_vector_handle yVec;
-    AMGX_vector_create(yVec, Resources_, AMGX_mode_dDDI);
     for(int i = 0; i < X.getNumVecs(); i++){
 	xdata = X.getDataNonConst(i);
 	ydata = Y.getData(i); 
-	
-        AMGX_vector_upload(xVec, N_, 1, &xdata[0]);
-    
-   	AMGX_vector_upload(yVec, N_, 1, &ydata[0]);
-
-   	AMGX_solver_solve(Solver_, xVec, yVec);
-
+        AMGX_vector_upload(X_, N_, 1, &xdata[0]);
+   	AMGX_vector_upload(Y_, N_, 1, &ydata[0]);
+   	AMGX_solver_solve(Solver_, X_, Y_);
         AMGX_vector_download(yVec, &ydata[0]);
-
+    }
 	
-     }
-     AMGX_vector_destroy(xVec);
-     AMGX_vector_destroy(yVec);
-
-   }
-
+    
   } catch (std::exception& e) {
-    //FIXME add message and rethrow
-    std::cerr << "Caught an exception in MueLu::AMGXOperator::Apply():" << std::endl
-        << e.what() << std::endl;
+      std::string errMsg = "Caught an exception in MueLu::AMGXOperator::Apply():\n" + e.what() + "\n";
+      throw Exceptions::RuntimeError(errMsg);
   }
 }
 
-/*Ignore*/
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 bool AMGXOperator::hasTransposeApply() const {
   return false;
