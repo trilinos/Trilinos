@@ -778,6 +778,17 @@
 
   </reuse>
 
+  <external>
+    <parameter>
+       <name>use external multigrid package</name>
+       <type>string</type>
+       <default>"none"</default>
+       <description>Option to utilize external multigrid package for computations, for example allows for use of AMGX</description>
+       <visible>false</visible>
+    </parameter>
+  </external>
+
+
   <debug>
 
     <parameter>
