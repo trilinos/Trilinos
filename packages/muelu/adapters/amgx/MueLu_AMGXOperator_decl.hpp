@@ -46,21 +46,24 @@
 #ifndef MUELU_AMGXOPERATOR_DECL_HPP
 #define MUELU_AMGXOPERATOR_DECL_HPP
 
-#include <Tpetra_MultiVector_decl.hpp>
-#include <AMGX.h>
+#ifdef HAVE_MUELU_EXPERIMENTAL
 
-/*! @class AMGXOperator
-    Wraps an existing MueLuOperator as a AMGX::Operator.
-*/
+ #include <Tpetra_MultiVector_decl.hpp>
+ #include <AMGX.h>
+ #include "cuda_runtime.h"
+
+ /*! @class AMGXOperator
+ * -    Wraps an existing MueLuOperator as a AMGX::Operator.
+ *       */
+
+
 
 namespace MueLu {
-/*not templating this operator if only using double and int*/
-/*  template <class Scalar = Tpetra::Operator<>::scalar_type,
+  template <class Scalar = Tpetra::Operator<>::scalar_type,
             class LocalOrdinal = typename Tpetra::Operator<Scalar>::local_ordinal_type,
             class GlobalOrdinal = typename Tpetra::Operator<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node = typename Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>*/
-  /*does this need to extend anything?*/
-  class AMGXOperator {
+            class Node = typename Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  class AMGXOperator : public Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
   public:
 
     //! @name Constructor/Destructor
@@ -80,12 +83,15 @@ namespace MueLu {
 
     //@}
 
-    /*Delete these functions?*/
-    //! Returns the Tpetra::Map object associated with the domain of this operator.
-    Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
+Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const{
+       /*throw error*/
+        throw Exceptions::RuntimeError("Cannot use AMGXOperator with scalar != double and/or global ordinal != int \n");
+    }
 
     //! Returns the Tpetra::Map object associated with the range of this operator.
-    Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const;
+    Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const{
+        throw Exceptions::RuntimeError("Cannot use AMGXOperator with scalar != double and/or global ordinal != int \n");
+    }
 
     //! Returns in Y the result of a Tpetra::Operator applied to a Tpetra::MultiVector X.
     /*!
@@ -95,19 +101,20 @@ namespace MueLu {
     void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
                                          Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
                                          Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                                         Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-                                         Scalar beta  = Teuchos::ScalarTraits<Scalar>::one()) const;
+                                         SC alpha = Teuchos::ScalarTraits<Scalar>::one(),
+                                         SC beta  = Teuchos::ScalarTraits<Scalar>::one()) const{
+        throw Exceptions::RuntimeError("Cannot use AMGXOperator with scalar != double and/or global ordinal != int \n");
+    }
 
-    //! Indicates whether this operator supports applying the adjoint operator.
-    bool hasTransposeApply() const;
+    bool hasTransposeApply() const{
+        throw Exceptions::RuntimeError("Cannot use AMGXOperator with scalar != double and/or global ordinal != int \n");
+    }
 
-
-    //implement for AMGXOperator?
+//implement for AMGXOperator?
     template <class NewNode>
     Teuchos::RCP< TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, NewNode> >
     clone(const RCP<NewNode>& new_node) const {
-     // return Teuchos::rcp (new TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, NewNode> (Hierarchy_->template clone<NewNode> (new_node)));
-      return NULL;
+        throw Exceptions::RuntimeError("Cannot use AMGXOperator with scalar != double and/or global ordinal != int \n");
     }
 
 
@@ -121,7 +128,42 @@ namespace MueLu {
     int N_;
   };
 
+template <>
+class AMGXOperator<double, int, int>  : public Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
+   public:
+
+    typedef double                                     SC;
+    typedef int                                                LO;
+    typedef int                                        GO;
+    typedef Tpetra::Operator<SC, LO, GO>::node_type    NO;
+     /*Delete these functions?*/
+     //! Returns the Tpetra::Map object associated with the domain of this operator.
+     Teuchos::RCP<const Tpetra::Map<LO,GO,NO> > getDomainMap() const;
+     //
+     //! Returns the Tpetra::Map object associated with the range of this operator.
+     Teuchos::RCP<const Tpetra::Map<LO,GO,NO> > getRangeMap() const;
+     //! Returns in Y the result of a Tpetra::Operator applied to a Tpetra::MultiVector X.
+     /*!
+        \param[in]  X - Tpetra::MultiVector of dimension NumVectors to multiply with matrix
+        \param[out] Y -Tpetra::MultiVector of dimension NumVectors containing result.                                       */
+     void apply(const Tpetra::MultiVector<SC,LO,GO,NO>& X,
+                Tpetra::MultiVector<SC,LO,GO,NO>& Y,
+                Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                SC alpha = Teuchos::ScalarTraits<SC>::one(),                                                                           SC beta  = Teuchos::ScalarTraits<SC>::one()) const;
+
+//! Indicates whether this operator supports applying the adjoint operator.
+     bool hasTransposeApply() const;
+
+    //implement for AMGXOperator?
+    template <class NewNode>
+    Teuchos::RCP< TpetraOperator<SC, LO, GO, NewNode> >
+    clone(const RCP<NewNode>& new_node) const {
+      // return Teuchos::rcp (new TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, NewNode> (Hierarchy_->template clone<NewNode> (new_node)));
+      return NULL;
+    }
+  };
+
 } // namespace
 
-
+#endif //HAVE_MUELU_EXPERIMENTAL
 #endif // MUELU_AMGXOPERATOR_DECL_HPP

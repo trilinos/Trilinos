@@ -17,12 +17,17 @@
 #include <MueLu_Utilities.hpp>
 #include <MueLu_HierarchyHelpers.hpp>
 
+#ifdef HAVE_MUELU_EXPERIMENTAL
+#include <amgx_c.h>
+#include "cuda_runtime.h"
+#endif //HAVE_MUELU_EXPERIMENTAL
+
 //! @file MueLu_CreateTpetraPreconditioner.hpp
 
 namespace MueLu {
 
   /*! \fn CreateTpetraPreconditioner
-    @brief Helper function to create a MueLu preconditioner that can be used by Tpetra.
+    @brief Helper function to create a MueLu or AMGX preconditioner that can be used by Tpetra.
 
     Given a Tpetra matrix, this function returns a constructed MueLu preconditioner.
 
@@ -32,11 +37,13 @@ namespace MueLu {
     @param[in] inNullspace (optional) Near nullspace of the matrix.
     */
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  // Teuchos::RCP<MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  Teuchos::RCP<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   CreateTpetraPreconditioner(const Teuchos::RCP<Tpetra::CrsMatrix  <Scalar, LocalOrdinal, GlobalOrdinal, Node> >& inA,
                              Teuchos::ParameterList& paramListIn,
                              const Teuchos::RCP<Tpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> >& inCoords    = Teuchos::null,
-                             const Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& inNullspace = Teuchos::null)
+                             const Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& inNullspace = Teuchos::null
+                             const std::string JSONFilename=NULL)
   {
     typedef Scalar          SC;
     typedef LocalOrdinal    LO;
@@ -54,6 +61,11 @@ namespace MueLu {
 
     RCP<HierarchyManager> mueLuFactory;
     ParameterList paramList = paramListIn;
+    
+    std::string externalMG = "use external multigrid package";
+    if(hasParamList && paramList.isParameter(externalMG) && paramList.get<std::string>(externalMG) == "AMGX"){
+      return CreateTpetraPreconditionerAMGX(inA, paramListIn, JSONFilename);
+    }
 
     std::string syntaxStr = "parameterlist: syntax";
     if (hasParamList && paramList.isParameter(syntaxStr) && paramList.get<std::string>(syntaxStr) == "ml") {
@@ -155,18 +167,57 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   CreateTpetraPreconditioner(const Teuchos::RCP<Tpetra::CrsMatrix  <Scalar, LocalOrdinal, GlobalOrdinal, Node> >& inA,
-                             const std::string& XMLFileName,
+                             const std::string& fileName,
                              const Teuchos::RCP<Tpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> >& inCoords    = Teuchos::null,
                              const Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& inNullspace = Teuchos::null)
   {
-    if(XMLFileName.find("xml") == std::string::npos){
-      throw Exceptions::RuntimeError("file needs to be of type XML");
-    }
     Teuchos::ParameterList paramList;
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *inA->getComm());
 
     return CreateTpetraPreconditioner<Scalar, LocalOrdinal, GlobalOrdinal, Node>(inA, paramList, inCoords, inNullspace);
   }
+
+  #ifdef HAVE_MUELU_EXPERIMENTAL
+
+ /*Method to create AMGXOperator from Tpetra Matrix*/
+  Teuchos::RCP<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  CreateTpetraPreconditionerAMGX(const Teuchos::RCP<Tpetra::CrsMatrix <Scalar, LocalOrdinal, GlobalOrdinal, Node> > &inA, Teuchos::ParameterList & paramListIn, const std::string JSONFileName = NULL){
+     AMGX_Mode mode;
+     AMGX_config_handle cfg;
+     AMGX_resources_handle rsrc;
+     AMGX_SAFE_CALL(AMGX_initialize());
+     AMGX_SAFE_CALL(AMGX_initialize_plugins());
+     /*system*/
+     AMGX_SAFE_CALL(AMGX_register_print_callback(&print_callback));
+     AMGX_SAFE_CALL(AMGX_install_signal_handler());
+
+     mode = AMGX_mode_dDDI;
+     /*transform matrix into crs arrays*/
+     /*need to transform size_t  into int*/
+     inA->getAllValues(row_ptr, col_ind, data);
+
+    if(JSONFileName != NULL){
+       AMGX_SAFE_CALL(AMGX_config_create_from_file(&cfg, JSONFileName));
+    }
+    else{
+       RCP<Teuchos::ParameterList> configs = Teuchos::ParameterList::sublist(paramListIn, "AMGX:params");
+       std::ostringstream oss;
+       oss << "";
+       ParameterList::ConstIterator itr;
+       for( itr = configs->begin(); itr != configs->end(); ++itr){
+         const std::string & paramName = configs->name(itr);
+ }
+       std::string configString = oss.str();
+       if(configString == ""){
+         //print msg that using defaults
+         GetOStream(Warnings0) << "Warning: No configuration parameters specified, using default AMGX configuration parameters. \n";
+         }
+        AMGX_SAFE_CALL(AMGX_config_create(&cfg, configString));
+
+    }
+   }
+   
+  #endif //HAVE_MUELU_EXPERIMENTAL
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ReuseTpetraPreconditioner(const Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& inA,

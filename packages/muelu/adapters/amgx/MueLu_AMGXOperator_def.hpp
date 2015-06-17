@@ -48,32 +48,44 @@
 #define MUELU_AMGXOPERATOR_DEF_HPP
 
 
-#ifdef HAVE_MUELU_AMGX
+#ifdef HAVE_MUELU_EXPERIMENTAL
 
-/*What needs to be included for this file?*/
 #include <amgx_c.h>
 #include <Teuchos_ArrayRCP.hpp>
+#include "cuda_runtime.h"
 
 namespace MueLu {
 
 /*Ignore*/
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
 AMGXOperator::getDomainMap() const {
    return null
 }
 
 /*Ignore*/
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > AMGXOperator::getRangeMap() const {
    return null
 }
 
 
 /*Need to implement this for AMGX*/
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void AMGXOperator::apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
                                                                                Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
                                                                                Teuchos::ETransp mode, Scalar alpha, Scalar beta) const {
   try {
+
+    /*necessary to reinitialize AMGX?*/
+    /*
+    AMGX_SAFE_CALL(AMGX_initialize());
+    AMGX_SAFE_CALL(AMGX_initialize_plugins());
+    */
+
+
     Teuchos::ArrayRCP<double> xdata, ydata;
+
     AMGX_vector_handle xVec;
     AMGX_vector_create(xVec, Resources_, AMGX_mode_dDDI);
         
@@ -82,14 +94,9 @@ void AMGXOperator::apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrd
     for(int i = 0; i < X.getNumVecs(); i++){
 	xdata = X.getDataNonConst(i);
 	ydata = Y.getData(i); 
-	/*how to determine size of arrayrcp?*/
-        /*AMGX_matrix_get_size(A_, &n, &blockX, &blockY);*/
-       // AMGX_vector_handle xVec;
-       // AMGX_vector_create(xVec, Resources_, AMGX_mode_dDDI);
-	AMGX_vector_upload(xVec, N_, 1, &xdata[0]);
+	
+        AMGX_vector_upload(xVec, N_, 1, &xdata[0]);
     
-        //AMGX_vector_handle yVec;
-        //AMGX_vector_create(yVec, Resources_, AMGX_mode_dDDI);
    	AMGX_vector_upload(yVec, N_, 1, &ydata[0]);
 
    	AMGX_solver_solve(Solver_, xVec, yVec);
@@ -97,11 +104,9 @@ void AMGXOperator::apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrd
         AMGX_vector_download(yVec, &ydata[0]);
 
 	
-	//AMGX_vector_destroy(xVec);
-	//AMGX_vector_destroy(yVec);
      }
-	AMGX_vector_destroy(xVec);
-	AMGX_vector_destroy(yVec);
+     AMGX_vector_destroy(xVec);
+     AMGX_vector_destroy(yVec);
 
    }
 
@@ -119,6 +124,6 @@ bool AMGXOperator::hasTransposeApply() const {
 }
 
 } // namespace
-#endif //ifdef HAVE_MUELU_AMGX
+#endif //ifdef HAVE_MUELU_EXPERIMENTAL
 
 #endif //ifdef MUELU_AMGXOPERATOR_DEF_HPP
