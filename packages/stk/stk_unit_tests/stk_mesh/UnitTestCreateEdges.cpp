@@ -36,6 +36,7 @@
 #include <stk_mesh/base/GetEntities.hpp>       // for comm_mesh_counts, count_entities
 #include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
 #include <stk_mesh/base/CreateEdges.hpp>  // for create_edges
+#include <stk_mesh/base/CreateFaces.hpp>  // for create_faces
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/SkinMesh.hpp>   // for skin_mesh
 #include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
@@ -49,6 +50,8 @@
 #include "unit_tests/Setup2Block2HexMesh.hpp"
 
 using stk::mesh::MetaData;
+
+
 
 TEST ( UnitTestCreateEdges, Quad_2x1 )
 {
@@ -585,9 +588,56 @@ TEST( UnitTestCreateEdges, hybrid_HexPyrTet )
       EXPECT_EQ( counts[stk::topology::EDGE_RANK], 8u );  // edges
       EXPECT_EQ( counts[stk::topology::ELEM_RANK], 6u );  // elements
     }
-
-
 }
+
+TEST ( UnitTestCreateEdges, Hex_2x1x1_select_out_a_face )
+{
+    stk::mesh::fixtures::HexFixture fixture( MPI_COMM_WORLD, 2, 1, 1);
+
+    stk::mesh::Part & facePart = fixture.m_meta.declare_part_with_topology("face_part_to_exclude", stk::topology::QUADRILATERAL_4, true);
+    stk::mesh::PartVector facePartVector(1, &facePart);
+    fixture.m_meta.commit();
+    fixture.generate_mesh();
+    stk::mesh::BulkData & mesh = fixture.m_bulk_data;
+    {
+        std::vector<size_t> counts ;
+        stk::mesh::comm_mesh_counts(mesh , counts);
+
+        EXPECT_EQ( counts[stk::topology::NODE_RANK] , 12u );
+        EXPECT_EQ( counts[stk::topology::EDGE_RANK] , 0u );
+        EXPECT_EQ( counts[stk::topology::FACE_RANK] , 0u );
+        EXPECT_EQ( counts[stk::topology::ELEM_RANK] , 2u );
+    }
+    stk::mesh::create_faces(mesh);
+    const stk::mesh::BucketVector & buckets = mesh.buckets(stk::topology::FACE_RANK);
+    mesh.modification_begin();
+    for (unsigned bucketCount = 0 ; bucketCount < buckets.size() ; ++bucketCount) {
+        stk::mesh::Bucket & bucket = *buckets[bucketCount];
+        for (unsigned count = 0; count < bucket.size(); ++count) {
+            stk::mesh::Entity face = bucket[count];
+            if (mesh.bucket(face).owned()) {
+                mesh.change_entity_parts(face, facePartVector);
+            }
+        }
+    }
+    mesh.modification_end();
+
+    stk::mesh::Selector selectOutFaces(!facePart);
+
+    stk::mesh::create_edges(mesh, selectOutFaces);
+
+    {
+        std::vector<size_t> counts ;
+        stk::mesh::comm_mesh_counts( mesh, counts);
+
+        EXPECT_EQ( counts[stk::topology::NODE_RANK] , 12u );
+        EXPECT_EQ( counts[stk::topology::EDGE_RANK] , 20u );
+        EXPECT_EQ( counts[stk::topology::FACE_RANK] , 11u );
+        EXPECT_EQ( counts[stk::topology::ELEM_RANK] , 2u );
+    }
+}
+
+
 
 
 
