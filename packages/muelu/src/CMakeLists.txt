@@ -57,10 +57,6 @@ APPEND_GLOB(HEADERS ${BDIR}/${PACKAGE_NAME}_config.hpp)
 APPEND_GLOB(HEADERS */*.hpp)
 APPEND_GLOB(HEADERS */*/*.hpp)
 APPEND_GLOB(HEADERS */*/*/*.hpp)
-# The Tpetra adapter headers are already pulled in by muelu-adapters.
-#if (${PACKAGE_NAME}_ENABLE_Tpetra)
-#  APPEND_GLOB(HEADERS ${DIR}/../adapters/tpetra/*.hpp)
-#ENDIF()
 
 # Remove everything in the interface directory and add it to a list for muelu-interface instead
 # NOTE: Because of the funny way the glob mactros work, the use of two slashses for the APPEND_GLOB is critical
@@ -160,30 +156,22 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
   )
 
-#TRIBITS_ADD_LIBRARY(
-#  muelu-interface
-#  HEADERS ${HEADERS_INTERFACE}
-#  SOURCES ${SOURCES_INTERFACE}
-#  )
-
-
 # for debugging
 #MESSAGE("")
 #MESSAGE("**************** in muelu src ***********")
 #MESSAGE("")
 #MESSAGE("HEADERS = ${HEADERS}")
 #MESSAGE("")
-MESSAGE("SOURCES = ${SOURCES}")
+#MESSAGE("SOURCES = ${SOURCES}")
 
 #MESSAGE("INCLUDE_DIRECTORIES = ")
 #get_directory_property(output INCLUDE_DIRECTORIES)
 #message(STATUS ${output})
 
-
-MESSAGE("")
+#MESSAGE("")
 #MESSAGE("**************** in muelu src ***********")
 #MESSAGE("")
 #MESSAGE("HEADERS_INTERFACE = ${HEADERS_INTERFACE}")
 #MESSAGE("")
-MESSAGE("SOURCES_INTERFACE = ${SOURCES_INTERFACE}")
+#MESSAGE("SOURCES_INTERFACE = ${SOURCES_INTERFACE}")
 
