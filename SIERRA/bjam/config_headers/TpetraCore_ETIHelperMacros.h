@@ -12,16 +12,32 @@
 #endif
 
 #define TPETRA_INSTANTIATE_SLG(INSTMACRO )\
+   INSTMACRO( int , int , int )\
+   INSTMACRO( int , int , long )\
+   INSTMACRO( int , long , long )\
+   INSTMACRO( long , int , long )\
+   INSTMACRO( long , long , long )\
+   INSTMACRO( float , int , int )\
    INSTMACRO( double , int , int )\
    INSTMACRO( double , int , long )\
+   INSTMACRO( double , long , long )\
    INSTMACRO( std_complex0double0 , int , int )\
-   INSTMACRO( std_complex0double0 , int , long )
+   INSTMACRO( std_complex0double0 , int , long )\
+   INSTMACRO( std_complex0double0 , long , long )
 
 #define TPETRA_INSTANTIATE_SLG_call(INSTMACRO, CALL_MACRO )\
+   INSTMACRO( int , int , int, CALL_MACRO )\
+   INSTMACRO( int , int , long, CALL_MACRO )\
+   INSTMACRO( int , long , long, CALL_MACRO )\
+   INSTMACRO( long , int , long, CALL_MACRO )\
+   INSTMACRO( long , long , long, CALL_MACRO )\
+   INSTMACRO( float , int , int, CALL_MACRO )\
    INSTMACRO( double , int , int, CALL_MACRO )\
    INSTMACRO( double , int , long, CALL_MACRO )\
+   INSTMACRO( double , long , long, CALL_MACRO )\
    INSTMACRO( std_complex0double0 , int , int, CALL_MACRO )\
-   INSTMACRO( std_complex0double0 , int , long, CALL_MACRO )
+   INSTMACRO( std_complex0double0 , int , long, CALL_MACRO )\
+   INSTMACRO( std_complex0double0 , long , long, CALL_MACRO )
 
 #ifdef HAVE_TPETRA_INST_SERIAL
    #define Exp_Macro_Kokkos_Compat_KokkosSerialWrapperNode( SCALAR, LO, GO, INSTAMACRO ) \
@@ -89,11 +105,13 @@
 
 #define TPETRA_INSTANTIATE_LG(INSTMACRO)\
    INSTMACRO( int , int )\
-   INSTMACRO( int , long )
+   INSTMACRO( int , long )\
+   INSTMACRO( long , long )
 
 #define TPETRA_INSTANTIATE_LG_call(INSTMACRO, CALL_MACRO)\
    INSTMACRO( int , int, CALL_MACRO )\
-   INSTMACRO( int , long, CALL_MACRO )
+   INSTMACRO( int , long, CALL_MACRO )\
+   INSTMACRO( long , long, CALL_MACRO )
 
 #define TPETRA_INSTANTIATE_TSLGN(INSTMACRO)
 
@@ -196,7 +214,11 @@
 #define TPETRA_INSTANTIATE_CONVERT_NOGPU_SSL(INSTMACRO)
 
 
-#define TPETRA_INSTANTIATE_TESTMV(INSTMACRO)
+#define TPETRA_INSTANTIATE_TESTMV(INSTMACRO)\
+	INSTMACRO( double , int , int , Kokkos_Compat_KokkosSerialWrapperNode )\
+	INSTMACRO( double , int , long , Kokkos_Compat_KokkosSerialWrapperNode )\
+	INSTMACRO( std_complex0double0 , int , int , Kokkos_Compat_KokkosSerialWrapperNode )\
+	INSTMACRO( std_complex0double0 , int , long , Kokkos_Compat_KokkosSerialWrapperNode )
 
 
 #define TPETRA_INSTANTIATE_TESTMV_NOGPU(INSTMACRO)
@@ -204,16 +226,16 @@
 
 #define TPETRA_INSTANTIATE_DOUBLE_INT_INT_N(INSTMACRO)\
    Exp_Macro_Kokkos_Compat_KokkosSerialWrapperNode(double , int , int , INSTMACRO )\
-   Exp_Macro_Kokkos_Compat_KokkosThreadsWrapperNode( double , int , int , INSTMACRO )                          \
-   Exp_Macro_Kokkos_Compat_KokkosOpenMPWrapperNode( double , int , int , INSTMACRO )                          \
+   Exp_Macro_Kokkos_Compat_KokkosThreadsWrapperNode( double , int , int , INSTMACRO )\
+   Exp_Macro_Kokkos_Compat_KokkosOpenMPWrapperNode( double , int , int , INSTMACRO )\
    Exp_Macro_Kokkos_Compat_KokkosCudaWrapperNode( double , int , int , INSTMACRO )
 
 
 #define TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(INSTMACRO)\
-   TPETRA_INSTANTIATE_SLG_call( Exp_Macro_Kokkos_Compat_KokkosSerialWrapperNode, INSTMACRO )\
-   TPETRA_INSTANTIATE_SLG_call( Exp_Macro_Kokkos_Compat_KokkosThreadsWrapperNode, INSTMACRO )\
-   TPETRA_INSTANTIATE_SLG_call( Exp_Macro_Kokkos_Compat_KokkosOpenMPWrapperNode, INSTMACRO )\
-   TPETRA_INSTANTIATE_SLG_call( Exp_Macro_Kokkos_Compat_KokkosCudaWrapperNode, INSTMACRO )
+	INSTMACRO( double , int , int , Kokkos_Compat_KokkosSerialWrapperNode )\
+	INSTMACRO( double , int , long , Kokkos_Compat_KokkosSerialWrapperNode )\
+	INSTMACRO( std_complex0double0 , int , int , Kokkos_Compat_KokkosSerialWrapperNode )\
+	INSTMACRO( std_complex0double0 , int , long , Kokkos_Compat_KokkosSerialWrapperNode )
 
 
 #define TPETRA_INSTANTIATE_SLG_NO_ORDINAL_SCALAR(INSTMACRO)\
