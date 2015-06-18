@@ -1,9 +1,9 @@
 /*
-// @HEADER
-// ***********************************************************************
+//@HEADER
+// ************************************************************************
 //
-//          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,40 +35,24 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
 //
 // ************************************************************************
-// @HEADER
+//@HEADER
 */
+#include <Kokkos_Profiler.hpp>
 
-// Including this is the easy way to get access to all the Node types.
-#include "Kokkos_DefaultNode.hpp"
-#include "Tpetra_ConfigDefs.hpp"
-
-// Don't bother compiling anything, or even including anything else,
-// unless KokkosOpenMPWrapperNode is enabled.
-#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_OPENMP) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-
-#include "Tpetra_CrsMatrixMultiplyOp_decl.hpp"
-#include "TpetraCore_ETIHelperMacros.h"
-#include "Tpetra_CrsMatrixMultiplyOp_def.hpp"
-
-#define TPETRA_CRSMATRIX_MULTIPLYOP_OPENMPWRAPPERNODE_INSTANT( T, SCALAR, LO, GO ) \
-  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT( T, SCALAR, LO, GO, Kokkos::Compat::KokkosOpenMPWrapperNode )
-
-#define TPETRA_CRSMATRIX_MULTIPLYOP_OPENMPWRAPPERNODE_INSTANT_SINGLE( SCALAR, LO, GO ) \
-  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT_SINGLE( SCALAR, LO, GO, Kokkos::Compat::KokkosOpenMPWrapperNode )
-
-
-namespace Tpetra {
-
-  TPETRA_ETI_MANGLING_TYPEDEFS()
-
-  TPETRA_INSTANTIATE_TSLG(TPETRA_CRSMATRIX_MULTIPLYOP_OPENMPWRAPPERNODE_INSTANT)
-  TPETRA_INSTANTIATE_SLG(TPETRA_CRSMATRIX_MULTIPLYOP_OPENMPWRAPPERNODE_INSTANT_SINGLE)
-
-} // namespace Tpetra
-
-
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION && HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT && KOKKOS_HAVE_OPENMP
-
+namespace Kokkos {
+namespace Experimental {
+void initialize() {
+#ifdef KOKKOS_ENABLE_PROFILING_COLLECT_KERNEL_DATA
+  KokkosP::Experimental::profiler_initialize();
+#endif
+}
+void finalize() {
+#ifdef KOKKOS_ENABLE_PROFILING_COLLECT_KERNEL_DATA
+  KokkosP::Experimental::profiler_finalize();
+#endif
+}
+}
+}

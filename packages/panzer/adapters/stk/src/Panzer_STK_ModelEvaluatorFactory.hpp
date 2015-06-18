@@ -227,8 +227,9 @@ namespace panzer_stk_classic {
     buildPhysicsModelEvaluator(bool buildThyraME,
                         const Teuchos::RCP<panzer::FieldManagerBuilder> & fmb,
                         const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & rLibrary,
-                                const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof,
+                        const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof,
                         const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > & p_names,
+                        const std::vector<Teuchos::RCP<Teuchos::Array<double> > > & p_values,
                         const Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<ScalarT> > & solverFactory,
                         const Teuchos::RCP<panzer::GlobalData> & global_data,
                         bool is_transient,double t_init) const;

@@ -41,18 +41,17 @@
 // @HEADER
 */
 
-
 #ifndef CG_SOLVE_FILE_HPP
 #define CG_SOLVE_FILE_HPP
+
 #include "Tpetra_ConfigDefs.hpp"
 #include "Kokkos_ConfigDefs.hpp"
+
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_XMLPerfTestArchive.hpp>
 #include <Teuchos_Array.hpp>
-
-#include <Kokkos_DefaultNode.hpp>
 
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_Version.hpp"
@@ -107,12 +106,13 @@ Teuchos::XMLTestNode test_entry(
   } else
     configuration.addString("Matrix_File",filename_matrix);
 
-  if(filename_vector.empty()) {
+  if (filename_vector.empty ()) {
     std::ostringstream strs;
     strs << "MiniFE-Generated " << nsize;
-    configuration.addString("Vector_File",strs.str());
-  } else
-    configuration.addString("Vector_File",filename_vector);
+    configuration.addString ("Vector_File", strs.str ());
+  } else {
+    configuration.addString ("Vector_File", filename_vector);
+  }
 
   configuration.addInt("Matrix_Rows",A->getGlobalNumRows());
   configuration.addInt("Matrix_Cols",A->getGlobalNumCols());
@@ -127,8 +127,8 @@ Teuchos::XMLTestNode test_entry(
   times.addValueTolerance("Time_MatVec", Teuchos::ValueTolerance(results.matvectime,tol_large));
   times.addValueTolerance("Time_CGSolve", Teuchos::ValueTolerance(results.matvectime+results.addtime+results.dottime,tol_small));
   times.addValueTolerance("Result_Iterations",Teuchos::ValueTolerance(results.niters,
-                                                             results.niters>0?results.niters-1:0,
-                                                             results.niters+1));
+                                                                      results.niters>0?results.niters-1:0,
+                                                                      results.niters+1));
   times.addValueTolerance("Result_Final_Residual",Teuchos::ValueTolerance(results.final_residual,tol_small));
 
   //times.addString("Result_Residual", ValueTolerance(atof(argc[8]),4,6).as_string());
@@ -143,10 +143,15 @@ Teuchos::XMLTestNode test_entry(
 
 
 template<class CrsMatrix, class Vector>
-result_struct cg_solve(Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<Vector> x, int myproc) {
-  typedef double ScalarType;
-  typedef double magnitude_type;
-  typedef typename CrsMatrix::local_ordinal_type LocalOrdinalType;
+result_struct
+cg_solve (Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<Vector> x, int myproc)
+{
+  static_assert (std::is_same<typename CrsMatrix::scalar_type, typename Vector::scalar_type>::value,
+                 "The CrsMatrix and Vector template parameters must have the same scalar_type.");
+
+  typedef typename Vector::scalar_type ScalarType;
+  typedef typename Vector::mag_type magnitude_type;
+  typedef typename Vector::local_ordinal_type LO;
   Teuchos::RCP<Vector> r,p,Ap;
   int max_iter=200;
   double tolerance = 1e-8;
@@ -165,7 +170,7 @@ result_struct cg_solve(Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teucho
   magnitude_type rtrans = 0;
   magnitude_type oldrtrans = 0;
 
-  LocalOrdinalType print_freq = max_iter/10;
+  LO print_freq = max_iter/10;
   if (print_freq>50) print_freq = 50;
   if (print_freq<1)  print_freq = 1;
 
@@ -194,7 +199,7 @@ result_struct cg_solve(Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teucho
   }
 
   magnitude_type brkdown_tol = std::numeric_limits<magnitude_type>::epsilon();
-  LocalOrdinalType k;
+  LO k;
   for(k=1; k <= max_iter && normr > tolerance; ++k) {
     if (k == 1) {
       p->update(1.0,*r,0.0);
@@ -244,19 +249,24 @@ result_struct cg_solve(Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teucho
 }
 
 template<class Node>
-int run(int argc, char *argv[]) {
-  typedef double                                                  Scalar;
-  typedef Teuchos::ScalarTraits<Scalar>::magnitudeType            Magnitude;
-  typedef int                                                     Ordinal;
-
-  typedef Tpetra::MpiPlatform<Node>                               Platform;
-  //typedef Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal,Node>        CrsMatrix;
-  //typedef Tpetra::Vector<Scalar,Ordinal,Ordinal,Node>           Vector;
-  typedef Tpetra::CrsMatrix<Scalar>                               CrsMatrix;
-  typedef Tpetra::Vector<Scalar>                                  Vector;
+int
+run (int argc, char *argv[])
+{
   using Teuchos::RCP;
   using Teuchos::tuple;
+  using std::cout;
+  using std::endl;
 
+  typedef Tpetra::Vector<>::scalar_type                 Scalar;
+  typedef typename Tpetra::Map<>::local_ordinal_type    LO;
+  typedef typename Tpetra::Map<>::global_ordinal_type   GO;
+
+  typedef Tpetra::MpiPlatform<Node>                     Platform;
+  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node>          crs_matrix_type;
+  typedef Tpetra::Vector<Scalar,LO,GO,Node>             vec_type;
+  typedef Tpetra::Map<LO,GO,Node>                       map_type;
+
+  typedef typename vec_type::mag_type                   mag_type;
 
   //
   // Get example parameters from command-line processor
@@ -269,7 +279,7 @@ int run(int argc, char *argv[]) {
   int numgpus = 1;
   int skipgpu = 999;
   int nsize = 20;
-  Magnitude tolerance = 1.0e-2;
+  mag_type tolerance = 1.0e-2;
   std::string filename;
   std::string filename_vector;
   std::string testarchive("Tpetra_PerformanceTests.xml");
@@ -295,7 +305,7 @@ int run(int argc, char *argv[]) {
   cmdp.setOption("tol_small",&tol_small,"Tolerance for total CG-Time and final residual.");
   cmdp.setOption("tol_large",&tol_small,"Tolerance for individual times.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
-    return int(-1);
+    return EXIT_FAILURE;
   }
 
   int myRank = 0;
@@ -303,7 +313,7 @@ int run(int argc, char *argv[]) {
   (void) MPI_Comm_rank (MPI_COMM_WORLD, &myRank);
 #endif // HAVE_MPI
 
-  int device = myRank%numgpus;
+  int device = myRank % numgpus;
   if(device>=skipgpu) device++;
   int verboseint = verbose?1:0;
   Teuchos::ParameterList params;
@@ -312,79 +322,109 @@ int run(int argc, char *argv[]) {
   params.set("Verbose",verboseint,"Verbose output");
   params.set("Device",device,"Device Number");
 
-
-
   //
   // Get the communicator and node
   //
-  Node anode(params);
-  RCP<Node>  node(&anode,false);
+  RCP<Node> node (new Node (params));
+  Platform platform (node);
+  RCP<const Teuchos::Comm<int> > comm = platform.getComm ();
 
-  Platform platform(node);
-  RCP<const Teuchos::Comm<int> > comm = platform.getComm();
-
-  /*Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  RCP<const Teuchos::Comm<int> > comm = platform.getComm();*/
-  //const int myRank = comm->getRank();
   //
   // Say hello, print some communicator info
   //
   if (verbose) {
-    std::cout << "\n" << Tpetra::version() << std::endl << std::endl;
-    std::cout << "Comm info: " << *comm;
+    if (myRank == 0) {
+      cout << "Comm info: ";
+    }
+    cout << *comm;
   }
 
 
   // Read Tpetra::CrsMatrix from file
   //
-  RCP<CrsMatrix> A;
-  if(!filename.empty())
-    A = Tpetra::MatrixMarket::Reader<CrsMatrix>::readSparseFile(filename,comm,node);
-  else
-    A = Tpetra::Utils::MatrixGenerator<CrsMatrix>::generate_miniFE_matrix(nsize,comm,node);
+  RCP<crs_matrix_type> A;
+  if (! filename.empty ()) {
+    A = Tpetra::MatrixMarket::Reader<crs_matrix_type>::readSparseFile (filename, comm, node);
+  }
+  else {
+    A = Tpetra::Utils::MatrixGenerator<crs_matrix_type>::generate_miniFE_matrix (nsize, comm, node);
+  }
+
   if (printMatrix) {
-    RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    A->describe(*fos, Teuchos::VERB_EXTREME);
+    RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream (Teuchos::rcpFromRef (cout));
+    A->describe (*fos, Teuchos::VERB_EXTREME);
   }
   else if (verbose) {
-    std::cout << std::endl << A->description() << std::endl << std::endl;
+    cout << endl << A->description() << endl << endl;
   }
 
-
-  if ( A->getRangeMap() != A->getDomainMap() ) {
-    throw std::runtime_error("TpetraExamples::powerMethod(): operator must have domain and range maps that are equivalent.");
+  // This is a collective over the Maps' communicator.
+  if (! A->getRangeMap ()->isSameAs (* (A->getDomainMap ()))) {
+    throw std::runtime_error ("The matrix must have domain and range maps that are the same.");
   }
-  // create three vectors, fill z with random numbers
-  Teuchos::RCP<Vector> b, x;
-  RCP<const typename CrsMatrix::map_type> map = A->getRangeMap();
 
-  if(nsize<0)
-    b = Tpetra::MatrixMarket::Reader<CrsMatrix>::readVectorFile(filename_vector,comm,node,map);
-  else
-    b = Tpetra::Utils::MatrixGenerator<CrsMatrix>::generate_miniFE_vector (nsize,comm,node);
+  // Either read the right-hand side b of the linear system from a
+  // file, or generate it.
+  RCP<const map_type> map = A->getRangeMap ();
+  RCP<vec_type> b;
+  if (nsize < 0) {
+    typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
+    b = reader_type::readVectorFile (filename_vector, map->getComm (),
+                                     map->getNode (), map);
+  } else {
+    typedef Tpetra::Utils::MatrixGenerator<crs_matrix_type> gen_type;
+    b = gen_type::generate_miniFE_vector (nsize, map->getComm (),
+                                          map->getNode ());
+  }
 
-  x = Tpetra::createVector<Scalar>(A->getRangeMap());
+  // The vector x on input is the initial guess for the CG solve.
+  // On output, it is the approximate solution.
+  RCP<vec_type> x (new vec_type (A->getDomainMap ()));
 
-  result_struct results = cg_solve(A,b,x,myRank);
+  // Solve the linear system Ax=b using CG.
+  result_struct results = cg_solve (A, b, x, myRank);
+
+  // Print results.
   if (myRank == 0) {
-    Teuchos::XMLTestNode machine_config = machine_configuration(node);
-    Teuchos::XMLTestNode test = test_entry(filename,filename_vector,nsize,
-                                           comm->getSize(),numteams,numthreads,
-                                           A,results,niters,tolerance,tol_small,tol_large);
-    Teuchos::PerfTestResult comparison_result=Teuchos::PerfTest_CheckOrAdd_Test(machine_config,test,testarchive,hostname);
+    Teuchos::XMLTestNode machine_config =
+      machine_configuration (map->getNode ());
+    Teuchos::XMLTestNode test =
+      test_entry (filename, filename_vector, nsize, comm->getSize (), numteams,
+                  numthreads, A, results, niters, tolerance, tol_small,
+                  tol_large);
+    Teuchos::PerfTestResult comparison_result =
+      Teuchos::PerfTest_CheckOrAdd_Test (machine_config, test, testarchive, hostname);
     switch (comparison_result) {
-      case  Teuchos::PerfTestPassed: std::cout << "PASSED" << std::endl; break;
-      case  Teuchos::PerfTestFailed: std::cout << "FAILED" << std::endl; break;
-      case  Teuchos::PerfTestNewMachine: std::cout << "PASSED. Adding new machine entry." << std::endl; break;
-      case  Teuchos::PerfTestNewConfiguration: std::cout << "PASSED. Adding new machine configuration." << std::endl; break;
-      case  Teuchos::PerfTestNewTest: std::cout << "PASSED. Adding new test entry." << std::endl; break;
-      case  Teuchos::PerfTestNewTestConfiguration: std::cout << "PASSED. Adding new test entry configuration." << std::endl; break;
-      case  Teuchos::PerfTestUpdatedTest: std::cout << "PASSED. Updating test entry." << std::endl; break;
+      case Teuchos::PerfTestPassed:
+        cout << "PASSED" << endl;
+        break;
+      case Teuchos::PerfTestFailed:
+        cout << "FAILED" << endl;
+        break;
+      case Teuchos::PerfTestNewMachine:
+        cout << "PASSED. Adding new machine entry." << endl;
+        break;
+      case Teuchos::PerfTestNewConfiguration:
+        cout << "PASSED. Adding new machine configuration." << endl;
+        break;
+      case Teuchos::PerfTestNewTest:
+        cout << "PASSED. Adding new test entry." << endl;
+        break;
+      case Teuchos::PerfTestNewTestConfiguration:
+        cout << "PASSED. Adding new test entry configuration." << endl;
+        break;
+      case Teuchos::PerfTestUpdatedTest:
+        cout << "PASSED. Updating test entry." << endl;
+        break;
+    default:
+      cout << "FAILED: Invalid comparison result." << endl;
     }
-    if(verbose) std::cout << test << std::endl;
+    if (verbose) {
+      cout << test << endl;
+    }
   }
 
-  return 0;
+  return EXIT_SUCCESS;
 }
 
 #endif

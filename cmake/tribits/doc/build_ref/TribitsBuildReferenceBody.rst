@@ -1315,7 +1315,7 @@ Enabling extra repositories with add-on packages:
 
 .. _<Project>_EXTRA_REPOSITORIES:
 
-To configure <Project> with an extra set of packages in extra TriBITS
+To configure <Project> with an post extra set of packages in extra TriBITS
 repositories, configure with::
 
   -D<Project>_EXTRA_REPOSITORIES="<REPO0>,<REPO1>,..."
@@ -1331,18 +1331,19 @@ For example, to add the packages from SomeExtraRepo one would configure as::
   $ git clone some_url.com/some/dir/SomeExtraRepo
   $ cd $BUILD_DIR
   $ ./do-configure -D<Project>_EXTRA_REPOSITORIES=SomeExtraRepo \
-     [Other Options]
+    [Other Options]
 
 After that, all of the extra packages defined in ``SomeExtraRepo`` will appear
-in the list of official <Project> packages and you are free to enable any of
-the defined add-on packages that you would like just like any other <Project>
-package.
+in the list of official <Project> packages (after all of the native packages)
+and one is free to enable any of the defined add-on packages just like any
+other native <Project> package.
 
 NOTE: If ``<Project>_EXTRAREPOS_FILE`` and
-``<Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE`` are specified then the list of
+``<Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE`` are specified, then the list of
 extra repositories in ``<Project>_EXTRA_REPOSITORIES`` must be a subset and in
 the same order as the list extra repos read in from the file specified by
-`<Project>_EXTRAREPOS_FILE`_.
+`<Project>_EXTRAREPOS_FILE`_.  (Also see the variable
+`<Project>_PRE_REPOSITORIES`_ as well.)
 
 
 Enabling extra repositories through a file
@@ -1369,9 +1370,9 @@ that ``Nightly`` matches ``Continuous`` and ``Experimental`` matches
 
 If ``<Project>_IGNORE_MISSING_EXTRA_REPOSITORIES`` is set to ``TRUE``, then
 any extra repositories selected who's directory is missing will be ignored.
-This is useful when the list of extra repos that a given developers develops
-or tests with is variable and one just wants TriBITS to pick up the list of
-existing repos automatically.
+This is useful when the list of extra repos that a given developer develops or
+tests is variable and one just wants TriBITS to pick up the list of existing
+repos automatically.
 
 If the file ``<projectDir>/cmake/ExtraRepositoriesList.cmake`` exists, then it
 is used as the default value for ``<Project>_EXTRAREPOS_FILE``.  However, the
@@ -1379,6 +1380,13 @@ default value for ``<Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE`` is empty so
 no extra repostories are defined by default unless
 ``<Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE`` is specifically set to one of
 the allowed values.
+
+.. _<Project>_PRE_REPOSITORIES:
+
+NOTE: The set of extra repositories listed in the file
+``<Project>_EXTRAREPOS_FILE`` can be filtered down by setting the variables
+``<Project>_PRE_REPOSITORIES`` if PRE extra repos are listed and/or
+``<Project>_EXTRA_REPOSITORIES`` if POST extra repos are listed.
 
   
 Reconfiguring completely from scratch

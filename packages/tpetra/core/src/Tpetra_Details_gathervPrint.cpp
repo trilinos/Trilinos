@@ -41,32 +41,69 @@
 // @HEADER
 */
 
-// Including this is the easy way to get access to all the Node types.
-#include "Kokkos_DefaultNode.hpp"
-#include "Tpetra_ConfigDefs.hpp"
-
-// Don't bother compiling anything, or even including anything else,
-// unless KokkosCudaWrapperNode is enabled.
-#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_CUDA) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-
-#include "Tpetra_CrsMatrixMultiplyOp_decl.hpp"
-#include "TpetraCore_ETIHelperMacros.h"
-#include "Tpetra_CrsMatrixMultiplyOp_def.hpp"
-
-#define TPETRA_CRSMATRIX_MULTIPLYOP_CUDAWRAPPERNODE_INSTANT( T, SCALAR, LO, GO ) \
-  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT( T, SCALAR, LO, GO, Kokkos::Compat::KokkosCudaWrapperNode )
-
-#define TPETRA_CRSMATRIX_MULTIPLYOP_CUDAWRAPPERNODE_INSTANT_SINGLE( SCALAR, LO, GO ) \
-  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT_SINGLE( SCALAR, LO, GO, Kokkos::Compat::KokkosCudaWrapperNode )
+#include <Tpetra_Details_gathervPrint.hpp>
+#include <Teuchos_CommHelpers.hpp>
+#include <algorithm>
 
 namespace Tpetra {
+namespace Details {
 
-  TPETRA_ETI_MANGLING_TYPEDEFS()
+void
+gathervPrint (std::ostream& out,
+              const std::string& s,
+              const Teuchos::Comm<int>& comm)
+{
+  using Teuchos::ArrayRCP;
+  using Teuchos::CommRequest;
+  using Teuchos::ireceive;
+  using Teuchos::isend;
+  using Teuchos::outArg;
+  using Teuchos::RCP;
+  using Teuchos::wait;
 
-  TPETRA_INSTANTIATE_TSLG(TPETRA_CRSMATRIX_MULTIPLYOP_CUDAWRAPPERNODE_INSTANT)
-  TPETRA_INSTANTIATE_SLG(TPETRA_CRSMATRIX_MULTIPLYOP_CUDAWRAPPERNODE_INSTANT_SINGLE)
+  const int myRank = comm.getRank ();
+  const int rootRank = 0;
+  if (myRank == rootRank) {
+    out << s; // Proc 0 prints its buffer first
+  }
 
+  const int numProcs = comm.getSize ();
+  const int sizeTag = 42;
+  const int msgTag = 43;
+
+  ArrayRCP<size_t> sizeBuf (1);
+  ArrayRCP<char> msgBuf; // to be resized later
+  RCP<CommRequest<int> > req;
+
+  for (int p = 1; p < numProcs; ++p) {
+    if (myRank == p) {
+      sizeBuf[0] = s.size ();
+      req = isend<int, size_t> (sizeBuf, rootRank, sizeTag, comm);
+      (void) wait<int> (comm, outArg (req));
+
+      const size_t msgSize = s.size ();
+      msgBuf.resize (msgSize + 1); // for the '\0'
+      std::copy (s.begin (), s.end (), msgBuf.begin ());
+      msgBuf[msgSize] = '\0';
+
+      req = isend<int, char> (msgBuf, rootRank, msgTag, comm);
+      (void) wait<int> (comm, outArg (req));
+    }
+    else if (myRank == rootRank) {
+      sizeBuf[0] = 0; // just a precaution
+      req = ireceive<int, size_t> (sizeBuf, p, sizeTag, comm);
+      (void) wait<int> (comm, outArg (req));
+
+      const size_t msgSize = sizeBuf[0];
+      msgBuf.resize (msgSize + 1); // for the '\0'
+      req = ireceive<int, char> (msgBuf, p, msgTag, comm);
+      (void) wait<int> (comm, outArg (req));
+
+      std::string msg (msgBuf.getRawPtr ());
+      out << msg;
+    }
+  }
+}
+
+} // namespace Details
 } // namespace Tpetra
-
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION && HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT && KOKKOS_HAVE_CUDA
-

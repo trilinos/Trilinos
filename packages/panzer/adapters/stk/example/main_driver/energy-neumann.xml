@@ -61,7 +61,6 @@
         <ParameterList name="fluid model">
 
             <ParameterList name="SOURCE_TEMPERATURE">
-                <Parameter name="Type" type="string" value="Parameter"/>
                 <Parameter name="Value" type="double" value="0.0"/>
             </ParameterList>
             <ParameterList name="DENSITY">

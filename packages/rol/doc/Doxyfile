@@ -1322,6 +1322,8 @@ USE_MATHJAX            = YES
 
 MATHJAX_EXTENSIONS     = TeX/AMSmath TeX/AMSsymbols
 
+MATHJAX_RELPATH        = https://cdn.mathjax.org/mathjax/latest
+
 #---------------------------------------------------------------------------
 # Configuration: additions related to the search engine   
 #---------------------------------------------------------------------------

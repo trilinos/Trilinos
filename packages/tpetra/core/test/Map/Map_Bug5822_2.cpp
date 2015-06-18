@@ -92,25 +92,38 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWithZeroThenSkipTo3Billion )
   TEUCHOS_TEST_FOR_EXCEPTION(numProcs != 2, std::logic_error,
     "This test only makes sense to run with 2 MPI processes.");
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+  // Pick the global index type to have 64 bits.
+#if ! defined (HAVE_TPETRA_INT_LONG_LONG) && ! defined (HAVE_TPETRA_INT_LONG)
+  typedef Tpetra::Map<>::global_ordinal_type GO; // just to make it compile
+  out << "This test only makes sense if GO = long or long long is enabled.  "
+    "That is because the test is supposed to exercise global indices greater "
+    "than the maximum that int can represent (about 2 billion)." << endl;
+  return;
+#else
+#  if defined (HAVE_TPETRA_INT_LONG_LONG)
   typedef long long GO;
   if (sizeof (long long) <= 4) {
     out << "sizeof (long long) = " << sizeof (long long) << " <= 4.  "
-      "This test only makes sense if sizeof (long long) >= 8, "
-      "since the test is supposed to exercise GIDs > 2 billion.";
+      "This test only makes sense if sizeof (long long) >= 8.  "
+      "That is because the test is supposed to exercise global indices "
+      "greater than the maximum that int can represent (about 2 billion)."
+        << endl;
     return;
   }
-#else // NOT HAVE_TEUCHOS_LONG_LONG_INT
+#  elif defined (HAVE_TPETRA_INT_LONG)
   typedef long GO;
   if (sizeof (long) <= 4) {
     out << "sizeof (long) = " << sizeof (long) << " <= 4.  "
-      "This test only makes sense if sizeof (long) >= 8, "
-      "since the test is supposed to exercise GIDs > 2 billion.";
+      "This test only makes sense if sizeof (long) >= 8.  "
+      "That is because the test is supposed to exercise global indices "
+      "greater than the maximum that int can represent (about 2 billion)."
+        << endl;
     return;
   }
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
+#  endif
+#endif
   typedef Tpetra::Map<>::local_ordinal_type LO;
-  typedef Tpetra::Details::DefaultTypes::node_type NT;
+  typedef Tpetra::Map<>::node_type NT;
   typedef Tpetra::Map<LO, GO, NT> map_type;
 
   // Proc 0 gets [0, 3B, 3B+2, 3B+4, 3B+8, 3B+10] (6 GIDs).
@@ -122,7 +135,7 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWithZeroThenSkipTo3Billion )
   const size_t localNumElts = (myRank == 0) ? 6 : 5;
   const global_size_t globalNumElts = 1 + 5*comm->getSize ();
   const GO globalFirstGid = 1L;
-  const GO threeBillion = 3000000000L;
+  const GO threeBillion = static_cast<GO> (3000000000L);
 
   Array<GO> myGids (localNumElts);
   // Make a copy, just to make sure that Map's constructor didn't

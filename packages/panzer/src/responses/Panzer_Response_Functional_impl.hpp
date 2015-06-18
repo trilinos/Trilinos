@@ -43,9 +43,13 @@ scatterResponse()
   using Teuchos::rcp_dynamic_cast;
 
   Teuchos::RCP<Thyra::MultiVectorBase<double> > dgdx_unique = getDerivative();
+
+  uniqueContainer_ = linObjFactory_->buildLinearObjContainer();
   Teuchos::rcp_dynamic_cast<ThyraObjContainer<double> >(uniqueContainer_)->set_x_th(dgdx_unique->col(0));
 
   linObjFactory_->ghostToGlobalContainer(*ghostedContainer_,*uniqueContainer_,LinearObjContainer::X);
+
+  uniqueContainer_ = Teuchos::null;
 }
 
 // Do nothing unless derivatives are actually required
