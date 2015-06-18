@@ -111,16 +111,36 @@ public:
    * It assumes that if Tpetra matrix is given then Amesos2 ParameterList must be given.
    * Likewise, if Epetra matrix is given then Amesos ParameterList must be given.
    */
+
+  DirectSolverInterface();
   DirectSolverInterface(Matrix *inA, Teuchos::ParameterList* pList);
+  int init_matrix(Matrix *inA, Teuchos::ParameterList* pList);
+  int factor();
   int solve(Vector* b, Vector* x);
 private:
+  //Private Functions
+  int factorAmesos();
   int solveAmesos(Vector* b, Vector *x );
+#ifdef HAVE_SHYLUCORE_AMESOS2
+  int factorAmesos2();
+  int solveAmesos2(Vector* b, Vector *x);
+#endif
+
+  //Private Variable
   Teuchos::ParameterList *pList;
   Matrix *A;
   int maxproc;
+  
+  //amesos
+  Epetra_LinearProblem  problem_amesos;
+  Amesos_BaseSolver*    solver_amesos;
+
+  //amesos2
 #ifdef HAVE_SHYLUCORE_AMESOS2
-  int solveAmesos2(Vector* b, Vector *x);
+  Teuchos::RCP<Amesos2::Solver<Matrix,Vector> > solver_amesos2;
 #endif
+
+
 }; //end class
 
 }// end namespace

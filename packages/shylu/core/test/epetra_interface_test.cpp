@@ -223,6 +223,8 @@ int main(int argc, char** argv)
   Teuchos::writeParameterListToXmlOStream(*pLUList, std::cout);
 
   ShyLU::DirectSolverInterface<Epetra_CrsMatrix, Epetra_MultiVector> directsolver(A, pLUList.get());
+
+  directsolver.factor();
   directsolver.solve(b,x);
 
   cout << "Done with Amesos-KLU" << endl;
@@ -247,7 +249,12 @@ int main(int argc, char** argv)
   cout << " \n\n--------------------BIG BREAK --------------\n\n";
   Teuchos::writeParameterListToXmlOStream(*pLUList, std::cout);
 
+
+  
+
   ShyLU::DirectSolverInterface<Epetra_CrsMatrix, Epetra_MultiVector> directsolver2(A, pLUList.get());
+
+  directsolver2.factor();
   directsolver2.solve(b,x);
 
   cout << "Done with Amesos-KLU2" << endl;
