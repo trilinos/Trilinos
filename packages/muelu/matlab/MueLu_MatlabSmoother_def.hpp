@@ -43,28 +43,14 @@
 // ***********************************************************************
 //
 // @HEADER
+#include "MueLu_MatlabSmoother_decl.hpp"
 #ifndef MUELU_MATLABSMOOTHER_DEF_HPP
 #define MUELU_MATLABSMOOTHER_DEF_HPP
-
-#include "MueLu_ConfigDefs.hpp"
+#include "MueLu_MatlabUtils_def.hpp"
 
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_MATLAB)
-
-#include <Teuchos_ParameterList.hpp>
-
-#include <Tpetra_RowMatrix.hpp>
-
-#include <Xpetra_BlockedCrsMatrix.hpp>
-#include <Xpetra_CrsMatrix.hpp>
-#include <Xpetra_CrsMatrixWrap.hpp>
-#include <Xpetra_Matrix.hpp>
-#include <Xpetra_MultiVectorFactory.hpp>
-
-#include "MueLu_MatlabSmoother_decl.hpp"
-#include "MueLu_Level.hpp"
-#include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_MatlabUtils_def.hpp"
+
 
 namespace MueLu {
 
@@ -146,8 +132,10 @@ namespace MueLu {
     InputArgs.push_back(rcp(new MuemexData<RCP<Matrix> >(A_)));
 
     // Push on LHS & RHS
-    InputArgs.push_back(rcp(new MuemexData<RCP<MultiVector> > (rcp(&X,false))));
-    InputArgs.push_back(rcp(new MuemexData<RCP<MultiVector> > (rcp(&B,false))));
+    Teuchos::RCP<MultiVector> Xrcp(&X,false);
+    Teuchos::RCP<const MultiVector> Brcp(&X,false);
+    InputArgs.push_back(rcp(new MuemexData<RCP<MultiVector> >(Xrcp)));
+    InputArgs.push_back(rcp(new MuemexData<RCP<const MultiVector> > (Brcp)));
 
     for(size_t i=0; solveData_.size(); i++)
       InputArgs.push_back(solveData_[i]);
