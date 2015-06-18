@@ -490,6 +490,11 @@ namespace MueLu {
         if (postSmootherType == preSmootherType && areSame(preSmootherParams, postSmootherParams))
           postSmoother = preSmoother;
         else
+#ifdef HAVE_MUELU_MATLAB
+	if(postSmootherType == "Matlab") 
+	  postSmoother = rcp(new SmootherFactory(rcp(new MatlabSmoother<Scalar,LocalOrdinal, GlobalOrdinal, Node>(postSmootherParams))));
+	else
+#endif
           postSmoother = rcp(new SmootherFactory(rcp(new TrilinosSmoother(postSmootherType, postSmootherParams, overlap))));
       }
 
@@ -543,6 +548,11 @@ namespace MueLu {
           coarseType == "Amesos")
         coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams, overlap));
       else
+#ifdef HAVE_MUELU_MATLAB
+	if(coarstType == "Matlab") 
+	  coarseSmoother = rcp(new MatlabSmoother<Scalar,LocalOrdinal, GlobalOrdinal, Node>(coarseParams));
+	else
+#endif
         coarseSmoother = rcp(new DirectSolver(coarseType, coarseParams));
 
       manager.SetFactory("CoarseSolver", rcp(new SmootherFactory(coarseSmoother)));
