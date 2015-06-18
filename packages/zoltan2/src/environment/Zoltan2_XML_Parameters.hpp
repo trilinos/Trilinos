@@ -254,6 +254,8 @@
     id=\"47\" name=\"color_choice\" type=\"string\" validatorId=\"47\" value=\"amd\" \
     docString='  selection criterion for coloring' \
     /> \
+   <ParameterList  name=\"zoltan_parameters\"> \
+   </ParameterList> \
     <Validators> \
       <Validator defaultParameterName=\"error_check_level\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"0\"> \
         <String integralValue=\"0\" stringDoc=\"no assertions will be performed\" stringValue=\"no_assertions\"/> \
