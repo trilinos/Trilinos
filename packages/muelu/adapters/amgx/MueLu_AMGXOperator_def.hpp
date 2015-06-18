@@ -48,28 +48,25 @@
 #define MUELU_AMGXOPERATOR_DEF_HPP
 
 
-#ifdef HAVE_MUELU_EXPERIMENTAL
-
+#if defined (HAVE_MUELU_EXPERIMENTAL) and defined (HAVE_MUELU_AMGX)
+#include "MueLu_AMGXOperator_decl.hpp"
 #include <amgx_c.h>
 #include <Teuchos_ArrayRCP.hpp>
 #include "cuda_runtime.h"
 
 namespace MueLu {
 
-/*Ignore*/
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
 AMGXOperator::getDomainMap() const {
-   return domainMap;
+   return domainMap_;
 }
 
-/*Ignore*/
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > AMGXOperator::getRangeMap() const {
-   return rangeMap;
+   return rangeMap_;
 }
 
-/*Need to implement this for AMGX*/
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void AMGXOperator::apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
                                                                                Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
@@ -99,6 +96,6 @@ bool AMGXOperator::hasTransposeApply() const {
 }
 
 } // namespace
-#endif //ifdef HAVE_MUELU_EXPERIMENTAL
+#endif //ifdef HAVE_MUELU_EXPERIMENTAL and defined(HAVE_MUELU_AMGX)
 
 #endif //ifdef MUELU_AMGXOPERATOR_DEF_HPP

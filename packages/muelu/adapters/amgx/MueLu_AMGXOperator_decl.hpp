@@ -46,10 +46,10 @@
 #ifndef MUELU_AMGXOPERATOR_DECL_HPP
 #define MUELU_AMGXOPERATOR_DECL_HPP
 
-#ifdef HAVE_MUELU_EXPERIMENTAL
-
+#if defined (HAVE_MUELU_EXPERIMENTAL) and defined (HAVE_MUELU_AMGX)
+ #include <Tpetra_Operator.hpp>
  #include <Tpetra_MultiVector_decl.hpp>
- #include <AMGX.h>
+ #include <amgx_c.h>
  #include "cuda_runtime.h"
 
  /*! @class AMGXOperator
@@ -70,21 +70,15 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    AMGXOperator(AMGX_solver_handle s, AMGX_resources_handle r, AMGX_config_handle c, AMGX_matrix_handle a, int N)
-	: Solver_(s)
-	, Resources_(r)
-	, Config_(c)
-        , A_(a)
-	, N_(N) 
-    { }
+    AMGXOperator(const Teuchos::RCP<Tpetra::CrsMatrix <SC, LO, GO, Node> > &InA, Teuchos::ParameterList &paramListIn) { }
 
     //! Destructor.
     virtual ~AMGXOperator() { }
 
     //@}
 
+    //! Returns the Tpetra::Map object associated with the domain of this operator.
     Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const{
-      /*throw error*/
       throw Exceptions::RuntimeError("Cannot use AMGXOperator with scalar != double and/or global ordinal != int \n");
     }
 
@@ -125,7 +119,8 @@ namespace MueLu {
     typedef double SC;
     typedef int LO;
     typedef int GO;
-
+    //! @name Constructor/Destructor
+    //@{
     AMGXOperator(const Teuchos::RCP<Tpetra::CrsMatrix <SC, LO, GO, Node> &InA, Teuchos::ParameterList &paramListIn){
       AMGX_mode mode;
       /* init */
@@ -140,8 +135,8 @@ namespace MueLu {
       Teuchos::ArrayRCP<int> col_ind;
       Teuchos::ArrayRCP<double> data;
 
-      domainMap = inA->getDomainMap();
-      columnMap = inA->getColumnMap();
+      domainMap_ = inA->getDomainMap();
+      columnMap_ = inA->getColumnMap();
 
       N = inA->getGlobalNumRows();
       int nnz = inA->getGlobalNumEntries();
@@ -207,12 +202,11 @@ namespace MueLu {
      AMGX_vector_handle X_;
      AMGX_vector_handle Y_;
      int N;
-     Teuchos::RCP<const Tpetra::Map<LO, GO, NO> > domainMap;
-     Teuchos::RCP<const Tpetra::Map<LO, GO, NO> > rangeMap;
-
+     Teuchos::RCP<const Tpetra::Map<LO, GO, NO> > domainMap_;
+     Teuchos::RCP<const Tpetra::Map<LO, GO, NO> > rangeMap_;
   };
 
 } // namespace
 
-#endif //HAVE_MUELU_EXPERIMENTAL
+#endif //HAVE_MUELU_EXPERIMENTAL && HAVE_MUELU_EXPERIMENTAL
 #endif // MUELU_AMGXOPERATOR_DECL_HPP

@@ -17,10 +17,10 @@
 #include <MueLu_Utilities.hpp>
 #include <MueLu_HierarchyHelpers.hpp>
 
-#ifdef HAVE_MUELU_EXPERIMENTAL
+#if defined (HAVE_MUELU_EXPERIMENTAL) and defined (HAVE_MUELU_AMGX)
 #include <amgx_c.h>
 #include "cuda_runtime.h"
-#endif //HAVE_MUELU_EXPERIMENTAL
+#endif
 
 //! @file MueLu_CreateTpetraPreconditioner.hpp
 
@@ -37,7 +37,6 @@ namespace MueLu {
     @param[in] inNullspace (optional) Near nullspace of the matrix.
     */
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  // Teuchos::RCP<MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   Teuchos::RCP<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   CreateTpetraPreconditioner(const Teuchos::RCP<Tpetra::CrsMatrix  <Scalar, LocalOrdinal, GlobalOrdinal, Node> >& inA,
                              Teuchos::ParameterList& paramListIn,
@@ -60,12 +59,13 @@ namespace MueLu {
 
     RCP<HierarchyManager> mueLuFactory;
     ParameterList paramList = paramListIn;
-    
+  
+#if defined (HAVE_MUELU_EXPERIMENTAL) && defined (HAVE_MUELU_AMGX)  
     std::string externalMG = "use external multigrid package";
     if(hasParamList && paramList.isParameter(externalMG) && paramList.get<std::string>(externalMG) == "amgx"){
       return CreateTpetraPreconditionerAMGX(inA, paramListIn);
     }
-
+#endif
     std::string syntaxStr = "parameterlist: syntax";
     if (hasParamList && paramList.isParameter(syntaxStr) && paramList.get<std::string>(syntaxStr) == "ml") {
       paramList.remove(syntaxStr);
@@ -166,7 +166,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   CreateTpetraPreconditioner(const Teuchos::RCP<Tpetra::CrsMatrix  <Scalar, LocalOrdinal, GlobalOrdinal, Node> >& inA,
-                             const std::string& XMLFileName,
+                             const std::string& xmlFileName,
                              const Teuchos::RCP<Tpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> >& inCoords    = Teuchos::null,
                              const Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& inNullspace = Teuchos::null)
   {
