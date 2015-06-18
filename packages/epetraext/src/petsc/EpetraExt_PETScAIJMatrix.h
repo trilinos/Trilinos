@@ -58,13 +58,11 @@
 #else
 #include "Epetra_SerialComm.h"
 #endif
-extern "C" {
 //Petsc headers.
 //Note: Petsc internally hard-codes paths to headers, relative to the PETSC home
 //      directory.  This means that --with-incdirs must contain the full path(s)
 //      to the header below plus the PETSc home directory.
 #include "src/mat/impls/aij/mpi/mpiaij.h"
-}
 
 class Epetra_Import;
 class Epetra_Export;
@@ -409,7 +407,7 @@ class Epetra_PETScAIJMatrix: public Epetra_Object, public Epetra_CompObject, pub
     int PetscRowStart_;
     int PetscRowEnd_;
     enum petscMatrixType {PETSC_SEQ_AIJ, PETSC_MPI_AIJ};
-    const MatType MatType_;         //really const char*
+    MatType  MatType_;         //really const char*
     mutable double NormInf_;
     mutable double NormOne_;
 
