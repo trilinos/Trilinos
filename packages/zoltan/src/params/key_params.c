@@ -293,6 +293,8 @@ int  idx 			/* index of vector param, -1 if scalar */
         break;
 
       case 11:          /* LB_Method */
+        if (result.def) 
+          strcpy(result.sval, "RCB");
         status = Zoltan_LB_Set_LB_Method(zz,result.sval);
         if (status == ZOLTAN_OK)
           status = 3;
