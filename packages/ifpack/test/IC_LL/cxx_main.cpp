@@ -90,10 +90,6 @@ int main(int argc, char *argv[]) {
   Epetra_SerialComm Comm;
 #endif
 
-  int MyPID = Comm.MyPID();
-  bool verbose = false; 
-  if (MyPID==0) verbose = true;
-
   // The problem is defined on a 2D grid, global size is nx * nx.
   int nx = 30;
   Teuchos::ParameterList GaleriList;
