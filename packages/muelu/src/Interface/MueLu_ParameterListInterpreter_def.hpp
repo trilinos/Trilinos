@@ -88,6 +88,11 @@
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_Zoltan2Interface.hpp"
 
+#ifdef HAVE_MUELU_MATLAB
+#include "../matlab/MueLu_MatlabSmoother_decl.hpp"
+#include "../matlab/MueLu_MatlabSmoother_def.hpp"
+#endif
+
 // These code chunks should only be enabled once Tpetra supports proper graph
 // reuse in MMM. At the moment, only Epetra does, while Tpetra throws
 // #define REUSE_MATRIX_GRAPHS
@@ -455,7 +460,11 @@ namespace MueLu {
           preSmootherParams = defaultList.sublist("smoother: params");
         else if (preSmootherType == "RELAXATION")
           preSmootherParams = defaultSmootherParams;
-
+#ifdef HAVE_MUELU_MATLAB
+	if(preSmootherType == "Matlab") 
+	  preSmoother = rcp(new SmootherFactory(rcp(new MatlabSmoother<Scalar,LocalOrdinal, GlobalOrdinal, Node>(preSmootherParams))));
+	else
+#endif
         preSmoother = rcp(new SmootherFactory(rcp(new TrilinosSmoother(preSmootherType, preSmootherParams, overlap))));
       }
 
@@ -481,6 +490,11 @@ namespace MueLu {
         if (postSmootherType == preSmootherType && areSame(preSmootherParams, postSmootherParams))
           postSmoother = preSmoother;
         else
+#ifdef HAVE_MUELU_MATLAB
+	if(postSmootherType == "Matlab") 
+	  postSmoother = rcp(new SmootherFactory(rcp(new MatlabSmoother<Scalar,LocalOrdinal, GlobalOrdinal, Node>(postSmootherParams))));
+	else
+#endif
           postSmoother = rcp(new SmootherFactory(rcp(new TrilinosSmoother(postSmootherType, postSmootherParams, overlap))));
       }
 
@@ -534,6 +548,11 @@ namespace MueLu {
           coarseType == "Amesos")
         coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams, overlap));
       else
+#ifdef HAVE_MUELU_MATLAB
+	if(coarseType == "Matlab") 
+	  coarseSmoother = rcp(new MatlabSmoother<Scalar,LocalOrdinal, GlobalOrdinal, Node>(coarseParams));
+	else
+#endif
         coarseSmoother = rcp(new DirectSolver(coarseType, coarseParams));
 
       manager.SetFactory("CoarseSolver", rcp(new SmootherFactory(coarseSmoother)));
