@@ -1,0 +1,16 @@
+<!--MueLu parameters to run Ptent MATLAB test-->
+<ParameterList name="MueLu">
+  <ParameterList name="Factories">
+    <ParameterList name="myMatlabTwoLevelFactory">
+      <Parameter name="Provides" type="string" value="Ptent"/>
+      <Parameter name="Needs Fine" type="string" value="A, Aggregates"/>
+      <Parameter name="Needs Coarse" type="string" value=""/>
+      <Parameter name="Function" type="string" value="matlabPtentTest"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="Hierarchy">
+    <ParameterList name="level 0">
+      <Parameter name="Ptent" type="string" value="myMatlabTwoLevelFactory"/>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>

@@ -87,11 +87,11 @@ namespace MueLu {
     TokenizeStringAndStripWhiteSpace(str_nc,needsCoarse_);
 
     // Declare inputs
-    for(size_t i=0; i<needsFine_.size(); i++)
-      Input(fineLevel,needsFine_[i]);
+    for(size_t i=0; i < needsFine_.size(); i++)
+      Input(fineLevel, needsFine_[i]);
 
-    for(size_t i=0; i<needsCoarse_.size(); i++)
-      Input(coarseLevel,needsCoarse_[i]);
+    for(size_t i = 0; i < needsCoarse_.size(); i++)
+      Input(coarseLevel, needsCoarse_[i]);
 
     hasDeclaredInput_=true;
   }
@@ -109,7 +109,7 @@ namespace MueLu {
     std::vector<RCP<MuemexArg> > InputArgs;
 
     // Fine needs
-    for(size_t i=0; needsFine_.size(); i++) {
+    for(size_t i = 0; needsFine_.size(); i++) {
       if(needsFine_[i] == "A" || needsFine_[i] == "P" || needsFine_[i] == "R" || needsFine_[i]=="Ptent") {
 	RCP<Matrix> mydata = Get<RCP<Matrix> >(fineLevel,needsFine_[i]);
 	InputArgs.push_back(rcp(new MuemexData<RCP<Matrix> >(mydata)));
