@@ -503,11 +503,30 @@
     </parameter>
 
     <parameter>
+      <name>toggle: mode</name>
+      <type>string</type>
+      <default>semicoarsen</default>
+      <description>Toggling strategy for transfer operators (default=semicoarsen)</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
       <name>semicoarsen: coarsen rate</name>
       <type>int</type>
       <default>3</default>
       <description>Rate at which to coarsen unknowns in the z direction.</description>
       <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>semicoarsen: number of levels</name>
+      <type>int</type>
+      <default>3</default>
+      <description>Determines the maximum number of times that semicoarsening is applied.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
     </parameter>
 
     <parameter>

@@ -294,6 +294,10 @@ typedef MueLu::TentativePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tentati
 typedef MueLu::ThresholdAFilterFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ThresholdAFilterFactory;
 #endif
 
+#ifdef MUELU_TOGGLEPFACTORY_SHORT
+typedef MueLu::TogglePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TogglePFactory;
+#endif
+
 #ifdef MUELU_TPETRAOPERATOR_SHORT
 typedef MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraOperator;
 #endif
@@ -338,4 +342,3 @@ typedef MueLu::SingleLevelMatlabFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> 
 #ifdef MUELU_MATLABSMOOTHER_SHORT
 typedef MueLu::MatlabSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> MatlabSmoother;
 #endif
-
