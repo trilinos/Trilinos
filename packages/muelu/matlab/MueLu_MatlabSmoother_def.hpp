@@ -46,7 +46,7 @@
 #include "MueLu_MatlabSmoother_decl.hpp"
 #ifndef MUELU_MATLABSMOOTHER_DEF_HPP
 #define MUELU_MATLABSMOOTHER_DEF_HPP
-#include "MueLu_MatlabUtils_def.hpp"
+#include "MueLu_MatlabUtils_decl.hpp"
 
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_MATLAB)
 #include "MueLu_Monitor.hpp"
@@ -133,9 +133,9 @@ namespace MueLu {
 
     // Push on LHS & RHS
     Teuchos::RCP<MultiVector> Xrcp(&X,false);
-    Teuchos::RCP<const MultiVector> Brcp(&X,false);
+    Teuchos::RCP<MultiVector> Brcp(const_cast<MultiVector*>(&X),false);
     InputArgs.push_back(rcp(new MuemexData<RCP<MultiVector> >(Xrcp)));
-    InputArgs.push_back(rcp(new MuemexData<RCP<const MultiVector> > (Brcp)));
+    InputArgs.push_back(rcp(new MuemexData<RCP<MultiVector> > (Brcp)));
 
     for(size_t i=0; solveData_.size(); i++)
       InputArgs.push_back(solveData_[i]);

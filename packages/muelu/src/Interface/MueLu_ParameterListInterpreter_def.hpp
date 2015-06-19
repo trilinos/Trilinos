@@ -461,7 +461,7 @@ namespace MueLu {
         else if (preSmootherType == "RELAXATION")
           preSmootherParams = defaultSmootherParams;
 #ifdef HAVE_MUELU_MATLAB
-	if(preSmootherType == "Matlab") 
+	if(preSmootherType == "matlab") 
 	  preSmoother = rcp(new SmootherFactory(rcp(new MatlabSmoother<Scalar,LocalOrdinal, GlobalOrdinal, Node>(preSmootherParams))));
 	else
 #endif
@@ -491,7 +491,7 @@ namespace MueLu {
           postSmoother = preSmoother;
         else
 #ifdef HAVE_MUELU_MATLAB
-	if(postSmootherType == "Matlab") 
+	if(postSmootherType == "matlab") 
 	  postSmoother = rcp(new SmootherFactory(rcp(new MatlabSmoother<Scalar,LocalOrdinal, GlobalOrdinal, Node>(postSmootherParams))));
 	else
 #endif
@@ -549,7 +549,7 @@ namespace MueLu {
         coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams, overlap));
       else
 #ifdef HAVE_MUELU_MATLAB
-	if(coarseType == "Matlab") 
+	if(coarseType == "matlab") 
 	  coarseSmoother = rcp(new MatlabSmoother<Scalar,LocalOrdinal, GlobalOrdinal, Node>(coarseParams));
 	else
 #endif
