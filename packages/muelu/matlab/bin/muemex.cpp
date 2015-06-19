@@ -260,70 +260,70 @@ mxArray* MuemexSystem::getHierarchyData(string dataName, HierAttribType dataType
 {
   mxArray* output = NULL;
   try
-    {
+  {
       switch(dataType)
-        {
+      {
         case MATRIX:
-          {
+        {
             switch(this->type)  //datapack type (EPETRA TPETRA or TPETRA_COMPLEX)
-              {
-                //get real matrix, put into output
+            {
+              //get real matrix, put into output
               case EPETRA:
               case TPETRA:
-                {
+              {
                   RCP<Hierarchy_double> hier = getDatapackHierarchy<double>(this);
                   RCP<MueLu::Level> level = hier->GetLevel(levelID);
                   RCP<Xpetra_Matrix_double> mat;
                   level->Get(dataName, mat);
                   output = saveMatrixToMatlab<double>(mat);
                   break;
-                }
+              }
               case TPETRA_COMPLEX:
-                {
+              {
                   RCP<Hierarchy_complex> hier = getDatapackHierarchy<complex_t>(this);
                   RCP<MueLu::Level> level = hier->GetLevel(levelID);
                   RCP<Xpetra_Matrix_complex> mat;
                   level->Get(dataName, mat);
                   output = saveMatrixToMatlab<complex_t>(mat);
                   break;
-                }
               }
+            }
             break;
-          }
+        }
         case MULTIVECTOR:
-          {
+        {
             switch(this->type)
-              {
+            {
               case EPETRA:
               case TPETRA:
-                {
+              {
                   RCP<Hierarchy_double> hier = getDatapackHierarchy<double>(this);
                   RCP<MueLu::Level> level = hier->GetLevel(levelID);
                   RCP<Xpetra_MultiVector_double> mv;
                   level->Get(dataName, mv);
                   output = saveMultiVectorToMatlab<double>(mv);
                   break;
-                }
+              }
               case TPETRA_COMPLEX:
-                {
+              {
                   RCP<Hierarchy_complex> hier = getDatapackHierarchy<complex_t>(this);
                   RCP<MueLu::Level> level = hier->GetLevel(levelID);
                   RCP<Xpetra_MultiVector_complex> mv;
                   level->Get(dataName, mv);
                   output = saveMultiVectorToMatlab<complex_t>(mv);
                   break;
-                }
               }
+            }
             break;
-          }
+        }
         case LOVECTOR:
-          {
+        {
             RCP<Xpetra_ordinal_vector> loVec;
             switch(this->type)
-              {
+            {
               case EPETRA:
               case TPETRA:
-                {
+              {
                   RCP<Hierarchy_double> hier = getDatapackHierarchy<double>(this);
                   RCP<MueLu::Level> level = hier->GetLevel(levelID);
 #ifdef VERBOSE_OUTPUT
@@ -331,34 +331,34 @@ mxArray* MuemexSystem::getHierarchyData(string dataName, HierAttribType dataType
 #endif
                   level->Get(dataName, loVec);
                   break;
-                }
+              }
               case TPETRA_COMPLEX:
-                {
+              {
                   RCP<Hierarchy_complex> hier = getDatapackHierarchy<complex_t>(this);
                   RCP<MueLu::Level> level = hier->GetLevel(levelID);
                   level->Get(dataName, loVec);
                   break;
-                }
               }
+            }
             output = createMatlabLOVector(loVec);
             break;
           }
         case SCALAR:
-          {
+        {
             switch(this->type)
-              {
+            {
               case EPETRA:
               case TPETRA:
-                {
+              {
                   double value;
                   RCP<Hierarchy_double> hier = getDatapackHierarchy<double>(this);
                   RCP<MueLu::Level> level = hier->GetLevel(levelID);
                   level->Get(dataName, value);
                   output = mxCreateDoubleScalar(value);
                   break;
-                }
+              }
               case TPETRA_COMPLEX:
-                {
+              {
                   complex_t value;
                   RCP<Hierarchy_complex> hier = getDatapackHierarchy<complex_t>(this);
                   RCP<MueLu::Level> level = hier->GetLevel(levelID);
@@ -369,25 +369,25 @@ mxArray* MuemexSystem::getHierarchyData(string dataName, HierAttribType dataType
                   double* imagPart = mxGetPi(output);
                   *imagPart = imag<double>(value);
                   break;
-                }
               }
+            }
             break;
-          }
+        }
         default:
-          {
-            throw runtime_error("getHierarchyData can't determine the type of the data requested.");
-          }
-        }
-      if(output == NULL)
         {
-          throw runtime_error("mxArray pointer was never initialized. Check data type and name.");
+            throw runtime_error("getHierarchyData can't determine the type of the data requested.");
         }
-    }
+      }
+      if(output == NULL)
+      {
+          throw runtime_error("mxArray pointer was never initialized. Check data type and name.");
+      }
+  }
   catch(exception& e)
-    {
+  {
       mexPrintf("Error occurred while getting hierarchy data.\n");
       cout << e.what() << endl;
-    }
+  }
   return output;
 }
 
@@ -942,6 +942,10 @@ RCP<ParameterList> build_teuchos_list(int nrhs, const mxArray *prhs[])
 }
 /*end build_teuchos_list*/
 
+} //end MueLu namespace (mexFunction must be in global namespace)
+
+using namespace MueLu; //...but give mexFunction access to all MueLu members defined above
+
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
   double* id;
@@ -962,7 +966,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     MueLu::SingleLevelMatlabFactory<double,int,int> f2;
   }
 #endif
-
 
   switch(mode)
     {
@@ -1297,6 +1300,3 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       mexPrintf("Mode not supported yet.");
     }
 }
-
-
-}//end namespace

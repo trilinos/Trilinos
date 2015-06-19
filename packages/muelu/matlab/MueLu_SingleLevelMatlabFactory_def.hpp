@@ -81,13 +81,13 @@ namespace MueLu {
     const std::string str = pL.get<std::string>("Needs");
 
     // Tokenize the strings
-    TokenizeStringAndStripWhiteSpace(str,needs_);
+    TokenizeStringAndStripWhiteSpace(str, needs_);
 
     // Declare inputs
-    for(size_t i=0; i<needs_.size(); i++)
-      Input(currentLevel,needs_[i]);
+    for(size_t i = 0; i < needs_.size(); i++)
+      Input(currentLevel, needs_[i]);
 
-    hasDeclaredInput_=true;
+    hasDeclaredInput_ = true;
   
   }
 
@@ -101,28 +101,28 @@ namespace MueLu {
        We'll need to replace this wby modifying the needs list with strings that define types and adding some kind of lookup function instead */
 
     // NOTE: mexOutput[0] is the "Provides."  Might want to modify to allow for additional outputs
-    std::vector<RCP<MuemexArg> > InputArgs;
+    std::vector<RCP<MuemexArg>> InputArgs;
 
     // Fine needs
     for(size_t i=0; needs_.size(); i++) {
       if(needs_[i] == "A" || needs_[i] == "P" || needs_[i] == "R" || needs_[i]=="Ptent") {
-	RCP<Matrix> mydata = Get<RCP<Matrix> >(currentLevel,needs_[i]);
-	InputArgs.push_back(rcp(new MuemexData<RCP<Matrix> >(mydata)));
+	RCP<Matrix> mydata = Get<RCP<Matrix>>(currentLevel,needs_[i]);
+	InputArgs.push_back(rcp(new MuemexData<RCP<Matrix>>(mydata)));
       }
 
       if(needs_[i] == "Nullspace" || needs_[i] == "Coordinates") {
-	RCP<MultiVector> mydata = Get<RCP<MultiVector> >(currentLevel,needs_[i]);
+	RCP<MultiVector> mydata = Get<RCP<MultiVector>>(currentLevel, needs_[i]);
 	InputArgs.push_back(rcp(new MuemexData<RCP<MultiVector> >(mydata)));
       }
 
       if(needs_[i] == "Aggregates") {
-	//	RCP<Aggregates> mydata =Get<RCP<Aggregates> >(currentLevel,needs_[i]);
-	//	InputArgs.push_back(rcp(new MuemexData<RCP<Aggregates> >(mydata)));
+	RCP<Aggregates> mydata = Get<RCP<Aggregates>>(currentLevel, needs_[i]);
+	InputArgs.push_back(rcp(new MuemexData<RCP<Aggregates> >(mydata)));
       }
 
       if(needs_[i] == "UnAmalgamationInfo") {
-	//	RCP<AmalgamationInfo> mydata=Get<RCP<AmalgamationInfo> >(currentLevel,needs_[i]);
-	//	InputArgs.push_back(rcp(new MuemexData<RCP<AmalgamationInfo> >(mydata)));
+	RCP<AmalgamationInfo> mydata = Get<RCP<AmalgamationInfo> >(currentLevel,needs_[i]);
+	InputArgs.push_back(rcp(new MuemexData<RCP<AmalgamationInfo>>(mydata)));
       }
     }
 
@@ -152,18 +152,15 @@ namespace MueLu {
       }
 
       if(provides[i] == "Aggregates") {
-	//	RCP<MuemexData<RCP<Aggregates> > > mydata = Teuchos::rcp_static_cast<MuemexData<RCP<Aggregates> > >(mexOutput[i]);
-	//	currentLevel.Set(provides[i],mydata->getData());
+	RCP<MuemexData<RCP<Aggregates> > > mydata = Teuchos::rcp_static_cast<MuemexData<RCP<Aggregates> > >(mexOutput[i]);
+	currentLevel.Set(provides[i], mydata->getData());
       }
 
       if(provides[i] == "UnAmalgamationInfo") {
-	//	RCP<MuemexData<RCP<AmalgamationInfo> > > mydata = Teuchos::rcp_static_cast<MuemexData<RCP<AmalgamationInfo> > >(mexOutput[i]);
-	//	currentLevel.Set(provides[i],mydata->getData());
+	RCP<MuemexData<RCP<AmalgamationInfo> > > mydata = Teuchos::rcp_static_cast<MuemexData<RCP<AmalgamationInfo> > >(mexOutput[i]);
+	currentLevel.Set(provides[i], mydata->getData());
       }
     }
-
-
-
   }
 
 } //namespace MueLu

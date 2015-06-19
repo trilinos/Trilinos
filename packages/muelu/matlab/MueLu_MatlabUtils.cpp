@@ -46,7 +46,6 @@
 #include "MueLu_MatlabUtils_def.hpp"
 #include <stdexcept>
 
-
 #if !defined(HAVE_MUELU_MATLAB) || !defined(HAVE_MUELU_EPETRA) || !defined(HAVE_MUELU_TPETRA)
 #error "Muemex types require MATLAB, Epetra and Tpetra."
 #else
@@ -58,6 +57,7 @@ typedef int mwIndex;
 #endif
 
 using namespace std;
+using namespace Teuchos;
 
 namespace MueLu {
 
@@ -65,8 +65,9 @@ namespace MueLu {
   template class MuemexData<RCP<Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >; 
   template class MuemexData<RCP<Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
   template class MuemexData<RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >; 
-  template class MuemexData<RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >; 
-
+  template class MuemexData<RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
+  template class MuemexData<RCP<MAggregates>>;
+  template class MuemexData<RCP<MAmalInfo>>;
   /*  
   template class MuemexData<int>;
 
@@ -137,7 +138,6 @@ void callMatlabNoArgs(std::string function)
 std::vector<RCP<MuemexArg>> callMatlab(std::string function, int numOutputs, std::vector<RCP<MuemexArg>> args)
 {
   using Teuchos::rcp_static_cast;
-
   mxArray** matlabArgs = new mxArray* [args.size()];
   mxArray** matlabOutput = new mxArray* [numOutputs];
   std::vector<RCP<MuemexArg>> output;
@@ -244,9 +244,9 @@ std::vector<RCP<MuemexArg>> callMatlab(std::string function, int numOutputs, std
                   else
                     //single complex scalar
                     output.push_back(rcp(new MuemexData<complex_t>(item)));
-                }
+              }
               else if(mxIsSparse(item))
-                {
+              {
                   //Default to Tpetra matrix for this
                   if(mxIsComplex(item))
                     //complex Tpetra matrix (sparse)
@@ -254,61 +254,32 @@ std::vector<RCP<MuemexArg>> callMatlab(std::string function, int numOutputs, std
                   else
                     //real Tpetra matrix
                     output.push_back(rcp(new MuemexData<RCP<Tpetra_CrsMatrix_complex>>(item)));
-                }
+              }
               else
-                {
+              {
                   //Default to Tpetra multivector for this case
                   if(mxIsComplex(item))
                     output.push_back(rcp(new MuemexData<RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>(item)));
                   else
                     output.push_back(rcp(new MuemexData<RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>(item)));
-                }
+              }
               break;
             case mxSTRUCT_CLASS:
             {
               //the only thing that should get here currently is an Aggregates struct
               //verify that is has the correct fields with the correct types
               //also assume that aggregates data will not be stored in an array of more than 1 element.
-              bool isValidAggregates = true;
-              int numFields = mxGetNumberOfFields(item); //check that struct has correct # of fields
-              if(numFields != 6)
-                isValidAggregates = false;
-              if(isValidAggregates)
-              {
-                const char* mem1 = mxGetFieldNameByNumber(item, 0);
-                if(mem1 == NULL || strcmp(mem1, "nVertices") != 0)
-                  isValidAggregates = false;
-                const char* mem2 = mxGetFieldNameByNumber(item, 1);
-                if(mem2 == NULL || strcmp(mem2, "nAggregates") != 0)
-                  isValidAggregates = false;
-                const char* mem3 = mxGetFieldNameByNumber(item, 2);
-                if(mem3 == NULL || strcmp(mem3, "vertexToAggID") != 0)
-                  isValidAggregates = false;
-                const char* mem4 = mxGetFieldNameByNumber(item, 3);
-                if(mem3 == NULL || strcmp(mem4, "rootNodes") != 0)
-                  isValidAggregates = false;
-                const char* mem5 = mxGetFieldNameByNumber(item, 4);
-                if(mem4 == NULL || strcmp(mem5, "aggSizes") != 0)
-                  isValidAggregates = false;
-                const char* mem6 = mxGetFieldNameByNumber(item, 5);
-                if(mem5 == NULL || strcmp(mem6, "procWinner") != 0)
-                  isValidAggregates = false;
-              }
-              if(isValidAggregates)
-              {
+              if(isValidMatlabAggregates(item))
                 output.push_back(rcp(new MuemexData<RCP<MAggregates>>(item)));
-              }
               else
-              {
                 throw runtime_error("Invalid aggregates struct passed in from MATLAB.");
-              }
               break;
             }
             default:
 	        throw std::runtime_error("MATLAB returned an unsupported type as a function output.\n");
             }
         }
-	      catch(std::exception& e)
+	catch(std::exception& e)
         {
           mexPrintf("An error occurred while converting output #%d from MATLAB:\n", i);
 	  std::cout << e.what() << std::endl;
@@ -431,7 +402,8 @@ int parseInt(const mxArray* mxa)
 
 mxArray* saveEpetraMatrix(RCP<Epetra_CrsMatrix>& mat)
 {
-  return saveMatrixToMatlab<double>(MueLu::EpetraCrs_To_XpetraMatrix<double, mm_LocalOrd, mm_GlobalOrd,mm_node_t>(mat));
+  RCP<Xpetra_Matrix_double> xmat = MueLu::EpetraCrs_To_XpetraMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(mat);
+  return saveMatrixToMatlab<double>(xmat);
 }
 
 RCP<Xpetra_ordinal_vector> loadLOVector(const mxArray* mxa)
@@ -470,7 +442,7 @@ RCP<MAggregates> loadAggregates(const mxArray* mxa)
   int nAgg;
   RCP<Xpetra_ordinal_vector> vertToAggIdLOV;
   RCP<Xpetra_ordinal_vector> aggSizesLOV;
-  RCP<vector<bool>> rootNodes;
+  RCP<Xpetra_ordinal_vector> rootNodesIn; //roots are stored in MATLAB struct as list of ints (representing nodeids)
   { //scope this so variable names can be simpler, and extra MuemexData wrappers are disposed of immediately
     RCP<MuemexData<int>> mmData = rcp(new MuemexData<int>(mxGetField(mxa, 0, "nVertices")));
     nVert = mmData->getData();
@@ -488,8 +460,8 @@ RCP<MAggregates> loadAggregates(const mxArray* mxa)
     aggSizesLOV = mmData->getData();
   }
   {
-    RCP<MuemexData<RCP<vector<bool>>>> mmData = rcp(new MuemexData<RCP<vector<bool>>>(mxGetField(mxa, 0, "rootNodes")));
-    rootNodes = mmData->getData();
+    RCP<MuemexData<RCP<Xpetra_ordinal_vector>>> mmData = rcp(new MuemexData<RCP<Xpetra_ordinal_vector>>(mxGetField(mxa, 0, "rootNodes")));
+    rootNodesIn = mmData->getData();
   }
   //Now have all the data needed to fully reconstruct the aggregate
   //Use similar approach as UserAggregationFactory (which is written for >1 thread but will just be serial here)
@@ -506,19 +478,21 @@ RCP<MAggregates> loadAggregates(const mxArray* mxa)
   //Also get const ArrayRCP views into vert2AggId and aggSizes vectors (of LOVectors extracted from matlab struct)
   ArrayRCP<const mm_LocalOrd> vertex2AggIDToCopy = vertToAggIdLOV->getData(0);
   ArrayRCP<const mm_LocalOrd> aggSizesToCopy = aggSizesLOV->getData(0);
+  ArrayRCP<const mm_LocalOrd> rootNodesToCopy = rootNodesIn->getData(0);
   //mm_LocalOrd and int are equivalent, so is ok to talk about aggSize with just 'int'
   //Deep copy the entire vertex2AggID and isRoot arrays, which are both nVert items long
   //At the same time, set ProcWinner
   for(int i = 0; i < nVert; i++)
   {
     vertex2AggId[i] = vertex2AggIDToCopy[i];
-    if(rootNodes->at(i))
-      agg->SetIsRoot(i, true);
-    else
-      agg->SetIsRoot(i, false);
     procWinner[i] = myRank; //all nodes are going to be on the same proc
+    agg->SetIsRoot(i, false); //the ones that are root will be set in next loop
   }
-  //Now recompute the aggSize array and cache the results in the aggregates object
+  for(int i = 0; i < nAgg; i++) //rootNodesToCopy is an array of node IDs which are the roots of their aggs
+  {
+    agg->SetIsRoot(rootNodesToCopy[i], true);
+  }
+  //Now recompute the aggSize array and cache the results in the object
   agg->ComputeAggregateSizes(true, true);
   agg->AggregatesCrossProcessors(false);
   return agg;
@@ -531,14 +505,13 @@ mxArray* saveAggregates(RCP<MAggregates>& agg)
   RCP<Xpetra_ordinal_vector> vertexToAggID = (RCP<Xpetra_ordinal_vector>) agg->GetVertex2AggId();
   mm_LocalOrd nVert = vertexToAggID->getLocalLength();
   //Construct Matlab objects to use in struct
-  vector<RCP<MuemexArg>> structMembers;
-  vector<RCP<MuemexArg>> builtStruct;
+  vector<RCP<MuemexArg>> structMembers; //input to the matlab callback
+  vector<RCP<MuemexArg>> builtStruct;   //output
   mwSize arrLen[] = {1}; //array of one element to hold dimensions of 1-D array for mxCreateNumArr
   mxArray* nVertices = mxCreateNumericArray(1, arrLen, mxINT32_CLASS, mxREAL);
   mxArray* nAggregates = mxCreateNumericArray(1, arrLen, mxINT32_CLASS, mxREAL);
   *((int*) mxGetData(nVertices)) = (int) nVert;
   *((int*) mxGetData(nAggregates)) = (int) nAgg;
-  RCP<vector<bool>> isRootVals = rcp(new vector<bool>());
   //agg sizes
   ArrayRCP<mm_LocalOrd> rawAggSizes = agg->ComputeAggregateSizes(false, true);
   mm_LocalOrd* rawAggSizeArray = rawAggSizes.getRawPtr();
@@ -548,28 +521,46 @@ mxArray* saveAggregates(RCP<MAggregates>& agg)
   RCP<const muemex_map_type> rowMap = rcp(new muemex_map_type(numGlobalIndices, (mm_GlobalOrd) 0, comm));
   RCP<Tpetra::Vector<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> aggSizeTempLOVec = rcp(new Tpetra::Vector<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(rowMap, aggSizeArrayView));
   RCP<Xpetra_ordinal_vector> aggSizes = Xpetra::toXpetra<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(aggSizeTempLOVec);
-  for(int i = 0; i < nVert; i++)
-  {
-    isRootVals->push_back(agg->IsRoot(i));
-  }
   //Place matlab objects in MuemexData objects
   RCP<MuemexData<int>> nVertArg = rcp(new MuemexData<int>(nVert));
   RCP<MuemexData<int>> nAggArg = rcp(new MuemexData<int>(nAgg));
+  RCP<Xpetra::TpetraMap<mm_LocalOrd, mm_GlobalOrd, mm_node_t>> tpetraVecMap = rcp(new Xpetra::TpetraMap<mm_LocalOrd, mm_GlobalOrd, mm_node_t>(nAgg, (mm_GlobalOrd) 0, comm));
+  RCP<Xpetra::Map<mm_LocalOrd, mm_GlobalOrd, mm_node_t>> vecMap = rcp_implicit_cast<Xpetra::Map<mm_LocalOrd, mm_GlobalOrd, mm_node_t>, Xpetra::TpetraMap<mm_LocalOrd, mm_GlobalOrd, mm_node_t>>(tpetraVecMap);
+  //now have the Xpetra::Map that we need to construct rootnode ordinal vector
+  mm_LocalOrd* rawRootNodes = (mm_LocalOrd*) malloc(sizeof(mm_LocalOrd) * nAgg);
+  int iter = 0;
+  for(int i = 0; i < nVert; i++)
+  {
+    if(iter > nAgg)
+      throw runtime_error("Number of root nodes and number of aggregates don't match!");
+    if(agg->IsRoot(i))
+    {
+      rawRootNodes[iter] = i;
+      iter++;
+    }
+  }
+  ArrayView<mm_LocalOrd> rootNodeArrayView(rawRootNodes, nAgg);
+  RCP<Xpetra::TpetraVector<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> tpetraRootNodeVec = rcp(new Xpetra::TpetraVector<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(vecMap, rootNodeArrayView));
+  if(rawRootNodes == NULL)
+    throw runtime_error("Malloc failed!");
+  RCP<Xpetra_ordinal_vector> rootNodes = rcp_implicit_cast<Xpetra_ordinal_vector, Xpetra::TpetraVector<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>(tpetraRootNodeVec);
   RCP<MuemexData<RCP<Xpetra_ordinal_vector>>> vertexToAggIDArg = rcp(new MuemexData<RCP<Xpetra_ordinal_vector>>(vertexToAggID));
-  RCP<MuemexData<RCP<vector<bool>>>> isRootValsArg = rcp(new MuemexData<RCP<vector<bool>>>(isRootVals));
+  RCP<MuemexData<RCP<Xpetra_ordinal_vector>>> rootNodesArg = rcp(new MuemexData<RCP<Xpetra_ordinal_vector>>(rootNodes));
   RCP<MuemexData<RCP<Xpetra_ordinal_vector>>> aggSizesArg = rcp(new MuemexData<RCP<Xpetra_ordinal_vector>>(aggSizes));
-  //Finally, upcast the inputs to MuemexArg and put in arg vector
-  structMembers.push_back(rcp_implicit_cast<MuemexData<int>>(nVertArg));
-  structMembers.push_back(rcp_implicit_cast<MuemexData<int>>(nAggArg));
-  structMembers.push_back(rcp_implicit_cast<MuemexData<RCP<Xpetra_ordinal_vector>>>(vertexToAggIDArg));
-  structMembers.push_back(rcp_implicit_cast<MuemexData<RCP<vector<bool>>>>(isRootValsArg));
-  structMembers.push_back(rcp_implicit_cast<MuemexData<RCP<Xpetra_ordinal_vector>>>(aggSizesArg));
+  //Finally, upcast the inputs to MuemexArg and put in arg vector (order matters here!)
+  structMembers.push_back(rcp_implicit_cast<MuemexArg, MuemexData<int>>(nVertArg));
+  structMembers.push_back(rcp_implicit_cast<MuemexArg, MuemexData<int>>(nAggArg));
+  structMembers.push_back(rcp_implicit_cast<MuemexArg, MuemexData<RCP<Xpetra_ordinal_vector>>>(vertexToAggIDArg));
+  structMembers.push_back(rcp_implicit_cast<MuemexArg, MuemexData<RCP<Xpetra_ordinal_vector>>>(rootNodesArg));
+  structMembers.push_back(rcp_implicit_cast<MuemexArg, MuemexData<RCP<Xpetra_ordinal_vector>>>(aggSizesArg));
   builtStruct = callMatlab("constructAggregates", 1, structMembers);
   //builtStruct[0] should be a MuemexArg wrapping the MAggregates object. Get that, convert to matlab struct and return
   //avoid buffer overrun, throw if builtStruct[0] doesn't exist
   if(builtStruct.size() == 0)
     throw runtime_error("Matlab aggregates struct builder didn't return the struct.");
-  return Teuchos::rcp_static_cast<MuemexData<RCP<MAggregates>>, MuemexArg>(builtStruct[0])->convertToMatlab();
+  free(rawRootNodes); //have to free this, the ArrayView doesn't automatically
+  RCP<MuemexData<RCP<MAggregates>>> outData = rcp_static_cast<MuemexData<RCP<MAggregates>>, MuemexArg>(builtStruct[0]);
+  return outData->convertToMatlab();
 }
 
 RCP<MAmalInfo> loadAmalInfo(const mxArray* mxa)
@@ -583,6 +574,35 @@ mxArray* saveAmalInfo(RCP<MAmalInfo>& amalInfo)
 {
   throw runtime_error("AmalgamationInfo not supported in MueMex yet.");
   return mxCreateDoubleScalar(0);
+}
+
+bool isValidMatlabAggregates(const mxArray* mxa)
+{
+  bool isValidAggregates = true;
+  if(!mxIsStruct(mxa))
+    return false;
+  int numFields = mxGetNumberOfFields(mxa); //check that struct has correct # of fields
+  if(numFields != 5)
+    isValidAggregates = false;
+  if(isValidAggregates)
+  {
+    const char* mem1 = mxGetFieldNameByNumber(mxa, 0);
+    if(mem1 == NULL || strcmp(mem1, "nVertices") != 0)
+      isValidAggregates = false;
+    const char* mem2 = mxGetFieldNameByNumber(mxa, 1);
+    if(mem2 == NULL || strcmp(mem2, "nAggregates") != 0)
+      isValidAggregates = false;
+    const char* mem3 = mxGetFieldNameByNumber(mxa, 2);
+    if(mem3 == NULL || strcmp(mem3, "vertexToAggID") != 0)
+      isValidAggregates = false;
+    const char* mem4 = mxGetFieldNameByNumber(mxa, 3);
+    if(mem3 == NULL || strcmp(mem4, "rootNodes") != 0)
+      isValidAggregates = false;
+    const char* mem5 = mxGetFieldNameByNumber(mxa, 4);
+    if(mem4 == NULL || strcmp(mem5, "aggSizes") != 0)
+      isValidAggregates = false;
+  }
+  return isValidAggregates;
 }
 
 }//end namespace

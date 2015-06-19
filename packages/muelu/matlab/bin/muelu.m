@@ -102,6 +102,6 @@ end
 %This function could be called externally, as long as the types are correct.
 %nVertices, nAggregates are single ints. vertexToAggID, aggSizes and procWinner and rootNodes are ordinal vectors, or arrays of ints.
 
-function agg = constructAggregates(nVertices, nAggregates, vertexToAggID, rootNodes, aggSizes, procWinner)
-  agg = struct('nVertices', nVertices, 'nAggregates', nAggregates, 'vertexToAggID', vertexToAggID, 'rootNodes', rootNodes, 'aggSizes', aggSizes, 'procWinner', procWinner);
+function agg = constructAggregates(nVertices, nAggregates, vertexToAggID, rootNodes, aggSizes)
+  agg = struct('nVertices', nVertices, 'nAggregates', nAggregates, 'vertexToAggID', vertexToAggID, 'rootNodes', rootNodes, 'aggSizes', aggSizes);
 end

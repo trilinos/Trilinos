@@ -90,7 +90,7 @@ enum MUEMEX_TYPE
     AMALGAMATION_INFO
   };
 
-typedef Tpetra::Vector<>::node_type mm_node_t;
+typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> mm_node_t;
 typedef Tpetra::Vector<>::local_ordinal_type mm_LocalOrd;
 typedef Tpetra::Vector<>::global_ordinal_type mm_GlobalOrd;
 typedef Tpetra::Map<> muemex_map_type;
@@ -106,8 +106,8 @@ typedef Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra
 typedef Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_MultiVector_complex;
 typedef MueLu::Hierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Hierarchy_double;
 typedef MueLu::Hierarchy<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Hierarchy_complex;
-typedef MueLu::Aggregates<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MAggregates;
-typedef MueLu::AmalgamationInfo<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MAmalInfo; //Note: Not actually implemented as MuemexData yet.
+typedef MueLu::Aggregates<> MAggregates;
+typedef MueLu::AmalgamationInfo<> MAmalInfo;
 
 /* Static utility functions */
 template<typename Scalar>
@@ -156,6 +156,8 @@ mxArray* saveAggregates(Teuchos::RCP<MAggregates>& agg);
 //AmalgamationInfo
 Teuchos::RCP<MAmalInfo> loadAmalInfo(const mxArray* mxa);
 mxArray* saveAmalInfo(Teuchos::RCP<MAmalInfo>& amal);
+//Need an easy way to determine if an mxArray* points to a valid Aggregates struct
+bool isValidMatlabAggregates(const mxArray* mxa);
 
 class MuemexArg
 {
@@ -166,7 +168,6 @@ class MuemexArg
 
 template<typename T> 
 MUEMEX_TYPE getMuemexType(const T & data);
-
 
 template<typename T>
 class MuemexData : public MuemexArg
@@ -181,7 +182,6 @@ class MuemexData : public MuemexArg
  private:
   T data;
 };
-
 
 //The two callback functions that MueLu can call to run anything in MATLAB
 void callMatlabNoArgs(std::string function);

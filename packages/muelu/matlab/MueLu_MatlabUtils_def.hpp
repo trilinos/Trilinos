@@ -440,7 +440,7 @@ MuemexData<RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> >
 }
 
 template<>
-MuemexData<RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::MuemexData(RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> >& dataToCopy) : MuemexData(dataToCopy,getMuemexType(dataToCopy)) {}
+MuemexData<RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::MuemexData(RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>& dataToCopy) : MuemexData(dataToCopy, getMuemexType(dataToCopy)) {}
 
 template<>
 MuemexData<RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::MuemexData(const mxArray* mxa) : MuemexArg(XPETRA_MATRIX_COMPLEX)
@@ -586,13 +586,12 @@ void MuemexData<T>::setData(T& newData)
   this->data = data;
 }
 
-
 /* ***************************** */
 /* More Template Functions       */
 /* ***************************** */
 
-template<typename Scalar = double>
-mxArray* saveMatrixToMatlab(RCP<Xpetra::Matrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mat)
+template<typename Scalar>
+mxArray* saveMatrixToMatlab(RCP<Xpetra::Matrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>& mat)
 {
   int nr = mat->getGlobalNumRows();
   int nc = mat->getGlobalNumCols();
