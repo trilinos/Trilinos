@@ -549,7 +549,7 @@ namespace MueLu {
         coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams, overlap));
       else
 #ifdef HAVE_MUELU_MATLAB
-	if(coarseType == "Matlab") 
+	if(coarseType == "matlab") 
 	  coarseSmoother = rcp(new MatlabSmoother<Scalar,LocalOrdinal, GlobalOrdinal, Node>(coarseParams));
 	else
 #endif
