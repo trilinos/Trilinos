@@ -256,6 +256,8 @@
     /> \
    <ParameterList  name=\"zoltan_parameters\"> \
    </ParameterList> \
+   <ParameterList   name=\"parma_parameters\"> \
+   </ParameterList> \
     <Validators> \
       <Validator defaultParameterName=\"error_check_level\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"0\"> \
         <String integralValue=\"0\" stringDoc=\"no assertions will be performed\" stringValue=\"no_assertions\"/> \
@@ -399,6 +401,7 @@
         <String value=\"phg\"/> \
         <String value=\"metis\"/> \
         <String value=\"parmetis\"/> \
+        <String value=\"parma\"/> \
         <String value=\"scotch\"/> \
         <String value=\"ptscotch\"/> \
         <String value=\"block\"/> \

@@ -739,7 +739,8 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       algName_ = algorithm;
       needConsecutiveGlobalIds = true;
     }
-    else if (algorithm == std::string("zoltan"))
+    else if (algorithm == std::string("zoltan") ||
+	     algorithm == std::string("parma"))
     {
       algName_ = algorithm;
     }

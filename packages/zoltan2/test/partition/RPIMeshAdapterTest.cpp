@@ -43,8 +43,8 @@
 //
 // @HEADER
 
-/*! \file pamgenMeshAdapterTest.cpp
-    \brief An example of partitioning pamgen coordinates with RCB.
+/*! \file RPIMeshAdapterTest.cpp
+    \brief An example of partitioning a SCOREC mesh with RCB.
 
     \author Created by V. Leung, K. Devine.
 
@@ -54,7 +54,7 @@
 /*                          Includes                          */
 /**************************************************************/
 
-#include <Zoltan2_PamgenMeshAdapter.hpp>
+#include <Zoltan2_RPIMeshAdapter.hpp>
 #include <Zoltan2_Environment.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_ColoringProblem.hpp>
@@ -67,8 +67,15 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-// Pamgen includes
-#include "create_inline_mesh.h"
+// SCOREC includes
+#ifdef HAVE_ZOLTAN2_PARMA
+#include <apf.h>
+#include <apfMesh.h>
+#include <apfMDS.h>
+#include <apfMesh2.h>
+#include <PCU.h>
+#include <gmi_mesh.h>
+#endif
 
 using namespace std;
 using Teuchos::ParameterList;
@@ -94,13 +101,13 @@ int main(int narg, char *arg[]) {
   RCP<const Teuchos::Comm<int> > CommT = platform.getComm();
 
   int me = CommT->getRank();
-  int numProcs = CommT->getSize();
+  //int numProcs = CommT->getSize();
 
   if (me == 0){
   cout 
     << "====================================================================\n" 
     << "|                                                                  |\n" 
-    << "|          Example: Partition Pamgen Hexahedral Mesh               |\n" 
+    << "|          Example: Partition ParMA Mesh                           |\n" 
     << "|                                                                  |\n"
     << "|  Questions? Contact  Karen Devine      (kddevin@sandia.gov),     |\n"
     << "|                      Erik Boman        (egboman@sandia.gov),     |\n"
@@ -129,67 +136,52 @@ int main(int narg, char *arg[]) {
   /***************************************************************************/
 
   // default values for command-line arguments
-  std::string xmlMeshInFileName("Poisson.xml");
+  std::string meshFileName("4/");
+  std::string modelFileName("torus.dmg");
   std::string action("parma");
   int nParts = CommT->getSize();
 
   // Read run-time options.
   Teuchos::CommandLineProcessor cmdp (false, false);
-  cmdp.setOption("xmlfile", &xmlMeshInFileName,
-                 "XML file with PamGen specifications");
+  cmdp.setOption("meshfile", &meshFileName,
+                 "Mesh file with APF specifications (.smb file(s))");
+  cmdp.setOption("modelfile", &modelFileName,
+		 "Model file with APF specifications (.dmg file)");
   cmdp.setOption("action", &action,
                  "Method to use:  mj, scotch, zoltan_rcb, parma or color");
   cmdp.setOption("nparts", &nParts,
                  "Number of parts to create");
   cmdp.parse(narg, arg);
 
-  // Read xml file into parameter list
-  ParameterList inputMeshList;
-
-  if(xmlMeshInFileName.length()) {
-    if (me == 0) {
-      cout << "\nReading parameter list from the XML file \""
-		<<xmlMeshInFileName<<"\" ...\n\n";
-    }
-    Teuchos::updateParametersFromXmlFile(xmlMeshInFileName, 
-					 Teuchos::inoutArg(inputMeshList));
-    if (me == 0) {
-      inputMeshList.print(cout,2,true,true);
-      cout << "\n";
-    }
-  }
-  else {
-    cout << "Cannot read input file: " << xmlMeshInFileName << "\n";
-    return 0;
-  }
-
-  // Get pamgen mesh definition
-  std::string meshInput = Teuchos::getParameter<std::string>(inputMeshList,
-							     "meshInput");
-
+  
   /***************************************************************************/
   /********************** GET CELL TOPOLOGY **********************************/
   /***************************************************************************/
 
   // Get dimensions
-  int dim = 3;
+  //int dim = 3;
 
   /***************************************************************************/
   /***************************** GENERATE MESH *******************************/
   /***************************************************************************/
 
+#ifdef HAVE_ZOLTAN2_PARMA
+
   if (me == 0) cout << "Generating mesh ... \n\n";
 
-  // Generate mesh with Pamgen
-  long long maxInt = 9223372036854775807LL;
-  Create_Pamgen_Mesh(meshInput.c_str(), dim, me, numProcs, maxInt);
-
+  //Setup for SCOREC
+  PCU_Comm_Init();
+  
+  // Generate mesh with MDS
+  gmi_register_mesh();
+  apf::Mesh2* m = apf::loadMdsMesh(modelFileName.c_str(),meshFileName.c_str());
+  
   // Creating mesh adapter
   if (me == 0) cout << "Creating mesh adapter ... \n\n";
 
-  typedef Zoltan2::PamgenMeshAdapter<tMVector_t> inputAdapter_t;
+  typedef Zoltan2::RPIMeshAdapter<apf::Mesh2*> inputAdapter_t;
 
-  inputAdapter_t ia(*CommT, "region");
+  inputAdapter_t ia(*CommT, m);
   ia.print(me);
 
   // Set parameters for partitioning
@@ -248,6 +240,14 @@ int main(int narg, char *arg[]) {
 
     problem.solve();
 
+
+
+    if (me==0) cout << "Applying Solution to Mesh\n\n";
+    apf::Mesh2** new_mesh = &m;
+    ia.applyPartitioningSolution(m,new_mesh,problem.getSolution());
+    
+    
+
     if (me) problem.printMetrics(cout);
   }
   else {
@@ -261,17 +261,26 @@ int main(int narg, char *arg[]) {
     problem.solve();
 
     problem.printTimers();
+
+
   }
+
 
   // delete mesh
   if (me == 0) cout << "Deleting the mesh ... \n\n";
 
-  Delete_Pamgen_Mesh();
-
+  //Delete_APF_Mesh();
+  ia.destroy();
+  m->destroyNative();
+  apf::destroyMesh(m);
+  //End communications
+  PCU_Comm_Free();
+#endif
   if (me == 0)
     std::cout << "PASS" << std::endl;
 
   return 0;
+
 }
 /*****************************************************************************/
 /********************************* END MAIN **********************************/

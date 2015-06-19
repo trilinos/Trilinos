@@ -95,13 +95,16 @@ public:
 
 #ifdef HAVE_ZOLTAN2_PARMA
 
-#include <apfMesh.h>
+
+#include <apf.h>
+#include <gmi_null.h>
+#include <apfMDS.h>
 #include <apfMesh2.h>
 #include <apfNumbering.h>
-#include <apfMDS.h>
 #include <PCU.h>
 #include <parma.h>
-#include <gmi_null.h>
+#include <apfConvert.h>
+#include <apfShape.h>
 #include <map>
 #include <cassert>
 
@@ -128,10 +131,11 @@ private:
   apf::Mesh2* m;
   apf::Numbering* gids;
   apf::Numbering* origin_part_ids;
-  std::map<zgid_t, lno_t> mapping_gids_index;
+  std::map<zgid_t, lno_t> mapping_elm_gids_index;
 
   MPI_Comm mpicomm;
-  
+  bool pcu_outside;
+
   void setMPIComm(const RCP<const Comm<int> > &problemComm__) {
 #   ifdef HAVE_ZOLTAN2_MPI
       mpicomm = TeuchosConst2MPI(problemComm__);
@@ -140,25 +144,51 @@ private:
 #   endif
   }
 
-  apf::Mesh::Type getElementType(int dim, int num_vert) {
-    if (dim==2) {
-      if (num_vert==3)
-        return apf::Mesh::TRIANGLE;
-      else if (num_vert==4)
-        return apf::Mesh::QUAD;
-      else
-        throw std::runtime_error("ParMA does not support this element type");
-    }
-    if (num_vert==4)
+  enum MeshEntityType entityAPFtoZ2(int dimension) const {return static_cast<MeshEntityType>(-dimension+3);}
+
+  enum apf::Mesh::Type topologyZ2toAPF(enum EntityTopologyType ttype) const {
+    if (ttype==POINT)
+      return apf::Mesh::VERTEX;
+    else if (ttype==LINE_SEGMENT)
+      return apf::Mesh::EDGE;
+    else if (ttype==TRIANGLE)
+      return apf::Mesh::TRIANGLE;
+    else if (ttype==QUADRILATERAL)
+      return apf::Mesh::QUAD;
+    else if (ttype==TETRAHEDRON) 
       return apf::Mesh::TET;
-    else if (num_vert==8)
+    else if (ttype==HEXAHEDRON)
       return apf::Mesh::HEX;
-    else if (num_vert==6)
+    else if (ttype==PRISM)
       return apf::Mesh::PRISM;
-    else if (num_vert==5)
+    else if (ttype==PYRAMID)
       return apf::Mesh::PYRAMID;
     else 
-      throw std::runtime_error("ParMA does not support this element type");
+      throw "APF does not support this topology type";
+    
+  }
+
+  void setEntWeights(int dim, apf::MeshTag* tag) {
+    apf::MeshIterator* itr = m->begin(dim);
+    apf::MeshEntity* ent;
+    double w = 1.0;
+    while ((ent= m->iterate(itr)))  {
+      m->setDoubleTag(ent,tag,&w);
+      assert(m->hasTag(ent,tag));
+    }
+    m->end(itr);
+   
+  }
+  
+  apf::MeshTag* setWeights(bool vtx, bool edge, bool elm) {
+    apf::MeshTag* tag = m->createDoubleTag("parma_weight",1);
+    if (vtx)
+      setEntWeights(0,tag);
+    if (edge)
+      setEntWeights(1,tag);
+    if (elm)
+      setEntWeights(m->getDimension(),tag);
+    return tag;
   }
 
 public:
@@ -197,85 +227,104 @@ public:
     
   }
   
-
   AlgParMA(const RCP<const Environment> &env__,
             const RCP<const Comm<int> > &problemComm__,
             const RCP<const MeshAdapter<user_t> > &adapter__) :
     env(env__), problemComm(problemComm__), adapter(adapter__)
   { 
     setMPIComm(problemComm__);
-    
-    //Setup numberings
-    gids = apf::createNumbering(m,"global_ids",m->getShape(),1);
-    origin_part_ids = apf::createNumbering(m,"origin",m->getShape(),1);
+   
+    //Setup PCU communications
+    pcu_outside=false;
+    if (!PCU_Comm_Initialized())
+      PCU_Comm_Init();
+    else
+      pcu_outside=true;
+    PCU_Switch_Comm(mpicomm);
 
     //Create empty apf mesh
     gmi_register_null();
     gmi_model* g = gmi_load(".null");
-    enum MeshEntityType primary_type = adapter->getPrimaryEntityType();
-    m = apf::makeEmptyMdsMesh(g,adapter->getDimension(),false);
-
+    int dim = adapter->getDimension();
+    enum MeshEntityType primary_type = entityAPFtoZ2(dim);
+    m = apf::makeEmptyMdsMesh(g,dim,false);
+    
     //Array of all vertices in order not to make duplicates
-    apf::MeshEntity** all_vertices = new apf::MeshEntity*[adapter->getLocalNumOf(MESH_VERTEX)];
+    /*apf::MeshEntity** all_vertices = new apf::MeshEntity*[adapter->getLocalNumOf(MESH_VERTEX)];
     for (size_t i=0;i<adapter->getLocalNumOf(primary_type);i++)
       all_vertices[i] = NULL;
+    */
 
     //Get element global ids and part ids
     const zgid_t* element_gids;
     const part_t* part_ids;
     adapter->getIDsViewOf(primary_type,element_gids);
     adapter->getPartsView(part_ids);
-
+    for (size_t i =0;i<adapter->getLocalNumOf(primary_type);i++)
+      mapping_elm_gids_index[element_gids[i]] = i;
+    
     //get vertex global ids
     const zgid_t* vertex_gids;
     adapter->getIDsViewOf(MESH_VERTEX,vertex_gids);
-    for (size_t i =0;i<adapter->getLocalNumOf(MESH_VERTEX);i++)
-      mapping_gids_index[vertex_gids[i]] = i;
+    
+    //Get entity topology types
+    const EntityTopologyType* tops;
+    adapter->getTopologyViewOf(primary_type,tops);
 
     //Get vertex coordinates
-    const scalar_t ** vertex_coords = new const scalar_t*[adapter->getDimension()];
-    int stride;
-    for (int i=0;i<adapter->getDimension();i++)
-      adapter->getCoordinatesViewOf(MESH_VERTEX,vertex_coords[i],stride,i);
+    const scalar_t ** vertex_coords = new const scalar_t*[dim];
+    int* strides = new int[dim];
+    for (int i=0;i<dim;i++)
+      adapter->getCoordinatesViewOf(MESH_VERTEX,vertex_coords[i],strides[i],i);
 
     //Get first adjacencies from elements to vertices
+    if (!adapter->availAdjs(primary_type,MESH_VERTEX))
+      throw "APF needs adjacency information from elements to vertices";
     const lno_t* offsets;
     const zgid_t* adjacent_vertex_gids;
     adapter->getAdjsView(primary_type, MESH_VERTEX,offsets,adjacent_vertex_gids);
-
+    
     //build the apf mesh
-    for (size_t i=0;i<adapter->getLocalNumOf(primary_type);i++) {
-      lno_t num_verts = offsets[i+1]-offsets[i];
-      apf::MeshEntity** vertices = new apf::MeshEntity*[num_verts];
-      for (lno_t j=0; j<num_verts;j++) {
-        lno_t vertex_lid = mapping_gids_index[adjacent_vertex_gids[offsets[i]+j]];
-        if (all_vertices[vertex_lid]==NULL) {
-	  scalar_t temp_coords[3];
-	  for (int k=0;k<adapter->getDimension();k++)
-	    temp_coords[k] = vertex_coords[k][vertex_lid];
-	  for (int k=adapter->getDimension();k<3;k++)
-	    temp_coords[k] = 0;  
-	  apf::Vector3 point(temp_coords[0],temp_coords[1],temp_coords[2]);
-	  vertices[j] = m->createVert(0);
-	  m->setPoint(vertices[j],0,point);
-	}
-	else 
-	  vertices[j] = all_vertices[vertex_lid];
-      }
-      apf::MeshEntity* element = apf::buildElement(m, 0, getElementType(adapter->getDimension(),num_verts), vertices);
-      apf::number(gids,element,0,0,element_gids[i]);
-      apf::number(origin_part_ids,element,0,0,part_ids[i]);
-      
-      delete [] vertices;
+    apf::GlobalToVert vertex_mapping;
+    for (size_t i=0;i<adapter->getLocalNumOf(MESH_VERTEX);i++) {
+      apf::MeshEntity* vtx = m->createVert(0);
+      scalar_t temp_coords[3];
+      for (int k=0;k<dim;k++)
+	temp_coords[k] = vertex_coords[k][i*strides[k]];
+      for (int k=dim;k<3;k++)
+	temp_coords[k] = 0;  
+      apf::Vector3 point(temp_coords[0],temp_coords[1],temp_coords[2]);    
+      m->setPoint(vtx,0,point);
+      vertex_mapping[vertex_gids[i]] = vtx;
     }
+    apf::Mesh::Type t = topologyZ2toAPF(tops[0]);
+    apf::construct(m,adjacent_vertex_gids,adapter->getLocalNumOf(primary_type),t,vertex_mapping);
+    
+    
+    //Setup numberings
+    apf::FieldShape* s = apf::getConstant(dim);
+    gids = apf::createNumbering(m,"global_ids",s,1);
+    origin_part_ids = apf::createNumbering(m,"origin",s,1);
 
+    //number the global ids and original part ids
+    apf::MeshIterator* itr = m->begin(dim);
+    apf::MeshEntity* ent;
+    int i = 0;
+    while ((ent = m->iterate(itr))) {
+      apf::number(gids,ent,0,0,element_gids[i]);
+      apf::number(origin_part_ids,ent,0,0,PCU_Comm_Self());
+      i++; 
+    }
+    m->end(itr);
+    
     //final setup for apf mesh
+    apf::alignMdsRemotes(m);
     apf::deriveMdsModel(m);
     m->acceptChanges();
     m->verify();
-    
     //cleanup
-    delete [] all_vertices;
+    delete [] vertex_coords;
+    delete [] strides;
   }
   void partition(const RCP<PartitioningSolution<Adapter> > &solution);
   
@@ -287,22 +336,91 @@ void AlgParMA<Adapter>::partition(
   const RCP<PartitioningSolution<Adapter> > &solution
 )
 {
-
-  //setup
-  PCU_Comm_Init();
-  PCU_Switch_Comm(mpicomm);
-  apf::Balancer* balancer;
-  apf::MeshTag* weights= NULL;
-
-  //TODO::Will be checking some kind of argument to choose which ParMA algorithm
-  if (true) {
-    //weights = setWeights(m);
-    const double step = 0.1; const int verbose = 1;
-    balancer = Parma_MakeElmBalancer(m, step, verbose);
+  //Get paramters
+  std::string alg_name = "VtxElm";
+  double imbalance = 1.1;
+  double step = .1;
+ 
+  const Teuchos::ParameterList &pl = env->getParameters();
+  try {
+    const Teuchos::ParameterList &ppl = pl.sublist("parma_parameters");
+    for (ParameterList::ConstIterator iter =  ppl.begin();
+	 iter != ppl.end(); iter++) {
+      const std::string &zname = pl.name(iter);
+      // Convert the value to a string to pass to Zoltan
+      std::string &zval = pl.entry(iter).getValue(&zval);
+      if (zname == "parma_method")
+	alg_name = zval;
+    }
+  }
+  catch (std::exception &e) {
+    //No parma_parameters sublist found
   }
 
+  const Teuchos::ParameterEntry *pe2 = pl.getEntryPtr("imbalance_tolerance");
+  if (pe2){
+    imbalance = pe2->getValue<double>(&imbalance);
+  }
+
+  bool weightVertex,weightEdge,weightElement;
+  weightVertex=weightEdge=weightElement=false;
+
+  apf::Balancer* balancer;
+  const int verbose = 1;
+  if (alg_name=="Vertex") {
+    balancer = Parma_MakeVtxBalancer(m, step, verbose);
+    weightVertex = true;
+  }
+  else if (alg_name=="Edge") {
+    balancer = Parma_MakeEdgeBalancer(m, step, verbose);
+    weightEdge = true;
+  }
+  else if (alg_name=="Element") {
+    balancer = Parma_MakeElmBalancer(m, step, verbose);
+    weightElement=true;
+  }
+  else if (alg_name=="VtxElm") {
+    balancer = Parma_MakeVtxElmBalancer(m,step,verbose);
+    weightVertex = weightElement=true;
+  }
+  else if (alg_name=="VtxEdgeElm") {
+    balancer = Parma_MakeVtxEdgeElmBalancer(m, step, verbose);
+    weightVertex=weightEdge=weightElement=true;    
+  }
+  else if (alg_name=="ElmLtVtx") {
+    balancer = Parma_MakeElmLtVtxBalancer(m, step, verbose);
+    weightElement=weightVertex=true;
+  }
+  else if (alg_name=="Hps") {
+    //balancer = Parma_MakeHpsBalancer(m, verbose);
+    throw "Not incorporated yet due to circular dependency";
+  }
+  else if (alg_name=="Ghost") {
+    int layers = 3;
+    int bridge = m->getDimension()-1;
+    balancer = Parma_MakeGhostDiffuser(m, layers, bridge, step, verbose);
+    weightVertex = true;
+  }
+  else if (alg_name=="Welder") {
+    //balancer = Parma_MakeWelder(m,step,verbose);
+    throw "Not incorporated yet";
+  }
+  else if (alg_name=="Centroid") {
+    balancer = Parma_MakeCentroidDiffuser(m,step,verbose);
+    throw "Not incorporated yet";
+  }
+  else if (alg_name=="Shape") {
+    balancer = Parma_MakeShapeOptimizer(m,step,verbose);
+    weightElement=true;
+  }
+  else  {
+    //Should be caught by the validator
+    throw "No such parma method defined";
+  }
+  apf::MeshTag* weights = setWeights(weightVertex,weightEdge,weightElement);
+
   //balance the apf mesh
-  balancer->balance(weights, 1.05);
+  balancer->balance(weights, imbalance);
   delete balancer;
 
   // Load answer into the solution.
@@ -313,7 +431,6 @@ void AlgParMA<Adapter>::partition(
   PCU_Comm_Begin();
   apf::MeshEntity* ent;
   apf::MeshIterator* itr = m->begin(m->getDimension());
-
   //Pack information back to each elements original owner
   while ((ent=m->iterate(itr))) {
     if (m->isOwned(ent)) {
@@ -322,28 +439,29 @@ void AlgParMA<Adapter>::partition(
       PCU_COMM_PACK(target_part_id,element_gid);
     }
   }
-
+  m->end(itr);
   //Send information off
   PCU_Comm_Send();
-
   //Unpack information and set new part ids
-  while (PCU_Comm_Listen()) {
+  while (PCU_Comm_Receive()) {
     zgid_t global_id;
     PCU_COMM_UNPACK(global_id);
-    lno_t local_id = mapping_gids_index[global_id];
+    lno_t local_id = mapping_elm_gids_index[global_id];
     part_t new_part_id = PCU_Comm_Sender();
     partList[local_id] = new_part_id;
   }
-
   //construct partition solution
   solution->setParts(partList);
   
   // Clean up
+  apf::destroyNumbering(gids);
+  apf::destroyNumbering(origin_part_ids);
   apf::removeTagFromDimension(m, weights, m->getDimension());
   m->destroyTag(weights);
   m->destroyNative();
   apf::destroyMesh(m);
-  PCU_Comm_Free();
+  if (!pcu_outside)
+    PCU_Comm_Free();
 }
 
 } // namespace Zoltan2
