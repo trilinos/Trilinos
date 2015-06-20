@@ -247,11 +247,53 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, Test2, Scalar, LocalOr
 // Test apply() with "null" x and y. In parallel, it is possible that some nodes do not have any local elements.
 // This never worked in Ifpack and won't work here either.
 
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TriDi, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  std::string version = Ifpack2::Version();
+  out << "Ifpack2::Version(): " << version << std::endl;
+
+  global_size_t num_rows_per_proc = 5;
+
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> CRS;
+  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
+  typedef Ifpack2::TriDiContainer<CRS,Scalar> TriDi;
+
+  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+  Teuchos::RCP<const CRS > crsmatrix = tif_utest::create_test_matrix_variable_blocking<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
+
+  /*** Fill RHS / LHS ***/
+  Vector rhs(rowmap), lhs(rowmap), exact_soln(rowmap);
+  rhs.putScalar(2.0);
+  lhs.putScalar(0.0);
+  exact_soln.putScalar(2.0);
+
+  /* Setup Block Relaxation */
+  int PartMap[5]={0,0,1,1,1};
+  Teuchos::ArrayRCP<int> PMrcp(&PartMap[0],0,5,false);
+
+  Teuchos::ParameterList ilist;
+  ilist.set("partitioner: type","user");
+  ilist.set("partitioner: map",PMrcp);
+  ilist.set("partitioner: local parts",2);
+  ilist.set("relaxation: sweeps",1);
+  ilist.set("relaxation: type","Gauss-Seidel");
+
+  Ifpack2::BlockRelaxation<CRS,TriDi> TDRelax(crsmatrix);
+
+  TDRelax.setParameters(ilist);
+  TDRelax.initialize();
+  TDRelax.compute();
+  TDRelax.apply(rhs,lhs);
+
+  TEST_COMPARE_FLOATING_ARRAYS(lhs.get1dView(), exact_soln.get1dView(), 2*Teuchos::ScalarTraits<Scalar>::eps());
+}
+
 
 #define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2BlockRelaxation, Test0, Scalar, LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2BlockRelaxation, Test1, Scalar, LocalOrdinal,GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2BlockRelaxation, Test2, Scalar, LocalOrdinal,GlobalOrdinal)
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2BlockRelaxation, Test2, Scalar, LocalOrdinal,GlobalOrdinal) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2BlockRelaxation, TriDi, Scalar, LocalOrdinal,GlobalOrdinal) 
 
 
 

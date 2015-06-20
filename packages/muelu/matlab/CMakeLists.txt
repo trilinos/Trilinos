@@ -15,7 +15,7 @@ if(TPL_ENABLE_MATLAB)
   SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
 
   APPEND_GLOB(HEADERS_LIB *.hpp)
-  APPEND_SET(SOURCES_LIB MueLu_SingleLevelMatlabFactory.cpp MueLu_TwoLevelMatlabFactory.cpp MueLu_MatlabUtils.cpp)
+  APPEND_SET(SOURCES_LIB MueLu_SingleLevelMatlabFactory.cpp MueLu_TwoLevelMatlabFactory.cpp MueLu_MatlabSmoother.cpp MueLu_MatlabUtils.cpp)
 
   TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR} NOSIERRABJAM)
   TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()

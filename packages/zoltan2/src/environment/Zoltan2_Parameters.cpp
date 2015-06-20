@@ -156,10 +156,8 @@ static void setValidatorsInList(
     const ParameterEntry &entryAll = plAll.getEntry(name);
 
     if (entrySome.isList()){
-      const ParameterList &sublistSome = plSome.sublist(name);   // get
-      const ParameterList &sublistAll = plAll.sublist(name);     // get
-      ParameterList &sublistVal = plVal.sublist(name);     // create & get
-      setValidatorsInList(sublistSome, sublistAll, sublistVal);
+      plVal.sublist(name);     // create & get
+      // Don't set validators for sublists; sublists are for TPL's parameters
     }
     else{
       plVal.setEntry(name, entryAll);

@@ -158,6 +158,20 @@ public:
 
     else Ids = NULL;
   }
+  
+  void getTopologyViewOf(MeshEntityType etype,
+			 enum EntityTopologyType const *&Types) const {
+    if ((MESH_REGION == etype && 3 == dimension_) ||
+	(MESH_FACE == etype && 2 == dimension_)) {
+      Types = elemTopology;
+    }
+
+    else if (MESH_VERTEX == etype) {
+      Types = nodeTopology;
+    }
+
+    else Types = NULL;
+  }
 
   void getWeightsViewOf(MeshEntityType etype, const scalar_t *&weights,
 			int &stride, int idx = 0) const
@@ -310,6 +324,9 @@ private:
   lno_t *eStart_;//, *nStart_;
   zgid_t *eAdj_;//, *nAdj_;
   size_t nEadj_;//, nNadj_;
+  EntityTopologyType* nodeTopology;
+  EntityTopologyType* elemTopology;
+
 };
 
 ////////////////////////////////////////////////////////////////
@@ -360,6 +377,17 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   node_num_map_ = new int [num_nodes_];
   error += im_ex_get_node_num_map(exoid, node_num_map_);
 
+  nodeTopology = new enum EntityTopologyType[num_nodes_];
+  for (int i=0;i<num_nodes_;i++)
+    nodeTopology[i] = POINT;
+  elemTopology = new enum EntityTopologyType[num_elem_];
+  for (int i=0;i<num_elem_;i++) {
+    if (dimension_==2)
+      elemTopology[i] = QUADRILATERAL;
+    else
+      elemTopology[i] = HEXAHEDRON;
+  }
+  
   int *elem_blk_ids       = new int [num_elem_blk];
   error += im_ex_get_elem_blk_ids(exoid, elem_blk_ids);
 

@@ -53,6 +53,7 @@
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_Ifpack2Smoother.hpp"
 
+
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
