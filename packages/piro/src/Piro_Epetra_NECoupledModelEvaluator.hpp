@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ************************************************************************
-// 
+//
 //        Piro: Strategy package for embedded analysis capabilitites
 //                  Copyright (2010) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 //
 // Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
 // National Laboratories.
-// 
+//
 // ************************************************************************
 // @HEADER
 */
@@ -78,24 +78,24 @@ namespace Piro {
 
       //! evaluate model
       virtual void evalModel(
-	const Teuchos::Array<EpetraExt::ModelEvaluator::InArgs>& model_inargs, 
-	const Teuchos::Array<EpetraExt::ModelEvaluator::OutArgs>& model_outargs,
-	const EpetraExt::ModelEvaluator::InArgs& network_inargs, 
-	const EpetraExt::ModelEvaluator::OutArgs& network_outargs,
-	const Teuchos::Array<int>& n_p,
-	const Teuchos::Array<int>& n_g,
-	const Teuchos::Array< Teuchos::RCP<Epetra_Vector> >& p,
-	const Teuchos::Array< Teuchos::RCP<Epetra_Vector> >& g,
-	const Teuchos::Array< Teuchos::RCP<Epetra_MultiVector> >& dgdp,
-	const Teuchos::Array<EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation>& dgdp_layout,
-	const Teuchos::Array<EpetraExt::ModelEvaluator::OutArgs::sg_vector_t>& p_sg,
-	const Teuchos::Array<EpetraExt::ModelEvaluator::OutArgs::sg_vector_t>& g_sg,
-	const Teuchos::Array<Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> >& dgdp_sg,
-	const Teuchos::Array<EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation>& dgdp_sg_layout) const = 0;
+        const Teuchos::Array<EpetraExt::ModelEvaluator::InArgs>& model_inargs,
+        const Teuchos::Array<EpetraExt::ModelEvaluator::OutArgs>& model_outargs,
+        const EpetraExt::ModelEvaluator::InArgs& network_inargs,
+        const EpetraExt::ModelEvaluator::OutArgs& network_outargs,
+        const Teuchos::Array<int>& n_p,
+        const Teuchos::Array<int>& n_g,
+        const Teuchos::Array< Teuchos::RCP<Epetra_Vector> >& p,
+        const Teuchos::Array< Teuchos::RCP<Epetra_Vector> >& g,
+        const Teuchos::Array< Teuchos::RCP<Epetra_MultiVector> >& dgdp,
+        const Teuchos::Array<EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation>& dgdp_layout,
+        const Teuchos::Array<EpetraExt::ModelEvaluator::OutArgs::sg_vector_t>& p_sg,
+        const Teuchos::Array<EpetraExt::ModelEvaluator::OutArgs::sg_vector_t>& g_sg,
+        const Teuchos::Array<Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> >& dgdp_sg,
+        const Teuchos::Array<EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation>& dgdp_sg_layout) const = 0;
 
     };
 
-    class ParamToResponseNetworkModel : 
+    class ParamToResponseNetworkModel :
       public AbstractNetworkModel {
 
     public:
@@ -108,57 +108,57 @@ namespace Piro {
 
       //! evaluate model
       virtual void evalModel(
-	const Teuchos::Array<EpetraExt::ModelEvaluator::InArgs>& model_inargs, 
-	const Teuchos::Array<EpetraExt::ModelEvaluator::OutArgs>& model_outargs,
-	const EpetraExt::ModelEvaluator::InArgs& network_inargs, 
-	const EpetraExt::ModelEvaluator::OutArgs& network_outargs,
-	const Teuchos::Array<int>& n_p,
-	const Teuchos::Array<int>& n_g,
-	const Teuchos::Array< Teuchos::RCP<Epetra_Vector> >& p,
-	const Teuchos::Array< Teuchos::RCP<Epetra_Vector> >& g,
-	const Teuchos::Array< Teuchos::RCP<Epetra_MultiVector> >& dgdp,
-	const Teuchos::Array<EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation>& dgdp_layout,
-	const Teuchos::Array<EpetraExt::ModelEvaluator::OutArgs::sg_vector_t>& p_sg,
-	const Teuchos::Array<EpetraExt::ModelEvaluator::OutArgs::sg_vector_t>& g_sg,
-	const Teuchos::Array<Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> >& dgdp_sg,
-	const Teuchos::Array<EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation>& dgdp_sg_layout) const;
+        const Teuchos::Array<EpetraExt::ModelEvaluator::InArgs>& model_inargs,
+        const Teuchos::Array<EpetraExt::ModelEvaluator::OutArgs>& model_outargs,
+        const EpetraExt::ModelEvaluator::InArgs& network_inargs,
+        const EpetraExt::ModelEvaluator::OutArgs& network_outargs,
+        const Teuchos::Array<int>& n_p,
+        const Teuchos::Array<int>& n_g,
+        const Teuchos::Array< Teuchos::RCP<Epetra_Vector> >& p,
+        const Teuchos::Array< Teuchos::RCP<Epetra_Vector> >& g,
+        const Teuchos::Array< Teuchos::RCP<Epetra_MultiVector> >& dgdp,
+        const Teuchos::Array<EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation>& dgdp_layout,
+        const Teuchos::Array<EpetraExt::ModelEvaluator::OutArgs::sg_vector_t>& p_sg,
+        const Teuchos::Array<EpetraExt::ModelEvaluator::OutArgs::sg_vector_t>& g_sg,
+        const Teuchos::Array<Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> >& dgdp_sg,
+        const Teuchos::Array<EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation>& dgdp_sg_layout) const;
 
     };
 
-    class NECoupledModelEvaluator : 
+    class NECoupledModelEvaluator :
       public EpetraExt::ModelEvaluator,
       public Teuchos::VerboseObject<NECoupledModelEvaluator> {
     public:
 
       /** \brief . */
       NECoupledModelEvaluator(
-	const Teuchos::Array<Teuchos::RCP<EpetraExt::ModelEvaluator> >& models,
-	const Teuchos::Array<Teuchos::RCP<Teuchos::ParameterList> >& piroParams,
-	const Teuchos::RCP<AbstractNetworkModel>& network_model,
-	const Teuchos::RCP<Teuchos::ParameterList>& params,
-	const Teuchos::RCP<const Epetra_Comm>& comm,
-	const Teuchos::Array< Teuchos::RCP<NOX::Epetra::Observer> >& observers =
-	Teuchos::Array<Teuchos::RCP<NOX::Epetra::Observer> >());
+        const Teuchos::Array<Teuchos::RCP<EpetraExt::ModelEvaluator> >& models,
+        const Teuchos::Array<Teuchos::RCP<Teuchos::ParameterList> >& piroParams,
+        const Teuchos::RCP<AbstractNetworkModel>& network_model,
+        const Teuchos::RCP<Teuchos::ParameterList>& params,
+        const Teuchos::RCP<const Epetra_Comm>& comm,
+        const Teuchos::Array< Teuchos::RCP<NOX::Epetra::Observer> >& observers =
+        Teuchos::Array<Teuchos::RCP<NOX::Epetra::Observer> >());
 
       /** \name Overridden from EpetraExt::ModelEvaluator . */
       //@{
 
       /** \brief . */
-      Teuchos::RefCountPtr<const Epetra_Map> get_x_map() const;
+      Teuchos::RCP<const Epetra_Map> get_x_map() const;
       /** \brief . */
-      Teuchos::RefCountPtr<const Epetra_Map> get_f_map() const;
+      Teuchos::RCP<const Epetra_Map> get_f_map() const;
       /** \brief . */
-      Teuchos::RefCountPtr<const Epetra_Vector> get_x_init() const;
+      Teuchos::RCP<const Epetra_Vector> get_x_init() const;
       /** \brief . */
-      Teuchos::RefCountPtr<const Epetra_Map> get_p_map(int l) const;
+      Teuchos::RCP<const Epetra_Map> get_p_map(int l) const;
       /** \brief . */
-      Teuchos::RefCountPtr<const Epetra_Map> get_g_map(int j) const;
+      Teuchos::RCP<const Epetra_Map> get_g_map(int j) const;
       //! Return array of parameter names
       Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
       /** \brief . */
-      Teuchos::RefCountPtr<const Epetra_Vector> get_p_init(int l) const;
+      Teuchos::RCP<const Epetra_Vector> get_p_init(int l) const;
       /** \brief . */
-      Teuchos::RefCountPtr<Epetra_Operator> create_W() const;
+      Teuchos::RCP<Epetra_Operator> create_W() const;
       /** \brief . */
       InArgs createInArgs() const;
       /** \brief . */
@@ -171,30 +171,30 @@ namespace Piro {
     protected:
 
       void do_dimension_reduction(
-	int model_index,
-	const InArgs& inArgs,
-	const InArgs& solver_inargs, 
-	const OutArgs& solver_outargs,
-	const Teuchos::RCP<EpetraExt::ModelEvaluator>& model,
-	const Teuchos::RCP<EpetraExt::ModelEvaluator>& solver,
-	const Teuchos::RCP<Teuchos::ParameterList>& solver_params,
-	InArgs& reduced_inargs, 
-	OutArgs& reduced_outargs,
-	Teuchos::RCP<EpetraExt::ModelEvaluator>& reduced_solver,
-	Teuchos::RCP<Teuchos::ParameterList>& reduced_params) const;
+        int model_index,
+        const InArgs& inArgs,
+        const InArgs& solver_inargs,
+        const OutArgs& solver_outargs,
+        const Teuchos::RCP<EpetraExt::ModelEvaluator>& model,
+        const Teuchos::RCP<EpetraExt::ModelEvaluator>& solver,
+        const Teuchos::RCP<Teuchos::ParameterList>& solver_params,
+        InArgs& reduced_inargs,
+        OutArgs& reduced_outargs,
+        Teuchos::RCP<EpetraExt::ModelEvaluator>& reduced_solver,
+        Teuchos::RCP<Teuchos::ParameterList>& reduced_params) const;
 
       void do_dimension_projection(
-	int model_index,
-	const InArgs& inArgs, 
-	const InArgs& reduced_inargs, 
-	const OutArgs& reduced_outargs,
-	OutArgs& solver_outargs) const;
+        int model_index,
+        const InArgs& inArgs,
+        const InArgs& reduced_inargs,
+        const OutArgs& reduced_outargs,
+        OutArgs& solver_outargs) const;
 
     private:
 
       // /////////////////////////////////////
       // Private member data
-      
+
       typedef Stokhos::StandardStorage<int,double> StorageType;
 
       Teuchos::Array<Teuchos::RCP<EpetraExt::ModelEvaluator> > models;
@@ -203,12 +203,12 @@ namespace Piro {
       Teuchos::RCP<Teuchos::ParameterList> params;
       Teuchos::RCP<const Epetra_Comm> comm;
       Teuchos::Array< Teuchos::RCP<NOX::Epetra::Observer> > observers;
-      
+
       Teuchos::Array< Teuchos::RCP<EpetraExt::ModelEvaluator> > solvers;
       Teuchos::Array< Teuchos::RCP<Piro::Epetra::StokhosSolver> > sgSolvers;
       int n_models;
       Teuchos::Array<int> p_indices;
-      Teuchos::Array<int> g_indices;     
+      Teuchos::Array<int> g_indices;
       Teuchos::Array<int> n_p;
       Teuchos::Array<int> n_g;
       Teuchos::Array<int> num_params;
@@ -219,12 +219,12 @@ namespace Piro {
       Teuchos::Array< std::pair<int,int> > param_map;
       Teuchos::Array< std::pair<int,int> > response_map;
 
-      mutable Teuchos::Array<EpetraExt::ModelEvaluator::InArgs> solver_inargs; 
+      mutable Teuchos::Array<EpetraExt::ModelEvaluator::InArgs> solver_inargs;
       mutable Teuchos::Array<EpetraExt::ModelEvaluator::OutArgs> solver_outargs;
 
       Teuchos::Array< Teuchos::RCP<const Epetra_Map> > p_maps;
       Teuchos::Array< Teuchos::RCP<const Epetra_Map> > g_maps;
-      
+
       Teuchos::RCP<Epetra_Map> x_map;
       Teuchos::RCP<Epetra_Map> f_map;
       Teuchos::RCP<Epetra_Map> x_overlap_map;
@@ -242,7 +242,7 @@ namespace Piro {
       Teuchos::Array< Teuchos::RCP<Epetra_Vector> > g;
       Teuchos::Array< EDerivativeMultiVectorOrientation > dgdp_layout;
       Teuchos::Array< Teuchos::RCP<Epetra_MultiVector> > dgdp;
-     
+
       // Stochastic Galerkin data
       bool supports_x_sg;
       bool supports_f_sg;

@@ -46,7 +46,7 @@
 #define _TEUCHOS_ORDINALTRAITS_HPP_
 
 /*! \file Teuchos_OrdinalTraits.hpp
-  \brief Defines basic traits for the ordinal field type 
+  \brief Defines basic traits for the ordinal field type
 */
 
 #include "Teuchos_ConfigDefs.hpp"
@@ -89,8 +89,8 @@ struct OrdinalTraits {
   //! Returns representation of one for this ordinal type.
   static inline T one()                      { return UndefinedOrdinalTraits<T>::notDefined(); }
 
-  //! \brief Returns a value designating the maximum value accessible by code using OrdinalTraits. 
-  /*! For a signed ordinal, this will typically be the maximum positive value. However, for an unsigned ordinal, this will typically be one less than the 
+  //! \brief Returns a value designating the maximum value accessible by code using OrdinalTraits.
+  /*! For a signed ordinal, this will typically be the maximum positive value. However, for an unsigned ordinal, this will typically be one less than the
    *  maximum value, because the maximum value will typically be reserved for designating an invalid value.
    */
   static inline T max()                  { return UndefinedOrdinalTraits<T>::notDefined(); }
@@ -173,6 +173,16 @@ struct OrdinalTraits<long long int> {
   static inline long long int invalid()       {return(static_cast<long long int>(-1));}
   static inline long long int max()           {return(LLONG_MAX);}
   static inline std::string name()            {return("long long int");}
+};
+
+template<>
+struct OrdinalTraits<unsigned long long int> {
+  static const bool hasMachineParameters = false;
+  static inline unsigned long long int zero()          {return(static_cast<unsigned long long int>(0));}
+  static inline unsigned long long int one()           {return(static_cast<unsigned long long int>(1));}
+  static inline unsigned long long int invalid()       {return(std::numeric_limits<unsigned long long int>::max());}
+  static inline unsigned long long int max()           {return(std::numeric_limits<unsigned long long int>::max()-1);}
+  static inline std::string name()                     {return("unsigned long long int");}
 };
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
 

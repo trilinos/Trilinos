@@ -146,6 +146,15 @@ class SolverManager : virtual public Teuchos::Describable {
         << " overridden for the class" << this->description() << " yet!");
     }
 
+  //! Set user-defined debug status test.
+  virtual void setDebugStatusTest(
+    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &debugStatusTest
+    )
+    {
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error, the function setDebugStatusTest() has not been"
+        << " overridden for the class" << this->description() << " yet!");
+    }
+
   //@}
 
   //! @name Reset methods

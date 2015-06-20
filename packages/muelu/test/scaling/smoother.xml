@@ -1,0 +1,15 @@
+<ParameterList name="MueLu">
+  <Parameter        name="verbosity"            type="string"   value="high"/>
+  <Parameter        name="max levels"           type="int"      value="1"/>
+  <Parameter        name="coarse: type"         type="string"   value="CHEBYSHEV"/>
+  <ParameterList    name="coarse: params">
+    <Parameter      name="chebyshev: degree"    type="int"      value="30"/>
+  </ParameterList>
+  <!--
+  <Parameter        name="coarse: type"         type="string"   value="RELAXATION"/>
+  <ParameterList    name="coarse: params">
+    <Parameter      name="relaxation: type"     type="string"   value="Symmetric Gauss-Seidel"/>
+    <Parameter      name="relaxation: sweeps"   type="int"      value="30"/>
+  </ParameterList>
+  -->
+</ParameterList>

@@ -977,8 +977,10 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
 
           int GRID = CoarseMap.GID(AID * NullSpaceDim + k);
           int ierr = R_->InsertGlobalValues(GRID, 1, &val, &GCID);
-          if (ierr < 0)
+          if (ierr < 0) {
+            if(AP_ML != NULL) ML_free(AP_ML);
             ML_CHK_ERR(-1);
+          }
         }
   }
 

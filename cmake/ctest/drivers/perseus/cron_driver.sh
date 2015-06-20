@@ -27,10 +27,14 @@ export http_proxy="http://sonproxy.sandia.gov:80"
 export TDD_FORCE_CMAKE_INSTALL=1
 export CUDA_LAUNCH_BLOCKING=1
 export OMP_NUM_THREADS=2
-
+export PATH="$PATH:/opt/intel/composer_xe_2015.1.133/bin/intel64"
+export LD_LIBRARY_PATH="/opt/intel/composer_xe_2015.1.133/compiler/lib/intel64:$LD_LIBRARY_PATH"
+export LD_LIBRARY_PATH="/usr/local/gcc/4.8.3/lib64:$LD_LIBRARY_PATH"
+export LD_LIBRARY_PATH="/opt/mpc/1.0.1/lib:$LD_LIBRARY_PATH"
+export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/lib:/usr/local/lib64"
 # Machine independent cron_driver:
 #
-openmpi-1.7-cuda6
+#openmpi-1.7-cuda6
 
 SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
 $SCRIPT_DIR/../cron_driver.py

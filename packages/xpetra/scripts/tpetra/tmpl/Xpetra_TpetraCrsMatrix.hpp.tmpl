@@ -15,8 +15,8 @@ $TMPL_HEADERS
 namespace Xpetra {
 
   // TODO: move that elsewhere
-  // template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  // const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> toTpetraCrsMatrix(const Xpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &);
+  // template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  // const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> toTpetraCrsMatrix(const Xpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &);
   //
 
   $TMPL_TEMPLATE_PARAM
@@ -25,7 +25,7 @@ namespace Xpetra {
   {
 
     // The following typedef are used by the XPETRA_DYNAMIC_CAST() macro.
-    typedef TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> TpetraCrsMatrixClass;
+    typedef TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraCrsMatrixClass;
     typedef TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraVectorClass;
 
   public:
@@ -56,7 +56,7 @@ $TMPL_PUBLIC_FUNCTIONS
       XPETRA_MONITOR("TpetraCrsMatrix::doImport");
 
       XPETRA_DYNAMIC_CAST(const TpetraCrsMatrixClass, source, tSource, "Xpetra::TpetraCrsMatrix::doImport only accept Xpetra::TpetraCrsMatrix as input arguments.");//TODO: remove and use toTpetra()
-      RCP< const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > v = tSource.getTpetra_CrsMatrix();
+      RCP< const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > v = tSource.getTpetra_CrsMatrix();
       //mtx_->doImport(toTpetraCrsMatrix(source), *tImporter.getTpetra_Import(), toTpetra(CM));
       mtx_->doImport(*v, toTpetra(importer), toTpetra(CM));
     }
@@ -67,7 +67,7 @@ $TMPL_PUBLIC_FUNCTIONS
       XPETRA_MONITOR("TpetraCrsMatrix::doExport");
 
       XPETRA_DYNAMIC_CAST(const TpetraCrsMatrixClass, dest, tDest, "Xpetra::TpetraCrsMatrix::doImport only accept Xpetra::TpetraCrsMatrix as input arguments.");//TODO: remove and use toTpetra()
-      RCP< const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > v = tDest.getTpetra_CrsMatrix();
+      RCP< const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > v = tDest.getTpetra_CrsMatrix();
       mtx_->doExport(*v, toTpetra(importer), toTpetra(CM));
 
     }
@@ -78,7 +78,7 @@ $TMPL_PUBLIC_FUNCTIONS
       XPETRA_MONITOR("TpetraCrsMatrix::doImport");
 
       XPETRA_DYNAMIC_CAST(const TpetraCrsMatrixClass, source, tSource, "Xpetra::TpetraCrsMatrix::doImport only accept Xpetra::TpetraCrsMatrix as input arguments.");//TODO: remove and use toTpetra()
-      RCP< const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > v = tSource.getTpetra_CrsMatrix();
+      RCP< const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > v = tSource.getTpetra_CrsMatrix();
       mtx_->doImport(*v, toTpetra(exporter), toTpetra(CM));
 
     }
@@ -89,7 +89,7 @@ $TMPL_PUBLIC_FUNCTIONS
       XPETRA_MONITOR("TpetraCrsMatrix::doExport");
 
       XPETRA_DYNAMIC_CAST(const TpetraCrsMatrixClass, dest, tDest, "Xpetra::TpetraCrsMatrix::doImport only accept Xpetra::TpetraCrsMatrix as input arguments.");//TODO: remove and use toTpetra()
-      RCP< const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > v = tDest.getTpetra_CrsMatrix();
+      RCP< const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > v = tDest.getTpetra_CrsMatrix();
       mtx_->doExport(*v, toTpetra(exporter), toTpetra(CM));
 
     }
@@ -100,26 +100,26 @@ $TMPL_PUBLIC_FUNCTIONS
     //@{
 
     //! TpetraCrsMatrix constructor to wrap a Tpetra::CrsMatrix object
-    TpetraCrsMatrix(const Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > &mtx) : mtx_(mtx) {  }
+    TpetraCrsMatrix(const Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &mtx) : mtx_(mtx) {  }
 
     //! Get the underlying Tpetra matrix
-    RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > getTpetra_CrsMatrix() const { return mtx_; }
+    RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_CrsMatrix() const { return mtx_; }
 
     //! Get the underlying Tpetra matrix
-    RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > getTpetra_CrsMatrixNonConst() const { return mtx_; } //TODO: remove
+    RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_CrsMatrixNonConst() const { return mtx_; } //TODO: remove
 
    //@}
 
   private:
 
-    RCP< Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > mtx_;
+    RCP< Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > mtx_;
 
   }; // $TMPL_CLASS class
 
   // TODO: move that elsewhere
-  // template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  // template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   // const Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, Node> toTpetraCrsMatrix(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &mtx) {
-  //   typedef TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrixClass;
+  //   typedef TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraCrsMatrixClass;
   //   XPETRA_DYNAMIC_CAST(const TpetraCrsMatrixClass, mtx, tMtx, "toTpetra");
   //   return *tMtx.getTpetra_CrsMatrix();
   // }

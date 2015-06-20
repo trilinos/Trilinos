@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,19 +36,16 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
 
 #include <gtest/gtest.h>
 
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core.hpp>
 
 #if defined( KOKKOS_HAVE_PTHREAD )
-
-#include <Kokkos_Threads.hpp>
-#include <Kokkos_hwloc.hpp>
 
 #include <Kokkos_Bitset.hpp>
 #include <Kokkos_UnorderedMap.hpp>
@@ -60,9 +57,11 @@
 //----------------------------------------------------------------------------
 #include <TestBitset.hpp>
 #include <TestUnorderedMap.hpp>
+#include <TestStaticCrsGraph.hpp>
 
 #include <TestVector.hpp>
 #include <TestDualView.hpp>
+#include <TestSegmentedView.hpp>
 
 namespace Test {
 
@@ -93,10 +92,16 @@ protected:
   }
 };
 
-TEST_F( threads, bitset )
+TEST_F( threads , staticcrsgraph )
+{
+  TestStaticCrsGraph::run_test_graph< Kokkos::Threads >();
+  TestStaticCrsGraph::run_test_graph2< Kokkos::Threads >();
+}
+
+/*TEST_F( threads, bitset )
 {
   test_bitset<Kokkos::Threads>();
-}
+}*/
 
 #define THREADS_INSERT_TEST( name, num_nodes, num_inserts, num_duplicates, repeat, near )                                \
   TEST_F( threads, UnorderedMap_insert_##name##_##num_nodes##_##num_inserts##_##num_duplicates##_##repeat##x) {   \
@@ -132,6 +137,11 @@ TEST_F( threads, bitset )
       test_dualview_combinations<int,Kokkos::Threads>(size);                     \
   }
 
+#define THREADS_SEGMENTEDVIEW_TEST( size )                             \
+  TEST_F( threads, segmentedview_##size##x) {       \
+      test_segmented_view<double,Kokkos::Threads>(size);                     \
+  }
+
 
 THREADS_INSERT_TEST(far, 100000, 90000, 100, 500, false)
 THREADS_FAILED_INSERT_TEST( 10000, 1000 )
@@ -140,6 +150,8 @@ THREADS_DEEP_COPY( 10000, 1 )
 THREADS_VECTOR_COMBINE_TEST( 10 )
 THREADS_VECTOR_COMBINE_TEST( 3057 )
 THREADS_DUALVIEW_COMBINE_TEST( 10 )
+THREADS_SEGMENTEDVIEW_TEST( 10000 )
+
 
 #undef THREADS_INSERT_TEST
 #undef THREADS_FAILED_INSERT_TEST
@@ -147,6 +159,7 @@ THREADS_DUALVIEW_COMBINE_TEST( 10 )
 #undef THREADS_DEEP_COPY
 #undef THREADS_VECTOR_COMBINE_TEST
 #undef THREADS_DUALVIEW_COMBINE_TEST
+#undef THREADS_SEGMENTEDVIEW_TEST
 
 } // namespace Test
 

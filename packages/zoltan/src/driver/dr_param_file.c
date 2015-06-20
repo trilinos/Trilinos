@@ -87,8 +87,8 @@
 
 #define MAX_PARAM_STRING_LEN 50
 struct zoltanParams_list_entry {
-  char param[MAX_PARAM_STRING_LEN+1];
-  char value[MAX_PARAM_STRING_LEN+1];
+  char param[MAX_PARAM_STRING_LEN];
+  char value[MAX_PARAM_STRING_LEN];
   struct zoltanParams_list_entry *next;
 };
 

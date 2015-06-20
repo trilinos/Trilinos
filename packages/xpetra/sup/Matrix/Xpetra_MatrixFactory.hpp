@@ -57,8 +57,12 @@
 #include "Xpetra_Exceptions.hpp"
 
 namespace Xpetra {
-
-  template <class Scalar, class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps>
+  template <class Scalar = Matrix<>::scalar_type,
+            class LocalOrdinal = typename Matrix<Scalar>::local_ordinal_type,
+            class GlobalOrdinal =
+              typename Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node =
+              typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class MatrixFactory {
 #undef XPETRA_MATRIXFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
@@ -137,7 +141,13 @@ namespace Xpetra {
   };
 #define XPETRA_MATRIXFACTORY_SHORT
 
-  template <class Scalar, class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps>
+
+  template <class Scalar = Matrix<>::scalar_type,
+            class LocalOrdinal = typename Matrix<Scalar>::local_ordinal_type,
+            class GlobalOrdinal =
+              typename Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node =
+              typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class MatrixFactory2 {
 #undef XPETRA_MATRIXFACTORY2_SHORT
 #include "Xpetra_UseShortNames.hpp"
@@ -185,17 +195,33 @@ namespace Xpetra {
 
   template<>
   class MatrixFactory2<double,int,int> {
-    typedef double                                                             Scalar;
-    typedef int                                                                LocalOrdinal;
-    typedef int                                                                GlobalOrdinal;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType                        Node;
-    typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
+    typedef double                                        Scalar;
+    typedef int                                           LocalOrdinal;
+    typedef int                                           GlobalOrdinal;
+    typedef Matrix<double, int, GlobalOrdinal>::node_type Node;
 #undef XPETRA_MATRIXFACTORY2_SHORT
 #include "Xpetra_UseShortNames.hpp"
 
   public:
     static RCP<Matrix> BuildCopy(const RCP<const Matrix> A);
   };
+
+#define XPETRA_MATRIXFACTORY2_SHORT
+
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+  template<>
+  class MatrixFactory2<double,int,long long> {
+    typedef double                                        Scalar;
+    typedef int                                           LocalOrdinal;
+    typedef long long                                     GlobalOrdinal;
+    typedef Matrix<double, int, GlobalOrdinal>::node_type Node;
+#undef XPETRA_MATRIXFACTORY2_SHORT
+#include "Xpetra_UseShortNames.hpp"
+
+  public:
+    static RCP<Matrix> BuildCopy(const RCP<const Matrix> A);
+  };
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 #define XPETRA_MATRIXFACTORY2_SHORT
 

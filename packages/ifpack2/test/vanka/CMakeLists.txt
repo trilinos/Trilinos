@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 #INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/output)
@@ -8,6 +7,5 @@ TRIBITS_ADD_EXECUTABLE(
      TomVankaTest
      SOURCES TomVankaTest.cpp
      COMM serial mpi
-     DEPLIBS ifpack2 tpetra
 )
 

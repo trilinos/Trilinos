@@ -943,6 +943,7 @@ void AZ_zero_out_context(struct context *context)
    context->padded_data_org = NULL;
    context->map           = NULL;
    context->inv_ordering  = NULL;
+   context->ordering      = NULL;
    context->tag           = NULL;
    context->proc_config   = NULL;
 

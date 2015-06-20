@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 */
@@ -66,11 +66,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ScalarResidualModelEvaluator,
 
   typedef ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
-  typedef ModelEvaluatorBase MEB;
+  //typedef ModelEvaluatorBase MEB; // unused
 
-  RCP<ModelEvaluator<Scalar> > model = 
+  RCP<ModelEvaluator<Scalar> > model =
     simple2DModelEvaluator<Scalar>();
-  
+
   RCP<ScaledModelEvaluator<Scalar> > scaled_model =
     createNonconstScaledModelEvaluator<Scalar>(model);
 
@@ -86,14 +86,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ScalarResidualModelEvaluator,
 
   RCP<VectorBase<Scalar> > f = createMember(f_space);
   RCP<VectorBase<Scalar> > f_scaled = createMember(f_space);
-  
+
   RCP<LinearOpBase<Scalar> > W_op = model->create_W_op() ;
   RCP<LinearOpBase<Scalar> > W_scaled_op = model->create_W_op() ;
 
   RCP<VectorBase<Scalar> > scaling_diagonal = createMember(f_space);
   const Scalar val = as<Scalar>(2.0);
   V_S(scaling_diagonal.ptr(), val);
-  
+
   scaled_model->set_f_scaling(scaling_diagonal);
 
   out_args.set_f(f);
@@ -116,12 +116,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ScalarResidualModelEvaluator,
     TEST_FLOATING_EQUALITY(two * f_dv(1), f_scaled_dv(1), tol);
   }
 
-  const RCP<SimpleDenseLinearOp<Scalar> > W_sdlo = 
+  const RCP<SimpleDenseLinearOp<Scalar> > W_sdlo =
     Teuchos::rcp_dynamic_cast<SimpleDenseLinearOp<Scalar> >(W_op, true);
   const RCP<MultiVectorBase<Scalar> > W_mv =
     W_sdlo->getNonconstMultiVector();
 
-  const RCP<SimpleDenseLinearOp<Scalar> > W_scaled_sdlo = 
+  const RCP<SimpleDenseLinearOp<Scalar> > W_scaled_sdlo =
     Teuchos::rcp_dynamic_cast<SimpleDenseLinearOp<Scalar> >(W_scaled_op, true);
   const RCP<MultiVectorBase<Scalar> > W_scaled_mv =
     W_scaled_sdlo->getNonconstMultiVector();
@@ -134,7 +134,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ScalarResidualModelEvaluator,
     TEST_FLOATING_EQUALITY(two * W_dv(1,0), W_scaled_dv(1,0), tol);
     TEST_FLOATING_EQUALITY(two * W_dv(1,1), W_scaled_dv(1,1), tol);
   }
-  
+
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES(

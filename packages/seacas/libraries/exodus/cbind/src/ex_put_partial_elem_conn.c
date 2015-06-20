@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1998 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -79,7 +79,7 @@ int ex_put_partial_elem_conn (int  exoid,
   exerrval = 0; /* clear error code */
 
   /* Determine index of elem_blk_id in VAR_ID_EL_BLK array */
-  if ((elem_blk_id_ndx = ex_id_lkup(exoid, EX_ELEM_BLOCK, elem_blk_id)) == -1)
+  if ((elem_blk_id_ndx = ex_id_lkup(exoid, EX_ELEM_BLOCK, elem_blk_id)) < 0)
     {
       if (exerrval == EX_NULLENTITY) {
 	sprintf(errmsg,

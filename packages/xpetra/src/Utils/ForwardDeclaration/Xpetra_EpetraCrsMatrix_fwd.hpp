@@ -46,8 +46,13 @@
 #ifndef XPETRA_EPETRACRSMATRIX_FWD_HPP
 #define XPETRA_EPETRACRSMATRIX_FWD_HPP
 
+#include <Epetra_ConfigDefs.h>
+
 namespace Xpetra {
-  class EpetraCrsMatrix;
+  template<class GO> class EpetraCrsMatrixT;
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
+  typedef EpetraCrsMatrixT<int> EpetraCrsMatrix;
+#endif
 }
 
 #ifndef XPETRA_EPETRACRSMATRIX_SHORT

@@ -51,7 +51,7 @@ namespace Teuchos {
  * Thrown when some aspect of a Dependency has been determined to be invalid.
  */
 class InvalidDependencyException : public std::logic_error{
-public: 
+public:
   /**
    * Constructs an InvalidDependencyException
    *

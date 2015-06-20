@@ -62,8 +62,8 @@ using namespace NOX::Direction;
 
 NonlinearCG::NonlinearCG(const Teuchos::RCP<NOX::GlobalData>& gd,
              Teuchos::ParameterList& params) :
-  paramsPtr(0),
   oldSolnPtr(NULL),
+  paramsPtr(0),
   beta(0.0),
   niter(0)
 {

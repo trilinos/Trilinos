@@ -24,9 +24,8 @@ not_a_templated_class="
 $not_a_templated_class
 
 Kokkos_ConfigDefs.hpp
-Kokkos_DefaultKernels.hpp
 Kokkos_DefaultNode.hpp
-Kokkos_SerialNode.hpp
+Kokkos_DefaultNode.hpp
 Xpetra_ConfigDefs.hpp
 Xpetra_Exceptions.hpp
 Xpetra_UseDefaultTypes.hpp

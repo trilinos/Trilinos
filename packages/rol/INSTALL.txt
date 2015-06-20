@@ -1,0 +1,64 @@
+*************************************************************
+********     Rapid Optimization Library (ROL)        ********
+********        Header-only installation             ********
+*************************************************************
+
+These are installation instructions for a *header-only* build
+of the Rapid Optimization Library (ROL).  For a full build,
+which may include tests and examples, please refer to the
+Trilinos documentation.
+
+The header-only build will simply extract the hpp files from
+the /rol/src directory (and its subdirectories) and copy
+them to an installation /include directory.
+
+*** PREREQUISITE: A Unix-like environment.  If using Windows,
+*** please refer to the Trilinos instructions for Windows.
+
+--- Step 1 ---
+
+If building from the /rol directory --which contains /src and
+other directories-- go to step 2.
+
+Otherwise, set the environment variable ROL_SOURCE to the
+absolute path of the /rol directory.  Again, this is the
+directory that contains /src and other directories.
+
+--- Step 2 ---
+
+Set the environment variable ROL_HOME to the absolute path
+of a directory where you want the /include directory to go.
+This /include directory will contain all hpp files.
+
+--- Step 3 ---
+
+Run the script install.sh.  You are done when you see:
+
+                               /-
+                            ./ /: /.
+    oooooo++:.             `o /: +:   oo.
+    RR///++oooRo          `/  ` +:   oLL-
+    RR        oRo        `:`   /:   +RLL-
+    RR         RR`  .ooRRRRRl+`.   :RooL-
+    RR        /Ro  oRo/`   .+oR/  :Ro.oL-
+    RR  :://ooRo` oRo        `oR--RR. oL-
+    RR  -oRo+:`   lR:         oRoRR.  oL-
+    RR    oRo.    :Ro.       :RRRo.   oL-
+    RR     -oR+    -oRl+  ..oRRRo`    oL-
+    RR       oRo.    .++ooo++lRo`     oLoooooooo
+    oo-       ```          -oR+       ``````````
+    -RR:                 `oRo-
+     .oRo`              /oRo
+       +Ro/          `+oRo`
+        `oRRo:.  `-+lRoo`
+           :ooRRRRoo+-
+
+***************************************************
+***       Install of ROL succeeded!!!           ***
+***************************************************
+
+Questions? Contact lead developers:
+              Drew Kouri   (dpkouri@sandia.gov) and
+              Denis Ridzal (dridzal@sandia.gov)
+
+Copyright (2014) Sandia Corporation

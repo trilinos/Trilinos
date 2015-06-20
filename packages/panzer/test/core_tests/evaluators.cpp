@@ -44,8 +44,10 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TimeMonitor.hpp>
-
 #include <Teuchos_ParameterList.hpp>
+
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_Dimension.hpp"
 #include "Panzer_Traits.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
@@ -81,6 +83,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(evaluators, Constant)
   {
+    PHX::KokkosDeviceSession session;
+    
     RCP<PHX::DataLayout> dl = rcp(new PHX::MDALayout<Cell,Point,Dim>(10,8,3));
 
     ParameterList p("Constant Test");
@@ -94,6 +98,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(evaluators, Sum)
   {
+    PHX::KokkosDeviceSession session;
+    
 
     ParameterList p("Sum Test");
     p.set("Sum Name", "Sum of Sources");
@@ -111,6 +117,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(evaluators, ScalarToVector)
   {
+    PHX::KokkosDeviceSession session;
+    
 
     ParameterList p("ScalarToVector Test");
     p.set("Vector Name", "U");
@@ -132,6 +140,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(evaluators, VectorToScalar)
   {
+    PHX::KokkosDeviceSession session;
+    
 
     ParameterList p("VectorToScalar Test");
     p.set("Vector Name", "U");
@@ -153,6 +163,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(evaluators, DirichletResidual)
   {
+    PHX::KokkosDeviceSession session;
+    
 
     ParameterList p("DirichletResidual Test");
     p.set("Residual Name", "Residual_TEMP");
@@ -167,6 +179,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(evaluators, DOF)
   {
+    PHX::KokkosDeviceSession session;
+    
     using panzer::IntegrationRule;
     using panzer::BasisIRLayout;
 
@@ -197,6 +211,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(evaluators, DOFGradient)
   {
+    PHX::KokkosDeviceSession session;
+    
     using panzer::IntegrationRule;
     using panzer::BasisIRLayout;
     
@@ -256,6 +272,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(evaluators, Integrator_BasisTimesScalar)
   {
+    PHX::KokkosDeviceSession session;
+    
     using panzer::IntegrationRule;
     using panzer::BasisIRLayout;
 
@@ -289,6 +307,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(evaluators, Integrator_GradBasisDotVector)
   {
+    PHX::KokkosDeviceSession session;
+    
     using panzer::IntegrationRule;
     using panzer::BasisIRLayout;
 
@@ -322,6 +342,7 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(evaluators, TestScatter)
   {
+    PHX::KokkosDeviceSession session;
 
     ParameterList p("TestScatter Test");
     p.set("Test Name", "TEMP");

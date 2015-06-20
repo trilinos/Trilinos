@@ -415,7 +415,7 @@ void RCPNodeTracer::addNewRCPNode( RCPNode* rcp_node, const std::string &info )
     TEUCHOS_TEST_FOR_EXCEPT(0==rcp_node_list());
 
     const void * const map_key_void_ptr = get_map_key_void_ptr(rcp_node);
-    
+
     // See if the rcp_node or its object has already been added.
     typedef rcp_node_list_t::iterator itr_t;
     typedef std::pair<itr_t, itr_t> itr_itr_t;
@@ -552,7 +552,7 @@ RCPNode* RCPNodeTracer::getExistingRCPNodeGivenLookupKey(const void* p)
   }
   return 0;
   // NOTE: Above, we return the first RCPNode added that has the given key
-  // value.  
+  // value.
 }
 
 
@@ -715,7 +715,7 @@ void RCPNodeHandle::unbindOne()
 void Teuchos::throw_null_ptr_error( const std::string &type_name )
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
-    true, NullReferenceError, 
+    true, NullReferenceError,
     type_name << " : You can not call operator->() or operator*()"
     <<" if getRawPtr()==0!" );
 }

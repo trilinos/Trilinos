@@ -36,7 +36,7 @@
 #include <assert.h>                     // for assert
 #include <stddef.h>                     // for size_t
 #include <sys/types.h>                  // for ssize_t
-#include <algorithm>                    // for adjacent_find, equal_range, etc
+#include <algorithm>                    // for adjacent_find, lower_bound, etc
 #include <iterator>                     // for insert_iterator, inserter
 #include <sstream>                      // for operator<<, basic_ostream, etc
 #include <string>                       // for char_traits, operator<<, etc
@@ -385,13 +385,11 @@ int64_t Ioss::Map::global_to_local(int64_t global, bool must_exist) const
 {
   int64_t local = global;
   if (map[0] == 1) {
-    std::pair<RMapI, RMapI> iter = std::equal_range(reverse.begin(), reverse.end(),
-						    global, IdPairCompare());
-    if (iter.first != iter.second)
-      local = (iter.first)->second;
+    RMapI iter = std::lower_bound(reverse.begin(), reverse.end(), global, IdPairCompare());
+    if (iter != reverse.end() && iter->first == global)
+      local = iter->second;
     else
       local = 0;
-    assert(!must_exist || iter.first != iter.second);
   } else if (!must_exist && global > (int64_t)map.size()-1) {
     local = 0;
   }

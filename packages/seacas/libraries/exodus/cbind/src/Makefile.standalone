@@ -2,6 +2,7 @@ PARSRCS = ex_create_par.c \
 	  ex_open_par.c
 
 SRCS =	\
+     ex_add_attr.c \
      ex_close.c \
      ex_conv.c \
      ex_copy.c \
@@ -15,6 +16,7 @@ SRCS =	\
      ex_get_attr_param.c \
      ex_get_block.c \
      ex_get_block_param.c \
+     ex_get_block_params.c \
      ex_get_cmap_params.c \
      ex_get_concat_node_sets.c \
      ex_get_concat_sets.c \
@@ -146,6 +148,7 @@ SRCS =	\
      ex_put_attr_param.c \
      ex_put_block.c \
      ex_put_block_param.c \
+     ex_put_block_params.c \
      ex_put_cmap_params.c \
      ex_put_cmap_params_cc.c \
      ex_put_concat_all_blocks.c \
@@ -255,7 +258,7 @@ SRCS =	\
      ex_put_variable_names.c \
      ex_put_variable_param.c \
      ex_update.c \
-     ex_utils.c \
+     ex_utils.c
 
 OBJS = ${SRCS:.c=.o}
 

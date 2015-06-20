@@ -1,4 +1,4 @@
-#include "commonRTC.hh"
+#include "RTC_commonRTC.hh"
 
 #include <string>
 #include <cmath>
@@ -195,7 +195,7 @@ string PG_RuntimeCompiler::typeToString(Type t)
 }
 
 
-#include "ExecutableRTC.hh"
+#include "RTC_ExecutableRTC.hh"
 
 using namespace std;
 
@@ -203,7 +203,7 @@ ostream& PG_RuntimeCompiler::operator<<(ostream& os, const Executable& obj)
 {                                                                                                    
   return obj.operator<<(os);                                                                         
 }
-#include "ObjectRTC.hh"
+#include "RTC_ObjectRTC.hh"
 
 using namespace std;
 

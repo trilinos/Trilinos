@@ -49,7 +49,8 @@
 void Teuchos::updateParametersFromXmlFileAndBroadcast(
   const std::string &xmlFileName,
   const Ptr<ParameterList> &paramList,
-  const Comm<int> &comm
+  const Comm<int> &comm,
+  bool overwrite
   )
 {
   if (comm.getSize()==1)
@@ -64,7 +65,7 @@ void Teuchos::updateParametersFromXmlFileAndBroadcast(
       int strsize = xmlString.size();
       broadcast<int, int>(comm, 0, &strsize);
       broadcast<int, char>(comm, 0, strsize, &xmlString[0]);
-      updateParametersFromXmlString(xmlString, paramList);
+      updateParametersFromXmlString(xmlString, paramList,overwrite);
     }
     else {
       int strsize;
@@ -72,7 +73,7 @@ void Teuchos::updateParametersFromXmlFileAndBroadcast(
       std::string xmlString;
       xmlString.resize(strsize);
       broadcast<int, char>(comm, 0, strsize, &xmlString[0]);
-      updateParametersFromXmlString(xmlString, paramList);
+      updateParametersFromXmlString(xmlString, paramList,overwrite);
     }
   }
 }

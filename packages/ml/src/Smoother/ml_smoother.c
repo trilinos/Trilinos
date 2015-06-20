@@ -51,6 +51,13 @@
 #include "ml_utils.h"
 #include "ml_op_utils.h"
 #include "ml_ifpack_wrap.h"
+#ifdef ML_WITH_EPETRA
+#ifdef __cplusplus
+//extern "C" {
+#include "ml_epetra_utils.h"
+//}
+#endif
+#endif
 
 /* A special version of dgetrs which is supposed to be optimized. */
 /* NOTE: it is assumed that ML_permute_for_dgetrs_special() has   */
@@ -2553,9 +2560,8 @@ int ML_Smoother_VBlockSGS(ML_Smoother *sm, int inlen, double x[],
    }
    ML_free( vals );
    ML_free( cols );
-   if ( Nblocks > 0 ) ML_free( aggr_offset );
-   if ( Nrows > 0 ) ML_free( aggr_group );
-
+   if ( aggr_offset != NULL ) ML_free( aggr_offset );
+   if ( aggr_group != NULL ) ML_free( aggr_group );
    return 0;
 }
 
@@ -2786,8 +2792,8 @@ int ML_Smoother_VBlockSGSSequential(ML_Smoother *sm, int inlen, double x[],
    }
    ML_free( vals );
    ML_free( cols );
-   if ( Nblocks > 0 ) ML_free( aggr_offset );
-   if ( Nrows > 0 ) ML_free( aggr_group );
+   if ( aggr_offset != NULL ) ML_free( aggr_offset );
+   if ( aggr_group != NULL ) ML_free( aggr_group );
 
    return 0;
 }
@@ -3755,11 +3761,22 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
 
    /* Get maximum eigenvalue for damping parameter. */
 
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && defined(__GNUC_PATCHLEVEL__)
+#define GCC_VERSION __GNUC__*100+__GNUC_MINOR__*10+__GNUC_PATCHLEVEL__
+#endif
+
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-pedantic"
+#endif
   if ( (edge_smoother == (void *) ML_Gen_Smoother_Jacobi) ||
        (edge_smoother == (void *) ML_Gen_Smoother_GaussSeidel) ||
        (edge_smoother == (void *) ML_Gen_Smoother_SymGaussSeidel) ||
        (edge_smoother == (void *) ML_Gen_Smoother_VBlockJacobi) ||
        (edge_smoother == (void *) ML_Gen_Smoother_VBlockSymGaussSeidel) )
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic pop
+#endif
   {
     dbl_arg1 = (double *) ML_Smoother_Arglist_Get(edge_args, 1);
     dataptr->omega = *dbl_arg1;
@@ -3894,11 +3911,18 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
    dataptr->sm_nodal->ntimes = 1;
    dataptr->sm_nodal->omega = 1.0;
 
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-pedantic"
+#endif
   if ( (nodal_smoother == (void *) ML_Gen_Smoother_Jacobi) ||
        (nodal_smoother == (void *) ML_Gen_Smoother_GaussSeidel) ||
        (nodal_smoother == (void *) ML_Gen_Smoother_SymGaussSeidel) ||
        (nodal_smoother == (void *) ML_Gen_Smoother_VBlockJacobi) ||
        (nodal_smoother == (void *) ML_Gen_Smoother_VBlockSymGaussSeidel) )
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic pop
+#endif
   {
     dbl_arg1 = (double *) ML_Smoother_Arglist_Get(nodal_args, 1);
     dataptr->omega = *dbl_arg1;
@@ -3978,11 +4002,18 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
 
    /* Get maximum eigenvalue for damping parameter. */
 
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-pedantic"
+#endif
   if ( (edge_smoother == (void *) ML_Gen_Smoother_Jacobi) ||
        (edge_smoother == (void *) ML_Gen_Smoother_GaussSeidel) ||
        (edge_smoother == (void *) ML_Gen_Smoother_SymGaussSeidel) ||
        (edge_smoother == (void *) ML_Gen_Smoother_VBlockJacobi) ||
        (edge_smoother == (void *) ML_Gen_Smoother_VBlockSymGaussSeidel) )
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic pop
+#endif
   {
     dbl_arg1 = (double *) ML_Smoother_Arglist_Get(edge_args, 1);
     if ((( (int) dbl_arg1[0]) == ML_DEFAULT) && (Amat->comm->ML_nprocs != 1))
@@ -7341,6 +7372,10 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
    ML_Operator_halfClone_Init( &((*ml_subproblem)->Amat[0]),
 				   Amat);
 
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-pedantic"
+#endif
    if (smoother == (void *) ML_Gen_Smoother_Cheby || smoother == (void *) ML_Gen_Smoother_MLS) {
 
 
@@ -7495,6 +7530,9 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
    printf("ML_Smoother_Gen_Hiptmair_Data: Unknown smoother for Hiptmair subproblem\n");
      exit(1);
    }
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic pop
+#endif
    return 0;
 }
 
@@ -8359,7 +8397,8 @@ void ML_Smoother_DestroySubdomainOverlap(void *data)
 int ML_Smoother_LineJacobi(ML_Smoother *sm, int inlen, double x[], int outlen,
                              double rhs[])
 {
-   int            i, k, iter, one=1, *BlkPtr, *block_indices, *blkOffset;
+   int            i, k, iter, one=1;
+   int            *BlkPtr = NULL, *block_indices, *blkOffset;
    int            Nrows, NBlks;
    int            *RowsInBlk;
    double         omega;
@@ -8461,7 +8500,8 @@ int ML_Smoother_LineJacobi(ML_Smoother *sm, int inlen, double x[], int outlen,
 int ML_Smoother_LineGS(ML_Smoother *sm, int inlen, double x[],
                           int outlen, double rhs[])
 {
-   int            i, j, k, iter, one=1, *BlkPtr, *block_indices, *blkOffset;
+   int            i, j, k, iter, one=1;
+   int            *BlkPtr = NULL, *block_indices, *blkOffset;
    int            Nrows, NBlks, row;
    int            *RowsInBlk;
    ML_CommInfoOP  *getrow_comm;
@@ -8649,7 +8689,7 @@ int ML_Smoother_LineGS(ML_Smoother *sm, int inlen, double x[],
 
 #include "ml_petsc.h"
 
-#ifdef HAVE_PETSC
+#ifdef HAVE_ML_PETSC
 int ML_Smoother_Petsc(ML_Smoother *sm, int inlen, double x[], int outlen,
                       double rhs[])
 {
@@ -8681,8 +8721,8 @@ int ML_Smoother_Petsc(ML_Smoother *sm, int inlen, double x[], int outlen,
 
   /* Set up the necessary PETSc data structures.*/
 # ifdef HAVE_MPI
-  ierr=VecCreateMPIWithArray(comm->USR_comm,inlen,PETSC_DECIDE,x2,&petscX); CHKERRQ(ierr);
-  ierr=VecCreateMPIWithArray(comm->USR_comm,outlen,PETSC_DECIDE,rhs,&petscB); CHKERRQ(ierr);
+  ierr=VecCreateMPIWithArray(comm->USR_comm,1,inlen,PETSC_DECIDE,x2,&petscX); CHKERRQ(ierr);
+  ierr=VecCreateMPIWithArray(comm->USR_comm,1,outlen,PETSC_DECIDE,rhs,&petscB); CHKERRQ(ierr);
 # else /*FIXME  this is untested */
   ierr=VecCreateSeqWithArray(comm->USR_comm,inlen,x2,&petscX); CHKERRQ(ierr);
   ierr=VecCreateSeqWithArray(comm->USR_comm,outlen,rhs,&petscB); CHKERRQ(ierr);
@@ -8696,8 +8736,8 @@ int ML_Smoother_Petsc(ML_Smoother *sm, int inlen, double x[], int outlen,
   }
 
   /* Clean up. */
-  ierr=VecDestroy(petscX);CHKERRQ(ierr);
-  ierr=VecDestroy(petscB);CHKERRQ(ierr);
+  ierr=VecDestroy(&petscX);CHKERRQ(ierr);
+  ierr=VecDestroy(&petscB);CHKERRQ(ierr);
 
   if (getrow_comm != NULL) {
     for (i = 0; i < inlen; i++) x[i] = x2[i];

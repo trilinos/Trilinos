@@ -68,16 +68,15 @@
 
 namespace MueLu {
 
- template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
- RCP<const ParameterList> RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
+ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+ RCP<const ParameterList> RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("repartition: rebalance P and R");
     SET_VALID_ENTRY("transpose: use implicit");
+    SET_VALID_ENTRY("repartition: use subcommunicators");
 #undef  SET_VALID_ENTRY
-    // The value of "useSubcomm" parameter here must be the same as in RebalanceAcFactory
-    validParamList->set< bool >                  ("useSubcomm",          true, "Construct subcommunicators");
 
     {
       typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
@@ -100,8 +99,8 @@ namespace MueLu {
     return validParamList;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
     const ParameterList& pL = GetParameterList();
 
     if (pL.get<std::string>("type") == "Interpolation") {
@@ -118,9 +117,10 @@ namespace MueLu {
     Input(coarseLevel, "Importer");
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& fineLevel, Level& coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
+    typedef Xpetra::MultiVector<double, LO, GO, NO> xdMV;
 
     const ParameterList& pL = GetParameterList();
 
@@ -130,9 +130,9 @@ namespace MueLu {
 
     if (writeStart == 0 && fineLevel.GetLevelID() == 0 && writeStart <= writeEnd && IsAvailable(fineLevel, "Coordinates")) {
       std::string fileName = "coordinates_level_0.m";
-      RCP<MultiVector> fineCoords = fineLevel.Get< RCP<MultiVector> >("Coordinates");
+      RCP<xdMV> fineCoords = fineLevel.Get< RCP<xdMV> >("Coordinates");
       if (fineCoords != Teuchos::null)
-        Utils::Write(fileName, *fineCoords);
+        MueLu::Utils<double,LO,GO,NO>::Write(fileName, *fineCoords);
     }
 
     RCP<const Import> importer = Get<RCP<const Import> >(coarseLevel, "Importer");
@@ -207,7 +207,7 @@ namespace MueLu {
 
         if (pL.isParameter("Coordinates") && pL.get< RCP<const FactoryBase> >("Coordinates") != Teuchos::null)
           if (IsAvailable(coarseLevel, "Coordinates"))
-            Set(coarseLevel, "Coordinates", Get< RCP<MultiVector> >(coarseLevel, "Coordinates"));
+            Set(coarseLevel, "Coordinates", Get< RCP<xdMV> >(coarseLevel, "Coordinates"));
 
         return;
       }
@@ -215,7 +215,7 @@ namespace MueLu {
       if (pL.isParameter("Coordinates") &&
           pL.get< RCP<const FactoryBase> >("Coordinates") != Teuchos::null &&
           IsAvailable(coarseLevel, "Coordinates")) {
-        RCP<MultiVector> coords = Get<RCP<MultiVector> >(coarseLevel, "Coordinates");
+        RCP<xdMV> coords = Get<RCP<xdMV> >(coarseLevel, "Coordinates");
 
         // This line must be after the Get call
         SubFactoryMonitor subM(*this, "Rebalancing coordinates", coarseLevel);
@@ -249,17 +249,17 @@ namespace MueLu {
           coordImporter = ImportFactory::Build(origMap, targetMap);
         }
 
-        RCP<MultiVector> permutedCoords  = MultiVectorFactory::Build(coordImporter->getTargetMap(), coords->getNumVectors());
+        RCP<xdMV> permutedCoords  = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(coordImporter->getTargetMap(), coords->getNumVectors());
         permutedCoords->doImport(*coords, *coordImporter, Xpetra::INSERT);
 
-        if (pL.get<bool>("useSubcomm") == true)
+        if (pL.get<bool>("repartition: use subcommunicators") == true)
           permutedCoords->replaceMap(permutedCoords->getMap()->removeEmptyProcesses());
 
         Set(coarseLevel, "Coordinates", permutedCoords);
 
         std::string fileName = "rebalanced_coordinates_level_" + toString(coarseLevel.GetLevelID()) + ".m";
         if (writeStart <= coarseLevel.GetLevelID() && coarseLevel.GetLevelID() <= writeEnd && permutedCoords->getMap() != Teuchos::null)
-          Utils::Write(fileName, *permutedCoords);
+          MueLu::Utils<double,LO,GO,NO>::Write(fileName, *permutedCoords);
       }
 
       if (IsAvailable(coarseLevel, "Nullspace")) {
@@ -271,7 +271,7 @@ namespace MueLu {
         RCP<MultiVector> permutedNullspace = MultiVectorFactory::Build(importer->getTargetMap(), nullspace->getNumVectors());
         permutedNullspace->doImport(*nullspace, *importer, Xpetra::INSERT);
 
-        if (pL.get<bool>("useSubcomm") == true)
+        if (pL.get<bool>("repartition: use subcommunicators") == true)
           permutedNullspace->replaceMap(permutedNullspace->getMap()->removeEmptyProcesses());
 
         Set(coarseLevel, "Nullspace", permutedNullspace);
@@ -281,7 +281,7 @@ namespace MueLu {
       if (pL.get<bool>("transpose: use implicit") == false) {
         RCP<Matrix> originalR = Get< RCP<Matrix> >(coarseLevel, "R");
 
-        SubFactoryMonitor m2(*this, "Rebalancing restriction", coarseLevel);
+        SubFactoryMonitor m2(*this, "Rebalancing restrictor", coarseLevel);
 
         if (implicit || importer.is_null()) {
           GetOStream(Runtime0) << "Using original restrictor" << std::endl;
@@ -293,7 +293,9 @@ namespace MueLu {
             SubFactoryMonitor subM(*this, "Rebalancing restriction -- fusedImport", coarseLevel);
 
             RCP<Map> dummy;         // meaning: use originalR's domain map.
-            rebalancedR = MatrixFactory::Build(originalR, *importer, dummy, importer->getTargetMap());
+            Teuchos::ParameterList listLabel;
+            listLabel.set("Timer Label","MueLu::RebalanceR-" + Teuchos::toString(coarseLevel.GetLevelID()));
+            rebalancedR = MatrixFactory::Build(originalR, *importer, dummy, importer->getTargetMap(),Teuchos::rcp(&listLabel,false));
           }
           Set(coarseLevel, "R", rebalancedR);
 

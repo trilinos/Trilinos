@@ -140,7 +140,7 @@ enum rcbParams {
   rcb_minMaximumWeight,  /*!< objective = mc_minimize_maximum_weight */
   rcb_balanceTotalMaximum, /*!< objective = mc_balance_total_maximum */
   rcb_averageCuts,          /*!< averageCuts = yes */
-  rcb_rectilinearBlocks,    /*!< rectilinearBlocks = yes */
+  rcb_rectilinear,    /*!< rectilinear = yes */
   rcb_multiplePartSizeSpecs,  /*!< multicriteria w/differing part sizes */
   NUM_RCB_PARAMS
 };
@@ -458,16 +458,14 @@ template <typename mvector_t>
 
   recvCount.clear();
 
-  RCP<const mvector_t> newMultiVector;
-  RCP<const mvector_t> constInput = rcp_const_cast<const mvector_t>(vectors);
-
+  RCP<mvector_t> newMultiVector;
   try{
     newMultiVector = XpetraTraits<mvector_t>::doMigration(
-      constInput, numMyNewGnos, recvBuf.getRawPtr());
+      *vectors, numMyNewGnos, recvBuf.getRawPtr());
   }
   Z2_FORWARD_EXCEPTIONS
 
-  vectors = rcp_const_cast<mvector_t>(newMultiVector);
+  vectors = newMultiVector;
   env->memory("Former problem data replaced with new data");
   env->debug(DETAILED_STATUS, "Exiting migrateData");
 }
@@ -747,7 +745,7 @@ template <typename mvector_t>
   typedef StridedData<lno_t, scalar_t> input_t;
 
   bool multiplePartSizeSpecs = params.test(rcb_multiplePartSizeSpecs);
-  bool rectilinearBlocks = params.test(rcb_rectilinearBlocks);
+  bool rectilinear = params.test(rcb_rectilinear);
   bool averageCuts = params.test(rcb_averageCuts);
 
   // A coordinate is considered to be on a cut if it is within
@@ -1057,7 +1055,7 @@ template <typename mvector_t>
 
       env->debug(DETAILED_STATUS, "  Done, cutting at a region boundary");
 
-      if (rectilinearBlocks){
+      if (rectilinear){
         // Can not divide boundary points into two
         // different regions to achieve balance.
         fail = true;

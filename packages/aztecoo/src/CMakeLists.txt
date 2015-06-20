@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -7,6 +6,9 @@ INCLUDE(TribitsLibraryMacros)
 
 SET(HAVE_BOOL ON)
 SET(HAVE_STL ON)
+SET(HAVE_BLAS ON)
+SET(HAVE_LAPACK ON)
+SET(HAVE_MPI ${Epetra_ENABLE_MPI})
 
 IF (${PROJECT_NAME}_ENABLE_Fortran)
   SET(HAVE_FORTRAN_SUPPORT ON)

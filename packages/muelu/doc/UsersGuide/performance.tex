@@ -1,0 +1,83 @@
+In practice, it can be very challenging to find an appropriate set of multigrid
+parameters for a specific problem, especially if few details are known about the
+underlying linear system. In this Chapter, we provide some advice for improving
+multigrid performance.
+
+\begin{mycomment}
+For optimizing multigrid parameters, it is highly recommended to set the
+verbosity to \verb|high| or \verb|extreme| for \muelu{} to output more
+information (e.g., for the effect of the chosen parameters to the aggregation
+and coarsening process).
+\end{mycomment}
+
+Some general advice:
+\begin{itemize}
+  \item
+    Choose appropriate iterative linear solver (e.g., GMRES for non-symmetric problems).
+
+  \item
+    Start with the recommended settings for particular problem types. See
+    Table~\ref{t:problem_types}.
+
+  \item
+    Choose reasonable basic multigrid parameters
+    (see~\S\ref{sec:options_general}), including maximum number of multigrid
+    levels (\texttt{max levels}) and maximum allowed coarse size of the problem
+    (\texttt{coarse: max size}). Take fine level problem size and sparsity
+    pattern into account for a reasonable choice of these parameters.
+
+  \item
+    Select an appropriate transfer operator strategy
+    (see~\S\ref{sec:options_mg}). For symmetric problems, you should start with smoothed
+    aggregation multigrid. For non-symmetric problems, a Petrov-Galerkin smoothed
+    aggregation method is a good starting point, though smoothed aggregation may
+    also perform well.
+
+  \item
+    Enable implicit restrictor construction (\texttt{transpose:} \texttt{use implicit}) for symmetric
+    problems.
+
+  \item
+    Find good level smoothers (see~\S\ref{sec:options_smoothing}). If a problem
+    is symmetric positive definite, choose a smoother with a matrix-vector
+    computational kernel, such as the Chebyshev polynomial smoother. If you are
+    using relaxation smoothers, we recommend starting with optimizing the
+    damping parameter. Once you have found a good damping parameter for your
+    problem, you can increase the number of smoothing iterations.
+
+  \item
+    Adjust aggregation parameters if you experience bad coarsening ratios
+    (see~\S\ref{sec:options_aggregation}). Particularly, try adjusting the
+    minimum (\texttt{aggregation:} \texttt{min agg size}) and maximum
+    (\texttt{aggregation:} \texttt{max agg size}) aggregation parameters. For a
+    2D (3D) isotropic problem on a regular mesh, the aggregate size should be
+    about 9 (27) nodes per aggregate.
+
+  \item
+    Replace a direct solver with an iterative method (\texttt{coarse: type}) if
+    your coarse level solution becomes too expensive (see~\S\ref{sec:options_smoothing}).
+\end{itemize}
+
+Some advice for parallel runs include:
+\begin{enumerate}
+  \item
+    Enable matrix rebalancing when running in parallel (\texttt{repartition:}
+    \texttt{enable}).
+
+  \item
+    Use smoothers invariant to the number of processors, such as
+    polynomial smoothing, if possible.
+
+  \item
+    Use \texttt{uncoupled} aggregation instead of \texttt{coupled}, as later
+    requires significantly more communication.
+
+  \item
+    Adjust rebalancing parameters (see~\S\ref{sec:options_rebalancing}). Try
+    choosing rebalancing parameters so that you end up with one processor on the
+    coarsest level for the direct solver (this avoids additional communication).
+
+  \item
+    Enable implicit rebalancing of prolongators and restrictors
+    (\texttt{repartition: rebalance P and R}).
+\end{enumerate}

@@ -341,7 +341,7 @@ namespace Tpetra {
 
       // Create new ArrayRCP holding data
       KokkosClassic::MultiVector<mp_scalar_type, node_type> mp_mv =
-        A.getLocalMVNonConst();
+        A.getLocalMV();
       Teuchos::ArrayRCP<mp_scalar_type> mp_vals = mp_mv.getValuesNonConst();
       const mp_ordinal_type mp_size = Storage::static_size;
       const size_type mv_size = mp_vals.size();

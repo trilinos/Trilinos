@@ -1,4 +1,3 @@
-INCLUDE(AddSubdirectories)
 
 #
 # Add specific test executables

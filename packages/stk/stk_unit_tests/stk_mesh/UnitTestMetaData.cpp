@@ -1,10 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include <stddef.h>                     // for NULL, size_t
 #include <exception>                    // for exception
@@ -24,6 +49,11 @@
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/util/NamedPair.hpp"
+#include "unit_tests/BulkDataTester.hpp"
+#include "stk_io/StkMeshIoBroker.hpp"
+#include <stk_mesh/base/GetEntities.hpp>
+
+
 namespace stk { namespace mesh { class Part; } }
 
 
@@ -32,6 +62,7 @@ namespace stk { namespace mesh { class Part; } }
 
 
 using stk::mesh::MetaData;
+using stk::mesh::BulkData;
 using stk::mesh::Part;
 using stk::mesh::PartVector;
 using stk::mesh::EntityRank;
@@ -41,6 +72,22 @@ using std::endl;
 //----------------------------------------------------------------------
 
 namespace {
+
+TEST( UnitTestRootTopology, noNewPartsWithTopologyAfterCommit )
+{
+  //Test functions in MetaData.cpp
+  const int spatial_dimension = 3;
+  MetaData uncommited_metadata(spatial_dimension);
+  MetaData commited_metadata(spatial_dimension);
+
+  commited_metadata.commit();
+
+  EXPECT_THROW(commited_metadata.declare_part_with_topology( std::string("a") , stk::topology::TRI_3  ), std::logic_error);
+
+  EXPECT_NO_THROW(uncommited_metadata.declare_part_with_topology( std::string("a") , stk::topology::TRI_3 ));
+  uncommited_metadata.commit();
+}
+
 
 TEST( UnitTestMetaData, testMetaData )
 {
@@ -105,12 +152,16 @@ TEST( UnitTestMetaData, testEntityRepository )
   //Test Entity repository - covering EntityRepository.cpp/hpp
   stk::mesh::MetaData meta ( spatial_dimension );
   stk::mesh::Part & part = meta.declare_part("another part");
+  stk::mesh::Part & hex_part = meta.declare_part_with_topology("elem_part", stk::topology::HEX_8);
 
   meta.commit();
 
-  stk::mesh::BulkData bulk ( meta , MPI_COMM_WORLD );
+  stk::mesh::unit_test::BulkDataTester bulk ( meta , MPI_COMM_WORLD );
   std::vector<stk::mesh::Part *>  add_part;
   add_part.push_back ( &part );
+  std::vector<stk::mesh::Part *> elem_parts;
+  elem_parts.push_back( &part );
+  elem_parts.push_back( &hex_part );
 
   int rank = stk::parallel_machine_rank( MPI_COMM_WORLD );
   int size = stk::parallel_machine_size( MPI_COMM_WORLD );
@@ -118,32 +169,38 @@ TEST( UnitTestMetaData, testEntityRepository )
 
   bulk.modification_begin();
 
+  std::vector<stk::mesh::Entity> nodes;
   stk::mesh::Entity node = stk::mesh::Entity();
   int id_base = 0;
   for ( id_base = 0 ; id_base < 97 ; ++id_base )
   {
     int new_id = size * id_base + rank;
     node = bulk.declare_entity( stk::topology::NODE_RANK , new_id+1 , add_part );
+    nodes.push_back(node);
   }
 
   int new_id = size * (++id_base) + rank;
-  stk::mesh::Entity elem  = bulk.declare_entity( stk::topology::ELEMENT_RANK , new_id+1 , add_part );
-  bulk.declare_relation(elem, node, 0);
+  stk::mesh::Entity elem  = bulk.declare_entity( stk::topology::ELEMENT_RANK , new_id+1 , elem_parts );
 
-  bulk.entity_comm_map_clear(bulk.entity_key(elem));
+  for (unsigned ord = 0; ord < 8; ++ord)
+  {
+    bulk.declare_relation(elem, nodes[ord], ord);
+  }
 
-  bulk.entity_comm_map_clear_ghosting(bulk.entity_key(elem));
+  bulk.my_entity_comm_map_clear(bulk.entity_key(elem));
+
+  bulk.my_entity_comm_map_clear_ghosting(bulk.entity_key(elem));
 
   const stk::mesh::Ghosting & ghost = bulk.aura_ghosting();
 
   bulk.modification_end();
 
-  ASSERT_FALSE(bulk.entity_comm_map_erase(bulk.entity_key(elem), ghost));
+  ASSERT_FALSE(bulk.my_entity_comm_map_erase(bulk.entity_key(elem), ghost));
 
   const stk::mesh::EntityCommInfo comm_info( ghost.ordinal() , 0 );
 
-  ASSERT_FALSE(bulk.entity_comm_map_erase(bulk.entity_key(elem), comm_info));
-  ASSERT_TRUE(bulk.entity_comm_map_insert(elem, comm_info));
+  ASSERT_FALSE(bulk.my_entity_comm_map_erase(bulk.entity_key(elem), comm_info));
+  ASSERT_TRUE(bulk.my_entity_comm_map_insert(elem, comm_info));
 }
 
 TEST( UnitTestMetaData, noEntityTypes )
@@ -180,6 +237,112 @@ TEST( UnitTestMetaData, declare_attribute_no_delete )
   Part &pa = metadata.declare_part( std::string("a") , stk::topology::NODE_RANK );
   metadata.declare_attribute_no_delete( pa, singleton);
   metadata.commit();
+}
+
+TEST(UnitTestMetaData, set_mesh_bulk_data )
+{
+  const int spatial_dimension = 3;
+  MetaData meta(spatial_dimension);
+  BulkData* bulk1 = new BulkData(meta, MPI_COMM_WORLD);
+  ASSERT_THROW(BulkData bulk2(meta, MPI_COMM_WORLD), std::logic_error);
+
+  //But if we first clear the original BulkData, we should be able to
+  //add another one with the same MetaData.
+  delete bulk1;
+  BulkData bulk2(meta, MPI_COMM_WORLD);
+  meta.set_mesh_bulk_data(&bulk2);
+  ASSERT_TRUE(&meta.mesh_bulk_data() == &bulk2);
+}
+
+TEST(UnitTestMetaData, superset_of_shared_part)
+{
+    stk::ParallelMachine communicator = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(communicator);
+    if(numProcs == 2)
+    {
+        stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
+        const std::string generatedMeshSpecification = "generated:1x1x2";
+        stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+        stkMeshIoBroker.create_input_mesh();
+        stk::mesh::MetaData &meta = stkMeshIoBroker.meta_data();
+
+        stk::mesh::Part & mysupername = meta.declare_part("my_superset_part_shared");
+        meta.declare_part_subset(mysupername, meta.globally_shared_part());
+        mysupername.entity_membership_is_parallel_consistent(false);
+
+        stk::mesh::Part & mysupernamelocal = meta.declare_part("my_superset_part_local");
+        meta.declare_part_subset(mysupernamelocal, meta.locally_owned_part());
+        mysupernamelocal.entity_membership_is_parallel_consistent(false);
+
+        stk::mesh::Part & userpart = meta.declare_part("userpartsubsettest");
+        stk::mesh::Part & usersuper = meta.declare_part("usersuperset");
+        meta.declare_part_subset(usersuper, userpart);
+
+        stkMeshIoBroker.populate_bulk_data();
+        stk::mesh::BulkData &mesh = stkMeshIoBroker.bulk_data();
+
+        bool expect_supersets_to_work_with_shared_part = false;
+
+        if (expect_supersets_to_work_with_shared_part) {
+
+            std::cout << "p[" << mesh.parallel_rank() <<"] num nodes stk shared part=" <<
+                    stk::mesh::count_selected_entities(meta.globally_shared_part(),
+                                                       mesh.buckets(stk::topology::NODE_RANK)) << std::endl;
+            std::cout << "p[" << mesh.parallel_rank() << "] num nodes in superset of stk shared part=" <<
+                    stk::mesh::count_selected_entities(mysupername,
+                                                       mesh.buckets(stk::topology::NODE_RANK)) << std::endl;
+            std::cout << "p[" << mesh.parallel_rank() <<"] num nodes stk local part=" <<
+                    stk::mesh::count_selected_entities(meta.locally_owned_part(),
+                                                       mesh.buckets(stk::topology::NODE_RANK)) << std::endl;
+            std::cout << "p[" << mesh.parallel_rank() << "] num nodes in superset of stk local part=" <<
+                    stk::mesh::count_selected_entities(mysupernamelocal,
+                                                       mesh.buckets(stk::topology::NODE_RANK)) << std::endl;
+
+            EXPECT_EQ(
+                    stk::mesh::count_selected_entities(meta.globally_shared_part(),
+                                                       mesh.buckets(stk::topology::NODE_RANK)),
+                                                       stk::mesh::count_selected_entities(mysupername,
+                                                                                          mesh.buckets(stk::topology::NODE_RANK)));
+        }
+
+        EXPECT_EQ(stk::mesh::count_selected_entities(meta.locally_owned_part(),
+                                                     mesh.buckets(stk::topology::NODE_RANK)),
+                  stk::mesh::count_selected_entities(mysupernamelocal,
+                                                     mesh.buckets(stk::topology::NODE_RANK)));
+
+        mesh.modification_begin();
+
+        stk::mesh::Entity node7 = mesh.get_entity(stk::topology::NODE_RANK, 7);
+        stk::mesh::PartVector addparts(1, &userpart);
+        if (mesh.parallel_rank() == 0) {
+            mesh.change_entity_parts(node7, addparts);
+        }
+        mesh.modification_end();
+
+        EXPECT_EQ(1u, stk::mesh::count_selected_entities(userpart,
+                                                mesh.buckets(stk::topology::NODE_RANK)));
+        EXPECT_EQ(1u, stk::mesh::count_selected_entities(usersuper,
+                                                mesh.buckets(stk::topology::NODE_RANK)));
+
+        //now take the subset part off, hope the superset gets taken off too
+        mesh.modification_begin();
+        stk::mesh::PartVector addnothing;
+        stk::mesh::PartVector removeparts(1, &userpart);
+        if (mesh.parallel_rank() == 0) {
+            mesh.change_entity_parts(node7, addnothing, removeparts);
+        }
+        mesh.modification_end();
+
+        EXPECT_EQ(0u, stk::mesh::count_selected_entities(userpart,
+                                                mesh.buckets(stk::topology::NODE_RANK)));
+        bool expect_entities_removed_from_supersets_when_removed_from_all_subsets = false;
+
+        if (expect_entities_removed_from_supersets_when_removed_from_all_subsets) {
+            EXPECT_EQ(0u, stk::mesh::count_selected_entities(usersuper,
+                                                mesh.buckets(stk::topology::NODE_RANK)));
+        }
+
+    }
 }
 
 }

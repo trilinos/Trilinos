@@ -50,41 +50,41 @@ all-local:
 #
 #np# Make sure to list all source files in one of the following categories.
 CORE = \
-	$(srcdir)/ArrayIndexRTC.hh \
-	$(srcdir)/ArrayNumberRTC.hh \
-	$(srcdir)/ArrayVarRTC.hh \
+	$(srcdir)/RTC_ArrayIndexRTC.hh \
+	$(srcdir)/RTC_ArrayNumberRTC.hh \
+	$(srcdir)/RTC_ArrayVarRTC.hh \
 	$(srcdir)/Bessel_I.C \
-	$(srcdir)/Bessel_I.hh \
+	$(srcdir)/RTC_Bessel_I_RTC.hh \
 	$(srcdir)/Block.C \
-	$(srcdir)/BlockRTC.hh \
+	$(srcdir)/RTC_BlockRTC.hh \
 	$(srcdir)/ConditionalBlock.C \
-	$(srcdir)/ConditionalBlockRTC.hh  \
-	$(srcdir)/ExecutableRTC.hh \
+	$(srcdir)/RTC_ConditionalBlockRTC.hh  \
+	$(srcdir)/RTC_ExecutableRTC.hh \
 	$(srcdir)/ForBlock.C \
-	$(srcdir)/ForBlockRTC.hh \
+	$(srcdir)/RTC_ForBlockRTC.hh \
 	$(srcdir)/Function.C \
-	$(srcdir)/FunctionRTC.hh \
+	$(srcdir)/RTC_FunctionRTC.hh \
 	$(srcdir)/IfElseifElseBlock.C \
-	$(srcdir)/IfElseifElseBlockRTC.hh \
+	$(srcdir)/RTC_IfElseifElseBlockRTC.hh \
 	$(srcdir)/Line.C \
-	$(srcdir)/LineRTC.hh \
+	$(srcdir)/RTC_LineRTC.hh \
 	$(srcdir)/NormalBlock.C \
-	$(srcdir)/NormalBlockRTC.hh \
-	$(srcdir)/ObjectRTC.hh \
+	$(srcdir)/RTC_NormalBlockRTC.hh \
+	$(srcdir)/RTC_ObjectRTC.hh \
 	$(srcdir)/Operator.C \
-	$(srcdir)/OperatorRTC.hh \
+	$(srcdir)/RTC_OperatorRTC.hh \
 	$(srcdir)/Registrar.C \
-	$(srcdir)/RegistrarRTC.hh \
-	$(srcdir)/ScalarNumberRTC.hh \
-	$(srcdir)/ScalarVarRTC.hh \
+	$(srcdir)/RTC_RegistrarRTC.hh \
+	$(srcdir)/RTC_ScalarNumberRTC.hh \
+	$(srcdir)/RTC_ScalarVarRTC.hh \
 	$(srcdir)/Tokenizer.C \
-	$(srcdir)/TokenizerRTC.hh \
-	$(srcdir)/ValueRTC.hh \
-	$(srcdir)/VariableRTC.hh \
+	$(srcdir)/RTC_TokenizerRTC.hh \
+	$(srcdir)/RTC_ValueRTC.hh \
+	$(srcdir)/RTC_VariableRTC.hh \
 	$(srcdir)/WhileBlock.C \
-	$(srcdir)/WhileBlockRTC.hh \
+	$(srcdir)/RTC_WhileBlockRTC.hh \
 	$(srcdir)/common.C \
-	$(srcdir)/commonRTC.hh
+	$(srcdir)/RTC_commonRTC.hh
 
 CORE_H =
 

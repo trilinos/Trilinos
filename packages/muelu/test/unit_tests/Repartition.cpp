@@ -116,7 +116,7 @@ namespace MueLuTests {
     RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), numGlobalElements, numMyElements, indexBase, comm);
 
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-        Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Laplace2D", map, matrixList);
+      Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Laplace2D", map, matrixList);
     RCP<Matrix> A = Pr->BuildMatrix();
 
     RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(map, false);
@@ -251,7 +251,7 @@ namespace MueLuTests {
     RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), numGlobalElements, numMyElements, indexBase, comm);
 
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-        Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Laplace2D", map, matrixList);
+      Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Laplace2D", map, matrixList);
     RCP<Matrix> A = Pr->BuildMatrix();
 
     RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(map, false);
@@ -297,8 +297,7 @@ namespace MueLuTests {
 
     RCP<RepartitionFactory> repart = rcp(new RepartitionFactory());
 
-    bool keepProc0 = false;
-    repart->DeterminePartitionPlacement(*A, *decomposition, numPartitions, keepProc0);
+    repart->DeterminePartitionPlacement(*A, *decomposition, numPartitions);
 
     Teuchos::ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
     switch (myRank) {
@@ -367,7 +366,7 @@ namespace MueLuTests {
     RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), numGlobalElements, numMyElements, indexBase, comm);
 
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-        Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Laplace2D", map, matrixList);
+      Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Laplace2D", map, matrixList);
     RCP<Matrix> A = Pr->BuildMatrix();
 
     RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(map, false);
@@ -413,8 +412,7 @@ namespace MueLuTests {
 
     RCP<RepartitionFactory> repart = rcp(new RepartitionFactory());
 
-    bool keepProc0 = false;
-    repart->DeterminePartitionPlacement(*A, *decomposition, numPartitions, keepProc0);
+    repart->DeterminePartitionPlacement(*A, *decomposition, numPartitions);
 
     Teuchos::ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
     switch (myRank)  {
@@ -488,7 +486,7 @@ namespace MueLuTests {
     RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), numGlobalElements, numMyElements, indexBase, comm);
 
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-        Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Laplace2D", map, matrixList);
+      Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Laplace2D", map, matrixList);
     RCP<Matrix> A = Pr->BuildMatrix();
 
     RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(map, false);
@@ -523,8 +521,7 @@ namespace MueLuTests {
 
     RCP<RepartitionFactory> repart = rcp(new RepartitionFactory());
 
-    bool keepProc0 = false;
-    repart->DeterminePartitionPlacement(*A, *decomposition, numPartitions, keepProc0);
+    repart->DeterminePartitionPlacement(*A, *decomposition, numPartitions);
 
     Teuchos::ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
     switch (myRank)  {
@@ -587,7 +584,7 @@ namespace MueLuTests {
     RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), numGlobalElements, numMyElements, indexBase, comm);
 
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-        Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Laplace2D", map, matrixList);
+      Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Laplace2D", map, matrixList);
     RCP<Matrix> A = Pr->BuildMatrix();
 
     RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(map, false);
@@ -626,8 +623,7 @@ namespace MueLuTests {
 
     RCP<RepartitionFactory> repart = rcp(new RepartitionFactory());
 
-    bool keepProc0 = false;
-    repart->DeterminePartitionPlacement(*A, *decomposition, numPartitions, keepProc0);
+    repart->DeterminePartitionPlacement(*A, *decomposition, numPartitions);
 
     Teuchos::ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
     switch (myRank)  {
@@ -693,7 +689,7 @@ namespace MueLuTests {
     RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), numGlobalElements, numMyElements, indexBase, comm);
 
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-        Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Laplace2D", map, matrixList);
+      Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Laplace2D", map, matrixList);
     RCP<Matrix> A = Pr->BuildMatrix();
 
     RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(map, false);
@@ -805,9 +801,9 @@ namespace MueLuTests {
     out << std::endl;
 
     /*
-      This test checks that MueLu successfully ignores the map of the coordinate MultiVector (MV).
-      MueLu treats the coordinate data as if the MV is consistent with the linear system A.
-    */
+       This test checks that MueLu successfully ignores the map of the coordinate MultiVector (MV).
+       MueLu treats the coordinate data as if the MV is consistent with the linear system A.
+       */
 
     // Create a matrix and coordinates.
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -832,7 +828,7 @@ namespace MueLuTests {
     galeriList.set("keepBCs",             false);
 
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-        Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Elasticity2D", map, galeriList);
+      Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Elasticity2D", map, galeriList);
     RCP<Matrix> A = Pr->BuildMatrix();
     A->SetFixedBlockSize(2);
 
@@ -844,7 +840,7 @@ namespace MueLuTests {
     H->GetLevel(0)->Set("A", A);
     H->GetLevel(0)->Set("Coordinates", coordinates);
     mueLuFactory->SetupHierarchy(*H);
-    ParameterList stats1 = H->print();
+    double cplx1 = H->GetOperatorComplexity();
 
     //build a map that is a "randomly" permuted version of the correct
     //coordinate map.  This map will be used to build the "bad" coordinates.
@@ -872,10 +868,8 @@ namespace MueLuTests {
     H->GetLevel(0)->Set("A", A);
     H->GetLevel(0)->Set("Coordinates", badCoordinates);
     mueLuFactory->SetupHierarchy(*H);
-    ParameterList stats2 = H->print();
+    double cplx2 = H->GetOperatorComplexity();
 
-    double cplx1 = stats1.get<double>("complexity");
-    double cplx2 = stats2.get<double>("complexity");
     TEST_EQUALITY(cplx1, cplx2);
 
   } // CoordinateMap

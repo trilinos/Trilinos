@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -116,6 +116,18 @@ int ex_copy (int in_exoid, int out_exoid)
     */
    in_large  = ex_large_model(in_exoid);
    out_large = ex_large_model(out_exoid);
+   
+   /*
+    * Get integer sizes for both input and output databases.
+    * Currently they should both match or there will be an error.
+    */
+   if (ex_int64_status(in_exoid) != ex_int64_status(out_exoid)) {
+     exerrval = EX_WRONGFILETYPE;
+     sprintf(errmsg,
+	     "Error: integer sizes do not match for input and output databases.");
+     ex_err("ex_copy",errmsg,exerrval);
+     return (EX_FATAL);
+   }
    
    /*
     * get number of dimensions, number of variables, number of global
@@ -502,6 +514,7 @@ int cpy_var_def(int in_id,int out_id,int rec_dim_id,char *var_nm)
    * to an output netCDF file. 
    */
 
+  char errmsg[MAX_ERR_LENGTH];
   int status;
   int *dim_in_id;
   int *dim_out_id;
@@ -564,7 +577,14 @@ int cpy_var_def(int in_id,int out_id,int rec_dim_id,char *var_nm)
     (void)nc_def_var(out_id, var_nm, nc_flt_code(out_id), nbr_dim, dim_out_id, &var_out_id);
     ex_compress_variable(out_id, var_out_id, 2);
   } else {
-    (void)nc_def_var(out_id, var_nm, var_type,            nbr_dim, dim_out_id, &var_out_id);
+    if ((status = nc_def_var(out_id, var_nm, var_type, nbr_dim, dim_out_id, &var_out_id)) != NC_NOERR) {
+      exerrval = status;
+      sprintf(errmsg,
+	      "Error: failed to define %s variable in file id %d",
+	      var_nm, out_id);
+      ex_err("ex_copy",errmsg,exerrval);
+      return (EX_FATAL);
+    }
     ex_compress_variable(out_id, var_out_id, 1);
   }
 
@@ -599,7 +619,7 @@ cpy_var_val(int in_id,int out_id,char *var_nm)
   size_t var_sz=1L;
   nc_type var_type_in, var_type_out;
 
-  void *void_ptr;
+  void *void_ptr = NULL;
 
   /* Get the var_id for the requested variable from both files. */
   (void)nc_inq_varid(in_id, var_nm, &var_in_id);
@@ -642,7 +662,8 @@ cpy_var_val(int in_id,int out_id,char *var_nm)
   } /* end loop over dim */
 
   /* Allocate enough space to hold the variable */
-  void_ptr=malloc(var_sz * type_size(var_type_in));
+  if (var_sz > 0)
+      void_ptr=malloc(var_sz * type_size(var_type_in));
 
   /* Get the variable */
 
@@ -769,7 +790,8 @@ cpy_coord_val(int in_id,int out_id,char *var_nm,
     (void)nc_inq_vartype( in_id, var_in_id,     &var_type_in);
     (void)nc_inq_vartype(out_id, var_out_id[0], &var_type_out);
 
-    void_ptr=malloc(num_nodes * type_size(var_type_in));
+    if (num_nodes > 0)
+        void_ptr=malloc(num_nodes * type_size(var_type_in));
 
     /* Copy each component of the variable... */
     for (i=0; i < spatial_dim; i++) {
@@ -797,7 +819,8 @@ cpy_coord_val(int in_id,int out_id,char *var_nm,
     (void)nc_inq_vartype(in_id,  var_in_id[0], &var_type_in);
     (void)nc_inq_vartype(out_id, var_out_id,   &var_type_out);
 
-    void_ptr=malloc(num_nodes * type_size(var_type_in));
+    if (num_nodes > 0)
+        void_ptr=malloc(num_nodes * type_size(var_type_in));
 
     /* Copy each component of the variable... */
     for (i=0; i < spatial_dim; i++) {

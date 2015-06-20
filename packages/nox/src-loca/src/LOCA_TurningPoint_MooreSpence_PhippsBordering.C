@@ -73,7 +73,8 @@ LOCA::TurningPoint::MooreSpence::PhippsBordering::PhippsBordering(
   borderedSolver(),
   nullMultiVector(),
   JnMultiVector(),
-  s(0.0)
+  s(0.0),
+  st(0.0)
 {
   borderedSolver =
     globalData->locaFactory->createBorderedSolverStrategy(topParams,

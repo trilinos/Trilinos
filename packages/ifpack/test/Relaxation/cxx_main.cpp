@@ -60,6 +60,8 @@
 #include "Ifpack_PointRelaxation.h"
 #include "Ifpack_BlockRelaxation.h"
 #include "Ifpack_SparseContainer.h"
+#include "Ifpack_TriDiContainer.h"
+
 #include "Ifpack_Amesos.h"
 #include "AztecOO.h"
 
@@ -67,6 +69,189 @@ static bool verbose = false;
 static bool SymmetricGallery = false;
 static bool Solver = AZ_gmres;
 const int NumVectors = 3;
+
+// ====================================================================== 
+bool TestTriDiVariableBlocking(const Epetra_Comm & Comm) {
+  // Basically each processor gets this 5x5 block lower-triangular matrix:
+  //
+  // [ 2 -1  0  0  0 ;...
+  // [-1  2  0  0  0 ;...
+  // [ 0 -1  3 -1  0 ;...
+  // [ 0  0 -1  3 -1 ;...
+  // [ 0  0  0 -1  2  ];
+  //
+
+  Epetra_Map RowMap(-1,5,0,Comm); // 5 rows per proc
+
+  Epetra_CrsMatrix A(Copy,RowMap,0);
+  
+  int num_entries;
+  int indices[5];
+  double values[5];
+  int rb = RowMap.GID(0);
+
+  /*** Fill RHS / LHS ***/
+  Epetra_Vector rhs(RowMap), lhs(RowMap), exact_soln(RowMap);
+  rhs.PutScalar(2.0);
+  lhs.PutScalar(0.0);
+  exact_soln.PutScalar(2.0);
+
+  /*** Fill Matrix ****/
+  // Row 0 
+  num_entries=2;
+  indices[0]=rb; indices[1]=rb+1;
+  values[0] =2; values[1] =-1;
+  A.InsertGlobalValues(rb,num_entries,&values[0],&indices[0]);
+
+  // Row 1
+  num_entries=2;
+  indices[0]=rb; indices[1]=rb+1; 
+  values[0] =-1; values[1] =2;
+  A.InsertGlobalValues(rb+1,num_entries,&values[0],&indices[0]);
+
+  // Row 2
+  num_entries=3;
+  indices[0]=rb+1; indices[1]=rb+2; indices[2]=rb+3; 
+  values[0] =-1;   values[1] = 3;   values[2] =-1;   
+  A.InsertGlobalValues(rb+2,num_entries,&values[0],&indices[0]);
+
+  // Row 3
+  num_entries=3;
+  indices[0]=rb+2; indices[1]=rb+3; indices[2]=rb+4;
+  values[0] =-1;   values[1] = 3;   values[2] =-1;
+  A.InsertGlobalValues(rb+3,num_entries,&values[0],&indices[0]);
+
+  // Row 4
+  num_entries=2;
+  indices[0]=rb+3; indices[1]=rb+4;
+  values[0] =-1;   values[1] = 2;
+  A.InsertGlobalValues(rb+4,num_entries,&values[0],&indices[0]); 
+  A.FillComplete();
+
+  /* Setup Block Relaxation */
+  int PartMap[5]={0,0,1,1,1};
+
+  Teuchos::ParameterList ilist;
+  ilist.set("partitioner: type","user");
+  ilist.set("partitioner: map",&PartMap[0]);
+  ilist.set("partitioner: local parts",2);
+  ilist.set("relaxation: sweeps",1);
+  ilist.set("relaxation: type","Gauss-Seidel");
+
+  Ifpack_BlockRelaxation<Ifpack_TriDiContainer> TDRelax(&A);
+
+  TDRelax.SetParameters(ilist);
+  TDRelax.Initialize();
+  TDRelax.Compute();
+  TDRelax.ApplyInverse(rhs,lhs);
+  
+  double norm;
+  lhs.Update(1.0,exact_soln,-1.0);
+  lhs.Norm2(&norm);
+
+  if(verbose) cout<<"Variable Block Partitioning Test"<<endl;
+
+  if(norm < 1e-14) {
+    if(verbose) cout << "Test passed" << endl;
+     return true;
+  }
+  else {
+    if(verbose) cout << "Test failed" << endl;
+    return false;
+  }
+}
+// ====================================================================== 
+bool TestVariableBlocking(const Epetra_Comm & Comm) {
+  // Basically each processor gets this 5x5 block lower-triangular matrix:
+  //
+  // [ 2 -1  0  0  0 ;...
+  // [-1  2  0  0  0 ;...
+  // [-1 -1  5 -1 -1 ;...
+  // [-1 -1 -1  5 -1 ;...
+  // [-1 -1 -1 -1  5  ];
+  //
+  // The nice thing about this matrix is that if the RHS is a constant,the solution is the same constant...
+
+  Epetra_Map RowMap(-1,5,0,Comm); // 5 rows per proc
+
+  Epetra_CrsMatrix A(Copy,RowMap,0);
+  
+  int num_entries;
+  int indices[5];
+  double values[5];
+  int rb = RowMap.GID(0);
+
+  /*** Fill RHS / LHS ***/
+  Epetra_Vector rhs(RowMap), lhs(RowMap), exact_soln(RowMap);
+  rhs.PutScalar(2.0);
+  lhs.PutScalar(0.0);
+  exact_soln.PutScalar(2.0);
+
+  /*** Fill Matrix ****/
+  // Row 0 
+  num_entries=2;
+  indices[0]=rb; indices[1]=rb+1;
+  values[0] =2; values[1] =-1;
+  A.InsertGlobalValues(rb,num_entries,&values[0],&indices[0]);
+
+  // Row 1
+  num_entries=2;
+  indices[0]=rb; indices[1]=rb+1;
+  values[0] =-1; values[1] =2;
+  A.InsertGlobalValues(rb+1,num_entries,&values[0],&indices[0]);
+
+  // Row 2
+  num_entries=5;
+  indices[0]=rb; indices[1]=rb+1; indices[2]=rb+2; indices[3]=rb+3; indices[4]=rb+4;
+  values[0] =-1; values[1] =-1;   values[2] = 5;   values[3] =-1;   values[4] =-1;
+  A.InsertGlobalValues(rb+2,num_entries,&values[0],&indices[0]);
+
+  // Row 3
+  num_entries=5;
+  indices[0]=rb; indices[1]=rb+1; indices[2]=rb+2; indices[3]=rb+3; indices[4]=rb+4;
+  values[0] =-1; values[1] =-1;   values[2] =-1;   values[3] = 5;   values[4] =-1;
+  A.InsertGlobalValues(rb+3,num_entries,&values[0],&indices[0]);
+
+  // Row 4
+  num_entries=5;
+  indices[0]=rb; indices[1]=rb+1; indices[2]=rb+2; indices[3]=rb+3; indices[4]=rb+4;
+  values[0] =-1; values[1] =-1;   values[2] =-1;   values[3] =-1;   values[4] = 5;
+  A.InsertGlobalValues(rb+4,num_entries,&values[0],&indices[0]); 
+  A.FillComplete();
+
+
+  /* Setup Block Relaxation */
+  int PartMap[5]={0,0,1,1,1};
+
+  Teuchos::ParameterList ilist;
+  ilist.set("partitioner: type","user");
+  ilist.set("partitioner: map",&PartMap[0]);
+  ilist.set("partitioner: local parts",2);
+  ilist.set("relaxation: sweeps",1);
+  ilist.set("relaxation: type","Gauss-Seidel");
+  Ifpack_BlockRelaxation<Ifpack_DenseContainer> Relax(&A);
+  Relax.SetParameters(ilist);
+  Relax.Initialize();
+  Relax.Compute();
+
+  Relax.ApplyInverse(rhs,lhs);
+
+  
+  double norm;
+  lhs.Update(1.0,exact_soln,-1.0);
+  lhs.Norm2(&norm);
+
+  if(verbose) cout<<"Variable Block Partitioning Test"<<endl;
+
+  if(norm < 1e-14) {
+    if(verbose) cout << "Test passed" << endl;
+     return true;
+  }
+  else {
+    if(verbose) cout << "Test failed" << endl;
+    return false;
+  }
+}
 
 // ====================================================================== 
 int CompareLineSmoother(const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, Teuchos::RCP<Epetra_MultiVector> coord)
@@ -88,7 +273,45 @@ int CompareLineSmoother(const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, Teuchos
   List.set("partitioner: y-coordinates",&(*coord)[1][0]);
   List.set("partitioner: z-coordinates",(double*) 0);
 
-  printf("CMS: Compare line smoother\n");//DEBUG
+  RHS.PutScalar(1.0);
+  LHS.PutScalar(0.0);
+
+  Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > Prec(&*A);
+  Prec.SetParameters(List);
+  Prec.Compute();
+
+  // set AztecOO solver object
+  AztecOO AztecOOSolver(Problem);
+  AztecOOSolver.SetAztecOption(AZ_solver,Solver);
+  if (verbose)
+    AztecOOSolver.SetAztecOption(AZ_output,32);
+  else
+    AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
+  AztecOOSolver.SetPrecOperator(&Prec);
+
+  AztecOOSolver.Iterate(2550,1e-5);
+
+  return(AztecOOSolver.NumIters());
+}
+// ====================================================================== 
+int AllSingle(const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, Teuchos::RCP<Epetra_MultiVector> coord)
+{
+  Epetra_MultiVector LHS(A->RowMatrixRowMap(), NumVectors);
+  Epetra_MultiVector RHS(A->RowMatrixRowMap(), NumVectors);
+  LHS.PutScalar(0.0); RHS.Random();
+
+  Epetra_LinearProblem Problem(&*A, &LHS, &RHS);
+
+  Teuchos::ParameterList List;
+  List.set("relaxation: damping factor", 1.0);
+  List.set("relaxation: type", "symmetric Gauss-Seidel");
+  List.set("relaxation: sweeps",1);
+  List.set("partitioner: overlap",0);
+  List.set("partitioner: type", "line");
+  List.set("partitioner: line detection threshold",1.0);
+  List.set("partitioner: x-coordinates",&(*coord)[0][0]);
+  List.set("partitioner: y-coordinates",&(*coord)[1][0]);
+  List.set("partitioner: z-coordinates",(double*) 0);
 
   RHS.PutScalar(1.0);
   LHS.PutScalar(0.0);
@@ -106,11 +329,11 @@ int CompareLineSmoother(const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, Teuchos
     AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
   AztecOOSolver.SetPrecOperator(&Prec);
 
-  AztecOOSolver.Iterate(1550,1e-5);
+  AztecOOSolver.Iterate(2550,1e-5);
 
+  printf(" AllSingle  iters %d \n",AztecOOSolver.NumIters());
   return(AztecOOSolver.NumIters());
 }
-
 
 // ====================================================================== 
 int CompareBlockOverlap(const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, int Overlap)
@@ -145,7 +368,7 @@ int CompareBlockOverlap(const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, int Ove
     AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
   AztecOOSolver.SetPrecOperator(&Prec);
 
-  AztecOOSolver.Iterate(1550,1e-5);
+  AztecOOSolver.Iterate(2550,1e-5);
 
   return(AztecOOSolver.NumIters());
 }
@@ -182,7 +405,7 @@ int CompareBlockSizes(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatr
     AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
   AztecOOSolver.SetPrecOperator(&Prec);
 
-  AztecOOSolver.Iterate(1550,1e-5);
+  AztecOOSolver.Iterate(2550,1e-5);
 
   return(AztecOOSolver.NumIters());
 }
@@ -226,7 +449,7 @@ bool ComparePointAndBlock(string PrecType, const Teuchos::RefCountPtr<Epetra_Row
       AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
     AztecOOSolver.SetPrecOperator(&Point);
 
-    AztecOOSolver.Iterate(1550,1e-2);
+    AztecOOSolver.Iterate(2550,1e-2);
 
     double TrueResidual = AztecOOSolver.TrueResidual();
     ItersPoint = AztecOOSolver.NumIters();
@@ -258,7 +481,7 @@ bool ComparePointAndBlock(string PrecType, const Teuchos::RefCountPtr<Epetra_Row
       AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
     AztecOOSolver.SetPrecOperator(&Block);
 
-    AztecOOSolver.Iterate(1550,1e-2);
+    AztecOOSolver.Iterate(2550,1e-2);
 
     double TrueResidual = AztecOOSolver.TrueResidual();
     ItersBlock = AztecOOSolver.NumIters();
@@ -275,12 +498,12 @@ bool ComparePointAndBlock(string PrecType, const Teuchos::RefCountPtr<Epetra_Row
   if (diff > 10)
   {
     if (verbose)
-      cout << "TEST FAILED!" << endl;
+      cout << "ComparePointandBlock TEST FAILED!" << endl;
     return(false);
   }
   else {
     if (verbose)
-      cout << "TEST PASSED" << endl;
+      cout << "ComparePointandBlock TEST PASSED" << endl;
     return(true);
   }
 }
@@ -334,7 +557,7 @@ bool KrylovTest(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A
     AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
     AztecOOSolver.SetPrecOperator(&Point);
 
-    AztecOOSolver.Iterate(1550,1e-5);
+    AztecOOSolver.Iterate(2550,1e-5);
 
     double TrueResidual = AztecOOSolver.TrueResidual();
     // some output
@@ -343,7 +566,7 @@ bool KrylovTest(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A
     }
     Iters1 = AztecOOSolver.NumIters();
   }
-
+ 
   // ======================================================== //
   // now re-run with 10 sweeps, solver should converge faster
   // ======================================================== //
@@ -359,7 +582,7 @@ bool KrylovTest(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A
     AztecOOSolver.SetAztecOption(AZ_solver,Solver);
     AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
     AztecOOSolver.SetPrecOperator(&Point);
-    AztecOOSolver.Iterate(1550,1e-5);
+    AztecOOSolver.Iterate(2550,1e-5);
 
     double TrueResidual = AztecOOSolver.TrueResidual();
     // some output
@@ -376,12 +599,12 @@ bool KrylovTest(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A
 
   if (Iters10 > Iters1) {
     if (verbose)
-      cout << "TEST FAILED!" << endl;
+      cout << "KrylovTest TEST FAILED!" << endl;
     return(false);
   }
   else {
     if (verbose)
-      cout << "TEST PASSED" << endl;
+      cout << "KrylovTest TEST PASSED" << endl;
     return(true);
   }
 }
@@ -399,7 +622,7 @@ bool BasicTest(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A,
   // Set up the list
   Teuchos::ParameterList List;
   List.set("relaxation: damping factor", 1.0);
-  List.set("relaxation: sweeps",1550);
+  List.set("relaxation: sweeps",2550);
   List.set("relaxation: type", PrecType);
   if(backward) List.set("relaxation: backward mode",backward);
 
@@ -430,12 +653,12 @@ bool BasicTest(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A,
   // Jacobi is very slow to converge here
   if (residual / starting_residual < 1e-2) {
     if (verbose)
-      cout << "Test passed" << endl;
+      cout << "BasicTest Test passed" << endl;
     return(true);
   }
   else {
     if (verbose)
-      cout << "Test failed!" << endl;
+      cout << "BasicTest Test failed!" << endl;
     return(false);
   }
 }
@@ -569,11 +792,11 @@ int main(int argc, char *argv[])
 
     if ((Iters16 > Iters8) && (Iters8 > Iters4)) {
       if (verbose)
-        cout << "Test passed" << endl;
+        cout << "CompareBlockSizes Test passed" << endl;
     }
     else {
       if (verbose) 
-        cout << "TEST FAILED!" << endl;
+        cout << "CompareBlockSizes TEST FAILED!" << endl;
       TestPassed = TestPassed && false;
     }
   }
@@ -589,11 +812,11 @@ int main(int argc, char *argv[])
     Iters4 = CompareBlockOverlap(A,4);
     if ((Iters4 < Iters2) && (Iters2 < Iters0)) {
       if (verbose)
-        cout << "Test passed" << endl;
+        cout << "CompareBlockOverlap Test passed" << endl;
     }
     else {
       if (verbose) 
-        cout << "TEST FAILED!" << endl;
+        cout << "CompareBlockOverlap TEST FAILED!" << endl;
       TestPassed = TestPassed && false;
     }
   }
@@ -602,9 +825,33 @@ int main(int argc, char *argv[])
   // check if line smoothing works      //
   // ================================== //
   {
-    //int Iters1=
+    int Iters1=
     CompareLineSmoother(A,coord);    
-  }							 
+    printf(" comparelinesmoother iters %d \n",Iters1);
+  }				
+ // ================================== //
+  // check if All singleton version of CompareLineSmoother    //
+  // ================================== //
+  {
+
+    AllSingle(A,coord);    
+
+  }				
+
+  // ================================== //
+  // test variable blocking             //
+  // ================================== //
+  {
+    TestPassed = TestPassed && TestVariableBlocking(A->Comm());
+  }
+
+  // ================================== //
+  // test variable blocking             //
+  // ================================== //
+  {
+    TestPassed = TestPassed && TestTriDiVariableBlocking(A->Comm());
+  }
+
 
   // ============ //
   // final output //
@@ -618,7 +865,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize(); 
 #endif
-  
+
   cout << endl;
   cout << "Test `TestRelaxation.exe' passed!" << endl;
   cout << endl;

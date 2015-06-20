@@ -1112,22 +1112,20 @@ LOCA::Epetra::Group::applyComplexInverseMultiVector(
                 NOX::Epetra::Vector::CreateView);
   NOX::Epetra::Vector nev_result(Teuchos::rcp(&complex_result,false),
                  NOX::Epetra::Vector::CreateView);
-  const NOX::Epetra::Vector* epetra_input_real;
-  const NOX::Epetra::Vector* epetra_input_imag;
-  NOX::Epetra::Vector* epetra_result_real;
-  NOX::Epetra::Vector* epetra_result_imag;
   bool status;
   bool finalStatus = true;
   for (int i=0; i<input_real.numVectors(); i++) {
-    epetra_input_real =
-      dynamic_cast<const NOX::Epetra::Vector*>(&input_real[i]);
-    epetra_input_imag =
-      dynamic_cast<const NOX::Epetra::Vector*>(&input_imag[i]);
-    epetra_result_real = dynamic_cast<NOX::Epetra::Vector*>(&result_real[i]);
-    epetra_result_imag = dynamic_cast<NOX::Epetra::Vector*>(&result_imag[i]);
+    const NOX::Epetra::Vector & epetra_input_real =
+      dynamic_cast<const NOX::Epetra::Vector&>(input_real[i]);
+    const NOX::Epetra::Vector & epetra_input_imag =
+      dynamic_cast<const NOX::Epetra::Vector&>(input_imag[i]);
+    NOX::Epetra::Vector & epetra_result_real =
+      dynamic_cast<NOX::Epetra::Vector&>(result_real[i]);
+    NOX::Epetra::Vector & epetra_result_imag =
+      dynamic_cast<NOX::Epetra::Vector&>(result_imag[i]);
 
-    complex_input.LoadBlockValues(epetra_input_real->getEpetraVector(), 0);
-    complex_input.LoadBlockValues(epetra_input_imag->getEpetraVector(), 1);
+    complex_input.LoadBlockValues(epetra_input_real.getEpetraVector(), 0);
+    complex_input.LoadBlockValues(epetra_input_imag.getEpetraVector(), 1);
     complex_result.PutScalar(0.0);
 
     status =
@@ -1136,8 +1134,8 @@ LOCA::Epetra::Group::applyComplexInverseMultiVector(
                              nev_input,
                              nev_result);
 
-    complex_result.ExtractBlockValues(epetra_result_real->getEpetraVector(),0);
-    complex_result.ExtractBlockValues(epetra_result_imag->getEpetraVector(),1);
+    complex_result.ExtractBlockValues(epetra_result_real.getEpetraVector(),0);
+    complex_result.ExtractBlockValues(epetra_result_imag.getEpetraVector(),1);
 
     finalStatus = finalStatus && status;
   }
@@ -1287,22 +1285,20 @@ LOCA::Epetra::Group::applyComplexTransposeInverseMultiVector(
                 NOX::Epetra::Vector::CreateView);
   NOX::Epetra::Vector nev_result(Teuchos::rcp(&complex_result,false),
                  NOX::Epetra::Vector::CreateView);
-  const NOX::Epetra::Vector* epetra_input_real;
-  const NOX::Epetra::Vector* epetra_input_imag;
-  NOX::Epetra::Vector* epetra_result_real;
-  NOX::Epetra::Vector* epetra_result_imag;
   bool status;
   bool finalStatus = true;
   for (int i=0; i<input_real.numVectors(); i++) {
-    epetra_input_real =
-      dynamic_cast<const NOX::Epetra::Vector*>(&input_real[i]);
-    epetra_input_imag =
-      dynamic_cast<const NOX::Epetra::Vector*>(&input_imag[i]);
-    epetra_result_real = dynamic_cast<NOX::Epetra::Vector*>(&result_real[i]);
-    epetra_result_imag = dynamic_cast<NOX::Epetra::Vector*>(&result_imag[i]);
+    const NOX::Epetra::Vector & epetra_input_real =
+      dynamic_cast<const NOX::Epetra::Vector&>(input_real[i]);
+    const NOX::Epetra::Vector & epetra_input_imag =
+      dynamic_cast<const NOX::Epetra::Vector&>(input_imag[i]);
+    NOX::Epetra::Vector & epetra_result_real =
+      dynamic_cast<NOX::Epetra::Vector&>(result_real[i]);
+    NOX::Epetra::Vector & epetra_result_imag =
+      dynamic_cast<NOX::Epetra::Vector&>(result_imag[i]);
 
-    complex_input.LoadBlockValues(epetra_input_real->getEpetraVector(), 0);
-    complex_input.LoadBlockValues(epetra_input_imag->getEpetraVector(), 1);
+    complex_input.LoadBlockValues(epetra_input_real.getEpetraVector(), 0);
+    complex_input.LoadBlockValues(epetra_input_imag.getEpetraVector(), 1);
     complex_result.PutScalar(0.0);
 
     status =
@@ -1310,8 +1306,8 @@ LOCA::Epetra::Group::applyComplexTransposeInverseMultiVector(
                           nev_input,
                           nev_result);
 
-    complex_result.ExtractBlockValues(epetra_result_real->getEpetraVector(),0);
-    complex_result.ExtractBlockValues(epetra_result_imag->getEpetraVector(),1);
+    complex_result.ExtractBlockValues(epetra_result_real.getEpetraVector(),0);
+    complex_result.ExtractBlockValues(epetra_result_imag.getEpetraVector(),1);
 
     finalStatus = finalStatus && status;
   }

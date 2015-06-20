@@ -43,11 +43,6 @@
 // MP::Vector
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include "Kokkos_View_MP_Vector.hpp"
-#include "Kokkos_ArithTraits_MP_Vector.hpp"
-#include "Kokkos_InnerProductSpaceTraits_MP_Vector.hpp"
-#include "Kokkos_MV_MP_Vector.hpp"
-#include "Kokkos_CrsMatrix_MP_Vector_Cuda.hpp"
-#include "Kokkos_CrsMatrix_MP_Vector.hpp"
 
 // Compile-time loops
 #include "Sacado_mpl_range_c.hpp"
@@ -57,8 +52,6 @@
 // Kokkos libraries' headers:
 #include <Kokkos_UnorderedMap.hpp>
 #include <Kokkos_StaticCrsGraph.hpp>
-#include <Kokkos_CrsMatrix.hpp>
-#include <Kokkos_ArithTraits.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
 // Utilities
@@ -76,26 +69,22 @@ struct Perf {
   size_t global_node_count ;
   double import_time ;
   double fill_time ;
-  double bc_time ;
 
   Perf() : global_elem_count(0) ,
            global_node_count(0) ,
            import_time(0) ,
-           fill_time(0) ,
-           bc_time(0) {}
+           fill_time(0) {}
 
   void increment(const Perf& p) {
     global_elem_count = p.global_elem_count;
     global_node_count = p.global_node_count;
     import_time      += p.import_time;
     fill_time        += p.fill_time;
-    bc_time          += p.bc_time ;
   }
 
   void scale(double s) {
     import_time *= s;
     fill_time   *= s;
-    bc_time     *= s;
   }
 };
 
@@ -112,9 +101,8 @@ Perf fenl_assembly(
   const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
   const int use_print ,
   const int use_trials ,
-  const int use_atomic ,
   const int use_nodes[] ,
-  Kokkos::DeviceConfig dev_config ,
+  Kokkos::Example::FENL::DeviceConfig dev_config ,
   Kokkos::View< Scalar* , Kokkos::LayoutLeft, Device >& nodal_residual)
 {
   using Teuchos::RCP;
@@ -125,9 +113,7 @@ Perf fenl_assembly(
 
   typedef Kokkos::Example::BoxElemFixture< Device , Kokkos::Example::BoxElemPart::ElemLinear > FixtureType ;
 
-  typedef Kokkos::CrsMatrix< Scalar , unsigned , Device >
-  //typedef typename GlobalMatrixType::k_local_matrix_type
-    LocalMatrixType ;
+  typedef Kokkos::Example::FENL::CrsMatrix< Scalar , Device > LocalMatrixType ;
 
   typedef typename LocalMatrixType::StaticCrsGraphType
     LocalGraphType ;
@@ -135,15 +121,13 @@ Perf fenl_assembly(
   typedef Kokkos::Example::FENL::NodeNodeGraph< typename FixtureType::elem_node_type , LocalGraphType , FixtureType::ElemNode >
      NodeNodeGraphType ;
 
-  typedef Kokkos::Example::FENL::ElementComputationConstantCoefficient CoeffFunctionType;
+  //typedef Kokkos::Example::FENL::ElementComputationConstantCoefficient CoeffFunctionType;
+  typedef Kokkos::Example::FENL::ExponentialKLCoefficient< Scalar, double, Device > CoeffFunctionType;
   typedef Kokkos::Example::FENL::ElementComputation< FixtureType , LocalMatrixType , CoeffFunctionType >
     ElementComputationType ;
 
   typedef Kokkos::Example::FENL::DirichletComputation< FixtureType , LocalMatrixType >
     DirichletComputationType ;
-
-  typedef Kokkos::Example::FENL::NodeElemGatherFill< ElementComputationType >
-    NodeElemGatherFillType ;
 
   typedef typename ElementComputationType::vector_type VectorType ;
 
@@ -161,14 +145,18 @@ Perf fenl_assembly(
 
   // Decompose by node to avoid parallel communication in assembly
 
-  const float bubble_x = 1.0 ;
-  const float bubble_y = 1.0 ;
-  const float bubble_z = 1.0 ;
+  const double bubble_x = 1.0 ;
+  const double bubble_y = 1.0 ;
+  const double bubble_z = 1.0 ;
 
   const FixtureType fixture( Kokkos::Example::BoxElemPart::DecomposeNode ,
                              comm_size , comm_rank ,
                              use_nodes[0] , use_nodes[1] , use_nodes[2] ,
                              bubble_x , bubble_y , bubble_z );
+
+  if ( maximum(comm, ( fixture.ok() ? 0 : 1 ) ) ) {
+    throw std::runtime_error(std::string("Problem fixture setup failed"));
+  }
 
   //------------------------------------
 
@@ -184,7 +172,9 @@ Perf fenl_assembly(
 
   const double bc_lower_value = 1 ;
   const double bc_upper_value = 2 ;
-  CoeffFunctionType diffusion_coefficient( 1.0 );
+  //CoeffFunctionType diffusion_coefficient( 1.0 );
+  CoeffFunctionType diffusion_coefficient( 1.0, 0.1, 1.0, 5 );
+  Kokkos::deep_copy( diffusion_coefficient.getRandomVariables(), 1.0 );
 
   //------------------------------------
 
@@ -224,39 +214,7 @@ Perf fenl_assembly(
                      graph_times );
 
     // Create the local sparse matrix from the graph:
-    LocalMatrixType jacobian( "jacobian" , mesh_to_graph.graph );
-
-    //----------------------------------
-
-    if ( print_flag ) {
-      const unsigned nrow = jacobian.numRows();
-      std::cout << "JacobianGraph[ "
-                << jacobian.numRows() << " x " << jacobian.numCols()
-                << " ] {" << std::endl ;
-      for ( unsigned irow = 0 ; irow < nrow ; ++irow ) {
-        std::cout << "  row[" << irow << "]{" ;
-        const unsigned entry_end = jacobian.graph.row_map(irow+1);
-        for ( unsigned entry = jacobian.graph.row_map(irow) ; entry < entry_end ; ++entry ) {
-          std::cout << " " << jacobian.graph.entries(entry);
-        }
-        std::cout << " }" << std::endl ;
-      }
-      std::cout << "}" << std::endl ;
-
-      std::cout << "ElemGraph {" << std::endl ;
-      for ( unsigned ielem = 0 ; ielem < mesh_to_graph.elem_graph.dimension_0() ; ++ielem ) {
-        std::cout << "  elem[" << ielem << "]{" ;
-        for ( unsigned irow = 0 ; irow < mesh_to_graph.elem_graph.dimension_1() ; ++irow ) {
-          std::cout << " {" ;
-          for ( unsigned icol = 0 ; icol < mesh_to_graph.elem_graph.dimension_2() ; ++icol ) {
-            std::cout << " " << mesh_to_graph.elem_graph(ielem,irow,icol);
-          }
-          std::cout << " }" ;
-        }
-        std::cout << " }" << std::endl ;
-      }
-      std::cout << "}" << std::endl ;
-    }
+    LocalMatrixType jacobian( mesh_to_graph.graph );
 
     //----------------------------------
 
@@ -265,30 +223,16 @@ Perf fenl_assembly(
     nodal_residual = VectorType( "nodal_residual" , fixture.node_count_owned() );
 
     // Get DeviceConfig structs used by some functors
-    Kokkos::DeviceConfig dev_config_elem, dev_config_gath, dev_config_bc;
+    Kokkos::Example::FENL::DeviceConfig dev_config_elem, dev_config_bc;
     Kokkos::Example::FENL::CreateDeviceConfigs<Scalar>::eval( dev_config_elem,
-                                                              dev_config_gath,
                                                               dev_config_bc );
 
     // Create element computation functor
-    const ElementComputationType elemcomp(
-      use_atomic ? ElementComputationType( fixture , diffusion_coefficient ,
+    const ElementComputationType elemcomp( fixture , diffusion_coefficient ,
                                            nodal_solution ,
                                            mesh_to_graph.elem_graph ,
                                            jacobian , nodal_residual ,
-                                           dev_config_elem )
-                 : ElementComputationType( fixture , diffusion_coefficient ,
-                                           nodal_solution , dev_config_elem ) );
-
-    const NodeElemGatherFillType gatherfill(
-      use_atomic ? NodeElemGatherFillType()
-                 : NodeElemGatherFillType( fixture.elem_node() ,
-                                           mesh_to_graph.elem_graph ,
-                                           nodal_residual ,
-                                           jacobian ,
-                                           elemcomp.elem_residuals ,
-                                           elemcomp.elem_jacobians ,
-                                           dev_config_gath) );
+                                           dev_config_elem );
 
     // Create boundary condition functor
     const DirichletComputationType dirichlet(
@@ -319,22 +263,13 @@ Perf fenl_assembly(
 
     elemcomp.apply();
 
-    if ( ! use_atomic ) {
-      gatherfill.apply();
-    }
-
-    Device::fence();
-    perf.fill_time = maximum( comm , wall_clock.seconds() );
-
     //--------------------------------
     // Apply boundary conditions
-
-    wall_clock.reset();
 
     dirichlet.apply();
 
     Device::fence();
-    perf.bc_time = maximum( comm , wall_clock.seconds() );
+    perf.fill_time = maximum( comm , wall_clock.seconds() );
 
     //--------------------------------
 
@@ -386,26 +321,23 @@ template <class Storage>
 struct PerformanceDriverOp {
   typedef typename Storage::value_type Scalar;
   typedef typename Storage::ordinal_type Ordinal;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   Teuchos::RCP<const Teuchos::Comm<int> > comm ;
   const int use_print ;
   const int use_trials ;
-  const int use_atomic ;
   const int *use_nodes ;
   const bool check     ;
-  Kokkos::DeviceConfig dev_config;
+  Kokkos::Example::FENL::DeviceConfig dev_config;
 
   PerformanceDriverOp(const Teuchos::RCP<const Teuchos::Comm<int> >& comm_ ,
                       const int use_print_ ,
                       const int use_trials_ ,
-                      const int use_atomic_ ,
                       const int use_nodes_[] ,
                       const bool check_ ,
-                      Kokkos::DeviceConfig dev_config_) :
+                      Kokkos::Example::FENL::DeviceConfig dev_config_) :
     comm(comm_),
     use_print(use_print_),
     use_trials(use_trials_),
-    use_atomic(use_atomic_),
     use_nodes(use_nodes_),
     check(check_),
     dev_config(dev_config_) {}
@@ -421,14 +353,14 @@ struct PerformanceDriverOp {
     typedef Kokkos::View< mp_vector_type* , Kokkos::LayoutLeft, Device > ensemble_vector_type ;
 
     scalar_vector_type scalar_residual;
-    Kokkos::DeviceConfig scalar_dev_config(0, 1, 1);
+    Kokkos::Example::FENL::DeviceConfig scalar_dev_config(0, 1, 1);
     Perf perf_scalar =
       fenl_assembly<Scalar,Device>(
-        comm, use_print, use_trials*ensemble, use_atomic, use_nodes,
+        comm, use_print, use_trials*ensemble, use_nodes,
         scalar_dev_config, scalar_residual );
 
     ensemble_vector_type ensemble_residual;
-    Kokkos::DeviceConfig ensemble_dev_config = dev_config;
+    Kokkos::Example::FENL::DeviceConfig ensemble_dev_config = dev_config;
 #if defined( KOKKOS_HAVE_CUDA )
     const bool is_cuda = Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value;
 #else
@@ -441,7 +373,7 @@ struct PerformanceDriverOp {
     }
     Perf perf_ensemble =
       fenl_assembly<mp_vector_type,Device>(
-        comm, use_print, use_trials, use_atomic, use_nodes,
+        comm, use_print, use_trials, use_nodes,
         ensemble_dev_config, ensemble_residual);
 
     if (check)
@@ -463,11 +395,6 @@ struct PerformanceDriverOp {
                 << std::fixed << std::setw(6)
                 << perf_scalar.import_time / perf_ensemble.import_time << " , "
                 << std::scientific
-                << perf_scalar.bc_time << " , "
-                << perf_ensemble.bc_time << " , "
-                << std::fixed << std::setw(6)
-                << perf_scalar.bc_time / perf_ensemble.bc_time << " , "
-                << std::scientific
                 << perf_scalar.fill_time << " , "
                 << perf_ensemble.fill_time << " , "
                 << std::fixed << std::setw(6)
@@ -481,10 +408,9 @@ template <class Storage, int entry_min, int entry_max, int entry_step>
 void performance_test_driver( const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
                               const int use_print ,
                               const int use_trials ,
-                              const int use_atomic ,
                               const int use_nodes[] ,
                               const bool check ,
-                              Kokkos::DeviceConfig dev_config)
+                              Kokkos::Example::FENL::DeviceConfig dev_config)
 {
   if (comm->getRank() == 0) {
     std::cout.precision(8);
@@ -495,9 +421,6 @@ void performance_test_driver( const Teuchos::RCP<const Teuchos::Comm<int> >& com
               << "\"Scalar Import Time\" , "
               << "\"Ensemble Import Time\" , "
               << "\"Ensemble Import Speedup\" , "
-              << "\"Scalar BC Time\" , "
-              << "\"Ensemble BC Time\" , "
-              << "\"Ensemble BC Speedup\" , "
               << "\"Scalar Fill Time\" , "
               << "\"Ensemble Fill Time\" , "
               << "\"Ensemble Fill Speedup\" , "
@@ -506,7 +429,7 @@ void performance_test_driver( const Teuchos::RCP<const Teuchos::Comm<int> >& com
 
   // Loop over [entry_min, entry_max] vector entries per thread
   typedef Sacado::mpl::range_c< int, entry_min, entry_max+1, entry_step > Range;
-  PerformanceDriverOp<Storage> op(comm, use_print, use_trials, use_atomic,
+  PerformanceDriverOp<Storage> op(comm, use_print, use_trials,
                                   use_nodes, check, dev_config);
   Sacado::mpl::for_each<Range> f(op);
 }

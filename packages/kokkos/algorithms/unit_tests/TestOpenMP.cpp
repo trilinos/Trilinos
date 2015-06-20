@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,23 +36,18 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
 
 #include <gtest/gtest.h>
 
-#include <KokkosCore_config.h>
-
-// To force use of OMP atomics instead of intrinsics
-// #define KOKKOS_ATOMICS_USE_OMP31
-
-#include <Kokkos_OpenMP.hpp>
-#include <Kokkos_hwloc.hpp>
+#include <Kokkos_Core.hpp>
 
 //----------------------------------------------------------------------------
 #include <TestRandom.hpp>
+#include <TestSort.hpp>
 #include <iomanip>
 
 namespace Test {
@@ -90,12 +85,18 @@ protected:
       Impl::test_random<Kokkos::Random_XorShift1024_Pool<Kokkos::OpenMP> >(num_draws);                                   \
   }
 
-OPENMP_RANDOM_XORSHIFT64( 10000000 )
-OPENMP_RANDOM_XORSHIFT1024( 10000000 )
+#define OPENMP_SORT_UNSIGNED( size )                                \
+  TEST_F( openmp, SortUnsigned ) {   \
+      Impl::test_sort< Kokkos::OpenMP, unsigned >(size);                                   \
+  }
+
+OPENMP_RANDOM_XORSHIFT64( 10240000 )
+OPENMP_RANDOM_XORSHIFT1024( 10130144 )
+OPENMP_SORT_UNSIGNED(171)
 
 #undef OPENMP_RANDOM_XORSHIFT64
 #undef OPENMP_RANDOM_XORSHIFT1024
-
+#undef OPENMP_SORT_UNSIGNED
 #endif
 } // namespace test
 

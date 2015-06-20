@@ -72,8 +72,8 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const ParameterList> TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const ParameterList> TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
@@ -84,8 +84,8 @@ namespace MueLu {
     return validParamList;
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
     Input(fineLevel, "A");
     Input(fineLevel, "Aggregates");
     Input(fineLevel, "Nullspace");
@@ -93,13 +93,13 @@ namespace MueLu {
     Input(fineLevel, "CoarseMap");
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& fineLevel, Level& coarseLevel) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
     return BuildP(fineLevel, coarseLevel);
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildP(Level& fineLevel, Level& coarseLevel) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
     RCP<Matrix>           A             = Get< RCP<Matrix> >          (fineLevel, "A");
@@ -138,8 +138,8 @@ namespace MueLu {
     }
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   BuildPuncoupled(RCP<Matrix> A, RCP<Aggregates> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
                 RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace) const {
     RCP<const Map> rowMap = A->getRowMap();
@@ -374,8 +374,8 @@ namespace MueLu {
     PtentCrs->expertStaticFillComplete(coarseMap, A->getDomainMap());
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   BuildPcoupled(RCP<Matrix> A, RCP<Aggregates> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
                 RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace) const {
     RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
@@ -537,19 +537,19 @@ namespace MueLu {
             if (nsVal != zero) bIsZeroNSColumn = false;
           }
           catch(...) {
-            std::cout << "length of fine level nsp: " << fineNullspace->getGlobalLength() << std::endl;
-            std::cout << "length of fine level nsp w overlap: " << fineNullspaceWithOverlap->getGlobalLength() << std::endl;
-            std::cout << "(local?) aggId=" << agg << std::endl;
-            std::cout << "aggSize=" << myAggSize << std::endl;
-            std::cout << "agg DOF=" << k << std::endl;
-            std::cout << "NS vector j=" << j << std::endl;
-            std::cout << "j*myAggSize + k = " << j*myAggSize + k << std::endl;
-            std::cout << "aggToRowMap["<<agg<<"][" << k << "] = " << aggToRowMap[aggStart[agg]+k] << std::endl;
-            std::cout << "id aggToRowMap[agg][k]=" << aggToRowMap[aggStart[agg]+k] << " is global element in nonUniqueMap = " <<
+            GetOStream(Runtime1,-1) << "length of fine level nsp: " << fineNullspace->getGlobalLength() << std::endl;
+            GetOStream(Runtime1,-1) << "length of fine level nsp w overlap: " << fineNullspaceWithOverlap->getGlobalLength() << std::endl;
+            GetOStream(Runtime1,-1) << "(local?) aggId=" << agg << std::endl;
+            GetOStream(Runtime1,-1) << "aggSize=" << myAggSize << std::endl;
+            GetOStream(Runtime1,-1) << "agg DOF=" << k << std::endl;
+            GetOStream(Runtime1,-1) << "NS vector j=" << j << std::endl;
+            GetOStream(Runtime1,-1) << "j*myAggSize + k = " << j*myAggSize + k << std::endl;
+            GetOStream(Runtime1,-1) << "aggToRowMap["<<agg<<"][" << k << "] = " << aggToRowMap[aggStart[agg]+k] << std::endl;
+            GetOStream(Runtime1,-1) << "id aggToRowMap[agg][k]=" << aggToRowMap[aggStart[agg]+k] << " is global element in nonUniqueMap = " <<
                 nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
-            std::cout << "colMap local id aggToRowMap[agg][k]=" << nonUniqueMapRef.getLocalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
-            std::cout << "fineNS...=" << fineNS[j][ nonUniqueMapRef.getLocalElement(aggToRowMap[aggStart[agg]+k]) ] << std::endl;
-            std::cerr << "caught an error!" << std::endl;
+            GetOStream(Runtime1,-1) << "colMap local id aggToRowMap[agg][k]=" << nonUniqueMapRef.getLocalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
+            GetOStream(Runtime1,-1) << "fineNS...=" << fineNS[j][ nonUniqueMapRef.getLocalElement(aggToRowMap[aggStart[agg]+k]) ] << std::endl;
+            GetOStream(Errors,-1) << "caught an error!" << std::endl;
           }
         } //for (LO k=0 ...
         TEUCHOS_TEST_FOR_EXCEPTION(bIsZeroNSColumn == true, Exceptions::RuntimeError, "MueLu::TentativePFactory::MakeTentative: fine level NS part has a zero column. Error.");
@@ -590,7 +590,7 @@ namespace MueLu {
                }
              }
              catch(...) {
-               std::cout << "caught error in coarseNS insert, j="<<j<<", offset+k = "<<offset+k<<std::endl;
+               GetOStream(Errors,-1) << "caught error in coarseNS insert, j="<<j<<", offset+k = "<<offset+k<<std::endl;
              }
            }
          }
@@ -669,7 +669,7 @@ namespace MueLu {
               }
             }
             catch(...) {
-              std::cout << "caught error in colPtr/valPtr insert, current index="<<nnz<<std::endl;
+              GetOStream(Errors,-1) << "caught error in colPtr/valPtr insert, current index="<<nnz<<std::endl;
             }
           } //for (size_t k=0; k<NSDim; ++k)
 
@@ -677,9 +677,9 @@ namespace MueLu {
               Ptentative->insertGlobalValues(globalRow,globalColPtr.view(0,nnz),valPtr.view(0,nnz));
           }
           catch(...) {
-            std::cout << "pid " << A->getRowMap()->getComm()->getRank()
-                      << "caught error during Ptent row insertion, global row "
-                      << globalRow << std::endl;
+            GetOStream(Errors,-1) << "pid " << A->getRowMap()->getComm()->getRank()
+                << "caught error during Ptent row insertion, global row "
+                << globalRow << std::endl;
           }
         }
       } //for (GO j=0; j<myAggSize; ++j)
@@ -747,8 +747,8 @@ namespace MueLu {
     Ptentative->fillComplete(coarseMap, A->getDomainMap());
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  bool TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::isGoodMap(const Map& rowMap, const Map& colMap) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::isGoodMap(const Map& rowMap, const Map& colMap) const {
     ArrayView<const GO> rowElements = rowMap.getNodeElementList();
     ArrayView<const GO> colElements = colMap.getNodeElementList();
 

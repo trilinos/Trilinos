@@ -50,17 +50,22 @@
 #ifndef _ZOLTAN2_ALGORITHM_HPP_
 #define _ZOLTAN2_ALGORITHM_HPP_
 
+namespace Zoltan2 {
+template <typename Adapter>
+class Algorithm;
+}
+
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_ColoringSolution.hpp>
 #include <Zoltan2_OrderingSolution.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
-
+#include <Zoltan2_CoordinatePartitioningGraph.hpp>
 
 #define Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM \
   { \
     std::ostringstream emsg; \
     emsg << __FILE__ << "," << __LINE__ \
-         << " error:  " <<  __func__ \
+         << " error:  " <<  __func__zoltan2__ \
          << " is not implement in selected algorithm " \
          << std::endl; \
     throw std::runtime_error(emsg.str()); \
@@ -84,7 +89,7 @@ public:
 
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
-  typedef typename Adapter::gid_t gid_t;
+  typedef typename Adapter::zgid_t zgid_t;
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::part_t part_t;
 
@@ -92,7 +97,7 @@ public:
   virtual ~Algorithm() {}
 
   //! \brief Ordering method
-  virtual int order(const RCP<OrderingSolution<gid_t, lno_t> > &solution) 
+  virtual int order(const RCP<OrderingSolution<zgid_t, lno_t> > &solution) 
   {
     Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM 
   }
@@ -103,7 +108,7 @@ public:
     Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
   }
   
-  //! \brief Coloring method
+  //! \brief Matching method
   virtual void match() { Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM }
 
   //! \brief Partitioning method
@@ -112,10 +117,21 @@ public:
     Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
   }
 
+  //! \brief  for partitioning methods, return bounding boxes of the 
+  //          computed parts
+  //          Not all partitioning algorithms will support
+  //          this method.
+  //
+  virtual std::vector<coordinateModelPartBox<scalar_t, part_t> > &
+  getPartBoxesView() const
+  {
+    Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
+  }
+
   //! \brief pointAssign method: Available only for some partitioning algorithms
   //          when a point lies on a part boundary, the lowest part
   //          number on that boundary is returned.
-  //          Note that not all partitioning algorithms will support
+  //          Not all partitioning algorithms will support
   //          this method.
   //
   //   \param dim : the number of dimensions specified for the point in space
@@ -141,6 +157,25 @@ public:
   //   \param parts :  (out) array of parts overlapping the box
   virtual void boxAssign(int dim, scalar_t *lower, scalar_t *upper,
                          size_t &nParts, part_t **partsFound) const
+  {
+    Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
+  }
+
+  //! \brief returns serial communication graph of a computed partition
+  //  Returned graph is identical on all processors, and represents the
+  //  global communication pattern in the partition.
+  //  
+  //  \param comXAdj:  (out) the offset array:  offsets into comAdj
+  //                         Format is standard CSR format:
+  //                         # nbor parts of part i = comXAdj[i+1]-comXAdj[i]
+  //                         That is, comXAdj[i] = Sum of # nbor parts of parts
+  //                                               0 through i-1
+  //  \param comAdj    (out) the neighboring parts
+  virtual void getCommunicationGraph(
+    const PartitioningSolution<Adapter> *solution,
+    ArrayRCP<part_t> &comXAdj,
+    ArrayRCP<part_t> &comAdj)
+    // TODO:  Should the return args be ArrayViews?
   {
     Z2_THROW_NOT_IMPLEMENTED_IN_ALGORITHM
   }

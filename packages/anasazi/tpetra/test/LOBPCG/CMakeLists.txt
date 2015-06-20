@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 IF (${PACKAGE_NAME}_ENABLE_Triutils)

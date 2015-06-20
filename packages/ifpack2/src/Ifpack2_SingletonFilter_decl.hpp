@@ -67,6 +67,8 @@ public:
   typedef typename MatrixType::node_type Node;
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
 
+  typedef typename Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type mag_type;
+
   //! \name Constructor & destructor methods
   //@{
 
@@ -265,7 +267,7 @@ public:
   /** Computes and returns the Frobenius norm of the matrix, defined as:
       \f$ \|A\|_F = \sqrt{\sum_{i,j} \|\a_{ij}\|^2} \f$
   */
-  virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const;
+  virtual mag_type getFrobeniusNorm() const;
 
   //! \brief Computes the operator-multivector application.
   /*! Loosely, performs \f$Y = \alpha \cdot A^{\textrm{mode}} \cdot X + \beta \cdot Y\f$. However, the details of operation
@@ -310,40 +312,6 @@ public:
 
 
   //@}
-
-  //! \name Deprecated routines to be removed at some point in the future.
-  //@{
-
-  //! Deprecated. Get a persisting const view of the entries in a specified global row of this matrix.
-  /*!
-    \param GlobalRow - (In) Global row from which to retrieve matrix entries.
-    \param Indices - (Out) Indices for the global row.
-    \param Values - (Out) Values for the global row.
-
-    Note: If \c GlobalRow does not belong to this node, then \c Indices and \c Values are set to <tt>Teuchos::null</t>>.
-
-    \pre isLocallyIndexed()==false
-  */
-  TPETRA_DEPRECATED virtual void getGlobalRowView(GlobalOrdinal GlobalRow,
-                                                  Teuchos::ArrayRCP<const GlobalOrdinal> &indices,
-                                                  Teuchos::ArrayRCP<const Scalar>        &values) const;
-
-  //! Deprecated. Get a persisting const view of the entries in a specified local row of this matrix.
-  /*!
-    \param LocalRow - (In) Local row from which to retrieve matrix entries.
-    \param Indices - (Out) Indices for the local row.
-    \param Values - (Out) Values for the local row.
-
-    Note: If \c LocalRow is not valid for this node, then \c Indices and \c Values are set to <tt>Teuchos::null</tt>.
-
-    \pre isGloballyIndexed()==false
-  */
-  TPETRA_DEPRECATED virtual void getLocalRowView(LocalOrdinal LocalRow,
-                                                 Teuchos::ArrayRCP<const LocalOrdinal> &indices,
-                                                 Teuchos::ArrayRCP<const Scalar>       &values) const;
-  //@}
-
-
 private:
 
   //! Pointer to the matrix to be preconditioned.

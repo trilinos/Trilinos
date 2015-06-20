@@ -1,3 +1,36 @@
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+
 #ifndef STKTOPOLOGY_TOPOLOGY_TCC
 #define STKTOPOLOGY_TOPOLOGY_TCC
 
@@ -174,6 +207,9 @@ struct equivalent_impl {
   const NodeArrayB & m_b;
 };
 
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
 template <typename NodeArray>
 struct lexicographical_smallest_permutation_impl {
   typedef unsigned result_type;
@@ -183,6 +219,9 @@ struct lexicographical_smallest_permutation_impl {
     : m_nodes(nodes), m_only_positive_permutations(only_positive_permutations)
   {}
 
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   template <typename Topology>
   BOOST_GPU_ENABLED
   result_type operator()(Topology) const
@@ -192,7 +231,33 @@ struct lexicographical_smallest_permutation_impl {
   bool              m_only_positive_permutations;
 };
 
-}} /*namespace stk::topology_detail*/
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
+template <typename NodeArray>
+struct lexicographical_smallest_permutation_preserve_polarity_impl {
+  typedef unsigned result_type;
+
+  BOOST_GPU_ENABLED
+  lexicographical_smallest_permutation_preserve_polarity_impl( const NodeArray &nodes, const NodeArray &element_nodes)
+    : m_nodes(nodes), m_element_nodes(element_nodes)
+  {}
+
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
+  template <typename Topology>
+  BOOST_GPU_ENABLED
+  result_type operator()(Topology) const
+  { return Topology::lexicographical_smallest_permutation_preserve_polarity(m_nodes, m_element_nodes); }
+
+  const NodeArray & m_nodes;
+  const NodeArray & m_element_nodes;
+};
+
+}
+
+} /*namespace stk::topology_detail*/
 
 namespace stk {
 
@@ -227,6 +292,16 @@ unsigned topology::lexicographical_smallest_permutation( const NodeArray &nodes,
 {
   typedef topology_detail::lexicographical_smallest_permutation_impl< NodeArray > functor;
   functor f(nodes, only_positive_permutations);
+  topology::apply_functor< functor > apply( f );
+  return apply(m_value);
+}
+
+template <typename NodeArray>
+BOOST_GPU_ENABLED inline
+unsigned topology::lexicographical_smallest_permutation_preserve_polarity( const NodeArray &nodes, const NodeArray &element_nodes) const
+{
+  typedef topology_detail::lexicographical_smallest_permutation_preserve_polarity_impl< NodeArray > functor;
+  functor f(nodes, element_nodes);
   topology::apply_functor< functor > apply( f );
   return apply(m_value);
 }

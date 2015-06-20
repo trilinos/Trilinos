@@ -78,8 +78,7 @@ PHX_POST_REGISTRATION_SETUP(Copy,worksets,fm)
 //**********************************************************************
 PHX_EVALUATE_FIELDS(Copy,workset)
 { 
-  for (typename PHX::MDField<ScalarT>::size_type i = 0; i < input.size(); ++i)
-    output[i] = input[i];
+  output.deep_copy(input);
 }
 
 //**********************************************************************

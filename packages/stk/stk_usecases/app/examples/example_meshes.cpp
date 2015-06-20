@@ -1,10 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010, 2011 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include <vector>
 #include <stdexcept>
@@ -143,31 +168,31 @@ static const double node_coord_data[ node_count ][ SpatialDim ] = {
   { 0 , 2 , -1 } , { 1 , 2 , -1 } ,
   { 1 , 1 , -2 } };
 
-static const stk::mesh::EntityId hex_node_ids[3][ shards::Hexahedron<8> ::node_count ] = {
+static const stk::mesh::EntityIdVector hex_node_ids[3] {
   { 1 , 2 , 12 , 11 , 5 , 6 , 16 , 15 } ,
   { 2 , 3 , 13 , 12 , 6 , 7 , 17 , 16 } ,
   { 3 , 4 , 14 , 13 , 7 , 8 , 18 , 17 } };
 
-static const stk::mesh::EntityId wedge_node_ids[3][ shards::Wedge<6> ::node_count ] = {
+static const stk::mesh::EntityIdVector wedge_node_ids[3] {
   { 15 , 16 , 19 ,  5 ,  6 ,  9 } ,
   { 10 ,  9 ,  6 , 20 , 19 , 16 } ,
   { 16 , 17 , 20 ,  6 ,  7 , 10 } };
 
-static const stk::mesh::EntityId tetra_node_ids[3][ shards::Tetrahedron<4> ::node_count ] = {
+static const stk::mesh::EntityIdVector tetra_node_ids[3] {
   { 15 , 19 , 16 , 21 } ,
   { 19 , 20 , 16 , 21 } ,
   { 16 , 20 , 17 , 21 } };
 
-static const stk::mesh::EntityId pyramid_node_ids[2][ shards::Pyramid<5> ::node_count ] = {
+static const stk::mesh::EntityIdVector pyramid_node_ids[2] {
   { 11 , 15 , 16 , 12 , 21 } ,
   { 12 , 16 , 17 , 13 , 21 } };
 
-static const stk::mesh::EntityId shell_quad_node_ids[3][ shards::ShellQuadrilateral<4> ::node_count ]={
+static const stk::mesh::EntityIdVector shell_quad_node_ids[3] {
   { 9 , 6 , 16 , 19 } ,
   { 6 , 7 , 17 , 16 } ,
   { 7 , 8 , 18 , 17 } };
 
-static const stk::mesh::EntityId shell_tri_node_ids[3][ shards::ShellTriangle<3> ::node_count ] ={
+static const stk::mesh::EntityIdVector shell_tri_node_ids[3] {
   { 19 , 16 , 21 } ,
   { 16 , 17 , 21 } ,
   { 17 , 13 , 21 } };

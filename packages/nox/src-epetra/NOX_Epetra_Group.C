@@ -117,6 +117,8 @@ Group::Group(const Group& source, CopyType type) :
   gradVector(*gradVectorPtr),
   NewtonVectorPtr(rcp_dynamic_cast<NOX::Epetra::Vector>(source.NewtonVector.clone(type))),
   NewtonVector(*NewtonVectorPtr),
+  normNewtonSolveResidual(0.0),
+  conditionNumber(0.0),
   sharedLinearSystemPtr(source.sharedLinearSystemPtr),
   sharedLinearSystem(*sharedLinearSystemPtr),
   linearResidCompDisabled(source.linearResidCompDisabled),

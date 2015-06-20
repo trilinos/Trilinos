@@ -1,6 +1,9 @@
 /* define if we want to include experimental code */
 #define INCLUDE_ZOLTAN2_EXPERIMENTAL
 
+/* define if we want to include wolf experimental code */
+/* #undef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF */
+
 /* define if we have MPI */
 #define HAVE_ZOLTAN2_MPI
 
@@ -8,7 +11,7 @@
 /* #undef HAVE_ZOLTAN2_OMP */
 
 /* define if we have the METIS library*/
-/* #undef HAVE_ZOLTAN2_METIS */
+#define HAVE_ZOLTAN2_METIS
 
 /* define if we have the PaToH library*/
 /* #undef HAVE_ZOLTAN2_PATOH */
@@ -17,7 +20,7 @@
 /* #undef HAVE_ZOLTAN2_SCOTCH */
 
 /* define if we have the ParMETIS library*/
-/* #undef HAVE_ZOLTAN2_PARMETIS */
+#define HAVE_ZOLTAN2_PARMETIS
 
 /* define if we have the AMD library*/
 /* #undef HAVE_ZOLTAN2_AMD */
@@ -43,34 +46,6 @@
 /* Define if Teuchos was compiled to support "long long".
  */
 /* #undef HAVE_ZOLTAN2_LONG_LONG */
-
-/* Tpetra explicit instantiation:
- *    scalar type is float
- *    local id type is int
- *    global id type is long
- */
-/* #undef HAVE_ZOLTAN2_INST_FLOAT_INT_LONG */
-
-/* Tpetra explicit instantiation:
- *    scalar type is double
- *    local id type is int
- *    global id type is long
- */
-/* #undef HAVE_ZOLTAN2_INST_DOUBLE_INT_LONG */
-
-/* Tpetra explicit instantiation:
- *    scalar type is float
- *    local id type is int
- *    global id type is int
- */
-/* #undef HAVE_ZOLTAN2_INST_FLOAT_INT_INT */
-
-/* Tpetra explicit instantiation:
- *    scalar type is double
- *    local id type is int
- *    global id type is int
- */
-/* #undef HAVE_ZOLTAN2_INST_DOUBLE_INT_INT */
 
 /* Zoltan (1) is included in the Trilinos build.
  */

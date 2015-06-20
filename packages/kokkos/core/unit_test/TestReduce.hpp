@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -45,7 +45,7 @@
 #include <sstream>
 #include <iostream>
 
-#include <Kokkos_Parallel.hpp>
+#include <Kokkos_Core.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -55,8 +55,8 @@ template< typename ScalarType , class DeviceType >
 class ReduceFunctor
 {
 public:
-  typedef DeviceType  device_type ;
-  typedef typename device_type::size_type size_type ;
+  typedef DeviceType  execution_space ;
+  typedef typename execution_space::size_type size_type ;
 
   struct value_type {
     ScalarType value[3] ;
@@ -121,14 +121,14 @@ class RuntimeReduceFunctor
 {
 public:
   // Required for functor:
-  typedef DeviceType  device_type ;
+  typedef DeviceType  execution_space ;
   typedef ScalarType  value_type[] ;
   const unsigned      value_count ;
 
 
   // Unit test details:
 
-  typedef typename device_type::size_type  size_type ;
+  typedef typename execution_space::size_type  size_type ;
 
   const size_type     nwork ;
 
@@ -189,8 +189,8 @@ template< typename ScalarType , class DeviceType >
 class TestReduce
 {
 public:
-  typedef DeviceType    device_type ;
-  typedef typename device_type::size_type size_type ;
+  typedef DeviceType    execution_space ;
+  typedef typename execution_space::size_type size_type ;
 
   //------------------------------------
 
@@ -202,7 +202,7 @@ public:
 
   void run_test( const size_type & nwork )
   {
-    typedef Test::ReduceFunctor< ScalarType , device_type > functor_type ;
+    typedef Test::ReduceFunctor< ScalarType , execution_space > functor_type ;
     typedef typename functor_type::value_type value_type ;
 
     enum { Count = 3 };
@@ -228,7 +228,7 @@ public:
 
   void run_test_final( const size_type & nwork )
   {
-    typedef Test::ReduceFunctorFinal< device_type > functor_type ;
+    typedef Test::ReduceFunctorFinal< execution_space > functor_type ;
     typedef typename functor_type::value_type value_type ;
 
     enum { Count = 3 };
@@ -257,8 +257,8 @@ template< typename ScalarType , class DeviceType >
 class TestReduceDynamic
 {
 public:
-  typedef DeviceType    device_type ;
-  typedef typename device_type::size_type size_type ;
+  typedef DeviceType    execution_space ;
+  typedef typename execution_space::size_type size_type ;
 
   //------------------------------------
 
@@ -270,7 +270,7 @@ public:
 
   void run_test_dynamic( const size_type nwork )
   {
-    typedef Test::RuntimeReduceFunctor< ScalarType , device_type > functor_type ;
+    typedef Test::RuntimeReduceFunctor< ScalarType , execution_space > functor_type ;
 
     enum { Count = 3 };
     enum { Repeat = 100 };
@@ -295,7 +295,7 @@ public:
 
   void run_test_dynamic_final( const size_type nwork )
   {
-    typedef Test::RuntimeReduceFunctorFinal< device_type > functor_type ;
+    typedef Test::RuntimeReduceFunctorFinal< execution_space > functor_type ;
 
     enum { Count = 3 };
     enum { Repeat = 100 };
@@ -307,7 +307,7 @@ public:
                                       : (nw/2) * ( nw + 1 );
 
     for ( unsigned i = 0 ; i < Repeat ; ++i ) {
-      Kokkos::parallel_reduce( nwork , functor_type(nwork,Count) , result[i] );
+      Kokkos::parallel_reduce( "TestKernelReduce" , nwork , functor_type(nwork,Count) , result[i] );
     }
 
     for ( unsigned i = 0 ; i < Repeat ; ++i ) {
@@ -323,8 +323,8 @@ template< typename ScalarType , class DeviceType >
 class TestReduceDynamicView
 {
 public:
-  typedef DeviceType    device_type ;
-  typedef typename device_type::size_type size_type ;
+  typedef DeviceType    execution_space ;
+  typedef typename execution_space::size_type size_type ;
 
   //------------------------------------
 
@@ -335,7 +335,7 @@ public:
 
   void run_test_dynamic_view( const size_type nwork )
   {
-    typedef Test::RuntimeReduceFunctor< ScalarType , device_type > functor_type ;
+    typedef Test::RuntimeReduceFunctor< ScalarType , execution_space > functor_type ;
 
     typedef Kokkos::View< ScalarType* , DeviceType > result_type ;
     typedef typename result_type::HostMirror result_host_type ;
@@ -353,7 +353,8 @@ public:
 
       // Test result to host pointer:
 
-      Kokkos::parallel_reduce( nw , functor_type(nw,count) , host_result.ptr_on_device() );
+      std::string str("TestKernelReduce");
+      Kokkos::parallel_reduce( str , nw , functor_type(nw,count) , host_result.ptr_on_device() );
 
       for ( unsigned j = 0 ; j < count ; ++j ) {
         const unsigned long correct = 0 == j % 3 ? nw : nsum ;

@@ -49,25 +49,13 @@
 
 #include "MueLu_CoarseMapFactory_def.hpp"
 
-#ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
-template class MueLu::CoarseMapFactory<double, int, int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void, int, KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>;
-#endif
+#include "TpetraCore_ETIHelperMacros.h"
 
-#ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT
-# ifdef HAVE_TEUCHOS_LONG_LONG_INT
-template class MueLu::CoarseMapFactory<double, int, long long int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void, int, KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>;
-# else
-# warning To compile MueLu with 'long long int' support, please turn on Teuchos_ENABLE_LONG_LONG_INT
-# endif
-#endif
+#define MUELU_LOCAL_INSTANT(S,LO,GO,N) \
+        template class MueLu::CoarseMapFactory<S,LO,GO,N>;
 
-#ifdef HAVE_MUELU_INST_COMPLEX_INT_INT
-# ifdef HAVE_TEUCHOS_COMPLEX
-#include <complex>
-template class MueLu::CoarseMapFactory<std::complex<double>, int, int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void, int, KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>;
-# else
-# warning To compile MueLu with 'complex' support, please turn on Teuchos_ENABLE_COMPLEX
-# endif
-#endif
+TPETRA_ETI_MANGLING_TYPEDEFS()
+
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(MUELU_LOCAL_INSTANT)
 
 

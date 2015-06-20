@@ -51,7 +51,6 @@
 #include "Teuchos_TypeNameTraits.hpp"
 
 // User application evaluators for this factory
-#include "user_app_ConstantModel.hpp"
 #include "TestEvaluators.hpp"
 
 // ********************************************************************

@@ -90,6 +90,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DSuperLU_INCLUDE_DIRS:PATH=/home/trilinos/tpl/gcc4.4.4/SuperLU_4.3/SRC"
     "-DSuperLU_LIBRARY_DIRS:PATH=/home/trilinos/tpl/gcc4.4.4/SuperLU_4.3/lib"
     "-DSuperLU_LIBRARY_NAMES:STRING=superlu_4.3"
+    "-DGLM_INCLUDE_DIRS=/home/trilinos/tpl/gcc4.4.4/glm-0.9.4.6"
+    "-DTrilinos_ENABLE_CXX11=ON"
     )
 
   IF (BUILD_TYPE STREQUAL "DEBUG")
@@ -107,7 +109,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
       "-DTPL_ENABLE_MPI:BOOL=ON"
-      "-DMPI_BASE_DIR=/home/trilinos/compilers/gcc/openmpi-1.6.3-gcc-4.7.2"
+      "-DMPI_BASE_DIR=/home/trilinos/compilers/gcc/openmpi-1.6.5-gcc-4.7.2"
       )
 
     SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS

@@ -142,7 +142,7 @@ derived_map_asynch(const Dakota::ParamResponsePair& pair)
 
 void 
 TriKota::MPDirectApplicInterface::
-derived_synch(Dakota::PRPQueue& prp_queue)
+wait_local_evaluations(Dakota::PRPQueue& prp_queue)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -171,7 +171,7 @@ derived_synch(Dakota::PRPQueue& prp_queue)
       if (block == num_blocks && remainder > 0)
 	blk_sz = remainder;
       for (unsigned int idx=0; idx<blk_sz; idx++) {
-	const Dakota::Variables& vars = iter->prp_parameters();
+	const Dakota::Variables& vars = iter->variables();
 	const Dakota::RealVector& xC  = vars.continuous_variables();
 	unsigned int numVars = xC.length();
 	for (unsigned int i=0; i<numVars; i++) 
@@ -183,7 +183,7 @@ derived_synch(Dakota::PRPQueue& prp_queue)
 	gradFlag = gradFlag && (asv & 2);
 	hessFlag = hessFlag && (asv & 4);
 
-	Dakota::Response resp = iter->prp_response();
+	Dakota::Response resp = iter->response();
 	Dakota::RealVector fnVals = resp.function_values_view();
 	unsigned int numFns = fnVals.length();
 	
@@ -206,7 +206,7 @@ derived_synch(Dakota::PRPQueue& prp_queue)
       if (block == num_blocks && remainder > 0) {
 	--iter;
 	for (unsigned int idx=remainder; idx<block_size-remainder; idx++) {
-	  const Dakota::Variables& vars = iter->prp_parameters();
+	  const Dakota::Variables& vars = iter->variables();
 	  const Dakota::RealVector& xC  = vars.continuous_variables();
 	  unsigned int numVars = xC.length();
 	  for (unsigned int i=0; i<numVars; i++) 
@@ -233,10 +233,10 @@ derived_synch(Dakota::PRPQueue& prp_queue)
       // Copy responses from block g
       iter = block_iter;
       for (unsigned int idx=0; idx<blk_sz; idx++) {
-	const Dakota::Variables& vars = iter->prp_parameters();
+	const Dakota::Variables& vars = iter->variables();
 	const Dakota::RealVector& xC  = vars.continuous_variables();
 	unsigned int numVars = xC.length();
-	Dakota::Response         resp = iter->prp_response(); // shared rep
+	Dakota::Response         resp = iter->response(); // shared rep
 	Dakota::RealVector fnVals     = resp.function_values_view();
 	Dakota::RealMatrix fnGrads    = resp.function_gradients_view();
 	unsigned int numFns = fnVals.length();

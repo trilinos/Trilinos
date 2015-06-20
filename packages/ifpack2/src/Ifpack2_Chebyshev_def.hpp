@@ -43,8 +43,8 @@
 #ifndef IFPACK2_CHEBYSHEV_DEF_HPP
 #define IFPACK2_CHEBYSHEV_DEF_HPP
 
-#include <Ifpack2_Condest.hpp>
 #include <Ifpack2_Parameters.hpp>
+#include <Ifpack2_Chebyshev.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
 namespace Ifpack2 {
@@ -53,7 +53,6 @@ template<class MatrixType>
 Chebyshev<MatrixType>::
 Chebyshev (const Teuchos::RCP<const row_matrix_type>& A)
   : impl_ (A),
-    Condest_ ( -Teuchos::ScalarTraits<magnitude_type>::one() ),
     IsInitialized_ (false),
     IsComputed_ (false),
     NumInitialize_ (0),
@@ -206,33 +205,6 @@ double Chebyshev<MatrixType>::getApplyFlops () const {
 
 
 template<class MatrixType>
-typename Chebyshev<MatrixType>::magnitude_type
-Chebyshev<MatrixType>::getCondEst () const {
-  return Condest_;
-}
-
-
-template<class MatrixType>
-typename Chebyshev<MatrixType>::magnitude_type
-Chebyshev<MatrixType>::
-computeCondEst (CondestType CT,
-                local_ordinal_type MaxIters,
-                magnitude_type Tol,
-                const Teuchos::Ptr<const row_matrix_type>& matrix)
-{
-  if (! isComputed ()) {
-    return -Teuchos::ScalarTraits<magnitude_type>::one ();
-  }
-  else {
-    // Always compute it. Call Condest() with no parameters to get
-    // the previous estimate.
-    Condest_ = Ifpack2::Condest (*this, CT, MaxIters, Tol, matrix);
-    return Condest_;
-  }
-}
-
-
-template<class MatrixType>
 void
 Chebyshev<MatrixType>::
 apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
@@ -324,7 +296,6 @@ void Chebyshev<MatrixType>::compute ()
       initialize ();
     }
     IsComputed_ = false;
-    Condest_ = -Teuchos::ScalarTraits<magnitude_type>::one();
     impl_.compute ();
   }
   IsComputed_ = true;
@@ -333,61 +304,6 @@ void Chebyshev<MatrixType>::compute ()
   // timer->totalElapsedTime() returns the total time over all timer
   // calls.  Thus, we use = instead of +=.
   ComputeTime_ = timer->totalElapsedTime ();
-}
-
-
-template<class MatrixType>
-void
-Chebyshev<MatrixType>::
-PowerMethod (const Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Operator,
-             const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& InvPointDiagonal,
-             const int MaximumIterations,
-             scalar_type& lambda_max)
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    true, std::logic_error, "Ifpack2::Chebyshev::PowerMethod: "
-    "This method is deprecated.  Please do not call it.");
-
-  // const scalar_type one = STS::one();
-  // const scalar_type zero = STS::zero();
-
-  // lambda_max = zero;
-  // Teuchos::Array<scalar_type> RQ_top(1), RQ_bottom(1);
-  // vector_type x (Operator.getDomainMap ());
-  // vector_type y (Operator.getRangeMap ());
-  // x.randomize ();
-  // Teuchos::Array<magnitude_type> norms (x.getNumVectors ());
-  // x.norm2 (norms ());
-  // x.scale (one / norms[0]);
-
-  // for (int iter = 0; iter < MaximumIterations; ++iter) {
-  //   Operator.apply (x, y);
-  //   y.elementWiseMultiply (one, InvPointDiagonal, y, zero);
-  //   y.dot (x, RQ_top ());
-  //   x.dot (x, RQ_bottom ());
-  //   lambda_max = RQ_top[0] / RQ_bottom[0];
-  //   y.norm2 (norms ());
-  //   TEUCHOS_TEST_FOR_EXCEPTION(
-  //     norms[0] == zero,
-  //     std::runtime_error,
-  //     "Ifpack2::Chebyshev::PowerMethod: norm == 0 at iteration " << (iter+1)
-  //     << " of " << MaximumIterations);
-  //   x.update (one / norms[0], y, zero);
-  // }
-}
-
-
-template<class MatrixType>
-void Chebyshev<MatrixType>::
-CG (const Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Operator,
-    const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& InvPointDiagonal,
-   const int MaximumIterations,
-   scalar_type& lambda_min, scalar_type& lambda_max)
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    true, std::logic_error,
-    "Ifpack2::Chebyshev::CG: Not implemented.  "
-    "Please use Belos' implementation of CG with Tpetra objects.");
 }
 
 
@@ -480,10 +396,6 @@ describe (Teuchos::FancyOStream &out,
     out << "Degree of polynomial      = " << PolyDegree_ << std::endl;
     if   (ZeroStartingSolution_) { out << "Using zero starting solution" << endl; }
     else                         { out << "Using input starting solution" << endl; }
-    if   (Condest_ == - Teuchos::ScalarTraits<magnitude_type>::one()) {
-      out << "Condition number estimate       = N/A" << endl;
-    }
-    else                    { out << "Condition number estimate       = " << Condest_ << endl; }
     if (IsComputed_) {
       out << "Minimum value on stored inverse diagonal = " << MinVal << std::endl;
       out << "Maximum value on stored inverse diagonal = " << MaxVal << std::endl;
@@ -536,32 +448,32 @@ applyImpl (const MV& X,
     return;
   }
 
-  // If beta != 0, then we need to keep a copy of the initial value of
-  // Y, so that we can add beta*it to the Chebyshev result at the end.
-  // Usually this method is called with beta == 0, so we don't have to
-  // worry about caching Y_org.
+  // If beta != 0, then we need to keep a (deep) copy of the initial
+  // value of Y, so that we can add beta*it to the Chebyshev result at
+  // the end.  Usually this method is called with beta == 0, so we
+  // don't have to worry about caching Y_org.
   RCP<MV> Y_orig;
   if (beta != zero) {
-    Y_orig = rcp (new MV (createCopy(Y)));
+    Y_orig = rcp (new MV (Y, Teuchos::Copy));
   }
 
   // If X and Y point to the same memory location, we need to use a
-  // copy of X (X_copy) as the input MV.  Otherwise, just let X_copy
-  // point to X.
+  // (deep) copy of X (X_copy) as the input MV.  Otherwise, just let
+  // X_copy point to X.
   //
   // This is hopefully an uncommon use case, so we don't bother to
   // optimize for it by caching X_copy.
   RCP<const MV> X_copy;
   bool copiedInput = false;
-  if (X.getLocalMV().getValues() == Y.getLocalMV().getValues()) {
-    X_copy = rcp (new MV (createCopy(X)));
+  if (X.getLocalMV ().getValues () == Y.getLocalMV ().getValues ()) {
+    X_copy = rcp (new MV (X, Teuchos::Copy));
     copiedInput = true;
   }
   else {
     X_copy = rcpFromRef (X);
   }
 
-  // If alpha != 1, fold alpha into (a copy of) X.
+  // If alpha != 1, fold alpha into (a deep copy of) X.
   //
   // This is an uncommon use case, so we don't bother to optimize for
   // it by caching X_copy.  However, we do check whether we've already
@@ -569,7 +481,7 @@ applyImpl (const MV& X,
   if (alpha != one) {
     RCP<MV> X_copy_nonConst = rcp_const_cast<MV> (X_copy);
     if (! copiedInput) {
-      X_copy_nonConst = rcp (new MV (createCopy(X)));
+      X_copy_nonConst = rcp (new MV (X, Teuchos::Copy));
       copiedInput = true;
     }
     X_copy_nonConst->scale (alpha);

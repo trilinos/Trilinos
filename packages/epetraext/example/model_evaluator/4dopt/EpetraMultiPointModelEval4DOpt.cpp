@@ -55,7 +55,7 @@ inline double sqr( const double& s ) { return s*s; }
 } // namespace
 
 EpetraMultiPointModelEval4DOpt::EpetraMultiPointModelEval4DOpt(
-  Teuchos::RefCountPtr<Epetra_Comm> epetra_comm
+  Teuchos::RCP<Epetra_Comm> epetra_comm
   ,const double         xt0
   ,const double        xt1
   ,const double        pt0
@@ -129,19 +129,19 @@ void EpetraMultiPointModelEval4DOpt::set_x_bounds(
 
 // Overridden from EpetraExt::ModelEvaluator
 
-Teuchos::RefCountPtr<const Epetra_Map>
+Teuchos::RCP<const Epetra_Map>
 EpetraMultiPointModelEval4DOpt::get_x_map() const
 {
   return map_x_;
 }
 
-Teuchos::RefCountPtr<const Epetra_Map>
+Teuchos::RCP<const Epetra_Map>
 EpetraMultiPointModelEval4DOpt::get_f_map() const
 {
   return map_x_;
 }
 
-Teuchos::RefCountPtr<const Epetra_Map>
+Teuchos::RCP<const Epetra_Map>
 EpetraMultiPointModelEval4DOpt::get_p_map(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(l>1);
@@ -149,20 +149,20 @@ EpetraMultiPointModelEval4DOpt::get_p_map(int l) const
   else return map_q_;
 }
 
-Teuchos::RefCountPtr<const Epetra_Map>
+Teuchos::RCP<const Epetra_Map>
 EpetraMultiPointModelEval4DOpt::get_g_map(int j) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(j!=0);
   return map_g_;
 }
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 EpetraMultiPointModelEval4DOpt::get_x_init() const
 {
   return x0_;
 }
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 EpetraMultiPointModelEval4DOpt::get_p_init(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(l>1);
@@ -170,19 +170,19 @@ EpetraMultiPointModelEval4DOpt::get_p_init(int l) const
   else return q_;
 }
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 EpetraMultiPointModelEval4DOpt::get_x_lower_bounds() const
 {
   return xL_;
 }
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 EpetraMultiPointModelEval4DOpt::get_x_upper_bounds() const
 {
   return xU_;
 }
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 EpetraMultiPointModelEval4DOpt::get_p_lower_bounds(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(l>1);
@@ -190,7 +190,7 @@ EpetraMultiPointModelEval4DOpt::get_p_lower_bounds(int l) const
   else      return qL_;
 }
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 EpetraMultiPointModelEval4DOpt::get_p_upper_bounds(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(l>1);
@@ -198,7 +198,7 @@ EpetraMultiPointModelEval4DOpt::get_p_upper_bounds(int l) const
   else      return qU_;
 }
 
-Teuchos::RefCountPtr<Epetra_Operator>
+Teuchos::RCP<Epetra_Operator>
 EpetraMultiPointModelEval4DOpt::create_W() const
 {
   return Teuchos::rcp(new Epetra_CrsMatrix(::Copy,*W_graph_));
@@ -263,8 +263,8 @@ void EpetraMultiPointModelEval4DOpt::evalModel( const InArgs& inArgs, const OutA
   //
   // Get the input arguments
   //
-  Teuchos::RefCountPtr<const Epetra_Vector> p_in = inArgs.get_p(0);
-  Teuchos::RefCountPtr<const Epetra_Vector> q_in = inArgs.get_p(1);
+  Teuchos::RCP<const Epetra_Vector> p_in = inArgs.get_p(0);
+  Teuchos::RCP<const Epetra_Vector> q_in = inArgs.get_p(1);
   const Epetra_Vector &p = (p_in.get() ? *p_in : *p0_);
   const Epetra_Vector &q = (q_in.get() ? *q_in : *q_);
   const Epetra_Vector &x = *inArgs.get_x();

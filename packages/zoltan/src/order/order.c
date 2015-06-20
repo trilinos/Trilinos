@@ -95,7 +95,6 @@ int Zoltan_Order (
   int ierr;
   double start_time, end_time;
   double order_time[2] = {0.0,0.0};
-  char msg[256];
   int comm[2],gcomm[2];
   ZOLTAN_ORDER_FN *Order_fn;
   struct Zoltan_Order_Options opt;
@@ -258,6 +257,7 @@ int Zoltan_Order (
   ZOLTAN_FREE(&lids);
 
   if (ierr) {
+    char msg[253];
     sprintf(msg, "Ordering routine returned error code %d.", ierr);
     if (ierr == ZOLTAN_WARN){
       ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);

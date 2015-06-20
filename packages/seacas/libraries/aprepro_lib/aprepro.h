@@ -1,3 +1,37 @@
+/*
+ * Copyright (c) 2014, Sandia Corporation.
+ * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+ * the U.S. Government retains certain rights in this software.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ * 
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ * 
+ *     * Redistributions in binary form must reproduce the above
+ *       copyright notice, this list of conditions and the following
+ *       disclaimer in the documentation and/or other materials provided
+ *       with the distribution.
+ * 
+ *     * Neither the name of Sandia Corporation nor the names of its
+ *       contributors may be used to endorse or promote products derived
+ *       from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ */
 /** \file aprepro.h Declaration of the SEAMS::Aprepro class. */
 
 /* Might be good to add a callback function which would be called
@@ -131,6 +165,7 @@ namespace SEAMS {
     bool immutable;
     bool trace_parsing;    // enable debug output in the bison parser
     bool one_based_index;
+    bool keep_history;  // Flag to keep a history of Aprepro substitutions
     aprepro_options() :
       end_on_exit(false),
       warning_msg(true),
@@ -139,7 +174,8 @@ namespace SEAMS {
       interactive(false),
       immutable(false),
       trace_parsing(false),
-      one_based_index(false)
+      one_based_index(false),
+      keep_history(false)
     {}
   };
 
@@ -151,10 +187,18 @@ namespace SEAMS {
     int	  loop_count;
     bool  tmp_file;
 
-    file_rec(const std::string &my_name, int line_num, bool is_temp, int loop_cnt)
+    file_rec(const char *my_name, int line_num, bool is_temp, int loop_cnt)
       : name(my_name), lineno(line_num), loop_count(loop_cnt), tmp_file(is_temp) {}
     file_rec()
-      : name("UNKNOWN_FILE_NAME"), lineno(0), loop_count(0), tmp_file(false) {}
+      : name("STDIN"), lineno(0), loop_count(0), tmp_file(false) {}
+  };
+
+  /* Structure for holding aprepro substitution info */
+  struct history_data
+  {
+    std::string original;
+    std::string substitution;
+    std::streampos index; // Character index in the output where the substitution begins.
   };
 
   /** The Aprepro class brings together all components. It creates an instance of
@@ -209,6 +253,13 @@ namespace SEAMS {
     bool parse_string(const std::string& input,
 		      const std::string& sname = "string stream");
 
+    /** Invoke the scanner and parser on a vector of strings.
+     * @param input	vector of input strings
+     * @param sname	stream name for error messages
+     * @return		true if successfully parsed
+     */
+    bool parse_strings(const std::vector<std::string> &input, const std::string& sname);
+
     /** Invoke the scanner and parser on an input string in an
      * interactive manner.
      * @param input input stringInput
@@ -261,6 +312,10 @@ namespace SEAMS {
     void info(const std::string& msg,
               bool line_info=false, bool prefix=true) const;
 
+    // The info stream. To only print out info messages if the -M option was
+    // specified, use info(...) instead.
+    std::ostream *infoStream;
+
     void set_error_streams(std::ostream* error, std::ostream* warning,
                            std::ostream* info);
 
@@ -280,7 +335,9 @@ namespace SEAMS {
     // For error handling
     std::ostream *errorStream;
     std::ostream *warningStream;
-    std::ostream *infoStream;
+
+    // For substitution history.
+    std::vector<history_data> history;
 
   public:
     bool stateImmutable;
@@ -288,6 +345,22 @@ namespace SEAMS {
     // Flag to do Aprepro substitutions within loops. Default value is true. If set to
     // false, content within the loop will be treated as verbatim text.
     bool doLoopSubstitution;
+
+    // Flag to do Aprepro substitutions when including a file. Default value is true.
+    // If set to false, content within the file will be treated as verbatim text that
+    // needs to be sent through Aprepro again later.
+    bool doIncludeSubstitution;
+
+    // Flag to inidicate whether Aprepro is in the middle of collecting lines for a
+    // loop.
+    bool isCollectingLoop;
+
+    // Record the substitution of the current Aprepro statement. This function will also
+    // reset the historyString and add an entry to the substitution map.
+    void add_history(const std::string& original, const std::string& substitution);
+
+    const std::vector<history_data> &get_history();
+    void clear_history();
   };
 
 } // namespace SEAMS

@@ -111,8 +111,8 @@ void multiply_CSRMat_CSVec(const CSRMat& A, const CSVec& x, CSVec& y)
   const std::vector<int>& xind = x.indices();
   const std::vector<double>& xcoef = x.coefs();
 
-  const double* xcoef_ptr = &xcoef[0];
-  const int* xind_ptr = &xind[0];
+  const double* xcoef_ptr = xcoef.empty() ? NULL : &xcoef[0];
+  const int* xind_ptr = xind.empty() ? NULL : &xind[0];
   int xlen = xcoef.size();
 
   std::vector<int>& yind = y.indices();
@@ -149,13 +149,13 @@ void multiply_trans_CSRMat_CSVec(const CSRMat& A, const CSVec& x, CSVec& y)
 {
   const std::vector<int>& rows = A.getGraph().rowNumbers;
   const int* rowoffs = &(A.getGraph().rowOffsets[0]);
-  const int* colinds = &(A.getGraph().packedColumnIndices[0]);
-  const double* Acoef = &(A.getPackedCoefs()[0]);
+  const int* colinds = A.getGraph().packedColumnIndices.empty() ? NULL : &(A.getGraph().packedColumnIndices[0]);
+  const double* Acoef = A.getPackedCoefs().empty() ? NULL : &(A.getPackedCoefs()[0]);
 
   const std::vector<int>& xind = x.indices();
   const std::vector<double>& xcoef = x.coefs();
 
-  const double* xcoef_ptr = &xcoef[0];
+  const double* xcoef_ptr = xcoef.empty() ? NULL : &xcoef[0];
 
   unsigned nrows = A.getNumRows();
 
@@ -205,7 +205,7 @@ void multiply_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
 
   const int* Browoffs = &(B.getGraph().rowOffsets[0]);
   const std::vector<int>& Bcols = B.getGraph().packedColumnIndices;
-  const double* Bcoefs = &(B.getPackedCoefs()[0]);
+  const double* Bcoefs = B.getPackedCoefs().empty() ? NULL : &(B.getPackedCoefs()[0]);
 
   static double fei_min = std::numeric_limits<double>::min();
 
@@ -239,8 +239,8 @@ void multiply_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
         }
       }
 
-      const int* Brow_cols = &(Bcols[Browoffs[Brow_offset]]);
-      const double* Brow_coefs = &(Bcoefs[Browoffs[Brow_offset]]);
+      const int* Brow_cols = Bcols.empty() ? NULL : &(Bcols[Browoffs[Brow_offset]]);
+      const double* Brow_coefs = Bcoefs==NULL ? NULL : &(Bcoefs[Browoffs[Brow_offset]]);
       int Brow_len = Browoffs[Brow_offset+1]-Browoffs[Brow_offset];
 
       for(int k=0; k<Brow_len; ++k) {
@@ -281,12 +281,12 @@ void multiply_trans_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
 
   const size_t numArows = Arows.size();
   const int* Arowoffs = &(A.getGraph().rowOffsets[0]);
-  const int* Acols = &(A.getGraph().packedColumnIndices[0]);
-  const double* Acoefs = &(A.getPackedCoefs()[0]);
+  const int* Acols = A.getGraph().packedColumnIndices.empty() ? NULL : &(A.getGraph().packedColumnIndices[0]);
+  const double* Acoefs = A.getPackedCoefs().empty() ? NULL : &(A.getPackedCoefs()[0]);
 
   const int* Browoffs = &(B.getGraph().rowOffsets[0]);
   const std::vector<int>& Bcols = B.getGraph().packedColumnIndices;
-  const double* Bcoefs = &(B.getPackedCoefs()[0]);
+  const double* Bcoefs = B.getPackedCoefs().empty() ? NULL : &(B.getPackedCoefs()[0]);
 
   std::vector<double> row_coefs;
 
@@ -305,8 +305,8 @@ void multiply_trans_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
       continue;
     }
 
-    const int* Brow_cols = &(Bcols[Browoffs[Brow_offset]]);
-    const double* Brow_coefs = &(Bcoefs[Browoffs[Brow_offset]]);
+    const int* Brow_cols = Bcols.empty() ? NULL : &(Bcols[Browoffs[Brow_offset]]);
+    const double* Brow_coefs = Bcoefs==NULL ? NULL : &(Bcoefs[Browoffs[Brow_offset]]);
     int Brow_len = Browoffs[Brow_offset+1]-Browoffs[Brow_offset];
 
     if ((int)row_coefs.size() < Brow_len) row_coefs.resize(Brow_len*2);

@@ -48,9 +48,12 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-#include "Kokkos_DefaultNode.hpp"
+#include "Panzer_NodeType.hpp"
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_STK_Version.hpp"
 #include "Panzer_STK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
@@ -90,6 +93,7 @@ using Teuchos::rcp;
 
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
+#include "Teuchos_CommHelpers.hpp"
 
 #include <cstdio> // for get char
 #include <fstream>
@@ -150,6 +154,8 @@ namespace panzer {
   {
     using Teuchos::RCP;
 
+    PHX::KokkosDeviceSession session;
+
     // panzer::pauseToAttach();
 
     bool parameter_on = true;
@@ -160,8 +166,9 @@ namespace panzer {
     // Test a transient me
     {
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+      std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
       bool build_transient_support = true;
-      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(ap.fmb,ap.rLibrary,ap.ep_lof,p_names,ap.gd,build_transient_support));
+      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(ap.fmb,ap.rLibrary,ap.ep_lof,p_names,p_values,ap.gd,build_transient_support));
 
       EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
       EpetraExt::ModelEvaluator::OutArgs out_args = me->createOutArgs();
@@ -210,10 +217,13 @@ namespace panzer {
     // Test a steady-state me
     {
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names(1);
+      std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values(1);
       p_names[0] = Teuchos::rcp(new Teuchos::Array<std::string>(1));
       (*p_names[0])[0] = "SOURCE_TEMPERATURE";
+      p_values[0] = Teuchos::rcp(new Teuchos::Array<double>(1));
+      (*p_values[0])[0] = 1.0;
       bool build_transient_support = false;
-      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(ap.fmb,ap.rLibrary,ap.ep_lof,p_names,ap.gd,build_transient_support));
+      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(ap.fmb,ap.rLibrary,ap.ep_lof,p_names,p_values,ap.gd,build_transient_support));
       
       // store to test parameter capabilities
       // ss_me = me;
@@ -263,13 +273,16 @@ namespace panzer {
   {
     bool parameter_on = true;
     AssemblyPieces ap;
+
+    PHX::KokkosDeviceSession session;
   
     buildAssemblyPieces(parameter_on,ap);
 
     {
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+      std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
       bool build_transient_support = false;
-      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(ap.fmb,ap.rLibrary,ap.ep_lof,p_names,ap.gd,build_transient_support));
+      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(ap.fmb,ap.rLibrary,ap.ep_lof,p_names,p_values,ap.gd,build_transient_support));
  
       RespFactoryFunc_Builder builder;
       builder.comm = MPI_COMM_WORLD;
@@ -306,130 +319,6 @@ namespace panzer {
         out << (*f)[i] << "     " << (*DgDx)[i] << std::endl;
     }
   }
-  
-/*
-  TEUCHOS_UNIT_TEST(model_evaluator, basic_parameter)
-  {
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-
-    Teuchos::RCP<panzer::FieldManagerBuilder> fmb_off;  
-    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary_off; 
-    Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof_off;
-    Teuchos::RCP<panzer::GlobalData> gd_off;
-    buildAssemblyPieces(false,fmb_off,rLibrary_off,gd_off,ep_lof_off);
-
-    Teuchos::RCP<panzer::FieldManagerBuilder> fmb_on;  
-    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary_on; 
-    Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof_on;
-    Teuchos::RCP<panzer::GlobalData> gd_on;
-    buildAssemblyPieces(true,fmb_on,rLibrary_on,gd_on,ep_lof_on);
-
-    // transient test
-    {
-      // build base line residual and Jacobian
-      /////////////////////////////////////////
-      RCP<Epetra_Vector> f_off;
-      RCP<Epetra_CrsMatrix> J_off;
-      {
-         std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names_off;
-         bool build_transient_support = true;
-         RCP<panzer::ModelEvaluator_Epetra> me_off 
-              = rcp(new panzer::ModelEvaluator_Epetra(fmb_off,rLibrary_off,ep_lof_off,p_names_off,gd_off,true));
-   
-         EpetraExt::ModelEvaluator::InArgs in_args = me_off->createInArgs();
-         EpetraExt::ModelEvaluator::OutArgs out_args = me_off->createOutArgs();
-         
-         RCP<Epetra_Vector> x = rcp(new Epetra_Vector(*me_off->get_x_map()));
-         RCP<Epetra_Vector> x_dot = rcp(new Epetra_Vector(*me_off->get_x_map()));
-         x->Update(1.0, *(me_off->get_x_init()), 0.0);
-         x_dot->PutScalar(0.0);
-         in_args.set_x(x);
-         in_args.set_x_dot(x_dot);
-         in_args.set_alpha(0.0);
-         in_args.set_beta(1.0);
-   
-         f_off = rcp(new Epetra_Vector(*me_off->get_f_map()));
-         J_off = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(me_off->create_W());
-         out_args.set_f(f_off);
-         out_args.set_W(J_off);
-   
-         me_off->evalModel(in_args, out_args);
-      }
-
-      // build test of "on" but no parameters registered
-      /////////////////////////////////////////////
-
-      {
-         std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names_on;
-         bool build_transient_support = true;
-         RCP<panzer::ModelEvaluator_Epetra> me_on 
-              = rcp(new panzer::ModelEvaluator_Epetra(fmb_on,rLibrary_on,ep_lof_on,p_names_on,gd_on,true));
-   
-         EpetraExt::ModelEvaluator::InArgs in_args = me_on->createInArgs();
-         EpetraExt::ModelEvaluator::OutArgs out_args = me_on->createOutArgs();
-         
-         RCP<Epetra_Vector> x = rcp(new Epetra_Vector(*me_on->get_x_map()));
-         RCP<Epetra_Vector> x_dot = rcp(new Epetra_Vector(*me_on->get_x_map()));
-         x->Update(1.0, *(me_on->get_x_init()), 0.0);
-         x_dot->PutScalar(0.0);
-         in_args.set_x(x);
-         in_args.set_x_dot(x_dot);
-         in_args.set_alpha(0.0);
-         in_args.set_beta(1.0);
-   
-         RCP<Epetra_Vector> f = rcp(new Epetra_Vector(*me_on->get_f_map()));
-         RCP<Epetra_CrsMatrix> J = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(me_on->create_W());
-         out_args.set_f(f);
-         out_args.set_W(J);
-   
-         me_on->evalModel(in_args, out_args);
-
-         double norm_f=0.0, norm_f_off=0.0;
-         f->Norm2(&norm_f);
-         f_off->Norm2(&norm_f_off);
-         TEST_FLOATING_EQUALITY(norm_f,norm_f_off,1e-15);
-      }
-
-      // build test of "on" but with a parameter registered but not modified
-      /////////////////////////////////////////////
-
-      {
-         std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names_on;
-         std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names(1);
-         p_names[0] = Teuchos::rcp(new Teuchos::Array<std::string>(1));
-         (*p_names[0])[0] = "SOURCE_TEMPERATURE";
-         bool build_transient_support = true;
-         RCP<panzer::ModelEvaluator_Epetra> me_on 
-              = rcp(new panzer::ModelEvaluator_Epetra(fmb_on,rLibrary_on,ep_lof_on,p_names_on,gd_on,true));
-   
-         EpetraExt::ModelEvaluator::InArgs in_args = me_on->createInArgs();
-         EpetraExt::ModelEvaluator::OutArgs out_args = me_on->createOutArgs();
-         
-         RCP<Epetra_Vector> x = rcp(new Epetra_Vector(*me_on->get_x_map()));
-         RCP<Epetra_Vector> x_dot = rcp(new Epetra_Vector(*me_on->get_x_map()));
-         x->Update(1.0, *(me_on->get_x_init()), 0.0);
-         x_dot->PutScalar(0.0);
-         in_args.set_x(x);
-         in_args.set_x_dot(x_dot);
-         in_args.set_alpha(0.0);
-         in_args.set_beta(1.0);
-   
-         RCP<Epetra_Vector> f = rcp(new Epetra_Vector(*me_on->get_f_map()));
-         RCP<Epetra_CrsMatrix> J = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(me_on->create_W());
-         out_args.set_f(f);
-         out_args.set_W(J);
-   
-         me_on->evalModel(in_args, out_args);
-
-         double norm_f=0.0, norm_f_off=0.0;
-         f->Norm2(&norm_f);
-         f_off->Norm2(&norm_f_off);
-         TEST_FLOATING_EQUALITY(norm_f,norm_f_off,1e-15);
-      }
-    }
-  }
-*/
 
   // Test for parameters and residual consistency
   /////////////////////////////////////////////
@@ -440,6 +329,8 @@ namespace panzer {
     // ss_me is created!
     // RCP<panzer::ModelEvaluator_Epetra> me = ss_me; This appears to cause seg faults for some reason!!!!
 
+    PHX::KokkosDeviceSession session;
+
     RCP<panzer::ModelEvaluator_Epetra> me;
     {
       bool parameter_on = true;
@@ -447,10 +338,13 @@ namespace panzer {
     
       buildAssemblyPieces(parameter_on,ap);
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names(1);
+      std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values(1);
       p_names[0] = Teuchos::rcp(new Teuchos::Array<std::string>(1));
       (*p_names[0])[0] = "SOURCE_TEMPERATURE";
+      p_values[0] = Teuchos::rcp(new Teuchos::Array<double>(1));
+      (*p_values[0])[0] = 1.0;
       bool build_transient_support = false;
-      me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(ap.fmb,ap.rLibrary,ap.ep_lof,p_names,ap.gd,build_transient_support));
+      me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(ap.fmb,ap.rLibrary,ap.ep_lof,p_names,p_values,ap.gd,build_transient_support));
     }
 
     TEUCHOS_ASSERT(nonnull(me));
@@ -540,6 +434,7 @@ namespace panzer {
   // Testing Ditributed Parameter Support
   TEUCHOS_UNIT_TEST(model_evaluator, distributed_parameters)
   {
+    PHX::KokkosDeviceSession session;
 
     RCP<panzer::ModelEvaluator_Epetra> me;
     int distributed_parameter_index = -1;
@@ -550,10 +445,13 @@ namespace panzer {
     
       buildAssemblyPieces(parameter_on,ap);
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names(1);
+      std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values(1);
       p_names[0] = Teuchos::rcp(new Teuchos::Array<std::string>(1));
       (*p_names[0])[0] = "SOURCE_TEMPERATURE";
+      p_values[0] = Teuchos::rcp(new Teuchos::Array<double>(1));
+      (*p_values[0])[0] = 1.0;
       bool build_transient_support = false;
-      me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(ap.fmb,ap.rLibrary,ap.ep_lof,p_names,ap.gd,build_transient_support));
+      me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(ap.fmb,ap.rLibrary,ap.ep_lof,p_names,p_values,ap.gd,build_transient_support));
 
       // add a distributed parameter
       ghosted_distributed_parameter = Teuchos::rcp(new Epetra_Vector(*ap.ep_lof->getGhostedMap()));
@@ -622,6 +520,8 @@ namespace panzer {
     using Teuchos::RCP;
     using Teuchos::rcp;
 
+    PHX::KokkosDeviceSession session;
+
     RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
 
     bool parameter_on = true;
@@ -636,8 +536,9 @@ namespace panzer {
     // Test a transient me, with basic values (no SG)
     {
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+      std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_names;
       bool build_transient_support = true;
-      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(ap.fmb,ap.rLibrary,sg_lof,p_names,ap.gd,build_transient_support));
+      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(ap.fmb,ap.rLibrary,sg_lof,p_names,p_values,ap.gd,build_transient_support));
 
       EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
       EpetraExt::ModelEvaluator::OutArgs out_args = me->createOutArgs();
@@ -686,8 +587,9 @@ namespace panzer {
     // Test a steady-state me, basic values (no SG)
     {
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+      std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
       bool build_transient_support = false;
-      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(ap.fmb,ap.rLibrary,sg_lof,p_names,ap.gd,build_transient_support));
+      RCP<panzer::ModelEvaluator_Epetra> me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(ap.fmb,ap.rLibrary,sg_lof,p_names,p_values,ap.gd,build_transient_support));
 
       EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
       EpetraExt::ModelEvaluator::OutArgs out_args = me->createOutArgs();
@@ -731,8 +633,9 @@ namespace panzer {
     // Test a steady-state me, SG values
     {
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+      std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
       bool build_transient_support = false;
-      RCP<panzer::ModelEvaluator_Epetra> pan_me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(ap.fmb,ap.rLibrary,sg_lof,p_names,ap.gd,build_transient_support));
+      RCP<panzer::ModelEvaluator_Epetra> pan_me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(ap.fmb,ap.rLibrary,sg_lof,p_names,p_values,ap.gd,build_transient_support));
       RCP<EpetraExt::ModelEvaluator> me = buildStochModel(Comm,pan_me,sgExpansion,fullExpansion);
 
       EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
@@ -1010,7 +913,8 @@ namespace panzer {
     Teuchos::ParameterList closure_models("Closure Models");
     if(parameter_on)
        closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<std::string>("Type","Parameter");
-    closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<double>("Value",1.0);
+    else
+       closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<double>("Value",1.0);
     closure_models.sublist("solid").sublist("DENSITY").set<double>("Value",1.0);
     closure_models.sublist("solid").sublist("HEAT_CAPACITY").set<double>("Value",1.0);
     closure_models.sublist("ion solid").sublist("SOURCE_ION_TEMPERATURE").set<double>("Value",1.0);

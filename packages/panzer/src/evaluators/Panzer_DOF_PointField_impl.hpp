@@ -53,8 +53,8 @@
 namespace panzer {
 
 //**********************************************************************
-template <typename EvalT, typename TraitsT>
-void DOF_PointField<EvalT,TraitsT>::initialize(const std::string & fieldName,
+template <typename EvalT, typename TRAITST>
+void DOF_PointField<EvalT,TRAITST>::initialize(const std::string & fieldName,
                                                 const PureBasis & fieldBasis,
                                                 const std::string & coordinateName,
                                                 const Teuchos::RCP<PHX::DataLayout> & coordLayout,
@@ -71,8 +71,8 @@ void DOF_PointField<EvalT,TraitsT>::initialize(const std::string & fieldName,
   Teuchos::RCP<PHX::DataLayout> basisLayout = fieldBasis.functional;
 
   coordinates = PHX::MDField<ScalarT,Point,Dim>(coordinateName,coordLayout);
-  dof_coeff = PHX::MDField<ScalarT,Cell,Point>(fieldName,basisLayout);
-  dof_field = PHX::MDField<ScalarT,Cell,Point>(fieldName+postfixFieldName,quadLayout);
+  dof_coeff = PHX::MDField<ScalarT>(fieldName,basisLayout);
+  dof_field = PHX::MDField<ScalarT>(fieldName+postfixFieldName,quadLayout);
 
   this->addDependentField(coordinates);
   this->addDependentField(dof_coeff);
@@ -88,9 +88,9 @@ void DOF_PointField<EvalT,TraitsT>::initialize(const std::string & fieldName,
 }
 
 //**********************************************************************
-template <typename EvalT, typename TraitsT>
-void DOF_PointField<EvalT,TraitsT>::postRegistrationSetup(typename TraitsT::SetupData d,
-			                                  PHX::FieldManager<TraitsT>& fm)
+template <typename EvalT, typename TRAITST>
+void DOF_PointField<EvalT,TRAITST>::postRegistrationSetup(typename TRAITST::SetupData d,
+			                                  PHX::FieldManager<TRAITST>& fm)
 {
   this->utils.setFieldData(coordinates,fm);
   this->utils.setFieldData(dof_coeff,fm);
@@ -98,16 +98,16 @@ void DOF_PointField<EvalT,TraitsT>::postRegistrationSetup(typename TraitsT::Setu
 }
 
 //**********************************************************************
-template <typename EvalT, typename TraitsT>
-void DOF_PointField<EvalT,TraitsT>::evaluateFields(typename TraitsT::EvalData workset)
+template <typename EvalT, typename TRAITST>
+void DOF_PointField<EvalT,TRAITST>::evaluateFields(typename TRAITST::EvalData workset)
 { 
   // Zero out arrays (intrepid does a sum! 1/17/2012)
-  for (int i = 0; i < dof_field.size(); ++i)
-    dof_field[i] = 0.0;
+  dof_field.deep_copy(ScalarT(0.0));
 
   // copy coordinates
-  for (int i = 0; i < coordinates.size(); ++i)
-    intrpCoords[i] = Sacado::ScalarValue<ScalarT>::eval(coordinates[i]);
+  for (int i = 0; i < coordinates.dimension_0(); ++i)
+    for (int j = 0; j < coordinates.dimension_1(); ++j)
+      intrpCoords(i,j) = Sacado::ScalarValue<ScalarT>::eval(coordinates(i,j));
 
   if(workset.num_cells>0) {
     // evaluate at reference points
@@ -115,7 +115,7 @@ void DOF_PointField<EvalT,TraitsT>::evaluateFields(typename TraitsT::EvalData wo
 
     // transfer reference basis values to physical frame values
     Intrepid::FunctionSpaceTools::
-      HGRADtransformVALUE<ScalarT>(basis,
+      HGRADtransformVALUE<double>(basis,
 				  basisRef);
 
     // evaluate function at specified points

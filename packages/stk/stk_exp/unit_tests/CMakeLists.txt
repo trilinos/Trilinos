@@ -1,0 +1,5 @@
+
+ADD_SUBDIRECTORY(kokkos)
+
+ADD_SUBDIRECTORY(cuda)
+

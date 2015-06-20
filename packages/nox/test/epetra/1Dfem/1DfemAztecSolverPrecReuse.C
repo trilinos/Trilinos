@@ -99,37 +99,36 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  // Get the process ID and the total number of processors
-  int MyPID = Comm.MyPID();
-  int NumProc = Comm.NumProc();
-
   // Check verbosity level
   bool verbose = false;
-  if (argc > 1)
-    if (argv[1][0]=='-' && argv[1][1]=='v')
-      verbose = true;
-
-  // Get the number of elements from the command line
-  int NumGlobalElements = 0;
-  if ((argc > 2) && (verbose))
-    NumGlobalElements = atoi(argv[2]) + 1;
-  else if ((argc > 1) && (!verbose))
-    NumGlobalElements = atoi(argv[1]) + 1;
-  else
-    NumGlobalElements = 101;
-
-  // The number of unknowns must be at least equal to the
-  // number of processors.
-  if (NumGlobalElements < NumProc) {
-    std::cout << "numGlobalBlocks = " << NumGlobalElements
-      << " cannot be < number of processors = " << NumProc << std::endl;
-    std::cout << "Test failed!" << std::endl;
-    throw "NOX Error";
-  }
-
   bool success = false;
-
   try {
+    // Get the process ID and the total number of processors
+    int MyPID = Comm.MyPID();
+    int NumProc = Comm.NumProc();
+
+    if (argc > 1)
+      if (argv[1][0]=='-' && argv[1][1]=='v')
+        verbose = true;
+
+    // Get the number of elements from the command line
+    int NumGlobalElements = 0;
+    if ((argc > 2) && (verbose))
+      NumGlobalElements = atoi(argv[2]) + 1;
+    else if ((argc > 1) && (!verbose))
+      NumGlobalElements = atoi(argv[1]) + 1;
+    else
+      NumGlobalElements = 101;
+
+    // The number of unknowns must be at least equal to the
+    // number of processors.
+    if (NumGlobalElements < NumProc) {
+      std::cout << "numGlobalBlocks = " << NumGlobalElements
+        << " cannot be < number of processors = " << NumProc << std::endl;
+      std::cout << "Test failed!" << std::endl;
+      throw "NOX Error";
+    }
+
     // Create the interface between NOX and the application
     // This object is derived from NOX::Epetra::Interface
     Teuchos::RCP<Interface> interface =

@@ -511,7 +511,7 @@ Teuchos::RCP<const Teuchos::ParameterList>
 Piro::Epetra::StokhosSolverFactory::getValidSGParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> validPL =
-     rcp(new Teuchos::ParameterList("ValidSGParams"));;
+     Teuchos::rcp(new Teuchos::ParameterList("ValidSGParams"));;
   validPL->sublist("SG Parameters", false, "");
   validPL->sublist("SG Solver Parameters", false, "");
   validPL->sublist("MP Solver Parameters", false, "");

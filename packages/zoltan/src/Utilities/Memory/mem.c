@@ -235,11 +235,13 @@ va_dcl
   if (numdim <= 0) {
     fprintf(stderr, "%s (%s: %d) ERROR: number of dimensions, %d, is <=0\n",
             yo, file, lineno, numdim);
+    va_end(va);
     return((double *) NULL);
   }
   else if (numdim > 4) {
     fprintf(stderr, "%s (%s: %d) ERROR: number of dimensions, %d, is > 4\n",
             yo, file, lineno, numdim);
+    va_end(va);
     return((double *) NULL);
   }
 
@@ -251,6 +253,7 @@ va_dcl
             "dimension <= 0, %ld; will return NULL\n",
             yo, file, lineno, dim[0].index);
     }
+    va_end(va);
     return((double *) NULL);
   }
 
@@ -263,6 +266,7 @@ va_dcl
       fprintf(stderr, "WARNING: %s (%s: %d) called with dimension %d <= 0, "
               "%ld; will return NULL\n",
               yo, file, lineno, i+1, dim[i].index);
+      va_end(va);
       return((double *) NULL);
     }
     dim[i].total = dim[i-1].total * dim[i].index;

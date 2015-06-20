@@ -58,11 +58,11 @@
 #ifdef HAVE_MPI
 LinearSystem::
 LinearSystem(
-    const Teuchos::RefCountPtr <Epetra_MpiComm> & aComm):
+    const Teuchos::RCP <Epetra_MpiComm> & aComm):
 #else
 LinearSystem::
 LinearSystem(
-    const Teuchos::RefCountPtr <Epetra_SerialComm> & aComm):
+    const Teuchos::RCP <Epetra_SerialComm> & aComm):
 #endif
   comm(aComm),
   continuableParams(LOCA::ParameterVector()),
@@ -194,13 +194,13 @@ ComputeJacF(const Epetra_Vector & x)
   return true;
 }
 
-Teuchos::RefCountPtr <Epetra_CrsMatrix> LinearSystem::
+Teuchos::RCP <Epetra_CrsMatrix> LinearSystem::
 GetJacF() const
 {
   return jacobian;
 }
 
-Teuchos::RefCountPtr <Epetra_Vector> LinearSystem::
+Teuchos::RCP <Epetra_Vector> LinearSystem::
 GetInitialGuess() const
 {
   return initialGuess;
@@ -264,7 +264,7 @@ SetContinuationFileParameters(const Epetra_Vector & x)
   return true;
 }
 
-Teuchos::RefCountPtr <Teuchos::ParameterList> LinearSystem::
+Teuchos::RCP <Teuchos::ParameterList> LinearSystem::
 GetContinuationFileParameters()
 {
   return continuationFileParams;

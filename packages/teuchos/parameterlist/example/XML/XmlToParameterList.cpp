@@ -50,7 +50,7 @@
 
 int main( int argc, char* argv[] )
 {
-  
+
   using Teuchos::inoutArg;
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
@@ -91,7 +91,7 @@ int main( int argc, char* argv[] )
       std::cout << "\nParameter list read from the XML file \""<<xmlInFileName<<"\":\n\n";
       paramList.print(std::cout,2,true,true);
     }
-    
+
     std::string line("");
     if(extraXmlFile.length()) {
       std::ifstream myfile(extraXmlFile.c_str());

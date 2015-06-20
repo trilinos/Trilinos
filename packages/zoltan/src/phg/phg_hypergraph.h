@@ -238,8 +238,6 @@ typedef struct Zoltan_HGraph ZHG;
 typedef int *Matching;  /* length |V|, matching information of vertices */
 typedef int *Packing;   /* length |V|, packing information of vertices */
 typedef int *Grouping;  /* length |V|, grouping information of vertices */
-
-typedef int *LevelMap;  /* length |V|, mapping of fine vtxs onto coarse vtxs */
 typedef int *Partition; /* length |V|, partition ID for each vertex */
 
 

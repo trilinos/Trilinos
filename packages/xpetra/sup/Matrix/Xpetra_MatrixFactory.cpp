@@ -51,7 +51,7 @@
 
 namespace Xpetra {
 
-  RCP<Xpetra::Matrix<double,int,int> > MatrixFactory2<double,int,int>::BuildCopy(const RCP<const Matrix> A) {
+   Teuchos::RCP<Xpetra::Matrix<double,int,int> > MatrixFactory2<double,int,int>::BuildCopy(const Teuchos::RCP<const Matrix> A) {
     RCP<const CrsMatrixWrap> oldOp = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(A);
     if (oldOp == Teuchos::null)
       throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
@@ -59,14 +59,16 @@ namespace Xpetra {
     RCP<const CrsMatrix> oldCrsOp = oldOp->getCrsMatrix();
 
 #ifdef HAVE_XPETRA_EPETRA
-    RCP<const EpetraCrsMatrix> oldECrsOp = Teuchos::rcp_dynamic_cast<const EpetraCrsMatrix>(oldCrsOp);
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
+	RCP<const EpetraCrsMatrixT<GlobalOrdinal> > oldECrsOp = Teuchos::rcp_dynamic_cast<const EpetraCrsMatrixT<GlobalOrdinal> >(oldCrsOp);
     if (oldECrsOp != Teuchos::null) {
       // Underlying matrix is Epetra
-      RCP<CrsMatrix>     newECrsOp(new EpetraCrsMatrix(*oldECrsOp));
+      RCP<CrsMatrix>     newECrsOp(new EpetraCrsMatrixT<GlobalOrdinal>(*oldECrsOp));
       RCP<CrsMatrixWrap> newOp    (new CrsMatrixWrap  (newECrsOp));
 
       return newOp;
     }
+#endif
 #endif
 
 #ifdef HAVE_XPETRA_TPETRA
@@ -84,6 +86,45 @@ namespace Xpetra {
 
     return Teuchos::null;  // make compiler happy
   }
+
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+Teuchos::RCP<Xpetra::Matrix<double,int,long long> > MatrixFactory2<double,int,long long>::BuildCopy(const Teuchos::RCP<const Matrix> A) {
+    RCP<const CrsMatrixWrap> oldOp = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(A);
+    if (oldOp == Teuchos::null)
+      throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
+
+    RCP<const CrsMatrix> oldCrsOp = oldOp->getCrsMatrix();
+
+#ifdef HAVE_XPETRA_EPETRA
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+	RCP<const EpetraCrsMatrixT<GlobalOrdinal> > oldECrsOp = Teuchos::rcp_dynamic_cast<const EpetraCrsMatrixT<GlobalOrdinal> >(oldCrsOp);
+    if (oldECrsOp != Teuchos::null) {
+      // Underlying matrix is Epetra
+      RCP<CrsMatrix>     newECrsOp(new EpetraCrsMatrixT<GlobalOrdinal>(*oldECrsOp));
+      RCP<CrsMatrixWrap> newOp    (new CrsMatrixWrap  (newECrsOp));
+
+      return newOp;
+    }
+#endif
+#endif
+
+#ifdef HAVE_XPETRA_TPETRA
+    // Underlying matrix is Tpetra
+    RCP<const TpetraCrsMatrix> oldTCrsOp = Teuchos::rcp_dynamic_cast<const TpetraCrsMatrix>(oldCrsOp);
+    if (oldTCrsOp != Teuchos::null) {
+      RCP<CrsMatrix>     newTCrsOp(new TpetraCrsMatrix(*oldTCrsOp));
+      RCP<CrsMatrixWrap> newOp    (new CrsMatrixWrap(newTCrsOp));
+
+      return newOp;
+    }
+#else
+    throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::EpetraCrsMatrix or Xpetra::TpetraCrsMatrix failed");
+#endif
+
+    return Teuchos::null;  // make compiler happy
+  }
+
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 } // namespace Xpetra
 

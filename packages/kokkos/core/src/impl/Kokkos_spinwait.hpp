@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -45,15 +45,20 @@
 #ifndef KOKKOS_SPINWAIT_HPP
 #define KOKKOS_SPINWAIT_HPP
 
+#include <Kokkos_Macros.hpp>
+
 namespace Kokkos {
 namespace Impl {
 
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
 void spinwait( volatile int & flag , const int value );
+#else
+KOKKOS_INLINE_FUNCTION
+void spinwait( volatile int & , const int ) {}
+#endif
 
 } /* namespace Impl */
 } /* namespace Kokkos */
-
-#undef KOKKOS_YIELD
 
 #endif /* #ifndef KOKKOS_SPINWAIT_HPP */
 

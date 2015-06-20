@@ -48,5 +48,6 @@
 // MP includes and specializations
 #include "Stokhos_Tpetra_MP_Vector.hpp"
 #include "Amesos2_Solver_MP_Vector.hpp"
+#include "Amesos2_Basker_MP_Vector.hpp"
 
 #endif // STOKHOS_AMESOS2_MP_VECTOR_HPP

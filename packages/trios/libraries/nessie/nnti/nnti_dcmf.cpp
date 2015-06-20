@@ -1516,7 +1516,6 @@ NNTI_bgpdcmf_wait (const NNTI_buffer_t * reg_buf,
   log_debug (nnti_debug_level, "bgpdcmf_wait  buffer = %p work request =%p", reg_buf, wr);
   nnti_rc = process_event (reg_buf, remote_op, wr, timeout_per_call);
   conn = get_conn_rank (wr->peer_rank);
-  memset (status, 0, sizeof (NNTI_status_t));
   status->op = remote_op;
   status->result = nnti_rc;
   if (nnti_rc == NNTI_OK)

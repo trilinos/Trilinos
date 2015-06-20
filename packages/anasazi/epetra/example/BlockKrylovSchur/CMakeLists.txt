@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
 # Declare all the packages that we use in tests here.  All these
 # packages must be listed in either TEST_REQUIRED_DEP_PACKAGES,

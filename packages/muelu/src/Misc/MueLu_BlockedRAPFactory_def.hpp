@@ -46,6 +46,8 @@
 #ifndef MUELU_BLOCKEDRAPFACTORY_DEF_HPP
 #define MUELU_BLOCKEDRAPFACTORY_DEF_HPP
 
+#ifdef HAVE_MUELU_EXPERIMENTAL
+
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
@@ -56,6 +58,7 @@
 
 #include "MueLu_BlockedRAPFactory_decl.hpp"
 
+#include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_RAPFactory_decl.hpp"
@@ -63,63 +66,107 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  BlockedRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BlockedRAPFactory()
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  BlockedRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockedRAPFactory()
     : checkAc_(false), repairZeroDiagonals_(false)
   { }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const ParameterList> BlockedRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const ParameterList> BlockedRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< RCP<const FactoryBase> >("A", Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
-    validParamList->set< RCP<const FactoryBase> >("P", Teuchos::null, "Prolongator factory");
-    validParamList->set< RCP<const FactoryBase> >("R", Teuchos::null, "Restrictor factory");
+#define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
+    SET_VALID_ENTRY("transpose: use implicit");
+#undef  SET_VALID_ENTRY
+    validParamList->set< RCP<const FactoryBase> >("A", null, "Generating factory of the matrix A used during the prolongator smoothing process");
+    validParamList->set< RCP<const FactoryBase> >("P", null, "Prolongator factory");
+    validParamList->set< RCP<const FactoryBase> >("R", null, "Restrictor factory");
 
     return validParamList;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void BlockedRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-    Input(coarseLevel, "R");
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void BlockedRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+    const Teuchos::ParameterList& pL = GetParameterList();
+    if (pL.get<bool>("transpose: use implicit") == false)
+      Input(coarseLevel, "R");
+
     Input(fineLevel,   "A");
     Input(coarseLevel, "P");
 
     // call DeclareInput of all user-given transfer factories
-    for(std::vector<RCP<const FactoryBase> >::const_iterator it = transferFacts_.begin(); it!=transferFacts_.end(); ++it) {
+    for (std::vector<RCP<const FactoryBase> >::const_iterator it = transferFacts_.begin(); it != transferFacts_.end(); ++it)
       (*it)->CallDeclareInput(coarseLevel);
-    }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void BlockedRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {  //FIXME make fineLevel const!!
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void BlockedRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fineLevel, Level &coarseLevel) const {  //FIXME make fineLevel const!!
     FactoryMonitor m(*this, "Computing Ac (block)", coarseLevel);
 
-    RCP<Matrix> R = Get< RCP<Matrix> >(coarseLevel, "R");
+    const Teuchos::ParameterList& pL = GetParameterList();
+
     RCP<Matrix> A = Get< RCP<Matrix> >(fineLevel,   "A");
     RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P");
 
-    RCP<BlockedCrsMatrix> bR = rcp_dynamic_cast<BlockedCrsMatrix>(R);
     RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A);
     RCP<BlockedCrsMatrix> bP = rcp_dynamic_cast<BlockedCrsMatrix>(P);
-    TEUCHOS_TEST_FOR_EXCEPTION(bR.is_null() || bA.is_null() || bP.is_null(), Exceptions::BadCast,
-                               "Matrices R, A and P must be of type BlockedCrsMatrix.");
+    TEUCHOS_TEST_FOR_EXCEPTION(bA.is_null() || bP.is_null(), Exceptions::BadCast, "Matrices R, A and P must be of type BlockedCrsMatrix.");
 
-    // Triple matrix product for BlockedCrsMatrixClass
-    TEUCHOS_TEST_FOR_EXCEPTION((bA->Cols() != bP->Rows()) || (bA->Rows() != bR->Cols()), Exceptions::BadCast,
+    RCP<BlockedCrsMatrix> bAP;
+    RCP<BlockedCrsMatrix> bAc;
+    {
+      SubFactoryMonitor subM(*this, "MxM: A x P", coarseLevel);
+
+      // Triple matrix product for BlockedCrsMatrixClass
+      TEUCHOS_TEST_FOR_EXCEPTION((bA->Cols() != bP->Rows()), Exceptions::BadCast,
                                "Block matrix dimensions do not match: "
-                               "R is " << bR->Rows() << "x" << bR->Cols() <<
                                "A is " << bA->Rows() << "x" << bA->Cols() <<
-                               "R is " << bR->Rows() << "x" << bR->Cols() <<
                                "P is " << bP->Rows() << "x" << bP->Cols());
 
-    RCP<BlockedCrsMatrix> bAP = Utils::TwoMatrixMultiplyBlock(*bA, false, *bP,  false, true, true);
-    RCP<BlockedCrsMatrix> bAc = Utils::TwoMatrixMultiplyBlock(*bR, false, *bAP, false, true, true);
+      bAP = Utils::TwoMatrixMultiplyBlock(*bA, false, *bP,  false, GetOStream(Statistics2), true, true);
+    }
+
+
+    // If we do not modify matrix later, allow optimization of storage.
+    // This is necessary for new faster Epetra MM kernels.
+    bool doOptimizeStorage = !checkAc_;
+
+    const bool doTranspose    = true;
+    const bool doFillComplete = true;
+    if (pL.get<bool>("transpose: use implicit") == true) {
+      SubFactoryMonitor m2(*this, "MxM: P' x (AP) (implicit)", coarseLevel);
+      bAc = Utils::TwoMatrixMultiplyBlock(*bP,  doTranspose, *bAP, !doTranspose, GetOStream(Statistics2), doFillComplete, doOptimizeStorage);
+
+    } else {
+      RCP<Matrix>           R  = Get< RCP<Matrix> >(coarseLevel, "R");
+      RCP<BlockedCrsMatrix> bR = rcp_dynamic_cast<BlockedCrsMatrix>(R);
+      TEUCHOS_TEST_FOR_EXCEPTION(bR.is_null(), Exceptions::BadCast, "Matrix R must be of type BlockedCrsMatrix.");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(bA->Rows() != bR->Cols(), Exceptions::BadCast,
+                                 "Block matrix dimensions do not match: "
+                                 "R is " << bR->Rows() << "x" << bR->Cols() <<
+                                 "A is " << bA->Rows() << "x" << bA->Cols());
+
+      SubFactoryMonitor m2(*this, "MxM: R x (AP) (explicit)", coarseLevel);
+      bAc = Utils::TwoMatrixMultiplyBlock(*bR, !doTranspose, *bAP, !doTranspose, GetOStream(Statistics2), doFillComplete, doOptimizeStorage);
+    }
+
 
     if (checkAc_)
       CheckMainDiagonal(bAc);
 
     GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*bAc, "Ac (blocked)");
+
+    // static int run = 1;
+    // RCP<CrsMatrixWrap> A11 = rcp(new CrsMatrixWrap(bAc->getMatrix(0,0)));
+    // Utils::Write(toString(run) + "_A_11.mm", *A11);
+    // if (!bAc->getMatrix(1,1).is_null()) {
+      // RCP<CrsMatrixWrap> A22 = rcp(new CrsMatrixWrap(bAc->getMatrix(1,1)));
+      // Utils::Write(toString(run) + "_A_22.mm", *A22);
+    // }
+    // RCP<CrsMatrixWrap> Am = rcp(new CrsMatrixWrap(bAc->Merge()));
+    // Utils::Write(toString(run) + "_A.mm", *Am);
+    // run++;
 
     Set<RCP <Matrix> >(coarseLevel, "A", bAc);
 
@@ -139,8 +186,8 @@ namespace MueLu {
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void BlockedRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CheckMainDiagonal(RCP<BlockedCrsMatrix> & bAc, bool repairZeroDiagonals) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void BlockedRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CheckMainDiagonal(RCP<BlockedCrsMatrix> & bAc, bool repairZeroDiagonals) {
     RCP<CrsMatrix> c00 = bAc->getMatrix(0, 0);
     RCP<CrsMatrix> Aout = CrsMatrixFactory::Build(c00->getRowMap(), c00->getGlobalMaxNumRowEntries(), Xpetra::StaticProfile);
 
@@ -180,8 +227,8 @@ namespace MueLu {
     bAc->setMatrix(0, 0, Aout);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void BlockedRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddTransferFactory(const RCP<const FactoryBase>& factory) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void BlockedRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddTransferFactory(const RCP<const FactoryBase>& factory) {
     // check if it's a TwoLevelFactoryBase based transfer factory
     TEUCHOS_TEST_FOR_EXCEPTION(rcp_dynamic_cast<const TwoLevelFactoryBase>(factory) == Teuchos::null, Exceptions::BadCast,
                                "Transfer factory is not derived from TwoLevelFactoryBase. This is very strange. (Note: you can remove this exception if there's a good reason for)");
@@ -191,6 +238,7 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_BLOCKEDRAPFACTORY_SHORT
+#endif /* HAVE_MUELU_EXPERIMENTAL */
 #endif // MUELU_BLOCKEDRAPFACTORY_DEF_HPP
 
 // TODO add plausibility check

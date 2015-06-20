@@ -11,7 +11,6 @@ ASSERT_DEFINED(
 # Executable
 #
 
-INCLUDE(TribitsAddExecutable)
 
 #TODO: how to remove that?
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -32,7 +31,6 @@ IF(${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Tpetra AND
     TwoBillionTest
     SOURCES TwoBillion.cpp
     COMM mpi
-    DEPLIBS muelu xpetra muelu-adapters
     )
 
 

@@ -63,9 +63,9 @@ namespace Teuchos{
  * \brief An abstract parent class for all visual dependencies.
  *
  * IMPORTANT NOTE:
- * If a parameter becomes hidden, it's validity will not necessarily 
+ * If a parameter becomes hidden, it's validity will not necessarily
  * be checked. This means that it
- * is indeed possible for a non-valid ParameterList to occur. Make 
+ * is indeed possible for a non-valid ParameterList to occur. Make
  * sure that you program code takes
  * this into account.
  */
@@ -78,7 +78,7 @@ public:
     static const bool SHOW_IF_DEFAULT_VALUE = true;
     return SHOW_IF_DEFAULT_VALUE;
   }
-    
+
 
   /** \name Constructors/Destructor */
   //@{
@@ -88,11 +88,11 @@ public:
    *
    * @param dependee The dependee parameter.
    * @param dependent The dependent parameter.
-   * @param showIf When true, the depndent will be be shown if the dependee is 
+   * @param showIf When true, the depndent will be be shown if the dependee is
    * true.
    */
   VisualDependency(
-    RCP<const ParameterEntry> dependee, 
+    RCP<const ParameterEntry> dependee,
     RCP<ParameterEntry> dependent,
     bool showIf=getShowIfDefaultValue());
 
@@ -101,7 +101,7 @@ public:
    *
    * @param dependee The dependee parameter.
    * @param dependents The dependent parameters.
-   * @param showIf When true, the depndent will be be shown if the dependee is 
+   * @param showIf When true, the depndent will be be shown if the dependee is
    * true.
    */
   VisualDependency(
@@ -114,11 +114,11 @@ public:
    *
    * @param dependees The dependees.
    * @param dependent The dependent parameter.
-   * @param showIf When true, the depndent will be be shown if the dependee is 
+   * @param showIf When true, the depndent will be be shown if the dependee is
    * true.
    */
   VisualDependency(
-    ConstParameterEntryList dependees, 
+    ConstParameterEntryList dependees,
     RCP<ParameterEntry> dependent,
     bool showIf=getShowIfDefaultValue());
 
@@ -127,7 +127,7 @@ public:
    *
    * @param dependees The dependees.
    * @param dependents The dependets.
-   * @param showIf When true, the depndent will be be shown if the dependee is 
+   * @param showIf When true, the depndent will be be shown if the dependee is
    * true.
    */
   VisualDependency(
@@ -137,7 +137,7 @@ public:
 
   //@}
 
-  //! @name Attribute/Query Methods 
+  //! @name Attribute/Query Methods
   //@{
 
   /**
@@ -147,7 +147,7 @@ public:
    * @return The state of the dependee.
    */
   virtual bool getDependeeState() const = 0;
-  
+
   /**
    * \brief Determines whether or not the dependent is currently visible.
    */
@@ -163,25 +163,25 @@ public:
 
   /** \brief . */
   void evaluate();
-  
+
   //@}
 
 private:
 
   /** \name Private Members */
   //@{
-  
+
   /**
    * \brief Whether or not the dependent is currently visible.
    */
   bool dependentVisible_;
 
   /**
-   * \brief Whether or not to show the dependent if the dependee is set to the 
+   * \brief Whether or not to show the dependent if the dependee is set to the
    * value.
    */
   bool showIf_;
-  
+
   //@}
 
 };
@@ -213,7 +213,7 @@ public:
    * @param dependents The dependents.
    */
   ValidatorDependency(
-    RCP<const ParameterEntry> dependee, 
+    RCP<const ParameterEntry> dependee,
     ParameterEntryList dependents);
 
   //@}
@@ -223,18 +223,18 @@ public:
 
   /** \brief . */
   virtual void evaluate() = 0;
-  
+
   //@}
 
 };
 
 /**
- * \brief A string visual depdencies says the following about the 
+ * \brief A string visual depdencies says the following about the
  * relationship between two elements in a Parameter List:
- * Depending on whether or not the dependee has a particular value, 
+ * Depending on whether or not the dependee has a particular value,
  * the dependent may or may not be displayed to the user in a UI.
- * 
- * The dependee of a StringVisualDependency must be of type string and 
+ *
+ * The dependee of a StringVisualDependency must be of type string and
  * can't be an array. The dependent may be any type of
  * parameter or parameter list.
  *
@@ -251,8 +251,8 @@ public:
   /**
    * Convience typedef representing an array of strings.
    */
-  typedef Array<std::string> ValueList; 
-  
+  typedef Array<std::string> ValueList;
+
   //@}
 
   /** \name Constructors/Destructor */
@@ -263,12 +263,12 @@ public:
    *
    * @param dependee The dependee paramter.
    * @parame dependent The dependent parameter.
-   * @param value The value of the depndee that affects the visiblity 
+   * @param value The value of the depndee that affects the visiblity
    * of the dependent.
-   * @param showIf When true, the depndent will be be shown 
-   * if the dependee 
+   * @param showIf When true, the depndent will be be shown
+   * if the dependee
    * is set to the same value as specified by the value parameter.
-   * If false, the dependent will be shown only when the dependee is 
+   * If false, the dependent will be shown only when the dependee is
    * set to a value other than the one specified by the value parameter.
    */
   StringVisualDependency(
@@ -282,12 +282,12 @@ public:
    *
    * @param dependee The dependee parameter.
    * @param dependent The dependent parameter.
-   * @param values The values of the depndee that affect the 
+   * @param values The values of the depndee that affect the
    * visiblity of the dependent.
-   * @param showIf When true, the depndent will be be shown if 
-   * the dependee is set to one of the values specified by the 
+   * @param showIf When true, the depndent will be be shown if
+   * the dependee is set to one of the values specified by the
    * values parameter.
-   * If false, the dependent will be shown only when the dependee is set 
+   * If false, the dependent will be shown only when the dependee is set
    * to a value other than the ones specified by the values parameter.
    */
   StringVisualDependency(
@@ -301,17 +301,17 @@ public:
    *
    * @param dependee The dependee parameter.
    * @param dependents The dependents
-   * @param value The value of the depndee that affects the visiblity 
+   * @param value The value of the depndee that affects the visiblity
    * of the dependent.
-   * @param showIf When true, the depndent will be be shown if 
-   * the dependee is set to one of the values specified by the values 
-   * parameter. If false, the dependent will be shown only when the 
-   * dependee is set to a value other than the ones specified by the 
+   * @param showIf When true, the depndent will be be shown if
+   * the dependee is set to one of the values specified by the values
+   * parameter. If false, the dependent will be shown only when the
+   * dependee is set to a value other than the ones specified by the
    * values parameter.
    */
   StringVisualDependency(
-    RCP<const ParameterEntry> dependee, 
-    Dependency::ParameterEntryList dependents, 
+    RCP<const ParameterEntry> dependee,
+    Dependency::ParameterEntryList dependents,
     const std::string& value,
     bool showIf=true);
 
@@ -320,21 +320,21 @@ public:
    *
    * @param dependee The dependee parameter.
    * @param dependents The dependents
-   * @param values The values of the depndee that affect the 
+   * @param values The values of the depndee that affect the
    * visiblity of the dependent.
-   * @param showIf When true, the depndent will be be 
-   * shown if the dependee is 
+   * @param showIf When true, the depndent will be be
+   * shown if the dependee is
    * set to one of the values specified by the values parameter.
-   * If false, the dependent will be shown only when the dependee 
-   * is set to a value other than the ones specified by 
+   * If false, the dependent will be shown only when the dependee
+   * is set to a value other than the ones specified by
    * the values parameter.
    */
   StringVisualDependency(
-    RCP<const ParameterEntry> dependee, 
-    Dependency::ParameterEntryList dependents, 
+    RCP<const ParameterEntry> dependee,
+    Dependency::ParameterEntryList dependents,
     const ValueList& values,
     bool showIf=true);
-  
+
   //@}
 
   /** \name Attribute/Query Functions */
@@ -350,15 +350,15 @@ public:
 
   /** \brief . */
   bool getDependeeState() const;
-  
+
   //@}
-  
+
   /** \name Overridden from Dependency */
   //@{
 
   /** \brief . */
   std::string getTypeAttributeValue() const;
-  
+
   //@}
 
 protected:
@@ -368,21 +368,21 @@ protected:
 
   /** \brief . */
   void validateDep() const;
-  
+
   //@}
 
 private:
 
   /** \name Private Members */
   //@{
-  
+
   /**
    * The value used to deteremine the visiblity of the dependent.
    */
   const ValueList values_;
-  
+
   //@}
-  
+
 };
 
 
@@ -403,19 +403,19 @@ public:
   * StringVisualDependency.
   */
   static RCP<StringVisualDependency> getDummyObject();
-  
+
   //@}
-  
+
 };
 
 
 /**
- * \brief A bool visual dependency says the following about the 
+ * \brief A bool visual dependency says the following about the
  * relationship between two elements in a Parameter List:
- * Depending on whether or not the dependee is true or false, the 
+ * Depending on whether or not the dependee is true or false, the
  * dependent may or may not be displayed to the user in a GUI.
  *
- * The dependee of a BoolVisualDependency must be of type bool and can't 
+ * The dependee of a BoolVisualDependency must be of type bool and can't
  * be an array. The dependent may be any type of parameter
  * or parameter list.
  *
@@ -434,7 +434,7 @@ public:
    *
    * @param dependee The dependee parameter.
    * @param dependent The dependent parameter.
-   * @param showIf When true, the depndent will be be shown if the dependee is 
+   * @param showIf When true, the depndent will be be shown if the dependee is
    * true.
    * If false, the dependent will be shown only when the dependee is false.
    */
@@ -448,15 +448,15 @@ public:
    *
    * @param dependee The dependee parameter.
    * @param dependents The dependent parameters.
-   * @param showIf When true, the depndent will be be shown if the dependee is 
+   * @param showIf When true, the depndent will be be shown if the dependee is
    * true.
    * If false, the dependent will be shown only when the dependee is false.
    */
   BoolVisualDependency(
-    RCP<const ParameterEntry> dependee, 
-    Dependency::ParameterEntryList dependents, 
+    RCP<const ParameterEntry> dependee,
+    Dependency::ParameterEntryList dependents,
     bool showIf=true);
-  
+
   //@}
 
   /** \name Overridden from VisualDependency */
@@ -464,7 +464,7 @@ public:
 
   /** \brief . */
   bool getDependeeState() const;
-  
+
   //@}
 
   /** \name Overridden from Dependency */
@@ -472,17 +472,17 @@ public:
 
   /** \brief . */
   std::string getTypeAttributeValue() const;
-  
+
   //@}
 
 protected:
 
   /** \name Overridden from Dependency */
   //@{
-  
+
   /** \brief . */
   void validateDep() const;
-  
+
   //@}
 
 };
@@ -505,22 +505,22 @@ public:
   * BoolVisualDependency.
   */
   static RCP<BoolVisualDependency> getDummyObject();
-  
+
   //@}
-  
+
 };
 
 /**
- * \brief A condition visual dependency says the following about the 
+ * \brief A condition visual dependency says the following about the
  * relationship between elements in a Parameter List:
- * Depending on whether or not the dependee(s) statisfy 
- * a particual condition, the dependent may or may not be displayed to 
+ * Depending on whether or not the dependee(s) statisfy
+ * a particual condition, the dependent may or may not be displayed to
  * the user in a UI.
  *
- * Condition Visual Dependencies are unique in that via 
+ * Condition Visual Dependencies are unique in that via
  * the Condition class, they allow for multiple dependees.
- * The dependee(s) of a ConditionVisualDependency must be expressed as a 
- * Condition and are subject to the consquential constraints. The 
+ * The dependee(s) of a ConditionVisualDependency must be expressed as a
+ * Condition and are subject to the consquential constraints. The
  * dependent may be any type of parameter or parameter list.
  *
  * Please see ConditionVisualDependencyXMLConverter for documentation
@@ -537,11 +537,11 @@ public:
    * Constructs a ConditionVisualDependency.
    *
    *
-   * @param condition The condition that must be satisfied in 
+   * @param condition The condition that must be satisfied in
    * order to display the dependent parameter.
    * @param dependent The dependent parameter.
-   * @param showIf When true, the depndent will be be shown if 
-   * the condition is true. If false, the dependent will be shown 
+   * @param showIf When true, the depndent will be be shown if
+   * the condition is true. If false, the dependent will be shown
    * only when the condition is false.
    */
   ConditionVisualDependency(
@@ -552,23 +552,23 @@ public:
   /**
    * Constructs a ConditionVisualDependency.
    *
-   * @param condition The condition that must be satisfied in 
+   * @param condition The condition that must be satisfied in
    * order to display the dependent parameter.
    * @param dependents The dependent parameters.
-   * @param showIf When true, the depndent will be be shown if 
-   * the condition is true. If false, the dependent will be shown 
+   * @param showIf When true, the depndent will be be shown if
+   * the condition is true. If false, the dependent will be shown
    * only when the condition is false.
    */
   ConditionVisualDependency(
-    RCP<const Condition> condition, 
+    RCP<const Condition> condition,
     Dependency::ParameterEntryList dependents,
     bool showIf=true);
-  
+
   //@}
-  
+
   /** \name Getter Functions */
   //@{
-  
+
   /** \brief Gets the condition being used in this dependency */
   RCP<const Condition> getCondition() const;
 
@@ -577,7 +577,7 @@ public:
 
   /** \brief . */
   bool getDependeeState() const;
-  
+
   //@}
 
   /** \name Overridden from Dependency */
@@ -585,7 +585,7 @@ public:
 
   /** \brief . */
   std::string getTypeAttributeValue() const;
-  
+
   //@}
 
 protected:
@@ -595,7 +595,7 @@ protected:
 
   /** \brief . */
   void validateDep() const {}
-  
+
   //@}
 
 
@@ -603,12 +603,12 @@ private:
 
   /** \name Private Members */
   //@{
-  
+
   /**
    * \brief The Condition to determine whether or not the dependent is displayed.
    */
   RCP<const Condition> condition_;
-  
+
   //@}
 
 };
@@ -632,18 +632,18 @@ public:
   static RCP<ConditionVisualDependency> getDummyObject();
 
   //@}
-  
+
 };
 
 
 /**
- * \brief A number visual dependency says the following about 
+ * \brief A number visual dependency says the following about
  * the relationship between two elements in a Parameter List:
- * Depending on whether or not the dependee has a certain value, 
+ * Depending on whether or not the dependee has a certain value,
  * the dependent may or may not be displayed to the user in a UI.
  *
- * The dependee of a NumberVisualDependency must 
- * be a number type and can't be an array. The dependent may be 
+ * The dependee of a NumberVisualDependency must
+ * be a number type and can't be an array. The dependent may be
  * any type of parameter or parameter list.
  * If no function is provided, then the value of the Dependee
  * is simply compared to 0. If it is greater than 0, the
@@ -669,19 +669,19 @@ public:
    *
    * @param dependee The dependee parameter.
    * @param dependent The dependent parameter.
-   * @param showIf When true, the depndent will be be shown 
-   * if the dependee 
+   * @param showIf When true, the depndent will be be shown
+   * if the dependee
    * is set to the same value as specified by the value parameter.
-   * If false, the dependent will be shown only when the dependee is 
+   * If false, the dependent will be shown only when the dependee is
    * set to a value other than the one specified by the value parameter.
-   * @param func A function that takes the dependees value, does some 
-   * calculations on it, and then returns a value. If this value is 
+   * @param func A function that takes the dependees value, does some
+   * calculations on it, and then returns a value. If this value is
    * greater than 0, the dependent is show. If the value returned is
    * less than or equal to zero, the dependent is not shown. If showIf is set
-   * to valse then these visibility results will be reversed. If no 
-   * fuction is specified, the direct value of the dependee will be used 
+   * to valse then these visibility results will be reversed. If no
+   * fuction is specified, the direct value of the dependee will be used
    * to determine the dependents visibility in a similar fashion (postive
-   * numbers causing the dependent to be displayed and 0 or 
+   * numbers causing the dependent to be displayed and 0 or
    * negative numbers causing the dependent to be hidden).
    */
   NumberVisualDependency(
@@ -695,19 +695,19 @@ public:
    *
    * @param dependee The dependee parameter.
    * @param dependents The dependents.
-   * @param showIf When true, the depndent will be be shown 
-   * if the dependee 
+   * @param showIf When true, the depndent will be be shown
+   * if the dependee
    * is set to the same value as specified by the value parameter.
-   * If false, the dependent will be shown only when the dependee is 
+   * If false, the dependent will be shown only when the dependee is
    * set to a value other than the one specified by the value parameter.
-   * @param func A function that takes the dependees value, does some 
-   * calculations on it, and then returns a value. If this value is 
+   * @param func A function that takes the dependees value, does some
+   * calculations on it, and then returns a value. If this value is
    * greater than 0, the dependent is show. If the value returned is
    * less than or equal to zero, the dependent is not shown. If showIf is set
-   * to false, then these visibility results will be reversed. If no 
-   * fuction is specified, the direct value of the dependee will be used 
+   * to false, then these visibility results will be reversed. If no
+   * fuction is specified, the direct value of the dependee will be used
    * to determine the dependents visibility in a similar fashion (postive
-   * numbers causing the dependent to be displayed and 0 or 
+   * numbers causing the dependent to be displayed and 0 or
    * negative numbers causing the dependent to be hidden).
    */
   NumberVisualDependency(
@@ -722,7 +722,7 @@ public:
   //@{
 
   bool getDependeeState() const;
-  
+
   //@}
 
   /** \name Overridden from Dependency */
@@ -730,12 +730,12 @@ public:
 
   /** \brief . */
   std::string getTypeAttributeValue() const;
-  
+
   //@}
-  
+
   /** \name Getter Functions */
   //@{
-  
+
   /** \brief Const version of function getter. */
   RCP<const SimpleFunctionObject<T> > getFunctionObject() const;
 
@@ -748,20 +748,20 @@ protected:
 
   /** \brief . */
   void validateDep() const;
-  
+
   //@}
-  
+
 private:
 
   /** \name Private Members */
   //@{
-  
+
   /**
    * \brief the function used to determine the
    * visibility of the dependent.
    */
     RCP<SimpleFunctionObject<T> > func_;
-  
+
   //@}
   //
 };
@@ -805,7 +805,7 @@ std::string NumberVisualDependency<T>::getTypeAttributeValue() const{
 }
 
 template<class T>
-RCP<const SimpleFunctionObject<T> > 
+RCP<const SimpleFunctionObject<T> >
   NumberVisualDependency<T>::getFunctionObject() const
 {
   return func_.getConst();
@@ -824,7 +824,7 @@ void NumberVisualDependency<T>::validateDep() const{
     "Template Type: " << TypeNameTraits<T>::name() << std::endl <<
     std::endl);
 }
-  
+
 
 /** \brief Specialized class for retrieving a dummy object of type
  * NumberVisualDependency.
@@ -843,12 +843,12 @@ public:
   * NumberVisualDependency.
   */
   static RCP<NumberVisualDependency<T> > getDummyObject();
-  
+
   //@}
-  
+
 };
 
-template<class T> 
+template<class T>
 RCP<NumberVisualDependency<T> >
   DummyObjectGetter<NumberVisualDependency<T> >::getDummyObject()
 {
@@ -858,7 +858,7 @@ RCP<NumberVisualDependency<T> >
 }
 
 /**
- * \brief An abstract base class for all dependencies which modify the 
+ * \brief An abstract base class for all dependencies which modify the
  * dimensional attributes of an Array parameter.
  */
 template<class DependeeType, class DependentType>
@@ -903,7 +903,7 @@ public:
    * @return The funciton being used to calculate the amount by which
    * an arrays dimensional attribute should be modified.
    */
-  inline RCP<const SimpleFunctionObject<DependeeType> > 
+  inline RCP<const SimpleFunctionObject<DependeeType> >
     getFunctionObject() const
   {
     return func_;
@@ -921,7 +921,7 @@ protected:
 
   /** \brief . */
   virtual void validateDep() const;
-  
+
   //@}
 
   /** @name Pure virtual functions */
@@ -935,11 +935,11 @@ protected:
    * @param dependentToModify The dependent containing the array to be modified.
    */
   virtual void modifyArray(
-    DependeeType newAmount, 
+    DependeeType newAmount,
     RCP<ParameterEntry> dependentToModify) = 0;
 
   /**
-   * \brief Returns the error message that should be displayed if the 
+   * \brief Returns the error message that should be displayed if the
    * dependent has taken on a value that, when run through the funciton given
    * in the constructor, returns a negative value.
    *
@@ -952,7 +952,7 @@ private:
 
   /** \name Private Members */
   //@{
-  
+
   /** \brief The function used to calculate the amount by which
    * an arrays dimensional attribute should be modified.
    */
@@ -1004,7 +1004,7 @@ void ArrayModifierDependency<DependeeType,DependentType>::evaluate(){
 
   for(
     Dependency::ParameterEntryList::iterator it = this->getDependents().begin();
-    it != this->getDependents().end(); 
+    it != this->getDependents().end();
     ++it)
   {
     modifyArray(newAmount, *it);
@@ -1013,9 +1013,9 @@ void ArrayModifierDependency<DependeeType,DependentType>::evaluate(){
 
 
 /**
- * \brief A NumberArrayLengthDependency says the following about the 
+ * \brief A NumberArrayLengthDependency says the following about the
  * relationship between two parameters:
- * The length of the dependent's array depends on the value 
+ * The length of the dependent's array depends on the value
  * of the dependee.
  *
  * A NumberArrayLengthDependency must have the following characteristics:
@@ -1023,9 +1023,9 @@ void ArrayModifierDependency<DependeeType,DependentType>::evaluate(){
  *   \li The dependee type must be an ordinal.
  *
  *   \li The dependent must be an array.
- *   
+ *
  *   \li When supplying template parameters for this class, the dependent type
- *   should be the type which the dependent array is templated on. For 
+ *   should be the type which the dependent array is templated on. For
  *   example: if the dependent is of type Array<int> then the
  *   NumberArrayLengthDependency's dependent template parameter should be set
  *   to int.
@@ -1035,7 +1035,7 @@ void ArrayModifierDependency<DependeeType,DependentType>::evaluate(){
  *
  */
 template<class DependeeType, class DependentType>
-class NumberArrayLengthDependency : 
+class NumberArrayLengthDependency :
   public ArrayModifierDependency<DependeeType, DependentType>
 {
 
@@ -1049,7 +1049,7 @@ public:
    *
    * @param dependee The dependee parameter.
    * @param dependent The dependent parameter.
-   * @param func A function specifying how the arrays length 
+   * @param func A function specifying how the arrays length
    * should be calculated from the dependees value.
    */
   NumberArrayLengthDependency(
@@ -1062,7 +1062,7 @@ public:
    *
    * @param dependee The dependee parameter.
    * @param dependents The dependents.
-   * @param func A function specifying how the arrays length 
+   * @param func A function specifying how the arrays length
    * should be calculated from the dependees value.
    */
   NumberArrayLengthDependency(
@@ -1074,10 +1074,10 @@ public:
 
   /** \name Overridden from Dependency */
   //@{
-  
+
   /** \brief . */
   std::string getTypeAttributeValue() const;
-  
+
   //@}
 
 protected:
@@ -1086,16 +1086,16 @@ protected:
   //@{
 
   virtual void validateDep() const;
-  
+
   /** \brief .  */
   void modifyArray(
     DependeeType newAmount, RCP<ParameterEntry> dependentToModify);
-  
+
   /** \brief . */
   std::string getBadDependentValueErrorMessage() const;
 
   //@}
-  
+
 };
 
 template<class DependeeType, class DependentType>
@@ -1120,7 +1120,7 @@ NumberArrayLengthDependency<DependeeType, DependentType>::NumberArrayLengthDepen
 
 
 template<class DependeeType, class DependentType>
-std::string 
+std::string
 NumberArrayLengthDependency<DependeeType, DependentType>::getTypeAttributeValue()
 const
 {
@@ -1130,17 +1130,17 @@ const
 }
 
 template <class DependeeType, class DependentType>
-void 
+void
 NumberArrayLengthDependency<DependeeType, DependentType>::modifyArray(
   DependeeType newAmount, RCP<ParameterEntry> dependentToModify)
 {
-  const Array<DependentType> originalArray = 
-    any_cast<Array<DependentType> >(dependentToModify->getAny()); 
+  const Array<DependentType> originalArray =
+    any_cast<Array<DependentType> >(dependentToModify->getAny());
   Array<DependentType> newArray(newAmount);
   DependeeType i;
   for(
-    i=OrdinalTraits<DependeeType>::zero(); 
-    i<originalArray.size() && i<newAmount; 
+    i=OrdinalTraits<DependeeType>::zero();
+    i<originalArray.size() && i<newAmount;
     ++i)
   {
     newArray[i] = originalArray[i];
@@ -1151,7 +1151,7 @@ NumberArrayLengthDependency<DependeeType, DependentType>::modifyArray(
 }
 
 template<class DependeeType, class DependentType>
-std::string 
+std::string
 NumberArrayLengthDependency<DependeeType, DependentType>::getBadDependentValueErrorMessage() const{
     std::ostringstream os;
     os <<
@@ -1165,24 +1165,24 @@ NumberArrayLengthDependency<DependeeType, DependentType>::getBadDependentValueEr
 }
 
 template<class DependeeType, class DependentType>
-void 
-NumberArrayLengthDependency<DependeeType, DependentType>::validateDep() 
+void
+NumberArrayLengthDependency<DependeeType, DependentType>::validateDep()
   const
 {
   ArrayModifierDependency<DependeeType, DependentType>::validateDep();
   for(
-    Dependency::ConstParameterEntryList::const_iterator it = 
-      this->getDependents().begin(); 
-    it != this->getDependents().end(); 
+    Dependency::ConstParameterEntryList::const_iterator it =
+      this->getDependents().begin();
+    it != this->getDependents().end();
     ++it)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       typeid(Teuchos::Array<DependentType>) != (*it)->getAny().type(),
         InvalidDependencyException,
         "Ay no! The dependent parameter types don't match." << std::endl <<
-        "Dependent Template Type: " << 
+        "Dependent Template Type: " <<
         TypeNameTraits<DependentType>::name() << std::endl <<
-        "Dependent Parameter Type: " << 
+        "Dependent Parameter Type: " <<
         (*it)->getAny().typeName() << std::endl << std::endl);
   }
 }
@@ -1205,9 +1205,9 @@ public:
   */
   static RCP<NumberArrayLengthDependency<DependeeType, DependentType> >
     getDummyObject();
-  
+
   //@}
-  
+
 };
 
 template<class DependeeType, class DependentType>
@@ -1221,15 +1221,15 @@ RCP<NumberArrayLengthDependency<DependeeType, DependentType> >
 }
 
 /**
- * \brief A StringValidatorDependency says the following about 
+ * \brief A StringValidatorDependency says the following about
  * the relationship between two parameters:
- * Dependening on the value of the dependee, the dependent should 
+ * Dependening on the value of the dependee, the dependent should
  * use a particular validator from
  * a given set of validators.
  *
  *
  * A StringValidatorDependency must have the following characterisitics:
- * 
+ *
  *   \li The dependee must be of type string
  *
  *   \li The validators in the ValueToValidatorMap must all be the same
@@ -1254,15 +1254,15 @@ public:
   /**
    * \brief Conveniece typedef
    */
-  typedef std::map<std::string, RCP<const ParameterEntryValidator> > 
+  typedef std::map<std::string, RCP<const ParameterEntryValidator> >
     ValueToValidatorMap;
 
   /**
    * \brief Conveniece typedef
    */
-  typedef std::pair<std::string, RCP<const ParameterEntryValidator> > 
+  typedef std::pair<std::string, RCP<const ParameterEntryValidator> >
     ValueToValidatorPair;
-  
+
   //@}
 
   /** \name Constructors/Destructor */
@@ -1273,18 +1273,18 @@ public:
    *
    * @param dependee The dependee parameter.
    * @param dependent The dependent parameter.
-   * @param valuesAndValidators A map associating string values 
+   * @param valuesAndValidators A map associating string values
    * with ParameterEntryValidators. This will be used
-   * to deteremine what type of validator should 
+   * to deteremine what type of validator should
    * be applied to the dependent based on the dependees value.
-   * @param defaultValidator If a value is entered in the 
+   * @param defaultValidator If a value is entered in the
    * dependee that is not in the valuesAndValidators map,
    * this is the validator that will be assigned to the dependent.
    */
   StringValidatorDependency(
-    RCP<const ParameterEntry> dependee, 
+    RCP<const ParameterEntry> dependee,
     RCP<ParameterEntry> dependent,
-    ValueToValidatorMap valuesAndValidators, 
+    ValueToValidatorMap valuesAndValidators,
     RCP<ParameterEntryValidator> defaultValidator=null);
 
   /**
@@ -1292,18 +1292,18 @@ public:
    *
    * @param dependee The dependee parameter.
    * @param dependents The dependents.
-   * @param valuesAndValidators A map associating string values 
+   * @param valuesAndValidators A map associating string values
    * with ParameterEntryValidators. This will be used
-   * to deteremine what type of validator should be applied to 
+   * to deteremine what type of validator should be applied to
    * the dependent based on the dependees value.
-   * @param defaultValidator If a value is entered in the dependee 
+   * @param defaultValidator If a value is entered in the dependee
    * that is not in the valuesAndValidators map,
    * this is the validator that will be assigned to the dependent.
    */
   StringValidatorDependency(
-    RCP<const ParameterEntry> dependee, 
+    RCP<const ParameterEntry> dependee,
     Dependency::ParameterEntryList dependents,
-    ValueToValidatorMap valuesAndValidators, 
+    ValueToValidatorMap valuesAndValidators,
     RCP<ParameterEntryValidator> defaultValidator = null);
 
   //@}
@@ -1311,7 +1311,7 @@ public:
   /** \name Getters */
   //@{
 
-  /** \brief retrieve a const reference to the ValueToValidator map being 
+  /** \brief retrieve a const reference to the ValueToValidator map being
    * used by this StringValidatorDependency */
   const ValueToValidatorMap& getValuesAndValidators() const;
 
@@ -1319,13 +1319,13 @@ public:
   RCP<const ParameterEntryValidator> getDefaultValidator() const;
 
   //@}
-  
+
   /** \name Overridden from Dependency */
   //@{
 
   /** \brief . */
   void evaluate();
-  
+
   //@}
 
   /** \name Overridden from Dependency */
@@ -1333,7 +1333,7 @@ public:
 
   /** \brief . */
   std::string getTypeAttributeValue() const;
-  
+
   //@}
 
 protected:
@@ -1342,29 +1342,29 @@ protected:
   //@{
 
   void validateDep() const;
-  
+
   //@}
 
 private:
 
   /** \name Private Members */
   //@{
-  
+
   /**
-   * \brief A map associating particular dependee values with validators 
+   * \brief A map associating particular dependee values with validators
    * that could be placed on the dependent.
    */
   ValueToValidatorMap valuesAndValidators_;
 
   /**
-   * \brief The default validator to be used if a request is made 
+   * \brief The default validator to be used if a request is made
    * for a value that does not
    * appear in the valuesAndValidators map.
    */
   RCP<ParameterEntryValidator> defaultValidator_;
-  
+
   //@}
-  
+
 };
 
 
@@ -1384,15 +1384,15 @@ public:
   /** \brief Retrieves a dummy object of type StringValidatorDependency.
   */
   static RCP<StringValidatorDependency > getDummyObject();
-  
+
   //@}
-  
+
 };
 
 /**
- * \brief A BoolValidatorDependency says the following about the 
+ * \brief A BoolValidatorDependency says the following about the
  * relationship between two parameters:
- * Dependening on the value of the dependee, the dependent should use a 
+ * Dependening on the value of the dependee, the dependent should use a
  * particular validator from a given set of validators.
  *
  * A BoolValidatorDependency must have the following characterisitics:
@@ -1416,9 +1416,9 @@ public:
    *
    * @param dependee The dependee parameter.
    * @param dependent The dependent parameter.
-   * @param trueValidator The validator to be used on the dependent 
+   * @param trueValidator The validator to be used on the dependent
    * if the dependee is set to true.
-   * @param falseValidator The validator to be used on the 
+   * @param falseValidator The validator to be used on the
    * dependent if the dependee is set to false.
    */
   BoolValidatorDependency(
@@ -1432,9 +1432,9 @@ public:
    *
    * @param dependee The dependee parameter.
    * @param dependents The dependents.
-   * @param trueValidator The validator to be used on the dependent 
+   * @param trueValidator The validator to be used on the dependent
    * if the dependee is set to true.
-   * @param falseValidator The validator to be used on the dependent 
+   * @param falseValidator The validator to be used on the dependent
    * if the dependee is set to false.
    */
   BoolValidatorDependency(
@@ -1449,18 +1449,18 @@ public:
   //@{
 
   void evaluate();
-  
+
   //@}
 
   /** \name Getters */
   //@{
-    
+
   /** \brief Gets the true validator */
   RCP<const ParameterEntryValidator> getTrueValidator() const;
 
   /** \brief Gets the false validator */
   RCP<const ParameterEntryValidator> getFalseValidator() const;
-  
+
   //@}
 
   /** \name Overridden from Dependency */
@@ -1468,7 +1468,7 @@ public:
 
   /** \brief . */
   std::string getTypeAttributeValue() const;
-  
+
   //@}
 
 protected:
@@ -1477,20 +1477,20 @@ protected:
   //@{
 
   void validateDep() const;
-  
+
   //@}
 
 private:
 
   /** \name Private Members */
   //@{
-  
+
   /**
    * \brief The validators to be used when the dependee is either
    * true or false.
    */
   RCP<const ParameterEntryValidator> trueValidator_, falseValidator_;
-  
+
   //@}
 
 };
@@ -1510,26 +1510,26 @@ public:
 
   /** \brief Retrieves a dummy object of type BoolValidatorDependency.  */
   static RCP<BoolValidatorDependency > getDummyObject();
-  
+
   //@}
-  
+
 };
 
 /**
  * \brief A RangeValidatorDependency says the following about the
  * relationship between two parameters:
- * Dependening on the value of the dependee, the dependent should 
+ * Dependening on the value of the dependee, the dependent should
  * use a particular validator from a given set of validators.
  *
- * A RangeValidatorDependency achieves this by associating ranges of 
+ * A RangeValidatorDependency achieves this by associating ranges of
  * values with validators.
- * If the dependees value falls within the one of the ranges, 
+ * If the dependees value falls within the one of the ranges,
  * the validator associated with the range is
  * used on the dependent. If the value doesn't fall within
  * any of the ranges, the dependent's validator is set to the specified
  * default validator. If no default validator was specified, then the
  * dependents validator is set to null.
- * 
+ *
  * The minimum of ranges is inclusive and the maximum is exclusive.
  *
  * A RangeValidatorDependency must have the following characterisitics:
@@ -1560,15 +1560,15 @@ public:
   /**
    * \brief Convenience typedef
    */
-  typedef std::map<Range, RCP<const ParameterEntryValidator> > 
+  typedef std::map<Range, RCP<const ParameterEntryValidator> >
     RangeToValidatorMap;
 
   /**
    * \brief Convenience typedef
    */
-  typedef std::pair<Range, RCP<const ParameterEntryValidator> > 
+  typedef std::pair<Range, RCP<const ParameterEntryValidator> >
     RangeValidatorPair;
-  
+
   //@}
 
   /** \name Constructors/Destructor */
@@ -1579,11 +1579,11 @@ public:
    *
    * @param dependee The dependee parameter.
    * @param dependent The dependent parameter.
-   * @param rangesAndValidators A map associating ranges of values 
+   * @param rangesAndValidators A map associating ranges of values
    * with ParameterEntryValidators. This will be used
-   * to deteremine what type of validator should be applied 
+   * to deteremine what type of validator should be applied
    * to the dependent based on the dependees value.
-   * @param defaultValidator The default validator to be used if 
+   * @param defaultValidator The default validator to be used if
    * the dependee's value does not fall within one of the specified
    * ranges.
    */
@@ -1598,11 +1598,11 @@ public:
    *
    * @param dependee The dependee parameter.
    * @param dependents The dependents.
-   * @param rangesAndValidators A map associating ranges of values 
+   * @param rangesAndValidators A map associating ranges of values
    * with ParameterEntryValidators. This will be used
-   * to deteremine what type of validator should be applied 
+   * to deteremine what type of validator should be applied
    * to the dependent based on the dependees value.
-   * @param defaultValidator The default validator to be used if 
+   * @param defaultValidator The default validator to be used if
    * the dependee's value does not fall within one of the specified
    * ranges.
    */
@@ -1626,7 +1626,7 @@ public:
   RCP<const ParameterEntryValidator> getDefaultValidator() const{
     return defaultValidator_;
   }
-  
+
   //@}
 
   /** \name Overridden from Dependency */
@@ -1634,7 +1634,7 @@ public:
 
   /** \brief . */
   void evaluate();
-  
+
   //@}
 
   /** \name Overridden from Dependency */
@@ -1642,30 +1642,30 @@ public:
 
   /** \brief . */
   std::string getTypeAttributeValue() const;
-  
+
   //@}
 
 protected:
 
   /** \name Overridden from Dependency */
   //@{
-  
+
   /** \brief . */
   void validateDep() const;
-  
+
   //@}
 
-  
+
 private:
 
   /** \name Private Members */
   //@{
-  
+
   /**
    * \brief A map associating ranges with validators.
    */
   RangeToValidatorMap rangesAndValidators_;
-  
+
   void setDependentsToValidator(RCP<const ParameterEntryValidator> toSet);
 
   RCP<const ParameterEntryValidator> defaultValidator_;
@@ -1705,15 +1705,15 @@ std::string RangeValidatorDependency<T>::getTypeAttributeValue() const
 {
   return "RangeValidatorDependency(" + TypeNameTraits<T>::name() + ")";
 }
-  
+
 
 template<class T>
 void RangeValidatorDependency<T>::evaluate(){
   typename RangeToValidatorMap::const_iterator it;
   T dependeeValue = getFirstDependeeValue<T>();
   for(
-    it = rangesAndValidators_.begin(); 
-    it != rangesAndValidators_.end(); 
+    it = rangesAndValidators_.begin();
+    it != rangesAndValidators_.end();
     ++it)
   {
     T min = it->first.first;
@@ -1723,7 +1723,7 @@ void RangeValidatorDependency<T>::evaluate(){
       return;
     }
   }
-  setDependentsToValidator(defaultValidator_); 
+  setDependentsToValidator(defaultValidator_);
 }
 
 template<class T>
@@ -1735,14 +1735,14 @@ void RangeValidatorDependency<T>::validateDep() const{
     "The RangeValidatorDependency template type!" << std::endl <<
     "Dependee Type: " << dependee->getAny().typeName() << std::endl <<
     "Templated Type: " << TypeNameTraits<T>::name() << std::endl << std::endl);
-  
+
   TEUCHOS_TEST_FOR_EXCEPTION(
     rangesAndValidators_.size() < 1,
     InvalidDependencyException,
     "The rangesAndValidators map RangeValidatorDependency "
     "must have at least one entry!" << std::endl << std::endl);
 
-  typename RangeToValidatorMap::const_iterator it = 
+  typename RangeToValidatorMap::const_iterator it =
     rangesAndValidators_.begin();
   RCP<const ParameterEntryValidator> firstValidator = it->second;
   ++it;
@@ -1758,16 +1758,16 @@ void RangeValidatorDependency<T>::validateDep() const{
       " is invalid. The min can't be greater than the max, you silly goose!"
       );
   }
-  
+
   TEUCHOS_TEST_FOR_EXCEPTION(
-    nonnull(defaultValidator_) 
-    && 
+    nonnull(defaultValidator_)
+    &&
     typeid(*firstValidator) != typeid(*defaultValidator_),
     InvalidDependencyException,
     "Ay no! The default validator of a RangeValidatorDependency "
     "must have the same type as the validators in rangesAndValidators map."
   );
-    
+
 }
 
 template<class T>
@@ -1776,8 +1776,8 @@ void RangeValidatorDependency<T>::setDependentsToValidator(
 {
   typename ParameterEntryList::const_iterator it;
   for(
-    it = getDependents().begin(); 
-    it != getDependents().end(); 
+    it = getDependents().begin();
+    it != getDependents().end();
     ++it)
   {
     (*it)->setValidator(toSet);
@@ -1801,19 +1801,19 @@ public:
   * RangeValidatorDependency.
   */
   static RCP<RangeValidatorDependency<T> > getDummyObject();
-  
+
   //@}
-  
+
 };
 
 template<class T>
-RCP<RangeValidatorDependency<T> > 
+RCP<RangeValidatorDependency<T> >
   DummyObjectGetter<RangeValidatorDependency<T> >::getDummyObject()
 {
   typename RangeValidatorDependency<T>::RangeToValidatorMap dummyMap;
   typename RangeValidatorDependency<T>::Range dummyRange(
     ScalarTraits<T>::zero(), ScalarTraits<T>::one());
-  RCP<FileNameValidator> dummyValidator = 
+  RCP<FileNameValidator> dummyValidator =
     DummyObjectGetter<FileNameValidator>::getDummyObject();
   dummyMap.insert(typename RangeValidatorDependency<T>::RangeValidatorPair(
     dummyRange, dummyValidator));
@@ -1824,11 +1824,11 @@ RCP<RangeValidatorDependency<T> >
 }
 
 /**
- * \brief A dependency in which some attribute of a TwoDArray in a parameter 
+ * \brief A dependency in which some attribute of a TwoDArray in a parameter
  * depends on the value of another parameter.
  */
 template<class DependeeType, class DependentType>
-class TwoDArrayModifierDependency : 
+class TwoDArrayModifierDependency :
   public ArrayModifierDependency<DependeeType, DependentType>
 {
 
@@ -1882,44 +1882,44 @@ protected:
   //@{
 
   virtual void validateDep() const;
-  
+
   //@}
-  
+
 };
 
 template<class DependeeType, class DependentType>
-void 
-TwoDArrayModifierDependency<DependeeType, DependentType>::validateDep() 
+void
+TwoDArrayModifierDependency<DependeeType, DependentType>::validateDep()
   const
 {
   ArrayModifierDependency<DependeeType, DependentType>::validateDep();
   for(
-    Dependency::ConstParameterEntryList::const_iterator it = 
-      this->getDependents().begin(); 
-    it != this->getDependents().end(); 
+    Dependency::ConstParameterEntryList::const_iterator it =
+      this->getDependents().begin();
+    it != this->getDependents().end();
     ++it)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       typeid(Teuchos::TwoDArray<DependentType>) != (*it)->getAny().type(),
         InvalidDependencyException,
         "Ay no! The dependent parameter types don't match." << std::endl <<
-        "Dependent Template Type: " << 
+        "Dependent Template Type: " <<
         TypeNameTraits<DependentType>::name() << std::endl <<
-        "Dependent Parameter Type: " << 
+        "Dependent Parameter Type: " <<
         (*it)->getAny().typeName() << std::endl << std::endl);
   }
 }
 
 
 /**
- * \brief A dependency in which the number of rows in a parameter 
+ * \brief A dependency in which the number of rows in a parameter
  * with a TwoDArray depends on the value of another parameter.
  *
  * Please see TwoDRowDependencyXMLConverter for documentation
  * regarding the XML representation of this Dependency.
  */
 template<class DependeeType, class DependentType>
-class TwoDRowDependency : 
+class TwoDRowDependency :
   public TwoDArrayModifierDependency<DependeeType, DependentType>
 {
 
@@ -1962,22 +1962,22 @@ public:
 
   /** \brief . */
   std::string getTypeAttributeValue() const;
-  
+
   //@}
 
 protected:
 
   /** \name Overridden from ArrayModifierDependency */
   //@{
-  
+
   /** \brief . */
   void modifyArray(
     DependeeType newAmount, RCP<ParameterEntry> dependentToModify);
-  
+
   /** \brief . */
   std::string getBadDependentValueErrorMessage() const;
   //@}
-  
+
 };
 
 template<class DependeeType, class DependentType>
@@ -2004,7 +2004,7 @@ TwoDRowDependency<DependeeType, DependentType>::TwoDRowDependency(
 
 
 template<class DependeeType, class DependentType>
-std::string 
+std::string
 TwoDRowDependency<DependeeType, DependentType>::getTypeAttributeValue()
 const
 {
@@ -2014,20 +2014,20 @@ const
 }
 
 template <class DependeeType, class DependentType>
-void 
+void
 TwoDRowDependency<DependeeType, DependentType>::modifyArray(
-  DependeeType newAmount, 
+  DependeeType newAmount,
   RCP<ParameterEntry> dependentToModify)
 {
-  TwoDArray<DependentType> originalArray = 
-    any_cast<TwoDArray<DependentType> >(dependentToModify->getAny()); 
+  TwoDArray<DependentType> originalArray =
+    any_cast<TwoDArray<DependentType> >(dependentToModify->getAny());
   originalArray.resizeRows(newAmount);
   dependentToModify->setValue(originalArray,
     false, dependentToModify->docString(), dependentToModify->validator());
 }
 
 template<class DependeeType, class DependentType>
-std::string 
+std::string
 TwoDRowDependency<DependeeType, DependentType>::getBadDependentValueErrorMessage() const{
   std::ostringstream os;
   os <<
@@ -2058,9 +2058,9 @@ public:
   */
   static RCP<TwoDRowDependency<DependeeType, DependentType> >
     getDummyObject();
-  
+
   //@}
-  
+
 };
 
 template<class DependeeType, class DependentType>
@@ -2075,14 +2075,14 @@ RCP<TwoDRowDependency<DependeeType, DependentType> >
 
 
 /**
- * \brief A dependency in which the number of rows in a parameter 
+ * \brief A dependency in which the number of rows in a parameter
  * with a TwoDArray depends on the value of another parameter.
  *
  * Please see TwoDColDependencyXMLConverter for documentation
  * regarding the XML representation of this Dependency.
  */
 template<class DependeeType, class DependentType>
-class TwoDColDependency : 
+class TwoDColDependency :
   public TwoDArrayModifierDependency<DependeeType, DependentType>
 {
 
@@ -2125,22 +2125,22 @@ public:
 
   /** \brief . */
   std::string getTypeAttributeValue() const;
-  
+
   //@}
 
 protected:
 
   /** \name Overridden from ArrayModifierDependency */
   //@{
-  
+
   /** \brief . */
   void modifyArray(
     DependeeType newAmount, RCP<ParameterEntry> dependentToModify);
-  
+
   /** \brief . */
   std::string getBadDependentValueErrorMessage() const;
   //@}
-  
+
 };
 
 template<class DependeeType, class DependentType>
@@ -2167,7 +2167,7 @@ TwoDColDependency<DependeeType, DependentType>::TwoDColDependency(
 
 
 template<class DependeeType, class DependentType>
-std::string 
+std::string
 TwoDColDependency<DependeeType, DependentType>::getTypeAttributeValue()
 const
 {
@@ -2177,20 +2177,20 @@ const
 }
 
 template <class DependeeType, class DependentType>
-void 
+void
 TwoDColDependency<DependeeType, DependentType>::modifyArray(
-  DependeeType newAmount, 
+  DependeeType newAmount,
   RCP<ParameterEntry> dependentToModify)
 {
-  TwoDArray<DependentType> originalArray = 
-    any_cast<TwoDArray<DependentType> >(dependentToModify->getAny()); 
+  TwoDArray<DependentType> originalArray =
+    any_cast<TwoDArray<DependentType> >(dependentToModify->getAny());
   originalArray.resizeCols(newAmount);
   dependentToModify->setValue(originalArray,
     false, dependentToModify->docString(), dependentToModify->validator());
 }
 
 template<class DependeeType, class DependentType>
-std::string 
+std::string
 TwoDColDependency<DependeeType, DependentType>::getBadDependentValueErrorMessage() const{
   std::ostringstream os;
   os <<
@@ -2221,9 +2221,9 @@ public:
   */
   static RCP<TwoDColDependency<DependeeType, DependentType> >
     getDummyObject();
-  
+
   //@}
-  
+
 };
 
 template<class DependeeType, class DependentType>

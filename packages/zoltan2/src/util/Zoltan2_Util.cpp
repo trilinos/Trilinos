@@ -55,10 +55,13 @@
 #include <fstream>
 #include <string>
 
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 
 namespace Zoltan2{
 
+#ifndef _WIN32
 /* On a linux node, find the total memory currently allocated
  * to this process.
  * Return the number of kilobytes allocated to this process.
@@ -105,7 +108,13 @@ long pageSize;
 
   return totalPages * pageKBytes;
 }
-
+#else
+long getProcessKilobytes()
+{
+#pragma message ("Zoltan2_Util.cpp: Page size query is not implemented on windows.  No per-process memory stats.")
+  return 0;
+}
+#endif
 
 
 #ifdef HAVE_ZOLTAN2_MPI

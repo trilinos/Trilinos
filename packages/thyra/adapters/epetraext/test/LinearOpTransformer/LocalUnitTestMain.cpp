@@ -56,10 +56,18 @@ specific unit test suites.
 
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 
 int main( int argc, char* argv[] )
 {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+  bool success = false;
+  try {
+    int ierr = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+    success = (ierr == 0);
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,success);
+
+  return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }

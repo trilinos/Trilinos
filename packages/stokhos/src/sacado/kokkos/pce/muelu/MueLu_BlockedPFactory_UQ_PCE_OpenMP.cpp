@@ -39,8 +39,8 @@
 // ***********************************************************************
 // @HEADER
 
-
-
+#include "MueLu_ConfigDefs.hpp"
+#ifdef HAVE_MUELU_EXPERIMENTAL
 
 #include "MueLu_ExplicitInstantiation.hpp"
 #include "Stokhos_ConfigDefs.h"
@@ -50,7 +50,6 @@
 #include "Stokhos_Tpetra_ETI_Helpers_UQ_PCE.hpp"
 #include "Stokhos_MueLu_UQ_PCE.hpp"
 
-#include "Tpetra_ETIHelperMacros.h"
 #include "MueLu_BlockedPFactory_def.hpp"
 
 #define MUELU_INST_S_LO_GO_N(S, LO, GO, N) \
@@ -65,4 +64,4 @@ INSTANTIATE_TPETRA_UQ_PCE_OPENMP(MUELU_INST_N)
 
 #endif
 
-
+#endif

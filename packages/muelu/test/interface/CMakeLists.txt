@@ -11,7 +11,6 @@ ASSERT_DEFINED(
 # Executable
 #
 
-INCLUDE(TribitsAddExecutable)
 
 #TODO: how to remove that?
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -27,8 +26,14 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
     ParameterListInterpreter
     SOURCES ParameterListInterpreter.cpp ../unit_tests/MueLu_TestHelpers.cpp
     COMM serial mpi
-    DEPLIBS muelu xpetra
     )
+
+ TRIBITS_ADD_EXECUTABLE(
+    CreateOperator
+    SOURCES CreateOperator.cpp ../unit_tests/MueLu_TestHelpers.cpp
+    COMM serial mpi
+    )
+
 
 ENDIF()
 
@@ -64,6 +69,23 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
         COMM mpi
         )
 
+      TRIBITS_ADD_TEST(
+        CreateOperator
+        NAME "CreateOperatorEpetra"
+        ARGS "--linAlgebra=Epetra"
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        COMM mpi serial
+        )
+      TRIBITS_ADD_TEST(
+        CreateOperator
+        NAME "CreateOperatorEpetra"
+        ARGS "--linAlgebra=Epetra"
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 4
+        COMM mpi
+        )
+
     ENDIF()
 
     IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
@@ -85,6 +107,23 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
         COMM mpi
         )
 
+      TRIBITS_ADD_TEST(
+        CreateOperator
+        NAME "CreateOperatorTpetra"
+        ARGS "--linAlgebra=Tpetra"
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        COMM mpi serial
+        )
+      TRIBITS_ADD_TEST(
+        CreateOperator
+        NAME "CreateOperatorTpetra"
+        ARGS "--linAlgebra=Tpetra"
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 4
+        COMM mpi
+        )
+
     ENDIF()
 
   ENDIF()
@@ -93,3 +132,6 @@ ENDIF()
 
 ADD_SUBDIRECTORY(EasyParameterListInterpreter)
 ADD_SUBDIRECTORY(FactoryParameterListInterpreter)
+ADD_SUBDIRECTORY(MLParameterListInterpreter)
+ADD_SUBDIRECTORY(MLParameterListInterpreter2)
+ADD_SUBDIRECTORY(Output)

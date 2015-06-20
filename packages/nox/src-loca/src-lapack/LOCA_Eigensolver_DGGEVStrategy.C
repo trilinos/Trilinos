@@ -91,8 +91,8 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
 {
 
   // Get LAPACK group
-  LOCA::LAPACK::Group* grp =
-    dynamic_cast<LOCA::LAPACK::Group*>(&group);
+  LOCA::LAPACK::Group & grp =
+    dynamic_cast<LOCA::LAPACK::Group&>(group);
 
   const bool hasMassMatrix = true;
 
@@ -109,13 +109,13 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
   }
 
   // Make sure Jacobian & mass matrices are fresh
-  grp->computeJacobian();
+  grp.computeJacobian();
   if (hasMassMatrix)
-    grp->computeShiftedMatrix(0.0, 1.0);
+    grp.computeShiftedMatrix(0.0, 1.0);
 
   // Get data out of group
-  NOX::LAPACK::Matrix<double>& jacobianMatrix = grp->getJacobianMatrix();
-  NOX::LAPACK::Matrix<double>& massMatrix = grp->getShiftedMatrix();
+  NOX::LAPACK::Matrix<double>& jacobianMatrix = grp.getJacobianMatrix();
+  NOX::LAPACK::Matrix<double>& massMatrix = grp.getShiftedMatrix();
 
   // Size of matrix
   int n = jacobianMatrix.numRows();
@@ -186,8 +186,6 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
     group.getX().createMultiVector(n, NOX::ShapeCopy);
   Teuchos::RCP<NOX::Abstract::MultiVector>evecs_i_tmp =
     group.getX().createMultiVector(n, NOX::ShapeCopy);
-  NOX::LAPACK::Vector* tmpr;
-  NOX::LAPACK::Vector* tmpi;
   double rnext;
   double inext;
   bool isComplexEval = false;
@@ -225,23 +223,23 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
     else if (!isPrevComplexEval && j == n-1)
       isComplexEval = false;
 
-    tmpr = dynamic_cast<NOX::LAPACK::Vector*>(&((*evecs_r_tmp)[j]));
-    tmpi = dynamic_cast<NOX::LAPACK::Vector*>(&((*evecs_i_tmp)[j]));
+    NOX::LAPACK::Vector & tmpr = dynamic_cast<NOX::LAPACK::Vector&>((*evecs_r_tmp)[j]);
+    NOX::LAPACK::Vector & tmpi = dynamic_cast<NOX::LAPACK::Vector&>((*evecs_i_tmp)[j]);
 
     if (isComplexEval)
       for (int i=0; i<n; i++) {
-    (*tmpr)(i) =  vr[i+j*n];
-    (*tmpi)(i) =  vr[i+(j+1)*n];
+        tmpr(i) =  vr[i+j*n];
+        tmpi(i) =  vr[i+(j+1)*n];
       }
     else if (isPrevComplexEval)
       for (int i=0; i<n; i++) {
-    (*tmpr)(i) =  vr[i+(j-1)*n];
-    (*tmpi)(i) = -vr[i+j*n];
+        tmpr(i) =  vr[i+(j-1)*n];
+        tmpi(i) = -vr[i+j*n];
       }
     else
       for (int i=0; i<n; i++) {
-    (*tmpr)(i) = vr[i+j*n];
-    (*tmpi)(i) = 0.0;;
+        tmpr(i) = vr[i+j*n];
+        tmpi(i) = 0.0;;
       }
 
     if (isPrevComplexEval) {

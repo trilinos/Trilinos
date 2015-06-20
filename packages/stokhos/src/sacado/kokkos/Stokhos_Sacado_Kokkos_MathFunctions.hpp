@@ -42,6 +42,8 @@
 #ifndef STOKHOS_SACADO_KOKKOS_MATHFUNCTIONS_HPP
 #define STOKHOS_SACADO_KOKKOS_MATHFUNCTIONS_HPP
 
+#include <cmath>
+
 #include "Kokkos_Macros.hpp"
 
 #define UNARYFUNC_MACRO(OP,FADOP)                                       \
@@ -74,6 +76,7 @@ UNARYFUNC_MACRO(exp, ExpOp)
 UNARYFUNC_MACRO(log, LogOp)
 UNARYFUNC_MACRO(log10, Log10Op)
 UNARYFUNC_MACRO(sqrt, SqrtOp)
+UNARYFUNC_MACRO(cbrt, CbrtOp)
 UNARYFUNC_MACRO(cos, CosOp)
 UNARYFUNC_MACRO(sin, SinOp)
 UNARYFUNC_MACRO(tan, TanOp)
@@ -139,10 +142,10 @@ namespace Sacado {                                                      \
     PCE<S> OP (const PCE<S>&, const PCE<S>&);                           \
     template <typename S>                                               \
     KOKKOS_INLINE_FUNCTION                                              \
-    PCE<S> OP (const typename S::value_type&, const PCE<S>&);           \
+    PCE<S> OP (const typename PCE<S>::value_type&, const PCE<S>&);      \
     template <typename S>                                               \
     KOKKOS_INLINE_FUNCTION                                              \
-    PCE<S> OP (const PCE<S>&, const typename S::value_type&);           \
+    PCE<S> OP (const PCE<S>&, const typename PCE<S>::value_type&);      \
   }                                                                     \
 }                                                                       \
                                                                         \
@@ -178,4 +181,4 @@ BINARYFUNC_MACRO(min)
 
 #undef BINARYFUNC_MACRO
 
-#endif // STOKHOS_STATIC_ARRAY_TRAITS_HPP
+#endif // STOKHOS_SACADO_KOKKOS_MATHFUNCTIONS_HPP

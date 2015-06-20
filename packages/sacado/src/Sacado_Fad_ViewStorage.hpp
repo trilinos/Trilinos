@@ -32,6 +32,7 @@
 
 #include "Sacado_Traits.hpp"
 #include "Sacado_DynamicArrayTraits.hpp"
+#include "Sacado_mpl_integral_nonzero_constant.hpp"
 
 namespace Sacado {
 
@@ -42,7 +43,7 @@ namespace Sacado {
      * memory allocation.  It does not provide proper value semantics and
      * thus should not be used in a general-purpose scalar type.
      */
-    template <typename T, unsigned static_length, unsigned static_stride>
+    template <typename T, unsigned static_length, unsigned static_stride, typename U>
     class ViewStorage {
 
     private:
@@ -52,20 +53,23 @@ namespace Sacado {
 
     public:
 
+      typedef T value_type;
+
       //! Default constructor (needed to satisfy interface)
+      template <typename S>
       KOKKOS_INLINE_FUNCTION
-      ViewStorage(const T & x) :
+      ViewStorage(const S & x, SACADO_ENABLE_VALUE_CTOR_DECL) :
         sz_(0), stride_(0), val_(0), dx_(0) {}
 
       //! Constructor with size \c sz (needed to satisfy interface)
       KOKKOS_INLINE_FUNCTION
-      ViewStorage(const int sz, const T & x) :
+      ViewStorage(const int sz, const T & x, const DerivInit zero_out = InitDerivArray) :
         sz_(0), stride_(0), val_(0), dx_(0) {}
 
       //! Constructor
       KOKKOS_INLINE_FUNCTION
       ViewStorage(T* v, const int arg_size = 0, const int arg_stride = 0) :
-        sz_(arg_size), stride_(arg_stride), val_(v), dx_(v+stride_.value) {}
+        sz_(arg_size), stride_(arg_stride), val_(v+sz_.value*stride_.value), dx_(v) {}
 
       //! Copy constructor
       KOKKOS_INLINE_FUNCTION
@@ -100,10 +104,22 @@ namespace Sacado {
       int length() const { return sz_.value; }
 
       //! Resize the derivative array to sz
+      /*!
+       * Since we can't actually resize, we check for resizes to zero,
+       * which signify assigning a constant.  Thus we zero out the derivative
+       * components.
+       */
       KOKKOS_INLINE_FUNCTION
-      void resize(int sz) {}
+      void resize(int sz) {
+        if (sz == 0) ds_array<T>::strided_zero(dx_, stride_.value, sz_.value);
+      }
 
       //! Resize the derivative array to sz
+      /*!
+       * We don't do anything here as this is used in the context of resizing
+       * the derivative array to zero and then back to some size > 0.  Instead
+       * we zero out components when it is resized to zero above.
+       */
       KOKKOS_INLINE_FUNCTION
       void resizeAndZero(int sz) {}
 
@@ -114,7 +130,7 @@ namespace Sacado {
       //! Zero out derivative array
       KOKKOS_INLINE_FUNCTION
       void zero() {
-        ds_array<T>::zero(dx_, sz_.value);
+        ds_array<T>::strided_zero(dx_, stride_.value, sz_.value);
       }
 
       //! Returns value
@@ -150,10 +166,10 @@ namespace Sacado {
     private:
 
       //! Derivative array size
-      const Kokkos::Impl::integral_nonzero_constant< int, static_length > sz_;
+      const mpl::integral_nonzero_constant< int, static_length > sz_;
 
       //! Derivative array stride
-      const Kokkos::Impl::integral_nonzero_constant< int, static_stride > stride_;
+      const mpl::integral_nonzero_constant< int, static_stride > stride_;
 
       //! Value
       T *val_;

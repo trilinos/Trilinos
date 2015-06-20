@@ -460,6 +460,9 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
         AZ_terminate_status_print(i, iter, status, rec_residual, params,
                                   true_scaled_r, actual_residual, options,
                                   proc_config);
+
+        sprintf(label,"vblock%s",suffix);
+        AZ_manage_memory(0, AZ_CLEAR, AZ_SYS+az_iterate_id, label, (int*)0);
         AZ_STOP_TIMER_BEFORE_EARLY_RETURN( gmresID );
         return;
       }
@@ -508,6 +511,9 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
         AZ_terminate_status_print(AZ_breakdown, iter, status, rec_residual, params,
                                   true_scaled_r, actual_residual, options,
                                   proc_config);
+
+        sprintf(label,"vblock%s",suffix);
+        AZ_manage_memory(0, AZ_CLEAR, AZ_SYS+az_iterate_id, label, (int*)0);
         AZ_STOP_TIMER_BEFORE_EARLY_RETURN( gmresID );
         return;
       }
@@ -546,6 +552,8 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
 	    AZ_terminate_status_print(AZ_loss, iter, status, rec_residual, params,
 				      true_scaled_r, actual_residual, options,
 				      proc_config);
+        sprintf(label,"vblock%s",suffix);
+        AZ_manage_memory(0, AZ_CLEAR, AZ_SYS+az_iterate_id, label, (int*)0);
 	    AZ_STOP_TIMER_BEFORE_EARLY_RETURN( gmresID );
 	    return;
 	  }
@@ -588,6 +596,9 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
   AZ_terminate_status_print(i, iter, status, rec_residual, params,
                             scaled_r_norm, actual_residual, options,
                             proc_config);
+
+  sprintf(label,"vblock%s",suffix);
+  AZ_manage_memory(0, AZ_CLEAR, AZ_SYS+az_iterate_id, label, (int*)0);
 
   AZ_STOP_TIMER( gmresID );
 } /* AZ_pgmres */

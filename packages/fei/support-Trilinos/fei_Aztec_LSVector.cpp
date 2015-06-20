@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Alan Williams (william@sandia.gov) 
+// Questions? Contact Alan Williams (william@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
@@ -75,7 +75,7 @@ namespace fei_trilinos {
 Aztec_LSVector::Aztec_LSVector(fei::SharedPtr<Aztec_Map> map, int* data_org)
  : amap_(map)
 {
-//  Aztec_LSVector::Aztec_LSVector -- construct a zero filled distributed vector 
+//  Aztec_LSVector::Aztec_LSVector -- construct a zero filled distributed vector
 //  object.
 
     int tmp1 = data_org[AZ_N_internal];
@@ -105,7 +105,7 @@ Aztec_LSVector::Aztec_LSVector(const Aztec_LSVector& source)
    length_ = source.length_;
    localCoeffs_ = new double[length_];
 
-//  Since virtual dispatching will not occur in a constructor, 
+//  Since virtual dispatching will not occur in a constructor,
 //  specify call explicitly for clarity.
 
    Aztec_LSVector::operator=(source);
@@ -185,11 +185,11 @@ double Aztec_LSVector::norm1 (void) const  {
 
    return(AZ_gvector_norm(N_update, 1,localCoeffs_, amap_->getProcConfig()));
 }
- 
+
 /**=========================================================================**/
 double& Aztec_LSVector::operator [] (int index)  {
 
-//  Aztec_LSVector::operator [] --- return non-const reference 
+//  Aztec_LSVector::operator [] --- return non-const reference
 
    int offset = amap_->localOffset();
 
@@ -199,7 +199,7 @@ double& Aztec_LSVector::operator [] (int index)  {
 /**=========================================================================**/
 const double& Aztec_LSVector::operator [] (int index) const  {
 
-// Aztec_LSVector::operator [] --- return const reference 
+// Aztec_LSVector::operator [] --- return const reference
 
    int offset = amap_->localOffset();
 
@@ -211,7 +211,7 @@ Aztec_LSVector* Aztec_LSVector::newVector() const  {
 
 /** Aztec_LSVector::newVector --- return a pointer to uninitialized object of same
     runtime type as *this **/
-    
+
     Aztec_LSVector* p = new Aztec_LSVector(*this);
 
     return p;
@@ -224,7 +224,7 @@ Aztec_LSVector& Aztec_LSVector::operator= (const Aztec_LSVector& rhs) {
    if (this != &rhs) {
       assign(rhs);
    }
-        
+
    return(*this);
 }
 
@@ -245,7 +245,7 @@ void Aztec_LSVector::assign(const Aztec_LSVector& rhs) {
      localCoeffs_[i] = pr[i];
    }
 
-   return;    
+   return;
 }
 
 /**=========================================================================**/
@@ -287,12 +287,15 @@ bool Aztec_LSVector::readFromFile(const char *fileName) {
    }
 
    if (binaryData) {
-      fread((char *)&nn,sizeof(int),1,file);
-      fread((char *)&nnz,sizeof(int),1,file);
+      if (fread((char *)&nn,sizeof(int),1,file) != 1)
+        throw "fei_Aztec_LSVector.cpp: I/O error.";
+      if (fread((char *)&nnz,sizeof(int),1,file) != 1)
+        throw "fei_Aztec_LSVector.cpp: I/O error.";
    }
    else {
       do {
-         fgets(line,128,file);
+         if (fgets(line,128,file) == NULL)
+           throw "fei_Aztec_LSVector.cpp: I/O error.";
       } while(strchr(line,'%'));
       sscanf(line,"%d",&nn);
    }
@@ -308,11 +311,14 @@ bool Aztec_LSVector::readFromFile(const char *fileName) {
 
    while (!feof(file)) {
       if(binaryData) {
-         fread((char *)&i,sizeof(int),1,file);
-         fread((char *)&value,sizeof(double),1,file);
+         if (fread((char *)&i,sizeof(int),1,file) != 1)
+           throw "fei_Aztec_LSVector.cpp: I/O error.";
+         if (fread((char *)&value,sizeof(double),1,file) != 1)
+           throw "fei_Aztec_LSVector.cpp: I/O error.";
       }
       else {
-         fgets(line,128,file);
+         if (fgets(line,128,file) == NULL)
+           throw "fei_Aztec_LSVector.cpp: I/O error.";
          sscanf(line,"%d %le",&i,&value);
       }
       if(feof(file))break;
@@ -323,7 +329,7 @@ bool Aztec_LSVector::readFromFile(const char *fileName) {
    } //end of 'while(!feof)
 
    return true;
-}   
+}
 
 /**=========================================================================**/
 bool Aztec_LSVector::writeToFile(const char *fileName) const {

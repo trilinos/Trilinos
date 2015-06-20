@@ -83,18 +83,14 @@
 #include "EpetraExt_CrsMatrixIn.h"
 #include "EpetraExt_VectorIn.h"
 
-//
 typedef double Scalar;
-typedef int    LocalOrdinal;
+typedef int LocalOrdinal;
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 typedef long long int GlobalOrdinal;
 #else
 typedef int GlobalOrdinal;
 #endif
-//
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
-//
 
 int main(int argc, char *argv[]) {
 #include "MueLu_UseShortNames.hpp"
@@ -169,14 +165,14 @@ int main(int argc, char *argv[]) {
 
     GlobalOrdinal gid = map->getGlobalElement(Teuchos::as<LocalOrdinal>(i));
     if(gid % 2 == 0) {
-      data0[i] = 1.0; data1[i] = 0.0;
+    data0[i] = 1.0; data1[i] = 0.0;
     }
     else {
-      data0[i] = 0.0; data1[i] = 1.0;
+    data0[i] = 0.0; data1[i] = 1.0;
     }
-  }*/
+    }*/
 
-  RCP<MueLu::Hierarchy<SC,LO,GO,NO,LMO> > H = rcp ( new Hierarchy() );
+  RCP<MueLu::Hierarchy<SC,LO,GO,NO> > H = rcp ( new Hierarchy() );
   H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
   H->SetMaxCoarseSize((GO) maxCoarseSize);;
 
@@ -228,18 +224,18 @@ int main(int argc, char *argv[]) {
   /*if (smooType == "sgs") {
     ifpackType = "RELAXATION";
     ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
-  } else if (smooType == "gs") {*/
-    ifpackType = "RELAXATION";
-    ifpackList.set("relaxation: type", "Gauss-Seidel");
+    } else if (smooType == "gs") {*/
+  ifpackType = "RELAXATION";
+  ifpackList.set("relaxation: type", "Gauss-Seidel");
   /*}
-  else if (smooType == "cheby") {
+    else if (smooType == "cheby") {
     ifpackType = "CHEBYSHEV";
     ifpackList.set("chebyshev: degree", (LO) sweeps);
     ifpackList.set("chebyshev: ratio eigenvalue", (SC) 20);
     ifpackList.set("chebyshev: max eigenvalue", (double) -1.0);
     ifpackList.set("chebyshev: min eigenvalue", (double) 1.0);
     ifpackList.set("chebyshev: zero starting solution", true);
-  }*/
+    }*/
 
   smooProto = Teuchos::rcp( new TrilinosSmoother(Xpetra::UseEpetra, ifpackType, ifpackList) );
   RCP<SmootherFactory> SmooFact;

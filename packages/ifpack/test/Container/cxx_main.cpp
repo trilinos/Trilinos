@@ -163,6 +163,8 @@ int main(int argc, char *argv[])
   if (!TestContainer("dense",LocalMatrix))  TestPassed = false;
   if (!TestContainer("sparse",LocalMatrix)) TestPassed = false;
 
+  // add TriDi
+
   if (TestPassed)
   {
     if (verbose)

@@ -255,6 +255,7 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
   }
 
   if ((prev_P_tentatives != 0) && (prev_P_tentatives[clevel] != 0)) {
+    if(P0 != NULL) ML_free(P0);
     P0 = prev_P_tentatives[clevel];
     Ncoarse = P0->invec_leng;
   }
@@ -1249,15 +1250,16 @@ void ML_print_mat(double * mat, int rows, int cols, char FileName[])
   FILE * fid = fopen(FileName, "w");
 
   for(int j = 0; j < cols; j++)
+  {
+    for(int i = 0; i < rows; i++)
     {
-      for(int i = 0; i < rows; i++)
-	{
-	  sprintf(str, "%d   %d      %1.16e \n", i+1, j+1, mat[counter]);
-	  fprintf(fid, "%s", str);
-	  counter++;
-	}
+      sprintf(str, "%d   %d      %1.16e \n", i+1, j+1, mat[counter]);
+      fprintf(fid, "%s", str);
+      counter++;
     }
+  }
 
+  if(fid != NULL) fclose(fid);
   return;
 }
 
@@ -1434,6 +1436,7 @@ ML_Operator * ML_ODE_Strength_Matrix(ML_Operator * A, int num_steps, double t_fi
     { diago_local[row] = 1.0/diago[row];	}
 
   //Implicitly Calculate Dinv*A, i.e. wrap around A with a Dinv routine
+  if(DinvA != NULL) ML_free(DinvA);
   DinvA = ML_Operator_ImplicitlyVScale(A, diago_local, 0);
 
   //Calculate the spectral radius of Dinv*A for the SA weight
@@ -1442,7 +1445,8 @@ ML_Operator * ML_ODE_Strength_Matrix(ML_Operator * A, int num_steps, double t_fi
   //Implicitly wrap around Dinv*A with another diagonal scaling.
   //	Scale by the time step size where t_final/rho is the real t_final and we divide
   //	by the number of desired time steps
-printf("these guys are %e  %d   %e\n",t_final,num_steps,DinvA->lambda_max);
+  printf("these guys are %e  %d   %e\n",t_final,num_steps,DinvA->lambda_max);
+  if(omegaDinvA != NULL) ML_free(omegaDinvA);
   omegaDinvA = ML_Operator_ImplicitlyScale(DinvA, t_final/(num_steps*(DinvA->lambda_max)), 0);
 
   // Add I to a constant times OmegaDinvA and store the result in S
@@ -1535,6 +1539,7 @@ printf("these guys are %e  %d   %e\n",t_final,num_steps,DinvA->lambda_max);
       //It is important to get rid of 0 entries, as we wrap this non-zero pattern with 1's later.
       ML_Squeeze_Out_Zeros(Atilde);
 
+      if(AtildeNew != NULL) ML_free(AtildeNew);
       return Atilde;
     }
   else
@@ -1906,6 +1911,7 @@ int ML_AGG_Gen_Prolongator_MandelMinEnergy(ML *ml,int level, int clevel, void *d
   }
 
   if ((prev_P_tentatives != 0) && (prev_P_tentatives[clevel] != 0)) {
+    if(P0 != NULL) ML_free(P0);
     P0 = prev_P_tentatives[clevel];
     Ncoarse = P0->invec_leng;
   }
@@ -1975,7 +1981,9 @@ exit(1);
 
       //We want to wrap our operators inside of an abs() when calculating the sparsity pattern,
       //	in order to mimic a symbolic mat-mat
+      if(AbsA != NULL) ML_free(AbsA);
       AbsA = ML_Operator_ImplicitAbs(Atilde, 0);
+      if(AbsP != NULL) ML_free(AbsP);
       AbsP = ML_Operator_ImplicitAbs(P0, 0);
 
       //Generate Sparsity Pattern
@@ -2140,6 +2148,7 @@ exit(1);
 
 
   //Begin Preparations for CG Iterations
+  if(minusA != NULL) ML_free(minusA);
   minusA = ML_Operator_ImplicitlyScale(Amat, -1.0, 0);    //  wrap A so that minusA = -A
   ML_2matmult(minusA, P0, rk, ML_CSR_MATRIX);	        //  rk = -A*P0
 
@@ -2158,6 +2167,7 @@ exit(1);
   while( (i <= Nits) && (resid > tol) )
     {
       //Implicitly scale rk with Dinv for for the application of the preconditioner
+      if(zk != NULL) ML_free(zk);
       zk = ML_Operator_ImplicitlyVScale(rk, diagonal_local, 0);
 
       //Calculate the innerprodct of rk and zk, which are "vectors" in the CG sense

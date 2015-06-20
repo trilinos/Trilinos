@@ -73,20 +73,22 @@ template< class ElemNodeIdView , class CrsGraphType , unsigned ElemNode >
 class NodeNodeGraph {
 public:
 
-  typedef typename ElemNodeIdView::device_type device_type ;
-  typedef pair<unsigned,unsigned> key_type ;
+  typedef typename ElemNodeIdView::execution_space  execution_space ;
+  typedef pair<unsigned,unsigned>                   key_type ;
 
-  typedef Kokkos::UnorderedMap< key_type, void , device_type > SetType ;
-  typedef typename CrsGraphType::row_map_type::non_const_type  RowMapType ;
-  typedef Kokkos::View< unsigned ,  device_type >              UnsignedValue ;
+  typedef Kokkos::UnorderedMap< key_type, void , execution_space >  SetType ;
+  typedef typename CrsGraphType::row_map_type::non_const_type       RowMapType ;
+  typedef Kokkos::View< unsigned ,  execution_space >               UnsignedValue ;
 
   // Static dimensions of 0 generate compiler warnings or errors.
-  typedef Kokkos::View< unsigned*[ElemNode][ElemNode] , device_type >
+  typedef Kokkos::View< unsigned*[ElemNode][ElemNode] , execution_space >
     ElemGraphType ;
+
+  struct TagFillNodeSet {};
 
 private:
 
-  enum PhaseType { FILL_NODE_SET ,
+  enum PhaseType { PHASE_NONE ,
                    SCAN_NODE_COUNT ,
                    FILL_GRAPH_ENTRIES ,
                    SORT_GRAPH_ENTRIES ,
@@ -122,10 +124,10 @@ public:
     : node_count(arg_node_count)
     , elem_node_id( arg_elem_node_id )
     , row_total( "row_total" )
-    , row_count(AllocateWithoutInitializing(), "row_count" , node_count ) // will deep_copy to 0 inside loop
+    , row_count(Kokkos::ViewAllocateWithoutInitializing("row_count"), node_count ) // will deep_copy to 0 inside loop
     , row_map( "graph_row_map" , node_count + 1 )
     , node_node_set()
-    , phase( FILL_NODE_SET )
+    , phase( PHASE_NONE )
     , graph()
     , elem_graph()
    {
@@ -135,26 +137,28 @@ public:
       Kokkos::Impl::Timer wall_clock ;
 
       wall_clock.reset();
-      phase = FILL_NODE_SET ;
 
       // upper bound on the capacity
       size_t set_capacity = (((28ull * node_count) / 2ull)*4ull)/3ull;
-
+      unsigned failed_insert_count = 0 ;
 
       // Increase capacity until the (node,node) map is successfully filled.
-      {
+      do {
         // Zero the row count to restart the fill
         Kokkos::deep_copy( row_count , 0u );
 
-        node_node_set = SetType( set_capacity );
+        node_node_set = SetType( ( set_capacity += failed_insert_count ) );
 
         // May be larger that requested:
         set_capacity = node_node_set.capacity();
 
-        Kokkos::parallel_for( elem_node_id.dimension_0() , *this );
-      }
+        Kokkos::parallel_reduce( Kokkos::RangePolicy<execution_space,TagFillNodeSet>(0,elem_node_id.dimension_0())
+                               , *this
+                               , failed_insert_count );
 
-      device_type::fence();
+      } while ( failed_insert_count );
+
+      execution_space::fence();
       results.ratio = (double)node_node_set.size() / (double)node_node_set.capacity();
       results.fill_node_set = wall_clock.seconds();
       //--------------------------------
@@ -181,14 +185,14 @@ public:
       //--------------------------------
       // Fill graph's entries from the (node,node) set.
 
-      device_type::fence();
+      execution_space::fence();
       results.scan_node_count = wall_clock.seconds();
 
       wall_clock.reset();
       phase = FILL_GRAPH_ENTRIES ;
       Kokkos::parallel_for( node_node_set.capacity() , *this );
 
-      device_type::fence();
+      execution_space::fence();
       results.fill_graph_entries = wall_clock.seconds();
 
       //--------------------------------
@@ -205,7 +209,7 @@ public:
       phase = SORT_GRAPH_ENTRIES ;
       Kokkos::parallel_for( node_count , *this );
 
-      device_type::fence();
+      execution_space::fence();
       results.sort_graph_entries = wall_clock.seconds();
 
       //--------------------------------
@@ -215,7 +219,7 @@ public:
       elem_graph = ElemGraphType("elem_graph", elem_node_id.dimension_0() );
       Kokkos::parallel_for( elem_node_id.dimension_0() , *this );
 
-      device_type::fence();
+      execution_space::fence();
       results.fill_element_graph = wall_clock.seconds();
     }
 
@@ -223,7 +227,7 @@ public:
   // parallel_for: create map and count row length
 
   KOKKOS_INLINE_FUNCTION
-  void fill_set( const unsigned ielem ) const
+  void operator()( const TagFillNodeSet & , const unsigned ielem , unsigned & count ) const
   {
     // Loop over element's (row_local_node,col_local_node) pairs:
     for ( unsigned row_local_node = 0 ; row_local_node < elem_node_id.dimension_1() ; ++row_local_node ) {
@@ -243,8 +247,13 @@ public:
           const typename SetType::insert_result result = node_node_set.insert( key );
 
           if ( result.success() ) {
+            // First time this pair was inserted
             if ( row_node < row_count.dimension_0() ) { atomic_fetch_add( & row_count( row_node ) , 1 ); }
             if ( col_node < row_count.dimension_0() && col_node != row_node ) { atomic_fetch_add( & row_count( col_node ) , 1 ); }
+          }
+          else if ( result.failed() ) {
+            // Ran out of memory for insertion.
+            ++count ;
           }
         }
       }
@@ -320,10 +329,7 @@ public:
   KOKKOS_INLINE_FUNCTION
   void operator()( const unsigned iwork ) const
   {
-    if ( phase == FILL_NODE_SET ) {
-      fill_set( iwork );
-    }
-    else if ( phase == FILL_GRAPH_ENTRIES ) {
+    if ( phase == FILL_GRAPH_ENTRIES ) {
       fill_graph_entries( iwork );
     }
     else if ( phase == SORT_GRAPH_ENTRIES ) {
@@ -381,28 +387,28 @@ template< class FiniteElementMeshType , class SparseMatrixType
 class ElementComputation ;
 
 
-template< class DeviceType , BoxElemPart::ElemOrder Order , class CoordinateMap ,
+template< class ExecutionSpace , BoxElemPart::ElemOrder Order , class CoordinateMap ,
           typename ScalarType , typename OrdinalType , class MemoryTraits , typename SizeType ,
           class CoeffFunctionType >
 class ElementComputation
-  < Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap >
-  , Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >
+  < Kokkos::Example::BoxElemFixture< ExecutionSpace , Order , CoordinateMap >
+  , Kokkos::CrsMatrix< ScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >
   , CoeffFunctionType >
 {
 public:
 
-  typedef Kokkos::Example::BoxElemFixture< DeviceType, Order, CoordinateMap >  mesh_type ;
+  typedef Kokkos::Example::BoxElemFixture< ExecutionSpace, Order, CoordinateMap >  mesh_type ;
   typedef Kokkos::Example::HexElement_Data< mesh_type::ElemNode >              element_data_type ;
 
   //------------------------------------
 
-  typedef DeviceType   device_type ;
+  typedef ExecutionSpace   execution_space ;
   typedef ScalarType   scalar_type ;
 
-  typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >  sparse_matrix_type ;
+  typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >  sparse_matrix_type ;
   typedef typename sparse_matrix_type::StaticCrsGraphType                                       sparse_graph_type ;
   typedef typename sparse_matrix_type::values_type matrix_values_type ;
-  typedef Kokkos::View< scalar_type* , Kokkos::LayoutLeft, device_type > vector_type ;
+  typedef Kokkos::View< scalar_type* , Kokkos::LayoutLeft, execution_space > vector_type ;
 
   //------------------------------------
 
@@ -423,8 +429,8 @@ public:
 
   typedef typename mesh_type::node_coord_type                                      node_coord_type ;
   typedef typename mesh_type::elem_node_type                                       elem_node_type ;
-  typedef Kokkos::View< scalar_type*[FunctionCount][FunctionCount] , device_type > elem_matrices_type ;
-  typedef Kokkos::View< scalar_type*[FunctionCount] ,                device_type > elem_vectors_type ;
+  typedef Kokkos::View< scalar_type*[FunctionCount][FunctionCount] , execution_space > elem_matrices_type ;
+  typedef Kokkos::View< scalar_type*[FunctionCount] ,                execution_space > elem_vectors_type ;
 
   typedef LocalViewTraits< elem_matrices_type > local_elem_matrices_traits;
   typedef LocalViewTraits< elem_vectors_type > local_elem_vectors_traits;
@@ -449,6 +455,8 @@ public:
   const vector_type         residual ;
   const sparse_matrix_type  jacobian ;
   const CoeffFunctionType   coeff_function ;
+  const double              coeff_source ;
+  const double              coeff_advection ;
   const Kokkos::DeviceConfig dev_config ;
 
   ElementComputation( const ElementComputation & rhs )
@@ -462,6 +470,8 @@ public:
     , residual( rhs.residual )
     , jacobian( rhs.jacobian )
     , coeff_function( rhs.coeff_function )
+    , coeff_source( rhs.coeff_source )
+    , coeff_advection( rhs.coeff_advection )
     , dev_config( rhs.dev_config )
     {}
 
@@ -469,13 +479,15 @@ public:
   // Otherwise fill per-element contributions for subequent gather-add into a residual and jacobian.
   ElementComputation( const mesh_type          & arg_mesh ,
                       const CoeffFunctionType  & arg_coeff_function ,
+                      const double             & arg_coeff_source ,
+                      const double             & arg_coeff_advection ,
                       const vector_type        & arg_solution ,
                       const elem_graph_type    & arg_elem_graph ,
                       const sparse_matrix_type & arg_jacobian ,
                       const vector_type        & arg_residual ,
                       const Kokkos::DeviceConfig arg_dev_config ,
-                      const QuadratureData<DeviceType>& qd =
-                        QuadratureData<DeviceType>() )
+                      const QuadratureData<ExecutionSpace>& qd =
+                        QuadratureData<ExecutionSpace>() )
     : elem_data()
     , elem_node_ids( arg_mesh.elem_node() )
     , node_coords(   arg_mesh.node_coord() )
@@ -486,6 +498,8 @@ public:
     , residual( arg_residual )
     , jacobian( arg_jacobian )
     , coeff_function( arg_coeff_function )
+    , coeff_source( arg_coeff_source )
+    , coeff_advection( arg_coeff_advection )
     , dev_config( arg_dev_config )
     {}
 
@@ -498,7 +512,7 @@ public:
       const size_t team_size = dev_config.block_dim.x * dev_config.block_dim.y;
       const size_t league_size =
         (nelem + dev_config.block_dim.y-1) / dev_config.block_dim.y;
-      Kokkos::TeamPolicy< device_type > config( league_size, team_size );
+      Kokkos::TeamPolicy< execution_space > config( league_size, team_size );
       parallel_for( config , *this );
     }
     else {
@@ -508,20 +522,15 @@ public:
 
   //------------------------------------
 
-  static const unsigned FLOPS_transform_gradients =
-     /* Jacobian */           FunctionCount * TensorDim * 2 +
-     /* Inverse jacobian */   TensorDim * 6 + 6 +
-     /* Gradient transform */ FunctionCount * 15 ;
-
   KOKKOS_INLINE_FUNCTION
-  float transform_gradients(
-    const float grad[][ FunctionCount ] , // Gradient of bases master element
+  double transform_gradients(
+    const double grad[][ FunctionCount ] , // Gradient of bases master element
     const double x[] ,
     const double y[] ,
     const double z[] ,
-    float dpsidx[] ,
-    float dpsidy[] ,
-    float dpsidz[] ) const
+    double dpsidx[] ,
+    double dpsidy[] ,
+    double dpsidz[] ) const
   {
     enum { j11 = 0 , j12 = 1 , j13 = 2 ,
            j21 = 3 , j22 = 4 , j23 = 5 ,
@@ -536,9 +545,9 @@ public:
       const double x2 = y[i] ;
       const double x3 = z[i] ;
 
-      const float g1 = grad[0][i] ;
-      const float g2 = grad[1][i] ;
-      const float g3 = grad[2][i] ;
+      const double g1 = grad[0][i] ;
+      const double g2 = grad[1][i] ;
+      const double g3 = grad[2][i] ;
 
       J[j11] += g1 * x1 ;
       J[j12] += g1 * x2 ;
@@ -555,33 +564,33 @@ public:
 
     // Inverse jacobian:
 
-    float invJ[ TensorDim ] = {
-      static_cast<float>( J[j22] * J[j33] - J[j23] * J[j32] ) ,
-      static_cast<float>( J[j13] * J[j32] - J[j12] * J[j33] ) ,
-      static_cast<float>( J[j12] * J[j23] - J[j13] * J[j22] ) ,
+    double invJ[ TensorDim ] = {
+      static_cast<double>( J[j22] * J[j33] - J[j23] * J[j32] ) ,
+      static_cast<double>( J[j13] * J[j32] - J[j12] * J[j33] ) ,
+      static_cast<double>( J[j12] * J[j23] - J[j13] * J[j22] ) ,
 
-      static_cast<float>( J[j23] * J[j31] - J[j21] * J[j33] ) ,
-      static_cast<float>( J[j11] * J[j33] - J[j13] * J[j31] ) ,
-      static_cast<float>( J[j13] * J[j21] - J[j11] * J[j23] ) ,
+      static_cast<double>( J[j23] * J[j31] - J[j21] * J[j33] ) ,
+      static_cast<double>( J[j11] * J[j33] - J[j13] * J[j31] ) ,
+      static_cast<double>( J[j13] * J[j21] - J[j11] * J[j23] ) ,
 
-      static_cast<float>( J[j21] * J[j32] - J[j22] * J[j31] ) ,
-      static_cast<float>( J[j12] * J[j31] - J[j11] * J[j32] ) ,
-      static_cast<float>( J[j11] * J[j22] - J[j12] * J[j21] ) };
+      static_cast<double>( J[j21] * J[j32] - J[j22] * J[j31] ) ,
+      static_cast<double>( J[j12] * J[j31] - J[j11] * J[j32] ) ,
+      static_cast<double>( J[j11] * J[j22] - J[j12] * J[j21] ) };
 
-    const float detJ = J[j11] * invJ[j11] +
+    const double detJ = J[j11] * invJ[j11] +
                        J[j21] * invJ[j12] +
                        J[j31] * invJ[j13] ;
 
-    const float detJinv = 1.0 / detJ ;
+    const double detJinv = 1.0 / detJ ;
 
     for ( unsigned i = 0 ; i < TensorDim ; ++i ) { invJ[i] *= detJinv ; }
 
     // Transform gradients:
 
     for( unsigned i = 0; i < FunctionCount ; ++i ) {
-      const float g0 = grad[0][i];
-      const float g1 = grad[1][i];
-      const float g2 = grad[2][i];
+      const double g0 = grad[0][i];
+      const double g1 = grad[1][i];
+      const double g2 = grad[2][i];
 
       dpsidx[i] = g0 * invJ[j11] + g1 * invJ[j12] + g2 * invJ[j13];
       dpsidy[i] = g0 * invJ[j21] + g1 * invJ[j22] + g2 * invJ[j23];
@@ -594,13 +603,15 @@ public:
   KOKKOS_INLINE_FUNCTION
   void contributeResidualJacobian(
     const local_scalar_type dof_values[] ,
-    const float  dpsidx[] ,
-    const float  dpsidy[] ,
-    const float  dpsidz[] ,
-    const float  detJ ,
+    const double  dpsidx[] ,
+    const double  dpsidy[] ,
+    const double  dpsidz[] ,
+    const double  detJ ,
+    const double  integ_weight ,
+    const double  bases_vals[] ,
     const local_scalar_type  coeff_k ,
-    const float  integ_weight ,
-    const float  bases_vals[] ,
+    const double  coeff_src ,
+    const double  advection[] ,
     local_scalar_type  elem_res[] ,
     local_scalar_type  elem_mat[][ FunctionCount ] ) const
   {
@@ -616,36 +627,46 @@ public:
       gradz_at_pt += dof_values[m] * dpsidz[m] ;
     }
 
-    const local_scalar_type k_detJ_weight = coeff_k             * detJ * integ_weight ;
-    const local_scalar_type res_val = value_at_pt * value_at_pt * detJ * integ_weight ;
-    const local_scalar_type mat_val = 2.0 * value_at_pt         * detJ * integ_weight ;
+    const double detJ_weight = detJ * integ_weight;
 
-    // $$ R_i = \int_{\Omega} \nabla \phi_i \cdot (k \nabla T) + \phi_i T^2 d \Omega $$
-    // $$ J_{i,j} = \frac{\partial R_i}{\partial T_j} = \int_{\Omega} k \nabla \phi_i \cdot \nabla \phi_j + 2 \phi_i \phi_j T d \Omega $$
+    const local_scalar_type source_term =
+      coeff_src * value_at_pt * value_at_pt;
+    const local_scalar_type source_deriv =
+      2.0 * coeff_src * value_at_pt;
+
+    const local_scalar_type advection_term =
+      advection[0]*gradx_at_pt +
+      advection[1]*grady_at_pt +
+      advection[2]*gradz_at_pt;
 
     for ( unsigned m = 0; m < FunctionCount; ++m) {
       local_scalar_type * const mat = elem_mat[m] ;
-      const float bases_val_m = bases_vals[m];
-      const float dpsidx_m    = dpsidx[m] ;
-      const float dpsidy_m    = dpsidy[m] ;
-      const float dpsidz_m    = dpsidz[m] ;
+      const double bases_val_m = bases_vals[m];
+      const double dpsidx_m    = dpsidx[m] ;
+      const double dpsidy_m    = dpsidy[m] ;
+      const double dpsidz_m    = dpsidz[m] ;
 
-      elem_res[m] += k_detJ_weight * ( dpsidx_m * gradx_at_pt +
-                                       dpsidy_m * grady_at_pt +
-                                       dpsidz_m * gradz_at_pt ) +
-                     res_val * bases_val_m ;
+      elem_res[m] +=
+        detJ_weight * ( coeff_k * ( dpsidx_m * gradx_at_pt +
+                                    dpsidy_m * grady_at_pt +
+                                    dpsidz_m * gradz_at_pt ) +
+                        ( advection_term  + source_term ) * bases_val_m ) ;
 
       for( unsigned n = 0; n < FunctionCount; n++) {
 
-        mat[n] += k_detJ_weight * ( dpsidx_m * dpsidx[n] +
-                                    dpsidy_m * dpsidy[n] +
-                                    dpsidz_m * dpsidz[n] ) +
-                  mat_val * bases_val_m * bases_vals[n];
+        mat[n] +=
+          detJ_weight * ( coeff_k * ( dpsidx_m * dpsidx[n] +
+                                      dpsidy_m * dpsidy[n] +
+                                      dpsidz_m * dpsidz[n] ) +
+                          ( advection[0] * dpsidx[n] +
+                            advection[1] * dpsidy[n] +
+                            advection[2] * dpsidz[n] +
+                            source_deriv * bases_vals[n] ) * bases_val_m );
       }
     }
   }
 
-  typedef typename Kokkos::TeamPolicy< device_type >::member_type team_member ;
+  typedef typename Kokkos::TeamPolicy< execution_space >::member_type team_member ;
   KOKKOS_INLINE_FUNCTION
   void operator()( const team_member & dev ) const
   {
@@ -710,60 +731,36 @@ public:
       }
     }
 
+    // advection = [ 1 , 1 , 1 ] * coeff_advection
+    double advection[] = { coeff_advection ,
+                           coeff_advection ,
+                           coeff_advection };
 
     for ( unsigned i = 0 ; i < IntegrationCount ; ++i ) {
-      float dpsidx[ FunctionCount ] ;
-      float dpsidy[ FunctionCount ] ;
-      float dpsidz[ FunctionCount ] ;
+      double dpsidx[ FunctionCount ] ;
+      double dpsidy[ FunctionCount ] ;
+      double dpsidz[ FunctionCount ] ;
 
-      local_scalar_type coeff_k = 0 ;
-
-      {
-        double pt_x = 0 ;
-        double pt_y = 0 ;
-        double pt_z = 0 ;
-
-        // If function is not constant
-        // then compute physical coordinates of integration point
-        if ( ! coeff_function.is_constant ) {
-          for ( unsigned j = 0 ; j < FunctionCount ; ++j ) {
-            pt_x += x[j] * elem_data.values[i][j] ;
-            pt_y += y[j] * elem_data.values[i][j] ;
-            pt_z += z[j] * elem_data.values[i][j] ;
-          }
-        }
-
-        // Need to fix this for local_scalar_type!!!!!!
-        coeff_k = coeff_function(pt_x,pt_y,pt_z,ensemble_rank);
-      }
-
-      const float detJ =
+      const double detJ =
         transform_gradients( elem_data.gradients[i] , x , y , z ,
                              dpsidx , dpsidy , dpsidz );
 
-      contributeResidualJacobian( val , dpsidx , dpsidy , dpsidz ,
-                                  detJ , coeff_k ,
-                                  elem_data.weights[i] ,
-                                  elem_data.values[i] ,
+      // Compute physical coordinates of integration point
+      double pt[] = { 0 , 0 , 0 } ;
+      for ( unsigned j = 0 ; j < FunctionCount ; ++j ) {
+        pt[0] += x[j] * elem_data.values[i][j] ;
+        pt[1] += y[j] * elem_data.values[i][j] ;
+        pt[2] += z[j] * elem_data.values[i][j] ;
+      }
+
+      // Evaluate diffusion coefficient
+      local_scalar_type coeff_k = coeff_function(pt, ensemble_rank);
+
+      contributeResidualJacobian( val , dpsidx , dpsidy , dpsidz , detJ ,
+                                  elem_data.weights[i] , elem_data.values[i] ,
+                                  coeff_k , coeff_source , advection ,
                                   elem_vec , elem_mat );
     }
-
-#if 0
-    if ( 1 == ielem ) {
-      printf("ElemResidual { %f %f %f %f %f %f %f %f }\n",
-             elem_vec[0], elem_vec[1], elem_vec[2], elem_vec[3],
-             elem_vec[4], elem_vec[5], elem_vec[6], elem_vec[7]);
-
-      printf("ElemJacobian {\n");
-
-      for ( unsigned j = 0 ; j < FunctionCount ; ++j ) {
-        printf("  { %f %f %f %f %f %f %f %f }\n",
-               elem_mat[j][0], elem_mat[j][1], elem_mat[j][2], elem_mat[j][3],
-               elem_mat[j][4], elem_mat[j][5], elem_mat[j][6], elem_mat[j][7]);
-      }
-      printf("}\n");
-    }
-#endif
 
     for( unsigned i = 0 ; i < FunctionCount ; i++ ) {
       const unsigned row = node_index[i] ;
@@ -786,25 +783,25 @@ public:
 template< class FixtureType , class SparseMatrixType >
 class DirichletComputation ;
 
-template< class DeviceType , BoxElemPart::ElemOrder Order , class CoordinateMap ,
+template< class ExecutionSpace , BoxElemPart::ElemOrder Order , class CoordinateMap ,
           typename ScalarType , typename OrdinalType , class MemoryTraits , typename SizeType >
 class DirichletComputation<
-  Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap > ,
-  Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType > >
+  Kokkos::Example::BoxElemFixture< ExecutionSpace , Order , CoordinateMap > ,
+  Kokkos::CrsMatrix< ScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType > >
 {
 public:
 
-  typedef Kokkos::Example::BoxElemFixture< DeviceType, Order, CoordinateMap >  mesh_type ;
+  typedef Kokkos::Example::BoxElemFixture< ExecutionSpace, Order, CoordinateMap >  mesh_type ;
   typedef typename mesh_type::node_coord_type                                  node_coord_type ;
   typedef typename node_coord_type::value_type                                 scalar_coord_type ;
 
-  typedef DeviceType   device_type ;
+  typedef ExecutionSpace   execution_space ;
   typedef ScalarType   scalar_type ;
 
-  typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >  sparse_matrix_type ;
+  typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >  sparse_matrix_type ;
   typedef typename sparse_matrix_type::StaticCrsGraphType                                       sparse_graph_type ;
   typedef typename sparse_matrix_type::values_type matrix_values_type ;
-  typedef Kokkos::View< scalar_type* , device_type > vector_type ;
+  typedef Kokkos::View< scalar_type* , execution_space > vector_type ;
 
   //------------------------------------
 
@@ -864,7 +861,7 @@ public:
       const size_t team_size = dev_config.block_dim.x * dev_config.block_dim.y;
       const size_t league_size =
         (node_count + dev_config.block_dim.y-1) / dev_config.block_dim.y;
-      Kokkos::TeamPolicy< device_type > config( league_size, team_size );
+      Kokkos::TeamPolicy< execution_space > config( league_size, team_size );
       parallel_for( config , *this );
     }
     else
@@ -873,7 +870,7 @@ public:
 
   //------------------------------------
 
-  typedef typename Kokkos::TeamPolicy< device_type >::member_type team_member ;
+  typedef typename Kokkos::TeamPolicy< execution_space >::member_type team_member ;
   KOKKOS_INLINE_FUNCTION
   void operator()( const team_member & dev ) const
   {
@@ -956,7 +953,7 @@ public:
 
   typedef FixtureType fixture_type ;
   typedef VectorType vector_type ;
-  typedef typename vector_type::device_type device_type ;
+  typedef typename vector_type::execution_space execution_space ;
   typedef typename vector_type::value_type value_type ;
 
   typedef Kokkos::Example::HexElement_Data< fixture_type::ElemNode > element_data_type ;
@@ -991,15 +988,15 @@ public:
   {
     value_type response = 0;
     //Kokkos::parallel_reduce( fixture.elem_count() , *this , response );
-    Kokkos::parallel_reduce( solution.dimension_0() , *this , Kokkos::create_unmanaged_view( response ) );
+    Kokkos::parallel_reduce( solution.dimension_0() , *this , response );
     return response;
   }
 
   //------------------------------------
 
    KOKKOS_INLINE_FUNCTION
-  float compute_detJ(
-    const float grad[][ ElemNodeCount ] , // Gradient of bases master element
+  double compute_detJ(
+    const double grad[][ ElemNodeCount ] , // Gradient of bases master element
     const double x[] ,
     const double y[] ,
     const double z[] ) const
@@ -1017,9 +1014,9 @@ public:
       const double x2 = y[i] ;
       const double x3 = z[i] ;
 
-      const float g1 = grad[0][i] ;
-      const float g2 = grad[1][i] ;
-      const float g3 = grad[2][i] ;
+      const double g1 = grad[0][i] ;
+      const double g2 = grad[1][i] ;
+      const double g3 = grad[2][i] ;
 
       J[j11] += g1 * x1 ;
       J[j12] += g1 * x2 ;
@@ -1036,20 +1033,20 @@ public:
 
     // Inverse jacobian:
 
-    float invJ[ TensorDim ] = {
-      static_cast<float>( J[j22] * J[j33] - J[j23] * J[j32] ) ,
-      static_cast<float>( J[j13] * J[j32] - J[j12] * J[j33] ) ,
-      static_cast<float>( J[j12] * J[j23] - J[j13] * J[j22] ) ,
+    double invJ[ TensorDim ] = {
+      static_cast<double>( J[j22] * J[j33] - J[j23] * J[j32] ) ,
+      static_cast<double>( J[j13] * J[j32] - J[j12] * J[j33] ) ,
+      static_cast<double>( J[j12] * J[j23] - J[j13] * J[j22] ) ,
 
-      static_cast<float>( J[j23] * J[j31] - J[j21] * J[j33] ) ,
-      static_cast<float>( J[j11] * J[j33] - J[j13] * J[j31] ) ,
-      static_cast<float>( J[j13] * J[j21] - J[j11] * J[j23] ) ,
+      static_cast<double>( J[j23] * J[j31] - J[j21] * J[j33] ) ,
+      static_cast<double>( J[j11] * J[j33] - J[j13] * J[j31] ) ,
+      static_cast<double>( J[j13] * J[j21] - J[j11] * J[j23] ) ,
 
-      static_cast<float>( J[j21] * J[j32] - J[j22] * J[j31] ) ,
-      static_cast<float>( J[j12] * J[j31] - J[j11] * J[j32] ) ,
-      static_cast<float>( J[j11] * J[j22] - J[j12] * J[j21] ) };
+      static_cast<double>( J[j21] * J[j32] - J[j22] * J[j31] ) ,
+      static_cast<double>( J[j12] * J[j31] - J[j11] * J[j32] ) ,
+      static_cast<double>( J[j11] * J[j22] - J[j12] * J[j21] ) };
 
-    const float detJ = J[j11] * invJ[j11] +
+    const double detJ = J[j11] * invJ[j11] +
                        J[j21] * invJ[j12] +
                        J[j31] * invJ[j13] ;
 
@@ -1059,9 +1056,9 @@ public:
   KOKKOS_INLINE_FUNCTION
   value_type contributeResponse(
     const value_type dof_values[] ,
-    const float  detJ ,
-    const float  integ_weight ,
-    const float  bases_vals[] ) const
+    const double  detJ ,
+    const double  integ_weight ,
+    const double  bases_vals[] ) const
   {
     // $$ g_i = \int_{\Omega} T^2 d \Omega $$
 
@@ -1099,7 +1096,7 @@ public:
 
     for ( unsigned i = 0 ; i < IntegrationCount ; ++i ) {
 
-      const float detJ = compute_detJ( elem_data.gradients[i] , x , y , z );
+      const double detJ = compute_detJ( elem_data.gradients[i] , x , y , z );
 
       response += contributeResponse( val , detJ , elem_data.weights[i] ,
                                       elem_data.values[i] );
@@ -1128,13 +1125,6 @@ public:
 } /* namespace FENL */
 } /* namespace Example */
 } /* namespace Kokkos  */
-
-//----------------------------------------------------------------------------
-
-/* A Cuda-specific specialization for the element computation functor. */
-#if defined( __CUDACC__ )
-// #include <NonlinearElement_Cuda.hpp>
-#endif
 
 //----------------------------------------------------------------------------
 

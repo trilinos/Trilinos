@@ -151,7 +151,7 @@ class RTRSolMgr : public SolverManager<ScalarType,MV,OP> {
   MagnitudeType convtol_;
   int maxIters_;
   bool relconvtol_;
-  enum StatusTestResNorm<ScalarType,MV,OP>::ResType convNorm_;
+  enum ResType convNorm_;
   int numIters_;
   int numICGS_;
 
@@ -194,10 +194,10 @@ RTRSolMgr<ScalarType,MV,OP>::RTRSolMgr(
   relconvtol_ = pl_.get("Relative Convergence Tolerance",relconvtol_);
   strtmp = pl_.get("Convergence Norm",std::string("2"));
   if (strtmp == "2") {
-    convNorm_ = StatusTestResNorm<ScalarType,MV,OP>::RES_2NORM;
+    convNorm_ = RES_2NORM;
   }
   else if (strtmp == "M") {
-    convNorm_ = StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH;
+    convNorm_ = RES_ORTH;
   }
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,

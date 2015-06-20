@@ -62,8 +62,8 @@
 // **********************************************************************
 
 
-template<typename Traits,typename LO,typename GO,typename NodeT>
-panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Residual, Traits,LO,GO,NodeT>::
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
 ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
                                 const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
@@ -80,27 +80,31 @@ ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,
   // grab map from evaluated names to field names
   fieldMap_ = p.get< Teuchos::RCP< std::map<std::string,std::string> > >("Dependent Map");
 
-  Teuchos::RCP<PHX::DataLayout> dl = 
-    p.get< Teuchos::RCP<panzer::PureBasis> >("Basis")->functional;
+  // determine if we are scattering an initial condition
+  scatterIC_ = p.isParameter("Scatter Initial Condition") ? p.get<bool>("Scatter Initial Condition") : false;
 
-  side_subcell_dim_ = p.get<int>("Side Subcell Dimension");
-  local_side_id_ = p.get<int>("Local Side ID");
-
+  Teuchos::RCP<PHX::DataLayout> dl = (!scatterIC_) ? 
+    p.get< Teuchos::RCP<panzer::PureBasis> >("Basis")->functional :
+    p.get< Teuchos::RCP<const panzer::PureBasis> >("Basis")->functional ;
+  if (!scatterIC_) {
+    side_subcell_dim_ = p.get<int>("Side Subcell Dimension");
+    local_side_id_ = p.get<int>("Local Side ID");
+  }
   
   // build the vector of fields that this is dependent on
   scatterFields_.resize(names.size());
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
-    scatterFields_[eq] = PHX::MDField<ScalarT,Cell,NODE>(names[eq],dl);
+    scatterFields_[eq] = PHX::MDField<const ScalarT,Cell,NODE>(names[eq],dl);
 
     // tell the field manager that we depend on this field
     this->addDependentField(scatterFields_[eq]);
   }
 
-  checkApplyBC_ = p.get<bool>("Check Apply BC");
+  checkApplyBC_ = p.isParameter("Check Apply BC") ? p.get<bool>("Check Apply BC") : false;
   if (checkApplyBC_) {
     applyBC_.resize(names.size());
     for (std::size_t eq = 0; eq < names.size(); ++eq) {
-      applyBC_[eq] = PHX::MDField<bool,Cell,NODE>(std::string("APPLY_BC_")+fieldMap_->find(names[eq])->second,dl);
+      applyBC_[eq] = PHX::MDField<const bool,Cell,NODE>(std::string("APPLY_BC_")+fieldMap_->find(names[eq])->second,dl);
       this->addDependentField(applyBC_[eq]);
     }
   }
@@ -115,10 +119,10 @@ ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT> 
-void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Residual, Traits,LO,GO,NodeT>::
-postRegistrationSetup(typename Traits::SetupData d, 
-		      PHX::FieldManager<Traits>& fm)
+template<typename TRAITS,typename LO,typename GO,typename NodeT> 
+void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
+postRegistrationSetup(typename TRAITS::SetupData d, 
+                      PHX::FieldManager<TRAITS>& fm)
 {
   fieldIds_.resize(scatterFields_.size());
 
@@ -140,16 +144,16 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT>
-void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Residual, Traits,LO,GO,NodeT>::
-preEvaluate(typename Traits::PreEvalData d)
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
+preEvaluate(typename TRAITS::PreEvalData d)
 {
   // extract linear object container
-  tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject(globalDataKey_));
+  tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.gedc.getDataObject(globalDataKey_));
 
   if(tpetraContainer_==Teuchos::null) {
     // extract linear object container
-    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
     tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc);
 
     dirichletCounter_ = Teuchos::null;
@@ -157,17 +161,17 @@ preEvaluate(typename Traits::PreEvalData d)
   else {
     // extract dirichlet counter from container
     Teuchos::RCP<LOC> tpetraContainer 
-          = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject("Dirichlet Counter"),true);
+          = Teuchos::rcp_dynamic_cast<LOC>(d.gedc.getDataObject("Dirichlet Counter"),true);
 
-    dirichletCounter_ = tpetraContainer->get_x();
+    dirichletCounter_ = tpetraContainer->get_f();
     TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
   }
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT>
-void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Residual, Traits,LO,GO,NodeT>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
    std::vector<GO> GIDs;
    std::vector<LO> LIDs;
@@ -176,7 +180,9 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer_->get_f(); 
+   Teuchos::RCP<typename LOC::VectorType> r = (!scatterIC_) ? 
+     tpetraContainer_->get_f() :
+     tpetraContainer_->get_x(); 
 
    Teuchos::ArrayRCP<double> r_array = r->get1dViewNonConst();
    Teuchos::ArrayRCP<double> dc_array = dirichletCounter_->get1dViewNonConst();
@@ -198,36 +204,51 @@ evaluateFields(typename Traits::EvalData workset)
       for(std::size_t i=0;i<GIDs.size();i++)
          LIDs[i] = r->getMap()->getLocalElement(GIDs[i]);
 
-      std::vector<bool> is_owned(GIDs.size(), false);
-      globalIndexer_->ownedIndices(GIDs,is_owned);
-
       // loop over each field to be scattered
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
          int fieldNum = fieldIds_[fieldIndex];
-   
-         // this call "should" get the right ordering accordint to the Intrepid basis
-         const std::pair<std::vector<int>,std::vector<int> > & indicePair 
-               = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
-         const std::vector<int> & elmtOffset = indicePair.first;
-         const std::vector<int> & basisIdMap = indicePair.second;
-   
-         // loop over basis functions
-         for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-            int offset = elmtOffset[basis];
-            LO lid = LIDs[offset];
-            if(lid<0) // not on this processor!
+
+         if (!scatterIC_) {
+           // this call "should" get the right ordering according to the Intrepid basis
+           const std::pair<std::vector<int>,std::vector<int> > & indicePair 
+             = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
+           const std::vector<int> & elmtOffset = indicePair.first;
+           const std::vector<int> & basisIdMap = indicePair.second;
+           
+           // loop over basis functions
+           for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
+             int offset = elmtOffset[basis];
+             LO lid = LIDs[offset];
+             if(lid<0) // not on this processor!
                continue;
 
-            int basisId = basisIdMap[basis];
+             int basisId = basisIdMap[basis];
 
-	    if (checkApplyBC_)
-	      if (!applyBC_[fieldIndex](worksetCellIndex,basisId))
-		continue;
+             if (checkApplyBC_)
+               if (!applyBC_[fieldIndex](worksetCellIndex,basisId))
+                 continue;
 
-            r_array[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
+             r_array[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
 
-            // record that you set a dirichlet condition
-            dc_array[lid] = 1.0;
+             // record that you set a dirichlet condition
+             dc_array[lid] = 1.0;
+           }
+         } else {
+           // this call "should" get the right ordering according to the Intrepid basis
+           const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
+   
+           // loop over basis functions
+           for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
+             int offset = elmtOffset[basis];
+             LO lid = LIDs[offset];
+             if(lid<0) // not on this processor!
+               continue;
+
+             r_array[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basis);
+
+             // record that you set a dirichlet condition
+             dc_array[lid] = 1.0;
+           }
          }
       }
    }
@@ -238,8 +259,8 @@ evaluateFields(typename Traits::EvalData workset)
 // **********************************************************************
 
 
-template<typename Traits,typename LO,typename GO,typename NodeT>
-panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Tangent, Traits,LO,GO,NodeT>::
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Tangent, TRAITS,LO,GO,NodeT>::
 ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
                                 const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
@@ -256,27 +277,31 @@ ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,
   // grab map from evaluated names to field names
   fieldMap_ = p.get< Teuchos::RCP< std::map<std::string,std::string> > >("Dependent Map");
 
-  Teuchos::RCP<PHX::DataLayout> dl = 
-    p.get< Teuchos::RCP<panzer::PureBasis> >("Basis")->functional;
+  // determine if we are scattering an initial condition
+  scatterIC_ = p.isParameter("Scatter Initial Condition") ? p.get<bool>("Scatter Initial Condition") : false;
 
-  side_subcell_dim_ = p.get<int>("Side Subcell Dimension");
-  local_side_id_ = p.get<int>("Local Side ID");
-
+  Teuchos::RCP<PHX::DataLayout> dl = (!scatterIC_) ? 
+    p.get< Teuchos::RCP<panzer::PureBasis> >("Basis")->functional :
+    p.get< Teuchos::RCP<const panzer::PureBasis> >("Basis")->functional ;
+  if (!scatterIC_) {
+    side_subcell_dim_ = p.get<int>("Side Subcell Dimension");
+    local_side_id_ = p.get<int>("Local Side ID");
+  }
   
   // build the vector of fields that this is dependent on
   scatterFields_.resize(names.size());
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
-    scatterFields_[eq] = PHX::MDField<ScalarT,Cell,NODE>(names[eq],dl);
+    scatterFields_[eq] = PHX::MDField<const ScalarT,Cell,NODE>(names[eq],dl);
 
     // tell the field manager that we depend on this field
     this->addDependentField(scatterFields_[eq]);
   }
 
-  checkApplyBC_ = p.get<bool>("Check Apply BC");
+  checkApplyBC_ = p.isParameter("Check Apply BC") ? p.get<bool>("Check Apply BC") : false;
   if (checkApplyBC_) {
     applyBC_.resize(names.size());
     for (std::size_t eq = 0; eq < names.size(); ++eq) {
-      applyBC_[eq] = PHX::MDField<bool,Cell,NODE>(std::string("APPLY_BC_")+fieldMap_->find(names[eq])->second,dl);
+      applyBC_[eq] = PHX::MDField<const bool,Cell,NODE>(std::string("APPLY_BC_")+fieldMap_->find(names[eq])->second,dl);
       this->addDependentField(applyBC_[eq]);
     }
   }
@@ -291,10 +316,10 @@ ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT> 
-void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Tangent, Traits,LO,GO,NodeT>::
-postRegistrationSetup(typename Traits::SetupData d, 
-		      PHX::FieldManager<Traits>& fm)
+template<typename TRAITS,typename LO,typename GO,typename NodeT> 
+void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Tangent, TRAITS,LO,GO,NodeT>::
+postRegistrationSetup(typename TRAITS::SetupData d, 
+                      PHX::FieldManager<TRAITS>& fm)
 {
   fieldIds_.resize(scatterFields_.size());
 
@@ -316,16 +341,16 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT>
-void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Tangent, Traits,LO,GO,NodeT>::
-preEvaluate(typename Traits::PreEvalData d)
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Tangent, TRAITS,LO,GO,NodeT>::
+preEvaluate(typename TRAITS::PreEvalData d)
 {
   // extract linear object container
-  tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject(globalDataKey_));
+  tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.gedc.getDataObject(globalDataKey_));
 
   if(tpetraContainer_==Teuchos::null) {
     // extract linear object container
-    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
     tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc);
 
     dirichletCounter_ = Teuchos::null;
@@ -333,17 +358,17 @@ preEvaluate(typename Traits::PreEvalData d)
   else {
     // extract dirichlet counter from container
     Teuchos::RCP<LOC> tpetraContainer 
-          = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject("Dirichlet Counter"),true);
+          = Teuchos::rcp_dynamic_cast<LOC>(d.gedc.getDataObject("Dirichlet Counter"),true);
 
-    dirichletCounter_ = tpetraContainer->get_x();
+    dirichletCounter_ = tpetraContainer->get_f();
     TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
   }
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT>
-void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Tangent, Traits,LO,GO,NodeT>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Tangent, TRAITS,LO,GO,NodeT>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
    TEUCHOS_ASSERT(false);
 
@@ -354,7 +379,9 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer_->get_f(); 
+   Teuchos::RCP<typename LOC::VectorType> r = (!scatterIC_) ? 
+     tpetraContainer_->get_f() :
+     tpetraContainer_->get_x(); 
 
    Teuchos::ArrayRCP<double> r_array = r->get1dViewNonConst();
    Teuchos::ArrayRCP<double> dc_array = dirichletCounter_->get1dViewNonConst();
@@ -376,36 +403,51 @@ evaluateFields(typename Traits::EvalData workset)
       for(std::size_t i=0;i<GIDs.size();i++)
          LIDs[i] = r->getMap()->getLocalElement(GIDs[i]);
 
-      std::vector<bool> is_owned(GIDs.size(), false);
-      globalIndexer_->ownedIndices(GIDs,is_owned);
-
       // loop over each field to be scattered
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
          int fieldNum = fieldIds_[fieldIndex];
+
+         if (!scatterIC_) {
+           // this call "should" get the right ordering according to the Intrepid basis
+           const std::pair<std::vector<int>,std::vector<int> > & indicePair 
+             = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
+           const std::vector<int> & elmtOffset = indicePair.first;
+           const std::vector<int> & basisIdMap = indicePair.second;
    
-         // this call "should" get the right ordering accordint to the Intrepid basis
-         const std::pair<std::vector<int>,std::vector<int> > & indicePair 
-               = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
-         const std::vector<int> & elmtOffset = indicePair.first;
-         const std::vector<int> & basisIdMap = indicePair.second;
-   
-         // loop over basis functions
-         for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-            int offset = elmtOffset[basis];
-            LO lid = LIDs[offset];
-            if(lid<0) // not on this processor!
+           // loop over basis functions
+           for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
+             int offset = elmtOffset[basis];
+             LO lid = LIDs[offset];
+             if(lid<0) // not on this processor!
+               continue;
+             
+             int basisId = basisIdMap[basis];
+             
+             if (checkApplyBC_)
+               if (!applyBC_[fieldIndex](worksetCellIndex,basisId))
+                 continue;
+             
+             r_array[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basisId).val();
+             
+             // record that you set a dirichlet condition
+             dc_array[lid] = 1.0;
+           }
+         } else {
+           // this call "should" get the right ordering according to the Intrepid basis
+           const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
+           
+           // loop over basis functions
+           for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
+             int offset = elmtOffset[basis];
+             LO lid = LIDs[offset];
+             if(lid<0) // not on this processor!
                continue;
 
-            int basisId = basisIdMap[basis];
-
-	    if (checkApplyBC_)
-	      if (!applyBC_[fieldIndex](worksetCellIndex,basisId))
-		continue;
-
-            r_array[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basisId).val();
-
-            // record that you set a dirichlet condition
-            dc_array[lid] = 1.0;
+             r_array[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basis).val();
+             
+             // record that you set a dirichlet condition
+             dc_array[lid] = 1.0;
+           }
          }
       }
    }
@@ -415,8 +457,8 @@ evaluateFields(typename Traits::EvalData workset)
 // Specialization: Jacobian
 // **********************************************************************
 
-template<typename Traits,typename LO,typename GO,typename NodeT>
-panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Jacobian, Traits,LO,GO,NodeT>::
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>::
 ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
                                 const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
@@ -442,7 +484,7 @@ ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,
   // build the vector of fields that this is dependent on
   scatterFields_.resize(names.size());
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
-    scatterFields_[eq] = PHX::MDField<ScalarT,Cell,NODE>(names[eq],dl);
+    scatterFields_[eq] = PHX::MDField<const ScalarT,Cell,NODE>(names[eq],dl);
 
     // tell the field manager that we depend on this field
     this->addDependentField(scatterFields_[eq]);
@@ -452,7 +494,7 @@ ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,
   if (checkApplyBC_) {
     applyBC_.resize(names.size());
     for (std::size_t eq = 0; eq < names.size(); ++eq) {
-      applyBC_[eq] = PHX::MDField<bool,Cell,NODE>(std::string("APPLY_BC_")+fieldMap_->find(names[eq])->second,dl);
+      applyBC_[eq] = PHX::MDField<const bool,Cell,NODE>(std::string("APPLY_BC_")+fieldMap_->find(names[eq])->second,dl);
       this->addDependentField(applyBC_[eq]);
     }
   }
@@ -467,10 +509,10 @@ ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT> 
-void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Jacobian, Traits,LO,GO,NodeT>::
-postRegistrationSetup(typename Traits::SetupData d,
-		      PHX::FieldManager<Traits>& fm)
+template<typename TRAITS,typename LO,typename GO,typename NodeT> 
+void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>::
+postRegistrationSetup(typename TRAITS::SetupData d,
+                      PHX::FieldManager<TRAITS>& fm)
 {
   fieldIds_.resize(scatterFields_.size());
   // load required field numbers for fast use
@@ -492,16 +534,16 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT>
-void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Jacobian, Traits,LO,GO,NodeT>::
-preEvaluate(typename Traits::PreEvalData d)
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>::
+preEvaluate(typename TRAITS::PreEvalData d)
 {
   // extract linear object container
-  tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject(globalDataKey_));
+  tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.gedc.getDataObject(globalDataKey_));
 
   if(tpetraContainer_==Teuchos::null) {
     // extract linear object container
-    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
     tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc);
 
     dirichletCounter_ = Teuchos::null;
@@ -509,17 +551,17 @@ preEvaluate(typename Traits::PreEvalData d)
   else {
     // extract dirichlet counter from container
     Teuchos::RCP<LOC> tpetraContainer 
-          = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject("Dirichlet Counter"),true);
+          = Teuchos::rcp_dynamic_cast<LOC>(d.gedc.getDataObject("Dirichlet Counter"),true);
 
-    dirichletCounter_ = tpetraContainer->get_x();
+    dirichletCounter_ = tpetraContainer->get_f();
     TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
   }
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT>
-void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Jacobian, Traits,LO,GO,NodeT>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
    std::vector<GO> GIDs;
  
@@ -545,14 +587,11 @@ evaluateFields(typename Traits::EvalData workset)
       globalIndexer_->getElementGIDs(cellLocalId,GIDs); 
       const std::vector<LO> & LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
 
-      std::vector<bool> is_owned(GIDs.size(), false);
-      globalIndexer_->ownedIndices(GIDs,is_owned);
-
       // loop over each field to be scattered
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
          int fieldNum = fieldIds_[fieldIndex];
    
-         // this call "should" get the right ordering accordint to the Intrepid basis
+         // this call "should" get the right ordering according to the Intrepid basis
          const std::pair<std::vector<int>,std::vector<int> > & indicePair 
                = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
          const std::vector<int> & elmtOffset = indicePair.first;
@@ -567,9 +606,9 @@ evaluateFields(typename Traits::EvalData workset)
 
             int basisId = basisIdMap[basis];
 
-	    if (checkApplyBC_)
-	      if (!applyBC_[fieldIndex](worksetCellIndex,basisId))
-		continue;
+            if (checkApplyBC_)
+              if (!applyBC_[fieldIndex](worksetCellIndex,basisId))
+                continue;
 
             // zero out matrix row
             {
@@ -588,7 +627,7 @@ evaluateFields(typename Traits::EvalData workset)
             }
  
             GO gid = GIDs[offset];
-            const ScalarT & scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
+            const ScalarT scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
     
             r_array[lid] = scatterField.val();
             dc_array[lid] = 1.0; // mark row as dirichlet

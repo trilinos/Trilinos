@@ -511,7 +511,7 @@ char *recv_data)		/* array of data I'll own after comm */
   char *outbuf=NULL, *inbuf=NULL, *buf=NULL;
   int *outbufCounts=NULL, *outbufOffsets=NULL; 
   int *inbufCounts=NULL, *inbufOffsets=NULL;
-  int nprocs, me, rc, i, j, k, p, sorted;
+  int nprocs, me, i, j, k, p, sorted;
   int nSendMsgs, nSendItems, nRecvMsgs, nRecvItems;
   int length, offset, itemSize, outbufLen;
 
@@ -775,9 +775,9 @@ char *recv_data)		/* array of data I'll own after comm */
 
   /* EXCHANGE DATA */
 
-  rc = MPI_Alltoallv(outbuf, outbufCounts, outbufOffsets, MPI_BYTE,
-                     inbuf, inbufCounts, inbufOffsets, MPI_BYTE,
-                     plan->comm);
+   MPI_Alltoallv(outbuf, outbufCounts, outbufOffsets, MPI_BYTE,
+                 inbuf, inbufCounts, inbufOffsets, MPI_BYTE,
+                 plan->comm);
 
   if (outbuf != send_data){
     ZOLTAN_FREE(&outbuf);

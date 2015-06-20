@@ -352,7 +352,7 @@ float wgt;
       before = globalID[i] - 1;
     }
 
-    if (lid==num_obj-1){
+    if ((int)lid==num_obj-1){
       after = proc_vertex_gid(myRank, 0);
     }
     else{

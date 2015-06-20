@@ -243,8 +243,7 @@ public:
     ////////////////////////////////////////////////////////////
     // Done
 
-    ArrayRCP<const gno_t> gnos = arcpFromArrayView(idList);
-    solution->setParts(gnos, gnoPart, true);
+    solution->setParts(gnoPart);
 
     env->debug(DETAILED_STATUS, string("Exiting AlgBlock"));
   }

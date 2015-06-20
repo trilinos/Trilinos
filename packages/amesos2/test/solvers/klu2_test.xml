@@ -1,0 +1,41 @@
+<ParameterList name="test_params">
+  <!-- Any of the test driver's command-line parameters may also be specified here -->
+  <ParameterList name="amesos2_test_mat0.mtx">
+    <!-- Optional parameter, used for debugging and for deciding whether to use epetra -->
+    <Parameter name="complex" type="bool" value="false"/>
+    <ParameterList name="KLU2">
+      
+      <!-- Next test Tpetra objects -->
+      <ParameterList name="tpetra">
+	<!-- these `run*' sublist names are arbitrary -->
+	<ParameterList name="run0">
+	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	  <!-- The `Node' parameter is not yet supported -->
+	</ParameterList>
+	<ParameterList name="run1">
+	  <Parameter name="Scalar" type="string" value="float"/>
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	  <!-- The `Node' parameter is not yet supported -->
+	</ParameterList>
+	<ParameterList name="run2">
+	  <Parameter name="Scalar" type="string" value="float"/>
+	  <Parameter name="LocalOrdinal" type="string" value="long"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	  <!-- The `Node' parameter is not yet supported -->
+	</ParameterList>
+	<ParameterList name="run3">
+	  <Parameter name="Scalar" type="string" value="float"/>
+	  <Parameter name="LocalOrdinal" type="string" value="long"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="long"/>
+	  <!-- The `Node' parameter is not yet supported -->
+	</ParameterList>
+      </ParameterList>
+
+    </ParameterList> <!-- end KLU2 -->
+  </ParameterList> <!-- end amesos2_test_mat0.mtx -->
+
+  <!-- For this matrix, no solver parameters are given, so the defaults will be used -->
+</ParameterList>

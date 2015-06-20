@@ -58,12 +58,16 @@
 
 namespace Xpetra {
 
-  template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
-  class RowMatrix
-
-  {
-
+  template <class Scalar = Vector<>::scalar_type,
+            class LocalOrdinal = Map<>::local_ordinal_type,
+            class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
+            class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
+  class RowMatrix {
   public:
+    typedef Scalar scalar_type;
+    typedef LocalOrdinal local_ordinal_type;
+    typedef GlobalOrdinal global_ordinal_type;
+    typedef Node node_type;
 
     //! @name Constructor/Destructor Methods
     //@{

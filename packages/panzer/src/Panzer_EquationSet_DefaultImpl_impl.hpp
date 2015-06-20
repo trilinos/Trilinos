@@ -47,6 +47,7 @@
 #include "Panzer_DOF_PointValues.hpp"
 #include "Panzer_DOFGradient.hpp"
 #include "Panzer_DOFCurl.hpp"
+#include "Panzer_DOFDiv.hpp"
 #include "Panzer_GatherBasisCoordinates.hpp"
 #include "Panzer_GatherIntegrationCoordinates.hpp"
 #include "Panzer_GatherOrientation.hpp"
@@ -180,6 +181,8 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
     p.set("Basis", basis_it->second.first);
     p.set("DOF Names", basis_it->second.second);
     p.set("Indexer Names", basis_it->second.second);
+    p.set("Sensitivities Name", "");
+    p.set("Disable Sensitivities", false);
     
     RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGather<EvalT>(p);
     
@@ -369,6 +372,45 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
 
       fm.template registerEvaluator<EvalT>(op);
     }
+
+  }
+
+  // Div of DOFs: Vector value @ basis --> Scalar value @ IP
+
+  for(typename std::map<std::string,DOFDescriptor>::const_iterator itr=m_provided_dofs_desc.begin();
+      itr!=m_provided_dofs_desc.end();++itr) {
+
+    if(itr->second.basis->supportsDiv()) {
+
+      // is div required for this variable
+      if(!itr->second.div.first) 
+        continue; // its not required, quit the loop
+
+      const std::string dof_name =      itr->first;
+      const std::string dof_div_name = itr->second.div.second;
+
+      ParameterList p;
+      p.set("Name", dof_name);
+      p.set("Div Name", dof_div_name);
+      p.set("Basis", fl.lookupLayout(dof_name)); 
+      p.set("IR", ir);
+
+      // this will help accelerate the DOFDiv evaluator when Jacobians are needed
+      if(globalIndexer!=Teuchos::null) {
+        // build the offsets for this field
+        int fieldNum = globalIndexer->getFieldNum(dof_name);
+        RCP<const std::vector<int> > offsets = 
+            rcp(new std::vector<int>(globalIndexer->getGIDFieldOffsets(m_block_id,fieldNum)));
+        p.set("Jacobian Offsets Vector", offsets);
+      }
+      // else default to the slow DOF call
+    
+      
+      RCP< PHX::Evaluator<panzer::Traits> > op = 
+        rcp(new panzer::DOFDiv<EvalT,panzer::Traits>(p));
+
+      fm.template registerEvaluator<EvalT>(op);
+    }
   }
 
   // Time derivative of DOFs: Scalar value @ basis --> Scalar value @ IP 
@@ -537,7 +579,16 @@ buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm
     name->push_back(itr->first);
     p.set("Dependent Names", name);
 
-    Teuchos::RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildScatterInitialCondition<EvalT>(p);
+    // Create an identity map
+    Teuchos::RCP<std::map<std::string,std::string> > names_map = Teuchos::rcp(new std::map<std::string,std::string>);
+    names_map->insert(std::make_pair(itr->first,itr->first));
+    p.set("Dependent Map", names_map);
+
+    // Set flag for ScatterDirichlet evaluators
+    p.set("Scatter Initial Condition", true);
+
+    // Use ScatterDirichlet to scatter the initial condition
+    Teuchos::RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildScatterDirichlet<EvalT>(p);
     
     fm.template registerEvaluator<EvalT>(op);
 
@@ -807,12 +858,9 @@ addDOFDiv(const std::string & dofName,
   TEUCHOS_ASSERT(desc.dofName==dofName); // safety check
 
   if (divName == "")
-    desc.div = std::make_pair(true,std::string("DOF_")+dofName);
+    desc.div = std::make_pair(true,std::string("DIV_")+dofName);
   else
     desc.div = std::make_pair(true,divName);
-
-  // can't do this yet!
-  TEUCHOS_ASSERT(false);
 }
 
 // ***********************************************************************
@@ -842,7 +890,7 @@ template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
 setCoordinateDOFs(const std::vector<std::string> & dofNames)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(m_cell_data.baseCellDimension()!=dofNames.size(),std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION(m_cell_data.baseCellDimension()!=Teuchos::as<int>(dofNames.size()),std::invalid_argument,
                              "EquationSet_DefaultImpl::setCoordinateDOFs: Size of vector is not equal to the "
                              "spatial dimension.");
 
@@ -916,7 +964,7 @@ buildAndRegisterResidualSummationEvalautor(PHX::FieldManager<panzer::Traits>& fm
   if (residual_field_name != "")
     p.set("Sum Name", residual_field_name);
   else
-    p.set("Sum Name", "RESIDUAL_"+dof_name);
+    p.set("Sum Name", "RESIDUAL_" + dof_name);
   
   RCP<std::vector<std::string> > rcp_residual_contributions = rcp(new std::vector<std::string>);
   *rcp_residual_contributions = residual_contributions;
@@ -927,8 +975,44 @@ buildAndRegisterResidualSummationEvalautor(PHX::FieldManager<panzer::Traits>& fm
   TEUCHOS_ASSERT(desc_it != m_provided_dofs_desc.end());
   
   p.set("Data Layout", desc_it->second.basis->functional);
+
+  RCP< PHX::Evaluator<panzer::Traits> > op = rcp(new panzer::SumStatic<EvalT,panzer::Traits,panzer::Cell,panzer::BASIS>(p));
   
-  RCP< PHX::Evaluator<panzer::Traits> > op = rcp(new panzer::Sum<EvalT,panzer::Traits>(p));
+  fm.template registerEvaluator<EvalT>(op);
+}
+
+// ***********************************************************************
+template <typename EvalT>
+void panzer::EquationSet_DefaultImpl<EvalT>::
+buildAndRegisterResidualSummationEvalautor(PHX::FieldManager<panzer::Traits>& fm,
+                                           const std::string dof_name,
+                                           const std::vector<std::string>& residual_contributions,
+                                           const std::vector<double>& scale_contributions,
+                                           const std::string residual_field_name) const
+{
+  using Teuchos::rcp;
+  using Teuchos::RCP;
+
+  Teuchos::ParameterList p;
+
+  if (residual_field_name != "")
+    p.set("Sum Name", residual_field_name);
+  else
+    p.set("Sum Name", "RESIDUAL_" + dof_name);
+  
+  RCP<std::vector<std::string> > rcp_residual_contributions = rcp(new std::vector<std::string>);
+  *rcp_residual_contributions = residual_contributions;
+  p.set("Values Names", rcp_residual_contributions);
+
+  RCP<const std::vector<double> > rcp_scale_contributions = rcp(new std::vector<double>(scale_contributions));
+  p.set("Scalars", rcp_scale_contributions);
+  
+  DescriptorIterator desc_it = m_provided_dofs_desc.find(dof_name);
+  TEUCHOS_ASSERT(desc_it != m_provided_dofs_desc.end());
+  
+  p.set("Data Layout", desc_it->second.basis->functional);
+
+  RCP< PHX::Evaluator<panzer::Traits> > op = rcp(new panzer::SumStatic<EvalT,panzer::Traits,panzer::Cell,panzer::BASIS>(p));
   
   fm.template registerEvaluator<EvalT>(op);
 }

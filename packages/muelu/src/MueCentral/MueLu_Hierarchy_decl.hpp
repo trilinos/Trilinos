@@ -50,9 +50,10 @@
 #include <Teuchos_Ptr.hpp>
 
 #include <Xpetra_ConfigDefs.hpp>  // global_size_t
-#include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
+#include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
+#include <Xpetra_Operator_fwd.hpp>
 
 #include <Xpetra_Cloner.hpp>
 #include <MueLu_SmootherCloner.hpp>
@@ -78,6 +79,13 @@
 #include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
+
+  enum ReturnType {
+    Converged,
+    Unconverged,
+    Undefined
+  };
+
   /*!
     @class Hierarchy
     @brief Provides methods to build a multigrid hierarchy and apply multigrid cycles.
@@ -88,10 +96,27 @@ namespace MueLu {
     restrictors, and coarse level discretizations.  Additionally, this class contains
     an apply method that supports V and W cycles.
   */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Node>::SparseOps> //TODO: or BlockSparseOp ?
+  template <class Scalar        = Xpetra::Operator<>::scalar_type,
+            class LocalOrdinal  = typename Xpetra::Operator<Scalar>::local_ordinal_type,
+            class GlobalOrdinal = typename Xpetra::Operator<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node          = typename Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class Hierarchy : public BaseClass {
 #undef MUELU_HIERARCHY_SHORT
 #include "MueLu_UseShortNames.hpp"
+
+    typedef Teuchos::ScalarTraits<SC> STS;
+    typedef typename STS::magnitudeType MagnitudeType;
+
+    //! Data struct for defining stopping criteria of multigrid iteration
+    struct ConvData {
+      ConvData()                              : maxIts_(1),       tol_(-STS::magnitude(STS::one())) { }
+      ConvData(LO maxIts)                     : maxIts_(maxIts),  tol_(-STS::magnitude(STS::one())) { }
+      ConvData(MagnitudeType tol)             : maxIts_(10000),   tol_(tol) { }
+      ConvData(std::pair<LO,MagnitudeType> p) : maxIts_(p.first), tol_(p.second) { }
+
+      LO            maxIts_;
+      MagnitudeType tol_;
+    };
 
   public:
 
@@ -120,15 +145,17 @@ namespace MueLu {
     static bool                  GetDefaultPRrebalance()                               { return MasterList::getDefault<bool>("repartition: rebalance P and R");   }
 
     Xpetra::global_size_t        GetMaxCoarseSize() const                              { return maxCoarseSize_; }
+    bool                         GetImplicitTranspose() const                          { return implicitTranspose_; }
 
     void                         SetMaxCoarseSize(Xpetra::global_size_t maxCoarseSize) { maxCoarseSize_ = maxCoarseSize; }
     void                         SetPRrebalance(bool doPRrebalance)                    { doPRrebalance_ = doPRrebalance; }
+    void                         SetImplicitTranspose(const bool& implicit)            { implicitTranspose_ = implicit; }
 
     //@}
 
     //!
 
-    template<class S2, class LO2, class GO2, class N2, class LMO2>
+    template<class S2, class LO2, class GO2, class N2>
     friend class Hierarchy;
 
   private:
@@ -146,14 +173,13 @@ namespace MueLu {
     //! Retrieve a certain level from hierarchy.
     RCP<Level> & GetLevel(const int levelID = 0);
 
-    LO GetNumLevels() const;
+    int    GetNumLevels() const;
+    int    GetGlobalNumLevels() const;
+
+    MagnitudeType GetRate() const { return rate_; }
+
+    // This function is global
     double GetOperatorComplexity() const;
-
-    //! Indicate that Iterate should use transpose of prolongator for restriction operations.
-    void SetImplicitTranspose(const bool &implicit);
-
-    //! If true is returned, iterate will use transpose of prolongator for restriction operations.
-    bool GetImplicitTranspose() const;
 
     //! Helper function
     void CheckLevel(Level& level, int levelID);
@@ -196,17 +222,22 @@ namespace MueLu {
          - have been allocated
          - requests already posted.
     */
-    bool Setup(int coarseLevelID, const Teuchos::Ptr<const FactoryManagerBase> fineLevelManager /* = Teuchos::null */, const Teuchos::Ptr<const FactoryManagerBase> coarseLevelManager,
-               const Teuchos::Ptr<const FactoryManagerBase> nextLevelManager = Teuchos::null);
+    bool Setup(int coarseLevelID, const RCP<const FactoryManagerBase> fineLevelManager /* = Teuchos::null */, const RCP<const FactoryManagerBase> coarseLevelManager,
+               const RCP<const FactoryManagerBase> nextLevelManager = Teuchos::null);
 
     //!
     void Setup(const FactoryManagerBase& manager = FactoryManager(), int startLevel = 0, int numDesiredLevels = GetDefaultMaxLevels());
 
+    void SetupRe();
+
     //! Clear impermanent data from previous setup
-    void Clear();
+    void Clear(int startLevel = 0);
     void ExpertClear();
 
+    //! Returns multigrid cycle type (supports VCYCLE and WCYCLE)
     CycleType GetCycle()                 const { return Cycle_;  }
+
+    //! Supports VCYCLE and WCYCLE types.
     void      SetCycle(CycleType Cycle)        { Cycle_ = Cycle; }
 
     /*!
@@ -216,13 +247,13 @@ namespace MueLu {
       the enumerated type CycleType would have to be extended.
 
       @param B right-hand side of linear problem
-      @param nIts number of multigrid cycles to perform
       @param X initial and final (approximate) solution of linear problem
+      @param ConvData struct which stores convergence criteria (maximum number of multigrid iterations or stopping tolerance)
       @param InitialGuessIsZero Indicates whether the initial guess is zero
-      @param Cycle Supports VCYCLE and WCYCLE types.
+      @param startLevel index of starting level to build multigrid hierarchy (default = 0)
     */
-    void Iterate(const MultiVector& B, MultiVector& X, LO nIts = 1,
-                 bool InitialGuessIsZero = false, LO startLevel = 0);
+    ReturnType Iterate(const MultiVector& B, MultiVector& X, ConvData conv = ConvData(),
+                       bool InitialGuessIsZero = false, LO startLevel = 0);
 
     /*!
       @brief Print matrices in the multigrid hierarchy to file.
@@ -265,11 +296,11 @@ namespace MueLu {
         @param[in] out The Teuchos::FancyOstream.
         @param[in] verbLevel Controls amount of output.
     */
-    //using MueLu::Describable::describe; // overloading, not hiding
-    //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const
-    Teuchos::ParameterList print(Teuchos::FancyOStream &out=*Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout)),
-                                 const VerbLevel verbLevel = (MueLu::Parameters | MueLu::Statistics0)) const;
-    void print(std::ostream& out, const VerbLevel verbLevel = (MueLu::Parameters | MueLu::Statistics0)) const;
+    void describe(Teuchos::FancyOStream& out, const VerbLevel verbLevel = Default) const;
+    void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_HIGH) const;
+
+    // Hierarchy::print is local hierarchy function, thus the statistics can be different from global ones
+    void print(std::ostream& out = std::cout, const VerbLevel verbLevel = (MueLu::Parameters | MueLu::Statistics0)) const;
 
     /*! Indicate whether the multigrid method is a preconditioner or a solver.
 
@@ -285,13 +316,9 @@ namespace MueLu {
       dumpFile_  = filename;
     }
 
-    int GetNumberOfLevels() {
-      return Teuchos::as<int>(Levels_.size());
-    }
-
-    template<class Node2, class LocalMatOps2>
-    Teuchos::RCP< Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> >
-    clone(const RCP<Node2> &node2) const;
+    template<class Node2>
+    Teuchos::RCP< Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+    clone (const RCP<Node2> &node2) const;
 
     void setlib(Xpetra::UnderlyingLib inlib) { lib_ = inlib; }
     Xpetra::UnderlyingLib lib() { return lib_; }
@@ -336,15 +363,22 @@ namespace MueLu {
     int  dumpLevel_;
     std::string dumpFile_;
 
+    //! Convergece rate
+    MagnitudeType rate_;
+
+    // Level managers used during the Setup
+    Array<RCP<const FactoryManagerBase> > levelManagers_;
+
   }; //class Hierarchy
 
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  template<typename Node2, typename LocalMatOps2>
-  Teuchos::RCP<Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> >
-  Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::clone(const Teuchos::RCP<Node2> &node2) const{
-    typedef Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2>           New_H_Type;
-    typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2>      CloneMatrix;
-    typedef MueLu::SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> CloneSmoother;
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  template<typename Node2>
+  Teuchos::RCP<Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+  Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  clone (const Teuchos::RCP<Node2> &node2) const {
+    typedef Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2>           New_H_Type;
+    typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2>      CloneOperator;
+    typedef MueLu::SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node2> CloneSmoother;
 
     Teuchos::RCP<New_H_Type> new_h = Teuchos::rcp(new New_H_Type());
     new_h->Levels_.resize(this->GetNumLevels());
@@ -357,35 +391,35 @@ namespace MueLu {
 
     RCP<SmootherBase>  Pre, Post;
     RCP<CloneSmoother> clonePre, clonePost;
-    RCP<CloneMatrix>   cloneA, cloneR, cloneP;
-    RCP<Matrix>        A, R, P;
+    RCP<CloneOperator> cloneA, cloneR, cloneP;
+    RCP<Operator>      A, R, P;
     for (int i = 0; i < GetNumLevels(); i++) {
       RCP<Level> level      = this->Levels_[i];
       RCP<Level> clonelevel = rcp(new Level());
 
       if (level->IsAvailable("A")) {
-        A      = level->template Get<RCP<Matrix> >("A");
+        A      = level->template Get<RCP<Operator> >("A");
         cloneA = Xpetra::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node2>(*A, node2);
-        clonelevel->template Set<RCP<CloneMatrix> >("A", cloneA);
+        clonelevel->template Set<RCP<CloneOperator> >("A", cloneA);
       }
       if (level->IsAvailable("R")){
-        R      = level->template Get<RCP<Matrix> >("R");
+        R      = level->template Get<RCP<Operator> >("R");
         cloneR = Xpetra::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node2>(*R, node2);
-        clonelevel->template Set<RCP<CloneMatrix> >("R", cloneR);
+        clonelevel->template Set<RCP<CloneOperator> >("R", cloneR);
       }
       if (level->IsAvailable("P")){
-        P      = level->template Get<RCP<Matrix> >("P");
+        P      = level->template Get<RCP<Operator> >("P");
         cloneP = Xpetra::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node2>(*P,  node2);
-        clonelevel->template Set<RCP<CloneMatrix> >("P", cloneP);
+        clonelevel->template Set<RCP<CloneOperator> >("P", cloneP);
       }
       if (level->IsAvailable("PreSmoother")){
         Pre      = level->template Get<RCP<SmootherBase> >("PreSmoother");
-        clonePre = MueLu::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps, Node2, LocalMatOps2>(Pre, cloneA, node2);
+        clonePre = MueLu::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node2> (Pre, cloneA, node2);
         clonelevel->template Set<RCP<CloneSmoother> >("PreSmoother", clonePre);
       }
       if (level->IsAvailable("PostSmoother")){
         Post      = level->template Get<RCP<SmootherBase> >("PostSmoother");
-        clonePost = MueLu::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps, Node2, LocalMatOps2>(Post, cloneA, node2);
+        clonePost = MueLu::clone<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node2> (Post, cloneA, node2);
         clonelevel-> template Set<RCP<CloneSmoother> >("PostSmoother", clonePost);
       }
       new_h->Levels_[i] = clonelevel;

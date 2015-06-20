@@ -49,120 +49,85 @@
 
 namespace Xpetra {
 
-  EpetraVector::EpetraVector(const Teuchos::RCP<const Map<int,int> > &map, bool zeroOut) : EpetraMultiVector(map,1,zeroOut) { }
+  template<class EpetraGlobalOrdinal>
+  EpetraVectorT<EpetraGlobalOrdinal>::EpetraVectorT(const Teuchos::RCP<const Map<int,GlobalOrdinal> > &map, bool zeroOut) : EpetraMultiVectorT<GlobalOrdinal>(map,1,zeroOut) { }
 
-  void EpetraVector::replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { XPETRA_MONITOR("EpetraVector::replaceGlobalValue"); getEpetra_MultiVector()->ReplaceGlobalValue(globalRow, 0, value); }
+  template<class EpetraGlobalOrdinal>
+  void EpetraVectorT<EpetraGlobalOrdinal>::replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { XPETRA_MONITOR("EpetraVectorT::replaceGlobalValue"); this->EpetraMultiVectorT<GlobalOrdinal>::getEpetra_MultiVector()->ReplaceGlobalValue(globalRow, 0, value); }
 
-  void EpetraVector::sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { XPETRA_MONITOR("EpetraVector::sumIntoGlobalValue");getEpetra_MultiVector()->SumIntoGlobalValue(globalRow, 0, value); }
+  template<class EpetraGlobalOrdinal>
+  void EpetraVectorT<EpetraGlobalOrdinal>::sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { XPETRA_MONITOR("EpetraVectorT::sumIntoGlobalValue");this->EpetraMultiVectorT<GlobalOrdinal>::getEpetra_MultiVector()->SumIntoGlobalValue(globalRow, 0, value); }
 
-  void EpetraVector::replaceLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraVector::replaceLocalValue");getEpetra_MultiVector()->ReplaceMyValue(myRow, 0, value); }
+  template<class EpetraGlobalOrdinal>
+  void EpetraVectorT<EpetraGlobalOrdinal>::replaceLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraVectorT::replaceLocalValue");this->EpetraMultiVectorT<GlobalOrdinal>::getEpetra_MultiVector()->ReplaceMyValue(myRow, 0, value); }
 
-  void EpetraVector::sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraVector::sumIntoLocalValue");getEpetra_MultiVector()->SumIntoMyValue(myRow, 0, value); }
+  template<class EpetraGlobalOrdinal>
+  void EpetraVectorT<EpetraGlobalOrdinal>::sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraVectorT::sumIntoLocalValue");this->EpetraMultiVectorT<GlobalOrdinal>::getEpetra_MultiVector()->SumIntoMyValue(myRow, 0, value); }
 
-  double EpetraVector::dot(const Vector<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType> &a) const {
-       XPETRA_MONITOR("EpetraVector::dot");
+  template<class EpetraGlobalOrdinal>
+  double EpetraVectorT<EpetraGlobalOrdinal>::dot(const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &a) const {
+    XPETRA_MONITOR("EpetraVectorT::dot");
 
-      XPETRA_DYNAMIC_CAST(const EpetraVector, a, tA, "This Xpetra::EpetraVector method only accept Xpetra::EpetraVector as input arguments.");
-      //      return getEpetra_Vector()->Dot(*tA.getEpetra_Vector());
+    XPETRA_DYNAMIC_CAST(const EpetraVectorT, a, tA, "This Xpetra::EpetraVectorT method only accept Xpetra::EpetraVectorT as input arguments.");
+    //      return getEpetra_Vector()->Dot(*tA.getEpetra_Vector());
 
-      // other way: use the MultiVector Dot instead of VectorDot:
-      double r;
-      getEpetra_MultiVector()->Epetra_MultiVector::Dot(*tA.getEpetra_MultiVector(), &r);
-      return r;
+    // other way: use the MultiVector Dot instead of VectorDot:
+    double r;
+    this->EpetraMultiVectorT<GlobalOrdinal>::getEpetra_MultiVector()->Epetra_MultiVector::Dot(*tA.getEpetra_MultiVector(), &r);
+    return r;
+  }
+
+  template<class EpetraGlobalOrdinal>
+  Teuchos::ScalarTraits<double>::magnitudeType EpetraVectorT<EpetraGlobalOrdinal>::norm1() const { XPETRA_MONITOR("EpetraVectorT::norm1"); double r; this->EpetraMultiVectorT<GlobalOrdinal>::getEpetra_MultiVector()->Norm1(&r); return r; }
+
+  template<class EpetraGlobalOrdinal>
+  Teuchos::ScalarTraits<double>::magnitudeType EpetraVectorT<EpetraGlobalOrdinal>::norm2() const { XPETRA_MONITOR("EpetraVectorT::norm2"); double r; this->EpetraMultiVectorT<GlobalOrdinal>::getEpetra_MultiVector()->Norm2(&r); return r; }
+
+  template<class EpetraGlobalOrdinal>
+  Teuchos::ScalarTraits<double>::magnitudeType EpetraVectorT<EpetraGlobalOrdinal>::normInf() const { XPETRA_MONITOR("EpetraVectorT::normInf"); double r; this->EpetraMultiVectorT<GlobalOrdinal>::getEpetra_MultiVector()->NormInf(&r); return r; }
+
+  template<class EpetraGlobalOrdinal>
+  Teuchos::ScalarTraits<double>::magnitudeType
+  EpetraVectorT<EpetraGlobalOrdinal>::normWeighted (const Vector<double,int,GlobalOrdinal, KokkosClassic::DefaultNode::DefaultNodeType>& weights) const
+  {
+    XPETRA_MONITOR("EpetraVectorT::normWeighted");
+    XPETRA_DYNAMIC_CAST(const EpetraVectorT, weights, tWeights, "This Xpetra::EpetraVectorT method only accept Xpetra::EpetraVectorT as input arguments.");
+    double r[1];
+    this->EpetraMultiVectorT<GlobalOrdinal>::getEpetra_MultiVector()->NormWeighted(*tWeights.getEpetra_MultiVector(), r);
+    return r[0];
+  }
+
+  template<class EpetraGlobalOrdinal>
+  double EpetraVectorT<EpetraGlobalOrdinal>::meanValue() const {
+    XPETRA_MONITOR("EpetraVectorT::meanValue");
+    double r;
+    this->EpetraMultiVectorT<GlobalOrdinal>::getEpetra_MultiVector()->MeanValue(&r);
+    return r;
+  }
+
+    template<class EpetraGlobalOrdinal>
+    std::string EpetraVectorT<EpetraGlobalOrdinal>::description() const {
+    XPETRA_MONITOR("EpetraVectorT::description");
+    // This implementation come from Epetra_Vector_def.hpp (without modification)
+    std::ostringstream oss;
+    oss << Teuchos::Describable::description();
+    oss << "{length="<<this->getGlobalLength()
+        << "}";
+    return oss.str();
+  }
+
+    template<class EpetraGlobalOrdinal>
+    void EpetraVectorT<EpetraGlobalOrdinal>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
+      XPETRA_MONITOR("EpetraVectorT::describe");
+
+      if (verbLevel > Teuchos::VERB_NONE) {
+        getEpetra_Vector()->Print (out);
+      }
     }
 
-    Teuchos::ScalarTraits<double>::magnitudeType EpetraVector::norm1() const { XPETRA_MONITOR("EpetraVector::norm1"); double r; getEpetra_MultiVector()->Norm1(&r); return r; }
-
-    Teuchos::ScalarTraits<double>::magnitudeType EpetraVector::norm2() const { XPETRA_MONITOR("EpetraVector::norm2"); double r; getEpetra_MultiVector()->Norm2(&r); return r; }
-
-    Teuchos::ScalarTraits<double>::magnitudeType EpetraVector::normInf() const { XPETRA_MONITOR("EpetraVector::normInf"); double r; getEpetra_MultiVector()->NormInf(&r); return r; }
-
-  Teuchos::ScalarTraits<double>::magnitudeType EpetraVector::normWeighted(const Vector<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType> &weights) const {
-      XPETRA_MONITOR("EpetraVector::normWeighted");
-      XPETRA_DYNAMIC_CAST(const EpetraVector, weights, tWeights, "This Xpetra::EpetraVector method only accept Xpetra::EpetraVector as input arguments.");
-      double r;
-      getEpetra_MultiVector()->NormWeighted(*tWeights.getEpetra_MultiVector(), &r); return r;
-    }
-
-    double EpetraVector::meanValue() const { XPETRA_MONITOR("EpetraVector::meanValue"); double r; getEpetra_MultiVector()->MeanValue(&r); return r; }
-
-    std::string EpetraVector::description() const {
-      XPETRA_MONITOR("EpetraVector::description");
-      // This implementation come from Epetra_Vector_def.hpp (without modification)
-      std::ostringstream oss;
-      oss << Teuchos::Describable::description();
-      oss << "{length="<<this->getGlobalLength()
-      << "}";
-      return oss.str();
-    }
-
-    void EpetraVector::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
-      XPETRA_MONITOR("EpetraVector::describe");
-
-      if (verbLevel > Teuchos::VERB_NONE)
-        getEpetra_Vector()->Print(out);
-
-//       typedef KokkosClassic::MultiVector<double> KMV;
-//       typedef KokkosClassic::DefaultArithmetic<KMV>   MVT;
-
-//       // This implementation come from Tpetra_Vector_def.hpp (without modification)
-//       using std::endl;
-//       using std::setw;
-//       using Teuchos::VERB_DEFAULT;
-//       using Teuchos::VERB_NONE;
-//       using Teuchos::VERB_LOW;
-//       using Teuchos::VERB_MEDIUM;
-//       using Teuchos::VERB_HIGH;
-//       using Teuchos::VERB_EXTREME;
-//       Teuchos::EVerbosityLevel vl = verbLevel;
-
-//       TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
-
-//       if (vl == VERB_DEFAULT) vl = VERB_LOW;
-//       Teuchos::RCP<const Teuchos::Comm<int> > comm = this->getMap()->getComm();
-//       const int myImageID = comm->getRank(),
-//       numImages = comm->getSize();
-//       size_t width = 1;
-//       for (size_t dec=10; dec<this->getGlobalLength(); dec *= 10) {
-//         ++width;
-//       }
-//       Teuchos::OSTab tab(out);
-//       if (vl != VERB_NONE) {
-//         // VERB_LOW and higher prints description()
-//         if (myImageID == 0) out << this->description() << std::endl;
-//         for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
-//           if (myImageID == imageCtr) {
-//             if (vl != VERB_LOW) {
-//               // VERB_MEDIUM and higher prints getLocalLength()
-//               out << "node " << setw(width) << myImageID << ": local length=" << this->getLocalLength() << endl;
-//               if (vl != VERB_MEDIUM) {
-//                 // VERB_HIGH and higher prints isConstantStride() and stride()
-//                 if (vl == VERB_EXTREME && this->getLocalLength() > 0) {
-//                   Teuchos::RCP<Node> node = this->lclMV_.getNode();
-//                   KOKKOS_NODE_TRACE("Vector::describe()")
-//                     Teuchos::ArrayRCP<const double> myview = node->template viewBuffer<double>(
-//                                                                                                this->getLocalLength(),
-//                                                                                                MVT::getValues(this->lclMV_) );
-//                   // VERB_EXTREME prints values
-//                   for (size_t i=0; i<this->getLocalLength(); ++i) {
-//                     out << setw(width) << this->getMap()->getGlobalElement(i)
-//                         << ": "
-//                         << myview[i] << endl;
-//                   }
-//                   myview = Teuchos::null;
-//                 }
-//               }
-//               else {
-//                 out << endl;
-//               }
-//             }
-//           }
-//         }
-//       }
-    }
-
-  EpetraVector::EpetraVector(const RCP<Epetra_MultiVector> &mv, size_t j)
-    : EpetraMultiVector(rcp((*mv)(j), false)), // view of the vector number j. false == I do not own the data.
+  template<class EpetraGlobalOrdinal>
+  EpetraVectorT<EpetraGlobalOrdinal>::EpetraVectorT(const RCP<Epetra_MultiVector> &mv, size_t j)
+    : EpetraMultiVectorT<GlobalOrdinal>(rcp((*mv)(j), false)), // view of the vector number j. false == I do not own the data.
       internalRefToBaseMV_(mv)                 // keep an internal reference to the initial MultiVector to avoid desallocation of the view.
   {
     // The view of the internal data of 'mv' is only valid until the destruction of 'mv'.
@@ -171,15 +136,29 @@ namespace Xpetra {
   }
 
   // TODO: move that elsewhere
-  Epetra_Vector & toEpetra(Vector<double, int, int> &x) {
-    XPETRA_DYNAMIC_CAST(      EpetraVector, x, tX, "toEpetra");
+  template<class GlobalOrdinal>
+  Epetra_Vector & toEpetra(Vector<double, int, GlobalOrdinal> &x) {
+    XPETRA_DYNAMIC_CAST(      EpetraVectorT<GlobalOrdinal>, x, tX, "toEpetra");
     return *tX.getEpetra_Vector();
   }
 
-  const Epetra_Vector & toEpetra(const Vector<double, int, int> &x) {
-    XPETRA_DYNAMIC_CAST(const EpetraVector, x, tX, "toEpetra");
+  template<class GlobalOrdinal>
+  const Epetra_Vector & toEpetra(const Vector<double, int, GlobalOrdinal> &x) {
+    XPETRA_DYNAMIC_CAST(const EpetraVectorT<GlobalOrdinal>, x, tX, "toEpetra");
     return *tX.getEpetra_Vector();
   }
   //
+
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
+template class EpetraVectorT<int>;
+template Epetra_Vector & toEpetra<int>(Vector<double, int, int> &);
+template const Epetra_Vector & toEpetra<int>(const Vector<double, int, int> &);
+#endif
+
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+template class EpetraVectorT<long long>;
+template Epetra_Vector & toEpetra<long long>(Vector<double, int, long long> &);
+template const Epetra_Vector & toEpetra<long long>(const Vector<double, int, long long> &);
+#endif
 
 }

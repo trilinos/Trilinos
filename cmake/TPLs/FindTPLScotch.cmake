@@ -53,15 +53,14 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsTplDeclareLibraries)
 
 IF (TPL_ENABLE_MPI)
-   TRIBITS_TPL_DECLARE_LIBRARIES( Scotch
+   TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( Scotch
     REQUIRED_HEADERS ptscotch.h
     REQUIRED_LIBS_NAMES ptscotch ptscotcherr scotch scotcherr
    )
 ELSE()
-   TRIBITS_TPL_DECLARE_LIBRARIES( Scotch
+   TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( Scotch
     REQUIRED_HEADERS scotch.h
     REQUIRED_LIBS_NAMES scotch scotcherr
    )

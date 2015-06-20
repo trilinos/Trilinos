@@ -1,5 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -15,6 +13,12 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   integration_values
   SOURCES integration_values.cpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  integration_values2
+  SOURCES integration_values2.cpp ${UNIT_TEST_DRIVER}
   NUM_MPI_PROCS 1
   )
   
@@ -36,15 +40,27 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
   
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  basis_values
+#  SOURCES basis_values.cpp ${UNIT_TEST_DRIVER}
+#  NUM_MPI_PROCS 1
+#  )
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  basis_values
-  SOURCES basis_values.cpp ${UNIT_TEST_DRIVER}
+  basis_values2
+  SOURCES basis_values2.cpp ${UNIT_TEST_DRIVER}
   NUM_MPI_PROCS 1
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   point_values 
   SOURCES point_values.cpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  point_values2 
+  SOURCES point_values2.cpp ${UNIT_TEST_DRIVER}
   NUM_MPI_PROCS 1
   )
 

@@ -81,10 +81,12 @@ operator<<(std::ostream & os, Vector<T, N> const & u)
     return os;
   }
 
-  os << std::scientific << std::setprecision(16) << u(0);
+  os << std::scientific << std::setw(24) << std::setprecision(16);
+
+  os << u(0);
 
   for (Index i = 1; i < dimension; ++i) {
-    os << "," << std::scientific << std::setprecision(16) << u(i);
+    os << "," << std::setw(24) << u(i);
   }
 
   return os;

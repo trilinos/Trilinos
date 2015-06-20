@@ -64,6 +64,7 @@
 #include "Panzer_StlMap_Utilities.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_EquationSet_Factory.hpp"
+#include "Panzer_UniqueGlobalIndexer.hpp"
 
 //#include "EpetraExt_BlockMapOut.h"
 
@@ -96,6 +97,8 @@ void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
 
   phx_volume_field_managers_.clear();
 
+  Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> globalIndexer = lo_factory.getUniqueGlobalIndexerBase();
+
   for (std::size_t blkInd=0;blkInd<physicsBlocks.size();++blkInd) {
     RCP<panzer::PhysicsBlock> pb = physicsBlocks[blkInd];
     const WorksetDescriptor wd = wkstDesc[blkInd];
@@ -127,6 +130,9 @@ void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
  
     // register additional model evaluator from the generic evaluator factory
     gEvalFact.registerEvaluators(*fm,wd,*pb);
+
+    // setup derivative information
+    setKokkosExtendedDataTypeDimensions(wd.getElementBlock(),*globalIndexer,*fm);
 
     // build the setup data using passed in information
     fm->postRegistrationSetup(setupData);
@@ -168,6 +174,8 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
   TEUCHOS_TEST_FOR_EXCEPTION(getWorksetContainer()==Teuchos::null,std::logic_error,
                             "panzer::FMB::setupBCFieldManagers: method function getWorksetContainer() returns null. "
                             "Plase call setWorksetContainer() before calling this method");
+
+  Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> globalIndexer = lo_factory.getUniqueGlobalIndexerBase();
 
   // for convenience build a map (element block id => physics block)
   std::map<std::string,Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks_map;
@@ -238,6 +246,10 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
 	Teuchos::rcp(new(std::vector<panzer::Workset>));
       worksets->push_back(wkst->second);
       setupData.worksets_ = worksets;
+
+      // setup derivative information
+      setKokkosExtendedDataTypeDimensions(element_block_id,*globalIndexer,fm);
+
       fm.postRegistrationSetup(setupData);
     }
     
@@ -276,11 +288,43 @@ writeBCGraphvizDependencyFiles(std::string filename_prefix) const
     panzer::BC bc = blkItr->first;
     const PHX::FieldManager<panzer::Traits> & fm = blkItr->second.begin()->second; // get the first field manager 
 
+    BCType bc_type = bc.bcType();
+    std::string type;
+    if (bc_type == BCT_Dirichlet)
+	type = "_Dirichlet";
+    else if (bc_type == BCT_Neumann)
+        type = "_Neumann";
+    else
+        TEUCHOS_ASSERT(false);
+
     std::string blockId = bc.elementBlockID();
     std::string sideId = bc.sidesetID();
-    fm.writeGraphvizFile(filename_prefix+blockId+"_"+sideId);
+    fm.writeGraphvizFile(filename_prefix+blockId+"_"+sideId+type);
   }
 
+}
+
+//=======================================================================
+//=======================================================================
+void panzer::FieldManagerBuilder::
+setKokkosExtendedDataTypeDimensions(const std::string & eblock,
+                                    const panzer::UniqueGlobalIndexerBase & globalIndexer,
+                                    PHX::FieldManager<panzer::Traits> & fm) const
+{
+  // setup Jacobian derivative terms
+  {
+    std::vector<PHX::index_size_type> derivative_dimensions;
+    derivative_dimensions.push_back(globalIndexer.getElementBlockGIDCount(eblock));
+
+    fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
+  }
+
+  {
+    std::vector<PHX::index_size_type> derivative_dimensions;
+    derivative_dimensions.push_back(1);
+
+    fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Tangent>(derivative_dimensions);
+  }
 }
 
 //=======================================================================

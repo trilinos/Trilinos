@@ -101,14 +101,14 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION((multipleCallCheck_ == ENABLED) && (multipleCallCheckGlobal_ == ENABLED) && (lastLevelID_ == levelID),
                                  Exceptions::RuntimeError,
                                  this->ShortClassName() << "::Build() called twice for the same level (levelID=" << levelID
-                                 << "). This is likely due to a configuration error.");
+                                 << "). This is likely due to a configuration error, or calling hierarchy setup multiple times "
+                                 << "without resetting debug info through FactoryManager::ResetDebugData().");
       if (multipleCallCheck_ == FIRSTCALL)
         multipleCallCheck_ = ENABLED;
 
       lastLevelID_ = levelID;
 #endif
 
-#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
       RCP<const Teuchos::Comm<int> > comm = requestedLevel.GetComm();
       if (comm.is_null()) {
         // Some factories are called before we constructed Ac, and therefore,
@@ -119,6 +119,11 @@ namespace MueLu {
           comm = prevLevel->GetComm();
       }
 
+      int oldRank = -1;
+      if (!comm.is_null())
+        oldRank = SetProcRankVerbose(comm->getRank());
+
+#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
       // Synchronization timer
       std::string syncTimer = this->ShortClassName() + ": Build sync (level=" + toString(requestedLevel.GetLevelID()) + ")";
       if (!comm.is_null()) {
@@ -138,6 +143,9 @@ namespace MueLu {
 #endif
 
       GetOStream(Test) << *RemoveFactoriesFromList(GetParameterList()) << std::endl;;
+
+      if (oldRank != -1)
+        SetProcRankVerbose(oldRank);
     }
 
     //!

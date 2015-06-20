@@ -57,11 +57,26 @@
 namespace MueLu {
   /*!
     @class AggregationPhase3Algorithm class.
-    @brief
+    @brief Handle leftover nodes. Try to avoid singleton nodes
+    @ingroup Aggregation
+
+    ### Idea ###
+    In phase 3 we try to stick unaggregated nodes into a neighboring aggregate.
+    We try to avoid singletons: we first try to build a new aggregate containing
+    all neighboring non-aggregated nodes. If we cannot build a new aggregate,
+    we add the non-aggregated node to the first adjacent aggregate.
+    Only if there is no adjacent aggregate, we create a singleton node aggregate.
+
+    ### Comments ###
+    Only nodes with state READY are changed to AGGREGATED.
+
   */
 
-  template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
-  class AggregationPhase3Algorithm : public MueLu::AggregationAlgorithmBase<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
+  template <class LocalOrdinal = int,
+            class GlobalOrdinal = LocalOrdinal,
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  class AggregationPhase3Algorithm :
+    public MueLu::AggregationAlgorithmBase<LocalOrdinal,GlobalOrdinal,Node> {
 #undef MUELU_AGGREGATIONPHASE3ALGORITHM_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 

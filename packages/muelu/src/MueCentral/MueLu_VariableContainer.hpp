@@ -47,7 +47,11 @@
 #define MUELU_VARIABLECONTAINER_HPP
 
 #include <map>
-#include <Teuchos_ParameterEntry.hpp>
+
+#include <Teuchos_TypeNameTraits.hpp>
+
+#include <Xpetra_Matrix.hpp>
+#include <Xpetra_Operator.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
@@ -67,24 +71,67 @@ namespace MueLu {
     all requesting factories.
   */
   class VariableContainer : public BaseClass {
+  private:
+    // Motivated by Teuchos_any.hpp
+    class DataBase {
+    public:
+      virtual ~DataBase() {}
+      virtual const std::type_info& type() const = 0;
+      virtual std::string typeName() const = 0;
+    };
+
+    template<typename T>
+    class Data : public DataBase {
+    public:
+      Data(const T& data) : data_(data) {}
+      const std::type_info& type() const { return typeid(T); }
+      std::string typeName() const { return Teuchos::TypeNameTraits<T>::name(); }
+      T data_;
+    };
+
+    template<typename T>
+    struct Getter {
+      static T& get(DataBase* data_, DataBase*& datah_) {
+        const std::string typeName = Teuchos::TypeNameTraits<T>::name();
+        TEUCHOS_TEST_FOR_EXCEPTION(data_ == NULL, Teuchos::bad_any_cast,
+                                   "Error, cast to type Data<" << typeName << "> failed since the content is NULL");
+        TEUCHOS_TEST_FOR_EXCEPTION(data_->type() != typeid(T), Teuchos::bad_any_cast,
+                                   "Error, cast to type Data<" << typeName << "> failed since the actual underlying type is "
+                                   "\'" << data_->typeName() << "!");
+
+        Data<T>* data = dynamic_cast<Data<T>*>(data_);
+        TEUCHOS_TEST_FOR_EXCEPTION(!data, std::logic_error,
+                                   "Error, cast to type Data<" << typeName << "> failed but should not have and the actual underlying type is "
+                                   "\'" << data_->typeName() << "! The problem might be related to incompatible RTTI systems in static and shared libraries!");
+        return data->data_;
+      }
+    };
+
+
   public:
     typedef std::map<const FactoryBase*,int> request_container;
 
   private:
-    Teuchos::ParameterEntry           data_;        ///< the data itself
-    bool                              available_;   ///< is data available?
-    KeepType                          keep_;        ///< keep flag
-    int                               count_;       ///< number of requests by all factories
+    DataBase*          data_;        ///< the data itself
+    mutable
+    DataBase*          datah_;       ///< temporary data storage (need to get a reference
+                                     ///< to RCP to a base class (like Operator)
+    bool               available_;   ///< is data available?
+    KeepType           keep_;        ///< keep flag
+    int                count_;       ///< number of requests by all factories
 
-    request_container                 requests_;    ///< requesting factories
+    request_container  requests_;    ///< requesting factories
 
   public:
     //! @name Constructors/Destructors.
     //@{
 
     //! Default constructor.
-    VariableContainer() : available_(false), keep_(false), count_(0) { }
-    ~VariableContainer() { }
+    VariableContainer() : data_(NULL), datah_(NULL), available_(false), keep_(false), count_(0) { }
+    ~VariableContainer() {
+      delete data_;   data_  = NULL;
+      delete datah_;  datah_ = NULL;
+    }
 
     //@}
 
@@ -92,21 +139,38 @@ namespace MueLu {
     //@{
 
     //! Store data in container class and set the "Available" status true.
-    void SetData(const Teuchos::ParameterEntry& entry) {
-      data_      = entry;
+    template<typename T>
+    void SetData(const T& entry) {
+      delete data_;
+      delete datah_;
+      data_      = new Data<T>(entry);
+      datah_     = NULL;
       available_ = true;
     }
 
     //! Return const reference to data stored in container
     //! NOTE: we do not check if data is available
-    const Teuchos::ParameterEntry& GetData() const                              { return data_; }
+    template<typename T>
+    const T& GetData() const {
+      return Getter<T>::get(data_, datah_);
+    }
 
     //! Return reference to data stored in container
     //! NOTE: we do not check if data is available
-    Teuchos::ParameterEntry& GetData()                                          { return data_; }
+    template<typename T>
+    T& GetData() {
+      return Getter<T>::get(data_, datah_);
+    }
 
-    //! Returns true if data is available, i.e. SetData has been called before
-    bool IsAvailable() const                                                    { return available_; }
+    std::string GetTypeName() {
+      if (data_ == NULL)
+        return std::string("");
+      return data_->typeName();
+    }
+
+    //! Returns true if data is available, i.e.
+    //  if SetData has been called before
+    bool IsAvailable() const { return available_; }
 
     //@}
 
@@ -126,7 +190,7 @@ namespace MueLu {
     //! Release data
     void Release(const FactoryBase* reqFactory) {
       request_container::iterator it = requests_.find(reqFactory);
-      TEUCHOS_TEST_FOR_EXCEPTION(it == requests_.end(), Exceptions::RuntimeError, "MueLu::VariableContainer::Release():"
+      TEUCHOS_TEST_FOR_EXCEPTION(it == requests_.end(), Exceptions::RuntimeError, "MueLu::VariableContainer::Release(): "
                                  "cannot call Release if factory has not been requested before by factory " << reqFactory);
       if (--(it->second) == 0)
         requests_.erase(it);
@@ -169,8 +233,45 @@ namespace MueLu {
     //@}
   };
 
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  struct VariableContainer::Getter<Teuchos::RCP<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > > {
+    typedef Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> Operator;
+    typedef Xpetra::Matrix  <Scalar,LocalOrdinal,GlobalOrdinal,Node> Matrix;
+
+    static Teuchos::RCP<Operator>& get(DataBase* data_, DataBase*& datah_) {
+      typedef Teuchos::RCP<Operator> TO;
+      typedef Teuchos::RCP<Matrix>   TM;
+
+      const std::string typeTOName = Teuchos::TypeNameTraits<TO>::name();
+      const std::string typeTMName = Teuchos::TypeNameTraits<TM>::name();
+      TEUCHOS_TEST_FOR_EXCEPTION(data_ == NULL, Teuchos::bad_any_cast,
+                                 "Error, cast to type Data<" << typeTOName << "> failed since the content is NULL");
+      if (data_->type() == typeid(TO)) {
+        Data<TO>* data = dynamic_cast<Data<TO>*>(data_);
+        TEUCHOS_TEST_FOR_EXCEPTION(!data, std::logic_error,
+                                   "Error, cast to type Data<" << typeTOName << "> failed but should not have and the actual underlying type is "
+                                   "\'" << data_->typeName() << "! The problem might be related to incompatible RTTI systems in static and shared libraries!");
+        return data->data_;
+      }
+
+      TEUCHOS_TEST_FOR_EXCEPTION(data_->type() != typeid(TM), Teuchos::bad_any_cast,
+                                 "Error, cast to type Data<" << typeTMName << "> failed since the actual underlying type is "
+                                 "\'" << data_->typeName() << "!");
+      Data<TM>* data = dynamic_cast<Data<TM>*>(data_);
+      TEUCHOS_TEST_FOR_EXCEPTION(!data, std::logic_error,
+                                 "Error, cast to type Data<" << typeTMName << "> failed but should not have and the actual underlying type is "
+                                 "\'" << data_->typeName() << "! The problem might be related to incompatible RTTI systems in static and shared libraries!");
+      if (datah_ == NULL)
+        datah_ = new Data<TO>(Teuchos::rcp_dynamic_cast<Operator>(data->data_));
+      Data<TO>* datah = dynamic_cast<Data<TO>*>(datah_);
+      TEUCHOS_TEST_FOR_EXCEPTION(!datah, std::logic_error,
+                                 "Error, cast to type Data<" << typeTOName << "> failed but should not have and the actual underlying type is "
+                                 "\'" << datah_->typeName() << "! The problem might be related to incompatible RTTI systems in static and shared libraries!");
+      return datah->data_;
+    }
+  };
+
 }
 
 #endif /* MUELU_VARIABLECONTAINER_HPP */
-
-//TODO: move implementation to .cpp file + fwd decl of this class

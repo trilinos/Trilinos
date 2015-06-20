@@ -26,7 +26,12 @@ IF (${PROJECT_NAME}_ENABLE_${PARENT_PACKAGE_NAME}ParameterList)
   SET(HAVE_TEUCHOS_PARAMETERLIST TRUE)
 ENDIF()
 
+# Have C++11?
+ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_CXX11)
+SET(HAVE_TEUCHOSCORE_CXX11 ${${PROJECT_NAME}_ENABLE_CXX11})
+
 TRIBITS_CONFIGURE_FILE(${PARENT_PACKAGE_NAME}_config.h)
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
 # B) Define the header and source files (and include directories)
@@ -36,11 +41,8 @@ SET(HEADERS "")
 SET(SOURCES "")
 
 # Set the base Trilinos directory in order to find Trilinos_version.h
-ASSERT_DEFINED(Trilinos_BINARY_DIR)
-INCLUDE_DIRECTORIES(${Trilinos_BINARY_DIR})
-APPEND_SET(HEADERS
-  ${Trilinos_BINARY_DIR}/Trilinos_version.h
-  )
+ASSERT_DEFINED(${${PACKAGE_NAME}_PARENT_REPOSITORY}_BINARY_DIR)
+INCLUDE_DIRECTORIES(${${${PACKAGE_NAME}_PARENT_REPOSITORY}_BINARY_DIR})
 
 # Set headers (for IDEs and installing)
 
@@ -48,6 +50,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 APPEND_SET(HEADERS
   ${CMAKE_CURRENT_BINARY_DIR}/${PARENT_PACKAGE_NAME}_config.h
+  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
   )
 
 # NOTE: Above, we add the XXX_config.h file so tht MS Visual Studio
@@ -76,6 +79,15 @@ IF (NOT ${PACKAGE_NAME}_ENABLE_Boost)
 
 ENDIF()
 
+IF (NOT ${PROJECT_NAME}_ENABLE_CXX11)
+
+  LIST(REMOVE_ITEM  HEADERS
+      ${CMAKE_CURRENT_SOURCE_DIR}/Teuchos_RCPStdSharedPtrConversions.hpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/Teuchos_RCPStdSharedPtrConversionsDecl.hpp
+      )
+
+ENDIF()
+
 
 #
 # C) Define the targets for package's library(s)
@@ -95,3 +107,10 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
   DEFINES -DTEUCHOSCORE_LIB_EXPORTS_MODE
   )
+
+#
+# Make a trivial change to this comment if you add a file either to
+# this directory, or to the impl/ subdirectory.  Otherwise, users who 
+# pull the latest version of Trilinos may get build errors, because
+# their Makefile won't know to rerun CMake.
+#

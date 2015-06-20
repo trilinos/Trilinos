@@ -1,10 +1,42 @@
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+
 #ifndef STK_MESH_BUCKET_CONNECTIVITY_HPP
 #define STK_MESH_BUCKET_CONNECTIVITY_HPP
 
 #include "stk_mesh/base/Types.hpp"      // for ConnectivityOrdinal, etc
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include "stk_util/environment/ReportHandler.hpp"
-#include <stk_util/util/TrackingAllocator.hpp>
 
 namespace stk {
 namespace mesh {
@@ -72,9 +104,9 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
   static const EntityRank target_rank = TargetRank;
   static const ConnectivityType connectivity_type = FIXED_CONNECTIVITY;
 
-  typedef TrackedVectorMetaFunc<Entity, BucketRelationTag>::type              EntityVector;
-  typedef TrackedVectorMetaFunc<ConnectivityOrdinal, BucketRelationTag>::type ConnectivityOrdinalVector;
-  typedef TrackedVectorMetaFunc<Permutation, BucketRelationTag>::type         PermutationVector;
+  typedef std::vector<Entity> EntityVector;
+  typedef std::vector<ConnectivityOrdinal> ConnectivityOrdinalVector;
+  typedef std::vector<Permutation> PermutationVector;
 
   BucketConnectivity() //default constructed BucketConnectivity implies connectivity is not used
     : m_num_connectivity(0u)
@@ -331,7 +363,8 @@ private:
 
   void invariant_check_helper(unsigned bucket_ordinal) const
   {
-#ifndef NDEBUG
+
+  #ifdef STK_INVARIANCE_CHECK
     const Entity* keys_begin = begin(bucket_ordinal);
     const Entity* keys_end   = end(bucket_ordinal);
     const ConnectivityOrdinal* ordinals_begin = begin_ordinals(bucket_ordinal);
@@ -378,11 +411,13 @@ private:
       // TODO - Anything else we can check here?
     }
 #endif
+
   }
 
   void invariant_check_helper() const
   {
-#ifndef NDEBUG
+
+  #ifdef STK_INVARIANCE_CHECK
     ThrowAssertMsg(static_cast<unsigned>(m_ordinals.size()) == m_num_connectivity,
                    "Total size of ordinals " << m_ordinals.size() << " does not match num_connectivity " << m_num_connectivity);
 
@@ -393,14 +428,16 @@ private:
     else {
       ThrowAssertMsg(m_permutations.empty(), "Permutations should be empty for nodal connectivity");
     }
-#endif
+  #endif
+
   }
 
   // Call this at the end of modification
   template <typename BulkData>
   void invariant_check_helper(BulkData* mesh = NULL) const
   {
-#ifndef NDEBUG
+
+  #ifdef STK_INVARIANCE_CHECK
     invariant_check_helper();
 
     if (mesh != NULL) {
@@ -416,7 +453,8 @@ private:
         }
       }
     }
-#endif
+  #endif
+
   }
 
   // Illegal
@@ -441,10 +479,6 @@ struct Counter
 {
   static int counter;
 };
-
-// Uncomment to enable profiling
-//#define STK_MESH_ANALYZE_DYN_CONN
-
 
 // Profiling data for an individual dynamic connectivity object
 struct DynConnData
@@ -505,11 +539,6 @@ struct DynConnData
   {}
 };
 
-struct DynConnMetrics
-{
-  static std::vector<DynConnData> m_data;
-};
-
 template<EntityRank TargetRank >
 class BucketConnectivity<TargetRank, DYNAMIC_CONNECTIVITY>
 {
@@ -522,13 +551,11 @@ public:
   static const EntityRank target_rank = TargetRank;
   static const ConnectivityType connectivity_type = DYNAMIC_CONNECTIVITY;
 
-  typedef typename DynamicConnectivityTagSelector<TargetRank>::type TagType;
-
-  typedef typename TrackedVectorMetaFunc<Entity,              TagType>::type              EntityVector;
-  typedef typename TrackedVectorMetaFunc<ConnectivityOrdinal, TagType>::type ConnectivityOrdinalVector;
-  typedef typename TrackedVectorMetaFunc<Permutation,         TagType>::type         PermutationVector;
-  typedef typename TrackedVectorMetaFunc<uint32_t,            TagType>::type              UInt32Vector;
-  typedef typename TrackedVectorMetaFunc<uint16_t,            TagType>::type              UInt16Vector;
+  typedef std::vector<Entity>              EntityVector;
+  typedef std::vector<ConnectivityOrdinal> ConnectivityOrdinalVector;
+  typedef std::vector<Permutation>         PermutationVector;
+  typedef std::vector<uint32_t>            UInt32Vector;
+  typedef std::vector<uint16_t>            UInt16Vector;
 
   static const unsigned chunk_size = 1u;
 
@@ -550,10 +577,6 @@ public:
     , m_rank_sensitive_lower_connectivity_cmp(*m_bulk_data)
     , m_last_capacity(0)
   {
-#ifdef STK_MESH_ANALYZE_DYN_CONN
-    DynConnMetrics::m_data.push_back(DynConnData(from_rank, target_rank));
-    m_data_idx = DynConnMetrics::m_data.size() - 1;
-#endif
   }
 
   // Entity iterator
@@ -840,7 +863,7 @@ public:
   { ThrowAssert(false); }
 
   bool has_permutation() const
-  { return TargetRank != stk::topology::NODE_RANK && m_from_rank != stk::topology::NODE_RANK; }
+  { return does_rank_have_valid_permutations(TargetRank) && does_rank_have_valid_permutations(m_from_rank); }
 
   void debug_dump(std::ostream& out) const
   {
@@ -878,9 +901,9 @@ public:
 
 private:
 
-  DynConnData& profile_data() const
+  bool does_rank_have_valid_permutations(stk::mesh::EntityRank rank) const
   {
-    return DynConnMetrics::m_data[m_data_idx];
+      return rank > stk::topology::NODE_RANK && rank < stk::topology::CONSTRAINT_RANK;
   }
 
   void copy_connectivity(unsigned from_ordinal, SelfType& to, unsigned to_ordinal)
@@ -951,26 +974,6 @@ private:
 
   void resize_and_order_by_index(unsigned capacity = 0u)
   {
-#ifdef STK_MESH_ANALYZE_DYN_CONN
-    if (capacity != 0u) {
-      ++profile_data().m_num_growths;
-    }
-
-    if (m_targets.capacity() > profile_data().m_max_capacity) {
-      profile_data().m_max_capacity = m_targets.capacity();
-      profile_data().m_total_unused_memory = m_targets.capacity() - m_total_connectivities;
-      profile_data().m_unused_capacity = m_targets.capacity() - m_targets.size();
-      profile_data().m_total_num_conn = m_total_connectivities;
-      const size_t total_unused_active = m_targets.size() - m_total_connectivities;
-      size_t total_unused_chunk_capacity = 0;
-      for (size_t i = 0, e = m_num_connectivities.size(); i < e; ++i) {
-        total_unused_chunk_capacity += num_chunks(m_num_connectivities[i]) * chunk_size - m_num_connectivities[i];
-      }
-      profile_data().m_abandoned_space = total_unused_active - total_unused_chunk_capacity;
-      profile_data().m_unused_chunk_capacity = total_unused_chunk_capacity;
-    }
-#endif
-
     //compute needed capacity
     if (capacity == 0u) {
       for( size_t i=0, e=m_indices.size(); i<e; ++i) {
@@ -1047,12 +1050,6 @@ private:
     //copy to end
     if (!last_entity_by_index)
     {
-#ifdef STK_MESH_ANALYZE_DYN_CONN
-      if (chunks_used_by_entity > 0) {
-        ++profile_data().m_num_entity_relocations;
-      }
-#endif
-
       uint32_t new_index = static_cast<uint32_t>(m_targets.size());
 
       m_targets.insert(m_targets.end(), chunks_needed_by_entity*chunk_size, invalid);
@@ -1137,7 +1134,6 @@ private:
         m_targets[i] = to;
         m_ordinals[i] = ordinal;
         if (has_permutation()) {
-          ThrowAssert(permutation == m_permutations[i-1u]);
           m_permutations[i] = permutation;
         }
         remove_connectivity(bucket_ordinal, to, ordinal);
@@ -1153,7 +1149,7 @@ private:
 
   void invariant_check_helper(unsigned bucket_ordinal) const
   {
-#ifndef NDEBUG
+  #ifdef STK_INVARIANCE_CHECK
     const Entity* keys_begin = begin(bucket_ordinal);
     const Entity* keys_end   = end(bucket_ordinal);
     const ConnectivityOrdinal* ordinals_begin = begin_ordinals(bucket_ordinal);
@@ -1223,12 +1219,14 @@ private:
     }
 
     invariant_check_helper();
-#endif
+  #endif
+
   }
 
   void invariant_check_helper() const
   {
-#ifndef NDEBUG
+
+  #ifdef STK_INVARIANCE_CHECK
     if (!m_active) {
       ThrowAssertMsg(m_num_connectivities.size() == 0, "Expect empty data if inactive");
     }
@@ -1269,14 +1267,16 @@ private:
                        "For offset " << o << ", num_connectivity/index mismatch, index_diff is " << index_diff << ", num conn is " << prior_num_conn);
       }
     }
-#endif
+  #endif
+
   }
 
   // Call after modification end
   template <typename BulkData>
   void invariant_check_helper(BulkData* mesh = NULL) const
   {
-#ifndef NDEBUG
+
+  #ifdef STK_INVARIANCE_CHECK
     invariant_check_helper();
 
     ThrowAssert(!m_active || !m_needs_shrink_to_fit);
@@ -1295,7 +1295,8 @@ private:
     // Check that connectivity is in-sync
     ThrowAssertMsg(m_targets.size() == m_ordinals.size(),
                    "Total size of partition indices " << m_targets.size() << " does not match size of ordinals " << m_ordinals.size());
-#endif
+  #endif
+
   }
 
   // Illegal

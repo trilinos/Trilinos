@@ -188,7 +188,7 @@ void AlgRCB<Adapter>::partition(
   ////////////////////////////////////////////////////////
   // Geometric partitioning problem parameters of interest:
   //    average_cuts
-  //    rectilinear_blocks
+  //    rectilinear
   //    bisection_num_test_cuts (experimental)
 
   int val = 0;
@@ -200,12 +200,12 @@ void AlgRCB<Adapter>::partition(
     params.set(rcb_averageCuts);
 
   val = 0;
-  pe = pl.getEntryPtr("rectilinear_blocks");
+  pe = pl.getEntryPtr("rectilinear");
   if (pe)
     val = pe->getValue(&val);
 
   if (val == 1)
-    params.set(rcb_rectilinearBlocks);
+    params.set(rcb_rectilinear);
 
   int numTestCuts = 1;
   pe = pl.getEntryPtr("bisection_num_test_cuts");
@@ -333,6 +333,9 @@ void AlgRCB<Adapter>::partition(
     map = rcp(new map_t(numGlobalCoords, gnos, gnoMin, comm));
   }
   Z2_THROW_OUTSIDE_ERROR(*env)
+
+  RCP<map_t> inputmap = map;  // Keep map of input to get answer back after
+                              // migration.
 
   typedef ArrayView<const scalar_t> coordList_t;
 
@@ -474,7 +477,6 @@ void AlgRCB<Adapter>::partition(
     // Create a new multivector for my smaller group.
 
     ArrayView<const gno_t> gnoList = mvector->getMap()->getNodeElementList();
-    size_t localSize = mvector->getLocalLength();
   
     // Tpetra will calculate the globalSize.
     size_t globalSize = Teuchos::OrdinalTraits<size_t>::invalid();
@@ -485,19 +487,9 @@ void AlgRCB<Adapter>::partition(
     }
     Z2_THROW_OUTSIDE_ERROR(*env)
 
-    coordList_t *avSubList = new coordList_t [multiVectorDim];
-  
-    for (int dim=0; dim < multiVectorDim; dim++)
-      avSubList[dim] = mvector->getData(dim).view(0, localSize);
-  
-    ArrayRCP<const ArrayView<const scalar_t> > subVectors =
-      arcp(avSubList, 0, multiVectorDim);
-  
     RCP<mvector_t> subMvector;
-  
     try{
-      subMvector = rcp(new mvector_t(
-        subMap, subVectors.view(0, multiVectorDim), multiVectorDim));
+      subMvector = mvector->offsetViewNonConst(subMap,0);
     }
     Z2_THROW_OUTSIDE_ERROR(*env)
 
@@ -557,20 +549,39 @@ void AlgRCB<Adapter>::partition(
   ////////////////////////////////////////////////////////
   // Done: update the solution
 
-  ArrayRCP<const gno_t> gnoList = 
-    arcpFromArrayView(mvector->getMap()->getNodeElementList());
+  ArrayView<const gno_t> gnoList = mvector->getMap()->getNodeElementList();
 
   if (env->getDebugLevel() >= VERBOSE_DETAILED_STATUS && 
      (numGlobalCoords < 500)){
     std::ostringstream oss;
     oss << "Solution: ";
-    for (gno_t i=0; i < gnoList.size(); i++)
+    for (typename ArrayRCP<const gno_t>::size_type i=0; i < gnoList.size(); i++)
       oss << gnoList[i] << " (" << partId[i] << ") ";
-    
     env->debug(VERBOSE_DETAILED_STATUS, oss.str());
   }
 
-  solution->setParts(gnoList, partId, false);
+  // Need a map with global communicator but local element list
+  RCP<const Tpetra::Map<lno_t,gno_t,node_t> > migratedMap =
+     rcp(new Tpetra::Map<lno_t,gno_t,node_t>(inputmap->getGlobalNumElements(),
+                                             gnoList, 0, inputmap->getComm()));
+  Tpetra::Export<lno_t, gno_t, node_t> exporter(migratedMap, inputmap);
+  Tpetra::Vector<part_t, lno_t, gno_t, node_t> migrated(migratedMap,
+                                                        partId());
+  Tpetra::Vector<part_t, lno_t, gno_t, node_t> ordered(inputmap);
+  ordered.doExport(migrated, exporter, Tpetra::INSERT);
+  ArrayRCP<part_t> orderedpartId = ordered.getDataNonConst();
+
+  if (env->getDebugLevel() >= VERBOSE_DETAILED_STATUS &&
+     (numGlobalCoords < 500)){
+    std::ostringstream oss;
+    oss << "OrderedSolution: ";
+    for (size_t i=0; i < ordered.getLocalLength(); i++)
+      oss << inputmap->getNodeElementList()[i] << " ("
+          << orderedpartId[i] << ") ";
+    
+    env->debug(VERBOSE_DETAILED_STATUS, oss.str());
+  }
+  solution->setParts(orderedpartId);
 #endif // INCLUDE_ZOLTAN2_EXPERIMENTAL
 }
 

@@ -48,6 +48,8 @@
 #include <string>
 #include <iostream>
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_Traits.hpp"
 
@@ -98,6 +100,8 @@ Teuchos::RCP<const Epetra_CrsMatrix> getSubBlock(int i,int j,const Thyra::Linear
 
 TEUCHOS_UNIT_TEST(tBlockedLinearObjFactory, intializeContainer_epetra)
 {
+   PHX::KokkosDeviceSession session;
+
    panzer::BlockedEpetraLinearObjContainer container;
 
    TEST_ASSERT(container.checkCompatibility());
@@ -105,6 +109,8 @@ TEUCHOS_UNIT_TEST(tBlockedLinearObjFactory, intializeContainer_epetra)
 
 TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, epetra_factory_tests)
 {
+   PHX::KokkosDeviceSession session;
+
    #ifdef HAVE_MPI
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
    #else
@@ -254,6 +260,8 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, epetra_factory_tests)
 
 TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, ghostToGlobal)
 {
+   PHX::KokkosDeviceSession session;
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -327,6 +335,8 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, ghostToGlobal)
 
 TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, graph_constr)
 {
+   PHX::KokkosDeviceSession session;
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -381,6 +391,8 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, graph_constr)
 
 TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, adjustDirichlet)
 {
+   PHX::KokkosDeviceSession session;
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -422,21 +434,21 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, adjustDirichlet)
    RCP<LinearObjContainer> ghosted_1   = la_factory->buildGhostedLinearObjContainer();
    RCP<LinearObjContainer> ghosted_sys = la_factory->buildGhostedLinearObjContainer();
 
-   la_factory->initializeGhostedContainer(LinearObjContainer::X,*ghosted_0);
-   la_factory->initializeGhostedContainer(LinearObjContainer::X,*ghosted_1);
+   la_factory->initializeGhostedContainer(LinearObjContainer::F,*ghosted_0);
+   la_factory->initializeGhostedContainer(LinearObjContainer::F,*ghosted_1);
    la_factory->initializeGhostedContainer(LinearObjContainer::F | LinearObjContainer::Mat,*ghosted_sys);
 
    RCP<BLOC> b_0   = rcp_dynamic_cast<BLOC>(ghosted_0);
    RCP<BLOC> b_1   = rcp_dynamic_cast<BLOC>(ghosted_1);
    RCP<BLOC> b_sys = rcp_dynamic_cast<BLOC>(ghosted_sys);
 
-   TEST_ASSERT(!Teuchos::is_null(b_0->get_x()));
-   TEST_ASSERT(!Teuchos::is_null(b_1->get_x()));
+   TEST_ASSERT(!Teuchos::is_null(b_0->get_f()));
+   TEST_ASSERT(!Teuchos::is_null(b_1->get_f()));
    TEST_ASSERT(!Teuchos::is_null(b_sys->get_f()));
    TEST_ASSERT(!Teuchos::is_null(b_sys->get_A()));
 
-   Thyra::assign(b_0->get_x().ptr(),0.0); // put some garbage in the systems
-   Thyra::assign(b_1->get_x().ptr(),0.0); // put some garbage in the systems
+   Thyra::assign(b_0->get_f().ptr(),0.0); // put some garbage in the systems
+   Thyra::assign(b_1->get_f().ptr(),0.0); // put some garbage in the systems
    Thyra::assign(b_sys->get_f().ptr(),-3.0); // put some garbage in the systems
 
    // b_sys->get_A()->PutScalar(-3.0);
@@ -451,8 +463,8 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, adjustDirichlet)
 
    if(myRank==0) {   
       for(int i=0;i<numBlocks;i++) {
-         RCP<Thyra::VectorBase<double> > x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_x())->getNonconstVectorBlock(i);
-         RCP<Thyra::VectorBase<double> > x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_x())->getNonconstVectorBlock(i);
+         RCP<Thyra::VectorBase<double> > x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_f())->getNonconstVectorBlock(i);
+         RCP<Thyra::VectorBase<double> > x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_f())->getNonconstVectorBlock(i);
 
          Teuchos::ArrayRCP<double> data_0,data_1;
          rcp_dynamic_cast<SpmdVectorBase<double> >(x_0)->getNonconstLocalData(Teuchos::ptrFromRef(data_0)); 
@@ -472,8 +484,8 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, adjustDirichlet)
    }
    else if(myRank==1) {
       for(int i=0;i<numBlocks;i++) {
-         RCP<Thyra::VectorBase<double> > x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_x())->getNonconstVectorBlock(i);
-         RCP<Thyra::VectorBase<double> > x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_x())->getNonconstVectorBlock(i);
+         RCP<Thyra::VectorBase<double> > x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_f())->getNonconstVectorBlock(i);
+         RCP<Thyra::VectorBase<double> > x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_f())->getNonconstVectorBlock(i);
 
          Teuchos::ArrayRCP<double> data_0,data_1;
          rcp_dynamic_cast<SpmdVectorBase<double> >(x_0)->getNonconstLocalData(Teuchos::ptrFromRef(data_0)); 
@@ -495,10 +507,10 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, adjustDirichlet)
       TEUCHOS_ASSERT(false);
 
    out << "LOCAL " << std::endl;
-   b_0->get_x()->describe(out,Teuchos::VERB_HIGH);
+   b_0->get_f()->describe(out,Teuchos::VERB_HIGH);
    out << std::endl;
    out << "GLOBAL " << std::endl;
-   b_1->get_x()->describe(out,Teuchos::VERB_HIGH);
+   b_1->get_f()->describe(out,Teuchos::VERB_HIGH);
    out << std::endl;
 
    // run test for conditions
@@ -566,6 +578,8 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, adjustDirichlet)
 
 TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, node_cell)
 {
+   PHX::KokkosDeviceSession session;
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -605,21 +619,21 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, node_cell)
    RCP<LinearObjContainer> ghosted_1   = la_factory->buildGhostedLinearObjContainer();
    RCP<LinearObjContainer> ghosted_sys = la_factory->buildGhostedLinearObjContainer();
 
-   la_factory->initializeGhostedContainer(LinearObjContainer::X,*ghosted_0);
-   la_factory->initializeGhostedContainer(LinearObjContainer::X,*ghosted_1);
+   la_factory->initializeGhostedContainer(LinearObjContainer::F,*ghosted_0);
+   la_factory->initializeGhostedContainer(LinearObjContainer::F,*ghosted_1);
    la_factory->initializeGhostedContainer(LinearObjContainer::F | LinearObjContainer::Mat,*ghosted_sys);
 
    RCP<BLOC> b_0   = rcp_dynamic_cast<BLOC>(ghosted_0);
    RCP<BLOC> b_1   = rcp_dynamic_cast<BLOC>(ghosted_1);
    RCP<BLOC> b_sys = rcp_dynamic_cast<BLOC>(ghosted_sys);
 
-   TEST_ASSERT(!Teuchos::is_null(b_0->get_x()));
-   TEST_ASSERT(!Teuchos::is_null(b_1->get_x()));
+   TEST_ASSERT(!Teuchos::is_null(b_0->get_f()));
+   TEST_ASSERT(!Teuchos::is_null(b_1->get_f()));
    TEST_ASSERT(!Teuchos::is_null(b_sys->get_f()));
    TEST_ASSERT(!Teuchos::is_null(b_sys->get_A()));
 
-   Thyra::assign(b_0->get_x().ptr(),0.0); // put some garbage in the systems
-   Thyra::assign(b_1->get_x().ptr(),0.0); // put some garbage in the systems
+   Thyra::assign(b_0->get_f().ptr(),0.0); // put some garbage in the systems
+   Thyra::assign(b_1->get_f().ptr(),0.0); // put some garbage in the systems
    Thyra::assign(b_sys->get_f().ptr(),-3.0); // put some garbage in the systems
 
    // b_sys->get_A()->PutScalar(-3.0);
@@ -633,8 +647,8 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, node_cell)
    //   3. Set remotely
 
    if(myRank==0) {   
-      RCP<Thyra::VectorBase<double> > x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_x())->getNonconstVectorBlock(0);
-      RCP<Thyra::VectorBase<double> > x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_x())->getNonconstVectorBlock(0);
+      RCP<Thyra::VectorBase<double> > x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_f())->getNonconstVectorBlock(0);
+      RCP<Thyra::VectorBase<double> > x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_f())->getNonconstVectorBlock(0);
 
       Teuchos::ArrayRCP<double> data_0,data_1;
       rcp_dynamic_cast<SpmdVectorBase<double> >(x_0)->getNonconstLocalData(Teuchos::ptrFromRef(data_0)); 
@@ -652,8 +666,8 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, node_cell)
       data_1[5] = 2.0; // GID = 5
 
       {
-         x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_x())->getNonconstVectorBlock(1);
-         x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_x())->getNonconstVectorBlock(1);
+         x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_f())->getNonconstVectorBlock(1);
+         x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_f())->getNonconstVectorBlock(1);
 
          rcp_dynamic_cast<SpmdVectorBase<double> >(x_0)->getNonconstLocalData(Teuchos::ptrFromRef(data_0)); 
          rcp_dynamic_cast<SpmdVectorBase<double> >(x_1)->getNonconstLocalData(Teuchos::ptrFromRef(data_1)); 
@@ -662,8 +676,8 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, node_cell)
       }
    }
    else if(myRank==1) {
-      RCP<Thyra::VectorBase<double> > x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_x())->getNonconstVectorBlock(0);
-      RCP<Thyra::VectorBase<double> > x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_x())->getNonconstVectorBlock(0);
+      RCP<Thyra::VectorBase<double> > x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_f())->getNonconstVectorBlock(0);
+      RCP<Thyra::VectorBase<double> > x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_f())->getNonconstVectorBlock(0);
 
       Teuchos::ArrayRCP<double> data_0,data_1;
       rcp_dynamic_cast<SpmdVectorBase<double> >(x_0)->getNonconstLocalData(Teuchos::ptrFromRef(data_0)); 
@@ -684,10 +698,10 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, node_cell)
       TEUCHOS_ASSERT(false);
 
    out << "LOCAL " << std::endl;
-   b_0->get_x()->describe(out,Teuchos::VERB_HIGH);
+   b_0->get_f()->describe(out,Teuchos::VERB_HIGH);
    out << std::endl;
    out << "GLOBAL " << std::endl;
-   b_1->get_x()->describe(out,Teuchos::VERB_HIGH);
+   b_1->get_f()->describe(out,Teuchos::VERB_HIGH);
    out << std::endl;
 
    // run test for conditions
@@ -789,6 +803,8 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, node_cell)
 
 TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, exclusion)
 {
+   PHX::KokkosDeviceSession session;
+
    #ifdef HAVE_MPI
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
    #else

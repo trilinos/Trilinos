@@ -59,12 +59,12 @@ public:
 
   /** \brief . */
   virtual ~Serializer() {}
-  
+
   /** \brief Return an estimate for the maximum storage for <tt>count</tt>
    * objects to be serialized.
    */
   virtual Ordinal getBufferSize(const Ordinal count) const = 0;
-  
+
   /** \brief Serialize an object to a <tt>char[]</tt> buffer.
    *
    * \param  count
@@ -96,7 +96,7 @@ public:
   /** \brief Create an object of type <tt>T</tt> to be serialized into.
    */
   virtual RCP<T> createObj() const = 0;
-  
+
   /** \brief Deserialize an object from a <tt>char[]</tt> buffer.
    *
    * \param  bytes

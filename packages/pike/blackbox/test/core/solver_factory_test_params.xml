@@ -1,0 +1,61 @@
+<ParameterList name="Solver Factory Unit Test">
+
+    <Parameter name="Solver Sublist Name" type="string" value="My Solver" />
+    <Parameter name="Status Test Sublist Name" type="string" value="My Stopping Criteria" />
+
+    <ParameterList name="My Solver">
+        <Parameter name="Type" type="string" value="My Super-Special Solver" />
+    </ParameterList>
+
+    <ParameterList name="My Stopping Criteria">
+
+        <Parameter name="Type" type="string" value="Composite OR" />
+
+        <ParameterList>
+            <Parameter name="Type" type="string" value="Maximum Iterations" />
+            <Parameter name="Maximum Iterations" type="int" value="6" />
+        </ParameterList>
+
+        <ParameterList>
+            <Parameter name="Type" type="string" value="Local Model Failure" />
+            <Parameter name="Model Name" type="string" value="app1" />
+        </ParameterList>
+
+        <ParameterList>
+            <Parameter name="Type" type="string" value="Local Model Failure" />
+            <Parameter name="Model Name" type="string" value="app2" />
+        </ParameterList>
+
+        <ParameterList>
+
+            <Parameter name="Type" type="string" value="Composite AND" />
+
+            <ParameterList>
+                <Parameter name="Type" type="string" value="Scalar Response Relative Tolerance" />
+                <Parameter name="Application Name" type="string" value="app1" />
+                <Parameter name="Response Name" type="string" value="Mock Response" />
+                <Parameter name="Tolerance" type="double" value="1.0e-3" />
+            </ParameterList>
+
+            <ParameterList>
+                <Parameter name="Type" type="string" value="Scalar Response Relative Tolerance" />
+                <Parameter name="Application Name" type="string" value="app2" />
+                <Parameter name="Response Name" type="string" value="Mock Response" />
+                <Parameter name="Tolerance" type="double" value="1.0e-3" />
+            </ParameterList>
+
+            <ParameterList>
+                <Parameter name="Type" type="string" value="Global Model Convergence" />
+                <Parameter name="Model Name" type="string" value="app1" />
+            </ParameterList>
+
+            <ParameterList>
+                <Parameter name="Type" type="string" value="Global Model Convergence" />
+                <Parameter name="Model Name" type="string" value="app2" />
+            </ParameterList>
+
+        </ParameterList>
+
+    </ParameterList>
+
+</ParameterList>

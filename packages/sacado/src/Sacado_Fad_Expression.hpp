@@ -58,6 +58,16 @@ namespace Sacado {
 
   namespace Fad {
 
+    //! Meta-function for determining concrete base expression
+    /*!
+     * This determines the concrete base expression type of each leaf in
+     * an expression tree.  The Promote meta-function is then used to promote
+     * all of the leaves to a single expression type that the whole expression
+     * can be assigned/promoted to.  This allows Promote to operate on
+     * expressions as well as AD types.
+     */
+    template <typename> struct BaseExpr {};
+
     //! Wrapper for a generic expression template
     /*!
      * This template class serves as a wrapper for all Fad expression
@@ -65,8 +75,81 @@ namespace Sacado {
      */
     template <typename ExprT> class Expr {};
 
+    //! Meta-function for determining nesting with an expression
+    /*!
+     * This determines the level of nesting within nested Fad types.
+     * The default implementation works for any type that isn't a Fad type
+     * or an expression of Fad types.
+     */
+    template <typename T>
+    struct ExprLevel {
+      static const unsigned value = 0;
+    };
+
+    template <typename T>
+    struct ExprLevel< Expr<T> > {
+      static const unsigned value =
+        ExprLevel< typename Expr<T>::value_type >::value + 1;
+    };
+
+    //! Determine whether a given type is an expression
+    template <typename T>
+    struct IsFadExpr {
+      static const bool value = false;
+    };
+
+    template <typename T>
+    struct IsFadExpr< Expr<T> > {
+      static const bool value = true;
+    };
+
+    //! Constant expression template
+    /*!
+     * This template class represents a constant expression.
+     */
+    template <typename ConstT>
+    class ConstExpr {
+
+    public:
+
+      //! Typename of argument values
+      typedef ConstT value_type;
+
+      //! Typename of scalar's (which may be different from ConstT)
+      typedef typename ScalarType<value_type>::type scalar_type;
+
+      //! Typename of base-expressions
+      typedef ConstT base_expr_type;
+
+      //! Constructor
+      KOKKOS_INLINE_FUNCTION
+      ConstExpr(const ConstT& constant) : constant_(constant) {}
+
+      //! Return value of operation
+      KOKKOS_INLINE_FUNCTION
+      const ConstT& val() const { return constant_; }
+
+    protected:
+
+      //! The constant
+      const ConstT& constant_;
+
+    }; // class ConstExpr
+
   } // namespace Fad
 
+  template <typename T>
+  struct IsExpr< Fad::Expr<T> > {
+    static const bool value = true;
+  };
+
+  template <typename T>
+  struct BaseExprType< Fad::Expr<T> > {
+    typedef typename Fad::Expr<T>::base_expr_type type;
+  };
+
 } // namespace Sacado
+
+#include "Sacado_SFINAE_Macros.hpp"
 
 #endif // SACADO_FAD_EXPRESSION_HPP

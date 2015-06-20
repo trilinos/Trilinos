@@ -529,14 +529,7 @@ int main(int argc, char *argv[])
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
   struct option opts[10];
   double comm_time[10];
-  /*
-   * mfh 18 Apr 2014: Some builds warn that cut_weight may be unused
-   * uninitialized.  I looked at the code and didn't see any evidence
-   * for that.  One could make that warning go away by initializing
-   * all entries of cut_weight, but I didn't want to do that, in case
-   * I missed an actual bug.
-   */
-  float cut_weight[10];
+  float cut_weight[3] = {0., 0., 0.};
   long nvert=0;
   char *debug_level=NULL;
 

@@ -124,7 +124,7 @@ preEvaluate(typename Traits::PreEvalData d)
 {
   // extract linear object container
   responseObj_ = Teuchos::rcp_dynamic_cast<Response_Functional<EvalT> >(
-                                   d.getDataObject(ResponseBase::buildLookupName(responseName_)),true);
+                                   d.gedc.getDataObject(ResponseBase::buildLookupName(responseName_)),true);
 }
 
 

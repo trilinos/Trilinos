@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                 TriUtils: Trilinos Utilities Package
 //                 Copyright (2011) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,32 +34,34 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 
 #include "Trilinos_Util.h"
 
-void Trilinos_Util_read_vec(const char *filename, int n_equations,double *x)
- 
-/*  read ASCII data file:
-*/
-
+// read ASCII data file:
+void Trilinos_Util_read_vec(
+    const char *filename,
+    int n_equations,double *x
+    )
 {
   FILE *in_file ;
   int i;
 
- 
   if ( (in_file = fopen( filename, "r")) == NULL ) {
     fprintf(stderr,"Error: Cannot open file: %s\n",filename);
     return;
   }
- 
+
   for (i=0; i< n_equations; i++)
-  fscanf(in_file, "%lf", x+i) ;
+    if (EOF == fscanf(in_file, "%lf", x+i)) {
+      fprintf(stderr,"Error: I/O error in file %s\n",filename);
+      return;
+    }
 
   fclose(in_file);
 
-/* end write_vec */
+  /* end write_vec */
 }

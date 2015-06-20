@@ -136,7 +136,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -144,9 +144,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_Vector;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -220,7 +219,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -229,9 +228,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef typename Tpetra_Vector::dot_type dot_type;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -306,7 +304,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -314,9 +312,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_MultiVector;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -399,7 +396,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -408,9 +405,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef typename Tpetra_MultiVector::dot_type dot_type;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -496,7 +492,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -505,9 +501,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef typename Tpetra_MultiVector::dot_type dot_type;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -601,7 +596,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -611,9 +606,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -728,7 +722,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -738,9 +732,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -868,7 +861,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -881,9 +874,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsMatrix<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> Flat_Tpetra_CrsMatrix;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -997,7 +989,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ParameterList;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -1007,9 +999,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1128,7 +1119,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 }
 
-#if defined(HAVE_STOKHOS_MUELU)
+#if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_STOKHOS_AMESOS2) && defined(HAVE_STOKHOS_IFPACK2)
 
 //
 // Test simple CG solve with MueLu preconditioning for a 1-D Laplacian matrix
@@ -1145,7 +1136,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::getParametersFromXmlFile;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -1155,9 +1146,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1306,7 +1296,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ParameterList;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -1316,9 +1306,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1460,7 +1449,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ParameterList;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -1470,9 +1459,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1606,7 +1594,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 #endif
 
-#if defined(HAVE_STOKHOS_BELOS) && defined(HAVE_STOKHOS_IFPACK2) && defined(HAVE_STOKHOS_MUELU)
+#if defined(HAVE_STOKHOS_BELOS) && defined(HAVE_STOKHOS_IFPACK2) && defined(HAVE_STOKHOS_MUELU) && defined(HAVE_STOKHOS_AMESOS2)
 
 //
 // Test Belos CG solve with MueLu preconditioning for a 1-D Laplacian matrix
@@ -1623,7 +1611,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::getParametersFromXmlFile;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -1633,9 +1621,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1717,13 +1704,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     getParametersFromXmlFile("muelu_cheby.xml");
   RCP<OP> M =
     MueLu::CreateTpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(matrix, *muelu_params);
-  // RCP<OP> M =
-  //   MueLu::CreateTpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(matrix);
-  // typedef Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> Prec;
-  // Ifpack2::Factory factory;
-  // RCP<Prec> M = factory.create<Tpetra_CrsMatrix>("RILUK", matrix);
-  // M->initialize();
-  // M->compute();
 
   // Solve
   typedef Teuchos::ScalarTraits<BaseScalar> ST;
@@ -1790,7 +1770,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 #endif
 
-#if defined(HAVE_STOKHOS_AMESOS2) && defined(HAVE_AMESOS2_SUPERLU)
+#if defined(HAVE_STOKHOS_AMESOS2)
 
 //
 // Test Amesos2 solve for a 1-D Laplacian matrix
@@ -1806,7 +1786,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ParameterList;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -1817,9 +1797,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1898,7 +1877,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Amesos2::Solver<Tpetra_CrsMatrix,Tpetra_MultiVector> Solver;
   RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
   std::string solver_name;
-#if defined(HAVE_AMESOS2_KLU2)
+#if defined(HAVE_AMESOS2_BASKER)
+  solver_name = "basker";
+#elif defined(HAVE_AMESOS2_KLU2)
   solver_name = "klu2";
 #elif defined(HAVE_AMESOS2_SUPERLUDIST)
   solver_name = "superlu_dist";
@@ -1917,6 +1898,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   success = true;
   return;
 #endif
+  out << "Solving linear system with " << solver_name << std::endl;
   RCP<Solver> solver = Amesos2::create<Tpetra_CrsMatrix,Tpetra_MultiVector>(
     solver_name, matrix, x, b);
   solver->solve();
@@ -1978,7 +1960,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 #define CRSMATRIX_MP_VECTOR_TESTS_N_SFS(N)                              \
   typedef Stokhos::DeviceForNode<N>::type Device;              \
-  typedef Stokhos::StaticFixedStorage<int,double,VectorSize,Device> SFS; \
+  typedef Stokhos::StaticFixedStorage<int,double,VectorSize,Device::execution_space> SFS; \
   CRSMATRIX_MP_VECTOR_TESTS_SLGN(SFS, int, int, N)
 
 #define CRSMATRIX_MP_VECTOR_TESTS_N(N)                                  \

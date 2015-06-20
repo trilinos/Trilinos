@@ -53,8 +53,7 @@
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_CrsProductTensor.hpp"
 
-#include "Kokkos_Cuda.hpp"
-#include "Cuda/Kokkos_Cuda_Parallel.hpp"
+#include "Kokkos_Core.hpp"
 
 #include "Stokhos_Cuda_DeviceProp.hpp"
 //#include "Stokhos_Cuda_WarpShuffle.hpp"
@@ -83,7 +82,9 @@ namespace Stokhos {
 //   A == Kokkos::CrsMatrix< Sacado::UQ::PCE<...>,...>,
 //   x, y == Kokkos::View< Sacado::UQ::PCE<...>*,...>,
 //   x and y are rank 1
-template <typename MatrixStorage,
+template <typename InputViewDevice,
+          typename OutputViewDevice,
+          typename MatrixStorage,
           typename MatrixOrdinal,
           typename MatrixMemory,
           typename MatrixSize,
@@ -98,11 +99,11 @@ class Multiply< Kokkos::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
                                    MatrixSize>,
                 Kokkos::View< Sacado::UQ::PCE<InputStorage>*,
                               Kokkos::LayoutLeft,
-                              Kokkos::Cuda,
+                              InputViewDevice,
                               InputMemory >,
                 Kokkos::View< Sacado::UQ::PCE<OutputStorage>*,
                               Kokkos::LayoutLeft,
-                              Kokkos::Cuda,
+                              OutputViewDevice,
                               OutputMemory >
                 >
 {
@@ -112,8 +113,8 @@ public:
   typedef Sacado::UQ::PCE<OutputStorage> OutputVectorValue;
 
   typedef Kokkos::Cuda Device;
-  typedef Device device_type;
-  typedef device_type::size_type size_type;
+  typedef Device execution_space;
+  typedef execution_space::size_type size_type;
 
   typedef Kokkos::CrsMatrix< MatrixValue,
                              MatrixOrdinal,
@@ -124,11 +125,11 @@ public:
   typedef typename matrix_values_type::cijk_type tensor_type;
   typedef Kokkos::View< InputVectorValue*,
                         Kokkos::LayoutLeft,
-                        Device,
+                        InputViewDevice,
                         InputMemory > input_vector_type;
   typedef Kokkos::View< OutputVectorValue*,
                         Kokkos::LayoutLeft,
-                        Device,
+                        OutputViewDevice,
                         OutputMemory > output_vector_type;
 
 private:
@@ -305,6 +306,7 @@ public:
     DeviceProp device_prop;
     const size_type shcap = device_prop.shared_memory_capacity;
     const size_type sh_granularity = device_prop.shared_memory_granularity;
+    const size_type max_shmem_per_block = device_prop.max_shmem_per_block;
     const size_type max_blocks_per_sm = device_prop.max_blocks_per_sm;
     const size_type warp_size = device_prop.warp_size;
     const size_type warp_granularity = device_prop.warp_granularity;
@@ -313,6 +315,7 @@ public:
                device_prop.max_warps_per_sm);
     const size_type min_warps_per_block = 1;
     const size_type max_regs_per_sm = device_prop.max_regs_per_sm;
+    const size_type max_regs_per_block = device_prop.max_regs_per_block;
     const size_type reg_bank_size = device_prop.reg_bank_size;
 
     // Compute number of warps we can fit on each SM based on register limits
@@ -325,6 +328,8 @@ public:
       (warp_size*regs_per_thread + reg_bank_size-1) & ~(reg_bank_size-1);
     const size_type warps_per_sm =
       (max_regs_per_sm/regs_per_warp) & ~(warp_granularity-1);
+    const size_type warps_per_block =
+      (max_regs_per_block/regs_per_warp) & ~(warp_granularity-1);
 
     // Compute number of threads per stochastic row based on number of
     // nonzero entries per row.
@@ -380,15 +385,16 @@ public:
       // We don't know the number of warps yet, so we just have to bound
       // sr by the maximum number possible (which is all warps in 1 block)
       const size_type sr =
-        device_prop.has_shuffle ? 0 : in_vec_scalar_size*warp_size*warps_per_sm;
+        device_prop.has_shuffle ? 0 : in_vec_scalar_size*warp_size*warps_per_block;
       size_type shmem =
         ((in_vec_scalar_size+mat_scalar_size)*bs+out_vec_scalar_size)*tensor_align+sr;
       shmem = (shmem + sh_granularity-1) & ~(sh_granularity-1);
-      size_type num_blocks = std::min(shcap / shmem, max_blocks_per_sm);
-      size_type tensor_reads = (fem_nnz_per_row+bs-1) / bs;
-      if (num_blocks > 0) {
+      if (shmem <= max_shmem_per_block) {
+        size_type num_blocks = std::min(shcap / shmem, max_blocks_per_sm);
+        size_type tensor_reads = (fem_nnz_per_row+bs-1) / bs;
         size_type num_warp =
-          std::min(std::max(warps_per_sm / num_blocks, min_warps_per_block),
+          std::min(std::max(std::min(warps_per_sm/num_blocks, warps_per_block),
+                            min_warps_per_block),
                    max_warps_per_block);
         while (num_warp > 1 && num_blocks*num_warp % warp_granularity)
           --num_warp;
@@ -455,7 +461,9 @@ public:
 //
 // Note:  Unlike the rank-1 version, this version has not been
 // optimized, and doesn't even include the block-column implementation
-template <typename MatrixStorage,
+template <typename InputViewDevice,
+          typename OutputViewDevice,
+          typename MatrixStorage,
           typename MatrixOrdinal,
           typename MatrixMemory,
           typename MatrixSize,
@@ -470,11 +478,11 @@ class Multiply< Kokkos::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
                                    MatrixSize>,
                 Kokkos::View< Sacado::UQ::PCE<InputStorage>**,
                               Kokkos::LayoutLeft,
-                              Kokkos::Cuda,
+                              InputViewDevice,
                               InputMemory >,
                 Kokkos::View< Sacado::UQ::PCE<OutputStorage>**,
                               Kokkos::LayoutLeft,
-                              Kokkos::Cuda,
+                              OutputViewDevice,
                               OutputMemory >
                 >
 {
@@ -484,8 +492,8 @@ public:
   typedef Sacado::UQ::PCE<OutputStorage> OutputVectorValue;
 
   typedef Kokkos::Cuda Device;
-  typedef Device device_type;
-  typedef device_type::size_type size_type;
+  typedef Device execution_space;
+  typedef execution_space::size_type size_type;
 
   typedef Kokkos::CrsMatrix< MatrixValue,
                              MatrixOrdinal,
@@ -494,11 +502,11 @@ public:
                              MatrixSize> matrix_type;
   typedef Kokkos::View< InputVectorValue**,
                         Kokkos::LayoutLeft,
-                        Device,
+                        InputViewDevice,
                         InputMemory > input_vector_type;
   typedef Kokkos::View< OutputVectorValue**,
                         Kokkos::LayoutLeft,
-                        Device,
+                        OutputViewDevice,
                         OutputMemory > output_vector_type;
   typedef typename InputVectorValue::value_type input_scalar;
   typedef typename OutputVectorValue::value_type output_scalar;
@@ -523,8 +531,8 @@ public:
 
       multiply_type_1D::apply(
         A,
-        Kokkos::subview<input_vector_type_1D>( x, Kokkos::ALL(), col),
-        Kokkos::subview<output_vector_type_1D>(y, Kokkos::ALL(), col),
+        Kokkos::subview( x, Kokkos::ALL(), col),
+        Kokkos::subview(y, Kokkos::ALL(), col),
         a, b );
   }
 };
@@ -542,7 +550,9 @@ MeanFullOccupancyKernelLaunch(Kernel kernel) {
 //   A == Kokkos::CrsMatrix< Sacado::UQ::PCE<...>,...>, with A.values.sacado_size() == 1
 //   x, y == Kokkos::View< Sacado::UQ::PCE<...>*,...>,
 //   x and y are rank 1
-template <typename MatrixStorage,
+template <typename InputViewDevice,
+          typename OutputViewDevice,
+          typename MatrixStorage,
           typename MatrixOrdinal,
           typename MatrixMemory,
           typename MatrixSize,
@@ -557,11 +567,11 @@ class MeanMultiply< Kokkos::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
                                        MatrixSize >,
                     Kokkos::View< Sacado::UQ::PCE<InputStorage>*,
                                   Kokkos::LayoutLeft,
-                                  Kokkos::Cuda,
+                                  InputViewDevice,
                                   InputMemory >,
                     Kokkos::View< Sacado::UQ::PCE<OutputStorage>*,
                                   Kokkos::LayoutLeft,
-                                  Kokkos::Cuda,
+                                  OutputViewDevice,
                                   OutputMemory >
                     >
 {
@@ -571,7 +581,7 @@ public:
   typedef Sacado::UQ::PCE<OutputStorage> OutputVectorValue;
 
   typedef Kokkos::Cuda Device;
-  typedef Device device_type;
+  typedef Device execution_space;
   typedef Kokkos::CrsMatrix< MatrixValue,
                              MatrixOrdinal,
                              Device,
@@ -581,11 +591,11 @@ public:
   typedef typename MatrixValue::ordinal_type size_type;
   typedef Kokkos::View< InputVectorValue*,
                         Kokkos::LayoutLeft,
-                        Device,
+                        InputViewDevice,
                         InputMemory > input_vector_type;
   typedef Kokkos::View< OutputVectorValue*,
                         Kokkos::LayoutLeft,
-                        Device,
+                        OutputViewDevice,
                         OutputMemory > output_vector_type;
 
   typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
@@ -595,7 +605,7 @@ public:
 
   template <int BlockSize>
   struct Kernel {
-    typedef Device device_type;
+    typedef Device execution_space;
     typedef typename matrix_values_type::flat_array_type matrix_array_type;
     typedef typename input_vector_type::array_type input_array_type;
     typedef typename output_vector_type::array_type output_array_type;
@@ -765,7 +775,7 @@ public:
   typedef Sacado::UQ::PCE<OutputStorage> OutputVectorValue;
 
   typedef Kokkos::Cuda Device;
-  typedef Device device_type;
+  typedef Device execution_space;
   typedef Kokkos::CrsMatrix< MatrixValue,
                              MatrixOrdinal,
                              Device,
@@ -789,7 +799,7 @@ public:
 
   template <int BlockSize>
   struct Kernel {
-    typedef Device device_type;
+    typedef Device execution_space;
     typedef typename matrix_values_type::flat_array_type matrix_array_type;
     typedef typename input_vector_type::array_type input_array_type;
     typedef typename output_vector_type::array_type output_array_type;

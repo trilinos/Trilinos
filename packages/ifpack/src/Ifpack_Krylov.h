@@ -99,9 +99,9 @@ public:
   //@}
 
   /*! This flag can be used to apply the preconditioner to the transpose of
-   * the input operator. 
-   * 
-   * \return Integer error code, set to 0 if successful.  
+   * the input operator.
+   *
+   * \return Integer error code, set to 0 if successful.
    * Set to -1 if this implementation does not support transpose.
     */
   virtual inline int SetUseTranspose(bool UseTranspose_in)
@@ -115,10 +115,10 @@ public:
   //@{ \name Mathematical functions.
 
   //! Applies the matrix to an Epetra_MultiVector.
-  /*! 
-    \param 
+  /*!
+    \param
     X - (In) A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
-    \param 
+    \param
     Y - (Out) A Epetra_MultiVector of dimension NumVectors containing the result.
 
     \return Integer error code, set to 0 if successful.
@@ -126,7 +126,7 @@ public:
   virtual inline int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
   //! Applies the preconditioner to X, returns the result in Y.
-  /*! 
+  /*!
     \param
     X - (In) A Epetra_MultiVector of dimension NumVectors to be preconditioned.
     \param
@@ -174,7 +174,7 @@ public:
   virtual const Epetra_Map & OperatorRangeMap() const;
 
   virtual int Initialize();
-  
+
   virtual bool IsInitialized() const
   {
     return(IsInitialized_);
@@ -189,7 +189,7 @@ public:
   //! Computes the preconditioners.
   virtual int Compute();
 
-  virtual const Epetra_RowMatrix& Matrix() const 
+  virtual const Epetra_RowMatrix& Matrix() const
   {
     return(*Matrix_);
   }
@@ -271,17 +271,17 @@ public:
   }
 
 private:
-  
+
   // @}
   // @{ \name Private methods
-  
+
   //! Sets the label.
   virtual void SetLabel();
 
   //! Copy constructor (PRIVATE, should not be used)
   Ifpack_Krylov(const Ifpack_Krylov& rhs)
   {}
-  
+
   //! operator = (PRIVATE, should not be used)
   Ifpack_Krylov& operator=(const Ifpack_Krylov& rhs)
   {
@@ -330,8 +330,12 @@ private:
   bool UseTranspose_;
   //! Contains the estimated condition number
   double Condest_;
+#if 0
+  // Unused; commented out to avoid build warnings.
+
   //! If true, Compute() also computes the condition number estimate.
   bool ComputeCondest_;
+#endif // 0
   //! Contains the label of this object.
   string Label_;
 

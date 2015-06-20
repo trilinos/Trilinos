@@ -203,8 +203,8 @@ element block index 2 has id 3 and 192 elements
 global ns info for ns index 0 id 4 num_nodes = 65 num_ns_df = 0
 global ns info for ns index 1 id 10 num_nodes = 169 num_ns_df = 0
 global ns info for ns index 2 id 20 num_nodes = 169 num_ns_df = 0
-global ss info for ss index 0 id 11 num_elements = 144 num_ss_df = 0
-global ss info for ss index 1 id 21 num_elements = 144 num_ss_df = 0
+global ss info for ss index 0 id 11 num_elements = 162 num_ss_df = 0
+global ss info for ss index 1 id 21 num_elements = 162 num_ss_df = 0
 global ss info for ss index 2 id 45 num_elements = 48 num_ss_df = 0
 global ss info for ss index 3 id 55 num_elements = 48 num_ss_df = 0
 global ss info for ss index 4 id 65 num_elements = 48 num_ss_df = 0

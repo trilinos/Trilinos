@@ -53,9 +53,8 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsTplDeclareLibraries)
 
-TRIBITS_TPL_DECLARE_LIBRARIES( qpOASES
+TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( qpOASES
   REQUIRED_HEADERS qpOASES.hpp
   REQUIRED_LIBS_NAMES qpOASES qpOASESextras
   )

@@ -1,10 +1,10 @@
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 
 TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/Fad)
 TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/test/utils)
 
-IF (${PACKAGE_NAME}_ENABLE_Teuchos)
+# Don't build these tests when Cuda is enabled -- they take forever to compile
+# using the nvcc wrapper
+IF (${PACKAGE_NAME}_ENABLE_Teuchos AND NOT Kokkos_ENABLE_Cuda)
 
   TRIBITS_ADD_EXECUTABLE(
     fad_expr_depth
@@ -37,7 +37,6 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
     fe_jac_fill_funcs
     HEADERS fe_jac_fill_funcs.hpp
     SOURCES fe_jac_fill_funcs.cpp
-    DEPLIBS sacado
     TESTONLY
     )
 
@@ -46,7 +45,7 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
     SOURCES fad_fe_jac_fill.cpp
     COMM serial mpi
     XHOSTTYPE AIX
-    DEPLIBS fe_jac_fill_funcs
+    TESTONLYLIBS fe_jac_fill_funcs
     )
 
   TRIBITS_ADD_EXECUTABLE(
@@ -54,7 +53,7 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
     SOURCES fad_fe_jac_fill_range.cpp
     COMM serial mpi
     XHOSTTYPE AIX
-    DEPLIBS fe_jac_fill_funcs
+    TESTONLYLIBS fe_jac_fill_funcs
     )
 
   TRIBITS_ADD_EXECUTABLE(
@@ -73,3 +72,5 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
     DEST_FILES   plot_fad_expr_depth.py)
 
 ENDIF()
+
+ADD_SUBDIRECTORY(fenl_assembly)

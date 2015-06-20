@@ -53,9 +53,8 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsTplDeclareLibraries)
 
-TRIBITS_TPL_DECLARE_LIBRARIES( Cholmod
+TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( Cholmod
   REQUIRED_HEADERS cholmod.h cholmod_core.h
   REQUIRED_LIBS_NAMES libcholmod.a libamd.a libcolamd.a libsuitesparseconfig.a
   )

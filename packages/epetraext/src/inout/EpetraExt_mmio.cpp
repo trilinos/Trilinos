@@ -58,6 +58,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
+#include "Teuchos_Assert.hpp"
 #include "EpetraExt_mmio.h"
 
 using namespace EpetraExt;
@@ -127,7 +128,7 @@ int mm_read_unsymmetric_sparse(const char *fname, int *M_, int *N_, int *nz_,
 
     for (i=0; i<nz; i++)
     {
-        fscanf(f, "%d %d %lg\n", &I[i], &J[i], &val[i]);
+        TEUCHOS_ASSERT(fscanf(f, "%d %d %lg\n", &I[i], &J[i], &val[i]) != EOF);
         I[i]--;  /* adjust from 1-based to 0-based */
         J[i]--;
     }
@@ -497,12 +498,13 @@ int mm_write_banner(FILE *f, MM_typecode matcode)
   char buffer[MM_MAX_LINE_LENGTH];
 
   mm_typecode_to_str(matcode, buffer);
-  int ret_code;
+  const int ret_code = fprintf(f, "%s %s\n", MatrixMarketBanner, buffer);
 
-  ret_code = fprintf(f, "%s %s\n", MatrixMarketBanner, buffer);
-  //free(str);
-  //delete [] str;
+  if (ret_code < 0) {
+    return -1;
+  } else {
     return 0;
+  }
 }
 
 int mm_write_mtx_crd(char fname[], int M, int N, int nz, int I[], int J[],
@@ -551,19 +553,27 @@ int mm_write_mtx_crd(char fname[], int M, int N, int nz, int I[], int J[],
 }
 
 
- void mm_typecode_to_str(MM_typecode matcode, char * buffer)
+void mm_typecode_to_str(MM_typecode matcode, char * buffer)
 {
     char type0[20];
     char type1[20];
     char type2[20];
     char type3[20];
-    int error =0;
+    //int error =0; // unused
 
     /* check for MTX type */
     if (mm_is_matrix(matcode))
         strcpy(type0, MM_MTX_STR);
-    else
-        error=1;
+    else {
+        // FIXME (mfh 27 Mar 2015) The code I found here set error=1,
+        // but kept going.  It would make more sense to return
+        // immediately on failure, as the code below does.  It would
+        // make even _more_ sense to return an error code, like some
+        // other functions in this file, but I don't want to change
+        // the public interface.
+        return;
+        //error=1; // unused
+    }
 
     /* check for CRD or ARR matrix */
     if (mm_is_sparse(matcode))

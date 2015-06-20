@@ -90,6 +90,10 @@ class MockModelEval_A
   /** \brief . */
   Teuchos::RCP<const Epetra_Vector> get_p_init(int l) const;
   /** \brief . */
+  Teuchos::RCP<const Epetra_Vector> get_p_lower_bounds(int l) const;
+  /** \brief . */
+  Teuchos::RCP<const Epetra_Vector> get_p_upper_bounds(int l) const;
+  /** \brief . */
   Teuchos::RCP<Epetra_Operator> create_W() const;
   /** \brief . */
   EpetraExt::ModelEvaluator::InArgs createInArgs() const;
@@ -123,6 +127,8 @@ class MockModelEval_A
    Teuchos::RCP<Epetra_Vector> x_dot_vec;
    Teuchos::RCP<Epetra_Map> p_map;
    Teuchos::RCP<Epetra_Vector> p_init;
+   Teuchos::RCP<Epetra_Vector> p_lo;
+   Teuchos::RCP<Epetra_Vector> p_up;
    Teuchos::RCP<Epetra_Map> g_map;
    Teuchos::RCP<Epetra_Comm> Comm;
    Teuchos::RCP<Epetra_CrsGraph> jacGraph;

@@ -1,10 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include <stk_mesh/base/Bucket.hpp>
 #include <stdlib.h>                     // for NULL
@@ -268,7 +293,7 @@ Bucket::Bucket( BulkData & arg_mesh ,
 {
   ThrowAssertMsg(arg_capacity != 0, "Buckets should never have zero capacity");
 
-  m_topology = get_topology( get_cell_topology(*this), m_mesh.mesh_meta_data().spatial_dimension() );
+  m_topology = get_topology(m_mesh.mesh_meta_data(), arg_entity_rank, superset_part_ordinals());
 
   if (m_topology != stk::topology::END_TOPOLOGY) {
     m_nodes_per_entity = m_topology.num_nodes();
@@ -287,6 +312,80 @@ Bucket::Bucket( BulkData & arg_mesh ,
 Bucket::~Bucket()
 {
   m_mesh.destroy_bucket_callback(m_entity_rank, *this, m_capacity);
+}
+
+
+void Bucket::change_existing_connectivity(unsigned bucket_ordinal, stk::mesh::Entity* new_nodes)
+{
+    unsigned num_nodes = this->num_nodes(bucket_ordinal);
+    Entity *nodes=0;
+    if (m_node_kind == FIXED_CONNECTIVITY)
+    {
+        nodes = m_fixed_node_connectivity.begin(bucket_ordinal);
+    }
+    else
+    {
+        nodes = m_dynamic_node_connectivity.begin(bucket_ordinal);
+    }
+
+    for(unsigned i=0;i<num_nodes;++i)
+    {
+        nodes[i] = new_nodes[i];
+    }
+}
+
+void Bucket::change_existing_permutation_for_connected_element(unsigned bucket_ordinal_of_lower_ranked_entity, unsigned elem_connectivity_ordinal, stk::mesh::Permutation permut)
+{
+    stk::mesh::Permutation *perms=0;
+    if (m_element_kind == FIXED_CONNECTIVITY)
+    {
+        perms = m_fixed_element_connectivity.begin_permutations(bucket_ordinal_of_lower_ranked_entity);
+    }
+    else
+    {
+        perms = m_dynamic_element_connectivity.begin_permutations(bucket_ordinal_of_lower_ranked_entity);
+    }
+
+    if (perms)
+    {
+        perms[elem_connectivity_ordinal] = permut;
+    }
+}
+
+void Bucket::change_existing_permutation_for_connected_face(unsigned bucket_ordinal_of_higher_ranked_entity, unsigned face_connectivity_ordinal, stk::mesh::Permutation permut)
+{
+    stk::mesh::Permutation *perms=0;
+    if (m_face_kind == FIXED_CONNECTIVITY)
+    {
+        perms = m_fixed_face_connectivity.begin_permutations(bucket_ordinal_of_higher_ranked_entity);
+    }
+    else
+    {
+        perms = m_dynamic_face_connectivity.begin_permutations(bucket_ordinal_of_higher_ranked_entity);
+    }
+
+    if (perms)
+    {
+        perms[face_connectivity_ordinal] = permut;
+    }
+}
+
+void Bucket::change_existing_permutation_for_connected_edge(unsigned bucket_ordinal_of_higher_ranked_entity, unsigned edge_connectivity_ordinal, stk::mesh::Permutation permut)
+{
+    stk::mesh::Permutation *perms=0;
+    if (m_edge_kind == FIXED_CONNECTIVITY)
+    {
+        perms = m_fixed_edge_connectivity.begin_permutations(bucket_ordinal_of_higher_ranked_entity);
+    }
+    else
+    {
+        perms = m_dynamic_edge_connectivity.begin_permutations(bucket_ordinal_of_higher_ranked_entity);
+    }
+
+    if (perms)
+    {
+        perms[edge_connectivity_ordinal] = permut;
+    }
 }
 
 bool Bucket::member( const Part & part ) const
@@ -632,10 +731,6 @@ bool Bucket::destroy_relation(Entity e_from, Entity e_to, const RelationIdentifi
   DestroyRelationFunctor functor(from_bucket_ordinal, e_to, static_cast<ConnectivityOrdinal>(local_id));
   modify_connectivity(functor, m_mesh.entity_rank(e_to));
 
-  if (functor.m_modified && mesh().bucket(e_from).owned() && (mesh().entity_rank(e_from) > mesh().entity_rank(e_to)) ) {
-    --mesh().m_closure_count[e_to.local_offset()];
-  }
-
   return functor.m_modified;
 }
 
@@ -643,10 +738,6 @@ bool Bucket::declare_relation(size_type bucket_ordinal, Entity e_to, const Conne
 {
   DeclareRelationFunctor functor(bucket_ordinal, e_to, ordinal, permutation);
   modify_connectivity(functor, m_mesh.entity_rank(e_to));
-
-  if (functor.m_modified && owned() && (entity_rank() > mesh().entity_rank(e_to)) ) {
-    ++mesh().m_closure_count[e_to.local_offset()];
-  }
 
   return functor.m_modified;
 }

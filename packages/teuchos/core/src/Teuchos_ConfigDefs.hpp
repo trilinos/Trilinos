@@ -45,10 +45,11 @@
 #define TEUCHOS_CONFIGDEFS_HPP
 
 /*! \file Teuchos_ConfigDefs.hpp
-    \brief Teuchos header file which uses auto-configuration information 
+    \brief Teuchos header file which uses auto-configuration information
 	to include necessary C++ headers.
 */
 
+#include "TeuchosCore_config.h"
 #include "Teuchos_config.h"
 
 #ifdef HAVE_TEUCHOS_DEBUG

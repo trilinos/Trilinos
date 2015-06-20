@@ -195,9 +195,11 @@ bool FiniteElementProblem::evaluate(FillType f,
     rhs = tmp_rhs;
   } else if (flag == MATRIX_ONLY) {
     A = dynamic_cast<Epetra_CrsMatrix*> (tmp_matrix);
+    assert(A != NULL);
   } else if (flag == ALL) {
     rhs = tmp_rhs;
     A = dynamic_cast<Epetra_CrsMatrix*> (tmp_matrix);
+    assert(A != NULL);
   } else {
     std::cout << "ERROR: FiniteElementProblem::fillMatrix() - FillType flag is broken" << std::endl;
     throw;
@@ -232,8 +234,14 @@ bool FiniteElementProblem::evaluate(FillType f,
   }
 
   // Zero out the objects that will be filled
-  if ((flag == MATRIX_ONLY) || (flag == ALL)) i=A->PutScalar(0.0);
-  if ((flag == F_ONLY)    || (flag == ALL)) i=rhs->PutScalar(0.0);
+  if ((flag == MATRIX_ONLY) || (flag == ALL)) {
+    i = A->PutScalar(0.0);
+    assert(i == 0);
+  }
+  if ((flag == F_ONLY)    || (flag == ALL)) {
+    i = rhs->PutScalar(0.0);
+    assert(i == 0);
+  }
 
   // Loop Over # of Finite Elements on Processor
   for (int ne=0; ne < OverlapNumMyElements-1; ne++) {
@@ -271,6 +279,7 @@ bool FiniteElementProblem::evaluate(FillType f,
          3.0*factor*basis.uu*basis.uu*basis.phi[j]*basis.phi[i]) +
         mass_coeff*basis.wt*basis.dx*basis.phi[j]*basis.phi[i];
           ierr=A->SumIntoGlobalValues(row, 1, &jac, &column);
+          assert(ierr == 0);
         }
       }
     }
@@ -370,9 +379,6 @@ Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AAA)
   int i,j;
   int row, column;
   int OverlapNumMyElements = OverlapMap->NumMyElements();
-  int OverlapMinMyGID;
-  if (MyPID==0) OverlapMinMyGID = StandardMap->MinMyGID();
-  else OverlapMinMyGID = StandardMap->MinMyGID()-1;
 
   // Loop Over # of Finite Elements on Processor
   for (int ne=0; ne < OverlapNumMyElements-1; ne++) {

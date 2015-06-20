@@ -259,7 +259,7 @@ public:
   virtual double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
                          const int MaxIters = 1550,
                          const double Tol = 1e-9,
-			 Epetra_RowMatrix* Matrix = 0);
+                         Epetra_RowMatrix* Matrix = 0);
 
   //! Returns the condition number estimate, or -1.0 if not computed.
   virtual double Condest() const
@@ -428,8 +428,12 @@ private:
   bool UseTranspose_;
   //! Contains the estimated condition number
   double Condest_;
+#if 0
+  // Unused; commented out to avoid build warnings
+
   //! If true, Compute() also computes the condition number estimate.
   bool ComputeCondest_;
+#endif // 0
   //! Contains the label of this object.
   string Label_;
   int PrecType_;

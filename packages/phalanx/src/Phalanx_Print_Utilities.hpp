@@ -46,7 +46,6 @@
 #define PHX_PRINT_UTILITIES_HPP
 
 #include <vector>
-#include "Shards_Array.hpp"
 
 namespace PHX {
 

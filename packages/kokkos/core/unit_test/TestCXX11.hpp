@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,19 +35,20 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// 
 // ************************************************************************
 //@HEADER
 */
-#include <Kokkos_Parallel.hpp>
+#include <Kokkos_Core.hpp>
+
 namespace TestCXX11 {
 
 template<class DeviceType>
 struct FunctorAddTest{
   typedef Kokkos::View<double**,DeviceType> view_type;
   view_type a_, b_;
-  typedef DeviceType device_type;
+  typedef DeviceType execution_space;
   FunctorAddTest(view_type & a, view_type &b):a_(a),b_(b) {}
   void operator() (const int& i) const {
     b_(i,0) = a_(i,1) + a_(i,2);
@@ -57,7 +58,7 @@ struct FunctorAddTest{
     b_(i,4) = a_(i,3) + a_(i,4);
   }
 
-  typedef typename Kokkos::TeamPolicy< device_type >::member_type  team_member ;
+  typedef typename Kokkos::TeamPolicy< execution_space >::member_type  team_member ;
   void operator() (const team_member & dev) const {
     int i = dev.league_rank()*dev.team_size() + dev.team_rank();
     b_(i,0) = a_(i,1) + a_(i,2);
@@ -75,10 +76,8 @@ double AddTestFunctor() {
 
   Kokkos::View<double**,DeviceType> a("A",100,5);
   Kokkos::View<double**,DeviceType> b("B",100,5);
-  Kokkos::View<double**,typename DeviceType::host_mirror_device_type>
-     h_a = Kokkos::create_mirror_view(a);
-  Kokkos::View<double**,typename DeviceType::host_mirror_device_type>
-     h_b = Kokkos::create_mirror_view(b);
+  typename Kokkos::View<double**,DeviceType>::HostMirror h_a = Kokkos::create_mirror_view(a);
+  typename Kokkos::View<double**,DeviceType>::HostMirror h_b = Kokkos::create_mirror_view(b);
 
   for(int i=0;i<100;i++) {
     for(int j=0;j<5;j++)
@@ -103,7 +102,7 @@ double AddTestFunctor() {
 
 
 
-#if defined (KOKKOS_HAVE_CXX11)
+#if defined (KOKKOS_HAVE_CXX11_DISPATCH_LAMBDA)
 template<class DeviceType, bool PWRTest>
 double AddTestLambda() {
 
@@ -111,10 +110,8 @@ double AddTestLambda() {
 
   Kokkos::View<double**,DeviceType> a("A",100,5);
   Kokkos::View<double**,DeviceType> b("B",100,5);
-  Kokkos::View<double**,typename DeviceType::host_mirror_device_type>
-     h_a = Kokkos::create_mirror_view(a);
-  Kokkos::View<double**,typename DeviceType::host_mirror_device_type>
-     h_b = Kokkos::create_mirror_view(b);
+  typename Kokkos::View<double**,DeviceType>::HostMirror h_a = Kokkos::create_mirror_view(a);
+  typename Kokkos::View<double**,DeviceType>::HostMirror h_b = Kokkos::create_mirror_view(b);
 
   for(int i=0;i<100;i++) {
     for(int j=0;j<5;j++)
@@ -164,7 +161,7 @@ template<class DeviceType>
 struct FunctorReduceTest{
   typedef Kokkos::View<double**,DeviceType> view_type;
   view_type a_;
-  typedef DeviceType device_type;
+  typedef DeviceType execution_space;
   typedef double value_type;
   FunctorReduceTest(view_type & a):a_(a) {}
 
@@ -177,7 +174,7 @@ struct FunctorReduceTest{
     sum += a_(i,3) + a_(i,4);
   }
 
-  typedef typename Kokkos::TeamPolicy< device_type >::member_type  team_member ;
+  typedef typename Kokkos::TeamPolicy< execution_space >::member_type  team_member ;
 
   KOKKOS_INLINE_FUNCTION
   void operator() (const team_member & dev, value_type& sum) const {
@@ -198,11 +195,11 @@ template<class DeviceType, bool PWRTest>
 double ReduceTestFunctor() {
 
   typedef Kokkos::TeamPolicy<DeviceType> policy_type ;
-  typedef Kokkos::View<double,typename DeviceType::host_mirror_device_type,Kokkos::MemoryUnmanaged> unmanaged_result ;
+  typedef Kokkos::View<double**,DeviceType> view_type ;
+  typedef Kokkos::View<double,typename view_type::host_mirror_space,Kokkos::MemoryUnmanaged> unmanaged_result ;
 
-  Kokkos::View<double**,DeviceType> a("A",100,5);
-  Kokkos::View<double**,typename DeviceType::host_mirror_device_type>
-     h_a = Kokkos::create_mirror_view(a);
+  view_type a("A",100,5);
+  typename view_type::HostMirror h_a = Kokkos::create_mirror_view(a);
 
   for(int i=0;i<100;i++) {
     for(int j=0;j<5;j++)
@@ -219,16 +216,16 @@ double ReduceTestFunctor() {
   return result;
 }
 
-#if defined (KOKKOS_HAVE_CXX11)
+#if defined (KOKKOS_HAVE_CXX11_DISPATCH_LAMBDA)
 template<class DeviceType, bool PWRTest>
 double ReduceTestLambda() {
 
   typedef Kokkos::TeamPolicy<DeviceType> policy_type ;
-  typedef Kokkos::View<double,typename DeviceType::host_mirror_device_type,Kokkos::MemoryUnmanaged> unmanaged_result ;
+  typedef Kokkos::View<double**,DeviceType> view_type ;
+  typedef Kokkos::View<double,typename view_type::host_mirror_space,Kokkos::MemoryUnmanaged> unmanaged_result ;
 
-  Kokkos::View<double**,DeviceType> a("A",100,5);
-  Kokkos::View<double**,typename DeviceType::host_mirror_device_type>
-     h_a = Kokkos::create_mirror_view(a);
+  view_type a("A",100,5);
+  typename view_type::HostMirror h_a = Kokkos::create_mirror_view(a);
 
   for(int i=0;i<100;i++) {
     for(int j=0;j<5;j++)
@@ -294,6 +291,7 @@ double TestVariantFunctor(int test) {
 template<class DeviceType>
 bool Test(int test) {
 
+#ifdef KOKKOS_HAVE_CXX11_DISPATCH_LAMBDA
   double res_functor = TestVariantFunctor<DeviceType>(test);
   double res_lambda = TestVariantLambda<DeviceType>(test);
 
@@ -313,6 +311,9 @@ bool Test(int test) {
   }
 
   return passed ;
+#else
+  return true;
+#endif
 }
 
 }

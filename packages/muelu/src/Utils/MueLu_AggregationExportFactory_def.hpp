@@ -67,8 +67,8 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const ParameterList> AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const ParameterList> AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     std::string output_msg = "Output filename template (%TIMESTEP is replaced by \'Output file: time step\' variable,"
@@ -85,15 +85,15 @@ namespace MueLu {
     return validParamList;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     Input(fineLevel, "Aggregates");         //< factory which created aggregates
     Input(fineLevel, "DofsPerNode");        //< CoalesceAndDropFactory (needed for DofsPerNode variable)
     Input(fineLevel, "UnAmalgamationInfo"); //< AmalgamationFactory (needed for UnAmalgamationInfo variable)
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "AggregationExportFactory", coarseLevel);
 
     Teuchos::RCP<Aggregates> aggregates      = Get< Teuchos::RCP<Aggregates> >(fineLevel,"Aggregates");
@@ -142,18 +142,18 @@ namespace MueLu {
     GetOStream(Runtime0) << "AggregationExportFactory: outputfilel \"" << outFile << "\"" << std::endl;
     std::ofstream fout(outFile.c_str());
 
-    GO numAggs = aggregates->GetNumAggregates();
+    GO numAggs   = aggregates->GetNumAggregates();
+    GO indexBase = aggregates->GetMap()->getIndexBase(); // extract indexBase from overlapping map within aggregates structure. The indexBase is constant throughout the whole simulation (either 0 = C++ or 1 = Fortran)
+    GO offset    = amalgInfo->GlobalOffset();            // extract offset for global dof ids
+    
+    
     std::vector<GlobalOrdinal> nodeIds;
     for (int i = 0; i < numAggs; ++i) {
       fout << "Agg " << minGlobalAggId[myRank] + i << " Proc " << myRank << ":";
 
+      // TODO: Use k+=DofsPerNode instead of ++k and get rid of std::unique call afterwards
       for (int k = aggStart[i]; k < aggStart[i+1]; ++k) {
-        /*std::cout << "proc: " << comm->getRank() << "\t aggToRowMap[" << i << "][" << k << "]=" <<aggToRowMap[i][k] << "\t node GID: " << aggToRowMap[i][k]/DofsPerNode << "\t GID in colMap=" << aggToRowMap[i][k];
-          if(colMap->isNodeGlobalElement(aggToRowMap[i][k])==false)
-          std::cout << " NOT ON CUR PROC!";
-          std::cout << std::endl;*/
-
-        nodeIds.push_back(aggToRowMap[k]/DofsPerNode);
+        nodeIds.push_back((aggToRowMap[k] - offset - indexBase) / DofsPerNode + indexBase);       
       }
 
       // remove duplicate entries from nodeids
@@ -172,8 +172,8 @@ namespace MueLu {
     fout.close();
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::string AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::replaceAll(std::string result, const std::string& replaceWhat, const std::string& replaceWithWhat) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::string AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceAll(std::string result, const std::string& replaceWhat, const std::string& replaceWithWhat) const {
     while(1) {
       const int pos = result.find(replaceWhat);
       if (pos == -1)

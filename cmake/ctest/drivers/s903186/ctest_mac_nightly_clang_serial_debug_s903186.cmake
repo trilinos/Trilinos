@@ -63,7 +63,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.s903186.clang.cmake")
 SET(COMM_TYPE SERIAL)
 SET(BUILD_TYPE DEBUG)
 SET(BUILD_DIR_NAME SERIAL_DEBUG_DEV_CLANG)
-SET(CTEST_PARALLEL_LEVEL 8)
+SET(CTEST_PARALLEL_LEVEL 7)
 SET(CTEST_TEST_TYPE Experimental)
 #SET(CTEST_TEST_TIMEOUT 900)
 
@@ -71,10 +71,10 @@ SET(EXTRA_EXCLUDE_PACKAGES PyTrilinos SEACAS Panzer)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
-  "-DNetcdf_LIBRARY_DIRS=/Users/trilinos/tpl/gcc/netcdf_4.2/lib"
-  "-DNetcdf_INCLUDE_DIRS=/Users/trilinos/tpl/gcc/netcdf_4.2/include"
-  "-DHDF5_LIBRARY_DIRS=/Users/trilinos/tpl/gcc/hdf5-1.8.6/lib"
-  "-DHDF5_INCLUDE_DIRS=/Users/trilinos/tpl/gcc/hdf5-1.8.6/include"
+  "-DNetcdf_LIBRARY_DIRS=/Volumes/SnowLeopardOSX/Users/trilinos/tpl/gcc/netcdf_4.2/lib"
+  "-DNetcdf_INCLUDE_DIRS=/Volumes/SnowLeopardOSX/Users/trilinos/tpl/gcc/netcdf_4.2/include"
+  "-DHDF5_LIBRARY_DIRS=/Volumes/SnowLeopardOSX/Users/trilinos/tpl/gcc/hdf5-1.8.6/lib"
+  "-DHDF5_INCLUDE_DIRS=/Volumes/SnowLeopardOSX/Users/trilinos/tpl/gcc/hdf5-1.8.6/include"
   )
 
 #

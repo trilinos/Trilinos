@@ -391,7 +391,7 @@ std::pair<panzer::Ordinal64,panzer::Ordinal64> CubeHexMeshFactory::determineZEle
    // first "extra" elements get an extra column of elements
    // this determines the starting X index and number of elements
    panzer::Ordinal64 nume=0, start=0;
-   if(zProcLoc<extra) {
+   if(zProcLoc<Teuchos::as<std::size_t>(extra)) {
       nume  = minElements+1;
       start = zProcLoc*(minElements+1);
    }

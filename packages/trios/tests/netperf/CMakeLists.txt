@@ -41,9 +41,6 @@
 # @HEADER
 
 
-INCLUDE(TribitsAddExecutable)
-INCLUDE(TribitsAddTest)
-INCLUDE(TribitsAddOptionAndDefine)
 INCLUDE(TriosProcessXDR)
 
 

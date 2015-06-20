@@ -35,18 +35,19 @@
   \brief A status test for testing the norm of the eigenvectors residuals.
 */
 
-
+#include "AnasaziTypes.hpp"
 #include "AnasaziStatusTest.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+
 namespace Anasazi {
 
   //! @name LOBPCG Exceptions
-  //@{ 
+  //@{
 
-  /*! 
+  /*!
     \class ResNormNaNError
-    \brief ResNormNaNError is thrown from StatusTestResNorm::checkStatus() 
-    when a NaN ("not a number") is detected among the residual norms returned 
+    \brief ResNormNaNError is thrown from StatusTestResNorm::checkStatus()
+    when a NaN ("not a number") is detected among the residual norms returned
     by the eigensolver.
 
     This behavior is optional and is controlled by flag to StatusTestResNorm::StatusTestResNorm().
@@ -57,19 +58,19 @@ namespace Anasazi {
 
   //@}
 
-  /*! 
+  /*!
     \class StatusTestResNorm
     \brief A status test for testing the norm of the eigenvectors residuals.
 
     StatusTestResNorm was designed to be used as a test for
     convergence. The tester compares the norms of the residual vectors against
-    a user specified tolerance. 
+    a user specified tolerance.
 
     In addition to specifying the tolerance, the user may specify:
     <ul>
     <li> the norm to be used: 2-norm or OrthoManager::norm() or Eigensolver::getRitzRes2Norms()
-    <li> the scale: absolute or relative to magnitude of Ritz value 
-    <li> the quorum: the number of vectors required for the test to 
+    <li> the scale: absolute or relative to magnitude of Ritz value
+    <li> the quorum: the number of vectors required for the test to
     evaluate as ::Passed.
     </ul>
     */
@@ -80,17 +81,8 @@ namespace Anasazi {
 
     public:
 
-    /*! \enum ResType 
-      Enumerated type used to specify which residual norm used by this status test.
-    */
-    enum ResType {
-      RES_ORTH,
-      RES_2NORM,
-      RITZRES_2NORM
-    };
-
     //! @name Constructors/destructors
-    //@{ 
+    //@{
 
     //! Constructor
     StatusTestResNorm(typename Teuchos::ScalarTraits<ScalarType>::magnitudeType tol, int quorum = -1, ResType whichNorm = RES_ORTH, bool scaled = true, bool throwExceptionOnNaN = true);
@@ -100,7 +92,7 @@ namespace Anasazi {
     //@}
 
     //! @name Status methods
-    //@{ 
+    //@{
     /*! Check status as defined by test.
 
       \return TestStatus indicating whether the test passed or failed.
@@ -123,7 +115,7 @@ namespace Anasazi {
     //@}
 
     //! @name Accessor methods
-    //@{ 
+    //@{
 
     /*! \brief Set quorum.
      *
@@ -177,20 +169,20 @@ namespace Anasazi {
     //@}
 
     //! @name Reset methods
-    //@{ 
+    //@{
     //! Informs the status test that it should reset its internal configuration to the uninitialized state.
     /*! This is necessary for the case when the status test is being reused by another solver or for another
-      eigenvalue problem. The status test may have information that pertains to a particular problem or solver 
-      state. The internal information will be reset back to the uninitialized state. The user specified information 
+      eigenvalue problem. The status test may have information that pertains to a particular problem or solver
+      state. The internal information will be reset back to the uninitialized state. The user specified information
       that the convergence test uses will remain.
       */
-    void reset() { 
+    void reset() {
       ind_.resize(0);
       state_ = Undefined;
     }
 
     //! Clears the results of the last status test.
-    /*! This should be distinguished from the reset() method, as it only clears the cached result from the last 
+    /*! This should be distinguished from the reset() method, as it only clears the cached result from the last
      * status test, so that a call to getStatus() will return ::Undefined. This is necessary for the SEQOR and SEQAND
      * tests in the StatusTestCombo class, which may short circuit and not evaluate all of the StatusTests contained
      * in them.
@@ -203,7 +195,7 @@ namespace Anasazi {
     //@}
 
     //! @name Print methods
-    //@{ 
+    //@{
 
     //! Output formatted description of stopping test to output stream.
     std::ostream& print(std::ostream& os, int indent = 0) const;
@@ -215,7 +207,7 @@ namespace Anasazi {
     std::vector<int> ind_;
     int quorum_;
     bool scaled_;
-    ResType whichNorm_;
+    enum ResType whichNorm_;
     bool throwExceptionOnNaN_;
   };
 
@@ -226,7 +218,7 @@ namespace Anasazi {
   {}
 
   template <class ScalarType, class MV, class OP>
-  TestStatus StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Eigensolver<ScalarType,MV,OP>* solver ) 
+  TestStatus StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Eigensolver<ScalarType,MV,OP>* solver )
   {
     typedef Teuchos::ScalarTraits<MagnitudeType> MT;
 
@@ -268,7 +260,7 @@ namespace Anasazi {
     int have = 0;
     ind_.resize(res.size());
     for (unsigned int i=0; i<res.size(); i++) {
-      TEUCHOS_TEST_FOR_EXCEPTION( MT::isnaninf(res[i]), ResNormNaNError, 
+      TEUCHOS_TEST_FOR_EXCEPTION( MT::isnaninf(res[i]), ResNormNaNError,
           "StatusTestResNorm::checkStatus(): residual norm is nan or inf" );
       if (res[i] < tol_) {
         ind_[have] = i;
@@ -283,7 +275,7 @@ namespace Anasazi {
 
 
   template <class ScalarType, class MV, class OP>
-  std::ostream& StatusTestResNorm<ScalarType,MV,OP>::print(std::ostream& os, int indent) const 
+  std::ostream& StatusTestResNorm<ScalarType,MV,OP>::print(std::ostream& os, int indent) const
   {
     std::string ind(indent,' ');
     os << ind << "- StatusTestResNorm: ";
@@ -298,7 +290,7 @@ namespace Anasazi {
         os << "Undefined" << std::endl;
         break;
     }
-    os << ind << "  (Tolerance,WhichNorm,Scaled,Quorum): " 
+    os << ind << "  (Tolerance,WhichNorm,Scaled,Quorum): "
       << "(" << tol_;
     switch (whichNorm_) {
       case RES_ORTH:
@@ -312,7 +304,7 @@ namespace Anasazi {
         break;
     }
     os        << "," << (scaled_   ? "true" : "false")
-      << "," << quorum_ 
+      << "," << quorum_
       << ")" << std::endl;
 
     if (state_ != Undefined) {

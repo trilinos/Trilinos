@@ -1,3 +1,36 @@
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+
 #include <gtest/gtest.h>
 #include <vector>
 #include <fstream>
@@ -8,8 +41,7 @@
 #include <exodusMeshInterface.h>
 
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
-#include <stk_util/unit_test_support/perf_unit_util.hpp>
-#include <optionParsing/getOption.h>
+#include <stk_unit_test_utils/getOption.h>
 
 namespace
 {
@@ -166,14 +198,6 @@ void runStkSearchTestUsingStkAABoxes(stk::search::SearchMethod searchMethod)
 
 void testGtkSearch(MPI_Comm comm, std::vector<GtkBox>&domainBoxes, SearchResults& searchResults)
 {
-  // This is an unusual situation where these tests are both performance unit tests
-  // and normal tests; therefore, they need to work regardless of whether we have
-  // callgrind available or not.
-#if __VALGRIND_MAJOR__
-    stk::check_valgrind_version();
-    CALLGRIND_START_INSTRUMENTATION;
-#endif
-
     int proc_id = stk::parallel_machine_rank(comm);
     std::vector<int> procThatOwnsBox;
 
@@ -183,10 +207,6 @@ void testGtkSearch(MPI_Comm comm, std::vector<GtkBox>&domainBoxes, SearchResults
     }
 
     std::vector<GtkBox> rangeBoxes(domainBoxes);
-
-#if __VALGRIND_MAJOR__
-    CALLGRIND_TOGGLE_COLLECT;
-#endif
 
     double startTime = stk::wall_time();
 
@@ -234,14 +254,7 @@ void testGtkSearch(MPI_Comm comm, std::vector<GtkBox>&domainBoxes, SearchResults
     double elapsedTime = stk::wall_time() - startTime;
 
 
-
-#if __VALGRIND_MAJOR__
-    CALLGRIND_TOGGLE_COLLECT;
-    CALLGRIND_STOP_INSTRUMENTATION;
-#endif
-
     printPeformanceStats(elapsedTime, comm);
-    stk::print_debug_skip(comm);
 
     EXPECT_EQ(domainBoxes.size(), first_interaction.size());
     EXPECT_EQ(domainBoxes.size(), last_interaction.size());
@@ -290,11 +303,6 @@ void testGtkSearch(MPI_Comm comm, std::vector<GtkBox>&domainBoxes, SearchResults
 void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxes,
         stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults)
 {
-#if __VALGRIND_MAJOR__
-    stk::check_valgrind_version();
-    CALLGRIND_START_INSTRUMENTATION;
-#endif
-
     int procId = stk::parallel_machine_rank(comm);
 
     StkBoxVector stkBoxes(domainBoxes.size());
@@ -303,21 +311,11 @@ void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxe
     std::string rangeBoxComm = unitTestUtils::getOption("-rangeBoxComm", "yes");
     bool rangeResultsCommunicated = ( rangeBoxComm == "yes" );
 
-#if __VALGRIND_MAJOR__
-    CALLGRIND_TOGGLE_COLLECT;
-#endif
-
     double startTime = stk::wall_time();
     stk::search::coarse_search(stkBoxes, stkBoxes, searchMethod, comm, boxIdPairResults, rangeResultsCommunicated);
     double elapsedTime = stk::wall_time() - startTime;
 
-#if __VALGRIND_MAJOR__
-    CALLGRIND_TOGGLE_COLLECT;
-    CALLGRIND_STOP_INSTRUMENTATION;
-#endif
-
     printPeformanceStats(elapsedTime, comm);
-    stk::print_debug_skip(comm);
 
     gatherResultstoProcZero(comm, boxIdPairResults);
     size_t goldValueNumber=getGoldValueForTest();
@@ -337,11 +335,6 @@ void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxe
 void testStkSearchUsingGtkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxes,
         stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults)
 {
-#if __VALGRIND_MAJOR__
-    stk::check_valgrind_version();
-    CALLGRIND_START_INSTRUMENTATION;
-#endif
-
     int procId = stk::parallel_machine_rank(comm);
 
     GtkBoxVector searchBoxPairs(domainBoxes.size());
@@ -354,21 +347,11 @@ void testStkSearchUsingGtkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxe
     std::string rangeBoxComm = unitTestUtils::getOption("-rangeBoxComm", "yes");
     bool rangeResultsCommunicated = ( rangeBoxComm == "yes" );
 
-#if __VALGRIND_MAJOR__
-    CALLGRIND_TOGGLE_COLLECT;
-#endif
-
     double startTime = stk::wall_time();
     stk::search::coarse_search(searchBoxPairs, searchBoxPairs, searchMethod, comm, boxIdPairResults, rangeResultsCommunicated);
     double elapsedTime = stk::wall_time() - startTime;
 
-#if __VALGRIND_MAJOR__
-    CALLGRIND_TOGGLE_COLLECT;
-    CALLGRIND_STOP_INSTRUMENTATION;
-#endif
-
     printPeformanceStats(elapsedTime, comm);
-    stk::print_debug_skip(comm);
 
     gatherResultstoProcZero(comm, boxIdPairResults);
     size_t goldValueNumber=getGoldValueForTest();

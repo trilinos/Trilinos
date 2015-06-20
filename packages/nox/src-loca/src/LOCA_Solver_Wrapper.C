@@ -162,7 +162,6 @@ LOCA::Solver::Wrapper::resetWrapper()
     constSolverPtr->getPreviousSolutionGroup();
 
   const LOCA::Extended::MultiAbstractGroup* eGrpPtr;
-  const LOCA::Extended::MultiAbstractGroup* oldEGrpPtr;
 
   // Cast soln group to an extended group
   eGrpPtr = dynamic_cast<const LOCA::Extended::MultiAbstractGroup*>(&soln);
@@ -171,14 +170,12 @@ LOCA::Solver::Wrapper::resetWrapper()
     // soln group is not extended, so set points to original groups
     solnGrpPtr = Teuchos::rcp(&soln, false);
     oldSolnGrpPtr = Teuchos::rcp(&oldSoln, false);
-  }
-
-  else {
+  } else {
     // soln group is extended so get underlying groups
-    oldEGrpPtr =
-      dynamic_cast<const LOCA::Extended::MultiAbstractGroup*>(&oldSoln);
+    const LOCA::Extended::MultiAbstractGroup & oldEGrp =
+      dynamic_cast<const LOCA::Extended::MultiAbstractGroup&>(oldSoln);
     solnGrpPtr = eGrpPtr->getUnderlyingGroup();
-    oldSolnGrpPtr = oldEGrpPtr->getUnderlyingGroup();
+    oldSolnGrpPtr = oldEGrp.getUnderlyingGroup();
   }
 
   return;

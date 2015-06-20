@@ -65,17 +65,17 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CoarseMapFactory()
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CoarseMapFactory()
   {
     stridingInfo_.clear();
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~CoarseMapFactory() {}
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~CoarseMapFactory() {}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const ParameterList> CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const ParameterList> CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set< RCP<const FactoryBase> >("Aggregates", Teuchos::null, "Generating factory for aggregates.");
@@ -97,14 +97,14 @@ namespace MueLu {
     return validParamList;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
     Input(currentLevel, "Aggregates");
     Input(currentLevel, "Nullspace");
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::setStridingData(std::vector<size_t> stridingInfo) {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setStridingData(std::vector<size_t> stridingInfo) {
     // store striding map in internal variable
     stridingInfo_ = stridingInfo;
 
@@ -114,8 +114,8 @@ namespace MueLu {
     SetParameter("Striding info", ParameterEntry(strStridingInfo));
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &currentLevel) const {
     FactoryMonitor m(*this, "Build", currentLevel);
 
     RCP<Aggregates>  aggregates = Get< RCP<Aggregates> >(currentLevel, "Aggregates");

@@ -54,6 +54,14 @@ $ Lines a, b, c, d, 1, 4, 6, 7 should be echoed
 $ Check line counting -- should be on line 78: 
  
 $ ========================================================================
+$ Test string if lines
+ This line should be echoed ("greg")
+
+
+ This line should be echoed (empty)
+
+
+$ ========================================================================
 $ Test if lines
   This line should be echoed. (a)
   This line should be echoed. (b)
@@ -169,3 +177,10 @@ $ Check parsing of escaped braces...
 { int a = b + 1.570796327 }
 { }
 
+$ Test variable deletion
+2.449489743
+2.449489743
+
+0  This should print warning about undefined variable
+
+$End of test file

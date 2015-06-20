@@ -344,11 +344,11 @@ NOX::LAPACK::Group::applyJacobianInverseMultiVector(
 
   // Copy all input vectors into one matrix
   NOX::LAPACK::Matrix<double> B(m,nVecs);
-  const NOX::LAPACK::Vector* constVecPtr;
   for (int j=0; j<nVecs; j++) {
-    constVecPtr = dynamic_cast<const NOX::LAPACK::Vector*>(&(input[j]));
+    const NOX::LAPACK::Vector & constVec =
+      dynamic_cast<const NOX::LAPACK::Vector&>(input[j]);
     for (int i=0; i<m; i++)
-      B(i,j) = (*constVecPtr)(i);
+      B(i,j) = constVec(i);
   }
 
   // Solve Jacobian

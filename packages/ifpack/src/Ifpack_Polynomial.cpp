@@ -101,7 +101,7 @@ Ifpack_Polynomial(const Epetra_Operator* Operator) :
   LSPointsImag_(10),
   UseTranspose_(false),
   Condest_(-1.0),
-  ComputeCondest_(false),
+  /* ComputeCondest_(false), (unused; commented out to avoid build warnings) */
   RealEigRatio_(10.0),
   ImagEigRatio_(10.0),
   Label_(),
@@ -150,7 +150,7 @@ Ifpack_Polynomial(const Epetra_RowMatrix* Operator) :
   LSPointsImag_(10),
   UseTranspose_(false),
   Condest_(-1.0),
-  ComputeCondest_(false),
+  /* ComputeCondest_(false), (unused; commented out to avoid build warnings) */
   RealEigRatio_(10.0),
   ImagEigRatio_(10.0),
   EigMaxIters_(10),
@@ -480,7 +480,7 @@ int Ifpack_Polynomial::Compute()
   Teuchos::SerialDenseMatrix< int, double > Vmatrix(xs.size()+1,PolyDegree_+1);
   Vmatrix.putScalar(0.0);
   for( int jj=0; jj<=PolyDegree_; jj++) {
-    for( int ii=0; ii<xs.size(); ii++) {
+    for( std::vector<double>::size_type ii=0; ii<xs.size(); ii++) {
       if(jj>0) {
         Vmatrix(ii,jj)=pow(xs[ii],jj);
       }

@@ -48,6 +48,8 @@
 #include <string>
 #include <iostream>
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "dofmngr/Panzer_FieldPattern.hpp"
 #include "dofmngr/Panzer_IntrepidFieldPattern.hpp"
 
@@ -89,6 +91,8 @@ bool intrepid_same_geom(const RCP<Intrepid::Basis<double,FieldContainer> > & bas
 // triangle tests
 TEUCHOS_UNIT_TEST(tFieldPattern, test_equals)
 {
+   PHX::KokkosDeviceSession session;
+
    out << note << std::endl;
 
    RCP<Intrepid::Basis<double,FieldContainer> > basisA;

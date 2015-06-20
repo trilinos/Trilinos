@@ -1,4 +1,3 @@
-INCLUDE(TribitsSubPackageMacros)
 
 TRIBITS_SUBPACKAGE(Comm)
 

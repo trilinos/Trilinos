@@ -183,9 +183,9 @@ void Epetra_Util::Sort(bool SortAscending, int NumKeys, double * Keys,
            int NumLongLongCompanions, long long ** LongLongCompanions)
 {
   Sort<double>(SortAscending, NumKeys, Keys,
-	       NumDoubleCompanions, DoubleCompanions,
-	       NumIntCompanions, IntCompanions,
-	       NumLongLongCompanions, LongLongCompanions);
+               NumDoubleCompanions, DoubleCompanions,
+               NumIntCompanions, IntCompanions,
+               NumLongLongCompanions, LongLongCompanions);
 }
 
 
@@ -359,13 +359,13 @@ Epetra_Map Epetra_Util::Create_Root_Map(const Epetra_Map& usermap,
 {
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   if(usermap.GlobalIndicesInt()) {
-	  return TCreate_Root_Map<int>(usermap, root);
+          return TCreate_Root_Map<int>(usermap, root);
   }
   else
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   if(usermap.GlobalIndicesLongLong()) {
-	  return TCreate_Root_Map<long long>(usermap, root);
+          return TCreate_Root_Map<long long>(usermap, root);
   }
   else
 #endif
@@ -441,23 +441,23 @@ int Epetra_Util::SortCrsEntries(int NumRows, const int *CRS_rowptr, int *CRS_col
     double* locValues = &CRS_vals[start];
     int NumEntries    = CRS_rowptr[i+1] - start;
     int* locIndices   = &CRS_colind[start];
-		
+
     int n = NumEntries;
     int m = n/2;
 
     while(m > 0) {
       int max = n - m;
       for(int j = 0; j < max; j++) {
-	for(int k = j; k >= 0; k-=m) {
-	  if(locIndices[k+m] >= locIndices[k])
-	    break;
-	  double dtemp = locValues[k+m];
-	  locValues[k+m] = locValues[k];
-	  locValues[k] = dtemp;
-	  int itemp = locIndices[k+m];
-	  locIndices[k+m] = locIndices[k];
-	  locIndices[k] = itemp;
-	}
+        for(int k = j; k >= 0; k-=m) {
+          if(locIndices[k+m] >= locIndices[k])
+            break;
+          double dtemp = locValues[k+m];
+          locValues[k+m] = locValues[k];
+          locValues[k] = dtemp;
+          int itemp = locIndices[k+m];
+          locIndices[k+m] = locIndices[k];
+          locIndices[k] = itemp;
+        }
       }
       m = m/2;
     }
@@ -506,15 +506,15 @@ int Epetra_Util::SortAndMergeCrsEntries(int NumRows, int *CRS_rowptr, int *CRS_c
     // Merge & shrink
     for(int j=CRS_rowptr[i]; j < CRS_rowptr[i+1]; j++) {
       if(j > CRS_rowptr[i] && CRS_colind[j]==CRS_colind[new_curr-1]) {
-	CRS_vals[new_curr-1] += CRS_vals[j];
+        CRS_vals[new_curr-1] += CRS_vals[j];
       }
       else if(new_curr==j) {
-	new_curr++;
+        new_curr++;
       }
       else {
-	CRS_colind[new_curr] = CRS_colind[j];
-	CRS_vals[new_curr]   = CRS_vals[j];
-	new_curr++;
+        CRS_colind[new_curr] = CRS_colind[j];
+        CRS_vals[new_curr]   = CRS_vals[j];
+        new_curr++;
       }
     }
 
@@ -569,6 +569,10 @@ int Epetra_Util::GetPidGidPairs(const Epetra_Import & Importer,std::vector< std:
   return 0;
 #else
   EPETRA_CHK_ERR(-10);
+  // The above macro may not necessarily invoke 'return', or at least
+  // GCC 4.8.2 can't tell if it does.  That's why I put an extra
+  // return statement here.
+  return 0;
 #endif
 }
 #endif
@@ -615,6 +619,10 @@ int Epetra_Util::GetPidGidPairs(const Epetra_Import & Importer,std::vector< std:
   return 0;
 #else
   EPETRA_CHK_ERR(-10);
+  // The above macro may not necessarily invoke 'return', or at least
+  // GCC 4.8.2 can't tell if it does.  That's why I put an extra
+  // return statement here.
+  return 0;
 #endif
 }
 #endif
@@ -659,6 +667,10 @@ int Epetra_Util::GetPids(const Epetra_Import & Importer, std::vector<int> &pids,
   return 0;
 #else
   EPETRA_CHK_ERR(-10);
+  // The above macro may not necessarily invoke 'return', or at least
+  // GCC 4.8.2 can't tell if it does.  That's why I put an extra
+  // return statement here.
+  return 0;
 #endif
 }
 

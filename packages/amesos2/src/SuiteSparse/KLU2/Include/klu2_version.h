@@ -46,10 +46,10 @@
 
 #define NPRINT  
 
-#define BYTES(type,n) (sizeof (type) * (n))
-#define CEILING(b,u)  (((b)+(u)-1) / (u))
-#define UNITS(type,n) (CEILING (BYTES (type,n), sizeof (Unit)))
-#define DUNITS(type,n) (ceil (BYTES (type, (double) n) / sizeof (Unit)))
+#define KLU2_BYTES(type,n) (sizeof (type) * (n))
+#define KLU2_CEILING(b,u)  (((b)+(u)-1) / (u))
+#define UNITS(type,n) (KLU2_CEILING (KLU2_BYTES (type,n), sizeof (Unit)))
+#define DUNITS(type,n) (ceil (KLU2_BYTES (type, (double) n) / sizeof (Unit)))
 
 #define GET_I_POINTER(LU, Xip, Xi, k) \
 { \
@@ -168,6 +168,7 @@ SCALAR_IS_LTZERO(x):
 
 typedef double Unit ;
 /*#define Entry double*/
+/* TODO: Need to add namespace to these methods */
 
 #define SPLIT(s)                    (1)
 #define REAL(c)                     (Teuchos::ScalarTraits<Entry>::real(c))
@@ -191,7 +192,7 @@ typedef double Unit ;
 #define RECIPROCAL(c)               { (c) = KLU_ScalarTraits<Entry>::reciprocal(c) ; }
 #define DIV_CONJ(c,a,b)             { (c) = KLU_ScalarTraits<Entry>::divideConjugate(a, b) ; }
 #define APPROX_ABS(s,a)             { (s) =  KLU_ScalarTraits<Entry>::approxABS(a) ; }
-#define ABS(s,a)                    { (s) =  KLU_ScalarTraits<Entry>::abs(a) ; }
+#define KLU2_ABS(s,a)                    { (s) =  KLU_ScalarTraits<Entry>::abs(a) ; }
 #define PRINT_ENTRY(a)              PRINT_SCALAR (a)
 #define CONJ(a,x)                   a = (Teuchos::ScalarTraits<Entry>::conjugate(x))
 

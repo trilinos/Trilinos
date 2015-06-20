@@ -40,7 +40,7 @@
 //@HEADER
 
 /*! \file BelosMatOrthoManager.hpp
-  \brief  Templated virtual class for providing orthogonalization/orthonormalization methods with matrix-based 
+  \brief  Templated virtual class for providing orthogonalization/orthonormalization methods with matrix-based
           inner products.
 */
 
@@ -48,8 +48,8 @@
 #define BELOS_MATORTHOMANAGER_HPP
 
 /*! \class Belos::MatOrthoManager
-  
-  \brief Belos's templated virtual class for providing routines for orthogonalization and 
+
+  \brief Belos's templated virtual class for providing routines for orthogonalization and
   orthonormzalition of multivectors using matrix-based inner products.
 
   This class extends Belos::OrthoManager by providing extra calling arguments to orthogonalization
@@ -58,7 +58,7 @@
 
   A concrete implementation of this class is necessary. The user can create
   their own implementation if those supplied are not suitable for their needs.
-  
+
   \author Chris Baker, Teri Barth, and Heidi Thornquist
 */
 
@@ -78,7 +78,7 @@ namespace Belos {
 
   public:
     //! @name Constructor/Destructor
-    //@{ 
+    //@{
     //! Default constructor.
     MatOrthoManager(Teuchos::RCP<const OP> Op = Teuchos::null) : _Op(Op), _hasOp(Op!=Teuchos::null) {};
 
@@ -87,28 +87,28 @@ namespace Belos {
     //@}
 
     //! @name Accessor routines
-    //@{ 
+    //@{
 
     //! Set operator.
-    void setOp( Teuchos::RCP<const OP> Op ) { 
-      _Op = Op; 
+    void setOp( Teuchos::RCP<const OP> Op ) {
+      _Op = Op;
       _hasOp = (_Op != Teuchos::null);
     };
 
     //! Get operator.
-    Teuchos::RCP<const OP> getOp() const { return _Op; } 
+    Teuchos::RCP<const OP> getOp() const { return _Op; }
 
     //@}
 
 
     //! @name Orthogonalization methods
-    //@{ 
+    //@{
 
     /*! \brief Provides the inner product defining the orthogonality concepts, using the provided operator.
 
     All concepts of orthogonality discussed in this class are with respect to this inner product.
      */
-    void innerProd( const MV& X, const MV& Y, 
+    void innerProd( const MV& X, const MV& Y,
                                   Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const {
       typedef Teuchos::ScalarTraits<ScalarType> SCT;
       typedef MultiVecTraits<ScalarType,MV>     MVT;
@@ -118,7 +118,7 @@ namespace Belos {
       Teuchos::RCP<MV> R;
 
       if (_hasOp) {
-        // attempt to minimize the amount of work in applying 
+        // attempt to minimize the amount of work in applying
         if ( MVT::GetNumberVecs(X) < MVT::GetNumberVecs(Y) ) {
           R = MVT::Clone(X,MVT::GetNumberVecs(X));
           OPT::Apply(*_Op,X,*R);
@@ -136,17 +136,17 @@ namespace Belos {
         P = Teuchos::rcp( &X, false );
         Q = Teuchos::rcp( &Y, false );
       }
-      
+
       MVT::MvTransMv(SCT::one(),*P,*Q,Z);
     }
 
     /*! \brief Provides the inner product defining the orthogonality concepts, using the provided operator.
      *  The method has the options of exploiting a caller-provided \c MX.
      *
-     *  If pointer \c MY is null, then this routine calls innerProd(X,Y,Z). Otherwise, it forgoes the 
+     *  If pointer \c MY is null, then this routine calls innerProd(X,Y,Z). Otherwise, it forgoes the
      *  operator application and uses \c *MY in the computation of the inner product.
      */
-    void innerProd( const MV& X, const MV& Y, Teuchos::RCP<const MV> MY, 
+    void innerProd( const MV& X, const MV& Y, Teuchos::RCP<const MV> MY,
                             Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const {
       typedef Teuchos::ScalarTraits<ScalarType> SCT;
       typedef MultiVecTraits<ScalarType,MV>     MVT;
@@ -189,10 +189,10 @@ namespace Belos {
     ///   column j of X.  normvec is resized if it has fewer entries
     ///   than the number of columns in X.
     ///
-    void 
-    norm (const MV& X, 
-	  Teuchos::RCP<const MV> MX, 
-	  std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>& normvec) const 
+    void
+    norm (const MV& X,
+          Teuchos::RCP<const MV> MX,
+          std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>& normvec) const
     {
       typedef Teuchos::ScalarTraits<ScalarType> SCT;
       typedef MultiVecTraits<ScalarType,MV>     MVT;
@@ -200,27 +200,27 @@ namespace Belos {
 
       const int numColsX = MVT::GetNumberVecs(X);
       if (!_hasOp) {
-	// X == MX, since the operator M is the identity.
+        // X == MX, since the operator M is the identity.
         MX = Teuchos::rcp(&X, false);
       }
       else if (MX.is_null()) {
-	// The caller didn't give us a previously computed MX, so
-	// apply the operator.  We assign to MX only after applying
-	// the operator, so that if the application fails, MX won't be
-	// modified.
+        // The caller didn't give us a previously computed MX, so
+        // apply the operator.  We assign to MX only after applying
+        // the operator, so that if the application fails, MX won't be
+        // modified.
         Teuchos::RCP<MV> R = MVT::Clone(X, numColsX);
         OPT::Apply(*_Op,X,*R);
         MX = R;
-      } 
+      }
       else {
-	// The caller gave us a previously computed MX.  Make sure
-	// that it has at least as many columns as X.
-	const int numColsMX = MVT::GetNumberVecs(*MX);
-	TEUCHOS_TEST_FOR_EXCEPTION(numColsMX < numColsX, std::invalid_argument,
-			   "MatOrthoManager::norm(X, MX, normvec): "
-			   "MX has fewer columns than X: "
-			   "MX has " << numColsMX << " columns, "
-			   "and X has " << numColsX << " columns.");
+        // The caller gave us a previously computed MX.  Make sure
+        // that it has at least as many columns as X.
+        const int numColsMX = MVT::GetNumberVecs(*MX);
+        TEUCHOS_TEST_FOR_EXCEPTION(numColsMX < numColsX, std::invalid_argument,
+                           "MatOrthoManager::norm(X, MX, normvec): "
+                           "MX has fewer columns than X: "
+                           "MX has " << numColsMX << " columns, "
+                           "and X has " << numColsX << " columns.");
       }
 
       // Make sure that normvec has enough entries to hold the norms
@@ -228,7 +228,7 @@ namespace Belos {
       // unsigned, so do the appropriate cast to avoid signed/unsigned
       // comparisons that trigger compiler warnings.
       if (normvec.size() < static_cast<size_t>(numColsX))
-	normvec.resize (numColsX);
+        normvec.resize (numColsX);
 
       Teuchos::SerialDenseMatrix<int,ScalarType> z(1,1);
       Teuchos::RCP<const MV> Xi, MXi;
@@ -244,10 +244,10 @@ namespace Belos {
 
 
     /*! \brief Given a list of (mutually and internally) orthonormal bases \c Q, this method
-     * takes a multivector \c X and projects it onto the space orthogonal to the individual <tt>Q[i]</tt>, 
+     * takes a multivector \c X and projects it onto the space orthogonal to the individual <tt>Q[i]</tt>,
      * optionally returning the coefficients of \c X for the individual <tt>Q[i]</tt>. All of this is done with respect
      * to the inner product innerProd().
-     *  
+     *
      * After calling this routine, \c X will be orthogonal to each of the <tt>Q[i]</tt>.
      *
      @param X [in/out] The multivector to be modified.
@@ -255,51 +255,51 @@ namespace Belos {
 
      @param MX [in] The image of the multivector under the specified operator. If \c MX is null, it is not used.
 
-     @param C [out] The coefficients of \c X in the \c *Q[i], with respect to innerProd(). If <tt>C[i]</tt> is a non-null pointer 
+     @param C [out] The coefficients of \c X in the \c *Q[i], with respect to innerProd(). If <tt>C[i]</tt> is a non-null pointer
        and \c *C[i] matches the dimensions of \c X and \c *Q[i], then the coefficients computed during the orthogonalization
-       routine will be stored in the matrix \c *C[i]. If <tt>C[i]</tt> is a non-null pointer whose size does not match the dimensions of 
+       routine will be stored in the matrix \c *C[i]. If <tt>C[i]</tt> is a non-null pointer whose size does not match the dimensions of
        \c X and \c *Q[i], then a std::invalid_argument std::exception will be thrown. Otherwise, if <tt>C.size() < i</tt> or <tt>C[i]</tt> is a null
        pointer, then the orthogonalization manager will declare storage for the coefficients and the user will not have access to them.
 
      @param Q [in] A list of multivector bases specifying the subspaces to be orthogonalized against. Each <tt>Q[i]</tt> is assumed to have
      orthonormal columns, and the <tt>Q[i]</tt> are assumed to be mutually orthogonal.
     */
-    virtual void project ( MV &X, Teuchos::RCP<MV> MX, 
-                           Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+    virtual void project ( MV &X, Teuchos::RCP<MV> MX,
+                           Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
                            Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const = 0;
 
 
-    
+
     /*! \brief This method calls project(X,Teuchos::null,C,Q); see documentation for that function.
     */
-    virtual void project ( MV &X, 
-                           Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+    virtual void project ( MV &X,
+                           Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
                            Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const {
       project(X,Teuchos::null,C,Q);
     }
 
     /*! \brief This method takes a multivector \c X and attempts to compute an orthonormal basis for \f$colspan(X)\f$, with respect to innerProd().
      *
-     * This routine returns an integer \c rank stating the rank of the computed basis. If \c X does not have full rank and the normalize() routine does 
-     * not attempt to augment the subspace, then \c rank may be smaller than the number of columns in \c X. In this case, only the first \c rank columns of 
+     * This routine returns an integer \c rank stating the rank of the computed basis. If \c X does not have full rank and the normalize() routine does
+     * not attempt to augment the subspace, then \c rank may be smaller than the number of columns in \c X. In this case, only the first \c rank columns of
      * output \c X and first \c rank rows of \c B will be valid.
-     *  
-     @param X [in/out] The multivector to the modified. 
+     *
+     @param X [in/out] The multivector to the modified.
        On output, \c X will have some number of orthonormal columns (with respect to innerProd()).
 
      @param MX [in/out] The image of the multivector under the specified operator. If \c MX is null, it is not used.
                         On output, it returns the image of the valid basis vectors under the specified operator.
 
-     @param B [out] The coefficients of \c X in the computed basis. If \c B is a non-null pointer 
+     @param B [out] The coefficients of \c X in the computed basis. If \c B is a non-null pointer
        and \c *B has appropriate dimensions, then the coefficients computed during the orthogonalization
-       routine will be stored in the matrix \c *B. If \c B is a non-null pointer whose size does not match the dimensions of 
-       \c X, then a std::invalid_argument std::exception will be thrown. Otherwise, 
-       the orthogonalization manager will declare storage for the coefficients and the user will not have access to them. <b>This matrix may or may not be triangular; see 
+       routine will be stored in the matrix \c *B. If \c B is a non-null pointer whose size does not match the dimensions of
+       \c X, then a std::invalid_argument std::exception will be thrown. Otherwise,
+       the orthogonalization manager will declare storage for the coefficients and the user will not have access to them. <b>This matrix may or may not be triangular; see
        documentation for individual orthogonalization managers.</b>
 
      @return Rank of the basis computed by this method.
     */
-    virtual int normalize ( MV &X, Teuchos::RCP<MV> MX, 
+    virtual int normalize ( MV &X, Teuchos::RCP<MV> MX,
                             Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B ) const = 0;
 
 
@@ -310,33 +310,52 @@ namespace Belos {
     }
 
 
+  protected:
+    virtual int
+    projectAndNormalizeWithMxImpl (MV &X,
+                                   Teuchos::RCP<MV> MX,
+                                   Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
+                                   Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
+                                   Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const = 0;
+
+    virtual int
+    projectAndNormalizeImpl (MV &X,
+                             Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
+                             Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
+                             Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
+    {
+      return this->projectAndNormalizeWithMxImpl (X, Teuchos::null, C, B, Q);
+    }
+
+  public:
+
     /*! \brief Given a set of bases <tt>Q[i]</tt> and a multivector \c X, this method computes an orthonormal basis for \f$colspan(X) - \sum_i colspan(Q[i])\f$.
      *
-     *  This routine returns an integer \c rank stating the rank of the computed basis. If the subspace \f$colspan(X) - \sum_i colspan(Q[i])\f$ does not 
-     *  have dimension as large as the number of columns of \c X and the orthogonalization manager doe not attempt to augment the subspace, then \c rank 
-     *  may be smaller than the number of columns of \c X. In this case, only the first \c rank columns of output \c X and first \c rank rows of \c B will 
+     *  This routine returns an integer \c rank stating the rank of the computed basis. If the subspace \f$colspan(X) - \sum_i colspan(Q[i])\f$ does not
+     *  have dimension as large as the number of columns of \c X and the orthogonalization manager doe not attempt to augment the subspace, then \c rank
+     *  may be smaller than the number of columns of \c X. In this case, only the first \c rank columns of output \c X and first \c rank rows of \c B will
      *  be valid.
      *
-     * \note This routine guarantees both the orthgonality constraints against the <tt>Q[i]</tt> as well as the orthonormality constraints. Therefore, this method 
+     * \note This routine guarantees both the orthgonality constraints against the <tt>Q[i]</tt> as well as the orthonormality constraints. Therefore, this method
      * is not necessarily equivalent to calling project() followed by a call to normalize(); see the documentation for specific orthogonalization managers.
      *
-     @param X [in/out] The multivector to the modified. 
+     @param X [in/out] The multivector to the modified.
        On output, the relevant rows of \c X will be orthogonal to the <tt>Q[i]</tt> and will have orthonormal columns (with respect to innerProd()).
 
      @param MX [in/out] The image of the multivector under the specified operator. If \c MX is null, it is not used.
                         On output, it returns the image of the valid basis vectors under the specified operator.
 
-     @param C [out] The coefficients of the original \c X in the \c *Q[i], with respect to innerProd(). If <tt>C[i]</tt> is a non-null pointer 
+     @param C [out] The coefficients of the original \c X in the \c *Q[i], with respect to innerProd(). If <tt>C[i]</tt> is a non-null pointer
        and \c *C[i] matches the dimensions of \c X and \c *Q[i], then the coefficients computed during the orthogonalization
-       routine will be stored in the matrix \c *C[i]. If <tt>C[i]</tt> is a non-null pointer whose size does not match the dimensions of 
+       routine will be stored in the matrix \c *C[i]. If <tt>C[i]</tt> is a non-null pointer whose size does not match the dimensions of
        \c X and \c *Q[i], then a std::invalid_argument std::exception will be thrown. Otherwise, if <tt>C.size() < i</tt> or <tt>C[i]</tt> is a null
        pointer, then the orthogonalization manager will declare storage for the coefficients and the user will not have access to them.
 
-     @param B [out] The coefficients of \c X in the computed basis. If \c B is a non-null pointer 
+     @param B [out] The coefficients of \c X in the computed basis. If \c B is a non-null pointer
        and \c *B has appropriate dimensions, then the coefficients computed during the orthogonalization
-       routine will be stored in the matrix \c *B. If \c B is a non-null pointer whose size does not match the dimensions of 
-       \c X, then a std::invalid_argument std::exception will be thrown. Otherwise, 
-       the orthogonalization manager will declare storage for the coefficients and the user will not have access to them. <b>This matrix may or may not be triangular; see 
+       routine will be stored in the matrix \c *B. If \c B is a non-null pointer whose size does not match the dimensions of
+       \c X, then a std::invalid_argument std::exception will be thrown. Otherwise,
+       the orthogonalization manager will declare storage for the coefficients and the user will not have access to them. <b>This matrix may or may not be triangular; see
        documentation for individual orthogonalization managers.</b>
 
      @param Q [in] A list of multivector bases specifying the subspaces to be orthogonalized against. Each <tt>Q[i]</tt> is assumed to have
@@ -344,28 +363,23 @@ namespace Belos {
 
      @return Rank of the basis computed by this method.
     */
-    virtual int projectAndNormalize ( MV &X, Teuchos::RCP<MV> MX, 
-                                      Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                                      Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-                                      Teuchos::ArrayView<Teuchos::RCP<const MV> > Q ) const = 0;
-
-    /*! \brief This method calls projectAndNormalize(X,Teuchos::null,C,B,Q); see documentation for that function.
-    */
-    virtual int projectAndNormalize ( MV &X, 
-                                      Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                                      Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-                                      Teuchos::ArrayView<Teuchos::RCP<const MV> > Q ) const {
-      return projectAndNormalize(X,Teuchos::null,C,B,Q);
+    int
+    projectAndNormalize (MV &X,
+                         Teuchos::RCP<MV> MX,
+                         Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
+                         Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
+                         Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
+    {
+      return this->projectAndNormalizeWithMxImpl (X, MX, C, B, Q);
     }
 
     //@}
-
     //! @name Error methods
-    //@{ 
+    //@{
 
     /*! \brief This method computes the error in orthonormality of a multivector.
      */
-    virtual typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
+    virtual typename Teuchos::ScalarTraits<ScalarType>::magnitudeType
     orthonormError(const MV &X) const {
       return orthonormError(X,Teuchos::null);
     }
@@ -373,12 +387,12 @@ namespace Belos {
     /*! \brief This method computes the error in orthonormality of a multivector.
      *  The method has the option of exploiting a caller-provided \c MX.
      */
-    virtual typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
+    virtual typename Teuchos::ScalarTraits<ScalarType>::magnitudeType
     orthonormError(const MV &X, Teuchos::RCP<const MV> MX) const = 0;
 
-    /*! \brief This method computes the error in orthogonality of two multivectors. This method 
+    /*! \brief This method computes the error in orthogonality of two multivectors. This method
      */
-    virtual typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
+    virtual typename Teuchos::ScalarTraits<ScalarType>::magnitudeType
     orthogError(const MV &X1, const MV &X2) const {
       return orthogError(X1,Teuchos::null,X2);
     }
@@ -387,7 +401,7 @@ namespace Belos {
      *  The method has the option of
      *  exploiting a caller-provided \c MX.
      */
-    virtual typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
+    virtual typename Teuchos::ScalarTraits<ScalarType>::magnitudeType
     orthogError(const MV &X1, Teuchos::RCP<const MV> MX1, const MV &X2) const = 0;
 
     //@}

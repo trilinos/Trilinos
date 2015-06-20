@@ -46,7 +46,7 @@
 #define TEUCHOS_COMPOBJECT_HPP
 
 /*! \file Teuchos_CompObject.hpp
-    \brief Object for storing data and providing functionality that is common to all 
+    \brief Object for storing data and providing functionality that is common to all
 	computational classes.
 */
 
@@ -57,7 +57,7 @@
     \brief Functionality and data that is common to all computational classes.
 
     The Teuchos::CompObject is a base class for all Teuchos computational objects.  It provides the basic
-    mechanisms and interface specifications for floating point operations using Teuchos::Flops objects. 
+    mechanisms and interface specifications for floating point operations using Teuchos::Flops objects.
 */
 
 namespace Teuchos
@@ -68,35 +68,35 @@ class TEUCHOSNUMERICS_LIB_DLL_EXPORT CompObject
   public:
 
     //! @name Constructors/Destructor.
-  //@{ 
+  //@{
 
   //! Default constructor
   CompObject();
 
   //! Copy Constructor
   CompObject(const CompObject &source);
-    
+
   //! Destructor
   virtual ~CompObject();
   //@}
 
   //! @name Set/Get counter method.
-  //@{ 
+  //@{
   //! Set the internal Teuchos::Flops() pointer.
   void setFlopCounter(const Flops &FlopCounter) {flopCounter_= (Flops *) &FlopCounter; return;}
-  
+
   //! Set the internal Teuchos::Flops() pointer to the flop counter of another Teuchos::CompObject.
   void setFlopCounter(const CompObject &compObject) {flopCounter_= (Flops *) (compObject.getFlopCounter()); return;}
-  
+
   //! Set the internal Teuchos::Flops() pointer to 0 (no flops counted).
   void unsetFlopCounter() {flopCounter_=0; return;}
-  
+
   //! Get the pointer to the Teuchos::Flops() object associated with this object, returns 0 if none.
   Flops * getFlopCounter() const {return(flopCounter_);}
   //@}
 
   //! @name Set flop count methods.
-  //@{ 
+  //@{
   //! Resets the number of floating point operations to zero for \e this multi-std::vector.
   void resetFlops() const {if (flopCounter_!=0) flopCounter_->resetFlops(); return;}
 
@@ -105,7 +105,7 @@ class TEUCHOSNUMERICS_LIB_DLL_EXPORT CompObject
   //@}
 
   //! @name Update flop count methods.
-  //@{ 
+  //@{
   //! Increment Flop count for \e this object
   void updateFlops(int addflops) const { if (flopCounter_!=0) flopCounter_->updateFlops(addflops); return;}
 

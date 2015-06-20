@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2006 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -79,7 +79,8 @@ int ex_get_partial_conn( int   exoid,
   int econnid = -1;
   int fconnid = -1;
 
-  int blk_id_ndx, status;
+  int blk_id_ndx;
+  int status = 0;
 
   int numnodperentdim = -1;
   int numedgperentdim = -1;

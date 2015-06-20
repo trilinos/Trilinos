@@ -80,25 +80,23 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
     "-DBUILD_SHARED_LIBS:BOOL=ON"
     "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
-    "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF"
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
 
     "-DTrilinos_ENABLE_Fortran=OFF"
 
-    "-DTPL_ENABLE_SuperLU:BOOL=ON"
     "-DSuperLU_INCLUDE_DIRS=/home/aprokop/local/opt/superlu-4.3/include"
     "-DSuperLU_LIBRARY_DIRS=/home/aprokop/local/opt/superlu-4.3/lib"
     "-DSuperLU_LIBRARY_NAMES=superlu_4.3"
     )
 
-  SET_DEFAULT(COMPILER_VERSION "GCC-4.9.1")
+  SET_DEFAULT(COMPILER_VERSION "GCC-5.1.0")
 
   #Ensuring that MPI is on for all parallel builds that might be run.
   IF(COMM_TYPE STREQUAL MPI)
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
          ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
          "-DTPL_ENABLE_MPI:BOOL=ON"
-         "-DMPI_BASE_DIR:PATH=/home/aprokop/local/opt/openmpi-1.8"
+         "-DMPI_BASE_DIR:PATH=/home/aprokop/local/opt/openmpi-1.8.5"
        )
 
     SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS
@@ -108,8 +106,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/home/aprokop/local/opt/gcc-4.9.1/bin/g++"
-      "-DCMAKE_C_COMPILER:FILEPATH=/home/aprokop/local/opt/gcc-4.9.1/bin/gcc"
+      "-DCMAKE_CXX_COMPILER:FILEPATH=/home/aprokop/local/opt/gcc-5.1.0/bin/g++"
+      "-DCMAKE_C_COMPILER:FILEPATH=/home/aprokop/local/opt/gcc-5.1.0/bin/gcc"
       )
 
   ENDIF()

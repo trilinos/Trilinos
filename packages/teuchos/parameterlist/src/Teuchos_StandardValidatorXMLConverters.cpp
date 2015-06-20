@@ -62,7 +62,7 @@ RCP<ParameterEntryValidator> AnyNumberValidatorXMLConverter::convertXML(
     xmlObj.getRequiredBool(getAllowStringAttributeName()));
   return anyNumberParameterEntryValidator(
       AnyNumberParameterEntryValidator::getPrefferedTypeStringEnum(
-        xmlObj.getRequired(getPrefferedTypeAttributeName())), 
+        xmlObj.getRequired(getPrefferedTypeAttributeName())),
       acceptedTypes);
 }
 
@@ -72,7 +72,7 @@ void AnyNumberValidatorXMLConverter::convertValidator(
   XMLObject& xmlObj,
   const ValidatortoIDMap& /*validatorIDsMap*/) const
 {
-  RCP<const AnyNumberParameterEntryValidator> castedValidator = 
+  RCP<const AnyNumberParameterEntryValidator> castedValidator =
     rcp_dynamic_cast<const AnyNumberParameterEntryValidator>(validator, true);
   xmlObj.addBool(
     getAllowIntAttributeName(), castedValidator->isIntAllowed());
@@ -86,7 +86,7 @@ void AnyNumberValidatorXMLConverter::convertValidator(
 }
 
 #ifdef HAVE_TEUCHOS_DEBUG
-RCP<const ParameterEntryValidator> 
+RCP<const ParameterEntryValidator>
 AnyNumberValidatorXMLConverter::getDummyValidator() const{
   return DummyObjectGetter<AnyNumberParameterEntryValidator>::getDummyObject();
 }
@@ -120,7 +120,7 @@ void FileNameValidatorXMLConverter::convertValidator(
 
 
 #ifdef HAVE_TEUCHOS_DEBUG
-RCP<const ParameterEntryValidator> 
+RCP<const ParameterEntryValidator>
 FileNameValidatorXMLConverter::getDummyValidator() const{
   return DummyObjectGetter<FileNameValidator>::getDummyObject();
 }
@@ -135,9 +135,9 @@ RCP<ParameterEntryValidator> StringValidatorXMLConverter::convertXML(
   if(xmlObj.numChildren()!=0){
     for(int i=0; i<xmlObj.numChildren(); ++i){
       XMLObject currentChild = xmlObj.getChild(i);
-      TEUCHOS_TEST_FOR_EXCEPTION(currentChild.getTag() != getStringTagName(), 
-        BadTagException,  
-        "Error converting xmlObject to StringValidator." << std::endl << 
+      TEUCHOS_TEST_FOR_EXCEPTION(currentChild.getTag() != getStringTagName(),
+        BadTagException,
+        "Error converting xmlObject to StringValidator." << std::endl <<
 		    "Unrecognized tag: " << currentChild.getTag());
         strings[i] = (currentChild.getRequired(getStringValueAttributeName()));
     }
@@ -151,11 +151,11 @@ void StringValidatorXMLConverter::convertValidator(
   XMLObject& xmlObj,
   const ValidatortoIDMap& /*validatorIDsMap*/) const
 {
-  RCP<const StringValidator> castedValidator = 
+  RCP<const StringValidator> castedValidator =
     rcp_dynamic_cast<const StringValidator>(validator);
 
   if(!is_null(validator->validStringValues())){
-    Array<std::string>::const_iterator it = 
+    Array<std::string>::const_iterator it =
      validator->validStringValues()->begin();
     for(; it != validator->validStringValues()->end(); ++it){
       XMLObject stringTag(getStringTagName());
@@ -167,7 +167,7 @@ void StringValidatorXMLConverter::convertValidator(
 
 
 #ifdef HAVE_TEUCHOS_DEBUG
-RCP<const ParameterEntryValidator> 
+RCP<const ParameterEntryValidator>
 StringValidatorXMLConverter::getDummyValidator() const{
   return DummyObjectGetter<StringValidator>::getDummyObject();
 }

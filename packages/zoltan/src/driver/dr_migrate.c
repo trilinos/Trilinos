@@ -1072,9 +1072,9 @@ void migrate_unpack_elem(void *data, int num_gid_entries, ZOLTAN_ID_PTR elem_gid
       current_elem->adj_proc[i] = *buf_int++;
 
       if (current_elem->adj[i] != ZOLTAN_ID_INVALID && current_elem->adj_proc[i] == proc) {
-        int idx = find_in_hash(current_elem->adj[i]);
-        if (idx >= 0) 
-          current_elem->adj[i] = (ZOLTAN_ID_TYPE)New_Elem_Hash_Nodes[idx].localID;
+        int nidx = find_in_hash(current_elem->adj[i]);
+        if (nidx >= 0) 
+          current_elem->adj[i] = (ZOLTAN_ID_TYPE)New_Elem_Hash_Nodes[nidx].localID;
         else {
           Gen_Error(0, "fatal: Unable to locate position for neighbor");
           *ierr = ZOLTAN_FATAL;

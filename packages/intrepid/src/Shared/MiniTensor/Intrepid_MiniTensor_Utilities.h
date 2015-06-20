@@ -42,6 +42,7 @@
 #if !defined(Intrepid_MiniTensor_Utilities_h)
 #define Intrepid_MiniTensor_Utilities_h
 
+#include "Intrepid_ConfigDefs.hpp"
 #include "Sacado.hpp"
 
 namespace Intrepid {
@@ -115,6 +116,48 @@ random_normal();
 template<typename T>
 T
 integer_power(T const & X, Index const exponent);
+
+///
+/// Utility for Kronecker delta in 2D
+///
+template<typename T>
+T
+kronecker_delta(Index const i, Index const j);
+
+///
+/// Utility for Kronecker delta in 3D
+///
+template<typename T>
+T
+kronecker_delta(Index const i, Index const j, Index const k);
+
+///
+/// Utility for Kronecker delta in 4D
+///
+template<typename T>
+T
+kronecker_delta(Index const i, Index const j, Index const k, Index const l);
+
+///
+/// Utility for Levi-Civita/permutation/alternating symbol in 2D
+///
+template<typename T>
+T
+levi_civita(Index const i, Index const j);
+
+///
+/// Utility for Levi-Civita/permutation/alternating symbol in 3D
+///
+template<typename T>
+T
+levi_civita(Index const i, Index const j, Index const k);
+
+///
+/// Utility for Levi-Civita/permutation/alternating symbol in 4D
+///
+template<typename T>
+T
+levi_civita(Index const i, Index const j, Index const k, Index const l);
 
 ///
 /// Duet type. Holder of two objects of the same type.

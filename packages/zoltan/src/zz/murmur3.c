@@ -12,12 +12,15 @@
 
 #include <stdint.h>
 
+#if defined(_MSC_VER)
+#define FORCE_INLINE	__forceinline
+#else
 #if __GNUC__ && __GNUC_STDC_INLINE__
 #define FORCE_INLINE inline __attribute__((always_inline))
 #else
 #define FORCE_INLINE __attribute__((always_inline))
 #endif
-
+#endif
 /* KDDKDD
 inline uint32_t rotl32 ( uint32_t x, int8_t r )
 {
@@ -46,6 +49,16 @@ inline uint64_t rotl64 ( uint64_t x, int8_t r )
 /*--------------------------------------------------------------------------- */
 /* Finalization mix - force all bits of a hash block to avalanche */
 
+
+/* Disable warnings associated with FORCE_INLINE */
+/* Copied from ml/src/Smoother/ml_smoother.c     */
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && defined(__GNUC_PATCHLEVEL__)
+#define GCC_VERSION __GNUC__*100+__GNUC_MINOR__*10+__GNUC_PATCHLEVEL__
+#endif
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattributes"
+#endif
 static FORCE_INLINE uint32_t fmix32 ( uint32_t h )
 {
   h ^= h >> 16;
@@ -56,6 +69,9 @@ static FORCE_INLINE uint32_t fmix32 ( uint32_t h )
 
   return h;
 }
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic pop
+#endif
 
 /*---------- */
 

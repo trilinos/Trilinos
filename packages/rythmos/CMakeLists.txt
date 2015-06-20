@@ -1,6 +1,4 @@
 
-INCLUDE(TribitsPackageMacros)
-INCLUDE(TribitsAddOptionAndDefine)
 INCLUDE(CombinedOption)
 
 #

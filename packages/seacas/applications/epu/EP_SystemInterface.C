@@ -145,7 +145,8 @@ void Excn::SystemInterface::enroll_options()
 		  NULL);
 
   options_.enroll("compress_data", GetLongOption::MandatoryValue,
-		  "The output database will be written using compression (netcdf-4 mode only)",
+		  "The output database will be written using compression (netcdf-4 mode only).\n"
+		  "\t\tValue ranges from 0 (no compression) to 9 (max compression) inclusive.",
 		  0);
 
   options_.enroll("steps", GetLongOption::MandatoryValue,

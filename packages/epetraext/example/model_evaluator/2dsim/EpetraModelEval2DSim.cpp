@@ -58,7 +58,7 @@ EpetraModelEval2DSim::EpetraModelEval2DSim(
 {
   using Teuchos::rcp;
 
-	epetra_comm_ = rcp(new Epetra_SerialComm());
+        epetra_comm_ = rcp(new Epetra_SerialComm());
 
   const int nx = 2;
 
@@ -81,25 +81,25 @@ EpetraModelEval2DSim::EpetraModelEval2DSim(
 
 // Overridden from EpetraExt::ModelEvaluator
 
-Teuchos::RefCountPtr<const Epetra_Map>
+Teuchos::RCP<const Epetra_Map>
 EpetraModelEval2DSim::get_x_map() const
 {
   return map_x_;
 }
 
-Teuchos::RefCountPtr<const Epetra_Map>
+Teuchos::RCP<const Epetra_Map>
 EpetraModelEval2DSim::get_f_map() const
 {
   return map_x_;
 }
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 EpetraModelEval2DSim::get_x_init() const
 {
   return x0_;
 }
 
-Teuchos::RefCountPtr<Epetra_Operator>
+Teuchos::RCP<Epetra_Operator>
 EpetraModelEval2DSim::create_W() const
 {
   return Teuchos::rcp(new Epetra_CrsMatrix(::Copy,*W_graph_));

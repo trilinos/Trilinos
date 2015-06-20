@@ -55,6 +55,7 @@
 #include "Galeri_AbstractGrid.h"
 #include "Galeri_AbstractVariational.h"
 #include "Galeri_AbstractProblem.h"
+#include <limits>
 
 namespace Galeri {
 namespace FiniteElements {
@@ -152,14 +153,36 @@ public:
 
       for (int i = 0 ; i < size ; ++i)
       {
-        int row = VertexMap.GID(LVID[i]);
+        long long LLrow = VertexMap.GID64(LVID[i]);
+        if(LLrow > std::numeric_limits<int>::max())
+        {
+          cerr << "LLrow out of int bound" << endl;
+          cerr << "File " << __FILE__ << ", line " << __LINE__ << endl;
+          throw(-1);
+        }
+
+        int row = (int) LLrow;
         assert (row != -1);
         for (int j = 0 ; j < size ; ++j)
         {
-          int col = VertexMap.GID(LVID[j]);
+          long long LLcol = VertexMap.GID64(LVID[j]);
+          if(LLcol > std::numeric_limits<int>::max())
+          {
+            cerr << "LLcol out of int bound" << endl;
+            cerr << "File " << __FILE__ << ", line " << __LINE__ << endl;
+            throw(-1);
+          }
+
+          int col = (int) LLcol;
+
           double mat_value = ElementMatrix[i + j * size];
+#ifdef EPETRA_NO_32BIT_GLOBAL_INDICES
+          if (LocalA.SumIntoGlobalValues(row, 1, &mat_value, &LLcol) > 0)
+            LocalA.InsertGlobalValues(row, 1, &mat_value, &LLcol);
+#else
           if (LocalA.SumIntoGlobalValues(row, 1, &mat_value, &col) > 0)
             LocalA.InsertGlobalValues(row, 1, &mat_value, &col);
+#endif
         }
         LocalRHS[LVID[i]] += ElementRHS[i];
       }

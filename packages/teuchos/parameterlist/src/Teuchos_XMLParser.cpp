@@ -41,7 +41,7 @@
 
 // BUGS: There is a bug in Teuchos_XMLObjectImplem.cpp, line 82
 // when printing attribute values, one must check if the value contains quote
-// or apost; 
+// or apost;
 // a quot'd attval cannot contain literal quot
 // a apos'd attval cannot contain literal apos
 // either they have to be matched appropriately or (easier) all quot and apos must
@@ -59,7 +59,7 @@ using namespace Teuchos;
 // * XML schemas
 // * CDATA sections...see http://www.w3.org/TR/2004/REC-xml-20040204/#dt-cdsection
 // * full Unicode support (we read unsigned bytes, so we get only 0x00 through 0xFF)
-// 
+//
 // it tolerates (read: ignores) xml declarations, at any point in the file where a tag would be valid
 //
 // it currently does support:
@@ -72,51 +72,51 @@ using namespace Teuchos;
 
 /* From the W3C XML 1.0 Third Edition
    http://www.w3.org/TR/2004/REC-xml-20040204/
-  
+
    The following productions specify well-formed XML documents.
    These have been reduced to the support anticipated for support by this parser.
-        
+
      element      ::=  EmptyElemTag
-                       | STag content ETag 
-     STag         ::=  '<' Name (S Attribute)* S? '>' 
-     Attribute    ::=  Name Eq AttValue 
+                       | STag content ETag
+     STag         ::=  '<' Name (S Attribute)* S? '>'
+     Attribute    ::=  Name Eq AttValue
      ETag         ::=  '</' Name S? '>'
      content      ::=  CharData? ((element | Reference | CDSect | Comment) CharData?)*
      EmptyElemTag ::=  '<' Name (S Attribute)* S? '/>'
-     
+
      AttValue     ::=  '"' ([^<&"] | Reference)* '"'
                        | "'" ([^<&'] | Reference)* "'"
-     
+
      CharRef   ::= '&#' [0-9]+ ';'
      EntityRef ::= '&' Name ';'
      Reference ::= EntityRef | CharRef
-     
+
      #x20 (space)
      #x9  (horizontal tab)
      #xD  (carriage return)
      #xA  (new line, new line line feed)
-     
+
      S        ::=  (#x20 | #x9 | #xD | #xA)+
      Eq       ::=   S? '=' S?
      NameChar ::=  Letter | Digit | '.' | '-' | '_' | ':' | #x00B7
      Name     ::=  (Letter | '_' | ':') (NameChar)*
-     
-     Letter   ::= [#x0041-#x005A] | [#x0061-#x007A] 
-                  | [#x00C0-#x00D6] | [#x00D8-#x00F6] 
+
+     Letter   ::= [#x0041-#x005A] | [#x0061-#x007A]
+                  | [#x00C0-#x00D6] | [#x00D8-#x00F6]
                   | [#x00F8-#x00FF]
      Digit    ::= [#x0030-#x0039]
-     
-     Char      ::=  #x9 | #xA | #xD | [#x20-#xFF]   
+
+     Char      ::=  #x9 | #xA | #xD | [#x20-#xFF]
      CharData  ::= [^<&]* - ([^<&]* ']]>' [^<&]*)
                    that is, some std::string of characters not containing '<' or '&' or ']]>'
      Comment   ::= '<!--' ((Char - '-') | ('-' (Char - '-')))* '-->'
-                   that is, '<!--' txt '-->', where txt does not contain '--' 
-     
+                   that is, '<!--' txt '-->', where txt does not contain '--'
+
      CDSect    ::= CDStart CData CDEnd
      CDStart   ::= '<![CDATA['
      CData     ::= (Char* - (Char* ']]>' Char*))
      CDEnd     ::= ']]>'
-     
+
      document     ::=   prolog element Misc*
      prolog       ::=   XMLDecl? Misc*
      XMLDecl      ::=   '<?xml' VersionInfo EncodingDecl? SDDecl? S? '?>'
@@ -128,24 +128,24 @@ using namespace Teuchos;
      Misc         ::=     Comment | S
 
 
-        
+
 */
 
 #define XMLPARSER_TFE( T , S ) \
   TEUCHOS_TEST_FOR_EXCEPTION( T, std::runtime_error, "XML parse error at line " << _lineNo << ": " << S )
 
-XMLObject XMLParser::parse() 
+XMLObject XMLParser::parse()
 {
-  
+
   RCP<TreeBuildingXMLHandler> handler = rcp(new TreeBuildingXMLHandler());
-  
+
   _entities.clear();
   _entities["apos"] = "'";
   _entities["quot"] = "\"";
   _entities["lt"]   = "<";
   _entities["gt"]   = ">";
   _entities["amp"]  = "&";
-  
+
   bool done = false;
   int curopen = 0;  // number of currently open tags, or "do we process character data?"
   bool gotRoot = false;
@@ -153,11 +153,11 @@ XMLObject XMLParser::parse()
   std::stack<string> tags;
 
   while (!done) {
-    
+
     std::string tag, cdata;
     unsigned char c1, c2;
     Teuchos::map<std::string,string> attrs;
-    
+
     // Consume any whitespace
     if (curopen == 0) {
       // this will leave a lookahead in c1
@@ -188,7 +188,7 @@ XMLObject XMLParser::parse()
         // have to check whether we have an enclosing, otherwise tags and tagLineStarts have no top()
         XMLPARSER_TFE( curopen == 0,  "document not well-formed: encountered end element '" << tag << "' while not enclosed." );
         XMLPARSER_TFE( handler->endElement(tag)!=0, "document not well-formed: end element tag = '" << tag << "'"
-                                                    << " did not match start element '" << tags.top() 
+                                                    << " did not match start element '" << tags.top()
                                                     << "' from line " << tagLineStarts.top() );
         curopen--;
         tagLineStarts.pop();
@@ -225,7 +225,7 @@ XMLObject XMLParser::parse()
         // it is starting to look like a comment; we need '--'
         // if we don't get this, it means
         // * the document is not well-formed
-        // * the document employs a feature not supported by this parser, 
+        // * the document employs a feature not supported by this parser,
         //   e.g. <!ELEMENT...  <!ATTLIST...  <!DOCTYPE...  <![CDATA[...
         XMLPARSER_TFE( assertChar('-') != 0 , "element not well-formed or exploits unsupported feature" );
         XMLPARSER_TFE( assertChar('-') != 0 , "element not well-formed or exploits unsupported feature" );
@@ -262,10 +262,10 @@ void XMLParser::getETag(std::string &tag)
   /* Recall from the specification:
         ETag  ::=  '</' Name S? '>'
         Name  ::=  (Letter | '_' | ':') (NameChar)*
-    
+
      We have already consumed: </
   */
-  
+
   bool tagover = false;
   unsigned char c;
   // clear tag
@@ -288,7 +288,7 @@ void XMLParser::getETag(std::string &tag)
       tagover = true;
     }
     else if (c == '>') {
-      break; 
+      break;
     }
     else {
       XMLPARSER_TFE(1,  "end element not well-formed");
@@ -297,31 +297,31 @@ void XMLParser::getETag(std::string &tag)
 }
 
 
-void XMLParser::getSTag(unsigned char lookahead, std::string &tag, Teuchos::map<std::string,string> &attrs, bool &emptytag) 
+void XMLParser::getSTag(unsigned char lookahead, std::string &tag, Teuchos::map<std::string,string> &attrs, bool &emptytag)
 {
-  
+
   /* Recall from the specification:
-        
-        STag         ::=  '<' Name (S Attribute)* S? '>' 
+
+        STag         ::=  '<' Name (S Attribute)* S? '>'
         EmptyElemTag ::=  '<' Name (S Attribute)* S? '/>'
         Name         ::=  (Letter | '_' | ':') (NameChar)*
         NameChar     ::=  Letter | Digit | '.' | '-' | '_' | ':' | #x00B7
-        
+
         S            ::=  (#x20 | #x9 | #xD | #xA)+
-        Attribute    ::=  Name Eq AttValue 
+        Attribute    ::=  Name Eq AttValue
         Eq           ::=   S? '=' S?
         AttValue     ::=  '"' ([^<&"] | Reference)* '"'
                           | "'" ([^<&'] | Reference)* "'"
         Reference ::= EntityRef | CharRef
         CharRef   ::= '&#' [0-9]+ ';'
         EntityRef ::= '&' Name ';'
-        
+
      We have already consumed: <lookahead
   */
-  
+
   unsigned char c;
   attrs.clear();
-  
+
   tag = lookahead;
   // get the rest of the tag: (NameChar)*
   while (1) {
@@ -330,25 +330,25 @@ void XMLParser::getSTag(unsigned char lookahead, std::string &tag, Teuchos::map<
       tag.push_back(c);
     }
     else {
-      break; 
+      break;
     }
   }
-  
+
   // after the name: should be one of the following
   // (S Attribute) | S? '>' | S? '/>'
   do {
-    
+
     bool hadspace = false;
-    
+
     // if space, consume the whitespace
     if ( isSpace(c) ) {
       hadspace = true;
       XMLPARSER_TFE( getSpace(c)!=0, "EOF before start element was terminated");
     }
-    
+
     // now, either Attribute | '>' | '/>'
     if ( (isLetter(c) || c=='_' || c==':') && hadspace ) {
-      
+
       // Attribute
       // get attribute name, starting with contents of c
       std::string attname, attval;
@@ -359,28 +359,28 @@ void XMLParser::getSTag(unsigned char lookahead, std::string &tag, Teuchos::map<
           attname.push_back(c);
         }
         else if ( isSpace(c) || c=='=' ) {
-          break; 
+          break;
         }
         else {
           XMLPARSER_TFE(1,  "attribute not well-formed: expected whitespace or '='");
         }
       } while (1);
-      
+
       // if whitespace, consume it
       if (isSpace(c)) {
-        getSpace(c);  
+        getSpace(c);
       }
       // should be on '='
       if (c != '=') {
         XMLPARSER_TFE(1,  "attribute not well-formed: expected '='");
       }
-      
+
       // get any whitespace following the '='
       XMLPARSER_TFE(_is->readBytes(&c,1) < 1,  "EOF before start element was terminated");
       if (isSpace(c)) {
         getSpace(c);
       }
-      
+
       // now get the quoted attribute value
       bool apost;
       attval = "";
@@ -417,7 +417,7 @@ void XMLParser::getSTag(unsigned char lookahead, std::string &tag, Teuchos::map<
           XMLPARSER_TFE(1,  "invalid character in attribute value");
         }
       } while(1);
-      
+
       // add attribute to list
       XMLPARSER_TFE( attrs.find(attname) != attrs.end() ,  "cannot have two attributes with the same name");
       attrs[attname] = attval;
@@ -434,21 +434,21 @@ void XMLParser::getSTag(unsigned char lookahead, std::string &tag, Teuchos::map<
     else {
       XMLPARSER_TFE(1,  "start element not well-formed: invalid character");
     }
-  
+
     // get next char
     XMLPARSER_TFE(_is->readBytes(&c,1) < 1,  "EOF before start element was terminated");
-  
+
   } while(1);
 }
 
 
-void XMLParser::getComment(long startLine) 
+void XMLParser::getComment(long startLine)
 {
   /* Recall from the specification:
         Comment   ::= '<!--' ((Char - '-') | ('-' (Char - '-')))* '-->'
-                      that is, '<!--' txt '-->', where txt does not contain '--' 
+                      that is, '<!--' txt '-->', where txt does not contain '--'
      We have already consumed: <!--
-     
+
      Be wary here of the fact that c=='-' implies isChar(c)
   */
   unsigned char c;
@@ -472,7 +472,7 @@ void XMLParser::getComment(long startLine)
     else if (!isChar(c)) {
       XMLPARSER_TFE(1,  "comment not well-formed: invalid character at line " << _lineNo );
     }
-  } 
+  }
 }
 
 
@@ -523,7 +523,7 @@ void XMLParser::getReference(std::string &refstr) {
         break;
       }
       else if ( isLetter(c) || ('0' <= c && c <= '9')
-                || c=='.' || c=='-' || c=='_' || c==':' 
+                || c=='.' || c=='-' || c=='_' || c==':'
                 || c==0xB7 ) {
         entname.push_back(c);
       }
@@ -532,7 +532,7 @@ void XMLParser::getReference(std::string &refstr) {
       }
     } while (1);
     XMLPARSER_TFE( _entities.find(entname) == _entities.end(),  "entity reference not well-formed: undefined entity");
-    refstr = _entities[entname];  
+    refstr = _entities[entname];
   }
   else {
     XMLPARSER_TFE(1,  "reference not well-formed: expected name or '#'");
@@ -566,7 +566,7 @@ bool XMLParser::isLetter(unsigned char c) {
 
 bool XMLParser::isNameChar(unsigned char c) {
   if ( isLetter(c) || ('0' <= c && c <= '9') ||
-       c=='.' || c=='-' || c=='_' || c==':' || c==0xB7 ) 
+       c=='.' || c=='-' || c=='_' || c==':' || c==0xB7 )
   {
     return true;
   }
@@ -591,7 +591,7 @@ bool XMLParser::isChar(unsigned char c) {
 }
 
 
-int XMLParser::assertChar(unsigned char cexp) 
+int XMLParser::assertChar(unsigned char cexp)
 {
   // pull the next character off the stream and verify that it is what is expected
   // if not, return an error to the caller
@@ -603,10 +603,10 @@ int XMLParser::assertChar(unsigned char cexp)
   if (c != cexp) {
     return 2;
   }
-  return 0; 
+  return 0;
 }
 
-void XMLParser::ignoreXMLDeclaration() 
+void XMLParser::ignoreXMLDeclaration()
 {
   /* Be a little lax on the spec here; read until we get to '?', then assert '>'
      We have already consumed: <xml
@@ -621,5 +621,5 @@ void XMLParser::ignoreXMLDeclaration()
       XMLPARSER_TFE( assertChar('>')!=0, "XML declaration not well-formed: missing expected '>' at line " << _lineNo );
       break;
     }
-  } 
+  }
 }

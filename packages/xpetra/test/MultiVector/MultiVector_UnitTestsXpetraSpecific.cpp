@@ -89,9 +89,15 @@ namespace {
     const Xpetra::global_size_t INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
 
     const size_t numLocal = 4;
-    RCP<const Xpetra::Map<int, int> > map = Xpetra::MapFactory<int, int>::createContigMap(lib, INVALID, numLocal, comm);
+#ifndef XPETRA_TEST_USE_LONGLONG_GO
+	typedef int GO;
+#else
+	typedef long long GO;
+#endif
 
-    RCP< Xpetra::MultiVector<double, int, int> > mv = Xpetra::MultiVectorFactory<double, int, int>::Build(map, 3, false);
+    RCP<const Xpetra::Map<int, GO> > map = Xpetra::MapFactory<int, GO>::createContigMap(lib, INVALID, numLocal, comm);
+
+    RCP< Xpetra::MultiVector<double, int, GO> > mv = Xpetra::MultiVectorFactory<double, int, GO>::Build(map, 3, false);
     for(size_t k=0; k < 3; k++) {
       Teuchos::ArrayRCP<double> mvData = mv->getDataNonConst(k);
 
@@ -100,8 +106,8 @@ namespace {
       }
     }
 
-    Teuchos::RCP< const Xpetra::Vector<double, int, int> > v         = mv->getVector(1);         // second vector
-    Teuchos::RCP<       Xpetra::Vector<double, int, int> > vNonConst = mv->getVectorNonConst(2); // third vector
+    Teuchos::RCP< const Xpetra::Vector<double, int, GO> > v         = mv->getVector(1);         // second vector
+    Teuchos::RCP<       Xpetra::Vector<double, int, GO> > vNonConst = mv->getVectorNonConst(2); // third vector
 
     mv = Teuchos::null;
 

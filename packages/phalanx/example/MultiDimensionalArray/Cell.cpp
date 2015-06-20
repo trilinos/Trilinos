@@ -45,37 +45,38 @@
 #include "Cell.hpp"
 
 //**********************************************************************
-MyCell::MyCell() :
-  m_phi_mem(Teuchos::arcp<double>(4*4)),
-  m_grad_phi_mem(Teuchos::arcp<double>(4*4*3)),
-  m_phi(&(m_phi_mem[0]),4,4),
-  m_grad_phi(&(m_grad_phi_mem[0]),4,4,3)
+MyCell::MyCell()
 { 
-  using namespace Teuchos;
+  m_phi = Kokkos::View<double**,PHX::Device>("phi",4,4);
+  m_grad_phi = Kokkos::View<double***,PHX::Device>("grad_phi",4,4,3);
 
-  for (ArrayRCP<double>::Ordinal i = 0; i < m_phi_mem.size(); ++i)
-    m_phi_mem[i] = 0.25;
-
-  for (ArrayRCP<double>::Ordinal i = 0; i < m_grad_phi_mem.size(); ++i)
-    m_grad_phi_mem[i] = 0.25;
+  // just some garbage values for unit testing
+  for (PHX::Device::size_type i=0; i < m_phi.dimension(0); ++i) {
+    for (PHX::Device::size_type j=0; j < m_phi.dimension(0); ++j) {
+      m_phi(i,j) = 0.25;
+      for (PHX::Device::size_type k=0; k < m_phi.dimension(0); ++k) {
+	m_grad_phi(i,j,k) = 0.25;
+      }
+    }
+  }
 }
 
 //**********************************************************************
-shards::Array<double,shards::NaturalOrder,Node,Dim>& 
+Kokkos::View<double**,PHX::Device>
 MyCell::getNodeCoordinates()
 {
   return m_coords;
 }
 
 //**********************************************************************
-shards::Array<double,shards::NaturalOrder,QuadPoint,Node>& 
-MyCell::getBasisFunctions()
+Kokkos::View<double**,PHX::Device>
+MyCell::getBasisFunctions() 
 {
   return m_phi;
 }
 
 //**********************************************************************
-shards::Array<double,shards::NaturalOrder,QuadPoint,Node,Dim>& 
+Kokkos::View<double***,PHX::Device>
 MyCell::getBasisFunctionGradients()
 {
   return m_grad_phi;

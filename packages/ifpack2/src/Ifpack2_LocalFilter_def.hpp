@@ -743,17 +743,49 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     "X has " << X.getNumVectors () << " columns, but Y has "
     << Y.getNumVectors () << " columns.");
 
+#ifdef HAVE_IFPACK2_DEBUG
+  {
+    typedef Teuchos::ScalarTraits<magnitude_type> STM;
+    Teuchos::Array<magnitude_type> norms (X.getNumVectors ());
+    X.norm1 (norms ());
+    bool good = true;
+    for (size_t j = 0; j < X.getNumVectors (); ++j) {
+      if (STM::isnaninf (norms[j])) {
+        good = false;
+        break;
+      }
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION( ! good, std::runtime_error, "Ifpack2::LocalFilter::apply: The 1-norm of the input X is NaN or Inf.");
+  }
+#endif // HAVE_IFPACK2_DEBUG
+
   if (&X == &Y) {
     // FIXME (mfh 23 Apr 2014) We have to do more work to figure out
     // if X and Y alias one another.  For example, we should check
     // whether one is a noncontiguous view of the other.
     //
     // X and Y alias one another, so we have to copy X.
-    MV X_copy = Tpetra::createCopy (X);
+    MV X_copy (X, Teuchos::Copy);
     applyNonAliased (X_copy, Y, mode, alpha, beta);
   } else {
     applyNonAliased (X, Y, mode, alpha, beta);
   }
+
+#ifdef HAVE_IFPACK2_DEBUG
+  {
+    typedef Teuchos::ScalarTraits<magnitude_type> STM;
+    Teuchos::Array<magnitude_type> norms (Y.getNumVectors ());
+    Y.norm1 (norms ());
+    bool good = true;
+    for (size_t j = 0; j < Y.getNumVectors (); ++j) {
+      if (STM::isnaninf (norms[j])) {
+        good = false;
+        break;
+      }
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION( ! good, std::runtime_error, "Ifpack2::LocalFilter::apply: The 1-norm of the output Y is NaN or Inf.");
+  }
+#endif // HAVE_IFPACK2_DEBUG
 }
 
 template<class MatrixType>
@@ -888,11 +920,16 @@ bool LocalFilter<MatrixType>::supportsRowViews () const
 
 template<class MatrixType>
 typename
-Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
+LocalFilter<MatrixType>::mag_type
 LocalFilter<MatrixType>::getFrobeniusNorm () const
 {
+#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
+  typedef Kokkos::Details::ArithTraits<scalar_type> STS;
+  typedef Kokkos::Details::ArithTraits<mag_type> STM;
+#else
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
+#endif
   typedef typename Teuchos::Array<scalar_type>::size_type size_type;
 
   const size_type maxNumRowEnt = getNodeMaxNumRowEntries ();
@@ -901,55 +938,17 @@ LocalFilter<MatrixType>::getFrobeniusNorm () const
   const size_t numRows = static_cast<size_t> (localRowMap_->getNodeNumElements ());
 
   // FIXME (mfh 03 Apr 2013) Scale during sum to avoid overflow.
-  magnitude_type sumSquared = STM::zero ();
-  if (STS::isComplex) {
-    for (size_t i = 0; i < numRows; ++i) {
-      size_t numEntries = 0;
-      this->getLocalRowCopy (i, ind (), val (), numEntries);
-      for (size_type k = 0; k < static_cast<size_type> (numEntries); ++k) {
-        sumSquared += STS::real (val[k]) * STS::real (val[k]) +
-          STS::imag (val[k]) * STS::imag (val[k]);
-      }
-    }
-  }
-  else {
-    for (size_t i = 0; i < numRows; ++i) {
-      size_t numEntries = 0;
-      this->getLocalRowCopy (i, ind (), val (), numEntries);
-      for (size_type k = 0; k < static_cast<size_type> (numEntries); ++k) {
-        const magnitude_type v_k_abs = STS::magnitude (val[k]);
-        sumSquared += v_k_abs * v_k_abs;
-      }
+  mag_type sumSquared = STM::zero ();
+  for (size_t i = 0; i < numRows; ++i) {
+    size_t numEntries = 0;
+    this->getLocalRowCopy (i, ind (), val (), numEntries);
+    for (size_type k = 0; k < static_cast<size_type> (numEntries); ++k) {
+      const mag_type v_k_abs = STS::magnitude (val[k]);
+      sumSquared += v_k_abs * v_k_abs;
     }
   }
   return STM::squareroot (sumSquared); // Different for each process; that's OK.
 }
-
-
-template<class MatrixType>
-TPETRA_DEPRECATED void
-LocalFilter<MatrixType>::
-getGlobalRowView (global_ordinal_type GlobalRow,
-                  Teuchos::ArrayRCP<const global_ordinal_type> &indices,
-                  Teuchos::ArrayRCP<const scalar_type> &values) const
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-    "Ifpack2::LocalFilter does not implement getGlobalRowView.");
-}
-
-
-template<class MatrixType>
-TPETRA_DEPRECATED
-void
-LocalFilter<MatrixType>::
-getLocalRowView (local_ordinal_type LocalRow,
-                 Teuchos::ArrayRCP<const local_ordinal_type> &indices,
-                 Teuchos::ArrayRCP<const scalar_type> &values) const
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-    "Ifpack2::LocalFilter does not implement getLocalRowView.");
-}
-
 
 template<class MatrixType>
 std::string

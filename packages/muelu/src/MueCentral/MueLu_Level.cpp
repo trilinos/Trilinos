@@ -155,13 +155,15 @@ namespace MueLu {
       } catch (Exceptions::DependencyError& e) {
         std::ostringstream msg;
         msg << requestedBy->ShortClassName() << "::DeclareInput: (" << e.what() << ") unable to find or generate requested data \""
-            << ename << "\" with generating factory \"" << ((factory != NULL) ? factory->ShortClassName() : "null") << "\"";
-        msg << "\n    during request for data \"" << std::setw(15) << ename << "\" on level " << GetLevelID() << " by factory " << requestedBy->ShortClassName();
+            << ename << "\" with generating factory \"" << ((factory != NULL) ? factory->ShortClassName() : "null") << "\" [" << factory << "]";
+        msg << "\n    during request for data \"" << std::setw(15) << ename << "\" on level " << GetLevelID()
+            << " by factory " << std::setw(25) << requestedBy->ShortClassName() << " [" << requestedBy << "]";
         throw Exceptions::RuntimeError(msg.str());
 
       } catch (Exceptions::RuntimeError &e) {
         std::ostringstream msg;
-        msg << e.what() << "\n    during request for data \"" << std::setw(15) << ename << "\" on level " << GetLevelID() << " by factory " << requestedBy->ShortClassName();
+        msg << e.what() << "\n    during request for data \"" << std::setw(15) << ename << "\" on level " << GetLevelID()
+            << " by factory " << std::setw(25) << requestedBy->ShortClassName() << " [" << requestedBy << "]";
         throw Exceptions::RuntimeError(msg.str());
       }
 
@@ -354,20 +356,6 @@ namespace MueLu {
     return out.str();
   }
 
-  void Level::print(Teuchos::FancyOStream& out, const VerbLevel verbLevel) const {
-    RCP<Teuchos::FancyOStream> out0 = Teuchos::rcpFromRef(out);
-    int previousSetting = out0->getOutputToRootOnly();
-    out0->setShowProcRank(true);
-
-    std::ostringstream ss;
-    print(ss, verbLevel);
-
-    out0->setOutputToRootOnly(-1);
-    *out0 << ss.str() << std::endl;
-    out0->setOutputToRootOnly(previousSetting);
-    out0->setShowProcRank(false);
-  }
-
   void Level::print(std::ostream& out, const VerbLevel verbLevel) const {
     if (!(verbLevel & Debug))
       return;
@@ -402,7 +390,11 @@ namespace MueLu {
         //         outputter.outputField((ss1.str()).substr(0,30));
 
         // factory ptr
-        outputter.outputField(factory);
+        if (factory == NoFactory::get())
+          outputter.outputField("NoFactory");
+        else
+          outputter.outputField(factory);
+
 
         int reqcount = NumRequests(factory, ename); // request counter
         outputter.outputField(reqcount);
@@ -419,21 +411,22 @@ namespace MueLu {
         }
 
         if (IsAvailable(ename, factory)) {
-          std::string strType = it->second->GetData().getAny(true).typeName();
+          std::string strType = it->second->GetTypeName();
 
           if        (strType == "int") {
             outputter.outputField(strType);
-            outputter.outputField(Teuchos::getValue<int>(it->second->GetData()));
+            outputter.outputField(it->second->GetData<int>());
           } else if (strType == "double") {
             outputter.outputField(strType);
-            outputter.outputField(Teuchos::getValue<double>(it->second->GetData()));
+            outputter.outputField(it->second->GetData<double>());
           } else if (strType == "string") {
             outputter.outputField(strType);
-            outputter.outputField(Teuchos::getValue<std::string>(it->second->GetData()));
+            outputter.outputField(it->second->GetData<std::string>());
           } else {
             size_t npos = std::string::npos;
 
             if      (strType.find("Xpetra::Matrix")          != npos) outputter.outputField("Matrix" );
+            else if (strType.find("Xpetra::Operator")        != npos) outputter.outputField("Operator");
             else if (strType.find("Xpetra::MultiVector")     != npos) outputter.outputField("Vector");
             else if (strType.find("Xpetra::Map")             != npos) outputter.outputField("Map");
             else if (strType.find("Xpetra::Import")          != npos) outputter.outputField("Import");

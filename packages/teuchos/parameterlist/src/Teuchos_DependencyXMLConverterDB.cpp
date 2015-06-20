@@ -46,7 +46,7 @@
 
 namespace Teuchos {
 
-  
+
 
 void DependencyXMLConverterDB::addConverter(
   RCP<const Dependency> dependency,
@@ -60,12 +60,12 @@ void DependencyXMLConverterDB::addConverter(
 RCP<const DependencyXMLConverter>
 DependencyXMLConverterDB::getConverter(const Dependency& dependency)
 {
-  ConverterMap::const_iterator it = 
+  ConverterMap::const_iterator it =
     getConverterMap().find(dependency.getTypeAttributeValue());
   TEUCHOS_TEST_FOR_EXCEPTION(it == getConverterMap().end(),
     CantFindDependencyConverterException,
     "Could not find a DependencyXMLConverter for a dependency with "
-    "attribute tag " << dependency.getTypeAttributeValue() << 
+    "attribute tag " << dependency.getTypeAttributeValue() <<
     "!" << std::endl <<
     "Try adding an appropriate converter to the DependencyXMLConverterDB " <<
     "in order to solve this problem." << std::endl << std::endl);
@@ -75,7 +75,7 @@ DependencyXMLConverterDB::getConverter(const Dependency& dependency)
 
 RCP<const DependencyXMLConverter>
 DependencyXMLConverterDB::getConverter(const XMLObject& xmlObject)
-{ 
+{
   std::string dependencyType = xmlObject.getRequired(
     DependencyXMLConverter::getTypeAttributeName());
   ConverterMap::const_iterator it = getConverterMap().find(dependencyType);
@@ -83,7 +83,7 @@ DependencyXMLConverterDB::getConverter(const XMLObject& xmlObject)
   std::ostringstream sout;
   printKnownConverters(sout);
   #endif
-  std::string extraError = 
+  std::string extraError =
   #ifdef HAVE_TEUCHOS_DEBUG
   sout.str();
   #else
@@ -108,9 +108,9 @@ XMLObject DependencyXMLConverterDB::convertDependency(
   return getConverter(*dependency)->fromDependencytoXML(
     dependency, entryIDsMap, validatorIDsMap);
 }
- 
+
 RCP<Dependency> DependencyXMLConverterDB::convertXML(
-    const XMLObject& xmlObject, 
+    const XMLObject& xmlObject,
     const XMLParameterListReader::EntryIDsMap& entryIDsMap,
     const IDtoValidatorMap& validatorIDsMap)
 {
@@ -130,7 +130,7 @@ DependencyXMLConverterDB::getConverterMap()
 
 
 namespace {
-  
+
 
 TEUCHOS_STATIC_SETUP()
 {
@@ -162,5 +162,5 @@ TEUCHOS_STATIC_SETUP()
 }
 
 
-} //namespace 
+} //namespace
 

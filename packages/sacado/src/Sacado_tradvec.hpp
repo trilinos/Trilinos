@@ -39,8 +39,7 @@
 #include "Sacado_tradvec_Traits.hpp"
 
 #include <stddef.h>
-#include <cmath>
-#include <math.h>
+#include <Sacado_cmath.hpp>
 
 #if defined(RAD_DEBUG_BLOCKKEEP) && !defined(HAVE_SACADO_UNINIT)
 #undef RAD_DEBUG_BLOCKKEEP
@@ -300,6 +299,7 @@ T F copy(Ai);
 ADvari {	// implementation of an ADvar
  public:
 	typedef Double value_type;
+        typedef typename ScalarType<value_type>::type scalar_type;
 	typedef IndepADvar<Double> IndepADVar;
 #ifdef RAD_AUTO_AD_Const
 	friend class IndepADvar<Double>;

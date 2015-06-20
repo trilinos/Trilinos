@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,14 +35,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// 
 // ************************************************************************
 //@HEADER
 */
 
-#include <Kokkos_Macros.hpp>
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 
 #define KOKKOS_PRAGMA_UNROLL(a)
 
@@ -50,8 +49,8 @@ namespace TestCompilerMacros {
 
 template<class DEVICE_TYPE>
 struct AddFunctor {
-  typedef DEVICE_TYPE device_type;
-  typedef typename Kokkos::View<int**,device_type> type;
+  typedef DEVICE_TYPE execution_space;
+  typedef typename Kokkos::View<int**,execution_space> type;
   type a,b;
   int length;
 

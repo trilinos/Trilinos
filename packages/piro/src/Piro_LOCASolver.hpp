@@ -91,6 +91,7 @@ private:
   Teuchos::RCP<NOX::StatusTest::Generic> noxStatusTests_;
 
   Teuchos::RCP<LOCA::Stepper> stepper_;
+  mutable bool first_;
 };
 
 

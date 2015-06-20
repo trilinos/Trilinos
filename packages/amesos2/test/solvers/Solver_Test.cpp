@@ -57,7 +57,7 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_ParameterXMLFileReader.hpp>
 #include <Teuchos_FancyOStream.hpp>
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_TimeMonitor.hpp>
@@ -229,10 +229,10 @@ int main(int argc, char*argv[])
   fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   if( !allprint ) fos->setOutputToRootOnly( root );
 
+  Teuchos::oblackholestream blackhole;
   if( verbosity > 3 ){
     compare_fos = fos;
   } else {
-    Teuchos::oblackholestream blackhole;
     compare_fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(blackhole));
   }
 
@@ -591,10 +591,11 @@ do_solve_routine(const string& solver_name,
   // declare as 'int' to allow incrementing
   int style = SOLVE_VERBOSE;
 
+  size_t count = 0;
   while (style <= SOLVE_SHORT) {
     rhs_it_t rhs_it = b.begin();
     rhs_it_t x_it = x.begin();
-
+    count++;
     // Create our solver according to the current style
     switch (style) {
     case SOLVE_VERBOSE:
@@ -606,7 +607,11 @@ do_solve_routine(const string& solver_name,
     case SOLVE_SHORT:
       solver = Amesos2::create<Matrix,Vector>(solver_name, A1);
       break;
+
     }
+    if(num_vecs < count)
+      {}
+
 
     solver->setParameters( rcpFromRef(solve_params) );
 
@@ -1307,7 +1312,7 @@ bool test_tpetra(const string& mm_file,
 #endif    // HAVE_TEUCHOS_QD
 #ifdef HAVE_TEUCHOS_COMPLEX
       if( scalar == "complex" ){
-#if !(defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) || ((defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) && (defined HAVE_TPETRA_INST_COMPLEX_FLOAT))
+#if !(defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) || ((defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) && (defined HAVE_TPETRA_INST_COMPLEX_FLOAT) && !(defined HAVE_AMESOS2_KLU2))
         if( mag == "float" ){
           typedef std::complex<float> cmplx;
           if( lo == "int" ){

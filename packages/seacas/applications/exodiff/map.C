@@ -931,9 +931,6 @@ namespace {
 	    double y2 = dim > 1 ? y[id[index]] : 0.0;
 	    double z2 = dim > 2 ? z[id[index]] : 0.0;
 	  
-	    INT loce1 = id[i];
-	    INT loce2 = id[index];
-	    
 	    std::cout << "\nexodiff: ERROR - Two elements in file 2 have the "
 		      << "same midpoint (within tolerance).\n"
 		      << "\tLocal element  " << id[i]+1 << " in block " << block_id

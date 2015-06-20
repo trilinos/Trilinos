@@ -69,7 +69,7 @@ class EpetraExt_PointToBlockDiagPermute;
 /*!
   The Ifpack_Chebyshev class enables the construction of preconditioners
   based on Chebyshev polynomials for an Epetra_RowMatrix.
-  Ifpack_Chebyshev is derived from the Ifpack_Preconditioner class, 
+  Ifpack_Chebyshev is derived from the Ifpack_Preconditioner class,
   which is itself derived from Epetra_Operator.
   Therefore this object can be used as preconditioner everywhere an
   ApplyInverse() method is required in the preconditioning step.
@@ -128,9 +128,9 @@ public:
   //@}
 
   /*! This flag can be used to apply the preconditioner to the transpose of
-   * the input operator. 
-   * 
-   * \return Integer error code, set to 0 if successful.  
+   * the input operator.
+   *
+   * \return Integer error code, set to 0 if successful.
    * Set to -1 if this implementation does not support transpose.
     */
   virtual inline int SetUseTranspose(bool UseTranspose_in)
@@ -144,10 +144,10 @@ public:
   //@{ \name Mathematical functions.
 
   //! Applies the matrix to an Epetra_MultiVector.
-  /*! 
-    \param 
+  /*!
+    \param
     X - (In) A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
-    \param 
+    \param
     Y - (Out) A Epetra_MultiVector of dimension NumVectors containing the result.
 
     \return Integer error code, set to 0 if successful.
@@ -155,7 +155,7 @@ public:
   virtual inline int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
   //! Applies the preconditioner to X, returns the result in Y.
-  /*! 
+  /*!
     \param
     X - (In) A Epetra_MultiVector of dimension NumVectors to be preconditioned.
     \param
@@ -203,7 +203,7 @@ public:
   virtual const Epetra_Map & OperatorRangeMap() const;
 
   virtual int Initialize();
-  
+
   virtual bool IsInitialized() const
   {
     return(IsInitialized_);
@@ -223,12 +223,12 @@ public:
 
   //! Contains an approximation to the smallest eigenvalue.
   virtual double GetLambdaMin(){return LambdaMin_;}
-  
+
   //@}
- 
+
   //@{ \name Miscellaneous
 
-  virtual const Epetra_RowMatrix& Matrix() const 
+  virtual const Epetra_RowMatrix& Matrix() const
   {
     return(*Matrix_);
   }
@@ -315,36 +315,36 @@ public:
   //! Simple power method to compute lambda_max.
   static int PowerMethod(const Epetra_Operator& Operator,
                          const Epetra_Vector& InvPointDiagonal,
-                         const int MaximumIterations, 
+                         const int MaximumIterations,
                          double& LambdaMax);
 
   //! Uses AztecOO's CG to estimate lambda_min and lambda_max.
-  static int CG(const Epetra_Operator& Operator, 
-                const Epetra_Vector& InvPointDiagonal, 
-                const int MaximumIterations, 
+  static int CG(const Epetra_Operator& Operator,
+                const Epetra_Vector& InvPointDiagonal,
+                const int MaximumIterations,
                 double& lambda_min, double& lambda_max);
-  
+
 #ifdef HAVE_IFPACK_EPETRAEXT
   //! Uses AztecOO's CG to estimate lambda_min and lambda_max.
   // WARNING: This only works in Block Mode.
-  int CG(const int MaximumIterations, 
+  int CG(const int MaximumIterations,
          double& lambda_min, double& lambda_max);
   //! Simple power method to compute lambda_max.
   // WARNING: This only works in Block Mode.
   int PowerMethod(const int MaximumIterations,double& lambda_max);
 #endif
 private:
-  
+
   // @}
   // @{ \name Private methods
-  
+
   //! Sets the label.
   virtual void SetLabel();
 
   //! Copy constructor (PRIVATE, should not be used)
   Ifpack_Chebyshev(const Ifpack_Chebyshev& rhs)
   {}
-  
+
   //! operator = (PRIVATE, should not be used)
   Ifpack_Chebyshev& operator=(const Ifpack_Chebyshev& rhs)
   {
@@ -381,13 +381,17 @@ private:
   bool UseTranspose_;
   //! Contains the estimated condition number
   double Condest_;
+#if 0
+  // Unused; commented out to avoid build warnings
+
   //! If true, Compute() also computes the condition number estimate.
   bool ComputeCondest_;
+#endif // 0
   //! Contains the ratio such that [LambdaMax_ / EigRatio_, LambdaMax_]
   //! is the interval of interest for the Chebyshev polynomial.
   double EigRatio_;
   //! Max number of iterations to use in eigenvalue estimation (if automatic).
-  int EigMaxIters_;  
+  int EigMaxIters_;
   //! Contains the label of this object.
   string Label_;
   //! Contains an approximation to the smallest eigenvalue.

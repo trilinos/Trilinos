@@ -60,8 +60,8 @@ int main(int argc, char** argv)
   typedef int                                                       Ordinal;
   typedef double                                                    Scalar;
 
-  typedef Tpetra::MpiPlatform<KokkosClassic::SerialNode>                   MpiPlatform;
-  typedef Tpetra::SerialPlatform<KokkosClassic::SerialNode>                SerialPlatform;
+  typedef Tpetra::MpiPlatform<KokkosClassic::DefaultNode::DefaultNodeType> MpiPlatform;
+  typedef Tpetra::SerialPlatform<KokkosClassic::DefaultNode::DefaultNodeType> SerialPlatform;
 
   typedef MpiPlatform::NodeType                                     MpiNodeType;
   typedef SerialPlatform::NodeType                                  SerialNodeType;

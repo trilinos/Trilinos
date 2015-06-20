@@ -115,10 +115,12 @@ namespace {
     return ret;
   }
 
+  /*
   RCP<FancyOStream> getDefaultOStream()
   {
     return( VerboseObjectBase::getDefaultOStream() );
   }
+  */
 
   /*
    * UNIT TESTS
@@ -399,7 +401,7 @@ namespace {
     Array<SCALAR> copy(numVectors*numLocal*numprocs);
 
     if( rank == 0 ){
-      std::fill(original.begin(), original.end(), 1.9);
+      std::fill(original.begin(), original.end(), (SCALAR) 1.9);
     }
 
     // distribute rank 0's data

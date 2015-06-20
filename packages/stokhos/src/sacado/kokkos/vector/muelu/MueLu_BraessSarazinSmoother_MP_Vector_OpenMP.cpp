@@ -39,8 +39,8 @@
 // ***********************************************************************
 // @HEADER
 
-
-
+#include "MueLu_ConfigDefs.hpp"
+#ifdef HAVE_MUELU_EXPERIMENTAL
 
 #include "MueLu_ExplicitInstantiation.hpp"
 #include "Stokhos_ConfigDefs.h"
@@ -50,7 +50,6 @@
 #include "Stokhos_Tpetra_ETI_Helpers_MP_Vector.hpp"
 #include "Stokhos_MueLu_MP_Vector.hpp"
 
-#include "Tpetra_ETIHelperMacros.h"
 #include "MueLu_BraessSarazinSmoother_def.hpp"
 
 #define MUELU_INST_S_LO_GO_N(S, LO, GO, N) \
@@ -62,4 +61,4 @@ INSTANTIATE_TPETRA_MP_VECTOR_OPENMP(MUELU_INST_S_LO_GO_N)
 
 #endif
 
-
+#endif

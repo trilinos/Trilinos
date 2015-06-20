@@ -1,3 +1,35 @@
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 #ifndef STKTOPOLOGY_TOPOLOGY_TYPE_TCC
 #define STKTOPOLOGY_TOPOLOGY_TYPE_TCC
 
@@ -10,6 +42,12 @@
 
 #include <boost/mpl/for_each.hpp>
 #include <boost/mpl/assert.hpp>
+
+
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
+
 
 #define STKTOPOLOGY_META_FUNCTION_SWITCH(ordinal, meta_function)  \
   switch (ordinal)                                                \
@@ -130,6 +168,9 @@ struct topology::topology_type
   }
 
   /// node ordinals that make up the given edge
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   template <typename OrdinalOutputIterator>
   BOOST_GPU_ENABLED
   static void edge_node_ordinals(unsigned edge_ordinal, OrdinalOutputIterator output_ordinals)
@@ -142,6 +183,9 @@ struct topology::topology_type
   }
 
   /// the node ordinals that make up the given face
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   template <typename OrdinalOutputIterator>
   BOOST_GPU_ENABLED
   static void face_node_ordinals(unsigned face_ordinal, OrdinalOutputIterator output_ordinals)
@@ -154,6 +198,9 @@ struct topology::topology_type
   }
 
   /// the node ordinals of the topology in the given permutation order
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   template <typename OrdinalOutputIterator>
   BOOST_GPU_ENABLED
   static void permutation_node_ordinals(unsigned permutation_ordinal, OrdinalOutputIterator output_ordinals)
@@ -166,6 +213,9 @@ struct topology::topology_type
   }
 
   /// node that make up the given edge
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   template <typename NodeArray, typename NodeOutputIterator>
   BOOST_GPU_ENABLED
   static void edge_nodes(const NodeArray & nodes, unsigned edge_ordinal, NodeOutputIterator output_nodes)
@@ -178,18 +228,23 @@ struct topology::topology_type
   }
 
   /// node that make up the given face
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   template <typename NodeArray, typename NodeOutputIterator>
   BOOST_GPU_ENABLED
   static void face_nodes(const NodeArray & nodes, unsigned face_ordinal, NodeOutputIterator output_nodes)
   {
     topology_detail::fill_node_container<NodeArray,NodeOutputIterator> f(nodes,output_nodes);
-
     STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(face_ordinal, topology_detail::face_node_ordinals_, f)
 
     return;
   }
 
   /// node that make up the given permutation
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   template <typename NodeArray, typename NodeOutputIterator>
   BOOST_GPU_ENABLED
   static void permutation_nodes(const NodeArray & nodes, unsigned permutation_ordinal, NodeOutputIterator output_nodes)
@@ -202,6 +257,9 @@ struct topology::topology_type
   }
 
   /// fill the output ordinals with the ordinals that make up the given sub topology
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   template <typename OrdinalOutputIterator>
   BOOST_GPU_ENABLED
   static void sub_topology_node_ordinals(unsigned sub_rank, unsigned sub_ordinal, OrdinalOutputIterator output_ordinals)
@@ -216,6 +274,9 @@ struct topology::topology_type
   }
 
   /// fill the output nodes with the nodes that make up the given sub topology
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   template <typename NodeArray, typename NodeOutputIterator>
   BOOST_GPU_ENABLED
   static void sub_topology_nodes(const NodeArray & nodes, unsigned sub_rank, unsigned sub_ordinal, NodeOutputIterator output_nodes)
@@ -261,6 +322,9 @@ struct topology::topology_type
 
   /// do the two arrays defined equivalent entities (same nodes, but maybe a different permutation)
   /// return a pair<bool, permutation_number> bool and permutation number from a to b
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   template <typename NodeArrayA, typename NodeArrayB>
   BOOST_GPU_ENABLED
   static std::pair<bool,unsigned> equivalent(const NodeArrayA & a, const NodeArrayB & b)
@@ -272,6 +336,12 @@ struct topology::topology_type
   static unsigned lexicographical_smallest_permutation( const NodeArray & nodes, bool only_positive_permutations = false)
   {
     return topology_detail::lexicographical_smallest_permutation_helper( type(), nodes, only_positive_permutations, nodes[0]);
+  }
+
+  template <typename NodeArray>
+  static unsigned lexicographical_smallest_permutation_preserve_polarity( const NodeArray & nodes, const NodeArray & element_nodes)
+  {
+    return topology_detail::lexicographical_smallest_permutation_preserve_polarity_helper( type(), nodes, element_nodes, nodes[0]);
   }
 
   BOOST_GPU_ENABLED

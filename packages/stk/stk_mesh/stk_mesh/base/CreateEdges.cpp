@@ -1,16 +1,40 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include "stk_mesh/base/CreateEdges.hpp"
 
 #include <stddef.h>                     // for size_t
 #include <algorithm>                    // for swap, lower_bound, max, etc
-#include <boost/array.hpp>              // for array
 #include <functional>                   // for equal_to
 #include <iterator>                     // for back_insert_iterator, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, EntityLess, etc
@@ -18,13 +42,12 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, get_cell_topology
 #include <stk_mesh/base/Selector.hpp>   // for operator&, Selector, etc
 #include <stk_mesh/base/Types.hpp>      // for EntityVector, etc
+#include <stk_mesh/base/GetEntities.hpp>
+
+#include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>  // for CommBuffer, CommAll
 #include <vector>                       // for vector, etc
-#include "boost/functional/hash/extensions.hpp"  // for hash
-#include "boost/tuple/detail/tuple_basic.hpp"  // for get
-#include "boost/unordered/detail/buckets.hpp"  // for iterator, etc
-#include "boost/unordered/unordered_map.hpp"
-#include "boost/utility/enable_if.hpp"  // for enable_if_c
+#include <unordered_map>
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
 #include "stk_mesh/base/Part.hpp"       // for Part
@@ -38,31 +61,153 @@
 namespace stk {
 namespace mesh {
 
+namespace impl {
+  typedef std::unordered_map<EntityVector,Entity,stk::mesh::impl::HashValueForEntityVector> edge_map_type;
+} //impl namespace
+
 namespace {
 
-typedef boost::unordered_map<EntityVector,Entity> edge_map_type;
 typedef std::vector<EntityKey> EntityKeyVector;
+
+struct create_single_edge_impl
+{
+  typedef void result_type;
+
+  create_single_edge_impl(   size_t & count_edges
+                    , std::vector<stk::mesh::EntityId>               & available_ids
+                    , impl::edge_map_type        & edge_map
+                    , BulkData             & mesh
+                    , Entity               & element
+                    , unsigned               edge_ordinal
+                    , unsigned               num_edge_nodes
+                    , const Entity*          edge_nodes
+                    , Part * part_to_insert_new_edges
+                  )
+    : m_count_edges(count_edges)
+     ,m_available_ids(available_ids)
+    , m_edge_map(edge_map)
+    , m_mesh(mesh)
+    , m_element(element)
+    , m_edge_ordinal(edge_ordinal)
+    , m_num_edge_nodes(num_edge_nodes)
+    , m_edge_nodes(edge_nodes)
+    , m_part_to_insert_new_edges(part_to_insert_new_edges)
+  {}
+
+  template <typename Topology>
+//  enable if?  check intel
+  void operator()(Topology t)
+  {
+    typedef topology::topology_type< Topology::edge_topology> EdgeTopology;
+
+    Topology     elem_topo;
+    EdgeTopology edge_topo;
+
+
+    BulkData & mesh = m_mesh;
+    PartVector add_parts;
+
+    add_parts.push_back( & mesh.mesh_meta_data().get_cell_topology_root_part( get_cell_topology( EdgeTopology::value )));
+    if (m_part_to_insert_new_edges)
+      add_parts.push_back(m_part_to_insert_new_edges);
+
+    std::array<Entity,Topology::num_nodes> elem_nodes;
+    EntityVector edge_nodes(m_edge_nodes, m_edge_nodes+m_num_edge_nodes);
+    OrdinalVector ordinal_scratch;
+    ordinal_scratch.reserve(64);
+    PartVector part_scratch;
+    part_scratch.reserve(64);
+
+    Entity ielem = m_element;
+
+    Entity const *nodes = m_mesh.begin_nodes(ielem);
+    const int num_nodes = Topology::num_nodes;
+    for (int n=0; n<num_nodes; ++n) {
+      elem_nodes[n] = nodes[n];
+    }
+
+    std::vector<bool> edge_exist(Topology::num_edges,false);
+    const int num_edges = m_mesh.num_edges(ielem);
+    Entity const *edge_entity = m_mesh.begin_edges(ielem);
+    ConnectivityOrdinal const *edge_ords = m_mesh.begin_edge_ordinals(ielem);
+    for (int i=0 ; i < num_edges ; ++i)
+    {
+      if (mesh.is_valid(edge_entity[i]))
+      {
+        edge_exist[edge_ords[i]] = true;
+      }
+    }
+
+    if (edge_exist[m_edge_ordinal]) {
+      return;
+    }
+
+    //sort edge nodes into lexicographical smallest permutation
+    if (EntityLess(mesh)(edge_nodes[1], edge_nodes[0])) {
+      std::swap(edge_nodes[0], edge_nodes[1]);
+    }
+
+    typename impl::edge_map_type::iterator iedge = m_edge_map.find(edge_nodes);
+
+    Entity edge;
+    Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
+    if (iedge == m_edge_map.end()) {
+      ThrowRequireMsg(m_count_edges < m_available_ids.size(), "Error: edge generation exhausted available identifier list. Report to sierra-help");
+      EntityId edge_id = m_available_ids[m_count_edges];
+      m_count_edges++;
+
+      edge = mesh.declare_entity( stk::topology::EDGE_RANK, edge_id, add_parts);
+      m_edge_map[edge_nodes] = edge;
+      const int num_edge_nodes = EdgeTopology::num_nodes;
+      for (int n=0; n<num_edge_nodes; ++n) {
+        Entity node = edge_nodes[n];
+        mesh.declare_relation(edge,node,n, perm, ordinal_scratch, part_scratch);
+      }
+    }
+    else {
+      edge = iedge->second;
+    }
+    perm = mesh.find_permutation(elem_topo, &elem_nodes[0], edge_topo, &edge_nodes[0], m_edge_ordinal);
+    ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
+    mesh.declare_relation(ielem, edge, m_edge_ordinal, perm, ordinal_scratch, part_scratch);
+  }
+
+  //members
+  size_t                                          & m_count_edges;
+  std::vector<stk::mesh::EntityId>                & m_available_ids;
+  impl::edge_map_type         & m_edge_map;
+  BulkData              & m_mesh;
+  Entity                  m_element;
+  unsigned                m_edge_ordinal;
+  unsigned                m_num_edge_nodes;
+  const Entity*           m_edge_nodes;
+  Part                  * m_part_to_insert_new_edges;
+};
 
 struct create_edge_impl
 {
   typedef void result_type;
 
-  create_edge_impl(   size_t               & next_edge
-                    , edge_map_type        & edge_map
+  create_edge_impl(   size_t & count_edges
+                    , std::vector<stk::mesh::EntityId>               & available_ids
+                    , impl::edge_map_type        & edge_map
                     , Bucket               & bucket
                     , Part * part_to_insert_new_edges
                   )
-    : m_next_edge(next_edge)
+    : m_count_edges(count_edges)
+    , m_available_ids(available_ids)
     , m_edge_map(edge_map)
     , m_bucket(bucket)
     , m_part_to_insert_new_edges(part_to_insert_new_edges)
   {}
 
   template <typename Topology>
-  typename boost::enable_if_c< (Topology::num_edges > 0u), void>::type
-  operator()(Topology t)
+  void operator()(Topology t)
   {
     typedef topology::topology_type< Topology::edge_topology> EdgeTopology;
+
+    stk::topology elem_topo = m_bucket.topology();
+    EdgeTopology edge_topo;
 
     BulkData & mesh = m_bucket.mesh();
     PartVector add_parts;
@@ -71,7 +216,7 @@ struct create_edge_impl
     if (m_part_to_insert_new_edges)
       add_parts.push_back(m_part_to_insert_new_edges);
 
-    boost::array<Entity,Topology::num_nodes> elem_nodes;
+    std::array<Entity,Topology::num_nodes> elem_nodes;
     EntityVector edge_nodes(EdgeTopology::num_nodes);
     EntityKeyVector edge_node_keys(EdgeTopology::num_nodes);
     OrdinalVector ordinal_scratch;
@@ -111,12 +256,15 @@ struct create_edge_impl
           std::swap(edge_nodes[0], edge_nodes[1]);
         }
 
-        typename edge_map_type::iterator iedge = m_edge_map.find(edge_nodes);
+        typename impl::edge_map_type::iterator iedge = m_edge_map.find(edge_nodes);
 
         Entity edge;
-        Permutation perm = static_cast<Permutation>(0);
+        Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
         if (iedge == m_edge_map.end()) {
-          EntityId edge_id = m_next_edge++;
+          ThrowRequireMsg(m_count_edges < m_available_ids.size(), "Error: edge generation exhausted available identifier list. Report to sierra-help");
+          EntityId edge_id = m_available_ids[m_count_edges];
+          m_count_edges++;
+
           edge = mesh.declare_entity( stk::topology::EDGE_RANK, edge_id, add_parts);
           m_edge_map[edge_nodes] = edge;
           const int num_edge_nodes = EdgeTopology::num_nodes;
@@ -128,20 +276,17 @@ struct create_edge_impl
         else {
           edge = iedge->second;
         }
+        perm = mesh.find_permutation(elem_topo, &elem_nodes[0], edge_topo, &edge_nodes[0], e);
+        ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
         mesh.declare_relation(m_bucket[ielem], edge, e, perm, ordinal_scratch, part_scratch);
       }
     }
   }
 
-  template <typename Topology>
-  typename boost::enable_if_c< (Topology::num_edges == 0u), void>::type
-  operator()(Topology t)
-  {}
-
-
   //members
-  size_t                & m_next_edge;
-  edge_map_type         & m_edge_map;
+  size_t                                          & m_count_edges;
+  std::vector<stk::mesh::EntityId>                & m_available_ids;
+  impl::edge_map_type         & m_edge_map;
   Bucket                & m_bucket;
   Part                  * m_part_to_insert_new_edges;
 };
@@ -150,7 +295,7 @@ struct connect_face_impl
 {
   typedef void result_type;
 
-  connect_face_impl(  edge_map_type & edge_map
+  connect_face_impl(  impl::edge_map_type & edge_map
                     , Bucket        & bucket
                   )
     : m_edge_map(edge_map)
@@ -158,14 +303,16 @@ struct connect_face_impl
   {}
 
   template <typename Topology>
-  typename boost::enable_if_c< (Topology::num_edges > 0u), void>::type
-  operator()(Topology t)
+  void operator()(Topology t)
   {
     typedef topology::topology_type< Topology::edge_topology> EdgeTopology;
 
+    stk::topology face_topo = m_bucket.topology();
+    EdgeTopology edge_topo;
+
     BulkData & mesh = m_bucket.mesh();
 
-    boost::array<Entity,Topology::num_nodes> face_nodes;
+    std::array<Entity,Topology::num_nodes> face_nodes;
     EntityVector edge_nodes(EdgeTopology::num_nodes);
     OrdinalVector ordinal_scratch;
     ordinal_scratch.reserve(64);
@@ -205,28 +352,47 @@ struct connect_face_impl
         }
 
         //the edge should already exist
-        typename edge_map_type::iterator iedge = m_edge_map.find(edge_nodes);
+        typename impl::edge_map_type::iterator iedge = m_edge_map.find(edge_nodes);
 
-        ThrowAssert(iedge != m_edge_map.end());
-
-        Entity edge = iedge->second;
-        Permutation perm = static_cast<Permutation>(0);
-        mesh.declare_relation(m_bucket[iface], edge, e, perm, ordinal_scratch, part_scratch);
+        //if this fails, we don't have the correct edge made yet
+        //which is fine
+        if (iedge != m_edge_map.end()) {
+          Entity edge = iedge->second;
+          Permutation perm = mesh.find_permutation(face_topo, &face_nodes[0], edge_topo, &edge_nodes[0], e);
+          ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
+          mesh.declare_relation(m_bucket[iface], edge, e, perm, ordinal_scratch, part_scratch);
+        }
       }
     }
   }
 
-  template <typename Topology>
-  typename boost::enable_if_c< (Topology::num_edges == 0u), void>::type
-  operator()(Topology t)
-  {}
-
   //members
-  edge_map_type         & m_edge_map;
+  impl::edge_map_type         & m_edge_map;
   Bucket                & m_bucket;
 };
 
-} //namespace
+} //empty namespace
+
+namespace impl {
+
+  void connect_faces_to_edges(BulkData & mesh,
+                              const Selector & element_selector,
+                              impl::edge_map_type edge_map) {
+      // connect existing faces to edges
+      if (mesh.mesh_meta_data().spatial_dimension() == 3u) {
+
+          BucketVector const& face_buckets = mesh.get_buckets(stk::topology::FACE_RANK, element_selector & (mesh.mesh_meta_data().locally_owned_part() | mesh.mesh_meta_data().globally_shared_part()));
+
+          for (size_t i=0, e=face_buckets.size(); i<e; ++i) {
+              Bucket &b = *face_buckets[i];
+
+              connect_face_impl functor(edge_map, b);
+              stk::topology::apply_functor< connect_face_impl > apply(functor);
+              apply( b.topology() );
+          }
+      }
+  }
+} //namespace impl
 
 void create_edges( BulkData & mesh )
 {
@@ -235,17 +401,20 @@ void create_edges( BulkData & mesh )
 
 void create_edges( BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges )
 {
+  std::vector<stk::mesh::EntityId> ids_requested;
 
-  //  static size_t next_edge = static_cast<size_t>(mesh.parallel_rank()+1) << 32;
-  // NOTE: This is a workaround to eliminate some bad behavior with the equation above when
-  //       the #proc is a power of two.  The 256 below is the bin size of the Distributed Index.
-  static size_t next_edge = (static_cast<size_t>(mesh.parallel_rank()+1) << 32) + 256 * mesh.parallel_rank();
+  std::vector<unsigned> localEntityCounts;
+  stk::mesh::count_entities(element_selector, mesh, localEntityCounts);
+  unsigned guessMultiplier = 12;
+  unsigned numRequested = localEntityCounts[stk::topology::ELEMENT_RANK] * guessMultiplier;
+  mesh.generate_new_ids(stk::topology::EDGE_RANK, numRequested, ids_requested);
+  size_t count_edges = 0;
 
-  mesh.modification_begin();
+  bool i_started = mesh.modification_begin();
 
   {
     {
-      edge_map_type        edge_map;
+      impl::edge_map_type        edge_map;
       //populate the edge_map with existing edges
       {
         BucketVector const & edge_buckets = mesh.buckets(stk::topology::EDGE_RANK);
@@ -278,30 +447,59 @@ void create_edges( BulkData & mesh, const Selector & element_selector, Part * pa
         for (size_t i=0, e=element_buckets.size(); i<e; ++i) {
           Bucket &b = *element_buckets[i];
 
-          create_edge_impl functor( next_edge, edge_map, b, part_to_insert_new_edges);
+          create_edge_impl functor( count_edges, ids_requested, edge_map, b, part_to_insert_new_edges);
           stk::topology::apply_functor< create_edge_impl > apply(functor);
           apply( b.topology() );
         }
       }
 
-      // connect existing faces to edges
-      if (mesh.mesh_meta_data().spatial_dimension() == 3u) {
+      // create any edges that are shared between locally-owned elements and elements that are
+      // in element_selector but are not locally-owned
+      {
+        BucketVector const& element_buckets = mesh.get_buckets(stk::topology::ELEMENT_RANK, element_selector & !mesh.mesh_meta_data().locally_owned_part());
 
-        BucketVector const& face_buckets = mesh.get_buckets(stk::topology::FACE_RANK, element_selector & (mesh.mesh_meta_data().locally_owned_part() | mesh.mesh_meta_data().globally_shared_part()));
-
-        //create the edges for the faces in each bucket
-        for (size_t i=0, e=face_buckets.size(); i<e; ++i) {
-          Bucket &b = *face_buckets[i];
-
-          connect_face_impl functor(edge_map, b);
-          stk::topology::apply_functor< connect_face_impl > apply(functor);
-          apply( b.topology() );
+        std::vector<Entity> elements;
+        for(size_t i=0, e=element_buckets.size(); i<e; ++i) {
+          Bucket& b = *element_buckets[i];
+          stk::topology elemTopology = b.topology();
+          ThrowRequireMsg(elemTopology != stk::topology::INVALID_TOPOLOGY, "create_edges ERROR, element bucket with invalid topology.");
+          const unsigned numEdgesPerElem = elemTopology.num_edges();
+          const unsigned numNodesPerEdge = elemTopology.sub_topology(stk::topology::EDGE_RANK).num_nodes();
+          for(size_t j=0, jend=b.size(); j<jend; ++j) {
+            const Entity* elemNodes = b.begin_nodes(j);
+            Entity edgeNodes[3];
+            Entity localElemEdgeNodes[3];
+            for(unsigned edgeIndex=0; edgeIndex<numEdgesPerElem; ++edgeIndex) {
+              elemTopology.edge_nodes(elemNodes, edgeIndex, edgeNodes);
+              stk::mesh::impl::find_locally_owned_elements_these_nodes_have_in_common(mesh, numNodesPerEdge, edgeNodes, elements);
+              if (!elements.empty()) {
+                for(size_t el=0; el<elements.size(); ++el) {
+                  Entity localElem = elements[el];
+                  unsigned localElemEdgeOrdinal = 10000;
+                  stk::mesh::impl::find_element_edge_ordinal_and_equivalent_nodes(mesh, localElem, numNodesPerEdge, edgeNodes, localElemEdgeOrdinal, localElemEdgeNodes);
+                  create_single_edge_impl functor( count_edges, ids_requested, edge_map, mesh, localElem, localElemEdgeOrdinal, numNodesPerEdge, localElemEdgeNodes, part_to_insert_new_edges);
+                  stk::topology::apply_functor< create_single_edge_impl > apply(functor);
+                  apply( mesh.bucket(localElem).topology() );
+                }
+                elements.clear();
+              }
+            }
+          }
         }
       }
+
+      impl::connect_faces_to_edges(mesh, element_selector, edge_map);
     }
   }
 
-  mesh.modification_end_for_edge_creation_exp( BulkData::MOD_END_COMPRESS_AND_SORT );
+  if(i_started)
+  {
+    bool oldOption = mesh.use_entity_ids_for_resolving_sharing();
+    mesh.set_use_entity_ids_for_resolving_sharing(false);
+    std::vector<EntityRank> entity_rank_vector = {stk::topology::EDGE_RANK};
+    mesh.modification_end_for_entity_creation( entity_rank_vector, BulkData::MOD_END_COMPRESS_AND_SORT );
+    mesh.set_use_entity_ids_for_resolving_sharing(oldOption);
+  }
 }
 
 }

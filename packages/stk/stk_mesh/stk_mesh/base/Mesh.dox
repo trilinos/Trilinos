@@ -1,156 +1,36 @@
-
-namespace stk {
-namespace mesh {
-} // namespace mesh
-} // namespace stk
-
-/** \defgroup  stk_mesh_module  Sierra Toolkit Mesh
- *
- *  \section stk_mesh_introduction  Introduction
- *
- *  The Sierra Toolkit Mesh supports parallel distributed,
- *  heterogeneous, and dynamically modifiable unstructured meshes
- *  with computational field data.
- *  Mesh data is partitioned into
- *  (1) <em> meta data </em>
- *  which <em> describes </em> an application's problem domain and
- *  (2) <em> bulk data </em>
- *  which <em> implements </em> a discretization of an
- *  application's problem domain.
- *
- *  - \ref stk::mesh::MetaData "Meta data"
- *    = { { \ref stk::mesh::Part "Part" } + 
- *        { \ref stk::mesh::Field "Field" } }
- *  - \ref stk::mesh::BulkData "Bulk data"
- *    = { { \ref stk::mesh::Entity "Entity" } +
- *        { \ref stk::mesh::Relation "Relation" } +
- *        { \ref stk_mesh_field_data "Field data" stored in
- *          \ref stk::mesh::Bucket "Buckets" } }
- *
- *  A \ref stk::mesh::BulkData "bulk data manager"
- *  owns and manages an integrated collection of
- *  \ref stk::mesh::Entity "entities" (e.g. nodes and elements),
- *  \ref stk::mesh::Relation "relations" between entities (i.e. connectivity),
- *  and computational
- *  \ref stk_mesh_field_data "field data" associated with entities of the mesh.
- *  \ref stk_mesh_field_data "Field data" for homogeneous subsets of entities 
- *  is aggregated into \ref stk::mesh::Bucket "buckets", i.e.
- *  contiguous blocks of memory.
- *  A \ref stk::mesh::MetaData "meta data manager"
- *  owns and manages an integrated collection of
- *  \ref stk::mesh::Part "parts" and 
- *  \ref stk::mesh::Field "fields".
- *  A \ref stk::mesh::Part "part" <em> defines </em> an expected
- *  subset of entities in the problem domain.
- *  A \ref stk::mesh::Field "field" <em> defines </em> the expected
- *  computational \ref stk_mesh_field_data "field data" for a
- *  discretization of the problem domain.
- *
- *  \section  stk_mesh_example  Simple Example
- *
- *  An application must first create a
- *  \ref stk::mesh::MetaData "meta data manager".
- *  An application owns the meta data manager that it creates;
- *  however, a meta data manager owns its parts and fields.
- *  \code
- *  using namespace stk ;
- *
- *  mesh::MetaData meta_mgr ; // Owned by the application
- *
- *  // Declare my element and face parts:
- *
- *  mesh::Part & my_part_a = meta_mgr.declare_part("A",mesh::Element);
- *  mesh::Part & my_part_b = meta_mgr.declare_part("B",mesh::Element);
- *  mesh::Part & my_side = meta_mgr.declare_part("S",mesh::Face);
- *  \endcode
- *
- *  An application defines <em> types </em> for the
- *  \ref stk::mesh::Field "fields" that it will use.
- *  The first template parameter of a field type is the numerical
- *  type of the field.  The remaining template parameters (if any)
- *  define the ranks of the multidimensional array.
- *  In this example the <c> TensorAtIntegrationField </c>
- *  defines a rank-two (FORTRAN ordering)
- *  array where the first array index selects a tensor component and
- *  the second array index selects an integration point.
- *  \code
- *  typedef mesh::Field<double>                        ScalarField ;
- *  typedef mesh::Field<double,Cartesian>              VectorField ;
- *  typedef mesh::Field<double,FullTensor>             TensorField ;
- *  typedef mesh::Field<double,FullTensor,Integration> TensorAtIntegrationField ;
- *  // Declare fields of a specified type
- *
- *  ScalarField & my_field_u = meta_mgr.declare_field< ScalarField >("u");
- *  VectorField & my_field_v = meta_mgr.declare_field< VectorField >("v");
- *  TensorField & my_field_w = meta_mgr.declare_field< TensorField >("w");
- *  TensorAtIntegrationField & my_field_x = meta_mgr.declare_field< TensorAtIntegrationField >("x");
- *
- *  meta_mgr.put_field( my_field_u , mesh::Node , my_part_a );
- *  meta_mgr.put_field( my_field_u , mesh::Node , my_part_b );
- *  meta_mgr.put_field( my_field_u , mesh::Face , my_part_s );
- *
- *  meta_mgr.put_field( my_field_w , mesh::Element , my_part_a );
- *  meta_mgr.put_field( my_field_x , mesh::Element , my_part_b , 8 );
- *  \endcode
- *  Fields of a given type are declared with a text name.
- *  This text name is intended to be used exclusively
- *  by input and output functions, and should be
- *  immediately <em> forgotten </em> by the application.
- *  The <c> put_field </c> method is used to associate
- *  fields with entities on specified parts.
- *  In this example the nodes of <c> my_part_a </c> and <c> my_part_b </c>,
- *  and faces of <c> my_side </c> will have a scalar field data for
- *  <c> my_field_u </c>; the elements of <c> my_part_a </c> will
- *  have tensor field data for <c> my_field_w </c>; and
- *  each element of <c> my_part_b </c> will have the eight
- *  tensor values associated with <c> my_field_x </c>.
- *  
- *  After populating it parts and fields a meta data manager is committed,
- *  locking it against further changes.
- *  A bulk data object is created to manage entities, relations, and
- *  field data that are (1) conformal to a given meta data objects and
- *  (2) distributed among the processors of a parallel communicator
- *  (e.g., MPI_Comm).
- *  \code
- *  meta_mgr.commit(); // Finished constructing meta data
- *
- *  mesh::BulkData bulk_mgr( meta_mgr , communicator );
- *  \endcode
- *  Mesh bulk data is created and managed with respect to a committed
- *  mesh meta data.  This separates, and thus simplifies, concerns of
- *  meta data changes from bulk data changes.
- *
- *  At this point in an application mesh bulk data is typically read
- *  from a mesh file into the mesh bulk data, <c> bulk_mgr </c>.
- *  The typical access pattern for bulk data is to (1) iterate mesh
- *  entities of a given type (e.g., node or element) that belong
- *  to a given part and (2) operate on computational field data associated
- *  with the selected entities.
- *
- *  \code
- *  std::vector< mesh::Bucket *> buckets ;
- *  // Get buckets for elements in <c> my_part_a </c>
- *  mesh::get_buckets( BucketSelector( my_part_a ) ,
- *                     bulk_mgr.buckets( mesh::Element ), buckets );
- *
- *  for ( unsigned i = 0 ; i < buckets.size() ; ++i ) {
- *    mesh::Bucket & k = * buckets[i] ;
- *
- *    // number of elements in this bucket:
- *    const unsigned n = k.size();
- *
- *    // Pointer to field data for 'n' elements:
- *    double * const tensor = mesh::field_data( my_field_w , k );
- *
- *    // Iterate the elements in the bucketa and the field data
- *    for ( unsigned j = 0 ; j < n ; ++j ) {
- *      mesh::Entity element = * k[j] ;
- *      double * element_tensor = tensor + size_of_tensor * j ;
- *      // computations...
- *    }
- *  }
- *  \endcode
- *
+/*
+ * Copyright (c) 2013, Sandia Corporation.
+ * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+ * the U.S. Government retains certain rights in this software.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ * 
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ * 
+ *     * Redistributions in binary form must reproduce the above
+ *       copyright notice, this list of conditions and the following
+ *       disclaimer in the documentation and/or other materials provided
+ *       with the distribution.
+ * 
+ *     * Neither the name of Sandia Corporation nor the names of its
+ *       contributors may be used to endorse or promote products derived
+ *       from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
  */
 
 //----------------------------------------------------------------------

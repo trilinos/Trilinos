@@ -57,6 +57,7 @@
 #include <Teuchos_Array.hpp>
 #include <Teuchos_as.hpp>
 #include <Tpetra_MultiVector.hpp>
+#include <Tpetra_Vector_decl.hpp>
 
 #include "Amesos2_MultiVecAdapter_decl.hpp"
 

@@ -49,7 +49,7 @@ FileInputSource::FileInputSource(const std::string& filename)
 	: XMLInputSource(), filename_(filename)
 {;}
 
-RCP<XMLInputStream> FileInputSource::stream() const 
+RCP<XMLInputStream> FileInputSource::stream() const
 {
 	return rcp(new FileInputStream(filename_), true);
 }

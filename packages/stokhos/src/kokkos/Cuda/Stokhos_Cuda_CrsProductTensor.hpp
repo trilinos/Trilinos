@@ -44,8 +44,7 @@
 
 #include <iostream>
 
-#include "Kokkos_Cuda.hpp"
-#include "Cuda/Kokkos_Cuda_Parallel.hpp"
+#include "Kokkos_Core.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_BlockCrsMatrix.hpp"
@@ -79,11 +78,11 @@ class Multiply<
 {
 public:
 
-  typedef Kokkos::Cuda device_type;
-  typedef device_type::size_type size_type;
+  typedef Kokkos::Cuda execution_space;
+  typedef execution_space::size_type size_type;
 
-  typedef CrsProductTensor< TensorScalar, device_type > tensor_type;
-  typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type > matrix_type;
+  typedef CrsProductTensor< TensorScalar, execution_space > tensor_type;
+  typedef BlockCrsMatrix< tensor_type, MatrixScalar, execution_space > matrix_type;
   typedef Kokkos::View< VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda > vector_type;
 
 #define USE_LDG 0
@@ -370,6 +369,7 @@ public:
     DeviceProp device_prop;
     const size_type shcap = device_prop.shared_memory_capacity;
     const size_type sh_granularity = device_prop.shared_memory_granularity;
+    const size_type max_shmem_per_block = device_prop.max_shmem_per_block;
     const size_type max_blocks_per_sm = device_prop.max_blocks_per_sm;
     const size_type warp_size = device_prop.warp_size;
     const size_type warp_granularity = device_prop.warp_granularity;
@@ -378,6 +378,7 @@ public:
                device_prop.max_warps_per_sm);
     const size_type min_warps_per_block = 1;
     const size_type max_regs_per_sm = device_prop.max_regs_per_sm;
+    const size_type max_regs_per_block = device_prop.max_regs_per_block;
     const size_type reg_bank_size = device_prop.reg_bank_size;
 
     // Compute number of warps we can fit on each SM based on register limits
@@ -390,6 +391,8 @@ public:
       (warp_size*regs_per_thread + reg_bank_size-1) & ~(reg_bank_size-1);
     const size_type warps_per_sm =
       (max_regs_per_sm/regs_per_warp) & ~(warp_granularity-1);
+    const size_type warps_per_block =
+      (max_regs_per_block/regs_per_warp) & ~(warp_granularity-1);
 
     // Compute number of threads per stochastic row based on number of
     // nonzero entries per row.
@@ -456,7 +459,7 @@ public:
       // We don't know the number of warps yet, so we just have to bound
       // sr by the maximum number possible (which is all warps in 1 block)
       const size_type sr =
-        device_prop.has_shuffle ? 0 : vec_scalar_size*warp_size*warps_per_sm;
+        device_prop.has_shuffle ? 0 : vec_scalar_size*warp_size*warps_per_block;
 #if USE_LDG == 1
       size_type shmem =
         (vec_scalar_size*bs+vec_scalar_size)*tensor_align+sr;
@@ -465,11 +468,12 @@ public:
         ((vec_scalar_size+mat_scalar_size)*bs+vec_scalar_size)*tensor_align+sr;
 #endif
       shmem = (shmem + sh_granularity-1) & ~(sh_granularity-1);
-      size_type num_blocks = std::min(shcap / shmem, max_blocks_per_sm);
-      size_type tensor_reads = (fem_nnz_per_row+bs-1) / bs;
-      if (num_blocks > 0) {
+      if (shmem <= max_shmem_per_block) {
+        size_type num_blocks = std::min(shcap / shmem, max_blocks_per_sm);
+        size_type tensor_reads = (fem_nnz_per_row+bs-1) / bs;
         size_type num_warp =
-          std::min(std::max(warps_per_sm / num_blocks, min_warps_per_block),
+          std::min(std::max(std::min(warps_per_sm/num_blocks, warps_per_block),
+                            min_warps_per_block),
                    max_warps_per_block);
         while (num_warp > 1 && num_blocks*num_warp % warp_granularity)
           --num_warp;

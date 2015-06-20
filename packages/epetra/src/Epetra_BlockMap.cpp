@@ -764,9 +764,14 @@ bool Epetra_BlockMap::SameAs(const Epetra_BlockMap & Map) const {
   // Now get min of MySameMap across all processors
 
   int GlobalSameMap = 0;
+#ifdef NDEBUG
+  (void) Comm().MinAll(&MySameMap, &GlobalSameMap, 1);
+#else
+  // Don't declare 'err' unless we actually use it (in the assert(),
+  // which gets defined away in a release build).
   int err = Comm().MinAll(&MySameMap, &GlobalSameMap, 1);
   assert(err==0);
-
+#endif // NDEBUG
   return(GlobalSameMap==1);
 }
 
@@ -790,8 +795,15 @@ bool Epetra_BlockMap::PointSameAs(const Epetra_BlockMap & Map) const
     MySameMap = 0;
 
   int GlobalSameMap = 0;
+
+#ifdef NDEBUG
+  (void) Comm().MinAll(&MySameMap, &GlobalSameMap, 1);
+#else
+  // Don't declare 'err' unless we actually use it (in the assert(),
+  // which gets defined away in a release build).
   int err = Comm().MinAll(&MySameMap, &GlobalSameMap, 1);
   assert( err == 0 );
+#endif // NDEBUG
 
   return(GlobalSameMap==1);
 }

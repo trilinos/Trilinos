@@ -2,15 +2,16 @@
 EXTRA_ARGS=$@
 
 #needed to find qt
-export PATH=/home/trilinos/tpl/gcc4.1.2/swig-2.0.0/bin:/home/trilinos/tpl/gcc4.1.2/qt-4.5.2/bin:$PATH
+export PATH=/home/trilinos/tpl/gcc4.1.2/swig-3.0.2/bin:/home/trilinos/tpl/gcc4.1.2/qt-4.5.2/bin:/home/trilinos/python-2.7.3/bin:$PATH
 
-NETCDF_DIR=/home/trilinos/tpl/gcc4.1.2/pnetcdf_4.2
-BOOST_DIR=/home/trilinos/tpl/gcc4.1.2/boost_1_49_0
+NETCDF_DIR=/home/trilinos/tpl/gcc4.7.2/pnetcdf-4.3.2
+HDF5_DIR=/home/trilinos/tpl/gcc4.7.2/phdf5-1.8.12
+BOOST_DIR=/home/trilinos/tpl/gcc4.1.2/boost_1_55_0
 MPI4PY_DIR=/home/trilinos/tpl/gcc4.1.2/mpi4py-1.3
 SCOTCH_DIR=/home/trilinos/tpl/gcc4.1.2/scotch_5.1
 PARMETIS_DIR=/home/trilinos/tpl/gcc4.1.2/ParMETIS3_1
 
-export PYTHONPATH="$MPI4PY_DIR/lib64/python:/home/trilinos/tpl/gcc4.1.2/numpy1.4.0/lib64/python2.4/site-packages"
+export PYTHONPATH="/home/trilinos/tpl/gcc4.1.2/numpy-1.9.1/lib/python2.7/site-packages"
 
 rm -fr CMakeCache.txt CMakeFiles/
 
@@ -22,17 +23,21 @@ cmake \
 -D COVERAGE_COMMAND:FILEPATH=/usr/bin/gcov \
 -D MEMORYCHECK_COMMAND:FILEPATH=/usr/bin/valgrind \
 -D TPL_ENABLE_MPI:BOOL=ON \
-  -D MPI_BASE_DIR=/usr/lib64/openmpi/1.2.7-gcc \
+  -D MPI_BASE_DIR=/home/trilinos/gcc4.7.2/openmpi-1.6.5 \
 -D ParMETIS_LIBRARY_DIRS=$PARMETIS_DIR \
 -D Scotch_INCLUDE_DIRS=$SCOTCH_DIR/include \
 -D Scotch_LIBRARY_DIRS=$SCOTCH_DIR/lib \
 -D Netcdf_INCLUDE_DIRS=$NETCDF_DIR/include \
--D Netcdf_LIBRARY_DIRS=$NETCDF_DIR/lib \
+-D Netcdf_LIBRARY_DIRS="$NETCDF_DIR/lib;$HDF5_DIR/lib" \
+-D Netcdf_LIBRARY_NAMES="netcdf;hdf5_hl;hdf5" \
+-D HDF5_INCLUDE_DIRS=$HDF5_DIR/include \
+-D HDF5_LIBRARY_DIRS=$HDF5_DIR/lib \
 -D Boost_INCLUDE_DIRS=$BOOST_DIR \
 -D BoostLib_INCLUDE_DIRS=$BOOST_DIR/include \
 -D BoostLib_LIBRARY_DIRS=$BOOST_DIR/lib \
 -D MPI4PY_INCLUDE_DIR=$MPI4PY_DIR/include \
 -D TPL_ENABLE_Matio=OFF \
+-D TPL_ENABLE_HDF5=ON \
 -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
 -D Trilinos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON \
 -D Trilinos_ENABLE_TriKota:BOOL=OFF \
@@ -40,8 +45,11 @@ cmake \
 -D Trilinos_ENABLE_FRAMEWORK_UNIT_TESTS:BOOL=OFF \
 -D Trilinos_ENABLE_TESTS:BOOL=ON \
 -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+-D Trilinos_ENABLE_STK:BOOL=OFF \
+-D Trilinos_ENABLE_Optika:BOOL=OFF \
+-D PyTrilinos_DOCSTRINGS=OFF \
 $EXTRA_ARGS \
-../trilinos-10.12.2-Source
+../trilinos-11.14.1-Source
  \
 
 #-D Trilinos_DATA_DIR:STRING=/home/bmpersc/nightly/TrilinosData \

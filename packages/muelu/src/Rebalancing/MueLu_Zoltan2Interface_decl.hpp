@@ -71,11 +71,12 @@ namespace MueLu {
   */
 
   //FIXME: this class should not be templated
-  template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType,
-            class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class Scalar,
+            class LocalOrdinal = typename Xpetra::Matrix<Scalar>::local_ordinal_type,
+            class GlobalOrdinal = typename Xpetra::Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class Zoltan2Interface : public SingleLevelFactoryBase {
 
-    typedef double Scalar; // FIXME
 #undef MUELU_ZOLTAN2INTERFACE_SHORT
 #include "MueLu_UseShortNames.hpp"
 

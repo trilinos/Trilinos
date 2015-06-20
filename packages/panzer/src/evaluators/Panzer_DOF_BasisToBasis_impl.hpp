@@ -53,8 +53,8 @@
 namespace panzer {
 
 //**********************************************************************
-template <typename EvalT, typename TraitsT>
-DOF_BasisToBasis<EvalT,TraitsT>::
+template <typename EvalT, typename TRAITST>
+DOF_BasisToBasis<EvalT,TRAITST>::
 DOF_BasisToBasis(const std::string & fieldName,
 		 const PureBasis & sourceBasis,
 		 const PureBasis & targetBasis)
@@ -65,8 +65,8 @@ DOF_BasisToBasis(const std::string & fieldName,
   // Declare fields
   // **************
 
-  dof_source_coeff = PHX::MDField<ScalarT,Cell,BASIS>(fieldName,sourceBasis.functional);
-  dof_target_coeff = PHX::MDField<ScalarT,Cell,BASIS>(fieldName,targetBasis.functional);
+  dof_source_coeff = PHX::MDField<ScalarT>(fieldName,sourceBasis.functional);
+  dof_target_coeff = PHX::MDField<ScalarT>(fieldName,targetBasis.functional);
 
   this->addDependentField(dof_source_coeff);
   this->addEvaluatedField(dof_target_coeff);
@@ -94,28 +94,27 @@ DOF_BasisToBasis(const std::string & fieldName,
   // Copy the reference basis values for all cells in workset
   // **************
   basis = Intrepid::FieldContainer<double>(sourceBasis.numCells(),sourceBasis.cardinality(),targetBasis.cardinality());
-  Intrepid::FunctionSpaceTools::HGRADtransformVALUE<ScalarT>(basis,basisRef);
+  Intrepid::FunctionSpaceTools::HGRADtransformVALUE<double>(basis,basisRef);
     
   std::string n = "DOF_BasisToBasis: " + dof_target_coeff.fieldTag().name();
   this->setName(n);
 }
 
 //**********************************************************************
-template <typename EvalT, typename TraitsT>
-void DOF_BasisToBasis<EvalT,TraitsT>::postRegistrationSetup(typename TraitsT::SetupData d,
-			                                  PHX::FieldManager<TraitsT>& fm)
+template <typename EvalT, typename TRAITST>
+void DOF_BasisToBasis<EvalT,TRAITST>::postRegistrationSetup(typename TRAITST::SetupData d,
+			                                  PHX::FieldManager<TRAITST>& fm)
 {
   this->utils.setFieldData(dof_source_coeff,fm);
   this->utils.setFieldData(dof_target_coeff,fm);
 }
 
 //**********************************************************************
-template <typename EvalT, typename TraitsT>
-void DOF_BasisToBasis<EvalT,TraitsT>::evaluateFields(typename TraitsT::EvalData workset)
+template <typename EvalT, typename TRAITST>
+void DOF_BasisToBasis<EvalT,TRAITST>::evaluateFields(typename TRAITST::EvalData workset)
 { 
   // Zero out arrays (intrepid does a sum!)
-  for (int i = 0; i < dof_target_coeff.size(); ++i)
-    dof_target_coeff[i] = 0.0;
+      dof_target_coeff.deep_copy(ScalarT(0.0));
 
   if(workset.num_cells>0) {
 

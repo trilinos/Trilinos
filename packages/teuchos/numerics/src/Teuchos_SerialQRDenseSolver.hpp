@@ -399,7 +399,6 @@ namespace Teuchos {
 template<typename OrdinalType, typename ScalarType>
 SerialQRDenseSolver<OrdinalType,ScalarType>::SerialQRDenseSolver()
   : CompObject(),
-    Object("Teuchos::SerialQRDenseSolver"),
     equilibrate_(false),
     shouldEquilibrate_(false),
     equilibratedA_(false),

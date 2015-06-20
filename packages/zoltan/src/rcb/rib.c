@@ -808,6 +808,8 @@ EndReporting:
     if (!displ || !treetmp) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
       ierr = ZOLTAN_MEMERR;
+      ZOLTAN_FREE(&displ);
+      ZOLTAN_FREE(&treetmp);
       goto End;
     }
     recvcount = displ + zz->Num_Proc;

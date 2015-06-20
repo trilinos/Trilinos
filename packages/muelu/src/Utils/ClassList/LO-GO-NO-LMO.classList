@@ -7,7 +7,6 @@ AmalgamationInfo
 CoupledAggregationCommHelper
 CoupledAggregationFactory
 DemoFactory
-EmergencyAggregationAlgorithm
 Graph
 GraphBase
 IsolatedNodeAggregationAlgorithm
@@ -15,7 +14,6 @@ IsorropiaInterface - #if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
 LWGraph
 LeftoverAggregationAlgorithm
 LocalAggregationAlgorithm
-MaxLinkAggregationAlgorithm
 OnePtAggregationAlgorithm
 PreserveDirichletAggregationAlgorithm
 PRFactory
@@ -23,5 +21,4 @@ RebalanceMapFactory
 RepartitionInterface
 UncoupledAggregationFactory
 UserAggregationFactory
-Zoltan2Interface - #if defined(HAVE_MUELU_ZOLTAN2) && defined(HAVE_MPI)
 ZoltanInterface - #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)

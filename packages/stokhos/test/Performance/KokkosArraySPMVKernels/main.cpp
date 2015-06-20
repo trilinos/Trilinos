@@ -43,9 +43,7 @@
 #include <iostream>
 #include <cstdlib>
 
-#include "KokkosCore_config.h"
-#include "Kokkos_Threads.hpp"
-#include "Kokkos_OpenMP.hpp"
+#include "Kokkos_Core.hpp"
 
 #include "Stokhos_ConfigDefs.h"
 

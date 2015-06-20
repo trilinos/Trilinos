@@ -31,7 +31,7 @@
 #define ANASAZI_SIMPLE_LOBPCG_SOLMGR_HPP
 
 /*! \file AnasaziSimpleLOBPCGSolMgr.hpp
-  \brief The Anasazi::SimpleLOBPCGSolMgr provides a simple solver manager over the LOBPCG 
+  \brief The Anasazi::SimpleLOBPCGSolMgr provides a simple solver manager over the LOBPCG
   eigensolver.
 */
 
@@ -53,13 +53,17 @@
 
 #include "Teuchos_TimeMonitor.hpp"
 
-/** \example LOBPCG/LOBPCGEpetraExSimple.cpp
-    This is an example of how to use the Anasazi::SimpleLOBPCGSolMgr solver manager.
-*/
+/// \example LOBPCGEpetraExSimple.cpp
+/// \brief Use "Simple LOBPCG" with Epetra test problem (computed here).
+///
+/// This example computes the eigenvalues of largest magnitude of an
+/// eigenvalue problem $A x = \lambda x$, using Anasazi's "simple"
+/// implementation of the LOBPCG method, with Epetra linear algebra.
+/// It constructs the test problem within the example itself.
 
 /*! \class Anasazi::SimpleLOBPCGSolMgr
   \brief The Anasazi::SimpleLOBPCGSolMgr provides a simple solver
-  manager over the LOBPCG eigensolver. 
+  manager over the LOBPCG eigensolver.
 
   Anasazi::SimpleLOBPCGSolMgr allows the user to specify convergence
   tolerance, verbosity level and block size. When block size is less than the
@@ -90,11 +94,11 @@ class SimpleLOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
     typedef Teuchos::ScalarTraits<MagnitudeType> MT;
-    
+
   public:
 
-  //!@name Constructors/Destructor 
-  //@{ 
+  //!@name Constructors/Destructor
+  //@{
 
   /*! \brief Basic constructor for SimpleLOBPCGSolMgr.
    *
@@ -112,9 +116,9 @@ class SimpleLOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
   //! Destructor.
   virtual ~SimpleLOBPCGSolMgr() {};
   //@}
-  
+
   //! @name Accessor methods
-  //@{ 
+  //@{
 
   const Eigenproblem<ScalarType,MV,OP>& getProblem() const {
     return *problem_;
@@ -127,10 +131,10 @@ class SimpleLOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
   //@}
 
   //! @name Solver application methods
-  //@{ 
-    
+  //@{
+
   /*! \brief This method performs possibly repeated calls to the underlying eigensolver's iterate() routine
-   * until the problem has been solved (as decided by the solver manager) or the solver manager decides to 
+   * until the problem has been solved (as decided by the solver manager) or the solver manager decides to
    * quit.
    *
    * \returns ::ReturnType specifying:
@@ -142,7 +146,7 @@ class SimpleLOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
 
   private:
   Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > problem_;
-  std::string whch_; 
+  std::string whch_;
   MagnitudeType tol_;
   int verb_;
   int blockSize_;
@@ -153,9 +157,9 @@ class SimpleLOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
 
 ////////////////////////////////////////////////////////////////////////////////////////
 template<class ScalarType, class MV, class OP>
-SimpleLOBPCGSolMgr<ScalarType,MV,OP>::SimpleLOBPCGSolMgr( 
+SimpleLOBPCGSolMgr<ScalarType,MV,OP>::SimpleLOBPCGSolMgr(
         const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem,
-        Teuchos::ParameterList &pl ) : 
+        Teuchos::ParameterList &pl ) :
   problem_(problem),
   whch_("LM"),
   tol_(1e-6),
@@ -201,7 +205,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::SimpleLOBPCGSolMgr(
 
 ////////////////////////////////////////////////////////////////////////////////////////
 template<class ScalarType, class MV, class OP>
-ReturnType 
+ReturnType
 SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
   // sort manager
@@ -216,12 +220,12 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   else {
     max = Teuchos::null;
   }
-  Teuchos::RCP<StatusTestResNorm<ScalarType,MV,OP> > norm 
+  Teuchos::RCP<StatusTestResNorm<ScalarType,MV,OP> > norm
       = Teuchos::rcp( new StatusTestResNorm<ScalarType,MV,OP>(tol_) );
   Teuchos::Array< Teuchos::RCP<StatusTest<ScalarType,MV,OP> > > alltests;
   alltests.push_back(norm);
   if (max != Teuchos::null) alltests.push_back(max);
-  Teuchos::RCP<StatusTestCombo<ScalarType,MV,OP> > combo 
+  Teuchos::RCP<StatusTestCombo<ScalarType,MV,OP> > combo
       = Teuchos::rcp( new StatusTestCombo<ScalarType,MV,OP>(
               StatusTestCombo<ScalarType,MV,OP>::OR, alltests
         ));
@@ -229,7 +233,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputtest
     = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer,combo,1,Passed ) );
   // orthomanager
-  Teuchos::RCP<SVQBOrthoManager<ScalarType,MV,OP> > ortho 
+  Teuchos::RCP<SVQBOrthoManager<ScalarType,MV,OP> > ortho
     = Teuchos::rcp( new SVQBOrthoManager<ScalarType,MV,OP>(problem_->getM()) );
   // parameter list
   Teuchos::ParameterList plist;
@@ -237,7 +241,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   plist.set("Full Ortho",true);
 
   // create an LOBPCG solver
-  Teuchos::RCP<LOBPCG<ScalarType,MV,OP> > lobpcg_solver 
+  Teuchos::RCP<LOBPCG<ScalarType,MV,OP> > lobpcg_solver
     = Teuchos::rcp( new LOBPCG<ScalarType,MV,OP>(problem_,sorter,printer,outputtest,ortho,plist) );
   // add the auxillary vecs from the eigenproblem to the solver
   if (problem_->getAuxVecs() != Teuchos::null) {
@@ -306,14 +310,14 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
       int num = norm->howMany();
       std::vector<int> ind = norm->whichVecs();
-      
+
       if (num > 0) {
         // copy the converged eigenvectors
         Teuchos::RCP<MV> newvecs = MVT::CloneCopy(*lobpcg_solver->getRitzVectors(),ind);
         // store them
         foundvecs.push_back(newvecs);
         // don't bother adding them as auxiliary vectors; we have reached maxiters and are going to quit
-        
+
         // copy the converged eigenvalues
         Teuchos::RCP<std::vector<MagnitudeType> > newvals = Teuchos::rcp( new std::vector<MagnitudeType>(num) );
         std::vector<Value<ScalarType> > all = lobpcg_solver->getRitzValues();
@@ -321,7 +325,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
           (*newvals)[i] = all[ind[i]].realpart;
         }
         foundvals.push_back(newvals);
-  
+
         numfound += num;
       }
       break;  // while(numfound < nev)
@@ -395,7 +399,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
   // get the number of iterations performed for this solve.
   numIters_ = lobpcg_solver->getNumIters();
- 
+
   // return from SolMgr::solve()
   if (sol.numVecs < nev) return Unconverged;
   return Converged;

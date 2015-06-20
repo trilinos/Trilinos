@@ -1,4 +1,3 @@
 
 ADD_SUBDIRECTORY(base)
-ADD_SUBDIRECTORY(fixtures)
 

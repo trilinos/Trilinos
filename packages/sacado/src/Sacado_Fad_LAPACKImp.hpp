@@ -150,7 +150,6 @@ Sacado::Fad::Fad_LAPACK<OrdinalType,FadType>::
 Fad_LAPACK(bool use_default_impl_,
            bool use_dynamic_, 
            OrdinalType static_workspace_size_) : 
-  LAPACKType(),
   arrayTraits(use_dynamic_, static_workspace_size_),
   lapack(),
   use_default_impl(use_default_impl_)
@@ -160,7 +159,6 @@ Fad_LAPACK(bool use_default_impl_,
 template <typename OrdinalType, typename FadType>
 Sacado::Fad::Fad_LAPACK<OrdinalType,FadType>::
 Fad_LAPACK(const Fad_LAPACK& x) : 
-  LAPACKType(x),
   arrayTraits(x.arrayTraits),
   lapack(x.lapack),
   use_default_impl(x.use_default_impl) 

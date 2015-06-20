@@ -49,16 +49,13 @@
 
 #include "MueLu_ZoltanInterface_def.hpp"
 
-#ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
-template class MueLu::ZoltanInterface<int, int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void, int, KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>;
-#endif
+#include "TpetraCore_ETIHelperMacros.h"
 
-#ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT
-# ifdef HAVE_TEUCHOS_LONG_LONG_INT
-template class MueLu::ZoltanInterface<int, long long int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void, int, KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>;
-# else
-# warning To compile MueLu with 'long long int' support, please turn on Teuchos_ENABLE_LONG_LONG_INT
-# endif
-#endif
+#define MUELU_LOCAL_INSTANT(LO,GO,N) \
+        template class MueLu::ZoltanInterface<LO,GO,N>;
+
+TPETRA_ETI_MANGLING_TYPEDEFS()
+
+TPETRA_INSTANTIATE_LGN(MUELU_LOCAL_INSTANT)
 
 #endif

@@ -71,7 +71,7 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
 
   GlobalEvaluationDataContainer gedc;
   {
-    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_gather("+PHX::TypeString<EvalT>::value+")");
+    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_gather("+PHX::typeAsString<EvalT>()+")");
 
     in.fillGlobalEvaluationDataContainer(gedc);
     gedc.initialize(); // make sure all ghosted data is ready to go
@@ -86,7 +86,7 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
   // Volumetric fill
   // *********************
   {
-    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_volume("+PHX::TypeString<EvalT>::value+")");
+    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_volume("+PHX::typeAsString<EvalT>()+")");
     this->evaluateVolume(in);
   }
 
@@ -98,18 +98,18 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
   // sure all neumann are done before dirichlet.
 
   {
-    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_neumannbcs("+PHX::TypeString<EvalT>::value+")");
+    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_neumannbcs("+PHX::typeAsString<EvalT>()+")");
     this->evaluateNeumannBCs(in);
   }
 
   // Dirchlet conditions require a global matrix
   {
-    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_dirichletbcs("+PHX::TypeString<EvalT>::value+")");
+    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_dirichletbcs("+PHX::typeAsString<EvalT>()+")");
     this->evaluateDirichletBCs(in);
   }
 
   {
-    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_scatter("+PHX::TypeString<EvalT>::value+")");
+    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_scatter("+PHX::typeAsString<EvalT>()+")");
     m_lin_obj_factory->ghostToGlobalContainer(*in.ghostedContainer_,*in.container_,LOC::F | LOC::Mat);
 
     m_lin_obj_factory->beginFill(*in.container_);
@@ -168,10 +168,11 @@ evaluateVolume(const panzer::AssemblyEngineInArgs& in)
 
   Teuchos::RCP<panzer::WorksetContainer> wkstContainer = m_field_manager_builder->getWorksetContainer();
 
-  GlobalEvaluationDataContainer gedc;
-  gedc.addDataObject("Solution Gather Container",in.ghostedContainer_);
-  gedc.addDataObject("Residual Scatter Container",in.ghostedContainer_);
-  in.fillGlobalEvaluationDataContainer(gedc);
+  panzer::Traits::PreEvalData ped;
+  ped.gedc.addDataObject("Solution Gather Container",in.ghostedContainer_);
+  ped.gedc.addDataObject("Residual Scatter Container",in.ghostedContainer_);
+  ped.sensitivities_name = in.sensitivities_name;
+  in.fillGlobalEvaluationDataContainer(ped.gedc);
 
   // Loop over volume field managers
   for (std::size_t block = 0; block < volume_field_managers.size(); ++block) {
@@ -179,7 +180,7 @@ evaluateVolume(const panzer::AssemblyEngineInArgs& in)
     Teuchos::RCP< PHX::FieldManager<panzer::Traits> > fm = volume_field_managers[block];
     std::vector<panzer::Workset>& w = *wkstContainer->getWorksets(wd);
 
-    fm->template preEvaluate<EvalT>(gedc);
+    fm->template preEvaluate<EvalT>(ped);
 
     // Loop over worksets in this element block
     for (std::size_t i = 0; i < w.size(); ++i) {
@@ -217,14 +218,15 @@ evaluateDirichletBCs(const panzer::AssemblyEngineInArgs& in)
 
   if(!countersInitialized_) {
     localCounter_ = m_lin_obj_factory->buildPrimitiveGhostedLinearObjContainer();
-    globalCounter_ = m_lin_obj_factory->buildPrimitiveGhostedLinearObjContainer();
+    // globalCounter_ = m_lin_obj_factory->buildPrimitiveGhostedLinearObjContainer();
+    globalCounter_ = m_lin_obj_factory->buildPrimitiveLinearObjContainer();
     summedGhostedCounter_ = m_lin_obj_factory->buildPrimitiveGhostedLinearObjContainer();
     countersInitialized_ = true;
   }
 
   // allocate a counter to keep track of where this processor set dirichlet boundary conditions
   Teuchos::RCP<LinearObjContainer> localCounter = localCounter_;
-  m_lin_obj_factory->initializeGhostedContainer(LinearObjContainer::X,*localCounter); // store counter in X
+  m_lin_obj_factory->initializeGhostedContainer(LinearObjContainer::F,*localCounter); // store counter in F
   localCounter->initialize();
      // this has only an X vector. The evaluate BCs will add a one to each row
      // that has been set as a dirichlet condition on this processor
@@ -233,19 +235,19 @@ evaluateDirichletBCs(const panzer::AssemblyEngineInArgs& in)
   this->evaluateBCs(panzer::BCT_Dirichlet, in,localCounter);
 
   Teuchos::RCP<LinearObjContainer> summedGhostedCounter = summedGhostedCounter_;
-  m_lin_obj_factory->initializeGhostedContainer(LinearObjContainer::X,*summedGhostedCounter); // store counter in X
+  m_lin_obj_factory->initializeGhostedContainer(LinearObjContainer::F,*summedGhostedCounter); // store counter in X
   summedGhostedCounter->initialize();
 
   // do communication to build summed ghosted counter for dirichlet conditions
   Teuchos::RCP<LinearObjContainer> globalCounter = globalCounter_;
   {
-     m_lin_obj_factory->initializeContainer(LinearObjContainer::X,*globalCounter); // store counter in X
+     m_lin_obj_factory->initializeContainer(LinearObjContainer::F,*globalCounter); // store counter in X
      globalCounter->initialize();
-     m_lin_obj_factory->ghostToGlobalContainer(*localCounter,*globalCounter,LOC::X);
+     m_lin_obj_factory->ghostToGlobalContainer(*localCounter,*globalCounter,LOC::F);
         // Here we do the reduction across all processors so that the number of times
         // a dirichlet condition is applied is summed into the global counter
 
-     m_lin_obj_factory->globalToGhostContainer(*globalCounter,*summedGhostedCounter,LOC::X);
+     m_lin_obj_factory->globalToGhostContainer(*globalCounter,*summedGhostedCounter,LOC::F);
         // finally we move the summed global vector into a local ghosted vector
         // so that the dirichlet conditions can be applied to both the ghosted
         // right hand side and the ghosted matrix
@@ -278,17 +280,17 @@ evaluateDirichletBCs(const panzer::AssemblyEngineInArgs& in)
 template <typename EvalT>
 void panzer::AssemblyEngine<EvalT>::
 evaluateBCs(const panzer::BCType bc_type,
-	    const panzer::AssemblyEngineInArgs& in,
+            const panzer::AssemblyEngineInArgs& in,
             const Teuchos::RCP<LinearObjContainer> preEval_loc)
 {
   Teuchos::RCP<panzer::WorksetContainer> wkstContainer = m_field_manager_builder->getWorksetContainer();
 
-  panzer::GlobalEvaluationDataContainer gedc;
-
-  gedc.addDataObject("Dirichlet Counter",preEval_loc);
-  gedc.addDataObject("Solution Gather Container",in.ghostedContainer_);
-  gedc.addDataObject("Residual Scatter Container",in.ghostedContainer_);
-  in.fillGlobalEvaluationDataContainer(gedc);
+  panzer::Traits::PreEvalData ped;
+  ped.gedc.addDataObject("Dirichlet Counter",preEval_loc);
+  ped.gedc.addDataObject("Solution Gather Container",in.ghostedContainer_);
+  ped.gedc.addDataObject("Residual Scatter Container",in.ghostedContainer_);
+  ped.sensitivities_name = in.sensitivities_name;
+  in.fillGlobalEvaluationDataContainer(ped.gedc);
 
   // this helps work around issues when constructing a mass
   // matrix using an evaluation of only the transient terms.
@@ -313,54 +315,54 @@ evaluateBCs(const panzer::BCType bc_type,
 
     // loop over bcs
     for (bcfm_it_type bcfm_it = bc_field_managers.begin(); 
-	 bcfm_it != bc_field_managers.end(); ++bcfm_it) {
+         bcfm_it != bc_field_managers.end(); ++bcfm_it) {
       
       const panzer::BC& bc = bcfm_it->first;
       const std::map<unsigned,PHX::FieldManager<panzer::Traits> > bc_fm = 
-	bcfm_it->second;
+        bcfm_it->second;
    
       Teuchos::RCP<const std::map<unsigned,panzer::Workset> > bc_wkst_ptr = wkstContainer->getSideWorksets(bc);
       TEUCHOS_TEST_FOR_EXCEPTION(bc_wkst_ptr == Teuchos::null, std::logic_error,
-			 "Failed to find corresponding bc workset!");
+                         "Failed to find corresponding bc workset!");
       const std::map<unsigned,panzer::Workset>& bc_wkst = *bc_wkst_ptr;
 
       // Only process bcs of the appropriate type (neumann or dirichlet)
       if (bc.bcType() == bc_type) {
 
-	// Loop over local faces
-	for (std::map<unsigned,PHX::FieldManager<panzer::Traits> >::const_iterator side = bc_fm.begin(); side != bc_fm.end(); ++side) {
+        // Loop over local faces
+        for (std::map<unsigned,PHX::FieldManager<panzer::Traits> >::const_iterator side = bc_fm.begin(); side != bc_fm.end(); ++side) {
 
-	  // extract field manager for this side  
-	  unsigned local_side_index = side->first;
-	  PHX::FieldManager<panzer::Traits>& local_side_fm = 
-	    const_cast<PHX::FieldManager<panzer::Traits>& >(side->second);
-	  
+          // extract field manager for this side  
+          unsigned local_side_index = side->first;
+          PHX::FieldManager<panzer::Traits>& local_side_fm = 
+            const_cast<PHX::FieldManager<panzer::Traits>& >(side->second);
+          
           // extract workset for this side: only one workset per face
-	  std::map<unsigned,panzer::Workset>::const_iterator wkst_it = 
-	    bc_wkst.find(local_side_index);
-	  
-	  TEUCHOS_TEST_FOR_EXCEPTION(wkst_it == bc_wkst.end(), std::logic_error,
-			     "Failed to find corresponding bc workset side!");
-	  
-	  panzer::Workset& workset = 
-	    const_cast<panzer::Workset&>(wkst_it->second); 
+          std::map<unsigned,panzer::Workset>::const_iterator wkst_it = 
+            bc_wkst.find(local_side_index);
+          
+          TEUCHOS_TEST_FOR_EXCEPTION(wkst_it == bc_wkst.end(), std::logic_error,
+                             "Failed to find corresponding bc workset side!");
+          
+          panzer::Workset& workset = 
+            const_cast<panzer::Workset&>(wkst_it->second); 
 
           // run prevaluate
-          local_side_fm.template preEvaluate<EvalT>(gedc);
+          local_side_fm.template preEvaluate<EvalT>(ped);
 
           // build and evaluate fields for the workset: only one workset per face
-	  workset.alpha = in.alpha;
-	  workset.beta = betaValue;
-	  workset.time = in.time;
-      workset.gather_seeds = in.gather_seeds;
-      workset.evaluate_transient_terms = in.evaluate_transient_terms;
-	  
-	  local_side_fm.template evaluateFields<EvalT>(workset);
+          workset.alpha = in.alpha;
+          workset.beta = betaValue;
+          workset.time = in.time;
+          workset.gather_seeds = in.gather_seeds;
+          workset.evaluate_transient_terms = in.evaluate_transient_terms;
+          
+          local_side_fm.template evaluateFields<EvalT>(workset);
 
           // run postevaluate for consistency
-	  local_side_fm.template postEvaluate<EvalT>(NULL);
-	  
-	}
+          local_side_fm.template postEvaluate<EvalT>(NULL);
+          
+        }
       }
     } 
   }

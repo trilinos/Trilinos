@@ -1,7 +1,5 @@
 # Required modules
 
-INCLUDE(TribitsAddExecutable)
-INCLUDE(TribitsAddTest)
 
 # Example definitions
 

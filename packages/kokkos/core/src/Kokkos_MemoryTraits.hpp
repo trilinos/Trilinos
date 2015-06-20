@@ -1,15 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//                             Kokkos
-//         Manycore Performance-Portable Multidimensional Arrays
-//
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -46,7 +44,9 @@
 #ifndef KOKKOS_MEMORYTRAITS_HPP
 #define KOKKOS_MEMORYTRAITS_HPP
 
+#include <impl/Kokkos_Traits.hpp>
 #include <impl/Kokkos_Tags.hpp>
+
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
@@ -67,14 +67,13 @@ enum MemoryTraitsFlags
 
 template < unsigned T >
 struct MemoryTraits {
-  //! The tag (what type of kokkos_object is this).
-  typedef Impl::MemoryTraitsTag       kokkos_tag ;
-
-  enum { Unmanaged  = T & unsigned(Kokkos::Unmanaged) };
-  enum { RandomAccess = T & unsigned(Kokkos::RandomAccess) };
-  enum { Atomic = T & unsigned(Kokkos::Atomic) };
-
+  //! Tag this class as a kokkos memory traits:
   typedef MemoryTraits memory_traits ;
+
+  enum { Unmanaged    = T & unsigned(Kokkos::Unmanaged) };
+  enum { RandomAccess = T & unsigned(Kokkos::RandomAccess) };
+  enum { Atomic       = T & unsigned(Kokkos::Atomic) };
+
 };
 
 } // namespace Kokkos
@@ -96,19 +95,19 @@ namespace Impl {
 
 /** \brief Memory alignment settings
  *
- *  Sets global value for memory alignment.
+ *  Sets global value for memory alignment.  Must be a power of two!
  *  Enable compatibility of views from different devices with static stride.
  *  Use compiler flag to enable overwrites.
  */
 enum { MEMORY_ALIGNMENT =
 #if defined( KOKKOS_MEMORY_ALIGNMENT )
-  KOKKOS_MEMORY_ALIGNMENT
+    ( 1 << Kokkos::Impl::power_of_two< KOKKOS_MEMORY_ALIGNMENT >::value )
 #else
-  128
+    ( 1 << Kokkos::Impl::power_of_two< 128 >::value )
 #endif
+  , MEMORY_ALIGNMENT_THRESHOLD = 4 
   };
 
-enum { MEMORY_ALIGNMENT_THRESHOLD = 4 };
 
 } //namespace Impl
 } // namespace Kokkos

@@ -1,15 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//                             Kokkos
-//         Manycore Performance-Portable Multidimensional Arrays
-//
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -46,7 +44,7 @@
 #ifndef KOKKOS_OPENMP_HPP
 #define KOKKOS_OPENMP_HPP
 
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core_fwd.hpp>
 
 #if defined( KOKKOS_HAVE_OPENMP ) && defined( _OPENMP )
 
@@ -55,17 +53,10 @@
 #include <cstddef>
 #include <iosfwd>
 #include <Kokkos_HostSpace.hpp>
+#include <Kokkos_ScratchSpace.hpp>
 #include <Kokkos_Parallel.hpp>
 #include <Kokkos_Layout.hpp>
 #include <impl/Kokkos_Tags.hpp>
-
-/*--------------------------------------------------------------------------*/
-
-namespace Kokkos {
-namespace Impl {
-class OpenMPexec ;
-} // namespace Impl
-} // namespace Kokkos
 
 /*--------------------------------------------------------------------------*/
 
@@ -79,14 +70,16 @@ public:
   //! \name Type declarations that all Kokkos devices must provide.
   //@{
 
-  //! The tag (what type of kokkos_object is this).
-  typedef Impl::DeviceTag       kokkos_tag ;
-  typedef OpenMP                device_type ;
-  typedef HostSpace::size_type  size_type ;
+  //! Tag this class as a kokkos execution space
+  typedef OpenMP                execution_space ;
   typedef HostSpace             memory_space ;
-  typedef OpenMP                scratch_memory_space ;
+  //! This execution space preferred device_type
+  typedef Kokkos::Device<execution_space,memory_space> device_type;
+
   typedef LayoutRight           array_layout ;
-  typedef OpenMP                host_mirror_device_type ;
+  typedef HostSpace::size_type  size_type ;
+
+  typedef ScratchMemorySpace< OpenMP > scratch_memory_space ;
 
   //@}
   //------------------------------------
@@ -124,58 +117,51 @@ public:
                           unsigned use_cores_per_numa = 0 );
 
   static int is_initialized();
-
-  KOKKOS_FUNCTION static unsigned team_max();
-  KOKKOS_FUNCTION static unsigned team_recommended();
-  KOKKOS_INLINE_FUNCTION static unsigned hardware_thread_id();
-  KOKKOS_INLINE_FUNCTION static unsigned max_hardware_threads();
   //@}
   //------------------------------------
-  //! \name Function for the functor device interface */
-  //@{
-
-  KOKKOS_INLINE_FUNCTION int league_rank() const ;
-  KOKKOS_INLINE_FUNCTION int league_size() const ;
-  KOKKOS_INLINE_FUNCTION int team_rank() const ;
-  KOKKOS_INLINE_FUNCTION int team_size() const ;
-
-  KOKKOS_INLINE_FUNCTION void team_barrier();
-
-  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
+  /** \brief  This execution space has a topological thread pool which can be queried.
    *
-   *  The highest rank thread can compute the reduction total as
-   *    reduction_total = dev.team_scan( value ) + value ;
+   *  All threads within a pool have a common memory space for which they are cache coherent.
+   *    depth = 0  gives the number of threads in the whole pool.
+   *    depth = 1  gives the number of threads in a NUMA region, typically sharing L3 cache.
+   *    depth = 2  gives the number of threads at the finest granularity, typically sharing L1 cache.
    */
-  template< typename Type >
-  KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value );
+  inline static int thread_pool_size( int depth = 0 );
 
-  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
-   *          with intra-team non-deterministic ordering accumulation.
-   *
-   *  The global inter-team accumulation value will, at the end of the
-   *  league's parallel execution, be the scan's total.
-   *  Parallel execution ordering of the league's teams is non-deterministic.
-   *  As such the base value for each team's scan operation is similarly
-   *  non-deterministic.
-   */
-  template< typename TypeLocal , typename TypeGlobal >
-  KOKKOS_INLINE_FUNCTION TypeGlobal team_scan( const TypeLocal & value , TypeGlobal * const global_accum );
-
-
-  KOKKOS_INLINE_FUNCTION void * get_shmem( const int size ) const ;
-
-  explicit KOKKOS_INLINE_FUNCTION OpenMP( Impl::OpenMPexec & );
+  /** \brief  The rank of the executing thread in this thread pool */
+  KOKKOS_INLINE_FUNCTION static int thread_pool_rank();
 
   //------------------------------------
 
-private:
+  inline static unsigned max_hardware_threads() { return thread_pool_size(0); }
 
-  Impl::OpenMPexec & m_exec ;
-
+  KOKKOS_INLINE_FUNCTION static
+  unsigned hardware_thread_id() { return thread_pool_rank(); }
 };
 
 } // namespace Kokkos
 
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
+namespace Impl {
+
+template<>
+struct VerifyExecutionCanAccessMemorySpace
+  < Kokkos::OpenMP::memory_space
+  , Kokkos::OpenMP::scratch_memory_space
+  >
+{
+  enum { value = true };
+  inline static void verify( void ) { }
+  inline static void verify( const void * ) { }
+};
+
+} // namespace Impl
+} // namespace Kokkos
+
+/*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
 
 #include <OpenMP/Kokkos_OpenMPexec.hpp>

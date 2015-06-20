@@ -50,6 +50,11 @@
 #define SACADO_TRAITS_HPP
 
 #include "Sacado_ConfigDefs.h"
+#include "Sacado_dummy_arg.hpp"
+#include "Sacado_mpl_enable_if.hpp"
+#include "Sacado_mpl_disable_if.hpp"
+#include "Sacado_mpl_is_convertible.hpp"
+#include "Sacado_mpl_is_same.hpp"
 #include <string>
 
 #ifdef HAVE_SACADO_COMPLEX
@@ -58,24 +63,152 @@
 
 namespace Sacado {
 
+  /*!
+   * \brief Enum use to signal whether the derivative array should be
+   * initialized in AD object constructors.
+   */
+  enum DerivInit {
+    NoInitDerivArray = 0, //!< Do not initialize the derivative array
+    InitDerivArray        //!< Initialize the derivative array
+  };
+
+  //! Is a type an expression
+  template <typename T>
+  struct IsExpr {
+    static const bool value = false;
+  };
+
+  //! Determine whether a given type is a view
+  template <typename T>
+  struct IsView {
+    static const bool value = false;
+  };
+
+  //! Get the base Fad type from a view/expression
+  template <typename T>
+  struct BaseExprType {
+    typedef T type;
+  };
+
+  //! Get view type for any Fad type
+  template <typename T,unsigned,unsigned> struct ViewFadType {};
+
+  //! Specialize this for a given type T to disable default Promote rules
+  template <typename T> struct OverrideDefaultPromote {
+    static const bool value = false;
+  };
+
   //! Base template specification for %Promote
   /*!
    * The %Promote classes provide a mechanism for computing the
    * promoted type of a binary operation.
    */
-  template <typename A, typename B> struct Promote {};
+  template <typename A, typename B, typename Enabled = void> struct Promote {};
 
   //! Specialization of %Promote for a single type
-  template <typename A> struct Promote<A,A> {
-    typedef A type;
+  template <typename A>
+  struct Promote< A, A,
+                  typename mpl::enable_if_c< !OverrideDefaultPromote<A>::value >::type > {
+    typedef typename BaseExprType<A>::type type;
+  };
+
+  //! Specialization of %Promote when A is convertible to B but not vice-versa
+  template <typename A, typename B>
+  struct Promote< A, B,
+                  typename mpl::enable_if_c< mpl::is_convertible<A,B>::value &&
+                                            !mpl::is_convertible<B,A>::value &&
+                                            !OverrideDefaultPromote<A>::value &&
+                                            !OverrideDefaultPromote<B>::value
+                                           >::type > {
+    typedef typename BaseExprType<B>::type type;
+  };
+
+  //! Specialization of %Promote when B is convertible to A but not vice-versa
+  template <typename A, typename B>
+  struct Promote< A, B,
+                  typename mpl::enable_if_c< mpl::is_convertible<B,A>::value &&
+                                            !mpl::is_convertible<A,B>::value &&
+                                            !OverrideDefaultPromote<A>::value &&
+                                            !OverrideDefaultPromote<B>::value
+                                           >::type > {
+    typedef typename BaseExprType<A>::type type;
+  };
+
+ /*!
+  * \brief Specialization of Promote when A and B are convertible to each
+  * other, and one of them is an expression.
+  */
+  template <typename A, typename B>
+  struct Promote< A, B,
+                  typename mpl::enable_if_c< mpl::is_convertible<A,B>::value &&
+                                             mpl::is_convertible<B,A>::value &&
+                                             !mpl::is_same<A,B>::value &&
+                                             ( IsExpr<A>::value ||
+                                               IsExpr<B>::value ) >::type >
+  {
+    typedef typename BaseExprType<A>::type A_base_fad_type;
+    typedef typename BaseExprType<B>::type B_base_fad_type;
+    typedef typename Promote< A_base_fad_type, B_base_fad_type >::type type;
+  };
+
+  /*!
+   * \brief Specialization of Promote when A is an expression and B is
+   * convertible to its value-type, e.g., Promote< fad-expression, double >
+   * (using BaseExprType to remove ViewFad)
+   */
+  template <typename A, typename B>
+  struct Promote< A, B,
+                  typename mpl::enable_if_c< !mpl::is_convertible<A,B>::value &&
+                                             !mpl::is_convertible<B,A>::value &&
+                                             IsExpr<A>::value &&
+                                             mpl::is_convertible< B, typename BaseExprType< typename A::value_type >::type >::value
+                                             >::type >
+  {
+    typedef typename BaseExprType<A>::type type;
+  };
+
+  /*!
+   * \brief Specialization of Promote when B is an expression and A is
+   * convertible to its value-type, e.g., Promote< double, fad-expression >
+   * (using BaseExprType to remove ViewFad)
+   */
+  template <typename A, typename B>
+  struct Promote< A, B,
+                  typename mpl::enable_if_c< !mpl::is_convertible<A,B>::value &&
+                                             !mpl::is_convertible<B,A>::value &&
+                                             IsExpr<B>::value &&
+                                              mpl::is_convertible< A, typename BaseExprType< typename B::value_type >::type >::value
+                                             >::type >
+  {
+    typedef typename BaseExprType<B>::type type;
+  };
+
+  /*!
+   * \brief Specialization of Promote when A and B are (different) expressions,
+   * with the same value type, e.g, Promote< fad-expr1, fad-expr2 >
+   * (using BaseExprType to remove ViewFad)
+   */
+  template <typename A, typename B>
+  struct Promote< A, B,
+                  typename mpl::enable_if_c< !mpl::is_convertible<A,B>::value &&
+                                             !mpl::is_convertible<B,A>::value &&
+                                             IsExpr<A>::value &&
+                                             IsExpr<B>::value &&
+                                             mpl::is_same< typename BaseExprType< typename A::value_type >::type,
+                                                           typename BaseExprType< typename B::value_type >::type >::value
+                                             >::type >
+  {
+    typedef typename BaseExprType<A>::type A_base_expr_type;
+    typedef typename BaseExprType<B>::type B_base_expr_type;
+    typedef typename Promote< A_base_expr_type, B_base_expr_type >::type type;
   };
 
   //! Specialization of %Promote to builtin types
-#define SACADO_PROMOTE_SPECIALIZATION(type1,type2,type3) \
-  template <> struct Promote< type1, type2 > {             \
+#define SACADO_PROMOTE_SPECIALIZATION(type1,type2,type3)   \
+  template <> struct Promote< type1, type2, void > {       \
     typedef type3 type;                                    \
   };                                                       \
-  template <> struct Promote< type2, type1 > {             \
+  template <> struct Promote< type2, type1, void > {       \
     typedef type3 type;                                    \
   };
 
@@ -97,12 +230,79 @@ namespace Sacado {
 
 #undef SACADO_PROMOTE_SPECIALIZATION
 
+   // Macros for building proper Promote specialization for AD types
+
+#define SACADO_AD_PROMOTE_SPEC(NS, AD) /* */
+
+#define SACADO_AD_PROMOTE_SPEC2(NS, AD) /* */
+
+#define SACADO_FAD_PROMOTE_SPEC(NS, FAD) /* */
+
+#define SACADO_SFAD_PROMOTE_SPEC(NS, FAD) /* */
+
+#define SACADO_EXPR_PROMOTE_SPEC(NS) /* */
+
+#define SACADO_VFAD_PROMOTE_SPEC(NS) /* */
+
+#define SACADO_RAD_PROMOTE_SPEC(NS)                                     \
+  namespace NS {                                                        \
+    template <typename> class ADvar;                                    \
+    template <typename> class ADvari;                                   \
+  }                                                                     \
+  template <typename T>                                                 \
+  struct OverrideDefaultPromote< NS :: ADvari <T>& > {                  \
+    static const bool value = true;                                     \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< NS :: ADvar <T>,                                      \
+                  NS :: ADvari <T>& > {                                 \
+    typedef NS :: ADvar <T> type;                                       \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< NS :: ADvari <T>&,                                    \
+                  NS :: ADvar <T> > {                                   \
+    typedef NS :: ADvar <T> type;                                       \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< NS :: ADvari <T>&,                                    \
+                  typename NS :: ADvari <T>::value_type > {             \
+    typedef NS :: ADvar <T> type;                                       \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< typename NS :: ADvari <T>::value_type,                \
+                  NS :: ADvari <T>& > {                                 \
+    typedef NS :: ADvar <T> type;                                       \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< NS :: ADvari <T>&,                                    \
+                  typename dummy< typename NS :: ADvari <T>::value_type, \
+                                  typename NS :: ADvari <T>::scalar_type \
+                                  >::type > {                           \
+    typedef NS :: ADvar <T> type;                                       \
+  };                                                                    \
+  template <typename T>                                                 \
+  struct Promote< typename dummy< typename NS :: ADvari <T>::value_type, \
+                                  typename NS :: ADvari <T>::scalar_type \
+                                  >::type,                              \
+                  NS :: ADvari <T>& > {                                 \
+    typedef NS :: ADvar <T> type;                                       \
+  };
+
+  //
+  // We define defaults for all of the traits to make Sacado easier to use.
+  // The default choices are based on what appears to be the "safest" choice
+  // for any scalar type.  They may not work in all cases, in which case a
+  // specialization should be provided.
+  //
+
   //! Base template specification for %ScalarType
   /*!
    * The %ScalarType classes provide a mechanism for computing the
    * base underlying type of nested AD classes
    */
-  template <typename T> struct ScalarType {};
+  template <typename T> struct ScalarType {
+    typedef T type;
+  };
 
   //! Specialization of %ScalarType for const types
   /*!
@@ -117,7 +317,9 @@ namespace Sacado {
    * The %ValueType classes provide a mechanism for computing the
    * the type stored in AD classes
    */
-  template <typename T> struct ValueType {};
+  template <typename T> struct ValueType {
+    typedef T type;
+  };
 
   //! Specialization of %ValueType for const types
   /*!
@@ -132,45 +334,80 @@ namespace Sacado {
    * The %IsADType classes provide a mechanism for computing the
    * determining whether a type is an AD type
    */
-  template <typename T> struct IsADType {};
+  template <typename T> struct IsADType {
+    static const bool value = false;
+  };
 
   //! Base template specification for %IsScalarType
   /*!
    * The %IsScalarType classes provide a mechanism for computing the
    * determining whether a type is a scalar type (float, double, etc...)
    */
-  template <typename T> struct IsScalarType {};
+  template <typename T> struct IsScalarType {
+    static const bool value = false;
+  };
 
   //! Base template specification for %Value
   /*!
    * The %Value functor returns the value of an AD type.
    */
-  template <typename T> struct Value {};
+  template <typename T> struct Value {
+    KOKKOS_INLINE_FUNCTION
+    static const T& eval(const T& x) { return x; }
+  };
 
   //! Base template specification for %ScalarValue
   /*!
    * The %ScalarValue functor returns the base scalar value of an AD type,
    * i.e., something that isn't an AD type.
    */
-  template <typename T> struct ScalarValue {};
+  template <typename T> struct ScalarValue {
+    KOKKOS_INLINE_FUNCTION
+    static const T& eval(const T& x) { return x; }
+  };
 
   //! Base template specification for marking constants
   template <typename T> struct MarkConstant {
+    KOKKOS_INLINE_FUNCTION
     static void eval(T& x) {}
   };
 
   //! Base template specification for string names of types
-  template <typename T> struct StringName {};
+  template <typename T> struct StringName {
+    static std::string eval() { return ""; }
+  };
 
   //! Base template specification for testing equivalence
-  template <typename T> struct IsEqual {};
+  template <typename T> struct IsEqual {
+    KOKKOS_INLINE_FUNCTION
+    static bool eval(const T& x, const T& y) { return x == y; }
+  };
 
   //! Base template specification for testing whether type is statically sized
-  template <typename T> struct IsStaticallySized {};
+  template <typename T> struct IsStaticallySized {
+    static const bool value = false;
+  };
 
   //! Base template specification for static size
   template <typename T> struct StaticSize {
     static const unsigned value = 0;
+  };
+
+  //! Base template specification for whether a type is a Fad type
+  template <typename T> struct IsFad {
+    static const bool value = false;
+  };
+
+  //! Remove const from a type
+  template <typename T>
+  struct RemoveConst {
+    typedef T type;
+  };
+
+  //! Remove const from a type
+  template <typename T>
+  struct RemoveConst< const T > {
+    typedef T type;
   };
 
   //! Specialization of above classes to builtin types
@@ -196,7 +433,6 @@ namespace Sacado {
     static const t& eval(const t& x) { return x; }        \
   };                                                      \
   template <> struct StringName< t > {                    \
-    KOKKOS_INLINE_FUNCTION                                \
     static std::string eval() { return NAME; }            \
   };                                                      \
   template <> struct IsEqual< t > {                       \
@@ -222,6 +458,32 @@ namespace Sacado {
 #endif
 
 #undef SACADO_BUILTIN_SPECIALIZATION
+
+template< typename T , T v , bool NonZero = ( v != T(0) ) >
+struct integral_nonzero
+{
+  // Declaration of 'static const' causes an unresolved linker symbol in debug
+  // static const T value = v ;
+  enum { value = T(v) };
+  typedef T value_type ;
+  typedef integral_nonzero<T,v> type ;
+  KOKKOS_INLINE_FUNCTION integral_nonzero() {}
+  KOKKOS_INLINE_FUNCTION integral_nonzero( const T & ) {}
+  KOKKOS_INLINE_FUNCTION integral_nonzero( const integral_nonzero & ) {}
+  KOKKOS_INLINE_FUNCTION integral_nonzero& operator=(const integral_nonzero &) {return *this;}
+};
+
+template< typename T , T zero >
+struct integral_nonzero<T,zero,false>
+{
+  T value ;
+  typedef T value_type ;
+  typedef integral_nonzero<T,0> type ;
+  KOKKOS_INLINE_FUNCTION integral_nonzero() : value() {}
+  KOKKOS_INLINE_FUNCTION integral_nonzero( const T & v ) : value(v) {}
+  KOKKOS_INLINE_FUNCTION integral_nonzero( const integral_nonzero & v) : value(v.value) {}
+  KOKKOS_INLINE_FUNCTION integral_nonzero& operator=(const integral_nonzero & v) { value = v.value; return *this; }
+};
 
 } // namespace Sacado
 

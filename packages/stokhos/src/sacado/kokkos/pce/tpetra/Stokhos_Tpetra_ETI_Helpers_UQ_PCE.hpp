@@ -41,12 +41,13 @@
 
 // UQ::PCE includes
 #include "Stokhos_Tpetra_UQ_PCE.hpp"
+#include "TpetraCore_ETIHelperMacros.h"
 
 #define INSTANTIATE_UQ_PCE_STORAGE(INSTMACRO, STORAGE, LO, GO, N)      \
   INSTMACRO( Sacado::UQ::PCE<STORAGE>, LO, GO, N )
 
 #define INSTANTIATE_UQ_PCE_DS_SLD(INSTMACRO, S, L, D, LO, GO, N)       \
-  typedef Stokhos::DynamicStorage<L,S,D> DS_ ## L ## _ ## S ## _ ## _ ## D; \
+  typedef Stokhos::DynamicStorage<L,S,D::execution_space> DS_ ## L ## _ ## S ## _ ## _ ## D; \
   INSTANTIATE_UQ_PCE_STORAGE(INSTMACRO, DS_ ## L ## _ ## S ## _ ## _ ## D, LO, GO, N)
 
 #define INSTANTIATE_UQ_PCE_S_D(INSTMACRO, D, LO, GO, N) \
@@ -62,21 +63,28 @@
 #define INSTANTIATE_TPETRA_UQ_PCE_N(INSTMACRO, N)  \
   INSTANTIATE_UQ_PCE_S(INSTMACRO, int, int, N)
 
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD)
+#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_SERIAL)
+#define INSTANTIATE_TPETRA_UQ_PCE_SERIAL(INSTMACRO) \
+  INSTMACRO(Kokkos_Compat_KokkosSerialWrapperNode)
+#else
+#define INSTANTIATE_TPETRA_UQ_PCE_SERIAL(INSTMACRO)
+#endif
+
+#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_PTHREAD)
 #define INSTANTIATE_TPETRA_UQ_PCE_THREADS(INSTMACRO) \
   INSTMACRO(Kokkos_Compat_KokkosThreadsWrapperNode)
 #else
 #define INSTANTIATE_TPETRA_UQ_PCE_THREADS(INSTMACRO)
 #endif
 
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_OPENMP)
+#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_OPENMP)
 #define INSTANTIATE_TPETRA_UQ_PCE_OPENMP(INSTMACRO) \
   INSTMACRO(Kokkos_Compat_KokkosOpenMPWrapperNode)
 #else
 #define INSTANTIATE_TPETRA_UQ_PCE_OPENMP(INSTMACRO)
 #endif
 
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA)
+#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_CUDA)
 #define INSTANTIATE_TPETRA_UQ_PCE_CUDA(INSTMACRO) \
   INSTMACRO(Kokkos_Compat_KokkosCudaWrapperNode)
 #else

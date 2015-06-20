@@ -48,7 +48,7 @@
 
 #include <boost/unordered_map.hpp>
 
-#include <Kokkos_DefaultNode.hpp>
+#include <Panzer_NodeType.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_MultiVector.hpp>
 
@@ -63,6 +63,13 @@ namespace panzer {
   */
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 std::string printUGILoadBalancingInformation(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi);
+
+/** Print all GIDs and their associated elements to the screen. Note if a FancyOStream is used
+  * the correct prefixes this method will label the processors as well. This can print out an 
+  * extreme amount of information so it is only useful for debugging.
+  */
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+void printMeshTopology(std::ostream & os,const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi);
 
 /** Construct a vector that contains a reduced set of field numbers.
   * The ordering is based on the ordering from <code>ugi.getOwnedAndSharedIndices()</code>.
@@ -98,10 +105,10 @@ buildGhostedFieldVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> 
 /** Convenience function default to the basic Kokkos node type.
   */
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-Teuchos::RCP<const Tpetra::Vector<int,int,GlobalOrdinalT,KokkosClassic::DefaultNode::DefaultNodeType> >
+Teuchos::RCP<const Tpetra::Vector<int,int,GlobalOrdinalT,panzer::TpetraNodeType> >
 buildGhostedFieldVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi,
-                        const Teuchos::RCP<const Tpetra::Vector<int,int,GlobalOrdinalT,KokkosClassic::DefaultNode::DefaultNodeType> > & reducedVec=Teuchos::null)
-{ return buildGhostedFieldVector<LocalOrdinalT,GlobalOrdinalT,KokkosClassic::DefaultNode::DefaultNodeType>(ugi,reducedVec); }
+                        const Teuchos::RCP<const Tpetra::Vector<int,int,GlobalOrdinalT,panzer::TpetraNodeType> > & reducedVec=Teuchos::null)
+{ return buildGhostedFieldVector<LocalOrdinalT,GlobalOrdinalT,panzer::TpetraNodeType>(ugi,reducedVec); }
 
 /** This function builds a vector that defines fields for each global unknown.
   * Notice that requires global communication and uses (underneath) the <code>Tpetra</code>
@@ -126,8 +133,8 @@ void buildGhostedFieldVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdin
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void buildGhostedFieldVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi,
                              std::vector<int> & fieldNumbers,
-                             const Teuchos::RCP<const Tpetra::Vector<int,int,GlobalOrdinalT,KokkosClassic::DefaultNode::DefaultNodeType> > & reducedVec=Teuchos::null)
-{ buildGhostedFieldVector<LocalOrdinalT,GlobalOrdinalT,KokkosClassic::DefaultNode::DefaultNodeType>(ugi,fieldNumbers,reducedVec); }
+                             const Teuchos::RCP<const Tpetra::Vector<int,int,GlobalOrdinalT,panzer::TpetraNodeType> > & reducedVec=Teuchos::null)
+{ buildGhostedFieldVector<LocalOrdinalT,GlobalOrdinalT,panzer::TpetraNodeType>(ugi,fieldNumbers,reducedVec); }
 
 /** Build a reduced data vector using the reduced field vector. Here reduced is meant in the
   * exact same context as for the field vectors.
@@ -197,13 +204,17 @@ void computeCellEdgeOrientations(const std::vector<std::pair<int,int> > & topEdg
                                  std::vector<char> & orientation);
 
 /** For a given field pattern compute the offsets that give 
-  * the dimension-0-subcell indices for each face.
+  * the dimension-0-subcell indices for each face. Note that the assumption is
+  * made that the node ordering returned by Shards for each face is counter-clockwise.
+  * This is how the determination of inward or outward facing normals is made.
   *
   * \param[in] pattern Pattern specifying the layout of IDs. Note that
   *                    this pattern must have dimension-0-subcell indices.
   * \param[in,out] faceIndices Empty vector that on exit will have a vector
   *                            containing start and end indices for each
   *                            face in a cell.
+  *
+  * \note In 2D a "Face" is defined to be the element (not the edge).
   */
 void computePatternFaceIndices(const FieldPattern & pattern,std::vector<std::vector<int> > & faceIndices);
 
@@ -211,7 +222,7 @@ void computePatternFaceIndices(const FieldPattern & pattern,std::vector<std::vec
   * It is most often called in conjunction with <code>computePatternFaceIndices</code>. The
   * general model is to call <code>computePatternFaceIndices</code> once for a given topology
   * field pattern. These face indices are used with the topology vector of GIDs (which is laid out 
-  * using the topology field pattern) for particular to define the orientation for that element.
+  * using the topology field pattern) to define the orientation for that element.
   * The layout of the orientation vector is defined to satisfy yet another field pattern whose
   * structure defines the global unknowns for that element. This function can then be called
   * repeatedly for each element that satisfies the topology used in the 

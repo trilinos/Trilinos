@@ -54,7 +54,7 @@ TwoDArray<int> getSimpleTestTwoDArray(){
   simpleArray(1,1) =4;
   return simpleArray;
 }
-  
+
 
 /**
  * Test all the validator dependencies.
@@ -87,7 +87,7 @@ TEUCHOS_UNIT_TEST(Teuchos_TwoDArrays, simpleTest){
   TEST_COMPARE_ARRAYS(oneDArray, simpleArray.getDataArray())
 
 }
-  
+
 TEUCHOS_UNIT_TEST(Teuchos_TwoDArrays, stringFunctions){
   TwoDArray<int> simpleArray = getSimpleTestTwoDArray();
   std::string stringRep = TwoDArray<int>::toString(simpleArray);
@@ -95,7 +95,7 @@ TEUCHOS_UNIT_TEST(Teuchos_TwoDArrays, stringFunctions){
   TEST_EQUALITY(simpleArray, convertedArray)
 
   std::string badStringRep = "4x4:{1.0,1.0}";
-  TEST_THROW(TwoDArray<int>::fromString(badStringRep), 
+  TEST_THROW(TwoDArray<int>::fromString(badStringRep),
     InvalidArrayStringRepresentation)
 }
 
@@ -112,7 +112,7 @@ TEUCHOS_UNIT_TEST(Teuchos_TwoDArrays, streamTests){
   std::stringstream ss;
   ss << simpleArray;
   TwoDArray<int> readArray;
-  std::istringstream instream(ss.str()); 
+  std::istringstream instream(ss.str());
   instream >> readArray;
   TEST_EQUALITY(simpleArray, readArray);
 }

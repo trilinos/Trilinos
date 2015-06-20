@@ -56,7 +56,7 @@ namespace Teuchos{
 
 /**
  * \brief This class represents a depndency between elements in a Parameter List.
- * 
+ *
  * \reference DependencySheet
  * \reference ParameterList
  */
@@ -89,7 +89,7 @@ public:
    * @param dependents A list of all the dependents.
    */
   Dependency(
-    ConstParameterEntryList dependees, 
+    ConstParameterEntryList dependees,
     ParameterEntryList dependents);
 
   /**
@@ -99,7 +99,7 @@ public:
    * @param dependent The dependent parameter.
    */
   Dependency(
-    ConstParameterEntryList dependees, 
+    ConstParameterEntryList dependees,
     RCP<ParameterEntry> dependent);
 
   /**
@@ -109,7 +109,7 @@ public:
    * @param dependents A List of all the dependents.
    */
   Dependency(
-    RCP<const ParameterEntry> dependee, 
+    RCP<const ParameterEntry> dependee,
     ParameterEntryList dependents);
 
   /**
@@ -119,12 +119,12 @@ public:
    * @param dependent The dependent parameter.
    */
   Dependency(
-    RCP<const ParameterEntry> dependee, 
+    RCP<const ParameterEntry> dependee,
     RCP<ParameterEntry> dependent);
 
   //@}
 
-  //! @name Attribute/Query Methods 
+  //! @name Attribute/Query Methods
   //@{
 
   /**
@@ -163,7 +163,7 @@ public:
   }
 
   /**
-   * \brief Convienence function. 
+   * \brief Convienence function.
    * Returns the first dependee in the list of dependees.
    *
    * @return The first dependee in the list of dependees.
@@ -173,12 +173,12 @@ public:
     return getValue<S>(*(*(dependees_.begin())));
   }
 
-  /** 
-   * \brief Returns the string to be used for the value of the 
+  /**
+   * \brief Returns the string to be used for the value of the
    * type attribute when converting the dependency to XML.
    */
   virtual std::string getTypeAttributeValue() const = 0;
- 
+
 
   /**
    * \brief Returns the XML tag to use when serializing Dependencies.
@@ -198,9 +198,9 @@ public:
    * dependee based on the dependent.
    */
   virtual void evaluate() = 0;
-  
+
   //@}
-  
+
   /** \name I/O Functions */
   //@{
 
@@ -215,7 +215,7 @@ protected:
   //@{
 
   /**
-   * \brief Validates the dependency to make sure it's valid/has been setup 
+   * \brief Validates the dependency to make sure it's valid/has been setup
    * properly. If subclassing, this fucntion should
    * be called in the new subclasses constructor.
    */
@@ -227,7 +227,7 @@ protected:
 
   /** \name Private Members */
   //@{
-  
+
   /**
    * \brief The parameters being depended upon.
    */

@@ -39,7 +39,7 @@
 #include "AnasaziTpetraAdapter.hpp"
 
 // I/O for Harwell-Boeing files
-#include <iohb.h>
+#include <Trilinos_Util_iohb.h>
 
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_GlobalMPISession.hpp>

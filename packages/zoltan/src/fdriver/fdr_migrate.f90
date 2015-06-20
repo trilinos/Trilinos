@@ -46,31 +46,31 @@
 
 module dr_migrate
 
-!/*--------------------------------------------------------------------------*/
-!/* Purpose: Call Zoltan to migrate elements.                                */
-!/*          Contains all of the callback functions that Zoltan needs        */
-!/*          for the migration.                                              */
-!/*                                                                          */
-!/* General migration strategy:                                              */
-!/*  1. In migrate_pre_process, reset all adjacency info for local elems,    */
-!/*     using the local ID for adj. elems that are or will be (after         */
-!/*     migration) on this processor, and the global ID for adj elems that   */
-!/*     are not or will not be (after migration)  on this processor.         */
-!/*  2. When exporting elements, convert all the export elems' adjacencies'  */
-!/*     local IDs to global IDs.                                             */ 
-!/*  3. When importing elements, convert import elems' adjacencies that are  */
-!/*     local elements to local ids.                                         */
-!/*                                                                          */
-!/*--------------------------------------------------------------------------*/
-!/* Author(s):  Matthew M. St.John (9226)                                    */
-!/*             Karen D. Devine (9226)                                       */
+!--------------------------------------------------------------------------
+! Purpose: Call Zoltan to migrate elements.                                
+!          Contains all of the callback functions that Zoltan needs        
+!          for the migration.                                              
+!                                                                          
+! General migration strategy:                                              
+!  1. In migrate_pre_process, reset all adjacency info for local elems,    
+!     using the local ID for adj. elems that are or will be (after         
+!     migration) on this processor, and the global ID for adj elems that   
+!     are not or will not be (after migration)  on this processor.         
+!  2. When exporting elements, convert all the export elems' adjacencies'  
+!     local IDs to global IDs.                                              
+!  3. When importing elements, convert import elems' adjacencies that are  
+!     local elements to local ids.                                         
+!                                                                          
+!--------------------------------------------------------------------------
+! Author(s):  Matthew M. St.John (9226)                                    
+!             Karen D. Devine (9226)                                       
 !   Translated to Fortran by William F. Mitchell
-!/*--------------------------------------------------------------------------*/
-!/*--------------------------------------------------------------------------*/
-!/* Revision History:                                                        */
-!/*    10 May 1999:       Date of creation.                                  */
+!--------------------------------------------------------------------------
+!--------------------------------------------------------------------------
+! Revision History:                                                        
+!    10 May 1999:       Date of creation.                                  
 !      14 Sept 1999:      Fortran translation
-!/*--------------------------------------------------------------------------*/
+!--------------------------------------------------------------------------
 
 use mpi_h
 use zoltan
@@ -83,12 +83,12 @@ private
 
 public :: migrate_elements, search_by_global_id, migrate_elem_size, migrate_elem_size_multi
 
-!/*****************************************************************************/
-!/*
+!***************************************************************************
+!
 ! *  Static global variables to help with migration.
-! */
+! 
 integer(Zoltan_INT), allocatable, save :: New_Elem_Index(:)
-!                                      /* Array containing globalIDs of 
+!                                       Array containing globalIDs of 
 !                                         elements in the new decomposition,
 !                                         ordered in the same order as the
 !                                         elements array.
@@ -96,17 +96,17 @@ integer(Zoltan_INT), allocatable, save :: New_Elem_Index(:)
 !                                         in migrate_pre_process to adjust
 !                                         element adjacencies; used in 
 !                                         migrate_unpack_elem to store 
-!                                         imported elements.                  */
-integer(Zoltan_INT), save :: New_Elem_Index_Size = 0 !/* Number of integers
+!                                         imported elements.                  
+integer(Zoltan_INT), save :: New_Elem_Index_Size = 0 ! Number of integers
 !                                         allocated in New_Elem_Index.
-logical, save :: Use_Edge_Wgts = .false.  !/* Flag indicating whether elements
-!                                         store edge weights.                 */
+logical, save :: Use_Edge_Wgts = .false.  ! Flag indicating whether elements
+!                                         store edge weights.                 
 
 contains
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
 logical function migrate_elements(Proc, zz_obj, &
                                   num_gid_entries, num_lid_entries, &
                                   num_imp, imp_gids, &
@@ -127,13 +127,13 @@ logical function migrate_elements(Proc, zz_obj, &
   integer(Zoltan_INT), pointer :: exp_procs(:)
   integer(Zoltan_INT), pointer :: exp_to_part(:)
 
-!/* Local declarations. */
+! Local declarations. 
 
-!/***************************** BEGIN EXECUTION ******************************/
+!**************************** BEGIN EXECUTION *****************************
 
-!  /*
+!  
 !   * register migration functions
-!   */
+!   
 ! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_PRE_MIGRATE_PP_FN_TYPE, migrate_pre_process, &
 !               0) == ZOLTAN_FATAL) then
   if (Zoltan_Set_Pre_Migrate_PP_Fn(zz_obj, migrate_pre_process) == ZOLTAN_FATAL) then
@@ -197,9 +197,9 @@ logical function migrate_elements(Proc, zz_obj, &
   migrate_elements = .true.
 end function migrate_elements
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
 subroutine migrate_pre_process(data, num_gid_entries, num_lid_entries, &
                                num_import, import_global_ids, &
                                import_local_ids, import_procs, import_to_part, &
@@ -216,13 +216,13 @@ integer(Zoltan_INT), intent(in) :: import_to_part(*), export_to_part(*)
 integer(Zoltan_INT), intent(out) :: ierr
 
 integer(Zoltan_INT) :: i, j, k, idx, maxlen, proc, offset, mpierr, allocstat
-integer(Zoltan_INT), allocatable :: proc_ids(:) !/* Temp array of processor assignments for elements.*/
-logical, allocatable :: change(:) !/* Temp array indicating whether local element's adj 
-                           ! list must be updated due to a nbor's migration.  */
-integer(Zoltan_INT) :: new_proc  !/* New processor assignment for nbor element.
-integer(Zoltan_INT) :: exp_elem  !/* index of an element being exported */
-integer(Zoltan_INT) :: bor_elem  !/* index of an element along the processor border
-integer(Zoltan_INT), allocatable :: send_vec(:), recv_vec(:) !/* Communication vecs.
+integer(Zoltan_INT), allocatable :: proc_ids(:) ! Temp array of processor assignments for elements.
+logical, allocatable :: change(:) ! Temp array indicating whether local element's adj 
+                           ! list must be updated due to a nbor's migration.  
+integer(Zoltan_INT) :: new_proc  ! New processor assignment for nbor element.
+integer(Zoltan_INT) :: exp_elem  ! index of an element being exported 
+integer(Zoltan_INT) :: bor_elem  ! index of an element along the processor border
+integer(Zoltan_INT), allocatable :: send_vec(:), recv_vec(:) ! Communication vecs.
 type(ELEM_INFO), pointer :: tmp(:), exp_elem_ptr
 logical :: flag
 integer(Zoltan_INT) :: gid  ! Temporary variables to change positioning of IDs.
@@ -234,9 +234,9 @@ integer(Zoltan_INT) :: lid
 
   ierr = ZOLTAN_OK
 
-!  /*
+!  
 !   *  Set some flags.  Assume if true for one element, true for all elements.
-!   */
+!   
 
   if (associated(Mesh%elements(0)%edge_wgt)) then
     flag = .true.
@@ -248,19 +248,19 @@ integer(Zoltan_INT) :: lid
                      MPI_COMM_WORLD, mpierr)
 
 
-!  /*
+!  
 !   *  For all elements, update adjacent elements' processor information.
 !   *  That way, when perform migration, will be migrating updated adjacency
 !   *  information.  
-!   */
+!   
   
-  if (Mesh%num_elems == 0) return !/* No elements to update */
+  if (Mesh%num_elems == 0) return ! No elements to update 
 
   call MPI_Comm_rank(MPI_COMM_WORLD, proc, mpierr)
 
-!  /*
+!  
 !   *  Build New_Elem_Index array and list of processor assignments.
-!   */
+!   
   New_Elem_Index_Size = Mesh%num_elems + num_import - num_export
   if (Mesh%elem_array_len > New_Elem_Index_Size) then
     New_Elem_Index_Size = Mesh%elem_array_len
@@ -292,7 +292,7 @@ integer(Zoltan_INT) :: lid
                        export_global_ids(gid+(i-1)*num_gid_entries), exp_elem)
     endif
     if (export_procs(i).ne.proc) then
-!     /* Export is moving to a new processor */
+!      Export is moving to a new processor 
       New_Elem_Index(exp_elem) = -1
       proc_ids(exp_elem) = export_procs(i)
     endif
@@ -300,9 +300,9 @@ integer(Zoltan_INT) :: lid
 
   do i = 1, num_import
     if (import_procs(i).ne.proc) then
-!    /* Import is moving from a new processor, not just from a new partition */
-!    /* search for first free location */
-!    /* search for first free location */
+!     Import is moving from a new processor, not just from a new partition 
+!     search for first free location 
+!     search for first free location 
       do j = 0, New_Elem_Index_Size-1
         if (New_Elem_Index(j) == -1) exit
       end do
@@ -311,11 +311,11 @@ integer(Zoltan_INT) :: lid
     endif
   end do
 
-!  /* 
+!   
 !   * Update local information 
-!   */
+!   
 
-!  /* Set change flag for elements whose adjacent elements are being exported */
+!   Set change flag for elements whose adjacent elements are being exported 
 
   do i = 1, num_export
     if (num_lid_entries.gt.0) then
@@ -328,37 +328,37 @@ integer(Zoltan_INT) :: lid
     Mesh%elements(exp_elem)%my_part = export_to_part(i)
 
     if (export_procs(i) == proc) then
-      cycle  ! /* No adjacency changes needed if export is changing
-             !    only partition, not processor. */
+      cycle  !  No adjacency changes needed if export is changing
+             !    only partition, not processor. 
     endif
 
     do j = 0, Mesh%elements(exp_elem)%adj_len-1
 
-!     /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
+!      Skip NULL adjacencies (sides that are not adjacent to another elem). 
       if (Mesh%elements(exp_elem)%adj(j) == -1) cycle
 
-!      /* Set change flag for adjacent local elements. */
+!       Set change flag for adjacent local elements. 
       if (Mesh%elements(exp_elem)%adj_proc(j) == proc) then
         change(Mesh%elements(exp_elem)%adj(j)) = .true.
       endif
     end do
   end do
 
-!  /* Change adjacency information in marked elements */
+!   Change adjacency information in marked elements 
   do i = 0, Mesh%num_elems-1
     if (.not.change(i)) cycle
 
-!    /* loop over marked element's adjacencies; look for ones that are moving */
+!     loop over marked element's adjacencies; look for ones that are moving 
     do j = 0, Mesh%elements(i)%adj_len-1
 
-!     /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
+!      Skip NULL adjacencies (sides that are not adjacent to another elem). 
       if (Mesh%elements(i)%adj(j) == -1) cycle
 
       if (Mesh%elements(i)%adj_proc(j) == proc) then
-!        /* adjacent element is local; check whether it is moving. */
+!         adjacent element is local; check whether it is moving. 
         new_proc = proc_ids(Mesh%elements(i)%adj(j))
         if (new_proc /= proc) then
-!          /* Adjacent element is being exported; update this adjacency entry */
+!           Adjacent element is being exported; update this adjacency entry 
           Mesh%elements(i)%adj(j) = Mesh%elements(Mesh%elements(i)%adj(j))%globalID
           Mesh%elements(i)%adj_proc(j) = new_proc
         endif
@@ -367,9 +367,9 @@ integer(Zoltan_INT) :: lid
   end do
   deallocate(change)
 
-!  /*
+!  
 !   * Update off-processor information 
-!   */
+!   
 
   maxlen = 0
   do i = 0, Mesh%necmap-1
@@ -384,7 +384,7 @@ integer(Zoltan_INT) :: lid
       return
     endif
 
-!  /* Load send vector */
+!   Load send vector 
 
     do i = 0, maxlen-1
       send_vec(i) = proc_ids(Mesh%ecmap_elemids(i))
@@ -407,34 +407,34 @@ integer(Zoltan_INT) :: lid
     allocate(recv_vec(0:0), stat=allocstat)
   endif
 
-!  /*  Perform boundary exchange */
+!    Perform boundary exchange 
 
   call boundary_exchange(1_Zoltan_INT, send_vec, recv_vec)
   
-!  /* Unload receive vector */
+!   Unload receive vector 
 
   offset = 0
   do i = 0, Mesh%necmap-1
     do j = 0, Mesh%ecmap_cnt(i)-1
       if (recv_vec(offset) == Mesh%ecmap_id(i)) then
-!        /* off-processor element is not changing processors.  */
-!        /* no changes are needed in the local data structure. */
+!         off-processor element is not changing processors.  
+!         no changes are needed in the local data structure. 
         offset = offset + 1
         cycle
       endif
-!      /* Change processor assignment in local element's adjacency list */
+!       Change processor assignment in local element's adjacency list 
       bor_elem = Mesh%ecmap_elemids(offset)
       do k = 0, Mesh%elements(bor_elem)%adj_len-1
 
-!        /* Skip NULL adjacencies (sides that are not adj to another elem). */
+!         Skip NULL adjacencies (sides that are not adj to another elem). 
         if (Mesh%elements(bor_elem)%adj(k) == -1) cycle
 
         if (Mesh%elements(bor_elem)%adj(k) == Mesh%ecmap_neighids(offset) .and. &
             Mesh%elements(bor_elem)%adj_proc(k) == Mesh%ecmap_id(i)) then
           Mesh%elements(bor_elem)%adj_proc(k) = recv_vec(offset)
           if (recv_vec(offset) == proc) then
-!            /* element is moving to this processor; */
-!            /* convert adj from global to local ID. */
+!             element is moving to this processor; 
+!             convert adj from global to local ID. 
             idx = in_list(Mesh%ecmap_neighids(offset), New_Elem_Index_Size, &
                           New_Elem_Index)
             if (idx == -1) then
@@ -444,7 +444,7 @@ integer(Zoltan_INT) :: lid
             endif
             Mesh%elements(bor_elem)%adj(k) = idx
           endif
-          exit  !/* from k loop */
+          exit  ! from k loop 
         endif
       end do
     offset = offset + 1
@@ -466,7 +466,7 @@ if (allocated(send_vec)) deallocate(send_vec)
     Mesh%elements => tmp
     Mesh%elem_array_len = New_Elem_Index_Size
 
-!    /* initialize the new spots */
+!     initialize the new spots 
     do i = Mesh%num_elems, Mesh%elem_array_len-1
       call initialize_element(Mesh%elements(i))
     end do
@@ -474,9 +474,9 @@ if (allocated(send_vec)) deallocate(send_vec)
 
 end subroutine migrate_pre_process
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
 subroutine migrate_post_process(data, num_gid_entries, num_lid_entries, &
                                 num_import, import_global_ids, &
                                 import_local_ids, import_procs, num_export, &
@@ -498,42 +498,42 @@ integer(Zoltan_INT) :: adj_elem
   call MPI_Comm_rank(MPI_COMM_WORLD, proc, mpierr)
   call MPI_Comm_size(MPI_COMM_WORLD, num_proc, mpierr)
 
-! /* compact elements array, as the application expects the array to be dense */
+!  compact elements array, as the application expects the array to be dense 
   do i = 0, New_Elem_Index_Size-1
     if (New_Elem_Index(i) /= -1) cycle
 
-!    /* Don't want to shift all elements down one position to fill the  */
-!    /* blank spot -- too much work to adjust adjacencies!  So find the */
-!    /* last element in the array and move it to the blank spot.        */
+!     Don't want to shift all elements down one position to fill the  
+!     blank spot -- too much work to adjust adjacencies!  So find the 
+!     last element in the array and move it to the blank spot.        
 
     do last = New_Elem_Index_Size-1, 0, -1
       if (New_Elem_Index(last) /= -1) exit
     end do
 
-!    /* If (last < i), array is already dense; i is just in some blank spots  */
-!    /* at the end of the array.  Quit the compacting.                     */
+!     If (last < i), array is already dense; i is just in some blank spots  
+!     at the end of the array.  Quit the compacting.                     
     if (last < i) exit
 
-!    /* Copy element[last] to element[i]. */
+!     Copy element[last] to element[i]. 
     Mesh%elements(i) = Mesh%elements(last)
 
-!    /* Adjust adjacencies for local elements.  Off-processor adjacencies */
-!    /* don't matter here.                                                */
+!     Adjust adjacencies for local elements.  Off-processor adjacencies 
+!     don't matter here.                                                
 
     do j = 0, Mesh%elements(i)%adj_len-1
 
-!     /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
+!      Skip NULL adjacencies (sides that are not adjacent to another elem). 
       if (Mesh%elements(i)%adj(j) == -1) cycle
 
       adj_elem = Mesh%elements(i)%adj(j)
 
-!      /* See whether adjacent element is local; if so, adjust its entry */
-!      /* for local element i.                                           */
+!       See whether adjacent element is local; if so, adjust its entry 
+!       for local element i.                                           
       if (Mesh%elements(i)%adj_proc(j) == proc) then
         do k = 0, Mesh%elements(adj_elem)%adj_len-1
           if (Mesh%elements(adj_elem)%adj(k) == last .and. &
               Mesh%elements(adj_elem)%adj_proc(k) == proc) then
-!            /* found adjacency entry for element last; change it to i */
+!             found adjacency entry for element last; change it to i 
             Mesh%elements(adj_elem)%adj(k) = i
             exit
           endif
@@ -541,7 +541,7 @@ integer(Zoltan_INT) :: adj_elem
       endif
     end do
 
-    !/* Update New_Elem_Index */
+    ! Update New_Elem_Index 
     New_Elem_Index(i) = New_Elem_Index(last)
     New_Elem_Index(last) = -1
 
@@ -574,17 +574,17 @@ integer(Zoltan_INT) :: adj_elem
 
 end subroutine migrate_post_process
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
 integer(Zoltan_INT) function migrate_elem_size(data, num_gid_entries, num_lid_entries, elem_gid, elem_lid, ierr)
 integer(Zoltan_INT), intent(in) :: data(*)
 integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
 integer(Zoltan_INT), intent(in) :: elem_gid(*), elem_lid(*)
 integer(Zoltan_INT), intent(out) :: ierr
-!/*
+!
 ! * Function to return size of element information for a single element.
-! */
+! 
 
 integer(Zoltan_INT) :: size
 type(ELEM_INFO), pointer :: current_elem
@@ -603,9 +603,9 @@ integer(Zoltan_INT) :: lid
     current_elem => search_by_global_id(Mesh, elem_gid(gid), idx)
   endif
 
-!  /*
+!  
 !   * Compute size of one element's data.
-!   */
+!   
 
 ! This is the correct size of the fdriver data.
 ! size = 8 * SIZE_OF_INT + 2 * SIZE_OF_FLOAT
@@ -617,30 +617,30 @@ integer(Zoltan_INT) :: lid
   num_nodes =  Mesh%eb_nnodes(current_elem%elem_blk)
   size = Zoltan_Align(size)
  
-!  /* Add space for connect table. */
+!   Add space for connect table. 
   if (Mesh%num_dims > 0) then
     size = size + num_nodes * SIZE_OF_INT
   endif
 
-!  /* Add space for adjacency info (elements[].adj and elements[].adj_proc). */
+!   Add space for adjacency info (elements[].adj and elements[].adj_proc). 
   size = size + current_elem%adj_len * 2 * SIZE_OF_INT
 
-!  /* Assume if one element has edge wgts, all elements have edge wgts. */
+!   Assume if one element has edge wgts, all elements have edge wgts. 
   if (Use_Edge_Wgts) then
     size = Zoltan_Align(size)
     size = size + current_elem%adj_len * SIZE_OF_FLOAT
   endif
 
-!  /* Add space for coordinate info */
+!   Add space for coordinate info 
   size = Zoltan_Align(size)
   size = size + num_nodes * Mesh%num_dims * SIZE_OF_FLOAT
   
   migrate_elem_size = size
 end function migrate_elem_size
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
 subroutine migrate_elem_size_multi(data, num_gid_entries, num_lid_entries, num_ids, elem_gid, elem_lid, num_bytes, ierr)
 integer(Zoltan_INT), intent(in) :: data(*)
 integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries, num_ids
@@ -664,9 +664,9 @@ integer(Zoltan_INT) :: i;
 
 end subroutine migrate_elem_size_multi
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
 subroutine migrate_pack_elem(data, num_gid_entries, num_lid_entries, &
                              elem_gid, elem_lid,  mig_proc, &
                              elem_data_size, buf, ierr)
@@ -703,9 +703,9 @@ integer(Zoltan_INT), intent(out) :: ierr
   endif
   num_nodes = Mesh%eb_nnodes(current_elem%elem_blk)
 
-!  /*
+!  
 !   * copy the ELEM_INFO structure
-!   */
+!   
 
   buf(1) = current_elem%border
   buf(2) = current_elem%globalID
@@ -718,13 +718,13 @@ integer(Zoltan_INT), intent(out) :: ierr
   buf(9) = current_elem%perm_value
   buf(10) = current_elem%invperm_value
 
-!  /*
+!  
 !   * copy the allocated integer fields for this element.
-!   */
+!   
 
   size = 10
 
-!  /* copy the connect table */
+!   copy the connect table 
   if (Mesh%num_dims > 0) then
     do i = 0, num_nodes-1
       buf(size+i+1) = current_elem%connect(i)
@@ -732,8 +732,8 @@ integer(Zoltan_INT), intent(out) :: ierr
     size = size + num_nodes
   endif
 
-!  /* copy the adjacency info */
-!  /* send globalID for all adjacencies */
+!   copy the adjacency info 
+!   send globalID for all adjacencies 
   do i =  0, current_elem%adj_len-1
     if (current_elem%adj(i) /= -1 .and. current_elem%adj_proc(i) == proc) then
       buf(size + 2*i + 1) = New_Elem_Index(current_elem%adj(i))
@@ -744,11 +744,11 @@ integer(Zoltan_INT), intent(out) :: ierr
   end do
   size = size + current_elem%adj_len * 2
 
-!  /*
+!  
 !   * copy the allocated float fields for this element.
-!   */
+!   
 
-!  /* copy the edge_wgt data */
+!   copy the edge_wgt data 
   if (Use_Edge_Wgts) then
     do i = 0, current_elem%adj_len-1
       buf(size+i+1) = transfer(current_elem%edge_wgt(i),1_Zoltan_INT)
@@ -756,7 +756,7 @@ integer(Zoltan_INT), intent(out) :: ierr
     size = size + current_elem%adj_len
   endif
 
-!  /* copy coordinate data */
+!   copy coordinate data 
   do i = 0, Mesh%num_dims-1
     do j = 0, num_nodes-1
       buf(size+i*num_nodes+j+1) = transfer(current_elem%coord(i,j),1_Zoltan_INT)
@@ -764,25 +764,25 @@ integer(Zoltan_INT), intent(out) :: ierr
   end do
   size = size + num_nodes * Mesh%num_dims
 
-!  /*
+!  
 !   * need to update the Mesh struct to reflect this element
 !   * being gone
-!   */
+!   
   Mesh%num_elems = Mesh%num_elems - 1
   Mesh%eb_cnts(current_elem%elem_blk) = Mesh%eb_cnts(current_elem%elem_blk) - 1
 
-!  /*
+!  
 !   * need to remove this entry from this procs list of elements
 !   * do so by setting the globalID to -1
-!   */
+!   
   current_elem%globalID = -1
   call free_element_arrays(current_elem)
 
-!  /*
+!  
 !   * NOTE: it is not worth the effort to determine the change in the
 !   * number of nodes on this processor until all of the migration is
 !   * completed.
-!   */
+!   
   if (size > elem_data_size) then
     ierr = ZOLTAN_WARN
   else
@@ -790,9 +790,9 @@ integer(Zoltan_INT), intent(out) :: ierr
   endif
 end subroutine migrate_pack_elem
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
 subroutine migrate_pack_elem_multi(data, num_gid_entries, num_lid_entries, &
   num_ids, elem_gid, elem_lid, mig_proc, elem_data_size, idx,              &
   buf, ierr)
@@ -822,9 +822,9 @@ integer(Zoltan_INT) :: i;
   end do
 
 end subroutine migrate_pack_elem_multi
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
 subroutine migrate_unpack_elem(data, num_gid_entries, &
                                elem_gid, elem_data_size, buf, ierr)
 integer(Zoltan_INT), intent(in) :: data(*)
@@ -854,7 +854,7 @@ integer(Zoltan_INT), intent(out) :: ierr
 
 
   current_elem => Mesh%elements(idx)
-!  /* now put the migrated information into the array */
+!   now put the migrated information into the array 
   current_elem%border = buf(1)
   current_elem%globalID = buf(2)
   current_elem%elem_blk = buf(3)
@@ -869,11 +869,11 @@ integer(Zoltan_INT), intent(out) :: ierr
 
   size = 10
 
-!  /*
+!  
 !   * copy the allocated integer fields for this element.
-!   */
+!   
 
-!  /* copy the connect table */
+!   copy the connect table 
   if (Mesh%num_dims > 0) then
     allocate(current_elem%connect(0:num_nodes-1),stat=allocstat)
     if (allocstat /= 0) then
@@ -887,8 +887,8 @@ integer(Zoltan_INT), intent(out) :: ierr
     size = size + num_nodes
   endif
 
-!  /* copy the adjacency info */
-!  /* globalIDs are received; convert to local IDs when adj elem is local */
+!   copy the adjacency info 
+!   globalIDs are received; convert to local IDs when adj elem is local 
   if (current_elem%adj_len > 0) then
     allocate(current_elem%adj(0:current_elem%adj_len-1), &
              current_elem%adj_proc(0:current_elem%adj_len-1), stat=allocstat)
@@ -907,11 +907,11 @@ integer(Zoltan_INT), intent(out) :: ierr
     end do
     size = size + current_elem%adj_len * 2
 
-!  /*
+!  
 !   * copy the allocated float fields for this element.
-!   */
+!   
 
-!  /* copy the edge_wgt data */
+!   copy the edge_wgt data 
     if (Use_Edge_Wgts) then
       allocate(current_elem%edge_wgt(0:current_elem%adj_len-1),stat=allocstat)
       if (allocstat /= 0) then
@@ -926,7 +926,7 @@ integer(Zoltan_INT), intent(out) :: ierr
     endif
   endif
 
-!  /* copy coordinate data */
+!   copy coordinate data 
   if (num_nodes > 0) then
     allocate(current_elem%coord(0:Mesh%num_dims-1,0:num_nodes-1),stat=allocstat)
     if (allocstat /= 0) then
@@ -942,7 +942,7 @@ integer(Zoltan_INT), intent(out) :: ierr
     size = size + num_nodes * Mesh%num_dims
   endif
 
-!  /* and update the Mesh struct */
+!   and update the Mesh struct 
   Mesh%num_elems = Mesh%num_elems + 1
   Mesh%eb_cnts(current_elem%elem_blk) = Mesh%eb_cnts(current_elem%elem_blk) + 1
 
@@ -953,9 +953,9 @@ integer(Zoltan_INT), intent(out) :: ierr
   endif
 end subroutine migrate_unpack_elem
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
 subroutine migrate_unpack_elem_multi(data, num_gid_entries, num_ids, &
                                elem_gid, elem_data_size, idx, buf, ierr)
 integer(Zoltan_INT), intent(in) :: data(*)
@@ -973,14 +973,14 @@ integer(Zoltan_INT) :: i
   end do
 
 end subroutine migrate_unpack_elem_multi
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
 
 subroutine boundary_exchange(vec_len,send_vec,recv_vec)
-  integer(Zoltan_INT) :: vec_len           ! /* Length of vector for each element
-  integer(Zoltan_INT) :: send_vec(0:)       ! /* Vector of values to be sent.
-  integer(Zoltan_INT) :: recv_vec(0:)       ! /* Vector of values to be received.
+  integer(Zoltan_INT) :: vec_len           !  Length of vector for each element
+  integer(Zoltan_INT) :: send_vec(0:)       !  Vector of values to be sent.
+  integer(Zoltan_INT) :: recv_vec(0:)       !  Vector of values to be received.
 
 integer(Zoltan_INT) :: i, ierr, offset
 integer(Zoltan_INT) :: msg_type = 111
@@ -989,7 +989,7 @@ integer, allocatable :: status(:,:), req(:)
 
   allocate(req(0:Mesh%necmap-1),status(MPI_STATUS_SIZE,Mesh%necmap))
 
-!  /* Post receives */
+!   Post receives 
   offset = 0
   do i = 0, Mesh%necmap-1
 ! RISKY old style assumption the address of recv_vec(offset) is passed
@@ -998,7 +998,7 @@ integer, allocatable :: status(:,:), req(:)
     offset = offset + Mesh%ecmap_cnt(i)
   end do
 
-!  /* Send messages */
+!   Send messages 
   offset = 0
   do i = 0, Mesh%necmap-1
 ! RISKY old style assumption the address of send_vec(offset) is passed
@@ -1007,23 +1007,23 @@ integer, allocatable :: status(:,:), req(:)
     offset = offset + Mesh%ecmap_cnt(i)
   end do
 
-!  /* Receive messages */
+!   Receive messages 
   call MPI_Waitall(Mesh%necmap, req, status, ierr)
 
   deallocate(status,req)
 end subroutine boundary_exchange
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
+!
 ! * Function that searchs for an element based upon its global ID.
 ! * This function does not provide the most efficient implementation of
 ! * the query functions; more efficient implementation uses local IDs
 ! * to directly access element info.  However, this function is useful
 ! * for testing Zoltan when the number of entries in a local ID
 ! * (NUM_LID_ENTRIES) is zero.
-! */
+! 
 function search_by_global_id(mesh, global_id, idx)
 type(ELEM_INFO), pointer :: search_by_global_id
 type(MESH_INFO),pointer :: mesh

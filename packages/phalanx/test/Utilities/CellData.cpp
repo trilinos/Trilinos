@@ -45,33 +45,40 @@
 #include "CellData.hpp"
 
 //**********************************************************************
-CellData::CellData() :
-  phi_(4),
-  grad_phi_(4)
+CellData::CellData()
 { 
-  for (std::size_t i=0; i < phi_.size(); ++i)
-    phi_[i].resize(4,0.25);
+  m_coords = Kokkos::View<double***,PHX::Device>("coords",4,4,3);
+  m_phi = Kokkos::View<double**,PHX::Device>("phi",4,4);
+  m_grad_phi = Kokkos::View<double***,PHX::Device>("grad_phi",4,4,3);
 
-  for (std::size_t i=0; i < grad_phi_.size(); ++i)
-    grad_phi_[i].resize(4,MyVector<double>(0.25,0.25,0.25));
+  // just some garbage values for unit testing
+  for (PHX::Device::size_type i=0; i < m_phi.dimension(0); ++i) {
+    for (PHX::Device::size_type j=0; j < m_phi.dimension(1); ++j) {
+      m_phi(i,j) = 0.25;
+      for (PHX::Device::size_type k=0; k < m_phi.dimension(2); ++k) {
+	m_coords(i,j,k) = 0.25;
+	m_grad_phi(i,j,k) = 0.25;
+      }
+    }
+  }
 }
 //**********************************************************************
-std::vector< MyVector<double> >& CellData::getNodeCoordinates()
+Kokkos::View<double***,PHX::Device> CellData::getNodeCoordinates()
 {
-  return coords_;
+  return m_coords;
 }
 
 //**********************************************************************
-std::vector< std::vector<double> >& CellData::getBasisFunctions()
+Kokkos::View<double**,PHX::Device> CellData::getBasisFunctions()
 {
-  return phi_;
+  return m_phi;
 }
 
 //**********************************************************************
-std::vector< std::vector< MyVector<double> > >& 
+Kokkos::View<double***,PHX::Device>
 CellData::getBasisFunctionGradients()
 {
-  return grad_phi_;
+  return m_grad_phi;
 }
 
 //**********************************************************************

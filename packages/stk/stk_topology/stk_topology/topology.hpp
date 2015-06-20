@@ -1,3 +1,36 @@
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+//
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+//
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+
 #ifndef STKTOPOLOGY_TOPOLOGY_HPP
 #define STKTOPOLOGY_TOPOLOGY_HPP
 
@@ -137,6 +170,11 @@ struct topology
   BOOST_GPU_ENABLED
   unsigned num_positive_permutations() const;
 
+  BOOST_GPU_ENABLED
+  bool is_positive_polarity(unsigned permutation_ordinal) const {
+      return (permutation_ordinal < num_positive_permutations());
+  }
+
   /// is this topology defined on the given spatial dimension
   BOOST_GPU_ENABLED
   bool defined_on_spatial_dimension(unsigned spatial_dimension) const;
@@ -198,7 +236,16 @@ struct topology
   BOOST_GPU_ENABLED
   unsigned lexicographical_smallest_permutation(const NodeArray &nodes, bool only_positive_permutations = false) const;
 
+  /// return the permutation index which gives the lowest lexicographical ordering of the nodes that preserves polarity
+  /// input 'nodes' is expected to be of length num_nodes.
+  template <typename NodeArray>
+  BOOST_GPU_ENABLED
+  unsigned lexicographical_smallest_permutation_preserve_polarity(const NodeArray &nodes, const NodeArray &element_nodes) const;
+
   /// fill the output ordinals with the ordinals that make up the given sub topology
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   template <typename OrdinalOutputIterator>
   BOOST_GPU_ENABLED
   void sub_topology_node_ordinals(unsigned sub_rank, unsigned sub_ordinal, OrdinalOutputIterator output_ordinals) const
@@ -214,6 +261,9 @@ struct topology
 
   /// fill the output nodes with the nodes that make up the given sub topology
   /// input 'nodes' is expected to be of length num_nodes.
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   template <typename NodeArray, typename NodeOutputIterator>
   BOOST_GPU_ENABLED
   void sub_topology_nodes(const NodeArray & nodes, unsigned sub_rank, unsigned sub_ordinal, NodeOutputIterator output_nodes) const
@@ -279,7 +329,11 @@ struct topology
   BOOST_GPU_ENABLED
   unsigned num_sides() const
   {
-    return side_rank() > NODE_RANK? num_sub_topology(side_rank()) : num_vertices();
+    unsigned num_sides_out = 0u;
+    if (side_rank() != INVALID_RANK) {
+      num_sides_out = side_rank() > NODE_RANK? num_sub_topology(side_rank()) : num_vertices();
+    }
+    return num_sides_out;
   }
 
 

@@ -21,11 +21,11 @@ The \textsc{pamgen} library handles the mesh geometries shown below:
 
 \begin{figure}[h]
     \centering
-      \includegraphics[width=1.0in]{brick}
-      \includegraphics[width=1.0in]{cubit_radial1}
-      \includegraphics[width=1.0in]{cubit_radial2}
-      \includegraphics[width=1.0in]{cubit_radial_trisection}
-      \includegraphics[width=1.0in]{cubit_radial_trisection2}
+      \includegraphics[width=1.0in]{figures/brick}
+      \includegraphics[width=1.0in]{figures/cubit_radial1}
+      \includegraphics[width=1.0in]{figures/cubit_radial2}
+      \includegraphics[width=1.0in]{figures/cubit_radial_trisection}
+      \includegraphics[width=1.0in]{figures/cubit_radial_trisection2}
   \caption{The mesh geometry zoo in 3D.}
   \label{fig:btm}
 \end{figure}
@@ -48,15 +48,15 @@ Any mesh can be modified by re-evaluating the nodal coordinate values using a us
 
 \begin{figure}[h]
     \centering
-      \includegraphics[width=1.0in]{3d_warped_geometry_white_bg}
-      \includegraphics[width=1.0in]{mesh_warp_2d_white_bg}
+      \includegraphics[width=1.0in]{figures/3d_warped_geometry_white_bg}
+      \includegraphics[width=1.0in]{figures/mesh_warp_2d_white_bg}
   \caption{Examples of geometry transformation.}
   \label{fig:btm}
 \end{figure}
 
 
 \subsection{Element Density}
-Several of the geometry types allow specification of first and last element sizes within a block in a particular cartesian direction. In addition the user may control node distribution over any geometry by providing a user defined distribution function. This function is evaluated so that nodes are shifted towards areas where the function has its highest values. 
+Several of the geometry types allow specification of first and last element sizes within a block in a particular cartesian direction. In addition the user may control node distribution over any geometry by providing a user defined distribution function. This function is evaluated so that nodes are shifted towards areas where the function has its highest values.
 
 \clearpage
 \section{Approach}\label{sec:challenge}
@@ -64,18 +64,18 @@ Several of the geometry types allow specification of first and last element size
 
 With one significant exception, \textsc{pamgen} operates in the same way as these identical processors producing identical mesh. The exception is that each processor only allocates for a subset of the nodes and elements, and each processor performs topology and geometry calculations only for the entities and dependencies present on that processor.  \textsc{pamgen} exploits the fact that each processor is capable of producing the entire mesh in order to allow each processor to produce its own mesh. The deterministic nature of the meshing process is essential to allow correspondence in topologies and geometries produced on adjacent processors.
 
-The implementation of the mesh generation in \textsc{pamgen} is as much as possible implicit. Quantities are not allocated until they are ready for output, and they are not calculated until they can be stored, or until they are required by a dependent calculation. This approach can result in duplication of intermediate calculations, but it avoids the severe limitations on total problem size that occur if attempts are made to allocate any quantity with a size related to the total mesh size. 
+The implementation of the mesh generation in \textsc{pamgen} is as much as possible implicit. Quantities are not allocated until they are ready for output, and they are not calculated until they can be stored, or until they are required by a dependent calculation. This approach can result in duplication of intermediate calculations, but it avoids the severe limitations on total problem size that occur if attempts are made to allocate any quantity with a size related to the total mesh size.
 
 \clearpage
 \section{Usage}\label{sec:usage}
-For the few simple geometries and element types it supports, the \textsc{pamgen} library is a substitute for pre-processed finite element mesh files.  Successful usage of the library requires some modification of the analysis code. 
+For the few simple geometries and element types it supports, the \textsc{pamgen} library is a substitute for pre-processed finite element mesh files.  Successful usage of the library requires some modification of the analysis code.
 
 The \textsc{pamgen} library must be linked into the analysis executable to allow access to the mesh creation, query and deletion functions.
 
 The modules in the analysis code that read finite element mesh data from a file must be adapted to:
 \begin{itemize}\addtolength{\itemsep}{-0.5\baselineskip}
 \item Read in a ``C''-progamming language string that specifices the geometry, topology, and boundary conditions of a mesh.
-\item Pass that string to the \textsc{pamgen} Create\_Pamgen\_Mesh(...) function along with the rank of the mesh requested and the total number of processors across which the mesh is spread. 
+\item Pass that string to the \textsc{pamgen} Create\_Pamgen\_Mesh(...) function along with the rank of the mesh requested and the total number of processors across which the mesh is spread.
 \item Handle message and possibly error strings available after calling Create\_Pamgen\_Mesh(...).
 \item Call the \textsc{pamgen} query functions to populate the analysis code's mesh and communication data structures.
 \item Call the \textsc{pamgen} Delete\_Pamgen\_Mesh() function release memory allocated within the library.
@@ -112,7 +112,7 @@ END
 \subsection{Dimensionality}
 \label{sec:dimensionality}
 \index{Dimensionality}
-The dimensionality of the mesh is not specified in the ``C'' programming language string. It is passed to the \textsc{pamgen} library at execution time through the \textsc{pamgen} API.  In general a 2D mesh can be specified by removing 3D specific keywords and values (those referencing a third coordinate [for example Z or k]) from a 3D mesh description. 
+The dimensionality of the mesh is not specified in the ``C'' programming language string. It is passed to the \textsc{pamgen} library at execution time through the \textsc{pamgen} API.  In general a 2D mesh can be specified by removing 3D specific keywords and values (those referencing a third coordinate [for example Z or k]) from a 3D mesh description.
 
 \subsection{Block IDs}
 \label{sec:blockids}
@@ -183,21 +183,21 @@ An example of a mesh specification with the
   \begin{minipage}[c]{0.5\linewidth}
     \centering
 {\ttfamily  \begin{verbatim}
-mesh 
-  rectilinear 
-    nx = 10 
-    ny = 10 
-    nz = 10 
-    bx = 4 
-    by = 7 
-    bz = 5 
-    gmin = 1.0 1.0 1.0 
-    gmax = 4.0 7.0 5.0 
-  end 
-  set assign 
-    nodeset,ihi,2 
-    nodeset,jhi,1 
-  end 
+mesh
+  rectilinear
+    nx = 10
+    ny = 10
+    nz = 10
+    bx = 4
+    by = 7
+    bz = 5
+    gmin = 1.0 1.0 1.0
+    gmax = 4.0 7.0 5.0
+  end
+  set assign
+    nodeset,ihi,2
+    nodeset,jhi,1
+  end
 end
 \end{verbatim}}
   \par\vspace{0pt}
@@ -205,7 +205,7 @@ end
   \hfill
   \begin{minipage}[c]{0.5\linewidth}
     \centering
-      \includegraphics[width=3.25in]{rect_inline}
+      \includegraphics[width=3.25in]{figures/rect_inline}
   \end{minipage}
   \caption{Definition of a three-dimensional \texttt{RECTILINEAR} mesh.}
   \label{fig:rect_inline}
@@ -292,7 +292,7 @@ end
   \hfil
   \begin{minipage}[c]{0.6\linewidth}
     \centering
-      \includegraphics[width=2.75in]{test_radial}
+      \includegraphics[width=2.75in]{figures/test_radial}
   \end{minipage}
   \caption{Definition of a two-dimensional spherical mesh.}
   \label{fig:test_radial}
@@ -324,7 +324,7 @@ end
   \hfil
   \begin{minipage}[c]{0.6\linewidth}
     \centering
-      \includegraphics[width=2.75in]{str_inline_sphere}
+      \includegraphics[width=2.75in]{figures/str_inline_sphere}
   \end{minipage}
   \caption{Definition of a three-dimensional spherical mesh.}
   \label{fig:str_inline_sphere}
@@ -412,7 +412,7 @@ end
   \hfil
   \begin{minipage}[c]{0.6\linewidth}
     \centering
-      \includegraphics[width=3.5in]{cylinder}
+      \includegraphics[width=3.5in]{figures/cylinder}
   \end{minipage}
   \caption{Three dimensional \texttt{CYLINDRICAL} mesh.}
   \label{fig:rect_cylinder}
@@ -431,7 +431,7 @@ end
    [ZMIN real]
    NUMZ int
      ZBLOCK int real {INTERVAL int | FIRST SIZE real [LAST SIZE real]}
-   {NUMR | NUMX} int INITIAL RADIUS real 
+   {NUMR | NUMX} int INITIAL RADIUS real
      RBLOCK int real {INTERVAL int | FIRST SIZE real [LAST SIZE real]}
    {NUMA | NUMY} int
      ABLOCK int real {INTERVAL int | FIRST SIZE real [LAST SIZE real]}
@@ -448,17 +448,17 @@ elements.  These options are similar to the \texttt{CYLINDRICAL}
 but they have a different set of controls on element distribution.  The
 successful creation of these meshes requires sequential
 specification of the information for the number of elements blocks and
-their sizes in each coordinate direction. 
+their sizes in each coordinate direction.
 
-The \texttt{ENFORCE PERIODICITY} keyword applies only to \texttt{RADIAL} and \texttt{RADIAL TRISECTION} mesh descriptions that meet certain requirements: 
+The \texttt{ENFORCE PERIODICITY} keyword applies only to \texttt{RADIAL} and \texttt{RADIAL TRISECTION} mesh descriptions that meet certain requirements:
 \begin{itemize}
   	\item The meshes must have azimuthal angles of 90, 180, or 360 degrees.
-	\item The meshes must have a single block of elements in the azimuthal direction. 
-	\item The meshes must have an even number of elements in each 90 degree segment of the mesh. 
-	\item For \texttt{RADIAL TRISECTION} meshes, one transition zone is required for each 90 degrees of azimuth. 
-\end{itemize} 
+	\item The meshes must have a single block of elements in the azimuthal direction.
+	\item The meshes must have an even number of elements in each 90 degree segment of the mesh.
+	\item For \texttt{RADIAL TRISECTION} meshes, one transition zone is required for each 90 degrees of azimuth.
+\end{itemize}
 
-This keyword causes the mesh generation to perform all node coordinate calculations in the first 45 degrees of the azimuthal domain. Coordinate locations of nodes ouside of 45 degrees are formed by permuting the sign and oder of the components of periodically corresponding nodes' locations. This guarantees that there will be no differences between the absolute floating point values of periodically corresponding nodes' coordinates.  
+This keyword causes the mesh generation to perform all node coordinate calculations in the first 45 degrees of the azimuthal domain. Coordinate locations of nodes ouside of 45 degrees are formed by permuting the sign and oder of the components of periodically corresponding nodes' locations. This guarantees that there will be no differences between the absolute floating point values of periodically corresponding nodes' coordinates.
 
 The \texttt{NUMZ | NUMR | NUMA} keywords are followed by an integer
 specifying the number
@@ -512,7 +512,7 @@ Figure~\ref{fig:rect_cubit_radial}.
 \hfil
   \begin{minipage}[c]{1.0\linewidth}
     \centering
-\includegraphics[width=3.0in]{cubit_radial1}
+\includegraphics[width=3.0in]{figures/cubit_radial1}
 {\ttfamily \begin{verbatim}
 mesh
   radial
@@ -549,7 +549,7 @@ mesh
   radial
   numz 1
     zblock 1 10.0 interval 6
-  numr 3 
+  numr 3
     rblock 1 2. interval 12
     rblock 2 5. interval 6
     rblock 3 5. interval 12
@@ -562,7 +562,7 @@ end
   \hfil
   \begin{minipage}[c]{0.6\linewidth}
     \centering
-      \includegraphics[width=3.0in]{cubit_radial2}
+      \includegraphics[width=3.0in]{figures/cubit_radial2}
   \end{minipage}
   \caption [A 360 degree \texttt{RADIAL} mesh.]{Three dimensional \texttt{RADIAL} mesh with azimuthal
     angle of 360 degrees.}
@@ -575,14 +575,14 @@ Figure~\ref{fig:cubit_radial_trisect3}. This figure is annotated to
 show the correspondence between input parameters and the
 resulting mesh. This mesh uses a \texttt{TRISECTION BLOCKS} setting of 3. In this case the azimuthal
 angle is 90. degrees and the \texttt{FIRST SIZE}, \texttt{LAST SIZE},
- and \texttt{TRANSITION RADIUS} directives are used. 
+ and \texttt{TRANSITION RADIUS} directives are used.
 
 \begin{figure}[!thbp]
 \centering
   \hfil
   \begin{minipage}[c]{1.0\linewidth}
     \centering
-      \includegraphics[width=5.5in,height=4.5in]{cubit_tris_rad_grad_trans}
+      \includegraphics[width=5.5in,height=4.5in]{figures/cubit_tris_rad_grad_trans}
 {\ttfamily \begin{verbatim}
 mesh
   radial trisection
@@ -609,7 +609,7 @@ end
 
 An second example of a \textsc{pamgen} mesh definition with the
 \texttt{RADIAL TRISECTION} option is illustrated in
-Figure~\ref{fig:cubit_radial_trisect1}. 
+Figure~\ref{fig:cubit_radial_trisect1}.
 
 \begin{figure}[htbp]
 \centering
@@ -622,7 +622,7 @@ mesh
     zmin -0.00075
     numz 1
       zblock 1 1. interval 4
-    numr 3 
+    numr 3
       rblock 1 2.0 interval 4
       rblock 2 3.0 interval 4
       rblock 3 4.0 interval 4
@@ -635,7 +635,7 @@ end
   \hfil
   \begin{minipage}[c]{0.6\linewidth}
     \centering
-      \includegraphics[width=3.0in]{cubit_radial_trisection}
+      \includegraphics[width=3.0in]{figures/cubit_radial_trisection}
   \end{minipage}
   \caption [A \texttt{RADIAL TRISECTION} mesh with three trisection blocks.] {Three dimensional \texttt{RADIAL TRISECTION} mesh with azimuthal
     angle of 90 degrees and two trisection blocks.}
@@ -646,7 +646,7 @@ end
 A third example of a \textsc{pamgen} mesh definition with the
 \texttt{RADIAL TRISECTION} option is illustrated in
 Figure~\ref{fig:cubit_radial_trisect2}. In this case the azimuthal
-angle is 360. degrees and the mesh is a complete circular disk. 
+angle is 360. degrees and the mesh is a complete circular disk.
 
 \begin{figure}[htbp]
 \centering
@@ -659,7 +659,7 @@ mesh
     zmin -0.00075
     numz 1
       zblock 1 4. interval 4
-    numr 3 
+    numr 3
       rblock 1 2.0 interval 4
       rblock 2 3.0 interval 4
       rblock 3 5.0 interval 4
@@ -672,7 +672,7 @@ end
   \hfil
   \begin{minipage}[c]{0.6\linewidth}
     \centering
-      \includegraphics[width=3.0in]{cubit_radial_trisection2}
+      \includegraphics[width=3.0in]{figures/cubit_radial_trisection2}
   \end{minipage}
   \caption [A 360 degree \texttt{RADIAL TRISECTION} mesh.] {Three dimensional \texttt{RADIAL TRISECTION} mesh with azimuthal
     angle of 360 degrees and four trisection blocks.}
@@ -713,7 +713,7 @@ The \texttt{BRICK} mesh topology type is a more flexible version of the \texttt{
 and
 successful creation of these meshes requires sequential
 specification of the information for the number of elements blocks and
-their sizes in each coordinate direction. 
+their sizes in each coordinate direction.
 
 The \texttt{NUMX | NUMY | NUMZ} keywords are followed by an integer
 specifying the number
@@ -771,7 +771,7 @@ end
   \hfil
   \begin{minipage}[c]{0.6\linewidth}
     \centering
-      \includegraphics[width=3.0in]{brick}
+      \includegraphics[width=3.0in]{figures/brick}
   \end{minipage}
   \caption{Three dimensional \texttt{BRICK} mesh.}
   \label{fig:brick1}
@@ -787,10 +787,10 @@ end
 \index{Set Assign}
 
 {\ttfamily \small \begin{verbatim}
-SET ASSIGN 
-   [{NODESET | SIDESET},{IHI | JHI | ... | V00 | V01 | ... | E00 | 
+SET ASSIGN
+   [{NODESET | SIDESET},{IHI | JHI | ... | V00 | V01 | ... | E00 |
    E01 | ALL| ... }, int]
-   [{BLOCK SIDESET | BLOCK NODESET},{IHI | JHI | ... | V00 | V01 | 
+   [{BLOCK SIDESET | BLOCK NODESET},{IHI | JHI | ... | V00 | V01 |
    ... | E00 | E01 | ... }, int, int]
    ...
 END
@@ -817,18 +817,18 @@ coordinate directions r, $\theta$, and $\phi$. For CYLINDRICAL meshes \textsc
 $\theta$, and z.  The \textsc {KHI, KLO} options do not exist in two
 dimension simulations.
 
-The \textsc{ALL} option for nodesets places all the nodes of the mesh in a 
-nodeset with the requested id. The \textsc{ALL} option is not available for 
+The \textsc{ALL} option for nodesets places all the nodes of the mesh in a
+nodeset with the requested id. The \textsc{ALL} option is not available for
 sidesets.
 
-Specifying a nodeset on the \textsc{ILO} face of a \texttt{RADIAL TRISECTION} mesh 
-refers to the edge aligned with the Z axis (see Figure~\ref{fig:block_ss}). 
-Sidesets may not be  specified on the \textsc{ILO} face of 
+Specifying a nodeset on the \textsc{ILO} face of a \texttt{RADIAL TRISECTION} mesh
+refers to the edge aligned with the Z axis (see Figure~\ref{fig:block_ss}).
+Sidesets may not be  specified on the \textsc{ILO} face of
 \texttt{RADIAL TRISECTION} meshes.
 
 \begin{figure}[htbp]
 {\ttfamily \small \begin{verbatim}
-  Side: 0-4-7-3  - ILO      k  7---------6      Edge:  0-1 - E00  
+  Side: 0-4-7-3  - ILO      k  7---------6      Edge:  0-1 - E00
   Side: 1-2-6-5  - IHI      | /|  j     /|      Edge:  1-2 - E01
   Side: 0-1-5-4  - JLO      |/ | /     / |      Edge:  3-2 - E02
   Side: 3-7-6-2  - JHI      4---------5  |      Edge:  0-3 - E03
@@ -877,7 +877,7 @@ mesh
     zmin -0.00075
     numz 1
       zblock 1 1. interval 4
-    numr 3 
+    numr 3
       rblock 1 2.0 interval 4
       rblock 2 3.0 interval 4
       rblock 3 4.0 interval 4
@@ -894,7 +894,7 @@ end
   \hfil
   \begin{minipage}[c]{0.6\linewidth}
     \centering
-      \includegraphics[width=3.0in]{block_ss}
+      \includegraphics[width=3.0in]{figures/block_ss}
   \end{minipage}
   \caption [A \texttt{RADIAL TRISECTION} mesh with sidesets.] {Three dimensional \texttt{RADIAL TRISECTION} mesh with azimuthal
     angle of 90 degrees and two trisection blocks having sidesets
@@ -909,13 +909,13 @@ end
 
 
 {\ttfamily \small \begin{verbatim}
-USER DEFINED GEOMETRY TRANSFORMATION 
+USER DEFINED GEOMETRY TRANSFORMATION
   "
     user supplied `C' language instructions;
   "
 END
 \end{verbatim}
-} 
+}
 
 The \texttt{USER DEFINED GEOMETRY TRANSFORMATION -- END} keyword pair provides
 a powerful way to modify the coordinats of any node of a mesh. The keyword-end
@@ -965,7 +965,7 @@ end
     \hfill
     \begin{minipage}[t]{0.65\linewidth}
 %      \centering
-        \includegraphics[width=4.8in]{3d_warped_geometry_white_bg}
+        \includegraphics[width=4.8in]{figures/3d_warped_geometry_white_bg}
     \end{minipage}
  \caption [3D Geometry Transformation Example]{3D mesh illustrating the ability to modify nodal coordinates using \texttt{USER
       DEFINED GEOMETRY TRANSFORMATION}.}
@@ -1014,7 +1014,7 @@ end
     \hfill
     \begin{minipage}[t]{0.65\linewidth}
 %      \centering
-        \includegraphics[width=3.8in]{mesh_warp_2d_white_bg}
+        \includegraphics[width=3.8in]{figures/mesh_warp_2d_white_bg}
     \end{minipage}
     \caption [2D Geometry Transformation Example]{2D mesh illustrating the ability to modify nodal coordinates using \texttt{USER
       DEFINED GEOMETRY TRANSFORMATION}.}
@@ -1029,13 +1029,13 @@ end
 
 
 {\ttfamily \small \begin{verbatim}
-USER DEFINED ELEMENT DENSITY, {I|J|K} 
+USER DEFINED ELEMENT DENSITY, {I|J|K}
   "
     user supplied `C' language instructions;
   "
 END
 \end{verbatim}
-} 
+}
 
 The \texttt{USER DEFINED ELEMENT DENSITY -- END} keyword pair provides
 a flexible way to bias \texttt{RECTILINEAR},
@@ -1060,7 +1060,7 @@ number of nodes in the coordinate direction, and \begin {math} f(u)
 
 \begin{equation}
    \frac {\int _ {0} ^ {x _ i} f(u)du } {\int _ {0} ^ {x _ n} f(u)du }
-   = \frac {i} {n} 
+   = \frac {i} {n}
 \end{equation}
 
 When these functions are applied to a two dimensional
@@ -1101,7 +1101,7 @@ end
     \hfill
     \begin{minipage}{0.45\linewidth}
       \centering
-        \includegraphics[width=2.8in]{bias_example}
+        \includegraphics[width=2.8in]{figures/bias_example}
     \end{minipage}
     \caption{2D mesh created with a \texttt{USER
       DEFINED ELEMENT DENSITY}.}
@@ -1158,15 +1158,15 @@ Table~\ref{tab:inlinemesh-decomp_strat}.
 
 The \texttt{BISECTION} decomposition strategy is the default for parallel calculations. This is
 because it is robust in providing decompositions and the resulting
-regions have satisfactory surface area to volume ratios. This strategy 
-attempts to automatically determine the number of slices to make through 
+regions have satisfactory surface area to volume ratios. This strategy
+attempts to automatically determine the number of slices to make through
 the entire mesh domain to provide an equal number of elements to each processor. This strategy will be most successful when the number of processors, and the number of elements in each direction are a power of 2 or a product of several prime numbers.
 
 The \texttt{PROCESSOR LAYOUT} decomposition strategy offers the user
 improved control of the distribution of elements to each
 processor in a parallel simulation. The strategy divides the mesh into the number of segments specified by the keyword-value pair for each coordinate direction. The number of
 processors must equal the product of the values given for each of the
-\texttt{NUMPROCS} directions. The default value for a coordinate direction is one.  
+\texttt{NUMPROCS} directions. The default value for a coordinate direction is one.
 
 When using a \texttt{RADIAL TRISECTION} mesh the number of processors in the \texttt{I} (radial) direction is fixed at 1, and the total number of processors must be equal to the
 product of the values given for the \texttt{J} and \texttt{K}
@@ -1187,7 +1187,7 @@ number of elements in this problem was 204, 17 in the radial or
 For the \texttt{BISECTION} decomposition the recursive cuts made on
 the 17x12x1 array of elements results in three processors with 3x12x1 elements,
 four processors with 2x12x1
-elements and a single processor 6x8x1 elements. 
+elements and a single processor 6x8x1 elements.
 
 For the \texttt{PROCESSOR LAYOUT} decomposition the
 17 elements in the \texttt{I} or radial direction are divided by 4 to
@@ -1221,7 +1221,7 @@ end
   \hfil
   \begin{minipage}[c]{0.6\linewidth}
     \centering
-      \includegraphics[width=2.0in]{bisect_7_white}
+      \includegraphics[width=2.0in]{figures/bisect_7_white}
   \end{minipage}
   \caption [\texttt{BISECTION} decomposition run on 7 processors.] {Three dimensional \texttt{RADIAL} mesh with azimuthal
     angle of 60 degrees run on 7 processors using \texttt{BISECTION} decomposition.}
@@ -1256,7 +1256,7 @@ end
   \hfil
   \begin{minipage}[c]{0.6\linewidth}
     \centering
-      \includegraphics[width=2.0in]{numprocs_8}
+      \includegraphics[width=2.0in]{figures/numprocs_8}
   \end{minipage}
   \caption [\texttt{PROCESSOR LAYOUT} decomposition run on 8 processors.] {Three dimensional \texttt{RADIAL} mesh with azimuthal
     angle of 60 degrees run on 8 processors using \texttt{PROCESSOR LAYOUT} decomposition.}
@@ -1272,7 +1272,7 @@ mesh
     trisection blocks, 4
     numz 1
       zblock 1 4.0 interval 1
-    numr 3 
+    numr 3
        rblock 1 2. interval 4
        rblock 2 3. interval 4
        rblock 3 5. interval 4
@@ -1288,7 +1288,7 @@ end
   \hfil
   \begin{minipage}[c]{0.6\linewidth}
     \centering
-      \includegraphics[width=2.0in]{trisection_decomp}
+      \includegraphics[width=2.0in]{figures/trisection_decomp}
   \end{minipage}
   \caption [\texttt{PROCESSOR LAYOUT} decomposition on 8 processors.] {Three dimensional \texttt{RADIAL TRISECTION} mesh run on 8 processors using \texttt{PROCESSOR LAYOUT} decomposition.}
   \label{fig:tri_dec}
@@ -1331,7 +1331,7 @@ This input variable must be greater than 0.  It specifes the total number of pro
 int getPamgenEchoStreamSize(void);
 \end{verbatim}}
 
-This function returns the size of the string (not counting termination character) that contains an echo of the \textbf{char * file\_char\_array} string previously passed to Create\_Pamgen\_Mesh. If a parsing error occurred, this string will be annotated with a summary of the error. Use of this function and subsequent access and display of this string is highly recommended if the value pointed to by \textbf{int * parse\_error\_count} is non-zero on return. 
+This function returns the size of the string (not counting termination character) that contains an echo of the \textbf{char * file\_char\_array} string previously passed to Create\_Pamgen\_Mesh. If a parsing error occurred, this string will be annotated with a summary of the error. Use of this function and subsequent access and display of this string is highly recommended if the value pointed to by \textbf{int * parse\_error\_count} is non-zero on return.
 
 \subsubsection{getPamgenEchoStream}
 {\ttfamily  \begin{verbatim}
@@ -1394,7 +1394,7 @@ This function takes a character pointer and returns that same pointer after it h
 }
 \clearpage
 \subsection{Querying a Mesh}
-All of the mesh query and access functions are based on the \texttt{EXODUS II} ~\cite{Schoof-Yarberry:1995} and \texttt{NEMESIS} ~\cite{Hennigan-StJohn-Shadid:1998} APIs. These APIs were written to standardize a platform independent interface for writing and reading binary mesh specification files. \texttt{NEMESIS} is a parallel extension of the serial \texttt{EXODUS II} API.  The \textsc{pamgen} function names are formed by prefixing the \texttt{EXODUS II} or \texttt{NEMESIS} function name with \textbf{im\_}. The remainder of the function signature and functionality remains unchanged. It may help to note that the original \texttt{EXODUS II} functions begin with \textbf{ex\_}, and the original \texttt{NEMESIS} functions begin with \textbf{ne\_}. 
+All of the mesh query and access functions are based on the \texttt{EXODUS II} ~\cite{Schoof-Yarberry:1995} and \texttt{NEMESIS} ~\cite{Hennigan-StJohn-Shadid:1998} APIs. These APIs were written to standardize a platform independent interface for writing and reading binary mesh specification files. \texttt{NEMESIS} is a parallel extension of the serial \texttt{EXODUS II} API.  The \textsc{pamgen} function names are formed by prefixing the \texttt{EXODUS II} or \texttt{NEMESIS} function name with \textbf{im\_}. The remainder of the function signature and functionality remains unchanged. It may help to note that the original \texttt{EXODUS II} functions begin with \textbf{ex\_}, and the original \texttt{NEMESIS} functions begin with \textbf{ne\_}.
 
 Querying a mesh database to build up a complete representation in accessible memory is a straightforward process.  Typically a query function is used to ascertain the number of items in an array, then memory is allocated and passed in through an access function which fills the memory with the requested information. The query and access functions will be presented in the same order they appear in the example function ``read\_mesh\_to\_memory()'' shown in Appendix~\ref{sec:read-mesh-to-memory}.
 
@@ -1405,7 +1405,7 @@ int im_ex_get_init( int exoid,
                     char *title,
                     int  *num_dim,
                     int  *num_nodes,
-                    int  *num_elem, 
+                    int  *num_elem,
                     int  *num_elem_blk,
                     int  *num_node_sets,
                     int  *num_side_sets);
@@ -1425,7 +1425,7 @@ This function is based on the \texttt{EXODUS II} API and is concerned only with 
 
 \subsubsection{im\_ex\_inquire}
 {\ttfamily  \begin{verbatim}
-int im_ex_inquire( int exoid,	
+int im_ex_inquire( int exoid,
                    int query_value,
                    int *int_value,
                    float *float_value,
@@ -1444,12 +1444,12 @@ This function is based on the \texttt{EXODUS II} API and is concerned only with 
 	\item \textbf{IM\_EX\_INQ\_SS\_PROP} The number of side set properties is returned in int\_value.
 	\item \textbf{IM\_EX\_INQ\_QA} The number of QA records is returned in int\_value.
 	\item \textbf{IM\_EX\_INQ\_INFO} The number of INFO records is returned in int\_value.
-	 
-\end{itemize} 
+
+\end{itemize}
 
 \subsubsection{im\_ex\_get\_coord}
 {\ttfamily  \begin{verbatim}
-int im_ex_get_coord( int exoid,	
+int im_ex_get_coord( int exoid,
                      double* x_coors,
                      double* y_coors,
                      double* z_coors);
@@ -1558,7 +1558,7 @@ This function is based on the \texttt{EXODUS II} API and is concerned only with 
 
 {\setlength{\parindent}{0pt}
  \textbf{char * elem\_type}  On return this variable holds one of the standard \texttt{EXODUS II} element types as a string. The element\_type pointer must be allocated as length MAX\_STR\_LENGTH+1. For \textsc{pamgen} the stored value will be QUAD in 2D or HEX in 3D.}
- 
+
 {\setlength{\parindent}{0pt}
  \textbf{int * num\_elem\_this\_blk}  On return this variable holds the number of elements in this block. }
 
@@ -1747,9 +1747,9 @@ This function is based on the \texttt{EXODUS II} API and is concerned only with 
 \subsubsection{im\_ne\_get\_init\_global}
 This function is adapted from the \texttt{NEMESIS} API. It is typically the first function called when gathering information about the parallel nature of the mesh. It retrieves the mesh sizing information for the complete mesh. A non-zero return value indicates an error.
 {\ttfamily  \begin{verbatim}
-int im_ne_get_init_global( int   neid, 	
+int im_ne_get_init_global( int   neid,
                            int  *num_nodes_global,
-                           int  *num_elems_global,	
+                           int  *num_elems_global,
                            int  *num_elem_blks_global,
                            int  *num_node_sets_global,
                            int  *num_side_sets_global );
@@ -1777,7 +1777,7 @@ int im_ne_get_init_global( int   neid,
 \subsubsection{im\_ne\_get\_init\_info}
 This function is adapted from the \texttt{NEMESIS} API. It retrieves information about the decomposition of the mesh. A non-zero return value indicates an error.
 {\ttfamily  \begin{verbatim}
-int im_ne_get_init_info( int   neid, 	
+int im_ne_get_init_info( int   neid,
                          int  *num_proc,
                          int  *num_proc_in_file,
                          char *file_type);
@@ -1794,7 +1794,7 @@ int im_ne_get_init_info( int   neid,
 
 {\setlength{\parindent}{0pt}
  \textbf{char *file\_type} Unused variable should be sized as shown below.}
-{\ttfamily 
+{\ttfamily
 	\begin{verbatim}char file_type [2];\end{verbatim}}
 
 \subsubsection{im\_ne\_get\_eb\_info\_global}
@@ -1818,7 +1818,7 @@ This function is adapted from the \texttt{NEMESIS} API. It retrieves the element
 
 \subsubsection{im\_ne\_get\_ns\_param\_global}
 {\ttfamily  \begin{verbatim}
-int im_ne_get_ns_param_global(int  neid,	
+int im_ne_get_ns_param_global(int  neid,
                               int *ns_ids_global,
                               int *ns_n_cnt_global,
                               int *ns_df_cnt_global);
@@ -1841,7 +1841,7 @@ This function is adapted from the \texttt{NEMESIS} API. It retrieves node set in
 
 \subsubsection{im\_ne\_get\_ss\_param\_global}
 {\ttfamily  \begin{verbatim}
-int im_ne_get_ss_param_global(int  neid,	
+int im_ne_get_ss_param_global(int  neid,
                               int *ss_ids_global,
                               int *ss_s_cnt_global,
                               int *ss_df_cnt_global);

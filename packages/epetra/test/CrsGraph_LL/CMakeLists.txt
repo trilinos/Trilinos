@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsGraph_test_LL

@@ -1,10 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities, etc
@@ -106,17 +131,18 @@ TEST( UnitTestBoxFixture, verifyRingFixture )
     ASSERT_TRUE( bulk.is_valid(node0) );
     ASSERT_TRUE( bulk.is_valid(node1) );
 
-    ASSERT_EQ( bulk.entity_comm_map_shared(bulk.entity_key(node0)).size(), 1u );
-    ASSERT_EQ( bulk.entity_comm_map_shared(bulk.entity_key(node1)).size() , 1u );
+    std::vector<int> node0_shared_procs;
+    bulk.comm_shared_procs(bulk.entity_key(node0), node0_shared_procs);
+    std::vector<int> node1_shared_procs;
+    bulk.comm_shared_procs(bulk.entity_key(node0), node1_shared_procs);
+    ASSERT_EQ( node0_shared_procs.size(), 1u );
+    ASSERT_EQ( node1_shared_procs.size(), 1u );
   }
 
   // Test no-op first:
 
   std::vector<EntityProc> change ;
-
-  ASSERT_TRUE( bulk.modification_begin() );
   bulk.change_entity_owner( change );
-  ASSERT_TRUE( bulk.modification_end());
 
   stk::mesh::count_entities( select_used , bulk , local_count );
   ASSERT_EQ( local_count[stk::topology::NODE_RANK] , nLocalNode );
@@ -126,9 +152,7 @@ TEST( UnitTestBoxFixture, verifyRingFixture )
   ASSERT_EQ( local_count[stk::topology::NODE_RANK] , nLocalNode + n_extra );
   ASSERT_EQ( local_count[stk::topology::ELEMENT_RANK] , nLocalElement + n_extra );
 
-  bulk.modification_begin();
   fixture.fixup_node_ownership();
-  ASSERT_TRUE(bulk.modification_end());
 
   // Make sure that element->owner_rank() == element->node[1]->owner_rank()
   if ( 1 < p_size ) {
@@ -151,10 +175,10 @@ TEST( UnitTestBoxFixture, verifyRingFixture )
 namespace stk {
 namespace unit_test {
 
-void test_shift_ring( RingFixture& ring, bool generate_aura=true )
+void test_shift_ring( RingFixture& ring )
 {
   MetaData& meta = ring.m_meta_data;
-  BulkData& bulk = ring.m_bulk_data;
+  stk::mesh::unit_test::BulkDataTester& bulk = ring.m_bulk_data;
 
   const int p_rank     = bulk.parallel_rank();
   const int p_size     = bulk.parallel_size();
@@ -213,9 +237,7 @@ void test_shift_ring( RingFixture& ring, bool generate_aura=true )
   recv_element_1 = Entity();
   recv_element_2 = Entity();
 
-  ASSERT_TRUE( bulk.modification_begin() );
-  bulk.change_entity_owner( change );
-  ASSERT_TRUE( stk::unit_test::modification_end_wrapper( bulk , generate_aura ) );
+  bulk.change_entity_owner( change, BulkData::MOD_END_COMPRESS_AND_SORT );
 
   send_element_1 = bulk.get_entity( stk::topology::ELEMENT_RANK , ring.m_element_ids[ id_send ] );
   send_element_2 = bulk.get_entity( stk::topology::ELEMENT_RANK , ring.m_element_ids[ id_send + 1 ] );
@@ -233,8 +255,8 @@ void test_shift_ring( RingFixture& ring, bool generate_aura=true )
 
   unsigned count_shared = 0 ;
   for ( stk::mesh::EntityCommListInfoVector::const_iterator
-        i = bulk.comm_list().begin() ;
-        i != bulk.comm_list().end() ; ++i )
+        i = bulk.my_internal_comm_list().begin() ;
+        i != bulk.my_internal_comm_list().end() ; ++i )
   {
     if ( bulk.in_shared( i->key ) ) { ++count_shared ; }
   }
@@ -244,8 +266,12 @@ void test_shift_ring( RingFixture& ring, bool generate_aura=true )
     const EntityKey node_recv = EntityKey(NODE_RANK , ring.m_node_ids[id_recv]);
     const EntityKey node_send = EntityKey(NODE_RANK , ring.m_node_ids[id_send]);
 
-    ASSERT_EQ( bulk.entity_comm_map_shared(node_recv).size(), 1u );
-    ASSERT_EQ( bulk.entity_comm_map_shared(node_send).size() , 1u );
+    std::vector<int> node_recv_shared_procs;
+    bulk.comm_shared_procs(node_recv,node_recv_shared_procs);
+    ASSERT_EQ( node_recv_shared_procs.size(), 1u );
+    std::vector<int> node_send_shared_procs;
+    bulk.comm_shared_procs(node_send,node_send_shared_procs);
+    ASSERT_EQ( node_send_shared_procs.size(), 1u );
   }
 }
 

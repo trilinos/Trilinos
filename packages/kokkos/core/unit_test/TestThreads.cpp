@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -47,29 +47,32 @@
 
 #if defined( KOKKOS_HAVE_PTHREAD )
 
-#include <Kokkos_Threads.hpp>
-#include <Kokkos_hwloc.hpp>
+#include <Kokkos_Core.hpp>
 
-#include <Kokkos_View.hpp>
-
-#include <Kokkos_CrsArray.hpp>
+#include <Threads/Kokkos_Threads_TaskPolicy.hpp>
 
 //----------------------------------------------------------------------------
 
 #include <TestViewImpl.hpp>
 
-#include <TestMemoryTracking.hpp>
 #include <TestViewAPI.hpp>
-#include <TestAggregate.hpp>
+#include <TestViewSubview.hpp>
 #include <TestAtomic.hpp>
 
-#include <TestCrsArray.hpp>
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
+#include <TestRange.hpp>
 #include <TestTeam.hpp>
 #include <TestAggregate.hpp>
+#include <TestAggregateReduction.hpp>
 #include <TestCompilerMacros.hpp>
 #include <TestCXX11.hpp>
+#include <TestCXX11Deduction.hpp>
+#include <TestTeamVector.hpp>
+#include <TestMemorySpaceTracking.hpp>
+#include <TestTemplateMetaFunctions.hpp>
+
+#include <TestTaskPolicy.hpp>
 
 namespace Test {
 
@@ -84,36 +87,37 @@ protected:
     const unsigned cores_per_numa   = Kokkos::hwloc::get_available_cores_per_numa();
     const unsigned threads_per_core = Kokkos::hwloc::get_available_threads_per_core();
 
-    unsigned team_count = 0 ;
-    unsigned threads_per_team = 0 ;
+    unsigned threads_count = 0 ;
 
     // Initialize and finalize with no threads:
     Kokkos::Threads::initialize( 1u );
     Kokkos::Threads::finalize();
 
-    team_count       = std::max( 1u , numa_count );
-    threads_per_team = std::max( 2u , cores_per_numa * threads_per_core );
+    threads_count = std::max( 1u , numa_count )
+                  * std::max( 2u , cores_per_numa * threads_per_core );
 
-    Kokkos::Threads::initialize( team_count * threads_per_team );
+    Kokkos::Threads::initialize( threads_count );
     Kokkos::Threads::finalize();
 
-    team_count       = std::max( 1u , numa_count * 2 );
-    threads_per_team = std::max( 2u , ( cores_per_numa * threads_per_core ) / 2 );
-    Kokkos::Threads::initialize( team_count * threads_per_team );
+    
+    threads_count = std::max( 1u , numa_count * 2 )
+                  * std::max( 2u , ( cores_per_numa * threads_per_core ) / 2 );
+
+    Kokkos::Threads::initialize( threads_count );
     Kokkos::Threads::finalize();
 
     // Quick attempt to verify thread start/terminate don't have race condition:
-    team_count       = std::max( 1u , numa_count );
-    threads_per_team = std::max( 2u , ( cores_per_numa * threads_per_core ) / 2 );
+    threads_count = std::max( 1u , numa_count )
+                  * std::max( 2u , ( cores_per_numa * threads_per_core ) / 2 );
     for ( unsigned i = 0 ; i < 10 ; ++i ) {
-      Kokkos::Threads::initialize( team_count * threads_per_team );
+      Kokkos::Threads::initialize( threads_count );
       Kokkos::Threads::sleep();
       Kokkos::Threads::wake();
       Kokkos::Threads::finalize();
     }
 
-    Kokkos::Threads::initialize( team_count * threads_per_team );
-    Kokkos::Threads::print_configuration( std::cout );
+    Kokkos::Threads::initialize( threads_count );
+    Kokkos::Threads::print_configuration( std::cout , true /* detailed */ );
   }
 
   static void TearDownTestCase()
@@ -134,8 +138,67 @@ TEST_F( threads, view_api) {
   TestViewAPI< double , Kokkos::Threads >();
 }
 
+TEST_F( threads, view_subview_auto_1d_left ) {
+  TestViewSubview::test_auto_1d< Kokkos::LayoutLeft,Kokkos::Threads >();
+}
+
+TEST_F( threads, view_subview_auto_1d_right ) {
+  TestViewSubview::test_auto_1d< Kokkos::LayoutRight,Kokkos::Threads >();
+}
+
+TEST_F( threads, view_subview_auto_1d_stride ) {
+  TestViewSubview::test_auto_1d< Kokkos::LayoutStride,Kokkos::Threads >();
+}
+
+TEST_F( threads, view_subview_assign_strided ) {
+  TestViewSubview::test_1d_strided_assignment< Kokkos::Threads >();
+}
+
+TEST_F( threads, view_subview_left_0 ) {
+  TestViewSubview::test_left_0< Kokkos::Threads >();
+}
+
+TEST_F( threads, view_subview_left_1 ) {
+  TestViewSubview::test_left_1< Kokkos::Threads >();
+}
+
+TEST_F( threads, view_subview_left_2 ) {
+  TestViewSubview::test_left_2< Kokkos::Threads >();
+}
+
+TEST_F( threads, view_subview_left_3 ) {
+  TestViewSubview::test_left_3< Kokkos::Threads >();
+}
+
+TEST_F( threads, view_subview_right_0 ) {
+  TestViewSubview::test_right_0< Kokkos::Threads >();
+}
+
+TEST_F( threads, view_subview_right_1 ) {
+  TestViewSubview::test_right_1< Kokkos::Threads >();
+}
+
+TEST_F( threads, view_subview_right_3 ) {
+  TestViewSubview::test_right_3< Kokkos::Threads >();
+}
+
+
 TEST_F( threads, view_aggregate ) {
   TestViewAggregate< Kokkos::Threads >();
+  TestViewAggregateReduction< Kokkos::Threads >();
+}
+
+TEST_F( threads , range_tag )
+{
+  TestRange< Kokkos::Threads >::test_for(1000);
+  TestRange< Kokkos::Threads >::test_reduce(1000);
+  TestRange< Kokkos::Threads >::test_scan(1000);
+}
+
+TEST_F( threads , team_tag )
+{
+  TestTeamPolicy< Kokkos::Threads >::test_for(1000);
+  TestTeamPolicy< Kokkos::Threads >::test_reduce(1000);
 }
 
 TEST_F( threads, long_reduce) {
@@ -244,6 +307,15 @@ TEST_F( threads , atomics )
   ASSERT_TRUE( ( TestAtomic::Loop<float,Kokkos::Threads>(100,1) ) );
   ASSERT_TRUE( ( TestAtomic::Loop<float,Kokkos::Threads>(100,2) ) );
   ASSERT_TRUE( ( TestAtomic::Loop<float,Kokkos::Threads>(100,3) ) );
+
+#if defined( KOKKOS_ENABLE_ASM )
+  ASSERT_TRUE( ( TestAtomic::Loop<Kokkos::complex<double> ,Kokkos::Threads>(100,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<Kokkos::complex<double> ,Kokkos::Threads>(100,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<Kokkos::complex<double> ,Kokkos::Threads>(100,3) ) );
+#endif
+
+  ASSERT_TRUE( ( TestAtomic::Loop<TestAtomic::SuperScalar<3>, Kokkos::Threads>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<TestAtomic::SuperScalar<3>, Kokkos::Threads>(loop_count,2) ) );
 }
 
 //----------------------------------------------------------------------------
@@ -265,10 +337,7 @@ TEST_F( threads , scan_small )
 
 TEST_F( threads , scan )
 {
-  for ( int i = 0 ; i < 1000 ; ++i ) {
-    TestScan< Kokkos::Threads >( 10 );
-    TestScan< Kokkos::Threads >( 10000 );
-  }
+  TestScan< Kokkos::Threads >::test_range( 1 , 1000 );
   TestScan< Kokkos::Threads >( 1000000 );
   TestScan< Kokkos::Threads >( 10000000 );
   Kokkos::Threads::fence();
@@ -289,8 +358,20 @@ TEST_F( threads , compiler_macros )
   ASSERT_TRUE( ( TestCompilerMacros::Test< Kokkos::Threads >() ) );
 }
 
+TEST_F( threads , memory_space )
+{
+  TestMemorySpace< Kokkos::Threads >();
+}
 
 //----------------------------------------------------------------------------
+
+TEST_F( threads , template_meta_functions )
+{
+  TestTemplateMetaFunctions<int, Kokkos::Threads >();
+}
+
+//----------------------------------------------------------------------------
+
 #if defined( KOKKOS_HAVE_CXX11 ) && defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS )
 TEST_F( threads , cxx11 )
 {
@@ -302,6 +383,45 @@ TEST_F( threads , cxx11 )
   }
 }
 #endif
+
+#if defined (KOKKOS_HAVE_CXX11)
+
+TEST_F( threads , reduction_deduction )
+{
+  TestCXX11::test_reduction_deduction< Kokkos::Threads >();
+}
+
+TEST_F( threads , team_vector )
+{
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(0) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(1) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(2) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(3) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(4) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(5) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(6) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(7) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(8) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(9) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(10) ) );
+}
+
+#endif
+
+TEST_F( threads , task_policy )
+{
+  TestTaskPolicy::test_task_dep< Kokkos::Threads >( 10 );
+  for ( long i = 0 ; i < 25 ; ++i ) TestTaskPolicy::test_fib< Kokkos::Threads >(i);
+  for ( long i = 0 ; i < 35 ; ++i ) TestTaskPolicy::test_fib2< Kokkos::Threads >(i);
+}
+
+#if defined( KOKKOS_HAVE_CXX11 )
+TEST_F( threads , task_team )
+{
+  TestTaskPolicy::test_task_team< Kokkos::Threads >(1000);
+}
+#endif
+
 
 } // namespace Test
 

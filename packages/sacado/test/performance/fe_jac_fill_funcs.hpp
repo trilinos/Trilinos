@@ -30,7 +30,7 @@
 #ifndef FE_JAC_FILL_FUNCS_HPP
 #define FE_JAC_FILL_FUNCS_HPP
 
-#include "Sacado.hpp"
+#include "Sacado_No_Kokkos.hpp"
 #include "Sacado_Fad_SimpleFad.hpp"
 #include "Sacado_CacheFad_DFad.hpp"
 #include "Sacado_CacheFad_SFad.hpp"

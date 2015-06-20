@@ -76,9 +76,10 @@ SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 #Stratimikos there was one test failure
 #Rythmos Disabling Stratimikos caused a lot of build errors
 #stokhos there was one build error
-SET(EXTRA_EXCLUDE_PACKAGES MOOCHO Piro Stratimikos Rythmos Zoltan2 Panzer PyTrilinos)
+SET(EXTRA_EXCLUDE_PACKAGES MOOCHO Piro Stratimikos Rythmos Zoltan2 Panzer PyTrilinos Kokkos Tpetra Muelu Sacado)
 
 SET( EXTRA_CONFIGURE_OPTIONS
+  "-DTrilinos_ENABLE_CXX11=OFF"
   "-DCMAKE_CXX_COMPILER:FILEPATH=/home/trilinos/gcc4.6.0/bin/g++"
   "-DCMAKE_C_COMPILER:FILEPATH=/home/trilinos/gcc4.6.0/bin/gcc"
   "-DCMAKE_Fortran_COMPILER:FILEPATH=/home/trilinos/gcc4.6.0/bin/gfortran"

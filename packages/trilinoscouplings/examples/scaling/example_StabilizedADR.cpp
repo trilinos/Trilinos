@@ -71,6 +71,9 @@
 */
 
 //#define DUMP_DATA
+// TrilinosCouplings includes
+#include "TrilinosCouplings_config.h"
+#include "TrilinosCouplings_Pamgen_Utils.hpp"
 
 // Intrepid includes
 #include "Intrepid_FunctionSpaceTools.hpp"
@@ -82,8 +85,12 @@
 #include "Intrepid_DefaultCubatureFactory.hpp"
 #include "Intrepid_Utils.hpp"
 
-// Sacado includes
+#ifdef HAVE_INTREPID_KOKKOSCORE
 #include "Sacado.hpp"
+#else
+// Sacado includes
+#include "Sacado_No_Kokkos.hpp"
+#endif
 
 // Epetra includes
 #include "Epetra_Time.h"
@@ -114,8 +121,8 @@
 
 // Pamgen includes
 #include "create_inline_mesh.h"
-#include "im_exodusII_l.h"
-#include "im_ne_nemesisI_l.h"
+#include "pamgen_im_exodusII_l.h"
+#include "pamgen_im_ne_nemesisI_l.h"
 #include "pamgen_extras.h"
 
 // AztecOO includes
@@ -1587,7 +1594,8 @@ void getPamgenMesh(FieldContainer<Scalar>    & localNodeCoordsFC,
   int128 ** comm_node_proc_ids   = NULL;
 
 
-  Create_Pamgen_Mesh(meshInput.c_str(), spaceDim, procRank, numProcs, maxInt);
+  long long cr_result = Create_Pamgen_Mesh(meshInput.c_str(), spaceDim, procRank, numProcs, maxInt);
+  TrilinosCouplings::pamgen_error_check(std::cout,cr_result);
 
   if(!Comm.MyPID() && verbose ) {
     std::cout << message << " Timing of Pamgen tasks: \n\n" ;

@@ -34,6 +34,7 @@ InstallLibrary(aprepro,$(LIBDIR))
 test: apr_test
 
 NormalCCTarget(apr_test,apr_test.o,$(LIBRARY),NullParameter,-laprepro)
+NormalCCTarget(strings,strings.o,$(LIBRARY),NullParameter,-laprepro)
 
 InstallIncludeList(makeincludes,$(INCLIST),$(INCDIR))
 InstallIncludeList(install,$(INCLIST),$(INCDIR))
@@ -41,14 +42,15 @@ InstallIncludeList(install,$(INCLIST),$(INCDIR))
 test: check
 
 check: apr_test
-	@echo "****Test should produce the following 7 lines of output to stderr:"
-	@echo "Aprepro: WARN: Undefined variable 'ifundefined' (test.inp_app, line 49)"
-	@echo "Aprepro: WARN: Undefined variable 'Parse' (test.inp_app, line 78)"
+	@echo "****Test should produce the following 8 lines of output to stderr:"
+	@echo "Aprepro: WARNING: Undefined variable 'ifundefined' (test.inp_app, line 49)"
+	@echo "Aprepro: WARNING: Undefined variable 'Parse' (test.inp_app, line 78)"
 	@echo "Aprepro: ERROR: syntax error, unexpected UNDVAR (test.inp_app, line 78)"
-	@echo "Aprepro: WARN: Undefined variable 'This' (test.inp_app, line 79)"
+	@echo "Aprepro: WARNING: Undefined variable 'This' (test.inp_app, line 79)"
 	@echo "Aprepro: ERROR: syntax error, unexpected UNDVAR (test.inp_app, line 79)"
-	@echo "Aprepro: WARN: User-defined Variable 'a' redefined (_string_, line 1)"
-	@echo "Aprepro: WARN: Undefined variable 'T' (test.inp_app, line 183)"
+	@echo "Aprepro: WARNING: User-defined Variable 'a' redefined (_string_, line 1)"
+	@echo "Aprepro: WARNING: Undefined variable 'T' (test.inp_app, line 199)"
+	@echo "Aprepro: WARNING: Undefined variable 'new_var' (test.inp_app, line 232)"
 	@echo " "
 	./apr_test test.inp_app >distribution.out
 	@echo " "

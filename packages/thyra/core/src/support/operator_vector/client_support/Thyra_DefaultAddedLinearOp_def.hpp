@@ -51,6 +51,43 @@
 namespace Thyra {
 
 
+// Inline members only used in this class impl
+
+
+template<class Scalar>
+inline
+void DefaultAddedLinearOp<Scalar>::assertInitialized() const
+{
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPT( !( numOps() > 0 ) );
+#endif
+}
+
+
+template<class Scalar>
+inline
+std::string DefaultAddedLinearOp<Scalar>::getClassName() const
+{
+  return Teuchos::Describable::description();
+}
+
+
+template<class Scalar>
+inline
+Ordinal DefaultAddedLinearOp<Scalar>::getRangeDim() const
+{
+  return (numOps() > 0 ? this->range()->dim() : 0);
+}
+
+
+template<class Scalar>
+inline
+Ordinal DefaultAddedLinearOp<Scalar>::getDomainDim() const
+{
+  return (numOps() > 0 ? this->domain()->dim() : 0);
+}
+
+
 // Constructors/initializers/accessors
 
 
@@ -158,8 +195,10 @@ template<class Scalar>
 Teuchos::RCP< const VectorSpaceBase<Scalar> >
 DefaultAddedLinearOp<Scalar>::range() const
 {
-  assertInitialized();
-  return getOp(0)->range();
+  if (numOps()) {
+    return getOp(0)->range();
+  }
+  return Teuchos::null;
 }
 
 
@@ -167,8 +206,10 @@ template<class Scalar>
 Teuchos::RCP< const VectorSpaceBase<Scalar> >
 DefaultAddedLinearOp<Scalar>::domain() const
 {
-  assertInitialized();
-  return getOp(numOps()-1)->domain();
+  if (numOps()) {
+    return getOp(numOps()-1)->domain();
+  }
+  return Teuchos::null;
 }
 
 
@@ -186,9 +227,10 @@ DefaultAddedLinearOp<Scalar>::clone() const
 template<class Scalar>
 std::string DefaultAddedLinearOp<Scalar>::description() const
 {
-  assertInitialized();
   std::ostringstream oss;
-  oss << Teuchos::Describable::description() << "{numOps = "<<numOps()<<"}";
+  oss << getClassName() << "{numOps="<<numOps()
+      <<",rangeDim=" << getRangeDim()
+      << ",domainDim="<< getDomainDim() <<"}";
   return oss.str();
 }
 
@@ -202,7 +244,6 @@ void DefaultAddedLinearOp<Scalar>::describe(
   using Teuchos::RCP;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
-  assertInitialized();
   RCP<FancyOStream> out = rcp(&out_arg,false);
   OSTab tab(out);
   const int l_numOps = Ops_.size();
@@ -215,14 +256,10 @@ void DefaultAddedLinearOp<Scalar>::describe(
     case Teuchos::VERB_HIGH:
     case Teuchos::VERB_EXTREME:
     {
-      *out
-        << Teuchos::Describable::description() << "{"
-        << "rangeDim=" << this->range()->dim()
-        << ",domainDim="<< this->domain()->dim() << "}\n";
+      *out << this->description() << std::endl;
       OSTab tab2(out);
       *out
-        <<  "numOps="<< l_numOps << std::endl
-        <<  "Constituent LinearOpBase objects for M = Op[0]*...*Op[numOps-1]:\n";
+         <<  "Constituent LinearOpBase objects for M = Op[0]*...*Op[numOps-1]:\n";
       tab.incrTab();
       for( int k = 0; k < l_numOps; ++k ) {
         *out << "Op["<<k<<"] = " << Teuchos::describe(*getOp(k),verbLevel);
@@ -264,7 +301,7 @@ void DefaultAddedLinearOp<Scalar>::applyImpl(
   typedef Teuchos::ScalarTraits<Scalar> ST;
 #ifdef TEUCHOS_DEBUG
   THYRA_ASSERT_LINEAR_OP_MULTIVEC_APPLY_SPACES(
-    "DefaultAddedLinearOp<Scalar>::apply(...)", *this, M_trans, X, &*Y
+    getClassName()+"::apply(...)", *this, M_trans, X, &*Y
     );
 #endif // TEUCHOS_DEBUG  
   //
@@ -294,7 +331,7 @@ void DefaultAddedLinearOp<Scalar>::validateOps()
       TEUCHOS_TEST_FOR_EXCEPT( Ops_[k]().get() == NULL );
       if( k > 0 ) {
         THYRA_ASSERT_LINEAR_OP_PLUS_LINEAR_OP_SPACES_NAMES(
-          "DefaultMultipliedLinearOp<Scalar>::initialize(...)"
+          getClassName()+"::initialize(...)"
           ,*Ops_[0], NOTRANS, ("Ops[0]")
           ,*Ops_[k], NOTRANS, ("Ops["+toString(k)+"]")
           );

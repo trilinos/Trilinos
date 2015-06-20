@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -186,15 +186,15 @@ public:
 
   typedef typename ShapeInsert< typename nested::shape , N >::type shape ;
 
-  typedef typename nested::array_type   array_type[ N ];
+  typedef typename nested::array_intrinsic_type   array_intrinsic_type[ N ];
   typedef Test::Array< T , N >          value_type ;
   typedef Test::Array< T , N >          type ;
 
-  typedef const array_type  const_array_type ;
+  typedef const array_intrinsic_type  const_array_intrinsic_type ;
   typedef const value_type  const_value_type ;
   typedef const type        const_type ;
 
-  typedef typename nested::non_const_array_type                    non_const_array_type[ N ];
+  typedef typename nested::non_const_array_intrinsic_type          non_const_array_intrinsic_type[ N ];
   typedef Test::Array< typename nested::non_const_value_type , N > non_const_value_type ;
   typedef Test::Array< typename nested::non_const_value_type , N > non_const_type ;
 };
@@ -211,15 +211,15 @@ public:
 
   typedef typename ShapeInsert< typename nested::shape , 0 >::type shape ;
 
-  typedef typename nested::array_type * array_type ;
+  typedef typename nested::array_intrinsic_type * array_intrinsic_type ;
   typedef Test::Array< T , 0 >          value_type ;
   typedef Test::Array< T , 0 >          type ;
 
-  typedef const array_type  const_array_type ;
+  typedef const array_intrinsic_type  const_array_intrinsic_type ;
   typedef const value_type  const_value_type ;
   typedef const type        const_type ;
 
-  typedef typename nested::non_const_array_type  * non_const_array_type ;
+  typedef typename nested::non_const_array_intrinsic_type  * non_const_array_intrinsic_type ;
   typedef Test::Array< typename nested::non_const_value_type , 0 > non_const_value_type ;
   typedef Test::Array< typename nested::non_const_value_type , 0 > non_const_type ;
 };
@@ -261,13 +261,11 @@ struct ViewAssignment< Test::EmbedArray , Test::EmbedArray , void >
                     )>::type * = 0
                   )
   {
-    dst.m_tracking.decrement( dst.m_ptr_on_device );
-
     dst.m_offset_map.assign( src.m_offset_map );
 
     dst.m_ptr_on_device = src.m_ptr_on_device ;
 
-    dst.m_tracking.increment( dst.m_ptr_on_device );
+    dst.m_tracker = src.m_tracker;
   }
 };
 
@@ -283,13 +281,11 @@ struct ViewAssignment< ViewDefault , Test::EmbedArray , void >
                 , const View<ST,SL,SD,SM,Test::EmbedArray> & src
                 )
   {
-    dst.m_tracking.decrement( dst.m_ptr_on_device );
-
     dst.m_offset_map.assign( src.m_offset_map );
 
     dst.m_ptr_on_device = src.m_ptr_on_device ;
 
-    dst.m_tracking.increment( dst.m_ptr_on_device );
+    dst.m_tracker = src.m_tracker;
   }
 };
 
@@ -324,32 +320,35 @@ private:
   typedef Impl::ViewOffset< typename traits::shape_type ,
                             typename traits::array_layout > offset_map_type ;
 
+  typedef Impl::ViewDataManagement< traits > view_data_management ;
+
   // traits::value_type = Test::Array< T , N >
 
   typename traits::value_type::value_type * m_ptr_on_device ;
   offset_map_type                           m_offset_map ;
-  Impl::ViewTracking< traits >              m_tracking ;
+  view_data_management                      m_management ;
+  Impl::AllocationTracker                   m_tracker ;
 
 public:
 
-  typedef View< typename traits::array_type ,
+  typedef View< typename traits::array_intrinsic_type ,
                 typename traits::array_layout ,
-                typename traits::device_type ,
+                typename traits::execution_space ,
                 typename traits::memory_traits > array_type ;
 
   typedef View< typename traits::non_const_data_type ,
                 typename traits::array_layout ,
-                typename traits::device_type ,
+                typename traits::execution_space ,
                 typename traits::memory_traits > non_const_type ;
 
   typedef View< typename traits::const_data_type ,
                 typename traits::array_layout ,
-                typename traits::device_type ,
+                typename traits::execution_space ,
                 typename traits::memory_traits > const_type ;
 
   typedef View< typename traits::non_const_data_type ,
                 typename traits::array_layout ,
-                typename traits::device_type::host_mirror_device_type ,
+                typename traits::host_mirror_space ,
                 void > HostMirror ;
 
   //------------------------------------
@@ -388,19 +387,27 @@ public:
   // Destructor, constructors, assignment operators:
 
   KOKKOS_INLINE_FUNCTION
-  ~View() { m_tracking.decrement( m_ptr_on_device ); }
+  ~View() {}
 
   KOKKOS_INLINE_FUNCTION
-  View() : m_ptr_on_device(0)
-    { m_offset_map.assing(0,0,0,0,0,0,0,0); }
+  View()
+    : m_ptr_on_device(0)
+    , m_offset_map()
+    , m_management()
+    , m_tracker()
+  { m_offset_map.assing(0,0,0,0,0,0,0,0); }
 
   KOKKOS_INLINE_FUNCTION
-  View( const View & rhs ) : m_ptr_on_device(0)
-    {
-      (void) Impl::ViewAssignment<
-        typename traits::specialize ,
-        typename traits::specialize >( *this , rhs );
-    }
+  View( const View & rhs )
+    : m_ptr_on_device(0)
+    , m_offset_map()
+    , m_management()
+    , m_tracker()
+  {
+    (void) Impl::ViewAssignment<
+      typename traits::specialize ,
+      typename traits::specialize >( *this , rhs );
+  }
 
   KOKKOS_INLINE_FUNCTION
   View & operator = ( const View & rhs )
@@ -418,10 +425,13 @@ public:
   KOKKOS_INLINE_FUNCTION
   View( const View<RT,RL,RD,RM,RS> & rhs )
     : m_ptr_on_device(0)
-    {
-      (void) Impl::ViewAssignment<
-        typename traits::specialize , RS >( *this , rhs );
-    }
+    , m_offset_map()
+    , m_management()
+    , m_tracker()
+  {
+    (void) Impl::ViewAssignment<
+      typename traits::specialize , RS >( *this , rhs );
+  }
 
   template< class RT , class RL , class RD , class RM , class RS >
   KOKKOS_INLINE_FUNCTION
@@ -435,14 +445,10 @@ public:
   //------------------------------------
   // Allocation of a managed view with possible alignment padding.
 
-  typedef Impl::if_c< traits::is_managed ,
-                      std::string ,
-                      Impl::ViewError::allocation_constructor_requires_managed >
-   if_allocation_constructor ;
-
+  template< class AllocationProperties >
   explicit inline
-  View( const typename if_allocation_constructor::type & label ,
-        const size_t n0 = 0 ,
+  View( const AllocationProperties & prop ,
+        const typename Impl::ViewAllocProp< traits , AllocationProperties >::size_type n0 = 0 ,
         const size_t n1 = 0 ,
         const size_t n2 = 0 ,
         const size_t n3 = 0 ,
@@ -451,49 +457,24 @@ public:
         const size_t n6 = 0 ,
         const size_t n7 = 0 )
     : m_ptr_on_device(0)
-    {
-      typedef typename traits::memory_space  memory_space ;
-      //typedef typename traits::shape_type    shape_type ; // unused
-      typedef typename traits::value_type::value_type   scalar_type ;
+    , m_offset_map()
+    , m_management()
+    , m_tracker()
+  {
+    typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
 
-      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
-      m_offset_map.set_padding();
+    typedef typename traits::memory_space  memory_space ;
+    typedef typename traits::value_type::value_type   scalar_type ;
 
-      m_ptr_on_device = (scalar_type *)
-        memory_space::allocate( if_allocation_constructor::select( label ) ,
-                                typeid(scalar_type) ,
-                                sizeof(scalar_type) ,
-                                m_offset_map.capacity() );
+    m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
+    m_offset_map.set_padding();
 
-      Impl::ViewFill< View > init( *this , typename traits::value_type() );
-    }
+    m_tracker = memory_space::allocate_and_track( Alloc::label( prop ), sizeof(scalar_type) * m_offset_map.capacity() );
 
-  explicit inline
-  View( const AllocateWithoutInitializing & ,
-        const typename if_allocation_constructor::type & label ,
-        const size_t n0 = 0 ,
-        const size_t n1 = 0 ,
-        const size_t n2 = 0 ,
-        const size_t n3 = 0 ,
-        const size_t n4 = 0 ,
-        const size_t n5 = 0 ,
-        const size_t n6 = 0 ,
-        const size_t n7 = 0 )
-    : m_ptr_on_device(0)
-    {
-      typedef typename traits::memory_space  memory_space ;
-      //typedef typename traits::shape_type    shape_type ; // unused
-      typedef typename traits::value_type::value_type   scalar_type ;
+    m_ptr_on_device = reinterpret_cast<scalar_type *>(m_tracker.alloc_ptr());
 
-      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
-      m_offset_map.set_padding();
-
-      m_ptr_on_device = (scalar_type *)
-        memory_space::allocate( if_allocation_constructor::select( label ) ,
-                                typeid(scalar_type) ,
-                                sizeof(scalar_type) ,
-                                m_offset_map.capacity() );
-    }
+    (void) Impl::ViewDefaultConstruct< typename traits::execution_space , scalar_type , Alloc::Initialize >( m_ptr_on_device , m_offset_map.capacity() );
+  }
 
   //------------------------------------
   // Assign an unmanaged View from pointer, can be called in functors.
@@ -514,17 +495,20 @@ public:
         const size_t n6 = 0 ,
         const size_t n7 = 0 )
     : m_ptr_on_device(0)
-    {
-      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
-
-      m_ptr_on_device = if_user_pointer_constructor::select( ptr );
-    }
+    , m_offset_map()
+    , m_management()
+    , m_tracker()
+  {
+    m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
+    m_ptr_on_device = if_user_pointer_constructor::select( ptr );
+    m_management.set_unmanaged();
+  }
 
   //------------------------------------
   // Assign unmanaged View to portion of Device shared memory
 
   typedef Impl::if_c< ! traits::is_managed ,
-                      typename traits::device_type ,
+                      typename traits::execution_space ,
                       Impl::ViewError::device_shmem_constructor_requires_unmanaged >
       if_device_shmem_constructor ;
 
@@ -539,23 +523,26 @@ public:
         const unsigned n6 = 0 ,
         const unsigned n7 = 0 )
     : m_ptr_on_device(0)
-    {
-      typedef typename traits::value_type::value_type   scalar_type ;
+    , m_offset_map()
+    , m_management()
+    , m_tracker()
+  {
+    typedef typename traits::value_type::value_type   scalar_type ;
 
-      enum { align = 8 };
-      enum { mask  = align - 1 };
+    enum { align = 8 };
+    enum { mask  = align - 1 };
 
-      typedef Impl::if_c< ! traits::is_managed ,
-                          scalar_type * ,
-                          Impl::ViewError::device_shmem_constructor_requires_unmanaged >
-        if_device_shmem_pointer ;
+    typedef Impl::if_c< ! traits::is_managed ,
+                        scalar_type * ,
+                        Impl::ViewError::device_shmem_constructor_requires_unmanaged >
+      if_device_shmem_pointer ;
 
-      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
+    m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
 
-      // Select the first argument:
-      m_ptr_on_device = if_device_shmem_pointer::select(
-       (scalar_type *) dev.get_shmem( unsigned( sizeof(scalar_type) * m_offset_map.capacity() + unsigned(mask) ) & ~unsigned(mask) ) );
-    }
+    // Select the first argument:
+    m_ptr_on_device = if_device_shmem_pointer::select(
+     (scalar_type *) dev.get_shmem( unsigned( sizeof(scalar_type) * m_offset_map.capacity() + unsigned(mask) ) & ~unsigned(mask) ) );
+  }
 
   static inline
   unsigned shmem_size( const unsigned n0 = 0 ,

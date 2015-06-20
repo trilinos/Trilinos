@@ -239,7 +239,12 @@ int Epetra_DistObject::DoTransfer(const Epetra_SrcDistObject& A,
   EPETRA_CHK_ERR(CheckSizes(A));
 
   if (NumSameIDs + NumPermuteIDs > 0) {
-    EPETRA_CHK_ERR(CopyAndPermute(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs,Indexor));
+    EPETRA_CHK_ERR(CopyAndPermute(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs,Indexor, CombineMode));
+  }
+
+  // Once CopyAndPermute is done, switch to Add so rest works as before.
+  if(CombineMode == Epetra_AddLocalAlso) {
+    CombineMode = Add;
   }
 
   if (CombineMode==Zero)

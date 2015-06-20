@@ -45,13 +45,14 @@
 
 #include "Teuchos_Assert.hpp"
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
 #include "Phalanx_DataLayout.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
 #include "Panzer_Traits.hpp"
+#include "Panzer_CommonArrayFactories.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 
@@ -77,14 +78,14 @@ ScatterVectorFields(const std::string & scatterName,
 
   spatialDimension_ = pointRule->spatial_dimension;
 
-  pointField_ = PHX::MDField<ScalarT,Cell,IP,Dim>(pointRule->getName()+"_point_coords",pointRule->dl_vector);
+  // pointField_ = PHX::MDField<Sconst calarT,Cell,IP,Dim>(pointRule->getName()+"_point_coords",pointRule->dl_vector);
 
   // build dependent fields
   names_ = names;
   scatterFields_.resize(names.size());
   for (std::size_t fd = 0; fd < names.size(); ++fd) {
     scatterFields_[fd] = 
-      PHX::MDField<ScalarT,Cell,IP,Dim>(names_[fd]+"_"+pointRule->getName(),pointRule->dl_vector);
+      PHX::MDField<const ScalarT,Cell,IP,Dim>(names_[fd]+"_"+pointRule->getName(),pointRule->dl_vector);
     this->addDependentField(scatterFields_[fd]);
   }
 
@@ -97,7 +98,8 @@ ScatterVectorFields(const std::string & scatterName,
 
 PHX_POST_REGISTRATION_SETUP(ScatterVectorFields,d,fm)
 {
-  this->utils.setFieldData(pointField_,fm);
+  // this->utils.setFieldData(pointField_,fm);
+
   for (std::size_t fd = 0; fd < scatterFields_.size(); ++fd) {
     // setup the field data object
     this->utils.setFieldData(scatterFields_[fd],fm);
@@ -113,6 +115,8 @@ template < >
 void ScatterVectorFields<panzer::Traits::Residual,panzer::Traits>::
 evaluateFields(panzer::Traits::EvalData workset)
 {
+   panzer::MDFieldArrayFactory af("",true);
+
    std::vector<std::string> dimStrings(3);
    dimStrings[0] = "X";
    dimStrings[1] = "Y";
@@ -145,15 +149,16 @@ evaluateFields(panzer::Traits::EvalData workset)
 
    for(int d=0;d<spatialDimension_;d++) {
       for(std::size_t fieldIndex=0; fieldIndex<scatterFields_.size();fieldIndex++) {
-         PHX::MDField<ScalarT,panzer::Cell,panzer::IP,panzer::Dim> & field = scatterFields_[fieldIndex];
+         PHX::MDField<const ScalarT,panzer::Cell,panzer::IP,panzer::Dim> & field = scatterFields_[fieldIndex];
          std::string fieldName = names_[fieldIndex]+dimStrings[d];
 
-         std::vector<double> average(field.dimension(0),0.0);
+         PHX::MDField<double,panzer::Cell,panzer::NODE> average = af.buildStaticArray<double,panzer::Cell,panzer::NODE>("",field.dimension(0),1);
+
          // write to double field
-         for(int i=0; i<field.dimension(0);i++) { // cell
-            for(int j=0; j<field.dimension(1);j++) // IP
-               average[i] += field(i,j,d);         // insert dimension
-            average[i] /= field.dimension(1);
+         for(unsigned i=0; i<field.dimension(0);i++) { // cell
+            for(unsigned j=0; j<field.dimension(1);j++) // IP
+               average(i,0) += field(i,j,d);         // insert dimension
+            average(i,0) /= field.dimension(1);
          }
       
          // add in vector value at d^th point

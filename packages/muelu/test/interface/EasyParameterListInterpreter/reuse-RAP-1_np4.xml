@@ -1,0 +1,5 @@
+<ParameterList name="MueLu">
+  <Parameter name="reuse: type"                     type="string"   value="RAP"/>
+  <Parameter name="repartition: enable"             type="bool"     value="true"/>
+  <Parameter name="repartition: rebalance P and R"  type="bool"     value="true"/>
+</ParameterList>

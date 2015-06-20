@@ -105,8 +105,7 @@ void
 LOCA::AnasaziOperator::JacobianInverse::beginPostProcessing()
 {
   // Make sure Jacobian is up-to-date
-  NOX::Abstract::Group::ReturnType status;
-  status = grp->computeJacobian();
+  grp->computeJacobian();
 }
 
 void

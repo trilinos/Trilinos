@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsLibraryMacros)
 INCLUDE(TrilinosCreateClientTemplateHeaders)
 
 #

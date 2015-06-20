@@ -89,7 +89,7 @@ typedef struct Param_Utype {
   float fval;
   double dval;
   long lval;
-  char sval[MAX_PARAM_STRING_LEN + 1];
+  char sval[MAX_PARAM_STRING_LEN];
   char cval;
 } PARAM_UTYPE;
 

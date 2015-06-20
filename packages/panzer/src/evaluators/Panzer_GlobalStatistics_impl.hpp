@@ -128,8 +128,8 @@ PHX_EVALUATE_FIELDS(GlobalStatistics,workset)
     return;
 
   Intrepid::FunctionSpaceTools::integrate<ScalarT>(volumes, ones, 
-						   (workset.int_rules[ir_index])->weighted_measure, 
-						   Intrepid::COMP_BLAS);
+                                                       (workset.int_rules[ir_index])->weighted_measure, 
+                                                       Intrepid::COMP_BLAS);
 
   for (std::size_t cell = 0; cell < workset.num_cells; ++cell)
     total_volume += volumes(cell);
@@ -139,20 +139,19 @@ PHX_EVALUATE_FIELDS(GlobalStatistics,workset)
        field != field_values.end(); ++field,++field_index) {
     
     Intrepid::FunctionSpaceTools::integrate<ScalarT>(tmp, *field, 
-						     (workset.int_rules[ir_index])->weighted_measure, 
-						     Intrepid::COMP_BLAS);
+                                                         (workset.int_rules[ir_index])->weighted_measure, 
+                                                         Intrepid::COMP_BLAS);
     
     for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
       averages[field_index] += tmp(cell);
 
       for (typename PHX::MDField<ScalarT,Cell,IP>::size_type ip = 0; ip < (field->dimension(1)); ++ip) {
-	maxs[field_index] = std::max( (*field)(cell,ip), maxs[field_index]);
-	mins[field_index] = std::min( (*field)(cell,ip), mins[field_index]);
+        maxs[field_index] = std::max( (*field)(cell,ip), maxs[field_index]);
+        mins[field_index] = std::min( (*field)(cell,ip), mins[field_index]);
       }
     }
     
   }
-
 }
 
 //**********************************************************************
@@ -177,8 +176,8 @@ PHX_POST_EVALUATE_FIELDS(GlobalStatistics,data)
 }
 
 //**********************************************************************
-template<typename EvalT, typename Traits>
-void GlobalStatistics<EvalT, Traits>::postprocess(std::ostream& os)
+template<typename EvalT, typename TRAITS>
+void GlobalStatistics<EvalT, TRAITS>::postprocess(std::ostream& os)
 {
   // throw unless specialized for residual evaluations
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"SHOULD NEVER BE CALLED!");
@@ -217,9 +216,9 @@ void GlobalStatistics<panzer::Traits::Residual, panzer::Traits>::postprocess(std
     
     for (std::vector<ScalarT>::size_type i = 0; i < field_values.size(); ++i) {
       os << std::setw(name_width) <<  field_values[i].fieldTag().name() 
-	 << " " << std::setw(value_width) << global_averages[i]
-	 << " " << std::setw(value_width) << global_maxs[i]
-	 << " " << std::setw(value_width) << global_mins[i] << std::endl;
+         << " " << std::setw(value_width) << global_averages[i]
+         << " " << std::setw(value_width) << global_maxs[i]
+         << " " << std::setw(value_width) << global_mins[i] << std::endl;
     }
 
   }
@@ -227,8 +226,8 @@ void GlobalStatistics<panzer::Traits::Residual, panzer::Traits>::postprocess(std
 }
 
 //**********************************************************************
-template<typename EvalT, typename Traits>
-const PHX::FieldTag& GlobalStatistics<EvalT, Traits>::getRequiredFieldTag()
+template<typename EvalT, typename TRAITS>
+const PHX::FieldTag& GlobalStatistics<EvalT, TRAITS>::getRequiredFieldTag()
 {
   return tmp.fieldTag();
 }

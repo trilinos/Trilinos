@@ -48,7 +48,7 @@ int main( int argc, char* argv[] )
 
   using Teuchos::CommandLineProcessor;
 
-  bool verbose = true;  
+  bool verbose = true;
   bool parse_successful = true;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
@@ -58,11 +58,14 @@ int main( int argc, char* argv[] )
     // Read options from the commandline
     CommandLineProcessor  clp(false, false); // Don't throw exceptions
 
-    double rel_proc_speed = 1e-5; // Should 
+    double rel_proc_speed = 1e-5; // Should
     clp.setOption( "rel-proc-speed", &rel_proc_speed, "Relative processor speed (try around 1.0 for timing)." );
 
     int size = 1;
     clp.setOption( "size", &size, "Size of memory blocks created." );
+
+    size_t sizetOption = 10;
+    clp.setOption( "sizeTOption", &sizetOption, "An option of type size_t.");
 
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
     long long longLongOption = 42;
@@ -84,8 +87,8 @@ int main( int argc, char* argv[] )
     // Add a new option that is required
     int num = 1;
     clp.setOption( "num", &num, "Number of memory blocks created (required option).", true );
-   
-    // Now parse with this new option (which should not be passed in on the command line) 
+
+    // Now parse with this new option (which should not be passed in on the command line)
     parse_return = clp.parse(argc,argv);
     if (verbose)
       std::cout << "Test 2:  CommandLineProcessor - No exceptions - All extra options ignored - 1 required: ";
@@ -111,7 +114,7 @@ int main( int argc, char* argv[] )
 
     clp2.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not." );
 
-    double rel_proc_speed = 1e-5; // Should 
+    double rel_proc_speed = 1e-5; // Should
     clp2.setOption( "rel-proc-speed", &rel_proc_speed, "Relative processor speed (try around 1.0 for timing)." );
 
     int size = 1;
@@ -120,8 +123,8 @@ int main( int argc, char* argv[] )
     // Add a new option that is required
     int num = 1;
     clp2.setOption( "num", &num, "Number of memory blocks created (required option).", true );
-  
-    // Parse the argument line and see if we get an exception thrown 
+
+    // Parse the argument line and see if we get an exception thrown
     clp2.parse(argc,argv);
   }
   catch( CommandLineProcessor::ParseError &excpt ) {
@@ -168,13 +171,13 @@ int main( int argc, char* argv[] )
     }
     else
       if (verbose) std::cout << "PASSED" << std::endl;
-  } 
+  }
   catch( ... ) {
     if(verbose)
       std::cerr << "*** Caught UNEXPECTED unknown exception" << std::endl;
     parse_successful = false;  // No exceptions should be thrown for this command line processor.
   }
- 
+
   // Next create tests for a command line processor that doesn't throw exceptions, and doesn't recognize all options.
   try {
     if (verbose)
@@ -184,7 +187,7 @@ int main( int argc, char* argv[] )
 
     // Parse the current input, which should not be successful because the test is run with "--verbose" argument.
     clp4.parse(argc,argv);
-  } 
+  }
   catch( CommandLineProcessor::UnrecognizedOption &excpt ) {
     if(verbose)
       std::cout << "*** Caught EXPECTED standard exception : " << excpt.what() << std::endl
@@ -197,7 +200,7 @@ int main( int argc, char* argv[] )
     parse_successful = false;  // No exceptions should be thrown for this command line processor.
   }
 
-  // Return whether the command line processor tests passed. 
+  // Return whether the command line processor tests passed.
   if (parse_successful) {
     std::cout << "End Result: TEST PASSED" << std::endl;
     return 0;

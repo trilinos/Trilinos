@@ -62,8 +62,8 @@
 
 #include "Teuchos_FancyOStream.hpp"
 
-template <typename EvalT,typename Traits,typename S,typename LO,typename GO,typename NodeT>
-panzer::ScatterResidual_BlockedTpetra<EvalT, Traits,S,LO,GO,NodeT>::
+template <typename EvalT,typename TRAITS,typename LO,typename GO,typename NodeT>
+panzer::ScatterResidual_BlockedTpetra<EvalT,TRAITS,LO,GO,NodeT>::
 ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
                               const Teuchos::ParameterList& p)
 { 
@@ -80,7 +80,7 @@ ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> 
   
   // build the vector of fields that this is dependent on
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
-    PHX::MDField<ScalarT,Cell,NODE> field = PHX::MDField<ScalarT,Cell,NODE>(names[eq],dl);
+    PHX::MDField<const ScalarT,Cell,NODE> field = PHX::MDField<const ScalarT,Cell,NODE>(names[eq],dl);
 
     // tell the field manager that we depend on this field
     this->addDependentField(field);
@@ -96,8 +96,8 @@ ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> 
 // Specialization: Residual
 // **********************************************************************
 
-template <typename Traits,typename S,typename LO,typename GO,typename NodeT>
-panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Residual, Traits,S,LO,GO,NodeT>::
+template <typename TRAITS,typename LO,typename GO,typename NodeT>
+panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
 ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
                               const Teuchos::ParameterList& p)
   : globalIndexer_(indexer) 
@@ -120,7 +120,7 @@ ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> 
   // build the vector of fields that this is dependent on
   scatterFields_.resize(names.size());
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
-    scatterFields_[eq] = PHX::MDField<ScalarT,Cell,NODE>(names[eq],dl);
+    scatterFields_[eq] = PHX::MDField<const ScalarT,Cell,NODE>(names[eq],dl);
 
     // tell the field manager that we depend on this field
     this->addDependentField(scatterFields_[eq]);
@@ -136,10 +136,10 @@ ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> 
 }
 
 // **********************************************************************
-template <typename Traits,typename S,typename LO,typename GO,typename NodeT>
-void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Residual, Traits,S,LO,GO,NodeT>::
-postRegistrationSetup(typename Traits::SetupData d, 
-		      PHX::FieldManager<Traits>& fm)
+template <typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Residual,TRAITS,LO,GO,NodeT>::
+postRegistrationSetup(typename TRAITS::SetupData d, 
+		      PHX::FieldManager<TRAITS>& fm)
 {
   fieldIds_.resize(scatterFields_.size());
 
@@ -155,18 +155,18 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template <typename Traits,typename S,typename LO,typename GO,typename NodeT>
-void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Residual, Traits,S,LO,GO,NodeT>::
-preEvaluate(typename Traits::PreEvalData d)
+template <typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
+preEvaluate(typename TRAITS::PreEvalData d)
 {
    // extract linear object container
-   blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.getDataObject(globalDataKey_),true);
+   blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.gedc.getDataObject(globalDataKey_),true);
 }
 
 // **********************************************************************
-template <typename Traits,typename S,typename LO,typename GO,typename NodeT>
-void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Residual, Traits,S,LO,GO,NodeT>::
-evaluateFields(typename Traits::EvalData workset)
+template <typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Residual,TRAITS,LO,GO,NodeT>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
    using Teuchos::RCP;
    using Teuchos::ArrayRCP;
@@ -234,8 +234,8 @@ evaluateFields(typename Traits::EvalData workset)
 // Specialization: Jacobian
 // **********************************************************************
 
-template <typename Traits,typename S,typename LO,typename GO,typename NodeT>
-panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Jacobian, Traits,S,LO,GO,NodeT>::
+template <typename TRAITS,typename LO,typename GO,typename NodeT>
+panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>::
 ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
                               const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
@@ -258,7 +258,7 @@ ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> 
   // build the vector of fields that this is dependent on
   scatterFields_.resize(names.size());
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
-    scatterFields_[eq] = PHX::MDField<ScalarT,Cell,NODE>(names[eq],dl);
+    scatterFields_[eq] = PHX::MDField<const ScalarT,Cell,NODE>(names[eq],dl);
 
     // tell the field manager that we depend on this field
     this->addDependentField(scatterFields_[eq]);
@@ -274,10 +274,10 @@ ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> 
 }
 
 // **********************************************************************
-template <typename Traits,typename S,typename LO,typename GO,typename NodeT>
-void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Jacobian, Traits,S,LO,GO,NodeT>::
-postRegistrationSetup(typename Traits::SetupData d,
-		      PHX::FieldManager<Traits>& fm)
+template <typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Jacobian,TRAITS,LO,GO,NodeT>::
+postRegistrationSetup(typename TRAITS::SetupData d,
+		      PHX::FieldManager<TRAITS>& fm)
 {
   fieldIds_.resize(scatterFields_.size());
 
@@ -293,26 +293,26 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template <typename Traits,typename S,typename LO,typename GO,typename NodeT>
-void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Jacobian, Traits,S,LO,GO,NodeT>::
-preEvaluate(typename Traits::PreEvalData d)
+template <typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Jacobian,TRAITS,LO,GO,NodeT>::
+preEvaluate(typename TRAITS::PreEvalData d)
 {
    using Teuchos::RCP;
    using Teuchos::rcp_dynamic_cast;
 
    // extract linear object container
-   blockedContainer_ = rcp_dynamic_cast<const ContainerType>(d.getDataObject(globalDataKey_));
+   blockedContainer_ = rcp_dynamic_cast<const ContainerType>(d.gedc.getDataObject(globalDataKey_));
 
    if(blockedContainer_==Teuchos::null) {
-     RCP<const LOCPair_GlobalEvaluationData> gdata = rcp_dynamic_cast<const LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true);
+     RCP<const LOCPair_GlobalEvaluationData> gdata = rcp_dynamic_cast<const LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true);
      blockedContainer_ = rcp_dynamic_cast<const ContainerType>(gdata->getGhostedLOC());
    }
 }
 
 // **********************************************************************
-template <typename Traits,typename S,typename LO,typename GO,typename NodeT>
-void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Jacobian, Traits,S,LO,GO,NodeT>::
-evaluateFields(typename Traits::EvalData workset)
+template <typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Jacobian,TRAITS,LO,GO,NodeT>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
    using Teuchos::RCP;
    using Teuchos::ArrayRCP;
@@ -382,7 +382,7 @@ evaluateFields(typename Traits::EvalData workset)
         
          // loop over the basis functions (currently they are nodes)
          for(std::size_t rowBasisNum = 0; rowBasisNum < elmtOffset.size(); rowBasisNum++) {
-            const ScalarT & scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,rowBasisNum);
+            const ScalarT scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,rowBasisNum);
             int rowOffset = elmtOffset[rowBasisNum];
             int r_lid = LIDs[rowOffset];
     

@@ -47,7 +47,6 @@
 #define XPETRA_BLOCKEDCRSMATRIX_HPP
 
 #include <Kokkos_DefaultNode.hpp>
-#include <Kokkos_DefaultKernels.hpp>
 
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_Hashtable.hpp>
@@ -74,12 +73,22 @@ namespace Xpetra {
 
   typedef std::string viewLabel_t;
 
-  template <class Scalar,
-           class LocalOrdinal  = int,
-           class GlobalOrdinal = LocalOrdinal,
-           class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
-           class LocalMatOps   = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps >
-           class BlockedCrsMatrix : public Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
+  template <class Scalar = Matrix<>::scalar_type,
+            class LocalOrdinal =
+              typename Matrix<Scalar>::local_ordinal_type,
+            class GlobalOrdinal =
+              typename Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node =
+              typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  class BlockedCrsMatrix :
+    public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
+  public:
+    typedef Scalar scalar_type;
+    typedef LocalOrdinal local_ordinal_type;
+    typedef GlobalOrdinal global_ordinal_type;
+    typedef Node node_type;
+
+  private:
 #undef XPETRA_BLOCKEDCRSMATRIX_SHORT
 #include "Xpetra_UseShortNames.hpp"
 
@@ -589,25 +598,25 @@ namespace Xpetra {
 
     //! \brief Returns the Map associated with the full domain of this operator.
     //! This will be <tt>null</tt> until fillComplete() is called.
-    const RCP<const Map > getDomainMap() const            { return domainmaps_->getFullMap(); }
+    RCP<const Map > getDomainMap() const            { return domainmaps_->getFullMap(); }
 
     //! \brief Returns the Map associated with the i'th block domain of this operator.
     //! This will be <tt>null</tt> until fillComplete() is called.
-    const RCP<const Map > getDomainMap(size_t i) const    { return domainmaps_->getMap(i); }
+    RCP<const Map > getDomainMap(size_t i) const    { return domainmaps_->getMap(i); }
 
     //! Returns the Map associated with the full range of this operator.
     //! This will be <tt>null</tt> until fillComplete() is called.
-    const RCP<const Map > getRangeMap() const             { return rangemaps_->getFullMap(); }
+    RCP<const Map > getRangeMap() const             { return rangemaps_->getFullMap(); }
 
     //! Returns the Map associated with the i'th block range of this operator.
     //! This will be <tt>null</tt> until fillComplete() is called.
-    const RCP<const Map > getRangeMap(size_t i) const     { return rangemaps_->getMap(i); }
+    RCP<const Map > getRangeMap(size_t i) const     { return rangemaps_->getMap(i); }
 
     //! Returns map extractor class for range map
-    const RCP<const MapExtractor> getRangeMapExtractor()  { return rangemaps_; }
+    RCP<const MapExtractor> getRangeMapExtractor()  { return rangemaps_; }
 
     //! Returns map extractor for domain map
-    const RCP<const MapExtractor> getDomainMapExtractor() { return domainmaps_; }
+    RCP<const MapExtractor> getDomainMapExtractor() { return domainmaps_; }
 
     //@}
 

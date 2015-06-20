@@ -615,9 +615,16 @@ namespace Ioss {
   double Region::begin_state(int state)
   {
     double time = 0.0;
-    if (state > stateCount) {
+    if (get_database()->is_input() && stateCount == 0) {
       std::ostringstream errmsg;
-      errmsg << "ERROR: Requested state does not exist.\n"
+      errmsg << "ERROR: There are no states (time steps) on the input database.\n"
+	     << "       [" << get_database()->get_filename() << "]\n";
+      IOSS_ERROR(errmsg);
+    }
+    if (state <= 0 || state > stateCount) {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: Requested state (" << state << ") is invalid.\n"
+	     << "       State must be between 1 and " << stateCount << ".\n"
 	     << "       [" << get_database()->get_filename() << "]\n";
       IOSS_ERROR(errmsg);
     } else if (currentState != -1 && !get_database()->is_input()) {

@@ -86,12 +86,21 @@ namespace Piro {
      );
 
   //! \brief Performs analysis of a solved model using Optipack.
-  //! \details Requires that the MOOCHO package is available.
+  //! \details Requires that the OptiPack package is available.
   //! \ingroup Piro_Thyra_analysis_driver_grp
   int PerformOptiPackAnalysis(
      Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
      Teuchos::ParameterList& optipackParams,
      Teuchos::ParameterList& globipackParams,
+     Teuchos::RCP< Thyra::VectorBase<double> >& p
+     );
+
+  //! \brief Performs analysis of a solved model using ROL.
+  //! \details Requires that the ROL package is available.
+  //! \ingroup Piro_Thyra_analysis_driver_grp
+  int PerformROLAnalysis(
+     Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
+     Teuchos::ParameterList& rolParams,
      Teuchos::RCP< Thyra::VectorBase<double> >& p
      );
   //@}

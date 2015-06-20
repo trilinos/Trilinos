@@ -89,10 +89,10 @@ protected:
   //int derived_map_if(const Dakota::String& if_name);
 
   //! evaluate the batch of jobs contained in prp_queue
-  void derived_synch(Dakota::PRPQueue& prp_queue);
+  void wait_local_evaluations(Dakota::PRPQueue& prp_queue);
 
-  void derived_synch_nowait(Dakota::PRPQueue& prp_queue) { 
-    derived_synch(prp_queue); 
+  void test_local_evaluations(Dakota::PRPQueue& prp_queue) { 
+    wait_local_evaluations(prp_queue); 
   }
 
   void check_configuration(int max_iterator_concurrency) {}

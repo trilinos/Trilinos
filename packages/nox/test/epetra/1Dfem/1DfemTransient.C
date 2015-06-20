@@ -117,6 +117,7 @@ class TransientInterface : public Interface
     TransientInterface(int NumGlobalElements, Epetra_Comm& Comm,
         double xmin = 0.0, double xmax = 1.0) :
       Interface(NumGlobalElements, Comm, xmin, xmax),
+      dt(0.0),
       oldSolution(0),
       exactSolution(0)
   {
@@ -182,12 +183,7 @@ class TransientInterface : public Interface
       xvec.Import(*xptr, *Importer, Insert);
 
       // Declare required variables
-      int ierr;
       int OverlapNumMyElements = OverlapMap->NumMyElements();
-
-      int OverlapMinMyGID;
-      if (MyPID == 0) OverlapMinMyGID = StandardMap->MinMyGID();
-      else OverlapMinMyGID = StandardMap->MinMyGID()-1;
 
       int row, column;
       double jac;
@@ -244,7 +240,7 @@ class TransientInterface : public Interface
                       8.0/factor/factor*
                       (2.0*basis.uu-3.0*basis.uu*basis.uu)*
                       basis.phi[j]*basis.phi[i]);
-                  ierr=jacobian->SumIntoGlobalValues(row, 1, &jac, &column);
+                  jacobian->SumIntoGlobalValues(row, 1, &jac, &column);
                 }
               }
             }

@@ -45,6 +45,8 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_CellData.hpp"
 #include "user_app_EquationSetFactory.hpp"
 
@@ -52,6 +54,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(equation_set, steady_state)
   {
+    PHX::KokkosDeviceSession session;
+
     Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::parameterList();
     p->set("Type","Energy");
     p->set("Prefix","ION_");
@@ -72,6 +76,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(equation_set, transient)
   {
+    PHX::KokkosDeviceSession session;
+
     Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::parameterList();
     p->set("Type","Energy");
     p->set("Prefix","ION_");

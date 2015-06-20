@@ -26,8 +26,8 @@
 
 namespace MueLu {
 
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void AlgebraicPermutationStrategy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildPermutation(const Teuchos::RCP<Matrix> & A, const Teuchos::RCP<const Map> permRowMap, Level & currentLevel, const FactoryBase* genFactory) const {
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void AlgebraicPermutationStrategy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildPermutation(const Teuchos::RCP<Matrix> & A, const Teuchos::RCP<const Map> permRowMap, Level & currentLevel, const FactoryBase* genFactory) const {
 #ifndef HAVE_MUELU_INST_COMPLEX_INT_INT
 
   const Teuchos::RCP< const Teuchos::Comm< int > > comm = A->getRowMap()->getComm();
@@ -607,10 +607,10 @@ namespace MueLu {
   Teuchos::RCP<Matrix> permPApermQt = Utils::Multiply(*permPmatrix, false, *ApermQt, false, GetOStream(Statistics2));
 
   /*
-  MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write("A.mat", *A);
-  MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write("permP.mat", *permPmatrix);
-  MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write("permQt.mat", *permQTmatrix);
-  MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write("permPApermQt.mat", *permPApermQt);
+  MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("A.mat", *A);
+  MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("permP.mat", *permPmatrix);
+  MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("permQt.mat", *permQTmatrix);
+  MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("permPApermQt.mat", *permPApermQt);
   */
   // build scaling matrix
   Teuchos::RCP<Vector> diagVec = VectorFactory::Build(permPApermQt->getRowMap(),true);
@@ -686,8 +686,6 @@ namespace MueLu {
   GetOStream(Statistics0) << "#Column permutations/max possible permutations: " << gNumColPermutations << "/" << diagQTVec->getMap()->getGlobalNumElements() << std::endl;
   GetOStream(Runtime1) << "#wide range row permutations: " << gWideRangeRowPermutations << " #wide range column permutations: " << gWideRangeColPermutations << std::endl;
 
-#else
-#warning PermutationFactory not compiling/working for Scalar==complex.
 #endif // #ifndef HAVE_MUELU_INST_COMPLEX_INT_INT
 
 

@@ -54,7 +54,7 @@ namespace Teuchos
 {
   using std::string;
 
-  /** 
+  /**
    * \brief Instantiation of XMLInputStream for reading an entire document from a std::string
    *
    * This is a low-level object and should not be needed at the user level.

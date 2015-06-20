@@ -57,8 +57,8 @@
 
 namespace MueLu {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  CoupledAggregationCommHelper<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CoupledAggregationCommHelper(const RCP<const Map> & uniqueMap, const RCP<const Map> & nonUniqueMap) {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  CoupledAggregationCommHelper<LocalOrdinal, GlobalOrdinal, Node>::CoupledAggregationCommHelper(const RCP<const Map> & uniqueMap, const RCP<const Map> & nonUniqueMap) {
     import_ = ImportFactory::Build(uniqueMap, nonUniqueMap);
     tempVec_ = VectorFactory::Build(uniqueMap,false); //zeroed out before use
     numMyWinners_ = 0;
@@ -66,8 +66,8 @@ namespace MueLu {
     myPID_ = uniqueMap->getComm()->getRank();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CoupledAggregationCommHelper<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ArbitrateAndCommunicate(Vector &weight_, LOVector &procWinner_, LOVector *companion, const bool perturb) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CoupledAggregationCommHelper<LocalOrdinal, GlobalOrdinal, Node>::ArbitrateAndCommunicate(Vector &weight_, LOVector &procWinner_, LOVector *companion, const bool perturb) const {
     const RCP<const Map> weightMap = weight_.getMap();
     const size_t nodeNumElements = weightMap->getNodeNumElements();
     const RCP<const Teuchos::Comm<int> > & comm = weightMap->getComm();
@@ -468,8 +468,8 @@ namespace MueLu {
 #endif
   } //ArbitrateAndCommunicate(Vector&, LOVector &, LOVector *, const bool) const
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CoupledAggregationCommHelper<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::NonUnique2NonUnique(const Vector &source, Vector &dest, const Xpetra::CombineMode what) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CoupledAggregationCommHelper<LocalOrdinal, GlobalOrdinal, Node>::NonUnique2NonUnique(const Vector &source, Vector &dest, const Xpetra::CombineMode what) const {
     tempVec_->putScalar(0.);
 
     try

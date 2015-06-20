@@ -68,6 +68,8 @@ using Teuchos::rcp;
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STKConnManager.hpp"
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
 
@@ -93,11 +95,13 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(block_assembly, scatter_dirichlet_residual)
   {
-   #ifdef HAVE_MPI
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-   #else
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
-   #endif
+    PHX::KokkosDeviceSession session;
+
+#ifdef HAVE_MPI
+    Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+#else
+    Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
+#endif
 
     int myRank = eComm->MyPID();
 
@@ -151,7 +155,7 @@ namespace panzer {
     Teuchos::RCP<LinearObjFactory<panzer::Traits> > lof = be_lof;
     Teuchos::RCP<LinearObjContainer> dd_loc = be_lof->buildGhostedLinearObjContainer();
     Teuchos::RCP<LinearObjContainer> loc = be_lof->buildGhostedLinearObjContainer();
-    be_lof->initializeGhostedContainer(LinearObjContainer::X,*dd_loc);
+    be_lof->initializeGhostedContainer(LinearObjContainer::F,*dd_loc);
     dd_loc->initialize();
 
     be_lof->initializeGhostedContainer(LinearObjContainer::X | LinearObjContainer::F,*loc);
@@ -256,17 +260,21 @@ namespace panzer {
        fm.registerEvaluator<panzer::Traits::Residual>(evaluator);
     }
 
+    std::vector<PHX::index_size_type> derivative_dimensions;
+    derivative_dimensions.push_back(12);
+    fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
+
     panzer::Traits::SetupData sd;
     fm.postRegistrationSetup(sd);
 
     // panzer::Traits::PED ped;
     // ped.dirichletData.ghostedCounter = dd_loc;
     // fm.preEvaluate<panzer::Traits::Residual>(ped);
-    panzer::GlobalEvaluationDataContainer gedc;
-    gedc.addDataObject("Dirichlet Counter",dd_loc);
-    gedc.addDataObject("Solution Gather Container",loc);
-    gedc.addDataObject("Residual Scatter Container",loc);
-    fm.preEvaluate<panzer::Traits::Residual>(gedc);
+    panzer::Traits::PreEvalData ped;
+    ped.gedc.addDataObject("Dirichlet Counter",dd_loc);
+    ped.gedc.addDataObject("Solution Gather Container",loc);
+    ped.gedc.addDataObject("Residual Scatter Container",loc);
+    fm.preEvaluate<panzer::Traits::Residual>(ped);
 
 
     // run tests
@@ -284,7 +292,7 @@ namespace panzer {
     std::size_t dd_count = 0;
     Teuchos::ArrayRCP<const double> data, dd_data;
     Teuchos::RCP<const Thyra::ProductVectorBase<double> > f_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(b_loc->get_f());
-    Teuchos::RCP<const Thyra::ProductVectorBase<double> > dd_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(b_dd_loc->get_x());
+    Teuchos::RCP<const Thyra::ProductVectorBase<double> > dd_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(b_dd_loc->get_f());
 
     // check all the residual values. This is kind of crappy test since it simply checks twice the target
     // value and the target. Its this way because you add two entries across elements.
@@ -338,11 +346,13 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(block_assembly, scatter_dirichlet_jacobian)
   {
-   #ifdef HAVE_MPI
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-   #else
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
-   #endif
+    PHX::KokkosDeviceSession session;
+    
+#ifdef HAVE_MPI
+    Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+#else
+    Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
+#endif
 
     int myRank = eComm->MyPID();
 
@@ -396,7 +406,7 @@ namespace panzer {
     Teuchos::RCP<LinearObjFactory<panzer::Traits> > lof = be_lof;
     Teuchos::RCP<LinearObjContainer> dd_loc = be_lof->buildGhostedLinearObjContainer();
     Teuchos::RCP<LinearObjContainer> loc = be_lof->buildGhostedLinearObjContainer();
-    be_lof->initializeGhostedContainer(LinearObjContainer::X,*dd_loc);
+    be_lof->initializeGhostedContainer(LinearObjContainer::F,*dd_loc);
     dd_loc->initialize();
 
     be_lof->initializeGhostedContainer(LinearObjContainer::X | LinearObjContainer::F | LinearObjContainer::Mat,*loc);
@@ -508,17 +518,21 @@ namespace panzer {
        fm.registerEvaluator<panzer::Traits::Jacobian>(evaluator);
     }
 
+    std::vector<PHX::index_size_type> derivative_dimensions;
+    derivative_dimensions.push_back(12);
+    fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
+
     panzer::Traits::SetupData sd;
     fm.postRegistrationSetup(sd);
 
     // panzer::Traits::PED ped;
     // ped.dirichletData.ghostedCounter = dd_loc;
     // fm.preEvaluate<panzer::Traits::Jacobian>(ped);
-    panzer::GlobalEvaluationDataContainer gedc;
-    gedc.addDataObject("Dirichlet Counter",dd_loc);
-    gedc.addDataObject("Solution Gather Container",loc);
-    gedc.addDataObject("Residual Scatter Container",loc);
-    fm.preEvaluate<panzer::Traits::Jacobian>(gedc);
+    panzer::Traits::PreEvalData ped;
+    ped.gedc.addDataObject("Dirichlet Counter",dd_loc);
+    ped.gedc.addDataObject("Solution Gather Container",loc);
+    ped.gedc.addDataObject("Residual Scatter Container",loc);
+    fm.preEvaluate<panzer::Traits::Jacobian>(ped);
 
     // run tests
     /////////////////////////////////////////////////////////////
@@ -535,7 +549,7 @@ namespace panzer {
     std::size_t dd_count = 0;
     Teuchos::ArrayRCP<const double> data, dd_data;
     Teuchos::RCP<const Thyra::ProductVectorBase<double> > f_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(b_loc->get_f());
-    Teuchos::RCP<const Thyra::ProductVectorBase<double> > dd_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(b_dd_loc->get_x());
+    Teuchos::RCP<const Thyra::ProductVectorBase<double> > dd_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(b_dd_loc->get_f());
 
     // check all the residual values. This is kind of crappy test since it simply checks twice the target
     // value and the target. Its this way because you add two entries across elements.

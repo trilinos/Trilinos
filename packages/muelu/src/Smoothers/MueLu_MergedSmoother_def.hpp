@@ -51,37 +51,37 @@
 
 namespace MueLu {
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MergedSmoother(ArrayRCP<RCP<SmootherPrototype> > & smootherList, bool verbose)
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MergedSmoother(ArrayRCP<RCP<SmootherPrototype> > & smootherList, bool verbose)
     : smootherList_(smootherList), reverseOrder_(false), verbose_(verbose) {
     // TODO: check that on each method TEUCHOS_TEST_FOR_EXCEPTION(smootherList == Teuchos::null, MueLu::Exceptions::RuntimeError, "");
 
     SmootherPrototype::IsSetup(false);
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MergedSmoother(const MergedSmoother& src)
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MergedSmoother(const MergedSmoother& src)
     : reverseOrder_(src.reverseOrder_), verbose_(src.verbose_) {
     // Deep copy of src.smootherList_
     smootherList_ = SmootherListDeepCopy(src.GetSmootherList());
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetFactory(const std::string& varName, const RCP<const FactoryBase>& factory) {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetFactory(const std::string& varName, const RCP<const FactoryBase>& factory) {
     // We need to propagate SetFactory to proper place
     for (typename ArrayView<RCP<SmootherPrototype> >::iterator it = smootherList_.begin(); it != smootherList_.end(); it++)
       (*it)->SetFactory(varName, factory);
   }
 
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& currentLevel) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
     for (typename ArrayView<RCP<SmootherPrototype> >::iterator it = smootherList_.begin(); it != smootherList_.end(); ++it)
       (*it)->DeclareInput(currentLevel);
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level& level) {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& level) {
     if (SmootherPrototype::IsSetup() == true)
       this->GetOStream(Warnings0) << "MueLu::MergedSmoother::Setup(): Setup() has already been called";
 
@@ -98,8 +98,8 @@ namespace MueLu {
     SmootherPrototype::IsSetup(true);
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, MueLu::Exceptions::RuntimeError, "MueLu::MergedSmoother<>:Apply(): Setup() has not been called");
 
     typedef typename ArrayRCP<RCP<SmootherPrototype> >::size_type sz_t;
@@ -120,13 +120,13 @@ namespace MueLu {
       }
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream& out, const VerbLevel verbLevel) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print(Teuchos::FancyOStream& out, const VerbLevel verbLevel) const {
     throw Exceptions::NotImplemented("MueLu::MergedSmoother<>::Print() is not implemented");
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CopyParameters(RCP<SmootherPrototype> src) { // TODO: wrong prototype. We do not need an RCP here.
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CopyParameters(RCP<SmootherPrototype> src) { // TODO: wrong prototype. We do not need an RCP here.
     RCP<MergedSmoother> srcMergedSmoother = rcp_dynamic_cast<MergedSmoother>(src); // TODO: check if dynamic cast fails
 
     reverseOrder_ = srcMergedSmoother->GetReverseOrder();
@@ -188,13 +188,19 @@ namespace MueLu {
     }
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Copy() const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  Copy () const
+  {
     return rcp(new MergedSmoother(*this));
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ArrayRCP<RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > > MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SmootherListDeepCopy(const ArrayRCP<const RCP<SmootherPrototype> >& srcSmootherList) {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  ArrayRCP<RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >
+  MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  SmootherListDeepCopy (const ArrayRCP<const RCP<SmootherPrototype> >& srcSmootherList)
+  {
     ArrayRCP<RCP<SmootherPrototype> > newSmootherList(srcSmootherList.size());
 
     for (typename ArrayRCP<RCP<SmootherPrototype> >::size_type i = 0; i < srcSmootherList.size(); i++)

@@ -244,7 +244,7 @@ int isprime = 1;
  if (n == 1) return 0;
 
   rootn = sqrt((double)n)+1;
-  for (i = 0; primes[i] < rootn && i < numprimes; i++)
+  for (i = 0; (i < numprimes) && (primes[i] < rootn); i++)
     if (!(n%primes[i])) {
       isprime = 0;
       break;

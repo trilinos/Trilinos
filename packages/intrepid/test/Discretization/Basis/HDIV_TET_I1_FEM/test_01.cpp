@@ -363,6 +363,74 @@ int main(int argc, char *argv[]) {
     *outStream << err.what() << "\n\n";
     errorFlag = -1000;
   };
+
+  *outStream \
+    << "\n"
+    << "===============================================================================\n"\
+    << "| TEST 4: correctness of DoF locations                                        |\n"\
+    << "===============================================================================\n";
+
+  try{
+    Teuchos::RCP<Basis<double, FieldContainer<double> > > basis =
+      Teuchos::rcp(new Basis_HDIV_TET_I1_FEM<double, FieldContainer<double> >);
+    Teuchos::RCP<DofCoordsInterface<FieldContainer<double> > > coord_iface =
+      Teuchos::rcp_dynamic_cast<DofCoordsInterface<FieldContainer<double> > >(basis);
+
+    int spaceDim = 3;
+    FieldContainer<double> cvals;
+    FieldContainer<double> bvals(basis->getCardinality(), basis->getCardinality(),spaceDim); // last dimension is spatial dim
+
+    // Check exceptions.
+#ifdef HAVE_INTREPID_DEBUG
+    cvals.resize(1,2,3);
+    INTREPID_TEST_COMMAND( coord_iface->getDofCoords(cvals), throwCounter, nException );
+    cvals.resize(3,2);
+    INTREPID_TEST_COMMAND( coord_iface->getDofCoords(cvals), throwCounter, nException );
+    cvals.resize(4,2);
+    INTREPID_TEST_COMMAND( coord_iface->getDofCoords(cvals), throwCounter, nException );
+#endif
+    cvals.resize(4,spaceDim);
+    INTREPID_TEST_COMMAND( coord_iface->getDofCoords(cvals), throwCounter, nException ); nException--;
+    // Check if number of thrown exceptions matches the one we expect
+    if (throwCounter != nException) {
+      errorFlag++;
+      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+    }
+
+    // Check mathematical correctness
+    FieldContainer<double> normals(basis->getCardinality(),spaceDim); // normals at each point basis point
+    normals(0,0)  =  0.0; normals(0,1)  = -0.5; normals(0,2)  =  0.0;
+    normals(1,0)  =  0.5; normals(1,1)  =  0.5; normals(1,2)  =  0.5;
+    normals(2,0)  = -0.5; normals(2,1)  =  0.0; normals(2,2)  =  0.0;
+    normals(3,0)  =  0.0; normals(3,1)  =  0.0; normals(3,2)  = -0.5;
+
+    basis->getValues(bvals, cvals, OPERATOR_VALUE);
+    char buffer[120];
+    for (int i=0; i<bvals.dimension(0); i++) {
+      for (int j=0; j<bvals.dimension(1); j++) {
+
+        double normal = 0.0;
+        for(int d=0;d<spaceDim;d++) 
+           normal += bvals(i,j,d)*normals(j,d);
+
+        if ((i != j) && (std::abs(normal - 0.0) > INTREPID_TOL)) {
+          errorFlag++;
+          sprintf(buffer, "\nValue of basis function %d at (%6.4e, %6.4e, %6.4e) is %6.4e but should be %6.4e!\n", i, cvals(i,0), cvals(i,1), cvals(i,2), normal, 0.0);
+          *outStream << buffer;
+        }
+        else if ((i == j) && (std::abs(normal - 1.0) > INTREPID_TOL)) {
+          errorFlag++;
+          sprintf(buffer, "\nValue of basis function %d at (%6.4e, %6.4e, %6.4e) is %6.4e but should be %6.4e!\n", i, cvals(i,0), cvals(i,1), cvals(i,2), normal, 1.0);
+          *outStream << buffer;
+        }
+      }
+    }
+
+  }
+  catch (std::logic_error err){
+    *outStream << err.what() << "\n\n";
+    errorFlag = -1000;
+  };
   
   if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED\n";

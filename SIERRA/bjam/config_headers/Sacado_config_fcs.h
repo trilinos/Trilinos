@@ -1,5 +1,5 @@
 /* Define if want to build teuchos-complex */
-/* #undef HAVE_SACADO_COMPLEX */
+#define HAVE_SACADO_COMPLEX
 
 /* Define if want to build with uninit */
 /* #undef HAVE_SACADO_UNINIT */
@@ -25,6 +25,13 @@
 /* Define if want to build with kokkos-core enabled */
 #define HAVE_SACADO_KOKKOSCORE
 
+/* Define if want to build with TeuchosKokkosComm subpackage enabled */
+#define HAVE_SACADO_TEUCHOSKOKKOSCOMM
+#ifdef HAVE_SACADO_TEUCHOSKOKKOSCOMM
+// For backwards compatibility
+#  define HAVE_SACADO_KOKKOSMPICOMM
+#endif // HAVE_SACADO_TEUCHOSKOKKOSCOMM
+
 /* Define if want to enable Kokkos view specializations for Sacado */
 #define HAVE_SACADO_VIEW_SPEC
 
@@ -36,4 +43,7 @@
 /* #undef SACADO_DEBUG */
 
 /* Define if compiler supports c99 tr1 cmath functions */
-/* #undef HAS_C99_TR1_CMATH */
+#define HAS_C99_TR1_CMATH
+
+/* Define to enable C++11 support*/
+#define HAVE_SACADO_CXX11

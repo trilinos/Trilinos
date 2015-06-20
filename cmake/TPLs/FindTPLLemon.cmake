@@ -53,10 +53,9 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsTplDeclareLibraries)
 
 
-TRIBITS_TPL_DECLARE_LIBRARIES( Lemon
+TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( Lemon
   REQUIRED_LIBS_NAMES libemon
   )
 

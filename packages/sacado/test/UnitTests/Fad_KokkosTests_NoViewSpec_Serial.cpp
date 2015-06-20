@@ -35,7 +35,7 @@
 
 #include "Fad_KokkosTests.hpp"
 
-#include "Kokkos_Serial.hpp"
+#include "Kokkos_Core.hpp"
 
 // Instantiate tests for Serial device
 using Kokkos::Serial;

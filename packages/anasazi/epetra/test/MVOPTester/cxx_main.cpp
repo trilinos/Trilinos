@@ -71,9 +71,8 @@ int main(int argc, char *argv[])
     int dim = 100;
     int blockSize = 5;
 
-    bool verbose = false;
-    if (argc>1) {
-      if (argv[1][0]=='-' && argv[1][1]=='v') {
+    if (argc > 1) {
+      if (argv[1][0] == '-' && argv[1][1] == 'v') {
         verbose = true;
       }
     }

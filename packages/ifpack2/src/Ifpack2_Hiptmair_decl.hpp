@@ -49,7 +49,6 @@
 
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_Preconditioner.hpp"
-#include "Ifpack2_Condest.hpp"
 #include "Ifpack2_Heap.hpp"
 #include "Ifpack2_Parameters.hpp"
 
@@ -76,7 +75,7 @@ namespace Ifpack2 {
   /// Ifpack2::Hiptmair does smoothing on two spaces; a primary space
   /// and an auxiliary space. This situation arises when preconditioning
   /// Maxwell's equations discretized by edge elements.
-  /// 
+  ///
   /// For a list of all run-time parameters that this class accepts,
   /// see the documentation of setParameters().
   template<class MatrixType>
@@ -93,36 +92,17 @@ namespace Ifpack2 {
     //! The type of the entries of the input MatrixType.
     typedef typename MatrixType::scalar_type scalar_type;
 
-    //! Preserved only for backwards compatibility.  Please use "scalar_type".
-    TEUCHOS_DEPRECATED typedef typename MatrixType::scalar_type Scalar;
-
-
     //! The type of local indices in the input MatrixType.
     typedef typename MatrixType::local_ordinal_type local_ordinal_type;
-
-    //! Preserved only for backwards compatibility.  Please use "local_ordinal_type".
-    TEUCHOS_DEPRECATED typedef typename MatrixType::local_ordinal_type LocalOrdinal;
-
 
     //! The type of global indices in the input MatrixType.
     typedef typename MatrixType::global_ordinal_type global_ordinal_type;
 
-    //! Preserved only for backwards compatibility.  Please use "global_ordinal_type".
-    TEUCHOS_DEPRECATED typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
-
-
-    //! The type of the Kokkos Node used by the input MatrixType.
+    //! The Node type used by the input MatrixType.
     typedef typename MatrixType::node_type node_type;
-
-    //! Preserved only for backwards compatibility.  Please use "node_type".
-    TEUCHOS_DEPRECATED typedef typename MatrixType::node_type Node;
-
 
     //! The type of the magnitude (absolute value) of a matrix entry.
     typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
-
-    //! Preserved only for backwards compatibility.  Please use "magnitude_type".
-    TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitudeType;
 
     //! Type of the Tpetra::RowMatrix specialization that this class uses.
     typedef Tpetra::RowMatrix<scalar_type,
@@ -142,8 +122,8 @@ namespace Ifpack2 {
 
     //! Constructor that takes 3 Tpetra matrices.
     explicit Hiptmair (const Teuchos::RCP<const row_matrix_type>& A,
-		       const Teuchos::RCP<const row_matrix_type>& PtAP,
-		       const Teuchos::RCP<const row_matrix_type>& P);
+                       const Teuchos::RCP<const row_matrix_type>& PtAP,
+                       const Teuchos::RCP<const row_matrix_type>& P);
 
     //! Destructor
     virtual ~Hiptmair ();
@@ -193,14 +173,14 @@ namespace Ifpack2 {
 
     void
     applyHiptmairSmoother(const Tpetra::MultiVector<typename MatrixType::scalar_type,
-			  typename MatrixType::local_ordinal_type,
-			  typename MatrixType::global_ordinal_type,
-			  typename MatrixType::node_type>& X,
-			  Tpetra::MultiVector<typename MatrixType::scalar_type,
-			  typename MatrixType::local_ordinal_type,
-			  typename MatrixType::global_ordinal_type,
-			  typename MatrixType::node_type>& Y) const;
-    
+                          typename MatrixType::local_ordinal_type,
+                          typename MatrixType::global_ordinal_type,
+                          typename MatrixType::node_type>& X,
+                          Tpetra::MultiVector<typename MatrixType::scalar_type,
+                          typename MatrixType::local_ordinal_type,
+                          typename MatrixType::global_ordinal_type,
+                          typename MatrixType::node_type>& Y) const;
+
     //! Tpetra::Map representing the domain of this operator.
     Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getDomainMap() const;
 
@@ -210,18 +190,11 @@ namespace Ifpack2 {
     //! Whether this object's apply() method can apply the transpose (or conjugate transpose, if applicable).
     bool hasTransposeApply() const;
 
-    /// \brief Return the computed condition number estimate, or -1 if not computed.
-    ///
-    /// \warning This method is DEPRECATED.  See warning for computeCondEst().
-    virtual magnitude_type TEUCHOS_DEPRECATED getCondEst() const {
-      return Condest_;
-    }
-
     //@}
     //! \name Mathematical functions.
     //@{
 
-    //! Returns the Tpetra::BlockMap object associated with the range of this matrix operator.
+    //! Returns the operator's communicator.
     Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
     //! Returns a reference to the matrix to be preconditioned.
@@ -244,21 +217,6 @@ namespace Ifpack2 {
 
     //! Returns the time spent in apply().
     double getApplyTime() const;
-
-    /// \brief Compute the condition number estimate and return its value.
-    ///
-    /// \warning This method is DEPRECATED.  It was inherited from
-    ///   Ifpack, and Ifpack never clearly stated what this method
-    ///   computes.  Furthermore, Ifpack's method just estimates the
-    ///   condition number of the matrix A, and ignores the
-    ///   preconditioner -- which is probably not what users thought it
-    ///   did.  If there is sufficient interest, we might reintroduce
-    ///   this method with a different meaning and a better algorithm.
-    virtual magnitude_type TEUCHOS_DEPRECATED
-    computeCondEst (CondestType CT = Cheap,
-                    local_ordinal_type MaxIters = 1550,
-                    magnitude_type Tol = 1e-9,
-                    const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &Matrix_in = Teuchos::null);
 
     //! @name Overridden from Teuchos::Describable
     //@{
@@ -296,8 +254,6 @@ namespace Ifpack2 {
     //! Preconditioner parameters.
     Teuchos::ParameterList precList1_, precList2_;
 
-    //! Condition number estimate
-    magnitude_type Condest_;
     //! \c true if \c this object has been initialized
     bool IsInitialized_;
     //! \c true if \c this object has been computed

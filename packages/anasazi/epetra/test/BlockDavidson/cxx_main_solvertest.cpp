@@ -55,13 +55,13 @@
 
 #include "ModeLaplace1DQ1.h"
 
-using namespace Teuchos;
-using namespace Anasazi;
+namespace { // (anonymous)
 
-typedef double                              ScalarType;
-typedef ScalarTraits<ScalarType>                   SCT;
-typedef SCT::magnitudeType               MagnitudeType;
-typedef ScalarTraits<MagnitudeType>                 MT;
+using namespace Anasazi;
+using namespace Teuchos;
+typedef double                                  ScalarType;
+typedef ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
+typedef ScalarTraits<MagnitudeType>             MT;
 typedef Epetra_MultiVector                 MV;
 typedef Epetra_Operator                    OP;
 typedef MultiVecTraits<ScalarType,MV>     MVT;
@@ -71,7 +71,7 @@ class get_out : public std::logic_error {
   public: get_out(const std::string &whatarg) : std::logic_error(whatarg) {}
 };
 
-void checks( RCP<BlockDavidson<ScalarType,MV,OP> > solver, int blocksize, int numblocks, 
+void checks( RCP<BlockDavidson<ScalarType,MV,OP> > solver, int blocksize, int numblocks,
              RCP<Eigenproblem<ScalarType,MV,OP> > problem,
              RCP<MatOrthoManager<ScalarType,MV,OP> > ortho,
              SolverUtils<ScalarType,MV,OP> &msutils) {
@@ -89,12 +89,12 @@ void checks( RCP<BlockDavidson<ScalarType,MV,OP> > solver, int blocksize, int nu
     TEUCHOS_TEST_FOR_EXCEPTION(state.MX != null,get_out,"MX should null; problem has no M matrix.");
   }
   TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.R)  != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for R.");
-  TEUCHOS_TEST_FOR_EXCEPTION(solver->getBlockSize() != blocksize, get_out,"Solver block size does not match specified block size.");  
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->getBlockSize() != blocksize, get_out,"Solver block size does not match specified block size.");
   TEUCHOS_TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim()/solver->getBlockSize() != numblocks, get_out, "Solver num blaocks does not match specified num blocks.");
   TEUCHOS_TEST_FOR_EXCEPTION(&solver->getProblem() != problem.get(),get_out,"getProblem() did not return the submitted problem.");
   TEUCHOS_TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim() != numblocks*blocksize,get_out,"BlockDavidson::getMaxSubspaceDim() does not match numblocks*blocksize.");
 
-  if (solver->isInitialized()) 
+  if (solver->isInitialized())
   {
     TEUCHOS_TEST_FOR_EXCEPTION(solver->getResNorms().size() != (unsigned int)blocksize,get_out,"getResNorms.size() does not match block size.");
     TEUCHOS_TEST_FOR_EXCEPTION(solver->getRes2Norms().size() != (unsigned int)blocksize,get_out,"getRes2Norms.size() does not match block size.");
@@ -131,7 +131,7 @@ void checks( RCP<BlockDavidson<ScalarType,MV,OP> > solver, int blocksize, int nu
     }
     SerialDenseMatrix<int,ScalarType> T(blocksize,blocksize);
     for (int i=0; i<blocksize; i++) T(i,i) = theta[i].realpart;
-    // BlockDavidson computes residuals like R = K*X - M*X*T 
+    // BlockDavidson computes residuals like R = K*X - M*X*T
     MVT::MvTimesMatAddMv(-1.0,*Mevecs,T,1.0,*Kevecs);
     MagnitudeType error = msutils.errorEquality(*Kevecs,*state.R);
     // residuals from BlockDavidson should be exact; we will cut a little slack
@@ -181,7 +181,7 @@ void testsolver( RCP<BasicEigenproblem<ScalarType,MV,OP> > problem,
   SolverUtils<ScalarType,MV,OP> msutils;
 
   // solver should be uninitialized
-  TEUCHOS_TEST_FOR_EXCEPTION(solver->isInitialized() != false,get_out,"Solver should be un-initialized after instantiation.");  
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->isInitialized() != false,get_out,"Solver should be un-initialized after instantiation.");
   TEUCHOS_TEST_FOR_EXCEPTION(solver->getNumIters() != 0,get_out,"Number of iterations after initialization should be zero after init.")
   TEUCHOS_TEST_FOR_EXCEPTION(solver->getAuxVecs().size() != 0,get_out,"getAuxVecs() should return empty.");
   checks(solver,blocksize,numblocks,problem,ortho,msutils);
@@ -200,7 +200,7 @@ void testsolver( RCP<BasicEigenproblem<ScalarType,MV,OP> > problem,
     return;
   }
 
-  TEUCHOS_TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after call to initialize().");  
+  TEUCHOS_TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after call to initialize().");
   TEUCHOS_TEST_FOR_EXCEPTION(solver->getNumIters() != 0,get_out,"Number of iterations should be zero.")
   TEUCHOS_TEST_FOR_EXCEPTION(solver->getAuxVecs().size() != 0,get_out,"getAuxVecs() should return empty.");
   TEUCHOS_TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != cursize,get_out,"after init, getCurSubspaceDim() should be size of problem->getInitVec().");
@@ -210,7 +210,7 @@ void testsolver( RCP<BasicEigenproblem<ScalarType,MV,OP> > problem,
 
     // call iterate(); solver should perform at most two iterations and return; status test should be consistent
     solver->iterate();
-    TEUCHOS_TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after return from iterate().");  
+    TEUCHOS_TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after return from iterate().");
     TEUCHOS_TEST_FOR_EXCEPTION(solver->getNumIters() != 2 && tester->getStatus() == Passed,get_out,"Number of iterations not consistent with StatusTest return.");
     TEUCHOS_TEST_FOR_EXCEPTION(solver->getNumIters() == 2 && tester->getStatus() != Passed,get_out,"Number of iterations not consistent with StatusTest return.");
     TEUCHOS_TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != solver->getMaxSubspaceDim() && tester->getStatus() != Passed,get_out,"solver should not have returned from iterate().");
@@ -247,8 +247,20 @@ void testsolver( RCP<BasicEigenproblem<ScalarType,MV,OP> > problem,
   TEUCHOS_TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim()/solver->getBlockSize() != numblocks+1,get_out,"After setSize(), new num blocks was not in effect.");
 }
 
-int main(int argc, char *argv[]) 
+} // namespace (anonymous)
+
+int
+main (int argc, char *argv[])
 {
+  using namespace Anasazi;
+  using Teuchos::ParameterList;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  typedef double                                  ScalarType;
+  typedef ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
+  typedef Epetra_MultiVector                 MV;
+  typedef Epetra_Operator                    OP;
+  typedef MultiVecTraits<ScalarType,MV>     MVT;
 
 #ifdef HAVE_MPI
   // Initialize MPI
@@ -262,12 +274,12 @@ int main(int argc, char *argv[])
   bool verbose = false;
   bool debug = false;
 
-  CommandLineProcessor cmdp(false,true);
-  cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
-  cmdp.setOption("debug","nodebug",&debug,"Print debugging output from iteration.");
-  if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
+  Teuchos::CommandLineProcessor cmdp (false, true);
+  cmdp.setOption ("verbose", "quiet", &verbose, "Print messages and results.");
+  cmdp.setOption ("debug", "nodebug", &debug, "Print debugging output from iteration.");
+  if (cmdp.parse (argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
-    MPI_Finalize();
+    MPI_Finalize ();
 #endif
     return -1;
   }
@@ -278,7 +290,7 @@ int main(int argc, char *argv[])
   if (debug) {
     verbosity += Anasazi::Debug;
   }
-  RCP< OutputManager<ScalarType> > printer = 
+  RCP< OutputManager<ScalarType> > printer =
     rcp( new BasicOutputManager<ScalarType>( verbosity ) );
 
   printer->stream(Debug) << Anasazi_Version() << std::endl << std::endl;
@@ -336,10 +348,10 @@ int main(int argc, char *argv[])
   // create the parameter list specifying blocksize > nev and full orthogonalization
   ParameterList pls;
 
-  // begin testing 
+  // begin testing
   testFailed = false;
 
-  try 
+  try
   {
     BlockDavidsonState<ScalarType,MV> istate;
 
@@ -450,14 +462,13 @@ int main(int argc, char *argv[])
     istate.KK = rcp( new SerialDenseMatrix<int,ScalarType>(3,3) );
     testsolver(probstd,printer,orthostd,sorter,pls,false,istate,true);
 
-
     // create a dummy status tester
     RCP< StatusTest<ScalarType,MV,OP> > dumtester = rcp( new StatusTestMaxIters<ScalarType,MV,OP>(1) );
 
     // try with a null problem
     if (verbose) printer->stream(Errors) << "Testing solver with null eigenproblem..." << std::endl;
     try {
-      RCP< BlockDavidson<ScalarType,MV,OP> > solver 
+      RCP< BlockDavidson<ScalarType,MV,OP> > solver
         = rcp( new BlockDavidson<ScalarType,MV,OP>(Teuchos::null,sorter,printer,dumtester,orthostd,pls) );
       TEUCHOS_TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
     }
@@ -468,7 +479,7 @@ int main(int argc, char *argv[])
     // try with a null sortman
     if (verbose) printer->stream(Errors) << "Testing solver with null sort manager..." << std::endl;
     try {
-      RCP< BlockDavidson<ScalarType,MV,OP> > solver 
+      RCP< BlockDavidson<ScalarType,MV,OP> > solver
         = rcp( new BlockDavidson<ScalarType,MV,OP>(probstd,Teuchos::null,printer,dumtester,orthostd,pls) );
       TEUCHOS_TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
     }
@@ -479,7 +490,7 @@ int main(int argc, char *argv[])
     // try with a output man problem
     if (verbose) printer->stream(Errors) << "Testing solver with null output manager..." << std::endl;
     try {
-      RCP< BlockDavidson<ScalarType,MV,OP> > solver 
+      RCP< BlockDavidson<ScalarType,MV,OP> > solver
         = rcp( new BlockDavidson<ScalarType,MV,OP>(probstd,sorter,Teuchos::null,dumtester,orthostd,pls) );
       TEUCHOS_TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
     }
@@ -490,7 +501,7 @@ int main(int argc, char *argv[])
     // try with a null status test
     if (verbose) printer->stream(Errors) << "Testing solver with null status test..." << std::endl;
     try {
-      RCP< BlockDavidson<ScalarType,MV,OP> > solver 
+      RCP< BlockDavidson<ScalarType,MV,OP> > solver
         = rcp( new BlockDavidson<ScalarType,MV,OP>(probstd,sorter,printer,Teuchos::null,orthostd,pls) );
       TEUCHOS_TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
     }
@@ -501,7 +512,7 @@ int main(int argc, char *argv[])
     // try with a null orthoman
     if (verbose) printer->stream(Errors) << "Testing solver with null ortho manager..." << std::endl;
     try {
-      RCP< BlockDavidson<ScalarType,MV,OP> > solver 
+      RCP< BlockDavidson<ScalarType,MV,OP> > solver
         = rcp( new BlockDavidson<ScalarType,MV,OP>(probstd,sorter,printer,dumtester,Teuchos::null,pls) );
       TEUCHOS_TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
     }
@@ -519,7 +530,6 @@ int main(int argc, char *argv[])
     testFailed = true;
   }
 
-  
 #ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
@@ -537,5 +547,4 @@ int main(int argc, char *argv[])
     printer->stream(Errors) << std::endl << "End Result: TEST PASSED" << std::endl;
   }
   return 0;
-
 }

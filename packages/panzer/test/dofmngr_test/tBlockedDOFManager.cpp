@@ -50,6 +50,8 @@
 #include <vector>
 #include <set>
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_BlockedDOFManager.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_PauseToAttach.hpp"
@@ -86,6 +88,8 @@ Teuchos::RCP<const panzer::FieldPattern> buildFieldPattern()
 // this just excercises a bunch of functions
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,assortedTests)
 {
+  PHX::InitializeKokkosDevice();
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -133,10 +137,14 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,assortedTests)
    TEST_ASSERT(dofManager.getElementBlock("block_0")==connManager->getElementBlock("block_0"));
    TEST_ASSERT(dofManager.getElementBlock("block_1")==connManager->getElementBlock("block_1"));
    TEST_ASSERT(dofManager.getElementBlock("block_2")==connManager->getElementBlock("block_2"));
+
+   PHX::FinalizeKokkosDevice();
 }
 
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
 {
+  PHX::InitializeKokkosDevice();
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -200,7 +208,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
    fieldOrder[2].push_back("T");
    dofManager.setFieldOrder(fieldOrder);
 
-   dofManager.registerFields();
+   dofManager.registerFields(true);
    TEST_ASSERT(dofManager.fieldsRegistered());
    const std::vector<RCP<panzer::UniqueGlobalIndexer<int,int> > > & subManagers = 
          dofManager.getFieldDOFManagers();
@@ -261,10 +269,14 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
 
    TEST_EQUALITY(blk2fn[0],4);
    TEST_EQUALITY(blk2fn[1],5);
+
+   PHX::FinalizeKokkosDevice();
 }
 
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
 {
+  PHX::InitializeKokkosDevice();
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -376,10 +388,14 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
       TEST_EQUALITY(fb1,0);
       TEST_EQUALITY(fb2,0);
    }
+
+   PHX::FinalizeKokkosDevice();
 }
 
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
 {
+  PHX::InitializeKokkosDevice();
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -551,10 +567,14 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
       for(std::size_t i=0;i<vec->first.size();i++) 
          TEST_EQUALITY(vec->first[i],dofManager.getBlockGIDOffset("block_2",2)+sub_vec->first[i]);
    }
+
+   PHX::FinalizeKokkosDevice();
 }
 
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,validFieldOrder)
 {
+  PHX::InitializeKokkosDevice();
+
    BlockedDOFManager<int,int> dofManager; 
    dofManager.setUseDOFManagerFEI(false);
 
@@ -644,6 +664,176 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,validFieldOrder)
  
       TEST_ASSERT(!dofManager.validFieldOrder(order,validFields));
    }
+
+   PHX::FinalizeKokkosDevice();
+}
+
+TEUCHOS_UNIT_TEST(tBlockedDOFManager,mergetests)
+{
+  PHX::InitializeKokkosDevice();
+
+   // build global (or serial communicator)
+   #ifdef HAVE_MPI
+      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+   #else
+      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
+   #endif
+
+   using Teuchos::RCP;
+   using Teuchos::rcp;
+   using Teuchos::rcp_dynamic_cast;
+
+   int myRank = eComm->MyPID();
+   int numProc = eComm->NumProc();
+
+   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager(myRank,numProc));
+
+   RCP<const panzer::FieldPattern> patternC1 
+         = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+
+   // Setup two DOF managers that will correspond to the blocks of the 
+   // system.
+   /////////////////////////////////////////////////////////////////////////
+   DOFManager<int,int> dofManager[2]; 
+
+   dofManager[0].setConnManager(connManager,MPI_COMM_WORLD);
+   dofManager[0].addField("T",patternC1); // add it to all three blocks
+   dofManager[0].addField("block_0","Ux",patternC1);
+   dofManager[0].addField("block_0","Uy",patternC1);
+   dofManager[0].addField("block_0","P",patternC1);
+   dofManager[0].addField("block_2","rho",patternC1);
+   dofManager[0].buildGlobalUnknowns();
+
+   dofManager[1].setConnManager(connManager,MPI_COMM_WORLD);
+   dofManager[1].addField("x",patternC1);
+   dofManager[1].buildGlobalUnknowns(dofManager[0].getGeometricFieldPattern());
+
+   std::vector<std::vector<std::string> > fieldOrder(2);
+   dofManager[0].getFieldOrder(fieldOrder[0]);
+   dofManager[1].getFieldOrder(fieldOrder[1]);
+
+   std::vector<RCP<panzer::UniqueGlobalIndexer<int,int> > > ugi_vector;
+   ugi_vector.push_back(Teuchos::rcpFromRef(dofManager[0]));
+   ugi_vector.push_back(Teuchos::rcpFromRef(dofManager[1]));
+
+   // Setup the BlockedDOFManager using the previously constructed
+   // DOF managers
+   ////////////////////////////////////////////////////////
+   BlockedDOFManager<int,int> blkDofManager; 
+   blkDofManager.setUseDOFManagerFEI(false);
+   blkDofManager.setConnManager(connManager,MPI_COMM_WORLD);
+   blkDofManager.setFieldOrder(fieldOrder);
+   blkDofManager.buildGlobalUnknowns(ugi_vector);
+
+   // Test to make sure the BlockedDOFManager understands all the fields
+   // it has.
+   ////////////////////////////////////////////////////////
+
+   TEST_ASSERT(blkDofManager.fieldsRegistered());
+   TEST_EQUALITY(blkDofManager.getNumFields(),6);
+
+   TEST_EQUALITY(blkDofManager.getFieldPattern("block_0","T"),patternC1);
+   TEST_EQUALITY(blkDofManager.getFieldPattern("block_1","T"),patternC1);
+   TEST_EQUALITY(blkDofManager.getFieldPattern("block_2","T"),patternC1);
+   TEST_EQUALITY(blkDofManager.getFieldPattern("block_0","Ux"),patternC1);
+   TEST_EQUALITY(blkDofManager.getFieldPattern("block_1","Ux"),Teuchos::null);
+   TEST_EQUALITY(blkDofManager.getFieldPattern("block_2","Ux"),Teuchos::null);
+   TEST_EQUALITY(blkDofManager.getFieldPattern("block_0","x"),patternC1);
+   TEST_EQUALITY(blkDofManager.getFieldPattern("block_1","x"),patternC1);
+   TEST_EQUALITY(blkDofManager.getFieldPattern("block_2","x"),patternC1);
+
+   TEST_ASSERT(blkDofManager.fieldInBlock("T","block_0"));
+   TEST_ASSERT(blkDofManager.fieldInBlock("T","block_1"));
+   TEST_ASSERT(blkDofManager.fieldInBlock("T","block_2"));
+   TEST_ASSERT(blkDofManager.fieldInBlock("Ux","block_0"));
+   TEST_ASSERT(!blkDofManager.fieldInBlock("Ux","block_2"));
+   TEST_ASSERT(blkDofManager.fieldInBlock("Uy","block_0"));
+   TEST_ASSERT(!blkDofManager.fieldInBlock("Uy","block_1"));
+   TEST_ASSERT(blkDofManager.fieldInBlock("P","block_0"));
+   TEST_ASSERT(!blkDofManager.fieldInBlock("P","block_1"));
+   TEST_ASSERT(!blkDofManager.fieldInBlock("rho","block_1"));
+   TEST_ASSERT(blkDofManager.fieldInBlock("rho","block_2"));
+   TEST_ASSERT(blkDofManager.fieldInBlock("x","block_0"));
+   TEST_ASSERT(blkDofManager.fieldInBlock("x","block_1"));
+   TEST_ASSERT(blkDofManager.fieldInBlock("x","block_2"));
+
+   // verify the elements are correct
+   /////////////////////////////////////////////////////////
+
+   std::vector<std::string> eBlocks;
+   blkDofManager.getElementBlockIds(eBlocks);
+   for(std::size_t eb=0;eb<eBlocks.size();eb++) {
+     std::string block_name = eBlocks[eb];
+
+     const std::vector<int> & blk_elements = blkDofManager.getElementBlock(block_name);
+     const std::vector<int> & elements_0   = dofManager[0].getElementBlock(block_name);
+     const std::vector<int> & elements_1   = dofManager[1].getElementBlock(block_name);
+     
+     // test the size for equality
+     TEST_EQUALITY(blk_elements.size(),elements_0.size());
+     TEST_EQUALITY(blk_elements.size(),elements_1.size());
+
+     // test each element value (a future change could break this, you might want to sort them 
+     // all instead)
+     for(std::size_t i=0;i<blk_elements.size();i++) {
+       TEST_EQUALITY(blk_elements[i],elements_0[i]);
+       TEST_EQUALITY(blk_elements[i],elements_1[i]);
+     }
+   }
+
+   // verify the GID offsets are correct
+   /////////////////////////////////////////////////////////
+
+   for(std::size_t eb=0;eb<eBlocks.size();eb++) {
+     std::string block_name = eBlocks[eb];
+ 
+     const std::vector<int> & offsets_blk_T = blkDofManager.getGIDFieldOffsets(block_name,blkDofManager.getFieldNum("T"));
+     const std::vector<int> & offsets_0_T   = dofManager[0].getGIDFieldOffsets(block_name,dofManager[0].getFieldNum("T"));
+
+     const std::vector<int> & offsets_blk_x = blkDofManager.getGIDFieldOffsets(block_name,blkDofManager.getFieldNum("x"));
+     const std::vector<int> & offsets_1_x   = dofManager[1].getGIDFieldOffsets(block_name,dofManager[1].getFieldNum("x"));
+
+     int offset0 = blkDofManager.getBlockGIDOffset(block_name,0);
+     int offset1 = blkDofManager.getBlockGIDOffset(block_name,1);
+
+     TEST_EQUALITY(offsets_blk_T.size(),offsets_0_T.size());
+     for(std::size_t i=0; i<offsets_blk_T.size(); i++)
+        TEST_EQUALITY(offsets_blk_T[i],offsets_0_T[i]+offset0);
+
+     TEST_EQUALITY(offsets_blk_x.size(),offsets_1_x.size());
+      for(std::size_t i=0; i<offsets_blk_x.size(); i++)
+        TEST_EQUALITY(offsets_blk_x[i],offsets_1_x[i]+offset1);
+   }
+
+   // verify the GIDs are correct
+   /////////////////////////////////////////////////////////
+   typedef BlockedDOFManager<int,int>::GlobalOrdinal GIDType;
+
+   for(std::size_t eb=0;eb<eBlocks.size();eb++) {
+     std::string block_name = eBlocks[eb];
+
+     int offset0 = blkDofManager.getBlockGIDOffset(block_name,0);
+     int offset1 = blkDofManager.getBlockGIDOffset(block_name,1);
+
+     const std::vector<int> & elements = dofManager[0].getElementBlock(block_name);
+     for(std::size_t i=0;i<elements.size();i++) {
+       std::vector<GIDType> blkgids;
+       std::vector<int> gids0, gids1;
+       dofManager[0].getElementGIDs(elements[i],gids0);
+       dofManager[1].getElementGIDs(elements[i],gids1);
+       blkDofManager.getElementGIDs(elements[i],blkgids);
+
+       for(std::size_t j=0;j<gids0.size();j++) {
+         TEST_EQUALITY(0,blkgids[j+offset0].first);
+         TEST_EQUALITY(gids0[j],blkgids[j+offset0].second);
+       }
+       for(std::size_t j=0;j<gids1.size();j++) {
+         TEST_EQUALITY(1,blkgids[j+offset1].first);
+         TEST_EQUALITY(gids1[j],blkgids[j+offset1].second);
+       }
+     }
+   }
+   PHX::FinalizeKokkosDevice();
 }
 
 }

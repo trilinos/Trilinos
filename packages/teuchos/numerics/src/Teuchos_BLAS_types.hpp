@@ -54,7 +54,7 @@
 /*! \defgroup BLASEnum_grp Enumerations for character inputs in Teuchos::BLAS methods
 
   \brief These enumerated lists are used in compile time checking of the input characters
-  for BLAS methods.  
+  for BLAS methods.
 
 	\note Any other input other than those specified here will result
 	in an error at compile time and are not supported by the templated BLAS/LAPACK interface.
@@ -86,25 +86,25 @@
 
 namespace Teuchos {
   enum ESide { 	
-    LEFT_SIDE,	/*!< Left side */ 
+    LEFT_SIDE,	/*!< Left side */
     RIGHT_SIDE 	/*!< Right side */
   };
 
   enum ETransp { 	
-    NO_TRANS,	/*!< Not transposed */ 
+    NO_TRANS,	/*!< Not transposed */
     TRANS, 		/*!< Transposed */
     CONJ_TRANS 	/*!< Conjugate transposed */
   };
-  
+
   enum EUplo { 	
-    UPPER_TRI,	/*!< Upper triangular */ 
+    UPPER_TRI,	/*!< Upper triangular */
     LOWER_TRI,	/*!< Lower triangular */
     UNDEF_TRI   /*!< Unspeficied/undefined triangular structure */
   };
-  
+
   enum EDiag { 	
-    UNIT_DIAG,	/*!< Unit diagaonal */ 
-    NON_UNIT_DIAG	/*!< Not unit diagonal */ 
+    UNIT_DIAG,	/*!< Unit diagaonal */
+    NON_UNIT_DIAG	/*!< Not unit diagonal */
   };
 
   enum EType {

@@ -119,7 +119,7 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
     TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetGlobalLength() != Y.GetGlobalLength(),Anasazi::OperatorError,"Invalid input multivectors.");
     
     // MyY = ONE*MyX
     MyY->MvAddMv( ONE, *MyX, ZERO, *MyX );
@@ -190,12 +190,12 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
     TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetGlobalLength() != Y.GetGlobalLength(),Anasazi::OperatorError,"Invalid input multivectors.");
     
     int nvecs = X.GetNumberVecs();
     
     // deduce the size of the operator from the vector length...
-    n = X.GetVecLength();
+    n = X.GetGlobalLength();
     // ... and the number of interior points in the discretization from that
     nx = ScalarTraits<int>::squareroot(n);
     TEUCHOS_TEST_FOR_EXCEPTION(nx*nx != n,Anasazi::OperatorError,"Invalid input.");
@@ -279,10 +279,10 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
     TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetGlobalLength() != Y.GetGlobalLength(),Anasazi::OperatorError,"Invalid input multivectors.");
     
     int nvecs = X.GetNumberVecs();
-    int n = X.GetVecLength();
+    int n = X.GetGlobalLength();
     
     // Perform  Y <--- A*X 
     const ScalarType ONE = ScalarTraits<ScalarType>::one();
@@ -394,8 +394,8 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
     TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetGlobalLength() != Y.GetGlobalLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetGlobalLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
     
     int nvecs = X.GetNumberVecs();
     
@@ -453,9 +453,9 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
     TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetGlobalLength() != Y.GetGlobalLength(),Anasazi::OperatorError,"Invalid input multivectors.");
     
-    int n = X.GetVecLength();
+    int n = X.GetGlobalLength();
     int nvecs = X.GetNumberVecs();
     
     ScalarType h = ONE/((ScalarType)(n+1)),
@@ -516,9 +516,9 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
     TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetGlobalLength() != Y.GetGlobalLength(),Anasazi::OperatorError,"Invalid input multivectors.");
     
-    int n = X.GetVecLength();
+    int n = X.GetGlobalLength();
     int nvecs = X.GetNumberVecs();
     
     ScalarType h = ONE/((ScalarType)(n+1));
@@ -610,8 +610,8 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
     TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetGlobalLength() != Y.GetGlobalLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetGlobalLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
     
     int nvecs = X.GetNumberVecs();
     
@@ -709,8 +709,8 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
     TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetGlobalLength() != Y.GetGlobalLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetGlobalLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
     
     int nvecs = X.GetNumberVecs();
     
@@ -779,12 +779,12 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
     TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetGlobalLength() != Y.GetGlobalLength(),Anasazi::OperatorError,"Invalid input multivectors.");
     
     int nvecs = X.GetNumberVecs();
     
     // deduce the size of the operator from the vector length...
-    n = X.GetVecLength();
+    n = X.GetGlobalLength();
     // ... and the number of interior points in the discretization from that
     nx = ScalarTraits<int>::squareroot(n);
     TEUCHOS_TEST_FOR_EXCEPTION(nx*nx != n,Anasazi::OperatorError,"Invalid input.");
@@ -868,9 +868,9 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
     TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetGlobalLength() != Y.GetGlobalLength(),Anasazi::OperatorError,"Invalid input multivectors.");
     
-    int n = X.GetVecLength();
+    int n = X.GetGlobalLength();
     int nvecs = X.GetNumberVecs();
     
     // Perform  Y <--- OP*X, a tridiagonal matrix multiply
@@ -972,8 +972,8 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
     TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetGlobalLength() != Y.GetGlobalLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetGlobalLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
     
     int nvecs = X.GetNumberVecs();
     
@@ -1025,9 +1025,9 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
     TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetGlobalLength() != Y.GetGlobalLength(),Anasazi::OperatorError,"Invalid input multivectors.");
     
-    int n = X.GetVecLength();
+    int n = X.GetGlobalLength();
     int nvecs = X.GetNumberVecs();
     
     // Perform  Y <--- OP*X, a tridiagonal matrix multiply
@@ -1086,9 +1086,9 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
     TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetGlobalLength() != Y.GetGlobalLength(),Anasazi::OperatorError,"Invalid input multivectors.");
     
-    int n = X.GetVecLength();
+    int n = X.GetGlobalLength();
     int nvecs = X.GetNumberVecs();
     
     // Perform  Y <--- OP*X, a tridiagonal matrix multiply
@@ -1194,8 +1194,8 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
     TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetGlobalLength() != Y.GetGlobalLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetGlobalLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
     
     int nvecs = X.GetNumberVecs();
     
@@ -1296,8 +1296,8 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
     TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetGlobalLength() != Y.GetGlobalLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetGlobalLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
     
     int nvecs = X.GetNumberVecs();
     
@@ -1398,8 +1398,8 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
     TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetGlobalLength() != Y.GetGlobalLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetGlobalLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
     
     int nvecs = X.GetNumberVecs();
     
@@ -1502,8 +1502,8 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
     TEUCHOS_TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
-    TEUCHOS_TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetGlobalLength() != Y.GetGlobalLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.GetGlobalLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
     
     int nvecs = X.GetNumberVecs();
     

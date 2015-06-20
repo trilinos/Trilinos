@@ -73,7 +73,7 @@ private:
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::lno_t lno_t;
-  typedef typename Adapter::gid_t gid_t;
+  typedef typename Adapter::zgid_t zgid_t;
 
 public:
 
@@ -95,7 +95,7 @@ public:
 
   /*! \brief Get (local) size of color array.
    */
-  inline size_t getColorsSize() {return length_;}
+  inline size_t getColorsSize() {return length_;} // TODO Deprecate or rename? Should always be numVertices?
 
   /*! \brief Get (local) color array by RCP.
    */

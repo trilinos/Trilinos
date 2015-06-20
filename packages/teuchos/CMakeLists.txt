@@ -1,4 +1,17 @@
 #
+# Teuchos is both a package and can be configured and built as it own TriBITS
+# project!
+#
+
+
+IF (TRIBITS_PROCESSING_PACKAGE)
+
+
+#
+# Processing TriBITS package!
+#
+
+#
 # A) Forward delcare the package so that certain options are also defined for
 # subpackages
 #
@@ -59,7 +72,7 @@ ENDIF()
 ASSERT_DEFINED(${PACKAGE_NAME}Core_ENABLE_Boost)
 IF (${PACKAGE_NAME}Core_ENABLE_Boost)
   INCLUDE(CheckForBoostIsPolymorphic)
-  CHECK_FOR_BOOST_IS_POLYMORPHIC(HAS_TEUCHOS_BOOST_IS_POLYMORPHIC)
+  CHECK_FOR_BOOST_IS_POLYMORPHIC(HAVE_TEUCHOSCORE_BOOST_IS_POLYMORPHIC)
 ENDIF()
 
 ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}Numerics)
@@ -220,6 +233,13 @@ IF (HAVE_TEUCHOS_DOUBLE_TO_ARPREC AND HAVE_TEUCHOS_DOUBLE_TO_QD)
     SET(HAVE_TEUCHOS_DOUBLE_TO_QD OFF)
 ENDIF()
 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_GLOBALLY_REDUCE_UNITTEST_RESULTS
+  HAVE_TEUCHOS_GLOBALLY_REDUCE_UNITTEST_RESULTS
+  "Set the Teuchos::UnitTestRepository to globally reduce test pass/fail results across all MPI ranks."
+  OFF
+  )
+
 #
 # D) Process the subpackages for Teuchos
 #
@@ -255,3 +275,25 @@ TRIBITS_EXCLUDE_FILES(
 #
 
 TRIBITS_PACKAGE_POSTPROCESS()
+
+
+ELSE(TRIBITS_PROCESSING_PACKAGE)
+
+
+#
+# Processing as a TriBITS project
+#
+
+# This CMakeLists.txt file is being processed as the TriBITS projects's base
+# CMakeLists.txt file!  (See comments at bottom of this file.)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8.11 FATAL_ERROR)
+INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/ProjectName.cmake")
+PROJECT(${PROJECT_NAME} NONE)
+SET(${PROJECT_NAME}_TRIBITS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/tribits"
+  CACHE PATH "By default assume Teuchos is in Trilinos")
+INCLUDE("${${PROJECT_NAME}_TRIBITS_DIR}/TriBITS.cmake")
+SET(TEUCHOS_STANDALONE_PACKAGE TRUE)
+TRIBITS_PROJECT_ENABLE_ALL()
+
+
+ENDIF(TRIBITS_PROCESSING_PACKAGE)

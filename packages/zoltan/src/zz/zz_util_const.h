@@ -63,6 +63,8 @@ extern "C" {
 /*****************************************************************************/
 
 #ifdef ZOLTAN_PURIFY
+extern int Zoltan_strcmp(const char *, const char *);
+extern int Zoltan_strncmp(const char *, const char *, size_t n);
 extern int Zoltan_strcasecmp(const char *, const char *);
 extern int Zoltan_strncasecmp(const char *, const char *, size_t n);
 #endif

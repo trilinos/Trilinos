@@ -406,9 +406,10 @@ revert to their default values.
   //! Prints timing information about the current solver. 
   virtual void PrintTiming() const = 0;
 
-  //! Redefined from Teuchos::ParameterListAcceptor
+  //! Redefined from Teuchos::ParameterListAcceptor (Does Not Work)
   virtual void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
   {
+    Teuchos::RCP<Teuchos::ParameterList> temp = paramList;
     //    paramList_ = paramlist ;
     //    this->SetParameters( *paramList_ );
   }
@@ -428,8 +429,12 @@ revert to their default values.
     return PL ; 
   }
 
-  //! Extracts timing information from the current solver and places it in the parameter list.
-  virtual void GetTiming( Teuchos::ParameterList &TimingParameterList ) const {}
+  //! Extracts timing information from the current solver and places it in the parameter list. (Does Not Work)
+  virtual void GetTiming( Teuchos::ParameterList &TimingParameterList ) const 
+  {
+    Teuchos::ParameterList temp;
+    TimingParameterList = temp.setName("NULL");
+  }
 
   //@}
 

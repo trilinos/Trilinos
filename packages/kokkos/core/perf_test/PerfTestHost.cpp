@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,38 +36,32 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
 
 #include <gtest/gtest.h>
 
-#include <Kokkos_Macros.hpp>
-#include <Kokkos_View.hpp>
-#include <Kokkos_hwloc.hpp>
+#include <Kokkos_Core.hpp>
 
-#if defined( KOKKOS_HAVE_PTHREAD )
-
-#include <Kokkos_Threads.hpp>
-
-typedef Kokkos::Threads TestHostDevice ;
-const char TestHostDeviceName[] = "Kokkos::Threads" ;
-
-#elif defined( KOKKOS_HAVE_OPENMP )
-
-#include <Kokkos_OpenMP.hpp>
+#if defined( KOKKOS_HAVE_OPENMP )
 
 typedef Kokkos::OpenMP TestHostDevice ;
 const char TestHostDeviceName[] = "Kokkos::OpenMP" ;
 
-#else
+#elif defined( KOKKOS_HAVE_PTHREAD )
 
-#include <Kokkos_Serial.hpp>
+typedef Kokkos::Threads TestHostDevice ;
+const char TestHostDeviceName[] = "Kokkos::Threads" ;
+
+#elif defined( KOKKOS_HAVE_SERIAL )
 
 typedef Kokkos::Serial TestHostDevice ;
 const char TestHostDeviceName[] = "Kokkos::Serial" ;
 
+#else
+#  error "You must enable at least one of the following execution spaces in order to build this test: Kokkos::Threads, Kokkos::OpenMP, or Kokkos::Serial."
 #endif
 
 #include <impl/Kokkos_Timer.hpp>

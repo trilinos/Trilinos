@@ -94,9 +94,15 @@ public:
 
    ResponseLibrary();
 
+   /** Build an initialized response library. By default this
+     * method does not initialize the response library to be a residual
+     * type. This can be set at runtime to build only residual responses
+     * by setting the <code>residualType</code> argument to true.
+     */
    ResponseLibrary(const Teuchos::RCP<WorksetContainer> & wc,
                    const Teuchos::RCP<const UniqueGlobalIndexerBase> & ugi,
-                   const Teuchos::RCP<const LinearObjFactory<TraitsT> > & lof); 
+                   const Teuchos::RCP<const LinearObjFactory<TraitsT> > & lof,
+                   bool residualType=false); 
 
    ResponseLibrary(const ResponseLibrary & rl);
 
@@ -106,9 +112,26 @@ public:
                    const Teuchos::RCP<const UniqueGlobalIndexerBase> & ugi,
                    const Teuchos::RCP<const LinearObjFactory<TraitsT> > & lof); 
 
+   /** Initialize the response library with the appropriate objects. This is
+     * in the case that no respones will be added an only a residual is 
+     * desired. If <code>addResponse</code> is called then an exception will
+     * be raised. 
+     */
+   void initializeResidualType(const Teuchos::RCP<WorksetContainer> & wc,
+                               const Teuchos::RCP<const UniqueGlobalIndexerBase> & ugi,
+                               const Teuchos::RCP<const LinearObjFactory<TraitsT> > & lof); 
+
+
    /** Initialize the response library from a previously construct response library.
      */
    void initialize(const ResponseLibrary & rl);
+ 
+   /** Copy all the responses from another response library. This is a different from
+     * <code>initialize</code>. This method only copies the responses leaving the
+     * parameters set by <code>initialize</code> alone. This must be called before 
+     * <code>buildResponseEvaluators</code>.
+     */
+   void copyResponses(const ResponseLibrary & rl);
 
    /** Get the internally stored workset container, note this is non-const because
      * the workset container is mostly a non-const object (uses lots of lazy evaluation).
@@ -203,6 +226,20 @@ public:
          const std::string& graphviz_file_prefix="")
    { buildResponseEvaluators(physicsBlocks,Teuchos::ptrFromRef(eqset_factory),cm_factory,closure_models,user_data,write_graphviz_file,graphviz_file_prefix); }
 
+   /** Setup up field managers for a residual response. This method can only be called
+     * if the residual response has been setup.
+     */
+   void buildResidualResponseEvaluators(
+         const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+         const panzer::EquationSetFactory & eqset_factory,
+         const std::vector<BC> & bcs,
+         const panzer::BCStrategyFactory & bc_factory,
+         const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+         const Teuchos::ParameterList& closure_models,
+         const Teuchos::ParameterList& user_data,
+         const bool write_graphviz_file=false,
+         const std::string& graphviz_file_prefix="");
+
    /** Have the response evaluators been built? True only if 
      * <code>buildResponseEvaluators</code> has been called and run to completion.
      */ 
@@ -229,6 +266,12 @@ public:
    void disableGather(bool value)
    { disableGather_ = value; }
 
+   void disableScatter(bool value)
+   { disableScatter_ = value; }
+
+   bool isResidualType() const 
+   { return residualType_; }
+
 protected:
 
    /** Setup up field managers for all responses. Once this method is called
@@ -242,6 +285,29 @@ protected:
          const Teuchos::ParameterList& user_data,
          const bool write_graphviz_file,
          const std::string& graphviz_file_prefix);
+
+   /** Add a residual response.
+     */
+   void addResidualResponse();
+
+   //! A struct for handling function overloading
+   template <typename EvalT> struct Overloader {};
+
+   /** Add in the residual responses to the input arguments. Note only residual and Jacobian
+     * calls currently work!
+     */
+   void addResidualResponsesToInArgs(Overloader<typename TraitsT::Residual>,panzer::AssemblyEngineInArgs & input_args) const;
+
+   /** Add in the residual responses to the input arguments. Note only residual and Jacobian
+     * calls currently work!
+     */
+   void addResidualResponsesToInArgs(Overloader<typename TraitsT::Jacobian>,panzer::AssemblyEngineInArgs & input_args) const;
+
+   /** Add in a response (for internal use only) using a template manager.
+     */
+   void addResponse(const std::string & responseName,
+                    const std::vector<WorksetDescriptor> & wkst_desc,
+                    const Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > & modelFact_tm);
 
 private:
 
@@ -268,6 +334,8 @@ private:
    boost::unordered_map<std::string, Response_TemplateManager> responseObjects_;
    bool closureModelByEBlock_;
    bool disableGather_;
+   bool disableScatter_;
+   bool residualType_;
 
    bool responseEvaluatorsBuilt_;
 
@@ -276,7 +344,7 @@ private:
      std::ostream & os_;
      Printer(const Response_TemplateManager & tm,std::ostream & os) : tm_(tm), os_(os) {}
      template <typename T> void operator()(T) const { 
-       os_ << PHX::TypeString<T>::value << "=";
+//       os_ << PHX::TypeString<T>::value << "=";
        if(tm_.get<T>()!=Teuchos::null) 
          os_ << "ON ";
        else

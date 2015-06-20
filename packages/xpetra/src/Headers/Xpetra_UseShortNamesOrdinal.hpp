@@ -45,7 +45,7 @@
 // @HEADER
 // Get rid of template parameters
 
-// New definition of types using the types LocalOrdinal, GlobalOrdinal, Node, LocalMatOps of the current context.
+// New definition of types using the types LocalOrdinal, GlobalOrdinal, Node of the current context.
 #ifdef XPETRA_MAP_SHORT
 typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
 #endif
@@ -55,11 +55,11 @@ typedef Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node> MapFactory;
 #endif
 
 #ifdef XPETRA_CRSGRAPH_SHORT
-typedef Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsGraph;
+typedef Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> CrsGraph;
 #endif
 
 #ifdef XPETRA_CRSGRAPHFACTORY_SHORT
-typedef Xpetra::CrsGraphFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsGraphFactory;
+typedef Xpetra::CrsGraphFactory<LocalOrdinal, GlobalOrdinal, Node> CrsGraphFactory;
 #endif
 
 #ifdef XPETRA_VECTOR_SHORT
@@ -111,7 +111,7 @@ typedef Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMap;
 #endif
 
 #ifdef XPETRA_TPETRACRSGRAPH_SHORT
-typedef Xpetra::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsGraph;
+typedef Xpetra::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node> TpetraCrsGraph;
 #endif
 
 #ifdef XPETRA_STRIDEDMAP_SHORT
@@ -130,6 +130,5 @@ typedef Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node> StridedMapF
 typedef LocalOrdinal  LO;
 typedef GlobalOrdinal GO;
 typedef Node          NO;
-typedef LocalMatOps   LMO;
 
 // TODO: do the same for Epetra object (problem of namespace)

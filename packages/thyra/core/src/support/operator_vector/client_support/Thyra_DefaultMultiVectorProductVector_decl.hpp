@@ -193,6 +193,14 @@ protected:
 
   //@}
 
+  /** @name Overridden protected functions from VectorBase */
+  //@{
+
+  /** \brief . */
+  void assignImpl(Scalar alpha);
+
+  //@}
+
 private:
 
   // //////////////////////////////

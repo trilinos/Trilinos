@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -118,7 +118,7 @@ bool run_composite_linear_ops_tests(
   else space = Thyra::defaultSpmdVectorSpace<Scalar>(n);
   if (nonnull(out)) *out
     << "\nUsing a basic vector space described as " << describe(*space,verbLevel) << " ...\n";
-  
+
   if (nonnull(out)) *out << "\nCreating random n x (n/2) multi-vector origA ...\n";
   RCP<Thyra::MultiVectorBase<Scalar> >
     mvOrigA = createMembers(space,n/2,"origA");
@@ -135,7 +135,7 @@ bool run_composite_linear_ops_tests(
   Thyra::seed_randomize<Scalar>(0);
   result = linearOpTester.check(*origA, out.ptr());
   if(!result) success = false;
-  
+
   if (nonnull(out)) *out
     << "\nCreating implicit scaled linear operator A1 = scale(0.5,origA) ...\n";
   RCP<const Thyra::LinearOpBase<Scalar> >
@@ -173,12 +173,12 @@ bool run_composite_linear_ops_tests(
     result = (transp == Thyra::NOTRANS);
     if(!result) success = false;
     if (nonnull(out))	*out << passfail(result) << std::endl;
-    
+
     if (nonnull(out)) *out << "\nTesting that origA_1 == origA ...\n";
     Thyra::seed_randomize<Scalar>(0);
     result = linearOpTester.compare(*origA_1,*origA,out.ptr());
     if(!result) success = false;
-    
+
   }
 
   {
@@ -206,7 +206,7 @@ bool run_composite_linear_ops_tests(
     if(!result) success = false;
 
   }
-  
+
   if (nonnull(out)) *out << "\nCreating implicit scaled linear operator A2 = adjoint(A1) ...\n";
   RCP<const Thyra::LinearOpBase<Scalar> >
     A2 = adjoint(A1);
@@ -221,7 +221,7 @@ bool run_composite_linear_ops_tests(
   Thyra::seed_randomize<Scalar>(0);
   result = linearOpTester.compare(*dyn_cast<const Thyra::DefaultScaledAdjointLinearOp<Scalar> >(*A2).getOp(),*A1,out.ptr());
   if(!result) success = false;
-  
+
   if (nonnull(out)) *out << "\nCreating implicit scaled, adjoined linear operator A3 = adjoint(scale(2.0,(A2)) ...\n";
   RCP<const Thyra::LinearOpBase<Scalar> >
     A3 = adjoint(scale(as<Scalar>(2.0),A2));
@@ -366,7 +366,7 @@ bool run_composite_linear_ops_tests(
       ,A1, nullOp
       );
   if (nonnull(out)) *out << "\nA9 =\n" << describe(*A9,verbLevel);
-  
+
   if (nonnull(out)) *out << "\nTesting A9 ...\n";
   Thyra::seed_randomize<Scalar>(0);
   result = symLinearOpTester.check(*A9,out.ptr());
@@ -386,14 +386,14 @@ bool run_composite_linear_ops_tests(
   A9_a->setBlock(1,0,A1);
   A9_a->endBlockFill();
   if (nonnull(out)) *out << "\nA9_a =\n" << describe(*A9_a,verbLevel);
-  
+
   if (nonnull(out)) *out << "\nTesting A9_a ...\n";
   Thyra::seed_randomize<Scalar>(0);
   result = symLinearOpTester.check(*A9_a,out.ptr());
   if(!result) success = false;
   // Note that testing the symmetry above helps to check the transpose mode
   // against the non-transpose mode!
-  
+
   if (nonnull(out)) *out << "\nComparing A9 == A9_a ...\n";
   Thyra::seed_randomize<Scalar>(0);
   result = linearOpTester.compare(*A9,*A9_a,out.ptr());
@@ -408,14 +408,14 @@ bool run_composite_linear_ops_tests(
   A9_b->setBlock(1,0,A1);
   A9_b->endBlockFill();
   if (nonnull(out)) *out << "\nA9_b =\n" << describe(*A9_b,verbLevel);
-  
+
   if (nonnull(out)) *out << "\nTesting A9_b ...\n";
   Thyra::seed_randomize<Scalar>(0);
   result = symLinearOpTester.check(*A9_b,out.ptr());
   if(!result) success = false;
   // Note that testing the symmetry above helps to check the transpose mode
   // against the non-transpose mode!
-  
+
   if (nonnull(out)) *out << "\nComparing A9 == A9_b ...\n";
   Thyra::seed_randomize<Scalar>(0);
   result = linearOpTester.compare(*A9,*A9_b,out.ptr());
@@ -428,14 +428,14 @@ bool run_composite_linear_ops_tests(
       A1,      nullOp
       );
   if (nonnull(out)) *out << "\nA9a =\n" << describe(*A9a,verbLevel);
-  
+
   if (nonnull(out)) *out << "\nTesting A9a ...\n";
   Thyra::seed_randomize<Scalar>(0);
   result = symLinearOpTester.check(*A9a,out.ptr());
   if(!result) success = false;
   // Note that testing the symmetry above helps to check the transpose mode
   // against the non-transpose mode!
-  
+
 #ifdef TEUCHOS_DEBUG
   if (nonnull(out)) *out << "\nCreating an invalid blocked 2x2 operator A9b = [ A6, A1^H; A1, A1 ] (should throw an exception) ...\n\n";
   try {
@@ -491,7 +491,7 @@ bool run_composite_linear_ops_tests(
       A1
       );
   if (nonnull(out)) *out << "\nA10 =\n" << describe(*A10,verbLevel);
-  
+
   if (nonnull(out)) *out << "\nTesting A10 ...\n";
   Thyra::seed_randomize<Scalar>(0);
   result = linearOpTester.check(*A10,out.ptr());
@@ -501,7 +501,7 @@ bool run_composite_linear_ops_tests(
   RCP<const Thyra::LinearOpBase<Scalar> >
     A11 = Thyra::block1x2<Scalar>( A9, A10 );
   if (nonnull(out)) *out << "\nA11 =\n" << describe(*A11,verbLevel);
-  
+
   if (nonnull(out)) *out << "\nTesting A11 ...\n";
   Thyra::seed_randomize<Scalar>(0);
   result = linearOpTester.check(*A11,out.ptr());
@@ -524,7 +524,7 @@ bool run_composite_linear_ops_tests(
       A1,                                       Thyra::zero(A1->range(),A1->range())
       );
   if (nonnull(out)) *out << "\nA13 =\n" << describe(*A13,verbLevel);
-  
+
   if (nonnull(out)) *out << "\nComparing A9a == A13 ...\n";
   Thyra::seed_randomize<Scalar>(0);
   result = linearOpTester.compare(*A9a,*A13,out.ptr());
@@ -534,12 +534,12 @@ bool run_composite_linear_ops_tests(
   RCP<const Thyra::LinearOpBase<Scalar> >
     A14 = Thyra::identity(origA->range());
   if (nonnull(out)) *out << "\nA14 =\n" << describe(*A14,verbLevel);
-  
+
   if (nonnull(out)) *out << "\nTesting A14 ...\n";
   Thyra::seed_randomize<Scalar>(0);
   result = symLinearOpTester.check(*A14,out.ptr());
   if(!result) success = false;
-  
+
   if (nonnull(out)) *out << "\n*** Leaving run_composite_linear_ops_tests<"<<ST::name()<<">(...) ...\n";
 
   return success;
@@ -554,14 +554,12 @@ int main( int argc, char* argv[] ) {
   bool verbose = true;
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
-
-  const Teuchos::RCP<const Teuchos::Comm<Thyra::Ordinal> >
-    comm = Teuchos::DefaultComm<Thyra::Ordinal>::getComm();
-
   Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
-  
+
   try {
+    const Teuchos::RCP<const Teuchos::Comm<Thyra::Ordinal> >
+      comm = Teuchos::DefaultComm<Thyra::Ordinal>::getComm();
 
     //
     // Read options from command-line
@@ -599,14 +597,14 @@ int main( int argc, char* argv[] ) {
     if( !run_composite_linear_ops_tests<mpf_class>(comm,n,useSpmd,mpf_class(1e-12),dumpAll,verbose?&*out:NULL) ) success = false;
 #endif
 
+    if( verbose ) {
+      if(success) *out << "\nAll of the tests seem to have run successfully!\n";
+      else        *out << "\nOh no! at least one of the tests failed!\n";
+    }
+
   } // end try
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,success)
 
-  if( verbose ) {
-    if(success) *out << "\nAll of the tests seem to have run successfully!\n";
-    else        *out << "\nOh no! at least one of the tests failed!\n";	
-  }
-  
-  return success ? 0 : 1;
+  return success ? EXIT_SUCCESS : EXIT_FAILURE;
 
 } // end main() [Doxygen looks for this!]

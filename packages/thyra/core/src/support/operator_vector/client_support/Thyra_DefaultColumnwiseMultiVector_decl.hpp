@@ -177,7 +177,15 @@ public:
 
 protected:
 
-  /** @name Overridden from LinearOpBase */
+  /** @name Overridden protected functions from MultiVectorBase */
+  //@{
+
+  /** \brief . */
+  void assignImpl(Scalar alpha);
+
+  //@}
+
+  /** @name Overridden protected functions from LinearOpBase */
   //@{
 
   /** \brief For complex <tt>Scalar</tt> types returns <tt>true</tt> for

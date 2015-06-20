@@ -1,12 +1,47 @@
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+
 #include "stk_mesh/base/FieldDataManager.hpp"
 #include <string.h>                     // for memcpy, memmove, memset
 #include <algorithm>                    // for swap
+#include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/FieldBase.hpp>  // for FieldMetaData, etc
 #include <stk_mesh/base/FieldDataManager.hpp>
 #include <stk_mesh/base/FindRestriction.hpp>
 #include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
 #include "stk_mesh/base/Types.hpp"      // for EntityRank, PartVector
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire, etc
+#include "stk_util/util/AdjustForAlignment.hpp"
 
 namespace stk {
 namespace mesh {
@@ -32,10 +67,11 @@ int getNumBytesForField(const FieldBase &field, const EntityRank rank, const Par
     return num_bytes_per_entity;
 }
 
-void initializeField(FieldMetaData& field_meta_data, const unsigned char* init_val, const size_t capacity, size_t &current_field_offset, unsigned char* all_data)
+void initializeField(FieldMetaData& field_meta_data, const unsigned char* init_val, const size_t capacity, size_t &current_field_offset, unsigned char* all_data, size_t alignment_increment_bytes)
 {
     if (field_meta_data.m_bytes_per_entity > 0)
     {
+        current_field_offset = stk::adjust_up_to_alignment_boundary(current_field_offset, alignment_increment_bytes);
         field_meta_data.m_data = all_data + current_field_offset;
         current_field_offset += field_meta_data.m_bytes_per_entity * capacity;
 
@@ -70,6 +106,17 @@ void setInitialValue(unsigned char* data_location, const FieldBase& field, const
 void DefaultFieldDataManager::allocate_bucket_field_data(const EntityRank rank,
         const std::vector< FieldBase * > & fields, const PartVector& superset_parts, const size_t capacity)
 {
+    if (m_field_raw_data.empty()) {
+      ThrowRequireMsg(!fields.empty(),"allocate_bucket_field_data ERROR, field-data-manager was constructed with 0 entity-ranks, and there are no fields. Mesh has not been initialized correctly.");
+
+      for(size_t i=0; i<fields.size(); ++i) {
+        if (fields[i] != NULL) {
+          m_field_raw_data.resize(fields[i]->get_mesh().mesh_meta_data().entity_rank_count());
+          break;
+        }
+      }
+    }
+
     if ( m_num_bytes_allocated_per_field.empty() )
     {
         m_num_bytes_allocated_per_field.resize(fields.size(), 0);
@@ -90,8 +137,9 @@ void DefaultFieldDataManager::allocate_bucket_field_data(const EntityRank rank,
             if(num_bytes_per_entity > 0)
             {
                 field_meta_data.m_bytes_per_entity = num_bytes_per_entity;
-                total_field_data_size += num_bytes_per_entity * capacity;
-                m_num_bytes_allocated_per_field[i] += num_bytes_per_entity * capacity;
+                size_t field_data_size_this_bucket = stk::adjust_up_to_alignment_boundary(num_bytes_per_entity*capacity, alignment_increment_bytes);
+                total_field_data_size += field_data_size_this_bucket;
+                m_num_bytes_allocated_per_field[i] += field_data_size_this_bucket;
             }
             fields[i]->get_meta_data_for_field().push_back(field_meta_data);
         }
@@ -100,7 +148,7 @@ void DefaultFieldDataManager::allocate_bucket_field_data(const EntityRank rank,
     // Allocate all field data for this bucket
     if(total_field_data_size > 0)
     {
-        unsigned char* all_data = field_data_allocator().allocate(total_field_data_size);
+        unsigned char* all_data = (*field_data_allocator).allocate(total_field_data_size);
         m_field_raw_data[rank].push_back(all_data);
 
         // Set data ptrs in field meta datas
@@ -112,7 +160,7 @@ void DefaultFieldDataManager::allocate_bucket_field_data(const EntityRank rank,
             {
                 const unsigned char* init_val = reinterpret_cast<const unsigned char*>(field.get_initial_value());
                 FieldMetaData& field_meta_data = const_cast<FieldMetaData&>(field.get_meta_data_for_field().back());
-                initializeField(field_meta_data, init_val, capacity, current_field_offset, all_data);
+                initializeField(field_meta_data, init_val, capacity, current_field_offset, all_data, alignment_increment_bytes);
             }
         }
     }
@@ -123,7 +171,7 @@ void DefaultFieldDataManager::allocate_bucket_field_data(const EntityRank rank,
 }
 
 void DefaultFieldDataManager::deallocate_bucket_field_data(const EntityRank rank, const unsigned bucket_id, const size_t capacity,
-        const std::vector<FieldBase*>  fields)
+        const std::vector<FieldBase*>&  fields)
 {
     if(fields.empty())
         return;
@@ -143,7 +191,7 @@ void DefaultFieldDataManager::deallocate_bucket_field_data(const EntityRank rank
                 field_data.m_data = NULL;
             }
         }
-        field_data_allocator().deallocate(m_field_raw_data[rank][bucket_id], bytes_to_delete);
+        (*field_data_allocator).deallocate(m_field_raw_data[rank][bucket_id], bytes_to_delete);
         m_field_raw_data[rank][bucket_id] = NULL;
     }
 }
@@ -228,7 +276,7 @@ ContiguousFieldDataManager::~ContiguousFieldDataManager()
 {
     for (size_t i=0;i<m_field_raw_data.size();i++)
     {
-        field_data_allocator().deallocate(m_field_raw_data[i], m_num_bytes_allocated_per_field[i]);
+        (*field_data_allocator).deallocate(m_field_raw_data[i], m_num_bytes_allocated_per_field[i]);
         m_field_raw_data[i] = NULL;
         m_num_bytes_allocated_per_field[i] = 0;
         m_num_bytes_used_per_field[i] = 0;
@@ -307,7 +355,7 @@ void ContiguousFieldDataManager::clear_bucket_field_data(const EntityRank rm_ran
 
 
 void ContiguousFieldDataManager::deallocate_bucket_field_data(const EntityRank rank, const unsigned bucket_id, const size_t capacity,
-        const std::vector<FieldBase*>  fields)
+        const std::vector<FieldBase*>&  fields)
 {
     if(fields.empty())
         return;
@@ -343,7 +391,7 @@ void ContiguousFieldDataManager::reorder_bucket_field_data(EntityRank rank, cons
                 newFieldSizeInBytes += m_num_entities_in_field_for_bucket[field_ordinal][reorderedBucketIds[i]]*oldMetaData[reorderedBucketIds[i]].m_bytes_per_entity;
             }
 
-            unsigned char* new_field_data = field_data_allocator().allocate(newFieldSizeInBytes + m_extra_capacity);
+            unsigned char* new_field_data = (*field_data_allocator).allocate(newFieldSizeInBytes + m_extra_capacity);
 
             FieldMetaData fieldMeta = {NULL, 0};
             FieldMetaDataVector newMetaData(reorderedBucketIds.size(), fieldMeta);
@@ -371,7 +419,7 @@ void ContiguousFieldDataManager::reorder_bucket_field_data(EntityRank rank, cons
                 }
             }
 
-            field_data_allocator().deallocate(m_field_raw_data[field_ordinal], m_num_bytes_allocated_per_field[field_ordinal]);
+            (*field_data_allocator).deallocate(m_field_raw_data[field_ordinal], m_num_bytes_allocated_per_field[field_ordinal]);
             ThrowRequire(new_offset == newFieldSizeInBytes);
             m_num_bytes_used_per_field[field_ordinal] = newFieldSizeInBytes;
             m_num_bytes_allocated_per_field[field_ordinal] = newFieldSizeInBytes + m_extra_capacity;
@@ -443,21 +491,21 @@ void ContiguousFieldDataManager::allocate_field_data(EntityRank rank, const std:
                 if ( numBytesPerEntity > 0 )
                 {
                     m_num_entities_in_field_for_bucket[field_ordinal][i] = buckets[i]->size();
-                    m_num_bytes_used_per_field[field_ordinal] += numBytesPerEntity * buckets[i]->size();
+                    m_num_bytes_used_per_field[field_ordinal] += stk::adjust_up_to_alignment_boundary(numBytesPerEntity * buckets[i]->size(), alignment_increment_bytes);
                 }
                 FieldMetaData fieldMetaData = {NULL, numBytesPerEntity};
                 const_cast<FieldBase&>(field).get_meta_data_for_field().push_back(fieldMetaData);
             }
 
             m_num_bytes_allocated_per_field[field_ordinal] += m_num_bytes_used_per_field[field_ordinal];
-            m_field_raw_data[field_ordinal] = field_data_allocator().allocate(m_num_bytes_allocated_per_field[field_ordinal]);
+            m_field_raw_data[field_ordinal] = (*field_data_allocator).allocate(m_num_bytes_allocated_per_field[field_ordinal]);
 
             size_t offset = 0;
             for(size_t i = 0; i < buckets.size(); ++i)
             {
                 const unsigned char* init_val = reinterpret_cast<const unsigned char*>(field.get_initial_value());
                 FieldMetaData& field_meta_data = const_cast<FieldMetaData&>(field.get_meta_data_for_field()[i]);
-                initializeField(field_meta_data, init_val, buckets[i]->size(), offset, m_field_raw_data[field_ordinal]);
+                initializeField(field_meta_data, init_val, buckets[i]->size(), offset, m_field_raw_data[field_ordinal], alignment_increment_bytes);
             }
         }
     }
@@ -496,7 +544,7 @@ void ContiguousFieldDataManager::add_field_data_for_entity(const std::vector<Fie
                 bool requiresNewAllocation = newFieldSize > m_num_bytes_allocated_per_field[field_ordinal];
                 if (requiresNewAllocation)
                 {
-                    new_field_data = field_data_allocator().allocate(newFieldSize + m_extra_capacity);
+                    new_field_data = (*field_data_allocator).allocate(newFieldSize + m_extra_capacity);
                 }
 
                 FieldMetaDataVector& field_meta_data_vector = const_cast<FieldMetaDataVector&>(field.get_meta_data_for_field());
@@ -518,7 +566,7 @@ void ContiguousFieldDataManager::add_field_data_for_entity(const std::vector<Fie
                 {
                     std::memcpy(new_field_data, m_field_raw_data[field_ordinal],  leftHalf);
                     std::memcpy(new_field_data+leftHalf+numBytesPerEntity, m_field_raw_data[field_ordinal]+leftHalf, rightHalf);
-                    field_data_allocator().deallocate(m_field_raw_data[field_ordinal], m_num_bytes_allocated_per_field[field_ordinal]);
+                    (*field_data_allocator).deallocate(m_field_raw_data[field_ordinal], m_num_bytes_allocated_per_field[field_ordinal]);
                     m_num_bytes_allocated_per_field[field_ordinal] = newFieldSize + m_extra_capacity;
                 }
                 else

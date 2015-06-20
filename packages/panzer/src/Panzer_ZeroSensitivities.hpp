@@ -49,53 +49,40 @@
 namespace panzer {
 
   //! Zero out AD types so that we can drop sensitivity contributions
-  template<typename ScalarT> 
-  void zeroSensitivities(ScalarT& s);
+  // template<typename ScalarT> 
+  // void zeroSensitivities(ScalarT& s);
 
   //! Specialization for Residual
-  inline void zeroSensitivities(double& s)
-  {
-  
-  }
+  inline void zeroSensitivities(panzer::Traits::RealType& s) {}
 
-  //! Specialization for Jacobian
-  inline void zeroSensitivities(Sacado::Fad::DFad<double>& s) 
+  //! Specialization for Fad type Jacobian
+  inline void zeroSensitivities(panzer::Traits::FadType& s) 
   {
-    //cout << "Zeroing out fad!" << endl;
-    //s.setIsConstant(true);
     s.zero();
   }
 
-  //! Specialization for Jacobian
-  inline void zeroSensitivities(Sacado::CacheFad::DFad<double>& s) 
+  //! Specialization for Kokkos View reference type Jacobian
+  /*
+  template<typename S, unsigned l, unsigned s, typename b>
+  inline 
+  void 
+  zeroSensitivities(Sacado::Fad::ViewFad<S,l,s,b> v) 
   {
-    //cout << "Zeroing out fad!" << endl;
-    //s.setIsConstant(true);
-    s.zero();
+    v.zero();
   }
-
-  //! Specialization for Jacobian
-  inline void zeroSensitivities(Sacado::ELRFad::DFad<double>& s) 
-  {
-    //cout << "Zeroing out fad!" << endl;
-    //s.setIsConstant(true);
-    s.zero();
-  }
-
-  //! Specialization for Jacobian
-  inline void zeroSensitivities(Sacado::ELRCacheFad::DFad<double>& s) 
-  {
-    //cout << "Zeroing out fad!" << endl;
-    //s.setIsConstant(true);
-    s.zero();
+  */
+  template <typename T>
+  inline
+  typename Sacado::mpl::enable_if< Sacado::IsView<T> >::type
+  zeroSensitivities(T x) {
+    //std::cout << "zeroSensitivities - ViewFad" << std::endl;
+      x.zero();
   }
 
 #ifdef HAVE_STOKHOS
   //! Specialization for Residual
   inline void zeroSensitivities(Traits::SGType & s)
-  {
-  }
-
+  {}
 
   //! Specialization for Residual
   inline void zeroSensitivities(Traits::SGFadType & s)

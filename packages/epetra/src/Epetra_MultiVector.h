@@ -1036,7 +1036,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
                      int NumPermuteIDs,
                      int * PermuteToLIDs,
                      int * PermuteFromLIDs,
-                     const Epetra_OffsetIndex * Indexor);
+                     const Epetra_OffsetIndex * Indexor,
+                     Epetra_CombineMode CombineMode = Zero);
 
   int PackAndPrepare(const Epetra_SrcDistObject & Source,
                      int NumExportIDs,

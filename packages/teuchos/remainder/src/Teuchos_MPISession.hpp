@@ -45,7 +45,7 @@
 /// \file Teuchos_MPISession.hpp
 /// \brief A MPI utilities class, providing methods for initializing,
 ///   finalizing, and querying the global MPI session.
-/// 
+///
 /// \warning This file has been DEPRECATED.  Please include
 ///   Teuchos_GlobalMPISession.hpp and use \c
 ///   Teuchos::GlobalMPISession instead.  Note the minor interface
@@ -61,8 +61,8 @@ namespace Teuchos
 {
   /**
    * \class MPISession
-   * \brief Methods for initializing, finalizing, and querying 
-   *   the global MPI session. 
+   * \brief Methods for initializing, finalizing, and querying
+   *   the global MPI session.
    *
    * \warning This class has been DEPRECATED.  Please include
    *   Teuchos_GlobalMPISession.hpp and use \c
@@ -78,7 +78,7 @@ namespace Teuchos
     //! Returns the process rank relative to MPI_COMM_WORLD
     static int getRank() {return rank_;}
 
-    //! Returns the number of processors in MPI_COMM_WORLD 
+    //! Returns the number of processors in MPI_COMM_WORLD
     static int getNProc() {return nProc_;}
 
     //! Finalizer, calls MPI_Finalize() if necessary

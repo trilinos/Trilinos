@@ -78,9 +78,19 @@ string toString(const unsigned int& x);
 
 string toString(const long int& x);
 
+string toString(const unsigned long int& x);
+
 string toString(const double& x);
 
 string toString(const long long& x);
+
+string toString(const unsigned long long& x);
+
+// printf for size_t is not cleanly possible on all platforms and
+// different size_t sizes.  It is also not required since we
+// already have overloads for unsigned {int,long,long long}.
+// Hence commenting it out.
+//string toString(const size_t & x);
 
 void 
 GetNeighboursCartesian2d(const int i, const int nx, const int ny,
@@ -97,7 +107,7 @@ GetNeighboursCartesian3d(const int i, const int nx, const int ny, const int nz,
                          int& below, int& above);
 void
 PrintStencil2D(const Epetra_CrsMatrix* Matrix,
-               const int nx, const int ny, int GID = -1);
+               const int nx, const int ny, long long GID = -1);
 
 } // namespace Galeri
 

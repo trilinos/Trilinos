@@ -116,7 +116,7 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("fact: sparskit: type", ("ILUT"));
 
   // Additive Schwarz preconditioner
-  params.set("schwarz: compute condest", true);
+  params.set("schwarz: compute condest", false); // mfh 24 Mar 2015: for backwards compatibility ONLY
   params.set("schwarz: combine mode", "ZERO"); // use string mode for this
   params.set("schwarz: use reordering", true);
   params.set("schwarz: filter singletons", false);

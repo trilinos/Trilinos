@@ -200,6 +200,8 @@ namespace LOCA {
     //! Private to prohibit copying
     AdaptiveStepper& operator = (const AdaptiveStepper&);
 
+    void computeEigenData();
+
   protected:
 
     //! Adaptive solution manager provides interface to remesh/resize functions

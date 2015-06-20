@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -45,8 +45,8 @@
 #define KOKKOSTRAITS_HPP
 
 #include <stddef.h>
-#include <Kokkos_Macros.hpp>
 #include <stdint.h>
+#include <Kokkos_Macros.hpp>
 
 namespace Kokkos {
 namespace Impl {
@@ -84,6 +84,10 @@ template <typename T> struct is_const : public false_type {};
 template <typename T> struct is_const<const T> : public true_type {};
 template <typename T> struct is_const<const T & > : public true_type {};
 
+template <typename T> struct is_array : public false_type {};
+template <typename T> struct is_array< T[] > : public true_type {};
+template <typename T, unsigned N > struct is_array< T[N] > : public true_type {};
+
 //----------------------------------------------------------------------------
 // C++11 Type transformations:
 
@@ -96,9 +100,13 @@ template <typename T> struct add_const<T & > { typedef const T & type; };
 template <typename T> struct add_const<const T> { typedef const T type; };
 template <typename T> struct add_const<const T & > { typedef const T & type; };
 
-template<typename T> struct remove_reference { typedef T type ; };
-template<typename T> struct remove_reference< T & > { typedef T type ; };
-template<typename T> struct remove_reference< const T & > { typedef const T type ; };
+template <typename T> struct remove_reference { typedef T type ; };
+template <typename T> struct remove_reference< T & > { typedef T type ; };
+template <typename T> struct remove_reference< const T & > { typedef const T type ; };
+
+template <typename T> struct remove_extent { typedef T type ; };
+template <typename T> struct remove_extent<T[]> { typedef T type ; };
+template <typename T, unsigned N > struct remove_extent<T[N]> { typedef T type ; };
 
 //----------------------------------------------------------------------------
 // C++11 Other type generators:
@@ -237,6 +245,35 @@ struct if_ : public if_c<Cond::value, TrueType, FalseType> {};
 
 //----------------------------------------------------------------------------
 
+// Allows aliased types:
+template< typename T >
+struct is_integral : public integral_constant< bool ,
+  (
+    Impl::is_same< T ,          char >::value ||
+    Impl::is_same< T , unsigned char >::value ||
+    Impl::is_same< T ,          short int >::value ||
+    Impl::is_same< T , unsigned short int >::value ||
+    Impl::is_same< T ,          int >::value ||
+    Impl::is_same< T , unsigned int >::value ||
+    Impl::is_same< T ,          long int >::value ||
+    Impl::is_same< T , unsigned long int >::value ||
+    Impl::is_same< T ,          long long int >::value ||
+    Impl::is_same< T , unsigned long long int >::value ||
+
+    Impl::is_same< T , int8_t   >::value ||
+    Impl::is_same< T , int16_t  >::value ||
+    Impl::is_same< T , int32_t  >::value ||
+    Impl::is_same< T , int64_t  >::value ||
+    Impl::is_same< T , uint8_t  >::value ||
+    Impl::is_same< T , uint16_t >::value ||
+    Impl::is_same< T , uint32_t >::value ||
+    Impl::is_same< T , uint64_t >::value 
+  )>
+{};
+
+//----------------------------------------------------------------------------
+
+
 template < size_t N >
 struct is_power_of_two
 {
@@ -272,7 +309,7 @@ unsigned power_of_two_if_valid( const unsigned N )
 {
   unsigned p = ~0u ;
   if ( N && ! ( N & ( N - 1 ) ) ) {
-#if defined( __CUDA_ARCH__ )
+#if defined( __CUDA_ARCH__ ) && defined( KOKKOS_HAVE_CUDA )
     p = __ffs(N) - 1 ;
 #elif defined( __GNUC__ ) || defined( __GNUG__ )
     p = __builtin_ffs(N) - 1 ;
@@ -310,17 +347,18 @@ struct integral_nonzero_constant<T,zero,false>
 
 //----------------------------------------------------------------------------
 
-template <typename T> struct is_integral : public false_ {};
+template < class C > struct is_integral_constant : public false_
+{
+  typedef void integral_type ;
+  enum { integral_value = 0 };
+};
 
-template <> struct is_integral<int8_t>  : public true_ {};
-template <> struct is_integral<int16_t> : public true_ {};
-template <> struct is_integral<int32_t> : public true_ {};
-template <> struct is_integral<int64_t> : public true_ {};
-
-template <> struct is_integral<uint8_t>  : public true_ {};
-template <> struct is_integral<uint16_t> : public true_ {};
-template <> struct is_integral<uint32_t> : public true_ {};
-template <> struct is_integral<uint64_t> : public true_ {};
+template < typename T , T v >
+struct is_integral_constant< integral_constant<T,v> > : public true_
+{
+  typedef T integral_type ;
+  enum { integral_value = v };
+};
 
 } // namespace Impl
 } // namespace Kokkos

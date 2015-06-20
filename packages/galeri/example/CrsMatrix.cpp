@@ -83,7 +83,11 @@ int main(int argc, char* argv[])
   {
     // Creates a simple linear map; for more details on the map creation
     // refer to the documentation
+#ifndef GALERI_TEST_USE_LONGLONG_GO
     Map = CreateMap("Cartesian2D", Comm, GaleriList);
+#else
+    Map = CreateMap64("Cartesian2D", Comm, GaleriList);
+#endif
 
     // Creates a diagonal matrix with 1's on the diagonal
     Matrix   = CreateCrsMatrix("Biharmonic2D", Map, GaleriList);

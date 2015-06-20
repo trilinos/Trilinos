@@ -43,7 +43,7 @@
 #include <iostream>
 #include <iomanip>
 
-#include "Sacado.hpp"
+#include "Sacado_No_Kokkos.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Sacado_Fad_BLAS.hpp"
 

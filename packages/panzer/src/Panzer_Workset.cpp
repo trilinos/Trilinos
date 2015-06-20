@@ -61,7 +61,8 @@ namespace panzer {
       os << "    " << *ir << std::endl;
 
     std::vector<int>::const_iterator ir = w.ir_degrees->begin();
-    for (std::vector<Teuchos::RCP<panzer::IntegrationValues<double,Intrepid::FieldContainer<double> > > >::const_iterator irv = w.int_rules.begin();  irv != w.int_rules.end(); ++irv,++ir) {
+    for (std::vector<Teuchos::RCP<panzer::IntegrationValues2<double> > >::const_iterator irv = w.int_rules.begin();  
+         irv != w.int_rules.end(); ++irv,++ir) {
 
       os << "  IR Values (Degree=" << *ir << "):" << endl;
 
@@ -111,15 +112,17 @@ namespace panzer {
       os << "    " << *b << std::endl;
 
     std::vector<std::string>::const_iterator b = w.basis_names->begin();
-    for (std::vector<Teuchos::RCP< panzer::BasisValues<double,Intrepid::FieldContainer<double> > > >::const_iterator bv = w.bases.begin(); bv != w.bases.end(); ++bv,++b) {
+ 
+    for (std::vector<Teuchos::RCP< panzer::BasisValues2<double> > >::const_iterator bv = w.bases.begin(); bv != w.bases.end(); ++bv,++b) {
 
       os << "  Basis Values (basis_name=" << *b << "):" << endl;
       
+/*
       os << "    basis_ref:" << endl;
       os << (*bv)->basis_ref << endl;
 
       os << "    basis:" << endl;
-      os << (*bv)->basis << endl;
+      os << (*bv)->basis_scalar << endl;
 
       os << "    grad_basis_ref:" << endl;
       os << (*bv)->grad_basis_ref << endl;
@@ -128,16 +131,17 @@ namespace panzer {
       os << (*bv)->grad_basis << endl;
 
       os << "    curl_basis_ref:" << endl;
-      os << (*bv)->curl_basis_ref << endl;
+      os << (*bv)->curl_basis_ref_vector << endl;
 
       os << "    curl_basis:" << endl;
-      os << (*bv)->curl_basis << endl;
+      os << (*bv)->curl_basis_vector << endl;
 
       os << "    basis_coordinates_ref:" << endl;
       os << (*bv)->basis_coordinates_ref << endl;
 
       os << "    basis_coordinates:" << endl;
       os << (*bv)->basis_coordinates << endl;
+*/
 
       os << "    basis_layout->name():" << (*bv)->basis_layout->name() << endl;
     }

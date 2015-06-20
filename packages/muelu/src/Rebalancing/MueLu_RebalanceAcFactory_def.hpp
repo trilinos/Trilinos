@@ -53,30 +53,35 @@
 
 #include "MueLu_RebalanceAcFactory_decl.hpp"
 
+#include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_RAPFactory.hpp"
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const ParameterList> RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const ParameterList> RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
-    validParamList->set< RCP<const FactoryBase> >("A",         Teuchos::null, "Generating factory of the matrix A for rebalancing");
-    validParamList->set< RCP<const FactoryBase> >("Importer",  Teuchos::null, "Generating factory of the importer");
-    // The value of "useSubcomm" paramter here must be the same as in RebalanceTransferFactory
-    validParamList->set< bool >                  ("useSubcomm",         true, "Construct subcommunicators");
+
+#define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
+    SET_VALID_ENTRY("repartition: use subcommunicators");
+#undef SET_VALID_ENTRY
+
+    validParamList->set< RCP<const FactoryBase> >("A",        Teuchos::null, "Generating factory of the matrix A for rebalancing");
+    validParamList->set< RCP<const FactoryBase> >("Importer", Teuchos::null, "Generating factory of the importer");
+
     return validParamList;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     Input(coarseLevel, "A");
     Input(coarseLevel, "Importer");
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Computing Ac", coarseLevel);
 
     RCP<Matrix> originalAc = Get< RCP<Matrix> >(coarseLevel, "A");
@@ -92,11 +97,12 @@ namespace MueLu {
         const ParameterList & pL = GetParameterList();
 
         ParameterList XpetraList;
-        if (pL.get<bool>("useSubcomm") == true) {
+        if (pL.get<bool>("repartition: use subcommunicators") == true) {
           GetOStream(Runtime0) << "Replacing maps with a subcommunicator" << std::endl;
           XpetraList.set("Restrict Communicator",true);
         }
         // NOTE: If the communicator is restricted away, Build returns Teuchos::null.
+        XpetraList.set("Timer Label","MueLu::RebalanceAc-" + Teuchos::toString(coarseLevel.GetLevelID()));
         rebalancedAc = MatrixFactory::Build(originalAc, *rebalanceImporter, targetMap, targetMap, rcp(&XpetraList,false));
 
         if (!rebalancedAc.is_null())
@@ -106,15 +112,19 @@ namespace MueLu {
       }
 
       if (!rebalancedAc.is_null() && IsPrint(Statistics1)) {
+        int oldRank = SetProcRankVerbose(rebalancedAc->getRowMap()->getComm()->getRank());
+
         RCP<ParameterList> params = rcp(new ParameterList());
         params->set("printLoadBalancingInfo", true);
         params->set("printCommInfo",          true);
         GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*rebalancedAc, "Ac (rebalanced)", params);
+
+        SetProcRankVerbose(oldRank);
       }
 
     } else {
       // Ac already built by the load balancing process and no load balancing needed
-      GetOStream(Warnings0) << "No rebalancing" << std::endl;
+      GetOStream(Runtime1) << "No rebalancing" << std::endl;
       Set(coarseLevel, "A", originalAc);
     }
 
@@ -130,8 +140,8 @@ namespace MueLu {
   } //Build()
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddRebalanceFactory(const RCP<const FactoryBase>& factory) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddRebalanceFactory(const RCP<const FactoryBase>& factory) {
 
     /*TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const TwoLevelFactoryBase>(factory) == Teuchos::null, Exceptions::BadCast,
                                "MueLu::RAPFactory::AddTransferFactory: Transfer factory is not derived from TwoLevelFactoryBase. "

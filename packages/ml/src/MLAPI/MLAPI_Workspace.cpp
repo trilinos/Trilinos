@@ -134,7 +134,8 @@ void Init()
       printf("** You may now attach debugger to the processes listed above.\n");
       printf( "**\n");
       printf( "** Enter a character to continue > "); fflush(stdout);
-      scanf("%c",&go);
+      if (EOF == scanf("%c",&go))
+         pr_error("Error: I/O error.\n");
     }
   }
 

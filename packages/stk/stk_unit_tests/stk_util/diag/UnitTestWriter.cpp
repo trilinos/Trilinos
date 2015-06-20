@@ -1,16 +1,41 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include <bitset>                       // for bitset, bitset<>::reference
 #include <functional>                   // for less
 #include <list>                         // for list, _List_iterator, etc
 #include <map>                          // for multimap, map, etc
-#include <memory>                       // for auto_ptr
+#include <memory>                       // for
 #include <set>                          // for multiset, set, etc
 #include <sstream>                      // for ostringstream, ostream, etc
 #include <stk_util/diag/WriterExt.hpp>  // for operator<<
@@ -201,21 +226,11 @@ TEST(UnitTestWriter, UnitTest)
     s.insert(3);
     s.insert(4);
     
-    std::set<int *> sp;
-    sp.insert(new int(2));
-    sp.insert(new int(3));
-    sp.insert(new int(4));
-
     std::multiset<int> ms;
     ms.insert(2);
     ms.insert(2);
     ms.insert(4);
     
-    std::multiset<int *> msp;
-    msp.insert(new int(2));
-    msp.insert(new int(3));
-    msp.insert(new int(4));
-
     std::bitset<8> b;
     b[1] = 1;
     b[3] = 1;
@@ -232,9 +247,7 @@ TEST(UnitTestWriter, UnitTest)
     dw() << mm << dendl;
     dw() << mmp << dendl;
     dw() << s << dendl;
-    dw() << sp << dendl;
     dw() << ms << dendl;
-    dw() << msp << dendl;
     dw() << b << dendl;
 
     for(std::vector<int*>::iterator it=vp.begin(); it!=vp.end(); ++it)
@@ -246,23 +259,6 @@ TEST(UnitTestWriter, UnitTest)
       delete curmp->second;
     for ( std::list<int *>::iterator curp = lp.begin() ; curp != lp.end() ; curp++ )
       delete *curp;
-    for ( std::set<int *>::iterator cursp = sp.begin() ; cursp != sp.end() ; cursp++ )
-      delete *cursp;
-    for ( std::multiset<int *>::iterator curmsp = msp.begin() ; curmsp != msp.end() ; curmsp++ )
-      delete *curmsp;
     
   }
-//  ASSERT_EQ(std::string("int\n(5:7)\nstd::vector<int, std::allocator<int> >, size 3 {\n  1 2 3 \n}\nstd::vector<int*, std::allocator<int*> >, size 3 {\n  [0] (pointer 0x53b040), 1\n  [1] (pointer 0x53b770), 2\n  [2] (pointer 0x53b750), 3\n}\nstd::list<int, std::allocator<int> >, size 3 {\n  [0] 1\n  [1] 2\n  [2] 3\n}\nstd::list<int*, std::allocator<int*> >, size 3 {\n  [0] (pointer 0x53b820), 1\n  [1] (pointer 0x53b8a0), 2\n  [2] (pointer 0x53b8e0), 3\n}\nstd::map<int, int, std::less<int>, std::allocator<std::pair<int const, int> > >, size 3 {\n  [1] 2\n  [2] 3\n  [3] 4\n}\nstd::map<int, int*, std::less<int>, std::allocator<std::pair<int const, int*> > >, size 3 {\n  [1] 0x53b9f0\n  [2] 0x53ba50\n  [3] 0x53bab0\n}\nstd::multimap<int, int, std::less<int>, std::allocator<std::pair<int const, int> > >, size 3 {\n  [1] 2\n  [1] 3\n  [2] 4\n}\nstd::multimap<int, int*, std::less<int>, std::allocator<std::pair<int const, int*> > >, size 3 {\n  [1] 0x53bb60\n  [1] 0x53bbc0\n  [2] 0x53bc20\n}\nstd::set<int, std::less<int>, std::allocator<int> >, size 3 {\n  2\n  3\n  4\n}\nstd::set<int*, std::less<int*>, std::allocator<int*> >, size 3 {\n  0x53bd10\n  0x53bd60\n  0x53bdb0\n}\nstd::multiset<int, std::less<int>, std::allocator<int> >, size 3 {\n  2\n  2\n  4\n}\nstd::multiset<int*, std::less<int*>, std::allocator<int*> >, size 3 {\n  0x53be90\n  0x53bee0\n  0x53bf30\n}\n00001010\n"), oss().str());  
-
-  oss().str("");
-  {
-    std::auto_ptr<int> a0(new int(1));
-    std::auto_ptr<int> a1;
-    dw() << a0 << dendl;
-    dw() << a1 << dendl;
-    a1 = a0;
-    dw() << a0 << dendl;
-    dw() << a1 << dendl;    
-  }
-//  ASSERT_EQ(std::string("std::auto_ptr<int>, 0x53b8c0, 1\n std::auto_ptr<int>, <not created or not owner>\n std::auto_ptr<int>, <not created or not owner>\n std::auto_ptr<int>, 0x53b8c0, 1\n"), oss().str());
 }

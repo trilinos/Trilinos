@@ -60,7 +60,7 @@ namespace Teuchos
   template<class Key, class Value> class HashPair
     {
     public:
-      //! Empty constructor 
+      //! Empty constructor
       inline HashPair() : key_(), value_() {;}
       //! Basic <key, value> constructor
       inline HashPair(const Key& key, const Value& value)
@@ -135,16 +135,20 @@ namespace Teuchos
   template<class Key, class Value>
   std::string toString(const Hashtable<Key, Value>& h);
 
-  /** \relates Hashtable 
+  /** \relates Hashtable
       \brief Write Hashtable to a stream
   */
   template<class Key, class Value>
   std::ostream& operator<<(std::ostream& os, const Hashtable<Key, Value>& h);
 
   template<class Key, class Value> inline
-    Hashtable<Key, Value>::Hashtable(int capacity, double rehashDensity)
-    : data_(), count_(0), capacity_(HashUtils::nextPrime(capacity)),
-    nHits_(0), avgDegeneracy_(0), rehashDensity_(rehashDensity)
+    Hashtable<Key, Value>::Hashtable(int capacity, double rehashDensity):
+    data_(),
+    count_(0),
+    capacity_(HashUtils::nextPrime(capacity)),
+    nHits_(0),
+    avgDegeneracy_(0),
+    rehashDensity_(rehashDensity)
     {
       data_.resize(capacity_);
     }
@@ -154,7 +158,7 @@ namespace Teuchos
     {
       const Array<HashPair<Key, Value> >& candidates
         = data_[hashCode(key) % capacity_];
-      
+
       for (int i=0; i<candidates.length(); i++)
         {
           const HashPair<Key, Value>& c = candidates[i];
@@ -172,9 +176,9 @@ namespace Teuchos
     void Hashtable<Key, Value>::put(const Key& key, const Value& value)
     {
       int index = hashCode(key) % capacity_;
-      
+
       Array<HashPair<Key, Value> >& local = data_[index];
-      
+
       // check for duplicate key
       for (int i=0; i<local.length(); i++)
         {
@@ -184,10 +188,10 @@ namespace Teuchos
               return;
             }
         }
-      
+
       // no duplicate key, so increment element count by one.
       count_++;
-      
+
       // check for need to resize.
       if ((double) count_ > rehashDensity_ * (double) capacity_)
         {
@@ -196,7 +200,7 @@ namespace Teuchos
           // recaluate index
           index = hashCode(key) % capacity_;
         }
-      
+
       data_[index].append(HashPair<Key, Value>(key, value));
     }
 
@@ -215,7 +219,7 @@ namespace Teuchos
               tmp[newIndex].append(data_[i][j]);
             }
         }
-      
+
       data_ = tmp;
     }
 
@@ -237,12 +241,12 @@ namespace Teuchos
     }
 
   template<class Key, class Value>  inline
-  std::string Hashtable<Key, Value>::toString() const 
+  std::string Hashtable<Key, Value>::toString() const
   {
     Array<Key> keys;
     Array<Value> values;
     arrayify(keys, values);
-    
+
     std::string rtn = "[";
     for (int i=0; i<keys.length(); i++)
       {
@@ -251,7 +255,7 @@ namespace Teuchos
         if (i < keys.length()-1) rtn += ", ";
       }
     rtn += "]";
-    
+
     return rtn;
   }
 
@@ -279,16 +283,16 @@ namespace Teuchos
     {
       TEUCHOS_TEST_FOR_EXCEPTION(!containsKey(key),
                          std::runtime_error,
-                         "Hashtable<Key, Value>::get: key " 
-                         << Teuchos::toString(key) 
+                         "Hashtable<Key, Value>::get: key "
+                         << Teuchos::toString(key)
                          << " not found in Hashtable"
                          << toString());
-      
+
       const Array<HashPair<Key, Value> >& candidates
         = data_[hashCode(key) % capacity_];
 
       accumulateAvgFill(candidates.length());
-      
+
       for (int i=0; i<candidates.length(); i++)
         {
           const HashPair<Key, Value>& c = candidates[i];
@@ -306,8 +310,8 @@ namespace Teuchos
     {
       TEUCHOS_TEST_FOR_EXCEPTION(!containsKey(key),
                          std::runtime_error,
-                         "Hashtable<Key, Value>::remove: key " 
-                         << Teuchos::toString(key) 
+                         "Hashtable<Key, Value>::remove: key "
+                         << Teuchos::toString(key)
                          << " not found in Hashtable"
                          << toString());
 

@@ -48,7 +48,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Solver_TrustRegionBased.H"    // class definition
+#include "NOX_Solver_TrustRegionBased.H"	// class definition
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Common.H"
@@ -59,14 +59,15 @@
 #include "NOX_Solver_SolverUtils.H"
 #include "NOX_Direction_Generic.H"
 #include "NOX_Direction_Factory.H"
+#include <cmath>
 
 using namespace NOX;
 using namespace NOX::Solver;
 
 TrustRegionBased::
 TrustRegionBased(const Teuchos::RCP<NOX::Abstract::Group>& grp,
-         const Teuchos::RCP<NOX::StatusTest::Generic>& t,
-         const Teuchos::RCP<Teuchos::ParameterList>& p) :
+		 const Teuchos::RCP<NOX::StatusTest::Generic>& t,
+		 const Teuchos::RCP<Teuchos::ParameterList>& p) :
   globalDataPtr(Teuchos::rcp(new NOX::GlobalData(p))),
   utilsPtr(globalDataPtr->getUtils()),
   solnPtr(grp),
@@ -120,6 +121,11 @@ void TrustRegionBased::init()
   maxRadius = paramsPtr->sublist("Trust Region").get("Maximum Trust Region Radius", 1.0e+10);
   if (maxRadius <= minRadius)
     invalid("Maximum Trust Region Radius", maxRadius);
+
+  initRadius = paramsPtr->sublist("Trust Region").
+    get("Initial Trust Region Radius", 1.0e0);
+  if (initRadius <= minRadius || initRadius >= maxRadius)
+    invalid("Initial Trust Region Radius", initRadius);
 
   minRatio = paramsPtr->sublist("Trust Region").get("Minimum Improvement Ratio", 1.0e-4);
   if (minRatio <= 0)
@@ -263,6 +269,7 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
   if (nIter == 0)
   {
     radius = newtonVecPtr->norm();
+    radius = std::min( initRadius, radius ) ;
 
     if (radius < minRadius)
       radius = 2 * minRadius;
@@ -310,7 +317,7 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
       dirPtr = cauchyVecPtr;
     }
     else
-    {            // Dogleg computation
+    {			// Dogleg computation
 
       // aVec = newtonVec - cauchyVec
       aVecPtr->update(1.0, *newtonVecPtr, -1.0, *cauchyVecPtr, 0.0);
@@ -325,15 +332,15 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
       // sqrt of quadratic equation
       double tmp = (cta * cta) - ((ctc - (radius * radius)) * ata);
       if (tmp < 0) {
-    utilsPtr->err() << "NOX::Solver::TrustRegionBased::iterate - invalid computation" << std::endl;
-    throw "NOX Error";
+	utilsPtr->err() << "NOX::Solver::TrustRegionBased::iterate - invalid computation" << std::endl;
+	throw "NOX Error";
       }
 
       // final soln to quadratic equation
       double gamma = (sqrt(tmp) - cta) / ata;
       if ((gamma < 0) || (gamma > 1)) {
-    utilsPtr->err() << "NOX::Solver::TrustRegionBased::iterate - invalid trust region step" << std::endl;
-    throw "NOX Error";
+	utilsPtr->err() << "NOX::Solver::TrustRegionBased::iterate - invalid trust region step" << std::endl;
+	throw "NOX Error";
       }
 
       // final direction computation
@@ -371,11 +378,11 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
       rtype = oldSolnPtr->applyJacobian(*dirPtr, *bVecPtr);
       if (rtype != NOX::Abstract::Group::Ok)
       {
-    utilsPtr->out() << "NOX::Solver::TrustRegionBased::iterate - "
-         << "unable to compute F" << std::endl;
-    throw "NOX Error";
+	utilsPtr->out() << "NOX::Solver::TrustRegionBased::iterate - "
+	     << "unable to compute F" << std::endl;
+	throw "NOX Error";
       }
-      bVecPtr->update(1.0, oldSolnPtr->getF(), 1.0);
+      bVecPtr->update(1.0, oldSolnPtr->getF(), step);
 
       // Compute norms
       double oldNormF = oldSolnPtr->getNormF();
@@ -386,12 +393,12 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
 
       // Print the ratio values if requested
       if (utilsPtr->isPrintType(NOX::Utils::InnerIteration)) {
-    double numerator = oldNormF - newNormF;
-    double denominator = oldNormF - normFLinear;
-    utilsPtr->out() << "Ratio computation: "
-            << utilsPtr->sciformat(numerator) << "/"
-            << utilsPtr->sciformat(denominator) << "="
-            << ratio << std::endl;
+	double numerator = oldNormF - newNormF;
+	double denominator = oldNormF - normFLinear;
+	utilsPtr->out() << "Ratio computation: "
+			<< utilsPtr->sciformat(numerator) << "/"
+			<< utilsPtr->sciformat(denominator) << "="
+			<< ratio << std::endl;
       }
 
       // Update the merit function (newF used when printing iteration status)
@@ -404,33 +411,30 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
 
       if (newF >= oldF)
       {
-    ratio = -1;
+	ratio = -1;
       }
       else
       {
 
-    rtype = oldSolnPtr->applyJacobian(*dirPtr, *bVecPtr);
-    if (rtype != NOX::Abstract::Group::Ok)
-    {
-      utilsPtr->err() << "NOX::Solver::TrustRegionBased::iterate - unable to compute F" << std::endl;
-      throw "NOX Error";
-    }
-    double numerator = oldF - newF;
-    double denominator = 0.0;
+        // use bVecPtr for scratch space
+        bVecPtr->update(step, dir, 0.0);
 
-    denominator = fabs(oldF - meritFuncPtr->
-               computeQuadraticModel(dir,*oldSolnPtr));
+	double numerator = oldF - newF;
+	double denominator = 0.0;
 
-    ratio = numerator / denominator;
-    if (utilsPtr->isPrintType(NOX::Utils::Debug))
-      utilsPtr->out() << "Ratio computation: "
-              << utilsPtr->sciformat(numerator) << "/"
-              << utilsPtr->sciformat(denominator) << "="
-              << utilsPtr->sciformat(ratio) << std::endl;
+	denominator = fabs(oldF - meritFuncPtr->
+			   computeQuadraticModel(*(bVecPtr.get()),*oldSolnPtr));
 
-    // WHY IS THIS CHECK HERE?
-    if ((denominator < 1.0e-12) && ((newF / oldF) >= 0.5))
-      ratio = -1;
+	ratio = numerator / denominator;
+	if (utilsPtr->isPrintType(NOX::Utils::Debug))
+	  utilsPtr->out() << "Ratio computation: "
+			  << utilsPtr->sciformat(numerator) << "/"
+			  << utilsPtr->sciformat(denominator) << "="
+			  << utilsPtr->sciformat(ratio) << std::endl;
+
+	// WHY IS THIS CHECK HERE?
+	if ((denominator < 1.0e-12) && ((newF / oldF) >= 0.5))
+	  ratio = -1;
       }
     }
 
@@ -443,14 +447,14 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
 
       switch(stepType) {
       case TrustRegionBased::Newton:
-    utilsPtr->out() << "Newton";
-    break;
+	utilsPtr->out() << "Newton";
+	break;
       case TrustRegionBased::Cauchy:
-    utilsPtr->out() << "Cauchy";
-    break;
+	utilsPtr->out() << "Cauchy";
+	break;
       case TrustRegionBased::Dogleg:
-    utilsPtr->out() << "Dogleg";
-    break;
+	utilsPtr->out() << "Dogleg";
+	break;
       }
 
       utilsPtr->out() << std::endl;
@@ -460,7 +464,7 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
     if (ratio < contractTriggerRatio)
     {
       if (stepType == TrustRegionBased::Newton) {
-    radius = newtonVecPtr->norm();
+	radius = newtonVecPtr->norm();
       }
       radius = NOX_MAX(contractFactor * radius, minRadius);
     }
@@ -569,4 +573,3 @@ void TrustRegionBased::printUpdate()
     utilsPtr->out() << NOX::Utils::fill(72) << "\n";
   }
 }
-

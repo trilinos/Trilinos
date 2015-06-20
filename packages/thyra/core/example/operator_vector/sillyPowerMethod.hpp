@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -71,7 +71,7 @@ bool sillyPowerMethod(
   typedef Teuchos::ScalarTraits<Scalar> ST; typedef typename ST::magnitudeType ScalarMag;
   using Thyra::apply;
   const Scalar one = ST::one(); using Thyra::NOTRANS;
-  typedef Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > VectorSpacePtr;
+  //typedef Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > VectorSpacePtr; // unused
   typedef Teuchos::RCP<Thyra::VectorBase<Scalar> > VectorPtr;
 
   // Initialize
@@ -83,7 +83,7 @@ bool sillyPowerMethod(
   // Perform iterations
   for( int iter = 0; iter < maxNumIters; ++iter ) {
     const ScalarMag z_nrm = norm(*z);           // Compute natural norm of z
-    V_StV( q.ptr(), Scalar(one/z_nrm), *z );    // q = (1/||z||)*z 
+    V_StV( q.ptr(), Scalar(one/z_nrm), *z );    // q = (1/||z||)*z
     apply<Scalar>( A, NOTRANS , *q, z.ptr() );  // z = A*q
     *lambda = scalarProd(*q,*z);                // lambda = <q,z>
     if( iter%(maxNumIters/10) == 0 || iter+1 == maxNumIters ) {

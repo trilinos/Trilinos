@@ -1,0 +1,23 @@
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/sacado/src/function)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    NumericsTest
+    SOURCES NumericsTest.cpp
+    ARGS 120 
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+  )
+
+
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#    SacadoTest
+#    SOURCES SacadoTest.cpp
+#    ARGS "5 8 0" "5 8 1"
+#    NUM_MPI_PROCS 1
+#    PASS_REGULAR_EXPRESSION "TEST PASSED"
+#    ADD_DIR_TO_NAME
+#  )
+
+

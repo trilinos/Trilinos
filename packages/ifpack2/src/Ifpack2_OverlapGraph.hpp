@@ -68,13 +68,14 @@ namespace Ifpack2 {
 /// promises that it works.  I heartily encourage developers to make
 /// use of the Ifpack2::Details namespace for classes that they are
 /// not yet ready to make public.
-template<class LocalOrdinal, 
-	 class GlobalOrdinal = LocalOrdinal, 
-	 class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+
+template<class LocalOrdinal = typename Tpetra::CrsGraph<>::local_ordinal_type,
+         class GlobalOrdinal = typename Tpetra::CrsGraph<LocalOrdinal>::global_ordinal_type,
+         class Node = typename Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal>::node_type>
 class OverlapGraph : public Teuchos::Describable {
 public:
   //! The Tpetra::CrsGraph specialization that this class uses.
-  typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> graph_type;
+  typedef Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> graph_type;
 
   /// \brief Constructor that takes a graph and the level of overlap.
   ///
@@ -82,8 +83,8 @@ public:
   ///   its row Map is nonoverlapping.
   ///
   /// \param OverlapLevel_in [in] The level of overlap; zero means none.
-  OverlapGraph (const Teuchos::RCP<const graph_type>& UserMatrixGraph_in, 
-		int OverlapLevel_in);
+  OverlapGraph (const Teuchos::RCP<const graph_type>& UserMatrixGraph_in,
+                int OverlapLevel_in);
 
   //! Copy constructor.
   OverlapGraph (const OverlapGraph<LocalOrdinal,GlobalOrdinal,Node>& Source);
@@ -92,17 +93,17 @@ public:
   virtual ~OverlapGraph () {}
 
   //! Return the overlap graph.
-  const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node>& 
+  const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node>&
   getOverlapGraph () const { return *OverlapGraph_; }
-    
+
   //! Return the overlap graph's row Map.
-  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& 
+  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>&
   getOverlapRowMap () const {return *OverlapRowMap_; }
-    
+
   //! Return the Import object.
-  const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& 
+  const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>&
   getOverlapImporter () const { return *OverlapImporter_; }
-    
+
   /// \brief Return the level of overlap used to create this graph.
   ///
   /// The graph created by this class uses a recursive definition of
@@ -124,8 +125,8 @@ protected:
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 OverlapGraph<LocalOrdinal,GlobalOrdinal,Node>::
-OverlapGraph (const Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& UserMatrixGraph_in, 
-	      int OverlapLevel_in)
+OverlapGraph (const Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& UserMatrixGraph_in,
+              int OverlapLevel_in)
   : UserMatrixGraph_ (UserMatrixGraph_in),
     OverlapLevel_ (OverlapLevel_in),
     IsOverlapped_ (OverlapLevel_in > 0 && UserMatrixGraph_in->getDomainMap ()->isDistributed ())

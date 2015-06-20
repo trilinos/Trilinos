@@ -116,7 +116,7 @@ public:
 
 };
 
-static const char *fname="objects.txt"; // File containing objects to be partitioned.
+static const char *global_fname="objects.txt"; // File containing objects to be partitioned.
 
 static int get_next_line(FILE *fp, char *buf, int bufsize);
 static void input_file_error(int numProcs, int tag, int startProc);
@@ -172,9 +172,9 @@ int main(int argc, char *argv[])
   // Read objects from input file and distribute them unevenly
   //////////////////////////////////////////////////////////////////
 
-  FILE *fp = fopen(fname, "r");
+  FILE *fp = fopen(global_fname, "r");
   if (!fp){
-    if (rank == 0) fprintf(stderr,"ERROR: Can not open %s\n",fname);
+    if (rank == 0) fprintf(stderr,"ERROR: Can not open %s\n",global_fname);
     MPIExit();
     exit(1);
   }
@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
 
   objectCollection objects;
 
-  read_input_objects(rank, size, fname, objects);
+  read_input_objects(rank, size, global_fname, objects);
 
   ///////////////////////////////////////////////////////////////////
   // Set the Zoltan parameters, and the names of the query functions

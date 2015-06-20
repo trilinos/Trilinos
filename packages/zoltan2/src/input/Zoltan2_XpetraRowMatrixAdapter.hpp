@@ -53,6 +53,7 @@
 #include <Zoltan2_MatrixAdapter.hpp>
 #include <Zoltan2_StridedData.hpp>
 #include <Zoltan2_XpetraTraits.hpp>
+#include <Zoltan2_PartitioningHelpers.hpp>
 
 #include <Xpetra_RowMatrix.hpp>
 
@@ -84,7 +85,7 @@ public:
   typedef typename InputTraits<User>::scalar_t    scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::gid_t    gid_t;
+  typedef typename InputTraits<User>::zgid_t    zgid_t;
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef Xpetra::RowMatrix<scalar_t, lno_t, gno_t, node_t> xmatrix_t;
@@ -168,19 +169,19 @@ public:
 
   bool CRSViewAvailable() const { return true; }
 
-  void getRowIDsView(const gid_t *&rowIds) const 
+  void getRowIDsView(const zgid_t *&rowIds) const 
   {
-    ArrayView<const gid_t> rowView = rowMap_->getNodeElementList();
+    ArrayView<const zgid_t> rowView = rowMap_->getNodeElementList();
     rowIds = rowView.getRawPtr();
   }
 
-  void getCRSView(const lno_t *&offsets, const gid_t *&colIds) const
+  void getCRSView(const lno_t *&offsets, const zgid_t *&colIds) const
   {
     offsets = offset_.getRawPtr();
     colIds = columnIds_.getRawPtr();
   }
 
-  void getCRSView(const lno_t *&offsets, const gid_t *&colIds,
+  void getCRSView(const lno_t *&offsets, const zgid_t *&colIds,
                     const scalar_t *&values) const
   {
     offsets = offset_.getRawPtr();
@@ -205,6 +206,10 @@ public:
 
   template <typename Adapter>
     void applyPartitioningSolution(const User &in, User *&out,
+         const PartitioningSolution<Adapter> &solution) const;
+
+  template <typename Adapter>
+    void applyPartitioningSolution(const User &in, RCP<User> &out,
          const PartitioningSolution<Adapter> &solution) const;
 
 private:
@@ -241,7 +246,8 @@ template <typename User, typename UserCoord>
       mayHaveDiagonalEntries(true)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
-  matrix_ = XpetraTraits<User>::convertToXpetra(inmatrix);
+  matrix_ = rcp_const_cast<const xmatrix_t>(
+           XpetraTraits<User>::convertToXpetra(rcp_const_cast<User>(inmatrix)));
   rowMap_ = matrix_->getRowMap();
   colMap_ = matrix_->getColMap();
   base_ = rowMap_->getIndexBase();
@@ -345,33 +351,43 @@ template <typename User, typename UserCoord>
       const User &in, User *&out, 
       const PartitioningSolution<Adapter> &solution) const
 { 
-  // Get an import list
-
-  size_t len = solution.getLocalNumberOfIds();
-  const gid_t *gids = solution.getIdList();
-  const part_t *parts = solution.getPartList();
-  ArrayRCP<gid_t> gidList = arcp(const_cast<gid_t *>(gids), 0, len, false); 
-  ArrayRCP<part_t> partList = arcp(const_cast<part_t *>(parts), 0, len, 
-    false); 
-  ArrayRCP<lno_t> dummyIn;
-  ArrayRCP<gid_t> importList;
-  ArrayRCP<lno_t> dummyOut;
+  // Get an import list (rows to be received)
   size_t numNewRows;
-  const RCP<const Comm<int> > comm = matrix_->getRowMap()->getComm();
-
+  ArrayRCP<zgid_t> importList;
   try{
-    numNewRows = solution.convertSolutionToImportList(
-      0, dummyIn, importList, dummyOut);
+    numNewRows = Zoltan2::getImportList<Adapter,
+                                        XpetraRowMatrixAdapter<User,UserCoord> >
+                                       (solution, this, importList);
   }
   Z2_FORWARD_EXCEPTIONS;
 
-  RCP<const User> inPtr = rcp(&in, false);
-
-  RCP<const User> outPtr = XpetraTraits<User>::doMigration(
-   inPtr, numNewRows, importList.getRawPtr());
-
-  out = const_cast<User *>(outPtr.get());
+  // Move the rows, creating a new matrix.
+  RCP<User> outPtr = XpetraTraits<User>::doMigration(in, numNewRows,
+                                                     importList.getRawPtr());
+  out = outPtr.get();
   outPtr.release();
+}
+
+////////////////////////////////////////////////////////////////////////////
+template <typename User, typename UserCoord>
+  template <typename Adapter>
+    void XpetraRowMatrixAdapter<User,UserCoord>::applyPartitioningSolution(
+      const User &in, RCP<User> &out, 
+      const PartitioningSolution<Adapter> &solution) const
+{ 
+  // Get an import list (rows to be received)
+  size_t numNewRows;
+  ArrayRCP<zgid_t> importList;
+  try{
+    numNewRows = Zoltan2::getImportList<Adapter,
+                                        XpetraRowMatrixAdapter<User,UserCoord> >
+                                       (solution, this, importList);
+  }
+  Z2_FORWARD_EXCEPTIONS;
+
+  // Move the rows, creating a new matrix.
+  out = XpetraTraits<User>::doMigration(in, numNewRows,
+                                        importList.getRawPtr());
 }
 
 }  //namespace Zoltan2

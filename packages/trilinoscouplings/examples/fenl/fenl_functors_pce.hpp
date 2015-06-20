@@ -69,7 +69,7 @@ public:
 
   typedef FixtureType fixture_type ;
   typedef Kokkos::View<S,L,D,M,Kokkos::Impl::ViewPCEContiguous> vector_type ;
-  typedef typename vector_type::device_type device_type ;
+  typedef typename vector_type::execution_space execution_space ;
   typedef typename vector_type::value_type scalar_type ;
 
   // Hack to get parallel_reduce to work
@@ -121,8 +121,8 @@ public:
   //------------------------------------
 
    KOKKOS_INLINE_FUNCTION
-  float compute_detJ(
-    const float grad[][ ElemNodeCount ] , // Gradient of bases master element
+  double compute_detJ(
+    const double grad[][ ElemNodeCount ] , // Gradient of bases master element
     const double x[] ,
     const double y[] ,
     const double z[] ) const
@@ -140,9 +140,9 @@ public:
       const double x2 = y[i] ;
       const double x3 = z[i] ;
 
-      const float g1 = grad[0][i] ;
-      const float g2 = grad[1][i] ;
-      const float g3 = grad[2][i] ;
+      const double g1 = grad[0][i] ;
+      const double g2 = grad[1][i] ;
+      const double g3 = grad[2][i] ;
 
       J[j11] += g1 * x1 ;
       J[j12] += g1 * x2 ;
@@ -159,20 +159,20 @@ public:
 
     // Inverse jacobian:
 
-    float invJ[ TensorDim ] = {
-      static_cast<float>( J[j22] * J[j33] - J[j23] * J[j32] ) ,
-      static_cast<float>( J[j13] * J[j32] - J[j12] * J[j33] ) ,
-      static_cast<float>( J[j12] * J[j23] - J[j13] * J[j22] ) ,
+    double invJ[ TensorDim ] = {
+      static_cast<double>( J[j22] * J[j33] - J[j23] * J[j32] ) ,
+      static_cast<double>( J[j13] * J[j32] - J[j12] * J[j33] ) ,
+      static_cast<double>( J[j12] * J[j23] - J[j13] * J[j22] ) ,
 
-      static_cast<float>( J[j23] * J[j31] - J[j21] * J[j33] ) ,
-      static_cast<float>( J[j11] * J[j33] - J[j13] * J[j31] ) ,
-      static_cast<float>( J[j13] * J[j21] - J[j11] * J[j23] ) ,
+      static_cast<double>( J[j23] * J[j31] - J[j21] * J[j33] ) ,
+      static_cast<double>( J[j11] * J[j33] - J[j13] * J[j31] ) ,
+      static_cast<double>( J[j13] * J[j21] - J[j11] * J[j23] ) ,
 
-      static_cast<float>( J[j21] * J[j32] - J[j22] * J[j31] ) ,
-      static_cast<float>( J[j12] * J[j31] - J[j11] * J[j32] ) ,
-      static_cast<float>( J[j11] * J[j22] - J[j12] * J[j21] ) };
+      static_cast<double>( J[j21] * J[j32] - J[j22] * J[j31] ) ,
+      static_cast<double>( J[j12] * J[j31] - J[j11] * J[j32] ) ,
+      static_cast<double>( J[j11] * J[j22] - J[j12] * J[j21] ) };
 
-    const float detJ = J[j11] * invJ[j11] +
+    const double detJ = J[j11] * invJ[j11] +
                        J[j21] * invJ[j12] +
                        J[j31] * invJ[j13] ;
 
@@ -182,9 +182,9 @@ public:
   KOKKOS_INLINE_FUNCTION
   scalar_type contributeResponse(
     const scalar_type dof_values[] ,
-    const float  detJ ,
-    const float  integ_weight ,
-    const float  bases_vals[] ) const
+    const double  detJ ,
+    const double  integ_weight ,
+    const double  bases_vals[] ) const
   {
     // $$ g_i = \int_{\Omega} T^2 d \Omega $$
 
@@ -224,7 +224,7 @@ public:
 
     for ( unsigned i = 0 ; i < IntegrationCount ; ++i ) {
 
-      const float detJ = compute_detJ( elem_data.gradients[i] , x , y , z );
+      const double detJ = compute_detJ( elem_data.gradients[i] , x , y , z );
 
       response_pce += contributeResponse( val , detJ , elem_data.weights[i] ,
                                           elem_data.values[i] );
@@ -264,9 +264,9 @@ template < typename pce_view_type,
            typename quad_values_type,
            typename ensemble_scalar_type,
            int EnsembleSize,
-           typename Device = typename pce_view_type::device_type >
+           typename Device = typename pce_view_type::execution_space >
 struct EvaluatePCE {
-  typedef Device device_type;
+  typedef Device execution_space;
   typedef typename pce_view_type::array_type pce_array_type;
 
   const pce_array_type   pce_view;
@@ -304,9 +304,9 @@ template < typename pce_view_type,
            typename quad_values_type,
            typename quad_weights_type,
            int EnsembleSize,
-           typename Device = typename pce_view_type::device_type >
+           typename Device = typename pce_view_type::execution_space >
 struct AssemblePCE {
-  typedef Device device_type;
+  typedef Device execution_space;
   typedef typename pce_view_type::array_type  pce_array_type;
 
   const pce_array_type    pce_view;
@@ -347,9 +347,9 @@ template < typename pce_view_type,
            typename quad_values_type,
            typename quad_weights_type,
            int EnsembleSize,
-           typename Device = typename pce_view_type::device_type >
+           typename Device = typename pce_view_type::execution_space >
 struct AssembleRightPCE {
-  typedef Device device_type;
+  typedef Device execution_space;
   typedef typename pce_view_type::array_type  pce_array_type;
 
   const pce_array_type    pce_view;
@@ -397,7 +397,7 @@ struct EvaluatePCE< pce_view_type,
                     ensemble_scalar_type,
                     EnsembleSize,
                     Kokkos::Cuda > {
-  typedef Kokkos::Cuda device_type;
+  typedef Kokkos::Cuda execution_space;
   typedef typename pce_view_type::array_type pce_array_type;
   typedef typename pce_array_type::value_type scalar_type;
   typedef typename quad_values_type::value_type quad_scalar_type;
@@ -421,7 +421,7 @@ struct EvaluatePCE< pce_view_type,
 
   void apply(const unsigned arg_qp) {
     qp = arg_qp;
-    Kokkos::parallel_for( Kokkos::MPVectorWorkConfig( row_count,
+    Kokkos::parallel_for( Kokkos::MPVectorWorkConfig<execution_space>( row_count,
                                                       EnsembleSize ),
                           *this );
   }
@@ -447,7 +447,7 @@ struct EvaluatePCE< pce_view_type,
 
     Kokkos::Impl::cuda_parallel_launch_local_memory<<< grid, block, shared >>>
         ( *this );
-    Kokkos::parallel_for( Kokkos::MPVectorWorkConfig( row_count,
+    Kokkos::parallel_for( Kokkos::MPVectorWorkConfig<execution_space>( row_count,
                                                       EnsembleSize ),
                           *this );
   }
@@ -487,7 +487,7 @@ struct AssemblePCE< pce_view_type,
                     quad_weights_type,
                     EnsembleSize,
                     Kokkos::Cuda > {
-  typedef Kokkos::Cuda device_type;
+  typedef Kokkos::Cuda execution_space;
   typedef typename pce_view_type::array_type  pce_array_type;
   typedef typename pce_array_type::value_type scalar_type;
   typedef typename quad_weights_type::value_type weights_scalar_type;
@@ -512,7 +512,7 @@ struct AssemblePCE< pce_view_type,
 
   void apply(const unsigned arg_qp) {
     qp = arg_qp;
-    Kokkos::parallel_for( Kokkos::MPVectorWorkConfig( pce_view.dimension_1(),
+    Kokkos::parallel_for( Kokkos::MPVectorWorkConfig<execution_space>( pce_view.dimension_1(),
                                                       EnsembleSize ),
                           *this );
   }
@@ -544,7 +544,7 @@ struct AssembleRightPCE< pce_view_type,
                          quad_weights_type,
                          EnsembleSize,
                          Kokkos::Cuda > {
-  typedef Kokkos::Cuda device_type;
+  typedef Kokkos::Cuda execution_space;
   typedef typename pce_view_type::array_type  pce_array_type;
   typedef typename pce_array_type::value_type scalar_type;
   typedef typename quad_weights_type::value_type weights_scalar_type;
@@ -575,7 +575,7 @@ struct AssembleRightPCE< pce_view_type,
 
   void apply(const unsigned arg_qp) {
     qp = arg_qp;
-    Kokkos::parallel_for( Kokkos::MPVectorWorkConfig( row_count,
+    Kokkos::parallel_for( Kokkos::MPVectorWorkConfig<execution_space>( row_count,
                                                       EnsembleSize ),
                           *this );
   }
@@ -638,46 +638,46 @@ struct AssembleRightPCE< pce_view_type,
 };
 #endif
 
-template< typename DeviceType ,
+template< typename ExecutionSpace ,
           BoxElemPart::ElemOrder Order ,
           typename CoordinateMap ,
           typename StorageType ,
           typename OrdinalType ,
           typename MemoryTraits ,
-          typename SizeType >
+          typename SizeType ,
+          class CoeffFunctionType>
 class ElementComputation<
-  Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap >,
-  Kokkos::CrsMatrix< Sacado::UQ::PCE<StorageType> , OrdinalType , DeviceType , MemoryTraits , SizeType >,
-  ElementComputationKLCoefficient< Sacado::UQ::PCE<StorageType>, typename StorageType::value_type, DeviceType> >
+  Kokkos::Example::BoxElemFixture< ExecutionSpace , Order , CoordinateMap >,
+  Kokkos::CrsMatrix< Sacado::UQ::PCE<StorageType> , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >,
+  CoeffFunctionType >
 {
 public:
 
-  typedef Kokkos::Example::BoxElemFixture< DeviceType, Order, CoordinateMap >  mesh_type ;
+  typedef Kokkos::Example::BoxElemFixture< ExecutionSpace, Order, CoordinateMap >  mesh_type ;
   typedef Kokkos::Example::HexElement_Data< mesh_type::ElemNode >              element_data_type ;
   typedef Sacado::UQ::PCE<StorageType> ScalarType;
-  typedef ElementComputationKLCoefficient< ScalarType, typename StorageType::value_type, DeviceType> CoeffFunctionType;
 
   //------------------------------------
 
-  typedef DeviceType   device_type ;
+  typedef ExecutionSpace   execution_space ;
   typedef ScalarType   scalar_type ;
 
-  typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >  sparse_matrix_type ;
+  typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >  sparse_matrix_type ;
   typedef typename sparse_matrix_type::StaticCrsGraphType sparse_graph_type ;
   typedef typename sparse_matrix_type::values_type matrix_values_type ;
-  typedef Kokkos::View< scalar_type* , Kokkos::LayoutLeft, device_type > vector_type ;
+  typedef Kokkos::View< scalar_type* , Kokkos::LayoutLeft, execution_space > vector_type ;
 
   //------------------------------------
 
   typedef typename scalar_type::value_type scalar_value_type;
   typedef typename scalar_type::ordinal_type ordinal_type;
   static const int EnsembleSize = 32;
-  typedef Stokhos::StaticFixedStorage<ordinal_type,scalar_value_type,EnsembleSize,DeviceType> ensemble_storage_type;
+  typedef Stokhos::StaticFixedStorage<ordinal_type,scalar_value_type,EnsembleSize,ExecutionSpace> ensemble_storage_type;
   typedef Sacado::MP::Vector<ensemble_storage_type> ensemble_scalar_type;
-  typedef ElementComputationKLCoefficient< ensemble_scalar_type, scalar_value_type, DeviceType > scalar_coeff_function_type;
+  typedef typename Sacado::mpl::apply<CoeffFunctionType, ensemble_scalar_type>::type scalar_coeff_function_type;
   typedef ElementComputation<
-    Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap >,
-    Kokkos::CrsMatrix< ensemble_scalar_type , OrdinalType , DeviceType , MemoryTraits , SizeType >,
+    Kokkos::Example::BoxElemFixture< ExecutionSpace , Order , CoordinateMap >,
+    Kokkos::CrsMatrix< ensemble_scalar_type , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >,
     scalar_coeff_function_type > scalar_element_computation_type;
   typedef typename scalar_element_computation_type::sparse_matrix_type scalar_sparse_matrix_type ;
   typedef typename scalar_sparse_matrix_type::values_type scalar_matrix_values_type ;
@@ -697,7 +697,7 @@ public:
   const scalar_coeff_function_type      scalar_diffusion_coefficient;
   const scalar_element_computation_type scalar_element_computation ;
 
-  typedef QuadratureData<DeviceType> QD;
+  typedef QuadratureData<ExecutionSpace> QD;
   typename QD::quad_weights_type quad_weights;
   typename QD::quad_values_type quad_points;
   typename QD::quad_values_type quad_values;
@@ -720,6 +720,8 @@ public:
   // Otherwise fill per-element contributions for subequent gather-add into a residual and jacobian.
   ElementComputation( const mesh_type          & arg_mesh ,
                       const CoeffFunctionType  & arg_coeff_function ,
+                      const double             & arg_coeff_source ,
+                      const double             & arg_coeff_advection ,
                       const vector_type        & arg_solution ,
                       const elem_graph_type    & arg_elem_graph ,
                       const sparse_matrix_type & arg_jacobian ,
@@ -738,6 +740,8 @@ public:
                                     arg_coeff_function.m_num_rv )
     , scalar_element_computation( arg_mesh,
                                   scalar_diffusion_coefficient,
+                                  arg_coeff_source,
+                                  arg_coeff_advection,
                                   scalar_solution,
                                   arg_elem_graph,
                                   scalar_jacobian,
@@ -786,7 +790,7 @@ public:
 
       // Set quadrature point in diffusion coefficient
       for (unsigned i=0; i<dim; ++i)
-        for (unsigned j=0; j<EnsembleSize; ++j)
+        for (unsigned j=0; j< unsigned(EnsembleSize); ++j)
           hrv(i).fastAccessCoeff(j) = quad_points(qp+j,i);
       Kokkos::deep_copy( rv, hrv );
 

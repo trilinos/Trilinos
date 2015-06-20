@@ -58,7 +58,7 @@ namespace PAMGEN_NEVADA {
     
     
     // find largest range
-    split_direction = -1;
+    split_direction = 0;
     if((dels[0] / inc_nels[0]) > 1 )split_direction = 0;
     if((dels[1] / inc_nels[1]) > 1 )split_direction = 1;
     if((dels[2] / inc_nels[2]) > 1 )split_direction = 2;

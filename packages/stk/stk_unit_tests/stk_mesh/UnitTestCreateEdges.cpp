@@ -1,5 +1,39 @@
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+
 #include <stddef.h>                     // for size_t
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/GetEntities.hpp>       // for comm_mesh_counts, count_entities
 #include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
 #include <stk_mesh/base/CreateEdges.hpp>  // for create_edges
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
@@ -11,7 +45,8 @@
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityRank
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include <exampleMeshes/StkMeshFromGeneratedMesh.h>
+#include <stk_unit_test_utils/StkMeshFromGeneratedMesh.h>
+#include "unit_tests/Setup2Block2HexMesh.hpp"
 
 using stk::mesh::MetaData;
 
@@ -250,6 +285,30 @@ TEST( UnitTestCreateEdges , testCreateEdges3x3x3 )
   }
 }
 
+TEST( UnitTestCreateEdges , TwoBlockTwoHexTwoProc )
+{
+  stk::ParallelMachine communicator = MPI_COMM_WORLD;
+  int numProcs = stk::parallel_machine_size(communicator);
+  if (numProcs > 2) {
+    return;
+  }
+
+  const unsigned spatialDim = 3;
+  stk::mesh::MetaData meta(spatialDim);
+  stk::mesh::BulkData bulk(meta, communicator);
+
+  setup2Block2HexMesh(bulk);
+
+  stk::mesh::create_edges(bulk, *meta.get_part("block_1"));
+
+  unsigned num_elems = stk::mesh::count_selected_entities(meta.universal_part(), bulk.buckets(stk::topology::ELEM_RANK));
+  unsigned num_edges = stk::mesh::count_selected_entities(meta.universal_part(), bulk.buckets(stk::topology::EDGE_RANK));
+  unsigned expected_num_elems = 2;//1 owned, 1 ghost on each proc
+  unsigned expected_num_edges = 12;//edges only on the block_1 elem
+  EXPECT_EQ(expected_num_elems, num_elems);
+  EXPECT_EQ(expected_num_edges, num_edges);
+}
+
 TEST( UnitTestCreateEdges , testSkinAndCreateEdges3x3x3 )
 {
   const stk::mesh::EntityRank elem_rank = stk::topology::ELEMENT_RANK;
@@ -416,6 +475,118 @@ TEST( UnitTestCreateEdges , hex1x1x4 )
         stkMeshBulkData.modification_begin();
         stkMeshBulkData.modification_end();
     }
+}
+
+TEST( UnitTestCreateEdges, hybrid_HexPyrTet )
+{
+    //  ID.proc
+    //
+    //          3.0------------7.0-----------11.1
+    //          /|             /|             /|
+    //         / |            / |            / |
+    //        /  |           /  |           /  |
+    //      4.0------------8.0-----------12.1  |
+    //       |   |          |   |          |   | <-- (Undrawable transition pyramid between node (5,6,7,8,9)
+    //       |   |   1.0    |   |          |   |      and 4 tets contained in volume on the right)
+    //       |   |          |   |          |   |
+    //       |  2.0---------|--6.0---------|-10.1
+    //       |  /           |  /           |  /
+    //       | /            | /            | /
+    //       |/             |/             |/
+    //      1.0------------5.0------------9.1
+
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    int p_size = stk::parallel_machine_size(pm);
+
+    if(p_size != 2)
+    {
+        return;
+    }
+
+    const unsigned spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta, pm);
+    const int p_rank = mesh.parallel_rank();
+
+    stk::mesh::Part * hexPart = &meta.declare_part_with_topology("hex_part", stk::topology::HEX_8);
+    stk::mesh::Part * pyrPart = &meta.declare_part_with_topology("pyr_part", stk::topology::PYRAMID_5);
+    stk::mesh::Part * tetPart = &meta.declare_part_with_topology("tet_part", stk::topology::TET_4);
+    meta.commit();
+
+    const size_t numHex = 1;
+    stk::mesh::EntityIdVector hexNodeIDs[] {
+        { 1, 2, 3, 4, 5, 6, 7, 8 }
+    };
+    stk::mesh::EntityId hexElemIDs[] = { 1 };
+
+    const size_t numPyr = 1;
+    stk::mesh::EntityIdVector pyrNodeIDs[] {
+        { 5, 6, 7, 8, 9 }
+    };
+    stk::mesh::EntityId pyrElemIDs[] = { 2 };
+
+    const size_t numTet = 4;
+    stk::mesh::EntityIdVector tetNodeIDs[] {
+        { 7, 8, 9, 12 },
+        { 6, 9, 10, 7 },
+        { 7, 9, 10, 12 },
+        { 7, 12, 10, 11 }
+    };
+    stk::mesh::EntityId tetElemIDs[] = { 3, 4, 5, 6 };
+
+    // list of triplets: (owner-proc, shared-nodeID, sharing-proc)
+    int shared_nodeIDs_and_procs[][3] =
+    {
+        { 0, 5, 1 },  // proc 0
+        { 0, 6, 1 },
+        { 0, 7, 1 },
+        { 0, 8, 1 },
+        { 1, 5, 0 },  // proc 1
+        { 1, 6, 0 },
+        { 1, 7, 0 },
+        { 1, 8, 0 }
+    };
+    int numSharedNodeTriples = 8;
+
+    mesh.modification_begin();
+
+    if (p_rank == 0) {
+        for (size_t i = 0; i < numHex; ++i) {
+          stk::mesh::declare_element(mesh, *hexPart, hexElemIDs[i], hexNodeIDs[i]);
+        }
+    }
+    else {
+        for (size_t i = 0; i < numPyr; ++i) {
+          stk::mesh::declare_element(mesh, *pyrPart, pyrElemIDs[i], pyrNodeIDs[i]);
+        }
+        for (size_t i = 0; i < numTet; ++i) {
+          stk::mesh::declare_element(mesh, *tetPart, tetElemIDs[i], tetNodeIDs[i]);
+        }
+    }
+
+    for (int nodeIdx = 0; nodeIdx < numSharedNodeTriples; ++nodeIdx) {
+        if (p_rank == shared_nodeIDs_and_procs[nodeIdx][0]) {
+            stk::mesh::EntityId nodeID = shared_nodeIDs_and_procs[nodeIdx][1];
+            int sharingProc = shared_nodeIDs_and_procs[nodeIdx][2];
+            stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, nodeID);
+            mesh.add_node_sharing(node, sharingProc);
+        }
+    }
+
+    mesh.modification_end();
+
+    stk::mesh::create_edges(mesh, *meta.get_part("pyr_part"));
+
+    {
+      std::vector<size_t> counts;
+      stk::mesh::comm_mesh_counts(mesh, counts);
+
+      EXPECT_EQ( counts[stk::topology::NODE_RANK], 12u ); // nodes
+      EXPECT_EQ( counts[stk::topology::EDGE_RANK], 8u );  // edges
+      EXPECT_EQ( counts[stk::topology::ELEM_RANK], 6u );  // elements
+    }
+
+
 }
 
 

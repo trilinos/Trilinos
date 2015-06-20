@@ -185,7 +185,7 @@
     docString='  partitioning algorithm' \
     /> \
    <Parameter  \
-    id=\"28\" name=\"rectilinear_blocks\" type=\"string\" validatorId=\"26\" value=\"no\" \
+    id=\"28\" name=\"rectilinear\" type=\"string\" validatorId=\"26\" value=\"no\" \
     docString='  If true, then when a cut is made, all of the dots located on the cut \
     are moved to the same side of the cut. The resulting regions are then \
     rectilinear.  The resulting load balance may not be as good as when \
@@ -246,6 +246,18 @@
     id=\"45\" name=\"mj_recursion_depth\" type=\"int\" validatorId=\"45\" value=\"-1\" \
     docString=\"Recursion depth for MJ: Must be greater than 0.\" \
     /> \
+   <Parameter  \
+    id=\"46\" name=\"color_method\" type=\"string\" validatorId=\"46\" value=\"rcm\" \
+    docString='  coloring algorithm' \
+    /> \
+   <Parameter  \
+    id=\"47\" name=\"color_choice\" type=\"string\" validatorId=\"47\" value=\"amd\" \
+    docString='  selection criterion for coloring' \
+    /> \
+   <ParameterList  name=\"zoltan_parameters\"> \
+   </ParameterList> \
+   <ParameterList   name=\"parma_parameters\"> \
+   </ParameterList> \
     <Validators> \
       <Validator defaultParameterName=\"error_check_level\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"0\"> \
         <String integralValue=\"0\" stringDoc=\"no assertions will be performed\" stringValue=\"no_assertions\"/> \
@@ -389,14 +401,16 @@
         <String value=\"phg\"/> \
         <String value=\"metis\"/> \
         <String value=\"parmetis\"/> \
+        <String value=\"parma\"/> \
         <String value=\"scotch\"/> \
         <String value=\"ptscotch\"/> \
         <String value=\"block\"/> \
         <String value=\"cyclic\"/> \
         <String value=\"random\"/> \
         <String value=\"wolf\"/> \
+        <String value=\"zoltan\"/> \
       </Validator> \
-      <Validator defaultParameterName=\"rectilinear_blocks\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"26\"> \
+      <Validator defaultParameterName=\"rectilinear\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"26\"> \
         <String integralValue=\"1\" stringValue=\"true\"/> \
         <String integralValue=\"1\" stringValue=\"yes\"/> \
         <String integralValue=\"1\" stringValue=\"1\"/> \
@@ -448,7 +462,21 @@
         <String integralValue=\"0\" stringValue=\"0\"/> \
         <String integralValue=\"0\" stringValue=\"off\"/> \
       </Validator> \
+      <Validator type=\"StringValidator\" validatorId=\"46\"> \
+        <String value=\"SerialGreedy\"/> \
+      </Validator> \
+      <Validator type=\"StringValidator\" validatorId=\"47\"> \
+        <String value=\"FirstFit\"/> \
+        <String value=\"Random\"/> \
+        <String value=\"RandomFast\"/> \
+        <String value=\"LeastUsed\"/> \
+      </Validator> \
     </Validators> \
   </ParameterList>"
+
+#ifdef _MSC_VER
+#undef ZOLTAN2_XML_PARAMETER_STRING
+#define ZOLTAN2_XML_PARAMETER_STRING "ZOLTAN2_XML_PARAMETER_STRING not available due to compiler error C2026: string too big, trailing characters truncated"
+#endif
 
 #endif  //ZOLTAN2_PARAMETER_DEFINITION_HEADER

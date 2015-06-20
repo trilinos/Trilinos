@@ -40,7 +40,7 @@
 //@HEADER
 #ifndef EPETRAEXT_DIRECTORY_H
 #define EPETRAEXT_DIRECTORY_H
-                                                                                                 
+
 // ----------- Includes ----------
 
 #include <map>
@@ -48,7 +48,7 @@
 
 #include <cmath>
 
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 
 #include <EpetraExt_Functors.h>
 
@@ -63,13 +63,13 @@ class Directory
 
 public:
 
-  typedef typename std::map< KT, Teuchos::RefCountPtr<DT> >         DataMap;
-  typedef typename DataMap::iterator        DataMapIter;
-  typedef typename DataMap::const_iterator  DataMapCIter;
+  typedef typename std::map< KT, Teuchos::RCP<DT> > DataMap;
+  typedef typename DataMap::iterator                DataMapIter;
+  typedef typename DataMap::const_iterator          DataMapCIter;
 
-  typedef typename std::multimap< KT, Teuchos::RefCountPtr<DT> >    DataRecvMap;
-  typedef typename DataRecvMap::iterator        DataRecvMapIter;
-  typedef typename DataRecvMap::const_iterator  DataRecvMapCIter;
+  typedef typename std::multimap< KT, Teuchos::RCP<DT> > DataRecvMap;
+  typedef typename DataRecvMap::iterator                 DataRecvMapIter;
+  typedef typename DataRecvMap::const_iterator           DataRecvMapCIter;
 
   typedef typename std::vector<KT>          KeyList;
   typedef typename KeyList::iterator        KeyListIter;
@@ -87,7 +87,7 @@ public:
 
   // Constructors
   Directory( MG migrate,
-	     DH distHash )
+             DH distHash )
   : migrate_(migrate),
     distHash_(distHash)
   {}
@@ -158,7 +158,7 @@ class Hash<std::string>
     int slen = in.length();
     int sum = 0;
     for( int i = 0; i < slen; ++i )
-      sum += static_cast<int>( in[i] ); 
+      sum += static_cast<int>( in[i] );
 
     return static_cast<int>( fmod( static_cast<float>( sum ), size_ ) );
   }
@@ -171,30 +171,30 @@ template < typename T, typename U >
 void SortContainer2( T & firstContainer, U & secondContainer )
 {
   typedef typename std::multimap< typename T::value_type, typename U::value_type> UTMultiMap;
-                                                                                      
+
   UTMultiMap SortMap;
-                                                                                      
+
   typename T::iterator iterT = firstContainer.begin();
   typename T::iterator endT = firstContainer.end();
   typename U::iterator iterU = secondContainer.begin();
   typename U::iterator endU = secondContainer.end();
-                                                                                      
+
   for( ; (iterT!=endT)||(iterU!=endU) ; ++iterT, ++iterU )
     SortMap.insert( typename UTMultiMap::value_type( *iterT, *iterU ) );
-                                                                                      
+
   firstContainer.clear();
   secondContainer.clear();
-                                                                                      
+
   typename UTMultiMap::iterator iterUTM = SortMap.begin();
   typename UTMultiMap::iterator endUTM = SortMap.end();
-                                                                                      
+
   for( ; iterUTM != endUTM; ++iterUTM )
   {
     firstContainer.push_back( iterUTM->first );
     secondContainer.push_back( iterUTM->second );
   }
 }
-                                                                                      
+
 ///
 /** Checks if data in a container is sorted
  */
@@ -202,15 +202,15 @@ template < typename T >
 bool IsSorted( T & container )
 {
   if( container.size() < 2 ) return true;
-                                                                                      
+
   typename T::iterator iterT = container.begin();
   typename T::iterator endT = container.end();
   typename T::iterator iterTPlus = iterT;
   iterTPlus++;
-                                                                                      
+
   for( ; iterTPlus != endT; ++iterT, ++iterTPlus )
     if( !(*iterT<*iterTPlus) ) return false;
-                                                                                      
+
   return true;
 }
 
@@ -314,7 +314,7 @@ void
 Directory<KT,DT,DH,AC,MG>::
 pushKeys_( KeyList & sKeys,
            KeyList & rKeys,
-	   ProcList & procs )
+           ProcList & procs )
 {
   KeyListCIter itKL  = sKeys.begin();
   KeyListCIter endKL = sKeys.end();
@@ -333,7 +333,7 @@ void
 Directory<KT,DT,DH,AC,MG>::
 pushData_( DataMap const & sData,
            DataRecvMap & rData,
-	   ProcList & procs )
+           ProcList & procs )
 {
   DataMapCIter itDM  = sData.begin();
   DataMapCIter endDM = sData.end();

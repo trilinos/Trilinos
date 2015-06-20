@@ -99,6 +99,9 @@ namespace NOX_UNIT_TEST {
 
   class MockSolver : public NOX::Solver::Generic {
 
+    Teuchos::RCP<NOX::Abstract::Group> nullGroup_;
+    Teuchos::ParameterList dummyParamList_;
+
   public:
 
     void reset(const NOX::Abstract::Vector& initial_guess){}
@@ -112,13 +115,16 @@ namespace NOX_UNIT_TEST {
 
     NOX::StatusTest::StatusType solve(){return NOX::StatusTest::Failed;}
 
-    const NOX::Abstract::Group& getSolutionGroup() const{}
+    const NOX::Abstract::Group& getSolutionGroup() const
+    {return *nullGroup_;}
 
-    const NOX::Abstract::Group& getPreviousSolutionGroup() const{}
+    const NOX::Abstract::Group& getPreviousSolutionGroup() const
+    {return *nullGroup_;}
 
     int getNumIterations() const{return 0;}
 
-    const Teuchos::ParameterList& getList() const {}
+    const Teuchos::ParameterList& getList() const
+    {return dummyParamList_;}
 
   };
 

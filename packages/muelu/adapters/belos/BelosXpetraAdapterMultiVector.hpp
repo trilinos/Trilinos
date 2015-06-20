@@ -93,7 +93,7 @@ namespace Belos { // should be moved to Belos or Xpetra?
   private:
 #ifdef HAVE_XPETRA_TPETRA
     typedef Xpetra::TpetraMultiVector<Scalar,LO,GO,Node> TpetraMultiVector;
-    typedef MultiVecTraits<Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node> > MultiVecTraitsTpetra;
+    typedef MultiVecTraits   <Scalar,Tpetra::MultiVector<Scalar,LO,GO,Node> > MultiVecTraitsTpetra;
 #endif
 
   public:
@@ -210,12 +210,12 @@ namespace Belos { // should be moved to Belos or Xpetra?
       XPETRA_FACTORY_END;
     }
 
-    static int GetVecLength( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
+    static ptrdiff_t GetGlobalLength( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
 
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra)
-        return MultiVecTraitsTpetra::GetVecLength(toTpetra(mv));
+        return MultiVecTraitsTpetra::GetGlobalLength(toTpetra(mv));
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
@@ -450,6 +450,7 @@ namespace Belos { // should be moved to Belos or Xpetra?
 
   };
 
+
   template<>
   class MultiVecTraits<double, Xpetra::MultiVector<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType> >
   {
@@ -463,12 +464,12 @@ namespace Belos { // should be moved to Belos or Xpetra?
 
 #ifdef HAVE_XPETRA_TPETRA
     typedef Xpetra::TpetraMultiVector<Scalar,LO,GO,Node>                    TpetraMultiVector;
-    typedef MultiVecTraits<Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node> > MultiVecTraitsTpetra;
+    typedef MultiVecTraits   <Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node> > MultiVecTraitsTpetra;
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
     typedef Xpetra::EpetraMultiVector                  EpetraMultiVector;
-    typedef MultiVecTraits<Scalar, Epetra_MultiVector> MultiVecTraitsEpetra;
+    typedef MultiVecTraits   <Scalar, Epetra_MultiVector> MultiVecTraitsEpetra;
 #endif
 
   public:
@@ -623,17 +624,17 @@ namespace Belos { // should be moved to Belos or Xpetra?
       XPETRA_FACTORY_END;
     }
 
-    static int GetVecLength( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
+    static ptrdiff_t GetGlobalLength( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
 
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra)
-        return MultiVecTraitsTpetra::GetVecLength(toTpetra(mv));
+        return MultiVecTraitsTpetra::GetGlobalLength(toTpetra(mv));
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra)
-        return MultiVecTraitsEpetra::GetVecLength(toEpetra(mv));
+        return MultiVecTraitsEpetra::GetGlobalLength(toEpetra(mv));
 #endif
 
       XPETRA_FACTORY_END;

@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    GlobiPack: Collection of Scalar 1D globalizaton utilities
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 */
@@ -66,7 +66,7 @@ GoldenQuadInterpBracket<Scalar>::GoldenQuadInterpBracket()
 template<typename Scalar>
 void GoldenQuadInterpBracket<Scalar>::setParameterList(RCP<ParameterList> const& paramList)
 {
-  typedef ScalarTraits<Scalar> ST;
+  //typedef ScalarTraits<Scalar> ST; // unused
   paramList->validateParametersAndSetDefaults(*this->getValidParameters());
   // ToDo: Add parameters!
   setMyParamList(paramList);
@@ -105,9 +105,9 @@ bool GoldenQuadInterpBracket<Scalar>::bracketMinimum(
   typedef Teuchos::TabularOutputter TO;
   typedef ScalarTraits<Scalar> ST;
   using Teuchos::OSTab;
-  typedef PointEval1D<Scalar> PE1D;
-  
 #ifdef TEUCHOS_DEBUG
+  typedef PointEval1D<Scalar> PE1D;
+
   TEUCHOS_TEST_FOR_EXCEPT(is_null(pointLower));
   TEUCHOS_TEST_FOR_EXCEPT(is_null(pointUpper));
   TEUCHOS_TEST_FOR_EXCEPT(is_null(pointMiddle));
@@ -117,7 +117,7 @@ bool GoldenQuadInterpBracket<Scalar>::bracketMinimum(
 #endif
 
   const RCP<Teuchos::FancyOStream> out = this->getOStream();
-  
+
   // ToDo: Make these variable!
   const Scalar GOLDEN_RATIO = 1.618033988749895;
   const Scalar SMALL_DIV = 1e-20;
@@ -125,10 +125,10 @@ bool GoldenQuadInterpBracket<Scalar>::bracketMinimum(
   const int MAX_TOTAL_ITERS = 30;
 
   *out << "\nStarting golden quadratic interpolating bracketing of the minimum ...\n\n";
-  
+
   // Repeatedly evaluate the function along the search direction until
   // we know we've bracketed a minimum.
- 
+
   Scalar &alpha_l = pointLower->alpha, &phi_l = pointLower->phi;
   Scalar &alpha_m = pointMiddle->alpha, &phi_m = pointMiddle->phi;
   Scalar &alpha_u = pointUpper->alpha = ST::nan(), &phi_u = pointUpper->phi = ST::nan();
@@ -136,13 +136,13 @@ bool GoldenQuadInterpBracket<Scalar>::bracketMinimum(
   Scalar tmp = ST::nan(), q = ST::nan(), r = ST::nan();
 
   const Scalar zero = ST::zero();
- 
-  // This does a simple backtracking 
+
+  // This does a simple backtracking
   alpha_u = zero;
   const Scalar goldinv = 1.0/(1.0+GOLDEN_RATIO);
-  
+
   TabularOutputter tblout(out);
-  
+
   tblout.pushFieldSpec("itr", TO::INT);
   tblout.pushFieldSpec("alpha_l", TO::DOUBLE);
   tblout.pushFieldSpec("alpha_m", TO::DOUBLE);
@@ -197,32 +197,32 @@ bool GoldenQuadInterpBracket<Scalar>::bracketMinimum(
     tblout.nextRow();
 
   }
-  
+
   if (alpha_u == zero) {
     // The following factor of gold was reduced to (GOLDEN_RATIO-1) to save
     // one function evaluation near convergence.
     alpha_u = alpha_m + (GOLDEN_RATIO-1.0) * (alpha_m-alpha_l);
     phi_u = computeValue<Scalar>(phi, alpha_u);
   }
-  
+
   //
   // B) Quadratic interpolation iterations
   //
-  
+
   bool bracketedMin = false;
 
   for (; icount < MAX_TOTAL_ITERS; ++icount) {
-    
+
     if (phi_m < phi_u) {
       bracketedMin = true;
       break;
     }
-      
+
     // find the extremum alpha_quad of a quadratic model interpolating there
     // points
     q = (phi_m-phi_l)*(alpha_m-alpha_u);
     r = (phi_m-phi_u)*(alpha_m-alpha_l);
-    
+
     // avoid division by small (q-r) by bounding with signed minimum
     tmp = ST::magnitude(q-r);
     tmp = (tmp > SMALL_DIV ? tmp : SMALL_DIV);
@@ -230,10 +230,10 @@ bool GoldenQuadInterpBracket<Scalar>::bracketMinimum(
 
     Scalar alpha_quad =
       alpha_m - (q*(alpha_m-alpha_u) - r*(alpha_m-alpha_l))/(2.0*tmp);
-    
+
     // maximum point for which we trust the interpolation
     const Scalar alpha_lim = alpha_m + MAX_EXTRAP_FACTOR * (alpha_u-alpha_m);
-    
+
     // now detect which interval alpha_quad is in and act accordingly
     bool skipToNextIter = false;
     Scalar phi_quad = ST::nan();
@@ -260,7 +260,7 @@ bool GoldenQuadInterpBracket<Scalar>::bracketMinimum(
     }
 
     if (!skipToNextIter) {
-      
+
       if ((alpha_u-alpha_quad)*(alpha_quad-alpha_lim) > zero) {  // [alpha_u, alpha_lim]
         phi_quad = computeValue<Scalar>(phi, alpha_quad);
         stepType = "[alpha_u, alpha_lim]";
@@ -269,7 +269,7 @@ bool GoldenQuadInterpBracket<Scalar>::bracketMinimum(
           alpha_u = alpha_quad;
           alpha_quad = alpha_u + GOLDEN_RATIO*(alpha_u-alpha_m);
           phi_m = phi_u;
-          phi_u = phi_quad;  
+          phi_u = phi_quad;
           phi_quad = computeValue<Scalar>(phi, alpha_quad);
           stepType = "phi_quad < phi_u";
         }
@@ -284,7 +284,7 @@ bool GoldenQuadInterpBracket<Scalar>::bracketMinimum(
         phi_quad = computeValue<Scalar>(phi, alpha_quad);
         stepType = "[0, alpha_m]";
       }
-      
+
       // shift to newest 3 points before loop
       alpha_l = alpha_m;
       phi_l = phi_m;
@@ -294,7 +294,7 @@ bool GoldenQuadInterpBracket<Scalar>::bracketMinimum(
       phi_u = phi_quad;
 
     }
-    
+
     tblout.outputField(icount);
     tblout.outputField(alpha_l);
     tblout.outputField(alpha_m);
@@ -304,9 +304,9 @@ bool GoldenQuadInterpBracket<Scalar>::bracketMinimum(
     tblout.outputField(phi_u);
     tblout.outputField(stepType);
     tblout.nextRow();
-   
+
   }  // end for loop
-  
+
   if (icount >= MAX_TOTAL_ITERS) {
     *out <<"\nExceeded maximum number of iterations!.\n";
   }
@@ -316,7 +316,7 @@ bool GoldenQuadInterpBracket<Scalar>::bracketMinimum(
   }
 
   *out << "\n";
- 
+
   return bracketedMin;
 
 }

@@ -247,6 +247,15 @@ DefaultProductMultiVector<Scalar>::domain() const
 
 
 template<class Scalar>
+void DefaultProductMultiVector<Scalar>::assignImpl(Scalar alpha)
+{
+  for ( int k = 0; k < numBlocks_; ++k ) {
+    multiVecs_[k].getNonconstObj()->assign(alpha);
+  }
+}
+
+
+template<class Scalar>
 RCP<const VectorBase<Scalar> >
 DefaultProductMultiVector<Scalar>::colImpl(Ordinal j) const
 {

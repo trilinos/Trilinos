@@ -74,7 +74,7 @@ TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT void updateParametersFromXmlFile(
   );
 
 
-/** \brief Reads XML parameters from a file and return them in a new parameter 
+/** \brief Reads XML parameters from a file and return them in a new parameter
  * list.
  *
  * \param xmlFileName [in] The file name containing XML parameter list
@@ -82,11 +82,11 @@ TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT void updateParametersFromXmlFile(
  *
  * \relates ParameterList
  */
-TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT 
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT
 RCP<ParameterList> getParametersFromXmlFile(const std::string &xmlFileName);
 
 
-/** \brief Reads XML parameters from a file and return them in a new parameter 
+/** \brief Reads XML parameters from a file and return them in a new parameter
  * list.
  *
  * \param xmlFileName [in] The file name containing XML parameter list
@@ -94,7 +94,7 @@ RCP<ParameterList> getParametersFromXmlFile(const std::string &xmlFileName);
  *
  * \param depSheet [out] The Dependency Sheet into which Dependencies should be
  * placed.
- * 
+ *
  * \relates ParameterList
  */
 TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT
@@ -109,15 +109,20 @@ RCP<ParameterList> getParametersFromXmlFile(const std::string &xmlFileName,
  *
  * \param paramList [in/out] On input, <tt>*paramList</tt> may be empty or
  * contain some parameters and sublists. On output, parameters and sublist
- * from the file <tt>xmlStr</tt> will be set or overide those in
- * <tt>*paramList</tt>.
+ * from the file <tt>xmlStr</tt> will be set or override (or not) those in
+ * <tt>*paramList</tt> depending on the <tt>overwrite</tt> parameter.
+ *
+ * \param overwrite [in] If true, parameters and sublists in the <tt>xmlStr</tt> 
+ * will override those in <tt>paramList</tt>.  If false, any value set in 
+ * <tt>paramList</tt> will be kept, only values not set will be updated.
  *
  * \relates ParameterList
  */
 TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT
 void updateParametersFromXmlString(
   const std::string &xmlStr,
-  const Ptr<ParameterList> &paramList
+  const Ptr<ParameterList> &paramList, 
+  bool overwrite = true
   );
 
 
@@ -138,7 +143,7 @@ RCP<ParameterList> getParametersFromXmlString(const std::string &xmlStr);
  * \param xmlStr [in] String containing XML parameter list specification.
  * \param depSheet [in] The Dependency Sheet into which Dependencies should be
  * placed.
- * 
+ *
  * \relates ParameterList
  */
 TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT
@@ -153,7 +158,7 @@ RCP<ParameterList> getParametersFromXmlString( const std::string &xmlStr,
  *
  * \param xmlOut [in] The stream that will get the XML output.
  *
- * \param depSheet [in] The Dependency Sheet which should be written out. 
+ * \param depSheet [in] The Dependency Sheet which should be written out.
  *
  * \relates ParameterList
  */
@@ -173,7 +178,7 @@ void writeParameterListToXmlOStream(
  * \param xmlFileName [in] The file name that will be create to contain the
  * XML version of the parameter list specification.
  *
- * \param depSheet [in] The Dependency Sheet which should be written out. 
+ * \param depSheet [in] The Dependency Sheet which should be written out.
  *
  * \relates ParameterList
  */

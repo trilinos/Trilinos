@@ -77,16 +77,7 @@
 // #include "Xpetra_EpetraMultiVector.hpp"
 // #include "Xpetra_EpetraVector.hpp"
 
-#include "Kokkos_SerialNode.hpp"
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-#include "Kokkos_TBBNode.hpp"
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-#include "Kokkos_TPINode.hpp"
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-#include "Kokkos_ThrustGPUNode.hpp"
-#endif
+#include "Kokkos_DefaultNode.hpp"
 
 // FINISH: add test for MultiVector with a node containing zero local entries
 // FINISH: add tests for local MultiVectors
@@ -2668,13 +2659,17 @@ typedef std::complex<double> ComplexDouble;
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MV, V, ORDINAL, SCALAR, NODE )
 #endif // HAVE_XPETRA_TPETRA
 
-  using KokkosClassic::SerialNode;
+
+#ifdef HAVE_KOKKOSCLASSIC_SERIAL && !defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  using KokkosClassic::DoNotUse::SerialNode;
 #define UNIT_TEST_SERIALNODE(MV, V, ORDINAL, SCALAR)                     \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MV, V, ORDINAL, SCALAR, SerialNode )
+#else
+#define UNIT_TEST_SERIALNODE(MV, V, ORDINAL, SCALAR)
+#endif // HAVE_KOKKOSCLASSIC_SERIAL
 
 #ifdef HAVE_KOKKOSCLASSIC_TBB
-
-  using KokkosClassic::TBBNode;
+  using KokkosClassic::DoNotUse::TBBNode;
 #define UNIT_TEST_TBBNODE(MV, V, ORDINAL, SCALAR) \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MV, V, ORDINAL, SCALAR, TBBNode )
 #else
@@ -2682,51 +2677,13 @@ typedef std::complex<double> ComplexDouble;
 #endif
 
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  using KokkosClassic::TPINode;
+  using KokkosClassic::DoNotUse::TPINode;
 #define UNIT_TEST_TPINODE(MV, V, ORDINAL, SCALAR) \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MV, V, ORDINAL, SCALAR, TPINode )
 #else
 #define UNIT_TEST_TPINODE(MV, V, ORDINAL, SCALAR)
 #endif
 
-// don't test Kokkos node for MPI builds, because we probably don't have multiple GPUs per node
-#if defined(HAVE_KOKKOSCLASSIC_THRUST) && !defined(HAVE_MPI)
-  using KokkosClassic::ThrustGPUNode;
-// float
-#if defined(HAVE_KOKKOSCLASSIC_CUDA_FLOAT)
-#  define UNIT_TEST_THRUSTGPUNODE_FLOAT(MV, V, ORDINAL) \
-          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MV, V, ORDINAL, float, ThrustGPUNode )
-#else
-#  define UNIT_TEST_THRUSTGPUNODE_FLOAT(MV, V, ORDINAL)
-#endif
-// double
-#if defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE)
-#  define UNIT_TEST_THRUSTGPUNODE_DOUBLE(MV, V, ORDINAL) \
-          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MV, V, ORDINAL, double, ThrustGPUNode )
-#else
-#  define UNIT_TEST_THRUSTGPUNODE_DOUBLE(MV, V, ORDINAL)
-#endif
-// complex<float>
-#if defined(HAVE_KOKKOSCLASSIC_CUDA_COMPLEX_FLOAT)
-#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(MV, V, ORDINAL) \
-          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MV, V, ORDINAL, ComplexFloat, ThrustGPUNode )
-#else
-#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(MV, V, ORDINAL)
-#endif
-// complex<double>
-#if defined(HAVE_KOKKOSCLASSIC_CUDA_COMPLEX_DOUBLE)
-#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(MV, V, ORDINAL) \
-          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MV, V, ORDINAL, ComplexDouble, ThrustGPUNode )
-#else
-#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(MV, V, ORDINAL)
-#endif
-#else
-// none
-# define UNIT_TEST_THRUSTGPUNODE_FLOAT(MV, V, ORDINAL)
-# define UNIT_TEST_THRUSTGPUNODE_DOUBLE(MV, V, ORDINAL)
-# define UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(MV, V, ORDINAL)
-# define UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(MV, V, ORDINAL)
-#endif
 
 #define UNIT_TEST_ALLCPUNODES(MV, V, ORDINAL, SCALAR) \
     UNIT_TEST_SERIALNODE(MV, V, ORDINAL, SCALAR) \
@@ -2734,24 +2691,20 @@ typedef std::complex<double> ComplexDouble;
     UNIT_TEST_TPINODE(MV, V, ORDINAL, SCALAR)
 
 #define UNIT_TEST_FLOAT(MV, V, ORDINAL) \
-    UNIT_TEST_ALLCPUNODES(MV, V, ORDINAL, float) \
-    UNIT_TEST_THRUSTGPUNODE_FLOAT(MV, V, ORDINAL)
+    UNIT_TEST_ALLCPUNODES(MV, V, ORDINAL, float)
 
 #define UNIT_TEST_DOUBLE(MV, V, ORDINAL) \
-    UNIT_TEST_ALLCPUNODES(MV, V, ORDINAL, double) \
-    UNIT_TEST_THRUSTGPUNODE_DOUBLE(MV, V, ORDINAL)
+    UNIT_TEST_ALLCPUNODES(MV, V, ORDINAL, double)
 
 #define UNIT_TEST_COMPLEX_FLOAT(MV, V, ORDINAL) \
-    UNIT_TEST_ALLCPUNODES(MV, V, ORDINAL, ComplexFloat) \
-    UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(MV, V, ORDINAL)
+    UNIT_TEST_ALLCPUNODES(MV, V, ORDINAL, ComplexFloat)
 
 #define UNIT_TEST_COMPLEX_DOUBLE(MV, V, ORDINAL) \
-    UNIT_TEST_ALLCPUNODES(MV, V, ORDINAL, ComplexDouble) \
-    UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(MV, V, ORDINAL)
+    UNIT_TEST_ALLCPUNODES(MV, V, ORDINAL, ComplexDouble)
 
 #ifdef HAVE_XPETRA_TPETRA
-  typedef Xpetra::TpetraMultiVector<double,int,int, KokkosClassic::SerialNode> MMultiVector;//TODO: remove 'M' prefix
-  typedef Xpetra::TpetraVector<double,int,int, KokkosClassic::SerialNode> MVector;
+  typedef Xpetra::TpetraMultiVector<double,int,int> MMultiVector;//TODO: remove 'M' prefix
+  typedef Xpetra::TpetraVector<double,int,int> MVector;
 #endif
 
 #if defined(HAVE_TPETRA_INST_DOUBLE)

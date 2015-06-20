@@ -103,6 +103,7 @@
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 // Added to allow timings
 #include "Epetra_Time.h"
@@ -138,6 +139,9 @@ int main(int argc, char *argv[])
   // Initialize MPI
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
+  bool verbose = true;
+  bool success = false;
+  try {
   // Get the number of elements from the command line
   int NumGlobalNodes = 100 + 1;
 
@@ -512,13 +516,6 @@ int main(int argc, char *argv[])
     else
        globalData->locaUtils->out() << "Stepper failed to converge!" << std::endl;
 
-
-    // Get the Epetra_Vector with the final solution from the solver
-    const LOCA::Epetra::Group& finalGroup =
-      dynamic_cast<const LOCA::Epetra::Group&>(*(stepper.getSolutionGroup()));
-    const Epetra_Vector& finalSolution =
-      (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
-
     // End Nonlinear Solver **************************************
 
 #ifndef DO_XYZT
@@ -548,5 +545,9 @@ int main(int argc, char *argv[])
 
   LOCA::destroyGlobalData(globalData);
 
-return 0 ;
+  success = true;
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }

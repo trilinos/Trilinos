@@ -116,6 +116,7 @@ int ZOLTAN_FILE_ungetc(int c, ZOLTAN_FILE* file);
 int ZOLTAN_FILE_flush(ZOLTAN_FILE* file);
 int ZOLTAN_FILE_close(ZOLTAN_FILE* file);
 void ZOLTAN_FILE_rewind(ZOLTAN_FILE* stream);
+
 ssize_t ZOLTAN_FILE_read(char* ptr, size_t size, size_t nitems, ZOLTAN_FILE *file);
 
 #ifndef ZOLTAN_COMPRESS

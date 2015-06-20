@@ -178,8 +178,8 @@ TEUCHOS_UNIT_TEST( ConstNonconstObjectContainer, dereferenceEmpty ) {
 }
 
 
-// implicit cast 
-//    RCP<const ObjType>  <- 
+// implicit cast
+//    RCP<const ObjType>  <-
 //    ConstNonconstObjectContainer<const ObjType>
 TEUCHOS_UNIT_TEST( ConstNonconstObjectContainer, castToRCP ) {
   RCP<std::vector<double> > vec = rcp(new std::vector<double>);
@@ -189,8 +189,8 @@ TEUCHOS_UNIT_TEST( ConstNonconstObjectContainer, castToRCP ) {
 }
 
 
-// implicit cast 
-//    RCP<const ObjType>  -> 
+// implicit cast
+//    RCP<const ObjType>  ->
 //    ConstNonconstObjectContainer<const ObjType>
 //    This is already done through the constructors on
 //    ConstNonconstObjectContainer.

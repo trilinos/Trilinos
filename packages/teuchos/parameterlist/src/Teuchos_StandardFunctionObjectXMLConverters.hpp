@@ -69,7 +69,7 @@ public:
    *
    *  @parameter operand The operand to be used with the SimpleFunction.
    */
-  virtual RCP<SimpleFunctionObject<OperandType> > 
+  virtual RCP<SimpleFunctionObject<OperandType> >
     getSpecificSimpleFunction(OperandType operand) const = 0;
 
   /**
@@ -89,14 +89,14 @@ public:
   //@{
 
   /** \brief . */
-  RCP<FunctionObject> 
+  RCP<FunctionObject>
     convertXML(const XMLObject& xmlObj) const;
 
   /** \brief . */
   void convertFunctionObject(
-    const RCP<const FunctionObject> functionObject, 
+    const RCP<const FunctionObject> functionObject,
     XMLObject& xmlObj) const;
-  
+
   //@}
 
   //! \name Constant Retrieving Functions
@@ -108,27 +108,27 @@ public:
   }
 
   //@}
-  
+
 };
 
 template<class OperandType>
-RCP<FunctionObject> 
+RCP<FunctionObject>
 SimpleFunctionXMLConverter<OperandType>::convertXML(
   const XMLObject& xmlObj) const
 {
-  OperandType operand = 
+  OperandType operand =
     xmlObj.getRequired<OperandType>(getOperandAttributeName());
   return getSpecificSimpleFunction(operand);
 }
 
 template<class OperandType>
 void SimpleFunctionXMLConverter<OperandType>::convertFunctionObject(
-  const RCP<const FunctionObject> functionObject, 
+  const RCP<const FunctionObject> functionObject,
   XMLObject& xmlObj) const
 {
   RCP<const SimpleFunctionObject<OperandType> > castedFunction =
     rcp_dynamic_cast<const SimpleFunctionObject<OperandType> >(
-      functionObject, true); 
+      functionObject, true);
   OperandType operand = castedFunction->getModifiyingOperand();
   xmlObj.addAttribute(getOperandAttributeName(),operand);
   getSpecialSimpleFunctionXMLTraits(castedFunction, xmlObj);
@@ -150,9 +150,9 @@ public:
 
   /** \name Overridden from SimpleFunctionXMLConverter */
   //@{
-  
+
   /** \brief. */
-  RCP<SimpleFunctionObject<OperandType> > 
+  RCP<SimpleFunctionObject<OperandType> >
     getSpecificSimpleFunction(OperandType operand) const;
 
   //@}
@@ -182,9 +182,9 @@ public:
 
   /** \name Overridden from SimpleFunctionXMLConverter */
   //@{
-  
+
   /** \brief. */
-  RCP<SimpleFunctionObject<OperandType> > 
+  RCP<SimpleFunctionObject<OperandType> >
     getSpecificSimpleFunction(OperandType operand) const;
 
   //@}
@@ -214,9 +214,9 @@ public:
 
   /** \name Overridden from SimpleFunctionXMLConverter */
   //@{
-  
+
   /** \brief. */
-  RCP<SimpleFunctionObject<OperandType> > 
+  RCP<SimpleFunctionObject<OperandType> >
     getSpecificSimpleFunction(OperandType operand) const;
 
   //@}
@@ -246,9 +246,9 @@ public:
 
   /** \name Overridden from SimpleFunctionXMLConverter */
   //@{
-  
+
   /** \brief. */
-  RCP<SimpleFunctionObject<OperandType> > 
+  RCP<SimpleFunctionObject<OperandType> >
     getSpecificSimpleFunction(OperandType operand) const;
 
   //@}

@@ -47,7 +47,7 @@ namespace Details {
 MpiCommRequest::
 MpiCommRequest (MPI_Request rawMpiRequest,
 		const ArrayRCP<const char>& buffer) :
-  MpiCommRequestBase<int> (rawMpiRequest), 
+  MpiCommRequestBase<int> (rawMpiRequest),
   buffer_ (buffer)
 {}
 

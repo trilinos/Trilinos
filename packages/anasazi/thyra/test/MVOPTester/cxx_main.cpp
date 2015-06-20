@@ -162,10 +162,6 @@ Teuchos::RCP<Epetra_SerialComm>& Comm
   // Create an Anasazi::EpetraSymOp from this Epetra_CrsMatrix
   Teuchos::RCP<Anasazi::EpetraSymOp> op = Teuchos::rcp(new Anasazi::EpetraSymOp(A));
 
-  // Issue several useful typedefs;
-  typedef Anasazi::MultiVec<double> EMV;
-  typedef Anasazi::Operator<double> EOP;
-
   // Create an Epetra_MultiVector for an initial vector to start the solver.
   // Note that this needs to have the same number of columns as the blocksize.
   Teuchos::RCP<Anasazi::EpetraMultiVec> ivec = Teuchos::rcp( new Anasazi::EpetraMultiVec(*Map, blockSize) );

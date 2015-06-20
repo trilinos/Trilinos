@@ -1,0 +1,8 @@
+<ParameterList name="MueLu">
+  <Parameter        name="verbosity"                type="string"   value="high"/>
+  <Parameter        name="max levels"               type="int"      value="2"/>
+  <Parameter        name="transpose: use implicit"  type="bool"     value="true"/>
+  <Parameter        name="smoother: pre or post"    type="string"   value="none"/>
+  <Parameter        name="repartition: enable"      type="bool"     value="false"/>
+  <Parameter        name="aggregation: type"        type="string"   value="coupled"/>
+</ParameterList>

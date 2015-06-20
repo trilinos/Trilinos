@@ -102,7 +102,7 @@ int main( int argc, char* argv[] )
 
     clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not." );
 
-    double rel_proc_speed = 1e-5; // Should 
+    double rel_proc_speed = 1e-5; // Should
     clp.setOption( "rel-proc-speed", &rel_proc_speed, "Relative processor speed (try around 1.0 for timing)." );
 
     int size = 1;
@@ -197,7 +197,7 @@ int main( int argc, char* argv[] )
 			std::cerr << "*** Caught an unknown std::exception\n";
 		return 1;
 	}
-  
+
 	return 0;
-  
+
 }

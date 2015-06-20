@@ -12,6 +12,14 @@ SET(PLT_VERSION_FULL "${PLT_VERSION}.${PLT_VERSION_PATCH}")
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
+SET(CDR_SOURCES "")
+APPEND_GLOB(CDR_SOURCES ${DIR}/cdr/*.f ${DIR}/cdr/*.F ${DIR}/cdr/*.c)
+
+TRIBITS_ADD_LIBRARY(
+	svdi_cdr
+	SOURCES ${CDR_SOURCES}
+)
+
 SET(CGI_SOURCES "")
 APPEND_GLOB(CGI_SOURCES
 	${DIR}/cgi/cgisdum.c
@@ -34,14 +42,6 @@ TRIBITS_ADD_LIBRARY(
 	DEPLIBS svdi_cdr
 )
 
-SET(CDR_SOURCES "")
-APPEND_GLOB(CDR_SOURCES ${DIR}/cdr/*.f ${DIR}/cdr/*.F ${DIR}/cdr/*.c)
-
-TRIBITS_ADD_LIBRARY(
-	svdi_cdr
-	SOURCES ${CDR_SOURCES}
-)
-
 TRIBITS_ADD_LIBRARY(svdi_cgi_x11
 	SOURCES ${DIR}/cgi/x11_cgisx11.c
 	DEPLIBS svdi_cgi
@@ -57,14 +57,14 @@ TRIBITS_ADD_LIBRARY(svdi_cgi_met
 	DEPLIBS svdi_cgi
 )
 
-TRIBITS_ADD_LIBRARY(vdx11cps
-	SOURCES ${DIR}/vdi_drivers/vdx11cps.F
-	DEPLIBS vdicps_dual svdi_cgi
-)
-
 TRIBITS_ADD_LIBRARY(vdicps_dual
 	SOURCES ${DIR}/vdi_drivers/vdicps_dual.f
 	DEPLIBS svdi_cgi
+)
+
+TRIBITS_ADD_LIBRARY(vdx11cps
+	SOURCES ${DIR}/vdi_drivers/vdx11cps.F
+	DEPLIBS vdicps_dual svdi_cgi
 )
 
 TRIBITS_ADD_LIBRARY(svdi_cgi_cps

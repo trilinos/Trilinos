@@ -112,6 +112,13 @@ namespace Teuchos
   extern TEUCHOSNUMERICS_LIB_DLL_EXPORT const char EDiagChar[];
   extern TEUCHOSNUMERICS_LIB_DLL_EXPORT const char ETypeChar[];
 
+  // Forward declaration
+  namespace details {
+    template<typename ScalarType,
+             bool isComplex = Teuchos::ScalarTraits<ScalarType>::isComplex>
+    class GivensRotator;
+  }
+
   //! Default implementation for BLAS routines
   /*!
    * This class provides the default implementation for the BLAS routines.  It
@@ -141,8 +148,13 @@ namespace Teuchos
     //! @name Level 1 BLAS Routines.
     //@{
 
+    //! The type used for c in ROTG
+    /*! This is MagnitudeType if ScalarType is complex and ScalarType otherwise.
+     */
+    typedef typename details::GivensRotator<ScalarType>::c_type rotg_c_type;
+
     //! Computes a Givens plane rotation.
-    void ROTG(ScalarType* da, ScalarType* db, MagnitudeType* c, ScalarType* s) const;
+    void ROTG(ScalarType* da, ScalarType* db, rotg_c_type* c, ScalarType* s) const;
 
     //! Applies a Givens plane rotation.
     void ROT(const OrdinalType n, ScalarType* dx, const OrdinalType incx, ScalarType* dy, const OrdinalType incy, MagnitudeType* c, ScalarType* s) const;
@@ -282,19 +294,13 @@ namespace Teuchos
     };
 
     template<typename ScalarType, bool isComplex>
-    class GivensRotator {
-    public:
-      void
-      ROTG (ScalarType* a,
-            ScalarType* b,
-            typename ScalarTraits<ScalarType>::magnitudeType* c,
-            ScalarType* s) const;
-    };
+    class GivensRotator {};
 
     // Complex-arithmetic specialization.
     template<typename ScalarType>
     class GivensRotator<ScalarType, true> {
     public:
+      typedef typename ScalarTraits<ScalarType>::magnitudeType c_type;
       void
       ROTG (ScalarType* ca,
             ScalarType* cb,
@@ -306,6 +312,7 @@ namespace Teuchos
     template<typename ScalarType>
     class GivensRotator<ScalarType, false> {
     public:
+      typedef ScalarType c_type;
       void
       ROTG (ScalarType* da,
             ScalarType* db,
@@ -504,11 +511,10 @@ namespace Teuchos
   DefaultBLASImpl<OrdinalType, ScalarType>::
   ROTG (ScalarType* da,
         ScalarType* db,
-        MagnitudeType* c,
+        rotg_c_type* c,
         ScalarType* s) const
   {
-    typedef ScalarTraits<ScalarType> STS;
-    details::GivensRotator<ScalarType, STS::isComplex> rotator;
+    details::GivensRotator<ScalarType> rotator;
     rotator.ROTG (da, db, c, s);
   }
 

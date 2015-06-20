@@ -33,7 +33,7 @@
 #define LOGICALSPARSEUNITTESTS_HPP
 
 // Sacado includes
-#include "Sacado.hpp"
+#include "Sacado_No_Kokkos.hpp"
 #include "Sacado_Random.hpp"
 
 typedef Sacado::Fad::DFad<double> DFadType;

@@ -44,6 +44,7 @@ ModelEvaluator1DFEM(const Teuchos::RCP<const Epetra_Comm>& comm,
   num_global_elements_(num_global_elements),
   z_min_(z_min),
   z_max_(z_max),
+  k_(0.0),
   showGetInvalidArg_(false)
 {
   using Teuchos::RCP;
@@ -468,7 +469,16 @@ void ModelEvaluator1DFEM<Scalar>::evalModelImpl(
 // Basis vector
 
 // Constructor
-Basis::Basis() {
+Basis::Basis():
+  uu(0.0),
+  zz(0.0),
+  duu(0.0),
+  eta(0.0),
+  wt(0.0),
+  dz(0.0),
+  uuold(0.0),
+  duuold(0.0)
+{
   phi = new double[2];
   dphide = new double[2];
 }

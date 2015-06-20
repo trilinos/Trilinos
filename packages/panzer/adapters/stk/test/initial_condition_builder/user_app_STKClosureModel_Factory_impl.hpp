@@ -51,8 +51,7 @@
 #include "Teuchos_TypeNameTraits.hpp"
 
 // User application evaluators for this factory
-#include "user_app_ConstantModel.hpp"
-//#include ""
+#include "Panzer_Constant.hpp"
 
 // ********************************************************************
 // ********************************************************************
@@ -109,7 +108,7 @@ buildClosureModels(const std::string& model_id,
 	input.set("Value", plist.get<double>("Value"));
 	input.set("Data Layout", ir->dl_scalar);
 	RCP< Evaluator<panzer::Traits> > e = 
-	  rcp(new user_app::ConstantModel<EvalT,panzer::Traits>(input));
+	  rcp(new panzer::Constant<EvalT,panzer::Traits>(input));
 	evaluators->push_back(e);
       }
 
@@ -120,7 +119,7 @@ buildClosureModels(const std::string& model_id,
 	input.set("Value", plist.get<double>("Value"));
 	input.set("Data Layout", (*basis_itr)->functional);
 	RCP< Evaluator<panzer::Traits> > e = 
-	  rcp(new user_app::ConstantModel<EvalT,panzer::Traits>(input));
+	  rcp(new panzer::Constant<EvalT,panzer::Traits>(input));
 	evaluators->push_back(e);
       }
       found = true;

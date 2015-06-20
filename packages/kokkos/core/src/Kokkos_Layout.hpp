@@ -1,15 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//                             Kokkos
-//         Manycore Performance-Portable Multidimensional Arrays
-//
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -71,8 +69,7 @@ namespace Kokkos {
 /// a two-dimensional array, "layout left" is also called "column
 /// major."
 struct LayoutLeft {
-  //! The tag (what type of kokkos_object is this).
-  typedef Impl::LayoutTag       kokkos_tag ;
+  //! Tag this class as a kokkos array layout
   typedef LayoutLeft array_layout ;
 };
 
@@ -91,8 +88,7 @@ struct LayoutLeft {
 /// multi-dimensional arrays.  For the special case of a
 /// two-dimensional array, "layout right" is also called "row major."
 struct LayoutRight {
-  //! The tag (what type of kokkos_object is this).
-  typedef Impl::LayoutTag       kokkos_tag ;
+  //! Tag this class as a kokkos array layout
   typedef LayoutRight array_layout ;
 };
 
@@ -102,9 +98,7 @@ struct LayoutRight {
 ///         multi-index mapping into contiguous memory.
 struct LayoutStride {
 
-  //! The tag (what type of kokkos_object is this).
-  typedef Impl::LayoutTag       kokkos_tag ;
-
+  //! Tag this class as a kokkos array layout
   typedef LayoutStride array_layout ;
 
   enum { MAX_RANK = 8 };
@@ -137,7 +131,8 @@ struct LayoutStride {
         size_t n = 1 ;
         for ( int r = 0 ; r < rank ; ++r ) {
           tmp.stride[ order[r] ] = n ;
-          n *= ( tmp.dimension[r] = dimen[r] );
+          n *= ( dimen[order[r]] );
+          tmp.dimension[r] = dimen[r];
         }
       }
       return tmp ;
@@ -166,10 +161,9 @@ template < unsigned ArgN0 , unsigned ArgN1 ,
                                  Impl::is_power_of_two<ArgN1>::value )
          >
 struct LayoutTileLeft {
-  //! The tag (what type of kokkos_object is this).
-  typedef Impl::LayoutTag       kokkos_tag ;
-
+  //! Tag this class as a kokkos array layout
   typedef LayoutTileLeft<ArgN0,ArgN1,IsPowerOfTwo> array_layout ;
+
   enum { N0 = ArgN0 };
   enum { N1 = ArgN1 };
 };

@@ -73,9 +73,9 @@ public:
   typedef typename std::iterator_traits<IteratorType>::pointer pointer;
   /** \brief . */
   typedef	typename std::iterator_traits<IteratorType>::difference_type difference_type;
-  
+
   //@}
-    
+
   /** \name Constructors. */
   //@{
 
@@ -105,14 +105,14 @@ public:
       pred_ = rhs.pred();
       return *this;
     }
-  
+
   //@}
 
   /** @name Access */
   //@{
 
   /** \brief itr* */
-  reference operator*()	const 
+  reference operator*()	const
     { return *current_; }
   /** \brief itr->member */
   pointer operator->() const
@@ -147,7 +147,7 @@ public:
       return *this;
     }
   /** \brief itr-- */
-  const FilteredIterator operator--(int) 
+  const FilteredIterator operator--(int)
     {
       FilteredIterator tmp = *this;
       --*this;
@@ -209,7 +209,7 @@ private: // Functions
  * \relates FilteredIterator
  */
 template<class IteratorType, class Predicate>
-inline bool operator==(const FilteredIterator<IteratorType,Predicate>& itr1, 
+inline bool operator==(const FilteredIterator<IteratorType,Predicate>& itr1,
   const FilteredIterator<IteratorType,Predicate>& itr2)
 {
   return itr1.current() == itr2.current();
@@ -220,7 +220,7 @@ inline bool operator==(const FilteredIterator<IteratorType,Predicate>& itr1,
  * \relates FilteredIterator
  */
 template<class IteratorType, class Predicate>
-inline bool operator!=(const FilteredIterator<IteratorType,Predicate>& itr1, 
+inline bool operator!=(const FilteredIterator<IteratorType,Predicate>& itr1,
   const FilteredIterator<IteratorType,Predicate>& itr2)
 {
   return itr1.current() != itr2.current();

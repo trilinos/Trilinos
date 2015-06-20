@@ -59,14 +59,14 @@ int main(int argc, char* argv[])
   My_Matrix.random();
   My_Vector.random();
 
-  // Perform an LU factorization of this matrix. 
+  // Perform an LU factorization of this matrix.
   int ipiv[4], info;
   char TRANS = 'N';
-  lapack.GETRF( 4, 4, My_Matrix.values(), My_Matrix.stride(), ipiv, &info ); 
-  
+  lapack.GETRF( 4, 4, My_Matrix.values(), My_Matrix.stride(), ipiv, &info );
+
   // Solve the linear system.
-  lapack.GETRS( TRANS, 4, 1, My_Matrix.values(), My_Matrix.stride(), 
-		ipiv, My_Vector.values(), My_Vector.stride(), &info );  
+  lapack.GETRS( TRANS, 4, 1, My_Matrix.values(), My_Matrix.stride(),
+		ipiv, My_Vector.values(), My_Vector.stride(), &info );
 
   // Print out the solution.
   std::cout << My_Vector << std::endl;

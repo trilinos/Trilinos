@@ -500,6 +500,21 @@ public:
   using LinearOpBase<Scalar>::apply;
 #endif
 
+  /** @name Minimal mathematical functions */
+  //@{
+
+  /** \brief V = alpha
+   *
+   * \param alpha [in] Scalar that is assigned to all multi-vector
+   * coefficients.
+   *
+   * NVI function.
+   */
+  void assign(Scalar alpha)
+    { assignImpl(alpha); }
+
+  //@}
+
   /** @name Provide access to the columns as VectorBase objects */
   //@{
 
@@ -668,6 +683,11 @@ protected:
 
   /** @name Protected virtual functions to be overridden by subclasses */
   //@{
+
+  /** \brief Virtual implementation for NVI assign().
+   *
+   */
+  virtual void assignImpl(Scalar alpha) = 0;
 
   /** \brief Return a non-changeable view of a constituent column vector.
    *

@@ -53,7 +53,6 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsTplDeclareLibraries)
 
 #-----------------------------------------------------------------------------
 #  Hardware locality detection and control library.
@@ -64,7 +63,7 @@ INCLUDE(TribitsTplDeclareLibraries)
 #    Source:        https://code.google.com/p/qthreads
 #
 
-TRIBITS_TPL_DECLARE_LIBRARIES( QTHREAD
+TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( QTHREAD
   REQUIRED_HEADERS qthread.h
   REQUIRED_LIBS_NAMES "qthread"
   )

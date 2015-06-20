@@ -64,7 +64,11 @@
 
 typedef double Scalar;
 typedef int    LocalOrdinal;
+#ifndef XPETRA_TEST_USE_LONGLONG_GO
 typedef int    GlobalOrdinal;
+#else
+typedef long long GlobalOrdinal;
+#endif
 
 int main(int argc, char *argv[]) {
   GlobalOrdinal numGlobalElements = 10; // problem size
@@ -74,11 +78,12 @@ int main(int argc, char *argv[]) {
   RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
-  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
   bool success = false;
   bool verbose = false;
   try {
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+
     //
     // Parse command line arguments
     //

@@ -76,6 +76,9 @@ namespace Sacado {
       //! Typename of values
       typedef T value_type;
 
+      //! Typename of scalar's (which may be different from T)
+      typedef typename ScalarType<T>::type scalar_type;
+
       //! Typename of ordinals
       typedef int ordinal_type;
 
@@ -399,6 +402,9 @@ namespace Sacado {
 
     template <typename T, typename Storage> OrthogPoly<T,Storage> 
     sqrt(const OrthogPoly<T,Storage>& a);
+
+    template <typename T, typename Storage> OrthogPoly<T,Storage> 
+    cbrt(const OrthogPoly<T,Storage>& a);
 
     template <typename T, typename Storage> OrthogPoly<T,Storage> 
     pow(const OrthogPoly<T,Storage>& a, const OrthogPoly<T,Storage>& b);

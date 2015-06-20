@@ -43,6 +43,10 @@
 #ifndef __Panzer_DOFManagerFEI_decl_hpp__
 #define __Panzer_DOFManagerFEI_decl_hpp__
 
+#include "Panzer_config.hpp"
+
+#ifdef PANZER_HAVE_FEI
+
 #include <map>
 
 // FEI includes
@@ -53,7 +57,6 @@
    #include "mpi.h"
 #endif
 
-#include "Panzer_config.hpp"
 #include "Panzer_FieldPattern.hpp"
 #include "Panzer_FieldAggPattern.hpp"
 #include "Panzer_ConnManager.hpp"
@@ -383,12 +386,12 @@ public:
 
    /** How any GIDs are associate with a particular element block
      */
-   inline int getElementBlockGIDCount(const std::string & blockId) const
+   virtual int getElementBlockGIDCount(const std::string & blockId) const
    { return getElementBlockGIDCount(blockIdToIndex(blockId)); }
 
    /** How any GIDs are associate with a particular element block
      */
-   inline int getElementBlockGIDCount(std::size_t blockIndex) const
+   virtual int getElementBlockGIDCount(const std::size_t & blockIndex) const
    { int cnt = matrixGraph_->getConnectivityNumIndices(blockIndex); 
      if(cnt<0)
         return 0;
@@ -485,4 +488,5 @@ protected:
 
 }
 
+#endif
 #endif

@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -72,6 +72,7 @@ void SpmdMultiVectorSerializer<Scalar>::serialize(
   Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >
     mpi_vec_spc
     = Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<Scalar> >(mv.range());
+  std::ios::fmtflags fmt(out.flags());
   out.precision(std::numeric_limits<Scalar>::digits10+4);
   if( mpi_vec_spc.get() ) {
     // This is a mpi-based vector space so let's just write the local
@@ -79,7 +80,7 @@ void SpmdMultiVectorSerializer<Scalar>::serialize(
     const Ordinal
       localOffset = mpi_vec_spc->localOffset(),
       localSubDim = mpi_vec_spc->localSubDim();
-    const Range1D localRng( localOffset, localOffset+localSubDim-1 ); 
+    const Range1D localRng( localOffset, localOffset+localSubDim-1 );
     ConstDetachedMultiVectorView<Scalar> local_mv(mv,localRng,Range1D());
     out << localSubDim << " " << local_mv.numSubCols() << std::endl;
     if( binaryMode() ) {
@@ -103,6 +104,7 @@ void SpmdMultiVectorSerializer<Scalar>::serialize(
     // just write all of the multi-vector elements here.
     TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error, "Does not handle non-SPMD spaces yet" );
   }
+  out.flags(fmt);
 }
 
 template<class Scalar>
@@ -118,7 +120,7 @@ void SpmdMultiVectorSerializer<Scalar>::deserialize(
     const Ordinal
       localOffset = mpi_vec_spc->localOffset(),
       localSubDim = mpi_vec_spc->localSubDim();
-    const Range1D localRng( localOffset, localOffset+localSubDim-1 ); 
+    const Range1D localRng( localOffset, localOffset+localSubDim-1 );
     DetachedMultiVectorView<Scalar> local_mv(*mv,localRng,Range1D());
 #ifdef TEUCHOS_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(

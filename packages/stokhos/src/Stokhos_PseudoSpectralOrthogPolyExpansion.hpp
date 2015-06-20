@@ -115,6 +115,8 @@ namespace Stokhos {
                const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
     void sqrt(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
               const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
+    void cbrt(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+              const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
     void pow(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
              const OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
              const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
@@ -282,6 +284,12 @@ namespace Stokhos {
     struct sqrt_quad_func { 
       value_type operator() (const value_type& a) const { 
         return std::sqrt(a); 
+      } 
+    };
+
+    struct cbrt_quad_func { 
+      value_type operator() (const value_type& a) const { 
+        return std::cbrt(a); 
       } 
     };
 

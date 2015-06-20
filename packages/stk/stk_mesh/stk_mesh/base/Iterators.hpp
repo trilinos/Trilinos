@@ -1,3 +1,36 @@
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+
 #ifndef Toolkit_Iterators_hpp
 #define Toolkit_Iterators_hpp
 
@@ -149,10 +182,6 @@ class TwoLevelIterator : public std::iterator<std::forward_iterator_tag, typenam
 //
 // Incrementing this iterator will take us to the next *selected* bucket, skipping past
 // unselected buckets, until the end.
-//
-// As long as we're using a pointer as the value type, we need to
-// specify the reference type to be the value_type in order for this
-// class to work with boost
 template <typename BucketIteratorType>
 class SelectedBucketIterator : public std::iterator<std::forward_iterator_tag,
                                                     typename BucketIteratorType::value_type,
@@ -231,9 +260,6 @@ class SelectedBucketIterator : public std::iterator<std::forward_iterator_tag,
     return *this;
   }
 
-  // The method below is why boost::filter_iterator won't work for us. filter_iterator
-  // deferences to a reference, tranform iterator dereferences to a copy, making them
-  // incompatible.
   typename BucketIteratorType::value_type operator*() const
   {
     return *m_bucket_itr;
@@ -269,7 +295,6 @@ typedef std::pair<BucketVectorEntityIterator, BucketVectorEntityIterator>      B
 
 // Iterator for iterating over selected buckets within a vector of buckets
 typedef SelectedBucketIterator<BucketVector::const_iterator>                      SelectedBucketVectorIterator;
-//typedef boost::filter_iterator<Selector, BucketVector::const_iterator>            SelectedBucketVectorIterator;
 typedef std::pair<SelectedBucketVectorIterator, SelectedBucketVectorIterator>             SelectedBucketVectorIteratorRange;
 
 // Iterator for iterating over all entities within each *selected* bucket of a vector of buckets
@@ -282,7 +307,6 @@ typedef std::pair<AllBucketsIterator, AllBucketsIterator>                       
 
 // Iterator for iterating over all *selected* buckets in a bucket range
 typedef SelectedBucketIterator<AllBucketsIterator>                         AllSelectedBucketsIterator;
-//typedef boost::filter_iterator<Selector, AllBucketsIterator>               AllSelectedBucketsIterator;
 typedef std::pair<AllSelectedBucketsIterator, AllSelectedBucketsIterator>  AllSelectedBucketsRange;
 
 // Iterator for iterating over all entities within each bucket of a bucket range

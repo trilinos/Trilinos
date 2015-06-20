@@ -56,11 +56,11 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RigidBodyModeFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~RigidBodyModeFactory() {}
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RigidBodyModeFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~RigidBodyModeFactory() {}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RigidBodyModeFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void RigidBodyModeFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
     if (currentLevel.IsAvailable(nspName_, NoFactory::get()) == false && currentLevel.GetLevelID() == 0) {
       Input(currentLevel, "A");
       //Input(currentLevel,"Coordinates");
@@ -70,8 +70,8 @@ namespace MueLu {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RigidBodyModeFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void RigidBodyModeFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &currentLevel) const {
     FactoryMonitor m(*this, "Rigid body mode factory", currentLevel);
     RCP<MultiVector> nullspace;
     if (currentLevel.GetLevelID() == 0) {

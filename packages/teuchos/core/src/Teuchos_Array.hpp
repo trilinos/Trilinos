@@ -134,9 +134,27 @@ template<typename T> inline
 bool operator>=( const Array<T> &a1, const Array<T> &a2 );
 
 
-/** \brief Memory-safe templated array class that encapsulates std::vector.
+/** \brief Replacement for std::vector that is compatible with
+ *     the Teuchos Memory Management classes.
+ * \tparam T The type of each entry in the array.
+ * \ingroup teuchos_mem_mng_grp
  *
- * ToDo: Finish documentation!
+ * This class implements a one-dimensional array, with a number of
+ * entries specified at run time.  It can be used as a drop-in
+ * replacement for the C++98 version of std::vector<T>.  It also has
+ * functions and methods for interacting with the other Teuchos Memory
+ * Management classes.  For example, you can get a nonpersisting view
+ * of an Array's entries as an ArrayView, or a nonowning (weak)
+ * ArrayRCP.
+ *
+ * If the CMake configuration option Teuchos_ENABLE_DEBUG is ON at
+ * build time, Array will do bounds and iterator checking at run time.
+ * This has a nontrivial run-time cost, so it is off by default, but
+ * you may find it useful for debugging.  Please note that if
+ * debugging is on, the types of Array's iterators change in order to
+ * implement these checks.  Thus, you should always use Array's
+ * typedefs to get the iterator types, and not assume that they are
+ * raw pointers.
  *
  * \section Teuchos_Array_Tuple_sec Tuple Construction
  *
@@ -168,8 +186,6 @@ bool operator>=( const Array<T> &a1, const Array<T> &a2 );
  * expense of the compiler refusing the make implicit conversions in some
  * cases when calling template functions.  Such conversion problems can always
  * be dealt with by using explicit template arguments.
- *
- * \ingroup teuchos_mem_mng_grp
  */
 template<typename T>
 class Array
@@ -1526,6 +1542,15 @@ int Teuchos::hashCode(const Array<T>& array)
   for (int i=0; i<array.length(); i++)
   {
     rtn += hashCode(array[i]);
+  }
+  if (rtn < 0)
+  {
+    /* Convert the largest -ve int to zero and -1 to
+    * std::numeric_limits<int>::max()
+    * */
+    size_t maxIntBeforeWrap = std::numeric_limits<int>::max();
+    maxIntBeforeWrap ++;
+    rtn += maxIntBeforeWrap;
   }
   return rtn;
 }

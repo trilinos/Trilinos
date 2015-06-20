@@ -44,8 +44,7 @@
 
 #include <cstdlib>
 
-#include "Kokkos_Macros.hpp"
-#include "Kokkos_HostSpace.hpp"
+#include "Kokkos_Core_fwd.hpp"
 
 // Currently always aligning
 #define STOKHOS_ALIGN_MEMORY 1
@@ -102,14 +101,14 @@ struct MemoryTraits< Kokkos::HostSpace > {
     if (size > 0) {
 #if STOKHOS_ALIGN_MEMORY
       const size_t mask = Alignment-1;
-      const size_t total_size = size + mask + sizeof(ptrdiff_t);
+      const size_t total_size = size + mask + sizeof(std::ptrdiff_t);
       char *ptr_alloc = reinterpret_cast<char*>(std::malloc(total_size));
-      char *ptr_storage = ptr_alloc + sizeof(ptrdiff_t);
+      char *ptr_storage = ptr_alloc + sizeof(std::ptrdiff_t);
       char *ptr_body = reinterpret_cast<char*>(
         ( reinterpret_cast<size_t>(ptr_storage) + mask ) & ~mask );
-      char *ptr_header = ptr_body - sizeof(ptrdiff_t);
-      const ptrdiff_t offset = ptr_body - ptr_alloc;
-      *reinterpret_cast<ptrdiff_t*>(ptr_header) = offset;
+      char *ptr_header = ptr_body - sizeof(std::ptrdiff_t);
+      const std::ptrdiff_t offset = ptr_body - ptr_alloc;
+      *reinterpret_cast<std::ptrdiff_t*>(ptr_header) = offset;
       ptr = reinterpret_cast<void*>(ptr_body);
 #else
       ptr = operator new(size);
@@ -123,8 +122,8 @@ struct MemoryTraits< Kokkos::HostSpace > {
   static void free(void *ptr) {
     if (ptr != 0) {
 #if STOKHOS_ALIGN_MEMORY
-      void *ptr_header = reinterpret_cast<char*>(ptr) - sizeof(ptrdiff_t);
-      const ptrdiff_t offset = *reinterpret_cast<ptrdiff_t*>(ptr_header);
+      void *ptr_header = reinterpret_cast<char*>(ptr) - sizeof(std::ptrdiff_t);
+      const std::ptrdiff_t offset = *reinterpret_cast<std::ptrdiff_t*>(ptr_header);
       void *ptr_alloc = reinterpret_cast<char*>(ptr) - offset;
       std::free(ptr_alloc);
 #else
@@ -145,7 +144,7 @@ public:
   typedef T&        reference;
   typedef const T&  const_reference;
   typedef size_t    size_type;
-  typedef ptrdiff_t difference_type;
+  typedef std::ptrdiff_t difference_type;
 
   typedef Stokhos::MemoryTraits< Kokkos::HostSpace > Traits;
 
@@ -188,7 +187,7 @@ public:
   typedef const T&  reference;
   typedef const T&  const_reference;
   typedef size_t    size_type;
-  typedef ptrdiff_t difference_type;
+  typedef std::ptrdiff_t difference_type;
 
   typedef Stokhos::MemoryTraits< Kokkos::HostSpace > Traits;
 

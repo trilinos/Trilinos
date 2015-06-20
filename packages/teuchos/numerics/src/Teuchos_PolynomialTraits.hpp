@@ -51,7 +51,7 @@ namespace Teuchos {
    * This class provides traits for implementing Teuchos::Polynomial.  The
    * default template definition here will work for any scalar type.  Any other
    * coefficient type for Teuchos::Polynomial should provide a specialization
-   * of this traits class for that type that mirrors the default definition 
+   * of this traits class for that type that mirrors the default definition
    * below.
    */
   template <typename Scalar>
@@ -80,7 +80,7 @@ namespace Teuchos {
     }
 
     //! y = x + beta*y
-    static inline void update(coeff_type* y, const coeff_type& x, 
+    static inline void update(coeff_type* y, const coeff_type& x,
 			      const scalar_type& beta) {
       *y = x + beta*(*y);
     }

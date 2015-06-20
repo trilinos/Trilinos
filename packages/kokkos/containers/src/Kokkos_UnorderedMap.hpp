@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -50,11 +50,8 @@
 #ifndef KOKKOS_UNORDERED_MAP_HPP
 #define KOKKOS_UNORDERED_MAP_HPP
 
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core.hpp>
 #include <Kokkos_Functional.hpp>
-#include <Kokkos_View.hpp>
-#include <Kokkos_Atomic.hpp>
-#include <Kokkos_HostSpace.hpp>
 
 #include <Kokkos_Bitset.hpp>
 
@@ -211,12 +208,14 @@ private:
 ///
 template <   typename Key
            , typename Value
-           , typename Device = Impl::DefaultDeviceType
+           , typename Device = Kokkos::DefaultExecutionSpace
            , typename Hasher = pod_hash<typename Impl::remove_const<Key>::type>
            , typename EqualTo = pod_equal_to<typename Impl::remove_const<Key>::type>
         >
 class UnorderedMap
 {
+private:
+  typedef typename ViewTraits<Key,Device,void,void>::host_mirror_space host_mirror_space ;
 public:
   //! \name Public types and constants
   //@{
@@ -231,16 +230,16 @@ public:
   typedef typename Impl::remove_const<declared_value_type>::type value_type;
   typedef typename Impl::add_const<value_type>::type const_value_type;
 
-  typedef Device device_type;
+  typedef Device execution_space;
   typedef Hasher hasher_type;
   typedef EqualTo  equal_to_type;
   typedef uint32_t size_type;
 
   //map_types
-  typedef UnorderedMap<declared_key_type,declared_value_type,device_type,hasher_type,equal_to_type> declared_map_type;
-  typedef UnorderedMap<key_type,value_type,device_type,hasher_type,equal_to_type>                   insertable_map_type;
-  typedef UnorderedMap<const_key_type,value_type,device_type,hasher_type,equal_to_type>             modifiable_map_type;
-  typedef UnorderedMap<const_key_type,const_value_type,device_type,hasher_type,equal_to_type>       const_map_type;
+  typedef UnorderedMap<declared_key_type,declared_value_type,execution_space,hasher_type,equal_to_type> declared_map_type;
+  typedef UnorderedMap<key_type,value_type,execution_space,hasher_type,equal_to_type>                   insertable_map_type;
+  typedef UnorderedMap<const_key_type,value_type,execution_space,hasher_type,equal_to_type>             modifiable_map_type;
+  typedef UnorderedMap<const_key_type,const_value_type,execution_space,hasher_type,equal_to_type>       const_map_type;
 
   static const bool is_set = Impl::is_same<void,value_type>::value;
   static const bool has_const_key = Impl::is_same<const_key_type,declared_key_type>::value;
@@ -253,9 +252,7 @@ public:
 
   typedef UnorderedMapInsertResult insert_result;
 
-  typedef typename Device::host_mirror_device_type host_mirror_device_type;
-
-  typedef UnorderedMap<Key,Value,host_mirror_device_type,Hasher,EqualTo> HostMirror;
+  typedef UnorderedMap<Key,Value,host_mirror_space,Hasher,EqualTo> HostMirror;
 
   typedef Impl::UnorderedMapHistogram<const_map_type> histogram_type;
 
@@ -267,28 +264,28 @@ private:
   typedef typename Impl::if_c< is_set, int, declared_value_type>::type impl_value_type;
 
   typedef typename Impl::if_c<   is_insertable_map
-                               , View< key_type *, device_type>
-                               , View< const key_type *, device_type, MemoryTraits<RandomAccess> >
+                               , View< key_type *, execution_space>
+                               , View< const key_type *, execution_space, MemoryTraits<RandomAccess> >
                              >::type key_type_view;
 
   typedef typename Impl::if_c<   is_insertable_map || is_modifiable_map
-                               , View< impl_value_type *, device_type>
-                               , View< const impl_value_type *, device_type, MemoryTraits<RandomAccess> >
+                               , View< impl_value_type *, execution_space>
+                               , View< const impl_value_type *, execution_space, MemoryTraits<RandomAccess> >
                              >::type value_type_view;
 
   typedef typename Impl::if_c<   is_insertable_map
-                               , View< size_type *, device_type>
-                               , View< const size_type *, device_type, MemoryTraits<RandomAccess> >
+                               , View< size_type *, execution_space>
+                               , View< const size_type *, execution_space, MemoryTraits<RandomAccess> >
                              >::type size_type_view;
 
   typedef typename Impl::if_c<   is_insertable_map
-                               , Bitset< device_type >
-                               , ConstBitset< device_type>
+                               , Bitset< execution_space >
+                               , ConstBitset< execution_space>
                              >::type bitset_type;
 
   enum { modified_idx = 0, erasable_idx = 1, failed_insert_idx = 2 };
   enum { num_scalars = 3 };
-  typedef View< int[num_scalars], LayoutLeft, device_type> scalars_view;
+  typedef View< int[num_scalars], LayoutLeft, execution_space> scalars_view;
 
 public:
   //! \name Public member functions
@@ -318,8 +315,8 @@ public:
     , m_equal_to(equal_to)
     , m_size()
     , m_available_indexes(calculate_capacity(capacity_hint))
-    , m_hash_lists(AllocateWithoutInitializing(), "UnorderedMap hash list", Impl::find_hash_size(capacity()))
-    , m_next_index(AllocateWithoutInitializing(), "UnorderedMap next index", capacity()+1) // +1 so that the *_at functions can always return a valid reference
+    , m_hash_lists(ViewAllocateWithoutInitializing("UnorderedMap hash list"), Impl::find_hash_size(capacity()))
+    , m_next_index(ViewAllocateWithoutInitializing("UnorderedMap next index"), capacity()+1) // +1 so that the *_at functions can always return a valid reference
     , m_keys("UnorderedMap keys",capacity()+1)
     , m_values("UnorderedMap values",(is_set? 1 : capacity()+1))
     , m_scalars("UnorderedMap scalars")
@@ -439,9 +436,9 @@ public:
   {
     bool result = !erasable();
     if (is_insertable_map && result) {
-      device_type::fence();
+      execution_space::fence();
       set_flag(erasable_idx);
-      device_type::fence();
+      execution_space::fence();
     }
     return result;
   }
@@ -450,10 +447,10 @@ public:
   {
     bool result = erasable();
     if (is_insertable_map && result) {
-      device_type::fence();
+      execution_space::fence();
       Impl::UnorderedMapErase<declared_map_type> f(*this);
       f.apply();
-      device_type::fence();
+      execution_space::fence();
       reset_flag(erasable_idx);
     }
     return result;
@@ -752,15 +749,15 @@ public:
       tmp.m_equal_to = src.m_equal_to;
       tmp.m_size = src.size();
       tmp.m_available_indexes = bitset_type( src.capacity() );
-      tmp.m_hash_lists        = size_type_view( AllocateWithoutInitializing(), "UnorderedMap hash list", src.m_hash_lists.size() );
-      tmp.m_next_index        = size_type_view( AllocateWithoutInitializing(), "UnorderedMap next index", src.m_next_index.size() );
-      tmp.m_keys              = key_type_view( AllocateWithoutInitializing(), "UnorderedMap keys", src.m_keys.size() );
-      tmp.m_values            = value_type_view( AllocateWithoutInitializing(), "UnorderedMap values", src.m_values.size() );
+      tmp.m_hash_lists        = size_type_view( ViewAllocateWithoutInitializing("UnorderedMap hash list"), src.m_hash_lists.size() );
+      tmp.m_next_index        = size_type_view( ViewAllocateWithoutInitializing("UnorderedMap next index"), src.m_next_index.size() );
+      tmp.m_keys              = key_type_view( ViewAllocateWithoutInitializing("UnorderedMap keys"), src.m_keys.size() );
+      tmp.m_values            = value_type_view( ViewAllocateWithoutInitializing("UnorderedMap values"), src.m_values.size() );
       tmp.m_scalars           = scalars_view("UnorderedMap scalars");
 
       Kokkos::deep_copy(tmp.m_available_indexes, src.m_available_indexes);
 
-      typedef Kokkos::Impl::DeepCopy< typename device_type::memory_space, typename SDevice::memory_space > raw_deep_copy;
+      typedef Kokkos::Impl::DeepCopy< typename execution_space::memory_space, typename SDevice::memory_space > raw_deep_copy;
 
       raw_deep_copy(tmp.m_hash_lists.ptr_on_device(), src.m_hash_lists.ptr_on_device(), sizeof(size_type)*src.m_hash_lists.size());
       raw_deep_copy(tmp.m_next_index.ptr_on_device(), src.m_next_index.ptr_on_device(), sizeof(size_type)*src.m_next_index.size());
@@ -784,21 +781,21 @@ private: // private member functions
 
   void set_flag(int flag) const
   {
-    typedef Kokkos::Impl::DeepCopy< typename device_type::memory_space, Kokkos::HostSpace > raw_deep_copy;
+    typedef Kokkos::Impl::DeepCopy< typename execution_space::memory_space, Kokkos::HostSpace > raw_deep_copy;
     const int true_ = true;
     raw_deep_copy(m_scalars.ptr_on_device() + flag, &true_, sizeof(int));
   }
 
   void reset_flag(int flag) const
   {
-    typedef Kokkos::Impl::DeepCopy< typename device_type::memory_space, Kokkos::HostSpace > raw_deep_copy;
+    typedef Kokkos::Impl::DeepCopy< typename execution_space::memory_space, Kokkos::HostSpace > raw_deep_copy;
     const int false_ = false;
     raw_deep_copy(m_scalars.ptr_on_device() + flag, &false_, sizeof(int));
   }
 
   bool get_flag(int flag) const
   {
-    typedef Kokkos::Impl::DeepCopy< Kokkos::HostSpace, typename device_type::memory_space > raw_deep_copy;
+    typedef Kokkos::Impl::DeepCopy< Kokkos::HostSpace, typename execution_space::memory_space > raw_deep_copy;
     int result = false;
     raw_deep_copy(&result, m_scalars.ptr_on_device() + flag, sizeof(int));
     return result;

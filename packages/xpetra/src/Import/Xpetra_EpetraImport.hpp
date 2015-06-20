@@ -59,18 +59,21 @@
 namespace Xpetra {
 
   // TODO: move that elsewhere
-  //   const Epetra_Import & toEpetra(const Import<int, int> &);
+  //   template<class GlobalOrdinal>
+  //   const Epetra_Import & toEpetra(const Import<int, GlobalOrdinal> &);
 
-  RCP< const Import<int, int > > toXpetra(const Epetra_Import *import);
+  template<class GlobalOrdinal>
+  RCP< const Import<int, GlobalOrdinal > > toXpetra(const Epetra_Import *import);
   //
 
-  class EpetraImport
-    : public Import<int, int>
+  template<class EpetraGlobalOrdinal>
+  class EpetraImportT
+    : public Import<int, EpetraGlobalOrdinal>
   {
 
     typedef int LocalOrdinal;
-    typedef int GlobalOrdinal;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+    typedef EpetraGlobalOrdinal GlobalOrdinal;
+    typedef typename Import<int, GlobalOrdinal>::node_type Node;
     //! The specialization of Map used by this class.
     typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
@@ -80,16 +83,18 @@ namespace Xpetra {
     //@{
 
     //! Construct an Import from the source and target Maps.
-    EpetraImport(const Teuchos::RCP< const map_type > &source, const Teuchos::RCP< const map_type > &target);
+    EpetraImportT(const Teuchos::RCP< const map_type > &source, const Teuchos::RCP< const map_type > &target);
 
-    //! Constructor (with list of parameters).
-    EpetraImport(const Teuchos::RCP< const map_type > &source, const Teuchos::RCP< const map_type > &target, const Teuchos::RCP< Teuchos::ParameterList > &plist);
+    ////! Constructor (with list of parameters).
+	// Definition not in cpp, so comment out
+    // EpetraImportT(const Teuchos::RCP< const map_type > &source, const Teuchos::RCP< const map_type > &target, const Teuchos::RCP< Teuchos::ParameterList > &plist);
 
-    //! Copy constructor.
-    EpetraImport(const Import< LocalOrdinal, GlobalOrdinal, Node > &import);
+    ////! Copy constructor.
+	// Definition commented out in cpp
+    // EpetraImportT(const Import< LocalOrdinal, GlobalOrdinal, Node > &import);
 
     //! Destructor.
-    ~EpetraImport() { }
+    ~EpetraImportT() { }
 
     //@}
 
@@ -97,10 +102,10 @@ namespace Xpetra {
     //@{
 
     //! Number of initial identical IDs.
-    size_t getNumSameIDs() const { XPETRA_MONITOR("EpetraImport::getNumSameIDs"); return import_->NumSameIDs(); }
+    size_t getNumSameIDs() const { XPETRA_MONITOR("EpetraImportT::getNumSameIDs"); return import_->NumSameIDs(); }
 
     //! Number of IDs to permute but not to communicate.
-    size_t getNumPermuteIDs() const { XPETRA_MONITOR("EpetraImport::getNumPermuteIDs"); return import_->NumPermuteIDs(); }
+    size_t getNumPermuteIDs() const { XPETRA_MONITOR("EpetraImportT::getNumPermuteIDs"); return import_->NumPermuteIDs(); }
 
     //! List of local IDs in the source Map that are permuted.
     ArrayView< const LocalOrdinal > getPermuteFromLIDs() const;
@@ -127,10 +132,10 @@ namespace Xpetra {
     ArrayView< const int > getExportPIDs() const;
 
     //! The Source Map used to construct this Import object.
-    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getSourceMap() const { XPETRA_MONITOR("EpetraImport::getSourceMap"); return toXpetra(import_->SourceMap()); }
+    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getSourceMap() const { XPETRA_MONITOR("EpetraImportT::getSourceMap"); return toXpetra<GlobalOrdinal>(import_->SourceMap()); }
 
     //! The Target Map used to construct this Import object.
-    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getTargetMap() const { XPETRA_MONITOR("EpetraImport::getTargetMap"); return toXpetra(import_->TargetMap()); }
+    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getTargetMap() const { XPETRA_MONITOR("EpetraImportT::getTargetMap"); return toXpetra<GlobalOrdinal>(import_->TargetMap()); }
 
     //@}
 
@@ -145,8 +150,8 @@ namespace Xpetra {
     //! @name Xpetra specific
     //@{
 
-    //! EpetraImport constructor to wrap a Epetra_Import object
-    EpetraImport(const RCP<const Epetra_Import> &import) : import_(import) { }
+    //! EpetraImportT constructor to wrap a Epetra_Import object
+    EpetraImportT(const RCP<const Epetra_Import> &import) : import_(import) { }
 
     //! Get the underlying Epetra import
     RCP< const Epetra_Import> getEpetra_Import() const { return import_; }
@@ -157,7 +162,15 @@ namespace Xpetra {
 
     RCP<const Epetra_Import> import_;
 
-  }; // EpetraImport class
+  }; // EpetraImportT class
+
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
+  typedef EpetraImportT<int> EpetraImport;
+#endif
+
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+  typedef EpetraImportT<long long> EpetraImport64;
+#endif
 
 } // Xpetra namespace
 

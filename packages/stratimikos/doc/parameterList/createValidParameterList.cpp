@@ -98,12 +98,12 @@ int main(int argc, char* argv[])
     if(parse_return != CommandLineProcessor::PARSE_SUCCESSFUL)
       return parse_return;
 
-    //
-    // Print the XSL header line if requested
-    //
-    if (xsl_header_flag )
-      out << "<?xml-stylesheet type=\"text/xsl\" "
-          << "href=\"../common/paramList/paramList.xsl\"?>\n";
+  //
+  // Print the XSL header line if requested
+  //
+  if (xsl_header_flag )
+    out << "<?xml-stylesheet type=\"text/xsl\" "
+        << "href=\"common/parameterList/parameterList.xsl\"?>\n";
 
     //
     // Obtain the validated ParameterList and write it to the fancy

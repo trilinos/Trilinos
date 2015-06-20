@@ -53,8 +53,7 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsTplDeclareLibraries)
 
-TRIBITS_TPL_DECLARE_LIBRARIES( TAUCS
+TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( TAUCS
   REQUIRED_HEADERS taucs.h 
   REQUIRED_LIBS_NAMES taucs)

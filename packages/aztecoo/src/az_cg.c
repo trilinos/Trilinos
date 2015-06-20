@@ -121,14 +121,14 @@ void AZ_pcg_f(double b[], double x[], double weight[], int options[],
   /* local variables */
 
   register int i;
-  int          N, NN, one = 1, iter = 1, r_avail = AZ_TRUE, j;
+  int          N, NN, one = 1, iter = 1, r_avail = AZ_TRUE /*, j*/;
   int          precond_flag, print_freq, proc, brkdown_will_occur = AZ_FALSE;
   double       alpha, beta = 0.0, nalpha, true_scaled_r=-1.0;
   double      *r, *z, *p, *ap, actual_residual = -1.0;
   double       r_z_dot, r_z_dot_old, p_ap_dot, rec_residual=-1.0;
   double       scaled_r_norm=-1.0, brkdown_tol = DBL_EPSILON;
   int          *data_org, str_leng, first_time = AZ_TRUE;
-  char         label[64],suffix[32], prefix[64];
+  char         /*label[64],*/suffix[32], prefix[64];
 
   double **saveme, *ptap;
   int *kvec_sizes = NULL, current_kept = 0;
@@ -181,9 +181,16 @@ void AZ_pcg_f(double b[], double x[], double weight[], int options[],
 
 
 
+  /* Fixing the memory leak associated with AZ_manage_memory (bug 6260)
+   * led to bus errors elsewhere.  Hence using malloc/free.
+   */
+
+  /*
   sprintf(label,"z%s",suffix);
   p  = (double *) AZ_manage_memory(4*NN*sizeof(double),AZ_ALLOC,
                                    AZ_SYS+az_iterate_id, label, &j);
+  */
+  p  = (double *) malloc(4*NN*sizeof(double));
   r  = &(p[1*NN]);
   z  = &(p[2*NN]);
   ap = &(p[3*NN]);
@@ -287,6 +294,7 @@ void AZ_pcg_f(double b[], double x[], double weight[], int options[],
                                weight, &actual_residual, &true_scaled_r,
                                options, data_org, proc_config, Amat,
                                convergence_info);
+        free(p);
         AZ_terminate_status_print(AZ_breakdown, iter, status, rec_residual,
                                   params, true_scaled_r, actual_residual,
                                   options, proc_config);
@@ -338,6 +346,7 @@ void AZ_pcg_f(double b[], double x[], double weight[], int options[],
       AZ_scale_true_residual( x, b, ap,
                               weight, &actual_residual, &true_scaled_r, options,
                               data_org, proc_config, Amat,convergence_info);
+      free(p);
       AZ_terminate_status_print(AZ_breakdown, iter, status, rec_residual,
                                 params, true_scaled_r, actual_residual, options,
                                 proc_config);
@@ -393,6 +402,7 @@ void AZ_pcg_f(double b[], double x[], double weight[], int options[],
 	   * AZ_get_new_eps() has decided that it is time to quit.
 	   */
 	  
+      free(p);
 	  AZ_terminate_status_print(AZ_loss, iter, status, rec_residual, params,
 				    true_scaled_r, actual_residual, options,
 				    proc_config);
@@ -419,6 +429,7 @@ void AZ_pcg_f(double b[], double x[], double weight[], int options[],
   else
     i = AZ_maxits;
 
+  free(p);
   AZ_terminate_status_print(i, iter, status, rec_residual, params,
                             scaled_r_norm, actual_residual, options,
                             proc_config);

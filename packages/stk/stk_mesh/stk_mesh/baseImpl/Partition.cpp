@@ -1,7 +1,36 @@
-/*
- * Partition.cpp
- *
- */
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+
 #include <stk_mesh/baseImpl/Partition.hpp>
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <stk_mesh/base/BulkData.hpp>   // for EntityLess, BulkData
@@ -10,12 +39,9 @@
 #include "stk_mesh/base/FieldBase.hpp"  // for field_bytes_per_entity, etc
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
 #include "stk_mesh/base/Part.hpp"       // for Part
-#include "stk_mesh/base/Trace.hpp"      // for DiagIf, DiagIfWatching, etc
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, PartOrdinal, etc
 #include "stk_mesh/baseImpl/BucketRepository.hpp"  // for BucketRepository
-#include "stk_mesh/baseImpl/FieldRepository.hpp"  // for FieldVector
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
-#include "stk_util/util/TrackingAllocator.hpp"  // for tracking_allocator
 namespace stk { namespace mesh { class FieldBase; } }
 
 
@@ -95,12 +121,10 @@ Partition::Partition(BulkData& mesh, BucketRepository *repo, EntityRank rank,
 // Only the BucketRepository will delete a Partition.
 Partition::~Partition()
 {
-  typedef tracking_allocator<Bucket, BucketTag> bucket_allocator;
   size_t num_bkts = m_buckets.size();
   for (size_t i = 0; i < num_bkts; ++i)
   {
-    m_buckets[i]->~Bucket();
-    bucket_allocator().deallocate(m_buckets[i],1);
+    delete m_buckets[i];
   }
 }
 
@@ -126,10 +150,6 @@ bool Partition::remove(Entity entity)
 
 bool Partition::add(Entity entity)
 {
-  TraceIf("stk::mesh::impl::Partition::add", LOG_PARTITION);
-  DiagIf(LOG_PARTITION, "Adding entity: " << print_entity_key(MetaData::get(BulkData::get(*m_repository)), m_mesh.entity_key(entity)));
-  TraceIfWatchingDec("stk::mesh::impl::Partition::add", LOG_ENTITY, m_mesh.entity_key(entity), extra);
-
   if (m_mesh.bucket_ptr(entity))
   {
     // If an entity already belongs to a partition, it cannot be added to one.
@@ -144,12 +164,6 @@ bool Partition::add(Entity entity)
   ++m_size;
 
   m_updated_since_compress = m_updated_since_sort = true;
-  m_mesh.set_synchronized_count(entity, m_mesh.synchronized_count());
-
-  // TODO - Too much tracing in this file, REMOVE
-  DiagIfWatching(LOG_ENTITY, m_mesh.entity_key(entity),
-                 " Bucket: " << *bucket << ", ordinal: " << m_mesh.bucket_ordinal(entity));
-  DiagIf(LOG_PARTITION, "After add, state is: " << *this);
 
   internal_check_invariants();
 
@@ -158,25 +172,17 @@ bool Partition::add(Entity entity)
 
 bool Partition::move_to(Entity entity, Partition &dst_partition)
 {
-  TraceIf("stk::mesh::impl::Partition::move_to", LOG_PARTITION);
-  DiagIf(LOG_PARTITION, "Moving entity: " << print_entity_key(MetaData::get(m_mesh), m_mesh.entity_key(entity)));
-  TraceIfWatchingDec("stk::mesh::impl::Partition::move_to", LOG_ENTITY, m_mesh.entity_key(entity), extra);
-
   ThrowAssert(belongs(m_mesh.bucket(entity)));
 
   Bucket *src_bucket   = m_mesh.bucket_ptr(entity);
   unsigned src_ordinal = m_mesh.bucket_ordinal(entity);
   if (src_bucket && (src_bucket->getPartition() == &dst_partition))
   {
-    DiagIfWatching(LOG_ENTITY, m_mesh.entity_key(entity),
-                   " Already on destination partition at bucket " << *src_bucket << ", ordinal " << src_ordinal);
     return false;
   }
 
   ThrowRequireMsg(src_bucket && (src_bucket->getPartition() == this),
                   "Partition::move_to cannot move an entity that does not belong to it.");
-  DiagIfWatching(LOG_ENTITY, m_mesh.entity_key(entity),
-                 " src_bucket: " << *src_bucket << ", src_ordinal: " << src_ordinal);
 
   // If the last bucket is full, automatically create a new one.
   Bucket *dst_bucket = dst_partition.get_bucket_for_adds();
@@ -198,16 +204,9 @@ bool Partition::move_to(Entity entity, Partition &dst_partition)
   dst_partition.m_updated_since_compress = dst_partition.m_updated_since_sort = true;
   dst_partition.m_size++;
 
-  DiagIfWatching(LOG_ENTITY, m_mesh.entity_key(entity),
-                 " dst_bucket: " << *dst_bucket << ", dst_ordinal: " << m_mesh.bucket_ordinal(entity));
-
   remove_impl();
 
   m_updated_since_compress = m_updated_since_sort = true;
-  m_mesh.set_synchronized_count(entity, m_mesh.synchronized_count());
-
-  DiagIf(LOG_PARTITION, "After move_to, src state is: " << *this);
-  DiagIf(LOG_PARTITION, "After move_to, dst state is: " << dst_partition);
 
   internal_check_invariants();
   dst_partition.internal_check_invariants();
@@ -233,8 +232,6 @@ void Partition::overwrite_from_end(Bucket& bucket, unsigned ordinal)
 
 void Partition::remove_impl()
 {
-  TraceIf("stk::mesh::impl::Partition::remove", LOG_PARTITION);
-
   ThrowAssert(!empty());
 
   Bucket &last_bucket   = **(end() - 1);
@@ -269,15 +266,11 @@ void Partition::remove_impl()
   m_updated_since_compress = m_updated_since_sort = true;
   --m_size;
 
-  DiagIf(LOG_PARTITION, "After remove, state is: " << *this);
-
   internal_check_invariants();
 }
 
 void Partition::compress(bool force)
 {
-  TraceIf("stk::mesh::impl::Partition::compress", LOG_PARTITION);
-
   // An easy optimization.
   if (!force && (empty() || !m_updated_since_compress))
   {
@@ -305,8 +298,6 @@ void Partition::compress(bool force)
   }
 
   //sort entities
-  DiagIf(LOG_PARTITION, "Partition::compress is sorting "
-         << num_entities << " entities in " << m_buckets.size() << " buckets");
   std::sort( entities.begin(), entities.end(), EntityLess(m_mesh) );
   m_updated_since_sort = false;
 
@@ -325,15 +316,7 @@ void Partition::compress(bool force)
     new_bucket.m_partition = this;
 
     for (size_t i=0; i<bucket_size; ++i, ++curr_entity) {
-
       Entity entity = entities[curr_entity];
-
-      TraceIfWatching("stk::mesh::impl::Partition::compress affects", LOG_ENTITY, m_mesh.entity_key(entity));
-      DiagIfWatching(LOG_ENTITY, m_mesh.entity_key(entity),
-                     "  old_bucket: " << m_mesh.bucket(entity) << ", old_ordinal: " << m_mesh.bucket_ordinal(entity) << '\n'
-                     << dumpit()
-                     << "\n  new_bucket: " << new_bucket);
-
       new_bucket.copy_entity( entity );
       // Don't worry about deleting from old buckets, they are being deallocated right after this loop
     }
@@ -351,20 +334,15 @@ void Partition::compress(bool force)
   m_updated_since_compress = false;
   m_updated_since_sort = false;
 
-  DiagIf(LOG_PARTITION, "After compress, state is: " << *this << "\n" << dumpit());
   internal_check_invariants();
 }
 
 void Partition::sort(bool force)
 {
-  TraceIf("stk::mesh::impl::Partition::sort", LOG_PARTITION);
-
   if (!force && (empty() || !m_updated_since_sort))
   {
     return;
   }
-
-  DiagIf(LOG_PARTITION, "Before sort, state is: " << *this << "\n" << dumpit());
 
   std::vector<unsigned> partition_key = get_legacy_partition_id();
   //index of bucket in partition
@@ -491,8 +469,6 @@ void Partition::sort(bool force)
     m_repository->deallocate_bucket(tmp_bucket);
   }
 
-  DiagIf(LOG_PARTITION, "After sort, state is: " << *this << "\n" << dumpit());
-
   internal_check_invariants();
 }
 
@@ -503,7 +479,7 @@ stk::mesh::Bucket *Partition::get_bucket_for_adds()
     std::vector<unsigned> partition_key = get_legacy_partition_id();
     partition_key[ partition_key[0] ] = 0;
     Bucket *bucket = m_repository->allocate_bucket(m_rank, partition_key,
-                                                   m_repository->default_bucket_capacity);
+                                                   m_repository->get_bucket_capacity());
     bucket->m_partition = this;
     bucket->set_first_bucket_in_partition(bucket);
     m_buckets.push_back(bucket);
@@ -518,7 +494,7 @@ stk::mesh::Bucket *Partition::get_bucket_for_adds()
     std::vector<unsigned> partition_key = get_legacy_partition_id();
     partition_key[ partition_key[0] ] = m_buckets.size();
     bucket = m_repository->allocate_bucket(m_rank, partition_key,
-                                           m_repository->default_bucket_capacity);
+                                           m_repository->get_bucket_capacity());
     bucket->m_partition = this;
     bucket->set_first_bucket_in_partition(m_buckets[0]);
     m_buckets[0]->set_last_bucket_in_partition(bucket);

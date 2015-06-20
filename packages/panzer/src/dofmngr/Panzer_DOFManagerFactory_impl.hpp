@@ -47,6 +47,8 @@
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 
+#include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
+
 namespace panzer {
 
 template <typename LO,typename GO>
@@ -56,10 +58,15 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuc
                             const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
                             const std::string & fieldOrder) const
 {
+
+#ifdef PANZER_HAVE_FEI
    if(useDOFManagerFEI_)
       return buildUniqueGlobalIndexer<panzer::DOFManagerFEI<LO,GO> >(mpiComm,physicsBlocks,connMngr,fieldOrder);
    else
       return buildUniqueGlobalIndexer<panzer::DOFManager<LO,GO> >(mpiComm,physicsBlocks,connMngr,fieldOrder);
+#else
+   return buildUniqueGlobalIndexer<panzer::DOFManager<LO,GO> >(mpiComm,physicsBlocks,connMngr,fieldOrder);
+#endif
 }
 
 template <typename LO,typename GO>
@@ -127,22 +134,8 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuc
    if(fieldOrder!="") {
       std::vector<std::string> fieldOrderV;
 
-      // this basiclly tokenzies "fieldOrder" string 
-      // and dumps it into "fieldOrderV"
-      std::stringstream ss;
-      ss << fieldOrder;
+      buildFieldOrder(fieldOrder,fieldOrderV);
 
-      // until all tokens are eaten
-      while(!ss.eof()) {
-         std::string token;
-         ss >> token;
- 
-         // reorder tokens
-         if(token!="")
-            fieldOrderV.push_back(token);
-      }
-
-      // do some stuff columinating in 
       dofManager->setFieldOrder(fieldOrderV);
    }
 
@@ -150,9 +143,40 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuc
      PANZER_FUNC_TIME_MONITOR("panzer::DOFManagerFactory::buildUnqueGlobalIndexer:buildGlobalUnknowns");
      dofManager->buildGlobalUnknowns();
    }
+
    // dofManager->printFieldInformation(*pout);
 
+   // print out mesh topology information. Uncomment at your own risk, there will
+   // be A LOT of information printed to the screen (scaling with the number of elements)
+   // {
+   //   Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
+   //   out.setShowProcRank(true);
+   //   out.setOutputToRootOnly(-1);
+   //   printMeshTopology(out,*dofManager);
+   // }
+
    return dofManager;
+}
+
+template <typename LO,typename GO>
+void 
+DOFManagerFactory<LO,GO>::
+buildFieldOrder(const std::string & fieldOrderStr,std::vector<std::string> & fieldOrder)
+{
+  // this tokenizes "fieldOrderStr" string 
+  // and dumps it into "fieldOrder"
+  std::stringstream ss;
+  ss << fieldOrderStr;
+
+  // until all tokens are eaten
+  while(!ss.eof()) {
+     std::string token;
+     ss >> token;
+
+     // reorder tokens
+     if(token!="")
+        fieldOrder.push_back(token);
+  }
 }
 
 }

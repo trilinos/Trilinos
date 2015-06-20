@@ -9,11 +9,30 @@ BIBFILE = mueluguide.bib
 
 PAPER = mueluguide
 
-PARTS = mueluguide.tex
+PARTS = \
+		SANDdistribution.tex \
+		abstract.tex \
+		acknowledgment.tex \
+		appendix.tex \
+		definitions.tex \
+		introduction.tex \
+		license.tex \
+		mueluguide.tex \
+		multigrid.tex \
+		options.tex \
+		options_aggregation.tex \
+		options_general.tex \
+		options_misc.tex \
+		options_multigrid.tex \
+		options_rebalancing.tex \
+		options_smoothing_and_coarse.tex \
+		paramlist.tex \
+		paramlist_hidden.tex \
+		performance.tex \
+		references.tex \
+		starting.tex
 
 PICTURES =
-
-SIAM = siam.bst       siam10.clo     siamuelutex.cls   siamuelutex.sty docultex.tex lexample.tex
 
 all: ${PAPER}.pdf
 
@@ -25,7 +44,7 @@ all: ${PAPER}.pdf
 #
 ########################################################################
 
-${PAPER}.dvi: ${PAPER}.tex ${PARTS} #${PAPER}.bbl
+${PAPER}.dvi: ${PAPER}.tex ${PARTS} ${PAPER}.bbl
 	${TEX} ${PAPER}
 	${TEX} ${PAPER}
 
@@ -43,7 +62,7 @@ ${PAPER}.ps:    ${PAPER}.dvi
 ${PAPER}.pdf:    ${PAPER}.dvi
 
 tarfile:
-	tar chvf ${PAPER}.tar Makefile ${PARTS} ${PICTURES} ${BIBFILE} ${SIAM}
+	tar chvf ${PAPER}.tar Makefile ${PARTS} ${PICTURES} ${BIBFILE}
 	compress ${PAPER}.tar
 
 clean:

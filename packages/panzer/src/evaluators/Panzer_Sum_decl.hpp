@@ -54,6 +54,7 @@ namespace panzer {
     <ParameterList>
       <ParameterList name="Sum Name" type="string" value="<destination field name>"/>
       <ParameterList name="Values Names" type="Teuchos::RCP<std::vector<std::string> >" value="<Source field names>"/>
+      <ParameterList name="Scalars" type="Teuchos::RCP<const std::vector<double> >" value="<scalar values>"/>
       <ParameterList name="Data Layout" type="Teuchos::RCP<PHX::DataLayout>" value="<data layout of all associated fields>"/>
     </ParameterList>
     \endverbatim
@@ -61,11 +62,103 @@ namespace panzer {
 PHX_EVALUATOR_CLASS(Sum)
   
   PHX::MDField<ScalarT> sum;
-  std::vector< PHX::MDField<ScalarT> > values;
+  std::vector< PHX::MDField<const ScalarT> > values;
+  std::vector<double> scalars;
 
   std::size_t cell_data_size;
 
 PHX_EVALUATOR_CLASS_END
+
+/** A template version of Sum that specializes on the
+  * rank type. This must be done at run time.
+  */ 
+template<typename EvalT, typename TRAITS,typename Tag0,typename Tag1=void,typename Tag2=void>
+class SumStatic : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+            public PHX::EvaluatorDerived<EvalT, TRAITS>  {
+public:
+  SumStatic(const Teuchos::ParameterList& p);
+  void postRegistrationSetup(typename TRAITS::SetupData d,
+                             PHX::FieldManager<TRAITS>& fm);
+  void evaluateFields(typename TRAITS::EvalData d);
+private:
+  typedef typename EvalT::ScalarT ScalarT;
+};
+
+template<typename EvalT, typename TRAITS,typename Tag0>
+class SumStatic<EvalT,TRAITS,Tag0,void,void> : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+                                         public PHX::EvaluatorDerived<EvalT, TRAITS>  {
+public:
+  SumStatic(const Teuchos::ParameterList& p);
+  void postRegistrationSetup(typename TRAITS::SetupData d,
+                             PHX::FieldManager<TRAITS>& fm);
+  void evaluateFields(typename TRAITS::EvalData d);
+private:
+  typedef typename EvalT::ScalarT ScalarT;
+
+  PHX::MDField<ScalarT,Tag0> sum;
+  std::vector< PHX::MDField<const ScalarT,Tag0> > values;
+};
+
+template<typename EvalT, typename TRAITS,typename Tag0,typename Tag1>
+class SumStatic<EvalT,TRAITS,Tag0,Tag1,void> : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+                                         public PHX::EvaluatorDerived<EvalT, TRAITS>  {
+public:
+  SumStatic(const Teuchos::ParameterList& p);
+  void postRegistrationSetup(typename TRAITS::SetupData d,
+                             PHX::FieldManager<TRAITS>& fm);
+  void evaluateFields(typename TRAITS::EvalData d);
+
+  struct ScalarsTag {};
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const ScalarsTag,const unsigned c) const;
+
+  struct NoScalarsTag {};
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const NoScalarsTag,const unsigned c) const;
+
+private:
+  typedef typename EvalT::ScalarT ScalarT;
+
+  PHX::MDField<ScalarT,Tag0,Tag1> sum;
+  std::vector< PHX::MDField<const ScalarT,Tag0,Tag1> > values;
+  bool useScalars;
+
+  // Functor members
+  //////////////////////////////////////////////
+  enum {MAX_VALUES=20};
+  PHX::MDField<const ScalarT,Tag0,Tag1> current_value;
+  Kokkos::View<const ScalarT**,PHX::Device> value_views[MAX_VALUES];
+  Kokkos::View<const double*,PHX::Device> scalars;
+  int numValues;
+
+     // this is used in the parallel kernel
+};
+
+/*
+template<typename EvalT, typename TRAITS,typename Tag0,typename Tag1,typename Tag2>
+class SumStatic<EvalT,TRAITS,Tag0,Tag1,Tag2> : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+                                         public PHX::EvaluatorDerived<EvalT, TRAITS>  {
+public:
+  SumStatic(const Teuchos::ParameterList& p);
+  void postRegistrationSetup(typename TRAITS::SetupData d,
+                             PHX::FieldManager<TRAITS>& fm);
+  void evaluateFields(typename TRAITS::EvalData d);
+private:
+  typedef typename EvalT::ScalarT ScalarT;
+
+  PHX::MDField<ScalarT,Tag0,Tag1,Tag2> sum;
+  std::vector< PHX::MDField<ScalarT,Tag0,Tag1,Tag2> > values;
+};
+*/
+
+/** This functions builds a static sum evaluator based on the rank of the data layout object.
+  * Dependent and evaluated fields are denoted by the passed in parameters.
+  */ 
+template<typename EvalT, typename TRAITS,typename Tag0,typename Tag1,typename Tag2>
+Teuchos::RCP<PHX::Evaluator<TRAITS> > 
+buildStaticSumEvaluator(const std::string & sum_name,
+                        const std::vector<std::string> & value_names,
+                        const Teuchos::RCP<PHX::DataLayout> & data_layout);
 
 }
 

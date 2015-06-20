@@ -52,6 +52,7 @@
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_TableFormat.hpp"
+#include <cstdlib> // atexit
 
 namespace Teuchos
 {
@@ -171,14 +172,63 @@ namespace Teuchos
      */
     static RCP<T> getNewCounter (const std::string& name);
 
-    //! Table format that will be used to print a summary of timer results.
-    static TableFormat& format()
+  private:
+    /// \brief Free the singleton returned by format().
+    ///
+    /// \warning Only for use as atexit() handler.
+    ///
+    /// \warning This method is not reentrant.  In particular, if
+    ///   multiple threads call this method at the same time, they
+    ///   might manage to double-delete format_.  This could only
+    ///   happen if the format() method below is called twice by
+    ///   different threads.
+    static void freeTableFormat () {
+      if (format_ != NULL) {
+        delete format_;
+        format_ = NULL;
+      }
+    }
+
+    /// \brief Free the singleton returned by counters().
+    ///
+    /// \warning Only for use as atexit() handler.
+    ///
+    /// \warning This method is not reentrant.  In particular, if
+    ///   multiple threads call this method at the same time, they
+    ///   might manage to double-delete counters_.  This could only
+    ///   happen if the counters() method below is called twice by
+    ///   different threads.
+    static void freeCounters () {
+      if (counters_ != NULL) {
+        delete counters_;
+        counters_ = NULL;
+      }
+    }
+
+  public:
+    /// \brief Table format that will be used to print a summary of
+    ///   timer results.
+    ///
+    /// \warning This method is not reentrant.  In particular, if
+    ///   multiple threads call this method at the same time, they
+    ///   might manage to double-register the atexit() handler for
+    ///   format_.  This could only happen if this method is called
+    ///   twice by different threads.
+    static TableFormat& format ()
     {
-      // WARNING This is not thread safe!  In particular, if multiple
-      // threads call this method for the "first time" at the same
-      // time, the RCP may be initialized incorrectly.
-      static RCP<TableFormat> rtn=rcp(new TableFormat());
-      return *rtn;
+      if (format_ == NULL) {
+        format_ = new TableFormat ();
+        // It _is_ possible for atexit() to fail (e.g., because it ran
+        // out of memory for storing callbacks).  We could throw an
+        // exception here in that case, but I think it's better just
+        // to let the minor memory leak happen.
+        (void) atexit (freeTableFormat);
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        format_ == NULL, std::logic_error, "Teuchos::PerformanceMonitorBase::"
+        "format: Should never get here!  format_ is NULL.");
+
+      return *format_;
     }
 
     /// \brief Return the first counter with the given name, or null if none.
@@ -243,24 +293,33 @@ namespace Teuchos
     /// and stop timers multiple times within a single call stack.
     bool isRecursiveCall() const { return isRecursiveCall_; }
 
-    //! The class' array of all counters that were created with getNewCounter().
-    static std::map<std::string, RCP<T> >& counters()
+    /// \brief Array of all counters that were created with
+    ///   getNewCounter() on the calling (MPI) process.
+    ///
+    /// \warning This method is not reentrant.
+    static std::map<std::string, RCP<T> >& counters ()
     {
-      // Use the "Meyers Trick" to create static data safely.
-      //
-      // WARNING This is not thread safe!  In particular, if multiple
-      // threads call counters() for the "first time" at the same
-      // time, the array may be initialized incorrectly.
-      static std::map<std::string, RCP<T> > theCounters;
-      static int initialized;
-      if (! initialized) {
-        theCounters.clear ();
-        initialized = 1;
+      if (counters_ == NULL) {
+        counters_ = new std::map<std::string, RCP<T> > ();
+        // It _is_ possible for atexit() to fail (e.g., because it ran
+        // out of memory for storing callbacks).  We could throw an
+        // exception here in that case, but I think it's better just
+        // to let the minor memory leak happen.
+        (void) atexit (freeCounters);
       }
-      return theCounters;
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        counters_ == NULL, std::logic_error, "Teuchos::PerformanceMonitorBase::"
+        "counters: Should never get here!  counters_ is NULL.");
+
+      return *counters_;
     }
 
   private:
+    //! Singleton object returned by format().
+    static TableFormat* format_;
+
+    //! Singleton object returned by counters().
+    static std::map<std::string, RCP<T> >* counters_;
 
     //! Reference to the counter being wrapped.
     T& counter_;
@@ -268,6 +327,14 @@ namespace Teuchos
     //! Whether we are currently in a recursive call of the counter.
     bool isRecursiveCall_;
   };
+
+  template<class T>
+  TableFormat*
+  PerformanceMonitorBase<T>::format_ = NULL;
+
+  template<class T>
+  std::map<std::string, RCP<T> >*
+  PerformanceMonitorBase<T>::counters_ = NULL;
 
   template<class T>
   RCP<T>

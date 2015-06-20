@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,36 +36,40 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
 
 #include <gtest/gtest.h>
 
-#include <Kokkos_Serial.hpp>
-#include <Kokkos_hwloc.hpp>
+#include <Kokkos_Core.hpp>
 
-#include <Kokkos_View.hpp>
 #include <impl/Kokkos_ViewTileLeft.hpp>
-
-#include <Kokkos_CrsArray.hpp>
+#include <impl/Kokkos_Serial_TaskPolicy.hpp>
 
 //----------------------------------------------------------------------------
 
 #include <TestViewImpl.hpp>
 
-#include <TestMemoryTracking.hpp>
 #include <TestViewAPI.hpp>
+#include <TestViewOfClass.hpp>
+#include <TestViewSubview.hpp>
 #include <TestAtomic.hpp>
 #include <TestTile.hpp>
+#include <TestRange.hpp>
 #include <TestTeam.hpp>
-#include <TestCrsArray.hpp>
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
 #include <TestAggregate.hpp>
+#include <TestAggregateReduction.hpp>
 #include <TestCompilerMacros.hpp>
+#include <TestTaskPolicy.hpp>
 #include <TestCXX11.hpp>
+#include <TestCXX11Deduction.hpp>
+#include <TestTeamVector.hpp>
+#include <TestMemorySpaceTracking.hpp>
+#include <TestTemplateMetaFunctions.hpp>
 
 namespace Test {
 
@@ -75,10 +79,6 @@ protected:
   static void TearDownTestCase() {}
 };
 
-TEST_F( serial, memory_tracking) {
-  TestMemoryTracking();
-}
-
 TEST_F( serial, view_impl) {
   test_view_impl< Kokkos::Serial >();
 }
@@ -87,9 +87,66 @@ TEST_F( serial, view_api) {
   TestViewAPI< double , Kokkos::Serial >();
 }
 
+TEST_F( serial , view_nested_view )
+{
+  ::Test::view_nested_view< Kokkos::Serial >();
+}
 
-TEST_F( serial, crsarray) {
-  TestCrsArray< Kokkos::Serial >();
+TEST_F( serial, view_subview_auto_1d_left ) {
+  TestViewSubview::test_auto_1d< Kokkos::LayoutLeft,Kokkos::Serial >();
+}
+
+TEST_F( serial, view_subview_auto_1d_right ) {
+  TestViewSubview::test_auto_1d< Kokkos::LayoutRight,Kokkos::Serial >();
+}
+
+TEST_F( serial, view_subview_auto_1d_stride ) {
+  TestViewSubview::test_auto_1d< Kokkos::LayoutStride,Kokkos::Serial >();
+}
+
+TEST_F( serial, view_subview_assign_strided ) {
+  TestViewSubview::test_1d_strided_assignment< Kokkos::Serial >();
+}
+
+TEST_F( serial, view_subview_left_0 ) {
+  TestViewSubview::test_left_0< Kokkos::Serial >();
+}
+
+TEST_F( serial, view_subview_left_1 ) {
+  TestViewSubview::test_left_1< Kokkos::Serial >();
+}
+
+TEST_F( serial, view_subview_left_2 ) {
+  TestViewSubview::test_left_2< Kokkos::Serial >();
+}
+
+TEST_F( serial, view_subview_left_3 ) {
+  TestViewSubview::test_left_3< Kokkos::Serial >();
+}
+
+TEST_F( serial, view_subview_right_0 ) {
+  TestViewSubview::test_right_0< Kokkos::Serial >();
+}
+
+TEST_F( serial, view_subview_right_1 ) {
+  TestViewSubview::test_right_1< Kokkos::Serial >();
+}
+
+TEST_F( serial, view_subview_right_3 ) {
+  TestViewSubview::test_right_3< Kokkos::Serial >();
+}
+
+TEST_F( serial , range_tag )
+{
+  TestRange< Kokkos::Serial >::test_for(1000);
+  TestRange< Kokkos::Serial >::test_reduce(1000);
+  TestRange< Kokkos::Serial >::test_scan(1000);
+}
+
+TEST_F( serial , team_tag )
+{
+  TestTeamPolicy< Kokkos::Serial >::test_for( 1000 );
+  TestTeamPolicy< Kokkos::Serial >::test_reduce( 1000 );
 }
 
 TEST_F( serial, long_reduce) {
@@ -114,6 +171,7 @@ TEST_F( serial, long_reduce_dynamic_view ) {
 
 TEST_F( serial , scan )
 {
+  TestScan< Kokkos::Serial >::test_range( 1 , 1000 );
   TestScan< Kokkos::Serial >( 10 );
   TestScan< Kokkos::Serial >( 10000 );
 }
@@ -183,6 +241,7 @@ TEST_F( serial , view_remap )
 TEST_F( serial , view_aggregate )
 {
   TestViewAggregate< Kokkos::Serial >();
+  TestViewAggregateReduction< Kokkos::Serial >();
 }
 
 //----------------------------------------------------------------------------
@@ -218,68 +277,37 @@ TEST_F( serial , atomics )
   ASSERT_TRUE( ( TestAtomic::Loop<float,Kokkos::Serial>(100,1) ) );
   ASSERT_TRUE( ( TestAtomic::Loop<float,Kokkos::Serial>(100,2) ) );
   ASSERT_TRUE( ( TestAtomic::Loop<float,Kokkos::Serial>(100,3) ) );
+
+  ASSERT_TRUE( ( TestAtomic::Loop<Kokkos::complex<double> ,Kokkos::Serial>(100,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<Kokkos::complex<double> ,Kokkos::Serial>(100,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<Kokkos::complex<double> ,Kokkos::Serial>(100,3) ) );
 }
 
 //----------------------------------------------------------------------------
 
-TEST_F( serial, tile_1x1)
+TEST_F( serial, tile_layout )
 {
-  static const size_t dim = 9;
-  typedef Kokkos::LayoutTileLeft<1,1> tile_layout;
-  typedef ReduceTileErrors< Kokkos::Serial, tile_layout > functor_type;
+  TestTile::test< Kokkos::Serial , 1 , 1 >( 1 , 1 );
+  TestTile::test< Kokkos::Serial , 1 , 1 >( 2 , 3 );
+  TestTile::test< Kokkos::Serial , 1 , 1 >( 9 , 10 );
 
-  functor_type::array_type array("",dim,dim);
-  ptrdiff_t errors = 0 ;
-  Kokkos::parallel_reduce(dim, functor_type(array) , errors );
-  EXPECT_EQ( errors, 0u);
-}
+  TestTile::test< Kokkos::Serial , 2 , 2 >( 1 , 1 );
+  TestTile::test< Kokkos::Serial , 2 , 2 >( 2 , 3 );
+  TestTile::test< Kokkos::Serial , 2 , 2 >( 4 , 4 );
+  TestTile::test< Kokkos::Serial , 2 , 2 >( 9 , 9 );
 
-TEST_F( serial, tile_2x2)
-{
-  static const size_t dim = 9;
-  typedef Kokkos::LayoutTileLeft<2,2> tile_layout;
-  typedef ReduceTileErrors< Kokkos::Serial, tile_layout > functor_type;
+  TestTile::test< Kokkos::Serial , 2 , 4 >( 9 , 9 );
+  TestTile::test< Kokkos::Serial , 4 , 2 >( 9 , 9 );
 
-  functor_type::array_type array("",dim,dim);
-  ptrdiff_t errors = 0 ;
-  Kokkos::parallel_reduce(dim, functor_type(array) , errors );
-  EXPECT_EQ( errors, ptrdiff_t(0) );
-}
+  TestTile::test< Kokkos::Serial , 4 , 4 >( 1 , 1 );
+  TestTile::test< Kokkos::Serial , 4 , 4 >( 4 , 4 );
+  TestTile::test< Kokkos::Serial , 4 , 4 >( 9 , 9 );
+  TestTile::test< Kokkos::Serial , 4 , 4 >( 9 , 11 );
 
-TEST_F( serial, tile_4x4)
-{
-  static const size_t dim = 9;
-  typedef Kokkos::LayoutTileLeft<4,4> tile_layout;
-  typedef ReduceTileErrors< Kokkos::Serial, tile_layout > functor_type;
-
-  functor_type::array_type array("",dim,dim);
-  ptrdiff_t errors = 0 ;
-  Kokkos::parallel_reduce(dim, functor_type(array) , errors );
-  EXPECT_EQ( errors, ptrdiff_t(0) );
-}
-
-TEST_F( serial, tile_8x8)
-{
-  static const size_t dim = 9;
-  typedef Kokkos::LayoutTileLeft<8,8> tile_layout;
-  typedef ReduceTileErrors< Kokkos::Serial, tile_layout > functor_type;
-
-  functor_type::array_type array("",dim,dim);
-  ptrdiff_t errors = 0 ;
-  Kokkos::parallel_reduce(dim, functor_type(array) , errors );
-  EXPECT_EQ( errors, ptrdiff_t(0) );
-}
-
-TEST_F( serial, tile_16x16)
-{
-  static const size_t dim = 9;
-  typedef Kokkos::LayoutTileLeft<16,16> tile_layout;
-  typedef ReduceTileErrors< Kokkos::Serial, tile_layout > functor_type;
-
-  functor_type::array_type array("",dim,dim);
-  ptrdiff_t errors = 0 ;
-  Kokkos::parallel_reduce(dim, functor_type(array) , errors );
-  EXPECT_EQ( errors, ptrdiff_t(0) );
+  TestTile::test< Kokkos::Serial , 8 , 8 >( 1 , 1 );
+  TestTile::test< Kokkos::Serial , 8 , 8 >( 4 , 4 );
+  TestTile::test< Kokkos::Serial , 8 , 8 >( 9 , 9 );
+  TestTile::test< Kokkos::Serial , 8 , 8 >( 9 , 11 );
 }
 
 //----------------------------------------------------------------------------
@@ -289,9 +317,41 @@ TEST_F( serial , compiler_macros )
   ASSERT_TRUE( ( TestCompilerMacros::Test< Kokkos::Serial >() ) );
 }
 
+//----------------------------------------------------------------------------
 
+TEST_F( serial , memory_space )
+{
+  TestMemorySpace< Kokkos::Serial >();
+}
 
 //----------------------------------------------------------------------------
+
+TEST_F( serial , task_policy )
+{
+  TestTaskPolicy::test_task_dep< Kokkos::Serial >( 10 );
+  // TestTaskPolicy::test_norm2< Kokkos::Serial >( 1000 );
+  // for ( long i = 0 ; i < 30 ; ++i ) TestTaskPolicy::test_fib< Kokkos::Serial >(i);
+  // for ( long i = 0 ; i < 40 ; ++i ) TestTaskPolicy::test_fib2< Kokkos::Serial >(i);
+  for ( long i = 0 ; i < 20 ; ++i ) TestTaskPolicy::test_fib< Kokkos::Serial >(i);
+  for ( long i = 0 ; i < 25 ; ++i ) TestTaskPolicy::test_fib2< Kokkos::Serial >(i);
+}
+
+#if defined( KOKKOS_HAVE_CXX11 )
+TEST_F( serial , task_team )
+{
+  TestTaskPolicy::test_task_team< Kokkos::Serial >(1000);
+}
+#endif
+
+//----------------------------------------------------------------------------
+
+TEST_F( serial , template_meta_functions )
+{
+  TestTemplateMetaFunctions<int, Kokkos::Serial >();
+}
+
+//----------------------------------------------------------------------------
+
 #if defined( KOKKOS_HAVE_CXX11 ) && defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_SERIAL )
 TEST_F( serial , cxx11 )
 {
@@ -304,5 +364,26 @@ TEST_F( serial , cxx11 )
 }
 #endif
 
+#if defined (KOKKOS_HAVE_CXX11)
+TEST_F( serial , reduction_deduction )
+{
+  TestCXX11::test_reduction_deduction< Kokkos::Serial >();
+}
+
+TEST_F( serial , team_vector )
+{
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(0) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(1) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(2) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(3) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(4) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(5) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(6) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(7) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(8) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(9) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(10) ) );
+}
+#endif
 } // namespace test
 

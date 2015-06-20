@@ -54,8 +54,8 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const ParameterList> MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const ParameterList> MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set< std::string >           ("Vector name",      "undefined", "Name of the vector that will be transfered on the coarse grid (level key)"); // TODO: how to set a validator without default value?
@@ -65,13 +65,13 @@ namespace MueLu {
     return validParamList;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MultiVectorTransferFactory(std::string const & vectorName) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MultiVectorTransferFactory(std::string const & vectorName) {
     SetParameter("Vector name", ParameterEntry(vectorName));
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     const ParameterList & pL = GetParameterList();
     std::string vectorName   = pL.get<std::string>("Vector name");
 
@@ -79,8 +79,8 @@ namespace MueLu {
     Input(coarseLevel, "R");
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & fineLevel, Level &coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
     const ParameterList & pL = GetParameterList();
@@ -105,8 +105,8 @@ namespace MueLu {
 
   } // Build
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ArrayRCP<Scalar> MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::expandCoordinates(ArrayRCP<SC> coordinates, LocalOrdinal blksize) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  ArrayRCP<Scalar> MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::expandCoordinates(ArrayRCP<SC> coordinates, LocalOrdinal blksize) {
     if (blksize == 1)
       return coordinates;
 

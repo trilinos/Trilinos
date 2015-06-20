@@ -79,7 +79,7 @@ namespace Teuchos {
   }
 
  \endverbatim
- * 
+ *
  * The number of strings passed to the constructor must equal the number of
  * options in the enumeration.  If there are duplicate strings
  * (capitalization concidered) then the std::exception <tt>AlreadyExists</tt> is

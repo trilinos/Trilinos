@@ -51,7 +51,7 @@ PHX_EVALUATOR_CTOR_NAMESPACE(user_app,ConstantModel,p) :
 {
   this->addEvaluatedField(constant);
   
-  std::string n = "Constant: " + constant.fieldTag().name();
+  std::string n = "user_app::Constant: " + constant.fieldTag().name();
   this->setName(n);
 }
 
@@ -63,6 +63,7 @@ PHX_POST_REGISTRATION_SETUP(user_app::ConstantModel,worksets,fm)
 
   for (std::size_t i = 0; i < static_cast<std::size_t>(constant.size()); ++i)
     constant[i] = value;
+  TEUCHOS_ASSERT(false);
 }
 
 //**********************************************************************

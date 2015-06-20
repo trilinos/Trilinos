@@ -19,6 +19,8 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Exodiff     applications/exodiff    SS  REQUIRED
   Exomatlab   applications/exomatlab  SS  REQUIRED
   Exotxt      applications/exotxt     SS  REQUIRED
+  Ex1ex2v2    applications/ex1ex2v2   SS  OPTIONAL
+  Ex2ex1v2    applications/ex2ex1v2   SS  OPTIONAL
   Fastq       applications/fastq      SS  OPTIONAL
   Gjoin       applications/gjoin      SS  REQUIRED
   Gen3D       applications/gen3d      SS  REQUIRED

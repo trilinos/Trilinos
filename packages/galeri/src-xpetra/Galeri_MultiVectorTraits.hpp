@@ -99,7 +99,7 @@ namespace Galeri {
       typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> type;
 
       static Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Build(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& map, size_t num) {
-        return rcp(new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map, num));
+        return Teuchos::rcp(new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map, num));
       }
     };
 #endif // HAVE_GALERI_TPETRA

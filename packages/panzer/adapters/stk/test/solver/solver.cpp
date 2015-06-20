@@ -48,10 +48,13 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-#include "Kokkos_DefaultNode.hpp"
+#include "Panzer_NodeType.hpp"
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_STK_Version.hpp"
 #include "Panzer_STK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
@@ -102,6 +105,8 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(solver, NOX_steady_state)
   {
     using Teuchos::RCP;
+
+    PHX::KokkosDeviceSession session;
   
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",1);
@@ -232,9 +237,10 @@ namespace panzer {
       Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(linObjFactory); 
     
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+    std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
 
     RCP<panzer::ModelEvaluator_Epetra> ep_me = 
-      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof, p_names, gd, false));
+      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof, p_names,p_values, gd, false));
 
     // Get solver params from input file
     RCP<Teuchos::ParameterList> piro_params = rcp(new Teuchos::ParameterList("Piro Parameters"));
@@ -380,6 +386,8 @@ namespace panzer {
   {
     using Teuchos::RCP;
 
+    PHX::KokkosDeviceSession session;
+
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",1);
     pl->set("Y Blocks",1);
@@ -511,9 +519,10 @@ namespace panzer {
       Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(linObjFactory); 
     
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+    std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
 
     RCP<panzer::ModelEvaluator_Epetra> ep_me = 
-      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof, p_names, gd, true));
+      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof, p_names,p_values, gd, true));
 
     // Get solver params from input file
     RCP<Teuchos::ParameterList> piro_params = rcp(new Teuchos::ParameterList("Piro Parameters"));

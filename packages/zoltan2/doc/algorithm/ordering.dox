@@ -1,0 +1,18 @@
+/*! \page orderingPage Ordering and Permutations
+
+
+\section ordering_functionality Ordering Functionality
+
+Ordering methods currently available:
+<ul>
+<li> \ref amdPage for fill-reducing ordering.
+<li> random ordering
+<li> \ref rcmPage for bandwidth-reducing ordering.
+<li> sorted_degree ordering
+</ul>
+These are all serial.
+
+
+
+
+*/

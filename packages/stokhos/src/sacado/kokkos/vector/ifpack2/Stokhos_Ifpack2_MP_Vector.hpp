@@ -49,4 +49,36 @@
 #include "Stokhos_Tpetra_MP_Vector.hpp"
 #include "Ifpack2_Krylov_MP_Vector.hpp"
 
+// Specialization of LocalReciprocalThreshold functor in
+// Ifpack2_Details_Chebyshev_def.hpp
+namespace Ifpack2 {
+namespace Details {
+
+template<class XV, class SizeType>
+struct LocalReciprocalThreshold;
+
+template<class T, class L, class D, class M, class SizeType>
+struct LocalReciprocalThreshold<
+  Kokkos::View<T,L,D,M,Kokkos::Impl::ViewMPVectorContiguous>, SizeType > {
+  typedef Kokkos::View<T,L,D,M,Kokkos::Impl::ViewMPVectorContiguous> XV;
+
+  static void
+  compute (const XV& X,
+           const typename XV::non_const_value_type& minVal)
+  {
+    if (!Sacado::is_constant(minVal)) {
+      Kokkos::Impl::raise_error(
+        "LocalReciprocalThreshold not implemented for non-constant minVal");
+    }
+
+    typedef typename XV::flat_array_type Flat_XV;
+    Flat_XV flat_X = X;
+    LocalReciprocalThreshold< Flat_XV, SizeType >::compute( flat_X,
+                                                            minVal.coeff(0) );
+  }
+};
+
+}
+}
+
 #endif // STOKHOS_IFPACK2_MP_VECTOR_HPP

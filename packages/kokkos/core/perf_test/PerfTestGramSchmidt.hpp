@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -125,30 +125,30 @@ void dot_neg( const VectorView & x ,
 template< typename Scalar , class DeviceType >
 struct ModifiedGramSchmidt
 {
-  typedef DeviceType  device_type ;
-  typedef typename device_type::size_type  size_type ;
+  typedef DeviceType  execution_space ;
+  typedef typename execution_space::size_type  size_type ;
 
   typedef Kokkos::View< Scalar** ,
                         Kokkos::LayoutLeft ,
-                        device_type > multivector_type ;
+                        execution_space > multivector_type ;
 
   typedef Kokkos::View< Scalar* ,
                         Kokkos::LayoutLeft ,
-                        device_type > vector_type ;
+                        execution_space > vector_type ;
 
   typedef Kokkos::View< Scalar ,
                         Kokkos::LayoutLeft ,
-                        device_type > value_view ;
+                        execution_space > value_view ;
 
 
   multivector_type Q ;
   multivector_type R ;
 
-  static double factorization( const multivector_type Q ,
-                               const multivector_type R )
+  static double factorization( const multivector_type Q_ ,
+                               const multivector_type R_ )
   {
     const Kokkos::ALL ALL ;
-    const size_type count  = Q.dimension_1();
+    const size_type count  = Q_.dimension_1();
     value_view tmp("tmp");
     value_view one("one");
 
@@ -159,8 +159,8 @@ struct ModifiedGramSchmidt
     for ( size_type j = 0 ; j < count ; ++j ) {
       // Reduction   : tmp = dot( Q(:,j) , Q(:,j) );
       // PostProcess : tmp = sqrt( tmp ); R(j,j) = tmp ; tmp = 1 / tmp ;
-      const vector_type Qj  = Kokkos::subview< vector_type >( Q , ALL , j );
-      const value_view  Rjj = Kokkos::subview< value_view >( R , j , j );
+      const vector_type Qj  = Kokkos::subview( Q_ , ALL , j );
+      const value_view  Rjj = Kokkos::subview( R_ , j , j );
 
       invnorm2( Qj , Rjj , tmp );
 
@@ -168,8 +168,8 @@ struct ModifiedGramSchmidt
       Kokkos::scale( tmp , Qj );
 
       for ( size_t k = j + 1 ; k < count ; ++k ) {
-        const vector_type Qk = Kokkos::subview< vector_type >( Q , ALL , k );
-        const value_view  Rjk = Kokkos::subview< value_view >( R , j , k );
+        const vector_type Qk = Kokkos::subview( Q_ , ALL , k );
+        const value_view  Rjk = Kokkos::subview( R_ , j , k );
 
         // Reduction   : R(j,k) = dot( Q(:,j) , Q(:,k) );
         // PostProcess : tmp = - R(j,k);
@@ -180,7 +180,7 @@ struct ModifiedGramSchmidt
       }
     }
 
-    device_type::fence();
+    execution_space::fence();
 
     return timer.seconds();
   }
@@ -191,11 +191,11 @@ struct ModifiedGramSchmidt
                       const size_t count ,
                       const size_t iter = 1 )
   {
-    multivector_type Q( "Q" , length , count );
-    multivector_type R( "R" , count , count );
+    multivector_type Q_( "Q" , length , count );
+    multivector_type R_( "R" , count , count );
 
     typename multivector_type::HostMirror A =
-      Kokkos::create_mirror( Q );
+      Kokkos::create_mirror( Q_ );
 
     // Create and fill A on the host
 
@@ -209,11 +209,11 @@ struct ModifiedGramSchmidt
 
     for ( size_t i = 0 ; i < iter ; ++i ) {
 
-      Kokkos::deep_copy( Q , A );
+      Kokkos::deep_copy( Q_ , A );
 
       // A = Q * R
 
-      const double dt = factorization( Q , R );
+      const double dt = factorization( Q_ , R_ );
 
       if ( 0 == i ) dt_min = dt ;
       else dt_min = dt < dt_min ? dt : dt_min ;

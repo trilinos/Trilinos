@@ -224,8 +224,11 @@ template <typename Ordinal, typename T>
 ConstReferenceTypeSerializationBuffer<Ordinal,T>::ConstReferenceTypeSerializationBuffer(
   const Serializer<Ordinal,T> &serializer
   ,const Ordinal count, const T*const buffer[]
-  )
-  :serializer_(serializer), count_(count), buffer_(buffer)
+  ):
+  serializer_(serializer),
+  count_(count),
+  buffer_(buffer),
+  bytes_(0)
 {
   const Ordinal bytes = serializer_.getBufferSize(count_);
   charBuffer_.resize(bytes);

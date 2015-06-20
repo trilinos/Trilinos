@@ -45,8 +45,7 @@
 #include "Stokhos_StaticArrayTraits.hpp"
 #include "Stokhos_MemoryTraits.hpp"
 
-#include "Kokkos_Macros.hpp"
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core_fwd.hpp"
 
 #include "Sacado_Traits.hpp"
 #include "Stokhos_KokkosTraits.hpp"
@@ -65,7 +64,8 @@ namespace Stokhos {
 
     typedef ordinal_t ordinal_type;
     typedef value_t value_type;
-    typedef device_t device_type;
+    typedef typename device_t::execution_space execution_space;
+    typedef typename device_t::memory_space memory_space;
     typedef value_type& reference;
     typedef volatile value_type& volatile_reference;
     typedef const value_type& const_reference;
@@ -74,9 +74,8 @@ namespace Stokhos {
     typedef volatile value_type* volatile_pointer;
     typedef const value_type* const_pointer;
     typedef const volatile value_type* const_volatile_pointer;
-    typedef Stokhos::StaticArrayTraits<value_type,device_type> ss;
+    typedef Stokhos::StaticArrayTraits<value_type,execution_space> ss;
 
-    typedef typename device_type::memory_space memory_space;
     typedef typename Stokhos::MemoryTraits<memory_space> MemTraits;
 
     //! Turn StaticFixedStorage into a meta-function class usable with mpl::apply
@@ -87,8 +86,12 @@ namespace Stokhos {
 
     template <int N>
     struct apply_N {
-      typedef StaticFixedStorage<ordinal_type,value_type,N,device_type> type;
+      typedef StaticFixedStorage<ordinal_type,value_type,N,device_t> type;
     };
+
+    //! Constructor
+    KOKKOS_INLINE_FUNCTION
+    StaticFixedStorage() = default;
 
     //! Constructor
     KOKKOS_INLINE_FUNCTION
@@ -97,15 +100,19 @@ namespace Stokhos {
       ss::fill(coeff_, Num, x);
     }
 
+    //! Constructor from array
+    KOKKOS_INLINE_FUNCTION
+    StaticFixedStorage(const ordinal_type& sz, const value_type* x) {
+      ss::copy(x, coeff_, sz);
+    }
+
     //! Constructor for creating a view (not allowed)
     KOKKOS_INLINE_FUNCTION
     StaticFixedStorage(const ordinal_type& sz, pointer v, bool owned) {}
 
     //! Copy constructor
     KOKKOS_INLINE_FUNCTION
-    StaticFixedStorage(const StaticFixedStorage& s) {
-      ss::copy(s.coeff_, coeff_, Num);
-    }
+    StaticFixedStorage(const StaticFixedStorage& s) = default;
 
     //! Copy constructor
     KOKKOS_INLINE_FUNCTION
@@ -115,14 +122,11 @@ namespace Stokhos {
 
     //! Destructor
     KOKKOS_INLINE_FUNCTION
-    ~StaticFixedStorage() {}
+    ~StaticFixedStorage() = default;
 
     //! Assignment operator
     KOKKOS_INLINE_FUNCTION
-    StaticFixedStorage& operator=(const StaticFixedStorage& s) {
-      ss::copy(s.coeff_, coeff_, Num);
-      return *this;
-    }
+    StaticFixedStorage& operator=(const StaticFixedStorage& s) = default;
 
     //! Assignment operator
     KOKKOS_INLINE_FUNCTION
@@ -292,7 +296,7 @@ namespace Stokhos {
 
     typedef ordinal_t ordinal_type;
     typedef value_t value_type;
-    typedef Kokkos::Cuda device_type;
+    typedef Kokkos::Cuda execution_space;
     typedef value_type& reference;
     typedef volatile value_type& volatile_reference;
     typedef const value_type& const_reference;
@@ -301,21 +305,25 @@ namespace Stokhos {
     typedef volatile value_type* volatile_pointer;
     typedef const value_type* const_pointer;
     typedef const volatile value_type* const_volatile_pointer;
-    typedef Stokhos::StaticArrayTraits<value_type,device_type> ss;
+    typedef Stokhos::StaticArrayTraits<value_type,execution_space> ss;
 
-    typedef typename device_type::memory_space memory_space;
+    typedef typename execution_space::memory_space memory_space;
     typedef typename Stokhos::MemoryTraits<memory_space> MemTraits;
 
     //! Turn StaticFixedStorage into a meta-function class usable with mpl::apply
-    template <typename ord_t, typename val_t = value_t , typename dev_t = device_type >
+    template <typename ord_t, typename val_t = value_t , typename dev_t = execution_space >
     struct apply {
       typedef StaticFixedStorage<ord_t,val_t,Num,dev_t> type;
     };
 
     template <int N>
     struct apply_N {
-      typedef StaticFixedStorage<ordinal_type,value_type,N,device_type> type;
+      typedef StaticFixedStorage<ordinal_type,value_type,N,execution_space> type;
     };
+
+    //! Constructor
+    KOKKOS_INLINE_FUNCTION
+    StaticFixedStorage() = default;
 
     //! Constructor
     KOKKOS_INLINE_FUNCTION
@@ -324,15 +332,19 @@ namespace Stokhos {
       ss::fill(coeff_, Num, x);
     }
 
+    //! Constructor from array
+    KOKKOS_INLINE_FUNCTION
+    StaticFixedStorage(const ordinal_type& sz, const value_type* x) {
+      ss::copy(x, coeff_, sz);
+    }
+
     //! Constructor for creating a view (not allowed)
     KOKKOS_INLINE_FUNCTION
     StaticFixedStorage(const ordinal_type& sz, pointer v, bool owned) {}
 
     //! Copy constructor
     KOKKOS_INLINE_FUNCTION
-    StaticFixedStorage(const StaticFixedStorage& s) {
-      ss::copy(s.coeff_, coeff_, Num);
-    }
+    StaticFixedStorage(const StaticFixedStorage& s) = default;
 
     //! Copy constructor
     KOKKOS_INLINE_FUNCTION
@@ -342,14 +354,11 @@ namespace Stokhos {
 
     //! Destructor
     KOKKOS_INLINE_FUNCTION
-    ~StaticFixedStorage() {}
+    ~StaticFixedStorage() = default;
 
     //! Assignment operator
     KOKKOS_INLINE_FUNCTION
-    StaticFixedStorage& operator=(const StaticFixedStorage& s) {
-      ss::copy(s.coeff_, coeff_, Num);
-      return *this;
-    }
+    StaticFixedStorage& operator=(const StaticFixedStorage& s) = default;
 
     //! Assignment operator
     KOKKOS_INLINE_FUNCTION

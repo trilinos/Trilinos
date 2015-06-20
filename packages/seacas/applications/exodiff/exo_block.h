@@ -51,7 +51,7 @@ public:
   Exo_Block(int exo_file_id, size_t block_id,
             const char* type,
             size_t num_elmts,
-            size_t num_nodes_per_elmt);
+            size_t num_nodes_per_elmt_x);
  ~Exo_Block();
   
   std::string Load_Connectivity();
@@ -88,6 +88,7 @@ private:
 
   EXOTYPE exodus_type() const;
   const char* label() const {return "Element Block";}
+  const char* short_label() const {return "block";}
 
   std::string elmt_type;
   int         num_nodes_per_elmt;

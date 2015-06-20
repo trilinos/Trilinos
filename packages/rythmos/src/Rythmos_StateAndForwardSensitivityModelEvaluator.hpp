@@ -289,7 +289,6 @@ void StateAndForwardSensitivityModelEvaluator<Scalar>::initializeStructure(
 {
 
   using Teuchos::tuple; using Teuchos::RCP;
-  typedef Thyra::ModelEvaluatorBase MEB;
 
   TEUCHOS_TEST_FOR_EXCEPT( is_null(sensModel) );
   

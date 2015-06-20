@@ -47,21 +47,27 @@ namespace Sacado {
 
     public:
 
+       typedef T value_type;
+
       //! Default constructor
+      template <typename S>
       KOKKOS_INLINE_FUNCTION
-      StaticStorage(const T & x) : val_(x), sz_(0) {}
+      StaticStorage(const S & x, SACADO_ENABLE_VALUE_CTOR_DECL) :
+        val_(x), sz_(0) {}
 
       //! Constructor with size \c sz
       /*!
        * Initializes derivative array 0 of length \c sz
        */
       KOKKOS_INLINE_FUNCTION
-      StaticStorage(const int sz, const T & x) : val_(x), sz_(sz) {
+      StaticStorage(const int sz, const T & x, const DerivInit zero_out = InitDerivArray) :
+        val_(x), sz_(sz) {
 #if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
         if (sz > Num)
           throw "StaticStorage::StaticStorage() Error:  Supplied derivative dimension exceeds maximum length.";
 #endif
-        ss_array<T>::zero(dx_, sz_);
+        if (zero_out == InitDerivArray)
+          ss_array<T>::zero(dx_, sz_);
       }
 
       //! Copy constructor
@@ -80,11 +86,13 @@ namespace Sacado {
       //! Assignment
       KOKKOS_INLINE_FUNCTION
       StaticStorage& operator=(const StaticStorage& x) {
-        val_ = x.val_;
-        sz_ = x.sz_;
-        //ss_array<T>::copy(x.dx_, dx_, sz_);
-        for (int i=0; i<sz_; i++)
-          dx_[i] = x.dx_[i];
+        if (this != &x) {
+          val_ = x.val_;
+          sz_ = x.sz_;
+          //ss_array<T>::copy(x.dx_, dx_, sz_);
+          for (int i=0; i<sz_; i++)
+            dx_[i] = x.dx_[i];
+        }
         return *this;
       }
 

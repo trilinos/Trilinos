@@ -1,7 +1,7 @@
 #ifndef geometry_transformH
 #define geometry_transformH
 
-#include "../rtcompiler/FunctionRTC.hh"
+#include "../rtcompiler/RTC_FunctionRTC.hh"
 namespace PAMGEN_NEVADA {
 
 class Geometry_Transform{

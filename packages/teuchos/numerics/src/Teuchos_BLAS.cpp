@@ -334,7 +334,7 @@ namespace Teuchos {
 	  ix = (1-n) * incx;
 	}
 	if (incy < 0) {
-	  iy = (1-n) * incy;    
+	  iy = (1-n) * incy;
 	}
 	for (int i = 0; i < n; ++i) {
 	  result += std::conj (x[ix]) * y[iy];
@@ -458,7 +458,7 @@ namespace Teuchos {
     std::complex<double> z;
     ZDOT_F77(&z, &n, x, &incx, y, &incy);
     return z;
-#  else 
+#  else
     // mfh 01 Feb 2013: Your complex BLAS is broken, but the problem
     // doesn't have the easy workaround.  I'll just reimplement the
     // missing routine here.  See www.netlib.org/blas/zdotc.f.

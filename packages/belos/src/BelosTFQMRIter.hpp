@@ -147,7 +147,6 @@ namespace Belos {
     // Convenience typedefs
     //
     typedef MultiVecTraits<ScalarType,MV> MVT;
-    typedef MultiVecTraitsExt<ScalarType,MV> MVText;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
@@ -213,7 +212,7 @@ namespace Belos {
      * \note For any pointer in \c newstate which directly points to the multivectors in 
      * the solver, the data is not copied.
      */
-    void initializeTFQMR(TFQMRIterState<ScalarType,MV> newstate);
+    void initializeTFQMR(const TFQMRIterState<ScalarType,MV> & newstate);
     
     /*! \brief Initialize the solver with the initial vectors from the linear problem
      *  or random data.
@@ -239,6 +238,7 @@ namespace Belos {
       state.Rtilde = Rtilde_;
       state.D = D_;
       state.V = V_;
+      state.solnUpdate = solnUpdate_;
       return state;
     }
     
@@ -259,9 +259,10 @@ namespace Belos {
     Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const;
     
     //! Get the current update to the linear system.
-    /*! \note This method returns a null pointer because the linear problem is updated every iteration.
+    /*! \note This method returns the accumulated update to the solution instead of updating
+              the linear problem, since it may incur an additional preconditioner application each iteration.
      */
-    Teuchos::RCP<MV> getCurrentUpdate() const { return Teuchos::null; }
+    Teuchos::RCP<MV> getCurrentUpdate() const { return solnUpdate_; }
 
     //@}
 
@@ -335,7 +336,7 @@ namespace Belos {
     Teuchos::RCP<MV> Rtilde_;
     Teuchos::RCP<MV> D_;
     Teuchos::RCP<MV> V_;
-
+    Teuchos::RCP<MV> solnUpdate_;
   };
   
   
@@ -406,6 +407,7 @@ namespace Belos {
           R_ = MVT::Clone( *tmp, 1 );
 	  AU_ = MVT::Clone( *tmp, 1 );
 	  D_ = MVT::Clone( *tmp, 1 );
+	  solnUpdate_ = MVT::Clone( *tmp, 1 );
           V_ = MVT::Clone( *tmp, 1 );
         }
 
@@ -418,7 +420,7 @@ namespace Belos {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
   template <class ScalarType, class MV, class OP>
-  void TFQMRIter<ScalarType,MV,OP>::initializeTFQMR(TFQMRIterState<ScalarType,MV> newstate)
+  void TFQMRIter<ScalarType,MV,OP>::initializeTFQMR(const TFQMRIterState<ScalarType,MV> & newstate)
   {
     // Initialize the state storage if it isn't already.
     if (!stateStorageInitialized_)
@@ -438,7 +440,7 @@ namespace Belos {
 
     if (newstate.R != Teuchos::null) {
 
-      TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*newstate.R) != MVText::GetGlobalLength(*R_),
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.R) != MVT::GetGlobalLength(*R_),
                           std::invalid_argument, errstr );
       TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.R) != 1,
                           std::invalid_argument, errstr );
@@ -456,6 +458,7 @@ namespace Belos {
       U_ = MVT::CloneCopy( *R_ );
       Rtilde_ = MVT::CloneCopy( *R_ );
       MVT::MvInit( *D_ );
+      MVT::MvInit( *solnUpdate_ );
       // Multiply the current residual by Op and store in V_
       //       V_ = Op * R_ 
       //
@@ -565,9 +568,10 @@ namespace Belos {
       //
       //--------------------------------------------------------
       // Update the solution.
+      // Don't update the linear problem object, may incur additional preconditioner application.
       //--------------------------------------------------------
       //
-      lp_->updateSolution( D_, true, eta );
+      MVT::MvAddMv( STone, *solnUpdate_, eta, *D_, *solnUpdate_ );
       //
       if (iter_%2) {
 	//

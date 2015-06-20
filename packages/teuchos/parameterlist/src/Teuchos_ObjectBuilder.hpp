@@ -127,27 +127,27 @@ public:
   RCP<ObjectType> create(
     const std::string &objectName = ""
     ) const;
-  
+
   /** \name Overridden from ParameterListAcceptor */
   //@{
 
   /** \brief . */
   void setParameterList(const RCP<ParameterList> & paramList);
-  
+
   /** \brief . */
   RCP<ParameterList> getNonconstParameterList();
-  
+
   /** \brief . */
   RCP<ParameterList> unsetParameterList();
-  
+
   /** \brief. */
   RCP<const ParameterList> getParameterList() const;
 
   /** \brief. */
   RCP<const ParameterList> getValidParameters() const;
- 
+
   //@}
-  
+
 private:
 
   // //////////////////////////////////////
@@ -219,7 +219,7 @@ ObjectBuilder<ObjectType>::~ObjectBuilder()
   if(!is_null(paramList_)) {
     paramList_->validateParameters(*this->getValidParameters());
   }
-#endif    
+#endif
 }
 
 
@@ -287,7 +287,7 @@ ObjectBuilder<ObjectType>::unsetParameterList()
   // Validate that we read the parameters correctly!
   if(!is_null(paramList_))
     paramList_->validateParameters(*this->getValidParameters());
-#endif    
+#endif
   RCP<ParameterList> _paramList = paramList_;
   paramList_ = null;
   return _paramList;
@@ -318,7 +318,7 @@ ObjectBuilder<ObjectType>::getValidParameters() const
     validParamList->set(
       objectType_name_, defaultObject_name_,
       (std::string("Determines the type of " + object_name_ + " object that will be built.\n")
-        + "The parameters for each " + objectType_name_ + " are specified in this sublist" 
+        + "The parameters for each " + objectType_name_ + " are specified in this sublist"
         ).c_str(),
       objectValidator_
       );
@@ -347,8 +347,8 @@ void ObjectBuilder<ObjectType>::setDefaultObject(
   objectValidator_->validateString(defaultObject_name,objectType_name_);
 #endif // TEUCHOS_DEBUG
   defaultObject_name_ = defaultObject_name;
-  // This is necessary to change the default in the valid parameter list 
-  validParamList_ = null; 
+  // This is necessary to change the default in the valid parameter list
+  validParamList_ = null;
 }
 
 template<class ObjectType>
@@ -364,15 +364,15 @@ ObjectBuilder<ObjectType>::create(
     sname = ( objectName.length()
              ? objectName
              : this->getObjectName() );
-  RCP<ObjectType> object = null; 
+  RCP<ObjectType> object = null;
   // Get the index of this object factory (this will validate!)
   const int
     s_idx = objectValidator_->getIntegralValue(sname, objectType_name_);
   if (s_idx != 0) {
     // Create the uninitialized object
-    object = objectArray_[s_idx-1]->create(); 
+    object = objectArray_[s_idx-1]->create();
     TEUCHOS_TEST_FOR_EXCEPTION( is_null(object), std::logic_error,
-        (std::string("Error!  ObjectBuilder attempted to create an object of type ") 
+        (std::string("Error!  ObjectBuilder attempted to create an object of type ")
          + validObjectNames_[s_idx] + " and it came back as a null RCP!").c_str()
         );
     // Allow the user to not set a parameterlist (this requires copying the
@@ -389,7 +389,7 @@ ObjectBuilder<ObjectType>::create(
 #endif // TEUCHOS_DEBUG
       pl = sublist(paramList_,sname);
     }
-    // Now set the parameters for the object 
+    // Now set the parameters for the object
     object->setParameterList(pl);
   }
   return object;

@@ -297,8 +297,6 @@ bool tLSCStablePreconditionerFactory::test_isCompatable(int verbosity,std::ostre
 bool tLSCStablePreconditionerFactory::test_identity(int verbosity,std::ostream & os)
 {
    // make sure the preconditioner is working by testing against the identity matrix
-   typedef RCP<const Thyra::VectorBase<double> > Vector;
-   typedef RCP<const Thyra::VectorSpaceBase<double> > VectorSpace;
    typedef RCP<const Thyra::LinearOpBase<double> > LinearOp;
 
    bool status = false;
@@ -387,8 +385,6 @@ bool tLSCStablePreconditionerFactory::test_identity(int verbosity,std::ostream &
 bool tLSCStablePreconditionerFactory::test_diagonal(int verbosity,std::ostream & os)
 {
    // make sure the preconditioner is working by testing against the identity matrix
-   typedef RCP<const Thyra::VectorBase<double> > Vector;
-   typedef RCP<const Thyra::VectorSpaceBase<double> > VectorSpace;
    typedef RCP<const Thyra::LinearOpBase<double> > LinearOp;
 
    bool status = false;
@@ -515,9 +511,6 @@ bool tLSCStablePreconditionerFactory::test_diagonal(int verbosity,std::ostream &
 
 bool tLSCStablePreconditionerFactory::test_result(int verbosity,std::ostream & os)
 {
-   typedef RCP<const Thyra::VectorBase<double> > Vector;
-   typedef RCP<const Thyra::VectorSpaceBase<double> > VectorSpace;
-
    bool status = false;
    bool allPassed = true;
    double diff;

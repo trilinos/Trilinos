@@ -1,0 +1,41 @@
+<ParameterList name="Inputs">
+  <Parameter name="Descent Type"                                      type="string" value="Steepest Descent"        /> 
+  <Parameter name="Nonlinear CG Type"                                 type="string" value="Hestenes-Stiefel"        />
+  <Parameter name="Secant Type"                                       type="string" value="Limited-Memory BFGS"     />
+  <Parameter name="Linesearch Type"                                   type="string" value="Cubic Interpolation"     />
+  <Parameter name="Linesearch Curvature Condition"                    type="string" value="Strong Wolfe Conditions" />
+  <Parameter name="Trust-Region Subproblem Solver Type"               type="string" value="Cauchy Point"            />
+  <Parameter name="Use Secant Preconditioning"                        type="bool"   value="false"                   />
+  <Parameter name="Use Secant Hessian-Times-A-Vector"                 type="bool"   value="false"                   />
+  <Parameter name="Maximum Secant Storage"                            type="int"    value="10"                      />
+  <Parameter name="Barzilai-Borwein Type"                             type="int"    value="1"                       />
+  <Parameter name="Use Inexact Objective Function"                    type="bool"   value="false"                   />
+  <Parameter name="Use Inexact Gradient"                              type="bool"   value="false"                   />
+  <Parameter name="Use Inexact Hessian-Times-A-Vector"                type="bool"   value="false"                   />
+  <Parameter name="Maximum Number of Function Evaluations"            type="int"    value="20"                      />
+  <Parameter name="Sufficient Decrease Parameter"                     type="double" value="1.e-4"                   />
+  <Parameter name="Curvature Conditions Parameter"                    type="double" value="0.9"                     />
+  <Parameter name="Curvature Conditions Parameter: Generalized Wolfe" type="double" value="0.6"                     />
+  <Parameter name="Bracketing Tolerance"                              type="double" value="1.e-8"                   />
+  <Parameter name="Backtracking Rate"                                 type="double" value="0.5"                     />
+  <Parameter name="Initial Linesearch Parameter"                      type="double" value="1.0"                     />
+  <Parameter name="User Defined Linesearch Parameter"                 type="bool"   value="false"                   />
+  <Parameter name="Krylov Method"                                     type="string" value="Conjugate Gradients"     />
+  <Parameter name="Absolute Krylov Tolerance"                         type="double" value="1.e-4"                   />
+  <Parameter name="Relative Krylov Tolerance"                         type="double" value="1.e-2"                   />
+  <Parameter name="Maximum Number of Krylov Iterations"               type="int"    value="100"                     />
+  <Parameter name="Initial Trust-Region Radius"                       type="double" value="10.0"                    />
+  <Parameter name="Minimum Trust-Region Radius"                       type="double" value="1.e-12"                  />
+  <Parameter name="Maximum Trust-Region Radius"                       type="double" value="5.e3"                    />
+  <Parameter name="Step Acceptance Parameter"                         type="double" value="0.05"                    />
+  <Parameter name="Radius Shrinking Threshold"                        type="double" value="0.05"                    />
+  <Parameter name="Radius Growing Threshold"                          type="double" value="0.9"                     />
+  <Parameter name="Radius Shrinking Rate (Negative rho)"              type="double" value="0.0625"                  />
+  <Parameter name="Radius Shrinking Rate (Positive rho)"              type="double" value="0.25"                    />
+  <Parameter name="Radius Growing Rate"                               type="double" value="2.5"                     />
+  <Parameter name="Trust-Region Safeguard"                            type="double" value="1.e4"                    />
+  <Parameter name="Use Projected Gradient Criticality Measure"        type="bool"   value="false"                   />
+  <Parameter name="Gradient Tolerance"                                type="double" value="1.e-6"                   />
+  <Parameter name="Step Tolerance"                                    type="double" value="1.e-12"                  />
+  <Parameter name="Maximum Number of Iterations"                      type="int"    value="100"                     />
+</ParameterList>

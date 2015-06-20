@@ -53,9 +53,8 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsTplDeclareLibraries)
 
-TRIBITS_TPL_DECLARE_LIBRARIES( GLPK
+TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( GLPK
   REQUIRED_HEADERS glpk.h
   REQUIRED_LIBS_NAMES glpk
   )

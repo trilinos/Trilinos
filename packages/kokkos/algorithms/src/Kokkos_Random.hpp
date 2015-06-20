@@ -1,15 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//                             Kokkos
-//         Manycore Performance-Portable Multidimensional Arrays
-//
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,27 +35,27 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// 
 // ************************************************************************
 //@HEADER
 */
 
-
+#ifndef KOKKOS_RANDOM_HPP
+#define KOKKOS_RANDOM_HPP
 
 #include <Kokkos_Core.hpp>
-#ifdef KOKKOS_HAVE_CUDA
-#include <Kokkos_Cuda.hpp>
-#endif
+#include <Kokkos_Complex.hpp>
 #include <cstdio>
 #include <cstdlib>
 #include <cmath>
 
-#ifndef KOKKOS_RANDOM_HPP
-#define KOKKOS_RANDOM_HPP
-
-// These generators are based on Vigna, Sebastiano (2014). "An experimental exploration of Marsaglia's xorshift generators, scrambled"
-// See: http://arxiv.org/abs/1402.6246
+/// \file Kokkos_Random.hpp
+/// \brief Pseudorandom number generators
+///
+/// These generators are based on Vigna, Sebastiano (2014). "An
+/// experimental exploration of Marsaglia's xorshift generators,
+/// scrambled."  See: http://arxiv.org/abs/1402.6246
 
 namespace Kokkos {
 
@@ -288,49 +286,161 @@ namespace Kokkos {
   template<class Generator>
   struct rand<Generator,unsigned int> {
     KOKKOS_INLINE_FUNCTION
-    static unsigned int max(){return Generator::MAX_URAND;}
+    static unsigned int max () {
+      return Generator::MAX_URAND;
+    }
     KOKKOS_INLINE_FUNCTION
-    static unsigned int draw(Generator& gen)
-                          {return gen.urand();}
+    static unsigned int draw (Generator& gen) {
+      return gen.urand ();
+    }
     KOKKOS_INLINE_FUNCTION
-    static unsigned int draw(Generator& gen, const unsigned int& range)
-                          {return gen.urand(range);}
+    static unsigned int draw(Generator& gen, const unsigned int& range) {
+      return gen.urand (range);
+    }
     KOKKOS_INLINE_FUNCTION
-    static unsigned int draw(Generator& gen, const unsigned int& start, const unsigned int& end)
-                          {return gen.urand(start,end);}
-
+    static unsigned int
+    draw (Generator& gen, const unsigned int& start, const unsigned int& end) {
+      return gen.urand (start, end);
+    }
   };
 
   template<class Generator>
-  struct rand<Generator,int64_t> {
+  struct rand<Generator,long> {
     KOKKOS_INLINE_FUNCTION
-    static int64_t max(){return Generator::MAX_RAND64;}
+    static long max () {
+      // FIXME (mfh 26 Oct 2014) It would be better to select the
+      // return value at compile time, using something like enable_if.
+      return sizeof (long) == 4 ?
+        static_cast<long> (Generator::MAX_RAND) :
+        static_cast<long> (Generator::MAX_RAND64);
+    }
     KOKKOS_INLINE_FUNCTION
-    static int64_t draw(Generator& gen)
-                          {return gen.rand64();}
+    static long draw (Generator& gen) {
+      // FIXME (mfh 26 Oct 2014) It would be better to select the
+      // return value at compile time, using something like enable_if.
+      return sizeof (long) == 4 ?
+        static_cast<long> (gen.rand ()) :
+        static_cast<long> (gen.rand64 ());
+    }
     KOKKOS_INLINE_FUNCTION
-    static int64_t draw(Generator& gen, const int64_t& range)
-                          {return gen.rand64(range);}
+    static long draw (Generator& gen, const long& range) {
+      // FIXME (mfh 26 Oct 2014) It would be better to select the
+      // return value at compile time, using something like enable_if.
+      return sizeof (long) == 4 ?
+        static_cast<long> (gen.rand (static_cast<int> (range))) :
+        static_cast<long> (gen.rand64 (range));
+    }
     KOKKOS_INLINE_FUNCTION
-    static int64_t draw(Generator& gen, const int64_t& start, const int64_t& end)
-                          {return gen.rand64(start,end);}
-
+    static long draw (Generator& gen, const long& start, const long& end) {
+      // FIXME (mfh 26 Oct 2014) It would be better to select the
+      // return value at compile time, using something like enable_if.
+      return sizeof (long) == 4 ?
+        static_cast<long> (gen.rand (static_cast<int> (start),
+                                     static_cast<int> (end))) :
+        static_cast<long> (gen.rand64 (start, end));
+    }
   };
 
   template<class Generator>
-  struct rand<Generator,uint64_t> {
+  struct rand<Generator,unsigned long> {
     KOKKOS_INLINE_FUNCTION
-    static uint64_t max(){return Generator::MAX_URAND64;}
+    static unsigned long max () {
+      // FIXME (mfh 26 Oct 2014) It would be better to select the
+      // return value at compile time, using something like enable_if.
+      return sizeof (unsigned long) == 4 ?
+        static_cast<unsigned long> (Generator::MAX_URAND) :
+        static_cast<unsigned long> (Generator::MAX_URAND64);
+    }
     KOKKOS_INLINE_FUNCTION
-    static uint64_t draw(Generator& gen)
-                          {return gen.urand64();}
+    static unsigned long draw (Generator& gen) {
+      // FIXME (mfh 26 Oct 2014) It would be better to select the
+      // return value at compile time, using something like enable_if.
+      return sizeof (unsigned long) == 4 ?
+        static_cast<unsigned long> (gen.urand ()) :
+        static_cast<unsigned long> (gen.urand64 ());
+    }
     KOKKOS_INLINE_FUNCTION
-    static uint64_t draw(Generator& gen, const uint64_t& range)
-                          {return gen.urand64(range);}
+    static unsigned long draw(Generator& gen, const unsigned long& range) {
+      // FIXME (mfh 26 Oct 2014) It would be better to select the
+      // return value at compile time, using something like enable_if.
+      return sizeof (unsigned long) == 4 ?
+        static_cast<unsigned long> (gen.urand (static_cast<unsigned int> (range))) :
+        static_cast<unsigned long> (gen.urand64 (range));
+    }
     KOKKOS_INLINE_FUNCTION
-    static uint64_t draw(Generator& gen, const uint64_t& start, const uint64_t& end)
-                          {return gen.urand64(start,end);}
+    static unsigned long
+    draw (Generator& gen, const unsigned long& start, const unsigned long& end) {
+      // FIXME (mfh 26 Oct 2014) It would be better to select the
+      // return value at compile time, using something like enable_if.
+      return sizeof (unsigned long) == 4 ?
+        static_cast<unsigned long> (gen.urand (static_cast<unsigned int> (start),
+                                               static_cast<unsigned int> (end))) :
+        static_cast<unsigned long> (gen.urand64 (start, end));
+    }
+  };
 
+  // NOTE (mfh 26 oct 2014) This is a partial specialization for long
+  // long, a C99 / C++11 signed type which is guaranteed to be at
+  // least 64 bits.  Do NOT write a partial specialization for
+  // int64_t!!!  This is just a typedef!  It could be either long or
+  // long long.  We don't know which a priori, and I've seen both.
+  // The types long and long long are guaranteed to differ, so it's
+  // always safe to specialize for both.
+  template<class Generator>
+  struct rand<Generator, long long> {
+    KOKKOS_INLINE_FUNCTION
+    static long long max () {
+      // FIXME (mfh 26 Oct 2014) It's legal for long long to be > 64 bits.
+      return Generator::MAX_RAND64;
+    }
+    KOKKOS_INLINE_FUNCTION
+    static long long draw (Generator& gen) {
+      // FIXME (mfh 26 Oct 2014) It's legal for long long to be > 64 bits.
+      return gen.rand64 ();
+    }
+    KOKKOS_INLINE_FUNCTION
+    static long long draw (Generator& gen, const long long& range) {
+      // FIXME (mfh 26 Oct 2014) It's legal for long long to be > 64 bits.
+      return gen.rand64 (range);
+    }
+    KOKKOS_INLINE_FUNCTION
+    static long long draw (Generator& gen, const long long& start, const long long& end) {
+      // FIXME (mfh 26 Oct 2014) It's legal for long long to be > 64 bits.
+      return gen.rand64 (start, end);
+    }
+  };
+
+  // NOTE (mfh 26 oct 2014) This is a partial specialization for
+  // unsigned long long, a C99 / C++11 unsigned type which is
+  // guaranteed to be at least 64 bits.  Do NOT write a partial
+  // specialization for uint64_t!!!  This is just a typedef!  It could
+  // be either unsigned long or unsigned long long.  We don't know
+  // which a priori, and I've seen both.  The types unsigned long and
+  // unsigned long long are guaranteed to differ, so it's always safe
+  // to specialize for both.
+  template<class Generator>
+  struct rand<Generator,unsigned long long> {
+    KOKKOS_INLINE_FUNCTION
+    static unsigned long long max () {
+      // FIXME (mfh 26 Oct 2014) It's legal for unsigned long long to be > 64 bits.
+      return Generator::MAX_URAND64;
+    }
+    KOKKOS_INLINE_FUNCTION
+    static unsigned long long draw (Generator& gen) {
+      // FIXME (mfh 26 Oct 2014) It's legal for unsigned long long to be > 64 bits.
+      return gen.urand64 ();
+    }
+    KOKKOS_INLINE_FUNCTION
+    static unsigned long long draw (Generator& gen, const unsigned long long& range) {
+      // FIXME (mfh 26 Oct 2014) It's legal for long long to be > 64 bits.
+      return gen.urand64 (range);
+    }
+    KOKKOS_INLINE_FUNCTION
+    static unsigned long long
+    draw (Generator& gen, const unsigned long long& start, const unsigned long long& end) {
+      // FIXME (mfh 26 Oct 2014) It's legal for long long to be > 64 bits.
+      return gen.urand64 (start, end);
+    }
   };
 
   template<class Generator>
@@ -363,6 +473,58 @@ namespace Kokkos {
     static double draw(Generator& gen, const double& start, const double& end)
                           {return gen.drand(start,end);}
 
+  };
+
+  template<class Generator>
+  struct rand<Generator, ::Kokkos::complex<float> > {
+    KOKKOS_INLINE_FUNCTION
+    static ::Kokkos::complex<float> max () {
+      return ::Kokkos::complex<float> (1.0, 1.0);
+    }
+    KOKKOS_INLINE_FUNCTION
+    static ::Kokkos::complex<float> draw (Generator& gen) {
+      const float re = gen.frand ();
+      const float im = gen.frand ();
+      return ::Kokkos::complex<float> (re, im);
+    }
+    KOKKOS_INLINE_FUNCTION
+    static ::Kokkos::complex<float> draw (Generator& gen, const ::Kokkos::complex<float>& range) {
+      const float re = gen.frand (real (range));
+      const float im = gen.frand (imag (range));
+      return ::Kokkos::complex<float> (re, im);
+    }
+    KOKKOS_INLINE_FUNCTION
+    static ::Kokkos::complex<float> draw (Generator& gen, const ::Kokkos::complex<float>& start, const ::Kokkos::complex<float>& end) {
+      const float re = gen.frand (real (start), real (end));
+      const float im = gen.frand (imag (start), imag (end));
+      return ::Kokkos::complex<float> (re, im);
+    }
+  };
+
+  template<class Generator>
+  struct rand<Generator, ::Kokkos::complex<double> > {
+    KOKKOS_INLINE_FUNCTION
+    static ::Kokkos::complex<double> max () {
+      return ::Kokkos::complex<double> (1.0, 1.0);
+    }
+    KOKKOS_INLINE_FUNCTION
+    static ::Kokkos::complex<double> draw (Generator& gen) {
+      const double re = gen.drand ();
+      const double im = gen.drand ();
+      return ::Kokkos::complex<double> (re, im);
+    }
+    KOKKOS_INLINE_FUNCTION
+    static ::Kokkos::complex<double> draw (Generator& gen, const ::Kokkos::complex<double>& range) {
+      const double re = gen.drand (real (range));
+      const double im = gen.drand (imag (range));
+      return ::Kokkos::complex<double> (re, im);
+    }
+    KOKKOS_INLINE_FUNCTION
+    static ::Kokkos::complex<double> draw (Generator& gen, const ::Kokkos::complex<double>& start, const ::Kokkos::complex<double>& end) {
+      const double re = gen.drand (real (start), real (end));
+      const double im = gen.drand (imag (start), imag (end));
+      return ::Kokkos::complex<double> (re, im);
+    }
   };
 
   template<class DeviceType>
@@ -522,7 +684,7 @@ namespace Kokkos {
 
   };
 
-  template<class DeviceType = Kokkos::Impl::DefaultDeviceType>
+  template<class DeviceType = Kokkos::DefaultExecutionSpace>
   class Random_XorShift64_Pool {
   private:
     typedef View<int*,DeviceType> lock_type;
@@ -538,12 +700,25 @@ namespace Kokkos {
     Random_XorShift64_Pool() {
       num_states_ = 0;
     }
-    Random_XorShift64_Pool(unsigned int seed) {
+    Random_XorShift64_Pool(uint64_t seed) {
       num_states_ = 0;
       init(seed,DeviceType::max_hardware_threads());
     }
 
-    void init(unsigned int seed, int num_states) {
+    Random_XorShift64_Pool(const Random_XorShift64_Pool& src):
+      locks_(src.locks_),
+      state_(src.state_),
+      num_states_(src.num_states_)
+    {}
+
+    Random_XorShift64_Pool operator = (const Random_XorShift64_Pool& src) {
+      locks_ = src.locks_;
+      state_ = src.state_;
+      num_states_ = src.num_states_;
+      return *this;
+    }
+
+    void init(uint64_t seed, int num_states) {
       num_states_ = num_states;
 
       locks_ = lock_type("Kokkos::Random_XorShift64::locks",num_states_);
@@ -552,7 +727,8 @@ namespace Kokkos {
       typename state_data_type::HostMirror h_state = create_mirror_view(state_);
       typename lock_type::HostMirror h_lock = create_mirror_view(locks_);
 
-      Random_XorShift64<Kokkos::Serial> gen(seed,0);
+      // Execute on the HostMirror's default execution space.
+      Random_XorShift64<typename state_data_type::HostMirror::execution_space> gen(seed,0);
       for(int i = 0; i < 17; i++)
         gen.rand();
       for(int i = 0; i < num_states_; i++) {
@@ -747,7 +923,7 @@ namespace Kokkos {
   };
 
 
-  template<class DeviceType = Kokkos::Impl::DefaultDeviceType>
+  template<class DeviceType = Kokkos::DefaultExecutionSpace>
   class Random_XorShift1024_Pool {
   private:
     typedef View<int*,DeviceType> int_view_type;
@@ -768,13 +944,28 @@ namespace Kokkos {
     }
 
     inline
-    Random_XorShift1024_Pool(unsigned int seed){
+    Random_XorShift1024_Pool(uint64_t seed){
       num_states_ = 0;
       init(seed,DeviceType::max_hardware_threads());
     }
 
+    Random_XorShift1024_Pool(const Random_XorShift1024_Pool& src):
+      locks_(src.locks_),
+      state_(src.state_),
+      p_(src.p_),
+      num_states_(src.num_states_)
+    {}
+
+    Random_XorShift1024_Pool operator = (const Random_XorShift1024_Pool& src) {
+      locks_ = src.locks_;
+      state_ = src.state_;
+      p_ = src.p_;
+      num_states_ = src.num_states_;
+      return *this;
+    }
+
     inline
-    void init(unsigned int seed, int num_states) {
+    void init(uint64_t seed, int num_states) {
       num_states_ = num_states;
 
       locks_ = int_view_type("Kokkos::Random_XorShift1024::locks",num_states_);
@@ -784,7 +975,9 @@ namespace Kokkos {
       typename state_data_type::HostMirror h_state = create_mirror_view(state_);
       typename int_view_type::HostMirror h_lock = create_mirror_view(locks_);
       typename int_view_type::HostMirror h_p = create_mirror_view(p_);
-      Random_XorShift64<Kokkos::Serial> gen(seed,0);
+
+      // Execute on the HostMirror's default execution space.
+      Random_XorShift64<typename state_data_type::HostMirror::execution_space> gen(seed,0);
       for(int i = 0; i < 17; i++)
         gen.rand();
       for(int i = 0; i < num_states_; i++) {
@@ -981,7 +1174,7 @@ namespace Kokkos {
 
 template<>
 inline
-Random_XorShift64_Pool<Kokkos::Cuda>::Random_XorShift64_Pool(unsigned int seed) {
+Random_XorShift64_Pool<Kokkos::Cuda>::Random_XorShift64_Pool(uint64_t seed) {
   num_states_ = 0;
   init(seed,4*32768);
 }
@@ -1017,7 +1210,7 @@ void Random_XorShift64_Pool<Kokkos::Cuda>::free_state(const Random_XorShift64<Ko
 
 template<>
 inline
-Random_XorShift1024_Pool<Kokkos::Cuda>::Random_XorShift1024_Pool(unsigned int seed) {
+Random_XorShift1024_Pool<Kokkos::Cuda>::Random_XorShift1024_Pool(uint64_t seed) {
   num_states_ = 0;
   init(seed,4*32768);
 }
@@ -1063,7 +1256,7 @@ struct fill_random_functor_begin_end;
 
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_range<ViewType,RandomPool,loops,1>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type range;
@@ -1088,7 +1281,7 @@ struct fill_random_functor_range<ViewType,RandomPool,loops,1>{
 
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_range<ViewType,RandomPool,loops,2>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type range;
@@ -1116,7 +1309,7 @@ struct fill_random_functor_range<ViewType,RandomPool,loops,2>{
 
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_range<ViewType,RandomPool,loops,3>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type range;
@@ -1144,7 +1337,7 @@ struct fill_random_functor_range<ViewType,RandomPool,loops,3>{
 
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_range<ViewType,RandomPool,loops,4>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type range;
@@ -1173,7 +1366,7 @@ struct fill_random_functor_range<ViewType,RandomPool,loops,4>{
 
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_range<ViewType,RandomPool,loops,5>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type range;
@@ -1203,7 +1396,7 @@ struct fill_random_functor_range<ViewType,RandomPool,loops,5>{
 
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_range<ViewType,RandomPool,loops,6>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type range;
@@ -1234,7 +1427,7 @@ struct fill_random_functor_range<ViewType,RandomPool,loops,6>{
 
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_range<ViewType,RandomPool,loops,7>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type range;
@@ -1266,7 +1459,7 @@ struct fill_random_functor_range<ViewType,RandomPool,loops,7>{
 
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_range<ViewType,RandomPool,loops,8>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type range;
@@ -1298,7 +1491,7 @@ struct fill_random_functor_range<ViewType,RandomPool,loops,8>{
 };
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_begin_end<ViewType,RandomPool,loops,1>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type begin,end;
@@ -1323,7 +1516,7 @@ struct fill_random_functor_begin_end<ViewType,RandomPool,loops,1>{
 
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_begin_end<ViewType,RandomPool,loops,2>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type begin,end;
@@ -1351,7 +1544,7 @@ struct fill_random_functor_begin_end<ViewType,RandomPool,loops,2>{
 
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_begin_end<ViewType,RandomPool,loops,3>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type begin,end;
@@ -1379,7 +1572,7 @@ struct fill_random_functor_begin_end<ViewType,RandomPool,loops,3>{
 
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_begin_end<ViewType,RandomPool,loops,4>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type begin,end;
@@ -1408,7 +1601,7 @@ struct fill_random_functor_begin_end<ViewType,RandomPool,loops,4>{
 
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_begin_end<ViewType,RandomPool,loops,5>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type begin,end;
@@ -1438,7 +1631,7 @@ struct fill_random_functor_begin_end<ViewType,RandomPool,loops,5>{
 
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_begin_end<ViewType,RandomPool,loops,6>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type begin,end;
@@ -1470,7 +1663,7 @@ struct fill_random_functor_begin_end<ViewType,RandomPool,loops,6>{
 
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_begin_end<ViewType,RandomPool,loops,7>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type begin,end;
@@ -1502,7 +1695,7 @@ struct fill_random_functor_begin_end<ViewType,RandomPool,loops,7>{
 
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_begin_end<ViewType,RandomPool,loops,8>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type begin,end;

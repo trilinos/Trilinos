@@ -67,7 +67,8 @@ NOX::Multiphysics::Group::Group(
   resetIsValid();
 }
 
-NOX::Multiphysics::Group::Group( const Group & source, NOX::CopyType type )
+NOX::Multiphysics::Group::Group( const Group & source, NOX::CopyType type ):
+  normRHS(0.0)
 {
   switch (type)
   {

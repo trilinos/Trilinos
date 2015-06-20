@@ -592,7 +592,6 @@ public:
   typedef typename T::value_type value_type;
 
 protected:
-  FadUnaryPlus() {}
 
   const T& expr_;
 
@@ -613,7 +612,6 @@ public:
   typedef typename T::value_type value_type;
 
 protected:
-  FadUnaryMin() {}
 
   const T& expr_;
 

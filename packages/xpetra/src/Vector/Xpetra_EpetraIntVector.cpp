@@ -49,42 +49,58 @@
 
 namespace Xpetra {
 
-  void EpetraIntVector::replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVector::replaceGlobalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::replaceGlobalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
-  void EpetraIntVector::sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVector::sumIntoGlobalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoGlobalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
-  void EpetraIntVector::replaceLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVector::replaceLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::replaceLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::replaceLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
-  void EpetraIntVector::sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVector::sumIntoLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
-  int EpetraIntVector::dot(const Vector<int,int,int> &a) const { XPETRA_MONITOR("EpetraIntVector::dot"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+  template<class EpetraGlobalOrdinal>
+  int EpetraIntVectorT<EpetraGlobalOrdinal>::dot(const Vector<int,int,GlobalOrdinal,Node> &a) const { XPETRA_MONITOR("EpetraIntVectorT::dot"); TEUCHOS_TEST_FOR_EXCEPTION(-1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
 
-  Teuchos::ScalarTraits<int>::magnitudeType EpetraIntVector::norm1() const { XPETRA_MONITOR("EpetraIntVector::norm1"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+  template<class EpetraGlobalOrdinal>
+  Teuchos::ScalarTraits<int>::magnitudeType EpetraIntVectorT<EpetraGlobalOrdinal>::norm1() const { XPETRA_MONITOR("EpetraIntVectorT::norm1"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
 
-  Teuchos::ScalarTraits<int>::magnitudeType EpetraIntVector::norm2() const { XPETRA_MONITOR("EpetraIntVector::norm2"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+  template<class EpetraGlobalOrdinal>
+  Teuchos::ScalarTraits<int>::magnitudeType EpetraIntVectorT<EpetraGlobalOrdinal>::norm2() const { XPETRA_MONITOR("EpetraIntVectorT::norm2"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
 
-  Teuchos::ScalarTraits<int>::magnitudeType EpetraIntVector::normInf() const { XPETRA_MONITOR("EpetraIntVector::normInf"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+  template<class EpetraGlobalOrdinal>
+  Teuchos::ScalarTraits<int>::magnitudeType EpetraIntVectorT<EpetraGlobalOrdinal>::normInf() const { XPETRA_MONITOR("EpetraIntVectorT::normInf"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
 
-  Teuchos::ScalarTraits<int>::magnitudeType EpetraIntVector::normWeighted(const Vector<int,int,int> &weights) const { XPETRA_MONITOR("EpetraIntVector::normWeighted"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+  template<class EpetraGlobalOrdinal>
+  Teuchos::ScalarTraits<int>::magnitudeType EpetraIntVectorT<EpetraGlobalOrdinal>::normWeighted(const Vector<int,int,GlobalOrdinal,Node> &weights) const { XPETRA_MONITOR("EpetraIntVectorT::normWeighted"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
 
-  int EpetraIntVector::meanValue() const { XPETRA_MONITOR("EpetraIntVector::meanValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+  template<class EpetraGlobalOrdinal>
+  int EpetraIntVectorT<EpetraGlobalOrdinal>::meanValue() const { XPETRA_MONITOR("EpetraIntVectorT::meanValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
 
-  int EpetraIntVector::maxValue() const { XPETRA_MONITOR("EpetraIntVector::maxValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+  template<class EpetraGlobalOrdinal>
+  int EpetraIntVectorT<EpetraGlobalOrdinal>::maxValue() const { XPETRA_MONITOR("EpetraIntVectorT::maxValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
 
-  void EpetraIntVector::randomize(bool bUseXpetraImplementation) { XPETRA_MONITOR("EpetraIntVector::randomize"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVector::randomize(): Functionnality not available in Epetra"); }
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::randomize(bool bUseXpetraImplementation) { XPETRA_MONITOR("EpetraIntVectorT::randomize"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVectorT::randomize(): Functionnality not available in Epetra"); }
 
-  void EpetraIntVector::setSeed(unsigned int seed) { XPETRA_MONITOR("EpetraIntVector::setSeed"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVector::setSeed(): Functionnality not available in Epetra"); }
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::setSeed(unsigned int seed) { XPETRA_MONITOR("EpetraIntVectorT::setSeed"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVectorT::setSeed(): Functionnality not available in Epetra"); }
 
-  Teuchos::RCP< const Vector< int,int,int > > EpetraIntVector::getVector(size_t j) const {
+  template<class EpetraGlobalOrdinal>
+  Teuchos::RCP< const Vector< int,int,EpetraGlobalOrdinal, typename EpetraIntVectorT<EpetraGlobalOrdinal>::Node > > EpetraIntVectorT<EpetraGlobalOrdinal>::getVector(size_t j) const {
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
   }
 
-  Teuchos::RCP< Vector< int,int,int > > EpetraIntVector::getVectorNonConst(size_t j) {
+  template<class EpetraGlobalOrdinal>
+  Teuchos::RCP< Vector< int,int,EpetraGlobalOrdinal, typename EpetraIntVectorT<EpetraGlobalOrdinal>::Node > > EpetraIntVectorT<EpetraGlobalOrdinal>::getVectorNonConst(size_t j) {
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
   }
 
-  Teuchos::ArrayRCP<const int> EpetraIntVector::getData(size_t j) const {
-    XPETRA_MONITOR("EpetraIntVector::getData");
+  template<class EpetraGlobalOrdinal>
+  Teuchos::ArrayRCP<const int> EpetraIntVectorT<EpetraGlobalOrdinal>::getData(size_t j) const {
+    XPETRA_MONITOR("EpetraIntVectorT::getData");
 
     int * data = vec_->Values();
     int localLength = vec_->MyLength();
@@ -92,8 +108,9 @@ namespace Xpetra {
     return ArrayRCP<int>(data, 0, localLength, false); // not ownership
   }
 
-  Teuchos::ArrayRCP<int> EpetraIntVector::getDataNonConst(size_t j) {
-    XPETRA_MONITOR("EpetraIntVector::getDataNonConst");
+  template<class EpetraGlobalOrdinal>
+  Teuchos::ArrayRCP<int> EpetraIntVectorT<EpetraGlobalOrdinal>::getDataNonConst(size_t j) {
+    XPETRA_MONITOR("EpetraIntVectorT::getDataNonConst");
 
     int * data = vec_->Values();
     int localLength = vec_->MyLength();
@@ -101,84 +118,104 @@ namespace Xpetra {
     return ArrayRCP<int>(data, 0, localLength, false); // not ownership
   }
 
-  void EpetraIntVector::dot(const MultiVector<int,int,int> &A, const Teuchos::ArrayView<int> &dots) const {
-    XPETRA_MONITOR("EpetraIntVector::dot");
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::dot(const MultiVector<int,int,GlobalOrdinal,Node> &A, const Teuchos::ArrayView<int> &dots) const {
+    XPETRA_MONITOR("EpetraIntVectorT::dot");
 
-    //XPETRA_DYNAMIC_CAST(const EpetraMultiVector, A, eA, "This Xpetra::EpetraMultiVector method only accept Xpetra::EpetraMultiVector as input arguments.");
+    //XPETRA_DYNAMIC_CAST(const EpetraMultiVectorT, A, eA, "This Xpetra::EpetraMultiVectorT method only accept Xpetra::EpetraMultiVectorT as input arguments.");
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
   }
 
-  void EpetraIntVector::abs(const MultiVector<int,int,int> &A) {
-    XPETRA_MONITOR("EpetraIntVector::abs");
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::abs(const MultiVector<int,int,GlobalOrdinal,Node> &A) {
+    XPETRA_MONITOR("EpetraIntVectorT::abs");
 
-    //XPETRA_DYNAMIC_CAST(const EpetraMultiVector, A, eA, "This Xpetra::EpetraMultiVector method only accept Xpetra::EpetraMultiVector as input arguments.");
+    //XPETRA_DYNAMIC_CAST(const EpetraMultiVectorT, A, eA, "This Xpetra::EpetraMultiVectorT method only accept Xpetra::EpetraMultiVectorT as input arguments.");
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
   }
 
-  void EpetraIntVector::reciprocal(const MultiVector<int,int,int> &A) {
-    XPETRA_MONITOR("EpetraIntVector::reciprocal");
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::reciprocal(const MultiVector<int,int,GlobalOrdinal,Node> &A) {
+    XPETRA_MONITOR("EpetraIntVectorT::reciprocal");
 
-    //XPETRA_DYNAMIC_CAST(const EpetraMultiVector, A, eA, "This Xpetra::EpetraMultiVector method only accept Xpetra::EpetraMultiVector as input arguments.");
+    //XPETRA_DYNAMIC_CAST(const EpetraMultiVectorT, A, eA, "This Xpetra::EpetraMultiVectorT method only accept Xpetra::EpetraMultiVectorT as input arguments.");
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
   }
 
-  void EpetraIntVector::scale(const int &alpha) {
-    XPETRA_MONITOR("EpetraIntVector::scale");
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::scale(const int &alpha) {
+    XPETRA_MONITOR("EpetraIntVectorT::scale");
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
   }
 
-  void EpetraIntVector::scale (Teuchos::ArrayView< const int > alpha) {
-    XPETRA_MONITOR("EpetraIntVector::scale");
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::scale (Teuchos::ArrayView< const int > alpha) {
+    XPETRA_MONITOR("EpetraIntVectorT::scale");
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
   }
 
-  void EpetraIntVector::update(const int &alpha, const MultiVector<int,int,int> &A, const int &beta) {
-    XPETRA_MONITOR("EpetraIntVector::update");
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::update(const int &alpha, const MultiVector<int,int,GlobalOrdinal,Node> &A, const int &beta) {
+    XPETRA_MONITOR("EpetraIntVectorT::update");
 
-    // XPETRA_DYNAMIC_CAST(const EpetraMultiVector, A, eA, "This Xpetra::EpetraMultiVector method only accept Xpetra::EpetraMultiVector as input arguments.");
+    // XPETRA_DYNAMIC_CAST(const EpetraMultiVectorT, A, eA, "This Xpetra::EpetraMultiVectorT method only accept Xpetra::EpetraMultiVectorT as input arguments.");
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
   }
 
-  void EpetraIntVector::update(const int &alpha, const MultiVector<int,int,int> &A, const int &beta, const MultiVector<int,int,int> &B, const int &gamma) {
-    XPETRA_MONITOR("EpetraIntVector::update");
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::update(const int &alpha, const MultiVector<int,int,GlobalOrdinal,Node> &A, const int &beta, const MultiVector<int,int,GlobalOrdinal,Node> &B, const int &gamma) {
+    XPETRA_MONITOR("EpetraIntVectorT::update");
 
-    //XPETRA_DYNAMIC_CAST(const EpetraMultiVector, A, eA, "This Xpetra::EpetraMultiVector method only accept Xpetra::EpetraMultiVector as input arguments.");
-    //XPETRA_DYNAMIC_CAST(const EpetraMultiVector, B, eB, "This Xpetra::EpetraMultiVector method only accept Xpetra::EpetraMultiVector as input arguments.");
+    //XPETRA_DYNAMIC_CAST(const EpetraMultiVectorT, A, eA, "This Xpetra::EpetraMultiVectorT method only accept Xpetra::EpetraMultiVectorT as input arguments.");
+    //XPETRA_DYNAMIC_CAST(const EpetraMultiVectorT, B, eB, "This Xpetra::EpetraMultiVectorT method only accept Xpetra::EpetraMultiVectorT as input arguments.");
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
   }
 
-  void EpetraIntVector::norm1(const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const { XPETRA_MONITOR("EpetraIntVector::norm1"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::norm1(const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const { XPETRA_MONITOR("EpetraIntVectorT::norm1"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
-  void EpetraIntVector::norm2(const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const { XPETRA_MONITOR("EpetraIntVector::norm2"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::norm2(const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const { XPETRA_MONITOR("EpetraIntVectorT::norm2"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
-  void EpetraIntVector::normInf(const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const { XPETRA_MONITOR("EpetraIntVector::normInf"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::normInf(const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const { XPETRA_MONITOR("EpetraIntVectorT::normInf"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
-  void EpetraIntVector::normWeighted(const MultiVector<int,int,int> &weights, const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const { XPETRA_MONITOR("EpetraIntVector::normWeighted"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::normWeighted(const MultiVector<int,int,GlobalOrdinal,Node> &weights, const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const { XPETRA_MONITOR("EpetraIntVectorT::normWeighted"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
-  void EpetraIntVector::meanValue(const Teuchos::ArrayView<int> &means) const { XPETRA_MONITOR("EpetraIntVector::meanValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::meanValue(const Teuchos::ArrayView<int> &means) const { XPETRA_MONITOR("EpetraIntVectorT::meanValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
-  void EpetraIntVector::maxValue(const Teuchos::ArrayView<int> &maxs) const { XPETRA_MONITOR("EpetraIntVector::maxValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::maxValue(const Teuchos::ArrayView<int> &maxs) const { XPETRA_MONITOR("EpetraIntVectorT::maxValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
-  void EpetraIntVector::multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const int &alpha, const MultiVector<int,int,int> &A, const MultiVector<int,int,int> &B, const int &beta) { XPETRA_MONITOR("EpetraIntVector::multiply"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Not available in Epetra"); }
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const int &alpha, const MultiVector<int,int,GlobalOrdinal,Node> &A, const MultiVector<int,int,GlobalOrdinal,Node> &B, const int &beta) { XPETRA_MONITOR("EpetraIntVectorT::multiply"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Not available in Epetra"); }
 
-  void EpetraIntVector::elementWiseMultiply(int scalarAB, const Vector<int,int,int> &A, const MultiVector<int,int,int> &B, int scalarThis) {
-    XPETRA_MONITOR("EpetraIntVector::elementWiseMultiply");
-
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::elementWiseMultiply(int scalarAB, const Vector<int,int,GlobalOrdinal,Node> &A, const MultiVector<int,int,GlobalOrdinal,Node> &B, int scalarThis) {
+    XPETRA_MONITOR("EpetraIntVectorT::elementWiseMultiply");
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra_EpetraIntVector: elementWiseMultiply not implemented because Epetra_IntVector does not support this operation");
   }
 
-  void EpetraIntVector::replaceGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraIntVector::replaceGlobalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::replaceGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::replaceGlobalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
-  void EpetraIntVector::sumIntoGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraIntVector::sumIntoGlobalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::sumIntoGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoGlobalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
-  void EpetraIntVector::replaceLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraIntVector::replaceLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::replaceLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::replaceLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
-  void EpetraIntVector::sumIntoLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraIntVector::sumIntoLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::sumIntoLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
-  size_t EpetraIntVector::getNumVectors() const { XPETRA_MONITOR("EpetraIntVector::getNumVectors"); return 1; }
+  template<class EpetraGlobalOrdinal>
+  size_t EpetraIntVectorT<EpetraGlobalOrdinal>::getNumVectors() const { XPETRA_MONITOR("EpetraIntVectorT::getNumVectors"); return 1; }
 
-  std::string EpetraIntVector::description() const {
-    XPETRA_MONITOR("EpetraIntVector::description");
+  template<class EpetraGlobalOrdinal>
+  std::string EpetraIntVectorT<EpetraGlobalOrdinal>::description() const {
+    XPETRA_MONITOR("EpetraIntVectorT::description");
 
     // This implementation come from Epetra_Vector_def.hpp (without modification)
     std::ostringstream oss;
@@ -188,11 +225,9 @@ namespace Xpetra {
     return oss.str();
   }
 
-  void EpetraIntVector::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
-    XPETRA_MONITOR("EpetraIntVector::describe");
-
-    //   typedef KokkosClassic::MultiVector<double> KMV;
-    //   typedef KokkosClassic::DefaultArithmetic<KMV> MVT;
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
+    XPETRA_MONITOR("EpetraIntVectorT::describe");
 
     // This implementation come from Tpetra_Vector_def.hpp (without modification) // JG: true?
     using std::endl;
@@ -208,63 +243,68 @@ namespace Xpetra {
       vec_->Print(out);
   }
 
-  void EpetraIntVector::doImport(const DistObject<int, int, int> &source,
-                                 const Import<int, int> &importer, CombineMode CM) {
-    XPETRA_MONITOR("EpetraIntVector::doImport");
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::doImport(const DistObject<int, int, GlobalOrdinal> &source,
+                                 const Import<int, GlobalOrdinal> &importer, CombineMode CM) {
+    XPETRA_MONITOR("EpetraIntVectorT::doImport");
 
-    XPETRA_DYNAMIC_CAST(const EpetraIntVector, source, tSource, "Xpetra::EpetraIntVector::doImport only accept Xpetra::EpetraIntVector as input arguments.");
-    XPETRA_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Xpetra::EpetraIntVector::doImport only accept Xpetra::EpetraImport as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraIntVectorT<GlobalOrdinal>, source, tSource, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraIntVectorT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal>, importer, tImporter, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraImportT as input arguments.");
 
     const Epetra_IntVector & v = *tSource.getEpetra_IntVector();
     int err = vec_->Import(v, *tImporter.getEpetra_Import(), toEpetra(CM));
     TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
 
-  void EpetraIntVector::doExport(const DistObject<int, int, int> &dest,
-                                 const Import<int, int>& importer, CombineMode CM) {
-    XPETRA_MONITOR("EpetraIntVector::doExport");
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::doExport(const DistObject<int, LocalOrdinal, GlobalOrdinal> &dest,
+                                 const Import<int, GlobalOrdinal>& importer, CombineMode CM) {
+    XPETRA_MONITOR("EpetraIntVectorT::doExport");
 
-    XPETRA_DYNAMIC_CAST(const EpetraIntVector, dest, tDest, "Xpetra::EpetraIntVector::doImport only accept Xpetra::EpetraIntVector as input arguments.");
-    XPETRA_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Xpetra::EpetraIntVector::doImport only accept Xpetra::EpetraImport as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraIntVectorT<GlobalOrdinal>, dest, tDest, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraIntVectorT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal>, importer, tImporter, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraImportT as input arguments.");
 
     const Epetra_IntVector & v = *tDest.getEpetra_IntVector();
     int err = vec_->Import(v, *tImporter.getEpetra_Import(), toEpetra(CM));
     TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
 
-  void EpetraIntVector::doImport(const DistObject<int, int, int> &source,
-                                 const Export<int, int>& exporter, CombineMode CM) {
-    XPETRA_MONITOR("EpetraIntVector::doImport");
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::doImport(const DistObject<int, LocalOrdinal, GlobalOrdinal> &source,
+                                 const Export<int, GlobalOrdinal>& exporter, CombineMode CM) {
+    XPETRA_MONITOR("EpetraIntVectorT::doImport");
 
-    XPETRA_DYNAMIC_CAST(const EpetraIntVector, source, tSource, "Xpetra::EpetraIntVector::doImport only accept Xpetra::EpetraIntVector as input arguments.");
-    XPETRA_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Xpetra::EpetraIntVector::doImport only accept Xpetra::EpetraImport as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraIntVectorT<GlobalOrdinal>, source, tSource, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraIntVectorT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal>, exporter, tExporter, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraImportT as input arguments.");
 
     const Epetra_IntVector & v = *tSource.getEpetra_IntVector();
     int err = vec_->Import(v, *tExporter.getEpetra_Export(), toEpetra(CM));
     TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
 
-  void EpetraIntVector::doExport(const DistObject<int, int, int> &dest,
-                                 const Export<int, int>& exporter, CombineMode CM) {
-    XPETRA_MONITOR("EpetraIntVector::doExport");
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::doExport(const DistObject<int, LocalOrdinal, GlobalOrdinal> &dest,
+                                 const Export<int, GlobalOrdinal>& exporter, CombineMode CM) {
+    XPETRA_MONITOR("EpetraIntVectorT::doExport");
 
-    XPETRA_DYNAMIC_CAST(const EpetraIntVector, dest, tDest, "Xpetra::EpetraIntVector::doImport only accept Xpetra::EpetraIntVector as input arguments.");
-    XPETRA_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Xpetra::EpetraIntVector::doImport only accept Xpetra::EpetraImport as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraIntVectorT<GlobalOrdinal>, dest, tDest, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraIntVectorT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal>, exporter, tExporter, "Xpetra::EpetraIntVectorT::doImport only accept Xpetra::EpetraImportT as input arguments.");
 
     const Epetra_IntVector & v = *tDest.getEpetra_IntVector();
     int err = vec_->Export(v, *tExporter.getEpetra_Export(), toEpetra(CM));
     TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
 
-  void EpetraIntVector::
-  assign (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs)
+  template<class EpetraGlobalOrdinal>
+  void EpetraIntVectorT<EpetraGlobalOrdinal>::
+  assign (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal>& rhs)
   {
-    typedef EpetraIntVector this_type;
+    typedef EpetraIntVectorT<GlobalOrdinal> this_type;
     const this_type* rhsPtr = dynamic_cast<const this_type*> (&rhs);
     TEUCHOS_TEST_FOR_EXCEPTION(
       rhsPtr == NULL, std::invalid_argument, "Xpetra::MultiVector::operator=: "
       "The left-hand side (LHS) of the assignment has a different type than "
-      "the right-hand side (RHS).  The LHS has type Xpetra::EpetraIntVector "
+      "the right-hand side (RHS).  The LHS has type Xpetra::EpetraIntVectorT "
       "(which means it wraps an Epetra_IntVector), but the RHS has some "
       "other type.  This probably means that the RHS wraps either an "
       "Tpetra::MultiVector, or an Epetra_MultiVector.  Xpetra::MultiVector "
@@ -276,12 +316,12 @@ namespace Xpetra {
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       rhsImpl.is_null (), std::logic_error, "Xpetra::MultiVector::operator= "
-      "(in Xpetra::EpetraIntVector::assign): *this (the right-hand side of "
+      "(in Xpetra::EpetraIntVectorT::assign): *this (the right-hand side of "
       "the assignment) has a null RCP<Epetra_IntVector> inside.  Please "
       "report this bug to the Xpetra developers.");
     TEUCHOS_TEST_FOR_EXCEPTION(
       lhsImpl.is_null (), std::logic_error, "Xpetra::MultiVector::operator= "
-      "(in Xpetra::EpetraIntVector::assign): The left-hand side of the "
+      "(in Xpetra::EpetraIntVectorT::assign): The left-hand side of the "
       "assignment has a null RCP<Epetra_IntVector> inside.  Please report "
       "this bug to the Xpetra developers.");
 
@@ -289,5 +329,12 @@ namespace Xpetra {
     *lhsImpl = *rhsImpl;
   }
 
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
+template class EpetraIntVectorT<int>;
+#endif
+
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+template class EpetraIntVectorT<long long>;
+#endif
 
 } // namespace Xpetra

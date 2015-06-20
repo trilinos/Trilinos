@@ -139,4 +139,14 @@
       }\
   }
 
+#ifdef _MSC_VER
+#if _MSC_VER >= 1300
+#define __func__zoltan2__  __FUNCTION__
+#else
+#define __func__zoltan2__  "unknown zoltan2 function"
+#endif
+#else
+#define __func__zoltan2__  __func__
+#endif
+
 #endif

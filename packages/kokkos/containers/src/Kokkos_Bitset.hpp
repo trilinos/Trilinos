@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -44,12 +44,8 @@
 #ifndef KOKKOS_BITSET_HPP
 #define KOKKOS_BITSET_HPP
 
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core.hpp>
 #include <Kokkos_Functional.hpp>
-#include <Kokkos_View.hpp>
-#include <Kokkos_Atomic.hpp>
-#include <Kokkos_HostSpace.hpp>
-#include <Kokkos_Pair.hpp>
 
 #include <impl/Kokkos_Bitset_impl.hpp>
 
@@ -57,10 +53,10 @@
 
 namespace Kokkos {
 
-template <typename Device = Impl::DefaultDeviceType>
+template <typename Device = Kokkos::DefaultExecutionSpace >
 class Bitset;
 
-template <typename Device = Impl::DefaultDeviceType>
+template <typename Device = Kokkos::DefaultExecutionSpace >
 class ConstBitset;
 
 template <typename DstDevice, typename SrcDevice>
@@ -78,7 +74,7 @@ template <typename Device>
 class Bitset
 {
 public:
-  typedef Device device_type;
+  typedef Device execution_space;
   typedef unsigned size_type;
 
   enum { BIT_SCAN_REVERSE = 1u };
@@ -150,7 +146,7 @@ public:
 
     if (m_last_block_mask) {
       //clear the unused bits in the last block
-      typedef Kokkos::Impl::DeepCopy< typename device_type::memory_space, Kokkos::HostSpace > raw_deep_copy;
+      typedef Kokkos::Impl::DeepCopy< typename execution_space::memory_space, Kokkos::HostSpace > raw_deep_copy;
       raw_deep_copy( m_blocks.ptr_on_device() + (m_blocks.size() -1u), &m_last_block_mask, sizeof(unsigned));
     }
   }
@@ -295,7 +291,7 @@ private:
 
   unsigned m_size;
   unsigned m_last_block_mask;
-  View< unsigned *, device_type, MemoryTraits<RandomAccess> > m_blocks;
+  View< unsigned *, execution_space, MemoryTraits<RandomAccess> > m_blocks;
 
 private:
   template <typename DDevice>
@@ -320,7 +316,7 @@ template <typename Device>
 class ConstBitset
 {
 public:
-  typedef Device device_type;
+  typedef Device execution_space;
   typedef unsigned size_type;
 
 private:
@@ -386,7 +382,7 @@ public:
 private:
 
   unsigned m_size;
-  View< const unsigned *, device_type, MemoryTraits<RandomAccess> > m_blocks;
+  View< const unsigned *, execution_space, MemoryTraits<RandomAccess> > m_blocks;
 
 private:
   template <typename DDevice>

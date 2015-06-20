@@ -43,9 +43,7 @@
 #include "TestMeanMultiply.hpp"
 
 // Devices
-#include "KokkosCore_config.h"
-#include "Kokkos_Threads.hpp"
-#include "Kokkos_OpenMP.hpp"
+#include "Kokkos_Core.hpp"
 
 #ifdef KOKKOS_HAVE_PTHREAD
 using Kokkos::Threads;

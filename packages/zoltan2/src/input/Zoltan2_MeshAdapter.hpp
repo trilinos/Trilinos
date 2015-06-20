@@ -52,19 +52,43 @@
 #define _ZOLTAN2_MESHADAPTER_HPP_
 
 #include <Zoltan2_Adapter.hpp>
+#include "Tpetra_DefaultPlatform.hpp"
+#include "TpetraExt_MatrixMatrix.hpp"
 
 namespace Zoltan2 {
-  
-  /*!  \brief Enumerate entity types for meshes:  Regions, Faces, Edges, or 
+
+  /*!  \brief Enumerate entity types for meshes:  Regions, Faces, Edges, or
    *                                              Vertices
    */
-  
+
 enum MeshEntityType {
   MESH_REGION,
   MESH_FACE,
   MESH_EDGE,
   MESH_VERTEX
 };
+
+  /*!  \brief Enumerate entity topology types for meshes: 
+   *          points,lines,polygons,triangles,quadrilaterals,
+   *          polyhedrons, tetrahedrons, hexhedrons, prisms, or pyramids
+   */
+
+enum EntityTopologyType {
+  POINT,         // a 0D entity (e.g. a vertex)
+  LINE_SEGMENT,  // a 1D entity (e.g. an edge)
+  POLYGON,       // a general 2D entity
+  TRIANGLE,      // a specific 2D entity bounded by 3 edge entities
+  QUADRILATERAL, // a specific 2D entity bounded by 4 edge entities
+  POLYHEDRON,    // a general 3D entity
+  TETRAHEDRON,   // a specific 3D entity bounded by 4 triangle entities
+  HEXAHEDRON,    // a specific 3D entity bounded by 6 quadrilateral
+                 // entities
+  PRISM,         // a specific 3D entity bounded by a combination of 3
+                 //quadrilateral entities and 2 triangle entities
+  PYRAMID        // a specific 3D entity bounded by a combination of 1
+                 // quadrilateral entity and 4 triangle entities
+};
+
 /*!  \brief MeshAdapter defines the interface for mesh input.
 
     Adapter objects provide access for Zoltan2 to the user's data.
@@ -75,11 +99,11 @@ enum MeshEntityType {
     \li \c scalar_t entity and adjacency weights
     \li \c lno_t    local indices and local counts
     \li \c gno_t    global indices and global counts
-    \li \c gid_t    application global Ids
+    \li \c zgid_t    application global Ids
     \li \c node_t is a sub class of KokkosClassic::StandardNodeMemoryModel
 
-    See IdentifierTraits to understand why the user's global ID type (\c gid_t)
-    may differ from that used by Zoltan2 (\c gno_t).
+    See IdentifierTraits to understand why the user's global ID type
+    (\c zgid_t) may differ from that used by Zoltan2 (\c gno_t).
 
     The Kokkos node type can be safely ignored.
 
@@ -101,61 +125,62 @@ enum MeshEntityType {
 
 */
 
-template <typename User, typename UserCoord=User>
-  class MeshAdapter : public BaseAdapter<User> {
-private:
-  enum MeshEntityType primaryEntityType; // Entity (region, face, edge, or 
-                                         // vertex) to be partitioned, ordered,
-                                         // colored, matched, etc.
-  enum MeshEntityType adjacencyEntityType; // Entity (face, edge, or vertex) 
-                                           // describing adjacencies;
-                                           // typically not primaryEntityType.
-  enum MeshEntityType secondAdjacencyEntityType; // Entity (face, edge, or 
-                                                 // vertex) describing second 
-                                                 // adjacencies;
-                                                 // typically not
-                                                 // primaryEntityType.
-
+template <typename User>
+class MeshAdapter : public BaseAdapter<User> {
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  typedef typename InputTraits<User>::scalar_t    scalar_t;
-  typedef typename InputTraits<User>::lno_t    lno_t;
-  typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::gid_t    gid_t;
-  typedef typename InputTraits<User>::part_t   part_t;
-  typedef typename InputTraits<User>::node_t   node_t;
-  typedef User user_t;
-  typedef UserCoord userCoord_t;
+  typedef typename InputTraits<User>::scalar_t              scalar_t;
+  typedef typename InputTraits<User>::lno_t                 lno_t;
+  typedef typename InputTraits<User>::gno_t                 gno_t;
+  typedef typename InputTraits<User>::zgid_t                zgid_t;
+  typedef typename InputTraits<User>::part_t                part_t;
+  typedef typename InputTraits<User>::node_t                node_t;
+  typedef User                                              user_t;
+  typedef User                                              userCoord_t;
+  typedef int nonzero_t;  // adjacency matrix doesn't need scalar_t
+  typedef Tpetra::CrsMatrix<nonzero_t,lno_t,gno_t,node_t>   sparse_matrix_type;
+  typedef Tpetra::Map<lno_t, gno_t, node_t>                 map_type;
 #endif
-  
+
   enum BaseAdapterType adapterType() const {return MeshAdapterType;}
-  
+
   /*! \brief Destructor
    */
   virtual ~MeshAdapter() {};
-  
+
   // Default MeshEntityType is MESH_REGION with MESH_FACE-based adjacencies and
   // second adjacencies and coordinates
   MeshAdapter() : primaryEntityType(MESH_REGION),
                   adjacencyEntityType(MESH_FACE),
-		  secondAdjacencyEntityType(MESH_FACE) {};
-  
+                  secondAdjacencyEntityType(MESH_FACE) {};
+
   ////////////////////////////////////////////////////////////////////////////
   // Methods to be defined in derived classes.
-  
+
+  /*! \brief Returns the global number of mesh entities of MeshEntityType
+   */
+  virtual size_t getGlobalNumOf(MeshEntityType etype) const = 0;
+
   /*! \brief Returns the number of mesh entities on this process.
    */
   virtual size_t getLocalNumOf(MeshEntityType etype) const = 0;
-  
-  
+
+
   /*! \brief Provide a pointer to this process' identifiers.
       \param Ids will on return point to the list of the global Ids for this
        process.
   */
   virtual void getIDsViewOf(MeshEntityType etype,
-                            gid_t const *&Ids) const = 0;
+                            zgid_t const *&Ids) const = 0;
 
+
+  /*! \brief Provide a pointer to the entity topology types
+      \param Types will on return point to the list of entity topology types
+      for this process.
+  */
+  virtual void getTopologyViewOf(MeshEntityType etype, 
+				     enum EntityTopologyType const *&Types) const = 0;
 
   /*! \brief Return the number of weights per entity.
    *  \return the count of weights, zero or more per entity.
@@ -163,12 +188,12 @@ public:
    *   are equally weighted.
    */
   virtual int getNumWeightsPerOf(MeshEntityType etype) const { return 0; }
-  
+
   /*! \brief Provide a pointer to one of the number of this process'
                 optional entity weights.
 
       \param weights on return will contain a list of the weights for the
-               number specified.  
+               number specified.
 
       \param stride on return will indicate the stride of the weights list.
 
@@ -194,8 +219,8 @@ public:
    *  Some algorithms can use geometric entity coordinate
    *    information if it is present.
    */
-  virtual int getDimensionOf() const { return 0; }
-  
+  virtual int getDimension() const { return 0; }
+
   /*! \brief Provide a pointer to one dimension of entity coordinates.
       \param coords  points to a list of coordinate values for the dimension.
       \param stride  describes the layout of the coordinate values in
@@ -207,7 +232,7 @@ public:
          being provided in the coords list.
   */
   virtual void getCoordinatesViewOf(MeshEntityType etype,
-    const scalar_t *&coords, int &stride, int coordDim) const 
+    const scalar_t *&coords, int &stride, int coordDim) const
   {
     coords = NULL;
     stride = 0;
@@ -217,7 +242,9 @@ public:
 
   /*! \brief Returns whether a first adjacency combination is available.
    */
-  virtual bool availAdjs(MeshEntityType source, MeshEntityType target);
+  virtual bool availAdjs(MeshEntityType source, MeshEntityType target) const {
+    return false;
+  }
 
 
   /*! \brief Returns the number of first adjacencies on this process.
@@ -236,12 +263,8 @@ public:
       \param adjacencyIds on return will point to the global first adjacency
          Ids for each entity.
   */
-//KDD Since the source objects are assumed to be gotten from getIDsViewOf(),
-//KDD is the source MeshEntityType understood here?
-//VJL Do we have to "defend" against multiple calls to that function?
-//KDD What about the target?
   virtual void getAdjsView(MeshEntityType source, MeshEntityType target,
-     const lno_t *&offsets, const gid_t *& adjacencyIds) const 
+     const lno_t *&offsets, const zgid_t *& adjacencyIds) const
   {
     offsets = NULL;
     adjacencyIds = NULL;
@@ -251,19 +274,197 @@ public:
 
   /*! \brief Returns whether a second adjacency combination is available.
    */
-  virtual bool avail2ndAdjs(MeshEntityType sourcetarget, 
-			    MeshEntityType through);
+  virtual bool avail2ndAdjs(MeshEntityType sourcetarget,
+                            MeshEntityType through) const {
+    /*if (availAdjs(sourcetarget, through)) {
+      return true;
+      }*/
+    return false;
+  }
 
+  virtual size_t get2ndAdjsFromAdjs(MeshEntityType sourcetarget,
+                                    MeshEntityType through,
+                                    const lno_t *&offsets,
+                                    const zgid_t *&adjacencyIds) const
+  {
+    //typedef Tpetra::global_size_t GST;
+    //const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+
+    /* Find the adjacency for a nodal based decomposition */
+    size_t nadj = 0;
+    if (availAdjs(sourcetarget, through)) {
+      using Tpetra::DefaultPlatform;
+      using Teuchos::Array;
+      using Teuchos::as;
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+
+      // Get the default communicator and Kokkos Node instance
+      // TODO:  Default communicator is not correct here; need to get
+      // TODO:  communicator from the problem
+      RCP<const Comm<int> > comm =
+        DefaultPlatform::getDefaultPlatform ().getComm ();
+
+      // Get node-element connectivity
+
+      offsets=NULL;
+      adjacencyIds=NULL;
+      getAdjsView(sourcetarget, through, offsets, adjacencyIds);
+
+      zgid_t const *Ids=NULL;
+      getIDsViewOf(sourcetarget, Ids);
+
+      zgid_t const *throughIds=NULL;
+      getIDsViewOf(through, throughIds);
+
+      size_t LocalNumIDs = getLocalNumOf(sourcetarget);
+
+      /***********************************************************************/
+      /************************* BUILD MAPS FOR ADJS *************************/
+      /***********************************************************************/
+
+      Array<gno_t> sourcetargetGIDs;
+      RCP<const map_type> sourcetargetMapG;
+      RCP<const map_type> throughMapG;
+
+      // count owned nodes
+      size_t LocalNumOfThrough = getLocalNumOf(through);
+
+      // Build a list of the global sourcetarget ids...
+      sourcetargetGIDs.resize (LocalNumIDs);
+      gno_t min[2];
+      min[0] = as<gno_t> (Ids[0]);
+      for (size_t i = 0; i < LocalNumIDs; ++i) {
+        sourcetargetGIDs[i] = as<gno_t> (Ids[i]);
+
+	if (sourcetargetGIDs[i] < min[0]) {
+	  min[0] = sourcetargetGIDs[i];
+	}
+      }
+
+      // min(throughIds[i])
+      min[1] = as<gno_t> (throughIds[0]);
+      for (size_t i = 0; i < LocalNumOfThrough; ++i) {
+	gno_t tmp = as<gno_t> (throughIds[i]);
+
+	if (tmp < min[1]) {
+	  min[1] = tmp;
+	}
+      }
+
+      gno_t gmin[2];
+      Teuchos::reduceAll<int, gno_t>(*comm, Teuchos::REDUCE_MIN, 2, min, gmin);
+
+      //Generate Map for sourcetarget.
+      sourcetargetMapG = rcp(new map_type(getGlobalNumOf(sourcetarget),
+					  sourcetargetGIDs(), gmin[0], comm));
+
+      //Generate Map for through.
+// TODO
+// TODO Could check for max through id as well, and if all through ids are
+// TODO in gmin to gmax, then default constructors works below.
+// TODO Otherwise, may need a constructor that is not one-to-one containing
+// TODO all through entities on processor, followed by call to createOneToOne
+// TODO
+
+      throughMapG = rcp (new map_type(getGlobalNumOf(through), gmin[1], comm));
+
+      /***********************************************************************/
+      /************************* BUILD GRAPH FOR ADJS ************************/
+      /***********************************************************************/
+
+      RCP<sparse_matrix_type> adjsMatrix;
+
+      // Construct Tpetra::CrsGraph objects.
+      adjsMatrix = rcp (new sparse_matrix_type (sourcetargetMapG, 0));
+
+      nonzero_t justOne = 1;
+      ArrayView<nonzero_t> justOneAV = Teuchos::arrayView (&justOne, 1);
+
+      for (size_t localElement=0; localElement<LocalNumIDs; ++localElement){
+
+        //globalRow for Tpetra Graph
+        gno_t globalRowT = as<gno_t> (Ids[localElement]);
+
+// KDD can we insert all adjacencies at once instead of one at a time
+// (since they are contiguous in adjacencyIds)?
+// KDD maybe not until we get rid of zgid_t, as we need the conversion to gno_t.
+        for (lno_t j=offsets[localElement]; j<offsets[localElement+1]; ++j){
+          gno_t globalCol = as<gno_t> (adjacencyIds[j]);
+          //create ArrayView globalCol object for Tpetra
+          ArrayView<gno_t> globalColAV = Teuchos::arrayView (&globalCol,1);
+
+          //Update Tpetra adjs Graph
+          adjsMatrix->insertGlobalValues(globalRowT,globalColAV,justOneAV);
+        }// *** through loop ***
+      }// *** source loop ***
+
+      //Fill-complete adjs Graph
+      adjsMatrix->fillComplete (throughMapG, adjsMatrix->getRowMap());
+
+      // Form 2ndAdjs
+      RCP<sparse_matrix_type> secondAdjs =
+        rcp (new sparse_matrix_type(adjsMatrix->getRowMap(),0));
+      Tpetra::MatrixMatrix::Multiply(*adjsMatrix,false,*adjsMatrix,
+                                     true,*secondAdjs);
+      Array<gno_t> Indices;
+      Array<nonzero_t> Values;
+
+      /* Allocate memory necessary for the adjacency */
+      lno_t *start = new lno_t [LocalNumIDs+1];
+      std::vector<gno_t> adj;
+
+      for (size_t localElement=0; localElement<LocalNumIDs; ++localElement){
+        start[localElement] = nadj;
+        const gno_t globalRow = Ids[localElement];
+        size_t NumEntries = secondAdjs->getNumEntriesInGlobalRow (globalRow);
+        Indices.resize (NumEntries);
+        Values.resize (NumEntries);
+        secondAdjs->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
+
+        for (size_t j = 0; j < NumEntries; ++j) {
+          if(globalRow != Indices[j]) {
+            adj.push_back(Indices[j]);
+            nadj++;;
+          }
+        }
+      }
+
+      Ids = NULL;
+      start[LocalNumIDs] = nadj;
+
+      zgid_t *adj_ = new zgid_t [nadj];
+
+      for (size_t i=0; i < nadj; i++) {
+        adj_[i] = adj[i];
+      }
+
+      offsets = start;
+      adjacencyIds = adj_;
+    }
+
+    return nadj;
+  }
 
   /*! \brief Returns the number of second adjacencies on this process.
-   *
-   *  Some algorithms can partition a graph of mesh entities
    *
    *  Parameters will specify algorithm options:
    *   balance_entity_type==MeshEntityType, adjacency_through==MeshEntityType
    */
   virtual size_t getLocalNum2ndAdjs(MeshEntityType sourcetarget,
-                                    MeshEntityType through) const { return 0; }
+                                    MeshEntityType through) const {
+    //if (!availAdjs(sourcetarget, through))
+      return 0;
+      /*else {
+      lno_t const *offsets;
+      zgid_t const *adjacencyIds;
+      size_t nadj = get2ndAdjsFromAdjs(sourcetarget, through, offsets,
+                                       adjacencyIds);
+      delete [] offsets;
+      delete [] adjacencyIds;
+      return nadj;
+      }*/
+  }
 
   /*! \brief Sets pointers to this process' mesh second adjacencies.
       \param sourcetarget
@@ -275,19 +476,20 @@ public:
       \param adjacencyIds on return will point to the global second adjacency
          Ids for each entity.
    */
-// TODO:  Later may allow user to not implement second adjacencies and, if we want them,
-// TODO:  we compute A^T A, where A is matrix of first adjacencies.
-//KDD Since the source objects are assumed to be gotten from getIDsViewOf(),
-//KDD is the sourcetarget MeshEntityType understood here?
-//VJL Do we have to "defend" against multiple calls to that function?
-//KDD What about the through MeshEntityType?
+  // allow user to not implement second adjacencies and,
+  // if we want them, we compute A^T A, where A is matrix of first adjacencies.
   virtual void get2ndAdjsView(MeshEntityType sourcetarget,
-     MeshEntityType through, const lno_t *&offsets,
-     const gid_t *& adjacencyIds) const
+                              MeshEntityType through,
+                              const lno_t *&offsets,
+                              const zgid_t *&adjacencyIds) const
   {
-    offsets = NULL;
-    adjacencyIds = NULL;
-    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+    //if (!availAdjs(sourcetarget, through)) {
+      offsets = NULL;
+      adjacencyIds = NULL;
+      Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+	/*} else {
+      get2ndAdjsFromAdjs(sourcetarget, through, offsets, adjacencyIds);
+      }*/
   }
 
 
@@ -305,22 +507,21 @@ public:
       \param idx ranges from zero to one less than
                    getNumWeightsPer2ndAdj().
    */
-//KDD Since the source objects are assumed to be gotten from getIDsViewOf(),
-//KDD is the sourcetarget MeshEntityType understood here?
-//VJL Do we have to "defend" against multiple calls to that function?
-//KDD What about the through MeshEntityType?
   virtual void get2ndAdjWeightsView(MeshEntityType sourcetarget,
-     MeshEntityType through, const scalar_t *&weights, int &stride,
-     int idx) const
+                                    MeshEntityType through,
+                                    const scalar_t *&weights,
+                                    int &stride,
+                                    int idx) const
   {
     weights = NULL;
     stride = 0;
     Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
   }
 
+// TODO:  If MeshAdapter computes second adjs, what (if anything) should be
+// TODO;  used for weights?
 //KDD What if we wanted to provide weights with respect to first adjacencies?
 //KDD Should we add functions for that?
-//VJL Yes.
 
   ////////////////////////////////////////////////////////////////////////////
   // Implementations of base-class methods
@@ -336,7 +537,6 @@ public:
    *  That is, a primaryEntityType that contains an adjacencyEntityType are
    *  adjacent.
    *  KDD:  Is Adjacency a poorly chosen name here?  Is it overloaded?
-   *  VJL:  Maybe
    */
   inline enum MeshEntityType getAdjacencyEntityType() const {
     return this->adjacencyEntityType;
@@ -350,96 +550,126 @@ public:
   inline enum MeshEntityType getSecondAdjacencyEntityType() const {
     return this->secondAdjacencyEntityType;
   }
-  
+
   /*! \brief Sets the primary, adjacency, and second adjacency entity types.
    *  Called by algorithm based on parameter values in parameter list from
    *  application.  Also sets primaryEntityType, adjacencyEntityType, and
    *  secondAdjacencyEntityType to something reasonable:  primaryEntityType not
    *  adjacencyEntityType or secondAdjacencyEntityType.
    *  KDD:  Is Adjacency a poorly chosen name here?  Is it overloaded?
-   *  VJL:  Maybe
    */
   void setEntityTypes(std::string ptypestr, std::string atypestr,
-		      std::string satypestr) {
+                      std::string satypestr) {
 
     if (ptypestr != atypestr && ptypestr != satypestr) {
       if (ptypestr == "region")
-	this->primaryEntityType = MESH_REGION;
+        this->primaryEntityType = MESH_REGION;
       else if (ptypestr == "face")
-	this->primaryEntityType = MESH_FACE;
+        this->primaryEntityType = MESH_FACE;
       else if (ptypestr == "edge")
-	this->primaryEntityType = MESH_EDGE;
+        this->primaryEntityType = MESH_EDGE;
       else if (ptypestr == "vertex")
-	this->primaryEntityType = MESH_VERTEX;
+        this->primaryEntityType = MESH_VERTEX;
       else {
-	std::ostringstream emsg;
-	emsg << __FILE__ << "," << __LINE__
-	     << " error:  Invalid MeshEntityType " << ptypestr << std::endl;
-	emsg << "Valid values: region  face  edge  vertex" << std::endl;
-	throw std::runtime_error(emsg.str());
+        std::ostringstream emsg;
+        emsg << __FILE__ << "," << __LINE__
+             << " error:  Invalid MeshEntityType " << ptypestr << std::endl;
+        emsg << "Valid values: region  face  edge  vertex" << std::endl;
+        throw std::runtime_error(emsg.str());
       }
-      
+
       if (atypestr == "region")
-	this->adjacencyEntityType = MESH_REGION;
+        this->adjacencyEntityType = MESH_REGION;
       else if (atypestr == "face")
-	this->adjacencyEntityType = MESH_FACE;
+        this->adjacencyEntityType = MESH_FACE;
       else if (atypestr == "edge")
-	this->adjacencyEntityType = MESH_EDGE;
+        this->adjacencyEntityType = MESH_EDGE;
       else if (atypestr == "vertex")
-	this->adjacencyEntityType = MESH_VERTEX;
+        this->adjacencyEntityType = MESH_VERTEX;
       else {
-	std::ostringstream emsg;
-	emsg << __FILE__ << "," << __LINE__
-	     << " error:  Invalid MeshEntityType " << atypestr << std::endl;
-	emsg << "Valid values: region  face  edge  vertex" << std::endl;
-	throw std::runtime_error(emsg.str());
+        std::ostringstream emsg;
+        emsg << __FILE__ << "," << __LINE__
+             << " error:  Invalid MeshEntityType " << atypestr << std::endl;
+        emsg << "Valid values: region  face  edge  vertex" << std::endl;
+        throw std::runtime_error(emsg.str());
       }
-      
+
       if (satypestr == "region")
-	this->secondAdjacencyEntityType = MESH_REGION;
+        this->secondAdjacencyEntityType = MESH_REGION;
       else if (satypestr == "face")
-	this->secondAdjacencyEntityType = MESH_FACE;
+        this->secondAdjacencyEntityType = MESH_FACE;
       else if (satypestr == "edge")
-	this->secondAdjacencyEntityType = MESH_EDGE;
+        this->secondAdjacencyEntityType = MESH_EDGE;
       else if (satypestr == "vertex")
-	this->secondAdjacencyEntityType = MESH_VERTEX;
+        this->secondAdjacencyEntityType = MESH_VERTEX;
       else {
-	std::ostringstream emsg;
-	emsg << __FILE__ << "," << __LINE__
-	     << " error:  Invalid MeshEntityType " << satypestr << std::endl;
-	emsg << "Valid values: region  face  edge  vertex" << std::endl;
-	throw std::runtime_error(emsg.str());
+        std::ostringstream emsg;
+        emsg << __FILE__ << "," << __LINE__
+             << " error:  Invalid MeshEntityType " << satypestr << std::endl;
+        emsg << "Valid values: region  face  edge  vertex" << std::endl;
+        throw std::runtime_error(emsg.str());
       }
     }
     else {
       std::ostringstream emsg;
       emsg << __FILE__ << "," << __LINE__
-	   << " error:  PrimaryEntityType " << ptypestr
-	   << " matches AdjacencyEntityType " << atypestr
-	   << " or SecondAdjacencyEntityType " << satypestr << std::endl;
+           << " error:  PrimaryEntityType " << ptypestr
+           << " matches AdjacencyEntityType " << atypestr
+           << " or SecondAdjacencyEntityType " << satypestr << std::endl;
       throw std::runtime_error(emsg.str());
     }
   }
-  
+
+  /*! \brief Optional method allowing the idx-th weight of entity type etype
+   *  to be set as the number of neighbors (the degree) of the entity
+   *  Default is false; user can change in his MeshAdapter implementation.
+   */
+  virtual bool useDegreeAsWeightOf(MeshEntityType etype, int idx) const
+  {
+    return false;
+  }
+
+  ///////////////////////////////////////////
   // Functions from the BaseAdapter interface
   size_t getLocalNumIDs() const {
     return getLocalNumOf(getPrimaryEntityType());
   }
-  
-  void getIDsView(const gid_t *&Ids) const {
+
+  void getIDsView(const zgid_t *&Ids) const {
     getIDsViewOf(getPrimaryEntityType(), Ids);
   }
-  
+
   int getNumWeightsPerID() const {
     return getNumWeightsPerOf(getPrimaryEntityType());
   }
-  
+
   void getWeightsView(const scalar_t *&wgt, int &stride, int idx = 0) const {
     getWeightsViewOf(getPrimaryEntityType(), wgt, stride, idx);
   }
-  
+
+  void getCoordinatesView(const scalar_t *&coords, int &stride,
+                          int coordDim) const
+  {
+    getCoordinatesViewOf(getPrimaryEntityType(), coords, stride, coordDim);
+  }
+
+  bool useDegreeAsWeight(int idx) const
+  {
+    return useDegreeAsWeightOf(getPrimaryEntityType(), idx);
+  }
+
+private:
+  enum MeshEntityType primaryEntityType; // Entity type
+                                         // to be partitioned, ordered,
+                                         // colored, matched, etc.
+  enum MeshEntityType adjacencyEntityType; // Entity type defining first-order
+                                           // adjacencies; adjacencies are of
+                                           // this type.
+  enum MeshEntityType secondAdjacencyEntityType; // Bridge entity type
+                                                 // defining second-order
+                                                 // adjacencies.
 };
-  
+
 }  //namespace Zoltan2
 
 #endif

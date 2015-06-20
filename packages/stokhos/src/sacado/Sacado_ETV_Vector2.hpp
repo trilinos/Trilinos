@@ -57,6 +57,9 @@ namespace Sacado {
   //! Namespace for expression templated vector classes
   namespace ETV {
 
+    // Forward declaration
+    template <typename T, typename S> class Vector2;
+
     //! Wrapper for a generic expression template
     /*!
      * This template class serves as a wrapper for all expression
@@ -267,6 +270,8 @@ namespace Sacado {
       typedef typename Vector2Impl<T,Storage>::scalar_type scalar_type;
       typedef typename Vector2Impl<T,Storage>::storage_type storage_type;
       typedef typename Vector2Impl<T,Storage>::const_reference const_reference;
+
+      typedef Vector2<T,Storage> base_expr_type;
 
       //! Number of arguments
       static const int num_args = 1;
@@ -497,6 +502,16 @@ namespace Sacado {
     }; // class Vector2
 
   } // namespace ETV
+
+  template <typename T, typename S>
+  struct IsExpr< ETV::Vector2<T,S> > {
+    static const bool value = true;
+  };
+
+  template <typename T, typename S>
+  struct BaseExprType< ETV::Vector2<T,S> > {
+    typedef ETV::Vector2<T,S> type;
+  };
 
 } // namespace Sacado
 

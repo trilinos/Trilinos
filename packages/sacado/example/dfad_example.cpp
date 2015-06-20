@@ -55,7 +55,7 @@ ScalarT func(const ScalarT& a, const ScalarT& b, const ScalarT& c) {
 // The analytic derivative of func(a,b,c) with respect to a and b
 void func_deriv(double a, double b, double c, double& drda, double& drdb)
 {
-  drda = -(c*std::log(b+1.)/std::pow(std::sin(a),2))*std::cos(a);
+  drda = -(c*std::log(b+1.)/std::pow(std::sin(a),2.))*std::cos(a);
   drdb = c / ((b+1.)*std::sin(a));
 }
 

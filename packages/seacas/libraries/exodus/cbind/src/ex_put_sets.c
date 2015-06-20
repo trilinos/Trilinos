@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2012 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -100,7 +100,7 @@ int ex_put_sets (int   exoid,
       return (EX_FATAL);
     }
 
-    set_id_ndx = ex_id_lkup(exoid, sets[i].type, sets[i].id);
+    ex_id_lkup(exoid, sets[i].type, sets[i].id);
     if (exerrval != EX_LOOKUPFAIL) {  /* found the side set id, so set is already defined... */
       sets_to_define[i] = 0;
       continue;

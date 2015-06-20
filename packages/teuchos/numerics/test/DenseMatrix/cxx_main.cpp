@@ -57,7 +57,7 @@ typedef Teuchos::SerialDenseVector<int, std::complex<Real> > DVector;
 typedef Teuchos::SerialDenseMatrix<int, std::complex<Real> > DMatrix;
 //typedef Teuchos::SerialDenseVector<OTYPE, STYPE> DVector;
 
-int main(int argc, char* argv[]) 
+int main(int argc, char* argv[])
 {
 
   int i, j;
@@ -107,15 +107,15 @@ int main(int argc, char* argv[])
   Con2Test1ExpRes.shape(2, 3);
   Con2Test1ExpRes(0, 0) = 0;  Con2Test1ExpRes(0, 1) = 2; Con2Test1ExpRes(0, 2) = 4;
   Con2Test1ExpRes(1, 0) = 1;  Con2Test1ExpRes(1, 1) = 3; Con2Test1ExpRes(1, 2) = 5;
-  
+
   DMatrix Con2Test1(Teuchos::Copy, a, 2, 2, 3);
   numberFailedTests += PrintTestResults("constructor 2 -- construct matrix from array subrange", Con2Test1, Con2Test1ExpRes, verbose);
-  
-  
+
+
   // constructor 3 (copy constructor)
 
   DMatrix Con3TestCopy( Con2Test1ExpRes );
-  if(verbose) std::cout <<"constructor 3 -- copy constructor "; 
+  if(verbose) std::cout <<"constructor 3 -- copy constructor ";
   if ( Con3TestCopy != Con2Test1ExpRes ) {
 	if (verbose) std::cout << "unsuccessful."<<std::endl;
 	numberFailedTests++;
@@ -124,20 +124,20 @@ int main(int argc, char* argv[])
   }
 
   DMatrix Con3TestCopyTrans( Con2Test1ExpRes, Teuchos::TRANS );
-  if(verbose) std::cout <<"constructor 3 -- copy constructor (transposed) "; 
+  if(verbose) std::cout <<"constructor 3 -- copy constructor (transposed) ";
   if ( Con3TestCopyTrans(2, 0) != Con2Test1ExpRes(0, 2) ) {
 	if (verbose) std::cout << "unsuccessful."<<std::endl;
 	numberFailedTests++;
   } else {
 	if (verbose) std::cout << "successful."<<std::endl;
-  }  
+  }
 
   // constructor 4 (submatrix)
 
   DMatrix Con4TestOrig(Teuchos::Copy, a, 3, 3, 3);
   DMatrix Con4TestSubmatrix;
   Con4TestSubmatrix.shape(2, 2);
-  Con4TestSubmatrix(0, 0) = 4; Con4TestSubmatrix(0, 1) = 7; 
+  Con4TestSubmatrix(0, 0) = 4; Con4TestSubmatrix(0, 1) = 7;
   Con4TestSubmatrix(1, 0) = 5; Con4TestSubmatrix(1, 1) = 8;
   DMatrix Con4TestCopy1(Teuchos::Copy, Con4TestOrig, 2, 2, 1, 1);
   numberFailedTests += PrintTestResults("constructor 4 -- submatrix copy", Con4TestCopy1, Con4TestSubmatrix, verbose);
@@ -166,10 +166,10 @@ int main(int argc, char* argv[])
 
   // multiply() -- dimensions tests
 
-  DMatrix DimTest0x0A, DimTest0x0B, DimTest2x0, DimTest1x2, DimTest2x1, DimTest2x2A, DimTest2x2B, 
-    DimTest3x3, DimTest0x2, DimTest0x0Result, DimTest1x1Result, DimTest2x0Result, DimTest1x2Result, DimTest2x1Result, DimTest2x2Result, 
+  DMatrix DimTest0x0A, DimTest0x0B, DimTest2x0, DimTest1x2, DimTest2x1, DimTest2x2A, DimTest2x2B,
+    DimTest3x3, DimTest0x2, DimTest0x0Result, DimTest1x1Result, DimTest2x0Result, DimTest1x2Result, DimTest2x1Result, DimTest2x2Result,
     DimTest2x3Result, DimTest0x2Result, DimTest3x3Result;
-  
+
   DimTest0x2.shape(0, 2);
   DimTest2x0.shape(2, 0);
   DimTest1x2.shape(1, 2);
@@ -216,8 +216,8 @@ int main(int argc, char* argv[])
 
   // multiply() -- multiplication results tests
 
-  DMatrix MultTest2x2A, MultTest2x2B, MultTest3x3A, MultTest3x3B, MultTest2x2ATimes2x2B, 
-    MultTest3x3ATimes3x3B, MultTest2x2BTimes2x2A, MultTest3x3BTimes3x3A, MultTest2x2ATimes2x2BExpResult, MultTest2x2BTimes2x2AExpResult, 
+  DMatrix MultTest2x2A, MultTest2x2B, MultTest3x3A, MultTest3x3B, MultTest2x2ATimes2x2B,
+    MultTest3x3ATimes3x3B, MultTest2x2BTimes2x2A, MultTest3x3BTimes3x3A, MultTest2x2ATimes2x2BExpResult, MultTest2x2BTimes2x2AExpResult,
     MultTest3x3ATimes3x3BExpResult, MultTest3x3BTimes3x3AExpResult, MultTest2x3A, MultTest2x3B, MultTest3x2A, MultTest3x2B,
     MultTest2x3ATimes3x2B, MultTest3x2ATimes2x3B, MultTest2x3BTimes3x2A, MultTest3x2BTimes2x3A, MultTest2x3ATimes3x2BExpResult,
     MultTest3x2ATimes2x3BExpResult, MultTest2x3BTimes3x2AExpResult, MultTest3x2BTimes2x3AExpResult;
@@ -234,17 +234,17 @@ int main(int argc, char* argv[])
   MultTest2x2BTimes2x2AExpResult.shape(2, 2);
   MultTest3x3ATimes3x3BExpResult.shape(3, 3);
   MultTest3x3BTimes3x3AExpResult.shape(3, 3);
-  MultTest2x3A.shape(2, 3); 
+  MultTest2x3A.shape(2, 3);
   MultTest2x3B.shape(2, 3);
   MultTest3x2A.shape(3, 2);
-  MultTest3x2B.shape(3, 2); 
+  MultTest3x2B.shape(3, 2);
   MultTest2x3ATimes3x2B.shape(2, 2);
   MultTest3x2ATimes2x3B.shape(3, 3);
-  MultTest2x3BTimes3x2A.shape(2, 2); 
-  MultTest3x2BTimes2x3A.shape(3, 3); 
+  MultTest2x3BTimes3x2A.shape(2, 2);
+  MultTest3x2BTimes2x3A.shape(3, 3);
   MultTest2x3ATimes3x2BExpResult.shape(2, 2);
-  MultTest3x2ATimes2x3BExpResult.shape(3, 3); 
-  MultTest2x3BTimes3x2AExpResult.shape(2, 2); 
+  MultTest3x2ATimes2x3BExpResult.shape(3, 3);
+  MultTest2x3BTimes3x2AExpResult.shape(2, 2);
   MultTest3x2BTimes2x3AExpResult.shape(3, 3);
 
   for(i = 0; i < 2; i++)
@@ -320,7 +320,7 @@ int main(int argc, char* argv[])
   MultTestHugeB.shape(hugeSize, hugeSize);
   MultTestHugeATimesHugeBExpResult.shape(hugeSize, hugeSize);
   MultTestHugeATimesHugeB.shape(hugeSize, hugeSize);
-  
+
   for(i = 0; i < hugeSize; i++)
   {
     for(j = 0; j < hugeSize; j++)
@@ -330,7 +330,7 @@ int main(int argc, char* argv[])
       MultTestHugeATimesHugeBExpResult(i, j) = 328350;
     }
   }
-  
+
   MultTestHugeATimesHugeB.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0,
     MultTestHugeA, MultTestHugeB, 1.0);
   numberFailedTests += PrintTestResults(
@@ -376,7 +376,7 @@ int main(int argc, char* argv[])
   //  Check assignment operator.
   DMatrix CCC2( 5, 5 );
   CCC2.assign( CCC );
-  if (verbose) std::cout <<  "assign() -- copy the values of an input matrix ";  
+  if (verbose) std::cout <<  "assign() -- copy the values of an input matrix ";
   if ( CCC( 3, 4 ) == Teuchos::ScalarTraits<STYPE>::one() ) {
     if (verbose) std::cout<< "successful" <<std::endl;
   } else {
@@ -384,7 +384,7 @@ int main(int argc, char* argv[])
     numberFailedTests++;
   }
   //  Create a view into a submatrix of CCC
-  DMatrix CCCview( Teuchos::View, CCC, 3, 3 );   
+  DMatrix CCCview( Teuchos::View, CCC, 3, 3 );
   DMatrix CCCtest1( 2, 3 );
   CCCtest1 = CCCview;
   if (verbose) std::cout << "operator= -- small(empty) = large(view) ";
@@ -418,9 +418,9 @@ int main(int argc, char* argv[])
     if(verbose) std::cout<<"successful" <<std::endl;
   } else {
     if (verbose) std::cout<<"unsuccessful"<<std::endl;
-    numberFailedTests++;   
-  }  
-  
+    numberFailedTests++;
+  }
+
   DMatrix CCCtest3( CCCview );
   CCCtest1 += CCCtest3;
   if (verbose) std::cout << "operator+= -- add two matrices of the same size, but different leading dimension ";
@@ -428,16 +428,16 @@ int main(int argc, char* argv[])
     if(verbose) std::cout<<"successful" <<std::endl;
   } else {
     if (verbose) std::cout<<"unsuccessful"<<std::endl;
-    numberFailedTests++;   
-  }  
+    numberFailedTests++;
+  }
   if (verbose) std::cout << "operator+= -- add two matrices of different size (nothing should change) ";
   CCCtest1 += CCC;
   if (CCCtest1(1,1)==2.0) {
     if(verbose) std::cout<<"successful" <<std::endl;
   } else {
     if (verbose) std::cout<<"unsuccessful"<<std::endl;
-    numberFailedTests++;   
-  }  
+    numberFailedTests++;
+  }
   //
   //  Check overloaded operators.
   //
@@ -487,11 +487,11 @@ int main(int argc, char* argv[])
         if (verbose) std::cout << "unsuccessful."<<std::endl;
         numberFailedTests++;
   } else {
-        if (verbose) std::cout << "successful."<<std::endl; 
+        if (verbose) std::cout << "successful."<<std::endl;
   }
 
   // constructor 3 (copy constructor)
-     
+
   DVector Con3TestCopyV( Con2Test1V );
   if(verbose) std::cout <<"constructor 3 -- copy constructor ";
   if ( Con3TestCopyV != Con2Test1V ) {
@@ -513,7 +513,7 @@ int main(int argc, char* argv[])
         if (verbose) std::cout << "successful."<<std::endl;
   }
 
-  // checking norms 
+  // checking norms
 
   numberFailedTests += PrintTestResults("normOne of a 3x1 std::vector", Con2Test1V.normOne(), 6.0, verbose);
   numberFailedTests += PrintTestResults("normInf of a 3x1 std::vector", Con2Test1V.normInf(), 3.0, verbose);
@@ -547,10 +547,10 @@ int main(int argc, char* argv[])
     numberFailedTests++;
   } else {
     if (verbose) std::cout << "successful."<<std::endl;
-  }  
-  
+  }
+
   DVector OpEqTestV1( 10 ); OpEqTestV1 = 3.0*Teuchos::ScalarTraits<STYPE>::one();
-  DVector OpEqTestV2( Teuchos::View, OpEqTestV1.values(), 3 );   
+  DVector OpEqTestV2( Teuchos::View, OpEqTestV1.values(), 3 );
   DVector OpEqTestV3( 2 );
   OpEqTestV3 = OpEqTestV2;
   if (verbose) std::cout << "operator= -- small(empty) = large(view) ";
@@ -585,33 +585,33 @@ int main(int argc, char* argv[])
     if (verbose) std::cout<<"successful" <<std::endl;
   } else {
     if (verbose) std::cout<<"unsuccessful"<<std::endl;
-    numberFailedTests++;   
-  }  
+    numberFailedTests++;
+  }
   if (verbose) std::cout << "operator+= -- add two vectors of different size (nothing should change) ";
   OpSumTestV1 += OpEqTestV1;
   if (OpSumTestV1( 1 )==6.0) {
     if (verbose) std::cout<<"successful" <<std::endl;
   } else {
     if (verbose) std::cout<<"unsuccessful"<<std::endl;
-    numberFailedTests++;   
-  }  
- 
+    numberFailedTests++;
+  }
+
   DVector OpCompTestV1( 5 );
-  OpCompTestV1 = 2.0*Teuchos::ScalarTraits<STYPE>::one();  
+  OpCompTestV1 = 2.0*Teuchos::ScalarTraits<STYPE>::one();
   if(verbose) std::cout <<"operator== -- test large == small ";
   if (OpCompTestV1 == SizeTestV1) {
     if (verbose) std::cout << "unsuccessful."<<std::endl;
     numberFailedTests++;
   } else {
     if (verbose) std::cout << "successful."<<std::endl;
-  }  
+  }
   if(verbose) std::cout <<"operator!= -- test large != small ";
   if (OpCompTestV1 != SizeTestV1) {
     if (verbose) std::cout << "successful."<<std::endl;
   } else {
     if (verbose) std::cout << "successful."<<std::endl;
     numberFailedTests++;
-  }  
+  }
 
   DVector ColSetTestV( AAA.numRows() );
   ColSetTestV.putScalar( 2.0 );
@@ -626,8 +626,8 @@ int main(int argc, char* argv[])
   //
   // If a test failed output the number of failed tests.
   //
-  if(numberFailedTests > 0) 
-	{ 
+  if(numberFailedTests > 0)
+	{
 	    if (verbose) {
 		std::cout << "Number of failed tests: " << numberFailedTests << std::endl;
                 std::cout << "End Result: TEST FAILED" << std::endl;
@@ -638,7 +638,7 @@ int main(int argc, char* argv[])
     std::cout << "End Result: TEST PASSED" << std::endl;
 
   return 0;
-}  
+}
 
 template<typename TYPE>
 int PrintTestResults(std::string testName, TYPE calculatedResult, TYPE expectedResult, bool verbose)

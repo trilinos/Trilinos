@@ -2,8 +2,8 @@
 //@HEADER
 // ************************************************************************
 // 
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,18 +35,23 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
 // 
 // ************************************************************************
 //@HEADER
 */
 
+#include <Kokkos_Core.hpp>
 #include <TestFixture.hpp>
 
 namespace Kokkos {
 namespace Example {
 
-template void test_fixture<HostExecSpace>();
+template void test_fixture< Kokkos::HostSpace::execution_space >();
+
+#if defined( KOKKOS_HAVE_CUDA )
+template void test_fixture<Kokkos::Cuda>();
+#endif
 
 } /* namespace Example */
 } /* namespace Kokkos */

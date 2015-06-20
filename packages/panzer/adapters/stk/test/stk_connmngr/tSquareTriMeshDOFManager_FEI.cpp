@@ -54,6 +54,8 @@
 #include "Panzer_STK_SquareTriMeshFactory.hpp"
 #include "Panzer_STKConnManager.hpp"
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Intrepid_HGRAD_TRI_C1_FEM.hpp"
 #include "Intrepid_HGRAD_TRI_C2_FEM.hpp"
 
@@ -99,6 +101,8 @@ RCP<const panzer::IntrepidFieldPattern> buildFieldPattern()
 // quad tests
 TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, buildTest_tri)
 {
+   PHX::InitializeKokkosDevice();
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
@@ -220,6 +224,8 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, buildTest_tri)
          TEST_ASSERT(gids[ux_offsets[i]]<gids[uy_offsets[i]]); 
       }
    }
+   
+   PHX::FinalizeKokkosDevice();
 }
 
 /*

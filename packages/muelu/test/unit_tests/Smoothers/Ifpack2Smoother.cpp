@@ -53,12 +53,12 @@
 #include "MueLu_UseDefaultTypes.hpp"
 
 /*
-  Comments about tests with hard coded results:
-  1) Chebyshev smoothing must pass for any number of processors.
-  2) Gauss-Seidel must pass for 1 and 4 processors.
-  3) For any processor count except 1 and 4, the Gauss-Seidel test will
-  report "passing", but this is only because the Teuchos test macro is skipped.
-*/
+   Comments about tests with hard coded results:
+   1) Chebyshev smoothing must pass for any number of processors.
+   2) Gauss-Seidel must pass for 1 and 4 processors.
+   3) For any processor count except 1 and 4, the Gauss-Seidel test will
+   report "passing", but this is only because the Teuchos test macro is skipped.
+   */
 
 namespace MueLuTests {
 
@@ -92,13 +92,13 @@ namespace MueLuTests {
 
       RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
       switch (comm->getSize()) {
-      case 1:
-      case 4:
-        TEST_FLOATING_EQUALITY(residualNorms,5.773502691896257e-01,1e-12);
-        break;
-      default:
-        out << "Pass/Fail is checked only for 1 and 4 processes." << std::endl;
-        break;
+        case 1:
+        case 4:
+          TEST_FLOATING_EQUALITY(residualNorms,5.773502691896257e-01,1e-12);
+          break;
+        default:
+          out << "Pass/Fail is checked only for 1 and 4 processes." << std::endl;
+          break;
       } // switch
 
     }
@@ -121,15 +121,15 @@ namespace MueLuTests {
 
       RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
       switch (comm->getSize()) {
-      case 1:
-        TEST_FLOATING_EQUALITY(residualNorms, 8.326553652741774e-02, 1e-12);
-        break;
-      case 4:
-        TEST_FLOATING_EQUALITY(residualNorms, 8.326553653078517e-02, 1e-12);
-        break;
-      default:
-        out << "Pass/Fail is checked only for 1 and 4 processes." << std::endl;
-        break;
+        case 1:
+          TEST_FLOATING_EQUALITY(residualNorms, 8.326553652741774e-02, 1e-12);
+          break;
+        case 4:
+          TEST_FLOATING_EQUALITY(residualNorms, 8.326553653078517e-02, 1e-12);
+          break;
+        default:
+          out << "Pass/Fail is checked only for 1 and 4 processes." << std::endl;
+          break;
       } // switch
 
     }
@@ -188,8 +188,8 @@ namespace MueLuTests {
       Ifpack2Smoother smoother("ILUT",paramList);
 
       //I don't use the testApply infrastructure because it has no provision for an initial guess.
-      Teuchos::RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(125);
-      Level level; TestHelpers::TestFactory<SC,LO,GO,NO,LMO>::createSingleLevelHierarchy(level);
+      Teuchos::RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(125);
+      Level level; TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
       level.Set("A", A);
       smoother.Setup(level);
 

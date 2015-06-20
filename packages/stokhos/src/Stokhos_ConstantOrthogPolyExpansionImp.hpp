@@ -341,6 +341,17 @@ sqrt(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::ConstantOrthogPolyExpansion<ordinal_type, value_type>::
+cbrt(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+     const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a)
+{
+  if (c.size() < 1)
+    c.resize(1);
+  c[0] = std::cbrt(a[0]);
+}
+
+template <typename ordinal_type, typename value_type>
+void
+Stokhos::ConstantOrthogPolyExpansion<ordinal_type, value_type>::
 pow(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
     const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a,
     const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)

@@ -56,15 +56,15 @@
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 // Functions to read a MatrixMarket file and load it into a matrix.
-// Adapted from 
+// Adapted from
 //    Trilinos/packages/epetraext/src/inout/EpetraExt_CrsMatrixIn.cpp
-// Modified by Jon Berry and Karen Devine to make matrix reallocations 
-// more efficient; rather than insert each non-zero separately, we 
+// Modified by Jon Berry and Karen Devine to make matrix reallocations
+// more efficient; rather than insert each non-zero separately, we
 // collect rows of non-zeros for insertion.
-// Modified by Karen Devine and Steve Plimpton to prevent all processors 
-// from reading the same file at the same time (ouch!); chunks of the file 
-// are read and broadcast by processor zero; each processor then extracts 
-// its nonzeros from the chunk, sorts them by row, and inserts them into 
+// Modified by Karen Devine and Steve Plimpton to prevent all processors
+// from reading the same file at the same time (ouch!); chunks of the file
+// are read and broadcast by processor zero; each processor then extracts
+// its nonzeros from the chunk, sorts them by row, and inserts them into
 // the matrix.
 // The variable "chunk_read" can be changed to modify the size of the chunks
 // read from the file.  Larger values of chunk_read lead to faster execution
@@ -76,12 +76,12 @@ using namespace EpetraExt;
 namespace EpetraExt {
 
 template<typename int_type>
-static void sort_three(int_type* list, int_type *parlista, double *parlistb, 
+static void sort_three(int_type* list, int_type *parlista, double *parlistb,
                        int start, int end);
 
 //////////////////////////////////////////////////////////////////////////////
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-int MatrixMarketFileToCrsMatrix(const char *filename, 
+int MatrixMarketFileToCrsMatrix(const char *filename,
     const Epetra_Comm & comm, Epetra_CrsMatrix * & A)
 {
   EPETRA_CHK_ERR(MatrixMarketFileToCrsMatrixHandle(filename, comm, A));
@@ -89,7 +89,7 @@ int MatrixMarketFileToCrsMatrix(const char *filename,
 }
 
 //////////////////////////////////////////////////////////////////////////////
-int MatrixMarketFileToCrsMatrix(const char *filename, 
+int MatrixMarketFileToCrsMatrix(const char *filename,
     const Epetra_Comm & comm, Epetra_CrsMatrix * & A, const bool transpose)
 {
   EPETRA_CHK_ERR(MatrixMarketFileToCrsMatrixHandle(filename, comm, A,
@@ -97,50 +97,50 @@ int MatrixMarketFileToCrsMatrix(const char *filename,
   return(0);
 }
 //////////////////////////////////////////////////////////////////////////////
-  
-int MatrixMarketFileToCrsMatrix(const char *filename, 
+
+int MatrixMarketFileToCrsMatrix(const char *filename,
     const Epetra_Comm & comm, Epetra_CrsMatrix * & A, const bool transpose,
-    const bool verbose) 
+    const bool verbose)
 {
   EPETRA_CHK_ERR(MatrixMarketFileToCrsMatrixHandle(filename, comm, A,
                                                    0, 0, 0, 0,
                                                    transpose, verbose));
   return(0);
 }
-  
+
 //////////////////////////////////////////////////////////////////////////////
-int MatrixMarketFileToCrsMatrix(const char *filename, 
-    const Epetra_Map & rowMap, const Epetra_Map& rangeMap, 
+int MatrixMarketFileToCrsMatrix(const char *filename,
+    const Epetra_Map & rowMap, const Epetra_Map& rangeMap,
     const Epetra_Map& domainMap, Epetra_CrsMatrix * & A, const bool transpose,
-    const bool verbose) 
+    const bool verbose)
 {
-  EPETRA_CHK_ERR(MatrixMarketFileToCrsMatrixHandle(filename, 
+  EPETRA_CHK_ERR(MatrixMarketFileToCrsMatrixHandle(filename,
                                                    rowMap.Comm(), A,
-                                                   &rowMap, 0, 
+                                                   &rowMap, 0,
                                                    &rangeMap, &domainMap,
                                                    transpose, verbose));
   return(0);
 }
 
 //////////////////////////////////////////////////////////////////////////////
-int MatrixMarketFileToCrsMatrix(const char *filename, 
+int MatrixMarketFileToCrsMatrix(const char *filename,
     const Epetra_Map & rowMap, Epetra_CrsMatrix * & A, const bool transpose,
-    const bool verbose) 
+    const bool verbose)
 {
-  EPETRA_CHK_ERR(MatrixMarketFileToCrsMatrixHandle(filename, 
+  EPETRA_CHK_ERR(MatrixMarketFileToCrsMatrixHandle(filename,
                                                    rowMap.Comm(), A,
-                                                   &rowMap, 0, 0, 0, 
+                                                   &rowMap, 0, 0, 0,
                                                    transpose, verbose));
   return(0);
 }
 
 //////////////////////////////////////////////////////////////////////////////
-int MatrixMarketFileToCrsMatrix(const char *filename, 
-    const Epetra_Map & rowMap, const Epetra_Map & colMap, 
+int MatrixMarketFileToCrsMatrix(const char *filename,
+    const Epetra_Map & rowMap, const Epetra_Map & colMap,
     Epetra_CrsMatrix * & A, const bool transpose,
-    const bool verbose) 
+    const bool verbose)
 {
-  EPETRA_CHK_ERR(MatrixMarketFileToCrsMatrixHandle(filename, 
+  EPETRA_CHK_ERR(MatrixMarketFileToCrsMatrixHandle(filename,
                                                    rowMap.Comm(), A,
                                                    &rowMap, &colMap, 0, 0,
                                                    transpose, verbose));
@@ -148,15 +148,15 @@ int MatrixMarketFileToCrsMatrix(const char *filename,
 }
 
 //////////////////////////////////////////////////////////////////////////////
-int MatrixMarketFileToCrsMatrix(const char *filename, 
+int MatrixMarketFileToCrsMatrix(const char *filename,
     const Epetra_Map & rowMap, const Epetra_Map & colMap,
-    const Epetra_Map& rangeMap, const Epetra_Map& domainMap, 
+    const Epetra_Map& rangeMap, const Epetra_Map& domainMap,
     Epetra_CrsMatrix * & A, const bool transpose,
-    const bool verbose) 
+    const bool verbose)
 {
-  EPETRA_CHK_ERR(MatrixMarketFileToCrsMatrixHandle(filename, 
-                                                   rowMap.Comm(), A, 
-                                                   &rowMap, &colMap, 
+  EPETRA_CHK_ERR(MatrixMarketFileToCrsMatrixHandle(filename,
+                                                   rowMap.Comm(), A,
+                                                   &rowMap, &colMap,
                                                    &rangeMap, &domainMap,
                                                    transpose, verbose));
   return(0);
@@ -164,7 +164,7 @@ int MatrixMarketFileToCrsMatrix(const char *filename,
 #endif
 
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-int MatrixMarketFileToCrsMatrix64(const char *filename, 
+int MatrixMarketFileToCrsMatrix64(const char *filename,
     const Epetra_Comm & comm, Epetra_CrsMatrix * & A)
 {
   EPETRA_CHK_ERR(MatrixMarketFileToCrsMatrixHandle64(filename, comm, A));
@@ -172,7 +172,7 @@ int MatrixMarketFileToCrsMatrix64(const char *filename,
 }
 
 //////////////////////////////////////////////////////////////////////////////
-int MatrixMarketFileToCrsMatrix64(const char *filename, 
+int MatrixMarketFileToCrsMatrix64(const char *filename,
     const Epetra_Comm & comm, Epetra_CrsMatrix * & A, const bool transpose)
 {
   EPETRA_CHK_ERR(MatrixMarketFileToCrsMatrixHandle64(filename, comm, A,
@@ -180,50 +180,50 @@ int MatrixMarketFileToCrsMatrix64(const char *filename,
   return(0);
 }
 //////////////////////////////////////////////////////////////////////////////
-  
-int MatrixMarketFileToCrsMatrix64(const char *filename, 
+
+int MatrixMarketFileToCrsMatrix64(const char *filename,
     const Epetra_Comm & comm, Epetra_CrsMatrix * & A, const bool transpose,
-    const bool verbose) 
+    const bool verbose)
 {
   EPETRA_CHK_ERR(MatrixMarketFileToCrsMatrixHandle64(filename, comm, A,
                                                    0, 0, 0, 0,
                                                    transpose, verbose));
   return(0);
 }
-  
+
 //////////////////////////////////////////////////////////////////////////////
-int MatrixMarketFileToCrsMatrix64(const char *filename, 
-    const Epetra_Map & rowMap, const Epetra_Map& rangeMap, 
+int MatrixMarketFileToCrsMatrix64(const char *filename,
+    const Epetra_Map & rowMap, const Epetra_Map& rangeMap,
     const Epetra_Map& domainMap, Epetra_CrsMatrix * & A, const bool transpose,
-    const bool verbose) 
+    const bool verbose)
 {
-  EPETRA_CHK_ERR(MatrixMarketFileToCrsMatrixHandle64(filename, 
+  EPETRA_CHK_ERR(MatrixMarketFileToCrsMatrixHandle64(filename,
                                                    rowMap.Comm(), A,
-                                                   &rowMap, 0, 
+                                                   &rowMap, 0,
                                                    &rangeMap, &domainMap,
                                                    transpose, verbose));
   return(0);
 }
 
 //////////////////////////////////////////////////////////////////////////////
-int MatrixMarketFileToCrsMatrix64(const char *filename, 
+int MatrixMarketFileToCrsMatrix64(const char *filename,
     const Epetra_Map & rowMap, Epetra_CrsMatrix * & A, const bool transpose,
-    const bool verbose) 
+    const bool verbose)
 {
-  EPETRA_CHK_ERR(MatrixMarketFileToCrsMatrixHandle64(filename, 
+  EPETRA_CHK_ERR(MatrixMarketFileToCrsMatrixHandle64(filename,
                                                    rowMap.Comm(), A,
-                                                   &rowMap, 0, 0, 0, 
+                                                   &rowMap, 0, 0, 0,
                                                    transpose, verbose));
   return(0);
 }
 
 //////////////////////////////////////////////////////////////////////////////
-int MatrixMarketFileToCrsMatrix64(const char *filename, 
-    const Epetra_Map & rowMap, const Epetra_Map & colMap, 
+int MatrixMarketFileToCrsMatrix64(const char *filename,
+    const Epetra_Map & rowMap, const Epetra_Map & colMap,
     Epetra_CrsMatrix * & A, const bool transpose,
-    const bool verbose) 
+    const bool verbose)
 {
-  EPETRA_CHK_ERR(MatrixMarketFileToCrsMatrixHandle64(filename, 
+  EPETRA_CHK_ERR(MatrixMarketFileToCrsMatrixHandle64(filename,
                                                    rowMap.Comm(), A,
                                                    &rowMap, &colMap, 0, 0,
                                                    transpose, verbose));
@@ -231,15 +231,15 @@ int MatrixMarketFileToCrsMatrix64(const char *filename,
 }
 
 //////////////////////////////////////////////////////////////////////////////
-int MatrixMarketFileToCrsMatrix64(const char *filename, 
+int MatrixMarketFileToCrsMatrix64(const char *filename,
     const Epetra_Map & rowMap, const Epetra_Map & colMap,
-    const Epetra_Map& rangeMap, const Epetra_Map& domainMap, 
+    const Epetra_Map& rangeMap, const Epetra_Map& domainMap,
     Epetra_CrsMatrix * & A, const bool transpose,
-    const bool verbose) 
+    const bool verbose)
 {
-  EPETRA_CHK_ERR(MatrixMarketFileToCrsMatrixHandle64(filename, 
-                                                   rowMap.Comm(), A, 
-                                                   &rowMap, &colMap, 
+  EPETRA_CHK_ERR(MatrixMarketFileToCrsMatrixHandle64(filename,
+                                                   rowMap.Comm(), A,
+                                                   &rowMap, &colMap,
                                                    &rangeMap, &domainMap,
                                                    transpose, verbose));
   return(0);
@@ -271,12 +271,11 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
   char token4[tokenLength];
   char token5[tokenLength];
   int M, N, NZ;      // Matrix dimensions
-  int i;
   int me = comm.MyPID();
 
   Epetra_Time timer(comm);
 
-  // Make sure domain and range maps are either both defined or undefined 
+  // Make sure domain and range maps are either both defined or undefined
   if ((domainMap!=0 && rangeMap==0) || (domainMap==0 && rangeMap!=0)) {
     EPETRA_CHK_ERR(-3);
   }
@@ -288,13 +287,13 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
     if (!rangeMap->UniqueGIDs()) {EPETRA_CHK_ERR(-2);}
   }
   else {
-    // If domain and range are not specified, 
+    // If domain and range are not specified,
     // rowMap becomes both and must be 1-to-1 if specified
     if (rowMap!=0) {
       if (!rowMap->UniqueGIDs()) {EPETRA_CHK_ERR(-2);}
     }
   }
-      
+
   FILE * handle = 0;
   if (me == 0) {
     if (verbose) std::cout << "Reading MatrixMarket file " << filename << std::endl;
@@ -302,14 +301,14 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
     if (handle == 0)
       EPETRA_CHK_ERR(-1); // file not found
 
-    // Check first line, which should be 
+    // Check first line, which should be
     // %%MatrixMarket matrix coordinate real general
     if(fgets(line, headerlineLength, handle)==0) {
-      if (handle!=0) fclose(handle); 
+      if (handle!=0) fclose(handle);
       EPETRA_CHK_ERR(-1);
     }
     if(sscanf(line, "%s %s %s %s %s", token1,token2,token3,token4,token5)==0) {
-      if (handle!=0) fclose(handle); 
+      if (handle!=0) fclose(handle);
       EPETRA_CHK_ERR(-1);
     }
     if (strcmp(token1, "%%MatrixMarket") ||
@@ -317,21 +316,21 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
         strcmp(token3, "coordinate") ||
         strcmp(token4, "real") ||
         strcmp(token5, "general")) {
-      if (handle!=0) fclose(handle); 
+      if (handle!=0) fclose(handle);
       EPETRA_CHK_ERR(-1);
     }
 
     // Next, strip off header lines (which start with "%")
     do {
       if(fgets(line, headerlineLength, handle)==0) {
-        if (handle!=0) fclose(handle); 
+        if (handle!=0) fclose(handle);
         EPETRA_CHK_ERR(-1);
       }
     } while (line[0] == '%');
 
     // Next get problem dimensions: M, N, NZ
     if(sscanf(line, "%d %d %d", &M, &N, &NZ)==0) {
-      if (handle!=0) fclose(handle); 
+      if (handle!=0) fclose(handle);
       EPETRA_CHK_ERR(-1);
     }
   }
@@ -344,7 +343,7 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
 
   // Now read in chunks of triplets and broadcast them to other processors.
   char *buffer = new char[chunk_read*lineLength];
-  int nchunk; 
+  int nchunk;
   int nmillion = 0;
   int nread = 0;
   int rlen;
@@ -357,12 +356,12 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
   double *vv = (double *) malloc(localsize * sizeof(double));
   int lnz = 0;   //  Number of non-zeros on this processor.
 
-  if (!iv || !jv || !vv) 
+  if (!iv || !jv || !vv)
     EPETRA_CHK_ERR(-1);
 
   Epetra_Map *rowMap1;
   bool allocatedHere=false;
-  if (rowMap != 0) 
+  if (rowMap != 0)
     rowMap1 = const_cast<Epetra_Map *>(rowMap);
   else {
     rowMap1 = new Epetra_Map(M, 0, comm);
@@ -371,7 +370,7 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
   int ioffset = rowMap1->IndexBase()-1;
   int joffset = (colMap != 0 ? colMap->IndexBase()-1 : ioffset);
 
-  int rowmajor = 1;  // Assume non-zeros are listed in row-major order, 
+  int rowmajor = 1;  // Assume non-zeros are listed in row-major order,
   int prevrow = -1;  // but test to detect otherwise.  If non-zeros
                      // are row-major, we can avoid the sort.
 
@@ -414,7 +413,7 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
       }
       if (rowMap1->MyGID(I)) {
         //  This processor keeps this non-zero.
-        if (lnz >= localsize) {  
+        if (lnz >= localsize) {
           // Need more memory to store nonzeros.
           localsize += localblock;
           iv = (int *) realloc(iv, localsize * sizeof(int));
@@ -454,11 +453,11 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
   if (verbose && me == 0) std::cout << std::endl << "   Constructing the matrix" << std::endl;
   int numRows = rowMap1->NumMyElements();
   int *numNonzerosPerRow = new int[numRows];
-  for (i = 0; i < numRows; i++) numNonzerosPerRow[i] = 0;
-  for (i = 0; i < lnz; i++) 
+  for (int i = 0; i < numRows; i++) numNonzerosPerRow[i] = 0;
+  for (int i = 0; i < lnz; i++)
     numNonzerosPerRow[rowMap1->LID(iv[i])]++;
 
-  if (rowMap!=0 && colMap !=0) 
+  if (rowMap!=0 && colMap !=0)
     A = new Epetra_CrsMatrix(Copy, *rowMap, *colMap, numNonzerosPerRow);
   else if (rowMap!=0) {
     // Construct with StaticProfile=true since we know numNonzerosPerRow.
@@ -475,18 +474,21 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
   // Rows are inserted in ascending global number, and the insertion uses numNonzerosPerRow.
   // Therefore numNonzerosPerRow must be permuted, as it was created in ascending local order.
   int *gidList = new int[numRows];
-  for (i = 0; i < numRows; i++) gidList[i] = rowMap1->GID(i);
+  for (int i = 0; i < numRows; i++) gidList[i] = rowMap1->GID(i);
   Epetra_Util::Sort(true,numRows,gidList,0,0,1,&numNonzerosPerRow);
   delete [] gidList;
 
   //  Insert the global values into the matrix row-by-row.
   if (verbose && me == 0) std::cout << "   Inserting global values" << std::endl;
-  for (int sum = 0, i = 0; i < numRows; i++) {
-    if (numNonzerosPerRow[i]) {
-      int ierr = A->InsertGlobalValues(iv[sum], numNonzerosPerRow[i], 
-                                       &vv[sum], &jv[sum]);
-      if (ierr<0) EPETRA_CHK_ERR(ierr);
-      sum += numNonzerosPerRow[i];
+  {
+    int i = 0;
+    for (int sum = 0; i < numRows; i++) {
+      if (numNonzerosPerRow[i]) {
+        int ierr = A->InsertGlobalValues(iv[sum], numNonzerosPerRow[i],
+                                         &vv[sum], &jv[sum]);
+        if (ierr<0) EPETRA_CHK_ERR(ierr);
+        sum += numNonzerosPerRow[i];
+      }
     }
   }
 
@@ -494,7 +496,7 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
   free(iv);
   free(jv);
   free(vv);
-    
+
   if (verbose && me == 0) std::cout << "   Completing matrix fill" << std::endl;
   if (rangeMap != 0 && domainMap != 0) {
     EPETRA_CHK_ERR(A->FillComplete(*domainMap, *rangeMap));
@@ -508,7 +510,7 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
   }
 
   if (allocatedHere) delete rowMap1;
-  
+
   if (handle!=0) fclose(handle);
   double dt = timer.ElapsedTime();
   if (verbose && me == 0) std::cout << "File Read time (secs):  " << dt << std::endl;
@@ -540,12 +542,11 @@ int MatrixMarketFileToCrsMatrixHandle64(const char *filename,
   char token4[tokenLength];
   char token5[tokenLength];
   long long M, N, NZ;      // Matrix dimensions
-  int i;
   int me = comm.MyPID();
 
   Epetra_Time timer(comm);
 
-  // Make sure domain and range maps are either both defined or undefined 
+  // Make sure domain and range maps are either both defined or undefined
   if ((domainMap!=0 && rangeMap==0) || (domainMap==0 && rangeMap!=0)) {
     EPETRA_CHK_ERR(-3);
   }
@@ -557,13 +558,13 @@ int MatrixMarketFileToCrsMatrixHandle64(const char *filename,
     if (!rangeMap->UniqueGIDs()) {EPETRA_CHK_ERR(-2);}
   }
   else {
-    // If domain and range are not specified, 
+    // If domain and range are not specified,
     // rowMap becomes both and must be 1-to-1 if specified
     if (rowMap!=0) {
       if (!rowMap->UniqueGIDs()) {EPETRA_CHK_ERR(-2);}
     }
   }
-      
+
   FILE * handle = 0;
   if (me == 0) {
     if (verbose) std::cout << "Reading MatrixMarket file " << filename << std::endl;
@@ -571,14 +572,14 @@ int MatrixMarketFileToCrsMatrixHandle64(const char *filename,
     if (handle == 0)
       EPETRA_CHK_ERR(-1); // file not found
 
-    // Check first line, which should be 
+    // Check first line, which should be
     // %%MatrixMarket matrix coordinate real general
     if(fgets(line, headerlineLength, handle)==0) {
-      if (handle!=0) fclose(handle); 
+      if (handle!=0) fclose(handle);
       EPETRA_CHK_ERR(-1);
     }
     if(sscanf(line, "%s %s %s %s %s", token1,token2,token3,token4,token5)==0) {
-      if (handle!=0) fclose(handle); 
+      if (handle!=0) fclose(handle);
       EPETRA_CHK_ERR(-1);
     }
     if (strcmp(token1, "%%MatrixMarket") ||
@@ -586,21 +587,21 @@ int MatrixMarketFileToCrsMatrixHandle64(const char *filename,
         strcmp(token3, "coordinate") ||
         strcmp(token4, "real") ||
         strcmp(token5, "general")) {
-      if (handle!=0) fclose(handle); 
+      if (handle!=0) fclose(handle);
       EPETRA_CHK_ERR(-1);
     }
 
     // Next, strip off header lines (which start with "%")
     do {
       if(fgets(line, headerlineLength, handle)==0) {
-        if (handle!=0) fclose(handle); 
+        if (handle!=0) fclose(handle);
         EPETRA_CHK_ERR(-1);
       }
     } while (line[0] == '%');
 
     // Next get problem dimensions: M, N, NZ
     if(sscanf(line, "%lld %lld %lld", &M, &N, &NZ)==0) {
-      if (handle!=0) fclose(handle); 
+      if (handle!=0) fclose(handle);
       EPETRA_CHK_ERR(-1);
     }
   }
@@ -613,7 +614,7 @@ int MatrixMarketFileToCrsMatrixHandle64(const char *filename,
 
   // Now read in chunks of triplets and broadcast them to other processors.
   char *buffer = new char[chunk_read*lineLength];
-  long long nchunk; 
+  long long nchunk;
   int nmillion = 0;
   long long nread = 0;
   int rlen;
@@ -626,12 +627,12 @@ int MatrixMarketFileToCrsMatrixHandle64(const char *filename,
   double *vv = (double *) malloc(localsize * sizeof(double));
   int lnz = 0;   //  Number of non-zeros on this processor.
 
-  if (!iv || !jv || !vv) 
+  if (!iv || !jv || !vv)
     EPETRA_CHK_ERR(-1);
 
   Epetra_Map *rowMap1;
   bool allocatedHere=false;
-  if (rowMap != 0) 
+  if (rowMap != 0)
     rowMap1 = const_cast<Epetra_Map *>(rowMap);
   else {
     rowMap1 = new Epetra_Map(M, 0, comm);
@@ -640,7 +641,7 @@ int MatrixMarketFileToCrsMatrixHandle64(const char *filename,
   long long ioffset = rowMap1->IndexBase64()-1;
   long long joffset = (colMap != 0 ? colMap->IndexBase64()-1 : ioffset);
 
-  int rowmajor = 1;  // Assume non-zeros are listed in row-major order, 
+  int rowmajor = 1;  // Assume non-zeros are listed in row-major order,
   long long prevrow = -1;  // but test to detect otherwise.  If non-zeros
                      // are row-major, we can avoid the sort.
 
@@ -698,7 +699,7 @@ int MatrixMarketFileToCrsMatrixHandle64(const char *filename,
       }
       if (rowMap1->MyGID(I)) {
         //  This processor keeps this non-zero.
-        if (lnz >= localsize) {  
+        if (lnz >= localsize) {
           // Need more memory to store nonzeros.
           localsize += localblock;
           iv = (long long *) realloc(iv, localsize * sizeof(long long));
@@ -738,11 +739,11 @@ int MatrixMarketFileToCrsMatrixHandle64(const char *filename,
   if (verbose && me == 0) std::cout << std::endl << "   Constructing the matrix" << std::endl;
   int numRows = rowMap1->NumMyElements();
   int *numNonzerosPerRow = new int[numRows];
-  for (i = 0; i < numRows; i++) numNonzerosPerRow[i] = 0;
-  for (i = 0; i < lnz; i++) 
+  for (int i = 0; i < numRows; i++) numNonzerosPerRow[i] = 0;
+  for (int i = 0; i < lnz; i++)
     numNonzerosPerRow[rowMap1->LID(iv[i])]++;
 
-  if (rowMap!=0 && colMap !=0) 
+  if (rowMap!=0 && colMap !=0)
     A = new Epetra_CrsMatrix(Copy, *rowMap, *colMap, numNonzerosPerRow);
   else if (rowMap!=0) {
     // Construct with StaticProfile=true since we know numNonzerosPerRow.
@@ -759,18 +760,21 @@ int MatrixMarketFileToCrsMatrixHandle64(const char *filename,
   // Rows are inserted in ascending global number, and the insertion uses numNonzerosPerRow.
   // Therefore numNonzerosPerRow must be permuted, as it was created in ascending local order.
   long long *gidList = new long long[numRows];
-  for (i = 0; i < numRows; i++) gidList[i] = rowMap1->GID64(i);
+  for (int i = 0; i < numRows; i++) gidList[i] = rowMap1->GID64(i);
   Epetra_Util::Sort(true,numRows,gidList,0,0,1,&numNonzerosPerRow,0,0);
   delete [] gidList;
 
   //  Insert the global values into the matrix row-by-row.
   if (verbose && me == 0) std::cout << "   Inserting global values" << std::endl;
-  for (int sum = 0, i = 0; i < numRows; i++) {
-    if (numNonzerosPerRow[i]) {
-      int ierr = A->InsertGlobalValues(iv[sum], numNonzerosPerRow[i], 
-                                       &vv[sum], &jv[sum]);
-      if (ierr<0) EPETRA_CHK_ERR(ierr);
-      sum += numNonzerosPerRow[i];
+  {
+    int i = 0;
+    for (int sum = 0; i < numRows; i++) {
+      if (numNonzerosPerRow[i]) {
+        int ierr = A->InsertGlobalValues(iv[sum], numNonzerosPerRow[i],
+                                         &vv[sum], &jv[sum]);
+        if (ierr<0) EPETRA_CHK_ERR(ierr);
+        sum += numNonzerosPerRow[i];
+      }
     }
   }
 
@@ -778,7 +782,7 @@ int MatrixMarketFileToCrsMatrixHandle64(const char *filename,
   free(iv);
   free(jv);
   free(vv);
-    
+
   if (verbose && me == 0) std::cout << "   Completing matrix fill" << std::endl;
   if (rangeMap != 0 && domainMap != 0) {
     EPETRA_CHK_ERR(A->FillComplete(*domainMap, *rangeMap));
@@ -792,7 +796,7 @@ int MatrixMarketFileToCrsMatrixHandle64(const char *filename,
   }
 
   if (allocatedHere) delete rowMap1;
-  
+
   if (handle!=0) fclose(handle);
   double dt = timer.ElapsedTime();
   if (verbose && me == 0) std::cout << "File Read time (secs):  " << dt << std::endl;
@@ -801,9 +805,9 @@ int MatrixMarketFileToCrsMatrixHandle64(const char *filename,
 #endif
 
 ///////////////////////////////////////////////////////////////////////////
-// Sorting values in array list in increasing order. Criteria is int. 
+// Sorting values in array list in increasing order. Criteria is int.
 // Also rearrange values in arrays parlista and partlistb
-// to match the new order of list. 
+// to match the new order of list.
 
 template<typename int_type>
 static void quickpart_list_inc_int (
@@ -846,13 +850,13 @@ double dtmp;
 
 ///////////////////////////////////////////////////////////////////////////
 template<typename int_type>
-static void sort_three(int_type* list, int_type *parlista, double *parlistb, 
+static void sort_three(int_type* list, int_type *parlista, double *parlistb,
                        int start, int end)
 {
 int  equal, larger;
 
   if (start < end) {
-    quickpart_list_inc_int(list, parlista, parlistb, start, end, 
+    quickpart_list_inc_int(list, parlista, parlistb, start, end,
                            &equal, &larger);
     sort_three(list, parlista, parlistb, start,  equal-1);
     sort_three(list, parlista, parlistb, larger, end);
@@ -862,8 +866,8 @@ int  equal, larger;
 ///////////////////////////////////////////////////////////////////////////
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int MatlabFileToCrsMatrix(const char *filename,
-				const Epetra_Comm & comm,
-				Epetra_CrsMatrix * & A)
+                                const Epetra_Comm & comm,
+                                Epetra_CrsMatrix * & A)
 {
   const int lineLength = 1025;
   char line[lineLength];
@@ -891,7 +895,7 @@ int MatlabFileToCrsMatrix(const char *filename,
 
   // Now read in each triplet and store to the local portion of the matrix if the row is owned.
   const Epetra_Map & rowMap1 = A->RowMap();
-  
+
   handle = 0;
 
   handle = fopen(filename,"r");  // Open file
@@ -906,7 +910,7 @@ int MatlabFileToCrsMatrix(const char *filename,
       if (ierr<0) EPETRA_CHK_ERR(ierr);
     }
   }
-    
+
   EPETRA_CHK_ERR(A->FillComplete(domainMap, rangeMap));
 
   if (handle!=0) fclose(handle);
@@ -916,8 +920,8 @@ int MatlabFileToCrsMatrix(const char *filename,
 
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 int MatlabFileToCrsMatrix64(const char *filename,
-				const Epetra_Comm & comm,
-				Epetra_CrsMatrix * & A)
+                                const Epetra_Comm & comm,
+                                Epetra_CrsMatrix * & A)
 {
   const int lineLength = 1025;
   char line[lineLength];
@@ -945,7 +949,7 @@ int MatlabFileToCrsMatrix64(const char *filename,
 
   // Now read in each triplet and store to the local portion of the matrix if the row is owned.
   const Epetra_Map & rowMap1 = A->RowMap();
-  
+
   handle = 0;
 
   handle = fopen(filename,"r");  // Open file
@@ -960,7 +964,7 @@ int MatlabFileToCrsMatrix64(const char *filename,
       if (ierr<0) EPETRA_CHK_ERR(ierr);
     }
   }
-    
+
   EPETRA_CHK_ERR(A->FillComplete(domainMap, rangeMap));
 
   if (handle!=0) fclose(handle);

@@ -274,7 +274,8 @@ int Epetra_IntVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
                                      int NumPermuteIDs,
                                      int * PermuteToLIDs,
                                      int *PermuteFromLIDs,
-                                     const Epetra_OffsetIndex * Indexor)
+                                     const Epetra_OffsetIndex * Indexor,
+                                     Epetra_CombineMode CombineMode)
 {
   (void)Indexor;
   const Epetra_IntVector & A = dynamic_cast<const Epetra_IntVector &>(Source);
@@ -321,8 +322,10 @@ int Epetra_IntVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
   // Do copy first
   if (NumSameIDs>0)
     if (To!=From) {
-  for (j=0; j<NumSameEntries; j++)
-    To[j] = From[j];
+      if (CombineMode==Epetra_AddLocalAlso)
+  for (j=0; j<NumSameEntries; j++) To[j] += From[j]; // Add to existing value
+      else
+  for (j=0; j<NumSameEntries; j++) To[j] = From[j];
     }
   // Do local permutation next
   if (NumPermuteIDs>0) {
@@ -330,12 +333,22 @@ int Epetra_IntVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
     // Point entry case
     if (Case1) {
 
-      for (j=0; j<NumPermuteIDs; j++)
-  To[PermuteToLIDs[j]] = From[PermuteFromLIDs[j]];
+      if (CombineMode==Epetra_AddLocalAlso)
+  for (j=0; j<NumPermuteIDs; j++) To[PermuteToLIDs[j]] += From[PermuteFromLIDs[j]]; // Add to existing value
+      else
+  for (j=0; j<NumPermuteIDs; j++) To[PermuteToLIDs[j]] = From[PermuteFromLIDs[j]];
     }
     // constant element size case
     else if (Case2) {
 
+      if (CombineMode==Epetra_AddLocalAlso)
+      for (j=0; j<NumPermuteIDs; j++) {
+  jj = MaxElementSize*PermuteToLIDs[j];
+  jjj = MaxElementSize*PermuteFromLIDs[j];
+    for (k=0; k<MaxElementSize; k++)
+      To[jj+k] += From[jjj+k];
+      }
+      else
       for (j=0; j<NumPermuteIDs; j++) {
   jj = MaxElementSize*PermuteToLIDs[j];
   jjj = MaxElementSize*PermuteFromLIDs[j];
@@ -347,6 +360,15 @@ int Epetra_IntVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
     // variable element size case
     else {
 
+      if (CombineMode==Epetra_AddLocalAlso)
+      for (j=0; j<NumPermuteIDs; j++) {
+  jj = ToFirstPointInElementList[PermuteToLIDs[j]];
+  jjj = FromFirstPointInElementList[PermuteFromLIDs[j]];
+  int ElementSize = FromElementSizeList[PermuteFromLIDs[j]];
+    for (k=0; k<ElementSize; k++)
+      To[jj+k] += From[jjj+k];
+      }
+      else
       for (j=0; j<NumPermuteIDs; j++) {
   jj = ToFirstPointInElementList[PermuteToLIDs[j]];
   jjj = FromFirstPointInElementList[PermuteFromLIDs[j]];

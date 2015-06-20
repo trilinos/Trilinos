@@ -60,8 +60,8 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const ParameterList> CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const ParameterList> CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set< RCP<const FactoryBase> >("Coordinates",    Teuchos::null, "Factory for coordinates generation");
@@ -73,21 +73,35 @@ namespace MueLu {
     return validParamList;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-    Input(fineLevel, "Coordinates");
-    Input(fineLevel, "Aggregates");
-    Input(fineLevel, "CoarseMap");
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+    static bool isAvailableCoords = false;
+
+    if (coarseLevel.GetRequestMode() == Level::REQUEST)
+      isAvailableCoords = coarseLevel.IsAvailable("Coordinates", this);
+
+    if (isAvailableCoords == false) {
+      Input(fineLevel, "Coordinates");
+      Input(fineLevel, "Aggregates");
+      Input(fineLevel, "CoarseMap");
+    }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & fineLevel, Level &coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
+
+    typedef Xpetra::MultiVector<double,LO,GO,NO> xdMV;
 
     GetOStream(Runtime0) << "Transferring coordinates" << std::endl;
 
+    if (coarseLevel.IsAvailable("Coordinates", this)) {
+      GetOStream(Runtime0) << "Reusing coordinates" << std::endl;
+      return;
+    }
+
     RCP<Aggregates>     aggregates = Get< RCP<Aggregates> > (fineLevel, "Aggregates");
-    RCP<MultiVector>    fineCoords = Get< RCP<MultiVector> >(fineLevel, "Coordinates");
+    RCP<xdMV>    fineCoords = Get< RCP<xdMV> >(fineLevel, "Coordinates");
     RCP<const Map>      coarseMap  = Get< RCP<const Map> >  (fineLevel, "CoarseMap");
 
     // coarseMap is being used to set up the domain map of tentative P, and therefore, the row map of Ac
@@ -109,15 +123,15 @@ namespace MueLu {
 
     RCP<const Map>   uniqueMap      = fineCoords->getMap();
     RCP<const Map>   coarseCoordMap = MapFactory        ::Build(coarseMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, coarseMap->getComm());
-    RCP<MultiVector> coarseCoords   = MultiVectorFactory::Build(coarseCoordMap, fineCoords->getNumVectors());
+    RCP<xdMV> coarseCoords   = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(coarseCoordMap, fineCoords->getNumVectors());
 
     // Create overlapped fine coordinates to reduce global communication
-    RCP<MultiVector> ghostedCoords = fineCoords;
+    RCP<xdMV> ghostedCoords = fineCoords;
     if (aggregates->AggregatesCrossProcessors()) {
       RCP<const Map>    nonUniqueMap = aggregates->GetMap();
       RCP<const Import> importer     = ImportFactory::Build(uniqueMap, nonUniqueMap);
 
-      ghostedCoords = MultiVectorFactory::Build(nonUniqueMap, fineCoords->getNumVectors());
+      ghostedCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(nonUniqueMap, fineCoords->getNumVectors());
       ghostedCoords->doImport(*fineCoords, *importer, Xpetra::INSERT);
     }
 
@@ -130,8 +144,8 @@ namespace MueLu {
 
     // Fill in coarse coordinates
     for (size_t j = 0; j < fineCoords->getNumVectors(); j++) {
-      ArrayRCP<const Scalar> fineCoordsData = ghostedCoords->getData(j);
-      ArrayRCP<Scalar>     coarseCoordsData = coarseCoords->getDataNonConst(j);
+      ArrayRCP<const double> fineCoordsData = ghostedCoords->getData(j);
+      ArrayRCP<double>     coarseCoordsData = coarseCoords->getDataNonConst(j);
 
       for (LO lnode = 0; lnode < vertex2AggID.size(); lnode++)
         if (procWinner[lnode] == myPID)
@@ -141,7 +155,7 @@ namespace MueLu {
         coarseCoordsData[agg] /= aggSizes[agg];
     }
 
-    Set<RCP<MultiVector> >(coarseLevel, "Coordinates", coarseCoords);
+    Set<RCP<xdMV> >(coarseLevel, "Coordinates", coarseCoords);
 
     const ParameterList& pL = GetParameterList();
     int writeStart = pL.get<int>("write start"), writeEnd = pL.get<int>("write end");
@@ -149,13 +163,13 @@ namespace MueLu {
       std::ostringstream buf;
       buf << fineLevel.GetLevelID();
       std::string fileName = "coordinates_before_rebalance_level_" + buf.str() + ".m";
-      Utils::Write(fileName,*fineCoords);
+      MueLu::Utils<double,LO,GO,NO>::Write(fileName,*fineCoords);
     }
     if (writeStart <= coarseLevel.GetLevelID() && coarseLevel.GetLevelID() <= writeEnd) {
       std::ostringstream buf;
       buf << coarseLevel.GetLevelID();
       std::string fileName = "coordinates_before_rebalance_level_" + buf.str() + ".m";
-      Utils::Write(fileName,*coarseCoords);
+      MueLu::Utils<double,LO,GO,NO>::Write(fileName,*coarseCoords);
     }
   }
 

@@ -45,9 +45,8 @@
 #include <fstream>
 #include <iomanip>
 
-#include "Kokkos_View.hpp"
-#include "Kokkos_CrsArray.hpp"
-#include "Kokkos_Parallel.hpp"
+#include "Kokkos_Core.hpp"
+#include "Kokkos_StaticCrsGraph.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_MatrixMarket.hpp"
@@ -80,12 +79,12 @@ template <typename ValueType, typename Device,
           typename Layout = Kokkos::LayoutRight>
 class CrsMatrix {
 public:
-  typedef Device device_type;
+  typedef Device execution_space;
   typedef ValueType value_type;
-  typedef Kokkos::View< value_type[], Layout, device_type > values_type;
-  typedef Kokkos::CrsArray< int , Layout, device_type , int > graph_type;
+  typedef Kokkos::View< value_type[], Layout, execution_space > values_type;
+  typedef Kokkos::StaticCrsGraph< int , Layout, execution_space , int > graph_type;
 
-  typedef CrsMatrix< ValueType, typename device_type::host_mirror_device_type, Layout> HostMirror;
+  typedef CrsMatrix< ValueType, typename values_type::host_mirror_space, Layout> HostMirror;
 
   values_type values;
   graph_type graph;
@@ -112,8 +111,8 @@ public:
   typedef InputVectorType input_vector_type;
   typedef OutputVectorType output_vector_type;
 
-  typedef Device device_type;
-  typedef typename device_type::size_type size_type;
+  typedef Device execution_space;
+  typedef typename execution_space::size_type size_type;
   typedef typename output_vector_type::value_type scalar_type;
 
   const matrix_type m_A;
@@ -130,7 +129,7 @@ public:
 
   //--------------------------------------------------------------------------
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   void operator()( const size_type iRow ) const
   {
     const size_type iEntryBegin = m_A.graph.row_map[iRow];
@@ -173,8 +172,8 @@ public:
   typedef OutputMultiVectorType output_multi_vector_type;
   typedef std::vector<OrdinalType> column_indices_type;
 
-  typedef Device device_type;
-  typedef typename device_type::size_type size_type;
+  typedef Device execution_space;
+  typedef typename execution_space::size_type size_type;
   typedef typename output_multi_vector_type::value_type scalar_type;
 
   const matrix_type m_A;
@@ -196,7 +195,7 @@ public:
 
   //--------------------------------------------------------------------------
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   void operator()( const size_type iRow ) const
   {
     const size_type iEntryBegin = m_A.graph.row_map[iRow];
@@ -262,8 +261,8 @@ public:
   typedef InputMultiVectorType input_multi_vector_type;
   typedef OutputMultiVectorType output_multi_vector_type;
 
-  typedef Device device_type;
-  typedef typename device_type::size_type size_type;
+  typedef Device execution_space;
+  typedef typename execution_space::size_type size_type;
   typedef typename output_multi_vector_type::value_type scalar_type;
 
   const matrix_type m_A;
@@ -288,7 +287,7 @@ public:
 
   //--------------------------------------------------------------------------
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   void operator()( const size_type iBlockRow ) const
   {
     // Number of rows in this block
@@ -358,8 +357,8 @@ public:
   typedef InputMultiVectorType input_multi_vector_type;
   typedef OutputMultiVectorType output_multi_vector_type;
 
-  typedef Device device_type;
-  typedef typename device_type::size_type size_type;
+  typedef Device execution_space;
+  typedef typename execution_space::size_type size_type;
   typedef typename output_multi_vector_type::value_type scalar_type;
 
   const matrix_type m_A;
@@ -378,7 +377,7 @@ public:
 
   //--------------------------------------------------------------------------
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   void operator()( const size_type iRow ) const
   {
     const size_type iEntryBegin = m_A.graph.row_map[iRow];
@@ -442,8 +441,8 @@ public:
   typedef std::vector<InputViewType> input_multi_vector_type;
   typedef std::vector<OutputViewType> output_multi_vector_type;
 
-  typedef Device device_type;
-  typedef typename device_type::size_type size_type;
+  typedef Device execution_space;
+  typedef typename execution_space::size_type size_type;
   typedef typename OutputViewType::value_type scalar_type;
 
   const matrix_type m_A;
@@ -468,7 +467,7 @@ public:
 
   //--------------------------------------------------------------------------
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   void operator()( const size_type iBlockRow ) const
   {
     // Number of rows in this block
@@ -538,8 +537,8 @@ public:
   typedef std::vector<InputViewType> input_multi_vector_type;
   typedef std::vector<OutputViewType> output_multi_vector_type;
 
-  typedef Device device_type;
-  typedef typename device_type::size_type size_type;
+  typedef Device execution_space;
+  typedef typename execution_space::size_type size_type;
   typedef typename OutputViewType::value_type scalar_type;
 
   const matrix_type m_A;
@@ -559,7 +558,7 @@ public:
 
   //--------------------------------------------------------------------------
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   void operator()( const size_type iRow ) const
   {
     const size_type iEntryBegin = m_A.graph.row_map[iRow];
@@ -628,9 +627,9 @@ void multiply(const CrsMatrix<MatrixValue,Device,Layout>& A,
   typedef Multiply<MatrixType,InputVectorType,OutputVectorType> multiply_type;
   for (size_t i=0; i<col_indices.size(); ++i) {
     InputVectorType x_view =
-      Kokkos::subview<InputVectorType>( x , Kokkos::ALL() , col_indices[i] );
+      Kokkos::subview( x , Kokkos::ALL() , col_indices[i] );
     OutputVectorType y_view =
-      Kokkos::subview<OutputVectorType>( y , Kokkos::ALL() , col_indices[i] );
+      Kokkos::subview( y , Kokkos::ALL() , col_indices[i] );
     multiply_type::apply( A , x_view , y_view );
   }
 }
@@ -700,8 +699,8 @@ class MatrixMarketWriter< CrsMatrix<MatrixValue,Device,Layout> >
 {
 public:
   typedef CrsMatrix<MatrixValue,Device,Layout> matrix_type ;
-  typedef Device device_type ;
-  typedef typename device_type::size_type size_type ;
+  typedef Device execution_space ;
+  typedef typename execution_space::size_type size_type ;
 
   static void write(const matrix_type& A, const std::string& filename) {
     std::ofstream file(filename.c_str());

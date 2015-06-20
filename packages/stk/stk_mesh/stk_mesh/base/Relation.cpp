@@ -1,10 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include <stk_mesh/base/Relation.hpp>
 #include <stddef.h>                     // for NULL
@@ -17,6 +42,7 @@
 #include "stk_mesh/base/ConnectivityMap.hpp"  // for ConnectivityMap
 #include "stk_mesh/base/Part.hpp"       // for Part, insert_ordinal, etc
 #include "stk_mesh/base/Types.hpp"      // for EntityRank, OrdinalVector, etc
+#include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssertMsg, etc
 
@@ -93,26 +119,7 @@ void get_entities_through_relations(
   }
 }
 
-inline
-void insert_part_and_supersets(OrdinalVector& induced_parts,
-                               const Part& part,
-                               bool include_supersets)
-{
-  insert_ordinal( induced_parts , part.mesh_meta_data_ordinal() );
-
-  // In order to preserve superset/subset consistency we should add supersets of
-  // induced parts to the induced part lists. Unfortunately, this opens up an ambiguity
-  // where, when a relation is removed, we cannot know if an unranked superset
-  // part should be removed.
-  if (include_supersets) {
-    const PartVector & supersets = part.supersets();
-    for (PartVector::const_iterator itr = supersets.begin(), end = supersets.end(); itr != end; ++itr) {
-      insert_ordinal( induced_parts, (*itr)->mesh_meta_data_ordinal() );
-    }
-  }
-}
-
-}
+} // namespace
 
 void get_entities_through_relations(
   const BulkData &mesh,
@@ -182,71 +189,23 @@ void get_entities_through_relations(
 
 //----------------------------------------------------------------------
 
-void induced_part_membership( const Part & part ,
-                              EntityRank entity_rank_from ,
-                              EntityRank entity_rank_to ,
-                              OrdinalVector & induced_parts,
-                              bool include_supersets)
+
+void get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(const BulkData       & mesh,
+                             const Entity           entity_from,
+                             const OrdinalVector  & omit,
+                                   EntityRank       entity_rank_to,
+                                   OrdinalVector  & induced_parts)
 {
-  if ( entity_rank_to < entity_rank_from && part.should_induce(entity_rank_from) ) {
-    // Direct relationship:
-    insert_part_and_supersets( induced_parts , part, include_supersets );
-  }
+    impl::get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(mesh,entity_from,omit,entity_rank_to,induced_parts);
 }
 
-//----------------------------------------------------------------------
-//  What are this entity's part memberships that can be deduced from
-//  this entity's relationship.  Can only trust 'entity_from' to be
-//  accurate if it is owned by the local process.
-
-void induced_part_membership(const BulkData& mesh,
-                             const Entity entity_from ,
-                             const OrdinalVector       & omit ,
-                                   EntityRank            entity_rank_to ,
-                                   OrdinalVector       & induced_parts,
-                                   bool include_supersets)
-{
-  const Bucket   & bucket_from    = mesh.bucket(entity_from);
-  const int      local_proc_rank  = mesh.parallel_rank();
-  const EntityRank entity_rank_from = bucket_from.entity_rank();
-  const bool dont_check_owner     = mesh.parallel_size() == 1; // critical for fmwk
-  ThrowAssert(entity_rank_from > entity_rank_to);
-
-  // Only induce parts for normal (not back) relations. Can only trust
-  // 'entity_from' to be accurate if it is owned by the local process.
-  if ( dont_check_owner || local_proc_rank == mesh.parallel_owner_rank(entity_from) ) {
-    const PartVector & all_parts   = mesh.mesh_meta_data().get_parts();
-
-    const std::pair<const unsigned *, const unsigned *>
-      bucket_superset_ordinals = bucket_from.superset_part_ordinals();
-
-    OrdinalVector::const_iterator omit_begin = omit.begin(),
-                                  omit_end   = omit.end();
-
-    // Contributions of the 'from' entity:
-    for ( const unsigned * i = bucket_superset_ordinals.first ;
-                           i != bucket_superset_ordinals.second ; ++i ) {
-      ThrowAssertMsg( *i < all_parts.size(), "Index " << *i << " out of bounds" );
-      Part & part = * all_parts[*i] ;
-
-      if ( part.should_induce(entity_rank_from) && ! contains_ordinal( omit_begin, omit_end , *i )) {
-        induced_part_membership( part,
-                                 entity_rank_from ,
-                                 entity_rank_to ,
-                                 induced_parts,
-                                 include_supersets);
-      }
-    }
-  }
-}
 
 //----------------------------------------------------------------------
 
 void induced_part_membership(const BulkData& mesh,
                              const Entity entity ,
                              const OrdinalVector & omit ,
-                                   OrdinalVector & induced_parts,
-                             bool  include_supersets)
+                                   OrdinalVector & induced_parts)
 {
   ThrowAssertMsg(mesh.is_valid(entity), "BulkData at " << &mesh << " does not know Entity" << entity.local_offset());
 
@@ -269,7 +228,7 @@ void induced_part_membership(const BulkData& mesh,
 
     for (int j = 0; j < num_rels; ++j)
     {
-      induced_part_membership(mesh, rels[j], omit, e_rank, induced_parts, include_supersets);
+      impl::get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(mesh, rels[j], omit, e_rank, induced_parts);
     }
   }
 }

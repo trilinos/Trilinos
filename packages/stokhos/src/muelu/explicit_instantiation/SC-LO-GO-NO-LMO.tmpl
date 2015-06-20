@@ -58,7 +58,7 @@ $TMPL_CONDITION_OPEN2
 
 typedef Stokhos::StandardStorage<int,double> Storage;
 typedef Sacado::PCE::OrthogPoly<double,Storage> pce_type;
-template class MueLu::$TMPL_CLASS<pce_type, int, int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void, int, KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>;
+template class MueLu::$TMPL_CLASS<pce_type, int, int>;
 
 #endif
 

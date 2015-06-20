@@ -78,7 +78,7 @@ namespace Laplace2D {
 // node for each node of the Cartesian grid (composed by nx \timex ny
 // elements)
 
-static void
+void
 get_myNeighbours( const int i, const int nx, const int ny,
                  int & left, int & right,
                  int & lower, int & upper);

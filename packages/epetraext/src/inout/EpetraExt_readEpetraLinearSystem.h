@@ -46,7 +46,7 @@
 #include "Epetra_Map.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 namespace EpetraExt {
 
@@ -76,11 +76,11 @@ namespace EpetraExt {
 void readEpetraLinearSystem(
   const std::string                               &fileName
   ,const Epetra_Comm                              &comm
-  ,Teuchos::RefCountPtr<Epetra_CrsMatrix>         *A        = NULL
-  ,Teuchos::RefCountPtr<Epetra_Map>               *map      = NULL
-  ,Teuchos::RefCountPtr<Epetra_Vector>            *x        = NULL
-  ,Teuchos::RefCountPtr<Epetra_Vector>            *b        = NULL
-  ,Teuchos::RefCountPtr<Epetra_Vector>            *xExact   = NULL
+  ,Teuchos::RCP<Epetra_CrsMatrix>         *A        = NULL
+  ,Teuchos::RCP<Epetra_Map>               *map      = NULL
+  ,Teuchos::RCP<Epetra_Vector>            *x        = NULL
+  ,Teuchos::RCP<Epetra_Vector>            *b        = NULL
+  ,Teuchos::RCP<Epetra_Vector>            *xExact   = NULL
   );
 #endif
 
@@ -88,11 +88,11 @@ void readEpetraLinearSystem(
 void readEpetraLinearSystem64(
   const std::string                               &fileName
   ,const Epetra_Comm                              &comm
-  ,Teuchos::RefCountPtr<Epetra_CrsMatrix>         *A        = NULL
-  ,Teuchos::RefCountPtr<Epetra_Map>               *map      = NULL
-  ,Teuchos::RefCountPtr<Epetra_Vector>            *x        = NULL
-  ,Teuchos::RefCountPtr<Epetra_Vector>            *b        = NULL
-  ,Teuchos::RefCountPtr<Epetra_Vector>            *xExact   = NULL
+  ,Teuchos::RCP<Epetra_CrsMatrix>         *A        = NULL
+  ,Teuchos::RCP<Epetra_Map>               *map      = NULL
+  ,Teuchos::RCP<Epetra_Vector>            *x        = NULL
+  ,Teuchos::RCP<Epetra_Vector>            *b        = NULL
+  ,Teuchos::RCP<Epetra_Vector>            *xExact   = NULL
   );
 #endif
 

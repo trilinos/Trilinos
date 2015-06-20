@@ -158,9 +158,10 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
     if (stepperType == "Explicit RK") {
       if (rythmosPL->get("Invert Mass Matrix", false)) {
         Teuchos::RCP<EpetraExt::ModelEvaluator> origModel = model;
-        rythmosPL->get("Lump Mass Matrix", false);
+        rythmosPL->get("Lump Mass Matrix", false); //JF line does not do anything
         model = Teuchos::rcp(new Piro::Epetra::InvertMassMatrixDecorator(
-              sublist(rythmosPL,"Stratimikos", true), origModel));
+              sublist(rythmosPL,"Stratimikos", true), origModel,
+              true,rythmosPL->get("Lump Mass Matrix", false),false));
       }
     }
 
@@ -257,9 +258,10 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
     if (stepperType == "Explicit RK") {
       if (rythmosSolverPL->get("Invert Mass Matrix", false)) {
         Teuchos::RCP<EpetraExt::ModelEvaluator> origModel = model;
-        rythmosSolverPL->get("Lump Mass Matrix", false);
+        rythmosSolverPL->get("Lump Mass Matrix", false); //JF line does not do anything
         model = Teuchos::rcp(new Piro::Epetra::InvertMassMatrixDecorator(
-              sublist(rythmosSolverPL,"Stratimikos", true), origModel));
+              sublist(rythmosSolverPL,"Stratimikos", true), origModel,
+              true,rythmosSolverPL->get("Lump Mass Matrix", false),false));
       }
     }
 
@@ -326,7 +328,7 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
   num_p(model->createInArgs().Np()),
   num_g(model->createOutArgs().Ng())
 {
-  thyraImplementation_ = rcp(new ThyraRythmosSolver(
+  thyraImplementation_ = Teuchos::rcp(new ThyraRythmosSolver(
         stateIntegrator,
         stateStepper,
         timeStepSolver,
@@ -349,7 +351,7 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
   num_p(model->createInArgs().Np()),
   num_g(model->createOutArgs().Ng())
 {
-  thyraImplementation_ = rcp(new ThyraRythmosSolver(
+  thyraImplementation_ = Teuchos::rcp(new ThyraRythmosSolver(
         stateIntegrator,
         stateStepper,
         timeStepSolver,

@@ -122,7 +122,7 @@ double AZK_residual_norm_no_copy(double *xr, double *xi, double *br, double *bi,
 
   N_equations = Amat->data_org[AZ_N_internal] + Amat->data_org[AZ_N_border];
 
-  y_tmp = (double *) AZ_allocate(N_equations*sizeof(double));
+  y_tmp = (double *) AZ_allocate((1+N_equations)*sizeof(double));
   if (y_tmp == NULL)
     AZ_perror("AZK_residual_norm_no_copy: Out of memory.");
 
@@ -208,7 +208,7 @@ double AZK_residual_norm(double *xk, double *bk,
   N_equations = Amat_komplex->data_org[AZ_N_internal] +
     Amat_komplex->data_org[AZ_N_border];
 
-  y_tmp = (double *) AZ_allocate(N_equations*sizeof(double));
+  y_tmp = (double *) AZ_allocate((1+N_equations)*sizeof(double));
   if (y_tmp == NULL)
     AZ_perror("AZK_residual_norm: Out of memory.");
 

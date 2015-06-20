@@ -27,11 +27,10 @@ namespace Xpetra {
   class $TMPL_CLASS
   $TMPL_INHERITANCE
   {
-
     typedef double Scalar;
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+    typedef MultiVector<double, int, int>::node_type Node;
 
   public:
 

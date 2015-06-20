@@ -49,6 +49,8 @@
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_config.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_Workset_Builder.hpp"
@@ -60,7 +62,6 @@
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
-#include "Panzer_DOFManagerFEI.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_GlobalData.hpp"
@@ -98,6 +99,8 @@ int main(int argc,char * argv[])
    using Teuchos::rcp_dynamic_cast;
    using panzer::StrPureBasisPair;
    using panzer::StrPureBasisComp;
+
+   PHX::InitializeKokkosDevice();
 
    Teuchos::GlobalMPISession mpiSession(&argc,&argv);
    RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -281,7 +284,7 @@ int main(int argc,char * argv[])
    AztecOO solver(problem);
    solver.SetAztecOption(AZ_solver,AZ_gmres); // we don't push out dirichlet conditions
    solver.SetAztecOption(AZ_precond,AZ_none);
-   solver.SetAztecOption(AZ_kspace,1000);
+   solver.SetAztecOption(AZ_kspace,300);
    solver.SetAztecOption(AZ_output,10);
    solver.SetAztecOption(AZ_precond,AZ_Jacobi);
 
@@ -319,6 +322,8 @@ int main(int argc,char * argv[])
 
    // all done!
    /////////////////////////////////////////////////////////////
+
+   PHX::FinalizeKokkosDevice();
 
    return 0;
 }

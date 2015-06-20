@@ -1,1 +1,0 @@
-mpicxx -O3 -mavx $1.cpp -o $1.threads -I$2/include -I./ -L$2/lib -ltpetrainout -ltpetra -lkokkosnodeapi -lteuchoscomm -lteuchosnumerics -lteuchosparameterlist -lteuchosremainder -lteuchoscore -lblas -lkokkoscore -lkokkoscompat -lkokkoscontainers -lkokkoslinalg -lhwloc -ltpi

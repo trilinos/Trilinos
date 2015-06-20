@@ -248,14 +248,14 @@ std::string Ioss::Utils::platform_information()
   return info;
 }
 
-namespace {
-  bool block_is_omitted(Ioss::ElementBlock *block) {
-    bool omitted = false;
-    if (block->property_exists("omitted"))
-      omitted = (block->get_property("omitted").get_int() == 1);
-    return omitted;
-  }
+bool Ioss::Utils::block_is_omitted(Ioss::GroupingEntity *block)
+{
+  bool omitted = false;
+  if (block->property_exists("omitted"))
+    omitted = (block->get_property("omitted").get_int() == 1);
+  return omitted;
 }
+
 void Ioss::Utils::calculate_sideblock_membership(IntVector &face_is_member,
 						 const Ioss::SideBlock *ef_blk,
 						 size_t int_byte_size,

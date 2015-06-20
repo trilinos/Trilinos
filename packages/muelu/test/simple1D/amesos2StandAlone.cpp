@@ -87,15 +87,15 @@
 // @HEADER
 
 /**
-   \file   SimpleSolve.cpp
-   \author Eric Bavier <etbavie@sandia.gov>
-   \date   Sat Jul 17 10:35:39 2010
+  \file   SimpleSolve.cpp
+  \author Eric Bavier <etbavie@sandia.gov>
+  \date   Sat Jul 17 10:35:39 2010
 
-   \brief  Simple example of Amesos2 usage.
+  \brief  Simple example of Amesos2 usage.
 
-   This example solves a simple sparse system of linear equations using the
-   Amesos2 interface to the Superlu solver.
-*/
+  This example solves a simple sparse system of linear equations using the
+  Amesos2 interface to the Superlu solver.
+  */
 
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_RCP.hpp>
@@ -151,18 +151,18 @@ int main(int argc, char *argv[]) {
   for (size_t i=0; i<numMyElements; i++) {
     if (myGlobalElements[i] == 0) {
       A->insertGlobalValues( myGlobalElements[i],
-                             tuple<Ordinal>( myGlobalElements[i], myGlobalElements[i]+1 ),
-                             tuple<Scalar> ( 2.0, -1.0 ) );
+          tuple<Ordinal>( myGlobalElements[i], myGlobalElements[i]+1 ),
+          tuple<Scalar> ( 2.0, -1.0 ) );
     }
     else if (myGlobalElements[i] == numGlobalElements-1) {
       A->insertGlobalValues( myGlobalElements[i],
-                             tuple<Ordinal>( myGlobalElements[i]-1, myGlobalElements[i] ),
-                             tuple<Scalar> ( -1.0, 2.0 ) );
+          tuple<Ordinal>( myGlobalElements[i]-1, myGlobalElements[i] ),
+          tuple<Scalar> ( -1.0, 2.0 ) );
     }
     else {
       A->insertGlobalValues( myGlobalElements[i],
-                             tuple<Ordinal>( myGlobalElements[i]-1, myGlobalElements[i], myGlobalElements[i]+1 ),
-                             tuple<Scalar> ( -1.0, 2.0, -1.0 ) );
+          tuple<Ordinal>( myGlobalElements[i]-1, myGlobalElements[i], myGlobalElements[i]+1 ),
+          tuple<Scalar> ( -1.0, 2.0, -1.0 ) );
     }
   }
   A->fillComplete();
@@ -201,12 +201,12 @@ int main(int argc, char *argv[]) {
       *fos << "||X_directSolve|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
   }
 
-//   /* Print the solution */
-//   RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(rcpFromRef(out));
+  //   /* Print the solution */
+  //   RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(rcpFromRef(out));
 
-//   *fos << "Solution :" << std::endl;
-//   X->describe(*fos,Teuchos::VERB_EXTREME);
-//   *fos << std::endl;
+  //   *fos << "Solution :" << std::endl;
+  //   X->describe(*fos,Teuchos::VERB_EXTREME);
+  //   *fos << std::endl;
 
   // We are done.
   return 0;

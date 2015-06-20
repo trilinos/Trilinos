@@ -186,7 +186,7 @@ static Int analyze_worker       /* returns KLU_OK or < 0 if error */
             /* -------------------------------------------------------------- */
 
             /*result = AMD_order (nk, Cp, Ci, Pblk, NULL, amd_Info) ;*/
-            result = KLU_OrdinalTraits<int>::amd_order (nk, Cp, Ci, Pblk, 
+            result = KLU_OrdinalTraits<Int>::amd_order (nk, Cp, Ci, Pblk, 
                         NULL, amd_Info) ;
             ok = (result >= AMD_OK) ;
             if (result == AMD_OUT_OF_MEMORY)
@@ -530,7 +530,7 @@ KLU_symbolic<Entry, Int> *KLU_analyze       /* returns NULL if error, or a valid
         /* natural ordering */
         /* TODO : c++ sees Ap, Ai as int *& Why ? */
         /* TODO : c++ does not allow NULL to be passed directly */
-        int *dummy = NULL ;
+        Int *dummy = NULL ;
         return (KLU_analyze_given (n, Ap, Ai, dummy, dummy, Common)) ;
     }
     else

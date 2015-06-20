@@ -47,7 +47,8 @@
 #define XPETRA_EPETRAMULTIVECTOR_FWD_HPP
 
 namespace Xpetra {
-  class EpetraMultiVector;
+  template<class GO> class EpetraMultiVectorT;
+  typedef EpetraMultiVectorT<int> EpetraMultiVector;
 }
 
 #ifndef XPETRA_EPETRAMULTIVECTOR_SHORT

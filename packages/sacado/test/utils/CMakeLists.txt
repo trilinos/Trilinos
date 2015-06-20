@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -38,6 +37,5 @@ SET(SOURCES ${SOURCES}
 #  sacadoutils
 #  HEADERS ${HEADERS}
 #  SOURCES ${SOURCES}
-#  DEPLIBS sacado
 #  TESTONLY
 #  )

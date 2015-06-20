@@ -263,7 +263,6 @@ int xfer_read_encode_srvr(
     if (validate) {
         xfer_init_data_array(seed, &res.array);
     }
-    log_debug(debug_level, "getting data from client (%s)", caller->url);
 
     rc = nssi_send_result(caller, request_id, NSSI_OK, &res, res_addr);
 

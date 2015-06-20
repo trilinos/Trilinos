@@ -133,7 +133,6 @@ bool proc_verbose = false;
   proc_verbose = verbose && (MyPID==0); /* Only print on zero processor */
   X = rcp( new Epetra_MultiVector( Map, numrhs ) );
   B = rcp( new Epetra_MultiVector( Map, numrhs ) );
-  X->Seed();
   X->Random();
   OPT::Apply( *A, *X, *B );
   X->PutScalar( 0.0 );

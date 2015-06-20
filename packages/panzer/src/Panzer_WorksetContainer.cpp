@@ -230,7 +230,8 @@ applyOrientations(const std::string & eBlock,std::vector<Workset> & worksets) co
   using Teuchos::RCP;
 
   typedef double Scalar;                          // orientation container scalar type
-  typedef Intrepid::FieldContainer<Scalar> Array; // orientation container array type
+  // typedef Intrepid::FieldContainer<Scalar> Array; // orientation container array type
+  typedef PHX::MDField<Scalar,Cell,BASIS> Array; // orientation container array type
   typedef std::pair<std::string,Teuchos::RCP<const PureBasis> > StrConstBasisPair;
 
   /////////////////////////////////
@@ -286,9 +287,7 @@ applyOrientations(const std::string & eBlock,std::vector<Workset> & worksets) co
     RCP<const OrientationContainerBase<Scalar,Array> > orientationContainer 
         = buildOrientationContainer<Scalar,Array>(globalIndexer_,fieldName); 
 
-    int array0_sz = basis.functional->dimension(0);
-    int array1_sz = basis.functional->dimension(1);
-    IntrepidFieldContainerFactory fc_factory;
+    MDFieldArrayFactory fc_factory("",true);
  
     // loop over worksets compute and apply orientations
     for(std::size_t i=0;i<worksets.size();i++) {
@@ -299,7 +298,7 @@ applyOrientations(const std::string & eBlock,std::vector<Workset> & worksets) co
 
         int array0_sz = worksets[i].num_cells;
         int array1_sz = basis.functional->dimension(1);
-        Array orientations = fc_factory.buildArray<double,panzer::Cell,panzer::BASIS>("orientations",array0_sz,array1_sz);
+        Array orientations = fc_factory.buildStaticArray<double,panzer::Cell,panzer::BASIS>("orientations",array0_sz,array1_sz);
 
         WorksetDetails & details = *worksets[i].details[j];
 
@@ -307,11 +306,13 @@ applyOrientations(const std::string & eBlock,std::vector<Workset> & worksets) co
         orientationContainer->getOrientations(eBlock,details.cell_local_ids,orientations);
 
         for(std::size_t basis_index=0;basis_index<details.bases.size();basis_index++) {
+          // Teuchos::RCP<const BasisIRLayout> layout = details.bases[basis_index]->basis_layout;
           Teuchos::RCP<const BasisIRLayout> layout = details.bases[basis_index]->basis_layout;
           TEUCHOS_ASSERT(layout!=Teuchos::null);
           TEUCHOS_ASSERT(layout->getBasis()!=Teuchos::null);
           if(layout->getBasis()->name()==basis.name()) {
             // apply orientations for this basis
+            // details.bases[basis_index]->applyOrientations(orientations);
             details.bases[basis_index]->applyOrientations(orientations);
           }
         }
@@ -326,7 +327,8 @@ applyOrientations(const SideId & sideId,std::map<unsigned,Workset> & worksets) c
   using Teuchos::RCP;
 
   typedef double Scalar;                          // orientation container scalar type
-  typedef Intrepid::FieldContainer<Scalar> Array; // orientation container array type
+  // typedef Intrepid::FieldContainer<Scalar> Array; // orientation container array type
+  typedef PHX::MDField<Scalar,Cell,BASIS> Array; // orientation container array type
   typedef std::pair<std::string,Teuchos::RCP<const PureBasis> > StrConstBasisPair;
 
   /////////////////////////////////
@@ -391,8 +393,9 @@ applyOrientations(const SideId & sideId,std::map<unsigned,Workset> & worksets) c
 
       int array0_sz = itr->second.num_cells;
       int array1_sz = basis.functional->dimension(1);
-      IntrepidFieldContainerFactory fc_factory;
-      Array orientations = fc_factory.buildArray<double,panzer::Cell,panzer::BASIS>("orientations",array0_sz,array1_sz);
+      // IntrepidFieldContainerFactory fc_factory;
+      MDFieldArrayFactory fc_factory("",true);
+      Array orientations = fc_factory.buildStaticArray<double,panzer::Cell,panzer::BASIS>("orientations",array0_sz,array1_sz);
 
       for(std::size_t j=0;j<itr->second.details.size();j++) {
 
@@ -407,6 +410,7 @@ applyOrientations(const SideId & sideId,std::map<unsigned,Workset> & worksets) c
           TEUCHOS_ASSERT(layout->getBasis()!=Teuchos::null);
           if(layout->getBasis()->name()==basis.name()) {
             // apply orientations for this basis
+            // details.bases[basis_index]->applyOrientations(orientations);
             details.bases[basis_index]->applyOrientations(orientations);
           }
         }

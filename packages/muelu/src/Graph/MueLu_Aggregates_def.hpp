@@ -57,8 +57,8 @@
 namespace MueLu {
 
   ///////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Aggregates(const GraphBase & graph) {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Aggregates<LocalOrdinal, GlobalOrdinal, Node>::Aggregates(const GraphBase & graph) {
     nAggregates_  = 0;
 
     vertex2AggId_ = LOVectorFactory::Build(graph.GetImportMap());
@@ -74,8 +74,8 @@ namespace MueLu {
   }
 
   ///////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Aggregates(const RCP<const Map> & map) {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Aggregates<LocalOrdinal, GlobalOrdinal, Node>::Aggregates(const RCP<const Map> & map) {
     nAggregates_ = 0;
 
     vertex2AggId_ = LOVectorFactory::Build(map);
@@ -91,8 +91,8 @@ namespace MueLu {
   }
 
   ///////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Teuchos::ArrayRCP<LocalOrdinal>  Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeAggregateSizes(bool forceRecompute, bool cacheSizes) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::ArrayRCP<LocalOrdinal>  Aggregates<LocalOrdinal, GlobalOrdinal, Node>::ComputeAggregateSizes(bool forceRecompute, bool cacheSizes) const {
 
     if (aggregateSizes_ != Teuchos::null && !forceRecompute) {
 
@@ -123,16 +123,16 @@ namespace MueLu {
 
   } //ComputeAggSizesNodes
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::string Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::description() const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::string Aggregates<LocalOrdinal, GlobalOrdinal, Node>::description() const {
     std::ostringstream out;
     out << BaseClass::description();
     out << "{nGlobalAggregates = " << GetNumGlobalAggregates() << "}";
     return out.str();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Aggregates<LocalOrdinal, GlobalOrdinal, Node>::print(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
     MUELU_DESCRIBE;
 
     if (verbLevel & Statistics0) {
@@ -140,15 +140,15 @@ namespace MueLu {
     }
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  GlobalOrdinal Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetNumGlobalAggregates() const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  GlobalOrdinal Aggregates<LocalOrdinal, GlobalOrdinal, Node>::GetNumGlobalAggregates() const {
     LO nAggregates = GetNumAggregates();
     GO nGlobalAggregates; sumAll(vertex2AggId_->getMap()->getComm(), (GO)nAggregates, nGlobalAggregates);
     return nGlobalAggregates;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> > Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMap() const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> > Aggregates<LocalOrdinal, GlobalOrdinal, Node>::GetMap() const {
     return vertex2AggId_->getMap();
   }
 

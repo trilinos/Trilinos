@@ -71,7 +71,7 @@ namespace MueLu {
 
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class AmalgamationFactory : public SingleLevelFactoryBase {
 #undef MUELU_AMALGAMATIONFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -107,7 +107,13 @@ namespace MueLu {
     // @param indexBase (GlobalOrdinal): indexBase for DOF map (and node map, default = 0)
     static const GlobalOrdinal DOFGid2NodeId(GlobalOrdinal gid, LocalOrdinal blockSize, const GlobalOrdinal offset /*= 0*/, const GlobalOrdinal indexBase/* = 0*/);
 
-  private:
+    //! Method to create merged  map for systems of PDEs.
+    // @param sourceMap (const Map&): source map with dofs which shall be amalgamated to a node map
+    // @param A (const Matrix&): operator A (matrix) with striding information (if available)
+    // @param amalgamatedMap (const Map&): amalgamated node based map
+    // @param translation (Array<LO>&): array storing local node ids given local dof ids (needed in CoalesceDropFactory)
+    static void AmalgamateMap(const Map& sourceMap, const Matrix& A, RCP<const Map>& amalgamatedMap, Array<LO>& translation); // const;
+
 
   }; //class SubBlockUnAmalgamationFactory
 

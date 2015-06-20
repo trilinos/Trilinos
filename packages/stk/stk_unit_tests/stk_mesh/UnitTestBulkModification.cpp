@@ -1,11 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
-
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include <stddef.h>                     // for size_t
 #include <algorithm>                    // for sort, unique
@@ -51,7 +75,7 @@ class UnitTestStkMeshBulkModification {
     m_ring_mesh(pm)
   { }
 
-  void test_bulkdata_not_syncronized();
+  void test_bulkdata_not_synchronized();
   void test_closure_of_non_locally_used_entities();
   void test_all_local_nodes();
   void test_all_local_elements();
@@ -66,9 +90,7 @@ class UnitTestStkMeshBulkModification {
     m_ring_mesh.generate_mesh( );
     ThrowRequire(bulk_data.modification_end());
 
-    bulk_data.modification_begin();
     m_ring_mesh.fixup_node_ownership( );
-    ThrowRequire(bulk_data.modification_end());
 
     return bulk_data;
   }
@@ -83,10 +105,10 @@ namespace {
 
 const EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
-TEST( UnitTestBulkDataNotSyrncronized , testUnit )
+TEST( UnitTestBulkDataNotSynchronized , testUnit )
 {
   UnitTestStkMeshBulkModification unit(MPI_COMM_WORLD);
-  unit.test_bulkdata_not_syncronized();
+  unit.test_bulkdata_not_synchronized();
 }
 
 TEST( UnitTestClosureOfNonLocallyUsedEntities , testUnit )
@@ -115,11 +137,11 @@ TEST( UnitTestParallelConsistency , testUnit )
 
 } //end namespace
 
-void UnitTestStkMeshBulkModification::test_bulkdata_not_syncronized()
+void UnitTestStkMeshBulkModification::test_bulkdata_not_synchronized()
 {
   BulkData& bulk_data = initialize_ring_fixture();
 
-  bulk_data.modification_begin(); // Intentially make things unsynced
+  bulk_data.modification_begin(); // Intentionally make things unsynced
 
   std::vector< Entity> entities;
   std::vector< Entity> entities_closure;

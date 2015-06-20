@@ -49,12 +49,14 @@
 #include <Teuchos_ParameterList.hpp>
 
 namespace KokkosClassic {
+namespace DoNotUse {
 
   class SerialNode {
     public:
       SerialNode(Teuchos::ParameterList &pl) {}
   };
 
+} // end of DoNotUse namespace
 } // end of KokkosClassic namespace
 
 #endif

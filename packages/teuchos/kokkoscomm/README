@@ -1,0 +1,4 @@
+The KokkosComm subpackage of Teuchos implements a compatibility layer
+between the MPI wrappers in the TeuchosComm subpackage, and Kokkos
+data structures.  KokkosComm does _not_ depend on MPI directly and can
+build even if MPI is disabled.  It depends on TeuchosComm to wrap MPI.

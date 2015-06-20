@@ -50,60 +50,28 @@
 #ifndef _ZOLTAN2_PARTITIONINGSOLUTION_HPP_
 #define _ZOLTAN2_PARTITIONINGSOLUTION_HPP_
 
+namespace Zoltan2 {
+template <typename Adapter>
+class PartitioningSolution;
+}
+
 #include <Zoltan2_IdentifierMap.hpp>
 #include <Zoltan2_Solution.hpp>
 #include <Zoltan2_GreedyMWM.hpp>
+#include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_CoordinatePartitioningGraph.hpp>
 #include <cmath>
 #include <algorithm>
 #include <vector>
 #include <limits>
 
-namespace Teuchos{
-
-/*! \brief Zoltan2_BoxBoundaries is a reduction operation
- * to all reduce the all box boundaries.
-*/
-
-template <typename Ordinal, typename T>
-class Zoltan2_BoxBoundaries  : public ValueTypeReductionOp<Ordinal,T>
-{
-private:
-    Ordinal size;
-    T _EPSILON;
-
-public:
-    /*! \brief Default Constructor
-     */
-    Zoltan2_BoxBoundaries ():size(0), _EPSILON (std::numeric_limits<T>::epsilon()){}
-
-    /*! \brief Constructor
-     *   \param nsum  the count of how many sums will be computed at the
-     *             start of the list.
-     *   \param nmin  following the sums, this many minimums will be computed.
-     *   \param nmax  following the minimums, this many maximums will be computed.
-     */
-    Zoltan2_BoxBoundaries (Ordinal s_):
-        size(s_), _EPSILON (std::numeric_limits<T>::epsilon()){}
-
-    /*! \brief Implement Teuchos::ValueTypeReductionOp interface
-     */
-    void reduce( const Ordinal count, const T inBuffer[], T inoutBuffer[]) const
-    {
-        for (Ordinal i=0; i < count; i++){
-            if (Z2_ABS(inBuffer[i]) >  _EPSILON){
-                inoutBuffer[i] = inBuffer[i];
-            }
-        }
-    }
-};
-} // namespace Teuchos
+#ifdef _MSC_VER
+#define NOMINMAX
+#include <windows.h>
+#endif
 
 
 namespace Zoltan2 {
-
-
-
 
 /*! \brief A PartitioningSolution is a solution to a partitioning problem.
 
@@ -128,7 +96,7 @@ public:
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::lno_t lno_t;
-  typedef typename Adapter::gid_t gid_t;
+  typedef typename Adapter::zgid_t zgid_t;
   typedef typename Adapter::part_t part_t;
   typedef typename Adapter::user_t user_t;
 #endif
@@ -141,19 +109,19 @@ public:
  *    \param env the environment for the application
  *    \param comm the communicator for the problem associated with
  *             this solution
- *    \param idMap  the IdentifierMap corresponding to the solution
  *    \param nUserWeights  the number of weights supplied by the
  *         application for each object.
+ *    \param algorithm  Algorithm, if any, used to compute the solution.
  *
  *   It is possible that part sizes were supplied on other processes,
  *   so this constructor does do a check to see if part sizes need
  *   to be globally calculated.
  */
 
-  PartitioningSolution( RCP<const Environment> &env,
+  PartitioningSolution( const RCP<const Environment> &env,
     RCP<const Comm<int> > &comm,
-    RCP<const IdentifierMap<user_t> > &idMap,
-    int nUserWeights);
+    int nUserWeights, 
+    const RCP<Algorithm<Adapter> > &algorithm = Teuchos::null);
 
 /*! \brief Constructor when part sizes are supplied.
  *
@@ -163,7 +131,6 @@ public:
  *    \param env the environment for the application
  *    \param comm the communicator for the problem associated with
  *                        this solution
- *    \param idMap  the IdentifierMap corresponding to the solution
  *    \param nUserWeights  the number of weights supplied
  *                         by the application
  *    \param reqPartIds  reqPartIds[i] is a list of
@@ -171,6 +138,7 @@ public:
  *    \param reqPartSizes  reqPartSizes[i] is the list
  *          of part sizes for weight i corresponding to parts in
  *          reqPartIds[i]
+ *    \param algorithm  Algorithm, if any, used to compute the solution.
  *
  *   If <tt>reqPartIds[i].size()</tt> and <tt>reqPartSizes[i].size()</tt>
  *           are zero for
@@ -184,11 +152,11 @@ public:
  *   \todo handle errors that may arise - like duplicate part numbers
  */
 
-  PartitioningSolution( RCP<const Environment> &env,
+  PartitioningSolution(const RCP<const Environment> &env,
     RCP<const Comm<int> > &comm,
-    RCP<const IdentifierMap<user_t> > &idMap,
     int nUserWeights, ArrayView<ArrayRCP<part_t> > reqPartIds,
-    ArrayView<ArrayRCP<scalar_t> > reqPartSizes);
+    ArrayView<ArrayRCP<scalar_t> > reqPartSizes,
+    const RCP<Algorithm<Adapter> > &algorithm = Teuchos::null);
 
   ////////////////////////////////////////////////////////////////////
   // Information that the algorithm may wish to query.
@@ -349,8 +317,7 @@ public:
    * in its InputAdapter is found and saved in this PartitioningSolution.
    */
 
-  void setParts(ArrayRCP<const gno_t> &gnoList,
-    ArrayRCP<part_t> &partList, bool dataDidNotMove);
+  void setParts(ArrayRCP<part_t> &partList);
 
   ////////////////////////////////////////////////////////////////////
 
@@ -395,22 +362,15 @@ public:
 
   /*! \brief Return the communicator associated with the solution.
    */
-  const RCP<const Comm<int> > &getCommunicator() const { return comm_;}
+  inline const RCP<const Comm<int> > &getCommunicator() const { return comm_;}
 
-  /*! \brief Returns the local number of Ids.
+  /*! \brief Return the environment associated with the solution.
    */
-  size_t getLocalNumberOfIds() const { return gids_.size(); }
-
-  /*! \brief Returns the user's global ID list.
-   */
-  const gid_t *getIdList() const {
-    if (gids_.size() > 0) return gids_.getRawPtr();
-    else                  return NULL;
-  }
+  inline const RCP<const Environment> &getEnvironment() const { return env_;}
 
   /*! \brief Returns the part list corresponding to the global ID list.
    */
-  const part_t *getPartList() const {
+  const part_t *getPartListView() const {
     if (parts_.size() > 0) return parts_.getRawPtr();
     else                   return NULL;
   }
@@ -419,159 +379,80 @@ public:
       \return The return value is a NULL pointer if part IDs are
                 synonomous with process IDs.
    */
-  const int *getProcList() const {
+  const int *getProcListView() const {
     if (procs_.size() > 0) return procs_.getRawPtr();
     else                   return NULL;
   }
 
 
-  /*! \brief set the Part Box boundaries as a result of geometric partitioning.
-   */
-  void setPartBoxes(
-    RCP<std::vector<
-             Zoltan2::coordinateModelPartBox<scalar_t, part_t> > > outPartBoxes)
-  {
-    this->partBoxes = outPartBoxes;
-  }
-
   /*! \brief returns the part box boundary list.
    */
-  RCP<std::vector<Zoltan2::coordinateModelPartBox<scalar_t, part_t> > > 
-  getPartBoxes()
+  std::vector<Zoltan2::coordinateModelPartBox<scalar_t, part_t> > &
+  getPartBoxesView() const
   {
-    return this->partBoxes;
+    return this->algorithm_->getPartBoxesView();
   }
+
+  //!  \brief Return the part overlapping a given point in space; 
+  //          when a point lies on a part boundary, the lowest part
+  //          number on that boundary is returned.
+  //          Note that not all partitioning algorithms will support
+  //          this method.
+  //
+  //   \param dim : the number of dimensions specified for the point in space
+  //   \param point : the coordinates of the point in space; array of size dim
+  //   \return the part number of a part overlapping the given point
+  part_t pointAssign(int dim, scalar_t *point) const
+  {
+    part_t p;
+    try {
+      if (this->algorithm_ == Teuchos::null)
+        throw std::logic_error("no partitioning algorithm has been run yet");
+
+      p = this->algorithm_->pointAssign(dim, point); 
+    }
+    Z2_FORWARD_EXCEPTIONS
+    return p;
+  }
+
+  //!  \brief Return an array of all parts overlapping a given box in space.
+  //   This method allocates memory for the return argument, but does not
+  //   control that memory.  The user is responsible for freeing the 
+  //   memory.
+  //
+  //   \param dim : (in) the number of dimensions specified for the box
+  //   \param lower : (in) the coordinates of the lower corner of the box; 
+  //                   array of size dim
+  //   \param upper : (in) the coordinates of the upper corner of the box; 
+  //                   array of size dim
+  //   \param nPartsFound : (out) the number of parts overlapping the box
+  //   \param partsFound :  (out) array of parts overlapping the box
+  void boxAssign(int dim, scalar_t *lower, scalar_t *upper,
+                 size_t &nPartsFound, part_t **partsFound) const
+  {
+    try {
+      if (this->algorithm_ == Teuchos::null)
+        throw std::logic_error("no partitioning algorithm has been run yet");
+
+      this->algorithm_->boxAssign(dim, lower, upper, nPartsFound, partsFound); 
+    }
+    Z2_FORWARD_EXCEPTIONS
+  }
+
 
   /*! \brief returns communication graph resulting from geometric partitioning.
    */
-  void getCommunicationGraph(
-          const Teuchos::Comm<int> *comm,
-          ArrayRCP <part_t> &comXAdj,
-          ArrayRCP <part_t> &comAdj) 
+  void getCommunicationGraph(ArrayRCP <part_t> &comXAdj,
+                             ArrayRCP <part_t> &comAdj) const
   {
-    if(comXAdj_.getRawPtr() == NULL && comAdj_.getRawPtr() == NULL){
+    try {
+      if (this->algorithm_ == Teuchos::null)
+        throw std::logic_error("no partitioning algorithm has been run yet");
 
-      part_t ntasks =  this->getActualGlobalNumberOfParts();
-      if (part_t (this->getTargetGlobalNumberOfParts()) > ntasks){
-        ntasks = this->getTargetGlobalNumberOfParts();
-      }
-      RCP<std::vector<Zoltan2::coordinateModelPartBox<scalar_t, part_t> > > 
-      pBoxes = this->getGlobalBoxBoundaries(comm);
-      int dim = (*pBoxes)[0].getDim();
-      GridHash<scalar_t, part_t> grid(pBoxes, ntasks, dim);
-      grid.getAdjArrays(comXAdj_, comAdj_);
+      this->algorithm_->getCommunicationGraph(this, comXAdj, comAdj);
     }
-    comAdj = comAdj_;
-    comXAdj = comXAdj_;
+    Z2_FORWARD_EXCEPTIONS
   }
-
-  RCP<std::vector<Zoltan2::coordinateModelPartBox<scalar_t, part_t> > > 
-  getGlobalBoxBoundaries(const Teuchos::Comm<int> *comm) {
-    part_t ntasks =  this->getActualGlobalNumberOfParts();
-    if (part_t (this->getTargetGlobalNumberOfParts()) > ntasks){
-      ntasks = this->getTargetGlobalNumberOfParts();
-    }
-
-    RCP<std::vector<Zoltan2::coordinateModelPartBox<scalar_t, part_t> > > 
-    pBoxes = this->getPartBoxes();
-
-    int dim = (*pBoxes)[0].getDim();
-    scalar_t *localPartBoundaries = new scalar_t[ntasks * 2 *dim];
-
-    memset(localPartBoundaries, 0, sizeof(scalar_t) * ntasks * 2 *dim);
-
-    scalar_t *globalPartBoundaries = new scalar_t[ntasks * 2 *dim];
-    memset(globalPartBoundaries, 0, sizeof(scalar_t) * ntasks * 2 *dim);
-
-    scalar_t *localPartMins = localPartBoundaries;
-    scalar_t *localPartMaxs = localPartBoundaries + ntasks * dim;
-
-    scalar_t *globalPartMins = globalPartBoundaries;
-    scalar_t *globalPartMaxs = globalPartBoundaries + ntasks * dim;
-
-    part_t boxCount = pBoxes->size();
-    for (part_t i = 0; i < boxCount; ++i){
-      part_t pId = (*pBoxes)[i].getpId();
-      //cout << "me:" << comm->getRank() << " has:" << pId << endl;
-
-      scalar_t *lmins = (*pBoxes)[i].getlmins();
-      scalar_t *lmaxs = (*pBoxes)[i].getlmaxs();
-
-      for (int j = 0; j < dim; ++j){
-        localPartMins[dim * pId + j] = lmins[j];
-        localPartMaxs[dim * pId + j] = lmaxs[j];
-        /*
-        cout << "me:" << comm->getRank()  <<
-                " dim * pId + j:"<< dim * pId + j <<
-                " localMin:" << localPartMins[dim * pId + j] <<
-                " localMax:" << localPartMaxs[dim * pId + j] << endl;
-        */
-      }
-    }
-
-    Teuchos::Zoltan2_BoxBoundaries<int, scalar_t> reductionOp(ntasks * 2 *dim);
-
-    reduceAll<int, scalar_t>(*comm, reductionOp,
-              ntasks * 2 *dim, localPartBoundaries, globalPartBoundaries);
-    RCP<std::vector<coordinateModelPartBox<scalar_t, part_t> > > 
-    pB(new std::vector <coordinateModelPartBox <scalar_t, part_t> > (), true);
-    for (part_t i = 0; i < ntasks; ++i){
-      Zoltan2::coordinateModelPartBox <scalar_t, part_t> tpb(i, dim,
-                                                 globalPartMins + dim * i,
-                                                 globalPartMaxs + dim * i);
-
-      /*
-      for (int j = 0; j < dim; ++j){
-          cout << "me:" << comm->getRank()  <<
-                  " dim * pId + j:"<< dim * i + j <<
-                  " globalMin:" << globalPartMins[dim * i + j] <<
-                  " globalMax:" << globalPartMaxs[dim * i + j] << endl;
-      }
-      */
-      pB->push_back(tpb);
-    }
-    delete []localPartBoundaries;
-    delete []globalPartBoundaries;
-    //RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, part_t> > > tmpRCPBox(pB, true);
-    this->partBoxes = pB;
-    return this->partBoxes;
-  }
-
-  /*! \brief Create an import list from the export list.
-   *
-   *  \param numExtra The amount of related information of type
-   *            \c Extra that you would like to associate with the data.
-   *  \param xtraInfo  The extra information related to your global Ids.
-   *       The information for the <tt>k-th</tt> global ID would begin at
-   *       <tt> xtraInfo[k*numExtra]</tt> and end before
-   *       <tt> xtraInfo[(k+1)*numExtra]</tt>.
-   *  \param imports on return is the list of global Ids assigned to
-   *        this process under the Solution.
-   *  \param newXtraInfo on return is the extra information associated
-   *     with the global Ids in the import list.
-   *
-   * The list returned in getPartList() is an export list, detailing
-   * to which part each object should be moved.  This method provides
-   * a new list, listing the global IDs of the objects to be imported
-   * to my part or parts.
-   *
-   * Because this method does global communication, it can also
-   * send useful data related to the global IDs.  For example, if the global IDs
-   * represent matrix rows, the extra data could be the number of non zeros
-   * in the row.
-   *
-   * \todo A version which takes the export part numbers and returns the
-   *            import part numbers in addition to the global IDs.  Although
-   *            this can be done with the extra data, it might be better
-   *            to do it explicitly.
-   */
-
-  template <typename Extra>
-    size_t convertSolutionToImportList(
-      int numExtra,
-      ArrayRCP<Extra> &xtraInfo,
-      ArrayRCP<typename Adapter::gid_t> &imports,
-      ArrayRCP<Extra> &newXtraInfo) const;
 
   /*! \brief Get the parts belonging to a process.
    *  \param procId a process rank
@@ -640,12 +521,9 @@ private:
 
   RCP<const Environment> env_;             // has application communicator
   RCP<const Comm<int> > comm_;             // the problem communicator
-  RCP<const IdentifierMap<user_t> > idMap_;
 
   //part box boundaries as a result of geometric partitioning algorithm.
   RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, part_t> > > partBoxes;
-  ArrayRCP <part_t> comXAdj_; //communication graph xadj
-  ArrayRCP <part_t> comAdj_; //communication graph adj.
 
   part_t nGlobalParts_;// target global number of parts
   part_t nLocalParts_; // number of parts to be on this process
@@ -728,8 +606,7 @@ private:
   ////////////////////////////////////////////////////////////////
   // The algorithm sets these values upon completion.
 
-  ArrayRCP<const gid_t>  gids_;   // User's global IDs
-  ArrayRCP<part_t> parts_;      // part number assigned to gids_[i]
+  ArrayRCP<part_t> parts_;      // part number assigned to localid[i]
 
   bool haveSolution_;
 
@@ -739,7 +616,12 @@ private:
   // The solution calculates this from the part assignments,
   // unless onePartPerProc_.
 
-  ArrayRCP<int> procs_;       // process rank assigned to gids_[i]
+  ArrayRCP<int> procs_;       // process rank assigned to localid[i]
+
+  ////////////////////////////////////////////////////////////////
+  // Algorithm used to compute the solution; 
+  // needed for post-processing with pointAssign or getCommunicationGraph
+  const RCP<Algorithm<Adapter> > algorithm_;  // 
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -748,18 +630,19 @@ private:
 
 template <typename Adapter>
   PartitioningSolution<Adapter>::PartitioningSolution(
-    RCP<const Environment> &env,
+    const RCP<const Environment> &env,
     RCP<const Comm<int> > &comm,
-    RCP<const IdentifierMap<user_t> > &idMap, int nUserWeights)
-    : env_(env), comm_(comm), idMap_(idMap),
-      partBoxes(),comXAdj_(), comAdj_(),
+    int nUserWeights,
+    const RCP<Algorithm<Adapter> > &algorithm)
+    : env_(env), comm_(comm),
+      partBoxes(),
       nGlobalParts_(0), nLocalParts_(0),
       localFraction_(0),  nWeightsPerObj_(),
       onePartPerProc_(false), partDist_(), procDist_(),
       procDistEquallySpread_(false),
       pSizeUniform_(), pCompactIndex_(), pSize_(),
-      gids_(), parts_(), haveSolution_(false), nGlobalPartsSolution_(0),
-      procs_()
+      parts_(), haveSolution_(false), nGlobalPartsSolution_(0),
+      procs_(), algorithm_(algorithm)
 {
   nWeightsPerObj_ = (nUserWeights ? nUserWeights : 1);  // TODO:  WHY??  WHY NOT ZERO?
 
@@ -780,20 +663,21 @@ template <typename Adapter>
 
 template <typename Adapter>
   PartitioningSolution<Adapter>::PartitioningSolution(
-    RCP<const Environment> &env,
+    const RCP<const Environment> &env,
     RCP<const Comm<int> > &comm,
-    RCP<const IdentifierMap<user_t> > &idMap, int nUserWeights,
+    int nUserWeights,
     ArrayView<ArrayRCP<part_t> > reqPartIds,
-    ArrayView<ArrayRCP<scalar_t> > reqPartSizes)
-    : env_(env), comm_(comm), idMap_(idMap),
-      partBoxes(),comXAdj_(), comAdj_(),
+    ArrayView<ArrayRCP<scalar_t> > reqPartSizes,
+    const RCP<Algorithm<Adapter> > &algorithm)
+    : env_(env), comm_(comm),
+      partBoxes(),
       nGlobalParts_(0), nLocalParts_(0),
       localFraction_(0),  nWeightsPerObj_(),
       onePartPerProc_(false), partDist_(), procDist_(),
       procDistEquallySpread_(false),
       pSizeUniform_(), pCompactIndex_(), pSize_(),
-      gids_(), parts_(), haveSolution_(false), nGlobalPartsSolution_(0),
-      procs_()
+      parts_(), haveSolution_(false), nGlobalPartsSolution_(0),
+      procs_(), algorithm_(algorithm)
 {
   nWeightsPerObj_ = (nUserWeights ? nUserWeights : 1);  // TODO:  WHY?? WHY NOT ZERO?
 
@@ -1342,11 +1226,8 @@ template <typename Adapter>
   }
 }
 
-
 template <typename Adapter>
-  void PartitioningSolution<Adapter>::setParts(
-    ArrayRCP<const gno_t> &gnoList, ArrayRCP<part_t> &partList,
-    bool dataDidNotMove)
+  void PartitioningSolution<Adapter>::setParts(ArrayRCP<part_t> &partList)
 {
   env_->debug(DETAILED_STATUS, "Entering setParts");
 
@@ -1364,166 +1245,10 @@ template <typename Adapter>
     IdentifierTraits<part_t>::minMax(partList.getRawPtr(), len, lMin, lMax);
 
   IdentifierTraits<part_t>::globalMinMax(*comm_, len == 0,
-    lMin, lMax, gMin, gMax);
+                                         lMin, lMax, gMin, gMax);
 
   nGlobalPartsSolution_ = gMax - gMin + 1;
-
-  if (dataDidNotMove) {
-    // Case where the algorithm provides the part list in the same order
-    // that it received the gnos.
-
-    if (idMap_->gnosAreGids()){
-      gids_ = Teuchos::arcp_reinterpret_cast<const gid_t>(gnoList);
-    }
-    else{
-      gid_t *gidList = new gid_t [len];
-      env_->localMemoryAssertion(__FILE__, __LINE__, len, gidList);
-      ArrayView<gid_t> gidView(gidList, len);
-
-      const gno_t *gnos = gnoList.getRawPtr();
-      ArrayView<gno_t> gnoView(const_cast<gno_t *>(gnos), len);
-
-      try{
-        idMap_->gidTranslate(gidView, gnoView, TRANSLATE_LIB_TO_APP);
-      }
-      Z2_FORWARD_EXCEPTIONS
-
-      gids_ = arcp<const gid_t>(gidList, 0, len);
-    }
-    parts_ = partList;
-  }
-  else {
-    // Case where the algorithm moved the data.
-    // KDDKDD Should we require the algorithm to return the parts in
-    // KDDKDD the same order as the gnos provided by the model?
-
-    // We send part information to the process that "owns" the global number.
-
-    ArrayView<gid_t> emptyView;
-    ArrayView<int> procList;
-
-    if (len){
-      int *tmp = new int [len];
-      env_->localMemoryAssertion(__FILE__, __LINE__, len, tmp);
-      procList = ArrayView<int>(tmp, len);
-    }
-
-    idMap_->gnoGlobalTranslate (gnoList.view(0,len), emptyView, procList);
-
-    int remotelyOwned = 0;
-    int rank = comm_->getRank();
-    int nprocs = comm_->getSize();
-
-    for (size_t i=0; !remotelyOwned && i < len; i++){
-      if (procList[i] != rank)
-        remotelyOwned = 1;
-    }
-
-    int anyRemotelyOwned=0;
-
-    try{
-      reduceAll<int, int>(*comm_, Teuchos::REDUCE_MAX, 1,
-        &remotelyOwned, &anyRemotelyOwned);
-    }
-    Z2_THROW_OUTSIDE_ERROR(*env_);
-
-    if (anyRemotelyOwned){
-
-      // Send the owners of these gnos their part assignments.
-
-      Array<int> countOutBuf(nprocs, 0);
-      Array<int> countInBuf(nprocs, 0);
-
-      Array<gno_t> outBuf(len*2, 0);
-
-      if (len > 0){
-        Array<lno_t> offsetBuf(nprocs+1, 0);
-
-        for (size_t i=0; i < len; i++){
-          countOutBuf[procList[i]]+=2;
-        }
-
-        offsetBuf[0] = 0;
-        for (int i=0; i < nprocs; i++)
-          offsetBuf[i+1] = offsetBuf[i] + countOutBuf[i];
-
-        for (size_t i=0; i < len; i++){
-          int p = procList[i];
-          int off = offsetBuf[p];
-          outBuf[off] = gnoList[i];
-          outBuf[off+1] = static_cast<gno_t>(partList[i]);
-          offsetBuf[p]+=2;
-        }
-      }
-
-      ArrayRCP<gno_t> inBuf;
-
-      try{
-        AlltoAllv<gno_t>(*comm_, *env_,
-          outBuf(), countOutBuf(), inBuf, countInBuf());
-      }
-      Z2_FORWARD_EXCEPTIONS;
-
-      outBuf.clear();
-      countOutBuf.clear();
-
-      gno_t newLen = 0;
-      for (int i=0; i < nprocs; i++)
-        newLen += countInBuf[i];
-
-      countInBuf.clear();
-
-      newLen /= 2;
-
-      ArrayRCP<part_t> parts;
-      ArrayRCP<const gno_t> myGnos;
-
-      if (newLen > 0){
-
-        gno_t *tmpGno = new gno_t [newLen];
-        env_->localMemoryAssertion(__FILE__, __LINE__, newLen, tmpGno);
-
-        part_t *tmpPart = new part_t [newLen];
-        env_->localMemoryAssertion(__FILE__, __LINE__, newLen, tmpPart);
-
-        size_t next = 0;
-        for (lno_t i=0; i < newLen; i++){
-          tmpGno[i] = inBuf[next++];
-          tmpPart[i] = inBuf[next++];
-        }
-
-        parts = arcp(tmpPart, 0, newLen);
-        myGnos = arcp(tmpGno, 0, newLen);
-      }
-
-      gnoList = myGnos;
-      partList = parts;
-      len = newLen;
-    }
-
-    delete [] procList.getRawPtr();
-
-    if (idMap_->gnosAreGids()){
-      gids_ = Teuchos::arcp_reinterpret_cast<const gid_t>(gnoList);
-    }
-    else{
-      gid_t *gidList = new gid_t [len];
-      env_->localMemoryAssertion(__FILE__, __LINE__, len, gidList);
-      ArrayView<gid_t> gidView(gidList, len);
-
-      const gno_t *gnos = gnoList.getRawPtr();
-      ArrayView<gno_t> gnoView(const_cast<gno_t *>(gnos), len);
-
-      try{
-        idMap_->gidTranslate(gidView, gnoView, TRANSLATE_LIB_TO_APP);
-      }
-      Z2_FORWARD_EXCEPTIONS
-
-      gids_ = arcp<const gid_t>(gidList, 0, len);
-    }
-
-    parts_ = partList;
-  }
+  parts_ = partList;
 
   // Now determine which process gets each object, if not one-to-one.
 
@@ -1629,82 +1354,6 @@ template <typename Adapter>
   env_->debug(DETAILED_STATUS, "Exiting setParts");
 }
 
-template <typename Adapter>
-  template <typename Extra>
-    size_t PartitioningSolution<Adapter>::convertSolutionToImportList(
-      int numExtra, ArrayRCP<Extra> &xtraInfo,
-      ArrayRCP<typename Adapter::gid_t> &imports,       // output
-      ArrayRCP<Extra> &newXtraInfo) const               // output
-{
-  env_->localInputAssertion(__FILE__, __LINE__, "no solution yet",
-    haveSolution_, BASIC_ASSERTION);
-  env_->debug(DETAILED_STATUS, "Entering convertSolutionToImportList");
-
-  int numProcs                = comm_->getSize();
-  size_t localNumIds          = gids_.size();
-
-  // How many to each process?
-  Array<int> counts(numProcs, 0);
-  if (onePartPerProc_)
-    for (size_t i=0; i < localNumIds; i++)
-      counts[parts_[i]]++;
-  else
-    for (size_t i=0; i < localNumIds; i++)
-      counts[procs_[i]]++;
-
-  Array<gno_t> offsets(numProcs+1, 0);
-  for (int i=1; i <= numProcs; i++){
-    offsets[i] = offsets[i-1] + counts[i-1];
-  }
-
-  Array<gid_t> gidList(localNumIds);
-  Array<Extra> numericInfo;
-
-  if (numExtra > 0)
-    numericInfo.resize(localNumIds);
-
-  if (onePartPerProc_){
-    for (size_t i=0; i < localNumIds; i++){
-      lno_t idx = offsets[parts_[i]];
-      gidList[idx] = gids_[i];
-      if (numExtra > 0)
-        numericInfo[idx] = xtraInfo[i];
-      offsets[parts_[i]] = idx + 1;
-    }
-  }
-  else {
-    for (size_t i=0; i < localNumIds; i++){
-      lno_t idx = offsets[procs_[i]];
-      gidList[idx] = gids_[i];
-      if (numExtra > 0)
-        numericInfo[idx] = xtraInfo[i];
-      offsets[procs_[i]] = idx + 1;
-    }
-  }
-
-  Array<int> recvCounts(numProcs, 0);
-
-  try{
-    AlltoAllv<gid_t>(*comm_, *env_, gidList(),
-      counts(), imports, recvCounts());
-  }
-  catch (std::exception &e){
-    throw std::runtime_error("alltoallv 1");
-  }
-
-  if (numExtra > 0){
-    try{
-      AlltoAllv<Extra>(*comm_, *env_, xtraInfo(),
-        counts(), newXtraInfo, recvCounts());
-    }
-    catch (std::exception &e){
-      throw std::runtime_error("alltoallv 2");
-    }
-  }
-
-  env_->debug(DETAILED_STATUS, "Exiting convertSolutionToImportList");
-  return imports.size();
-}
 
 template <typename Adapter>
   void PartitioningSolution<Adapter>::procToPartsMap(int procId,
@@ -1827,6 +1476,9 @@ template <typename Adapter>
     bool doCheck, bool haveNumLocalParts, bool haveNumGlobalParts,
     int numLocalParts, int numGlobalParts)
 {
+#ifdef _MSC_VER
+	typedef SSIZE_T ssize_t;
+#endif
   int nprocs = comm_->getSize();
   ssize_t reducevals[4];
   ssize_t sumHaveGlobal=0, sumHaveLocal=0;

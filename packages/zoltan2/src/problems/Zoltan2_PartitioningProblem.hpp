@@ -60,7 +60,13 @@
 #include <Zoltan2_MachineRepresentation.hpp>
 #include <Zoltan2_TaskMapping.hpp>
 
+#ifndef _WIN32
 #include <unistd.h>
+#else
+#include <process.h>
+#define NOMINMAX
+#include <windows.h>
+#endif
 
 #ifdef HAVE_ZOLTAN2_OVIS
 #include <ovis.h>
@@ -97,7 +103,7 @@ class PartitioningProblem : public Problem<Adapter>
 public:
 
   typedef typename Adapter::scalar_t scalar_t;
-  typedef typename Adapter::gid_t gid_t;
+  typedef typename Adapter::zgid_t zgid_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::part_t part_t;
@@ -106,22 +112,56 @@ public:
 
 #ifdef HAVE_ZOLTAN2_MPI
   typedef Teuchos::OpaqueWrapper<MPI_Comm> mpiWrapper_t;
+  /*! \brief Constructor where MPI communicator can be specified
+   */
+  PartitioningProblem(Adapter *A, ParameterList *p, MPI_Comm comm):
+      Problem<Adapter>(A,p,comm), solution_(),
+      problemComm_(), problemCommConst_(),
+      inputType_(InvalidAdapterType), 
+      graphFlags_(), idFlags_(), coordFlags_(), algName_(),
+      numberOfWeights_(), partIds_(), partSizes_(), 
+      numberOfCriteria_(), levelNumberParts_(), hierarchical_(false), 
+      timer_(), metricsRequested_(false), metrics_()
+  {
+    for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
+    initializeProblem();
+  }
 #endif
+
+  //! \brief Constructor where communicator is the Teuchos default.
+  PartitioningProblem(Adapter *A, ParameterList *p):
+      Problem<Adapter>(A,p), solution_(),
+      problemComm_(), problemCommConst_(),
+      inputType_(InvalidAdapterType), 
+      graphFlags_(), idFlags_(), coordFlags_(), algName_(),
+      numberOfWeights_(), 
+      partIds_(), partSizes_(), numberOfCriteria_(), 
+      levelNumberParts_(), hierarchical_(false), timer_(),
+      metricsRequested_(false), metrics_()
+  {
+    for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
+    initializeProblem();
+  }
+
+  //! \brief Constructor where Teuchos communicator is specified
+  PartitioningProblem(Adapter *A, ParameterList *p,
+                      RCP<const Teuchos::Comm<int> > &comm):
+      Problem<Adapter>(A,p,comm), solution_(),
+      problemComm_(), problemCommConst_(),
+      inputType_(InvalidAdapterType), 
+      graphFlags_(), idFlags_(), coordFlags_(), algName_(),
+      numberOfWeights_(), 
+      partIds_(), partSizes_(), numberOfCriteria_(), 
+      levelNumberParts_(), hierarchical_(false), timer_(),
+      metricsRequested_(false), metrics_()
+  {
+    for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
+    initializeProblem();
+  }
 
   /*! \brief Destructor
    */
   ~PartitioningProblem() {};
-
-#ifdef HAVE_ZOLTAN2_MPI
-
-  /*! \brief Constructor where MPI communicator can be specified
-   */
-  PartitioningProblem(Adapter *A, Teuchos::ParameterList *p, MPI_Comm comm); 
-
-#endif
-
-  //! \brief Constructor where communicator is the Teuchos default.
-  PartitioningProblem(Adapter *A, Teuchos::ParameterList *p);
 
   //!  \brief Direct the problem to create a solution.
   //
@@ -142,59 +182,6 @@ public:
 
   void solve(bool updateInputData=true );
  
-  //!  \brief Return the part overlapping a given point in space; 
-  //          when a point lies on a part boundary, the lowest part
-  //          number on that boundary is returned.
-  //          Note that not all partitioning algorithms will support
-  //          this method.
-  //
-  //   \param dim : the number of dimensions specified for the point in space
-  //   \param point : the coordinates of the point in space; array of size dim
-  //   \return the part number of a part overlapping the given point
-  //
-  //   TODO:  This method might be more appropriate in a partitioning solution
-  //   TODO:  But then the solution would need to know about the algorithm.
-  //   TODO:  Consider moving the algorithm to the partitioning solution.
-  part_t pointAssign(int dim, scalar_t *point) 
-  {
-    part_t p;
-    try {
-      if (this->algorithm_ == Teuchos::null)
-        throw std::logic_error("no partitioning algorithm has been run yet");
-
-      p = this->algorithm_->pointAssign(dim, point); 
-    }
-    Z2_FORWARD_EXCEPTIONS
-    return p;
-  }
-
-  //!  \brief Return an array of all parts overlapping a given box in space.
-  //   This method allocates memory for the return argument, but does not
-  //   control that memory.  The user is responsible for freeing the 
-  //   memory.
-  //
-  //   \param dim : (in) the number of dimensions specified for the box
-  //   \param lower : (in) the coordinates of the lower corner of the box; 
-  //                   array of size dim
-  //   \param upper : (in) the coordinates of the upper corner of the box; 
-  //                   array of size dim
-  //   \param nPartsFound : (out) the number of parts overlapping the box
-  //   \param partsFound :  (out) array of parts overlapping the box
-  //   TODO:  This method might be more appropriate in a partitioning solution
-  //   TODO:  But then the solution would need to know about the algorithm.
-  //   TODO:  Consider moving the algorithm to the partitioning solution.
-  void boxAssign(int dim, scalar_t *lower, scalar_t *upper,
-                 size_t &nPartsFound, part_t **partsFound) 
-  {
-    try {
-      if (this->algorithm_ == Teuchos::null)
-        throw std::logic_error("no partitioning algorithm has been run yet");
-
-      this->algorithm_->boxAssign(dim, lower, upper, nPartsFound, partsFound); 
-    }
-    Z2_FORWARD_EXCEPTIONS
-  }
-
   //!  \brief Get the solution to the problem.
   //
   //   \return  a reference to the solution to the most recent solve().
@@ -357,10 +344,6 @@ private:
   RCP<Comm<int> > problemComm_;
   RCP<const Comm<int> > problemCommConst_;
 
-#ifdef HAVE_ZOLTAN2_MPI
-  MPI_Comm mpiComm_;
-#endif
-
   BaseAdapterType inputType_;
 
   //ModelType modelType_;
@@ -402,53 +385,13 @@ private:
 };
 ////////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_ZOLTAN2_MPI
-template <typename Adapter>
-  PartitioningProblem<Adapter>::PartitioningProblem(Adapter *A, 
-    ParameterList *p, MPI_Comm comm):
-      Problem<Adapter>(A,p,comm), solution_(),
-      problemComm_(), problemCommConst_(),
-      inputType_(InvalidAdapterType), 
-      graphFlags_(), idFlags_(), coordFlags_(), algName_(),
-      numberOfWeights_(), partIds_(), partSizes_(), 
-      numberOfCriteria_(), levelNumberParts_(), hierarchical_(false), 
-      timer_(), metricsRequested_(false), metrics_()
-{
-
-  for(int i=0;i<MAX_NUM_MODEL_TYPES;i++)
-  {
-    modelAvail_[i]=false;
-  }
-
-  initializeProblem();
-
-}
-#endif
 /*
 template <typename Adapter>
 void PartitioningProblem<Adapter>::setMachine(MachineRepresentation<typename Adapter::base_adapter_t::scalar_t> *machine){
   this->machine_ = RCP<MachineRepresentation<typename Adapter::base_adapter_t::scalar_t> > (machine, false);
 }
 */
-template <typename Adapter>
-  PartitioningProblem<Adapter>::PartitioningProblem(Adapter *A, 
-    ParameterList *p):
-      Problem<Adapter>(A,p), solution_(),
-      problemComm_(), problemCommConst_(),
-      inputType_(InvalidAdapterType), 
-      graphFlags_(), idFlags_(), coordFlags_(), algName_(),
-      numberOfWeights_(), 
-      partIds_(), partSizes_(), numberOfCriteria_(), 
-      levelNumberParts_(), hierarchical_(false), timer_(),
-      metricsRequested_(false), metrics_()
-{
-  for(int i=0;i<MAX_NUM_MODEL_TYPES;i++)
-  {
-    modelAvail_[i]=false;
-  }
 
-  initializeProblem();
-}
 
 template <typename Adapter>
   void PartitioningProblem<Adapter>::initializeProblem()
@@ -458,8 +401,13 @@ template <typename Adapter>
   this->env_->debug(DETAILED_STATUS, "PartitioningProblem::initializeProblem");
 
   if (getenv("DEBUGME")){
+#ifndef _WIN32
     std::cout << getpid() << std::endl;
     sleep(15);
+#else
+    std::cout << _getpid() << std::endl;
+    Sleep(15000);
+#endif
   }
 
 #ifdef HAVE_ZOLTAN2_OVIS
@@ -472,13 +420,6 @@ template <typename Adapter>
   problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
 
   machine_ = RCP <Zoltan2::MachineRepresentation<typename Adapter::scalar_t> >(new Zoltan2::MachineRepresentation<typename Adapter::scalar_t>(problemComm_));
-#ifdef HAVE_ZOLTAN2_MPI
-
-  // TPLs may want an MPI communicator
-
-  mpiComm_ = Teuchos2MPI(problemComm_);
-
-#endif
 
   // Number of criteria is number of user supplied weights if non-zero.
   // Otherwise it is 1 and uniform weight is implied.
@@ -555,7 +496,6 @@ template <typename Adapter>
 template <typename Adapter>
 void PartitioningProblem<Adapter>::solve(bool updateInputData)
 {
-  HELLO;
   this->env_->debug(DETAILED_STATUS, "Entering solve");
 
   // Create the computational model.
@@ -574,75 +514,73 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
   //   metrics.  The Solution object itself will convert our internal
   //   global numbers back to application global Ids if needed.
 
-  RCP<const IdentifierMap<user_t> > idMap = 
-    this->baseModel_->getIdentifierMap();
+  // Create the algorithm
+  try {
+    if (algName_ == std::string("multijagged")) {
+      this->algorithm_ = rcp(new Zoltan2_AlgMJ<Adapter>(this->envConst_,
+                                              problemComm_,
+                                              this->coordinateModel_));
+    }
+    else if (algName_ == std::string("zoltan")) {
+      this->algorithm_ = rcp(new AlgZoltan<Adapter>(this->envConst_,
+                                           problemComm_,
+                                           this->baseInputAdapter_));
+    }
+    else if (algName_ == std::string("parma")) {
+      this->algorithm_ = rcp(new AlgParMA<Adapter>(this->envConst_,
+                                           problemComm_,
+                                           this->baseInputAdapter_));
+    }
+    else if (algName_ == std::string("scotch")) {
+      this->algorithm_ = rcp(new AlgPTScotch<Adapter>(this->envConst_,
+                                            problemComm_,
+                                            this->graphModel_));
+    }
+    else if (algName_ == std::string("parmetis")) {
+      this->algorithm_ = rcp(new AlgParMETIS<Adapter>(this->envConst_,
+                                            problemComm_,
+                                            this->graphModel_));
+    }
+    else if (algName_ == std::string("block")) {
+      this->algorithm_ = rcp(new AlgBlock<Adapter>(this->envConst_,
+                                         problemComm_, this->identifierModel_));
+    }
+    else if (algName_ == std::string("rcb")) {
+      this->algorithm_ = rcp(new AlgRCB<Adapter>(this->envConst_, problemComm_,
+                                                 this->coordinateModel_));
+    }
+    else if (algName_ == std::string("wolf")) {
+      this->algorithm_ = rcp(new AlgWolf<Adapter>(this->envConst_,
+                                        problemComm_,this->graphModel_,
+                                        this->coordinateModel_));
+    }
+    else {
+      throw std::logic_error("partitioning algorithm not supported");
+    }
+  }
+  Z2_FORWARD_EXCEPTIONS;
 
-  PartitioningSolution<Adapter> *soln = NULL;
-
+  // Create the solution
   this->env_->timerStart(MACRO_TIMERS, "create solution");
+  PartitioningSolution<Adapter> *soln = NULL;
 
   try{
     soln = new PartitioningSolution<Adapter>( 
-      this->envConst_, problemCommConst_, idMap, numberOfWeights_, 
+      this->envConst_, problemCommConst_, numberOfWeights_, 
       partIds_.view(0, numberOfCriteria_), 
-      partSizes_.view(0, numberOfCriteria_));
+      partSizes_.view(0, numberOfCriteria_), this->algorithm_);
   }
   Z2_FORWARD_EXCEPTIONS;
 
   solution_ = rcp(soln);
 
   this->env_->timerStop(MACRO_TIMERS, "create solution");
-
   this->env_->memory("After creating Solution");
 
   // Call the algorithm
 
   try {
-    if (algName_ == std::string("scotch")) {
-
-      this->algorithm_ = rcp(new AlgPTScotch<Adapter>(this->envConst_,
-                                            problemComm_,
-#ifdef HAVE_ZOLTAN2_MPI
-                                            mpiComm_,
-#endif
-                                            this->graphModel_));
-      this->algorithm_->partition(solution_);
-    }
-
-    else if (algName_ == std::string("block")) {
-
-      this->algorithm_ = rcp(new AlgBlock<Adapter>(this->envConst_,
-                                         problemComm_, this->identifierModel_));
-      this->algorithm_->partition(solution_);
-    }
-
-    else if (algName_ == std::string("rcb")) {
-
-      this->algorithm_ = rcp(new AlgRCB<Adapter>(this->envConst_, problemComm_,
-                                                 this->coordinateModel_));
-      this->algorithm_->partition(solution_);
-    }
-
-    else if (algName_ == std::string("multijagged")) {
-
-      this->algorithm_ = rcp(new Zoltan2_AlgMJ<Adapter>(this->envConst_,
-                                              problemComm_,
-                                              this->coordinateModel_));
-      this->algorithm_->partition(solution_);
-    }
-
-    else if (algName_ == std::string("wolf")) {
-
-      this->algorithm_ = rcp(new AlgWolf<Adapter>(this->envConst_,
-                                        problemComm_,this->graphModel_,
-                                        this->coordinateModel_));
-
-      // need to add coordModel, make sure this is built
-      this->algorithm_->partition(solution_);
-    }
-    else {
-      throw std::logic_error("partitioning algorithm not supported");
-    }
+    this->algorithm_->partition(solution_);
   }
   Z2_FORWARD_EXCEPTIONS;
 
@@ -675,31 +613,16 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
     //if mapping is 1 -- graph mapping
   }
 
-#ifdef KDDKDD_SHOULD_NEVER_CHANGE_PROBLEMCOMM
-#ifdef HAVE_ZOLTAN2_MPI
-
-  // The algorithm may have changed the communicator.  Change it back.
-  // KDD:  Why would the algorithm change the communicator? TODO
-  // KDD:  Should we allow such a side effect? TODO
-
-  RCP<const mpiWrapper_t > wrappedComm = rcp(new mpiWrapper_t(mpiComm_));
-  problemComm_ = rcp(new Teuchos::MpiComm<int>(wrappedComm));
-  problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
-
-#endif
-#endif
-
   if (metricsRequested_){
     typedef PartitioningSolution<Adapter> ps_t;
     typedef PartitioningSolutionQuality<Adapter> psq_t;
 
     psq_t *quality = NULL;
     RCP<const ps_t> solutionConst = rcp_const_cast<const ps_t>(solution_);
-    RCP<const Adapter> adapter = rcp(this->inputAdapter_, false);
 
     try{
-      quality = new psq_t(this->envConst_, problemCommConst_, adapter, 
-        solutionConst);
+      quality = new psq_t(this->envConst_, problemCommConst_,
+                          this->inputAdapter_, solutionConst);
     }
     Z2_FORWARD_EXCEPTIONS
 
@@ -712,7 +635,6 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 template <typename Adapter>
 void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 {
-  HELLO;
   this->env_->debug(DETAILED_STATUS, 
     "PartitioningProblem::createPartitioningProblem");
 
@@ -816,6 +738,11 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
       algName_ = algorithm;
       needConsecutiveGlobalIds = true;
+    }
+    else if (algorithm == std::string("zoltan") ||
+	     algorithm == std::string("parma"))
+    {
+      algName_ = algorithm;
     }
     else if (algorithm == std::string("rcb") ||
              algorithm == std::string("rib") ||
@@ -1094,17 +1021,16 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   }
 
 
-  if ( newData ||
-       (modelAvail_[GraphModelType]!=prevModelAvail[GraphModelType]) ||
-       (modelAvail_[HypergraphModelType]!=prevModelAvail[HypergraphModelType]) ||
-       (modelAvail_[CoordinateModelType]!=prevModelAvail[CoordinateModelType]) ||
-       (modelAvail_[IdentifierModelType]!=prevModelAvail[IdentifierModelType]) ||
-	//       (modelType_ != previousModel) ||
-       (graphFlags_ != previousGraphModelFlags) ||
-       (coordFlags_ != previousCoordinateModelFlags) ||
-       (idFlags_ != previousIdentifierModelFlags) ) 
+  if (newData ||
+      (modelAvail_[GraphModelType]!=prevModelAvail[GraphModelType]) ||
+      (modelAvail_[HypergraphModelType]!=prevModelAvail[HypergraphModelType])||
+      (modelAvail_[CoordinateModelType]!=prevModelAvail[CoordinateModelType])||
+      (modelAvail_[IdentifierModelType]!=prevModelAvail[IdentifierModelType])||
+      // (modelType_ != previousModel) ||
+      (graphFlags_ != previousGraphModelFlags) ||
+      (coordFlags_ != previousCoordinateModelFlags) ||
+      (idFlags_    != previousIdentifierModelFlags)) 
   {
-
     // Create the computational model.
     // Models are instantiated for base input adapter types (mesh,
     // matrix, graph, and so on).  We pass a pointer to the input
@@ -1115,53 +1041,47 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     //KDD const Teuchos::ParameterList pl = this->envConst_->getParameters();
     //bool exceptionThrow = true;
 
-    if(modelAvail_[GraphModelType]==false && modelAvail_[HypergraphModelType]==false &&
-       modelAvail_[CoordinateModelType]==false && modelAvail_[IdentifierModelType]==false)
+    if(modelAvail_[GraphModelType]==true)
     {
-      cout << __func__ << " Invalid model"  << endl;
-    }
-    else
-    {
-      if(modelAvail_[GraphModelType]==true)
-      {
-        this->env_->debug(DETAILED_STATUS, "    building graph model");
-        this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
-          this->baseInputAdapter_, this->envConst_, problemComm_, graphFlags_));
+      this->env_->debug(DETAILED_STATUS, "    building graph model");
+      this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
+            this->baseInputAdapter_, this->envConst_, problemComm_,
+            graphFlags_));
 
-        this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(this->graphModel_);
-      }
-      if(modelAvail_[HypergraphModelType]==true)
-      {
-	std::cout << "Hypergraph model not implemented yet..." << std::endl;
-      }
-
-      if(modelAvail_[CoordinateModelType]==true)
-      {
-      	this->env_->debug(DETAILED_STATUS, "    building coordinate model");
-      	this->coordinateModel_ = rcp(new CoordinateModel<base_adapter_t>(
-      				     this->baseInputAdapter_, this->envConst_, problemComm_, coordFlags_));
-
-        this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(this->coordinateModel_);
-      }
-
-      if(modelAvail_[IdentifierModelType]==true)
-      {
-        this->env_->debug(DETAILED_STATUS, "    building identifier model");
-        this->identifierModel_ = rcp(new IdentifierModel<base_adapter_t>(
-                                     this->baseInputAdapter_, this->envConst_, problemComm_, idFlags_));
-
-        this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(this->identifierModel_);
-      }
-  
-
+      this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
+            this->graphModel_);
     }
 
+    if(modelAvail_[HypergraphModelType]==true)
+    {
+      std::cout << "Hypergraph model not implemented yet..." << std::endl;
+    }
 
+    if(modelAvail_[CoordinateModelType]==true)
+    {
+      this->env_->debug(DETAILED_STATUS, "    building coordinate model");
+      this->coordinateModel_ = rcp(new CoordinateModel<base_adapter_t>(
+            this->baseInputAdapter_, this->envConst_, problemComm_, 
+            coordFlags_));
+
+      this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
+            this->coordinateModel_);
+    }
+
+    if(modelAvail_[IdentifierModelType]==true)
+    {
+      this->env_->debug(DETAILED_STATUS, "    building identifier model");
+      this->identifierModel_ = rcp(new IdentifierModel<base_adapter_t>(
+            this->baseInputAdapter_, this->envConst_, problemComm_,
+            idFlags_));
+
+      this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
+            this->identifierModel_);
+    }
 
     this->env_->memory("After creating Model");
     this->env_->debug(DETAILED_STATUS, "createPartitioningProblem done");
   }
-
 }
 
 }  // namespace Zoltan2

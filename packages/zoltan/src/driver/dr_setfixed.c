@@ -151,6 +151,7 @@ FILE *fp;
             else
               printf("Warning: Invalid part number %i ignored\n", part);
           }
+          fclose(fp);
         }
       }
       break;

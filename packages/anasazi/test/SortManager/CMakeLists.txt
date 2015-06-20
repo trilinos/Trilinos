@@ -1,7 +1,4 @@
 
-INCLUDE(TribitsAddExecutable)
-INCLUDE(TribitsAddTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SortManager_test

@@ -54,6 +54,8 @@
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STKConnManager.hpp"
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
 #include "Intrepid_HCURL_QUAD_I1_FEM.hpp"
@@ -100,6 +102,8 @@ RCP<const panzer::IntrepidFieldPattern> buildFieldPattern()
 // quad tests
 TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad)
 {
+   PHX::InitializeKokkosDevice();
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
@@ -201,10 +205,13 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad)
          TEST_ASSERT(gids[ux_offsets[i]]<gids[uy_offsets[i]]); 
       }
    }
+   PHX::FinalizeKokkosDevice();
 }
 
 TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, field_order)
 {
+   PHX::InitializeKokkosDevice();
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
@@ -291,11 +298,14 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, field_order)
          TEST_ASSERT(gids[p_offsets[i]]<gids[ux_offsets[i]]); 
       }
    }
+   PHX::FinalizeKokkosDevice();
 }
 
 // quad tests
 TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, shared_owned_indices)
 {
+   PHX::InitializeKokkosDevice();
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
@@ -367,11 +377,15 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, shared_owned_indices)
    }
    else 
       TEUCHOS_ASSERT(false);
+
+   PHX::FinalizeKokkosDevice();
 }
 
 // quad tests
 TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, multiple_dof_managers)
 {
+   PHX::InitializeKokkosDevice();
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
@@ -440,10 +454,14 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, multiple_dof_managers)
    }
    else
       TEUCHOS_ASSERT(false);
+
+   PHX::FinalizeKokkosDevice();
 }
 
 TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager,getDofCoords)
 {
+   PHX::InitializeKokkosDevice();
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
@@ -495,11 +513,15 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager,getDofCoords)
    //    for(int i=0;i<4;i++) {
    //    }
    // }
+
+   PHX::FinalizeKokkosDevice();
 }
 
 // quad tests
 TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations)
 {
+   PHX::InitializeKokkosDevice();
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
@@ -622,11 +644,15 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations)
       for(std::size_t i=0;i<4;i++)
          TEST_EQUALITY(orientation[i+4],standardO[i]);
    }
+
+   PHX::FinalizeKokkosDevice();
 }
 
 // quad tests
 TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations2)
 {
+   PHX::InitializeKokkosDevice();
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
@@ -698,11 +724,15 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations2)
       for(std::size_t i=0;i<4;i++)
          TEST_EQUALITY(orientation[i],standardO[i]);
    }
+   
+   PHX::FinalizeKokkosDevice();
 }
 
 // quad tests
 TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations_fail)
 {
+   PHX::InitializeKokkosDevice();
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
@@ -731,6 +761,8 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations_fa
    dofManager->addField("b",patternI1);
 
    TEST_THROW(dofManager->buildGlobalUnknowns(patternI1),std::logic_error);
+
+   PHX::FinalizeKokkosDevice();
 }
 
 }

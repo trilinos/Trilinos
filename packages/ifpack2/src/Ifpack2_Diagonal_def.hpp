@@ -45,7 +45,6 @@
 
 #include "Ifpack2_Diagonal_decl.hpp"
 #include "Tpetra_CrsMatrix_def.hpp"
-#include "Ifpack2_Condest.hpp"
 
 namespace Ifpack2 {
 
@@ -58,7 +57,6 @@ Diagonal<MatrixType>::Diagonal (const Teuchos::RCP<const row_matrix_type>& A) :
   numInitialize_ (0),
   numCompute_ (0),
   numApply_ (0),
-  condEst_ (-Teuchos::ScalarTraits<magnitude_type>::one ()),
   isInitialized_ (false),
   isComputed_ (false)
 {}
@@ -72,14 +70,12 @@ Diagonal<MatrixType>::Diagonal (const Teuchos::RCP<const crs_matrix_type>& A) :
   numInitialize_ (0),
   numCompute_ (0),
   numApply_ (0),
-  condEst_ (-Teuchos::ScalarTraits<magnitude_type>::one ()),
   isInitialized_ (false),
   isComputed_ (false)
 {}
 
 template<class MatrixType>
-Diagonal<MatrixType>::
-Diagonal (const Teuchos::RCP<const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& diag) :
+Diagonal<MatrixType>::Diagonal (const Teuchos::RCP<const vector_type>& diag) :
   userInverseDiag_ (diag),
   inverseDiag_ (diag),
   initializeTime_ (0.0),
@@ -88,14 +84,12 @@ Diagonal (const Teuchos::RCP<const Tpetra::Vector<scalar_type,local_ordinal_type
   numInitialize_ (0),
   numCompute_ (0),
   numApply_ (0),
-  condEst_ (-Teuchos::ScalarTraits<magnitude_type>::one ()),
   isInitialized_ (false),
   isComputed_ (false)
 {}
 
-
 template<class MatrixType>
-Diagonal<MatrixType>::~Diagonal()
+Diagonal<MatrixType>::~Diagonal ()
 {}
 
 template<class MatrixType>
@@ -117,7 +111,6 @@ Diagonal<MatrixType>::getDomainMap () const
   }
 }
 
-
 template<class MatrixType>
 Teuchos::RCP<const typename Diagonal<MatrixType>::map_type>
 Diagonal<MatrixType>::getRangeMap () const
@@ -137,22 +130,19 @@ Diagonal<MatrixType>::getRangeMap () const
   }
 }
 
-
 template<class MatrixType>
-void Diagonal<MatrixType>::setParameters (const Teuchos::ParameterList& /*params*/)
+void Diagonal<MatrixType>::
+setParameters (const Teuchos::ParameterList& /*params*/)
 {}
-
 
 template<class MatrixType>
 void Diagonal<MatrixType>::reset ()
 {
   inverseDiag_ = Teuchos::null;
   offsets_ = Teuchos::null;
-  condEst_ = -Teuchos::ScalarTraits<magnitude_type>::one ();
   isInitialized_ = false;
   isComputed_ = false;
 }
-
 
 template<class MatrixType>
 void Diagonal<MatrixType>::
@@ -163,7 +153,6 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     matrix_ = A;
   }
 }
-
 
 template<class MatrixType>
 void Diagonal<MatrixType>::initialize ()
@@ -260,58 +249,43 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     "called compute(), you need not call it again unless the values in the "
     "matrix have changed, or unless you have called setMatrix().");
 
+  // FIXME (mfh 12 Sep 2014) This assumes that row Map == range Map ==
+  // domain Map.  If the preconditioner has a matrix, we should ask
+  // the matrix whether we need to do an Import before and/or an
+  // Export after.
+
   Y.elementWiseMultiply (alpha, *inverseDiag_, X, beta);
   ++numApply_;
 }
 
-template<class MatrixType>
-typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
-Diagonal<MatrixType>::
-computeCondEst (CondestType CT,
-                local_ordinal_type MaxIters,
-                magnitude_type Tol,
-                const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &matrix)
-{
-  const magnitude_type minusOne = -Teuchos::ScalarTraits<magnitude_type>::one ();
-
-  if (! isComputed ()) { // cannot compute right now
-    return minusOne;
-  }
-  // NOTE: this is computing the *local* condest
-  if (condEst_ == minusOne) {
-    condEst_ = Ifpack2::Condest (*this, CT, MaxIters, Tol, matrix);
-  }
-  return condEst_;
-}
-
 template <class MatrixType>
 int Diagonal<MatrixType>::getNumInitialize() const {
-  return(numInitialize_);
+  return numInitialize_;
 }
 
 template <class MatrixType>
 int Diagonal<MatrixType>::getNumCompute() const {
-  return(numCompute_);
+  return numCompute_;
 }
 
 template <class MatrixType>
 int Diagonal<MatrixType>::getNumApply() const {
-  return(numApply_);
+  return numApply_;
 }
 
 template <class MatrixType>
 double Diagonal<MatrixType>::getInitializeTime() const {
-  return(initializeTime_);
+  return initializeTime_;
 }
 
 template<class MatrixType>
 double Diagonal<MatrixType>::getComputeTime() const {
-  return(computeTime_);
+  return computeTime_;
 }
 
 template<class MatrixType>
 double Diagonal<MatrixType>::getApplyTime() const {
-  return(applyTime_);
+  return applyTime_;
 }
 
 template <class MatrixType>

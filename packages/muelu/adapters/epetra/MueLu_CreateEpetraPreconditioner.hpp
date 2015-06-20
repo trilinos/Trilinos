@@ -5,41 +5,21 @@
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+
 #include <MueLu.hpp>
+
 #include <MueLu_EpetraOperator.hpp>
-#include <MueLu_ParameterListInterpreter.hpp>
-#include <MueLu_Hierarchy.hpp>
 #include <MueLu_Exceptions.hpp>
+#include <MueLu_Hierarchy.hpp>
+#include <MueLu_MasterList.hpp>
+#include <MueLu_MLParameterListInterpreter.hpp>
+#include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_Utilities.hpp>
+#include <MueLu_HierarchyHelpers.hpp>
 
 //! @file MueLu_CreateEpetraPreconditioner.hpp
 
 namespace MueLu {
-
-  /*! \fn EpetraCrs_To_XpetraMatrix
-    @brief Helper function to convert a Epetra::CrsMatrix to an Xpetra::Matrix
-    TODO move this function to an Xpetra utility file
-    */
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-  EpetraCrs_To_XpetraMatrix(const Teuchos::RCP<Epetra_CrsMatrix>& A) {
-    typedef Xpetra::EpetraCrsMatrix                                            XECrsMatrix;
-    typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>       XCrsMatrix;
-    typedef Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>   XCrsMatrixWrap;
-
-    RCP<XCrsMatrix> Atmp = rcp(new XECrsMatrix(A));
-    return rcp(new XCrsMatrixWrap(Atmp));
-  }
-
-  /*! \fn EpetraMultiVector_To_XpetraMultiVector
-    @brief Helper function to convert a Epetra::MultiVector to an Xpetra::MultiVector
-    TODO move this function to an Xpetra utility file
-    */
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-  EpetraMultiVector_To_XpetraMultiVector(const Teuchos::RCP<Epetra_MultiVector>& V) {
-    return rcp(new Xpetra::EpetraMultiVector(V));
-  }
 
   /*! \fn CreateEpetraPreconditioner
     @brief Helper function to create a MueLu preconditioner that can be used by Epetra.
@@ -53,7 +33,8 @@ namespace MueLu {
     */
   Teuchos::RCP<MueLu::EpetraOperator>
   CreateEpetraPreconditioner(const Teuchos::RCP<Epetra_CrsMatrix>&   inA,
-                             Teuchos::ParameterList& paramList,
+                             // FIXME: why is it non-const
+                             Teuchos::ParameterList& paramListIn,
                              const Teuchos::RCP<Epetra_MultiVector>& inCoords    = Teuchos::null,
                              const Teuchos::RCP<Epetra_MultiVector>& inNullspace = Teuchos::null)
   {
@@ -62,23 +43,29 @@ namespace MueLu {
     typedef int                                                                 GO;
     typedef KokkosClassic::DefaultNode::DefaultNodeType                         NO;
 
-    typedef Xpetra::MultiVector<SC, LO, GO, NO>      MultiVector;
-    typedef Xpetra::Matrix<SC, LO, GO, NO>           Matrix;
-    typedef Hierarchy<SC,LO,GO,NO>                   Hierarchy;
-    typedef HierarchyManager<SC,LO,GO,NO>            HierarchyManager;
+    using   Teuchos::ParameterList;
 
-    bool hasParamList = paramList.numParams();
+    typedef Xpetra::MultiVector<SC, LO, GO, NO>     MultiVector;
+    typedef Xpetra::Matrix<SC, LO, GO, NO>          Matrix;
+    typedef Hierarchy<SC,LO,GO,NO>                  Hierarchy;
+    typedef HierarchyManager<SC,LO,GO,NO>           HierarchyManager;
+
+    bool hasParamList = paramListIn.numParams();
 
     RCP<HierarchyManager> mueLuFactory;
-    RCP<Hierarchy>        H;
-    if (hasParamList) {
-      mueLuFactory = rcp(new ParameterListInterpreter<SC,LO,GO,NO>(paramList));
+    ParameterList paramList = paramListIn;
 
-      H = mueLuFactory->CreateHierarchy();
+    std::string syntaxStr = "parameterlist: syntax";
+    if (hasParamList && paramList.isParameter(syntaxStr) && paramList.get<std::string>(syntaxStr) == "ml") {
+      paramList.remove(syntaxStr);
+      mueLuFactory = rcp(new MLParameterListInterpreter<SC,LO,GO,NO>(paramList));
 
     } else {
-      H = rcp(new Hierarchy());
+      mueLuFactory = rcp(new ParameterListInterpreter  <SC,LO,GO,NO>(paramList,Xpetra::toXpetra(inA->Comm())));
     }
+
+    RCP<Hierarchy> H = mueLuFactory->CreateHierarchy();
+    H->setlib(Xpetra::UseEpetra);
 
     // Wrap A
     RCP<Matrix> A = EpetraCrs_To_XpetraMatrix<SC, LO, GO, NO>(inA);
@@ -96,7 +83,7 @@ namespace MueLu {
       nullspace = EpetraMultiVector_To_XpetraMultiVector<SC, LO, GO, NO>(inNullspace);
 
     } else {
-      int nPDE = 1;
+      int nPDE = MasterList::getDefault<int>("number of equations");
       if (paramList.isSublist("Matrix")) {
         // Factory style parameter list
         const Teuchos::ParameterList& operatorList = paramList.sublist("Matrix");
@@ -107,7 +94,6 @@ namespace MueLu {
         // Easy style parameter list
         nPDE = paramList.get<int>("number of equations");
       }
-
 
       nullspace = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(A->getDomainMap(), nPDE);
       if (nPDE == 1) {
@@ -127,10 +113,11 @@ namespace MueLu {
     }
     H->GetLevel(0)->Set("Nullspace", nullspace);
 
-    if (hasParamList)
-      mueLuFactory->SetupHierarchy(*H);
-    else
-      H->Setup();
+    Teuchos::ParameterList nonSerialList,dummyList;
+    ExtractNonSerializableData(paramList, dummyList, nonSerialList);    
+    HierarchyUtils<SC,LO,GO,NO>::AddNonSerializableDataToHierarchy(*mueLuFactory,*H, nonSerialList);
+
+    mueLuFactory->SetupHierarchy(*H);
 
     return rcp(new EpetraOperator(H));
   }
@@ -163,15 +150,47 @@ namespace MueLu {
     @param[in] inNullspace (optional) Near nullspace of the matrix.
     */
   Teuchos::RCP<MueLu::EpetraOperator>
-  CreateEpetraPreconditioner(const Teuchos::RCP<Epetra_CrsMatrix>  & inA,
+  CreateEpetraPreconditioner(const Teuchos::RCP<Epetra_CrsMatrix>  & A,
                              const std::string& xmlFileName,
                              const Teuchos::RCP<Epetra_MultiVector>& inCoords    = Teuchos::null,
                              const Teuchos::RCP<Epetra_MultiVector>& inNullspace = Teuchos::null)
   {
     Teuchos::ParameterList paramList;
-    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *Xpetra::toXpetra(inA->Comm()));
+    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *Xpetra::toXpetra(A->Comm()));
 
-    return CreateEpetraPreconditioner(inA, paramList, inCoords, inNullspace);
+    return CreateEpetraPreconditioner(A, paramList, inCoords, inNullspace);
+  }
+
+  void ReuseEpetraPreconditioner(const Teuchos::RCP<Epetra_CrsMatrix>& inA, MueLu::EpetraOperator& Op) {
+    typedef double                                                              SC;
+    typedef int                                                                 LO;
+    typedef int                                                                 GO;
+    typedef KokkosClassic::DefaultNode::DefaultNodeType                         NO;
+
+    typedef Xpetra::Matrix<SC,LO,GO,NO>     Matrix;
+    typedef Xpetra::Operator<SC,LO,GO,NO>   Operator;
+    typedef MueLu ::Hierarchy<SC,LO,GO,NO>  Hierarchy;
+
+    RCP<Hierarchy> H = Op.GetHierarchy();
+
+    TEUCHOS_TEST_FOR_EXCEPTION(!H->GetNumLevels(), Exceptions::RuntimeError,
+                               "ReuseTpetraPreconditioner: Hierarchy has no levels in it");
+    TEUCHOS_TEST_FOR_EXCEPTION(!H->GetLevel(0)->IsAvailable("A"), Exceptions::RuntimeError,
+                               "ReuseTpetraPreconditioner: Hierarchy has no fine level operator");
+    RCP<Level> level0 = H->GetLevel(0);
+
+    RCP<Operator> O0 = level0->Get<RCP<Operator> >("A");
+    RCP<Matrix>   A0 = Teuchos::rcp_dynamic_cast<Matrix>(O0);
+
+    RCP<Matrix> A = EpetraCrs_To_XpetraMatrix<SC,LO,GO,NO>(inA);
+    if (!A0.is_null()) {
+      // If a user provided a "number of equations" argument in a parameter list
+      // during the initial setup, we must honor that settings and reuse it for
+      // all consequent setups.
+      A->SetFixedBlockSize(A0->GetFixedBlockSize());
+    }
+    level0->Set("A", A);
+    H->SetupRe();
   }
 
 } //namespace

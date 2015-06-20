@@ -110,6 +110,7 @@ typedef struct ML_Aggregate_Struct
   int    coarsen_rate;               /* used only for semicoarsening */
   int    semicoarsen_levels;         /* number of levels where semicoarsening */
                                      /* will be applied                       */
+  char   semicoarsen_coordinate;     /* coordinate direction to be coarsened  */
 
 
 } ML_Aggregate;

@@ -71,15 +71,14 @@ using Teuchos::rcp_const_cast;
 using Teuchos::Comm;
 using Teuchos::DefaultComm;
 
-typedef UserInputForTests uinput_t;
-typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tvector_t;
-typedef Xpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> xvector_t;
+typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tvector_t;
+typedef Xpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> xvector_t;
 typedef Epetra_MultiVector evector_t;
 
 template <typename User>
 int verifyInputAdapter(
   Zoltan2::XpetraMultiVectorAdapter<User> &ia, tvector_t &vector, int nvec,
-    int wdim, scalar_t **weights, int *strides)
+    int wdim, zscalar_t **weights, int *strides)
 {
   RCP<const Comm<int> > comm = vector.getMap()->getComm();
   int fail = 0, gfail=0;
@@ -98,8 +97,8 @@ int verifyInputAdapter(
   gfail = globalFail(comm, fail);
 
   if (!gfail){
-    const gno_t *vtxIds=NULL;
-    const scalar_t *vals=NULL;
+    const zgno_t *vtxIds=NULL;
+    const zscalar_t *vals=NULL;
     int stride;
 
     size_t nvals = ia.getLocalNumIDs();
@@ -121,7 +120,7 @@ int verifyInputAdapter(
   }
 
   if (!gfail && wdim){
-    const scalar_t *wgt =NULL;
+    const zscalar_t *wgt =NULL;
     int stride;
 
     for (int w=0; !fail && w < wdim; w++){
@@ -152,11 +151,11 @@ int main(int argc, char *argv[])
   // Create object that can give us test Tpetra, Xpetra
   // and Epetra vectors for testing.
 
-  RCP<uinput_t> uinput;
+  RCP<UserInputForTests> uinput;
 
   try{
     uinput = 
-      rcp(new uinput_t(testDataFilePath,std::string("simple"), comm, true));
+      rcp(new UserInputForTests(testDataFilePath,std::string("simple"), comm, true));
   }
   catch(std::exception &e){
     TEST_FAIL_AND_EXIT(*comm, 0, string("input ")+e.what(), 1);
@@ -169,7 +168,6 @@ int main(int argc, char *argv[])
 
   tV = uinput->getUITpetraMultiVector(numVectors);
   size_t vlen = tV->getLocalLength();
-  Teuchos::ArrayView<const gno_t> rowGids = tV->getMap()->getNodeElementList();
 
   // To test migration in the input adapter we need a Solution
   // object.  The Solution needs an IdentifierMap.
@@ -177,9 +175,6 @@ int main(int argc, char *argv[])
   typedef Zoltan2::IdentifierMap<tvector_t> idmap_t;
 
   RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
-
-  ArrayRCP<const gno_t> gidArray = arcpFromArrayView(rowGids);
-  RCP<const idmap_t> idMap = rcp(new idmap_t(env, comm, gidArray));
 
   int nWeights = 1;
 
@@ -191,10 +186,10 @@ int main(int argc, char *argv[])
   memset(p, 0, sizeof(part_t) * vlen);
   ArrayRCP<part_t> solnParts(p, 0, vlen, true);
 
-  soln_t solution(env, comm, idMap, nWeights);
-  solution.setParts(gidArray, solnParts, true);
+  soln_t solution(env, comm, nWeights);
+  solution.setParts(solnParts);
 
-  std::vector<const scalar_t *> emptyWeights;
+  std::vector<const zscalar_t *> emptyWeights;
   std::vector<int> emptyStrides;
 
   /////////////////////////////////////////////////////////////

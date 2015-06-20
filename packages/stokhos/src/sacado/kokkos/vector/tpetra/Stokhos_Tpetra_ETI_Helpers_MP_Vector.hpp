@@ -41,12 +41,13 @@
 
 // MP::Vector includes
 #include "Stokhos_Tpetra_MP_Vector.hpp"
+#include "TpetraCore_ETIHelperMacros.h"
 
 #define INSTANTIATE_MP_VECTOR_STORAGE(INSTMACRO, STORAGE, LO, GO, N)      \
   INSTMACRO( Sacado::MP::Vector<STORAGE>, LO, GO, N )
 
 #define INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L, NUM, D, LO, GO, N) \
-  typedef Stokhos::StaticFixedStorage<L,S,NUM,D> SFS_ ## L ## _ ## S ## _ ## NUM ## _ ## D; \
+  typedef Stokhos::StaticFixedStorage<L,S,NUM,D::execution_space> SFS_ ## L ## _ ## S ## _ ## NUM ## _ ## D; \
   INSTANTIATE_MP_VECTOR_STORAGE(INSTMACRO, SFS_ ## L ## _ ## S ## _ ## NUM ## _ ## D, LO, GO, N)
 
 #if defined(__MIC__)
@@ -86,21 +87,29 @@
   typedef Stokhos::DeviceForNode<N>::type DFN_GPU_ ## LO ## _ ## GO ## _ ## N; \
   INSTANTIATE_MP_VECTOR_S_D_GPU(INSTMACRO, DFN_GPU_ ## LO ## _ ## GO ## _ ## N, LO, GO, N)
 
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD)
+#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_SERIAL)
+#define INSTANTIATE_TPETRA_MP_VECTOR_SERIAL(INSTMACRO) \
+  INSTANTIATE_MP_VECTOR_S_CPU(INSTMACRO, int, int, Kokkos_Compat_KokkosSerialWrapperNode)
+#else
+#define INSTANTIATE_TPETRA_MP_VECTOR_SERIAL(INSTMACRO)
+#endif
+
+
+#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_PTHREAD)
 #define INSTANTIATE_TPETRA_MP_VECTOR_THREADS(INSTMACRO) \
   INSTANTIATE_MP_VECTOR_S_CPU(INSTMACRO, int, int, Kokkos_Compat_KokkosThreadsWrapperNode)
 #else
 #define INSTANTIATE_TPETRA_MP_VECTOR_THREADS(INSTMACRO)
 #endif
 
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_OPENMP)
+#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_OPENMP)
 #define INSTANTIATE_TPETRA_MP_VECTOR_OPENMP(INSTMACRO) \
   INSTANTIATE_MP_VECTOR_S_CPU(INSTMACRO, int, int, Kokkos_Compat_KokkosOpenMPWrapperNode)
 #else
 #define INSTANTIATE_TPETRA_MP_VECTOR_OPENMP(INSTMACRO)
 #endif
 
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA)
+#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_CUDA)
 #define INSTANTIATE_TPETRA_MP_VECTOR_CUDA(INSTMACRO) \
   INSTANTIATE_MP_VECTOR_S_GPU(INSTMACRO, int, int, Kokkos_Compat_KokkosCudaWrapperNode)
 #else

@@ -1,0 +1,14 @@
+<ParameterList      name="Driver">
+
+  <Parameter        name="convergence rate"         type="double"   value="0.99"/>
+
+  <ParameterList    name="MueLu">
+    <Parameter      name="max levels"               type="int"      value="1"/>
+
+    <Parameter      name="coarse: type"             type="string"   value="RELAXATION"/>
+    <ParameterList  name="coarse: params">
+      <Parameter    name="relaxation: type"         type="string"   value="Jacobi"/>
+    </ParameterList>
+  </ParameterList>
+
+</ParameterList>

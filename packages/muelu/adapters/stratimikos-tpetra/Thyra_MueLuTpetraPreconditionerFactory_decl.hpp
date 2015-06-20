@@ -52,74 +52,71 @@
 
 namespace Thyra {
 
-/** \brief Concrete preconditioner factory subclass based on MueLu.
- *
- * ToDo: Finish documentation!
- */
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
-class MueLuTpetraPreconditionerFactory : public PreconditionerFactoryBase<Scalar> {
-public:
+  /** \brief Concrete preconditioner factory subclass based on MueLu.
+   *
+   * ToDo: Finish documentation!
+   */
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  class MueLuTpetraPreconditionerFactory : public PreconditionerFactoryBase<Scalar> {
+  public:
 
-  /** @name Constructors/initializers/accessors */
-  //@{
+    /** @name Constructors/initializers/accessors */
+    //@{
 
-  /** \brief . */
-  MueLuTpetraPreconditionerFactory();
-  //@}
+    /** \brief . */
+    MueLuTpetraPreconditionerFactory();
+    //@}
 
-  /** @name Overridden from PreconditionerFactoryBase */
-  //@{
+    /** @name Overridden from PreconditionerFactoryBase */
+    //@{
 
-  /** \brief . */
-  bool isCompatible( const LinearOpSourceBase<Scalar> &fwdOp ) const;
-  /** \brief . */
-  Teuchos::RCP<PreconditionerBase<Scalar> > createPrec() const;
-  /** \brief . */
-  void initializePrec(
-    const Teuchos::RCP<const LinearOpSourceBase<Scalar> > &fwdOp,
-    PreconditionerBase<Scalar> *prec,
-    const ESupportSolveUse supportSolveUse
-    ) const;
-  /** \brief . */
-  void uninitializePrec(
-    PreconditionerBase<Scalar> *prec
-    ,Teuchos::RCP<const LinearOpSourceBase<Scalar> > *fwdOp
-    ,ESupportSolveUse *supportSolveUse
-    ) const;
+    /** \brief . */
+    bool isCompatible(const LinearOpSourceBase<Scalar>& fwdOp) const;
+    /** \brief . */
+    Teuchos::RCP<PreconditionerBase<Scalar> > createPrec() const;
+    /** \brief . */
+    void initializePrec(const Teuchos::RCP<const LinearOpSourceBase<Scalar> >& fwdOp,
+                        PreconditionerBase<Scalar>* prec,
+                        const ESupportSolveUse supportSolveUse
+                       ) const;
+    /** \brief . */
+    void uninitializePrec(PreconditionerBase<Scalar>* prec,
+                          Teuchos::RCP<const LinearOpSourceBase<Scalar> >* fwdOp,
+                          ESupportSolveUse* supportSolveUse
+                         ) const;
 
-  //@}
+    //@}
 
-  /** @name Overridden from Teuchos::ParameterListAcceptor */
-  //@{
+    /** @name Overridden from Teuchos::ParameterListAcceptor */
+    //@{
 
-  /** \brief . */
-  void setParameterList(
-    Teuchos::RCP<Teuchos::ParameterList> const& paramList);
-  /** \brief . */
-  Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
-  /** \brief . */
-  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
-  /** \brief . */
-  Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
-  /** \brief . */
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
-  //@}
+    /** \brief . */
+    void                                          setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& paramList);
+    /** \brief . */
+    Teuchos::RCP<Teuchos::ParameterList>          unsetParameterList();
+    /** \brief . */
+    Teuchos::RCP<Teuchos::ParameterList>          getNonconstParameterList();
+    /** \brief . */
+    Teuchos::RCP<const Teuchos::ParameterList>    getParameterList() const;
+    /** \brief . */
+    Teuchos::RCP<const Teuchos::ParameterList>    getValidParameters() const;
+    //@}
 
-  /** \name Public functions overridden from Describable. */
-  //@{
+    /** \name Public functions overridden from Describable. */
+    //@{
 
-  /** \brief . */
-  std::string description() const;
+    /** \brief . */
+    std::string description() const;
 
-  // ToDo: Add an override of describe(...) to give more detail!
+    // ToDo: Add an override of describe(...) to give more detail!
 
-  //@}
+    //@}
 
-private:
+  private:
 
-  Teuchos::RCP<Teuchos::ParameterList> paramList_;
+    Teuchos::RCP<Teuchos::ParameterList> paramList_;
 
-};
+  };
 
 } // namespace Thyra
 

@@ -1,6 +1,6 @@
 /*! \page rcbPage Recursive Coordinate Bisection (RCB)
 
-\section rcb_algorithm RCB algorithm
+\section rcb_algorithm RCB Algorithm Overview
 
 Recursive coordinate bisection (RCB) is a parallel geometric partitioning algorithm.  Geometric coordinates are first partitioned into two balanced parts.  Partitioning continues recursively in each part until the desired number of balanced parts has been created.
 
@@ -8,18 +8,18 @@ Coordinates can be weighted, in which case the total weight in each part is bala
 
 Relative part sizes may be specified.  If part sizes are specified, then the total weight or total number of objects in each part instead of being evenly balanced will respect the relative part sizes required.
 
-\subsection rcb_input Input
+\section rcb_input Input
 
 RCB expects a Zoltan2::CoordinateInput object.  This class supports geometric coordinates of arbitrary dimension, with weights of arbritrary dimension.  If weights are not provided, RCB assumes coordinates are equally weighted.
 
 If weights of dimension greater than one are provided, then the \ref partitioning_objective parameter must be set to specify how the multiple weights per coordinate should be interpreted.
 
-\subsection rcb_parameters Parameters
+\section rcb_parameters Parameters
 
 The following parameters are used by the RCB algorithm:
 
 - \ref partitioning_objective (default is \e balance_object_weights )
-- \ref imbalance_tolerance (default is \e 10% )
+- \ref imbalance_tolerance (default is \e 1.1 )
 - \ref rectilinear_blocks (default is \e no )
 - \ref average_cuts (default is \e no )
 - \ref bisection_num_test_cuts (default is \e 1 )
@@ -31,20 +31,20 @@ For uniformly distributed coordinates, this value should be
 set to one.   For high values, larger messages are exchanged
 at each step to find the bisector, but there are fewer total steps.
 
-\subsection rcb_solution Solution
+\section rcb_solution Solution
 
 An RCB solution is a list of global IDs with a corresponding list of part numbers and process ranks.  
 
-\subsection rcb_quality_measures Quality measures
+\section rcb_quality_measures Quality measures
 
 RCB quality is measured with an imbalance measure.  Use the parameter
 \ref compute_metrics if you want the Zoltan2::PartitioningProblem to
 compute imbalance metrics for the solution.
 
-\subsection rcb_examples Examples
+\section rcb_examples Examples
 See rcb_C.cpp for and example of using the RCB algorithm.
 
-\subsection rcb_source Source
+\section rcb_source Source
 Zoltan2_AlgRCB.hpp is the source file for RCB.
 
 */

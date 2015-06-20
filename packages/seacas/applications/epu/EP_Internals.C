@@ -313,10 +313,10 @@ int Excn::Internals<INT>::write_meta_data(const Mesh &mesh,
 
 template <typename INT>
 bool Excn::Internals<INT>::check_meta_data(const Mesh &mesh,
-					   const std::vector<Block>   &blocks,
-					   const std::vector<NodeSet<INT> > &nodesets,
-					   const std::vector<SideSet<INT> > &sidesets,
-					   const CommunicationMetaData &comm)
+					   const std::vector<Block>   &,
+					   const std::vector<NodeSet<INT> > &,
+					   const std::vector<SideSet<INT> > &,
+					   const CommunicationMetaData &)
 {
   ex_init_params init_data;
   ex_get_init_ext(exodusFilePtr, &init_data);

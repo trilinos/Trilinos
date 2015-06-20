@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> a_10_2_3(10, 2, 3);
     FieldContainer<double> a_10_3_2(10, 3, 2);
     FieldContainer<double> a_9_2_2(9, 2, 2);
-
+    
     *outStream << "-> contractFieldFieldScalar:\n";
     INTREPID_TEST_COMMAND( atools.contractFieldFieldScalar<double>(a_2_2, a_2_2, a_2_2, COMP_CPP) );
     INTREPID_TEST_COMMAND( atools.contractFieldFieldScalar<double>(a_2_2, a_10_2_2, a_2_2, COMP_CPP) );
@@ -144,12 +144,14 @@ int main(int argc, char *argv[]) {
     INTREPID_TEST_COMMAND( atools.contractFieldFieldScalar<double>(a_10_2_2, a_10_2_2, a_10_3_2, COMP_CPP) );
     INTREPID_TEST_COMMAND( atools.contractFieldFieldScalar<double>(a_10_2_3, a_10_2_2, a_10_3_2, COMP_ENGINE_MAX) );
     INTREPID_TEST_COMMAND( atools.contractFieldFieldScalar<double>(a_10_2_3, a_10_2_2, a_10_3_2, COMP_CPP) );
+ 
 
     FieldContainer<double> a_10_2_2_2(10, 2, 2, 2);
     FieldContainer<double> a_9_2_2_2(9, 2, 2, 2);
     FieldContainer<double> a_10_3_2_2(10, 3, 2, 2);
     FieldContainer<double> a_10_2_3_2(10, 2, 3, 2);
     FieldContainer<double> a_10_2_2_3(10, 2, 2, 3);
+
 
     *outStream << "-> contractFieldFieldVector:\n";
     INTREPID_TEST_COMMAND( atools.contractFieldFieldVector<double>(a_2_2, a_2_2, a_2_2, COMP_CPP) );
@@ -163,6 +165,7 @@ int main(int argc, char *argv[]) {
     INTREPID_TEST_COMMAND( atools.contractFieldFieldVector<double>(a_10_2_2, a_10_2_2_2, a_10_3_2_2, COMP_CPP) );
     INTREPID_TEST_COMMAND( atools.contractFieldFieldVector<double>(a_10_2_3, a_10_2_2_2, a_10_3_2_2, COMP_ENGINE_MAX) );
     INTREPID_TEST_COMMAND( atools.contractFieldFieldVector<double>(a_10_2_3, a_10_2_2_2, a_10_3_2_2, COMP_CPP) );
+ 
 
     FieldContainer<double> a_10_2_2_2_2(10, 2, 2, 2, 2);
     FieldContainer<double> a_9_2_2_2_2(9, 2, 2, 2, 2);
@@ -184,6 +187,7 @@ int main(int argc, char *argv[]) {
     INTREPID_TEST_COMMAND( atools.contractFieldFieldTensor<double>(a_10_2_2, a_10_2_2_2_2, a_10_3_2_2_2, COMP_CPP) );
     INTREPID_TEST_COMMAND( atools.contractFieldFieldTensor<double>(a_10_2_3, a_10_2_2_2_2, a_10_3_2_2_2, COMP_ENGINE_MAX) );
     INTREPID_TEST_COMMAND( atools.contractFieldFieldTensor<double>(a_10_2_3, a_10_2_2_2_2, a_10_3_2_2_2, COMP_CPP) );
+  
 
     FieldContainer<double> a_9_2(9, 2);
     FieldContainer<double> a_10_1(10, 1);
@@ -199,6 +203,7 @@ int main(int argc, char *argv[]) {
     INTREPID_TEST_COMMAND( atools.contractDataFieldScalar<double>(a_10_2, a_10_2, a_10_2_2, COMP_ENGINE_MAX) );
     INTREPID_TEST_COMMAND( atools.contractDataFieldScalar<double>(a_10_2, a_10_2, a_10_2_2, COMP_CPP) );
     INTREPID_TEST_COMMAND( atools.contractDataFieldScalar<double>(a_10_2, a_10_1, a_10_2_2, COMP_CPP) );
+  
 
     FieldContainer<double> a_10_1_2(10, 1, 2);
     FieldContainer<double> a_10_1_3(10, 1, 3);
@@ -215,6 +220,7 @@ int main(int argc, char *argv[]) {
     INTREPID_TEST_COMMAND( atools.contractDataFieldVector<double>(a_10_2, a_10_2_2, a_10_2_2_2, COMP_ENGINE_MAX) );
     INTREPID_TEST_COMMAND( atools.contractDataFieldVector<double>(a_10_2, a_10_2_2, a_10_2_2_2, COMP_CPP) );
     INTREPID_TEST_COMMAND( atools.contractDataFieldVector<double>(a_10_2, a_10_1_2, a_10_2_2_2, COMP_CPP) );
+  
 
     FieldContainer<double> a_10_1_2_2(10, 1, 2, 2);
 
@@ -231,6 +237,7 @@ int main(int argc, char *argv[]) {
     INTREPID_TEST_COMMAND( atools.contractDataFieldTensor<double>(a_10_2, a_10_2_2_2, a_10_2_2_2_2, COMP_ENGINE_MAX) );
     INTREPID_TEST_COMMAND( atools.contractDataFieldTensor<double>(a_10_2, a_10_2_2_2, a_10_2_2_2_2, COMP_CPP) );
     INTREPID_TEST_COMMAND( atools.contractDataFieldTensor<double>(a_10_2, a_10_1_2_2, a_10_2_2_2_2, COMP_CPP) );
+  
 
     FieldContainer<double> a_2(2);
     FieldContainer<double> a_10(10);
@@ -244,6 +251,7 @@ int main(int argc, char *argv[]) {
     INTREPID_TEST_COMMAND( atools.contractDataDataScalar<double>(a_2, a_10_2, a_10_2, COMP_CPP) );
     INTREPID_TEST_COMMAND( atools.contractDataDataScalar<double>(a_10, a_10_2, a_10_2, COMP_ENGINE_MAX) );
     INTREPID_TEST_COMMAND( atools.contractDataDataScalar<double>(a_10, a_10_2, a_10_2, COMP_CPP) );
+  
 
     *outStream << "-> contractDataDataVector:\n";
     INTREPID_TEST_COMMAND( atools.contractDataDataVector<double>(a_2_2, a_2_2, a_2_2, COMP_CPP) );
@@ -255,6 +263,7 @@ int main(int argc, char *argv[]) {
     INTREPID_TEST_COMMAND( atools.contractDataDataVector<double>(a_2, a_10_2_2, a_10_2_2, COMP_CPP) );
     INTREPID_TEST_COMMAND( atools.contractDataDataVector<double>(a_10, a_10_2_2, a_10_2_2, COMP_ENGINE_MAX) );
     INTREPID_TEST_COMMAND( atools.contractDataDataVector<double>(a_10, a_10_2_2, a_10_2_2, COMP_CPP) );
+  
 
     *outStream << "-> contractDataDataTensor:\n";
     INTREPID_TEST_COMMAND( atools.contractDataDataTensor<double>(a_2_2, a_2_2, a_2_2, COMP_CPP) );
@@ -267,7 +276,8 @@ int main(int argc, char *argv[]) {
     INTREPID_TEST_COMMAND( atools.contractDataDataTensor<double>(a_2, a_10_2_2_2, a_10_2_2_2, COMP_CPP) );
     INTREPID_TEST_COMMAND( atools.contractDataDataTensor<double>(a_10, a_10_2_2_2, a_10_2_2_2, COMP_ENGINE_MAX) );
     INTREPID_TEST_COMMAND( atools.contractDataDataTensor<double>(a_10, a_10_2_2_2, a_10_2_2_2, COMP_CPP) );
-
+  
+   
 #endif
 
   }
@@ -282,7 +292,7 @@ int main(int argc, char *argv[]) {
   if (Teuchos::TestForException_getThrowNumber() != endThrowNumber)
     errorFlag++;
 #endif
-
+ 
   *outStream \
   << "\n"
   << "===============================================================================\n"\

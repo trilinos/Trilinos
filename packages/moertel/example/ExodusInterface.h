@@ -41,8 +41,8 @@
 #@HEADER
 */
 
-#ifndef MOERTEL_EXODUS
-#define MOERTEL_EXODUS
+#ifndef MOERTEL_EXODUS_H
+#define MOERTEL_EXODUS_H
 
 #include <iostream>
 #include <iomanip>

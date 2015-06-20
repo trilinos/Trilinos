@@ -40,8 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_EVALUATOR_BASISTIMESVECTOR_DECL_HPP
-#define PANZER_EVALUATOR_BASISTIMESVECTOR_DECL_HPP
+#ifndef __Panzer_Integerator_BasisTimesVector_decl_hpp__
+#define __Panzer_Integerator_BasisTimesVector_decl_hpp__
 
 #include <string>
 #include "Panzer_Dimension.hpp"
@@ -72,7 +72,8 @@ PHX_EVALUATOR_CLASS(Integrator_BasisTimesVector)
   std::string basis_name;
   std::size_t basis_index;
 
-  Intrepid::FieldContainer<ScalarT> tmp;
+  // Intrepid::FieldContainer<ScalarT> tmp;
+  PHX::MDField<ScalarT,Cell,IP,Dim> scratch;
 
 private:
   Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;

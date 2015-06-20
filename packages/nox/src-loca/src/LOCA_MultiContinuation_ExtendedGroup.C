@@ -385,18 +385,16 @@ LOCA::MultiContinuation::ExtendedGroup::isPredictor() const
 void
 LOCA::MultiContinuation::ExtendedGroup::scaleTangent()
 {
-  LOCA::MultiContinuation::ExtendedVector *v;
-
   scaledTangentMultiVec = tangentMultiVec;
 
   // Only scale the tangent if it is scalable
   if (predictor->isTangentScalable()) {
 
     for (int i=0; i<numParams; i++) {
-      v =
-    dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(&scaledTangentMultiVec[i]);
-      grpPtr->scaleVector(*(v->getXVec()));
-      grpPtr->scaleVector(*(v->getXVec()));
+      LOCA::MultiContinuation::ExtendedVector & v =
+        dynamic_cast<LOCA::MultiContinuation::ExtendedVector&>(scaledTangentMultiVec[i]);
+      grpPtr->scaleVector(*(v.getXVec()));
+      grpPtr->scaleVector(*(v.getXVec()));
     }
 
   }

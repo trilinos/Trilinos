@@ -74,7 +74,7 @@ namespace {
     //! Stream to which to write test results.
     std::ostream& out_;
 
-    /// \brief Error bound for computed cosines and sines.  
+    /// \brief Error bound for computed cosines and sines.
     ///
     /// We compute this once, in the constructor, to save a little
     /// overhead.
@@ -126,13 +126,13 @@ namespace {
     {}
 
     //! Test the results of ROTG on [a; b].
-    bool compare (ScalarType a, ScalarType b) 
+    bool compare (ScalarType a, ScalarType b)
     {
       using std::endl;
       typedef Teuchos::DefaultBLASImpl<int, ScalarType> generic_blas_type;
       typedef Teuchos::BLAS<int, ScalarType> library_blas_type;
 
-      out_ << "Comparing Givens rotations for [a; b] = [" 
+      out_ << "Comparing Givens rotations for [a; b] = ["
 	   << a << "; " << b << "]" << endl;
 
       generic_blas_type genericBlas;
@@ -151,17 +151,17 @@ namespace {
       ScalarType s_library;
       libraryBlas.ROTG (&a_library, &b_library, &c_library, &s_library);
 
-      out_ << "-- DefaultBLASImpl results: a,b,c,s = " 
-	   << a_generic << ", " << b_generic << ", " 
+      out_ << "-- DefaultBLASImpl results: a,b,c,s = "
+	   << a_generic << ", " << b_generic << ", "
 	   << c_generic << ", " << s_generic << endl;
-      out_ << "-- (Library) BLAS results: a,b,c,s = " 
-	   << a_library << ", " << b_library << ", " 
+      out_ << "-- (Library) BLAS results: a,b,c,s = "
+	   << a_library << ", " << b_library << ", "
 	   << c_library << ", " << s_library << endl;
 
       bool success = true; // Innocent until proven guilty.
 
       // Test the difference between the computed cosines.
-      out_ << "-- |c_generic - c_library| = " 
+      out_ << "-- |c_generic - c_library| = "
 	   << STS::magnitude(c_generic - c_library) << endl;
       if (STS::magnitude(c_generic - c_library) > trigErrorBound_) {
 	success = false;
@@ -169,26 +169,26 @@ namespace {
       }
 
       // Test the difference between the computed sines.
-      out_ << "-- |s_generic - s_library| = " 
+      out_ << "-- |s_generic - s_library| = "
 	   << STS::magnitude(s_generic - s_library) << endl;
       if (STS::magnitude(s_generic - s_library) > trigErrorBound_) {
 	success = false;
 	out_ << "---- Difference exceeded error bound " << trigErrorBound_ << endl;
-      } 
-      
+      }
+
       // Test the forward error of applying the Givens rotation.
       // Remember that ROTG applies the rotation to its input
       // arguments [a; b], overwriting them with the resulting [r; z].
       //
       // See Higham's Lemma 19.8.
       const MagnitudeType inputNorm = norm2 (a, b);
-      const MagnitudeType outputDiffNorm = 
+      const MagnitudeType outputDiffNorm =
 	norm2 (a_generic - a_library, b_generic - b_library);
 
       out_ << "-- ||[a; b]||_2 = " << inputNorm << endl;
-      out_ << "-- ||[a_generic - a_library; b_generic - b_library]||_2 = " 
+      out_ << "-- ||[a_generic - a_library; b_generic - b_library]||_2 = "
 	   << outputDiffNorm << endl;
-      
+
       // Multiply by a fudge factor of the base, just in case the
       // forward error bound wasn't computed accurately.  Also
       // multiply by 2, since we don't know the exact result.  The
@@ -196,7 +196,7 @@ namespace {
       // side of the exact result: sqrt((2 * x_diff)^2 + (2 *
       // y_diff)^2) = sqrt(4) * sqrt(x_diff^2 + y_diff^2).
       const MagnitudeType two = STM::one() + STM::one();
-      const MagnitudeType fwdErrorBound = 
+      const MagnitudeType fwdErrorBound =
 	2 * STS::base() * STM::squareroot(two) * (6*STS::eps() / (1 - 6*STS::eps()));
 
       if (outputDiffNorm > fwdErrorBound * inputNorm) {
@@ -265,7 +265,7 @@ namespace {
 } // namespace (anonymous)
 
 
-int 
+int
 main (int argc, char *argv[])
 {
   using std::endl;
@@ -282,7 +282,7 @@ main (int argc, char *argv[])
 
   // Parse the command-line arguments.
   {
-    const CommandLineProcessor::EParseCommandLineReturn parseResult = 
+    const CommandLineProcessor::EParseCommandLineReturn parseResult =
       cmdp.parse (argc,argv);
     // If the caller asks us to print the documentation, let the
     // "test" pass trivially.
@@ -290,8 +290,8 @@ main (int argc, char *argv[])
       out << "End Result: TEST PASSED" << endl;
       return EXIT_SUCCESS;
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(parseResult != CommandLineProcessor::PARSE_SUCCESSFUL, 
-		       std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION(parseResult != CommandLineProcessor::PARSE_SUCCESSFUL,
+		       std::invalid_argument,
 		       "Failed to parse command-line arguments");
   }
 

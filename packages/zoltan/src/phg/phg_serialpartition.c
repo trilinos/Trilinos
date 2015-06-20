@@ -412,14 +412,14 @@ const int num_coarse_iter = 1 + 9/zz->Num_Proc;
       for (i = 0; i < phg->nVtx; i++)
         part[i] = spart[i];
     }
-    ZOLTAN_FREE(&spart);
-    ZOLTAN_FREE(&bestvals);
   }
   
 End:
   if (fine_timing) 
     ZOLTAN_TIMER_STOP(zz->ZTime, timer->cpart, phg->comm->Communicator);
 
+  ZOLTAN_FREE(&spart);
+  ZOLTAN_FREE(&bestvals);
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
@@ -701,7 +701,7 @@ static int greedy_grow_part (
 )
 {
   int i, j, vtx, edge, edgesize;
-  int *cut[2];
+  int *cut[2] = {NULL,NULL};
   double *gain = NULL;
   int vwgtdim = hg->VtxWeightDim;
   int part_dim = (hg->VtxWeightDim ? hg->VtxWeightDim : 1);
@@ -712,7 +712,11 @@ static int greedy_grow_part (
   static char *yo = "greedy_grow_part";
   int err=ZOLTAN_OK;
 
+
   /* Allocate arrays. */
+  Zoltan_Heap_Init(zz, &h[0], hg->nVtx);
+  Zoltan_Heap_Init(zz, &h[1], 0);       /* Dummy heap, not used. */
+
   if (!(gain  = (double*) ZOLTAN_CALLOC (hg->nVtx, sizeof (double)))){
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     err =  ZOLTAN_MEMERR;
@@ -776,15 +780,12 @@ static int greedy_grow_part (
   if (!hgp->UseFixedVtx) 
     gain[start_vtx] = 1e10;      /* Make start_vtx max value in heap. */
                                  /* All other values should be negative. */
-  Zoltan_Heap_Init(zz, &h[0], hg->nVtx);
-  Zoltan_Heap_Init(zz, &h[1], 0);       /* Dummy heap, not used. */
   for (i=0; i<hg->nVtx; i++){
     /* Insert all non-fixed vertices into heap. */
     if (!hgp->UseFixedVtx || (hg->fixed_part[i] < 0))
       Zoltan_Heap_Input(h, i, gain[i]);
   }
   Zoltan_Heap_Make(h);
-
 
   while (part_sum < cutoff) {
 
@@ -811,7 +812,7 @@ static int greedy_grow_part (
 
 End:
   ZOLTAN_FREE (&gain);
-  if (cut[0])    ZOLTAN_FREE (&cut[0]);
+  ZOLTAN_FREE (&cut[0]);
   Zoltan_Heap_Free (&h[0]);
   Zoltan_Heap_Free( &h[1]);
   return err;

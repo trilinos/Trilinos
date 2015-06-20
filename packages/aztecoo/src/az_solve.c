@@ -1450,8 +1450,12 @@ void AZ_rm_context(int options[], double params[], int data_org[])
   char tag[80];
   int  istatus;
 
+  char x_reord_str[80];
 
   AZ_mk_identifier(params,options,data_org, tag);
+
+  sprintf(x_reord_str,"x_reord %s",tag);
+  AZ_manage_memory(0, AZ_CLEAR, data_org[AZ_name], x_reord_str, (int*)0);
 
   tag[0] = 'T';
   AZ_manage_memory(sizeof(char)*80, AZ_SELECTIVE_CLEAR,

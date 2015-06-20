@@ -1,0 +1,643 @@
+test_lu
+{??? Error: <a href="matlab: opentoline('/home/srajama/code/c/mylu/test_lu.m',40,77)">File: test_lu.m Line: 40 Column: 77</a>
+Expression or statement is incorrect--possibly unbalanced (, {, or [.
+} 
+clear all
+test_lu
+904: vanHeukelum/cage3:           your   resid: 6.93889e-18 matlab_time:0.000313 mylu_time:0.002001
+449: Grund/b1_ss:           your   resid: 0 matlab_time:9.4e-05 mylu_time:5.3e-05
+905: vanHeukelum/cage4: 	    skip
+1524: Pajek/Stranke94:           your   resid: 5.14265e-17 matlab_time:9.7e-05 mylu_time:5.8e-05
+1440: Oberwolfach/LFAT5:           your   resid: 1.13086e-21 matlab_time:0.000109 mylu_time:5.6e-05
+1438: Oberwolfach/LF10:           your   resid: 2.64e-18 matlab_time:0.000117 mylu_time:6e-05
+2203: JGD_Trefethen/Trefethen_20b:           your   resid: 1.90272e-16 matlab_time:0.000126 mylu_time:8.1e-05
+2204: JGD_Trefethen/Trefethen_20:           your   resid: 1.9292e-16 matlab_time:0.000139 mylu_time:7.2e-05
+1516: Pajek/Ragusa18: 	    skip (zero pivot encountered)
+1515: Pajek/Ragusa16: 	    skip (zero pivot encountered)
+436: FIDAP/ex5:           your   resid: 4.91127e-17 matlab_time:0.000166 mylu_time:7.8e-05
+232: HB/pores_1:           your   resid: 4.58233e-19 matlab_time:0.00019 mylu_time:7.6e-05
+1199: Hamrle/Hamrle1:           your   resid: 1.75809e-19 matlab_time:0.000158 mylu_time:7.7e-05
+1480: Pajek/GD01_c: 	    skip (zero pivot encountered)
+1474: Pajek/football: 	    skip (zero pivot encountered)
+906: vanHeukelum/cage5:           your   resid: 1.53523e-16 matlab_time:0.000206 mylu_time:0.000106
+1493: Pajek/GD97_b: 	    skip (zero pivot encountered)
+23: HB/bcsstk01:           your   resid: 1.41894e-16 matlab_time:0.000303 mylu_time:0.00015
+56: HB/bcsstm01: 	    skip (zero pivot encountered)
+872: Pothen/mesh1e1:           your   resid: 1.92873e-16 matlab_time:0.000267 mylu_time:0.000118
+873: Pothen/mesh1em1:           your   resid: 1.2339e-16 matlab_time:0.000249 mylu_time:0.000116
+874: Pothen/mesh1em6:           your   resid: 1.18751e-16 matlab_time:0.000247 mylu_time:0.000115
+464: Grund/d_ss:           your   resid: 4.43613e-21 matlab_time:0.000243 mylu_time:9.5e-05
+172: HB/impcol_b:           your   resid: 3.47101e-17 matlab_time:0.000221 mylu_time:0.000109
+293: Bai/bfwa62:           your   resid: 1.52071e-16 matlab_time:0.000279 mylu_time:0.000127
+296: Bai/bfwb62:           your   resid: 1.07623e-16 matlab_time:0.00028 mylu_time:0.000114
+1498: Pajek/GD99_b: 	    skip (zero pivot encountered)
+24: HB/bcsstk02:           your   resid: 2.20905e-16 matlab_time:0.000658 mylu_time:0.00054
+57: HB/bcsstm02:           your   resid: 0 matlab_time:7.2e-05 mylu_time:7.8e-05
+2338: Rommes/ww_36_pmec_36:           your   resid: 8.76139e-19 matlab_time:0.000385 mylu_time:0.000177
+262: HB/west0067:           your   resid: 7.22875e-17 matlab_time:0.000353 mylu_time:0.000134
+1943: JGD_CAG/CAG_mat72:           your   resid: 1.93082e-17 matlab_time:0.000433 mylu_time:0.000175
+2400: Newman/lesmis: 	    skip (zero pivot encountered)
+253: HB/steam3:           your   resid: 5.35682e-20 matlab_time:0.000228 mylu_time:0.000107
+1519: Pajek/Sandi_authors: 	    skip (zero pivot encountered)
+462: Grund/d_dyn:           your   resid: 2.78517e-18 matlab_time:0.000272 mylu_time:0.000124
+463: Grund/d_dyn1:           your   resid: 7.21516e-17 matlab_time:0.000269 mylu_time:0.000116
+1641: Bai/tols90:           your   resid: 2.10125e-16 matlab_time:0.00021 mylu_time:0.000822
+907: vanHeukelum/cage6:           your   resid: 2.71051e-16 matlab_time:0.000541 mylu_time:0.000262
+220: HB/nos4:           your   resid: 1.49679e-16 matlab_time:0.000456 mylu_time:0.000176
+318: Bai/olm100:           your   resid: 3.80121e-18 matlab_time:0.000304 mylu_time:0.000126
+337: Bai/tub100:           your   resid: 4.70086e-17 matlab_time:0.000239 mylu_time:0.000113
+1326: Morandini/rotor1:           your   resid: 1.76535e-19 matlab_time:0.000422 mylu_time:0.000215
+861: MathWorks/pivtol:           your   resid: 3.35239e-17 matlab_time:0.000222 mylu_time:0.00011
+306: Bai/ck104:           your   resid: 3.97821e-17 matlab_time:0.000368 mylu_time:0.000152
+2097: JGD_Homology/n3c6-b1: 	    skip (zero pivot encountered)
+25: HB/bcsstk03:           your   resid: 6.38599e-17 matlab_time:0.000324 mylu_time:0.000161
+58: HB/bcsstm03: 	    skip (zero pivot encountered)
+161: HB/gre_115:           your   resid: 2.35922e-16 matlab_time:0.00053 mylu_time:0.000248
+2397: Newman/football:           your   resid: 5.67922e-16 matlab_time:0.001001 mylu_time:0.00083
+1325: Morandini/robot:           your   resid: 6.62017e-18 matlab_time:0.000621 mylu_time:0.000241
+1506: Pajek/Journals:           your   resid: 2.99492e-16 matlab_time:0.002593 mylu_time:0.002118
+6: HB/arc130:           your   resid: 9.07086e-21 matlab_time:0.000393 mylu_time:0.000195
+188: HB/lns_131:           your   resid: 2.04354e-24 matlab_time:0.000439 mylu_time:0.000212
+192: HB/lnsp_131:           your   resid: 2.04354e-24 matlab_time:0.000439 mylu_time:0.000211
+26: HB/bcsstk04:           your   resid: 3.01597e-16 matlab_time:0.001043 mylu_time:0.000976
+59: HB/bcsstm04: 	    skip (zero pivot encountered)
+263: HB/west0132:           your   resid: 4.62555e-18 matlab_time:0.000445 mylu_time:0.000176
+1195: Rajat/rajat11:           your   resid: 7.40141e-18 matlab_time:0.000494 mylu_time:0.000176
+334: Bai/rw136:           your   resid: 2.83461e-16 matlab_time:0.000645 mylu_time:0.000271
+173: HB/impcol_c:           your   resid: 1.15648e-19 matlab_time:0.000275 mylu_time:0.000154
+44: HB/bcsstk22:           your   resid: 1.60458e-16 matlab_time:0.000574 mylu_time:0.00024
+72: HB/bcsstm22:           your   resid: 0 matlab_time:0.000189 mylu_time:0.000146
+206: HB/lund_a:           your   resid: 3.241e-16 matlab_time:0.000831 mylu_time:0.000991
+207: HB/lund_b:           your   resid: 3.25486e-16 matlab_time:0.000837 mylu_time:0.000882
+2559: CPM/cz148:           your   resid: 1.9417e-16 matlab_time:0.000959 mylu_time:0.000559
+2205: JGD_Trefethen/Trefethen_150:           your   resid: 9.14949e-16 matlab_time:0.001766 mylu_time:0.001758
+27: HB/bcsstk05:           your   resid: 3.88181e-16 matlab_time:0.000975 mylu_time:0.000653
+60: HB/bcsstm05:           your   resid: 0 matlab_time:0.000195 mylu_time:0.000158
+264: HB/west0156:           your   resid: 5.94589e-24 matlab_time:0.000297 mylu_time:0.000182
+313: Bai/lop163:           your   resid: 1.27578e-16 matlab_time:0.000821 mylu_time:0.00036
+265: HB/west0167:           your   resid: 4.63252e-18 matlab_time:0.000444 mylu_time:0.000213
+212: HB/mcca:           your   resid: 4.72164e-17 matlab_time:0.001282 mylu_time:0.000553
+1198: Rajat/rajat14:           your   resid: 4.73423e-18 matlab_time:0.000709 mylu_time:0.000468
+141: HB/fs_183_1:           your   resid: 8.74904e-18 matlab_time:0.000761 mylu_time:0.000279
+142: HB/fs_183_3:           your   resid: 1.0262e-21 matlab_time:0.000841 mylu_time:0.000344
+143: HB/fs_183_4:           your   resid: 2.7683e-19 matlab_time:0.000842 mylu_time:0.000324
+144: HB/fs_183_6:           your   resid: 6.13054e-23 matlab_time:0.000761 mylu_time:0.000276
+162: HB/gre_185:           your   resid: 4.37996e-16 matlab_time:0.001146 mylu_time:0.000581
+2406: Arenas/jazz:           your   resid: 4.36873e-16 matlab_time:0.002375 mylu_time:0.002923
+2206: JGD_Trefethen/Trefethen_200b:           your   resid: 1.10915e-15 matlab_time:0.005298 mylu_time:0.002751
+298: Bai/bwm200:           your   resid: 9.3734e-17 matlab_time:0.000489 mylu_time:0.000279
+1630: Bai/rdb200:           your   resid: 3.34118e-16 matlab_time:0.001013 mylu_time:0.000654
+1631: Bai/rdb200l:           your   resid: 2.26316e-16 matlab_time:0.000988 mylu_time:0.000635
+2207: JGD_Trefethen/Trefethen_200:           your   resid: 9.24531e-16 matlab_time:0.007177 mylu_time:0.002827
+171: HB/impcol_a:           your   resid: 2.60566e-18 matlab_time:0.000458 mylu_time:0.000304
+163: HB/gre_216a:           your   resid: 5.25621e-16 matlab_time:0.001151 mylu_time:0.000775
+164: HB/gre_216b:           your   resid: 1.11246e-16 matlab_time:0.001171 mylu_time:0.000595
+406: FIDAP/ex1:           your   resid: 2.45561e-16 matlab_time:0.001852 mylu_time:0.001735
+175: HB/impcol_e:           your   resid: 2.86715e-18 matlab_time:0.000575 mylu_time:0.000353
+323: Bai/pde225:           your   resid: 2.6786e-16 matlab_time:0.000944 mylu_time:0.000471
+217: HB/nos1:           your   resid: 9.55429e-17 matlab_time:0.000615 mylu_time:0.000329
+239: HB/saylr1:           your   resid: 9.73503e-17 matlab_time:0.000985 mylu_time:0.000513
+251: HB/steam1:           your   resid: 1.31383e-16 matlab_time:0.001668 mylu_time:0.00112
+215: HB/nnc261:           your   resid: 1.59591e-16 matlab_time:0.001356 mylu_time:0.000811
+1864: Muite/Chebyshev1:           your   resid: 2.58901e-20 matlab_time:0.002917 mylu_time:0.002354
+877: Pothen/mesh3e1:           your   resid: 3.78992e-16 matlab_time:0.001184 mylu_time:0.000712
+878: Pothen/mesh3em5:           your   resid: 2.66453e-16 matlab_time:0.001146 mylu_time:0.000701
+2392: Newman/celegansneural: 	    skip (zero pivot encountered)
+824: TOKAMAK/utm300:           your   resid: 2.4604e-16 matlab_time:0.001744 mylu_time:0.001137
+2194: JGD_SPG/08blocks:           your   resid: 0 matlab_time:0.000245 mylu_time:0.000413
+2208: JGD_Trefethen/Trefethen_300:           your   resid: 1.13993e-15 matlab_time:0.012241 mylu_time:0.008382
+1189: Rajat/rajat05:           your   resid: 6.93019e-17 matlab_time:0.000981 mylu_time:0.000537
+875: Pothen/mesh2e1:           your   resid: 6.06271e-17 matlab_time:0.001435 mylu_time:0.000915
+876: Pothen/mesh2em5:           your   resid: 1.09259e-16 matlab_time:0.001436 mylu_time:0.000917
+2560: CPM/cz308:           your   resid: 4.52103e-16 matlab_time:0.001765 mylu_time:0.001403
+1477: Pajek/GD01_a: 	    skip (zero pivot encountered)
+380: DRIVCAV/cavity01:           your   resid: 7.82438e-16 matlab_time:0.002171 mylu_time:0.00242
+381: DRIVCAV/cavity02:           your   resid: 4.96816e-16 matlab_time:0.002129 mylu_time:0.002156
+382: DRIVCAV/cavity03:           your   resid: 2.82272e-16 matlab_time:0.002227 mylu_time:0.002114
+383: DRIVCAV/cavity04:           your   resid: 4.51846e-16 matlab_time:0.002154 mylu_time:0.002024
+1529: Pajek/USAir97: 	    skip (zero pivot encountered)
+908: vanHeukelum/cage7:           your   resid: 7.34405e-16 matlab_time:0.002161 mylu_time:0.003853
+1639: Bai/tols340:           your   resid: 2.22615e-17 matlab_time:0.000314 mylu_time:0.003371
+165: HB/gre_343:           your   resid: 1.88738e-15 matlab_time:0.001743 mylu_time:0.004206
+229: HB/plat362:           your   resid: 3.27343e-16 matlab_time:0.002256 mylu_time:0.006448
+231: HB/plskz362:           your   resid: 3.04413e-16 matlab_time:0.00168 mylu_time:0.003875
+254: HB/str_0:           your   resid: 0 matlab_time:0.000232 mylu_time:0.003452
+255: HB/str_200:           your   resid: 2.418e-17 matlab_time:0.000843 mylu_time:0.003647
+256: HB/str_400:           your   resid: 2.27947e-17 matlab_time:0.00096 mylu_time:0.003576
+257: HB/str_600:           your   resid: 1.01726e-16 matlab_time:0.001283 mylu_time:0.003635
+1942: JGD_CAG/CAG_mat364:           your   resid: 5.81677e-17 matlab_time:0.011878 mylu_time:0.004403
+926: FEMLAB/poisson2D:           your   resid: 2.79553e-16 matlab_time:0.00163 mylu_time:0.002733
+266: HB/west0381:           your   resid: 1.24379e-16 matlab_time:0.002325 mylu_time:0.00613
+1523: Pajek/SmallW: 	    skip (zero pivot encountered)
+292: Bai/bfwa398:           your   resid: 3.61099e-16 matlab_time:0.001822 mylu_time:0.013262
+295: Bai/bfwb398:           your   resid: 2.36866e-16 matlab_time:0.001674 mylu_time:0.013531
+307: Bai/ck400:           your   resid: 2.6453e-17 matlab_time:0.00101 mylu_time:0.012872
+316: Bai/odepa400:           your   resid: 1.58603e-17 matlab_time:0.000642 mylu_time:0.012748
+317: Bai/odepb400: 	    skip (zero pivot encountered)
+929: FEMLAB/problem1:           your   resid: 4.45566e-16 matlab_time:0.001854 mylu_time:0.014563
+314: Bai/mhda416:           your   resid: 3.5076e-18 matlab_time:0.008523 mylu_time:0.012251
+315: Bai/mhdb416:           your   resid: 6.27207e-18 matlab_time:0.001004 mylu_time:0.009091
+28: HB/bcsstk06:           your   resid: 8.2592e-16 matlab_time:0.002833 mylu_time:0.015088
+29: HB/bcsstk07:           your   resid: 8.2592e-16 matlab_time:0.002837 mylu_time:0.019684
+61: HB/bcsstm06:           your   resid: 0 matlab_time:0.000168 mylu_time:0.013911
+62: HB/bcsstm07:           your   resid: 3.85367e-16 matlab_time:0.002967 mylu_time:0.022441
+174: HB/impcol_d:           your   resid: 4.44089e-17 matlab_time:0.000429 mylu_time:0.013358
+1112: Sandia/oscil_dcop_01:           your   resid: 7.26141e-18 matlab_time:0.00128 mylu_time:0.0143
+1113: Sandia/oscil_dcop_02:           your   resid: 7.26141e-18 matlab_time:0.001265 mylu_time:0.013692
+1114: Sandia/oscil_dcop_03:           your   resid: 7.26141e-18 matlab_time:0.001263 mylu_time:0.013799
+1115: Sandia/oscil_dcop_04:           your   resid: 8.49393e-19 matlab_time:0.001271 mylu_time:0.014194
+1116: Sandia/oscil_dcop_05:           your   resid: 8.49393e-19 matlab_time:0.001259 mylu_time:0.014261
+1117: Sandia/oscil_dcop_06:           your   resid: 1.77835e-18 matlab_time:0.001276 mylu_time:0.014368
+1118: Sandia/oscil_dcop_07:           your   resid: 1.7784e-18 matlab_time:0.001267 mylu_time:0.014139
+1119: Sandia/oscil_dcop_08:           your   resid: 1.77829e-18 matlab_time:0.001252 mylu_time:0.014406
+1120: Sandia/oscil_dcop_09:           your   resid: 1.77851e-18 matlab_time:0.001257 mylu_time:0.01369
+1121: Sandia/oscil_dcop_10:           your   resid: 1.77839e-18 matlab_time:0.001255 mylu_time:0.014185
+1122: Sandia/oscil_dcop_11:           your   resid: 1.77834e-18 matlab_time:0.001248 mylu_time:0.013991
+1123: Sandia/oscil_dcop_12:           your   resid: 1.77845e-18 matlab_time:0.001281 mylu_time:0.014706
+1124: Sandia/oscil_dcop_13:           your   resid: 1.77828e-18 matlab_time:0.001244 mylu_time:0.014237
+1125: Sandia/oscil_dcop_14:           your   resid: 1.77839e-18 matlab_time:0.001246 mylu_time:0.014217
+1126: Sandia/oscil_dcop_15:           your   resid: 1.77829e-18 matlab_time:0.001244 mylu_time:0.013929
+1127: Sandia/oscil_dcop_16:           your   resid: 1.77839e-18 matlab_time:0.001245 mylu_time:0.014063
+1128: Sandia/oscil_dcop_17:           your   resid: 1.7785e-18 matlab_time:0.001242 mylu_time:0.014312
+1129: Sandia/oscil_dcop_18:           your   resid: 1.77836e-18 matlab_time:0.001244 mylu_time:0.014415
+1130: Sandia/oscil_dcop_19:           your   resid: 1.77845e-18 matlab_time:0.00125 mylu_time:0.014453
+1131: Sandia/oscil_dcop_20:           your   resid: 1.77839e-18 matlab_time:0.001251 mylu_time:0.014404
+1132: Sandia/oscil_dcop_21:           your   resid: 1.77834e-18 matlab_time:0.001243 mylu_time:0.014127
+1133: Sandia/oscil_dcop_22:           your   resid: 1.77834e-18 matlab_time:0.001255 mylu_time:0.014289
+1134: Sandia/oscil_dcop_23:           your   resid: 1.77828e-18 matlab_time:0.001246 mylu_time:0.014138
+1135: Sandia/oscil_dcop_24:           your   resid: 1.77839e-18 matlab_time:0.001248 mylu_time:0.013806
+1136: Sandia/oscil_dcop_25:           your   resid: 1.77839e-18 matlab_time:0.001244 mylu_time:0.014297
+1137: Sandia/oscil_dcop_26:           your   resid: 1.77845e-18 matlab_time:0.001244 mylu_time:0.013911
+1138: Sandia/oscil_dcop_27:           your   resid: 1.77839e-18 matlab_time:0.001251 mylu_time:0.014465
+1139: Sandia/oscil_dcop_28:           your   resid: 1.77828e-18 matlab_time:0.001273 mylu_time:0.014221
+1140: Sandia/oscil_dcop_29:           your   resid: 1.77839e-18 matlab_time:0.001256 mylu_time:0.014431
+1141: Sandia/oscil_dcop_30:           your   resid: 1.77828e-18 matlab_time:0.001252 mylu_time:0.014288
+1142: Sandia/oscil_dcop_31:           your   resid: 1.77839e-18 matlab_time:0.001268 mylu_time:0.014195
+1143: Sandia/oscil_dcop_32:           your   resid: 1.77845e-18 matlab_time:0.001243 mylu_time:0.01434
+1144: Sandia/oscil_dcop_33:           your   resid: 1.77839e-18 matlab_time:0.001251 mylu_time:0.014507
+1145: Sandia/oscil_dcop_34:           your   resid: 1.77834e-18 matlab_time:0.00125 mylu_time:0.01433
+1146: Sandia/oscil_dcop_35:           your   resid: 1.77839e-18 matlab_time:0.001248 mylu_time:0.01458
+1147: Sandia/oscil_dcop_36:           your   resid: 1.77834e-18 matlab_time:0.001254 mylu_time:0.014493
+1148: Sandia/oscil_dcop_37:           your   resid: 1.77839e-18 matlab_time:0.001258 mylu_time:0.001234
+1149: Sandia/oscil_dcop_38:           your   resid: 1.77845e-18 matlab_time:0.001245 mylu_time:0.00123
+1150: Sandia/oscil_dcop_39:           your   resid: 1.77834e-18 matlab_time:0.001239 mylu_time:0.00123
+1151: Sandia/oscil_dcop_40:           your   resid: 1.77834e-18 matlab_time:0.00124 mylu_time:0.001233
+1152: Sandia/oscil_dcop_41:           your   resid: 1.77834e-18 matlab_time:0.001248 mylu_time:0.001238
+1153: Sandia/oscil_dcop_42:           your   resid: 1.77834e-18 matlab_time:0.001231 mylu_time:0.001246
+1154: Sandia/oscil_dcop_43:           your   resid: 1.77834e-18 matlab_time:0.001234 mylu_time:0.00123
+1155: Sandia/oscil_dcop_44:           your   resid: 1.77834e-18 matlab_time:0.001255 mylu_time:0.001243
+1156: Sandia/oscil_dcop_45:           your   resid: 1.77834e-18 matlab_time:0.00125 mylu_time:0.001237
+1157: Sandia/oscil_dcop_46:           your   resid: 1.77834e-18 matlab_time:0.001239 mylu_time:0.001234
+1158: Sandia/oscil_dcop_47:           your   resid: 1.77834e-18 matlab_time:0.001249 mylu_time:0.001238
+1159: Sandia/oscil_dcop_48:           your   resid: 1.77834e-18 matlab_time:0.001253 mylu_time:0.001235
+1160: Sandia/oscil_dcop_49:           your   resid: 1.77834e-18 matlab_time:0.001257 mylu_time:0.001242
+1161: Sandia/oscil_dcop_50:           your   resid: 1.77834e-18 matlab_time:0.001232 mylu_time:0.001252
+1162: Sandia/oscil_dcop_51:           your   resid: 1.77834e-18 matlab_time:0.001232 mylu_time:0.001236
+1163: Sandia/oscil_dcop_52:           your   resid: 1.77834e-18 matlab_time:0.001234 mylu_time:0.001238
+1164: Sandia/oscil_dcop_53:           your   resid: 1.77834e-18 matlab_time:0.001245 mylu_time:0.001244
+1165: Sandia/oscil_dcop_54:           your   resid: 1.77834e-18 matlab_time:0.001258 mylu_time:0.00124
+1166: Sandia/oscil_dcop_55:           your   resid: 1.77834e-18 matlab_time:0.001253 mylu_time:0.001242
+1167: Sandia/oscil_dcop_56:           your   resid: 1.77834e-18 matlab_time:0.001244 mylu_time:0.001243
+1168: Sandia/oscil_dcop_57:           your   resid: 1.77834e-18 matlab_time:0.001237 mylu_time:0.001251
+1169: Sandia/oscil_trans_01:           your   resid: 1.45228e-17 matlab_time:0.001301 mylu_time:0.001207
+167: HB/hor_131:           your   resid: 4.27518e-16 matlab_time:0.002692 mylu_time:0.006775
+416: FIDAP/ex2:           your   resid: 3.03563e-16 matlab_time:0.004654 mylu_time:0.01497
+1634: Bai/rdb450:           your   resid: 8.63587e-16 matlab_time:0.001961 mylu_time:0.00237
+1635: Bai/rdb450l:           your   resid: 3.62056e-16 matlab_time:0.001941 mylu_time:0.003189
+1494: Pajek/GD97_c: 	    skip (zero pivot encountered)
+2407: Arenas/celegans_metabolic: 	    skip (zero pivot encountered)
+221: HB/nos5:           your   resid: 5.54386e-16 matlab_time:0.00428 mylu_time:0.010071
+267: HB/west0479:           your   resid: 4.75914e-18 matlab_time:0.001298 mylu_time:0.001724
+329: Bai/rbsa480:           your   resid: 1.23023e-15 matlab_time:0.008413 mylu_time:0.030516
+330: Bai/rbsb480:           your   resid: 1.21881e-15 matlab_time:0.007815 mylu_time:0.028259
+42: HB/bcsstk20:           your   resid: 4.81981e-18 matlab_time:0.001185 mylu_time:0.004568
+70: HB/bcsstm20:           your   resid: 0 matlab_time:0.000162 mylu_time:0.006112
+2: HB/494_bus:           your   resid: 9.09144e-17 matlab_time:0.001207 mylu_time:0.006524
+209: HB/mbeacxc: 	    skip (zero pivot encountered)
+210: HB/mbeaflw: 	    skip (zero pivot encountered)
+211: HB/mbeause: 	    skip (zero pivot encountered)
+335: Bai/rw496:           your   resid: 3.30635e-16 matlab_time:0.002246 mylu_time:0.00761
+268: HB/west0497:           your   resid: 5.2051e-18 matlab_time:0.000732 mylu_time:0.0068
+321: Bai/olm500:           your   resid: 4.9471e-18 matlab_time:0.001112 mylu_time:0.006906
+1328: MathWorks/tomography:           your   resid: 4.44969e-15 matlab_time:0.043128 mylu_time:0.035766
+2209: JGD_Trefethen/Trefethen_500:           your   resid: 8.90133e-16 matlab_time:0.034186 mylu_time:0.048686
+190: HB/lns_511:           your   resid: 7.94615e-22 matlab_time:0.002249 mylu_time:0.010029
+193: HB/lnsp_511:           your   resid: 7.94615e-22 matlab_time:0.002239 mylu_time:0.010224
+166: HB/gre_512:           your   resid: 1.1588e-15 matlab_time:0.003174 mylu_time:0.008888
+310: Bai/dw256A:           your   resid: 5.18042e-16 matlab_time:0.001947 mylu_time:0.006538
+311: Bai/dw256B:           your   resid: 3.44687e-16 matlab_time:0.002007 mylu_time:0.005866
+1616: Bai/dwa512:           your   resid: 5.18042e-16 matlab_time:0.001934 mylu_time:0.006597
+1617: Bai/dwb512:           your   resid: 3.44687e-16 matlab_time:0.001946 mylu_time:0.008344
+2357: Rommes/M10PI_n1: 	    skip (zero pivot encountered)
+2365: Rommes/S10PI_n1: 	    skip (zero pivot encountered)
+234: HB/pores_3:           your   resid: 1.64447e-16 matlab_time:0.001725 mylu_time:0.008747
+145: HB/fs_541_1:           your   resid: 1.81596e-18 matlab_time:0.002342 mylu_time:0.010493
+146: HB/fs_541_2:           your   resid: 1.1089e-17 matlab_time:0.002323 mylu_time:0.015126
+147: HB/fs_541_3:           your   resid: 3.43889e-18 matlab_time:0.002332 mylu_time:0.013773
+148: HB/fs_541_4:           your   resid: 7.72264e-18 matlab_time:0.002338 mylu_time:0.011416
+339: Boeing/bcsstk34:           your   resid: 3.94329e-16 matlab_time:0.008261 mylu_time:0.039964
+344: Boeing/bcsstm34:           your   resid: 8.69633e-16 matlab_time:0.008489 mylu_time:0.113622
+252: HB/steam2:           your   resid: 6.10595e-16 matlab_time:0.003585 mylu_time:0.02355
+2015: JGD_Homology/ch5-5-b3: 	    skip (zero pivot encountered)
+2561: CPM/cz628:           your   resid: 3.30766e-16 matlab_time:0.003089 mylu_time:0.016005
+1476: Pajek/GD00_c: 	    skip (zero pivot encountered)
+269: HB/west0655:           your   resid: 4.75914e-18 matlab_time:0.001825 mylu_time:0.023025
+308: Bai/ck656:           your   resid: 2.6248e-17 matlab_time:0.001296 mylu_time:0.022748
+418: FIDAP/ex21:           your   resid: 3.5532e-16 matlab_time:0.006886 mylu_time:0.04673
+3: HB/662_bus:           your   resid: 5.02212e-17 matlab_time:0.001825 mylu_time:0.023082
+247: HB/shl_0:           your   resid: 0 matlab_time:0.000256 mylu_time:0.023213
+248: HB/shl_200:           your   resid: 0 matlab_time:0.000249 mylu_time:0.023524
+249: HB/shl_400:           your   resid: 0 matlab_time:0.000248 mylu_time:0.023413
+216: HB/nnc666:           your   resid: 1.9654e-16 matlab_time:0.003407 mylu_time:0.02628
+222: HB/nos6:           your   resid: 3.35149e-16 matlab_time:0.002324 mylu_time:0.024264
+149: HB/fs_680_1:           your   resid: 8.08644e-17 matlab_time:0.000912 mylu_time:0.025109
+150: HB/fs_680_2:           your   resid: 1.0109e-17 matlab_time:0.00096 mylu_time:0.024124
+151: HB/fs_680_3:           your   resid: 4.0436e-17 matlab_time:0.000958 mylu_time:0.024615
+2361: Rommes/M10PI_n: 	    skip (zero pivot encountered)
+2369: Rommes/S10PI_n: 	    skip (zero pivot encountered)
+4: HB/685_bus:           your   resid: 1.88064e-17 matlab_time:0.002222 mylu_time:0.034924
+2210: JGD_Trefethen/Trefethen_700:           your   resid: 1.20418e-15 matlab_time:0.068651 mylu_time:0.130737
+357: Boeing/msc00726:           your   resid: 9.92532e-16 matlab_time:0.070065 mylu_time:0.120006
+223: HB/nos7:           your   resid: 3.923e-16 matlab_time:0.004936 mylu_time:0.038914
+152: HB/fs_760_1:           your   resid: 6.64125e-20 matlab_time:0.004739 mylu_time:0.046611
+153: HB/fs_760_2:           your   resid: 1.07655e-16 matlab_time:0.004727 mylu_time:0.046395
+154: HB/fs_760_3:           your   resid: 1.04811e-16 matlab_time:0.004874 mylu_time:0.047383
+213: HB/mcfe:           your   resid: 2.08724e-16 matlab_time:0.011222 mylu_time:0.052231
+1627: Bai/qh768:           your   resid: 1.45001e-19 matlab_time:0.002246 mylu_time:0.044679
+1360: PARSEC/Si2:           your   resid: 2.00938e-15 matlab_time:0.107907 mylu_time:0.224794
+294: Bai/bfwa782:           your   resid: 4.70664e-16 matlab_time:0.00354 mylu_time:0.047296
+297: Bai/bfwb782:           your   resid: 3.80843e-16 matlab_time:0.00306 mylu_time:0.047628
+1327: Morandini/rotor2:           your   resid: 5.66656e-17 matlab_time:0.00414 mylu_time:0.048772
+470: Gset/G10:           your   resid: 1.84931e-15 matlab_time:0.196345 mylu_time:0.521446
+471: Gset/G11:           your   resid: 3.67761e-16 matlab_time:0.002608 mylu_time:0.048084
+472: Gset/G12:           your   resid: 8.50882e-16 matlab_time:0.003089 mylu_time:0.047923
+473: Gset/G13:           your   resid: 1.26288e-15 matlab_time:0.003855 mylu_time:0.049313
+478: Gset/G18:           your   resid: 1.42275e-15 matlab_time:0.050056 mylu_time:0.321696
+479: Gset/G19:           your   resid: 2.40186e-15 matlab_time:0.048623 mylu_time:0.304419
+481: Gset/G20:           your   resid: 2.49394e-15 matlab_time:0.05067 mylu_time:0.300842
+482: Gset/G21:           your   resid: 2.04178e-15 matlab_time:0.067954 mylu_time:0.316383
+524: Gset/G6:           your   resid: 1.64918e-15 matlab_time:0.215564 mylu_time:0.526992
+533: Gset/G7:           your   resid: 1.62265e-15 matlab_time:0.196094 mylu_time:0.524275
+534: Gset/G8:           your   resid: 1.68404e-15 matlab_time:0.217442 mylu_time:0.523471
+535: Gset/G9:           your   resid: 1.65849e-15 matlab_time:0.213703 mylu_time:0.521406
+1636: Bai/rdb800l:           your   resid: 4.88125e-16 matlab_time:0.003531 mylu_time:0.054456
+41: HB/bcsstk19:           your   resid: 1.23315e-16 matlab_time:0.002948 mylu_time:0.056382
+69: HB/bcsstm19:           your   resid: 0 matlab_time:0.00022 mylu_time:0.049709
+82: HB/bp_0:           your   resid: 0 matlab_time:0.000345 mylu_time:0.050969
+83: HB/bp_1000:           your   resid: 5.23294e-17 matlab_time:0.002146 mylu_time:0.052118
+84: HB/bp_1200:           your   resid: 6.02024e-17 matlab_time:0.002188 mylu_time:0.051679
+85: HB/bp_1400:           your   resid: 2.94353e-17 matlab_time:0.002148 mylu_time:0.051763
+86: HB/bp_1600:           your   resid: 2.79677e-17 matlab_time:0.002145 mylu_time:0.05162
+87: HB/bp_200:           your   resid: 9.86286e-18 matlab_time:0.001032 mylu_time:0.05083
+88: HB/bp_400:           your   resid: 3.01498e-17 matlab_time:0.001432 mylu_time:0.050834
+89: HB/bp_600:           your   resid: 2.71867e-17 matlab_time:0.001534 mylu_time:0.051782
+90: HB/bp_800:           your   resid: 5.23294e-17 matlab_time:0.001786 mylu_time:0.050262
+419: FIDAP/ex22:           your   resid: 2.76813e-16 matlab_time:0.004992 mylu_time:0.072562
+280: HB/young3c:           your   resid: 7.44579e-16 matlab_time:0.003173 mylu_time:0.053274
+422: FIDAP/ex25:           your   resid: 2.3519e-16 matlab_time:0.150925 mylu_time:0.064245
+328: Bai/qh882:           your   resid: 2.4476e-19 matlab_time:0.00256 mylu_time:0.038108
+226: HB/orsirr_2:           your   resid: 4.09705e-16 matlab_time:0.005309 mylu_time:0.063373
+159: HB/gr_30_30:           your   resid: 5.63094e-16 matlab_time:0.00413 mylu_time:0.042808
+325: Bai/pde900:           your   resid: 3.29462e-16 matlab_time:0.00317 mylu_time:0.060875
+2334: Fluorem/DK01R:           your   resid: 8.15595e-17 matlab_time:0.003176 mylu_time:0.082071
+1478: Pajek/GD01_A: 	    skip (zero pivot encountered)
+218: HB/nos2:           your   resid: 9.66367e-17 matlab_time:0.001711 mylu_time:0.067144
+219: HB/nos3:           your   resid: 5.18293e-16 matlab_time:0.006538 mylu_time:0.066934
+300: Bai/cdde1:           your   resid: 4.59106e-16 matlab_time:0.003446 mylu_time:0.061771
+301: Bai/cdde2:           your   resid: 7.86168e-16 matlab_time:0.003339 mylu_time:0.093442
+302: Bai/cdde3:           your   resid: 1.0511e-15 matlab_time:0.003331 mylu_time:0.092565
+303: Bai/cdde4:           your   resid: 5.99837e-16 matlab_time:0.003357 mylu_time:0.094386
+304: Bai/cdde5:           your   resid: 7.99886e-16 matlab_time:0.003326 mylu_time:0.094054
+305: Bai/cdde6:           your   resid: 8.44937e-16 matlab_time:0.003359 mylu_time:0.093229
+333: Bai/rdb968:           your   resid: 6.83962e-16 matlab_time:0.00429 mylu_time:0.10266
+424: FIDAP/ex27:           your   resid: 4.69638e-16 matlab_time:0.033209 mylu_time:0.108473
+270: HB/west0989:           your   resid: 4.74777e-18 matlab_time:0.002195 mylu_time:0.096434
+187: HB/jpwh_991:           your   resid: 5.26976e-16 matlab_time:0.005905 mylu_time:0.076618
+240: HB/saylr3: 	    skip (zero pivot encountered)
+242: HB/sherman1:           your   resid: 3.44859e-16 matlab_time:0.00298 mylu_time:0.100662
+319: Bai/olm1000:           your   resid: 4.96695e-18 matlab_time:0.002071 mylu_time:0.100132
+338: Bai/tub1000:           your   resid: 5.87087e-17 matlab_time:0.001537 mylu_time:0.097197
+ matlab_time:0.00128 mylu_time:0.0143
+???  matlab_time:0.00128 mylu_time:0.0143
+                         |
+{Error: Unexpected MATLAB expression.
+} 
+
+
+
+clear all
+test_lu
+904: vanHeukelum/cage3:           your   resid: 6.93889e-18 matlab_time:0.000308 mylu_time:0.002126
+449: Grund/b1_ss:           your   resid: 0 matlab_time:8.9e-05 mylu_time:4.9e-05
+905: vanHeukelum/cage4: 	    skip
+1524: Pajek/Stranke94:           your   resid: 5.14265e-17 matlab_time:8.9e-05 mylu_time:5.4e-05
+1440: Oberwolfach/LFAT5:           your   resid: 1.13086e-21 matlab_time:8.8e-05 mylu_time:4.9e-05
+1438: Oberwolfach/LF10:           your   resid: 2.64e-18 matlab_time:9.6e-05 mylu_time:5.2e-05
+2203: JGD_Trefethen/Trefethen_20b:           your   resid: 1.90272e-16 matlab_time:0.000103 mylu_time:6e-05
+2204: JGD_Trefethen/Trefethen_20:           your   resid: 1.9292e-16 matlab_time:0.000108 mylu_time:6.4e-05
+1516: Pajek/Ragusa18: 	    skip (zero pivot encountered)
+1515: Pajek/Ragusa16: 	    skip (zero pivot encountered)
+436: FIDAP/ex5:           your   resid: 4.91127e-17 matlab_time:0.00012 mylu_time:7.6e-05
+232: HB/pores_1:           your   resid: 4.58233e-19 matlab_time:0.000148 mylu_time:6.7e-05
+1199: Hamrle/Hamrle1:           your   resid: 1.75809e-19 matlab_time:0.000134 mylu_time:5.7e-05
+1480: Pajek/GD01_c: 	    skip (zero pivot encountered)
+1474: Pajek/football: 	    skip (zero pivot encountered)
+906: vanHeukelum/cage5:           your   resid: 1.53523e-16 matlab_time:0.000157 mylu_time:7.5e-05
+1493: Pajek/GD97_b: 	    skip (zero pivot encountered)
+23: HB/bcsstk01:           your   resid: 1.41894e-16 matlab_time:0.00025 mylu_time:0.00013
+56: HB/bcsstm01: 	    skip (zero pivot encountered)
+872: Pothen/mesh1e1:           your   resid: 1.92873e-16 matlab_time:0.000206 mylu_time:9.3e-05
+873: Pothen/mesh1em1:           your   resid: 1.2339e-16 matlab_time:0.000201 mylu_time:0.000103
+874: Pothen/mesh1em6:           your   resid: 1.18751e-16 matlab_time:0.0002 mylu_time:9.3e-05
+464: Grund/d_ss:           your   resid: 4.43613e-21 matlab_time:0.000187 mylu_time:8.6e-05
+172: HB/impcol_b:           your   resid: 3.47101e-17 matlab_time:0.000167 mylu_time:7.8e-05
+293: Bai/bfwa62:           your   resid: 1.52071e-16 matlab_time:0.00025 mylu_time:0.0001
+296: Bai/bfwb62:           your   resid: 1.07623e-16 matlab_time:0.000279 mylu_time:8.9e-05
+1498: Pajek/GD99_b: 	    skip (zero pivot encountered)
+24: HB/bcsstk02:           your   resid: 2.20905e-16 matlab_time:0.000747 mylu_time:0.000499
+57: HB/bcsstm02:           your   resid: 0 matlab_time:0.000149 mylu_time:5.5e-05
+2338: Rommes/ww_36_pmec_36:           your   resid: 8.76139e-19 matlab_time:0.000411 mylu_time:0.00015
+262: HB/west0067:           your   resid: 7.22875e-17 matlab_time:0.000398 mylu_time:0.000117
+1943: JGD_CAG/CAG_mat72:           your   resid: 1.93082e-17 matlab_time:0.000484 mylu_time:0.000147
+2400: Newman/lesmis: 	    skip (zero pivot encountered)
+253: HB/steam3:           your   resid: 5.35682e-20 matlab_time:0.000279 mylu_time:8e-05
+1519: Pajek/Sandi_authors: 	    skip (zero pivot encountered)
+462: Grund/d_dyn:           your   resid: 2.78517e-18 matlab_time:0.000329 mylu_time:9.7e-05
+463: Grund/d_dyn1:           your   resid: 7.21516e-17 matlab_time:0.000326 mylu_time:8.7e-05
+1641: Bai/tols90:           your   resid: 2.10125e-16 matlab_time:0.000257 mylu_time:0.000812
+907: vanHeukelum/cage6:           your   resid: 2.71051e-16 matlab_time:0.000542 mylu_time:0.000228
+220: HB/nos4:           your   resid: 1.49679e-16 matlab_time:0.00048 mylu_time:0.000138
+318: Bai/olm100:           your   resid: 3.80121e-18 matlab_time:0.000366 mylu_time:8.9e-05
+337: Bai/tub100:           your   resid: 4.70086e-17 matlab_time:0.000302 mylu_time:8.1e-05
+1326: Morandini/rotor1:           your   resid: 1.76535e-19 matlab_time:0.000469 mylu_time:0.000181
+861: MathWorks/pivtol:           your   resid: 3.35239e-17 matlab_time:0.000296 mylu_time:8e-05
+306: Bai/ck104:           your   resid: 3.97821e-17 matlab_time:0.000411 mylu_time:0.000117
+2097: JGD_Homology/n3c6-b1: 	    skip (zero pivot encountered)
+25: HB/bcsstk03:           your   resid: 6.38599e-17 matlab_time:0.000367 mylu_time:0.000116
+58: HB/bcsstm03: 	    skip (zero pivot encountered)
+161: HB/gre_115:           your   resid: 2.35922e-16 matlab_time:0.000571 mylu_time:0.000187
+2397: Newman/football:           your   resid: 5.67922e-16 matlab_time:0.000993 mylu_time:0.000776
+1325: Morandini/robot:           your   resid: 6.62017e-18 matlab_time:0.000624 mylu_time:0.000177
+1506: Pajek/Journals:           your   resid: 2.99492e-16 matlab_time:0.00413 mylu_time:0.002136
+6: HB/arc130:           your   resid: 9.07086e-21 matlab_time:0.000488 mylu_time:0.00017
+188: HB/lns_131:           your   resid: 2.04354e-24 matlab_time:0.000498 mylu_time:0.000182
+192: HB/lnsp_131:           your   resid: 2.04354e-24 matlab_time:0.00045 mylu_time:0.000163
+26: HB/bcsstk04:           your   resid: 3.01597e-16 matlab_time:0.00108 mylu_time:0.000935
+59: HB/bcsstm04: 	    skip (zero pivot encountered)
+263: HB/west0132:           your   resid: 4.62555e-18 matlab_time:0.000371 mylu_time:0.000126
+1195: Rajat/rajat11:           your   resid: 7.40141e-18 matlab_time:0.000441 mylu_time:0.00012
+334: Bai/rw136:           your   resid: 2.83461e-16 matlab_time:0.000585 mylu_time:0.0002
+173: HB/impcol_c:           your   resid: 1.15648e-19 matlab_time:0.00016 mylu_time:8.9e-05
+44: HB/bcsstk22:           your   resid: 1.60458e-16 matlab_time:0.000508 mylu_time:0.000185
+72: HB/bcsstm22:           your   resid: 0 matlab_time:0.000161 mylu_time:7.3e-05
+206: HB/lund_a:           your   resid: 3.241e-16 matlab_time:0.000746 mylu_time:0.00095
+207: HB/lund_b:           your   resid: 3.25486e-16 matlab_time:0.000664 mylu_time:0.000792
+2559: CPM/cz148:           your   resid: 1.9417e-16 matlab_time:0.000863 mylu_time:0.000483
+2205: JGD_Trefethen/Trefethen_150:           your   resid: 9.14949e-16 matlab_time:0.001677 mylu_time:0.001673
+27: HB/bcsstk05:           your   resid: 3.88181e-16 matlab_time:0.000862 mylu_time:0.000547
+60: HB/bcsstm05:           your   resid: 0 matlab_time:9.6e-05 mylu_time:8.1e-05
+264: HB/west0156:           your   resid: 5.94589e-24 matlab_time:0.000265 mylu_time:0.000105
+313: Bai/lop163:           your   resid: 1.27578e-16 matlab_time:0.000742 mylu_time:0.000294
+265: HB/west0167:           your   resid: 4.63252e-18 matlab_time:0.000375 mylu_time:0.000132
+212: HB/mcca:           your   resid: 4.72164e-17 matlab_time:0.001166 mylu_time:0.000477
+1198: Rajat/rajat14:           your   resid: 4.73423e-18 matlab_time:0.000615 mylu_time:0.000398
+141: HB/fs_183_1:           your   resid: 8.74904e-18 matlab_time:0.000729 mylu_time:0.000183
+142: HB/fs_183_3:           your   resid: 1.0262e-21 matlab_time:0.000762 mylu_time:0.00024
+143: HB/fs_183_4:           your   resid: 2.7683e-19 matlab_time:0.00076 mylu_time:0.000265
+144: HB/fs_183_6:           your   resid: 6.13054e-23 matlab_time:0.000701 mylu_time:0.00018
+162: HB/gre_185:           your   resid: 4.37996e-16 matlab_time:0.001045 mylu_time:0.00051
+2406: Arenas/jazz:           your   resid: 4.36873e-16 matlab_time:0.002413 mylu_time:0.002835
+2206: JGD_Trefethen/Trefethen_200b:           your   resid: 1.10915e-15 matlab_time:0.005341 mylu_time:0.002615
+298: Bai/bwm200:           your   resid: 9.3734e-17 matlab_time:0.000431 mylu_time:0.000154
+1630: Bai/rdb200:           your   resid: 3.34118e-16 matlab_time:0.000883 mylu_time:0.000545
+1631: Bai/rdb200l:           your   resid: 2.26316e-16 matlab_time:0.000791 mylu_time:0.000552
+2207: JGD_Trefethen/Trefethen_200:           your   resid: 9.24531e-16 matlab_time:0.006777 mylu_time:0.002725
+171: HB/impcol_a:           your   resid: 2.60566e-18 matlab_time:0.000333 mylu_time:0.000178
+163: HB/gre_216a:           your   resid: 5.25621e-16 matlab_time:0.001065 mylu_time:0.000613
+164: HB/gre_216b:           your   resid: 1.11246e-16 matlab_time:0.001064 mylu_time:0.000494
+406: FIDAP/ex1:           your   resid: 2.45561e-16 matlab_time:0.001734 mylu_time:0.001613
+175: HB/impcol_e:           your   resid: 2.86715e-18 matlab_time:0.000515 mylu_time:0.000215
+323: Bai/pde225:           your   resid: 2.6786e-16 matlab_time:0.000853 mylu_time:0.000344
+217: HB/nos1:           your   resid: 9.55429e-17 matlab_time:0.000553 mylu_time:0.000179
+239: HB/saylr1:           your   resid: 9.73503e-17 matlab_time:0.000923 mylu_time:0.000355
+251: HB/steam1:           your   resid: 1.31383e-16 matlab_time:0.001505 mylu_time:0.000999
+215: HB/nnc261:           your   resid: 1.59591e-16 matlab_time:0.001155 mylu_time:0.000647
+1864: Muite/Chebyshev1:           your   resid: 2.58901e-20 matlab_time:0.002849 mylu_time:0.00224
+877: Pothen/mesh3e1:           your   resid: 3.78992e-16 matlab_time:0.001042 mylu_time:0.000499
+878: Pothen/mesh3em5:           your   resid: 2.66453e-16 matlab_time:0.001101 mylu_time:0.000486
+2392: Newman/celegansneural: 	    skip (zero pivot encountered)
+824: TOKAMAK/utm300:           your   resid: 2.4604e-16 matlab_time:0.00163 mylu_time:0.000922
+2194: JGD_SPG/08blocks:           your   resid: 0 matlab_time:0.00021 mylu_time:0.000212
+2208: JGD_Trefethen/Trefethen_300:           your   resid: 1.13993e-15 matlab_time:0.012373 mylu_time:0.008188
+1189: Rajat/rajat05:           your   resid: 6.93019e-17 matlab_time:0.000914 mylu_time:0.000326
+875: Pothen/mesh2e1:           your   resid: 6.06271e-17 matlab_time:0.00135 mylu_time:0.000672
+876: Pothen/mesh2em5:           your   resid: 1.09259e-16 matlab_time:0.001227 mylu_time:0.000637
+2560: CPM/cz308:           your   resid: 4.52103e-16 matlab_time:0.001632 mylu_time:0.001097
+1477: Pajek/GD01_a: 	    skip (zero pivot encountered)
+380: DRIVCAV/cavity01:           your   resid: 7.82438e-16 matlab_time:0.002037 mylu_time:0.002228
+381: DRIVCAV/cavity02:           your   resid: 4.96816e-16 matlab_time:0.001992 mylu_time:0.001892
+382: DRIVCAV/cavity03:           your   resid: 2.82272e-16 matlab_time:0.002107 mylu_time:0.001872
+383: DRIVCAV/cavity04:           your   resid: 4.51846e-16 matlab_time:0.001993 mylu_time:0.001756
+1529: Pajek/USAir97: 	    skip (zero pivot encountered)
+908: vanHeukelum/cage7:           your   resid: 7.34405e-16 matlab_time:0.002026 mylu_time:0.001659
+1639: Bai/tols340:           your   resid: 2.22615e-17 matlab_time:0.000322 mylu_time:0.000991
+165: HB/gre_343:           your   resid: 1.88738e-15 matlab_time:0.001735 mylu_time:0.00177
+229: HB/plat362:           your   resid: 3.27343e-16 matlab_time:0.002169 mylu_time:0.006504
+231: HB/plskz362:           your   resid: 3.04413e-16 matlab_time:0.00169 mylu_time:0.00384
+254: HB/str_0:           your   resid: 0 matlab_time:0.00028 mylu_time:0.003302
+255: HB/str_200:           your   resid: 2.418e-17 matlab_time:0.000758 mylu_time:0.003439
+256: HB/str_400:           your   resid: 2.27947e-17 matlab_time:0.000884 mylu_time:0.003381
+257: HB/str_600:           your   resid: 1.01726e-16 matlab_time:0.001191 mylu_time:0.003553
+1942: JGD_CAG/CAG_mat364:           your   resid: 5.81677e-17 matlab_time:0.012121 mylu_time:0.004477
+926: FEMLAB/poisson2D:           your   resid: 2.79553e-16 matlab_time:0.001561 mylu_time:0.002781
+266: HB/west0381:           your   resid: 1.24379e-16 matlab_time:0.002209 mylu_time:0.003763
+1523: Pajek/SmallW: 	    skip (zero pivot encountered)
+292: Bai/bfwa398:           your   resid: 3.61099e-16 matlab_time:0.001801 mylu_time:0.013101
+295: Bai/bfwb398:           your   resid: 2.36866e-16 matlab_time:0.001601 mylu_time:0.013192
+307: Bai/ck400:           your   resid: 2.6453e-17 matlab_time:0.000952 mylu_time:0.012777
+316: Bai/odepa400:           your   resid: 1.58603e-17 matlab_time:0.000609 mylu_time:0.012727
+317: Bai/odepb400: 	    skip (zero pivot encountered)
+929: FEMLAB/problem1:           your   resid: 4.45566e-16 matlab_time:0.001726 mylu_time:0.014084
+314: Bai/mhda416:           your   resid: 3.5076e-18 matlab_time:0.009662 mylu_time:0.01202
+315: Bai/mhdb416:           your   resid: 6.27207e-18 matlab_time:0.000954 mylu_time:0.013404
+28: HB/bcsstk06:           your   resid: 8.2592e-16 matlab_time:0.002799 mylu_time:0.019351
+29: HB/bcsstk07:           your   resid: 8.2592e-16 matlab_time:0.002797 mylu_time:0.019503
+61: HB/bcsstm06:           your   resid: 0 matlab_time:0.000224 mylu_time:0.013278
+62: HB/bcsstm07:           your   resid: 3.85367e-16 matlab_time:0.002828 mylu_time:0.022737
+174: HB/impcol_d:           your   resid: 4.44089e-17 matlab_time:0.000493 mylu_time:0.014137
+1112: Sandia/oscil_dcop_01:           your   resid: 7.26141e-18 matlab_time:0.001203 mylu_time:0.014535
+1113: Sandia/oscil_dcop_02:           your   resid: 7.26141e-18 matlab_time:0.001191 mylu_time:0.014026
+1114: Sandia/oscil_dcop_03:           your   resid: 7.26141e-18 matlab_time:0.00119 mylu_time:0.014544
+1115: Sandia/oscil_dcop_04:           your   resid: 8.49393e-19 matlab_time:0.001198 mylu_time:0.01417
+1116: Sandia/oscil_dcop_05:           your   resid: 8.49393e-19 matlab_time:0.001186 mylu_time:0.014498
+1117: Sandia/oscil_dcop_06:           your   resid: 1.77835e-18 matlab_time:0.001193 mylu_time:0.014528
+1118: Sandia/oscil_dcop_07:           your   resid: 1.7784e-18 matlab_time:0.001192 mylu_time:0.013841
+1119: Sandia/oscil_dcop_08:           your   resid: 1.77829e-18 matlab_time:0.001183 mylu_time:0.014036
+1120: Sandia/oscil_dcop_09:           your   resid: 1.77851e-18 matlab_time:0.001193 mylu_time:0.013698
+1121: Sandia/oscil_dcop_10:           your   resid: 1.77839e-18 matlab_time:0.001186 mylu_time:0.014296
+1122: Sandia/oscil_dcop_11:           your   resid: 1.77834e-18 matlab_time:0.001181 mylu_time:0.014134
+1123: Sandia/oscil_dcop_12:           your   resid: 1.77845e-18 matlab_time:0.001174 mylu_time:0.01434
+1124: Sandia/oscil_dcop_13:           your   resid: 1.77828e-18 matlab_time:0.001175 mylu_time:0.014292
+1125: Sandia/oscil_dcop_14:           your   resid: 1.77839e-18 matlab_time:0.001178 mylu_time:0.013759
+1126: Sandia/oscil_dcop_15:           your   resid: 1.77829e-18 matlab_time:0.001177 mylu_time:0.013978
+1127: Sandia/oscil_dcop_16:           your   resid: 1.77839e-18 matlab_time:0.001178 mylu_time:0.01435
+1128: Sandia/oscil_dcop_17:           your   resid: 1.7785e-18 matlab_time:0.001186 mylu_time:0.014561
+1129: Sandia/oscil_dcop_18:           your   resid: 1.77836e-18 matlab_time:0.00118 mylu_time:0.014267
+1130: Sandia/oscil_dcop_19:           your   resid: 1.77845e-18 matlab_time:0.001177 mylu_time:0.014409
+1131: Sandia/oscil_dcop_20:           your   resid: 1.77839e-18 matlab_time:0.001178 mylu_time:0.014099
+1132: Sandia/oscil_dcop_21:           your   resid: 1.77834e-18 matlab_time:0.001173 mylu_time:0.01405
+1133: Sandia/oscil_dcop_22:           your   resid: 1.77834e-18 matlab_time:0.001178 mylu_time:0.014761
+1134: Sandia/oscil_dcop_23:           your   resid: 1.77828e-18 matlab_time:0.001199 mylu_time:0.014174
+1135: Sandia/oscil_dcop_24:           your   resid: 1.77839e-18 matlab_time:0.001179 mylu_time:0.014187
+1136: Sandia/oscil_dcop_25:           your   resid: 1.77839e-18 matlab_time:0.001178 mylu_time:0.014138
+1137: Sandia/oscil_dcop_26:           your   resid: 1.77845e-18 matlab_time:0.001188 mylu_time:0.013935
+1138: Sandia/oscil_dcop_27:           your   resid: 1.77839e-18 matlab_time:0.001182 mylu_time:0.01419
+1139: Sandia/oscil_dcop_28:           your   resid: 1.77828e-18 matlab_time:0.001177 mylu_time:0.014248
+1140: Sandia/oscil_dcop_29:           your   resid: 1.77839e-18 matlab_time:0.001181 mylu_time:0.014215
+1141: Sandia/oscil_dcop_30:           your   resid: 1.77828e-18 matlab_time:0.001179 mylu_time:0.013616
+1142: Sandia/oscil_dcop_31:           your   resid: 1.77839e-18 matlab_time:0.001181 mylu_time:0.014402
+1143: Sandia/oscil_dcop_32:           your   resid: 1.77845e-18 matlab_time:0.001187 mylu_time:0.013918
+1144: Sandia/oscil_dcop_33:           your   resid: 1.77839e-18 matlab_time:0.001182 mylu_time:0.014291
+1145: Sandia/oscil_dcop_34:           your   resid: 1.77834e-18 matlab_time:0.001184 mylu_time:0.014407
+1146: Sandia/oscil_dcop_35:           your   resid: 1.77839e-18 matlab_time:0.001178 mylu_time:0.014254
+1147: Sandia/oscil_dcop_36:           your   resid: 1.77834e-18 matlab_time:0.001192 mylu_time:0.014576
+1148: Sandia/oscil_dcop_37:           your   resid: 1.77839e-18 matlab_time:0.001179 mylu_time:0.014501
+1149: Sandia/oscil_dcop_38:           your   resid: 1.77845e-18 matlab_time:0.001177 mylu_time:0.014261
+1150: Sandia/oscil_dcop_39:           your   resid: 1.77834e-18 matlab_time:0.001203 mylu_time:0.013849
+1151: Sandia/oscil_dcop_40:           your   resid: 1.77834e-18 matlab_time:0.001179 mylu_time:0.014126
+1152: Sandia/oscil_dcop_41:           your   resid: 1.77834e-18 matlab_time:0.001192 mylu_time:0.014331
+1153: Sandia/oscil_dcop_42:           your   resid: 1.77834e-18 matlab_time:0.00118 mylu_time:0.014582
+1154: Sandia/oscil_dcop_43:           your   resid: 1.77834e-18 matlab_time:0.001207 mylu_time:0.014616
+1155: Sandia/oscil_dcop_44:           your   resid: 1.77834e-18 matlab_time:0.001187 mylu_time:0.014173
+1156: Sandia/oscil_dcop_45:           your   resid: 1.77834e-18 matlab_time:0.001184 mylu_time:0.014119
+1157: Sandia/oscil_dcop_46:           your   resid: 1.77834e-18 matlab_time:0.001182 mylu_time:0.014363
+1158: Sandia/oscil_dcop_47:           your   resid: 1.77834e-18 matlab_time:0.001177 mylu_time:0.014255
+1159: Sandia/oscil_dcop_48:           your   resid: 1.77834e-18 matlab_time:0.001175 mylu_time:0.014442
+1160: Sandia/oscil_dcop_49:           your   resid: 1.77834e-18 matlab_time:0.001187 mylu_time:0.01389
+1161: Sandia/oscil_dcop_50:           your   resid: 1.77834e-18 matlab_time:0.001181 mylu_time:0.013939
+1162: Sandia/oscil_dcop_51:           your   resid: 1.77834e-18 matlab_time:0.001179 mylu_time:0.014565
+1163: Sandia/oscil_dcop_52:           your   resid: 1.77834e-18 matlab_time:0.001185 mylu_time:0.014368
+1164: Sandia/oscil_dcop_53:           your   resid: 1.77834e-18 matlab_time:0.001175 mylu_time:0.014704
+1165: Sandia/oscil_dcop_54:           your   resid: 1.77834e-18 matlab_time:0.001197 mylu_time:0.014081
+1166: Sandia/oscil_dcop_55:           your   resid: 1.77834e-18 matlab_time:0.001176 mylu_time:0.014283
+1167: Sandia/oscil_dcop_56:           your   resid: 1.77834e-18 matlab_time:0.00118 mylu_time:0.014282
+1168: Sandia/oscil_dcop_57:           your   resid: 1.77834e-18 matlab_time:0.001179 mylu_time:0.014509
+1169: Sandia/oscil_trans_01:           your   resid: 1.45228e-17 matlab_time:0.001246 mylu_time:0.014469
+167: HB/hor_131:           your   resid: 4.27518e-16 matlab_time:0.002928 mylu_time:0.020535
+416: FIDAP/ex2:           your   resid: 3.03563e-16 matlab_time:0.013354 mylu_time:0.018256
+1634: Bai/rdb450:           your   resid: 8.63587e-16 matlab_time:0.002051 mylu_time:0.011422
+1635: Bai/rdb450l:           your   resid: 3.62056e-16 matlab_time:0.001928 mylu_time:0.017618
+1494: Pajek/GD97_c: 	    skip (zero pivot encountered)
+2407: Arenas/celegans_metabolic: 	    skip (zero pivot encountered)
+221: HB/nos5:           your   resid: 5.54386e-16 matlab_time:0.008293 mylu_time:0.018091
+267: HB/west0479:           your   resid: 4.75914e-18 matlab_time:0.001278 mylu_time:0.023722
+329: Bai/rbsa480:           your   resid: 1.23023e-15 matlab_time:0.017303 mylu_time:0.031563
+330: Bai/rbsb480:           your   resid: 1.21881e-15 matlab_time:0.016473 mylu_time:0.035876
+42: HB/bcsstk20:           your   resid: 4.81981e-18 matlab_time:0.001256 mylu_time:0.015743
+70: HB/bcsstm20:           your   resid: 0 matlab_time:0.000156 mylu_time:0.023335
+2: HB/494_bus:           your   resid: 9.09144e-17 matlab_time:0.001239 mylu_time:0.025762
+209: HB/mbeacxc: 	    skip (zero pivot encountered)
+210: HB/mbeaflw: 	    skip (zero pivot encountered)
+211: HB/mbeause: 	    skip (zero pivot encountered)
+335: Bai/rw496:           your   resid: 3.30635e-16 matlab_time:0.002358 mylu_time:0.0176
+268: HB/west0497:           your   resid: 5.2051e-18 matlab_time:0.000723 mylu_time:0.016702
+321: Bai/olm500:           your   resid: 4.9471e-18 matlab_time:0.001104 mylu_time:0.025417
+1328: MathWorks/tomography:           your   resid: 4.44969e-15 matlab_time:0.045828 mylu_time:0.035746
+2209: JGD_Trefethen/Trefethen_500:           your   resid: 8.90133e-16 matlab_time:0.053141 mylu_time:0.059936
+190: HB/lns_511:           your   resid: 7.94615e-22 matlab_time:0.002425 mylu_time:0.029145
+193: HB/lnsp_511:           your   resid: 7.94615e-22 matlab_time:0.002405 mylu_time:0.028403
+166: HB/gre_512:           your   resid: 1.1588e-15 matlab_time:0.003472 mylu_time:0.021185
+310: Bai/dw256A:           your   resid: 5.18042e-16 matlab_time:0.002016 mylu_time:0.020778
+311: Bai/dw256B:           your   resid: 3.44687e-16 matlab_time:0.001996 mylu_time:0.027334
+1616: Bai/dwa512:           your   resid: 5.18042e-16 matlab_time:0.001946 mylu_time:0.027866
+1617: Bai/dwb512:           your   resid: 3.44687e-16 matlab_time:0.00199 mylu_time:0.027284
+2357: Rommes/M10PI_n1: 	    skip (zero pivot encountered)
+2365: Rommes/S10PI_n1: 	    skip (zero pivot encountered)
+234: HB/pores_3:           your   resid: 1.64447e-16 matlab_time:0.001795 mylu_time:0.029778
+145: HB/fs_541_1:           your   resid: 1.81596e-18 matlab_time:0.002448 mylu_time:0.032149
+146: HB/fs_541_2:           your   resid: 1.1089e-17 matlab_time:0.002423 mylu_time:0.036229
+147: HB/fs_541_3:           your   resid: 3.43889e-18 matlab_time:0.002445 mylu_time:0.035796
+148: HB/fs_541_4:           your   resid: 7.72264e-18 matlab_time:0.002464 mylu_time:0.034128
+339: Boeing/bcsstk34:           your   resid: 3.94329e-16 matlab_time:0.019305 mylu_time:0.048977
+344: Boeing/bcsstm34:           your   resid: 8.69633e-16 matlab_time:0.021627 mylu_time:0.122842
+252: HB/steam2:           your   resid: 6.10595e-16 matlab_time:0.004409 mylu_time:0.032824
+2015: JGD_Homology/ch5-5-b3: 	    skip (zero pivot encountered)
+2561: CPM/cz628:           your   resid: 3.30766e-16 matlab_time:0.003154 mylu_time:0.03875
+1476: Pajek/GD00_c: 	    skip (zero pivot encountered)
+269: HB/west0655:           your   resid: 4.75914e-18 matlab_time:0.002074 mylu_time:0.046457
+308: Bai/ck656:           your   resid: 2.6248e-17 matlab_time:0.001409 mylu_time:0.04545
+418: FIDAP/ex21:           your   resid: 3.5532e-16 matlab_time:0.016664 mylu_time:0.039366
+3: HB/662_bus:           your   resid: 5.02212e-17 matlab_time:0.001957 mylu_time:0.029814
+247: HB/shl_0:           your   resid: 0 matlab_time:0.000237 mylu_time:0.045073
+248: HB/shl_200:           your   resid: 0 matlab_time:0.000317 mylu_time:0.046391
+249: HB/shl_400:           your   resid: 0 matlab_time:0.000251 mylu_time:0.04549
+216: HB/nnc666:           your   resid: 1.9654e-16 matlab_time:0.004039 mylu_time:0.04944
+222: HB/nos6:           your   resid: 3.35149e-16 matlab_time:0.002629 mylu_time:0.047867
+149: HB/fs_680_1:           your   resid: 8.08644e-17 matlab_time:0.001056 mylu_time:0.04799
+150: HB/fs_680_2:           your   resid: 1.0109e-17 matlab_time:0.001086 mylu_time:0.047413
+151: HB/fs_680_3:           your   resid: 4.0436e-17 matlab_time:0.001079 mylu_time:0.04808
+2361: Rommes/M10PI_n: 	    skip (zero pivot encountered)
+2369: Rommes/S10PI_n: 	    skip (zero pivot encountered)
+4: HB/685_bus:           your   resid: 1.88064e-17 matlab_time:0.002608 mylu_time:0.049035
+2210: JGD_Trefethen/Trefethen_700:           your   resid: 1.20418e-15 matlab_time:0.074527 mylu_time:0.119541
+357: Boeing/msc00726:           your   resid: 9.92532e-16 matlab_time:0.081229 mylu_time:0.126197
+223: HB/nos7:           your   resid: 3.923e-16 matlab_time:0.009552 mylu_time:0.040674
+152: HB/fs_760_1:           your   resid: 6.64125e-20 matlab_time:0.004871 mylu_time:0.041768
+153: HB/fs_760_2:           your   resid: 1.07655e-16 matlab_time:0.00491 mylu_time:0.060552
+154: HB/fs_760_3:           your   resid: 1.04811e-16 matlab_time:0.00561 mylu_time:0.063857
+213: HB/mcfe:           your   resid: 2.08724e-16 matlab_time:0.019202 mylu_time:0.05065
+1627: Bai/qh768:           your   resid: 1.45001e-19 matlab_time:0.002427 mylu_time:0.039867
+1360: PARSEC/Si2:           your   resid: 2.00938e-15 matlab_time:0.103074 mylu_time:0.237046
+294: Bai/bfwa782:           your   resid: 4.70664e-16 matlab_time:0.004286 mylu_time:0.066127
+297: Bai/bfwb782:           your   resid: 3.80843e-16 matlab_time:0.003377 mylu_time:0.066144
+1327: Morandini/rotor2:           your   resid: 5.66656e-17 matlab_time:0.010753 mylu_time:0.068225
+470: Gset/G10:           your   resid: 1.84931e-15 matlab_time:0.227672 mylu_time:0.575004
+471: Gset/G11:           your   resid: 3.67761e-16 matlab_time:0.003095 mylu_time:0.069004
+472: Gset/G12:           your   resid: 8.50882e-16 matlab_time:0.003607 mylu_time:0.068744
+473: Gset/G13:           your   resid: 1.26288e-15 matlab_time:0.004574 mylu_time:0.04634
+478: Gset/G18:           your   resid: 1.42275e-15 matlab_time:0.04714 mylu_time:0.361298
+479: Gset/G19:           your   resid: 2.40186e-15 matlab_time:0.056197 mylu_time:0.333885
+481: Gset/G20:           your   resid: 2.49394e-15 matlab_time:0.055011 mylu_time:0.33928
+482: Gset/G21:           your   resid: 2.04178e-15 matlab_time:0.078325 mylu_time:0.33996
+524: Gset/G6:           your   resid: 1.64918e-15 matlab_time:0.212125 mylu_time:0.565624
+533: Gset/G7:           your   resid: 1.62265e-15 matlab_time:0.221164 mylu_time:0.592775
+534: Gset/G8:           your   resid: 1.68404e-15 matlab_time:0.23964 mylu_time:0.596863
+535: Gset/G9:           your   resid: 1.65849e-15 matlab_time:0.239181 mylu_time:0.591872
+1636: Bai/rdb800l:           your   resid: 4.88125e-16 matlab_time:0.004316 mylu_time:0.075176
+41: HB/bcsstk19:           your   resid: 1.23315e-16 matlab_time:0.003578 mylu_time:0.076966
+69: HB/bcsstm19:           your   resid: 0 matlab_time:0.000222 mylu_time:0.069334
+82: HB/bp_0:           your   resid: 0 matlab_time:0.000546 mylu_time:0.069954
+83: HB/bp_1000:           your   resid: 5.23294e-17 matlab_time:0.002425 mylu_time:0.070876
+84: HB/bp_1200:           your   resid: 6.02024e-17 matlab_time:0.002416 mylu_time:0.071415
+85: HB/bp_1400:           your   resid: 2.94353e-17 matlab_time:0.00243 mylu_time:0.073241
+86: HB/bp_1600:           your   resid: 2.79677e-17 matlab_time:0.00248 mylu_time:0.0722
+87: HB/bp_200:           your   resid: 9.86286e-18 matlab_time:0.001252 mylu_time:0.06988
+88: HB/bp_400:           your   resid: 3.01498e-17 matlab_time:0.001527 mylu_time:0.070787
+89: HB/bp_600:           your   resid: 2.71867e-17 matlab_time:0.001772 mylu_time:0.069715
+90: HB/bp_800:           your   resid: 5.23294e-17 matlab_time:0.002048 mylu_time:0.072949
+419: FIDAP/ex22:           your   resid: 2.76813e-16 matlab_time:0.015551 mylu_time:0.083959
+280: HB/young3c:           your   resid: 7.44579e-16 matlab_time:0.003794 mylu_time:0.07597
+422: FIDAP/ex25:           your   resid: 2.3519e-16 matlab_time:0.023036 mylu_time:0.069387
+328: Bai/qh882:           your   resid: 2.4476e-19 matlab_time:0.002702 mylu_time:0.07608
+226: HB/orsirr_2:           your   resid: 4.09705e-16 matlab_time:0.011581 mylu_time:0.070029
+159: HB/gr_30_30:           your   resid: 5.63094e-16 matlab_time:0.010507 mylu_time:0.089034
+325: Bai/pde900:           your   resid: 3.29462e-16 matlab_time:0.003773 mylu_time:0.08806
+2334: Fluorem/DK01R:           your   resid: 8.15595e-17 matlab_time:0.007601 mylu_time:0.085955
+1478: Pajek/GD01_A: 	    skip (zero pivot encountered)
+218: HB/nos2:           your   resid: 9.66367e-17 matlab_time:0.001937 mylu_time:0.099785
+219: HB/nos3:           your   resid: 5.18293e-16 matlab_time:0.015675 mylu_time:0.078561
+300: Bai/cdde1:           your   resid: 4.59106e-16 matlab_time:0.003946 mylu_time:0.099759
+301: Bai/cdde2:           your   resid: 7.86168e-16 matlab_time:0.003931 mylu_time:0.101695
+302: Bai/cdde3:           your   resid: 1.0511e-15 matlab_time:0.003908 mylu_time:0.101156
+303: Bai/cdde4:           your   resid: 5.99837e-16 matlab_time:0.003938 mylu_time:0.101242
+304: Bai/cdde5:           your   resid: 7.99886e-16 matlab_time:0.003951 mylu_time:0.103847
+305: Bai/cdde6:           your   resid: 8.44937e-16 matlab_time:0.003893 mylu_time:0.102525
+333: Bai/rdb968:           your   resid: 6.83962e-16 matlab_time:0.010275 mylu_time:0.116394
+424: FIDAP/ex27:           your   resid: 4.69638e-16 matlab_time:0.040482 mylu_time:0.153271
+270: HB/west0989:           your   resid: 4.74777e-18 matlab_time:0.002658 mylu_time:0.106909
+187: HB/jpwh_991:           your   resid: 5.26976e-16 matlab_time:0.013102 mylu_time:0.084847
+240: HB/saylr3: 	    skip (zero pivot encountered)
+242: HB/sherman1:           your   resid: 3.44859e-16 matlab_time:0.003498 mylu_time:0.10967
+319: Bai/olm1000:           your   resid: 4.96695e-18 matlab_time:0.002535 mylu_time:0.109627
+338: Bai/tub1000:           your   resid: 5.87087e-17 matlab_time:0.001674 mylu_time:0.107122
+diary off

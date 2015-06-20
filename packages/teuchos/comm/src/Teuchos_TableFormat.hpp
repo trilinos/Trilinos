@@ -66,25 +66,28 @@ class TableFormat
 {
 public:
   /** \brief Construct with a header and default format settings */
-  TableFormat()
-    : pageWidth_(80), precision_(4), columnSpacing_(4),
-      maxNameSize_(40), columnWidths_(), lineInterval_(10)
-    {}
-    
+  TableFormat () :
+    pageWidth_ (80),
+    precision_ (4),
+    columnSpacing_ (4),
+    lineInterval_ (10),
+    columnWidths_ ()
+  {}
+
   /** \brief Get the maximum number of characters per line.
    * Default is 80. */
   int pageWidth() const {return pageWidth_;}
-    
+
   /** \brief Get the precision for writing doubles.
    * Default is 4. */
   int precision() const {return precision_;}
 
-  /** \brief Get the number of characters to be left as blank 
+  /** \brief Get the number of characters to be left as blank
    * spaces in each column. Default is 4. */
   int columnSpacing() const {return columnSpacing_;}
 
   /** \brief Set the number of characters on a line.
-   * This quantity can be updated within the const 
+   * This quantity can be updated within the const
    * method writeWholeTables() */
   void setPageWidth(int pw) const {pageWidth_ = pw;}
 
@@ -95,21 +98,21 @@ public:
   void setColumnSpacing(int columnSpacing_in) {columnSpacing_ = columnSpacing_in;}
 
   /** \brief Set the interval at which a horizontal line will be written between
-   * rows. 
+   * rows.
    *
    * \break lineInterval [in] the number of rows between each horizontal line
    */
   void setRowsBetweenLines(int lineInterval) {lineInterval_=lineInterval;}
 
-  /** \brief Return a horizontal line in dashes "----" 
-   * the width of the page. 
+  /** \brief Return a horizontal line in dashes "----"
+   * the width of the page.
    *
-   * Originally called <tt>hbar</tt>, but changed to avoid 
-   * possible confusion for physicists expecting <tt>hbar()</tt> to return 
+   * Originally called <tt>hbar</tt>, but changed to avoid
+   * possible confusion for physicists expecting <tt>hbar()</tt> to return
    * \f$1.05457168e-34\f$ :-).  */
   std::string thinline() const ;
 
-  /** \brief Return a thick horizontal line in equal signs "====" the 
+  /** \brief Return a thick horizontal line in equal signs "====" the
    * width of the page */
   std::string thickline() const ;
 
@@ -128,7 +131,7 @@ public:
     const TableColumn& column) const ;
 
   /** \brief Set the column widths to be used for subsequent rows */
-  void setColumnWidths(const Array<int>& colWidths) 
+  void setColumnWidths(const Array<int>& colWidths)
     {columnWidths_ = colWidths;}
 
   /** \brief Write the row of entries.
@@ -136,7 +139,7 @@ public:
    * \param out [in/out] the output stream to which the row will be written
    * \param entries [in] the data to be written into this row. Each array
    * element is the entry for a column on this row.
-   */ 
+   */
   void writeRow(
     std::ostream& out,
     const Array<RCP<TableEntry> >& entries
@@ -148,7 +151,7 @@ public:
    * \param columns [in] the columns of data from which this row is to be sliced
    * \param rowIndex [in] the index into the columns used to obtain the values for
    * this row
-   */ 
+   */
   void writeRow(
     std::ostream& out,
     int rowIndex,
@@ -172,9 +175,9 @@ private:
   mutable int pageWidth_;
   int precision_;
   int columnSpacing_;
-  int maxNameSize_;
-  Array<int> columnWidths_;
+  //int maxNameSize_; // UNUSED
   int lineInterval_;
+  Array<int> columnWidths_;
 };
 
 

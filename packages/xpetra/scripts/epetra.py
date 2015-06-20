@@ -79,7 +79,7 @@ def buildFuncLineEpetra( functionNode ):
     if className == "EpetraVector" and 'ArrayView' in argsstring: return ''
 
     # hack for CrsMatrix
-    if name == "EpetraCrsMatrix" and "const RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > > &graph" in argsstring: return ''
+    if name == "EpetraCrsMatrix" and "const RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node> > &graph" in argsstring: return ''
 
     if name in conf_RemoveRefFunctionList: declStr = declStr.replace('&', '')
 

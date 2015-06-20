@@ -1,0 +1,24 @@
+#!/bin/bash
+# We need to do LD_PRELOAD as MATLAB carries its own set of few key libraries
+# We find libraries from the executable using current LD_LIBRARY_PATH
+
+if [ ! -f muemex.mexa64 ]; then
+  echo "File \"muemex.mexa64\" not found, exiting...\n"
+  exit 1
+fi
+
+lfind() {
+local lib=${1:-1};
+echo `ldd muemex.mexa64 | grep $lib | rev | cut -f 2 -d ' ' | rev`
+}
+
+LIBBLAS=`lfind libblas`
+LIBLAPACK=`lfind liblapack`
+LIBSTDCPP=`lfind libstdc++`
+LIBGCC_S=`lfind libgcc_s`
+LIBGFORTRAN=`lfind libgfortran`
+
+PRELOAD="$LIBSTDCPP $LIBGCC_S $LIBGFORTRAN $LIBLAPACK $LIBBLAS"
+
+echo "Setting LD_PRELOAD to \"$PRELOAD\""
+LD_PRELOAD="$PRELOAD" matlab -nodisplay

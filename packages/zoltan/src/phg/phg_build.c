@@ -533,7 +533,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
     ierr = Zoltan_Comm_Create(&(zhg->VtxPlan), zhg->nObj, proclist, 
                               zz->Communicator, msg_tag, &nrecv);
 
-    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+    if (ierr != ZOLTAN_OK){
       goto End;
     }
     zhg->nRecv_GNOs = nrecv;
@@ -546,7 +546,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
     msg_tag++;
     ierr = Zoltan_Comm_Do(zhg->VtxPlan, msg_tag, (char *) zhg->objGNO, sizeof(ZOLTAN_GNO_TYPE), (char *) recv_gno);
 
-    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+    if (ierr != ZOLTAN_OK){
       goto End;
     }
   }
@@ -614,7 +614,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
     ierr = Zoltan_Comm_Do(zhg->VtxPlan, msg_tag, (char *) zhg->Input_Parts,
                           sizeof(int), (char *) *input_parts);
 
-    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+    if (ierr != ZOLTAN_OK){
       goto End;
     }
 
@@ -622,7 +622,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
     ierr = Zoltan_Comm_Do(zhg->VtxPlan, msg_tag, (char *) zhg->objWeight,
                           sizeof(float) * dim, (char *) phg->vwgt);
 
-    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+    if (ierr != ZOLTAN_OK){
       goto End;
     }
 
@@ -631,7 +631,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
       ierr = Zoltan_Comm_Do(zhg->VtxPlan, msg_tag, (char *) zhg->coor,
 			    sizeof(double) * phg->nDim, (char *) phg->coor);
 
-      if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+      if (ierr != ZOLTAN_OK){
 	goto End;
       }
     }
@@ -640,7 +640,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
        msg_tag++;
        ierr = Zoltan_Comm_Do (zhg->VtxPlan, msg_tag, (char*) zhg->fixed,
          sizeof(int), (char*) phg->fixed_part);
-       if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN))
+       if (ierr != ZOLTAN_OK)
          goto End;         
     }
        
@@ -732,7 +732,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
         ierr = Zoltan_Comm_Create(&plan, nLocalEdges, proclist, 
                                   zz->Communicator, msg_tag, &nrecv); 
   
-        if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+        if (ierr != ZOLTAN_OK){
           goto End;
         }
   
@@ -754,7 +754,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
         msg_tag++;
         ierr = Zoltan_Comm_Do(plan, msg_tag, (char *) edgeGNO, sizeof(ZOLTAN_GNO_TYPE), (char *) recv_gno);
   
-        if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+        if (ierr != ZOLTAN_OK){
           goto End;
         }
   
@@ -762,7 +762,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
         ierr = Zoltan_Comm_Do(plan, msg_tag, (char *) edgeWeight, 
                               dim*sizeof(float), (char *) gid_weights);
   
-        if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+        if (ierr != ZOLTAN_OK){
           goto End;
         }
   
@@ -847,15 +847,16 @@ End:
     Zoltan_PHG_Free_Hypergraph_Data(zhg);
   }
 
-  ZOLTAN_FREE(&edgeSize);
-  ZOLTAN_FREE(&edgeGNO);
-  ZOLTAN_FREE(&edgeWeight);
-  ZOLTAN_FREE(&pinGNO);
-  ZOLTAN_FREE(&pinProcs);
-
   Zoltan_Comm_Destroy(&plan);
 
-  Zoltan_Multifree(__FILE__, __LINE__, 9, 
+  Zoltan_Multifree(__FILE__, __LINE__, 17, 
+    &edgeSize,
+    &edgeGNO,
+    &edgeWeight,
+    &pinGNO,
+    &pinProcs,
+    &fixedGIDs,
+    &fixedPart,
     &proclist,
     &sendbuf,
     &nonzeros,
@@ -967,17 +968,12 @@ intptr_t iptr;                   /* an int the size of a pointer */
     Zoltan_Map_Destroy(zz, &map);
   }
 
-  ZOLTAN_FREE(&recvpins);
-
   /* Send partition info back to requesting processor */
   pin_parts = (int *) ZOLTAN_MALLOC(npins * sizeof(int));
   if (npins && !pin_parts) MEMORY_ERROR;
 
   Zoltan_Comm_Do_Reverse(plan, msg_tag, (char *) outparts, sizeof(int), NULL, (char *) pin_parts);
 
-  ZOLTAN_FREE(&outparts);
-
-  Zoltan_Comm_Destroy(&plan);
 
   /* Compute the cut metrics using received partition info.
    *
@@ -1001,6 +997,9 @@ intptr_t iptr;                   /* an int the size of a pointer */
 
 End:
 
+  Zoltan_Comm_Destroy(&plan);
+  ZOLTAN_FREE(&recvpins);
+  ZOLTAN_FREE(&outparts);
   ZOLTAN_FREE(&pin_parts);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
@@ -1145,7 +1144,7 @@ int myStart_vtx, nextStart_vtx;      /* Each proc in column sends info about
                                         nextStart_vtx is the first vertex
                                         sent by the next proc in the column. */
 
-ZOLTAN_COMM_OBJ *plan;               /* Plan for communicating input part
+ZOLTAN_COMM_OBJ *plan = NULL;        /* Plan for communicating input part
                                         info to procs owning corresponding
                                         repartition vertices and edges. */
 int *proclist = NULL;                /* Buffers to send/recv input part info */
@@ -1269,7 +1268,7 @@ ZOLTAN_GNO_TYPE *repart_dist_y = NULL; /* Distribution of repartition edges
       /* Use zhg->VtxPlan */
       ierr = Zoltan_Comm_Do(zhg->VtxPlan, 25232, (char *) zhg->AppObjSizes, 
                             sizeof(int), (char *) objsize);
-      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+      if (ierr != ZOLTAN_OK){
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Zoltan_Comm_Do.");
         goto End;
       }
@@ -1447,18 +1446,15 @@ ZOLTAN_GNO_TYPE *repart_dist_y = NULL; /* Distribution of repartition edges
       ZOLTAN_GNO_TYPE vtx_gno;   /* Global vtx number of vtx in received repartition edge.*/
       int rEdge_lno; /* local index of repartition edge */
       ZOLTAN_GNO_TYPE rVtx_gno;  /* global repartition vertex number */
-      int rVtx_lno;  /* local index of repartition vertex */
   
 #ifdef REPART_FASTER_METHOD
       vtx_gno = recvgno[NSEND*i];
       rEdge_lno = (int)(vtx_gno - firstRepartEdge);
       rVtx_gno = recvgno[NSEND*i+1];
-      rVtx_lno = (int)(rVtx_gno - firstRepartVtx);
 #else
       vtx_gno = recvgno[i];
       rEdge_lno = (int)(vtx_gno - firstRepartEdge);
       rVtx_gno = recvpart[i];
-      rVtx_lno = (int)(rVtx_gno - firstRepartVtx);
 #endif
 
       if (rVtx_gno >= firstRepartVtx && rVtx_gno < firstRepartVtx+nRepartVtx) {
@@ -1625,6 +1621,7 @@ End:
   ZOLTAN_FREE(&proclist);
   ZOLTAN_FREE(&sendgno);
   ZOLTAN_FREE(&recvgno);
+  Zoltan_Comm_Destroy(&plan);
 
 #ifndef REPART_FASTER_METHOD
   ZOLTAN_FREE(&sendpart);
@@ -1839,12 +1836,16 @@ MPI_Datatype zoltan_gno_mpi_type;
 
     if ((nremove && (!goEdgeGNO || !goEdgeSize)) ||
         (nremove_size && (!goPinGNO||!goPinProc))) {
+      Zoltan_Multifree(__FILE__, __LINE__, 4,
+                       &goEdgeGNO, &goEdgeSize, &goPinGNO, &goPinProc);
       MEMORY_ERROR;
     }
 
     goEdgeWeight = (float *)ZOLTAN_MALLOC(sizeof(float) * nremove * ew_dim);
 
     if (nremove && ew_dim && !goEdgeWeight){
+      Zoltan_Multifree(__FILE__, __LINE__, 4,
+                       &goEdgeGNO, &goEdgeSize, &goPinGNO, &goPinProc);
       MEMORY_ERROR;
     }
   }
@@ -1855,12 +1856,20 @@ MPI_Datatype zoltan_gno_mpi_type;
   keepPinProc = (int *)ZOLTAN_MALLOC(sizeof(int) * nkeep_size);
 
   if (!keepEdgeGNO || !keepEdgeSize || !keepPinGNO || !keepPinProc){
+    Zoltan_Multifree(__FILE__, __LINE__, 9,
+                     &goEdgeGNO, &goEdgeSize, &goPinGNO, &goPinProc,
+                     &goEdgeWeight,
+                     &keepEdgeGNO, &keepEdgeSize, &keepPinGNO, &keepPinProc);
     MEMORY_ERROR;
   }
 
   keepEdgeWeight = (float *)ZOLTAN_MALLOC(sizeof(float) * nkeep * ew_dim);
 
   if (ew_dim && !keepEdgeWeight){
+    Zoltan_Multifree(__FILE__, __LINE__, 9,
+                     &goEdgeGNO, &goEdgeSize, &goPinGNO, &goPinProc, 
+                     &goEdgeWeight,
+                     &keepEdgeGNO, &keepEdgeSize, &keepPinGNO, &keepPinProc);
     MEMORY_ERROR;
   }
 

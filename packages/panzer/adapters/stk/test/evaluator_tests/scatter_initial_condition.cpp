@@ -51,6 +51,8 @@ using Teuchos::rcp;
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
@@ -91,6 +93,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(block_assembly, scatter_initial_condition_residual)
   {
+    PHX::KokkosDeviceSession session;
+
    #ifdef HAVE_MPI
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
    #else
@@ -270,10 +274,10 @@ namespace panzer {
     panzer::Traits::SetupData sd;
     fm.postRegistrationSetup(sd);
 
-    panzer::GlobalEvaluationDataContainer gedc;
-    gedc.addDataObject("Scatter IC Container",gl_loc);
-    gedc.addDataObject("Solution Gather Container",loc);
-    fm.preEvaluate<panzer::Traits::Residual>(gedc);
+    panzer::Traits::PreEvalData ped;
+    ped.gedc.addDataObject("Scatter IC Container",gl_loc);
+    ped.gedc.addDataObject("Solution Gather Container",loc);
+    fm.preEvaluate<panzer::Traits::Residual>(ped);
 
     // run tests
     /////////////////////////////////////////////////////////////

@@ -92,8 +92,11 @@
 #include "Amesos2_MatrixTraits.hpp"
 #include "Amesos2_ctassert.hpp"
 
-#ifdef HAVE_AMESOS2_KLU2
-#include "Amesos2_Klu2.hpp"
+#ifdef HAVE_AMESOS2_BASKER
+#include "Amesos2_Basker.hpp"
+#endif
+#if defined(HAVE_AMESOS2_KLU2)
+#include "Amesos2_KLU2.hpp"
 #endif
 #ifdef HAVE_AMESOS2_SUPERLUDIST // Distributed-memory SuperLU
 #include "Amesos2_Superludist.hpp"
@@ -113,6 +116,10 @@
 #if defined (HAVE_AMESOS2_CHOLMOD) && defined (HAVE_AMESOS2_EXPERIMENTAL)
 #include "Amesos2_Cholmod.hpp"
 #endif
+#ifdef HAVE_AMESOS2_MUMPS
+#include "Amesos2_MUMPS.hpp"
+#endif
+
 
 namespace Amesos2 {
 
@@ -504,10 +511,21 @@ struct throw_no_scalar_support_exception {
     // Check for our native solver first.  Treat KLU and KLU2 as equals.
     //
     // We use compiler guards in case a user does want to disable KLU2
-#ifdef HAVE_AMESOS2_KLU2
-    if((solverName == "amesos2_klu2") || (solverName == "klu2") ||
-       (solverName == "amesos2_klu")  || (solverName == "klu")){
-      return handle_solver_type_support<Klu2,Matrix,Vector>::apply(A, X, B);
+#ifdef HAVE_AMESOS2_BASKER
+    if((solverName == "Basker") || (solverName == "basker"))
+      {
+	
+	return handle_solver_type_support<Basker, Matrix,Vector>::apply(A,X,B);
+      }
+#endif
+
+
+
+#ifdef HAVE_AMESOS2_KLU2 
+
+if((solverName == "amesos2_klu2") || (solverName == "klu2") ||
+   (solverName == "amesos2_klu")  || (solverName == "klu")){
+      return handle_solver_type_support<KLU2,Matrix,Vector>::apply(A, X, B);
     }
 #endif
 
@@ -550,6 +568,15 @@ struct throw_no_scalar_support_exception {
        (solverName == "lapack")){
       return handle_solver_type_support<Lapack,Matrix,Vector>::apply(A, X, B);
     }
+#endif
+
+
+#ifdef HAVE_AMESOS2_MUMPS
+    if((solverName == "MUMPS") || (solverName == "mumps") ||
+       (solverName == "amesos2_MUMPS") || (solverName == "amesos2_mumps"))
+      {
+        return handle_solver_type_support<MUMPS,Matrix,Vector>::apply(A,X,B);
+      }
 #endif
 
 #if defined (HAVE_AMESOS2_CHOLMOD) && defined (HAVE_AMESOS2_EXPERIMENTAL)

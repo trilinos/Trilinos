@@ -77,6 +77,14 @@
 #include "Thyra_DefaultIdentityLinearOp.hpp"
 #include "Thyra_DefaultZeroLinearOp.hpp"
 
+#ifdef _MSC_VER
+#ifndef _MSC_EXTENSIONS
+#define _MSC_EXTENSIONS
+#define TEKO_DEFINED_MSC_EXTENSIONS
+#endif
+#include <iso646.h> // For C alternative tokens
+#endif
+
 // #define Teko_DEBUG_OFF
 #define Teko_DEBUG_INT 5
 
@@ -831,5 +839,11 @@ void columnAverages(const MultiVector & v,std::vector<double> & averages);
 double average(const MultiVector & v);
 
 } // end namespace Teko
+
+#ifdef _MSC_VER
+#ifdef TEKO_DEFINED_MSC_EXTENSIONS
+#undef _MSC_EXTENSIONS
+#endif
+#endif
 
 #endif

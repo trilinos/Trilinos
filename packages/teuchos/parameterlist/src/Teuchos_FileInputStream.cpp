@@ -49,11 +49,11 @@ FileInputStream::FileInputStream(const std::string& filename)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(file_ == NULL,
                      std::runtime_error,
-                     "FileInputStream ctor failed to open file: " 
+                     "FileInputStream ctor failed to open file: "
                      << filename);
 }
 
-unsigned int FileInputStream::readBytes(unsigned char* const toFill, 
+unsigned int FileInputStream::readBytes(unsigned char* const toFill,
 																				const unsigned int maxToRead)
 {
 	if (
@@ -65,7 +65,7 @@ unsigned int FileInputStream::readBytes(unsigned char* const toFill,
     )
     return (size_t)0;
 	int n = std::fread((void*) toFill, sizeof(char), maxToRead, file_);
-  if (n==0) return (size_t)0; 
+  if (n==0) return (size_t)0;
 
   const bool
     is_eof

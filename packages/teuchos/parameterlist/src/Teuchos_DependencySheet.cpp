@@ -62,7 +62,7 @@ void DependencySheet::addDependency(RCP<Dependency> dependency){
     it != dependees.end();
     ++it)
   {
-    dependenciesMap_[*it].insert(dependency);     
+    dependenciesMap_[*it].insert(dependency);
   }
   dependencies_.insert(dependency);
 }
@@ -74,7 +74,7 @@ void DependencySheet::removeDependency(RCP<Dependency> dependency){
     it != dependees.end();
     ++it)
   {
-    dependenciesMap_[*it].erase(dependency);     
+    dependenciesMap_[*it].erase(dependency);
   }
   dependencies_.erase(dependency);
 }
@@ -96,7 +96,7 @@ void DependencySheet::printDeps(std::ostream& out) const {
 }
 
 void DependencySheet::addDependencies(RCP<DependencySheet> otherSheet){
-  for(  
+  for(
     DepSet::iterator it = otherSheet->depBegin();
     it != otherSheet->depEnd();
     ++it

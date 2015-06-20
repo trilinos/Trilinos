@@ -94,6 +94,10 @@ int main(int argc, char *argv[])
 
   bool success = false;
   bool verbose = false;
+  int StorageDepth = 10;
+  double ParamC = 0.999;
+  std::string LineSearch = "Full Step";
+  int Reorthogonalize = 0;
   try {
     // Parse the command line
     using Teuchos::CommandLineProcessor;
@@ -101,6 +105,10 @@ int main(int argc, char *argv[])
     clp.throwExceptions(false);
     clp.addOutputSetupOptions(true);
     clp.setOption( "v", "disable-verbosity", &verbose, "Enable verbosity" );
+    clp.setOption("storage-depth", &StorageDepth, "Anderson storage depth parameter");
+    clp.setOption("c-parameter", &ParamC, "H equation parameter, c");
+    clp.setOption("line-search", &LineSearch, "Line search type: Full Step, Backtracking, or Polynomial");
+    clp.setOption("ortho-frequency", &Reorthogonalize, "Reorthogonalization frequency");
 
     CommandLineProcessor::EParseCommandLineReturn
       parse_return = clp.parse(argc,argv,&std::cerr);
@@ -123,9 +131,8 @@ int main(int argc, char *argv[])
       throw "Error! Number of elements must be greate than number of processors!";
 
     // Create the model evaluator object
-    double paramC = 0.99;
     Teuchos::RCP<ModelEvaluatorHeq<double> > model =
-      modelEvaluatorHeq<double>(Teuchos::rcp(&Comm,false),num_elements,paramC);
+      modelEvaluatorHeq<double>(Teuchos::rcp(&Comm,false),num_elements,ParamC);
 
     ::Stratimikos::DefaultLinearSolverBuilder builder;
 
@@ -164,7 +171,7 @@ int main(int argc, char *argv[])
     converged->addStatusTest(absresid);
     converged->addStatusTest(wrms);
     Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters =
-      Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
+      Teuchos::rcp(new NOX::StatusTest::MaxIters(100));
     Teuchos::RCP<NOX::StatusTest::FiniteValue> fv =
       Teuchos::rcp(new NOX::StatusTest::FiniteValue);
     Teuchos::RCP<NOX::StatusTest::Combo> combo =
@@ -177,25 +184,56 @@ int main(int argc, char *argv[])
     Teuchos::RCP<Teuchos::ParameterList> nl_params =
       Teuchos::rcp(new Teuchos::ParameterList);
     nl_params->set("Nonlinear Solver", "Anderson Accelerated Fixed-Point");
-    nl_params->sublist("Anderson Parameters").set("Storage Depth", 5);
+    nl_params->sublist("Anderson Parameters").set("Storage Depth", StorageDepth);
     nl_params->sublist("Anderson Parameters").set("Mixing Parameter", 1.0);
     nl_params->sublist("Anderson Parameters").set("Acceleration Start Iteration", 1);
+    nl_params->sublist("Anderson Parameters").set("Reorthogonalization Frequency", Reorthogonalize);
     nl_params->sublist("Anderson Parameters").sublist("Preconditioning").set("Precondition", false);
     nl_params->sublist("Direction").sublist("Newton").sublist("Linear Solver").set("Tolerance", 1.0e-4);
     nl_params->sublist("Printing").sublist("Output Information").set("Details",true);
     nl_params->sublist("Printing").sublist("Output Information").set("Outer Iteration",true);
     //nl_params->sublist("Printing").sublist("Output Information").set("Outer Iteration StatusTest",true);
 
+    if (verbose){
+      nl_params->sublist("Printing").sublist("Output Information").set("Error",true);
+      nl_params->sublist("Printing").sublist("Output Information").set("Test Details",true);
+      nl_params->sublist("Printing").sublist("Output Information").set("Debug",true);
+      nl_params->sublist("Printing").sublist("Output Information").set("Warning",true);
+      nl_params->sublist("Printing").sublist("Output Information").set("Parameters",true);
+      nl_params->sublist("Printing").sublist("Output Information").set("Linear Solver Details",true);
+      nl_params->sublist("Printing").sublist("Output Information").set("Inner Iteration",true);
+      nl_params->sublist("Printing").sublist("Output Information").set("Outer Iteration StatusTest",true);
+    }
+
+    // Line search parameters
+    nl_params->sublist("Line Search").set("Method", LineSearch);
+
     // Create the solver
     Teuchos::RCP<NOX::Solver::Generic> solver =
       NOX::Solver::buildSolver(nox_group, combo, nl_params);
     NOX::StatusTest::StatusType solvStatus = solver->solve();
 
+    // Create a print class for controlling output below
+    nl_params->sublist("Printing").set("MyPID", Comm.MyPID());
+    nl_params->sublist("Printing").set("Output Precision", 3);
+    nl_params->sublist("Printing").set("Output Processor", 0);
+    NOX::Utils printing(nl_params->sublist("Printing"));
+
+    // Output the parameter list
+    if (verbose) {
+      if (printing.isPrintType(NOX::Utils::Parameters)) {
+        printing.out() << std::endl << "Final Parameters" << std::endl
+          << "****************" << std::endl;
+        solver->getList().print(printing.out());
+        printing.out() << std::endl;
+      }
+    }
+
     // 1. Convergence
     if (solvStatus != NOX::StatusTest::Converged)
       status = 1;
     // 2. Number of iterations
-    if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Output").get("Nonlinear Iterations", 0) != 11)
+    if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Output").get("Nonlinear Iterations", 0) != 19)
       status = 2;
 
     success = status==0;

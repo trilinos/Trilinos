@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
 
 IF (${PACKAGE_NAME}_ENABLE_COMPLEX)
 

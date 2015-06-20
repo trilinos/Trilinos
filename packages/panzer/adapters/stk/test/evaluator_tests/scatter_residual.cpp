@@ -68,6 +68,8 @@ using Teuchos::rcp;
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STKConnManager.hpp"
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
 
@@ -92,6 +94,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(block_assembly, scatter_solution_residual)
   {
+    PHX::KokkosDeviceSession session;
+
    #ifdef HAVE_MPI
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
    #else
@@ -245,13 +249,17 @@ namespace panzer {
        fm.registerEvaluator<panzer::Traits::Residual>(evaluator);
     }
 
+    std::vector<PHX::index_size_type> derivative_dimensions;
+    derivative_dimensions.push_back(12);
+    fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
+
     panzer::Traits::SetupData sd;
     fm.postRegistrationSetup(sd);
 
-    panzer::GlobalEvaluationDataContainer gedc;
-    gedc.addDataObject("Solution Gather Container",loc);
-    gedc.addDataObject("Residual Scatter Container",loc);
-    fm.preEvaluate<panzer::Traits::Residual>(gedc);
+    panzer::Traits::PreEvalData ped;
+    ped.gedc.addDataObject("Solution Gather Container",loc);
+    ped.gedc.addDataObject("Residual Scatter Container",loc);
+    fm.preEvaluate<panzer::Traits::Residual>(ped);
 
     // run tests
     /////////////////////////////////////////////////////////////
@@ -295,6 +303,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(block_assembly, scatter_solution_jacobian)
   {
+   PHX::KokkosDeviceSession session;
+
    #ifdef HAVE_MPI
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
    #else
@@ -449,13 +459,17 @@ namespace panzer {
        fm.registerEvaluator<panzer::Traits::Jacobian>(evaluator);
     }
 
+    std::vector<PHX::index_size_type> derivative_dimensions;
+    derivative_dimensions.push_back(12);
+    fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
+
     panzer::Traits::SetupData sd;
     fm.postRegistrationSetup(sd);
 
-    panzer::GlobalEvaluationDataContainer gedc;
-    gedc.addDataObject("Solution Gather Container",loc);
-    gedc.addDataObject("Residual Scatter Container",loc);
-    fm.preEvaluate<panzer::Traits::Jacobian>(gedc);
+    panzer::Traits::PreEvalData ped;
+    ped.gedc.addDataObject("Solution Gather Container",loc);
+    ped.gedc.addDataObject("Residual Scatter Container",loc);
+    fm.preEvaluate<panzer::Traits::Jacobian>(ped);
 
     // run tests
     /////////////////////////////////////////////////////////////

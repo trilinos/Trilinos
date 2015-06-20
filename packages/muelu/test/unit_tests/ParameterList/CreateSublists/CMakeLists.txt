@@ -1,4 +1,3 @@
-INCLUDE(TribitsCopyFilesToBinaryDir)
 
 # Note about the use of wildcard in CMakeLists.txt: CMake dont't know
 # when new files is added. You need to re-run CMake manually to

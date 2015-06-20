@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -53,34 +53,40 @@ namespace {
     double mean;
     mutable Teuchos::Array<double> point;
     Teuchos::RCP< Stokhos::KL::ExponentialRandomField<double> > rf;
-    
-    KL_Diffusion_Func(double xyLeft, double xyRight, 
-		      double mean_, double std_dev, 
-		      double L, int num_KL) : mean(mean_), point(2)
+
+    KL_Diffusion_Func(double xyLeft, double xyRight,
+                      double mean_, double std_dev,
+                      double L, int num_KL) : mean(mean_), point(2)
     {
+      Kokkos::initialize();
+
       Teuchos::ParameterList rfParams;
       rfParams.set("Number of KL Terms", num_KL);
       rfParams.set("Mean", mean);
       rfParams.set("Standard Deviation", std_dev);
       int ndim = 2;
-      Teuchos::Array<double> domain_upper(ndim), domain_lower(ndim), 
-	correlation_length(ndim);
+      Teuchos::Array<double> domain_upper(ndim), domain_lower(ndim),
+        correlation_length(ndim);
       for (int i=0; i<ndim; i++) {
-	domain_upper[i] = xyRight;
-	domain_lower[i] = xyLeft;
-	correlation_length[i] = L;
+        domain_upper[i] = xyRight;
+        domain_lower[i] = xyLeft;
+        correlation_length[i] = L;
       }
       rfParams.set("Domain Upper Bounds", domain_upper);
       rfParams.set("Domain Lower Bounds", domain_lower);
       rfParams.set("Correlation Lengths", correlation_length);
 
-      rf = 
-	Teuchos::rcp(new Stokhos::KL::ExponentialRandomField<double>(rfParams));
+      rf =
+        Teuchos::rcp(new Stokhos::KL::ExponentialRandomField<double>(rfParams));
+    }
+
+    ~KL_Diffusion_Func() {
+      Kokkos::finalize();
     }
 
     double operator() (double x, double y, int k) const {
       if (k == 0)
-	return mean;
+        return mean;
       point[0] = x;
       point[1] = y;
       return rf->evaluate_eigenfunction(point, k-1);
@@ -94,19 +100,19 @@ namespace {
     const DiffusionFunc& func;
     int d;
     Teuchos::Array<double> psi_0, psi_1;
-    
+
     Normalized_KL_Diffusion_Func(
       const DiffusionFunc& func_,
-      const Stokhos::OrthogPolyBasis<int,double>& basis) : 
+      const Stokhos::OrthogPolyBasis<int,double>& basis) :
       func(func_),
-      d(basis.dimension()), 
-      psi_0(basis.size()), 
-      psi_1(basis.size())    
+      d(basis.dimension()),
+      psi_0(basis.size()),
+      psi_1(basis.size())
     {
       Teuchos::Array<double> zero(d), one(d);
       for(int k=0; k<d; k++) {
-	zero[k] = 0.0;
-	one[k] = 1.0;
+        zero[k] = 0.0;
+        one[k] = 1.0;
       }
       basis.evaluateBases(zero, psi_0);
       basis.evaluateBases(one, psi_1);
@@ -114,14 +120,14 @@ namespace {
 
     double operator() (double x, double y, int k) const {
       if (k == 0) {
-	double val = func(x, y, 0);
-	for (int i=1; i<=d; i++)
-	  val -= psi_0[i]/(psi_1[i]-psi_0[i])*func(x, y, i);
-	val /= psi_0[0];
-	return val;
+        double val = func(x, y, 0);
+        for (int i=1; i<=d; i++)
+          val -= psi_0[i]/(psi_1[i]-psi_0[i])*func(x, y, i);
+        val /= psi_0[0];
+        return val;
       }
       else
-	return 1.0/(psi_1[k]-psi_0[k])*func(x, y, k);
+        return 1.0/(psi_1[k]-psi_0[k])*func(x, y, k);
     }
   };
 
@@ -135,20 +141,20 @@ namespace {
     LogNormal_Diffusion_Func(
       double mean_,
       const DiffusionFunc& func_,
-      const Teuchos::RCP<const Stokhos::ProductBasis<int, double> > prodbasis_) 
+      const Teuchos::RCP<const Stokhos::ProductBasis<int, double> > prodbasis_)
       : mean(mean_), func(func_), prodbasis(prodbasis_) {}
-    
+
     double operator() (double x, double y, int k) const {
       int d = prodbasis->dimension();
       const Teuchos::Array<double>& norms = prodbasis->norm_squared();
       const Stokhos::MultiIndex<int> multiIndex = prodbasis->term(k);
       double sum_g = 0.0, efval;
       for (int l=0; l<d; l++) {
-	sum_g += std::pow(func(x,y,l+1),2);
+        sum_g += std::pow(func(x,y,l+1),2);
       }
       efval = std::exp(mean + 0.5*sum_g)/norms[k];
       for (int l=0; l<d; l++) {
-	efval *= std::pow(func(x,y,l+1),multiIndex[l]); 
+        efval *= std::pow(func(x,y,l+1),multiIndex[l]);
       }
       return efval;
     }
@@ -158,8 +164,8 @@ namespace {
 
 twoD_diffusion_ME::
 twoD_diffusion_ME(
-  const Teuchos::RCP<const Epetra_Comm>& comm, int n, int d, 
-  double s, double mu, 
+  const Teuchos::RCP<const Epetra_Comm>& comm, int n, int d,
+  double s, double mu,
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& basis_,
   bool log_normal_,
   bool eliminate_bcs_,
@@ -171,7 +177,7 @@ twoD_diffusion_ME(
   precParams(precParams_)
 {
   //////////////////////////////////////////////////////////////////////////////
-  // Construct the mesh.  
+  // Construct the mesh.
   // The mesh is uniform and the nodes are numbered
   // LEFT to RIGHT, DOWN to UP.
   //
@@ -191,20 +197,20 @@ twoD_diffusion_ME(
       mesh[idx].x = x;
       mesh[idx].y = y;
       if (i == 0 || i == n-1 || j == 0 || j == n-1)
-	mesh[idx].boundary = true;
+        mesh[idx].boundary = true;
       if (i != 0)
-	mesh[idx].left = idx-1;
+        mesh[idx].left = idx-1;
       if (i != n-1)
-	mesh[idx].right = idx+1;
+        mesh[idx].right = idx+1;
       if (j != 0)
-	mesh[idx].down = idx-n;
+        mesh[idx].down = idx-n;
       if (j != n-1)
-	mesh[idx].up = idx+n;
+        mesh[idx].up = idx+n;
       if (!(eliminate_bcs && mesh[idx].boundary))
-	global_dof_indices.push_back(idx);
+        global_dof_indices.push_back(idx);
     }
   }
-  
+
   // Solution vector map
   int n_global_dof = global_dof_indices.size();
   int n_proc = comm->NumProc();
@@ -213,7 +219,7 @@ twoD_diffusion_ME(
   if (proc_id == n_proc-1)
     n_my_dof += n_global_dof % n_proc;
   int *my_dof = global_dof_indices.getRawPtr() + proc_id*(n_global_dof / n_proc);
-  x_map = 
+  x_map =
     Teuchos::rcp(new Epetra_Map(n_global_dof, n_my_dof, my_dof, 0, *comm));
 
   // Initial guess, initialized to 0.0
@@ -235,7 +241,7 @@ twoD_diffusion_ME(
   for (int i=0;i<d;i++) {
     std::stringstream ss;
     ss << "KL Random Variable " << i+1;
-    (*p_names)[i] = ss.str(); 
+    (*p_names)[i] = ss.str();
   }
 
   // Build Jacobian graph
@@ -251,19 +257,19 @@ twoD_diffusion_ME(
     if (!mesh[global_idx].boundary) {
       // Down
       if (!(eliminate_bcs && mesh[mesh[global_idx].down].boundary))
-	graph->InsertGlobalIndices(global_idx, 1, &mesh[global_idx].down);
+        graph->InsertGlobalIndices(global_idx, 1, &mesh[global_idx].down);
 
       // Left
       if (!(eliminate_bcs && mesh[mesh[global_idx].left].boundary))
-	graph->InsertGlobalIndices(global_idx, 1, &mesh[global_idx].left);
+        graph->InsertGlobalIndices(global_idx, 1, &mesh[global_idx].left);
 
       // Right
       if (!(eliminate_bcs && mesh[mesh[global_idx].right].boundary))
-	graph->InsertGlobalIndices(global_idx, 1, &mesh[global_idx].right);
+        graph->InsertGlobalIndices(global_idx, 1, &mesh[global_idx].right);
 
       // Up
       if (!(eliminate_bcs && mesh[mesh[global_idx].up].boundary))
-	graph->InsertGlobalIndices(global_idx, 1, &mesh[global_idx].up);
+        graph->InsertGlobalIndices(global_idx, 1, &mesh[global_idx].up);
     }
   }
   graph->FillComplete();
@@ -272,7 +278,7 @@ twoD_diffusion_ME(
   KL_Diffusion_Func klFunc(xyLeft, xyRight, mu, s, 1.0, d);
   if (!log_normal) {
     // Fill coefficients of KL expansion of operator
-    if (basis == Teuchos::null) { 
+    if (basis == Teuchos::null) {
       fillMatrices(klFunc, d+1);
     }
     else {
@@ -285,21 +291,21 @@ twoD_diffusion_ME(
     int sz = basis->size();
     Teuchos::RCP<const Stokhos::ProductBasis<int, double> > prodbasis =
       Teuchos::rcp_dynamic_cast<const Stokhos::ProductBasis<int, double> >(
-	basis, true);
+        basis, true);
     LogNormal_Diffusion_Func<KL_Diffusion_Func> lnFunc(mu, klFunc, prodbasis);
     fillMatrices(lnFunc, sz);
   }
 
   // Construct deterministic operator
   A = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *graph));
- 
+
   // Construct the RHS vector.
   b = Teuchos::rcp(new Epetra_Vector(*x_map));
   for( int i=0 ; i<NumMyElements; ++i ) {
     int global_idx = MyGlobalElements[i];
     if (mesh[global_idx].boundary)
       (*b)[i] = 0;
-    else 
+    else
       (*b)[i] = 1;
   }
 
@@ -312,7 +318,7 @@ twoD_diffusion_ME(
     std::string name = precParams->get("Preconditioner Type", "Ifpack");
     Teuchos::RCP<Teuchos::ParameterList> p =
       Teuchos::rcp(&(precParams->sublist("Preconditioner Parameters")), false);
-    precFactory = 
+    precFactory =
       Teuchos::rcp(new Stokhos::PreconditionerFactory(name, p));
   }
 }
@@ -337,9 +343,9 @@ Teuchos::RCP<const Epetra_Map>
 twoD_diffusion_ME::
 get_p_map(int l) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(l != 0, 
-		     std::logic_error,
-                     std::endl << 
+  TEUCHOS_TEST_FOR_EXCEPTION(l != 0,
+                     std::logic_error,
+                     std::endl <<
                      "Error!  twoD_diffusion_ME::get_p_map():  " <<
                      "Invalid parameter index l = " << l << std::endl);
 
@@ -350,9 +356,9 @@ Teuchos::RCP<const Epetra_Map>
 twoD_diffusion_ME::
 get_g_map(int l) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(l != 0, 
-		     std::logic_error,
-                     std::endl << 
+  TEUCHOS_TEST_FOR_EXCEPTION(l != 0,
+                     std::logic_error,
+                     std::endl <<
                      "Error!  twoD_diffusion_ME::get_g_map():  " <<
                      "Invalid parameter index l = " << l << std::endl);
 
@@ -363,9 +369,9 @@ Teuchos::RCP<const Teuchos::Array<std::string> >
 twoD_diffusion_ME::
 get_p_names(int l) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(l != 0, 
-		     std::logic_error,
-                     std::endl << 
+  TEUCHOS_TEST_FOR_EXCEPTION(l != 0,
+                     std::logic_error,
+                     std::endl <<
                      "Error!  twoD_diffusion_ME::get_p_names():  " <<
                      "Invalid parameter index l = " << l << std::endl);
 
@@ -383,12 +389,12 @@ Teuchos::RCP<const Epetra_Vector>
 twoD_diffusion_ME::
 get_p_init(int l) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(l != 0, 
-		     std::logic_error,
-                     std::endl << 
+  TEUCHOS_TEST_FOR_EXCEPTION(l != 0,
+                     std::logic_error,
+                     std::endl <<
                      "Error!  twoD_diffusion_ME::get_p_init():  " <<
                      "Invalid parameter index l = " << l << std::endl);
-  
+
   return p_init;
 }
 
@@ -396,7 +402,7 @@ Teuchos::RCP<Epetra_Operator>
 twoD_diffusion_ME::
 create_W() const
 {
-  Teuchos::RCP<Epetra_CrsMatrix> AA = 
+  Teuchos::RCP<Epetra_CrsMatrix> AA =
     Teuchos::rcp(new Epetra_CrsMatrix(Copy, *graph));
   AA->FillComplete();
   AA->OptimizeStorage();
@@ -408,10 +414,10 @@ twoD_diffusion_ME::
 create_WPrec() const
 {
   if (precFactory != Teuchos::null) {
-    Teuchos::RCP<Epetra_Operator> precOp = 
+    Teuchos::RCP<Epetra_Operator> precOp =
       precFactory->compute(A, false);
     return Teuchos::rcp(new EpetraExt::ModelEvaluator::Preconditioner(precOp,
-								      true));
+                                                                      true));
   }
   return Teuchos::null;
 }
@@ -437,7 +443,7 @@ createInArgs() const
   // Multipoint InArgs
   inArgs.setSupports(IN_ARG_x_mp,true);
  inArgs.setSupports(IN_ARG_p_mp, 0, true); // 1 MP parameter vector
-  
+
   return inArgs;
 }
 
@@ -454,7 +460,7 @@ createOutArgs() const
   outArgs.setSupports(OUT_ARG_W,true);
   if (precFactory != Teuchos::null)
     outArgs.setSupports(OUT_ARG_WPrec,true);
-  
+
   // Stochastic OutArgs
   outArgs.setSupports(OUT_ARG_f_sg,true);
   outArgs.setSupports(OUT_ARG_W_sg,true);
@@ -468,7 +474,7 @@ createOutArgs() const
   return outArgs;
 }
 
-void 
+void
 twoD_diffusion_ME::
 evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
 {
@@ -491,22 +497,22 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
   if (f != Teuchos::null || W != Teuchos::null || WPrec != Teuchos::null) {
     if (basis != Teuchos::null) {
       for (int i=0; i<point.size(); i++)
-    	point[i] = (*p)[i];
+        point[i] = (*p)[i];
       basis->evaluateBases(point, basis_vals);
       A->PutScalar(0.0);
       for (int k=0;k<A_k.size();k++)
-    	EpetraExt::MatrixMatrix::Add((*A_k[k]), false, basis_vals[k], *A, 1.0);
+        EpetraExt::MatrixMatrix::Add((*A_k[k]), false, basis_vals[k], *A, 1.0);
     }
     else {
       *A = *(A_k[0]);
       for (int k=1;k<A_k.size();k++)
-	EpetraExt::MatrixMatrix::Add((*A_k[k]), false, (*p)[k-1], *A, 1.0);
+        EpetraExt::MatrixMatrix::Add((*A_k[k]), false, (*p)[k-1], *A, 1.0);
     }
     A->FillComplete();
     A->OptimizeStorage();
   }
 
-  // Residual  
+  // Residual
   if (f != Teuchos::null) {
     Teuchos::RCP<Epetra_Vector> kx = Teuchos::rcp(new Epetra_Vector(*x_map));
     A->Apply(*det_x,*kx);
@@ -548,16 +554,16 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
   if (f_sg != Teuchos::null) {
 
     // Get stochastic expansion data
-    Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expn = 
+    Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expn =
       inArgs.get_sg_expansion();
     typedef Stokhos::Sparse3Tensor<int,double> Cijk_type;
-    Teuchos::RCP<const Cijk_type> Cijk = expn->getTripleProduct(); 
+    Teuchos::RCP<const Cijk_type> Cijk = expn->getTripleProduct();
     const Teuchos::Array<double>& norms = basis->norm_squared();
 
     if (sg_kx_vec_all.size() != basis->size()) {
       sg_kx_vec_all.resize(basis->size());
       for (int i=0;i<basis->size();i++) {
-	sg_kx_vec_all[i] = Teuchos::rcp(new Epetra_Vector(*x_map));
+        sg_kx_vec_all[i] = Teuchos::rcp(new Epetra_Vector(*x_map));
       }
     }
     f_sg->init(0.0);
@@ -566,22 +572,22 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
     Cijk_type::k_iterator k_end = Cijk->k_end();
     for (Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
       int k = Stokhos::index(k_it);
-      for (Cijk_type::kj_iterator j_it = Cijk->j_begin(k_it); 
-	   j_it != Cijk->j_end(k_it); ++j_it) {
-	int j = Stokhos::index(j_it);
-	A_k[k]->Apply((*x_sg)[j],*(sg_kx_vec_all[j]));
+      for (Cijk_type::kj_iterator j_it = Cijk->j_begin(k_it);
+           j_it != Cijk->j_end(k_it); ++j_it) {
+        int j = Stokhos::index(j_it);
+        A_k[k]->Apply((*x_sg)[j],*(sg_kx_vec_all[j]));
       }
-      for (Cijk_type::kj_iterator j_it = Cijk->j_begin(k_it); 
-	   j_it != Cijk->j_end(k_it); ++j_it) {
-	int j = Stokhos::index(j_it);
-	for (Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
-	     i_it != Cijk->i_end(j_it); ++i_it) {
-	  int i = Stokhos::index(i_it);
-	  double c = Stokhos::value(i_it);  // C(i,j,k)
-	  (*f_sg)[i].Update(1.0*c/norms[i],*(sg_kx_vec_all[j]),1.0);
-	}
+      for (Cijk_type::kj_iterator j_it = Cijk->j_begin(k_it);
+           j_it != Cijk->j_end(k_it); ++j_it) {
+        int j = Stokhos::index(j_it);
+        for (Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
+             i_it != Cijk->i_end(j_it); ++i_it) {
+          int i = Stokhos::index(i_it);
+          double c = Stokhos::value(i_it);  // C(i,j,k)
+          (*f_sg)[i].Update(1.0*c/norms[i],*(sg_kx_vec_all[j]),1.0);
+        }
       }
-    } //End 
+    } //End
     (*f_sg)[0].Update(-1.0,*b,1.0);
   }
 
@@ -589,8 +595,8 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
   OutArgs::sg_operator_t W_sg = outArgs.get_W_sg();
   if (W_sg != Teuchos::null) {
     for (int i=0; i<W_sg->size(); i++) {
-      Teuchos::RCP<Epetra_CrsMatrix> jac = 
-	Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W_sg->getCoeffPtr(i), true);
+      Teuchos::RCP<Epetra_CrsMatrix> jac =
+        Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W_sg->getCoeffPtr(i), true);
       *jac = *A_k[i];
       jac->FillComplete();
       jac->OptimizeStorage();
@@ -598,7 +604,7 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
   }
 
   // Stochastic responses
-  Teuchos::RCP< Stokhos::EpetraVectorOrthogPoly > g_sg = 
+  Teuchos::RCP< Stokhos::EpetraVectorOrthogPoly > g_sg =
     outArgs.get_g_sg(0);
   if (g_sg != Teuchos::null) {
     int sz = x_sg->size();
@@ -626,38 +632,38 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
     for (int i=0; i<num_mp; i++) {
       // Compute operator
       if (basis != Teuchos::null) {
-	for (int k=0; k<point.size(); k++)
-	  point[k] = (*p_mp)[i][k];
-	basis->evaluateBases(point, basis_vals);
-	A->PutScalar(0.0);
-	for (int k=0;k<A_k.size();k++)
-	  EpetraExt::MatrixMatrix::Add((*A_k[k]), false, basis_vals[k], *A, 
-				       1.0);
+        for (int k=0; k<point.size(); k++)
+          point[k] = (*p_mp)[i][k];
+        basis->evaluateBases(point, basis_vals);
+        A->PutScalar(0.0);
+        for (int k=0;k<A_k.size();k++)
+          EpetraExt::MatrixMatrix::Add((*A_k[k]), false, basis_vals[k], *A,
+                                       1.0);
       }
       else {
-	*A = *(A_k[0]);
-	for (int k=1;k<A_k.size();k++)
-	  EpetraExt::MatrixMatrix::Add((*A_k[k]), false, (*p_mp)[i][k-1], *A, 
-				       1.0);
+        *A = *(A_k[0]);
+        for (int k=1;k<A_k.size();k++)
+          EpetraExt::MatrixMatrix::Add((*A_k[k]), false, (*p_mp)[i][k-1], *A,
+                                       1.0);
       }
 
       A->FillComplete();
       A->OptimizeStorage();
-      
+
       // Compute residual
       if (f_mp != Teuchos::null) {
-	A->Apply((*x_mp)[i], (*f_mp)[i]);
-	(*f_mp)[i].Update(-1.0, *b, 1.0);
+        A->Apply((*x_mp)[i], (*f_mp)[i]);
+        (*f_mp)[i].Update(-1.0, *b, 1.0);
       }
 
       // Copy operator
       if (W_mp != Teuchos::null) {
-	Teuchos::RCP<Epetra_CrsMatrix> jac = 
-	  Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W_mp->getCoeffPtr(i), 
-						      true);
-	*jac = *A;
-	jac->FillComplete();
-	jac->OptimizeStorage();
+        Teuchos::RCP<Epetra_CrsMatrix> jac =
+          Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W_mp->getCoeffPtr(i),
+                                                      true);
+        *jac = *A;
+        jac->FillComplete();
+        jac->OptimizeStorage();
       }
     }
   }

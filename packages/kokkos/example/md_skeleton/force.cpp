@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -67,7 +67,7 @@
 
 struct ForceFunctor {
 
-  typedef t_x_array::device_type device_type; //Device Type for running the kernel
+  typedef t_x_array::execution_space execution_space; //Device Type for running the kernel
   typedef double2 value_type; // When energy calculation is requested return energy, and virial
 
   t_x_array_randomread x;       //atom positions
@@ -152,7 +152,9 @@ struct ForceFunctor {
     f(i, 1) += fiy;
     f(i, 2) += fiz;
 
-    double2 energy_virial = {4.0 * energy, 0.5 * virial};
+    double2 energy_virial ;
+    energy_virial.x = 4.0 * energy ;
+    energy_virial.y = 0.5 * virial ;
     return energy_virial;
   }
 
@@ -178,12 +180,13 @@ double2 force(System &s,int evflag) {
 
   ForceFunctor f(s);
 
-  double2 ev = {0,0};
+  double2 ev ; ev.x = 0 ; ev.y = 0 ;
   if(!evflag)
     Kokkos::parallel_for(s.nlocal,f);
   else
     Kokkos::parallel_reduce(s.nlocal,f,ev);
 
-  device_type::fence();
+  execution_space::fence();
   return ev;
 }
+

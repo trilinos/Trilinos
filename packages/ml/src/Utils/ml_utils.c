@@ -602,6 +602,7 @@ int ML_selection_dsort(double *vals, int length, int *cols, int limit)
 
    ML_free(darray);
    ML_free(treeArray);
+   ML_free(treeIArray);
    ML_free(treeLengs);
    return 0;
 }
@@ -1925,7 +1926,9 @@ void ML_serial_end(ML_Comm *comm)
 /* (Based on code from ALEGRA).                                         */
 /* ******************************************************************** */
 #ifndef ICL
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 #endif
 void ML_BreakForDebugger(ML_Comm *comm)
 {
@@ -1977,7 +1980,8 @@ void ML_BreakForDebugger(ML_Comm *comm)
       printf("** You may now attach debugger to the processes listed above.\n");
       printf( "**\n");
       printf( "** Enter a character to continue > "); fflush(stdout);
-	  scanf("%c",&go);
+      if (EOF == scanf("%c",&go))
+         pr_error("Error: I/O error.\n");
     }
   }
 }
@@ -1992,7 +1996,8 @@ void ML_Pause(ML_Comm *comm)
 
   if (comm->ML_mypid == 0) {
       printf( "** Press enter to continue > "); fflush(stdout);
-      scanf("%c",&go);
+      if (EOF == scanf("%c",&go))
+         pr_error("Error: I/O error.\n");
   }
   ML_Comm_Barrier(comm);
 }
@@ -2106,7 +2111,11 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
      }
    }
 
-   if ( matrix->getrow == NULL) return(1);
+   if ( matrix->getrow == NULL) {
+     ML_free(global_row_ordering);
+     ML_free(global_col_ordering);
+     return(1);
+   }
 
    MyPID = comm->ML_mypid;
    NumProc = comm->ML_nprocs;

@@ -57,7 +57,10 @@
 
 namespace Xpetra {
 
-  template <class Packet, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Packet,
+            class LocalOrdinal = Map<>::local_ordinal_type,
+            class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
+            class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
   class DistObject
     : virtual public Teuchos::Describable
   {

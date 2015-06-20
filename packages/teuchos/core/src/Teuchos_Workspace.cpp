@@ -115,7 +115,7 @@ void WorkspaceStore::protected_initialize(size_t num_bytes)
   num_dyn_allocations_    = 0;
   num_current_bytes_total_= 0;
   num_max_bytes_needed_   = 0;
-} 
+}
 
 // RawWorkspace
 

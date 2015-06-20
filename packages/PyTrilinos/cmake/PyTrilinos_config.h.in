@@ -1,31 +1,46 @@
-/* @HEADER
- * ************************************************************************
- *
- *                PyTrilinos: Python Interface to Trilinos
- *                   Copyright (2010) Sandia Corporation
- *
- * Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
- * license for use of this work by or on behalf of the U.S. Government.
- *
- * This library is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of the
- * License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
- * USA
- * Questions? Contact Bill Spotz (wfspotz@sandia.gov)
- *
- * ************************************************************************
- * @HEADER
- */
+/*
+// @HEADER
+// ***********************************************************************
+//
+//          PyTrilinos: Python Interfaces to Trilinos Packages
+//                 Copyright (2014) Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia
+// Corporation, the U.S. Government retains certain rights in this
+// software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact William F. Spotz (wfspotz@sandia.gov)
+//
+// ***********************************************************************
+// @HEADER
+*/
 
 /* cmake/PyTrilinos_config.h.in.  Modified from version in src/.  */
 
@@ -41,6 +56,9 @@
 /* Define if EpetraExt capabilities are enabled within NOX::Epetra */
 #cmakedefine HAVE_NOX_EPETRAEXT
 
+/* Define if Petsc namespace is enabled within NOX */
+#cmakedefine HAVE_NOX_PETSC
+
 /* Define ML options */
 #define MLAPI_LC
 
@@ -53,103 +71,106 @@
 /* define if we want to use MPI */
 #cmakedefine HAVE_MPI
 
-/* Define if want to build pytrilinos */
+/* define if we want to use Mpi4Py */
+#cmakedefine HAVE_MPI4PY
+
+/* Define if want to build PyTrilinos */
 #cmakedefine HAVE_PYTRILINOS
 
-/* Define if want to build with pytrilinos enabled */
+/* Define if want to build with Amesos enabled */
 #cmakedefine HAVE_PYTRILINOS_AMESOS
 
-/* Define if want to build with pytrilinos enabled */
+/* Define if want to build with Anasazi enabled */
 #cmakedefine HAVE_PYTRILINOS_ANASAZI
 
-/* Define if want to build with pytrilinos enabled */
+/* Define if want to build with AztecOO enabled */
 #cmakedefine HAVE_PYTRILINOS_AZTECOO
 
-/* Define if want to build aztecoo-teuchos */
+/* Define if want to build AztecOO-Teuchos */
 #cmakedefine HAVE_PYTRILINOS_AZTECOO_TEUCHOS
 
-/* Define if want to build with pytrilinos enabled */
+/* Define if want to build with Belos enabled */
 #cmakedefine HAVE_PYTRILINOS_BELOS
 
-/* Define if want to build with pytrilinos enabled */
+/* Define if want to build with Claps enabled */
 #cmakedefine HAVE_PYTRILINOS_CLAPS
 
-/* Define if want to build with pytrilinos enabled */
+/* Define if want to build with Epetra enabled */
 #cmakedefine HAVE_PYTRILINOS_EPETRA
 
-/* Define if want to build with pytrilinos enabled */
+/* Define if want to build with EpetraExt enabled */
 #cmakedefine HAVE_PYTRILINOS_EPETRAEXT
 
-/* Define if want to build epetraext-hdf5 */
+/* Define if want to build EpetraExt-hdf5 */
 #cmakedefine HAVE_PYTRILINOS_EPETRAEXT_HDF5
 
-/* Define if want to build pytrilinos-examples */
+/* Define if want to build PyTrilinos-examples */
 #cmakedefine HAVE_PYTRILINOS_EXAMPLES
 
-/* Define if want to build with pytrilinos enabled */
+/* Define if want to build with Galeri enabled */
 #cmakedefine HAVE_PYTRILINOS_GALERI
 
-/* Define if want to build with pytrilinos enabled */
+/* Define if want to build with Ifpack enabled */
 #cmakedefine HAVE_PYTRILINOS_IFPACK
 
-/* Define if want to build with pytrilinos enabled */
+/* Define if want to build with Isorropia enabled */
 #cmakedefine HAVE_PYTRILINOS_ISORROPIA
 
-/* Define if want to build with pytrilinos enabled */
+/* Define if want to build with Kokkos enabled */
 #cmakedefine HAVE_PYTRILINOS_KOKKOS
 
-/* Define if want to build with pytrilinos enabled */
+/* Define if want to build with Komplex enabled */
 #cmakedefine HAVE_PYTRILINOS_KOMPLEX
 
-/* Define if want to build with pytrilinos enabled */
+/* Define if want to build with LOCA enabled */
 #cmakedefine HAVE_PYTRILINOS_LOCA
 
-/* Define if want to build with pytrilinos enabled */
+/* Define if want to build with Meros enabled */
 #cmakedefine HAVE_PYTRILINOS_MEROS
 
-/* Define if want to build with pytrilinos enabled */
+/* Define if want to build with ML enabled */
 #cmakedefine HAVE_PYTRILINOS_ML
 
-/* Define if want to build with pytrilinos enabled */
+/* Define if want to build with Moertel enabled */
 #cmakedefine HAVE_PYTRILINOS_MOERTEL
 
-/* Define if want to build with pytrilinos enabled */
+/* Define if want to build with Moocho enabled */
 #cmakedefine HAVE_PYTRILINOS_MOOCHO
 
-/* Define if want to build with pytrilinos enabled */
+/* Define if want to build with NOX enabled */
 #cmakedefine HAVE_PYTRILINOS_NOX
 
-/* Define if want to build nox-epetra */
+/* Define if want to build NOX-Epetra */
 #cmakedefine HAVE_PYTRILINOS_NOX_EPETRA
 
-/* Define if want to build nox-epetra with epetraext */
+/* Define if want to build NOX-Epetra with EpetraExt */
 #cmakedefine HAVE_PYTRILINOS_NOX_EPETRAEXT
 
-/* Define if want to build with pytrilinos enabled */
+/* Define if want to build with RTOp enabled */
 #cmakedefine HAVE_PYTRILINOS_RTOP
 
-/* Define if want to build with pytrilinos enabled */
+/* Define if want to build with Rythmos enabled */
 #cmakedefine HAVE_PYTRILINOS_RYTHMOS
 
-/* Define if want to build with pytrilinos enabled */
+/* Define if want to build with Sacado enabled */
 #cmakedefine HAVE_PYTRILINOS_SACADO
 
-/* Define if want to build with pytrilinos enabled */
+/* Define if want to build with Stratimikos enabled */
 #cmakedefine HAVE_PYTRILINOS_STRATIMIKOS
 
-/* Define if want to build pytrilinos-tests */
+/* Define if want to build PyTrilinos-tests */
 #cmakedefine HAVE_PYTRILINOS_TESTS
 
-/* Define if want to build with pytrilinos enabled */
+/* Define if want to build with Teuchos enabled */
 #cmakedefine HAVE_PYTRILINOS_TEUCHOS
 
-/* Define if want to build with pytrilinos enabled */
+/* Define if want to build with Thyra enabled */
 #cmakedefine HAVE_PYTRILINOS_THYRA
 
-/* Define if want to build with pytrilinos enabled */
+/* Define if want to build with Tpetra enabled */
 #cmakedefine HAVE_PYTRILINOS_TPETRA
 
-/* Define if want to build with pytrilinos enabled */
+/* Define if want to build with TriUtils enabled */
 #cmakedefine HAVE_PYTRILINOS_TRIUTILS
 
 /* Define if want to build tests */
@@ -157,3 +178,29 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #cmakedefine HAVE_UNISTD_H
+
+/**********************************************************************/
+
+#ifdef SWIG
+
+  #define COMPILER_ID @CMAKE_CXX_COMPILER_ID@
+
+  #if COMPILER_ID == Clang
+    #if ! defined(__clang__)
+      #define __clang__
+    #endif
+  #endif
+
+  #if COMPILER_ID == GNU
+    #if ! defined(__GNUC__)
+      #define __GNUC__
+    #endif
+  #endif
+
+  #if COMPILER_ID == Intel
+    #if ! defined(__INTEL_COMPILER)
+      #define __INTEL_COMPILER
+    #endif
+  #endif
+
+#endif

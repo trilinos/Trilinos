@@ -162,6 +162,8 @@ protected:
   //@{
 
   /** \brief . */
+  void assignImpl(Scalar alpha);
+  /** \brief . */
   RCP<const VectorBase<Scalar> > colImpl(Ordinal j) const;
   /** \brief . */
   RCP<VectorBase<Scalar> > nonconstColImpl(Ordinal j);

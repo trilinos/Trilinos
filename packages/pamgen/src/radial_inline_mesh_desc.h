@@ -16,7 +16,7 @@ public:
   virtual void calculateSize(long long & total_el_count, 
 			     long long & total_node_count, 
 			     long long & total_edge_count);
-  virtual long long Calc_Coord_Vectors();
+//   virtual long long Calc_Coord_Vectors(); 
   Vector calc_coords_periodic(double total_theta,
 			      long long i, 
 			      long long j, 

@@ -58,6 +58,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosPseudoBlockCGSolMgr.hpp"
+#include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "BelosTpetraAdapter.hpp"
 
 #include "Teuchos_TimeMonitor.hpp"
@@ -68,14 +69,51 @@
 namespace Kokkos {
 namespace Example {
 
-template <class SM, class SV, class LO, class GO, class N, class LMO>
+// Functor to copy the nodal coordinates out of the mesh fixture into
+// a multi-vector.  This functor is necessary because the respective views
+// have potentially different layouts.
+template <typename coords_type, typename coords_vec_type>
+struct FillCoords {
+  typedef typename coords_type::execution_space execution_space;
+  typedef typename coords_type::size_type size_type;
+
+  const coords_type m_coords;
+  const coords_vec_type m_coords_vec;
+  const size_type m_dim;
+
+  FillCoords( const coords_type& coords, const coords_vec_type& coords_vec )
+    : m_coords(coords), m_coords_vec(coords_vec), m_dim(coords.dimension_1())
+  {
+    // Note:  coords contains off-processor halo nodes and thus is longer
+    // than coords_vec, which is the same length as the solution vector.
+    // These extra halo nodes are stored at the end.
+    Kokkos::parallel_for( m_coords_vec.dimension_0(), *this );
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const size_type i) const
+  {
+    for (size_type j=0; j<m_dim; ++j)
+      m_coords_vec(i,j) = m_coords(i,j);
+  }
+};
+
+template <typename coords_type, typename coords_vec_type>
+void fill_coords( const coords_type& coords,
+                  const coords_vec_type& coords_vec ) {
+  FillCoords<coords_type,coords_vec_type>(coords, coords_vec);
+}
+
+template <class SM, class SV, class LO, class GO, class N, class Mesh>
 result_struct
 belos_solve(
-  const Teuchos::RCP<Tpetra::CrsMatrix<SM,LO,GO,N,LMO> >& A,
+  const Teuchos::RCP<Tpetra::CrsMatrix<SM,LO,GO,N> >& A,
   const Teuchos::RCP<Tpetra::Vector<SV,LO,GO,N> >& b,
   const Teuchos::RCP<Tpetra::Vector<SV,LO,GO,N> >& x,
+  const Mesh& mesh,
   const int use_muelu,
   const int use_mean_based,
+  const Teuchos::RCP<Teuchos::ParameterList>& fenlParams,
   const unsigned max_iter = 200,
   const typename Kokkos::Details::ArithTraits<SV>::mag_type tolerance =
     Kokkos::Details::ArithTraits<SV>::epsilon())
@@ -84,7 +122,9 @@ belos_solve(
   typedef Tpetra::MultiVector<SV,LO,GO,N> VectorType;
   typedef typename VectorType::dot_type BelosScalarType;
   typedef Belos::LinearProblem<BelosScalarType, VectorType, OperatorType> ProblemType;
-  typedef Belos::PseudoBlockCGSolMgr<BelosScalarType, VectorType, OperatorType> SolverType;
+  typedef Belos::PseudoBlockCGSolMgr<BelosScalarType, VectorType, OperatorType> CGSolverType;
+  typedef Belos::PseudoBlockGmresSolMgr<BelosScalarType, VectorType, OperatorType> GmresSolverType;
+  typedef Belos::SolverManager<BelosScalarType, VectorType, OperatorType> SolverType;
   typedef SGPreconditioner<SM,LO,GO,N> PreconditionerType;
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -95,17 +135,9 @@ belos_solve(
     Teuchos::TimeMonitor::getNewTimer("Belos: Operation Op*x");
   Teuchos::RCP<Teuchos::Time> time_prec_apply =
     Teuchos::TimeMonitor::getNewTimer("Belos: Operation Prec*x");
-  Teuchos::RCP<Teuchos::Time> time_total =
-    Teuchos::TimeMonitor::getNewTimer("Belos: PseudoBlockCGSolMgr total solve time");
+  Teuchos::RCP<Teuchos::Time> time_total;
   Teuchos::RCP<Teuchos::Time> time_prec_setup =
     Teuchos::TimeMonitor::getNewTimer("Total MueLu setup time");
-
-  // FENL accumulates the times itself, so reset them here so they don't
-  // accumulate across solves
-  time_mat_vec->reset();
-  time_prec_apply->reset();
-  time_total->reset();
-  time_prec_setup->reset();
 
   //--------------------------------
   // Create preconditioner
@@ -114,24 +146,30 @@ belos_solve(
 
   if (use_muelu) {
     Teuchos::TimeMonitor timeMon(*time_prec_setup);
-    std::string xmlFileName="muelu.xml";
-    preconditioner = rcp(new MueLuPreconditioner<SM, LO, GO, N>());
-    precOp = preconditioner->setupPreconditioner(A, xmlFileName);
-  }
 
-  if (use_mean_based) {
-    Teuchos::TimeMonitor timeMon(*time_prec_setup);
-    std::string xmlFileName = "muelu.xml";
-    preconditioner = rcp(new MeanBasedPreconditioner<SM, LO, GO, N>());
-    precOp = preconditioner->setupPreconditioner(A, xmlFileName);
+    // Create tpetra-vector storing coordinates for repartitioning
+    typename Mesh::node_coord_type node_coords = mesh.node_coord();
+    //Teuchos::RCP<VectorType> coords =
+    Teuchos::RCP<Tpetra::MultiVector<double,LO,GO,N> > coords =
+      Teuchos::rcp(new Tpetra::MultiVector<double,LO,GO,N>(x->getMap(), node_coords.dimension_1()));
+    fill_coords(node_coords, coords->getDualView().d_view);
+
+    RCP<ParameterList> mueluParams = Teuchos::sublist(fenlParams, "MueLu");
+    if (use_mean_based) {
+      preconditioner =
+        Teuchos::rcp(new MeanBasedPreconditioner<SM, LO, GO, N>());
+      precOp = preconditioner->setupPreconditioner(A, mueluParams, coords);
+    }
+    else {
+      preconditioner =
+        Teuchos::rcp(new MueLuPreconditioner<SM, LO, GO, N>());
+      precOp = preconditioner->setupPreconditioner(A, mueluParams, coords);
+    }
   }
 
   //--------------------------------
   // Set up linear solver
-  RCP<ParameterList> belosParams = Teuchos::parameterList();
-  // Read in any params from xml file
-  Teuchos::updateParametersFromXmlFileAndBroadcast(
-    "belos.xml", belosParams.ptr(),*A->getComm());
+  RCP<ParameterList> belosParams = Teuchos::sublist(fenlParams, "Belos");
 
   if (!(belosParams->isParameter("Convergence Tolerance")))
     belosParams->set("Convergence Tolerance", tolerance);
@@ -141,7 +179,25 @@ belos_solve(
     belosParams->set("Output Frequency", 1);
 
   RCP<ProblemType> problem = rcp(new ProblemType(A, x, b));
-  RCP<SolverType> solver = rcp(new SolverType(problem, belosParams));
+
+  std::string belos_solver = belosParams->get("Belos Solver", "CG");
+  RCP<SolverType> solver;
+  if (belos_solver == "CG" ||
+      belos_solver == "cg") {
+    time_total =
+      Teuchos::TimeMonitor::getNewTimer("Belos: PseudoBlockCGSolMgr total solve time");
+    solver = rcp(new CGSolverType(problem, belosParams));
+  }
+  else if (belos_solver == "GMRES" ||
+           belos_solver == "Gmres" ||
+           belos_solver == "gmres") {
+    time_total =
+      Teuchos::TimeMonitor::getNewTimer("Belos: PseudoBlockGmresSolMgr total solve time");
+    solver = rcp(new GmresSolverType(problem, belosParams));
+  }
+  else
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+                               "Invalid solver " << belos_solver);
 
   if (use_muelu || use_mean_based){
      problem->setRightPrec(precOp);
@@ -183,14 +239,16 @@ belos_solve(
 namespace Kokkos {
 namespace Example {
 
-template <class SM, class SV, class LO, class GO, class N, class LMO>
+template <class SM, class SV, class LO, class GO, class N, class Mesh>
 result_struct
 belos_solve(
-  const Teuchos::RCP<Tpetra::CrsMatrix<SM,LO,GO,N,LMO> >& A,
+  const Teuchos::RCP<Tpetra::CrsMatrix<SM,LO,GO,N> >& A,
   const Teuchos::RCP<Tpetra::Vector<SV,LO,GO,N> >& b,
   const Teuchos::RCP<Tpetra::Vector<SV,LO,GO,N> >& x,
+  const Mesh& mesh,
   const int use_muelu,
   const int use_mean_based,
+  const Teuchos::RCP<Teuchos::ParameterList>& fenlParams,
   const unsigned max_iter = 200,
   const typename Kokkos::Details::ArithTraits<SV>::mag_type tolerance =
     Kokkos::Details::ArithTraits<SV>::epsilon())

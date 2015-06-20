@@ -82,7 +82,7 @@ TEUCHOSCORE_LIB_DLL_EXPORT void dyn_cast_throw_exception(
  *
  * Existing uses of the built-in <tt>dynamic_cast<T&>()</tt> operator
  * such as:
- 
+
  \code
  C &c = dynamic_cast<C&>(a);
  \endcode
@@ -131,7 +131,7 @@ TEUCHOSCORE_LIB_DLL_EXPORT void dyn_cast_throw_exception(
   	return 0;
   }
  \endcode
- 
+
  * The above program will print something that looks like (compiled
  * with g++ for example):
 
@@ -148,7 +148,7 @@ TEUCHOSCORE_LIB_DLL_EXPORT void dyn_cast_throw_exception(
   not support the interface '1C' and the dynamic cast failed!"
 
  \endverbatim
- 
+
  * The above program shows that the standard implementation of
  * <tt>dynamic_cast<T&>()</tt> does not return any useful debugging
  * information at all but the templated function

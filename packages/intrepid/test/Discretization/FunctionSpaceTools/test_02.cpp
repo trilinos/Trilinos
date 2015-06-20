@@ -62,7 +62,6 @@ using namespace Intrepid;
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
   // This little trick lets us print to std::cout only if
   // a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -114,7 +113,6 @@ int main(int argc, char *argv[]) {
       Teuchos::RCP<Cubature<double> > myCub = cubFactory.create(cellType, cubDegree);           // create default cubature
       int spaceDim = myCub->getDimension();                                                     // get spatial dimension 
       int numCubPoints = myCub->getNumPoints();                                                 // get number of cubature points
-
       /* Related to basis. */
       Basis_HCURL_HEX_I1_FEM<double, FieldContainer<double> > hexBasis;                         // create H-curl basis on a hex
       int numFields = hexBasis.getCardinality();                                                // get basis cardinality
@@ -164,7 +162,7 @@ int main(int argc, char *argv[]) {
         0.0, 1.0, 1.0
       };
 
-      short edgesigns[] = {
+      double edgesigns[] = {
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
         1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1,
         -1, -1, -1, 1, 1, 1, -1, -1, 1, 1, -1, 1,
@@ -175,7 +173,7 @@ int main(int argc, char *argv[]) {
       FieldContainer<double> cub_points(numCubPoints, spaceDim);
       FieldContainer<double> cub_weights(numCubPoints);
       FieldContainer<double> cell_nodes(numCells, numNodes, spaceDim);
-      FieldContainer<short>  field_signs(numCells, numFields);
+      FieldContainer<double>  field_signs(numCells, numFields);
       FieldContainer<double> jacobian(numCells, numCubPoints, spaceDim, spaceDim);
       FieldContainer<double> jacobian_inv(numCells, numCubPoints, spaceDim, spaceDim);
       FieldContainer<double> jacobian_det(numCells, numCubPoints);
@@ -198,7 +196,6 @@ int main(int argc, char *argv[]) {
 
       // fill cell vertex array
       cell_nodes.setValues(hexnodes, numCellData);
-
       // set basis function signs, for each cell
       field_signs.setValues(edgesigns, numSignData);
 
@@ -206,7 +203,6 @@ int main(int argc, char *argv[]) {
       CellTools<double>::setJacobian(jacobian, cub_points, cell_nodes, cellType);
       CellTools<double>::setJacobianInv(jacobian_inv, jacobian);
       CellTools<double>::setJacobianDet(jacobian_det, jacobian);
-
       // compute weighted measure
       fst::computeCellMeasure<double>(weighted_measure, jacobian_det, cub_weights);
 
@@ -219,7 +215,6 @@ int main(int argc, char *argv[]) {
                                       jacobian,
                                       jacobian_det,
                                       curl_of_basis_at_cub_points);
-
       // multiply with weighted measure
       fst::multiplyMeasure<double>(weighted_transformed_curl_of_basis_at_cub_points,
                                    weighted_measure,
@@ -234,7 +229,6 @@ int main(int argc, char *argv[]) {
                              transformed_curl_of_basis_at_cub_points,
                              weighted_transformed_curl_of_basis_at_cub_points,
                              COMP_CPP);
-
       // Computing mass matrices:
       // tabulate values of basis functions at (reference) cubature points
       hexBasis.getValues(value_of_basis_at_cub_points, cub_points, OPERATOR_VALUE);
@@ -258,7 +252,6 @@ int main(int argc, char *argv[]) {
       // apply field signs (after the fact, as a post-processing step)
       fst::applyLeftFieldSigns<double>(mass_matrices, field_signs);
       fst::applyRightFieldSigns<double>(mass_matrices, field_signs);
-
       /*******************  STOP COMPUTATION ***********************/
 
 
@@ -301,6 +294,7 @@ int main(int argc, char *argv[]) {
         }
 
       }
+
       for (int cell_id = 3; cell_id < numCells; cell_id++) {
 
         stringstream namestream;
@@ -338,6 +332,7 @@ int main(int argc, char *argv[]) {
         }
 
       }
+
       /******************* STOP COMPARISON ***********************/
 
       *outStream << "\n";
@@ -348,7 +343,6 @@ int main(int argc, char *argv[]) {
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     errorFlag = -1000;
   };
-
 
   if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED\n";

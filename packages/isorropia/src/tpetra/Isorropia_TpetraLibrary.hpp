@@ -59,27 +59,27 @@ namespace Tpetra {
 
 */
 
-template <typename Node=KokkosClassic::DefaultNode::DefaultNodeType>
+template <typename Node = ::Tpetra::Map<int,int>::node_type>
 class Library {
 public:
 
   Library(Teuchos::RCP<const ::Tpetra::CrsGraph<int,int,Node> > input_graph, int itype = unspecified_input_);
-  Library(Teuchos::RCP<const ::Tpetra::CrsGraph<int,int,Node> > input_graph, 
+  Library(Teuchos::RCP<const ::Tpetra::CrsGraph<int,int,Node> > input_graph,
           Teuchos::RCP<const ::Tpetra::MultiVector<double,int,int,Node> > input_coords,
           int itype = unspecified_input_);
   Library(Teuchos::RCP<const ::Tpetra::CrsGraph<int,int,Node> > input_graph,
-	  Teuchos::RCP<CostDescriber<Node> > costs, int itype = unspecified_input_);
-  Library(Teuchos::RCP<const ::Tpetra::CrsGraph<int,int,Node> > input_graph, Teuchos::RCP<CostDescriber<Node> > costs, 
-	  Teuchos::RCP<const ::Tpetra::MultiVector<double,int,int,Node> > input_coords, 
+          Teuchos::RCP<CostDescriber<Node> > costs, int itype = unspecified_input_);
+  Library(Teuchos::RCP<const ::Tpetra::CrsGraph<int,int,Node> > input_graph, Teuchos::RCP<CostDescriber<Node> > costs,
+          Teuchos::RCP<const ::Tpetra::MultiVector<double,int,int,Node> > input_coords,
           Teuchos::RCP<const ::Tpetra::MultiVector<double,int,int,Node> > weights,
           int itype = unspecified_input_);
   Library(Teuchos::RCP<const ::Tpetra::RowMatrix<double,int,int,Node> > input_matrix, int itype = unspecified_input_);
   Library(Teuchos::RCP<const ::Tpetra::RowMatrix<double,int,int,Node> > input_matrix, Teuchos::RCP<const ::Tpetra::MultiVector<double,int,int,Node> > input_coords,
           int itype = unspecified_input_);
   Library(Teuchos::RCP<const ::Tpetra::RowMatrix<double,int,int,Node> > input_matrix,
- 	  Teuchos::RCP<CostDescriber<Node> > costs, int itype = unspecified_input_);
-  Library(Teuchos::RCP<const ::Tpetra::RowMatrix<double,int,int,Node> > input_matrix, Teuchos::RCP<CostDescriber<Node> > costs, 
-	  Teuchos::RCP<const ::Tpetra::MultiVector<double,int,int,Node> > input_coords, Teuchos::RCP<const ::Tpetra::MultiVector<double,int,int,Node> > weights,
+          Teuchos::RCP<CostDescriber<Node> > costs, int itype = unspecified_input_);
+  Library(Teuchos::RCP<const ::Tpetra::RowMatrix<double,int,int,Node> > input_matrix, Teuchos::RCP<CostDescriber<Node> > costs,
+          Teuchos::RCP<const ::Tpetra::MultiVector<double,int,int,Node> > input_coords, Teuchos::RCP<const ::Tpetra::MultiVector<double,int,int,Node> > weights,
           int itype = unspecified_input_);
   Library(Teuchos::RCP<const ::Tpetra::MultiVector<double,int,int,Node> > input_coords, int itype = unspecified_input_);
   Library(Teuchos::RCP<const ::Tpetra::MultiVector<double,int,int,Node> > input_coords,
@@ -90,17 +90,17 @@ public:
 
   virtual int
   repartition(Teuchos::ParameterList& paramlist,
-	      std::vector<int>& myNewElements,
-	      int& exportsSize,
-	      std::vector<int>& imports) = 0;
+              std::vector<int>& myNewElements,
+              int& exportsSize,
+              std::vector<int>& imports) = 0;
 
   virtual int
   color(Teuchos::ParameterList& paramlist,
-	std::vector<int>& colorAssignment) = 0 ;
+        std::vector<int>& colorAssignment) = 0 ;
 
   virtual int
   order(Teuchos::ParameterList& paramlist,
-	std::vector<int>& orderAssignment) = 0 ;
+        std::vector<int>& orderAssignment) = 0 ;
 
   /** input_type_ == hgraph_input_
       This indicates that the matrix or graph represents a hypergraph.  Columns
@@ -115,7 +115,7 @@ public:
     */
   static const int hgraph2d_finegrain_input_ = 2;
 
-  /** input_type_ == graph_input_ 
+  /** input_type_ == graph_input_
       This indicates that the square symmetric matrix or graph represents a graph
       in the sense that row/column IDs are vertices and non-zeroes represent
       edges.  The vertices are to be partitioned.
@@ -166,7 +166,7 @@ public:
   static const int simple_input_ = 9;
 
 
-  /** input_type_ == unspecified_input_ 
+  /** input_type_ == unspecified_input_
       This value is the "unset" state for the input_type_ instance variable.
     */
 

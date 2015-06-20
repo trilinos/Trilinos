@@ -1,5 +1,5 @@
-#include "TokenizerRTC.hh"
-#include "commonRTC.hh"
+#include "RTC_TokenizerRTC.hh"
+#include "RTC_commonRTC.hh"
 
 #include <string>
 #include <vector>

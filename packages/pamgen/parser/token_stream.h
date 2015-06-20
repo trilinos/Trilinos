@@ -2,7 +2,7 @@
 
 #ifndef token_streamH
 #define token_streamH
- 
+
 #include "token.h"
 
 #include <sstream>
@@ -15,10 +15,10 @@
 namespace PAMGEN_NEVADA{
 class InputBlock;
 /*****************************************************************************/
-class Token_Stream 
+class Token_Stream
 /*****************************************************************************/
 // Represents a stream of tokens.  These are extracted from the associated
-// istream and echoed to the associated ostream. 
+// istream and echoed to the associated ostream.
 {
   public:
   Token_Stream(std::istream &in, std::ostream &out,
@@ -40,7 +40,7 @@ class Token_Stream
     int Line_Number() const {return line_number;}
     int Recovery_Flag() const {return recovery_flag;}
     int Verbosity() const {return verbosity;}
- 
+
     std::ostream &Output_Stream() const {return output;}
 
 // Definitions
@@ -113,15 +113,15 @@ class Token_Stream
 
 // Define the set of whitespace characters
     static bool iswhite(char c){
-      return c==' ' || c=='\t' || c==',' || c=='=' || c==';' || c==':' || 
+      return c==' ' || c=='\t' || c==',' || c=='=' || c==';' || c==':' ||
          c=='\n';
     }
-    
+
     void setRunID( const std::string& s ) { runid = s; }
     void setCurDir( const std::string& d ) { curdir = d; }
-    
+
     void setCollectInput( std::string* is ) { all_input = is; }
-    
+
     void pushNewInputBlock( const char* name );
     void popInputBlock();
     InputBlock* getInputBlock();  // returns the current block
@@ -134,7 +134,7 @@ class Token_Stream
     int indentation_depth;
     int verbosity;
     bool include_active;
-    
+
     std::string runid;
     std::string curdir;
 
@@ -161,7 +161,7 @@ class Token_Stream
     // Parse a file name from the current input stream, push the current
     // input stream, and open a new input stream to the named file.  Increment
     // the indentation depth.  Input now croms from the new input stream. When
-    // the new stream reaches EOF, close it, decrement the indentation depth, 
+    // the new stream reaches EOF, close it, decrement the indentation depth,
     // and pop the old stream.  This sequence of actions can be nested.
     void push_include();
     void pop_include();
@@ -176,7 +176,7 @@ Token Get_Integer_Token(Token_Stream *, int);
 Token Get_String_Token(Token_Stream *, int);
 Token Get_Identifier_Token(Token_Stream *, int);
 
-// The following is the keyword function version of a no-op.  
+// The following is the keyword function version of a no-op.
 Token Get_No_Token(Token_Stream *, int);
 }//end namespace PAMGEN_NEVADA
 #endif

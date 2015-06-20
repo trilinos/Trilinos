@@ -15,24 +15,17 @@ doxygen_objdb_*.tmp
 .cproject
 
 # Trilinos extra repos
+/TriBITS/
 /preCopyrightTrilinos/
-/Drekar/
+/DrekarBase/
 /DrekarResearch/
 /LIMEExt/
 /TerminalApplication/
-
-# CASL-related extra repos
-/CASLBOA/
-/CASLRAVE/
-/DeCARTExt/
-/Nemesis/
-/Denovo/
-/PSSDriversExt/
-/RELAP5Ext/
-/StarCCMExt/
-/Coupler/
 /DataTransferKit/
 /TeuchosWrappersExt
+
+# Allow github Kokkos to be cloned under Trilinos
+/kokkos/
 
 # RPI SCOREC extra repos
 /SCOREC
@@ -69,6 +62,12 @@ packages/epetra/src/new_Epetra_CrsGraph.cpp
 packages/jpetra.tar.gz
 packages/kokkos/doc/.DS_Store
 packages/kokkos/classic/doc/html/
+packages/kokkos/doc/ProgrammingGuide/Kokkos_PG.aux
+packages/kokkos/doc/ProgrammingGuide/Kokkos_PG.log
+packages/kokkos/doc/ProgrammingGuide/Kokkos_PG.pdf
+packages/kokkos/doc/ProgrammingGuide/Kokkos_PG.toc
+packages/kokkos/doc/ProgrammingGuide/Kokkos_PG.dvi
+packages/kokkos/doc/ProgrammingGuide/Kokkos_PG.ps
 CHECKINS
 XPETRA_MPI_THREADED/
 ALL_OMP_GCC/

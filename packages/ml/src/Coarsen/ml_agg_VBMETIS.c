@@ -527,6 +527,7 @@ including the ghost blocks
 
      if (block_size > 1) {
         Nneigh    = ML_CommInfoOP_Get_Nneighbors(Amat->getrow->pre_comm);
+        ML_free(neighbors);
         neighbors = ML_CommInfoOP_Get_neighbors(Amat->getrow->pre_comm);
 
 
@@ -2103,7 +2104,7 @@ static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
   real_t *tpwgts, *ubvec;
 # endif
 #else
-  int *options=NULL,edgecut;
+  int edgecut;
 #endif
   int ok = 0;
   int * nodes_per_aggre = NULL;

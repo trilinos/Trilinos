@@ -62,7 +62,7 @@ public:
     RCP<ParameterEntryValidator> > ValidatorMap;
 
   /** \brief . */
-  typedef std::pair<ParameterEntryValidator::ValidatorID, 
+  typedef std::pair<ParameterEntryValidator::ValidatorID,
     RCP<ParameterEntryValidator> > IDValidatorPair;
 
   /** \brief . */
@@ -103,9 +103,9 @@ private:
 /** \brief A class for mapping validators to integers. */
 class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT ValidatortoIDMap {
 public:
-  
+
   /** \brief . */
-  typedef std::map<RCP<const ParameterEntryValidator>, int, RCPComp> 
+  typedef std::map<RCP<const ParameterEntryValidator>, int, RCPComp>
     ValidatorMap;
 
   /** \brief . */
@@ -122,7 +122,7 @@ public:
 
   /** \brief inserts an IDValidatorPair into the map. */
   void insert(RCP<const ParameterEntryValidator> toInsert);
-  
+
   /** \brief Returns an iterator to the validator and id specified by the validator.
    *
    * If no id is found with the associated validator, a reference to the end
@@ -130,7 +130,7 @@ public:
    */
   const_iterator find(
     const RCP<const ParameterEntryValidator> validator) const;
-  
+
   /** \brief Returns a const_reference to the beginning of the map. */
   const_iterator begin() const;
 

@@ -1,6 +1,4 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 INCLUDE(MultilineSet)
 
 ASSERT_DEFINED(PACKAGE_SOURCE_DIR CMAKE_CURRENT_SOURCE_DIR)
@@ -12,7 +10,7 @@ FILE(GLOB SOURCES *.cpp)
 TRIBITS_ADD_EXECUTABLE(
   timeDiscretizedBackwardEuler
   SOURCES ${SOURCES}
-  DEPLIBS rythmos_test_models
+  TESTONLYLIBS rythmos_test_models
   COMM serial mpi  
   )
 

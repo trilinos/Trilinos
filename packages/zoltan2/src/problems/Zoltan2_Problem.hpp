@@ -73,16 +73,55 @@ public:
 #ifdef HAVE_ZOLTAN2_MPI
   /*! \brief Constructor for MPI builds
    */
-  Problem(Adapter *, ParameterList *params, MPI_Comm comm);
+  Problem(const Adapter *input, ParameterList *params, MPI_Comm comm):
+        inputAdapter_(rcp(input,false)),
+        baseInputAdapter_(rcp(dynamic_cast<const base_adapter_t *>(input),
+                              false)),
+        graphModel_(), identifierModel_(), baseModel_(), algorithm_(),
+        params_(), comm_(), env_(), envConst_(), timer_()
+  {
+    RCP<Teuchos::OpaqueWrapper<MPI_Comm> > wrapper = 
+                                           Teuchos::opaqueWrapper(comm);
+    comm_ = rcp<const Comm<int> >(new Teuchos::MpiComm<int>(wrapper));
+    setupProblemEnvironment(params);
+  }
 #endif
+
 
   /*! \brief Constructor where communicator is Teuchos default.
    */
-  Problem(Adapter *, ParameterList *params);
+  Problem(const Adapter *input, ParameterList *params):
+        inputAdapter_(rcp(input,false)), 
+        baseInputAdapter_(rcp(dynamic_cast<const base_adapter_t *>(input),
+                              false)),
+        graphModel_(), identifierModel_(), baseModel_(), algorithm_(),
+        params_(), comm_(), env_(), envConst_(), timer_()
+  {
+    comm_ = DefaultComm<int>::getComm();
+    setupProblemEnvironment(params);
+  }
+
+
+  /*! \brief Constructor where Teuchos communicator is specified
+   */
+  Problem(const Adapter *input, ParameterList *params, 
+          RCP<const Comm<int> > &comm):
+        inputAdapter_(rcp(input,false)),
+        baseInputAdapter_(rcp(dynamic_cast<const base_adapter_t *>(input),
+                              false)),
+        graphModel_(), identifierModel_(), baseModel_(), algorithm_(),
+        params_(), comm_(comm), env_(), envConst_(), timer_()
+  {
+    setupProblemEnvironment(params);
+  }
 
   /*! \brief Destructor
    */
   virtual ~Problem() {};
+
+  /*! \brief Return the communicator used by the problem
+   */
+  RCP<const Comm<int> > getComm() { return comm_; }
 
   /*! \brief Reset the list of parameters
    */
@@ -91,6 +130,9 @@ public:
   /*! \brief Method that creates a solution.
    */
   virtual void solve(bool updateInputData) = 0;
+
+  /*! \brief Return the communicator passed to the problem
+   */
 
   /*! \brief If timer data was collected, print out global data.
    *
@@ -126,8 +168,8 @@ protected:
 
   typedef typename Adapter::base_adapter_t base_adapter_t;
 
-  Adapter* inputAdapter_;
-  base_adapter_t *baseInputAdapter_;
+  RCP<const Adapter> inputAdapter_;
+  RCP<const base_adapter_t> baseInputAdapter_;
 
   RCP<GraphModel<base_adapter_t> > graphModel_;  
   RCP<IdentifierModel<base_adapter_t> > identifierModel_;  
@@ -164,35 +206,6 @@ private:
   void setupProblemEnvironment(ParameterList *pl);
 
 };
-
-#ifdef HAVE_ZOLTAN2_MPI
-
-template <typename Adapter>
-Problem<Adapter>::Problem(Adapter *input, ParameterList *params, MPI_Comm comm):
-        inputAdapter_(input),
-        baseInputAdapter_(dynamic_cast<base_adapter_t *>(input)),
-        graphModel_(), identifierModel_(), baseModel_(), algorithm_(),
-        params_(), comm_(), env_(), envConst_(), timer_()
-{
-  HELLO;
-  RCP<Teuchos::OpaqueWrapper<MPI_Comm> > wrapper = 
-    Teuchos::opaqueWrapper(comm);
-  comm_ = rcp<const Comm<int> >(new Teuchos::MpiComm<int>(wrapper));
-  setupProblemEnvironment(params);
-}
-#endif
-
-template <typename Adapter>
-Problem<Adapter>::Problem( Adapter *input, ParameterList *params):
-        inputAdapter_(input), 
-        baseInputAdapter_(dynamic_cast<base_adapter_t *>(input)),
-        graphModel_(), identifierModel_(), baseModel_(), algorithm_(),
-        params_(), comm_(), env_(), envConst_(), timer_()
-{
-  HELLO;
-  comm_ = DefaultComm<int>::getComm();
-  setupProblemEnvironment(params);
-}
 
 template <typename Adapter>
   void Problem<Adapter>::setupProblemEnvironment(ParameterList *params)

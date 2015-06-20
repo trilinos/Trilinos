@@ -60,7 +60,7 @@ Poisson2dOperator::Poisson2dOperator(int nx, int ny, const Epetra_Comm & comm)
     importMap_(0),
     importer_(0),
     importX_(0),
-    Label_(0) {
+    Label_ ("") {
 
   Label_ = "2D Poisson Operator";
   int numProc = comm.NumProc(); // Get number of processors
@@ -150,13 +150,13 @@ int Poisson2dOperator::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
       y[0] = 4.0*x[0]-x[nx]-x[1];
       y[nx-1] = 4.0*x[nx-1]-x[nx-2]-x[nx+nx-1];
       for (int ix=1; ix< nx-1; ix++)
-	y[ix] = 4.0*x[ix]-x[ix-1]-x[ix+1]-x[ix+nx];
+        y[ix] = 4.0*x[ix]-x[ix-1]-x[ix+1]-x[ix+nx];
     }
     else {
       y[0] = 4.0*x[0]-x[nx]-x[1]-importx1[0];
       y[nx-1] = 4.0*x[nx-1]-x[nx-2]-x[nx+nx-1]-importx1[nx-1];
       for (int ix=1; ix< nx-1; ix++)
-	y[ix] = 4.0*x[ix]-x[ix-1]-x[ix+1]-x[ix+nx]-importx1[ix];
+        y[ix] = 4.0*x[ix]-x[ix-1]-x[ix+1]-x[ix+nx]-importx1[ix];
     }
     if (comm_.MyPID()+1==comm_.NumProc()) {
       int curxy = nx*myny_-1;
@@ -164,8 +164,8 @@ int Poisson2dOperator::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
       curxy -= (nx-1);
       y[curxy] = 4.0*x[curxy]-x[curxy-nx]-x[curxy+1];
       for (int ix=1; ix< nx-1; ix++) {
-	curxy++;
-	y[curxy] = 4.0*x[curxy]-x[curxy-1]-x[curxy+1]-x[curxy-nx];
+        curxy++;
+        y[curxy] = 4.0*x[curxy]-x[curxy-1]-x[curxy+1]-x[curxy-nx];
       }
     }
     else {
@@ -174,8 +174,8 @@ int Poisson2dOperator::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
       curxy -= (nx-1);
       y[curxy] = 4.0*x[curxy]-x[curxy-nx]-x[curxy+1]-importx2[0];
       for (int ix=1; ix< nx-1; ix++) {
-	curxy++;
-	y[curxy] = 4.0*x[curxy]-x[curxy-1]-x[curxy+1]-x[curxy-nx]-importx2[ix];
+        curxy++;
+        y[curxy] = 4.0*x[curxy]-x[curxy-1]-x[curxy+1]-x[curxy-nx]-importx2[ix];
       }
     }
     for (int iy=1; iy< myny_-1; iy++) {
@@ -184,8 +184,8 @@ int Poisson2dOperator::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
       curxy -= (nx-1);
       y[curxy] = 4.0*x[curxy]-x[curxy-nx]-x[curxy+1]-x[curxy+nx];
       for (int ix=1; ix< nx-1; ix++) {
-	curxy++;
-	y[curxy] = 4.0*x[curxy]-x[curxy-1]-x[curxy+1]-x[curxy-nx]-x[curxy+nx];
+        curxy++;
+        y[curxy] = 4.0*x[curxy]-x[curxy-1]-x[curxy+1]-x[curxy-nx]-x[curxy+nx];
       }
     }
   }

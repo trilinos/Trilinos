@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)   
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -8,6 +7,5 @@ TRIBITS_ADD_EXECUTABLE(
   tutorial_01_hello_world
   SOURCES hello_world.cpp
   COMM serial mpi
-  DEPLIBS kokkoscore
   )
 

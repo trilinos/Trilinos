@@ -53,8 +53,7 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsTplDeclareLibraries)
 
-TRIBITS_TPL_DECLARE_LIBRARIES( Eigen
+TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( Eigen
   REQUIRED_HEADERS Eigen/Dense
   )

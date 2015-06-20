@@ -73,8 +73,15 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& 
 {
   InitializeDefaults();
   Graph_ = new Epetra_CrsGraph(CV, rowMap, NumBlockEntriesPerRow);
+
+#ifdef NDEBUG
+  (void) Allocate();
+#else
+  // Don't declare 'err' unless we actually use it (in the assert(),
+  // which gets defined away in a release build).
   int err = Allocate();
   assert( err == 0 );
+#endif // NDEBUG
 }
 
 //==============================================================================
@@ -93,8 +100,15 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& 
 {
   InitializeDefaults();
   Graph_ = new Epetra_CrsGraph(CV, rowMap, NumBlockEntriesPerRow);
+
+#ifdef NDEBUG
+  (void) Allocate();
+#else
+  // Don't declare 'err' unless we actually use it (in the assert(),
+  // which gets defined away in a release build).
   int err = Allocate();
   assert( err == 0 );
+#endif // NDEBUG
 }
 //==============================================================================
 Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& rowMap,
@@ -113,8 +127,15 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& 
 {
   InitializeDefaults();
   Graph_ = new Epetra_CrsGraph(CV, rowMap, colMap, NumBlockEntriesPerRow);
+
+#ifdef NDEBUG
+  (void) Allocate();
+#else
+  // Don't declare 'err' unless we actually use it (in the assert(),
+  // which gets defined away in a release build).
   int err = Allocate();
   assert( err == 0 );
+#endif // NDEBUG
 }
 
 //==============================================================================
@@ -134,9 +155,17 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& 
 {
   InitializeDefaults();
   Graph_ = new Epetra_CrsGraph(CV, rowMap, colMap, NumBlockEntriesPerRow);
+
+#ifdef NDEBUG
+  (void) Allocate();
+#else
+  // Don't declare 'err' unless we actually use it (in the assert(),
+  // which gets defined away in a release build).
   int err = Allocate();
   assert( err == 0 );
+#endif // NDEBUG
 }
+
 //==============================================================================
 Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_CrsGraph & graph)
   : Epetra_DistObject(graph.RowMap(), "Epetra::VbrMatrix"),
@@ -153,8 +182,15 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_CrsGraph &
 {
   constructedWithFilledGraph_ = graph.Filled();
   InitializeDefaults();
+
+#ifdef NDEBUG
+  (void) Allocate();
+#else
+  // Don't declare 'err' unless we actually use it (in the assert(),
+  // which gets defined away in a release build).
   int err = Allocate();
-  assert(err==0);
+  assert( err == 0 );
+#endif // NDEBUG
 }
 
 //==============================================================================
@@ -199,8 +235,14 @@ Epetra_VbrMatrix& Epetra_VbrMatrix::operator=(const Epetra_VbrMatrix& src)
   //delete it now before re-creating it.
   Graph_ = new Epetra_CrsGraph(src.Graph());
 
+#ifdef NDEBUG
+  (void) Allocate();
+#else
+  // Don't declare 'err' unless we actually use it (in the assert(),
+  // which gets defined away in a release build).
   int err = Allocate();
   assert( err == 0 );
+#endif // NDEBUG
 
   int i, j;
 
@@ -2896,7 +2938,8 @@ int Epetra_VbrMatrix::CopyAndPermute(const Epetra_SrcDistObject & Source,
                                      int NumPermuteIDs,
                                      int * PermuteToLIDs,
                                      int *PermuteFromLIDs,
-                                     const Epetra_OffsetIndex * Indexor)
+                                     const Epetra_OffsetIndex * Indexor,
+                                     Epetra_CombineMode CombineMode)
 {
   (void)Indexor;
   const Epetra_VbrMatrix & A = dynamic_cast<const Epetra_VbrMatrix &>(Source);
@@ -2922,11 +2965,22 @@ int Epetra_VbrMatrix::CopyAndPermute(const Epetra_SrcDistObject & Source,
                   BlockIndices, Entries)); // Set pointers
       // Place into target matrix.  Depends on Epetra_DataAccess copy/view and static/dynamic graph.
       if (StaticGraph() || IndicesAreLocal()) {
-  EPETRA_CHK_ERR(BeginReplaceGlobalValues(BlockRow, NumBlockEntries,
+            if (CombineMode==Epetra_AddLocalAlso) {
+              EPETRA_CHK_ERR(BeginSumIntoGlobalValues(BlockRow, NumBlockEntries,
                                                 BlockIndices));
+            }
+            else {
+              EPETRA_CHK_ERR(BeginReplaceGlobalValues(BlockRow, NumBlockEntries,
+                                                BlockIndices));
+            }
       }
       else {
-  EPETRA_CHK_ERR(BeginInsertGlobalValues(BlockRow, NumBlockEntries, BlockIndices));
+            if (CombineMode==Epetra_AddLocalAlso) {
+               EPETRA_CHK_ERR(BeginSumIntoGlobalValues(BlockRow, NumBlockEntries, BlockIndices));
+            }
+            else {
+               EPETRA_CHK_ERR(BeginInsertGlobalValues(BlockRow, NumBlockEntries, BlockIndices));
+            }
       }
       // Insert block entries one-at-a-time
       for (j=0; j<NumBlockEntries; j++) SubmitBlockEntry(Entries[j]->A(),
@@ -2949,10 +3003,20 @@ int Epetra_VbrMatrix::CopyAndPermute(const Epetra_SrcDistObject & Source,
                BlockIndices, Entries)); // Set pointers
       // Place into target matrix.  Depends on Epetra_DataAccess copy/view and static/dynamic graph.
       if (StaticGraph() || IndicesAreLocal()) {
-  EPETRA_CHK_ERR(BeginReplaceGlobalValues(ToBlockRow, NumBlockEntries, BlockIndices));
+            if (CombineMode==Epetra_AddLocalAlso) {
+              EPETRA_CHK_ERR(BeginSumIntoGlobalValues(ToBlockRow, NumBlockEntries, BlockIndices));
+            }
+            else {
+              EPETRA_CHK_ERR(BeginReplaceGlobalValues(ToBlockRow, NumBlockEntries, BlockIndices));
+            }
       }
       else {
-  EPETRA_CHK_ERR(BeginInsertGlobalValues(ToBlockRow, NumBlockEntries, BlockIndices));
+            if (CombineMode==Epetra_AddLocalAlso) {
+               EPETRA_CHK_ERR(BeginSumIntoGlobalValues(ToBlockRow, NumBlockEntries, BlockIndices));
+            }
+            else {
+               EPETRA_CHK_ERR(BeginInsertGlobalValues(ToBlockRow, NumBlockEntries, BlockIndices));
+            }
       }
       // Insert block entries one-at-a-time
       for (j=0; j<NumBlockEntries; j++) SubmitBlockEntry(Entries[j]->A(),

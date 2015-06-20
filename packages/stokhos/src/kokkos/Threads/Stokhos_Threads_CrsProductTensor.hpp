@@ -42,7 +42,7 @@
 #ifndef STOKHOS_THREADS_CRS_PRODUCT_TENSOR_HPP
 #define STOKHOS_THREADS_CRS_PRODUCT_TENSOR_HPP
 
-#include "Kokkos_Threads.hpp"
+#include "Kokkos_Core.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_CrsProductTensor.hpp"

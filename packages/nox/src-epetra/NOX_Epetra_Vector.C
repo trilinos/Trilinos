@@ -265,13 +265,13 @@ NOX::Epetra::Vector::createMultiVector(
 
   double** v = new double*[numVecs+1];
   const Epetra_BlockMap& map = epetraVec->Map();
-  const NOX::Epetra::Vector* noxEpetraVecPtr;
   const Epetra_Vector* vecPtr;
 
   epetraVec->ExtractView(&(v[0]));
   for (int i=0; i<numVecs; i++) {
-    noxEpetraVecPtr = dynamic_cast<const NOX::Epetra::Vector*>(vecs[i]);
-    vecPtr = &(noxEpetraVecPtr->getEpetraVector());
+    const NOX::Epetra::Vector & noxEpetraVecPtr =
+      dynamic_cast<const NOX::Epetra::Vector&>(*vecs[i]);
+    vecPtr = &(noxEpetraVecPtr.getEpetraVector());
     vecPtr->ExtractView(&(v[i+1]));
   }
 

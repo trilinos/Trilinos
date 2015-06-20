@@ -67,8 +67,8 @@
 // Specialization: Residual
 // **********************************************************************
 
-template<typename Traits,typename LO,typename GO>
-panzer::ScatterResidual_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
+template<typename TRAITS,typename LO,typename GO>
+panzer::ScatterResidual_Epetra<panzer::Traits::Residual, TRAITS,LO,GO>::
 ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                        const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & cIndexer,
                        const Teuchos::ParameterList& p,
@@ -110,10 +110,10 @@ ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,G
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO> 
-void panzer::ScatterResidual_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
-postRegistrationSetup(typename Traits::SetupData d, 
-		      PHX::FieldManager<Traits>& fm)
+template<typename TRAITS,typename LO,typename GO> 
+void panzer::ScatterResidual_Epetra<panzer::Traits::Residual, TRAITS,LO,GO>::
+postRegistrationSetup(typename TRAITS::SetupData d, 
+                      PHX::FieldManager<TRAITS>& fm)
 {
   fieldIds_.resize(scatterFields_.size());
   // load required field numbers for fast use
@@ -128,24 +128,24 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO>
-void panzer::ScatterResidual_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
-preEvaluate(typename Traits::PreEvalData d)
+template<typename TRAITS,typename LO,typename GO>
+void panzer::ScatterResidual_Epetra<panzer::Traits::Residual, TRAITS,LO,GO>::
+preEvaluate(typename TRAITS::PreEvalData d)
 {
   // extract linear object container
-  epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject(globalDataKey_));
+  epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.gedc.getDataObject(globalDataKey_));
  
   if(epetraContainer_==Teuchos::null) {
     // extract linear object container
-    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
     epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
   }
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO>
-void panzer::ScatterResidual_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename TRAITS,typename LO,typename GO>
+void panzer::ScatterResidual_Epetra<panzer::Traits::Residual, TRAITS,LO,GO>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
    std::vector<int> LIDs;
  
@@ -185,8 +185,8 @@ evaluateFields(typename Traits::EvalData workset)
 // Specialization: Tangent
 // **********************************************************************
 
-template<typename Traits,typename LO,typename GO>
-panzer::ScatterResidual_Epetra<panzer::Traits::Tangent, Traits,LO,GO>::
+template<typename TRAITS,typename LO,typename GO>
+panzer::ScatterResidual_Epetra<panzer::Traits::Tangent, TRAITS,LO,GO>::
 ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                        const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & cIndexer,
                        const Teuchos::ParameterList& p,
@@ -223,10 +223,10 @@ ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,G
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO> 
-void panzer::ScatterResidual_Epetra<panzer::Traits::Tangent, Traits,LO,GO>::
-postRegistrationSetup(typename Traits::SetupData d, 
-		      PHX::FieldManager<Traits>& fm)
+template<typename TRAITS,typename LO,typename GO> 
+void panzer::ScatterResidual_Epetra<panzer::Traits::Tangent, TRAITS,LO,GO>::
+postRegistrationSetup(typename TRAITS::SetupData d, 
+                      PHX::FieldManager<TRAITS>& fm)
 {
   fieldIds_.resize(scatterFields_.size());
   // load required field numbers for fast use
@@ -241,27 +241,28 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO>
-void panzer::ScatterResidual_Epetra<panzer::Traits::Tangent, Traits,LO,GO>::
-preEvaluate(typename Traits::PreEvalData d)
+template<typename TRAITS,typename LO,typename GO>
+void panzer::ScatterResidual_Epetra<panzer::Traits::Tangent, TRAITS,LO,GO>::
+preEvaluate(typename TRAITS::PreEvalData d)
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
   
   // this is the list of parameters and their names that this scatter has to account for
   std::vector<std::string> activeParameters = 
-    rcp_dynamic_cast<ParameterList_GlobalEvaluationData>(d.getDataObject("PARAMETER_NAMES"))->getActiveParameters();
+    rcp_dynamic_cast<ParameterList_GlobalEvaluationData>(d.gedc.getDataObject("PARAMETER_NAMES"))->getActiveParameters();
 
+  dfdp_vectors_.clear();
   for(std::size_t i=0;i<activeParameters.size();i++) {
-    RCP<Epetra_Vector> vec = rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject(activeParameters[i]),true)->get_f();
+    RCP<Epetra_Vector> vec = rcp_dynamic_cast<EpetraLinearObjContainer>(d.gedc.getDataObject(activeParameters[i]),true)->get_f();
     dfdp_vectors_.push_back(vec);
   }
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO>
-void panzer::ScatterResidual_Epetra<panzer::Traits::Tangent, Traits,LO,GO>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename TRAITS,typename LO,typename GO>
+void panzer::ScatterResidual_Epetra<panzer::Traits::Tangent, TRAITS,LO,GO>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
    std::vector<int> LIDs;
  
@@ -290,12 +291,8 @@ evaluateFields(typename Traits::EvalData workset)
             int offset = elmtOffset[basis];
             int lid = LIDs[offset];
 
+            // scatter the sensitivity vectors
             ScalarT value = (scatterFields_[fieldIndex])(worksetCellIndex,basis);
-            // // first scatter the residual (WE ARE NOT DOING THIS!)
-            // if(r!=Teuchos::null)
-            //   (*r)[lid] += value.val();
-
-            // then scatter the sensitivity vectors
             for(int d=0;d<value.size();d++)
               (*dfdp_vectors_[d])[lid] += value.fastAccessDx(d);
          }
@@ -307,8 +304,8 @@ evaluateFields(typename Traits::EvalData workset)
 // Specialization: Jacobian
 // **********************************************************************
 
-template<typename Traits,typename LO,typename GO>
-panzer::ScatterResidual_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
+template<typename TRAITS,typename LO,typename GO>
+panzer::ScatterResidual_Epetra<panzer::Traits::Jacobian, TRAITS,LO,GO>::
 ScatterResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
                        const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & cIndexer,
                        const Teuchos::ParameterList& p,
@@ -357,10 +354,10 @@ ScatterResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & i
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO> 
-void panzer::ScatterResidual_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
-postRegistrationSetup(typename Traits::SetupData d,
-		      PHX::FieldManager<Traits>& fm)
+template<typename TRAITS,typename LO,typename GO> 
+void panzer::ScatterResidual_Epetra<panzer::Traits::Jacobian, TRAITS,LO,GO>::
+postRegistrationSetup(typename TRAITS::SetupData d,
+                      PHX::FieldManager<TRAITS>& fm)
 {
   // globalIndexer_ = d.globalIndexer_;
 
@@ -377,24 +374,24 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO>
-void panzer::ScatterResidual_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
-preEvaluate(typename Traits::PreEvalData d)
+template<typename TRAITS,typename LO,typename GO>
+void panzer::ScatterResidual_Epetra<panzer::Traits::Jacobian, TRAITS,LO,GO>::
+preEvaluate(typename TRAITS::PreEvalData d)
 {
   // extract linear object container
-  epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject(globalDataKey_));
+  epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.gedc.getDataObject(globalDataKey_));
  
   if(epetraContainer_==Teuchos::null) {
     // extract linear object container
-    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
     epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
   }
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO>
-void panzer::ScatterResidual_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename TRAITS,typename LO,typename GO>
+void panzer::ScatterResidual_Epetra<panzer::Traits::Jacobian, TRAITS,LO,GO>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
    std::vector<int> cLIDs, rLIDs;
    std::vector<double> jacRow;
@@ -430,13 +427,13 @@ evaluateFields(typename Traits::EvalData workset)
 
          // loop over the basis functions (currently they are nodes)
          for(std::size_t rowBasisNum = 0; rowBasisNum < elmtOffset.size(); rowBasisNum++) {
-            const ScalarT & scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,rowBasisNum);
+            const ScalarT scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,rowBasisNum);
             int rowOffset = elmtOffset[rowBasisNum];
             int row = rLIDs[rowOffset];
     
             // Sum residual
             if(r!=Teuchos::null)
-    	       r->SumIntoMyValue(row,0,scatterField.val());
+                   r->SumIntoMyValue(row,0,scatterField.val());
             
             // Sum Jacobian
             if(useDiscreteAdjoint_) {
@@ -453,9 +450,10 @@ evaluateFields(typename Traits::EvalData workset)
             }
             else {
                int err = Jac->SumIntoMyValues(row,
-					   scatterField.size(),
-					   scatterField.dx(),
-					   panzer::ptrFromStlVector(cLIDs));
+                                              cLIDs.size(),
+                                              // scatterField.size(),
+                                              scatterField.dx(),
+                                              panzer::ptrFromStlVector(cLIDs));
                TEUCHOS_ASSERT_EQUALITY(err,0);
             }
          } // end rowBasisNum

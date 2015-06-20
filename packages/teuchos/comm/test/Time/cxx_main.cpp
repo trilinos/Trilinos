@@ -91,12 +91,12 @@ int main(int argc, char* argv[])
   int procRank = 0;
   int FailedTests = 1; // This will be set to 0, if the std::exception is caught!
 
-#ifdef HAVE_MPI 
+#ifdef HAVE_MPI
   /* initialize MPI if we are running in parallel */
   MPI_Init(&argc, &argv);
   MPI_Comm_rank( MPI_COMM_WORLD, &procRank );
-#endif      
-  
+#endif
+
   // Check for verbose flag.
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
 
@@ -124,7 +124,7 @@ int main(int argc, char* argv[])
       yetOneMoreFunc ();
     }
 
-    /* Time a function that will be called only on the root proc. This 
+    /* Time a function that will be called only on the root proc. This
      * checks that the TimeMonitor will work properly when different
      * processors have different sets of timers. */
     if (procRank == 0) {
@@ -181,7 +181,7 @@ double sqrtFunc()
 
   double sum = 0.0;
 
-  for (int i=0; i<10000; i++) 
+  for (int i=0; i<10000; i++)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(ScalarTraits<double>::squareroot(as<double>(i)) > 1000.0, std::runtime_error,
       "throw an std::exception");
@@ -230,7 +230,7 @@ double localFunc()
 
   double sum = 0.0;
 
-  for (int i=0; i<10000; i++) 
+  for (int i=0; i<10000; i++)
   {
     sum += i;
   }
@@ -247,7 +247,7 @@ double anotherFunc()
 
   double sum = 0.0;
 
-  for (int i=0; i<10000; i++) 
+  for (int i=0; i<10000; i++)
   {
     sum += i*i;
   }
@@ -264,7 +264,7 @@ double yetAnotherFunc()
 
   double sum = 0.0;
 
-  for (int i=0; i<10000; i++) 
+  for (int i=0; i<10000; i++)
   {
     sum += i*i*i;
   }
@@ -281,7 +281,7 @@ double yetOneMoreFunc()
 
   double sum = 0.0;
 
-  for (int i=0; i<10000; i++) 
+  for (int i=0; i<10000; i++)
   {
     sum += i+1;
   }

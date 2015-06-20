@@ -1,0 +1,29 @@
+
+\cbb{smoother: pre or post}{string}{"both"}{Pre- and post-smoother combination. Possible values: "pre" (only pre-smoother), "post" (only post-smoother), "both" (both pre-and post-smoothers), "none" (no smoothing).}
+          
+\cbb{smoother: type}{string}{"RELAXATION"}{Smoother type. Possible values: see Table~\ref{tab:smoothers}.}
+          
+\cbb{smoother: pre type}{string}{"RELAXATION"}{Pre-smoother type. Possible values: see Table~\ref{tab:smoothers}.}
+          
+\cbb{smoother: post type}{string}{"RELAXATION"}{Post-smoother type. Possible values: see Table~\ref{tab:smoothers}.}
+          
+\cba{smoother: params}{\parameterlist}{Smoother parameters. For standard smoothers, \muelu passes them directly to the appropriate package library.}
+          
+\cba{smoother: pre params}{\parameterlist}{Pre-smoother parameters. For standard smoothers, \muelu passes them directly to the appropriate package library.}
+          
+\cba{smoother: post params}{\parameterlist}{Post-smoother parameters. For standard smoothers, \muelu passes them directly to the appropriate package library.}
+          
+\cbb{smoother: overlap}{int}{0}{Smoother subdomain overlap.}
+          
+\cbb{smoother: pre overlap}{int}{0}{Pre-smoother subdomain overlap.}
+          
+\cbb{smoother: post overlap}{int}{0}{Post-smoother subdomain overlap.}
+          
+\cbb{coarse: max size}{int}{2000}{Maximum dimension of a coarse grid. \muelu will stop coarsening once it is achieved.}
+          
+\cbb{coarse: type}{string}{"SuperLU"}{Coarse solver. Possible values: see Table~\ref{tab:coarse_solvers}.}
+          
+\cba{coarse: params}{\parameterlist}{Coarse solver parameters. \muelu passes them directly to the appropriate package library.}
+          
+\cbb{coarse: overlap}{int}{0}{Coarse solver subdomain overlap.}
+          

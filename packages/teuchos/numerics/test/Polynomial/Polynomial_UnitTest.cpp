@@ -76,7 +76,7 @@ TEUCHOS_UNIT_TEST( Teuchos_Polynomial, coeffs ) {
 
 TEUCHOS_UNIT_TEST( Teuchos_Polynomial, coeffsPtr ) {
   unsigned int degree = 10;
-  Polynomial<double> P(degree);  
+  Polynomial<double> P(degree);
   for (unsigned int d=0 ; d <= degree ; ++d) {
     RCP<double> coeffPtr = rcp(new double(d*1.0));
     P.setCoefficientPtr(d,coeffPtr);
@@ -99,7 +99,7 @@ TEUCHOS_UNIT_TEST( Teuchos_Polynomial, RCPcoeffs ) {
   RCP<double> coeff = rcp(new double);
   coeff = P.getCoefficient(4);
   TEST_EQUALITY_CONST( *coeff, 4.0 );
-  
+
 }
 
 TEUCHOS_UNIT_TEST( Teuchos_Polynomial, evaluate ) {

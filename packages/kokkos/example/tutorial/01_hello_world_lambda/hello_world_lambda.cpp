@@ -1,15 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//                             Kokkos
-//         Manycore Performance-Portable Multidimensional Arrays
-//
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -47,17 +45,65 @@
 #include <cstdio>
 #include <typeinfo>
 
-int main() {
-  // initialize DefaultDeviceType (and potentially its host_mirror_device_type)
-  Kokkos::initialize();
-  printf("Hello World running on %s\n",typeid(Kokkos::Impl::DefaultDeviceType).name());
+//
+// "Hello world" parallel_for example:
+//   1. Start up Kokkos
+//   2. Execute a parallel for loop in the default execution space,
+//      using a C++11 lambda to define the loop body
+//   3. Shut down Kokkos
+//
+// This example only builds if C++11 is enabled.  Compare this example
+// to 01_hello_world, which uses functors (explicitly defined classes)
+// to define the loop body of the parallel_for.  Both functors and
+// lambdas have their places.
+//
 
-  // run lambda with 15 iterations in parallel on DefaultDeviceType
-  Kokkos::parallel_for(15, [=] (int i) {
-    printf("HelloWorld %i\n",i);
-  });
-  
-  // finalize DefaultDeviceType (and potentially its host_mirror_device_type)
-  Kokkos::finalize();
+int main (int argc, char* argv[]) {
+  // You must call initialize() before you may call Kokkos.
+  //
+  // With no arguments, this initializes the default execution space
+  // (and potentially its host execution space) with default
+  // parameters.  You may also pass in argc and argv, analogously to
+  // MPI_Init().  It reads and removes command-line arguments that
+  // start with "--kokkos-".
+  Kokkos::initialize (argc, argv);
+
+  // Print the name of Kokkos' default execution space.  We're using
+  // typeid here, so the name might get a bit mangled by the linker,
+  // but you should still be able to figure out what it is.
+  printf ("Hello World on Kokkos execution space %s\n",
+          typeid (Kokkos::DefaultExecutionSpace).name ());
+
+  // Run lambda on the default Kokkos execution space in parallel,
+  // with a parallel for loop count of 15.  The lambda's argument is
+  // an integer which is the parallel for's loop index.  As you learn
+  // about different kinds of parallelism, you will find out that
+  // there are other valid argument types as well.
+  //
+  // For a single level of parallelism, we prefer that you use the
+  // KOKKOS_LAMBDA macro.  If CUDA is disabled, this just turns into
+  // [=].  That captures variables from the surrounding scope by
+  // value.  Do NOT capture them by reference!  If CUDA is enabled,
+  // this macro may have a special definition that makes the lambda
+  // work correctly with CUDA.  Compare to the KOKKOS_INLINE_FUNCTION
+  // macro, which has a special meaning if CUDA is enabled.
+  //
+  // The following parallel_for would look like this if we were using
+  // OpenMP by itself, instead of Kokkos:
+  //
+  // #pragma omp parallel for
+  // for (int i = 0; i < 15; ++i) {
+  //   printf ("Hello from i = %i\n", i);
+  // }
+  //
+  // You may notice that the printed numbers do not print out in
+  // order.  Parallel for loops may execute in any order.
+  Kokkos::parallel_for (15, KOKKOS_LAMBDA (const int i) {
+      // printf works in a CUDA parallel kernel; std::ostream does not.
+      printf ("Hello from i = %i\n", i);
+    });
+
+  // You must call finalize() after you are done using Kokkos.
+  Kokkos::finalize ();
 }
 

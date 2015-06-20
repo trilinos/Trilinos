@@ -1,5 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   simple_local_HSFC_order

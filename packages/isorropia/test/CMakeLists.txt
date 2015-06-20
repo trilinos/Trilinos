@@ -1,4 +1,3 @@
-INCLUDE(AddSubdirectories)
 
 ADD_SUBDIRECTORIES(
   geometric

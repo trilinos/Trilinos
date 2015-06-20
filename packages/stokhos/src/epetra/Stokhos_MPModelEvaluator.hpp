@@ -94,6 +94,7 @@ namespace Stokhos {
 
     //! Return initial solution
     Teuchos::RCP<const Epetra_Vector> get_x_init() const;
+    Teuchos::RCP<const Epetra_Vector> get_x_dot_init() const;
 
     //! Return initial parameters
     Teuchos::RCP<const Epetra_Vector> get_p_init(int l) const;
@@ -105,16 +106,16 @@ namespace Stokhos {
     Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner> create_WPrec() const;
 
     //! Create MP operator representing dg/dxdot
-    Teuchos::RefCountPtr<Epetra_Operator> create_DgDx_dot_op(int j) const;
+    Teuchos::RCP<Epetra_Operator> create_DgDx_dot_op(int j) const;
 
     //! Create MP operator representing dg/dx
-    Teuchos::RefCountPtr<Epetra_Operator> create_DgDx_op(int j) const;
+    Teuchos::RCP<Epetra_Operator> create_DgDx_op(int j) const;
 
     //! Create MP operator representing dg/dp
-    Teuchos::RefCountPtr<Epetra_Operator> create_DgDp_op(int j, int i) const;
+    Teuchos::RCP<Epetra_Operator> create_DgDp_op(int j, int i) const;
 
     //! Create MP operator representing df/dp
-    Teuchos::RefCountPtr<Epetra_Operator> create_DfDp_op(int i) const;
+    Teuchos::RCP<Epetra_Operator> create_DfDp_op(int i) const;
 
     //! Create InArgs
     InArgs createInArgs() const;
@@ -129,9 +130,11 @@ namespace Stokhos {
 
     //! Set initial multi-point solution
     void set_x_mp_init(const Stokhos::ProductEpetraVector& x_mp_in);
+    void set_x_dot_mp_init(const Stokhos::ProductEpetraVector& x_dot_mp_in);
 
     //! Return initial SG x
     Teuchos::RCP<const Stokhos::ProductEpetraVector> get_x_mp_init() const;
+    Teuchos::RCP<const Stokhos::ProductEpetraVector> get_x_dot_mp_init() const;
 
     //! Set initial multi-point parameter
     void set_p_mp_init(int i, const Stokhos::ProductEpetraVector& p_mp_in);
@@ -259,6 +262,7 @@ namespace Stokhos {
 
     //! MP initial x
     Teuchos::RCP<Stokhos::ProductEpetraVector> mp_x_init;
+    Teuchos::RCP<Stokhos::ProductEpetraVector> mp_x_dot_init;
 
     //! MP initial p
     Teuchos::Array< Teuchos::RCP<ProductEpetraVector> > mp_p_init;

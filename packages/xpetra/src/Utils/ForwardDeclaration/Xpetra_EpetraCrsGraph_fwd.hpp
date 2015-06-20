@@ -47,7 +47,8 @@
 #define XPETRA_EPETRACRSGRAPH_FWD_HPP
 
 namespace Xpetra {
-  class EpetraCrsGraph;
+  template<class GO> class EpetraCrsGraphT;
+  typedef EpetraCrsGraphT<int> EpetraCrsGraph;
 }
 
 #ifndef XPETRA_EPETRACRSGRAPH_SHORT

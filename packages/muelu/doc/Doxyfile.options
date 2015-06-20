@@ -19,6 +19,7 @@ TAGFILES += \
 USE_MATHJAX            = YES
 # this path *must* be relative to muelu/doc/html
 #MATHJAX_RELPATH        = ../../../../../../../Software/mathjax-MathJax-f5cd294
+MATHJAX_RELPATH        = https://cdn.mathjax.org/mathjax/latest
 #
 
 #
@@ -75,7 +76,7 @@ TAB_SIZE               = 2
 ENABLED_SECTIONS       =
 GENERATE_TODOLIST      = YES
 GENERATE_TESTLIST      = YES
-QUIET                  = NO
+QUIET                  = YES
 WARNINGS               = YES
 WARN_IF_UNDOCUMENTED   = YES
 WARN_FORMAT            = "$file:$line: $text"

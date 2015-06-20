@@ -60,7 +60,7 @@ namespace Tpetra {
     is that matrix is lower triangular or upper triangular.
 */
 
-template <class Node=KokkosClassic::DefaultNode::DefaultNodeType>
+template <class Node = ::Tpetra::Map<int, int>::node_type >
 class LevelScheduler :  public Isorropia::LevelScheduler, public Isorropia::Tpetra::Operator<Node> {
 
 public:
@@ -72,9 +72,9 @@ public:
     \param[in] compute_now  if @c true, the scheduling is computed in the constructor, otherwise call Isorropia::Tpetra::LevelScheduler::schedule when you want to compute the scheduling, defaults to @c false
     */
 
-  LevelScheduler(Teuchos::RCP<const ::Tpetra::CrsGraph<int,int,Node> > input_graph, 
+  LevelScheduler(Teuchos::RCP<const ::Tpetra::CrsGraph<int,int,Node> > input_graph,
                  const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
-	         bool compute_now=true);
+                 bool compute_now=true);
 
   /** Destructor */
   ~LevelScheduler(); // {} ;

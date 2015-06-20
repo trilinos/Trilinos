@@ -61,7 +61,9 @@ namespace MueLu {
 
    Pure virtual base class for MueLu representations of graphs.
 */
-  template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class LocalOrdinal = int,
+            class GlobalOrdinal = LocalOrdinal,
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class GraphBase
     : public BaseClass {
 #undef MUELU_GRAPHBASE_SHORT

@@ -53,17 +53,6 @@
 #endif
 
 
-#ifdef THYRA_INITIALIZE_VECS_MULTIVECS_WITH_NANS
-#include "RTOpPack_TOpAssignScalar.hpp"
-// 2008/02/13: rabartl: This include represents a bad dependency to a concrete
-// implementation of an RTOp. However, this is better than a dependency on
-// Thyra_[Multi]VectorStdOps.hpp!  I don't know of a better alternative at
-// this point.
-// 2010/01/13: rabartl: I could just write a simple RTOp implementation to
-// assgin to null to remove this dependency.
-#endif // THYRA_INITIALIZE_VECS_MULTIVECS_WITH_NANS
-
-
 namespace Thyra {
 
 
@@ -133,9 +122,7 @@ Thyra::createMember(
   RCP<VectorBase<Scalar> > v = vs->createMember();
 #ifdef THYRA_INITIALIZE_VECS_MULTIVECS_WITH_NANS
   if (vs->dim()) {
-    applyOp<Scalar>(
-      RTOpPack::TOpAssignScalar<Scalar>(ScalarTraits<Scalar>::nan()),
-      Teuchos::null, Teuchos::tuple(v.ptr()), Teuchos::null );
+    v->assign(ScalarTraits<Scalar>::nan());
   }
 #endif  
   Teuchos::set_extra_data( makeHaveOwnership(vs), "VectorSpaceBase",
@@ -166,9 +153,7 @@ Thyra::createMembers(
     mv = vs->createMembers(numMembers);
 #ifdef THYRA_INITIALIZE_VECS_MULTIVECS_WITH_NANS
   if (vs->dim()) {
-    applyOp<Scalar>(
-      RTOpPack::TOpAssignScalar<Scalar>(ScalarTraits<Scalar>::nan()),
-      Teuchos::null, Teuchos::tuple(mv.ptr()), Teuchos::null );
+    mv->assign(ScalarTraits<Scalar>::nan());
   }
 #endif  
   Teuchos::set_extra_data(makeHaveOwnership(vs), "VectorSpaceBase",

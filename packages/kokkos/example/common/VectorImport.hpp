@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -50,7 +50,7 @@
 #include <sstream>
 #include <stdexcept>
 
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <WrapMPI.hpp>
 
@@ -58,7 +58,7 @@ namespace Kokkos {
 namespace Example {
 
 template< class CommMessageType , class CommIdentType , class VectorType >
-class VectorImport ;
+struct VectorImport ;
 
 } // namespace Example
 } // namespace Kokkos
@@ -136,7 +136,7 @@ public:
   const unsigned         count_receive ;
 
   struct Pack {
-    typedef typename VectorType::device_type device_type ;
+    typedef typename VectorType::execution_space execution_space ;
     const CommIdentType  index ;
     const VectorType     source ;
     const VectorType     buffer ;
@@ -153,7 +153,7 @@ public:
       , buffer( arg_buffer )
     {
       Kokkos::parallel_for( index.dimension_0() , *this );
-      device_type::fence();
+      execution_space::fence();
     }
   };
 
@@ -193,7 +193,7 @@ public:
 
     // Subvector for receives
     const std::pair<unsigned,unsigned> recv_range( count_owned , count_owned + count_receive );
-    const VectorType recv_vector = Kokkos::subview< VectorType >( v , recv_range );
+    const VectorType recv_vector = Kokkos::subview( v , recv_range );
 
     std::vector< MPI_Request > recv_request( recv_msg.dimension_0() , MPI_REQUEST_NULL );
 

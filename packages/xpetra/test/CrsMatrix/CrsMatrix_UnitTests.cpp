@@ -428,7 +428,7 @@ namespace {
       if (rangeMap->getNodeNumElements () > static_cast<size_t> (1)) {
         bool allOnes = true;
         for (size_type k = 1; k < static_cast<size_type>(rangeMap->getNodeNumElements()); ++k) {
-          if (! outData[k] == 1.0) {
+          if (!(outData[k] == 1.0)) {
             allOnes = false;
           }
         }
@@ -447,7 +447,7 @@ namespace {
       if (rangeMap->getNodeNumElements () > static_cast<size_t> (1)) {
         bool allOnes = true;
         for (size_type k = 1; k < static_cast<size_type>(rangeMap->getNodeNumElements()); ++k) {
-          if (! outDataNonConst[k] == 1.0) {
+          if (!(outDataNonConst[k] == 1.0)) {
             allOnes = false;
           }
         }

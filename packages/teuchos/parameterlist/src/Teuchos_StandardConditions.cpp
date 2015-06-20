@@ -54,7 +54,7 @@ ParameterCondition::ParameterCondition(RCP<const ParameterEntry> parameter):
     std::endl << std::endl);
 }
 
-Dependency::ConstParameterEntryList 
+Dependency::ConstParameterEntryList
 ParameterCondition::getAllParameters() const
 {
   Dependency::ConstParameterEntryList toReturn;
@@ -102,7 +102,7 @@ bool BoolLogicCondition::containsAtLeasteOneParameter() const{
   return false;
 }
 
-Dependency::ConstParameterEntryList 
+Dependency::ConstParameterEntryList
 BoolLogicCondition::getAllParameters() const{
   Dependency::ConstParameterEntryList toReturn;
   Dependency::ConstParameterEntryList currentList;
@@ -191,7 +191,7 @@ RCP<NotCondition> DummyObjectGetter<NotCondition>::getDummyObject(){
 StringCondition::StringCondition(
   RCP<const ParameterEntry> parameter,
   std::string value):
-  ParameterCondition(parameter), 
+  ParameterCondition(parameter),
   values_(ValueList(1,value))
 {
   checkParameterType();
@@ -200,7 +200,7 @@ StringCondition::StringCondition(
 StringCondition::StringCondition(
   RCP<const ParameterEntry> parameter,
   ValueList values):
-  ParameterCondition(parameter), 
+  ParameterCondition(parameter),
   values_(values)
 {
   checkParameterType();
@@ -210,16 +210,16 @@ void StringCondition::checkParameterType(){
   TEUCHOS_TEST_FOR_EXCEPTION(!getParameter()->isType<std::string>(),
     InvalidConditionException,
     "The parameter of a String Condition "
-    "must be of type string." << std::endl << 
+    "must be of type string." << std::endl <<
     "Expected type: " << TypeNameTraits<std::string>::name() << std::endl <<
-    "Actual type: " << getParameter()->getAny().typeName() << 
+    "Actual type: " << getParameter()->getAny().typeName() <<
     std::endl << std::endl);
 }
-  
+
 
 bool StringCondition::evaluateParameter() const{
   return  find(
-    values_.begin(), values_.end(), 
+    values_.begin(), values_.end(),
     getValue<std::string>(*getParameter())) != values_.end();
 }
 

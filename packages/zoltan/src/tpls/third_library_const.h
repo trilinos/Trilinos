@@ -258,8 +258,8 @@ struct Zoltan_TPL_Order_Struct {
   ZOLTAN_ID_PTR gidrank;
   indextype *iperm;
   indextype  start_index;
-  char method[MAX_PARAM_STRING_LEN+1]; /* Ordering method used */
-  char order_type[MAX_PARAM_STRING_LEN+1]; /* Ordering method used */
+  char method[MAX_PARAM_STRING_LEN]; /* Ordering method used */
+  char order_type[MAX_PARAM_STRING_LEN]; /* Ordering method used */
 
   /* Elimination Tree */
   indextype nbr_blocks;               /* Out: number of ordering blocks */

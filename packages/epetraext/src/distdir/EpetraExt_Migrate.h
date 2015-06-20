@@ -47,7 +47,7 @@
 #include <vector>
 #include <map>
 
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 
 #include <EpetraExt_PackTraits.h>
 
@@ -66,7 +66,7 @@ class Migrate
 {
  public:
 
-  typedef typename std::map< KT, Teuchos::RefCountPtr<DT> >         DataMap;
+  typedef typename std::map< KT, Teuchos::RCP<DT> >         DataMap;
   typedef typename DataMap::iterator        DataMapIter;
   typedef typename DataMap::const_iterator  DataMapCIter;
 
@@ -105,16 +105,16 @@ class Migrate
   void operator()( std::vector<int> const & pList,
                    std::vector<KT> const & iKeys,
                    std::vector<KT> & oKeys );
-  
+
   void operator()( std::vector<int> const & pList,
-                   std::map< KT, Teuchos::RefCountPtr<DT> > const & iData,
-                   std::multimap< KT, Teuchos::RefCountPtr<DT> > & oData );
-  
+                   std::map< KT, Teuchos::RCP<DT> > const & iData,
+                   std::multimap< KT, Teuchos::RCP<DT> > & oData );
+
   void rvs( std::vector<int> const & pList,
             std::vector<KT> const & keys,
-            std::map< KT, Teuchos::RefCountPtr<DT> > & iData,
-            std::map< KT, Teuchos::RefCountPtr<DT> > & oData );
-  
+            std::map< KT, Teuchos::RCP<DT> > & iData,
+            std::map< KT, Teuchos::RCP<DT> > & oData );
+
  protected:
 
   Epetra_Comm & comm_;
@@ -131,7 +131,7 @@ class Migrate1
 {
  public:
 
-  typedef typename Teuchos::RefCountPtr<DT> DataPtr;
+  typedef typename Teuchos::RCP<DT> DataPtr;
   typedef typename std::vector<DataPtr>   DataContainer;
   typedef typename DataContainer::iterator        DataContainerIter;
   typedef typename DataContainer::const_iterator  DataContainerCIter;
@@ -163,13 +163,13 @@ class Migrate1
  public:
 
   void operator()( std::vector<int> const & pList,
-                   std::vector< Teuchos::RefCountPtr<DT> > const & iData,
-                   std::vector< Teuchos::RefCountPtr<DT> > & oData );
-  
+                   std::vector< Teuchos::RCP<DT> > const & iData,
+                   std::vector< Teuchos::RCP<DT> > & oData );
+
   void rvs( std::vector<int> const & pList,
-            std::vector< Teuchos::RefCountPtr<DT> > const & iData,
-            std::vector< Teuchos::RefCountPtr<DT> > & oData );
-  
+            std::vector< Teuchos::RCP<DT> > const & iData,
+            std::vector< Teuchos::RCP<DT> > & oData );
+
  protected:
 
   Epetra_Comm & comm_;
@@ -200,7 +200,7 @@ operator()( std::vector<int> const & pList,
     max_size = std::max( max_size, static_cast<int>(PackTraits<KT>::size( *citKL )) );
 
   int importCnt;
-  distributor.CreateFromSends( exportCnt, &(pList[0]), true, importCnt ); 
+  distributor.CreateFromSends( exportCnt, &(pList[0]), true, importCnt );
 
   int max_all;
   comm_.MaxAll( &max_size, &max_all, 1 );
@@ -235,13 +235,13 @@ operator()( std::vector<int> const & pList,
   oKeys = iKeys;
 #endif
 }
-  
+
 template <typename KT, typename DT>
 void
 Migrate<KT,DT>::
 operator()( std::vector<int> const & pList,
-            std::map< KT, Teuchos::RefCountPtr<DT> > const & iData,
-            std::multimap< KT, Teuchos::RefCountPtr<DT> > & oData )
+            std::map< KT, Teuchos::RCP<DT> > const & iData,
+            std::multimap< KT, Teuchos::RCP<DT> > & oData )
 {
 #ifdef EPETRA_MPI
   Epetra_MpiDistributor distributor( dynamic_cast<Epetra_MpiComm&>(comm_) );
@@ -256,7 +256,7 @@ operator()( std::vector<int> const & pList,
                + static_cast<int>(PackTraits<DT>::size( *(citDM->second) )) );
 
   int importCnt;
-  distributor.CreateFromSends( exportCnt, &(pList[0]), true, importCnt ); 
+  distributor.CreateFromSends( exportCnt, &(pList[0]), true, importCnt );
 
   int max_all;
   comm_.MaxAll( &max_size, &max_all, 1 );
@@ -287,7 +287,7 @@ operator()( std::vector<int> const & pList,
   {
     pos = max_all * i;
     PackTraits<KT>::unpack( key, &(imports_[0]), (max_all*importCnt), pos );
-    Teuchos::RefCountPtr<DT> data = rcp( new DT );
+    Teuchos::RCP<DT> data = rcp( new DT );
     PackTraits<DT>::unpack( *data, &(imports_[0]), (max_all*importCnt), pos );
     oData.insert( DataPair( key, data ) );
   }
@@ -305,8 +305,8 @@ void
 Migrate<KT,DT>::
 rvs( std::vector<int> const & pList,
      std::vector<KT> const & keys,
-     std::map< KT, Teuchos::RefCountPtr<DT> > & iData,
-     std::map< KT, Teuchos::RefCountPtr<DT> > & oData )
+     std::map< KT, Teuchos::RCP<DT> > & iData,
+     std::map< KT, Teuchos::RCP<DT> > & oData )
 {
 #ifdef EPETRA_MPI
   Epetra_MpiDistributor distributor( dynamic_cast<Epetra_MpiComm&>(comm_) );
@@ -357,7 +357,7 @@ rvs( std::vector<int> const & pList,
   {
     pos = max_all * i;
     PackTraits<KT>::unpack( key, &(imports_[0]), (max_all*importCnt), pos );
-    Teuchos::RefCountPtr<DT> data = rcp( new DT );
+    Teuchos::RCP<DT> data = rcp( new DT );
     PackTraits<DT>::unpack( *data, &(imports_[0]), (max_all*importCnt), pos );
     oData[key] = data;
   }
@@ -370,8 +370,8 @@ template <typename DT>
 void
 Migrate1<DT>::
 operator()( std::vector<int> const & pList,
-            std::vector< Teuchos::RefCountPtr<DT> > const & iData,
-            std::vector< Teuchos::RefCountPtr<DT> > & oData )
+            std::vector< Teuchos::RCP<DT> > const & iData,
+            std::vector< Teuchos::RCP<DT> > & oData )
 {
 #ifdef EPETRA_MPI
   Epetra_MpiDistributor distributor( dynamic_cast<Epetra_MpiComm&>(comm_) );
@@ -385,7 +385,7 @@ operator()( std::vector<int> const & pList,
     max_size = std::max( max_size, static_cast<int>(PackTraits<DT>::size( **citDC )) );
 
   int importCnt;
-  distributor.CreateFromSends( exportCnt, &(pList[0]), true, importCnt ); 
+  distributor.CreateFromSends( exportCnt, &(pList[0]), true, importCnt );
 
   int max_all;
   comm_.MaxAll( &max_size, &max_all, 1 );
@@ -413,7 +413,7 @@ operator()( std::vector<int> const & pList,
   for( int i = 0; i < importCnt; ++i )
   {
     pos = max_all * i;
-    Teuchos::RefCountPtr<DT> data = rcp( new DT );
+    Teuchos::RCP<DT> data = rcp( new DT );
     PackTraits<DT>::unpack( *data, &(imports_[0]), (max_all*importCnt), pos );
     oData.push_back( data );
   }
@@ -427,8 +427,8 @@ template <typename DT>
 void
 Migrate1<DT>::
 rvs( std::vector<int> const & pList,
-     std::vector< Teuchos::RefCountPtr<DT> > const & iData,
-     std::vector< Teuchos::RefCountPtr<DT> > & oData )
+     std::vector< Teuchos::RCP<DT> > const & iData,
+     std::vector< Teuchos::RCP<DT> > & oData )
 {
 #ifdef EPETRA_MPI
   Epetra_MpiDistributor distributor( dynamic_cast<Epetra_MpiComm&>(comm_) );
@@ -475,7 +475,7 @@ rvs( std::vector<int> const & pList,
   for( int i = 0; i < importCnt; ++i )
   {
     pos = max_all * i;
-    Teuchos::RefCountPtr<DT> data = rcp( new DT );
+    Teuchos::RCP<DT> data = rcp( new DT );
     PackTraits<DT>::unpack( *data, &(imports_[0]), (max_all*importCnt), pos );
     oData.push_back( data );
   }
@@ -486,4 +486,4 @@ rvs( std::vector<int> const & pList,
 
 } //namespace EpetraExt
 
-#endif 
+#endif

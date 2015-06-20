@@ -12,7 +12,7 @@ for i in SC-LO-GO-NO-LMO
 
   for className in `cat $classList | grep -v ^\# | cut -d "-" -f1 | sed 's/ //'`
     do
-    if ! grep -q -x $className $classListDir/EI-Exceptions.classList
+    if ! grep -q -x $className EI-Exceptions.classList
         then
 
         condition=$(cat $classList | grep "^$className -" | cut -d "-" -f2-)
@@ -26,6 +26,13 @@ for i in SC-LO-GO-NO-LMO
             conditionOpen2=""
             conditionClose=""
         fi
+
+        cat ${i}-Serial.tmpl \
+            | sed "s/\$TMPL_CLASS/$className/g" \
+            | sed "s/\$TMPL_CONDITION_OPEN1/$conditionOpen1/g" \
+            | sed "s/\$TMPL_CONDITION_OPEN2/$conditionOpen2/g" \
+            | sed "s/\$TMPL_CONDITION_CLOSE/$conditionClose/g" \
+            > MueLu_${className}_MP_Vector_Serial.cpp
 
         cat ${i}-Threads.tmpl \
             | sed "s/\$TMPL_CLASS/$className/g" \
@@ -46,7 +53,7 @@ for i in SC-LO-GO-NO-LMO
             | sed "s/\$TMPL_CONDITION_OPEN1/$conditionOpen1/g" \
             | sed "s/\$TMPL_CONDITION_OPEN2/$conditionOpen2/g" \
             | sed "s/\$TMPL_CONDITION_CLOSE/$conditionClose/g" \
-            > MueLu_${className}_MP_Vector_Cuda.cu
+            > MueLu_${className}_MP_Vector_Cuda.cpp
 
     fi
 

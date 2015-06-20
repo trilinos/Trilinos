@@ -1,0 +1,42 @@
+<ParameterList name="MueLu">
+
+  <!-- Factory collection -->
+  <ParameterList name="Factories">
+
+    <!-- Note that ParameterLists must be defined prior to being used -->
+    <ParameterList name="BackwardGaussSeidel">
+      <Parameter name="factory"                        type="string" value="TrilinosSmoother"/>
+      <Parameter name="type"                                type="string"  value="RELAXATION"/>
+
+      <ParameterList name="ParameterList">
+        <Parameter name="relaxation: type"                  type="string"  value="Gauss-Seidel"/>
+        <Parameter name="relaxation: backward mode"         type="bool"    value="true"/>
+        <Parameter name="relaxation: sweeps"                type="int"     value="50"/>
+        <Parameter name="relaxation: damping factor"        type="double"  value="0.6"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!-- Definition of the multigrid preconditioner -->
+  <ParameterList name="Hierarchy">
+
+    <Parameter name="max levels"                            type="int"      value="4"/>
+    <Parameter name="coarse: max size"                      type="int"      value="10"/>
+    <Parameter name="verbosity"                             type="string"   value="Low"/>
+
+    <ParameterList name="Finest">
+      <Parameter name="PreSmoother"           type="string" value="BackwardGaussSeidel"/>
+      <Parameter name="PostSmoother"          type="string" value="NoFactory"/>
+      <Parameter name="CoarseSolver"          type="string"  value="DirectSolver"/>
+      
+    </ParameterList>
+    
+    <ParameterList name="Remaining">
+      <Parameter name="startLevel"            type="int" value="1"/>
+      <Parameter name="PreSmoother"           type="string" value="NoFactory"/>
+      <Parameter name="PostSmoother"          type="string" value="BackwardGaussSeidel"/>
+      <Parameter name="CoarseSolver"          type="string"  value="DirectSolver"/>
+    </ParameterList>    
+
+  </ParameterList>
+</ParameterList>

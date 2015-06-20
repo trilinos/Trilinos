@@ -1,6 +1,4 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsLibraryMacros)
 
 ####################
 

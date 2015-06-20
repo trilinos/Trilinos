@@ -50,7 +50,7 @@
 
 
 namespace MueLu {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   class CoupledAggregationCommHelper;
 }
 

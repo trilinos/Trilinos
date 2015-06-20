@@ -1,10 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #ifndef stk_mesh_Types_hpp
 #define stk_mesh_Types_hpp
@@ -13,20 +38,24 @@
 
 #include <stddef.h>                     // for size_t
 #include <stdint.h>                     // for uint64_t
+#include <ostream>
 #include <iosfwd>                       // for ostream
 #include <limits>                       // for numeric_limits
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/util/NamedPair.hpp>  // for NAMED_PAIR
 #include <stk_util/util/PairIter.hpp>   // for PairIter
-#include <stk_util/util/TrackingAllocator.hpp>  // for tracking_allocator
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc
-#include "boost/range/iterator_range_core.hpp"  // for iterator_range
+#include <set>
+#include <map>
+
 namespace stk { namespace mesh { class Bucket; } }
 namespace stk { namespace mesh { class Part; } }
+namespace stk { namespace mesh { class Selector; } }
 namespace stk { namespace mesh { class Relation; } }
 namespace stk { namespace mesh { struct Entity; } }
+namespace stk { namespace mesh { namespace impl { class EntityRepository; } } }
 namespace stk { namespace mesh { struct EntityKey; } }
 namespace stk { namespace mesh { template <typename DataType = void> class Property; } }
 
@@ -34,45 +63,25 @@ namespace stk { namespace mesh { template <typename DataType = void> class Prope
 namespace stk {
 namespace mesh {
 
-// Tags used by tracking allocator
-struct FieldDataTag {};
-struct SelectorMapTag {};
-struct PartitionTag {};
-struct BucketTag {};
-struct EntityCommTag {};
-struct BucketRelationTag {};
-struct DynamicBucketRelationTag {};
-struct DynamicBucketNodeRelationTag {};
-struct DynamicBucketEdgeRelationTag {};
-struct DynamicBucketFaceRelationTag {};
-struct DynamicBucketElementRelationTag {};
-struct DynamicBucketOtherRelationTag {};
-struct AuxRelationTag {};
-struct DeletedEntityTag {};
-struct VolatileFastSharedCommMapTag {};
-
-void print_dynamic_connectivity_profile( ParallelMachine parallel, int parallel_rank, std::ostream & out);
-
-void print_max_stk_memory_usage( ParallelMachine parallel, int parallel_rank, std::ostream & out);
-
 //----------------------------------------------------------------------
 /** \addtogroup stk_mesh_module
  *  \{
  */
 
 class MetaData ;  // Meta-data description of a mesh
+class FieldBase;
 
 /** \brief  Collections of \ref stk::mesh::Part "parts" are frequently
  *          maintained as a vector of Part pointers.
  */
-typedef std::vector< Part * > PartVector;
-typedef std::vector< Bucket * > BucketVector;
+typedef std::vector< Part * >       PartVector;
+typedef std::vector< Bucket * >     BucketVector;
 typedef std::vector< const Part * > ConstPartVector;
-typedef std::vector< unsigned > OrdinalVector;
-typedef std::vector< unsigned > PermutationIndexVector;
-typedef std::vector<Entity> EntityVector;
+typedef std::vector< FieldBase * >  FieldVector;
+typedef std::vector< unsigned >     OrdinalVector;
+typedef std::vector< unsigned >     PermutationIndexVector;
+typedef std::vector<Entity>         EntityVector;
 
-class FieldBase;
 
 template< typename Scalar = void ,
           class Tag1 = void , class Tag2 = void ,
@@ -82,7 +91,7 @@ template< typename Scalar = void ,
   class Field ;
 
 /** \brief Maximum
- *  \ref shards::Array "multi-dimenaional array" dimension of a
+ *  \ref "multi-dimensional array" dimension of a
  *  \ref stk::mesh::Field "field"
  */
 enum { MaximumFieldDimension = 7 };
@@ -108,8 +117,29 @@ enum EntityState { Unchanged = 0 ,
                    Modified = 2 ,
                    Deleted  = 3 };
 
-template< class FieldType > struct EntityArray ;
-template< class FieldType > struct BucketArray ;
+inline std::ostream & operator<<(std::ostream &out, EntityState state)
+{
+  switch (state)
+  {
+      case EntityState::Unchanged:
+          out << "Unchanged";
+          break;
+      case EntityState::Created:
+          out << "Created  ";
+          break;
+      case EntityState::Modified:
+          out << "Modified ";
+          break;
+      case EntityState::Deleted:
+          out << "Deleted  ";
+          break;
+      default:
+          out << "Unknown  ";
+  }
+  return out;
+}
+
+
 template< class FieldType > struct FieldTraits ;
 
 //MeshIndex describes an Entity's location in the mesh, specifying which bucket,
@@ -129,9 +159,19 @@ struct FastMeshIndex
   unsigned bucket_ord;
 };
 
+typedef std::vector<std::vector<FastMeshIndex> > VolatileFastSharedCommMapOneRank;
+typedef stk::topology::rank_t EntityRank ;
+
+typedef std::map<std::pair<EntityRank, Selector>, std::pair<size_t, size_t> > SelectorCountMap;
+typedef std::map<std::pair<EntityRank, Selector>, BucketVector> SelectorBucketMap;
+typedef std::vector<VolatileFastSharedCommMapOneRank> VolatileFastSharedCommMap;
+
+typedef std::map<EntityKey,std::set<int> > EntityToDependentProcessorsMap;
+typedef std::map<EntityKey,int> NewOwnerMap;
+
 typedef unsigned Ordinal;
 static const Ordinal InvalidOrdinal = static_cast<Ordinal>(-1); // std::numeric_limits<PartOrdinal>::max();
-typedef stk::topology::rank_t EntityRank ;
+
 //typedef Ordinal EntityRank ;
 typedef Ordinal PartOrdinal;
 typedef Ordinal FieldOrdinal;
@@ -139,6 +179,8 @@ typedef Ordinal RelationIdentifier;
 typedef Ordinal FieldArrayRank;
 
 typedef uint64_t EntityId ;
+
+typedef std::vector<EntityId> EntityIdVector;
 
 // Base Entity Rank
 // Note:  This BaseEntityRank can be considered the leaf of a tree and it
@@ -163,8 +205,6 @@ struct RelationType
   {
     USES      = 0 ,
     USED_BY   = 1 ,
-    CHILD     = 2 ,
-    PARENT    = 3 ,
     EMBEDDED  = 0x00ff , // 4
     CONTACT   = 0x00ff , // 5
     AUXILIARY = 0x00ff ,
@@ -202,7 +242,7 @@ NAMED_PAIR( EntityCommInfo , unsigned , ghost_id , int , proc )
 /** \brief  Span of ( communication-subset-ordinal , process-rank ) pairs
  *          for the communication of an entity.
  */
-typedef std::vector<EntityCommInfo, tracking_allocator<EntityCommInfo,EntityCommTag > > EntityCommInfoVector;
+typedef std::vector<EntityCommInfo> EntityCommInfoVector;
 typedef PairIter<  EntityCommInfoVector::const_iterator >  PairIterEntityComm ;
 
 #endif
@@ -235,13 +275,12 @@ typedef int ( * relation_stencil_ptr )( EntityRank  from_type ,
  *  -# relation identifier, and
  *  -# range entity global identifier.
  */
-typedef std::vector<Relation, tracking_allocator<Relation,AuxRelationTag> > RelationVector;
+typedef std::vector<Relation> RelationVector;
 
 typedef PairIter< RelationVector::const_iterator > PairIterRelation ;
 
 #ifdef SIERRA_MIGRATION
 typedef RelationVector::const_iterator   RelationIterator;
-typedef boost::iterator_range<RelationIterator> RelationRange;
 #endif // SIERRA_MIGRATION
 
 enum ConnectivityType
@@ -250,6 +289,25 @@ enum ConnectivityType
   DYNAMIC_CONNECTIVITY,
   INVALID_CONNECTIVITY_TYPE
 };
+
+inline std::ostream & operator<<(std::ostream &out, ConnectivityType type)
+{
+  switch (type)
+  {
+      case ConnectivityType::FIXED_CONNECTIVITY:
+          out << "Fixed  ";
+          break;
+      case ConnectivityType::DYNAMIC_CONNECTIVITY:
+          out << "Dynamic";
+          break;
+      case ConnectivityType::INVALID_CONNECTIVITY_TYPE:
+          out << "Invalid";
+          break;
+      default:
+          out << "Unknown";
+  }
+  return out;
+}
 
 #define EXTRACT_BUCKET_ID(idx) ((idx) >> NUM_BUCKET_ORDINAL_BITS)
 
@@ -269,7 +327,8 @@ ConnectivityOrdinal& operator++(ConnectivityOrdinal& ord)
 
 enum Permutation
 {
-  INVALID_PERMUTATION = ~0U
+  DEFAULT_PERMUTATION = 0,
+  INVALID_PERMUTATION = 128
 };
 
 enum ConnectivityId
@@ -277,39 +336,15 @@ enum ConnectivityId
   INVALID_CONNECTIVITY_ID = ~0U
 };
 
-//////////////////////////////////////////////////////////////////////////////
-
-template <EntityRank TargetRank>
-struct DynamicConnectivityTagSelector
-{
-  typedef DynamicBucketOtherRelationTag type;
-};
-
-template <>
-struct DynamicConnectivityTagSelector<stk::topology::NODE_RANK>
-{
-  typedef DynamicBucketNodeRelationTag type;
-};
-
-template <>
-struct DynamicConnectivityTagSelector<stk::topology::EDGE_RANK>
-{
-  typedef DynamicBucketEdgeRelationTag type;
-};
-
-template <>
-struct DynamicConnectivityTagSelector<stk::topology::FACE_RANK>
-{
-  typedef DynamicBucketFaceRelationTag type;
-};
-
-template <>
-struct DynamicConnectivityTagSelector<stk::topology::ELEMENT_RANK>
-{
-  typedef DynamicBucketElementRelationTag type;
-};
-
 //----------------------------------------------------------------------
+
+// Use macro below to deprecate functions
+#ifdef __GNUC__
+#define STK_DEPRECATED(func) func __attribute__ ((deprecated))
+#else
+#define STK_DEPRECATED(func) func
+#endif
+
 
 } // namespace mesh
 } // namespace stk

@@ -94,6 +94,15 @@ const NNTI_REQUEST_BUFFER_SIZE=1216;
 const NNTI_RESULT_BUFFER_SIZE=1216;
 
 
+enum NNTI_datatype_t {
+    NNTI_dt_transport    = 1111,
+    NNTI_dt_peer         = 1112,
+    NNTI_dt_buffer       = 1113,
+    NNTI_dt_work_request = 1114,
+    NNTI_dt_status       = 1115
+};
+
+
 /**
  * @brief Enumerator of the transport mechanisms supported by NNTI.
  *
@@ -101,6 +110,9 @@ const NNTI_RESULT_BUFFER_SIZE=1216;
  * to represent the supported transport mechanisms.
  */
 enum NNTI_transport_id_t {
+    /** @brief No operations permitted. */
+    NNTI_TRANSPORT_NULL,
+
     /** @brief Use Portals to transfer rpc requests. */
     NNTI_TRANSPORT_PORTALS,
 
@@ -120,10 +132,7 @@ enum NNTI_transport_id_t {
     NNTI_TRANSPORT_MPI,
 
     /** @brief Use a local buffer (no remote operations). */
-    NNTI_TRANSPORT_LOCAL,
-
-    /** @brief No operations permitted. */
-    NNTI_TRANSPORT_NULL
+    NNTI_TRANSPORT_LOCAL
 };
 
 /**
@@ -178,15 +187,66 @@ enum NNTI_result_t {
     /** @brief Insufficient priveleges to perform operation. */
     NNTI_EPERM,
 
-    /** @brief An operation would have blocked. */
+    /** @brief Either an operation was interrupted by a signal
+     *         or NNTI_wait() was interrupted by NNTI_interrupt(). */
+    NNTI_EINTR,
+
+    /** @brief An async operation would have blocked. */
     NNTI_EWOULDBLOCK,
 
-    /** @brief Operation was interupted, but possibly recoverable. */
-    NNTI_EAGAIN
+    /** @brief The requested resource is temporarily unavailable.  Retry later. */
+    NNTI_EAGAIN,
+
+    /** @brief The request could not be delivered. */
+    NNTI_EDROPPED,
+    
+    /** @brief Error unpacking an NNTI data structure. */
+    NNTI_EDECODE,
+
+    /** @brief Error packing an NNTI data structure. */
+    NNTI_EENCODE
 
 };
 
 
+/**
+  * atomic operations that may be implemented by a transport
+  */
+enum NNTI_atomic_op_t {
+  NNTI_ATOMIC_FADD
+};
+
+
+
+/***********  TCP/IP address types  ***********/
+
+/**
+ * @brief Binary encoding of a TCP/IP host address.
+ *
+ * The <tt>\ref NNTI_ip_addr</tt> type identifies a particular node.
+ */
+typedef uint32_t NNTI_ip_addr;
+
+/**
+ * @brief TCP port in NBO.
+ *
+ * The <tt>\ref NNTI_tcp_addr</tt> type identifies a particular port.
+ */
+typedef uint16_t NNTI_tcp_port;
+
+
+/***********  NULL Process Types  ***********/
+
+/**
+ * @brief Remote process identifier for the NULL transport.
+ *
+ */
+struct NNTI_null_process_t {
+    int i;  /* unused, but empty structs are not allowed */
+};
+
+
+/***********  Portals Process Types  ***********/
 
 /**
  * @brief Network node identifier (used by Portals).
@@ -202,8 +262,6 @@ typedef uint32_t NNTI_nid;
  */
 typedef uint32_t NNTI_pid;
 
-
-
 /**
  * @brief Remote process identifier for Portals.
  *
@@ -218,20 +276,8 @@ struct NNTI_portals_process_t {
 };
 
 
+/***********  IB Process Types  ***********/
 
-
-/**
- * @brief Binary encoding of a TCP/IP host address.
- *
- * The <tt>\ref NNTI_ip_addr</tt> type identifies a particular node.
- */
-typedef uint32_t NNTI_ip_addr;
-/**
- * @brief TCP port in NBO.
- *
- * The <tt>\ref NNTI_tcp_addr</tt> type identifies a particular port.
- */
-typedef uint16_t NNTI_tcp_port;
 /**
  * @brief The queue pair number of an IB connection.
  *
@@ -259,33 +305,7 @@ struct NNTI_ib_process_t {
 };
 
 
-
-
-/**
- * @brief Remote process identifier for BG/P DCMF.
- *
- * The <tt>\ref NNTI_bgpdcmf_process_t</tt> identifies a particular process
- * on a particular node.
- */
-struct NNTI_bgpdcmf_process_t {
-        int     xcoord;
-        int     ycoord;
-        int     zcoord;
-        int     pset_rank;
-};
-
-
-/**
- * @brief Remote process identifier for BG/Q PAMI.
- *
- * The <tt>\ref NNTI_bgpdcmf_process_t</tt> identifies a particular process
- * on a particular node.
- */
-struct NNTI_bgqpami_process_t {
-        int     pset_rank;
-	int     taskid;
-	int     thrid;
-};
+/***********  Gemini Process Types  ***********/
 
 /**
  * @brief The instance ID of a Gemini process.
@@ -312,9 +332,38 @@ struct NNTI_gni_process_t {
 };
 
 
+/***********  BG/P DCMF Process Types  ***********/
+
+/**
+ * @brief Remote process identifier for BG/P DCMF.
+ *
+ * The <tt>\ref NNTI_bgpdcmf_process_t</tt> identifies a particular process
+ * on a particular node.
+ */
+struct NNTI_bgpdcmf_process_t {
+    int     xcoord;
+    int     ycoord;
+    int     zcoord;
+    int     pset_rank;
+};
 
 
+/***********  BG/Q PAMI Process Types  ***********/
 
+/**
+ * @brief Remote process identifier for BG/Q PAMI.
+ *
+ * The <tt>\ref NNTI_bgpdcmf_process_t</tt> identifies a particular process
+ * on a particular node.
+ */
+struct NNTI_bgqpami_process_t {
+    int     pset_rank;
+    int     taskid;
+    int     thrid;
+};
+
+
+/***********  MPI Process Types  ***********/
 
 /**
  * @brief Remote process identifier for MPI.
@@ -328,8 +377,18 @@ struct NNTI_mpi_process_t {
 };
 
 
+/***********  Local Process Types  ***********/
+
+/**
+ * @brief Remote process identifier for the Local transport.
+ *
+ */
+struct NNTI_local_process_t {
+    int i;  /* unused, but empty structs are not allowed */
+};
 
 
+/***********  Remote Process Union  ***********/
 
 /**
  * @brief A structure to represent a remote processes.
@@ -340,6 +399,8 @@ struct NNTI_mpi_process_t {
  */
 #if defined(RPC_HDR) || defined(RPC_XDR)
 union NNTI_remote_process_t switch (NNTI_transport_id_t transport_id) {
+    /** @brief The NULL representation of a process on the network. */
+    case NNTI_TRANSPORT_NULL:    NNTI_null_process_t    null;
     /** @brief The Portals representation of a process on the network. */
     case NNTI_TRANSPORT_PORTALS: NNTI_portals_process_t portals;
     /** @brief The IB representation of a process on the network. */
@@ -347,14 +408,18 @@ union NNTI_remote_process_t switch (NNTI_transport_id_t transport_id) {
     /** @brief The Cray Gemini representation of a process on the network. */
     case NNTI_TRANSPORT_GEMINI:  NNTI_gni_process_t     gni;
     /** @brief The BGP  DCMF library usage  on the torus network. */
-    case NNTI_TRANSPORT_DCMF:      NNTI_bgpdcmf_process_t      bgpdcmf;
+    case NNTI_TRANSPORT_DCMF:    NNTI_bgpdcmf_process_t bgpdcmf;
     /** @brief The BGQ PAMI library usage  on the torus network. */
-    case NNTI_TRANSPORT_PAMI:      NNTI_bgqpami_process_t      bgqpami;
+    case NNTI_TRANSPORT_PAMI:    NNTI_bgqpami_process_t bgqpami;
     /** @brief The MPI representation of a process on the network. */
     case NNTI_TRANSPORT_MPI:     NNTI_mpi_process_t     mpi;
+    /** @brief The Local representation of a process on the network. */
+    case NNTI_TRANSPORT_LOCAL:   NNTI_local_process_t   local;
 };
 #else
 union NNTI_remote_process_t {
+    /** @brief The NULL representation of a process on the network. */
+    NNTI_null_process_t    null;
     /** @brief The Portals representation of a process on the network. */
     NNTI_portals_process_t portals;
     /** @brief The IB representation of a process on the network. */
@@ -362,12 +427,18 @@ union NNTI_remote_process_t {
     /** @brief The Cray Gemini representation of a process on the network. */
     NNTI_gni_process_t     gni;
     /** @brief The BGPDMA representation of a process on the network. */
-    NNTI_bgpdcmf_process_t      bgpdcmf;
+    NNTI_bgpdcmf_process_t bgpdcmf;
+    /** @brief The BGQPAMI representation of a process on the network. */
+    NNTI_bgqpami_process_t bgqpami;
     /** @brief The MPI representation of a process on the network. */
     NNTI_mpi_process_t     mpi;
+    /** @brief The Local representation of a process on the network. */
+    NNTI_local_process_t   local;
 };
 #endif
 
+
+/***********  Peer Type  ***********/
 
 /**
  * @brief Handle to an NNTI process.
@@ -376,6 +447,8 @@ union NNTI_remote_process_t {
  * Use this handle to move data to/from the process.
  */
 struct NNTI_peer_t {
+    NNTI_datatype_t datatype;
+    
     /** @brief string encoding of a process on the network */
     opaque url[NNTI_URL_LEN];
 
@@ -384,9 +457,17 @@ struct NNTI_peer_t {
 };
 
 
+/***********  NULL RDMA Address Types  ***********/
+
+/**
+ * @brief RDMA address used for the NULL transport.
+ */
+struct NNTI_null_rdma_addr_t {
+    int i;  /* unused, but empty structs are not allowed */
+};
 
 
-
+/***********  Portals RDMA Address Types  ***********/
 
 /**
  * @brief Definition for match bits in Portals.
@@ -404,7 +485,6 @@ enum NNTI_portals_indices {
     NNTI_LONG_RES_PT_INDEX   /* where to fetch long results */
 };
 
-
 /**
  * @brief RDMA address used for the Portals implementation.
  */
@@ -418,13 +498,7 @@ struct NNTI_portals_rdma_addr_t {
 };
 
 
-
-
-
-
-
-
-
+/***********  IB RDMA Address Types  ***********/
 
 /**
  * @brief RDMA address used for the InfiniBand implementation.
@@ -446,7 +520,7 @@ struct NNTI_ib_rdma_addr_t {
 };
 
 
-
+/***********  Gemini RDMA Address Types  ***********/
 
 enum NNTI_gni_buffer_type_t {
     NNTI_GNI_RDMA_INITIATOR,
@@ -459,54 +533,6 @@ struct NNTI_gni_mem_hdl_t {
     uint64_t qword1;
     uint64_t qword2;
 };
-
-struct NNTI_bgpdcmf_memreg_hdl_t {
-	unsigned  word0;
-	unsigned  word1;
-	unsigned  word2;
-	unsigned  word3;
-};
-
-
-enum NNTI_bgpdcmf_buffer_type_t {
-        NNTI_DCMF_REQUEST_BUFFER,
-        NNTI_DCMF_RESULT_BUFFER,
-        NNTI_DCMF_SEND_SRC,
-        NNTI_DCMF_RECEIVE_DST
-};
-enum NNTI_bgqpami_buffer_type_t {
-        NNTI_PAMI_REQUEST_BUFFER,
-        NNTI_PAMI_RESULT_BUFFER,
-        NNTI_PAMI_SEND_SRC,
-        NNTI_PAMI_RECEIVE_DST
-};
-
-/**
- * @brief RDMA address used for the InfiniBand implementation.
- */
-struct NNTI_bgpdcmf_rdma_addr_t {
-    /** @brief Address of the memory buffer cast to a uint64_t. */
-    uint64_t buf;
-    /** @brief Size of the the memory buffer. */
-    uint32_t size;
-    uint32_t owner_rank;
-    NNTI_bgpdcmf_buffer_type_t type;
-    NNTI_bgpdcmf_memreg_hdl_t mem_hdl;
-    uint64_t wc_addr;
-    NNTI_bgpdcmf_memreg_hdl_t wc_mem_hdl;
-};
-
-struct NNTI_bgqpami_rdma_addr_t {
-    uint64_t  buf;
-    uint32_t size;
-    uint32_t owner_rank;
-    NNTI_bgqpami_buffer_type_t type;
-    uint64_t  mem_hdl;
-    uint64_t wc_addr;
-    uint64_t wc_mem_hdl;
-};
-
-
 
 /**
  * @brief RDMA address used for the Gemini implementation.
@@ -529,23 +555,86 @@ struct NNTI_gni_rdma_addr_t {
 };
 
 
+/***********  BG/P DCMF RDMA Address Types  ***********/
+
+struct NNTI_bgpdcmf_memreg_hdl_t {
+    unsigned  word0;
+    unsigned  word1;
+    unsigned  word2;
+    unsigned  word3;
+};
+
+enum NNTI_bgpdcmf_buffer_type_t {
+    NNTI_DCMF_REQUEST_BUFFER,
+    NNTI_DCMF_RESULT_BUFFER,
+    NNTI_DCMF_SEND_SRC,
+    NNTI_DCMF_RECEIVE_DST
+};
+
+/**
+ * @brief RDMA address used for the BG/P DCMF implementation.
+ */
+struct NNTI_bgpdcmf_rdma_addr_t {
+    /** @brief Address of the memory buffer cast to a uint64_t. */
+    uint64_t buf;
+    /** @brief Size of the the memory buffer. */
+    uint32_t size;
+    uint32_t owner_rank;
+    NNTI_bgpdcmf_buffer_type_t type;
+    NNTI_bgpdcmf_memreg_hdl_t mem_hdl;
+    uint64_t wc_addr;
+    NNTI_bgpdcmf_memreg_hdl_t wc_mem_hdl;
+};
+
+
+/***********  BG/Q PAMI RDMA Address Types  ***********/
+
+enum NNTI_bgqpami_buffer_type_t {
+    NNTI_PAMI_REQUEST_BUFFER,
+    NNTI_PAMI_RESULT_BUFFER,
+    NNTI_PAMI_SEND_SRC,
+    NNTI_PAMI_RECEIVE_DST
+};
+
+struct NNTI_bgqpami_rdma_addr_t {
+    uint64_t  buf;
+    uint32_t size;
+    uint32_t owner_rank;
+    NNTI_bgqpami_buffer_type_t type;
+    uint64_t  mem_hdl;
+    uint64_t wc_addr;
+    uint64_t wc_mem_hdl;
+};
+
+
+/***********  MPI RDMA Address Types  ***********/
 
 /**
  * @brief RDMA address used for the MPI implementation.
  */
 struct NNTI_mpi_rdma_addr_t {
-    /** @brief The MPI tag for RTR msg. */
-    NNTI_match_bits rtr_tag;
-    /** @brief The MPI tag for RTS msg. */
-    NNTI_match_bits rts_tag;
-    /** @brief The MPI tag for data msg. */
-    NNTI_match_bits data_tag;
+    /** @brief The MPI tag for RTR/RTS msg. */
+    NNTI_match_bits cmd_tag;
+    /** @brief The MPI tag for GET data msg. */
+    NNTI_match_bits get_data_tag;
+    /** @brief The MPI tag for PUT data msg. */
+    NNTI_match_bits put_data_tag;
     /** @brief Size of the the memory buffer. */
     uint32_t        size;
 };
 
 
+/***********  Local RDMA Address Types  ***********/
 
+/**
+ * @brief RDMA address used for the Local transport.
+ */
+struct NNTI_local_rdma_addr_t {
+    int i;  /* unused, but empty structs are not allowed */
+};
+
+
+/***********  Remote Address Union  ***********/
 
 /**
  * @brief A structure to represent a remote memory region.
@@ -556,6 +645,8 @@ struct NNTI_mpi_rdma_addr_t {
  */
 #if defined(RPC_HDR) || defined(RPC_XDR)
 union NNTI_remote_addr_t switch (NNTI_transport_id_t transport_id) {
+    /** @brief The NULL representation of a memory region. */
+    case NNTI_TRANSPORT_NULL:    NNTI_null_rdma_addr_t    null;
     /** @brief The Portals representation of a memory region. */
     case NNTI_TRANSPORT_PORTALS: NNTI_portals_rdma_addr_t portals;
     /** @brief The IB representation of a memory region. */
@@ -563,14 +654,18 @@ union NNTI_remote_addr_t switch (NNTI_transport_id_t transport_id) {
     /** @brief The Cray Gemini representation of a memory region. */
     case NNTI_TRANSPORT_GEMINI:  NNTI_gni_rdma_addr_t     gni;
     /** @brief The BGP DCMF representation of a memory region. */
-    case NNTI_TRANSPORT_DCMF:      NNTI_bgpdcmf_rdma_addr_t      bgpdcmf;
+    case NNTI_TRANSPORT_DCMF:    NNTI_bgpdcmf_rdma_addr_t bgpdcmf;
     /** @brief The BGQ PAMI representation of a memory region. */
-    case NNTI_TRANSPORT_PAMI:      NNTI_bgqpami_rdma_addr_t      bgqpami;
+    case NNTI_TRANSPORT_PAMI:    NNTI_bgqpami_rdma_addr_t bgqpami;
     /** @brief The MPI representation of a memory region. */
     case NNTI_TRANSPORT_MPI:     NNTI_mpi_rdma_addr_t     mpi;
+    /** @brief The Local representation of a memory region. */
+    case NNTI_TRANSPORT_LOCAL:   NNTI_local_rdma_addr_t   local;
 };
 #else
 union NNTI_remote_addr_t {
+    /** @brief The NULL representation of a memory region. */
+    NNTI_null_rdma_addr_t    null;
     /** @brief The Portals representation of a memory region. */
     NNTI_portals_rdma_addr_t portals;
     /** @brief The IB representation of a memory region. */
@@ -578,14 +673,28 @@ union NNTI_remote_addr_t {
     /** @brief The Cray Gemini representation of a memory region. */
     NNTI_gni_rdma_addr_t     gni;
     /** @brief The BGP DCMF representation of a memory region. */
-    NNTI_bgpdcmf_rdma_addr_t      bgpdcmf;
+    NNTI_bgpdcmf_rdma_addr_t bgpdcmf;
     /** @brief The BGQ PAMI representation of a memory region. */
-    NNTI_bgqpami_rdma_addr_t      bgqpami;
+    NNTI_bgqpami_rdma_addr_t bgqpami;
     /** @brief The MPI representation of a memory region. */
     NNTI_mpi_rdma_addr_t     mpi;
+    /** @brief The Local representation of a memory region. */
+    NNTI_local_rdma_addr_t   local;
 };
 #endif
 
+/**
+ * @brief Array of 16-byte structures that we can send with the request.
+ *
+ * Rpcgen will use this definition to define encoding functions to
+ * encode and decode an array of \ref data_t structures.  We will
+ * use these functions when sending the array with the request.
+ */
+typedef NNTI_remote_addr_t NNTI_remote_addr_array_t<>;
+
+
+
+/***********  Buffer Operations Type  ***********/
 
 /**
  * @brief The operations that are permitted on a buffer
@@ -595,22 +704,43 @@ union NNTI_remote_addr_t {
  * a multipurpose buffer.
  */
 enum NNTI_buf_ops_t {
-    /** @brief this buffer can be put from */
-    NNTI_PUT_SRC=1,
-    /** @brief this buffer can be put into */
-    NNTI_PUT_DST=2,
-    /** @brief this buffer can be got from */
-    NNTI_GET_SRC=4,
-    /** @brief this buffer can be got into */
-    NNTI_GET_DST=8,
-    /** @brief this buffer can be sent from */
-    NNTI_SEND_SRC=16,
-    /** @brief this buffer can be received into */
-    NNTI_RECV_DST=32,
+    /** @brief a local process/NIC can read from this buffer */
+    NNTI_BOP_LOCAL_READ=1,
+    /** @brief a remote process/NIC can read from this buffer */
+    NNTI_BOP_REMOTE_READ=2,
+    /** @brief a local process/NIC can write to this buffer */
+    NNTI_BOP_LOCAL_WRITE=4,
+    /** @brief a remote process/NIC can write to this buffer */
+    NNTI_BOP_REMOTE_WRITE=8,
+    /** @brief operations on this memory generate events that cause work requests to change state */
+    NNTI_BOP_WITH_EVENTS=16,
+    /** @brief SENDs to this memory occur at the offset+length of the last SEND */
+    NNTI_BOP_QUEUING=32,
     /** @brief this buffer has multiple receive slots */
-    NNTI_RECV_QUEUE=64
+    NNTI_BOP_RECV_QUEUE=64,
+    /** @brief this buffer allows atomic operations */
+    NNTI_BOP_ATOMICS=128
 };
 
+/** @brief this buffer can be put from */
+%#define NNTI_PUT_SRC    ((NNTI_buf_ops_t)(NNTI_BOP_LOCAL_READ|NNTI_BOP_WITH_EVENTS))
+/** @brief this buffer can be put into */
+%#define NNTI_PUT_DST    ((NNTI_buf_ops_t)(NNTI_BOP_REMOTE_WRITE))
+/** @brief this buffer can be got from */
+%#define NNTI_GET_SRC    ((NNTI_buf_ops_t)(NNTI_BOP_REMOTE_READ))
+/** @brief this buffer can be got into */
+%#define NNTI_GET_DST    ((NNTI_buf_ops_t)(NNTI_BOP_LOCAL_WRITE|NNTI_BOP_WITH_EVENTS))
+/** @brief this buffer can be sent from */
+%#define NNTI_SEND_SRC   ((NNTI_buf_ops_t)(NNTI_BOP_LOCAL_READ|NNTI_BOP_WITH_EVENTS))
+/** @brief this buffer can be received into */
+%#define NNTI_RECV_DST   ((NNTI_buf_ops_t)(NNTI_BOP_REMOTE_WRITE|NNTI_BOP_WITH_EVENTS))
+/** @brief this buffer has multiple receive slots */
+%#define NNTI_RECV_QUEUE ((NNTI_buf_ops_t)(NNTI_BOP_RECV_QUEUE))
+/** @brief this buffer allows atomic operations */
+%#define NNTI_ATOMICS    ((NNTI_buf_ops_t)(NNTI_BOP_ATOMICS))
+
+
+/***********  Buffer Type  ***********/
 
 /**
  * @brief handle to a memory buffer prepared by NNTI_register_memory
@@ -620,13 +750,16 @@ enum NNTI_buf_ops_t {
  *  a peer needs to put/get this buffer.
  */
 struct NNTI_buffer_t {
+    NNTI_datatype_t datatype;
+    
     /** @brief the transport where this buffer is registered */
     NNTI_transport_id_t transport_id;
 
     /** @brief the process in which this buffer resides */
-    NNTI_peer_t        buffer_owner;
-    /** @brief the remote address at which this buffer resides */
-    NNTI_remote_addr_t buffer_addr;
+    NNTI_peer_t buffer_owner;
+
+    /** @brief Array of remote addresses.  Each remote address is a segment of the complete buffer. */
+    NNTI_remote_addr_array_t buffer_segments;
 
     /** @brief permitted operations */
     NNTI_buf_ops_t ops;
@@ -640,6 +773,35 @@ struct NNTI_buffer_t {
     uint64_t     transport_private;
 };
 
+
+/***********  Work Request Types  ***********/
+
+/**
+ * @brief handle to a work request prepared by an operation initiator
+ *
+ */
+struct NNTI_work_request_t {
+    NNTI_datatype_t datatype;
+    
+    /** @brief the transport where this buffer is registered */
+    NNTI_transport_id_t transport_id;
+
+    /** @brief  */
+    NNTI_buffer_t *reg_buf;
+
+    /** @brief permitted operations */
+    NNTI_buf_ops_t ops;
+
+    /** @brief operation result */
+    NNTI_result_t result;
+
+    /** @brief Private storage (cast to a uint64_t). */
+    uint64_t     transport_private;
+};
+
+
+/***********  Transport Header Type  ***********/
+
 /**
  * @brief A header that is prepended to all requests and results.
  *
@@ -652,6 +814,8 @@ struct NNTI_transport_header_t {
 };
 
 
+/***********  Status Type  ***********/
+
 /**
  * @brief The status of an NNTI operation.
  *
@@ -662,6 +826,8 @@ struct NNTI_transport_header_t {
  * unsuccessful, then the remaining fields are undefined.
  */
 struct NNTI_status_t {
+    NNTI_datatype_t datatype;
+    
     /** @brief The operation performed on the buffer. */
     NNTI_buf_ops_t op;
     /** @brief The result code for this operation. */
@@ -681,10 +847,14 @@ struct NNTI_status_t {
 };
 
 
+/***********  Transport Type  ***********/
+
 /**
  * @brief The external representation of a configured transport.
  */
 struct NNTI_transport_t {
+    NNTI_datatype_t datatype;
+    
     /** @brief The transport id. */
     NNTI_transport_id_t  id;
     /** @brief A reference to my process that can be sent to a peer so the peer can contact me. */

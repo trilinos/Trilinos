@@ -199,13 +199,13 @@ namespace Teuchos {
 
   void fooThatThrows(const Ptr<Container> &container)
   {
- 
+
     // A non-const version of Held
     RCP<Held> myHeld = createNewHeld(...);
-  
+
     // Accidentally set a const version of Held
     container->setHeld(myHeld);
-    
+
     // Try to get back a non-const version of Held
     RCP<Held> myHeldAgain = container->getNonconstHeld(); // Throws NonconstAccessError!
 
@@ -296,7 +296,7 @@ public:
   void initialize( const RCP<const ObjType> &obj )
     {
       TEUCHOS_TEST_FOR_EXCEPTION(is_null(obj), NullReferenceError, "Error!");
-      constObj_ = obj; 
+      constObj_ = obj;
       isConst_ = true;
     }
   /** \biref Uninitialize. */

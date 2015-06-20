@@ -89,6 +89,9 @@ namespace Sacado {
      */
     template <typename ExprT> class Expr {};
 
+    // Forward declaration
+    template <typename T, typename S> class OrthogPoly;
+
     //! Generalized polynomial chaos expansion class implementation
     template <typename T, typename Storage >
     class OrthogPolyImpl {
@@ -96,6 +99,9 @@ namespace Sacado {
 
       //! Typename of values
       typedef T value_type;
+
+      //! Typename of scalar's (which may be different from T)
+      typedef typename ScalarType<T>::type scalar_type;
 
       //! Typename of ordinals
       typedef int ordinal_type;
@@ -373,9 +379,12 @@ namespace Sacado {
 
       //! Typename of values
       typedef typename OrthogPolyImpl<T,Storage>::value_type value_type;
+      typedef typename OrthogPolyImpl<T,Storage>::scalar_type scalar_type;
       typedef typename OrthogPolyImpl<T,Storage>::approx_type approx_type;
       typedef typename OrthogPolyImpl<T,Storage>::storage_type storage_type;
       typedef typename OrthogPolyImpl<T,Storage>::const_reference const_reference;
+
+      typedef OrthogPoly<T,Storage> base_expr_type;
 
       //! Number of arguments
       static const int num_args = 1;
@@ -461,6 +470,9 @@ namespace Sacado {
 
       //! Typename of values
       typedef typename OrthogPolyImpl<T,Storage>::value_type value_type;
+
+      //! Typename of scalars
+      typedef typename OrthogPolyImpl<T,Storage>::scalar_type scalar_type;
 
       //! Typename of ordinals
       typedef typename OrthogPolyImpl<T,Storage>::ordinal_type ordinal_type;
@@ -613,6 +625,26 @@ namespace Sacado {
     }; // class OrthogPoly
 
   } // namespace ETPCE
+
+  template <typename T>
+  struct IsExpr< ETPCE::Expr<T> > {
+    static const bool value = true;
+  };
+
+  template <typename T>
+  struct BaseExprType< ETPCE::Expr<T> > {
+    typedef typename ETPCE::Expr<T>::base_expr_type type;
+  };
+
+  template <typename T, typename S>
+  struct IsExpr< ETPCE::OrthogPoly<T,S> > {
+    static const bool value = true;
+  };
+
+  template <typename T, typename S>
+  struct BaseExprType< ETPCE::OrthogPoly<T,S> > {
+    typedef ETPCE::OrthogPoly<T,S> type;
+  };
 
 } // namespace Sacado
 

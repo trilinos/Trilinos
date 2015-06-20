@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -46,7 +46,7 @@
 #include "Epetra_MultiVector.h"
 
 Stokhos::PCECovarianceOp::
-PCECovarianceOp(const Stokhos::VectorOrthogPoly<Epetra_Vector>& X_poly) 
+PCECovarianceOp(const Stokhos::VectorOrthogPoly<Epetra_Vector>& X_poly)
   : label("Stokhos::PCECovarianceOp"),
     X(),
     s(X_poly.basis()->norm_squared()),
@@ -56,18 +56,18 @@ PCECovarianceOp(const Stokhos::VectorOrthogPoly<Epetra_Vector>& X_poly)
 {
   const Epetra_BlockMap& base_map = X_poly[0].Map();
   int sz = X_poly.size();
-  Teuchos::RCP<Epetra_MultiVector> XX = 
+  Teuchos::RCP<Epetra_MultiVector> XX =
     Teuchos::rcp(new Epetra_MultiVector(base_map, sz-1));
   for (int i=0; i<sz-1; i++)
     (*XX)(i)->Scale(1.0, X_poly[i+1]);
   X = XX;
-  tmp_map = 
+  tmp_map =
     Teuchos::rcp(new Epetra_LocalMap(X->NumVectors(), 0, X->Map().Comm()));
 }
 
 Stokhos::PCECovarianceOp::
 PCECovarianceOp(const Teuchos::RCP<const EpetraExt::BlockVector>& X_bv,
-		const Stokhos::OrthogPolyBasis<int,double>& basis) 
+                const Stokhos::OrthogPolyBasis<int,double>& basis)
   : label("Stokhos::PCECovarianceOp"),
     X(),
     s(basis.norm_squared()),
@@ -78,15 +78,15 @@ PCECovarianceOp(const Teuchos::RCP<const EpetraExt::BlockVector>& X_bv,
   const Epetra_BlockMap& base_map = X_bv->GetBaseMap();
   int N = base_map.NumMyElements();
   int sz = basis.size();
-  X = Teuchos::rcp(new Epetra_MultiVector(View, base_map, X_bv->Values()+N, 
-					  N, sz-1));
-  tmp_map = 
+  X = Teuchos::rcp(new Epetra_MultiVector(View, base_map, X_bv->Values()+N,
+                                          N, sz-1));
+  tmp_map =
     Teuchos::rcp(new Epetra_LocalMap(X->NumVectors(), 0, X->Map().Comm()));
 }
 
 Stokhos::PCECovarianceOp::
 PCECovarianceOp(const Teuchos::RCP<const Epetra_MultiVector>& X_,
-		const Stokhos::OrthogPolyBasis<int,double>& basis) 
+                const Stokhos::OrthogPolyBasis<int,double>& basis)
   : label("Stokhos::PCECovarianceOp"),
     X(X_),
     s(basis.norm_squared()),
@@ -94,7 +94,7 @@ PCECovarianceOp(const Teuchos::RCP<const Epetra_MultiVector>& X_,
     tmp_map(),
     tmp()
 {
-  tmp_map = 
+  tmp_map =
     Teuchos::rcp(new Epetra_LocalMap(X->NumVectors(), 0, X->Map().Comm()));
 }
 
@@ -102,16 +102,16 @@ Stokhos::PCECovarianceOp::~PCECovarianceOp()
 {
 }
 
-int 
-Stokhos::PCECovarianceOp::SetUseTranspose(bool UseTranspose) 
+int
+Stokhos::PCECovarianceOp::SetUseTranspose(bool UseTheTranspose)
 {
-  useTranspose = UseTranspose;
+  useTranspose = UseTheTranspose;
   return 0;
 }
 
-int 
-Stokhos::PCECovarianceOp::Apply(const Epetra_MultiVector& Input, 
-				Epetra_MultiVector& Result) const
+int
+Stokhos::PCECovarianceOp::Apply(const Epetra_MultiVector& Input,
+                                Epetra_MultiVector& Result) const
 {
   // Allocate temporary storage
   int m = Input.NumVectors();
@@ -132,51 +132,51 @@ Stokhos::PCECovarianceOp::Apply(const Epetra_MultiVector& Input,
   return 0;
 }
 
-int 
-Stokhos::PCECovarianceOp::ApplyInverse(const Epetra_MultiVector& Input, 
-					  Epetra_MultiVector& Result) const
+int
+Stokhos::PCECovarianceOp::ApplyInverse(const Epetra_MultiVector& Input,
+                                          Epetra_MultiVector& Result) const
 {
   throw "PCECovarianceOp::ApplyInverse not defined!";
   return -1;
 }
 
-double 
+double
 Stokhos::PCECovarianceOp::NormInf() const
 {
   return 1.0;
 }
 
 
-const char* 
+const char*
 Stokhos::PCECovarianceOp::Label () const
 {
   return const_cast<char*>(label.c_str());
 }
-  
-bool 
+
+bool
 Stokhos::PCECovarianceOp::UseTranspose() const
 {
   return useTranspose;
 }
 
-bool 
+bool
 Stokhos::PCECovarianceOp::HasNormInf() const
 {
   return false;
 }
 
-const Epetra_Comm & 
+const Epetra_Comm &
 Stokhos::PCECovarianceOp::Comm() const
 {
   return X->Map().Comm();
 }
-const Epetra_Map& 
+const Epetra_Map&
 Stokhos::PCECovarianceOp::OperatorDomainMap() const
 {
   return dynamic_cast<const Epetra_Map&>(X->Map());
 }
 
-const Epetra_Map& 
+const Epetra_Map&
 Stokhos::PCECovarianceOp::OperatorRangeMap() const
 {
   return dynamic_cast<const Epetra_Map&>(X->Map());

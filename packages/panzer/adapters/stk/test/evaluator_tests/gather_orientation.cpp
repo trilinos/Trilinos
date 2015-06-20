@@ -52,7 +52,7 @@ using Teuchos::rcp;
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include "Panzer_FieldManagerBuilder.hpp"
-#include "Panzer_DOFManagerFEI.hpp"
+#include "Panzer_DOFManager.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset.hpp"
@@ -64,6 +64,7 @@ using Teuchos::rcp;
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STKConnManager.hpp"
+#include "Phalanx_KokkosUtilities.hpp"
 
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
@@ -84,6 +85,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(gather_orientation, gather_constr)
   {
+    PHX::KokkosDeviceSession session;
+
     const std::size_t workset_size = 4;
     const std::string fieldName_q1 = "U";
     const std::string fieldName_qedge1 = "V";
@@ -110,7 +113,7 @@ namespace panzer {
 
     // build connection manager and field manager
     const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
-    RCP<panzer::DOFManagerFEI<int,int> > dofManager = Teuchos::rcp(new panzer::DOFManagerFEI<int,int>(conn_manager,MPI_COMM_WORLD));
+    RCP<panzer::DOFManager<int,int> > dofManager = Teuchos::rcp(new panzer::DOFManager<int,int>(conn_manager,MPI_COMM_WORLD));
     dofManager->addField(fieldName_q1,Teuchos::rcp(new panzer::IntrepidFieldPattern(basis_q1->getIntrepidBasis())));
     dofManager->addField(fieldName_qedge1,Teuchos::rcp(new panzer::IntrepidFieldPattern(basis_qedge1->getIntrepidBasis())));
     dofManager->setOrientationsRequired(true);
@@ -181,9 +184,11 @@ namespace panzer {
 
     fm.evaluateFields<panzer::Traits::Residual>(workset);
 
-    PHX::MDField<panzer::Traits::Residual::ScalarT,panzer::Cell,panzer::BASIS> 
+    // <cell,basis>
+    PHX::MDField<panzer::Traits::Residual::ScalarT> 
        fieldData_q1(evalField_q1->name(),basis_q1->functional);
-    PHX::MDField<panzer::Traits::Residual::ScalarT,panzer::Cell,panzer::BASIS> 
+    // <cell,basis>
+    PHX::MDField<panzer::Traits::Residual::ScalarT> 
        fieldData_qedge1(evalField_qedge1->name(),basis_qedge1->functional);
 
     fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual>(fieldData_q1);

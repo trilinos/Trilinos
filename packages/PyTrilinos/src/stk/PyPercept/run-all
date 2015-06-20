@@ -1,7 +1,0 @@
-#python Example.py
-python FieldFunctionUnitTests.py
-python NormUnitTests.py
-python PerceptMeshUnitTests.py
-python StringFunctionUnitTests.py
-python UniformRefinerUnitTests.py
-#python UseCases.py

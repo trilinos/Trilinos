@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -25,7 +24,7 @@ SET(HEADERS ${HEADERS}
   )
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-
+ 
 SET(HEADERS ${HEADERS}
   Ifpack_ConfigDefs.h
   Ifpack_Version.h
@@ -51,6 +50,9 @@ SET(HEADERS ${HEADERS}
   Ifpack_Container.h
   Ifpack_SparseContainer.h
   Ifpack_DenseContainer.h
+  Ifpack_TriDiContainer.h
+  Ifpack_SerialTriDiMatrix.h
+  Ifpack_SerialTriDiSolver.h
   Ifpack_AdditiveSchwarz.h
   Ifpack_LocalFilter.h
   Ifpack_NodeFilter.h
@@ -107,6 +109,9 @@ SET(SOURCES ${SOURCES}
   Ifpack_Condest.cpp
   Ifpack.cpp
   Ifpack_DenseContainer.cpp
+  Ifpack_TriDiContainer.cpp
+  Ifpack_SerialTriDiMatrix.cpp
+  Ifpack_SerialTriDiSolver.cpp
   Ifpack_LocalFilter.cpp
   Ifpack_NodeFilter.cpp
   Ifpack_SingletonFilter.cpp
@@ -249,15 +254,12 @@ IF (${PACKAGE_NAME}_ENABLE_Euclid)
 
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Boost)
-
+IF (${PACKAGE_NAME}_ENABLE_SUPPORTGRAPH)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/supportgraph)
-
-  SET(HEADERS ${HEADERS}
-  supportgraph/Ifpack_SupportGraph.h
+  SET (HEADERS
+    ${HEADERS} 
+    supportgraph/Ifpack_SupportGraph.h
   )
-
-
 ENDIF()
 
 # Experimental code:

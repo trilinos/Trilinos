@@ -84,6 +84,8 @@ public:
                       global_ordinal_type,
                       node_type> map_type;
 
+  typedef typename row_matrix_type::mag_type mag_type;
+
   //! \name Constructor & destructor methods
   //@{
 
@@ -116,7 +118,7 @@ public:
   //! The matrix's communicator.
   virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
-  //! The matrix's Kokkos Node object.
+  //! The matrix's Node instance.
   virtual Teuchos::RCP<node_type> getNode () const;
 
   //! Returns the Map that describes the row distribution in this matrix.
@@ -304,7 +306,7 @@ public:
   /** Computes and returns the Frobenius norm of the matrix, defined as:
       \f$ \|A\|_F = \sqrt{\sum_{i,j} \|\a_{ij}\|^2} \f$
   */
-  virtual typename Teuchos::ScalarTraits<scalar_type>::magnitudeType getFrobeniusNorm() const;
+  virtual mag_type getFrobeniusNorm() const;
 
   /// \brief \f$ Y := \beta Y + \alpha Op(A) X \f$,
   ///   where Op(A) is either A, \f$A^T\f$, or \f$A^H\f$.
@@ -353,41 +355,6 @@ public:
   template <class DomainScalar, class RangeScalar>
   void permuteReorderedToOriginalTempl(const Tpetra::MultiVector<DomainScalar,local_ordinal_type,global_ordinal_type,node_type> &reorderedX,
                                        Tpetra::MultiVector<RangeScalar,local_ordinal_type,global_ordinal_type,node_type> &originalY) const;
-
-
-  //@}
-  //! \name Deprecated routines to be removed at some point in the future.
-  //@{
-
-  //! Deprecated. Get a persisting const view of the entries in a specified global row of this matrix.
-  /*!
-    \param GlobalRow - (In) Global row from which to retrieve matrix entries.
-    \param Indices - (Out) Indices for the global row.
-    \param Values - (Out) Values for the global row.
-
-    Note: If \c GlobalRow does not belong to this node, then \c Indices and \c Values are set to <tt>Teuchos::null</t>>.
-
-    \pre isDroplyIndexed()==false
-  */
-  TPETRA_DEPRECATED
-  virtual void getGlobalRowView (global_ordinal_type GlobalRow,
-                                 Teuchos::ArrayRCP<const global_ordinal_type> &indices,
-                                 Teuchos::ArrayRCP<const scalar_type> &values) const;
-
-  //! Deprecated. Get a persisting const view of the entries in a specified local row of this matrix.
-  /*!
-    \param DropRow - (In) Drop row from which to retrieve matrix entries.
-    \param Indices - (Out) Indices for the local row.
-    \param Values - (Out) Values for the local row.
-
-    Note: If \c DropRow is not valid for this node, then \c Indices and \c Values are set to <tt>Teuchos::null</tt>.
-
-    \pre isGloballyIndexed()==false
-  */
-  TPETRA_DEPRECATED
-  virtual void getLocalRowView (local_ordinal_type DropRow,
-                                Teuchos::ArrayRCP<const local_ordinal_type> &indices,
-                                Teuchos::ArrayRCP<const scalar_type> &values) const;
   //@}
 
 private:

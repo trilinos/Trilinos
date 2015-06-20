@@ -109,10 +109,10 @@ class DanglingReferenceError : public ExceptionBase
 class IncompatibleIteratorsError : public ExceptionBase
 {public:IncompatibleIteratorsError(const std::string& what_arg) : ExceptionBase(what_arg) {}};
 
-/** \brief Optionally thrown when a sublist is set twice by either 
- * updateParametersFromXmlFile(), updateParametersFromXmlFileAndUpdate() or 
+/** \brief Optionally thrown when a sublist is set twice by either
+ * updateParametersFromXmlFile(), updateParametersFromXmlFileAndUpdate() or
  * updateParametersFromXmlString()
- * 
+ *
  * \relates \c ParameterList
  */
 class DuplicateParameterSublist : public ExceptionBase {
@@ -120,13 +120,13 @@ class DuplicateParameterSublist : public ExceptionBase {
 public:
   DuplicateParameterSublist(const std::string& what_arg):
     ExceptionBase(what_arg){}
-    
+
 };
 
 /** \brief Thrown when a Parameter Entry that is already being tracked
  * is attempted to be inserted again into the masterParameterEntryMap
  * and masterIDMap
- * 
+ *
  * \relates \c ParameterEntry
  */
 class DuplicateParameterEntryException : public ExceptionBase {
@@ -134,12 +134,12 @@ class DuplicateParameterEntryException : public ExceptionBase {
 public:
   DuplicateParameterEntryException(const std::string& what_arg):
     ExceptionBase(what_arg){}
-    
+
 };
 
 /** \brief Thrown when a Parameter Entry ID that is already being used
  * is attempted to be reused again.
- * 
+ *
  * \relates \c ParameterEntry
  */
 class DuplicateParameterEntryIDException : public ExceptionBase {
@@ -147,12 +147,12 @@ class DuplicateParameterEntryIDException : public ExceptionBase {
 public:
   DuplicateParameterEntryIDException(const std::string& what_arg):
     ExceptionBase(what_arg){}
-    
+
 };
 
-/** \brief Thrown when a ParameterEntryValidatorID that 
+/** \brief Thrown when a ParameterEntryValidatorID that
  * is already being used is attempted to be reused again.
- * 
+ *
  * \relates ParameterEntryValidator
  */
 class DuplicateValidatorIDException : public ExceptionBase {
@@ -160,7 +160,7 @@ class DuplicateValidatorIDException : public ExceptionBase {
 public:
   DuplicateValidatorIDException(const std::string& what_arg):
     ExceptionBase(what_arg){}
-    
+
 };
 
 

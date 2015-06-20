@@ -67,7 +67,7 @@ public:
 
   /** \name Converter Functions */
   //@{
-  
+
   /** \brief Converts a given XMLObject to a FunctionObject.
    *
    * @param xmlObj The XMLObject to convert to a FunctionObject.
@@ -75,7 +75,7 @@ public:
    */
   RCP<FunctionObject> fromXMLtoFunctionObject(const XMLObject& xmlObj) const;
 
-  /** \brief Preforms any and all special xml conversion that 
+  /** \brief Preforms any and all special xml conversion that
    * is specific to a
    * particular FunctionObject.
    *
@@ -101,12 +101,12 @@ public:
   virtual void convertFunctionObject(
     const RCP<const FunctionObject> function,
     XMLObject& xmlObj) const = 0;
-  
+
   //@}
 
   //! \name Attribute/Query Functions
   //@{
-  
+
   /** \brief . */
   static const std::string& getTypeAttributeName(){
     static const std::string typeAttributeName = "type";

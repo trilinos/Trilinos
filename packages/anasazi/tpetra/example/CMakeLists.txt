@@ -1,0 +1,2 @@
+ADD_SUBDIRECTORY(TraceMinDavidson)
+ADD_SUBDIRECTORY(CustomStatusTest)

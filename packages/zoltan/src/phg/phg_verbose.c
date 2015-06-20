@@ -58,13 +58,12 @@ extern "C" {
 
 void print_zoltan_pins(zoltan_pins *z, int me, int ewgt_dim)
 {
-int i, k;
+  int i;
 
   printf("%d) %d hyperedges\n\n",me, z->nHedges);
 
   if (z->nHedges == 0) return;
 
-  k = 0;
   for (i=0; i<z->nHedges; i++){
     if (z->edgeHash){
       printf("  GID " ZOLTAN_ID_SPEC ", hashed to %d, num pins %d\n", z->edgeGID[i], z->edgeHash[i], z->esizes[i]);

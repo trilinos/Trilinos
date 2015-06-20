@@ -1,0 +1,250 @@
+// @HEADER
+//
+// ***********************************************************************
+//
+//   Zoltan2: A package of combinatorial algorithms for scientific computing
+//                  Copyright 2012 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Karen Devine      (kddevin@sandia.gov)
+//                    Erik Boman        (egboman@sandia.gov)
+//                    Siva Rajamanickam (srajama@sandia.gov)
+//
+// ***********************************************************************
+//
+// @HEADER
+//
+// Basic testing of Zoltan2::PamgenMeshAdapter
+
+#include <Zoltan2_PamgenMeshAdapter.hpp>
+
+// Teuchos includes
+#include "Teuchos_XMLParameterListHelpers.hpp"
+
+// Pamgen includes
+#include "create_inline_mesh.h"
+
+using namespace std;
+using Teuchos::RCP;
+
+/*********************************************************/
+/*                     Typedefs                          */
+/*********************************************************/
+//Tpetra typedefs
+typedef Tpetra::DefaultPlatform::DefaultPlatformType            Platform;
+typedef Tpetra::MultiVector<double, int, int>     tMVector_t;
+
+
+
+/*****************************************************************************/
+/******************************** MAIN ***************************************/
+/*****************************************************************************/
+
+int main(int narg, char *arg[]) {
+
+  Teuchos::GlobalMPISession mpiSession(&narg, &arg,0);
+  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
+  RCP<const Teuchos::Comm<int> > CommT = platform.getComm();
+
+  int me = CommT->getRank();
+  int numProcs = CommT->getSize();
+
+  /***************************************************************************/
+  /*************************** GET XML INPUTS ********************************/
+  /***************************************************************************/
+
+  // default values for command-line arguments
+  std::string xmlMeshInFileName("Poisson.xml");
+
+  // Read run-time options.
+  Teuchos::CommandLineProcessor cmdp (false, false);
+  cmdp.setOption("xmlfile", &xmlMeshInFileName,
+                 "XML file with PamGen specifications");
+  cmdp.parse(narg, arg);
+
+  // Read xml file into parameter list
+  ParameterList inputMeshList;
+
+  if(xmlMeshInFileName.length()) {
+    if (me == 0) {
+      cout << "\nReading parameter list from the XML file \""
+		<<xmlMeshInFileName<<"\" ...\n\n";
+    }
+    Teuchos::updateParametersFromXmlFile(xmlMeshInFileName, 
+					 Teuchos::inoutArg(inputMeshList));
+    if (me == 0) {
+      inputMeshList.print(cout,2,true,true);
+      cout << "\n";
+    }
+  }
+  else {
+    cout << "Cannot read input file: " << xmlMeshInFileName << "\n";
+    return 0;
+  }
+
+  // Get pamgen mesh definition
+  std::string meshInput = Teuchos::getParameter<std::string>(inputMeshList,
+							     "meshInput");
+
+  /***************************************************************************/
+  /********************** GET CELL TOPOLOGY **********************************/
+  /***************************************************************************/
+
+  // Get dimensions
+  int dim = 3;
+
+  /***************************************************************************/
+  /***************************** GENERATE MESH *******************************/
+  /***************************************************************************/
+
+  if (me == 0) cout << "Generating mesh ... \n\n";
+
+  // Generate mesh with Pamgen
+  long long maxInt = 9223372036854775807LL;
+  Create_Pamgen_Mesh(meshInput.c_str(), dim, me, numProcs, maxInt);
+
+  // Creating mesh adapter
+  if (me == 0) cout << "Creating mesh adapter ... \n\n";
+
+  typedef Zoltan2::PamgenMeshAdapter<tMVector_t> inputAdapter_t;
+
+  inputAdapter_t ia(*CommT, "region");
+  inputAdapter_t::zgid_t const *adjacencyIds=NULL;
+  inputAdapter_t::lno_t const *offsets=NULL;
+  ia.print(me);
+  Zoltan2::MeshEntityType primaryEType = ia.getPrimaryEntityType();
+  Zoltan2::MeshEntityType adjEType = ia.getAdjacencyEntityType();
+
+  if (ia.availAdjs(primaryEType, adjEType)) {
+    ia.getAdjsView(primaryEType, adjEType, offsets, adjacencyIds);
+    int dimension, num_nodes, num_elem;
+    int error = 0;
+    char title[100];
+    int exoid = 0;
+    int num_elem_blk, num_node_sets, num_side_sets;
+    error += im_ex_get_init(exoid, title, &dimension, &num_nodes, &num_elem,
+			    &num_elem_blk, &num_node_sets, &num_side_sets);
+
+    if ((int)ia.getLocalNumOf(primaryEType) != num_elem) {
+      cout << "Number of elements do not match\n";
+      return 2;
+    }
+
+    int *element_num_map = new int [num_elem];
+    error += im_ex_get_elem_num_map(exoid, element_num_map);
+
+    inputAdapter_t::zgid_t *node_num_map = new int [num_nodes];
+    error += im_ex_get_node_num_map(exoid, node_num_map);
+
+    int *elem_blk_ids = new int [num_elem_blk];
+    error += im_ex_get_elem_blk_ids(exoid, elem_blk_ids);
+
+    int *num_nodes_per_elem = new int [num_elem_blk];
+    int *num_attr           = new int [num_elem_blk];
+    int *num_elem_this_blk  = new int [num_elem_blk];
+    char **elem_type        = new char * [num_elem_blk];
+    int **connect           = new int * [num_elem_blk];
+
+    for(int i = 0; i < num_elem_blk; i++){
+      elem_type[i] = new char [MAX_STR_LENGTH + 1];
+      error += im_ex_get_elem_block(exoid, elem_blk_ids[i], elem_type[i],
+				    (int*)&(num_elem_this_blk[i]),
+				    (int*)&(num_nodes_per_elem[i]),
+				    (int*)&(num_attr[i]));
+      delete[] elem_type[i];
+    }
+
+    delete[] elem_type;
+    elem_type = NULL;
+    delete[] num_attr;
+    num_attr = NULL;
+
+    for(int b = 0; b < num_elem_blk; b++) {
+      connect[b] = new int [num_nodes_per_elem[b]*num_elem_this_blk[b]];
+      error += im_ex_get_elem_conn(exoid, elem_blk_ids[b], connect[b]);
+    }
+
+    delete[] elem_blk_ids;
+    elem_blk_ids = NULL;
+    int telct = 0;
+
+    for (int b = 0; b < num_elem_blk; b++) {
+      for (int i = 0; i < num_elem_this_blk[b]; i++) {
+	if (offsets[telct + 1] - offsets[telct] != num_nodes_per_elem[b]) {
+	  std::cout << "Number of adjacencies do not match" << std::endl;
+	  return 3;
+	}
+
+	for (int j = 0; j < num_nodes_per_elem[b]; j++) {
+	  ssize_t in_list = -1;
+
+	  for(inputAdapter_t::lno_t k=offsets[telct];k<offsets[telct+1];k++) {
+	    if(adjacencyIds[k] ==
+	       node_num_map[connect[b][i*num_nodes_per_elem[b]+j]-1]) {
+	      in_list = k;
+	      break;
+	    }
+	  }
+
+	  if (in_list < 0) {
+	    std::cout << "Adjacency missing" << std::endl;
+	    return 4;
+	  }
+	}
+
+	++telct;
+      }
+    }
+
+    if (telct != num_elem) {
+      cout << "Number of elements do not match\n";
+      return 2;
+    }
+  }
+  else{
+    std::cout << "Adjacencies not available" << std::endl;
+    return 1;
+  }
+
+  // delete mesh
+  if (me == 0) cout << "Deleting the mesh ... \n\n";
+
+  Delete_Pamgen_Mesh();
+
+  if (me == 0)
+    std::cout << "PASS" << std::endl;
+
+  return 0;
+}
+/*****************************************************************************/
+/********************************* END MAIN **********************************/
+/*****************************************************************************/

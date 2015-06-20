@@ -126,7 +126,6 @@ class BlockGmresSolMgr : public SolverManager<ScalarType,MV,OP> {
 
 private:
   typedef MultiVecTraits<ScalarType,MV> MVT;
-  typedef MultiVecTraitsExt<ScalarType,MV> MVText;
   typedef OperatorTraits<ScalarType,MV,OP> OPT;
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -972,7 +971,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   Teuchos::ParameterList plist;
   plist.set("Block Size",blockSize_);
 
-  ptrdiff_t dim = MVText::GetGlobalLength( *(problem_->getRHS()) );
+  ptrdiff_t dim = MVT::GetGlobalLength( *(problem_->getRHS()) );
   if (blockSize_*static_cast<ptrdiff_t>(numBlocks_) > dim) {
     int tmpNumBlocks = 0;
     if (blockSize_ == 1)

@@ -243,41 +243,24 @@ void gen_par_filename(char *scalar_fname, char *par_fname,
 
 void add_fname_ext(char *cOrigFile, const char *cExt)
 /*
- *     This function removes the existing extension on a file name,
- *     if it exists, and adds the extension input to the function as
+ *     This function adds the extension input to the function as
  *     the variable cExt. The function overwrites the original file
- *     name.
+ *     name. Any existing extension is retained. "test.e" becomes "test.e.new"
  *
  *     Note that it is assumed enough memory is allocate for the original
  *     string to handle it's new extension.
  */
 {
+  int iExtLen = strlen(cExt);
 
-  char *cPtr;
-  int i1, iExtLen;
+  char *cPtr = cOrigFile;
+  cPtr += strlen(cOrigFile);
 
-  cPtr = strrchr(cOrigFile, '.');
-
-  iExtLen = strlen(cExt);
-
-  if(cPtr != NULL)
-  {
-    for(i1=0; i1 < iExtLen; i1++)
-    {
-      cPtr[i1] = cExt[i1];
-    }
-    cPtr[i1] = '\0';
+  int i1=0;
+  for( ; i1 < iExtLen; i1++) {
+    cPtr[i1] = cExt[i1];
   }
-  else
-  {
-    cPtr = cOrigFile;
-    cPtr += strlen(cOrigFile);
-    for(i1=0; i1 < iExtLen; i1++)
-    {
-      cPtr[i1] = cExt[i1];
-    }
-    cPtr[i1] = '\0';
-  }
+  cPtr[i1] = '\0';
 
   return;
 }

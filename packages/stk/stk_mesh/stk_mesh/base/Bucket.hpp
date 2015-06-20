@@ -1,10 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #ifndef stk_mesh_base_Bucket_hpp
 #define stk_mesh_base_Bucket_hpp
@@ -13,7 +38,6 @@
 #include <algorithm>                    // for lower_bound
 #include <iosfwd>                       // for ostream
 #include <stk_mesh/base/BucketConnectivity.hpp>  // for BucketConnectivity
-#include <stk_mesh/base/CellTopology.hpp>  // for CellTopology
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <stk_mesh/base/Part.hpp>       // for contains_ordinal, Part
 #include <stk_mesh/base/Types.hpp>
@@ -343,13 +367,20 @@ public:
 
   bool has_permutation(EntityRank rank) const;
 
+  void debug_dump(std::ostream& out, unsigned ordinal = -1u) const;
+
+protected:
+  void change_existing_connectivity(unsigned bucket_ordinal, stk::mesh::Entity* new_nodes);
+  void change_existing_permutation_for_connected_element(unsigned bucket_ordinal_of_lower_ranked_entity, unsigned elem_connectivity_ordinal, stk::mesh::Permutation permut);
+  void change_existing_permutation_for_connected_edge(unsigned bucket_ordinal_of_higher_ranked_entity, unsigned edge_connectivity_ordinal, stk::mesh::Permutation permut);
+  void change_existing_permutation_for_connected_face(unsigned bucket_ordinal_of_higher_ranked_entity, unsigned face_connectivity_ordinal, stk::mesh::Permutation permut);
+  virtual ~Bucket();
+
+private:
+
   bool destroy_relation(Entity e_from, Entity e_to, const RelationIdentifier local_id );
 
   bool declare_relation(size_type bucket_ordinal, Entity e_to, const ConnectivityOrdinal ordinal, Permutation permutation);
-
-  void debug_dump(std::ostream& out, unsigned ordinal = -1u) const;
-
-private:
 
   // The following *_other* functions should not be made available externally, in
   // order to avoid external confusion with "constraint" and "other" connectivities.
@@ -384,9 +415,8 @@ private:
    */
   BulkData & bulk_data() const { return mesh(); }
 
-  ~Bucket();
-
   Bucket();
+
   Bucket( const Bucket & );
   Bucket & operator = ( const Bucket & );
 
@@ -551,13 +581,14 @@ bool Bucket::has_permutation(EntityRank rank) const
   case stk::topology::NODE_RANK:
     return m_node_kind == FIXED_CONNECTIVITY ? m_fixed_node_connectivity.has_permutation() : m_dynamic_node_connectivity.has_permutation();
   case stk::topology::EDGE_RANK:
-    return m_edge_kind == FIXED_CONNECTIVITY ? m_fixed_node_connectivity.has_permutation() : m_dynamic_node_connectivity.has_permutation();
+    return m_edge_kind == FIXED_CONNECTIVITY ? m_fixed_edge_connectivity.has_permutation() : m_dynamic_edge_connectivity.has_permutation();
   case stk::topology::FACE_RANK:
-    return m_face_kind == FIXED_CONNECTIVITY ? m_fixed_node_connectivity.has_permutation() : m_dynamic_node_connectivity.has_permutation();
+    return m_face_kind == FIXED_CONNECTIVITY ? m_fixed_face_connectivity.has_permutation() : m_dynamic_face_connectivity.has_permutation();
   case stk::topology::ELEMENT_RANK:
-    return m_element_kind == FIXED_CONNECTIVITY ? m_fixed_node_connectivity.has_permutation() : m_dynamic_node_connectivity.has_permutation();
+    return m_element_kind == FIXED_CONNECTIVITY ? m_fixed_element_connectivity.has_permutation() : m_dynamic_element_connectivity.has_permutation();
+  case stk::topology::CONSTRAINT_RANK:
   default:
-    return m_dynamic_other_connectivity.has_permutation();
+    return false;
   }
 }
 
@@ -660,10 +691,6 @@ void Bucket::check_for_invalid_connectivity_request(ConnectivityType const* type
 #endif
 
 typedef Bucket::iterator BucketIterator;
-
-/** Get the cell_topology off a bucket */
-CellTopology get_cell_topology(const Bucket &bucket);
-
 
 } // namespace mesh
 } // namespace stk

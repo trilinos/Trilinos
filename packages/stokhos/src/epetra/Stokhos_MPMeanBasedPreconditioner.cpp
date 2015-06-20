@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -68,34 +68,34 @@ Stokhos::MPMeanBasedPreconditioner::
 
 void
 Stokhos::MPMeanBasedPreconditioner::
-setupPreconditioner(const Teuchos::RCP<Stokhos::BlockDiagonalOperator>& mp_op, 
-		    const Epetra_Vector& x)
+setupPreconditioner(const Teuchos::RCP<Stokhos::BlockDiagonalOperator>& mp_op,
+                    const Epetra_Vector& x)
 {
    TEUCHOS_TEST_FOR_EXCEPTION(prec_factory == Teuchos::null, std::logic_error,
-		      "Error!  setupPreconditioner() cannot be called when " <<
-		      "prec_factory is null!" << std::endl);
+                      "Error!  setupPreconditioner() cannot be called when " <<
+                      "prec_factory is null!" << std::endl);
 
-   Teuchos::RCP<Stokhos::ProductContainer<Epetra_Operator> > mp_ops = 
+   Teuchos::RCP<Stokhos::ProductContainer<Epetra_Operator> > mp_ops =
      mp_op->getMPOps();
    mean_prec = prec_factory->compute(mp_ops->getCoeffPtr(0));
    if (num_mp_blocks > 0) {
-     label = std::string("Stokhos MP Mean Preconditioner:\n") + 
-       std::string("		***** ") + 
+     label = std::string("Stokhos MP Mean Preconditioner:\n") +
+       std::string("            ***** ") +
        std::string(mean_prec->Label());
    }
 }
 
-int 
+int
 Stokhos::MPMeanBasedPreconditioner::
-SetUseTranspose(bool UseTranspose) 
+SetUseTranspose(bool UseTheTranspose)
 {
-  useTranspose = UseTranspose;
+  useTranspose = UseTheTranspose;
   mean_prec->SetUseTranspose(useTranspose);
 
   return 0;
 }
 
-int 
+int
 Stokhos::MPMeanBasedPreconditioner::
 Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 {
@@ -108,7 +108,7 @@ Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
   return 0;
 }
 
-int 
+int
 Stokhos::MPMeanBasedPreconditioner::
 ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 {
@@ -121,7 +121,7 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
   return 0;
 }
 
-double 
+double
 Stokhos::MPMeanBasedPreconditioner::
 NormInf() const
 {
@@ -129,41 +129,41 @@ NormInf() const
 }
 
 
-const char* 
+const char*
 Stokhos::MPMeanBasedPreconditioner::
 Label () const
 {
   return const_cast<char*>(label.c_str());
 }
-  
-bool 
+
+bool
 Stokhos::MPMeanBasedPreconditioner::
 UseTranspose() const
 {
   return useTranspose;
 }
 
-bool 
+bool
 Stokhos::MPMeanBasedPreconditioner::
 HasNormInf() const
 {
   return mean_prec->HasNormInf();
 }
 
-const Epetra_Comm & 
+const Epetra_Comm &
 Stokhos::MPMeanBasedPreconditioner::
 Comm() const
 {
   return *mp_comm;
 }
-const Epetra_Map& 
+const Epetra_Map&
 Stokhos::MPMeanBasedPreconditioner::
 OperatorDomainMap() const
 {
   return *mp_map;
 }
 
-const Epetra_Map& 
+const Epetra_Map&
 Stokhos::MPMeanBasedPreconditioner::
 OperatorRangeMap() const
 {

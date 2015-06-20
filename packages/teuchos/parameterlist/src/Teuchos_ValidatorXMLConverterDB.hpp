@@ -61,7 +61,7 @@ public:
 
   /** \name Modifier Functions */
   //@{
-  
+
   /** \brief Add a converter to the database.
    *
    * \param validator A dummy validator representing the type of validator the
@@ -70,13 +70,13 @@ public:
    */
   static void addConverter(RCP<const ParameterEntryValidator> validator,
     RCP<ValidatorXMLConverter> converterToAdd);
-  
+
   //@}
 
   /** \name Converter Functions */
   //@{
-  
-  /** \brief Get an appropriate ValidatorXMLConverter given a 
+
+  /** \brief Get an appropriate ValidatorXMLConverter given a
    * Validator.
    *
    * \param validator The ParameterEntryValidator for which a converter is
@@ -89,7 +89,7 @@ public:
    *
    * @param xmlObject The XMLObject for which a converter is desired.
    */
-  static RCP<const ValidatorXMLConverter> 
+  static RCP<const ValidatorXMLConverter>
     getConverter(const XMLObject& xmlObject);
 
   /**
@@ -99,7 +99,7 @@ public:
    * \param validator The validator to be converter.
    * \param validatorIDsMap A map containing ParameterEntryValidators and their
    * associated IDs.
-   * \param assignedID Whether or not the validator to be converted has been 
+   * \param assignedID Whether or not the validator to be converted has been
    * assigned an ID and is therefore in the validatorIDsMap and should have a
    * ID attribute.
    *
@@ -108,10 +108,10 @@ public:
   static XMLObject convertValidator(
     RCP<const ParameterEntryValidator> validator,
     const ValidatortoIDMap& validatorIDsMap,
-    bool assignedID=true); 
+    bool assignedID=true);
 
   /**
-   * \brief Given an XMLObject converts the XMLObject 
+   * \brief Given an XMLObject converts the XMLObject
    * to a ParameterEntryValidator and inserts the validator into the map.
    *
    * \param xmlObject The XMLObject representing the validator to be converted.
@@ -119,11 +119,11 @@ public:
    * associated IDs.
    * \return A ParameterEntryValidator that was represented by the XML.
    */
-  static RCP<ParameterEntryValidator> 
+  static RCP<ParameterEntryValidator>
     convertXML(
       const XMLObject& xmlObject,
       const IDtoValidatorMap& validatorIDsMap);
-  
+
   //@}
 
   /** \name I/O Functions */
@@ -135,14 +135,14 @@ public:
    * \param out Stream to which tags should be printed.
    */
   static void printKnownConverters(std::ostream& out);
-  
+
   //@}
 
 private:
 
   /** \name Private types. */
   //@{
-  
+
   /** \brief convience class. */
   typedef std::map<std::string, RCP<ValidatorXMLConverter> > ConverterMap;
 
@@ -160,7 +160,7 @@ private:
    * This map is used to enable outside code to set up new converter types.
    */
   static ConverterMap& getConverterMap();
-  
+
   //@}
 
 
@@ -174,7 +174,7 @@ private:
 // Helper Macros
 //
 
-// Doing this include so that when people macros like 
+// Doing this include so that when people macros like
 // TEUCHOS_ADD_STRINGTOINTEGRALCONVERTER below they don't have to bother
 // including it themselves. More likely they might not even know they have
 // to.
@@ -190,10 +190,10 @@ private:
       Teuchos::StringToIntegralParameterEntryValidator< INTEGRALTYPE > >:: \
         getDummyObject(), \
     Teuchos::rcp(new Teuchos::StringToIntegralValidatorXMLConverter< INTEGRALTYPE >));
-    
 
 
-/** \brief Add EnhancedNumberValidator<T> to the set of supported parameter 
+
+/** \brief Add EnhancedNumberValidator<T> to the set of supported parameter
  * types.
  */
 #define TEUCHOS_ADD_ENHANCEDNUMBERVALIDATOR_CONVERTER(T) \

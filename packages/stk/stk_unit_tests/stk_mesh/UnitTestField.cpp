@@ -1,13 +1,36 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
-
-#include <boost/foreach.hpp>            // for auto_any_base, etc
 #include <iostream>                     // for ostream, operator<<, etc
 #include <stdexcept>                    // for runtime_error
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
@@ -25,11 +48,17 @@
 #include "stk_mesh/base/Selector.hpp"   // for operator<<, Selector, etc
 #include "stk_mesh/base/Types.hpp"      // for PartVector, BucketVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
+#include "Ioss_DBUsage.h"               // for DatabaseUsage::READ_MODEL
+#include "Ioss_Field.h"                 // for Field, etc
+#include "Ioss_IOFactory.h"             // for IOFactory
+#include "Ioss_NodeBlock.h"             // for NodeBlock
+#include "Ioss_ElementBlock.h"
+#include "Ioss_Property.h"              // for Property
+#include "Ioss_Region.h"                // for Region, NodeBlockContainer
+#include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH, etc
+
 namespace stk { namespace mesh { class Bucket; } }
-
-
-
-
 
 
 using stk::mesh::MetaData;
@@ -262,7 +291,7 @@ TEST(UnitTestField, testFieldWithSelector)
   unsigned num_buckets = f0_buckets.size();
   ASSERT_EQ(1u, num_buckets);
 
-  BOOST_FOREACH(stk::mesh::Bucket* b, f0_buckets) {
+  for(stk::mesh::Bucket* b : f0_buckets) {
     unsigned f0_size = field_bytes_per_entity(f0, *b);
     ASSERT_EQ(8u, f0_size);
   }
@@ -324,7 +353,7 @@ TEST(UnitTestField, testFieldWithSelectorAnd)
   {
     stk::mesh::BucketVector const& f0_buckets = bulk_data.get_buckets(elem_rank, elem_hex_selector);
 
-    BOOST_FOREACH(stk::mesh::Bucket* b, f0_buckets) {
+    for(stk::mesh::Bucket* b : f0_buckets) {
       unsigned f0_size = field_bytes_per_entity(f0, *b);
       ASSERT_EQ(64u, f0_size);
     }
@@ -333,7 +362,7 @@ TEST(UnitTestField, testFieldWithSelectorAnd)
   {
     stk::mesh::BucketVector const& f0_buckets = bulk_data.get_buckets(elem_rank, elem_tet_selector);
 
-    BOOST_FOREACH(stk::mesh::Bucket* b, f0_buckets) {
+    for(stk::mesh::Bucket* b : f0_buckets) {
       unsigned f0_size = field_bytes_per_entity(f0, *b);
       ASSERT_EQ(32u, f0_size);
     }
@@ -392,6 +421,132 @@ TEST(UnitTestField, testFieldWithSelectorInvalid)
 SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( ATAG )
 SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( BTAG )
 SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( CTAG )
+
+
+TEST(UnitTestField, writeFieldsWithSameName)
+{
+    std::string mesh_name = "mesh_fields_with_same_name.e";
+    MPI_Comm communicator = MPI_COMM_WORLD;
+    const std::string fieldName = "MyFieldForElementsAndNodes";
+    const double nodeInitialValue = 1.25;
+    const double elemInitialValue = 8.39;
+    const double time = 1.0;
+
+    // Create the mesh with fields with the same name
+    {
+        stk::io::StkMeshIoBroker stkIo(communicator);
+
+        const std::string generatedFileName = "generated:4x4x16";
+        size_t index = stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
+        stkIo.set_active_mesh(index);
+        stkIo.create_input_mesh();
+
+        stk::mesh::Field<double> &nodeField = stkIo.meta_data().declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, fieldName, 1);
+        stk::mesh::put_field(nodeField, stkIo.meta_data().universal_part(), &nodeInitialValue);
+
+        stk::mesh::Field<double> &elemField = stkIo.meta_data().declare_field<stk::mesh::Field<double> >(stk::topology::ELEMENT_RANK, fieldName, 1);
+        stk::mesh::put_field(elemField, stkIo.meta_data().universal_part(), &elemInitialValue);
+
+        stkIo.populate_bulk_data();
+
+        size_t fh = stkIo.create_output_mesh(mesh_name, stk::io::WRITE_RESULTS);
+        stkIo.write_output_mesh(fh);
+        stkIo.add_field(fh, nodeField);
+        stkIo.add_field(fh, elemField);
+        stkIo.begin_output_step(fh, time);
+        stkIo.write_defined_output_fields(fh);
+        stkIo.end_output_step(fh);
+    }
+
+    // Verify that the fields were written out to disk properly
+    {
+        Ioss::DatabaseIO *resultsDb = Ioss::IOFactory::create("exodus", mesh_name, Ioss::READ_MODEL, communicator);
+        Ioss::Region results(resultsDb);
+        const int goldNumSteps = 1;
+        EXPECT_EQ(goldNumSteps, results.get_property("state_count").get_int());
+        // Should be 1 nodal field on database named "disp";
+        Ioss::NodeBlock *nb = results.get_node_blocks()[0];
+        const unsigned goldNumNodeFields = 1;
+        EXPECT_EQ(goldNumNodeFields, nb->field_count(Ioss::Field::TRANSIENT));
+        EXPECT_TRUE(nb->field_exists(fieldName));
+
+        Ioss::ElementBlock *eb = results.get_element_blocks()[0];
+        const unsigned goldNumElemFields = 1;
+        EXPECT_EQ(goldNumElemFields, eb->field_count(Ioss::Field::TRANSIENT));
+        EXPECT_TRUE(eb->field_exists(fieldName));
+
+        const int step = 1;
+        double db_time = results.begin_state(step);
+        EXPECT_EQ(time, db_time);
+
+        std::vector<double> nodeFieldData;
+        nb->get_field_data(fieldName, nodeFieldData);
+        for (size_t node = 0; node < nodeFieldData.size(); node++) {
+            EXPECT_EQ(nodeInitialValue, nodeFieldData[node]);
+        }
+
+        std::vector<double> elemFieldData;
+        eb->get_field_data(fieldName, elemFieldData);
+        for (size_t elem = 0; elem < elemFieldData.size(); elem++) {
+            EXPECT_EQ(elemInitialValue, elemFieldData[elem]);
+        }
+
+        results.end_state(step);
+    }
+
+    // Verify that we can read the mesh back into memory correctly
+    {
+        stk::io::StkMeshIoBroker stkIo(communicator);
+
+        size_t index = stkIo.add_mesh_database(mesh_name, stk::io::READ_MESH);
+        stkIo.set_active_mesh(index);
+        stkIo.create_input_mesh();
+        const double badInitialData = -1.2345;
+
+        stk::mesh::Field<double> &nodeField = stkIo.meta_data().declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, fieldName, 1);
+        stk::mesh::put_field(nodeField, stkIo.meta_data().universal_part(), &badInitialData);
+
+        stk::mesh::Field<double> &elemField = stkIo.meta_data().declare_field<stk::mesh::Field<double> >(stk::topology::ELEMENT_RANK, fieldName, 1);
+        stk::mesh::put_field(elemField, stkIo.meta_data().universal_part(), &badInitialData);
+
+        stkIo.populate_bulk_data();
+        stkIo.add_input_field(stk::io::MeshField(nodeField, fieldName));
+        stkIo.add_input_field(stk::io::MeshField(elemField, fieldName));
+        stkIo.read_defined_input_fields(time);
+        stk::mesh::BulkData &mesh = stkIo.bulk_data();
+        stk::mesh::MetaData &metaData = stkIo.meta_data();
+
+        const stk::mesh::BucketVector &nodeBuckets = mesh.get_buckets(stk::topology::NODE_RANK, metaData.locally_owned_part());
+        for (size_t bucket_i=0 ; bucket_i<nodeBuckets.size() ; ++bucket_i) {
+            stk::mesh::Bucket &nodeBucket = *nodeBuckets[bucket_i];
+            for (size_t node_i=0 ; node_i<nodeBucket.size() ; ++node_i) {
+                double * nodeData = field_data(nodeField,nodeBucket.bucket_id(),node_i);
+                EXPECT_EQ(nodeInitialValue, *nodeData);
+            }
+        }
+
+        const stk::mesh::BucketVector &elemBuckets = mesh.get_buckets(stk::topology::ELEM_RANK, metaData.locally_owned_part());
+        for (size_t bucket_i=0 ; bucket_i<elemBuckets.size() ; ++bucket_i) {
+            stk::mesh::Bucket &elemBucket = *elemBuckets[bucket_i];
+            for (size_t elem_i=0 ; elem_i<elemBucket.size() ; ++elem_i) {
+                double * elemData = field_data(elemField,elemBucket.bucket_id(),elem_i);
+                EXPECT_EQ(elemInitialValue, *elemData);
+            }
+        }
+
+        // Test Field accessor functions:
+        stk::mesh::Field<double> *myTemplatedField = stk::mesh::get_field_by_name<stk::mesh::Field<double> >(fieldName, metaData);
+        ASSERT_TRUE(myTemplatedField != NULL);
+        EXPECT_TRUE( &nodeField == myTemplatedField);
+        stk::mesh::FieldBase *myFieldBase = stk::mesh::get_field_by_name(fieldName, metaData);
+        ASSERT_TRUE(myFieldBase != NULL);
+        EXPECT_TRUE( &nodeField == myFieldBase);
+    }
+
+    unlink(mesh_name.c_str());
+}
+
+
 
 } //namespace <anonymous>
 

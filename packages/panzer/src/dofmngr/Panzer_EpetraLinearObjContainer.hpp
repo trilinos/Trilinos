@@ -83,6 +83,16 @@ public:
       rangeSpace = Thyra::create_VectorSpace(rangeMap);
    }
 
+   EpetraLinearObjContainer(const Teuchos::RCP<const Epetra_Map> & domain,
+                            const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & domainS,
+                            const Teuchos::RCP<const Epetra_Map> & range,
+                            const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & rangeS)
+      : domainMap(domain), rangeMap(range) 
+   {
+      domainSpace = domainS;
+      rangeSpace = rangeS;
+   }
+
    virtual void initialize() 
    {
       if(get_x()!=Teuchos::null) get_x()->PutScalar(0.0);

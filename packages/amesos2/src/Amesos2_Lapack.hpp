@@ -43,7 +43,7 @@
 
 
 #ifndef AMESOS2_LAPACK_HPP
-#define AMESOS2_LACPACK_HPP
+#define AMESOS2_LAPACK_HPP
 
 #include "Amesos2_Lapack_decl.hpp"
 

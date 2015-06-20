@@ -43,7 +43,7 @@
 #ifndef PANZER_EVALUATOR_GATHER_SOLUTION_EPETRA_DECL_HPP
 #define PANZER_EVALUATOR_GATHER_SOLUTION_EPETRA_DECL_HPP
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
 
@@ -59,8 +59,6 @@ class Epetra_CrsMatrix;
 
 namespace panzer {
 
-class EpetraLinearObjContainer;
-
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 class UniqueGlobalIndexer; //forward declaration
 
@@ -71,7 +69,7 @@ class UniqueGlobalIndexer; //forward declaration
     and that the nmber of dofs is equal to the size of the solution
     names vector.
 */
-template<typename EvalT, typename Traits,typename LO,typename GO> class GatherSolution_Epetra;
+template<typename EvalT, typename TRAITS,typename LO,typename GO> class GatherSolution_Epetra;
 
 // **************************************************************
 // **************************************************************
@@ -83,10 +81,10 @@ template<typename EvalT, typename Traits,typename LO,typename GO> class GatherSo
 // **************************************************************
 // Residual 
 // **************************************************************
-template<typename Traits,typename LO,typename GO>
-class GatherSolution_Epetra<panzer::Traits::Residual,Traits,LO,GO>
-  : public PHX::EvaluatorWithBaseImpl<Traits>,
-    public PHX::EvaluatorDerived<panzer::Traits::Residual, Traits>,
+template<typename TRAITS,typename LO,typename GO>
+class GatherSolution_Epetra<panzer::Traits::Residual,TRAITS,LO,GO>
+  : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+    public PHX::EvaluatorDerived<panzer::Traits::Residual, TRAITS>,
     public panzer::CloneableEvaluator  {
    
   
@@ -98,15 +96,15 @@ public:
   GatherSolution_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                         const Teuchos::ParameterList& p);
   
-  void postRegistrationSetup(typename Traits::SetupData d,
-			     PHX::FieldManager<Traits>& vm);
+  void postRegistrationSetup(typename TRAITS::SetupData d,
+			     PHX::FieldManager<TRAITS>& vm);
 
-  void preEvaluate(typename Traits::PreEvalData d);
+  void preEvaluate(typename TRAITS::PreEvalData d);
   
-  void evaluateFields(typename Traits::EvalData d);
+  void evaluateFields(typename TRAITS::EvalData d);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new GatherSolution_Epetra<panzer::Traits::Residual,Traits,LO,GO>(globalIndexer_,pl)); }
+  { return Teuchos::rcp(new GatherSolution_Epetra<panzer::Traits::Residual,TRAITS,LO,GO>(globalIndexer_,pl)); }
   
 private:
 
@@ -124,7 +122,7 @@ private:
   bool useTimeDerivativeSolutionVector_;
   std::string globalDataKey_; // what global data does this fill?
 
-  Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer_;
+  Teuchos::RCP<Epetra_Vector> x_;
 
   GatherSolution_Epetra();
 };
@@ -132,10 +130,10 @@ private:
 // **************************************************************
 // Tangent 
 // **************************************************************
-template<typename Traits,typename LO,typename GO>
-class GatherSolution_Epetra<panzer::Traits::Tangent,Traits,LO,GO>
-  : public PHX::EvaluatorWithBaseImpl<Traits>,
-    public PHX::EvaluatorDerived<panzer::Traits::Tangent, Traits>,
+template<typename TRAITS,typename LO,typename GO>
+class GatherSolution_Epetra<panzer::Traits::Tangent,TRAITS,LO,GO>
+  : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+    public PHX::EvaluatorDerived<panzer::Traits::Tangent, TRAITS>,
     public panzer::CloneableEvaluator  {
    
   
@@ -147,15 +145,15 @@ public:
   GatherSolution_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                         const Teuchos::ParameterList& p);
   
-  void postRegistrationSetup(typename Traits::SetupData d,
-			     PHX::FieldManager<Traits>& vm);
+  void postRegistrationSetup(typename TRAITS::SetupData d,
+			     PHX::FieldManager<TRAITS>& vm);
 
-  void preEvaluate(typename Traits::PreEvalData d);
+  void preEvaluate(typename TRAITS::PreEvalData d);
   
-  void evaluateFields(typename Traits::EvalData d);
+  void evaluateFields(typename TRAITS::EvalData d);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new GatherSolution_Epetra<panzer::Traits::Tangent,Traits,LO,GO>(globalIndexer_,pl)); }
+  { return Teuchos::rcp(new GatherSolution_Epetra<panzer::Traits::Tangent,TRAITS,LO,GO>(globalIndexer_,pl)); }
   
 private:
 
@@ -173,7 +171,7 @@ private:
   bool useTimeDerivativeSolutionVector_;
   std::string globalDataKey_; // what global data does this fill?
 
-  Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer_;
+  Teuchos::RCP<Epetra_Vector> x_;
 
   GatherSolution_Epetra();
 };
@@ -181,10 +179,10 @@ private:
 // **************************************************************
 // Jacobian
 // **************************************************************
-template<typename Traits,typename LO,typename GO>
-class GatherSolution_Epetra<panzer::Traits::Jacobian,Traits,LO,GO>
-  : public PHX::EvaluatorWithBaseImpl<Traits>,
-    public PHX::EvaluatorDerived<panzer::Traits::Jacobian, Traits>,
+template<typename TRAITS,typename LO,typename GO>
+class GatherSolution_Epetra<panzer::Traits::Jacobian,TRAITS,LO,GO>
+  : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+    public PHX::EvaluatorDerived<panzer::Traits::Jacobian, TRAITS>,
     public panzer::CloneableEvaluator  {
   
 public:
@@ -194,15 +192,15 @@ public:
   GatherSolution_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                         const Teuchos::ParameterList& p);
   
-  void postRegistrationSetup(typename Traits::SetupData d,
-			     PHX::FieldManager<Traits>& vm);
+  void postRegistrationSetup(typename TRAITS::SetupData d,
+			     PHX::FieldManager<TRAITS>& vm);
 
-  void preEvaluate(typename Traits::PreEvalData d);
+  void preEvaluate(typename TRAITS::PreEvalData d);
   
-  void evaluateFields(typename Traits::EvalData d);
+  void evaluateFields(typename TRAITS::EvalData d);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new GatherSolution_Epetra<panzer::Traits::Jacobian,Traits,LO,GO>(globalIndexer_,pl)); }
+  { return Teuchos::rcp(new GatherSolution_Epetra<panzer::Traits::Jacobian,TRAITS,LO,GO>(globalIndexer_,pl)); }
   
 private:
 
@@ -218,13 +216,16 @@ private:
 
   Teuchos::RCP<std::vector<std::string> > indexerNames_;
   bool useTimeDerivativeSolutionVector_;
-  bool disableSensitivities_;
+  bool disableSensitivities_;     // This disables sensitivities absolutely
+  std::string sensitivitiesName_; // This sets which gather operations have sensitivities
+  bool applySensitivities_;       // This is a local variable that is used by evaluateFields
+                                  // to turn on/off a certain set of sensitivities
   std::string globalDataKey_; // what global data does this fill?
   int gatherSeedIndex_; // what gather seed in the workset to use
                         // if less than zero then use alpha or beta
                         // as appropriate
 
-  Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer_;
+  Teuchos::RCP<Epetra_Vector> x_;
 
   GatherSolution_Epetra();
 };

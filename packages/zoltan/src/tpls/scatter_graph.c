@@ -106,13 +106,14 @@ int Zoltan_Scatter_Graph(
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   /* Save pointers to "old" data distribution */
-  old_vtxdist = old_adjncy = NULL;
+  old_adjncy = NULL;
   old_xadj = NULL;
   old_vwgt = old_adjwgt = NULL;
   old_vsize = NULL;
   old_xyz = NULL;
-  if (vtxdist)
-    old_vtxdist = *vtxdist;
+
+  old_vtxdist = *vtxdist;
+
   if (xadj)
     old_xadj = *xadj;
   if (adjncy)

@@ -434,11 +434,12 @@ int Epetra_MapColoring::CheckSizes(const Epetra_SrcDistObject& Source) {
 
 //=========================================================================
 int Epetra_MapColoring::CopyAndPermute(const Epetra_SrcDistObject& Source,
-                                       int NumSameIDs,
+               int NumSameIDs,
                int NumPermuteIDs,
-                                       int * PermuteToLIDs,
+               int * PermuteToLIDs,
                int *PermuteFromLIDs,
-                                       const Epetra_OffsetIndex * Indexor)
+               const Epetra_OffsetIndex * Indexor,
+               Epetra_CombineMode CombineMode)
 {
   (void)Indexor;
   const Epetra_MapColoring & A = dynamic_cast<const Epetra_MapColoring &>(Source);
@@ -449,13 +450,18 @@ int Epetra_MapColoring::CopyAndPermute(const Epetra_SrcDistObject& Source,
   // Do copy first
   if (NumSameIDs>0)
     if (To!=From) {
-      for (int j=0; j<NumSameIDs; j++)
-  To[j] = From[j];
+  if (CombineMode==Epetra_AddLocalAlso)
+    for (int j=0; j<NumSameIDs; j++) To[j] += From[j]; // Add to existing value
+  else
+    for (int j=0; j<NumSameIDs; j++) To[j] = From[j];
     }
   // Do local permutation next
-  if (NumPermuteIDs>0)
-    for (int j=0; j<NumPermuteIDs; j++)
-      To[PermuteToLIDs[j]] = From[PermuteFromLIDs[j]];
+  if (NumPermuteIDs>0) {
+    if (CombineMode==Epetra_AddLocalAlso)
+      for (int j=0; j<NumPermuteIDs; j++) To[PermuteToLIDs[j]] += From[PermuteFromLIDs[j]]; // Add to existing value
+    else
+      for (int j=0; j<NumPermuteIDs; j++) To[PermuteToLIDs[j]] = From[PermuteFromLIDs[j]];
+  }
 
   return(0);
 }

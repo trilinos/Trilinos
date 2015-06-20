@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,40 +36,35 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
 
 #include <gtest/gtest.h>
 
-// Force OMP atomics for testing only
-
-//#define KOKKOS_ATOMICS_USE_OMP31
-#include <Kokkos_Atomic.hpp>
-
-#include <Kokkos_OpenMP.hpp>
-#include <Kokkos_hwloc.hpp>
-
-#include <Kokkos_View.hpp>
-
-#include <Kokkos_CrsArray.hpp>
+#include <Kokkos_Core.hpp>
 
 //----------------------------------------------------------------------------
 
 #include <TestViewImpl.hpp>
 #include <TestAtomic.hpp>
 
-#include <TestMemoryTracking.hpp>
 #include <TestViewAPI.hpp>
+#include <TestViewSubview.hpp>
 
-#include <TestCrsArray.hpp>
+#include <TestRange.hpp>
 #include <TestTeam.hpp>
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
 #include <TestAggregate.hpp>
+#include <TestAggregateReduction.hpp>
 #include <TestCompilerMacros.hpp>
 #include <TestCXX11.hpp>
+#include <TestCXX11Deduction.hpp>
+#include <TestTeamVector.hpp>
+#include <TestMemorySpaceTracking.hpp>
+#include <TestTemplateMetaFunctions.hpp>
 
 namespace Test {
 
@@ -92,7 +87,7 @@ protected:
   {
     Kokkos::OpenMP::finalize();
 
-    omp_set_num_threads(0);
+    omp_set_num_threads(1);
 
     ASSERT_EQ( 1 , omp_get_max_threads() );
   }
@@ -108,8 +103,63 @@ TEST_F( openmp, view_api) {
 }
 
 
-TEST_F( openmp, crsarray) {
-  TestCrsArray< Kokkos::OpenMP >();
+TEST_F( openmp, view_subview_auto_1d_left ) {
+  TestViewSubview::test_auto_1d< Kokkos::LayoutLeft,Kokkos::OpenMP >();
+}
+
+TEST_F( openmp, view_subview_auto_1d_right ) {
+  TestViewSubview::test_auto_1d< Kokkos::LayoutRight,Kokkos::OpenMP >();
+}
+
+TEST_F( openmp, view_subview_auto_1d_stride ) {
+  TestViewSubview::test_auto_1d< Kokkos::LayoutStride,Kokkos::OpenMP >();
+}
+
+TEST_F( openmp, view_subview_assign_strided ) {
+  TestViewSubview::test_1d_strided_assignment< Kokkos::OpenMP >();
+}
+
+TEST_F( openmp, view_subview_left_0 ) {
+  TestViewSubview::test_left_0< Kokkos::OpenMP >();
+}
+
+TEST_F( openmp, view_subview_left_1 ) {
+  TestViewSubview::test_left_1< Kokkos::OpenMP >();
+}
+
+TEST_F( openmp, view_subview_left_2 ) {
+  TestViewSubview::test_left_2< Kokkos::OpenMP >();
+}
+
+TEST_F( openmp, view_subview_left_3 ) {
+  TestViewSubview::test_left_3< Kokkos::OpenMP >();
+}
+
+TEST_F( openmp, view_subview_right_0 ) {
+  TestViewSubview::test_right_0< Kokkos::OpenMP >();
+}
+
+TEST_F( openmp, view_subview_right_1 ) {
+  TestViewSubview::test_right_1< Kokkos::OpenMP >();
+}
+
+TEST_F( openmp, view_subview_right_3 ) {
+  TestViewSubview::test_right_3< Kokkos::OpenMP >();
+}
+
+
+
+TEST_F( openmp , range_tag )
+{
+  TestRange< Kokkos::OpenMP >::test_for(1000);
+  TestRange< Kokkos::OpenMP >::test_reduce(1000);
+  TestRange< Kokkos::OpenMP >::test_scan(1000);
+}
+
+TEST_F( openmp , team_tag )
+{
+  TestTeamPolicy< Kokkos::OpenMP >::test_for(1000);
+  TestTeamPolicy< Kokkos::OpenMP >::test_reduce(1000);
 }
 
 TEST_F( openmp, long_reduce) {
@@ -176,6 +226,12 @@ TEST_F( openmp , atomics )
   ASSERT_TRUE( ( TestAtomic::Loop<float,Kokkos::OpenMP>(100,1) ) );
   ASSERT_TRUE( ( TestAtomic::Loop<float,Kokkos::OpenMP>(100,2) ) );
   ASSERT_TRUE( ( TestAtomic::Loop<float,Kokkos::OpenMP>(100,3) ) );
+
+#if defined( KOKKOS_ENABLE_ASM )
+  ASSERT_TRUE( ( TestAtomic::Loop<Kokkos::complex<double> ,Kokkos::OpenMP>(100,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<Kokkos::complex<double> ,Kokkos::OpenMP>(100,2) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<Kokkos::complex<double> ,Kokkos::OpenMP>(100,3) ) );
+#endif
 }
 
 TEST_F( openmp , view_remap )
@@ -225,16 +281,14 @@ TEST_F( openmp , view_remap )
 TEST_F( openmp , view_aggregate )
 {
   TestViewAggregate< Kokkos::OpenMP >();
+  TestViewAggregateReduction< Kokkos::OpenMP >();
 }
 
 //----------------------------------------------------------------------------
 
 TEST_F( openmp , scan )
 {
-  for ( int i = 0 ; i < 1000 ; ++i ) {
-    TestScan< Kokkos::OpenMP >( 10 );
-    TestScan< Kokkos::OpenMP >( 10000 );
-  }
+  TestScan< Kokkos::OpenMP >::test_range( 1 , 1000 );
   TestScan< Kokkos::OpenMP >( 1000000 );
   TestScan< Kokkos::OpenMP >( 10000000 );
   Kokkos::OpenMP::fence();
@@ -254,8 +308,22 @@ TEST_F( openmp , compiler_macros )
   ASSERT_TRUE( ( TestCompilerMacros::Test< Kokkos::OpenMP >() ) );
 }
 
+//----------------------------------------------------------------------------
+
+TEST_F( openmp , memory_space )
+{
+  TestMemorySpace< Kokkos::OpenMP >();
+}
 
 //----------------------------------------------------------------------------
+
+TEST_F( openmp , template_meta_functions )
+{
+  TestTemplateMetaFunctions<int, Kokkos::OpenMP >();
+}
+
+//----------------------------------------------------------------------------
+
 #if defined( KOKKOS_HAVE_CXX11 ) && defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP )
 TEST_F( openmp , cxx11 )
 {
@@ -265,6 +333,28 @@ TEST_F( openmp , cxx11 )
     ASSERT_TRUE( ( TestCXX11::Test< Kokkos::OpenMP >(3) ) );
     ASSERT_TRUE( ( TestCXX11::Test< Kokkos::OpenMP >(4) ) );
   }
+}
+#endif
+
+#if defined (KOKKOS_HAVE_CXX11)
+TEST_F( openmp , reduction_deduction )
+{
+  TestCXX11::test_reduction_deduction< Kokkos::OpenMP >();
+}
+
+TEST_F( openmp , team_vector )
+{
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(0) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(1) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(2) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(3) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(4) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(5) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(6) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(7) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(8) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(9) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(10) ) );
 }
 #endif
 } // namespace test

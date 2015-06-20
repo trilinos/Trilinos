@@ -52,7 +52,8 @@
 #include <Zoltan2_Util.hpp>
 #include <iostream>
 
-typedef KokkosClassic::DefaultNode::DefaultNodeType node_t;
+#include <Tpetra_Map.hpp>
+typedef Tpetra::Map<>::node_type znode_t;
 
 // The path to the directory of test data
 
@@ -74,49 +75,75 @@ typedef KokkosClassic::DefaultNode::DefaultNodeType node_t;
   std::string zoltanTestDirectory(".");
 #endif
 
+//////////////////////////////////////////////////////////////////////////
 //
 // If Tpetra is compiled with explicit instantiation,
-// then we will use these types in our tests.
+// we have to choose data types that are compiled into Tpetra.
 //
-// Epetra uses int, int, double data types.  If we
-// are using these data types, then we can test 
-// cases of Epetra user input.
-//
+// Epetra uses (scalar/lno/gno) == (double/int/int) data types.  If we
+// are using these data types, we can test Epetra user input.
 
+// TODO:  KDD 8/13/14
+// Global definitions of types gno_t, lno_t, zgid_t and
+// scalar_t can cause bugs in the code.  If a class fails to define these
+// types, but this file is included before the class file, the types
+// from Zoltan2_TestHelpers.hpp will be used in the class.  Compilation in
+// user programs (without Zoltan2_TestHelpers.hpp) would then fail.  An
+// example of this bug was in the GeometricGenerator class, which used
+// scalar_t without defining it.
+// In this "fix," I changed gno_t, lno_t, zgid_t, scalar_t, and node_t to
+// zgno_t, zlno_t, zzgid_t, zscalar_t and znode_t in Zoltan2_TestHelpers.hpp.
+// This change is not the best fix; a better fix would remove the global
+// definitions, but that would require more work.  (An even better change
+// would use the Teuchos test framework to cycle through various options,
+// but that would require even more work and should be delayed until we
+// revamp the testing.)
 
-#if defined HAVE_ZOLTAN2_INST_FLOAT_INT_LONG
+#include <TpetraCore_config.h>
 
-typedef int lno_t;
-typedef long gno_t;
-typedef float scalar_t;
+#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+  typedef unsigned long zzgid_t;
 
-#elif defined HAVE_ZOLTAN2_INST_DOUBLE_INT_LONG
+# ifdef HAVE_TPETRA_FLOAT
+    typedef float zscalar_t;
+# else
+    typedef double zscalar_t;
+# endif
 
-typedef int lno_t;
-typedef long gno_t;
-typedef double scalar_t;
+# if defined HAVE_TPETRA_INT_LONG
+    typedef int zlno_t;
+    typedef long zgno_t;
+# elif defined HAVE_TPETRA_INT_LONG_LONG
+    typedef int zlno_t;
+    typedef long long zgno_t;
+# elif defined HAVE_TPETRA_INT_UNSIGNED
+    typedef int zlno_t;
+    typedef unsigned zgno_t;
+# elif defined HAVE_TPETRA_INT_INT
+    typedef int zlno_t;
+    typedef int zgno_t;
+# else
+#   error "Tpetra uses ETI, but no lno/gno instantiation is recognized"
+# endif
 
-#elif defined HAVE_ZOLTAN2_INST_FLOAT_INT_INT
+#else  // !HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-typedef int lno_t;
-typedef int gno_t;
-typedef float scalar_t;
+# if defined TEST_STK_DATA_TYPES
+    typedef size_t  zzgid_t;
+    typedef double  zscalar_t;
+    typedef ssize_t zlno_t;
+    typedef size_t  zgno_t;
+# else  // !TEST_STK_DATA_TYPES
+    typedef unsigned long zzgid_t;
+    typedef double zscalar_t;
+    typedef int zlno_t;
+    typedef int zgno_t;
+#   define HAVE_EPETRA_DATA_TYPES
+# endif  // TEST_STK_DATA_TYPES
 
-#elif defined HAVE_ZOLTAN2_INST_DOUBLE_INT_INT
+#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-typedef int lno_t;
-typedef int gno_t;
-typedef double scalar_t;
-#define HAVE_EPETRA_DATA_TYPES
-
-#else
-
-typedef int lno_t;
-typedef int gno_t;
-typedef double scalar_t;
-#define HAVE_EPETRA_DATA_TYPES
-
-#endif
+//////////////////////////////////////////////////////////////////////////
 
 #define MEMORY_CHECK(iPrint, msg) \
   if (iPrint){ \
@@ -128,7 +155,7 @@ typedef double scalar_t;
     std::cout.fill(' '); \
   }
 
-#include <ErrorHandlingForTests.hpp>  
+#include <ErrorHandlingForTests.hpp>
 #include <UserInputForTests.hpp>
 #include <PrintData.hpp>
 

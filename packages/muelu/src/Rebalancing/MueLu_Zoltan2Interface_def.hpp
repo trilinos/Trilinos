@@ -66,15 +66,15 @@
 
 namespace MueLu {
 
- template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
- Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Zoltan2Interface() {
+ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+ Zoltan2Interface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Zoltan2Interface() {
     defaultZoltan2Params = rcp(new ParameterList());
     defaultZoltan2Params->set("algorithm",             "multijagged");
     defaultZoltan2Params->set("partitioning_approach", "partition");
  }
 
- template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
- RCP<const ParameterList> Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
+ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+ RCP<const ParameterList> Zoltan2Interface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set< RCP<const FactoryBase> >   ("A",                      Teuchos::null, "Factory of the matrix A");
@@ -86,26 +86,23 @@ namespace MueLu {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& currentLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Zoltan2Interface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
     Input(currentLevel, "A");
     Input(currentLevel, "Coordinates");
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& level) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Zoltan2Interface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& level) const {
     FactoryMonitor m(*this, "Build", level);
 
     RCP<Matrix>      A        = Get< RCP<Matrix> >     (level, "A");
     RCP<const Map>   rowMap   = A->getRowMap();
 
-    RCP<MultiVector> coords   = Get< RCP<MultiVector> >(level, "Coordinates");
+    RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > coords   = Get< RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > >(level, "Coordinates");
     RCP<const Map>   map      = coords->getMap();
 
     GO               numParts = level.Get<GO>("number of partitions");
-
-    TEUCHOS_TEST_FOR_EXCEPTION(rowMap->lib() == Xpetra::UseEpetra, Exceptions::RuntimeError,
-                               "Zoltan2 does not work with Epetra at the moment. Please use Zoltan through ZoltanInterface");
 
     size_t dim       = coords->getNumVectors();
     LO     blkSize   = A->GetFixedBlockSize();
@@ -134,7 +131,7 @@ namespace MueLu {
     }
 
     GO numElements = map->getNodeNumElements();
-    std::vector<const SC*> values(dim), weights(1);
+    std::vector<const double*> values(dim), weights(1);
     std::vector<int>       strides;
 
     for (size_t k = 0; k < dim; k++)
@@ -144,9 +141,9 @@ namespace MueLu {
     int rowWeight = pL.get<int>("rowWeight");
     GetOStream(Runtime0) << "Using weights formula: nnz + " << rowWeight << std::endl;
 
-    Array<SC> weightsPerRow(numElements);
+    Array<double> weightsPerRow(numElements);
     for (LO i = 0; i < numElements; i++) {
-      weightsPerRow[i] = Teuchos::ScalarTraits<SC>::zero();
+      weightsPerRow[i] = 0.0;
       for (LO j = 0; j < blkSize; j++) {
         weightsPerRow[i] += A->getNumEntriesInLocalRow(i*blkSize+j);
         // Zoltan2 pqJagged gets as good partitioning as Zoltan RCB in terms of nnz
@@ -180,7 +177,7 @@ namespace MueLu {
                                algo != "rcb",
                                Exceptions::RuntimeError, "Unknown partitioning algorithm: \"" << algo << "\"");
 
-    typedef Zoltan2::BasicVectorAdapter<Zoltan2::BasicUserTypes<SC,GO,LO,GO> > InputAdapterType;
+    typedef Zoltan2::BasicVectorAdapter<Zoltan2::BasicUserTypes<double,GO,LO,GO> > InputAdapterType;
     typedef Zoltan2::PartitioningProblem<InputAdapterType> ProblemType;
 
     InputAdapterType adapter(numElements, map->getNodeElementList().getRawPtr(), values, strides, weights, strides);
@@ -198,25 +195,13 @@ namespace MueLu {
     RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(rowMap, false);
     ArrayRCP<GO>                      decompEntries = decomposition->getDataNonConst(0);
 
-    const typename InputAdapterType::part_t * parts = problem->getSolution().getPartList();
-
-    // K. Devine comment:
-    //   At present, Zoltan2 does not guarantee that the parts in getPartList() are listed
-    //   in the same order as the input. Using getIdList() compensates for differences
-    //   in the order. Eventually, Zoltan2 will guarantee identical ordering; at that time,
-    //   all code marked with
-    //       "KDDKDD NEW"
-    //   can be reverted to the code marked with
-    //       "KDDKDD OLD".
-    const GO * zgids = problem->getSolution().getIdList();  // KDDKDD  NEW
+    const typename InputAdapterType::part_t * parts = problem->getSolution().getPartListView();
 
     for (GO i = 0; i < numElements; i++) {
-      // GO localID = i;                           // KDDKDD OLD
-      GO localID = map->getLocalElement(zgids[i]); // KDDKDD NEW
       int partNum = parts[i];
 
       for (LO j = 0; j < blkSize; j++)
-        decompEntries[localID*blkSize + j] = partNum;
+        decompEntries[i*blkSize + j] = partNum;
     }
 
     Set(level, "Partition", decomposition);

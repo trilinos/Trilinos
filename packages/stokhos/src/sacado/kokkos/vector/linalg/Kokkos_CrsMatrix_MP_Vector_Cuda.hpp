@@ -45,8 +45,7 @@
 #if defined( __CUDACC__)
 
 #include "Kokkos_CrsMatrix_MP_Vector.hpp"
-#include "Kokkos_Cuda.hpp"
-#include "Cuda/Kokkos_Cuda_Parallel.hpp"
+#include "Kokkos_Core.hpp"
 #include "Stokhos_Cuda_DeviceProp.hpp"
 
 //----------------------------------------------------------------------------
@@ -79,7 +78,9 @@ FullOccupancyKernelLaunch(Kernel kernel) {
 //
 // This implementation uses the underlying 2-D view directly.
 // Currently only works for statically sized MP::Vector
-template <typename MatrixStorage,
+template <typename InputViewDevice,
+          typename OutputViewDevice,
+          typename MatrixStorage,
           typename MatrixOrdinal,
           typename MatrixMemory,
           typename MatrixSize,
@@ -97,11 +98,11 @@ class MPMultiply< Kokkos::CrsMatrix<Sacado::MP::Vector<MatrixStorage>,
                                     MatrixSize>,
                   Kokkos::View< Sacado::MP::Vector<InputStorage>*,
                                 InputLayout,
-                                Kokkos::Cuda,
+                                InputViewDevice,
                                 InputMemory >,
                   Kokkos::View< Sacado::MP::Vector<OutputStorage>*,
                                 OutputLayout,
-                                Kokkos::Cuda,
+                                OutputViewDevice,
                                 OutputMemory >,
                   Update
                 >
@@ -113,23 +114,23 @@ public:
   typedef Sacado::MP::Vector<OutputStorage> OutputVectorValue;
 
   typedef typename Kokkos::Cuda Device;
-  typedef Device device_type;
-  typedef typename device_type::size_type size_type;
+  typedef Device execution_space;
+  typedef typename execution_space::size_type size_type;
 
   typedef Kokkos::CrsMatrix<MatrixValue,
                             MatrixOrdinal,
-                            device_type,
+                            execution_space,
                             MatrixMemory,
                             MatrixSize> matrix_type;
   typedef typename matrix_type::values_type matrix_values_type;
   typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef Kokkos::View< InputVectorValue*,
                         InputLayout,
-                        Device,
+                        InputViewDevice,
                         InputMemory > input_vector_type;
   typedef Kokkos::View< OutputVectorValue*,
                         OutputLayout,
-                        Device,
+                        OutputViewDevice,
                         OutputMemory > output_vector_type;
   typedef Update update_type;
 
@@ -335,7 +336,9 @@ private:
 //
 // This implementation uses the underlying 2-D view directly.
 // Currently only works for statically sized MP::Vector
-template <typename MatrixStorage,
+template <typename InputViewDevice,
+          typename OutputViewDevice,
+          typename MatrixStorage,
           typename MatrixOrdinal,
           typename MatrixMemory,
           typename MatrixSize,
@@ -353,11 +356,11 @@ class MPMultiply< Kokkos::CrsMatrix<Sacado::MP::Vector<MatrixStorage>,
                                     MatrixSize>,
                   Kokkos::View< Sacado::MP::Vector<InputStorage>**,
                                 InputLayout,
-                                Kokkos::Cuda,
+                                InputViewDevice,
                                 InputMemory >,
                   Kokkos::View< Sacado::MP::Vector<OutputStorage>**,
                                 OutputLayout,
-                                Kokkos::Cuda,
+                                OutputViewDevice,
                                 OutputMemory >,
                   Update
                 >
@@ -369,23 +372,23 @@ public:
   typedef Sacado::MP::Vector<OutputStorage> OutputVectorValue;
 
   typedef typename Kokkos::Cuda Device;
-  typedef Device device_type;
-  typedef typename device_type::size_type size_type;
+  typedef Device execution_space;
+  typedef typename execution_space::size_type size_type;
 
   typedef Kokkos::CrsMatrix<MatrixValue,
                             MatrixOrdinal,
-                            device_type,
+                            execution_space,
                             MatrixMemory,
                             MatrixSize> matrix_type;
   typedef typename matrix_type::values_type matrix_values_type;
   typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef Kokkos::View< InputVectorValue**,
                         InputLayout,
-                        Device,
+                        InputViewDevice,
                         InputMemory > input_vector_type;
   typedef Kokkos::View< OutputVectorValue**,
                         OutputLayout,
-                        Device,
+                        OutputViewDevice,
                         OutputMemory > output_vector_type;
   typedef Update update_type;
 

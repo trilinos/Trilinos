@@ -1,10 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include <stdlib.h>
 #include <stdexcept>
@@ -12,7 +37,6 @@
 #include <iostream>
 #include <vector>
 
-#include <boost/static_assert.hpp> 
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 
@@ -31,6 +55,7 @@ enum { STK_MPI_TAG_SIZING = 0 , STK_MPI_TAG_DATA = 1 };
 
 namespace {
 
+#ifndef NDEBUG
 bool all_to_all_dense( ParallelMachine p_comm ,
                        const CommBuffer * const send ,
                        const CommBuffer * const recv ,
@@ -66,7 +91,6 @@ bool all_to_all_dense( ParallelMachine p_comm ,
       recv_displs[i] = static_cast<ucharp>(recv_buf.buffer()) - pr ;
     }
 
-    BABBLE_STK_PARALLEL_COMM(p_comm, "                      calling MPI_Alltoallv from all_to_all_dense");
     result = MPI_Alltoallv( ps , send_counts , send_displs , MPI_BYTE ,
                             pr , recv_counts , recv_displs , MPI_BYTE ,
                             p_comm );
@@ -134,7 +158,6 @@ bool all_to_all_sparse( ParallelMachine p_comm ,
 
     // This sync is necessary to ensure the IRecvs happen before the Rsends. It
     // is an error to call Rsend before the corresponding Irecv.
-    BABBLE_STK_PARALLEL_COMM(p_comm, "                      calling MPI_Allreduce from all_to_all_sparce");
     result = MPI_Allreduce( & local_error , & global_error ,
                             1 , MPI_INT , MPI_SUM , p_comm );
 
@@ -168,7 +191,6 @@ bool all_to_all_sparse( ParallelMachine p_comm ,
         MPI_Request * const p_request = (request.empty() ? NULL : & request[0]) ;
         MPI_Status  * const p_status  = (status.empty() ? NULL : & status[0]) ;
 
-        BABBLE_STK_PARALLEL_COMM(p_comm, "                      calling MPI_Waitall from all_to_all_sparce");
         result = MPI_Waitall( num_recv , p_request , p_status );
       }
 
@@ -200,7 +222,80 @@ bool all_to_all_sparse( ParallelMachine p_comm ,
 
   return MPI_SUCCESS == result ;
 }
+#endif // #ifndef NDEBUG
 
+
+#ifdef NDEBUG
+void communicate_sparse( ParallelMachine p_comm ,
+                        const CommBuffer * const send ,
+                        const CommBuffer * const recv )
+{
+  static const int mpi_tag = STK_MPI_TAG_DATA ;
+
+  int result = MPI_SUCCESS ;
+
+  const int p_size = parallel_machine_size( p_comm );
+
+  //------------------------------
+  // Receive count
+
+  unsigned num_recv = 0 ;
+
+  for ( int i = 0 ; i < p_size ; ++i ) {
+    if ( recv[i].capacity() ) { ++num_recv ; }
+  }
+
+  //------------------------------
+  // Post receives for specific processors with specific sizes
+
+  MPI_Request request_null = MPI_REQUEST_NULL ;
+  std::vector<MPI_Request> request( num_recv , request_null );
+  std::vector<MPI_Status>  status(  num_recv );
+
+  unsigned count = 0 ;
+
+  for ( int i = 0 ; result == MPI_SUCCESS && i < p_size ; ++i ) {
+    const unsigned recv_size = recv[i].capacity();
+    if ( recv_size ) {
+      void * const   recv_buf  = recv[i].buffer();
+      result = MPI_Irecv( recv_buf , recv_size , MPI_BYTE , i , mpi_tag , p_comm , & request[count] );
+      ++count ;
+    }
+  }
+
+  // This sync is necessary to ensure the IRecvs happen before the Sends.
+  MPI_Barrier( p_comm );
+
+  for ( int i = 0 ; i < p_size ; ++i ) {
+    const unsigned send_size = send[i].capacity();
+    if ( send_size ) {
+      void * const   send_buf  = send[i].buffer();
+      MPI_Send( send_buf , send_size , MPI_BYTE , i , mpi_tag , p_comm );
+    }
+  }
+
+  result = MPI_Waitall( num_recv , &request[0] , &status[0] );
+
+#ifndef NDEBUG
+  const int p_rank = parallel_machine_rank( p_comm );
+  for ( unsigned i = 0 ; i < num_recv ; ++i ) {
+    MPI_Status * const recv_status = & status[i] ;
+    const int recv_proc = recv_status->MPI_SOURCE ;
+    const int recv_tag  = recv_status->MPI_TAG ;
+    const int recv_plan = recv[recv_proc].capacity();
+    int recv_count = 0 ;
+
+    MPI_Get_count( recv_status , MPI_BYTE , & recv_count );
+
+    if ( recv_tag != mpi_tag || recv_count != recv_plan ) {
+      std::cerr << "stk::communicate_sparse LOCAL[" << p_rank << "] ERROR: Recv["
+            << recv_proc << "] Size( "
+            << recv_count << " != expected " << recv_plan << " ) , " ;
+    }
+  }
+#endif
+}
+#endif
 }
 
 #else
@@ -209,6 +304,7 @@ bool all_to_all_sparse( ParallelMachine p_comm ,
 
 namespace {
 
+#ifndef NDEBUG
 bool all_to_all_dense( ParallelMachine ,
                        const CommBuffer * const send ,
                        const CommBuffer * const recv ,
@@ -222,6 +318,7 @@ bool all_to_all_sparse( ParallelMachine ,
 { return send == recv ; }
 
 }
+#endif // #ifndef NDEBUG
 
 #endif
 
@@ -350,8 +447,9 @@ CommAll::~CommAll()
   m_recv = NULL ;
 }
 
-CommAll::CommAll()
+CommAll::CommAll(bool propagate_local_error_flags)
   : m_comm( parallel_machine_null() ),
+    m_propagate_local_error_flags(propagate_local_error_flags),
     m_size( 0 ), m_rank( 0 ),
     m_bound( 0 ),
     m_max( 0 ),
@@ -359,8 +457,9 @@ CommAll::CommAll()
     m_recv(NULL)
 {}
 
-CommAll::CommAll( ParallelMachine comm )
+CommAll::CommAll( ParallelMachine comm, bool propagate_local_error_flags)
   : m_comm( comm ),
+    m_propagate_local_error_flags(propagate_local_error_flags),
     m_size( parallel_machine_size( comm ) ),
     m_rank( parallel_machine_rank( comm ) ),
     m_bound( 0 ),
@@ -435,8 +534,6 @@ bool CommAll::allocate_buffers( ParallelMachine comm ,
 			        const bool local_flag )
 {
 
-  BABBLE_STK_PARALLEL_COMM(comm, "              entered CommAll::allocate_buffers");
-
   static const char method[] = "stk::CommAll::allocate_buffers" ;
   const unsigned uzero = 0 ;
 
@@ -480,7 +577,6 @@ bool CommAll::allocate_buffers( ParallelMachine comm ,
 
         unsigned * const r = (tmp_recv.empty() ? NULL : & tmp_recv[0]) ;
 
-        BABBLE_STK_PARALLEL_COMM(comm, "                  calling comm_sizes from allocate_buffers");
         comm_sizes( m_comm , m_bound , m_max , send , r );
       }
 
@@ -493,71 +589,92 @@ bool CommAll::allocate_buffers( ParallelMachine comm ,
     }
   }
 
-  bool error_alloc = m_send == NULL || m_recv == NULL ;
+  if (m_propagate_local_error_flags) {
 
-  //--------------------------------
-  // Propogation of error flag, input flag, and quick/cheap/approximate
-  // verification of send and receive messages.
-  // Is the number and total size of messages consistent?
-  // Sum message counts and sizes for grouped processors.
-  // Sent are positive and received are negative.
-  // Should finish with all total counts of zero.
+      bool error_alloc = m_send == NULL || m_recv == NULL ;
 
-  enum { NPSum  = 7 };
-  enum { Length = 2 + 2 * NPSum };
+      //--------------------------------
+      // Propagation of error flag, input flag, and quick/cheap/approximate
+      // verification of send and receive messages.
+      // Is the number and total size of messages consistent?
+      // Sum message counts and sizes for grouped processors.
+      // Sent are positive and received are negative.
+      // Should finish with all total counts of zero.
 
-  int64_t local_result[ Length ];
-  int64_t global_result[ Length ];
+      enum { NPSum  = 7 };
+      enum { Length = 2 + 2 * NPSum };
 
-  std::fill( local_result , local_result+Length, 0 );
+      int64_t local_result[ Length ];
+      int64_t global_result[ Length ];
 
-  local_result[ Length - 2 ] = error_alloc ;
-  local_result[ Length - 1 ] = local_flag ;
+      std::fill( local_result , local_result+Length, 0 );
 
-  if ( ! error_alloc ) {
+      local_result[ Length - 2 ] = error_alloc ;
+      local_result[ Length - 1 ] = local_flag ;
 
-    const unsigned r = 2 * ( m_rank % NPSum );
+      if ( ! error_alloc ) {
 
-    for ( int i = 0 ; i < m_size ; ++i ) {
-      const unsigned n_send = m_send[i].capacity();
-      const unsigned n_recv = m_recv[i].capacity();
+        const unsigned r = 2 * ( m_rank % NPSum );
 
-      const unsigned s = 2 * ( i % NPSum );
+        for ( int i = 0 ; i < m_size ; ++i ) {
+          const unsigned n_send = m_send[i].capacity();
+          const unsigned n_recv = m_recv[i].capacity();
 
-      local_result[s]   += n_send ? 1 : 0 ;
-      local_result[s+1] += n_send ;
+          const unsigned s = 2 * ( i % NPSum );
 
-      local_result[r]   -= n_recv ? 1 : 0 ;
-      local_result[r+1] -= n_recv ;
-    }
+          local_result[s]   += n_send ? 1 : 0 ;
+          local_result[s+1] += n_send ;
+
+          local_result[r]   -= n_recv ? 1 : 0 ;
+          local_result[r+1] -= n_recv ;
+        }
+      }
+
+      if (m_size > 1) {
+        all_reduce_sum( m_comm , local_result , global_result , Length );
+      }
+      else {
+        std::copy(local_result, local_result+Length, global_result);
+      }
+
+      error_alloc   = global_result[ Length - 2 ] ;
+      bool global_flag   = global_result[ Length - 1 ] ;
+
+      bool ok = true ;
+
+      for ( unsigned i = 0 ; ok && i < 2 * NPSum ; ++i ) {
+        ok = 0 == global_result[i] ;
+      }
+
+      if ( error_alloc || ! ok ) {
+        msg << method << " ERROR:" ;
+        if ( error_alloc   ) { msg << " Failed memory allocation ," ; }
+        if ( ! ok          ) { msg << " Parallel inconsistent send/receive ," ; }
+        throw std::runtime_error( msg.str() );
+      }
+
+      return global_flag ;
   }
 
-  if (m_size > 1) {
-    BABBLE_STK_PARALLEL_COMM(comm, "                  calling all_reduce_sum from allocate_buffers");
-    all_reduce_sum( m_comm , local_result , global_result , Length );
-  }
-  else {
-    std::copy(local_result, local_result+Length, global_result);
-  }
+  return true;
+}
 
-  error_alloc   = global_result[ Length - 2 ] ;
-  bool global_flag   = global_result[ Length - 1 ] ;
+bool CommAll::allocate_buffers( ParallelMachine comm ,
+                                unsigned const* const send_sizes,
+                                unsigned const* const recv_sizes )
+{
+  CommBuffer::deallocate( m_size , m_send );
+  CommBuffer::deallocate( m_size , m_recv );
 
-  bool ok = true ;
+  m_comm = comm ;
+  m_size = parallel_machine_size( comm );
+  m_rank = parallel_machine_rank( comm );
+  m_bound = ~0u; // force sparse
 
-  for ( unsigned i = 0 ; ok && i < 2 * NPSum ; ++i ) {
-    ok = 0 == global_result[i] ;
-  }
+  m_send = CommBuffer::allocate( m_size, send_sizes );
+  m_recv = CommBuffer::allocate( m_size, recv_sizes );
 
-  if ( error_alloc || ! ok ) {
-    msg << method << " ERROR:" ;
-    if ( error_alloc   ) { msg << " Failed memory allocation ," ; }
-    if ( ! ok          ) { msg << " Parallel inconsistent send/receive ," ; }
-    throw std::runtime_error( msg.str() );
-  }
-
-  // BABBLE_STK_PARALLEL_COMM(comm, "         exiting CommAll::allocate_buffers");
-  return global_flag ;
+  return true;
 }
 
 bool CommAll::allocate_symmetric_buffers( ParallelMachine comm ,
@@ -581,40 +698,35 @@ bool CommAll::allocate_symmetric_buffers( ParallelMachine comm ,
 
 void CommAll::communicate()
 {
-  BABBLE_STK_PARALLEL_COMM(m_comm, "              entered CommAll::communicate");
-
-  static const char method[] = "stk::CommAll::communicate" ;
-
-  std::ostringstream msg ;
-
-  // Verify the send buffers have been filled, reset the buffer pointers
 
   for ( int i = 0 ; i < m_size ; ++i ) {
+    // Verify the send buffers have been filled, reset the buffer pointers
 
     if ( m_send[i].remaining() ) {
-      msg << method << " LOCAL[" << m_rank << "] ERROR: Send[" << i
+      std::ostringstream msg ;
+      msg << "stk::CommAll::communicate LOCAL[" << m_rank << "] ERROR: Send[" << i
           << "] Buffer not filled." ;
       throw std::underflow_error( msg.str() );
     }
-/*
-    m_send[i].reset();
-*/
     m_recv[i].reset();
   }
 
   if ( 1 < m_size ) {
+#ifdef NDEBUG
+    // Do the communication to exchange the send/recv buffers
+    communicate_sparse( m_comm , m_send , m_recv );
+#else
     bool ok = false;
-
+    std::ostringstream msg;
     if ( m_bound < m_max ) {
-      BABBLE_STK_PARALLEL_COMM(m_comm, "                  calling all_to_all_dense from communicate");
       ok = all_to_all_dense( m_comm , m_send , m_recv , msg );
     }
     else {
-      BABBLE_STK_PARALLEL_COMM(m_comm, "                  calling all_to_all_sparce from communicate");
       ok = all_to_all_sparse( m_comm , m_send , m_recv , msg );
     }
 
     if ( ! ok ) { throw std::runtime_error( msg.str() ); }
+#endif
   }
 }
 
@@ -693,7 +805,6 @@ void CommBroadcast::communicate()
     const int count = m_buffer.capacity();
     void * const buf = m_buffer.buffer();
 
-    BABBLE_STK_PARALLEL_COMM(m_comm, "                      calling MPI_Bcast from communicate");
     const int result = MPI_Bcast( buf, count, MPI_BYTE, m_root_rank, m_comm);
 
     if ( MPI_SUCCESS != result ) {
@@ -767,7 +878,6 @@ CommGather::CommGather( ParallelMachine comm ,
       m_recv_displ = m_recv_count + m_size ;
     }
 
-    BABBLE_STK_PARALLEL_COMM(m_comm, "                      calling MPI_Gather from CommGather");
     MPI_Gather( & send_size ,    1 , MPI_INT ,
                   m_recv_count , 1 , MPI_INT ,
                   m_root_rank , m_comm );
@@ -798,7 +908,6 @@ void CommGather::communicate()
     void * const send_buf = m_send.buffer();
     void * const recv_buf = m_rank == m_root_rank ? m_recv->buffer() : NULL ;
 
-    BABBLE_STK_PARALLEL_COMM(m_comm, "                      calling MPI_Gatherv from commmunicate");
     MPI_Gatherv( send_buf , send_count , MPI_BYTE ,
                  recv_buf , m_recv_count , m_recv_displ , MPI_BYTE ,
                  m_root_rank , m_comm );
@@ -837,7 +946,6 @@ bool comm_dense_sizes( ParallelMachine comm ,
     unsigned * const ps = (send_buf.empty() ? NULL : & send_buf[0]) ;
     unsigned * const pr = (recv_buf.empty() ? NULL : & recv_buf[0]) ;
 
-    BABBLE_STK_PARALLEL_COMM(comm, "                      calling MPI_Alltoall from comm_dens_sizes");
     const int result =
        MPI_Alltoall( ps , 2 , MPI_UNSIGNED , pr , 2 , MPI_UNSIGNED , comm );
 
@@ -897,7 +1005,6 @@ bool comm_sizes( ParallelMachine comm ,
                  bool local_flag )
 {
   static const char method[] = "stk::comm_unknown_sizes" ;
-  const size_t uzero = 0 ;
 
   static MPI_Op mpi_op = MPI_OP_NULL ;
 
@@ -911,7 +1018,6 @@ bool comm_sizes( ParallelMachine comm ,
 
   int result = MPI_SUCCESS ;
 
-  std::ostringstream msg ;
 
   num_msg_maximum = 0 ;
 
@@ -919,9 +1025,22 @@ bool comm_sizes( ParallelMachine comm ,
   size_t max_msg  = 0 ;
   bool     global_flag = false ;
 
+  MPI_Datatype size_t_type_ = MPI_LONG_LONG;
+  if (sizeof(int) == sizeof(size_t))
+    size_t_type_ = MPI_INT;
+  else if (sizeof(long) == sizeof(size_t))
+    size_t_type_ = MPI_LONG;
+  else if (sizeof(long long) == sizeof(size_t))
+    size_t_type_ = MPI_LONG_LONG;
+  else {
+    std::ostringstream msg ;
+    msg << method << " ERROR: No matching MPI type found for size_t argument";
+    throw std::runtime_error(msg.str());
+  }
+
   {
-    std::vector<size_t> send_buf( p_size + 2 , uzero );
-    std::vector<size_t> recv_buf( p_size + 2 , uzero );
+    std::vector<size_t> send_buf( p_size + 2 );
+    std::vector<size_t> recv_buf( p_size + 2 );
 
     size_t * const p_send = (send_buf.empty() ? NULL : & send_buf[0]) ;
     size_t * const p_recv = (recv_buf.empty() ? NULL : & recv_buf[0]) ;
@@ -936,21 +1055,20 @@ bool comm_sizes( ParallelMachine comm ,
     send_buf[p_size]   = max_msg ;
     send_buf[p_size+1] = local_flag ;
 
-    BABBLE_STK_PARALLEL_COMM(comm, "                      calling MPI_Allreduce from comm_sizes");
-    BOOST_STATIC_ASSERT(sizeof(long long) == sizeof(size_t));
-    result = MPI_Allreduce(p_send,p_recv,p_size,MPI_LONG_LONG,MPI_SUM,comm);
+    result = MPI_Allreduce(p_send,p_recv,p_size,size_t_type_,MPI_SUM,comm);
 
     if ( result != MPI_SUCCESS ) {
       // PARALLEL ERROR
+    std::ostringstream msg ;
       msg << method << " ERROR: " << result << " == MPI_AllReduce" ;
       throw std::runtime_error( msg.str() );
     }
 
-    BABBLE_STK_PARALLEL_COMM(comm, "                      calling MPI_Allreduce from comm_sizes");
-    result = MPI_Allreduce(p_send+p_size,p_recv+p_size,2,MPI_LONG_LONG,MPI_MAX,comm);
+    result = MPI_Allreduce(p_send+p_size,p_recv+p_size,2,size_t_type_,MPI_MAX,comm);
 
     if ( result != MPI_SUCCESS ) {
       // PARALLEL ERROR
+    std::ostringstream msg ;
       msg << method << " ERROR: " << result << " == 2nd MPI_AllReduce" ;
       throw std::runtime_error( msg.str() );
     }
@@ -971,13 +1089,13 @@ bool comm_sizes( ParallelMachine comm ,
   if ( false /*num_msg_bound < max_msg && p_size < 1024*/ ) {
     // Dense, pay for an all-to-all
 
-    BABBLE_STK_PARALLEL_COMM(comm, "                      calling MPI_Alltoall from comm_sizes");
     result =
       MPI_Alltoall( const_cast<unsigned*>(send_size) , 1 , MPI_LONG_LONG ,
                      recv_size , 1 , MPI_UNSIGNED , comm );
 
     if ( MPI_SUCCESS != result ) {
       // LOCAL ERROR ?
+    std::ostringstream msg ;
       msg << method << " ERROR: " << result << " == MPI_Alltoall" ;
       throw std::runtime_error( msg.str() );
     }
@@ -997,10 +1115,11 @@ bool comm_sizes( ParallelMachine comm ,
     for ( unsigned i = 0 ; i < num_recv ; ++i ) {
       size_t    * const p_buf     = & buf[i] ;
       MPI_Request * const p_request = & request[i] ;
-      result = MPI_Irecv( p_buf , 1 , MPI_LONG_LONG ,
+      result = MPI_Irecv( p_buf , 1 , size_t_type_,
                           MPI_ANY_SOURCE , mpi_tag , comm , p_request );
       if ( MPI_SUCCESS != result ) {
         // LOCAL ERROR
+    std::ostringstream msg ;
         msg << method << " ERROR: " << result << " == MPI_Irecv" ;
         throw std::runtime_error( msg.str() );
       }
@@ -1013,9 +1132,10 @@ bool comm_sizes( ParallelMachine comm ,
       int      dst = ( i + p_rank ) % p_size ;
       size_t value = send_size[dst] ;
       if ( value ) {
-        result = MPI_Send( & value , 1 , MPI_LONG_LONG , dst , mpi_tag , comm );
+        result = MPI_Send( & value , 1 , size_t_type_, dst , mpi_tag , comm );
         if ( MPI_SUCCESS != result ) {
           // LOCAL ERROR
+    std::ostringstream msg ;
           msg << method << " ERROR: " << result << " == MPI_Send" ;
           throw std::runtime_error( msg.str() );
         }
@@ -1027,11 +1147,11 @@ bool comm_sizes( ParallelMachine comm ,
     {
       MPI_Request * const p_request = (request.empty() ? NULL : & request[0]) ;
       MPI_Status  * const p_status  = (status.empty() ? NULL : & status[0]) ;
-      BABBLE_STK_PARALLEL_COMM(comm, "                     calling MPI_Waitall from comm_sizes");
       result = MPI_Waitall( num_recv , p_request , p_status );
     }
     if ( MPI_SUCCESS != result ) {
       // LOCAL ERROR ?
+    std::ostringstream msg ;
       msg << method << " ERROR: " << result << " == MPI_Waitall" ;
       throw std::runtime_error( msg.str() );
     }
@@ -1047,6 +1167,7 @@ bool comm_sizes( ParallelMachine comm ,
       MPI_Get_count( recv_status , MPI_LONG_LONG , & recv_count );
 
       if ( recv_tag != mpi_tag || recv_count != 1 ) {
+    std::ostringstream msg ;
         msg << method << " ERROR: Received buffer mismatch " ;
         msg << "P" << p_rank << " <- P" << recv_proc ;
         msg << "  " << 1 << " != " << recv_count ;
@@ -1061,10 +1182,10 @@ bool comm_sizes( ParallelMachine comm ,
     }
   }
 
-  // BABBLE_STK_PARALLEL_COMM(comm, "                 exiting comm_sizes");
 
   return global_flag ;
 }
+
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------

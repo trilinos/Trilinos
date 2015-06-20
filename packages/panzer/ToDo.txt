@@ -1,0 +1,6 @@
+1. The following evaluators do not have adequate test coverage:
+
+Panzer_Integrator_TransientBasisTimesScalar.hpp
+Panzer_Neumann_Residual.hpp
+Panzer_ReorderADValues_Evaluator.hpp
+

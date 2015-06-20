@@ -102,6 +102,8 @@ int Zoltan_LocalHSFC_Order(
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
+#if 0  /* KDD 2/3/15  Trusting that order_opt should never be NULL, 
+        * KDD 2/3/15  I am commenting out this code.   */
   /******************************************************************/
   /* If for some reason order_opt is NULL, allocate a new ZOOS here. */
   /* This should really never happen. */
@@ -111,6 +113,7 @@ int Zoltan_LocalHSFC_Order(
     order_opt = (ZOOS *) ZOLTAN_MALLOC(sizeof(ZOOS));
     strcpy(order_opt->method,"LOCAL_HSFC");
   }
+#endif
   /******************************************************************/
 
   /* local HSFC only computes the rank vector */

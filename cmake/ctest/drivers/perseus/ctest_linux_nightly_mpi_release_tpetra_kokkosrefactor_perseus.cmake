@@ -67,7 +67,7 @@ SET(CTEST_PARALLEL_LEVEL 1)
 SET(CTEST_TEST_TYPE Experimental)
 SET(CTEST_TEST_TIMEOUT 900)
 
-SET(Trilinos_PACKAGES Tpetra Kokkos KokkosCompat KokkosContainers KokkosLinAlg KokkosClassic)
+SET(Trilinos_PACKAGES Tpetra KokkosCore KokkosContainers KokkosAlgorithms TpetraKokkosCompat TpetraKokkosComm TpetraKernels TpetraClassic)
 
 SET(EXTRA_CONFIGURE_OPTIONS
   ""

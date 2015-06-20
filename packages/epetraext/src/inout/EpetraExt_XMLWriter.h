@@ -45,7 +45,7 @@
 #define EPETRAEXT_XMLWRITER_H
 
 #include "EpetraExt_ConfigDefs.h"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include <fstream>
 
 class Epetra_Map;
@@ -60,9 +60,9 @@ namespace Teuchos {
   class ParameterList;
 }
 
-namespace EpetraExt 
+namespace EpetraExt
 {
-/*! 
+/*!
 \brief class XMLWriter: A class for writing Trilinos objects to XML files.
 
 Class EpetraExt::XMLWriter writes several Trilinos objects in an XML-compatible format.
@@ -79,7 +79,7 @@ objects, that can only be written to files.
 
 An example of usage is reported in file epetraext/example/inout/XML_IO.cpp.
 
-Writing objects goes as follows. Let \c Map, \c Matrix, \c LHS and \c RHS an 
+Writing objects goes as follows. Let \c Map, \c Matrix, \c LHS and \c RHS an
 Epetra_Map, Epetra_CrsMatrix, and two Epetra_MultiVector's, respectively. First, we define an XMLWriter object
 \code
 EpetraExt::XMLWriter XMLWriter(Comm, "data.xml");
@@ -131,16 +131,16 @@ May 2006
 3 3 1
 </PointMatrix>
 <MultiVector Label="MyLHS" Length="4" NumVectors="2" Type="double">
--0.232996 -0.893077 
-0.0388327 0.0594004 
-0.661931 0.342299 
--0.930856 -0.984604 
+-0.232996 -0.893077
+0.0388327 0.0594004
+0.661931 0.342299
+-0.930856 -0.984604
 </MultiVector>
 <MultiVector Label="MyRHS" Length="4" NumVectors="2" Type="double">
-0 0 
-0 0 
-0 0 
-0 0 
+0 0
+0 0
+0 0
+0 0
 </MultiVector>
 <Text Label="MyContent">
 This is an example of description
@@ -166,10 +166,10 @@ This class requires Teuchos to be configured with the option \c --enable-teuchos
 */
 class XMLWriter
 {
-  public: 
+  public:
     // @{ \name Constructor and destructor.
     //! ctor
-    XMLWriter(const Epetra_Comm& Comm, const std::string& FileName); 
+    XMLWriter(const Epetra_Comm& Comm, const std::string& FileName);
 
     //! dtor
     ~XMLWriter() {}
@@ -182,7 +182,7 @@ class XMLWriter
 
     // @}
     // @{ \name Read operations
-    
+
     //! Writes an Epetra_Map using label \c Label.
     void Write(const std::string& Label, const Epetra_Map& Map);
 

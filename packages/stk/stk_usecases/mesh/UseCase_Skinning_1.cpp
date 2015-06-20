@@ -1,10 +1,36 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010, 2011 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+
 #include <mesh/UseCase_Skinning.hpp>
 
 #include <stk_mesh/base/BulkModification.hpp>
@@ -55,6 +81,10 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
 
     fixture.generate_mesh();
 
+    if ( mesh.parallel_size() != 2 ) return passed;
+
+    ///////////////////
+
     {
       stk::mesh::PartVector add_parts(1,&skin_part);
       stk::mesh::skin_mesh(mesh, add_parts);
@@ -95,12 +125,14 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
       stk::mesh::Entity const *rel_nodes_iter = mesh.begin_nodes(middle_element);
       stk::mesh::Entity const *rel_nodes_end = mesh.end_nodes(middle_element);
 
+      std::vector<int> commProcs;
       for (; rel_nodes_iter != rel_nodes_end; ++rel_nodes_iter) {
         stk::mesh::Entity current_node = *rel_nodes_iter;
         //each node should be attached to only 1 element and 3 faces
         correct_relations &= ( mesh.count_relations(current_node) == 4 );
         //the entire closure of the element should exist on a single process
-        correct_comm      &= ( mesh.entity_comm_map(mesh.entity_key(current_node)).size() == 0 );
+        mesh.comm_procs(mesh.entity_key(current_node), commProcs);
+        correct_comm      &= ( commProcs.size() == 0 );
       }
     }
     passed &= (correct_skin && correct_relations && correct_comm);
@@ -149,7 +181,6 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
 
     // pointer to middle_element after mesh modification.
     unsigned num_skin_entities = count_skin_entities(mesh, skin_part, side_rank);
-
     stk::all_reduce(pm, stk::ReduceSum<1>(&num_skin_entities));
 
     //there should be 90 faces in the skin part

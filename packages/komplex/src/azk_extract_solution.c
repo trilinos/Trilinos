@@ -248,7 +248,7 @@ void AZK_extract_solution_k2ri(int *options, double *params, int *proc_config,
       update_index = linsys_pass_data->update_index;
       rpntr = Amat_komplex->rpntr;
             
-      tmp = (double *) AZ_allocate(N_equations*sizeof(double));
+      tmp = (double *) AZ_allocate((N_equations+1)*sizeof(double));
       if (tmp == NULL) 
       AZ_perror("AZK_extract_solution_k2ri: Out of memory.");
       

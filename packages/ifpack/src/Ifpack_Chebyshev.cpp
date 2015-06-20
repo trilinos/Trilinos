@@ -94,7 +94,7 @@ Ifpack_Chebyshev(const Epetra_Operator* Operator) :
   PolyDegree_(1),
   UseTranspose_(false),
   Condest_(-1.0),
-  ComputeCondest_(false),
+  /* ComputeCondest_(false), (Unused; commented out to avoid build warnings) */
   EigRatio_(30.0),
   Label_(),
   LambdaMin_(0.0),
@@ -136,7 +136,7 @@ Ifpack_Chebyshev(const Epetra_RowMatrix* Operator) :
   PolyDegree_(1),
   UseTranspose_(false),
   Condest_(-1.0),
-  ComputeCondest_(false),
+  /* ComputeCondest_(false), (Unused; commented out to avoid build warnings) */
   EigRatio_(30.0),
   EigMaxIters_(10),
   Label_(),
@@ -367,6 +367,8 @@ int Ifpack_Chebyshev::Compute()
   ComputeTime_ += Time_->ElapsedTime();
   IsComputed_ = true;
 
+  SetLabel();
+
   return(0);
 }
 
@@ -430,7 +432,7 @@ ostream& Ifpack_Chebyshev::Print(ostream & os) const
 double Ifpack_Chebyshev::
 Condest(const Ifpack_CondestType CT,
         const int MaxIters, const double Tol,
-	Epetra_RowMatrix* Matrix_in)
+        Epetra_RowMatrix* Matrix_in)
 {
   if (!IsComputed()) // cannot compute right now
     return(-1.0);
@@ -445,7 +447,16 @@ Condest(const Ifpack_CondestType CT,
 //==============================================================================
 void Ifpack_Chebyshev::SetLabel()
 {
-  Label_ = "IFPACK (Chebyshev polynomial), degree=" + Ifpack_toString(PolyDegree_);
+  std::ostringstream oss;
+  oss << "\"Ifpack Chebyshev polynomial\": {"
+      << "Initialized: " << (IsInitialized() ? "true" : "false")
+      << ", Computed: " << (IsComputed() ? "true" : "false")
+      << ", degree: " << PolyDegree_
+      << ", lambdaMax: " << LambdaMax_
+      << ", alpha: "  << EigRatio_
+      << ", lambdaMin: " << LambdaMin_
+      << "}";
+  Label_ = oss.str();
 }
 
 //==============================================================================

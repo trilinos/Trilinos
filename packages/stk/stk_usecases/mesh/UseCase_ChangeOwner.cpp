@@ -1,3 +1,36 @@
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+
 #include <iostream>
 #include <set>
 
@@ -31,7 +64,7 @@ const unsigned spatial_dimension = 2;
 Grid2D_Fixture::Grid2D_Fixture( stk::ParallelMachine comm )
   : m_spatial_dimension(spatial_dimension),
     m_fem_meta_data( m_spatial_dimension ),
-    m_bulk_data( m_fem_meta_data , comm , 100 ),
+    m_bulk_data( m_fem_meta_data , comm , stk::mesh::BulkData::AUTO_AURA ),
     m_quad_part( m_fem_meta_data.declare_part_with_topology( "quad", stk::topology::QUAD_4)),
     m_coord_field( m_fem_meta_data.declare_field< VectorField >(stk::topology::NODE_RANK, "coordinates" ) ),
     m_elem_rank( stk::topology::ELEMENT_RANK ),
@@ -53,11 +86,11 @@ bool Grid2D_Fixture::test_change_owner( unsigned nx , unsigned ny )
 
   // First of all work out the node ids and declare element elem
   if ( p_rank == 0 ) {
+    stk::mesh::EntityIdVector nodes(4) ;
     const unsigned nnx = nx + 1 ;
     for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
       for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
         stk::mesh::EntityId elem = 1 + ix + iy * nx ;
-        stk::mesh::EntityId nodes[4] ;
         nodes[0] = 1 + ix + iy * nnx ;
         nodes[1] = 2 + ix + iy * nnx ;
         nodes[2] = 2 + ix + ( iy + 1 ) * nnx ;
@@ -125,9 +158,7 @@ bool Grid2D_Fixture::test_change_owner( unsigned nx , unsigned ny )
       }
     }
 
-    m_bulk_data.modification_begin();
     m_bulk_data.change_entity_owner( change );
-    m_bulk_data.modification_end();
 
     change.clear();
 
@@ -150,9 +181,7 @@ bool Grid2D_Fixture::test_change_owner( unsigned nx , unsigned ny )
       }
     }
 
-    m_bulk_data.modification_begin();
     m_bulk_data.change_entity_owner( change );
-    m_bulk_data.modification_end();
 
     if ( p_size == 3 ) {
       change.clear();
@@ -178,9 +207,7 @@ bool Grid2D_Fixture::test_change_owner( unsigned nx , unsigned ny )
         }
       }
 
-      m_bulk_data.modification_begin();
       m_bulk_data.change_entity_owner( change );
-      m_bulk_data.modification_end();
     }
 
     // Only P1 has any nodes or elements
@@ -229,7 +256,7 @@ bool test_change_owner_with_constraint( stk::ParallelMachine pm )
 
   fem_meta_data.commit();
 
-  stk::mesh::BulkData bulk_data( fem_meta_data, pm, 100 );
+  stk::mesh::BulkData bulk_data( fem_meta_data, pm, stk::mesh::BulkData::AUTO_AURA );
   bulk_data.modification_begin();
 
   unsigned nx = 3;
@@ -237,11 +264,11 @@ bool test_change_owner_with_constraint( stk::ParallelMachine pm )
 
   if ( p_rank==0 )
   {
+    stk::mesh::EntityIdVector nodes(4) ;
     const unsigned nnx = nx + 1 ;
     for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
       for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
         stk::mesh::EntityId elem = 1 + ix + iy * nx ;
-        stk::mesh::EntityId nodes[4] ;
         nodes[0] = 1 + ix + iy * nnx ;
         nodes[1] = 2 + ix + iy * nnx ;
         nodes[2] = 2 + ix + ( iy + 1 ) * nnx ;
@@ -285,19 +312,24 @@ bool test_change_owner_with_constraint( stk::ParallelMachine pm )
       ep.push_back( stk::mesh::EntityProc( bulk_data.get_entity( element_rank, 9 ), 1 ) );
     }
 
-    bulk_data.modification_begin();
     bulk_data.change_entity_owner( ep );
-    bulk_data.modification_end();
 
     bulk_data.modification_begin();
 
-    if ( p_rank==1 )
+    if ( p_rank==0 )
+    {
+        stk::mesh::Entity n10 = bulk_data.get_entity( NODE_RANK, 10 );
+        bulk_data.add_node_sharing(n10, 1);
+    }
+    else if ( p_rank==1 )
     {
       // create constraint
 
       stk::mesh::Entity n10 = bulk_data.get_entity( NODE_RANK, 10 );
       stk::mesh::Entity n11 = bulk_data.get_entity( NODE_RANK, 11 );
       stk::mesh::Entity n12 = bulk_data.get_entity( NODE_RANK, 12 );
+
+      bulk_data.add_node_sharing(n10, 0);
 
       stk::mesh::PartVector add;
       add.push_back( &owned_part );
@@ -363,7 +395,7 @@ bool test_change_owner_2( stk::ParallelMachine pm )
 
   fem_meta_data.commit();
 
-  stk::mesh::BulkData bulk_data( fem_meta_data, pm, 100 );
+  stk::mesh::BulkData bulk_data( fem_meta_data, pm, stk::mesh::BulkData::AUTO_AURA );
   bulk_data.modification_begin();
 
   unsigned nx = 3;
@@ -371,11 +403,11 @@ bool test_change_owner_2( stk::ParallelMachine pm )
 
   if ( p_rank==0 )
   {
+    stk::mesh::EntityIdVector nodes(4) ;
     const unsigned nnx = nx + 1 ;
     for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
       for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
         stk::mesh::EntityId elem = 1 + ix + iy * nx ;
-        stk::mesh::EntityId nodes[4] ;
         nodes[0] = 1 + ix + iy * nnx ;
         nodes[1] = 2 + ix + iy * nnx ;
         nodes[2] = 2 + ix + ( iy + 1 ) * nnx ;
@@ -426,9 +458,7 @@ bool test_change_owner_2( stk::ParallelMachine pm )
       ep.push_back( stk::mesh::EntityProc( bulk_data.get_entity( element_rank, 6 ), 2 ) );
     }
 
-    bulk_data.modification_begin();
     bulk_data.change_entity_owner( ep );
-    bulk_data.modification_end();
 
     ep.clear();
 
@@ -458,9 +488,7 @@ bool test_change_owner_2( stk::ParallelMachine pm )
       ep.push_back( stk::mesh::EntityProc( bulk_data.get_entity( element_rank, 6 ), 0 ) );
     }
 
-    bulk_data.modification_begin();
     bulk_data.change_entity_owner( ep );
-    bulk_data.modification_end();
   }
 
   return true ;
@@ -487,7 +515,7 @@ bool test_change_owner_3( stk::ParallelMachine pm )
 
   fem_meta_data.commit();
 
-  stk::mesh::BulkData bulk_data( fem_meta_data, pm, 100 );
+  stk::mesh::BulkData bulk_data( fem_meta_data, pm, stk::mesh::BulkData::AUTO_AURA );
   bulk_data.modification_begin();
 
   unsigned nx = 3;
@@ -495,11 +523,11 @@ bool test_change_owner_3( stk::ParallelMachine pm )
 
   if ( p_rank==0 )
   {
+    stk::mesh::EntityIdVector nodes(4) ;
     const unsigned nnx = nx + 1 ;
     for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
       for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
         stk::mesh::EntityId elem = 1 + ix + iy * nx ;
-        stk::mesh::EntityId nodes[4] ;
         nodes[0] = 1 + ix + iy * nnx ;
         nodes[1] = 2 + ix + iy * nnx ;
         nodes[2] = 2 + ix + ( iy + 1 ) * nnx ;
@@ -554,9 +582,7 @@ bool test_change_owner_3( stk::ParallelMachine pm )
       ep.push_back( stk::mesh::EntityProc( bulk_data.get_entity( element_rank, 9 ), 1 ) );
     }
 
-    bulk_data.modification_begin();
     bulk_data.change_entity_owner( ep );
-    bulk_data.modification_end();
 
     // output to debug
 
@@ -584,9 +610,7 @@ bool test_change_owner_3( stk::ParallelMachine pm )
       ep.push_back( stk::mesh::EntityProc( bulk_data.get_entity( element_rank, 9 ), 0 ) );
     }
 
-    bulk_data.modification_begin();
     bulk_data.change_entity_owner( ep );
-    bulk_data.modification_end();
   }
 
   return true ;

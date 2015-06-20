@@ -333,5 +333,19 @@ Teuchos::RCP<Teuchos::Comm<int> > UniqueGlobalIndexer::getComm() const
    #endif
 }
 
+int UniqueGlobalIndexer::getElementBlockGIDCount(const std::string & block) const
+{
+   if(block=="block_0")
+      return 8;
+   else return 4;
+}
+
+int UniqueGlobalIndexer::getElementBlockGIDCount(const std::size_t & block) const
+{
+   if(block==0)
+      return 8;
+   else return 4;
+}
+
 } // end unit test
 } // end panzer

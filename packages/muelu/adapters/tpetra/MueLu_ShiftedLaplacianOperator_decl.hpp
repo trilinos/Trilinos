@@ -69,28 +69,29 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType,
-            class LocalMatOps = typename KokkosClassic::DefaultKernels<Scalar, LocalOrdinal, Node>::SparseOps >
+  template <class Scalar = Tpetra::Operator<>::scalar_type,
+            class LocalOrdinal = typename Tpetra::Operator<Scalar>::local_ordinal_type,
+            class GlobalOrdinal = typename Tpetra::Operator<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node = typename Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class ShiftedLaplacianOperator
     : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>
   {
 
-    typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>      Matrix;
-    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>   CrsMatrix;
-    typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>             MV;
-    typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>                OP;
-    typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>        MUtils;
+    typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>      Matrix;
+    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>   CrsMatrix;
+    typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+    typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>    OP;
+    typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node>        MUtils;
   public:
 
     //! @name Constructor/Destructor
     //@{
 
     //! Constructor
-    ShiftedLaplacianOperator(const RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & H) : Hierarchy_(H), option_(0) { }
+    ShiftedLaplacianOperator(const RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > & H) : Hierarchy_(H), option_(0) { }
 
     //! Auxiliary Constructor
-    ShiftedLaplacianOperator(const RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & H,
+    ShiftedLaplacianOperator(const RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > & H,
                              const RCP<Matrix> A, int cycles, int iters, int option, double tol) : Hierarchy_(H), A_(A), cycles_(cycles), iters_(iters), option_(option), tol_(tol)
     {
 
@@ -149,9 +150,9 @@ namespace MueLu {
 
   private:
 
-    RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Hierarchy_;
-    RCP< Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > R_, P_, A_;
-    RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > Ac_;
+    RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Hierarchy_;
+    RCP< Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > R_, P_, A_;
+    RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Ac_;
     RCP< Teuchos::ParameterList >  BelosList_;
     RCP< Belos::LinearProblem<Scalar,MV,OP> > BelosLP_;
     RCP< Belos::SolverManager<Scalar,MV,OP> > BelosSM_;

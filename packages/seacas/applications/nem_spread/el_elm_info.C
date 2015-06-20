@@ -71,7 +71,7 @@ namespace {
 
   {
 
-    register int i;
+    int i;
 
     ivector += ibegin;
     for (i = ibegin; i < iend; ivector++, i++)

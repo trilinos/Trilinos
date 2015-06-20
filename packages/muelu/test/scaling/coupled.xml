@@ -1,6 +1,0 @@
-    <ParameterList name="CoupledAggregationFactory">
-      <Parameter name="aggregation: ordering"                    type="string" value="natural"/>
-      <Parameter name="aggregation: max selected neighbors"     type="int"    value="0"/>
-      <Parameter name="Phase3AggCreation"           type="double" value="0.5"/>
-      <Parameter name="aggregation: min agg size"   type="int"    value="3"/>
-    </ParameterList>

@@ -62,16 +62,19 @@
 #include "Ifpack_Chebyshev.h"
 
 using namespace Trilinos_Util;
+/*
+(unused; commented out to avoid build warnings)
 static bool verbose = false;
 static bool SymmetricGallery = false;
 static bool Solver = AZ_gmres;
+*/
 
 //=============================================
 // Test the BlockDiagMatrix
 bool TestBlockDiagMatrix(const Epetra_Comm& Comm){
   const int NUM_BLOCKS=30;
   bool TestPassed=true;
-  int my_blockgids[NUM_BLOCKS]; 
+  int my_blockgids[NUM_BLOCKS];
   int my_blocksizes[NUM_BLOCKS];
 
   for(int i=0;i<NUM_BLOCKS;i++){
@@ -79,12 +82,12 @@ bool TestBlockDiagMatrix(const Epetra_Comm& Comm){
     if(i<NUM_BLOCKS/3)
       my_blocksizes[i]=1;
     else if(i<2*NUM_BLOCKS/3)
-      my_blocksizes[i]=2;    
+      my_blocksizes[i]=2;
     else
       my_blocksizes[i]=3;
    }
 
-   
+
   // Build me a map and a DBM to go with it...
   Epetra_BlockMap BDMap(-1,NUM_BLOCKS,my_blockgids,my_blocksizes,0,Comm);
   EpetraExt_BlockDiagMatrix BMAT(BDMap,true);
@@ -92,7 +95,7 @@ bool TestBlockDiagMatrix(const Epetra_Comm& Comm){
   // Fill the matrix - This tests all three block size cases in the code, 1x1, 2x2 and larger.
   for(int i=0;i<BMAT.NumMyBlocks();i++){
     double*start=BMAT[i];
-    if(BMAT.BlockSize(i)==1)      
+    if(BMAT.BlockSize(i)==1)
       *start=2.0;
     else if(BMAT.BlockSize(i)==2){
       start[0]=2.0;
@@ -113,7 +116,7 @@ bool TestBlockDiagMatrix(const Epetra_Comm& Comm){
     }
     else
       exit(1);
-  } 
+  }
 
 
   // Allocations for tests
@@ -130,7 +133,7 @@ bool TestBlockDiagMatrix(const Epetra_Comm& Comm){
   //***************************
   List.set("apply mode","invert");
   BMAT.SetParameters(List);
-  X.SetSeed(24601); X.Random();  
+  X.SetSeed(24601); X.Random();
   BMAT_forward.ApplyInverse(X,Y);
   BMAT.Compute();
   BMAT.ApplyInverse(Y,Z);
@@ -143,7 +146,7 @@ bool TestBlockDiagMatrix(const Epetra_Comm& Comm){
   // Test the Forward/Factor
   //***************************
   List.set("apply mode","factor");
-  BMAT_factor.SetParameters(List);    
+  BMAT_factor.SetParameters(List);
   X.SetSeed(24601); X.Random();
   BMAT_forward.ApplyInverse(X,Y);
   BMAT_factor.Compute();
@@ -157,8 +160,8 @@ bool TestBlockDiagMatrix(const Epetra_Comm& Comm){
 }
 
 //=============================================
-//============================================= 
-//============================================= 
+//=============================================
+//=============================================
 void Build_Local_Contiguous_Size2_BlockMatrix(const Epetra_Comm & Comm, int NUM_ROWS,int &NumBlocks,
                                         int *&Blockstart_, int *&Blockids_,Epetra_CrsMatrix *&MAT){
   double values[3]={-1.0,2.0,-1.0};
@@ -168,7 +171,7 @@ void Build_Local_Contiguous_Size2_BlockMatrix(const Epetra_Comm & Comm, int NUM_
   Epetra_Map Map(-1,NUM_ROWS,0,Comm);
   MAT=new Epetra_CrsMatrix(Copy,Map,2);
   assert(MAT->NumMyRows()%2==0);
-  
+
   NumBlocks=MAT->NumMyRows()/2;
   Blockstart_=new int [NumBlocks+1];
   Blockids_=new int [MAT->NumMyRows()];
@@ -179,24 +182,24 @@ void Build_Local_Contiguous_Size2_BlockMatrix(const Epetra_Comm & Comm, int NUM_
     // local contiguous blocks of constant size 2
     int row_in_block=i%2;
     if(row_in_block==0){
-      Blockstart_[curr_block]=i;      
+      Blockstart_[curr_block]=i;
       indices[0]=i; indices[1]=i+1;
       Blockids_[i]=i;
       MAT->InsertGlobalValues(Map.GID(i),2,&values[1],&indices[0]);
     }
     else if(row_in_block==1){
-      indices[0]=i-1; indices[1]=i;      
+      indices[0]=i-1; indices[1]=i;
       MAT->InsertGlobalValues(Map.GID(i),2,&values[0],&indices[0]);
       Blockids_[i]=i;
       curr_block++;
     }
   }
   Blockstart_[NumBlocks]=MAT->NumMyRows();
-  
+
   MAT->FillComplete();
 }
 
-//============================================= 
+//=============================================
 void Build_Local_NonContiguous_Size2_BlockMatrix(const Epetra_Comm & Comm, int NUM_ROWS,int &NumBlocks,
                                                  int *&Blockstart_, int *&Blockids_,Epetra_CrsMatrix *&MAT){
   double values[3]={-1.0,2.0,-1.0};
@@ -217,7 +220,7 @@ void Build_Local_NonContiguous_Size2_BlockMatrix(const Epetra_Comm & Comm, int N
     int row_in_block=(i%2)?1:0;
     if(row_in_block==0){
       int idx=i/2;
-      Blockstart_[curr_block]=i;      
+      Blockstart_[curr_block]=i;
       indices[0]=Map.GID(idx); indices[1]=Map.GID(idx+NumBlocks);
       Blockids_[i]=idx;
       MAT->InsertGlobalValues(Map.GID(idx),2,&values[1],&indices[0]);
@@ -225,35 +228,35 @@ void Build_Local_NonContiguous_Size2_BlockMatrix(const Epetra_Comm & Comm, int N
     }
     else if(row_in_block==1){
       int idx=(i-1)/2+NumBlocks;
-      indices[0]=Map.GID(idx-NumBlocks); indices[1]=Map.GID(idx);      
+      indices[0]=Map.GID(idx-NumBlocks); indices[1]=Map.GID(idx);
       MAT->InsertGlobalValues(Map.GID(idx),2,&values[0],&indices[0]);
       Blockids_[i]=idx;
       curr_block++;
     }
   }
   Blockstart_[NumBlocks]=MAT->NumMyRows();
-  
+
   MAT->FillComplete();
 }
-//============================================= 
+//=============================================
 void Build_NonLocal_BlockMatrix(const Epetra_Comm & Comm, int NUM_ROWS,int &NumBlocks,
                                 int *&Blockstart_, int *&Blockids_,Epetra_CrsMatrix *&MAT){
   double values[3]={-1.0,2.0,-1.0};
   int indices[3];
   int NumProcs=Comm.NumProc();
-  
+
   // Build me a CrsMatrix
   Epetra_Map Map(-1,NUM_ROWS,0,Comm);
-  MAT=new Epetra_CrsMatrix(Copy,Map,2); 
+  MAT=new Epetra_CrsMatrix(Copy,Map,2);
   int MyPID=Comm.MyPID();
 
   for(int i=0;i<MAT->NumMyRows();i++){
     int GID=Map.GID(i);
-    indices[0]=GID;     
+    indices[0]=GID;
     if(i==0) values[1]=2.0;
     else values[1]=NumProcs+1;
-    
-    MAT->InsertGlobalValues(GID,1,&values[1],&indices[0]);    
+
+    MAT->InsertGlobalValues(GID,1,&values[1],&indices[0]);
 
     // A little off-diagonal for good measure
     if(NumProcs>1 && MyPID==0 && i>0){
@@ -266,24 +269,24 @@ void Build_NonLocal_BlockMatrix(const Epetra_Comm & Comm, int NUM_ROWS,int &NumB
     else if(NumProcs>1 && MyPID!=0 && i>0){
       indices[1]=GID%NUM_ROWS;//HAQ
       MAT->InsertGlobalValues(GID,1,&values[0],&indices[1]);
-    }    
+    }
   }
   MAT->FillComplete();
 
   // Build me some block structure
   // The first row on each proc is a solo block.  All others get blocked to
-  // PID=0's second block  
+  // PID=0's second block
   if(MyPID==0) NumBlocks=NUM_ROWS;
-  else NumBlocks=1;  
+  else NumBlocks=1;
   Blockstart_=new int [NumBlocks+1];
   Blockstart_[0]=0;
   int curr_idx,curr_block;
-  
+
   if(MyPID){
     // PID > 0
     Blockids_=new int[1];
     Blockstart_[0]=0; Blockstart_[1]=1;
-    Blockids_[0]=Map.GID(0);    
+    Blockids_[0]=Map.GID(0);
   }
   else{
     // PID 0
@@ -304,7 +307,7 @@ void Build_NonLocal_BlockMatrix(const Epetra_Comm & Comm, int NUM_ROWS,int &NumB
   }
 }
 
-//============================================= 
+//=============================================
 void Build_DiagonalStructure(const Epetra_Map &Map,int &NumBlocks,int *&Blockstart_, int *&Blockids_,bool local_ids){
   NumBlocks=Map.NumMyElements();
   Blockstart_=new int[NumBlocks+1];
@@ -317,11 +320,11 @@ void Build_DiagonalStructure(const Epetra_Map &Map,int &NumBlocks,int *&Blocksta
   Blockstart_[NumBlocks]=NumBlocks;
 }
 
-  
 
-//============================================= 
-//============================================= 
-//============================================= 
+
+//=============================================
+//=============================================
+//=============================================
 double Test_PTBDP(const Epetra_CrsMatrix& MAT, int NumBlocks,int* Blockstart_,int* Blockids_,bool is_lid){
   // Build the block lists
   Teuchos::ParameterList List,Sublist;
@@ -333,7 +336,7 @@ double Test_PTBDP(const Epetra_CrsMatrix& MAT, int NumBlocks,int* Blockstart_,in
   Sublist.set("apply mode","invert");
   //Sublist.set("apply mode","multiply");
   List.set("blockdiagmatrix: list",Sublist);
-  
+
   EpetraExt_PointToBlockDiagPermute Perm(MAT);
   Perm.SetParameters(List);
 
@@ -341,7 +344,7 @@ double Test_PTBDP(const Epetra_CrsMatrix& MAT, int NumBlocks,int* Blockstart_,in
   Epetra_MultiVector X(MAT.RowMap(),1);
   Epetra_MultiVector Y(MAT.RowMap(),1);
   Epetra_MultiVector Z(MAT.RowMap(),1);
-  X.SetSeed(24601); X.Random();  
+  X.SetSeed(24601); X.Random();
 
   double norm2;
   Perm.ApplyInverse(X,Y);
@@ -352,7 +355,7 @@ double Test_PTBDP(const Epetra_CrsMatrix& MAT, int NumBlocks,int* Blockstart_,in
 }
 
 
-//============================================= 
+//=============================================
 double Test_PTBDP_C(const Epetra_CrsMatrix& MAT,int BlockSize){
   // Build the block lists
   Teuchos::ParameterList List,Sublist;
@@ -361,7 +364,7 @@ double Test_PTBDP_C(const Epetra_CrsMatrix& MAT,int BlockSize){
   Sublist.set("apply mode","invert");
   //Sublist.set("apply mode","multiply");
   List.set("blockdiagmatrix: list",Sublist);
-  
+
   EpetraExt_PointToBlockDiagPermute Perm(MAT);
   Perm.SetParameters(List);
 
@@ -369,7 +372,7 @@ double Test_PTBDP_C(const Epetra_CrsMatrix& MAT,int BlockSize){
   Epetra_MultiVector X(MAT.RowMap(),1);
   Epetra_MultiVector Y(MAT.RowMap(),1);
   Epetra_MultiVector Z(MAT.RowMap(),1);
-  X.SetSeed(24601); X.Random();  
+  X.SetSeed(24601); X.Random();
 
   double norm2;
   Perm.ApplyInverse(X,Y);
@@ -379,10 +382,10 @@ double Test_PTBDP_C(const Epetra_CrsMatrix& MAT,int BlockSize){
   return norm2;
 }
 
-//============================================= 
+//=============================================
 bool TestPointToBlockDiagPermute(const Epetra_Comm & Comm){
   const int NUM_ROWS=64;
-  
+
   bool TestPassed=true;
   Epetra_CrsMatrix *MAT;
   int NumBlocks, *Blockstart_,*Blockids_;
@@ -401,7 +404,7 @@ bool TestPointToBlockDiagPermute(const Epetra_Comm & Comm){
   if(norm2 > 1e-12) TestPassed=false;
   if(!Comm.MyPID()) cout<<"P2BDP LNCMat   Error = "<<norm2<<endl;
   delete MAT; delete [] Blockstart_; delete [] Blockids_;
-  
+
   // TEST #3 - Non-Local
   Build_NonLocal_BlockMatrix(Comm,NUM_ROWS,NumBlocks,Blockstart_,Blockids_,MAT);
   norm2=Test_PTBDP(*MAT,NumBlocks,Blockstart_,Blockids_,false);
@@ -421,10 +424,10 @@ bool TestPointToBlockDiagPermute(const Epetra_Comm & Comm){
 }
 
 
-//============================================= 
+//=============================================
 double Test_Cheby(const Epetra_CrsMatrix& MAT, int NumBlocks,int* Blockstart_,int* Blockids_,int maxits,bool is_lid){
   double norm2,norm0;
-  // Build the block lists  
+  // Build the block lists
   Teuchos::ParameterList ChebyList,List,Sublist;
   List.set("number of local blocks",NumBlocks);
   List.set("block start index",Blockstart_);
@@ -450,17 +453,17 @@ double Test_Cheby(const Epetra_CrsMatrix& MAT, int NumBlocks,int* Blockstart_,in
   X.SetSeed(24601); X.Random();
   MAT.Apply(X,Y);
   Y.Norm2(&norm0);
-  
+
   Cheby.ApplyInverse(Y,Z);
   X.Update(1.0,Z,-1.0);
   X.Norm2(&norm2);
   return norm2 / norm0;
 }
 
-//============================================= 
+//=============================================
 double Test_Cheby_C(const Epetra_CrsMatrix& MAT, int BlockSize,int maxits){
   double norm2,norm0;
-  // Build the block lists  
+  // Build the block lists
   Teuchos::ParameterList ChebyList,List,Sublist;
   List.set("contiguous block size",BlockSize);
   Sublist.set("apply mode","invert");
@@ -482,7 +485,7 @@ double Test_Cheby_C(const Epetra_CrsMatrix& MAT, int BlockSize,int maxits){
   X.SetSeed(24601); X.Random();
   MAT.Apply(X,Y);
   Y.Norm2(&norm0);
-  
+
   Cheby.ApplyInverse(Y,Z);
   X.Update(1.0,Z,-1.0);
   X.Norm2(&norm2);
@@ -490,10 +493,10 @@ double Test_Cheby_C(const Epetra_CrsMatrix& MAT, int BlockSize,int maxits){
 }
 
 
-//============================================= 
+//=============================================
 bool TestBlockChebyshev(const Epetra_Comm & Comm){
   const int NUM_ROWS=100;
-  
+
   bool TestPassed=true;
   Epetra_CrsMatrix *MAT;
   int NumBlocks, *Blockstart_,*Blockids_;
@@ -536,17 +539,17 @@ bool TestBlockChebyshev(const Epetra_Comm & Comm){
   // Test #5 - Local, Non-Contiguous matrix w/ exact precond
   Build_Local_NonContiguous_Size2_BlockMatrix(Comm,NUM_ROWS,NumBlocks,Blockstart_,Blockids_,MAT);
   norm2=Test_Cheby(*MAT,NumBlocks,Blockstart_,Blockids_,1,true);
-  if(norm2 > 1e-12) TestPassed=false;  
+  if(norm2 > 1e-12) TestPassed=false;
   if(!Comm.MyPID()) cout<<"Cheby LNC-E  nrm-red = "<<norm2<<endl;
   delete MAT; delete [] Blockstart_; delete [] Blockids_;
-  
+
   // TEST #6 - Non-Local matrix w/ exact precond
   Build_NonLocal_BlockMatrix(Comm,NUM_ROWS,NumBlocks,Blockstart_,Blockids_,MAT);
   norm2=Test_Cheby(*MAT,NumBlocks,Blockstart_,Blockids_,1,false);
   if(norm2 > 1e-12) TestPassed=false;
   if(!Comm.MyPID()) cout<<"Cheby NL-E   nrm-red = "<<norm2<<endl;
   delete MAT; delete [] Blockstart_; delete [] Blockids_;
-  
+
   // Test #7 - Local, Contiguous matrix w/ diagonal precond (contiguous mode)
   Build_Local_Contiguous_Size2_BlockMatrix(Comm,NUM_ROWS,NumBlocks,Blockstart_,Blockids_,MAT);
   norm2=Test_Cheby_C(*MAT,1,100);
@@ -564,9 +567,9 @@ bool TestBlockChebyshev(const Epetra_Comm & Comm){
   return TestPassed;
 }
 
-//============================================= 
-//============================================= 
-//============================================= 
+//=============================================
+//=============================================
+//=============================================
 int main(int argc, char *argv[])
 {
 
@@ -586,7 +589,7 @@ int main(int argc, char *argv[])
 
   // Block Chebyshev Tests
   TestPassed=TestPassed && TestBlockChebyshev(Comm);
-  
+
   // ============ //
   // final output //
   // ============ //
@@ -595,9 +598,9 @@ int main(int argc, char *argv[])
     if(!Comm.MyPID()) cout << "Test `BlockCheby.exe' FAILED!" << endl;
     exit(EXIT_FAILURE);
   }
-  
+
 #ifdef HAVE_MPI
-  MPI_Finalize(); 
+  MPI_Finalize();
 #endif
   if(!Comm.MyPID()) cout << "Test `BlockCheby.exe' passed!" << endl;
   exit(EXIT_SUCCESS);

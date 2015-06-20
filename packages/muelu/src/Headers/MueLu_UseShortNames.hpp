@@ -47,8 +47,8 @@
 
 // This file can be use for two purpose:
 // 1) As an header of a user program.
-//    In this case, this file must be include *after* other headers
-//    and type Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps must be defined.
+//    In this case, this file must be included *after* other headers
+//    and the types Scalar, LocalOrdinal, GlobalOrdinal, Node must be defined.
 //    Note also that there is no #ifndef/#endif to protect again the multiple inclusion of this file.
 //    User should create is own header file including this one:
 //
@@ -61,7 +61,10 @@
 //
 // 2) Inside of MueLu to enhance the readability.
 //
-// template <class Scalar, class LocalOrdinal=int, class GlobalOrdinal=LocalOrdinal, class Node=KokkosClassic::DefaultNode::DefaultNodeType>
+// template <class Scalar = Xpetra::MultiVector<>::scalar_type,
+//           class LocalOrdinal = typename Xpetra::MultiVector<Scalar>::local_ordinal_type,
+//           class GlobalOrdinal = typename Xpetra::MultiVector<Scalar, LocalOrdinal>::global_ordinal_type,
+//           class Node = typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
 //  class TpetraMultiVector : public virtual Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 //
 //  #include <MueLu_UseShortNames.hpp>

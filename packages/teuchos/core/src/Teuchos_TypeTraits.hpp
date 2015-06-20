@@ -50,7 +50,7 @@ namespace  Teuchos {
 
 namespace TypeTraits {
 
-/** \brief Default is_equal traits class has \c value equal to \c false, indicating that T1 and T2 are not equal, 
+/** \brief Default is_equal traits class has \c value equal to \c false, indicating that T1 and T2 are not equal,
  *
  * \ingroup teuchos_language_support_grp
  */
@@ -67,7 +67,7 @@ template<typename T>
 struct is_same<T,T> {
   enum {value = true};
 };
- 
+
 }
 
 } // namespace Teuchos

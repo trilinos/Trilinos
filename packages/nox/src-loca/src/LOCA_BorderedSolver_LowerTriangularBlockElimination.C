@@ -121,7 +121,7 @@ solve(Teuchos::ParameterList& params,
     }
 
     // Overwrite Y with Y = C^-1 * (G - B^T*X)
-    NOX::Abstract::MultiVector::DenseMatrix M(C);
+    NOX::Abstract::MultiVector::DenseMatrix M(Teuchos::Copy, C);
     int *ipiv = new int[M.numRows()];
     Teuchos::LAPACK<int,double> L;
     int info;
@@ -220,7 +220,7 @@ solveTranspose(Teuchos::ParameterList& params,
     }
 
     // Overwrite Y with Y = C^-T * (G - B^T*X)
-    NOX::Abstract::MultiVector::DenseMatrix M(C);
+    NOX::Abstract::MultiVector::DenseMatrix M(Teuchos::Copy, C);
     int *ipiv = new int[M.numRows()];
     Teuchos::LAPACK<int,double> L;
     int info;

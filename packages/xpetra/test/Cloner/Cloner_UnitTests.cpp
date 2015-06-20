@@ -50,6 +50,9 @@
 #include <Teuchos_ScalarTraits.hpp>
 
 #include "Xpetra_ConfigDefs.hpp" //TODO
+#ifdef HAVE_XPETRA_TPETRA
+#  include <Tpetra_ConfigDefs.hpp>
+#endif // HAVE_XPETRA_TPETRA
 #include "Xpetra_DefaultPlatform.hpp" //TODO
 #include "Teuchos_as.hpp"
 
@@ -255,21 +258,193 @@ namespace {
   // INSTANTIATIONS
   //
 
-#ifdef HAVE_XPETRA_KOKKOSCLASSIC
-#if   defined(HAVE_KOKKOSCLASSIC_SERIAL)
-  typedef KokkosClassic::SerialNode   NodeType;
-#elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-  typedef KokkosClassic::TPINode      NodeType;
-#elif defined(HAVE_KOKKOSCLASSIC_THRUST)
-  typedef KokkosClassic::ThrustGPUNode NodeType;
-#elif defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD)
+  // mfh 15 Oct 2014: In order to exercise clone(), we have to pick
+  // NodeType different than the default Node type.  We can use the
+  // macros defined in KokkosClassic to figure out some Node type that
+  // differs from the default Node type.  Of course, if only one Node
+  // type is defined, we have no choice but to use it.
+
+#if defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE)
+#  if defined(HAVE_KOKKOSCLASSIC_SERIAL)
+  typedef KokkosClassic::DoNotUse::SerialNode NodeType;
+#  elif defined(HAVE_KOKKOSCLASSIC_TBB)
+  typedef KokkosClassic::DoNotUse::TBBNode NodeType;
+//#  elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
+//  typedef KokkosClassic::DoNotUse::TPINode NodeType;
+#  elif defined(HAVE_KOKKOSCLASSIC_OPENMP)
+  typedef KokkosClassic::DoNotUse::OpenMPNode NodeType;
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_PTHREAD) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   typedef Kokkos::Compat::KokkosThreadsWrapperNode NodeType;
-#elif defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_OPENMP)
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_OPENMP) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   typedef Kokkos::Compat::KokkosOpenMPWrapperNode NodeType;
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_CUDA) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  typedef Kokkos::Compat::KokkosCudaWrapperNode NodeType;
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_SERIAL) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  typedef Kokkos::Compat::KokkosSerialWrapperNode NodeType;
+#  else
+  // There's only one Node type defined, so we have no choice but to use it.
+  typedef KokkosClassic::DefaultNode::DefaultNodeType NodeType;
+#  endif
+#elif defined (HAVE_KOKKOSCLASSIC_DEFAULTNODE_TBBNODE)
+#  if defined(HAVE_KOKKOSCLASSIC_SERIAL)
+  typedef KokkosClassic::DoNotUse::SerialNode NodeType;
+// #  elif defined(HAVE_KOKKOSCLASSIC_TBB)
+//   typedef KokkosClassic::DoNotUse::TBBNode NodeType;
+#  elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
+  typedef KokkosClassic::DoNotUse::TPINode NodeType;
+#  elif defined(HAVE_KOKKOSCLASSIC_OPENMP)
+  typedef KokkosClassic::DoNotUse::OpenMPNode NodeType;
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_PTHREAD)
+  typedef Kokkos::Compat::KokkosThreadsWrapperNode NodeType;
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_OPENMP)
+  typedef Kokkos::Compat::KokkosOpenMPWrapperNode NodeType;
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_CUDA)
+  typedef Kokkos::Compat::KokkosCudaWrapperNode NodeType;
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_SERIAL)
+  typedef Kokkos::Compat::KokkosSerialWrapperNode NodeType;
+#  else
+  // There's only one Node type defined, so we have no choice but to use it.
+  typedef KokkosClassic::DefaultNode::DefaultNodeType NodeType;
+#  endif
+#elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPNODE)
+#  if defined(HAVE_KOKKOSCLASSIC_SERIAL)
+  typedef KokkosClassic::DoNotUse::SerialNode NodeType;
+#  elif defined(HAVE_KOKKOSCLASSIC_TBB)
+  typedef KokkosClassic::DoNotUse::TBBNode NodeType;
+#  elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
+  typedef KokkosClassic::DoNotUse::TPINode NodeType;
+// #  elif defined(HAVE_KOKKOSCLASSIC_OPENMP)
+//   typedef KokkosClassic::DoNotUse::OpenMPNode NodeType;
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_PTHREAD) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  typedef Kokkos::Compat::KokkosThreadsWrapperNode NodeType;
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_OPENMP) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  typedef Kokkos::Compat::KokkosOpenMPWrapperNode NodeType;
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_CUDA) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  typedef Kokkos::Compat::KokkosCudaWrapperNode NodeType;
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_SERIAL) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  typedef Kokkos::Compat::KokkosSerialWrapperNode NodeType;
+#  else
+  // There's only one Node type defined, so we have no choice but to use it.
+  typedef KokkosClassic::DefaultNode::DefaultNodeType NodeType;
+#  endif
+#elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE)
+#  if defined(HAVE_KOKKOSCLASSIC_SERIAL)
+  typedef KokkosClassic::DoNotUse::SerialNode NodeType;
+#  elif defined(HAVE_KOKKOSCLASSIC_TBB)
+  typedef KokkosClassic::DoNotUse::TBBNode NodeType;
+#  elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
+  typedef KokkosClassic::DoNotUse::TPINode NodeType;
+#  elif defined(HAVE_KOKKOSCLASSIC_OPENMP)
+  typedef KokkosClassic::DoNotUse::OpenMPNode NodeType;
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_PTHREAD) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  typedef Kokkos::Compat::KokkosThreadsWrapperNode NodeType;
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_OPENMP) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  typedef Kokkos::Compat::KokkosOpenMPWrapperNode NodeType;
+// #  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_CUDA) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+//   typedef Kokkos::Compat::KokkosCudaWrapperNode NodeType;
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_SERIAL) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  typedef Kokkos::Compat::KokkosSerialWrapperNode NodeType;
+#  else
+  // There's only one Node type defined, so we have no choice but to use it.
+  typedef KokkosClassic::DefaultNode::DefaultNodeType NodeType;
+#  endif
+#elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE)
+#  if defined(HAVE_KOKKOSCLASSIC_SERIAL)
+  typedef KokkosClassic::DoNotUse::SerialNode NodeType;
+#  elif defined(HAVE_KOKKOSCLASSIC_TBB)
+  typedef KokkosClassic::DoNotUse::TBBNode NodeType;
+#  elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
+  typedef KokkosClassic::DoNotUse::TPINode NodeType;
+#  elif defined(HAVE_KOKKOSCLASSIC_OPENMP)
+  typedef KokkosClassic::DoNotUse::OpenMPNode NodeType;
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_PTHREAD) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  typedef Kokkos::Compat::KokkosThreadsWrapperNode NodeType;
+// #  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_OPENMP) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+//   typedef Kokkos::Compat::KokkosOpenMPWrapperNode NodeType;
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_CUDA) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  typedef Kokkos::Compat::KokkosCudaWrapperNode NodeType;
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_SERIAL) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  typedef Kokkos::Compat::KokkosSerialWrapperNode NodeType;
+#  else
+  // There's only one Node type defined, so we have no choice but to use it.
+  typedef KokkosClassic::DefaultNode::DefaultNodeType NodeType;
+#  endif
+#elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE)
+#  if defined(HAVE_KOKKOSCLASSIC_SERIAL)
+  typedef KokkosClassic::DoNotUse::SerialNode NodeType;
+#  elif defined(HAVE_KOKKOSCLASSIC_TBB)
+  typedef KokkosClassic::DoNotUse::TBBNode NodeType;
+#  elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
+  typedef KokkosClassic::DoNotUse::TPINode NodeType;
+#  elif defined(HAVE_KOKKOSCLASSIC_OPENMP)
+  typedef KokkosClassic::DoNotUse::OpenMPNode NodeType;
+// #  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_PTHREAD) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+//   typedef Kokkos::Compat::KokkosThreadsWrapperNode NodeType;
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_OPENMP) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  typedef Kokkos::Compat::KokkosOpenMPWrapperNode NodeType;
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_CUDA) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  typedef Kokkos::Compat::KokkosCudaWrapperNode NodeType;
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_SERIAL) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  typedef Kokkos::Compat::KokkosSerialWrapperNode NodeType;
+#  else
+  // There's only one Node type defined, so we have no choice but to use it.
+  typedef KokkosClassic::DefaultNode::DefaultNodeType NodeType;
+#  endif
+#elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE)
+#  if defined(HAVE_KOKKOSCLASSIC_SERIAL)
+  typedef KokkosClassic::DoNotUse::SerialNode NodeType;
+#  elif defined(HAVE_KOKKOSCLASSIC_TBB)
+  typedef KokkosClassic::DoNotUse::TBBNode NodeType;
+#  elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
+  typedef KokkosClassic::DoNotUse::TPINode NodeType;
+#  elif defined(HAVE_KOKKOSCLASSIC_OPENMP)
+  typedef KokkosClassic::DoNotUse::OpenMPNode NodeType;
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_PTHREAD) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  typedef Kokkos::Compat::KokkosThreadsWrapperNode NodeType;
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_OPENMP) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  typedef Kokkos::Compat::KokkosOpenMPWrapperNode NodeType;
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_CUDA) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  typedef Kokkos::Compat::KokkosCudaWrapperNode NodeType;
+// #  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_SERIAL) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+//   typedef Kokkos::Compat::KokkosSerialWrapperNode NodeType;
+#  else
+  // There's only one Node type defined, so we have no choice but to use it.
+  typedef KokkosClassic::DefaultNode::DefaultNodeType NodeType;
+#  endif
+#elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALNODE)
+// #  if defined(HAVE_KOKKOSCLASSIC_SERIAL)
+//   typedef KokkosClassic::DoNotUse::SerialNode NodeType;
+#  if defined(HAVE_KOKKOSCLASSIC_TBB)
+  typedef KokkosClassic::DoNotUse::TBBNode NodeType;
+#  elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
+  typedef KokkosClassic::DoNotUse::TPINode NodeType;
+#  elif defined(HAVE_KOKKOSCLASSIC_OPENMP)
+  typedef KokkosClassic::DoNotUse::OpenMPNode NodeType;
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_PTHREAD) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  typedef Kokkos::Compat::KokkosThreadsWrapperNode NodeType;
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_OPENMP) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  typedef Kokkos::Compat::KokkosOpenMPWrapperNode NodeType;
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_CUDA) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  typedef Kokkos::Compat::KokkosCudaWrapperNode NodeType;
+#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_SERIAL) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  typedef Kokkos::Compat::KokkosSerialWrapperNode NodeType;
+#  else
+  // There's only one Node type defined, so we have no choice but to use it.
+  typedef KokkosClassic::DefaultNode::DefaultNodeType NodeType;
+#  endif
+#else
+  // Pick some reasonable default.
+  typedef KokkosClassic::DefaultNode::DefaultNodeType NodeType;
 #endif
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Cloner, MapCloneTpetra, int, int, NodeType )
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Cloner, MapCloneEpetra, int, int, NodeType )
+
+#ifndef XPETRA_TEST_USE_LONGLONG_GO
+        typedef int GO;
+#else
+        typedef long long GO;
+#endif
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Cloner, MapCloneTpetra, int, GO, NodeType )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Cloner, MapCloneEpetra, int, GO, NodeType )
 
   // FIXME (mfh 28 Sep 2013) I disabled this test.  Please uncomment
   // the line below if you want to reenable the test.
@@ -278,7 +453,7 @@ namespace {
   // FIXME (mfh 28 Sep 2013) I disabled this test.  Please uncomment
   // the line below if you want to reenable the test.
   //TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Cloner, MatrixCloneEpetra, double, int, int, NodeType )
-#else
-#warning Skipping Cloner tests as KokkosClassic is not enabled
-#endif
+// #else
+// #warning Skipping Cloner tests as KokkosClassic is not enabled
+// #endif
 }

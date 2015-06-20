@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,17 +36,17 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
 
 #include <gtest/gtest.h>
 
-#include <Kokkos_Threads.hpp>
-#include <Kokkos_hwloc.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <TestRandom.hpp>
+#include <TestSort.hpp>
 #include <iomanip>
 
 
@@ -93,11 +93,19 @@ protected:
       Impl::test_random<Kokkos::Random_XorShift1024_Pool<Kokkos::Threads> >(num_draws);                                   \
   }
 
+#define THREADS_SORT_UNSIGNED( size )                                \
+  TEST_F( threads, SortUnsigned ) {   \
+      Impl::test_sort< Kokkos::Threads, double >(size);                                   \
+  }
+
+
 THREADS_RANDOM_XORSHIFT64( 10240000 )
 THREADS_RANDOM_XORSHIFT1024( 10130144 )
+THREADS_SORT_UNSIGNED(171)
 
 #undef THREADS_RANDOM_XORSHIFT64
 #undef THREADS_RANDOM_XORSHIFT1024
+#undef THREADS_SORT_UNSIGNED
 
 #endif
 } // namespace Test

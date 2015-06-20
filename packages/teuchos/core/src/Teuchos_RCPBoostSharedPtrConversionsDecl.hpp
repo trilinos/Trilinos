@@ -39,8 +39,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TEUCHOS_RCP_SHAREDPTR_CONVERSIONS_DECL_HPP
-#define TEUCHOS_RCP_SHAREDPTR_CONVERSIONS_DECL_HPP
+#ifndef TEUCHOS_RCP_BOOST_SHAREDPTR_CONVERSIONS_DECL_HPP
+#define TEUCHOS_RCP_BOOST_SHAREDPTR_CONVERSIONS_DECL_HPP
 
 #include "Teuchos_RCPDecl.hpp"
 #include "boost/shared_ptr.hpp"
@@ -171,4 +171,4 @@ bool nonnull( const boost::shared_ptr<T> &p )
 } // namespace boost
 
 
-#endif	// TEUCHOS_RCP_SHAREDPTR_CONVERSIONS_DECL_HPP
+#endif	// TEUCHOS_RCP_BOOST_SHAREDPTR_CONVERSIONS_DECL_HPP

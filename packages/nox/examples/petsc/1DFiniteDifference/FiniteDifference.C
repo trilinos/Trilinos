@@ -47,7 +47,7 @@
 
 #include "NOX_Common.H"
 #include "petscsnes.h"
-#include "petscda.h"
+#include "petscdmda.h"
 
 /*
    User-defined routines
@@ -133,37 +133,37 @@ Mat& FiniteDifference::getJacobian()
 int FormFunction(SNES snes,Vec x,Vec f,void *ctx)
 {
   ApplicationCtx *user = (ApplicationCtx*) ctx;
-  DA             da = user->da;
+  DM             da = user->da;
   PetscScalar    *xx,*ff,d;
   int            i,ierr,M,xs,xm;
   Vec            xlocal;
 
   PetscFunctionBegin;
-  ierr = DAGetLocalVector(da,&xlocal);CHKERRQ(ierr);
+  ierr = DMGetLocalVector(da,&xlocal);CHKERRQ(ierr);
   /*
      Scatter ghost points to local vector, using the 2-step process
         DAGlobalToLocalBegin(), DAGlobalToLocalEnd().
      By placing code between these two statements, computations can
      be done while messages are in transition.
   */
-  ierr = DAGlobalToLocalBegin(da,x,INSERT_VALUES,xlocal);CHKERRQ(ierr);
-  ierr = DAGlobalToLocalEnd(da,x,INSERT_VALUES,xlocal);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalBegin(da,x,INSERT_VALUES,xlocal);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalEnd(da,x,INSERT_VALUES,xlocal);CHKERRQ(ierr);
 
   /*
      Get pointers to vector data.
        - The vector xlocal includes ghost point; the vectors x and f do
          NOT include ghost points.
        - Using DAVecGetArray() allows accessing the values using global ordering  */
-  ierr = DAVecGetArray(da,xlocal,&xx);CHKERRQ(ierr);
-  ierr = DAVecGetArray(da,f,&ff);CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(da,xlocal,&xx);CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(da,f,&ff);CHKERRQ(ierr);
 
   /*
      Get local grid boundaries (for 1-dimensional DA):
        xs, xm  - starting grid index, width of local grid (no ghost points)
   */
-  ierr = DAGetCorners(da,&xs,PETSC_NULL,PETSC_NULL,&xm,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
-  ierr = DAGetInfo(da,PETSC_NULL,&M,PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL,
-                   PETSC_NULL,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
+  ierr = DMDAGetCorners(da,&xs,PETSC_NULL,PETSC_NULL,&xm,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
+  ierr = DMDAGetInfo(da,PETSC_NULL,&M,PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL,
+		     PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
 
   /*
      Set function values for boundary points; define local interior grid point range:
@@ -190,9 +190,9 @@ int FormFunction(SNES snes,Vec x,Vec f,void *ctx)
   /*
      Restore vectors
   */
-  ierr = DAVecRestoreArray(da,xlocal,&xx);CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(da,f,&ff);CHKERRQ(ierr);
-  ierr = DARestoreLocalVector(da,&xlocal);CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(da,xlocal,&xx);CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(da,f,&ff);CHKERRQ(ierr);
+  ierr = DMRestoreLocalVector(da,&xlocal);CHKERRQ(ierr);
   //PetscFunctionReturn(0);
 
   return 0;
@@ -217,20 +217,20 @@ int FormJacobian(SNES snes,Vec x,Mat *jac,Mat *B,MatStructure*flag,void *ctx)
   ApplicationCtx *user = (ApplicationCtx*) ctx;
   PetscScalar    *xx,d,A[3];
   int            i,j[3],ierr,M,xs,xm;
-  DA             da = user->da;
+  DM             da = user->da;
 
   PetscFunctionBegin;
   /*
      Get pointer to vector data
   */
-  ierr = DAVecGetArray(da,x,&xx);CHKERRQ(ierr);
-  ierr = DAGetCorners(da,&xs,PETSC_NULL,PETSC_NULL,&xm,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(da,x,&xx);CHKERRQ(ierr);
+  ierr = DMDAGetCorners(da,&xs,PETSC_NULL,PETSC_NULL,&xm,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
 
   /*
     Get range of locally owned matrix
   */
-  ierr = DAGetInfo(da,PETSC_NULL,&M,PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL,
-                   PETSC_NULL,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
+  ierr = DMDAGetInfo(da,PETSC_NULL,&M,PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL,
+		     PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
 
   /*
      Determine starting and ending local indices for interior grid points.
@@ -273,7 +273,7 @@ int FormJacobian(SNES snes,Vec x,Mat *jac,Mat *B,MatStructure*flag,void *ctx)
   */
 
   ierr = MatAssemblyBegin(*jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(da,x,&xx);CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(da,x,&xx);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(*jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
   return 0;

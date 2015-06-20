@@ -67,13 +67,13 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
 #  REQUIRED_FILES ${INSTALLATION_DIR}/lib/cmake/Trilinos/TrilinosConfig.cmake
 #)
 
-TRILINOS_DRIVER_ADD_DASHBOARD(
-  MPI_OPT_DEV_BACKWARDS_COMPATIBILITY_11.4
-  ctest_linux_nightly_mpi_development_opt_backwards_11_4_trilinos-test2.cmake
-  CTEST_INSTALLER_TYPE release
-  DEPENDS Install_Trilinos
-  REQUIRED_FILES ${INSTALLATION_DIR}/lib/cmake/Trilinos/TrilinosConfig.cmake
-)
+#TRILINOS_DRIVER_ADD_DASHBOARD(
+#  MPI_OPT_DEV_BACKWARDS_COMPATIBILITY_11.4
+#  ctest_linux_nightly_mpi_development_opt_backwards_11_4_trilinos-test2.cmake
+#  CTEST_INSTALLER_TYPE release
+#  DEPENDS Install_Trilinos
+#  REQUIRED_FILES ${INSTALLATION_DIR}/lib/cmake/Trilinos/TrilinosConfig.cmake
+#)
 
 #TRILINOS_DRIVER_ADD_DASHBOARD(
 #  MPI_OPT_DEV_BACKWARDS_COMPATIBILITY_11.2

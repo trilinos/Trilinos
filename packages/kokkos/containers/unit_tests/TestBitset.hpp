@@ -1,3 +1,44 @@
+//@HEADER
+// ************************************************************************
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// 
+// ************************************************************************
+//@HEADER
+
 #ifndef KOKKOS_TEST_BITSET_HPP
 #define KOKKOS_TEST_BITSET_HPP
 
@@ -13,7 +54,7 @@ template <typename Bitset, bool Set>
 struct TestBitset
 {
   typedef Bitset bitset_type;
-  typedef typename bitset_type::device_type device_type;
+  typedef typename bitset_type::execution_space execution_space;
   typedef uint32_t value_type;
 
   bitset_type m_bitset;
@@ -22,9 +63,9 @@ struct TestBitset
     : m_bitset(bitset)
   {}
 
-  unsigned apply(unsigned collisions)
+  unsigned testit(unsigned collisions)
   {
-    device_type::fence();
+    execution_space::fence();
 
     unsigned count = 0;
     Kokkos::parallel_reduce( m_bitset.size()*collisions, *this, count);
@@ -61,7 +102,7 @@ template <typename Bitset>
 struct TestBitsetTest
 {
   typedef Bitset bitset_type;
-  typedef typename bitset_type::device_type device_type;
+  typedef typename bitset_type::execution_space execution_space;
   typedef uint32_t value_type;
 
   bitset_type m_bitset;
@@ -70,9 +111,9 @@ struct TestBitsetTest
     : m_bitset(bitset)
   {}
 
-  unsigned apply()
+  unsigned testit()
   {
-    device_type::fence();
+    execution_space::fence();
 
     unsigned count = 0;
     Kokkos::parallel_reduce( m_bitset.size(), *this, count);
@@ -98,7 +139,7 @@ template <typename Bitset, bool Set>
 struct TestBitsetAny
 {
   typedef Bitset bitset_type;
-  typedef typename bitset_type::device_type device_type;
+  typedef typename bitset_type::execution_space execution_space;
   typedef uint32_t value_type;
 
   bitset_type m_bitset;
@@ -107,9 +148,9 @@ struct TestBitsetAny
     : m_bitset(bitset)
   {}
 
-  unsigned apply()
+  unsigned testit()
   {
-    device_type::fence();
+    execution_space::fence();
 
     unsigned count = 0;
     Kokkos::parallel_reduce( m_bitset.size(), *this, count);
@@ -178,7 +219,7 @@ void test_bitset()
     // nothing should be set
     {
       Impl::TestBitsetTest< bitset_type > f(bitset);
-      uint32_t count = f.apply();
+      uint32_t count = f.testit();
       EXPECT_EQ(0u, count);
       EXPECT_EQ(count, bitset.count());
     }
@@ -188,7 +229,7 @@ void test_bitset()
     // everything should be set
     {
       Impl::TestBitsetTest< const_bitset_type > f(bitset);
-      uint32_t count = f.apply();
+      uint32_t count = f.testit();
       EXPECT_EQ(bitset.size(), count);
       EXPECT_EQ(count, bitset.count());
     }
@@ -201,7 +242,7 @@ void test_bitset()
     // test setting bits
     {
       Impl::TestBitset< bitset_type, true > f(bitset);
-      uint32_t count = f.apply(10u);
+      uint32_t count = f.testit(10u);
       EXPECT_EQ( bitset.size(), bitset.count());
       EXPECT_EQ( bitset.size(), count );
     }
@@ -210,7 +251,7 @@ void test_bitset()
     // test resetting bits
     {
       Impl::TestBitset< bitset_type, false > f(bitset);
-      uint32_t count = f.apply(10u);
+      uint32_t count = f.testit(10u);
       EXPECT_EQ( bitset.size(), count);
       EXPECT_EQ( 0u, bitset.count() );
     }
@@ -220,7 +261,7 @@ void test_bitset()
     // test setting any bits
     {
       Impl::TestBitsetAny< bitset_type, true > f(bitset);
-      uint32_t count = f.apply();
+      uint32_t count = f.testit();
       EXPECT_EQ( bitset.size(), bitset.count());
       EXPECT_EQ( bitset.size(), count );
     }
@@ -229,7 +270,7 @@ void test_bitset()
     // test resetting any bits
     {
       Impl::TestBitsetAny< bitset_type, false > f(bitset);
-      uint32_t count = f.apply();
+      uint32_t count = f.testit();
       EXPECT_EQ( bitset.size(), count);
       EXPECT_EQ( 0u, bitset.count() );
     }

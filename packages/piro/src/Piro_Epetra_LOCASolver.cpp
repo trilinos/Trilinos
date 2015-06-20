@@ -254,7 +254,7 @@ Teuchos::RCP<const Epetra_Map> Piro::Epetra::LOCASolver::get_g_map(int j) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION( (j>1 || j<0), Teuchos::Exceptions::InvalidParameter,
                      std::endl <<
-                     "Error!  Piro::Epetra::NOXSolver::get_g_map() only " <<
+                     "Error!  Piro::Epetra::LOCASolver::get_g_map() only " <<
                      " supports 2 response vectors.  Supplied index l = " <<
                      j << std::endl);
 
@@ -278,6 +278,16 @@ Teuchos::RCP<const Epetra_Vector> Piro::Epetra::LOCASolver::get_p_init(int l) co
                      l << std::endl);
 
   return model->get_p_init(l);
+}
+
+Teuchos::RCP<const Epetra_Vector> Piro::Epetra::LOCASolver::get_p_lower_bounds(int l) const
+{
+  return model->get_p_lower_bounds(l);
+}
+
+Teuchos::RCP<const Epetra_Vector> Piro::Epetra::LOCASolver::get_p_upper_bounds(int l) const
+{
+  return model->get_p_upper_bounds(l);
 }
 
 EpetraExt::ModelEvaluator::InArgs Piro::Epetra::LOCASolver::createInArgs() const

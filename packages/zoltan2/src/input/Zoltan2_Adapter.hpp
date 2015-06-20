@@ -60,7 +60,7 @@
   { \
     std::ostringstream emsg; \
     emsg << __FILE__ << "," << __LINE__ \
-         << " error:  " << __func__ << " not implemented in adapter "  \
+         << " error:  " << __func__zoltan2__ << " not implemented in adapter "  \
          << std::endl; \
     throw std::runtime_error(emsg.str()); \
   }
@@ -94,7 +94,7 @@ template <typename User>
   class BaseAdapter {
 
 public:
-  typedef typename InputTraits<User>::gid_t gid_t;
+  typedef typename InputTraits<User>::zgid_t zgid_t;
   typedef typename InputTraits<User>::scalar_t scalar_t;
 
   typedef typename InputTraits<User>::part_t part_t;  
@@ -119,7 +119,7 @@ public:
       \param Ids will on return point to the list of the global Ids for 
         this process.
    */
-  virtual void getIDsView(const gid_t *&Ids) const = 0;
+  virtual void getIDsView(const zgid_t *&Ids) const = 0;
 
   /*! \brief Returns the number of weights per object.
    *   Number of weights per object should be zero or greater.  If

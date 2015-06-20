@@ -49,7 +49,7 @@ public:
     numels =(ie-is)*(je-js)*(ke-ks);
     proc_id = -1;
     split_value = -1;
-    split_direction = -1;
+    split_direction = 0;
     unique_id = partition_count;
     partition_count++;
     inline_decomposition_type = idt;
@@ -74,7 +74,7 @@ public:
     numels =(ie-is)*(je-js)*(ke-ks);
     proc_id = -1;
     split_value = -1;
-    split_direction = -1;
+    split_direction = 0;
     unique_id = partition_count;
     partition_count++;
     inline_decomposition_type = idt;
@@ -101,7 +101,7 @@ public:
   long long Element_Proc(long long []);
   Partition * high;
   Partition * low;
-  long long split_direction;
+  unsigned split_direction;
   long long split_value;
   long long lows[4];
   long long highs[4];

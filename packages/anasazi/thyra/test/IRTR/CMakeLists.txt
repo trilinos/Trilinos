@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
 IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_ThyraEpetraAdapters)
 

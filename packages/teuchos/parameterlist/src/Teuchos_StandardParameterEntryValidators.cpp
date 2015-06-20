@@ -47,23 +47,38 @@ std::string Teuchos::getVerbosityLevelParameterValueName(
   const EVerbosityLevel verbLevel
   )
 {
-  switch(verbLevel) {
-    case VERB_DEFAULT:
-      return "default";
-    case VERB_NONE:
-      return "none";
-    case VERB_LOW:
-      return "low";
-    case VERB_MEDIUM:
-      return "medium";
-    case VERB_HIGH:
-      return "high";
-    case VERB_EXTREME:
-      return "extreme";
-    default:
-      TEUCHOS_TEST_FOR_EXCEPT("Should never get here!");
+  switch (verbLevel) {
+  case VERB_DEFAULT:
+    return "default";
+  case VERB_NONE:
+    return "none";
+  case VERB_LOW:
+    return "low";
+  case VERB_MEDIUM:
+    return "medium";
+  case VERB_HIGH:
+    return "high";
+  case VERB_EXTREME:
+    return "extreme";
+  default:
+    TEUCHOS_TEST_FOR_EXCEPTION(
+       true, std::invalid_argument, "Teuchos::getVerbosityLevelParameterValue"
+       "Name(const Teuchos::EVerbosityLevel): Input argument " << verbLevel <<
+       " has an invalid value.  Valid values are VERB_DEFAULT=" << VERB_DEFAULT
+       << ", VERB_NONE=" << VERB_NONE << ", VERB_LOW=" << VERB_LOW << ", "
+       "VERB_MEDIUM=" << VERB_MEDIUM << ", VERB_HIGH=" << VERB_HIGH << ", AND "
+       "VERB_EXTREME=" << VERB_EXTREME << ".");
   }
-  return ""; // Never get here!
+
+  // NOTE (mfh 15 Sep 2014): Most compilers have figured out that the
+  // return statement below is unreachable.  Some older compilers
+  // might not realize this.  That's why the return statement was put
+  // there, so that those compilers don't warn that this function
+  // doesn't return a value.  If it's a choice between one warning and
+  // another, I would prefer the choice that produces less code and
+  // doesn't have unreachable code (which never gets tested).
+
+  //return ""; // Never get here!
 }
 
 
@@ -231,7 +246,7 @@ bool AnyNumberParameterEntryValidator::isIntAllowed() const
   return acceptedTypes_.allowInt();
 }
 
-  
+
 bool AnyNumberParameterEntryValidator::isStringAllowed() const
 {
   return acceptedTypes_.allowString();
@@ -362,11 +377,11 @@ void AnyNumberParameterEntryValidator::throwTypeError(
 }
 
 
-RCP<AnyNumberParameterEntryValidator> 
+RCP<AnyNumberParameterEntryValidator>
   DummyObjectGetter<AnyNumberParameterEntryValidator>::getDummyObject()
 {
   return anyNumberParameterEntryValidator(
-    AnyNumberParameterEntryValidator::PREFER_INT, 
+    AnyNumberParameterEntryValidator::PREFER_INT,
     AnyNumberParameterEntryValidator::AcceptedTypes());
 }
 
@@ -414,19 +429,19 @@ void FileNameValidator::validate(ParameterEntry const &entry, std::string const 
   TEUCHOS_TEST_FOR_EXCEPTION(!(anyValue.type() == typeid(std::string) ),
     Exceptions::InvalidParameterType,
     "The \"" << paramName << "\"" <<
-    " parameter in the \"" << sublistName << 
+    " parameter in the \"" << sublistName <<
     "\" sublist is has an error." << std::endl << std::endl <<
     "Error: The value that you entered was the wrong type." << std::endl <<
-    "Parameter: " << paramName << std::endl << 
+    "Parameter: " << paramName << std::endl <<
     "Type specified: " << entryName << std::endl <<
-    "Type accepted: " << typeid(std::string).name() << 
+    "Type accepted: " << typeid(std::string).name() <<
     std::endl << std::endl);
   if(mustAlreadyExist_ && !EmptyNameOK_){
     std::string fileName = getValue<std::string>(entry);
     TEUCHOS_TEST_FOR_EXCEPTION(!std::ifstream(fileName.c_str()),
       Exceptions::InvalidParameterValue,
       "The \"" << paramName << "\"" <<
-      " parameter in the \"" << sublistName << 
+      " parameter in the \"" << sublistName <<
       "\" sublist is has an error." << std::endl << std::endl <<
       "Error: The file must already exists. The value you entered does " <<
       "not corresspond to an existing file name." << std::endl <<
@@ -491,7 +506,7 @@ void StringValidator::validate(
   TEUCHOS_TEST_FOR_EXCEPTION(!(anyValue.type() == typeid(std::string)) ,
     Exceptions::InvalidParameterType,
     "The \"" << paramName << "\"" <<
-    " parameter in the \"" << sublistName << 
+    " parameter in the \"" << sublistName <<
     "\" sublist is has an error." << std::endl << std::endl <<
     "Error: The value that you entered was the wrong type." <<
     "Parameter: " << paramName << std::endl <<
@@ -505,7 +520,7 @@ void StringValidator::validate(
     TEUCHOS_TEST_FOR_EXCEPTION(it == validStrings_->end(),
       Exceptions::InvalidParameterValue,
       "The \"" << paramName << "\"" <<
-      " parameter in the \"" << sublistName << 
+      " parameter in the \"" << sublistName <<
       "\" sublist is has an error." << std::endl << std::endl <<
       "Error: The value that was entered doesn't fall with in "
       "the range set by the validator." <<
@@ -574,7 +589,7 @@ void Teuchos::setIntParameter(
   )
 {
   TEUCHOS_TEST_FOR_EXCEPT(0==paramList);
-  const RCP<const ParameterEntryValidator> paramEntryValidator =  
+  const RCP<const ParameterEntryValidator> paramEntryValidator =
     anyNumberParameterEntryValidator(
       AnyNumberParameterEntryValidator::PREFER_INT, acceptedTypes
       );
@@ -590,7 +605,7 @@ void Teuchos::setDoubleParameter(
   )
 {
   TEUCHOS_TEST_FOR_EXCEPT(0==paramList);
-  const RCP<const ParameterEntryValidator> paramEntryValidator =  
+  const RCP<const ParameterEntryValidator> paramEntryValidator =
     anyNumberParameterEntryValidator(
       AnyNumberParameterEntryValidator::PREFER_DOUBLE, acceptedTypes
       );
@@ -606,7 +621,7 @@ void Teuchos::setNumericStringParameter(
   )
 {
   TEUCHOS_TEST_FOR_EXCEPT(0==paramList);
-  const RCP<const ParameterEntryValidator> paramEntryValidator =  
+  const RCP<const ParameterEntryValidator> paramEntryValidator =
     anyNumberParameterEntryValidator(
       AnyNumberParameterEntryValidator::PREFER_STRING, acceptedTypes
       );

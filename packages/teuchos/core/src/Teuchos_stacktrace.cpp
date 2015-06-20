@@ -258,7 +258,7 @@ int load_symbol_table(bfd *abfd, line_data *data)
    'file_name'.
 
    Example:
-   
+
    File "/home/ondrej/repos/rcp/src/Teuchos_RCP.hpp", line 428, in Teuchos::RCP<A>::assert_not_null() const
    throw_null_ptr_error(typeName(*this));
 */

@@ -1,11 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
-
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include <stddef.h>                     // for size_t
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
@@ -64,7 +88,7 @@ TEST( UnitTestBoxFixture, verifyBoxFixture )
 
   BoxFixture fixture(pm);
   MetaData& meta = fixture.fem_meta();
-  BulkData& bulk = fixture.bulk_data();
+  stk::mesh::unit_test::BulkDataTester& bulk = fixture.bulk_data();
 
   const EntityRank element_rank = stk::topology::ELEMENT_RANK;
 
@@ -170,7 +194,9 @@ TEST( UnitTestBoxFixture, verifyBoxFixture )
       ( i == local_box[0][0] && i != root_box[0][0] ) ||
       ( i == local_box[0][1] && i != root_box[0][1] );
     if (bulk.parallel_size() > 1) {
-      ASSERT_EQ( shared , ! bulk.entity_comm_map_shared(bulk.entity_key(node)).empty() );
+        std::vector<int> shared_procs;
+        bulk.comm_shared_procs(bulk.entity_key(node),shared_procs);
+      ASSERT_EQ( shared , ! shared_procs.empty() );
     }
   }
   }
@@ -192,9 +218,10 @@ TEST( UnitTestBoxFixture, verifyBoxFixture )
                 Entity const node = bulk.get_entity( node_type , node_id );
                 ASSERT_TRUE( bulk.is_valid(node) );
                 // Must be shared with 'p'
-                stk::mesh::PairIterEntityComm iter = bulk.entity_comm_map_shared(bulk.entity_key(node));
-                for ( ; ! iter.empty() && iter->proc != p ; ++iter );
-                ASSERT_TRUE( ! iter.empty() );
+                std::vector<int> shared_procs;
+                bulk.comm_shared_procs(bulk.entity_key(node),shared_procs);
+                std::vector<int>::const_iterator it=std::find(shared_procs.begin(),shared_procs.end(),p);
+                ASSERT_TRUE( it != shared_procs.end() );
 
                 ++count_shared_node_pairs ;
               }
@@ -204,11 +231,12 @@ TEST( UnitTestBoxFixture, verifyBoxFixture )
 
   size_t count_shared_entities = 0 ;
   for (stk::mesh::EntityCommListInfoVector::const_iterator
-       i = bulk.comm_list().begin() ;
-       i != bulk.comm_list().end() ;
+       i = bulk.my_internal_comm_list().begin() ;
+       i != bulk.my_internal_comm_list().end() ;
        ++i) {
-    const stk::mesh::PairIterEntityComm ec = bulk.entity_comm_map_shared(i->key);
-    count_shared_entities += ec.size();
+    std::vector<int> shared_procs;
+    bulk.comm_shared_procs(i->key,shared_procs);
+    count_shared_entities += shared_procs.size();
   }
   ASSERT_EQ( count_shared_entities , count_shared_node_pairs );
 

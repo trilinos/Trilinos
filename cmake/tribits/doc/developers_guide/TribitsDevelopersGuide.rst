@@ -3,6 +3,10 @@ TriBITS Developers Guide and Reference
 =======================================
 
 :Author: Roscoe A. Bartlett (bartlettra@ornl.gov)
+:Date: |date|
+:Version: .. include:: TribitsGitVersion.txt
+
+.. |date| date::
 
 :Abstract: This document describes the usage of TriBITS to build, test, and deploy complex software.  The primary audience are those individuals who develop on a software project which uses TriBITS.  The overall structure of a TriBITS project is described including all of the various project- and package-specific files that TriBITS requires or can use and how and what order these files are processed.  It also contains detailed reference information on all of the various TriBITS macros and functions directly used in TriBITS project CMake files.  Many other topics of interest to a TriBITS project developer and architect are discussed as well.
 
@@ -100,10 +104,10 @@ lower-level roles.
 The first role is that of a **TriBITS Project User** who only needs to be able
 to configure, build, and test a project that uses TriBITS as its build system.
 A person acting in this role needs to know little about CMake other than
-basics about how to run the ``cmake`` and ``ctest`` exectuables, how to set
+basics about how to run the ``cmake`` and ``ctest`` executables, how to set
 CMake cache variables, and the basics of building software by typing ``make``
 and running tests with ``ctest``.  The proper reference for a TriBITS Project
-User is the `Project-Specific Build Quick Reference`_.  The `TriBITS
+User is the `Project-Specific Build Reference`_.  The `TriBITS
 Overview`_ document may also be of some help.  A TriBITS project user does not
 need to know anything about the CMake language itself or any of the TriBITS
 macros or functions described in `TriBITS Macros and Functions`_ or really
@@ -115,14 +119,14 @@ Dependencies and Enable/Disable Logic`_.
 
 A **TriBITS Project Developer** is someone who contributes to a software
 project that uses TriBITS.  They will add source files, libraries and
-exectuables, test executables and define tests run with ``ctest``.  They have
+executables , test executables and define tests run with ``ctest``.  They have
 to configure and build the project code in order to be able to develop and run
 tests and therefore this role includes all of the necessary knowledge and
 functions of a TriBITS Project User.  A casual TriBITS Project Developer
 typically does not need to know a lot about CMake and really only needs to
 know a subset of the `TriBITS Macros and Functions`_ defined in this document
-in addition to the genetic `TriBITS Build Quick Reference
-<../build_quick_ref/TribitsBuildQuickRef.html>`_ document.  A slightly more
+in addition to the genetic `TriBITS Build Reference
+<TribitsBuildReference.html>`_ document.  A slightly more
 sophisticated TriBITS Project Developer will also add new packages, add new
 package dependencies, and define new TPLs.  This current TriBITS Developers
 Guide and Reference document should supply everything such a developer needs
@@ -177,7 +181,7 @@ TriBITS matures and its requirements further stabilize, the need for a
 
 So depending on the particular role that a reader falls into, this document
 may or may not be necessary but instead the `TriBITS Overview`_ or the
-`<Project>BuildQuickRef`_ documents may be more appropriate.  Hopefully the
+`<Project>BuildReference`_ documents may be more appropriate.  Hopefully the
 above roles and discussion will help the reader select the right document to
 start with.
 
@@ -475,7 +479,7 @@ TriBITS Project Structure
 =========================
 
 TriBITS is a Framework, implemented in CMake, to create CMake projects.  As a
-Framework (with a capital "F"), TriBITS defines the the overall structure of a
+Framework (with a capital "F"), TriBITS defines the overall structure of a
 CMake build system for a project and it processes the various project-,
 repository-, and package-specific files in a specified order.  Almost all of
 this processing takes place in the `TRIBITS_PROJECT()`_ macro (or macros and
@@ -489,8 +493,9 @@ Details`_ defines exactly what files TriBITS processes and in what order.  It
 also shows how to get TriBITS to show exactly what files it is processing to
 help in debugging issues.  The subsection `Coexisting Projects, Repositories,
 and Packages`_ gives some of the rules and constrains for how the different
-structure units can co-exist in the same directories.  The last subsection in
-this section covers the `Standard TriBITS TPLs`_.
+structure units can co-exist in the same directories.  The last two
+subsections in this section cover `Standard TriBITS TPLs`_ and `Common TriBITS
+TPLs`_.
 
 TriBITS Structural Units
 ------------------------
@@ -514,7 +519,7 @@ units are:
   and testing (see `TriBITS Automated Testing`_).  A TriBITS package may or
   may not be broken down into multiple subpackages. Examples of TriBITS
   packages in `TribitsExampleProject`_ include ``SimpleCXX``,
-  ``MixedLanguage`` and ``PackageWithSubpackages``.  (Don't confuse a TriBITS
+  ``MixedLang`` and ``WithSubpackages``.  (Don't confuse a TriBITS
   "Package" with a raw CMake "Package". A raw CMake "Package" actually maps to
   a `TriBITS TPL`_; see `Why a TriBITS Package is not a CMake Package`_.)
 
@@ -524,25 +529,25 @@ units are:
   typically has source files built into libraries and tests but is documented
   and tested along with the other subpackages the parent package.  The primary
   purpose for supporting subpackages is to provide finer-grained control of
-  software dependencies.  In `TribitsExampleProject`_,
-  ``PackageWithSubpackages`` is an example of a package with subpackages
-  ``SubpackageA``, ``SubpackaeB``, and ``SubpackageC``.  The full subpackage
-  name has the parent package name prefixed the the subpackage name
-  (e.g. ``PackageWithSubpackagesSubpackageA``).  The parent package is always
-  implicitly dependent on its subpackages.
+  software dependencies.  In `TribitsExampleProject`_, ``WithSubpackages`` is
+  an example of a package with subpackages ``'A'``, ``'B'``, and ``'C'``.  The
+  full subpackage name is prefixed by the parent package name (e.g. the full
+  name for subpackage ``'A'`` is ``WithSubpackagesA``).  The parent package is
+  always implicitly dependent on its subpackages (e.g. parent package
+  ``WithSubpackages`` depends on its subpackages ``WithSubpackagesA``,
+  ``WithSubpackagesB``, and ``WithSubpackagesC``).
 
 .. _TriBITS SE Package:
 .. _TriBITS SE Packages:
 
 * **TriBITS SE Package**: The combined set of `TriBITS Packages`_ and `TriBITS
-  Subpackages`_ that constitute the basic *Software Engineering* packages (see
-  `Software Engineering Packaging Principles`_) of a TriBITS project: SE
+  Subpackages`_ that constitute the basic *Software Engineering* packages of a
+  TriBITS project (see `Software Engineering Packaging Principles`_): SE
   packages are the basis for setting dependencies in the TriBITS system.  For
-  example, the SE Packages provided by the top-level example
-  ``PackageWithSubpackages`` is (in order of increasing dependencies)
-  ``PackageWithSubpackagesSubpackageA``, ``PackageWithSubpackagesSubpackaeB``,
-  ``PackageWithSubpackagesSubpackageC``, and ``PackageWithSubpackages`` (see
-  `TribitsExampleProject`_).
+  example, the SE Packages provided by the top-level example package
+  ``WithSubpackages`` (in order of increasing dependencies) are
+  ``WithSubpackagesA``, ``WithSubpackagesB``, ``WithSubpackagesC``, and
+  ``WithSubpackages`` (see `TribitsExampleProject`_).
 
 .. _TriBITS TPLs:
 
@@ -571,7 +576,7 @@ units are:
 
 * **TriBITS Meta-Project**: A `TriBITS Project`_ that contains no native
   `TriBITS packages`_ or `TriBITS TPLs`_ but is composed out packages from
-  other other `TriBITS Repositories`_.
+  other `TriBITS Repositories`_.
 
 In this document, dependencies are described as either being *upstream* or
 *downstream/forward* defined as:
@@ -703,7 +708,7 @@ that this is a project, not a repository file so no general
 repository-specific settings should go in this file.  A simple example of this
 file is `TribitsExampleProject`_/``ProjectName.cmake``:
 
-.. include:: ../examples/TribitsExampleProject/ProjectName.cmake
+.. include:: ../../examples/TribitsExampleProject/ProjectName.cmake
    :literal:
 
 A meta-project's ``ProjectName.cmake`` file might have a number of other
@@ -723,7 +728,7 @@ variables.  Due to a few CMake limitations and quarks, a project's top-level
 be but it is not too bad.  A simple, but representative, example is
 `TribitsExampleProject`_/``CMakeLists.txt``:
 
-.. include:: ../examples/TribitsExampleProject/CMakeLists.txt
+.. include:: ../../examples/TribitsExampleProject/CMakeLists.txt
    :literal:
 
 A couple of CMake and TriBITS quarks that that above example
@@ -742,40 +747,36 @@ set in this top-level ``CMakeLists.txt`` file are those that do not impact the
 list of package enables/disables.  The latter type of defaults should set in
 other files (see below).
 
-.. _${PROJECT_NAME}_TRIBITS_DIR:
-
-In this example project, a CMake cache variable
-``${PROJECT_NAME}_TRIBITS_DIR`` must be set by the user to define where the
-base ``tribits`` source directory is located.  With this variable set
-(i.e. passed into ``cmake`` command-line use
-``-DTribitsExProj_TRIBITS_DIR=<someDir>``), one just includes a single file to
-pull in the TriBITS system::
+In this example project, a CMake cache variable `${PROJECT_NAME}_TRIBITS_DIR`_
+must be set by the user to define where the base ``tribits`` source directory
+is located.  With this variable set (i.e. passed into ``cmake`` command-line
+use ``-DTribitsExProj_TRIBITS_DIR=<someDir>``), one just includes a single
+file to pull in the TriBITS system::
 
   INCLUDE("${${PROJECT_NAME}_TRIBITS_DIR}/TriBITS.cmake")
 
 With the ``TriBITS.cmake`` file included, the configuration of the project
 using TriBITS occurs with a single call to `TRIBITS_PROJECT()`_.
 
-Some projects, like Trilinos, actually snapshot the ``tribits`` directory into
-their source tree `<projectDir>/cmake/tribits/`_ and therefore don't need to
-have this variable set.  In Trilinos, the include line is just::
+Some projects, like Trilinos, actually snapshot the `TriBITS/tribits/`_
+directory into their source tree `<projectDir>/cmake/tribits/`_ and therefore
+don't need to have this variable set.  In Trilinos, the include line is just::
 
   INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits/TriBITS.cmake)
 
 The minimum CMake version must also be declared in the top-level
 ``CMakeLists.txt`` file as shown.  Explicitly setting the minimum CMake
 version avoids strange errors that can occur when someone tries to build the
-project using a version of CMake that is too old.  If the given project
-requires a version of CMake newer than what is required by TriBITS itself (as
-defined in the variable ``TRIBITS_CMAKE_MINIMUM_REQUIRED`` which was set when
-the ``TriBITS.cmake`` file was included), then that version can be passed
-instead of using ``${TRIBITS_CMAKE_MINIMUM_REQUIRED}`` (the current minimum
-version of CMake required by TriBITS is given at in `Getting set up to use
-CMake`_) .  For example, the ``VERA/CMakeLists.txt`` file lists as its first
-line::
+project using a version of CMake that is too old.  The project should set the
+minimum CMake version based on the CMake features used in that project's own
+CMake files.  The minimum CMake version required by TriBITS is defined in in
+the variable ``TRIBITS_CMAKE_MINIMUM_REQUIRED`` (the current minimum version
+of CMake required by TriBITS is given at in `Getting set up to use CMake`_) .
+For example, the ``VERA/CMakeLists.txt`` file lists as its first line::
 
-  SET(VERA_TRIBITS_CMAKE_MINIMUM_REQUIRED 2.8.5)
-  CMAKE_MINIMUM_REQUIRED(VERSION ${VERA_TRIBITS_CMAKE_MINIMUM_REQUIRED})
+  SET(VERA_TRIBITS_CMAKE_MINIMUM_REQUIRED 2.8.11)
+  CMAKE_MINIMUM_REQUIRED(VERSION ${VERA_TRIBITS_CMAKE_MINIMUM_REQUIRED}
+    FATAL_ERROR)
 
 .. _<projectDir>/CTestConfig.cmake:
 
@@ -786,7 +787,7 @@ CTest/Dash Driver`_).  This file is also required to use the TriBITS-generated
 ``dashboard`` target (see `Dashboard Submissions`_).  An example of this file
 is `TribitsExampleProject`_/``CTestConfig.cmake``:
 
-.. include:: ../examples/TribitsExampleProject/CTestConfig.cmake
+.. include:: ../../examples/TribitsExampleProject/CTestConfig.cmake
    :literal:
 
 All of the variables set in this file are directly understood by raw ``ctest``
@@ -810,12 +811,12 @@ project's base-level ``<projectDir>/CMakeLists.txt`` file scope so local
 variables set in this file are seen by the entire CMake project.  For example,
 `TribitsExampleProject`_/``Version.cmake``, looks like:
 
-.. include:: ../examples/TribitsExampleProject/Version.cmake
+.. include:: ../../examples/TribitsExampleProject/Version.cmake
    :literal:
 
 Note that the prefix ``${REPOSITORY_NAME}_`` is used instead of hard-coding
 the project name.  This is so that the same ``Version.txt`` file can be used
-as the the `<repoDir>/Version.cmake`_ file and have the repository name be
+as the `<repoDir>/Version.cmake`_ file and have the repository name be
 flexible.  TriBITS sets ``REPOSITORY_NAME = ${PROJECT_NAME}`` when it reads in
 this file at the project-level scope.
 
@@ -834,7 +835,7 @@ project's usage of the `checkin-test.py`_ script.  Machine or package-specific
 options should **not** be placed in this file.  An example of this file for
 `TribitsExampleProject`_/``project-checkin-test-config.py`` is shown below:
 
-.. include:: ../examples/TribitsExampleProject/project-checkin-test-config.py
+.. include:: ../../examples/TribitsExampleProject/project-checkin-test-config.py
    :literal:
 
 The contents of the file ``project-checkin-test-config.py`` show above are
@@ -884,7 +885,7 @@ project's native repositories.  The list of repositories is defined using the
 macro `TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES()`_.  For example, the extra
 repos file:
 
-.. include:: ../../python/UnitTests/ExtraReposList.cmake
+.. include:: ExtraReposList.cmake
    :literal:
 
 shows the specification of both TriBITS Repositories and non-TriBITS VC
@@ -959,7 +960,7 @@ which is then invoked by TriBITS.  The file:
 
 provides a good example which is:
 
-.. include:: ../examples/TribitsExampleProject/cmake/CallbackDefineProjectPackaging.cmake
+.. include:: ../../examples/TribitsExampleProject/cmake/CallbackDefineProjectPackaging.cmake
    :literal:
 
 The CPack variables show above that should be defined at the project-level are
@@ -973,7 +974,7 @@ Source Distributions` for more details.
 .. _<projectDir>/cmake/tribits/:
 
 **<projectDir>/cmake/tribits/**: [Optional] This is the typical location of
-the ``tribits`` source tree for projects that choose to snapshot or checkout
+the `TriBITS/tribits/`_ source tree for projects that choose to snapshot
 TriBITS into their source tree.  In fact, TriBITS assumes this is the default
 location for the TriBITS source tree if ``${PROJECT_NAME}_TRIBITS_DIR`` is not
 otherwise specified.  Trilinos, for example, currently snapshots the TriBITS
@@ -990,7 +991,7 @@ exists, it is processed using a ``CONFIGURE_FILE()`` command to write the file
 the maximum size of test output.  For example, the
 `TribitsExampleProject`_/``cmake/ctest/CTestCustom.cmake.in`` looks like:
 
-.. include:: ../examples/TribitsExampleProject/cmake/ctest/CTestCustom.cmake.in
+.. include:: ../../examples/TribitsExampleProject/cmake/ctest/CTestCustom.cmake.in
    :literal:
 
 which sets the output size for each test submitted to CDash be unlimited
@@ -1010,7 +1011,7 @@ documentation`_.
 TriBITS Project Core Variables
 ..............................
 
-The following local variables are defined in the top-level Project
+The following `local variables` are defined in the top-level Project
 ``CMakeLists.txt`` file scope and are therefore accessible by all files
 processed by TriBITS:
 
@@ -1056,11 +1057,44 @@ processed by TriBITS:
     the built-in ``PROJECT()`` command called in the top-level
     `<projectDir>/CMakeLists.txt`_ file..
 
-  .. _${PACKAGE_NAME}_ENABLE_TESTS:
+The following `cache varaibles` are defined for every TriBITS project:
 
-  ``${PACKAGE_NAME}_ENABLE_TESTS``
+  .. _${PROJECT_NAME}_TRIBITS_DIR:
 
-    CMake cache variables that if set to ``ON``, then tests for all explicitly
+  ``${PROJECT_NAME}_TRIBITS_DIR``
+
+    CMake cache variable that gives the path to the TriBITS implementation
+    directory.  When set to a relative path (set as type ``STRING``, see
+    below), this is taken relative to ``${CMAKE_CURRENT_SOURCE_DIR}/`` (the
+    project base source dir).  When an absolute path is given, it is used
+    without modification.  If this variable is not set in the
+    `<projectDir>/CMakeLists.txt`_ file, then it will be automatically set as
+    a ``PATH`` cache variable by the include of ``TriBITS.cmake`` by the
+    statement ::
+
+      SET( ${PROJECT_NAME}_TRIBITS_DIR
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits" CACHE PATH "...")
+
+    Therefore, projects that snapshot TriBITS into
+    `<projectDir>/cmake/tribits/`_ don't need to explicitly set
+    ``${PROJECT_NAME}_TRIBITS_DIR``.  In addition, one can also point to a
+    different TriBITS implementation just by setting the absolute path::
+
+      -D <Project>_TRIBITS_DIR=<some-abs-dir>
+
+    or to a relative path using, for example::
+
+      -D <Project>_TRIBITS_DIR:STRING=TriBITS/tribits
+
+    Note that when the ``TriBITS`` git repo itself is cloned by a TriBITS
+    project, then ``${PROJECT_NAME}_TRIBITS_DIR`` should be set to the
+    directory ``TriBITS/tribits`` (see `TriBITS/tribits/`_) as shown above.
+
+  .. _${PROJECT_NAME}_ENABLE_TESTS:
+
+  ``${PROJECT_NAME}_ENABLE_TESTS``
+
+    CMake cache variable that if set to ``ON``, then tests for all explicitly
     enabled packages will be turned on.  This has a default value of ``OFF``.
     This is used in logic to enable individual SE package tests (see
     `<Project>_ENABLE_TESTS only enables explicitly enabled SE package
@@ -1068,11 +1102,11 @@ processed by TriBITS:
 
   ``${PACKAGE_NAME}_ENABLE_EXAMPLES``
 
-    CMake cache variables that if set to ``ON``, then examples for all
+    CMake cache variable that if set to ``ON``, then examples for all
     explicitly enabled packages will be turned on.  This has a default value
     of ``OFF``.
 
-The following internal project-scope local (non-cache) CMake variables are
+The following `internal project-scope local` (non-cache) CMake variables are
 defined by TriBITS giving the project's TriBITS repositories.:
 
   .. _${PROJECT_NAME}_NATIVE_REPOSITORIES:
@@ -1125,8 +1159,9 @@ In short, a TriBITS Repository:
   ``${REPOSITORY_NAME}_SOURCE_DIR`` and ``${REPOSITORY_NAME}_BINARY_DIR``.
 * Defines a common set of initializations and other hooks for a all the
   packages in the repository.
-* Typically maps to a VC (i.e. git) repository and therefore represents a
-  unit of integration, versioning and reuse.
+* Typically maps to a VC (i.e. git) repository and therefore represents a unit
+  of integration, versioning and reuse.  (But core TriBITS has no dependency
+  on any VC tool.)
 
 For more details on the definition of a TriBITS Repository, see:
 
@@ -1167,19 +1202,15 @@ packages defined by the repository.  This file typically just calls the macro
 with their directories and other properties.  For example, the file
 `TribitsExampleProject`_/``PackagesList.cmake`` looks like:
 
-.. include:: ../examples/TribitsExampleProject/PackagesList.cmake
+.. include:: ../../examples/TribitsExampleProject/PackagesList.cmake
    :literal:
 
 Other commands that are appropriate to use in this file include
-`TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()`_.  Also, if the binary directory for
-any package ``<packageName>`` needs to be changed from the default, then the
-variable ``<packageName>_SPECIFIED_BINARY_DIR`` can be set.  One can see an
-example of this in the file ``tribits/PackageList.cmake`` which shows
-
-.. include:: ../../PackagesList.cmake
-   :literal:
-
-(see `TriBITS Package == TriBITS Repository == TriBITS Project`_).
+`TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()`_ and
+`TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`_.  Also, if the binary directory
+for any package ``<packageName>`` needs to be changed from the default, then
+the variable ``<packageName>_SPECIFIED_BINARY_DIR`` can be set.  (see `TriBITS
+Package == TriBITS Repository == TriBITS Project`_).
 
 It is perfectly legal for a TriBITS repository to define no packages at all
 with::
@@ -1200,7 +1231,7 @@ file typically just calls the macro `TRIBITS_REPOSITORY_DEFINE_TPLS()`_ to
 define the TPLs along with their find modules and other properties.  An
 example is `ReducedMockTrilinos`_/``TPLsList.cmake`` which shows:
 
-.. include:: ../../package_arch/UnitTests/ReducedMockTrilinos/TPLsList.cmake
+.. include:: ../../examples/ReducedMockTrilinos/TPLsList.cmake
    :literal:
 
 See `TriBITS TPL`_ for details on what gets defined for each TriBITS TPL once
@@ -1223,10 +1254,10 @@ configure the repository's version header file (see `Project and Repository
 Versioning and Release Mode`_).  Even if a repository version header file is
 not produced, it is a good idea for every TriBITS repository to define this
 file, just for legal purposes.  For a good open-source license, one should
-consider copying the ``tribits/Copyright.txt`` file which is a simple 3-clause
+consider copying the ``TriBITS/Copyright.txt`` file which is a simple 3-clause
 BSD-like license like:
 
-.. include:: ../../Copyright.txt
+.. include:: ../../../Copyright.txt
    :literal:
 
 .. _<repoDir>/Version.cmake:
@@ -1235,7 +1266,7 @@ BSD-like license like:
 repository (and the project also if this is also the base project).  For
 example, `TribitsExampleProject`_/``Version.cmake``, this looks like:
 
-.. include:: ../examples/TribitsExampleProject/Version.cmake
+.. include:: ../../examples/TribitsExampleProject/Version.cmake
    :literal:
 
 Note that the prefix ``${REPOSITORY_NAME}_`` is used instead of hard-coding
@@ -1289,8 +1320,8 @@ can be used in the logic in these files.  Some of the variables that should
 already be defined (in addition to all of the basic user TriBITS cache
 variables set in ``TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS()``)
 include ``CMAKE_HOST_SYSTEM_NAME``, ``${PROJECT_NAME}_HOSTNAME``, and
-``PYTHON_EXECUTABLE``.  The types of commands and logic to put in this file
-include:
+``PYTHON_EXECUTABLE`` (see `Python Support`_).  The types of commands and
+logic to put in this file include:
 
 * Setting additional user cache variable options that are used by multiple
   packages in the TriBITS Repository.  For example, Trilinos defines a
@@ -1307,7 +1338,7 @@ An example of this file is:
 
 which currently looks like:
 
-.. include:: ../examples/TribitsExampleProject/cmake/CallbackSetupExtraOptions.cmake
+.. include:: ../../examples/TribitsExampleProject/cmake/CallbackSetupExtraOptions.cmake
    :literal:
 
 .. _<repoDir>/cmake/CallbackDefineRepositoryPackaging.cmake:
@@ -1317,16 +1348,17 @@ this file exists, then it defines extra CPack-related options that are
 specific to this TriBITS Repository.  This file must define the macro
 ``TRIBITS_REPOSITORY_DEFINE_PACKAGING()`` which is called by TriBITS.  This
 file is processed as the top project-level scope so any local variables set
-have project-wide effect.  This file is processed before the project's
-`<projectDir>/cmake/CallbackDefineProjectPackaging.cmake`_ file so any options
-defined in this can be overridden by the project.  This file typically just
-sets extra excludes to remove files from the tarball.  The file:
+have project-wide effect.  This file is processed after the project's
+`<projectDir>/cmake/CallbackDefineProjectPackaging.cmake`_ file so any project
+CPACK varaibles are defined for the repository-level options and commands are
+created.  This file typically just sets extra excludes to remove files from
+the tarball.  The file:
 
   `TribitsExampleProject`_/``cmake/CallbackDefineRepositoryPackaging.cmake``
 
 provides a good example which is:
 
-.. include:: ../examples/TribitsExampleProject/cmake/CallbackDefineRepositoryPackaging.cmake
+.. include:: ../../examples/TribitsExampleProject/cmake/CallbackDefineRepositoryPackaging.cmake
    :literal:
 
 As shown in the above example, it is important to prefix the excluded files
@@ -1380,6 +1412,40 @@ are processed:
     where the various TriBITS repos are in relation to each other or the
     Project.
 
+The following project-level local varaibles can be defined by the project or
+the user to help define the what packages from the repository
+``${REPOSITORY_NAME}`` contribute to the primary meta-project packages (PMPP):
+
+  .. _${REPOSITORY_NAME}_NO_PRIMARY_META_PROJECT_PACKAGES:
+
+  ``${REPOSITORY_NAME}_NO_PRIMARY_META_PROJECT_PACKAGES``
+
+    If set to ``TRUE``, then the package's in the TriBITS repository are not
+    considered to be part of the primary meta-project packages.  This affects
+    what packages get enabled by default when enabling all packages with
+    setting ``${PROJECT_NAME}_ENABLE_ALL_PACKAGES=ON`` and what tests and
+    examples get enabled by default when setting
+    ``${PROJECT_NAME}_ENABLE_TESTS=ON``.  See `TriBITS Dependency Handling
+    Behaviors`_ for more details.
+
+  .. _${REPOSITORY_NAME}_NO_PRIMARY_META_PROJECT_PACKAGES_EXCEPT:
+
+  ``${REPOSITORY_NAME}_NO_PRIMARY_META_PROJECT_PACKAGES_EXCEPT``
+
+     When the above variable is set to ``TRUE``, this variable is read by
+     TriBITS to find the list of TriBITS packages selected packages in the
+     repository ``${REPOSITORY_NAME}`` which are considered to be part of the
+     set of the project's primary meta-project package when the above variable
+     is set to ``ON``.  NOTE: It is not necessary to list all of the
+     subpackages in a given parent package.  Only the parent package need be
+     listed and it will be equivalent to listing all of the subpackages.  See
+     `TriBITS Dependency Handling Behaviors`_ for more details.
+
+The above primary meta-project variables should be set in the meta-project's
+`<projectDir>/ProjectName.cmake`_ file so that they will be set in all
+situations.
+
+
 TriBITS Package
 +++++++++++++++
 
@@ -1429,6 +1495,7 @@ ${${PACKAGE_NAME}_SOURCE_DIR}``) are::
     CMakeLists.txt  # Only processed if the package is enabled
     cmake/
       Dependencies.cmake  # Always processed if its repo is processed
+      <packageName>_config.h.in  # [Optional], name is not fixed
 
 **NOTE:** Before a TriBITS Package's files are described in more detail, it is
 important to note that all of the package's files that define its behavior and
@@ -1445,6 +1512,7 @@ can lead to pushing broken software.
 The following TriBITS Package files are documented in more detail below:
 
 * `<packageDir>/cmake/Dependencies.cmake`_
+* `<packageDir>/cmake/<packageName>_config.h.in`_
 * `<packageDir>/CMakeLists.txt`_
 
 .. _<packageDir>/cmake/Dependencies.cmake:
@@ -1460,25 +1528,38 @@ Package Dependency Processing`_).
 An example of a ``Dependencies.cmake`` file for a package with optional and
 required dependencies is for the mock ``Panzer`` package in `MockTrilinos`_:
 
-.. include:: ../../package_arch/UnitTests/MockTrilinos/packages/panzer/cmake/Dependencies.cmake
+.. include:: ../../examples/MockTrilinos/packages/panzer/cmake/Dependencies.cmake
    :literal:
 
-.. _package_with_subpackages/cmake/Dependencies.cmake:
+.. _with_subpackages/cmake/Dependencies.cmake:
 
-An example of a package with subpackages is the example package
-``PackageWithSubpackages`` which has the the file:
+An example of a package with subpackages is ``WithSubpackages`` which has the
+dependencies file:
 
-  `TribitsExampleProject`_/``packages/package_with_subpackages/cmake/Dependencies.cmake``
+  `TribitsExampleProject`_/``packages/with_subpackages/cmake/Dependencies.cmake``
 
 which is:
 
-.. include:: ../examples/TribitsExampleProject/packages/package_with_subpackages/cmake/Dependencies.cmake
+.. include:: ../../examples/TribitsExampleProject/packages/with_subpackages/cmake/Dependencies.cmake
    :literal:
 
-The last case defines three subpackages which creates three new SE packages
-with names ``PackageWithSubpackagesSubpackageA``,
-``PackageWithSubpackagesSubpackageB``, and
-``PackageWithSubpackagesSubpackageC``.
+``WithSubpackages`` defines three subpackages which creates three new SE
+packages with names ``WithSubpackagesA``, ``WithSubpackagesB``, and
+``WithSubpackagesC``.
+
+.. _<packageDir>/cmake/<packageName>_config.h.in:
+
+**<packageDir>/cmake/<packageName>_config.h.in**: [Optional] The package's
+configured header file.  This file will contain placeholders for variables
+that will be substitute at configure time with `TRIBITS_CONFIGURE_FILE()`_.
+This includes usage of ``#cmakedefine <varName>`` and other standard CMake
+file configuration features.
+
+**NOTE:** The file name ``<packageName>_config.h.in`` is not at all fixed and
+the package can call this file anything it wants.  Also, a package can
+configure multiple header files in different directories for different
+purposes using `TRIBITS_CONFIGURE_FILE()`_ or even calls to the raw CMake
+function `CONFIGURE_FILE()`_.
 
 .. _<packageDir>/CMakeLists.txt:
 
@@ -1493,7 +1574,7 @@ shown in:
 
 which is:
 
-.. include:: ../examples/TribitsExampleProject/packages/simple_cxx/CMakeLists.txt
+.. include:: ../../examples/TribitsExampleProject/packages/simple_cxx/CMakeLists.txt
    :literal:
 
 The first command at the top of the file is a call to `TRIBITS_PACKAGE()`_
@@ -1525,15 +1606,15 @@ only ``CMakeLists.txt`` file for a package.  Such an example can be see in the
 example project `TribitsHelloWorld`_ in the ``HelloWorld`` package.
 
 When a TriBITS package is broken up into subpackages (see `TriBITS
-Subpackage`_), its ``CMakeLists.txt`` file looks a little different from what
-is shown above.  The basic structure of this file for a **package with
-subpackages** is shown in:
+Subpackage`_), its ``CMakeLists.txt`` file looks a little different from a
+package with no subpackages as shown above.  The basic structure of this file
+for a **package with subpackages** is shown in:
 
-  `TribitsExampleProject`_/``packages/package_with_subpackages/CMakeLists.txt``
+  `TribitsExampleProject`_/``packages/with_subpackages/CMakeLists.txt``
 
 which contains:
 
-.. include:: ../examples/TribitsExampleProject/packages/package_with_subpackages/CMakeLists.txt
+.. include:: ../../examples/TribitsExampleProject/packages/with_subpackages/CMakeLists.txt
    :literal:
 
 What is different about ``CMakeLists.txt`` files for packages without
@@ -1546,7 +1627,7 @@ tests/example of its own, it can define those after calling
 `TRIBITS_PACKAGE_DEF()`_, just like with a regular package.  However, it is
 rare for a package broken up into subpackages to have its own libraries and/or
 tests and examples.  As always, the final command called inside of a package's
-base ``CMakeLists.txt`` is `TRIBITS_PACKAGE_POSTPROCESS()`_.
+base ``CMakeLists.txt`` file is `TRIBITS_PACKAGE_POSTPROCESS()`_.
 
 NOTE: The package's base ``CMakeLists.txt`` file only gets processed if the
 package is actually enabled
@@ -1560,6 +1641,13 @@ repositories safely with higher-maturity and more important packages.
 
 TriBITS Package Core Variables
 ..............................
+
+A packages' core variables are broken down into the following categories:
+
+* `TriBITS Package Local Variables`_
+* `TriBITS Package Top-Level Local Variables`_
+* `TriBITS Package Cache Variables`_
+* `TriBITS Package Optional Dependency Macro Variables`_
 
 .. _TriBITS Package Local Variables:
 
@@ -1576,8 +1664,8 @@ are being processed:
 
   ``PACKAGE_SOURCE_DIR``
 
-    The absolute path to the package's base source directory.  This is set
-    automatically by TriBITS in the macro `TRIBITS_PACKAGE()`_.
+    The absolute path to the package's base source directory.    This is
+    set automatically by TriBITS in the macro `TRIBITS_PACKAGE()`_.
 
   ``PACKAGE_BINARY_DIR``
 
@@ -1601,16 +1689,17 @@ defined:
     example in other packages, refer to this by the raw name like
     ``PackageX_SOURCE_DIR``.  This makes such CMake code independent of where
     the package is in relation to other packages.  NOTE: This variable is
-    defined for all processed packages, independent of whether they are
-    enabled or not.
+    defined for all declared packages that exist, independent of whether they
+    are enabled or not.  This varible is set as soon as it is known if the
+    given package exists or not.
 
   ``${PACKAGE_NAME}_BINARY_DIR``
 
     The absolute path to the package's base binary directory.  CMake code, for
     example in other packages, refer to this by the raw name like
     ``PackageX_BINARY_DIR``.  This makes such CMake code independent of where
-    the package is in relation to other packages.  NOTE: This variable is only
-    defined if the package is enabled.
+    the package is in relation to other packages.  NOTE: This variable is
+    **only** defined if the package is actually enabled!
 
   ``${PACKAGE_NAME}_PARENT_REPOSITORY``
 
@@ -1633,9 +1722,13 @@ defined:
 In addition, the following user-settable *TriBITS Package Cache Variables* are
 defined before a (SE) Package's ``CMakeLists.txt`` file is processed:
 
+  .. _${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}:
+
   ``${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}``
 
     Set to ``ON`` if the package is enabled and is to be processed.
+
+  .. _${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}:
 
   ``${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}``
 
@@ -1644,36 +1737,45 @@ defined before a (SE) Package's ``CMakeLists.txt`` file is processed:
     ``${PACKAGE_NAME}``.  Here ``${OPTIONAL_DEP_PACKAGE_NAME}`` corresponds to
     each optional upstream SE package listed in the ``LIB_OPTIONAL_PACKAGES``
     and ``TEST_OPTIONAL_PACKAGES`` arguments to the
-    `TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()`_ macro. **NOTE:** It is important
-    that the CMake code in the package ``${PACKAGE_NAME}`` key off of this
-    variable and **not** the global
-    ``${PROJECT_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}`` variable because
+    `TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()`_ macro.
+
+    **NOTE:** It is important that the CMake code in the package's
+    ``CMakeLists.txt`` files key off of this variable and **not** the
+    project-level variable
+    ``${PROJECT_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}`` because the
+    package-level variable
     ``${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}`` can be explicitly
     turned off by the user even through the packages ``${PACKAGE_NAME}`` and
-    ``${OPTIONAL_DEP_PACKAGE_NAME}`` are both enabled (see `Support for
-    optional SE package/TPL can be explicitly disabled`_).
+    ``${OPTIONAL_DEP_PACKAGE_NAME}`` are both enabled at the project level!
+    See `Support for optional SE package/TPL can be explicitly disabled`_.
 
-  ``${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEPENDENT_TPL_NAME}``
+  .. _${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_TPL_NAME}:
+
+  ``${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_TPL_NAME}``
 
     Set to ``ON`` if support for the optional `upstream`_ dependent TPL
-    ``${OPTIONAL_DEPENDENT_TPL_NAME}`` is enabled in package
-    ``${PACKAGE_NAME}``.  Here ``${OPTIONAL_DEPENDENT_TPL_NAME}`` corresponds
+    ``${OPTIONAL_DEP_TPL_NAME}`` is enabled in package
+    ``${PACKAGE_NAME}``.  Here ``${OPTIONAL_DEP_TPL_NAME}`` corresponds
     each to the optional upstream TPL listed in the ``LIB_OPTIONAL_TPLS`` and
     ``TEST_OPTIONAL_TPLS`` arguments to the
     `TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()`_ macro.  **NOTE:** It is important
     that the CMake code in the package ``${PACKAGE_NAME}`` key off of this
     variable and **not** the global
-    ``TPL_ENABLE_${OPTIONAL_DEPENDENT_TPL_NAME}`` variable because
-    ``${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEPENDENT_TPL_NAME}`` can be
+    ``TPL_ENABLE_${OPTIONAL_DEP_TPL_NAME}`` variable because
+    ``${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_TPL_NAME}`` can be
     explicitly turned off by the user even through the package
-    ``${PACKAGE_NAME}`` and the TPL ``${OPTIONAL_DEPENDENT_TPL_NAME}`` are
+    ``${PACKAGE_NAME}`` and the TPL ``${OPTIONAL_DEP_TPL_NAME}`` are
     both enabled (see `Support for optional SE package/TPL can be explicitly
     disabled`_).
+
+  .. _${PACKAGE_NAME}_ENABLE_TESTS:
 
   ``${PACKAGE_NAME}_ENABLE_TESTS``
 
     Set to ``ON`` if the package's tests are to be enabled.  This will enable
     a package's tests and all of its subpackage's tests.
+
+  .. _${PACKAGE_NAME}_ENABLE_EXAMPLES:
 
   ``${PACKAGE_NAME}_ENABLE_EXAMPLES``
 
@@ -1684,6 +1786,59 @@ The above global cache variables can be explicitly set by the user or may be
 set automatically as part of the `Package Dependencies and Enable/Disable
 Logic`_.
 
+.. _TriBITS Package Optional Dependency Macro Variables:
+
+The following local *TriBITS Package Optional Dependency Macro Variables* are
+defined in the top-level project scope before a (SE) Package's
+``CMakeLists.txt`` file is processed:
+
+  .. _HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_PACKAGE_NAME_UC>:
+
+  ``HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_PACKAGE_NAME_UC>``
+
+    Set to ``ON`` if support for optional upstream package
+    ``${OPTIONAL_DEP_PACKAGE}`` is enabled in downstream package
+    ``${PACKAGE_NAME}``
+    (i.e. `${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}`_ = ``ON``) and
+    is set to ``FALSE`` otherwise.  Here, ``<PACKAGE_NAME_UC>`` and
+    ``<OPTIONAL_DEP_PACKAGE_NAME_UC>`` are the upper-case names for the packages
+    ``${PACKAGE_NAME}`` and ``${OPTIONAL_DEP_PACKAGE_NAME}``, respectively.
+    For example, if optional support for upstream package ``Triutils`` is
+    enabled in downstream package ``EpetraExt`` in `ReducedMockTrilinos`_,
+    then ``EpetraExt_ENABLE_TriUtils=ON`` and ``HAVE_EPETRAEXT_TRIUTILS=ON``.
+    This variable is meant to be used in::
+
+      #cmakedefine HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_PACKAGE_NAME_UC>
+
+    in configured header files
+    (e.g. `<packageDir>/cmake/<packageName>_config.h.in`_).  For example, for
+    the ``EpetraExt`` and ``Triutils`` example, this would be::
+
+      #cmakedefine HAVE_EPETRAEXT_TRIUTILS
+
+  .. _HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_TPL_NAME_UC>:
+
+  ``HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_TPL_NAME_UC>``
+
+    Set to ``ON`` if support for the optional TPL ``${OPTIONAL_DEP_TPL_NAME}``
+    is enabled in downstream package ``${PACKAGE_NAME}``
+    (i.e. `${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_TPL_NAME}`_ = ``ON``) and is
+    set to ``FALSE`` otherwise.  Here, ``<PACKAGE_NAME_UC>`` and
+    ``<OPTIONAL_DEP_TPL_NAME_UC>`` are the upper-case names for the packages
+    ``${PACKAGE_NAME}`` and ``${OPTIONAL_DEP_TPL_NAME}``, respectively.  For
+    example, if optional support for the TPL ``Boost`` is enabled in the
+    package ``Teuchos`` in `ReducedMockTrilinos`_, then
+    ``Teuchos_ENABLE_Boost=ON`` and ``HAVE_TUECHOS_BOOST=ON``.  This variable
+    is meant to be used in::
+
+      #cmakedefine HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_TPL_NAME_UC>
+
+    in configured header files
+    (e.g. `<packageDir>/cmake/<packageName>_config.h.in`_).  For example, for
+    the ``Teuchos`` and ``Boost`` example, this would be::
+
+      #cmakedefine HAVE_TEUCHOS_BOOST
+
 Currently, a Package can refer to its containing Repository and refer to its
 source and binary directories.  This is so that it can refer to
 repository-level resources (e.g. like the ``Trilinos_version.h`` file for
@@ -1693,6 +1848,7 @@ repository for a different use.  However, a package can indirectly refer to
 its own repository without loss of generality by reading the variable
 ``${PACKAGE_NAME}_PARENT_REPOSITORY``.  The problem is referring to other
 TriBITS repositories explicitly.
+
 
 TriBITS Subpackage
 ++++++++++++++++++
@@ -1732,6 +1888,7 @@ For more details on the definition of a TriBITS Package (or subpackage), see:
 * `TriBITS Subpackage Core Files`_
 * `TriBITS Subpackage Core Variables`_
 
+
 TriBITS Subpackage Core Files
 ..............................
 
@@ -1760,55 +1917,55 @@ These TriBITS Subpackage files are documented in more detail below:
 of this file for subpackages are identical as for top-level packages.  It just
 contains a call to the macro `TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()`_ to
 define this SE package's `upstream`_ TPL and SE package dependencies.  A
-simple example is for the example package ``SubpackageB`` (declared in
-`package_with_subpackages/cmake/Dependencies.cmake`_) with the file:
+simple example is for the example subpackage ``WithSubpackagesB`` (declared in
+`with_subpackages/cmake/Dependencies.cmake`_) with the file:
 
-  `TribitsExampleProject`_/``packages/package_with_subpackages/B/cmake/Dependneices.cmake``
+  `TribitsExampleProject`_/``packages/with_subpackages/b/cmake/Dependencies.cmake``
 
 which is:
 
-.. include:: ../examples/TribitsExampleProject/packages/package_with_subpackages/B/cmake/Dependencies.cmake
+.. include:: ../../examples/TribitsExampleProject/packages/with_subpackages/b/cmake/Dependencies.cmake
    :literal:
 
 What this shows is that subpackages must list their dependencies on each other
 (if such dependencies exist) using the full SE package name
-``${PARENT_PACKAGE_NAME}${SUBPACKAGE_NAME}`` or in this case
-``PackageWithSubpackages`` + ``SubpackageA`` =
-``PackageWithSubpackagesSubpackageA``.
+``${PARENT_PACKAGE_NAME}${SUBPACKAGE_NAME}`` or in this case::
+
+   'WithSubpackagesA' = 'WithSubpackages' + 'A'
 
 Note that the parent SE package depends on its subpackages, not the other way
-around.  For example, the ``PackageWithSubpackages`` parent SE package
+around.  For example, the ``WithSubpackages`` parent SE package
 automatically depends its SE subpackages
-``PackageWithSubpackagesSubpackageA``, ``PackageWithSubpackagesSubpackageC``,
-and ``PackageWithSubpackagesSubpackageC``.  As such all (direct) dependencies
+``WithSubpackagesA``, ``WithSubpackagesC``,
+and ``WithSubpackagesC``.  As such all (direct) dependencies
 for a subpackage must be listed in its own ``Dependencies.cmake`` file.  For
-example, the ``PackageWithSubpackages`` subpackage ``SubpackageA`` depends on
+example, the ``WithSubpackages`` subpackage ``A`` depends on
 the ``SimpleCxx`` package and is declared as such as shown in:
 
-  `TribitsExampleProject`_/``packages/package_with_subpackages/A/cmake/Dependneices.cmake``
+  `TribitsExampleProject`_/``packages/with_subpackages/a/cmake/Dependencies.cmake``
 
 which is:
 
-.. include:: ../examples/TribitsExampleProject/packages/package_with_subpackages/A/cmake/Dependencies.cmake
+.. include:: ../../examples/TribitsExampleProject/packages/with_subpackages/a/cmake/Dependencies.cmake
    :literal:
 
 What this means is that any TPL or library dependencies listed in the parent
 package's `<packageDir>/cmake/Dependencies.cmake`_ file are **NOT**
 dependencies of its subpackages.  For example, if
-`package_with_subpackages/cmake/Dependencies.cmake`_ where changed to be::
+`with_subpackages/cmake/Dependencies.cmake`_ where changed to be::
 
   TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
     LIB_REQUIRED_TPLS Boost
     SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
-      SubpackageA   A   PT  REQUIRED
+      A   A   PT  REQUIRED
       ...
     )
 
 then the ``Boost`` TPL would **NOT** be a dependency of the SE package
-``PackageWithSubpackagesSubpackageA`` but instead would be listed as a
-dependency of the parent SE package ``PackageWithSubpackages``.  (And in this
+``WithSubpackagesA`` but instead would be listed as a
+dependency of the parent SE package ``WithSubpackages``.  (And in this
 case, this TPL dependency is pretty worthless since the SE package
-``PackageWithSubpackages`` does not even define any libraries or tests of its
+``WithSubpackages`` does not even define any libraries or tests of its
 own.)
 
 .. _<packageDir>/<spkgDir>/CMakeLists.txt:
@@ -1823,11 +1980,11 @@ difference is that the commands `TRIBITS_PACKAGE()`_ and
 `TRIBITS_SUBPACKAGE_POSTPROCESS()`_ as shown in the file:
 
 
-  `TribitsExampleProject`_/``packages/package_with_subpackages/A/CMakeLists.txt``
+  `TribitsExampleProject`_/``packages/with_subpackages/a/CMakeLists.txt``
 
 which contains:
 
-.. include:: ../examples/TribitsExampleProject/packages/package_with_subpackages/A/CMakeLists.txt
+.. include:: ../../examples/TribitsExampleProject/packages/with_subpackages/a/CMakeLists.txt
    :literal:
 
 Unlike `TRIBITS_PACKAGE()`_, `TRIBITS_SUBPACKAGE()`_ does not take any extra
@@ -1870,8 +2027,8 @@ How is a TriBITS Subpackage is different from a TriBITS Package?
 A common question this is natural to ask is how a TriBITS Subpackage is
 different from a TriBITS Package?  They contain the same basic files (i.e. a
 ``cmake/Dependencies.cmake`` file, a top-level ``CMakeLists.txt`` file, source
-files, test files, etc.).  They both are included in the list of TriBITS SE
-Packages and therefore can both be enabled/disabled by the user or in
+files, test files, etc.).  They both are included in the list of `TriBITS SE
+Packages`_ and therefore can both be enabled/disabled by the user or in
 automatic dependency logic (see `Package Dependencies and Enable/Disable
 Logic`_).  The primary difference is that a subpackage is meant to involve
 less overhead and is to be used to partition the parent package's software
@@ -1926,21 +2083,26 @@ packages that depend on that TPL will be automatically disabled as well (see
 For each TPL referenced in a `<repoDir>/TPLsList.cmake`_ file using the macro
 `TRIBITS_REPOSITORY_DEFINE_TPLS()`_, there must exist a file, typically called
 ``FindTPL${TPL_NAME}.cmake``, that once processed, produces the variables
-``${TPL_NAME}_LIBRARIES`` and ``${TPL_NAME}_INCLUDE_DIRS``.  Most
-``FindTPL${TPL_NAME}.cmake`` files just use the the function
-`TRIBITS_TPL_DECLARE_LIBRARIES()`_ the define the TriBITS TPL.  A simple
-example of such a file is the standard TriBITS ``FindTPLPETSC.cmake`` module
-which is currently:
+``TPL_${TPL_NAME}_LIBRARIES`` and ``TPL_${TPL_NAME}_INCLUDE_DIRS``.  Most
+``FindTPL${TPL_NAME}.cmake`` files just use the function
+`TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_ the define the TriBITS TPL.
+A simple example of such a file is the common TriBITS ``FindTPLPETSC.cmake``
+module which is currently:
 
-.. include:: ../../tpls/FindTPLPETSC.cmake
+.. include:: ../../common_tpls/FindTPLPETSC.cmake
    :literal:
 
 Some concrete ``FindTPL${TPL_NAME}.cmake`` files actually do use
 ``FIND_PACKAGE()`` and a standard CMake package find module to fill in the
-guts of finding at TPL which is perfectly fine.
+guts of finding at TPL which is perfectly fine.  In this case, the purpose for
+the wrapping ``FindTPL${TPL_NAME}.cmake`` is to standardize the output
+variables ``TPL_${TPL_NAME}_INCLUDE_DIRS`` and ``TPL_${TPL_NAME}_LIBRARIES``.
+For more details on properly using ``FIND_PACKAGE()`` to define a
+``FindTPL${TPL_NAME}.cmake`` file, see `How to use FIND_PACKAGE() for a
+TriBITS TPL`_.
 
-Once processed, each defined TPL ``TPL_NAME`` is assigned the following global
-non-cache variables:
+Once the `<repoDir>/TPLsList.cmake`_ files are all processed, then each
+defined TPL ``TPL_NAME`` is assigned the following global non-cache variables:
 
   .. _${TPL_NAME}_FINDMOD:
 
@@ -1960,7 +2122,7 @@ non-cache variables:
 
   ``${TPL_NAME}_TESTGROUP``
 
-    Gives the TPLs `SE Package Test Group`_. This is set using the
+    Gives the TPL's `SE Package Test Group`_. This is set using the
     ``CLASSIFICATION`` field in the call to
     `TRIBITS_REPOSITORY_DEFINE_TPLS()`_.  If multiple repos define a given
     TPL, then the *first* `<repoDir>/TPLsList.cmake`_ file that is processed
@@ -1969,27 +2131,28 @@ non-cache variables:
     ``SomeTpl``, then if ``Repo2`` is processed after ``Repo1``, then
     ``SomeTpl_TESTGROUP`` is determined by ``Repo1/TPLsList.cmake`` and the
     test group in ``Repo2/TPLsList.cmake`` is ignored.  However, if
-    ``${TPL_NAME}_TESTGROUP`` is already set before the the
+    ``${TPL_NAME}_TESTGROUP`` is already set before the
     `<repoDir>/TPLsList.cmake`_ files are processed, then that test group will
     be used.  Therefore, the project can override the test group for a given
     TPL if desired.
 
 The specification given in `Enabling support for an optional Third-Party
-Library (TPL)`_ and `TRIBITS_TPL_DECLARE_LIBRARIES()`_ describes how the a
-``FindTPL${TPL_NAME}.cmake`` module should behave and allow users to override
-and specialize how a TPL is determined.  However, note that the TriBITS system
-does not require the usage of of the function
-``TRIBITS_TPL_DECLARE_LIBRARIES()`` and does not even care about the TPL
-module name ``FindTPL${TPL_NAME}.cmake``.  All that is required is that some
-CMake file fragment exist that once included, will define the variables
-``${TPL_NAME}_LIBRARIES`` and ``${TPL_NAME}_INCLUDE_DIRS``.  However, to be
-user friendly, such a CMake file should respond to the same variables as
-accepted by the standard ``TRIBITS_TPL_DECLARE_LIBRARIES()`` function.
+Library (TPL)`_ and `TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_ describes
+how the a ``FindTPL${TPL_NAME}.cmake`` module should behave and allow users to
+override and specialize how a TPL's include directories and libraries are
+determined.  However, note that the TriBITS system does not require the usage
+of the function ``TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`` and does not
+even care about the TPL module name ``FindTPL${TPL_NAME}.cmake``.  All that is
+required is that some CMake file fragment exist that once included, will
+define the variables ``${TPL_NAME}_LIBRARIES`` and
+``${TPL_NAME}_INCLUDE_DIRS``.  However, to be user friendly, such a CMake file
+should respond to the same variables as accepted by the standard
+``TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`` function.
 
 The core variables related to an enabled TPL are ``${TPL_NAME}_LIBRARIES``,
 ``${TPL_NAME}_INCLUDE_DIRS``, and ``${TPL_NAME}_TESTGROUP`` as defined in
-`TRIBITS_TPL_DECLARE_LIBRARIES()`_ need to be defined.  For more details, see
-`TRIBITS_REPOSITORY_DEFINE_TPLS()`_.
+`TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_ need to be defined.  For more
+details, see `TRIBITS_REPOSITORY_DEFINE_TPLS()`_.
 
 Processing of TriBITS Files: Ordering and Details
 --------------------------------------------------
@@ -2057,7 +2220,7 @@ through the call to `TRIBITS_PROJECT()`_.
 |       * ``INCLUDE(<optFile>)``
 |   3)  Set variables ``CMAKE_HOST_SYSTEM_NAME`` and ``${PROJECT_NAME}_HOSTNAME``
 |       (both of these can be overridden in the cache by the user)
-|   4)  Find Python (sets ``PYTHON_EXECUTABLE``)
+|   4)  Find Python (sets ``PYTHON_EXECUTABLE``, see `Python Support`_)
 |   5)  ``INCLUDE(`` `<projectDir>/Version.cmake`_ ``)``
 |   6)  Define primary TriBITS options and read in the list of extra repositories
 |       (calls ``TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS()``)
@@ -2092,11 +2255,11 @@ through the call to `TRIBITS_PROJECT()`_.
 |       * ``ADD_SUBDIRECTORY(`` `<packageDir>/CMakeLists.txt`_ ``)``
 |       * For each ``<spkgDir>`` in all enabled subpackages for this package:
 |         * ``ADD_SUBDIRECTORY(`` `<packageDir>/<spkgDir>/CMakeLists.txt`_ ``)``
-|   15) For each ``<repoDir>`` in all defined TriBITS repositories:
+|   16) ``INCLUDE(`` `<projectDir>/cmake/CallbackDefineProjectPackaging.cmake`_ ``)``
+|       * Call ``TRIBITS_PROJECT_DEFINE_PACKAGING()``
+|   16) For each ``<repoDir>`` in all defined TriBITS repositories:
 |       * ``INCLUDE(`` `<repoDir>/cmake/CallbackDefineRepositoryPackaging.cmake`_ ``)``
 |       * Call ``TRIBITS_REPOSITORY_DEFINE_PACKAGING()``
-|   17) ``INCLUDE(`` `<projectDir>/cmake/CallbackDefineProjectPackaging.cmake`_ ``)``
-|       * Call ``TRIBITS_PROJECT_DEFINE_PACKAGING()``
 
 The TriBITS Framework obviously does a lot more that what is described above
 but the basic trace of major operations and ordering and the processing of
@@ -2194,34 +2357,34 @@ looks something like::
   -- File Trace: REPOSITORY INCLUDE    [...]/PackagesList.cmake
   -- File Trace: REPOSITORY INCLUDE    [...]/TPLsList.cmake
   -- File Trace: PACKAGE    INCLUDE    [...]/packages/simple_cxx/cmake/Dependencies.cmake
-  -- File Trace: PACKAGE    INCLUDE    [...]/packages/mixed_language/cmake/Dependencies.cmake
-  -- File Trace: PACKAGE    INCLUDE    [...]/packages/package_with_subpackages/cmake/Dependencies.cmake
-  -- File Trace: PACKAGE    INCLUDE    [...]/packages/package_with_subpackages/A/cmake/Dependencies.cmake
-  -- File Trace: PACKAGE    INCLUDE    [...]/packages/package_with_subpackages/B/cmake/Dependencies.cmake
-  -- File Trace: PACKAGE    INCLUDE    [...]/packages/package_with_subpackages/C/cmake/Dependencies.cmake
+  -- File Trace: PACKAGE    INCLUDE    [...]/packages/mixed_lang/cmake/Dependencies.cmake
+  -- File Trace: PACKAGE    INCLUDE    [...]/packages/with_subpackages/cmake/Dependencies.cmake
+  -- File Trace: PACKAGE    INCLUDE    [...]/packages/with_subpackages/a/cmake/Dependencies.cmake
+  -- File Trace: PACKAGE    INCLUDE    [...]/packages/with_subpackages/b/cmake/Dependencies.cmake
+  -- File Trace: PACKAGE    INCLUDE    [...]/packages/with_subpackages/c/cmake/Dependencies.cmake
   -- File Trace: PACKAGE    INCLUDE    [...]/packages/wrap_external/cmake/Dependencies.cmake
   -- File Trace: PROJECT    CONFIGURE  [...]/cmake/ctest/CTestCustom.cmake.in
   -- File Trace: REPOSITORY READ       [...]/Copyright.txt
   -- File Trace: REPOSITORY INCLUDE    [...]/Version.cmake
   -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/simple_cxx/CMakeLists.txt
   -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/simple_cxx/test/CMakeLists.txt
-  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/mixed_language/CMakeLists.txt
-  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/mixed_language/test/CMakeLists.txt
-  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/package_with_subpackages/CMakeLists.txt
-  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/package_with_subpackages/A/CMakeLists.txt
-  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/package_with_subpackages/A/tests/CMakeLists.txt
-  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/package_with_subpackages/B/CMakeLists.txt
-  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/package_with_subpackages/B/tests/CMakeLists.txt
-  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/package_with_subpackages/C/CMakeLists.txt
-  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/package_with_subpackages/C/tests/CMakeLists.txt
-  -- File Trace: REPOSITORY INCLUDE    [...]/cmake/CallbackDefineRepositoryPackaging.cmake
+  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/mixed_lang/CMakeLists.txt
+  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/mixed_lang/test/CMakeLists.txt
+  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/with_subpackages/CMakeLists.txt
+  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/with_subpackages/a/CMakeLists.txt
+  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/with_subpackages/a/tests/CMakeLists.txt
+  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/with_subpackages/b/CMakeLists.txt
+  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/with_subpackages/b/tests/CMakeLists.txt
+  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/with_subpackages/c/CMakeLists.txt
+  -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/with_subpackages/c/tests/CMakeLists.txt
   -- File Trace: PROJECT    INCLUDE    [...]/cmake/CallbackDefineProjectPackaging.cmake
+  -- File Trace: REPOSITORY INCLUDE    [...]/cmake/CallbackDefineRepositoryPackaging.cmake
 
 However, every file that TriBITS processes is not printed in this file trace
 if it should be obvious that the file is being processed.  For example, the
 package's configured header file created using `TRIBITS_CONFIGURE_FILE()`_
 does not result in a file trace print statement because this is an
-unconditional command that is explicitly called in one of the the package's
+unconditional command that is explicitly called in one of the package's
 ``CMakeLists.txt`` files so it should be clear that this file is being
 processed and exactly when it is processed.
 
@@ -2233,9 +2396,9 @@ Certain simplifications are allowed when defining TriBITS projects,
 repositories and packages.  The known allowed simplifications are described
 below.
 
-**TriBITS Repository == TriBITS Project**: It is allowed for a TriBITS Project
-and a TriBITS Repository to be the same source directory and in fact this is
-the default for every TriBITS project (unless the the
+**TriBITS Repository Dir == TriBITS Project Dir**: It is allowed for a TriBITS
+Project and a TriBITS Repository to be the same source directory and in fact
+this is the default for every TriBITS project (unless the
 `<projectDir>/cmake/NativeRepositoriesList.cmake`_ is defined).  In this case,
 the repository name `REPOSITORY_NAME`_ and the project name `PROJECT_NAME`_
 are the same as well.  This is quite common and is in fact the default that
@@ -2247,22 +2410,22 @@ Project's and the Repository's ``Version.cmake`` and ``Copyright.txt`` files
 are also one and the same, as they should be (see `Project and Repository
 Versioning and Release Mode`_).
 
-**TriBITS Package == TriBITS Repository**: It is also allowed for a TriBITS
-Repository to have only one package and to have that package be the base
-repository directory.  The TriBITS Repository and the single TriBITS Package
-would typically have the same name in this case (but that is actually not
-required but it is confusing if they are not the same).  For example, in the
-TriBITS test project `MockTrilinos`_, the repository and package
-``extraRepoOnePackage`` are one in the same.  In this case, the file
+**TriBITS Package Dir == TriBITS Repository Dir**: It is also allowed for a
+TriBITS Repository to have only one package and to have that package be the
+base repository directory.  The TriBITS Repository and the single TriBITS
+Package would typically have the same name in this case (but that is actually
+not required but it is confusing if they are not the same).  For example, in
+the TriBITS test project `MockTrilinos`_, the repository and package
+``extraRepoOnePackage`` are the same directory.  In this case, the file
 ``extraRepoOnePackage/PackagesList.cmake`` looks like:
 
-.. include:: ../../package_arch/UnitTests/MockTrilinos/extraRepoOnePackage/PackagesList.cmake
+.. include:: ../../examples/MockTrilinos/extraRepoOnePackage/PackagesList.cmake
    :literal:
 
 (Note the dot ``'.'`` for the package directory.)
 
-This is show the real TriBITS repository and package `DataTransferKit`_ is set
-up (at least that is the way it was when this document was first written).
+This is also how the real TriBITS repository and package `DataTransferKit`_ is
+set up (at least that is the way it was when this document was first written).
 
 .. _DataTransferKit: https://github.com/CNERG/DataTransferKit
 
@@ -2272,69 +2435,59 @@ This allows a TriBITS repository to define more packages later.
 
 .. _TriBITS Package == TriBITS Repository == TriBITS Project:
 
-**TriBITS Package == TriBITS Repository == TriBITS Project**: In the extreme,
-it is possible to collapse a single TriBITS package, repository, and project
-into the same base source directory.  However, in this case, the TriBITS
-Project name and the TriBITS Package name cannot be the same and some
-modifications and tricks are needed to allow this to work.  One example of
-this is the ``TriBITSProj`` project and `The TriBITS Test Package`_
-themselves, which are both rooted in the base ``tribits`` source directory.
-There are a few restrictions and modifications needed to get this to work:
+**TriBITS Package Dir == TriBITS Repository Dir == TriBITS Project Dir**: In
+the extreme, it is possible to collapse a single TriBITS package, repository,
+and project into the same base source directory.  They can also share the same
+name for the package, repository and package.  One example of this is the
+``TriBITS`` project and `The TriBITS Test Package`_ themselves, which are both
+rooted in the base ``TriBITS/`` source directory of the stand-alone TriBITS
+repository.  There are a few restrictions and modifications needed to get this
+to work:
 
-* The Project and Package names cannot be the same.  In the case of the
-  TriBITS project, the project name is ``TriBITSProj`` (as defined in
-  ``tribits/ProjectName.cmake``) and the package name is ``TriBITS`` (as
-  defined in ``tribits/PackagesList.cmake``).
 * The base ``CMakeLists.txt`` file must be modified to allow it to be
   processed both as the base project ``CMakeLists.txt`` file and as the
   package's base ``CMakeLists.txt`` file.  In the case of
-  ``tribits/CMakeLists.txt``, a big if statement is used.
-* An extra subdirectory must be created for TriBITS package's binary
-  directory.  Because of directory-level targets like ``${PROJECT_NAME}_libs``
-  and ``${PACKAGE_NAME}_libs``, a subdirectory for the package's binary
-  directory must be created.  This is simply done by overriding the binary
-  directory name ``${PACKAGE_NAME}_SPECIFIED_BINARY_DIR``.  In the case of
-  TriBITS, this is set to ``tribits`` in the ``tribits/PackagesList.cmake``
-  file.
+  ``TriBITS/CMakeLists.txt``, a big if statement is used.
 
-Other than those modifications, a TriBITS project, repository, and package can
-all be rooted in the same source directory.  However, as one can see above, to
-do so is a little messy and is not recommended.  It was only done this way
-with the base TriBITS directory ``tribits`` in order to maintain backward
-compatibility for the usage of TriBITS in existing TriBITS projects.
+.. ToDo: Create a new macro called TRIBITS_PROJECT_AND_PACKAGE() that will
+.. automatically take care of the details of a TriBITS package also being a
+.. TriBITS project.
 
-However, one possible use case for collapsing a project, repository, and
-package into a single base source directory would be to support the
-stand-alone build of a TriBITS package as its own entity that uses an
-independent installation of the TriBITS.  If a given TriBITS package has no
+Other than that simple modification to the top-level ``CMakeLists.txt`` file,
+a TriBITS project, repository, and package can all be rooted in the same
+source directory.
+
+The primary use case for collapsing a project, repository, and package into a
+single base source directory would be to support the stand-alone build of a
+TriBITS package as its own entity that uses an independent installation of the
+TriBITS (or a minimal snapshot of TriBITS).  If a given TriBITS package has no
 required `upstream`_ TriBITS package dependencies and minimal TPL dependencies
-(or only uses `Standard TriBITS TPLs`_ already defined in the
-``tribits/tpls/`` directory), then creating a stand-alone project build of a
-loan TriBITS package requires fairly little extra overhead or duplication.
-However, as mentioned above, one cannot use the same name for the package and
-the project.
+(or only uses `Standard TriBITS TPLs`_ or `Common TriBITS TPLs`_ already
+defined in the ``tribits/core/std_tpls/`` or ``tribits/common_tpls/``
+directories), then creating a stand-alone project build of a single TriBITS
+package requires fairly little extra overhead or duplication.
 
-.. NOTE: We could modify the TriBITS system to allow having the project and
-.. package names be the same if we disable one of the sets of XXX_libs and
-.. other targets created by TriBITS.  We could also provide a standard wrapper
-.. CMakeLists.txt file to make it easy for packages to support stand-alone
-.. builds.  However, that is an effort for later.
+
+Standard and Common TPLs
+------------------------
+
+While a TriBITS Repository can define their own TPLs and their own TPL find
+modules (see `TriBITS TPL`_), the TriBITS source tree contains the find
+modules for a few different standard TPLs and common TPLs.  `Standard TriBITS
+TPLs`_ are integral to the TriBITS system itself while `Common TriBITS TPLs`_
+are TPL that are used in several different TriBITS Repositories and are
+contained in TriBITS for convenience and uniformity.
 
 
 Standard TriBITS TPLs
----------------------
++++++++++++++++++++++
 
-TriBITS contains find modules for a few standard TPLs that are either integral
-to the TriBITS system or are likely to be used across many independent TriBITS
-repositories.  The goal of maintaining a few of these in the later case under
-TriBITS is to enforce conformity in case these independent repositories are
-combined into a single meta-project.
+TriBITS contains find modules for a few standard TPLs integral to the TriBITS
+system.  The standard TriBITS TPLs are contained under the directory::
 
-The standard TriBITS TPLs are contained under the directory::
+  tribits/core/std_tpls/
 
-  tribits/tpls/
-
-The current list of standard TriBITS TPLs is:
+The current list of standard TriBITS TPL find modules is:
 
 .. include:: TribitsStandardTPLsList.txt
    :literal:
@@ -2347,25 +2500,48 @@ and other commands.
 These standard TPLs are used in a `<repoDir>/TPLsList.cmake`_ file as::
 
   TRIBITS_REPOSITORY_DEFINE_TPLS(
-    MPI   "${${PROJECT_NAME}_TRIBITS_DIR}/tpls/"  PT
-    CUDA  "${${PROJECT_NAME}_TRIBITS_DIR}/tpls/"  ST
+    MPI   "${${PROJECT_NAME}_TRIBITS_DIR}/core/std_tpls/"  PT
+    CUDA  "${${PROJECT_NAME}_TRIBITS_DIR}/core/std_tpls/"  ST
     ...
     )
 
-Other than the special TPLs ``MPI`` and ``CUDA``, other TPLs that are
-candidates to put into TriBITS are those that are likely to be used by
-different stand-alone TriBITS repositories that need to be combined into a
-single TriBITS meta-project.  By using a standard TPL definition, it is
-guaranteed that the TPL used will be consistent with all of the repositories.
 
-Note that just because packages in two repositories reference the same TPL
-does not necessarily mean that it needs to be a standard TriBITS TPL.  For
-example, if the TPL ``BLAS`` is defined in an `upstream`_ repository
-(e.g. Trilinos), then a package in a `downstream`_ repository can list a
-dependency on the TPL ``BLAS`` without having to define its own ``BLAS`` TPL
-in its repository's `<repoDir>/TPLsList.cmake`_ file.  For more details, see
-`TriBITS TPL`_.
+Common TriBITS TPLs
++++++++++++++++++++
 
+TriBITS also contains find modules for several TPLs that are used across many
+independent TriBITS repositories.  The goal of maintaining these under TriBITS
+is to enforce conformity in case these independent repositories are combined
+into a single meta-project.
+
+The common TriBITS TPLs are contained under the directory::
+
+  tribits/common_tpls/
+
+The current list of common TriBITS TPL find modules is:
+
+.. include:: TribitsCommonTPLsList.txt
+   :literal:
+
+Common TPLs are used in a `<repoDir>/TPLsList.cmake`_ file as::
+
+  TRIBITS_REPOSITORY_DEFINE_TPLS(
+    BLAS   "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"  PT
+    LAPACK  "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"  PT
+    ...
+    )
+
+By using a standard TPL definition, it is guaranteed that the TPL used will be
+consistent with all of the TriBITS packages that depend on these TPLs in case
+they are combined into a single project.
+
+Note that just because packages in two different TriBITS repositories
+reference the same TPL does not necessarily mean that it needs to be moved
+into the TriBITS source tree under ``tribits/common_tpls/``.  For example, if
+the TPL ``QT`` is defined in an `upstream`_ repository (e.g. Trilinos), then a
+package in a `downstream`_ repository can list a dependency on the TPL ``QT``
+without having to define its own ``QT`` TPL in its repository's
+`<repoDir>/TPLsList.cmake`_ file.  For more details, see `TriBITS TPL`_.
 
 .. Where to set variables?
 .. -----------------------
@@ -2400,7 +2576,7 @@ in this document.  Also mentioned is the `Trilinos`_ project itself which can
 be a useful example of the usage of TriBITS (see disclaimers in the section
 `Trilinos`_).  The last example mentioned is `The TriBITS Test Package`_
 itself which allows the TriBITS system to be tested and installed from any
-TriBITS project that lists it, including the ``TriBITSProj`` project itself
+TriBITS project that lists it, including the ``TriBITS`` project itself
 (see `Coexisting Projects, Repositories, and Packages`_).
 
 The directory ``tribits/doc/examples/`` contains some other example TriBITS
@@ -2434,7 +2610,7 @@ Repository Core Files`_, and `TriBITS Package Core Files`_.  It just builds a
 simple library, a simple executable, a test executable, and the tests them as
 shown by the file ``TribitsHelloWorld/hello_world/CMakeLists.txt`` which is:
 
-.. include:: ../examples/TribitsHelloWorld/hello_world/CMakeLists.txt
+.. include:: ../../examples/TribitsHelloWorld/hello_world/CMakeLists.txt
    :literal:
 
 The build and test of this simple project is tested in the `The TriBITS Test
@@ -2481,7 +2657,7 @@ Logic`_.
 The name of this project ``PROJECT_NAME`` is given in its
 ``TribitsExampleProject/ProjectName.cmake`` file:
 
-.. include:: ../examples/TribitsExampleProject/ProjectName.cmake
+.. include:: ../../examples/TribitsExampleProject/ProjectName.cmake
    :literal:
 
 The variable ``PROJECT_NAME=TribitsExProj`` is used to prefix (using
@@ -2520,8 +2696,8 @@ the partial list of `TribitsExampleProject Files and Directories`_ below::
         test/
           CMakeLists.txt
           SimpleCxx_HelloWorld_Tests.cpp
-      mixed_language/ ...
-      package_with_subpackages/
+      mixed_lang/ ...
+      with_subpackages/
         CMakeLists.txt
         cmake/
           Dependencies.cmake
@@ -2537,13 +2713,14 @@ the partial list of `TribitsExampleProject Files and Directories`_ below::
 Above, the sub-directories under ``packages/`` are sorted according to the
 order listed in the ``TribitsExampleProject/PackagesList.cmake`` file:
 
-.. include:: ../examples/TribitsExampleProject/PackagesList.cmake
+.. include:: ../../examples/TribitsExampleProject/PackagesList.cmake
    :literal:
 
 From this file, we get the list of top-level packages ``SimpleCxx``,
-``MixedLanguage``, ``PackageWithSubpackages``, and ``WrapExternal`` (and their
-base package directories and testing group, see
-`<repoDir>/PackagesList.cmake`_).
+``MixedLang``, ``WithSubpackages``, and ``WrapExternal`` (and their base
+package directories and testing group, see `<repoDir>/PackagesList.cmake`_).
+(NOTE: By default the package ``InsertedPkg`` is not defined because its
+directory is missing, see `How to insert a package into an upstream repo`_.)
 
 A full listing of package files in `TribitsExampleProject Files and
 Directories`_ is only shown for the ``SimpleCxx`` package directory
@@ -2556,37 +2733,36 @@ must exist for every package directory listed in
 ``packages/simple_cxx/``.  The package ``SimpleCxx`` does not have any
 `upstream`_ SE package dependencies.
 
-Now consider the example top-level package ``PackageWithSubpackages`` which,
+Now consider the example top-level package ``WithSubpackages`` which,
 as the name suggests, is broken down into subpackages.  The
-``PackageWithSubpackages`` dependencies file::
+``WithSubpackages`` dependencies file::
 
-  TribitsExampleProject/packages/package_with_subpackages/cmake/Dependencies.cmake
+  TribitsExampleProject/packages/with_subpackages/cmake/Dependencies.cmake
 
 with contents:
 
-.. include:: ../examples/TribitsExampleProject/packages/package_with_subpackages/cmake/Dependencies.cmake
+.. include:: ../../examples/TribitsExampleProject/packages/with_subpackages/cmake/Dependencies.cmake
    :literal:
 
 references the three subpackages with sub-directories ``<spkgDir>`` = ``A``,
 ``B``, and ``C`` under the parent package directory
 ``packages/package_with_packages/`` which are shown in `TribitsExampleProject
 Files and Directories`_.  This gives another set of three SE packages
-``PackageWithSubpackagesSubpackageA``, ``PackageWithSubpackagesSubpackageB``,
-and ``PackageWithSubpackagesSubpackageC``.  Combining ``<packageDir> =
+``WithSubpackagesA``, ``WithSubpackagesB``,
+and ``WithSubpackagesC``.  Combining ``<packageDir> =
 packages/package_with_packages`` and ``<spkgDir>`` for each subpackage gives
 the subpackage directories::
 
-  TribitsExampleProject/packages/package_with_subpackages/A/
-  TribitsExampleProject/packages/package_with_subpackages/B/
-  TribitsExampleProject/packages/package_with_subpackages/C/
+  TribitsExampleProject/packages/with_subpackages/a/
+  TribitsExampleProject/packages/with_subpackages/b/
+  TribitsExampleProject/packages/with_subpackages/c/
 
-Together with the top-level parent SE package ``PackageWithSubpackages``
+Together with the top-level parent SE package ``WithSubpackages``
 itself, this top-level package provides four `TriBITS SE Packages`_ giving the
 final list of SE packages provided by this TriBITS repo as::
 
-  SimpleCxx MixedLanguage PackageWithSubpackagesSubpackageA \
-    PackageWithSubpackagesSubpackaeB PackageWithSubpackagesSubpackageC \
-    PackageWithSubpackages WrapExternal 7
+  SimpleCxx MixedLang WithSubpackagesA WithSubpackagesB WithSubpackagesC \
+    WithSubpackages WrapExternal 7
 
 The above list of SE packages is printed (with the number of packages printed
 at the end) by TriBITS to the ``cmake`` stdout on the line starting with
@@ -2595,7 +2771,7 @@ at the end) by TriBITS to the ``cmake`` stdout on the line starting with
 in line-brakes with continuation characters ``"\"`` as shown above.)  TriBITS
 defines enable/disable cache variables for each of these defined SE packages
 like ``TribitsExProj_ENABLE_SimpleCxx`` and
-``TribitsExProj_ENABLE_PackageWithSubpackagesSubpackageA``, and defines all
+``TribitsExProj_ENABLE_WithSubpackagesA``, and defines all
 the variables listed in `TriBITS Package Cache Variables`_ that are settable
 by the users or by the dependency logic described in section `Package
 Dependencies and Enable/Disable Logic`_.
@@ -2618,21 +2794,20 @@ MockTrilinos
 
 The TriBITS project ``MockTrilinos`` is contained under the directory::
 
-  tribits/package_arch/UnitTests/MockTrilinos/
+  tribits/examples/MockTrilinos/
 
 This TriBITS project is not a full TriBITS project (i.e. it does not build
 anything).  Instead, it is primarily used to test the TriBITS system using
 tests defined in the `The TriBITS Test Package`_.  The ``MockTrilinos``
 project is actually given the name ``PROJECT_NAME = Trilinos`` and contains a
-subset of Trilinos packages with slightly modified dependencies from a
-snapshot of the real Trilinos project from May 2009.  The list of packages
-in::
+subset of Trilinos packages with slightly modified dependencies from a real
+version of the Trilinos project from May 2009.  The list of packages in::
 
-  tribits/package_arch/UnitTests/MockTrilinos/PackagesList.cmake
+  tribits/examples/MockTrilinos/PackagesList.cmake
 
 is:
 
-.. include:: ../../package_arch/UnitTests/MockTrilinos/PackagesList.cmake
+.. include:: ../../examples/MockTrilinos/PackagesList.cmake
    :literal:
 
 All of the package directories listed above have
@@ -2689,7 +2864,7 @@ ReducedMockTrilinos
 
 The TriBITS project ``ReducedMockTrilinos`` is contained under the directory::
 
-  tribits/package_arch/UnitTests/ReducedMockTrilinos/
+  tribits/examples/ReducedMockTrilinos/
 
 It is a scaled-down version of the `MockTrilinos`_ test project with just a
 handful of packages and some modified dependencies.  Its primary purpose for
@@ -2699,11 +2874,11 @@ TriBITS system not tested in other tests.
 
 The list of packages in::
 
-  tribits/package_arch/UnitTests/ReducedMockTrilinos/PackagesList.cmake
+  tribits/examples/ReducedMockTrilinos/PackagesList.cmake
 
 is:
 
-.. include:: ../../package_arch/UnitTests/ReducedMockTrilinos/PackagesList.cmake
+.. include:: ../../examples/ReducedMockTrilinos/PackagesList.cmake
    :literal:
 
 All of the listed packages are standard TriBITS packages except for the mock
@@ -2728,31 +2903,21 @@ The TriBITS Test Package
 ------------------------
 
 The last TriBITS example mentioned here is the TriBITS test package named
-(appropriately) ``TriBITS`` itself.  The directory for the ``TriBITS`` test
-package is the base TriBITS source directory ``tribits``.  This allows any
-TriBITS project to add testing for the TriBITS system by just listing this
-package and its directory in its repository's `<repoDir>/PackagesList.cmake`_
-file.  For example, the Trilinos repository which currently snapshots the
-TriBITS source tree lists the ``TriBITS`` package with::
+(appropriately) ``TriBITS`` itself defined in the ``TriBITS`` repository.  The
+directory for the ``TriBITS`` test package is the base TriBITS source
+directory ``tribits``.  This allows any TriBITS project to add testing for the
+TriBITS system by just listing the TriBITS repository in its
+`<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file.  Trilinos lists the
+TriBITS repository in its ``ExtraRepositoriesList.cmake`` file as:
 
-  TRIBITS_REPOSITORY_DEFINE_PACKAGES(
-    TriBITS   cmake/tribits  PT   # Only tests, no libraries/capabilities!
+  TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES(
+    TriBITS  ""  GIT  https://github.com/TriBITSPub/TriBITS  ""  Continuous
     ...
     )
 
-No `downstream`_ packages list a dependency on ``TriBITS`` in their
-`<packageDir>/cmake/Dependencies.cmake`_ files.  Listing the ``TriBITS``
-package in only done in the ``PackagesList.cmake`` file for testing TriBITS.
-
-Other TriBITS projects/repositories that don't snapshot TriBITS but also want
-to test TriBITS (perhaps just to mine its tests for examples) can do so by
-including the ``TriBITS`` test package in their ``PackagesList.cmake`` file
-using::
-
-  TRIBITS_REPOSITORY_DEFINE_PACKAGES(
-    TriBITS   ${${PROJECT_NAME}_TRIBITS_DIR}   PT
-    ...
-    )
+No `downstream`_ TriBITS packages list a dependency on ``TriBITS`` in their
+`<packageDir>/cmake/Dependencies.cmake`_ files.  Defining the ``TriBITS``
+TriBITS package in only done for running the TriBITS tests.
 
 Once the ``TriBITS`` test package is added to the list of project/repository
 packages, it can be enabled just like any other package by adding the
@@ -2820,7 +2985,7 @@ small simple `ReducedMockTrilinos`_ project is used.  The list of packages for
 this project is defined in the file ``ReducedMockTrilinos/PackagesList.cmake``
 (see `<repoDir>/PackagesList.cmake`_) which contents:
 
-.. include:: ../../package_arch/UnitTests/ReducedMockTrilinos/PackagesList.cmake
+.. include:: ../../examples/ReducedMockTrilinos/PackagesList.cmake
    :literal:
 
 All of the listed packages are standard TriBITS packages except for the mock
@@ -2828,7 +2993,7 @@ All of the listed packages are standard TriBITS packages except for the mock
 ``packages/thyra/cmake/Dependnecies.cmake`` (see
 `<packageDir>/cmake/Dependencies.cmake`_) which is:
 
-.. include:: ../../package_arch/UnitTests/ReducedMockTrilinos/packages/thyra/cmake/Dependencies.cmake
+.. include:: ../../examples/ReducedMockTrilinos/packages/thyra/cmake/Dependencies.cmake
    :literal:
 
 This gives the full list of top-level TriBITS packages::
@@ -2854,7 +3019,7 @@ The list of `TriBITS TPLs`_ for this example project given in the file
 ``ReducedMockTrilinos/TPLsList.cmake`` (see `<repoDir>/TPLsList.cmake`_) which
 is:
 
-.. include:: ../../package_arch/UnitTests/ReducedMockTrilinos/TPLsList.cmake
+.. include:: ../../examples/ReducedMockTrilinos/TPLsList.cmake
    :literal:
 
 Take note of the `SE Package Test Group`_ (i.e. `PT`_, `ST`_, or `EX`_)
@@ -3235,17 +3400,18 @@ In more detail, these rules/behaviors are:
 .. _Support for optional SE package/TPL can be explicitly disabled:
 
 14) **Support for optional SE package/TPL can be explicitly disabled:** Even
-    through TriBITS will automatically set
+    though TriBITS will automatically set
     ``<TRIBITS_PACKAGE>_ENABLE_<TRIBITS_DEP_PACKAGE_OR_TPL>=ON`` by default if
     ``<TRIBITS_PACKAGE>`` and ``<TRIBITS_DEP_PACKAGE_OR_TPL>`` are both
-    enabled (as described above) the user can explicitly set
-    ``<TRIBITS_PACKAGE>_ENABLE_<TRIBITS_DEP_PACKAGE_OR_TPL>=OFF`` which will
-    turn off optional support for the SE package or TPL
-    ``<TRIBITS_DEP_PACKAGE_OR_TPL>`` in the SE package ``<TRIBITS_PACKAGE>``.
-    For example, the user can enabled ``EpetraExt`` and ``Triutils`` but set
-    ``EpetraExt_ENABLE_Triutils=OFF`` which will turn off support for
-    ``Triutils`` in the ``EpetraExt`` package.  Likewise, the user can enable
-    ``Teuchos``, ``Epetra`` and the optional TPL ``Boost``, but set
+    enabled at the project level (as described above), the user can explicitly
+    set ``<TRIBITS_PACKAGE>_ENABLE_<TRIBITS_DEP_PACKAGE_OR_TPL>=OFF`` which
+    will turn off optional package-level support for the upstream SE package
+    or TPL ``<TRIBITS_DEP_PACKAGE_OR_TPL>`` in the downstream SE package
+    ``<TRIBITS_PACKAGE>``.  For example, the user can enable ``EpetraExt`` and
+    ``Triutils`` at the project level, but set
+    ``EpetraExt_ENABLE_Triutils=OFF`` which will turn off package-level
+    support for ``Triutils`` in the ``EpetraExt`` package.  Likewise, the user
+    can enable ``Teuchos``, ``Epetra`` and the optional TPL ``Boost``, but set
     ``Epetra_ENABLE_Boost=ON``.  This would provide support for ``Boost`` in
     ``Teuchos`` but not in ``Epetra``.  For examples, see `Explicit disable of
     an optional package dependency`_ and `Explicit disable of an optional TPL
@@ -3306,6 +3472,8 @@ In more detail, these rules/behaviors are:
     example, see `Explicit enable of a package and downstream packages and
     tests`_.
 
+.. _${PROJECT_NAME}_ENABLE_ALL_PACKAGES:
+
 .. _<Project>_ENABLE_ALL_PACKAGES enables all PT (cond. ST) SE packages:
 
 18) **<Project>_ENABLE_ALL_PACKAGES enables all PT (cond. ST) SE packages**:
@@ -3313,7 +3481,17 @@ In more detail, these rules/behaviors are:
     will result in the enable of all ``PT`` SE packages when
     ``${PROJECT_NAME}_SECONDARY_TESTED_CODE=OFF`` and all ``PT`` and ``ST`` SE
     packages when ``${PROJECT_NAME}_SECONDARY_TESTED_CODE=ON``.  For an
-    example, see `Enable all packages`_.
+    example, see `Enable all packages`_.  When the project is a meta-project,
+    this will only enable the project's primary meta-project packages (PMPP).
+    That is, a package will only be enabled due to
+    ``${PROJECT_NAME}_ENABLE_ALL_PACKAGES=ON`` when its parent repository does
+    not have `${REPOSITORY_NAME}_NO_PRIMARY_META_PROJECT_PACKAGES`_ set to
+    ``TRUE``.  However, if::
+
+       ${REPOSITORY_NAME}_NO_PRIMARY_META_PROJECT_PACKAGES=TRUE
+
+    then the SE package may be enabled if it (or its parent package) is listed
+    in `${REPOSITORY_NAME}_NO_PRIMARY_META_PROJECT_PACKAGES_EXCEPT`_.
 
 .. _<Project>_ENABLE_TESTS only enables explicitly enabled SE package tests:
 
@@ -3324,7 +3502,11 @@ In more detail, these rules/behaviors are:
     ``Trilinos_ENABLE_TESTS=ON`` will only result in the enable of tests for
     ``RTOp``, not ``Teuchos`` (even through TriBITS will enable ``Teuchos``
     because it is a required dependency of ``RTOp``).  See an example, see
-    `Explicit enable of a package and its tests`_.
+    `Explicit enable of a package and its tests`_.  When the project is a
+    meta-project, this will only enable tests for the project's primary
+    meta-project packages (PMPP).  The uses the same logic as for
+    ``${PROJECT_NAME}_ENABLE_ALL_PACKAGES``, see
+    `<Project>_ENABLE_ALL_PACKAGES enables all PT (cond. ST) SE packages`_.
 
 .. _If no SE packages are enabled, nothing will get built:
 
@@ -3441,7 +3623,7 @@ The use cases covered are:
 All of these use cases and more can be easily run from the command-line by
 first setting:
 
-  $ export REDUCED_MOCK_TRILINOS=<base-dir>/tribits/package_arch/UnitTests/ReducedMockTrilinos
+  $ export REDUCED_MOCK_TRILINOS=<base-dir>/tribits/examples/ReducedMockTrilinos
 
 and then copy and pasting the ``cmake`` commands shown below.  Just make sure
 to run these in a temp directory because this actually configures a CMake
@@ -3807,13 +3989,13 @@ packages from the `MockTrilinos`_ project is shown below::
 This XML file contains the names, directories, testing groups (``type``),
 CDash email address, and all of the SE package and TPL dependencies for every
 SE package in the TriBITS project.  There are several python tools under
-``tribits/python/`` that read in this file and use the created data-structure
-for various tasks.  A TriBITS project configure can create this file as a
-byproduct (see ???), or the CMake -P script ``TribitsDumpDepsXmlScript.cmake``
-can be used to create this file on the fly without having to configure a
-TriBITS project (see the ``checkin-test.out`` log file generated by
-`checkin-test.py`_ for an example of how to run this script to generate the
-``<Project>Dependencies.xml`` file).
+``tribits/ci_support/`` that read in this file and use the created
+data-structure for various tasks.  A TriBITS project configure can create this
+file as a byproduct (see ???), or the CMake -P script
+``TribitsDumpDepsXmlScript.cmake`` can be used to create this file on the fly
+without having to configure a TriBITS project (see the ``checkin-test.out``
+log file generated by `checkin-test.py`_ for an example of how to run this
+script to generate the ``<Project>Dependencies.xml`` file).
 
 
 TriBITS Automated Testing
@@ -3909,9 +4091,9 @@ CTest/Dash Driver`_ for details).
   `Pre-Push CI Testing`_ or `Post-Push CI Testing`_.  One would mark a
   repository as ``Nightly`` for few reasons.  First, an extra repo may be
   marked as ``Nightly`` if it may not be available to all developers to clone
-  and only the the nightly testing processes and machines may have access.
-  Also, an extra repo may also be marked as ``Nightly`` if it does not contain
-  any packages that the project wants to pay the cost to include in even
+  and only the nightly testing processes and machines may have access.  Also,
+  an extra repo may also be marked as ``Nightly`` if it does not contain any
+  packages that the project wants to pay the cost to include in even
   `Post-Push CI Testing`_.  NOTE: One should **not** confuse this with the
   `Test Test Category NIGHTLY`_.
 
@@ -3976,8 +4158,8 @@ More detailed descriptions of the test groups are given below.
   it is required by a ``PT`` SE package.  Every project developer is expected
   to have every ``PT`` TPL installed on every machine where they do
   development on and from which they push to the global repo (see
-  `checkin-test.py`_ script).  ``PT`` SE packages and TPLs are the the
-  foundation for `Pre-Push CI Testing`_.
+  `checkin-test.py`_ script).  ``PT`` SE packages and TPLs are the foundation
+  for `Pre-Push CI Testing`_.
 
 .. _ST:
 
@@ -4017,7 +4199,7 @@ More detailed descriptions of the test groups are given below.
 The test group for each type of entity is assigned in the following places:
 
 * The top-level `TriBITS Package`_'s test group is assigned using the
-  ``CLASSIFICATION`` field in the the macro call
+  ``CLASSIFICATION`` field in the macro call
   `TRIBITS_REPOSITORY_DEFINE_PACKAGES()`_ in its parent repository's
   `<repoDir>/PackagesList.cmake`_ file.
 
@@ -4205,7 +4387,7 @@ Test Test Category         ``BASIC``           (`Test Test Category BASIC`_)
 
 Typically a TriBITS project will define a "standard development environment"
 which is comprised of a standard compiler (e.g. GCC 4.6.1), TPL versions
-(e.g. OpenMPI 1.4.2, Boost 4.9, etc.), and other tools (e.g. cmake 2.8.5, git
+(e.g. OpenMPI 1.4.2, Boost 4.9, etc.), and other tools (e.g. cmake 2.8.11, git
 1.8.2, etc.).  This standard development environment is expected to be used to
 test changes to the project's code before any push.  By using a standard
 development environment, if the code builds and all the tests pass for the
@@ -4309,7 +4491,7 @@ Test Test Category         ``WEEKLY``          (`Test Test Category WEEKLY`_)
 Project developer teams should strive to limit the number of test cases that
 are marked as ``WEEKLY`` since these tests will *not* get run nightly and
 developers will tend to never enable them when doing more extensive testing
-using ``--st-extra-builds`` with the the `checkin-test.py`_ script in extended
+using ``--st-extra-builds`` with the `checkin-test.py`_ script in extended
 pre-push testing.
 
 .. _Performance Testing:
@@ -4337,9 +4519,9 @@ SE Package Test Group      ``PT`` & ``ST``     (`PT`_ and `ST`_)
 Test Test Category         ``PERFORMANCE``     (`Test Test Category PERFORMANCE`_)
 =========================  ==================  ====================================
 
-.. ToDo: I need to set up automated testing for TriBITSProj to use as the
-.. example for all of these types of testing.  There is no better example that
-.. one that actually works.  It would also be nice t have a snapshot repo of
+.. ToDo: I need to set up automated testing for TriBITS to use as the example
+.. for all of these types of testing.  There is no better example that one
+.. that actually works.  It would also be nice t have a snapshot repo of
 .. TribitsExampleProject that also had this testing enabled for it but I am
 .. not sure that really makes sense.
 
@@ -4382,7 +4564,7 @@ project defines its default pre-push builds using the file
 `<projectDir>/project-checkin-test-config.py`_.  For an example, the file
 `TribitsExampleProject`_/``project-checkin-test-config.py`` is shown below:
 
-.. include:: ../examples/TribitsExampleProject/project-checkin-test-config.py
+.. include:: ../../examples/TribitsExampleProject/project-checkin-test-config.py
    :literal:
 
 This gives ``--default-builds=MPI_DEBUG,SERIAL_RELEASE``.  As shown, typically
@@ -4708,18 +4890,124 @@ Dependencies`_).  Every TriBITS project automatically supports tacking on
 add-on TriBITS packages and TPLs through the
 `${PROJECT_NAME}_EXTRA_REPOSITORIES`_ cmake cache variable as described in
 `Enabling extra repositories with add-on packages`_.  In addition, a TriBITS
-project can be set up from the start to pull in other TriBITS Repositories
-using the `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file.  A special
-form of this is a `TriBITS Meta-Project`_ that contains no packages or TPLs of
+project can be set up to pull in other TriBITS Repositories using the
+`<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file.  A special form of
+this is a `TriBITS Meta-Project`_ that contains no native packages or TPLs of
 its own.  The ability to create meta-projects out of individual TriBITS
-repositories allows TriBITS to be used to provide coordinated builds of large
-aggregations of software.
+repositories allows TriBITS to be used to provide coordinated builds (or
+meta-builds) of large aggregations of software.
 
 To help set up a full-featured development environment (i.e. not just the
 basic configure, build, test, and install) for TriBITS projects with multiple
 repositories, TriBITS provides some extra development tools implemented using
-Python.  The primary tools supporting multi-repository projects are the
-`checkin-test.py`_ tool and the `egdist`_ tool.
+Python which are provided in the "extended" parts of TriBITS (see
+`TriBITS/tribits/ Directory Contents`_).  The primary tools supporting
+multi-repository projects are the Python scripts `clone_extra_repos.py`_,
+`gitdist`_, and `checkin-test.py`_.
+
+To demonstrate, consider the TriBITS meta-project with the following
+``ExtraRepositoriesList.cmake`` file::
+
+  TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES(
+    ExtraRepo1  ""  GIT  git@someurl.com:ExtraRepo1  ""  Continuous
+    ExtraRepo2  "ExtraRepo1/ExtraRepos2"  GIT  git@someurl.com:ExtraRepo2
+                                                   NOPACKAGES  Continuous
+    ExtraRepo3  ""  GIT  git@someurl.com:ExtraRepo3  ""  Nightly
+  )
+
+Once cloned, the directories would be laid out as::
+
+  MetaProject/
+    .git/
+    .gitignore
+    ExtraRepo1/
+      .git/
+      ExrraRepo2/
+        .git/
+    ExtraRepo3/
+      .git/
+
+.. _clone_extra_repos.py:
+
+The tool **clone_extra_repos.py** is used to clone the extra repositories for
+a multi-repositories TriBITS proejct.  It reads the repository URLs and
+destination directories from the file
+`<projectDir>/cmake/ExtraRepositoriesList.cmake`_ and does the clones.  For
+example, to clone all the repos for the ``MetaProject`` project, one would use
+the commands::
+
+  $ git clone git@someurl.com:MetaProject
+  $ cd MetaProject/
+  $ ./cmake/tribits/ci_support/clone_extra_repos.py 
+
+which produces the output like::
+
+  ...  
+  
+  ***
+  *** Clone the selected extra repos:
+  ***
+  
+  Cloning repo ExtraRepo1 ...
+  
+  Running: git clone git@someurl.com:ExtraRepo1 ExtraRepo1
+  
+  Cloning repo ExtraRepo2 ...
+  
+  Running: git clone git@someurl.com:ExtraRepo2 ExtraRepo1/ExtraRepo2
+  
+  Cloning repo ExtraRepo3 ...
+  
+  Running: git clone git@someurl.com:ExtraRepo3 ExtraRepo3
+
+See `clone_extra_repos.py --help`_ for more details.
+
+.. _gitdist:
+
+Once cloned, one needs to work with the multiple repositories to perform basic
+VC operations.  For this, TriBITS provides the tool **gitdist** which is a
+simple stand-alone Python script that distributes a git command across a set
+of git repos.  This tool is not specific to TriBITS but it is very useful for
+dealing with TriBITS projects with multiple repositories.  It only requires
+that a base git repo and a set of zero or more git repos cloned under it.
+
+To use ``gitdist`` with this aggregate meta-project, one would first set up
+the file ``MetaProject/.gitdist`` (or a version controlled
+``MetaProject.gitdist.default`` file) which would contain the lines::
+
+  ExtraRepo1
+  ExtraRepo1/ExtraRepo2
+  ExtraRepo3
+
+and one would set up the tracked ignore file ``MetaProject/.gitignore`` which
+contains the lines::
+
+  /ExtraRepo1/
+  /ExtraRepo1/ExtraRepo2/
+  /ExtraRepo3/
+
+To use ``gitdist``, one would put ``gitdist`` into their path and also set up
+the command-line shell aliases ``gitdist-status`` and ``gitdist-mod`` (see
+`gitdist --help`_).
+
+Some of the aggregate commands that one would typically run under the base
+``MetaProject/`` directory are::
+
+  # See status of all repos at once
+  gitdist-status
+
+  # Pull updates to all
+  gitdist pull
+
+  # Push local commits to tracking branches
+  gitdist push
+
+The script ``gitdist`` is provided under TriBITS directory::
+
+  cmake/tribits/python_utils/gitidst   
+
+and can be installed by the `install_devtools.py`_ script (see `TriBITS
+Development Toolset`_).  See `gitdist --help`_ for more details.
 
 For projects with a standard set of extra repositories defined in the
 `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file, the
@@ -4729,81 +5017,50 @@ For projects with a standard set of extra repositories defined in the
 perform all of the various actions for all of the selected repositories.  See
 `checkin-test.py`_ and `checkin-test.py --help`_ for more details.
 
-.. _egdist:
+To keep track of compatible versions of the git repos, TriBITS provides
+support for a ``<Project>RepoVersion.txt`` file.  Any TriBITS project can
+generate this file automatically by setting the option
+`${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE`_.  For the above example
+``MetaProject``, this file looks like::
 
-The tool **egdist** is a simple Python script that distributes an eg/git
-command across a set of git repos.  This tool is not specific to TriBITS but
-it is very useful for dealing with TriBITS projects with multiple
-repositories.  It only requires that a base git repo and a set of zero or more
-git repos cloned under it.  For example, consider the TriBITS meta-project
-given in the ExtraRepositoriesList.cmake file:
+  *** Base Git Repo: MetaProject
+  e102e27 [Mon Sep 23 11:34:59 2013 -0400] <author0@someurl.com>
+  First summary message
+  *** Git Repo: ExtraRepo1
+  b894b9c [Fri Aug 30 09:55:07 2013 -0400] <author1@someurl.com>
+  Second summary message
+  *** Git Repo: ExtraRepo1/ExtraRepo2
+  97cf1ac [Thu Dec 1 23:34:06 2012 -0500] <author2someurl.com>
+  Third summary message
+  *** Git Repo: ExtraRepo3
+  cd4a3af [Mon Mar 9 19:39:06 2013 -0400] <author3someurl.com>
+  Fourth summary message
 
-.. include:: ../../python/UnitTests/ExtraReposList.cmake
-   :literal:
-
-This would be laid out in directories as::
-
-  BaseRepo/
-    .git/
-    .gitignore
-    ExtraRepo1/
-      .git/
-    packages/SomePackage/Blah/
-      .git/
-    ExtraRepo3/
-      .git/
-    ExtraRepo4/
-      .git/
-
-to use ``egdist`` with this aggregate project, one would first set up the file
-``BaseRepo/.egdist`` to contain just::
-
-  ExtraRepo1
-  packages/SomePackage/Blah
-  ExtraRepo3
-  ExtraRepo4
-
-and one would set up the tracked ignore file ``BaseRepo/.gitignore`` which
-contains the lines::
-
-  /ExtraRepo1/
-  /packages/SomePackage/Blah/
-  /ExtraRepo3/
-  /ExtraRepo4/
-
-Common aggregate commands then run under the ``BaseRepo/`` directory are::
-
-  # See status of all repos at once
-  egdist status
-
-  # Pull updates to all
-  egdist pull
-
-  # Push local commits to tracking branches
-  egdist push
-
-See `egdist --help`_ for more details.
+This file gets created in the build directory, gets echoed in the configure
+output, gets installed into the install directory, and get added to the source
+distributions tarball.  It also gets pushed up to CDash for all automated
+builds.  The tool `gitdist`_ can then use this file to checkout and tag
+compatible versions, difference two versions of the meta-project, etc. (see
+`gitdist --help`_ for more details on git operations).
 
 The TriBITS approach to managing multiple VC repos described above works well
-for order-10 or so VC repos but will not scale well to order-30 or more repos.
-For larger numbers of VC repos, one should consider nested integration
-creating snapshot git repos (e.g. using the tool `snapshot-dir.py`_) that
-aggregate several related repositories into a single git repo.  Another
-approach might be to use git submodules.  However, note that the TriBITS tools
-and processes described here are **not** currently set up to support aggregate
-VC repos that use git submodules.  The design decision with TriBITS was to
-explicitly handle the different git VC repos using `egdist`_ and the
-`<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file.  There are advantages
-and disadvantages to using git submodules verses explicitly handling the
-different git repos currently employed by the TriBITS software development
-tools.  It is possible that TriBITS will add support for aggregate git repos
-using git submodules but only if there are important projects that choose to
-use them.  The discussion of these various approaches and strategies to
-dealing with aggregate repos is beyond the scope of this document.
-
-.. ToDo: Discuss a repo clone script (once you write it).
-
-.. ToDo: Discuss how to handle missing packages in upstream repos.
+for around 20 or 30 VC repos but is likely not a good solution for many more
+git repos.  For larger numbers of VC repos, one should consider nested
+integration creating snapshot git repos (e.g. using the tool
+`snapshot-dir.py`_) that aggregate several related repositories into a single
+git repo.  Another approach might be to use git submodules.  (However, note
+that the TriBITS tools and processes described here are **not** currently set
+up to support aggregate VC repos that use git submodules.)  The design
+decision with TriBITS was to explicitly handle the different git VC repos by
+listing them in the `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file and
+then using the simple, easy to understand, tools `clone_extra_repos.py`_ and
+`gitdist`_.  There are advantages and disadvantages to explicitly handling the
+different git repos as is currently employed by the TriBITS software
+development tools verses using git submodules.  It is possible that TriBITS
+will add support for aggregate git repos using git submodules in the future
+but only if there are important projects that choose to use them.  The
+discussion of these various approaches and strategies to dealing with
+aggregate repos is beyond the scope of this document.
 
 
 Development Workflows
@@ -4826,8 +5083,7 @@ then pushes updates.  The major difference is that a well constructed
 development process will use the `checkin-test.py`_ script to test and push
 all changes that affect the build or the tests.  The basic steps in
 configuring, building, running tests, etc., are given in the project's
-`<Project>BuildQuickRef`_. file (see `Project-Specific Build Quick
-Reference`_).
+`<Project>BuildReference`_. file (see `Project-Specific Build Reference`_).
 
 Multi-Repository Development Workflow
 -------------------------------------
@@ -4835,13 +5091,13 @@ Multi-Repository Development Workflow
 The development workflow for a project with multiple VC repos is very similar
 to a project with just a single VC repo if the project provides a standard
 `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file.  The major difference
-is in making changes, creating commits, etc.  The `egdist`_ tool makes these
+is in making changes, creating commits, etc.  The `gitdist`_ tool makes these
 steps easier and has been shown to work fairly well for up to 20 extra VC
 repos (as used in the CASL VERA project).  The `checkin-test.py`_ script
 automatically handles all of the details of pulling, diffing, pushing etc. to
 all the VC repos.
 
-.. ToDo: Discuss usage of 'egdist' and the rep clone script.
+.. ToDo: Discuss usage of 'gitdist' and the rep clone script.
 
 
 Howtos
@@ -4851,7 +5107,7 @@ This section provides short, succinct lists of the steps to accomplish a few
 common tasks.  Extra details are referenced.
 
 
-How to Add a new TriBITS Package
+How to add a new TriBITS Package
 --------------------------------
 
 To add a new TriBITS package, it is recommended to take the template from one
@@ -4892,14 +5148,14 @@ dependencies on this new package.
 .. ToDo: Expand on the above bullets a lot!
 
 
-How to Add a new TriBITS Package with Subpackages
+How to add a new TriBITS Package with Subpackages
 -------------------------------------------------
 
 Adding a new package with subpackages is similar to adding a new regular
-package described in `How to Add a new TriBITS Package`_.  Again, it is
+package described in `How to add a new TriBITS Package`_.  Again, it is
 recommended that one copies an example package from `TribitsExampleProject`_.
 For example, one could copy files and directories from the example package
-``PackageWithSubpackages``.
+``WithSubpackages``.
 
 To add a new TriBITS package with packages, do the following:
 
@@ -4921,24 +5177,24 @@ To add a new TriBITS package with packages, do the following:
 4) Configure the TriBITS project enabling the new empty package
    ``<packageName>``.
 
-5) Incrementally add the subpackages as described in `How to Add a new TriBITS
+5) Incrementally add the subpackages as described in `How to add a new TriBITS
    Subpackage`_, filling out the various ``CMakeLists.txt`` files defining
    libraries, executables, tests and examples.
 
 Once the new SE packages are defined, downstream SE packages can define
 dependencies on these.
 
-How to Add a new TriBITS Subpackage
+How to add a new TriBITS Subpackage
 -----------------------------------
 
 Given an existing top-level TriBITS package that is already broken down into
-subpackages (see `How to Add a new TriBITS Package with Subpackages`_), adding
+subpackages (see `How to add a new TriBITS Package with Subpackages`_), adding
 a new subpackage does not require changing any project-level or
 repository-level files.  One only needs to add the declaration for the new
 subpackages in its parent's `<packageDir>/cmake/Dependencies.cmake`_ file then
 fill out the pieces of the new subpackage defined in the section `TriBITS
 Subpackage Core Files`_.  It is recommended to copy files from one of the
-`TribitsExampleProject`_ subpackages in the ``PackageWithSubpackages``
+`TribitsExampleProject`_ subpackages in the ``WithSubpackages``
 package.
 
 To add a new TriBITS subpackage to a top-level package that already has
@@ -4973,7 +5229,7 @@ subpackages, do the following:
    and tests run as new pieces are added.
 
 
-How to Add a new TriBITS TPL
+How to add a new TriBITS TPL
 ----------------------------
 
 In order for an SE package to define a dependency on a new TPL (i.e. one that
@@ -4990,9 +5246,11 @@ To add a new TriBITS TPL, do the following:
    dependency.
 
 2) Create the TPL find module, e.g. ``<repoDir>/tpls/FindTPL<tplName>.cmake``
-   (see `TriBITS TPL`_ and `TRIBITS_TPL_DECLARE_LIBRARIES()`_ for details).
-   List the default required header files and/or libraries that must be
-   provided by the TPL.
+   (see `TriBITS TPL`_ and `TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_
+   for details).  List the default required header files and/or libraries that
+   must be provided by the TPL.  NOTE: This find module can also (optionally)
+   use ``FIND_PACKAGE(<tplName> ...)`` for the default find operation.  For
+   details, see `How to use FIND_PACKAGE() for a TriBITS TPL`_.
 
 3) Add a row for the new TPL to the `<repoDir>/TPLsList.cmake`_ file after any
    TPLs that this new TPL may depend on.
@@ -5022,7 +5280,88 @@ To add a new TriBITS TPL, do the following:
 .. package and refer to it here.
 
 
-How to Add a new TriBITS Repository
+How to use FIND_PACKAGE() for a TriBITS TPL
+-------------------------------------------
+
+When defining a ``FindTPL<tplName>.cmake`` file, it is possible (and
+encouraged) to utilize ``FIND_PACKAGE(<tplName> ...)`` to provide the default
+find operation.  In order for the resulting ``FindTPL<tplName>.cmake`` to
+behave consistently between all the various TriBITS TPLs (and allow the
+standard TriBITS TPL find overrides) one must use the TriBITS function
+`TRIBITS_TPL_ALLOW_PRE_FIND_PACKAGE()`_ in combination with the function
+`TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_.  The basic form of the
+resulting TriBITS TPL module file ``FindTPL<tplName>.cmake`` looks like::
+
+  # First, set up the variables for the (backward-compatible) TriBITS way of
+  # finding <tplName>.  These are used in case FIND_PACKAGE(<tplName> ...) is
+  # not called or does not find <tplName>.  Also, these variables need to be
+  # non-null in order to trigger the right behavior in the function
+  # TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES().
+  SET(REQUIRED_HEADERS <header0> <header1> ...)
+  SET(REQUIRED_LIBS_NAMES <libname0> <libname1> ...)
+  
+  # Second, search for <tplName> components (if allowed) using the standard
+  # FIND_PACKAGE(<tplName> ...).
+  TRIBITS_TPL_ALLOW_PRE_FIND_PACKAGE(<tplName>  <tplName>_ALLOW_PREFIND)
+  IF (<tplName>_ALLOW_PREFIND)
+    MESSAGE("-- Using FIND_PACKAGE(<tplName> ...) ...") 
+    FIND_PACKAGE(<tplName>)
+    IF (<tplName>_FOUND)
+      # Tell TriBITS that we found <tplName> and there no need to look any further!
+      SET(TPL_<tplName>_INCLUDE_DIRS ${<tplName>_INCLUDE_DIRS} CACHE PATH "...")
+      SET(TPL_<tplName>_LIBRARIES ${<tplName>_LIBRARIES} CACHE FILEPATH "...")
+      SET(TPL_<tplName>_LIBRARY_DIRS ${<tplName>_LIBRARY_DIRS} CACHE PATH "...")
+    ENDIF()
+  ENDIF()
+  
+  # Third, call TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()
+  TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( <tplName>
+    REQUIRED_HEADERS ${REQUIRED_HEADERS}
+    REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES}
+    )
+  # NOTE: If FIND_PACKAGE(<tplName> ...) was called and successfully found
+  # <tplName>, then TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES() will use the
+  # already-set variables and just print them out.  This is the final "hook"
+  # into the TriBITS TPL system.
+
+With this approach, the ``FindTPL<tplName>.cmake`` module preserves all of the
+user behavior described in `Enabling support for an optional Third-Party
+Library (TPL)`_ for overriding what TPL componets to look for, where to look
+and finally to override what is actually used.  That is, if the user sets the
+cache variables ``TPL_<tplName>_INCLUDE_DIRS``, ``TPL_<tplName>_LIBRARIES``,
+or ``TPL_<tplName>_LIBRARY_DIRS``, then they should be used without question
+(which is why the ``SET( ... CACHE ...)`` calls in the above example do not
+use ``FORCE``).
+
+If one wants to skip and ignore the standard TriBITS TPL override variables
+``<tplName>_INCLUDE_DIRS``, ``<tplName>_LIBRARY_NAMES``, or
+``<tplName>_LIBRARY_DIRS``, then one can set::
+
+  SET(<tplName>_FORCE_PRE_FIND_PACKAGE TRUE CACHE BOOL
+    "Always first call FIND_PACKAGE(<tplName> ...) unless explicit override")
+
+at the top of the ``FindTPL<tplName>.cmake`` and it will ignore these
+variables.  This avoids name classes with the variables
+``<tplName>_INCLUDE_DIRS`` and ``<tplName>_LIBRARY_DIRS`` which are often used
+in the concrete CMake ``Find<tplName>.cmake`` module files themselves.
+
+For a slightly more complex (but real-life) example, see ``FindTPLHDF5.cmake``
+which is:
+
+.. include:: ../../common_tpls/FindTPLHDF5.cmake
+   :literal:
+
+Note that some specialized ``Find<tplName>.cmake`` modules do more than just
+return a list of include directories and libraries.  Some, like
+``FindQt4.cmake`` also return other variables that are used in downstream
+packages. therefore, in these cases, ``FIND_PACKAGE(Qt4 ...)`` must be called
+on every configure.  In specialized cases such as this, one must write a more
+specialized ``FindTPL<tplName>.cmake`` file and can't use the
+`TRIBITS_TPL_ALLOW_PRE_FIND_PACKAGE()`_ function like shown shown above.  Such
+find modules cannot completely adhere to the standard behavior described in
+`Enabling support for an optional Third-Party Library (TPL)`_.
+
+How to add a new TriBITS Repository
 -----------------------------------
 
 To add a new TriBITS and/ git VC repository to a TriBITS project that already
@@ -5046,31 +5385,223 @@ links.
 .. ToDo: Provide more detail!
 
 
+How to add a new TriBITS SE Package dependency
+----------------------------------------------
+
+It is often the case where one will want to add a new dependency for an
+existing `downstream`_ package to an existing `upstream`_ `TriBITS SE
+Package`_.  This can either be a required dependency or an optional
+dependency.  Here, we will refer to the downstream SE package as
+``<packageName>`` with base directory ``<packageDir>`` and will refer to the
+upstream package as ``<upstreamPackageName>``.
+
+The process for adding a new dependency to an existing upstream SE package is
+as follows:
+
+1) **Add the name of the upstream package to the downstream package's
+   Dependencies.cmake file:** Add ``<upstreamPackagename>`` to the call of
+   `TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()`_ in the downstream package's
+   `<packageDir>/cmake/Dependencies.cmake`_ file.  If this is to be a required
+   library dependency, then ``<upstreamPackagename>`` is added to the
+   ``LIB_REQUIRED_PACKAGES`` argument.  Alternatively, if this is to be an
+   optional library dependency, then ``<upstreamPackagename>`` is added to the
+   ``LIB_OPTIONAL_PACKAGES`` argument.  (For example, see the file
+   ``packages/EpetaExt/cmake/Dependencies.cmake`` file in the
+   `ReducedMockTrilinos`_ project.)  If only the test and/or example sources,
+   and not the package's core library sources, will have the required or
+   optional dependency, then ``<upstreamPackagename>`` is added to the
+   arguments ``TEST_REQUIRED_PACKAGES`` or ``TEST_OPTIONAL_PACKAGES``,
+   respectively.
+
+2) **For an optional dependency, add `HAVE_` preprocessor macro to the
+   package's configured header file:** If this is an optional dependency,
+   typically a C/C++ processor macro will be added to the package's configured
+   `<packageDir>/cmake/<packageName>_config.h.in`_ file using the line::
+
+     #cmakedefine HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_PACKAGE_NAME_UC>
+
+   (see `HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_PACKAGE_NAME_UC>`_.)
+
+   .. _Warning, do not add optional defines for tests/examples to configured header files:
+
+   **Warning, do not add optional defines for tests/examples to configured
+   header files:** If this is a test-only and/or example-only dependency then
+   please do **not** add a ``#cmakedefine`` to the package's core
+   `<packageDir>/cmake/<packageName>_config.h.in`_ file.  Instead, add the
+   ``#cmakedefine`` line to a configured header that is only included by
+   sources for the tests/examples or just add a define on the compiler command
+   line (see the ``DEFINES`` argument to `TRIBITS_ADD_LIBRARY()`_ and
+   `TRIBITS_ADD_EXECUTABLE()`_, but see the warning about problems with
+   ``ADD_DEFINITIONS()`` in `Miscellaneous Notes (TRIBITS_ADD_LIBRARY())`_).
+   We don't want the package's header files to change or libraries to have to
+   be rebuilt if tests/examples get enabled or disabled.  Otherwise, the
+   `TriBITS Package-by-Package CTest/Dash Driver`_ process will result in
+   unnecessary rebuilds of software over and over again.
+
+3) **Use the features of the upstream package in the source files of the
+   downstream package sources and/or tests/examples:** Usage of the features
+   of the upstream package ``<upstreamPackageName>`` in the downstream package
+   ``<packageName>`` will typically involve adding ``#include
+   <upstreamPackageName>_<fileName>`` in the package's C/C++ source (or
+   test/example) files (or the equivalent in Fortran).  If it is an optional
+   dependency, then these includes will typically be protected using
+   preprocessor ifdefs, for example, as::
+
+     #include "<packageName>_config.h"
+
+     #if HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_PACKAGE_NAME_UC>
+     #  include "<upstreamPackageName>_<fileName>"
+     #endif 
+
+  .. ToDo: Find an example to point to in TribitsExampleProject.
+  
+NOTE: TriBITS will automatically add the include directories for the upstream
+package to the compile lines for the downstream package source builds and will
+add the libraries for the upstream package to the link lines to the downstream
+package library and executable links.  See documentation in the functions
+`TRIBITS_ADD_LIBRARY()`_ and `TRIBITS_ADD_EXECUTABLE()`_, and the ``DEPLIBS``
+argument to these functions, for more details.
+
+
+How to add a new TriBITS TPL dependency
+---------------------------------------
+
+It is often the case where one will want to add a new dependency for an
+existing `downstream`_ package to an existing `upstream`_ `TriBITS TPL`_.
+This can either be a required dependency or an optional dependency.  Here, we
+will refer to the downstream SE package as ``<packageName>`` with base
+directory ``<packageDir>`` and will refer to the upstream TPL as
+``<tplName>``.
+
+The process for adding a new dependency to an existing upstream TPL is as
+follows:
+
+1) **Add the name of the upstream TPL to the downstream package's
+   Dependencies.cmake file:** Add ``<tplName>`` to the call of
+   `TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()`_ in the downstream package's
+   `<packageDir>/cmake/Dependencies.cmake`_ file.  If this is to be a required
+   library dependency, then ``<tplName>`` is added to the
+   ``LIB_REQUIRED_TPLs`` argument.  Alternatively, if this is to be an
+   optional library dependency, then ``<tplName>`` is added to the
+   ``LIB_OPTIONAL_TPL`` argument.  (For example, see the file
+   ``packages/Teuchos/cmake/Dependencies.cmake`` file in the
+   `ReducedMockTrilinos`_ project.)  If only the test and/or example sources,
+   and not the package's core library sources, will have the required or
+   optional dependency, then ``<tplName>`` is added to the arguments
+   ``TEST_REQUIRED_TPLs`` or ``TEST_OPTIONAL_TPLS``, respectively.
+
+2) **For an optional dependency, add `HAVE_` preprocessor macro to the
+   package's configured header file:** If this is an optional dependency,
+   typically a C/C++ processor macro will be added to the package's configured
+   `<packageDir>/cmake/<packageName>_config.h.in`_ file using the line::
+
+     #cmakedefine HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_TPL_NAME_UC>
+
+   (see `HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_TPL_NAME_UC>`_.)
+
+   **WARNING:** If this is a test-only and/or example-only dependency then
+   please do **not** add a ``#cmakedefine`` to the package's core
+   `<packageDir>/cmake/<packageName>_config.h.in`_ file.  See `Warning, do not
+   add optional defines for tests/examples to configured header files`_.
+
+3) **Use the features of the upstream TPL in the source files of the
+   downstream package sources and/or tests/examples:** Usage of the features
+   of the upstream package ``<tplName>`` in the downstream package
+   ``<packageName>`` will typically involve adding ``#include
+   <tplName>_<fileName>`` in the package's C/C++ source (or test/example)
+   files (or the equivalent in Fortran).  If it is an optional dependency,
+   then these includes will typically be protected using preprocessor ifdefs,
+   for example, as::
+
+     #include "<packageName>_config.h"
+
+     #if HAVE_<PACKAGE_NAME_UC>_<OPTIONAL_DEP_TPL_NAME_UC>
+     #  include "<upstreamPackageName>_<fileName>"
+     #endif 
+
+  .. ToDo: Find an example to point to in TribitsExampleProject.
+  
+NOTE: TriBITS will automatically add the include directories for the upstream
+TPL to the compile lines for the downstream package source builds and will add
+the libraries for the upstream TPL to the link lines to the downstream package
+library and executable links.  See documentation in the functions
+`TRIBITS_ADD_LIBRARY()`_ and `TRIBITS_ADD_EXECUTABLE()`_, and the ``DEPLIBS``
+argument to these functions, for more details.
+
+
 How to insert a package into an upstream repo
 ---------------------------------------------
 
 Sometimes it is desired to insert a package from a downstream VC repo into an
-upstream repo in order for one or more packages in the upstream repo to define
-a dependency on that package.  While TriBITS does not provide direct support
-for doing this, it is easy to set up.  For example, say you want to add the
-package ``PackageFromDownstreamRepo`` who's source is provided in a downstream
-VC repo (i.e. listed later in the
-`<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file).  This was done in
-several different TriBITS projects at one point such as Trilinos (with Dakota
-wrapped in the TriKota package) and in the MPACT project (with one of their
-sensitive packages).  There are a few different ways to accomplish this and
-choosing an approach depends on a few details.  One issue is that the
-downstream repo and the extra package may be allowed to be missing.  If so,
-then all of the packages that define a dependency on the potentially missing
-package must declare that the package might be missing by calling
-`TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`_ in the SE package's
-``Dependencies.cmake`` file.
+upstream `TriBITS Repository`_ in order for one or more packages in the
+upstream repo to define a dependency on that package.  The way this is
+supported in TriBITS is to just list the inserted package into the
+``PackagesList.cmake`` file of the upstream TriBITS repo after the packages it
+depends on and before the packages that will use it then call the
+`TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`_ function to allow the package to
+be missing.  This is demonstrated in `TribitsExampleProject`_ with the package
+``InsertedPkg`` which is **not** included in the default
+``TribitsExampleProject`` source tree.  The
+`TribitsExampleProject`_/``PackagesList.cmake`` file looks like:
 
-.. ToDo: Create an example where a package is inserted into
-.. TribitsExampleProject and is listed as an extra repo in an
-.. ExtraRepositoriesList.cmake file.  To test and demonstrate this example we
-.. would have to copy the TribitsExampleProject source into the build tree,
-.. then copy in the extra package source, then configure the project.
+.. include:: ../../examples/TribitsExampleProject/PackagesList.cmake
+   :literal:
+
+In this example, the subpackage ``InsertedPkg`` has a required dependency on
+``SimpleCxx`` and ``WithSubpackagesB`` has an optional dependency on
+``InsertedPkg``.  Therefore, the inserted package ``InsertedPkg`` has upstream
+and downstream dependencies.
+
+What the function ``TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`` does is to
+tell TriBITS to treat ``InsertedPkg`` the same as any other package if the
+directory ``TribitsExampleProject/InsertedPkg`` exists and to otherwise
+complete ignore the package ``InsertedPkg`` if the source for the package does
+not exist.  In addition, TriBITS will automatically disable of all downstream
+package dependencies for the missing package.
+
+The way one would set up ``TribitsExampleProject`` to enable ``InsertedPkg``,
+if these were in separate VC (e.g. git) repos for example, would be to do::
+
+  $ git clone <some-url-base>/TribitsExampleProject
+  $ cd TribitsExampleProject
+  $ git clone <some-other-url-base>/ExteranlPkg
+  $ echo /InsertedPkg/ >> .git/info/excludes
+
+Then, when you configure ``TribitsExampleProject``, the package
+``InsertedPkg`` would automatically appear and could then be enabled or
+disabled like any other TriBITS package.  The TriBITS test
+``Tribits_TribitsExampleProject_InsertedPkg`` demonstrates this.
+
+Assuming that one would put the (new) external package in a separate VC repo,
+one would perform the following steps:
+
+1) Pick a name for the new inserted external package ``<insertedPackageName>``
+   (see `Globally unique TriBITS package names`_).  (NOTE: The external
+   package may already exist in which case the name would already be
+   selected).
+
+2) Create a new VC repo containing the new package ``<insertedPackageName>``
+   or add it to an existing extra VC repo. (Or, add the new package to an
+   existing downstream repo but don't add it to the ``PackagesList.cmake``
+   file to downstream repo.  That would define the package twice!)
+
+3) Clone the downstream VC repo under the upstream TriBITS repository.  (This
+   is currently needed since TriBITS only allows package dirs to be contained
+   under the repository directory.)
+
+4) Insert the package into the `<repoDir>/PackagesList.cmake`_ file as
+   described in `How to add a new TriBITS Package`_ except one must also call
+   ``TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(<insertedPackageName>)`` as
+   described above.
+
+5) Flesh out the new package and use it in downstream SE packages just like it
+   was any other package.  But note that any downstream SE package that has a
+   required dependency on ``<insertedPackageName>`` will always be hard
+   disabled when the source for ``<insertedPackageName>`` is missing.
+
+6) When configuring and building to get the package working, add
+   ``-D<insertedPackageName>_ALLOW_MISSING_EXTERNAL_PACKAGE=FALSE`` so that
+   TriBITS will catch mistakes in specifying the package directory.
 
 
 Additional Topics
@@ -5081,95 +5612,141 @@ discussed.  These features and topics are either not considered primary
 features of TriBITS (but can be very useful in many situations) or don't neatly
 fit into one of the other sections.
 
+TriBITS Repository Contents
+---------------------------
+
+The TriBITS git repository is organized as a `TriBITS Project`_, `TriBITS
+Repository`_, and `TriBITS Package`_ all in the same base directory.  The base
+contents are described in the file::
+
+   TriBITS/README.DIRECTORY_CONTENTS.rst
+
+The part of TriBITS that is installed or snapshotted in contained in the
+subdirectory `TriBITS/tribits/`_ and is described in the following section.
+
+.. include:: TriBITS.README.DIRECTORY_CONTENTS.rst
+
+.. _TriBITS/tribits/:
+
+.. include:: ../../README.DIRECTORY_CONTENTS.rst
+
 
 TriBITS System Project Dependencies
 -----------------------------------
 
-The basic TriBITS system itself which is used to configure, built, test,
-create tarballs, and install software has no dependencies other than a basic
-installation of CMake (which typically includes the executables ``cmake``,
-``ctest``, and ``cpack``).  Great effort has been expended to implement all of
-the core functionality of TriBITS just using raw CMake.  That means that
-anyone who needs to configure, build, and install software that uses TriBITS
-just needs a compatible CMake implementation.  TriBITS is purposefully
-maintained to work with older versions of CMake (as well as newer versions).
-At the time of this writing, the minimum required version of CMake needed to
-use TriBITS is CMake 2.8.1 (released in March 2010, see `CMake Release Wiki
-<http://www.cmake.org/Wiki/CMake_Released_Versions>`_).  CMake is becoming
-iniquitous enough that many clients will already have a current-enough version
-of CMake installed by default on their systems and will therefore not need to
-download or install any extra software when building and installing a project
-that uses TriBITS (assuming the necessary compilers etc. required by the
-project are also installed).  If a current-enough version of CMake is not
-installed on a given system, it is easy to download the source code and all it
-needs is a basic C++ compiler to build and install.
+The core TriBITS system itself (see ``tribts/core/`` in `TriBITS/tribits/`_)
+which is used to configure, built, test, create tarballs, and install software
+has no dependencies other than a basic installation of CMake (which typically
+includes the executables ``cmake``, ``ctest``, and ``cpack``).  Great effort
+has been expended to implement all of this core functionality of TriBITS just
+using raw CMake.  That means that anyone who needs to configure, build, and
+install software that uses TriBITS just needs a compatible CMake
+implementation.  CMake is becoming iniquitous enough that many machines will
+already have a current-enough version of CMake installed by default on their
+systems and therefore no one will need to download or install any extra
+software when building and installing a project that uses TriBITS (assuming
+the necessary compilers etc. required by the project are also installed).  If
+a current-enough version of CMake is not installed on a given system, it is
+easy to download the source code and all it needs is a basic C++ compiler to
+build and install.
 
 However, note that a specific TriBITS project is free to use any newer CMake
 features it wants and therefore these projects will require newer versions of
 CMake than what is required by TriBITS (see discussion of
 ``CMAKE_MINIMUM_REQUIRED()`` in `<projectDir>/CMakeLists.txt`_).  But also
 note that specific TriBITS projects and packages will also require additional
-tools like compilers, Python, Perl, or many other such dependencies.  It is
-just that TriBITS itself does not require any of these in order to perform the
-basic configure, build, test, and install of software.  The goal of TriBITS is
-not to make the portability of software that uses it any worse than it already
-is but instead to make it easier in most cases (that after all is the whole
-goal of CMake).
+tools like compilers, Python (see `Python Support`_), Perl, or many other such
+dependencies.  It is just that TriBITS itself does not require any of these in
+order to perform the basic configure, build, test, and install of software.
+The goal of TriBITS is not to make the portability of software that uses it
+any worse than it already is but instead to make it easier in most cases (that
+after all is the whole goal of CMake).
 
-While the core TriBITS functionality to configure, build, test, and install
+While the TriBITS Core functionality to configure, build, test, and install
 software is written using only raw CMake, the more sophisticated development
 tools needed to implement the full TriBITS development environment require
-Python 2.4 (or higher, but not Python 3.x).  Python is needed for tools like
-`checkin-test.py`_ and `egdist`_.  In addition, these python tools are used in
-`TRIBITS_CTEST_DRIVER()`_ to drive automated testing and submits to CDash.
-Also not that git is the chosen version control tool for the TriBITS software
-development tools and all the VC-related functionality in TriBITS.  But none
-of this is required for doing the most basic building, testing, or
-installation of a project using TriBITS.
+Python 2.4 (or higher, but not Python 3.x) (see `Python Support`_).  Python is
+needed for tools like `checkin-test.py`_ and `gitdist`_.  In addition, these
+python tools are used in `TRIBITS_CTEST_DRIVER()`_ to drive automated testing
+and submits to CDash.  Also note that ``git`` is the chosen version control
+tool for the TriBITS software development tools and all the VC-related
+functionality in TriBITS.  But none of this is required for doing the most
+basic building, testing, or installation of a project using TriBITS Core.
 
 
-Project-Specific Build Quick Reference
---------------------------------------
+Python Support
+--------------
+
+TriBITS Core does not require anything other than raw CMake.  However, Python
+Utils, TriBITS CI Support, and other extended TriBITS components require
+Python.  These extra TriBITS tools only require Python 2.4+.  By default, when
+a TriBITS project starts to configure using CMake, it will try to find Python
+2.4+ on the system (see `Full Processing of TriBITS Project Files`_).  If
+Python is found, it will set the global cache variable ``PYTHON_EXECUTABLE``.
+If it is not found, then it will print a warning and ``PYTHON_EXECUTABLE``
+will be empty.  With this default behavior, if Python is found, then the
+TriBITS project can use it.  Otherwise, it can do without it.
+
+While the default behavior for finding Python described above is useful for
+many TriBITS project (such as Trilinos), some TriBITS projects need different
+behavior such as:
+
+1. The TriBITS project may not ever use Python so there is no need to look for
+   it at all.  In this case, the TriBITS project would set
+   `${PROJECT_NAME}_USES_PYTHON`_ to ``FALSE``.
+
+2. Some TriBITS projects require Python and should not even configure if it
+   can't be found.  In this case, the TriBITS project would set
+   `${PROJECT_NAME}_REQUIRES_PYTHON`_ to ``TRUE``.
+
+3. Some TriBITS projects may require a version of Python more recent than 2.4.
+   In this case, the TriBITS project would set `PythonInterp_FIND_VERSION`_ to
+   some value higer than ``2.4``.  For example, may newer systems have Python
+   2.6.6 or higher versions installed by default and projects developed on
+   such a system typically requires this version or higher.
+
+
+Project-Specific Build Reference
+--------------------------------
 
 If a project that uses TriBITS is going to have a significant user base that
 will configure, build, and test the project, then having some documentation
 that explains how to do this would be useful.  For this purpose, TriBITS
-provides a mechanism to quickly create a project-specific build quick
-reference document in restructured text (RST) format and with HTML and
-LaTeX/PDF outputs.  This document are generally created in the base project
-source tree and given then name ``<Project>BuildQuickRef.[rst,html,pdf]``.
-This document consists of two parts.  One part is a generic template
-document::
+provides a mechanism to quickly create a project-specific build reference
+document in restructured text (RST) format and with HTML and LaTeX/PDF
+outputs.  This document are generally created in the base project source tree
+and given then name ``<Project>BuildReference.[rst,html,pdf]``.  This document
+consists of two parts.  One part is a generic template document::
 
-  tribits/doc/build_quick_ref/TribitsBuildQuickRefBody.rst
+  tribits/doc/TribitsBuildReferenceBody.rst
 
 provided in the TriBITS source tree that uses the place-holder ``<Project>``
 for the for the real project name.  The second part is a project-specific
 template file::
 
-  <projectDir>/cmake/<Project>BuildQuickRefTemplate.rst
+  <projectDir>/cmake/<Project>BuildReferenceTemplate.rst
 
 which provides the outer RST document (with title, authors, abstract,
 introduction, other introductory sections).  From these two files, the
 script::
 
-  tribits/doc/build_quick_ref/create-project-build-quickref.py
+  tribits/doc/build_ref/create-project-build-quickref.py
 
-is used to replace ``<Project>`` in the ``TribitsBuildQuickRefBody.rst`` file
+is used to replace ``<Project>`` in the ``TribitsBuildReferenceBody.rst`` file
 with the real project name (read from the project's ``ProjectName.cmake`` file
 by default) and then generates the read-only files::
 
   <projectDir>/
-    <Project>BuildQuickRef.rst
-    <Project>BuildQuickRef.html
-    <Project>BuildQuickRef.pdf
+    <Project>BuildReference.rst
+    <Project>BuildReference.html
+    <Project>BuildReference.pdf
 
 For a simple example of this, see::
 
   tribits/doc/examples/TribitsExampleProject/cmake/create-build-quickref.sh
 
 A project-independent version of this file is provided in the
-`TribitsBuildQuickRef`_.[rst,html,pdf] which is referred to many times in this
+`TribitsBuildReference`_.[rst,html,pdf] which is referred to many times in this
 developers guide.
 
 
@@ -5450,8 +6027,8 @@ git integration server ``url4.gov``.  The state where the TriBITS packages in
 the three different git/TriBITS repos in the master branch on ``url4.gov`` all
 work together correctly constitutes the initial condition for the ACI process
 described below.  From that initial condition, the ACI processes ensures that
-updates the the master branches for the git/TriBITS repos on ``url4.gov`` do
-not break any builds or tests of the integrated software.
+updates the master branches for the git/TriBITS repos on ``url4.gov`` do not
+break any builds or tests of the integrated software.
 
 In order to describe how to set up an ACI process using the
 ``checkin-test.py`` script, the following subsections will focus on the update
@@ -5475,14 +6052,14 @@ integration server url4.gov as follows (all of which become 'origin')::
 where, ``SYNC_BASE_DIR=~/sync_base_dir`` for example, which must already be
 created.
 
-An ``.egdist`` file can be created to aid in multi-repo git commands using the
-tool `egdist`_.  This file is located in the ``BaseProj`` directory and can be
+An ``.gitdist`` file can be created to aid in multi-repo git commands using the
+tool `gitdist`_.  This file is located in the ``BaseProj`` directory and can be
 created as::
 
   $ cd $SYNC_BASE_DIR/BaseProj
-  $ echo ExtraRepo1 > .egdist
-  $ echo ExtraRepo2 >> .egdist
-  $ cat .egdist
+  $ echo ExtraRepo1 > .gitdist
+  $ echo ExtraRepo2 >> .gitdist
+  $ cat .gitdist
   ExtraRepo1
   ExtraRepo2
 
@@ -5504,7 +6081,7 @@ Next, the remotes that define the integration pattern are created as follows::
 This gives the remotes::
 
   $ cd $SYNC_BASE_DIR/BaseProj
-  $ egdist remote -v | grep -v push | grep -v "^$"
+  $ gitdist remote -v | grep -v push | grep -v "^$"
   *** Base Git Repo: BaseProj
   origin	        url4.gov:/git/BaseProj (fetch)
   integrate-from	url4.gov:/git/BaseProj (fetch)
@@ -5541,7 +6118,7 @@ continuously in a loop (but that is possible as well but is not documented
 here).
 
 NOTE: Other build directory structures are possible, it all depends how one
-writes the the ``checkin-test.py`` wrapper scripts but the above directory
+writes the ``checkin-test.py`` wrapper scripts but the above directory
 structure is fairly standard in the usage of the ``checkin-test.py`` script.
 
 
@@ -5676,7 +6253,7 @@ packages have changed files in the ``ExtraRepo1`` git/TriBITS extra
 repository.  This is the preferred way to go since any affected packages will
 automatically be enabled as determined by the TriBITS package dependency
 structure and therefore this driver script will require no modifications if
-the the dependency structure changes over time.  However, there are cases and
+the dependency structure changes over time.  However, there are cases and
 various reasons where the exact list of packages to be tested (or not tested)
 should be specified using the ``--enable-packages`` option (or the
 ``--disable-packages`` option, respectively).  However, these should not be
@@ -5833,15 +6410,16 @@ The `TriBITS Package-by-Package CTest/Dash Driver`_ system using the
 Regulated Backward Compatibility and Deprecated Code
 ----------------------------------------------------
 
-The motivation and ideas behind regulated backward compatibility and
+The motivation and ideas behind `Regulated Backward Compatibility` and
 deprecated code are described in the `TriBITS Lifecycle Model`_ document.
-Here, the details of the implementation in the TriBITS system are given and
-how transitions between non-backward compatible versions is accomplished.
+Here, the details of the implementation in TriBITS are given and how
+transitions between non-backward compatible major versions is accomplished.
 
-This section describes the process to use for deprecating code within a major
-version sequence and finally removing deprecated code when transitioning to a
-new the major repository version X to X+1 for the TriBITS version numbering
-scheme X.Y.Z.  This information is given as a process with different phases.
+This section describes the process for deprecating code within a major
+backward-compatible version sequence and finally removing deprecated code when
+transitioning to a new major version X to X+1 for the semantic versioning
+numbering scheme X.Y.Z.  This information is given as a process with different
+phases.
 
 The processing for managing deprecated code is as follows and more details are
 given below:
@@ -5956,11 +6534,33 @@ example, one would deprecate standard C/C++ constructs for the package
   // Deprecate a typedef
   SOMEPACKAGE_DEPRECATED typedef someTypeDef int;
 
-The GCC and Intel C and C++ compilers both support adding extra attributes
-including the ``__deprecated__`` attribute.  When this attribute is applied to
-a given C/C++ entity, it produces a compiler warning that can be searched for
-in the compiler output and elevated to an error (when ``-Werror`` is also
-passed to the compiler).
+The GCC (version 3.1 and newer) and Intel C and C++ compilers both support
+adding extra attributes including the ``__deprecated__`` attribute.  When this
+attribute is applied to a given C/C++ entity, it produces a compiler warning
+that can be searched for in the compiler output and elevated to an error (when
+``-Werror`` is also passed to the compiler).
+
+In addition to the basic deprecated warning, one can also add an optional
+deprecated warning message using the macro
+``<PACKAGE_UCNAME>_DEPRECATED_MSG()``.  For example, if a new function is
+replacing an old function, one might use::
+
+  // Deprecated old unsafe function taking raw pointers
+  SOMEPACKAGE_DEPRECATED_MSG(
+    "Please use the safe someFunc(const Ptr<const std::string>&) instead!")
+  void someFunc(const std::string *str);
+
+  // New version take does not take raw pointers (and is therefore safer)
+  void someFunc(const Teuchos::Ptr<const std::string> &str);
+
+Then, if user code calls the version ``someFunc(const std::string*)`` they
+will get the string::
+
+  "Please use the safe someFunc(const Ptr<const std::string>&) instead!"
+
+printed as well by the compiler.  Note that the custom message will only be
+printed for GCC versions 4.5 and newer.  If an older version of GCC is used,
+then the message string is ignored.
 
 
 Deprecating preprocessor macros
@@ -6226,19 +6826,29 @@ Wrapping Externally Configured/Built Software
 It is possible to take an external piece of software that uses any arbitrary
 build system and wrap it as a TriBITS package and have it integrate in with
 the package dependency infrastructure.  The `TribitsExampleProject`_ package
-``WrapExternal`` shows how this can be done.
+``WrapExternal`` shows how this can be done.  Support for this in TriBITS is
+slowly evolving but some key TriBITS features that have been added to support
+the arbitrary case include:
 
-.. ToDo: Show this this is done in detail once TriBITS has nice support for
-.. this and this example looks cleaner.
+* `TRIBITS_DETERMINE_IF_CURRENT_PACKAGE_NEEDS_REBUILT()`_: Uses brute-force
+  searches for recently modified files in upstream SE packages to determine if
+  the external piece of software needs to be rebuilt.
 
-While it is possible to wrap an externally configured and built piece of
-software as a TriBITS package, is is usually must better to just go ahead and
+* `TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()`_: Write an export
+  makefile or a ``XXXConfig.cmake`` file for usage by the wrapped externally
+  configured and built software.
+
+.. ToDo: Show how this is done in detail once TriBITS has nice support for
+.. external software and the WrapExternal example looks cleaner.
+
+While it is possible to wrap nearly any externally configured and built piece
+of software as a TriBITS package, in most cases, it is usually better to just
 create a TriBITS build system for the software.  For projects that use a raw
-CMake build system, a TriBITS build can be created side-by-side with the
-existing CMake raw build using a number of approaches. The common approach
+CMake build system, a TriBITS build system can be created side-by-side with
+the existing raw CMake build using a number of approaches. The common approach
 that is not too invasive is to create a ``CMakeLists.tribits.txt`` file along
-side every native ``CMakeLists.txt`` file and have the native
-``CMakeLists.txt`` file defined like::
+side every native ``CMakeLists.txt`` file in the external software project and
+have the native ``CMakeLists.txt`` file defined like::
 
   IF (DOING_A_TRIBITS_BUILD)
     INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.tribits.txt")
@@ -6247,64 +6857,100 @@ side every native ``CMakeLists.txt`` file and have the native
 
   # Rest of native CMakeLists.txt file ...
 
-Experience from the CASL VERA project showed that, overall, there is less
-hassle and less work and better portability when creating a native TriBITS
+Experience from the CASL VERA project has shown that, overall, there is less
+hassle, less work, and better portability when creating a native TriBITS
 build, even if it is a secondary build system for a given piece of software.
+
+The decision whether to just wrap the build system for the existing software
+or to create a (secondary) TriBITS build system for it depends on a number of
+factors.
+
+Note that while it is generally recommended to create a TriBITS build for an
+existing piece of software, it is generally not recommended with switch over
+all of the tests to use CTest (unless the existing software is going to ditch
+their current test driver and reporting system).  Instead, the external
+software's native test system can just be called by the wrapped TriBITS
+package in one or more CTest tests.
 
 
 TriBITS directory snapshotting
 ------------------------------
 
-Some TriBITS projects choose to snapshot the ``tribits`` directory source tree
-into their project's source tree, typically under
-`<projectDir>/cmake/tribits/`_.  The ``tribits`` git source tree contains a
-symbolic link to the the tool `snapshot-dir.py`_ that allows one to update the
-snapshot of the TriBITS source tree as simply as::
+Some TriBITS projects choose to snapshot the `TriBITS/tribits/`_ directory
+source tree into their project's source tree, typically under
+`<projectDir>/cmake/tribits/`_.  The independent ``TriBITS/tribts/`` source
+tree contains the script ``snapshot_tribits.py`` (calls `snapshot-dir.py`_)
+that allows one to update the snapshot of the TriBITS source tree as simply
+as::
 
   $ cd <projectDir>/cmake/tribits/
-  $ <some-base-dir>/tribits/snapshot-dir.py
+  $ <some-base-dir>/TriBITS/tribits/snapshot_tribits.py
 
 This will create a git commit in the local ``<projectDir>/`` git repo that
 looks like::
 
-    Automatic snapshot commit
+    Automatic snapshot commit from tribits at f8c1682
     
-    origin: '<some-url-base>/tribits'
+    Origin repo remote tracking branch: 'casl-dev-collab/tribits_reorg_26'
+    Origin repo remote repo URL: 'casl-dev-collab = git@casl-dev:collaboration/TriBITS'
     
     At commit:
     
-    a2e0ab8 Removing bad global cache var messing up multiple configures
-    Author: Roscoe A. Bartlett <some-email-address>
-    Date: Wed Mar 26 18:22:08 2014 -0400
+    f8c1682 Assert TriBITS min CMake version in TriBITS itself
+    Author: Roscoe A. Bartlett <bartlettra@ornl.gov>
+    Date: Fri Dec 5 05:40:49 2014 -0500
 
 This, of course, assumes that ``<projectDir>/`` is a local git repo (or is in
 local git repo).  If that is not the case, then one cannot use the script
-``snapshot-dir.py``.
+``snapshot_tribits.py`` or must use it with the ``--skip-commit`` option.
 
 See `snapshot-dir.py --help`_ for more details.  Note the guidance on using a
 different branch for the snapshot sync followed by a merge.  This allows for
 one to maintain local changes to TriBITS and use git to manage the merges.
+However, this will increase the changes of merge conflicts so one should
+consider just directly snapshottting into the master branch to avoid merge
+conflicts.
 
 
 TriBITS Development Toolset
 ---------------------------
 
 Most TriBITS projects need git, a compiler (e.g. GCC), MPI, and a number of
-other standard TPLs and tools in order to develop on and test the project
-code.  To this end, TriBITS contains some helper scripts for downloading,
-configuring, building, and installing packages like git, cmake, GCC, OpenMPI,
-and others needed to set up a development environment for a typical
-computational science software project.  These tools are used to set up
-development environments on new machines for projects like Trilinos and CASL
-VERA.  Scripts with names like ``install-gcc.py`` are defined which pull
+other standard TPLs and other tools in order to develop on and test the
+project code.  To this end, TriBITS contains some helper scripts for
+downloading, configuring, building, and installing packages like git, cmake,
+GCC, MPICH, and others needed to set up a development environment for a
+typical computational science software project.  These tools are used to set
+up development environments on new machines for projects like Trilinos and
+CASL VERA.  Scripts with names like ``install-gcc.py`` are defined which pull
 sources from public git repos then configure, build, and install into
 specified installation directories.
 
-.. ToDo: Discuss the installation scripts and github repos for GCC, OpenMPI,
-.. CMake, etc.
+.. _install_devtools.py:
 
-.. ToDo: Move install scripts to tribits/dev_toolset/ and document specific
-.. scripts here and even a top-level driver install script.
+The script **install_devtools.py** is provided in the directory::
+
+  tribits/devtools_install/
+
+To use this script, one just needs to create some scratch directory like::
+
+  $ mkdir scratch
+  $ cd scratch/
+
+then install the tools using, for example::
+
+  $ install_devtools.py --install-dir=~/install/tribits_devtools \
+    --parallel=16 --do-all
+
+Then to access installed development environment, one just needs to source the
+script::
+
+  ~/install/tribits_devtools/load_dev_env.sh
+
+and then the installed versions of GCC, MPICH, CMake, and `gitdist`_ are
+placed in one's path.
+
+See `install_devtools.py --help`_ for more details.
 
 
 References
@@ -6325,6 +6971,9 @@ Engineering for Computational Science and Engineering, 2009.  http://web.ornl.go
 
 *SCALE: A Comprehensive Modeling and Simulation Suite for Nuclear Safety Analysis and Design*, ORNL/TM-2005/39, Version 6.1, Oak Ridge National Laboratory, Oak Ridge, Tennessee, June 2011. Available from Radiation Safety Information Computational Center at Oak Ridge National Laboratory as CCC-785.  http://scale.ornl.gov/
 
+.. _LiveV:
+
+*LiveV*  https://github.com/lifev/cmake
 
 TriBITS Detailed Reference Documentation
 ========================================
@@ -6380,32 +7029,58 @@ be overridden by the user when calling ``cmake`` in a number of ways.
 
 Most of these global options that can be overridden externally by setting the
 cache variable ``${PROJECT_NAME}_<SOME_OPTION>`` should be documented in the
-`Project-Specific Build Quick Reference`_ document.  A generic version of this
-document is found in `TribitsBuildQuickRef`_.  Some of the more unusual
+`Project-Specific Build Reference`_ document.  A generic version of this
+document is found in `TribitsBuildReference`_.  Some of the more unusual
 options that might only be of interest to developers mentioned below may not
-be documented in `TribitsBuildQuickRef`_.
+be documented in `TribitsBuildReference`_.
 
 The global project-level TriBITS options for which defaults can be provided by
 a given TriBITS project are:
 
+* `${PROJECT_NAME}_CPACK_SOURCE_GENERATOR`_
 * `${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES`_
-* `${PROJECT_NAME}_ENABLE_C`_
-* `${PROJECT_NAME}_ENABLE_CXX`_
-* `${PROJECT_NAME}_ENABLE_CXX11`_
-* `${PROJECT_NAME}_ENABLE_Fortran`_
-* `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_
-* `${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES`_
-* `${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES`_
-* `${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES`_
 * `${PROJECT_NAME}_ELEVATE_ST_TO_PT`_
 * `${PROJECT_NAME}_ENABLE_CPACK_PACKAGING`_
-* `${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION`_
-* `${PROJECT_NAME}_CPACK_SOURCE_GENERATOR`_
-* `${PROJECT_NAME}_TEST_CATEGORIES`_
+* `${PROJECT_NAME}_ENABLE_CXX11`_
+* `${PROJECT_NAME}_ENABLE_CXX`_
+* `${PROJECT_NAME}_ENABLE_C`_
 * `${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE`_
+* `${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES`_
+* `${PROJECT_NAME}_ENABLE_Fortran`_
+* `${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES`_
+* `${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION`_
+* `${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES`_
+* `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_
+* `${PROJECT_NAME}_REQUIRES_PYTHON`_
+* `${PROJECT_NAME}_SHOW_TEST_START_END_DATE_TIME`_
+* `${PROJECT_NAME}_TEST_CATEGORIES`_
+* `${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS`_
+* `${PROJECT_NAME}_TRACE_ADD_TEST`_
+* `${PROJECT_NAME}_USE_GNUINSTALLDIRS`_
+* `${PROJECT_NAME}_USES_PYTHON`_
 * `MPI_EXEC_MAX_NUMPROCS`_
+* `PythonInterp_FIND_VERSION`_
+
 
 These options are described below.
+
+.. _${PROJECT_NAME}_CPACK_SOURCE_GENERATOR:
+
+**${PROJECT_NAME}_CPACK_SOURCE_GENERATOR**
+
+  The variable ``${PROJECT_NAME}_CPACK_SOURCE_GENERATOR`` determines the CPack
+  source generation types that are created when the ``package_source`` target
+  is run.  The TriBITS default is set to ``TGZ``.  However, this default can
+  be overridden by setting, for example::
+
+    SET(${PROJECT_NAME}_CPACK_SOURCE_GENERATOR_DEFAULT "TGZ;TBZ2")
+
+  This variable should generally be set in the file::
+
+     <projectDir>/cmake/CallbackDefineProjectPackaging.cmake
+
+  instead of in the base-level ``CMakeLists.txt`` file so that it goes along
+  with rest of the project-specific CPack packaging options.
 
 .. _${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES:
 
@@ -6416,154 +7091,10 @@ These options are described below.
   `upstream`_ required packages or TPLs will be disabled.  If
   `${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=OFF`_, then an
   configure error will occur.  For more details also see
-  `TribitsBuildQuickRef`_ and `Disables trump enables where there is a
+  `TribitsBuildReference`_ and `Disables trump enables where there is a
   conflict`_.  A project can define a different default value by setting::
   
     SET(${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES_DEFAULT FALSE)
-
-.. _${PROJECT_NAME}_ENABLE_C:
-  
-**${PROJECT_NAME}_ENABLE_C**
-  
-  If ``${PROJECT_NAME}_ENABLE_C`` is ``ON``, then C language support for the
-  project will be enabled and the C compiler must be found.  By default,
-  TriBITS sets this to ``ON`` for all systems.  A project never requires C can
-  set this to off by default by setting:
-  
-    SET(${PROJECT_NAME}_ENABLE_C_DEFAULT FALSE)
-  
-  If a project does not have any native C code a good default would be::
-  
-    SET(${PROJECT_NAME}_ENABLE_C_DEFAULT FALSE)
-  
-  NOTE: It is usually not a good idea to always force off C, or any compiler,
-  because extra repositories and packages might be added by someone that might
-  require the compiler and we don't want to unnecessarily limit the generality
-  of a given TriBITS build.  Setting the default for all platforms should be
-  sufficient.
-
-.. _${PROJECT_NAME}_ENABLE_CXX:
-  
-**${PROJECT_NAME}_ENABLE_CXX**
-  
-  If ``${PROJECT_NAME}_ENABLE_CXX`` is ``ON``, then C++ language support for
-  the project will be enabled and the C++ compiler must be found.  By default,
-  TriBITS sets this to ``ON`` for all systems.  A project never requires C++
-  can set this to off by default by setting:
-  
-    SET(${PROJECT_NAME}_ENABLE_CXX_DEFAULT FALSE)
-
-.. _${PROJECT_NAME}_ENABLE_CXX11:
-  
-**${PROJECT_NAME}_ENABLE_CXX11**
-  
-  If ``${PROJECT_NAME}_ENABLE_CXX11`` is ``ON``, then C++ compiler options
-  that turn on C++11 support will be searched for.  By default, TriBITS sets
-  this to ``OFF`` for all systems.  However, if project requires C++11 support
-  by default, then the project should set the default:
-  
-    SET(${PROJECT_NAME}_ENABLE_CXX11_DEFAULT TRUE)
- 
-.. _${PROJECT_NAME}_ENABLE_Fortran:
-  
-**${PROJECT_NAME}_ENABLE_Fortran**
-  
-  If ``${PROJECT_NAME}_ENABLE_Fortran`` is ``ON``, then Fortran support for
-  the project will be enabled and the Fortran compiler(s) must be found.  By
-  default, TriBITS sets this to ``ON`` for non-Windows systems (i.e. ``WIN32``
-  is not set by CMake) but is ``OFF`` for a Windows system.  A project that
-  always requires Fortran, for example, it can set the default::
-  
-    SET(${PROJECT_NAME}_ENABLE_Fortran_DEFAULT TRUE)
-  
-  If a project does not have any native Fortran code a good default would be::
-  
-    SET(${PROJECT_NAME}_ENABLE_Fortran_DEFAULT OFF)
-  
-  NOTE: It is usually not a good idea to always force off Fortran, or any
-  compiler, because extra repositories and packages might be added by someone
-  that might require the compiler and we don't want to unnecessarily limit the
-  generality of a given TriBITS build.  Setting the default for all platforms
-  should be sufficient.
-  
-.. _${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS:
-
-**${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS**
-
-  If ``${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`` is set to ``ON``, then
-  any defined libraries or header files that are listed in calls to
-  `TRIBITS_ADD_LIBRARY()`_ will be installed (unless options are passed into
-  `TRIBITS_ADD_LIBRARY()`_ that disable installs).  If set to ``OFF``, then
-  headers and libraries will *not* be installed by default and only
-  ``INSTALLABLE`` executables added with `TRIBITS_ADD_EXECUTABLE()`_ will be
-  installed.  However, as described in `TribitsBuildQuickRef`_, shared
-  libraries will always be installed if enabled since they are needed by the
-  installed executables.
-  
-  For a TriBITS project that primarily is delivering libraries
-  (e.g. Trilinos), then it makes sense to leave the TriBITS default which is
-  ``ON`` or explicitly set::
-  
-    SET(${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT ON)
-  
-  For a TriBITS project that is primarily delivering executables (e.g. VERA),
-  then it makes sense to set the default to::
-  
-    SET(${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT OFF)
-  
-.. _${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES:
-
-**${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES**
-  
-  If ``${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES`` is ``ON``, then
-  ``Makefile.export.<PackageName>`` will get created at configure time in the
-  build tree and installed into the install tree.  See `TribitsBuildQuickRef`_
-  for details.  The TriBITS default is ``ON`` but a project can decide to turn
-  this off by default by setting::
-  
-    SET(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT OFF)
-  
-  A project might want to disable the generation of export makefiles by default
-  if its main purpose is to provide executables.  There is no reason to provide
-  an export makefile if libraries and headers are not actually installed (see
-  `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_)
-
-.. _${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES:
-
-**${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES**
-
-  If ``${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES`` is set to ``ON``,
-  then ``<PackageName>Config.cmake`` files are created at configure time in
-  the build tree and installed into the install tree.  These files are used by
-  external CMake projects to pull in the list of compilers, compiler options,
-  include directories and libraries.  The TriBITS default is ``ON`` but a
-  project can change the default by setting, for example::
-
-    SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT OFF)
-
-  A project would want to turn off the creation and installation of
-  ``<PackageName>Config.cmake`` files if it was only installing and providing
-  executables (see `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_).
-
-.. _${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES:
-
-**${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES**
-
-  If ``${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES`` is ``ON``, then the
-  data-structures needed to generate ``Makefile.export.<PackageName>`` and
-  ``<PackageName>Config.cmake`` are created.  These data structures are also
-  needed in order to generate export makefiles on demand using the function
-  `TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()`_.  The default in
-  TriBITS is to turn this ``ON`` automatically by default if
-  ``${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES`` or
-  ``${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES`` are ``ON``.  Else, by
-  default, TriBITS sets this to ``OFF``.  The only reason for the project to
-  override the default is to set it to ``ON`` as with::
-
-    SET(${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES_DEFAULT ON)
-
-  is so that the necessary data-structures are generated in order to use the
-  function `TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()`_.
 
 .. _${PROJECT_NAME}_ELEVATE_ST_TO_PT:
 
@@ -6594,6 +7125,123 @@ These options are described below.
 
     SET(${PROJECT_NAME}_ENABLE_CPACK_PACKAGING_DEFAULT ON)
 
+.. _${PROJECT_NAME}_ENABLE_CXX11:
+  
+**${PROJECT_NAME}_ENABLE_CXX11**
+  
+  If ``${PROJECT_NAME}_ENABLE_CXX11`` is ``ON``, then C++ compiler options
+  that turn on C++11 support will be searched for.  By default, TriBITS sets
+  this to ``OFF`` for all systems.  However, if project requires C++11 support
+  by default, then the project should set the default:
+  
+    SET(${PROJECT_NAME}_ENABLE_CXX11_DEFAULT TRUE)
+
+.. _${PROJECT_NAME}_ENABLE_CXX:
+  
+**${PROJECT_NAME}_ENABLE_CXX**
+  
+  If ``${PROJECT_NAME}_ENABLE_CXX`` is ``ON``, then C++ language support for
+  the project will be enabled and the C++ compiler must be found.  By default,
+  TriBITS sets this to ``ON`` for all systems.  A project never requires C++
+  can set this to off by default by setting:
+  
+    SET(${PROJECT_NAME}_ENABLE_CXX_DEFAULT FALSE)
+
+.. _${PROJECT_NAME}_ENABLE_C:
+  
+**${PROJECT_NAME}_ENABLE_C**
+  
+  If ``${PROJECT_NAME}_ENABLE_C`` is ``ON``, then C language support for the
+  project will be enabled and the C compiler must be found.  By default,
+  TriBITS sets this to ``ON`` for all systems.  A project never requires C can
+  set this to off by default by setting:
+  
+    SET(${PROJECT_NAME}_ENABLE_C_DEFAULT FALSE)
+  
+  If a project does not have any native C code a good default would be::
+  
+    SET(${PROJECT_NAME}_ENABLE_C_DEFAULT FALSE)
+  
+  NOTE: It is usually not a good idea to always force off C, or any compiler,
+  because extra repositories and packages might be added by someone that might
+  require the compiler and we don't want to unnecessarily limit the generality
+  of a given TriBITS build.  Setting the default for all platforms should be
+  sufficient.
+
+.. _${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE:
+.. _${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE_DEFAULT:
+
+**${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE**
+
+  The variable ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE`` switches the
+  TriBITS project from development mode to release mode.  The default for this
+  variable ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE_DEFAULT`` should be set
+  in the project's `<projectDir>/Version.cmake`_ file and switched from ``ON``
+  to ``OFF`` when creating a release (see `Project and Repository Versioning
+  and Release Mode`_).  When ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE`` is
+  ``ON``, several other variables are given defaults appropriate for
+  development mode.  For example, ``${PROJECT_NAME}_ASSERT_MISSING_PACKAGES``
+  is set to ``ON`` by default in development mode but is set to ``OFF`` by
+  default in release mode.  In addition, strong compiler warnings are enabled
+  by default in development mode but are disabled by default in release mode.
+  This variable also affects the behavior of `TRIBITS_SET_ST_FOR_DEV_MODE()`_.
+  
+.. _${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES:
+
+**${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES**
+  
+  If ``${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES`` is ``ON``, then
+  ``Makefile.export.<PackageName>`` will get created at configure time in the
+  build tree and installed into the install tree.  See `TribitsBuildReference`_
+  for details.  The TriBITS default is ``ON`` but a project can decide to turn
+  this off by default by setting::
+  
+    SET(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT OFF)
+  
+  A project might want to disable the generation of export makefiles by default
+  if its main purpose is to provide executables.  There is no reason to provide
+  an export makefile if libraries and headers are not actually installed (see
+  `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_)
+ 
+.. _${PROJECT_NAME}_ENABLE_Fortran:
+  
+**${PROJECT_NAME}_ENABLE_Fortran**
+  
+  If ``${PROJECT_NAME}_ENABLE_Fortran`` is ``ON``, then Fortran support for
+  the project will be enabled and the Fortran compiler(s) must be found.  By
+  default, TriBITS sets this to ``ON`` for non-Windows systems (i.e. ``WIN32``
+  is not set by CMake) but is ``OFF`` for a Windows system.  A project that
+  always requires Fortran, for example, it can set the default::
+  
+    SET(${PROJECT_NAME}_ENABLE_Fortran_DEFAULT TRUE)
+  
+  If a project does not have any native Fortran code a good default would be::
+  
+    SET(${PROJECT_NAME}_ENABLE_Fortran_DEFAULT OFF)
+  
+  NOTE: It is usually not a good idea to always force off Fortran, or any
+  compiler, because extra repositories and packages might be added by someone
+  that might require the compiler and we don't want to unnecessarily limit the
+  generality of a given TriBITS build.  Setting the default for all platforms
+  should be sufficient.
+
+.. _${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES:
+
+**${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES**
+
+  If ``${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES`` is set to ``ON``,
+  then ``<PackageName>Config.cmake`` files are created at configure time in
+  the build tree and installed into the install tree.  These files are used by
+  external CMake projects to pull in the list of compilers, compiler options,
+  include directories and libraries.  The TriBITS default is ``ON`` but a
+  project can change the default by setting, for example::
+
+    SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT OFF)
+
+  A project would want to turn off the creation and installation of
+  ``<PackageName>Config.cmake`` files if it was only installing and providing
+  executables (see `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_).
+
 .. _${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION:
 
 **${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION**
@@ -6607,26 +7255,83 @@ These options are described below.
 
     SET(${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION_DEFAULT FALSE)
 
-.. _${PROJECT_NAME}_CPACK_SOURCE_GENERATOR:
+.. _${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES:
 
-**${PROJECT_NAME}_CPACK_SOURCE_GENERATOR**
+**${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES**
 
-  The variable ``${PROJECT_NAME}_CPACK_SOURCE_GENERATOR`` determines the CPack
-  source generation types that are created when the ``package_source`` target
-  is run.  The TriBITS default is set to ``TGZ``.  However, this default can
-  be overridden by setting, for example::
+  If ``${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES`` is ``ON``, then the
+  data-structures needed to generate ``Makefile.export.<PackageName>`` and
+  ``<PackageName>Config.cmake`` are created.  These data structures are also
+  needed in order to generate export makefiles on demand using the function
+  `TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()`_.  The default in
+  TriBITS is to turn this ``ON`` automatically by default if
+  ``${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES`` or
+  ``${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES`` are ``ON``.  Else, by
+  default, TriBITS sets this to ``OFF``.  The only reason for the project to
+  override the default is to set it to ``ON`` as with::
 
-    SET(${PROJECT_NAME}_CPACK_SOURCE_GENERATOR_DEFAULT "TGZ;TBZ2")
+    SET(${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES_DEFAULT ON)
 
-  This variable should generally be set in the file::
+  is so that the necessary data-structures are generated in order to use the
+  function `TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()`_.
+  
+.. _${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS:
 
-     <projectDir>/cmake/CallbackDefineProjectPackaging.cmake
+**${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS**
 
-  instead of in the base-level ``CMakeLists.txt`` file so that it goes along
-  with rest of the project-specific CPack packaging options.
+  If ``${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`` is set to ``ON``, then
+  any defined libraries or header files that are listed in calls to
+  `TRIBITS_ADD_LIBRARY()`_ or `TRIBITS_INSTALL_HEADERS()`_ will be installed
+  (unless options are passed into `TRIBITS_ADD_LIBRARY()`_ that disable
+  installs).  If set to ``OFF``, then headers and libraries will *not* be
+  installed by default and only ``INSTALLABLE`` executables added with
+  `TRIBITS_ADD_EXECUTABLE()`_ will be installed.  However, as described in
+  `TribitsBuildReference`_, shared libraries will always be installed if
+  enabled since they are needed by the installed executables.
+  
+  For a TriBITS project that is primarily delivering libraries
+  (e.g. Trilinos), then it makes sense to leave the TriBITS default which is
+  ``ON`` or explicitly set::
+  
+    SET(${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT  ON)
+  
+  For a TriBITS project that is primarily delivering executables (e.g. VERA),
+  then it makes sense to set the default to::
+  
+    SET(${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT  OFF)
+
+.. _${PROJECT_NAME}_REQUIRES_PYTHON:
+
+**${PROJECT_NAME}_REQUIRES_PYTHON**
+
+  If the TriBITS project requires Python, set::
+
+    SET(${PROJECT_NAME}_REQUIRES_PYTHON  TRUE)
+
+  in the `<projectDir>/ProjectName.cmake`_ file (See `Python Support`_).  The
+  default is implicitly ``FALSE``.
+
+.. _${PROJECT_NAME}_SHOW_TEST_START_END_DATE_TIME:
+
+**${PROJECT_NAME}_SHOW_TEST_START_END_DATE_TIME**
+
+  The cache variable ``${PROJECT_NAME}_SHOW_TEST_START_END_DATE_TIME``
+  determines if the start and end date/time for each advanced test (i.e. added
+  with `TRIBITS_ADD_ADVANCED_TEST()`_) is printed or not with each test.  The
+  TriBITS default is ``OFF`` but a TriBITS project can change this default by
+  setting::
+
+    SET(${PROJECT_NAME}_SHOW_TEST_START_END_DATE_TIME_DEFAULT ON)
+
+  The implementation of this feature currently uses ``EXECUTE_PROCESS(date)``
+  and therefore will only work on Linux/Unix/Mac systems and not Windows
+  systems.
+
+  NOTE: In a future version of CTest, this option may turn on start and end
+  date/time for regular tests added with `TRIBITS_ADD_TEST()`_ (which uses a
+  raw command with ``ADD_TEST()``).
 
 .. _${PROJECT_NAME}_TEST_CATEGORIES:
-
 .. _${PROJECT_NAME}_TEST_CATEGORIES_DEFAULT:
 
 **${PROJECT_NAME}_TEST_CATEGORIES**
@@ -6652,23 +7357,68 @@ These options are described below.
   tests down.  See the section `TriBITS Automated Testing`_ for a more
   detailed discussion.
 
-.. _${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE:
-.. _${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE_DEFAULT:
+.. _${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS:
+.. _${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS_DEFAULT:
 
-**${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE**
+**${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS**
 
-  The variable ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE`` switches the
-  TriBITS project from development mode to release mode.  The default for this
-  variable ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE_DEFAULT`` should be set
-  in the project's `<projectDir>/Version.cmake`_ file and switched from ``ON``
-  to ``OFF`` when creating a release (see `Project and Repository Versioning
-  and Release Mode`_).  When ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE`` is
-  ``ON``, several other variables are given defaults appropriate for
-  development mode.  For example, ``${PROJECT_NAME}_ASSERT_MISSING_PACKAGES``
-  is set to ``ON`` by default in development mode but is set to ``OFF`` by
-  default in release mode.  In addition, strong compiler warnings are enabled
-  by default in development mode but are disabled by default in release mode.
-  This variable also affects the behavior of `TRIBITS_SET_ST_FOR_DEV_MODE()`_.
+  If ``${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS`` is set to ``TRUE``, then the
+  ``SYSTEM`` flag will be passed into the ``INCLUDE_DIRECTORIES()`` command
+  for TPL include directories.  On some systems this will result in include
+  directories being passed to the compiler with ``-isystem`` instead of
+  ``-I``.  This helps to avoid compiler warning coming from TPL header files
+  for C and C++.  However, with CMake version 2.8.11, this also results in
+  ``-isystem`` being passed to the Fortran compiler (e.g. gfortran) as well.
+  This breaks the reading of Fortran module files (perhaps a bug in gfortran).
+  Because if the issue with Fortran, the default for this option is ``FALSE``
+  but project can override the default using::
+
+    SET(${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS_DEFAULT  TRUE)
+
+.. _${PROJECT_NAME}_TRACE_ADD_TEST:
+.. _${PROJECT_NAME}_TRACE_ADD_TEST_DEFAULT:
+
+**${PROJECT_NAME}_TRACE_ADD_TEST**
+
+  If ``${PROJECT_NAME}_TRACE_ADD_TEST`` is set to ``TRUE``, then a single line
+  will be printed for each call to `TRIBITS_ADD_TEST()`_ and
+  `TRIBITS_ADD_ADVANCED_TEST()`_ for if the test is added or not and if not
+  then why.  The default is set based on the value of
+  ``${PROJECT_NAME}_VERBOSE_CONFIGURE`` but a project can override the default
+  by setting::
+
+    SET(${PROJECT_NAME}_TRACE_ADD_TEST_DEFAULT  TRUE)
+
+.. _${PROJECT_NAME}_USE_GNUINSTALLDIRS:
+
+**${PROJECT_NAME}_USE_GNUINSTALLDIRS**
+
+  If ``${PROJECT_NAME}_USE_GNUINSTALLDIRS`` is set to ``TRUE``, then the
+  default install paths will be determined by the standard CMake module
+  ``GNUInstallDirs``.  Otherwise, platform independent install paths are used
+  by default.
+
+  A project can use the paths given the cmake module ``GNUInstallDirs`` by
+  default by setting::
+  
+    SET(${PROJECT_NAME}_USE_GNUINSTALLDIRS_DEFAULT FALSE)
+
+  in the project's top-level `<projectDir>/CMakeLists.txt`_ file or its
+  `<projectDir>/ProjectName.cmake`_ file.  The default is ``FALSE``.
+
+.. _${PROJECT_NAME}_USES_PYTHON:
+
+**${PROJECT_NAME}_USES_PYTHON**
+
+  If the TriBITS project can use Python, but does not require it, set::
+
+    SET(${PROJECT_NAME}_USES_PYTHON  TRUE)
+
+  in the `<projectDir>/ProjectName.cmake`_ file (see `Python Support`_).  The
+  default for a TriBITS project is implicitly ``TRUE``.  To explicitly state
+  that Python is never needed, set::
+
+    SET(${PROJECT_NAME}_USES_PYTHON  FALSE)
 
 .. _MPI_EXEC_MAX_NUMPROCS:
 
@@ -6688,6 +7438,22 @@ These options are described below.
   by a given machine (or class of machines).  For example if a given machine
   has 64 cores, a reasonable number for ``MPI_EXEC_MAX_NUMPROCS_DEFAULT`` is
   64.
+
+.. _PythonInterp_FIND_VERSION:
+
+**PythonInterp_FIND_VERSION**
+
+  Determines the version of Python that is looked for.  TriBITS requires at
+  least version "2.4".  A particular TriBITS project can require a higher
+  version of TriBITS and this is set using, for example:
+
+    SET(PythonInterp_FIND_VERSION_DEFAULT "2.6.6")
+
+  in the `<projectDir>/ProjectName.cmake`_ file (See `Python Support`_).  The
+  default is version "2.4".  The user can force a more recent version of
+  Python by configuring with, for example::
+
+    -D PythonInterp_FIND_VERSION="2.7.3"
 
 
 TriBITS Macros and Functions
@@ -6732,6 +7498,17 @@ command as ``_some_builtin_command()``.
 .. ToDo: Edited and spell-checked through here on 5/15/2014.
 
 
+FAQ
+===
+
+**Q:** Why does not TriBITS just use the standard CMake ``Find<PACKAGE_NAME>.cmake``
+modules and the standard ``FIND_PACKAGE()`` function to find TPLs?
+
+**A:** The different "standard" CMake ``Find<PACKAGE_NAME>.cmake`` modules do not
+have a standard set of outputs and therefore, can't be handled in a uniform
+way.  For example, 
+
+
 Appendix
 ========
 
@@ -6741,8 +7518,8 @@ History of TriBITS
 
 TriBITS started development in November 2007 as a set of helper macros to
 provide a CMake build system for a small subset of packages in Trilinos.  The
-initial goal was to just to support a native Windows build (using Visual C++)
-to compile and install these few Trilinos packages on Windows for usage by
+initial goal was to support a native Windows build (using Visual C++) to
+compile and install these few Trilinos packages on Windows for usage by
 another project (the Sandia Titan project which included VTK).  At that time,
 Trilinos was using a highly customized and augmented autotools build system.
 Initially, this CMake system was just a set of macros to streamline creating
@@ -6768,7 +7545,7 @@ CMake-based build system started in October 2011 and an initial implementation
 was complete in December 2011 when it was used for the CASL VERA build system.
 In early 2012, the ORNL CASL-related projects Denovo and SCALE (see [`SCALE,
 2011`_]) adopted TriBITS as their native development build systems.  Shortly
-after, TriBITS was adopted the native build system for the CASL-related
+after, TriBITS was adopted as the native build system for the CASL-related
 University of Michigan code MPACT.  In addition to being used in CASL, all of
 these codes also had a significant life outside of CASL.  Because they used
 the same TriBITS build system, it proved relatively easy to keep these various
@@ -6778,7 +7555,7 @@ independent from CASL VERA.  Since the initial extraction of TriBITS from
 Trilinos, the TriBITS system was further extended and refined, driven by CASL
 VERA development and expansion.  Independently, an early version of TriBITS
 from 2012 was adopted by the LiveV
-project\footnote{https://github.com/lifev/cmake} which was forked and extended
+project (see [`LiveV`_]) which was forked and extended
 independently.
 
 Why a TriBITS Package is not a CMake Package
@@ -6833,27 +7610,27 @@ Software Development, 2003`_]).
 .. dependencies!
 
 
-checkin-test.py --help
-----------------------
+clone_extra_repos.py --help
+---------------------------
 
-Below is a snapshot of the output from ``checkin-test.py --help``.  This
-``--help`` output contains a lot of information about the recommended
-development workflow (mostly related to pushing commits) and outlines a number
-of different use cases for using the script.
+Below is a snapshot of the output from ``clone_extra_repos.py --help``.  For
+more details on the usage of ``clone_extra_repos.py``, see `Multi-Repository
+Support`_ and `Multi-Repository Development Workflow`_.
 
-.. include:: checkin-test-help.txt
+.. include:: clone_extra_repos-help.txt
    :literal:
 
 
-egdist --help
--------------
+gitdist --help
+--------------
 
-Below is a snapshot of the output from ``egdist --help``.  For more details on
-the usage of ``egdist``, see `Multi-Repository Support`_ and `Multi-Repository
-Development Workflow`_.
+Below is a snapshot of the output from ``gitdist --help``.  For more details
+on the usage of ``gitdist``, see `Multi-Repository Support`_ and
+`Multi-Repository Development Workflow`_.
 
-.. include:: egdist-help.txt
+.. include:: gitdist-help.txt
    :literal:
+
 
 .. _snapshot-dir.py:
 
@@ -6868,41 +7645,71 @@ snapshotting`_.
 .. include:: snapshot-dir-help.txt
    :literal:
 
+
+checkin-test.py --help
+----------------------
+
+Below is a snapshot of the output from ``checkin-test.py --help``.  This
+``--help`` output contains a lot of information about the recommended
+development workflow (mostly related to pushing commits) and outlines a number
+of different use cases for using the script.
+
+.. include:: checkin-test-help.txt
+   :literal:
+
+
+install_devtools.py --help
+--------------------------
+
+Below is a snapshot of the output from ``install_devtools.py --help``.
+
+.. include:: install_devtools-help.txt
+   :literal:
+
+
+
 .. ***
 .. *** Common references
 .. **
 
-.. Common references to TribitsBuildQuickRef document
+.. Common references to TribitsBuildReference document
 
-.. _<Project>BuildQuickRef: ../build_quick_ref/TribitsBuildQuickRef.html
+.. NOTE: These references
+.. are for when published in the same directory using public_docs.sh
 
-.. _TribitsBuildQuickRef: `<Project>BuildQuickRef`_
+.. _<Project>BuildReference: TribitsBuildReference.html
 
-.. _Selecting the list of packages to enable: ../build_quick_ref/TribitsBuildQuickRef.html#selecting-the-list-of-packages-to-enable
+.. _TribitsBuildReference: `<Project>BuildReference`_
 
-.. _Enabling extra repositories with add-on packages: ../build_quick_ref/TribitsBuildQuickRef.html#enabling-extra-repositories-with-add-on-packages
+.. _Selecting the list of packages to enable: TribitsBuildReference.html#selecting-the-list-of-packages-to-enable
 
-.. _Getting set up to use CMake: ../build_quick_ref/TribitsBuildQuickRef.html#getting-set-up-to-use-cmake
+.. _Enabling extra repositories with add-on packages: TribitsBuildReference.html#enabling-extra-repositories-with-add-on-packages
 
-.. _Dashboard Submissions: ../build_quick_ref/TribitsBuildQuickRef.html#dashboard-submissions
+.. _Getting set up to use CMake: TribitsBuildReference.html#getting-set-up-to-use-cmake
 
-.. _<Project>_EXTRAREPOS_FILE: ../build_quick_ref/TribitsBuildQuickRef.html#project-extrarepos-file
+.. _Dashboard Submissions: TribitsBuildReference.html#dashboard-submissions
+
+.. _<Project>_EXTRAREPOS_FILE: TribitsBuildReference.html#project-extrarepos-file
 
 .. _${PROJECT_NAME}_EXTRAREPOS_FILE: `<Project>_EXTRAREPOS_FILE`_
 
-.. _Creating a tarball of the source tree: ../build_quick_ref/TribitsBuildQuickRef.html#creating-a-tarball-of-the-source-tree
+.. _${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE: TribitsBuildReference.html#generating-a-project-repo-version-file
 
-.. _Enabling support for an optional Third-Party Library (TPL): ../build_quick_ref/TribitsBuildQuickRef.html#enabling-support-for-an-optional-third-party-library-tpl
+.. _Creating a tarball of the source tree: TribitsBuildReference.html#creating-a-tarball-of-the-source-tree
 
-.. _${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE: ../build_quick_ref/TribitsBuildQuickRef.html#project-configure-options-file
+.. _Enabling support for an optional Third-Party Library (TPL): TribitsBuildReference.html#enabling-support-for-an-optional-third-party-library-tpl
 
-.. _${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE: ../build_quick_ref/TribitsBuildQuickRef.html#outputting-package-dependency-information
+.. _${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE: TribitsBuildReference.html#project-configure-options-file
 
-.. _${PROJECT_NAME}_TRACE_FILE_PROCESSING: ../build_quick_ref/TribitsBuildQuickRef.html#project-trace-file-processing
+.. _${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE: TribitsBuildReference.html#outputting-package-dependency-information
 
-.. _make dashboard: ../build_quick_ref/TribitsBuildQuickRef.html#dashboard-submissions
+.. _${PROJECT_NAME}_TRACE_FILE_PROCESSING: TribitsBuildReference.html#project-trace-file-processing
 
-.. _Setting the install prefix at configure time: ../build_quick_ref/TribitsBuildQuickRef.html#setting-the-install-prefix-at-configure-time
+.. _${PROJECT_NAME}_SCALE_TEST_TIMEOUT: TribitsBuildReference.html#project-scale-test-timeout-testing-timeout
+
+.. _make dashboard: TribitsBuildReference.html#dashboard-submissions
+
+.. _Setting the install prefix at configure time: TribitsBuildReference.html#setting-the-install-prefix-at-configure-time
 
 .. Common references to the TribitsOverview document
 
@@ -6913,7 +7720,15 @@ snapshotting`_.
 
 .. _TriBITS Lifecycle Model: ../lifecycle_model/TribitsLifecycleModel.pdf
 
-..  OTher common references
+..  Other common references
 
 .. _CTest documentation: http://www.cmake.org/Wiki/CMake/Testing_With_CTest
 
+.. Common references to raw CMake commands:
+
+.. _CONFIGURE_FILE(): http://www.cmake.org/cmake/help/v2.8.11/cmake.html#command:configure_file
+
+..  LocalWords:  TribitsOverview TribitsLifecycleModel Lifecycle CMakeLists
+..  LocalWords:  TriBITS Subpackage subpackage Subpackages subpackages TPL TPLs Kitware
+..  LocalWords:  CMake cmake CTest ctest CDash CPack WithSubpackages WithSubpackagesA
+..  LocalWords:  WithSubpackagesB WithSubpackagesC executables FOREACH ENDFOREACH

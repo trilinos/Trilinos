@@ -62,8 +62,8 @@
 // Specialization: SGResidual
 // **********************************************************************
 
-template<typename Traits,typename LO,typename GO,typename NodeT>
-panzer::GatherSolution_Tpetra<panzer::Traits::SGResidual, Traits,LO,GO,NodeT>::
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+panzer::GatherSolution_Tpetra<panzer::Traits::SGResidual, TRAITS,LO,GO,NodeT>::
 GatherSolution_Tpetra(
   const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
   const Teuchos::ParameterList& p)
@@ -96,10 +96,10 @@ GatherSolution_Tpetra(
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT>
-void panzer::GatherSolution_Tpetra<panzer::Traits::SGResidual, Traits,LO,GO,NodeT>::
-postRegistrationSetup(typename Traits::SetupData d, 
-		      PHX::FieldManager<Traits>& fm)
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::GatherSolution_Tpetra<panzer::Traits::SGResidual, TRAITS,LO,GO,NodeT>::
+postRegistrationSetup(typename TRAITS::SetupData d, 
+		      PHX::FieldManager<TRAITS>& fm)
 {
   // globalIndexer_ = d.globalIndexer_;
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_->size());
@@ -120,20 +120,20 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT>
-void panzer::GatherSolution_Tpetra<panzer::Traits::SGResidual, Traits,LO,GO,NodeT>::
-preEvaluate(typename Traits::PreEvalData d)
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::GatherSolution_Tpetra<panzer::Traits::SGResidual, TRAITS,LO,GO,NodeT>::
+preEvaluate(typename TRAITS::PreEvalData d)
 {
    typedef SGTpetraLinearObjContainer<double,LO,GO,NodeT> SGLOC;
 
    // extract linear object container
-   sgTpetraContainer_ = Teuchos::rcp_dynamic_cast<SGLOC>(d.getDataObject(globalDataKey_),true);
+   sgTpetraContainer_ = Teuchos::rcp_dynamic_cast<SGLOC>(d.gedc.getDataObject(globalDataKey_),true);
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT>
-void panzer::GatherSolution_Tpetra<panzer::Traits::SGResidual, Traits,LO,GO,NodeT>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::GatherSolution_Tpetra<panzer::Traits::SGResidual, TRAITS,LO,GO,NodeT>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
 /*
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
@@ -208,8 +208,8 @@ evaluateFields(typename Traits::EvalData workset)
 // Specialization: SGJacobian
 // **********************************************************************
 
-template<typename Traits,typename LO,typename GO,typename NodeT>
-panzer::GatherSolution_Tpetra<panzer::Traits::SGJacobian, Traits,LO,GO,NodeT>::
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+panzer::GatherSolution_Tpetra<panzer::Traits::SGJacobian, TRAITS,LO,GO,NodeT>::
 GatherSolution_Tpetra(
   const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
   const Teuchos::ParameterList& p)
@@ -242,10 +242,10 @@ GatherSolution_Tpetra(
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT>
-void panzer::GatherSolution_Tpetra<panzer::Traits::SGJacobian, Traits,LO,GO,NodeT>::
-postRegistrationSetup(typename Traits::SetupData d, 
-		      PHX::FieldManager<Traits>& fm)
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::GatherSolution_Tpetra<panzer::Traits::SGJacobian, TRAITS,LO,GO,NodeT>::
+postRegistrationSetup(typename TRAITS::SetupData d, 
+		      PHX::FieldManager<TRAITS>& fm)
 {
   // globalIndexer_ = d.globalIndexer_;
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_->size());
@@ -266,20 +266,20 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT>
-void panzer::GatherSolution_Tpetra<panzer::Traits::SGJacobian, Traits,LO,GO,NodeT>::
-preEvaluate(typename Traits::PreEvalData d)
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::GatherSolution_Tpetra<panzer::Traits::SGJacobian, TRAITS,LO,GO,NodeT>::
+preEvaluate(typename TRAITS::PreEvalData d)
 {
    typedef SGTpetraLinearObjContainer<double,LO,GO,NodeT> SGLOC;
 
    // extract linear object container
-   sgTpetraContainer_ = Teuchos::rcp_dynamic_cast<SGLOC>(d.getDataObject(globalDataKey_),true);
+   sgTpetraContainer_ = Teuchos::rcp_dynamic_cast<SGLOC>(d.gedc.getDataObject(globalDataKey_),true);
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT>
-void panzer::GatherSolution_Tpetra<panzer::Traits::SGJacobian, Traits,LO,GO,NodeT>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::GatherSolution_Tpetra<panzer::Traits::SGJacobian, TRAITS,LO,GO,NodeT>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
 /*
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;

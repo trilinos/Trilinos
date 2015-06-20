@@ -53,7 +53,6 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsTplDeclareLibraries)
 
 #-----------------------------------------------------------------------------
 #  Hardware locality detection and control library.
@@ -65,7 +64,7 @@ INCLUDE(TribitsTplDeclareLibraries)
 #    Version:       1.3
 #
 
-TRIBITS_TPL_DECLARE_LIBRARIES( HWLOC
+TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( HWLOC
   REQUIRED_HEADERS hwloc.h
   REQUIRED_LIBS_NAMES "hwloc"
   )

@@ -161,7 +161,7 @@ class MinresIteration : virtual public Iteration<ScalarType,MV,OP> {
    * \note For any pointer in \c newstate which directly points to the multivectors in 
    * the solver, the data is not copied.
    */
-  virtual void initializeMinres(MinresIterationState<ScalarType,MV> newstate) = 0;
+  virtual void initializeMinres(const MinresIterationState<ScalarType,MV> & newstate) = 0;
 
   /*! \brief Get the current state of the linear solver.
    *

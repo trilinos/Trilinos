@@ -67,10 +67,14 @@ void addToStratimikosBuilder(Stratimikos::DefaultLinearSolverBuilder & builder)
 {
    typedef Thyra::PreconditionerFactoryBase<double> PrecFactory;
 
-   RCP<const Teuchos::AbstractFactory<Thyra::PreconditionerFactoryBase<double> > > factory;
+   RCP<const Teuchos::ParameterList> parameters = builder.getValidParameters();
+
+   if(!parameters->sublist("Preconditioner Types").isSublist("Neumann Series")) {
+     RCP<const Teuchos::AbstractFactory<Thyra::PreconditionerFactoryBase<double> > > factory;
      
-   factory = Teuchos::abstractFactoryStd<PrecFactory,Teko::NeumannSeriesPreconditionerFactory<double> >();
-   builder.setPreconditioningStrategyFactory(factory,"Neumann Series");
+     factory = Teuchos::abstractFactoryStd<PrecFactory,Teko::NeumannSeriesPreconditionerFactory<double> >();
+     builder.setPreconditioningStrategyFactory(factory,"Neumann Series");
+   }
 }
 
 InverseLibrary::InverseLibrary()
@@ -484,6 +488,10 @@ RCP<InverseLibrary> InverseLibrary::buildFromParameterList(const Teuchos::Parame
 RCP<InverseLibrary> InverseLibrary::buildFromParameterList(const Teuchos::ParameterList & pl,
                                                            const Teuchos::RCP<Stratimikos::DefaultLinearSolverBuilder> & strat)
 {
+   // if strat is set to null, use the defaults
+   if(strat==Teuchos::null)
+     return buildFromParameterList(pl,true);
+
    // build from Stratimikos or allocate a new inverse library
    RCP<InverseLibrary> invLib = InverseLibrary::buildFromStratimikos(strat);
 

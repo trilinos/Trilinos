@@ -2,8 +2,597 @@
 Release Notes for Trilinos Package Tpetra
 -----------------------------------------
 
-Dev version (11.9):
--------------------
+Trilinos 12.0
+-------------
+
+* Tpetra now requires C++11
+
+This requirement comes in part from Tpetra itself, and in part from
+the Kokkos package, on which Tpetra depends.
+
+* "Kokkos refactor" (new) version of Tpetra is the only version
+
+We no longer enable or support the old ("classic") version of Tpetra.
+The new ("Kokkos refactor") implementation of Tpetra is now the only
+supported version.
+
+Do not use any of the Node types in the KokkosClassic namespace.  We
+do not support any of those Node types anymore.  Instead, use any of
+the following Node types:
+
+  - Kokkos::Compat::KokkosOpenMPWrapperNode (OpenMP)
+  - Kokkos::Compat::KokkosCudaWrapperNode (NVIDIA CUDA)
+  - Kokkos::Compat::KokkosSerialWrapperNode (no threads)
+  - Kokkos::Compat::KokkosThreadsWrapperNode (Pthreads)
+
+Each of these is a typedef for
+Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace>, for the
+corresponding Kokkos execution space.
+
+* Set / rely on the default Node type as much as possible
+
+Tpetra classes have a template parameter, "Node", which determines
+what thread-level parallel programming model Tpetra will use.  This
+corresponds directly to the "execution space" concept in Kokkos.
+
+Tpetra classes have a default Node type.  Users do NOT need to specify
+this explicitly.  I cannot emphasize this enough:
+
+IF YOU ONLY EVER USE THE DEFAULT VALUES OF TEMPLATE PARAMETERS, DO NOT
+SPECIFY THEM EXPLICITLY.
+
+If you need to refer to the default values of template parameters, ask
+Tpetra classes.  For example, 'Tpetra::Map<>::node_type' is the
+default Node type.
+
+Tpetra pays attention to Kokkos' build configuration when determining
+the default Node type.  For example, it will not use a disabled
+execution space.  If you do not like the default Node type, but you
+only ever use one Node type in your application, you should change the
+default Node type at Trilinos configure time.  You may do this by
+setting the 'KokkosClassic_DefaultNode' CMake option.  Here is a list
+of reasonable values:
+
+  "Kokkos::Compat::KokkosSerialWrapperNode": use Kokkos::Serial
+  execution space (execute in a single thread on the CPU)
+
+  "Kokkos::Compat::KokkosOpenMPWrapperNode": use Kokkos::OpenMP
+  execution space (use OpenMP for thread-level parallelism on the CPU)
+
+  "Kokkos::Compat::KokkosThreadsWrapperNode": use Kokkos::Threads
+  execution space (use Pthreads (the POSIX Threads library) for
+  thread-level parallelism on the CPU)
+
+  "Kokkos::Compat::KokkosCudaWrapperNode": use Kokkos::Cuda execution
+  space (use NVIDIA's CUDA programming model for thread-level
+  parallelism on the CPU)
+
+You must use the above strings with the 'KokkosClassic_DefaultNode'
+CMake option.  If you choose (unwisely, in many cases) to specify the
+Node template parameter directly in your code, you may use those
+names.  Alternately, you may let the Kokkos execution space determine
+the Node type, by using the templated class
+Kokkos::Compat::KokkosDeviceWrapperNode.  This class is templated on
+the Kokkos execution space.  The above four types are typedefs to
+their corresponding specializations of KokkosDeviceWrapperNode.  For
+example, KokkosSerialWrapperNode is a typedef of
+KokkosDeviceWrapperNode<Kokkos::Serial>.  This may be useful if your
+code already makes use of Kokkos execution spaces.
+
+* Removed (deprecated classes) Tpetra::VbrMatrix, Tpetra::BlockMap,
+  Tpetra::BlockCrsGraph, and Tpetra::BlockMultiVector.
+
+All these classes relate to VBR (variable-block-size block sparse
+matrix) functionality.  We may reimplement that at some point, but for
+now it's going away.
+
+* Removed (deprecated class) Tpetra::HybridPlatform
+
+Trilinos 11.14:
+---------------
+
+* Public release of "Kokkos refactor" version of Tpetra
+
+The "Kokkos refactor" version of Tpetra is a new implementation of
+Tpetra.  It is based on the new Kokkos programming model in the
+KokkosCore subpackage.  It coexists with the "classic" version of
+Tpetra, which has been DEPRECATED and will be removed entirely in the
+12.0 major release of Trilinos.  Thus, the Kokkos refactor version
+will become the /only/ version of Tpetra at that time.
+
+The Kokkos refactor version of Tpetra maintains mostly backwards
+compatibility [SEE NOTE BELOW] with the classic version's interface.
+Its interface will continue to evolve.  For this first public release,
+we have prioritized backwards compatibility over interface innovation.
+
+The implementation of the Kokkos refactor version of Tpetra currently
+lives in tpetra/core/src/kokkos_refactor.  It works by partial
+specialization on the 'Node' template parameter, and by a final 'bool'
+template parameter (which users must NEVER SPECIFY EXPLICITLY).  The
+"classic" version of Tpetra uses the old ("classic") Node types that
+live in the KokkosClassic namespace.  All of the classic Node types
+have been DEPRECATED, which is how users can see that classic Tpetra
+has been deprecated.
+
+If you wish to disable the Kokkos refactor version of Tpetra, set the
+Tpetra_ENABLE_Kokkos_Refactor CMake option to OFF.  Please note that
+this will result in a large number of warnings about deprecated
+classes.  This CMake option will go away in the 12.0 release.
+
+* Note on backwards compatibility of Tpetra interface
+
+In the new version of Tpetra, MultiVector and Vector implement /view
+semantics/.  That is, the one-argument copy constructor and the
+assignment operator (operator=) perform shallow copies.  (By default,
+in the classic version of Tpetra, they did deep copies.)  For deep
+copies, use one of the following:
+
+  - Two-argument "copy constructor" with Teuchos::Copy as the second
+    argument (to create a new MultiVector or Vector which is a deep
+    copy of an existing one)
+  - Tpetra::deep_copy (works like Kokkos::deep_copy)
+
+* What if I have trouble building with Scalar=std::complex<T>?
+
+The new version of Tpetra should be able to build with Scalar =
+std::complex<float> or std::complex<double>.  If you have trouble
+building, you may disable explicit template instantiation (ETI) and
+tests for those Scalar types, using the following CMake options:
+
+  Tpetra_INST_COMPLEX_FLOAT:BOOL=OFF
+  Tpetra_INST_COMPLEX_DOUBLE:BOOL=OFF
+
+* Accessing and changing the default Node type
+
+Tpetra classes have a template parameter, "Node", which determines
+what thread-level parallel programming model Tpetra will use.  This
+corresponds directly to the "execution space" concept in Kokkos.
+
+Tpetra classes have a default Node type.  Users do NOT need to specify
+this explicitly.  I cannot emphasize this enough:
+
+IF YOU ONLY EVER USE THE DEFAULT VALUES OF TEMPLATE PARAMETERS, DO NOT
+SPECIFY THEM EXPLICITLY.
+
+If you need to refer to the default values of template parameters, ask
+Tpetra classes.  For example, 'Tpetra::Map<>::node_type' is the
+default Node type.
+
+Tpetra pays attention to Kokkos' build configuration when determining
+the default Node type.  For example, it will not use a disabled
+execution space.  If you do not like the default Node type, but you
+only ever use one Node type in your application, you should change the
+default Node type at Trilinos configure time.  You may do this by
+setting the 'KokkosClassic_DefaultNode' CMake option.  Here is a list
+of reasonable values:
+
+  "Kokkos::Compat::KokkosSerialWrapperNode": use Kokkos::Serial
+  execution space (execute in a single thread on the CPU)
+
+  "Kokkos::Compat::KokkosOpenMPWrapperNode": use Kokkos::OpenMP
+  execution space (use OpenMP for thread-level parallelism on the CPU)
+
+  "Kokkos::Compat::KokkosThreadsWrapperNode": use Kokkos::Threads
+  execution space (use Pthreads (the POSIX Threads library) for
+  thread-level parallelism on the CPU)
+
+  "Kokkos::Compat::KokkosCudaWrapperNode": use Kokkos::Cuda execution
+  space (use NVIDIA's CUDA programming model for thread-level
+  parallelism on the CPU)
+
+You must use the above strings with the 'KokkosClassic_DefaultNode'
+CMake option.  If you choose (unwisely, in many cases) to specify the
+Node template parameter directly in your code, you may use those
+names.  Alternately, you may let the Kokkos execution space determine
+the Node type, by using the templated class
+Kokkos::Compat::KokkosDeviceWrapperNode.  This class is templated on
+the Kokkos execution space.  The above four types are typedefs to
+their corresponding specializations of KokkosDeviceWrapperNode.  For
+example, KokkosSerialWrapperNode is a typedef of
+KokkosDeviceWrapperNode<Kokkos::Serial>.  This may be useful if your
+code already makes use of Kokkos execution spaces.
+
+* Changes to subpackages
+
+Tpetra is now divided into subpackages.  What was formerly just
+"Tpetra" is now "TpetraCore".  Other subpackages of Kokkos have moved,
+some into Teuchos and some into Tpetra.  Those subpackages have
+changed from Experimental (EX) to Primary Tested (PT), so that they
+build by default if Tpetra is enabled.
+
+The most important change is that Tpetra now has a required dependency
+on the Kokkos programming model.  See below.
+
+If your application links against Trilinos using either the
+Makefile.export.* system or the CMake FIND_PACKAGE(Trilinos ...)
+system, you do not need to worry about this.  Just enable Tpetra and
+let Trilinos' build system handle the rest.
+
+* New required dependency on Kokkos
+
+Tpetra now has a required dependency on the Kokkos programming model.
+In particular, TpetraCore (see above) has required dependencies on the
+KokkosCore, KokkosContainers, and KokkosAlgorithms subpackages of
+Kokkos.
+
+This means that Tpetra is now subject to Kokkos' build requirements.
+C++11 support is still optional in this release, but future releases
+will require C++11 support.  Please refer to Kokkos' documentation for
+more details.
+
+* Deprecated variable-block-size classes (like VbrMatrix).
+
+We have deprecated the following classes in the Tpetra namespace:
+
+  - BlockCrsGraph
+  - BlockMap  
+  - BlockMultiVector (NOT Tpetra::Experimental::BlockMultiVector)
+  - VbrMatrix
+
+These classes relate to "variable-block-size" vectors and matrices.
+Tpetra::BlockMultiVector (NOT the same as
+Tpetra::Experimental::BlockMultiVector) implements a
+variable-block-size block analogue of MultiVector.  Each row of a
+MultiVector corresponds to a single degree of freedom; each block row
+of a BlockMultiVector corresponds to any number of degrees of freedom.
+"Variable block size" means that different block rows may have
+different numbers of degrees of freedom.  An instance of
+Tpetra::BlockMap represents the block (row) Map of a BlockMultiVector.
+Tpetra::VbrMatrix implements a variable-block-size block sparse matrix
+that corresponds to BlockMultiVector.  Each (block) entry of a
+VbrMatrix is it own dense matrix.  These dense matrices are not
+distributed; they are locally stored and generally "small" (think
+"fits in cache").  An instance of Tpetra::BlockCrsGraph represents the
+block graph of a VbrMatrix.
+
+Here are the reasons why we are deprecating these classes:
+
+  - Their interfaces as well as their implementations need a
+    significant redesign for MPI+X, e.g., for efficient use of
+    multiple levels of parallelism.
+  - They are poorly exercised, even in comparison to their Epetra
+    equivalents.
+  - They have poor test coverage, and have outstanding known bugs: see
+    e.g., Bug 6039.
+  - Most users don't need a fully general VBR [1].
+  - We would prefer to name the VBR classes consistently, both to
+    emphasize the V (variable) part and to distinguish them from the
+    new constant-block-size classes.
+
+[1] Many users' block matrices have blocks which are all the same
+    size.  They would get best performance by using the new
+    constant-block-size classes that currently live in the
+    Tpetra::Experimental namespace.  Others usually only have a small
+    number of different block sizes per matrix (e.g., 3 degrees of
+    freedom per interior mesh point; 2 for boundary mesh points).  The
+    latter users could get much better performance by a data structure
+    that represents the sparse matrix as a sum of constant-block-size
+    matrices.
+
+
+Development version (11.13):
+----------------------------
+
+* Deprecated "classic" Node types
+
+* Update to instructions for building Kokkos Refactor version
+
+See the Release Notes for the 11.12 release (below) for an explanation
+of what the Kokkos Refactor version of Tpetra is.  Currently, you must
+enable this option explicitly at Trilinos configuration time; it is
+disabled by default.  Here is a summary of the required CMake options
+(NOTE: many options are no longer necessary!).
+
+  # Enable the Kokkos refactor version of Tpetra.
+  -D Tpetra_ENABLE_Kokkos_Refactor:BOOL=ON
+
+  # Set default Node type to one of the new Kokkos Nodes.
+  # The one below uses the Kokkos::Serial execution space.
+  # Replace "Serial" with "OpenMP" for the Kokkos::OpenMP
+  # execution space, or replace it with "Threads" for the
+  # Kokkos::Threads execution space.
+  -D KokkosClassic_DefaultNode:STRING="Kokkos::Compat::KokkosSerialWrapperNode"
+
+* Subpackages needed for the Kokkos refactor version of Tpetra
+  are now Primary Tested (PT) by default
+
+This means that if you enable Tpetra, you should no longer have to
+enable the necessary subpackages of Kokkos and Tpetra (see below) by
+default.
+
+* Changed CMake options for enabling / disabling "classic" Nodes
+
+  TpetraClassic_ENABLE_SerialNode:    For KokkosClassic::SerialNode
+  TpetraClassic_ENABLE_OpenMPNode:    For KokkosClassic::OpenMPNode
+  TpetraClassic_ENABLE_TBBNode:       For KokkosClassic::TBBNode  
+  TpetraClassic_ENABLE_TPINode:       For KokkosClassic::TPINode
+  TpetraClassic_ENABLE_ThrustGPUNode: For KokkosClassic::ThrustGPUNode
+
+* Disabled "classic" Node types by default if Kokkos refactor version
+  of Tpetra is enabled
+
+* Moved KokkosCompat and KokkosMpiComm subpackages of Kokkos to
+  KokkosCompat resp. KokkosComm subpackages of Teuchos
+
+This affects configuration for the Kokkos refactor build of Tpetra.
+See below.  I have updated release notes for the 11.13 version, but
+not for previous releases (in particular 11.12).
+
+* Moved KokkosLinAlg subpackage (from Kokkos) into Tpetra as the
+  TpetraKernels subpackage
+
+* Split Tpetra into subpackages; moved KokkosClassic and KokkosTSQR
+  subpackages into Tpetra
+
+The "Classic" and "TSQR" subpackages of Kokkos are now the "Classic"
+resp. "TSQR" subpackages of Tpetra.  The original contents of Tpetra
+are now the "Core" subpackage of Tpetra.
+
+NOTE: Any package dependencies on "KokkosClassic" or "KokkosTSQR" must
+now be changed to "TpetraClassic" resp. "TpetraTSQR".
+
+* Update to instructions for building Kokkos Refactor version
+
+See the Release Notes for the 11.12 release (below) for an explanation
+of what the Kokkos Refactor version of Tpetra is.  Currently, you must
+enable this option explicitly at Trilinos configuration time; it is
+disabled by default.  Here is a summary of the required CMake options.
+
+# Enable Kokkos subpackages explicitly.
+#
+# If Tpetra_ENABLE_Kokkos_Refactor is ON but any of those subpackages
+# are not enabled, CMake will stop with an error message that tells you
+# what subpackages to enable.
+-D Trilinos_ENABLE_KokkosCore:BOOL=ON
+-D Trilinos_ENABLE_KokkosContainers:BOOL=ON
+-D Trilinos_ENABLE_KokkosAlgorithms:BOOL=ON
+-D Trilinos_ENABLE_TeuchosKokkosCompat:BOOL=ON
+-D Trilinos_ENABLE_TeuchosKokkosComm:BOOL=ON
+-D Trilinos_ENABLE_TpetraKernels:BOOL=ON
+
+# Set default Node type to one of the new Kokkos Nodes
+-D KokkosClassic_DefaultNode:STRING="Kokkos::Compat::KokkosSerialWrapperNode"
+
+# Enable the Kokkos refactor version of Tpetra.
+-D Tpetra_ENABLE_Kokkos_Refactor:BOOL=ON
+
+# Turn off ETI and tests for std::complex.
+-D Tpetra_INST_COMPLEX_DOUBLE:BOOL=OFF
+-D Tpetra_INST_COMPLEX_FLOAT:BOOL=OFF
+
+Here are some OPTIONAL CMake options that may help reduce build times
+if ETI (explicit template instantiation) is enabled:
+
+# Disable KokkosClassic::TPINode
+-D TpetraClassic_ENABLE_ThreadPool:BOOL=OFF
+# Disable KokkosClassic::OpenMPNode
+-D TpetraClassic_ENABLE_OpenMP:BOOL=OFF
+# Shut off Kokkos' Pthreads back-end.
+-D Kokkos_ENABLE_Pthread:BOOL=OFF
+
+* Deprecated variable-block-size classes (like VbrMatrix).
+
+I have deprecated the following classes in the Tpetra namespace:
+
+  - BlockMultiVector (NOT Tpetra::Experimental::BlockMultiVector)
+  - BlockMap
+  - VbrMatrix
+  - BlockCrsGraph
+
+Tpetra::BlockMultiVector (NOT the same as
+Tpetra::Experimental::BlockMultiVector) implements a
+variable-block-size block analogue of MultiVector.  Each row of a
+MultiVector corresponds to a single degree of freedom; each block row
+of a BlockMultiVector corresponds to any number of degrees of freedom.
+"Variable block size" means that different block rows may have
+different numbers of degrees of freedom.  An instance of
+Tpetra::BlockMap represents the block (row) Map of a BlockMultiVector.
+Tpetra::VbrMatrix implements a variable-block-size block sparse matrix
+that corresponds to BlockMultiVector.  Each (block) entry of a
+VbrMatrix is it own dense matrix.  These dense matrices are not
+distributed; they are locally stored and generally "small" (think
+"fits in cache").  An instance of Tpetra::BlockCrsGraph represents the
+block graph of a VbrMatrix.
+
+Here are the reasons why I am deprecating these classes:
+
+  - Their interfaces as well as their implementations need a
+    significant redesign for MPI+X [1].
+  - They are poorly exercised, even in comparison to their Epetra
+    equivalents.
+  - They have poor test coverage, and have outstanding known bugs: see
+    e.g., Bug 6039.
+  - Most users don't need a fully general VBR [2].
+  - I would prefer to name the VBR classes consistently, both to
+    emphasize the V (variable) part and to distinguish them from the
+    new constant-block-size classes.  This would let me move the
+    latter out of the Tpetra::Experimental namespace into the Tpetra
+    namespace.
+  - I don't have time to support these classes _and_ finish the port
+    of the rest of Tpetra to use new Kokkos.
+  - I don't want to leave these classes in place and let users think
+    that they work correctly.
+
+[1] The interfaces will likely change so much that it might not be
+    worth maintaining backwards compatibility, in contrast to the
+    other Tpetra classes, whose interfaces can change gradually.  This
+    is because current and future computer hardware requires
+    exploiting multiple levels of parallelism in order to get best (or
+    even reasonable) performance.  We will have to think hard about
+    how to do this efficiently for sparse matrices with variable block
+    sizes.  I would prefer to focus on the constant-block-size case
+    first, get that right, and then generalize to handle the load
+    balancing issues of the variable-block-size case.
+
+[2] Many users' block matrices have blocks which are all the same
+    size.  They would get best performance by using the new
+    constant-block-size classes that currently live in the
+    Tpetra::Experimental namespace.  Others usually only have a small
+    number of different block sizes per matrix (e.g., 3 degrees of
+    freedom per interior mesh point; 2 for boundary mesh points).  The
+    latter users could get much better performance by a data structure
+    that represents the sparse matrix as a sum of constant-block-size
+    matrices.
+
+
+Trilinos 11.12:
+---------------
+
+* Kokkos refactor version of Tpetra
+
+The "Kokkos refactor" version of Tpetra is the new version of Tpetra,
+based on the new Kokkos programming model in the KokkosCore
+subpackage.  It coexists with the "classic" version of Tpetra, which
+is currently the default version.  We plan to deprecate the "classic"
+version of Tpetra in the 11.14 minor release in January, and to remove
+it entirely in the 12.0 major release.  Thus, the "Kokkos refactor"
+version of Tpetra will become the /only/ version of Tpetra at that
+time.
+
+The implementation of the Kokkos refactor version of Tpetra currently
+lives in src/kokkos_refactor.  It works by partial specialization on
+the Node template parameter.  If you would like to enable this version
+of Tpetra, here is a suggested set of CMake options:
+
+# Enable OpenMP, and enable Kokkos' OpenMP backend
+-D Trilinos_ENABLE_OpenMP:BOOL=ON
+
+# Set Tpetra's default Node type to use new Kokkos with OpenMP.
+# You could also use KokkosThreadsWrapperNode or even 
+# KokkosSerialWrapperNode here.  
+-D KokkosClassic_DefaultNode:STRING="Kokkos::Compat::KokkosOpenMPWrapperNode"
+
+# Enable the Kokkos refactor version of Tpetra.
+-D Tpetra_ENABLE_Kokkos_Refactor:BOOL=ON
+
+In a debug build, you might like to enable Kokkos' run-time bounds
+checking.  Here's how you do that.  These are _optional_ parameters
+and their default values are both OFF (not enabled).
+
+-D Kokkos_ENABLE_BOUNDS_CHECK:BOOL=ON
+-D Kokkos_ENABLE_DEBUG:BOOL=ON
+
+The following options may reduce build times if ETI is enabled:
+
+# Disable KokkosClassic::OpenMPNode
+-D KokkosClassic_ENABLE_OpenMP:BOOL=OFF
+# Disable KokkosClassic::TPINode
+-D KokkosClassic_ENABLE_ThreadPool:BOOL=OFF
+# Shut off Kokkos' Pthreads back-end in favor of OpenMP
+-D Kokkos_ENABLE_Pthread:BOOL=OFF
+
+You must also enable the following subpackages explicitly, since they
+are not Primary Tested at the moment:
+
+  - KokkosCore
+  - KokkosCompat
+  - KokkosContainers
+  - KokkosLinAlg
+  - KokkosAlgorithms
+  - KokkosMpiComm
+
+If Tpetra_ENABLE_Kokkos_Refactor is ON but any of those subpackages
+are not enabled, CMake will stop with an error message that tells you
+what subpackages to enable.
+
+If you would like to build with the above subpackages enabled, but
+would /not/ like to build Tpetra with any of the new Kokkos Nodes, you
+may try setting the CMake KokkosClassic_ENABLE_KokkosCompat to OFF.
+This works for me as of 07 Oct 2014, but I do not recommend it, and it
+is not supported.
+
+Fun fact: there are three relevant combinations of (new Kokkos
+enabled?, Kokkos refactor enabled?), and we test them all!  You can
+use the new Kokkos Node types with "classic" Tpetra, or you can use
+them with "Kokkos refactor" Tpetra.
+
+Most Tpetra tests exercise all enabled Node types, or just use the
+default Node type.  Ifpack2 tests only use the default Node type
+currently.  That's why the above build configuration changes the
+default Node type.  That way, all packages that depend on Tpetra will
+use the Kokkos refactor version of Tpetra in /their/ tests by default.
+
+
+* Full set of default values of template parameters
+
+Usability improvement!  Most Tpetra classes now come with a full set
+of default values of template parameters.  In many cases, you need no
+longer specify _any_ template parameters' values, if you only intend
+to use their defaults.  For example, you may now write the following:
+
+  // All default template parameters!
+  Tpetra::Map<> map (...);
+
+  // No "typename" because Map<> is a concrete type.
+  typedef Tpetra::Map<>::local_ordinal_type LO;
+  typedef Tpetra::Map<>::global_ordinal_type GO;
+
+  for (LO i_lcl = map.getMinLocalIndex (); 
+       i_lcl <= map.getMaxLocalIndex (); ++i_lcl) {
+    const GO i_gbl = map.getGlobalElement (i_lcl);
+    // ...
+  }
+
+  // All default template parameters!
+  // Scalar defaults to double.
+  // LocalOrdinal, GlobalOrdinal, and Node default
+  // to the same values as those of Map<> above.
+  Tpetra::MultiVector<> X (...);
+
+Also, if you need to specify (say) GlobalOrdinal explicitly, you don't
+have to specify Node explicitly.  For example:
+
+  // Don't need to specify Node; it takes its default value.
+  Tpetra::Map<int, long long> map (...);
+  Tpetra::MultiVector<double, int, long long> X (...);
+
+You may specify the default value of Node at Trilinos configure time
+(that is, when running CMake).  The current default is
+KokkosClassic::SerialNode (no threads; MPI only).  This will change,
+but it will always have a reasonable value for conventional multicore
+processors.
+
+Please, _please_ prefer default values of template parameters!  This
+will make your code shorter, allow more flexibility at configure time,
+and might even make builds a bit faster.  All Tpetra classes come with
+public typedefs, so you can pick up scalar_type (if applicable),
+local_ordinal_type, global_ordinal_type, and node_type from Tpetra
+directly, rather than specifying them explicitly.
+
+* Removed the LocalMatOps template parameter
+
+CrsGraph, CrsMatrix, VbrMatrix, and other classes used to have a
+LocalMatOps template parameter.  This was the fourth template
+parameter of CrsGraph and the fifth template parameter of CrsMatrix.
+It was always optional.  Chris Baker intended it as an extension point
+for users or third-party vendors to insert their own sparse
+matrix-vector multiply or triangular solve routines.  However, no one
+ever used it for this purpose as far as we know.  When it started to
+hinder the Kokkos refactor effort (see release notes for Trilinos
+11.10 below), we removed it.  This should speed up compilation times.
+
+Lesson: It's always easier to _add_ a template parameter (at the end,
+if it's optional) than it is to remove one.
+
+Getting rid of LocalMatOps does amount to a backwards incompatible
+interface change.  However, we deemed it a harmless change, for the
+following reasons:
+
+  1. LocalMatOps has a reasonable default value.
+  2. As far as I know, no one other than Chris Baker and myself ever
+     wrote or used alternate implementations of LocalMatOps.
+  3. Trilinos packages or applications which bothered to specify
+     LocalMatOps never used anything other than the default value.
+
+Thus, it never even crossed my mind that applications would bother to
+specify this thing.  Unfortunately, some applications may still
+LocalMatOps explicitly.  This typedef is unnecessary.  You do not need
+to specify this template parameter.  The default value was always
+perfectly fine and has been for years.
+
+
+Trilinos 11.10:
+---------------
 
 * Continued work on the Kokkos refactor version of Tpetra
 

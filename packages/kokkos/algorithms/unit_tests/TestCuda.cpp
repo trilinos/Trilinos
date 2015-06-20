@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,40 +36,51 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
 
+#include <stdint.h>
 #include <iostream>
+#include <iomanip>
 
 #include <gtest/gtest.h>
 
-#include <Kokkos_Cuda.hpp>
-#include <stdint.h>
+#include <Kokkos_Core.hpp>
 
-#include <iomanip>
+#ifdef KOKKOS_HAVE_CUDA
+
+#include <TestRandom.hpp>
+#include <TestSort.hpp>
 
 namespace Test {
-#ifdef KOKKOS_HAVE_CUDA
 
 class cuda : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
     std::cout << std::setprecision(5) << std::scientific;
-    Kokkos::Cuda::host_mirror_device_type::initialize();
+    Kokkos::HostSpace::execution_space::initialize();
     Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
   }
   static void TearDownTestCase()
   {
     Kokkos::Cuda::finalize();
-    Kokkos::Cuda::host_mirror_device_type::finalize();
+    Kokkos::HostSpace::execution_space::finalize();
   }
 };
 
-extern void cuda_test_random_xorshift64( int num_draws  );
-extern void cuda_test_random_xorshift1024( int num_draws  );
+void cuda_test_random_xorshift64( int num_draws  )
+{
+  Impl::test_random<Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> >(num_draws);
+}
+
+void cuda_test_random_xorshift1024( int num_draws  )
+{
+  Impl::test_random<Kokkos::Random_XorShift1024_Pool<Kokkos::Cuda> >(num_draws);
+}
+
 
 #define CUDA_RANDOM_XORSHIFT64( num_draws )                                \
   TEST_F( cuda, Random_XorShift64 ) {   \
@@ -81,10 +92,19 @@ extern void cuda_test_random_xorshift1024( int num_draws  );
   cuda_test_random_xorshift1024(num_draws);                                   \
   }
 
+#define CUDA_SORT_UNSIGNED( size )                                \
+  TEST_F( cuda, SortUnsigned ) {   \
+      Impl::test_sort< Kokkos::Cuda, unsigned >(size);                                   \
+  }
+
 CUDA_RANDOM_XORSHIFT64(  132141141 )
 CUDA_RANDOM_XORSHIFT1024( 52428813 )
+CUDA_SORT_UNSIGNED(171)
 
 #undef CUDA_RANDOM_XORSHIFT64
 #undef CUDA_RANDOM_XORSHIFT1024
-#endif
+#undef CUDA_SORT_UNSIGNED
 }
+
+#endif  /* #ifdef KOKKOS_HAVE_CUDA */
+

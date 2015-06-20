@@ -57,6 +57,7 @@
 #include "Teuchos_oblackholestream.hpp"
 
 #include <unistd.h>
+#include <stdlib.h>
 
 #include <mpi.h>
 
@@ -69,73 +70,74 @@ NNTI_transport_t trans_hdl;
 NNTI_peer_t      server_hdl;
 char             url[NNTI_URL_LEN];
 
-NNTI_buffer_t       queue_mr;
-NNTI_buffer_t       client_ack_mr;
-NNTI_buffer_t       server_ack_mr;
-NNTI_buffer_t       send_mr;
+NNTI_buffer_t queue_mr;
+NNTI_buffer_t client_ack_mr;
+NNTI_buffer_t server_ack_mr;
+NNTI_buffer_t send_mr;
 
-NNTI_buffer_t       get_src_mr;
-NNTI_buffer_t       get_dst_mr;
+NNTI_work_request_t   queue_wr;
+NNTI_work_request_t   client_ack_wr;
+NNTI_work_request_t   server_ack_wr;
+NNTI_work_request_t  *send_wr;       // need an array of work requests because we will be issuing multiple async sends
+NNTI_work_request_t **send_wr_list;
 
-NNTI_buffer_t       put_src_mr;
-NNTI_buffer_t       put_dst_mr;
+NNTI_buffer_t get_src_mr;
+NNTI_buffer_t get_dst_mr;
+NNTI_buffer_t put_src_mr;
+NNTI_buffer_t put_dst_mr;
 
-#define WR_COUNT 2
+NNTI_work_request_t *get_wr;  // need an array of work requests because we will be issuing multiple async gets
+NNTI_work_request_t *put_wr;  // need an array of work requests because we will be issuing multiple async puts
+
 NNTI_result_t        err;
 
 int one_mb=1024*1024;
 
 log_level nntiperf_debug_level = LOG_UNDEFINED;
 
-uint32_t num_sends;
+uint64_t num_sends;
 
-uint32_t num_gets;
-uint32_t get_size;
+uint64_t num_gets;
+uint64_t min_get_size;
+uint64_t max_get_size;
 
-uint32_t num_puts;
-uint32_t put_size;
+uint64_t num_puts;
+uint64_t min_put_size;
+uint64_t max_put_size;
 
 
-static int buffer_pack(void *input, void **output, int32_t *output_size, xdrproc_t pack_func)
+static int buffer_pack(void *input, char **output, uint64_t *output_size)
 {
-	XDR pack_xdrs;
-
-	*output_size = xdr_sizeof(pack_func, input);
-	*output=malloc(*output_size);
-    xdrmem_create(&pack_xdrs, (caddr_t)*output, *output_size, XDR_ENCODE);
-    pack_func(&pack_xdrs, input);
+    NNTI_dt_sizeof(&trans_hdl, input, output_size);
+    *output=(char*)malloc(*output_size);
+    NNTI_dt_pack(&trans_hdl, input, *output, *output_size);
 
     return(0);
 }
 
-static int buffer_pack_free(void *input, int32_t input_size, xdrproc_t free_func)
+static int buffer_free(void *input)
 {
-	XDR free_xdrs;
-
-    xdrmem_create(&free_xdrs, (caddr_t)input, input_size, XDR_FREE);
-    free_func(&free_xdrs, input);
+    NNTI_dt_free(&trans_hdl, input);
 
     return(0);
 }
 
-static int buffer_unpack(void *input, int32_t input_size, void *output, xdrproc_t unpack_func)
+static int buffer_unpack(char *input, uint64_t input_size, void *output)
 {
-	XDR unpack_xdrs;
-
-    xdrmem_create(&unpack_xdrs, (caddr_t)input, input_size, XDR_DECODE);
-    unpack_func(&unpack_xdrs, output);
+    NNTI_dt_unpack(&trans_hdl, output, input, input_size);
 
     return(0);
 }
 
 void client(void) {
-    NNTI_result_t rc=NNTI_OK;
-    NNTI_status_t rdma_status;
-    NNTI_status_t send_status;
-    NNTI_status_t client_ack_status;
-    char *c_ptr;
-    void    *packed=NULL;
-    int32_t  packed_size=0;
+    NNTI_result_t   rc=NNTI_OK;
+    NNTI_status_t   rdma_status;
+    NNTI_status_t  *send_status;
+    NNTI_status_t **send_status_list;
+    NNTI_status_t   client_ack_status;
+    char    *c_ptr;
+    char     *packed=NULL;
+    uint64_t  packed_size=0;
 
     double op_timer;
 
@@ -144,26 +146,37 @@ void client(void) {
 
     NNTI_connect(&trans_hdl, url, 5000, &server_hdl);
 
-    char *send_buf=(char *)malloc(NNTI_REQUEST_BUFFER_SIZE);
+    NNTI_alloc(&trans_hdl, NNTI_REQUEST_BUFFER_SIZE, 1, NNTI_SEND_SRC, &send_mr);
+    char *send_buf=NNTI_BUFFER_C_POINTER(&send_mr);
     memset(send_buf, 0, NNTI_REQUEST_BUFFER_SIZE);
-    NNTI_register_memory(&trans_hdl, send_buf, NNTI_REQUEST_BUFFER_SIZE, 1, NNTI_SEND_SRC, NULL, &send_mr);
 
-    char *client_ack_buf=(char *)malloc(NNTI_REQUEST_BUFFER_SIZE);
+    NNTI_alloc(&trans_hdl, NNTI_REQUEST_BUFFER_SIZE, 1, NNTI_RECV_DST, &client_ack_mr);
+    char *client_ack_buf=NNTI_BUFFER_C_POINTER(&client_ack_mr);
     memset(client_ack_buf, 0, NNTI_REQUEST_BUFFER_SIZE);
-    NNTI_register_memory(&trans_hdl, client_ack_buf, NNTI_REQUEST_BUFFER_SIZE, 1, NNTI_RECV_DST, NULL, &client_ack_mr);
 
-    char *get_dst_buf=(char *)malloc(get_size);
-    memset(get_dst_buf, 0, get_size);
-    NNTI_register_memory(&trans_hdl, get_dst_buf, get_size, 1, NNTI_GET_DST, NULL, &get_dst_mr);
+    NNTI_alloc(&trans_hdl, max_get_size, 1, NNTI_GET_DST, &get_dst_mr);
+    char *get_dst_buf=NNTI_BUFFER_C_POINTER(&get_dst_mr);
+    memset(get_dst_buf, 0, max_get_size);
 
-    char *put_src_buf=(char *)malloc(put_size);
-    memset(put_src_buf, 0, put_size);
-    NNTI_register_memory(&trans_hdl, put_src_buf, put_size, 1, NNTI_PUT_SRC, NULL, &put_src_mr);
+    NNTI_alloc(&trans_hdl, max_put_size, 1, NNTI_PUT_SRC, &put_src_mr);
+    char *put_src_buf=NNTI_BUFFER_C_POINTER(&put_src_mr);
+    memset(put_src_buf, 0, max_put_size);
+
+    send_wr      = (NNTI_work_request_t*)malloc(num_sends*sizeof(NNTI_work_request_t));
+    send_wr_list = (NNTI_work_request_t**)malloc(num_sends*sizeof(NNTI_work_request_t*));
+    send_status      = (NNTI_status_t*)malloc(num_sends*sizeof(NNTI_status_t));
+    send_status_list = (NNTI_status_t**)malloc(num_sends*sizeof(NNTI_status_t*));
+    for (int i=0;i<num_sends;i++) {
+        send_wr_list[i] = &send_wr[i];
+        send_status_list[i] = &send_status[i];
+    }
+    get_wr =(NNTI_work_request_t*)malloc(num_gets*sizeof(NNTI_work_request_t));
+    put_wr =(NNTI_work_request_t*)malloc(num_puts*sizeof(NNTI_work_request_t));
 
     /*
      * Phase 1 - exchange buffer handles
      */
-    buffer_pack(&client_ack_mr, &packed, &packed_size, (xdrproc_t)&xdr_NNTI_buffer_t);
+    buffer_pack(&client_ack_mr, &packed, &packed_size);
     if (packed_size > NNTI_REQUEST_BUFFER_SIZE) {
         log_error(nntiperf_debug_level, "buffer_pack() says encoded NNTI_buffer_t is larger than NNTI_REQUEST_BUFFER_SIZE");
     	MPI_Abort(MPI_COMM_WORLD, -10);
@@ -172,21 +185,21 @@ void client(void) {
     // send the server the recv_mr so it can send back it's ack_mr
     memcpy(send_buf, packed, packed_size);
 
-    buffer_pack_free(packed, packed_size, (xdrproc_t)&xdr_NNTI_buffer_t);
+    NNTI_create_work_request(&client_ack_mr, &client_ack_wr);
 
-    rc=NNTI_send(&server_hdl, &send_mr, NULL);
+    rc=NNTI_send(&server_hdl, &send_mr, NULL, &send_wr[0]);
     if (rc != NNTI_OK) {
         log_error(nntiperf_debug_level, "NNTI_send() returned an error: %d", rc);
         MPI_Abort(MPI_COMM_WORLD, rc);
     }
-    rc=NNTI_wait(&send_mr, NNTI_SEND_SRC, 5000, &send_status);
+    rc=NNTI_wait(&send_wr[0], 5000, &send_status[0]);
     if (rc != NNTI_OK) {
         log_error(nntiperf_debug_level, "NNTI_wait() returned an error: %d", rc);
         MPI_Abort(MPI_COMM_WORLD, rc);
     }
 
     // wait for the server to send back it's recv_mr
-    rc=NNTI_wait(&client_ack_mr, NNTI_RECV_DST, -1, &client_ack_status);
+    rc=NNTI_wait(&client_ack_wr, -1, &client_ack_status);
 
     char *ptr=(char*)client_ack_status.start+client_ack_status.offset;
 
@@ -195,21 +208,23 @@ void client(void) {
     memcpy(packed, ptr, packed_size);
     ptr += packed_size;
 
-    buffer_unpack(packed, packed_size, &server_ack_mr, (xdrproc_t)&xdr_NNTI_buffer_t);
+    buffer_unpack(packed, packed_size, &server_ack_mr);
 
     memcpy(&packed_size, ptr, sizeof(packed_size));
     ptr += sizeof(packed_size);
     memcpy(packed, ptr, packed_size);
     ptr += packed_size;
 
-    buffer_unpack(packed, packed_size, &get_src_mr, (xdrproc_t)&xdr_NNTI_buffer_t);
+    buffer_unpack(packed, packed_size, &get_src_mr);
 
     memcpy(&packed_size, ptr, sizeof(packed_size));
     ptr += sizeof(packed_size);
     memcpy(packed, ptr, packed_size);
     ptr += packed_size;
 
-    buffer_unpack(packed, packed_size, &put_dst_mr, (xdrproc_t)&xdr_NNTI_buffer_t);
+    buffer_unpack(packed, packed_size, &put_dst_mr);
+
+    NNTI_destroy_work_request(&client_ack_wr);
 
 //    fprint_NNTI_buffer(logger_get_file(), "server_ack_mr",
 //            "received server ack hdl", &server_ack_mr);
@@ -223,22 +238,29 @@ void client(void) {
     /*
      * Phase 2 - test sync request performance
      */
+    NNTI_create_work_request(&client_ack_mr, &client_ack_wr);
     op_timer=trios_get_time();
-    for (int i=0;i<num_sends;i++) {
-        rc=NNTI_send(&server_hdl, &send_mr, NULL);
+    for (uint64_t i=0;i<num_sends;i++) {
+        rc=NNTI_send(&server_hdl, &send_mr, NULL, &send_wr[0]);
         if (rc != NNTI_OK) {
             log_error(nntiperf_debug_level, "NNTI_send() returned an error: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
-        rc=NNTI_wait(&send_mr, NNTI_SEND_SRC, 1000, &send_status);
+        rc=NNTI_wait(&send_wr[0], 1000, &send_status[0]);
         if (rc != NNTI_OK) {
             log_error(nntiperf_debug_level, "NNTI_wait() returned an error: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
     }
+
+    // wait for the server to acknowledge that all messages were received
+    rc=NNTI_wait(&client_ack_wr, -1, &client_ack_status);
+    NNTI_destroy_work_request(&client_ack_wr);
+
     op_timer=trios_get_time()-op_timer;
     if (num_sends > 0) {
     	out << " sync requests per second == " << num_sends/op_timer << std::endl;
+    	out << " sync requests MBps       == " << (double)(NNTI_REQUEST_BUFFER_SIZE * num_sends)/one_mb/op_timer << std::endl;
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
@@ -246,24 +268,29 @@ void client(void) {
     /*
      * Phase 3 - test async request performance
      */
+    NNTI_create_work_request(&client_ack_mr, &client_ack_wr);
     op_timer=trios_get_time();
-    for (int i=0;i<num_sends;i++) {
-        rc=NNTI_send(&server_hdl, &send_mr, NULL);
+    for (uint64_t i=0;i<num_sends;i++) {
+        rc=NNTI_send(&server_hdl, &send_mr, NULL, &send_wr[i]);
         if (rc != NNTI_OK) {
             log_error(nntiperf_debug_level, "NNTI_send() returned an error: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
     }
-    for (int i=0;i<num_sends;i++) {
-        rc=NNTI_wait(&send_mr, NNTI_SEND_SRC, 1000, &send_status);
-        if (rc != NNTI_OK) {
-            log_error(nntiperf_debug_level, "NNTI_wait() returned an error: %d", rc);
-            MPI_Abort(MPI_COMM_WORLD, rc);
-        }
+    rc=NNTI_waitall(send_wr_list, num_sends, 1000, send_status_list);
+    if (rc != NNTI_OK) {
+        log_error(nntiperf_debug_level, "NNTI_waitall() returned an error: %d", rc);
+        MPI_Abort(MPI_COMM_WORLD, rc);
     }
+
+    // wait for the server to acknowledge that all messages were received
+    rc=NNTI_wait(&client_ack_wr, -1, &client_ack_status);
+    NNTI_destroy_work_request(&client_ack_wr);
+
     op_timer=trios_get_time()-op_timer;
     if (num_sends > 0) {
     	out << "async requests per second == " << num_sends/op_timer << std::endl;
+        out << "async requests MBps       == " << (double)(NNTI_REQUEST_BUFFER_SIZE * num_sends)/one_mb/op_timer << std::endl;
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
@@ -272,35 +299,37 @@ void client(void) {
      * Phase 4 - test sync get performance
      */
     // warm up the pipes
-    for (int i=0;i<num_gets;i++) {
-        rc=NNTI_get(&get_src_mr, client_rank*get_size, get_size, &get_dst_mr, 0);
+    for (uint64_t i=0;i<num_gets;i++) {
+        rc=NNTI_get(&get_src_mr, client_rank*max_get_size, max_get_size, &get_dst_mr, 0, &get_wr[0]);
         if (rc != NNTI_OK) {
             log_error(nntiperf_debug_level, "NNTI_get() returned an error: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
-        rc=NNTI_wait(&get_dst_mr, NNTI_GET_DST, 1000, &rdma_status);
+        rc=NNTI_wait(&get_wr[0], 10000, &rdma_status);
         if (rc != NNTI_OK) {
             log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_OK: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
     }
 
-    op_timer=trios_get_time();
-    for (int i=0;i<num_gets;i++) {
-        rc=NNTI_get(&get_src_mr, client_rank*get_size, get_size, &get_dst_mr, 0);
-        if (rc != NNTI_OK) {
-            log_error(nntiperf_debug_level, "NNTI_get() returned an error: %d", rc);
-            MPI_Abort(MPI_COMM_WORLD, rc);
+    for (uint64_t get_size=min_get_size;get_size<=max_get_size;get_size*=2) {
+        op_timer=trios_get_time();
+        for (uint64_t i=0;i<num_gets;i++) {
+            rc=NNTI_get(&get_src_mr, client_rank*get_size, get_size, &get_dst_mr, 0, &get_wr[0]);
+            if (rc != NNTI_OK) {
+                log_error(nntiperf_debug_level, "NNTI_get() returned an error: %d", rc);
+                MPI_Abort(MPI_COMM_WORLD, rc);
+            }
+            rc=NNTI_wait(&get_wr[0], 10000, &rdma_status);
+            if (rc != NNTI_OK) {
+                log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_OK: %d", rc);
+                MPI_Abort(MPI_COMM_WORLD, rc);
+            }
         }
-        rc=NNTI_wait(&get_dst_mr, NNTI_GET_DST, 1000, &rdma_status);
-        if (rc != NNTI_OK) {
-            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_OK: %d", rc);
-            MPI_Abort(MPI_COMM_WORLD, rc);
+        op_timer=trios_get_time()-op_timer;
+        if (num_gets > 0) {
+            out << " sync get (" << get_size << " byte transfer) == " << (double)(num_gets*get_size)/one_mb/op_timer << " MBps" << std::endl;
         }
-    }
-    op_timer=trios_get_time()-op_timer;
-    if (num_gets > 0) {
-    	out << " sync get (" << get_size << " byte transfer) == " << (double)(num_gets*get_size)/one_mb/op_timer << " MBps" << std::endl;
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
@@ -309,39 +338,41 @@ void client(void) {
      * Phase 5 - test async get performance
      */
     // warm up the pipes
-    for (int i=0;i<num_gets;i++) {
-        rc=NNTI_get(&get_src_mr, client_rank*get_size, get_size, &get_dst_mr, 0);
+    for (uint64_t i=0;i<num_gets;i++) {
+        rc=NNTI_get(&get_src_mr, client_rank*max_get_size, max_get_size, &get_dst_mr, 0, &get_wr[i]);
         if (rc != NNTI_OK) {
             log_error(nntiperf_debug_level, "NNTI_get() returned an error: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
     }
-    for (int i=0;i<num_gets;i++) {
-        rc=NNTI_wait(&get_dst_mr, NNTI_GET_DST, 1000, &rdma_status);
+    for (uint64_t i=0;i<num_gets;i++) {
+        rc=NNTI_wait(&get_wr[i], 10000, &rdma_status);
         if (rc != NNTI_OK) {
             log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_OK: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
     }
 
-    op_timer=trios_get_time();
-    for (int i=0;i<num_gets;i++) {
-        rc=NNTI_get(&get_src_mr, client_rank*get_size, get_size, &get_dst_mr, 0);
-        if (rc != NNTI_OK) {
-            log_error(nntiperf_debug_level, "NNTI_get() returned an error: %d", rc);
-            MPI_Abort(MPI_COMM_WORLD, rc);
+    for (uint64_t get_size=min_get_size;get_size<=max_get_size;get_size*=2) {
+        op_timer=trios_get_time();
+        for (uint64_t i=0;i<num_gets;i++) {
+            rc=NNTI_get(&get_src_mr, client_rank*get_size, get_size, &get_dst_mr, 0, &get_wr[i]);
+            if (rc != NNTI_OK) {
+                log_error(nntiperf_debug_level, "NNTI_get() returned an error: %d", rc);
+                MPI_Abort(MPI_COMM_WORLD, rc);
+            }
         }
-    }
-    for (int i=0;i<num_gets;i++) {
-        rc=NNTI_wait(&get_dst_mr, NNTI_GET_DST, 1000, &rdma_status);
-        if (rc != NNTI_OK) {
-            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_OK: %d", rc);
-            MPI_Abort(MPI_COMM_WORLD, rc);
+        for (uint64_t i=0;i<num_gets;i++) {
+            rc=NNTI_wait(&get_wr[i], 10000, &rdma_status);
+            if (rc != NNTI_OK) {
+                log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_OK: %d", rc);
+                MPI_Abort(MPI_COMM_WORLD, rc);
+            }
         }
-    }
-    op_timer=trios_get_time()-op_timer;
-    if (num_gets > 0) {
-    	out << "async get (" << get_size << " byte transfer) == " << (double)(num_gets*get_size)/one_mb/op_timer << " MBps" << std::endl;
+        op_timer=trios_get_time()-op_timer;
+        if (num_gets > 0) {
+            out << "async get (" << get_size << " byte transfer) == " << (double)(num_gets*get_size)/one_mb/op_timer << " MBps" << std::endl;
+        }
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
@@ -350,35 +381,37 @@ void client(void) {
      * Phase 6 - test sync put performance
      */
     // warm up the pipes
-    for (int i=0;i<num_puts;i++) {
-        rc=NNTI_put(&put_src_mr, 0, put_size, &put_dst_mr, client_rank*put_size);
+    for (uint64_t i=0;i<num_puts;i++) {
+        rc=NNTI_put(&put_src_mr, 0, max_put_size, &put_dst_mr, client_rank*max_put_size, &put_wr[0]);
         if (rc != NNTI_OK) {
             log_error(nntiperf_debug_level, "NNTI_put() returned an error: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
-        rc=NNTI_wait(&put_src_mr, NNTI_PUT_SRC, 1000, &rdma_status);
+        rc=NNTI_wait(&put_wr[0], 10000, &rdma_status);
         if (rc != NNTI_OK) {
             log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_OK: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
     }
 
-    op_timer=trios_get_time();
-    for (int i=0;i<num_puts;i++) {
-        rc=NNTI_put(&put_src_mr, 0, put_size, &put_dst_mr, client_rank*put_size);
-        if (rc != NNTI_OK) {
-            log_error(nntiperf_debug_level, "NNTI_put() returned an error: %d", rc);
-            MPI_Abort(MPI_COMM_WORLD, rc);
+    for (uint64_t put_size=min_put_size;put_size<=max_put_size;put_size*=2) {
+        op_timer=trios_get_time();
+        for (uint64_t i=0;i<num_puts;i++) {
+            rc=NNTI_put(&put_src_mr, 0, put_size, &put_dst_mr, client_rank*put_size, &put_wr[0]);
+            if (rc != NNTI_OK) {
+                log_error(nntiperf_debug_level, "NNTI_put() returned an error: %d", rc);
+                MPI_Abort(MPI_COMM_WORLD, rc);
+            }
+            rc=NNTI_wait(&put_wr[0], 10000, &rdma_status);
+            if (rc != NNTI_OK) {
+                log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_OK: %d", rc);
+                MPI_Abort(MPI_COMM_WORLD, rc);
+            }
         }
-        rc=NNTI_wait(&put_src_mr, NNTI_PUT_SRC, 1000, &rdma_status);
-        if (rc != NNTI_OK) {
-            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_OK: %d", rc);
-            MPI_Abort(MPI_COMM_WORLD, rc);
+        op_timer=trios_get_time()-op_timer;
+        if (num_puts > 0) {
+            out << " sync put (" << put_size << " byte transfer) == " << (double)(num_puts*put_size)/one_mb/op_timer << " MBps" << std::endl;
         }
-    }
-    op_timer=trios_get_time()-op_timer;
-    if (num_puts > 0) {
-    	out << " sync put (" << put_size << " byte transfer) == " << (double)(num_puts*put_size)/one_mb/op_timer << " MBps" << std::endl;
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
@@ -387,55 +420,57 @@ void client(void) {
      * Phase 7 - test async put performance
      */
     // warm up the pipes
-    for (int i=0;i<num_puts;i++) {
-        rc=NNTI_put(&put_src_mr, 0, put_size, &put_dst_mr, client_rank*put_size);
+    for (uint64_t i=0;i<num_puts;i++) {
+        rc=NNTI_put(&put_src_mr, 0, max_put_size, &put_dst_mr, client_rank*max_put_size, &put_wr[i]);
         if (rc != NNTI_OK) {
             log_error(nntiperf_debug_level, "NNTI_put() returned an error: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
     }
-    for (int i=0;i<num_puts;i++) {
-        rc=NNTI_wait(&put_src_mr, NNTI_PUT_SRC, 1000, &rdma_status);
+    for (uint64_t i=0;i<num_puts;i++) {
+        rc=NNTI_wait(&put_wr[i], 10000, &rdma_status);
         if (rc != NNTI_OK) {
             log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_OK: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
     }
 
-    op_timer=trios_get_time();
-    for (int i=0;i<num_puts;i++) {
-        rc=NNTI_put(&put_src_mr, 0, put_size, &put_dst_mr, client_rank*put_size);
-        if (rc != NNTI_OK) {
-            log_error(nntiperf_debug_level, "NNTI_put() returned an error: %d", rc);
-            MPI_Abort(MPI_COMM_WORLD, rc);
+    for (uint64_t put_size=min_put_size;put_size<=max_put_size;put_size*=2) {
+        op_timer=trios_get_time();
+        for (uint64_t i=0;i<num_puts;i++) {
+            rc=NNTI_put(&put_src_mr, 0, put_size, &put_dst_mr, client_rank*put_size, &put_wr[i]);
+            if (rc != NNTI_OK) {
+                log_error(nntiperf_debug_level, "NNTI_put() returned an error: %d", rc);
+                MPI_Abort(MPI_COMM_WORLD, rc);
+            }
         }
-    }
-    for (int i=0;i<num_puts;i++) {
-        rc=NNTI_wait(&put_src_mr, NNTI_PUT_SRC, 1000, &rdma_status);
-        if (rc != NNTI_OK) {
-            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_OK: %d", rc);
-            MPI_Abort(MPI_COMM_WORLD, rc);
+        for (uint64_t i=0;i<num_puts;i++) {
+            rc=NNTI_wait(&put_wr[i], 1000, &rdma_status);
+            if (rc != NNTI_OK) {
+                log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_OK: %d", rc);
+                MPI_Abort(MPI_COMM_WORLD, rc);
+            }
         }
-    }
-    op_timer=trios_get_time()-op_timer;
-    if (num_puts > 0) {
-    	out << "async put (" << put_size << " byte transfer) == " << (double)(num_puts*put_size)/one_mb/op_timer << " MBps" << std::endl;
+        op_timer=trios_get_time()-op_timer;
+        if (num_puts > 0) {
+            out << "async put (" << put_size << " byte transfer) == " << (double)(num_puts*put_size)/one_mb/op_timer << " MBps" << std::endl;
+        }
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
 
+    free(send_wr);
+    free(get_wr);
+    free(put_wr);
 
-    NNTI_unregister_memory(&send_mr);
-    free(send_buf);
+    buffer_free(&server_ack_mr);
+    buffer_free(&get_src_mr);
+    buffer_free(&put_dst_mr);
 
-    NNTI_unregister_memory(&client_ack_mr);
-    free(client_ack_buf);
-
-    NNTI_unregister_memory(&get_dst_mr);
-    free(get_dst_buf);
-
-    NNTI_unregister_memory(&put_src_mr);
-    free(put_src_buf);
+    NNTI_free(&send_mr);
+    NNTI_free(&client_ack_mr);
+    NNTI_free(&get_dst_mr);
+    NNTI_free(&put_src_mr);
 
     return;
 }
@@ -447,46 +482,49 @@ void server(void)
     NNTI_status_t send_status;
     NNTI_status_t server_ack_status;
     char *c_ptr;
-    void    *packed=NULL;
-    int32_t  packed_size=0;
+    char     *packed=NULL;
+    uint64_t  packed_size=0;
 
 
     int num_elements=nclients+(4*nclients*num_sends);
-    char *queue_buf=(char *)malloc(num_elements*NNTI_REQUEST_BUFFER_SIZE);
-    memset(queue_buf, 0, num_elements*NNTI_REQUEST_BUFFER_SIZE);
-    NNTI_register_memory(&trans_hdl, queue_buf, NNTI_REQUEST_BUFFER_SIZE, num_elements, NNTI_RECV_QUEUE, NULL, &queue_mr);
+    NNTI_alloc(&trans_hdl, NNTI_REQUEST_BUFFER_SIZE, num_elements, NNTI_RECV_QUEUE, &queue_mr);
 
-    char *send_buf=(char *)malloc(NNTI_REQUEST_BUFFER_SIZE);
+    NNTI_alloc(&trans_hdl, NNTI_REQUEST_BUFFER_SIZE, 1, NNTI_SEND_SRC, &send_mr);
+    char *send_buf=NNTI_BUFFER_C_POINTER(&send_mr);
     memset(send_buf, 0, NNTI_REQUEST_BUFFER_SIZE);
-    NNTI_register_memory(&trans_hdl, send_buf, NNTI_REQUEST_BUFFER_SIZE, 1, NNTI_SEND_SRC, NULL, &send_mr);
 
-    char *server_ack_buf=(char *)malloc(NNTI_REQUEST_BUFFER_SIZE);
+    NNTI_alloc(&trans_hdl, NNTI_REQUEST_BUFFER_SIZE, 1, NNTI_RECV_DST, &server_ack_mr);
+    char *server_ack_buf=NNTI_BUFFER_C_POINTER(&server_ack_mr);
     memset(server_ack_buf, 0, NNTI_REQUEST_BUFFER_SIZE);
-    NNTI_register_memory(&trans_hdl, server_ack_buf, NNTI_REQUEST_BUFFER_SIZE, 1, NNTI_RECV_DST, NULL, &server_ack_mr);
 
-    char *get_src_buf=(char *)malloc(nclients*get_size);
-    memset(get_src_buf, 0, nclients*get_size);
-    NNTI_register_memory(&trans_hdl, get_src_buf, nclients*get_size, 1, NNTI_GET_SRC, NULL, &get_src_mr);
+    char *get_src_buf=(char *)malloc(nclients*max_get_size);
+    memset(get_src_buf, 0, nclients*max_get_size);
+    NNTI_register_memory(&trans_hdl, get_src_buf, nclients*max_get_size, 1, NNTI_GET_SRC, &get_src_mr);
 
-    char *put_dst_buf=(char *)malloc(nclients*put_size);
-    memset(put_dst_buf, 0, nclients*put_size);
-    NNTI_register_memory(&trans_hdl, put_dst_buf, nclients*put_size, 1, NNTI_PUT_DST, NULL, &put_dst_mr);
+    char *put_dst_buf=(char *)malloc(nclients*max_put_size);
+    memset(put_dst_buf, 0, nclients*max_put_size);
+    NNTI_register_memory(&trans_hdl, put_dst_buf, nclients*max_put_size, 1, NNTI_PUT_DST, &put_dst_mr);
 
+    send_wr=(NNTI_work_request_t*)malloc(num_sends*sizeof(NNTI_work_request_t));
 
     /*
      * Phase 1 - exchange buffers handles
      */
     // wait for the client to send it's recv_mr
-    NNTI_wait(&queue_mr, NNTI_RECV_QUEUE, -1, &queue_status);
+    NNTI_create_work_request(&queue_mr, &queue_wr);
+
+    NNTI_wait(&queue_wr, -1, &queue_status);
 
     c_ptr=(char*)queue_status.start+queue_status.offset;
-    buffer_unpack(c_ptr, queue_status.length, &client_ack_mr, (xdrproc_t)&xdr_NNTI_buffer_t);
+    buffer_unpack(c_ptr, queue_status.length, &client_ack_mr);
+
+    NNTI_destroy_work_request(&queue_wr);
 
 //    fprint_NNTI_buffer(logger_get_file(), "client_ack_mr",
 //            "received client ack hdl", &client_ack_mr);
 
     // send our server_ack_mr, get_src_mr and put_dst_mr back to the client
-    buffer_pack(&server_ack_mr, &packed, &packed_size, (xdrproc_t)&xdr_NNTI_buffer_t);
+    buffer_pack(&server_ack_mr, &packed, &packed_size);
     if (packed_size > NNTI_REQUEST_BUFFER_SIZE) {
         log_error(nntiperf_debug_level, "buffer_pack() says encoded NNTI_buffer_t is larger than NNTI_REQUEST_BUFFER_SIZE");
     	MPI_Abort(MPI_COMM_WORLD, -10);
@@ -498,9 +536,9 @@ void server(void)
     memcpy(ptr, packed, packed_size);
     ptr += packed_size;
 
-    buffer_pack_free(packed, packed_size, (xdrproc_t)&xdr_NNTI_buffer_t);
+    free(packed);
 
-    buffer_pack(&get_src_mr, &packed, &packed_size, (xdrproc_t)&xdr_NNTI_buffer_t);
+    buffer_pack(&get_src_mr, &packed, &packed_size);
     if (packed_size > NNTI_REQUEST_BUFFER_SIZE) {
         log_error(nntiperf_debug_level, "buffer_pack() says encoded NNTI_buffer_t is larger than NNTI_REQUEST_BUFFER_SIZE");
     	MPI_Abort(MPI_COMM_WORLD, -10);
@@ -511,9 +549,9 @@ void server(void)
     memcpy(ptr, packed, packed_size);
     ptr += packed_size;
 
-    buffer_pack_free(packed, packed_size, (xdrproc_t)&xdr_NNTI_buffer_t);
+    free(packed);
 
-    buffer_pack(&put_dst_mr, &packed, &packed_size, (xdrproc_t)&xdr_NNTI_buffer_t);
+    buffer_pack(&put_dst_mr, &packed, &packed_size);
     if (packed_size > NNTI_REQUEST_BUFFER_SIZE) {
         log_error(nntiperf_debug_level, "buffer_pack() says encoded NNTI_buffer_t is larger than NNTI_REQUEST_BUFFER_SIZE");
     	MPI_Abort(MPI_COMM_WORLD, -10);
@@ -524,14 +562,14 @@ void server(void)
     memcpy(ptr, packed, packed_size);
     ptr += packed_size;
 
-    buffer_pack_free(packed, packed_size, (xdrproc_t)&xdr_NNTI_buffer_t);
+    free(packed);
 
-    rc=NNTI_send(&queue_status.src, &send_mr, &client_ack_mr);
+    rc=NNTI_send(&queue_status.src, &send_mr, &client_ack_mr, &send_wr[0]);
     if (rc != NNTI_OK) {
         log_error(nntiperf_debug_level, "NNTI_send() returned an error: %d", rc);
         MPI_Abort(MPI_COMM_WORLD, rc);
     }
-    rc=NNTI_wait(&send_mr, NNTI_SEND_SRC, 5000, &send_status);
+    rc=NNTI_wait(&send_wr[0], 5000, &send_status);
     if (rc != NNTI_OK) {
         log_error(nntiperf_debug_level, "NNTI_wait() returned an error: %d", rc);
         MPI_Abort(MPI_COMM_WORLD, rc);
@@ -542,12 +580,26 @@ void server(void)
     /*
      * Phase 2 - client sends sync requests
      */
-    for (int i=0;i<nclients*num_sends;i++) {
-        rc=NNTI_wait(&queue_mr, NNTI_RECV_QUEUE, 1000, &queue_status);
+    for (uint64_t i=0;i<nclients*num_sends;i++) {
+        NNTI_create_work_request(&queue_mr, &queue_wr);
+
+        rc=NNTI_wait(&queue_wr, 1000, &queue_status);
         if (rc != NNTI_OK) {
             log_error(nntiperf_debug_level, "NNTI_wait() returned an error: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
+
+        NNTI_destroy_work_request(&queue_wr);
+    }
+    rc=NNTI_send(&queue_status.src, &send_mr, &client_ack_mr, &send_wr[0]);
+    if (rc != NNTI_OK) {
+        log_error(nntiperf_debug_level, "NNTI_send() returned an error: %d", rc);
+        MPI_Abort(MPI_COMM_WORLD, rc);
+    }
+    rc=NNTI_wait(&send_wr[0], 5000, &send_status);
+    if (rc != NNTI_OK) {
+        log_error(nntiperf_debug_level, "NNTI_wait() returned an error: %d", rc);
+        MPI_Abort(MPI_COMM_WORLD, rc);
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
@@ -555,12 +607,26 @@ void server(void)
     /*
      * Phase 3 - client sends async requests
      */
-    for (int i=0;i<nclients*num_sends;i++) {
-        rc=NNTI_wait(&queue_mr, NNTI_RECV_QUEUE, 1000, &queue_status);
+    for (uint64_t i=0;i<nclients*num_sends;i++) {
+        NNTI_create_work_request(&queue_mr, &queue_wr);
+
+        rc=NNTI_wait(&queue_wr, 1000, &queue_status);
         if (rc != NNTI_OK) {
             log_error(nntiperf_debug_level, "NNTI_wait() returned an error: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
+
+        NNTI_destroy_work_request(&queue_wr);
+    }
+    rc=NNTI_send(&queue_status.src, &send_mr, &client_ack_mr, &send_wr[0]);
+    if (rc != NNTI_OK) {
+        log_error(nntiperf_debug_level, "NNTI_send() returned an error: %d", rc);
+        MPI_Abort(MPI_COMM_WORLD, rc);
+    }
+    rc=NNTI_wait(&send_wr[0], 5000, &send_status);
+    if (rc != NNTI_OK) {
+        log_error(nntiperf_debug_level, "NNTI_wait() returned an error: %d", rc);
+        MPI_Abort(MPI_COMM_WORLD, rc);
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
@@ -585,15 +651,13 @@ void server(void)
      */
     MPI_Barrier(MPI_COMM_WORLD);
 
+    free(send_wr);
 
-    NNTI_unregister_memory(&queue_mr);
-    free(queue_buf);
+    buffer_free(&client_ack_mr);
 
-    NNTI_unregister_memory(&send_mr);
-    free(send_buf);
-
-    NNTI_unregister_memory(&server_ack_mr);
-    free(server_ack_buf);
+    NNTI_free(&queue_mr);
+    NNTI_free(&send_mr);
+    NNTI_free(&server_ack_mr);
 
     NNTI_unregister_memory(&get_src_mr);
     free(get_src_buf);
@@ -609,17 +673,22 @@ int parse_args(int argc, char *argv[])
 	num_sends=atol(argv[1]);
 
 	num_gets=atol(argv[2]);
-	get_size=atol(argv[3]);
+    min_get_size=atol(argv[3]);
+    max_get_size=atol(argv[4]);
 
-	num_puts=atol(argv[4]);
-	put_size=atol(argv[5]);
+	num_puts=atol(argv[5]);
+    min_put_size=atol(argv[6]);
+    max_put_size=atol(argv[7]);
 
 	return(0);
 }
 
 int main(int argc, char *argv[])
 {
-    char logname[1024];
+    char      *env_debug_level=NULL;
+    log_level  debug_level=LOG_ERROR;
+    char       logname[1024];
+    char      *debug_name=NULL;
 
     bool success=true;
 
@@ -633,16 +702,6 @@ int main(int argc, char *argv[])
     nclients=nprocs-nservers;
     client_rank=rank-1;
 
-    if (argc != 6) {
-    	if (rank == 0) {
-        	fprintf(stderr, "Usage: %s <num sends> <num_gets> <get_size> <num_puts> <put_size>\n", argv[0]);
-            MPI_Barrier(MPI_COMM_WORLD);
-    	} else {
-    	    MPI_Barrier(MPI_COMM_WORLD);
-    	}
-    	MPI_Abort(MPI_COMM_WORLD, -1);
-    }
-
     if (nprocs != 2) {
     	if (rank == 0) {
         	fprintf(stderr, "%s only supports 2 ranks.\n", argv[0]);
@@ -653,10 +712,35 @@ int main(int argc, char *argv[])
     	MPI_Abort(MPI_COMM_WORLD, -1);
     }
 
-    parse_args(argc, argv);
+    if (argc == 8) {
+        parse_args(argc, argv);
+    } else if (argc == 1) {
+        // no args from user.  set some defaults.
+        num_sends=10;
+        num_gets=10;
+        min_get_size=1024;
+        max_get_size=1024*1024;
+        num_puts=10;
+        min_put_size=1024;
+        max_put_size=1024*1024;
+    } else {
+        // partial args from user.  can't do that.  abort.
+        if (rank == 0) {
+            fprintf(stderr, "Usage: %s <num sends> <num_gets> <get_size> <num_puts> <put_size>\n", argv[0]);
+            MPI_Barrier(MPI_COMM_WORLD);
+        } else {
+            MPI_Barrier(MPI_COMM_WORLD);
+        }
+        MPI_Abort(MPI_COMM_WORLD, -1);
+    }
 
-    sprintf(logname, "nntiperf.%03d.log", rank);
-    logger_init(LOG_ERROR, NULL);
+    env_debug_level=getenv("NNTI_LOG_LEVEL");
+    if (env_debug_level != NULL) {
+        debug_level=(log_level)strtol(env_debug_level, NULL, 0);
+        sprintf(logname, "nntiperf.%03d.log", rank);
+        debug_name=&logname[0];
+    }
+    logger_init(debug_level, debug_name);
 
     NNTI_init(NNTI_DEFAULT_TRANSPORT, NULL, &trans_hdl);
 

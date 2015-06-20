@@ -197,7 +197,7 @@ namespace Anasazi {
 
     innerStop_ = MAXIMUM_ITERATIONS;
 
-    const int n = MVT::GetVecLength(*this->eta_);
+    const int n = MVT::GetGlobalLength(*this->eta_);
     const int p = this->blockSize_;
     const int d = n*p - (p*p+p)/2;
 

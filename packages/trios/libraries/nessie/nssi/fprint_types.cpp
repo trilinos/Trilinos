@@ -149,6 +149,14 @@ const char *nssi_err_str(int rc)
     case NSSI_EENCODE:
         return "NSSI_EENCODE";
 
+        /** @brief An operation would have blocked. */
+    case NSSI_EWOULDBLOCK:
+        return "NSSI_EWOULDBLOCK";
+
+        /** @brief Operation was interupted, but possibly recoverable. */
+    case NSSI_EAGAIN:
+        return "NSSI_EAGAIN";
+
     default:
         return myitoa(rc);
     }
@@ -281,6 +289,7 @@ void fprint_nssi_result_header(
     out << subprefix << " fetch_result = " << hdr->fetch_result << std::endl;
     out << subprefix << " result_size = " << hdr->result_size << std::endl;
     fprint_NNTI_buffer(out, "res_addr", subprefix.c_str(), &hdr->result_addr);
+    fprint_NNTI_buffer(out, "res_ack_addr", subprefix.c_str(), &hdr->result_ack_addr);
     out << subprefix << " rc = " << hdr->rc << std::endl;
 
     /* footer */

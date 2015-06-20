@@ -99,11 +99,11 @@ using std::vector;
 
 using Zoltan2::PartitioningProblem;
 
-typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tcrsMatrix_t;
-typedef Tpetra::CrsGraph<lno_t, gno_t, node_t> tcrsGraph_t;
-typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
-typedef Tpetra::Vector<scalar_t, lno_t, gno_t, node_t> tVector_t;
-typedef Tpetra::Map<lno_t, gno_t, node_t> tmap_t;
+typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> tcrsMatrix_t;
+typedef Tpetra::CrsGraph<zlno_t, zgno_t, znode_t> tcrsGraph_t;
+typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tMVector_t;
+typedef Tpetra::Vector<zscalar_t, zlno_t, zgno_t, znode_t> tVector_t;
+typedef Tpetra::Map<zlno_t, zgno_t, znode_t> tmap_t;
 
 typedef Zoltan2::BasicIdentifierAdapter<tcrsMatrix_t> bii_t;
 typedef Zoltan2::BasicVectorAdapter<tcrsMatrix_t>     bvi_t; 
@@ -117,7 +117,7 @@ typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t>  xmvi_t;
 
 template <typename Adapter>
   int runAlgorithm(int rank, Adapter *ia, ParameterList &pList,
-    ArrayRCP<const Zoltan2::MetricValues<scalar_t> > &quality)
+    ArrayRCP<const Zoltan2::MetricValues<zscalar_t> > &quality)
 {
   int fail = 0;
 
@@ -161,7 +161,7 @@ void createInput(const XMLObject &testInfo,
 }
 
 int evaluateSuccess(const XMLObject &criteria,
-    ArrayRCP<const Zoltan2::MetricValues<scalar_t> > &quality)
+    ArrayRCP<const Zoltan2::MetricValues<zscalar_t> > &quality)
 {
   int fail = 0;
 
@@ -314,17 +314,17 @@ int main(int argc, char *argv[])
     const RCP<const tmap_t> rowMap = M->getRowMap();
     const RCP<const tmap_t> colMap = M->getColMap();
 
-    const gno_t *gids = rowMap->getNodeElementList().getRawPtr();
+    const zgno_t *gids = rowMap->getNodeElementList().getRawPtr();
 
-    vector<const scalar_t *> coords;
+    vector<const zscalar_t *> coords;
     for (int i=0; i < coordDim; i++)
       coords.push_back(objectCoordinates->getData(i).getRawPtr());
 
-    vector<const scalar_t *> vweights;
+    vector<const zscalar_t *> vweights;
     for (int i=0; i < nVertexWeights; i++)
       coords.push_back(objectWeights->getData(i).getRawPtr());
 
-    vector<const scalar_t *> eweights;
+    vector<const zscalar_t *> eweights;
     for (int i=0; i < nEdgeWeights; i++)
       coords.push_back(objectWeights->getData(i).getRawPtr());
 
@@ -337,7 +337,7 @@ int main(int argc, char *argv[])
     ////
 
     bool fail = false;
-    ArrayRCP<const Zoltan2::MetricValues<scalar_t> > quality;
+    ArrayRCP<const Zoltan2::MetricValues<zscalar_t> > quality;
 
     if (iaType == string("BasicIdentifierInput")){
       bii_t *ia = NULL;
@@ -357,7 +357,7 @@ int main(int argc, char *argv[])
     else if (iaType == string("BasicVectorInput")){
       bvi_t *ia = NULL;
       // UserInputForTests can give us a vector based on M.
-      scalar_t *vec=NULL; 
+      zscalar_t *vec=NULL; 
       try{
         ia = new bvi_t(numRows, gids, vec, 1, vweights, strides);
       }

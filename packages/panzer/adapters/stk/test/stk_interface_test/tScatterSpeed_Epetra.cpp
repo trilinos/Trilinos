@@ -108,7 +108,6 @@ void newAssembly(Teuchos::FancyOStream &out)
   RCP<Map> colmap;
   RCP<panzer::ConnManager<int,int> > conn;
 
-  size_t sz = setUp1(rowmap, colmap, my_dofM, conn);
   const std::vector<int> & myElements=conn->getElementBlock("eblock-0_0_0");
 
   std::vector<std::vector<int> > gids;

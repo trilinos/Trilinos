@@ -1,7 +1,0 @@
-/*
-    ShyLU configuration.
-*/
-
-/* define if we want to use MPI */
-#cmakedefine HAVE_MPI
-

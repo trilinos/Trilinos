@@ -50,10 +50,10 @@
 namespace Amesos2 {
 
 #if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  template <class S, class LO, class GO, class D, class LMO>
-  Stokhos::CrsProductTensor<typename S::value_type,D>
+  template <class S, class LO, class GO, class D>
+  typename Sacado::UQ::PCE<S>::cijk_type
   get_pce_cijk(
-    const Teuchos::RCP<const Tpetra::CrsMatrix<Sacado::UQ::PCE<S>, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D>, LMO> >& A = Teuchos::null,
+    const Teuchos::RCP<const Tpetra::CrsMatrix<Sacado::UQ::PCE<S>, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D> > >& A = Teuchos::null,
     const Teuchos::RCP<Tpetra::MultiVector<Sacado::UQ::PCE<S>, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D> > >& X = Teuchos::null,
     const Teuchos::RCP<const Tpetra::MultiVector<Sacado::UQ::PCE<S>, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D> > >& B = Teuchos::null)
   {
@@ -66,7 +66,7 @@ namespace Amesos2 {
     else if (B != Teuchos::null) {
       return B->template getLocalView<D>().cijk();
     }
-    return Stokhos::CrsProductTensor<typename S::value_type,D>();
+    return typename Sacado::UQ::PCE<S>::cijk_type();
   }
 
   /// \brief Amesos2 solver adapter for UQ::PCE scalar type
@@ -76,13 +76,12 @@ namespace Amesos2 {
   /// these matrices and vectors into ones with a standard (e.g., double)
   /// scalar type.
   template <class Storage, class LocalOrdinal, class GlobalOrdinal,
-            class Device, class LMO, template<class,class> class ConcreteSolver>
+            class Device, template<class,class> class ConcreteSolver>
   class PCESolverAdapter :
     public Solver< Tpetra::CrsMatrix<Sacado::UQ::PCE<Storage>,
                                      LocalOrdinal,
                                      GlobalOrdinal,
-                                     Kokkos::Compat::KokkosDeviceWrapperNode<Device>,
-                                     LMO>,
+                                     Kokkos::Compat::KokkosDeviceWrapperNode<Device> >,
                    Tpetra::MultiVector<Sacado::UQ::PCE<Storage>,
                                        LocalOrdinal,
                                        GlobalOrdinal,
@@ -93,7 +92,7 @@ namespace Amesos2 {
 
     typedef Sacado::UQ::PCE<Storage> Scalar;
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
-    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LMO> Matrix;
+    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Matrix;
     typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
 
     typedef typename Scalar::value_type BaseScalar;
@@ -106,7 +105,7 @@ namespace Amesos2 {
 
     typedef Solver<Matrix,Vector> solver_type;
     typedef typename solver_type::type type;
-    typedef Stokhos::CrsProductTensor<typename Storage::value_type,Device> cijk_type;
+    typedef typename Scalar::cijk_type cijk_type;
 
     /// Constructor
     PCESolverAdapter(
@@ -115,11 +114,13 @@ namespace Amesos2 {
       const Teuchos::RCP<const Vector>& B_) :
       A(A_), X(X_), B(B_) {
       cijk = get_pce_cijk(A, X, B);
-      flat_graph = Stokhos::create_flat_pce_graph(*(A->getCrsGraph()),
-                                                  cijk,
-                                                  flat_X_map,
-                                                  flat_B_map,
-                                                  cijk_graph);
+      flat_graph =
+        Stokhos::create_flat_pce_graph(*(A->getCrsGraph()),
+                                       cijk,
+                                       flat_X_map,
+                                       flat_B_map,
+                                       cijk_graph,
+                                       A->getLocalMatrix().values.sacado_size());
       if (A != Teuchos::null)
         flat_A = Stokhos::create_flat_matrix(*A, flat_graph, cijk_graph, cijk);
       if (X != Teuchos::null)
@@ -203,14 +204,14 @@ namespace Amesos2 {
      * and setB() methods.
      *
      * \post
-     *  - The (multi)vector \c X contains the solution to the system
-     *  - The \c X and \c B given at construction time (if any) are unchanged.
+     *  - The (multi)vector \c XX contains the solution to the system
+     *  - The \c XX and \c BB given at construction time (if any) are unchanged.
      */
-    virtual void solve(const Teuchos::Ptr<Vector>       X,
-                       const Teuchos::Ptr<const Vector> B) const {
+    virtual void solve(const Teuchos::Ptr<Vector>       XX,
+                       const Teuchos::Ptr<const Vector> BB) const {
       flat_solver->solve(
-        Stokhos::create_flat_vector_view(*X, flat_X_map).get(),
-        Stokhos::create_flat_vector_view(*B, flat_B_map).get() );
+        Stokhos::create_flat_vector_view(*XX, flat_X_map).get(),
+        Stokhos::create_flat_vector_view(*BB, flat_B_map).get() );
     }
 
 
@@ -225,13 +226,13 @@ namespace Amesos2 {
      * and setB() methods.
      *
      * \post
-     *  - The (multi)vector \c X contains the solution to the system
-     *  - The \c X and \c B given at construction time (if any) are unchanged.
+     *  - The (multi)vector \c XX contains the solution to the system
+     *  - The \c XX and \c BB given at construction time (if any) are unchanged.
      */
-    virtual void solve(Vector* X, const Vector* B) const {
+    virtual void solve(Vector* XX, const Vector* BB) const {
       flat_solver->solve(
-        Stokhos::create_flat_vector_view(*X, flat_X_map).get(),
-        Stokhos::create_flat_vector_view(*B, flat_B_map).get() );
+        Stokhos::create_flat_vector_view(*XX, flat_X_map).get(),
+        Stokhos::create_flat_vector_view(*BB, flat_B_map).get() );
     }
 
     //@} End Mathematical Functions
@@ -305,11 +306,13 @@ namespace Amesos2 {
         flat_X_map = Teuchos::null;
         flat_B_map = Teuchos::null;
         flat_graph = Teuchos::null;
-        flat_graph = Stokhos::create_flat_pce_graph(*(A->getCrsGraph()),
-                                                    cijk,
-                                                    flat_X_map,
-                                                    flat_B_map,
-                                                    cijk_graph);
+        flat_graph =
+          Stokhos::create_flat_pce_graph(*(A->getCrsGraph()),
+                                         cijk,
+                                         flat_X_map,
+                                         flat_B_map,
+                                         cijk_graph,
+                                         A->getLocalMatrix().values.sacado_size());
       }
       if (keep_phase <= SYMBFACT) // should this by NUMFACT???
         flat_A = Stokhos::create_flat_matrix(*a, flat_graph, cijk_graph, cijk);
@@ -505,14 +508,14 @@ namespace Amesos2 {
   // Sacado::UQ::PCE where we create PCESolverAdapter wrapping
   // each solver
   template < template <class,class> class ConcreteSolver,
-             class ST, class LO, class GO, class D, class LMO >
+             class ST, class LO, class GO, class D >
   struct create_solver_with_supported_type<
     ConcreteSolver,
-    Tpetra::CrsMatrix<Sacado::UQ::PCE<ST>,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D>,LMO>,
+    Tpetra::CrsMatrix<Sacado::UQ::PCE<ST>,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D> >,
     Tpetra::MultiVector<Sacado::UQ::PCE<ST>,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D> > > {
     typedef Sacado::UQ::PCE<ST> SC;
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<D> NO;
-    typedef Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> Matrix;
+    typedef Tpetra::CrsMatrix<SC,LO,GO,NO> Matrix;
     typedef Tpetra::MultiVector<SC,LO,GO,NO> Vector;
     static Teuchos::RCP<Solver<Matrix,Vector> >
     apply(Teuchos::RCP<const Matrix> A,
@@ -528,7 +531,7 @@ namespace Amesos2 {
       (void)same_scalar_assertion; // This stops the compiler from warning about unused declared variables
 
       // If our assertion did not fail, then create and return a new solver
-      return Teuchos::rcp( new PCESolverAdapter<ST,LO,GO,D,LMO,ConcreteSolver>(A, X, B) );
+      return Teuchos::rcp( new PCESolverAdapter<ST,LO,GO,D,ConcreteSolver>(A, X, B) );
     }
   };
 

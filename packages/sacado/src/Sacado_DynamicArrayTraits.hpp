@@ -35,10 +35,7 @@
 
 #include "Sacado_Traits.hpp"
 #if defined(HAVE_SACADO_KOKKOSCORE)
-#include "KokkosCore_config.h"
-#if defined(KOKKOS_HAVE_CUDA)
-#include "Kokkos_Cuda.hpp"
-#endif
+#include "Kokkos_Core.hpp"
 #endif
 
 namespace Sacado {
@@ -69,6 +66,19 @@ namespace Sacado {
         operator delete((void*) m);
 #endif
       }
+    }
+
+    //! Get memory for new array of length \c sz
+    KOKKOS_INLINE_FUNCTION
+    static T* get(int sz) {
+      if (sz > 0) {
+        T* m = my_alloc(sz);
+        T* p = m;
+        for (int i=0; i<sz; ++i)
+          new (p++) T();
+        return m;
+      }
+      return NULL;
     }
 
     //! Get memory for new array of length \c sz and fill with zeros
@@ -189,6 +199,16 @@ namespace Sacado {
         operator delete((void*) m);
 #endif
       }
+    }
+
+    //! Get memory for new array of length \c sz
+    KOKKOS_INLINE_FUNCTION
+    static T* get(int sz) {
+      if (sz > 0) {
+        T* m = my_alloc(sz);
+        return m;
+      }
+      return NULL;
     }
 
     //! Get memory for new array of length \c sz and fill with zeros

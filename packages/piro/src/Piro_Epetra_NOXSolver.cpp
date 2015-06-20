@@ -229,6 +229,26 @@ Teuchos::RCP<const Epetra_Vector> Piro::Epetra::NOXSolver::get_p_init(int l) con
   return model->get_p_init(l);
 }
 
+Teuchos::RCP<const Epetra_Vector> Piro::Epetra::NOXSolver::get_p_lower_bounds(int l) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(l >= num_p || l < 0, Teuchos::Exceptions::InvalidParameter,
+                     std::endl <<
+                     "Error in Piro::Epetra::NOXSolver::get_p_lower_bounds():  " <<
+                     "Invalid parameter index l = " <<
+                     l << std::endl);
+  return model->get_p_lower_bounds(l);
+}
+
+Teuchos::RCP<const Epetra_Vector> Piro::Epetra::NOXSolver::get_p_upper_bounds(int l) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(l >= num_p || l < 0, Teuchos::Exceptions::InvalidParameter,
+                     std::endl <<
+                     "Error in Piro::Epetra::NOXSolver::get_upper_bounds():  " <<
+                     "Invalid parameter index l = " <<
+                     l << std::endl);
+  return model->get_p_upper_bounds(l);
+}
+
 Teuchos::RCP<Epetra_Operator>
 Piro::Epetra::NOXSolver::create_DgDp_op( int j, int l ) const
 {

@@ -75,7 +75,7 @@ int read_mesh_file_name(const char *filename)
           cptr = strtok(NULL, "\t=");
           strip_string(cptr, " \t\n");
           strcpy(ExoFile, cptr);
-	  break;
+          break;
         }
       }
     }
@@ -152,12 +152,11 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
       }
       /****** The parallel results ExodusII file name ******/
       else if (token_compare(cptr, "parallel results file base name")) {
-        if(strlen(Par_Nem_File_Name) == 0)
-        {
+        if (strlen(Output_File_Base_Name) == 0) {
           cptr = strtok(NULL, "\t=");
           strip_string(cptr, " \t\n");
-          strcpy(Par_Nem_File_Name, cptr);
-        }
+          strcpy(Output_File_Base_Name, cptr);
+        }         
       }
       /****** The Number of Processors ******/
       else if (token_compare(cptr, "number of processors")) {
@@ -173,9 +172,9 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
       }
       /****** The File extension to use for spread files ******/
       else if (token_compare(cptr, "file extension for spread files")) {
-	cptr = strtok(NULL, "\t=");
-	strip_string(cptr, " \t\n");
-	strcpy(PIO_Info.Exo_Extension, cptr);
+        cptr = strtok(NULL, "\t=");
+        strip_string(cptr, " \t\n");
+        strcpy(PIO_Info.Exo_Extension, cptr);
       }
       
       /****** Is There a Scalar Mesh File to Use ******/
@@ -548,6 +547,18 @@ int read_pexoII_info(NemSpread<T,INT> &spreader, const char *filename)
   } /* End "while(fgets(inp_line, MAX_INPUT_STR_LN, file_cmd))" */
 
 
+  if (strlen(Output_File_Base_Name) == 0 && strlen(Exo_LB_File) != 0) {
+    // User did not specify a base name.  Use the basenmae of the
+    // Exo_LB_File instead.
+    strcpy(Output_File_Base_Name, Exo_LB_File);
+
+    // If there is an extension, strip it off...
+    char *cPtr = strrchr(Output_File_Base_Name, '.');
+    if (cPtr != NULL) {
+      *cPtr = '\0';
+    }
+  }
+  
   /* Close the command file */
   fclose(file_cmd);
 

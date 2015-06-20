@@ -64,7 +64,7 @@
     try {                                                               \
       sourceCode;                                                       \
     }                                                                   \
-    catch (int epetraErrCode) {                                         \
+    catch (int /*epetraErrCode*/) {                                     \
       localFailure = 1; /* 1 == failure */                              \
     }                                                                   \
                                                                         \

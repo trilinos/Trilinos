@@ -1,5 +1,39 @@
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+
 #include <unit_tests/UnitTestUtils.hpp>
 #include <unit_tests/MeshUtilsForBoundingVolumes.hpp>
+#include <stk_util/parallel/Parallel.hpp>
 
 #include <gtest/gtest.h>
 
@@ -110,7 +144,7 @@ void testCoarseSearchForAlgorithm_IntsForIdents(stk::search::SearchMethod algori
   // what if identifier is NOT unique
 
   StkBox box;
-  int id;
+  int id = 0;
 
   box = StkBox( Point(proc_id + 0.1, 0.0, 0.0), Point(proc_id + 0.9, 1.0, 1.0));
   id = IdentForTest(proc_id * 4, proc_id);
@@ -396,6 +430,44 @@ TEST(stk_search, coarse_search_one_point)
   } else {
     ASSERT_EQ(searchResults.size(), 0u);
   }
+}
+
+TEST(CoarseSearch, forDeterminingSharing)
+{
+    const stk::ParallelMachine comm = MPI_COMM_WORLD;
+    const int p_rank = stk::parallel_machine_rank(comm);
+
+    typedef std::vector< std::pair<Sphere,Ident> > SphereVector;
+
+    SphereVector source_bbox_vector;
+
+    Point coords(1.0, 1.0, 1.0);
+    double radius = 1.0e-6;
+    Sphere node(coords, radius);
+    uint64_t global_id = 1000;
+    Ident id = Ident(global_id, p_rank);
+
+    source_bbox_vector.push_back(std::make_pair(node, id));
+
+    SearchResults searchResults;
+    stk::search::coarse_search(source_bbox_vector, source_bbox_vector, stk::search::BOOST_RTREE, comm, searchResults);
+
+    std::set<int> procs;
+
+    for(size_t i=0;i<searchResults.size();++i)
+    {
+        procs.insert(searchResults[i].second.proc());
+        procs.insert(searchResults[i].first.proc());
+    }
+
+    std::set<int>::iterator iter = procs.begin();
+
+    int procCounter = 0;
+    for (;iter!=procs.end();++iter)
+    {
+        EXPECT_EQ(procCounter, *iter);
+        procCounter++;
+    }
 }
 
 } //namespace

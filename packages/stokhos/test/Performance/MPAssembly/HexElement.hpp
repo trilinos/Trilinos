@@ -64,19 +64,19 @@ public:
   static const unsigned integration_count_1d  = 2 ;
   static const unsigned function_count_1d     = 2 ;
 
-  float values_1d [ function_count_1d ][ integration_count_1d ];
-  float derivs_1d [ function_count_1d ][ integration_count_1d ];
-  float weights_1d[ integration_count_1d ];
+  double values_1d [ function_count_1d ][ integration_count_1d ];
+  double derivs_1d [ function_count_1d ][ integration_count_1d ];
+  double weights_1d[ integration_count_1d ];
 
   unsigned char eval_map[ element_node_count ][4] ;
 
-  static float eval_value_1d( const unsigned jf , const float x )
+  static double eval_value_1d( const unsigned jf , const double x )
   {
     return 0 == jf ? 0.5 * ( 1.0 - x ) : (
            1 == jf ? 0.5 * ( 1.0 + x ) : 0 );
   }
 
-  static float eval_deriv_1d( const unsigned jf , const float )
+  static double eval_deriv_1d( const unsigned jf , const double )
   {
     return 0 == jf ? -0.5 : (
            1 == jf ?  0.5 : 0 );
@@ -97,8 +97,8 @@ public:
     weights_1d[0] = 1 ;
     weights_1d[1] = 1 ;
 
-    const float points_1d[ integration_count_1d ] =
-      { -0.577350269 , 0.577350269 };
+    const double points_1d[ integration_count_1d ] =
+      { -0.577350269189623 , 0.577350269189623 };
 
     for ( unsigned i = 0 ; i < element_node_count ; ++i ) {
       eval_map[i][0] = tmp_map[i][0];
@@ -125,26 +125,26 @@ public:
   static const unsigned integration_count_1d  = 3 ;
   static const unsigned function_count_1d     = 3 ;
 
-  float values_1d [ function_count_1d ][ integration_count_1d ];
-  float derivs_1d [ function_count_1d ][ integration_count_1d ];
-  float weights_1d[ integration_count_1d ];
+  double values_1d [ function_count_1d ][ integration_count_1d ];
+  double derivs_1d [ function_count_1d ][ integration_count_1d ];
+  double weights_1d[ integration_count_1d ];
 
   unsigned char eval_map[ element_node_count ][4] ;
 
   // sizeof(EvaluateElementHex) = 111 bytes =
-  //   sizeof(float) * 9 +
-  //   sizeof(float) * 9 +
-  //   sizeof(float) * 3 +
+  //   sizeof(double) * 9 +
+  //   sizeof(double) * 9 +
+  //   sizeof(double) * 3 +
   //   sizeof(char) * 27 
 
-  static float eval_value_1d( const unsigned jf , const float p )
+  static double eval_value_1d( const unsigned jf , const double p )
   {
     return 0 == jf ? 0.5 * p * ( p - 1 ) : (
            1 == jf ? 1.0 - p * p : (
            2 == jf ? 0.5 * p * ( p + 1 ) : 0 ));
   }
 
-  static float eval_deriv_1d( const unsigned jf , const float p )
+  static double eval_deriv_1d( const unsigned jf , const double p )
   {
     return 0 == jf ? p - 0.5 : (
            1 == jf ? -2.0 * p : (
@@ -184,13 +184,13 @@ public:
 
     // Interval [-1,1]
 
-    weights_1d[0] = 0.555555556 ;
-    weights_1d[1] = 0.888888889 ;
-    weights_1d[2] = 0.555555556 ;
+    weights_1d[0] = 0.55555555555556 ;
+    weights_1d[1] = 0.88888888888889 ;
+    weights_1d[2] = 0.55555555555556 ;
 
-    const float points_1d[3] = { -0.774596669 ,
-                                  0.000000000 ,
-                                  0.774596669 };
+    const double points_1d[3] = { -0.774596669241483 ,
+                                   0.000000000000000 ,
+                                   0.774596669241483 };
 
     for ( unsigned i = 0 ; i < element_node_count ; ++i ) {
       eval_map[i][0] = tmp_map[i][0];
@@ -216,9 +216,9 @@ public:
   static const unsigned integration_count   = NodeCount ;
   static const unsigned function_count      = NodeCount ;
 
-  float weights[   integration_count ] ;
-  float values[    integration_count ][ function_count ];
-  float gradients[ integration_count ][ spatial_dimension ][ function_count ];
+  double weights[   integration_count ] ;
+  double values[    integration_count ][ function_count ];
+  double gradients[ integration_count ][ spatial_dimension ][ function_count ];
 
   HexElement_Data()
   {

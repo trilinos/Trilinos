@@ -42,161 +42,91 @@
 #ifndef TEUCHOS_MPI_REDUCTION_OP_SETTER_HPP
 #define TEUCHOS_MPI_REDUCTION_OP_SETTER_HPP
 
-#include "Teuchos_RCP.hpp"
+/// \file Teuchos_MpiReductionOpSetter.hpp
+/// \brief Implementation detail of Teuchos' MPI wrapper.
+///
+/// \warning Everything in this file is an implementation detail of
+///   Teuchos.  Do not use it and do not depend on it.
+///
+/// This file only contains meaningful content if building with MPI.
+
+#include <Teuchos_ConfigDefs.hpp>
+
+#ifdef HAVE_MPI
 #include "Teuchos_ReductionOp.hpp"
 #include "mpi.h"
 
 namespace Teuchos {
+namespace Details {
 
-/** \brief Base class for an MPI-compatible reduction operator.
- *
- * The base class allows clients to create a reduction callback as an object
- * instead of just as a global function.  The single extra level of
- * indirection should not be a performance problem in must cases.
- *
- * Note, <tt>HAVE_MPI</tt> must be defined to use this class!.
- */
-class TEUCHOSCOMM_LIB_DLL_EXPORT MpiReductionOpBase : virtual public Describable {
+/// \brief Base class for an MPI-compatible reduction operator.
+///
+/// This class exists as an intermediate wrapper between
+/// ValueTypeReductionOp and MPI_Op.  Its pure virtual method reduce()
+/// takes the same arguments as an MPI_Op reduction / scan operator.
+///
+/// \note This class only exists if building with MPI enabled.
+class TEUCHOSCOMM_LIB_DLL_EXPORT MpiReductionOpBase :
+    virtual public Describable {
 public:
-  /** \brief . */
-  virtual void reduce(
-    void              *invec
-    ,void             *inoutvec
-    ,int              *len
-    ,MPI_Datatype     *datatype
-    ) const = 0;
+  virtual void
+  reduce (void* invec, void* inoutvec,
+          int* len, MPI_Datatype* datatype) const = 0;
 };
 
-/** \brief Standard subclass implementation for <tt>MpiReductionOpBase</tt>
- * in terms of a templated <tt>ReductionOp<Ordinal,char></tt> object.
- */
-template<typename Ordinal>
+/// \brief Subclass of MpiReductionOpBase that implements reduce()
+///   using a ValueTypeReductionOp instance.
+///
+/// \note This class only views the ValueTypeReductionOp instance; it
+///   does not own it.  The ValueTypeReductionOp must be in scope;
+///   otherwise this class' behavior is undefined.
+template<typename OrdinalType>
 class MpiReductionOp : public MpiReductionOpBase {
 public:
-  /** \brief . */
-  MpiReductionOp( const RCP<const ValueTypeReductionOp<Ordinal,char> > &reductOp );
-  /** \brief . */
-  void reduce(
-    void              *invec
-    ,void             *inoutvec
-    ,int              *len
-    ,MPI_Datatype     *datatype
-    ) const;
-private:
-  RCP<const ValueTypeReductionOp<Ordinal,char> > reductOp_;
-  // Not defined and not to be called
-  MpiReductionOp();
-  MpiReductionOp(const MpiReductionOp&);
-  MpiReductionOp& operator=(const MpiReductionOp&);
-};
+  MpiReductionOp (const ValueTypeReductionOp<OrdinalType,char>& reductOp)
+    : reductOp_ (reductOp)
+  {}
 
-/** \brief Create an <tt>MpiReductionOp</tt> object given an
- * <tt>ReductionOp</tt> object.
- */
-template<typename Ordinal>
-RCP<const MpiReductionOp<Ordinal> >
-mpiReductionOp( const RCP<const ValueTypeReductionOp<Ordinal,char> > &reductOp );
-
-/** \brief Utility class for setting an MPI-compatible reduction object and
- * using it to create an <tt>MPI_Op</tt> object.
- *
- * The destructor to this object will remove the set MPI-compatible reduction
- * operation.
- *
- * Note, this object can only be allocated on the stack and should be used
- * directly before a call to any MPI function that takes an <tt>MPI_Op</tt>
- * object.  For example:
- 
- \code
-
-  ???
-
- \endcode
-
- *
- * Note that this class can only be used in a program where MPI is called
- * from only one thread.
- *
- * Note, <tt>HAVE_MPI</tt> must be defined to use this class!.
- */
-class TEUCHOSCOMM_LIB_DLL_EXPORT MpiReductionOpSetter {
-public:
-
-  /** \brief Construct a new <tt>MPI_Op</tt> object which uses the passed in
-   * <tt>reduct_op</tt> objects.
-   *
-   * Preconditions:<ul>
-   * <li><tt>reduct_op.get()!=NULL</tt>
-   * </ul>
-   *
-   * Postconditions:<ul>
-   * <li><tt>this->mpi_op()</tt> gives access to the created <tt>MPI_Op</tt>
-   *     object that can be used with MPI.
-   * </ul>
-   */
-  MpiReductionOpSetter( const Teuchos::RCP<const MpiReductionOpBase>& reduct_op );
-
-  /** \brief . */
-  ~MpiReductionOpSetter();
-
-  /** \brief Return the created <tt>MPI_Op</tt> reduction object that can be used
-   * by MPI.
-   *
-   * Note, this reduction function object will only be valid while <tt>*this</tt> is still
-   * in scope.  Therefore, it is recommended that clients only directly call this
-   * function to pass in the returned <tt>MPI_Op</tt> object.
-   */
-  MPI_Op mpi_op() const;
-  
-private:
-  // Not defined and not to be called!
-  MpiReductionOpSetter();
-  MpiReductionOpSetter(const MpiReductionOpSetter&);
-  MpiReductionOpSetter& operator=(const MpiReductionOpSetter&);
-};
-
-// ///////////////////////////////////////
-// Template implemenations
-
-template<typename Ordinal>
-MpiReductionOp<Ordinal>::MpiReductionOp(
-  const RCP<const ValueTypeReductionOp<Ordinal,char> > &reductOp
-  )
-  :reductOp_(reductOp)
-{}
-
-template<typename Ordinal>
-void MpiReductionOp<Ordinal>::reduce(
-  void              *invec
-  ,void             *inoutvec
-  ,int              *len
-  ,MPI_Datatype     *datatype
-  ) const
-{
-  (void)datatype;
+  void
+  reduce (void* invec, void* inoutvec, int* len, MPI_Datatype* datatype) const
+  {
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPT(!invec);
-  TEUCHOS_TEST_FOR_EXCEPT(!inoutvec);
-  TEUCHOS_TEST_FOR_EXCEPT(!len);
-  TEUCHOS_TEST_FOR_EXCEPT(!(*len>0));
-  TEUCHOS_TEST_FOR_EXCEPT(!datatype);
-  //TEUCHOS_TEST_FOR_EXCEPT(!(*datatype==MPI_CHAR));
-  // We also allow datatypes that are blocks of chars!
+    TEUCHOS_TEST_FOR_EXCEPT(!len);
+    TEUCHOS_TEST_FOR_EXCEPT(!datatype);
 #endif
-  int sz;
-  MPI_Type_size(*datatype, &sz);
-  reductOp_->reduce(
-    *len*sz,reinterpret_cast<char*>(invec),reinterpret_cast<char*>(inoutvec)
-    );
-}
+    // mfh 23 Nov 2014: Ross made the unfortunate decision initially
+    // to mash everything into MPI_CHAR.  This means that we have to
+    // do a lot of type casting here.  Of course, most implementations
+    // of ValueTypeReductionOp will immediately cast back from char*
+    // to the actual type of interest.
+    int sz;
+    MPI_Type_size (*datatype, &sz);
+    (void) datatype;
+    reductOp_.reduce ((*len) * sz, reinterpret_cast<char*> (invec),
+                      reinterpret_cast<char*> (inoutvec));
+  }
 
-template<typename Ordinal>
-RCP<const MpiReductionOp<Ordinal> >
-mpiReductionOp( const RCP<const ValueTypeReductionOp<Ordinal,char> > &reductOp )
-{
-  return rcp(new MpiReductionOp<Ordinal>(reductOp));
-}
+private:
+  const ValueTypeReductionOp<OrdinalType, char>& reductOp_;
+  // Not defined and not to be called
+  MpiReductionOp ();
+  MpiReductionOp (const MpiReductionOp&);
+  MpiReductionOp& operator= (const MpiReductionOp&);
+};
 
+/// \brief Set the current reduction or scan operation for MpiComm.
+///   Get the resulting MPI_Op to pass into MPI functions.
+///
+/// \return Global singleton MPI_Op to pass into MPI functions.
+///   This is valid only before MPI_Finalize has been called.
+///
+/// \warning This is an implementation detail of Teuchos.
+///   Users should never call this function directly.
+MPI_Op setMpiReductionOp (const MpiReductionOpBase& reductOp);
+
+} // namespace Details
 } // namespace Teuchos
+
+#endif // HAVE_MPI
 
 #endif // TEUCHOS_MPI_REDUCTION_OP_SETTER_HPP

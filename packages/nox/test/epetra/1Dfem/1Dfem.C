@@ -333,14 +333,15 @@ int main(int argc, char *argv[])
       status = 3;
     // 4. Test the pre/post iterate options
     {
-      UserPrePostOperator* ppoPtr = dynamic_cast<UserPrePostOperator*>(ppo.get());
-      if (ppoPtr->getNumRunPreIterate() != 10)
+      UserPrePostOperator & ppo2 =
+        dynamic_cast<UserPrePostOperator&>(*ppo.get());
+      if (ppo2.getNumRunPreIterate() != 10)
         status = 4;
-      if (ppoPtr->getNumRunPostIterate() != 10)
+      if (ppo2.getNumRunPostIterate() != 10)
         status = 4;
-      if (ppoPtr->getNumRunPreSolve() != 1)
+      if (ppo2.getNumRunPreSolve() != 1)
         status = 4;
-      if (ppoPtr->getNumRunPostSolve() != 1)
+      if (ppo2.getNumRunPostSolve() != 1)
         status = 4;
     }
 

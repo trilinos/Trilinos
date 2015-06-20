@@ -43,7 +43,7 @@
 #ifndef PANZER_SCATTER_INITIAL_CONDITION_TPETRA_DECL_HPP
 #define PANZER_SCATTER_INITIAL_CONDITION_TPETRA_DECL_HPP
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
 
@@ -55,7 +55,7 @@
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_TpetraLinearObjContainer.hpp"
 
-#include "Kokkos_DefaultNode.hpp"
+#include "Panzer_NodeType.hpp"
 
 namespace panzer {
 
@@ -68,7 +68,7 @@ class UniqueGlobalIndexer;
     Default implementation throws exceptions.  Residual specialization will be used for setting solution.
 
 */
-template<typename EvalT, typename Traits,typename LO,typename GO,typename NodeT=KokkosClassic::DefaultNode::DefaultNodeType>
+template<typename EvalT, typename Traits,typename LO,typename GO,typename NodeT=panzer::TpetraNodeType>
 class ScatterInitialCondition_Tpetra;
 
 // **************************************************************
@@ -81,10 +81,10 @@ class ScatterInitialCondition_Tpetra;
 // **************************************************************
 // Residual 
 // **************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT>
-class ScatterInitialCondition_Tpetra<panzer::Traits::Residual,Traits,LO,GO,NodeT>
-  : public PHX::EvaluatorWithBaseImpl<Traits>,
-    public PHX::EvaluatorDerived<panzer::Traits::Residual, Traits>,
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+class ScatterInitialCondition_Tpetra<panzer::Traits::Residual,TRAITS,LO,GO,NodeT>
+  : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+    public PHX::EvaluatorDerived<panzer::Traits::Residual, TRAITS>,
     public panzer::CloneableEvaluator {
   
 public:
@@ -94,15 +94,15 @@ public:
   ScatterInitialCondition_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                          const Teuchos::ParameterList& p);
   
-  void postRegistrationSetup(typename Traits::SetupData d,
-			     PHX::FieldManager<Traits>& vm);
+  void postRegistrationSetup(typename TRAITS::SetupData d,
+			     PHX::FieldManager<TRAITS>& vm);
 
-  void preEvaluate(typename Traits::PreEvalData d);
+  void preEvaluate(typename TRAITS::PreEvalData d);
   
-  void evaluateFields(typename Traits::EvalData workset);
+  void evaluateFields(typename TRAITS::EvalData workset);
   
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new ScatterInitialCondition_Tpetra<panzer::Traits::Residual,Traits,LO,GO,NodeT>(globalIndexer_,pl)); }
+  { return Teuchos::rcp(new ScatterInitialCondition_Tpetra<panzer::Traits::Residual,TRAITS,LO,GO,NodeT>(globalIndexer_,pl)); }
 
 private:
   typedef typename panzer::Traits::Residual::ScalarT ScalarT;
@@ -111,7 +111,7 @@ private:
   Teuchos::RCP<PHX::FieldTag> scatterHolder_;
 
   // fields that need to be scattered will be put in this vector
-  std::vector< PHX::MDField<ScalarT,Cell,NODE> > scatterFields_;
+  std::vector< PHX::MDField<const ScalarT,Cell,NODE> > scatterFields_;
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
@@ -126,10 +126,10 @@ private:
 // **************************************************************
 // Tangent 
 // **************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT>
-class ScatterInitialCondition_Tpetra<panzer::Traits::Tangent,Traits,LO,GO,NodeT>
-  : public PHX::EvaluatorWithBaseImpl<Traits>,
-    public PHX::EvaluatorDerived<panzer::Traits::Tangent, Traits>,
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+class ScatterInitialCondition_Tpetra<panzer::Traits::Tangent,TRAITS,LO,GO,NodeT>
+  : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+    public PHX::EvaluatorDerived<panzer::Traits::Tangent, TRAITS>,
     public panzer::CloneableEvaluator {
   
 public:
@@ -139,15 +139,15 @@ public:
   ScatterInitialCondition_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                          const Teuchos::ParameterList& p);
   
-  void postRegistrationSetup(typename Traits::SetupData d,
-			     PHX::FieldManager<Traits>& vm);
+  void postRegistrationSetup(typename TRAITS::SetupData d,
+			     PHX::FieldManager<TRAITS>& vm);
 
-  void preEvaluate(typename Traits::PreEvalData d);
+  void preEvaluate(typename TRAITS::PreEvalData d);
   
-  void evaluateFields(typename Traits::EvalData workset);
+  void evaluateFields(typename TRAITS::EvalData workset);
   
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new ScatterInitialCondition_Tpetra<panzer::Traits::Tangent,Traits,LO,GO,NodeT>(globalIndexer_,pl)); }
+  { return Teuchos::rcp(new ScatterInitialCondition_Tpetra<panzer::Traits::Tangent,TRAITS,LO,GO,NodeT>(globalIndexer_,pl)); }
 
 private:
   typedef typename panzer::Traits::Tangent::ScalarT ScalarT;
@@ -156,7 +156,7 @@ private:
   Teuchos::RCP<PHX::FieldTag> scatterHolder_;
 
   // fields that need to be scattered will be put in this vector
-  std::vector< PHX::MDField<ScalarT,Cell,NODE> > scatterFields_;
+  std::vector< PHX::MDField<const ScalarT,Cell,NODE> > scatterFields_;
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
@@ -171,10 +171,10 @@ private:
 // **************************************************************
 // Jacobian
 // **************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT>
-class ScatterInitialCondition_Tpetra<panzer::Traits::Jacobian,Traits,LO,GO,NodeT>
-  : public PHX::EvaluatorWithBaseImpl<Traits>,
-    public PHX::EvaluatorDerived<panzer::Traits::Jacobian, Traits>, 
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+class ScatterInitialCondition_Tpetra<panzer::Traits::Jacobian,TRAITS,LO,GO,NodeT>
+  : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+    public PHX::EvaluatorDerived<panzer::Traits::Jacobian, TRAITS>, 
     public panzer::CloneableEvaluator {
   
 public:
@@ -185,13 +185,13 @@ public:
   ScatterInitialCondition_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                          const Teuchos::ParameterList& pl);
   
-  void postRegistrationSetup(typename Traits::SetupData d,
-			     PHX::FieldManager<Traits>& vm);
+  void postRegistrationSetup(typename TRAITS::SetupData d,
+			     PHX::FieldManager<TRAITS>& vm);
   
-  void evaluateFields(typename Traits::EvalData workset);
+  void evaluateFields(typename TRAITS::EvalData workset);
   
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new ScatterInitialCondition_Tpetra<panzer::Traits::Jacobian,Traits,LO,GO,NodeT>(globalIndexer_,pl)); }
+  { return Teuchos::rcp(new ScatterInitialCondition_Tpetra<panzer::Traits::Jacobian,TRAITS,LO,GO,NodeT>(globalIndexer_,pl)); }
 
 private:
 
@@ -201,7 +201,7 @@ private:
   Teuchos::RCP<PHX::FieldTag> scatterHolder_;
 
   // fields that need to be scattered will be put in this vector
-  std::vector< PHX::MDField<ScalarT,Cell,NODE> > scatterFields_;
+  std::vector< PHX::MDField<const ScalarT,Cell,NODE> > scatterFields_;
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering

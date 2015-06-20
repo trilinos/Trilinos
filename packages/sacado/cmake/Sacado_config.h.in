@@ -25,6 +25,13 @@
 /* Define if want to build with kokkos-core enabled */
 #cmakedefine HAVE_SACADO_KOKKOSCORE
 
+/* Define if want to build with TeuchosKokkosComm subpackage enabled */
+#cmakedefine HAVE_SACADO_TEUCHOSKOKKOSCOMM
+#ifdef HAVE_SACADO_TEUCHOSKOKKOSCOMM
+// For backwards compatibility
+#  define HAVE_SACADO_KOKKOSMPICOMM
+#endif // HAVE_SACADO_TEUCHOSKOKKOSCOMM
+
 /* Define if want to enable Kokkos view specializations for Sacado */
 #cmakedefine HAVE_SACADO_VIEW_SPEC
 
@@ -37,3 +44,6 @@
 
 /* Define if compiler supports c99 tr1 cmath functions */
 #cmakedefine HAS_C99_TR1_CMATH
+
+/* Define to enable C++11 support*/
+#cmakedefine HAVE_SACADO_CXX11

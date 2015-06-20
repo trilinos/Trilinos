@@ -82,13 +82,14 @@ int main(int argc, char *argv[]) {
 
   Piro::Epetra::SolverFactory solverFactory;
 
-  for (int iTest=0; iTest<3; iTest++) {
+  for (int iTest=0; iTest<4; iTest++) {
 
     if (doAll) {
       switch (iTest) {
        case 0: inputFile="input_Analysis_Dakota.xml"; break;
-       case 1: inputFile="input_Analysis_OptiPack.xml"; break;
-       case 2: inputFile="input_Analysis_MOOCHO.xml"; break;
+       case 1: inputFile="input_Analysis_ROL.xml"; break;
+       case 2: inputFile="input_Analysis_OptiPack.xml"; break;
+       case 3: inputFile="input_Analysis_MOOCHO.xml"; break;
        default : std::cout << "iTest logic error " << std::endl; exit(-1);
       }
     }

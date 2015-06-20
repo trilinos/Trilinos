@@ -213,6 +213,14 @@ protected:
 
   //@}
 
+  /** @name Overridden protected functions from MultiVectorBase */
+  //@{
+
+  /** \brief . */
+  void assignImpl(Scalar alpha);
+
+  //#}
+
 public:
 
 private:

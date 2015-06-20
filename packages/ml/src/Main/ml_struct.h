@@ -55,6 +55,8 @@ typedef struct ML_Struct ML;
 #include <Epetra_LocalMap.h>
 #endif
 
+#include "ml_petsc.h"
+
 /* ******************************************************************** */
 /* ******************************************************************** */
 /* data definition for the ML Class                                     */
@@ -309,8 +311,8 @@ extern int ML_Gen_Smoother_VBlockAdditiveSchwarz(ML *,int nl,int pre_or_post,
                      int ntimes, int length, int *blkinfo);
 extern int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *,int nl,
                      int pre_or_post, int ntimes, int length, int *blkinfo);
-#include "ml_petsc.h"
-#ifdef HAVE_PETSC
+//#include "ml_petsc.h"
+#ifdef HAVE_ML_PETSC
 extern int ML_Gen_Smoother_Petsc(ML *ml, int level, int pre_or_post, int ntimes, ML_PetscKSP petscKSP);
 #endif
 
@@ -408,6 +410,8 @@ extern int ML_Get_Label( ML *ml, char *label);
 }
 #endif
 #endif
+
+
 
 #endif
 

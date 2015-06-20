@@ -56,7 +56,6 @@
 #include <Tpetra_CrsMatrix_def.hpp>
 #include <Tpetra_CrsGraph_def.hpp>
 #include <Tpetra_CrsMatrixMultiplyOp_decl.hpp>
-#include <Tpetra_CrsMatrixMultiplyOp_def.hpp>
 #include <Tpetra_MatrixIO_decl.hpp>
 #include <Tpetra_MatrixIO_def.hpp>
 #include <Ifpack2_BorderedOperator_decl.hpp>
@@ -101,7 +100,10 @@
     template class Chebyshev<Tpetra::CrsMatrix<dd_real,int,int,NODE> >; \
   }
 
-INSTANT_ALL(KokkosClassic::DefaultNode::DefaultNodeType)
+// Get the default Node type directly from Tpetra.
+typedef typename ::Tpetra::Map<>::node_type default_node_type;
+
+INSTANT_ALL(default_node_type)
 #endif
 
 #endif

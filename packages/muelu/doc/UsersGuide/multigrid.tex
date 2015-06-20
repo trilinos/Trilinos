@@ -1,0 +1,54 @@
+\label{sec:multigrid intro}
+Here we provide a brief multigrid introduction (see~\cite{MGTutorial}
+or~\cite{OwlBook} for more information). A multigrid solver tries to approximate
+the original problem of interest with a sequence of smaller (\textit{coarser})
+problems. The solutions from the coarser problems are combined in order to
+accelerate convergence of the original (\textit{fine}) problem on the finest
+grid. A simple multilevel iteration is illustrated in
+Algorithm~\ref{multigrid_code}.
+
+\begin{algorithm}
+\centering
+\begin{algorithmic}[0]
+  \State{$A_0 = A$}
+  \Function{Multilevel}{$A_k$, $b$, $u$, $k$}
+    \State{// Solve $A_k$ u = b (k is current grid level)}
+    \State $ u = S^{1}_m (A_k, b, u)$
+      \If{$(k \ne {\bf N-1})$}
+        \State{$P_k = $ determine\_interpolant( $A_k$ )}
+        \State{$R_k = $ determine\_restrictor( $A_k$ )}
+        \State{$\widehat{r}_{k+1} = R_k (b - A_k u )$}
+        \State{$A_{k+1} = R_k A_k P_k$}
+        \State{$v = 0$}
+        \State{}\Call{Multilevel}{$\widehat{A}_{k+1}$, $\widehat{r}_{k+1}$, $v$, $k+1$}
+        \State{$ u = u + P_{k} v$}
+        \State{$ u = S^{2}_m (A_k, b, u )$}
+      \EndIf
+  \EndFunction
+\end{algorithmic}
+\caption{V-cycle multigrid with $N$ levels to solve $Ax=b$.}
+\label{multigrid_code}
+\end{algorithm}
+
+In the multigrid iteration in Algorithm~\ref{multigrid_code}, the $S^{1}_m()$'s
+and $S^{2}_m()$'s are called \textit{pre-smoothers} and \textit{post-smoothers}.
+They are approximate solvers (e.g., symmetric Gauss-Seidel), with the subscript
+$m$ denoting the number of applications of the approximate solution method. The
+purpose of a smoother is to quickly reduce certain error modes in the
+approximate solution on a level $k$. For symmetric problems, the pre-
+and post-smoothers should be chosen to maintain symmetry (e.g., forward
+Gauss-Seidel for the pre-smoother and backward Gauss-Seidel for the
+post-smoother). The $P_k$'s are \textit{interpolation} matrices that transfer
+solutions from coarse levels to finer levels. The $R_k$'s are
+\textit{restriction} matrices that restrict a fine level solution to a coarser
+level. In a geometric multigrid, $P_k$'s and $R_k$'s are determined
+by the application, whereas in an algebraic multigrid they are automatically
+generated. For symmetric problems, typically $R_k=P_k^T$. For nonsymmetric
+problems, this is not necessarily true. The $A_k$'s are the coarse level
+problems, and are generated through a Galerkin (triple matrix) product.
+
+Please note that the algebraic multigrid algorithms implemented in \muelu{}
+generate the grid transfers $P_k$ automatically and the coarse problems $A_k$
+via a sparse triple matrix product. \trilinos{} provides a wide selection of
+smoothers and direct solvers for use in \muelu through the \ifpack,
+\ifpacktwo, \amesos, and \amesostwo packages (see \S\ref{sec:options}).

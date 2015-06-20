@@ -505,7 +505,7 @@ int create_a_graph(
    * x and y value as its points.  So adjacency information is easily created.
    */
 
-  ZOLTAN_ID_TYPE    i, j, nvtxs, gnvtxs, num4;
+  ZOLTAN_ID_TYPE    i, nvtxs, gnvtxs, num4;
   ZOLTAN_ID_TYPE    gid;
   long left=0, right=0;
   int    vwgt_dim=0, ewgt_dim=0;
@@ -625,16 +625,18 @@ int create_a_graph(
     if (pio_info->init_vwgt_dim == 0) 
       /* Unit weights if no weights were requested. */
       vwgts[i] = 1.0;
-    else
+    else {
+      int jj;
       srand(0);
-      for (j = 0; j < vwgt_dim; j++)  {
+      for (jj = 0; jj < vwgt_dim; jj++)  {
         /* Only assign one of the weight dimensions a weight>0. */
         /* Modify to get more complicated test cases. */
-        if (j == i%vwgt_dim)
-          vwgts[i*vwgt_dim+j] = ((float) rand())/RAND_MAX;
+        if (jj == (int)(i%vwgt_dim))
+          vwgts[i*vwgt_dim+jj] = ((float) rand())/RAND_MAX;
         else
-          vwgts[i*vwgt_dim+j] = 0.0;
+          vwgts[i*vwgt_dim+jj] = 0.0;
       }
+    }
   }
 
   start = (int *)malloc(sizeof(int) * (nvtxs + 1));
@@ -756,7 +758,7 @@ static int setup_mesh_struct(
 const char *yo = "setup_mesh_struct";
 int i, j, k;
 ZOLTAN_ID_TYPE elem_id;
-ZOLTAN_ID_TYPE min_vtx, max_vtx; 
+ZOLTAN_ID_TYPE min_vtx;
 
   DEBUG_TRACE_START(Proc, yo);
 
@@ -820,7 +822,6 @@ ZOLTAN_ID_TYPE min_vtx, max_vtx;
     initialize_element(&(mesh->elements[i]));
 
   min_vtx = local_to_global_id_map(0, Proc);
-  max_vtx = local_to_global_id_map(nvtxs-1, Proc);
 
   for (i = 0; i < nvtxs; i++) {
     mesh->elements[i].globalID = local_to_global_id_map(i, Proc);

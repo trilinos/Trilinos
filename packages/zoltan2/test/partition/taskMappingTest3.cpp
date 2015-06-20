@@ -11,9 +11,6 @@
 #define nProcs 200;
 #define nParts 200;
 
-typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
-typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
-typedef inputAdapter_t::part_t part_t;
 
 string trim_right_copy(
         const string& s,
@@ -116,6 +113,7 @@ bool getArgumentValue(string &argumentid, double &argumentValue, string argument
     return true;
 }
 
+template <typename part_t>
 void getArgVals(
         int argc,
         char **argv,
@@ -131,9 +129,8 @@ void getArgVals(
         string tmp = convert_to_string(argv[i]);
         string tmp2 = "";
         string identifier = "";
-        long long int value = -1; double fval = -1;
+        double fval = -1;
         if(!getArgumentValue(identifier, fval, tmp)) continue;
-        value = (long long int) (fval);
 
         if(identifier == "PROC"){
             std::stringstream stream(std::stringstream::in | std::stringstream::out);
@@ -179,22 +176,27 @@ void getArgVals(
 
 }
 int main(int argc, char *argv[]){
+
+    typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tMVector_t;
+    typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
+    typedef inputAdapter_t::part_t part_t;
+
     Teuchos::GlobalMPISession session(&argc, &argv);
     //if (argc != 3){
     //    cout << "Usage: " << argv[0] << " PART=partGeoParams.txt PROC=procGeoParams.txt" << endl;
     //    exit(1);
     //}
     part_t numParts = 0;
-    scalar_t **partCenters = NULL;
+    zscalar_t **partCenters = NULL;
     int coordDim = 0;
 
     part_t numProcs = 0;
-    scalar_t **procCoordinates = NULL;
+    zscalar_t **procCoordinates = NULL;
     int procDim = 0;
 
 
 
-    part_t jobX = 1, jobY = 1 ,jobZ = 1;
+    part_t jobX = 1, jobY = 1, jobZ = 1;
     string procfile = "";
 
     const RCP<Comm<int> > commN;
@@ -205,7 +207,7 @@ int main(int argc, char *argv[]){
     part_t *task_communication_adj_ = NULL;
     try {
 
-        getArgVals(
+        getArgVals<part_t>(
                 argc,
                 argv,
                 procfile ,
@@ -217,16 +219,17 @@ int main(int argc, char *argv[]){
         numProcs = numParts;
         //cout << "part:" << numParts << " proc:" << procfile << endl;
         {
-            partCenters = new scalar_t * [coordDim];
+            partCenters = new zscalar_t * [coordDim];
             for(int i = 0; i < coordDim; ++i){
-                partCenters[i] = new scalar_t[numParts];
+                partCenters[i] = new zscalar_t[numParts];
             }
 
 
-            task_communication_xadj_ = new part_t [numParts];
+            task_communication_xadj_ = new part_t [numParts+1];
             task_communication_adj_ = new part_t [numParts * 6];
 
             int prevNCount = 0;
+            task_communication_xadj_[0] = 0;
             for (part_t i = 0; i < numParts; ++i) {
               int x = i % jobX;
               int y = (i / (jobX)) % jobY;
@@ -253,7 +256,7 @@ int main(int argc, char *argv[]){
               if (z < jobZ - 1){
               task_communication_adj_[prevNCount++] = i + jobX * jobY;
               }
-              task_communication_xadj_[i] = prevNCount;
+              task_communication_xadj_[i+1] = prevNCount;
             }
         }
 
@@ -261,9 +264,9 @@ int main(int argc, char *argv[]){
 
         {
             std::fstream m(procfile.c_str());
-            procCoordinates = new scalar_t * [procDim];
+            procCoordinates = new zscalar_t * [procDim];
             for(int i = 0; i < procDim; ++i){
-                procCoordinates[i] = new scalar_t[numParts];
+                procCoordinates[i] = new zscalar_t[numParts];
             }
             part_t i = 0;
             while(i < numProcs){
@@ -277,8 +280,8 @@ int main(int argc, char *argv[]){
 
 
         /*
-        Zoltan2::CoordinateCommunicationModel<scalar_t,scalar_t,int> *cm =
-                new Zoltan2::CoordinateCommunicationModel<scalar_t,scalar_t,int>(
+        Zoltan2::CoordinateCommunicationModel<zscalar_t,zscalar_t,int> *cm =
+                new Zoltan2::CoordinateCommunicationModel<zscalar_t,zscalar_t,int>(
                         procDim, procCoordinates,
                         coordDim, partCenters,
                         numProcs, numParts);
@@ -289,7 +292,7 @@ int main(int argc, char *argv[]){
 
         */
         RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
-        part_t *proc_to_task_xadj_ = new part_t[numProcs];
+        part_t *proc_to_task_xadj_ = new part_t[numProcs+1];
         part_t *proc_to_task_adj_ = new part_t[numParts];
 /*
         cout << "procDim:" << procDim <<
@@ -313,13 +316,13 @@ int main(int argc, char *argv[]){
         */
         part_t *partArray = NULL;
         int partArraysize = -1;
-        part_t hopper[3];
-        hopper[0] = 17;
-        hopper[1] = 8;
-        hopper[2] = 24;
+        //part_t hopper[3];
+        //hopper[0] = 17;
+        //hopper[1] = 8;
+        //hopper[2] = 24;
         part_t *machineDimensions = NULL;
         //machineDimensions = hopper;
-        Zoltan2::coordinateTaskMapperInterface<part_t, scalar_t, scalar_t>(
+        Zoltan2::coordinateTaskMapperInterface<part_t, zscalar_t, zscalar_t>(
                 tcomm,
                 procDim,
                 numProcs,

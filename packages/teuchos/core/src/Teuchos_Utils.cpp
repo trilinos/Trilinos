@@ -46,7 +46,7 @@ namespace Teuchos {
 
 double Utils::chopVal_ = 1.0e-16;
 
-double Utils::chop(const double& x) 
+double Utils::chop(const double& x)
 {
 	if (std::fabs(x) < chopVal_) return 0;
 	return x;

@@ -67,7 +67,7 @@ namespace MueLu {
     @brief Factory for building restriction operators using a prolongator factory
   */
 
-  template < class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps >
+  template < class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class GenericRFactory : public TwoLevelFactoryBase {
 #undef MUELU_GENERICRFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

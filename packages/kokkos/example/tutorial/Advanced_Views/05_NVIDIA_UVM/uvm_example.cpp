@@ -1,15 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//                             Kokkos
-//         Manycore Performance-Portable Multidimensional Arrays
-//
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -55,13 +53,13 @@ typedef Kokkos::View<int**> idx_type;
 
 template<class Device>
 struct localsum {
-  // Define the execution space for the functor (overrides the DefaultDeviceType)
-  typedef Device device_type;
+  // Define the execution space for the functor (overrides the DefaultExecutionSpace)
+  typedef Device execution_space;
 
   // Get the view types on the particular device the functor is instantiated for
   idx_type::const_type idx;
   view_type dest;
-  Kokkos::View<view_type::const_data_type, view_type::array_layout, view_type::device_type, Kokkos::MemoryRandomAccess > src;
+  Kokkos::View<view_type::const_data_type, view_type::array_layout, view_type::execution_space, Kokkos::MemoryRandomAccess > src;
 
   localsum(idx_type idx_, view_type dest_,
       view_type src_):idx(idx_),dest(dest_),src(src_) {
@@ -100,13 +98,13 @@ int main(int narg, char* arg[]) {
   // Run on the device
   // This will cause a sync of idx to the device since it was modified on the host
   Kokkos::Impl::Timer timer;
-  Kokkos::parallel_for(size,localsum<view_type::device_type>(idx,dest,src));
+  Kokkos::parallel_for(size,localsum<view_type::execution_space>(idx,dest,src));
   Kokkos::fence();
   double sec1_dev = timer.seconds();
 
   // No data transfer will happen now, since nothing is accessed on the host
   timer.reset();
-  Kokkos::parallel_for(size,localsum<view_type::device_type>(idx,dest,src));
+  Kokkos::parallel_for(size,localsum<view_type::execution_space>(idx,dest,src));
   Kokkos::fence();
   double sec2_dev = timer.seconds();
 
@@ -116,13 +114,13 @@ int main(int narg, char* arg[]) {
   // when they are accessed the first time during the parallel_for. Due to the latency of a memcpy
   // this gives lower effective bandwidth when doing a manual copy via dual views
   timer.reset();
-  Kokkos::parallel_for(size,localsum<view_type::device_type::host_mirror_device_type>(idx,dest,src));
+  Kokkos::parallel_for(size,localsum<Kokkos::HostSpace::execution_space>(idx,dest,src));
   Kokkos::fence();
   double sec1_host = timer.seconds();
 
   // No data transfers will happen now
   timer.reset();
-  Kokkos::parallel_for(size,localsum<view_type::device_type::host_mirror_device_type>(idx,dest,src));
+  Kokkos::parallel_for(size,localsum<Kokkos::HostSpace::execution_space>(idx,dest,src));
   Kokkos::fence();
   double sec2_host = timer.seconds();
 

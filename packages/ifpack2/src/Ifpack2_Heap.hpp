@@ -45,6 +45,7 @@
 
 #include <algorithm>
 #include "Teuchos_Array.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 
 namespace Ifpack2 {
 

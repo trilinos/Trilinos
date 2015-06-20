@@ -46,7 +46,7 @@ class Side_Set: public Exo_Entity {
   
   Side_Set();
   Side_Set(int file_id, size_t exo_set_id);
-  Side_Set(int file_id, size_t exo_set_id, size_t num_sides, size_t num_dist_factors = 0);
+  Side_Set(int file_id, size_t exo_set_id, size_t num_sides, size_t num_dist_factors_x = 0);
   ~Side_Set();
   
   void apply_map(const INT *node_map);
@@ -55,27 +55,32 @@ class Side_Set: public Exo_Entity {
   std::pair<INT,INT> Side_Id(size_t position) const;
   size_t Side_Index(size_t position) const;
 
+  std::pair<INT,INT> Distribution_Factor_Range(size_t side) const;
   const double* Distribution_Factors() const;
   
   void Display_Stats(std::ostream& = std::cout) const;
   void Display      (std::ostream& = std::cout) const;
   int  Check_State() const;
-  
+  size_t Distribution_Factor_Count() const {return num_dist_factors;}
+
  private:
   Side_Set(const Side_Set&);  // Not written.
   const Side_Set& operator=(const Side_Set&);  // Not written.
   
   void load_sides(const INT *elmt_map = NULL) const;
+  void load_df() const;
   void entity_load_params();
 
   EXOTYPE exodus_type() const;
   const char* label() const {return "Sideset";}
+  const char* short_label() const {return "sideset";}
 
   size_t num_dist_factors;
   
   mutable INT*    elmts;    
   mutable INT*    sides;    
   mutable INT*    sideIndex;
+  mutable INT*    dfIndex;
   mutable double* dist_factors;
   
   friend class ExoII_Read<INT>;

@@ -62,8 +62,8 @@
 
 namespace MueLu {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::UnamalgamateAggregates(const Aggregates& aggregates,
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>::UnamalgamateAggregates(const Aggregates& aggregates,
         Teuchos::ArrayRCP<LocalOrdinal>& aggStart, Teuchos::ArrayRCP<GlobalOrdinal>& aggToRowMap) const {
     int myPid = aggregates.GetMap()->getComm()->getRank();
     Teuchos::ArrayView<const GO> nodeGlobalElts = aggregates.GetMap()->getNodeElementList();
@@ -130,8 +130,8 @@ namespace MueLu {
 
   } //UnamalgamateAggregates
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::UnamalgamateAggregatesLO(const Aggregates& aggregates,
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>::UnamalgamateAggregatesLO(const Aggregates& aggregates,
         Teuchos::ArrayRCP<LO>& aggStart, Teuchos::ArrayRCP<LO>& aggToRowMap) const {
 
     int myPid = aggregates.GetMap()->getComm()->getRank();
@@ -200,8 +200,8 @@ namespace MueLu {
 
   /////////////////////////////////////////////////////////////////////////////
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeUnamalgamatedImportDofMap(const Aggregates& aggregates) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>::ComputeUnamalgamatedImportDofMap(const Aggregates& aggregates) const {
     Teuchos::RCP<const Map> nodeMap = aggregates.GetMap();
 
     Teuchos::RCP<std::vector<GO> > myDofGids = Teuchos::rcp(new std::vector<GO>);
@@ -229,8 +229,8 @@ namespace MueLu {
 
   /////////////////////////////////////////////////////////////////////////////
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  GlobalOrdinal AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeGlobalDOF(GlobalOrdinal const &gNodeID, LocalOrdinal const &k) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  GlobalOrdinal AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>::ComputeGlobalDOF(GlobalOrdinal const &gNodeID, LocalOrdinal const &k) const {
     // here, the assumption is, that the node map has the same indexBase as the dof map
     //                            this is the node map index base                    this is the dof map index base
     GlobalOrdinal gDofIndex = offset_ + (gNodeID-indexBase_)*fullblocksize_ + nStridedOffset_ + k + indexBase_;

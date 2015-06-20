@@ -48,7 +48,7 @@
 #include <string>
 #include <typeinfo>
 #include <iostream>
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx_FieldTag.hpp"
 #include "Phalanx_DataLayout.hpp"
 

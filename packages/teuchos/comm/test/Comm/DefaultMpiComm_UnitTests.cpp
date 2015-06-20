@@ -51,8 +51,12 @@
 #include "Teuchos_getConst.hpp"
 #include "Teuchos_as.hpp"
 
+#ifdef HAVE_TEUCHOS_MPI
+#  include "Teuchos_DefaultMpiComm.hpp"
+#endif
+
 #ifdef HAVE_TEUCHOS_QD
-#include <qd/dd_real.h>
+#  include <qd/dd_real.h>
 #endif
 
 namespace std {
@@ -168,6 +172,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultMpiComm, basic, Ordinal )
   out << "comm = " << Teuchos::describe(*comm);
   TEST_EQUALITY( size(*comm), GlobalMPISession::getNProc() );
 }
+
+
+#ifdef HAVE_TEUCHOS_MPI
+
+
+TEUCHOS_UNIT_TEST( DefaultMpiComm, getRawMpiComm )
+{
+  ECHO(MPI_Comm rawMpiComm = MPI_COMM_WORLD);
+  ECHO(const RCP<const Comm<int> > comm =
+    Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper(rawMpiComm)));
+  out << "comm = " << Teuchos::describe(*comm);
+  ECHO(MPI_Comm rawMpiComm2 = Teuchos::getRawMpiComm<int>(*comm));
+  TEST_EQUALITY( rawMpiComm2, rawMpiComm );
+}
+
+
+#endif // HAVE_TEUCHOS_MPI
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, reduceAllAndScatter_1, Ordinal, Packet )

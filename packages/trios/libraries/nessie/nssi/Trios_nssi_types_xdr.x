@@ -152,6 +152,9 @@ const NSSI_URL_LEN      = NNTI_URL_LEN;
  * Initially, the only supported transport mechanism is Portals.
  */
 enum nssi_rpc_transport {
+    /** @brief No operations permitted. */
+    NSSI_RPC_NULL,
+
     /** @brief Use Portals to transfer rpc requests. */
     NSSI_RPC_PTL,
 
@@ -161,9 +164,10 @@ enum nssi_rpc_transport {
     /** @brief Use Cray Gemini to transfer rpc requests. */
     NSSI_RPC_GEMINI,
 
-   /** @brief Use  Blue Gene/P DCMF Lib to transfer rpc requests. */
+   /** @brief Use Blue Gene/P DCMF Lib to transfer rpc requests. */
     NSSI_RPC_BGPDCMF,
-    
+
+    /** @brief Use Blue Gene/P PAMI Lib to transfer rpc requests. */
     NSSI_RPC_BGQPAMI,
 
     /** @brief Use MPI to transfer rpc requests. */
@@ -176,7 +180,7 @@ enum nssi_rpc_transport {
 /**
  * @brief The number of RPC mechanisms supported by NSSI.
  */
-const NSSI_RPC_COUNT = 7;
+const NSSI_RPC_COUNT = 8;
 
 
 /**
@@ -279,6 +283,10 @@ struct nssi_request_header {
     /** @brief A flag that tells the server to fetch bulk data from
      *        <em>\ref data_addr</em>. */
     bool fetch_data;
+
+    /** @brief A flag that tells the server if the client expects 
+     * a response. */
+    bool is_responseless;
 
     /** @brief The remote memory address reserved for
      *        long arguments. */

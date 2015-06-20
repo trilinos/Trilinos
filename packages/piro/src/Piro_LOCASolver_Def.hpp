@@ -113,6 +113,7 @@ Piro::LOCASolver<Scalar>::LOCASolver(
   noxStatusTests_ = NOX::StatusTest::buildStatusTests(*noxStatusParams, *(globalData_->locaUtils));
 
   stepper_ = Teuchos::rcp(new LOCA::Stepper(globalData_, group_, locaStatusTests_, noxStatusTests_, piroParams_));
+  first_ = true;
 }
 
 template<typename Scalar>
@@ -145,7 +146,12 @@ Piro::LOCASolver<Scalar>::evalModelImpl(
     group_->setParams(paramVector_);
   }
 
-  stepper_->reset(globalData_, group_, locaStatusTests_, noxStatusTests_, piroParams_);
+  if (first_) {
+    // No need to call reset. The call can result in long stdout output, so it's
+    // nice to avoid it since we can.
+    first_ = false;
+  } else
+    stepper_->reset(globalData_, group_, locaStatusTests_, noxStatusTests_, piroParams_);
   const LOCA::Abstract::Iterator::IteratorStatus status = stepper_->run();
 
   if (status == LOCA::Abstract::Iterator::Finished) {

@@ -66,15 +66,15 @@ namespace Teuchos {
 template<typename T, int N>
 class Tuple : public ArrayView<T> {
 public:
-  
+
 	/** \brief Default construct raw storage.
 	 */
 	inline Tuple();
-  
+
 	/** \brief Copy constructor
 	 */
 	Tuple( const Tuple<T,N> &t );
-  
+
 	/** \brief Copy constructor
 	 */
 	Tuple<T,N>& operator=( const Tuple<T,N> &t );
@@ -93,7 +93,7 @@ private:
 template<typename T> inline
 Tuple<T,1> tuple(const T& a);
 
-                      
+
 /** \brief Create a Tuple<T,2>.
  *
  * \relates Tuple

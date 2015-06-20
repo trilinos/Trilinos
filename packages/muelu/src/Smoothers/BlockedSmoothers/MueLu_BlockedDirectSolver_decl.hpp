@@ -78,8 +78,11 @@ namespace MueLu {
     by a direct solver.
       */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
-  class BlockedDirectSolver : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
+  template <class Scalar = SmootherPrototype<>::scalar_type,
+            class LocalOrdinal = typename SmootherPrototype<Scalar>::local_ordinal_type,
+            class GlobalOrdinal = typename SmootherPrototype<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node = typename SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  class BlockedDirectSolver : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node>
   {
     typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractorClass;
 
@@ -110,9 +113,7 @@ namespace MueLu {
     //@{
 
     /*! @brief Setup routine
-     * In the Setup method the Inverse_ vector is filled with the corresponding
-     * SmootherBase objects. Without the Inverse_ vector being filled we cannot call
-     * BlockedGaussSeidelSmoother::Apply.
+     * Call the underlaying Setup routine of the nested direct solver once the input block matrix has been merged
     */
     void Setup(Level &currentLevel);
 

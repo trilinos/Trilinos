@@ -45,8 +45,7 @@
 
 #include "Stokhos_TpetraCrsMatrixUQPCEUnitTest.hpp"
 
-#include "Kokkos_hwloc.hpp"
-#include "Kokkos_Threads.hpp"
+#include "Kokkos_Core.hpp"
 #include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 
 // Instantiate tests for threads node
@@ -68,6 +67,7 @@ int main( int argc, char* argv[] ) {
   Kokkos::Threads::print_configuration(std::cout);
 
   // Run tests
+  Teuchos::UnitTestRepository::setGloballyReduceTestResult(true);
   int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
   // Finish up

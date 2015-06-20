@@ -1,0 +1,20 @@
+mesh
+ radial trisection
+ trisection blocks, 4
+ numz 2
+  zblock 1 4.0 interval 10
+  zblock 2 4.0 interval 10
+ numr 3 
+  rblock 1 2. interval 4
+  rblock 2 3. interval 4
+  rblock 3 5. interval 4
+ numa 1
+  ablock 1 360. interval 32
+ end
+
+   topology modification
+    suppress block, 1
+    suppress block, 3
+    end
+
+end

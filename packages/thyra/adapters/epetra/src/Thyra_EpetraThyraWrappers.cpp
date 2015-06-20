@@ -152,14 +152,16 @@ Thyra::create_VectorSpace(
   const Ordinal localSubDim = epetra_map->NumMyElements();
   RCP<DefaultSpmdVectorSpace<double> > vs =
     defaultSpmdVectorSpace<double>(
-      comm, localSubDim, epetra_map->NumGlobalElements(),
+      comm, localSubDim, epetra_map->NumGlobalElements64(),
       !epetra_map->DistributedGlobal());
-  TEUCHOS_ASSERT_EQUALITY(vs->dim(), as<Ordinal>(epetra_map->NumGlobalElements()));
-  // NOTE: It is impossible to trigger the above exception unless
-  // NumGlobalElemenets() overflows 'int'.  However, this is a nice sanity
-  // check to stop the code early in case we seen an overflow in practice.
-  // Because this assert will only likely trigger in a non-debug build, we
-  // will unguard the assert since it is very cheap to perform.
+  TEUCHOS_ASSERT_EQUALITY(vs->dim(), as<Ordinal>(epetra_map->NumGlobalElements64()));
+  // NOTE: the above assert just checks to make sure that the size of the
+  // Ordinal type can hold the size returned from NumGlobalElemenets64().  A
+  // 64 bit system will always have Ordinal=ptrdiff_t by default which will
+  // always be 64 bit so this should be fine.  However, if Ordinal were
+  // defined to only be 32 bit and then this exception could trigger.  Because
+  // this assert will only likely trigger in a non-debug build, we will leave
+  // the assert unguarded since it is very cheap to perform.
   Teuchos::set_extra_data( epetra_map, "epetra_map", inoutArg(vs) );
   return vs;
 }

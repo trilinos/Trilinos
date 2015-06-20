@@ -184,6 +184,8 @@ public:
 
    void addElement(const Teuchos::RCP<ElementDescriptor> & ed,stk_classic::mesh::Part * block);
 
+   void addEdges();
+
    /** Addes an entity to a specified side set.
      */
    void addEntityToSideset(stk_classic::mesh::Entity & entity,stk_classic::mesh::Part * sideset);
@@ -199,6 +201,11 @@ public:
      */
    const VectorFieldType & getCoordinatesField() const
    { return *coordinatesField_; }
+
+   /** Grab the edges field 
+     */
+   const VectorFieldType & getEdgesField() const
+   { return *edgesField_; }
 
    /** Look up a global node and get the coordinate.
      */
@@ -239,6 +246,25 @@ public:
      */
    void getMySides(const std::string & sideName,std::vector<stk_classic::mesh::Entity*> & sides) const;
 
+   /** Get Entities corresponding to the locally owned part of the side set requested. This also limits
+     * the entities to be in a particular element block. The Entites in the vector should be a dimension
+     * lower then <code>getDimension()</code>.
+     *
+     * \param[in] sideName Name of side set
+     * \param[in] blockName Name of block
+     * \param[in,out] sides Vector of entities containing the requested sides.
+     */
+   void getMySides(const std::string & sideName,const std::string & blockName,std::vector<stk_classic::mesh::Entity*> & sides) const;
+
+   /** Get Entities corresponding to the locally owned part of the side set requested. 
+     * The Entites in the vector should be a dimension
+     * lower then <code>getDimension()</code>.
+     *
+     * \param[in] sideName Name of side set
+     * \param[in,out] sides Vector of entities containing the requested sides.
+     */
+   void getAllSides(const std::string & sideName,std::vector<stk_classic::mesh::Entity*> & sides) const;
+
    /** Get Entities corresponding to the side set requested. This also limits the entities
      * to be in a particular element block. The Entites in the vector should be a dimension
      * lower then <code>getDimension()</code>.
@@ -247,7 +273,8 @@ public:
      * \param[in] blockName Name of block
      * \param[in,out] sides Vector of entities containing the requested sides.
      */
-   void getMySides(const std::string & sideName,const std::string & blockName,std::vector<stk_classic::mesh::Entity*> & sides) const;
+
+   void getAllSides(const std::string & sideName,const std::string & blockName,std::vector<stk_classic::mesh::Entity*> & sides) const;
 
    /** Get Entities corresponding to the node set requested. This also limits the entities
      * to be in a particular element block. The Entites in the vector should be ofdimension
@@ -257,6 +284,7 @@ public:
      * \param[in] blockName Name of block
      * \param[in,out] sides Vector of entities containing the requested sides.
      */
+
    void getMyNodes(const std::string & sideName,const std::string & blockName,std::vector<stk_classic::mesh::Entity*> & nodes) const;
 
    // Utility functions
@@ -372,7 +400,7 @@ public:
    /** Get set of element sharing a single node and its local node id.
      */
    void getOwnedElementsSharingNode(stk_classic::mesh::EntityId nodeId,std::vector<stk_classic::mesh::Entity *> & elements,
-                                                          std::vector<int> & localNodeId) const;
+                                                          std::vector<int> & localNodeId, unsigned int matchType) const;
 
 
    //! get a set of elements sharing multiple nodes
@@ -572,7 +600,7 @@ public:
    void addPeriodicBCs(const std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > & bc_vec)
    { periodicBCs_.insert(periodicBCs_.end(),bc_vec.begin(),bc_vec.end()); }
 
-   Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > > 
+   std::pair<Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > >, Teuchos::RCP<std::vector<unsigned int> > >
    getPeriodicNodePairing() const;
 
    /** check for a valid block id
@@ -741,6 +769,7 @@ protected:
    std::vector<stk_classic::mesh::Part*> edgesPartVec_;
 
    VectorFieldType * coordinatesField_;
+   VectorFieldType * edgesField_;
    ProcIdFieldType * processorIdField_;
    SolutionFieldType * loadBalField_;
    
@@ -902,7 +931,7 @@ void STK_Interface::setCellFieldData(const std::string & fieldName,const std::st
 
       double * solnData = stk_classic::mesh::field_data(*field,*element);
       TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
-      solnData[0] = scaleValue*solutionValues[cell];
+      solnData[0] = scaleValue*solutionValues(cell,0);
    }
 }
 

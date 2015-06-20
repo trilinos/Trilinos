@@ -32,20 +32,4 @@ TRIBITS_ADD_LIBRARY(
 	SOURCES ${SOURCES}
 )
 
-TRIBITS_ADD_EXECUTABLE(
-  exttest
-  SOURCES exttest.f
-  DEPLIBS supes
-  )
-TRIBITS_ADD_EXECUTABLE(
-  ffrtest
-  SOURCES ffrtest.f
-  DEPLIBS supes
-  )
-TRIBITS_ADD_EXECUTABLE(
-  memtest
-  SOURCES memtest.f
-  DEPLIBS supes
-  )
-
 TRIBITS_SUBPACKAGE_POSTPROCESS()

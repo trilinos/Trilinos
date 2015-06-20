@@ -69,13 +69,12 @@ using Teuchos::rcp_const_cast;
 using Teuchos::Comm;
 using Teuchos::DefaultComm;
 
-typedef UserInputForTests uinput_t;
-typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tmatrix_t;
-typedef Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> xmatrix_t;
+typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> tmatrix_t;
+typedef Xpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> xmatrix_t;
 typedef Epetra_CrsMatrix ematrix_t;
 
-void printMatrix(RCP<const Comm<int> > &comm, lno_t nrows,
-    const gno_t *rowIds, const lno_t *offsets, const gno_t *colIds)
+void printMatrix(RCP<const Comm<int> > &comm, zlno_t nrows,
+    const zgno_t *rowIds, const zlno_t *offsets, const zgno_t *colIds)
 {
   int rank = comm->getRank();
   int nprocs = comm->getSize();
@@ -83,9 +82,9 @@ void printMatrix(RCP<const Comm<int> > &comm, lno_t nrows,
   for (int p=0; p < nprocs; p++){
     if (p == rank){
       std::cout << rank << ":" << std::endl;
-      for (lno_t i=0; i < nrows; i++){
+      for (zlno_t i=0; i < nrows; i++){
         std::cout << " row " << rowIds[i] << ": ";
-        for (lno_t j=offsets[i]; j < offsets[i+1]; j++){
+        for (zlno_t j=offsets[i]; j < offsets[i+1]; j++){
           std::cout << colIds[j] << " ";
         }
         std::cout << std::endl;
@@ -114,8 +113,8 @@ int verifyInputAdapter(
 
   gfail = globalFail(comm, fail);
 
-  const gno_t *rowIds=NULL, *colIds=NULL;
-  const lno_t *offsets=NULL;
+  const zgno_t *rowIds=NULL, *colIds=NULL;
+  const zlno_t *offsets=NULL;
   size_t nrows=0;
 
   if (!gfail){
@@ -149,11 +148,11 @@ int main(int argc, char *argv[])
   // Create object that can give us test Tpetra, Xpetra
   // and Epetra matrices for testing.
 
-  RCP<uinput_t> uinput;
+  RCP<UserInputForTests> uinput;
 
   try{
     uinput = 
-      rcp(new uinput_t(
+      rcp(new UserInputForTests(
         testDataFilePath,std::string("simple"), comm, true));
   }
   catch(std::exception &e){
@@ -165,8 +164,6 @@ int main(int argc, char *argv[])
 
   tM = uinput->getUITpetraCrsMatrix();
   size_t nrows = tM->getNodeNumRows();
-  Teuchos::ArrayView<const gno_t> rowGids = 
-    tM->getRowMap()->getNodeElementList();
 
   // To test migration in the input adapter we need a Solution
   // object.  The Solution needs an IdentifierMap.
@@ -174,9 +171,6 @@ int main(int argc, char *argv[])
   typedef Zoltan2::IdentifierMap<tmatrix_t> idmap_t;
 
   RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
-
-  ArrayRCP<const gno_t> gidArray = arcpFromArrayView(rowGids);
-  RCP<const idmap_t> idMap = rcp(new idmap_t(env, comm, gidArray));
 
   int nWeights = 1;
 
@@ -189,8 +183,8 @@ int main(int argc, char *argv[])
   memset(p, 0, sizeof(part_t) * nrows);
   ArrayRCP<part_t> solnParts(p, 0, nrows, true);
 
-  soln_t solution(env, comm, idMap, nWeights);
-  solution.setParts(gidArray, solnParts, false);//could use true, but test false
+  soln_t solution(env, comm, nWeights);
+  solution.setParts(solnParts);
 
   /////////////////////////////////////////////////////////////
   // User object is Tpetra::CrsMatrix

@@ -65,7 +65,7 @@
 #include <Epetra_Operator.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_RowMatrix.h>
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
 #else
 #include <Epetra_SerialComm.h>

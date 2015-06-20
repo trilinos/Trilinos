@@ -1,0 +1,86 @@
+<ParameterList name="MueLu">
+  <Parameter        name="verbosity"                            type="string"   value="high"/>
+
+  <Parameter        name="number of equations"                  type="int"      value="1"/>
+
+  <Parameter        name="coarse: max size"                     type="int"      value="1000"/>
+
+  <Parameter        name="multigrid algorithm"                  type="string"   value="sa"/>
+
+  <!-- ===========  AGGREGATION  =========== -->
+  <Parameter        name="aggregation: type"                    type="string"   value="uncoupled"/>
+  <Parameter        name="aggregation: drop scheme"             type="string"   value="distance laplacian"/>
+  <!-- <Parameter        name="aggregation: drop tol"                type="double"   value="0.1"/> -->
+
+  <!-- ===========  SMOOTHING  =========== -->
+  <!-- Ifpack2: Additive Schwarz, overlap=1, subdomain solver ILU(2) -->
+  <!--
+  <Parameter name="smoother: type" type="string" value="SCHWARZ"/>
+  <ParameterList    name="smoother: params">
+    <Parameter name="schwarz: overlap level"            type="int"    value="1"/>
+    <Parameter name="schwarz: combine mode"             type="string" value="Zero"/>
+    <Parameter name="schwarz: use reordering"           type="bool"   value="false"/>
+    <ParameterList name="schwarz: reordering list">
+      <Parameter name="order_method"                    type="string"  value="rcm"/>
+    </ParameterList>
+
+    <Parameter name="subdomain solver name"             type="string" value="RILUK"/>
+    <ParameterList name="subdomain solver parameters">
+      <Parameter name= "fact: iluk level-of-fill"         type="int"    value="2"/>
+      <Parameter name= "fact: absolute threshold"         type="double" value="0."/>
+      <Parameter name= "fact: relative threshold"         type="double" value="1."/>
+      <Parameter name= "fact: relax value"                type="double" value="0."/>
+    </ParameterList>
+  </ParameterList>
+  -->
+
+  <!-- Ifpack2: Additive Schwarz, overlap=1, subdomain solver SuperLU sparse direct solve -->
+  <!--
+  <Parameter name="smoother: type" type="string" value="SCHWARZ"/>
+  <ParameterList    name="smoother: params">
+    <Parameter name="schwarz: overlap level"            type="int"    value="1"/>
+    <Parameter name="schwarz: combine mode"             type="string" value="Zero"/>
+    <Parameter name="subdomain solver name"             type="string" value="AMESOS2"/>
+  </ParameterList>
+  -->
+
+  <!-- Ifpack2: Additive Schwarz, overlap=1, subdomain solver SuperLU ILUTP -->
+  <!--
+  <Parameter name="smoother: type" type="string" value="SCHWARZ"/>
+  <ParameterList    name="smoother: params">
+    <Parameter name="schwarz: overlap level"            type="int"    value="1"/>
+    <Parameter name="schwarz: combine mode"             type="string" value="Zero"/>
+    <Parameter name="subdomain solver name"             type="string" value="AMESOS2"/>
+    <ParameterList name="subdomain solver parameters">
+      <ParameterList name="Amesos2">
+        <ParameterList name="SuperLU">
+          <Parameter name="ILU_Flag"           type="bool"   value="true"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  -->
+
+  <!-- Ifpack1: Additive Schwarz, overlap=1, subdomain solver KLU for pre and post -->
+  <!--
+  <Parameter        name="smoother: type"                       type="string"   value="Amesos"/>
+  <Parameter        name="smoother: overlap"                    type="int"   value="1"/>
+  -->
+
+  <!-- Ifpack1: Additive Schwarz, specifying different overlap and subdomains solvers for pre and post -->
+  <!--
+  <Parameter        name="smoother: pre overlap"                type="int"   value="1"/>
+  <Parameter        name="smoother: pre type"                   type="string"   value="Amesos"/>
+  <Parameter        name="smoother: post overlap"                type="int"   value="0"/>
+  <Parameter        name="smoother: post type"                  type="string"   value="ILU"/>
+  -->
+
+  <!-- ===========  REPARTITIONING  =========== -->
+  <Parameter        name="repartition: enable"                  type="bool"     value="true"/>
+  <Parameter        name="repartition: partitioner"             type="string"   value="zoltan"/>
+  <Parameter        name="repartition: start level"             type="int"      value="2"/>
+  <Parameter        name="repartition: min rows per proc"       type="int"      value="800"/>
+  <Parameter        name="repartition: max imbalance"           type="double"   value="1.1"/>
+  <Parameter        name="repartition: remap parts"             type="bool"     value="false"/>
+
+</ParameterList>

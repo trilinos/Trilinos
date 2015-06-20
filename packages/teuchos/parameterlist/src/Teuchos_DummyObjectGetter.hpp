@@ -60,7 +60,7 @@ public:
   static RCP<T> getDummyObject(){
     return rcp(new T);
   }
-  
+
 };
 
 

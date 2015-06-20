@@ -99,6 +99,9 @@ namespace MueLu {
     //! Get proc rank used for printing. <b>Do not use this information for any other purpose.</b>
     int GetProcRankVerbose() const;
 
+    //! Set proc rank used for printing.
+    int SetProcRankVerbose(int procRank) const;
+
     /*! @brief Find out whether we need to print out information for a specific message type.
 
         This method is used to determine whether computations are necessary for this message type.
@@ -128,7 +131,9 @@ namespace MueLu {
   private:
     //! Verbose level specific to 'this'
     VerbLevel verbLevel_;
-    int procRank_;
+    mutable
+      int procRank_;
+    int numProcs_;
 
     static Teuchos::RCP<Teuchos::FancyOStream> blackHole_;
 

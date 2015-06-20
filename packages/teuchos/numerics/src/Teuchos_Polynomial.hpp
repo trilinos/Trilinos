@@ -47,7 +47,7 @@
 
 template <typename CoeffT>
 Teuchos::Polynomial<CoeffT>::Polynomial(unsigned int deg,
-					const CoeffT& cloneCoeff, 
+					const CoeffT& cloneCoeff,
 					unsigned int reserve) :
   d(deg)
 {
@@ -62,7 +62,7 @@ Teuchos::Polynomial<CoeffT>::Polynomial(unsigned int deg,
 }
 
 template <typename CoeffT>
-Teuchos::Polynomial<CoeffT>::Polynomial(unsigned int deg, 
+Teuchos::Polynomial<CoeffT>::Polynomial(unsigned int deg,
 					unsigned int reserve) :
   d(deg)
 {
@@ -80,8 +80,8 @@ Teuchos::Polynomial<CoeffT>::~Polynomial()
 }
 
 template <typename CoeffT>
-void 
-Teuchos::Polynomial<CoeffT>::setDegree(unsigned int deg) 
+void
+Teuchos::Polynomial<CoeffT>::setDegree(unsigned int deg)
 {
   d = deg;
   if (d+1 > sz) {
@@ -96,13 +96,13 @@ Teuchos::Polynomial<CoeffT>::setDegree(unsigned int deg)
 
 template <typename CoeffT>
 Teuchos::RCP<CoeffT>
-Teuchos::Polynomial<CoeffT>::getCoefficient(unsigned int i) 
+Teuchos::Polynomial<CoeffT>::getCoefficient(unsigned int i)
 {
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION(i > d, 
+  TEUCHOS_TEST_FOR_EXCEPTION(i > d,
 		     std::out_of_range,
-		     "Polynomial<CoeffT>::getCoefficient(i): " << 
-		     "Error, coefficient i = " << i << 
+		     "Polynomial<CoeffT>::getCoefficient(i): " <<
+		     "Error, coefficient i = " << i <<
 		     " is not in range, degree = " << d << "." );
 #endif
   return coeff[i];
@@ -113,10 +113,10 @@ Teuchos::RCP<const CoeffT>
 Teuchos::Polynomial<CoeffT>::getCoefficient(unsigned int i) const
 {
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION(i > d, 
+  TEUCHOS_TEST_FOR_EXCEPTION(i > d,
 		     std::out_of_range,
-		     "Polynomial<CoeffT>::getCoefficient(i): " << 
-		     "Error, coefficient i = " << i << 
+		     "Polynomial<CoeffT>::getCoefficient(i): " <<
+		     "Error, coefficient i = " << i <<
 		     " is not in range, degree = " << d << "." );
 #endif
   return coeff[i];
@@ -124,17 +124,17 @@ Teuchos::Polynomial<CoeffT>::getCoefficient(unsigned int i) const
 
 template <typename CoeffT>
 void
-Teuchos::Polynomial<CoeffT>::setCoefficient(unsigned int i, const CoeffT& v) 
+Teuchos::Polynomial<CoeffT>::setCoefficient(unsigned int i, const CoeffT& v)
 {
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION(i > d, 
+  TEUCHOS_TEST_FOR_EXCEPTION(i > d,
 		     std::out_of_range,
-		     "Polynomial<CoeffT>::setCoefficient(i,v): " << 
-		     "Error, coefficient i = " << i << 
+		     "Polynomial<CoeffT>::setCoefficient(i,v): " <<
+		     "Error, coefficient i = " << i <<
 		     " is not in range, degree = " << d << "." );
-  TEUCHOS_TEST_FOR_EXCEPTION(coeff[i] == Teuchos::null, 
+  TEUCHOS_TEST_FOR_EXCEPTION(coeff[i] == Teuchos::null,
 		     std::runtime_error,
-		     "Polynomial<CoeffT>::setCoefficient(i,v): " << 
+		     "Polynomial<CoeffT>::setCoefficient(i,v): " <<
 		     "Error, coefficient i = " << i << " is null!");
 #endif
   PolynomialTraits<CoeffT>::copy(v, coeff[i].get());
@@ -147,10 +147,10 @@ Teuchos::Polynomial<CoeffT>::setCoefficientPtr(
 	                          const Teuchos::RCP<CoeffT>& v)
 {
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION(i > d, 
+  TEUCHOS_TEST_FOR_EXCEPTION(i > d,
 		     std::out_of_range,
-		     "Polynomial<CoeffT>::setCoefficientPtr(i,v): " << 
-		     "Error, coefficient i = " << i << 
+		     "Polynomial<CoeffT>::setCoefficientPtr(i,v): " <<
+		     "Error, coefficient i = " << i <<
 		     " is not in range, degree = " << d << "." );
 #endif
   coeff[i] = v;
@@ -159,16 +159,16 @@ Teuchos::Polynomial<CoeffT>::setCoefficientPtr(
 template <typename CoeffT>
 void
 Teuchos::Polynomial<CoeffT>::evaluate(
-			  typename Teuchos::Polynomial<CoeffT>::scalar_type& t, 
+			  typename Teuchos::Polynomial<CoeffT>::scalar_type& t,
 			  CoeffT* x, CoeffT* xdot) const
 {
   bool evaluate_xdot = (xdot != NULL);
 
 #ifdef TEUCHOS_DEBUG
   for (unsigned int i=0; i<=d; i++)
-    TEUCHOS_TEST_FOR_EXCEPTION(coeff[i] == Teuchos::null, 
+    TEUCHOS_TEST_FOR_EXCEPTION(coeff[i] == Teuchos::null,
 		       std::runtime_error,
-		       "Polynomial<CoeffT>::evaluate(): " << 
+		       "Polynomial<CoeffT>::evaluate(): " <<
 		       "Error, coefficient i = " << i << " is null!");
 #endif
 
@@ -179,7 +179,7 @@ Teuchos::Polynomial<CoeffT>::evaluate(
       PolynomialTraits<CoeffT>::copy(*coeff[d], xdot);
     else
       PolynomialTraits<CoeffT>::assign(
-				 xdot, 
+				 xdot,
 				 Teuchos::ScalarTraits<scalar_type>::zero());
   }
 

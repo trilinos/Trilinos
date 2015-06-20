@@ -95,7 +95,7 @@ solve(Teuchos::ParameterList& params,
     Y.putScalar(0.0);
   else {
     // Solve Y = C^-1 * G
-    NOX::Abstract::MultiVector::DenseMatrix M(C);
+    NOX::Abstract::MultiVector::DenseMatrix M(Teuchos::Copy, C);
     int *ipiv = new int[M.numRows()];
     Teuchos::LAPACK<int,double> L;
     int info;
@@ -184,7 +184,7 @@ solveTranspose(Teuchos::ParameterList& params,
     Y.putScalar(0.0);
   else {
     // Solve Y = C^-T * G
-    NOX::Abstract::MultiVector::DenseMatrix M(C);
+    NOX::Abstract::MultiVector::DenseMatrix M(Teuchos::Copy, C);
     int *ipiv = new int[M.numRows()];
     Teuchos::LAPACK<int,double> L;
     int info;

@@ -317,6 +317,36 @@ void
 LOCA::Thyra::Group::postProcessContinuationStep(
                  LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
+  // Mimic
+  //     LOCA::Epetra::ModelEvaluatorInterface::postProcessContinuationStep.
+  // Previously, response functions were not evaluated after each LOCA step. I
+  // had initially tried to fix this problem using
+  //     Piro::LOCASolver::evalConvergedModel.
+  // However, that evaluates the tangent and gradient as well as the
+  // response. Additionally, sequencing the response function and observer calls
+  // is tricky using that approach.
+  //   If there are no responses, then we don't have to call evalModel.
+  if (model_->Ng() > 0) {
+    in_args_.set_x(x_vec_->getThyraRCPVector().assert_not_null());
+    if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot))
+      in_args_.set_x_dot(x_dot_vec);
+    in_args_.set_p(param_index, param_thyra_vec);
+    out_args_.set_f(f_vec_->getThyraRCPVector().assert_not_null());
+    // This is the key part. It makes the model evaluator call the response
+    // functions.
+    const Teuchos::RCP< ::Thyra::VectorBase<double> >
+      g0 = ::Thyra::createMember(model_->get_g_space(0));
+    out_args_.set_g(0, g0);
+
+    model_->evalModel(in_args_, out_args_);
+
+    in_args_.set_x(Teuchos::null);
+    in_args_.set_p(param_index, Teuchos::null);
+    out_args_.set_f(Teuchos::null);
+    // Set g back to null to restore the original state of out_args_.
+    out_args_.set_g(0, Teuchos::null);
+  }
+
   if (saveDataStrategy != Teuchos::null)
     saveDataStrategy->postProcessContinuationStep(stepStatus);
 }

@@ -118,7 +118,7 @@ void Zoltan_RB_scan_double(
       }
    }
 
-   if (count>1)
+   if (count!=1)
       ZOLTAN_FREE(&tmpin);
 }
 
@@ -185,7 +185,7 @@ void Zoltan_RB_sum_double(
       if (rank + nprocs_small < nprocs)
          MPI_Send(x, count, MPI_DOUBLE, to, tag, comm);
    }
-   if (count>1)
+   if (count!=1)
       ZOLTAN_FREE(&tmp);
 }
 
@@ -252,7 +252,7 @@ void Zoltan_RB_max_double(
       if (rank + nprocs_small < nprocs)
          MPI_Send(x, count, MPI_DOUBLE, to, tag, comm);
    }
-   if (count>1)
+   if (count!=1)
       ZOLTAN_FREE(&tmp);
 }
 /*

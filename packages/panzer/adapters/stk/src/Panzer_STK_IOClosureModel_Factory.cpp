@@ -64,7 +64,6 @@ buildClosureModels(const std::string& model_id,
   using Teuchos::rcp;
   using Teuchos::ParameterList;
   using PHX::Evaluator;
-  static bool justOnce = false;
 
   // build user evaluators
   RCP< std::vector< RCP<Evaluator<panzer::Traits> > > > user_evals = 
@@ -85,7 +84,6 @@ buildClosureModels(const std::string& model_id,
      // if a requested field is found then add in cell avg quantity evaluator
      BlockIdToFields::const_iterator cellAvgItr = blockIdToCellAvgFields_.find(block_id);
      if(cellAvgItr!=blockIdToCellAvgFields_.end() ) {
-        justOnce = true;
         Teuchos::RCP<std::vector<std::string> > fieldNames = Teuchos::rcp(new std::vector<std::string>(cellAvgItr->second));
    
         // setup averge cell fields
@@ -107,7 +105,6 @@ buildClosureModels(const std::string& model_id,
      // if a requested field is found then add in cell avg vector evaluator
      BlockIdToFields::const_iterator cellAvgVecItr = blockIdToCellAvgVectors_.find(block_id);
      if(cellAvgVecItr != blockIdToCellAvgVectors_.end() ) {
-        justOnce = true;
         Teuchos::RCP<std::vector<std::string> > fieldNames = Teuchos::rcp(new std::vector<std::string>(cellAvgVecItr->second));
    
         // setup cell average vectors
@@ -129,7 +126,6 @@ buildClosureModels(const std::string& model_id,
      // if a requested field is found then add in cell quantity evaluator
      BlockIdToFields::const_iterator cellItr = blockIdToCellFields_.find(block_id);
      if(cellItr!=blockIdToCellFields_.end() ) {
-        justOnce = true;
         Teuchos::RCP<std::vector<std::string> > fieldNames = Teuchos::rcp(new std::vector<std::string>(cellItr->second));
    
         // setup averge cell fields
@@ -151,7 +147,6 @@ buildClosureModels(const std::string& model_id,
      // if a requested field is found then add in cell quantity evaluator
      BlockIdToFields::const_iterator nodalItr = blockIdToNodalFields_.find(block_id);
      if(nodalItr!=blockIdToNodalFields_.end() ) {
-        justOnce = true;
         Teuchos::RCP<std::vector<std::string> > fieldNames = Teuchos::rcp(new std::vector<std::string>(nodalItr->second));
 
         Teuchos::RCP<const panzer::PureBasis> basis = Teuchos::rcp(new panzer::PureBasis("HGrad",1,ir->workset_size,ir->topology));

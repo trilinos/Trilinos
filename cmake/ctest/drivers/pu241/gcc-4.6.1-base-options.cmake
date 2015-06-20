@@ -20,11 +20,23 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/mkl-12.0.4-options.cmake)
 SET(BLAS_INCLUDE_DIRS   ${MKL_GCC451_MODULE_PATH} CACHE PATH "Path to MKL BLAS Fortran modules compatible with gfortran")
 SET(LAPACK_INCLUDE_DIRS ${MKL_GCC451_MODULE_PATH} CACHE PATH "Path to MKL LAPACK Fortran modules compatible with gfortran")
 
+# Build shared libs by default to save massive amounts of disk space
+SET(BUILD_SHARED_LIBS ON CACHE BOOL
+  "Set by default in gcc-4.6.1-base-options.cmake")
+
 # To avoid problem with EpetraExt_inout_test failure in optimized code for hybrid builds
-SET(Epetra_ENABLE_Fortran OFF CACHE BOOL "")
+SET(Epetra_ENABLE_Fortran OFF CACHE BOOL
+  "Set by default in gcc-4.6.1-base-options.cmake")
 
 # Turn off HDF5 in EpetraExt to avoid hdf5 conflicts
-SET(EpetraExt_ENABLE_HDF5 OFF CACHE BOOL "")
+SET(EpetraExt_ENABLE_HDF5 OFF CACHE BOOL
+  "Set by default in gcc-4.6.1-base-options.cmake")
+
+# Set up valgrind options
+SET( MEMORYCHECK_COMMAND
+  /projects/vera/common_tools/valgrind-3.9.0/bin/valgrind)
+SET( MEMORYCHECK_COMMAND_OPTIONS
+  "-q --trace-children=yes --tool=memcheck --leak-check=yes --leak-check=full --workaround-gcc296-bugs=yes --num-callers=50")
 
 # Include last so that above override these cache variables
 INCLUDE(${CMAKE_CURRENT_LIST_DIR}/casl-core-enables-disables.cmake)

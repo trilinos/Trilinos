@@ -52,6 +52,8 @@
 
 #include <Teuchos_ParameterList.hpp>
 
+#include <Tpetra_RowMatrix.hpp>
+
 #include <Ifpack2_Chebyshev.hpp>
 #include <Ifpack2_Factory.hpp>
 #include <Ifpack2_Parameters.hpp>
@@ -69,15 +71,15 @@
 
 namespace MueLu {
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Ifpack2Smoother(const std::string& type, const Teuchos::ParameterList& paramList, const LO& overlap)
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Ifpack2Smoother(const std::string& type, const Teuchos::ParameterList& paramList, const LO& overlap)
     : type_(type), overlap_(overlap)
   {
     SetParameterList(paramList);
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetParameterList(const Teuchos::ParameterList& paramList) {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetParameterList(const Teuchos::ParameterList& paramList) {
     Factory::SetParameterList(paramList);
 
     if (SmootherPrototype::IsSetup()) {
@@ -87,8 +89,8 @@ namespace MueLu {
     }
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetPrecParameters(const Teuchos::ParameterList& list) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetPrecParameters(const Teuchos::ParameterList& list) const {
     ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
     paramList.setParameters(list);
 
@@ -99,13 +101,13 @@ namespace MueLu {
     paramList.setParameters(*precList);
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
     this->Input(currentLevel, "A");
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level& currentLevel) {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& currentLevel) {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
 
     if (this->IsSetup() == true)
@@ -150,8 +152,9 @@ namespace MueLu {
 
           ArrayRCP<LocalOrdinal> blockSeeds(numRows, Teuchos::OrdinalTraits<LocalOrdinal>::invalid());
 
+          size_t numBlocks = 0;
           for (size_t rowOfB = numVels; rowOfB < numVels+numPres; ++rowOfB)
-            blockSeeds[rowOfB] = rowOfB - numVels;
+            blockSeeds[rowOfB] = numBlocks++;
 
           RCP<BlockedCrsMatrix> bA2 = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
           TEUCHOS_TEST_FOR_EXCEPTION(bA2.is_null(), Exceptions::BadCast,
@@ -163,14 +166,20 @@ namespace MueLu {
           // Add Dirichlet rows to the list of seeds
           ArrayRCP<const bool> boundaryNodes;
           boundaryNodes = Utils::DetectDirichletRows(*merged2Mat, 0.0);
+          bool haveBoundary = false;
           for (LO i = 0; i < boundaryNodes.size(); i++)
             if (boundaryNodes[i]) {
-              blockSeeds[i] = numPres;
-              numPres++;
+              // FIXME:
+              // 1. would not this [] overlap with some in the previos blockSeed loop?
+              // 2. do we need to distinguish between pressure and velocity Dirichlet b.c.
+              blockSeeds[i] = numBlocks;
+              haveBoundary = true;
             }
+          if (haveBoundary)
+            numBlocks++;
 
           subList.set("partitioner: map",         blockSeeds);
-          subList.set("partitioner: local parts", as<int>(numPres));
+          subList.set("partitioner: local parts", as<int>(numBlocks));
         }
       }
     } // if (type_ == "SCHWARZ")
@@ -225,12 +234,10 @@ namespace MueLu {
       paramList.set(eigRatioString, ratio);
     }
 
-    RCP<const Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> > tpA;
-    if (isBlockedMatrix == true) tpA = Utils::Op2NonConstTpetraCrs(merged2Mat);
-    else                         tpA = Utils::Op2NonConstTpetraCrs(A_);
-
+    RCP<const Tpetra::RowMatrix<SC, LO, GO, NO> > tpA;
+    if (isBlockedMatrix == true) tpA = Utils::Op2NonConstTpetraRow(merged2Mat);
+    else                         tpA = Utils::Op2NonConstTpetraRow(A_);
     prec_ = Ifpack2::Factory::create(type_, tpA, overlap_);
-
     SetPrecParameters();
     prec_->initialize();
     prec_->compute();
@@ -238,7 +245,7 @@ namespace MueLu {
     SmootherPrototype::IsSetup(true);
 
     if (type_ == "CHEBYSHEV" && lambdaMax == negone) {
-      typedef Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> MatrixType;
+      typedef Tpetra::RowMatrix<SC, LO, GO, NO> MatrixType;
 
       Teuchos::RCP<Ifpack2::Chebyshev<MatrixType> > chebyPrec = rcp_dynamic_cast<Ifpack2::Chebyshev<MatrixType> >(prec_);
       if (chebyPrec != Teuchos::null) {
@@ -252,8 +259,8 @@ namespace MueLu {
     this->GetOStream(Statistics0) << description() << std::endl;
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Apply(): Setup() has not been called");
 
     // Forward the InitialGuessIsZero option to Ifpack2
@@ -282,7 +289,16 @@ namespace MueLu {
       SetPrecParameters(paramList);
       supportInitialGuess = true;
 
+    } else if (type_ == "SCHWARZ") {
+      paramList.set("schwarz: zero starting solution", InitialGuessIsZero);
+      //Because additive Schwarz has "delta" semantics, it's sufficient to
+      //toggle only the zero initial guess flag, and not pass in already
+      //set parameters.  If we call SetPrecParameters, the subdomain solver
+      //will be destroyed.
+      prec_->setParameters(paramList);
+      supportInitialGuess = true;
     }
+
     //TODO JJH 30Apr2014  Calling SetPrecParameters(paramList) when the smoother
     //is Ifpack2::AdditiveSchwarz::setParameterList() will destroy the subdomain
     //(aka inner) solver.  This behavior is documented but a departure from what
@@ -310,15 +326,15 @@ namespace MueLu {
     }
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Copy() const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Copy() const {
     RCP<Ifpack2Smoother> smoother = rcp(new Ifpack2Smoother(*this) );
     smoother->SetParameterList(this->GetParameterList());
     return smoother;
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::string Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::description() const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::string Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::description() const {
     std::ostringstream out;
     if (SmootherPrototype::IsSetup()) {
       out << prec_->description();
@@ -329,8 +345,8 @@ namespace MueLu {
     return out.str();
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
 
     if (verbLevel & Parameters0)

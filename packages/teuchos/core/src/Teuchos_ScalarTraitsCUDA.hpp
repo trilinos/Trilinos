@@ -45,7 +45,7 @@
 /*! \file Teuchos_ScalarTraitsCUDA.hpp
     \brief Defines basic traits for the scalar field type, appropriate for compilation under the NVIDIA CUDA C compiler.
 */
- 
+
 #include "Teuchos_ScalarTraitsDecl.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include <cfloat>
@@ -166,8 +166,8 @@ struct ScalarTraits<float>
   static const bool hasMachineParameters = false;
   static inline __device__ __host__ magnitudeType magnitude(float a) { return fabsf(a); }
   static inline __device__ __host__ float zero()  { return(0.0f); }
-  static inline __device__ __host__ float one()   { return(1.0f); }    
-  static inline __device__ __host__ float conjugate(float x)   { return(x); }    
+  static inline __device__ __host__ float one()   { return(1.0f); }
+  static inline __device__ __host__ float conjugate(float x)   { return(x); }
   static inline __device__ __host__ float real(float x) { return x; }
   static inline __device__ __host__ float imag(float)   { return zero(); }
   static inline __device__ __host__ bool  isnaninf(float x) { return isnan(x) || isinf(x); }
@@ -205,8 +205,8 @@ struct ScalarTraits<double>
   static const bool hasMachineParameters = false;
   static inline __device__ __host__ magnitudeType magnitude(double a) { return abs(a); }
   static inline __device__ __host__ double zero()  { return(0.0); }
-  static inline __device__ __host__ double one()   { return(1.0); }    
-  static inline __device__ __host__ double conjugate(double x)   { return(x); }    
+  static inline __device__ __host__ double one()   { return(1.0); }
+  static inline __device__ __host__ double conjugate(double x)   { return(x); }
   static inline __device__ __host__ double real(double x) { return x; }
   static inline __device__ __host__ double imag(double)   { return zero(); }
   static inline __device__ __host__ bool  isnaninf(double x) { return isnan(x) || isinf(x); }

@@ -115,7 +115,8 @@ double NOX::Direction::Broyden::BroydenMemoryUnit::sNormSqr() const
 
 //------------------------------------------------------------
 
-NOX::Direction::Broyden::BroydenMemory::BroydenMemory()
+NOX::Direction::Broyden::BroydenMemory::BroydenMemory():
+  mMax(0)
 {
 }
 
@@ -191,6 +192,8 @@ NOX::Direction::Broyden::
 Broyden(const Teuchos::RCP<NOX::GlobalData>& gd,
     Teuchos::ParameterList& p) :
   lsParamsPtr(NULL),
+  cnt(0),
+  convRate(0.0),
   inexactNewtonUtils(gd, p)
 {
   reset(gd, p);

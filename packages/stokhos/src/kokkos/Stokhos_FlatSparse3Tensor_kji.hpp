@@ -42,14 +42,12 @@
 #ifndef STOKHOS_FLAT_SPARSE_3_TENSOR_KJI_HPP
 #define STOKHOS_FLAT_SPARSE_3_TENSOR_KJI_HPP
 
-#include "Kokkos_View.hpp"
+#include "Kokkos_Core.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_ProductBasis.hpp"
 #include "Stokhos_Sparse3Tensor.hpp"
 #include "Teuchos_ParameterList.hpp"
-
-#include "Kokkos_Cuda.hpp"
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -59,20 +57,20 @@ namespace Stokhos {
 /** \brief  Sparse product tensor with replicated entries
  *          to provide subsets with a given coordinate.
  */
-template< typename ValueType , class DeviceType >
+template< typename ValueType , class ExecutionSpace >
 class FlatSparse3Tensor_kji {
 public:
 
-  typedef DeviceType                       device_type ;
-  typedef typename device_type::size_type  size_type ;
+  typedef ExecutionSpace                       execution_space ;
+  typedef typename execution_space::size_type  size_type ;
   typedef ValueType                        value_type ;
 
 private:
 
-  typedef Kokkos::View< size_type[] , device_type > coord_array_type ;
-  typedef Kokkos::View< value_type[], device_type > value_array_type ;
-  typedef Kokkos::View< size_type[], device_type > entry_array_type ;
-  typedef Kokkos::View< size_type[], device_type > row_map_array_type ;
+  typedef Kokkos::View< size_type[] , execution_space > coord_array_type ;
+  typedef Kokkos::View< value_type[], execution_space > value_array_type ;
+  typedef Kokkos::View< size_type[], execution_space > entry_array_type ;
+  typedef Kokkos::View< size_type[], execution_space > row_map_array_type ;
 
   coord_array_type   m_j_coord ;
   coord_array_type   m_i_coord ;
@@ -250,7 +248,7 @@ public:
 
     /*
     // Pad each row to have size divisible by alignment size
-    enum { Align = Kokkos::Impl::is_same<DeviceType,Kokkos::Cuda>::value ? 32 : 2 };
+    enum { Align = Kokkos::Impl::is_same<ExecutionSpace,Kokkos::Cuda>::value ? 32 : 2 };
     for ( size_type i = 0 ; i < dimension ; ++i ) {
       const size_t rem = coord_work[i] % Align;
       if (rem > 0) {

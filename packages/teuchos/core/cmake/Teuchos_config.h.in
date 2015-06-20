@@ -1,4 +1,6 @@
 
+#cmakedefine TEUCHOS_STANDALONE_PACKAGE
+
 #cmakedefine BUILD_SHARED_LIBS
 
 #cmakedefine HAVE_TEUCHOS_PARAMETERLIST
@@ -55,12 +57,8 @@
 
 #cmakedefine HAVE_TEUCHOS_LAPACKLARND
 
-#cmakedefine HAVE_TEUCHOSCORE_BOOST
-
 /* Deprecated */
 #cmakedefine HAVE_TEUCHOS_BOOST
-
-#cmakedefine HAVE_TEUCHOSCORE_QT
 
 /* Deprecated */
 #cmakedefine HAVE_TEUCHOS_QT
@@ -69,15 +67,9 @@
 
 #cmakedefine HAVE_TEUCHOSNUMERICS_EIGEN
 
-/* Deprecated */
-#cmakedefine HAVE_TEUCHOSCORE_QD
-
 #cmakedefine HAVE_TEUCHOS_DOUBLE_TO_QD
 
 #cmakedefine HAVE_TEUCHOS_ARPREC
-
-/* Deprecated */
-#cmakedefine HAVE_TEUCHOSCORE_ARPREC
 
 #cmakedefine HAVE_TEUCHOS_DOUBLE_TO_ARPREC
 
@@ -94,8 +86,6 @@
 #cmakedefine HAVE_TEUCHOS_DEBUG
 
 #cmakedefine HAVE_TEUCHOS_DEBUG_RCP_NODE_TRACING
-
-#cmakedefine HAS_TEUCHOS_BOOST_IS_POLYMORPHIC
 
 #cmakedefine HAVE_TEUCHOS_DEMANGLE
 
@@ -118,6 +108,8 @@
 #cmakedefine HAVE_TEUCHOS_STACKTRACE
 
 #cmakedefine HAVE_TEUCHOS_DEFAULT_STACKTRACE
+
+#cmakedefine HAVE_TEUCHOS_GLOBALLY_REDUCE_UNITTEST_RESULTS
 
 /* template qualifier required for calling template methods from non-template
    code */

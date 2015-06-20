@@ -68,7 +68,7 @@ struct ListPlusValidList {
 };
 
 
-} // namespace 
+} // namespace
 
 
 namespace Teuchos {
@@ -95,7 +95,7 @@ ParameterList::ParameterList(const ParameterList& source)
 }
 
 
-ParameterList::~ParameterList() 
+ParameterList::~ParameterList()
 {}
 
 
@@ -105,7 +105,7 @@ Ordinal ParameterList::numParams() const
 }
 
 
-ParameterList& ParameterList::operator=(const ParameterList& source) 
+ParameterList& ParameterList::operator=(const ParameterList& source)
 {
   if (&source == this)
     return *this;
@@ -136,7 +136,7 @@ ParameterList& ParameterList::setParameters(const ParameterList& source)
 
 ParameterList& ParameterList::setParametersNotAlreadySet(
   const ParameterList& source
-  ) 
+  )
 {
   for( ConstIterator i = source.begin(); i != source.end(); ++i ) {
     const std::string &name_i = this->name(i);
@@ -267,7 +267,7 @@ ParameterList& ParameterList::sublist(
         );
     sublist_entry_ptr = params_.getNonconstObjPtr(new_param_idx);
   }
-  
+
   return any_cast<ParameterList>(sublist_entry_ptr->getAny(false));
 }
 
@@ -283,17 +283,17 @@ const ParameterList& ParameterList::sublist(const std::string& name_in) const
 
   Ptr<const ParameterEntry>  sublist_entry_ptr = params_.getObjPtr(param_idx);
   validateEntryIsList(name_in, *sublist_entry_ptr);
-  
+
   return any_cast<ParameterList>(sublist_entry_ptr->getAny(false));
 }
 
-  
+
 void ParameterList::print() const
 {
   this->print(*Teuchos::VerboseObjectBase::getDefaultOStream());
 }
 
-  
+
 std::ostream& ParameterList::print(std::ostream& os, const PrintOptions &printOptions ) const
 {
   const int   indent    = printOptions.indent();
@@ -307,9 +307,9 @@ std::ostream& ParameterList::print(std::ostream& os, const PrintOptions &printOp
   if (this->begin() == this->end()) {
     *out <<"[empty list]" << std::endl;
   }
-  else { 
+  else {
     // Print parameters first
-    for (ConstIterator i = this->begin(); i != this->end(); ++i) 
+    for (ConstIterator i = this->begin(); i != this->end(); ++i)
     {
       const std::string &name_i = this->name(i);
       const ParameterEntry &entry_i = entry(i);
@@ -332,7 +332,7 @@ std::ostream& ParameterList::print(std::ostream& os, const PrintOptions &printOp
       }
     }
     // Print sublists second
-    for (ConstIterator i = this->begin(); i != this->end(); ++i) 
+    for (ConstIterator i = this->begin(); i != this->end(); ++i)
     {
       const ParameterEntry &entry_i = entry(i);
       if(!entry_i.isList())
@@ -349,7 +349,7 @@ std::ostream& ParameterList::print(std::ostream& os, const PrintOptions &printOp
   return os;
 }
 
-  
+
 std::ostream& ParameterList::print(std::ostream& os, int indent, bool showTypes, bool showFlags) const
 {
   return this->print(os,PrintOptions().indent(indent).showTypes(showTypes).showFlags(showFlags));
@@ -405,7 +405,7 @@ void ParameterList::validateParameters(
       );
     RCP<const ParameterEntryValidator> validator;
     if (nonnull(validator=validEntry->validator())) {
-      validator->validate(theEntry, entryName, this->name()); 
+      validator->validate(theEntry, entryName, this->name());
     }
     else {
       const bool validType =

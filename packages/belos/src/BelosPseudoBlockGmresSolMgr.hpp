@@ -380,6 +380,15 @@ namespace Belos {
       const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &userConvStatusTest
       );
 
+    /// \brief Set a debug status test.
+    ///
+    /// A debug status test is not required. If you decide to set
+    /// one, the current implementation will apply it at the same
+    /// time it applies Pseudoblock GMRES' standard convergence test.
+    virtual void setDebugStatusTest(
+      const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &debugStatusTest
+      );
+
     //@}
 
     //! @name Reset methods
@@ -461,6 +470,7 @@ namespace Belos {
 
     // Status tests.
     Teuchos::RCP<StatusTest<ScalarType,MV,OP> > userConvStatusTest_;
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP> > debugStatusTest_;
     Teuchos::RCP<StatusTest<ScalarType,MV,OP> > sTest_;
     Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxIterTest_;
     Teuchos::RCP<StatusTest<ScalarType,MV,OP> > convTest_;
@@ -993,6 +1003,16 @@ PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setUserConvStatusTest(
   userConvStatusTest_ = userConvStatusTest;
 }
 
+template<class ScalarType, class MV, class OP>
+void
+PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setDebugStatusTest(
+  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &debugStatusTest
+  )
+{
+  debugStatusTest_ = debugStatusTest;
+}
+
+
 
 template<class ScalarType, class MV, class OP>
 Teuchos::RCP<const Teuchos::ParameterList>
@@ -1102,6 +1122,12 @@ bool PseudoBlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
     // Set the explicit and total convergence test to this implicit test that checks for accuracy loss.
     expConvTest_ = impConvTest_;
     convTest_ = impConvTest_;
+  }
+
+  if (nonnull(debugStatusTest_) ) {
+    // Add debug convergence test
+    convTest_ = Teuchos::rcp(
+      new StatusTestCombo_t( StatusTestCombo_t::AND, convTest_, debugStatusTest_ ) );
   }
 
   if (nonnull(userConvStatusTest_) ) {

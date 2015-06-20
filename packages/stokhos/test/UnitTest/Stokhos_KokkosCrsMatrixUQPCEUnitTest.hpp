@@ -43,7 +43,7 @@
 #include "Stokhos_UnitTestHelpers.hpp"
 
 #include "Stokhos_Sacado_Kokkos_UQ_PCE.hpp"
-#include "Kokkos_CrsMatrix.hpp"
+#include "Kokkos_Sparse.hpp"
 #include "Kokkos_CrsMatrix_UQ_PCE.hpp"
 #include "Kokkos_CrsMatrix_UQ_PCE_Cuda.hpp"
 #include "Stokhos_LegendreBasis.hpp"
@@ -51,8 +51,7 @@
 #include "Stokhos_Sparse3Tensor.hpp"
 
 // For computing DeviceConfig
-#include "Kokkos_hwloc.hpp"
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core.hpp"
 
 // Helper functions
 template< typename IntType >
@@ -138,7 +137,7 @@ kokkos_cijk_type build_cijk(ordinal_type stoch_dim,
   using Teuchos::Array;
 
   typedef typename kokkos_cijk_type::value_type value_type;
-  typedef typename kokkos_cijk_type::device_type device_type;
+  typedef typename kokkos_cijk_type::execution_space execution_space;
   typedef Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> one_d_basis;
   typedef Stokhos::LegendreBasis<ordinal_type,value_type> legendre_basis;
   typedef Stokhos::CompletePolynomialBasis<ordinal_type,value_type> product_basis;
@@ -155,7 +154,7 @@ kokkos_cijk_type build_cijk(ordinal_type stoch_dim,
 
   // Kokkos triple product tensor
   kokkos_cijk_type kokkos_cijk =
-    Stokhos::create_product_tensor<device_type>(*basis, *cijk);
+    Stokhos::create_product_tensor<execution_space>(*basis, *cijk);
 
   return kokkos_cijk;
 }
@@ -311,7 +310,7 @@ buildDiagonalMatrix(typename MatrixType::ordinal_type nrow,
 // Kernel to set diagonal of a matrix to prescribed values
 template <typename MatrixType>
 struct ReplaceDiagonalValuesKernel {
-  typedef typename MatrixType::device_type device_type;
+  typedef typename MatrixType::execution_space execution_space;
   typedef typename MatrixType::size_type size_type;
   typedef typename MatrixType::value_type value_type;
   typedef typename MatrixType::ordinal_type ordinal_type;
@@ -361,7 +360,7 @@ struct ReplaceDiagonalValuesKernel {
 // Kernel to add values to the diagonal of a matrix
 template <typename MatrixType>
 struct AddDiagonalValuesKernel {
-  typedef typename MatrixType::device_type device_type;
+  typedef typename MatrixType::execution_space execution_space;
   typedef typename MatrixType::size_type size_type;
   typedef typename MatrixType::value_type value_type;
   typedef typename MatrixType::ordinal_type ordinal_type;
@@ -412,7 +411,7 @@ struct AddDiagonalValuesKernel {
 // adds to the same row (checks atomic really works)
 template <typename MatrixType>
 struct AddDiagonalValuesAtomicKernel {
-  typedef typename MatrixType::device_type device_type;
+  typedef typename MatrixType::execution_space execution_space;
   typedef typename MatrixType::size_type size_type;
   typedef typename MatrixType::value_type value_type;
   typedef typename MatrixType::ordinal_type ordinal_type;
@@ -467,9 +466,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   Kokkos_CrsMatrix_PCE, ReplaceValues, MatrixScalar )
 {
   typedef typename MatrixScalar::ordinal_type Ordinal;
-  typedef typename MatrixScalar::device_type Device;
+  typedef typename MatrixScalar::execution_space Device;
   typedef typename MatrixScalar::cijk_type Cijk;
-  typedef Kokkos::CrsMatrix<MatrixScalar,Ordinal,Device> Matrix;
+  typedef KokkosSparse::CrsMatrix<MatrixScalar,Ordinal,Device> Matrix;
 
   // Build Cijk tensor
   const Ordinal stoch_dim = 2;
@@ -493,9 +492,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   Kokkos_CrsMatrix_PCE, SumIntoValues, MatrixScalar )
 {
   typedef typename MatrixScalar::ordinal_type Ordinal;
-  typedef typename MatrixScalar::device_type Device;
+  typedef typename MatrixScalar::execution_space Device;
   typedef typename MatrixScalar::cijk_type Cijk;
-  typedef Kokkos::CrsMatrix<MatrixScalar,Ordinal,Device> Matrix;
+  typedef KokkosSparse::CrsMatrix<MatrixScalar,Ordinal,Device> Matrix;
 
   // Build Cijk tensor
   const Ordinal stoch_dim = 2;
@@ -519,9 +518,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   Kokkos_CrsMatrix_PCE, SumIntoValuesAtomic, MatrixScalar )
 {
   typedef typename MatrixScalar::ordinal_type Ordinal;
-  typedef typename MatrixScalar::device_type Device;
+  typedef typename MatrixScalar::execution_space Device;
   typedef typename MatrixScalar::cijk_type Cijk;
-  typedef Kokkos::CrsMatrix<MatrixScalar,Ordinal,Device> Matrix;
+  typedef KokkosSparse::CrsMatrix<MatrixScalar,Ordinal,Device> Matrix;
 
   // Build Cijk tensor
   const Ordinal stoch_dim = 2;
@@ -553,16 +552,19 @@ bool test_embedded_pce(const typename PCEType::ordinal_type nGrid,
   typedef typename PCEType::value_type scalar_type;
   typedef typename PCEType::storage_type storage_type;
   typedef typename PCEType::cijk_type cijk_type;
-  typedef typename storage_type::device_type device_type;
+  typedef typename storage_type::execution_space execution_space;
   typedef Kokkos::LayoutLeft Layout;
-  typedef Kokkos::View< PCEType*, Layout, device_type > block_vector_type;
-  typedef Kokkos::CrsMatrix< PCEType, ordinal_type, device_type > block_matrix_type;
+  typedef Kokkos::View< PCEType*, Layout, execution_space > block_vector_type;
+  typedef KokkosSparse::CrsMatrix< PCEType, ordinal_type, execution_space > block_matrix_type;
   typedef typename block_matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef typename block_matrix_type::values_type matrix_values_type;
 
   // Build Cijk tensor
   cijk_type cijk = build_cijk<cijk_type>(stoch_dim, poly_ord);
   const ordinal_type stoch_length = cijk.dimension();
+  // const ordinal_type align = 8;
+  // const ordinal_type stoch_length_aligned = (stoch_length+align-1) & ~(align-1);
+  const ordinal_type stoch_length_aligned = stoch_length;
 
   // Check pce_length == storage_type::static_size for static storage
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -580,11 +582,9 @@ bool test_embedded_pce(const typename PCEType::ordinal_type nGrid,
   // regardless of LayoutLeft/Right
 
   block_vector_type x =
-    block_vector_type(Kokkos::allocate_without_initializing,
-                      "x", cijk, fem_length, stoch_length);
+    block_vector_type("x", cijk, fem_length, stoch_length_aligned);
   block_vector_type y =
-    block_vector_type(Kokkos::allocate_without_initializing,
-                      "y", cijk, fem_length, stoch_length);
+    block_vector_type("y", cijk, fem_length, stoch_length_aligned);
 
   typename block_vector_type::HostMirror hx = Kokkos::create_mirror_view( x );
   typename block_vector_type::HostMirror hy = Kokkos::create_mirror_view( y );
@@ -613,8 +613,7 @@ bool test_embedded_pce(const typename PCEType::ordinal_type nGrid,
       std::string("test crs graph"), fem_graph);
   matrix_values_type matrix_values =
     matrix_values_type(
-      Kokkos::allocate_without_initializing,
-      "matrix", cijk, fem_graph_length, stoch_length);
+      Kokkos::ViewAllocateWithoutInitializing("matrix"), cijk, fem_graph_length, stoch_length_aligned);
   block_matrix_type matrix(
     "block_matrix", fem_length, matrix_values, matrix_graph);
   matrix.dev_config = dev_config;
@@ -650,7 +649,7 @@ bool test_embedded_pce(const typename PCEType::ordinal_type nGrid,
 
   typedef typename block_vector_type::array_type array_type;
   array_type ay_expected =
-    array_type("ay_expected", stoch_length, fem_length);
+    array_type("ay_expected", stoch_length_aligned, fem_length);
   typename array_type::HostMirror hay_expected =
     Kokkos::create_mirror_view(ay_expected);
   typename cijk_type::HostMirror host_cijk =
@@ -719,7 +718,7 @@ struct Kokkos_MV_Multiply_Op {
   void operator() (const Matrix& A,
                    const InputVector& x,
                    OutputVector& y) const {
-    Kokkos::MV_Multiply(y, A, x);
+    KokkosSparse::spmv("N", typename Matrix::value_type(1.0) , A, x, typename Matrix::value_type(0.0), y);
   }
 };
 
@@ -750,16 +749,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   typedef typename Scalar::value_type scalar_type;
   typedef typename Scalar::storage_type storage_type;
   typedef typename Scalar::cijk_type cijk_type;
-  typedef typename storage_type::device_type device_type;
+  typedef typename storage_type::execution_space execution_space;
   typedef Kokkos::LayoutLeft Layout;
-  typedef Kokkos::View< Scalar*, Layout, device_type > block_vector_type;
-  typedef Kokkos::CrsMatrix< Scalar, ordinal_type, device_type > block_matrix_type;
+  typedef Kokkos::View< Scalar*, Layout, execution_space > block_vector_type;
+  typedef KokkosSparse::CrsMatrix< Scalar, ordinal_type, execution_space > block_matrix_type;
   typedef typename block_matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef typename block_matrix_type::values_type matrix_values_type;
 
   // Build Cijk tensor
   cijk_type cijk = build_cijk<cijk_type>(stoch_dim, poly_ord);
   const ordinal_type stoch_length = cijk.dimension();
+  const ordinal_type align = 8;
+  const ordinal_type stoch_length_aligned = (stoch_length+align-1) & ~(align-1);
 
   // Generate FEM graph:
   const ordinal_type fem_length = nGrid * nGrid * nGrid;
@@ -767,15 +768,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   const ordinal_type fem_graph_length = generate_fem_graph( nGrid, fem_graph );
 
   block_vector_type x =
-    block_vector_type(Kokkos::allocate_without_initializing,
-                      "x", cijk, fem_length);
+    block_vector_type("x", cijk, fem_length, stoch_length_aligned);
   block_vector_type y =
-    block_vector_type(Kokkos::allocate_without_initializing,
-                      "y", cijk, fem_length);
+    block_vector_type("y", cijk, fem_length, stoch_length_aligned);
 
   block_vector_type y_expected =
-    block_vector_type(Kokkos::allocate_without_initializing,
-                      "y", cijk, fem_length);
+    block_vector_type("y", cijk, fem_length, stoch_length_aligned);
 
   typename block_vector_type::HostMirror hx = Kokkos::create_mirror_view( x );
   typename block_vector_type::HostMirror hy = Kokkos::create_mirror_view( y );
@@ -808,8 +806,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
       std::string("test crs graph"), fem_graph);
   matrix_values_type matrix_values =
     matrix_values_type(
-      Kokkos::allocate_without_initializing,
-      "matrix", cijk, fem_graph_length, ordinal_type(1)); //instead of stoch_length
+      Kokkos::ViewAllocateWithoutInitializing("matrix"), cijk, fem_graph_length, ordinal_type(1)); //instead of stoch_length
   block_matrix_type matrix(
     "block_matrix", fem_length, matrix_values, matrix_graph);
   matrix.dev_config = dev_config;
@@ -824,20 +821,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
          ++iRowEntryFEM, ++iEntryFEM) {
       const ordinal_type iColFEM = fem_graph[iRowFEM][iRowEntryFEM];
 
-      for (ordinal_type k=0; k<1; ++k) {
-        haM(iEntryFEM, k) =
-          generate_matrix_coefficient<scalar_type>(
-            fem_length, 1, iRowFEM, iColFEM, k);
+      haM(iEntryFEM, 0) =
+        generate_matrix_coefficient<scalar_type>(
+          fem_length, 1, iRowFEM, iColFEM, 0);
+      for (ordinal_type iRowStoch=0; iRowStoch<stoch_length; ++iRowStoch) {
+        hay_expected(iRowStoch,iRowFEM) +=
+          haM(iEntryFEM, 0) * hax(iRowStoch,iColFEM);
       }
     }
   }
   Kokkos::deep_copy( matrix.values, hM );
+  Kokkos::deep_copy( y_expected, hy_expected );
 
+  /*
   //Generate same matrix with stochastic dim = x.sacado_size() (i.e. not = 1)
   matrix_values_type full_matrix_values =
     matrix_values_type(
-      Kokkos::allocate_without_initializing,
-      "matrix", cijk, fem_graph_length, stoch_length);
+      Kokkos::ViewAllocateWithoutInitializing("matrix"), cijk, fem_graph_length, stoch_length_aligned);
   block_matrix_type full_matrix(
     "block_matrix", fem_length, full_matrix_values, matrix_graph);
   matrix.dev_config = dev_config;
@@ -864,17 +864,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   }
 
   Kokkos::deep_copy( full_matrix.values, full_hM );
-
+  */
 
   //------------------------------
   // multiply
 
-  Kokkos::MV_Multiply( y, matrix, x );
+  KokkosSparse::spmv("N", Scalar(1.0) , matrix, x, Scalar(0.0), y);
 
   //------------------------------
   // multiply with same matrix but with sacado_size = x.sacado_size
 
-  Kokkos::MV_Multiply( y_expected, full_matrix, x );
+  //Kokkos::MV_Multiply( y_expected, full_matrix, x );
 
   //------------------------------
   // check
@@ -891,10 +891,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   typedef typename Scalar::value_type scalar_type;
   typedef typename Scalar::storage_type storage_type;
   typedef typename Scalar::cijk_type cijk_type;
-  typedef typename storage_type::device_type device_type;
+  typedef typename storage_type::execution_space execution_space;
   typedef Kokkos::LayoutLeft Layout;
-  typedef Kokkos::View< Scalar**, Layout, device_type > block_vector_type;
-  typedef Kokkos::CrsMatrix< Scalar, ordinal_type, device_type > block_matrix_type;
+  typedef Kokkos::View< Scalar**, Layout, execution_space > block_vector_type;
+  typedef KokkosSparse::CrsMatrix< Scalar, ordinal_type, execution_space > block_matrix_type;
   typedef typename block_matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef typename block_matrix_type::values_type matrix_values_type;
 
@@ -907,6 +907,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   // Build Cijk tensor
   cijk_type cijk = build_cijk<cijk_type>(stoch_dim, poly_ord);
   const ordinal_type stoch_length = cijk.dimension();
+  const ordinal_type align = 8;
+  const ordinal_type stoch_length_aligned = (stoch_length+align-1) & ~(align-1);
   const ordinal_type num_cols = 2;
   // Generate FEM graph:
   const ordinal_type fem_length = nGrid * nGrid * nGrid;
@@ -914,15 +916,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   const ordinal_type fem_graph_length = generate_fem_graph( nGrid, fem_graph );
 
   block_vector_type x =
-    block_vector_type(Kokkos::allocate_without_initializing,
-                      "x", cijk, fem_length, num_cols);
+    block_vector_type("x", cijk, fem_length, num_cols, stoch_length_aligned);
   block_vector_type y =
-    block_vector_type(Kokkos::allocate_without_initializing,
-                      "y", cijk, fem_length, num_cols);
+    block_vector_type("y", cijk, fem_length, num_cols, stoch_length_aligned);
 
   block_vector_type y_expected =
-    block_vector_type(Kokkos::allocate_without_initializing,
-                      "y_expected", cijk, fem_length, num_cols);
+    block_vector_type("y_expected", cijk, fem_length, num_cols, stoch_length_aligned);
 
   typename block_vector_type::HostMirror hx = Kokkos::create_mirror_view( x );
   typename block_vector_type::HostMirror hy = Kokkos::create_mirror_view( y );
@@ -951,8 +950,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
       std::string("test crs graph"), fem_graph);
   matrix_values_type matrix_values =
     matrix_values_type(
-      Kokkos::allocate_without_initializing,
-      "matrix", cijk, fem_graph_length, ordinal_type(1));
+      Kokkos::ViewAllocateWithoutInitializing("matrix"), cijk, fem_graph_length, ordinal_type(1));
   block_matrix_type matrix(
     "block_matrix", fem_length, matrix_values, matrix_graph);
   matrix.dev_config = dev_config;
@@ -968,21 +966,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
          ++iRowEntryFEM, ++iEntryFEM) {
       const ordinal_type iColFEM = fem_graph[iRowFEM][iRowEntryFEM];
 
-      for (ordinal_type k=0; k<1; ++k) {
-        haM(iEntryFEM, k) =
-          generate_matrix_coefficient<scalar_type>(
-            fem_length, 1, iRowFEM, iColFEM, k);
+      haM(iEntryFEM, 0) =
+        generate_matrix_coefficient<scalar_type>(
+          fem_length, 1, iRowFEM, iColFEM, 0);
+      for (ordinal_type i=0; i<num_cols; ++i){
+        for (ordinal_type iRowStoch=0; iRowStoch<stoch_length; ++iRowStoch) {
+          hy_expected(iRowFEM,i).fastAccessCoeff(iRowStoch) +=
+            haM(iEntryFEM, 0) * hx(iColFEM,i).fastAccessCoeff(iRowStoch);
+        }
       }
     }
   }
 
   Kokkos::deep_copy( matrix.values, hM );
+  Kokkos::deep_copy( y_expected, hy_expected );
 
+  /*
   //Generate same matrix with stochastic dim = x.sacado_size() (i.e. not = 1)
   matrix_values_type full_matrix_values =
     matrix_values_type(
-      Kokkos::allocate_without_initializing,
-      "matrix", cijk, fem_graph_length, stoch_length);
+      Kokkos::ViewAllocateWithoutInitializing("matrix"), cijk, fem_graph_length, stoch_length_aligned);
   block_matrix_type full_matrix(
     "block_matrix", fem_length, full_matrix_values, matrix_graph);
   matrix.dev_config = dev_config;
@@ -1010,16 +1013,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   }
 
   Kokkos::deep_copy( full_matrix.values, full_hM );
+  */
 
   //------------------------------
   // multiply
 
-  Kokkos::MV_Multiply( y, matrix, x );
+  KokkosSparse::spmv("N", Scalar(1.0) , matrix, x, Scalar(0.0), y);
 
   //------------------------------
   // multiply with full matrix
 
-  Kokkos::MV_Multiply( y_expected, full_matrix, x );
+  //Kokkos::MV_Multiply( y_expected, full_matrix, x );
 
   //------------------------------
   // check

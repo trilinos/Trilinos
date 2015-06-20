@@ -1,7 +1,5 @@
 
 
-INCLUDE(TribitsPackageMacros)
-INCLUDE(TribitsAddOptionAndDefine)
 
 #
 # A) Define the package
@@ -13,6 +11,11 @@ TRIBITS_PACKAGE(Pamgen)
 #
 # B) Set up package-specific options
 #
+IF(${PACKAGE_NAME}_ENABLE_Boost)
+  SET(HAVE_PAMGEN_BOOST ON )
+ENDIF()
+
+
 
 #
 # C) Add the libraries, tests, and examples

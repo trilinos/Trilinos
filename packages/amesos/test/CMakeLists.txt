@@ -1,5 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(AddSubdirectories)
 
 ADD_SUBDIRECTORY(Test_Basic)
 ADD_SUBDIRECTORY(Test_Epetra_RowMatrix)

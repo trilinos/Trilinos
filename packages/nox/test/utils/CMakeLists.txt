@@ -1,6 +1,4 @@
 
-INCLUDE(TribitsLibraryMacros)
-INCLUDE(TribitsAddExecutableAndTest)
 
 SET(HEADERS "")
 SET(SOURCES "")

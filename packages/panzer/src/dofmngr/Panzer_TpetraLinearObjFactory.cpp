@@ -46,7 +46,7 @@
 #include "Panzer_TpetraLinearObjFactory_decl.hpp"
 #include "Panzer_TpetraLinearObjFactory_impl.hpp"
 
-#include "Kokkos_DefaultNode.hpp"
+#include "Panzer_NodeType.hpp"
 
 // template class panzer::TpetraLinearObjFactory<panzer::Traits,double,int,int>;
 template class panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64>;

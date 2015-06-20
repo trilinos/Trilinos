@@ -48,7 +48,7 @@ IF (${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP)
   #       when built with shareable libraries on some platforms....
 
   FOREACH ( testName ${forbind_OLDTESTS} )
-    TRIBITS_ADD_EXECUTABLE( f_${testName} NOEXEPREFIX NOEXESUFFIX LINKER_LANGUAGE Fortran SOURCES ${testName}.f DEPLIBS exodus_for)
+    TRIBITS_ADD_EXECUTABLE( f_${testName} NOEXEPREFIX NOEXESUFFIX LINKER_LANGUAGE Fortran SOURCES ${testName}.f)
   ENDFOREACH ( testName )
 
   TRIBITS_ADD_ADVANCED_TEST(

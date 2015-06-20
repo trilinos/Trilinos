@@ -57,7 +57,7 @@ namespace Teuchos {
  */
 class CantFindParameterEntryConverterException : public std::logic_error{
 
-public: 
+public:
 
   /**
    * \brief Constructs an CantFindParameterEntryConverterException.
@@ -75,7 +75,7 @@ public:
  */
 class DuplicateValidatorIDsException : public std::logic_error{
 
-public: 
+public:
 
   /**
    * \brief Constructs an DuplicateValidatorIDsException.
@@ -91,7 +91,7 @@ public:
  */
 class DuplicateParameterIDsException : public std::logic_error{
 
-public: 
+public:
 
   /**
    * \brief Constructs an DuplicateParameterIDsException.
@@ -107,7 +107,7 @@ public:
  */
 class BadValidatorXMLConverterException : public std::logic_error{
 
-public: 
+public:
   /**
    * \brief Constructs an BadValidatorXMLConverterException.
    *
@@ -119,12 +119,12 @@ public:
 
 
 /**
- * \brief Thrown when the ValidatorXMLConverterDB can't find an 
+ * \brief Thrown when the ValidatorXMLConverterDB can't find an
  * appropriate converter.
  */
 class CantFindValidatorConverterException : public std::logic_error{
 
-public: 
+public:
   /**
    * \brief Constructs a CantFindValidatorConverterException.
    *
@@ -141,7 +141,7 @@ public:
  */
 class BadParameterEntryXMLConverterTypeException : public std::logic_error{
 
-public: 
+public:
 
   /**
    * \brief Constructs a BadParmaeterEntryXMLConverterTypeException.
@@ -158,7 +158,7 @@ public:
  * \brief Thrown when a parameter entry tag is missing it's value attribute.
  */
 class NoValueAttributeExecption : public std::logic_error{
-public: 
+public:
   /**
    * \brief Constructs a NoValueAttributeExecption.
    *
@@ -172,7 +172,7 @@ public:
  * \brief Thrown when a parameter entry tag is missing it's type attribute.
  */
 class NoTypeAttributeExecption : public std::logic_error{
-public: 
+public:
   /**
    * \brief Constructs a NoTypeAttributeExecption.
    *
@@ -185,7 +185,7 @@ public:
  * \brief Thrown when a parameter entry tag is missing it's name attribute.
  */
 class NoNameAttributeExecption : public std::logic_error{
-public: 
+public:
   /**
    * \brief Constructs a NoNameAttributeExecption.
    *
@@ -198,7 +198,7 @@ public:
  * \brief Thrown when an element inside a parameter list is bad.
  */
 class BadParameterListElementException : public std::logic_error{
-public: 
+public:
   /**
    * \brief Constructs a BadParameterListElementException.
    *
@@ -211,7 +211,7 @@ public:
  * \brief Thrown when the root xml tag for a parameter list is incorrect.
  */
 class BadXMLParameterListRootElementException : public std::logic_error{
-public: 
+public:
   /**
    * \brief Constructs a BadXMLParameterListRootElementException.
    *
@@ -224,7 +224,7 @@ public:
  * \brief Thrown when a referenced validator can't be found.
  */
 class MissingValidatorDefinitionException : public std::logic_error{
-public: 
+public:
   /**
    * \brief Constructs a MissingValidatorDefinitionException.
    *
@@ -238,7 +238,7 @@ public:
  * \brief Thrown when a referenced ParameterEntry can't be found.
  */
 class MissingParameterEntryDefinitionException : public std::logic_error{
-public: 
+public:
   /**
    * \brief Constructs a MissingParameterEntryDefinitionException.
    *
@@ -249,11 +249,11 @@ public:
 };
 
 /**
- * \brief Thrown when xml tag is encountered that is either unrecognized or 
+ * \brief Thrown when xml tag is encountered that is either unrecognized or
  * inappropriate for a given context.
  */
 class BadTagException : public std::logic_error{
-public: 
+public:
   /**
    * \brief Constructs a MissingValidatorDefinitionException.
    *

@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -49,51 +49,47 @@
 #include "MueLu_CreateTpetraPreconditioner.hpp"
 
 namespace Kokkos {
-namespace Example {    
+namespace Example {
 
   template<class S, class LO, class GO, class N>
-  class MueLuPreconditioner : 
+  class MueLuPreconditioner :
     public SGPreconditioner<S, LO, GO, N> {
-      
+
   public:
 
-    //! Constructor 
-    MueLuPreconditioner() {} 
-    
+    //! Constructor
+    MueLuPreconditioner() {}
+
     //! Destructor
     virtual ~MueLuPreconditioner() {}
 
     //! Setup preconditioner
-    virtual 
-    Teuchos::RCP<Tpetra::Operator<S,LO,GO,N> > 
-    setupPreconditioner(const Teuchos::RCP<Tpetra::CrsMatrix<S,LO,GO,N> >& A,
-			const std::string& xmlFileName); 
+    virtual
+    Teuchos::RCP<Tpetra::Operator<S,LO,GO,N> >
+    setupPreconditioner(
+      const Teuchos::RCP<Tpetra::CrsMatrix<S,LO,GO,N> >& A,
+      const Teuchos::RCP<Teuchos::ParameterList>& mueluParams,
+      const Teuchos::RCP<Tpetra::MultiVector<double,LO,GO,N> >& coords)
+    {
+      typedef MueLu::TpetraOperator<S,LO,GO,N> PreconditionerType;
+      Teuchos::RCP<PreconditionerType> mueluPreconditioner;
+      mueluPreconditioner =
+        MueLu::CreateTpetraPreconditioner(A,*mueluParams,coords);
+      return mueluPreconditioner;
+    }
 
   private:
-    
+
     //! Private to prohibit copying
     MueLuPreconditioner(const MueLuPreconditioner&);
-    
+
     //! Private to prohibit copying
     MueLuPreconditioner& operator=(const MueLuPreconditioner&);
-    
+
 
   }; // class MeanBasedPreconditioner
 
-}   
 }
-
-template<class S, class LO, class GO, class N>
-Teuchos::RCP<Tpetra::Operator<S,LO,GO,N> >
-Kokkos::Example::MueLuPreconditioner<S,LO,GO,N>::
-setupPreconditioner(const Teuchos::RCP<Tpetra::CrsMatrix<S,LO,GO,N> >& A,
-                        const std::string& xmlFileName)
-{
-  typedef MueLu::TpetraOperator<S,LO,GO,N> PreconditionerType;
-  RCP<PreconditionerType> mueluPreconditioner;
-  mueluPreconditioner = MueLu::CreateTpetraPreconditioner(A,xmlFileName);
-  return mueluPreconditioner;
 }
-
 
 #endif // STOKHOS_MUELU_PRECONDITIONER_HPP

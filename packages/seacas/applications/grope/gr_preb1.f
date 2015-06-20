@@ -59,11 +59,12 @@ C     --   ATRIB - IN - the attribute array for this block
       INTEGER LINK(NLINK,*)
       REAL ATRIB(natrdm,*)
       INTEGER MAPN(*), MAPE(*)
+      CHARACTER*32 STRA
       LOGICAL DOMAPN, DOMAPE
 
       LOGICAL ALLSAM
       LOGICAL DOCONN, DOATR
-
+      
       IF (NLISEL .LE. 0) RETURN
 
       DOCONN = ((OPTION .EQ. '*') .OR. (INDEX (OPTION, 'C') .GT. 0))
@@ -73,10 +74,24 @@ C     --   ATRIB - IN - the attribute array for this block
       IF (.NOT. (DOCONN .OR. DOATR)) RETURN
 
       if (doconn) then
-        if (nout .gt. 0) then
-          WRITE (NOUT, 10000) 'Connectivity'
+        if (domapn) then
+          stra = '(Global Node IDs)'
         else
-          WRITE (*, 10000) 'Connectivity'
+          stra = '(Local Node IDs)'
+        end if
+
+        if (nout .gt. 0) then
+          if (domape) then
+            WRITE (NOUT, 10000) 'Connectivity', STRA(:LENSTR(STRA))
+          else
+            WRITE (NOUT, 10001) 'Connectivity', STRA(:LENSTR(STRA))
+          end if
+        else
+          if (domape) then
+            WRITE (*, 10000) 'Connectivity', STRA(:LENSTR(STRA))
+          else
+            WRITE (*, 10001) 'Connectivity', STRA(:LENSTR(STRA))
+          end if
         end if
         do 100 ix=1, nlisel
           IEL = LISEL(IX)
@@ -154,11 +169,12 @@ C     ... Print either all values (if not all same), or the common values
       
       RETURN
 
-10000 FORMAT (1X, '         #      elem            ', A)
-10010 FORMAT (1X, I10, I10, 5X, 8I10, :, /,
-     &  (26X, 8I10))
-10020 FORMAT (1X, I10, I10, 3X, 4 (1X, 1pE11.4), :, /,
-     &  (24X, 4 (1X, 1pE11.4)))
+10000 FORMAT (1X, '   Local ID  Global ID       ', A, '  ', A)
+10001 FORMAT (1X, '   Local ID   Local ID       ', A, '  ', A)
+10010 FORMAT (1X, I11, I11, 5X, 8I11, :, /,
+     &  (18X, 8I11))
+10020 FORMAT (1X, I11, I11, 3X, 4 (1X, 1pE11.4), :, /,
+     &  (16X, 4 (2X, 1pE11.4)))
 10025 FORMAT (2X, 'All attributes are equal. Values are: ',
      &  (3 (1x, 1pE11.4)), :, /,
      &  (3X, 6 (1X, 1pE11.4)))

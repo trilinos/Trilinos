@@ -154,6 +154,9 @@ public:
      */
    virtual void ownedIndices(const std::vector<int> & indices,std::vector<bool> & isOwned) const;
 
+   int getElementBlockGIDCount(const std::string &) const;
+   int getElementBlockGIDCount(const std::size_t &) const;
+
 private:
    int procRank_;
    mutable Teuchos::RCP<std::vector<short> > elements_b0_; // local element IDs

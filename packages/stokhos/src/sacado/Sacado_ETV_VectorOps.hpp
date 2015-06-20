@@ -58,6 +58,7 @@ namespace Sacado {							\
 									\
       typedef typename ExprT::value_type value_type;			\
       typedef typename ExprT::storage_type storage_type;		\
+      typedef typename ExprT::base_expr_type base_expr_type;            \
 									\
       Expr(const ExprT& expr_) : expr(expr_)  {}			\
 									\
@@ -108,6 +109,7 @@ ETV_UNARYOP_MACRO(exp, ExpOp, std::exp)
 ETV_UNARYOP_MACRO(log, LogOp, std::log)
 ETV_UNARYOP_MACRO(log10, Log10Op, std::log10)
 ETV_UNARYOP_MACRO(sqrt, SqrtOp, std::sqrt)
+ETV_UNARYOP_MACRO(cbrt, CbrtOp, std::cbrt)
 ETV_UNARYOP_MACRO(cos, CosOp, std::cos)
 ETV_UNARYOP_MACRO(sin, SinOp, std::sin)
 ETV_UNARYOP_MACRO(tan, TanOp, std::tan)
@@ -145,6 +147,7 @@ namespace Sacado {							\
 				       value_type_2>::type value_type;  \
 									\
       typedef typename ExprT1::storage_type storage_type;		\
+      typedef typename ExprT1::base_expr_type base_expr_type;           \
 									\
 									\
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :		\
@@ -192,6 +195,7 @@ namespace Sacado {							\
       typedef typename ExprT1::value_type ConstT;			\
 									\
       typedef typename ExprT1::storage_type storage_type;		\
+      typedef typename ExprT1::base_expr_type base_expr_type;           \
 									\
       Expr(const ExprT1& expr1_, const ConstT& c_) :			\
 	expr1(expr1_), c(c_) {}						\
@@ -234,6 +238,7 @@ namespace Sacado {							\
       typedef typename ExprT2::value_type ConstT;			\
 									\
       typedef typename ExprT2::storage_type storage_type;		\
+      typedef typename ExprT2::base_expr_type base_expr_type;           \
 									\
       Expr(const ConstT& c_, const ExprT2& expr2_) :			\
 	c(c_), expr2(expr2_) {}						\
@@ -335,6 +340,7 @@ namespace Sacado {							\
 				       value_type_2>::type value_type;  \
 									\
       typedef typename ExprT1::storage_type storage_type;		\
+      typedef typename ExprT1::base_expr_type base_expr_type;           \
 									\
 									\
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :		\
@@ -382,6 +388,7 @@ namespace Sacado {							\
       typedef typename ExprT1::value_type ConstT;			\
 									\
       typedef typename ExprT1::storage_type storage_type;		\
+      typedef typename ExprT1::base_expr_type base_expr_type;           \
 									\
       Expr(const ExprT1& expr1_, const ConstT& c_) :			\
 	expr1(expr1_), c(c_) {}						\
@@ -424,6 +431,7 @@ namespace Sacado {							\
       typedef typename ExprT2::value_type ConstT;			\
 									\
       typedef typename ExprT2::storage_type storage_type;		\
+      typedef typename ExprT2::base_expr_type base_expr_type;           \
 									\
       Expr(const ConstT& c_, const ExprT2& expr2_) :			\
 	c(c_), expr2(expr2_) {}						\

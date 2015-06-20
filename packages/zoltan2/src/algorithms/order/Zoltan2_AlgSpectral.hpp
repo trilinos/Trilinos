@@ -62,7 +62,7 @@ template <typename Adapter>
 int AlgSpectral(
   const RCP<GraphModel<Adapter> > &model, 
   //const RCP<Adapter> &matrixadapter, // Hack: Use matrix adapter directly
-  const RCP<OrderingSolution<typename Adapter::gid_t,
+  const RCP<OrderingSolution<typename Adapter::zgid_t,
                              typename Adapter::lno_t> > &solution,
   const RCP<Teuchos::ParameterList> &pl,
   const RCP<const Teuchos::Comm<int> > &comm
@@ -78,7 +78,7 @@ int AlgSpectral(
 
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
-  typedef typename Adapter::gid_t gid_t;
+  typedef typename Adapter::zgid_t zgid_t;
   typedef typename Adapter::scalar_t scalar_t;
 
   int ierr= 0;

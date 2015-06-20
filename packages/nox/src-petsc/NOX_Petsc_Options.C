@@ -76,7 +76,11 @@ bool Options::setOptions(Teuchos::ParameterList& nlParams)
   {
     // Check for MaxIters option
     int maxIters;
+#if  (PETSC_VERSION_MAJOR >= 3) || (PETSC_VERSION_MINOR >= 5)
+    PetscBool lflg;
+#else
     PetscTruth lflg;  // Needed to permit two ways of specification
+#endif
     ierr = PetscOptionsGetInt(PETSC_NULL,"-snes_max_it", &maxIters, &flg);CHKERRQ(ierr);
     ierr = PetscOptionsGetInt(PETSC_NULL,"-nox_conv_maxiters", &maxIters, &lflg);CHKERRQ(ierr);
     if(flg || lflg)
@@ -177,7 +181,11 @@ bool Options::setOptions(Teuchos::ParameterList& nlParams)
       dirParams.set("Method", "Steepest Descent");
 
       // Check to see if any steepest_descent options are set
+#if  (PETSC_VERSION_MAJOR >= 3) || (PETSC_VERSION_MINOR >= 5)
+      PetscBool lflg;
+#else
       PetscTruth lflg;
+#endif
       ierr = PetscOptionsGetString(PETSC_NULL,"-nox_sd_scaling_type",
                    optionString, maxStringLength, &lflg);CHKERRQ(ierr);
       if(lflg)

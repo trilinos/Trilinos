@@ -46,11 +46,10 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
+#include "Teuchos_TypeTraits.hpp"
 #include "Teuchos_Version.hpp"
 
-
 namespace {
-
 
 //
 // Output of the ordinal that will avoid printing non-asci chars.
@@ -75,26 +74,35 @@ int outputOrdinal(const char& t)
 
 
 //
-// Type ouptutting
+// Type outputting
 //
 
 template <class T>
 void TYPE_CHAIN_A(Teuchos::FancyOStream &out) {
-  T b; typename Teuchos::ScalarTraits<T>::doublePrecision d;
-  out << Teuchos::typeName(b);
-  if (typeid(b) != typeid(d)) {
+  using Teuchos::TypeTraits::is_same;
+  typedef typename Teuchos::ScalarTraits<T>::doublePrecision double_type;
+
+  T b;
+  // double_type d; // unused
+  out << Teuchos::typeName (b);
+  if (! is_same<T, double_type>::value) {
     out << " -> ";
-    TYPE_CHAIN_A<typename Teuchos::ScalarTraits<T>::doublePrecision>(out);
+    TYPE_CHAIN_A<double_type>(out);
   }
 }
 
 template <class T>
 void TYPE_CHAIN_D(Teuchos::FancyOStream &out) {
-  T b; typename Teuchos::ScalarTraits<T>::halfPrecision d;
-  out << Teuchos::typeName(b);
-  if (typeid(b) != typeid(d)) {
+  using Teuchos::TypeTraits::is_same;
+  typedef typename Teuchos::ScalarTraits<T>::halfPrecision half_type;
+
+  T b;
+  // half_type d; // unused
+  out << Teuchos::typeName (b);
+
+  if (! is_same<T, half_type>::value) {
     out << " -> ";
-    TYPE_CHAIN_D<typename Teuchos::ScalarTraits<T>::halfPrecision>(out);
+    TYPE_CHAIN_D<half_type>(out);
   }
 }
 
@@ -110,9 +118,9 @@ bool testScalarTraits(
   Teuchos::FancyOStream &out
   )
 {
-  
+
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  
+
   bool success = true;
   bool result;
 
@@ -145,7 +153,7 @@ bool testScalarTraits(
       << "squareroot("<<negNan<<") = " << sqrtNegNan << " == " << nan << " : "
       << passfail(result) << "\n";
   }
-    
+
   if (ST::isComplex == false)
   {
     out << "\nTesting that squareroot(-1) == NaN! ...\n";
@@ -161,7 +169,7 @@ bool testScalarTraits(
   }
 
 #ifdef HAVE_NUMERIC_LIMITS
-    
+
   out << "\nTesting that squareroot(quiet_NaN) == NaN! ...\n";
   {
     const Scalar nan = std::numeric_limits<Scalar>::quiet_NaN();
@@ -172,7 +180,7 @@ bool testScalarTraits(
       << "squareroot("<<nan<<") = " << sqrtNan << " == " << nan << " : "
       << passfail(result) << "\n";
   }
-    
+
   out << "\nTesting that squareroot(signaling_NaN) == NaN! ...\n";
   {
     const Scalar nan = std::numeric_limits<Scalar>::signaling_NaN();
@@ -183,7 +191,7 @@ bool testScalarTraits(
       << "squareroot("<<nan<<") = " << sqrtNan << " == " << nan << " : "
       << passfail(result) << "\n";
   }
-    
+
   out << "\nTesting that squareroot(inf) == NaN! ...\n";
   {
     const Scalar inf = std::numeric_limits<Scalar>::infinity();
@@ -196,7 +204,7 @@ bool testScalarTraits(
   }
 
 #endif // HAVE_NUMERIC_LIMITS
-    
+
   return success;
 
 }
@@ -207,9 +215,9 @@ bool testOrdinalTraits(
   Teuchos::FancyOStream &out
   )
 {
-  
+
   typedef Teuchos::OrdinalTraits<Ordinal> OT;
-  
+
   bool success = true;
   bool result;
 
@@ -271,9 +279,9 @@ bool testOrdinalTraits(
     result = (zero < one) && (one <= max) && (zero < max);
     if (!result) success = false;
     out
-      << "(zero < one) = " << (zero < one) << " == " 
-      << "(one <= max) = " << (one <= max) << " == " 
-      << "(zero < max) = " << (zero < max) << " == " 
+      << "(zero < one) = " << (zero < one) << " == "
+      << "(one <= max) = " << (one <= max) << " == "
+      << "(zero < max) = " << (zero < max) << " == "
       << true << " : "
       << passfail(result) << "\n";
   }
@@ -298,24 +306,24 @@ int main( int argc, char* argv[] ) {
 
   using Teuchos::CommandLineProcessor;
 
-	bool success = true;
+        bool success = true;
   bool result;
-  
+
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
   //const int procRank = Teuchos::GlobalMPISession::getRank();
-  
+
   Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
-  
-	try {
 
-		// Read options from the commandline
+        try {
+
+                // Read options from the commandline
     CommandLineProcessor  clp(false); // Don't throw exceptions
-		CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
-		if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) {
-			*out << "\nEnd Result: TEST FAILED" << std::endl;
-			return parse_return;
-		}
+                CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
+                if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) {
+                        *out << "\nEnd Result: TEST FAILED" << std::endl;
+                        return parse_return;
+                }
 
     result = testScalarTraits<float>(*out);
     if(!result) success = false;
@@ -355,22 +363,27 @@ int main( int argc, char* argv[] ) {
 //     result = testScalarTraits<std::complex<double> >(*out);
 //     if(!result) success = false;
 // #endif
-    
+
+#ifdef HAVE_TEUCHOSCORE_QUADMATH
+    result = testScalarTraits<__float128>(*out);
+    if(!result) success = false;
+#endif // HAVE_TEUCHOSCORE_QUADMATH
+
 #ifdef HAVE_TEUCHOS_QD
     result = testScalarTraits<dd_real>(*out);
     if(!result) success = false;
     result = testScalarTraits<qd_real>(*out);
     if(!result) success = false;
 #endif
-    
-	}
+
+        }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,success);
-  
+
   if(success)
-    *out << "\nEnd Result: TEST PASSED\n" << std::endl;	
+    *out << "\nEnd Result: TEST PASSED\n" << std::endl;
   else
     *out << "\nEnd Result: TEST FAILED\n" << std::endl;
-  
+
   return ( success ? 0 : 1 );
-  
+
 }

@@ -82,8 +82,8 @@ namespace panzer {
   void evaluateInitialCondition(WorksetContainer & wkstContainer,
 				const std::map<std::string, Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& phx_ic_field_managers,
 				Teuchos::RCP<panzer::LinearObjContainer> loc,
+				const panzer::LinearObjFactory<panzer::Traits>& lo_factory,
 				const double time_stamp);
-  
 }
 
 #endif

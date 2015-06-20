@@ -328,7 +328,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Validators, twoDArrayValidators)
 	RCP<ParameterList> stringList = rcp(new ParameterList("String List"));
 	Array<std::string> stringVals = tuple<std::string>("str1", "str2", "str3");
 	RCP<StringValidator> stringVali = rcp(new StringValidator(stringVals));
-	RCP<TwoDArrayStringValidator> stringArrayVali = 
+	RCP<TwoDArrayStringValidator> stringArrayVali =
     rcp(new TwoDArrayStringValidator(stringVali));
 	TEST_ASSERT(stringVali.get() == stringArrayVali->getPrototype().get());
 	TwoDArray<std::string> stringArray(2,2);
@@ -359,7 +359,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Validators, twoDArrayValidators)
 	 */
 	RCP<ParameterList> intList = rcp(new ParameterList("Int List"));
 	RCP<EnhancedNumberValidator<int> > intVali = rcp(new EnhancedNumberValidator<int>(0, 10));
-	RCP<TwoDArrayNumberValidator<int> > intArrayVali = 
+	RCP<TwoDArrayNumberValidator<int> > intArrayVali =
     rcp(new TwoDArrayNumberValidator<int>(intVali));
 	TEST_ASSERT(intVali.get() == intArrayVali->getPrototype().get());
 	TwoDArray<int> intArray(2,2);
@@ -458,7 +458,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Validators, twoDArrayValidators)
 	 */
 	RCP<ParameterList> fileNameList = rcp(new ParameterList("Filename List"));
 	RCP<FileNameValidator> fileNameVali = rcp(new FileNameValidator(true));
-	RCP<TwoDArrayFileNameValidator> arrayFileNameVali = 
+	RCP<TwoDArrayFileNameValidator> arrayFileNameVali =
     rcp(new TwoDArrayFileNameValidator(fileNameVali));
 	TEST_ASSERT(arrayFileNameVali->getPrototype().get() == fileNameVali.get());
 	TwoDArray<std::string> fileNameArray(2,2);

@@ -69,7 +69,7 @@ namespace Example {
   class GetMeanValsFunc {
   public:
     typedef ViewType MeanViewType;
-    typedef typename ViewType::device_type device_type;
+    typedef typename ViewType::execution_space execution_space;
     typedef typename ViewType::size_type size_type;
 
     GetMeanValsFunc(const ViewType& vals)
@@ -94,7 +94,7 @@ namespace Example {
     typedef Sacado::UQ::PCE<Storage> Scalar;
     typedef Kokkos::View< Scalar*, Layout, Memory, Device > ViewType;
     typedef ViewType MeanViewType;
-    typedef typename ViewType::device_type device_type;
+    typedef typename ViewType::execution_space execution_space;
     typedef typename ViewType::size_type size_type;
 
     GetMeanValsFunc(const ViewType& vals_) : vals(vals_)
@@ -127,7 +127,7 @@ namespace Example {
     typedef Sacado::MP::Vector<Storage> Scalar;
     typedef Kokkos::View< Scalar*, Layout, Memory, Device > ViewType;
     typedef ViewType MeanViewType;
-    typedef typename ViewType::device_type device_type;
+    typedef typename ViewType::execution_space execution_space;
     typedef typename ViewType::size_type size_type;
 
     GetMeanValsFunc(const ViewType& vals_) :
@@ -174,7 +174,8 @@ namespace Example {
     Teuchos::RCP<Tpetra::Operator<Scalar,LO,GO,N> >
     setupPreconditioner(
       const Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,N> >& A,
-      const std::string& xmlFileName)
+      const Teuchos::RCP<Teuchos::ParameterList>& precParams,
+      const Teuchos::RCP<Tpetra::MultiVector<double,LO,GO,N> >& coords)
     {
       using Teuchos::ArrayView;
       using Teuchos::Array;
@@ -182,13 +183,13 @@ namespace Example {
       typedef Tpetra::Map<LO,GO,N> Map;
       typedef MueLu::TpetraOperator<Scalar,LO,GO,N> PreconditionerType;
 
-      typedef Kokkos::CrsMatrix<Scalar, LO, typename N::device_type, void, size_t> KokkosMatrixType;
+      typedef typename MatrixType::local_matrix_type KokkosMatrixType;
 
       typedef typename KokkosMatrixType::StaticCrsGraphType KokkosGraphType;
       typedef typename KokkosMatrixType::values_type KokkosMatrixValuesType;
 
-      RCP< const Map > rmap = A->getRowMap();
-      RCP< const Map > cmap = A->getColMap();
+      Teuchos::RCP< const Map > rmap = A->getRowMap();
+      Teuchos::RCP< const Map > cmap = A->getColMap();
 
       KokkosMatrixType  kokkos_matrix = A->getLocalMatrix();
       KokkosGraphType kokkos_graph = kokkos_matrix.graph;
@@ -205,11 +206,12 @@ namespace Example {
 
       KokkosMatrixType mean_kokkos_matrix(
         "mean-matrix", ncols, mean_matrix_values, kokkos_graph);
-      RCP < MatrixType > M =
-        rcp( new MatrixType(rmap, cmap, mean_kokkos_matrix) );
+      Teuchos::RCP < MatrixType > M =
+          Teuchos::rcp( new MatrixType(rmap, cmap, mean_kokkos_matrix) );
 
-      RCP< PreconditionerType > mueluPreconditioner;
-      mueluPreconditioner = MueLu::CreateTpetraPreconditioner(M,xmlFileName);
+      Teuchos::RCP< PreconditionerType > mueluPreconditioner;
+      mueluPreconditioner =
+        MueLu::CreateTpetraPreconditioner(M,*precParams,coords);
       return mueluPreconditioner;
     };
 

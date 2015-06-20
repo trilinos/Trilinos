@@ -7,7 +7,7 @@ SRCDIR=~/shared/projects/Trilinos
 /bin/rm -rf *.* CMakeFiles Testing packages preCopyrightTrilinos Makefile
 
 cmake \
--D Tpetra_ENABLE_EXPLICIT_INSTANTIATION:BOOL=OFF \
+-D TpetraCore_ENABLE_EXPLICIT_INSTANTIATION:BOOL=OFF \
 -D TPL_ENABLE_MPI:BOOL=ON \
 -D Trilinos_EXTRA_LINK_FLAGS:STRING="-L/usr/local/lib -lmpichcxx -lmpichf90 -lmpich -lmpl -lopa -lpthread" \
 -D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING="" \

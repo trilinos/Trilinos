@@ -46,8 +46,7 @@
 #include <sstream>
 #include <stdexcept>
 
-#include "Kokkos_Cuda.hpp"
-#include "Cuda/Kokkos_Cuda_Parallel.hpp"
+#include "Kokkos_Core.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_BlockCrsMatrix.hpp"
@@ -62,10 +61,10 @@ class Multiply<
 {
 public:
 
-  typedef Kokkos::Cuda                         device_type ;
-  typedef device_type::size_type                    size_type ;
+  typedef Kokkos::Cuda                         execution_space ;
+  typedef execution_space::size_type                    size_type ;
   typedef Kokkos::View< VectorValue** ,Kokkos::LayoutLeft , Kokkos::Cuda > block_vector_type ;
-  typedef BlockCrsMatrix< BlockSpec , MatrixValue , device_type >  matrix_type ;
+  typedef BlockCrsMatrix< BlockSpec , MatrixValue , execution_space >  matrix_type ;
 
   const matrix_type  m_A ;
   const block_vector_type  m_x ;

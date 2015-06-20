@@ -66,8 +66,9 @@ namespace Xpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > toXpetra(const RCP<const Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node> >& exp);
 
-
-  template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class LocalOrdinal = Export<>::local_ordinal_type,
+            class GlobalOrdinal = typename Export<LocalOrdinal>::global_ordinal_type,
+            class Node = typename Export<LocalOrdinal, GlobalOrdinal>::node_type>
   class TpetraExport
     : public Export<LocalOrdinal, GlobalOrdinal, Node>
   {

@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -109,7 +109,7 @@ bool runCgSolveExample(
   const Scalar one = ST::one(), diagTerm = as<Scalar>(2.0)* diagScale * ST::one();
   int k = 0, kl = 0;
   // First local row
-  if(procRank > 0) { lower[kl] = -one; ++kl; };  diag[k] = diagTerm; upper[k] = -one; 
+  if(procRank > 0) { lower[kl] = -one; ++kl; };  diag[k] = diagTerm; upper[k] = -one;
   // Middle local rows
   for( k = 1; k < localDim - 1; ++k, ++kl ) {
     lower[kl] = -one; diag[k] = diagTerm; upper[k] = -one;
@@ -155,7 +155,7 @@ bool runCgSolveExample(
   //
   // (C) Check that the linear system was solved to the specified tolerance
   //
-  RCP<Thyra::VectorBase<Scalar> > r = createMember(A->range());                     
+  RCP<Thyra::VectorBase<Scalar> > r = createMember(A->range());
   // r = b
   Thyra::V_V(r.ptr(), *b);
   // r = -A*x + r
@@ -187,20 +187,19 @@ int main(int argc, char *argv[])
 
   using Teuchos::CommandLineProcessor;
 
-  bool success = true;
-  bool result;
+  bool success = false;
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
-  const int procRank = Teuchos::GlobalMPISession::getRank();
-  const int numProc = Teuchos::GlobalMPISession::getNProc();
-
-  const Teuchos::RCP<const Teuchos::Comm<Thyra::Ordinal> >
-    comm = Teuchos::DefaultComm<Thyra::Ordinal>::getComm();
-
   Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   try {
+    bool result;
+    const int procRank = Teuchos::GlobalMPISession::getRank();
+    const int numProc = Teuchos::GlobalMPISession::getNProc();
+
+    const Teuchos::RCP<const Teuchos::Comm<Thyra::Ordinal> >
+      comm = Teuchos::DefaultComm<Thyra::Ordinal>::getComm();
 
     //
     // Read in command-line options
@@ -243,37 +242,37 @@ int main(int argc, char *argv[])
 #if defined(HAVE_THYRA_FLOAT)
     result = runCgSolveExample<float>(comm, procRank, numProc, localDim, diagScale,
       showAllTests, dumpAll, tolerance, maxNumIters);
-    if(!result) success = false;
+    success = result;
 #endif
 
     result = runCgSolveExample<double>(comm, procRank, numProc, localDim, diagScale,
       showAllTests, dumpAll, tolerance, maxNumIters);
-    if(!result) success = false;
+    success = result;
 
 #ifdef HAVE_THYRA_COMPLEX
 
 #if defined(HAVE_THYRA_FLOAT)
     result = runCgSolveExample<std::complex<float> >(comm, procRank, numProc, localDim,
       diagScale, showAllTests, dumpAll, tolerance, maxNumIters);
-    if(!result) success = false;
+    success = result;
 #endif
 
     result = runCgSolveExample<std::complex<double> >(comm, procRank, numProc, localDim,
       diagScale, showAllTests, dumpAll, tolerance, maxNumIters);
-    if(!result) success = false;
+    success = result;
 
 #endif // HAVE_THYRA_COMPLEX
+
+    if (procRank==0) {
+      if (success)
+        *out << "\nAll of the tests seem to have run successfully!\n";
+      else
+        *out << "\nOh no! at least one of the tests failed!\n";
+    }
 
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, *out, success)
 
-  if (procRank==0) {
-    if (success)
-      *out << "\nAll of the tests seem to have run successfully!\n";
-    else
-      *out << "\nOh no! at least one of the tests failed!\n";	
-  }
-  
-  return success ? 0 : 1;
+  return success ? EXIT_SUCCESS : EXIT_FAILURE;
 
 } // end main()

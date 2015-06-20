@@ -1,6 +1,4 @@
 
-INCLUDE(TribitsPackageMacros)
-INCLUDE(TribitsAddOptionAndDefine)
 
 #
 # A) Define the package
@@ -62,9 +60,32 @@ IF(${PACKAGE_NAME}_ENABLE_SPARSKIT)
   SET(HAVE_IFPACK_SPARSKIT ON )
 ENDIF()
 
-IF(${PACKAGE_NAME}_ENABLE_Boost)
-  SET(HAVE_IFPACK_SUPPORTGRAPH ON )
-ENDIF()
+ASSERT_DEFINED( ${PACKAGE_NAME}_ENABLE_Boost )
+ASSERT_DEFINED( TPL_ENABLE_CUDA )
+# FIXME (mfh 29 Apr 2015) The part of Boost that Ifpack_SupportGraph
+# uses does not currently build with NVCC.  It's unlikely that
+# Ifpack_SupportGraph users care about CUDA.  Thus, I am disabling
+# Ifpack_SupportGraph if CUDA is enabled.
+IF (${PACKAGE_NAME}_ENABLE_Boost)
+  IF (TPL_ENABLE_CUDA)
+    MESSAGE (WARNING "Ifpack_SupportGraph requires Boost, but CUDA is enabled.  The parts of Boost that it uses do not currently build correctly with CUDA.  Ifpack_SupportGraph users are unlikely to depend on CUDA.  Thus, we are turning off Ifpack_SupportGraph support.")
+    SET (${PACKAGE_NAME}_ENABLE_SUPPORTGRAPH_DEFAULT OFF)
+  ELSE ()
+    # mfh 04 Jun 2015: Boost Graph Library build issues mean that it's
+    # likely Ifpack_SupportGraph won't build with newer versions of
+    # Boost.  See Bug 6343.  Thus, I'm disabling it by default.
+    SET (${PACKAGE_NAME}_ENABLE_SUPPORTGRAPH_DEFAULT OFF)
+  ENDIF ()
+ELSE ()
+  SET (${PACKAGE_NAME}_ENABLE_SUPPORTGRAPH_DEFAULT OFF)
+ENDIF ()
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_SUPPORTGRAPH
+  HAVE_IFPACK_SUPPORTGRAPH
+  "Enable Ifpack_SupportGraph support graph preconditioner.  It requires Boost to build, and it does not build correctly if CUDA is ON.  It also may not build correctly with new versions of Boost (see Bug 6343).  Thus, it is disabled by default.  You must explicitly enable it by setting Ifpack_ENABLE_SUPPORTGRAPH:BOOL=ON."
+  ${${PACKAGE_NAME}_ENABLE_SUPPORTGRAPH_DEFAULT}
+  )
 
 # "Experimental" code lives in Ifpack, but is not quite ready for use
 # by a general audience.  You have to enable the CMake option below in

@@ -122,7 +122,7 @@ public:
 	 * </ul>
 	 *
 	 * @param  workspace_store  [in] Pointer to the workspace object to get the memory from.
-	 *                          This can be <tt>NULL</tt> in which case <tt>new T[]</tt> and 
+	 *                          This can be <tt>NULL</tt> in which case <tt>new T[]</tt> and
 	 *                          <tt>delete []</tt> will be used instead.
 	 * @param  num_bytes        [in] The number of bytes to allocate.
 	 */
@@ -179,7 +179,7 @@ public:
 	/** \brief Allocates a num_elements array of temporary objects.
 	 *
 	 * @param  workspace_store  [in] Pointer to the workspace object to get the memory from.
-	 *                          This can be <tt>NULL</tt> in which case <tt>new T[]</tt> and 
+	 *                          This can be <tt>NULL</tt> in which case <tt>new T[]</tt> and
 	 *                          <tt>delete []</tt> will be used instead.
 	 * @param  num_elements     [in] The number of bytes to allocate.
 	 * @param  call_consructors [in] If <tt>true</tt> then constructors and destructors will be
@@ -235,13 +235,13 @@ public:
 	 */
 	const T& operator[](size_t i) const;
   /** \brief Return a non-const array view. */
-  ArrayView<T> operator()(); 
+  ArrayView<T> operator()();
   /** \brief Return a const array view. */
-  ArrayView<const T> operator()() const; 
+  ArrayView<const T> operator()() const;
   /** \brief Return a non-const array view. */
-  operator ArrayView<T>(); 
+  operator ArrayView<T>();
   /** \brief Return a const view object. */
-  operator ArrayView<const T>() const; 
+  operator ArrayView<const T>() const;
 private:
 	RawWorkspace  raw_workspace_;
 	bool          call_constructors_;

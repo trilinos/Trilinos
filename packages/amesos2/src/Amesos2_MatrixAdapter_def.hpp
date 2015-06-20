@@ -210,6 +210,7 @@ namespace Amesos2 {
 				     EStorage_Ordering ordering,
 				     has_special_impl hsi) const
   {
+    hsi.set = false;
     static_cast<const adapter_t*>(this)->getCrs_spec(nzval, colind, rowptr,
 						     nnz, rowmap, ordering);
   }
@@ -224,6 +225,9 @@ namespace Amesos2 {
 				     EStorage_Ordering ordering,
 				     no_special_impl nsi) const
   {
+  
+    //Added void to remove parameter not used warning
+    ((void)nsi);
     do_getCrs(nzval, colind, rowptr,
 	      nnz, rowmap, ordering,
 	      typename adapter_t::major_access());
@@ -244,6 +248,9 @@ namespace Amesos2 {
     using Teuchos::ArrayView;
     using Teuchos::OrdinalTraits;
     
+ 
+    ((void) ra);
+
     RCP<const type> get_mat;
     if( *rowmap == *this->row_map_ ){
       // No need to redistribute
@@ -345,6 +352,8 @@ namespace Amesos2 {
 				     EStorage_Ordering ordering,
 				     no_special_impl nsi) const
   {
+    ((void)nsi);
+   
     do_getCcs(nzval, rowind, colptr,
 	      nnz, colmap, ordering,
 	      typename adapter_t::major_access());
@@ -362,7 +371,9 @@ namespace Amesos2 {
   {
     using Teuchos::Array;
     // get the crs and transpose
-
+   
+    ((void) ra);
+    
     Array<scalar_t> nzval_tmp(nzval.size(), 0);
     Array<global_ordinal_t> colind(rowind.size(), 0);
     Array<global_size_t> rowptr(this->getGlobalNumRows() + 1);

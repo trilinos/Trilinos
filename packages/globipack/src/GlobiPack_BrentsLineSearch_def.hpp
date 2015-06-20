@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    GlobiPack: Collection of Scalar 1D globalizaton utilities
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 */
@@ -84,7 +84,7 @@ void BrentsLineSearch<Scalar>::setParameterList(
   RCP<ParameterList> const& paramList
   )
 {
-  typedef ScalarTraits<Scalar> ST;
+  //typedef ScalarTraits<Scalar> ST; // unused
   namespace BLSU = BrentsLineSearchUtils;
   using Teuchos::sublist;
   paramList->validateParametersAndSetDefaults(*this->getValidParameters());
@@ -145,10 +145,11 @@ bool BrentsLineSearch<Scalar>::doLineSearch(
   using Teuchos::OSTab;
   using Teuchos::outArg;
   using Teuchos::inOutArg;
+
+#ifdef TEUCHOS_DEBUG
   typedef ScalarTraits<Scalar> ST;
   typedef PointEval1D<Scalar> PE1D;
 
-#ifdef TEUCHOS_DEBUG
   TEUCHOS_ASSERT_EQUALITY(point_k.alpha, ST::zero());
   TEUCHOS_ASSERT_INEQUALITY(point_k.phi, !=, PE1D::valNotGiven());
   TEUCHOS_ASSERT_EQUALITY(point_k.Dphi, PE1D::valNotGiven());
@@ -190,12 +191,12 @@ bool BrentsLineSearch<Scalar>::doLineSearch(
   if (bracketSuccess) {
 
     int numBrentsIters = -1;
-    
+
     const bool brentsSuccess = brentsMin_.approxMinimize(
       phi, p_l, inOutArg(p_m), p_u, outArg(numBrentsIters) );
-    
+
     if (!brentsSuccess) success = false;
-    
+
     totalNumIters += numBrentsIters;
 
   }
@@ -206,7 +207,7 @@ bool BrentsLineSearch<Scalar>::doLineSearch(
     *numIters = totalNumIters;
 
   return success;
-  
+
 }
 
 

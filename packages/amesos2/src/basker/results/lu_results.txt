@@ -1,0 +1,315 @@
+test_lu
+904: vanHeukelum/cage3:           your   resid: 6.93889e-18
+449: Grund/b1_ss:           your   resid: 0
+905: vanHeukelum/cage4: 	    skip
+1524: Pajek/Stranke94:           your   resid: 5.14265e-17
+1440: Oberwolfach/LFAT5:           your   resid: 1.13086e-21
+1438: Oberwolfach/LF10:           your   resid: 2.64e-18
+2203: JGD_Trefethen/Trefethen_20b:           your   resid: 1.90272e-16
+2204: JGD_Trefethen/Trefethen_20:           your   resid: 1.9292e-16
+1516: Pajek/Ragusa18: 	    skip (zero pivot encountered)
+1515: Pajek/Ragusa16: 	    skip (zero pivot encountered)
+436: FIDAP/ex5:           your   resid: 4.91127e-17
+232: HB/pores_1:           your   resid: 4.58233e-19
+1199: Hamrle/Hamrle1:           your   resid: 1.75809e-19
+1480: Pajek/GD01_c: 	    skip (zero pivot encountered)
+1474: Pajek/football: 	    skip (zero pivot encountered)
+906: vanHeukelum/cage5:           your   resid: 1.53523e-16
+1493: Pajek/GD97_b: 	    skip (zero pivot encountered)
+23: HB/bcsstk01:           your   resid: 1.41894e-16
+56: HB/bcsstm01: 	    skip (zero pivot encountered)
+872: Pothen/mesh1e1:           your   resid: 1.92873e-16
+873: Pothen/mesh1em1:           your   resid: 1.2339e-16
+874: Pothen/mesh1em6:           your   resid: 1.18751e-16
+464: Grund/d_ss:           your   resid: 4.43613e-21
+172: HB/impcol_b:           your   resid: 3.47101e-17
+293: Bai/bfwa62:           your   resid: 1.52071e-16
+296: Bai/bfwb62:           your   resid: 1.07623e-16
+1498: Pajek/GD99_b: 	    skip (zero pivot encountered)
+24: HB/bcsstk02:           your   resid: 2.20905e-16
+57: HB/bcsstm02:           your   resid: 0
+2338: Rommes/ww_36_pmec_36:           your   resid: 8.76139e-19
+262: HB/west0067:           your   resid: 7.22875e-17
+1943: JGD_CAG/CAG_mat72:           your   resid: 1.93082e-17
+2400: Newman/lesmis: 	    skip (zero pivot encountered)
+253: HB/steam3:           your   resid: 5.35682e-20
+1519: Pajek/Sandi_authors: 	    skip (zero pivot encountered)
+462: Grund/d_dyn:           your   resid: 2.78517e-18
+463: Grund/d_dyn1:           your   resid: 7.21516e-17
+1641: Bai/tols90:           your   resid: 2.10125e-16
+907: vanHeukelum/cage6:           your   resid: 2.71051e-16
+220: HB/nos4:           your   resid: 1.49679e-16
+318: Bai/olm100:           your   resid: 3.80121e-18
+337: Bai/tub100:           your   resid: 4.70086e-17
+1326: Morandini/rotor1:           your   resid: 1.76535e-19
+861: MathWorks/pivtol:           your   resid: 3.35239e-17
+306: Bai/ck104:           your   resid: 3.97821e-17
+2097: JGD_Homology/n3c6-b1: 	    skip (zero pivot encountered)
+25: HB/bcsstk03:           your   resid: 6.38599e-17
+58: HB/bcsstm03: 	    skip (zero pivot encountered)
+161: HB/gre_115:           your   resid: 2.35922e-16
+2397: Newman/football:           your   resid: 5.67922e-16
+1325: Morandini/robot:           your   resid: 6.62017e-18
+1506: Pajek/Journals:           your   resid: 2.99492e-16
+6: HB/arc130:           your   resid: 9.07086e-21
+188: HB/lns_131:           your   resid: 2.04354e-24
+192: HB/lnsp_131:           your   resid: 2.04354e-24
+26: HB/bcsstk04:           your   resid: 3.01597e-16
+59: HB/bcsstm04: 	    skip (zero pivot encountered)
+263: HB/west0132:           your   resid: 4.62555e-18
+1195: Rajat/rajat11:           your   resid: 7.40141e-18
+334: Bai/rw136:           your   resid: 2.83461e-16
+173: HB/impcol_c:           your   resid: 1.15648e-19
+44: HB/bcsstk22:           your   resid: 1.60458e-16
+72: HB/bcsstm22:           your   resid: 0
+206: HB/lund_a:           your   resid: 3.241e-16
+207: HB/lund_b:           your   resid: 3.25486e-16
+2559: CPM/cz148:           your   resid: 1.9417e-16
+2205: JGD_Trefethen/Trefethen_150:           your   resid: 9.14949e-16
+27: HB/bcsstk05:           your   resid: 3.88181e-16
+60: HB/bcsstm05:           your   resid: 0
+264: HB/west0156:           your   resid: 5.94589e-24
+313: Bai/lop163:           your   resid: 1.27578e-16
+265: HB/west0167:           your   resid: 4.63252e-18
+212: HB/mcca:           your   resid: 4.72164e-17
+1198: Rajat/rajat14:           your   resid: 4.73423e-18
+141: HB/fs_183_1:           your   resid: 8.74904e-18
+142: HB/fs_183_3:           your   resid: 1.0262e-21
+143: HB/fs_183_4:           your   resid: 2.7683e-19
+144: HB/fs_183_6:           your   resid: 6.13054e-23
+162: HB/gre_185:           your   resid: 4.37996e-16
+2406: Arenas/jazz:           your   resid: 4.36873e-16
+2206: JGD_Trefethen/Trefethen_200b:           your   resid: 1.10915e-15
+298: Bai/bwm200:           your   resid: 9.3734e-17
+1630: Bai/rdb200:           your   resid: 3.34118e-16
+1631: Bai/rdb200l:           your   resid: 2.26316e-16
+2207: JGD_Trefethen/Trefethen_200:           your   resid: 9.24531e-16
+171: HB/impcol_a:           your   resid: 2.60566e-18
+163: HB/gre_216a:           your   resid: 5.25621e-16
+164: HB/gre_216b:           your   resid: 1.11246e-16
+406: FIDAP/ex1:           your   resid: 2.45561e-16
+175: HB/impcol_e:           your   resid: 2.86715e-18
+323: Bai/pde225:           your   resid: 2.6786e-16
+217: HB/nos1:           your   resid: 9.55429e-17
+239: HB/saylr1:           your   resid: 9.73503e-17
+251: HB/steam1:           your   resid: 1.31383e-16
+215: HB/nnc261:           your   resid: 1.59591e-16
+1864: Muite/Chebyshev1:           your   resid: 2.58901e-20
+877: Pothen/mesh3e1:           your   resid: 3.78992e-16
+878: Pothen/mesh3em5:           your   resid: 2.66453e-16
+2392: Newman/celegansneural: 	    skip (zero pivot encountered)
+824: TOKAMAK/utm300:           your   resid: 2.4604e-16
+2194: JGD_SPG/08blocks:           your   resid: 0
+2208: JGD_Trefethen/Trefethen_300:           your   resid: 1.13993e-15
+1189: Rajat/rajat05:           your   resid: 6.93019e-17
+875: Pothen/mesh2e1:           your   resid: 6.06271e-17
+876: Pothen/mesh2em5:           your   resid: 1.09259e-16
+2560: CPM/cz308:           your   resid: 4.52103e-16
+1477: Pajek/GD01_a: 	    skip (zero pivot encountered)
+380: DRIVCAV/cavity01:           your   resid: 7.82438e-16
+381: DRIVCAV/cavity02:           your   resid: 4.96816e-16
+382: DRIVCAV/cavity03:           your   resid: 2.82272e-16
+383: DRIVCAV/cavity04:           your   resid: 4.51846e-16
+1529: Pajek/USAir97: 	    skip (zero pivot encountered)
+908: vanHeukelum/cage7:           your   resid: 7.34405e-16
+1639: Bai/tols340:           your   resid: 2.22615e-17
+165: HB/gre_343:           your   resid: 1.88738e-15
+229: HB/plat362:           your   resid: 3.27343e-16
+231: HB/plskz362:           your   resid: 3.04413e-16
+254: HB/str_0:           your   resid: 0
+255: HB/str_200:           your   resid: 2.418e-17
+256: HB/str_400:           your   resid: 2.27947e-17
+257: HB/str_600:           your   resid: 1.01726e-16
+1942: JGD_CAG/CAG_mat364:           your   resid: 5.81677e-17
+926: FEMLAB/poisson2D:           your   resid: 2.79553e-16
+266: HB/west0381:           your   resid: 1.24379e-16
+1523: Pajek/SmallW: 	    skip (zero pivot encountered)
+292: Bai/bfwa398:           your   resid: 3.61099e-16
+295: Bai/bfwb398:           your   resid: 2.36866e-16
+307: Bai/ck400:           your   resid: 2.6453e-17
+316: Bai/odepa400:           your   resid: 1.58603e-17
+317: Bai/odepb400: 	    skip (zero pivot encountered)
+929: FEMLAB/problem1:           your   resid: 4.45566e-16
+314: Bai/mhda416:           your   resid: 3.5076e-18
+315: Bai/mhdb416:           your   resid: 6.27207e-18
+28: HB/bcsstk06:           your   resid: 8.2592e-16
+29: HB/bcsstk07:           your   resid: 8.2592e-16
+61: HB/bcsstm06:           your   resid: 0
+62: HB/bcsstm07:           your   resid: 3.85367e-16
+174: HB/impcol_d:           your   resid: 4.44089e-17
+1112: Sandia/oscil_dcop_01:           your   resid: 7.26141e-18
+1113: Sandia/oscil_dcop_02:           your   resid: 7.26141e-18
+1114: Sandia/oscil_dcop_03:           your   resid: 7.26141e-18
+1115: Sandia/oscil_dcop_04:           your   resid: 8.49393e-19
+1116: Sandia/oscil_dcop_05:           your   resid: 8.49393e-19
+1117: Sandia/oscil_dcop_06:           your   resid: 1.77835e-18
+1118: Sandia/oscil_dcop_07:           your   resid: 1.7784e-18
+1119: Sandia/oscil_dcop_08:           your   resid: 1.77829e-18
+1120: Sandia/oscil_dcop_09:           your   resid: 1.77851e-18
+1121: Sandia/oscil_dcop_10:           your   resid: 1.77839e-18
+1122: Sandia/oscil_dcop_11:           your   resid: 1.77834e-18
+1123: Sandia/oscil_dcop_12:           your   resid: 1.77845e-18
+1124: Sandia/oscil_dcop_13:           your   resid: 1.77828e-18
+1125: Sandia/oscil_dcop_14:           your   resid: 1.77839e-18
+1126: Sandia/oscil_dcop_15:           your   resid: 1.77829e-18
+1127: Sandia/oscil_dcop_16:           your   resid: 1.77839e-18
+1128: Sandia/oscil_dcop_17:           your   resid: 1.7785e-18
+1129: Sandia/oscil_dcop_18:           your   resid: 1.77836e-18
+1130: Sandia/oscil_dcop_19:           your   resid: 1.77845e-18
+1131: Sandia/oscil_dcop_20:           your   resid: 1.77839e-18
+1132: Sandia/oscil_dcop_21:           your   resid: 1.77834e-18
+1133: Sandia/oscil_dcop_22:           your   resid: 1.77834e-18
+1134: Sandia/oscil_dcop_23:           your   resid: 1.77828e-18
+1135: Sandia/oscil_dcop_24:           your   resid: 1.77839e-18
+1136: Sandia/oscil_dcop_25:           your   resid: 1.77839e-18
+1137: Sandia/oscil_dcop_26:           your   resid: 1.77845e-18
+1138: Sandia/oscil_dcop_27:           your   resid: 1.77839e-18
+1139: Sandia/oscil_dcop_28:           your   resid: 1.77828e-18
+1140: Sandia/oscil_dcop_29:           your   resid: 1.77839e-18
+1141: Sandia/oscil_dcop_30:           your   resid: 1.77828e-18
+1142: Sandia/oscil_dcop_31:           your   resid: 1.77839e-18
+1143: Sandia/oscil_dcop_32:           your   resid: 1.77845e-18
+1144: Sandia/oscil_dcop_33:           your   resid: 1.77839e-18
+1145: Sandia/oscil_dcop_34:           your   resid: 1.77834e-18
+1146: Sandia/oscil_dcop_35:           your   resid: 1.77839e-18
+1147: Sandia/oscil_dcop_36:           your   resid: 1.77834e-18
+1148: Sandia/oscil_dcop_37:           your   resid: 1.77839e-18
+1149: Sandia/oscil_dcop_38:           your   resid: 1.77845e-18
+1150: Sandia/oscil_dcop_39:           your   resid: 1.77834e-18
+1151: Sandia/oscil_dcop_40:           your   resid: 1.77834e-18
+1152: Sandia/oscil_dcop_41:           your   resid: 1.77834e-18
+1153: Sandia/oscil_dcop_42:           your   resid: 1.77834e-18
+1154: Sandia/oscil_dcop_43:           your   resid: 1.77834e-18
+1155: Sandia/oscil_dcop_44:           your   resid: 1.77834e-18
+1156: Sandia/oscil_dcop_45:           your   resid: 1.77834e-18
+1157: Sandia/oscil_dcop_46:           your   resid: 1.77834e-18
+1158: Sandia/oscil_dcop_47:           your   resid: 1.77834e-18
+1159: Sandia/oscil_dcop_48:           your   resid: 1.77834e-18
+1160: Sandia/oscil_dcop_49:           your   resid: 1.77834e-18
+1161: Sandia/oscil_dcop_50:           your   resid: 1.77834e-18
+1162: Sandia/oscil_dcop_51:           your   resid: 1.77834e-18
+1163: Sandia/oscil_dcop_52:           your   resid: 1.77834e-18
+1164: Sandia/oscil_dcop_53:           your   resid: 1.77834e-18
+1165: Sandia/oscil_dcop_54:           your   resid: 1.77834e-18
+1166: Sandia/oscil_dcop_55:           your   resid: 1.77834e-18
+1167: Sandia/oscil_dcop_56:           your   resid: 1.77834e-18
+1168: Sandia/oscil_dcop_57:           your   resid: 1.77834e-18
+1169: Sandia/oscil_trans_01:           your   resid: 1.45228e-17
+167: HB/hor_131:           your   resid: 4.27518e-16
+416: FIDAP/ex2:           your   resid: 3.03563e-16
+1634: Bai/rdb450:           your   resid: 8.63587e-16
+1635: Bai/rdb450l:           your   resid: 3.62056e-16
+1494: Pajek/GD97_c: 	    skip (zero pivot encountered)
+2407: Arenas/celegans_metabolic: 	    skip (zero pivot encountered)
+221: HB/nos5:           your   resid: 5.54386e-16
+267: HB/west0479:           your   resid: 4.75914e-18
+329: Bai/rbsa480:           your   resid: 1.23023e-15
+330: Bai/rbsb480:           your   resid: 1.21881e-15
+42: HB/bcsstk20:           your   resid: 4.81981e-18
+70: HB/bcsstm20:           your   resid: 0
+2: HB/494_bus:           your   resid: 9.09144e-17
+209: HB/mbeacxc: 	    skip (zero pivot encountered)
+210: HB/mbeaflw: 	    skip (zero pivot encountered)
+211: HB/mbeause: 	    skip (zero pivot encountered)
+335: Bai/rw496:           your   resid: 3.30635e-16
+268: HB/west0497:           your   resid: 5.2051e-18
+321: Bai/olm500:           your   resid: 4.9471e-18
+1328: MathWorks/tomography:           your   resid: 4.44969e-15
+2209: JGD_Trefethen/Trefethen_500:           your   resid: 8.90133e-16
+190: HB/lns_511:           your   resid: 7.94615e-22
+193: HB/lnsp_511:           your   resid: 7.94615e-22
+166: HB/gre_512:           your   resid: 1.1588e-15
+310: Bai/dw256A:           your   resid: 5.18042e-16
+311: Bai/dw256B:           your   resid: 3.44687e-16
+1616: Bai/dwa512:           your   resid: 5.18042e-16
+1617: Bai/dwb512:           your   resid: 3.44687e-16
+2357: Rommes/M10PI_n1: 	    skip (zero pivot encountered)
+2365: Rommes/S10PI_n1: 	    skip (zero pivot encountered)
+234: HB/pores_3:           your   resid: 1.64447e-16
+145: HB/fs_541_1:           your   resid: 1.81596e-18
+146: HB/fs_541_2:           your   resid: 1.1089e-17
+147: HB/fs_541_3:           your   resid: 3.43889e-18
+148: HB/fs_541_4:           your   resid: 7.72264e-18
+339: Boeing/bcsstk34:           your   resid: 3.94329e-16
+344: Boeing/bcsstm34:           your   resid: 8.69633e-16
+252: HB/steam2:           your   resid: 6.10595e-16
+2015: JGD_Homology/ch5-5-b3: 	    skip (zero pivot encountered)
+2561: CPM/cz628:           your   resid: 3.30766e-16
+1476: Pajek/GD00_c: 	    skip (zero pivot encountered)
+269: HB/west0655:           your   resid: 4.75914e-18
+308: Bai/ck656:           your   resid: 2.6248e-17
+418: FIDAP/ex21:           your   resid: 3.5532e-16
+3: HB/662_bus:           your   resid: 5.02212e-17
+247: HB/shl_0:           your   resid: 0
+248: HB/shl_200:           your   resid: 0
+249: HB/shl_400:           your   resid: 0
+216: HB/nnc666:           your   resid: 1.9654e-16
+222: HB/nos6:           your   resid: 3.35149e-16
+149: HB/fs_680_1:           your   resid: 8.08644e-17
+150: HB/fs_680_2:           your   resid: 1.0109e-17
+151: HB/fs_680_3:           your   resid: 4.0436e-17
+2361: Rommes/M10PI_n: 	    skip (zero pivot encountered)
+2369: Rommes/S10PI_n: 	    skip (zero pivot encountered)
+4: HB/685_bus:           your   resid: 1.88064e-17
+2210: JGD_Trefethen/Trefethen_700:           your   resid: 1.20418e-15
+357: Boeing/msc00726:           your   resid: 9.92532e-16
+223: HB/nos7:           your   resid: 3.923e-16
+152: HB/fs_760_1:           your   resid: 6.64125e-20
+153: HB/fs_760_2:           your   resid: 1.07655e-16
+154: HB/fs_760_3:           your   resid: 1.04811e-16
+213: HB/mcfe:           your   resid: 2.08724e-16
+1627: Bai/qh768:           your   resid: 1.45001e-19
+1360: PARSEC/Si2:           your   resid: 2.00938e-15
+294: Bai/bfwa782:           your   resid: 4.70664e-16
+297: Bai/bfwb782:           your   resid: 3.80843e-16
+1327: Morandini/rotor2:           your   resid: 5.66656e-17
+470: Gset/G10:           your   resid: 1.84931e-15
+471: Gset/G11:           your   resid: 3.67761e-16
+472: Gset/G12:           your   resid: 8.50882e-16
+473: Gset/G13:           your   resid: 1.26288e-15
+478: Gset/G18:           your   resid: 1.42275e-15
+479: Gset/G19:           your   resid: 2.40186e-15
+481: Gset/G20:           your   resid: 2.49394e-15
+482: Gset/G21:           your   resid: 2.04178e-15
+524: Gset/G6:           your   resid: 1.64918e-15
+533: Gset/G7:           your   resid: 1.62265e-15
+534: Gset/G8:           your   resid: 1.68404e-15
+535: Gset/G9:           your   resid: 1.65849e-15
+1636: Bai/rdb800l:           your   resid: 4.88125e-16
+41: HB/bcsstk19:           your   resid: 1.23315e-16
+69: HB/bcsstm19:           your   resid: 0
+82: HB/bp_0:           your   resid: 0
+83: HB/bp_1000:           your   resid: 5.23294e-17
+84: HB/bp_1200:           your   resid: 6.02024e-17
+85: HB/bp_1400:           your   resid: 2.94353e-17
+86: HB/bp_1600:           your   resid: 2.79677e-17
+87: HB/bp_200:           your   resid: 9.86286e-18
+88: HB/bp_400:           your   resid: 3.01498e-17
+89: HB/bp_600:           your   resid: 2.71867e-17
+90: HB/bp_800:           your   resid: 5.23294e-17
+419: FIDAP/ex22:           your   resid: 2.76813e-16
+280: HB/young3c:           your   resid: 7.44579e-16
+422: FIDAP/ex25:           your   resid: 2.3519e-16
+328: Bai/qh882:           your   resid: 2.4476e-19
+226: HB/orsirr_2:           your   resid: 4.09705e-16
+159: HB/gr_30_30:           your   resid: 5.63094e-16
+325: Bai/pde900:           your   resid: 3.29462e-16
+2334: Fluorem/DK01R:           your   resid: 8.15595e-17
+1478: Pajek/GD01_A: 	    skip (zero pivot encountered)
+218: HB/nos2:           your   resid: 9.66367e-17
+219: HB/nos3:           your   resid: 5.18293e-16
+300: Bai/cdde1:           your   resid: 4.59106e-16
+301: Bai/cdde2:           your   resid: 7.86168e-16
+302: Bai/cdde3:           your   resid: 1.0511e-15
+303: Bai/cdde4:           your   resid: 5.99837e-16
+304: Bai/cdde5:           your   resid: 7.99886e-16
+305: Bai/cdde6:           your   resid: 8.44937e-16
+333: Bai/rdb968:           your   resid: 6.83962e-16
+424: FIDAP/ex27:           your   resid: 4.69638e-16
+270: HB/west0989:           your   resid: 4.74777e-18
+187: HB/jpwh_991:           your   resid: 5.26976e-16
+240: HB/saylr3: 	    skip (zero pivot encountered)
+242: HB/sherman1:           your   resid: 3.44859e-16
+319: Bai/olm1000:           your   resid: 4.96695e-18
+338: Bai/tub1000:           your   resid: 5.87087e-17
+diary off

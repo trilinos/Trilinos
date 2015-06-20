@@ -65,7 +65,7 @@ TableColumn::TableColumn(const Array<double>& vals,
 }
 
 
-TableColumn::TableColumn(const Array<double>& first, 
+TableColumn::TableColumn(const Array<double>& first,
                          const Array<double>& second,
                          int precision,
                          bool spaceBeforeParentheses)
@@ -75,7 +75,7 @@ TableColumn::TableColumn(const Array<double>& first,
     {
       RCP<DoubleEntry> x1 = rcp(new DoubleEntry(first[i], precision));
       RCP<DoubleEntry> x2 = rcp(new DoubleEntry(second[i], precision));
-      data_[i] 
+      data_[i]
         = rcp(new CompoundEntryWithParentheses(x1, x2,
                                                spaceBeforeParentheses));
     }

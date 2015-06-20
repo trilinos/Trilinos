@@ -47,7 +47,7 @@
  * \brief A database for FunctionObjectXMLConverters.
 */
 
-// All includes needed for convience macros below 
+// All includes needed for convience macros below
 #include "Teuchos_StandardFunctionObjectXMLConverters.hpp"
 #include "Teuchos_StandardFunctionObjects.hpp"
 #include "Teuchos_DummyObjectGetter.hpp"
@@ -55,7 +55,7 @@
 
 namespace Teuchos {
 
-/** 
+/**
  * \brief Provides ability to lookup FunctionObjectXMLConverters
  */
 class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT FunctionObjectXMLConverterDB {
@@ -64,7 +64,7 @@ public:
 
   /** \name Modifier Functions */
   //@{
-  
+
   /** \brief Add a converter to the database.
    *
    * \param function A dummy FunctionObject representing the type of function
@@ -74,13 +74,13 @@ public:
   static void addConverter(
     RCP<const FunctionObject> function,
     RCP<FunctionObjectXMLConverter> converterToAdd);
-  
+
   //@}
 
   /** \name Converter Functions */
   //@{
-  
-  /** \brief Get an appropriate FunctionObjectXMLConverter given a 
+
+  /** \brief Get an appropriate FunctionObjectXMLConverter given a
    *  FunctionObject.
    *
    * \param function The FunctionObject for which a converter is
@@ -88,7 +88,7 @@ public:
    *
    * \return A converter for the function.
    */
-  static RCP<const FunctionObjectXMLConverter> 
+  static RCP<const FunctionObjectXMLConverter>
     getConverter(const FunctionObject& function);
 
   /** \brief Get an appropriate FunctionObjectXMLConverter given a XMLObject.
@@ -97,7 +97,7 @@ public:
    *
    * @return A converter for the XMLObject.
    */
-  static RCP<const FunctionObjectXMLConverter> 
+  static RCP<const FunctionObjectXMLConverter>
     getConverter(const XMLObject& xmlObject);
 
   /**
@@ -110,14 +110,14 @@ public:
   static XMLObject convertFunctionObject(RCP<const FunctionObject> function);
 
   /**
-   * \brief Given an XMLObject, converts the XMLObject 
+   * \brief Given an XMLObject, converts the XMLObject
    * to a FunctionObject.
    *
    * \param xmlObject The XMLObject to be converted.
    *
    * \return A FunctionObject that was represented by the XML.
    */
-  static RCP<FunctionObject> convertXML(const XMLObject& xmlObject); 
+  static RCP<FunctionObject> convertXML(const XMLObject& xmlObject);
   //@}
 
   /** \name I/O Functions */
@@ -138,14 +138,14 @@ public:
       out << "\t" << it->first <<std::endl;
     }
   }
-  
+
   //@}
 
 private:
 
   /** \name Private Members */
   //@{
-  
+
   /** \brief convience class. */
   typedef std::map<std::string, RCP<FunctionObjectXMLConverter> > ConverterMap;
 
@@ -156,7 +156,7 @@ private:
    * FunctionObjects.
    */
   static ConverterMap& getConverterMap();
-  
+
   //@}
 
 };

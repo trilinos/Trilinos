@@ -193,7 +193,7 @@ TEUCHOS_UNIT_TEST( Array, braketOperatorOverhead )
     outputter.outputField(arrayRatio);
 
     outputter.nextRow();
-    
+
     arraySize *= 4;
     finalArrayBraketRatio = TEUCHOS_MIN(arrayRatio, finalArrayBraketRatio);
 
@@ -284,7 +284,7 @@ TEUCHOS_UNIT_TEST( ArrayView, braketOperatorOverhead )
     outputter.outputField(arrayviewRatio);
 
     outputter.nextRow();
-    
+
     arraySize *= 4;
     finalArrayViewBraketRatio = TEUCHOS_MIN(arrayviewRatio, finalArrayViewBraketRatio);
 
@@ -374,7 +374,7 @@ TEUCHOS_UNIT_TEST( ArrayRCP, braketOperatorOverhead )
     outputter.outputField(arrayrcpRatio);
 
     outputter.nextRow();
-    
+
     arraySize *= 4;
     finalArrayRCPBraketRatio = TEUCHOS_MIN(arrayrcpRatio, finalArrayRCPBraketRatio);
 
@@ -486,7 +486,7 @@ TEUCHOS_UNIT_TEST( Array, iteratorOverhead )
     outputter.outputField(arrayRatio);
 
     outputter.nextRow();
-    
+
     arraySize *= 4;
     finalArrayIterRatio = TEUCHOS_MIN(arrayRatio, finalArrayIterRatio);
 
@@ -582,7 +582,7 @@ TEUCHOS_UNIT_TEST( ArrayView, iteratorOverhead )
     outputter.outputField(arrayviewRatio);
 
     outputter.nextRow();
-    
+
     arraySize *= 4;
     finalArrayViewIterRatio = TEUCHOS_MIN(arrayviewRatio, finalArrayViewIterRatio);
 
@@ -677,7 +677,7 @@ TEUCHOS_UNIT_TEST( ArrayRCP, iteratorOverhead )
     outputter.outputField(arrayviewRatio);
 
     outputter.nextRow();
-    
+
     arraySize *= 4;
     finalArrayRCPIterRatio = TEUCHOS_MIN(arrayviewRatio, finalArrayRCPIterRatio);
 
@@ -772,7 +772,7 @@ TEUCHOS_UNIT_TEST( ArrayRCP, selfIteratorOverhead )
     outputter.outputField(arrayviewRatio);
 
     outputter.nextRow();
-    
+
     arraySize *= 4;
     finalArrayRCPIterRatio = TEUCHOS_MIN(arrayviewRatio, finalArrayRCPIterRatio);
 

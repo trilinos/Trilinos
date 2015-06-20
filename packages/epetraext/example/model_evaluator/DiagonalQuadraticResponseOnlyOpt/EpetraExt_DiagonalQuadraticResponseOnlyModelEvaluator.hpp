@@ -58,11 +58,11 @@ namespace EpetraExt {
 /** \brief A simple quadratic parallel response-only model evaluator.
  *
  * Represents the model:
- 
+
  \verbatim
 
     g[0] = 0.5 * (p-pt)^T * (p-pt)
- 
+
  \endverbatim
  *
  * See the function <tt>evalModel()</tt> for more details.
@@ -79,15 +79,15 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Map> get_x_map() const;
+  Teuchos::RCP<const Epetra_Map> get_x_map() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Map> get_f_map() const;
+  Teuchos::RCP<const Epetra_Map> get_f_map() const;
   /** \breif . */
-  Teuchos::RefCountPtr<const Epetra_Map> get_p_map(int l) const;
+  Teuchos::RCP<const Epetra_Map> get_p_map(int l) const;
   /** \breif . */
-  Teuchos::RefCountPtr<const Epetra_Map> get_g_map(int j) const;
+  Teuchos::RCP<const Epetra_Map> get_g_map(int j) const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Vector> get_p_init(int l) const;
+  Teuchos::RCP<const Epetra_Vector> get_p_init(int l) const;
   /** \brief . */
   InArgs createInArgs() const;
   /** \brief . */
@@ -102,14 +102,14 @@ private:
   // /////////////////////////////////////
   // Private member data
 
-  Teuchos::RefCountPtr<const Epetra_Comm> epetra_comm_;
-	Teuchos::RefCountPtr<const Epetra_Map> map_p_;
-	Teuchos::RefCountPtr<const Epetra_Map> map_g_;
+  Teuchos::RCP<const Epetra_Comm> epetra_comm_;
+        Teuchos::RCP<const Epetra_Map> map_p_;
+        Teuchos::RCP<const Epetra_Map> map_g_;
 
-	double scale_;
+        double scale_;
 
-	Teuchos::RefCountPtr<Epetra_Vector> pt_;
-	Teuchos::RefCountPtr<Epetra_Vector> p0_;
+        Teuchos::RCP<Epetra_Vector> pt_;
+        Teuchos::RCP<Epetra_Vector> p0_;
 
   // Note defined and not to be called
   DiagonalQuadraticResponseOnlyModelEvaluator();

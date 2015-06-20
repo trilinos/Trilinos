@@ -198,7 +198,7 @@
 	    \CoverFont{b}{24}{28pt}
 	    \parbox[t]{\textwidth}{
 		\raggedright
-		\@title            
+		\@title
 	    }
 
 
@@ -219,7 +219,7 @@
 	    \\
 	    Approved for public release; further dissemination unlimited.\\
 
-	    \includegraphics{snllineblk.eps}
+	    \includegraphics{snllineblk}
 	    }
 	    \end{minipage}
 
@@ -303,7 +303,7 @@
 		\vspace{\baselineskip}
 		\vspace{0.125in}
 
-		\includegraphics[width=0.75in]{DOEbwlogo.eps}
+		\includegraphics[width=0.75in]{DOEbwlogo}
 	    \end{minipage}
 	    \newpage
 	    \addtolength{\headheight}{0.5in}
@@ -494,7 +494,7 @@
 
     % ------------------------------------------------------------------------ %
     % We don't want blank lines between entries and no boldface.
-    % This is the l@section definition from article.sty. We get rid of 
+    % This is the l@section definition from article.sty. We get rid of
     % \addvspace{1.0em... and \bfseries (if relax is not set in the main doc)
     %
     \renewcommand*\l@section[2]{

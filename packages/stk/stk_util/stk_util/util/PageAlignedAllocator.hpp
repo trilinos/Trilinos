@@ -1,3 +1,36 @@
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+
 #ifndef STK_UTIL_STK_UTIL_UTIL_PAGE_ALIGNED_ALLOCATOR_HPP
 #define STK_UTIL_STK_UTIL_UTIL_PAGE_ALIGNED_ALLOCATOR_HPP
 
@@ -6,7 +39,6 @@
 #include <cstdlib>                      // for malloc, free
 #include <limits>                       // for numeric_limits
 #include <new>                          // for operator new
-#include <stk_util/util/AllocatorMemoryUsage.hpp>
 
 
 
@@ -27,13 +59,10 @@ struct page_aligned_allocator_impl
 
 } // namespace detail
 
-template <typename T, typename Tag = void>
+template <typename T>
 class page_aligned_allocator
 {
 public:
-
-  typedef Tag                         tag;
-  typedef allocator_memory_usage<tag> memory_usage;
 
   // type definitions
   typedef T              value_type;
@@ -48,7 +77,7 @@ public:
   template <typename U>
   struct rebind
   {
-    typedef page_aligned_allocator<U,tag> other;
+    typedef page_aligned_allocator<U> other;
   };
 
 
@@ -58,7 +87,7 @@ public:
   page_aligned_allocator(const page_aligned_allocator&) {}
 
   template <typename U>
-  page_aligned_allocator (const page_aligned_allocator<U,tag>&) {}
+  page_aligned_allocator (const page_aligned_allocator<U>&) {}
 
   // destructor
   ~page_aligned_allocator() {}
@@ -78,8 +107,6 @@ public:
   {
     size_t size = num * sizeof(T);
 
-    memory_usage::allocate(size);
-
     pointer ret;
 
     if (use_page_aligned_memory(size)) {
@@ -95,8 +122,6 @@ public:
   static void deallocate(pointer p, size_type num)
   {
     size_t size = num * sizeof(T);
-
-    memory_usage::deallocate(size);
 
     if (use_page_aligned_memory(size)) {
       detail::page_aligned_allocator_impl::deallocate(p, size);
@@ -128,13 +153,13 @@ private:
 };
 
 // return that all specializations of the page_aligned_allocator with the same allocator and same tag are interchangeable
-template <typename T1, typename T2, typename Tag1, typename Tag2>
-inline bool operator==(const page_aligned_allocator<T1,Tag1>&, const page_aligned_allocator<T2,Tag2>&)
-{ return boost::is_same<Tag1,Tag2>::value; }
+template <typename T1, typename T2>
+inline bool operator==(const page_aligned_allocator<T1>&, const page_aligned_allocator<T2>&)
+{ return boost::is_same<T1,T2>::value; }
 
-template <typename T1, typename T2, typename Tag1, typename Tag2>
-inline bool operator!=(const page_aligned_allocator<T1,Tag1>&, const page_aligned_allocator<T2,Tag2>&)
-{ return !boost::is_same<Tag1,Tag2>::value; }
+template <typename T1, typename T2>
+inline bool operator!=(const page_aligned_allocator<T1>&, const page_aligned_allocator<T2>&)
+{ return !boost::is_same<T1,T2>::value; }
 
 } // namespace stk
 

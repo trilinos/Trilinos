@@ -59,7 +59,7 @@ void testEvil(const T& obj)
   using EvilPack::AEvil;
   using EvilPack::BEvil;
 
-  RCP<AEvil<T> > aEvil = 
+  RCP<AEvil<T> > aEvil =
     rcp_dynamic_cast<AEvil<T> >(EvilBase<T>::createEvil("AEvil"));
   RCP<BEvil<T> > bEvil =
     rcp_dynamic_cast<BEvil<T> >(EvilBase<T>::createEvil("BEvil"));

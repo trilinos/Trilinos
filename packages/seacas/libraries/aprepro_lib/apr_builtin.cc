@@ -900,7 +900,8 @@ double do_option(char *option, double value)
   }
 
   else {
-    fprintf(stderr, "Valid arguments to option are: 'warning', 'info', 'debugging', and 'statistics'\n");
+    aprepro->error("Valid arguments to option are: 'warning', 'info', 'debugging', and 'statistics'\n",
+                   false);
   }
   return current;
 }
@@ -961,6 +962,30 @@ const char *do_notif(double x)
 const char *do_elseif(double x)
 {
   aprepro->lexer->elseif_handler(x);
+  return NULL;
+}
+
+const char *do_str_if(char *string)
+{
+  std::string test(string);
+  aprepro->lexer->if_handler(!test.empty());
+
+  return NULL;
+}
+
+const char *do_str_notif(char* string)
+{
+  std::string test(string);
+  aprepro->lexer->if_handler(test.empty());
+
+  return NULL;
+}
+
+const char*do_str_elseif(char* string)
+{
+  std::string test(string);
+  aprepro->lexer->elseif_handler(!test.empty());
+
   return NULL;
 }
 
@@ -1057,6 +1082,13 @@ const char *do_print_array(const array *my_array_data)
   }
 }
 
+const char *do_delete(char *string)
+{
+  aprepro->remove_variable(string);
+
+  return NULL;
+}
+
 array *do_make_array(double rows, double cols)
 {
   array *array_data = new array(rows, cols);
@@ -1095,7 +1127,7 @@ array *do_csv_array1(const char *filename)
 
 array *do_csv_array(const char *filename, double skip)
 {
-  int rows_to_skip = (int)skip;
+  size_t rows_to_skip = (size_t)skip;
   
   const char *delim = ",\t ";
   std::fstream *file = aprepro->open_file(filename, "r");
@@ -1135,7 +1167,7 @@ array *do_csv_array(const char *filename, double skip)
       }
     }
   }
-  assert((int)rows - rows_to_skip == array_data->rows);
+  assert(rows - rows_to_skip == (size_t)array_data->rows);
   return array_data;
 }
 

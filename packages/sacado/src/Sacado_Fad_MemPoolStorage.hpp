@@ -48,6 +48,19 @@ namespace Sacado {
     template <typename T, bool isScalar = IsScalarType<T>::value>
     struct mp_array {
 
+      //! Get memory for new array of length \c sz
+      static inline T* get(int sz, MemPool* pool) {
+        if (sz) {
+          T* m = static_cast<T*>(pool->alloc());
+          T* p = m;
+          for (int i=0; i<sz; ++i)
+            new (p++) T();
+          return m;
+        }
+        else
+          return NULL;
+      }
+
       //! Get memory for new array of length \c sz and fill with zeros
       static inline T* get_and_fill(int sz, MemPool* pool) {
         if (sz) {
@@ -105,6 +118,16 @@ namespace Sacado {
     template <typename T>
     struct mp_array<T,true> {
 
+      //! Get memory for new array of length \c sz
+      static inline T* get(int sz, MemPool* pool) {
+        if (sz) {
+          T* m = static_cast<T*>(pool->alloc());
+          return m;
+        }
+        else
+          return NULL;
+      }
+
       //! Get memory for new array of length \c sz and fill with zeros
       static inline T* get_and_fill(int sz, MemPool* pool) {
         if (sz) {
@@ -155,17 +178,23 @@ namespace Sacado {
 
     public:
 
+      typedef T value_type;
+
       //! Default constructor
-      MemPoolStorage(const T & x) :
+      template <typename S>
+      MemPoolStorage(const S & x, SACADO_ENABLE_VALUE_CTOR_DECL) :
         val_(x), sz_(0), len_(0), dx_(NULL), myPool_(defaultPool_) {}
 
       //! Constructor with size \c sz
       /*!
        * Initializes derivative array 0 of length \c sz
        */
-      MemPoolStorage(const int sz, const T & x) :
+      MemPoolStorage(const int sz, const T & x, const DerivInit zero_out = InitDerivArray) :
         val_(x), sz_(sz), len_(sz), myPool_(defaultPool_) {
-        dx_ = mp_array<T>::get_and_fill(sz_, myPool_);
+        if (zero_out == InitDerivArray)
+          dx_ = mp_array<T>::get_and_fill(sz_, myPool_);
+        else
+          dx_ = mp_array<T>::get(sz_, myPool_);
       }
 
       //! Copy constructor
@@ -182,22 +211,23 @@ namespace Sacado {
 
       //! Assignment
       MemPoolStorage& operator=(const MemPoolStorage& x) {
-        val_ = x.val_;
-        if (sz_ != x.sz_) {
-          sz_ = x.sz_;
-          if (x.sz_ > len_) {
-            if (len_ != 0)
-              mp_array<T>::destroy_and_release(dx_, len_, myPool_);
-            len_ = x.sz_;
-            myPool_ = x.myPool_;
-            dx_ = mp_array<T>::get_and_fill(x.dx_, sz_, myPool_);
+        if (this != &x) {
+          val_ = x.val_;
+          if (sz_ != x.sz_) {
+            sz_ = x.sz_;
+            if (x.sz_ > len_) {
+              if (len_ != 0)
+                mp_array<T>::destroy_and_release(dx_, len_, myPool_);
+              len_ = x.sz_;
+              myPool_ = x.myPool_;
+              dx_ = mp_array<T>::get_and_fill(x.dx_, sz_, myPool_);
+            }
+            else
+              mp_array<T>::copy(x.dx_, dx_, sz_);
           }
           else
             mp_array<T>::copy(x.dx_, dx_, sz_);
         }
-        else
-          mp_array<T>::copy(x.dx_, dx_, sz_);
-
         return *this;
       }
 

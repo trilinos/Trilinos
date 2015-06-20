@@ -94,7 +94,9 @@ namespace MueLu {
 
        @ingroup MueLuBaseClasses
    */
-  template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
+  template <class LocalOrdinal = int,
+            class GlobalOrdinal = LocalOrdinal,
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class AggregationAlgorithmBase : public BaseClass {
 #undef MUELU_AGGREGATIONALGORITHMBASE_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"

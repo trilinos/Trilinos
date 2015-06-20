@@ -54,7 +54,7 @@
 
 
 /**
-* When parameterlists get written or read from XML, any validators 
+* When parameterlists get written or read from XML, any validators
 * associated with a parameter entry go with it. If you're using a
 * validator that isn't part of the standard set of validators, then
 * you'll get an error. You need to add a converter for it.
@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
       );
   My_List.set(
     "Solver"
-    ,"GMRES" 
+    ,"GMRES"
     ,"The type of solver to use."
     ,solverValidator
     );
@@ -89,11 +89,11 @@ int main(int argc, char* argv[])
   //You'll have to make you're own converter for it by subclassing the ValidatorXMLConverter
   //class and then use the TEUCHOS_ADD_VALIDATOR_CONVERTER convience macro.
 
-  
+
    //Now we'll write it out to xml.
   Teuchos::writeParameterListToXmlFile(My_List, "custom_validator_test_list.xml");
   //Then read it in to a new list.
- 
+
   Teuchos::writeParameterListToXmlOStream(My_List, std::cout);
   Teuchos::RCP<Teuchos::ParameterList> readIn = Teuchos::getParametersFromXmlFile("custom_validator_test_list.xml");
 

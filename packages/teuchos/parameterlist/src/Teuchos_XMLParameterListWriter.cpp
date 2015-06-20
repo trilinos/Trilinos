@@ -53,25 +53,25 @@ XMLParameterListWriter::XMLParameterListWriter()
 {;}
 
 
-XMLObject 
+XMLObject
 XMLParameterListWriter::toXML(
-  const ParameterList& p, 
+  const ParameterList& p,
   RCP<const DependencySheet> depSheet) const
 {
   EntryIDsMap entryIDsMap;
   ValidatortoIDMap validatorIDsMap;
   ParameterEntry::ParameterEntryID peIDCounter = 0;
 
-  //We build an initial map full of validators that are located in the 
+  //We build an initial map full of validators that are located in the
   //parameter list. That way we can convert the parameter entries.
   buildInitialValidatorMap(p, validatorIDsMap);
 
-  XMLObject toReturn = 
+  XMLObject toReturn =
     convertParameterList(p, peIDCounter, entryIDsMap, validatorIDsMap);
   toReturn.addAttribute(getNameAttributeName(), p.name());
 
   if(!depSheet.is_null()){
-    XMLObject deps = 
+    XMLObject deps =
       convertDependencies(depSheet, entryIDsMap, validatorIDsMap);
     toReturn.addChild(deps);
   }
@@ -125,13 +125,13 @@ XMLObject XMLParameterListWriter::convertParameterList(
   const ValidatortoIDMap& validatorIDsMap) const
 {
   XMLObject rtn(getParameterListTagName());
-  
+
   for (ParameterList::ConstIterator i=p.begin(); i!=p.end(); ++i){
     RCP<const ParameterEntry> entry = p.getEntryRCP(i->first);
     if(entry->isList()){
       XMLObject newPL = convertParameterList(
-        getValue<ParameterList>(entry), 
-        idCounter, 
+        getValue<ParameterList>(entry),
+        idCounter,
         entryIDsMap,
         validatorIDsMap);
       newPL.addAttribute(
@@ -152,7 +152,7 @@ XMLObject XMLParameterListWriter::convertParameterList(
   return rtn;
 }
 
-XMLObject 
+XMLObject
 XMLParameterListWriter::convertDependencies(
   RCP<const DependencySheet> depSheet,
   const EntryIDsMap& entryIDsMap,
@@ -160,7 +160,7 @@ XMLParameterListWriter::convertDependencies(
 {
   XMLObject toReturn(getDependenciesTagName());
   toReturn.addAttribute(
-    DependencySheet::getNameAttributeName(), 
+    DependencySheet::getNameAttributeName(),
     depSheet->getName()
   );
 

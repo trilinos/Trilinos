@@ -49,9 +49,9 @@
 
 namespace Amesos2 {
 
-  template <class S, class LO, class GO, class N, class LMO>
+  template <class S, class LO, class GO, class N>
   LO get_mp_vector_size(
-    const Teuchos::RCP<const Tpetra::CrsMatrix<Sacado::MP::Vector<S>, LO, GO, N, LMO> >& A = Teuchos::null,
+    const Teuchos::RCP<const Tpetra::CrsMatrix<Sacado::MP::Vector<S>, LO, GO, N> >& A = Teuchos::null,
     const Teuchos::RCP<Tpetra::MultiVector<Sacado::MP::Vector<S>, LO, GO, N> >& X = Teuchos::null,
     const Teuchos::RCP<const Tpetra::MultiVector<Sacado::MP::Vector<S>, LO, GO, N> >& B = Teuchos::null)
   {
@@ -60,9 +60,9 @@ namespace Amesos2 {
   }
 
 #if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  template <class S, class LO, class GO, class D, class LMO>
+  template <class S, class LO, class GO, class D>
   LO get_mp_vector_size(
-    const Teuchos::RCP<const Tpetra::CrsMatrix<Sacado::MP::Vector<S>, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D>, LMO> >& A = Teuchos::null,
+    const Teuchos::RCP<const Tpetra::CrsMatrix<Sacado::MP::Vector<S>, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D> > >& A = Teuchos::null,
     const Teuchos::RCP<Tpetra::MultiVector<Sacado::MP::Vector<S>, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D> > >& X = Teuchos::null,
     const Teuchos::RCP<const Tpetra::MultiVector<Sacado::MP::Vector<S>, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D> > >& B = Teuchos::null)
   {
@@ -86,13 +86,12 @@ namespace Amesos2 {
   /// these matrices and vectors into ones with a standard (e.g., double)
   /// scalar type.
   template <class Storage, class LocalOrdinal, class GlobalOrdinal, class Node,
-            class LMO, template<class,class> class ConcreteSolver>
+            template<class,class> class ConcreteSolver>
   class MPVectorSolverAdapter :
     public Solver< Tpetra::CrsMatrix<Sacado::MP::Vector<Storage>,
                                      LocalOrdinal,
                                      GlobalOrdinal,
-                                     Node,
-                                     LMO>,
+                                     Node>,
                    Tpetra::MultiVector<Sacado::MP::Vector<Storage>,
                                        LocalOrdinal,
                                        GlobalOrdinal,
@@ -102,7 +101,7 @@ namespace Amesos2 {
   public:
 
     typedef Sacado::MP::Vector<Storage> Scalar;
-    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LMO> Matrix;
+    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Matrix;
     typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
 
     typedef typename Scalar::value_type BaseScalar;
@@ -199,46 +198,52 @@ namespace Amesos2 {
     }
 
 
-    /** \brief Solve \f$ A X = B\f$ using the given X and B vectors.
+    /** \brief Solve \f$ A X = B\f$ using the given \c XX and \c BB
+     *   (multi)vectors.
      *
-     * This overload of solve uses the given X and B vectors when
-     * solving.  This X and B are used in place of any X and B that
-     * were given upon construction of the Amesos2 solver instance and
-     * are used only for this solve.
+     * This overload of solve uses the given \c XX and \c BB
+     * (multi)vectors when solving.  These \c XX and \c BB
+     * (multi)vectors are used in place of any X and B that were given
+     * upon construction of the Amesos2 solver instance.  \c XX and
+     * \c BB are used only for this solve.
      *
      * If a permanent change of X and B are required, see the setX()
      * and setB() methods.
      *
      * \post
-     *  - The (multi)vector \c X contains the solution to the system
-     *  - The \c X and \c B given at construction time (if any) are unchanged.
+     *  - The (multi)vector \c XX contains the solution to the system
+     *  - The (multi)vectors \c X and \c B given at construction time
+     *    (if any) are unchanged.
      */
-    virtual void solve(const Teuchos::Ptr<Vector>       X,
-                       const Teuchos::Ptr<const Vector> B) const {
+    virtual void solve(const Teuchos::Ptr<Vector>       XX,
+                       const Teuchos::Ptr<const Vector> BB) const {
       flat_solver->solve(
-        Stokhos::create_flat_vector_view(*X, flat_X_map).get(),
-        Stokhos::create_flat_vector_view(*B, flat_B_map).get() );
+        Stokhos::create_flat_vector_view(*XX, flat_X_map).get(),
+        Stokhos::create_flat_vector_view(*BB, flat_B_map).get() );
     }
 
 
-    /** \brief Solve \f$ A X = B\f$ using the given X and B vectors.
+    /** \brief Solve \f$ A X = B\f$ using the given \c XX and \c BB
+     *   (multi)vectors.
      *
-     * This overload of solve uses the given X and B vectors when
-     * solving.  This X and B are used in place of any X and B that
-     * were given upon construction of the Amesos2 solver instance and
-     * are used only for this solve.
+     * This overload of solve uses the given \c XX and \c BB
+     * (multi)vectors when solving.  These \c XX and \c BB
+     * (multi)vectors are used in place of any X and B that were given
+     * upon construction of the Amesos2 solver instance.  \c XX and
+     * \c BB are used only for this solve.
      *
      * If a permanent change of X and B are required, see the setX()
      * and setB() methods.
      *
      * \post
-     *  - The (multi)vector \c X contains the solution to the system
-     *  - The \c X and \c B given at construction time (if any) are unchanged.
+     *  - The (multi)vector \c XX contains the solution to the system
+     *  - The (multi)vectors \c X and \c B given at construction time
+     *    (if any) are unchanged.
      */
-    virtual void solve(Vector* X, const Vector* B) const {
+    virtual void solve(Vector* XX, const Vector* BB) const {
       flat_solver->solve(
-        Stokhos::create_flat_vector_view(*X, flat_X_map).get(),
-        Stokhos::create_flat_vector_view(*B, flat_B_map).get() );
+        Stokhos::create_flat_vector_view(*XX, flat_X_map).get(),
+        Stokhos::create_flat_vector_view(*BB, flat_B_map).get() );
     }
 
     //@} End Mathematical Functions
@@ -506,23 +511,16 @@ namespace Amesos2 {
 
   };
 
-  // Specialization of create_solver_with_supported_type for
-  // Sacado::MP::Vector where we create MPVectorSolverAdapter wrapping
-  // each solver
   template < template <class,class> class ConcreteSolver,
-             class ST, class LO, class GO, class NO, class LMO >
-  struct create_solver_with_supported_type<
-    ConcreteSolver,
-    Tpetra::CrsMatrix<Sacado::MP::Vector<ST>,LO,GO,NO,LMO>,
-    Tpetra::MultiVector<Sacado::MP::Vector<ST>,LO,GO,NO> > {
+             class ST, class LO, class GO, class NO >
+  struct create_mp_vector_solver_impl {
     typedef Sacado::MP::Vector<ST> SC;
-    typedef Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> Matrix;
+    typedef Tpetra::CrsMatrix<SC,LO,GO,NO> Matrix;
     typedef Tpetra::MultiVector<SC,LO,GO,NO> Vector;
     static Teuchos::RCP<Solver<Matrix,Vector> >
     apply(Teuchos::RCP<const Matrix> A,
           Teuchos::RCP<Vector>       X,
-          Teuchos::RCP<const Vector> B )
-    {
+          Teuchos::RCP<const Vector> B ) {
       ctassert<
         Meta::is_same<
           typename MatrixTraits<Matrix>::scalar_t,
@@ -532,9 +530,20 @@ namespace Amesos2 {
       (void)same_scalar_assertion; // This stops the compiler from warning about unused declared variables
 
       // If our assertion did not fail, then create and return a new solver
-      return Teuchos::rcp( new MPVectorSolverAdapter<ST,LO,GO,NO,LMO,ConcreteSolver>(A, X, B) );
+      return Teuchos::rcp( new MPVectorSolverAdapter<ST,LO,GO,NO,ConcreteSolver>(A, X, B) );
     }
   };
+
+  // Specialization of create_solver_with_supported_type for
+  // Sacado::MP::Vector where we create MPVectorSolverAdapter wrapping
+  // each solver
+  template < template <class,class> class ConcreteSolver,
+             class ST, class LO, class GO, class NO >
+  struct create_solver_with_supported_type<
+    ConcreteSolver,
+    Tpetra::CrsMatrix<Sacado::MP::Vector<ST>,LO,GO,NO>,
+    Tpetra::MultiVector<Sacado::MP::Vector<ST>,LO,GO,NO> > :
+    public create_mp_vector_solver_impl<ConcreteSolver, ST, LO, GO, NO> {};
 
   // Specialization for solver_supports_scalar for Sacado::MP::Vector<Storage>
   // value == true if and only if

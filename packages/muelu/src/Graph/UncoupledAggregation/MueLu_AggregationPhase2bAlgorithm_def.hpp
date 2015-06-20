@@ -62,8 +62,8 @@ namespace MueLu {
 
   // Try to stick unaggregated nodes into a neighboring aggregate if they are
   // not already too big
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void AggregationPhase2bAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void AggregationPhase2bAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
 
     const LO  numRows = graph.GetNodeNumVertices();
@@ -83,6 +83,10 @@ namespace MueLu {
 
     // We do this cycle twice.
     // I don't know why, but ML does it too
+    // taw: by running the aggregation routine more than once there is a chance that also
+    // non-aggregated nodes with a node distance of two are added to existing aggregates.
+    // Assuming that the aggregate size is 3 in each direction running the algorithm only twice
+    // should be sufficient.
     for (int k = 0; k < 2; k++) {
       for (LO i = 0; i < numRows; i++) {
         if (aggStat[i] != READY)

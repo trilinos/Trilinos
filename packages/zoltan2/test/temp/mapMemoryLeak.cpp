@@ -9,9 +9,9 @@
 #include <sstream>
 #include <iostream>
 
-typedef int LO;
-typedef int GO;
-typedef double Scalar;
+typedef int z2TestLO;
+typedef int z2TestGO;
+typedef double z2TestScalar;
 
 /////////////////////////////////////////////////////////////////////////
 /* On a linux node, find the total memory currently allocated
@@ -75,14 +75,14 @@ int main(int narg, char **arg)
   if (nprocs != 4)
       std::cout << "Run with 4 MPI ranks " << std::endl;
 
-  typedef Tpetra::Map<LO, GO> map_t;
-  GO numGlobalCoords = 4000000;
-  LO numLocalCoords = 1000000;
+  typedef Tpetra::Map<z2TestLO, z2TestGO> map_t;
+  z2TestGO numGlobalCoords = 4000000;
+  z2TestLO numLocalCoords = 1000000;
   Teuchos::ParameterList myParams("testParameterList");
   myParams.set("memory_procs", "0");
   myParams.set("memory_output_stream", "std::cout");
 
-  LO newnumLocalCoords = 1000000;
+  z2TestLO newnumLocalCoords = 1000000;
   if (me == 0)
       newnumLocalCoords = 999999;
   else if (me == 1)
@@ -90,7 +90,7 @@ int main(int narg, char **arg)
   else
       newnumLocalCoords = 1000000;
 
-  typedef Tpetra::MultiVector<Scalar, LO, GO> mvector_t;
+  typedef Tpetra::MultiVector<z2TestScalar, z2TestLO, z2TestGO> mvector_t;
 
   long before = getProcessKilobytes();
   if (me == 0)
@@ -111,8 +111,8 @@ int main(int narg, char **arg)
       Teuchos::RCP<const map_t> newTmap = rcp(new map_t(numGlobalCoords, 
         newnumLocalCoords, 0, comm));
       Teuchos::RCP<mvector_t> newMvector = rcp(new mvector_t(tmap, 3, true));
-      Teuchos::RCP<Tpetra::Import<LO, GO> > importer = rcp(
-        new Tpetra::Import<LO, GO>(tmap, newTmap));
+      Teuchos::RCP<Tpetra::Import<z2TestLO, z2TestGO> > importer = rcp(
+        new Tpetra::Import<z2TestLO, z2TestGO>(tmap, newTmap));
       //defEnv->memory("Inside the loop after i = 0");
   }
 

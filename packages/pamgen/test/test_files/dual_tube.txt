@@ -1,0 +1,32 @@
+
+  mesh
+    radial trisection
+      trisection blocks, 1
+      transition radius, 0.0525
+      numz 1
+        zblock 1 0.006 first size 0.001666666667
+      numr 5
+        rblock 1 0.07 first size 0.001666666667
+        rblock 2 0.005 first size 0.001666666667 
+        rblock 3 0.035 first size 0.001666666667
+        rblock 4 0.005 first size 0.001666666667
+        rblock 5 0.03 first size 0.001666666667
+      numa 1
+        ablock 1 20 interval 24
+    end
+
+    set assign
+      nodeset,zaxis,20
+      nodeset,ihi,10
+      nodeset,jhi,30
+      nodeset,jlo,40
+      nodeset,khi,50
+      nodeset,klo,60
+      sideset,ihi,10
+      sideset,jhi,30
+      sideset,jlo,40
+      sideset,khi,50
+      sideset,klo,60
+    end
+  end
+ 

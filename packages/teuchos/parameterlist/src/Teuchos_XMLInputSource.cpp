@@ -61,7 +61,7 @@ XMLObject XMLInputSource::getObject() const
 
 	XML_Parser parser = XML_ParserCreate(NULL);
 
-	XML_SetElementHandler(parser, expatStartElementHandler, 
+	XML_SetElementHandler(parser, expatStartElementHandler,
 												expatEndElementHandler);
 
 	XML_SetCharacterDataHandler(parser, expatCharacterDataHandler);
@@ -77,7 +77,7 @@ XMLObject XMLInputSource::getObject() const
 	while (!done)
 		{
 			unsigned int nRead = s->readBytes(buf, bufsize);
-			if (nRead < bufsize) 
+			if (nRead < bufsize)
 				{
 					done = true;
 				}
@@ -85,11 +85,11 @@ XMLObject XMLInputSource::getObject() const
 		}
 
 	return handler->getObject();
-  
+
 #else
 
   XMLParser parser(stream());
-  
+
   return parser.parse();
 
 #endif

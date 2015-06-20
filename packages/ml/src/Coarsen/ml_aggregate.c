@@ -103,6 +103,7 @@ int ML_Aggregate_Create( ML_Aggregate **ag )
    (*ag)->cheap_minimizing_energy    = 0;
    (*ag)->coarsen_rate               = -1;
    (*ag)->semicoarsen_levels         = -1;
+   (*ag)->semicoarsen_coordinate     = 'z';
 
 
 #if defined(AZTEC) && defined(ML_AGGR_READINFO)

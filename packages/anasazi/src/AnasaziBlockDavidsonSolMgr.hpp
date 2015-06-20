@@ -114,7 +114,6 @@ class BlockDavidsonSolMgr : public SolverManager<ScalarType,MV,OP> {
 
   private:
     typedef MultiVecTraits<ScalarType,MV> MVT;
-    typedef MultiVecTraitsExt<ScalarType,MV> MVText;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -240,7 +239,7 @@ class BlockDavidsonSolMgr : public SolverManager<ScalarType,MV,OP> {
   int lockQuorum_;
   bool inSituRestart_;
   int numRestartBlocks_;
-  enum StatusTestResNorm<ScalarType,MV,OP>::ResType convNorm_, lockNorm_;
+  enum ResType convNorm_, lockNorm_;
 
   Teuchos::RCP<Teuchos::Time> _timerSolve, _timerRestarting, _timerLocking;
 
@@ -300,10 +299,10 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
   relconvtol_ = pl.get("Relative Convergence Tolerance",relconvtol_);
   strtmp = pl.get("Convergence Norm",std::string("2"));
   if (strtmp == "2") {
-    convNorm_ = StatusTestResNorm<ScalarType,MV,OP>::RES_2NORM;
+    convNorm_ = RES_2NORM;
   }
   else if (strtmp == "M") {
-    convNorm_ = StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH;
+    convNorm_ = RES_ORTH;
   }
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
@@ -318,10 +317,10 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
   locktol_ = pl.get("Locking Tolerance",locktol_);
   strtmp = pl.get("Locking Norm",std::string("2"));
   if (strtmp == "2") {
-    lockNorm_ = StatusTestResNorm<ScalarType,MV,OP>::RES_2NORM;
+    lockNorm_ = RES_2NORM;
   }
   else if (strtmp == "M") {
-    lockNorm_ = StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH;
+    lockNorm_ = RES_ORTH;
   }
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
@@ -354,7 +353,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
   TEUCHOS_TEST_FOR_EXCEPTION(maxLocked_ + blockSize_ < problem_->getNEV(), 
                      std::invalid_argument,
                      "Anasazi::BlockDavidsonSolMgr: Not enough storage space for requested number of eigenpairs.");
-  TEUCHOS_TEST_FOR_EXCEPTION(static_cast<ptrdiff_t>(numBlocks_)*blockSize_ + maxLocked_ > MVText::GetGlobalLength(*problem_->getInitVec()),
+  TEUCHOS_TEST_FOR_EXCEPTION(static_cast<ptrdiff_t>(numBlocks_)*blockSize_ + maxLocked_ > MVT::GetGlobalLength(*problem_->getInitVec()),
                      std::invalid_argument,
                      "Anasazi::BlockDavidsonSolMgr: Potentially impossible orthogonality requests. Reduce basis size or locking size.");
 

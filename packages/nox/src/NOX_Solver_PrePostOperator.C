@@ -56,11 +56,13 @@
 
 
 // Disallowed
-NOX::Solver::PrePostOperator::PrePostOperator()
+NOX::Solver::PrePostOperator::PrePostOperator():
+  havePrePostOperator(false)
 { }
 
 // Disallowed
-NOX::Solver::PrePostOperator::PrePostOperator(const PrePostOperator& p)
+NOX::Solver::PrePostOperator::PrePostOperator(const PrePostOperator& p):
+  havePrePostOperator(false)
 { }
 
 // Disallowed

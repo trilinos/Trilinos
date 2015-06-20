@@ -241,7 +241,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_DistObject: public Epetra_Object, public virt
                              int NumPermuteIDs,
                              int * PermuteToLIDs,
                              int * PermuteFromLIDs,
-                             const Epetra_OffsetIndex * Indexor) = 0;
+                             const Epetra_OffsetIndex * Indexor,
+                             Epetra_CombineMode CombineMode = Zero) = 0;
 
   //! Perform any packing or preparation required for call to DoTransfer().
   virtual int PackAndPrepare(const Epetra_SrcDistObject& Source,

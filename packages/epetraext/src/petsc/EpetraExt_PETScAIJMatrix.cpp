@@ -57,14 +57,26 @@
 
 //==============================================================================
 Epetra_PETScAIJMatrix::Epetra_PETScAIJMatrix(Mat Amat)
-  : Epetra_Object("Epetra::PETScAIJMatrix"),
-    Amat_(Amat),
+  : Amat_(Amat),
+    Epetra_Object("Epetra::PETScAIJMatrix"),
     Values_(0),
     Indices_(0),
     MaxNumEntries_(-1),
     ImportVector_(0),
     NormInf_(-1.0),
-    NormOne_(-1.0)
+    NormOne_(-1.0),
+    Comm_(0),
+    DomainMap_(0),
+    ColMap_(0),
+    Importer_(0),
+    NumGlobalNonzeros_(0),
+    NumMyNonzeros_(0),
+    NumMyRows_(0),
+    NumGlobalRows_(0),
+    NumMyCols_(0),
+    PetscRowStart_(0),
+    PetscRowEnd_(0),  
+    MatType_(" ")
 {
 #ifdef HAVE_MPI
   MPI_Comm comm;
@@ -75,6 +87,7 @@ Epetra_PETScAIJMatrix::Epetra_PETScAIJMatrix(Mat Amat)
 #endif  
   int ierr;
   char errMsg[80];
+  //MatGetType(Amat, const_cast<const char**>(&MatType_)); 
   MatGetType(Amat, &MatType_);
   if ( strcmp(MatType_,MATSEQAIJ) != 0 && strcmp(MatType_,MATMPIAIJ) != 0 ) {
     sprintf(errMsg,"PETSc matrix must be either seqaij or mpiaij (but it is %s)",MatType_);
@@ -165,9 +178,9 @@ Epetra_PETScAIJMatrix::~Epetra_PETScAIJMatrix(){
 
 //==========================================================================
 
-extern "C" {
-  PetscErrorCode CreateColmap_MPIAIJ_Private(Mat);
-}
+//extern "C" {
+  PetscErrorCode MatCreateColmap_MPIAIJ_Private(Mat);
+//}
 
 int Epetra_PETScAIJMatrix::ExtractMyRowCopy(int Row, int Length, int & NumEntries, double * Values,
                      int * Indices) const 
@@ -189,7 +202,7 @@ int Epetra_PETScAIJMatrix::ExtractMyRowCopy(int Row, int Length, int & NumEntrie
     lcols = (PetscInt *) malloc(nz * sizeof(int));
     alloc=true;
     if (!aij->colmap) {
-      ierr = CreateColmap_MPIAIJ_Private(Amat_);CHKERRQ(ierr);
+      ierr = MatCreateColmap_MPIAIJ_Private(Amat_);CHKERRQ(ierr);
     }
     /*
       A PETSc parallel aij matrix uses two matrices to represent the local rows.
@@ -269,7 +282,7 @@ int Epetra_PETScAIJMatrix::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const
   VecGetLocalSize(petscDiag,&length);
   for (int i=0; i<length; i++) Diagonal[i] = vals[i];
   VecRestoreArray(petscDiag,&vals);
-  VecDestroy(petscDiag);
+  VecDestroy(&petscDiag);
   return(0);
 }
 
@@ -302,11 +315,11 @@ int Epetra_PETScAIJMatrix::Multiply(bool TransA,
   int ierr;
   for (int i=0; i<NumVectors; i++) {
 #   ifdef HAVE_MPI
-    ierr=VecCreateMPIWithArray(Comm_->Comm(),X.MyLength(),X.GlobalLength(),xptrs[i],&petscX); CHKERRQ(ierr);
-    ierr=VecCreateMPIWithArray(Comm_->Comm(),Y.MyLength(),Y.GlobalLength(),yptrs[i],&petscY); CHKERRQ(ierr);
+    ierr=VecCreateMPIWithArray(Comm_->Comm(),1,X.MyLength(),X.GlobalLength(),xptrs[i],&petscX); CHKERRQ(ierr);
+    ierr=VecCreateMPIWithArray(Comm_->Comm(),1, Y.MyLength(),Y.GlobalLength(),yptrs[i],&petscY); CHKERRQ(ierr);
 #   else //FIXME  untested
-    ierr=VecCreateSeqWithArray(Comm_->Comm(),X.MyLength(),X.GlobalLength(),xptrs[i],&petscX); CHKERRQ(ierr);
-    ierr=VecCreateSeqWithArray(Comm_->Comm(),Y.MyLength(),Y.GlobalLength(),yptrs[i],&petscY); CHKERRQ(ierr);
+    ierr=VecCreateSeqWithArray(Comm_->Comm(),1, X.MyLength(),X.GlobalLength(),xptrs[i],&petscX); CHKERRQ(ierr);
+    ierr=VecCreateSeqWithArray(Comm_->Comm(),1, Y.MyLength(),Y.GlobalLength(),yptrs[i],&petscY); CHKERRQ(ierr);
 #   endif
 
     ierr = MatMult(Amat_,petscX,petscY);CHKERRQ(ierr);
@@ -317,7 +330,7 @@ int Epetra_PETScAIJMatrix::Multiply(bool TransA,
     ierr = VecRestoreArray(petscY,&vals);CHKERRQ(ierr);
   }
 
-  VecDestroy(petscX); VecDestroy(petscY);
+  VecDestroy(&petscX); VecDestroy(&petscY);
   
   double flops = NumGlobalNonzeros();
   flops *= 2.0;
@@ -456,14 +469,14 @@ int Epetra_PETScAIJMatrix::LeftScale(const Epetra_Vector& X) {
   X.ExtractView(&xptr);
   Vec petscX;
 # ifdef HAVE_MPI
-  int ierr=VecCreateMPIWithArray(Comm_->Comm(),X.MyLength(),X.GlobalLength(),xptr,&petscX); CHKERRQ(ierr);
+  int ierr=VecCreateMPIWithArray(Comm_->Comm(),1, X.MyLength(),X.GlobalLength(),xptr,&petscX); CHKERRQ(ierr);
 # else //FIXME  untested
-  int ierr=VecCreateSeqWithArray(Comm_->Comm(),X.MyLength(),X.GlobalLength(),xptr,&petscX); CHKERRQ(ierr);
+  int ierr=VecCreateSeqWithArray(Comm_->Comm(),1, X.MyLength(),X.GlobalLength(),xptr,&petscX); CHKERRQ(ierr);
 # endif
 
   MatDiagonalScale(Amat_, petscX, PETSC_NULL);
 
-  ierr=VecDestroy(petscX); CHKERRQ(ierr);
+  ierr=VecDestroy(&petscX); CHKERRQ(ierr);
   return(0);
 } //LeftScale()
 
@@ -476,14 +489,14 @@ int Epetra_PETScAIJMatrix::RightScale(const Epetra_Vector& X) {
   X.ExtractView(&xptr);
   Vec petscX;
 # ifdef HAVE_MPI
-  int ierr=VecCreateMPIWithArray(Comm_->Comm(),X.MyLength(),X.GlobalLength(),xptr,&petscX); CHKERRQ(ierr);
+  int ierr=VecCreateMPIWithArray(Comm_->Comm(),1,X.MyLength(),X.GlobalLength(),xptr,&petscX); CHKERRQ(ierr);
 # else //FIXME  untested
-  int ierr=VecCreateSeqWithArray(Comm_->Comm(),X.MyLength(),X.GlobalLength(),xptr,&petscX); CHKERRQ(ierr);
+  int ierr=VecCreateSeqWithArray(Comm_->Comm(),1,X.MyLength(),X.GlobalLength(),xptr,&petscX); CHKERRQ(ierr);
 # endif
 
   MatDiagonalScale(Amat_, PETSC_NULL, petscX);
 
-  ierr=VecDestroy(petscX); CHKERRQ(ierr);
+  ierr=VecDestroy(&petscX); CHKERRQ(ierr);
   return(0);
 } //RightScale()
 

@@ -1,0 +1,114 @@
+A = mmread('/home/srajama/matrices/SivaTestMatrices/TL1X.d/Transformed_Matrix99.mm');
+[L, U, P, Q] = lu (A) ;
+B = P * A * Q ;
+ops
+{??? Undefined function or variable 'ops'.
+} 
+opts
+{??? Undefined function or variable 'opts'.
+} 
+opts.ordering = 2
+
+opts = 
+
+    ordering: 2
+
+opts.btf = 0
+
+opts = 
+
+    ordering: 2
+         btf: 0
+
+tic ; [LU, info] = klu(B, opts) ; klu_t = toc
+
+klu_t =
+
+    0.0014
+
+tic ; [L1, U1, P1] = mylu(B) ; mylu_t = toc
+
+mylu_t =
+
+    0.0021
+
+
+A = mmread('/home/srajama/matrices/SivaTestMatrices/MCNC_BJT_OPAMPAL.d/Transformed_Matrix1459.mm');
+[L, U, P, Q] = lu (A) ;
+B = P * A * Q ;
+tic ; [LU, info] = klu(B, opts) ; klu_t = toc
+
+klu_t =
+
+   9.2700e-04
+
+tic ; [L1, U1, P1] = mylu(B) ; mylu_t = toc
+
+mylu_t =
+
+   6.8800e-04
+
+
+A = mmread('/home/srajama/matrices/SivaTestMatrices/HOMOTOPY_bjt_expord.d/Transformed_Matrix363.mm');
+[L, U, P, Q] = lu (A) ;
+B = P * A * Q ;
+tic ; [LU, info] = klu(B, opts) ; klu_t = toc
+
+klu_t =
+
+   6.6200e-04
+
+tic ; [L1, U1, P1] = mylu(B) ; mylu_t = toc
+
+mylu_t =
+
+   5.9500e-04
+
+
+A = mmread('/home/srajama/matrices/SivaTestMatrices/Fastrack_LAM_RING/Transformed_Matrix4265.mm');
+[L, U, P, Q] = lu (A) ;
+B = P * A * Q ;
+tic ; [LU, info] = klu(B, opts) ; klu_t = toc
+
+klu_t =
+
+   4.6300e-04
+
+tic ; [L1, U1, P1] = mylu(B) ; mylu_t = toc
+
+mylu_t =
+
+   3.8400e-04
+
+A = mmread('/home/srajama/matrices/SivaTestMatrices/BUG_846_ring51_loca.d/Transformed_Matrix381.mm');
+[L, U, P, Q] = lu (A) ;
+B = P * A * Q ;
+tic ; [LU, info] = klu(B, opts) ; klu_t = toc
+
+klu_t =
+
+   5.1900e-04
+
+tic ; [L1, U1, P1] = mylu(B) ; mylu_t = toc
+
+mylu_t =
+
+   6.2900e-04
+
+
+A = mmread('/home/srajama/matrices/SivaTestMatrices/BUG_1301_rlc_tranline.d/Transformed_Matrix383.mm');
+[L, U, P, Q] = lu (A) ;
+B = P * A * Q ;
+tic ; [LU, info] = klu(B, opts) ; klu_t = toc
+
+klu_t =
+
+   6.9100e-04
+
+tic ; [L1, U1, P1] = mylu(B) ; mylu_t = toc
+
+mylu_t =
+
+   5.1000e-04
+
+diary off

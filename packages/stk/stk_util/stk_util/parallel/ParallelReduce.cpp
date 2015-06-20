@@ -1,14 +1,38 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
-#include <boost/static_assert.hpp>      // for BOOST_STATIC_ASSERT
 #include <sstream>                      // for basic_ostream::operator<<, etc
 #include <stdexcept>                    // for runtime_error
 #include <vector>                       // for vector
@@ -41,7 +65,6 @@ void all_write_string( ParallelMachine arg_comm ,
 
   int * const recv_count_ptr = & recv_count[0] ;
 
-  BABBLE_STK_PARALLEL_COMM(arg_comm, "                      calling MPI_Gather from all_write_string");
   result = MPI_Gather( & send_count , 1 , MPI_INT ,
                        recv_count_ptr , 1 , MPI_INT ,
                        p_root , arg_comm );
@@ -69,7 +92,6 @@ void all_write_string( ParallelMachine arg_comm ,
     char * const recv_ptr = recv_size ? & buffer[0] : NULL ;
     int * const recv_displ_ptr = & recv_displ[0] ;
 
-    BABBLE_STK_PARALLEL_COMM(arg_comm, "                      calling MPI_Gatherv from all_write_string");
     result = MPI_Gatherv( const_cast<char*>(send_ptr), send_count, MPI_CHAR ,
                           recv_ptr, recv_count_ptr, recv_displ_ptr, MPI_CHAR,
                           p_root, arg_comm );
@@ -139,12 +161,10 @@ void all_reduce_impl( ParallelMachine comm ,
   size_t * tmp = const_cast<size_t*>( local );
 
   if ( sizeof(size_t) == sizeof(unsigned) ) {
-    BABBLE_STK_PARALLEL_COMM(comm, "                      calling MPI_Allreduce from all_reduce");
     MPI_Allreduce( tmp , global , count , MPI_UNSIGNED , op , comm );
 
   }
   else if ( sizeof(size_t) == sizeof(unsigned long) ) {
-    BABBLE_STK_PARALLEL_COMM(comm, "                      calling MPI_Allreduce from all_reduce");
     MPI_Allreduce( tmp , global , count , MPI_UNSIGNED_LONG , op , comm );
   }
   else {
@@ -152,7 +172,6 @@ void all_reduce_impl( ParallelMachine comm ,
     unsigned long * const out = new unsigned long[ count ];
 
     for ( unsigned i = 0 ; i < count ; ++i ) { in[i] = local[i] ; }
-    BABBLE_STK_PARALLEL_COMM(comm, "                      calling MPI_Allreduce from all_reduce");
     MPI_Allreduce( in , out , count , MPI_UNSIGNED_LONG , op , comm );
     for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = out[i] ; }
 
@@ -166,7 +185,6 @@ void all_reduce_bor( ParallelMachine comm ,
                      unsigned * global , unsigned count )
 {
   unsigned * tmp = const_cast<unsigned*>( local );
-  BABBLE_STK_PARALLEL_COMM(comm, "                      calling MPI_Allreduce from all_reduce_bor");
   MPI_Allreduce( tmp , global , count , MPI_UNSIGNED , MPI_BOR , comm );
 }
 //----------------------------------------------------------------------

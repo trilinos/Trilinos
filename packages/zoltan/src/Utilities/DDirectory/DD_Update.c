@@ -79,7 +79,7 @@ int Zoltan_DD_Update (
    char            *sbufftmp = NULL;/* pointer into send buffer        */
    char            *rbuff = NULL;   /* receive buffer                  */
    char            *rbufftmp = NULL;/* pointer into receive buffer     */
-   int              nrec;           /* number of receives to expect    */
+   int              nrec = 0;       /* number of receives to expect    */
    int              i;
    int              err;
    int              errcount = 0;   /* count of GIDs not found, added  */

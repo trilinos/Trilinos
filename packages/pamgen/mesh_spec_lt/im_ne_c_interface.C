@@ -1,5 +1,5 @@
 #include <cstring>
-#include "im_ne_nemesisI.h"
+#include "pamgen_im_ne_nemesisI.h"
 #include "pamgen_mesh_specification.h"
 #include <strings.h>
 

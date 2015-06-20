@@ -1113,7 +1113,7 @@ int testProjectMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
 double MVDiff(const MV &X, const MV &Y)
 {
   typedef MultiVecTraits<double,MV>    MVT;
-  typedef OperatorTraits<double,MV,OP> OPT;
+  //typedef OperatorTraits<double,MV,OP> OPT;
   typedef ScalarTraits<double>         SCT;
   typedef SCT::magnitudeType           MT;
 

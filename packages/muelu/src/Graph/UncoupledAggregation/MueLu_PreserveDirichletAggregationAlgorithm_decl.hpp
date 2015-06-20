@@ -59,10 +59,31 @@ namespace MueLu {
     @class PreserveDirichletAggregationAlgorithm class.
     @brief Builds one-to-one aggregates for all Dirichlet boundary nodes. For some applications this might
            be necessary. (default = off)
+
+    @ingroup Aggregation
+
+    ### Idea ###
+    Handles Dirichlet boundary nodes with the state Boundary.
+    Depending on the boolean parameter "aggregation: preserve Dirichlet points" one-to-one aggregates
+    with singleton nodes are built for all Dirichlet boundary nodes or the aggregates are just
+    ignored (default behavior). The state of all boundary nodes (state = Boundary)
+    is set to ignored. That means, that these nodes are not considered for further
+    aggregation in the later aggregation phases.
+
+    ### Parameters ###
+    Parameter | Meaning
+    ----------|--------
+    aggregation: preserve Dirichlet points | Boolean parameter stating whether Dirichlet boundary nodes shall be aggregated in singleton aggregates (default: false).
+
+    ### Comments ###
+    Only nodes with state BOUNDARY are changed to IGNORED. No other nodes are touched.
   */
 
-  template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
-  class PreserveDirichletAggregationAlgorithm : public MueLu::AggregationAlgorithmBase<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
+  template <class LocalOrdinal = int,
+            class GlobalOrdinal = LocalOrdinal,
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  class PreserveDirichletAggregationAlgorithm :
+    public MueLu::AggregationAlgorithmBase<LocalOrdinal,GlobalOrdinal,Node> {
 #undef MUELU_PRESERVEDIRICHLETAGGREGATIONALGORITHM_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 

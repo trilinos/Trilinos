@@ -48,6 +48,8 @@
 #include <string>
 #include <iostream>
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "dofmngr/Panzer_FieldAggPattern.hpp"
 #include "dofmngr/Panzer_IntrepidFieldPattern.hpp"
 #include "dofmngr/Panzer_GeometricAggFieldPattern.hpp"
@@ -92,6 +94,8 @@ typedef Intrepid::FieldContainer<double> FieldContainer;
 //    - getDimension 
 TEUCHOS_UNIT_TEST(tFieldAggPattern, testA)
 {
+   PHX::KokkosDeviceSession session;
+
    out << note << std::endl;
 
    // basis to build patterns from

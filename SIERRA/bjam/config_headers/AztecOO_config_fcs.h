@@ -34,7 +34,7 @@
 #define HAVE_AZTECOO_TEUCHOS
 
 /* Define if you have a BLAS library. */
-/* #undef HAVE_BLAS */
+#define HAVE_BLAS
 
 /* define if bool is a built-in type */
 #define HAVE_BOOL
@@ -64,7 +64,7 @@
 /* #undef HAVE_GNUMAKE */
 
 /* Define if you have LAPACK library. */
-/* #undef HAVE_LAPACK */
+#define HAVE_LAPACK
 
 /* Define if want to build libcheck */
 /* #undef HAVE_LIBCHECK */

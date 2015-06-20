@@ -307,7 +307,7 @@ private: // data members
   // for an object.
   //
   // NOTES:
-  // 
+  //
   // A) This data-structure stores the key names twice in order to allow for
   // optimal iterator performance.  The array key_and_obj_array_ allows fast
   // ordered iterators through the data but in order to also provide the names
@@ -492,7 +492,7 @@ StringIndexedOrderedValueObjectContainer<ObjType>::setObj(const std::string &key
 template<class ObjType>
 void StringIndexedOrderedValueObjectContainer<ObjType>::removeObj(const Ordinal &idx)
 {
-  key_and_obj_t &key_and_obj = getNonconstKeyAndObject(idx); 
+  key_and_obj_t &key_and_obj = getNonconstKeyAndObject(idx);
   key_to_idx_map_.erase(key_and_obj.first);
   key_and_obj = key_and_obj_t::makeInvalid();
 }
@@ -504,10 +504,10 @@ void StringIndexedOrderedValueObjectContainer<ObjType>::removeObj(const std::str
   typename key_to_idx_map_t::iterator itr = key_to_idx_map_.find(key);
   if (itr == key_to_idx_map_.end()) {
     throwInvalidKeyError(getInvalidOrdinal(), key);
-  } 
+  }
   const Ordinal idx = itr->second.idx;
   key_to_idx_map_.erase(itr);
-  key_and_obj_array_[idx] = key_and_obj_t::makeInvalid(); 
+  key_and_obj_array_[idx] = key_and_obj_t::makeInvalid();
 }
 
 
@@ -572,7 +572,7 @@ StringIndexedOrderedValueObjectContainer<ObjType>::assertKeyGetOrdinal(const std
   return idx;
 }
 
-  
+
 } // end of Teuchos namespace
 
 /* Notes:

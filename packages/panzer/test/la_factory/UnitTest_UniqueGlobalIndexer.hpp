@@ -171,6 +171,9 @@ public:
 
    void getCoordinates(LocalOrdinalT localElementId,Intrepid::FieldContainer<double> & points);
 
+   int getElementBlockGIDCount(const std::string &) const;
+   int getElementBlockGIDCount(const std::size_t &) const;
+
 private:
    int procRank_;
    mutable Teuchos::RCP<std::vector<LocalOrdinalT> > elements_; // local element IDs
@@ -288,6 +291,9 @@ public:
 
    void getCoordinates(LocalOrdinalT localElementId,Intrepid::FieldContainer<double> & points);
 
+   int getElementBlockGIDCount(const std::string &) const;
+   int getElementBlockGIDCount(const std::size_t &) const;
+
 private:
    int procRank_;
    mutable Teuchos::RCP<std::vector<LocalOrdinalT> > elements_; // local element IDs
@@ -403,6 +409,9 @@ public:
 
    void getCoordinates(LocalOrdinalT localElementId,Intrepid::FieldContainer<double> & points)
    { TEUCHOS_ASSERT(false); }
+
+   int getElementBlockGIDCount(const std::string &) const { TEUCHOS_ASSERT(false); }
+   int getElementBlockGIDCount(const std::size_t &) const { TEUCHOS_ASSERT(false); }
 
 private:
    int procRank_;

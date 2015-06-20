@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsPackageMacros)
 
 TRIBITS_PACKAGE(Epetra)
 

@@ -84,9 +84,9 @@ private:
  *
  * ToDo: Finish Documentation!
  */
-template<typename Ordinal, typename T, 
+template<typename Ordinal, typename T,
 	 typename Serializer = typename DefaultSerializer<Ordinal,T>::DefaultSerializerType>
-class CharToValueTypeReductionOp : 
+class CharToValueTypeReductionOp :
     public CharToValueTypeReductionOpImp<Ordinal,T,Serializer>
 {
 public:
@@ -102,13 +102,13 @@ public:
  * <tt>char[]</tt> to typed buffers for objects that use value semantics and
  * then call a type-specific reduction object.
  *
- * Specialization for the default serializer object type with a default 
+ * Specialization for the default serializer object type with a default
  * argument for the serializer object parameter.
  *
  * ToDo: Finish Documentation!
  */
 template<typename Ordinal, typename T>
-class CharToValueTypeReductionOp<Ordinal,T,typename DefaultSerializer<Ordinal,T>::DefaultSerializerType> : 
+class CharToValueTypeReductionOp<Ordinal,T,typename DefaultSerializer<Ordinal,T>::DefaultSerializerType> :
     public CharToValueTypeReductionOpImp<Ordinal,T,typename DefaultSerializer<Ordinal,T>::DefaultSerializerType>
 {
 public:

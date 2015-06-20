@@ -1,15 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//                             Kokkos
-//         Manycore Performance-Portable Multidimensional Arrays
-//
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -46,7 +44,7 @@
 #ifndef KOKKOS_VECTOR_HPP
 #define KOKKOS_VECTOR_HPP
 
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core_fwd.hpp>
 #include <Kokkos_DualView.hpp>
 
 /* Drop in replacement for std::vector based on Kokkos::DualView
@@ -55,10 +53,13 @@
  */
   namespace Kokkos {
 
-template <typename Scalar, class Device=Impl::DefaultDeviceType>
-class vector : public DualView<Scalar*,LayoutLeft,Device> {
+template <typename Scalar, class Space = Kokkos::DefaultExecutionSpace >
+class vector : public DualView<Scalar*,LayoutLeft,Space> {
 public:
-  typedef Device device_type;
+  typedef typename Space::memory_space memory_space;
+  typedef typename Space::execution_space execution_space;
+  typedef typename Kokkos::Device<execution_space,memory_space> device_type;
+
   typedef Scalar value_type;
   typedef Scalar* pointer;
   typedef const Scalar* const_pointer;
@@ -71,7 +72,7 @@ private:
   size_t _size;
   typedef size_t size_type;
   float _extra_storage;
-  typedef DualView<Scalar*,LayoutLeft,Device> DV;
+  typedef DualView<Scalar*,LayoutLeft,Space> DV;
 
 
 public:
@@ -88,7 +89,7 @@ public:
   };
 
 
-  vector(int n, Scalar val=Scalar()):DualView<Scalar*,LayoutLeft,Device>("Vector",size_t(n*(1.1))) {
+  vector(int n, Scalar val=Scalar()):DualView<Scalar*,LayoutLeft,Space>("Vector",size_t(n*(1.1))) {
     _size = n;
     _extra_storage = 1.1;
     DV::modified_host = 1;
@@ -120,12 +121,12 @@ public:
     if( DV::modified_host >= DV::modified_device ) {
       set_functor_host f(DV::h_view,val);
       parallel_for(n,f);
-      DV::t_host::device_type::fence();
+      DV::t_host::execution_space::fence();
       DV::modified_host++;
     } else {
       set_functor f(DV::d_view,val);
       parallel_for(n,f);
-      DV::t_dev::device_type::fence();
+      DV::t_dev::execution_space::fence();
       DV::modified_device++;
     }
   }
@@ -248,7 +249,7 @@ public:
 
 public:
   struct set_functor {
-    typedef typename DV::t_dev::device_type device_type;
+    typedef typename DV::t_dev::execution_space execution_space;
     typename DV::t_dev _data;
     Scalar _val;
 
@@ -262,7 +263,7 @@ public:
   };
 
   struct set_functor_host {
-    typedef typename DV::t_host::device_type device_type;
+    typedef typename DV::t_host::execution_space execution_space;
     typename DV::t_host _data;
     Scalar _val;
 

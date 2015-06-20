@@ -1,4 +1,6 @@
 #BlockMap
+CrsGraph
+CrsGraphFactory
 Export
 ExportFactory
 Import
@@ -6,10 +8,11 @@ ImportFactory
 Map
 MapFactory
 MatrixView
+StridedMap
+StridedMapFactory
+StridedTpetraMap
 #TpetraBlockMap
+TpetraCrsGraph
 TpetraExport
 TpetraImport
 TpetraMap
-StridedMap
-StridedTpetraMap
-StridedMapFactory

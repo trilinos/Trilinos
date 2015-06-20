@@ -43,8 +43,7 @@
 #include "TestSpMv.hpp"
 
 // Devices
-#include "KokkosCore_config.h"
-#include "Kokkos_Threads.hpp"
+#include "Kokkos_Core.hpp"
 
 template <typename Storage>
 void mainHost(int nGrid, int nIter, Kokkos::DeviceConfig dev_config) {

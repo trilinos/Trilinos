@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -43,7 +42,7 @@ SET(HEADERS ${HEADERS}
   Galeri_FiniteElements.h
   Galeri_Utils.h
   Galeri_ReadHB.h
-  iohb.h
+  Galeri_iohb.h
   )
 
 SET(SOURCES ${SOURCES}
@@ -52,7 +51,7 @@ SET(SOURCES ${SOURCES}
   Galeri_VbrMatrices.cpp
   Galeri_Utils.cpp
   Galeri_ReadHB.cpp
-  iohb.cpp
+  Galeri_iohb.cpp
   )
 
 

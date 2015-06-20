@@ -53,21 +53,11 @@ namespace Ifpack2 {
 
   #define LCLINST(LO,GO) \
           IFPACK2_INST_GRAPH(LinearPartitioner,LO,GO) \
-          template class LinearPartitioner< Tpetra::RowGraph<LO,GO,     \
-               KokkosClassic::DefaultNode::DefaultNodeType > >;
+          template class LinearPartitioner<Tpetra::RowGraph<LO,GO> >;
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 
   IFPACK2_INSTANTIATE_LG(LCLINST)
-
-  // FIXME (mfh 24 May 2014) This will result in a duplicate symbol if
-  // the default Node type is TPINode.  See the definition of LCLINST
-  // above.
-#  if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
-
-  template class LinearPartitioner<Tpetra::RowGraph<int, int, KokkosClassic::TPINode> >;
-
-#  endif // defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
 
 }
 

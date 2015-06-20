@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -95,6 +94,18 @@ APPEND_SET(HEADERS
   AnasaziStubTsqrAdapter.hpp
   AnasaziSVQBOrthoManager.hpp
   AnasaziTypes.hpp
+  AnasaziTraceMinBase.hpp
+  AnasaziTraceMin.hpp
+  AnasaziTraceMinDavidson.hpp
+  AnasaziTraceMinBaseSolMgr.hpp
+  AnasaziTraceMinSolMgr.hpp
+  AnasaziTraceMinDavidsonSolMgr.hpp
+  AnasaziMinres.hpp
+  AnasaziSaddleContainer.hpp
+  AnasaziSaddleOperator.hpp
+  AnasaziTraceMinRitzOp.hpp
+  AnasaziTraceMinTypes.hpp
+  AnasaziStatusTestSpecTrans.hpp
   )
 
 APPEND_SET(SOURCES
@@ -126,6 +137,12 @@ APPEND_SET(HEADERS
   AnasaziLOBPCGSolMgr.hpp
   AnasaziSimpleLOBPCGSolMgr.hpp
   AnasaziRTRSolMgr.hpp
+  AnasaziTraceMinBase.hpp
+  AnasaziTraceMin.hpp
+  AnasaziTraceMinDavidson.hpp
+  AnasaziTraceMinBaseSolMgr.hpp
+  AnasaziTraceMinSolMgr.hpp
+  AnasaziTraceMinDavidsonSolMgr.hpp
   )
 
 ASSERT_DEFINED(Anasazi_ENABLE_ThyraCore)

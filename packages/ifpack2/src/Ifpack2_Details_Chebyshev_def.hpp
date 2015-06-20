@@ -78,6 +78,7 @@
 /// It defines a new implementation of Chebyshev iteration.
 
 #include "Ifpack2_Details_Chebyshev_decl.hpp"
+#include <Kokkos_ArithTraits.hpp>
 #include <cmath>
 
 // Uncommit the #define line below if you want Chebyshev to do extra
@@ -90,17 +91,125 @@
 namespace Ifpack2 {
 namespace Details {
 
-namespace {
-  // We use this text a lot in error messages.
-  const char computeBeforeApplyReminder[] =
-    "This means one of the following:\n"
-    "  - you have not yet called compute() on this instance, or \n"
-    "  - you didn't call compute() after calling setParameters().\n\n"
-    "After creating an Ifpack2::Chebyshev instance,\n"
-    "you must _always_ call compute() at least once before calling apply().\n"
-    "After calling compute() once, you do not need to call it again,\n"
-    "unless the matrix has changed or you have changed parameters\n"
-    "(by calling setParameters()).";
+namespace { // (anonymous)
+
+// We use this text a lot in error messages.
+const char computeBeforeApplyReminder[] =
+  "This means one of the following:\n"
+  "  - you have not yet called compute() on this instance, or \n"
+  "  - you didn't call compute() after calling setParameters().\n\n"
+  "After creating an Ifpack2::Chebyshev instance,\n"
+  "you must _always_ call compute() at least once before calling apply().\n"
+  "After calling compute() once, you do not need to call it again,\n"
+  "unless the matrix has changed or you have changed parameters\n"
+  "(by calling setParameters()).";
+
+} // namespace (anonymous)
+
+// ReciprocalThreshold stuff below needs to be in a namspace visible outside
+// of this file
+template<class XV, class SizeType = typename XV::size_type>
+struct V_ReciprocalThresholdSelfFunctor
+{
+  typedef typename XV::execution_space execution_space;
+  typedef typename XV::non_const_value_type value_type;
+  typedef SizeType size_type;
+  typedef Kokkos::Details::ArithTraits<value_type> KAT;
+  typedef typename KAT::mag_type mag_type;
+
+  XV X_;
+  const value_type m_min_val;
+  const mag_type m_min_val_mag;
+
+  V_ReciprocalThresholdSelfFunctor (const XV& X,
+                                    const value_type& min_val) :
+    X_ (X),
+    m_min_val (min_val),
+    m_min_val_mag (KAT::abs (min_val))
+  {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const size_type& i) const
+  {
+    if (KAT::abs (X_(i)) < m_min_val_mag) {
+      X_[i] = m_min_val;
+    }
+    else {
+      X_[i] = KAT::one () / X_[i];
+    }
+  }
+};
+
+template<class XV, class SizeType = typename XV::size_type>
+struct LocalReciprocalThreshold {
+  static void
+  compute (const XV& X,
+           const typename XV::non_const_value_type& minVal)
+  {
+    typedef typename XV::execution_space execution_space;
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, X.dimension_0 ());
+    V_ReciprocalThresholdSelfFunctor<XV, SizeType> op (X, minVal);
+    Kokkos::parallel_for (policy, op);
+  }
+};
+
+template <class TpetraVectorType,
+          const bool classic = TpetraVectorType::node_type::classic>
+struct GlobalReciprocalThreshold {};
+
+template <class TpetraVectorType>
+struct GlobalReciprocalThreshold<TpetraVectorType, true> {
+  static void
+  compute (TpetraVectorType& V,
+           const typename TpetraVectorType::scalar_type& min_val)
+  {
+    typedef typename TpetraVectorType::scalar_type scalar_type;
+    typedef typename TpetraVectorType::mag_type mag_type;
+    typedef Kokkos::Details::ArithTraits<scalar_type> STS;
+
+    const scalar_type ONE = STS::one ();
+    const mag_type min_val_abs = STS::abs (min_val);
+
+    Teuchos::ArrayRCP<scalar_type> V_0 = V.getDataNonConst (0);
+    const size_t lclNumRows = V.getLocalLength ();
+
+    for (size_t i = 0; i < lclNumRows; ++i) {
+      const scalar_type V_0i = V_0[i];
+      if (STS::abs (V_0i) < min_val_abs) {
+        V_0[i] = min_val;
+      } else {
+        V_0[i] = ONE / V_0i;
+      }
+    }
+  }
+};
+
+template <class TpetraVectorType>
+struct GlobalReciprocalThreshold<TpetraVectorType, false> {
+  static void
+  compute (TpetraVectorType& X,
+           const typename TpetraVectorType::scalar_type& minVal)
+  {
+    typedef typename TpetraVectorType::dual_view_type::non_const_value_type value_type;
+    typedef typename TpetraVectorType::execution_space::memory_space memory_space;
+
+    auto X_lcl = X.getDualView ();
+    X_lcl.template sync<memory_space> ();
+    X_lcl.template modify<memory_space> ();
+
+    const value_type minValS = static_cast<value_type> (minVal);
+
+    auto X_0 = Kokkos::subview (X_lcl.d_view, Kokkos::ALL (), 0);
+    LocalReciprocalThreshold<decltype (X_0) >::compute (X_0, minValS);
+  }
+};
+
+// Utility function for inverting diagonal with threshold.
+template <typename S, typename L, typename G, typename N>
+void
+reciprocal_threshold (Tpetra::Vector<S,L,G,N>& V, const S& minVal)
+{
+  GlobalReciprocalThreshold<Tpetra::Vector<S,L,G,N> >::compute (V, minVal);
 }
 
 template<class ScalarType, class MV>
@@ -209,7 +318,6 @@ setParameters (Teuchos::ParameterList& plist)
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_const_cast;
-  using Teuchos::rcpFromRef;
 
   // Note to developers: The logic for this method is complicated,
   // because we want to accept Ifpack and ML parameters whenever
@@ -242,7 +350,7 @@ setParameters (Teuchos::ParameterList& plist)
   // from the ParameterList.  That way, if any of the ParameterList
   // reads fail (e.g., due to the wrong parameter type), we will not
   // have left the instance data in a half-changed state.
-  RCP<const V> userInvDiag;
+  RCP<const V> userInvDiagCopy; // if nonnull: deep copy of user's Vector
   ST lambdaMax = defaultLambdaMax;
   ST lambdaMin = defaultLambdaMin;
   ST eigRatio = defaultEigRatio;
@@ -263,33 +371,32 @@ setParameters (Teuchos::ParameterList& plist)
   //
   // Check for a raw pointer (const V* or V*), for Ifpack
   // compatibility, as well as for RCP<const V>, RCP<V>, const V, or
-  // V.  We'll copy the vector anyway, so it doesn't matter whether
-  // it's const or nonconst.
+  // V.  We'll make a deep copy of the vector at the end of this
+  // method anyway, so its const-ness doesn't matter.  We handle the
+  // latter two cases ("const V" or "V") specially (copy them into
+  // userInvDiagCopy first, which is otherwise null at the end of the
+  // long if-then chain) to avoid an extra copy.
   if (plist.isParameter ("chebyshev: operator inv diagonal")) {
+    // Pointer to the user's Vector, if provided.
+    RCP<const V> userInvDiag;
+
     try { // Could the type be const V*?
       const V* rawUserInvDiag =
         plist.get<const V*> ("chebyshev: operator inv diagonal");
-      // If it's a raw pointer, then we have to copy it, since we
-      // can't otherwise ensure that the user won't deallocate the
-      // Vector before we use it.
-      userInvDiag = rcp (new V (*rawUserInvDiag));
+      // Nonowning reference (we'll make a deep copy below)
+      userInvDiag = rcp (rawUserInvDiag, false);
     } catch (Teuchos::Exceptions::InvalidParameterType&) {
     }
     if (userInvDiag.is_null ()) {
       try { // Could the type be V*?
         V* rawUserInvDiag = plist.get<V*> ("chebyshev: operator inv diagonal");
-        // If it's a raw pointer, then we have to copy it, since we
-        // can't otherwise ensure that the user won't deallocate the
-        // Vector before we use it.
-        userInvDiag = rcp (new V (*rawUserInvDiag));
+        // Nonowning reference (we'll make a deep copy below)
+        userInvDiag = rcp (const_cast<const V*> (rawUserInvDiag), false);
       } catch (Teuchos::Exceptions::InvalidParameterType&) {
       }
     }
     if (userInvDiag.is_null ()) {
       try { // Could the type be RCP<const V>?
-        // If the type is RCP<const V>, then the user has promised
-        // that they won't change the Vector.  Thus, it's safe just to
-        // keep the RCP; we don't have to make a copy.
         userInvDiag =
           plist.get<RCP<const V> > ("chebyshev: operator inv diagonal");
       } catch (Teuchos::Exceptions::InvalidParameterType&) {
@@ -297,32 +404,79 @@ setParameters (Teuchos::ParameterList& plist)
     }
     if (userInvDiag.is_null ()) {
       try { // Could the type be RCP<V>?
-        RCP<V> userInvDiagNonconst =
+        RCP<V> userInvDiagNonConst =
           plist.get<RCP<V> > ("chebyshev: operator inv diagonal");
-        // If the type is RCP<V>, the user could still change the
-        // Vector.  That means we have to make a deep copy.
-        userInvDiag = rcp (new V (*userInvDiagNonconst));
+        userInvDiag = rcp_const_cast<const V> (userInvDiagNonConst);
       } catch (Teuchos::Exceptions::InvalidParameterType&) {
       }
     }
     if (userInvDiag.is_null ()) {
+#ifndef _MSC_VER
       try { // Could the type be const V?
-        // The line below does a deep copy (V::operator=).
-        userInvDiag =
-          rcp (new V (plist.get<const V> ("chebyshev: operator inv diagonal")));
+        // ParameterList::get() returns by reference.  Thus, we don't
+        // have to invoke Vector's copy constructor here.  It's good
+        // practice not to make an RCP to this reference, even though
+        // it should be valid as long as the ParameterList that holds
+        // it is valid.  Thus, we make our deep copy here, rather than
+        // waiting to do it below.
+        const V& userInvDiagRef =
+          plist.get<const V> ("chebyshev: operator inv diagonal");
+        userInvDiagCopy = rcp (new V (userInvDiagRef, Teuchos::Copy));
+        // Tell the if-chain below not to keep trying.
+        userInvDiag = userInvDiagCopy;
       } catch (Teuchos::Exceptions::InvalidParameterType&) {
       }
+#else
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::runtime_error,
+      "Ifpack2::Chebyshev::setParameters: \"chebyshev: operator inv diagonal\" "
+      "plist.get<const V> does not compile around return held == other_held "
+      "in Teuchos::any in Visual Studio.  Can't fix it now, so throwing "
+      "in case someone builds there.");
+#endif
     }
     if (userInvDiag.is_null ()) {
+#ifndef _MSC_VER
       try { // Could the type be V?
-        // The line below does a deep copy (V::operator=).
-        userInvDiag =
-          rcp (new V (plist.get<V> ("chebyshev: operator inv diagonal")));
+        // ParameterList::get() returns by reference.  Thus, we don't
+        // have to invoke Vector's copy constructor here.  It's good
+        // practice not to make an RCP to this reference, even though
+        // it should be valid as long as the ParameterList that holds
+        // it is valid.  Thus, we make our deep copy here, rather than
+        // waiting to do it below.
+        V& userInvDiagNonConstRef =
+          plist.get<V> ("chebyshev: operator inv diagonal");
+        const V& userInvDiagRef = const_cast<const V&> (userInvDiagNonConstRef);
+        userInvDiagCopy = rcp (new V (userInvDiagRef, Teuchos::Copy));
+        // Tell the if-chain below not to keep trying.
+        userInvDiag = userInvDiagCopy;
       } catch (Teuchos::Exceptions::InvalidParameterType&) {
       }
+#else
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::runtime_error,
+      "Ifpack2::Chebyshev::setParameters: \"chebyshev: operator inv diagonal\" "
+      "plist.get<V> does not compile around return held == other_held "
+      "in Teuchos::any in Visual Studio.  Can't fix it now, so throwing "
+      "in case someone builds there.");
+#endif
     }
-    // We don't necessarily have a range Map yet.  compute() is the
-    // proper place to compute the range Map version of userInvDiag.
+
+    // NOTE: If the user's parameter has some strange type that we
+    // didn't test above, userInvDiag might still be null.  You may
+    // want to add an error test for this condition.  Currently, we
+    // just say in this case that the user didn't give us a Vector.
+
+    // If we have userInvDiag but don't have a deep copy yet, make a
+    // deep copy now.
+    if (! userInvDiag.is_null () && userInvDiagCopy.is_null ()) {
+      userInvDiagCopy = rcp (new V (*userInvDiag, Teuchos::Copy));
+    }
+
+    // NOTE: userInvDiag, if provided, is a row Map version of the
+    // Vector.  We don't necessarily have a range Map yet.  compute()
+    // would be the proper place to compute the range Map version of
+    // userInvDiag.
   }
 
   // Don't fill in defaults for the max or min eigenvalue, because
@@ -465,7 +619,7 @@ setParameters (Teuchos::ParameterList& plist)
   }
 
   // We've validated all the parameters, so it's safe now to "commit" them.
-  userInvDiag_ = userInvDiag;
+  userInvDiag_ = userInvDiagCopy;
   userLambdaMax_ = lambdaMax;
   userLambdaMin_ = lambdaMin;
   userEigRatio_ = eigRatio;
@@ -784,10 +938,7 @@ makeInverseDiagonal (const row_matrix_type& A, const bool useDiagOffsets) const
 
   // Invert the diagonal entries, replacing entries less (in
   // magnitude) than the user-specified value with that value.
-  typedef KokkosClassic::MultiVector<ST, typename MV::node_type> KMV;
-  KMV localDiag = D_rangeMap->getLocalMV ();
-  typedef KokkosClassic::DefaultArithmetic<KMV> KMVT;
-  KMVT::ReciprocalThreshold (localDiag, minDiagVal_);
+  reciprocal_threshold (*D_rangeMap, minDiagVal_);
   return Teuchos::rcp_const_cast<const V> (D_rangeMap);
 }
 
@@ -841,7 +992,7 @@ makeRangeMapVectorConst (const Teuchos::RCP<const V>& D) const
       return D; // Row Map and range Map are the same; no need to Export.
     }
     else { // Row Map and range Map are _not_ the same; must Export.
-      RCP<V> D_out = rcp (new V (*D));
+      RCP<V> D_out = rcp (new V (*D, Teuchos::Copy));
       D_out->doExport (*D, *exporter, Tpetra::ADD);
       return Teuchos::rcp_const_cast<const V> (D_out);
     }
@@ -1073,35 +1224,71 @@ ifpackApplyImpl (const op_type& A,
 template<class ScalarType, class MV>
 typename Chebyshev<ScalarType, MV>::ST
 Chebyshev<ScalarType, MV>::
-powerMethod (const op_type& A, const V& D_inv, const int numIters)
+powerMethodWithInitGuess (const op_type& A,
+                          const V& D_inv,
+                          const int numIters,
+                          V& x)
 {
   const ST zero = Teuchos::as<ST> (0);
   const ST one = Teuchos::as<ST> (1);
   ST lambdaMax = zero;
   ST RQ_top, RQ_bottom, norm;
 
-  V x (A.getDomainMap ());
   V y (A.getRangeMap ());
-  x.randomize ();
   norm = x.norm2 ();
-  TEUCHOS_TEST_FOR_EXCEPTION(norm == zero, std::runtime_error,
-    "Ifpack2::Chebyshev::powerMethod: "
-    "Tpetra::Vector's randomize() method filled the vector "
-    "with zeros.  This is not impossible, but is unlikely.  "
-    "It's far more likely that there is a bug in Tpetra.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    norm == zero, std::runtime_error,
+    "Ifpack2::Chebyshev::powerMethodWithInitGuess: "
+    "The initial guess has zero norm.  This could be either because Tpetra::"
+    "Vector::randomize() filled the vector with zeros (if that was used to "
+    "compute the initial guess), or because the norm2 method has a bug.  The "
+    "first is not impossible, but unlikely.");
 
+  //std::cerr << "Original norm1(x): " << x.norm1 () << ", norm2(x): " << norm << std::endl;
   x.scale (one / norm);
+  //std::cerr << "norm1(x.scale(one/norm)): " << x.norm1 () << std::endl;
   for (int iter = 0; iter < numIters; ++iter) {
     A.apply (x, y);
+    //std::cerr << "norm1(y) before: " << y.norm1 ();
     solve (y, D_inv, y);
+    //std::cerr << ", norm1(y) after: " << y.norm1 () << std::endl;
     RQ_top = y.dot (x);
     RQ_bottom = x.dot (x);
+    //std::cerr << "RQ_top: " << RQ_top << ", RQ_bottom: " << RQ_bottom << std::endl;
     lambdaMax = RQ_top / RQ_bottom;
     norm = y.norm2 ();
     if (norm == zero) { // Return something reasonable.
       return zero;
     }
     x.update (one / norm, y, zero);
+  }
+  return lambdaMax;
+}
+
+template<class ScalarType, class MV>
+typename Chebyshev<ScalarType, MV>::ST
+Chebyshev<ScalarType, MV>::
+powerMethod (const op_type& A, const V& D_inv, const int numIters)
+{
+  const ST zero = Teuchos::as<ST> (0);
+  V x (A.getDomainMap ());
+  x.randomize ();
+
+  ST lambdaMax = powerMethodWithInitGuess (A, D_inv, numIters, x);
+  // mfh 07 Jan 2015: Taking the real part here is only a concession
+  // to the compiler, so that this class can build with ScalarType =
+  // std::complex<T>.  Our Chebyshev implementation only works with
+  // real, symmetric positive definite matrices.  The right thing to
+  // do would be what Belos does, which is provide a partial
+  // specialization for ScalarType = std::complex<T> with a stub
+  // implementation (that builds, but whose constructor throws).
+  if (STS::real (lambdaMax) < STS::real (zero)) {
+    // Max eigenvalue estimate is negative.  Perhaps we got unlucky
+    // with the random initial guess.  Try again with a different (but
+    // still random) initial guess.  Only try again once, so that the
+    // run time is bounded.
+    x.randomize ();
+    lambdaMax = powerMethodWithInitGuess (A, D_inv, numIters, x);
   }
   return lambdaMax;
 }

@@ -57,7 +57,11 @@
 
 typedef double Scalar;
 typedef int    LocalOrdinal;
+#ifndef XPETRA_TEST_USE_LONGLONG_GO
 typedef int    GlobalOrdinal;
+#else
+typedef long long GlobalOrdinal;
+#endif
 
 int main(int argc, char *argv[]) {
 
@@ -65,11 +69,12 @@ int main(int argc, char *argv[]) {
   using Teuchos::rcp;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
-  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
   bool success = false;
   bool verbose = false;
   try {
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+
     GlobalOrdinal numGlobalElements = 256; // problem size
     Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
 

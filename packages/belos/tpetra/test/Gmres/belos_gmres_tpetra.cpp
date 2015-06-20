@@ -59,58 +59,11 @@ namespace {
   template<class NodeType>
   Teuchos::RCP<NodeType>
   getNode (Teuchos::RCP<Teuchos::ParameterList> params) {
-    throw std::runtime_error ("This Kokkos Node type not supported (compile-time error)");
-  }
-
-  // Specialization of getNode for SerialNode
-  template<>
-  Teuchos::RCP<KokkosClassic::SerialNode>
-  getNode (Teuchos::RCP<Teuchos::ParameterList> params) {
-    // "Num Threads" specifies the number of threads.  Defaults to an
-    // automatically chosen value.
     if (params.is_null ()) {
       params = Teuchos::parameterList ();
     }
-    return Teuchos::rcp (new KokkosClassic::SerialNode (*params));
+    return Teuchos::rcp (new NodeType (*params));
   }
-
-#if defined(HAVE_KOKKOSCLASSIC_TBB)
-  // Specialization of getNode for TBBNode
-  template<>
-  Teuchos::RCP<KokkosClassic::TBBNode>
-  getNode (Teuchos::RCP<Teuchos::ParameterList> params) {
-    // "Num Threads" specifies the number of threads.  Defaults to an
-    // automatically chosen value.
-    if (params.is_null ()) {
-      params = Teuchos::parameterList ();
-    }
-    return Teuchos::rcp (new KokkosClassic::TBBNode (*params));
-  }
-#endif // defined(HAVE_KOKKOSCLASSIC_TBB)
-
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-  // Specialization of getNode for TPINode
-  template<>
-  Teuchos::RCP<KokkosClassic::TPINode>
-  getNode (Teuchos::RCP<Teuchos::ParameterList> params) {
-    using Teuchos::isParameterType;
-
-    // "Num Threads" (defaults to 0) specifies the number of threads,
-    // and "Verbose" specifies verbosity (defaults to 0, but we set 1
-    // as the default, so that you can see how many threads are being
-    // used if you don't set a specific number.
-    if (params.is_null ()) {
-      params = Teuchos::parameterList ();
-      int verbosity = 1;
-      params->set ("Verbose", verbosity);
-    }
-    else if (isParameterType<int> (*params, "Num Threads") && 
-	     params->get<int>("Num Threads") == -1) {
-      params->set ("Num Threads", static_cast<int> (0));
-    }
-    return Teuchos::rcp (new KokkosClassic::TPINode (*params));
-  }
-#endif // defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
 
   /// \brief Show MsgType as comma-delimited list of names.
   ///
@@ -122,8 +75,7 @@ namespace {
   /// these kind of C-style bit sets as int rather than MsgType) as a
   /// comma-delimited, human-readable list of names.  This is useful
   /// for debugging.
-  /// 
-  std::string 
+  std::string
   msgTypeToString (const int msgType)
   {
     using std::ostringstream;
@@ -134,8 +86,8 @@ namespace {
     // be enumerated?
     const size_type numValidTypes = 8;
     const int validTypes[] = {
-      Belos::Errors, 
-      Belos::Warnings, 
+      Belos::Errors,
+      Belos::Warnings,
       Belos::IterationDetails,
       Belos::OrthoDetails,
       Belos::FinalSummary,
@@ -144,8 +96,8 @@ namespace {
       Belos::Debug
     };
     const char* typeNames[] = {
-      "Errors", 
-      "Warnings", 
+      "Errors",
+      "Warnings",
       "IterationDetails",
       "OrthoDetails",
       "FinalSummary",
@@ -162,7 +114,7 @@ namespace {
     vector<size_type> theList;
     for (size_type nameIndex = 0; nameIndex < numValidTypes; ++nameIndex) {
       if (msgType & validTypes[nameIndex]) {
-	theList.push_back (nameIndex);
+        theList.push_back (nameIndex);
       }
     }
     ostringstream os;
@@ -170,7 +122,7 @@ namespace {
       const size_type nameIndex = theList[k];
       os << typeNames[nameIndex];
       if (nameIndex < theList.size () - 1) {
-	os << ",";
+        os << ",";
       }
     }
     return os.str ();
@@ -186,10 +138,10 @@ namespace {
     typedef typename SparseMatrixType::local_ordinal_type local_ordinal_type;
     typedef typename SparseMatrixType::global_ordinal_type global_ordinal_type;
     typedef typename SparseMatrixType::node_type node_type;
-    typedef Tpetra::MultiVector<scalar_type, 
-				local_ordinal_type, 
-				global_ordinal_type, 
-				node_type> multivector_type;
+    typedef Tpetra::MultiVector<scalar_type,
+                                local_ordinal_type,
+                                global_ordinal_type,
+                                node_type> multivector_type;
 
   private:
     typedef Teuchos::ScalarTraits<scalar_type> STS;
@@ -206,17 +158,17 @@ namespace {
     ///   matrix file to read (on MPI Rank 0 only)
     /// \param pComm [in] Communicator, over whose MPI ranks to
     ///   distribute the returned Tpetra::CrsMatrix.
-    /// \param tolerant [in] Whether or not to parse the file 
+    /// \param tolerant [in] Whether or not to parse the file
     ///   tolerantly
     ///
-    /// \return Tpetra::CrsMatrix read in from the file 
+    /// \return Tpetra::CrsMatrix read in from the file
     Teuchos::RCP<sparse_matrix_type>
     readSparseFile (const std::string& matrixFilename)
     {
       typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
       const bool callFillComplete = true;
       return reader_type::readSparseFile (matrixFilename, comm_, node_,
-					  callFillComplete, tolerant_, debug_);
+                                          callFillComplete, tolerant_, debug_);
     }
 
     /// \brief Generate, distribute, and return a test sparse matrix.
@@ -225,13 +177,13 @@ namespace {
     ///   number of rows in the sparse matrix.
     ///
     /// \param symmetric [in] Whether to generate a symmetric test problem.
-    ///   Storage is nonsymmetric regardless; symmetry here only applies to 
+    ///   Storage is nonsymmetric regardless; symmetry here only applies to
     ///   the entries' locations and values.
     ///
     /// \return The sparse matrix (global, distributed)
     Teuchos::RCP<sparse_matrix_type>
     generateTestMatrix (const global_ordinal_type globalNumRows,
-			const bool symmetric)
+                        const bool symmetric)
     {
       using Teuchos::RCP;
       using Teuchos::rcp;
@@ -243,28 +195,28 @@ namespace {
       typedef node_type NT;
 
       // For a square matrix, we only need a Map for the range of the matrix.
-      RCP<const map_type> pRangeMap = 
-	createUniformContigMapWithNode<LO, GO, NT> (globalNumRows, comm_, node_);
+      RCP<const map_type> pRangeMap =
+        createUniformContigMapWithNode<LO, GO, NT> (globalNumRows, comm_, node_);
       // The sparse matrix object to fill.
       RCP<sparse_matrix_type> pMat = rcp (new sparse_matrix_type (pRangeMap, 0));
 
       const int myRank = comm_->getRank();
       if (myRank == 0) {
-	const scalar_type leftVal = -STS::one();
-	const scalar_type rightVal = symmetric ? -STS::one() : +2*STS::one();
-	// Boost the diagonal if nonsymmetric, hopefully to make
-	// convergence a little faster.
-	const scalar_type centerVal = symmetric ? 2*STS::one() : 8*STS::one(); 
+        const scalar_type leftVal = -STS::one();
+        const scalar_type rightVal = symmetric ? -STS::one() : +2*STS::one();
+        // Boost the diagonal if nonsymmetric, hopefully to make
+        // convergence a little faster.
+        const scalar_type centerVal = symmetric ? 2*STS::one() : 8*STS::one();
 
-	for (GO curRow = 0; curRow < globalNumRows; ++curRow) {
-	  if (curRow > 0) {
-	    pMat->insertGlobalValues (curRow, tuple(curRow-1), tuple(leftVal));
-	  }
-	  pMat->insertGlobalValues (curRow, tuple(curRow), tuple(centerVal));
-	  if (curRow < globalNumRows-1) {
-	    pMat->insertGlobalValues (curRow, tuple(curRow+1), tuple(rightVal));
-	  }
-	}
+        for (GO curRow = 0; curRow < globalNumRows; ++curRow) {
+          if (curRow > 0) {
+            pMat->insertGlobalValues (curRow, tuple(curRow-1), tuple(leftVal));
+          }
+          pMat->insertGlobalValues (curRow, tuple(curRow), tuple(centerVal));
+          if (curRow < globalNumRows-1) {
+            pMat->insertGlobalValues (curRow, tuple(curRow+1), tuple(rightVal));
+          }
+        }
       }
       // Make sure Rank 0 is done filling in the matrix.
       Teuchos::barrier (*comm_);
@@ -288,18 +240,18 @@ namespace {
       typedef typename SparseMatrixType::node_type NT;
 
       // For a square matrix, we only need a Map for the range of the matrix.
-      RCP<const map_type> pRangeMap = 
-	createUniformContigMapWithNode<LO, GO, NT> (globalNumRows, comm_, node_);
+      RCP<const map_type> pRangeMap =
+        createUniformContigMapWithNode<LO, GO, NT> (globalNumRows, comm_, node_);
       // The sparse matrix object to fill.
       RCP<sparse_matrix_type> pMat = rcp (new sparse_matrix_type (pRangeMap, 0));
 
       const int myRank = comm_->getRank();
       if (myRank == 0) {
-	const scalar_type val = STS::one();
-	for (GO curRow = 0; curRow < globalNumRows; ++curRow) {
-	  const GO curCol = (curRow == 0) ? (globalNumRows-1) : (curRow-1);
-	  pMat->insertGlobalValues (curRow, tuple(curCol), tuple(val));
-	}
+        const scalar_type val = STS::one();
+        for (GO curRow = 0; curRow < globalNumRows; ++curRow) {
+          const GO curCol = (curRow == 0) ? (globalNumRows-1) : (curRow-1);
+          pMat->insertGlobalValues (curRow, tuple(curCol), tuple(val));
+        }
       }
       // Make sure Rank 0 is done filling in the matrix.
       Teuchos::barrier (*comm_);
@@ -311,9 +263,9 @@ namespace {
 
   public:
     ProblemMaker (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-		  const Teuchos::RCP<node_type>& node,
-		  const bool tolerant,
-		  const bool debug) :
+                  const Teuchos::RCP<node_type>& node,
+                  const bool tolerant,
+                  const bool debug) :
       comm_ (comm), node_ (node), tolerant_ (tolerant), debug_ (debug)
     {}
 
@@ -325,11 +277,11 @@ namespace {
 
       const int myRank = comm_->getRank ();
       Teuchos::oblackholestream blackHole;
-      std::ostream& err = (debug_ && myRank == 0) ? std::cerr : blackHole; 
+      std::ostream& err = (debug_ && myRank == 0) ? std::cerr : blackHole;
 
       // Read the sparse matrix A from the file.
       err << "Reading sparse matrix A from file \""
-	  << inMatrixFilename << "\"...";
+          << inMatrixFilename << "\"...";
       RCP<sparse_matrix_type> A = readSparseFile (inMatrixFilename);
       err << "done." << endl;
       return A;
@@ -337,40 +289,40 @@ namespace {
 
     Teuchos::RCP<sparse_matrix_type>
     makeMatrix (const std::string& inMatrixFilename,
-		const std::string& outMatrixFilename,
-		const int globalNumRows,
-		const bool generated,
-		const bool symmetric,
-		const bool gmresUnfriendly)
+                const std::string& outMatrixFilename,
+                const int globalNumRows,
+                const bool generated,
+                const bool symmetric,
+                const bool gmresUnfriendly)
     {
       Teuchos::RCP<sparse_matrix_type> A;
       if (inMatrixFilename != "") {
-	A = makeMatrixFromFile (inMatrixFilename);
+        A = makeMatrixFromFile (inMatrixFilename);
       } else if (generated) {
-	if (gmresUnfriendly) {
-	  A = generateGmresUnfriendlyMatrix (globalNumRows);
-	} else {
-	  A = generateTestMatrix (globalNumRows, symmetric);
-	}
+        if (gmresUnfriendly) {
+          A = generateGmresUnfriendlyMatrix (globalNumRows);
+        } else {
+          A = generateTestMatrix (globalNumRows, symmetric);
+        }
       } else {
-	TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
       }
 
       if (outMatrixFilename != "") {
-	typedef Tpetra::MatrixMarket::Writer<sparse_matrix_type> writer_type;
-	writer_type::writeSparseFile (outMatrixFilename, A, "", "", debug_);
+        typedef Tpetra::MatrixMarket::Writer<sparse_matrix_type> writer_type;
+        writer_type::writeSparseFile (outMatrixFilename, A, "", "", debug_);
       }
       return A;
     }
 
     void
     makeVectors (const Teuchos::RCP<const sparse_matrix_type>& A,
-		 Teuchos::RCP<multivector_type>& X_guess,
-		 Teuchos::RCP<multivector_type>& X_exact,
-		 Teuchos::RCP<multivector_type>& B,
-		 const std::string& inRhsFilename,
-		 const std::string& outRhsFilename,
-		 const bool gmresUnfriendly)
+                 Teuchos::RCP<multivector_type>& X_guess,
+                 Teuchos::RCP<multivector_type>& X_exact,
+                 Teuchos::RCP<multivector_type>& B,
+                 const std::string& inRhsFilename,
+                 const std::string& outRhsFilename,
+                 const bool gmresUnfriendly)
     {
       using std::endl;
       using Teuchos::RCP;
@@ -382,7 +334,7 @@ namespace {
 
       const int myRank = comm_->getRank ();
       Teuchos::oblackholestream blackHole;
-      std::ostream& err = (debug_ && myRank == 0) ? std::cerr : blackHole; 
+      std::ostream& err = (debug_ && myRank == 0) ? std::cerr : blackHole;
 
       // Construct X_guess (the initial guess for the solution of
       // AX=B) from the domain of the matrix A, and fill it with
@@ -393,49 +345,49 @@ namespace {
       err << "done." << endl;
 
       if (inRhsFilename != "") {
-	// If reading the right-hand side(s) from a file, don't set
-	// the exact solution(s).  Later we could try to read those
-	// from a file too.
-	err << "Reading B from Matrix Market file...";
-	typedef Tpetra::MatrixMarket::Reader<SparseMatrixType> reader_type;
-	RCP<const map_type> map = A->getRangeMap();
-	B = reader_type::readDenseFile (inRhsFilename, comm_, A->getNode(), 
-					map, tolerant_, debug_);
-	err << "...done." << endl;
+        // If reading the right-hand side(s) from a file, don't set
+        // the exact solution(s).  Later we could try to read those
+        // from a file too.
+        err << "Reading B from Matrix Market file...";
+        typedef Tpetra::MatrixMarket::Reader<SparseMatrixType> reader_type;
+        RCP<const map_type> map = A->getRangeMap();
+        B = reader_type::readDenseFile (inRhsFilename, comm_, A->getNode(),
+                                        map, tolerant_, debug_);
+        err << "...done." << endl;
       } else {
-	// Our choice of exact solution and right-hand side depend on
-	// the test problem.  If we generated the GMRES-unfriendly
-	// example, we need B = e_{globalNumRows} and therefore
-	// X_exact = e_{globalNumRows} as well.  Otherwise, we pick
-	// X_exact first and compute B via SpMV: B = A * X_exact.
-	X_exact = rcp (new MV (A->getDomainMap(), 1));
+        // Our choice of exact solution and right-hand side depend on
+        // the test problem.  If we generated the GMRES-unfriendly
+        // example, we need B = e_{globalNumRows} and therefore
+        // X_exact = e_{globalNumRows} as well.  Otherwise, we pick
+        // X_exact first and compute B via SpMV: B = A * X_exact.
+        X_exact = rcp (new MV (A->getDomainMap(), 1));
 
-	// Construct the right-hand side B from the range of the
-	// matrix A.  Don't just clone X_guess, since the range may
-	// differ from the domain.
-	B = rcp (new MV (A->getRangeMap(), 1));
+        // Construct the right-hand side B from the range of the
+        // matrix A.  Don't just clone X_guess, since the range may
+        // differ from the domain.
+        B = rcp (new MV (A->getRangeMap(), 1));
 
-	if (gmresUnfriendly) {
-	  err << "Constructing B and X_exact for canonical \"GMRES-"
-	    "unfriendly\" example...";
-	  X_exact->putScalar (STS::zero());
-	  X_exact->replaceGlobalValue (A->getGlobalNumRows()-1, 0, STS::one());
-	  B->putScalar (STS::zero());
-	  B->replaceGlobalValue (A->getGlobalNumRows()-1, 0, STS::one());
-	  err << "done." << endl;
-	} else {
-	  // Construct the exact solution vector and fill it with all
-	  // ones.  Tacky, but deterministic.  Not so good if we
-	  // expect A to be singular with rigid body modes.
-	  err << "Setting X_exact = [1; ...; 1]...";
-	  X_exact->putScalar (STS::one());
-	  err << "done." << endl;
-      
-	  // Compute the right-hand side B := A*X_exact.
-	  err << "Computing B := A*X_exact...";
-	  A->apply (*X_exact, *B);
-	  err << "done." << endl;
-	}
+        if (gmresUnfriendly) {
+          err << "Constructing B and X_exact for canonical \"GMRES-"
+            "unfriendly\" example...";
+          X_exact->putScalar (STS::zero());
+          X_exact->replaceGlobalValue (A->getGlobalNumRows()-1, 0, STS::one());
+          B->putScalar (STS::zero());
+          B->replaceGlobalValue (A->getGlobalNumRows()-1, 0, STS::one());
+          err << "done." << endl;
+        } else {
+          // Construct the exact solution vector and fill it with all
+          // ones.  Tacky, but deterministic.  Not so good if we
+          // expect A to be singular with rigid body modes.
+          err << "Setting X_exact = [1; ...; 1]...";
+          X_exact->putScalar (STS::one());
+          err << "done." << endl;
+
+          // Compute the right-hand side B := A*X_exact.
+          err << "Computing B := A*X_exact...";
+          A->apply (*X_exact, *B);
+          err << "done." << endl;
+        }
       }
     }
   }; // class ProblemMaker
@@ -443,8 +395,8 @@ namespace {
 
 /// \fn main
 /// \brief Test driver for Belos' new GMRES implementations
-int 
-main (int argc, char *argv[]) 
+int
+main (int argc, char *argv[])
 {
   using Belos::GmresSolMgr;
   using Belos::LinearProblem;
@@ -483,26 +435,18 @@ main (int argc, char *argv[])
 #else // not 0
   typedef int global_ordinal_type;
 #endif // 0
-
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-  typedef KokkosClassic::TPINode node_type;
-#else
-#  if defined(HAVE_KOKKOSCLASSIC_TBB)
-  typedef KokkosClassic::TBBNode node_type;
-#  else
-  typedef KokkosClassic::SerialNode node_type;
-#  endif // HAVE_KOKKOSCLASSIC_TBB
-#endif // HAVE_KOKKOSCLASSIC_THREADPOOL
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
+    global_ordinal_type>::node_type node_type;
 
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef STS::magnitudeType magnitude_type;
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
-  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, 
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
     global_ordinal_type, node_type> MV;
-  typedef Tpetra::Operator<scalar_type, local_ordinal_type, 
+  typedef Tpetra::Operator<scalar_type, local_ordinal_type,
     global_ordinal_type, node_type> OP;
-  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, 
+  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
     global_ordinal_type, node_type> sparse_matrix_type;
   typedef Belos::MultiVecTraits<scalar_type, MV> MVT;
   typedef Belos::OperatorTraits<scalar_type, MV, OP> OPT;
@@ -512,7 +456,7 @@ main (int argc, char *argv[])
   ////////////////////////////////////////////////////////////////////
 
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, NULL);
-  RCP<const Teuchos::Comm<int> > comm = 
+  RCP<const Teuchos::Comm<int> > comm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
   const int myRank = comm->getRank();
   Teuchos::oblackholestream blackHole;
@@ -579,77 +523,77 @@ main (int argc, char *argv[])
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption ("matrixFilename", &matrixFilename, "Name of a Matrix Market - "
-		  "format sparse matrix file from which to read the matrix A."
-		  "Do not provide if the \"--generated\" option is set.");
+                  "format sparse matrix file from which to read the matrix A."
+                  "Do not provide if the \"--generated\" option is set.");
   cmdp.setOption ("rhsFilename", &rhsFilename, "Name of a Matrix Market - "
-		  "format dense matrix file from which to read the right-hand "
-		  "side(s) B.  A right-hand side will be generated if not "
-		  "provided.");
-  cmdp.setOption ("tolerant", "strict", &tolerant, 
-		  "Whether to parse Matrix Market files tolerantly.");
-  cmdp.setOption ("generated", "nongenerated", &generated, 
-		  "Whether to generate a test matrix.  Do not provide if you "
-		  "give the \"--matrixFilename=<file>\" option.");
+                  "format dense matrix file from which to read the right-hand "
+                  "side(s) B.  A right-hand side will be generated if not "
+                  "provided.");
+  cmdp.setOption ("tolerant", "strict", &tolerant,
+                  "Whether to parse Matrix Market files tolerantly.");
+  cmdp.setOption ("generated", "nongenerated", &generated,
+                  "Whether to generate a test matrix.  Do not provide if you "
+                  "give the \"--matrixFilename=<file>\" option.");
   cmdp.setOption ("globalNumRows", &globalNumRows, "Global number of rows in "
-		  "the generated test matrix.  Ignored if the sparse matrix is "
-		  "to be read from a file.");
+                  "the generated test matrix.  Ignored if the sparse matrix is "
+                  "to be read from a file.");
   cmdp.setOption ("symmetric", "nonsymmetric", &symmetric, "Whether the "
-		  "generated test problem is symmetric.  This option is "
-		  "ignored if the \"--generated\" option is not provided.");
-  cmdp.setOption ("gmresUnfriendly", "notGmresUnfriendly", &gmresUnfriendly, 
-		  "Whether to generate a \"GMRES-unfriendly\" test problem "
-		  "(the classical permutation matrix example).  This option is "
-		  "ignored if the \"--generated\" option is not provided.");
+                  "generated test problem is symmetric.  This option is "
+                  "ignored if the \"--generated\" option is not provided.");
+  cmdp.setOption ("gmresUnfriendly", "notGmresUnfriendly", &gmresUnfriendly,
+                  "Whether to generate a \"GMRES-unfriendly\" test problem "
+                  "(the classical permutation matrix example).  This option is "
+                  "ignored if the \"--generated\" option is not provided.");
   cmdp.setOption ("outMatrixFilename", &outMatrixFilename, "Name of the file to "
-		  "which to dump the sparse matrix (in Matrix Market format).  "
-		  "Ignored if the filename is empty or not provided.");
+                  "which to dump the sparse matrix (in Matrix Market format).  "
+                  "Ignored if the filename is empty or not provided.");
   cmdp.setOption ("outRhsFilename", &outRhsFilename, "Name of the file to "
-		  "which to dump the right-hand side(s) (in Matrix Market "
-		  "format).  Ignored if the filename is empty or not provided.");
+                  "which to dump the right-hand side(s) (in Matrix Market "
+                  "format).  Ignored if the filename is empty or not provided.");
   cmdp.setOption ("paramFile", &xmlInFile, "Name of an XML file containing "
-		  "parameters (in Teuchos::ParameterList form) for the solve.");
+                  "parameters (in Teuchos::ParameterList form) for the solve.");
   cmdp.setOption ("outParamFile", &xmlOutFile, "Name of an XML file to which to "
-		  "dump the parameters used by the GMRES solver manager.  These "
-		  "may be different than those given to the solver manager.");
+                  "dump the parameters used by the GMRES solver manager.  These "
+                  "may be different than those given to the solver manager.");
   cmdp.setOption ("verbose", "quiet", &verbose,
-		  "Print messages and results.");
+                  "Print messages and results.");
   cmdp.setOption ("debug", "nodebug", &debug,
-		  "Print debugging information.");
+                  "Print debugging information.");
   cmdp.setOption ("frequency", &frequency, "Frequency of the iterative solver's "
-		  "intermediate status output, in terms of number of iterations."
-		  "  1 means every iteration; -1 means no intermediate status "
-		  "output.  Defaults to -1.  If set, overrides the parameters "
-		  "in the XML file.");
+                  "intermediate status output, in terms of number of iterations."
+                  "  1 means every iteration; -1 means no intermediate status "
+                  "output.  Defaults to -1.  If set, overrides the parameters "
+                  "in the XML file.");
   //
   // Parse the command-line arguments.
   //
   {
-    const CommandLineProcessor::EParseCommandLineReturn parseResult = 
+    const CommandLineProcessor::EParseCommandLineReturn parseResult =
       cmdp.parse (argc,argv);
     // If the caller asks us to print the documentation, or does not
     // specify which matrix to use (from a file, or generated), we let
     // the "test" pass trivially.
-    if (parseResult == CommandLineProcessor::PARSE_HELP_PRINTED || 
-	(matrixFilename == "" && ! generated))
+    if (parseResult == CommandLineProcessor::PARSE_HELP_PRINTED ||
+        (matrixFilename == "" && ! generated))
       {
-	out << "End Result: TEST PASSED" << endl;
-	return EXIT_SUCCESS;
+        out << "End Result: TEST PASSED" << endl;
+        return EXIT_SUCCESS;
       }
-    TEUCHOS_TEST_FOR_EXCEPTION(parseResult != CommandLineProcessor::PARSE_SUCCESSFUL, 
-		       std::invalid_argument, 
-		       "Failed to parse command-line arguments");
+    TEUCHOS_TEST_FOR_EXCEPTION(parseResult != CommandLineProcessor::PARSE_SUCCESSFUL,
+                       std::invalid_argument,
+                       "Failed to parse command-line arguments");
     if (generated)
       {
-	TEUCHOS_TEST_FOR_EXCEPTION(matrixFilename != "",
-			   std::invalid_argument,
-			   "The --generated and \"--matrixFilename=<file>\" "
-			   "options may not both be used.");
-	TEUCHOS_TEST_FOR_EXCEPTION(globalNumRows < std::max(3, Teuchos::size(*comm)),
-			   std::invalid_argument,
-			   "The number of rows in the test matrix to generate "
-			   "must be at least max(3, # MPI processes), in order "
-			   "for the matrix to be nonsingular and for each MPI "
-			   "process to have at least one row of the matrix.");
+        TEUCHOS_TEST_FOR_EXCEPTION(matrixFilename != "",
+                           std::invalid_argument,
+                           "The --generated and \"--matrixFilename=<file>\" "
+                           "options may not both be used.");
+        TEUCHOS_TEST_FOR_EXCEPTION(globalNumRows < std::max(3, Teuchos::size(*comm)),
+                           std::invalid_argument,
+                           "The number of rows in the test matrix to generate "
+                           "must be at least max(3, # MPI processes), in order "
+                           "for the matrix to be nonsingular and for each MPI "
+                           "process to have at least one row of the matrix.");
       }
   }
 
@@ -678,8 +622,8 @@ main (int argc, char *argv[])
   RCP<ParameterList> params = Teuchos::parameterList();
   const bool readParamsFromFile = (xmlInFile != "");
   if (readParamsFromFile) {
-    err << "Reading solve parameters from XML file \"" 
-	<< xmlInFile << "\"...";
+    err << "Reading solve parameters from XML file \""
+        << xmlInFile << "\"...";
 
     updateParametersFromXmlFileAndBroadcast (xmlInFile, ptr (params.getRawPtr ()), *comm);
     err << "done." << endl;
@@ -698,10 +642,10 @@ main (int argc, char *argv[])
     // whatever was in the XML file.
     if (! setFrequencyAtCommandLine) {
       try {
-	const int newFreq = params->get<int>("Output Frequency");
-	frequency = newFreq;
+        const int newFreq = params->get<int>("Output Frequency");
+        frequency = newFreq;
       } catch (Teuchos::Exceptions::InvalidParameter&) {
-	// Do nothing; leave frequency at its (new) default value
+        // Do nothing; leave frequency at its (new) default value
       }
     }
   }
@@ -719,20 +663,20 @@ main (int argc, char *argv[])
   if (verbose || debug) {
     // Change verbosity level from its default.
     if (verbose) {
-      verbosityLevel = Belos::IterationDetails | 
-	Belos::OrthoDetails |
-	Belos::FinalSummary |
-	Belos::TimingDetails |
-	Belos::StatusTestDetails |
-	Belos::Warnings | 
-	Belos::Errors;
+      verbosityLevel = Belos::IterationDetails |
+        Belos::OrthoDetails |
+        Belos::FinalSummary |
+        Belos::TimingDetails |
+        Belos::StatusTestDetails |
+        Belos::Warnings |
+        Belos::Errors;
     } else if (debug) {
       verbosityLevel = Belos::Debug |
-	Belos::Warnings | 
-	Belos::Errors;
+        Belos::Warnings |
+        Belos::Errors;
     }
-    err << "Setting \"Verbosity\" to " << msgTypeToString(verbosityLevel) 
-	<< endl;
+    err << "Setting \"Verbosity\" to " << msgTypeToString(verbosityLevel)
+        << endl;
     params->set ("Verbosity", verbosityLevel);
   }
   //
@@ -744,8 +688,8 @@ main (int argc, char *argv[])
     // For now, we use default parameters.
     RCP<ParameterList> nodeParams = parameterList ("Node Parameters");
     node = getNode<node_type> (nodeParams);
-    TEUCHOS_TEST_FOR_EXCEPTION(node.is_null(), std::logic_error, 
-		       "Failed to initialize Kokkos Node.");
+    TEUCHOS_TEST_FOR_EXCEPTION(node.is_null(), std::logic_error,
+                       "Failed to initialize Kokkos Node.");
   }
   //
   // Make a sparse matrix A.  Either read it from the given file, or
@@ -753,17 +697,17 @@ main (int argc, char *argv[])
   //
   ProblemMaker<sparse_matrix_type> maker (comm, node, tolerant, debug);
   // This dumps the matrix to a file, if outMatrixFilename != "".
-  RCP<sparse_matrix_type> A = 
-    maker.makeMatrix (matrixFilename, outMatrixFilename, globalNumRows, 
-		      generated, symmetric, gmresUnfriendly);
+  RCP<sparse_matrix_type> A =
+    maker.makeMatrix (matrixFilename, outMatrixFilename, globalNumRows,
+                      generated, symmetric, gmresUnfriendly);
   //
   // Construct the initial guess and the right-hand side.  If the
   // right-hand side was read from a file, we don't get X_exact.
   //
   RCP<MV> X_guess, X_exact, B;
   // This dumps B to a file, if outRhsFilename != "".
-  maker.makeVectors (A, X_guess, X_exact, B, rhsFilename, 
-		     outRhsFilename, gmresUnfriendly);
+  maker.makeVectors (A, X_guess, X_exact, B, rhsFilename,
+                     outRhsFilename, gmresUnfriendly);
   // If B was read in from a file, we won't get X_exact.
   const bool haveExactSolution = ! X_exact.is_null();
 
@@ -782,8 +726,8 @@ main (int argc, char *argv[])
     std::vector<magnitude_type> theNorm (MVT::GetNumberVecs (*R));
     MVT::MvNorm (*R, theNorm);
 
-    err << "Initial residual norm: ||B - A*X_guess||_2 = " 
-	<< theNorm[0] << endl;
+    err << "Initial residual norm: ||B - A*X_guess||_2 = "
+        << theNorm[0] << endl;
 
     MVT::MvNorm (*B, theNorm);
     err << "||B||_2 = " << theNorm[0] << endl;
@@ -798,11 +742,11 @@ main (int argc, char *argv[])
       MVT::MvNorm (*X_diff, theNorm);
 
       if (X_exact_norm == STM::zero()) {
-	// Don't compute a relative norm if ||X_exact|| is zero.
-	err << "||X_guess - X_exact||_2 = " << theNorm[0] << endl;
+        // Don't compute a relative norm if ||X_exact|| is zero.
+        err << "||X_guess - X_exact||_2 = " << theNorm[0] << endl;
       } else {
-	err << "||X_guess - X_exact||_2 / ||X_exact||_2 = " 
-	    << theNorm[0] / X_exact_norm << endl;
+        err << "||X_guess - X_exact||_2 / ||X_exact||_2 = "
+            << theNorm[0] / X_exact_norm << endl;
       }
     }
 
@@ -831,8 +775,8 @@ main (int argc, char *argv[])
   // latter may fill in unspecified default values and / or silently
   // correct invalid values.
   if (myRank == 0 && xmlOutFile != "") {
-    err << "Dumping parameters for GMRES solve to XML file \"" 
-	<< xmlOutFile << "\"...";
+    err << "Dumping parameters for GMRES solve to XML file \""
+        << xmlOutFile << "\"...";
     RCP<const ParameterList> curParams = solver.getCurrentParameters();
     Teuchos::writeParameterListToXmlFile (*curParams, xmlOutFile);
     err << "done." << endl;
@@ -843,10 +787,10 @@ main (int argc, char *argv[])
   Belos::ReturnType result = solver.solve();
   if (verbose) {
     const int numEquations = MVT::GetNumberVecs(*B);
-    out << "Total number of iterations: " << solver.getNumIters() 
-	<< endl
-	<< "Relative residual norm" << (numEquations != 1 ? "s" : "") 
-	<< ":" << endl;
+    out << "Total number of iterations: " << solver.getNumIters()
+        << endl
+        << "Relative residual norm" << (numEquations != 1 ? "s" : "")
+        << ":" << endl;
 
     // Norm(s) of the right-hand side(s) are useful for computing
     // relative residuals.
@@ -887,23 +831,23 @@ main (int argc, char *argv[])
 
     // Display resulting residual norm(s) on Rank 0.
     for (std::vector<magnitude_type>::size_type k = 0;
-	 k < rhsNorms.size(); ++k) {
-      out << "For problem " << k+1 << " of " << numEquations << ": " 
-	  << endl
-	  << "* ||b||_2 = " << rhsNorms[k] << endl
-	  << "* ||A x_guess - b||_2 ";
+         k < rhsNorms.size(); ++k) {
+      out << "For problem " << k+1 << " of " << numEquations << ": "
+          << endl
+          << "* ||b||_2 = " << rhsNorms[k] << endl
+          << "* ||A x_guess - b||_2 ";
       if (rhsNorms[k] == STM::zero()) {
-	out << "= " << initResNorms[k] << endl;
+        out << "= " << initResNorms[k] << endl;
       } else {
-	out << "/ ||b||_2 = "
-	    << initResNorms[k] / rhsNorms[k] << endl;
+        out << "/ ||b||_2 = "
+            << initResNorms[k] / rhsNorms[k] << endl;
       }
       out << "* ||A x - b||_2 ";
       if (rhsNorms[k] == STM::zero()) {
-	out << "= " << finalResNorms[k] << endl;
+        out << "= " << finalResNorms[k] << endl;
       } else {
-	out << "/ ||b||_2 = "
-	    << finalResNorms[k] / rhsNorms[k] << endl;
+        out << "/ ||b||_2 = "
+            << finalResNorms[k] / rhsNorms[k] << endl;
       }
       out << "* ||x - x_exact||_2 = " << absSolNorms[k] << endl;
     }
@@ -924,7 +868,7 @@ main (int argc, char *argv[])
     if (result == Belos::Converged) {
       out << "Result: Converged." << endl;
     } else if (result == Belos::Unconverged) {
-      cout << "Result: Unconverged." << endl;	
+      cout << "Result: Unconverged." << endl;
     } else {
       badness = 1;
     }
@@ -933,8 +877,8 @@ main (int argc, char *argv[])
     // test fail quickly.
     Teuchos::broadcast (*comm, 0, 1, &badness);
     if (badness) {
-      err << "GmresSolMgr::solve() returned unknown result value " 
-	  << result << "." << endl;
+      err << "GmresSolMgr::solve() returned unknown result value "
+          << result << "." << endl;
       Teuchos::barrier (*comm);
       return EXIT_FAILURE;
     }
@@ -951,8 +895,8 @@ main (int argc, char *argv[])
   int numFailed = 0;
   if (numFailed != 0) {
     if (verbose) {
-      err << "There were " << numFailed << " error" 
-	  << (numFailed != 1 ? "s." : ".") << endl;
+      err << "There were " << numFailed << " error"
+          << (numFailed != 1 ? "s." : ".") << endl;
     }
     out << "End Result: TEST FAILED" << endl;
     return EXIT_FAILURE;

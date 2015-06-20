@@ -47,8 +47,8 @@
 
 using namespace Teuchos;
 
-void expatStartElementHandler(void* handler, 
-															const XML_Char* name, 
+void expatStartElementHandler(void* handler,
+															const XML_Char* name,
 															const XML_Char** attr)
 {
 	TreeBuildingXMLHandler* h = (TreeBuildingXMLHandler*) handler;
@@ -56,7 +56,7 @@ void expatStartElementHandler(void* handler,
 	std::string tag = name;
 	Teuchos::map<std::string, std::string> attributes;
 	
-	/* the attribute data is stored in a C array of C strings, in order 
+	/* the attribute data is stored in a C array of C strings, in order
 	 * {key1, val1, key2, val2, ...}. */
 
 	for (int i=0; attr[i] != 0; i+=2)
@@ -69,7 +69,7 @@ void expatStartElementHandler(void* handler,
 	h->startElement(tag, attributes);
 }
 
-void expatEndElementHandler(void* handler, 
+void expatEndElementHandler(void* handler,
 														const XML_Char* name)
 {
 	TreeBuildingXMLHandler* h = (TreeBuildingXMLHandler*) handler;
@@ -79,7 +79,7 @@ void expatEndElementHandler(void* handler,
 	h->endElement(tag);
 }
 
-void expatCharacterDataHandler(void* handler, 
+void expatCharacterDataHandler(void* handler,
 															 const XML_Char* s,
 															 int len)
 {

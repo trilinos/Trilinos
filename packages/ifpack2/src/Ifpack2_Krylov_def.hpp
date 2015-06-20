@@ -59,7 +59,6 @@ Krylov (const Teuchos::RCP<const row_matrix_type>& A) :
   ZeroStartingSolution_ (true),
   PreconditionerType_ (1),
   // General
-  Condest_ (-STM::one ()),
   IsInitialized_ (false),
   IsComputed_ (false),
   NumInitialize_ (0),
@@ -93,7 +92,6 @@ void Krylov<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A
   // factorization.
   IsInitialized_ = false;
   IsComputed_ = false;
-  Condest_ = -STM::one ();
 
   A_ = A;
 }
@@ -106,6 +104,9 @@ void Krylov<MatrixType>::setParameters (const Teuchos::ParameterList& plist)
   using Teuchos::ParameterList;
   using Teuchos::Exceptions::InvalidParameterName;
   using Teuchos::Exceptions::InvalidParameterType;
+
+  // FIXME (mfh 12 Sep 2014) Don't rewrite Belos::SolverFactory!!! Use
+  // that instead.
 
   ParameterList params = plist;
 
@@ -302,25 +303,6 @@ double Krylov<MatrixType>::getApplyTime () const {
 
 
 template <class MatrixType>
-typename Krylov<MatrixType>::magnitude_type
-Krylov<MatrixType>::
-computeCondEst (CondestType CT,
-                local_ordinal_type MaxIters,
-                magnitude_type Tol,
-                const Teuchos::Ptr<const row_matrix_type>& matrix)
-{
-  if (! isComputed ()) { // cannot compute right now
-    return -STM::one ();
-  }
-  // NOTE: this is computing the *local* condest
-  if (Condest_ == -STM::one ()) {
-    Condest_ = Ifpack2::Condest (*this, CT, MaxIters, Tol, matrix);
-  }
-  return Condest_;
-}
-
-
-template <class MatrixType>
 void Krylov<MatrixType>::initialize ()
 {
   using Teuchos::ParameterList;
@@ -466,7 +448,7 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
     // we need to create an auxiliary vector, Xcopy
     RCP<const MV> Xcopy;
     if (X.getLocalMV ().getValues () == Y.getLocalMV ().getValues ()) {
-      Xcopy = rcp (new MV (createCopy(X)));
+      Xcopy = rcp (new MV (X, Teuchos::Copy));
     } else {
       Xcopy = rcpFromRef (X);
     }
@@ -555,7 +537,18 @@ describe (Teuchos::FancyOStream &out,
 
 } // namespace Ifpack2
 
+// FIXME (mfh 16 Sep 2014) We should really only use RowMatrix here!
+// There's no need to instantiate for CrsMatrix too.  All Ifpack2
+// preconditioners can and should do dynamic casts if they need a type
+// more specific than RowMatrix.
+//
+// In fact, Krylov really doesn't _need_ the RowMatrix methods; it
+// could very well just rely on the Operator interface.  initialize()
+// need only check whether the domain and range Maps have changed
+// (which would necessitate reinitializing the Krylov solver).
+
 #define IFPACK2_KRYLOV_INSTANT(S,LO,GO,N) \
+  template class Ifpack2::Krylov< Tpetra::RowMatrix<S, LO, GO, N> >; \
   template class Ifpack2::Krylov< Tpetra::CrsMatrix<S, LO, GO, N> >;
 
 #endif /* IFPACK2_KRYLOV_DEF_HPP */

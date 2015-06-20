@@ -86,7 +86,7 @@ $TMPL_PUBLIC_FUNCTIONS
 
     //! Non-member function to create a (potentially) non-uniform, contiguous Map with the default node.
     template <class LocalOrdinal, class GlobalOrdinal>
-    Teuchos::RCP< const TpetraMap<LocalOrdinal,GlobalOrdinal,KokkosClassic::DefaultNode::DefaultNodeType> >
+    Teuchos::RCP< const TpetraMap<LocalOrdinal,GlobalOrdinal> >
     createContigMap(global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
       XPETRA_MONITOR("useTpetra::createContigMap");
 

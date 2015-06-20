@@ -42,7 +42,7 @@
 #ifndef STOKHOS_OPENMP_CRS_PRODUCT_TENSOR_HPP
 #define STOKHOS_OPENMP_CRS_PRODUCT_TENSOR_HPP
 
-#include "Kokkos_OpenMP.hpp"
+#include "Kokkos_Core.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_CrsProductTensor.hpp"

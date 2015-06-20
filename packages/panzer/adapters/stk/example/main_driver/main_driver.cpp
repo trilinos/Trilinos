@@ -53,7 +53,9 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_as.hpp"
 
-#include "Kokkos_DefaultNode.hpp"
+#include "Panzer_NodeType.hpp"
+
+#include "Phalanx_KokkosUtilities.hpp"
 
 #include "Panzer_ConfigDefs.hpp"
 #include "Panzer_STK_ModelEvaluatorFactory.hpp"
@@ -80,6 +82,8 @@
 
 int main(int argc, char *argv[])
 {
+  PHX::InitializeKokkosDevice();
+
   int status = 0;
 
   Teuchos::oblackholestream blackhole;
@@ -421,6 +425,8 @@ int main(int argc, char *argv[])
 
   if (status == 0)
     *out << "panzer::MainDriver run completed." << std::endl;
+
+  PHX::FinalizeKokkosDevice();
 
   return status;
 }

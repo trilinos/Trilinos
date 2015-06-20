@@ -1,10 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include <stddef.h>                     // for size_t
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
@@ -38,7 +63,7 @@ using stk::mesh::fixtures::RingFixture;
 //----------------------------------------------------------------------
 // Testing for mesh entities without relations
 
-TEST(UnitTestingOfBulkData, testDestroy_nodes)
+void testDestroy_nodes(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( pm );
@@ -57,7 +82,7 @@ TEST(UnitTestingOfBulkData, testDestroy_nodes)
 
   meta.commit();
 
-  BulkData bulk( meta , pm );
+  BulkData bulk( meta , pm, autoAuraOption );
 
   // Ids for all entities (all entities have type 0):
 
@@ -108,6 +133,16 @@ TEST(UnitTestingOfBulkData, testDestroy_nodes)
   }
 }
 
+TEST(UnitTestingOfBulkData, testDestroy_nodes_with_aura)
+{
+    testDestroy_nodes(stk::mesh::BulkData::AUTO_AURA);
+}
+
+TEST(UnitTestingOfBulkData, testDestroy_nodes_without_aura)
+{
+    testDestroy_nodes(stk::mesh::BulkData::NO_AUTO_AURA);
+}
+
 //----------------------------------------------------------------------
 
 void assert_is_destroyed(const BulkData& mesh, const Entity entity )
@@ -141,21 +176,15 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
 
   //------------------------------
   { // No ghosting
-    const bool aura_flag = false ;
-
-    RingFixture mesh( pm , nPerProc , false /* No element parts */ );
+    RingFixture mesh( pm , nPerProc , false /* No element parts */, stk::mesh::BulkData::NO_AUTO_AURA );
     mesh.m_meta_data.commit();
     BulkData& bulk = mesh.m_bulk_data;
 
     bulk.modification_begin();
     mesh.generate_mesh( );
-    ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk,
-                                                           false /*no aura*/));
+    ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk));
 
-    bulk.modification_begin();
-    mesh.fixup_node_ownership();
-    ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk,
-                                                           false /*no aura*/));
+    mesh.fixup_node_ownership(BulkData::MOD_END_COMPRESS_AND_SORT);
 
     // This process' first element in the loop
     // if a parallel mesh has a shared node
@@ -192,7 +221,7 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
       ASSERT_TRUE( bulk.destroy_entity( node1 ) );
       node1 = Entity();
     }
-    ASSERT_TRUE( stk::unit_test::modification_end_wrapper(bulk, aura_flag) );
+    ASSERT_TRUE( stk::unit_test::modification_end_wrapper(bulk) );
 
     if ( bulk.is_valid(node0) ) {
       ASSERT_EQ( node0_elements - 1 , bulk.count_relations(node0) );
@@ -205,15 +234,13 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
   if ( 1 < p_size ) { // With ghosting
     RingFixture mesh( pm , nPerProc , false /* No element parts */ );
     mesh.m_meta_data.commit();
-    BulkData& bulk = mesh.m_bulk_data;
+    stk::mesh::unit_test::BulkDataTester& bulk = mesh.m_bulk_data;
 
     bulk.modification_begin();
     mesh.generate_mesh( );
     ASSERT_TRUE( bulk.modification_end() );
 
-    bulk.modification_begin();
     mesh.fixup_node_ownership();
-    ASSERT_TRUE( bulk.modification_end() );
 
     const unsigned nNotOwned = nPerProc * p_rank ;
 
@@ -223,7 +250,9 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
     ASSERT_TRUE( bulk.is_valid(node) );
     ASSERT_NE( p_rank , bulk.parallel_owner_rank(node) );
 
-    ASSERT_EQ( size_t(1) , bulk.entity_comm_map_shared(bulk.entity_key(node)).size() );
+    std::vector<int> shared_procs;
+    bulk.comm_shared_procs(bulk.entity_key(node),shared_procs);
+    ASSERT_EQ( size_t(1) , shared_procs.size() );
     ASSERT_EQ( size_t(2) , bulk.count_relations(node) );
 
     EntityId node_element_ids[2] ;
@@ -260,21 +289,19 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
     assert_is_destroyed(bulk, bulk.get_entity(stk::topology::ELEMENT_RANK, node_element_ids[1] ) );
 
     // assert that no entities are shared or ghosted
-    ASSERT_TRUE( bulk.comm_list().empty() );
+    ASSERT_TRUE( bulk.my_internal_comm_list().empty() );
   }
   //------------------------------
   if ( 1 < p_size ) { // With ghosting
     RingFixture mesh( pm , nPerProc , false /* No element parts */ );
     mesh.m_meta_data.commit();
-    BulkData& bulk = mesh.m_bulk_data;
+    stk::mesh::unit_test::BulkDataTester& bulk = mesh.m_bulk_data;
 
     bulk.modification_begin();
     mesh.generate_mesh( );
     ASSERT_TRUE( bulk.modification_end() );
 
-    bulk.modification_begin();
     mesh.fixup_node_ownership();
-    ASSERT_TRUE( bulk.modification_end() );
 
     // The owned shared entity:
     const unsigned nOwned = ( nPerProc * ( p_rank + 1 ) ) % mesh.m_node_ids.size();
@@ -288,8 +315,12 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
     ASSERT_NE( p_rank , bulk.parallel_owner_rank(node_not_owned) );
     ASSERT_EQ( p_rank , bulk.parallel_owner_rank(node_owned) );
 
-    ASSERT_EQ( 1u , bulk.entity_comm_map_shared(bulk.entity_key(node_owned)).size() );
-    ASSERT_EQ( 1u , bulk.entity_comm_map_shared(bulk.entity_key(node_not_owned)).size() );
+    std::vector<int> node_owned_shared_procs;
+    bulk.comm_shared_procs(bulk.entity_key(node_owned),node_owned_shared_procs);
+    std::vector<int> node_not_owned_shared_procs;
+    bulk.comm_shared_procs(bulk.entity_key(node_not_owned),node_not_owned_shared_procs);
+    ASSERT_EQ( 1u , node_owned_shared_procs.size() );
+    ASSERT_EQ( 1u , node_not_owned_shared_procs.size() );
     ASSERT_EQ( 2u , bulk.count_relations(node_owned) );
 
     EntityId node_element_ids[2] ;
@@ -329,7 +360,7 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
     assert_is_destroyed(bulk, bulk.get_entity(stk::topology::ELEMENT_RANK, node_element_ids[1] ) );
 
     // assert that no entities are shared or ghosted
-    ASSERT_TRUE( bulk.comm_list().empty() );
+    ASSERT_TRUE( bulk.my_internal_comm_list().empty() );
   }
 }
 

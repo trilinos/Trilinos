@@ -1,10 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*  Copyright 2010, 2011, 2012, 2013  Sandia Corporation.                 */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include <string>
 #include <iostream>
@@ -32,7 +57,7 @@ namespace {
 		       const std::string &working_directory,
 		       const std::string &filename,
 		       stk::io::StkMeshIoBroker &mesh_data,
-		       int db_integer_size,
+		       int integer_size,
 		       stk::io::HeartbeatType hb_type,
 		       int interpolation_intervals)
   {
@@ -199,7 +224,7 @@ namespace {
 	      bool compose_output,
 	      int  compression_level,
 	      bool compression_shuffle,
-	      int  db_integer_size,
+	      int  integer_size,
 	      stk::io::HeartbeatType hb_type,
 	      int interpolation_intervals)
   {
@@ -228,12 +253,12 @@ namespace {
     if (use_netcdf4) {
       mesh_data.property_add(Ioss::Property("FILE_TYPE", "netcdf4"));
     }
-    if (db_integer_size == 8) {
-      mesh_data.property_add(Ioss::Property("INTEGER_SIZE_DB", db_integer_size));
-      mesh_data.property_add(Ioss::Property("INTEGER_SIZE_API", db_integer_size));
+    if (integer_size == 8) {
+      mesh_data.property_add(Ioss::Property("INTEGER_SIZE_DB", integer_size));
+      mesh_data.property_add(Ioss::Property("INTEGER_SIZE_API", integer_size));
     }
 
-    mesh_read_write(type, working_directory, filename, mesh_data, db_integer_size, hb_type,
+    mesh_read_write(type, working_directory, filename, mesh_data, integer_size, hb_type,
 		    interpolation_intervals);
   }
 }
@@ -249,7 +274,7 @@ int main(int argc, char** argv)
   int compression_level = 0;
   int interpolation_intervals = 0;
   bool compression_shuffle = false;
-  int db_integer_size = 4;
+  int integer_size = 4;
   bool compose_output = false;
   std::string parallel_io = "";
   std::string heartbeat_format = "none";
@@ -273,7 +298,7 @@ int main(int argc, char** argv)
     ("heartbeat_format", bopt::value<std::string>(&heartbeat_format),
      "Format of heartbeat output. One of binary, csv, text, ts_text, spyhis, [none]")
     ("interpolate", bopt::value<int>(&interpolation_intervals), "number of intervals to divide each input time step into")
-    ("db_integer_size", bopt::value<int>(&db_integer_size), "use 4 or 8-byte integers on output database" );
+    ("integer_size", bopt::value<int>(&integer_size), "use 4 or 8-byte integers for input and output" );
 
 
   stk::parallel_machine_init(&argc, &argv);
@@ -316,7 +341,7 @@ int main(int argc, char** argv)
 
   driver(parallel_io,
 	 working_directory, mesh, type, decomp_method, compose_output, 
-	 compression_level, compression_shuffle, db_integer_size, hb_type,
+	 compression_level, compression_shuffle, integer_size, hb_type,
 	 interpolation_intervals);
 
   stk::parallel_machine_finalize();

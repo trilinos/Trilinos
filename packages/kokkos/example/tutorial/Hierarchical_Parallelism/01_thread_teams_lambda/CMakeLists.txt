@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)   
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -9,7 +8,6 @@ IF (Kokkos_ENABLE_CXX11)
     tutorial_hierarchical_01_thread_teams_lambda
     SOURCES thread_teams_lambda.cpp
     COMM serial mpi
-    DEPLIBS kokkoscore
     )
 ENDIF ()
 

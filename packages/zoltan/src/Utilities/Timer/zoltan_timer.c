@@ -87,9 +87,9 @@ extern "C" {
 
 #define FATALERROR(yo, str) \
   { \
-    int proc; \
-    MPI_Comm_rank(MPI_COMM_WORLD, &proc); \
-    ZOLTAN_PRINT_ERROR(proc, yo, str); \
+    int ppproc; \
+    MPI_Comm_rank(MPI_COMM_WORLD, &ppproc); \
+    ZOLTAN_PRINT_ERROR(ppproc, yo, str); \
     return ZOLTAN_FATAL; \
   }
   

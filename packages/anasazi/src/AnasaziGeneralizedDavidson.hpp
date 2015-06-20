@@ -534,7 +534,7 @@ GeneralizedDavidson<ScalarType,MV,OP>::GeneralizedDavidson(
     TEUCHOS_TEST_FOR_EXCEPTION( d_maxSubspaceDim <= 0, std::invalid_argument, "Maximum Subspace Dimension must be positive" );
     TEUCHOS_TEST_FOR_EXCEPTION( d_problem->getNEV()+2 > pl.get<int>("Maximum Subspace Dimension"),
                                 std::invalid_argument, "Maximum Subspace Dimension must be strictly greater than NEV");
-    TEUCHOS_TEST_FOR_EXCEPTION( d_maxSubspaceDim > MVT::GetVecLength(*problem->getInitVec()),
+    TEUCHOS_TEST_FOR_EXCEPTION( d_maxSubspaceDim > MVT::GetGlobalLength(*problem->getInitVec()),
                                 std::invalid_argument, "Maximum Subspace Dimension cannot exceed problem size");
 
 

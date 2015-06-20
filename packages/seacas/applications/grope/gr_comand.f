@@ -35,7 +35,7 @@ C=======================================================================
      &     NAMECO, EBTYPE, EBNAME, ATNAME, 
      $     NAMIGV, NAMINV, NAMIEV, NAMINS, NAMISS,
      &     NAMOGV, NAMONV, NAMOEV, NAMONS, NAMOSS,
-     &     CORD, MAPEL, MAPNO,
+     &     CORD, MAPEL, MAPND, DOMAPN, DOMAPE,
      &     IDELB, NUMELB, LENE, NUMLNK, NUMATR, LINK, ATRIB,
      &     IDNPS, NNNPS, NDNPS, IXNNPS, IXDNPS, LTNNPS, FACNPS, NSNAME,
      &     IDESS, NEESS, NNESS, IXEESS, IXNESS, LTEESS, LTSESS, FACESS,
@@ -70,7 +70,7 @@ C   --   NAMONV - IN - the names of the nodal variables for comparison
 C   --   NAMOEV - IN - the names of the element variables for comparison
 C   --   CORD - IN - the coordinates
 C   --   MAPEL - IN - the element order map
-C   --   MAPNO - IN - the node order map
+C   --   MAPND - IN - the node order map
 C   --   IDELB - IN - the element block ID for each block
 C   --   NUMELB - IN - the number of elements for each block
 C   --   LENE - IN - the cumulative element count by element block
@@ -139,7 +139,7 @@ C   --   Uses NOUT, NCRT, NPRT, ANYPRT of /OUTFIL/
      $     NAMONS(*), NAMOSS(*)
       REAL CORD(*)
       INTEGER MAPEL(*)
-      INTEGER MAPNO(*)
+      INTEGER MAPND(*)
       INTEGER IDELB(*), NUMELB(*)
       INTEGER LENE(0:*)
       INTEGER NUMLNK(*), NUMATR(*)
@@ -212,9 +212,6 @@ C   --Initialize
       OUTPUT = "grope.o"
       MAXERRS = 10
 
-      DOMAPN = .FALSE.
-      DOMAPE = .FALSE.
-
       LENE(0) = 0
       DO 100 I = 1, NELBLK
         LENE(I) = LENE(I-1) + NUMELB(I)
@@ -280,6 +277,20 @@ C   --Read first time step variables
       WRITE (*, *)
       CALL PRTERR ('CMDREQ',
      & 'Use "precision low|normal|high|#" to control" output precision')
+
+      if (domape .and. domapn) then
+        call PRTERR('CMDREQ',
+     *    'Nodes and Elements using Global Ids')
+      else if (domape) then
+        call PRTERR('CMDREQ',
+     *    'Elements use Global Ids, Node Ids are Local')
+      else if (domapn) then
+        call PRTERR('CMDREQ',
+     *    'Element use Local Ids, Node Ids are Global')
+      else
+        call PRTERR('CMDREQ',
+     *    'Nodes and Elements using Local Ids')
+      end if        
 
  200  CONTINUE
 
@@ -407,8 +418,8 @@ C *** GENESIS Print Commands ***
             CALL MDDEL ('SCRSEL')
             CALL MDDEL ('SCR')
           else
-            CALL RIXINT (DUMLIN, IFLD, INTYP, CFIELD, IFIELD,
-     &        'node number', NUMNP, LISNP(0), LISNP(1), *270)
+            CALL RMIXINT (DUMLIN, IFLD, INTYP, CFIELD, IFIELD,
+     &        'node number', NUMNP, LISNP(0), LISNP(1), MAPND, *270)
           end if
           
         ELSE IF ((VERB .NE. 'SELECT')
@@ -417,8 +428,8 @@ C *** GENESIS Print Commands ***
           CALL CKNONE (NUMNP, .FALSE., 'nodes', *270)
           CALL CKNONE (NDIM, .FALSE., 'coordinates', *270)
 
-          CALL RIXINT (DUMLIN, IFLD, INTYP, CFIELD, IFIELD,
-     &      'node number', NUMNP, LISNP(0), LISNP(1), *270)
+          CALL RMIXINT (DUMLIN, IFLD, INTYP, CFIELD, IFIELD,
+     &      'node number', NUMNP, LISNP(0), LISNP(1), MAPND, *270)
 
           ELSE IF ((LISTYP .EQ. 'ELEMENTS')
      &      .OR. ((VERB .NE. 'SELECT')
@@ -442,8 +453,9 @@ C *** GENESIS Print Commands ***
      *          idess, neess, ixeess, lteess, "elements")
             end if
           else
-            CALL RIXINT (DUMLIN, IFLD, INTYP, CFIELD, IFIELD,
-     &        'element number', NUMEL, IA(KLEL), IA(KLEL+1), *210)
+            CALL RMIXINT (DUMLIN, IFLD, INTYP, CFIELD, IFIELD,
+     &        'element number', NUMEL, IA(KLEL), IA(KLEL+1), MAPEL,
+     *        *210)
           end if
  210      CONTINUE
 
@@ -543,8 +555,8 @@ C *** EXODUS Print Commands ***
           CALL CKEXOD (EXODUS, *270)
           CALL CKNONE (NUMNP, .FALSE., 'nodes', *270)
 
-          CALL RIXINT (DUMLIN, IFLD, INTYP, CFIELD, IFIELD,
-     &      'node number', NUMNP, LISNP(0), LISNP(1), *270)
+          CALL RMIXINT (DUMLIN, IFLD, INTYP, CFIELD, IFIELD,
+     &      'node number', NUMNP, LISNP(0), LISNP(1), MAPND, *270)
 
         ELSE IF (LISTYP .EQ. 'EVARS') THEN
           IF (VERB .EQ. '*') VERB = 'SELECT'
@@ -592,7 +604,7 @@ C *** EXODUS Print Commands ***
           if (ffexst(ifld, intyp)) THEN
             call ffintg(ifld, intyp, ifield, 'Global ID',
      *        0, IDGLO, *270)
-            call selmap(nout, 'node', idglo, numnp, mapno)
+            call selmap(nout, 'node', idglo, numnp, mapnd)
             go to 233
           end if
 
@@ -629,7 +641,7 @@ C *** EXODUS Print Commands ***
           CALL CKNONE (LISNP(0), .TRUE., 'nodes', *270)
 
           CALL PRXYZ ('*', NOUT, NDIM, NAMECO, NUMNP, LISNP, CORD,
-     *      MAPNO, DOMAPN)
+     *      MAPND, DOMAPN)
 
         ELSE IF (LISTYP .EQ. 'MAP') THEN
           CALL CKNONE (NUMEL, .FALSE., 'elements', *270)
@@ -639,7 +651,7 @@ C *** EXODUS Print Commands ***
         ELSE IF (LISTYP .EQ. 'NMAP' .OR. LISTYP .EQ. 'NODEMAP') THEN
           CALL CKNONE (NUMNP, .FALSE., 'nodes', *270)
 
-          CALL PRMAP ('*', NOUT, 'Node', NUMNP, MAPNO)
+          CALL PRMAP ('*', NOUT, 'Node', NUMNP, MAPND)
 
         ELSE IF ((LISTYP .EQ. 'BLOCKS') .OR. (LISTYP .EQ. 'MATERIAL')
      &      .OR. (LISTYP .EQ. 'LINK') .OR. (LISTYP .EQ. 'CONNECTI')
@@ -670,7 +682,7 @@ C *** EXODUS Print Commands ***
           CALL PRELB (OPT, NOUT, NELBLK, NLISEL, LISEL,
      &      IDELB, LENE, NUMLNK, NUMATR, LINK, ATRIB,
      &      EBTYPE, EBNAME, NVAREL, NAMIEV, ISEVOK, A(KXLSEV),
-     *      ATNAME, MAPNO, DOMAPN, MAPEL, DOMAPE)
+     *      ATNAME, MAPND, DOMAPN, MAPEL, DOMAPE)
 
           IF (INDEX (OPT, 'V') .GT. 0) THEN
             CALL MDDEL ('XLISEV')
@@ -701,7 +713,7 @@ C *** EXODUS Print Commands ***
           CALL PRNPS (OPT, NOUT, NUMNPS, LISNPS, LNPSNL,
      &         IDNPS, NNNPS, NDNPS, IXNNPS, IXDNPS, LTNNPS, FACNPS,
      *         NSNAME, nvarns, namins, isnsvok, a(kxlsnv), 
-     $         MAPNO, DOMAPN)
+     $         MAPND, DOMAPN)
           IF (INDEX (OPT, 'V') .GT. 0) THEN
             CALL MDDEL ('XLISNV')
           END IF
@@ -731,13 +743,24 @@ C *** EXODUS Print Commands ***
             CALL MDSTAT (NERR, MEM)
             IF (NERR .GT. 0) GOTO 280
           END IF
+          IF (INDEX (OPT, 'F') .GT. 0) then
+            CALL MDRSRV ('NDFSID', KNDFSID, LESSEL)
+            CALL MDRSRV ('NODSID', KNODSID, LESSNL)
+            CALL MDSTAT (NERR, MEM)
+            IF (NERR .GT. 0) GOTO 280
+          END IF
+            
           CALL PRESS (OPT, NOUT, NUMESS, LISESS, LESSEL, LESSNL,
      &         IDESS, NEESS, NNESS, IXEESS, IXNESS,
      &         LTEESS, LTSESS, FACESS, SSNAME,
      $         nvarss, namiss, isssvok, a(kxlssv),
-     $         MAPEL, DOMAPE)
+     &         a(kndfsid), a(knodsid),MAPEL, MAPND, DOMAPE, DOMAPN)
           IF (INDEX (OPT, 'V') .GT. 0) THEN
             CALL MDDEL ('XLISSV')
+          END IF
+          IF (INDEX (OPT, 'F') .GT. 0) THEN
+            CALL MDDEL ('NDFSID')
+            CALL MDDEL ('NODSID')
           END IF
 
         ELSE IF (LISTYP .EQ. 'INVCON') THEN
@@ -761,7 +784,7 @@ C *** EXODUS Print Commands ***
            end if
            
            call invcon(ia, nelblk, idelb, numelb, numlnk, link, numnp,
-     *          ia(kinvc), ia(kinvs), ia(kndmp), lisnp, NOUT, MAPNO,
+     *          ia(kinvc), ia(kinvs), ia(kndmp), lisnp, NOUT, MAPND,
      $          MAPEL, DOMAPN, DOMAPE, DOBLK, DOELE, ebtype)
            
         ELSE IF (LISTYP .EQ. 'QA') THEN
@@ -809,7 +832,7 @@ C *** EXODUS Print Commands ***
           CALL PRSTEP ('*', NOUT, TIME, NCSTEP, NSTEPS)
 
           CALL PRNODE ('*', NOUT, NUMNP, LISNP, NVARNP, LISNV, NAMINV,
-     &      VARNP, MAPNO, DOMAPN)
+     &      VARNP, MAPND, DOMAPN)
 
         ELSE IF ((LISTYP .EQ. 'EVARS')
      &      .OR. (LISTYP .EQ. 'ELEMENTS')) THEN
@@ -836,7 +859,7 @@ C *** EXODUS Print Commands ***
           CALL PRNSV (NOUT, NCSTEP, NUMNPS, LISNPS, LNPSNL,
      &         IDNPS, NNNPS, IXNNPS, LTNNPS, NSNAME, 
      $         NVARNS, LISMV(0), NAMINS, ISNSVOK, VARNS, max(1,nvarns),
-     *         MAPNO, DOMAPN)
+     *         MAPND, DOMAPN)
 
         ELSE IF ((LISTYP .EQ. 'SSVARS')
      &      .OR. (LISTYP .EQ. 'SIDESETVARS')) THEN
@@ -904,23 +927,28 @@ C     didn't, need to rewrite frefld to return mixed case.
       ELSE IF (VERB .EQ. 'CHECK') THEN
 
         L = MAX (NUMEL, NUMNPS, LNPSNL, NUMESS, LESSEL, LESSNL, NUMNP)
-        CALL MDRSRV ('CHECK', KCHECK, L)
+        CALL MDRSRV ('ICHECK', KICHECK, L)
+        CALL MDRSRV ('ISCR',   KISCR, LESSEL)
+        CALL MDRSRV ('RCHECK', KRCHECK, NUMNP)
         CALL MDSTAT (NERR, MEM)
         IF (NERR .GT. 0) GOTO 240
 
-        CALL CKMAP (NUMEL, MAPEL, IA(KCHECK), 'Element')
-        CALL CKMAP (NUMNP, MAPNO, IA(KCHECK), 'Node')
+        CALL CKMAP (NUMEL, MAPEL, IA(KICHECK), 'Element')
+        CALL CKMAP (NUMNP, MAPND, IA(KICHECK), 'Node')
         CALL CKELB (NELBLK, NUMEL, NUMNP, EBTYPE, 
      &    IDELB, NUMELB, NUMLNK, NUMATR, LINK, ATRIB, ATNAME, 
-     &       IA(KCHECK), MAPNO)
+     &       IA(KICHECK), MAPND)
         CALL CKNPS (NUMNPS, LNPSNL, NUMNP,
-     &    IDNPS, NNNPS, IXNNPS, LTNNPS, FACNPS, A(KCHECK))
+     &    IDNPS, NNNPS, IXNNPS, LTNNPS, FACNPS, A(KICHECK))
         CALL CKESS (NUMESS, LESSEL, LESSNL, NUMEL, NUMNP,
      &    IDESS, NEESS, NNESS, IXEESS, IXNESS,
-     &    LTEESS, LTSESS, FACESS, A(KCHECK), NDIM)
+     &    LTEESS, LTSESS, FACESS,
+     *    A(KISCR), A(KICHECK), A(KRCHECK), NDIM,
+     *    MAPEL, MAPND)
 
  240    CONTINUE
-        CALL MDDEL ('CHECK')
+        CALL MDDEL ('ICHECK')
+        CALL MDDEL ('RCHECK')
 
         IF (EXODUS) THEN
           DO 250 N = 1, NSTEPS

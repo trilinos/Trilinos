@@ -53,9 +53,6 @@ namespace Sacado {
 
 namespace Sacado {
 
-  // We don't specialize Promote because otherwise we can get ambiguous
-  // partial specializations with the Vector classes.
-
   //! Specialization of %ScalarType to Expr types
   template <typename T>
   struct ScalarType< MP::Expr<T> > {

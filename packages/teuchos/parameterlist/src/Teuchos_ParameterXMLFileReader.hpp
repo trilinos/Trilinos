@@ -49,10 +49,10 @@
 
 namespace Teuchos
 {
-  /** 
+  /**
    * Reader for getting parameter lists from XML files
    */
-  class ParameterXMLFileReader 
+  class ParameterXMLFileReader
     {
     public:
       /** \brief Constructor */

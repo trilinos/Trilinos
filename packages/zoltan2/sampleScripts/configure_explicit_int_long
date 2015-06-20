@@ -7,7 +7,7 @@ SRCDIR=~/shared/projects/NewTrilinos
 /bin/rm -rf *.* CMakeFiles Testing packages preCopyrightTrilinos Makefile
 
 cmake \
--D Tpetra_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+-D TpetraCore_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
 -D Tpetra_INST_INT_LONG:BOOL=ON \
 -D Tpetra_INST_FLOAT:BOOL=ON \
 -D TPL_ENABLE_MPI:BOOL=ON \

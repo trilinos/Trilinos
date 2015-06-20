@@ -1006,7 +1006,7 @@ private:
 //
 
 
-/** \brief Base class for transformations for 1 input and 1 output vector. */
+/** \brief Base class for transformations for 2 input and 1 output vector. */
 template<class Scalar, class EleWiseTransformation>
 class TOp_2_1_Base : public RTOpT<Scalar>
 {
@@ -1065,6 +1065,77 @@ public:
       
     }
   
+
+  //@}
+
+private:
+
+  EleWiseTransformation eleWiseTransformation_;
+
+};
+
+/** \brief Base class for transformations for 3 input and 1 output vector. */
+template<class Scalar, class EleWiseTransformation>
+class TOp_3_1_Base : public RTOpT<Scalar>
+{
+public:
+
+  /** \brief . */
+  TOp_3_1_Base(
+    EleWiseTransformation eleWiseTransformation = EleWiseTransformation()
+    )
+    : eleWiseTransformation_(eleWiseTransformation)
+    {}
+
+  /** @name Overridden from RTOpT */
+  //@{
+
+  /** \brief . */
+  void apply_op_impl(
+    const ArrayView<const ConstSubVectorView<Scalar> > &sub_vecs,
+    const ArrayView<const SubVectorView<Scalar> > &targ_sub_vecs,
+    const Ptr<ReductTarget> &reduct_obj_inout
+    ) const
+    {
+      typedef typename Teuchos::ArrayRCP<const Scalar>::iterator const_iter_t;
+      typedef typename Teuchos::ArrayRCP<Scalar>::iterator iter_t;
+
+#ifdef TEUCHOS_DEBUG
+      validate_apply_op<Scalar>(*this, 3, 1, false,
+        sub_vecs, targ_sub_vecs, reduct_obj_inout);
+#endif
+
+      const RTOpPack::index_type subDim = sub_vecs[0].subDim();
+
+      const_iter_t v0_val = sub_vecs[0].values().begin();
+      const ptrdiff_t v0_s = sub_vecs[0].stride();
+
+      const_iter_t v1_val = sub_vecs[1].values().begin();
+      const ptrdiff_t v1_s = sub_vecs[1].stride();
+
+      const_iter_t v2_val = sub_vecs[2].values().begin();
+      const ptrdiff_t v2_s = sub_vecs[2].stride();
+
+      iter_t z0_val = targ_sub_vecs[0].values().begin();
+      const ptrdiff_t z0_s = targ_sub_vecs[0].stride();
+
+      if ( v0_s == 1 && v1_s == 1 && v2_s == 1 && z0_s == 1 ) {
+        for( Teuchos_Ordinal i = 0; i < subDim; ++i )
+          eleWiseTransformation_( *v0_val++, *v1_val++, *v2_val++, *z0_val++ );
+      }
+      else {
+        for(
+          Teuchos_Ordinal i = 0;
+          i < subDim;
+          ++i, v0_val += v0_s, v1_val += v1_s, v2_val += v2_s, z0_val += z0_s
+          )
+        {
+          eleWiseTransformation_( *v0_val, *v1_val, *v2_val, *z0_val );
+        }
+      }
+
+    }
+
   //@}
   
 private:

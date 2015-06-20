@@ -498,7 +498,7 @@ int error = 0;  /* flag to indicate status */
               vwgts[iptr->i] = iptr->v;
           }
           else { /* Off-diagonal */
-            int idx = start[iptr->i]+cnt[iptr->i];
+            idx = start[iptr->i]+cnt[iptr->i];
             adj[idx] = iptr->j;
             if (*ch_ewgt_dim) 
               ewgts[idx] = iptr->v;
@@ -542,8 +542,8 @@ End:
       /* Set hypergraph to be empty. */
       *nVtx  = *nEdge  = *nPins = *vwgt_dim = *ewgt_dim = 0;
       *global_nPins = 0;
-      safe_free((void **)(void *) &index);
-      safe_free((void **)(void *) &vertex);
+      safe_free((void **)(void *) index);
+      safe_free((void **)(void *) vertex);
     }
     safe_free((void **)(void *) &myIJV);
     safe_free((void **)(void *) &myVals);

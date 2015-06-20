@@ -53,6 +53,7 @@
 #include "Ifpack2_Krylov.hpp"
 #include "Ifpack2_BlockRelaxation.hpp"
 #include "Ifpack2_DenseContainer.hpp"
+#include "Ifpack2_Details_OneLevelFactory.hpp"
 
 #ifdef HAVE_IFPACK2_AMESOS2
 #  include "Ifpack2_Details_Amesos2Wrapper.hpp"
@@ -144,6 +145,7 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
 } // namespace Ifpack2
 
 #define IFPACK2_DETAILS_ONELEVELFACTORY_INSTANT(S,LO,GO,N)              \
-  template class Ifpack2::Details::OneLevelFactory< Tpetra::CrsMatrix<S, LO, GO, N> >;
+  template class Ifpack2::Details::OneLevelFactory< Tpetra::CrsMatrix<S, LO, GO, N> >; \
+  template class Ifpack2::Details::OneLevelFactory< Tpetra::RowMatrix<S, LO, GO, N> >;
 
 #endif // IFPACK2_DETAILS_ONELEVELFACTORY_DEF_HPP

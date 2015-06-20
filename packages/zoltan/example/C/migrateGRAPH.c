@@ -64,7 +64,7 @@
 /***************************************************************************/
 /* Name of file containing graph to be partitioned */
 
-static char *fname="graph.txt";
+static char *global_fname="graph.txt";
 
 /***************************************************************************/
 /* Structure to hold graph data */
@@ -410,15 +410,15 @@ int main(int argc, char *argv[])
   ** Read graph from input file and distribute it
   ******************************************************************/
 
-  fp = fopen(fname, "r");
+  fp = fopen(global_fname, "r");
   if (!fp){
-    if (myRank == 0) fprintf(stderr,"ERROR: Can not open %s\n",fname);
+    if (myRank == 0) fprintf(stderr,"ERROR: Can not open %s\n",global_fname);
     MPI_Finalize();
     exit(1);
   }
   fclose(fp);
 
-  read_input_file(myRank, numProcs, fname, &myGraph);
+  read_input_file(myRank, numProcs, global_fname, &myGraph);
 
   /******************************************************************
   ** Create a distributed data directory which maps vertex
@@ -709,7 +709,7 @@ int i, j;
 /* Draw part assignments of the objects.  We know globals IDs are [1,25] */
 static void showGraphParts(int me, struct Zoltan_DD_Struct *dd)
 {
-int i, j, rc, part, cuts, prevPart, nparts=0;
+int i, j, part, cuts, prevPart=-1, nparts=0;
 int *partCount;
 float imbal, localImbal, sum;
 ZOLTAN_ID_TYPE gid[25];
@@ -719,7 +719,7 @@ int parts[25];
     gid[i] = i+1;
   }
 
-  rc = Zoltan_DD_Find(dd, gid, NULL, NULL, parts, 25, NULL);
+  Zoltan_DD_Find(dd, gid, NULL, NULL, parts, 25, NULL);
 
   if (me > 0){
     return;

@@ -128,15 +128,16 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
   if(workset.num_cells<=0)
     return;
 
+  residual.deep_copy(ScalarT(0.0));
+
   if(workset.subcell_dim==1) {
     Intrepid::CellTools<ScalarT>::getPhysicalEdgeTangents(edgeTan,
                                             pointValues.jac,
                                             workset.subcell_index, 
                                            *basis->getCellTopology());
-  
+
     for(std::size_t c=0;c<workset.num_cells;c++) {
       for(int b=0;b<dof.dimension(1);b++) {
-        residual(c,b) = ScalarT(0.0);
         for(int d=0;d<dof.dimension(2);d++)
           residual(c,b) += (dof(c,b,d)-value(c,b,d))*edgeTan(c,b,d);
       } 
@@ -175,7 +176,6 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
 
     for(std::size_t c=0;c<workset.num_cells;c++) {
       for(int b=0;b<dof.dimension(1);b++) {
-        residual(c,b) = ScalarT(0.0);
         for(int d=0;d<dof.dimension(2);d++)
           residual(c,b) += (dof(c,b,d)-value(c,b,d))*edgeTan(c,b,d);
       } 

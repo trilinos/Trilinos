@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -186,7 +186,14 @@ int ex_conv_ini( int  exoid,
   
   nc_inq_format(exoid, &filetype);
      
-  new_file = malloc(sizeof(struct ex_file_item));
+  if (!(new_file = malloc(sizeof(struct ex_file_item)))) {
+    exerrval = EX_MEMFAIL;
+    sprintf(errmsg,
+	    "Error: failed to allocate memory for internal file structure storage file id %d",
+	    exoid);
+    ex_err("ex_inquire",errmsg,exerrval);
+    return (EX_FATAL);
+  }
 
   new_file->file_id = exoid;
   new_file->user_compute_wordsize = *comp_wordsize == 4 ? 0 : 1;

@@ -1,4 +1,4 @@
-/* 
+/*
  * @HEADER
  *
  * ***********************************************************************
@@ -36,8 +36,8 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * Questions? Contact Karen Devine	kddevin@sandia.gov
- *                    Erik Boman	egboman@sandia.gov
+ * Questions? Contact Karen Devine      kddevin@sandia.gov
+ *                    Erik Boman        egboman@sandia.gov
  *
  * ***********************************************************************
  *
@@ -67,7 +67,7 @@ extern "C" {
 
 /****************************************************************************/
 
-static int partition_stats(ZZ *zz, int ndots, 
+static int partition_stats(ZZ *zz, int ndots,
                    Dots *dots, int *obj_sizes,
                    float *work_fraction, int *parts, int *new_parts);
 
@@ -153,7 +153,7 @@ int Zoltan_HSFC(
     zz->Debug_Proc);
 
    if (sizeof (int) != 4) {
-     ZOLTAN_HSFC_ERROR(ZOLTAN_FATAL, 
+     ZOLTAN_HSFC_ERROR(ZOLTAN_FATAL,
                        "HSFC implemented only for 32-bit integers");
    }
 
@@ -210,7 +210,7 @@ int Zoltan_HSFC(
    err = Zoltan_Get_Coordinates(zz, ndots, gids, lids, &(d->ndimension),
                                 &geom_vec);
 
-   if (err != 0) 
+   if (err != 0)
       ZOLTAN_HSFC_ERROR(ZOLTAN_FATAL, "Error in Zoltan_Get_Coordinates.");
 
    if (d->tran.Target_Dim > 0){  /* degenerate geometry */
@@ -258,16 +258,20 @@ int Zoltan_HSFC(
       }
 
    /* Get bounding box, smallest coordinate aligned box containing all dots */
-   for (i = 0; i < dim; i++) 
+   for (i = 0; i < dim; i++)
       out[i] = in[i] = -HUGE_VAL;
-   for (i = dim; i < 2*dim; i++) 
+   for (i = dim; i < 2*dim; i++)
       out[i] = in[i] =  HUGE_VAL;
-   for (i = 0; i < ndots; i++)
+   for (i = 0; i < ndots; i++) {
      for (j = 0; j < dim; j++) {
-       /* get maximum and minimum bound box coordinates: */
+       /* get maximum bound box coordinates: */
        if(dots[i].x[j]>in[j]) in[j]=dots[i].x[j];
-       if(dots[i].x[j]<in[j+dim]) in[j+dim]=dots[i].x[j];
        }
+     for (j = dim; j < 2*dim; j++) {
+       /* get minimum bound box coordinates: */
+       if(dots[i].x[j-dim]<in[j]) in[j]=dots[i].x[j-dim];
+       }
+     }
    err = MPI_Allreduce(in,out,dim,MPI_DOUBLE,MPI_MAX,zz->Communicator);
    err = MPI_Allreduce(in+dim,out+dim,dim,MPI_DOUBLE,MPI_MIN,zz->Communicator);
    if (err != MPI_SUCCESS)
@@ -294,7 +298,6 @@ int Zoltan_HSFC(
       for (j = 0; j < dim; j++)
          out[j] = (dots[i].x[j] - d->bbox_lo[j]) / d->bbox_extent[j];
       dots[i].fsfc = d->fhsfc (zz, out);      /* Note, this is a function call */
-/* printf("KDDKDD %f %f %f \n", dots[i].fsfc, dots[i].x[0], dots[i].x[1]);*/
       }
 
    /* Initialize grand partition to equally spaced intervals on [0,1] */
@@ -311,11 +314,11 @@ int Zoltan_HSFC(
    /* This loop is the real guts of the partitioning algorithm */
    for (loop = 0; loop < MAX_LOOPS; loop++) {
       /* initialize bins, DEFAULT_BIN_MAX is less than any possible max,... */
-      for (i = 0;        i <   pcount; i++) 
+      for (i = 0;        i <   pcount; i++)
          grand_weight[i] = temp_weight[i] = 0.0; /* SUM */
-      for (i =   pcount; i < 2*pcount; i++) 
+      for (i =   pcount; i < 2*pcount; i++)
          grand_weight[i] = temp_weight[i] = DEFAULT_BIN_MAX;
-      for (i = 2*pcount; i < 3*pcount; i++) 
+      for (i = 2*pcount; i < 3*pcount; i++)
          grand_weight[i] = temp_weight[i] = DEFAULT_BIN_MIN;
 
       /* bin weights, max, min for all dots using current grand partition */
@@ -478,7 +481,7 @@ int Zoltan_HSFC(
       /* correct target[]s for cumulative partitioning errors (Bruce H.) */
       correction = ((desired == 0) ? 1.0 : actual/desired);
       }
-   /* check if we didn't close out last sum, fix right boundary if needed */   
+   /* check if we didn't close out last sum, fix right boundary if needed */
    if (i == pcount && k < zz->LB.Num_Global_Parts)
      {
      d->final_partition[k].r = 1.0 + (2.0 * FLT_EPSILON) ;
@@ -498,7 +501,7 @@ int Zoltan_HSFC(
    ZOLTAN_TRACE_DETAIL (zz, yo, "Determined final partition");
 
    new_part = (int *) ZOLTAN_MALLOC(2 * ndots * sizeof(int));
-   if (ndots && !new_part) 
+   if (ndots && !new_part)
       ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Memory error.");
    new_proc = new_part + ndots;
 
@@ -523,7 +526,7 @@ int Zoltan_HSFC(
    /* Remap partitions to reduce data movement. */
    if (zz->LB.Remap_Flag) {
       err = Zoltan_LB_Remap(zz, &new_map, ndots, new_proc, parts, new_part, 1);
-      if (err < 0) 
+      if (err < 0)
          ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL,"Error returned from Zoltan_LB_Remap");
       }
 
@@ -534,12 +537,12 @@ int Zoltan_HSFC(
         start_stat_time = Zoltan_Time(zz->Timer);
         }
      if ((ndots > 0) && ((zz->Get_Obj_Size_Multi) || (zz->Get_Obj_Size))){
-       
+
        objSizes = (int *) ZOLTAN_MALLOC(ndots * sizeof(int));
        if (!objSizes){
          ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Failed to ZOLTAN_MALLOC sizes.");
        }
-   
+
        if (zz->Get_Obj_Size_Multi) {
          zz->Get_Obj_Size_Multi(zz->Get_Obj_Size_Multi_Data,
                                 zz->Num_GID, zz->Num_LID, ndots,
@@ -563,16 +566,16 @@ int Zoltan_HSFC(
          }
        }
      }
-     err = partition_stats(zz, ndots, dots, objSizes, work_fraction, 
+     err = partition_stats(zz, ndots, dots, objSizes, work_fraction,
                            parts, new_part);
-  
+
      if (err != ZOLTAN_OK){
        ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL, "statistics");
      }
      if (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME) {
         total_stat_time = Zoltan_Time(zz->Timer) - start_stat_time;
      }
-  
+
      ZOLTAN_FREE(&objSizes);
    }
 
@@ -597,28 +600,23 @@ EndReporting:
    }
    else if (*num_export > 0) {
       /* allocate storage for export information and fill in data */
-      if (zz->Num_GID > 0) {
-         err = Zoltan_Special_Malloc (zz, (void**) export_gids, *num_export,
-          ZOLTAN_SPECIAL_MALLOC_GID);
-         if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
-            ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Failed to malloc global ids");
-         }
+      if (!Zoltan_Special_Malloc (zz, (void**) export_gids, *num_export,
+                                  ZOLTAN_SPECIAL_MALLOC_GID))
+         ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Failed to malloc global ids");
 
       if (zz->Num_LID > 0) {
-         err = Zoltan_Special_Malloc (zz, (void**) export_lids, *num_export,
-          ZOLTAN_SPECIAL_MALLOC_LID);
-         if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
+         if (!Zoltan_Special_Malloc (zz, (void**) export_lids, *num_export,
+                                     ZOLTAN_SPECIAL_MALLOC_LID)){
             ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Failed to malloc local ids");
+            }
          }
 
-      err = Zoltan_Special_Malloc (zz, (void**) export_procs, *num_export,
-       ZOLTAN_SPECIAL_MALLOC_INT);
-      if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
+      if (!Zoltan_Special_Malloc (zz, (void**) export_procs, *num_export,
+                                  ZOLTAN_SPECIAL_MALLOC_INT))
          ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Failed to malloc export proc list");
 
-      err = Zoltan_Special_Malloc (zz, (void**) export_to_parts, *num_export,
-       ZOLTAN_SPECIAL_MALLOC_INT);
-      if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
+      if (!Zoltan_Special_Malloc (zz, (void**) export_to_parts, *num_export,
+                                  ZOLTAN_SPECIAL_MALLOC_INT))
          ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Failed to malloc export part list");
 
       /* Fill in export arrays */
@@ -670,17 +668,24 @@ EndReporting:
 
 End:
 
+   if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
+      Zoltan_Special_Free(zz, (void **)export_gids, ZOLTAN_SPECIAL_MALLOC_GID);
+      Zoltan_Special_Free(zz, (void **)export_lids, ZOLTAN_SPECIAL_MALLOC_LID);
+      Zoltan_Special_Free(zz, (void **)export_procs, ZOLTAN_SPECIAL_MALLOC_INT);
+      Zoltan_Special_Free(zz, (void **)export_to_parts,
+                          ZOLTAN_SPECIAL_MALLOC_INT);
+      }
    Zoltan_Multifree (__FILE__, __LINE__, 12, &dots, &gids, &lids, &partition,
     &grand_partition, &grand_weight, &temp_weight, &weights, &target, &delta,
     &parts, &tsum);
    if (zz->Obj_Weight_Dim > 1)
       ZOLTAN_FREE (&work_fraction);
-      
+
    if (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME) {
       MPI_Barrier(zz->Communicator);
       end_time = Zoltan_Time(zz->Timer);
       if (zz->Debug_Proc == zz->Proc)
-         printf ("HSFC Processing Time is %.6f seconds\n", 
+         printf ("HSFC Processing Time is %.6f seconds\n",
                   end_time-start_time-total_stat_time);
       }
 
@@ -764,7 +769,7 @@ int Zoltan_HSFC_Set_Param (char *name, char *val)
 
 
 /****************************************************************************/
-static int partition_stats(ZZ *zz, int ndots, 
+static int partition_stats(ZZ *zz, int ndots,
                    Dots *dots, int *obj_sizes,
                    float *work_fraction, int *parts, int *new_parts)
 {
@@ -796,6 +801,8 @@ double *gpartWgt = NULL;
   gpartWgt = (double *)ZOLTAN_MALLOC(numParts * sizeof(double));
 
   if (numParts && (!lpartWgt || !gpartWgt)){
+    ZOLTAN_FREE(&lpartWgt);
+    ZOLTAN_FREE(&gpartWgt);
     ZOLTAN_PRINT_ERROR(zz->Proc, "partition_stats", "Insufficient memory.");
     return ZOLTAN_MEMERR;
   }
@@ -804,7 +811,7 @@ double *gpartWgt = NULL;
     if (wgtDim)
       lpartWgt[new_parts[i]] +=  (double)dots[j].weight;
     else
-      lpartWgt[new_parts[i]] += 1.0; 
+      lpartWgt[new_parts[i]] += 1.0;
 
     if (parts[i] != new_parts[i]){
       if (obj_sizes)

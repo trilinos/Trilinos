@@ -180,6 +180,10 @@ namespace Iogn {
 
     assert(m_generatedMesh != NULL);
     
+    Ioss::Region *this_region = get_region();
+    this_region->property_add(Ioss::Property("global_node_count",    m_generatedMesh->node_count()));
+    this_region->property_add(Ioss::Property("global_element_count", m_generatedMesh->element_count()));
+
     spatialDimension = 3;
     nodeCount = m_generatedMesh->node_count_proc();
     elementCount = m_generatedMesh->element_count_proc();
@@ -195,7 +199,6 @@ namespace Iogn {
     get_sidesets();
     get_commsets();
 
-    Ioss::Region *this_region = get_region();
     this_region->property_add(Ioss::Property(std::string("title"), std::string("GeneratedMesh: ") += get_filename()));
     this_region->property_add(Ioss::Property(std::string("spatial_dimension"), 3));
   }
@@ -742,6 +745,7 @@ namespace Iogn {
 
         Ioss::ElementBlock * el_block = get_region()->get_element_block(touching_blocks[0]);
         ef_block->set_parent_element_block(el_block);
+	add_transient_fields(ef_block);
       }
       else
       {
@@ -769,6 +773,7 @@ namespace Iogn {
 
           Ioss::ElementBlock * el_block = get_region()->get_element_block(touching_block);
           ef_block->set_parent_element_block(el_block);
+	  add_transient_fields(ef_block);
         }
       }
     }
@@ -789,7 +794,7 @@ namespace Iogn {
 
   unsigned DatabaseIO::entity_field_support() const
   {
-    return Ioss::NODEBLOCK | Ioss::ELEMENTBLOCK | Ioss::REGION;
+    return Ioss::NODEBLOCK | Ioss::ELEMENTBLOCK | Ioss::REGION | Ioss::NODESET | Ioss::SIDESET;
   }
 
   void DatabaseIO::add_transient_fields(Ioss::GroupingEntity *entity)

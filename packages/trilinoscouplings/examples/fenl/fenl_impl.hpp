@@ -55,6 +55,8 @@
 #include <Kokkos_ArithTraits.hpp>
 
 #include <Teuchos_CommHelpers.hpp>
+#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_XMLParameterListHelpers.hpp>
 
 // Examples headers:
 
@@ -100,8 +102,8 @@ class BuildLocalToGlobalMap {
   const Map m_lid_to_gid;
   const Fixture m_fixture;
 public:
-  typedef typename Map::device_type device_type;
-  typedef typename device_type::size_type size_type;
+  typedef typename Map::execution_space execution_space;
+  typedef typename execution_space::size_type size_type;
 
   BuildLocalToGlobalMap(const Map& lid_to_gid, const Fixture& fixture) :
     m_lid_to_gid(lid_to_gid),
@@ -144,11 +146,11 @@ public:
   typedef Kokkos::View<     Scalar * , Kokkos::LayoutLeft, Device >  LocalVectorType ;
   typedef Kokkos::DualView< Scalar** , Kokkos::LayoutLeft, Device >  LocalDualVectorType;
 
-  typedef Tpetra::Map<int, int, NodeType>                 MapType;
-  typedef Tpetra::Vector<Scalar,int,int,NodeType>         GlobalVectorType;
-  typedef Tpetra::CrsMatrix<Scalar,int,int,NodeType>      GlobalMatrixType;
-  typedef typename GlobalMatrixType::k_local_matrix_type  LocalMatrixType ;
-  typedef typename LocalMatrixType::StaticCrsGraphType    LocalGraphType ;
+  typedef Tpetra::Map<int, int, NodeType>              MapType;
+  typedef Tpetra::Vector<Scalar,int,int,NodeType>      GlobalVectorType;
+  typedef Tpetra::CrsMatrix<Scalar,int,int,NodeType>   GlobalMatrixType;
+  typedef typename GlobalMatrixType::local_matrix_type LocalMatrixType;
+  typedef typename LocalMatrixType::StaticCrsGraphType LocalGraphType;
 
 
   typedef NodeNodeGraph< typename FixtureType::elem_node_type
@@ -240,7 +242,7 @@ public:
   Problem( const rcpCommType & use_comm
          , const rcpNodeType & use_node
          , const int use_nodes[]
-         , const float grid_bubble[]
+         , const double grid_bubble[]
          , const bool print_flag
          )
     : comm( use_comm )
@@ -264,7 +266,7 @@ public:
     , g_nodal_delta(    RowMap, 1 )
     , g_nodal_solution_no_overlap(
         RowMap ,
-        Kokkos::subview<LocalDualVectorType>( g_nodal_solution.getDualView()
+        Kokkos::subview( g_nodal_solution.getDualView()
                                             , std::pair<unsigned,unsigned>(0,fixture.node_count_owned())
                                             , Kokkos::ALL()
                                             ) )
@@ -272,6 +274,10 @@ public:
     , response()
     , perf()
     {
+      if ( maximum(comm, ( fixture.ok() ? 0 : 1 ) ) ) {
+        throw std::runtime_error(std::string("Problem fixture setup failed"));
+      }
+
       perf.global_elem_count  = fixture.elem_count_global();
       perf.global_node_count  = fixture.node_count_global();
 
@@ -330,6 +336,8 @@ public:
   //----------------------------------------
 
   void solve( const CoeffFunctionType & coeff_function
+            , const double coeff_source
+            , const double coeff_advection
             , const double    bc_lower_value
             , const double    bc_upper_value
             , const unsigned  newton_iteration_limit
@@ -342,6 +350,7 @@ public:
             , const bool   use_muelu
             , const bool   use_mean_based
             , const bool   print_flag
+            , const Teuchos::RCP<Teuchos::ParameterList>& fenlParams
             )
     {
       typedef ElementComputation< FixtureType , LocalMatrixType , CoeffFunctionType >
@@ -363,14 +372,14 @@ public:
       const LocalDualVectorType k_nodal_delta    = g_nodal_delta   .getDualView();
 
       const LocalVectorType nodal_solution =
-        Kokkos::subview<LocalVectorType>(k_nodal_solution.d_view,Kokkos::ALL(),0);
+        Kokkos::subview(k_nodal_solution.d_view,Kokkos::ALL(),0);
       const LocalVectorType nodal_residual =
-        Kokkos::subview<LocalVectorType>(k_nodal_residual.d_view,Kokkos::ALL(),0);
+        Kokkos::subview(k_nodal_residual.d_view,Kokkos::ALL(),0);
       const LocalVectorType nodal_delta =
-        Kokkos::subview<LocalVectorType>(k_nodal_delta.d_view,Kokkos::ALL(),0);
+        Kokkos::subview(k_nodal_delta.d_view,Kokkos::ALL(),0);
 
       LocalVectorType nodal_solution_no_overlap =
-        Kokkos::subview<LocalVectorType>(nodal_solution,std::pair<unsigned,unsigned>(0,fixture.node_count_owned()));
+        Kokkos::subview(nodal_solution,std::pair<unsigned,unsigned>(0,fixture.node_count_owned()));
 
       // Get DeviceConfig structs used by some functors
       Kokkos::DeviceConfig dev_config_elem, dev_config_gath, dev_config_bc;
@@ -381,6 +390,7 @@ public:
 
       // Create element computation functor
       const ElementComputationType elemcomp( fixture , coeff_function ,
+                                             coeff_source , coeff_advection ,
                                              nodal_solution ,
                                              elem_graph ,
                                              jacobian , nodal_residual ,
@@ -450,41 +460,56 @@ public:
         const Magnitude residual_norm = g_nodal_residual.norm2();
 
         perf.newton_residual = residual_norm ;
+        perf.error_max = residual_norm ;
 
-        if ( 0 == perf.newton_iter_count ) { residual_norm_init = residual_norm ; }
+        if ( 0 == perf.newton_iter_count ) {
+          residual_norm_init = residual_norm ;
+        }
 
-        if ( residual_norm < residual_norm_init * newton_iteration_tolerance ) { break ; }
+        if ( residual_norm < residual_norm_init * newton_iteration_tolerance ) {
+          break ;
+        }
 
         //--------------------------------
         // Solve for nonlinear update
 
         result_struct cgsolve;
         if (use_belos) {
+          // Don't accumulate Belos times as the internal Teuchos timers
+          // already accumulate
           cgsolve = belos_solve(rcpFromRef(g_jacobian),
                                 rcpFromRef(g_nodal_residual),
                                 rcpFromRef(g_nodal_delta),
+                                fixture,
                                 use_muelu,
-                                use_mean_based,
+                                use_mean_based ,
+                                fenlParams ,
                                 cg_iteration_limit ,
                                 cg_iteration_tolerance);
+          perf.mat_vec_time    = cgsolve.matvec_time ;
+          perf.cg_iter_time    = cgsolve.iter_time ;
+          perf.prec_setup_time = cgsolve.prec_setup_time ;
+          perf.prec_apply_time = cgsolve.prec_apply_time ;
+          perf.cg_total_time   = cgsolve.total_time ;
         }
         else {
           cgsolve = cg_solve(rcpFromRef(g_jacobian),
                              rcpFromRef(g_nodal_residual),
                              rcpFromRef(g_nodal_delta),
                              cg_iteration_limit,
-                             cg_iteration_tolerance);
+                             cg_iteration_tolerance,
+                             print_flag);
+          perf.mat_vec_time    += cgsolve.matvec_time ;
+          perf.cg_iter_time    += cgsolve.iter_time ;
+          perf.prec_setup_time += cgsolve.prec_setup_time ;
+          perf.prec_apply_time += cgsolve.prec_apply_time ;
+          perf.cg_total_time   += cgsolve.total_time ;
         }
+        perf.cg_iter_count   += cgsolve.iteration ;
 
         // Update solution vector
 
         g_nodal_solution_no_overlap.update(-1.0,g_nodal_delta,1.0);
-        perf.cg_iter_count   += cgsolve.iteration ;
-        perf.mat_vec_time    += cgsolve.matvec_time ;
-        perf.cg_iter_time    += cgsolve.iter_time ;
-        perf.prec_setup_time += cgsolve.prec_setup_time ;
-        perf.prec_apply_time += cgsolve.prec_apply_time ;
-        perf.cg_total_time   += cgsolve.total_time ;
 
         //--------------------------------
 
@@ -544,10 +569,11 @@ public:
 
 
 template < class Scalar, class Device , BoxElemPart::ElemOrder ElemOrder,
-           class CoeffFunctionType , class ManufacturedSolutionType >
+           class CoeffFunctionType >
 Perf fenl(
   const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
   const Teuchos::RCP<  typename ::Kokkos::Compat::KokkosDeviceWrapperNode<Device> >& node,
+  const std::string& fenl_xml_file,
   const int use_print ,
   const int use_trials ,
   const int use_atomic ,
@@ -556,25 +582,34 @@ Perf fenl(
   const int use_mean_based ,
   const int use_nodes[] ,
   const CoeffFunctionType& coeff_function ,
-  const ManufacturedSolutionType& manufactured_solution ,
+  const double coeff_source ,
+  const double coeff_advection ,
   const double bc_lower_value ,
   const double bc_upper_value ,
-  const bool check_solution ,
   Scalar& response,
-  const QuadratureData<Device>& qd )
+  const QuadratureData<Device>& qd = QuadratureData<Device>() )
 {
   typedef typename Kokkos::Details::ArithTraits<Scalar>::mag_type  Magnitude;
 
   typedef Problem< Scalar, Device , ElemOrder, CoeffFunctionType > ProblemType ;
 
-  const int print_flag = use_print && Kokkos::Impl::is_same< Kokkos::HostSpace , typename Device::memory_space >::value ;
+  const int print_flag = use_print && Kokkos::Impl::VerifyExecutionCanAccessMemorySpace< Kokkos::HostSpace::execution_space , typename Device::memory_space >::value ;
 
-  const float geom_bubble[3] = { 1.0 , 1.0 , 1.0 };
+  // Read in any params from xml file
+  Teuchos::RCP<Teuchos::ParameterList> fenlParams = Teuchos::parameterList();
+  Teuchos::updateParametersFromXmlFileAndBroadcast(
+    fenl_xml_file, fenlParams.ptr(), *comm);
 
-  const unsigned  newton_iteration_limit     = 10 ;
-  const Magnitude newton_iteration_tolerance = 1e-7 ;
-  const unsigned  cg_iteration_limit         = 2000 ;
-  const Magnitude cg_iteration_tolerance     = 1e-7 ;
+  const double geom_bubble[3] = { 1.0 , 1.0 , 1.0 };
+
+  const unsigned  newton_iteration_limit =
+    fenlParams->get("Max Nonlinear Iterations", 10) ;
+  const Magnitude newton_iteration_tolerance =
+    fenlParams->get("Nonlinear Solver Tolerance", 1e-7) ;
+  const unsigned  cg_iteration_limit =
+    fenlParams->get("Max Linear Iterations", 2000) ;
+  const Magnitude cg_iteration_tolerance =
+    fenlParams->get("Linear Solver Tolerance", 1e-7) ;
 
   //------------------------------------
   // Problem setup:
@@ -590,6 +625,8 @@ Perf fenl(
   for ( int itrial = 0 ; itrial < use_trials ; ++itrial ) {
 
     problem.solve( coeff_function
+                 , coeff_source
+                 , coeff_advection
                  , bc_lower_value
                  , bc_upper_value
                  , newton_iteration_limit
@@ -602,28 +639,10 @@ Perf fenl(
                  , use_muelu
                  , use_mean_based
                  , print_flag
+                 , fenlParams
                  );
 
     if ( 0 == itrial ) {
-
-      if ( check_solution ) { // Evaluate solution error
-
-        if ( print_flag ) {
-          manufactured_solution.print( std::cout , problem.fixture );
-        }
-
-        const typename ProblemType::LocalDualVectorType k_nodal_solution = problem.g_nodal_solution.getDualView();
-
-        const typename ProblemType::LocalVectorType nodal_solution =
-          Kokkos::subview< typename ProblemType::LocalVectorType >(k_nodal_solution.d_view,Kokkos::ALL(),0);
-
-        const double error_max =
-          manufactured_solution.compute_error( problem.fixture, nodal_solution );
-
-        problem.perf.error_max =
-          std::sqrt( Kokkos::Example::all_reduce_max( error_max , comm ) );
-      }
-
       response   = problem.response ;
       perf_stats = problem.perf ;
     }
@@ -661,63 +680,6 @@ Perf fenl(
 
   return perf_stats ;
 }
-
-#define INST_FENL( SCALAR, DEVICE, ELEMENT, COEFF, MS )              \
-  template Perf                                                      \
-  fenl< SCALAR, DEVICE , ELEMENT , COEFF, MS >(                      \
-    const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,            \
-    const Teuchos::RCP<Kokkos::Compat::KokkosDeviceWrapperNode<DEVICE> >& node,\
-    const int use_print ,                                            \
-    const int use_trials ,                                           \
-    const int use_atomic ,                                           \
-    const int use_belos ,                                            \
-    const int use_muelu ,                                            \
-    const int use_mean_based ,                                       \
-    const int global_elems[] ,                                       \
-    const COEFF& coeff_function ,                                    \
-    const MS& manufactured_solution ,                                \
-    const double bc_lower_value ,                                    \
-    const double bc_upper_value ,                                    \
-    const bool check_solution ,                                      \
-    SCALAR& response ,                                               \
-    const QuadratureData<DEVICE>& qd);
-
-//----------------------------------------------------------------------------
-
-template < typename Scalar, typename MeshScalar, typename Device >
-ElementComputationKLCoefficient<Scalar,MeshScalar,Device>::
-ElementComputationKLCoefficient( const MeshScalar mean ,
-                                 const MeshScalar variance ,
-                                 const MeshScalar correlation_length ,
-                                 const size_type num_rv )
-  : m_mean( mean ),
-    m_variance( variance ),
-    m_corr_len( correlation_length ),
-    m_num_rv( num_rv ),
-    m_rv( "KL Random Variables", m_num_rv ),
-    m_eig( "KL Eigenvalues", m_num_rv ),
-    m_pi( 4.0*std::atan(1.0) )
-{
-  typename EigenView::HostMirror host_eig =
-    Kokkos::create_mirror_view( m_eig );
-
-  const MeshScalar a = std::sqrt( std::sqrt(m_pi)*m_corr_len );
-
-  if (m_num_rv > 0)
-    host_eig(0) = a / std::sqrt( MeshScalar(2) );
-
-  for ( size_type i=1; i<m_num_rv; ++i ) {
-    const MeshScalar b = (i+1)/2;  // floor((i+1)/2)
-    const MeshScalar c = b * m_pi * m_corr_len;
-    host_eig(i) = a * std::exp( -c*c / MeshScalar(8) );
-  }
-
-  Kokkos::deep_copy( m_eig , host_eig );
-}
-
-#define INST_KL( SCALAR, MESH_SCALAR, DEVICE )                        \
-  template class                                                      \
-  ElementComputationKLCoefficient< SCALAR, MESH_SCALAR, DEVICE >;
 
 } /* namespace FENL */
 } /* namespace Example */

@@ -128,7 +128,7 @@ TEUCHOS_UNIT_TEST(Teuchos_ParameterList, parameterEntryConverterExceptions)
   TEST_THROW(RCP<ParameterList>
     noTypeAttributeList = getParametersFromXmlFile("NoTypeAttribute.xml"),
     NoTypeAttributeExecption);
-  
+
   TEST_THROW(RCP<ParameterList>
     noValueAttributeList = getParametersFromXmlFile("NoValueAttribute.xml"),
     NoValueAttributeExecption);
@@ -149,11 +149,11 @@ TEUCHOS_UNIT_TEST(Teuchos_ParameterList, parameterEntryConverterExceptions)
   ValidatortoIDMap dummmyValidatorMap;
   RCP<ParameterEntry> floatParameter = rcp(
     new ParameterEntry((float)3.0));
-  TEST_THROW(intConverter.fromParameterEntrytoXML(floatParameter, "blah", 1, dummmyValidatorMap), 
+  TEST_THROW(intConverter.fromParameterEntrytoXML(floatParameter, "blah", 1, dummmyValidatorMap),
     BadParameterEntryXMLConverterTypeException);
 
   XMLObject floatXML = floatConverter.fromParameterEntrytoXML(floatParameter, "float", 1, dummmyValidatorMap);
-  TEST_THROW(intConverter.fromXMLtoParameterEntry(floatXML), 
+  TEST_THROW(intConverter.fromXMLtoParameterEntry(floatXML),
     BadParameterEntryXMLConverterTypeException);
 
   #endif

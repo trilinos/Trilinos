@@ -1,5 +1,3 @@
-INCLUDE(TribitsPackageMacros)
-INCLUDE(TribitsAddOptionAndDefine)
 
 #
 #  When adding test directories if you want the test to be distributed
@@ -62,6 +60,10 @@ ENDIF()
 
 IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/ch_hammond2)
   ADD_SUBDIRECTORY(ch_hammond2)
+ENDIF()
+
+IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/ch_hughes)
+  ADD_SUBDIRECTORY(ch_hughes)
 ENDIF()
 
 IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/ch_nograph)

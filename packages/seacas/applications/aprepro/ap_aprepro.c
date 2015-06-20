@@ -1,6 +1,6 @@
 /* 
  * Copyright 2007 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,8 +47,8 @@
 static char *qainfo[] =
 {
   "Aprepro",
-  "Date: 2014/04/09",
-  "Revision: 3.04"
+  "Date: 2015/06/03",
+  "Revision: 3.05"
 };
 
 #include <ctype.h>                      // for isdigit
@@ -371,7 +371,7 @@ copyright_output (void)
 {
   ECHOC("%s -------------------------------------------------------------------------\n");
   ECHOC("%s Copyright 2007 Sandia Corporation. Under the terms of Contract\n");
-  ECHOC("%s DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement\n");
+  ECHOC("%s DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government\n");
   ECHOC("%s retains certain rights in this software.\n");
   ECHOC("%s\n");
   ECHOC("%s Redistribution and use in source and binary forms, with or without\n");

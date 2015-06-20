@@ -3,7 +3,7 @@
   <xsl:output method="text"/>
 
   <xsl:template match="/masterlist">
-    <xsl:for-each select="/masterlist/parameter">
+    <xsl:for-each select="/masterlist/*/parameter">
 
       <!-- If default field is present, include it -->
       <xsl:choose>

@@ -1,0 +1,19 @@
+%This is the definitive user guide for the \muelu{} library in Trilinos version XX.YY.
+%\muelu{} is a C++ multigrid framework that can work with either the \epetra or \tpetra linear
+%algebra libraries.
+%\muelu{} provides a variety of aggregation-based multigrid algorithms,
+%including smoothed aggregation algebraic multigrid (AMG), Petrov-Galerkin AMG, and AMG for
+%Maxwell's equations, as well as many different types of smoothers.
+%\muelu{} is templated on the index, scalar, and compute node types.
+%Thus it is possible to use \muelu{} on problems with scalar types other than double, on very
+%large problems, and to exploit node-level parallelism.
+
+This is the official user guide for \muelu{} multigrid library in Trilinos
+version 11.12.  This guide provides an overview of \muelu, its capabilities, and
+instructions for new users who want to start using \muelu{} with a minimum of
+effort. Detailed information is given on how to drive \muelu{} through its XML
+interface. Links to more advanced use cases are given. This guide gives
+information on how to achieve good parallel performance, as well as how to
+introduce new algorithms. Finally, readers will find a comprehensive listing of
+available \muelu{} options.  {\em Any options not documented in this manual
+should be considered strictly experimental.}

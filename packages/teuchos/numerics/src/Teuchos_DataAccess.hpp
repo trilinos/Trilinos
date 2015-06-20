@@ -45,7 +45,7 @@
 #ifndef _TEUCHOS_DATAACCESS_HPP_
 #define _TEUCHOS_DATAACCESS_HPP_
 
-/*! \file Teuchos_DataAccess.hpp 
+/*! \file Teuchos_DataAccess.hpp
     \brief Teuchos::DataAccess Mode enumerable type
 */
 

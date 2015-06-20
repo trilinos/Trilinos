@@ -164,7 +164,7 @@ int Zoltan_Inverse_Perm(
     }
     ierr = Zoltan_Comm_Create(&comm_plan, num_obj, proclist, 
              zz->Communicator, TAG1, &nrecv);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
+    if (ierr != ZOLTAN_OK){
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in Zoltan_Comm_Create");
       goto error;
     }
@@ -177,7 +177,7 @@ int Zoltan_Inverse_Perm(
     }
     /* Do the communication. */
     ierr = Zoltan_Comm_Do(comm_plan, TAG2, (char *)sendlist, 2*sizeof(int), (char *) recvlist);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
+    if (ierr != ZOLTAN_OK){
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in Zoltan_Comm_Do");
       goto error;
     }

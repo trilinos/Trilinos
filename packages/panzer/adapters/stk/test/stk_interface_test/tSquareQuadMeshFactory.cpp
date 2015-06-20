@@ -79,6 +79,7 @@ private:
    Teuchos::RCP<const STK_Interface> mesh_;
 };
 
+/*
 static void getNodeIds(stk_classic::mesh::EntityRank nodeRank,const stk_classic::mesh::Entity * element,std::vector<stk_classic::mesh::EntityId> & nodeIds)
 {
    stk_classic::mesh::PairIterRelation nodeRel = element->relations(nodeRank);
@@ -87,7 +88,9 @@ static void getNodeIds(stk_classic::mesh::EntityRank nodeRank,const stk_classic:
    for(itr=nodeRel.begin();itr!=nodeRel.end();++itr)
       nodeIds.push_back(itr->entity()->identifier());
 }
+*/
 
+/*
 static const double * getNode(const Teuchos::RCP<const STK_Interface> & mesh, const stk_classic::mesh::Entity * element,int id)
 {
    std::vector<stk_classic::mesh::EntityId> nodeIds;
@@ -95,6 +98,7 @@ static const double * getNode(const Teuchos::RCP<const STK_Interface> & mesh, co
 
    return mesh->getNodeCoordinates(nodeIds[id]); 
 }
+*/
 
 TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, periodic_input)
 {

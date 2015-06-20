@@ -7,6 +7,7 @@ echo
 # TrilinosDriver settings:
 #
 
+CTEST_EXE=/Volumes/SnowLeopardOSX/Users/trilinos/CMake-2.8.12/bin/ctest
 export TDD_GIT_EXE=/usr/bin/git
 export TDD_PARALLEL_LEVEL=2
 

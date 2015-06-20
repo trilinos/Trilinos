@@ -3,7 +3,7 @@
   <xsl:output method="text"/>
 
   <xsl:template match="/masterlist">
-    <xsl:for-each select="/masterlist/parameter">
+    <xsl:for-each select="/masterlist/*/parameter">
 
       <!-- Skip parameter if visible field is not true. If it is absent, or is true, do the transformation -->
       <xsl:if test="(count(visible) &lt; 1) or (visible='true')">

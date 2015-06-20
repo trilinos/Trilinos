@@ -1,90 +1,35 @@
-namespace stk {
-namespace mesh {
-}
-}
-
-/** \addtogroup stk_mesh_relations
- *
- * \section entity_relation Entity Relation
- *
- *  An \ref stk::mesh::Relation "entity relation"
- *  defines a directed relationship between two
- *  \ref stk::mesh::Entity "entities" <em>eA</em> and <em>eB</em>.
- *  This relationship is directed from the higher ranking
- *  entity to the lower ranking entity.
- *  \code
- *  if ( eA.entity_type() > eB.entity_type() ) {
- *    // relationship is from eA to eB
- *  }
- *  \endcode
- *
- *  Each \ref stk::mesh::Relation "relationship" has two attributes:
- *  - a <em>local identifier</em> for the relation.
- *  - the <em>kind</em> of relation and
- *
- *  The identifier is <em>local</em> to the <em>from</em>
- *  entity of the relationship.  For example, a relationship
- *  from an element entity to a node entity is given local identifier
- *  according to the element topology's local numbering system
- *  for nodes.
- *  
- *  The kind attribute support and application-defined taxonomy
- *  of relationships.  For example,
- *  - kind == 0 : simple topological connectivity relationships,
- *  - kind == 1 : constraint relationships, or
- *  - kind == 2 : proximity relationships for contact tracking,
- *
- *
- * \section  Querying Relations
- *
- *  Each \ref stk::mesh::Entity "entity" has a set of
- *  \ref stk::mesh::Relation "relations" for which that
- *  entity is a member.
- *  Relations for which the entity is a <em>from</em> members
- *  or a <em>to</em> member are included.
- *
- *
- * \section entity_relation_stencil  Relation Stencil
- *
- *  An \ref stk::mesh::relation_stencil_ptr "entity relation stencil"
- *  is a mapping of a relation <em>type</em> to an integer value.
- *  \code
- *    i = stencil( from_entity_type , to_entity_type , identifer , kind );
- *  \endcode
- *  If the returned integer value is non-negative then a relation
- *  of this type is in the domain of the map.  Otherwise it is not.
- *
- *  An \ref stk::mesh::relation_stencil_ptr "entity relation stencil"
- *  is used to induce
- *  \ref stk::mesh::Entity "entity" membership in
- *  \ref stk::mesh::Part "parts" and to induce
- *  \ref stk_mesh_field_data "field data" pointer values from
- *  \ref stk::mesh::Relation "entity relations". 
- *
- *
- * \section  Induced Part Membership
- *
- *  An \ref stk::mesh::Entity "entity" is becomes a member of a
- *  \ref stk::mesh::Part "mesh part" explicility via the
- *  \ref stk::mesh::BulkData "mesh bulk data"
- *  \ref stk::mesh::BulkData::change_entity_part "change entity parts"
- *  method, and when it membership is <em>induced</em>
- *  by its relationships.
- *
- *  Induced membership occurs as per the following simple type-based rule.
- *  - If <em>entity_from</em> is a explicitly a member of <em>part</em>, and
- *  - if <em>entity_from.entity_type() == part.primary_entity_type()</em>, and
- *  - if a relation exists from <em>entity_from</em> to <em>entity_to</em>
- *  - then <em>entity_to</em> is induced to be a member of <em>part</em>.
- *
- *  The negation holds for both of these induced membership rules:
- *  - In the type-based rule the <em>entity_to</em> cannot be a member
- *    of <em>part</em> unless the conditions of the type-based rule
- *    are satisfied.
- *  - In the stencil-based rule the <em>entity_to</em> cannot be a member
- *    of <em>part_to</em> unless the conditions of the stencil-based rule
- *    are satisfied.
+/*
+ * Copyright (c) 2013, Sandia Corporation.
+ * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+ * the U.S. Government retains certain rights in this software.
  * 
- *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ * 
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ * 
+ *     * Redistributions in binary form must reproduce the above
+ *       copyright notice, this list of conditions and the following
+ *       disclaimer in the documentation and/or other materials provided
+ *       with the distribution.
+ * 
+ *     * Neither the name of Sandia Corporation nor the names of its
+ *       contributors may be used to endorse or promote products derived
+ *       from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
  */
 

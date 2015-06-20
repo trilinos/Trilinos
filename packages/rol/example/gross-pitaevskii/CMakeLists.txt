@@ -1,0 +1,37 @@
+INCLUDE(TribitsAddExecutableAndTest)
+
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    example_01
+    SOURCES example_01.cpp
+    ARGS PrintItAll
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    example_02
+    SOURCES example_02.cpp 
+    ARGS "default" "exactsolve" 
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    example_03
+    SOURCES example_03.cpp 
+    ARGS PrintItAll 
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+  )
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(
+    GrossPitaevskiiDataCopy
+    SOURCE_FILES
+     parameters.xml
+    SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
+    DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
+  )

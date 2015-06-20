@@ -86,7 +86,7 @@ template <class T>
 class SimpleObjectDB
 {
 public:
-  
+
   /** \brief Construct an empty DB. */
   SimpleObjectDB();
 
@@ -119,7 +119,7 @@ public:
    * \return Index to the object.
    */
   int storeConstObj(const RCP<const T> &obj);
-  
+
   /** \brief Performs an rcp_dynamic_cast<>() to store the obejct.
    *
    * If the dynamic cast fails, then an exception is thrown.
@@ -146,7 +146,7 @@ public:
   /** \breif Remove a stored const object from the table and return it.
    */
   RCP<const T> removeConstObj(const int index);
-  
+
   /** \brief Remove an indexed object from the table.
    *
    * If this object is solely owned by this table, then it will be destroyed
@@ -156,41 +156,41 @@ public:
    * table.  If this count is 0, then the object was freed as a side-effect.
    */
   int removeRCP(int &index);
-  
+
   /** \brief Get an object (nonconst persisting association).
    *
    * This will throw NonconstAccessError if a const object was added with
    * <tt>storeConstObj()</tt>.
    */
   RCP<T> getNonconstObjRCP(const int index);
-  
+
   /** \brief Get an object (const persisting association).
    */
   RCP<const T> getConstObjRCP(const int index) const;
-  
+
   /** \brief Get an object (nonconst semi-persisting association).
    *
    * This will throw NonconstAccessError if a const object was added with
    * <tt>storeConstObj()</tt>.
    */
   Ptr<T> getNonconstObjPtr(const int index);
-  
+
   /** \brief Get an object (const semi-persisting association).
    */
   Ptr<const T> getConstObjPtr(const int index) const;
-  
+
   /** \brief Clear out all storage.
    *
    * Clears out the table storage and all RCPs to stored objects.  Any objects
    * solely owned by this table will be freed.
    */
   void purge();
-  
+
 private:
 
   typedef Array<ConstNonconstObjectContainer<T> > tableOfObjects_t;
   typedef Array<int> freedIndices_t;
-  
+
   tableOfObjects_t tableOfObjects_;
   freedIndices_t freedIndices_;
 
@@ -198,7 +198,7 @@ private:
 
   template <class T2>
   int storeObjectImpl(const RCP<T2> &robj);
-  
+
   void removeObjImpl(const int index);
 
 };

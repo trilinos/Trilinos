@@ -46,8 +46,7 @@
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 
 // For computing DeviceConfig
-#include "Kokkos_hwloc.hpp"
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core.hpp"
 
 //
 // Tests various View< Sacado::MP::Vector<...>,...> operations work
@@ -153,15 +152,15 @@ checkConstantVectorView(const ViewType& v,
   return success;
 }
 
-template <typename DataType, typename LayoutType, typename DeviceType>
+template <typename DataType, typename LayoutType, typename ExecutionSpace>
 struct ApplyView {
-  typedef Kokkos::View<DataType,LayoutType,DeviceType> type;
+  typedef Kokkos::View<DataType,LayoutType,ExecutionSpace> type;
 };
 
 struct NoLayout {};
-template <typename DataType, typename DeviceType>
-struct ApplyView<DataType,NoLayout,DeviceType> {
-  typedef Kokkos::View<DataType,DeviceType> type;
+template <typename DataType, typename ExecutionSpace>
+struct ApplyView<DataType,NoLayout,ExecutionSpace> {
+  typedef Kokkos::View<DataType,ExecutionSpace> type;
 };
 
 //
@@ -172,9 +171,22 @@ const int global_num_rows = 11;
 const int global_num_cols = 8;  // Currently must be a multiple of 8 based on
                                 // alignment assumptions for SFS
 
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, Size, Storage, Layout )
+{
+  typedef typename Storage::execution_space Device;
+  typedef Sacado::MP::Vector<Storage> Vector;
+  typedef typename ApplyView<Vector*,Layout,Device>::type ViewType;
+  typedef typename ViewType::size_type size_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type num_cols = Storage::is_static ? Storage::static_size : global_num_cols;
+  ViewType v("view", num_rows, num_cols);
+  TEUCHOS_TEST_EQUALITY(v.size(), num_rows, out, success);
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy, Storage, Layout )
 {
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef typename Storage::value_type Scalar;
   typedef Sacado::MP::Vector<Storage> Vector;
   typedef typename ApplyView<Vector*,Layout,Device>::type ViewType;
@@ -209,7 +221,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy, Storage, Layout )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy_ConstantScalar, Storage, Layout )
 {
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef typename Storage::value_type Scalar;
   typedef Sacado::MP::Vector<Storage> Vector;
   typedef typename ApplyView<Vector*,Layout,Device>::type ViewType;
@@ -227,7 +239,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy_ConstantScalar, Stor
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy_ConstantVector, Storage, Layout )
 {
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef typename Storage::value_type Scalar;
   typedef Sacado::MP::Vector<Storage> Vector;
   typedef typename ApplyView<Vector*,Layout,Device>::type ViewType;
@@ -245,7 +257,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy_ConstantVector, Stor
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy_ConstantVector2, Storage, Layout )
 {
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef typename Storage::value_type Scalar;
   typedef Sacado::MP::Vector<Storage> Vector;
   typedef typename ApplyView<Vector*,Layout,Device>::type ViewType;
@@ -266,7 +278,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy_ConstantVector2, Sto
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Kokkos_View_MP, DeepCopy_Subview_Range, Storage )
 {
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef typename Storage::value_type Scalar;
   typedef Sacado::MP::Vector<Storage> Vector;
   typedef typename ApplyView<Vector**,Kokkos::LayoutLeft,Device>::type ViewType;
@@ -283,8 +295,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Kokkos_View_MP, DeepCopy_Subview_Range, Stora
 
   for (size_type j=0; j<num_cols; ++j) {
     std::pair<size_type,size_type> rows( 0, num_rows1 );
-    ViewType v1s = Kokkos::subview<ViewType>( v1, rows, j );
-    ViewType v2s = Kokkos::subview<ViewType>( v2, rows, j );
+    ViewType v1s = Kokkos::subview( v1, rows, std::pair<size_t,size_t> (j,j+1) );
+    ViewType v2s = Kokkos::subview( v2, rows, std::pair<size_t,size_t> (j,j+1) );
     Kokkos::deep_copy( v1s, Scalar(j+1) );
     Kokkos::deep_copy( v2s, v1s );
   }
@@ -313,7 +325,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Kokkos_View_MP, DeepCopy_Subview_Range, Stora
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy_HostArray, Storage, Layout )
 {
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef typename Storage::value_type Scalar;
   typedef Sacado::MP::Vector<Storage> Vector;
   typedef typename ApplyView<Vector*,Layout,Device>::type ViewType;
@@ -347,7 +359,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy_HostArray, Storage, 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy_DeviceArray, Storage, Layout )
 {
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef typename Storage::value_type Scalar;
   typedef Sacado::MP::Vector<Storage> Vector;
   typedef typename ApplyView<Vector*,Layout,Device>::type ViewType;
@@ -374,7 +386,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy_DeviceArray, Storage
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, Unmanaged, Storage, Layout )
 {
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef typename Storage::value_type Scalar;
   typedef Sacado::MP::Vector<Storage> Vector;
   typedef typename ApplyView<Vector*,Layout,Device>::type ViewType;
@@ -405,8 +417,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, Unmanaged, Storage, Layout )
   Kokkos::deep_copy(v, h_v);
 
   // Create unmanaged view
-  ViewType v2(Kokkos::view_without_managing, v.ptr_on_device(),
-              num_rows, num_cols);
+  ViewType v2(v.ptr_on_device(), num_rows, num_cols);
 
   success = checkVectorView(v2, out);
 }
@@ -415,7 +426,7 @@ namespace Test {
 
 template< class ViewType >
 struct MPVectorAtomicFunctor {
-  typedef typename ViewType::device_type device_type ;
+  typedef typename ViewType::execution_space execution_space ;
 
   typedef typename ViewType::value_type vector_type ;
   typedef typename vector_type::storage_type::value_type scalar_type ;
@@ -440,7 +451,7 @@ struct MPVectorAtomicFunctor {
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeviceAtomic, Storage, Layout )
 {
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef typename Storage::value_type Scalar;
   typedef Sacado::MP::Vector<Storage> Vector;
   typedef typename ApplyView<Vector*,Layout,Device>::type ViewType;
@@ -458,6 +469,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeviceAtomic, Storage, Layout
 
 
 #define VIEW_MP_VECTOR_TESTS_STORAGE_LAYOUT( STORAGE, LAYOUT )          \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
+    Kokkos_View_MP, Size, STORAGE, LAYOUT )                             \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
     Kokkos_View_MP, DeepCopy, STORAGE, LAYOUT )                         \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \

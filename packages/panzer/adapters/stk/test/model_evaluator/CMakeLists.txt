@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -18,6 +17,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  model_evaluator_mass_check
+  SOURCES model_evaluator_mass_check.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   thyra_model_evaluator
   SOURCES thyra_model_evaluator.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
@@ -29,4 +35,11 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES explicit_model_evaluator.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
   NUM_MPI_PROCS 4
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  response_residual 
+  SOURCES response_residual.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  NUM_MPI_PROCS 2
   )

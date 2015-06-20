@@ -1,0 +1,10 @@
+#ifndef TPETRATSQR_CONFIG_H
+#define TPETRATSQR_CONFIG_H
+
+/* Define if building TSQR with std::complex<T> support */
+#cmakedefine HAVE_KOKKOSTSQR_COMPLEX
+
+/* Define if the TBB (Intel Threading Building Blocks) TPL is available */
+#cmakedefine HAVE_KOKKOSTSQR_TBB
+
+#endif // TPETRATSQR_CONFIG_H

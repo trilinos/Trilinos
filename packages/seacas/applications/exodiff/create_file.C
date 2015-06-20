@@ -211,6 +211,21 @@ int Create_File(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2,
 
       output_compare_names("Sideset", interface.ss_var_names, interface.ss_var,
 			   file1.Num_SS_Vars(), file2.Num_SS_Vars());
+      if (!interface.ignore_sideset_df &&
+	  interface.ss_df_tol.type != IGNORE &&
+	  file1.Num_Side_Sets() > 0 &&
+	  file2.Num_Side_Sets() > 0) {
+	sprintf(buf, "Sideset Distribution Factors will be compared .. tol: %8g (%s), floor: %8g",
+		interface.ss_df_tol.value, interface.ss_df_tol.typestr(), interface.ss_df_tol.floor);
+	std::cout << buf << std::endl;
+      } else {
+	if (interface.ignore_sideset_df || interface.ss_df_tol.type == IGNORE) {
+	  std::cout << "Sideset Distribution Factors will not be compared.\n";
+	}
+	else {
+	  std::cout << "No Sideset Distribution Factors on either file.\n";
+	}
+      }
     }
   }
 
@@ -399,7 +414,12 @@ namespace {
       
       for (size_t b = 0; b < num_entity; ++b) {
 	Exo_Entity *set1 = file1.Get_Entity_by_Index(type, b);
-	Exo_Entity *set2 = file2.Get_Entity_by_Id(type, set1->Id());
+	Exo_Entity *set2 = NULL;
+	if (interface.by_name)
+	  set2 = file2.Get_Entity_by_Name(type, set1->Name());
+	else
+	  set2 = file2.Get_Entity_by_Id(type, set1->Id());
+
 	if (set2 == NULL) {
 	  *diff_found = true;
 	  std::cout << "exodiff: WARNING " << label << " id " << set1->Id()

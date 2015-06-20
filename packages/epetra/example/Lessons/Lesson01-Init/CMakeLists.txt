@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
 # This example works whether or not MPI is enabled.
 # It does not refer to MPI explicitly.

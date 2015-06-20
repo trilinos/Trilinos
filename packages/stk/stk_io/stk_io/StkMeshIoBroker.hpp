@@ -1,10 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*  Copyright 2010, 2011, 2012, 2013, 2014 Sandia Corporation.            */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #ifndef STK_IO_STKMESHIOBROKER_HPP
 #define STK_IO_STKMESHIOBROKER_HPP
@@ -16,6 +41,7 @@
 #include <stk_io/DatabasePurpose.hpp>   // for DatabasePurpose
 #include <stk_io/IossBridge.hpp>        // for FieldAndName, STKIORequire, etc
 #include <stk_io/MeshField.hpp>         // for MeshField, etc
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/Selector.hpp>   // for Selector
 #include <stk_util/util/ParameterList.hpp>  // for Type
 #include <string>                       // for string, basic_string
@@ -56,6 +82,8 @@ namespace stk {
       stk::util::ParameterType::Type m_type;
     };
 
+namespace impl
+{
     class OutputFile
     {
     public:
@@ -134,6 +162,7 @@ namespace stk {
       OutputFile(const OutputFile &);
       const OutputFile & operator=(const OutputFile &);
     };
+}
 
     // ========================================================================
     // ========================================================================    
@@ -147,6 +176,8 @@ namespace stk {
       NONE        /* Ignored in this class, can be used by apps */
     };
 
+namespace impl
+{
     // ========================================================================
     class Heartbeat {
     public:
@@ -165,7 +196,7 @@ namespace stk {
       int m_current_step;
       int m_processor;
     };
-
+}
     // ========================================================================    
     //-BEGIN
     class StkMeshIoBroker {
@@ -174,7 +205,7 @@ namespace stk {
       // \param[in] comm MPI Communicator to be used for all
       // parallel communication needed to generate the mesh.
       StkMeshIoBroker(stk::ParallelMachine comm,
-		      stk::mesh::ConnectivityMap *connectivity_map = NULL);
+		      const stk::mesh::ConnectivityMap *connectivity_map = NULL);
       StkMeshIoBroker();
 
       ~StkMeshIoBroker();
@@ -234,6 +265,26 @@ namespace stk {
       // bulk data's metadata
       void set_bulk_data(Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data);
       void set_bulk_data(stk::mesh::BulkData &arg_bulk_data);
+
+      // Replace the current bulk data directly with your own bulk data.
+      // There must be a current bulk data and the current meta data
+      // must match the meta data associated with the new bulk data.
+      // This is a potentially dangerous call depending on what
+      // point of the usage it is made.  Typical use would be to call
+      // this, only if needed, after you are completely done accessing
+      // the input mesh and before any access to the output mesh and only
+      // if the output mesh needs a different bulk data than the input mesh.
+      void replace_bulk_data(Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data);
+      void replace_bulk_data(stk::mesh::BulkData &arg_bulk_data);
+
+      enum SideSetFaceCreationBehavior {
+          STK_IO_SIDESET_FACE_CREATION_CLASSIC = 42,
+          STK_IO_SIDESET_FACE_CREATION_CURRENT = 73
+      };
+      void set_sideset_face_creation_behavior(SideSetFaceCreationBehavior behavior)
+      {
+          m_sideset_face_creation_behavior = behavior;
+      }
 
       // Create the Ioss::DatabaseIO associated with the specified filename
       // and type (exodus by default). The routine checks that the
@@ -533,6 +584,14 @@ namespace stk {
       const stk::mesh::MetaData &meta_data() const;
       const stk::mesh::BulkData &bulk_data() const;
 
+      // Special RCP getters for meta_data and bulk_data. Use these to handoff
+      // meta/bulk data to classes that also track meta/bulk data via RCP.
+      Teuchos::RCP<stk::mesh::MetaData> meta_data_rcp() { return m_meta_data; }
+      Teuchos::RCP<stk::mesh::BulkData> bulk_data_rcp() { return m_bulk_data; }
+
+      Teuchos::RCP<const stk::mesh::MetaData> meta_data_rcp() const { return m_meta_data; }
+      Teuchos::RCP<const stk::mesh::BulkData> bulk_data_rcp() const { return m_bulk_data; }
+
       // Return the coordinate field for this mesh.
       stk::mesh::FieldBase const& get_coordinate_field();
 
@@ -585,15 +644,18 @@ namespace stk {
 
       Teuchos::RCP<stk::mesh::Selector> m_deprecated_selector;
 
-      stk::mesh::ConnectivityMap* m_connectivity_map;
+      const stk::mesh::ConnectivityMap* m_connectivity_map;
 
-      std::vector<Teuchos::RCP<OutputFile> > m_output_files;
-      std::vector<Teuchos::RCP<Heartbeat> > m_heartbeat;
+      std::vector<Teuchos::RCP<impl::OutputFile> > m_output_files;
+      std::vector<Teuchos::RCP<impl::Heartbeat> > m_heartbeat;
       std::vector<Teuchos::RCP<InputFile> > m_input_files;
 
       StkMeshIoBroker(const StkMeshIoBroker&); // Do not implement
       StkMeshIoBroker& operator=(const StkMeshIoBroker&); // Do not implement
       size_t m_active_mesh_index;
+
+      SideSetFaceCreationBehavior m_sideset_face_creation_behavior;
+
     };
 
     inline Teuchos::RCP<Ioss::Region> StkMeshIoBroker::get_output_io_region(size_t output_file_index) {
@@ -623,6 +685,9 @@ namespace stk {
 
     inline void StkMeshIoBroker::set_bulk_data(stk::mesh::BulkData &arg_bulk_data)
     { set_bulk_data(Teuchos::rcpFromRef(arg_bulk_data));}
+
+    inline void StkMeshIoBroker::replace_bulk_data(stk::mesh::BulkData &arg_bulk_data)
+    { replace_bulk_data(Teuchos::rcpFromRef(arg_bulk_data));}
 
     inline void StkMeshIoBroker::add_heartbeat_global(size_t index,
 						      const std::string &name,

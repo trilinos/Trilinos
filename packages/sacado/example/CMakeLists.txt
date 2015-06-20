@@ -1,5 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
-
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   dfad_example
   SOURCES dfad_example.cpp
@@ -21,6 +19,14 @@ IF(Sacado_ENABLE_NESTEDFAD)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     dfad_dfad_example
     SOURCES dfad_dfad_example.cpp
+    ARGS -v
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    dfad_sfad_example
+    SOURCES dfad_sfad_example.cpp
     ARGS -v
     COMM serial mpi
     NUM_MPI_PROCS 1

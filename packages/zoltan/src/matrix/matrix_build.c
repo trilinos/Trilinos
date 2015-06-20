@@ -230,20 +230,26 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix,
     /* Needed for graph : rowID = colID */
     /* y and x may have different distributions */
     matrix->yGNO = (ZOLTAN_GNO_TYPE*)ZOLTAN_MALLOC(matrix->nY * sizeof(ZOLTAN_GNO_TYPE));
-    if (matrix->nY && matrix->yGNO == NULL)
+    if (matrix->nY && matrix->yGNO == NULL) {
+      ZOLTAN_FREE(&pinID);
       MEMORY_ERROR;
+    }
     ierr = Zoltan_DD_Find (dd, yGID, (ZOLTAN_ID_PTR)(matrix->yGNO), NULL, NULL,
 		    matrix->nY, NULL);
     if (ierr != ZOLTAN_OK) {
       ZOLTAN_PRINT_ERROR(zz->Proc,yo,"Hyperedge GIDs don't match.\n");
       ierr = ZOLTAN_FATAL;
+      ZOLTAN_FREE(&pinID);
       goto End;
     }
   }
 
   if (matrix->opts.local) { /* keep only local edges */
     proclist = (int*) ZOLTAN_MALLOC(matrix->nPins*sizeof(int));
-    if (matrix->nPins && proclist == NULL) MEMORY_ERROR;
+    if (matrix->nPins && proclist == NULL) { 
+      ZOLTAN_FREE(&pinID);
+      MEMORY_ERROR;
+    }
   }
   else
     proclist = NULL;
@@ -251,7 +257,10 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix,
   /* Convert pinID to pinGNO using the same translation as x */
   if (use_full_dd) {
     matrix->pinGNO = (ZOLTAN_GNO_TYPE*)ZOLTAN_MALLOC(matrix->nPins* sizeof(ZOLTAN_GNO_TYPE));
-    if ((matrix->nPins > 0) && (matrix->pinGNO == NULL)) MEMORY_ERROR;
+    if ((matrix->nPins > 0) && (matrix->pinGNO == NULL)) {
+        ZOLTAN_FREE(&pinID);
+        MEMORY_ERROR;
+    }
 
     ierr = Zoltan_DD_Find (dd, pinID, (ZOLTAN_ID_PTR)(matrix->pinGNO), NULL, NULL,
 			   matrix->nPins, proclist);
@@ -268,6 +277,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix,
     if (sizeof(ZOLTAN_GNO_TYPE) != sizeof(ZOLTAN_ID_TYPE)){
       matrix->pinGNO = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(matrix->nPins * sizeof(ZOLTAN_GNO_TYPE));
       if (matrix->nPins && !matrix->pinGNO){
+        ZOLTAN_FREE(&pinID);
         MEMORY_ERROR;
       }
       for (i=0; i < matrix->nPins; i++)

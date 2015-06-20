@@ -43,15 +43,23 @@
 #define TEUCHOS_VERSION_HPP
 
 #include "Teuchos_ConfigDefs.hpp"
-#include "Trilinos_version.h"
+#ifdef TEUCHOS_STANDALONE_PACKAGE
+#  include "Teuchos_version.h"
+#else
+#  include "Trilinos_version.h"
+#endif
 
 namespace Teuchos {
 
-	std::string Teuchos_Version() { 
-		return ("Teuchos in Trilinos " TRILINOS_VERSION_STRING); 
+	std::string Teuchos_Version() {
+#ifdef TEUCHOS_STANDALONE_PACKAGE
+		return ("Teuchos standalone package " TEUCHOS_VERSION_STRING);
+#else
+		return ("Teuchos in Trilinos " TRILINOS_VERSION_STRING);
+#endif
 	}
 
 } // namespace Teuchos
 
 #endif // TEUCHOS_VERSION_HPP
- 
+

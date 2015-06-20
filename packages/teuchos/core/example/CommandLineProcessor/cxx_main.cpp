@@ -61,11 +61,11 @@ int main(int argc, char* argv[])
   std::ostream &out = ( procRank == 0 ? std::cout : blackhole );
 
   bool success = true;
-  
+
   try {
-    
+
     out << Teuchos::Teuchos_Version() << std::endl << std::endl;
-    
+
     // Creating an empty command line processor looks like:
     Teuchos::CommandLineProcessor My_CLP;
 
@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
       "This example program demonstrates how to use this Teuchos::CommandLineProcessor class\n"
       "to get options from the command-line and print this help messange automatically.\n"
       );
-    
+
     /* To set and option, it must be given a name and default value.  Additionally,
        each option can be given a help std::string.  Although it is not necessary, a help
        std::string aids a users comprehension of the acceptable command line arguments.
@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
     My_CLP.setOption("iterations", &NumIters, "Number of iterations");
     // Set a long integer command line option
     long int MatrixDim = Teuchos::OrdinalTraits<long int>::max();
-    My_CLP.setOption("long-matrix-dim", &MatrixDim, "Matrix dimension (long)");    
+    My_CLP.setOption("long-matrix-dim", &MatrixDim, "Matrix dimension (long)");
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
     long long int MatrixDim2 = Teuchos::OrdinalTraits<long long int>::max();
     My_CLP.setOption("long-long-matrix-dim", &MatrixDim2, "Matrix dimension (long long)");
@@ -95,7 +95,7 @@ int main(int argc, char* argv[])
     // Set a std::string command line option.
     std::string Solver = "GMRES";
     My_CLP.setOption("solver", &Solver, "Linear solver");
-    // Set a boolean command line option.    
+    // Set a boolean command line option.
     bool Precondition = true;
     My_CLP.setOption("precondition","no-precondition",
                      &Precondition,"Preconditioning flag");
@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
        only have a warning printed), use:
     */
     My_CLP.recogniseAllOptions(true);
-  
+
     /* Second, by default, if the parser finds a command line option it
        doesn't recognize or finds the --help option, it will throw an
        std::exception.  If you want prevent a command line processor from
@@ -161,7 +161,7 @@ int main(int argc, char* argv[])
 
   } // try
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,success);
-  
+
   if(success)
     out << "\nEnd Result: TEST PASSED" << std::endl;	
 

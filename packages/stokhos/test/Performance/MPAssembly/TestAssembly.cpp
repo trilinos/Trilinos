@@ -45,11 +45,7 @@
 #include "TestAssembly.hpp"
 
 // Devices
-#include "KokkosCore_config.h"
-#include "Kokkos_hwloc.hpp"
-#include "Kokkos_Threads.hpp"
-#include "Kokkos_OpenMP.hpp"
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core.hpp"
 
 // Utilities
 #include "Teuchos_DefaultComm.hpp"
@@ -63,18 +59,39 @@ template <typename Storage>
 void mainHost(const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
               const int use_print ,
               const int use_trials ,
-              const int use_atomic ,
               const int use_nodes[] ,
               const bool check ,
-              Kokkos::DeviceConfig dev_config);
+              Kokkos::Example::FENL::DeviceConfig dev_config) {
+#ifdef __MIC__
+  const int entry_min = 8;
+  const int entry_max = 48;
+  const int entry_step = 8;
+#else
+  const int entry_min = 4;
+  const int entry_max = 32;
+  const int entry_step = 4;
+  // const int entry_min = 16;
+  // const int entry_max = 16;
+  // const int entry_step = 16;
+#endif
+
+  performance_test_driver<Storage,entry_min,entry_max,entry_step>(
+    comm, use_print, use_trials, use_nodes, check, dev_config);
+}
+
 template <typename Storage>
 void mainCuda(const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
               const int use_print ,
               const int use_trials ,
-              const int use_atomic ,
               const int use_nodes[] ,
               const bool check ,
-              Kokkos::DeviceConfig dev_config);
+              Kokkos::Example::FENL::DeviceConfig dev_config) {
+  const int entry_min = 16;
+  const int entry_max = 64;
+  const int entry_step = 16;
+  performance_test_driver<Storage,entry_min,entry_max,entry_step>(
+    comm, use_print, use_trials, use_nodes, check, dev_config);
+}
 
 int main(int argc, char *argv[])
 {
@@ -102,8 +119,6 @@ int main(int argc, char *argv[])
     CLP.setOption("n", &nGrid, "Number of mesh points in the each direction");
     int nIter = 10;
     CLP.setOption("ni", &nIter, "Number of assembly iterations");
-    bool atomic = true;
-    CLP.setOption("atomics", "no-atomics", &atomic, "Use atomics");
     bool print = false;
     CLP.setOption("print", "no-print", &print, "Print debugging output");
     bool check = false;
@@ -163,11 +178,11 @@ int main(int argc, char *argv[])
                   << " MPI ranks and " << num_cores*num_hyper_threads
                   << " threads per rank:" << std::endl;
 
-      Kokkos::DeviceConfig dev_config(num_cores,
+      Kokkos::Example::FENL::DeviceConfig dev_config(num_cores,
                                        threads_per_vector,
                                        num_hyper_threads / threads_per_vector);
 
-      mainHost<Storage>(comm, print, nIter, atomic, use_nodes, check,
+      mainHost<Storage>(comm, print, nIter, use_nodes, check,
                         dev_config);
 
       Kokkos::Threads::finalize();
@@ -187,11 +202,11 @@ int main(int argc, char *argv[])
                   << " MPI ranks and " << num_cores*num_hyper_threads
                   << " threads per rank:" << std::endl;
 
-      Kokkos::DeviceConfig dev_config(num_cores,
+      Kokkos::Example::FENL::DeviceConfig dev_config(num_cores,
                                        threads_per_vector,
                                        num_hyper_threads / threads_per_vector);
 
-      mainHost<Storage>(comm, print, nIter, atomic, use_nodes, check,
+      mainHost<Storage>(comm, print, nIter, use_nodes, check,
                         dev_config);
 
       Kokkos::OpenMP::finalize();
@@ -222,7 +237,7 @@ int main(int argc, char *argv[])
           " to run with too many GPUs per node");
       }
 
-      Kokkos::Cuda::host_mirror_device_type::initialize();
+      Kokkos::HostSpace::execution_space::initialize();
       Kokkos::Cuda::initialize(Kokkos::Cuda::SelectDevice(device_id));
 
       cudaDeviceProp deviceProp;
@@ -234,15 +249,15 @@ int main(int argc, char *argv[])
                   << deviceProp.name << "):"
                   << std::endl;
 
-      Kokkos::DeviceConfig dev_config(
+      Kokkos::Example::FENL::DeviceConfig dev_config(
         num_cuda_blocks,
         cuda_threads_per_vector,
         cuda_threads_per_vector == 0 ? 0 : cuda_block_size / cuda_threads_per_vector);
 
-      mainCuda<Storage>(comm, print, nIter, atomic, use_nodes, check,
+      mainCuda<Storage>(comm, print, nIter, use_nodes, check,
                         dev_config);
 
-      Kokkos::Cuda::host_mirror_device_type::finalize();
+      Kokkos::HostSpace::execution_space::finalize();
       Kokkos::Cuda::finalize();
     }
 #endif

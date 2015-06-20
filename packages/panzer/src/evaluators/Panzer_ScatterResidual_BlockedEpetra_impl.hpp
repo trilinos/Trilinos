@@ -67,8 +67,8 @@
 
 #include "Teuchos_FancyOStream.hpp"
 
-template<typename EvalT,typename Traits,typename LO,typename GO>
-panzer::ScatterResidual_BlockedEpetra<EvalT, Traits,LO,GO>::
+template<typename EvalT,typename TRAITS,typename LO,typename GO>
+panzer::ScatterResidual_BlockedEpetra<EvalT, TRAITS,LO,GO>::
 ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
                               const Teuchos::ParameterList& p)
 { 
@@ -101,8 +101,8 @@ ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int>
 // Specialization: Residual
 // **********************************************************************
 
-template<typename Traits,typename LO,typename GO>
-panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Residual, Traits,LO,GO>::
+template<typename TRAITS,typename LO,typename GO>
+panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Residual, TRAITS,LO,GO>::
 ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
                               const Teuchos::ParameterList& p)
   : globalIndexer_(indexer) 
@@ -141,10 +141,10 @@ ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int>
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO> 
-void panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Residual, Traits,LO,GO>::
-postRegistrationSetup(typename Traits::SetupData d, 
-		      PHX::FieldManager<Traits>& fm)
+template<typename TRAITS,typename LO,typename GO> 
+void panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Residual, TRAITS,LO,GO>::
+postRegistrationSetup(typename TRAITS::SetupData d, 
+		      PHX::FieldManager<TRAITS>& fm)
 {
   fieldIds_.resize(scatterFields_.size());
 
@@ -160,20 +160,20 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO>
-void panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Residual, Traits,LO,GO>::
-preEvaluate(typename Traits::PreEvalData d)
+template<typename TRAITS,typename LO,typename GO>
+void panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Residual, TRAITS,LO,GO>::
+preEvaluate(typename TRAITS::PreEvalData d)
 {
    typedef BlockedEpetraLinearObjContainer BLOC;
 
    // extract linear object container
-   blockedContainer_ = Teuchos::rcp_dynamic_cast<const BLOC>(d.getDataObject(globalDataKey_),true);
+   blockedContainer_ = Teuchos::rcp_dynamic_cast<const BLOC>(d.gedc.getDataObject(globalDataKey_),true);
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO>
-void panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Residual, Traits,LO,GO>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename TRAITS,typename LO,typename GO>
+void panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Residual, TRAITS,LO,GO>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
    using Teuchos::RCP;
    using Teuchos::ArrayRCP;
@@ -243,8 +243,8 @@ evaluateFields(typename Traits::EvalData workset)
 // Specialization: Tangent
 // **********************************************************************
 
-template<typename Traits,typename LO,typename GO>
-panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Tangent, Traits,LO,GO>::
+template<typename TRAITS,typename LO,typename GO>
+panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Tangent, TRAITS,LO,GO>::
 ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
                               const Teuchos::ParameterList& p)
   : globalIndexer_(indexer) 
@@ -283,10 +283,10 @@ ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int>
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO> 
-void panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Tangent, Traits,LO,GO>::
-postRegistrationSetup(typename Traits::SetupData d, 
-		      PHX::FieldManager<Traits>& fm)
+template<typename TRAITS,typename LO,typename GO> 
+void panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Tangent, TRAITS,LO,GO>::
+postRegistrationSetup(typename TRAITS::SetupData d, 
+		      PHX::FieldManager<TRAITS>& fm)
 {
   fieldIds_.resize(scatterFields_.size());
 
@@ -302,20 +302,20 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO>
-void panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Tangent, Traits,LO,GO>::
-preEvaluate(typename Traits::PreEvalData d)
+template<typename TRAITS,typename LO,typename GO>
+void panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Tangent, TRAITS,LO,GO>::
+preEvaluate(typename TRAITS::PreEvalData d)
 {
    typedef BlockedEpetraLinearObjContainer BLOC;
 
    // extract linear object container
-   blockedContainer_ = Teuchos::rcp_dynamic_cast<const BLOC>(d.getDataObject(globalDataKey_),true);
+   blockedContainer_ = Teuchos::rcp_dynamic_cast<const BLOC>(d.gedc.getDataObject(globalDataKey_),true);
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO>
-void panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Tangent, Traits,LO,GO>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename TRAITS,typename LO,typename GO>
+void panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Tangent, TRAITS,LO,GO>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
    TEUCHOS_ASSERT(false);
 
@@ -387,8 +387,8 @@ evaluateFields(typename Traits::EvalData workset)
 // Specialization: Jacobian
 // **********************************************************************
 
-template<typename Traits,typename LO,typename GO>
-panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Jacobian, Traits,LO,GO>::
+template<typename TRAITS,typename LO,typename GO>
+panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Jacobian, TRAITS,LO,GO>::
 ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
                               const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
@@ -427,10 +427,10 @@ ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int>
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO> 
-void panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Jacobian, Traits,LO,GO>::
-postRegistrationSetup(typename Traits::SetupData d,
-		      PHX::FieldManager<Traits>& fm)
+template<typename TRAITS,typename LO,typename GO> 
+void panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Jacobian, TRAITS,LO,GO>::
+postRegistrationSetup(typename TRAITS::SetupData d,
+		      PHX::FieldManager<TRAITS>& fm)
 {
   fieldIds_.resize(scatterFields_.size());
 
@@ -446,9 +446,9 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO>
-void panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Jacobian, Traits,LO,GO>::
-preEvaluate(typename Traits::PreEvalData d)
+template<typename TRAITS,typename LO,typename GO>
+void panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Jacobian, TRAITS,LO,GO>::
+preEvaluate(typename TRAITS::PreEvalData d)
 {
    using Teuchos::RCP;
    using Teuchos::rcp_dynamic_cast;
@@ -456,18 +456,18 @@ preEvaluate(typename Traits::PreEvalData d)
    typedef BlockedEpetraLinearObjContainer BLOC;
 
    // extract linear object container
-   blockedContainer_ = rcp_dynamic_cast<const BLOC>(d.getDataObject(globalDataKey_));
+   blockedContainer_ = rcp_dynamic_cast<const BLOC>(d.gedc.getDataObject(globalDataKey_));
 
    if(blockedContainer_==Teuchos::null) {
-     RCP<const LOCPair_GlobalEvaluationData> gdata = rcp_dynamic_cast<const LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true);
+     RCP<const LOCPair_GlobalEvaluationData> gdata = rcp_dynamic_cast<const LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true);
      blockedContainer_ = rcp_dynamic_cast<const BLOC>(gdata->getGhostedLOC());
    }
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO>
-void panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Jacobian, Traits,LO,GO>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename TRAITS,typename LO,typename GO>
+void panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Jacobian, TRAITS,LO,GO>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
    using Teuchos::RCP;
    using Teuchos::ArrayRCP;
@@ -539,7 +539,7 @@ evaluateFields(typename Traits::EvalData workset)
         
          // loop over the basis functions (currently they are nodes)
          for(std::size_t rowBasisNum = 0; rowBasisNum < elmtOffset.size(); rowBasisNum++) {
-            const ScalarT & scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,rowBasisNum);
+            const ScalarT scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,rowBasisNum);
             int rowOffset = elmtOffset[rowBasisNum];
             int r_lid = LIDs[rowOffset];
     
@@ -548,10 +548,13 @@ evaluateFields(typename Traits::EvalData workset)
                local_r[r_lid] += (scatterField.val());
 
             blockOffsets[numFieldBlocks] = scatterField.size(); // add the sentinel
-    
             // loop over the sensitivity indices: all DOFs on a cell
             jacRow.resize(scatterField.size());
-            
+  
+            // For Neumann conditions with no dependence on degrees of freedom, there should be no Jacobian contribution
+            if(scatterField.size() == 0)
+                continue;
+ 
             for(int sensIndex=0;sensIndex<scatterField.size();++sensIndex) {
                jacRow[sensIndex] = scatterField.fastAccessDx(sensIndex);
             }

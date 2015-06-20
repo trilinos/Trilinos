@@ -522,6 +522,12 @@ convert(
   const RCP<const Epetra_Map> &var_map
   );
 
+EpetraExt::ModelEvaluator::MPDerivative
+convert(
+  const ModelEvaluatorBase::MPDerivative &derivative,
+  const RCP<const Epetra_Map> &fnc_map,
+  const RCP<const Epetra_Map> &var_map
+  );
 
 } // namespace Thyra
 

@@ -12,6 +12,7 @@
 
 #include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
+#include <Xpetra_Operator_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_HierarchyManager.hpp"
@@ -69,8 +70,9 @@ namespace MueLu {
     This interpreter uses the same default values as ML. This allows to compare ML/MueLu results
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
-  class AdaptiveSaMLParameterListInterpreter : public HierarchyManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> {
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  class AdaptiveSaMLParameterListInterpreter :
+    public HierarchyManager<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 #undef MUELU_ADAPTIVESAMLPARAMETERLISTINTERPRETER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -155,7 +157,7 @@ namespace MueLu {
 
     //! Used in SetupInitHierarchy() to access levelManagers_
     //! Inputs i=-1 and i=size() are allowed to simplify calls to hierarchy->Setup()
-    Teuchos::Ptr<FactoryManagerBase> InitLvlMngr(int levelID, int lastLevelID) const {
+    Teuchos::RCP<FactoryManagerBase> InitLvlMngr(int levelID, int lastLevelID) const {
 
       // Please not that the order of the 'if' statements is important.
 
@@ -165,11 +167,11 @@ namespace MueLu {
       if (0       == init_levelManagers_.size()) {                     // default factory manager.
         // the default manager is shared across levels, initialized only if needed and deleted with the HierarchyManager.
         static RCP<FactoryManagerBase> defaultMngr = rcp(new FactoryManager());
-        return defaultMngr();
+        return defaultMngr;
       }
-      if (levelID >= init_levelManagers_.size()) return init_levelManagers_[init_levelManagers_.size()-1](); // last levelManager is used for all the remaining levels.
+      if (levelID >= init_levelManagers_.size()) return init_levelManagers_[init_levelManagers_.size()-1]; // last levelManager is used for all the remaining levels.
 
-      return init_levelManagers_[levelID](); // throw exception if out of bound.
+      return init_levelManagers_[levelID]; // throw exception if out of bound.
     }
 
     //! nullspace can be embedded in the ML parameter list
@@ -189,11 +191,11 @@ namespace MueLu {
     //! initialization phase
     Array<RCP<FactoryManagerBase> > init_levelManagers_;
 
-    //@{ Matrix configuration
+    //@{ Operator configuration
 
-    //! Setup Matrix object
+    //! Setup Operator object
     //! overloaded from HierarchyManager to set nDofsPerNode
-    virtual void SetupMatrix(Matrix & Op) const;
+    virtual void SetupOperator(Operator & Op) const;
 
     //! Matrix configuration storage
     int blksize_;

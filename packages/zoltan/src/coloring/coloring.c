@@ -382,7 +382,6 @@ int Zoltan_Color(
   times[2] = Zoltan_Time(zz->Timer);
 #endif
 
-KDDKDDKDD(zz->Proc, "Coloring Hash");
   if (nvtx && !(local_GNOs = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(nvtx * sizeof(ZOLTAN_GNO_TYPE))))
       MEMORY_ERROR;
   for (i=0; i<nvtx; ++i)
@@ -412,7 +411,6 @@ KDDKDDKDD(zz->Proc, "Coloring Hash");
     }
   }
 
-KDDKDDKDD(zz->Proc, "Coloring DD");
   /* lastlno is the total number of local and d1 neighbors */
   lastlno = nvtx+hash.size;
 
@@ -454,7 +452,6 @@ KDDKDDKDD(zz->Proc, "Coloring DD");
   times[3] = Zoltan_Time(zz->Timer);
 #endif
   /* Select Coloring algorithm and perform the coloring */
-KDDKDDKDD(zz->Proc, "Coloring D1");
   if (coloring_problem == '1')
       D1coloring(zz, coloring_problem, coloring_order, coloring_method, comm_pattern, ss, nvtx, &hash, xadj, (int *)adjncy, adjproc, color,
 		 recoloring_permutation, recoloring_type, recoloring_num_of_iterations);
@@ -464,7 +461,6 @@ KDDKDDKDD(zz->Proc, "Coloring D1");
   times[4] = Zoltan_Time(zz->Timer);
 #endif
 
-KDDKDDKDD(zz->Proc, "Coloring Result");
    ierr = Zoltan_DD_Create (&dd_color, zz->Communicator, 
                             sizeof(ZOLTAN_GNO_TYPE)/sizeof(ZOLTAN_ID_TYPE), 0, 0, nvtx, 0);
    if (ierr != ZOLTAN_OK)
@@ -484,7 +480,6 @@ KDDKDDKDD(zz->Proc, "Coloring Result");
    /* Free DDirectory */
    Zoltan_DD_Destroy(&dd_color);
    ZOLTAN_FREE(&my_global_ids); 
-KDDKDDKDD(zz->Proc, "Coloring Done");
 
 #ifdef _DEBUG_TIMES    
   MPI_Barrier(zz->Communicator);
@@ -517,7 +512,7 @@ KDDKDDKDD(zz->Proc, "Coloring Done");
 /* fills the visit array with the n first vertices of xadj using the
    Largest Degree First ordering. The algorithm used to compute this
    ordering is a stable count sort. */
-static void LargestDegreeFirstOrdering(
+static int LargestDegreeFirstOrdering(
     ZZ  *zz, 
     int *visit, /*Out*/
     int *xadj,
@@ -554,10 +549,11 @@ static void LargestDegreeFirstOrdering(
     
 End:
     ZOLTAN_FREE(&cnt);
+    return ierr;
 }
 
 
-static void SmallestDegreeLastOrdering(
+static int SmallestDegreeLastOrdering(
     ZZ  *zz, 
     int *visit, /*Out*/
     int *xadj,
@@ -591,6 +587,7 @@ static void SmallestDegreeLastOrdering(
   }
 End:
   Zoltan_Bucket_Free(&bs);		
+  return ierr;
 }
 
 
@@ -1467,7 +1464,7 @@ static int ReorderGraph(
 
     /* move cut edges to the beginning of adj lists for boundary vertices */
     for (i=0; i<nvtx; ++i) {
-	int j, b, tmp;
+	int b, tmp;
 	b = xadj[i+1] - 1;
 	j = xadj[i];
 	while (b > j) {
@@ -1618,14 +1615,11 @@ static int D1ParallelColoring (
     int rreqcnt=0, sreqcnt=0, repcount;
     int ierr;
     MPI_Datatype gno_mpi_type;
-    ZOLTAN_GNO_TYPE *colored=NULL;
 
     int flag = 0; /* if set to one, will color all the vertices with color 1 */
     gno_mpi_type = Zoltan_mpi_gno_type();
 
     memset(Ssize, 0, sizeof(int) * zz->Num_Proc);
-
-    colored = newcolored[zz->Proc];
 
     /* Issue async recvs */
     for (rreqcnt = i = 0; i < plstcnt; ++i) {
@@ -2360,7 +2354,7 @@ static int Recoloring(ZZ *zz, int recoloring_permutation, int recoloring_type,
   static char *yo = "Recoloring";
   int globnumofcolor = 0;
   int numofcolor = 0; 
-  int marksize, nStart, nEnd, length, color_of_i;
+  int nStart, nEnd, length, color_of_i;
   int *howmanynodeinthatcolor = NULL; /* number of vertices in the color classes of a proc*/
   int *howmanynodeinthatcolorglobal = NULL; /* number of vertices in the color classes of all procs */
   int *sorted_color = NULL; /* sorted colors wrt to number of vertices at them */
@@ -2491,7 +2485,6 @@ static int Recoloring(ZZ *zz, int recoloring_permutation, int recoloring_type,
           /* for  synchronous coloring, recoloring is done for  each color classes separately,i.e. relevant neigs wait each other while  coloring same colored vertices*/
           if (recoloring_type == SYNCHRONOUS) {
               carrierbufsize = globmaxnvtx;
-              marksize = *nColor;
               *nColor = -1;
               for (i=1; i<globnumofcolor+1; i++) {
                   if (recoloring_permutation == REVERSE) {

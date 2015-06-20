@@ -1,13 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2014 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
-/*
- * UnitTestCreateFaces.C created by tcfishe on Feb 20, 2014
- */
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include <stddef.h>                     // for size_t
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
@@ -29,6 +51,7 @@
 #include "stk_mesh/base/Selector.hpp"   // for Selector, operator&, etc
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityRank
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 
 using stk::mesh::MetaData;
 
@@ -77,7 +100,7 @@ namespace {
     size_t exp_elem = 6 * nx * ny * nz;
     return exp_elem;
   }
-}
+
 
 TEST ( UnitTestCreateFaces, Hex_2x1x1 )
 {
@@ -646,7 +669,7 @@ TEST ( UnitTestCreateFaces, Gears )
 
 }
 
-TEST ( UnitTestCreateFaces, Heterogeneous )
+void heterogeneous_create_faces_test(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
 {
   int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
   if (numprocs > 1)
@@ -660,7 +683,7 @@ TEST ( UnitTestCreateFaces, Heterogeneous )
   stk::mesh::fixtures::heterogeneous_mesh_meta_data( meta_data , node_coord );
   meta_data.commit();
 
-  stk::mesh::BulkData bulk_data( meta_data, MPI_COMM_WORLD );
+  stk::mesh::BulkData bulk_data( meta_data, MPI_COMM_WORLD, autoAuraOption );
   stk::mesh::fixtures::heterogeneous_mesh_bulk_data( bulk_data , node_coord );
 
   /*
@@ -703,7 +726,7 @@ TEST ( UnitTestCreateFaces, Heterogeneous )
 
   /*
    * Total elements = 21 = 3 + 3 + 3 + 2 + 3 + 3
-   * Total faces    = 39 = 6 front + 6 back + 9 perimeter + 6 internal + 7 from tet + 5 from pyr
+   * Total faces    = 45 = 6 front + 6 back + 9 perimeter + 6 internal + 7 from tet + 5 from pyr + 6 from extra (2sided) shells
    */
   {
     std::vector<size_t> counts ;
@@ -723,10 +746,19 @@ TEST ( UnitTestCreateFaces, Heterogeneous )
 
     EXPECT_EQ( 21u, counts[node_rank] ); // nodes
     EXPECT_EQ( 0u,  counts[edge_rank] ); // edges
-    EXPECT_EQ( 39u, counts[face_rank] ); // faces
+    EXPECT_EQ( 45u, counts[face_rank] ); // faces
     EXPECT_EQ( 17u, counts[elem_rank] ); // elements
   }
+}
 
+TEST ( UnitTestCreateFaces, HeterogeneousWithAura )
+{
+    heterogeneous_create_faces_test(stk::mesh::BulkData::AUTO_AURA );
+}
+
+TEST ( UnitTestCreateFaces, HeterogeneousNoAura )
+{
+    heterogeneous_create_faces_test(stk::mesh::BulkData::NO_AUTO_AURA );
 }
 
 TEST ( UnitTestCreateFaces, Degenerate )
@@ -797,6 +829,7 @@ TEST ( UnitTestCreateFaces, Degenerate )
     EXPECT_EQ(11u, counts[face_rank] ); // faces
     EXPECT_EQ( 2u, counts[elem_rank] ); // elements
   }
-
 }
+
+} //end empty namespace
 

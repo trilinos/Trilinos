@@ -64,7 +64,7 @@ int main( int argc, char* argv[] ) {
   using Teuchos::constOptInArg;
   using Teuchos::CommandLineProcessor;
 
-        bool success = true;
+  bool success = true;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   //const int procRank = Teuchos::GlobalMPISession::getRank();
@@ -72,21 +72,21 @@ int main( int argc, char* argv[] ) {
   Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
-        try {
+  try {
 
     //
-                // Read options from the commandline
+    // Read options from the commandline
     //
-
+    
     CommandLineProcessor clp(false); // Don't throw exceptions
-
-                CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
-
-                if ( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) {
-                        *out << "\nEnd Result: TEST FAILED" << std::endl;
-                        return parse_return;
-                }
-
+    
+    CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
+    
+    if ( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) {
+      *out << "\nEnd Result: TEST FAILED" << std::endl;
+      return parse_return;
+    }
+    
     *out << std::endl << Teuchos::Teuchos_Version() << std::endl;
 
     *out << "\nTesting Teuchos::Ptr class ...\n";
@@ -282,7 +282,7 @@ int main( int argc, char* argv[] ) {
       }
     }
 
-        }
+  }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,success);
 
   if (success)

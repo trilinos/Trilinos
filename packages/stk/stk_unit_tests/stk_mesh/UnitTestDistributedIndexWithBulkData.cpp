@@ -1,3 +1,36 @@
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+
 #include <gtest/gtest.h>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
@@ -5,7 +38,8 @@
 #include <stk_util/parallel/DistributedIndex.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
-#include <exampleMeshes/StkMeshFromGeneratedMesh.h>
+#include <stk_mesh/baseImpl/MeshImplUtils.hpp>
+#include <stk_unit_test_utils/StkMeshFromGeneratedMesh.h>
 
 namespace {
 
@@ -20,19 +54,19 @@ public:
 
 
 
-void updateDistributedIndexUsingStkMesh(stk::mesh::BulkData &stkMeshBulkData, const int myProc, stk::parallel::DistributedIndex& distributedIndex)
+void updateDistributedIndexUsingStkMesh(stk::mesh::unit_test::BulkDataTester &stkMeshBulkData, stk::parallel::DistributedIndex& distributedIndex)
 {
     stk::parallel::DistributedIndex::KeyTypeVector local_created_or_modified; // only store locally owned/shared entities
 
     size_t num_created_or_modified = 0;
 
-    stk::mesh::impl::EntityRepository &m_entity_repo = stkMeshBulkData.get_entity_repository();
+    stk::mesh::impl::EntityRepository &m_entity_repo = stkMeshBulkData.my_get_entity_repository();
 
     for(stk::mesh::impl::EntityRepository::const_iterator i = m_entity_repo.begin(); i != m_entity_repo.end(); ++i)
     {
         stk::mesh::Entity entity = i->second;
 
-        if(stk::mesh::in_owned_closure(stkMeshBulkData, entity, myProc) &&
+        if(stkMeshBulkData.owned_closure(entity) &&
                 stkMeshBulkData.entity_rank(entity) == stk::topology::NODE_RANK )
         {
             ++num_created_or_modified;
@@ -45,7 +79,7 @@ void updateDistributedIndexUsingStkMesh(stk::mesh::BulkData &stkMeshBulkData, co
     {
         stk::mesh::Entity entity = i->second;
 
-        if(stk::mesh::in_owned_closure(stkMeshBulkData, entity, myProc) &&
+        if(stkMeshBulkData.owned_closure(entity)  &&
                 stkMeshBulkData.entity_rank(entity) == stk::topology::NODE_RANK )
         {
             local_created_or_modified.push_back(stkMeshBulkData.entity_key(entity));
@@ -69,12 +103,12 @@ TEST( UnderstandingDistributedIndex, WithoutStkMeshBulkData)
         unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
         stk::mesh::MetaData &stkMeshMetaData = *stkMesh.getMetaData();
-        stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
+        stk::mesh::unit_test::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
-        stk::parallel::DistributedIndex::KeySpanVector spans = stk::mesh::convert_entity_keys_to_spans(stkMeshMetaData);
+        stk::parallel::DistributedIndex::KeySpanVector spans = stk::mesh::impl::convert_entity_keys_to_spans(stkMeshMetaData);
         DistributedIndexTester distributedIndex(communicator, spans);
 
-        updateDistributedIndexUsingStkMesh(stkMeshBulkData, myProc, distributedIndex);
+        updateDistributedIndexUsingStkMesh(stkMeshBulkData, distributedIndex);
 
         const unsigned rankCount = stkMeshMetaData.entity_rank_count();
         EXPECT_EQ(4u, rankCount);
@@ -149,6 +183,11 @@ TEST( UnderstandingDistributedIndex, ViaStkMeshBulkData)
         const std::string generatedMeshSpec = "generated:2x2x2|sideset:xXyYzZ|nodeset:xXyYzZ";
         unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
+        stk::mesh::MetaData &stkMeshMetaData = *stkMesh.getMetaData();
+        stk::mesh::Part &line2_part = stkMeshMetaData.get_topology_root_part(stk::topology::LINE_2);
+        stk::mesh::Part &quad4_part = stkMeshMetaData.get_topology_root_part(stk::topology::QUAD_4);
+        stk::mesh::Part &hex8_part = stkMeshMetaData.get_topology_root_part(stk::topology::HEX_8);
+
         stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
 
         MPI_Barrier(communicator);
@@ -174,6 +213,11 @@ TEST( UnderstandingDistributedIndex, ViaStkMeshBulkData)
         stkMeshBulkData.modification_begin();
         stkMeshBulkData.generate_new_entities(requests, requested_entities);
 
+        stk::mesh::PartVector element_topo_parts, face_topo_parts, edge_topo_parts, empty_parts;
+        edge_topo_parts.push_back(&line2_part);
+        face_topo_parts.push_back(&quad4_part);
+        element_topo_parts.push_back(&hex8_part);
+
         //each entity in requested_entities needs to be connected to at least one node
         //because stk-mesh requires that.
         size_t idx = requests[0];
@@ -181,7 +225,32 @@ TEST( UnderstandingDistributedIndex, ViaStkMeshBulkData)
         for(size_t i=1; i<requests.size(); ++i) {
           for(size_t j=0; j<requests[i]; ++j) {
             stk::mesh::Entity entity = requested_entities[idx++];
-            stkMeshBulkData.declare_relation(entity, node, 0);
+            stk::topology entity_topo;
+            stk::mesh::EntityRank entity_rank = stkMeshBulkData.entity_rank(entity);
+            switch (entity_rank)
+            {
+            case stk::topology::EDGE_RANK:
+              stkMeshBulkData.change_entity_parts(entity, edge_topo_parts, empty_parts);
+              entity_topo = stk::topology::LINE_2;
+              break;
+            case stk::topology::FACE_RANK:
+              stkMeshBulkData.change_entity_parts(entity, face_topo_parts, empty_parts);
+              entity_topo = stk::topology::QUAD_4;
+              break;
+            case stk::topology::ELEMENT_RANK:
+              stkMeshBulkData.change_entity_parts(entity, element_topo_parts, empty_parts);
+              entity_topo = stk::topology::HEX_8;
+              break;
+            default:
+              break;
+            }
+            if (entity_rank != stk::topology::NODE_RANK)
+            {
+              for (unsigned ord = 0; ord < entity_topo.num_nodes(); ++ord)
+              {
+                stkMeshBulkData.declare_relation(entity, node, ord);
+              }
+            }
           }
         }
 
@@ -238,7 +307,7 @@ TEST(UnderstandingDistributedIndex, TestSharedAndGhostedAndOwnedEntitiesWithoutA
         const std::string generatedMeshSpec = "generated:2x2x2|sideset:xXyYzZ|nodeset:xXyYzZ";
         unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
-        stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
+        stk::mesh::unit_test::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
         int sharedNodeIds[] = { 10, 11, 12, 13, 14, 15, 16, 17, 18 };
 
@@ -254,7 +323,7 @@ TEST(UnderstandingDistributedIndex, TestSharedAndGhostedAndOwnedEntitiesWithoutA
             stk::mesh::Entity sharedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, sharedNodeIds[i]);
             stk::mesh::Bucket& bucket = stkMeshBulkData.bucket(sharedNode);
             EXPECT_TRUE(bucket.shared());
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map_shared(stkMeshBulkData.entity_key(sharedNode));
+            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.my_internal_entity_comm_map_shared(stkMeshBulkData.entity_key(sharedNode));
             EXPECT_TRUE(commStuff.size() == 1);
             EXPECT_TRUE((*commStuff.first).proc == otherProcId);
             size_t sharedButNotGhostedId = 0;
@@ -277,7 +346,7 @@ TEST(UnderstandingDistributedIndex, TestSharedAndGhostedAndOwnedEntitiesWithoutA
             stk::mesh::Bucket& bucket = stkMeshBulkData.bucket(ghostedNode);
             bool isGhosted = !bucket.shared() && !bucket.owned();
             EXPECT_TRUE(isGhosted);
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(ghostedNode));
+            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.my_internal_entity_comm_map(stkMeshBulkData.entity_key(ghostedNode));
             size_t numProcsOtherThanMeOnWhichEntityIsAGhost = 1;
             EXPECT_TRUE(commStuff.size() == numProcsOtherThanMeOnWhichEntityIsAGhost);
             EXPECT_TRUE((*commStuff.first).proc == otherProcId);
@@ -300,7 +369,7 @@ TEST(UnderstandingDistributedIndex, TestSharedAndGhostedAndOwnedEntitiesWithoutA
             stk::mesh::Bucket& bucket = stkMeshBulkData.bucket(ghostedElement);
             bool isGhosted = !bucket.shared() && !bucket.owned();
             EXPECT_TRUE(isGhosted);
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(ghostedElement));
+            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.my_internal_entity_comm_map(stkMeshBulkData.entity_key(ghostedElement));
             size_t numProcsOtherThanMeOnWhichEntityIsAGhost = 1;
             EXPECT_TRUE(commStuff.size() == numProcsOtherThanMeOnWhichEntityIsAGhost);
             EXPECT_TRUE((*commStuff.first).proc == otherProcId);
@@ -320,7 +389,7 @@ TEST(UnderstandingDistributedIndex, TestSharedAndGhostedAndOwnedEntitiesWithoutA
             stk::mesh::Entity ownedElement = stkMeshBulkData.get_entity(stk::topology::ELEMENT_RANK, ownedElements[i]);
             stk::mesh::Bucket& bucket = stkMeshBulkData.bucket(ownedElement);
             EXPECT_TRUE(bucket.owned());
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(ownedElement));
+            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.my_internal_entity_comm_map(stkMeshBulkData.entity_key(ownedElement));
             size_t numProcsOtherThanMeOnWhichEntityIsAGhost = 1;
             EXPECT_TRUE(commStuff.size() == numProcsOtherThanMeOnWhichEntityIsAGhost);
             EXPECT_TRUE((*commStuff.first).proc == otherProcId);
@@ -330,7 +399,7 @@ TEST(UnderstandingDistributedIndex, TestSharedAndGhostedAndOwnedEntitiesWithoutA
     }
 }
 
-void testSharedNodesFor2x2x4MeshForTwoProcs(const int myProc, const stk::mesh::BulkData &stkMeshBulkData)
+void testSharedNodesFor2x2x4MeshForTwoProcs(const int myProc, const stk::mesh::unit_test::BulkDataTester &stkMeshBulkData)
 {
     int sharedNodeIds[] = { 19, 20, 21, 22, 23, 24, 25, 26, 27 };
 
@@ -346,7 +415,7 @@ void testSharedNodesFor2x2x4MeshForTwoProcs(const int myProc, const stk::mesh::B
         stk::mesh::Entity sharedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, sharedNodeIds[i]);
         stk::mesh::Bucket& bucket = stkMeshBulkData.bucket(sharedNode);
         EXPECT_TRUE(bucket.shared());
-        stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map_shared(stkMeshBulkData.entity_key(sharedNode));
+        stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.my_internal_entity_comm_map_shared(stkMeshBulkData.entity_key(sharedNode));
         EXPECT_TRUE(commStuff.size() == 1);
         EXPECT_TRUE((*commStuff.first).proc == otherProcId);
         size_t sharedButNotGhostedId = 0;
@@ -365,7 +434,7 @@ TEST(UnderstandingDistributedIndex, GhostAnElement)
         const std::string generatedMeshSpec = "generated:2x2x4|sideset:xXyYzZ|nodeset:xXyYzZ";
         unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
-        stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
+        stk::mesh::unit_test::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
         testSharedNodesFor2x2x4MeshForTwoProcs(myProc, stkMeshBulkData);
 
@@ -416,7 +485,7 @@ TEST(UnderstandingDistributedIndex, GhostAnElement)
         if ( myProc == processorThatReceivesGhostedElement13 )
         {
             stk::mesh::Entity element = stkMeshBulkData.get_entity(stk::topology::ELEMENT_RANK, ghostedElementId);
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(element));
+            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.my_internal_entity_comm_map(stkMeshBulkData.entity_key(element));
             size_t numProcsToCommunicateWithForEntity = 1;
             EXPECT_TRUE(commStuff.size() == numProcsToCommunicateWithForEntity);
             EXPECT_TRUE((*commStuff.first).proc == otherProcId);
@@ -438,7 +507,7 @@ TEST(UnderstandingDistributedIndex, KillAGhostedElement)
         const std::string generatedMeshSpec = "generated:2x2x4|sideset:xXyYzZ|nodeset:xXyYzZ";
         unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
-        stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
+        stk::mesh::unit_test::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
         testSharedNodesFor2x2x4MeshForTwoProcs(myProc, stkMeshBulkData);
 
@@ -474,7 +543,7 @@ TEST(UnderstandingDistributedIndex, KillAGhostedElement)
             bool isGhosted = !bucket.shared() && !bucket.owned();
             EXPECT_TRUE(isGhosted);
 
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(element));
+            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.my_internal_entity_comm_map(stkMeshBulkData.entity_key(element));
             size_t numProcsToCommunicateWithForEntity = 1;
             EXPECT_TRUE(commStuff.size() == numProcsToCommunicateWithForEntity);
             EXPECT_TRUE((*commStuff.first).proc == otherProcId);
@@ -506,7 +575,7 @@ TEST(UnderstandingDistributedIndex, CreateDisconnectedElement)
         const std::string generatedMeshSpec = "generated:2x2x4|sideset:xXyYzZ|nodeset:xXyYzZ";
         unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
-        stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
+        stk::mesh::unit_test::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
         testSharedNodesFor2x2x4MeshForTwoProcs(myProc, stkMeshBulkData);
 
@@ -532,7 +601,7 @@ TEST(UnderstandingDistributedIndex, CreateDisconnectedElement)
         stk::mesh::EntityId elementId = static_cast<stk::mesh::EntityId>(-1);
         if(myProc == owningProc)
         {
-            std::vector<stk::mesh::EntityId> nodeIds;
+            stk::mesh::EntityIdVector nodeIds;
             for(size_t i=0; i < generatedEntities.size(); i++)
             {
                 stk::mesh::Entity current = generatedEntities[i];
@@ -551,7 +620,7 @@ TEST(UnderstandingDistributedIndex, CreateDisconnectedElement)
             stk::mesh::PartVector justBlock1Really(1, block1);
 
             stkMeshBulkData.change_entity_parts(generatedEntities[0], justBlock1Really);
-            stk::mesh::declare_element(stkMeshBulkData, justBlock1Really, elementId, &nodeIds[0]);
+            stk::mesh::declare_element(stkMeshBulkData, justBlock1Really, elementId, nodeIds);
         }
         stkMeshBulkData.modification_end();
 
@@ -575,13 +644,11 @@ void testElementMove(int fromProc, int toProc, int myProc, int elementToMoveId, 
     stk::mesh::Entity elementToMove = stkMeshBulkData.get_entity(stk::topology::ELEMENT_RANK, elementToMoveId);
 
     std::vector<std::pair<stk::mesh::Entity, int> > entityProcPairs;
-    stkMeshBulkData.modification_begin();
     if(myProc == fromProc)
     {
         entityProcPairs.push_back(std::make_pair(elementToMove, toProc));
     }
     stkMeshBulkData.change_entity_owner(entityProcPairs);
-    stkMeshBulkData.modification_end();
     //END_DOC_FOR_ELEMENT_MOVE
 }
 
@@ -596,7 +663,7 @@ TEST(UnderstandingDistributedIndex, MoveAnElement)
         const std::string generatedMeshSpec = "generated:2x2x4|sideset:xXyYzZ|nodeset:xXyYzZ";
         unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
-        stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
+        stk::mesh::unit_test::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
         testSharedNodesFor2x2x4MeshForTwoProcs(myProc, stkMeshBulkData);
 
@@ -618,7 +685,7 @@ TEST(UnderstandingDistributedIndex, MoveAnElement)
             bool isGhosted = !bucket.owned() && !bucket.shared();
             EXPECT_TRUE(isGhosted);
 
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(elementToMove));
+            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.my_internal_entity_comm_map(stkMeshBulkData.entity_key(elementToMove));
             size_t numProcsToCommunicateWithForEntity = 1;
             EXPECT_TRUE(commStuff.size() == numProcsToCommunicateWithForEntity);
             EXPECT_TRUE((*commStuff.first).proc == toProc);
@@ -631,7 +698,7 @@ TEST(UnderstandingDistributedIndex, MoveAnElement)
             stk::mesh::Bucket& bucket = stkMeshBulkData.bucket(elementToMove);
             EXPECT_TRUE(bucket.owned());
 
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(elementToMove));
+            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.my_internal_entity_comm_map(stkMeshBulkData.entity_key(elementToMove));
             size_t numProcsToCommunicateWithForEntity = 1;
             EXPECT_TRUE(commStuff.size() == numProcsToCommunicateWithForEntity);
             EXPECT_TRUE((*commStuff.first).proc == fromProc);
@@ -653,7 +720,7 @@ TEST(UnderstandingDistributedIndex, MoveAnElement)
             bool isGhosted = !bucket.owned() && !bucket.shared();
             EXPECT_TRUE(isGhosted);
 
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(elementToMove));
+            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.my_internal_entity_comm_map(stkMeshBulkData.entity_key(elementToMove));
             size_t numProcsToCommunicateWithForEntity = 1;
             EXPECT_TRUE(commStuff.size() == numProcsToCommunicateWithForEntity);
             EXPECT_TRUE((*commStuff.first).proc == toProc);
@@ -665,7 +732,7 @@ TEST(UnderstandingDistributedIndex, MoveAnElement)
         {
             stk::mesh::Bucket& bucket = stkMeshBulkData.bucket(elementToMove);
             EXPECT_TRUE(bucket.owned());
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(elementToMove));
+            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.my_internal_entity_comm_map(stkMeshBulkData.entity_key(elementToMove));
             size_t numProcsToCommunicateWithForEntity = 1;
             EXPECT_TRUE(commStuff.size() == numProcsToCommunicateWithForEntity);
             EXPECT_TRUE((*commStuff.first).proc == fromProc);
@@ -688,7 +755,7 @@ TEST(UnderstandingDistributedIndex, GhostANode)
         const std::string generatedMeshSpec = "generated:2x2x4|sideset:xXyYzZ|nodeset:xXyYzZ";
         unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
-        stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
+        stk::mesh::unit_test::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
         testSharedNodesFor2x2x4MeshForTwoProcs(myProc, stkMeshBulkData);
 
@@ -714,7 +781,7 @@ TEST(UnderstandingDistributedIndex, GhostANode)
             bool isGhosted = !bucket.shared() && !bucket.owned();
             EXPECT_FALSE(isGhosted);
 
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(ghostedNode));
+            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.my_internal_entity_comm_map(stkMeshBulkData.entity_key(ghostedNode));
             size_t numProcsToCommunicateWithForEntity = 0;
             EXPECT_TRUE(commStuff.size() == numProcsToCommunicateWithForEntity);
         }
@@ -746,7 +813,7 @@ TEST(UnderstandingDistributedIndex, GhostANode)
             bool isGhosted = !bucket.shared() && !bucket.owned();
             EXPECT_TRUE(isGhosted);
 
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(ghostedNode));
+            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.my_internal_entity_comm_map(stkMeshBulkData.entity_key(ghostedNode));
             size_t numProcsToCommunicateWithForEntity = 1;
             EXPECT_TRUE(commStuff.size() == numProcsToCommunicateWithForEntity);
             EXPECT_TRUE((*commStuff.first).proc == otherProcId);
@@ -761,14 +828,14 @@ TEST(UnderstandingDistributedIndex, GhostANode)
             bool isThisAGhostOnThisProc = !bucket.shared() && !bucket.owned();
             EXPECT_FALSE(isThisAGhostOnThisProc);
 
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(ghostedNode));
+            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.my_internal_entity_comm_map(stkMeshBulkData.entity_key(ghostedNode));
             size_t numProcsToCommunicateWithForEntity = 1;
             EXPECT_TRUE(commStuff.size() == numProcsToCommunicateWithForEntity);
         }
     }
 }
 
-void testReceivingProcHasOneNodeGhosted(stk::mesh::BulkData &stkMeshBulkData,
+void testReceivingProcHasOneNodeGhosted(stk::mesh::unit_test::BulkDataTester &stkMeshBulkData,
                            stk::mesh::Ghosting &ghosting1,
                            stk::mesh::Ghosting &ghosting2,
                            int nodeIdToGhost, int owningProc)
@@ -778,7 +845,7 @@ void testReceivingProcHasOneNodeGhosted(stk::mesh::BulkData &stkMeshBulkData,
     bool isGhosted = !bucket.shared() && !bucket.owned();
     EXPECT_TRUE(isGhosted);
 
-    stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(ghostedNode));
+    stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.my_internal_entity_comm_map(stkMeshBulkData.entity_key(ghostedNode));
     size_t numGhostingsInvolvingEntity = 2;
     EXPECT_EQ(numGhostingsInvolvingEntity, commStuff.size());
     EXPECT_EQ(owningProc, (*commStuff.first).proc);
@@ -788,13 +855,13 @@ void testReceivingProcHasOneNodeGhosted(stk::mesh::BulkData &stkMeshBulkData,
     EXPECT_EQ(ghosting2.ordinal(), (*commStuff.first).ghost_id);
 }
 
-void testOwningProcHasOneNodeGhosted(stk::mesh::BulkData &stkMeshBulkData,
+void testOwningProcHasOneNodeGhosted(stk::mesh::unit_test::BulkDataTester &stkMeshBulkData,
                            stk::mesh::Ghosting &ghosting1,
                            stk::mesh::Ghosting &ghosting2,
                            int nodeIdToGhost, int ghostReceivingProc)
 {
     stk::mesh::Entity ghostedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, nodeIdToGhost);
-    stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(ghostedNode));
+    stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.my_internal_entity_comm_map(stkMeshBulkData.entity_key(ghostedNode));
     size_t numGhostingsInvolvingEntity = 2;
     EXPECT_EQ(numGhostingsInvolvingEntity, commStuff.size());
     EXPECT_EQ(ghostReceivingProc, (*commStuff.first).proc);
@@ -804,7 +871,7 @@ void testOwningProcHasOneNodeGhosted(stk::mesh::BulkData &stkMeshBulkData,
     EXPECT_EQ(ghosting2.ordinal(), (*commStuff.first).ghost_id);
 }
 
-void testReceivingProcHasNoGhosts(stk::mesh::BulkData &stkMeshBulkData,
+void testReceivingProcHasNoGhosts(stk::mesh::unit_test::BulkDataTester &stkMeshBulkData,
                            stk::mesh::Ghosting &ghosting1,
                            stk::mesh::Ghosting &ghosting2,
                            int nodeIdToGhost, int owningProc)
@@ -813,18 +880,18 @@ void testReceivingProcHasNoGhosts(stk::mesh::BulkData &stkMeshBulkData,
     EXPECT_FALSE(stkMeshBulkData.is_valid(ghostedNode));
 }
 
-void testOwningProcHasNoGhosts(stk::mesh::BulkData &stkMeshBulkData,
+void testOwningProcHasNoGhosts(stk::mesh::unit_test::BulkDataTester &stkMeshBulkData,
                            stk::mesh::Ghosting &ghosting1,
                            stk::mesh::Ghosting &ghosting2,
                            int nodeIdToGhost, int ghostReceivingProc)
 {
     stk::mesh::Entity ghostedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, nodeIdToGhost);
-    stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(ghostedNode));
+    stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.my_internal_entity_comm_map(stkMeshBulkData.entity_key(ghostedNode));
     size_t numGhostingsInvolvingEntity = 0;
     EXPECT_EQ(numGhostingsInvolvingEntity, commStuff.size());
 }
 
-void testReceivingProcAfterOneGhostingDestroyed(stk::mesh::BulkData &stkMeshBulkData,
+void testReceivingProcAfterOneGhostingDestroyed(stk::mesh::unit_test::BulkDataTester &stkMeshBulkData,
                            stk::mesh::Ghosting &ghosting1,
                            stk::mesh::Ghosting &ghosting2,
                            int nodeIdToGhost, int owningProc)
@@ -834,27 +901,27 @@ void testReceivingProcAfterOneGhostingDestroyed(stk::mesh::BulkData &stkMeshBulk
     bool isGhosted = !bucket.shared() && !bucket.owned();
     EXPECT_TRUE(isGhosted);
 
-    stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(ghostedNode));
+    stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.my_internal_entity_comm_map(stkMeshBulkData.entity_key(ghostedNode));
     size_t numGhostingsInvolvingEntity = 1;
     EXPECT_EQ(numGhostingsInvolvingEntity, commStuff.size());
     EXPECT_EQ(owningProc, (*commStuff.first).proc);
     EXPECT_EQ(ghosting2.ordinal(), (*commStuff.first).ghost_id);
 }
 
-void testOwningProcAfterOneGhostingDestroyed(stk::mesh::BulkData &stkMeshBulkData,
+void testOwningProcAfterOneGhostingDestroyed(stk::mesh::unit_test::BulkDataTester &stkMeshBulkData,
                            stk::mesh::Ghosting &ghosting1,
                            stk::mesh::Ghosting &ghosting2,
                            int nodeIdToGhost, int ghostReceivingProc)
 {
     stk::mesh::Entity ghostedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, nodeIdToGhost);
-    stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm_map(stkMeshBulkData.entity_key(ghostedNode));
+    stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.my_internal_entity_comm_map(stkMeshBulkData.entity_key(ghostedNode));
     size_t numGhostingsInvolvingEntity = 1;
     EXPECT_EQ(numGhostingsInvolvingEntity, commStuff.size());
     EXPECT_EQ(ghostReceivingProc, (*commStuff.first).proc);
     EXPECT_EQ(ghosting2.ordinal(), (*commStuff.first).ghost_id);
 }
 
-void testOneNodeGhostedTwice(stk::mesh::BulkData &stkMeshBulkData,
+void testOneNodeGhostedTwice(stk::mesh::unit_test::BulkDataTester &stkMeshBulkData,
                         stk::mesh::Ghosting &ghosting1,
                         stk::mesh::Ghosting &ghosting2,
                         int nodeIdToGhost,
@@ -872,7 +939,7 @@ void testOneNodeGhostedTwice(stk::mesh::BulkData &stkMeshBulkData,
     }
 }
 
-void testNoGhosts(stk::mesh::BulkData &stkMeshBulkData,
+void testNoGhosts(stk::mesh::unit_test::BulkDataTester &stkMeshBulkData,
                         stk::mesh::Ghosting &ghosting1,
                         stk::mesh::Ghosting &ghosting2,
                         int nodeIdToGhost,
@@ -890,7 +957,7 @@ void testNoGhosts(stk::mesh::BulkData &stkMeshBulkData,
     }
 }
 
-void testOneGhostingDestroyed(stk::mesh::BulkData &stkMeshBulkData,
+void testOneGhostingDestroyed(stk::mesh::unit_test::BulkDataTester &stkMeshBulkData,
                         stk::mesh::Ghosting &ghosting1,
                         stk::mesh::Ghosting &ghosting2,
                         int nodeIdToGhost,
@@ -923,7 +990,7 @@ TEST(UnderstandingDistributedIndex, MultipleCustomGhostings)
         int ghostReceivingProc = 1;
         int nodeIdToGhost = 2;
 
-        stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
+        stk::mesh::unit_test::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
         stkMeshBulkData.modification_begin();
         stk::mesh::Ghosting &ghosting1 = stkMeshBulkData.create_ghosting("Ghosting For Algorithm 1");
@@ -969,7 +1036,7 @@ TEST(UnderstandingDistributedIndex, MultipleCustomGhostingsWithDestroy)
         int ghostReceivingProc = 1;
         int nodeIdToGhost = 2;
 
-        stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
+        stk::mesh::unit_test::BulkDataTester &stkMeshBulkData = *stkMesh.getBulkData();
 
         stkMeshBulkData.modification_begin();
         stk::mesh::Ghosting &ghosting1 = stkMeshBulkData.create_ghosting("Ghosting For Algorithm 1");

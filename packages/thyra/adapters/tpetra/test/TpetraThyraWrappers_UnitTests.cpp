@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 */
@@ -45,15 +45,21 @@
 #include "Thyra_TpetraThyraWrappers.hpp"
 #include "Thyra_VectorSpaceTester.hpp"
 #include "Thyra_VectorStdOpsTester.hpp"
+#include "Thyra_VectorStdOps.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_DefaultProductVector.hpp"
 #include "Thyra_TestingTools.hpp"
+#include "Thyra_ScaledLinearOpBase.hpp"
+#include "Thyra_RowStatLinearOpBase.hpp"
+#include "Thyra_VectorStdOps.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_Tuple.hpp"
 
 
-namespace {
+namespace Thyra {
 
 
 //
@@ -70,13 +76,6 @@ using Teuchos::rcp_dynamic_cast;
 using Teuchos::inOutArg;
 using Teuchos::Comm;
 using Teuchos::tuple;
-typedef Thyra::Ordinal Ordinal;
-using Thyra::VectorSpaceBase;
-using Thyra::SpmdVectorSpaceBase;
-using Thyra::MultiVectorBase;
-using Thyra::VectorBase;
-using Thyra::LinearOpBase;
-using Thyra::createMember;
 
 
 const int g_localDim = 4; // ToDo: Make variable!
@@ -119,7 +118,7 @@ createTriDiagonalTpetraOperator(const int numLocalRows)
   ArrayView<const int> myGlobalElements = map->getNodeElementList();
 
   // Create an OTeger vector numNz that is used to build the Petra Matrix.
-  // numNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
+  // numNz[i] is the Number of OFF-DIAGONAL term for the ith global equation
   // on this processor
 
   Teuchos::ArrayRCP<size_t> numNz = Teuchos::arcp<size_t>(numMyElements);
@@ -140,7 +139,7 @@ createTriDiagonalTpetraOperator(const int numLocalRows)
   // Create a Tpetra::Matrix using the Map, with a static allocation dictated by numNz
   RCP< Tpetra::CrsMatrix<Scalar,int> > A =
     Teuchos::rcp( new Tpetra::CrsMatrix<Scalar,int>(map, numNz, Tpetra::StaticProfile) );
-  
+
   // We are done with NumNZ
   numNz = Teuchos::null;
 
@@ -224,7 +223,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, createVectorSpace,
     Thyra::createVectorSpace<Scalar>(tpetraMap);
   TEST_ASSERT(nonnull(vs));
   out << "vs = " << *vs;
-  const RCP<const SpmdVectorSpaceBase<Scalar> > vs_spmd = 
+  const RCP<const SpmdVectorSpaceBase<Scalar> > vs_spmd =
     rcp_dynamic_cast<const SpmdVectorSpaceBase<Scalar> >(vs, true);
   TEST_EQUALITY(vs_spmd->localSubDim(), g_localDim);
   TEST_EQUALITY(vs->dim(), as<Ordinal>(tpetraMap->getGlobalNumElements()));
@@ -251,7 +250,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, createVector,
   {
     const RCP<VectorBase<Scalar> > thyraVector = createVector(tpetraVector, vs);
     TEST_EQUALITY(thyraVector->space(), vs);
-    const RCP<Tpetra::Vector<Scalar,int> > tpetraVector2 = 
+    const RCP<Tpetra::Vector<Scalar,int> > tpetraVector2 =
       ConverterT::getTpetraVector(thyraVector);
     TEST_EQUALITY(tpetraVector2, tpetraVector);
   }
@@ -260,7 +259,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, createVector,
     const RCP<VectorBase<Scalar> > thyraVector = Thyra::createVector(tpetraVector);
     TEST_INEQUALITY(thyraVector->space(), vs);
     TEST_ASSERT(thyraVector->space()->isCompatible(*vs));
-    const RCP<Tpetra::Vector<Scalar,int> > tpetraVector2 = 
+    const RCP<Tpetra::Vector<Scalar,int> > tpetraVector2 =
       ConverterT::getTpetraVector(thyraVector);
     TEST_EQUALITY(tpetraVector2, tpetraVector);
   }
@@ -289,7 +288,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, createConstVector,
     const RCP<const VectorBase<Scalar> > thyraVector =
       createConstVector(tpetraVector, vs);
     TEST_EQUALITY(thyraVector->space(), vs);
-    const RCP<const Tpetra::Vector<Scalar,int> > tpetraVector2 = 
+    const RCP<const Tpetra::Vector<Scalar,int> > tpetraVector2 =
       ConverterT::getConstTpetraVector(thyraVector);
     TEST_EQUALITY(tpetraVector2, tpetraVector);
   }
@@ -299,7 +298,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, createConstVector,
       Thyra::createConstVector(tpetraVector);
     TEST_INEQUALITY(thyraVector->space(), vs);
     TEST_ASSERT(thyraVector->space()->isCompatible(*vs));
-    const RCP<const Tpetra::Vector<Scalar,int> > tpetraVector2 = 
+    const RCP<const Tpetra::Vector<Scalar,int> > tpetraVector2 =
       ConverterT::getConstTpetraVector(thyraVector);
     TEST_EQUALITY(tpetraVector2, tpetraVector);
   }
@@ -316,7 +315,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, createMultiVector,
 {
 
   typedef Thyra::TpetraOperatorVectorExtraction<Scalar,int> ConverterT;
-  
+
   const int numCols = 3;
 
   const RCP<const TpetraMap_t> tpetraMap = createTpetraMap(g_localDim);
@@ -337,7 +336,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, createMultiVector,
       createMultiVector(tpetraMultiVector, rangeVs, domainVs);
     TEST_EQUALITY(thyraMultiVector->range(), rangeVs);
     TEST_EQUALITY(thyraMultiVector->domain(), domainVs);
-    const RCP<Tpetra::MultiVector<Scalar,int> > tpetraMultiVector2 = 
+    const RCP<Tpetra::MultiVector<Scalar,int> > tpetraMultiVector2 =
       ConverterT::getTpetraMultiVector(thyraMultiVector);
     TEST_EQUALITY(tpetraMultiVector2, tpetraMultiVector);
   }
@@ -349,7 +348,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, createMultiVector,
     TEST_INEQUALITY(thyraMultiVector->domain(), domainVs);
     TEST_ASSERT(thyraMultiVector->range()->isCompatible(*rangeVs));
     TEST_ASSERT(thyraMultiVector->domain()->isCompatible(*domainVs));
-    const RCP<Tpetra::MultiVector<Scalar,int> > tpetraMultiVector2 = 
+    const RCP<Tpetra::MultiVector<Scalar,int> > tpetraMultiVector2 =
       ConverterT::getTpetraMultiVector(thyraMultiVector);
     TEST_EQUALITY(tpetraMultiVector2, tpetraMultiVector);
   }
@@ -366,7 +365,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, createConstMultiVector,
 {
 
   typedef Thyra::TpetraOperatorVectorExtraction<Scalar,int> ConverterT;
-  
+
   const int numCols = 3;
 
   const RCP<const TpetraMap_t> tpetraMap = createTpetraMap(g_localDim);
@@ -387,7 +386,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, createConstMultiVector,
       createConstMultiVector(tpetraMultiVector, rangeVs, domainVs);
     TEST_EQUALITY(thyraMultiVector->range(), rangeVs);
     TEST_EQUALITY(thyraMultiVector->domain(), domainVs);
-    const RCP<const Tpetra::MultiVector<Scalar,int> > tpetraMultiVector2 = 
+    const RCP<const Tpetra::MultiVector<Scalar,int> > tpetraMultiVector2 =
       ConverterT::getConstTpetraMultiVector(thyraMultiVector);
     TEST_EQUALITY(tpetraMultiVector2, tpetraMultiVector);
   }
@@ -399,7 +398,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, createConstMultiVector,
     TEST_INEQUALITY(thyraMultiVector->domain(), domainVs);
     TEST_ASSERT(thyraMultiVector->range()->isCompatible(*rangeVs));
     TEST_ASSERT(thyraMultiVector->domain()->isCompatible(*domainVs));
-    const RCP<const Tpetra::MultiVector<Scalar,int> > tpetraMultiVector2 = 
+    const RCP<const Tpetra::MultiVector<Scalar,int> > tpetraMultiVector2 =
       ConverterT::getConstTpetraMultiVector(thyraMultiVector);
     TEST_EQUALITY(tpetraMultiVector2, tpetraMultiVector);
   }
@@ -430,7 +429,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, TeptraVectorSpace,
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, vectorSpaceTester,
   Scalar )
 {
-  const RCP<const VectorSpaceBase<Scalar> > vs 
+  const RCP<const VectorSpaceBase<Scalar> > vs
     = createTpetraVectorSpace<Scalar>(g_localDim);
   Thyra::VectorSpaceTester<Scalar> vectorSpaceTester;
   vectorSpaceTester.show_all_tests(showAllTests);
@@ -470,7 +469,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, getTpetraMultiVector,
   typedef Thyra::TpetraOperatorVectorExtraction<Scalar,int> ConverterT;
 
   const int numCols = 3;
-  const RCP<const VectorSpaceBase<Scalar> > vs 
+  const RCP<const VectorSpaceBase<Scalar> > vs
     = createTpetraVectorSpace<Scalar>(g_localDim);
 
   {
@@ -507,7 +506,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, getConstTpetraMultiVecto
   typedef Thyra::TpetraOperatorVectorExtraction<Scalar,int> ConverterT;
 
   const int numCols = 3;
-  const RCP<const VectorSpaceBase<Scalar> > vs 
+  const RCP<const VectorSpaceBase<Scalar> > vs
     = createTpetraVectorSpace<Scalar>(g_localDim);
 
   {
@@ -603,7 +602,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, createLinearOp,
       createLinearOp(tpetraOp, rangeSpace, domainSpace);
     TEST_EQUALITY(thyraOp->range(), rangeSpace);
     TEST_EQUALITY(thyraOp->domain(), domainSpace);
-    const RCP<Tpetra::Operator<Scalar,int> > tpetraOp2 = 
+    const RCP<Tpetra::Operator<Scalar,int> > tpetraOp2 =
       ConverterT::getTpetraOperator(thyraOp);
     TEST_EQUALITY(tpetraOp2, tpetraOp);
   }
@@ -615,7 +614,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, createLinearOp,
     TEST_INEQUALITY(thyraOp->domain(), domainSpace);
     TEST_ASSERT(thyraOp->range()->isCompatible(*rangeSpace));
     TEST_ASSERT(thyraOp->domain()->isCompatible(*domainSpace));
-    const RCP<Tpetra::Operator<Scalar,int> > tpetraOp2 = 
+    const RCP<Tpetra::Operator<Scalar,int> > tpetraOp2 =
       ConverterT::getTpetraOperator(thyraOp);
     TEST_EQUALITY(tpetraOp2, tpetraOp);
   }
@@ -648,7 +647,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, createConstLinearOp,
       createConstLinearOp(tpetraOp, rangeSpace, domainSpace);
     TEST_EQUALITY(thyraOp->range(), rangeSpace);
     TEST_EQUALITY(thyraOp->domain(), domainSpace);
-    const RCP<const Tpetra::Operator<Scalar,int> > tpetraOp2 = 
+    const RCP<const Tpetra::Operator<Scalar,int> > tpetraOp2 =
       ConverterT::getConstTpetraOperator(thyraOp);
     TEST_EQUALITY(tpetraOp2, tpetraOp);
   }
@@ -660,12 +659,156 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, createConstLinearOp,
     TEST_INEQUALITY(thyraOp->domain(), domainSpace);
     TEST_ASSERT(thyraOp->range()->isCompatible(*rangeSpace));
     TEST_ASSERT(thyraOp->domain()->isCompatible(*domainSpace));
-    const RCP<const Tpetra::Operator<Scalar,int> > tpetraOp2 = 
+    const RCP<const Tpetra::Operator<Scalar,int> > tpetraOp2 =
       ConverterT::getConstTpetraOperator(thyraOp);
     TEST_EQUALITY(tpetraOp2, tpetraOp);
   }
 
 }
+
+
+//
+// Tpetra-implemented methods
+//
+
+
+Teuchos::RCP<Teuchos::Time> lookupAndAssertTimer(const std::string &label)
+{
+  Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter(label);
+  TEUCHOS_TEST_FOR_EXCEPTION(timer == null,
+    std::runtime_error,
+    "lookupAndAssertTimer(): timer \"" << label << "\" was not present in Teuchos::TimeMonitor."
+    " Unit test not valid.");
+  return timer;
+}
+
+
+#define CHECK_TPETRA_FUNC_CALL_INCREMENT( timerStr, tpetraCode, thyraCode ) \
+{ \
+  out << "\nTesting that Thyra calls down to " << timerStr << "\n"; \
+  ECHO(tpetraCode); \
+  const RCP<const Time> timer = lookupAndAssertTimer(timerStr); \
+  const int countBefore = timer->numCalls();  \
+  ECHO(thyraCode); \
+  const int countAfter = timer->numCalls(); \
+  TEST_EQUALITY( countAfter, countBefore+1 ); \
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, UseTpetraImplementations,
+  Scalar )
+{
+  using Teuchos::Time;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef typename ST::magnitudeType Magnitude;
+  typedef VectorSpaceBase<Scalar> VectorSpace;
+  typedef MultiVectorBase<Scalar> MultiVec;
+  //typedef Tpetra::Map<int> TpetraMap;
+  typedef Tpetra::MultiVector<Scalar> TpetraMultiVec;
+  typedef TpetraOperatorVectorExtraction<Scalar, int> TOVE;
+
+  const int numCols = 3;
+
+  const RCP<const VectorSpace> vs =
+    createTpetraVectorSpace<Scalar>(g_localDim);
+  const RCP<MultiVec>
+    A = createMembers(vs, numCols),
+    B = createMembers(vs, numCols);
+  const RCP<TpetraMultiVec>
+    tA = TOVE::getTpetraMultiVector(A),
+    tB = TOVE::getTpetraMultiVector(B);
+  Array<Scalar> C(numCols*numCols,ST::zero());
+
+  Teuchos::Array<Magnitude> avMag(numCols);
+  Teuchos::Array<Scalar> avScal(numCols);
+
+  CHECK_TPETRA_FUNC_CALL_INCREMENT(
+    "Tpetra::MultiVector::putScalar()",
+    tA->putScalar(ST::zero()),
+    Thyra::assign(A.ptr(), ST::zero())
+    );
+
+  CHECK_TPETRA_FUNC_CALL_INCREMENT(
+    "Tpetra::MultiVector::dot()",
+    tA->dot(*tB, avScal() ),      // norms calls scalarProd, which calls Tpetra::dot
+    Thyra::norms( *A, avMag() )
+    );
+
+  CHECK_TPETRA_FUNC_CALL_INCREMENT(
+    "Tpetra::MultiVector::dot()",
+    tA->dot(*tB, avScal() ),
+    A->range()->scalarProds(*A, *B, avScal() )
+    );
+
+  /*
+  CHECK_TPETRA_FUNC_CALL_INCREMENT(
+    "Tpetra::MultiVector::scale(alpha)",
+    tB->scale( ST::zero() ),
+    Thyra::scale( ST::zero(), B.ptr() )
+    );
+  */
+
+  /*
+  CHECK_TPETRA_FUNC_CALL_INCREMENT(
+    "Tpetra::MultiVector::operator=()",
+    (*tA) = *tB,
+    Thyra::assign( A.ptr(), *B )
+    );
+  */
+
+  /*
+  {
+    RCP<MultiVec> Ctmvb = Thyra::createMembersView(
+        A->domain(),
+        RTOpPack::SubMultiVectorView<Scalar>(
+          0, numCols, 0, numCols,
+          Teuchos::arcpFromArrayView(C()), numCols
+        )
+      );
+    CHECK_TPETRA_FUNC_CALL_INCREMENT(
+      "Tpetra::multiplyOntoHost()",
+      Tpetra::multiplyOntoHost(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ST::one(),*tA,*tB, C()),
+      A->apply(Thyra::CONJTRANS,*B,Ctmvb.ptr(),ST::one(),ST::zero())
+      );
+  }
+  */
+
+  /*
+  {
+    RCP<const MultiVec> Ctmvb = Thyra::createMembersView(
+        A->domain(),
+        RTOpPack::ConstSubMultiVectorView<Scalar>(
+          0, numCols, 0, numCols,
+          Teuchos::arcpFromArrayView(C()), numCols
+        )
+      );
+    const RCP<const TpetraMultiVec>
+      tC = TOVE::getConstTpetraMultiVector(Ctmvb);
+    CHECK_TPETRA_FUNC_CALL_INCREMENT(
+      "Tpetra::MultiVector::multiply()",
+      tB->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ST::one(),*tA,*tC,ST::zero()),
+      A->apply(Thyra::NOTRANS,*Ctmvb,B.ptr(),ST::one(),ST::zero())
+    );
+  }
+  */
+
+/*
+  RCP<Time>
+    timerUpdate = lookupAndAssertTimer("Tpetra::MultiVector::update(alpha,A,beta,B,gamma)"),
+    timerUpdate2   = lookupAndAssertTimer("Tpetra::MultiVector::update(alpha,A,beta)"),
+
+  // TODO: test update(two vector)
+  // TODO: test update(three vector)
+*/
+}
+
+
+#ifdef TPETRA_TEUCHOS_TIME_MONITOR
+#  define TPETRA_TIMER_TESTS(SCALAR)  \
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( TpetraThyraWrappers, UseTpetraImplementations, SCALAR )
+#else
+#  define TPETRA_TIMER_TESTS(SCALAR)
+#endif
 
 
 //
@@ -732,6 +875,123 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, TpetraLinearOp_EpetraRow
 {
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, TpetraLinearOp_RowStatLinearOpBase,
+  Scalar )
+{
+  using Teuchos::as;
+
+  const RCP<Tpetra::Operator<Scalar,int> > tpetraOp =
+    createTriDiagonalTpetraOperator<Scalar>(g_localDim);
+  out << "tpetraOp = " << Teuchos::describe(*tpetraOp, Teuchos::VERB_HIGH) << std::endl;
+  TEST_ASSERT(nonnull(tpetraOp));
+
+  const RCP<Tpetra::CrsMatrix<Scalar,int> > tpetraCrsMatrix =
+    Teuchos::rcp_dynamic_cast<Tpetra::CrsMatrix<Scalar,int> >(tpetraOp,true);
+
+  const RCP<const VectorSpaceBase<Scalar> > rangeSpace =
+    Thyra::createVectorSpace<Scalar>(tpetraOp->getRangeMap());
+  const RCP<const VectorSpaceBase<Scalar> > domainSpace =
+    Thyra::createVectorSpace<Scalar>(tpetraOp->getDomainMap());
+  const RCP<LinearOpBase<Scalar> > thyraLinearOp =
+    Thyra::tpetraLinearOp(rangeSpace, domainSpace, tpetraOp);
+  TEST_ASSERT(nonnull(thyraLinearOp));
+
+  const Teuchos::RCP<Thyra::RowStatLinearOpBase<Scalar> > rowStatOp =
+    Teuchos::rcp_dynamic_cast<Thyra::RowStatLinearOpBase<Scalar> >(thyraLinearOp, true);
+
+  // Get the inverse row sums
+
+  const RCP<VectorBase<Scalar> > inv_row_sums =
+    createMember<Scalar>(thyraLinearOp->range());
+  const RCP<VectorBase<Scalar> > row_sums =
+    createMember<Scalar>(thyraLinearOp->range());
+
+  rowStatOp->getRowStat(Thyra::RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM,
+    inv_row_sums.ptr());
+  rowStatOp->getRowStat(Thyra::RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM,
+    row_sums.ptr());
+
+  out << "inv_row_sums = " << *inv_row_sums;
+  out << "row_sums = " << *row_sums;
+
+  TEST_FLOATING_EQUALITY(
+    Thyra::sum<Scalar>(*row_sums),
+    Teuchos::as<Scalar>(4.0 * thyraLinearOp->domain()->dim() - 2.0),
+    Teuchos::as<Scalar>(10.0 * Teuchos::ScalarTraits<Scalar>::eps())
+    );
+
+  TEST_FLOATING_EQUALITY(
+    Thyra::sum<Scalar>(*inv_row_sums),
+    Teuchos::as<Scalar>( 1.0 / 4.0 * (thyraLinearOp->domain()->dim() - 2) + 2.0 / 3.0 ),
+    Teuchos::as<Scalar>(10.0 * Teuchos::ScalarTraits<Scalar>::eps())
+    );
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, TpetraLinearOp_ScaledLinearOpBase,
+  Scalar )
+{
+  const RCP<Tpetra::Operator<Scalar,int> > tpetraOp =
+    createTriDiagonalTpetraOperator<Scalar>(g_localDim);
+  out << "tpetraOp = " << Teuchos::describe(*tpetraOp, Teuchos::VERB_HIGH) << std::endl;
+  TEST_ASSERT(nonnull(tpetraOp));
+
+  const RCP<Tpetra::CrsMatrix<Scalar,int> > tpetraCrsMatrix =
+    Teuchos::rcp_dynamic_cast<Tpetra::CrsMatrix<Scalar,int> >(tpetraOp,true);
+
+  const RCP<const VectorSpaceBase<Scalar> > rangeSpace =
+    Thyra::createVectorSpace<Scalar>(tpetraOp->getRangeMap());
+  const RCP<const VectorSpaceBase<Scalar> > domainSpace =
+    Thyra::createVectorSpace<Scalar>(tpetraOp->getDomainMap());
+  const RCP<LinearOpBase<Scalar> > thyraLinearOp =
+    Thyra::tpetraLinearOp(rangeSpace, domainSpace, tpetraOp);
+  TEST_ASSERT(nonnull(thyraLinearOp));
+
+  const Teuchos::RCP<Thyra::RowStatLinearOpBase<Scalar> > rowStatOp =
+    Teuchos::rcp_dynamic_cast<Thyra::RowStatLinearOpBase<Scalar> >(thyraLinearOp, true);
+
+  // Get the inverse row sums
+
+  const RCP<VectorBase<Scalar> > inv_row_sums =
+    createMember<Scalar>(thyraLinearOp->range());
+  const RCP<VectorBase<Scalar> > row_sums =
+    createMember<Scalar>(thyraLinearOp->range());
+
+  rowStatOp->getRowStat(Thyra::RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM,
+    inv_row_sums.ptr());
+  rowStatOp->getRowStat(Thyra::RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM,
+    row_sums.ptr());
+
+  out << "inv_row_sums = " << *inv_row_sums;
+  out << "row_sums = " << *row_sums;
+
+  const Teuchos::RCP<Thyra::ScaledLinearOpBase<Scalar> > scaledOp =
+    Teuchos::rcp_dynamic_cast<Thyra::ScaledLinearOpBase<Scalar> >(thyraLinearOp, true);
+
+  TEUCHOS_ASSERT(scaledOp->supportsScaleLeft());
+
+  scaledOp->scaleLeft(*inv_row_sums);
+
+  rowStatOp->getRowStat(Thyra::RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM,
+    row_sums.ptr());
+
+  out << "row_sums after left scaling by inv_row_sum = " << *row_sums;
+
+  // scaled row sums should be one for each entry
+  TEST_FLOATING_EQUALITY(
+    Scalar(row_sums->space()->dim()),
+    Thyra::sum<Scalar>(*row_sums),
+    as<Scalar>(10.0 * Teuchos::ScalarTraits<Scalar>::eps())
+    );
+
+  // Don't currently check the results of right scaling.  Tpetra tests
+  // already check this.  Once column sums are supported in tpetra
+  // adapters, this can be checked easily.
+  TEUCHOS_ASSERT(scaledOp->supportsScaleRight());
+  scaledOp->scaleRight(*inv_row_sums);
+  rowStatOp->getRowStat(Thyra::RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM,row_sums.ptr());
+  out << "row_sums after right scaling by inv_row_sum = " << *row_sums;
+}
+
 #endif // HAVE_THYRA_TPETRA_EPETRA
 
 
@@ -782,7 +1042,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, TpetraLinearOp_EpetraRow
    \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( TpetraThyraWrappers, \
     TpetraLinearOp_EpetraRowMatrix, SCALAR ) \
-  
+   \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( TpetraThyraWrappers, \
+    TpetraLinearOp_RowStatLinearOpBase, SCALAR ) \
+   \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( TpetraThyraWrappers, \
+    TpetraLinearOp_ScaledLinearOpBase, SCALAR ) \
+
 
 // We can currently only explicitly instantiate with double support because
 // Tpetra only supports explicit instantaition with double.  As for implicit
@@ -794,4 +1060,4 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, TpetraLinearOp_EpetraRow
 THYRA_TPETRA_THYRA_WRAPPERS_INSTANT(double)
 
 
-} // namespace
+} // namespace Thyra

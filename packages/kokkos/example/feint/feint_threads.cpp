@@ -2,8 +2,8 @@
 //@HEADER
 // ************************************************************************
 // 
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,24 +35,27 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
 // 
 // ************************************************************************
 //@HEADER
 */
 
-#include <HostExecSpace.hpp>
+#include <Kokkos_Core.hpp>
+
+#if defined( KOKKOS_HAVE_PTHREAD )
+
 #include <feint.hpp>
 
 namespace Kokkos {
 namespace Example {
 
-template void feint<HostExecSpace,false>(
+template void feint< Kokkos::Threads ,false>(
   const unsigned global_elem_nx ,
   const unsigned global_elem_ny ,
   const unsigned global_elem_nz );
 
-template void feint<HostExecSpace,true>(
+template void feint< Kokkos::Threads ,true>(
   const unsigned global_elem_nx ,
   const unsigned global_elem_ny ,
   const unsigned global_elem_nz );
@@ -60,3 +63,4 @@ template void feint<HostExecSpace,true>(
 } /* namespace Example */
 } /* namespace Kokkos */
 
+#endif /* #if defined( KOKKOS_HAVE_PTHREAD ) */

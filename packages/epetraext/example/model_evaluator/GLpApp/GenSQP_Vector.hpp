@@ -44,7 +44,7 @@
 #ifndef GENSQP_VECTOR_H
 #define GENSQP_VECTOR_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 /** \class GenSQP::Vector
     \brief Provides the interface to generic abstract vector libraries.
@@ -86,7 +86,7 @@ public:
 
   /** Clone to make a new (uninitialized) vector.
   */
-  virtual Teuchos::RefCountPtr<Vector> createVector() const = 0;
+  virtual Teuchos::RCP<Vector> createVector() const = 0;
 
 }; // class Vector
 

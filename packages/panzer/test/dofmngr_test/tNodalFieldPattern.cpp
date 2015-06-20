@@ -48,6 +48,8 @@
 #include <string>
 #include <iostream>
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_NodalFieldPattern.hpp"
 
@@ -76,6 +78,8 @@ namespace panzer {
 // triangle tests
 TEUCHOS_UNIT_TEST(tNodalFieldPattern, test2d_tri_c1)
 {
+   PHX::KokkosDeviceSession session;
+
    typedef Intrepid::FieldContainer<double> FieldContainer;
    RCP<Intrepid::Basis<double,FieldContainer> > basis1, basis2;
 
@@ -92,6 +96,8 @@ TEUCHOS_UNIT_TEST(tNodalFieldPattern, test2d_tri_c1)
 
 TEUCHOS_UNIT_TEST(tNodalFieldPattern, test3d_HEX_c1)
 {
+   PHX::KokkosDeviceSession session;
+
    typedef Intrepid::FieldContainer<double> FieldContainer;
    RCP<Intrepid::Basis<double,FieldContainer> > basis1, basis2;
 

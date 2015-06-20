@@ -1,0 +1,6 @@
+INCLUDE(TribitsAddExecutableAndTest)
+
+ADD_SUBDIRECTORY(function)
+ADD_SUBDIRECTORY(vector)
+ADD_SUBDIRECTORY(step)
+ADD_SUBDIRECTORY(sol)

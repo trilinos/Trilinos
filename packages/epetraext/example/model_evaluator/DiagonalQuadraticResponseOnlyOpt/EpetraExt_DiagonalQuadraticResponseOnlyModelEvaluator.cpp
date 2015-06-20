@@ -55,7 +55,7 @@ DiagonalQuadraticResponseOnlyModelEvaluator
   const Teuchos::RCP<Epetra_Comm> &comm,
   const int localDim, const double &pt, const double &p0, const double &scale
   )
-	:epetra_comm_(comm), scale_(scale)
+        :epetra_comm_(comm), scale_(scale)
 {
 
   using Teuchos::rcp;
@@ -77,21 +77,21 @@ DiagonalQuadraticResponseOnlyModelEvaluator
 // Overridden from EpetraExt::ModelEvaluator
 
 
-Teuchos::RefCountPtr<const Epetra_Map>
+Teuchos::RCP<const Epetra_Map>
 DiagonalQuadraticResponseOnlyModelEvaluator::get_x_map() const
 {
   return Teuchos::null;
 }
 
 
-Teuchos::RefCountPtr<const Epetra_Map>
+Teuchos::RCP<const Epetra_Map>
 DiagonalQuadraticResponseOnlyModelEvaluator::get_f_map() const
 {
   return Teuchos::null;
 }
 
 
-Teuchos::RefCountPtr<const Epetra_Map>
+Teuchos::RCP<const Epetra_Map>
 DiagonalQuadraticResponseOnlyModelEvaluator::get_p_map(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(l!=0);
@@ -99,7 +99,7 @@ DiagonalQuadraticResponseOnlyModelEvaluator::get_p_map(int l) const
 }
 
 
-Teuchos::RefCountPtr<const Epetra_Map>
+Teuchos::RCP<const Epetra_Map>
 DiagonalQuadraticResponseOnlyModelEvaluator::get_g_map(int j) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(j!=0);
@@ -107,7 +107,7 @@ DiagonalQuadraticResponseOnlyModelEvaluator::get_g_map(int j) const
 }
 
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 DiagonalQuadraticResponseOnlyModelEvaluator::get_p_init(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(l!=0);
@@ -183,7 +183,7 @@ void DiagonalQuadraticResponseOnlyModelEvaluator::evalModel(
       p_minus_pt.Dot(p_minus_pt, dot);
       (*g_out)[0] = scale_ * 0.5 * dot[0];
     }
-    
+
     if (nonnull(DgDp_trans_out)) {
       (*DgDp_trans_out) = p_minus_pt;
       DgDp_trans_out->Scale(scale_);

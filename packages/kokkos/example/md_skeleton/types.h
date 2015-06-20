@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -46,69 +46,73 @@
 
 /* Determine default device type and necessary includes */
 
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core.hpp>
 
-#if defined( KOKKOS_HAVE_CUDA )
-  #include <Kokkos_Cuda.hpp>
-  #include <cuda.h>
-  #include <cuda_runtime.h>
-  typedef Kokkos::Cuda device_type;
-#else
-  #if defined( KOKKOS_HAVE_OPENMP )
-    typedef Kokkos::OpenMP device_type;
-  #elif defined( KOKKOS_HAVE_PTHREAD )
-    typedef Kokkos::Threads device_type;
-  #else
-    typedef Kokkos::Serial device_type;
-  #endif
+typedef Kokkos::DefaultExecutionSpace execution_space ;
 
+#if ! defined( KOKKOS_HAVE_CUDA )
   struct double2 {
     double x, y;
+    KOKKOS_INLINE_FUNCTION
+    double2(double xinit, double yinit) {
+      x = xinit;
+      y = yinit;
+    }
+    KOKKOS_INLINE_FUNCTION
+    double2() {
+      x = 0.0;
+      y = 0.0;
+    }
+    KOKKOS_INLINE_FUNCTION
+    double2& operator += (const double2& src) {
+      x+=src.x;
+      y+=src.y;
+      return *this;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    volatile double2& operator += (const volatile double2& src) volatile {
+      x+=src.x;
+      y+=src.y;
+      return *this;
+    }
+
   };
 #endif
 
-#if defined( KOKKOS_HAVE_OPENMP )
-  #include <Kokkos_OpenMP.hpp>
-#elif defined( KOKKOS_HAVE_PTHREAD )
-  #include <Kokkos_Threads.hpp>
-#else
-  #include <Kokkos_Serial.hpp>
-#endif
-
-#include <Kokkos_View.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
 /* Define types used throughout the code */
 
 //Position arrays
-typedef Kokkos::View<double*[3], Kokkos::LayoutRight, device_type>                                   t_x_array ;
+typedef Kokkos::View<double*[3], Kokkos::LayoutRight, execution_space>                                   t_x_array ;
 typedef t_x_array::HostMirror                                                                        t_x_array_host ;
-typedef Kokkos::View<const double*[3], Kokkos::LayoutRight, device_type>                             t_x_array_const ;
-typedef Kokkos::View<const double*[3], Kokkos::LayoutRight, device_type, Kokkos::MemoryRandomAccess >  t_x_array_randomread ;
+typedef Kokkos::View<const double*[3], Kokkos::LayoutRight, execution_space>                             t_x_array_const ;
+typedef Kokkos::View<const double*[3], Kokkos::LayoutRight, execution_space, Kokkos::MemoryRandomAccess >  t_x_array_randomread ;
 
 //Force array
-typedef Kokkos::View<double*[3],  device_type>                                                       t_f_array ;
+typedef Kokkos::View<double*[3],  execution_space>                                                       t_f_array ;
 
 
 //Neighborlist
-typedef Kokkos::View<int**, device_type >                                                            t_neighbors ;
-typedef Kokkos::View<const int**, device_type >                                                      t_neighbors_const ;
-typedef Kokkos::View<int*, device_type, Kokkos::MemoryUnmanaged >                                    t_neighbors_sub ;
-typedef Kokkos::View<const int*, device_type, Kokkos::MemoryUnmanaged >                              t_neighbors_const_sub ;
+typedef Kokkos::View<int**, execution_space >                                                            t_neighbors ;
+typedef Kokkos::View<const int**, execution_space >                                                      t_neighbors_const ;
+typedef Kokkos::View<int*, execution_space, Kokkos::MemoryUnmanaged >                                    t_neighbors_sub ;
+typedef Kokkos::View<const int*, execution_space, Kokkos::MemoryUnmanaged >                              t_neighbors_const_sub ;
 
 //1d int array
-typedef Kokkos::View<int*, device_type >                                                             t_int_1d ;
+typedef Kokkos::View<int*, execution_space >                                                             t_int_1d ;
 typedef t_int_1d::HostMirror                                                                         t_int_1d_host ;
-typedef Kokkos::View<const int*, device_type >                                                       t_int_1d_const ;
-typedef Kokkos::View<int*, device_type , Kokkos::MemoryUnmanaged>                                    t_int_1d_um ;
-typedef Kokkos::View<const int* , device_type , Kokkos::MemoryUnmanaged>                             t_int_1d_const_um ;
+typedef Kokkos::View<const int*, execution_space >                                                       t_int_1d_const ;
+typedef Kokkos::View<int*, execution_space , Kokkos::MemoryUnmanaged>                                    t_int_1d_um ;
+typedef Kokkos::View<const int* , execution_space , Kokkos::MemoryUnmanaged>                             t_int_1d_const_um ;
 
 //2d int array
-typedef Kokkos::View<int**, Kokkos::LayoutRight, device_type >                                       t_int_2d ;
+typedef Kokkos::View<int**, Kokkos::LayoutRight, execution_space >                                       t_int_2d ;
 typedef t_int_2d::HostMirror                                                                         t_int_2d_host ;
 
 //Scalar ints
-typedef Kokkos::View<int[1], Kokkos::LayoutLeft, device_type>                                        t_int_scalar ;
+typedef Kokkos::View<int[1], Kokkos::LayoutLeft, execution_space>                                        t_int_scalar ;
 typedef t_int_scalar::HostMirror                                                                     t_int_scalar_host ;
 
 #endif /* TYPES_H_ */

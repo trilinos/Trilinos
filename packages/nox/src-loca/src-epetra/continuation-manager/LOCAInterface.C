@@ -53,7 +53,8 @@ LOCAInterface::
 LOCAInterface( Teuchos::RCP <ProblemLOCAPrototype> & aProblem ,
     Teuchos::RCP <ContinuationManager> aContinuationManager):
   continuationManager(aContinuationManager),
-  problem(aProblem)
+  problem(aProblem),
+  t(0.0)
 {
 }
 

@@ -239,7 +239,7 @@ namespace Anasazi {
     //@{
 
     //! Obtain the vector length of \c mv.
-    static int GetVecLength( const TMVB & mv )
+    static ptrdiff_t GetGlobalLength( const TMVB & mv )
     { return mv.range()->dim(); }
 
     //! Obtain the number of vectors in \c mv
@@ -493,6 +493,7 @@ namespace Anasazi {
     //@}
 
   };        
+
 
   ///////////////////////////////////////////////////////////////////////// 
   //

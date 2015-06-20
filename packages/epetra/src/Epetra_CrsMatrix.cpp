@@ -2163,9 +2163,10 @@ int Epetra_CrsMatrix::CheckSizes(const Epetra_SrcDistObject & Source) {
 int Epetra_CrsMatrix::CopyAndPermute(const Epetra_SrcDistObject & Source,
              int NumSameIDs,
              int NumPermuteIDs,
-                                     int * PermuteToLIDs,
+             int * PermuteToLIDs,
              int *PermuteFromLIDs,
-                                     const Epetra_OffsetIndex * Indexor ) {
+             const Epetra_OffsetIndex * Indexor ,
+             Epetra_CombineMode CombineMode) {
 
   if(!Source.Map().GlobalIndicesTypeMatch(RowMap()))
     throw ReportError("Epetra_CrsMatrix::CopyAndPermute: Incoming global index type does not match the one for *this",-1);
@@ -2173,13 +2174,13 @@ int Epetra_CrsMatrix::CopyAndPermute(const Epetra_SrcDistObject & Source,
   try {
     const Epetra_CrsMatrix & A = dynamic_cast<const Epetra_CrsMatrix &>(Source);
     EPETRA_CHK_ERR(CopyAndPermuteCrsMatrix(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs,
-             PermuteFromLIDs,Indexor));
+             PermuteFromLIDs,Indexor,CombineMode));
   }
   catch (...) {
     try {
       const Epetra_RowMatrix & A = dynamic_cast<const Epetra_RowMatrix &>(Source);
       EPETRA_CHK_ERR(CopyAndPermuteRowMatrix(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs,
-               PermuteFromLIDs,Indexor));
+               PermuteFromLIDs,Indexor,CombineMode));
     }
     catch (...) {
       EPETRA_CHK_ERR(-1); // Incompatible SrcDistObject
@@ -2192,13 +2193,14 @@ int Epetra_CrsMatrix::CopyAndPermute(const Epetra_SrcDistObject & Source,
 //=========================================================================
 template<typename int_type>
 int Epetra_CrsMatrix::TCopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
-                                              int NumSameIDs,
+                int NumSameIDs,
                 int NumPermuteIDs,
-                                              int * PermuteToLIDs,
+                int * PermuteToLIDs,
                 int *PermuteFromLIDs,
-                                              const Epetra_OffsetIndex * Indexor) {
+                const Epetra_OffsetIndex * Indexor,
+                Epetra_CombineMode CombineMode) {
 
-  int i, ierr;
+  int i, ierr = -1;
 
   int_type Row;
   int NumEntries;
@@ -2219,7 +2221,10 @@ int Epetra_CrsMatrix::TCopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
           for (i=0; i<NumSameIDs; i++) {
       Row = (int_type) GRID64(i);
       EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(Row, maxNumEntries, NumEntries, values, Indices)); // Set pointers
-            ierr = ReplaceOffsetValues(Row, NumEntries, values, Indexor->SameOffsets()[i]);
+            if (CombineMode==Epetra_AddLocalAlso)
+              ierr = SumIntoOffsetValues(Row, NumEntries, values, Indexor->SameOffsets()[i]);
+            else
+              ierr = ReplaceOffsetValues(Row, NumEntries, values, Indexor->SameOffsets()[i]);
             if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
@@ -2227,7 +2232,10 @@ int Epetra_CrsMatrix::TCopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
           for (i=0; i<NumSameIDs; i++) {
       Row = (int_type) GRID64(i);
       EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(Row, maxNumEntries, NumEntries, values, Indices)); // Set pointers
-            ierr = ReplaceGlobalValues(Row, NumEntries, values, Indices);
+            if (CombineMode==Epetra_AddLocalAlso)
+              ierr = SumIntoGlobalValues(Row, NumEntries, values, Indices);
+            else
+              ierr = ReplaceGlobalValues(Row, NumEntries, values, Indices);
             if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
@@ -2257,7 +2265,10 @@ int Epetra_CrsMatrix::TCopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
           for (i=0; i<NumSameIDs; i++) {
       Row = (int_type) GRID64(i);
       EPETRA_CHK_ERR(A.ExtractGlobalRowView(Row, NumEntries, values, Indices)); // Set pointers
-            ierr = ReplaceOffsetValues(Row, NumEntries, values, Indexor->SameOffsets()[i]);
+            if (CombineMode==Epetra_AddLocalAlso)
+              ierr = SumIntoOffsetValues(Row, NumEntries, values, Indexor->SameOffsets()[i]);
+            else
+              ierr = ReplaceOffsetValues(Row, NumEntries, values, Indexor->SameOffsets()[i]);
             if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
@@ -2265,7 +2276,10 @@ int Epetra_CrsMatrix::TCopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
           for (i=0; i<NumSameIDs; i++) {
       Row = (int_type) GRID64(i);
       EPETRA_CHK_ERR(A.ExtractGlobalRowView(Row, NumEntries, values, Indices)); // Set pointers
-            ierr = ReplaceGlobalValues(Row, NumEntries, values, Indices);
+            if (CombineMode==Epetra_AddLocalAlso)
+              ierr = SumIntoGlobalValues(Row, NumEntries, values, Indices);
+            else
+              ierr = ReplaceGlobalValues(Row, NumEntries, values, Indices);
             if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
@@ -2301,7 +2315,10 @@ int Epetra_CrsMatrix::TCopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
       FromRow = (int_type) A.GRID64(PermuteFromLIDs[i]);
       ToRow = (int_type) GRID64(PermuteToLIDs[i]);
       EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(FromRow, maxNumEntries, NumEntries, values, Indices)); // Set pointers
-      ierr = ReplaceOffsetValues(ToRow, NumEntries, values, Indexor->PermuteOffsets()[i]);
+            if (CombineMode==Epetra_AddLocalAlso)
+              ierr = SumIntoOffsetValues(ToRow, NumEntries, values, Indexor->PermuteOffsets()[i]);
+            else
+              ierr = ReplaceOffsetValues(ToRow, NumEntries, values, Indexor->PermuteOffsets()[i]);
             if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
@@ -2310,7 +2327,10 @@ int Epetra_CrsMatrix::TCopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
       FromRow = (int_type) A.GRID64(PermuteFromLIDs[i]);
       ToRow = (int_type) GRID64(PermuteToLIDs[i]);
       EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(FromRow, maxNumEntries, NumEntries, values, Indices)); // Set pointers
-      ierr = ReplaceGlobalValues(ToRow, NumEntries, values, Indices);
+            if (CombineMode==Epetra_AddLocalAlso)
+              ierr = SumIntoGlobalValues(ToRow, NumEntries, values, Indices);
+            else
+              ierr = ReplaceGlobalValues(ToRow, NumEntries, values, Indices);
             if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
@@ -2343,7 +2363,10 @@ int Epetra_CrsMatrix::TCopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
       FromRow = (int_type) A.GRID64(PermuteFromLIDs[i]);
       ToRow = (int_type) GRID64(PermuteToLIDs[i]);
       EPETRA_CHK_ERR(A.ExtractGlobalRowView(FromRow, NumEntries, values, Indices)); // Set pointers
-      ierr = ReplaceOffsetValues(ToRow, NumEntries, values, Indexor->PermuteOffsets()[i]);
+            if (CombineMode==Epetra_AddLocalAlso)
+              ierr = SumIntoOffsetValues(ToRow, NumEntries, values, Indexor->PermuteOffsets()[i]);
+            else
+              ierr = ReplaceOffsetValues(ToRow, NumEntries, values, Indexor->PermuteOffsets()[i]);
       if (ierr<0) EPETRA_CHK_ERR(ierr);
           }
         }
@@ -2352,7 +2375,10 @@ int Epetra_CrsMatrix::TCopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
       FromRow = (int_type) A.GRID64(PermuteFromLIDs[i]);
       ToRow = (int_type) GRID64(PermuteToLIDs[i]);
       EPETRA_CHK_ERR(A.ExtractGlobalRowView(FromRow, NumEntries, values, Indices)); // Set pointers
-      ierr = ReplaceGlobalValues(ToRow, NumEntries, values, Indices);
+            if (CombineMode==Epetra_AddLocalAlso)
+              ierr = SumIntoGlobalValues(ToRow, NumEntries, values, Indices);
+            else
+              ierr = ReplaceGlobalValues(ToRow, NumEntries, values, Indices);
       if (ierr<0) EPETRA_CHK_ERR(ierr);
           }
         }
@@ -2390,24 +2416,25 @@ int Epetra_CrsMatrix::TCopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
 
 int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
                                               int NumSameIDs,
-                int NumPermuteIDs,
+                                              int NumPermuteIDs,
                                               int * PermuteToLIDs,
-                int *PermuteFromLIDs,
-                                              const Epetra_OffsetIndex * Indexor)
+                                              int *PermuteFromLIDs,
+                                              const Epetra_OffsetIndex * Indexor,
+                                              Epetra_CombineMode CombineMode)
 {
   if(!A.RowMap().GlobalIndicesTypeMatch(RowMap()))
     throw ReportError("Epetra_CrsMatrix::CopyAndPermuteCrsMatrix: Incoming global index type does not match the one for *this",-1);
 
   if(A.RowMap().GlobalIndicesInt())
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-    return TCopyAndPermuteCrsMatrix<int>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
+    return TCopyAndPermuteCrsMatrix<int>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor, CombineMode);
 #else
     throw ReportError("Epetra_CrsMatrix::CopyAndPermuteCrsMatrix: ERROR, GlobalIndicesInt but no API for it.",-1);
 #endif
 
   if(A.RowMap().GlobalIndicesLongLong())
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-    return TCopyAndPermuteCrsMatrix<long long>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
+    return TCopyAndPermuteCrsMatrix<long long>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor, CombineMode);
 #else
     throw ReportError("Epetra_CrsMatrix::CopyAndPermuteCrsMatrix: ERROR, GlobalIndicesLongLong but no API for it.",-1);
 #endif
@@ -2418,11 +2445,12 @@ int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
 //=========================================================================
 template<typename int_type>
 int Epetra_CrsMatrix::TCopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
-                                              int NumSameIDs,
+                int NumSameIDs,
                 int NumPermuteIDs,
-                                              int * PermuteToLIDs,
+                int * PermuteToLIDs,
                 int *PermuteFromLIDs,
-                                              const Epetra_OffsetIndex * Indexor ) {
+                const Epetra_OffsetIndex * Indexor,
+                Epetra_CombineMode CombineMode) {
   int i, j, ierr;
 
   int_type Row, ToRow;
@@ -2566,25 +2594,26 @@ int Epetra_CrsMatrix::TCopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
 }
 
 int Epetra_CrsMatrix::CopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
-                                              int NumSameIDs,
+                int NumSameIDs,
                 int NumPermuteIDs,
-                                              int * PermuteToLIDs,
+                int * PermuteToLIDs,
                 int *PermuteFromLIDs,
-                                              const Epetra_OffsetIndex * Indexor )
+                const Epetra_OffsetIndex * Indexor,
+                Epetra_CombineMode CombineMode)
 {
   if(!A.Map().GlobalIndicesTypeMatch(RowMap()))
     throw ReportError("Epetra_CrsMatrix::CopyAndPermuteRowMatrix: Incoming global index type does not match the one for *this",-1);
 
   if(A.RowMatrixRowMap().GlobalIndicesInt())
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-    return TCopyAndPermuteRowMatrix<int>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
+    return TCopyAndPermuteRowMatrix<int>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor, CombineMode);
 #else
     throw ReportError("Epetra_CrsMatrix::CopyAndPermuteRowMatrix: ERROR, GlobalIndicesInt but no API for it.",-1);
 #endif
 
   if(A.RowMatrixRowMap().GlobalIndicesLongLong())
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-    return TCopyAndPermuteRowMatrix<long long>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
+    return TCopyAndPermuteRowMatrix<long long>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor, CombineMode);
 #else
     throw ReportError("Epetra_CrsMatrix::CopyAndPermuteRowMatrix: ERROR, GlobalIndicesLongLong but no API for it.",-1);
 #endif
@@ -4570,7 +4599,7 @@ int Epetra_CrsMatrix::ExpertMakeUniqueCrsGraphData(){
  }
 
 //=============================================================================
-int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,const Epetra_Map & RangeMap, const Epetra_Import * Importer, const Epetra_Export * Exporter, int NumMyDiagonals){
+int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & theDomainMap,const Epetra_Map & theRangeMap, const Epetra_Import * theImporter, const Epetra_Export * theExporter, int numMyDiagonals){
 
   Epetra_CrsGraphData& D=*Graph_.CrsGraphData_;
   int m=D.RowMap_.NumMyElements();
@@ -4584,8 +4613,8 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
     EPETRA_CHK_ERR(-1);
 
   // Maps
-  D.DomainMap_ = DomainMap;
-  D.RangeMap_  = RangeMap;
+  D.DomainMap_ = theDomainMap;
+  D.RangeMap_  = theRangeMap;
 
   // Create import, if needed
   if (!D.ColMap_.SameAs(D.DomainMap_)) {
@@ -4593,11 +4622,11 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
       delete D.Importer_;
       D.Importer_ = 0;
     }
-    if(Importer && Importer->SourceMap().SameAs(D.DomainMap_) && Importer->TargetMap().SameAs(D.ColMap_)){
-      D.Importer_=Importer;
+    if(theImporter && theImporter->SourceMap().SameAs(D.DomainMap_) && theImporter->TargetMap().SameAs(D.ColMap_)){
+      D.Importer_=theImporter;
     }
     else {
-      delete Importer;
+      delete theImporter;
       D.Importer_ = new Epetra_Import(D.ColMap_, D.DomainMap_);
     }
   }
@@ -4608,12 +4637,12 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
       delete D.Exporter_;
       D.Exporter_ = 0;
     }
-    if(Exporter && Exporter->SourceMap().SameAs(D.RowMap_) && Exporter->TargetMap().SameAs(D.RangeMap_)){
-      D.Exporter_=Exporter;
+    if(theExporter && theExporter->SourceMap().SameAs(D.RowMap_) && theExporter->TargetMap().SameAs(D.RangeMap_)){
+      D.Exporter_=theExporter;
     }
     else {
-      delete Exporter;
-      D.Exporter_ = new Epetra_Export(D.RowMap_,D.RangeMap_);				
+      delete theExporter;
+      D.Exporter_ = new Epetra_Export(D.RowMap_,D.RangeMap_);
     }
   }
 
@@ -4686,34 +4715,34 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
       if(jl_0 < i) D.UpperTriangular_ = false;
 
 
-      if(NumMyDiagonals == -1) {
-	// Binary search in GID space
-	// NOTE: This turns out to be noticibly faster than doing a single LID lookup and then binary searching
-	// on the LIDs directly.
-	int insertPoint = -1;
-	if(UseLL)  {
+      if(numMyDiagonals == -1) {
+        // Binary search in GID space
+        // NOTE: This turns out to be noticibly faster than doing a single LID lookup and then binary searching
+        // on the LIDs directly.
+        int insertPoint = -1;
+        if(UseLL)  {
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-	  long long jg = D.RowMap_.GID64(i);
-	  if (Epetra_Util_binary_search_aux(jg, col_indices, D.ColMap_.MyGlobalElements64(), NumIndices, insertPoint)>-1) {
-	    D.NumMyBlockDiagonals_++;
-	    D.NumMyDiagonals_ ++;
-	  }
+          long long jg = D.RowMap_.GID64(i);
+          if (Epetra_Util_binary_search_aux(jg, col_indices, D.ColMap_.MyGlobalElements64(), NumIndices, insertPoint)>-1) {
+            D.NumMyBlockDiagonals_++;
+            D.NumMyDiagonals_ ++;
+          }
 #endif
-	}
-	else {
+        }
+        else {
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-	  int jg = D.RowMap_.GID(i);
-	  if (Epetra_Util_binary_search_aux(jg, col_indices, D.ColMap_.MyGlobalElements(), NumIndices, insertPoint)>-1) {
-	    D.NumMyBlockDiagonals_++;
-	    D.NumMyDiagonals_ ++;
-	  }
+          int jg = D.RowMap_.GID(i);
+          if (Epetra_Util_binary_search_aux(jg, col_indices, D.ColMap_.MyGlobalElements(), NumIndices, insertPoint)>-1) {
+            D.NumMyBlockDiagonals_++;
+            D.NumMyDiagonals_ ++;
+          }
 #endif
-	}
+        }
       }
     }
   } // end DetermineTriangular
 
-  if(NumMyDiagonals > -1) D.NumMyDiagonals_ = D.NumMyBlockDiagonals_ = NumMyDiagonals;
+  if(numMyDiagonals > -1) D.NumMyDiagonals_ = D.NumMyBlockDiagonals_ = numMyDiagonals;
 
   D.MaxNumNonzeros_=D.MaxNumIndices_;
 
@@ -4755,7 +4784,12 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & DomainMap,cons
 
 // ===================================================================
 template<class TransferType>
-  void Epetra_CrsMatrix::FusedTransfer(const Epetra_CrsMatrix & SourceMatrix, const TransferType & RowTransfer,const Epetra_Map * DomainMap, const Epetra_Map * RangeMap,bool RestrictCommunicator)
+void
+Epetra_CrsMatrix::FusedTransfer (const Epetra_CrsMatrix& SourceMatrix,
+                                 const TransferType& RowTransfer,
+                                 const Epetra_Map* theDomainMap,
+                                 const Epetra_Map* theRangeMap,
+                                 const bool RestrictCommunicator)
 {
   // Fused constructor, import & FillComplete
   int rv;
@@ -4812,8 +4846,8 @@ template<class TransferType>
 
   // The new Domain & Range maps
   const Epetra_Map* MyRowMap        = &RowMap();
-  const Epetra_Map* MyDomainMap     = DomainMap ? DomainMap : &SourceMatrix.DomainMap();
-  const Epetra_Map* MyRangeMap      = RangeMap  ? RangeMap  : &RowMap();
+  const Epetra_Map* MyDomainMap     = theDomainMap ? theDomainMap : &SourceMatrix.DomainMap();
+  const Epetra_Map* MyRangeMap      = theRangeMap  ? theRangeMap  : &RowMap();
   const Epetra_Map* BaseRowMap      = &RowMap();
   const Epetra_Map* BaseDomainMap   = MyDomainMap;
 
@@ -4872,10 +4906,10 @@ template<class TransferType>
   }
   else if(BaseDomainMap->SameAs(*BaseRowMap) && SourceMatrix.DomainMap().SameAs(SourceMatrix.RowMap())){
     // We can use the RowTransfer + SourceMatrix' importer to find out who owns what.
-    Epetra_IntVector TargetRow_pids(*DomainMap,true);
+    Epetra_IntVector TargetRow_pids(*theDomainMap,true);
     Epetra_IntVector SourceRow_pids(SourceMatrix.RowMap());
     SourcePids.resize(SourceMatrix.ColMap().NumMyElements(),0);
-    Epetra_IntVector SourceCol_pids(View,SourceMatrix.ColMap(),&SourcePids[0]);
+    Epetra_IntVector SourceCol_pids(View,SourceMatrix.ColMap(),SourcePids.size() ? &SourcePids[0] : 0);
 
     TargetRow_pids.PutValue(MyPID);
     if(typeid(TransferType)==typeid(Epetra_Import))
@@ -4887,13 +4921,13 @@ template<class TransferType>
     SourceCol_pids.Import(SourceRow_pids,*MyImporter,Insert);
   }
   else
-    throw ReportError("Epetra_CrsMatrix: Fused import/export constructor only supports *DomainMap==SourceMatrix.DomainMap() || *DomainMap==RowTransfer.TargetMap() && SourceMatrix.DomainMap() == SourceMatrix.RowMap().",-4);
+    throw ReportError("Epetra_CrsMatrix: Fused import/export constructor only supports *theDomainMap==SourceMatrix.DomainMap() || *theDomainMap==RowTransfer.TargetMap() && SourceMatrix.DomainMap() == SourceMatrix.RowMap().",-4);
 
   // Pack & Prepare w/ owning PIDs
   rv=Epetra_Import_Util::PackAndPrepareWithOwningPIDs(SourceMatrix,
-						      NumExportIDs,ExportLIDs,
-						      LenExports_,Exports_,SizeOfPacket,
-						      Sizes_,VarSizes,SourcePids);
+                                                      NumExportIDs,ExportLIDs,
+                                                      LenExports_,Exports_,SizeOfPacket,
+                                                      Sizes_,VarSizes,SourcePids);
   if(rv) throw ReportError("Epetra_CrsMatrix: Fused import/export constructor failed in PackAndPrepareWithOwningPIDs()",-5);
 
   if (communication_needed) {
@@ -4965,17 +4999,17 @@ template<class TransferType>
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
     long long * CSR_colind_LL_ptr = CSR_colind_LL.size() ? &CSR_colind_LL[0] : 0;
     Epetra_Import_Util::LowCommunicationMakeColMapAndReindex(N,CSR_rowptr.Values(),CSR_colind.Values(),CSR_colind_LL_ptr,
-							     *MyDomainMap,pids_ptr,
-							     Graph_.CrsGraphData_->SortGhostsAssociatedWithEachProcessor_,RemotePIDs,
-							     Graph_.CrsGraphData_->ColMap_);
+                                                             *MyDomainMap,pids_ptr,
+                                                             Graph_.CrsGraphData_->SortGhostsAssociatedWithEachProcessor_,RemotePIDs,
+                                                             Graph_.CrsGraphData_->ColMap_);
     Graph_.CrsGraphData_->HaveColMap_ = true;
 #endif
   }
   else {
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     Epetra_Import_Util::LowCommunicationMakeColMapAndReindex(N,CSR_rowptr.Values(),CSR_colind.Values(),*MyDomainMap,pids_ptr,
-							     Graph_.CrsGraphData_->SortGhostsAssociatedWithEachProcessor_,RemotePIDs,
-							     Graph_.CrsGraphData_->ColMap_);
+                                                             Graph_.CrsGraphData_->SortGhostsAssociatedWithEachProcessor_,RemotePIDs,
+                                                             Graph_.CrsGraphData_->ColMap_);
     Graph_.CrsGraphData_->HaveColMap_ = true;
 #endif
   }
@@ -4987,7 +5021,7 @@ template<class TransferType>
   const Epetra_Import* xferAsImport = dynamic_cast<const Epetra_Import*> (&RowTransfer);
   if(xferAsImport)
     Epetra_Util::SortCrsEntries(N, CSR_rowptr.Values(), CSR_colind.Values(), CSR_vals);
-  else 
+  else
     Epetra_Util::SortAndMergeCrsEntries(N, CSR_rowptr.Values(), CSR_colind.Values(), CSR_vals);
 
   /***************************************************/
@@ -5017,7 +5051,7 @@ template<class TransferType>
 
 
 // ===================================================================
-Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const Epetra_Import & RowImporter,const Epetra_Map * DomainMap, const Epetra_Map * RangeMap, bool RestrictCommunicator)
+Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const Epetra_Import & RowImporter,const Epetra_Map * theDomainMap, const Epetra_Map * theRangeMap, bool RestrictCommunicator)
   : Epetra_DistObject(RowImporter.TargetMap(), "Epetra::CrsMatrix"),
   Epetra_CompObject(),
   Epetra_BLAS(),
@@ -5030,12 +5064,12 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
   ExportVector_(0),
   CV_(Copy)
 {
-  FusedTransfer<Epetra_Import>(SourceMatrix,RowImporter,DomainMap,RangeMap,RestrictCommunicator);
+  FusedTransfer<Epetra_Import>(SourceMatrix,RowImporter,theDomainMap,theRangeMap,RestrictCommunicator);
 }// end fused import constructor
 
 
 // ===================================================================
-Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const Epetra_Export & RowExporter,const Epetra_Map * DomainMap, const Epetra_Map * RangeMap, bool RestrictCommunicator)
+Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const Epetra_Export & RowExporter,const Epetra_Map * theDomainMap, const Epetra_Map * theRangeMap, bool RestrictCommunicator)
    : Epetra_DistObject(RowExporter.TargetMap(), "Epetra::CrsMatrix"),
    Epetra_CompObject(),
    Epetra_BLAS(),
@@ -5048,26 +5082,26 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
    ExportVector_(0),
    CV_(Copy)
 {
-  FusedTransfer<Epetra_Export>(SourceMatrix,RowExporter,DomainMap,RangeMap,RestrictCommunicator);
+  FusedTransfer<Epetra_Export>(SourceMatrix,RowExporter,theDomainMap,theRangeMap,RestrictCommunicator);
 } // end fused export constructor
 
 
 // ===================================================================
 void Epetra_CrsMatrix::FusedImport(const Epetra_CrsMatrix & SourceMatrix,
-				   const Epetra_Import & RowImporter,
-				   const Epetra_Map * DomainMap,
-				   const Epetra_Map * RangeMap,
-				   bool RestrictCommunicator) {
-  FusedTransfer<Epetra_Import>(SourceMatrix,RowImporter,DomainMap,RangeMap,RestrictCommunicator);
+                                   const Epetra_Import & RowImporter,
+                                   const Epetra_Map * theDomainMap,
+                                   const Epetra_Map * theRangeMap,
+                                   bool RestrictCommunicator) {
+  FusedTransfer<Epetra_Import>(SourceMatrix,RowImporter,theDomainMap,theRangeMap,RestrictCommunicator);
 }  // end fused import non-constructor
 
 // ===================================================================
 void Epetra_CrsMatrix::FusedExport(const Epetra_CrsMatrix & SourceMatrix,
-				   const Epetra_Export & RowExporter,
-				   const Epetra_Map * DomainMap,
-				   const Epetra_Map * RangeMap,
-				   bool RestrictCommunicator) {
-  FusedTransfer<Epetra_Export>(SourceMatrix,RowExporter,DomainMap,RangeMap,RestrictCommunicator);
+                                   const Epetra_Export & RowExporter,
+                                   const Epetra_Map * theDomainMap,
+                                   const Epetra_Map * theRangeMap,
+                                   bool RestrictCommunicator) {
+  FusedTransfer<Epetra_Export>(SourceMatrix,RowExporter,theDomainMap,theRangeMap,RestrictCommunicator);
 } // end fused export non-constructor
 
 

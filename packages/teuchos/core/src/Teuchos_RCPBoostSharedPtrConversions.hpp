@@ -39,8 +39,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TEUCHOS_RCP_SHAREDPTR_CONVERSIONS_HPP
-#define TEUCHOS_RCP_SHAREDPTR_CONVERSIONS_HPP
+#ifndef TEUCHOS_RCP_BOOST_SHAREDPTR_CONVERSIONS_HPP
+#define TEUCHOS_RCP_BOOST_SHAREDPTR_CONVERSIONS_HPP
 
 #include "Teuchos_RCPBoostSharedPtrConversionsDecl.hpp"
 #include "Teuchos_RCP.hpp"
@@ -50,7 +50,7 @@ template<class T>
 Teuchos::RCP<T>
 Teuchos::rcp( const boost::shared_ptr<T> &sptr )
 {
-  if (sptr.get()) {
+  if (nonnull(sptr)) {
     // First, see if the RCP is in the shared_ptr deleter object
     const RCPDeleter<T>
       *rcpd = boost::get_deleter<RCPDeleter<T> >(sptr);
@@ -88,4 +88,4 @@ Teuchos::shared_pointer( const RCP<T> &rcp )
 }
 
 
-#endif	// TEUCHOS_RCP_SHAREDPTR_CONVERSIONS_HPP
+#endif	// TEUCHOS_RCP_BOOST_SHAREDPTR_CONVERSIONS_HPP

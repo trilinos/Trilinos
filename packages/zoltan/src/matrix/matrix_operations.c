@@ -164,8 +164,6 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
     ZOLTAN_FREE(&outmat->yend);
   ZOLTAN_FREE(&outmat->ystart);
 
-KDDKDDKDD(zz->Proc, "        Create Maps");
-
   nnz_map = Zoltan_Map_Create(zz, 0, 2 * sizeof(ZOLTAN_GNO_TYPE), 0, size);
   if (nnz_map == NULL) MEMORY_ERROR;
   y_map = Zoltan_Map_Create(zz, 0, sizeof(ZOLTAN_GNO_TYPE), 0, size);  /* KDDKDD if y_map is storing vertices, shouldn't it have nY?  size is nPins. */
@@ -211,10 +209,8 @@ KDDKDDKDD(zz->Proc, "        Create Maps");
     i = (int) pos;
   }
 
-KDDKDDKDD(zz->Proc, "        Sort");
   Zoltan_quicksort_list_inc_gno(outmat->yGNO, iperm, 0, outmat->nY - 1);
 
-KDDKDDKDD(zz->Proc, "        Create outmat");
   perm = (int*) ZOLTAN_MALLOC(outmat->nY*sizeof(int));
   if (outmat->nY > 0 && perm == NULL) MEMORY_ERROR;
   for (i = 0 ; i < outmat->nY ; ++i)
@@ -369,23 +365,10 @@ Zoltan_Matrix_Construct_CSR(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
 {
   static char *yo = "Zoltan_Matrix_Construct_CSR";
   int *tmparray=NULL;
-  WgtFctPtr wgtfct;
   int ierr = ZOLTAN_OK;
   int i;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
-
-  switch (outmat->opts.pinwgtop) {
-  case MAX_WEIGHT:
-    wgtfct = &wgtFctMax;
-    break;
-  case CMP_WEIGHT:
-    wgtfct = &wgtFctCmp;
-    break;
-  case ADD_WEIGHT:
-  default:
-    wgtfct = &wgtFctAdd;
-  }
 
   tmparray = (int*)ZOLTAN_CALLOC(outmat->nY, sizeof(int));
 
@@ -588,7 +571,6 @@ Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, ZOLTAN_GNO_TYPE * perm_y)
     if (m->nY && (!yGID || !ypid || (m->bipartite && !ybipart))) MEMORY_ERROR;
 
     /* Get Informations about Y */
-KDDKDDKDD(zz->Proc, "        First DD_Find");
     Zoltan_DD_Find (m->ddY, (ZOLTAN_ID_PTR)m->yGNO, yGID, (char *)ypid, ybipart, m->nY, NULL);
   }
 
@@ -627,7 +609,6 @@ KDDKDDKDD(zz->Proc, "        First DD_Find");
   if (m->nPins && pinGNO == NULL)
     MEMORY_ERROR;
 
-KDDKDDKDD(zz->Proc, "        Second DD_Find");
 
   Zoltan_DD_Find (dd, (ZOLTAN_ID_PTR)m->pinGNO, (ZOLTAN_ID_PTR)pinGNO, NULL, NULL,
 		  m->nPins, NULL);
@@ -639,7 +620,6 @@ KDDKDDKDD(zz->Proc, "        Second DD_Find");
 
   }
   else {
-KDDKDDKDD(zz->Proc, "        Skipping pin renumbering; not needed.");
   }
 
  End:

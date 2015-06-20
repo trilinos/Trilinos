@@ -46,6 +46,7 @@
 #define PHX_FIELDTAG_TAG_DEF_HPP
 
 #include <sstream>
+#include <boost/type_traits.hpp>
 #include "Phalanx_TypeStrings.hpp"
 #include "Teuchos_Assert.hpp"
 
@@ -102,7 +103,7 @@ const PHX::DataLayout& PHX::Tag<DataT>::dataLayout() const
 template<typename DataT>
 const std::type_info& PHX::Tag<DataT>::dataTypeInfo() const
 { 
-  DataT tmp;
+  typename boost::remove_const<DataT>::type tmp;
   return typeid(tmp);
 }
 
@@ -112,8 +113,10 @@ const std::string PHX::Tag<DataT>::identifier() const
 {
   std::ostringstream ost;
 
-  ost << this->name() 
-      << this->dataTypeInfo().name() 
+  ost << this->name()
+      << ":"
+      << Teuchos::demangleName(this->dataTypeInfo().name()) 
+      << ":"
       << this->dataLayout().identifier();
   return ost.str(); 
 }
@@ -122,12 +125,8 @@ const std::string PHX::Tag<DataT>::identifier() const
 template<typename DataT>
 void PHX::Tag<DataT>::print(std::ostream& os) const
 {
-//   DataT tmp;
-//   os << "Tag: " << m_name << ", " << typeid(tmp).name()
-//      << ", DataLayout: " << *m_data_layout;
   os << "Tag: " << m_name << ", " << PHX::typeAsString<DataT>()
      << ", DataLayout: " << *m_data_layout;
-
 }
 
 //**********************************************************************

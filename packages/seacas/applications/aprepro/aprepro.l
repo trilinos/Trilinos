@@ -1,7 +1,7 @@
 /* -*- Mode: c++ -*- */
 /* 
  * Copyright 2006 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -99,8 +99,6 @@ int switch_skip_to_endcase = 0;
 double switch_condition = 0.0; /* Value specified in "switch(condition)" */
 
 %}
-
-%option nounput
 
 qstring	\"[^\"\n]*[\"\n]
 mlstring \'[^\']*[\']
@@ -286,6 +284,35 @@ integer {D}+({E})?
     yyerror("endswitch statement found without matching switch.");
   }
   switch_active = 0;
+}
+
+<INITIAL>{
+  /* This restores the old behavior of ifdef and ifndef
+   * where they would eat up any leading whitespace on
+   * a line.
+   */
+  {WS}"{"[Ii]"fdef"{WS}"(" { 
+    unput('(');
+    unput('f');
+    unput('e');
+    unput('d');
+    unput('f');
+    unput('i');
+    unput('_');
+    unput('{');
+  }
+
+  {WS}"{"[Ii]"fndef"{WS}"(" {
+    unput('(');
+    unput('f');
+    unput('e');
+    unput('d');
+    unput('n');
+    unput('f');
+    unput('i');
+    unput('_');
+    unput('{');
+  }
 }
 
 <IF_WHILE_SKIP>{
@@ -838,19 +865,21 @@ char *do_case(double x)
 char *do_if(double x)
 {
   if_lvl++;
-  if (if_lvl >= MAX_IF_NESTING)
+  if (if_lvl >= MAX_IF_NESTING) {
     yyerror("Too many nested if statements");
-
-  if (x == 0) {
-    if_state[if_lvl] = IF_SKIP;
-    if_case_run[if_lvl] = False;
-  } else {
-    suppress_nl = 1;
-    if_state[if_lvl] = INITIAL;
-    if_case_run[if_lvl] = True;
   }
-  if (ap_options.debugging) 
-    fprintf(stderr, "DEBUG IF: If level %d %d\n", if_lvl, if_state[if_lvl]); 
+  else {
+    if (x == 0) {
+      if_state[if_lvl] = IF_SKIP;
+      if_case_run[if_lvl] = False;
+    } else {
+      suppress_nl = 1;
+      if_state[if_lvl] = INITIAL;
+      if_case_run[if_lvl] = True;
+    }
+    if (ap_options.debugging) 
+      fprintf(stderr, "DEBUG IF: If level %d %d\n", if_lvl, if_state[if_lvl]);
+  }
   return(NULL);
 }
 

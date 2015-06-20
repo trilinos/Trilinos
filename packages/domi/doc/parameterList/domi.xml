@@ -1,0 +1,36 @@
+<?xml-stylesheet type="text/xsl" href="common/paramList/paramList.xsl"?>
+<ParameterList name="ANONYMOUS">
+  <Parameter docString="An array of ints that specifies the size of the MDComm along each axis. If the 'dimensions' parameter is present, then the length of that parameter determines the number of dimensions.  If 'dimensions' is not present, then the length of this parameter determines the number of dimensions.  If the length of this parameter is shorter than the number of dimensions, then this parameter is extended with values of -1.  A negative value tells Domi to fill in a logical value based on the total number of processors." id="0" isDefault="false" isUsed="true" name="comm dimensions" type="Array(int)" validatorId="0" value="{-1}"/>
+  <Parameter docString="A scalar or an array of int flags specifying whether axes are periodic. If a scalar is given, then all axes share that periodicity flag.  If an array is given and it is shorter than the length of commDims array, then the unspecified entries are given a default value of zero (not periodic)." id="1" isDefault="false" isUsed="true" name="periodic" type="Array(int)" validatorId="1" value="{0}"/>
+  <Parameter docString="An array of ordinals specifying the global dimensions of the MDMap. If present for the MDComm constructor, the length of this parameter will set the number of dimensions.  If not present for the MDComm constructor, the number of dimensions will be set by the length of the 'axis comm szies' parameter." id="2" isDefault="false" isUsed="true" name="dimensions" type="Array(int)" validatorId="2" value="{0}"/>
+  <Parameter docString="An int that specifies the boundary padding size for all axes." id="3" isDefault="false" isUsed="true" name="boundary pad size" type="int" validatorId="3" value="0"/>
+  <Parameter docString="An array of ints specifying the size of the boundary padding along each axis. All unspecified entries take the value of the 'boundary pad size' parameter, which defaults to zero." id="4" isDefault="false" isUsed="true" name="boundary pad sizes" type="Array(int)" validatorId="4" value="{}"/>
+  <Parameter docString="An int that specifies the communication padding size for all axes." id="5" isDefault="false" isUsed="true" name="communication pad size" type="int" validatorId="3" value="0"/>
+  <Parameter docString="An array of ints specifying the size of the communication padding along each axis. All unspecified entries take the value of the 'communication pad size' parameter, which defaults to zero." id="6" isDefault="false" isUsed="true" name="communication pad sizes" type="Array(int)" validatorId="4" value="{}"/>
+  <Parameter docString="A string indicating how the data is laid out in memory. Default is currently set to Fortran order." id="7" isDefault="false" isUsed="true" name="layout" type="string" validatorId="5" value="Default"/>
+  <Parameter docString="Use the 'leading dimension' parameter to specify multiple degrees of freedom at each MDMap index.  This increases the dimension of the MDVector by one, and the new degrees of freedom are accessed with the first index." id="8" isDefault="false" isUsed="true" name="leading dimension" type="int" validatorId="3" value="0"/>
+  <Parameter docString="Use the 'trailing dimension' parameter to specify multiple degrees of freedom at each MDMap index.  This increases the dimension of the MDVector by one, and the new degrees of freedom are accessed with the last index." id="9" isDefault="false" isUsed="true" name="trailing dimension" type="int" validatorId="3" value="0"/>
+  <Validators>
+    <Validator type="ArrayValidator(EnhancedNumberValidator(int), int)" validatorId="0">
+      <Validator min="-1" precision="0" step="1" type="EnhancedNumberValidator(int)"/>
+    </Validator>
+    <Validator type="ArrayValidator(EnhancedNumberValidator(int), int)" validatorId="1">
+      <Validator max="1" min="0" precision="0" step="1" type="EnhancedNumberValidator(int)"/>
+    </Validator>
+    <Validator type="ArrayValidator(EnhancedNumberValidator(int), int)" validatorId="2">
+      <Validator min="0" precision="0" step="1" type="EnhancedNumberValidator(int)"/>
+    </Validator>
+    <Validator min="0" precision="0" step="1" type="EnhancedNumberValidator(int)" validatorId="3"/>
+    <Validator prototypeId="3" type="ArrayValidator(EnhancedNumberValidator(int), int)" validatorId="4"/>
+    <Validator caseSensitive="false" defaultParameterName="Default" integralValue="int" type="StringIntegralValidator(int)" validatorId="5">
+      <String integralValue="0" stringDoc="C storage order (last index varies fastest)" stringValue="C ORDER"/>
+      <String integralValue="1" stringDoc="Fortran storage order (first index varies fastest)" stringValue="FORTRAN ORDER"/>
+      <String integralValue="0" stringDoc="Row major storage order (last index varies fastest)" stringValue="ROW MAJOR"/>
+      <String integralValue="1" stringDoc="Column major storage order (first index varies fastest)" stringValue="COLUMN MAJOR"/>
+      <String integralValue="0" stringDoc="Last index varies fastest" stringValue="LAST INDEX FASTEST"/>
+      <String integralValue="1" stringDoc="First index varies fastest" stringValue="FIRST INDEX FASTEST"/>
+      <String integralValue="1" stringDoc="Fortran storage order" stringValue="DEFAULT"/>
+    </Validator>
+  </Validators>
+</ParameterList>
+

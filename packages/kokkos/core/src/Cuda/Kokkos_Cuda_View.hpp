@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -44,18 +44,18 @@
 #ifndef KOKKOS_CUDA_VIEW_HPP
 #define KOKKOS_CUDA_VIEW_HPP
 
+#include <Kokkos_Macros.hpp>
+
+/* only compile this file if CUDA is enabled for Kokkos */
+#ifdef KOKKOS_HAVE_CUDA
+
 #include <cstring>
 
-#if defined( __CUDACC__ )
-#include <cuda_runtime.h>
-#endif
-
-#include <Kokkos_View.hpp>
 #include <Kokkos_HostSpace.hpp>
 #include <Kokkos_CudaSpace.hpp>
-#include <Kokkos_CudaTypes.hpp>
-#include <Cuda/Kokkos_Cuda_abort.hpp>
-#include <Kokkos_Atomic.hpp>
+#include <Kokkos_View.hpp>
+
+#include <Cuda/Kokkos_Cuda_BasicAllocators.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ struct AssertShapeBoundsAbort< CudaSpace >
                      const size_t /* i4 */ , const size_t /* i5 */ ,
                      const size_t /* i6 */ , const size_t /* i7 */ )
     {
-      Kokkos::cuda_abort("Kokkos::View array bounds violation");
+      Kokkos::abort("Kokkos::View array bounds violation");
     }
 };
 
@@ -92,269 +92,174 @@ struct AssertShapeBoundsAbort< CudaSpace >
 namespace Kokkos {
 namespace Impl {
 
-// Cuda 5.0 <texture_types.h> defines 'cudaTextureObject_t'
-// to be an 'unsigned long long'.  This chould change with
-// future version of Cuda and this typedef would have to
-// change accordingly.
-
-#if defined( CUDA_VERSION ) && ( 5000 <= CUDA_VERSION )
-
-typedef enable_if<
-  sizeof(::cudaTextureObject_t) == sizeof(const void *) ,
-  ::cudaTextureObject_t >::type cuda_texture_object_type ;
-
-cuda_texture_object_type
-cuda_texture_object_attach(
-  const cudaChannelFormatDesc & ,
-  const void * const );
-
-int cuda_texture_object_release(
-    cuda_texture_object_type obj
-    );
-
-int cuda_texture_object_release(
-    const void * const
-    );
-
-template< typename TextureType >
-inline
-cuda_texture_object_type
-cuda_texture_object_attach( const void * const base_view_ptr )
-{
-  return cuda_texture_object_attach( cudaCreateChannelDesc<TextureType>() , base_view_ptr );
-}
-
-#else
-
-typedef const void * cuda_texture_object_type ;
-
-template< typename TextureType >
-inline
-cuda_texture_object_type
-cuda_texture_object_attach( const void * const )
-{ return 0 ; }
-
-int cuda_texture_object_release(
-    const void * const
-    );
-
-#endif
-
 //----------------------------------------------------------------------------
-
 // Cuda Texture fetches can be performed for 4, 8 and 16 byte objects (int,int2,int4)
 // Via reinterpret_case this can be used to support all scalar types of those sizes.
 // Any other scalar type falls back to either normal reads out of global memory,
 // or using the __ldg intrinsic on Kepler GPUs or newer (Compute Capability >= 3.0)
 
-template< typename T, size_t size = sizeof(T) >
-struct alias_type {
-  typedef void type;
-};
+template< typename ValueType
+        , class MemorySpace
+        , class AliasType =
+            typename Kokkos::Impl::if_c< ( sizeof(ValueType) ==  4 ) , int ,
+            typename Kokkos::Impl::if_c< ( sizeof(ValueType) ==  8 ) , ::int2 ,
+            typename Kokkos::Impl::if_c< ( sizeof(ValueType) == 16 ) , ::int4 , void
+            >::type
+            >::type
+            >::type
+        >
+class CudaTextureFetch {
+private:
 
-template< typename T >
-struct alias_type<T,4> {
-  typedef int type;
-};
+  cuda_texture_object_type  m_obj ;
+  const ValueType         * m_alloc_ptr ;
+  int                       m_offset ;
 
-template< typename T >
-struct alias_type<T,8> {
-  typedef int2 type;
-};
+  void attach( const ValueType * const arg_ptr, AllocationTracker const & tracker )
+  {
+    typedef char const * const byte;
 
-template< typename T >
-struct alias_type<T,16> {
-  typedef int4 type;
-};
+    m_alloc_ptr = reinterpret_cast<ValueType *>(tracker.alloc_ptr());
 
-template< typename ValueType, typename AliasType = typename alias_type<ValueType>::type >
-struct CudaTextureFetch {
-  private:
+    size_t byte_offset = reinterpret_cast<byte>(arg_ptr) - reinterpret_cast<byte>(m_alloc_ptr);
+    const bool ok_aligned = 0 == byte_offset % sizeof(ValueType);
 
-    cuda_texture_object_type  obj ;
+    const size_t count = tracker.alloc_size() / sizeof(ValueType);
+    const bool ok_contains = (m_alloc_ptr <= arg_ptr) && (arg_ptr < (m_alloc_ptr + count));
 
-    int* ref_count ;
-  public:
-
-    const ValueType * ptr ;
-
-    KOKKOS_INLINE_FUNCTION
-    CudaTextureFetch() : obj( 0 ) , ref_count(0), ptr( 0 ) {}
-
-    KOKKOS_INLINE_FUNCTION
-    ~CudaTextureFetch() {
-#ifndef __CUDA_ARCH__
-      if(ptr!=NULL) {
-        //printf("Release D: %p %p %i\n",this,ptr,ref_count[0]);
-        int count = Kokkos::atomic_fetch_add(ref_count,-1);
-        if(count == 1) {
-          cuda_texture_object_release(obj);
-          delete [] ref_count;
-        }
+    if (ok_aligned && ok_contains) {
+      if (tracker.attribute() == NULL ) {
+        MemorySpace::texture_object_attach(
+            tracker
+            , sizeof(ValueType)
+            , cudaCreateChannelDesc< AliasType >()
+            );
       }
-#endif
+      m_obj = dynamic_cast<TextureAttribute*>(tracker.attribute())->m_tex_obj;
+      m_offset = arg_ptr - m_alloc_ptr;
     }
+    else if( !ok_contains ) {
+      throw_runtime_exception("Error: cannot attach a texture object to a tracker which does not bound the pointer.");
+    }
+    else {
+      throw_runtime_exception("Error: cannot attach a texture object to an incorrectly aligned pointer.");
+    }
+  }
 
-    KOKKOS_INLINE_FUNCTION
-    CudaTextureFetch( const CudaTextureFetch & rhs ) {
-#ifndef __CUDA_ARCH__
-      if(rhs.ptr != NULL) {
-        obj = rhs.obj;
-        ptr = rhs.ptr;
-        ref_count = rhs.ref_count;
-        Kokkos::atomic_fetch_add(ref_count,1);
-        //printf("Attach C: %p %p %i\n",this,ptr,ref_count[0]);
-      } else {
-        obj = 0;
-        ref_count = NULL;
-        ptr = NULL;
-      }
-#else
-      obj = rhs.obj;
-      ref_count = rhs.ref_count;
-      ptr = rhs.ptr;
-#endif
-}
+public:
 
-    KOKKOS_INLINE_FUNCTION
-    CudaTextureFetch & operator = ( const CudaTextureFetch & rhs ) {
-#ifndef __CUDA_ARCH__
-      if(ptr!=NULL) {
-        //printf("Release A: %p %p %i\n",this,ptr,ref_count[0]);
-        int count = Kokkos::atomic_fetch_add(ref_count,-1);
-        if(count == 1) {
-          cuda_texture_object_release(obj);
-          delete [] ref_count;
-        }
-      }
-      if(rhs.ptr!=NULL) {
-        obj = rhs.obj;
-        ptr = rhs.ptr;
-        ref_count = rhs.ref_count;
-        Kokkos::atomic_fetch_add(ref_count,1);
-        //printf("Attach A: %p %p %i\n",this,ptr,ref_count[0]);
-      } else {
-        obj = 0;
-        ref_count = NULL;
-        ptr = NULL;
-      }
-#else
-      obj = rhs.obj;
-      ref_count = rhs.ref_count;
-      ptr = rhs.ptr;
-#endif
+  KOKKOS_INLINE_FUNCTION
+  CudaTextureFetch() : m_obj() , m_alloc_ptr() , m_offset() {}
+
+  KOKKOS_INLINE_FUNCTION
+  ~CudaTextureFetch() {}
+
+  KOKKOS_INLINE_FUNCTION
+  CudaTextureFetch( const CudaTextureFetch & rhs )
+    : m_obj(       rhs.m_obj )
+    , m_alloc_ptr( rhs.m_alloc_ptr )
+    , m_offset(    rhs.m_offset )
+    {}
+
+  KOKKOS_INLINE_FUNCTION
+  CudaTextureFetch & operator = ( const CudaTextureFetch & rhs )
+    {
+      m_obj       = rhs.m_obj ;
+      m_alloc_ptr = rhs.m_alloc_ptr ;
+      m_offset    = rhs.m_offset ;
       return *this ;
     }
 
-    explicit KOKKOS_INLINE_FUNCTION
-    CudaTextureFetch( ValueType * const base_view_ptr ) {
-#ifndef __CUDA_ARCH__
-      if( base_view_ptr != NULL ) {
-        obj = cuda_texture_object_attach<AliasType>( base_view_ptr );
-        ref_count = new int[1];
-        ref_count[0] = 1;
-        ptr = base_view_ptr;
-        //printf("Attach PC: %p %p %i\n",this,ptr,ref_count[0]);
-      } else {
-        obj = 0;
-        ref_count = NULL;
-        ptr = NULL;
-      }
-#else
-      cuda_abort("ERROR: Trying to assign a non texture_fetch view to a texture_fetch view in a Device kernel\n.");
-#endif
-    }
-
-    KOKKOS_INLINE_FUNCTION
-    CudaTextureFetch & operator = (const ValueType* base_view_ptr) {
-#ifndef __CUDA_ARCH__
-      if(ptr!=NULL) {
-        //printf("Release P: %p %p %i\n",this,ptr,ref_count[0]);
-        int count = Kokkos::atomic_fetch_add(ref_count,-1);
-        if(count == 1) {
-          cuda_texture_object_release(obj);
-          delete [] ref_count;
-        }
-      }
-      if( base_view_ptr != NULL ) {
-        obj = cuda_texture_object_attach<AliasType>( base_view_ptr );
-        ref_count = new int[1];
-        ref_count[0] = 1;
-        ptr = base_view_ptr;
-        //printf("Attach P: %p %p %i\n",this,ptr,ref_count[0]);
-      } else {
-        obj = 0;
-        ref_count = NULL;
-        ptr = NULL;
-      }
-#else
-      cuda_abort("ERROR: Trying to assign a non texture_fetch view to a texture_fetch view in a Device kernel\n.");
-#endif
-      return *this;
-    }
-
-    template< typename iType >
-    KOKKOS_INLINE_FUNCTION
-    ValueType operator[]( const iType & i ) const
+  KOKKOS_INLINE_FUNCTION explicit
+  CudaTextureFetch( const ValueType * const arg_ptr, AllocationTracker const & tracker )
+    : m_obj( 0 ) , m_alloc_ptr(0) , m_offset(0)
     {
-  #if defined( __CUDA_ARCH__ ) && ( 300 <= __CUDA_ARCH__ )
-  // Enable the usage of the _ldg intrinsic even in cases where texture fetches work
-  // Currently texture fetches are faster, but that might change in the future
-  #ifdef KOKKOS_USE_LDG_INTRINSIC
-      return _ldg(&ptr[i]);
-  #else
-      AliasType v = tex1Dfetch<AliasType>( obj , i );
-
-      return  *(reinterpret_cast<ValueType*> (&v));
-  #endif
-  #else
-      return ptr[ i ];
-  #endif
+      #if defined( KOKKOS_USE_LDG_INTRINSIC )
+        m_alloc_ptr(arg_ptr);
+      #elif defined( __CUDACC__ ) && ! defined( __CUDA_ARCH__ )
+        if ( arg_ptr != NULL ) {
+          if ( tracker.is_valid() ) {
+            attach( arg_ptr, tracker );
+          }
+          else {
+            AllocationTracker found_tracker = AllocationTracker::find<typename MemorySpace::allocator>(arg_ptr);
+            if ( found_tracker.is_valid() ) {
+              attach( arg_ptr, found_tracker );
+            } else {
+              throw_runtime_exception("Error: cannot attach a texture object to an untracked pointer!");
+            }
+          }
+        }
+      #endif
     }
-
-};
-
-template< typename ValueType >
-struct CudaTextureFetch< const ValueType, void > {
-
-  const ValueType * ptr ;
 
   KOKKOS_INLINE_FUNCTION
-  CudaTextureFetch() : ptr(0) {};
+  operator const ValueType * () const { return m_alloc_ptr + m_offset ; }
+
+
+  template< typename iType >
+  KOKKOS_INLINE_FUNCTION
+  ValueType operator[]( const iType & i ) const
+    {
+      #if defined( KOKKOS_USE_LDG_INTRINSIC ) && defined( __CUDA_ARCH__ ) && ( 300 <= __CUDA_ARCH__ )
+        AliasType v = __ldg(reinterpret_cast<AliasType*>(&m_alloc_ptr[i]));
+        return  *(reinterpret_cast<ValueType*> (&v));
+      #elif defined( __CUDA_ARCH__ ) && ( 300 <= __CUDA_ARCH__ )
+        AliasType v = tex1Dfetch<AliasType>( m_obj , i + m_offset );
+        return  *(reinterpret_cast<ValueType*> (&v));
+      #else
+        return m_alloc_ptr[ i + m_offset ];
+      #endif
+  }
+};
+
+template< typename ValueType, class MemorySpace >
+class CudaTextureFetch< const ValueType, MemorySpace, void >
+{
+private:
+  const ValueType * m_ptr ;
+public:
+
+  KOKKOS_INLINE_FUNCTION
+  CudaTextureFetch() : m_ptr(0) {};
 
   KOKKOS_INLINE_FUNCTION
   ~CudaTextureFetch() {
   }
 
   KOKKOS_INLINE_FUNCTION
-  CudaTextureFetch( const CudaTextureFetch & rhs ) : ptr(rhs.ptr) {}
+  CudaTextureFetch( const ValueType * ptr, const AllocationTracker & ) : m_ptr(ptr) {}
+
+  KOKKOS_INLINE_FUNCTION
+  CudaTextureFetch( const CudaTextureFetch & rhs ) : m_ptr(rhs.m_ptr) {}
 
   KOKKOS_INLINE_FUNCTION
   CudaTextureFetch & operator = ( const CudaTextureFetch & rhs ) {
-    ptr = rhs.ptr;
+    m_ptr = rhs.m_ptr;
     return *this ;
   }
 
   explicit KOKKOS_INLINE_FUNCTION
-  CudaTextureFetch( ValueType * const base_view_ptr ) {
-    ptr = base_view_ptr;
+  CudaTextureFetch( ValueType * const base_view_ptr, AllocationTracker const & /*tracker*/ ) {
+    m_ptr = base_view_ptr;
   }
 
   KOKKOS_INLINE_FUNCTION
   CudaTextureFetch & operator = (const ValueType* base_view_ptr) {
-    ptr = base_view_ptr;
+    m_ptr = base_view_ptr;
     return *this;
   }
+
+
+  KOKKOS_INLINE_FUNCTION
+  operator const ValueType * () const { return m_ptr ; }
+
 
   template< typename iType >
   KOKKOS_INLINE_FUNCTION
   ValueType operator[]( const iType & i ) const
   {
-  #if defined( __CUDA_ARCH__ ) && ( 300 <= __CUDA_ARCH__ )
-    return _ldg(&ptr[i]);
-  #else
-    return ptr[ i ];
-  #endif
+    return m_ptr[ i ];
   }
 };
 
@@ -371,40 +276,37 @@ namespace Impl {
 /** \brief  Replace Default ViewDataHandle with Cuda texture fetch specialization
  *          if 'const' value type, CudaSpace and random access.
  */
-template<class ViewTraits>
-class ViewDataHandle<ViewTraits,
-typename enable_if<is_same<typename ViewTraits::memory_space,CudaSpace>::value &&
-                   is_same<typename ViewTraits::const_value_type,typename ViewTraits::value_type>::value &&
-                   ViewTraits::memory_traits::RandomAccess
-                  >::type> {
-  typedef ViewDataHandle self_type;
+template< class ViewTraits >
+class ViewDataHandle< ViewTraits ,
+  typename enable_if< ( is_same< typename ViewTraits::memory_space,CudaSpace>::value ||
+                        is_same< typename ViewTraits::memory_space,CudaUVMSpace>::value )
+                      &&
+                      is_same<typename ViewTraits::const_value_type,typename ViewTraits::value_type>::value
+                      &&
+                      ViewTraits::memory_traits::RandomAccess
+                    >::type >
+{
 public:
-  enum {ReferenceAble = 0};
-  typedef Impl::CudaTextureFetch<typename ViewTraits::value_type> type;
-  typedef typename ViewTraits::value_type return_type;
+  enum { ReturnTypeIsReference = false };
 
-  static type allocate(std::string label, size_t count) {
-    return type((typename ViewTraits::value_type*)
-                typename ViewTraits::memory_space::allocate( label ,
-                typeid(typename ViewTraits::value_type) ,
-                sizeof(typename ViewTraits::value_type) ,
-                count ));
-  }
+  typedef Impl::CudaTextureFetch< typename ViewTraits::value_type
+                                , typename ViewTraits::memory_space> handle_type;
 
   KOKKOS_INLINE_FUNCTION
-  static typename ViewTraits::value_type* get_raw_ptr(type handle) {
-    return handle.ptr;
+  static handle_type create_handle( typename ViewTraits::value_type * arg_data_ptr, AllocationTracker const & arg_tracker )
+  {
+    return handle_type(arg_data_ptr, arg_tracker);
   }
+
+  typedef typename ViewTraits::value_type return_type;
 };
 
 }
 }
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
+#endif // KOKKOS_HAVE_CUDA
 #endif /* #ifndef KOKKOS_CUDA_VIEW_HPP */
 

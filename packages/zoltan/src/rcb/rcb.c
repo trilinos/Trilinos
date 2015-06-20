@@ -931,7 +931,8 @@ static int rcb_fn(
       }
       else { 
         if (Zoltan_RB_find_bisector(
-               zz, zz->Tflops_Special, pts, dotpt->Weight, dotpt->uniformWeight, dotmark, dotnum, 
+               zz, zz->Tflops_Special, pts, dotpt->Weight, dotpt->uniformWeight,
+               dotmark, dotnum, 
                wgtflag, mcnorm, fraclo, local_comm, 
                &valuehalf, first_guess,
                old_nprocs, proclower, old_nparts, 
@@ -939,7 +940,8 @@ static int rcb_fn(
                weight, weightlo, weighthi, &norm_max,
                dotlist, rectilinear_blocks, average_cuts)
           != ZOLTAN_OK) {
-          ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_bisector.");
+          ZOLTAN_PRINT_ERROR(proc, yo,
+                             "Error returned from Zoltan_RB_find_bisector.");
           ierr = ZOLTAN_FATAL;
           goto End;
         }
@@ -947,7 +949,7 @@ static int rcb_fn(
         /* test for better balance */
         if ((!one_cut_dir) && 
             ((norm_best<0.) ||
-              (!tfs_disregard_results && (norm_max < norm_best)))) {
+             (!tfs_disregard_results && (norm_max < norm_best)))) {
           norm_best = norm_max; 
           dim_best = dim;
           for (j=0; j<wgtdim; j++){
@@ -959,11 +961,12 @@ static int rcb_fn(
           valuehalf_best = valuehalf;
         }
         if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL){
-          printf("[%1d] Debug: cut dim=%1d, norm_max=%f, dim_best=%1d, norm_best=%f, cut value=%f\n", 
-            proc, dim, norm_max, dim_best, norm_best, valuehalf);
+          printf("[%1d] Debug: cut dim=%1d, norm_max=%f, dim_best=%1d, "
+                 "norm_best=%f, cut value=%f\n", 
+                 proc, dim, norm_max, dim_best, norm_best, valuehalf);
           if (wgtflag>1)
             printf("[%1d] Debug: weightlo=(%f,%f), weighthi=(%f,%f)\n",
-              proc, weightlo[0], weightlo[1],  weighthi[0], weighthi[1]);
+                   proc, weightlo[0], weightlo[1],  weighthi[0], weighthi[1]);
         }
       }
       if (breakflag) break; /* if one_cut_dir is true */
@@ -1219,7 +1222,6 @@ EndReporting:
        goto End;
     }
   }
-  ZOLTAN_FREE(&dindx);
 
   if (gen_tree) {
     int *displ, *recvcount;
@@ -1232,6 +1234,8 @@ EndReporting:
     displ = (int *) ZOLTAN_MALLOC(2 * zz->Num_Proc * sizeof(int));
     if (!displ || !treetmp) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+      ZOLTAN_FREE(&displ);
+      ZOLTAN_FREE(&treetmp);
       ierr = ZOLTAN_MEMERR;
       goto End;
     }
@@ -1294,6 +1298,7 @@ End:
   MPI_Type_free(&box_type);
   MPI_Op_free(&box_op);
 
+  ZOLTAN_FREE(&dindx);
   ZOLTAN_FREE(&dotmark);
   ZOLTAN_FREE(&coord);
   ZOLTAN_FREE(&wgts);
@@ -1572,7 +1577,8 @@ static int serial_rcb(
   double weighthi[RB_MAX_WGTS];      /* weight in upper half */
   double weightlo_best[RB_MAX_WGTS]; /* temp weightlo */
   double weighthi_best[RB_MAX_WGTS]; /* temp weighthi */
-  int set0, set1, breakflag, one_cut_dir;
+  int set0, set1, breakflag; 
+  int one_cut_dir=1;
   struct rcb_box tmpbox;
   int *dotmark0 = NULL;             /* temp dotmark array */
   int *dotmark_best = NULL;         /* temp dotmark array */
@@ -1849,6 +1855,10 @@ static int serial_rcb(
   }
 End:
 
+  if (!one_cut_dir){   /* Needed here only if got to End on error condition */
+    ZOLTAN_FREE(&dotmark0);
+    ZOLTAN_FREE(&dotmark_best);
+  }
   return ierr;
 }
 

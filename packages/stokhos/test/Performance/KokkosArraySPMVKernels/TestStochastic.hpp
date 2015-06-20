@@ -44,8 +44,7 @@
 
 #include "Teuchos_ScalarTraitsCUDA.hpp"
 
-#include "Kokkos_Cuda.hpp"
-#include "Kokkos_Threads.hpp"
+#include "Kokkos_Core.hpp"
 #include "impl/Kokkos_Timer.hpp"
 
 #include "Stokhos_Update.hpp"
@@ -76,8 +75,8 @@
 #include "Stokhos_Sparse3TensorUtilities.hpp"
 
 #ifdef HAVE_STOKHOS_KOKKOSLINALG
-#include "Kokkos_CrsMatrix.hpp"
-#include "Kokkos_MV.hpp"
+#include "Kokkos_Sparse.hpp"
+#include "Kokkos_Blas1_MV.hpp"
 #endif
 
 namespace unit_test {
@@ -196,18 +195,18 @@ test_product_tensor_matrix(
   matrix.block =
     Stokhos::create_stochastic_product_tensor< TensorType >( *basis,
                                                              *Cijk );
-  matrix.graph = Kokkos::create_crsarray<graph_type>( std::string("test crs graph") , graph );
+  matrix.graph = Kokkos::create_staticcrsgraph<graph_type>( std::string("test crs graph") , graph );
 
   const size_t inner_length         = matrix.block.dimension();
   const size_t inner_length_aligned = matrix.block.aligned_dimension();
 
   matrix.values =
-    block_vector_type( Kokkos::allocate_without_initializing, "matrix" , inner_length_aligned , graph_length );
+    block_vector_type( Kokkos::ViewAllocateWithoutInitializing("matrix"), inner_length_aligned , graph_length );
 
   block_vector_type x =
-    block_vector_type( Kokkos::allocate_without_initializing, "x" , inner_length_aligned , outer_length );
+    block_vector_type( Kokkos::ViewAllocateWithoutInitializing("x"), inner_length_aligned , outer_length );
   block_vector_type y =
-    block_vector_type( Kokkos::allocate_without_initializing, "y" , inner_length_aligned , outer_length );
+    block_vector_type( Kokkos::ViewAllocateWithoutInitializing("y"), inner_length_aligned , outer_length );
 
   Kokkos::deep_copy( matrix.values , ScalarType(1.0) );
 
@@ -216,7 +215,7 @@ test_product_tensor_matrix(
 
   Kokkos::deep_copy( x , ScalarType(1.0) );
   block_vector_type x0 =
-    block_vector_type( Kokkos::allocate_without_initializing, "x" ,
+    block_vector_type( Kokkos::ViewAllocateWithoutInitializing("x"),
                        inner_length_aligned , outer_length );
   Kokkos::deep_copy( x0 , ScalarType(1.0) );
 
@@ -303,8 +302,8 @@ test_product_tensor_diagonal_matrix(
 
   //------------------------------
 
-  block_vector_type x = block_vector_type( Kokkos::allocate_without_initializing, "x" , stoch_length , fem_length );
-  block_vector_type y = block_vector_type( Kokkos::allocate_without_initializing, "y" , stoch_length , fem_length );
+  block_vector_type x = block_vector_type( Kokkos::ViewAllocateWithoutInitializing("x"), stoch_length , fem_length );
+  block_vector_type y = block_vector_type( Kokkos::ViewAllocateWithoutInitializing("y"), stoch_length , fem_length );
 
   Kokkos::deep_copy( x , ScalarType(1.0) );
 
@@ -314,10 +313,10 @@ test_product_tensor_diagonal_matrix(
   matrix_type matrix ;
 
   matrix.block  = Stokhos::SymmetricDiagonalSpec< Device >( stoch_length );
-  matrix.graph  = Kokkos::create_crsarray<graph_type>(
+  matrix.graph  = Kokkos::create_staticcrsgraph<graph_type>(
     std::string("test product tensor graph") , fem_graph );
   matrix.values = block_vector_type(
-    Kokkos::allocate_without_initializing, "matrix" , matrix.block.matrix_size() , fem_graph_length );
+    Kokkos::ViewAllocateWithoutInitializing("matrix"), matrix.block.matrix_size() , fem_graph_length );
 
   Kokkos::deep_copy( matrix.values , ScalarType(1.0) );
 
@@ -460,8 +459,8 @@ test_product_flat_commuted_matrix(
 
   //------------------------------
 
-  vector_type x = vector_type( Kokkos::allocate_without_initializing, "x" , flat_length );
-  vector_type y = vector_type( Kokkos::allocate_without_initializing, "y" , flat_length );
+  vector_type x = vector_type( Kokkos::ViewAllocateWithoutInitializing("x"), flat_length );
+  vector_type y = vector_type( Kokkos::ViewAllocateWithoutInitializing("y"), flat_length );
 
   Kokkos::deep_copy( x , ScalarType(1.0) );
 
@@ -469,12 +468,12 @@ test_product_flat_commuted_matrix(
 
   matrix_type matrix ;
 
-  matrix.graph = Kokkos::create_crsarray<matrix_graph_type>(
+  matrix.graph = Kokkos::create_staticcrsgraph<matrix_graph_type>(
     std::string("testing") , flat_graph );
 
   const size_t flat_graph_length = matrix.graph.entries.dimension_0();
 
-  matrix.values = matrix_values_type( Kokkos::allocate_without_initializing, "matrix" , flat_graph_length );
+  matrix.values = matrix_values_type( Kokkos::ViewAllocateWithoutInitializing("matrix"), flat_graph_length );
 
   Kokkos::deep_copy( matrix.values , ScalarType(1.0) );
 
@@ -616,8 +615,8 @@ test_product_flat_original_matrix(
 
   //------------------------------
 
-  vector_type x = vector_type( Kokkos::allocate_without_initializing, "x" , flat_length );
-  vector_type y = vector_type( Kokkos::allocate_without_initializing, "y" , flat_length );
+  vector_type x = vector_type( Kokkos::ViewAllocateWithoutInitializing("x"), flat_length );
+  vector_type y = vector_type( Kokkos::ViewAllocateWithoutInitializing("y"), flat_length );
 
   Kokkos::deep_copy( x , ScalarType(1.0) );
 
@@ -625,11 +624,11 @@ test_product_flat_original_matrix(
 
   matrix_type matrix ;
 
-  matrix.graph = Kokkos::create_crsarray<matrix_graph_type>( std::string("testing") , flat_graph );
+  matrix.graph = Kokkos::create_staticcrsgraph<matrix_graph_type>( std::string("testing") , flat_graph );
 
   const size_t flat_graph_length = matrix.graph.entries.dimension_0();
 
-  matrix.values = matrix_values_type( Kokkos::allocate_without_initializing, "matrix" , flat_graph_length );
+  matrix.values = matrix_values_type( Kokkos::ViewAllocateWithoutInitializing("matrix"), flat_graph_length );
 
   Kokkos::deep_copy( matrix.values , ScalarType(1.0) );
 
@@ -718,18 +717,18 @@ test_tiled_product_tensor_matrix(
   matrix.block =
     Stokhos::create_stochastic_product_tensor< TensorType >( *basis, *Cijk,
                                                              params);
-  matrix.graph = Kokkos::create_crsarray<graph_type>( std::string("test crs graph") , graph );
+  matrix.graph = Kokkos::create_staticcrsgraph<graph_type>( std::string("test crs graph") , graph );
 
   const size_t inner_length      = matrix.block.dimension();
   const size_t inner_length_aligned = matrix.block.aligned_dimension();
 
   matrix.values =
-    block_vector_type( Kokkos::allocate_without_initializing, "matrix" , inner_length_aligned , graph_length );
+    block_vector_type( Kokkos::ViewAllocateWithoutInitializing("matrix"), inner_length_aligned , graph_length );
 
   block_vector_type x =
-    block_vector_type( Kokkos::allocate_without_initializing, "x" , inner_length_aligned , outer_length );
+    block_vector_type( Kokkos::ViewAllocateWithoutInitializing("x"), inner_length_aligned , outer_length );
   block_vector_type y =
-    block_vector_type( Kokkos::allocate_without_initializing, "y" , inner_length_aligned , outer_length );
+    block_vector_type( Kokkos::ViewAllocateWithoutInitializing("y"), inner_length_aligned , outer_length );
 
   Kokkos::deep_copy( matrix.values , ScalarType(1.0) );
 
@@ -828,18 +827,18 @@ test_simple_tiled_product_tensor_matrix(
   matrix.block =
     Stokhos::create_stochastic_product_tensor< TensorType >( *basis, *Cijk,
                                                              params);
-  matrix.graph = Kokkos::create_crsarray<graph_type>( std::string("test crs graph") , graph );
+  matrix.graph = Kokkos::create_staticcrsgraph<graph_type>( std::string("test crs graph") , graph );
 
   const size_t inner_length      = matrix.block.dimension();
   const size_t inner_length_aligned = matrix.block.aligned_dimension();
 
   matrix.values =
-    block_vector_type( Kokkos::allocate_without_initializing, "matrix" , inner_length_aligned , graph_length );
+    block_vector_type( Kokkos::ViewAllocateWithoutInitializing("matrix"), inner_length_aligned , graph_length );
 
   block_vector_type x =
-    block_vector_type( Kokkos::allocate_without_initializing, "x" , inner_length_aligned , outer_length );
+    block_vector_type( Kokkos::ViewAllocateWithoutInitializing("x"), inner_length_aligned , outer_length );
   block_vector_type y =
-    block_vector_type( Kokkos::allocate_without_initializing, "y" , inner_length_aligned , outer_length );
+    block_vector_type( Kokkos::ViewAllocateWithoutInitializing("y"), inner_length_aligned , outer_length );
 
   Kokkos::deep_copy( matrix.values , ScalarType(1.0) );
 
@@ -937,14 +936,14 @@ test_lexo_block_tensor(
   matrix.block =
     Stokhos::create_stochastic_product_tensor< TensorType >( *basis,
                                                              *Cijk );
-  matrix.graph = Kokkos::create_crsarray<graph_type>( std::string("test crs graph") , graph );
+  matrix.graph = Kokkos::create_staticcrsgraph<graph_type>( std::string("test crs graph") , graph );
 
   const size_t inner_length      = matrix.block.dimension();
 
-  matrix.values = block_vector_type( Kokkos::allocate_without_initializing, "matrix" , inner_length , graph_length );
+  matrix.values = block_vector_type( Kokkos::ViewAllocateWithoutInitializing("matrix"), inner_length , graph_length );
 
-  block_vector_type x = block_vector_type( Kokkos::allocate_without_initializing, "x" , inner_length , outer_length );
-  block_vector_type y = block_vector_type( Kokkos::allocate_without_initializing, "y" , inner_length , outer_length );
+  block_vector_type x = block_vector_type( Kokkos::ViewAllocateWithoutInitializing("x"), inner_length , outer_length );
+  block_vector_type y = block_vector_type( Kokkos::ViewAllocateWithoutInitializing("y"), inner_length , outer_length );
 
   Kokkos::deep_copy( matrix.values , ScalarType(1.0) );
 
@@ -1044,15 +1043,15 @@ test_linear_tensor(
     Stokhos::create_stochastic_product_tensor< TensorType >( *basis,
                                                              *Cijk,
                                                              params );
-  matrix.graph = Kokkos::create_crsarray<graph_type>( std::string("test crs graph") , graph );
+  matrix.graph = Kokkos::create_staticcrsgraph<graph_type>( std::string("test crs graph") , graph );
 
   const size_t inner_length         = matrix.block.tensor().dimension();
   const size_t inner_length_aligned = matrix.block.tensor().aligned_dimension();
 
-  matrix.values = block_vector_type( Kokkos::allocate_without_initializing, "matrix" , inner_length_aligned , graph_length );
+  matrix.values = block_vector_type( Kokkos::ViewAllocateWithoutInitializing("matrix"), inner_length_aligned , graph_length );
 
-  block_vector_type x = block_vector_type( Kokkos::allocate_without_initializing, "x" , inner_length_aligned , outer_length );
-  block_vector_type y = block_vector_type( Kokkos::allocate_without_initializing, "y" , inner_length_aligned , outer_length );
+  block_vector_type x = block_vector_type( Kokkos::ViewAllocateWithoutInitializing("x"), inner_length_aligned , outer_length );
+  block_vector_type y = block_vector_type( Kokkos::ViewAllocateWithoutInitializing("y"), inner_length_aligned , outer_length );
 
   Kokkos::deep_copy( matrix.values , ScalarType(1.0) );
 
@@ -1149,13 +1148,13 @@ test_original_matrix_free_vec(
   std::vector<vec_type> tmp( outer_length ) ;
 
   for (size_t block=0; block<outer_length; ++block) {
-    matrix[block].graph = Kokkos::create_crsarray<matrix_graph_type>( std::string("testing") , fem_graph );
+    matrix[block].graph = Kokkos::create_staticcrsgraph<matrix_graph_type>( std::string("testing") , fem_graph );
 
-    matrix[block].values = matrix_values_type( Kokkos::allocate_without_initializing, "matrix" , graph_length );
+    matrix[block].values = matrix_values_type( Kokkos::ViewAllocateWithoutInitializing("matrix"), graph_length );
 
-    x[block]   = vec_type( Kokkos::allocate_without_initializing, "x" , inner_length );
-    y[block]   = vec_type( Kokkos::allocate_without_initializing, "y" , inner_length );
-    tmp[block] = vec_type( Kokkos::allocate_without_initializing, "tmp" , inner_length );
+    x[block]   = vec_type( Kokkos::ViewAllocateWithoutInitializing("x"), inner_length );
+    y[block]   = vec_type( Kokkos::ViewAllocateWithoutInitializing("y"), inner_length );
+    tmp[block] = vec_type( Kokkos::ViewAllocateWithoutInitializing("tmp"), inner_length );
 
     Kokkos::deep_copy( matrix[block].values , ScalarType(1.0) );
 
@@ -1284,7 +1283,7 @@ test_original_matrix_free_view(
   typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, Device> multi_vec_type ;
 
   std::vector<matrix_type> matrix( outer_length ) ;
-  multi_vec_type x( Kokkos::allocate_without_initializing, "x",
+  multi_vec_type x( Kokkos::ViewAllocateWithoutInitializing("x"),
                     inner_length, outer_length  ) ;
   multi_vec_type y("y", inner_length, outer_length ) ;
   multi_vec_type tmp_x( "tmp_x", inner_length, outer_length ) ;
@@ -1293,7 +1292,7 @@ test_original_matrix_free_view(
   Kokkos::deep_copy( x , ScalarType(1.0) );
 
   for (size_t block=0; block<outer_length; ++block) {
-    matrix[block].graph = Kokkos::create_crsarray<matrix_graph_type>(
+    matrix[block].graph = Kokkos::create_staticcrsgraph<matrix_graph_type>(
       std::string("testing") , fem_graph );
 
     matrix[block].values = matrix_values_type( "matrix" , graph_length );
@@ -1326,28 +1325,28 @@ test_original_matrix_free_view(
         unsigned jdx = 0;
         for (kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
           int j = index(j_it);
-          vec_type xx = Kokkos::subview<vec_type>( x, Kokkos::ALL(), j );
-          vec_type tt = Kokkos::subview<vec_type>( tmp_x, Kokkos::ALL(), jdx++ );
+          vec_type xx = Kokkos::subview( x, Kokkos::ALL(), j );
+          vec_type tt = Kokkos::subview( tmp_x, Kokkos::ALL(), jdx++ );
           Kokkos::deep_copy(tt, xx);
         }
         multi_vec_type tmp_x_view =
-          Kokkos::subview<multi_vec_type>( tmp_x, Kokkos::ALL(),
+          Kokkos::subview( tmp_x, Kokkos::ALL(),
                                            std::make_pair(0u,nj));
         multi_vec_type tmp_y_view =
-          Kokkos::subview<multi_vec_type>( tmp_y, Kokkos::ALL(),
+          Kokkos::subview( tmp_y, Kokkos::ALL(),
                                            std::make_pair(0u,nj));
         Stokhos::multiply( matrix[k] , tmp_x_view , tmp_y_view, smo );
         n_apply += nj;
         jdx = 0;
         for (kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
           vec_type tmp_y_view =
-            Kokkos::subview<vec_type>( tmp_y, Kokkos::ALL(), jdx++ );
+            Kokkos::subview( tmp_y, Kokkos::ALL(), jdx++ );
           kji_iterator i_begin = Cijk->i_begin(j_it);
           kji_iterator i_end =  Cijk->i_end(j_it);
           for (kji_iterator i_it = i_begin; i_it != i_end; ++i_it) {
             int i = index(i_it);
             value_type c = value(i_it);
-            vec_type y_view = Kokkos::subview<vec_type>( y, Kokkos::ALL(), i );
+            vec_type y_view = Kokkos::subview( y, Kokkos::ALL(), i );
             Stokhos::update( value_type(1.0) , y_view , c , tmp_y_view );
             ++n_add;
           }
@@ -1413,7 +1412,7 @@ test_original_matrix_free_kokkos(
   //------------------------------
 
   typedef int ordinal_type;
-  typedef Kokkos::CrsMatrix<value_type,ordinal_type,Device> matrix_type;
+  typedef KokkosSparse::CrsMatrix<value_type,ordinal_type,Device> matrix_type;
   typedef typename matrix_type::values_type matrix_values_type;
   typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
 
@@ -1432,7 +1431,7 @@ test_original_matrix_free_kokkos(
   typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, Device> multi_vec_type;
 
   std::vector<matrix_type> matrix( outer_length ) ;
-  multi_vec_type x( Kokkos::allocate_without_initializing, "x",
+  multi_vec_type x( Kokkos::ViewAllocateWithoutInitializing("x"),
                     inner_length, outer_length  ) ;
   multi_vec_type y( "y", inner_length, outer_length ) ;
   multi_vec_type tmp_x( "tmp_x", inner_length, outer_length ) ;
@@ -1446,7 +1445,7 @@ test_original_matrix_free_kokkos(
         std::string("test crs graph") , fem_graph );
 
     matrix_values_type matrix_values = matrix_values_type(
-      Kokkos::allocate_without_initializing, "matrix" , graph_length );
+      Kokkos::ViewAllocateWithoutInitializing("matrix"), graph_length );
     Kokkos::deep_copy(matrix_values , ScalarType(1.0) );
     matrix[block] = matrix_type("matrix", outer_length, matrix_values,
                                 matrix_graph);
@@ -1475,30 +1474,30 @@ test_original_matrix_free_kokkos(
         unsigned jdx = 0;
         for (kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
           int j = index(j_it);
-          vec_type xx = Kokkos::subview<vec_type>( x, Kokkos::ALL(), j );
-          vec_type tt = Kokkos::subview<vec_type>( tmp_x, Kokkos::ALL(), jdx++ );
+          vec_type xx = Kokkos::subview( x, Kokkos::ALL(), j );
+          vec_type tt = Kokkos::subview( tmp_x, Kokkos::ALL(), jdx++ );
           Kokkos::deep_copy(tt, xx);
         }
         multi_vec_type tmp_x_view =
-          Kokkos::subview<multi_vec_type>( tmp_x, Kokkos::ALL(),
+          Kokkos::subview( tmp_x, Kokkos::ALL(),
                                            std::make_pair(0u,nj));
         multi_vec_type tmp_y_view =
-          Kokkos::subview<multi_vec_type>( tmp_y, Kokkos::ALL(),
+          Kokkos::subview( tmp_y, Kokkos::ALL(),
                                            std::make_pair(0u,nj));
-        Kokkos::MV_Multiply( tmp_y_view , matrix[k] , tmp_x_view  );
+        KokkosSparse::spmv( "N" , value_type(1.0) , matrix[k] , tmp_x_view , value_type(0.0) , tmp_y_view );
         n_apply += nj;
         jdx = 0;
         for (kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
           vec_type tmp_y_view =
-            Kokkos::subview<vec_type>( tmp_y, Kokkos::ALL(), jdx++ );
+            Kokkos::subview( tmp_y, Kokkos::ALL(), jdx++ );
           kji_iterator i_begin = Cijk->i_begin(j_it);
           kji_iterator i_end =  Cijk->i_end(j_it);
           for (kji_iterator i_it = i_begin; i_it != i_end; ++i_it) {
             int i = index(i_it);
             value_type c = value(i_it);
-            vec_type y_view = Kokkos::subview<vec_type>( y, Kokkos::ALL(), i );
+            vec_type y_view = Kokkos::subview( y, Kokkos::ALL(), i );
             //Stokhos::update( value_type(1.0) , y_view , c , tmp_y_view );
-            Kokkos::V_Add(y_view, c, tmp_y_view, value_type(1.0), y_view);
+            KokkosBlas::update(value_type(1.0) , y_view, c, tmp_y_view, value_type(0.0), y_view);
             ++n_add;
           }
         }
@@ -1728,7 +1727,7 @@ void performance_test_driver_poly_deg( const int nvar ,
                                        const bool symmetric )
 {
   bool do_flat_sparse =
-    Kokkos::Impl::is_same<Device,Kokkos::Threads>::value ;
+    Kokkos::Impl::is_same<typename Device::memory_space,Kokkos::HostSpace>::value ;
 
   std::cout.precision(8);
 

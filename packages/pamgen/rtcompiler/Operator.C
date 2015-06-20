@@ -1,8 +1,8 @@
-#include "OperatorRTC.hh"
-#include "commonRTC.hh"
-#include "VariableRTC.hh"
-#include "ObjectRTC.hh"
-#include "ScalarNumberRTC.hh"
+#include "RTC_OperatorRTC.hh"
+#include "RTC_commonRTC.hh"
+#include "RTC_VariableRTC.hh"
+#include "RTC_ObjectRTC.hh"
+#include "RTC_ScalarNumberRTC.hh"
 
 #include <string>
 #include <cmath>

@@ -251,35 +251,17 @@ class RILUK:
   //! The type of the entries of the input MatrixType.
   typedef typename MatrixType::scalar_type scalar_type;
 
-  //! Preserved only for backwards compatibility.  Please use "scalar_type".
-  TEUCHOS_DEPRECATED typedef typename MatrixType::scalar_type Scalar;
-
-
   //! The type of local indices in the input MatrixType.
   typedef typename MatrixType::local_ordinal_type local_ordinal_type;
-
-  //! Preserved only for backwards compatibility.  Please use "local_ordinal_type".
-  TEUCHOS_DEPRECATED typedef typename MatrixType::local_ordinal_type LocalOrdinal;
-
 
   //! The type of global indices in the input MatrixType.
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
 
-  //! Preserved only for backwards compatibility.  Please use "global_ordinal_type".
-  TEUCHOS_DEPRECATED typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
-
-
-  //! The type of the Kokkos Node used by the input MatrixType.
+  //! The Node type used by the input MatrixType.
   typedef typename MatrixType::node_type node_type;
-
-  //! Preserved only for backwards compatibility.  Please use "node_type".
-  TEUCHOS_DEPRECATED typedef typename MatrixType::node_type Node;
 
   //! The type of the magnitude (absolute value) of a matrix entry.
   typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
-
-  //! Preserved only for backwards compatibility.  Please use "magnitude_type".
-  TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitudeType;
 
   //! Tpetra::RowMatrix specialization used by this class.
   typedef Tpetra::RowMatrix<scalar_type,
@@ -326,38 +308,6 @@ class RILUK:
 
   //! Destructor (declared virtual for memory safety).
   virtual ~RILUK ();
-
-  /// \brief Set RILU(k) relaxation parameter
-  ///
-  /// This method is DEPRECATED.  If you want to change the value of
-  /// this parameter, you should instead call setParameters().
-  void TEUCHOS_DEPRECATED SetRelaxValue (const magnitude_type RelaxValue) {
-    RelaxValue_ = RelaxValue;
-  }
-  /// \brief Set absolute threshold value
-  ///
-  /// This method is DEPRECATED.  If you want to change the value of
-  /// this parameter, you should instead call setParameters().
-  void TEUCHOS_DEPRECATED SetAbsoluteThreshold (const magnitude_type Athresh) {
-    Athresh_ = Athresh;
-  }
-  /// \brief Set relative threshold value
-  ///
-  /// This method is DEPRECATED.  If you want to change the value of
-  /// this parameter, you should instead call setParameters().
-  void TEUCHOS_DEPRECATED SetRelativeThreshold (const magnitude_type Rthresh) {
-    Rthresh_ = Rthresh;
-  }
-  /// \brief Set overlap mode type
-  ///
-  /// This method is DEPRECATED.  If you want to change the value of
-  /// this parameter, you should instead call setParameters().
-  void TEUCHOS_DEPRECATED SetOverlapMode (const Tpetra::CombineMode OverlapMode) {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Ifpack2::RILUK::SetOverlapMode: "
-      "RILUK no longer implements overlap on its own.  "
-      "Use RILUK with AdditiveSchwarz if you want overlap.");
-  }
 
   /// Set parameters for the incomplete factorization.
   ///
@@ -528,34 +478,6 @@ private:
             const Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 public:
 
-  /// \brief Compute the condition number estimate and return its value.
-  ///
-  /// \warning This method is DEPRECATED.  It was inherited from
-  ///   Ifpack, and Ifpack never clearly stated what this method
-  ///   computes.  Furthermore, Ifpack's method just estimates the
-  ///   condition number of the matrix A, and ignores the
-  ///   preconditioner -- which is probably not what users thought it
-  ///   did.  If there is sufficient interest, we might reintroduce
-  ///   this method with a different meaning and a better algorithm.
-  magnitude_type TEUCHOS_DEPRECATED computeCondEst (Teuchos::ETransp mode) const;
-
-  /// \brief Compute the condition number estimate and return its value.
-  ///
-  /// \warning This method is DEPRECATED.  It was inherited from
-  ///   Ifpack, and Ifpack never clearly stated what this method
-  ///   computes.  Furthermore, Ifpack's method just estimates the
-  ///   condition number of the matrix A, and ignores the
-  ///   preconditioner -- which is probably not what users thought it
-  ///   did.  If there is sufficient interest, we might reintroduce
-  ///   this method with a different meaning and a better algorithm.
-  virtual magnitude_type TEUCHOS_DEPRECATED
-  computeCondEst (CondestType CT = Ifpack2::Cheap,
-                  local_ordinal_type MaxIters = 1550,
-                  magnitude_type Tol = 1e-9,
-                  const Teuchos::Ptr<const row_matrix_type>& Matrix = Teuchos::null);
-
-  magnitude_type getCondEst () const { return Condest_; }
-
   //! Get the input matrix.
   Teuchos::RCP<const row_matrix_type> getMatrix () const;
 
@@ -606,7 +528,6 @@ public:
 
 private:
   typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
-  typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vec_type;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
@@ -620,6 +541,9 @@ private:
   /// wrap it, so we just return A.
   static Teuchos::RCP<const row_matrix_type>
   makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A);
+
+protected:
+  typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vec_type;
 
   //! The (original) input matrix for which to compute ILU(k).
   Teuchos::RCP<const row_matrix_type> A_;
@@ -662,33 +586,23 @@ private:
   magnitude_type RelaxValue_;
   magnitude_type Athresh_;
   magnitude_type Rthresh_;
-
-  mutable magnitude_type Condest_;
 };
 
-//Set necessary local solve parameters when using ThrustGPU node
+// NOTE (mfh 11 Feb 2015) This used to exist in order to deal with
+// different behavior of Tpetra::Crs{Graph,Matrix} for
+// KokkosClassic::ThrustGPUNode.  In particular, fillComplete on a
+// CrsMatrix used to make the graph go away by default, so we had to
+// pass in a parameter to keep a host copy of the graph.  With the new
+// (Kokkos refactor) version of Tpetra, this problem has gone away.
 namespace detail {
-  template<class MatrixType, class NodeType, class MatSolveType>
+  template<class MatrixType, class NodeType>
   struct setLocalSolveParams{
     static Teuchos::RCP<Teuchos::ParameterList>
     setParams (const Teuchos::RCP<Teuchos::ParameterList>& param) {
       return param;
     }
   };
-#if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUSPARSE)
-  template<class MatrixType, class Scalar>
-  struct setLocalSolveParams<MatrixType,
-                             KokkosClassic::ThrustGPUNode,
-                             KokkosClassic::CUSPARSEOps<Scalar, KokkosClassic::ThrustGPUNode> >
-  {
-    static Teuchos::RCP<Teuchos::ParameterList>
-    setParams (const Teuchos::RCP<Teuchos::ParameterList>& param) {
-      param->sublist ("fillComplete").sublist ("Local Sparse Ops").set ("Prepare Solve", true);
-      return param;
-    }
-  };
-#endif
-} //end namespace detail
+} // namespace detail
 
 template <class MatrixType>
 template <typename NewMatrixType>
@@ -700,14 +614,12 @@ clone (const Teuchos::RCP<const NewMatrixType>& A_newnode) const
   using Teuchos::RCP;
   using Teuchos::rcp;
   typedef typename NewMatrixType::node_type new_node_type;
-  typedef typename NewMatrixType::mat_solve_type mat_solve_type;
   typedef RILUK<NewMatrixType> new_riluk_type;
 
   RCP<new_riluk_type> new_riluk = rcp (new new_riluk_type (A_newnode));
 
   RCP<ParameterList> plClone = Teuchos::parameterList ();
-  plClone = detail::setLocalSolveParams<NewMatrixType,
-    new_node_type, mat_solve_type>::setParams (plClone);
+  plClone = detail::setLocalSolveParams<NewMatrixType, new_node_type>::setParams (plClone);
 
   RCP<new_node_type> new_node = A_newnode->getNode ();
   new_riluk->L_ = L_->clone (new_node, plClone);
@@ -727,7 +639,6 @@ clone (const Teuchos::RCP<const NewMatrixType>& A_newnode) const
   new_riluk->RelaxValue_ = RelaxValue_;
   new_riluk->Athresh_ = Athresh_;
   new_riluk->Rthresh_ = Rthresh_;
-  new_riluk->Condest_ = Condest_;
 
   return new_riluk;
 }

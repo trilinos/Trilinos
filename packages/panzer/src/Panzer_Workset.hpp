@@ -48,13 +48,13 @@
 #include <vector>
 #include <map>
 #include <iostream>
-#include "Teuchos_ArrayRCP.hpp"
-#include "Panzer_Dimension.hpp"
-#include "Shards_Array.hpp"
-#include "Panzer_BasisValues.hpp"
-#include "Panzer_IntegrationValues.hpp"
 
-#include "Intrepid_FieldContainer.hpp"
+#include "Panzer_Dimension.hpp"
+#include "Panzer_BasisValues2.hpp"
+#include "Panzer_IntegrationValues2.hpp"
+#include "Panzer_Dimension.hpp"
+
+#include "Phalanx_KokkosDeviceTypes.hpp"
 
 namespace panzer {
 
@@ -65,8 +65,11 @@ namespace panzer {
     * from how it is accessed.
     */
   struct WorksetDetails {
+    typedef PHX::MDField<double,Cell,NODE,Dim> CellCoordArray;
+
+    Kokkos::View<const int*,PHX::Device> cell_local_ids_k;
     std::vector<std::size_t> cell_local_ids;
-    Intrepid::FieldContainer<double> cell_vertex_coordinates;
+    CellCoordArray cell_vertex_coordinates;
     std::string block_id;
 
     int subcell_index; //! If workset corresponds to a sub cell, what is the index?
@@ -74,13 +77,13 @@ namespace panzer {
     //! Value correspondes to integration order.  Use the offest for indexing.
     Teuchos::RCP< std::vector<int> > ir_degrees;
     
-    std::vector<Teuchos::RCP<panzer::IntegrationValues<double,Intrepid::FieldContainer<double> > > > int_rules;
+    std::vector<Teuchos::RCP<panzer::IntegrationValues2<double> > > int_rules;
     
     //! Value corresponds to basis type.  Use the offest for indexing.
     Teuchos::RCP< std::vector<std::string> > basis_names;
 
     //! Static basis function data, key is basis name, value is index in the static_bases vector
-    std::vector<Teuchos::RCP< panzer::BasisValues<double,Intrepid::FieldContainer<double> > > > bases;
+    std::vector<Teuchos::RCP< panzer::BasisValues2<double> > > bases;
   };
 
   /** This is the main workset object. Not that it inherits from WorksetDetails, this
@@ -88,7 +91,9 @@ namespace panzer {
     * of a details vector supports things like DG based assembly.
     */
   struct Workset : public WorksetDetails {
-    
+
+    Workset() : sensitivities_name("") {}
+
     std::size_t num_cells;
     int subcell_dim; //! If workset corresponds to a sub cell, what is the dimension?
 
@@ -100,6 +105,7 @@ namespace panzer {
     double time;
     std::vector<double> gather_seeds; // generic gather seeds
     bool evaluate_transient_terms;
+    std::string sensitivities_name;
   };
 
   std::ostream& operator<<(std::ostream& os, const panzer::Workset& w);

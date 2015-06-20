@@ -53,9 +53,8 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsTplDeclareLibraries)
 
-TRIBITS_TPL_DECLARE_LIBRARIES( PAPI
+TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( PAPI
   REQUIRED_HEADERS papi.h
   REQUIRED_LIBS_NAMES "papi" "pfm"
   )

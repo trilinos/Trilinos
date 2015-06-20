@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    GlobiPack: Collection of Scalar 1D globalizaton utilities
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 */
@@ -118,10 +118,12 @@ bool Brents1DMinimization<Scalar>::approxMinimize(
   typedef Teuchos::TabularOutputter TO;
   typedef ScalarTraits<Scalar> ST;
   using Teuchos::OSTab;
+#ifdef TEUCHOS_DEBUG
   typedef PointEval1D<Scalar> PE1D;
+#endif // TEUCHOS_DEBUG
   using std::min;
   using std::max;
-  
+
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPT(is_null(pointMiddle));
   TEUCHOS_ASSERT_INEQUALITY(pointLower.alpha, <, pointMiddle->alpha);
@@ -129,14 +131,14 @@ bool Brents1DMinimization<Scalar>::approxMinimize(
   TEUCHOS_ASSERT_INEQUALITY(pointLower.phi, !=, PE1D::valNotGiven());
   TEUCHOS_ASSERT_INEQUALITY(pointMiddle->phi, !=, PE1D::valNotGiven());
   TEUCHOS_ASSERT_INEQUALITY(pointUpper.phi, !=, PE1D::valNotGiven());
-#endif
+#endif // TEUCHOS_DEBUG
 
   const RCP<Teuchos::FancyOStream> out = this->getOStream();
 
   *out << "\nStarting Brent's 1D minimization algorithm ...\n\n";
-  
+
   TabularOutputter tblout(out);
-  
+
   tblout.pushFieldSpec("itr", TO::INT);
   tblout.pushFieldSpec("alpha_a", TO::DOUBLE);
   tblout.pushFieldSpec("alpha_min", TO::DOUBLE);
@@ -147,10 +149,10 @@ bool Brents1DMinimization<Scalar>::approxMinimize(
   tblout.pushFieldSpec("tol", TO::DOUBLE);
 
   tblout.outputHeader();
-  
+
   const Scalar INV_GOLD2=0.3819660112501051518; // (1/golden-ratio)^2
   const Scalar TINY = ST::squareroot(ST::eps());
-  
+
   const Scalar alpha_l = pointLower.alpha, phi_l = pointLower.phi;
   Scalar &alpha_m = pointMiddle->alpha, &phi_m = pointMiddle->phi;
   const Scalar alpha_u = pointUpper.alpha, phi_u = pointUpper.phi;
@@ -158,14 +160,14 @@ bool Brents1DMinimization<Scalar>::approxMinimize(
   Scalar d = ST::nan();
   Scalar e = ST::nan();
   Scalar u = ST::nan();
-  
+
   Scalar phi_w = min(phi_l, phi_u);
 
   Scalar alpha_v = ST::nan();
   Scalar alpha_w = ST::nan();
   Scalar phi_v = ST::nan();
 
-  if (phi_w == phi_l){  
+  if (phi_w == phi_l){
     alpha_w  = alpha_l;
     alpha_v  = alpha_u;
     phi_v = phi_u;
@@ -180,7 +182,7 @@ bool Brents1DMinimization<Scalar>::approxMinimize(
   Scalar phi_min = phi_m;
   Scalar alpha_a = alpha_l;
   Scalar alpha_b = alpha_u;
-  
+
   bool foundMin = false;
 
   int iteration = 0;
@@ -255,7 +257,7 @@ bool Brents1DMinimization<Scalar>::approxMinimize(
       else {
         d = p/q;
         u = alpha_min + d;
-        if (u - alpha_a < tol2 || alpha_b - u < tol2) 
+        if (u - alpha_a < tol2 || alpha_b - u < tol2)
            // sign(tol1,alpha_avg-alpha_min)
           d = ( alpha_avg - alpha_min > ST::zero()
             ? ST::magnitude(tol1)
@@ -269,12 +271,12 @@ bool Brents1DMinimization<Scalar>::approxMinimize(
       d = INV_GOLD2 * e;
 
     }
-    
+
     u = ( ST::magnitude(d) >= tol1
       ? alpha_min + d
       : alpha_min + (d >= 0 ? ST::magnitude(tol1) : -ST::magnitude(tol1))
-      ); 
-    
+      );
+
     const Scalar phi_eval_u = computeValue<Scalar>(phi, u);
 
     if (phi_eval_u <= phi_min) {
@@ -317,7 +319,7 @@ bool Brents1DMinimization<Scalar>::approxMinimize(
   phi_m = phi_min;
   if (!is_null(numIters))
     *numIters = iteration;
-  
+
   if (foundMin) {
     *out <<"\nFound the minimum alpha="<<alpha_m<<", phi(alpha)="<<phi_m<<"\n";
   }

@@ -247,13 +247,8 @@ bool Brusselator::evaluate(FillType fType,
   u.Import(*soln, *Importer, Insert);
 
   // Declare required variables
-  int i,j,ierr;
+  int i,j;
   int OverlapNumMyNodes = OverlapNodeMap->NumMyElements();
-  //int OverlapNumMyUnknowns = OverlapMap->NumMyElements();
-
-  int OverlapMinMyNodeGID;
-  if (MyPID==0) OverlapMinMyNodeGID = StandardNodeMap->MinMyGID();
-  else OverlapMinMyNodeGID = StandardNodeMap->MinMyGID()-1;
 
   int row1, row2, column1, column2;
   double term1, term2;
@@ -330,12 +325,12 @@ bool Brusselator::evaluate(FillType fType,
           ((1.0/(basis.dx*basis.dx))*D2*basis.dphide[j]*
            basis.dphide[i]
            + basis.phi[i] * basis.uu[0]*basis.uu[0]*basis.phi[j] ));
-              ierr=A->SumIntoGlobalValues(row1, 1, &jac11, &column1);
+              A->SumIntoGlobalValues(row1, 1, &jac11, &column1);
               column1++;
-              ierr=A->SumIntoGlobalValues(row1, 1, &jac12, &column1);
-              ierr=A->SumIntoGlobalValues(row2, 1, &jac22, &column2);
+              A->SumIntoGlobalValues(row1, 1, &jac12, &column1);
+              A->SumIntoGlobalValues(row2, 1, &jac22, &column2);
               column2--;
-              ierr=A->SumIntoGlobalValues(row2, 1, &jac21, &column2);
+              A->SumIntoGlobalValues(row2, 1, &jac21, &column2);
             }
           }
         }
@@ -432,9 +427,6 @@ Epetra_CrsGraph& Brusselator::generateGraph(Epetra_CrsGraph& AA)
   int i,j;
   int row, column;
   int OverlapNumMyNodes = OverlapNodeMap->NumMyElements();
-  int OverlapMinMyNodeGID;
-  if (MyPID==0) OverlapMinMyNodeGID = StandardNodeMap->MinMyGID();
-  else OverlapMinMyNodeGID = StandardNodeMap->MinMyGID()-1;
 
   // Loop Over # of Finite Elements on Processor
   for (int ne=0; ne < OverlapNumMyNodes-1; ne++) {

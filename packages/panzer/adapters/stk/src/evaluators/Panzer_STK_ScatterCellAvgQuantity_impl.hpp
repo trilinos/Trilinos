@@ -45,13 +45,14 @@
 
 #include "Teuchos_Assert.hpp"
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
 #include "Phalanx_DataLayout.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
 #include "Panzer_IntegrationRule.hpp"
+#include "Panzer_CommonArrayFactories.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_ArrayRCP.hpp"
@@ -77,7 +78,7 @@ PHX_EVALUATOR_CTOR(ScatterCellAvgQuantity,p) :
   stkFields_.resize(names.size());
   for (std::size_t fd = 0; fd < names.size(); ++fd) {
     scatterFields_[fd] = 
-      PHX::MDField<ScalarT,Cell,Point>(names[fd],intRule->dl_scalar);
+      PHX::MDField<const ScalarT,Cell,Point>(names[fd],intRule->dl_scalar);
     this->addDependentField(scatterFields_[fd]);
   }
 
@@ -102,18 +103,20 @@ PHX_POST_REGISTRATION_SETUP(ScatterCellAvgQuantity,d,fm)
 
 PHX_EVALUATE_FIELDS(ScatterCellAvgQuantity,workset)
 {
+   panzer::MDFieldArrayFactory af("",true);
+
    // for convenience pull out some objects from workset
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
    std::string blockId = workset.block_id;
 
    for(std::size_t fieldIndex=0; fieldIndex<scatterFields_.size();fieldIndex++) {
-      PHX::MDField<ScalarT,panzer::Cell,panzer::Point> & field = scatterFields_[fieldIndex];
-      std::vector<double> average(field.dimension(0),0.0);
+      PHX::MDField<const ScalarT,panzer::Cell,panzer::Point> & field = scatterFields_[fieldIndex];
+      PHX::MDField<double,panzer::Cell,panzer::NODE> average = af.buildStaticArray<double,panzer::Cell,panzer::NODE>("",field.dimension(0),1);
       // write to double field
       for(int i=0; i<field.dimension(0);i++) {
          for(int j=0; j<field.dimension(1);j++) 
-            average[i] += Sacado::ScalarValue<ScalarT>::eval(field(i,j));
-         average[i] /= field.dimension(1);
+            average(i,0) += Sacado::ScalarValue<ScalarT>::eval(field(i,j));
+         average(i,0) /= field.dimension(1);
       }
 
       mesh_->setCellFieldData(field.fieldTag().name(),blockId,localCellIds,average);

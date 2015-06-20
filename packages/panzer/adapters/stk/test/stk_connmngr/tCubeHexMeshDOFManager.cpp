@@ -71,7 +71,7 @@ using Teuchos::rcpFromRef;
 
 namespace panzer_stk_classic {
 
-Teuchos::RCP<panzer_stk_classic::STK_Interface> buildQuadMesh(stk_classic::ParallelMachine comm,int xelmts,int yelmts,int zelmts,
+Teuchos::RCP<panzer_stk_classic::STK_Interface> buildHexMesh(stk_classic::ParallelMachine comm,int xelmts,int yelmts,int zelmts,
                                                                                     int xblocks,int yblocks,int zblocks)
 {
    Teuchos::ParameterList pl;
@@ -118,7 +118,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
    RCP<const panzer::FieldPattern> patternC1 
          = buildFieldPattern<Intrepid::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer> >();
 
-   Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = buildQuadMesh(Comm,2,2,2,1,1,1);
+   Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = buildHexMesh(Comm,2,2,2,1,1,1);
    RCP<panzer::ConnManager<int,int> > connManager 
          = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
@@ -219,6 +219,83 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
    }
    for(std::size_t i=owned.size();i<owned_and_shared.size();i++) {
      TEST_ASSERT(std::find(owned.begin(),owned.end(),owned_and_shared[i])==owned.end());
+   }
+}
+
+// quad tests
+TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex_face_orientations)
+{
+   // build global (or serial communicator)
+   #ifdef HAVE_MPI
+      stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
+   #else
+      stk_classic::ParallelMachine Comm = WHAT_TO_DO_COMM;
+   #endif
+
+   int numProcs = stk_classic::parallel_machine_size(Comm);
+   int myRank = stk_classic::parallel_machine_rank(Comm);
+
+   TEUCHOS_ASSERT(numProcs==2);
+
+   // build a geometric pattern from a single basis
+   RCP<const panzer::FieldPattern> patternI1 
+         = buildFieldPattern<Intrepid::Basis_HDIV_HEX_I1_FEM<double,FieldContainer> >();
+
+   RCP<panzer::ConnManager<int,int> > connManager = 
+       Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(buildHexMesh(Comm,2,2,2,1,1,1)));
+   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+
+   dofManager->setOrientationsRequired(true);
+   TEST_EQUALITY(dofManager->getOrientationsRequired(),true);
+   TEST_EQUALITY(dofManager->getConnManager(),Teuchos::null);
+
+   dofManager->setConnManager(connManager,MPI_COMM_WORLD);
+   TEST_EQUALITY(dofManager->getConnManager(),connManager);
+
+   dofManager->addField("b",patternI1);
+
+   dofManager->buildGlobalUnknowns();
+   dofManager->printFieldInformation(out);
+
+   const std::vector<int> & b_offsets = dofManager->getGIDFieldOffsets("eblock-0_0_0",dofManager->getFieldNum("b"));
+
+   TEST_EQUALITY(b_offsets.size(),6);
+
+   // unfortunatly this mesh is completly uniform
+   double standardO[] = { 1.0, 1.0, -1.0, -1.0, -1.0, 1.0 };
+   if(myRank==0) {
+      std::vector<double> orientation;
+
+      // element 0
+      dofManager->getElementOrientation(0,orientation);
+      TEST_EQUALITY(orientation.size(),6);
+
+      for(std::size_t i=0;i<6;i++)
+         TEST_EQUALITY(orientation[i],standardO[i]);
+
+      // element 1
+      dofManager->getElementOrientation(1,orientation);
+      TEST_EQUALITY(orientation.size(),6);
+
+      for(std::size_t i=0;i<6;i++)
+         TEST_EQUALITY(orientation[i],standardO[i]);
+   }
+   else if(myRank==1) {
+      std::vector<double> orientation;
+
+      // element 0
+      dofManager->getElementOrientation(0,orientation);
+      TEST_EQUALITY(orientation.size(),6);
+
+      for(std::size_t i=0;i<6;i++)
+         TEST_EQUALITY(orientation[i],standardO[i]);
+
+      // element 1
+      dofManager->getElementOrientation(1,orientation);
+      TEST_EQUALITY(orientation.size(),6);
+
+      for(std::size_t i=0;i<6;i++)
+         TEST_EQUALITY(orientation[i],standardO[i]);
    }
 }
 

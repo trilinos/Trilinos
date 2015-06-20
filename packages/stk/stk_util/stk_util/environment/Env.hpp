@@ -1,10 +1,35 @@
-/*--------------------------------------------------------------------*/
-/*    Copyright 2003 - 2010 Sandia Corporation.                       */
-/*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
-/*    non-exclusive license for use of this work by or on behalf      */
-/*    of the U.S. Government.  Export of this program may require     */
-/*    a license from the United States Government.                    */
-/*--------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #ifndef STK_UTIL_DIAG_Env_h
 #define STK_UTIL_DIAG_Env_h
@@ -61,7 +86,9 @@ static const std::string PARAM_ON = "on";  ///< Option value when command line o
   enum GeminiSCIVersion {
     GEMINI_SCI_UNKNOWN = 0,
     GEMINI_SCI_1 = 1,
-    GEMINI_SCI_2 = 2
+    GEMINI_SCI_2 = 2,
+    GEMINI_SCI_2_1 = 21,
+    NEMO_1 = 101
   };
 
   GeminiSCIVersion GetGeminiVersion(GeminiSCIVersion ver=GEMINI_SCI_UNKNOWN);
@@ -118,7 +145,7 @@ const std::string &product_name();
 bool developer_mode();
 
 /**
- * @brief Function <b>set_input_file_required<b> sets whether lack of an input
+ * @brief Function <b>set_input_file_required</b> sets whether lack of an input
  * file specification will automatically cause failure.  The default behavior
  * corresponds to true.
  */
@@ -129,20 +156,20 @@ std::string getInputFileName();
 
 
 /**
- * @brief Function <b>set_check_subcycle<b> sets whether to check input
- * file for subcycling.  The default behavior corresponds to false.
+ * @brief Function <b>set_sm_preprocessing</b> sets whether to check input
+ * file for sm specific preprocessing.  The default behavior corresponds to false.
  */
-void set_check_subcycle(bool value);
+void set_sm_preprocessing(bool value);
 
 /**
- * @brief Function <b>set_zapotec<b> sets whether this code is
+ * @brief Function <b>set_zapotec</b> sets whether this code is
  * zaptoec.  The default behavior corresponds to false.
  * Send all function-related hate mail to Arne Gullerud.
  */
 void set_zapotec(bool value);
 
 /**
- * @brief Function <b>is_zapotec<b> returns whether this code is
+ * @brief Function <b>is_zapotec</b> returns whether this code is
  * zaptoec. Send all function-related hate mail to Arne Gullerud.
  */
 bool is_zapotec();
@@ -258,26 +285,6 @@ std::ostream &outputP0();
  */
 std::ostream &outputNull();
 
-
-/**
- * @ingroup EnvOutputDetail
- * @brief Function <b>output_open</b> opens an output file on processor zero for
- * synchronous data output from all processors via the <b>mpi_filebuf</b> class.
- * The output is synchronized via the <b>output_flush()</b> function and maintain in
- * the output stream list so that it is flushed and closed on application rundown.
- *
- * Must be executed concurrently on all processor in the current
- * <b>Env::parallel_comm()</b> group.
- *
- * @param filename		a <b>char</b> const pointer to the path of file to
- *				open.
- *
- * @return			a <b>std::ostream</b> reference to the newly opened
- *				output stream.
- */
-//std::ostream &output_open(const char * const filename);
-
-
 /**
  * @brief Function <b>section_separator</b> returns a c-style string to be used as a
  * output section separator.
@@ -365,6 +372,15 @@ MPI_Comm parallel_comm();
 MPI_Comm parallel_world_comm();
 
 /**
+ * @brief Function <b>parallel_intercomm</b> returns the current MPI intercommunicator used by
+ * the sierra environment.
+ *
+ * @return          a <b>MPI_Comm</b> value of the current MPI
+ *              communicator.
+ */
+MPI_Comm parallel_intercomm();
+
+/**
  * @brief Function <b>peer_group</b> returns the peer group rank for an application of type
  *        EXEC_TYPE_PEER.
  *
@@ -412,33 +428,6 @@ int parallel_size();
  */
 int parallel_rank();
 
-// /**
-//  * @brief Function <b>set_current_diag_stream</b> set the diagnostic writer current out
-//  * put stream.  The special names - and cout attach the diag stream to the std::cout
-//  * stream.  The special name cerr attaches the stream to the std::cerr stream, output
-//  * attaches to the stream Env::output() and outputp0 to the stream outputP0().  Otherwise,
-//  * the file is opened with <b>mode</b> ios mode flags and attached to the diagnostic
-//  * stream.
-//  *
-//  * @param path			a <b>char</b> const pointer to the file path to
-//  *				open.
-//  *
-//  * @param mode			a <b>std::ios::openmode</b> value of the ios mode to
-//  *				open the file.
-//  *
-//  */
-// void set_current_diag_stream(const char *path, std::ios_base::openmode mode = std::ios_base::out);
-
-// /**
-//  * @brief Function <b>getCurrentStream</b> returns the current diagnostic stream.
-//  *
-//  * @return			a <b>std::ostream</b> reference to the current diagnostic
-//  *				stream.
-//  */
-// // Diag::Stream &get_current_diag_stream();
-// std::ostream &get_current_diag_stream();
-
-///
 /// @}
 ///
 

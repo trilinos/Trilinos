@@ -91,7 +91,7 @@ class Vector_Operator
   private:
 
     // Not allowing copy construction.
-    Vector_Operator( const Vector_Operator& ) {};
+    Vector_Operator( const Vector_Operator& ): m(0), n(0) {};
     Vector_Operator* operator=( const Vector_Operator& ) { return NULL; };
 
 };

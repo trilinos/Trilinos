@@ -67,10 +67,10 @@ void doAlgorithmStuff( Teuchos::ParameterList *algoParams = 0 )
     algoA.setParameterList(Teuchos::rcp(algoParams,false));
   // Note that here I could change the stream just this object prints to
   // by calling algoA.setOStream(...).
-  
+
   // Now I call the algorithm which will print to its default output stream
   algoA.doAlgorithm();
-  
+
   *algoA.getOStream() << std::endl;
 
   TEUCHOS_ASSERT(algoA.getParameterList().getRawPtr() == algoParams);
@@ -140,52 +140,52 @@ int main(int argc, char* argv[])
     // Now I call doAlgorithmStuff() a bunch of times with different setups to
     // show the different kinds of line prefix options
     //
-  
+
     *out << "\n***\n*** Testing VerboseObject base class use\n***\n";
-  
+
     *out << "\n*** Algorithm output with default formatting\n\n";
     doAlgorithmStuff();
-  
+
     out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
     *out << "\n*** Algorithm output with no front matter\n\n";
     out->setShowAllFrontMatter(false);
     doAlgorithmStuff();
-  
+
     out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
     *out << "\n*** Algorithm output with processor ranks\n\n";
     out->setShowAllFrontMatter(false).setShowProcRank(true);
     doAlgorithmStuff();
-  
+
     out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
     *out << "\n*** Algorithm output with line prefix names\n\n";
     out->setShowAllFrontMatter(false).setShowLinePrefix(true);
     doAlgorithmStuff();
-  
+
     out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
     *out << "\n*** Algorithm output with tab counts\n\n";
     out->setShowAllFrontMatter(false).setShowTabCount(true);
     doAlgorithmStuff();
-  
+
     out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
     *out << "\n*** Algorithm output with line prefix names and tab counts\n\n";
     out->setShowAllFrontMatter(false).setShowLinePrefix(true).setShowTabCount(true);
     doAlgorithmStuff();
-  
+
     out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
     *out << "\n*** Algorithm output with processor ranks and line prefix names\n\n";
     out->setShowAllFrontMatter(false).setShowProcRank(true).setShowLinePrefix(true);
     doAlgorithmStuff();
-  
+
     out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
     *out << "\n*** Algorithm output with processor ranks and tab counts\n\n";
     out->setShowAllFrontMatter(false).setShowProcRank(true).setShowTabCount(true);
     doAlgorithmStuff();
-  
+
     out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
     *out << "\n*** Algorithm output with processor ranks, line prefix names, and tab counts\n\n";
     out->setShowAllFrontMatter(false).setShowProcRank(true).setShowLinePrefix(true).setShowTabCount(true);
     doAlgorithmStuff();
-  
+
     out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
     *out << "\n*** Algorithm output with processor ranks, line prefix names, and tab counts but no output for AlgorithmA\n\n";
     Teuchos::VerboseObject<AlgorithmA>::setDefaultVerbLevel(Teuchos::VERB_NONE);
@@ -229,9 +229,9 @@ int main(int argc, char* argv[])
 
     out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1).setShowTabCount(true);
     out->setProcRankAndSize(mpiSession.getRank(),mpiSession.getNProc());
-    
+
     *out << "\n***\n*** Testing basic FancyOStream and OSTab classes\n***\n\n";
-    
+
     *out << "\nThis is very good output\nand I like it a lot!\n";
     *out << "";
     *out << "\n";
@@ -258,7 +258,7 @@ int main(int argc, char* argv[])
       *out << "This should be indented one tab!\n";
     }
     *out << "This should be indented zero tabs!\n";
-    
+
     *out << std::endl; // This required overflow() to be overridden!
 
     *out << "\n***\n*** Now outputting the latent output that was sent to out2\n***\n\n"
@@ -266,10 +266,10 @@ int main(int argc, char* argv[])
 
     if(success)
       *out << "\nEnd Result: TEST PASSED" << std::endl;
-    
+
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,success);
-    
+
   return ( success ? 0 : 1 );
-  
+
 }

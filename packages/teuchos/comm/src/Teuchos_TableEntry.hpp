@@ -44,10 +44,10 @@
 
 /** \file Teuchos_TableEntry.hpp
     \brief Base class for representing compound entries in a printed
-    * table of data. 
-    * "Compound" means that each entry may be some aggregation 
+    * table of data.
+    * "Compound" means that each entry may be some aggregation
     * of more than one item,
-    * for example a timer together with a number of calls, or a 
+    * for example a timer together with a number of calls, or a
     * value together with its estimated measurement error.
     */
 
@@ -59,8 +59,8 @@
 namespace Teuchos
 {
   /**
-   * \brief An entry, perhaps compound, to be written into a table. 
-   * 
+   * \brief An entry, perhaps compound, to be written into a table.
+   *
    * KL 30 Apr 2006 -- initial design. Can you say overengineering??
    * The complexity is to support a nice interface for pair entries
    * such as time/numCalls.
@@ -73,7 +73,7 @@ namespace Teuchos
 
     /** \brief virtual dtor */
     virtual ~TableEntry() {}
-    
+
     /**  \brief Return a std::string representation of this entry */
     virtual std::string toString() const = 0 ;
 
@@ -90,7 +90,7 @@ namespace Teuchos
   };
 
 
-  /** 
+  /**
    * \brief A table entry that is a simple double-precision number
    */
   class DoubleEntry : public TableEntry
@@ -99,7 +99,7 @@ namespace Teuchos
     /** \brief Construct with a value
      * and a precision */
     DoubleEntry(const double& value, int precision);
-    
+
     /** \brief Write the specified entry to a std::string */
     virtual std::string toString() const ;
 
@@ -108,8 +108,8 @@ namespace Teuchos
     int precision_;
   };
 
-  
-  /** 
+
+  /**
    * \brief A table entry that is a simple integer
    */
   class IntEntry : public TableEntry
@@ -117,7 +117,7 @@ namespace Teuchos
   public:
     /** \brief Construct with a value */
     IntEntry(int value);
-    
+
     /** \brief Write the specified entry to a std::string */
     virtual std::string toString() const ;
 
@@ -125,8 +125,8 @@ namespace Teuchos
     int data_;
   };
 
-  
-  /** 
+
+  /**
    * \brief A table entry that is a simple std::string
    */
   class StringEntry : public TableEntry
@@ -134,7 +134,7 @@ namespace Teuchos
   public:
     /** \brief Construct with a value */
     StringEntry(std::string value);
-    
+
     /** \brief Write the specified entry to a std::string */
     virtual std::string toString() const ;
 
@@ -142,14 +142,14 @@ namespace Teuchos
     std::string data_;
   };
 
-  /** 
+  /**
    * \brief An entry containing two subentries, with the second
    * to be written in parentheses after the first. For example,
    * \code
    * 1.23(456)
-   * \endcode 
-   * The two subentries can be any type of data, each represented 
-   * with a TableEntry derived type. 
+   * \endcode
+   * The two subentries can be any type of data, each represented
+   * with a TableEntry derived type.
    */
   class CompoundEntryWithParentheses : public TableEntry
   {
@@ -158,19 +158,19 @@ namespace Teuchos
     CompoundEntryWithParentheses(const RCP<TableEntry>& first,
                                  const RCP<TableEntry>& second,
                                  bool spaceBeforeParens=true);
-    
+
     /** \brief Write the specified entry to a std::string */
     virtual std::string toString() const ;
-    
+
   private:
     RCP<TableEntry> first_;
     RCP<TableEntry> second_;
     bool spaceBeforeParens_;
   };
 
-  
 
- 
+
+
 
 }
 #endif

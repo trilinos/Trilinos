@@ -1,6 +1,4 @@
 
-INCLUDE(TribitsPackageMacros)
-INCLUDE(TribitsAddOptionAndDefine)
 
 #
 # A) Define the package
@@ -14,6 +12,8 @@ TRIBITS_PACKAGE( Anasazi ENABLE_SHADOWING_WARNINGS )
 #
 # B) Set up package-specific options
 #
+
+TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
 # Anasazi includes tests that may require complex arithmetic in order
 # to build.  These include especially (but not exclusively) the
@@ -39,14 +39,20 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 # factorization.  TSQR is used to implement an OrthoManager
 # (Anasazi::TsqrOrthoManager) and a MatOrthoManager (which only uses
 # TSQR in the Euclidean-inner-product case).  TSQR is enabled by
-# default if enabled in Kokkos.  If Teuchos_ENABLE_COMPLEX is enabled,
-# TSQR is built with complex arithmetic support.
+# default if the KokkosTSQR and Tpetra packages are enabled, but users
+# have control over Tpetra_ENABLE_TSQR.  Note that the Epetra adapter
+# for TSQR currently lives in Tpetra.
 
+IF (${PACKAGE_NAME}_ENABLE_Tpetra AND Tpetra_ENABLE_TSQR)
+  GLOBAL_SET(${PACKAGE_NAME}_ENABLE_TSQR_DEFAULT ON)
+ELSE()
+  GLOBAL_SET(${PACKAGE_NAME}_ENABLE_TSQR_DEFAULT OFF)
+ENDIF()
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_TSQR
   HAVE_ANASAZI_TSQR
   "Enable TSQR (Tall Skinny QR factorization) support in Anasazi."
-  "${KokkosClassic_ENABLE_TSQR}" )
+  "${${PACKAGE_NAME}_ENABLE_TSQR_DEFAULT}")
 
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
   ANASAZI_TEUCHOS_TIME_MONITOR

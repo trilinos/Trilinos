@@ -45,7 +45,7 @@
 #ifndef PHX_EXAMPLE_MY_WORKSET_HPP
 #define PHX_EXAMPLE_MY_WORKSET_HPP
 
-#include "Phalanx_ConfigDefs.hpp" // for std::vector
+#include "Phalanx_config.hpp" // for std::vector
 #include "Cell.hpp"
 
 struct MyWorkset {

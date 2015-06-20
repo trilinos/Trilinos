@@ -71,9 +71,9 @@ RCP<ParameterList> writeThenReadPL(ParameterList& myList);
  *
  * \param depSheetIn [in] The Dependency Sheet from which Dependencies should be
  * should be written.
- * \param depSheetOut [out] The Dependency Sheet into which Dependencies should 
+ * \param depSheetOut [out] The Dependency Sheet into which Dependencies should
  * be placed once read.
- * 
+ *
  * \return The read in parameter list.
  * \ingroup XML
  */

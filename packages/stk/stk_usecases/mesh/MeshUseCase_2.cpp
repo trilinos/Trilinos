@@ -1,15 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
-
-/**
- * @author H. Carter Edwards  <hcedwar@sandia.gov>
- * @date   June 2008
- */
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include <mesh/MeshUseCase_2.hpp>
 //
@@ -40,7 +60,7 @@ namespace use_cases {
 // Functions to generate the use case mesh information:
 namespace {
 void usecase_2_elem_node_ids( stk::mesh::EntityId elem_id ,
-                              stk::mesh::EntityId node_ids[] );
+                              stk::mesh::EntityIdVector & node_ids );
 void usecase_2_node_coordinates( stk::mesh::EntityId node_id ,
                                  double coord[] );
 
@@ -63,7 +83,7 @@ typedef shards::Hexahedron<8>  ElementTraits ;
 
 UseCase_2_Mesh::UseCase_2_Mesh( stk::ParallelMachine comm ) :
   m_fem_metaData( SpatialDim )
-  , m_bulkData( m_fem_metaData , comm , field_data_chunk_size )
+  , m_bulkData( m_fem_metaData , comm , stk::mesh::BulkData::AUTO_AURA )
   , m_partLeft( m_fem_metaData.declare_part_with_topology( "block_left", stk::topology::HEX_8))
   , m_partRight( m_fem_metaData.declare_part_with_topology( "block_right", stk::topology::HEX_8))
   , m_coordinates_field( m_fem_metaData.declare_field< VectorFieldType >(stk::topology::NODE_RANK, "coordinates" ))
@@ -108,7 +128,7 @@ void UseCase_2_Mesh::populate( unsigned nleft , unsigned nright )
     m_bulkData.modification_begin(); // Begin modifying the mesh
 
     stk::mesh::EntityId curr_elem_id = 1 ;
-    stk::mesh::EntityId node_ids[ shards::Hexahedron<8> ::node_count ];
+    stk::mesh::EntityIdVector node_ids( shards::Hexahedron<8> ::node_count );
 
     // Note declare_element expects a cell topology
     // to have been attached to m_partLeft.
@@ -344,7 +364,7 @@ bool verifyRelations( const UseCase_2_Mesh & mesh,
         stk::mesh::Entity elem = elem_bucket[i] ;
 
         // Query the node ids for this element.
-        stk::mesh::EntityId node_ids[ shards::Hexahedron<8> ::node_count ];
+        stk::mesh::EntityIdVector node_ids( shards::Hexahedron<8> ::node_count );
         usecase_2_elem_node_ids( bulkData.identifier(elem) , node_ids );
 
         // Pair of iterators for all of the element's relations.
@@ -561,7 +581,7 @@ namespace {
 
 //Given an element id compute the ids of the associated nodes.
 void usecase_2_elem_node_ids( stk::mesh::EntityId elem_id ,
-                              stk::mesh::EntityId node_ids[] )
+                              stk::mesh::EntityIdVector & node_ids )
 {
   ThrowRequireMsg( elem_id != 0,
                    "usecase_2_elem_node_ids: ERROR, elem_id ("

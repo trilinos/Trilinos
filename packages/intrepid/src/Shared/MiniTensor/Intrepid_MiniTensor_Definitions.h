@@ -44,8 +44,8 @@
 
 #include <complex>
 
+#include "Intrepid_ConfigDefs.hpp"
 #include "Sacado.hpp"
-#include "Sacado_mpl_disable_if.hpp"
 
 namespace Intrepid {
 

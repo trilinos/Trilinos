@@ -50,6 +50,9 @@
 #include <vector>
 #include <set>
 
+#include "Phalanx_KokkosUtilities.hpp"
+
+#include "Panzer_ConfigDefs.hpp"
 #include "Panzer_DOFManagerFEI.hpp"
 
 // include some intrepid basis functions
@@ -70,8 +73,11 @@ using Teuchos::rcpFromRef;
 
 namespace panzer {
 
+#ifdef PANZER_HAVE_FEI
 TEUCHOS_UNIT_TEST(tDOFManager_SimpleTests,validFieldOrder)
 {
+   PHX::KokkosDeviceSession session;
+
    DOFManagerFEI<int,int> dofManager; 
 
    std::set<std::string> validFields;
@@ -120,6 +126,7 @@ TEUCHOS_UNIT_TEST(tDOFManager_SimpleTests,validFieldOrder)
       TEST_ASSERT(!dofManager.validFieldOrder(order,validFields));
    }
 }
+#endif
 
 
 }

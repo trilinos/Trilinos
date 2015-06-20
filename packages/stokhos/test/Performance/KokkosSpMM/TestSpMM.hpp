@@ -41,7 +41,7 @@
 #include <iostream>
 
 // Kokkos CrsMatrix
-#include "Kokkos_CrsMatrix.hpp"
+#include "Kokkos_Sparse.hpp"
 
 // Utilities
 #include "impl/Kokkos_Timer.hpp"
@@ -100,11 +100,11 @@ test_spmm(const OrdinalType ensemble_length,
 {
   typedef ScalarType value_type;
   typedef OrdinalType ordinal_type;
-  typedef Device device_type;
-  typedef Kokkos::View< value_type*, device_type > vector_type;
-  typedef Kokkos::View< value_type**, Kokkos::LayoutLeft, device_type > left_multivec_type;
-  //typedef Kokkos::View< value_type**, Kokkos::LayoutRight, device_type > right_multivec_type;
-  typedef Kokkos::CrsMatrix< value_type, ordinal_type, device_type > matrix_type;
+  typedef Device execution_space;
+  typedef Kokkos::View< value_type*, execution_space > vector_type;
+  typedef Kokkos::View< value_type**, Kokkos::LayoutLeft, execution_space > left_multivec_type;
+  //typedef Kokkos::View< value_type**, Kokkos::LayoutRight, execution_space > right_multivec_type;
+  typedef KokkosSparse::CrsMatrix< value_type, ordinal_type, execution_space > matrix_type;
   typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef typename matrix_type::values_type matrix_values_type;
 
@@ -121,22 +121,16 @@ test_spmm(const OrdinalType ensemble_length,
   std::vector<vector_type> x(ensemble_length);
   std::vector<vector_type> y(ensemble_length);
   for (ordinal_type e=0; e<ensemble_length; ++e) {
-    x[e] = vector_type(Kokkos::allocate_without_initializing,
-                       "x", fem_length);
-    y[e] = vector_type(Kokkos::allocate_without_initializing,
-                       "y", fem_length);
+    x[e] = vector_type(Kokkos::ViewAllocateWithoutInitializing("x"), fem_length);
+    y[e] = vector_type(Kokkos::ViewAllocateWithoutInitializing("y"), fem_length);
 
     Kokkos::deep_copy( x[e] , value_type(1.0) );
     Kokkos::deep_copy( y[e] , value_type(0.0) );
   }
-  left_multivec_type xl(Kokkos::allocate_without_initializing,
-                        "xl", fem_length, ensemble_length);
-  left_multivec_type yl(Kokkos::allocate_without_initializing,
-                        "yl", fem_length, ensemble_length);
-  // right_multivec_type xr(Kokkos::allocate_without_initializing,
-  //                        "xr", fem_length, ensemble_length);
-  // right_multivec_type yr(Kokkos::allocate_without_initializing,
-  //                        "yr", fem_length, ensemble_length);
+  left_multivec_type xl(Kokkos::ViewAllocateWithoutInitializing("xl"), fem_length, ensemble_length);
+  left_multivec_type yl(Kokkos::ViewAllocateWithoutInitializing("yl"), fem_length, ensemble_length);
+  // right_multivec_type xr(Kokkos::ViewAllocateWithoutInitializing("xr"), fem_length, ensemble_length);
+  // right_multivec_type yr(Kokkos::ViewAllocateWithoutInitializing("yr"), fem_length, ensemble_length);
   Kokkos::deep_copy(xl, value_type(1.0));
   //Kokkos::deep_copy(xr, value_type(1.0));
   Kokkos::deep_copy(yl, value_type(0.0));
@@ -149,8 +143,7 @@ test_spmm(const OrdinalType ensemble_length,
     Kokkos::create_staticcrsgraph<matrix_graph_type>(
       std::string("test crs graph"), fem_graph);
   matrix_values_type matrix_values =
-    matrix_values_type(Kokkos::allocate_without_initializing,
-                       "matrix", graph_length);
+    matrix_values_type(Kokkos::ViewAllocateWithoutInitializing("matrix"), graph_length);
   matrix_type matrix("matrix", fem_length, matrix_values, matrix_graph);
   Kokkos::deep_copy( matrix_values , value_type(1.0) );
 
@@ -161,18 +154,18 @@ test_spmm(const OrdinalType ensemble_length,
     // warm up
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
       for (ordinal_type e=0; e<ensemble_length; ++e) {
-        Kokkos::MV_Multiply( y[e], matrix, x[e] );
+        KokkosSparse::spmv( "N", value_type(1.0), matrix, x[e] , value_type(0.0) , y[e]);
       }
     }
 
-    device_type::fence();
+    execution_space::fence();
     Kokkos::Impl::Timer clock ;
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
       for (ordinal_type e=0; e<ensemble_length; ++e) {
-        Kokkos::MV_Multiply( y[e], matrix, x[e] );
+        KokkosSparse::spmv( "N", value_type(1.0), matrix, x[e] , value_type(0.0) , y[e]);
       }
     }
-    device_type::fence();
+    execution_space::fence();
 
     const double seconds_per_iter = clock.seconds() / ((double) iterCount );
     const double flops = 1.0e-9 * 2.0 * graph_length * ensemble_length;
@@ -191,15 +184,15 @@ test_spmm(const OrdinalType ensemble_length,
   {
     // warm up
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
-      Kokkos::MV_Multiply( yl, matrix, xl );
+      KokkosSparse::spmv( "N", value_type(1.0), matrix, xl , value_type(0.0) , yl);
     }
 
-    device_type::fence();
+    execution_space::fence();
     Kokkos::Impl::Timer clock ;
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
-      Kokkos::MV_Multiply( yl, matrix, xl );
+      KokkosSparse::spmv( "N", value_type(1.0), matrix, xl , value_type(0.0) , yl);
     }
-    device_type::fence();
+    execution_space::fence();
 
     const double seconds_per_iter = clock.seconds() / ((double) iterCount );
     const double flops = 1.0e-9 * 2.0 * graph_length * ensemble_length;
@@ -219,15 +212,15 @@ test_spmm(const OrdinalType ensemble_length,
   {
     // warm up
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
-      Kokkos::MV_Multiply( yr, matrix, xr );
+      KokkosSparse::spmv( "N", value_type(1.0), matrix, xr , value_type(0.0) , yr);
     }
 
-    device_type::fence();
+    execution_space::fence();
     Kokkos::Impl::Timer clock ;
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
-      Kokkos::MV_Multiply( yr, matrix, xr );
+      KokkosSparse::spmv( "N", value_type(1.0), matrix, xr , value_type(0.0) , yr);
     }
-    device_type::fence();
+    execution_space::fence();
 
     const double seconds_per_iter = clock.seconds() / ((double) iterCount );
     const double flops = 1.0e-9 * 2.0 * graph_length * ensemble_length;

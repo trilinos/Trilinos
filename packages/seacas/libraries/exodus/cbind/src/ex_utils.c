@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -727,6 +727,7 @@ int ex_id_lkup( int exoid,
                 "Error: failed to allocate memory for temporary array id_vals_int for file id %d",
                 exoid);
         ex_err("ex_id_lkup",errmsg,exerrval);
+        free(id_vals);
         return (EX_FATAL);
       }
       status = nc_get_var_int(exoid, varid, (int *)id_vals_int);

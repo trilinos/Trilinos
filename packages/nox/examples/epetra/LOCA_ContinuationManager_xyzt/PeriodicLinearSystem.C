@@ -57,7 +57,7 @@
 
 PeriodicLinearSystem::
 PeriodicLinearSystem(
-    const Teuchos::RefCountPtr <Epetra_Comm> aComm):
+    const Teuchos::RCP <Epetra_Comm> aComm):
   comm(aComm),
   continuableParams(LOCA::ParameterVector()),
   continuationFileParams(Teuchos::null),
@@ -193,13 +193,13 @@ ComputeJacF(const Epetra_Vector & x)
   return true;
 }
 
-Teuchos::RefCountPtr <Epetra_CrsMatrix> PeriodicLinearSystem::
+Teuchos::RCP <Epetra_CrsMatrix> PeriodicLinearSystem::
 GetJacF() const
 {
   return jacobian;
 }
 
-Teuchos::RefCountPtr <Epetra_Vector> PeriodicLinearSystem::
+Teuchos::RCP <Epetra_Vector> PeriodicLinearSystem::
 GetInitialGuess() const
 {
   return initialGuess;
@@ -263,7 +263,7 @@ SetContinuationFileParameters(const Epetra_Vector & x)
   return true;
 }
 
-Teuchos::RefCountPtr <Teuchos::ParameterList> PeriodicLinearSystem::
+Teuchos::RCP <Teuchos::ParameterList> PeriodicLinearSystem::
 GetContinuationFileParameters()
 {
   return continuationFileParams;

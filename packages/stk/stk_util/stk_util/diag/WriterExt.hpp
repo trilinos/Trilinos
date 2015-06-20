@@ -1,10 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #ifndef STK_UTIL_DIAG_WRITEREXT_HPP
 #define STK_UTIL_DIAG_WRITEREXT_HPP
@@ -15,7 +40,7 @@
 #include <iostream>                     // for ostream, endl
 #include <list>                         // for list
 #include <map>                          // for map, multimap
-#include <memory>                       // for auto_ptr
+#include <memory>                       //
 #include <set>                          // for multiset, set
 #include <stk_util/diag/Mapv.hpp>       // for Mapv, MapvNode, etc
 #include <stk_util/diag/String.hpp>     // for String, Identifier
@@ -59,27 +84,6 @@ namespace diag {
  * @return    a <b>Writer</b> reference to this object
  */
 Writer &operator<<(Writer &dout, const std::type_info &t);
-
-/**
- * @brief Template function <b>operator<<</b> writes an std::auto_ptr object
- * address and content to the diagnostic writer.
- *
- * @param dout    a <b>Writer</b> reference to the diagnostic writer to
- *      write the std::auto_ptr object.
- *
- * @param t    a <b>std::auto_ptr</b> const reference to the object.
- *
- * @return    a <b>Writer</b> reference to this object
- */
-template <class T>
-Writer &operator<<(Writer &dout, const std::auto_ptr<T> &t) {
-  if (t.get())
-    dout << " " << typeid(t) << ", " << t.get() << ", " << *t;
-  else
-    dout << " " << typeid(t) << ", <not created or not owner>";
-
-  return dout;
-}
 
 /**
  * @brief Template function <b>operator<<</b> writes the members of an arbitrary

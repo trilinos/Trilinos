@@ -47,24 +47,25 @@
 #define XPETRA_VECTORFACTORY_HPP
 
 #include "Xpetra_ConfigDefs.hpp"
-
 #include "Xpetra_Vector.hpp"
 
 #ifdef HAVE_XPETRA_TPETRA
-#include "Xpetra_TpetraVector.hpp"
+#  include "Xpetra_TpetraVector.hpp"
 #endif
 #ifdef HAVE_XPETRA_EPETRA
-#include "Xpetra_EpetraVector.hpp"
-#include "Xpetra_EpetraIntVector.hpp"
+#  include "Xpetra_EpetraVector.hpp"
+#  include "Xpetra_EpetraIntVector.hpp"
 #endif
 
 #include "Xpetra_Exceptions.hpp"
 
 namespace Xpetra {
 
-  template <class Scalar, class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = Vector<>::scalar_type,
+            class LocalOrdinal = typename Vector<Scalar>::local_ordinal_type,
+            class GlobalOrdinal = typename Vector<Scalar, LocalOrdinal>::local_ordinal_type,
+            class Node = typename Vector<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class VectorFactory {
-    typedef void LocalMatOps;
 #undef XPETRA_VECTORFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
 
@@ -93,11 +94,10 @@ namespace Xpetra {
   template <>
   class VectorFactory<double, int, int> {
 
-    typedef double                                      Scalar;
-    typedef int                                         LocalOrdinal;
-    typedef int                                         GlobalOrdinal;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-    typedef void                                        LocalMatOps;
+    typedef double                              Scalar;
+    typedef int                                 LocalOrdinal;
+    typedef int                                 GlobalOrdinal;
+    typedef Vector<double, int, GlobalOrdinal>::node_type Node;
 #undef XPETRA_VECTORFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
 
@@ -116,24 +116,64 @@ namespace Xpetra {
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
       if (map->lib() == UseEpetra)
-        return rcp( new EpetraVector(map, zeroOut) );
+        return rcp( new EpetraVectorT<int>(map, zeroOut) );
+#endif
 #endif
 
       XPETRA_FACTORY_END;
     }
 
   };
+
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+  template <>
+  class VectorFactory<double, int, long long> {
+
+    typedef double                              Scalar;
+    typedef int                                 LocalOrdinal;
+    typedef long long                           GlobalOrdinal;
+    typedef Vector<double, int, GlobalOrdinal>::node_type Node;
+#undef XPETRA_VECTORFACTORY_SHORT
+#include "Xpetra_UseShortNames.hpp"
+
+  private:
+    //! Private constructor. This is a static class.
+    VectorFactory() {}
+
+  public:
+
+    static RCP<Vector> Build(const Teuchos::RCP<const Map>& map, bool zeroOut=true) {
+      XPETRA_MONITOR("VectorFactory::Build");
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (map->lib() == UseTpetra)
+        return rcp( new TpetraVector(map, zeroOut) );
+#endif
+
+#ifdef HAVE_XPETRA_EPETRA
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+      if (map->lib() == UseEpetra)
+        return rcp( new EpetraVectorT<long long>(map, zeroOut) );
+#endif
+#endif
+
+      XPETRA_FACTORY_END;
+    }
+
+  };
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
+
 #define XPETRA_VECTORFACTORY_SHORT
 
   template <>
   class VectorFactory<int, int, int> {
 
-    typedef int                                         Scalar;
-    typedef int                                         LocalOrdinal;
-    typedef int                                         GlobalOrdinal;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-    typedef void                                        LocalMatOps;
+    typedef int                              Scalar;
+    typedef int                              LocalOrdinal;
+    typedef int                              GlobalOrdinal;
+    typedef Vector<int, int, GlobalOrdinal>::node_type Node;
 #undef XPETRA_VECTORFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
 
@@ -152,14 +192,54 @@ namespace Xpetra {
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
       if (map->lib() == UseEpetra)
-        return rcp( new EpetraIntVector(map, zeroOut) );
+        return rcp( new EpetraIntVectorT<int>(map, zeroOut) );
+#endif
 #endif
 
       XPETRA_FACTORY_END;
     }
 
   };
+
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+  template <>
+  class VectorFactory<int, int, long long> {
+
+    typedef int                              Scalar;
+    typedef int                              LocalOrdinal;
+    typedef long long                        GlobalOrdinal;
+    typedef Vector<int, int, GlobalOrdinal>::node_type Node;
+#undef XPETRA_VECTORFACTORY_SHORT
+#include "Xpetra_UseShortNames.hpp"
+
+  private:
+    //! Private constructor. This is a static class.
+    VectorFactory() {}
+
+  public:
+
+    static RCP<Vector> Build(const Teuchos::RCP<const Map>& map, bool zeroOut=true) {
+      XPETRA_MONITOR("VectorFactory::Build");
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (map->lib() == UseTpetra)
+        return rcp( new TpetraVector(map, zeroOut) );
+#endif
+
+#ifdef HAVE_XPETRA_EPETRA
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+      if (map->lib() == UseEpetra)
+        return rcp( new EpetraIntVectorT<long long>(map, zeroOut) );
+#endif
+#endif
+
+      XPETRA_FACTORY_END;
+    }
+
+  };
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 }
 

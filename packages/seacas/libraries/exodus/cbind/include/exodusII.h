@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -58,8 +58,8 @@
 #endif
 
 /* EXODUS II version number */
-#define EX_API_VERS 6.08f
-#define EX_API_VERS_NODOT 608
+#define EX_API_VERS 6.13f
+#define EX_API_VERS_NODOT 613
 #define EX_VERS EX_API_VERS
 #define NEMESIS_API_VERSION		EX_API_VERS
 #define NEMESIS_API_VERSION_NODOT	EX_API_VERS_NODOT
@@ -474,11 +474,6 @@ extern "C" {
   EXODUS_EXPORT int ex_get_names (int exoid,
 				  ex_entity_type obj_type,
 				  char **names);
-
-  EXODUS_EXPORT int ex_get_nset_var_tab (int  exoid,
-					 int  num_nodesets,
-					 int  num_nset_var,
-					 int *nset_var_tab);
 
   EXODUS_EXPORT int ex_get_n_nodal_var (int   exoid,
 					int   time_step,
@@ -1972,16 +1967,16 @@ ex_put_elem_cmap(int  exoid,	/* NetCDF/Exodus file ID */
     * ======================================================================== */
 
   /* ERROR CODE DEFINITIONS AND STORAGE                                       */
-  extern int exerrval;     /**< shared error return value                */
-  extern int exoptval;     /**< error reporting flag (default is quiet)  */
+  EXODUS_EXPORT int exerrval;     /**< shared error return value                */
+  EXODUS_EXPORT int exoptval;     /**< error reporting flag (default is quiet)  */
 
-  char* ex_name_of_object(ex_entity_type obj_type);
-  ex_entity_type ex_var_type_to_ex_entity_type(char var_type);
+  EXODUS_EXPORT char* ex_name_of_object(ex_entity_type obj_type);
+  EXODUS_EXPORT ex_entity_type ex_var_type_to_ex_entity_type(char var_type);
 
   /* Should be internal use only, but was in external include file for
      nemesis and some codes are using the function
   */
-  int ex_get_idx(int      neid,	 /* NetCDF/Exodus file ID */
+  EXODUS_EXPORT int ex_get_idx(int      neid,	 /* NetCDF/Exodus file ID */
 		 const char *ne_var_name, /* Nemesis index variable name */
 		 int64_t *index,	 /* array of length 2 to hold results */
 		 int      pos		 /* position of this proc/cmap in index */
@@ -2002,6 +1997,7 @@ ex_put_elem_cmap(int  exoid,	/* NetCDF/Exodus file ID */
 #define EX_WRONGFILETYPE 1003   /**< wrong file type for function             */
 #define EX_LOOKUPFAIL    1004   /**< id table lookup failed                   */
 #define EX_BADPARAM      1005   /**< bad parameter passed                     */
+#define EX_INTERNAL      1006   /**< internal logic error                     */
 #define EX_MSG          -1000   /**< message print code - no error implied    */
 #define EX_PRTLASTMSG   -1001   /**< print last error message msg code        */
 #define EX_NOTROOTID    -1002   /**< file id is not the root id; it is a subgroup id */

@@ -64,6 +64,7 @@ namespace panzer {
        , beta(Teuchos::ScalarTraits<double>::nan())    // hopefully loud initial values
        , time(Teuchos::ScalarTraits<double>::nan())
        , evaluate_transient_terms(false)
+       , sensitivities_name("")
        , apply_dirichlet_beta(false)
        , dirichlet_beta(0.0)
     { }
@@ -74,6 +75,7 @@ namespace panzer {
        , beta(Teuchos::ScalarTraits<double>::nan())    // hopefully loud initial values
        , time(Teuchos::ScalarTraits<double>::nan())
        , evaluate_transient_terms(false)
+       , sensitivities_name("")
        , apply_dirichlet_beta(false)
        , dirichlet_beta(0.0)
     { }
@@ -86,6 +88,7 @@ namespace panzer {
     double time;
     std::vector<double> gather_seeds; // generic gather seeds
     bool evaluate_transient_terms;
+    std::string sensitivities_name;
 
     bool apply_dirichlet_beta;
     double dirichlet_beta;

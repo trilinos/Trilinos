@@ -107,12 +107,15 @@ public:
     DomainSpace_       = DomainSpace;
 
     RCPOperatorBox_    = Teuchos::rcp(new ML_Operator_Box(Op,Ownership));
-    // NOTE: Should the code crash, change the following to `false'
-    bool cheap;
-    if (RangeSpace_ != DomainSpace_)
-      cheap = true;
-    else
-      cheap = false;
+
+    // 'cheap' isn't used, so the branch below is commented out.
+    //
+    // // NOTE: Should the code crash, change the following to `false'
+    // bool cheap;
+    // if (RangeSpace_ != DomainSpace_)
+    //   cheap = true;
+    // else
+    //   cheap = false;
     RCPRowMatrix_      = Teuchos::rcp(new ML_Epetra::RowMatrix(Op,&(GetEpetra_Comm()),
                                                                false));
     RCPAuxOperatorBox_ = AuxOp;

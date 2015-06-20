@@ -78,7 +78,10 @@ norm(Tensor<T, N> const & A)
 
   }
 
-  return std::sqrt(s);
+  if (s > 0.0) return std::sqrt(s);
+
+  return 0.0;
+
 }
 
 //

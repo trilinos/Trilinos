@@ -46,6 +46,8 @@
 #ifndef MUELU_BLOCKEDRAPFACTORY_DECL_HPP
 #define MUELU_BLOCKEDRAPFACTORY_DECL_HPP
 
+#ifdef HAVE_MUELU_EXPERIMENTAL
+
 #include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_CrsMatrix_fwd.hpp>
 #include <Xpetra_CrsMatrixWrap_fwd.hpp>
@@ -68,7 +70,7 @@ namespace MueLu {
     @class BlockedRAPFactory
     @brief Factory for building coarse matrices.
   */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Node>::SparseOps>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class BlockedRAPFactory : public TwoLevelFactoryBase {
 #undef MUELU_BLOCKEDRAPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -152,4 +154,5 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_BLOCKEDRAPFACTORY_SHORT
+#endif /* HAVE_MUELU_EXPERIMENTAL */
 #endif // MUELU_BLOCKEDRAPFACTORY_DECL_HPP

@@ -80,9 +80,9 @@ int main(int argc, char* argv[])
 
   // Filling matrices with numbers can be done in several ways:
   My_Matrix.random();             // random numbers
-  My_Copy1.putScalar( 1.0 );      // every entry is 1.0 
+  My_Copy1.putScalar( 1.0 );      // every entry is 1.0
   My_Copy2(1,1) = 10.0;           // individual element access
-  Empty_Matrix = My_Matrix;       // copy My_Matrix to Empty_Matrix 
+  Empty_Matrix = My_Matrix;       // copy My_Matrix to Empty_Matrix
   x = 1.0;                        // every entry of vector is 1.0
   y = 1.0;
 
@@ -90,13 +90,13 @@ int main(int argc, char* argv[])
   double d;
   Teuchos::SerialDenseMatrix<int,double> My_Prod( 3, 2 );
   // Matrix multiplication ( My_Prod = 1.0*My_Matrix*My_Copy^T )
-  My_Prod.multiply( Teuchos::NO_TRANS, Teuchos::TRANS, 
+  My_Prod.multiply( Teuchos::NO_TRANS, Teuchos::TRANS,
 		    1.0, My_Matrix, My_Copy3, 0.0 );
   My_Copy2 += My_Matrix;         // Matrix addition
   My_Copy2.scale( 0.5 );         // Matrix scaling
-  d = x.dot( y );                // Vector dot product  
-  (void)d; // Not used! 
-  
+  d = x.dot( y );                // Vector dot product
+  (void)d; // Not used!
+
   // The pointer to the array of matrix values can be obtained:
   double *My_Array=0, *My_Column=0;
   My_Array = My_Matrix.values();   // pointer to matrix values
@@ -127,17 +127,17 @@ int main(int argc, char* argv[])
   Teuchos::SerialDenseSolver<int,double> My_Solver;
   Teuchos::SerialDenseMatrix<int,double> X(3,1), B(3,1);
   X.putScalar(1.0);
-  B.multiply( Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, My_Matrix, X, 0.0 );  
+  B.multiply( Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, My_Matrix, X, 0.0 );
   X.putScalar(0.0);  // Make sure the computed answer is correct.
 
   int info = 0;
   My_Solver.setMatrix( Teuchos::rcp( &My_Matrix, false ) );
   My_Solver.setVectors( Teuchos::rcp( &X, false ), Teuchos::rcp( &B, false ) );
   info = My_Solver.factor();
-  if (info != 0) 
+  if (info != 0)
     std::cout << "Teuchos::SerialDenseSolver::factor() returned : " << info << std::endl;
   info = My_Solver.solve();
-  if (info != 0) 
+  if (info != 0)
     std::cout << "Teuchos::SerialDenseSolver::solve() returned : " << info << std::endl;
 
   // A matrix can be sent to the output stream:

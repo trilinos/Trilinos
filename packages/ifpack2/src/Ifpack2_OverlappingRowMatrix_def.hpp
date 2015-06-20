@@ -556,7 +556,7 @@ rightScale (const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal
 
 
 template<class MatrixType>
-typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
+typename OverlappingRowMatrix<MatrixType>::mag_type
 OverlappingRowMatrix<MatrixType>::getFrobeniusNorm () const
 {
   throw std::runtime_error("Ifpack2::OverlappingRowMatrix does not support getFrobeniusNorm.");
@@ -576,8 +576,13 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   using Teuchos::as;
   typedef scalar_type RangeScalar;
   typedef scalar_type DomainScalar;
-
   typedef Teuchos::ScalarTraits<RangeScalar> STRS;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    alpha != Teuchos::ScalarTraits<scalar_type>::one () ||
+    beta != Teuchos::ScalarTraits<scalar_type>::zero (), std::logic_error,
+    "Ifpack2::ReorderFilter::apply is only implemented for alpha = 1 and "
+    "beta = 0.  You set alpha = " << alpha << " and beta = " << beta << ".");
   TEUCHOS_TEST_FOR_EXCEPTION(
     X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
     "Ifpack2::OverlappingRowMatrix::apply: The input X and the output Y must "
@@ -586,9 +591,9 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     << ".");
 
   // FIXME (mfh 13 July 2013) This would be a good candidate for a
-  // Kokkos local parallel operator implementation.  That would
-  // obviate the need for getting views of the data and make the code
-  // below a lot simpler.
+  // local parallel operator implementation.  That would obviate the
+  // need for getting views of the data and make the code below a lot
+  // simpler.
 
   const RangeScalar zero = STRS::zero ();
   ArrayRCP<ArrayRCP<const DomainScalar> > x_ptr = X.get2dView();

@@ -1,3 +1,36 @@
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+
 #include <gtest/gtest.h>
 #include <stk_topology/topology.hpp>
 #include <vector>
@@ -19,7 +52,7 @@ void verifyPermutationsForTriangle(stk::topology triangular_shell, unsigned* tri
     }
 }
 
-//Lexicographical
+//BEGIN_lexicographical
 TEST(stk_topology_understanding, lexicographical_smallest_permutation)
 {
     {
@@ -51,6 +84,72 @@ TEST(stk_topology_understanding, lexicographical_smallest_permutation)
         EXPECT_EQ(gold_lexicographical_smallest_permutation_index, permutation_index);
     }
 }
+//END_lexicographical
+
+//BEGIN_Preserves_polarity_lexicographical
+TEST(stk_topology_understanding, lexicographical_smallest_permutation_preserve_polarity)
+{
+    {
+        stk::topology triangular_shell = stk::topology::SHELL_TRIANGLE_3;
+        unsigned shell_node_ids[3] = {10, 8, 12};
+        {
+            unsigned triangle_node_ids[3] = {12, 10, 8};
+
+            unsigned permutation_index = triangular_shell.lexicographical_smallest_permutation_preserve_polarity(triangle_node_ids, shell_node_ids);
+            unsigned expected_positive_permutation = 2;
+
+            EXPECT_EQ(expected_positive_permutation, permutation_index);
+            EXPECT_LT(expected_positive_permutation, triangular_shell.num_positive_permutations());
+        }
+        {
+            unsigned triangle_node_ids[3] = {12, 8, 10};
+
+            unsigned permutation_index = triangular_shell.lexicographical_smallest_permutation_preserve_polarity(triangle_node_ids, shell_node_ids);
+            unsigned expected_negative_permutation = 5;
+
+            EXPECT_EQ(expected_negative_permutation, permutation_index);
+            EXPECT_GE(expected_negative_permutation, triangular_shell.num_positive_permutations());
+        }
+    }
+}
+
+TEST(stk_topology_understanding, quad_lexicographical_smallest_permutation_preserve_polarity)
+{
+    {
+        stk::topology quad_shell = stk::topology::SHELL_QUAD_4;
+        unsigned shell_node_ids[4] = {1, 2, 3, 4};
+        {
+            unsigned quad_node_ids[4] = {1, 2, 3, 4};
+
+            unsigned permutation_index = quad_shell.lexicographical_smallest_permutation_preserve_polarity(quad_node_ids, shell_node_ids);
+            unsigned expected_positive_permutation = 0;
+
+            EXPECT_EQ(expected_positive_permutation, permutation_index);
+            EXPECT_LT(expected_positive_permutation, quad_shell.num_positive_permutations());
+        }
+
+        {
+            unsigned quad_node_ids[4] = {1, 4, 3, 2};
+
+            unsigned permutation_index = quad_shell.lexicographical_smallest_permutation_preserve_polarity(quad_node_ids, shell_node_ids);
+            unsigned expected_negative_permutation = 4;
+
+            EXPECT_EQ(expected_negative_permutation, permutation_index);
+            EXPECT_GE(expected_negative_permutation, quad_shell.num_positive_permutations());
+        }
+
+        {
+            unsigned quad_node_ids[4] = {4, 2, 3, 1};
+
+            unsigned permutation_index = quad_shell.lexicographical_smallest_permutation_preserve_polarity(quad_node_ids, shell_node_ids);
+            unsigned expected_invalid_permutation = 8;
+
+            EXPECT_EQ(expected_invalid_permutation, permutation_index);
+            EXPECT_EQ(expected_invalid_permutation, quad_shell.num_permutations());
+        }
+    }
+}
+//END_Preserves_polarity_lexicographical
 
 //SubTopology
 TEST(stk_topology_understanding, sub_topology)
@@ -136,6 +235,25 @@ TEST(stk_topology_understanding, superelements)
     EXPECT_FALSE(invalidSuperElement.is_shell());
 }
 //Done
+
+//beginCheckForPositivePolarity
+TEST(stk_topology_how_to, check_for_positive_polarity)
+{
+    stk::topology quad4Topology = stk::topology::QUAD_4;
+
+    ASSERT_EQ(8u, quad4Topology.num_permutations());
+    ASSERT_EQ(4u, quad4Topology.num_positive_permutations());
+
+    EXPECT_TRUE( quad4Topology.is_positive_polarity(0));
+    EXPECT_TRUE( quad4Topology.is_positive_polarity(1));
+    EXPECT_TRUE( quad4Topology.is_positive_polarity(2));
+    EXPECT_TRUE( quad4Topology.is_positive_polarity(3));
+    EXPECT_TRUE(!quad4Topology.is_positive_polarity(4));
+    EXPECT_TRUE(!quad4Topology.is_positive_polarity(5));
+    EXPECT_TRUE(!quad4Topology.is_positive_polarity(6));
+    EXPECT_TRUE(!quad4Topology.is_positive_polarity(7));
+}
+//endCheckForPositivePolarity
 
 }
 

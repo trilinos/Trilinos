@@ -59,42 +59,6 @@ using namespace std;
     \todo write some examples that don't use teuchos
 */
 
-// Zoltan2 is templated.  What data types will we use for
-// scalars (coordinate values and weights), for local ids, and
-// for global ids?
-//
-// If Zoltan2 was compiled with explicit instantiation, we will
-// use the the library's data types.  These macros are defined
-// in Zoltan2_config.h.
-
-#ifdef HAVE_ZOLTAN2_INST_FLOAT_INT_LONG
-typedef float scalar_t;
-typedef int localId_t;
-typedef long globalId_t;
-#else
-  #ifdef HAVE_ZOLTAN2_INST_DOUBLE_INT_LONG
-  typedef double scalar_t;
-  typedef int localId_t;
-  typedef long globalId_t;
-  #else
-    #ifdef HAVE_ZOLTAN2_INST_FLOAT_INT_INT
-    typedef float scalar_t;
-    typedef int localId_t;
-    typedef int globalId_t;
-    #else
-      #ifdef HAVE_ZOLTAN2_INST_DOUBLE_INT_INT
-      typedef double scalar_t;
-      typedef int localId_t;
-      typedef int globalId_t;
-      #else
-      typedef float scalar_t;
-      typedef int localId_t;
-      typedef int globalId_t;
-      #endif
-    #endif
-  #endif
-#endif
-
 int main(int argc, char *argv[])
 {
 #ifdef HAVE_ZOLTAN2_MPI
@@ -104,6 +68,14 @@ int main(int argc, char *argv[])
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #else
   int rank=0, nprocs=1;
+#endif
+
+  typedef double scalar_t;
+  typedef int localId_t;
+#ifdef HAVE_ZOLTAN2_LONG_LONG
+  typedef long long globalId_t;
+#else
+  typedef int globalId_t;
 #endif
 
   ///////////////////////////////////////////////////////////////////////
@@ -152,14 +124,8 @@ int main(int argc, char *argv[])
   ///////////////////////////////////////////////////////////////////////
   // Create a Zoltan2 partitioning problem
 
-#ifdef HAVE_ZOLTAN2_MPI
-  Zoltan2::PartitioningProblem<inputAdapter_t> *problem = 
-           new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia, &params, 
-                                                            MPI_COMM_WORLD);
-#else
   Zoltan2::PartitioningProblem<inputAdapter_t> *problem = 
            new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia, &params);
-#endif
    
   ///////////////////////////////////////////////////////////////////////
   // Solve the problem

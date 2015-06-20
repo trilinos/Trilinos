@@ -1,6 +1,4 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsAddAdvancedTest)
 
 TRIBITS_ADD_EXECUTABLE(
   UnitTest_TimeMonitor_UnitTests

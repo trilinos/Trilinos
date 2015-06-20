@@ -86,7 +86,9 @@ namespace {
   using Xpetra::TpetraCrsMatrix; //TMP
 #endif
 #ifdef HAVE_XPETRA_EPETRA
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
   using Xpetra::EpetraCrsMatrix; //TMP
+#endif
 #endif
 
   using Xpetra::Map;
@@ -204,6 +206,7 @@ namespace {
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
     typedef Xpetra::CrsMatrixWrap<double, int, int, Node> EpCrsMatrix;
 
     RCP<const Map<int,int,Node> > epmap = Xpetra::MapFactory<int,int,Node>::createContigMap(Xpetra::UseEpetra, INVALID, numLocal, comm);
@@ -224,6 +227,7 @@ namespace {
        TEST_EQUALITY_CONST(blkSize, 2);
      }
 #endif
+#endif
   }
 
   //
@@ -235,6 +239,10 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Matrix, StridedMaps, SC, LO, GO, Node )
 
   typedef KokkosClassic::DefaultNode::DefaultNodeType DefaultNodeType;
+#ifndef XPETRA_TEST_USE_LONGLONG_GO
   UNIT_TEST_GROUP_ORDINAL(double, int, int, DefaultNodeType)
-
+#else
+  typedef long long LongLongInt;
+  UNIT_TEST_GROUP_ORDINAL(double, int, LongLongInt, DefaultNodeType)
+#endif
 }

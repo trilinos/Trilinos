@@ -1,4 +1,3 @@
-INCLUDE(AddSubdirectories)
 
 IF (NOT Trilinos_NO_32BIT_GLOBAL_INDICES)
 
@@ -11,14 +10,19 @@ ADD_SUBDIRECTORIES(
   IHSS-SORa
   IlukGraph
   OverlappingRowMatrix
+  Performance
   PreconditionerFactory
   Relaxation
   SetParameters
+  TriDi
   TestAll
   BlockCheby
   #UseTranspose
-  SupportGraph
   )
+
+IF (${PACKAGE_NAME}_ENABLE_SUPPORTGRAPH)
+  ADD_SUBDIRECTORY(SupportGraph)
+ENDIF ()
 IF (${PACKAGE_NAME}_ENABLE_AztecOO)
   ADD_SUBDIRECTORY(AztecOO)
 ENDIF()

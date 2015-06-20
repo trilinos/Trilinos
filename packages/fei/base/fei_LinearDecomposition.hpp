@@ -14,8 +14,8 @@ public:
                       GlobalIDType highest_global_id);
   ~LinearDecomposition() {}
 
-  GlobalIDType first_local_id() const {return first_local;}
-  GlobalIDType last_local_id() const {return last_local;}
+  GlobalIDType first_locally_owned_global_id() const {return first_locally_owned_global;}
+  GlobalIDType last_locally_owned_global_id() const {return last_locally_owned_global;}
 
   GlobalIDType first_global_id() const {return first_global;}
   GlobalIDType last_global_id() const {return last_global;}
@@ -28,8 +28,8 @@ public:
 private:
   GlobalIDType first_global;
   GlobalIDType last_global;
-  GlobalIDType first_local;
-  GlobalIDType last_local;
+  GlobalIDType first_locally_owned_global;
+  GlobalIDType last_locally_owned_global;
   std::vector<GlobalIDType> proc_offsets;
 };//class LinearDecomposition
 
@@ -37,8 +37,8 @@ template<typename GlobalIDType>
 LinearDecomposition<GlobalIDType>::LinearDecomposition(int localProc, int numProcs,
                                      GlobalIDType lowest_global_id,
                                      GlobalIDType highest_global_id)
- : first_local(0),
-   last_local(0),
+ : first_locally_owned_global(0),
+   last_locally_owned_global(0),
    proc_offsets()
 {
   GlobalIDType num_global = highest_global_id - lowest_global_id + 1;
@@ -62,8 +62,8 @@ LinearDecomposition<GlobalIDType>::LinearDecomposition(int localProc, int numPro
 
   first_global = lowest_global_id;
   last_global = highest_global_id;
-  first_local = lowest_global_id  + proc_offsets[localProc];
-  last_local  = highest_global_id + proc_offsets[localProc] + num_local - 1;
+  first_locally_owned_global = lowest_global_id  + proc_offsets[localProc];
+  last_locally_owned_global  = highest_global_id + proc_offsets[localProc] + num_local - 1;
 }
 
 template<typename GlobalIDType>

@@ -1,213 +1,37 @@
-///
-/// \addtogroup stk_util_diag_writer_detail
-/// @{
-///
-/// @brief The diagnostic writer provides features for the runtime selection of diagnostic output of
-/// data and objects.
-///
-/// The runtime diagnostic output selection is achieved utilizing message marking within the source
-/// code and selection from the command line or input deck.
-///
-/// The First,
-///
-/// by implementing a <b>dump</b> member function and an <b>operator<<</b> free function, the class
-/// may be easily dumped using the <b>&lt;&lt;</b> operator.  And, second, by assigning appropriate
-/// bit masks, the diagnostic writer allows the diagnostic output to be selectively output by the
-/// developer or user at runtime.
-///
-/// For Example:<BR>
-///
-/// \code
-///     class AnotherClass
-///     {
-///     public:
-///       AnotherClass(int i)
-///       {}
-///  
-///       double hairyCalc(int i) {
-///         return sin((double) i);
-///       }
-///  
-///       Writer &dump(Writer &dout) const {
-///         if (dout.shouldPrint()) {
-///           dout << "AnotherClass " << push << dendl;
-///  
-///           dout.m(LOG_MEMBERS) << "m_m1, " << m_m1 << dendl;
-///           dout.m(LOG_MEMBERS) << "m_mem2, " << m_mem2 << dendl;
-///  
-///           if (dout.shouldPrint(LOG_MEMBERS)) {
-///             dout << "hairyCalc" << push << dendl;
-///             for (int i = 0; i < 1000; ++i)
-///               dout << "hairyCalc(" << i << ") = " << hairyCalc(i) << dendl;
-///  
-///             dout << pop;
-///           }
-///           dout << pop;
-///         }
-///         return dout;
-///       }
-///  
-///     private:
-///       int		m_m1;
-///       int		m_mem2;
-///     };
-///  
-///     inline Writer &operator<<(Writer &dout, const AnotherClass &another_class) {
-///       return another_class.dump(dout);
-///     }
-///  
-///     class ShowWriter
-///     {
-///       void Func() {
-///         sierra::diag_writer dout(std::cout);
-///         dout.setPrintMask(LOG_LIGHT | LOG_HEAVY | LOG_MEMBERS);
-///  
-///         int j = 7;
-///  
-///         m_anotherClassVector.push_back(AnotherClass(j));
-///         m_anotherClassVector.push_back(AnotherClass(j*2));
-///         m_anotherClassVector.push_back(AnotherClass(j*2 + 1));
-///  
-///  
-///         dout.m(LOG_LIGHT) << "Light weight diagnostic message, j is " << j << dendl;
-///         dout.m(LOG_HEAVY) << "Heavy weight diagnostic message " << m_anotherClassVector << dendl;
-///       }
-///  
-///       Writer &dump(Writer &dout) const {
-///         if (dout.shouldPrint()) {
-///           dout << "ShowWriter, " << push << dendl;
-///  
-///           dout.m(LOG_MEMBERS) << "m_anotherClassVector, " << m_anotherClassVector << dendl;
-///           dout << pop;
-///         }
-///  
-///         return dout;
-///       }
-///  
-///       std::vector<AnotherClass> m_anotherClassVector;
-///     };
-///  
-///     inline Writer &operator<<(Writer &dout, const ShowWriter &show_diag_writer) {
-///       return show_diag_writer.dump(dout);
-///     }
-/// \endcode
-///
-///
-/// \anchor stk_util_diag_writer_howto_add_to_app
-/// \section stk_util_diag_writer_add_to_app Adding diagnostic writer to your application
-///
-/// Adding a diagnostic writer to your application allows you to leave diagnostic
-/// code in your application which is only seen when desired.
-///
-/// <UL>
-/// <LI>Create a <i>App</i>_DiagWriter_fwd.h
-///
-/// The forward definition file defines the LOG_<i>name</i> bit masks which will be used
-/// to select the messages to be written to the diagnostic stream.
-///
-/// \code
-///     #ifndef SIERRA_App_DiagWriter_fwd_h
-///     #define SIERRA_App_DiagWriter_fwd_h
-///    
-///     #include <stk_util/util/Writer_fwd.hpp>
-///    
-///     namespace sierra {
-///     namespace app {
-///    
-///     enum {
-///       LOG_ALWAYS          = sierra::LOG_ALWAYS,
-///       LOG_TRACE           = sierra::LOG_TRACE,
-///       LOG_TRACE_STATS     = sierra::LOG_TRACE_STATS,
-///       LOG_TRACE_SUB_CALLS = sierra::LOG_TRACE_SUB_CALLS,
-///       LOG_MEMBERS         = sierra::LOG_MEMBERS,
-///    
-///       LOG_NOLOAD          = 0x00000100,
-///       LOG_NOEXECUTE       = 0x00000200,
-///       LOG_SYNTAX_CHECK    = 0x00000400,
-///       LOG_INPUT_CHECK     = 0x00000800,
-///       LOG_DUMP_SETUP      = 0x00001000,
-///       LOG_DUMP_LOAD       = 0x00002000,
-///    
-///       LOG_CONTROL         = 0x00003F00,
-///    
-///       LOG_COMM            = 0x00010000,
-///       LOG_CONTACT         = 0x00020000,
-///       LOG_GEOMETRY        = 0x00040000,
-///       LOG_APP04           = 0x00080000,
-///       LOG_MATERIAL        = 0x00100000,
-///       LOG_MESH_MOD        = 0x00200000,
-///       LOG_PARAMS          = 0x00400000,
-///       LOG_PLUGINS         = 0x00800000,
-///       LOG_SCONTROL        = 0x01000000,
-///       LOG_SEARCH          = 0x02000000,
-///       LOG_SOLVER          = 0x04000000,
-///       LOG_XFER            = 0x08000000,
-///       LOG_FIELD           = 0x10000000,
-///       LOG_DIAGNOSTICS     = 0xFFFF0000
-///     };
-///    
-///     } // namespace app
-///     } // namespace sierra
-///    
-///     #endif // SIERRA_App_DiagWriter_fwd_h
-/// \endcode
-///
-/// <LI>Create a <i>App</i>_DiagWriter.h
-///
-/// The diagnostic writer header file defines the parser for parsing the command line and
-/// line commands to produce the mask of bits which the user has selected.  It also
-/// implements the sentry which the application uses to bootstrap the diagnostic writer.
-///
-/// \code
-///     #ifndef SIERRA_App_DiagWriter_h
-///     #define SIERRA_App_DiagWriter_h
-///     
-///     #include <stk_util/util/Writer.hpp>
-///     #include <stk_util/diag/WriterParser.hpp>
-///     
-///     #include <App_DiagWriter_fwd.h>
-///     
-///     namespace sierra {
-///     namespace app {
-///     
-///     class DiagWriterParser : public Diag::WriterParser
-///     {
-///     public:
-///       DiagWriterParser();
-///     };
-///     
-///     stk::diag::Writer &theDiagWriter();
-///     
-///     DiagWriterParser &theDiagWriterParser();
-///     
-///     #define applog sierra::App::theDiagWriter()
-///     } // namespace app
-///     } // namespace sierra
-///     
-///     #endif // SIERRA_Aria_DiagWriter_h
-/// \endcode
-///
-/// <LI>Create a <i>App</i>_DiagWriter.C
-///
-/// The implementation of the parser constructor adds the command line and line command
-/// value used to generate the bit mask.  Any combinations of bit masks can be given a
-/// name.  This will simplify specification of commonly grouped options for the user.
-///
-/// \code
-///     #include <stk_util/util/Bootstrap.hpp>
-///     
-///     #include <stk_util/environment/OutputLog.hpp>
-///     #include <stk_util/diag/WriterRegistry.hpp>
-///     
-///     #include <App_DiagWriter.h>
-///     
-///     namespace sierra {
-///     namespace app {
-///     
-///     DiagWriterParser &
-///     theDiagWriterParser()
-///     {
-///       /* %TRACE% */  /* %TRACE% */
+/*
+ * Copyright (c) 2013, Sandia Corporation.
+ * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+ * the U.S. Government retains certain rights in this software.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ * 
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ * 
+ *     * Redistributions in binary form must reproduce the above
+ *       copyright notice, this list of conditions and the following
+ *       disclaimer in the documentation and/or other materials provided
+ *       with the distribution.
+ * 
+ *     * Neither the name of Sandia Corporation nor the names of its
+ *       contributors may be used to endorse or promote products derived
+ *       from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ */
 ///       static DiagWriterParser parser;
 ///     
 ///       return parser;

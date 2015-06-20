@@ -75,7 +75,7 @@ public:
    * dependencies.
    */
   typedef map<RCP<const ParameterEntry>, DepSet, RCPConstComp > DepMap;
-  
+
   //@}
 
   /** \name Constructors/Destructor */
@@ -92,7 +92,7 @@ public:
    * @param name Name of the Dependency Sheet.
    */
   DependencySheet(const std::string &name);
-  
+
   //@}
 
   /** \name Add/Remove Functions */
@@ -100,15 +100,15 @@ public:
 
   /**
    * \brief Adds a dependency to the sheet.
-   * 
+   *
    * @param dependency The dependency to be added.
    */
   void addDependency(RCP<Dependency> dependency);
 
   /**
-   * \brief Adds a dependencies from another she 
+   * \brief Adds a dependencies from another she
    * to this sheet.
-   * 
+   *
    * @param otherSheet The other sheet from which
    * to add dependencies.
    */
@@ -128,12 +128,12 @@ public:
   void setName(const std::string newName){
     name_ = newName;
   }
-  
+
   //@}
 
   //! \name Attribute/Query Functions
   //@{
-  
+
   /**
    * \brief Determines whether or not a parameter is depended upon by any another
    * parameters or parameter lists.
@@ -142,16 +142,16 @@ public:
    * @return True if the parameter you're checking has other dependents, false otherwise.
    */
   inline bool hasDependents(RCP<const ParameterEntry> dependee) const{
-    return (dependenciesMap_.find(dependee) != dependenciesMap_.end() 
+    return (dependenciesMap_.find(dependee) != dependenciesMap_.end()
       && dependenciesMap_.find(dependee)->second.size() > 0);
   }
 
   /**
-   * \brief Returns a set of all the dependencies associated with a 
+   * \brief Returns a set of all the dependencies associated with a
    * particular dependee. If no dependencies with the given dependee have
    * ever been enetered into the sheet then a null reference is returned.
    *
-   * @param dependee The parameter whose dependencies are sought. 
+   * @param dependee The parameter whose dependencies are sought.
    * @return A set of all dependencies associated with the dependee parameter.
    * */
   RCP<const DepSet> getDependenciesForParameter(
@@ -170,14 +170,14 @@ public:
   inline bool empty() const{
     return dependencies_.empty();
   }
-  
+
   //@}
 
   /** \name Iterator Functions */
   //@{
 
   /**
-   * \brief Returns an iterator to the beginning of all 
+   * \brief Returns an iterator to the beginning of all
    * the dependees in the sheet.
    */
   inline DepSet::iterator depBegin(){
@@ -199,7 +199,7 @@ public:
   inline DepSet::const_iterator depBegin() const{
     return dependencies_.begin();
   }
-    
+
   /**
    * \brief Returns a const iterator to the end of all of the dependees in the sheet.
    */
@@ -217,7 +217,7 @@ public:
   inline DepSet::size_type size(){
     return dependencies_.size();
   }
-  
+
   //@}
 
   /** \name I/O Functions */
@@ -241,12 +241,12 @@ private:
 
   /** \name Private Members */
   //@{
-  
+
   /**
-   * \brief A map containing all the depenecies for a list. 
+   * \brief A map containing all the depenecies for a list.
    *
    * Dependencies with multiple dependees will be found in multiple
-   * places within the map. Essentially, for each dependee, there will 
+   * places within the map. Essentially, for each dependee, there will
    * be a pointer to each dependency of which it is a part.
    */
   DepMap dependenciesMap_;

@@ -59,11 +59,11 @@ namespace Teuchos{
 class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT FunctionObject: public Describable {
 
 public:
-  
+
   /** \name XMLSerialiation Functions */
   //@{
 
-  /** \brief Returns the string to be used for the value of the 
+  /** \brief Returns the string to be used for the value of the
    * type attribute when converting the function to XML.
    */
   virtual std::string getTypeAttributeValue() const=0;
@@ -77,7 +77,7 @@ public:
   }
 
   //@}
-  
+
 };
 
 

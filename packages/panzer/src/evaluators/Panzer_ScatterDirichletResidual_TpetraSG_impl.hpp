@@ -55,8 +55,8 @@
 // Specialization: SGResidual
 // **********************************************************************
 
-template<typename Traits,typename LO,typename GO,typename NodeT>
-panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::SGResidual, Traits,LO,GO,NodeT>::
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::SGResidual, TRAITS,LO,GO,NodeT>::
 ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
                                 const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
@@ -99,10 +99,10 @@ ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT> 
-void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::SGResidual, Traits,LO,GO,NodeT>::
-postRegistrationSetup(typename Traits::SetupData d, 
-		      PHX::FieldManager<Traits>& fm)
+template<typename TRAITS,typename LO,typename GO,typename NodeT> 
+void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::SGResidual, TRAITS,LO,GO,NodeT>::
+postRegistrationSetup(typename TRAITS::SetupData d, 
+		      PHX::FieldManager<TRAITS>& fm)
 {
   fieldIds_.resize(scatterFields_.size());
 
@@ -121,24 +121,24 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT>
-void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::SGResidual, Traits,LO,GO,NodeT>::
-preEvaluate(typename Traits::PreEvalData d)
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::SGResidual, TRAITS,LO,GO,NodeT>::
+preEvaluate(typename TRAITS::PreEvalData d)
 {
 /*
    // extract dirichlet counter from container
    sgTpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject("Dirichlet Counter"),true);
 
-   dirichletCounter_ = sgTpetraContainer_->get_x();
+   dirichletCounter_ = sgTpetraContainer_->get_f();
    TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
 */
   TEUCHOS_ASSERT(false);
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT>
-void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::SGResidual, Traits,LO,GO,NodeT>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::SGResidual, TRAITS,LO,GO,NodeT>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
 /*
    typedef SGTpetraLinearObjContainer<double,LO,GO,NodeT> SGLOC;
@@ -178,7 +178,7 @@ evaluateFields(typename Traits::EvalData workset)
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
          int fieldNum = fieldIds_[fieldIndex];
    
-         // this call "should" get the right ordering accordint to the Intrepid basis
+         // this call "should" get the right ordering according to the Intrepid basis
          const std::pair<std::vector<int>,std::vector<int> > & indicePair 
                = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
          const std::vector<int> & elmtOffset = indicePair.first;
@@ -192,7 +192,7 @@ evaluateFields(typename Traits::EvalData workset)
                continue;
 
             int basisId = basisIdMap[basis];
-            const ScalarT & field = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
+            const ScalarT field = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
 
             // loop over stochastic basis scatter field values to residual vectors
             int stochIndex = 0;
@@ -215,8 +215,8 @@ evaluateFields(typename Traits::EvalData workset)
 // Specialization: SGJacobian
 // **********************************************************************
 
-template<typename Traits,typename LO,typename GO,typename NodeT>
-panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::SGJacobian, Traits,LO,GO,NodeT>::
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::SGJacobian, TRAITS,LO,GO,NodeT>::
 ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
                                 const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
@@ -254,10 +254,10 @@ ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT> 
-void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::SGJacobian, Traits,LO,GO,NodeT>::
-postRegistrationSetup(typename Traits::SetupData d,
-		      PHX::FieldManager<Traits>& fm)
+template<typename TRAITS,typename LO,typename GO,typename NodeT> 
+void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::SGJacobian, TRAITS,LO,GO,NodeT>::
+postRegistrationSetup(typename TRAITS::SetupData d,
+		      PHX::FieldManager<TRAITS>& fm)
 {
   fieldIds_.resize(scatterFields_.size());
   // load required field numbers for fast use
@@ -276,24 +276,24 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT>
-void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::SGJacobian, Traits,LO,GO,NodeT>::
-preEvaluate(typename Traits::PreEvalData d)
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::SGJacobian, TRAITS,LO,GO,NodeT>::
+preEvaluate(typename TRAITS::PreEvalData d)
 {
 /*
    // extract dirichlet counter from container
    sgTpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject("Dirichlet Counter"),true);
 
-   dirichletCounter_ = sgTpetraContainer_->get_x();
+   dirichletCounter_ = sgTpetraContainer_->get_f();
    TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
 */
   TEUCHOS_ASSERT(false);
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT>
-void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::SGJacobian, Traits,LO,GO,NodeT>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::SGJacobian, TRAITS,LO,GO,NodeT>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
 /*
    typedef SGTpetraLinearObjContainer<double,LO,GO,NodeT> SGLOC;
@@ -333,7 +333,7 @@ evaluateFields(typename Traits::EvalData workset)
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
          int fieldNum = fieldIds_[fieldIndex];
    
-         // this call "should" get the right ordering accordint to the Intrepid basis
+         // this call "should" get the right ordering according to the Intrepid basis
          const std::pair<std::vector<int>,std::vector<int> > & indicePair 
                = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
          const std::vector<int> & elmtOffset = indicePair.first;
@@ -348,7 +348,7 @@ evaluateFields(typename Traits::EvalData workset)
             if(lid<0) // not on this processor
                continue;
 
-            const ScalarT & scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
+            const ScalarT scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
 
             // loop over stochastic basis scatter field values to residual vectors
             int stochIndex = 0;

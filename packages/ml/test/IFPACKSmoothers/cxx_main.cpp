@@ -2,6 +2,8 @@
 
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_GALERI) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_IFPACK)
 
+#include <vector>
+
 #ifdef HAVE_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"

@@ -53,8 +53,8 @@
 // Specialization: SGResidual
 // **********************************************************************
 
-template<typename Traits,typename LO,typename GO,typename NodeT>
-panzer::ScatterResidual_Tpetra<panzer::Traits::SGResidual, Traits,LO,GO,NodeT>::
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+panzer::ScatterResidual_Tpetra<panzer::Traits::SGResidual, TRAITS,LO,GO,NodeT>::
 ScatterResidual_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                        const Teuchos::ParameterList& p)
   : globalIndexer_(indexer) 
@@ -89,10 +89,10 @@ ScatterResidual_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,G
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT> 
-void panzer::ScatterResidual_Tpetra<panzer::Traits::SGResidual, Traits,LO,GO,NodeT>::
-postRegistrationSetup(typename Traits::SetupData d, 
-		      PHX::FieldManager<Traits>& fm)
+template<typename TRAITS,typename LO,typename GO,typename NodeT> 
+void panzer::ScatterResidual_Tpetra<panzer::Traits::SGResidual, TRAITS,LO,GO,NodeT>::
+postRegistrationSetup(typename TRAITS::SetupData d, 
+		      PHX::FieldManager<TRAITS>& fm)
 {
   // globalIndexer_ = d.globalIndexer_;
 
@@ -109,9 +109,9 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT>
-void panzer::ScatterResidual_Tpetra<panzer::Traits::SGResidual, Traits,LO,GO,NodeT>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterResidual_Tpetra<panzer::Traits::SGResidual, TRAITS,LO,GO,NodeT>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
    TEUCHOS_ASSERT(false); // this doesn't even work
 /*
@@ -156,7 +156,7 @@ evaluateFields(typename Traits::EvalData workset)
             int offset = elmtOffset[basis];
             LO lid = LIDs[offset];
 
-            const ScalarT & field = (scatterFields_[fieldIndex])(worksetCellIndex,basis);
+            const ScalarT field = (scatterFields_[fieldIndex])(worksetCellIndex,basis);
 
             // loop over stochastic basis scatter field values to residual vectors
             int stochIndex = 0;
@@ -175,8 +175,8 @@ evaluateFields(typename Traits::EvalData workset)
 // Specialization: SGJacobian
 // **********************************************************************
 
-template<typename Traits,typename LO,typename GO,typename NodeT>
-panzer::ScatterResidual_Tpetra<panzer::Traits::SGJacobian, Traits,LO,GO,NodeT>::
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+panzer::ScatterResidual_Tpetra<panzer::Traits::SGJacobian, TRAITS,LO,GO,NodeT>::
 ScatterResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
                        const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
@@ -211,10 +211,10 @@ ScatterResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & i
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT> 
-void panzer::ScatterResidual_Tpetra<panzer::Traits::SGJacobian, Traits,LO,GO,NodeT>::
-postRegistrationSetup(typename Traits::SetupData d,
-		      PHX::FieldManager<Traits>& fm)
+template<typename TRAITS,typename LO,typename GO,typename NodeT> 
+void panzer::ScatterResidual_Tpetra<panzer::Traits::SGJacobian, TRAITS,LO,GO,NodeT>::
+postRegistrationSetup(typename TRAITS::SetupData d,
+		      PHX::FieldManager<TRAITS>& fm)
 {
   // globalIndexer_ = d.globalIndexer_;
 
@@ -231,9 +231,9 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT>
-void panzer::ScatterResidual_Tpetra<panzer::Traits::SGJacobian, Traits,LO,GO,NodeT>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterResidual_Tpetra<panzer::Traits::SGJacobian, TRAITS,LO,GO,NodeT>::
+evaluateFields(typename TRAITS::EvalData workset)
 {  
    TEUCHOS_ASSERT(false);
 
@@ -281,7 +281,7 @@ evaluateFields(typename Traits::EvalData workset)
         
          // loop over the basis functions (currently they are nodes)
          for(std::size_t rowBasisNum = 0; rowBasisNum < elmtOffset.size(); rowBasisNum++) {
-            const ScalarT & scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,rowBasisNum);
+            const ScalarT scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,rowBasisNum);
             int rowOffset = elmtOffset[rowBasisNum];
             LO row = rLIDs[rowOffset];
 

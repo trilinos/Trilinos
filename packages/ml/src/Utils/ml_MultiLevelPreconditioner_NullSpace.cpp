@@ -52,7 +52,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
     // sanity check for default null-space
     if( NullSpacePtr == NULL ) NullSpaceDim = NumPDEEqns_;
     ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,NullSpaceDim,NULL,
-                               RowMatrix_->NumMyRows());
+        RowMatrix_->NumMyRows());
     if (verbose_)
       std::cout << PrintMsg_ << "Null space type      = default (constants)" << std::endl;
   } //"default vectors"
@@ -72,13 +72,13 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
     if (in_x_coord == 0) {
       if (Comm().MyPID() == 0)
         std::cerr << ErrorMsg_ << "You asked for the near null-space from coordinates," << std::endl
-             << ErrorMsg_ << "but x-coordinate vector is NULL!" << std::endl;
+          << ErrorMsg_ << "but x-coordinate vector is NULL!" << std::endl;
       ML_EXIT(EXIT_FAILURE);
     }
 
     NullSpacePtr = new double[NullSpaceDim*NumMyRows()];
     ML_Coord2RBM(NumMyRows()/NumPDEEqns_, in_x_coord, in_y_coord, in_z_coord, NullSpacePtr,
-                 NumPDEEqns_, 0);
+        NumPDEEqns_, 0);
     ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,NullSpaceDim,NullSpacePtr, RowMatrix_->NumMyRows());
     if (verbose_) {
       std::cout << PrintMsg_ << "Null space type      = elasticity from coordinates" << std::endl;
@@ -99,7 +99,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
     }
 
     ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,NullSpaceDim,NullSpacePtr,
-			       RowMatrix_->NumMyRows());
+        RowMatrix_->NumMyRows());
     if (verbose_)
       std::cout << PrintMsg_ << "Null space type      = user-supplied" << std::endl;
 
@@ -142,7 +142,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
     // create a double vector hosting null space
     if( NullSpacePtr ) {
       std::cerr << ErrorMsg_ << "NullSpacePtr is not NULL. Is null space already defined?" << std::endl
-	   << ErrorMsg_ << "Now I delete the old null space, and proceed with finger crossed..." << std::endl;
+        << ErrorMsg_ << "Now I delete the old null space, and proceed with finger crossed..." << std::endl;
       delete [] NullSpacePtr;
     }
 
@@ -150,8 +150,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
 
     if( NullSpacePtr == 0 ) {
       std::cerr << ErrorMsg_ << "Not enough space to allocate " << TotalNullSpaceDim*NumMyRows()*8
-	   << " bytes" << std::endl
-	   << "(file " << __FILE__ << ", line " << __LINE__ << ")" << std::endl;
+        << " bytes" << std::endl
+        << "(file " << __FILE__ << ", line " << __LINE__ << ")" << std::endl;
     }
 
     // here NullSpaceDim is the number of eigenvalues/vectors that Anasazi has to compute
@@ -161,10 +161,10 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
     double * ImagEigenvalues = new double[NullSpaceDim];
 
     /*
-    int offset;
-    if( UseDefaultVectors ) offset = NumPDEEqns_;
-    else                    offset = 0;
-    */
+       int offset;
+       if( UseDefaultVectors ) offset = NumPDEEqns_;
+       else                    offset = 0;
+       */
 
     // create List for Anasazi (kept separate from List_, I don't want to pollute it)
     ParameterList AnasaziList;
@@ -173,26 +173,26 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
 
       std::string opt = List_.get("null space: matrix operation", "I-A");
       if( opt == "I-A" ) {
-	AnasaziList.set("eigen-analysis: matrix operation", opt);
-	AnasaziList.set("eigen-analysis: action", "LM");
-	AnasaziList.set("eigen-analysis: use diagonal scaling",false);
-      }	else if( opt == "I-D^{-1}A" ) {
-	AnasaziList.set("eigen-analysis: matrix operation", "I-A");
-	AnasaziList.set("eigen-analysis: action", "LM");
-	AnasaziList.set("eigen-analysis: use diagonal scaling",true);
+        AnasaziList.set("eigen-analysis: matrix operation", opt);
+        AnasaziList.set("eigen-analysis: action", "LM");
+        AnasaziList.set("eigen-analysis: use diagonal scaling",false);
+      } else if( opt == "I-D^{-1}A" ) {
+        AnasaziList.set("eigen-analysis: matrix operation", "I-A");
+        AnasaziList.set("eigen-analysis: action", "LM");
+        AnasaziList.set("eigen-analysis: use diagonal scaling",true);
       } else if( opt == "A" ) {
-	AnasaziList.set("eigen-analysis: matrix operation", opt);
-	AnasaziList.set("eigen-analysis: action", "SM");
-	AnasaziList.set("eigen-analysis: use diagonal scaling",false);
+        AnasaziList.set("eigen-analysis: matrix operation", opt);
+        AnasaziList.set("eigen-analysis: action", "SM");
+        AnasaziList.set("eigen-analysis: use diagonal scaling",false);
       } else if( opt == "D^{-1}A" ) {
-	AnasaziList.set("eigen-analysis: matrix operation", "A");
-	AnasaziList.set("eigen-analysis: action", "SM");
-	AnasaziList.set("eigen-analysis: use diagonal scaling",true);
+        AnasaziList.set("eigen-analysis: matrix operation", "A");
+        AnasaziList.set("eigen-analysis: action", "SM");
+        AnasaziList.set("eigen-analysis: use diagonal scaling",true);
       } else {
-	std::cerr << ErrorMsg_ << "value for `null space: matrix operation' not recognized" << std::endl
-	     << ErrorMsg_ << "(" << opt << "). It should be: " << std::endl
-	     << ErrorMsg_ << "<I-A> / <A> / <D^{-1}A> / <I-D^{-1}A>" << std::endl;
-	exit( EXIT_FAILURE );
+        std::cerr << ErrorMsg_ << "value for `null space: matrix operation' not recognized" << std::endl
+          << ErrorMsg_ << "(" << opt << "). It should be: " << std::endl
+          << ErrorMsg_ << "<I-A> / <A> / <D^{-1}A> / <I-D^{-1}A>" << std::endl;
+        exit( EXIT_FAILURE );
       }
 
       AnasaziList.set("eigen-analysis: length", List_.get("eigen-analysis: length", 20));
@@ -214,15 +214,15 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
     else                         ImagEigenvectors = 0;
 
     ML_Anasazi::Interface(RowMatrix_,EigenVectors,RealEigenvalues,
-			  ImagEigenvalues, AnasaziList, RealEigenvectors,
-			  ImagEigenvectors);
+        ImagEigenvalues, AnasaziList, RealEigenvectors,
+        ImagEigenvectors);
 
     // fill it with normal 0's and 1's for standard vectors
     if( UseDefaultVectors )
       for( int i=0 ; i<NumPDEEqns_ ; ++i )
-	for( int j=0 ; j<NumMyRows() ; ++j )
-	  if( j%NumPDEEqns_ == i ) NullSpacePtr[j+i*NumMyRows()] = 1.0;
-	  else                     NullSpacePtr[j+i*NumMyRows()] = 0.0;
+        for( int j=0 ; j<NumMyRows() ; ++j )
+          if( j%NumPDEEqns_ == i ) NullSpacePtr[j+i*NumMyRows()] = 1.0;
+          else                     NullSpacePtr[j+i*NumMyRows()] = 0.0;
 
     NullSpaceToFree_ = NullSpacePtr; // this null space will be freed later
 
@@ -230,10 +230,10 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
     if( verbose_ ) {
       std::cout << PrintMsg_ << "\tComputed eigenvalues:" << std::endl;
       for( int i=0 ; i<NullSpaceDim ; ++i ) {
-	std::cout << PrintMsg_ << "\t" << std::setw(10) << RealEigenvalues[i]
-	     << " + " << std::setw(10) << ImagEigenvalues[i] << " i" << std::endl;
-	if( RealEigenvalues[i] == 0 ) ++Discarded;
-	if( ImagEigenvalues[i] == 0 ) ++Discarded;
+        std::cout << PrintMsg_ << "\t" << std::setw(10) << RealEigenvalues[i]
+          << " + " << std::setw(10) << ImagEigenvalues[i] << " i" << std::endl;
+        if( RealEigenvalues[i] == 0 ) ++Discarded;
+        if( ImagEigenvalues[i] == 0 ) ++Discarded;
       }
       std::cout << std::endl;
     }
@@ -245,18 +245,18 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
 
     if( 0 ) { // debugging only, print all computed eigenvectors
       for( int i=0 ; i<NumMyRows() ; ++i ) {
-	std::cout << i << ": ";
-	for( int j=0 ; j<TotalNullSpaceDim-Discarded ; ++j ) {
-	  std::cout << NullSpacePtr[i+j*NumMyRows()] << " ";
-	}
-	std::cout << std::endl;
+        std::cout << i << ": ";
+        for( int j=0 ; j<TotalNullSpaceDim-Discarded ; ++j ) {
+          std::cout << NullSpacePtr[i+j*NumMyRows()] << " ";
+        }
+        std::cout << std::endl;
       }
     }
 
 
     ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,TotalNullSpaceDim-Discarded,
-			       NullSpacePtr,
-			       NumMyRows());
+        NullSpacePtr,
+        NumMyRows());
 
     delete [] RealEigenvalues;
     delete [] ImagEigenvalues;
@@ -264,9 +264,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
     if( verbose_ ) std::cout << PrintMsg_ << "Total time for eigen-analysis = " << Time.ElapsedTime() << " (s)\n";
 
 #else
-     std::cout << "ML_Anasazi ERROR: you must compile with --with-ml_anasazi "  << std::endl
-       << "ML_Anasazi ERROR: for eigen-analysis." << std::endl;
-     exit( EXIT_FAILURE );
+    std::cout << "ML_Anasazi ERROR: you must compile with --with-ml_anasazi "  << std::endl
+      << "ML_Anasazi ERROR: for eigen-analysis." << std::endl;
+    exit( EXIT_FAILURE );
 #endif
 
   }
@@ -274,9 +274,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
   else
   {
     std::cerr << ErrorMsg_ << "Option `null space: type' not recognized ("
-	 << option << ")" << std::endl
-	 << ErrorMsg_ << "It should be:" << std::endl
-	 << ErrorMsg_ << "<default vectors> / <pre-computed> / <elasticity from coordinates> / <enriched>" << std::endl;
+      << option << ")" << std::endl
+      << ErrorMsg_ << "It should be:" << std::endl
+      << ErrorMsg_ << "<default vectors> / <pre-computed> / <elasticity from coordinates> / <enriched>" << std::endl;
     exit(EXIT_FAILURE);
   }
 
@@ -289,7 +289,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
     if (verbose_)
       std::cout << PrintMsg_ << "Scaling Null Space..." << std::endl;
     ML_Aggregate_Scale_NullSpace(agg_,NullSpaceScaling,
-                                 RowMatrix_->RowMatrixRowMap().NumMyElements());
+        RowMatrix_->RowMatrixRowMap().NumMyElements());
   }
 
   if (verbose_) std::cout << PrintMsg_ << "Null space dimension = " << NullSpaceDim << std::endl;

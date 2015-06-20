@@ -47,6 +47,7 @@
 #define MUELU_SAPFACTORY_DEF_HPP
 
 #include <Xpetra_Matrix.hpp>
+#include <sstream>
 
 #include "MueLu_SaPFactory_decl.hpp"
 
@@ -61,8 +62,8 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const ParameterList> SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const ParameterList> SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
@@ -77,8 +78,8 @@ namespace MueLu {
     return validParamList;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     Input(fineLevel, "A");
 
     // Get default tentative prolongator factory
@@ -88,14 +89,16 @@ namespace MueLu {
     coarseLevel.DeclareInput("P", initialPFact.get(), this); // --
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& fineLevel, Level &coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level &coarseLevel) const {
     return BuildP(fineLevel, coarseLevel);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildP(Level &fineLevel, Level &coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level &fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Prolongator smoothing", coarseLevel);
+    std::ostringstream levelstr;
+    levelstr << coarseLevel.GetLevelID();
 
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
 
@@ -145,7 +148,7 @@ namespace MueLu {
         SC omega = dampingFactor / lambdaMax;
 
         // finalP = Ptent + (I - \omega D^{-1}A) Ptent
-        finalP = Utils::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2));
+        finalP = Utils::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2),std::string("MueLu::SaP-")+levelstr.str());
       }
 
     } else {
@@ -181,14 +184,14 @@ namespace MueLu {
   } //Build()
 
   // deprecated
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetDampingFactor(Scalar dampingFactor) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetDampingFactor(Scalar dampingFactor) {
     SetParameter("sa: damping factor", ParameterEntry(dampingFactor)); // revalidate
   }
 
   // deprecated
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Scalar SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetDampingFactor() {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Scalar SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetDampingFactor() {
     const ParameterList & pL = GetParameterList();
     return as<Scalar>(pL.get<double>("sa: damping factor"));
   }

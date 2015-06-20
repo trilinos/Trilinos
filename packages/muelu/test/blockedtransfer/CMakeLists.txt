@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
@@ -13,7 +12,6 @@ TRIBITS_ADD_EXECUTABLE(
     BlockedTransfer
     SOURCES BlockedTransfer.cpp
     COMM serial mpi
-    DEPLIBS muelu xpetra
   )
 
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack)
@@ -56,7 +54,6 @@ ENDIF() # Galeri
 #    SOURCES tsiexample.cpp
 #    ARGS ""
 #    COMM serial mpi
-#    DEPLIBS muelu xpetra
 #  )
 
 #TRIBITS_COPY_FILES_TO_BINARY_DIR(TSIExample_test_cp

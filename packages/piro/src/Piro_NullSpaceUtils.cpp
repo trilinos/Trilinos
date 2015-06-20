@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Glen Hansen (gahanse@sandia.gov), Sandia
+// Questions? Contact Glen Hansen (gahanse@sandia.gov), Irina Kalashnikova (ikalash@sandia.gov), Sandia
 // National Laboratories.
 //
 // ************************************************************************
@@ -49,10 +49,11 @@ namespace Piro {
   MLRigidBodyModes::MLRigidBodyModes(int numPDEs_)
     : numPDEs(numPDEs_),
     numElasticityDim(0),
+    numScalar(0),
     nullSpaceDim(0),
     numSpaceDim(0),
-    numScalar(0),
-    mlUsed(false)
+    mlUsed(false),
+    mueLuUsed(false)
   {
   }
 
@@ -67,6 +68,18 @@ namespace Piro {
           mlList =
             sublist(sublist(sublist(stratList, "Preconditioner Types"), "ML"), "ML Settings");
           mlUsed = true;
+        }
+        else if ("MueLu" == stratList->get<std::string>("Preconditioner Type")) {
+          // MueLu preconditioner is used, get nodal coordinates from application
+          mueLuList =
+            sublist(sublist(stratList, "Preconditioner Types"), "MueLu");
+          mueLuUsed = true;
+        }
+        else if ("MueLu-Tpetra" == stratList->get<std::string>("Preconditioner Type")) {
+          // MueLu preconditioner is used, get nodal coordinates from application
+          mueLuList =
+            sublist(sublist(stratList, "Preconditioner Types"), "MueLu-Tpetra");
+          mueLuUsed = true;
         }
       }
 
@@ -92,7 +105,12 @@ namespace Piro {
       else y.resize(numNodes);
       if ( (numNodes == 0) && (numSpaceDim_ > 2) ) z.resize(1);
       else z.resize(numNodes);
+      
+      //For MueLu: allocate vector holding the x, y and z coordinates concatenated
+      if ( (numNodes == 0)) xyz.resize(1);
+      else xyz.resize((numSpaceDim+1)*numNodes);
 
+      //std<vector> rr is used for both MueLu and ML 
       if(nullSpaceDim > 0) rr.resize((nullSpaceDim + numScalar) * numPDEs * numNodes + 1);
 
     }
@@ -103,6 +121,13 @@ namespace Piro {
       *xx = &x[0];
       *yy = &y[0];
       *zz = &z[0];
+
+    }
+  
+  void
+    MLRigidBodyModes::getCoordArraysMueLu(double **xxyyzz){
+
+      *xxyyzz = &xyz[0];
 
     }
 
@@ -165,6 +190,7 @@ namespace Piro {
         double x[], double y[], double z[], double rbm[], int Ndof, int NscalarDof, int NSdim)
     {
 
+
       int vec_leng, ii, jj, offset, node, dof;
 
       vec_leng = Nnodes*Ndof;
@@ -184,8 +210,7 @@ namespace Piro {
                 rbm[offset] = (ii==jj) ? 1.0 : 0.0;
               }
             }
-            break;
-
+            /* There is no break here and that is on purpose */
           case 3:
             for(ii=0;ii<3+NscalarDof;ii++){ /* upper left = [ I ] */
               for(jj=0;jj<3+NscalarDof;jj++){
@@ -252,7 +277,7 @@ namespace Piro {
       return;
 
 
-    } /*ML_Coord2RBM*/
+    } /*Piro_ML_Coord2RBM*/
 
 
 

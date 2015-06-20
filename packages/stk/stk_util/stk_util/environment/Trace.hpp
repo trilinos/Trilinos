@@ -1,3 +1,36 @@
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+
 #ifndef STK_UTIL_SIERRA_TRACE_HPP
 #define STK_UTIL_SIERRA_TRACE_HPP
 
@@ -127,7 +160,14 @@ public:
    * let it go.
    *
    */
-  typedef std::map<const char *, int> Coverage;
+  struct StringLiteralLess
+  {
+    inline bool operator()(const char *lhs, const char *rhs) const
+    {
+      return std::strcmp(lhs, rhs) < 0;
+    }
+  };
+  typedef std::map<const char *, int, StringLiteralLess> Coverage;
 
   /**
    * @brief Class <b>Traceback::Preserve</b> serves as a sentry for traceback
@@ -310,18 +350,6 @@ public:
    */
   static std::string printTraceback(const TracebackStack &traceback_stack);
 
-  /**
-   * @brief Member function <b>verbose_print</b> dumps the function specification
-   * stack to the diagnostic writer.
-   *
-   * @param dout		a <b>Writer</b> reference to the diagnostic
-   *				writer to write to.
-   *
-   * @return			a <b>Writer</b> reference to the diagnostic
-   *				writer.
-   */
-  Writer &verbose_print(Writer &dout) const;
-
 private:
   static TracebackState    s_tracebackState;  ///< State of the traceback system
   static int      s_tracebackPreserve;  ///< Preserve traceback stack
@@ -367,6 +395,9 @@ public:
     }
 
     ~TraceList() {
+      for(size_t i=0; i<size(); ++i) {
+        delete [] operator[](i);
+      }
       s_traceListExists = false;
     }
   };

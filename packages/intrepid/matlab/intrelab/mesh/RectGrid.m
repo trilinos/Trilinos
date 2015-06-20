@@ -230,6 +230,7 @@ elseif strcmp(lower(celltype), 'quadrilateral')
   mesh.side_ss{1}   = 0*ones(nx,1);  % bottom 
   mesh.side_ss{2}   = 1*ones(ny,1);  % right 
   mesh.side_ss{3}   = 2*ones(nx,1);  % top
+  mesh.side_ss{4}   = 3*ones(ny,1);  % left
 end
 
 

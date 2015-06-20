@@ -81,16 +81,18 @@ namespace Teuchos {
 const std::string TabularOutputter::fieldSpacer_("  ");
 
 
-TabularOutputter::TabularOutputter(std::ostream &out)
-  :timer_("")
+TabularOutputter::TabularOutputter(std::ostream &out):
+  timer_(""),
+  numLoops_(0)
 {
   initialize();
   setOStream(rcpFromRef(out));
 }
 
 
-TabularOutputter::TabularOutputter(const RCP<std::ostream> &out)
-  :timer_("")
+TabularOutputter::TabularOutputter(const RCP<std::ostream> &out):
+  timer_(""),
+  numLoops_(0)
 {
   initialize();
   setOStream(out);
@@ -141,7 +143,7 @@ void TabularOutputter::setFieldTypePrecision( const EFieldType fieldType,
 
 void TabularOutputter::outputHeader()
 {
-  
+
   using std::left;
   using std::setw;
 

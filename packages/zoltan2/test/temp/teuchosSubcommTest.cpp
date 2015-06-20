@@ -30,16 +30,16 @@ int main(int narg, char **arg)
     comm = Teuchos::DefaultComm<int>::getComm();
   int me = comm->getRank();
   int np = comm->getSize();
-  bool manual_comm_free = false;
+//  bool manual_comm_free = false;
 
   if (me == 0) 
     printf("Usage:  Zoltan2_teuchosSubcommTest.exe "
            "[-f to call MPI_Comm_free]\n");
 
   int niter = 4;
-  if (narg > 1) 
-    if (!strcmp(arg[1], "-f"))
-      manual_comm_free = true;
+//  if (narg > 1) 
+//    if (!strcmp(arg[1], "-f"))
+//      manual_comm_free = true;
 
   int *ids = NULL;
   ids = new int[np/2+1];

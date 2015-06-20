@@ -59,7 +59,7 @@ DoubleEntry::DoubleEntry(const double& value, int precision)
   : TableEntry(), data_(value), precision_(precision)
 {}
 
-std::string DoubleEntry::toString() const 
+std::string DoubleEntry::toString() const
 {
   std::ostringstream toss;
   toss << std::setprecision(precision_) << data_;
@@ -74,7 +74,7 @@ IntEntry::IntEntry(int value)
   : TableEntry(), data_(value)
 {}
 
-std::string IntEntry::toString() const 
+std::string IntEntry::toString() const
 {
   std::ostringstream toss;
   toss << data_;
@@ -89,7 +89,7 @@ StringEntry::StringEntry(std::string value)
   : TableEntry(), data_(value)
 {}
 
-std::string StringEntry::toString() const 
+std::string StringEntry::toString() const
 {
   return data_;
 }
@@ -104,20 +104,20 @@ CompoundEntryWithParentheses
 ::CompoundEntryWithParentheses(const RCP<TableEntry>& first,
                                 const RCP<TableEntry>& second,
                                 bool spaceBeforeParens)
-  : TableEntry(), 
-    first_(first), 
-    second_(second), 
+  : TableEntry(),
+    first_(first),
+    second_(second),
     spaceBeforeParens_(spaceBeforeParens)
 {}
 
-std::string CompoundEntryWithParentheses::toString() const 
+std::string CompoundEntryWithParentheses::toString() const
 {
   std::ostringstream toss;
-  
+
   toss << first_->toString();
   if (spaceBeforeParens_) toss << " ";
   toss << "(" << second_->toString() << ")";
-  
+
   return toss.str();
 }
 

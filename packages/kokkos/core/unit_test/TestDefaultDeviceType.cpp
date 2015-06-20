@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -51,7 +51,6 @@
 #include <TestViewImpl.hpp>
 #include <TestAtomic.hpp>
 
-#include <TestMemoryTracking.hpp>
 #include <TestViewAPI.hpp>
 
 #include <TestReduce.hpp>
@@ -60,6 +59,7 @@
 #include <TestAggregate.hpp>
 #include <TestCompilerMacros.hpp>
 #include <TestCXX11.hpp>
+#include <TestTeamVector.hpp>
 
 namespace Test {
 
@@ -192,10 +192,7 @@ TEST_F( defaultdevicetype , view_aggregate )
 
 TEST_F( defaultdevicetype , scan )
 {
-  for ( int i = 0 ; i < 1000 ; ++i ) {
-    TestScan< Kokkos::DefaultExecutionSpace >( 10 );
-    TestScan< Kokkos::DefaultExecutionSpace >( 10000 );
-  }
+  TestScan< Kokkos::DefaultExecutionSpace >::test_range( 1 , 1000 );
   TestScan< Kokkos::DefaultExecutionSpace >( 1000000 );
   TestScan< Kokkos::DefaultExecutionSpace >( 10000000 );
   Kokkos::DefaultExecutionSpace::fence();
@@ -226,6 +223,28 @@ TEST_F( defaultdevicetype , cxx11 )
   ASSERT_TRUE( ( TestCXX11::Test< Kokkos::DefaultExecutionSpace >(4) ) );
 }
 #endif
+
+#if defined (KOKKOS_HAVE_CXX11)
+TEST_F( defaultdevicetype , team_vector )
+{
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::DefaultExecutionSpace >(0) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::DefaultExecutionSpace >(1) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::DefaultExecutionSpace >(2) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::DefaultExecutionSpace >(3) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::DefaultExecutionSpace >(4) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::DefaultExecutionSpace >(5) ) );
+}
+#endif
+
+#if defined (KOKKOS_HAVE_CXX11)
+TEST_F( defaultdevicetype , malloc )
+{
+  int* data = (int*) Kokkos::kokkos_malloc(100*sizeof(int));
+  ASSERT_NO_THROW(data = (int*) Kokkos::kokkos_realloc(data,120*sizeof(int)));
+  Kokkos::kokkos_free(data);
+}
+#endif
+
 } // namespace test
 
 #endif

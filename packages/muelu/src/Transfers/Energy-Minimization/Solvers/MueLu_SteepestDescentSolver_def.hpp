@@ -52,19 +52,22 @@
 #include "MueLu_SteepestDescentSolver_decl.hpp"
 
 #include "MueLu_Constraint.hpp"
+#include "MueLu_Monitor.hpp"
 #include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
   using Teuchos::rcp_const_cast;
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  SteepestDescentSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SteepestDescentSolver(size_t Its, SC StepLength)
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  SteepestDescentSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SteepestDescentSolver(size_t Its, SC StepLength)
   : nIts_(Its), stepLength_(StepLength)
   { }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void SteepestDescentSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Iterate(const Matrix& Aref, const Constraint& C, const Matrix& P0, RCP<Matrix>& P) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void SteepestDescentSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(const Matrix& Aref, const Constraint& C, const Matrix& P0, RCP<Matrix>& P) const {
+    PrintMonitor m(*this, "SD iterations");
+
     RCP<const Matrix> A = rcpFromRef(Aref);
     RCP<Matrix> AP, G;
 

@@ -54,41 +54,8 @@ namespace Sacado {
 
 namespace Sacado {
 
-  //! Specialization of %Promote to PCe types
-  template <typename S>
-  class Promote< UQ::PCE<S>, UQ::PCE<S> > {
-  public:
-
-    typedef UQ::PCE<S> type;
-  };
-
   //! Specialization of %Promote to PCE types
-  template <typename S, typename R>
-  class Promote< UQ::PCE<S>, R > {
-  public:
-
-    typedef typename ValueType< UQ::PCE<S> >::type value_type_l;
-    typedef typename ValueType<R>::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-    typedef typename S::ordinal_type ordinal_type;
-    typedef typename Sacado::mpl::apply<S,ordinal_type,value_type>::type storage_type;
-
-    typedef UQ::PCE<storage_type> type;
-  };
-
-  //! Specialization of %Promote to OrthogPoly types
-  template <typename S, typename L>
-  class Promote< L, UQ::PCE<S> > {
-  public:
-
-    typedef typename ValueType<L>::type value_type_l;
-    typedef typename ValueType< UQ::PCE<S> >::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-    typedef typename S::ordinal_type ordinal_type;
-    typedef typename Sacado::mpl::apply<S,ordinal_type,value_type>::type storage_type;
-
-    typedef UQ::PCE<storage_type> type;
-  };
+  SACADO_AD_PROMOTE_SPEC( UQ, PCE )
 
   //! Specialization of %ScalarType to PCE types
   template <typename S>

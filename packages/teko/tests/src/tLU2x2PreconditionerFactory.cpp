@@ -290,8 +290,6 @@ bool tLU2x2PreconditionerFactory::test_isCompatable(int verbosity,std::ostream &
 bool tLU2x2PreconditionerFactory::test_identity(int verbosity,std::ostream & os)
 {
    // make sure the preconditioner is working by testing against the identity matrix
-   typedef RCP<const Thyra::VectorBase<double> > Vector;
-   typedef RCP<const Thyra::VectorSpaceBase<double> > VectorSpace;
    typedef RCP<const Thyra::LinearOpBase<double> > LinearOp;
 
    bool status = false;
@@ -367,8 +365,6 @@ bool tLU2x2PreconditionerFactory::test_identity(int verbosity,std::ostream & os)
 bool tLU2x2PreconditionerFactory::test_diagonal(int verbosity,std::ostream & os)
 {
    // make sure the preconditioner is working by testing against the identity matrix
-   typedef RCP<const Thyra::VectorBase<double> > Vector;
-   typedef RCP<const Thyra::VectorSpaceBase<double> > VectorSpace;
    typedef RCP<const Thyra::LinearOpBase<double> > LinearOp;
 
    bool status = false;
@@ -539,9 +535,6 @@ bool tLU2x2PreconditionerFactory::test_diagonal(int verbosity,std::ostream & os)
 
 bool tLU2x2PreconditionerFactory::test_result(int verbosity,std::ostream & os)
 {
-   typedef RCP<const Thyra::VectorBase<double> > Vector;
-   typedef RCP<const Thyra::VectorSpaceBase<double> > VectorSpace;
-
    bool status = false;
    bool allPassed = true;
    double diff;
@@ -633,9 +626,6 @@ bool tLU2x2PreconditionerFactory::test_result(int verbosity,std::ostream & os)
 
 bool tLU2x2PreconditionerFactory::test_alphabeta(int verbosity,std::ostream & os)
 {
-   typedef RCP<const Thyra::VectorBase<double> > Vector;
-   typedef RCP<const Thyra::VectorSpaceBase<double> > VectorSpace;
-
    bool status = false;
    bool allPassed = true;
    double diff;

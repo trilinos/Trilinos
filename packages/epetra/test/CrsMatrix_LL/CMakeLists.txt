@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_test_LL

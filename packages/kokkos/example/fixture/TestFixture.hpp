@@ -2,8 +2,8 @@
 //@HEADER
 // ************************************************************************
 // 
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
 // 
 // ************************************************************************
 //@HEADER
@@ -47,12 +47,7 @@
 #include <utility>
 #include <iostream>
 
-#include <Kokkos_Macros.hpp>
-#include <HostExecSpace.hpp>
-
-#if defined( KOKKOS_HAVE_CUDA )
-#include <Kokkos_Cuda.hpp>
-#endif
+#include <Kokkos_Core.hpp>
 
 #include <BoxElemPart.hpp>
 #include <BoxElemFixture.hpp>
@@ -63,7 +58,7 @@ namespace Example {
 template< class Device >
 struct FixtureVerifyElemNodeCoord
 {
-  typedef Device device_type ;
+  typedef Device execution_space ;
 
   typedef struct { size_t success , error ; } value_type ;
 
@@ -125,9 +120,9 @@ void test_fixture()
     decompose = Kokkos::Example::BoxElemPart:: DecomposeElem ; // DecomposeElem | DecomposeNode ;
 
   const unsigned global_size = 256 ;
-  const unsigned global_nx = 100 ;
-  const unsigned global_ny = 120 ;
-  const unsigned global_nz = 140 ;
+  const unsigned global_nx = 400 ;
+  const unsigned global_ny = 400 ;
+  const unsigned global_nz = 400 ;
 
   for ( unsigned my_rank = 0 ; my_rank < global_size ; ++my_rank ) {
 

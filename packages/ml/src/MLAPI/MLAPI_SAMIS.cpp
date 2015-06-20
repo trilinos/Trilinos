@@ -24,7 +24,12 @@ namespace SAMIS {
 #include <sys/stat.h>
 */
 #include <fcntl.h>
+
+#ifndef ICL
+#ifndef _WIN32
 #include <unistd.h>
+#endif
+#endif
 #include <iostream>
 #include <fstream>
 

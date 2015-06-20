@@ -40,6 +40,7 @@
 // @HEADER
 
 
+#include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_UnitTestBase.hpp"
 #include "Teuchos_TestingHelpers.hpp"
@@ -188,7 +189,11 @@ public:
   InstanceData()
     :clp(false),
      showTestDetails(SHOW_TEST_DETAILS_TEST_NAMES),
+#if defined(HAVE_TEUCHOS_GLOBALLY_REDUCE_UNITTEST_RESULTS)
+     globallyReduceUnitTestResult(true),
+#else
      globallyReduceUnitTestResult(false),
+#endif
      showSrcLocation(false),
      showFailSrcLocation(true),
      noOp(false),
@@ -249,7 +254,7 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
   Array<std::string> failedTests;
 
   try {
-    
+
     out << "\nSorting tests by group name then by the order they were added ...";
     timer.start(true);
     std::sort( data.unitTests.begin(), data.unitTests.end() );
@@ -315,41 +320,41 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
             if (!result) {
 
               failedTests.push_back(testHeader);
-              
+
               if (!showTestNames)
                 out <<testHeader<<"\n"<<std::flush;
               else if (!showAll)
                 out <<"\n";
-              
+
               if (!is_null(oss))
                 out << oss->str();
-              
+
               out
                 <<"[FAILED] "
                 <<" "<<setprecision(timerPrec)<<"("<<timer.totalElapsedTime()<< " sec)"
                 <<" "<<unitTestName<<"\n"
                 <<"Location: "<<utd.unitTest->unitTestFile()<<":"
                 <<utd.unitTest->unitTestFileLineNumber()<<"\n";
-              
+
               if (!is_null(oss))
                 out << "\n";
-              
+
               success = false;
-              
+
               ++numTestsFailed;
-              
+
             }
             else {
-              
+
               if (showTestNames)
                 out << "[Passed] "
                     << setprecision(timerPrec)<<"("<<timer.totalElapsedTime()<<" sec)\n";
-              
+
               if (showAll && data.showSrcLocation)
                 out
                   << "Location: "<<utd.unitTest->unitTestFile()<<":"
                   <<utd.unitTest->unitTestFileLineNumber()<<"\n";
-              
+
             }
 
           }
@@ -357,11 +362,11 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
 
             if (showTestNames)
               out << "[Not Run]\n";
-            
+
           }
 
         }
-   
+
       }
 
     }
@@ -395,7 +400,7 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
       << ", passed = ???"
       << ", failed = ???\n";
   }
-    
+
   return success;
 
 }
@@ -517,7 +522,7 @@ void UnitTestRepository::setUpCLP(const Ptr<CommandLineProcessor>& clp)
     "no-op", "do-op", &getData().noOp,
     "If --no-op, then only the names of the tests that would be run are run."
     );
-  
+
 }
 
 

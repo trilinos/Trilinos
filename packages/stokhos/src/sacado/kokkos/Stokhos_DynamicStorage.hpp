@@ -62,7 +62,8 @@ namespace Stokhos {
 
     typedef ordinal_t ordinal_type;
     typedef value_t value_type;
-    typedef device_t device_type;
+    typedef typename device_t::execution_space execution_space;
+    typedef typename device_t::memory_space memory_space;
     typedef value_type& reference;
     typedef volatile value_type& volatile_reference;
     typedef const value_type& const_reference;
@@ -71,7 +72,7 @@ namespace Stokhos {
     typedef volatile value_type* volatile_pointer;
     typedef const value_type* const_pointer;
     typedef const volatile value_type* const_volatile_pointer;
-    typedef Stokhos::DynArrayTraits<value_type,device_type> ds;
+    typedef Stokhos::DynArrayTraits<value_type,execution_space> ds;
 
     //! Turn DynamicStorage into a meta-function class usable with mpl::apply
     template <typename ord_t, typename val_t = value_t , typename dev_t = device_t >
@@ -81,40 +82,92 @@ namespace Stokhos {
 
     template <int N>
     struct apply_N {
-      typedef DynamicStorage<ordinal_type,value_type,device_type> type;
+      typedef DynamicStorage<ordinal_type,value_type,device_t> type;
     };
 
     //! Constructor
     KOKKOS_INLINE_FUNCTION
-    DynamicStorage(const ordinal_type& sz,
+    DynamicStorage(const ordinal_type& sz = 1,
                    const value_type& x = value_type(0.0)) :
       sz_(sz), is_view_(false) {
-      coeff_ = ds::get_and_fill(sz_, x);
+      if (sz_ == 0) {
+        sz_ = 1;
+        coeff_0_ = x;
+        coeff_ = &coeff_0_;
+        is_constant_ = true;
+      }
+      else if (sz_ == 1) {
+        coeff_0_ = x;
+        coeff_ = &coeff_0_;
+        is_constant_ = true;
+      }
+      else {
+        coeff_ = ds::get_and_fill(sz_, x);
+        is_constant_ = false;
+      }
+    }
+
+    //! Constructor from array
+    KOKKOS_INLINE_FUNCTION
+    DynamicStorage(const ordinal_type& sz, const value_type* x) :
+      sz_(sz), is_view_(false) {
+      if (sz_ == 0) {
+        sz_ = 1;
+        coeff_0_ = 0.0;
+        coeff_ = &coeff_0_;
+        is_constant_ = true;
+      }
+      else if (sz_ == 1) {
+        coeff_0_ = *x;
+        coeff_ = &coeff_0_;
+        is_constant_ = true;
+      }
+      else {
+        coeff_ = ds::get_and_fill(x, sz_);
+        is_constant_ = false;
+      }
     }
 
     //! Constructor for creating a view
+    // This might be problematic if sz == 1 and owned == true
     KOKKOS_INLINE_FUNCTION
     DynamicStorage(const ordinal_type& sz, pointer v, bool owned) :
-      coeff_(v), sz_(sz), is_view_(!owned) {}
+      coeff_(v), sz_(sz), is_view_(!owned), is_constant_(false) {}
 
     //! Constructor
     KOKKOS_INLINE_FUNCTION
     DynamicStorage(const DynamicStorage& s) :
       sz_(s.sz_), is_view_(false) {
-      coeff_ = ds::get_and_fill(s.coeff_, sz_);
+      if (sz_ > 1) {
+        coeff_ = ds::get_and_fill(s.coeff_, sz_);
+        is_constant_ = false;
+      }
+      else {
+        coeff_0_ = s.coeff_[0];
+        coeff_ = &coeff_0_;
+        is_constant_ = true;
+      }
     }
 
     //! Constructor
     KOKKOS_INLINE_FUNCTION
     DynamicStorage(const volatile DynamicStorage& s) :
       sz_(s.sz_), is_view_(false) {
-      coeff_ = ds::get_and_fill(s.coeff_, sz_);
+      if (sz_ > 1) {
+        coeff_ = ds::get_and_fill(s.coeff_, sz_);
+        is_constant_ = false;
+      }
+      else {
+        coeff_0_ = s.coeff_[0];
+        coeff_ = &coeff_0_;
+        is_constant_ = true;
+      }
     }
 
     //! Destructor
     KOKKOS_INLINE_FUNCTION
     ~DynamicStorage() {
-      if (!is_view_) ds::destroy_and_release(coeff_, sz_);
+      if (!is_view_ && !is_constant_) ds::destroy_and_release(coeff_, sz_);
     }
 
     //! Assignment operator
@@ -125,11 +178,22 @@ namespace Stokhos {
         // Only reallocate if we own the array and the sizes
         // differ
         if (!is_view_ && s.sz_ != sz_) {
-          ds::destroy_and_release(coeff_, sz_);
-          coeff_ = ds::get_and_fill(s.coeff_, s.sz_);
+          if (!is_constant_)
+            ds::destroy_and_release(coeff_, sz_);
+          if (s.sz_ > 1) {
+            coeff_ = ds::get_and_fill(s.coeff_, s.sz_);
+            is_constant_ = false;
+          }
+          else {
+            coeff_0_ = s.coeff_[0];
+            coeff_ = &coeff_0_;
+            is_constant_ = true;
+          }
           sz_ = s.sz_;
         }
         else {
+          // This should work if is_view_ or s.sz_ == sz_, regardless
+          // of whether s.sz_ or sz_ is 1
           ds::copy(s.coeff_, coeff_, s.sz_);
         }
       }
@@ -144,11 +208,22 @@ namespace Stokhos {
         // Only reallocate if we own the array and the sizes
         // differ
         if (!is_view_ && s.sz_ != sz_) {
-          ds::destroy_and_release(coeff_, sz_);
-          coeff_ = ds::get_and_fill(s.coeff_, s.sz_);
+          if (!is_constant_)
+            ds::destroy_and_release(coeff_, sz_);
+          if (s.sz_ > 1) {
+            coeff_ = ds::get_and_fill(s.coeff_, s.sz_);
+            is_constant_ = false;
+          }
+          else {
+            coeff_0_ = s.coeff_[0];
+            coeff_ = &coeff_0_;
+            is_constant_ = true;
+          }
           sz_ = s.sz_;
         }
         else {
+          // This should work if is_view_ or s.sz_ == sz_, regardless
+          // of whether s.sz_ or sz_ is 1
           ds::copy(s.coeff_, coeff_, s.sz_);
         }
       }
@@ -163,11 +238,22 @@ namespace Stokhos {
         // Only reallocate if we own the array and the sizes
         // differ
         if (!is_view_ && s.sz_ != sz_) {
-          ds::destroy_and_release(coeff_, sz_);
-          coeff_ = ds::get_and_fill(s.coeff_, s.sz_);
+          if (!is_constant_)
+            ds::destroy_and_release(coeff_, sz_);
+          if (s.sz_ > 1) {
+            coeff_ = ds::get_and_fill(s.coeff_, s.sz_);
+            is_constant_ = false;
+          }
+          else {
+            coeff_0_ = s.coeff_[0];
+            coeff_ = &coeff_0_;
+            is_constant_ = true;
+          }
           sz_ = s.sz_;
         }
         else {
+          // This should work if is_view_ or s.sz_ == sz_, regardless
+          // of whether s.sz_ or sz_ is 1
           ds::copy(s.coeff_, coeff_, s.sz_);
         }
       }
@@ -183,11 +269,22 @@ namespace Stokhos {
         // Only reallocate if we own the array and the sizes
         // differ
         if (!is_view_ && s.sz_ != sz_) {
-          ds::destroy_and_release(coeff_, sz_);
-          coeff_ = ds::get_and_fill(s.coeff_, s.sz_);
+          if (!is_constant_)
+            ds::destroy_and_release(coeff_, sz_);
+          if (s.sz_ > 1) {
+            coeff_ = ds::get_and_fill(s.coeff_, s.sz_);
+            is_constant_ = false;
+          }
+          else {
+            coeff_0_ = s.coeff_[0];
+            coeff_ = &coeff_0_;
+            is_constant_ = true;
+          }
           sz_ = s.sz_;
         }
         else {
+          // This should work if is_view_ or s.sz_ == sz_, regardless
+          // of whether s.sz_ or sz_ is 1
           ds::copy(s.coeff_, coeff_, s.sz_);
         }
       }
@@ -240,14 +337,24 @@ namespace Stokhos {
     KOKKOS_INLINE_FUNCTION
     void resize(const ordinal_type& sz) {
       if (!is_view_ && sz != sz_) {
-        value_type *coeff_new = ds::get_and_fill(sz);
-        if (sz > sz_)
-          ds::copy(coeff_, coeff_new, sz_);
-        else
-          ds::copy(coeff_, coeff_new, sz);
-        if (!is_view_)
-          ds::destroy_and_release(coeff_, sz_);
-        coeff_ = coeff_new;
+        if (sz > 1) {
+          value_type *coeff_new = ds::get_and_fill(sz);
+          if (sz > sz_)
+            ds::copy(coeff_, coeff_new, sz_);
+          else
+            ds::copy(coeff_, coeff_new, sz);
+          if (!is_view_ && !is_constant_)
+            ds::destroy_and_release(coeff_, sz_);
+          coeff_ = coeff_new;
+          is_constant_ = false;
+        }
+        else {
+          coeff_0_ = coeff_[0];
+          if (!is_constant_)
+            ds::destroy_and_release(coeff_, sz_);
+          coeff_ = &coeff_0_;
+          is_constant_ = true;
+        }
         sz_ = sz;
       }
     }
@@ -256,14 +363,24 @@ namespace Stokhos {
     KOKKOS_INLINE_FUNCTION
     void resize(const ordinal_type& sz) volatile {
       if (!is_view_ && sz != sz_) {
-        value_type *coeff_new = ds::get_and_fill(sz);
-        if (sz > sz_)
-          ds::copy(coeff_, coeff_new, sz_);
-        else
-          ds::copy(coeff_, coeff_new, sz);
-        if (!is_view_)
-          ds::destroy_and_release(coeff_, sz_);
-        coeff_ = coeff_new;
+        if (sz > 1) {
+          value_type *coeff_new = ds::get_and_fill(sz);
+          if (sz > sz_)
+            ds::copy(coeff_, coeff_new, sz_);
+          else
+            ds::copy(coeff_, coeff_new, sz);
+          if (!is_view_ && !is_constant_)
+            ds::destroy_and_release(coeff_, sz_);
+          coeff_ = coeff_new;
+          is_constant_ = false;
+        }
+        else {
+          coeff_0_ = coeff_[0];
+          if (!is_constant_)
+            ds::destroy_and_release(coeff_, sz_);
+          coeff_ = &coeff_0_;
+          is_constant_ = true;
+        }
         sz_ = sz;
       }
     }
@@ -272,7 +389,7 @@ namespace Stokhos {
     KOKKOS_INLINE_FUNCTION
     void shallowReset(pointer v, const ordinal_type& sz,
                       const ordinal_type& stride, bool owned) {
-      if (!is_view_)
+      if (!is_view_ && !is_constant_)
         ds::destroy_and_release(coeff_, sz_);
       coeff_ = v;
       sz_ = sz;
@@ -283,7 +400,7 @@ namespace Stokhos {
     KOKKOS_INLINE_FUNCTION
     void shallowReset(pointer v, const ordinal_type& sz,
                       const ordinal_type& stride, bool owned) volatile {
-      if (!is_view_)
+      if (!is_view_ && !is_constant_)
         ds::destroy_and_release(coeff_, sz_);
       coeff_ = v;
       sz_ = sz;
@@ -364,11 +481,18 @@ namespace Stokhos {
     //! Coefficient values
     pointer coeff_;
 
+    //! Coefficient value when sz_ == 1 (i.e., a constant)
+    /*! Eliminates dynamic memory allocation for this common use-case */
+    value_type coeff_0_;
+
     //! Size of array used
     ordinal_type sz_;
 
     //! Do we own the array
     bool is_view_;
+
+    //! Is the coefficient array length-1
+    bool is_constant_;
 
   };
 

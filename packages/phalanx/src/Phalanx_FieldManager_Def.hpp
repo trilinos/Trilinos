@@ -49,6 +49,7 @@
 #include "Sacado_mpl_size.hpp"
 #include "Sacado_mpl_find.hpp"
 #include "boost/mpl/at.hpp"
+#include "boost/any.hpp"
 #include "Phalanx_EvaluationContainer_TemplateBuilder.hpp"
 #include <sstream>
 
@@ -69,17 +70,6 @@ template<typename Traits>
 inline
 PHX::FieldManager<Traits>::~FieldManager()
 { }
-
-// **************************************************************
-template<typename Traits>
-template<typename DataT, typename EvalT> 
-inline
-void PHX::FieldManager<Traits>::
-getFieldData(PHX::Field<DataT>& f)
-{
-  f.setFieldData(m_eval_containers.template 
-    getAsObject<EvalT>()->template getFieldData<DataT>(f.fieldTag()) );
-}
     
 // **************************************************************
 template<typename Traits>
@@ -91,19 +81,26 @@ void PHX::FieldManager<Traits>::
 getFieldData(PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,
 	     Tag5,Tag6,Tag7>& f)
 {
-  f.setFieldData(m_eval_containers.template 
-    getAsObject<EvalT>()->template getFieldData<DataT>(f.fieldTag()) );
+  boost::any a = m_eval_containers.template
+    getAsObject<EvalT>()->getFieldData(f.fieldTag());
+
+  f.setFieldData(a);
 }
     
 // **************************************************************
 template<typename Traits>
-template<typename DataT, typename EvalT> 
+template<typename DataT, typename EvalT,
+	 typename Tag0, typename Tag1, typename Tag2, typename Tag3,
+	 typename Tag4, typename Tag5, typename Tag6, typename Tag7> 
 inline
 void PHX::FieldManager<Traits>::
-getFieldData(const PHX::FieldTag& t, Teuchos::ArrayRCP<DataT>& d)
+getFieldData(PHX::MDField<const DataT,Tag0,Tag1,Tag2,Tag3,Tag4,
+	     Tag5,Tag6,Tag7>& f)
 {
-  d = m_eval_containers.template 
-    getAsObject<EvalT>()->template getFieldData<DataT>(t);
+  boost::any a = m_eval_containers.template
+    getAsObject<EvalT>()->getFieldData(f.fieldTag());
+
+  f.setFieldData(a);
 }
 
 // **************************************************************
@@ -221,6 +218,28 @@ void PHX::FieldManager<Traits>::
 postEvaluate(typename Traits::PostEvalData d)
 {
   m_eval_containers.template getAsBase<EvalT>()->postEvaluate(d);
+}
+
+// **************************************************************
+template<typename Traits>
+template<typename EvalT>
+inline
+void PHX::FieldManager<Traits>::
+setKokkosExtendedDataTypeDimensions(const std::vector<PHX::index_size_type>& dims)
+{
+  m_eval_containers.template getAsObject<EvalT>()->
+    setKokkosExtendedDataTypeDimensions(dims);
+}
+
+// **************************************************************
+template<typename Traits>
+template<typename EvalT>
+inline
+const std::vector<PHX::index_size_type>& PHX::FieldManager<Traits>::
+getKokkosExtendedDataTypeDimensions() const
+{
+  return m_eval_containers.template getAsObject<EvalT>()->
+    getKokkosExtendedDataTypeDimensions();
 }
 
 // **************************************************************

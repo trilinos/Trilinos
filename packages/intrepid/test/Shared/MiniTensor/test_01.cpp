@@ -42,12 +42,13 @@
 #include <ctime>
 #include <vector>
 
-#include "Intrepid_FieldContainer.hpp"
 #include "Sacado.hpp"
+#include "Intrepid_FieldContainer.hpp"
 #include "Intrepid_MiniTensor.h"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Sacado.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -57,8 +58,7 @@ int main(int argc, char* argv[])
   return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 }
 
-namespace Intrepid
-{
+namespace Intrepid {
 
 namespace {
 
@@ -77,7 +77,7 @@ generate_sequence(
   return v;
 }
 
-template <typename Tensor, typename Scalar>
+template<typename Tensor, typename Scalar>
 bool
 test_fundamentals(Index const dimension)
 {
@@ -147,10 +147,83 @@ test_fundamentals(Index const dimension)
   decremented = error <= machine_epsilon<Scalar>();
   passed = passed && decremented;
 
+#ifdef HAVE_INTREPID_KOKKOSCORE
+  //test Tensor fill and create for Kokkos data types
+  Kokkos::View<Scalar *, Kokkos::DefaultExecutionSpace>
+  X1("X1_kokkos", dimension);
+
+  Kokkos::View<Scalar **, Kokkos::DefaultExecutionSpace>
+  X2("X2_kokkos", dimension, dimension);
+
+  Kokkos::View<Scalar ***, Kokkos::DefaultExecutionSpace>
+  X3("X3_kokkos", dimension, dimension, dimension);
+
+  Kokkos::View<Scalar ****, Kokkos::DefaultExecutionSpace>
+  X4("X4_kokkos", dimension, dimension, dimension, dimension);
+
+  Kokkos::deep_copy(X1, 3.1);
+  Kokkos::deep_copy(X2, 3.2);
+  Kokkos::deep_copy(X3, 3.3);
+  Kokkos::deep_copy(X4, 3.4);
+
+  Tensor
+  Z(dimension); //(X1_k,0);
+
+  Index
+  rank = 0;
+
+  Index
+  temp = number_components;
+
+  while (temp != 1) {
+    temp = temp / dimension;
+    rank = rank + 1;
+    assert(temp > 0);
+  }
+
+  switch (rank) {
+  default:
+    assert(false);
+    break;
+
+  case 1:
+    Z.fill(X1, 0);
+    break;
+
+  case 2:
+    Z.fill(X2, 0, 0);
+    break;
+
+  case 3:
+    Z.fill(X3, 0, 0, 0);
+    break;
+
+  case 4:
+    Z.fill(X4, 0, 0, 0, 0);
+    break;
+  }
+
+  // Test copy constructor.
+  Tensor const
+  U = Z;
+
+  // Test copy assignment.
+  Tensor
+  V;
+
+  V = U - Z;
+
+  error = norm_f(V);
+
+  bool const
+  tensor_create_from_1d_kokkos = error <= machine_epsilon<Scalar>();
+  passed = passed && tensor_create_from_1d_kokkos;
+#endif 
+
   return passed;
 }
 
-template <typename Tensor, typename Scalar>
+template<typename Tensor, typename Scalar>
 bool
 test_filling(Index const dimension)
 {
@@ -221,7 +294,7 @@ test_filling(Index const dimension)
   return passed;
 }
 
-template <typename Tensor, typename Scalar>
+template<typename Tensor, typename Scalar>
 bool
 test_arithmetic(Index const dimension)
 {
@@ -236,7 +309,7 @@ test_arithmetic(Index const dimension)
 
   Real const
   sum_squares = number_components * (number_components + 1) *
-  (2 * number_components + 1) / 6;
+      (2 * number_components + 1) / 6;
 
   // Test addition
   Tensor const
@@ -429,8 +502,6 @@ TEUCHOS_UNIT_TEST(MiniTensor, Arithmetic)
 
 TEUCHOS_UNIT_TEST(MiniTensor, Inverse2x2)
 {
-  std::srand(std::time(NULL));
-
   Tensor<Real, 2> const
   A = 2.0 * eye<Real, 2>() + Tensor<Real, 2>(RANDOM_UNIFORM);
 
@@ -448,8 +519,6 @@ TEUCHOS_UNIT_TEST(MiniTensor, Inverse2x2)
 
 TEUCHOS_UNIT_TEST(MiniTensor, Inverse3x3)
 {
-  std::srand(std::time(NULL));
-
   Tensor<Real, 3> const
   A = 2.0 * eye<Real, 3>() + Tensor<Real, 3>(RANDOM_UNIFORM);
 
@@ -467,10 +536,8 @@ TEUCHOS_UNIT_TEST(MiniTensor, Inverse3x3)
 
 TEUCHOS_UNIT_TEST(MiniTensor, InverseNxN)
 {
-  std::srand(std::time(NULL));
-
   Index const
-  N = static_cast<Index>((7.0 * std::rand()) / RAND_MAX + 4.0);
+  N = 11;
 
   Tensor<Real> const
   A = 2.0 * eye<Real>(N) + Tensor<Real>(N, RANDOM_UNIFORM);
@@ -489,10 +556,8 @@ TEUCHOS_UNIT_TEST(MiniTensor, InverseNxN)
 
 TEUCHOS_UNIT_TEST(MiniTensor, Inverse_4th_NxN)
 {
-  std::srand(std::time(NULL));
-
   Index const
-  N = static_cast<Index>((2.0 * std::rand()) / RAND_MAX + 2.0);
+  N = 4;
 
   Tensor4<Real> const
   A = 2.0 * identity_1<Real>(N) + Tensor4<Real>(N, RANDOM_UNIFORM);
@@ -551,7 +616,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, Exponential)
 
   Real const error = norm(D) / norm(B);
 
-  TEST_COMPARE( error, <=, 100.0 * machine_epsilon<Real>());
+  TEST_COMPARE(error, <=, 100.0 * machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, SymmetricEigen)
@@ -565,9 +630,9 @@ TEUCHOS_UNIT_TEST(MiniTensor, SymmetricEigen)
 
   boost::tie(V, D) = eig_sym(A);
 
-  TEST_COMPARE(std::abs(D(0,0) - 1.1), <=, machine_epsilon<Real>());
-  TEST_COMPARE(std::abs(D(1,1) - 1.0), <=, machine_epsilon<Real>());
-  TEST_COMPARE(std::abs(D(2,2) - 0.9), <=, machine_epsilon<Real>());
+  TEST_COMPARE(std::abs(D(0, 0) - 1.1), <=, machine_epsilon<Real>());
+  TEST_COMPARE(std::abs(D(1, 1) - 1.0), <=, machine_epsilon<Real>());
+  TEST_COMPARE(std::abs(D(2, 2) - 0.9), <=, machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, LeftPolarDecomposition)
@@ -582,8 +647,8 @@ TEUCHOS_UNIT_TEST(MiniTensor, LeftPolarDecomposition)
   Tensor<Real> R(3);
   boost::tie(V, R) = polar_left(F);
 
-  TEST_COMPARE(norm(V-V0), <=, 10.0*machine_epsilon<Real>());
-  TEST_COMPARE(norm(R-R0), <=, machine_epsilon<Real>());
+  TEST_COMPARE(norm(V - V0), <=, 10.0 * machine_epsilon<Real>());
+  TEST_COMPARE(norm(R - R0), <=, machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, LogRotation)
@@ -597,10 +662,10 @@ TEUCHOS_UNIT_TEST(MiniTensor, LogRotation)
 
   TEST_COMPARE(norm(r), <=, machine_epsilon<Real>());
 
-  TEST_COMPARE( std::abs(r0(0,1) + 0.785398163397448), <=,
-      10.0*machine_epsilon<Real>());
+  TEST_COMPARE(std::abs(r0(0, 1) + 0.785398163397448), <=,
+      10.0 * machine_epsilon<Real>());
 
-  TEST_COMPARE( std::abs(r0(0,1) + r0(1,0)), <=, machine_epsilon<Real>());
+  TEST_COMPARE(std::abs(r0(0, 1) + r0(1, 0)), <=, machine_epsilon<Real>());
 
   Real theta = std::acos(-1.0) + 10 * machine_epsilon<Real>();
 
@@ -616,7 +681,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, LogRotation)
   Rref(0, 1) = -theta;
   Rref(1, 0) = theta;
 
-  TEST_COMPARE(norm(logR - Rref), <=, 100*machine_epsilon<Real>());
+  TEST_COMPARE(norm(logR - Rref), <=, 100 * machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, BakerCampbellHausdorff)
@@ -629,7 +694,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, BakerCampbellHausdorff)
 
   Tensor<Real> f = bch(logV, logR);
 
-  TEST_COMPARE( std::abs(f(0,0) - std::log(3.0)), <=,
+  TEST_COMPARE(std::abs(f(0, 0) - std::log(3.0)), <=,
       machine_epsilon<Real>());
 
   Vector<Real> u(3);
@@ -652,9 +717,9 @@ TEUCHOS_UNIT_TEST(MiniTensor, BakerCampbellHausdorff)
   Rref(1, 0) = 1.0;
   Rref(2, 2) = -1.0;
 
-  TEST_COMPARE( norm(Rref-R1), <=, 100.0*machine_epsilon<Real>());
-  TEST_COMPARE( norm(exp_skew_symmetric(logR) - R), <=,
-      100.0*machine_epsilon<Real>());
+  TEST_COMPARE(norm(Rref - R1), <=, 100.0 * machine_epsilon<Real>());
+  TEST_COMPARE(norm(exp_skew_symmetric(logR) - R), <=,
+      100.0 * machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, PolarLeftLog)
@@ -675,14 +740,14 @@ TEUCHOS_UNIT_TEST(MiniTensor, PolarLeftLog)
 
   Real const error = norm(v - L) / norm(L);
 
-  TEST_COMPARE( error, <=, 100*machine_epsilon<Real>());
+  TEST_COMPARE(error, <=, 100 * machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, VolumetricDeviatoric)
 {
   Tensor<Real> A = 3.0 * eye<Real>(3);
 
-  TEST_COMPARE( norm(A - vol(A)), <=, 100.0*machine_epsilon<Real>());
+  TEST_COMPARE(norm(A - vol(A)), <=, 100.0 * machine_epsilon<Real>());
 
   Tensor<Real> B = dev(A);
 
@@ -690,7 +755,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, VolumetricDeviatoric)
   A(1, 1) = 0.0;
   A(2, 2) = 0.0;
 
-  TEST_COMPARE( norm(A - B), <=, 100.0*machine_epsilon<Real>());
+  TEST_COMPARE(norm(A - B), <=, 100.0 * machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, SVD2x2)
@@ -727,7 +792,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, SVD2x2)
 
   Real const error = norm(A - B) / norm(A);
 
-  TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
+  TEST_COMPARE(error, <=, 100.0 * machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, SVD3x3)
@@ -742,7 +807,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, SVD3x3)
 
   Real const error = norm(A - B) / norm(A);
 
-  TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
+  TEST_COMPARE(error, <=, 100.0 * machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, SVD3x3Fad)
@@ -758,7 +823,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, SVD3x3Fad)
 
   Sacado::Fad::DFad<Real> const error = norm(B - A) / norm(A);
 
-  TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
+  TEST_COMPARE(error, <=, 100.0 * machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, MixedTypes)
@@ -822,7 +887,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, SymmetricEigen2x2)
 
   Real const error = norm(A - B) / norm(A);
 
-  TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
+  TEST_COMPARE(error, <=, 100.0 * machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, SymmetricEigen3x3)
@@ -837,7 +902,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, SymmetricEigen3x3)
 
   Real const error = norm(A - B) / norm(A);
 
-  TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
+  TEST_COMPARE(error, <=, 100.0 * machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, Polar3x3)
@@ -856,7 +921,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, Polar3x3)
 
   Real const error = norm(B) / norm(A);
 
-  TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
+  TEST_COMPARE(error, <=, 100.0 * machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, Cholesky)
@@ -873,7 +938,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, Cholesky)
 
   Real const error = norm(G - B) / norm(A);
 
-  TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
+  TEST_COMPARE(error, <=, 100.0 * machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, MechanicsTransforms)
@@ -919,7 +984,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, KroneckerProduct)
 
   Tensor4<Real> B = kronecker(Q, A);
 
-  Real const error = norm_f(B-A) / norm_f(A);
+  Real const error = norm_f(B - A) / norm_f(A);
 
   TEST_COMPARE(error, <=, 100.0 * machine_epsilon<Real>());
 }
@@ -1041,7 +1106,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, TemplateMetaProgramming)
     TEST_COMPARE(is_equal, ==, true);
   }
 
-
+#ifndef KOKKOS_HAVE_CUDA
   {
     //
     // use double explicitly
@@ -1060,35 +1125,37 @@ TEUCHOS_UNIT_TEST(MiniTensor, TemplateMetaProgramming)
 
     std::string
     type_string =
-        Sacado::StringName<Sacado::ScalarType<A>::type >::eval();
+        Sacado::StringName<Sacado::ScalarType<A>::type>::eval();
 
     TEST_COMPARE(type_string, ==, double_string);
 
     type_string =
-        Sacado::StringName<Sacado::ValueType<A>::type >::eval();
+        Sacado::StringName<Sacado::ValueType<A>::type>::eval();
 
     TEST_COMPARE(type_string, ==, double_string);
 
     type_string =
-        Sacado::StringName<Sacado::ScalarType<B>::type >::eval();
+        Sacado::StringName<Sacado::ScalarType<B>::type>::eval();
 
     TEST_COMPARE(type_string, ==, double_string);
 
     type_string =
-        Sacado::StringName<Sacado::ValueType<B>::type >::eval();
+        Sacado::StringName<Sacado::ValueType<B>::type>::eval();
 
     TEST_COMPARE(type_string, ==, double_string);
 
     type_string =
-        Sacado::StringName<Sacado::ScalarType<C>::type >::eval();
+        Sacado::StringName<Sacado::ScalarType<C>::type>::eval();
 
     TEST_COMPARE(type_string, ==, double_string);
 
     type_string =
-        Sacado::StringName<Sacado::ValueType<C>::type >::eval();
+        Sacado::StringName<Sacado::ValueType<C>::type>::eval();
 
     TEST_COMPARE(type_string, ==, fad_string);
   }
+#endif
+
 }
 
 } // namespace Intrepid

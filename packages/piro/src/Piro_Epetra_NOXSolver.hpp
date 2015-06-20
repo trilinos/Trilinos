@@ -101,6 +101,10 @@ class NOXSolver
   /** \brief . */
   Teuchos::RCP<const Epetra_Vector> get_p_init(int l) const;
   /** \brief . */
+  Teuchos::RCP<const Epetra_Vector> get_p_lower_bounds(int l) const;
+  /** \brief . */
+  Teuchos::RCP<const Epetra_Vector> get_p_upper_bounds(int l) const;
+  /** \brief . */
   Teuchos::RCP<Epetra_Operator> create_DgDp_op( int j, int l ) const;
   /** \brief . */
   EpetraExt::ModelEvaluator::InArgs createInArgs() const;

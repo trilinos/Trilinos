@@ -264,7 +264,7 @@ void indexed_sort(INT v[], INT iv[], size_t N)
   }
 
 #if DEBUG_SORT
-  fprintf(stderr, "Checking sort of "ST_ZU" values\n", (size_t)count+1);
+  fprintf(stderr, "Checking sort of " ST_ZU " values\n", (size_t)count+1);
   for (size_t i=1; i < N; i++) {
     assert(v[iv[i-1]] <= v[iv[i]]);
   }
@@ -279,7 +279,7 @@ void gds_iqsort(INT v[], INT iv[], size_t N)
   gds_iisort(v, iv, N);
   
 #if defined(DEBUG_QSORT)
-  fprintf(stderr, "Checking sort of "ST_ZU" values\n", (size_t)N+1);
+  fprintf(stderr, "Checking sort of " ST_ZU " values\n", (size_t)N+1);
   size_t i;
   for (i=1; i < N; i++) {
     assert(v[iv[i-1]] <= v[iv[i]]);

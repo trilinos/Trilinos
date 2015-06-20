@@ -51,6 +51,11 @@ namespace Piro {
   //! \brief Extracts the Stratimikos sublist from the Piro Solver parameter list
   Teuchos::RCP<Teuchos::ParameterList>
     extractStratimikosParams(const Teuchos::RCP<Teuchos::ParameterList> &piroParams);
+  
+  //! \brief Rename the preconditioner and parameter list
+  void
+    renamePreconditionerParamList(const Teuchos::RCP<Teuchos::ParameterList> &stratParams, 
+              const std::string &oldname, const std::string &newname);
 
 } // namespace Piro
 

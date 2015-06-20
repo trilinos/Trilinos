@@ -197,6 +197,12 @@ private:
    *     <li> \c "COLAMD" : approximate minimum degree column ordering.
    *       (default)</li>
    *     </ul>
+   *   <li> \c "ILU_Flag" : { \c false | \c true }. If true, run ILU routines.</li>
+   *   <li> \c "ILU_DropTol" : \c double value. ILUT drop tolerance.</li>
+   *   <li> \c "ILU_FillFactor" : \c double value. ILUT fill factor.</li>
+   *   <li> \c "ILU_Norm" : { \c "INF_NORM" | \c "ONE_NORM" | \c "TWO_NORM"}.</li>
+   *   <li> \c "ILU_MILU" : { \c "SILU" | \c "SMILU_1" | \c "SMILU_2" | \c "SMILU_3"}.  Type of modified ILU algorithm to use.</li>
+   *   <li> \c "ILU_FillTol" : \c double value. ILUT fill tolerance.</li>
    * </ul>
    */
   void setParameters_impl(

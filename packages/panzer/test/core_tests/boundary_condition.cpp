@@ -46,6 +46,8 @@
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_ParameterList.hpp>
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_BC.hpp"
 #include <iostream>
 #include <sstream>
@@ -55,6 +57,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(bc, nonmember_ctor)
   {
+    PHX::KokkosDeviceSession session;
+    
     Teuchos::ParameterList bc_params;
 
     std::vector<panzer::BC> bcs;
@@ -72,19 +76,26 @@ namespace panzer {
     bc_1.set("Equation Set Name", "UX");
     bc_1.set("Strategy", "Constant");
     bc_1.sublist("Data").set("Value",1.0);
+    
+    Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
 
-    panzer::buildBCs(bcs, bc_params);
+    panzer::buildBCs(bcs, bc_params, gd);
 
     TEST_EQUALITY(bcs.size(), 2);
     TEST_EQUALITY(bcs[0].bcID(), 0);
     TEST_EQUALITY(bcs[1].bcID(), 1);
     TEST_EQUALITY(bcs[0].bcType(), panzer::BCT_Dirichlet);
     TEST_EQUALITY(bcs[1].bcType(), panzer::BCT_Neumann);
+
+    TEST_ASSERT(bcs[0].global_data()!=Teuchos::null);
+    TEST_ASSERT(bcs[0].global_data()!=Teuchos::null);
   }
 
 
   TEUCHOS_UNIT_TEST(bc, neumann_no_param_list)
   {
+    PHX::KokkosDeviceSession session;
+    
 
     std::size_t bc_id = 0;
     panzer::BCType neumann = BCT_Dirichlet;
@@ -110,6 +121,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(bc, dirichlet_with_param_list)
   {
+    PHX::KokkosDeviceSession session;
+    
     std::size_t bc_id = 0;
     panzer::BCType dirichlet = BCT_Dirichlet;
     std::string sideset_id = "4";
@@ -134,6 +147,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(bc, dirichlet_complete_param_list)
   {
+    PHX::KokkosDeviceSession session;
+    
     Teuchos::ParameterList p;
     p.set("Type", "Dirichlet");
     p.set("Sideset ID", "4");
@@ -156,6 +171,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(bc, map_comparitor)
   {
+    PHX::KokkosDeviceSession session;
+    
     using panzer::BC;
 
     BC bc1(0,BCT_Dirichlet,"3","fluid","VELOCITY","Constant");

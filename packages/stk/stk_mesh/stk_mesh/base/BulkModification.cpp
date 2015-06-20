@@ -1,10 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include <stk_mesh/base/BulkModification.hpp>
 #include <stddef.h>                     // for size_t
@@ -70,37 +95,40 @@ void construct_communication_set( const BulkData & bulk, const std::set<Entity,E
 {
   if (bulk.parallel_size() < 2) return;
 
+  std::vector<int> commProcs;
   for ( std::set<Entity,EntityLess>::const_iterator
         i = closure.begin(); i != closure.end(); ++i) {
 
     Entity entity = *i;
 
     const bool owned = bulk.parallel_rank() == bulk.parallel_owner_rank(entity);
+    const bool shared = bulk.bucket(entity).shared();
 
     // Add sharing processes and ghost-send processes to communication_set
 
-    for ( PairIterEntityComm ec = bulk.entity_comm_map(bulk.entity_key(entity)); ! ec.empty() ; ++ec ) {
-      if ( owned || ec->ghost_id == 0 ) {
-        EntityKeyProc tmp( bulk.entity_key(entity) , ec->proc );
+    bulk.comm_procs(bulk.entity_key(entity), commProcs);
+    for(size_t j=0; j<commProcs.size(); j++)
+    {
+      if ( owned || shared ) {
+        EntityKeyProc tmp( bulk.entity_key(entity) , commProcs[j] );
         communication_set.insert( tmp );
       }
     }
   }
 }
 
-size_t count_non_used_entities( const BulkData & bulk, const EntityVector & entities)
+size_t count_ghost_entities( const BulkData & bulk, const EntityVector & entities)
 {
-  const unsigned proc_local = bulk.parallel_rank();
-  size_t non_used_entities = 0;
+  size_t num_ghost_entities = 0;
 
   for ( EntityVector::const_iterator
         i = entities.begin(); i != entities.end(); ++i ) {
-    if ( ! in_owned_closure( bulk, *i , proc_local ) ) {
-      ++non_used_entities;
+    if ( ! bulk.owned_closure(*i) ) {
+      ++num_ghost_entities;
     }
   }
 
-  return non_used_entities;
+  return num_ghost_entities;
 }
 
 }
@@ -119,10 +147,10 @@ void find_closure( const BulkData & bulk,
   EntityLess entless(bulk);
   std::set<Entity,EntityLess>     temp_entities_closure(entless);
 
-  const bool bulk_not_synchronized = bulk.synchronized_state() != BulkData::SYNCHRONIZED;
-  const size_t non_used_entities = bulk_not_synchronized ? 0 : count_non_used_entities(bulk, entities);
+  const bool bulk_in_modifiable_state = !bulk.in_synchronized_state();
+  const size_t num_ghost_entities = bulk_in_modifiable_state ? 0 : count_ghost_entities(bulk, entities);
 
-  const bool local_bad_input = bulk_not_synchronized || (0 < non_used_entities);
+  const bool local_bad_input = bulk_in_modifiable_state || (0 < num_ghost_entities);
 
   //Can skip if error on input
   if ( !local_bad_input) {
@@ -148,12 +176,12 @@ void find_closure( const BulkData & bulk,
 
     std::ostringstream msg;
     //parallel consisent throw
-    if (bulk_not_synchronized) {
+    if (bulk_in_modifiable_state) {
       msg << "stk::mesh::find_closure( const BulkData & bulk, ... ) bulk is not synchronized";
     }
-    else if ( 0 < non_used_entities) {
+    else if ( 0 < num_ghost_entities) {
       msg << "stk::mesh::find_closure( const BulkData & bulk, std::vector<Entity> entities, ... ) \n"
-          << "entities contains " << non_used_entities << " non locally used entities \n";
+          << "entities contains " << num_ghost_entities << " non locally used entities \n";
     }
 
     throw std::runtime_error(msg.str());

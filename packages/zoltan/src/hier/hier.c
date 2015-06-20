@@ -366,10 +366,10 @@ static int set_hier_part_sizes(HierPartParams *hpp, float *part_sizes) {
                            part_ids, wgt_idx, level_part_sizes);
 
 End:
-  if (my_level_part_sizes) ZOLTAN_FREE(&my_level_part_sizes);
-  if (level_part_sizes) ZOLTAN_FREE(&level_part_sizes);
-  if (part_ids) ZOLTAN_FREE(&part_ids);
-  if (wgt_idx) ZOLTAN_FREE(&wgt_idx);
+  ZOLTAN_FREE(&my_level_part_sizes);
+  ZOLTAN_FREE(&level_part_sizes);
+  ZOLTAN_FREE(&part_ids);
+  ZOLTAN_FREE(&wgt_idx);
 
   return ierr;
 }
@@ -390,7 +390,6 @@ static int final_migrate(
 {
   ZOLTAN_COMM_OBJ *plan=NULL;
   ZOLTAN_ID_TYPE *importList=NULL;
-  ZOLTAN_GNO_TYPE *gnoList = NULL;
   int i, nImports, numGno, next, tag, ierr;
   MPI_Comm comm = hpp->hier_comm;
 
@@ -426,7 +425,6 @@ static int final_migrate(
    */
 
   numGno = hpp->num_obj + nImports - num_export;
-  gnoList = NULL;
   next=0;
 
   if (numGno){
@@ -941,8 +939,8 @@ static int Zoltan_Hier_Initialize_Params(ZZ *zz, HierPartParams *hpp) {
   char *yo = "Zoltan_Hier_Initialize_Params";
   int assist, i=0, j, len;
   int num_cpus, num_siblings;
-  char platform[MAX_PARAM_STRING_LEN+1];
-  char topology[MAX_PARAM_STRING_LEN+1];
+  char platform[MAX_PARAM_STRING_LEN];
+  char topology[MAX_PARAM_STRING_LEN];
   char *c=NULL;
   div_t result;
 
@@ -1243,7 +1241,7 @@ static void Zoltan_Hier_Edge_List_Multi_Fn(
   int *ierr)
 {
   HierPartParams *hpp = (HierPartParams *)data;
-  int i, j, k, idx, nedges;
+  int i, j, k, idx;
   int *out_proc;
   ZOLTAN_ID_TYPE *out_gid;
   float *out_weight, *wgts;
@@ -1256,8 +1254,6 @@ static void Zoltan_Hier_Edge_List_Multi_Fn(
 
   for (i=0; i < num_obj; i++){
     idx = local_id[i];
-
-    nedges = hpp->xadj[idx+1] - hpp->xadj[idx];
 
     for (j= hpp->xadj[idx]; j < hpp->xadj[idx+1]; j++){
       *out_proc++ = hpp->adjproc[j];
@@ -1605,29 +1601,31 @@ int Zoltan_Hier(
 
       /* specify the callbacks */
 
-      ierr = Zoltan_Set_Num_Obj_Fn(hpp.hierzz,
-                           Zoltan_Hier_Num_Obj_Fn,
-                           (void *) &hpp);
+      ierr = Zoltan_Set_Num_Obj_Fn(hpp.hierzz, Zoltan_Hier_Num_Obj_Fn,
+                                   (void *) &hpp);
 
-      ierr = Zoltan_Set_Obj_List_Fn(hpp.hierzz,
-                           Zoltan_Hier_Obj_List_Fn,
-                           (void *) &hpp);
+      ierr = Zoltan_Set_Obj_List_Fn(hpp.hierzz, Zoltan_Hier_Obj_List_Fn,
+                                    (void *) &hpp);
 
-      ierr = Zoltan_Set_Num_Geom_Fn(hpp.hierzz,
-                           Zoltan_Hier_Num_Geom_Fn,
-                           (void *) &hpp);
+      if (hpp.use_geom) {
 
-      ierr = Zoltan_Set_Geom_Multi_Fn(hpp.hierzz,
-                           Zoltan_Hier_Geom_Multi_Fn,
-                           (void *) &hpp);
+        ierr = Zoltan_Set_Num_Geom_Fn(hpp.hierzz, Zoltan_Hier_Num_Geom_Fn,
+                                      (void *) &hpp);
 
-      ierr = Zoltan_Set_Num_Edges_Multi_Fn(hpp.hierzz,
-                           Zoltan_Hier_Num_Edges_Multi_Fn,
-                           (void *) &hpp);
+        ierr = Zoltan_Set_Geom_Multi_Fn(hpp.hierzz, Zoltan_Hier_Geom_Multi_Fn,
+                                        (void *) &hpp);
+      }
 
-      ierr = Zoltan_Set_Edge_List_Multi_Fn(hpp.hierzz,
-                           Zoltan_Hier_Edge_List_Multi_Fn,
-                           (void *) &hpp);
+      if (hpp.use_graph) {
+
+        ierr = Zoltan_Set_Num_Edges_Multi_Fn(hpp.hierzz,
+                                             Zoltan_Hier_Num_Edges_Multi_Fn,
+                                             (void *) &hpp);
+
+        ierr = Zoltan_Set_Edge_List_Multi_Fn(hpp.hierzz,
+                                             Zoltan_Hier_Edge_List_Multi_Fn,
+                                             (void *) &hpp);
+      }
 
       /* specify the GIDs (just the global numbering) */
       Zoltan_Set_Param(hpp.hierzz, "NUM_GID_ENTRIES", "1");
@@ -1661,6 +1659,7 @@ int Zoltan_Hier(
       }
 
       /* call partitioning method to compute the part at this level */
+
       ierr = Zoltan_LB_Partition(hpp.hierzz, &hier_changes,
                                  &hier_num_gid_entries, &hier_num_lid_entries,
                                  &hier_num_import_objs,
@@ -1751,13 +1750,13 @@ int Zoltan_Hier(
 
     ierr = Zoltan_LB_Free_Part(&hier_import_gids, &hier_import_lids,
                                &hier_import_procs, &hier_import_to_part);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
+    if (ierr != ZOLTAN_OK){
       ZOLTAN_HIER_ERROR(ierr, "Zoltan_LB_Free_Part returned error.");
     }
 
     ierr = Zoltan_LB_Free_Part(&hier_export_gids, &hier_export_lids,
                                &hier_export_procs, &hier_export_to_part);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
+    if (ierr != ZOLTAN_OK){
       ZOLTAN_HIER_ERROR(ierr, "Zoltan_LB_Free_Part returned error.");
     }
 

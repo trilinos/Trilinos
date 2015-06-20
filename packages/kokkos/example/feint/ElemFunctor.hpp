@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -45,8 +45,7 @@
 #define KOKKOS_EXAMPLE_FEINT_FUNCTORS_HPP
 
 #include <stdio.h>
-#include <Kokkos_Serial.hpp>
-#include <Kokkos_Atomic.hpp>
+#include <Kokkos_Core.hpp>
 #include <BoxElemFixture.hpp>
 
 namespace Kokkos {
@@ -108,7 +107,7 @@ struct FiniteElementIntegration<
 
   //----------------------------------------
   // Device for parallel dispatch.
-  typedef Device device_type ;
+  typedef typename Device::execution_space execution_space;
 
   // Value type for global parallel reduction.
   struct value_type {
@@ -333,7 +332,7 @@ template< class ViewNodeValue ,
           bool  AlreadyUsedAtomic >
 struct LumpElemToNode {
 
-  typedef typename ViewElemValue::device_type device_type ;
+  typedef typename ViewElemValue::execution_space execution_space ;
 
   // In this example we know that the ViewElemValue
   // array specification is < double*[nNode][nValue] >
@@ -342,8 +341,8 @@ struct LumpElemToNode {
 
   ViewNodeValue             m_node_value ; ///< Integrated values at nodes
   ViewElemValue             m_elem_value ; ///< Values apportioned to nodes
-  View<int*,   device_type> m_node_scan ;  ///< Offsets for nodes->element
-  View<int*[2],device_type> m_node_elem ;  ///< Node->element connectivity
+  View<int*,   execution_space> m_node_scan ;  ///< Offsets for nodes->element
+  View<int*[2],execution_space> m_node_elem ;  ///< Node->element connectivity
 
   // Only allocate node->element connectivity if have
   // not already used atomic updates for the nodes.
@@ -432,6 +431,8 @@ void map_node_to_elem( const ViewElemNode & elem_node ,
                        const ViewNodeScan & node_scan ,
                        const ViewNodeElem & node_elem )
 {
+  typedef typename ViewElemNode::host_mirror_space host_mirror_space ;
+
   const typename ViewElemNode::HostMirror host_elem_node =
     Kokkos::create_mirror_view(elem_node);
 
@@ -445,7 +446,7 @@ void map_node_to_elem( const ViewElemNode & elem_node ,
   const int elem_node_count = host_elem_node.dimension_1();
   const int node_count      = host_node_scan.dimension_0() - 1 ;
 
-  const View<int*,Kokkos::Serial>
+  const View<int*, host_mirror_space >
     node_elem_count( "node_elem_count" , node_count );
 
   Kokkos::deep_copy( host_elem_node , elem_node );

@@ -103,55 +103,54 @@ typedef int GlobalOrdinal;
 #endif
 //
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 //
 
 namespace MueLuTests {
 
 #include "MueLu_UseShortNames.hpp"
 
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal>
-Teuchos::RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal> > TriDiag(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal> > & map,
+  template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal>
+    Teuchos::RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal> > TriDiag(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal> > & map,
         const GlobalOrdinal nx, // note: nx unused
         const Scalar a, const Scalar b, const Scalar c)
-{
-
-  Teuchos::RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal> > mtx = Galeri::Xpetra::OperatorTraits<Xpetra::Map<LocalOrdinal, GlobalOrdinal>,Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal> >::Build(map, 3);
-
-  LocalOrdinal NumMyElements = map->getNodeNumElements();
-  Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
-
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = map->getComm();
-
-  GlobalOrdinal NumGlobalElements = map->getGlobalNumElements();
-
-  GlobalOrdinal NumEntries;
-  LocalOrdinal nnz=2;
-  std::vector<Scalar> Values(nnz);
-  std::vector<GlobalOrdinal> Indices(nnz);
-
-  comm->barrier();
-
-  Teuchos::RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TriDiag global insert"));
-  timer->start(true);
-
-  for (LocalOrdinal i = 0; i < NumMyElements; ++i)
     {
-      if (MyGlobalElements[i] == 0)
+
+      Teuchos::RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal> > mtx = Galeri::Xpetra::OperatorTraits<Xpetra::Map<LocalOrdinal, GlobalOrdinal>,Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal> >::Build(map, 3);
+
+      LocalOrdinal NumMyElements = map->getNodeNumElements();
+      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
+
+      Teuchos::RCP<const Teuchos::Comm<int> > comm = map->getComm();
+
+      GlobalOrdinal NumGlobalElements = map->getGlobalNumElements();
+
+      GlobalOrdinal NumEntries;
+      LocalOrdinal nnz=2;
+      std::vector<Scalar> Values(nnz);
+      std::vector<GlobalOrdinal> Indices(nnz);
+
+      comm->barrier();
+
+      Teuchos::RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TriDiag global insert"));
+      timer->start(true);
+
+      for (LocalOrdinal i = 0; i < NumMyElements; ++i)
+      {
+        if (MyGlobalElements[i] == 0)
         {
           // off-diagonal for first row
           Indices[0] = 1;
           NumEntries = 1;
           Values[0] = 0.0;//c; // dirichlet bc left (c)
         }
-      else if (MyGlobalElements[i] == NumGlobalElements - 1)
+        else if (MyGlobalElements[i] == NumGlobalElements - 1)
         {
           // off-diagonal for last row
           Indices[0] = NumGlobalElements - 2;
           NumEntries = 1;
           Values[0] = 0.0; //Teuchos::ScalarTraits<Scalar>(0.0); // dirichlet bc right (b)
         }
-      else
+        else
         {
           // off-diagonal for internal row
           Indices[0] = MyGlobalElements[i] - 1;
@@ -161,31 +160,31 @@ Teuchos::RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal> > TriDia
           NumEntries = 2;
         }
 
-      // put the off-diagonal entries
-      // Xpetra wants ArrayViews (sigh)
-      Teuchos::ArrayView<Scalar> av(&Values[0],NumEntries);
-      Teuchos::ArrayView<GlobalOrdinal> iv(&Indices[0],NumEntries);
-      mtx->insertGlobalValues(MyGlobalElements[i], iv, av);
+        // put the off-diagonal entries
+        // Xpetra wants ArrayViews (sigh)
+        Teuchos::ArrayView<Scalar> av(&Values[0],NumEntries);
+        Teuchos::ArrayView<GlobalOrdinal> iv(&Indices[0],NumEntries);
+        mtx->insertGlobalValues(MyGlobalElements[i], iv, av);
 
-      // Put in the diagonal entry
-      mtx->insertGlobalValues(MyGlobalElements[i],
-                              Teuchos::tuple<GlobalOrdinal>(MyGlobalElements[i]),
-                              Teuchos::tuple<Scalar>(a) );
+        // Put in the diagonal entry
+        mtx->insertGlobalValues(MyGlobalElements[i],
+            Teuchos::tuple<GlobalOrdinal>(MyGlobalElements[i]),
+            Teuchos::tuple<Scalar>(a) );
 
-    } //for (LocalOrdinal i = 0; i < NumMyElements; ++i)
+      } //for (LocalOrdinal i = 0; i < NumMyElements; ++i)
 
-    timer->stop();
+      timer->stop();
 
 
-  timer = rcp(new Teuchos::Time("TriDiag fillComplete"));
-  timer->start(true);
+      timer = rcp(new Teuchos::Time("TriDiag fillComplete"));
+      timer->start(true);
 
-  //mtx->fillComplete();
+      //mtx->fillComplete();
 
-  timer->stop();
+      timer->stop();
 
-  return mtx;
-} //TriDiag
+      return mtx;
+    } //TriDiag
 
 }
 
@@ -269,10 +268,10 @@ int main(int argc, char *argv[]) {
   clp.setOption("sweeps",&sweeps,"sweeps to be used in level smoother (or Chebyshev degree)");
 
   switch (clp.parse(argc,argv)) {
-  case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
-  case Teuchos::CommandLineProcessor::PARSE_ERROR:
-  case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
-  case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+    case Teuchos::CommandLineProcessor::PARSE_ERROR:
+    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
 
   if (pauseForDebugger) {
@@ -326,7 +325,7 @@ int main(int argc, char *argv[]) {
   // MueLu setup
   mtime.push_back(M.getNewTimer("MueLu Setup"));
   mtime.back()->start(); // start time measurement
-  RCP<MueLu::Hierarchy<SC,LO,GO,NO,LMO> > H = rcp ( new Hierarchy() );
+  RCP<MueLu::Hierarchy<SC,LO,GO,NO> > H = rcp ( new Hierarchy() );
   H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
   H->SetMaxCoarseSize((GO) maxCoarseSize);;
 
@@ -449,13 +448,13 @@ int main(int argc, char *argv[]) {
     typedef Belos::OperatorT<MV>      OP;
 
     // Vectors
-    RCP<MV> belosX     = MueLu::Utils<SC,LO,GO,NO,LMO>::MV2NonConstTpetraMV(X);
-    RCP<MV> belosRHS   = MueLu::Utils<SC,LO,GO,NO,LMO>::MV2NonConstTpetraMV(rhs);
-    RCP<MV> belosResid = MueLu::Utils<SC,LO,GO,NO,LMO>::MV2NonConstTpetraMV(resid);
+    RCP<MV> belosX     = MueLu::Utils<SC,LO,GO,NO>::MV2NonConstTpetraMV(X);
+    RCP<MV> belosRHS   = MueLu::Utils<SC,LO,GO,NO>::MV2NonConstTpetraMV(rhs);
+    RCP<MV> belosResid = MueLu::Utils<SC,LO,GO,NO>::MV2NonConstTpetraMV(resid);
 
     // construct Belos LinearProblem
-    RCP<OP> belosOp      = Teuchos::rcp (new Belos::XpetraOp<SC,LO,GO,NO,LMO>(Op) );  // Xpetra::Op -> Belos::Op
-    RCP<OP> belosPrec    = Teuchos::rcp (new Belos::MueLuOp<SC,LO,GO,NO,LMO>(H)); // Hierarchy  -> prec
+    RCP<OP> belosOp      = Teuchos::rcp (new Belos::XpetraOp<SC,LO,GO,NO>(Op) );  // Xpetra::Op -> Belos::Op
+    RCP<OP> belosPrec    = Teuchos::rcp (new Belos::MueLuOp<SC,LO,GO,NO>(H)); // Hierarchy  -> prec
 
     RCP<Belos::LinearProblem<double,MV,OP> > problem = Teuchos::rcp( new Belos::LinearProblem<double,MV,OP>(belosOp, belosX, belosRHS) );
     problem->setLeftPrec( belosPrec );

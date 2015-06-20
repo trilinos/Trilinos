@@ -1,0 +1,115 @@
+#!/bin/bash
+#
+#********************************************************************\
+#*Albany, Copyright (2010) Sandia Corporation
+#*
+#* Notice: This computer software was prepared by Sandia Corporation, *
+#* hereinafter the Contractor, under Contract DE-AC04-94AL85000 with *
+#* the Department of Energy (DOE). All rights in the computer software*
+#* are reserved by DOE on behalf of the United States Government and *
+#* the Contractor as provided in the Contract. You are authorized to *
+#* use this computer software for Governmental purposes but it is not *
+#* to be released or distributed to the public. NEITHER THE GOVERNMENT*
+#* NOR THE CONTRACTOR MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
+#* ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE. This notice
+#* including this sentence must appear on any copies of this software.*
+#*
+#\********************************************************************/
+# This is a sample Trilinos configuration script for Albany.
+#
+# Boost is required, but just needs to be unpacked,
+# not compiled. Version _1_40 or newer.
+#
+# There are two optional build choices, commented below
+#these are for Dakota and Exodus I/O capabilites.
+#
+# Albany automatically queries the Trilinos build to
+# know if these capabilities are enabled or disabled.
+#
+#
+# All paths must me changed for your build (search "agsalin")
+#
+BOOSTDIR=/home/ipdemes/install/boost
+NETCDF=/home/ipdemes/install/netcdf
+HDFDIR=/home/ipdemes/install/hdf5
+CUDA_NVCC_FLAGS="-gencode;arch=compute_35,code=sm_35"
+CUDA_NVCC_FLAGS="${CUDA_NVCC_FLAGS};-Xcompiler;-Wall,-ansi"
+CUDA_NVCC_FLAGS="${CUDA_NVCC_FLAGS};-O3;-DKOKKOS_USE_UVM"
+HWLOC_PATH="/home/projects/hwloc/1.6.2"
+export BOOST_ROOT=$BOOST_DIR
+#export CUDA_LAUNCH_BLOCKING=1
+EXTRA_ARGS=$@
+
+rm -rf CMakeFiles CMakeCache.txt
+
+/home/ipdemes/install/cmake/bin/cmake \
+-D Trilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON \
+        -D CMAKE_INSTALL_PREFIX:PATH="/home/rppawlo/install"  \
+        -D CMAKE_BUILD_TYPE=DEBUG  \
+        -D CMAKE_SKIP_RULE_DEPENDENCY=ON \
+        -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
+        -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
+        -D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING="" \
+        -D Trilinos_ENABLE_Phalanx:BOOL=ON \
+        -D Phalanx_ENABLE_EXAMPLES:BOOL=ON \
+        -D Phalanx_ENABLE_TESTS:BOOL=ON \
+        -D Phalanx_KOKKOS_DEVICE_TYPE:STRING="CUDA" \
+	-D Trilinos_ENABLE_OpenMP:BOOL=OFF \
+        -D TPL_ENABLE_OpenMP:BOOL=OFF \
+	-D Trilinos_Enable_Kokkos:BOOL=ON \
+	-D Trilinos_ENABLE_KokkosCore:BOOL=ON \
+	-D Trilinos_ENABLE_KokkosContainers:BOOL=ON \
+	-D Trilinos_ENABLE_KokkosCompat:BOOL=ON \
+	-D Trilinos_ENABLE_KokkosTPL:BOOL=ON \
+        -D Trilinos_ENABLE_KokkosLinAlg:BOOL=ON \
+	-D Trilinos_ENABLE_KokkosExample:BOOL=OFF \
+	-D TPL_HWLOC_LIBRARIES:PATHNAME="${HWLOC_PATH}/lib/libhwloc.so" \
+        -D TPL_HWLOC_INCLUDE_DIRS:PATHNAME="${HWLOC_PATH}/include" \
+        -D TPL_ENABLE_HWLOC:STRING=ON \
+	-D Trilinos_ENABLE_Sacado:BOOL=ON \
+        -D DAKOTA_ENABLE_TESTS:BOOL=OFF \
+        -D TPL_ENABLE_Boost:BOOL=ON \
+        -D Boost_INCLUDE_DIRS:FILEPATH="$BOOSTDIR/include" \
+        -D Boost_LIBRARY_DIRS:FILEPATH="$BOOSTDIR/lib" \
+        -D TPL_ENABLE_Netcdf:BOOL=ON \
+        -D Netcdf_INCLUDE_DIRS:PATH="$NETCDF/include" \
+        -D Netcdf_LIBRARY_DIRS:PATH="$NETCDF/lib" \
+        -D TPL_ENABLE_HDF5:BOOL=ON \
+        -D HDF5_INCLUDE_DIRS:PATH="$HDFDIR/include" \
+        -D HDF5_LIBRARY_DIRS:PATH="$HDFDIR/lib" \
+        -D Trilinos_ENABLE_Mesquite:BOOL=OFF \
+        -D Trilinos_ENABLE_Tpetra:BOOL=OFF \
+        -D Trilinos_ENABLE_EXAMPLES:BOOL=OFF \
+        -D Trilinos_ENABLE_TESTS:BOOL=OFF \
+        -D Piro_ENABLE_TESTS:BOOL=ON \
+        -D TPL_ENABLE_BinUtils:BOOL=OFF \
+        -D TPL_ENABLE_MPI:BOOL=ON \
+	-D CMAKE_C_COMPILER="mpicc" \
+        -D CMAKE_CXX_COMPILER="mpicxx" \
+        -D CMAKE_Fortran_COMPILER="mpif90" \
+	-D MPI_EXEC:FILEPATH=/home/projects/openmpi/1.6.4/gnu-4.4.6/bin/mpiexec\
+	-D MPI_EXEC_NUMPROC_FLAG:STRING=-n\
+	-D CUDA_TOOLKIT_ROOT_DIR="/home/projects/cuda/6.0.9-beta" \
+	-D TPL_ENABLE_CUSPARSE:STRING=OFF \
+	-D Kokkos_ENABLE_EXAMPLES:BOOL=OFF \
+	-D Kokkos_ENABLE_TESTS:BOOL=ON \
+	-D Kokkos_ENABLE_CUDA:BOOL=ON \
+	-D Kokkos_ENABLE_OpenMP:BOOL=OFF \
+	-D Kokkos_ENABLE_Thrust=OFF \
+	-D TPL_ENABLE_CUDA:STRING=ON \
+	-D CUDA_VERBOSE_BUILD:BOOL=OFF \
+	-D CUDA_PROPAGATE_HOST_FLAGS:BOOL=OFF \
+ 	-D CUDA_NVCC_FLAGS:STRING=${CUDA_NVCC_FLAGS} \
+        -D SEACASExodus_PARALLEL_AWARE:BOOL=OFF \
+        -D CMAKE_VERBOSE_MAKEFILE:BOOL=OFF \
+        -D CMAKE_CXX_FLAGS:STRING="-g -O1 -fno-var-tracking" \
+	-D Trilinos_ENABLE_Export_Makefiles:BOOL=ON \
+	-D BLAS_LIBRARY_NAMES:STRING="libf77blas.so.3" \
+	-D BLAS_LIBRARY_DIRS:PATH="/usr/lib64/atlas" \
+        -D LAPACK_LIBRARY_NAMES:STRING="liblapack.so.3" \
+        -D LAPACK_LIBRARY_DIRS:PATH="/usr/lib64/atlas" \
+\
+\
+$EXTRA_ARGS \
+../Trilinos
+

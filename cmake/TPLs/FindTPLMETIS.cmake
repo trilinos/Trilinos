@@ -53,9 +53,8 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsTplDeclareLibraries)
 
-TRIBITS_TPL_DECLARE_LIBRARIES( METIS
+TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( METIS
   REQUIRED_HEADERS metis.h
   REQUIRED_LIBS_NAMES "metis"
   )

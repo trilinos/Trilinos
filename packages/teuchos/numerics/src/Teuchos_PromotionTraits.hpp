@@ -66,7 +66,7 @@ public: \
 template <> class PromotionTraits< type2 , type1 > { \
 public: \
     typedef type3 promote; \
-};                                               
+};
 
 #ifdef HAVE_TEUCHOS_COMPLEX
 PT_SPEC(double,std::complex<float>,std::complex<double>)

@@ -87,7 +87,7 @@ namespace Galeri {
         int myPID = comm->getRank();
 
         GO startx, endx;
-        Utils::getSubdomainData(nx, mx, myPID, startx, endx);
+        Utils::getSubdomainData<GO>(nx, mx, myPID, startx, endx);
 
         size_t numMyElements = endx - startx;
         std::vector<GO> myGlobalElements(numMyElements);

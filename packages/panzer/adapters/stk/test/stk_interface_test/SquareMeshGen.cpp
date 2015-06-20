@@ -119,8 +119,8 @@ int main(int argc, char * argv[])
      pl->set("Zf",zf);
    }
 
-   int numprocs = stk_classic::parallel_machine_size(MPI_COMM_WORLD);
-   int rank = stk_classic::parallel_machine_rank(MPI_COMM_WORLD);
+   // int numprocs = stk_classic::parallel_machine_size(MPI_COMM_WORLD);
+   // int rank = stk_classic::parallel_machine_rank(MPI_COMM_WORLD);
 
    RCP<panzer_stk_classic::STK_MeshFactory> factory; 
    if(!threeD)

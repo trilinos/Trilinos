@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -367,25 +367,6 @@ int ex_create_par_int (const char *path,
     ex_err("ex_create",errmsg,exerrval);
     return (EX_FATAL);
   }
-
-  if ((status = nc_def_dim(exoid, DIM_TIME, NC_UNLIMITED, &time_dim)) != NC_NOERR) {
-    exerrval = status;
-    sprintf(errmsg,
-	    "Error: failed to define time dimension in file id %d", exoid);
-    ex_err("ex_create",errmsg,exerrval);
-    return (EX_FATAL);
-  }
-
-  dims[0] = time_dim;
-  if ((status = nc_def_var(exoid, VAR_WHOLE_TIME, nc_flt_code(exoid), 1, dims, &dimid)) != NC_NOERR) {
-    exerrval = status;
-    sprintf(errmsg,
-	    "Error: failed to define whole time step variable in file id %d",
-	    exoid);
-    ex_err("ex_create",errmsg,exerrval);
-    return (EX_FATAL);
-  }
-  ex_compress_variable(exoid, dimid, 2);
 
   {
     int int64_db_status = int64_status & EX_ALL_INT64_DB;

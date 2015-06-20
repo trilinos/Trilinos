@@ -59,8 +59,8 @@ Final set of non-enabled TPLs:  MPI Boost UMFPACK AMD PETSC 5
 
 Getting information for all enabled TPLs ...
 
--- Processing enabled TPL: BLAS
--- Processing enabled TPL: LAPACK
+Processing enabled TPL: BLAS
+Processing enabled TPL: LAPACK
 
 Configuring individual enabled Trilinos packages ...
 

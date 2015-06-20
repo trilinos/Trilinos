@@ -128,7 +128,6 @@ class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP> {
 private:
 
   typedef MultiVecTraits<ScalarType,MV> MVT;
-  typedef MultiVecTraitsExt<ScalarType,MV> MVText;
   typedef OperatorTraits<ScalarType,MV,OP> OPT;
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -1231,13 +1230,13 @@ void BlockGCRODRSolMgr<ScalarType,MV,OP>::buildRecycleSpaceKryl(int& keff, Teuch
   }
   else{ //use a subspace selection method to get recycle space
     int info = 0;
-    Teuchos::RCP<SDM > PPtmp = rcp (new SDM ( Teuchos::View, *PP_, p, recycledBlocks_+1 ) );
+    Teuchos::RCP<SDM > PPtmp = Teuchos::rcp (new SDM ( Teuchos::View, *PP_, p, recycledBlocks_+1 ) );
     if(recycleMethod_ == "harmvecs"){
       keff = getHarmonicVecsKryl(p, HH, *PPtmp);
       printer_->stream(Debug) << "keff = " << keff << std::endl;
     }
 // Hereafter, only keff columns of PP are needed
-PPtmp = rcp (new SDM ( Teuchos::View, *PP_, p, keff ) );
+PPtmp = Teuchos::rcp (new SDM ( Teuchos::View, *PP_, p, keff ) );
 // Now get views into C, U, V
 index.resize(keff);
 for (int ii=0; ii<keff; ++ii) index[ii] = ii;
@@ -1635,7 +1634,7 @@ int BlockGCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecsKryl(int m, const SDM& H
 
   // Solve linear system:  H_m^{-H}*E_m where E_m is the last blockSize_ columns of the identity matrix
   SDM HHt( HH, Teuchos::TRANS );
-  Teuchos::RCP<SDM> harmRitzMatrix = rcp( new SDM( m, blockSize_));
+  Teuchos::RCP<SDM> harmRitzMatrix = Teuchos::rcp( new SDM( m, blockSize_));
 
   //Initialize harmRitzMatrix as E_m
   for(int i=0; i<=blockSize_-1; i++) (*harmRitzMatrix)[blockSize_-1-i][harmRitzMatrix->numRows()-1-i] = 1;
@@ -1844,7 +1843,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
   problem_->setLSIndex( currIdx );
 
   //ADD ERROR CHECKING TO MAKE SURE SIZE OF BLOCK KRYLOV SUBSPACE NOT LARGER THAN dim
-  //ptrdiff_t dim = MVText::GetGlobalLength( *(problem_->getRHS()) );
+  //ptrdiff_t dim = MVT::GetGlobalLength( *(problem_->getRHS()) );
 
   // reset loss of orthogonality flag
   loaDetected_ = false;
@@ -1954,7 +1953,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
       primeList.set("Keep Hessenberg",true);
       primeList.set("Initialize Hessenberg",true);
 
-      ptrdiff_t dim = MVText::GetGlobalLength( *(problem_->getRHS()) );
+      ptrdiff_t dim = MVT::GetGlobalLength( *(problem_->getRHS()) );
       if (blockSize_*static_cast<ptrdiff_t>(numBlocks_) > dim) {//if user has selected a total subspace dimension larger than system dimension
         ptrdiff_t tmpNumBlocks = 0;
         if (blockSize_ == 1)

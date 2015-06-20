@@ -47,6 +47,10 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <Tpetra_ConfigDefs.hpp>
 
+#if defined(HAVE_TPETRA_DEBUG) && ! defined(HAVE_IFPACK2_DEBUG)
+#  define HAVE_IFPACK2_DEBUG 1
+#endif
+
 //The sgn function isn't well defined for complex.
 //Is it correct to operate on the real part of x as is done below?
 template<class Scalar>

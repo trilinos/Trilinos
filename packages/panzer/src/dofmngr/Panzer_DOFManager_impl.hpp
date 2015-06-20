@@ -54,6 +54,7 @@
 #include "Panzer_ConnManager.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
+#include "Panzer_DOF_Functors.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Panzer_NodalFieldPattern.hpp"
 
@@ -331,7 +332,7 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
                       "DOFManager::buildGlobalUnknowns: buildGlobalUnknowns cannot be called again "
                       "after buildGlobalUnknowns has been called"); 
   //Some stuff for the Map.
-  typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+  typedef panzer::TpetraNodeType Node;
   typedef Tpetra::Map<LO, GO, Node> Map;
 
   typedef Tpetra::Vector<LO,GO> Vector;
@@ -462,17 +463,26 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
 
  /* 10. Use KokkosClassic::DefaultArithmetic to locally sum.
    */
-  typedef KokkosClassic::MultiVector<GO,Node> KMV;
-  Array<GO> columnSums(numFields_);
-  DefaultArithmetic<KMV>::Sum(non_overlap_mv->getLocalMVNonConst(), columnSums());
-  size_t localsum=0;
-  for(int i=0;i<columnSums.size();++i){
-    localsum+=columnSums[i];
+  GO localsum=0;
+  {  
+    typedef typename Tpetra::MultiVector<GO,Node> MV;
+    typedef typename MV::dual_view_type::t_dev KV;
+    typedef typename MV::dual_view_type::t_dev::memory_space DMS;
+    KV values = non_overlap_mv->template getLocalView<DMS>();
+    auto mv_size = values.dimension_0();
+    Kokkos::parallel_reduce(mv_size,panzer::dof_functors::SumRank2<GO,KV>(values),localsum);
   }
 
  /* 11. Create a map using local sums to generate final GIDs.
    */
-  RCP<const Map> gid_map = Tpetra::createContigMap<LO,GO>(-1,localsum, comm);
+  RCP<const Map> gid_map = 
+    rcp (new Map (Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid (), 
+		  static_cast<size_t> (localsum), static_cast<GO> (0), comm));
+  // mfh 28 Apr 2015: This doesn't work because createContigMap
+  // assumes the default Node type, but Panzer might use a different
+  // Node type.  Just call the Map constructor; don't call those
+  // nonmember "constructors."
+  //RCP<const Map> gid_map = Tpetra::createContigMap<LO,GO>(-1,localsum, comm);
 
  /* 12. Iterate through the non-overlapping MV and assign GIDs to 
    *     the necessary points. (Assign a -1 elsewhere.)
@@ -672,7 +682,12 @@ int DOFManager<LO,GO>::getFieldNum(const std::string & string) const
     else
       ind++;
   }
-  return ind;
+
+  if(found)
+    return ind;
+  
+  // didn't find anything...return -1
+  return -1;
 }
 
 template <typename LO, typename GO>
@@ -841,9 +856,14 @@ void DOFManager<LO,GO>::buildUnknownsOrientation()
      // grab field patterns, will be necessary to compute orientations
     const FieldPattern & fieldPattern = *fa_fps_[bid];
 
+    //Should be ga_fp_ (geometric aggregate field pattern)
     std::vector<std::pair<int,int> > topEdgeIndices;
-    //Should be ga_fp_
     orientation_helpers::computePatternEdgeIndices(*ga_fp_,topEdgeIndices);
+
+    // grab face orientations if 3D
+    std::vector<std::vector<int> > topFaceIndices;
+    if(ga_fp_->getDimension()==3)
+      orientation_helpers::computePatternFaceIndices(*ga_fp_,topFaceIndices);
 
     //How many GIDs are associated with a particular element bloc
     const std::vector<LO> & elmts = connMngr_->getElementBlock(blockName);
@@ -851,11 +871,10 @@ void DOFManager<LO,GO>::buildUnknownsOrientation()
        // this is the vector of orientations to fill: initialize it correctly
       std::vector<char> & eOrientation = orientation_[elmts[e]];
 
-      //This resize seems to be the same as fieldPattern.numberIDs(). 
-      //When computer ede orientations is called, that is the assert.
-      //There should be no reason to make it anymore complicated.
+      // This resize seems to be the same as fieldPattern.numberIDs(). 
+      // When computer edge orientations is called, that is the assert.
+      // There should be no reason to make it anymore complicated.
       eOrientation.resize(fieldPattern.numberIds());
-      //eOrientation.resize(8);
       for(std::size_t s=0;s<eOrientation.size();s++)
         eOrientation[s] = 1; // put in 1 by default 
 
@@ -865,6 +884,10 @@ void DOFManager<LO,GO>::buildUnknownsOrientation()
       const std::vector<GO> connectivity(connPtr,connPtr+connSz);
 
       orientation_helpers::computeCellEdgeOrientations(topEdgeIndices, connectivity, fieldPattern, eOrientation);
+
+      // compute face orientations in 3D
+      if(ga_fp_->getDimension()==3)
+        orientation_helpers::computeCellFaceOrientations(topFaceIndices, connectivity, fieldPattern, eOrientation);
     }
   }
 }
@@ -928,11 +951,11 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::printFieldInformation(std::ostrea
 }
 
 template <typename LO,typename GO>
-Teuchos::RCP<const Tpetra::Map<LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> >
+Teuchos::RCP<const Tpetra::Map<LO,GO,panzer::TpetraNodeType> >
 DOFManager<LO,GO>::
 buildOverlapMapFromElements(const ElementBlockAccess & access) const
 {
-  typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+  typedef panzer::TpetraNodeType Node;
   typedef Tpetra::Map<LO, GO, Node> Map;
 
   /*
@@ -966,8 +989,8 @@ template <typename LO,typename GO>
 void DOFManager<LO,GO>::
 fillGIDsFromOverlappedMV(const ElementBlockAccess & access,
                          std::vector<std::vector< GO > > & elementGIDs,
-                         const Tpetra::Map<LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> & overlapmap,
-                         const Tpetra::MultiVector<GO,LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> & overlap_mv) const
+                         const Tpetra::Map<LO,GO,panzer::TpetraNodeType> & overlapmap,
+                         const Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> & overlap_mv) const
 {
   using Teuchos::ArrayRCP;
 
@@ -1019,10 +1042,10 @@ fillGIDsFromOverlappedMV(const ElementBlockAccess & access,
 
 /*
 template <typename LO,typename GO>
-Teuchos::RCP<const Tpetra::Map<LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> >
-DOFManager<LO,GO>::runLocalRCMReordering(const Teuchos::RCP<const Tpetra::Map<LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> > & map)
+Teuchos::RCP<const Tpetra::Map<LO,GO,panzer::TpetraNodeType> >
+DOFManager<LO,GO>::runLocalRCMReordering(const Teuchos::RCP<const Tpetra::Map<LO,GO,panzer::TpetraNodeType> > & map)
 {
-  typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+  typedef panzer::TpetraNodeType Node;
   typedef Tpetra::Map<LO, GO, Node> Map;
   typedef Tpetra::CrsGraph<LO, GO, Node> Graph;
 

@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
   My_Copy1.putScalar( 1.0 );      // every entry is 1.0
   My_Copy1 = 1.0;                 // every entry is 1.0 (still)
   My_Copy2(1,1) = 10.0;           // individual element access
-  Empty_Matrix = My_Matrix;       // copy My_Matrix to Empty_Matrix 
+  Empty_Matrix = My_Matrix;       // copy My_Matrix to Empty_Matrix
 
   // Basic matrix arithmetic can be performed:
   Teuchos::SerialDenseMatrix<int,double> My_Prod( 4, 3 ), My_GenMatrix( 4, 3 );
@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
   My_Prod.multiply( Teuchos::RIGHT_SIDE, 1.0, My_Matrix, My_GenMatrix, 0.0 );
   My_Copy2 += My_Matrix;   // Matrix addition
   My_Copy2 *= 0.5;         // Matrix scaling
-  
+
   // Matrices can be compared:
   // Check if the matrices are equal in dimension and values
   if (Empty_Matrix == My_Matrix) {

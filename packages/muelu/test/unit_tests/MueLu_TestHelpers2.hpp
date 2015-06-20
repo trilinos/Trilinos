@@ -86,7 +86,7 @@ namespace MueLuTests {
 
   namespace TestHelpers {
 
-    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     class TestProblem {
 #include "MueLu_UseShortNames.hpp"
 
@@ -98,7 +98,7 @@ namespace MueLuTests {
 
           // Create a matrix
           {
-            A_ = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(99);
+            A_ = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(99);
           }
 
           // Create a Hierarchy
@@ -151,7 +151,12 @@ namespace MueLuTests {
       RCP<Hierarchy>   & GetH()   { Init(); return H_; }
       RCP<MultiVector> & GetRHS() { Init(); return B_; }
 
-      RCP<MultiVector> GetNewX0() { Init(); RCP<MultiVector> X = MultiVectorFactory::Build(A_->getRowMap(), 1); X->putScalar(0.0); return X; }
+      RCP<MultiVector> GetNewX0 () {
+        Init ();
+        RCP<MultiVector> X = MultiVectorFactory::Build (A_->getRowMap (), 1);
+        X->putScalar (0.0);
+        return X;
+      }
 
     private:
       Xpetra::UnderlyingLib lib_;
@@ -161,13 +166,15 @@ namespace MueLuTests {
     };
 
     // Singleton for TestProblem
-    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-    RCP<TestProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & getTestProblem(Xpetra::UnderlyingLib lib) {
-      static Array<RCP<TestProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > > problem_(2);
+    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+    RCP<TestProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &
+    getTestProblem (Xpetra::UnderlyingLib lib)
+    {
+      static Array<RCP<TestProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > problem_(2);
 
       int libNum = (Xpetra::UseEpetra) ? 0 : 1;
       if (problem_[libNum] == Teuchos::null)
-        problem_[libNum] = rcp(new TestProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(lib));
+        problem_[libNum] = rcp (new TestProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node> (lib));
 
       return problem_[libNum];
     }

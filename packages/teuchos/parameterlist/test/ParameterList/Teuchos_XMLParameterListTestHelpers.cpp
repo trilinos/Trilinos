@@ -55,8 +55,8 @@ Teuchos::writeThenReadPL(ParameterList& myList)
 
 Teuchos::RCP<Teuchos::ParameterList>
 Teuchos::writeThenReadPL(
-  ParameterList& myList, 
-  RCP<DependencySheet> depSheetIn, 
+  ParameterList& myList,
+  RCP<DependencySheet> depSheetIn,
   RCP<DependencySheet> depSheetOut)
 {
   std::ostringstream xmlOut;

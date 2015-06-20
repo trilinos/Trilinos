@@ -51,7 +51,11 @@
 
 // Constructor
 Basis::Basis(int numSpec) :
-  NumSpecies(numSpec)
+  NumSpecies(numSpec),
+  xx(0.0),
+  eta(0.0),
+  wt(0.0),
+  dx(0.0)
 {
   uu = new double[numSpec];
   duu = new double[numSpec];

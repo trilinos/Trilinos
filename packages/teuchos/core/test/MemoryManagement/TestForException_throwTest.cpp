@@ -69,11 +69,11 @@ int main(int argc, char* argv[])
     std::cerr << "\nEnd Result: TEST FAILED" << std::endl;
     return parse_return;
   }
-  
+
   Teuchos::TestForException_setEnableStacktrace(enableStackTrace);
 
   bool success = true;
-  
+
   try {
     func_b();
   }

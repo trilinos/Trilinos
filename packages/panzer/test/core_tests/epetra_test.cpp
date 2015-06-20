@@ -44,6 +44,8 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_RCP.hpp>
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Epetra_Map.h"
 #include "Epetra_MpiComm.h"
 
@@ -55,6 +57,8 @@ namespace panzer {
   
   TEUCHOS_UNIT_TEST(epetra_test, maptest)
   {
+    PHX::KokkosDeviceSession session;
+    
     Epetra_MpiComm comm(MPI_COMM_WORLD);
 
     int veca[] = {0, 1, 2, 3, 4, 5};

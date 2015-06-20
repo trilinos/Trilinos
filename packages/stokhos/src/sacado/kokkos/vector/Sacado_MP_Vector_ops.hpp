@@ -123,6 +123,7 @@ namespace Sacado {                                                      \
       typedef typename remove_volatile<T>::type Tnv;                    \
       typedef typename Tnv::value_type value_type;                      \
       typedef typename Tnv::storage_type storage_type;                  \
+      typedef typename Tnv::base_expr_type base_expr_type;              \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       OP(const T& expr_) : expr(expr_)  {}                              \
@@ -190,6 +191,16 @@ namespace Sacado {                                                      \
       return expr_t(expr.derived());                                    \
     }                                                                   \
   }                                                                     \
+                                                                        \
+  template <typename T>                                                 \
+  struct IsExpr< MP::OP<T> > {                                          \
+    static const bool value = true;                                     \
+  };                                                                    \
+                                                                        \
+  template <typename T>                                                 \
+  struct BaseExprType< MP::OP<T> > {                                    \
+    typedef typename MP::OP<T>::base_expr_type type;                    \
+  };                                                                    \
 }
 
 MP_UNARYOP_MACRO(operator+, UnaryPlusOp, +)
@@ -198,6 +209,7 @@ MP_UNARYOP_MACRO(exp, ExpOp, std::exp)
 MP_UNARYOP_MACRO(log, LogOp, std::log)
 MP_UNARYOP_MACRO(log10, Log10Op, std::log10)
 MP_UNARYOP_MACRO(sqrt, SqrtOp, std::sqrt)
+MP_UNARYOP_MACRO(cbrt, CbrtOp, std::cbrt)
 MP_UNARYOP_MACRO(cos, CosOp, std::cos)
 MP_UNARYOP_MACRO(sin, SinOp, std::sin)
 MP_UNARYOP_MACRO(tan, TanOp, std::tan)
@@ -233,6 +245,7 @@ namespace Sacado {                                                      \
                                        value_type_2>::type value_type;  \
                                                                         \
       typedef typename Tnv1::storage_type storage_type;                 \
+      typedef typename Tnv1::base_expr_type base_expr_type;             \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       OP(const T1& expr1_, const T2& expr2_) :                          \
@@ -293,6 +306,7 @@ namespace Sacado {                                                      \
       typedef typename Tnv1::value_type ConstT;                         \
                                                                         \
       typedef typename Tnv1::storage_type storage_type;                 \
+      typedef typename Tnv1::base_expr_type base_expr_type;             \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       OP(const T1& expr1_, const ConstT& c_) :                          \
@@ -351,6 +365,7 @@ namespace Sacado {                                                      \
       typedef typename Tnv2::value_type ConstT;                         \
                                                                         \
       typedef typename Tnv2::storage_type storage_type;                 \
+      typedef typename Tnv2::base_expr_type base_expr_type;             \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       OP(const ConstT& c_, const T2& expr2_) :                          \
@@ -502,6 +517,16 @@ namespace Sacado {                                                      \
       return expr_t(expr.derived(), c);                                 \
     }                                                                   \
   }                                                                     \
+                                                                        \
+  template <typename T1, typename T2>                                   \
+  struct IsExpr< MP::OP<T1,T2> > {                                      \
+    static const bool value = true;                                     \
+  };                                                                    \
+                                                                        \
+  template <typename T1, typename T2>                                   \
+  struct BaseExprType< MP::OP<T1,T2> > {                                \
+    typedef typename MP::OP<T1,T2>::base_expr_type type;                \
+  };                                                                    \
 }
 
 MP_BINARYOP_MACRO(operator+, AdditionOp, +)
@@ -527,6 +552,7 @@ namespace Sacado {                                                      \
                                        value_type_2>::type value_type;  \
                                                                         \
       typedef typename T1::storage_type storage_type;                   \
+      typedef typename T1::base_expr_type base_expr_type;               \
                                                                         \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
@@ -588,6 +614,7 @@ namespace Sacado {                                                      \
       typedef typename T1::value_type ConstT;                           \
                                                                         \
       typedef typename T1::storage_type storage_type;                   \
+      typedef typename T1::base_expr_type base_expr_type;               \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       OP(const T1& expr1_, const ConstT& c_) :                          \
@@ -643,6 +670,7 @@ namespace Sacado {                                                      \
       typedef typename T2::value_type ConstT;                           \
                                                                         \
       typedef typename T2::storage_type storage_type;                   \
+      typedef typename T2::base_expr_type base_expr_type;               \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       OP(const ConstT& c_, const T2& expr2_) :                          \
@@ -724,6 +752,16 @@ namespace Sacado {                                                      \
       return expr_t(expr.derived(), c);                                 \
     }                                                                   \
   }                                                                     \
+                                                                        \
+  template <typename T1, typename T2>                                   \
+  struct IsExpr< MP::OP<T1,T2> > {                                      \
+    static const bool value = true;                                     \
+  };                                                                    \
+                                                                        \
+  template <typename T1, typename T2>                                   \
+  struct BaseExprType< MP::OP<T1,T2> > {                                \
+    typedef typename MP::OP<T1,T2>::base_expr_type type;                \
+  };                                                                    \
 }
 
 MP_BINARYOP_MACRO(atan2, Atan2Op, std::atan2)

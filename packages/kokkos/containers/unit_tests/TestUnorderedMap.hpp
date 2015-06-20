@@ -1,3 +1,44 @@
+//@HEADER
+// ************************************************************************
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// 
+// ************************************************************************
+//@HEADER
+
 #ifndef KOKKOS_TEST_UNORDERED_MAP_HPP
 #define KOKKOS_TEST_UNORDERED_MAP_HPP
 
@@ -13,7 +54,7 @@ template <typename MapType, bool Near = false>
 struct TestInsert
 {
   typedef MapType map_type;
-  typedef typename map_type::device_type device_type;
+  typedef typename map_type::execution_space execution_space;
   typedef uint32_t value_type;
 
   map_type map;
@@ -26,9 +67,9 @@ struct TestInsert
     , collisions(arg_collisions)
   {}
 
-  void apply( bool rehash_on_fail = true )
+  void testit( bool rehash_on_fail = true )
   {
-    device_type::fence();
+    execution_space::fence();
 
     uint32_t failed_count = 0;
     do {
@@ -41,7 +82,7 @@ struct TestInsert
       }
     } while (rehash_on_fail && failed_count > 0u);
 
-    device_type::fence();
+    execution_space::fence();
   }
 
 
@@ -67,7 +108,7 @@ struct TestInsert
     typedef TestErase<MapType, Near> self_type;
 
     typedef MapType map_type;
-    typedef typename MapType::device_type device_type;
+    typedef typename MapType::execution_space execution_space;
 
     map_type m_map;
     uint32_t m_num_erase;
@@ -79,15 +120,15 @@ struct TestInsert
       , m_num_duplicates(num_duplicates)
     {}
 
-    void apply()
+    void testit()
     {
-      device_type::fence();
+      execution_space::fence();
       Kokkos::parallel_for(m_num_erase, *this);
-      device_type::fence();
+      execution_space::fence();
     }
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(typename device_type::size_type i) const
+    void operator()(typename execution_space::size_type i) const
     {
       if (Near) {
         m_map.erase(i/m_num_duplicates);
@@ -103,7 +144,7 @@ struct TestInsert
   struct TestFind
   {
     typedef MapType map_type;
-    typedef typename MapType::device_type device_type;
+    typedef typename MapType::execution_space::execution_space execution_space;
     typedef uint32_t value_type;
 
     map_type m_map;
@@ -118,11 +159,11 @@ struct TestInsert
       , m_max_key( ((num_inserts + num_duplicates) - 1)/num_duplicates )
     {}
 
-    void apply(value_type &errors)
+    void testit(value_type &errors)
     {
-      device_type::fence();
+      execution_space::execution_space::fence();
       Kokkos::parallel_reduce(m_map.capacity(), *this, errors);
-      device_type::fence();
+      execution_space::execution_space::fence();
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -136,7 +177,7 @@ struct TestInsert
     { dst += src; }
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(typename device_type::size_type i, value_type & errors) const
+    void operator()(typename execution_space::size_type i, value_type & errors) const
     {
       const bool expect_to_find_i = (i < m_max_key);
 
@@ -164,11 +205,11 @@ void test_insert( uint32_t num_nodes , uint32_t num_inserts , uint32_t num_dupli
 
   if (near) {
     Impl::TestInsert<map_type,true> test_insert(map, num_inserts, num_duplicates);
-    test_insert.apply();
+    test_insert.testit();
   } else
   {
     Impl::TestInsert<map_type,false> test_insert(map, num_inserts, num_duplicates);
-    test_insert.apply();
+    test_insert.testit();
   }
 
   const bool print_list = false;
@@ -186,13 +227,13 @@ void test_insert( uint32_t num_nodes , uint32_t num_inserts , uint32_t num_dupli
     {
       uint32_t find_errors = 0;
       Impl::TestFind<const_map_type> test_find(map, num_inserts, num_duplicates);
-      test_find.apply(find_errors);
+      test_find.testit(find_errors);
       EXPECT_EQ( 0u, find_errors);
     }
 
     map.begin_erase();
     Impl::TestErase<map_type,false> test_erase(map, num_inserts, num_duplicates);
-    test_erase.apply();
+    test_erase.testit();
     map.end_erase();
     EXPECT_EQ(0u, map.size());
   }
@@ -205,8 +246,8 @@ void test_failed_insert( uint32_t num_nodes)
 
   map_type map(num_nodes);
   Impl::TestInsert<map_type> test_insert(map, 2u*num_nodes, 1u);
-  test_insert.apply(false /*don't rehash on fail*/);
-  Device::fence();
+  test_insert.testit(false /*don't rehash on fail*/);
+  Device::execution_space::fence();
 
   EXPECT_TRUE( map.failed_insert() );
 }
@@ -216,25 +257,24 @@ void test_failed_insert( uint32_t num_nodes)
 template <typename Device>
 void test_deep_copy( uint32_t num_nodes )
 {
-  typedef typename Device::host_mirror_device_type host_type ;
-
   typedef Kokkos::UnorderedMap<uint32_t,uint32_t, Device> map_type;
   typedef Kokkos::UnorderedMap<const uint32_t, const uint32_t, Device> const_map_type;
 
-  typedef Kokkos::UnorderedMap<uint32_t, uint32_t, host_type> host_map_type;
+  typedef typename map_type::HostMirror host_map_type ;
+  // typedef Kokkos::UnorderedMap<uint32_t, uint32_t, typename Device::host_mirror_execution_space > host_map_type;
 
   map_type map;
   map.rehash(num_nodes,false);
 
   {
     Impl::TestInsert<map_type> test_insert(map, num_nodes, 1);
-    test_insert.apply();
+    test_insert.testit();
     ASSERT_EQ( map.size(), num_nodes);
     ASSERT_FALSE( map.failed_insert() );
     {
       uint32_t find_errors = 0;
       Impl::TestFind<map_type> test_find(map, num_nodes, 1);
-      test_find.apply(find_errors);
+      test_find.testit(find_errors);
       EXPECT_EQ( find_errors, 0u);
     }
 
@@ -248,7 +288,7 @@ void test_deep_copy( uint32_t num_nodes )
   {
     uint32_t find_errors = 0;
     Impl::TestFind<host_map_type> test_find(hmap, num_nodes, 1);
-    test_find.apply(find_errors);
+    test_find.testit(find_errors);
     EXPECT_EQ( find_errors, 0u);
   }
 
@@ -262,7 +302,7 @@ void test_deep_copy( uint32_t num_nodes )
   {
     uint32_t find_errors = 0;
     Impl::TestFind<const_map_type> test_find(cmap, num_nodes, 1);
-    test_find.apply(find_errors);
+    test_find.testit(find_errors);
     EXPECT_EQ( find_errors, 0u);
   }
 

@@ -63,16 +63,16 @@ public:
   /** \name Special Converter Functions */
   //@{
 
-  /** 
-   * \brief Gets the specific BoolLogicCondition to be returned 
+  /**
+   * \brief Gets the specific BoolLogicCondition to be returned
    * by this conveter when converting from XML.
    *
-   * @param conditions The condition list for the BoolLogic converter 
+   * @param conditions The condition list for the BoolLogic converter
    * that is being converted.
    */
   virtual RCP<BoolLogicCondition> getSpecificBoolLogicCondition(
     Condition::ConstConditionList& conditions) const = 0;
- 
+
   //@}
 
   /** \name Overridden from ConditionXMLConverter */
@@ -85,10 +85,10 @@ public:
 
   /** \brief . */
   void convertCondition(
-    const RCP<const Condition> condition, 
+    const RCP<const Condition> condition,
     XMLObject& xmlObj,
     const XMLParameterListWriter::EntryIDsMap& entryIDsMap) const;
-  
+
   //@}
 
 };
@@ -112,7 +112,7 @@ public:
   /** \brief . */
   RCP<BoolLogicCondition> getSpecificBoolLogicCondition(
     Condition::ConstConditionList& conditions) const;
- 
+
   //@}
 
 };
@@ -136,7 +136,7 @@ public:
   /** \brief . */
   RCP<BoolLogicCondition> getSpecificBoolLogicCondition(
     Condition::ConstConditionList& conditions) const;
- 
+
   //@}
 
 };
@@ -161,7 +161,7 @@ public:
   /** \brief . */
   RCP<BoolLogicCondition> getSpecificBoolLogicCondition(
     Condition::ConstConditionList& conditions) const;
- 
+
   //@}
 
 };
@@ -189,7 +189,7 @@ public:
 
   /** \brief . */
   void convertCondition(
-    const RCP<const Condition> condition, 
+    const RCP<const Condition> condition,
     XMLObject& xmlObj,
     const XMLParameterListWriter::EntryIDsMap& entryIDsMap) const;
 
@@ -206,28 +206,28 @@ public:
   /** \name Special Converter Functions */
   //@{
 
-  /** \brief Gets the specific ParameterCondition to be returned 
+  /** \brief Gets the specific ParameterCondition to be returned
    * by this conveter
    * when converting from XML.
    *
-   * @param xmlObj The xml object from which the ParameterCondition 
+   * @param xmlObj The xml object from which the ParameterCondition
    * is being derived.
    * @param parameterEntry The ParameterEntry the ParameterCondition evaluates.
    */
   virtual RCP<ParameterCondition> getSpecificParameterCondition(
     const XMLObject& xmlObj,
     RCP<ParameterEntry> parameterEntry) const = 0;
-  
+
   /** \brief Adds specific xml traits to the xmlObj for a particular
    * ParmaterCondtion
    *
    * @param condition The ParameterCondition to be converted.
-   * @param xmlObj The XMLObject to which the specific traits should be 
+   * @param xmlObj The XMLObject to which the specific traits should be
    * added.
    */
   virtual void addSpecificXMLTraits(
     RCP<const ParameterCondition> condition, XMLObject& xmlObj) const = 0;
- 
+
   //@}
 
   /** \name Overridden from ConditionXMLConverter */
@@ -240,25 +240,25 @@ public:
 
   /** \brief . */
   void convertCondition(
-    const RCP<const Condition> condition, 
+    const RCP<const Condition> condition,
     XMLObject& xmlObj,
     const XMLParameterListWriter::EntryIDsMap& entryIDsMap) const;
-  
+
   //@}
- 
+
 private:
 
   /** \name Private Members */
   //@{
- 
+
   /** \brief gets the ParameterEntryID attribute name. */
   static const std::string& getParameterEntryIdAttributeName(){
     static const std::string parameterEntryIdAttributeName = "parameterId";
     return parameterEntryIdAttributeName;
   }
-  
+
   //@}
-  
+
 };
 
 /** \brief An xml converter for StringConditions
@@ -283,11 +283,11 @@ public:
   RCP<ParameterCondition> getSpecificParameterCondition(
     const XMLObject& xmlObj,
     RCP<ParameterEntry> parameterEntry) const;
- 
+
   /** \brief . */
   void addSpecificXMLTraits(
     RCP<const ParameterCondition> condition, XMLObject& xmlObj) const;
- 
+
   //@}
 
 private:
@@ -331,7 +331,7 @@ public:
   RCP<ParameterCondition> getSpecificParameterCondition(
     const XMLObject& xmlObj,
     RCP<ParameterEntry> parameterEntry) const;
- 
+
   /** \brief . */
   void addSpecificXMLTraits(
     RCP<const ParameterCondition> condition, XMLObject& xmlObj) const;
@@ -365,13 +365,13 @@ public:
   /** \brief . */
   void addSpecificXMLTraits(
     RCP<const ParameterCondition> condition, XMLObject& xmlObj) const;
- 
+
   //@}
 
 };
 
 template<class T>
-RCP<ParameterCondition> 
+RCP<ParameterCondition>
 NumberConditionConverter<T>::getSpecificParameterCondition(
   const XMLObject& xmlObj,
   RCP<ParameterEntry> parameterEntry) const
@@ -381,9 +381,9 @@ NumberConditionConverter<T>::getSpecificParameterCondition(
     return rcp(new NumberCondition<T>(parameterEntry));
   }
   else{
-    RCP<FunctionObject> functionObj = 
+    RCP<FunctionObject> functionObj =
       FunctionObjectXMLConverterDB::convertXML(xmlObj.getChild(functionTag));
-    RCP<SimpleFunctionObject<T> > castedFunction = 
+    RCP<SimpleFunctionObject<T> > castedFunction =
       rcp_dynamic_cast<SimpleFunctionObject<T> >(functionObj);
     return rcp(new NumberCondition<T>(parameterEntry, castedFunction));
   }
@@ -393,12 +393,12 @@ template<class T>
 void NumberConditionConverter<T>::addSpecificXMLTraits(
   RCP<const ParameterCondition> condition, XMLObject& xmlObj) const
 {
-  RCP<const NumberCondition<T> > castedCondition = 
+  RCP<const NumberCondition<T> > castedCondition =
     rcp_dynamic_cast<const NumberCondition<T> >(condition);
   RCP<const SimpleFunctionObject<T> > functionObject =
     castedCondition->getFunctionObject();
   if(!functionObject.is_null()){
-    XMLObject functionXML = 
+    XMLObject functionXML =
       FunctionObjectXMLConverterDB::convertFunctionObject(functionObject);
     xmlObj.addChild(functionXML);
   }

@@ -56,31 +56,31 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const ParameterList> AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const ParameterList> AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A");
     return validParamList;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
     Input(currentLevel, "A"); // sub-block from blocked A
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &currentLevel) const
   {
     FactoryMonitor m(*this, "Build", currentLevel);
 
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
 
-    LO fullblocksize    = 1;    // block dim for fixed size blocks
+    LO fullblocksize    = 1;   // block dim for fixed size blocks
     GO offset           = 0;   // global offset of dof gids
     LO blockid          = -1;  // block id in strided map
     LO nStridedOffset   = 0;   // DOF offset for strided block id "blockid" (default = 0)
     LO stridedblocksize = fullblocksize; // size of strided block id "blockid" (default = fullblocksize, only if blockid!=-1 stridedblocksize <= fullblocksize)
-    GO indexBase        = A->getRowMap()->getIndexBase();  // index base for maps
+    // GO indexBase        = A->getRowMap()->getIndexBase();  // index base for maps (unused)
 
     // 1) check for blocking/striding information
 
@@ -107,34 +107,103 @@ namespace MueLu {
     } else {
       GetOStream(Warnings0) << "AmalagamationFactory::Build(): no striding information available. Use blockdim=1 with offset=0" << std::endl;
     }
-    // TODO: maybe no striding information on coarser levels -> misuse nullspace vector?
 
-    // 2) prepare maps for amalgamated graph of A and
-    //    setup unamalgamation information
+    // build node row map (uniqueMap) and node column map (nonUniqueMap)
+    // the arrays rowTranslation and colTranslation contain the local node id
+    // given a local dof id. They are only necessary for the CoalesceDropFactory if
+    // fullblocksize > 1
+    RCP<const Map> uniqueMap, nonUniqueMap;
+    RCP<AmalgamationInfo> amalgamationData;
+    RCP<Array<LO> > rowTranslation = Teuchos::null;
+    RCP<Array<LO> > colTranslation = Teuchos::null;
 
-    RCP<const Map> const &rowMap = A->getRowMap();
-    Teuchos::ArrayView<const GlobalOrdinal> globalColDofs = A->getColMap()->getNodeElementList();
-    LocalOrdinal nColEle = Teuchos::as<LocalOrdinal>(globalColDofs.size());
-    RCP<std::vector<GlobalOrdinal> > gNodeIds; // contains global node ids on current proc
-    gNodeIds = Teuchos::rcp(new std::vector<GlobalOrdinal>);
-    for (LocalOrdinal i = 0; i < nColEle; i++) {
-      GlobalOrdinal gDofId = globalColDofs[i];
-      GlobalOrdinal gNodeId = DOFGid2NodeId(gDofId, fullblocksize, offset, indexBase);
-      if (rowMap->isNodeGlobalElement(gDofId))
-        gNodeIds->push_back(gNodeId);
+    if (fullblocksize > 1) {
+      // mfh 14 Apr 2015: These need to have different names than
+      // rowTranslation and colTranslation, in order to avoid
+      // shadowing warnings (-Wshadow with GCC).  Alternately, it
+      // looks like you could just assign to the existing variables in
+      // this scope, rather than creating new ones.
+      RCP<Array<LO> > theRowTranslation = rcp(new Array<LO>);
+      RCP<Array<LO> > theColTranslation = rcp(new Array<LO>);
+      AmalgamateMap(*(A->getRowMap()), *A, uniqueMap,    *theRowTranslation);
+      AmalgamateMap(*(A->getColMap()), *A, nonUniqueMap, *theColTranslation);
+
+      amalgamationData = rcp(new AmalgamationInfo(theRowTranslation,
+                                                  theColTranslation,
+                                                  uniqueMap,
+                                                  nonUniqueMap,
+                                                  A->getColMap(),
+                                                  fullblocksize,
+                                                  offset,
+                                                  blockid,
+                                                  nStridedOffset,
+                                                  stridedblocksize) );
+    } else {
+      amalgamationData = rcp(new AmalgamationInfo(rowTranslation, // Teuchos::null
+                                                  colTranslation, // Teuchos::null
+                                                  A->getRowMap(), // unique map of graph
+                                                  A->getColMap(), // non-unique map of graph
+                                                  A->getColMap(), // column map of A
+                                                  fullblocksize,
+                                                  offset,
+                                                  blockid,
+                                                  nStridedOffset,
+                                                  stridedblocksize) );
     }
-    //make the gNodeIds unique
-    std::sort( gNodeIds->begin(), gNodeIds->end() );
-    gNodeIds->erase( std::unique( gNodeIds->begin(), gNodeIds->end() ), gNodeIds->end() );
 
     // store (un)amalgamation information on current level
-    RCP<AmalgamationInfo> amalgamationData = rcp(new AmalgamationInfo(gNodeIds, A->getColMap(), fullblocksize, offset, blockid, nStridedOffset, stridedblocksize) );
-
     Set(currentLevel, "UnAmalgamationInfo", amalgamationData);
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const GlobalOrdinal AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DOFGid2NodeId(GlobalOrdinal gid, LocalOrdinal blockSize, const GlobalOrdinal offset, const GlobalOrdinal indexBase) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AmalgamateMap(const Map& sourceMap, const Matrix& A, RCP<const Map>& amalgamatedMap, Array<LO>& translation) {
+    typedef typename ArrayView<const GO>::size_type size_type;
+    typedef std::map<GO,size_type> container;
+
+    GO                      indexBase = sourceMap.getIndexBase();
+    ArrayView<const GO>     elementAList = sourceMap.getNodeElementList();
+    size_type               numElements  = elementAList.size();
+    container               filter; // TODO:  replace std::set with an object having faster lookup/insert, hashtable for instance
+
+    GO offset = 0;
+    LO blkSize = A.GetFixedBlockSize();
+    if (A.IsView("stridedMaps") == true) {
+      Teuchos::RCP<const Map> myMap = A.getRowMap("stridedMaps");
+      Teuchos::RCP<const StridedMap> strMap = Teuchos::rcp_dynamic_cast<const StridedMap>(myMap);
+      TEUCHOS_TEST_FOR_EXCEPTION(strMap == null, Exceptions::RuntimeError, "Map is not of type StridedMap");
+      offset = strMap->getOffset();
+      blkSize = Teuchos::as<const LO>(strMap->getFixedBlockSize());
+    }
+
+    Array<GO> elementList(numElements);
+    translation.resize(numElements);
+
+    size_type numRows = 0;
+    for (size_type id = 0; id < numElements; id++) {
+      GO dofID  = elementAList[id];
+      GO nodeID = AmalgamationFactory::DOFGid2NodeId(dofID, blkSize, offset, indexBase);
+
+      typename container::iterator it = filter.find(nodeID);
+      if (it == filter.end()) {
+        filter[nodeID] = numRows;
+
+        translation[id]      = numRows;
+        elementList[numRows] = nodeID;
+
+        numRows++;
+
+      } else {
+        translation[id]      = it->second;
+      }
+    }
+    elementList.resize(numRows);
+
+    amalgamatedMap = MapFactory::Build(sourceMap.lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, sourceMap.getComm());
+
+  }
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  const GlobalOrdinal AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DOFGid2NodeId(GlobalOrdinal gid, LocalOrdinal blockSize, const GlobalOrdinal offset, const GlobalOrdinal indexBase) {
     // here, the assumption is, that the node map has the same indexBase as the dof map
     GlobalOrdinal globalblockid = ((GlobalOrdinal) gid - offset - indexBase) / blockSize + indexBase;
     return globalblockid;

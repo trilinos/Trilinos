@@ -1,9 +1,0 @@
-*** Base Git Repo: MockTrilinos
-sha1_1 [Mon Sep 23 11:34:59 2013 -0400] <author_1@ornl.gov>
-First summary message
-*** Git Repo: extraTrilinosRepo
-sha1_2 [Fri Aug 30 09:55:07 2013 -0400] <author_2@ornl.gov>
-Second summary message
-*** Git Repo: extraRepoOnePackage
-sha1_3 [Thu Dec 1 23:34:06 2011 -0500] <author_3@ornl.gov>
-Third summary message

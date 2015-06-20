@@ -57,7 +57,7 @@
 
 /* Name of file containing the mesh to be partitioned */
 
-static char *fname="mesh.txt";
+static char *global_fname="mesh.txt";
 
 /* Structure to hold mesh data */
 
@@ -119,15 +119,15 @@ int main(int argc, char *argv[])
   ** Read geometry from input file and distribute it unevenly
   ******************************************************************/
 
-  fp = fopen(fname, "r");
+  fp = fopen(global_fname, "r");
   if (!fp){
-    if (myRank == 0) fprintf(stderr,"ERROR: Can not open %s\n",fname);
+    if (myRank == 0) fprintf(stderr,"ERROR: Can not open %s\n",global_fname);
     MPI_Finalize();
     exit(1);
   }
   fclose(fp);
 
-  read_input_objects(myRank, numProcs, fname, &myMesh);
+  read_input_objects(myRank, numProcs, global_fname, &myMesh);
 
   /******************************************************************
   ** Create a Zoltan library structure for this instance of load

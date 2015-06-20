@@ -225,7 +225,7 @@ public:
 
     for (int i = 0 ; i < NumMyRows() ; ++i)
     {
-      int NumEntries;
+      int NumEntries = 0;
       // use the inlined function
       getrow(i, MaxNumEntries(), NumEntries, &Values[0], &Indices[0]);
       for (int j = 0 ; j < NumEntries ; ++j)

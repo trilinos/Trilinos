@@ -395,20 +395,16 @@ main (int argc, char *argv[])
   bool success = false;
 
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &std::cout);
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-
   try {
+    RCP<const Teuchos::Comm<int> > comm =
+      Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+
     // Get values of command-line arguments.
     getCmdLineArgs (*comm, argc, argv);
 
-    typedef int local_ordinal_type;
-    typedef int global_ordinal_type;
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-    typedef KokkosClassic::TBBNode node_type;
-#else
-    typedef KokkosClassic::SerialNode node_type;
-#endif // HAVE_KOKKOSCLASSIC_TBB
+    typedef Tpetra::Map<>::local_ordinal_type local_ordinal_type;
+    typedef Tpetra::Map<>::global_ordinal_type global_ordinal_type;
+    typedef Tpetra::Map<>::node_type node_type;
 
     {
       typedef double scalar_type;

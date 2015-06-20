@@ -43,6 +43,8 @@
 #ifndef __Panzer_DOFManagerFactory_decl_hpp__
 #define __Panzer_DOFManagerFactory_decl_hpp__
 
+#include "Panzer_config.hpp"
+
 #include "Panzer_UniqueGlobalIndexerFactory.hpp"
 
 namespace panzer {
@@ -71,16 +73,40 @@ public:
                             const std::string & fieldOrder="") const;
 
    void setUseDOFManagerFEI(bool flag)
-   { useDOFManagerFEI_ = flag; }
+   { 
+     #ifdef PANZER_HAVE_FEI
+     useDOFManagerFEI_ = flag; 
+     #else
+     useDOFManagerFEI_ = flag; 
+
+     Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
+     out.setShowProcRank(false);
+     out.setOutputToRootOnly(0);
+     out << "*********************************************************************" << std::endl;
+     out << "*                                                                   *" << std::endl;
+     out << "*  PANZER WARNING: Panzer was not configured with FEI enabled,      *" << std::endl;
+     out << "*                  therefore the internal DOFManager will be used.  *" << std::endl;
+     out << "*                                                                   *" << std::endl;
+     out << "*********************************************************************" << std::endl;
+     #endif
+   }
 
    bool getUseDOFManagerFEI() const
-   { return useDOFManagerFEI_; }
+   { 
+     #ifdef PANZER_HAVE_FEI
+     return useDOFManagerFEI_; 
+     #else
+     return false;
+     #endif
+   }
 
    void setUseTieBreak(bool flag) 
    { useTieBreak_ = flag; }
 
    bool getUseTieBreak()
    { return useTieBreak_; }
+
+   static void buildFieldOrder(const std::string & fieldOrderStr,std::vector<std::string> & fieldOrder);
 
 protected:
    template <typename DOFManagerT>

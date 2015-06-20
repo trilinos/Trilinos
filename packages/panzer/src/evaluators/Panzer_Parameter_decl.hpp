@@ -56,16 +56,15 @@ namespace panzer {
   template <typename EvalT> class ScalarParameterEntry;
 
 //! Constant parameter from sacado parameter library
-  template<typename EvalT, typename Traits>
+  template<typename EvalT, typename TRAITS>
   class Parameter : 
-    public PHX::EvaluatorWithBaseImpl<Traits>,
-    public PHX::EvaluatorDerived<EvalT, Traits> {
+    public PHX::EvaluatorWithBaseImpl<TRAITS>,
+    public PHX::EvaluatorDerived<EvalT, TRAITS> {
   
   public:
     
     Parameter(const std::string name,
 	      const Teuchos::RCP<PHX::DataLayout>& data_layout,
-	      const double initial_value,
 	      panzer::ParamLib& param_lib);
 
     #ifdef HAVE_STOKHOS
@@ -84,10 +83,10 @@ namespace panzer {
 	      panzer::ParamLib& param_lib);
     #endif
     
-    void postRegistrationSetup(typename Traits::SetupData d,
-			       PHX::FieldManager<Traits>& vm);
+    void postRegistrationSetup(typename TRAITS::SetupData d,
+			       PHX::FieldManager<TRAITS>& vm);
     
-    void evaluateFields(typename Traits::EvalData ud);
+    void evaluateFields(typename TRAITS::EvalData ud);
     
   private:
     
