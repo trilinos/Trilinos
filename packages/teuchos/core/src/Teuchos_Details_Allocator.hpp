@@ -39,11 +39,20 @@
 // ***********************************************************************
 // @HEADER
 
+/// \file Teuchos_Details_Allocator.hpp
+/// \brief Declaration of Teuchos::Details::Allocator, a tracking and
+///   logging implementation of the C++ Standard Library's Allocator
+///   concept.
+/// \warning This header file is an implementation detail of Teuchos.
+///   We make no promises of backwards compatibility for this header
+///   file or its contents.  They may change or disappear at any time.
+
 #ifndef TEUCHOS_DETAILS_ALLOCATOR
 #define TEUCHOS_DETAILS_ALLOCATOR
 
-#include <memory>
-#include <iostream>
+#include <Teuchos_ConfigDefs.hpp>
+//#include <memory> // Teuchos_ConfigDefs.hpp includes it
+//#include <iostream> // Teuchos_ConfigDefs.hpp includes it
 
 namespace Teuchos {
 namespace Details {
@@ -57,9 +66,32 @@ class AllocationLogger {
 public:
   /// \brief Type of the size of an allocation or deallocation.
   ///
-  /// This must match Allocation::size_type (see below).
+  /// This must match Allocator::size_type (see below).
   typedef std::size_t size_type;
 
+  /// \brief Log an allocation.
+  ///
+  /// This is useful for Allocator<T>, but not so useful for users,
+  /// unless they are writing a custom Allocator and want it use this
+  /// class for logging.
+  ///
+  /// \param out [out] Output stream to which to write logging
+  ///   information, if \c verbose is true.
+  ///
+  /// \param numEntries [in] Number of entries (of type \c T) in the
+  ///   allocated array (1 if just allocating one instance of \c T).
+  ///
+  /// \param numBytes [in] Number of bytes in the allocated array.
+  ///   This would normally be <tt>numEntries*sizeof(T)</tt>, at least
+  ///   for types \c T which are "plain old data" (POD) or structs
+  ///   thereof.  We make you compute this, so that the logger doesn't
+  ///   have to know about (e.g., be templated on) the type \c T.
+  ///
+  /// \param typeName [in] Human-readable name of the type \c T, for
+  ///   which you are logging an allocation.
+  ///
+  /// \param verbose [in] Whether to print logging information to the
+  ///   given output stream \c out.
   static void
   logAllocation (std::ostream& out,
                  const size_type numEntries,
@@ -67,6 +99,33 @@ public:
                  const char typeName[],
                  const bool verbose);
 
+  /// \brief Log a deallocation, that was previously logged using
+  ///   logAllocation().
+  ///
+  /// This is useful for Allocator<T>, but not so useful for users,
+  /// unless they are writing a custom Allocator and want it use this
+  /// class for logging.
+  ///
+  /// \param out [out] Output stream to which to write logging
+  ///   information, if \c verbose is true.
+  ///
+  /// \param numEntries [in] Number of entries (of type \c T) in the
+  ///   deallocated array (1 if just allocating one instance of \c T).
+  ///   Note that the allocate() function in the C++ Standard
+  ///   Library's Allocator concept gets this information, unlike
+  ///   free() or <tt>operator delete[]</tt>.
+  ///
+  /// \param numBytes [in] Number of bytes in the deallocated array.
+  ///   This would normally be <tt>numEntries*sizeof(T)</tt>, at least
+  ///   for types \c T which are "plain old data" (POD) or structs
+  ///   thereof.  We make you compute this, so that the logger doesn't
+  ///   have to know about (e.g., be templated on) the type \c T.
+  ///
+  /// \param typeName [in] Human-readable name of the type \c T, for
+  ///   which you are logging a deallocation.
+  ///
+  /// \param verbose [in] Whether to print logging information to the
+  ///   given output stream \c out.
   static void
   logDeallocation (std::ostream& out,
                    const size_type numEntries,
@@ -74,10 +133,14 @@ public:
                    const char typeName[],
                    const bool verbose);
 
-  //! Current total allocation in bytes.
+  /// \brief Current total allocation in bytes.
+  ///
+  /// This count includes allocations using Allocator<T> for all \c T.
   static size_type curAllocInBytes ();
 
-  //! Max total allocation ("high water mark") in bytes.
+  /// \brief Max total allocation ("high water mark") in bytes.
+  ///
+  /// This count includes allocations using Allocator<T> for all \c T.
   static size_type maxAllocInBytes ();
 
   /// \brief Reset the current and max total allocation numbers to zero.
@@ -93,11 +156,29 @@ private:
   static size_type maxAllocInBytes_;
 };
 
-/// \brief Tracking allocator for Teuchos Memory Management classes.
-/// \tparam T The type of the entries in arrays.
+/// \brief Optional tracking allocator for Teuchos Memory Management classes.
+/// \tparam T The type of the entries in arrays to allocate.
+///
+/// \warning This is an implementation detail of Teuchos.  We make no
+///   promises of backwards compatibility for this header file or this
+///   class.  They may change or disappear at any time.
+///
+/// This class implements the C++ Standard Library's "Allocator"
+/// concept.  It does "high water mark" tracking, and has the option
+/// to print to \c stderr on allocations and deallocations.
+///
+/// \note To Teuchos developers: Making this class be the "allocator"
+///   (second) template parameter of the std::vector type that
+///   Teuchos::Array uses, would make Teuchos::Array track memory.
+///   (This would require changing Teuchos::Array.)  It should also be
+///   possible to change Teuchos::ArrayRCP to use this class as well,
+///   but only to track memory that it allocates (vs. memory given it
+///   by the user, possibly with a custom deallocator functor).
 template<class T>
 class Allocator {
 private:
+  /// \brief Internal enum, identifying whether an operation is an
+  ///   allocation or a deallocation.
   enum EAllocatorOp {
     ALLOCATOR_ALLOCATE,
     ALLOCATOR_DEALLOCATE
@@ -186,24 +267,66 @@ public:
     ::operator delete ((void*) p);
   }
 
-  /// \brief Invoke the constructor of an instance of U, without allocating.
+#ifdef HAVE_TEUCHOSCORE_CXX11
+  /// \brief Invoke the constructor of an instance of \c U, without
+  ///   allocating.
   /// \tparam U The type of the object to construct.
   ///
-  /// The "class..." thing and std::forward are C++11 syntax for a
-  /// variable number of arguments corresponding to possibly different
-  /// template parameters.  That lets this method deal with any kind
-  /// of constructor that U might have.
+  /// \warning This variant only works with >= C++11.  The C++98
+  ///   version is different (see below).
+  ///
+  /// \param p [in] Pointer to an area of memory in which to construct
+  ///   a \c U instance, using placement new.
+  /// \param args [in] Zero or more arguments to U's constructor.
+  ///
+  /// The "class..." thing and std::forward are C++11 syntax for
+  /// handling a variable number of arguments corresponding to
+  /// possibly different template parameters.  That lets this method
+  /// deal with any kind of constructor that \c U might have.
   template<class U, class... Args>
   void construct (U* p, Args&&... args) {
     new ((void*) p) U (std::forward<Args> (args)...);
   }
+#else
+  /// \brief Invoke the constructor of an instance of \c T, without
+  ///   allocating.
+  ///
+  /// \warning This variant only works with C++98.  The C++11 version
+  ///   is different (see above).
+  ///
+  /// \param p [in] Pointer to an area of memory in which to construct
+  ///   a T instance, using placement new.
+  /// \param val [in] Argument to T's (copy) constructor.
+  void construct (pointer p, const_reference val) {
+    new ((void*) p) T (val);
+  }
+#endif // HAVE_TEUCHOSCORE_CXX11
 
-  /// \brief Invoke the destructor of an instance of U, without deallocating.
+#ifdef HAVE_TEUCHOSCORE_CXX11
+  /// \brief Invoke the destructor of an instance of \c U, without
+  ///   deallocating.
   /// \tparam U The type of the object to destroy.
+  ///
+  /// \warning This variant only works with >= C++11.  The C++98
+  ///   version is different (see below).
+  ///
+  /// \param p [in] Pointer to an instance of \c U to destroy.
   template<class U>
   void destroy (U* p) {
     p->~U ();
   }
+#else
+  /// \brief Invoke the destructor of an instance of \c T, without
+  ///   deallocating.
+  ///
+  /// \warning This variant only works with C++98.  The C++11 version
+  ///   is different (see above).
+  ///
+  /// \param p [in] Pointer to an instance of \c T to destroy.
+  void destroy (pointer p) {
+    ((T*)p)->~T ()
+  }
+#endif // HAVE_TEUCHOSCORE_CXX11
 
   template<class U>
   struct rebind { typedef Allocator<U> other; };
