@@ -49,17 +49,46 @@
 #ifndef SHYLU_H
 #define SHYLU_H
 
+// Epetra include
 #include "Epetra_CrsMatrix.h" 
 #include "Epetra_Map.h" 
 #include "Epetra_MultiVector.h" 
 #include "Epetra_LinearProblem.h" 
 #include "Epetra_SerialComm.h"
+
+// Amesos includes
 #include "Amesos_BaseSolver.h"
+
+// Ifpack includes
 #include "Ifpack.h"
 #include "Ifpack_Preconditioner.h"
+
+// AztecOO includes
 #include "AztecOO.h"
+
+// Isorropia includes
 #include "Isorropia_EpetraProber.hpp"
 
+// Amesos2 includes
+#ifdef HAVE_SHYLUCORE_AMESOS2
+#include <Amesos2.hpp>
+#endif
+
+// Tpetra includes
+#ifdef HAVE_SHYLUCORE_TPETRA
+#include <Tpetra_CrsMatrix_decl.hpp>
+#include <Tpetra_CrsMatrix_def.hpp>
+#endif
+
+// Zoltan2 includes
+#ifdef HAVE_SHYLUCORE_ZOLTAN2
+#include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
+#include <Zoltan2_XpetraMultiVectorAdapter.hpp>
+#include <Zoltan2_PartitioningProblem.hpp>
+#endif
+
+
+// Shylu includes
 #include "shylu_symbolic.h"
 #include "shylu_config.h"
 #include "shylu_probing_operator.h"

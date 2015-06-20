@@ -92,8 +92,16 @@
 #include "Amesos_BaseSolver.h"
 
 
-//Tpetra options
+// Amesos2 includes
+#ifdef HAVE_SHYLUCORE_AMESOS2
+#include <Amesos2.hpp>
+#endif
 
+// Tpetra includes
+#ifdef HAVE_SHYLUCORE_TPETRA
+#include <Tpetra_CrsMatrix_decl.hpp>
+#include <Tpetra_CrsMatrix_def.hpp>
+#endif
 
 #include "shylu.h"
 

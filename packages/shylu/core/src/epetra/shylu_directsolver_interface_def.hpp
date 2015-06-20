@@ -110,7 +110,7 @@ namespace ShyLU{
 
     Amesos Factory;
     solver_amesos  = Factory.Create(solvertype, problem_amesos);
-    assert (Solver != 0);
+    assert (solver_amesos != 0);
     solver_amesos->SetParameters(subsubList);
     //Add error checking
     solver_amesos->SymbolicFactorization();
