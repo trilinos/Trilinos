@@ -197,7 +197,7 @@ namespace MueLu {
               if (boundaryNodes[i])
                 numLocalBoundaryNodes++;
             RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
-            sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+            MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
             GetOStream(Statistics0) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
           }
 
@@ -268,7 +268,7 @@ namespace MueLu {
               if (boundaryNodes[i])
                 numLocalBoundaryNodes++;
             RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
-            sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+            MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
             GetOStream(Statistics0) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
           }
           Set(currentLevel, "Graph",       graph);
@@ -389,7 +389,7 @@ namespace MueLu {
                 numLocalBoundaryNodes++;
 
             RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
-            sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+            MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
             GetOStream(Statistics0) << "Detected " << numGlobalBoundaryNodes
                                        << " agglomerated Dirichlet nodes" << std::endl;
           }
@@ -516,7 +516,7 @@ namespace MueLu {
                 numLocalBoundaryNodes++;
 
             RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
-            sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+            MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
             GetOStream(Statistics0) << "Detected " << numGlobalBoundaryNodes
                                        << " agglomerated Dirichlet nodes" << std::endl;
           }
@@ -556,7 +556,7 @@ namespace MueLu {
               if (pointBoundaryNodes[i])
                 numLocalBoundaryNodes++;
             RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
-            sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+            MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
             GetOStream(Statistics0) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
           }
 
@@ -737,7 +737,7 @@ namespace MueLu {
                 numLocalBoundaryNodes++;
 
             RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
-            sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+            MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
             GetOStream(Statistics0) << "Detected " << numGlobalBoundaryNodes << " agglomerated Dirichlet nodes"
                                        << " using threshold " << dirichletThreshold << std::endl;
           }
@@ -750,8 +750,8 @@ namespace MueLu {
       if ((GetVerbLevel() & Statistics0) && !(A->GetFixedBlockSize() > 1 && threshold != STS::zero())) {
           RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
           GO numGlobalTotal, numGlobalDropped;
-          sumAll(comm, numTotal,   numGlobalTotal);
-          sumAll(comm, numDropped, numGlobalDropped);
+          MueLu_sumAll(comm, numTotal,   numGlobalTotal);
+          MueLu_sumAll(comm, numDropped, numGlobalDropped);
           GetOStream(Statistics0) << "Number of dropped entries in " << graphType << " matrix graph: " << numGlobalDropped << "/" << numGlobalTotal;
           if (numGlobalTotal != 0)
             GetOStream(Statistics0) << " (" << 100*Teuchos::as<double>(numGlobalDropped)/Teuchos::as<double>(numGlobalTotal) << "%)";
@@ -859,7 +859,7 @@ namespace MueLu {
           if (amalgBoundaryNodes[i])
             numLocalBoundaryNodes++;
         RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
-        sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+        MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
         GetOStream(Statistics0) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
       }
 

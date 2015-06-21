@@ -226,7 +226,7 @@ namespace MueLu {
         LO myBlkSize = 0, blkSize = 0;
         if (nodeNumElts > 0)
           myBlkSize = importer->getSourceMap()->getNodeNumElements() / nodeNumElts;
-        maxAll(coords->getMap()->getComm(), myBlkSize, blkSize);
+        MueLu_maxAll(coords->getMap()->getComm(), myBlkSize, blkSize);
 
         RCP<const Import> coordImporter;
         if (blkSize == 1) {

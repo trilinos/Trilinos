@@ -98,11 +98,11 @@ class Epetra_Vector;
 
 namespace MueLu {
 // MPI helpers
-#define sumAll(rcpComm, in, out)                                        \
+#define MueLu_sumAll(rcpComm, in, out)                                        \
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out))
-#define minAll(rcpComm, in, out)                                        \
+#define MueLu_minAll(rcpComm, in, out)                                        \
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MIN, in, Teuchos::outArg(out))
-#define maxAll(rcpComm, in, out)                                        \
+#define MueLu_maxAll(rcpComm, in, out)                                        \
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out))
 
 #ifdef HAVE_MUELU_EPETRA

@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
     int nLocalDofs = (int) globalNumDofs / nProcs;
     nLocalDofs = nLocalDofs - (nLocalDofs % nDofsPerNode);
     int nCumulatedDofs = 0;
-    sumAll(comm,nLocalDofs, nCumulatedDofs);
+    MueLu_sumAll(comm,nLocalDofs, nCumulatedDofs);
 
     if(comm->getRank() == nProcs-1) {
       nLocalDofs += globalNumDofs - nCumulatedDofs;

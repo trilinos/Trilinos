@@ -788,7 +788,7 @@ namespace MueLu {
         printf("Warning: did not assign %d to a Layer?????\n",i);
       }
     }
-    maxAll(&comm, NumNodesPerVertLine, i);
+    MueLu_maxAll(&comm, NumNodesPerVertLine, i);
     if (NumNodesPerVertLine == -1)  NumNodesPerVertLine = i;
 
     TEUCHOS_TEST_FOR_EXCEPTION(NumNodesPerVertLine != i,Exceptions::RuntimeError, "Different processors have different z direction line lengths?\n");
