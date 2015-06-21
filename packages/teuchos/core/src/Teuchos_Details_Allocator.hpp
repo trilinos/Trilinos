@@ -201,11 +201,10 @@ public:
 
   /// \brief Type of the size of an allocation or deallocation.
   ///
-  /// This must match AllocationLogger::size_type (see above).
-  typedef std::size_t size_type;
-
-  //! Signed integer type representing the difference of two pointers.
-  typedef std::ptrdiff_t difference_type;
+  /// This must match AllocationLogger::size_type (see above).  If we
+  /// didn't need this to have the same type as that, then we wouldn't
+  /// need this typedef.
+  typedef AllocationLogger::size_type size_type;
 
   //! Default constructor.
   Allocator () :
