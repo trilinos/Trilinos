@@ -100,9 +100,12 @@ namespace PyTrilinos
 // routines to indicate how the routine is supposed to react to
 // illegal parameters.
 
-enum ResponseToIllegalParameters {raiseError,
-				  ignore,
-				  storeNames };
+enum ResponseToIllegalParameters
+{
+  raiseError,
+  ignore,
+  storeNames
+};
 
 // ****************************************************************** //
 

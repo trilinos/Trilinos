@@ -122,7 +122,6 @@ exAmesos_Factory.py.
 #endif
 
 // Teuchos includes
-#ifdef HAVE_TEUCHOS
 #include "Teuchos_RefCountPtrDecl.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
@@ -130,7 +129,6 @@ exAmesos_Factory.py.
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
 #include "PyTrilinos_Teuchos_Util.hpp"
-#endif
 
 // Amesos includes
 #include "Amesos.h"
@@ -199,9 +197,7 @@ exAmesos_Factory.py.
 %include "stl.i"
 
 // External Trilinos packages
-#ifdef HAVE_TEUCHOS
 %import "Teuchos.i"
-#endif
 #ifdef HAVE_EPETRA
 %import "Epetra.i"
 #endif

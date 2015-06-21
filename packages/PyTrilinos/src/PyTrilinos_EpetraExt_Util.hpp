@@ -201,8 +201,6 @@ ModelEvaluator::InArgs  convertInArgsFromPython( PyObject*);
 ModelEvaluator::OutArgs convertOutArgsFromPython(PyObject*);
 }
 
-#ifdef HAVE_TEUCHOS
-
 namespace PyTrilinos
 {
 
@@ -212,7 +210,5 @@ PyObject *
 convertArrayOfIntToPython(const Teuchos::Array<int> & tai);
 
 }  // Namespace PyTrilinos
-
-#endif  // HAVE_TEUCHOS
 
 #endif // PYTRILINOS_EPETRAEXT_UTIL_HPP
