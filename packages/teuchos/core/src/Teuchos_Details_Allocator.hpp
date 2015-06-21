@@ -324,7 +324,7 @@ public:
   ///
   /// \param p [in] Pointer to an instance of \c T to destroy.
   void destroy (pointer p) {
-    ((T*)p)->~T ()
+    ((T*)p)->~T ();
   }
 #endif // HAVE_TEUCHOSCORE_CXX11
 
