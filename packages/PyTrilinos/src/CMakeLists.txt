@@ -48,10 +48,6 @@ IF(PyTrilinos_ENABLE_Epetra)
   SET(HAVE_EPETRA ON)
 ENDIF()
 
-IF(PyTrilinos_ENABLE_Teuchos)
-  SET(HAVE_TEUCHOS ON)
-ENDIF()
-
 IF(PyTrilinos_ENABLE_STK)
   SET(HAVE_STK ON)
 ENDIF()
@@ -141,17 +137,13 @@ LIST(APPEND SOURCES
 
 #
 # PyTrilinos + Teuchos headers and sources
-IF(PyTrilinos_ENABLE_Teuchos)
+LIST(APPEND HEADERS
+  PyTrilinos_Teuchos_Util.hpp
+  )
 
-  LIST(APPEND HEADERS
-    PyTrilinos_Teuchos_Util.hpp
-    )
-
-  LIST(APPEND SOURCES
-    PyTrilinos_Teuchos_Util.cpp
-    )
-
-ENDIF(PyTrilinos_ENABLE_Teuchos)
+LIST(APPEND SOURCES
+  PyTrilinos_Teuchos_Util.cpp
+  )
 
 #
 # PyTrilinos + Epetra headers and sources

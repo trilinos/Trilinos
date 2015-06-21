@@ -59,9 +59,7 @@
 #include "PyTrilinos_DAP.hpp"
 
 // Teuchos includes
-#ifdef HAVE_TEUCHOS
 #include "Teuchos_RCP.hpp"
-#endif
 
 // Epetra includes
 #include "Epetra_BlockMap.h"
@@ -72,15 +70,8 @@
 #include "Epetra_IntVector.h"
 #include "Epetra_Operator.h"
 
-
-////////////////////////////////////////////////////////////////////////
-
 namespace PyTrilinos
 {
-
-////////////////////////////////////////////////////////////
-
-#ifdef HAVE_TEUCHOS
 
 ////////////////////////////////////////////////////////////
 
@@ -261,72 +252,6 @@ getEpetraOperatorObjectAttr(PyObject   * object,
 // const Epetra_IntVector.
 // Teuchos::RCP< const Epetra_IntVector >
 // convertDistArrayToConstEpetraIntVector(PyObject * object);
-
-////////////////////////////////////////////////////////////
-
-#else   // HAVE_TEUCHOS
-
-////////////////////////////////////////////////////////////
-
-// Given a pointer to an Epetra_MultiVector, convert to a python
-// object and return the pointer.  Attempt to downcast to an
-// Epetra_NumPyMultiVector.
-// PyObject *
-// convertEpetraMultiVectorToDistArray(const Epetra_MultiVector * emv);
-
-////////////////////////////////////////////////////////////
-
-// Given a pointer to an Epetra_Vector, convert to a python object and
-// return the pointer.  Attempt to downcast to an Epetra_NumPyVector.
-// PyObject *
-// convertEpetraVectorToDistArray(const Epetra_Vector * ev);
-
-////////////////////////////////////////////////////////////
-
-// Given a pointer to an Epetra_Operator, convert to a python object
-// and return the pointer.  Attempt to downcast to any one of the many
-// Epetra classes that derive from Epetra_Operator.
-// PyObject *
-// convertEpetraOperatorToDistArray(const Epetra_Operator * eo,
-//                                  int cnvt_flags=0);
-
-////////////////////////////////////////////////////////////
-
-// Given a Python dimension data object, convert it to an Epetra_Map.
-// const Epetra_Map *
-// convertDimDataToEpetraMap(PyObject * object);
-
-////////////////////////////////////////////////////////////
-
-// Given a Python distributed array object, convert it to an
-// Epetra_MultiVector.
-// Epetra_MultiVector *
-// convertDistArrayToEpetraMultiVector(PyObject * object);
-
-////////////////////////////////////////////////////////////
-
-// Given a Python distributed array object, convert it to an
-// Epetra_Vector.
-// Epetra_Vector *
-// convertDistArrayToEpetraVector(PyObject * object);
-
-////////////////////////////////////////////////////////////
-
-// Given a Python distributed array object, convert it to an
-// Epetra_FEVector.
-// Epetra_FEVector *
-// convertDistArrayToEpetraFEVector(PyObject * object);
-
-////////////////////////////////////////////////////////////
-
-// Given a Python distributed array object, convert it to an
-// Epetra_IntVector.
-// Epetra_IntVector *
-// convertDistArrayToEpetraIntVector(PyObject * object);
-
-////////////////////////////////////////////////////////////
-
-#endif  // HAVE_TEUCHOS
 
 ////////////////////////////////////////////////////////////
 

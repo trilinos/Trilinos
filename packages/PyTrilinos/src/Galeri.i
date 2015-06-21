@@ -138,14 +138,12 @@ example subdirectory of the PyTrilinos package:
 #endif
 
 // Teuchos includes
-#ifdef HAVE_TEUCHOS
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
 #include "PyTrilinos_Teuchos_Util.hpp"
-#endif
 
 // Galeri includes
 #include "Galeri_Version.h"
@@ -172,9 +170,7 @@ example subdirectory of the PyTrilinos package:
 %include "stl.i"
 
 // Trilinos package imports
-#ifdef HAVE_TEUCHOS
 %import "Teuchos.i"
-#endif
 #ifdef HAVE_EPETRA
 %import "Epetra.i"
 #endif

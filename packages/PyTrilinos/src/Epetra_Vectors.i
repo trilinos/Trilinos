@@ -163,7 +163,6 @@ Epetra_NumPyIntVector::Values
     PyTrilinos::Epetra_NumPyIntVector * enpiv = NULL;
     Epetra_BlockMap                   * bmap  = NULL;
 
-#ifdef HAVE_TEUCHOS
     Teuchos::RCP< const Epetra_BlockMap > rcpbmap;
     void * vtemp  = NULL;
     int    newmem = 0;
@@ -182,9 +181,6 @@ Epetra_NumPyIntVector::Values
 	bmap = const_cast< Epetra_BlockMap * >(reinterpret_cast< Teuchos::RCP< const Epetra_BlockMap > * >(vtemp)->get());
       }
     }
-#else
-    res = SWIG_ConvertPtr(arg1, (void**)&bmap, SWIGTYPE_p_Epetra_BlockMap, 0);
-#endif
 
     if (SWIG_CheckState(res))
     {
@@ -192,7 +188,6 @@ Epetra_NumPyIntVector::Values
     }
     else
     {
-#ifdef HAVE_TEUCHOS
       Teuchos::RCP< const Epetra_IntVector > rcpeiv;
       vtemp = NULL;
       newmem = 0;
@@ -211,9 +206,6 @@ Epetra_NumPyIntVector::Values
 	  eiv = const_cast< Epetra_IntVector * >(reinterpret_cast< Teuchos::RCP< const Epetra_IntVector > * >(vtemp)->get());
         }
       }
-#else
-      res = SWIG_ConvertPtr(arg1, (void**)&eiv, SWIGTYPE_p_Epetra_IntVector, 0);
-#endif
 
       if (SWIG_CheckState(res))
       {
@@ -243,7 +235,6 @@ Epetra_NumPyIntVector::Values
     PyTrilinos::Epetra_NumPyIntVector * enpiv   = NULL;
     Epetra_BlockMap                   * bmap    = NULL;
 
-#ifdef HAVE_TEUCHOS
     Teuchos::RCP< const Epetra_BlockMap > rcpbmap;
     void * vtemp  = NULL;
     int    newmem = 0;
@@ -262,9 +253,6 @@ Epetra_NumPyIntVector::Values
         bmap = const_cast< Epetra_BlockMap * >(reinterpret_cast< Teuchos::RCP< const Epetra_BlockMap > * >(vtemp)->get());
       }
     }
-#else
-    res = SWIG_ConvertPtr(arg1, (void**)&bmap, SWIGTYPE_p_Epetra_BlockMap, 0);
-#endif
 
     if (SWIG_CheckState(res))
     {
@@ -722,7 +710,6 @@ Epetra_NumPyVector::SumIntoMyValues
     PyTrilinos::Epetra_NumPyVector * enpv = NULL;
     Epetra_BlockMap                * bmap = NULL;
 
-#ifdef HAVE_TEUCHOS
     Teuchos::RCP< const Epetra_BlockMap > rcpbmap;
     void * vtemp  = NULL;
     int    newmem = 0;
@@ -741,9 +728,6 @@ Epetra_NumPyVector::SumIntoMyValues
         bmap = const_cast< Epetra_BlockMap * >(reinterpret_cast< Teuchos::RCP< const Epetra_BlockMap > * >(vtemp)->get());
       }
     }
-#else
-    res = SWIG_ConvertPtr(arg1, (void**)&bmap, SWIGTYPE_p_Epetra_BlockMap, 0);
-#endif
 
     if (SWIG_CheckState(res))
     {
@@ -751,7 +735,6 @@ Epetra_NumPyVector::SumIntoMyValues
     }
     else
     {
-#ifdef HAVE_TEUCHOS
       Teuchos::RCP< const Epetra_Vector > rcpev;
       vtemp  = NULL;
       newmem = 0;
@@ -770,9 +753,7 @@ Epetra_NumPyVector::SumIntoMyValues
 	  ev = const_cast< Epetra_Vector * >(reinterpret_cast< Teuchos::RCP< const Epetra_Vector > * >(vtemp)->get());
 	}
       }
-#else
-      res = SWIG_ConvertPtr(arg1, (void**)&ev, SWIGTYPE_p_Epetra_Vector, 0);
-#endif
+
       if (SWIG_CheckState(res))
       {
 	enpv = new PyTrilinos::Epetra_NumPyVector(*ev);
@@ -803,7 +784,6 @@ Epetra_NumPyVector::SumIntoMyValues
     PyTrilinos::Epetra_NumPyVector * enpv    = NULL;
     Epetra_DataAccess                cv;
 
-#ifdef HAVE_TEUCHOS
     Teuchos::RCP< const Epetra_BlockMap > rcpbmap;
     void * vtemp  = NULL;
     int    newmem = 0;
@@ -822,9 +802,6 @@ Epetra_NumPyVector::SumIntoMyValues
         bmap = const_cast< Epetra_BlockMap * >(reinterpret_cast< Teuchos::RCP< const Epetra_BlockMap > * >(vtemp)->get());
       }
     }
-#else
-    res = SWIG_ConvertPtr(arg1, (void**)&bmap, SWIGTYPE_p_Epetra_BlockMap, 0);
-#endif
 
     if (SWIG_CheckState(res))
     {
@@ -843,7 +820,6 @@ Epetra_NumPyVector::SumIntoMyValues
       if (PyInt_Check(arg1))
       {
 	cv  = static_cast< Epetra_DataAccess >(PyInt_AsLong(arg1));
-#ifdef HAVE_TEUCHOS
 	Teuchos::RCP< const Epetra_Vector > rcpev;
 	vtemp  = NULL;
 	newmem = 0;
@@ -862,9 +838,6 @@ Epetra_NumPyVector::SumIntoMyValues
 	    ev = const_cast< Epetra_Vector * >(reinterpret_cast< Teuchos::RCP< const Epetra_Vector > * >(vtemp)->get());
 	  }
 	}
-#else
-	res = SWIG_ConvertPtr(arg2, (void**)&ev, SWIGTYPE_p_Epetra_Vector, 0);
-#endif
 	if (SWIG_CheckState(res))
 	{
 	  enpv = new PyTrilinos::Epetra_NumPyVector(cv, *ev);
