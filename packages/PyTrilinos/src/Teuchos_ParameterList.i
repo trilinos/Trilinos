@@ -965,9 +965,6 @@ Teuchos::ParameterList::values
 %ignore Teuchos::ParameterList::end() const;
 %ignore Teuchos::ParameterList::entry(ConstIterator) const;
 %ignore Teuchos::ParameterList::name(ConstIterator) const;
-#ifndef HAVE_TEUCHOS
-%warn "HAVE_TEUCHOS IS NOT DEFINED!!!!"
-#endif
 %include "Teuchos_ParameterList.hpp"
 // SWIG thinks that PrintOptions is an un-nested Teuchos class, so we
 // need to trick the C++ compiler into understanding this so called

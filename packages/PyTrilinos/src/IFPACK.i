@@ -134,14 +134,12 @@ example subdirectory of the PyTrilinos package:
 #endif
 
 // Teuchos Python utility code
-#ifdef HAVE_TEUCHOS
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
 #include "PyTrilinos_Teuchos_Util.hpp"
-#endif
 
 // IFPACK includes
 #include "Ifpack.h"
@@ -170,9 +168,7 @@ example subdirectory of the PyTrilinos package:
 %include "IFPACK_dox.i"
 
 // External Trilinos modules
-#ifdef HAVE_TEUCHOS
 %import "Teuchos.i"
-#endif
 #ifdef HAVE_EPETRA
 %ignore Epetra_Version();
 %import "Epetra.i"
