@@ -34,14 +34,18 @@ IF(${PACKAGE_NAME}_ENABLE_Tpetra AND HAVE_SHYLUCORE_AMESOS2 AND TPL_ENABLE_Super
 	COMM serial mpi
 	)
 
-   TRIBITS_ADD_EXECUTABLE(
+ENDIF()
+
+IF(${PACKAGE_NAME}_ENABLE_Tpetra)
+
+ TRIBITS_ADD_EXECUTABLE(
         iterative_interface
         SOURCES iterative_solver_interface_test.cpp
         COMM serial mpi
         )
 
-
 ENDIF()
+
 
 IF(${PACKAGE_NAME}_ENABLE_Tpetra AND HAVE_SHYLUCORE_AMESOS2 AND TPL_ENABLE_SuperLU AND ${PACKAGE_NAME}_ENABLE_ParMETIS)
   TRIBITS_ADD_TEST(
