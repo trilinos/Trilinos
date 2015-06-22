@@ -45,6 +45,7 @@
 
 #include "Ifpack2_BlockRelaxation_decl.hpp"
 #include "Ifpack2_LinearPartitioner.hpp"
+#include "Ifpack2_LinePartitioner.hpp"
 #include "Ifpack2_Details_UserPartitioner_decl.hpp"
 #include "Ifpack2_Details_UserPartitioner_def.hpp"
 #include <Ifpack2_Parameters.hpp>
@@ -376,7 +377,10 @@ void BlockRelaxation<MatrixType,ContainerType>::initialize() {
 
   if (PartitionerType_ == "linear") {
     Partitioner_ =
-      rcp (new Ifpack2::LinearPartitioner<row_graph_type> (A_->getGraph ()));
+      rcp (new Ifpack2::LinearPartitioner<row_graph_type> (A_->getGraph ())); 
+  } else if (PartitionerType_ == "line") {
+    Partitioner_ =
+      rcp (new Ifpack2::LinePartitioner<row_graph_type,typename MatrixType::scalar_type> (A_->getGraph ()));
   } else if (PartitionerType_ == "user") {
     Partitioner_ =
       rcp (new Ifpack2::Details::UserPartitioner<row_graph_type> (A_->getGraph () ) );

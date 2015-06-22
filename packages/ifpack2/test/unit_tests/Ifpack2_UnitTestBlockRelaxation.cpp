@@ -90,6 +90,7 @@
 #include <Ifpack2_TriDiContainer.hpp>
 #include <Ifpack2_OverlappingPartitioner.hpp>
 #include <Ifpack2_LinearPartitioner.hpp>
+#include <Ifpack2_LinePartitioner.hpp>
 #include <Ifpack2_ILUT.hpp>
 
 namespace {
@@ -288,12 +289,66 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TriDi, Scalar, LocalOr
   TEST_COMPARE_FLOATING_ARRAYS(lhs.get1dView(), exact_soln.get1dView(), 2*Teuchos::ScalarTraits<Scalar>::eps());
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, LinePartition, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  std::string version = Ifpack2::Version();
+  out << "Ifpack2::Version(): " << version << std::endl;
+
+  global_size_t num_rows_per_proc = 5;
+
+  typedef Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> RG;
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> CRS;
+  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVector;
+  typedef Ifpack2::TriDiContainer<CRS,Scalar> TriDi;
+
+  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+  Teuchos::RCP<const CRS > crsmatrix = tif_utest::create_test_matrix_variable_blocking<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
+
+  /*** Fill RHS / LHS ***/
+  Vector rhs(rowmap), lhs(rowmap), exact_soln(rowmap);
+  rhs.putScalar(2.0);
+  lhs.putScalar(0.0);
+  exact_soln.putScalar(2.0);
+
+  /* Generate some fake coordinates */
+  Teuchos::RCP<MultiVector> coord = rcp(new MultiVector(rowmap,2));
+  Teuchos::ArrayView<Scalar> x0 = coord->getDataNonConst(0)();
+  Teuchos::ArrayView<Scalar> x1 = coord->getDataNonConst(1)();
+  x0[0]=0; x0[1]=1;   x0[2]=10;  x0[3]=11;  x0[4]=12;
+  x1[0]=0; x1[1]=1;   x1[2]=2;   x1[3]=3;   x1[4]=4;
+
+
+  /* Setup Block Relaxation */
+  Teuchos::ParameterList ilist;
+  ilist.set("partitioner: type","line");
+  ilist.set("partitioner: coordinates",coord);
+  ilist.set("partitioner: line detection threshold",0.5);
+  ilist.set("relaxation: sweeps",1);
+  ilist.set("relaxation: type","Gauss-Seidel");
+
+  Ifpack2::BlockRelaxation<CRS,TriDi> TDRelax(crsmatrix);
+
+  TDRelax.setParameters(ilist);
+  TDRelax.initialize();
+  TDRelax.compute();  
+  TDRelax.apply(rhs,lhs);
+
+  // For debugging:
+  // Teuchos::RCP<Ifpack2::Partitioner<RG> > MyPart = TDRelax.getPartitioner();
+  // Teuchos::ArrayView<const LocalOrdinal> part = MyPart->nonOverlappingPartition();
+
+  TEST_COMPARE_FLOATING_ARRAYS(lhs.get1dView(), exact_soln.get1dView(), 2*Teuchos::ScalarTraits<Scalar>::eps());
+}
+
+
 
 #define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2BlockRelaxation, Test0, Scalar, LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2BlockRelaxation, Test1, Scalar, LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2BlockRelaxation, Test2, Scalar, LocalOrdinal,GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2BlockRelaxation, TriDi, Scalar, LocalOrdinal,GlobalOrdinal) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2BlockRelaxation, TriDi, Scalar, LocalOrdinal,GlobalOrdinal) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2BlockRelaxation, LinePartition, Scalar, LocalOrdinal,GlobalOrdinal) 
 
 
 
