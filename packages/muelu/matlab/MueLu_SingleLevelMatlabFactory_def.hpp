@@ -88,7 +88,7 @@ namespace MueLu {
       Input(currentLevel, needs_[i]);
 
     hasDeclaredInput_ = true;
-  
+
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

@@ -139,11 +139,10 @@ RCP<Tpetra_CrsMatrix_double> tpetraLoadMatrix<double>(const mxArray* mxa)
       const mm_GlobalOrd indexBase = 0;
       RCP<const muemex_map_type> rowMap = rcp(new muemex_map_type(numGlobalIndices, indexBase, comm));
       RCP<const muemex_map_type> domainMap = rcp(new muemex_map_type(mxGetN(mxa), indexBase, comm));
-      A = Tpetra::createCrsMatrix<double, mm_GlobalOrd, mm_LocalOrd, mm_node_t>(rowMap);
+      A = Tpetra::createCrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(rowMap);
       double* valueArray = mxGetPr(mxa);
       int* colptr;
       int* rowind;
-      //int nr = mxGetM(mxa);
       int nc = mxGetN(mxa);
       if(rewrap_ints)
         {
@@ -295,6 +294,18 @@ RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> loadTp
       std::cout << e.what() << std::endl;
     }
   return mv;
+}
+
+RCP<Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> loadXpetraMVDouble(const mxArray* mxa)
+{
+  RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > tmv = loadTpetraMV<double>(mxa);
+  return MueLu::TpetraMultiVector_To_XpetraMultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tmv);
+}
+
+RCP<Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> loadXpetraMVComplex(const mxArray* mxa)
+{
+  RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > tmv = loadTpetraMV<complex_t>(mxa);
+  return MueLu::TpetraMultiVector_To_XpetraMultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tmv);
 }
 
 /******************************/
@@ -510,7 +521,7 @@ mxArray* MuemexData<RCP<Xpetra_ordinal_vector>>::convertToMatlab()
 template<>
 MuemexData<RCP<Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >::MuemexData(const mxArray* mxa) : MuemexArg(XPETRA_MULTIVECTOR_DOUBLE)
 {
-  data = loadXpetraMV<double>(mxa);
+  data = loadXpetraMVDouble(mxa);
 }
 
 template<>
@@ -523,7 +534,7 @@ mxArray* MuemexData<RCP<Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, m
 template<>
 MuemexData<RCP<Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >::MuemexData(const mxArray* mxa) : MuemexArg(XPETRA_MULTIVECTOR_COMPLEX)
 {
-  data = loadXpetraMV<complex_t>(mxa);
+  data = loadXpetraMVComplex(mxa);
 }
 
 template<>
@@ -740,13 +751,6 @@ mxArray* saveTpetraMV(RCP<Tpetra::MultiVector<Scalar, mm_LocalOrd, mm_GlobalOrd,
     }
   fillMatlabArray<Scalar>(data, output, nc * nr);
   return output;
-}
-
-template<typename Scalar>
-RCP<Xpetra::MultiVector<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> loadXpetraMV(const mxArray* mxa)
-{
-  RCP<Tpetra::MultiVector<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > tmv = loadTpetraMV<Scalar>(mxa);
-  return MueLu::TpetraMultiVector_To_XpetraMultiVector<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tmv);
 }
 
 }// end namespace

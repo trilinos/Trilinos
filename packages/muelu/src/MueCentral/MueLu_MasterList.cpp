@@ -179,6 +179,9 @@ namespace MueLu {
   "<Parameter name=\"aggregation: preserve Dirichlet points\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: allow user-specified singletons\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: export visualization data\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: output filename\" type=\"string\" value=\"AggViz.vtp\"/>"
+  "<Parameter name=\"aggregation: output file: time step\" type=\"int\" value=\"0\"/>"
+  "<Parameter name=\"aggregation: iter\" type=\"int\" value=\"0\"/>"
   "<ParameterList name=\"export data\"/>"
   "<Parameter name=\"print initial parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"print unused parameters\" type=\"bool\" value=\"true\"/>"
@@ -401,7 +404,13 @@ namespace MueLu {
          ("aggregation: allow user-specified singletons","aggregation: allow user-specified singletons")
 
          ("aggregation: export visualization data","aggregation: export visualization data")
-
+      
+         ("aggregation: output filename","aggregation: output filename")
+      
+         ("aggregation: output file: time step","aggregation: output file: time step")
+      
+         ("aggregation: iter","aggregation: iter")
+      
          ("export data","export data")
 
          ("ML print initial list","print initial parameters")

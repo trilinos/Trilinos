@@ -9,7 +9,7 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="Hierarchy">
-    <ParameterList name="level 0">
+    <ParameterList name="level 1">
       <Parameter name="Ptent" type="string" value="myMatlabTwoLevelFactory"/>
     </ParameterList>
   </ParameterList>

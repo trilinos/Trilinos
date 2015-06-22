@@ -83,15 +83,20 @@ namespace MueLu {
     const std::string str_nc = pL.get<std::string>("Needs Coarse");
 
     // Tokenize the strings
-    TokenizeStringAndStripWhiteSpace(str_nf,needsFine_);
-    TokenizeStringAndStripWhiteSpace(str_nc,needsCoarse_);
+    printf("str_nf = %s\n",str_nf.c_str());
+    TokenizeStringAndStripWhiteSpace(str_nf,needsFine_,",");
+    TokenizeStringAndStripWhiteSpace(str_nc,needsCoarse_,",");
 
     // Declare inputs
-    for(size_t i = 0; i < needsFine_.size(); i++)
-      Input(fineLevel, needsFine_[i]);
+    for(size_t i = 0; i < needsFine_.size(); i++) {
+          printf("needsFine_[%d] = %s\n",(int)i,needsFine_[i].c_str());
+          Input(fineLevel, needsFine_[i]);
+    }
 
-    for(size_t i = 0; i < needsCoarse_.size(); i++)
+    for(size_t i = 0; i < needsCoarse_.size(); i++) {
+          printf("needsCoarse_[%d] = %s\n",(int)i,needsCoarse_[i].c_str());
       Input(coarseLevel, needsCoarse_[i]);
+  }
 
     hasDeclaredInput_=true;
   }
@@ -111,7 +116,7 @@ namespace MueLu {
     // Fine needs
     for(size_t i = 0; needsFine_.size(); i++) {
       if(needsFine_[i] == "A" || needsFine_[i] == "P" || needsFine_[i] == "R" || needsFine_[i]=="Ptent") {
-	RCP<Matrix> mydata = Get<RCP<Matrix> >(fineLevel,needsFine_[i]);
+	RCP<Matrix> mydata = Get<RCP<Matrix> >(fineLevel, needsFine_[i]);
 	InputArgs.push_back(rcp(new MuemexData<RCP<Matrix> >(mydata)));
       }
 
