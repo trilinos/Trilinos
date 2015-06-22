@@ -44,7 +44,7 @@ namespace Rythmos {
 
 //! Reduction operator for a logarithmic infinity norm
 /*!
- * This class implements a reduction operator for computing the 
+ * This class implements a reduction operator for computing the
  * logarithmic infinity norm of a vector:
  * \f[
  *      \|1 + log(x)\|_\infty.
@@ -67,13 +67,13 @@ RTOP_ROP_1_REDUCT_SCALAR( ROpLogNormInf,
  * time integration of ODEs.
  */
 /*!
- * Let 
+ * Let
  * \f[
  *     \frac{dx}{dt} = f(x,t), \quad x(t_0) = a
  * \f]
  * be an ODE initial-value problem.  This class implements a single time
  * step of an explicit Taylor polynomial time integration method for
- * computing numerical solutions to the IVP.  The method consists of 
+ * computing numerical solutions to the IVP.  The method consists of
  * computing a local truncated Taylor series solution to the ODE (section
  * \ref Rythmos_ETI_local_TS), estimating a step size within the radius
  * of convergence of the Taylor series (section \ref Rythmos_ETI_stepsize)
@@ -84,44 +84,44 @@ RTOP_ROP_1_REDUCT_SCALAR( ROpLogNormInf,
  * section \ref Rythmos_ETI_params.
  *
  * \section Rythmos_ETI_local_TS Computing the Taylor Polynomial
- * 
+ *
  * Let
  * \f[
- *      x(t) = \sum_{k=0}^\infty x_k (t-t_0)^k 
+ *      x(t) = \sum_{k=0}^\infty x_k (t-t_0)^k
  * \f]
  * be a power series solution to the IVP above.  Then \f$f(x(t))\f$ can
  * be expaned in a power series along the solution curve \f$x(t)\f$:
  * \f[
  *      f(x(t),t) = \sum_{k=0}^\infty f_k (t-t_0)^k
  * \f]
- * where 
+ * where
  * \f[
  *      f_k = \left.\frac{1}{k!}\frac{d^k}{dt^k} f(x(t),t)\right|_{t=t_0}.
  * \f]
  * By differentiating the power series for \f$x(t)\f$ to compute a power
- * series for \f$dx/dt\f$ and then comparing coefficients in the 
+ * series for \f$dx/dt\f$ and then comparing coefficients in the
  * equation \f$dx/dt=f(x(t),t)\f$ we find the following recurrence
  * relationship for the Taylor coefficients \f$\{x_k\}\f$:
  * \f[
  *     x_{k+1} = \frac{1}{k+1} f_k, \quad k=0,1,\dots
  * \f]
- * where each coefficient \f$f_k\f$ is a function only of 
+ * where each coefficient \f$f_k\f$ is a function only of
  * \f$x_0,\dots,x_k\f$ and can be efficiently computed using the Taylor
  * polynomial mode of automatic differentation.  This allows the Taylor
  * coefficients to be iteratively computed starting with the initial point
- * \f$x_0\f$ up to some fixed degree \f$d\f$ to yield a local truncated 
+ * \f$x_0\f$ up to some fixed degree \f$d\f$ to yield a local truncated
  * Taylor polynomial approximating the solution to the IVP.
  *
  * \section Rythmos_ETI_stepsize Computing a Step Size
  *
- * With the truncated Taylor polynomial solution 
+ * With the truncated Taylor polynomial solution
  * \f$\tilde{x}(t) = \sum_{k=0}^d x_k (t-t_0)^k\f$ in hand, a step size
  * is chosen by estimating the truncation error in the polynomial solution
  * and forcing this error to be less than some prescribed tolerance.  Let
  * \f[
  *     \rho = \max_{d/2\leq k\leq d} (1+\|x_k\|_\infty)^{1/k}
  * \f]
- * so \f$\|x_k\|_\infty\leq\rho^k\f$ for \f$d/2\leq k \leq d\f$.  Assume 
+ * so \f$\|x_k\|_\infty\leq\rho^k\f$ for \f$d/2\leq k \leq d\f$.  Assume
  * \f$\|x_k\|\leq\rho^k\f$ for \f$k>d\f$ as well, then for any \f$h<1/\rho\f$
  * it can be shown that the truncation error is bounded by
  * \f[
@@ -136,7 +136,7 @@ RTOP_ROP_1_REDUCT_SCALAR( ROpLogNormInf,
  *
  * \section Rythmos_ETI_sum Summing the Polynomial
  *
- * With a step size \f$h\f$ computed, 
+ * With a step size \f$h\f$ computed,
  * \f[
  *     x^\ast = \sum_{k=0}^d x_k h^k
  * \f]
@@ -166,10 +166,10 @@ public:
 
   //! Typename of magnitude of scalars
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
-    
+
   //! Constructor
   ExplicitTaylorPolynomialStepper();
-    
+
   //! Destructor
   ~ExplicitTaylorPolynomialStepper();
 
@@ -192,10 +192,10 @@ public:
   void setInitialCondition(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
     );
-    
+
   /** \brief . */
   Thyra::ModelEvaluatorBase::InArgs<Scalar> getInitialCondition() const;
-    
+
   //! Take a time step of magnitude \c dt
   Scalar takeStep(Scalar dt, StepSizeType flag);
 
@@ -224,14 +224,14 @@ public:
     const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default
     ) const;
 
-  /// Redefined from InterpolationBufferBase 
+  /// Redefined from InterpolationBufferBase
   /// Add points to buffer
   void addPoints(
     const Array<Scalar>& time_vec
     ,const Array<RCP<const Thyra::VectorBase<Scalar> > >& x_vec
     ,const Array<RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
     );
-    
+
   /// Get values from buffer
   void getPoints(
     const Array<Scalar>& time_vec
@@ -259,14 +259,14 @@ public:
 
 private:
 
-  //! Default initialize all data 
+  //! Default initialize all data
   void defaultInitializAll_();
 
   //! Computes a local Taylor series solution to the ODE
   void computeTaylorSeriesSolution_();
 
-  /*! 
-   * \brief Computes of log of the estimated radius of convergence of the 
+  /*!
+   * \brief Computes of log of the estimated radius of convergence of the
    * Taylor series.
    */
   ScalarMag estimateLogRadius_();
@@ -342,7 +342,7 @@ typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 log_norm_inf(const Thyra::VectorBase<Scalar>& x)
 {
   ROpLogNormInf<Scalar> log_norm_inf_op;
-  RCP<RTOpPack::ReductTarget> log_norm_inf_targ = 
+  RCP<RTOpPack::ReductTarget> log_norm_inf_targ =
     log_norm_inf_op.reduct_obj_create();
   Thyra::applyOp<Scalar>(log_norm_inf_op,
     Teuchos::tuple(Teuchos::ptrFromRef(x))(), Teuchos::null,
@@ -409,7 +409,7 @@ void ExplicitTaylorPolynomialStepper<Scalar>::setModel(
 {
   TEUCHOS_TEST_FOR_EXCEPT( is_null(model) );
   assertValidModel( *this, *model );
-    
+
   model_ = model;
   f_vector_ = Thyra::createMember(model_->get_f_space());
 }
@@ -434,7 +434,7 @@ ExplicitTaylorPolynomialStepper<Scalar>::getModel() const
 
 template<class Scalar>
 RCP<Thyra::ModelEvaluator<Scalar> >
-ExplicitTaylorPolynomialStepper<Scalar>::getNonconstModel() 
+ExplicitTaylorPolynomialStepper<Scalar>::getNonconstModel()
 {
   return Teuchos::null;
 }
@@ -463,7 +463,7 @@ void ExplicitTaylorPolynomialStepper<Scalar>::setInitialCondition(
 
 
 template<class Scalar>
-Thyra::ModelEvaluatorBase::InArgs<Scalar> 
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
 ExplicitTaylorPolynomialStepper<Scalar>::getInitialCondition() const
 {
   return basePoint_;
@@ -471,7 +471,7 @@ ExplicitTaylorPolynomialStepper<Scalar>::getInitialCondition() const
 
 
 template<class Scalar>
-Scalar 
+Scalar
 ExplicitTaylorPolynomialStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -537,10 +537,10 @@ ExplicitTaylorPolynomialStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
     } while (local_error > local_error_tolerance_ && shadowed_dt > min_step_size_);
 
     // Check if minimum step size was reached
-    TEUCHOS_TEST_FOR_EXCEPTION(shadowed_dt < min_step_size_, 
+    TEUCHOS_TEST_FOR_EXCEPTION(shadowed_dt < min_step_size_,
       std::runtime_error,
-      "ExplicitTaylorPolynomialStepper<Scalar>::takeStep(): " 
-      << "Step size reached minimum step size " 
+      "ExplicitTaylorPolynomialStepper<Scalar>::takeStep(): "
+      << "Step size reached minimum step size "
       << min_step_size_ << ".  Failing step." );
 
     // Increment t_
@@ -592,12 +592,12 @@ template<class Scalar>
 const StepStatus<Scalar>
 ExplicitTaylorPolynomialStepper<Scalar>::getStepStatus() const
 {
-  typedef Teuchos::ScalarTraits<Scalar> ST;
+  // typedef Teuchos::ScalarTraits<Scalar> ST; // unused
   StepStatus<Scalar> stepStatus;
 
   if (!haveInitialCondition_) {
     stepStatus.stepStatus = STEP_STATUS_UNINITIALIZED;
-  } 
+  }
   else if (numSteps_ == 0) {
     stepStatus.stepStatus = STEP_STATUS_UNKNOWN;
     stepStatus.stepSize = dt_;
@@ -608,7 +608,7 @@ ExplicitTaylorPolynomialStepper<Scalar>::getStepStatus() const
     if (!is_null(model_)) {
       stepStatus.residual = f_vector_;
     }
-  } 
+  }
   else  {
     stepStatus.stepStatus = STEP_STATUS_CONVERGED;
     stepStatus.stepSize = dt_;
@@ -639,7 +639,7 @@ void ExplicitTaylorPolynomialStepper<Scalar>::setParameterList(RCP<Teuchos::Para
   t_final_ = parameterList_->get("Final Time", ST::one());
 
   // Get local error tolerance
-  local_error_tolerance_ = 
+  local_error_tolerance_ =
     parameterList_->get("Local Error Tolerance", ScalarMag(1.0e-10));
 
   // Get minimum step size
@@ -784,7 +784,7 @@ void ExplicitTaylorPolynomialStepper<Scalar>::getNodes(Array<Scalar>* time_vec) 
   TEUCHOS_ASSERT( time_vec != NULL );
   time_vec->clear();
   if (!haveInitialCondition_) {
-    return; 
+    return;
   } else {
     time_vec->push_back(t_);
   }
@@ -833,7 +833,7 @@ ExplicitTaylorPolynomialStepper<Scalar>::computeTaylorSeriesSolution_()
 
     x_poly_->setDegree(k);
     f_poly_->setDegree(k);
-      
+
     // x[k] = f[k-1] / k
     tmp = x_poly_->getCoefficient(k);
     copy(*(f_poly_->getCoefficient(k-1)), tmp.ptr());

@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 
   using std::endl;
   typedef double Scalar;
-  typedef double ScalarMag;
+  // typedef double ScalarMag; // unused
   using Teuchos::describe;
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
   using Teuchos::CommandLineProcessor;
   typedef Teuchos::ParameterList::PrintOptions PLPrintOptions;
   typedef Thyra::ModelEvaluatorBase MEB;
-  typedef Thyra::DefaultMultiVectorProductVectorSpace<Scalar> DMVPVS;
+  // typedef Thyra::DefaultMultiVectorProductVectorSpace<Scalar> DMVPVS; // unused
   using Thyra::productVectorBase;
 
   bool result, success = true;

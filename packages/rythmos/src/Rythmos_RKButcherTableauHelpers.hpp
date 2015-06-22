@@ -50,7 +50,7 @@ void assembleIRKState(
   )
 {
 
-  typedef ScalarTraits<Scalar> ST;
+  // typedef ScalarTraits<Scalar> ST; // unused
 
   const int numStages_in = A_in.numRows();
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( stageIndex, 0, numStages_in );
@@ -78,7 +78,7 @@ void assembleIRKSolution(
   )
 {
 
-  typedef ScalarTraits<Scalar> ST;
+  // typedef ScalarTraits<Scalar> ST; // unused
 
   const int numStages_in = b_in.length();
   TEUCHOS_ASSERT_EQUALITY( b_in.length(), numStages_in );
@@ -122,7 +122,7 @@ void assembleERKSolution(
 template<class Scalar>
 bool isEmptyRKButcherTableau( const RKButcherTableauBase<Scalar>& rkbt ) {
   typedef ScalarTraits<Scalar> ST;
-  
+
   // Check that numStages > 0
   if (rkbt.numStages() == 0) {
     return true;
@@ -174,7 +174,7 @@ bool isDIRKButcherTableau( const RKButcherTableauBase<Scalar>& rkbt )
 }
 
 template<class Scalar>
-bool isIRKButcherTableau( const RKButcherTableauBase<Scalar>& rkbt ) 
+bool isIRKButcherTableau( const RKButcherTableauBase<Scalar>& rkbt )
 {
   if (isEmptyRKButcherTableau(rkbt)) {
     return false;
@@ -194,12 +194,12 @@ template<class Scalar>
 void validateDIRKButcherTableau( const RKButcherTableauBase<Scalar>& rkbt )
 {
   TEUCHOS_TEST_FOR_EXCEPTION( !isDIRKButcherTableau(rkbt), std::logic_error,
-      "Error!  This Diagonal Implicit RK Butcher Tableau has non-zeros in the upper triangular part!\n" 
+      "Error!  This Diagonal Implicit RK Butcher Tableau has non-zeros in the upper triangular part!\n"
       );
 }
 
 template<class Scalar>
-bool isSDIRKButcherTableau( const RKButcherTableauBase<Scalar>& rkbt ) 
+bool isSDIRKButcherTableau( const RKButcherTableauBase<Scalar>& rkbt )
 {
   if (isEmptyRKButcherTableau(rkbt)) {
     return false;
@@ -208,7 +208,7 @@ bool isSDIRKButcherTableau( const RKButcherTableauBase<Scalar>& rkbt )
     return false;
   }
   // Verify the diagonal entries are all equal.
-  typedef ScalarTraits<Scalar> ST;
+  // typedef ScalarTraits<Scalar> ST; // unused
   int numStages_local = rkbt.numStages();
   const Teuchos::SerialDenseMatrix<int,Scalar> A_local = rkbt.A();
   Scalar val = A_local(0,0);
@@ -229,7 +229,7 @@ void validateSDIRKButcherTableau( const RKButcherTableauBase<Scalar>& rkbt )
 }
 
 template<class Scalar>
-bool isERKButcherTableau( const RKButcherTableauBase<Scalar>& rkbt) 
+bool isERKButcherTableau( const RKButcherTableauBase<Scalar>& rkbt)
 {
   if (isEmptyRKButcherTableau(rkbt)) {
     return false;
@@ -259,7 +259,7 @@ template<class Scalar>
 void validateERKButcherTableau( const RKButcherTableauBase<Scalar>& rkbt )
 {
   TEUCHOS_TEST_FOR_EXCEPTION( !isERKButcherTableau(rkbt), std::logic_error,
-      "Error!  This ERK Butcher Tableau is not lower triangular or c(0) is not zero!\n" 
+      "Error!  This ERK Butcher Tableau is not lower triangular or c(0) is not zero!\n"
       );
 }
 
@@ -291,11 +291,11 @@ void validateERKOrder( RKButcherTableauBase<Scalar> rkbt, int order_in )
     }
     TEUCHOS_TEST_FOR_EXCEPTION(
         (
-         ( sum1 != ST::one() ) || 
+         ( sum1 != ST::one() ) ||
          ( sum2 != ST::one() ) ||
          ( sum3 != ST::one() ) ||
          ( sum4 != ST::one() )
-        ), 
+        ),
         std::logic_error,
         "Error!, this RK Butcher Tableau does not meet the order conditions for 3rd order\n"
         );
@@ -324,7 +324,7 @@ void validateSDIRKOrder( RKButcherTableauBase<Scalar> rkbt, int order_in )
   TEUCHOS_TEST_FOR_EXCEPT(true);
 }
 */
- 
+
 enum E_RKButcherTableauTypes {
   RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_INVALID,
   RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_ERK,
@@ -341,7 +341,7 @@ E_RKButcherTableauTypes determineRKBTType(const RKButcherTableauBase<Scalar>& rk
   if (isERKButcherTableau(rkbt)) {
     return RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_ERK;
   }
-  if (rkbt.numStages() == 1) { 
+  if (rkbt.numStages() == 1) {
     // In this case, its just an IRK method.
     return RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_IRK;
   }
